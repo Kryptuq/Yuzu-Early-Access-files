@@ -2,6 +2,7 @@ version: 'EA{build}'
 branches:
   only:
   - master
+stack: python 3.9.5
 clone_folder: c:\Projects\yuzu-early-access
 image:
 - Visual Studio 2019
