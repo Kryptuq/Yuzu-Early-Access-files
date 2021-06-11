@@ -21,7 +21,7 @@ init:
 - if "%arch%"=="Win64" ( set arch= Win64)
 - echo %arch%
 - echo %APPVEYOR_BUILD_WORKER_IMAGE%
-- set generator="Visual Studio 16 2019%arch%"
+- set generator="Visual Studio 16 2019"
 - echo %generator%
 
 before_build:
