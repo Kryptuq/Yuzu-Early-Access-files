@@ -12,6 +12,7 @@ platform:
 environment:
   matrix:
   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+  - TOXENV: py37
   
 matrix:
   fast_finish: true
@@ -25,6 +26,8 @@ init:
 - set generator="Visual Studio 16 2019"
 - echo %generator%
 - python -m pip install --upgrade pip
+- pip install tox
+- tox
 - python --version
 
 before_build:
