@@ -14,7 +14,7 @@ environment:
   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
     PYTHON: "3.7"
 
-stack: python %PYTHON%
+stack: python3 %PYTHON%
   
 matrix:
   fast_finish: true
