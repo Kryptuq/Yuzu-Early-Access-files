@@ -1,0 +1,42 @@
+version: '{build}'
+branches:
+  only:
+  - master
+clone_folder: c:\Projects\yuzu-early-access
+image:
+- Visual Studio 2019
+configuration:
+- Release
+platform:
+- x64
+environment:
+  matrix:
+  - arch: Win64
+matrix:
+  fast_finish: true
+
+# skip unsupported combinations
+init:
+- set arch=
+- if "%arch%"=="Win64" ( set arch= Win64)
+- echo %arch%
+- echo %APPVEYOR_BUILD_WORKER_IMAGE%
+- set generator="Visual Studio 16 2019%arch%"
+- echo %generator%
+
+before_build:
+- cmd: |-
+    mkdir build
+    cd build
+    cmake --version
+    cmake .. -G %generator%
+build:
+  project: c:\Projects\yuzu-early-access\build\template.sln
+  verbosity: minimal
+  parallel: true
+only_commits:
+  files:
+    - CMakeLists.txt
+    - appveyor.yml
+    - source/
+    - cmake/
