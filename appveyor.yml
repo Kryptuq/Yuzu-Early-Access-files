@@ -31,7 +31,7 @@ before_build:
     cmake --version
     cmake .. -G %generator%
 build:
-  project: c:\Projects\yuzu-early-access\build\template.sln
+  project: c:\Projects\yuzu-early-access\build\yuzu.sln
   verbosity: minimal
   parallel: true
 only_commits:
