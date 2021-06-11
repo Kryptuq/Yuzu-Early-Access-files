@@ -23,13 +23,13 @@ init:
 - echo %APPVEYOR_BUILD_WORKER_IMAGE%
 - set generator="Visual Studio 16 2019"
 - echo %generator%
-- python3 --version
+- python --version
 
 before_build:
 - cmd: |-
     mkdir build
     cd build
-    pip3 install conan
+    pip install conan
     conan user
     cmake --version
     cmake .. -G %generator%
