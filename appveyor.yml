@@ -1,7 +1,7 @@
 version: 'EA{build}'
 branches:
   only:
-  - master
+  - main
 clone_folder: c:\Projects\yuzu-early-access
 image:
 - Visual Studio 2019
