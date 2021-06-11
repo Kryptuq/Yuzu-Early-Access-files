@@ -12,7 +12,7 @@ platform:
 environment:
   matrix:
   - arch: Win64
-  - TOXENV: py37
+  - PY_DIR: C:/Python37-x64
 matrix:
   fast_finish: true
 
