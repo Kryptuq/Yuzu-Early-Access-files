@@ -30,6 +30,8 @@ before_build:
     cd build
     cmake --version
     cmake .. -G %generator%
+    pip install conan
+    conan user
 build:
   project: c:\Projects\yuzu-early-access\build\yuzu.sln
   verbosity: minimal
