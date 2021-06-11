@@ -10,6 +10,11 @@ configuration:
 platform:
 - x64
 environment:
+  global:
+    PYTHONUNBUFFERED: 'True'
+    PYTHONWARNINGS: 'ignore:::wheel.pep425tags:'
+    CODECOV_ENV: PYTHON_VERSION, PLATFORM
+    
   matrix:
   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
   - PYTHON_VERSION: 3.9
@@ -25,14 +30,9 @@ environment:
   - PYTHON_VERSION: 3.6
     PYTHONNET_SHUTDOWN_MODE: Soft
   
-matrix:
-  fast_finish: true
-
 # skip unsupported combinations
 init:
-- set arch=
-- if "%arch%"=="Win64" ( set arch= Win64)
-- echo %arch%
+- set arch= Win64
 - echo %APPVEYOR_BUILD_WORKER_IMAGE%
 - set generator="Visual Studio 16 2019"
 - echo %generator%
