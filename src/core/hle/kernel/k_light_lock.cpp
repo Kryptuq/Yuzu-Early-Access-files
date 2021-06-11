@@ -59,11 +59,7 @@ void KLightLock::LockSlowPath(uintptr_t _owner, uintptr_t _cur_thread) {
         owner_thread->AddWaiter(cur_thread);
 
         // Set thread states.
-        if (cur_thread->GetState() == ThreadState::Runnable) {
-            cur_thread->SetState(ThreadState::Waiting);
-        } else {
-            KScheduler::SetSchedulerUpdateNeeded(kernel);
-        }
+        cur_thread->SetState(ThreadState::Waiting);
 
         if (owner_thread->IsSuspended()) {
             owner_thread->ContinueIfHasKernelWaiters();
@@ -73,10 +69,9 @@ void KLightLock::LockSlowPath(uintptr_t _owner, uintptr_t _cur_thread) {
     // We're no longer waiting on the lock owner.
     {
         KScopedSchedulerLock sl{kernel};
-        KThread* owner_thread = cur_thread->GetLockOwner();
-        if (owner_thread) {
+
+        if (KThread* owner_thread = cur_thread->GetLockOwner(); owner_thread != nullptr) {
             owner_thread->RemoveWaiter(cur_thread);
-            KScheduler::SetSchedulerUpdateNeeded(kernel);
         }
     }
 }
@@ -95,17 +90,13 @@ void KLightLock::UnlockSlowPath(uintptr_t _cur_thread) {
 
         // Pass the lock to the next owner.
         uintptr_t next_tag = 0;
-        if (next_owner) {
+        if (next_owner != nullptr) {
             next_tag = reinterpret_cast<uintptr_t>(next_owner);
             if (num_waiters > 1) {
                 next_tag |= 0x1;
             }
 
-            if (next_owner->GetState() == ThreadState::Waiting) {
-                next_owner->SetState(ThreadState::Runnable);
-            } else {
-                KScheduler::SetSchedulerUpdateNeeded(kernel);
-            }
+            next_owner->SetState(ThreadState::Runnable);
 
             if (next_owner->IsSuspended()) {
                 next_owner->ContinueIfHasKernelWaiters();

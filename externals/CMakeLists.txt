@@ -45,6 +45,11 @@ target_include_directories(microprofile INTERFACE ./microprofile)
 add_library(unicorn-headers INTERFACE)
 target_include_directories(unicorn-headers INTERFACE ./unicorn/include)
 
+# libusb
+if (NOT LIBUSB_FOUND OR YUZU_USE_BUNDLED_LIBUSB)
+    add_subdirectory(libusb)
+endif()
+
 # SDL2
 if (NOT SDL2_FOUND AND ENABLE_SDL2)
     if (NOT WIN32)

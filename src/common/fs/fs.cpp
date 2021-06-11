@@ -321,7 +321,8 @@ bool RemoveDirContentsRecursively(const fs::path& path) {
 
     std::error_code ec;
 
-    for (const auto& entry : fs::recursive_directory_iterator(path, ec)) {
+    // TODO (Morph): Replace this with recursive_directory_iterator once it's fixed in MSVC.
+    for (const auto& entry : fs::directory_iterator(path, ec)) {
         if (ec) {
             LOG_ERROR(Common_Filesystem,
                       "Failed to completely enumerate the directory at path={}, ec_message={}",
@@ -336,6 +337,12 @@ bool RemoveDirContentsRecursively(const fs::path& path) {
                       "Failed to remove the filesystem object at path={}, ec_message={}",
                       PathToUTF8String(entry.path()), ec.message());
             break;
+        }
+
+        // TODO (Morph): Remove this when MSVC fixes recursive_directory_iterator.
+        // recursive_directory_iterator throws an exception despite passing in a std::error_code.
+        if (entry.status().type() == fs::file_type::directory) {
+            return RemoveDirContentsRecursively(entry.path());
         }
     }
 
@@ -475,7 +482,8 @@ void IterateDirEntriesRecursively(const std::filesystem::path& path,
 
     std::error_code ec;
 
-    for (const auto& entry : fs::recursive_directory_iterator(path, ec)) {
+    // TODO (Morph): Replace this with recursive_directory_iterator once it's fixed in MSVC.
+    for (const auto& entry : fs::directory_iterator(path, ec)) {
         if (ec) {
             break;
         }
@@ -494,6 +502,12 @@ void IterateDirEntriesRecursively(const std::filesystem::path& path,
                 callback_error = true;
                 break;
             }
+        }
+
+        // TODO (Morph): Remove this when MSVC fixes recursive_directory_iterator.
+        // recursive_directory_iterator throws an exception despite passing in a std::error_code.
+        if (entry.status().type() == fs::file_type::directory) {
+            IterateDirEntriesRecursively(entry.path(), callback, filter);
         }
     }
 

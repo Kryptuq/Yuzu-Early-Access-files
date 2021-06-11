@@ -201,16 +201,14 @@ bool KProcess::ReleaseUserException(KThread* thread) {
 
         // Remove waiter thread.
         s32 num_waiters{};
-        KThread* next = thread->RemoveWaiterByKey(
-            std::addressof(num_waiters),
-            reinterpret_cast<uintptr_t>(std::addressof(exception_thread)));
-        if (next != nullptr) {
-            if (next->GetState() == ThreadState::Waiting) {
-                next->SetState(ThreadState::Runnable);
-            } else {
-                KScheduler::SetSchedulerUpdateNeeded(kernel);
-            }
+        if (KThread* next = thread->RemoveWaiterByKey(
+                std::addressof(num_waiters),
+                reinterpret_cast<uintptr_t>(std::addressof(exception_thread)));
+            next != nullptr) {
+            next->SetState(ThreadState::Runnable);
         }
+
+        KScheduler::SetSchedulerUpdateNeeded(kernel);
 
         return true;
     } else {

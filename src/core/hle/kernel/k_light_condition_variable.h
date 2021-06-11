@@ -18,41 +18,58 @@ class KernelCore;
 
 class KLightConditionVariable {
 public:
-    explicit KLightConditionVariable(KernelCore& kernel_)
-        : thread_queue(kernel_), kernel(kernel_) {}
+    explicit KLightConditionVariable(KernelCore& kernel_) : kernel{kernel_} {}
 
-    void Wait(KLightLock* lock, s64 timeout = -1) {
-        WaitImpl(lock, timeout);
-        lock->Lock();
+    void Wait(KLightLock* lock, s64 timeout = -1, bool allow_terminating_thread = true) {
+        WaitImpl(lock, timeout, allow_terminating_thread);
     }
 
     void Broadcast() {
         KScopedSchedulerLock lk{kernel};
-        while (thread_queue.WakeupFrontThread() != nullptr) {
-            // We want to signal all threads, and so should continue waking up until there's nothing
-            // to wake.
+
+        // Signal all threads.
+        for (auto& thread : wait_list) {
+            thread.SetState(ThreadState::Runnable);
         }
     }
 
 private:
-    void WaitImpl(KLightLock* lock, s64 timeout) {
+    void WaitImpl(KLightLock* lock, s64 timeout, bool allow_terminating_thread) {
         KThread* owner = GetCurrentThreadPointer(kernel);
 
         // Sleep the thread.
         {
-            KScopedSchedulerLockAndSleep lk(kernel, owner, timeout);
-            lock->Unlock();
+            KScopedSchedulerLockAndSleep lk{kernel, owner, timeout};
 
-            if (!thread_queue.SleepThread(owner)) {
+            if (!allow_terminating_thread && owner->IsTerminationRequested()) {
                 lk.CancelSleep();
                 return;
             }
+
+            lock->Unlock();
+
+            // Set the thread as waiting.
+            GetCurrentThread(kernel).SetState(ThreadState::Waiting);
+
+            // Add the thread to the queue.
+            wait_list.push_back(GetCurrentThread(kernel));
+        }
+
+        // Remove the thread from the wait list.
+        {
+            KScopedSchedulerLock sl{kernel};
+
+            wait_list.erase(wait_list.iterator_to(GetCurrentThread(kernel)));
         }
 
         // Cancel the task that the sleep setup.
         kernel.TimeManager().UnscheduleTimeEvent(owner);
+
+        // Re-acquire the lock.
+        lock->Lock();
     }
-    KThreadQueue thread_queue;
+
     KernelCore& kernel;
+    KThread::WaiterList wait_list{};
 };
 } // namespace Kernel
