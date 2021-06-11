@@ -1,4 +1,4 @@
-version: '{build}'
+version: 'EA{build}'
 branches:
   only:
   - master
