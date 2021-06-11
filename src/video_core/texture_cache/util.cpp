@@ -647,6 +647,9 @@ u32 CalculateLayerSize(const ImageInfo& info) noexcept {
 }
 
 LevelArray CalculateMipLevelOffsets(const ImageInfo& info) noexcept {
+    if (info.type == ImageType::Linear) {
+        return {};
+    }
     ASSERT(info.resources.levels <= static_cast<s32>(MAX_MIP_LEVELS));
     const LevelInfo level_info = MakeLevelInfo(info);
     LevelArray offsets{};

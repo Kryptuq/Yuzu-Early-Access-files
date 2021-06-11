@@ -476,6 +476,9 @@ private:
                     current_size = 0;
                     on_going = false;
                 }
+                if (empty_bits == PAGES_PER_WORD) {
+                    break;
+                }
                 page += empty_bits;
 
                 const int continuous_bits = std::countr_one(word >> page);

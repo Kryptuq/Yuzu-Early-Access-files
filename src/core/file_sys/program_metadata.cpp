@@ -150,7 +150,9 @@ void ProgramMetadata::Print() const {
     LOG_DEBUG(Service_FS, " > Is Retail:           {}", acid_header.is_retail ? "YES" : "NO");
     LOG_DEBUG(Service_FS, "Title ID Min:           0x{:016X}", acid_header.title_id_min);
     LOG_DEBUG(Service_FS, "Title ID Max:           0x{:016X}", acid_header.title_id_max);
-    LOG_DEBUG(Service_FS, "Filesystem Access:      0x{:016X}\n", acid_file_access.permissions);
+    u64_le permissions_l; // local copy to fix alignment error
+    std::memcpy(&permissions_l, &acid_file_access.permissions, sizeof(permissions_l));
+    LOG_DEBUG(Service_FS, "Filesystem Access:      0x{:016X}\n", permissions_l);
 
     // Begin ACI0 printing (actual perms, unsigned)
     LOG_DEBUG(Service_FS, "Magic:                  {:.4}", aci_header.magic.data());
