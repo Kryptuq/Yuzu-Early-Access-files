@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ConfigureCpu</class>
+ <widget class="QWidget" name="ConfigureCpu">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>321</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout">
+   <item>
+    <layout class="QVBoxLayout">
+     <item>
+      <widget class="QGroupBox">
+       <property name="title">
+        <string>General</string>
+       </property>
+       <layout class="QVBoxLayout">
+        <item>
+         <widget class="QWidget" name="widget_accuracy" native="true">
+          <layout class="QHBoxLayout" name="layout_accuracy">
+           <item>
+            <widget class="QLabel" name="label_accuracy">
+             <property name="text">
+              <string>Accuracy:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="accuracy">
+             <item>
+              <property name="text">
+               <string>Accurate</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Unsafe</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Enable Debug Mode</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_recommended_accuracy">
+          <property name="text">
+           <string>We recommend setting accuracy to &quot;Accurate&quot;.</string>
+          </property>
+          <property name="wordWrap">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QVBoxLayout">
+     <item>
+      <widget class="QGroupBox" name="unsafe_group">
+       <property name="title">
+        <string>Unsafe CPU Optimization Settings</string>
+       </property>
+       <layout class="QVBoxLayout">
+        <item>
+         <widget class="QLabel" name="label_accuracy_description">
+          <property name="text">
+           <string>These settings reduce accuracy for speed.</string>
+          </property>
+          <property name="wordWrap">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_unsafe_unfuse_fma">
+          <property name="toolTip">
+           <string>
+            &lt;div&gt;This option improves speed by reducing accuracy of fused-multiply-add instructions on CPUs without native FMA support.&lt;/div&gt;
+           </string>
+          </property>
+          <property name="text">
+           <string>Unfuse FMA (improve performance on CPUs without FMA)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_unsafe_reduce_fp_error">
+          <property name="toolTip">
+           <string>
+            &lt;div&gt;This option improves the speed of some approximate floating-point functions by using less accurate native approximations.&lt;/div&gt;
+           </string>
+          </property>
+          <property name="text">
+           <string>Faster FRSQRTE and FRECPE</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_unsafe_inaccurate_nan">
+          <property name="toolTip">
+           <string>
+            &lt;div&gt;This option improves speed by removing NaN checking. Please note this also reduces accuracy of certain floating-point instructions.&lt;/div&gt;
+           </string>
+          </property>
+          <property name="text">
+           <string>Inaccurate NaN handling</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_unsafe_fastmem_check">
+          <property name="toolTip">
+           <string>
+            &lt;div&gt;This option improves speed by eliminating a safety check before every memory read/write in guest. Disabling it may allow a game to read/write the emulator's memory.&lt;/div&gt;
+           </string>
+          </property>
+          <property name="text">
+           <string>Disable adress space checks</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_disable_info">
+     <property name="text">
+      <string>CPU settings are available only when game is not running.</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

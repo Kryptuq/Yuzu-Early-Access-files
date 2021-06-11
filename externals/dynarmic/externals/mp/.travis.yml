@@ -1,0 +1,19 @@
+language: cpp
+os: linux
+
+matrix:
+  - compiler: clang
+    env: CXX=clang
+    dist: bionic
+  - compiler: g++-8
+    env: CXX=g++-8
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - g++-8
+
+script:
+  - $CXX --version
+  - $CXX -I./include -std=c++17 -Wall -Wextra -Wcast-qual -pedantic -pedantic-errors -Werror tests/all_tests.cpp

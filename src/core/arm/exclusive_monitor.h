@@ -1,0 +1,38 @@
+// Copyright 2018 yuzu emulator team
+// Licensed under GPLv2 or any later version
+// Refer to the license.txt file included.
+
+#pragma once
+
+#include <memory>
+
+#include "common/common_types.h"
+
+namespace Core::Memory {
+class Memory;
+}
+
+namespace Core {
+
+class ExclusiveMonitor {
+public:
+    virtual ~ExclusiveMonitor();
+
+    virtual u8 ExclusiveRead8(std::size_t core_index, VAddr addr) = 0;
+    virtual u16 ExclusiveRead16(std::size_t core_index, VAddr addr) = 0;
+    virtual u32 ExclusiveRead32(std::size_t core_index, VAddr addr) = 0;
+    virtual u64 ExclusiveRead64(std::size_t core_index, VAddr addr) = 0;
+    virtual u128 ExclusiveRead128(std::size_t core_index, VAddr addr) = 0;
+    virtual void ClearExclusive() = 0;
+
+    virtual bool ExclusiveWrite8(std::size_t core_index, VAddr vaddr, u8 value) = 0;
+    virtual bool ExclusiveWrite16(std::size_t core_index, VAddr vaddr, u16 value) = 0;
+    virtual bool ExclusiveWrite32(std::size_t core_index, VAddr vaddr, u32 value) = 0;
+    virtual bool ExclusiveWrite64(std::size_t core_index, VAddr vaddr, u64 value) = 0;
+    virtual bool ExclusiveWrite128(std::size_t core_index, VAddr vaddr, u128 value) = 0;
+};
+
+std::unique_ptr<Core::ExclusiveMonitor> MakeExclusiveMonitor(Memory::Memory& memory,
+                                                             std::size_t num_cores);
+
+} // namespace Core

@@ -1,0 +1,6 @@
+# Built files
+build/
+build-*/
+docs/Doxygen/
+# Generated files
+src/backend/x64/mig/

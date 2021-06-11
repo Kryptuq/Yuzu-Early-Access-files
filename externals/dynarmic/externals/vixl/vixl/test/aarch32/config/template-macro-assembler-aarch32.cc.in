@@ -1,0 +1,169 @@
+// Copyright 2016, VIXL authors
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//   * Redistributions of source code must retain the above copyright notice,
+//     this list of conditions and the following disclaimer.
+//   * Redistributions in binary form must reproduce the above copyright notice,
+//     this list of conditions and the following disclaimer in the documentation
+//     and/or other materials provided with the distribution.
+//   * Neither the name of ARM Limited nor the names of its contributors may be
+//     used to endorse or promote products derived from this software without
+//     specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+/// This file is a template read by tools/generate_tests.py, it isn't valid C++
+/// as it is. Variables written as ${substitute_me} are replaced by the script.
+/// Comments starting with three forward slashes such as this one are also
+/// removed.
+
+${do_not_edit_comment}
+
+#include <iostream>
+#include <map>
+
+#include "test-runner.h"
+
+#include "test-utils.h"
+#include "test-utils-aarch32.h"
+
+#include "aarch32/assembler-aarch32.h"
+#include "aarch32/disasm-aarch32.h"
+#include "aarch32/macro-assembler-aarch32.h"
+
+#define BUF_SIZE (4096)
+
+namespace vixl {
+namespace aarch32 {
+
+// List of instruction mnemonics.
+#define FOREACH_INSTRUCTION(M) \
+  ${instruction_list_declaration}
+
+// The following definitions are defined again in each generated test, therefore
+// we need to place them in an anomymous namespace. It expresses that they are
+// local to this file only, and the compiler is not allowed to share these types
+// across test files during template instantiation. Specifically, `Operands` has
+// various layouts across generated tests so it absolutely cannot be shared.
+
+#ifdef ${isa_guard}
+namespace {
+
+// Values to be passed to the assembler to produce the instruction under test.
+struct Operands {
+  ${operand_list_declaration}
+};
+
+// This structure contains all data needed to test one specific
+// instruction.
+struct TestData {
+  // The `operands` field represents what to pass to the assembler to
+  // produce the instruction.
+  Operands operands;
+  // Description of the operands, used for error reporting.
+  const char* operands_description;
+  // Unique identifier, used for generating traces.
+  const char* identifier;
+};
+
+// Each element of this array produce one instruction encoding.
+const TestData kTests[] = {${test_case_definitions}};
+
+typedef void (MacroAssembler::*Fn)(${macroassembler_method_args});
+
+// Use a customised disassembler to label test cases.
+typedef std::map<uint32_t, int> TestCaseSymbolMap;
+
+class TestDisassembler : public PrintDisassembler {
+ public:
+  TestDisassembler(std::ostream& os,  // NOLINT(runtime/references)
+                   const TestCaseSymbolMap& symbols,
+                   const char* mnemonic)
+      : PrintDisassembler(os), symbols_(symbols), mnemonic_(mnemonic) {}
+
+  virtual void PrintCodeAddress(uint32_t pc) VIXL_OVERRIDE {
+    // Label test cases.
+    TestCaseSymbolMap::const_iterator symbol = symbols_.find(pc);
+    if (symbol != symbols_.end()) {
+      int n = symbol->second;
+      os().os() << "// " << mnemonic_ << "(" <<
+          kTests[n].operands_description << ")" << std::endl;
+    }
+    // Print the code address as normal.
+    PrintDisassembler::PrintCodeAddress(pc);
+  }
+
+ private:
+  const TestCaseSymbolMap& symbols_;
+  const char* mnemonic_;
+};
+
+void TestHelper(Fn instruction, const char* mnemonic) {
+  MacroAssembler masm(BUF_SIZE);
+
+  ${macroassembler_set_isa}
+
+  TestCaseSymbolMap symbols;
+
+  for (unsigned i = 0; i < ARRAY_SIZE(kTests); i++) {
+    if (Test::disassemble()) {
+      // TODO: This will fail if the MacroAssembler generates no code. We can
+      // fix this with multimap but then we must take care to print the labels
+      // in the correct order. (Insertion order is only preserved for C++11.)
+      symbols.insert(std::pair<uint32_t, int>(masm.GetCursorOffset(), i));
+    }
+
+    // Values to pass to the macro-assembler.
+    UseScratchRegisterScope scratch_registers(&masm);
+    ${code_instantiate_operands}
+
+    (masm.*instruction)(${code_parameter_list});
+
+    // For now, these test don't currently produce (or check) any trace; we just
+    // check that the MacroAssembler didn't crash.
+    // TODO: We could generate disassembly as a trace here, to check for sane
+    // output, though the trace would need to be manually checked.
+  }
+
+  masm.FinalizeCode();
+
+  if (Test::disassemble()) {
+    // Disassemble to stdout if given --disassemble on the command line.
+    TestDisassembler dis(std::cout, symbols, mnemonic);
+    if (masm.IsUsingT32()) {
+      dis.DisassembleT32Buffer(masm.GetBuffer()->GetStartAddress<uint16_t*>(),
+                               masm.GetCursorOffset());
+    } else {
+      dis.DisassembleA32Buffer(masm.GetBuffer()->GetStartAddress<uint32_t*>(),
+                               masm.GetCursorOffset());
+    }
+  }
+}
+
+// Instantiate tests for each instruction in the list.
+#define TEST(mnemonic)                                    \
+  void Test_##mnemonic() {                                \
+    TestHelper(&MacroAssembler::mnemonic, #mnemonic);     \
+  }                                                       \
+  Test test_##mnemonic("AARCH32_${test_name}_" #mnemonic, \
+                              &Test_##mnemonic);
+FOREACH_INSTRUCTION(TEST)
+#undef TEST
+
+}  // namespace
+#endif
+
+}  // namespace aarch32
+}  // namespace vixl

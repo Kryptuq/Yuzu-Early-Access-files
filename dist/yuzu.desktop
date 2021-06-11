@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=yuzu
+GenericName=Switch Emulator
+Comment=Nintendo Switch video game console emulator
+Icon=yuzu
+TryExec=yuzu
+Exec=yuzu %f
+Categories=Game;Emulator;Qt;
+MimeType=application/x-nx-nro;application/x-nx-nso;
+Keywords=Switch;Nintendo;

@@ -1,0 +1,31 @@
+// Copyright 2019 yuzu Emulator Project
+// Licensed under GPLv2 or any later version
+// Refer to the license.txt file included.
+
+#version 460 core
+#extension GL_EXT_shader_16bit_storage : require
+#extension GL_EXT_shader_8bit_storage : require
+
+layout (local_size_x = 1024) in;
+
+layout (std430, set = 0, binding = 0) readonly buffer InputBuffer {
+    uint8_t input_indexes[];
+};
+
+layout (std430, set = 0, binding = 1) writeonly buffer OutputBuffer {
+    uint16_t output_indexes[];
+};
+
+uint AssembleIndex(uint id) {
+    // Most primitive restart indices are 0xFF
+    // Hardcode this to 0xFF for now
+    uint index = uint(input_indexes[id]);
+    return index == 0xFF ? 0xFFFF : index;
+}
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    if (id < input_indexes.length()) {
+        output_indexes[id] = uint16_t(AssembleIndex(id));
+    }
+}

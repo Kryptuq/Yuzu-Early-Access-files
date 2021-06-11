@@ -1,0 +1,214 @@
+// Copyright 2016, VIXL authors
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//   * Redistributions of source code must retain the above copyright notice,
+//     this list of conditions and the following disclaimer.
+//   * Redistributions in binary form must reproduce the above copyright notice,
+//     this list of conditions and the following disclaimer in the documentation
+//     and/or other materials provided with the distribution.
+//   * Neither the name of ARM Limited nor the names of its contributors may be
+//     used to endorse or promote products derived from this software without
+//     specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+// Test description for instructions of the following forms:
+//   MNEMONIC{<c>}{<q>} <Rd>, <Rm>
+//   MNEMONIC{<c>}{<q>} <Rn>, <Rm> {, <shift> #<amount> }
+//   MNEMONIC{<c>}{<q>} {<Rd>}, <Rm> {, ROR #<amount> }
+//
+// Note that this test only covers the cases where the optional shift
+// operand is not provided. The shift operands are tested in
+// "cond-rd-operand-rn-shift-amount-*-t32.json".
+
+{
+  "mnemonics" : [
+    "Cmn",    // CMN{<c>}{<q>} <Rn>, <Rm> ; T1
+              // CMN{<c>}{<q>} <Rn>, <Rm> {, <shift> #<amount> } ; T2
+    "Cmp",    // CMP{<c>}{<q>} <Rn>, <Rm> ; T1
+              // CMP{<c>}{<q>} <Rn>, <Rm> ; T2
+    "Mov",    // MOV{<c>}{<q>} <Rd>, <Rm> ; T1
+              // MOV<c>{<q>} <Rd>, <Rm> {, <shift> #<amount> } ; T2
+              // MOV{<c>}{<q>} <Rd>, <Rm> {, <shift> #<amount> } ; T3
+    "Movs",   // MOVS{<q>} <Rd>, <Rm> {, <shift> #<amount> } ; T2
+              // MOVS{<c>}{<q>} <Rd>, <Rm> {, <shift> #<amount> } ; T3
+    "Mvn",    // MVN<c>{<q>} <Rd>, <Rm> ; T1
+              // MVN{<c>}{<q>} <Rd>, <Rm> {, <shift> #<amount> } ; T2
+    "Mvns",   // MVNS{<q>} <Rd>, <Rm> ; T1
+              // MVNS{<c>}{<q>} <Rd>, <Rm> {, <shift> #<amount> } ; T2
+    "Teq",    // TEQ{<c>}{<q>} <Rn>, <Rm> {, <shift> #<amount> } ; T1
+    "Tst",    // TST{<c>}{<q>} <Rn>, <Rm> ; T1
+
+    "Sxtb",   // SXTB{<c>}{<q>} {<Rd>}, <Rm> ; T1
+              // SXTB{<c>}{<q>} {<Rd>}, <Rm> {, ROR #<amount> } ; T2
+    "Sxtb16", // SXTB16{<c>}{<q>} {<Rd>}, <Rm> {, ROR #<amount> } ; T1
+    "Sxth",   // SXTH{<c>}{<q>} {<Rd>}, <Rm> ; T1
+              // SXTH{<c>}{<q>} {<Rd>}, <Rm> {, ROR #<amount> } ; T2
+    "Uxtb",   // UXTB{<c>}{<q>} {<Rd>}, <Rm> ; T1
+              // UXTB{<c>}{<q>} {<Rd>}, <Rm> {, ROR #<amount> } ; T2
+    "Uxtb16", // UXTB16{<c>}{<q>} {<Rd>}, <Rm> {, ROR #<amount> } ; T1
+    "Uxth"    // UXTH{<c>}{<q>} {<Rd>}, <Rm> ; T1
+              // UXTH{<c>}{<q>} {<Rd>}, <Rm> {, ROR #<amount> } ; T2
+  ],
+  "description" : {
+    "operands": [
+      {
+        "name": "cond",
+        "type": "Condition"
+      },
+      {
+        "name": "rd",
+        "type": "AllRegistersButPC"
+      },
+      {
+        "name": "op",
+        "wrapper": "Operand",
+        "operands": [
+          {
+            "name": "rn",
+            "type": "AllRegistersButPC"
+          }
+        ]
+      }
+    ],
+    "inputs": [
+      {
+        "name": "apsr",
+        "type": "NZCV"
+      },
+      {
+        "name": "rd",
+        "type": "Register"
+      },
+      {
+        "name": "rn",
+        "type": "Register"
+      }
+    ]
+  },
+  "test-files": [
+    {
+      "type": "assembler",
+      "test-cases": [
+        {
+          "name": "Unconditional",
+          "operands": [
+            "cond", "rd", "rn"
+          ],
+          "operand-filter": "cond == 'al'"
+        }
+      ]
+    },
+    // Test instructions in an IT block with no restrictions on registers.
+    {
+      "name": "in-it-block",
+      "type": "assembler",
+      "mnemonics" : [
+        "Cmp", // CMP{<c>}{<q>} <Rn>, <Rm> ; T1
+        "Mov"  // MOV{<c>}{<q>} <Rd>, <Rm> ; T1
+      ],
+      "test-cases": [
+        {
+          "name": "InITBlock",
+          "operands": [
+            "cond", "rd", "rn"
+          ],
+          // Generate an extra IT instruction.
+          "in-it-block": "{cond}",
+          "operand-filter": "cond != 'al'"
+        }
+      ]
+    },
+    // Test instructions in an IT block where registers have to be from r0 to r7.
+    {
+      "name": "low-registers-in-it-block",
+      "type": "assembler",
+      "mnemonics" : [
+        "Cmn", // CMN{<c>}{<q>} <Rn>, <Rm> ; T1
+        "Tst"  // TST{<c>}{<q>} <Rn>, <Rm> ; T1
+      ],
+      "test-cases": [
+        {
+          "name": "InITBlock",
+          "operands": [
+            "cond", "rd", "rn"
+          ],
+          // Generate an extra IT instruction.
+          "in-it-block": "{cond}",
+          "operand-filter": "cond != 'al' and register_is_low(rd) and register_is_low(rn)"
+        }
+      ]
+    },
+    // Special case for MVN in an IT block, both register operands
+    // need to be identical as well as from r0 to r7.
+    {
+      "name": "identical-low-registers-in-it-block",
+      "type": "assembler",
+      "mnemonics" : [
+        "Mvn" // MVN<c>{<q>} <Rd>, <Rm> ; T1
+      ],
+      "test-cases": [
+        {
+          "name": "InITBlock",
+          "operands": [
+            "cond", "rd", "rn"
+          ],
+          // Generate an extra IT instruction.
+          "in-it-block": "{cond}",
+          "operand-filter": "cond != 'al' and rd == rn and register_is_low(rd)"
+        }
+      ]
+    },
+    {
+      "type": "simulator",
+      "test-cases": [
+        {
+          "name": "Condition",
+          "operands": [
+            "cond"
+          ],
+          "inputs": [
+            "apsr"
+          ]
+        },
+        // Test combinations of registers values with rd == rn.
+        {
+          "name": "RdIsRn",
+          "operands": [
+            "rd", "rn"
+          ],
+          "inputs": [
+            "rd", "rn"
+          ],
+          "operand-filter": "rd == rn",
+          "input-filter": "rd == rn"
+        },
+        // Test combinations of registers values.
+        {
+          "name": "RdIsNotRn",
+          "operands": [
+            "rd", "rn"
+          ],
+          "inputs": [
+            "rd", "rn"
+          ],
+          "operand-filter": "rd != rn",
+          "operand-limit": 10,
+          "input-limit": 200
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+// Copyright 2020 yuzu Emulator Project
+// Licensed under GPLv2 or any later version
+// Refer to the license.txt file included.
+
+#version 460 core
+
+layout (local_size_x = 1024) in;
+
+layout (std430, set = 0, binding = 0) readonly buffer InputBuffer {
+    uint input_indexes[];
+};
+
+layout (std430, set = 0, binding = 1) writeonly buffer OutputBuffer {
+    uint output_indexes[];
+};
+
+layout (push_constant) uniform PushConstants {
+    uint base_vertex;
+    int index_shift; // 0: uint8, 1: uint16, 2: uint32
+};
+
+void main() {
+    int primitive = int(gl_GlobalInvocationID.x);
+    if (primitive * 6 >= output_indexes.length()) {
+        return;
+    }
+
+    int index_size = 8 << index_shift;
+    int flipped_shift = 2 - index_shift;
+    int mask = (1 << flipped_shift) - 1;
+
+    const int quad_swizzle[6] = int[](0, 1, 2, 0, 2, 3);
+    for (uint vertex = 0; vertex < 6; ++vertex) {
+        int offset = primitive * 4 + quad_swizzle[vertex];
+        int int_offset = offset >> flipped_shift;
+        int bit_offset = (offset & mask) * index_size;
+        uint packed_input = input_indexes[int_offset];
+        uint index = bitfieldExtract(packed_input, bit_offset, index_size);
+        output_indexes[primitive * 6 + vertex] = index + base_vertex;
+    }
+}

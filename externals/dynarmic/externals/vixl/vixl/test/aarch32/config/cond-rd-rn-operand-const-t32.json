@@ -1,0 +1,152 @@
+// Copyright 2016, VIXL authors
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//   * Redistributions of source code must retain the above copyright notice,
+//     this list of conditions and the following disclaimer.
+//   * Redistributions in binary form must reproduce the above copyright notice,
+//     this list of conditions and the following disclaimer in the documentation
+//     and/or other materials provided with the distribution.
+//   * Neither the name of ARM Limited nor the names of its contributors may be
+//     used to endorse or promote products derived from this software without
+//     specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+// Test description for instructions of the following forms:
+//   MNEMONIC{<c>}.W <Rd>, <Rn>, #<const>
+//   MNEMONIC{<c>}.W <Rd>, SP, #<const>
+//
+// The instructions covered in this test do not write to the `Q` and `GE` flags,
+// these are covered in other description files.
+
+{
+  "mnemonics" : [
+    "Adc",  // ADC{<c>}{<q>} {<Rd>}, <Rn>, #<const> ; T1
+    "Adcs", // ADCS{<c>}{<q>} {<Rd>}, <Rn>, #<const> ; T1
+    "Add",  // ADD{<c>}{<q>} {<Rd>}, <Rn>, #<const> ; T3
+            // ADD{<c>}{<q>} {<Rd>}, SP, #<const> ; T3
+    "Adds", // ADDS{<c>}{<q>} {<Rd>}, <Rn>, #<const> ; T3
+            // ADDS{<c>}{<q>} {<Rd>}, SP, #<const> ; T3
+    "And",  // AND{<c>}{<q>} {<Rd>}, <Rn>, #<const> ; T1
+    "Ands", // ANDS{<c>}{<q>} {<Rd>}, <Rn>, #<const> ; T1
+    "Bic",  // BIC{<c>}{<q>} {<Rd>}, <Rn>, #<const> ; T1
+    "Bics", // BICS{<c>}{<q>} {<Rd>}, <Rn>, #<const> ; T1
+    "Eor",  // EOR{<c>}{<q>} {<Rd>}, <Rn>, #<const> ; T1
+    "Eors", // EORS{<c>}{<q>} {<Rd>}, <Rn>, #<const> ; T1
+    "Orn",  // ORN{<c>}{<q>} {<Rd>}, <Rn>, #<const> ; T1
+    "Orns", // ORNS{<c>}{<q>} {<Rd>}, <Rn>, #<const> ; T1
+    "Orr",  // ORR{<c>}{<q>} {<Rd>}, <Rn>, #<const> ; T1
+    "Orrs", // ORRS{<c>}{<q>} {<Rd>}, <Rn>, #<const> ; T1
+    "Rsb",  // RSB{<c>}{<q>} {<Rd>}, <Rn>, #<const> ; T2
+    "Rsbs", // RSBS{<c>}{<q>} {<Rd>}, <Rn>, #<const> ; T2
+    "Sbc",  // SBC{<c>}{<q>} {<Rd>}, <Rn>, #<const> ; T1
+    "Sbcs", // SBCS{<c>}{<q>} {<Rd>}, <Rn>, #<const> ; T1
+    "Sub",  // SUB{<c>}{<q>} {<Rd>}, <Rn>, #<const> ; T3
+            // SUB{<c>}{<q>} {<Rd>}, SP, #<const> ; T2
+    "Subs"  // SUBS{<c>}{<q>} {<Rd>}, <Rn>, #<const> ; T3
+            // SUBS{<c>}{<q>} {<Rd>}, SP, #<const> ; T2
+  ],
+  "description" : {
+    "operands": [
+      {
+        "name": "cond",
+        "type": "Always"
+      },
+      {
+        "name": "rd",
+        "type": "AllRegistersButPC"
+      },
+      {
+        "name": "rn",
+        "type": "AllRegistersButPC"
+      },
+      {
+        "name": "op",
+        "wrapper": "Operand",
+        "operands": [
+          {
+            "name": "immediate",
+            "type": "T32ModifiedImmediate"
+          }
+        ]
+      }
+    ],
+    "inputs":[
+      {
+        "name": "apsr",
+        "type": "NZCV"
+      },
+      {
+        "name": "rd",
+        "type": "Register"
+      },
+      {
+        "name": "rn",
+        "type": "Register"
+      }
+    ]
+  },
+  "test-files": [
+    {
+      "type": "assembler",
+      "test-cases": [
+        {
+          "name": "Operands",
+          "operands": [
+            "rd", "rn", "immediate"
+          ],
+          "operand-limit": 500
+        }
+      ]
+    },
+    {
+      "type": "simulator",
+      "test-cases": [
+        {
+          "name": "RdIsRn",
+          "operands": [
+            "rd", "rn", "immediate"
+          ],
+          "inputs": [
+            "rd", "rn"
+          ],
+          "operand-filter": "rd == rn",
+          "operand-limit": 10,
+          "input-filter": "rd == rn"
+        },
+        {
+          "name": "RdIsNotRn",
+          "operands": [
+            "rd", "rn", "immediate"
+          ],
+          "inputs": [
+            "rd", "rn"
+          ],
+          "operand-filter": "rd != rn",
+          "operand-limit": 10
+        },
+        {
+          "name": "ModifiedImmediate",
+          "operands": [
+            "immediate"
+          ],
+          "inputs": [
+            "rn"
+          ]
+        }
+      ]
+    }
+  ]
+}

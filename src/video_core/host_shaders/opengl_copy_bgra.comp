@@ -1,0 +1,15 @@
+// Copyright 2021 yuzu Emulator Project
+// Licensed under GPLv2 or any later version
+// Refer to the license.txt file included.
+
+#version 430 core
+
+layout (local_size_x = 4, local_size_y = 4) in;
+
+layout(binding = 0, rgba8) readonly uniform image2DArray bgr_input;
+layout(binding = 1, rgba8) writeonly uniform image2DArray bgr_output;
+
+void main() {
+    vec4 color = imageLoad(bgr_input, ivec3(gl_GlobalInvocationID));
+    imageStore(bgr_output, ivec3(gl_GlobalInvocationID), color.bgra);
+}

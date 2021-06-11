@@ -1,0 +1,20 @@
+<RCC>
+    <qresource prefix="icons/default">
+        <file alias="index.theme">icons/index.theme</file>
+        <file alias="16x16/checked.png">icons/16x16/checked.png</file>
+        <file alias="16x16/failed.png">icons/16x16/failed.png</file>
+        <file alias="16x16/lock.png">icons/16x16/lock.png</file>
+        <file alias="16x16/view-refresh.png">icons/16x16/view-refresh.png</file>
+        <file alias="48x48/bad_folder.png">icons/48x48/bad_folder.png</file>
+        <file alias="48x48/chip.png">icons/48x48/chip.png</file>
+        <file alias="48x48/folder.png">icons/48x48/folder.png</file>
+        <file alias="48x48/plus.png">icons/48x48/plus.png</file>
+        <file alias="48x48/sd_card.png">icons/48x48/sd_card.png</file>
+        <file alias="48x48/star.png">icons/48x48/star.png</file>
+        <file alias="256x256/yuzu.png">icons/256x256/yuzu.png</file>
+        <file alias="256x256/plus_folder.png">icons/256x256/plus_folder.png</file>
+    </qresource>
+    <qresource prefix="default">
+        <file>style.qss</file>
+    </qresource>
+</RCC>

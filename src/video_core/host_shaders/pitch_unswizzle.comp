@@ -1,0 +1,86 @@
+// Copyright 2020 yuzu Emulator Project
+// Licensed under GPLv2 or any later version
+// Refer to the license.txt file included.
+
+#version 430
+
+#ifdef VULKAN
+
+#extension GL_EXT_shader_16bit_storage : require
+#extension GL_EXT_shader_8bit_storage : require
+#define HAS_EXTENDED_TYPES 1
+#define BEGIN_PUSH_CONSTANTS layout(push_constant) uniform PushConstants {
+#define END_PUSH_CONSTANTS };
+#define UNIFORM(n)
+#define BINDING_INPUT_BUFFER 0
+#define BINDING_OUTPUT_IMAGE 1
+
+#else // ^^^ Vulkan ^^^ // vvv OpenGL vvv
+
+#extension GL_NV_gpu_shader5 : enable
+#ifdef GL_NV_gpu_shader5
+#define HAS_EXTENDED_TYPES 1
+#else
+#define HAS_EXTENDED_TYPES 0
+#endif
+#define BEGIN_PUSH_CONSTANTS
+#define END_PUSH_CONSTANTS
+#define UNIFORM(n) layout (location = n) uniform
+#define BINDING_INPUT_BUFFER 0
+#define BINDING_OUTPUT_IMAGE 0
+
+#endif
+
+BEGIN_PUSH_CONSTANTS
+UNIFORM(0) uvec2 origin;
+UNIFORM(1) ivec2 destination;
+UNIFORM(2) uint bytes_per_block;
+UNIFORM(3) uint pitch;
+END_PUSH_CONSTANTS
+
+#if HAS_EXTENDED_TYPES
+layout(binding = BINDING_INPUT_BUFFER, std430) readonly buffer InputBufferU8 { uint8_t u8data[]; };
+layout(binding = BINDING_INPUT_BUFFER, std430) readonly buffer InputBufferU16 { uint16_t u16data[]; };
+#endif
+layout(binding = BINDING_INPUT_BUFFER, std430) readonly buffer InputBufferU32 { uint u32data[]; };
+layout(binding = BINDING_INPUT_BUFFER, std430) readonly buffer InputBufferU64 { uvec2 u64data[]; };
+layout(binding = BINDING_INPUT_BUFFER, std430) readonly buffer InputBufferU128 { uvec4 u128data[]; };
+
+layout(binding = BINDING_OUTPUT_IMAGE) writeonly uniform uimage2D output_image;
+
+layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
+
+uvec4 ReadTexel(uint offset) {
+    switch (bytes_per_block) {
+#if HAS_EXTENDED_TYPES
+    case 1:
+        return uvec4(u8data[offset], 0, 0, 0);
+    case 2:
+        return uvec4(u16data[offset / 2], 0, 0, 0);
+#else
+    case 1:
+        return uvec4(bitfieldExtract(u32data[offset / 4], int((offset * 8) & 24), 8), 0, 0, 0);
+    case 2:
+        return uvec4(bitfieldExtract(u32data[offset / 4], int((offset * 8) & 16), 16), 0, 0, 0);
+#endif
+    case 4:
+        return uvec4(u32data[offset / 4], 0, 0, 0);
+    case 8:
+        return uvec4(u64data[offset / 8], 0, 0);
+    case 16:
+        return u128data[offset / 16];
+    }
+    return uvec4(0);
+}
+
+void main() {
+    uvec2 pos = gl_GlobalInvocationID.xy + origin;
+
+    uint offset = 0;
+    offset += pos.x * bytes_per_block;
+    offset += pos.y * pitch;
+
+    const uvec4 texel = ReadTexel(offset);
+    const ivec2 coord = ivec2(gl_GlobalInvocationID.xy) + destination;
+    imageStore(output_image, coord, texel);
+}

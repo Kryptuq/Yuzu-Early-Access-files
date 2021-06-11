@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ConfigureDialog</class>
+ <widget class="QDialog" name="ConfigureDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>650</width>
+    <height>650</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>650</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>yuzu Configuration</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QListWidget" name="selectorList">
+       <property name="minimumSize">
+        <size>
+         <width>120</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>120</width>
+         <height>16777215</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QTabWidget" name="tabWidget">
+       <property name="currentIndex">
+        <number>0</number>
+       </property>
+       <widget class="ConfigureGeneral" name="generalTab">
+        <property name="accessibleName">
+         <string>General</string>
+        </property>
+        <attribute name="title">
+         <string>General</string>
+        </attribute>
+       </widget>
+       <widget class="ConfigureUi" name="uiTab">
+        <property name="accessibleName">
+         <string>UI</string>
+        </property>
+        <attribute name="title">
+         <string>Game List</string>
+        </attribute>
+       </widget>
+       <widget class="ConfigureSystem" name="systemTab">
+        <property name="accessibleName">
+         <string>System</string>
+        </property>
+        <attribute name="title">
+         <string>System</string>
+        </attribute>
+       </widget>
+       <widget class="ConfigureProfileManager" name="profileManagerTab">
+        <property name="accessibleName">
+         <string>Profiles</string>
+        </property>
+        <attribute name="title">
+         <string>Profiles</string>
+        </attribute>
+       </widget>
+       <widget class="ConfigureFilesystem" name="filesystemTab">
+        <property name="accessibleName">
+         <string>Filesystem</string>
+        </property>
+        <attribute name="title">
+         <string>Filesystem</string>
+        </attribute>
+       </widget>
+       <widget class="ConfigureInput" name="inputTab">
+        <property name="accessibleName">
+         <string>Controls</string>
+        </property>
+        <attribute name="title">
+         <string>Controls</string>
+        </attribute>
+       </widget>
+       <widget class="ConfigureHotkeys" name="hotkeysTab">
+        <property name="accessibleName">
+         <string>Hotkeys</string>
+        </property>
+        <attribute name="title">
+         <string>Hotkeys</string>
+        </attribute>
+       </widget>
+       <widget class="ConfigureCpu" name="cpuTab">
+        <property name="accessibleName">
+         <string>CPU</string>
+        </property>
+        <attribute name="title">
+         <string>CPU</string>
+        </attribute>
+       </widget>
+       <widget class="ConfigureCpuDebug" name="cpuDebugTab">
+        <property name="accessibleName">
+         <string>Debug</string>
+        </property>
+        <attribute name="title">
+         <string>Debug</string>
+        </attribute>
+       </widget>
+       <widget class="ConfigureGraphics" name="graphicsTab">
+        <property name="accessibleName">
+         <string>Graphics</string>
+        </property>
+        <attribute name="title">
+         <string>Graphics</string>
+        </attribute>
+       </widget>
+       <widget class="ConfigureGraphicsAdvanced" name="graphicsAdvancedTab">
+        <property name="accessibleName">
+         <string>Advanced</string>
+        </property>
+        <attribute name="title">
+         <string>GraphicsAdvanced</string>
+        </attribute>
+       </widget>
+       <widget class="ConfigureAudio" name="audioTab">
+        <property name="accessibleName">
+         <string>Audio</string>
+        </property>
+        <attribute name="title">
+         <string>Audio</string>
+        </attribute>
+       </widget>
+       <widget class="ConfigureDebug" name="debugTab">
+        <property name="accessibleName">
+         <string>Debug</string>
+        </property>
+        <attribute name="title">
+         <string>Debug</string>
+        </attribute>
+       </widget>
+       <widget class="ConfigureWeb" name="webTab">
+        <property name="accessibleName">
+         <string>Web</string>
+        </property>
+        <attribute name="title">
+         <string>Web</string>
+        </attribute>
+       </widget>
+       <widget class="ConfigureService" name="serviceTab">
+        <property name="accessibleName">
+         <string>Services</string>
+        </property>
+        <attribute name="title">
+         <string>Services</string>
+        </attribute>
+       </widget>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ConfigureGeneral</class>
+   <extends>QWidget</extends>
+   <header>configuration/configure_general.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ConfigureSystem</class>
+   <extends>QWidget</extends>
+   <header>configuration/configure_system.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ConfigureProfileManager</class>
+   <extends>QWidget</extends>
+   <header>configuration/configure_profile_manager.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ConfigureFilesystem</class>
+   <extends>QWidget</extends>
+   <header>configuration/configure_filesystem.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ConfigureAudio</class>
+   <extends>QWidget</extends>
+   <header>configuration/configure_audio.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ConfigureDebug</class>
+   <extends>QWidget</extends>
+   <header>configuration/configure_debug.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ConfigureCpu</class>
+   <extends>QWidget</extends>
+   <header>configuration/configure_cpu.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ConfigureCpuDebug</class>
+   <extends>QWidget</extends>
+   <header>configuration/configure_cpu_debug.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ConfigureGraphics</class>
+   <extends>QWidget</extends>
+   <header>configuration/configure_graphics.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ConfigureGraphicsAdvanced</class>
+   <extends>QWidget</extends>
+   <header>configuration/configure_graphics_advanced.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ConfigureWeb</class>
+   <extends>QWidget</extends>
+   <header>configuration/configure_web.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ConfigureUi</class>
+   <extends>QWidget</extends>
+   <header>configuration/configure_ui.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ConfigureInput</class>
+   <extends>QWidget</extends>
+   <header>configuration/configure_input.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ConfigureHotkeys</class>
+   <extends>QWidget</extends>
+   <header>configuration/configure_hotkeys.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ConfigureService</class>
+   <extends>QWidget</extends>
+   <header>configuration/configure_service.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>ConfigureDialog</receiver>
+   <slot>accept()</slot>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>ConfigureDialog</receiver>
+   <slot>reject()</slot>
+  </connection>
+ </connections>
+</ui>

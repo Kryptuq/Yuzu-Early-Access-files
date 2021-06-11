@@ -1,0 +1,33 @@
+---
+# We use the clang-tidy defaults and the Google styles as a baseline, with a
+# few changes specific to VIXL:
+#   -clang-analyzer-security.insecureAPI.rand:
+#       This warns against the use of mrand48 (etc) and suggests replacing them
+#       with arc4random. However, we are using these to drive tests and debug
+#       tools, and we need the ability to manually seed the generator. This is
+#       not possible with arc4random, and we do not need particularly robust
+#       random numbers, so we continue to use mrand48.
+#   -google-readability-todo:
+#       We don't put names on TODOs.
+#   -google-readability-function-size:
+#       There are cases where we need (or generate) very long functions,
+#       particularly involving macro-generated encoding tables and so on.
+#   -google-build-using-namespace:
+#       We do this in internal contexts (typically in .cc files), but clang-tidy
+#       cannot tell the difference.
+#   -google-explicit-constructor:
+#       We follow this rule, but have some exceptions that are annotated using
+#       cpplint's NOLINT format.
+#
+# TODO: The following _should_ be enabled, but currently show several failures:
+#   google-readability-braces-around-statements
+#   google-readability-namespace-comments
+#   google-readability-casting
+#
+# TODO: Also consider enabling other rules, such as bugprone-* and cert-*.
+Checks:          '-clang-analyzer-security.insecureAPI.rand,google-*,-google-readability-todo,-google-readability-function-size,-google-build-using-namespace,-google-explicit-constructor,-google-readability-braces-around-statements,-google-readability-namespace-comments,-google-readability-casting'
+HeaderFilterRegex: '\.h$'
+AnalyzeTemporaryDtors: false
+CheckOptions:
+...
+

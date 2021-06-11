@@ -1,0 +1,34 @@
+<RCC>
+  <qresource prefix="controller">
+    <file alias="applet_dual_joycon">applet_dual_joycon.png</file>
+    <file alias="applet_dual_joycon_dark">applet_dual_joycon_dark.png</file>	
+    <file alias="applet_dual_joycon_midnight">applet_dual_joycon_midnight.png</file>	
+    <file alias="applet_handheld">applet_handheld.png</file>
+    <file alias="applet_handheld_dark">applet_handheld_dark.png</file>	
+    <file alias="applet_handheld_midnight">applet_handheld_midnight.png</file>
+    <file alias="applet_pro_controller">applet_pro_controller.png</file>
+    <file alias="applet_pro_controller_dark">applet_pro_controller_dark.png</file>
+    <file alias="applet_pro_controller_midnight">applet_pro_controller_midnight.png</file>
+    <file alias="applet_joycon_left">applet_single_joycon_left.png</file>
+    <file alias="applet_joycon_left_dark">applet_single_joycon_left_dark.png</file>
+    <file alias="applet_joycon_left_midnight">applet_single_joycon_left_midnight.png</file>
+    <file alias="applet_joycon_right">applet_single_joycon_right.png</file>
+    <file alias="applet_joycon_right_dark">applet_single_joycon_right_dark.png</file>
+    <file alias="applet_joycon_right_midnight">applet_single_joycon_right_midnight.png</file>
+    <file alias="applet_dual_joycon_disabled">applet_dual_joycon_disabled.png</file>
+    <file alias="applet_dual_joycon_dark_disabled">applet_dual_joycon_dark_disabled.png</file>
+    <file alias="applet_dual_joycon_midnight_disabled">applet_dual_joycon_midnight_disabled.png</file>
+    <file alias="applet_handheld_disabled">applet_handheld_disabled.png</file>
+    <file alias="applet_handheld_dark_disabled">applet_handheld_dark_disabled.png</file>
+    <file alias="applet_handheld_midnight_disabled">applet_handheld_midnight_disabled.png</file>
+    <file alias="applet_pro_controller_disabled">applet_pro_controller_disabled.png</file>
+    <file alias="applet_pro_controller_dark_disabled">applet_pro_controller_dark_disabled.png</file>
+    <file alias="applet_pro_controller_midnight_disabled">applet_pro_controller_midnight_disabled.png</file>
+    <file alias="applet_joycon_left_disabled">applet_single_joycon_left_disabled.png</file>
+    <file alias="applet_joycon_left_dark_disabled">applet_single_joycon_left_dark_disabled.png</file>
+    <file alias="applet_joycon_left_midnight_disabled">applet_single_joycon_left_midnight_disabled.png</file>
+    <file alias="applet_joycon_right_disabled">applet_single_joycon_right_disabled.png</file>
+    <file alias="applet_joycon_right_dark_disabled">applet_single_joycon_right_dark_disabled.png</file>
+    <file alias="applet_joycon_right_midnight_disabled">applet_single_joycon_right_midnight_disabled.png</file>
+  </qresource>
+</RCC>

@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ConfigureCpuDebug</class>
+ <widget class="QWidget" name="ConfigureCpuDebug">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>321</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout">
+   <item>
+    <layout class="QVBoxLayout">
+     <item>
+      <widget class="QGroupBox">
+       <property name="title">
+        <string>Toggle CPU Optimizations</string>
+       </property>
+       <layout class="QVBoxLayout">
+        <item>
+         <widget class="QLabel">
+          <property name="wordWrap">
+            <bool>1</bool>
+          </property>
+          <property name="text">
+           <string>
+            &lt;div&gt;
+            &lt;b&gt;For debugging only.&lt;/b&gt;
+            &lt;br&gt;
+            If you're not sure what these do, keep all of these enabled.
+            &lt;br&gt;
+            These settings only take effect when CPU Accuracy is "Debug Mode".
+            &lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_page_tables">
+          <property name="text">
+           <string>Enable inline page tables</string>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;div style="white-space: nowrap"&gt;This optimization speeds up memory accesses by the guest program.&lt;/div&gt;
+            &lt;div style="white-space: nowrap"&gt;Enabling it inlines accesses to PageTable::pointers into emitted code.&lt;/div&gt;
+            &lt;div style="white-space: nowrap"&gt;Disabling this forces all memory accesses to go through the Memory::Read/Memory::Write functions.&lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_block_linking">
+          <property name="text">
+           <string>Enable block linking</string>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;div&gt;This optimization avoids dispatcher lookups by allowing emitted basic blocks to jump directly to other basic blocks if the destination PC is static.&lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_return_stack_buffer">
+          <property name="text">
+           <string>Enable return stack buffer</string>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;div&gt;This optimization avoids dispatcher lookups by keeping track potential return addresses of BL instructions. This approximates what happens with a return stack buffer on a real CPU.&lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_fast_dispatcher">
+          <property name="text">
+           <string>Enable fast dispatcher</string>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;div&gt;Enable a two-tiered dispatch system. A faster dispatcher written in assembly has a small MRU cache of jump destinations is used first. If that fails, dispatch falls back to the slower C++ dispatcher.&lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_context_elimination">
+          <property name="text">
+           <string>Enable context elimination</string>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;div&gt;Enables an IR optimization that reduces unnecessary accesses to the CPU context structure.&lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_const_prop">
+          <property name="text">
+           <string>Enable constant propagation</string>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;div&gt;Enables IR optimizations that involve constant propagation.&lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_misc_ir">
+          <property name="text">
+           <string>Enable miscellaneous optimizations</string>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;div&gt;Enables miscellaneous IR optimizations.&lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_reduce_misalign_checks">
+          <property name="text">
+           <string>Enable misalignment check reduction</string>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;div style="white-space: nowrap"&gt;When enabled, a misalignment is only triggered when an access crosses a page boundary.&lt;/div&gt;
+            &lt;div style="white-space: nowrap"&gt;When disabled, a misalignment is triggered on all misaligned accesses.&lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_fastmem">
+          <property name="text">
+           <string>Enable Host MMU Emulation</string>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;div style="white-space: nowrap"&gt;This optimization speeds up memory accesses by the guest program.&lt;/div&gt;
+            &lt;div style="white-space: nowrap"&gt;Enabling it causes guest memory reads/writes to be done directly into memory and make use of Host's MMU.&lt;/div&gt;
+            &lt;div style="white-space: nowrap"&gt;Disabling this forces all memory accesses to use Software MMU Emulation.&lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_disable_info">
+     <property name="text">
+      <string>CPU settings are available only when game is not running.</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

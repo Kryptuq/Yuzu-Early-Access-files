@@ -1,0 +1,150 @@
+// Copyright 2016, VIXL authors
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//   * Redistributions of source code must retain the above copyright notice,
+//     this list of conditions and the following disclaimer.
+//   * Redistributions in binary form must reproduce the above copyright notice,
+//     this list of conditions and the following disclaimer in the documentation
+//     and/or other materials provided with the distribution.
+//   * Neither the name of ARM Limited nor the names of its contributors may be
+//     used to endorse or promote products derived from this software without
+//     specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+// Test description for instructions of the following form:
+//   MNEMONIC{<c>}.W <Rd>, <Rn>, ROR #<amount>
+
+{
+  "mnemonics": [
+    "Sxtb",   // SXTB{<c>}{<q>} {<Rd>}, <Rm> {, ROR #<amount> } ; T2
+    "Sxtb16", // SXTB16{<c>}{<q>} {<Rd>}, <Rm> {, ROR #<amount> } ; T1
+    "Sxth",   // SXTH{<c>}{<q>} {<Rd>}, <Rm> {, ROR #<amount> } ; T2
+    "Uxtb",   // UXTB{<c>}{<q>} {<Rd>}, <Rm> {, ROR #<amount> } ; T2
+    "Uxtb16", // UXTB16{<c>}{<q>} {<Rd>}, <Rm> {, ROR #<amount> } ; T1
+    "Uxth"    // UXTH{<c>}{<q>} {<Rd>}, <Rm> {, ROR #<amount> } ; T2
+  ],
+  "description": {
+    "operands": [
+      {
+        "name": "cond",
+        "type": "Condition"
+      },
+      {
+        "name": "rd",
+        "type": "AllRegistersButPC"
+      },
+      {
+        "name": "op",
+        "wrapper": "Operand",
+        "operands": [
+          {
+            "name": "rn",
+            "type": "AllRegistersButPC"
+          },
+          {
+            "name": "ror",
+            "type": "ShiftROR"
+          },
+          {
+            "name": "amount",
+            "type": "ShiftRotationAmountX8"
+          }
+        ]
+      }
+    ],
+    "inputs": [
+      {
+        "name": "apsr",
+        "type": "NZCV"
+      },
+      {
+        "name": "rd",
+        "type": "Register"
+      },
+      {
+        "name": "rn",
+        "type": "Register"
+      }
+    ]
+  },
+  "test-files": [
+    {
+      "type": "assembler",
+      "test-cases": [
+        {
+          "name": "Operands",
+          "operands": [
+            "cond", "rd", "rn", "ror", "amount"
+          ],
+          "operand-filter": "cond == 'al'"
+        }
+      ]
+    },
+    {
+      "type": "simulator",
+      "test-cases": [
+        {
+          "name": "Condition",
+          "operands": [
+            "cond"
+          ],
+          "inputs": [
+            "apsr"
+          ]
+        },
+        // Test combinations of registers values with rd == rn.
+        {
+          "name": "RdIsRn",
+          "operands": [
+            "rd", "rn"
+          ],
+          "inputs": [
+            "rd", "rn"
+          ],
+          "operand-filter": "rd == rn",
+          "input-filter": "rd == rn"
+        },
+        // Test combinations of registers values.
+        {
+          "name": "RdIsNotRn",
+          "operands": [
+            "rd", "rn"
+          ],
+          "inputs": [
+            "rd", "rn"
+          ],
+          "operand-filter": "rd != rn",
+          "operand-limit": 10,
+          "input-limit": 200
+        },
+        // Test combinations of rotation amounts.
+        {
+          "name": "Rotations",
+          "operands": [
+            "rd", "rn", "ror", "amount"
+          ],
+          "inputs": [
+            "rn"
+          ],
+          // Specify exactly what registers to use in this test to make sure
+          // that they are different. It makes the execution trace more
+          // understandable.
+          "operand-filter": "rd == 'r0' and rn == 'r1'"
+        }
+      ]
+    }
+  ]
+}

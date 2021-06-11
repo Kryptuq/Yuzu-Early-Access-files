@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1280</width>
+    <height>720</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>yuzu</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="yuzu.qrc">
+    <normaloff>:/img/yuzu.ico</normaloff>:/img/yuzu.ico</iconset>
+  </property>
+  <property name="tabShape">
+   <enum>QTabWidget::Rounded</enum>
+  </property>
+  <property name="dockNestingEnabled">
+   <bool>true</bool>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <property name="margin">
+     <number>0</number>
+    </property>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1280</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_File">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <widget class="QMenu" name="menu_recent_files">
+     <property name="title">
+      <string>&amp;Recent Files</string>
+     </property>
+    </widget>
+    <addaction name="action_Install_File_NAND"/>
+    <addaction name="separator"/>
+    <addaction name="action_Load_File"/>
+    <addaction name="action_Load_Folder"/>
+    <addaction name="separator"/>
+    <addaction name="menu_recent_files"/>
+    <addaction name="separator"/>
+    <addaction name="separator"/>
+    <addaction name="action_Load_Amiibo"/>
+    <addaction name="separator"/>
+    <addaction name="action_Open_yuzu_Folder"/>
+    <addaction name="separator"/>
+    <addaction name="action_Exit"/>
+   </widget>
+   <widget class="QMenu" name="menu_Emulation">
+    <property name="title">
+     <string>&amp;Emulation</string>
+    </property>
+    <addaction name="action_Start"/>
+    <addaction name="action_Pause"/>
+    <addaction name="action_Stop"/>
+    <addaction name="action_Restart"/>
+    <addaction name="separator"/>
+    <addaction name="action_Configure"/>
+    <addaction name="action_Configure_Current_Game"/>
+   </widget>
+   <widget class="QMenu" name="menu_View">
+    <property name="title">
+     <string>&amp;View</string>
+    </property>
+    <widget class="QMenu" name="menu_View_Debugging">
+     <property name="title">
+      <string>&amp;Debugging</string>
+     </property>
+    </widget>
+    <addaction name="action_Fullscreen"/>
+    <addaction name="action_Single_Window_Mode"/>
+    <addaction name="action_Display_Dock_Widget_Headers"/>
+    <addaction name="action_Show_Filter_Bar"/>
+    <addaction name="action_Show_Status_Bar"/>
+    <addaction name="action_Reset_Window_Size_720"/>
+    <addaction name="action_Reset_Window_Size_1080"/>
+    <addaction name="separator"/>
+    <addaction name="menu_View_Debugging"/>
+   </widget>
+   <widget class="QMenu" name="menu_Tools">
+    <property name="title">
+     <string>&amp;Tools</string>
+    </property>
+    <addaction name="action_Rederive"/>
+    <addaction name="separator"/>
+    <addaction name="action_Capture_Screenshot"/>
+   </widget>
+   <widget class="QMenu" name="menu_Help">
+    <property name="title">
+     <string>&amp;Help</string>
+    </property>
+    <addaction name="action_Report_Compatibility"/>
+    <addaction name="action_Open_Mods_Page"/>
+    <addaction name="action_Open_Quickstart_Guide"/>
+    <addaction name="action_Open_FAQ"/>
+    <addaction name="separator"/>
+    <addaction name="action_About"/>
+   </widget>
+   <addaction name="menu_File"/>
+   <addaction name="menu_Emulation"/>
+   <addaction name="menu_View"/>
+   <addaction name="menu_Tools"/>
+   <addaction name="menu_Help"/>
+  </widget>
+  <action name="action_Install_File_NAND">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Install Files to NAND...</string>
+   </property>
+  </action>
+  <action name="action_Load_File">
+   <property name="text">
+    <string>L&amp;oad File...</string>
+   </property>
+  </action>
+  <action name="action_Load_Folder">
+   <property name="text">
+    <string>Load &amp;Folder...</string>
+   </property>
+  </action>
+  <action name="action_Exit">
+   <property name="text">
+    <string>E&amp;xit</string>
+   </property>
+  </action>
+  <action name="action_Start">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Start</string>
+   </property>
+  </action>
+  <action name="action_Pause">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Pause</string>
+   </property>
+  </action>
+  <action name="action_Stop">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Stop</string>
+   </property>
+  </action>
+  <action name="action_Rederive">
+   <property name="text">
+    <string>&amp;Reinitialize keys...</string>
+   </property>
+  </action>
+  <action name="action_About">
+   <property name="text">
+    <string>&amp;About yuzu</string>
+   </property>
+  </action>
+  <action name="action_Single_Window_Mode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Single &amp;Window Mode</string>
+   </property>
+  </action>
+  <action name="action_Configure">
+   <property name="text">
+    <string>Con&amp;figure...</string>
+   </property>
+  </action>
+  <action name="action_Display_Dock_Widget_Headers">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Display D&amp;ock Widget Headers</string>
+   </property>
+  </action>
+  <action name="action_Show_Filter_Bar">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show &amp;Filter Bar</string>
+   </property>
+  </action>
+  <action name="action_Show_Status_Bar">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show &amp;Status Bar</string>
+   </property>
+   <property name="iconText">
+    <string>Show Status Bar</string>
+   </property>
+  </action>
+  <action name="action_Reset_Window_Size_720">
+   <property name="text">
+    <string>Reset Window Size to &amp;720p</string>
+   </property>
+   <property name="iconText">
+    <string>Reset Window Size to 720p</string>
+   </property>
+  </action>
+  <action name="action_Reset_Window_Size_1080">
+   <property name="text">
+    <string>Reset Window Size to &amp;1080p</string>
+   </property>
+   <property name="iconText">
+    <string>Reset Window Size to 1080p</string>
+   </property>
+  </action>
+  <action name="action_Fullscreen">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>F&amp;ullscreen</string>
+   </property>
+  </action>
+  <action name="action_Restart">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Restart</string>
+   </property>
+  </action>
+  <action name="action_Load_Amiibo">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Load &amp;Amiibo...</string>
+   </property>
+  </action>
+  <action name="action_Report_Compatibility">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Report Compatibility</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="action_Open_Mods_Page">
+   <property name="text">
+    <string>Open &amp;Mods Page</string>
+   </property>
+  </action>
+  <action name="action_Open_Quickstart_Guide">
+   <property name="text">
+    <string>Open &amp;Quickstart Guide</string>
+   </property>
+  </action>
+  <action name="action_Open_FAQ">
+   <property name="text">
+    <string>&amp;FAQ</string>
+   </property>
+  </action>
+  <action name="action_Open_yuzu_Folder">
+   <property name="text">
+    <string>Open &amp;yuzu Folder</string>
+   </property>
+  </action>
+  <action name="action_Capture_Screenshot">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Capture Screenshot</string>
+   </property>
+  </action>
+  <action name="action_Configure_Current_Game">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Configure C&amp;urrent Game...</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="yuzu.qrc"/>
+ </resources>
+ <connections/>
+</ui>

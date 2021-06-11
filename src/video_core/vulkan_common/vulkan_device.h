@@ -1,0 +1,307 @@
+// Copyright 2018 yuzu Emulator Project
+// Licensed under GPLv2 or any later version
+// Refer to the license.txt file included.
+
+#pragma once
+
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <vector>
+
+#include "common/common_types.h"
+#include "video_core/vulkan_common/vulkan_wrapper.h"
+
+namespace Vulkan {
+
+class NsightAftermathTracker;
+
+/// Format usage descriptor.
+enum class FormatType { Linear, Optimal, Buffer };
+
+/// Subgroup size of the guest emulated hardware (Nvidia has 32 threads per subgroup).
+const u32 GuestWarpSize = 32;
+
+/// Handles data specific to a physical device.
+class Device {
+public:
+    explicit Device(VkInstance instance, vk::PhysicalDevice physical, VkSurfaceKHR surface,
+                    const vk::InstanceDispatch& dld);
+    ~Device();
+
+    /**
+     * Returns a format supported by the device for the passed requeriments.
+     * @param wanted_format The ideal format to be returned. It may not be the returned format.
+     * @param wanted_usage The usage that must be fulfilled even if the format is not supported.
+     * @param format_type Format type usage.
+     * @returns A format supported by the device.
+     */
+    VkFormat GetSupportedFormat(VkFormat wanted_format, VkFormatFeatureFlags wanted_usage,
+                                FormatType format_type) const;
+
+    /// Reports a device loss.
+    void ReportLoss() const;
+
+    /// Reports a shader to Nsight Aftermath.
+    void SaveShader(const std::vector<u32>& spirv) const;
+
+    /// Returns the dispatch loader with direct function pointers of the device.
+    const vk::DeviceDispatch& GetDispatchLoader() const {
+        return dld;
+    }
+
+    /// Returns the logical device.
+    const vk::Device& GetLogical() const {
+        return logical;
+    }
+
+    /// Returns the physical device.
+    vk::PhysicalDevice GetPhysical() const {
+        return physical;
+    }
+
+    /// Returns the main graphics queue.
+    vk::Queue GetGraphicsQueue() const {
+        return graphics_queue;
+    }
+
+    /// Returns the main present queue.
+    vk::Queue GetPresentQueue() const {
+        return present_queue;
+    }
+
+    /// Returns main graphics queue family index.
+    u32 GetGraphicsFamily() const {
+        return graphics_family;
+    }
+
+    /// Returns main present queue family index.
+    u32 GetPresentFamily() const {
+        return present_family;
+    }
+
+    /// Returns the current Vulkan API version provided in Vulkan-formatted version numbers.
+    u32 ApiVersion() const {
+        return properties.apiVersion;
+    }
+
+    /// Returns the current driver version provided in Vulkan-formatted version numbers.
+    u32 GetDriverVersion() const {
+        return properties.driverVersion;
+    }
+
+    /// Returns the device name.
+    std::string_view GetModelName() const {
+        return properties.deviceName;
+    }
+
+    /// Returns the driver ID.
+    VkDriverIdKHR GetDriverID() const {
+        return driver_id;
+    }
+
+    /// Returns uniform buffer alignment requeriment.
+    VkDeviceSize GetUniformBufferAlignment() const {
+        return properties.limits.minUniformBufferOffsetAlignment;
+    }
+
+    /// Returns storage alignment requeriment.
+    VkDeviceSize GetStorageBufferAlignment() const {
+        return properties.limits.minStorageBufferOffsetAlignment;
+    }
+
+    /// Returns the maximum range for storage buffers.
+    VkDeviceSize GetMaxStorageBufferRange() const {
+        return properties.limits.maxStorageBufferRange;
+    }
+
+    /// Returns the maximum size for push constants.
+    VkDeviceSize GetMaxPushConstantsSize() const {
+        return properties.limits.maxPushConstantsSize;
+    }
+
+    /// Returns the maximum size for shared memory.
+    u32 GetMaxComputeSharedMemorySize() const {
+        return properties.limits.maxComputeSharedMemorySize;
+    }
+
+    /// Returns true if ASTC is natively supported.
+    bool IsOptimalAstcSupported() const {
+        return is_optimal_astc_supported;
+    }
+
+    /// Returns true if the device supports float16 natively
+    bool IsFloat16Supported() const {
+        return is_float16_supported;
+    }
+
+    /// Returns true if the device warp size can potentially be bigger than guest's warp size.
+    bool IsWarpSizePotentiallyBiggerThanGuest() const {
+        return is_warp_potentially_bigger;
+    }
+
+    /// Returns true if the device can be forced to use the guest warp size.
+    bool IsGuestWarpSizeSupported(VkShaderStageFlagBits stage) const {
+        return guest_warp_stages & stage;
+    }
+
+    /// Returns true if formatless image load is supported.
+    bool IsFormatlessImageLoadSupported() const {
+        return is_formatless_image_load_supported;
+    }
+
+    /// Returns true when blitting from and to depth stencil images is supported.
+    bool IsBlitDepthStencilSupported() const {
+        return is_blit_depth_stencil_supported;
+    }
+
+    /// Returns true if the device supports VK_NV_viewport_swizzle.
+    bool IsNvViewportSwizzleSupported() const {
+        return nv_viewport_swizzle;
+    }
+
+    /// Returns true if the device supports VK_EXT_scalar_block_layout.
+    bool IsKhrUniformBufferStandardLayoutSupported() const {
+        return khr_uniform_buffer_standard_layout;
+    }
+
+    /// Returns true if the device supports VK_EXT_index_type_uint8.
+    bool IsExtIndexTypeUint8Supported() const {
+        return ext_index_type_uint8;
+    }
+
+    /// Returns true if the device supports VK_EXT_sampler_filter_minmax.
+    bool IsExtSamplerFilterMinmaxSupported() const {
+        return ext_sampler_filter_minmax;
+    }
+
+    /// Returns true if the device supports VK_EXT_depth_range_unrestricted.
+    bool IsExtDepthRangeUnrestrictedSupported() const {
+        return ext_depth_range_unrestricted;
+    }
+
+    /// Returns true if the device supports VK_EXT_shader_viewport_index_layer.
+    bool IsExtShaderViewportIndexLayerSupported() const {
+        return ext_shader_viewport_index_layer;
+    }
+
+    /// Returns true if the device supports VK_EXT_transform_feedback.
+    bool IsExtTransformFeedbackSupported() const {
+        return ext_transform_feedback;
+    }
+
+    /// Returns true if the device supports VK_EXT_custom_border_color.
+    bool IsExtCustomBorderColorSupported() const {
+        return ext_custom_border_color;
+    }
+
+    /// Returns true if the device supports VK_EXT_extended_dynamic_state.
+    bool IsExtExtendedDynamicStateSupported() const {
+        return ext_extended_dynamic_state;
+    }
+
+    /// Returns true if the device supports VK_EXT_shader_stencil_export.
+    bool IsExtShaderStencilExportSupported() const {
+        return ext_shader_stencil_export;
+    }
+
+    /// Returns true when a known debugging tool is attached.
+    bool HasDebuggingToolAttached() const {
+        return has_renderdoc || has_nsight_graphics;
+    }
+
+    /// Returns the vendor name reported from Vulkan.
+    std::string_view GetVendorName() const {
+        return vendor_name;
+    }
+
+    /// Returns the list of available extensions.
+    const std::vector<std::string>& GetAvailableExtensions() const {
+        return reported_extensions;
+    }
+
+    /// Returns true if the setting for async shader compilation is enabled.
+    bool UseAsynchronousShaders() const {
+        return use_asynchronous_shaders;
+    }
+
+private:
+    /// Checks if the physical device is suitable.
+    void CheckSuitability(bool requires_swapchain) const;
+
+    /// Loads extensions into a vector and stores available ones in this object.
+    std::vector<const char*> LoadExtensions(bool requires_surface);
+
+    /// Sets up queue families.
+    void SetupFamilies(VkSurfaceKHR surface);
+
+    /// Sets up device features.
+    void SetupFeatures();
+
+    /// Collects telemetry information from the device.
+    void CollectTelemetryParameters();
+
+    /// Collects information about attached tools.
+    void CollectToolingInfo();
+
+    /// Returns a list of queue initialization descriptors.
+    std::vector<VkDeviceQueueCreateInfo> GetDeviceQueueCreateInfos() const;
+
+    /// Returns true if ASTC textures are natively supported.
+    bool IsOptimalAstcSupported(const VkPhysicalDeviceFeatures& features) const;
+
+    /// Returns true if the device natively supports blitting depth stencil images.
+    bool TestDepthStencilBlits() const;
+
+    /// Returns true if a format is supported.
+    bool IsFormatSupported(VkFormat wanted_format, VkFormatFeatureFlags wanted_usage,
+                           FormatType format_type) const;
+
+    VkInstance instance;                    ///< Vulkan instance.
+    vk::DeviceDispatch dld;                 ///< Device function pointers.
+    vk::PhysicalDevice physical;            ///< Physical device.
+    VkPhysicalDeviceProperties properties;  ///< Device properties.
+    vk::Device logical;                     ///< Logical device.
+    vk::Queue graphics_queue;               ///< Main graphics queue.
+    vk::Queue present_queue;                ///< Main present queue.
+    u32 instance_version{};                 ///< Vulkan onstance version.
+    u32 graphics_family{};                  ///< Main graphics queue family index.
+    u32 present_family{};                   ///< Main present queue family index.
+    VkDriverIdKHR driver_id{};              ///< Driver ID.
+    VkShaderStageFlags guest_warp_stages{}; ///< Stages where the guest warp size can be forced.ed
+    bool is_optimal_astc_supported{};       ///< Support for native ASTC.
+    bool is_float16_supported{};            ///< Support for float16 arithmetics.
+    bool is_warp_potentially_bigger{};      ///< Host warp size can be bigger than guest.
+    bool is_formatless_image_load_supported{};  ///< Support for shader image read without format.
+    bool is_shader_storage_image_multisample{}; ///< Support for image operations on MSAA images.
+    bool is_blit_depth_stencil_supported{};     ///< Support for blitting from and to depth stencil.
+    bool nv_viewport_swizzle{};                 ///< Support for VK_NV_viewport_swizzle.
+    bool khr_uniform_buffer_standard_layout{};  ///< Support for std430 on UBOs.
+    bool ext_index_type_uint8{};                ///< Support for VK_EXT_index_type_uint8.
+    bool ext_sampler_filter_minmax{};           ///< Support for VK_EXT_sampler_filter_minmax.
+    bool ext_depth_range_unrestricted{};        ///< Support for VK_EXT_depth_range_unrestricted.
+    bool ext_shader_viewport_index_layer{};     ///< Support for VK_EXT_shader_viewport_index_layer.
+    bool ext_tooling_info{};                    ///< Support for VK_EXT_tooling_info.
+    bool ext_transform_feedback{};              ///< Support for VK_EXT_transform_feedback.
+    bool ext_custom_border_color{};             ///< Support for VK_EXT_custom_border_color.
+    bool ext_extended_dynamic_state{};          ///< Support for VK_EXT_extended_dynamic_state.
+    bool ext_shader_stencil_export{};           ///< Support for VK_EXT_shader_stencil_export.
+    bool nv_device_diagnostics_config{};        ///< Support for VK_NV_device_diagnostics_config.
+    bool has_renderdoc{};                       ///< Has RenderDoc attached
+    bool has_nsight_graphics{};                 ///< Has Nsight Graphics attached
+
+    // Asynchronous Graphics Pipeline setting
+    bool use_asynchronous_shaders{}; ///< Setting to use asynchronous shaders/graphics pipeline
+
+    // Telemetry parameters
+    std::string vendor_name;                      ///< Device's driver name.
+    std::vector<std::string> reported_extensions; ///< Reported Vulkan extensions.
+
+    /// Format properties dictionary.
+    std::unordered_map<VkFormat, VkFormatProperties> format_properties;
+
+    /// Nsight Aftermath GPU crash tracker
+    std::unique_ptr<NsightAftermathTracker> nsight_aftermath_tracker;
+};
+
+} // namespace Vulkan

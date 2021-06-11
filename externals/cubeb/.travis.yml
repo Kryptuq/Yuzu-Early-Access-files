@@ -1,0 +1,85 @@
+language: cpp
+dist: xenial
+sudo: required
+addons:
+  apt:
+    packages:
+      - clang-3.8
+      - g++-5
+      - libpulse-dev
+      - libasound2-dev
+      - pulseaudio
+      - doxygen
+      - mingw-w64
+      - mingw-w64-tools
+env:
+  global:
+    - CMAKE_USE_ASAN=OFF
+matrix:
+  include:
+    - env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8
+    - env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 CMAKE_USE_ASAN=ON
+    - env: C_COMPILER=gcc-5 CXX_COMPILER=g++-5
+    - env: SCAN_BUILD=true
+    - env: CROSS=mingw
+    - env: CROSS=android API_LEVEL=android-16
+    - os: freebsd
+      compiler: clang
+    - os: freebsd
+      compiler: gcc
+    - os: freebsd
+      env: SCAN_BUILD=true
+    - os: osx
+    - os: osx
+      env: SCAN_BUILD=true
+    - os: windows
+  allow_failures:
+    - os: freebsd
+      env: SCAN_BUILD=true
+before_install:
+  - if [[ -n $SCAN_BUILD ]]; then
+      if [[ $TRAVIS_OS_NAME = "osx" ]]; then
+        . scan-build-install.sh;
+      elif [[ $TRAVIS_OS_NAME = "freebsd" ]]; then
+        export SCAN_BUILD_PATH=scan-build10;
+        sudo pkg install -y llvm10;
+      else
+        export SCAN_BUILD_PATH=/usr/share/clang/scan-build-3.8/bin/scan-build;
+      fi;
+      export SCAN_BUILD_PATH="$SCAN_BUILD_PATH -o scan_results";
+    fi
+  - if [[ $TRAVIS_OS_NAME = "freebsd" ]]; then
+      export CFLAGS+=" -isystem/usr/local/include";
+      export CXXFLAGS+=" -isystem/usr/local/include";
+      sudo pkg install -y alsa-lib jackit pulseaudio sndio;
+    fi
+  - if [[ $CROSS = "android" ]]; then
+      NDK=android-ndk-r19c;
+      curl -LO https://dl.google.com/android/repository/$NDK-linux-x86_64.zip;
+      unzip -q $NDK-linux-x86_64.zip;
+      rm $NDK-linux-x86_64.zip;
+      export ANDROID_NDK=$(pwd)/$NDK;
+    fi
+before_script:
+  - if [[ -n $C_COMPILER ]]; then
+      export CC=$C_COMPILER;
+    fi
+  - if [[ -n $CXX_COMPILER ]]; then
+      export CXX=$CXX_COMPILER;
+    fi
+  - if [[ -n $CROSS ]]; then
+      export TOOLCHAIN=-DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain-cross-$CROSS.cmake;
+    fi
+  - if [[ $CROSS = "android" ]]; then
+      export TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake -DANDROID_NATIVE_API_LEVEL=$API_LEVEL";
+    fi
+  - mkdir build && cd build
+  - $SCAN_BUILD_PATH cmake -DCMAKE_BUILD_TYPE=Debug -DSANITIZE_ADDRESS=$CMAKE_USE_ASAN $TOOLCHAIN ..;
+script:
+  - $SCAN_BUILD_PATH cmake --build .
+  - if [[ $TRAVIS_OS_NAME = "linux" && -z $CROSS ]]; then
+      ctest -V;
+    fi
+  - if [[ -n $SCAN_BUILD ]]; then
+      rmdir scan_results || ( echo "scan-build detected bugs!" && exit 1 );
+    fi

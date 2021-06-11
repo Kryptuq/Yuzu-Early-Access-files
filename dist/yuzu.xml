@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+    <mime-type type="application/x-nx-nro">
+        <comment>Nintendo Switch homebrew executable</comment>
+        <acronym>NRO</acronym>
+        <icon name="yuzu"/>
+        <glob pattern="*.nro"/>
+        <magic><match value="NRO" type="string" offset="16"/></magic>
+    </mime-type>
+
+    <mime-type type="application/x-nx-nso">
+        <comment>Nintendo Switch homebrew executable</comment>
+        <acronym>NSO</acronym>
+        <icon name="yuzu"/>
+        <glob pattern="*.nso"/>
+        <magic><match value="NSO" type="string" offset="0"/></magic>
+    </mime-type>
+</mime-info>

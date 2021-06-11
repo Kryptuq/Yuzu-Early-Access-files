@@ -1,0 +1,70 @@
+name: Build and Test
+
+on: [push, pull_request]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        cpu_detection: [0, 1]
+      fail-fast: false
+
+    runs-on: ${{matrix.os}}
+
+    steps:
+
+    - name: Install build dependencies
+      if: ${{matrix.os == 'ubuntu-latest'}}
+      run: sudo apt-get install llvm ninja-build
+
+    - name: Install build dependencies
+      if: ${{matrix.os == 'macos-latest'}}
+      run: |
+        brew install llvm ninja
+        echo "/usr/local/opt/llvm/bin" >> $GITHUB_PATH
+    
+    - name: Checkout dynarmic repo
+      uses: actions/checkout@v2
+
+    - name: Checkout ext-boost repo
+      uses: actions/checkout@v2
+      with:
+        repository: MerryMage/ext-boost
+        path: externals/ext-boost
+
+    - name: Checkout unicorn repo
+      uses: actions/checkout@v2
+      with:
+        repository: MerryMage/unicorn
+        path: externals/unicorn
+
+    - name: Build unicorn
+      working-directory: externals/unicorn
+      run: UNICORN_ARCHS=aarch64,arm ./make.sh
+
+    - name: Configure CMake
+      run: >
+        cmake 
+        -B ${{github.workspace}}/build
+        -DBoost_INCLUDE_DIRS=${{github.workspace}}/externals/ext-boost
+        -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        -DDYNARMIC_ENABLE_CPU_FEATURE_DETECTION=${{matrix.cpu_detection}}
+        -DDYNARMIC_TESTS_USE_UNICORN=1
+        -DDYNARMIC_USE_LLVM=1
+        -DLIBUNICORN_INCLUDE_DIR=${{github.workspace}}/externals/unicorn/include
+        -DLIBUNICORN_LIBRARY=${{github.workspace}}/externals/unicorn/libunicorn.a
+        -G Ninja
+
+    - name: Build
+      working-directory: ${{github.workspace}}/build
+      run: ninja
+
+    - name: Test
+      env:
+        DYLD_FALLBACK_LIBRARY_PATH: ${{github.workspace}}/externals/unicorn
+      working-directory: ${{github.workspace}}/build
+      run: ctest --extra-verbose -C ${{env.BUILD_TYPE}}
