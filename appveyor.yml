@@ -2,7 +2,6 @@ version: 'EA{build}'
 branches:
   only:
   - master
-stack: python 3.7
 clone_folder: c:\Projects\yuzu-early-access
 image:
 - Visual Studio 2019
@@ -13,6 +12,7 @@ platform:
 environment:
   matrix:
   - arch: Win64
+  - TOXENV: py37
 matrix:
   fast_finish: true
 
