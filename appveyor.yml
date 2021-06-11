@@ -12,7 +12,10 @@ platform:
 environment:
   matrix:
   - arch: Win64
-  - PY_DIR: C:/Python37-x64
+  - PYTHON: "3.7"
+
+stack: python %PYTHON%
+  
 matrix:
   fast_finish: true
 
