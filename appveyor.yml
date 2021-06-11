@@ -11,6 +11,7 @@ platform:
 - x64
 environment:
   matrix:
+  - arch: Win64
   - PY_DIR: C:/Python37-x64
 matrix:
   fast_finish: true
@@ -23,6 +24,7 @@ init:
 - echo %APPVEYOR_BUILD_WORKER_IMAGE%
 - set generator="Visual Studio 16 2019"
 - echo %generator%
+- set PATH=%PY_DIR%;%PY_DIR%\Scripts;%PATH%
 - python --version
 
 before_build:
