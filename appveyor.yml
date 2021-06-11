@@ -11,8 +11,12 @@ platform:
 - x64
 environment:
   matrix:
-  - arch: Win64
-  - PYTHON: "3.7"
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+    PYTHON: "C:/Python27-x64"
+  - PYTHON: "C:/Python35-x64"
+  - PYTHON: "C:/Python36-x64"
+  - PYTHON: "C:/Python37-x64"
+  - PYTHON: "C:/Python38-x64"
 
 stack: python %PYTHON%
   
@@ -27,8 +31,8 @@ init:
 - echo %APPVEYOR_BUILD_WORKER_IMAGE%
 - set generator="Visual Studio 16 2019"
 - echo %generator%
-- set PATH=%PY_DIR%;%PY_DIR%\Scripts;%PATH%
-- python --version
+- "%PYTHON%/python.exe" -m pip install --upgrade pip
+- "%PYTHON%/python.exe" --version
 
 before_build:
 - cmd: |-
