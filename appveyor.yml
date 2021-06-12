@@ -10,10 +10,6 @@ configuration:
 platform:
 - x64
 environment:
-  VULKANSDK: C:\Projects\yuzu-early-access\VulkanSDK\1.2.176.1
-  
-  VK_SDK_PATH: C:\Program Files\yuzu-early-access\VulkanSDK\1.2.176.1
-  
   global:
     PYTHONUNBUFFERED: 'True'
     PYTHONWARNINGS: 'ignore:::wheel.pep425tags:'
@@ -24,6 +20,10 @@ environment:
   
 # skip unsupported combinations
 init:
+- ps: Start-FileDownload 'https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-sdk.exe'
+- VulkanSDK-1.2.135.0-Installer.exe /S
+- set VULKAN_SDK=C:\VulkanSDK\1.2.135.0
+- set VK_SDK_PATH=C:\VulkanSDK\1.2.135.0
 - set arch= Win64
 - echo %APPVEYOR_BUILD_WORKER_IMAGE%
 - set generator="Visual Studio 16 2019"
