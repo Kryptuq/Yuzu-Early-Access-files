@@ -10,6 +10,10 @@ configuration:
 platform:
 - x64
 environment:
+  VULKANSDK: C:\Projects\yuzu-early-access\VulkanSDK\1.2.176.1
+  
+  VK_SDK_PATH: C:\Program Files\yuzu-early-access\VulkanSDK\1.2.176.1
+  
   global:
     PYTHONUNBUFFERED: 'True'
     PYTHONWARNINGS: 'ignore:::wheel.pep425tags:'
@@ -50,6 +54,26 @@ build:
   project: c:\Projects\yuzu-early-access\build\yuzu.sln
   verbosity: minimal
   parallel: true
+  
+after_build:
+  7z a yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip
+  
+artifacts:
+    - path: yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip c:\Projects\yuzu-early-access\build\bin\Release
+  
+deploy:
+  release: yuzu-early-access-$(APPVEYOR_BUILD_VERSION)
+  description: 'Yuzu Early Access CI Builds with Appveyor'
+  provider: GitHub
+  auth_token:
+    secure: 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 # your encrypted token from GitHub
+  artifact: bin\release\yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip # upload all yuzu builds to release assets
+  draft: false
+  prerelease: false
+  on:
+    branch: master                 # release from master branch only
+    APPVEYOR_REPO_TAG: true        # deploy on tag push only
+
 only_commits:
   files:
     - CMakeLists.txt
