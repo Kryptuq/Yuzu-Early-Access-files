@@ -10,6 +10,8 @@ configuration:
 platform:
 - x64
 environment:
+  PATH: C:\Projects\yuzu-early-access\VulkanSDK\1.2.135.0\Bin;$(PATH)
+  
   global:
     PYTHONUNBUFFERED: 'True'
     PYTHONWARNINGS: 'ignore:::wheel.pep425tags:'
