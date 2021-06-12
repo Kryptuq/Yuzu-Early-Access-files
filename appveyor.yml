@@ -21,7 +21,7 @@ environment:
 # skip unsupported combinations
 init:
 - ps: Start-FileDownload 'https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-sdk.exe'
-- VulkanSDK-1.2.135.0-Installer.exe /S
+- vulkan-sdk.exe /S
 - set VULKAN_SDK=C:\VulkanSDK\1.2.135.0
 - set VK_SDK_PATH=C:\VulkanSDK\1.2.135.0
 - set arch= Win64
