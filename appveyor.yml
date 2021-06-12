@@ -10,8 +10,6 @@ configuration:
 platform:
 - x64
 environment:
-  PATH: C:\Projects\yuzu-early-access\VulkanSDK\1.2.135.0\Bin;$(PATH)
-  
   global:
     PYTHONUNBUFFERED: 'True'
     PYTHONWARNINGS: 'ignore:::wheel.pep425tags:'
@@ -24,6 +22,7 @@ environment:
 init:
 - set VULKAN_SDK=C:\Projects\yuzu-early-access\VulkanSDK\1.2.135.0
 - set VK_SDK_PATH=C:\Projects\yuzu-early-access\VulkanSDK\1.2.135.0
+- set PATH=%PATH%;C:\Projects\yuzu-early-access\VulkanSDK\1.2.135.0\Bin
 - set arch= Win64
 - echo %APPVEYOR_BUILD_WORKER_IMAGE%
 - set generator="Visual Studio 16 2019"
