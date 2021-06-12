@@ -1,4 +1,5 @@
 version: 'EA{build}'
+clone_folder: c:\Projects\yuzu-early-access
 branches:
   only:
   - main
@@ -19,10 +20,8 @@ environment:
   
 # skip unsupported combinations
 init:
-- ps: Start-FileDownload 'https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-sdk.exe'
-- vulkan-sdk.exe /S
-- set VULKAN_SDK=C:\VulkanSDK\1.2.135.0
-- set VK_SDK_PATH=C:\VulkanSDK\1.2.135.0
+- set VULKAN_SDK=C:\Projects\yuzu-early-access\VulkanSDK\1.2.135.0
+- set VK_SDK_PATH=C:\Projects\yuzu-early-access\VulkanSDK\1.2.135.0
 - set arch= Win64
 - echo %APPVEYOR_BUILD_WORKER_IMAGE%
 - set generator="Visual Studio 16 2019"
@@ -50,7 +49,7 @@ before_build:
     cmake .. -G %generator%
     
 build:
-  project: c:\yuzu-early-access\build\yuzu.sln
+  project: c:\Projects\yuzu-early-access\build\yuzu.sln
   verbosity: minimal
   parallel: true
   
@@ -58,7 +57,7 @@ after_build:
   7z a yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip
   
 artifacts:
-    - path: yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip c:\yuzu-early-access\build\bin\Release
+    - path: yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip c:\Projects\yuzu-early-access\build\bin\Release
   
 deploy:
   release: yuzu-early-access-$(APPVEYOR_BUILD_VERSION)
