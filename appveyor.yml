@@ -2,7 +2,6 @@ version: 'EA{build}'
 branches:
   only:
   - main
-clone_folder: c:\Projects\yuzu-early-access
 image:
 - Visual Studio 2019
 configuration:
@@ -51,7 +50,7 @@ before_build:
     cmake .. -G %generator%
     
 build:
-  project: c:\Projects\yuzu-early-access\build\yuzu.sln
+  project: c:\yuzu-early-access\build\yuzu.sln
   verbosity: minimal
   parallel: true
   
@@ -59,7 +58,7 @@ after_build:
   7z a yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip
   
 artifacts:
-    - path: yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip c:\Projects\yuzu-early-access\build\bin\Release
+    - path: yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip c:\yuzu-early-access\build\bin\Release
   
 deploy:
   release: yuzu-early-access-$(APPVEYOR_BUILD_VERSION)
