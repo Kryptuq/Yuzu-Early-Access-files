@@ -131,7 +131,7 @@
            </string>
           </property>
           <property name="text">
-           <string>Disable adress space checks</string>
+           <string>Disable address space checks</string>
           </property>
          </widget>
         </item>

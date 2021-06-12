@@ -37,6 +37,7 @@
 #include "xdg-shell-unstable-v6-client-protocol.h"
 #include "xdg-decoration-unstable-v1-client-protocol.h"
 #include "idle-inhibit-unstable-v1-client-protocol.h"
+#include "xdg-activation-v1-client-protocol.h"
 
 static float get_window_scale_factor(SDL_Window *window) {
       return ((SDL_WindowData*)window->driverdata)->scale_factor;
@@ -272,9 +273,12 @@ handle_configure_zxdg_toplevel(void *data,
 
     enum zxdg_toplevel_v6_state *state;
     SDL_bool fullscreen = SDL_FALSE;
+    SDL_bool maximized = SDL_FALSE;
     wl_array_for_each(state, states) {
         if (*state == ZXDG_TOPLEVEL_V6_STATE_FULLSCREEN) {
             fullscreen = SDL_TRUE;
+        } else if (*state == ZXDG_TOPLEVEL_V6_STATE_MAXIMIZED) {
+            maximized = SDL_TRUE;
         }
     }
 
@@ -283,6 +287,7 @@ handle_configure_zxdg_toplevel(void *data,
             /* We might need to re-enter fullscreen after being restored from minimized */
             SDL_WaylandOutputData *driverdata = (SDL_WaylandOutputData *) SDL_GetDisplayForWindow(window)->driverdata;
             SetFullscreen(window, driverdata->output);
+            fullscreen = SDL_TRUE;
         }
 
         if (width == 0 || height == 0) {
@@ -308,6 +313,19 @@ handle_configure_zxdg_toplevel(void *data,
             wind->resize.height = window->h;
             return;
         }
+    }
+
+    /* Always send a maximized/restore event; if the event is redundant it will
+     * automatically be discarded (see src/events/SDL_windowevents.c).
+     *
+     * No, we do not get minimize events from zxdg-shell.
+     */
+    if (!fullscreen) {
+        SDL_SendWindowEvent(window,
+                            maximized ?
+                                SDL_WINDOWEVENT_MAXIMIZED :
+                                SDL_WINDOWEVENT_RESTORED,
+                            0, 0);
     }
 
     if (width == 0 || height == 0) {
@@ -388,9 +406,12 @@ handle_configure_xdg_toplevel(void *data,
 
     enum xdg_toplevel_state *state;
     SDL_bool fullscreen = SDL_FALSE;
+    SDL_bool maximized = SDL_FALSE;
     wl_array_for_each(state, states) {
         if (*state == XDG_TOPLEVEL_STATE_FULLSCREEN) {
             fullscreen = SDL_TRUE;
+        } else if (*state == XDG_TOPLEVEL_STATE_MAXIMIZED) {
+            maximized = SDL_TRUE;
         }
     }
 
@@ -399,6 +420,7 @@ handle_configure_xdg_toplevel(void *data,
             /* We might need to re-enter fullscreen after being restored from minimized */
             SDL_WaylandOutputData *driverdata = (SDL_WaylandOutputData *) SDL_GetDisplayForWindow(window)->driverdata;
             SetFullscreen(window, driverdata->output);
+            fullscreen = SDL_TRUE;
         }
 
         if (width == 0 || height == 0) {
@@ -424,6 +446,19 @@ handle_configure_xdg_toplevel(void *data,
             wind->resize.height = window->h;
             return;
         }
+    }
+
+    /* Always send a maximized/restore event; if the event is redundant it will
+     * automatically be discarded (see src/events/SDL_windowevents.c)
+     *
+     * No, we do not get minimize events from xdg-shell.
+     */
+    if (!fullscreen) {
+        SDL_SendWindowEvent(window,
+                            maximized ?
+                                SDL_WINDOWEVENT_MAXIMIZED :
+                                SDL_WINDOWEVENT_RESTORED,
+                            0, 0);
     }
 
     if (width == 0 || height == 0) {
@@ -682,11 +717,6 @@ void Wayland_ShowWindow(_THIS, SDL_Window *window)
         data->shell_surface.xdg.roleobj.toplevel = xdg_surface_get_toplevel(data->shell_surface.xdg.surface);
         xdg_toplevel_set_app_id(data->shell_surface.xdg.roleobj.toplevel, c->classname);
         xdg_toplevel_add_listener(data->shell_surface.xdg.roleobj.toplevel, &toplevel_listener_xdg, data);
-
-        /* Create the window decorations */
-        if (c->decoration_manager) {
-            data->server_decoration = zxdg_decoration_manager_v1_get_toplevel_decoration(c->decoration_manager, data->shell_surface.xdg.roleobj.toplevel);
-        }
     } else if (c->shell.zxdg) {
         data->shell_surface.zxdg.surface = zxdg_shell_v6_get_xdg_surface(c->shell.zxdg, data->surface);
         zxdg_surface_v6_set_user_data(data->shell_surface.zxdg.surface, data);
@@ -705,7 +735,6 @@ void Wayland_ShowWindow(_THIS, SDL_Window *window)
 
     /* Restore state that was set prior to this call */
     Wayland_SetWindowTitle(_this, window);
-    Wayland_SetWindowBordered(_this, window, (window->flags & SDL_WINDOW_BORDERLESS) == 0);
     if (window->flags & SDL_WINDOW_MAXIMIZED) {
         Wayland_MaximizeWindow(_this, window);
     }
@@ -724,12 +753,42 @@ void Wayland_ShowWindow(_THIS, SDL_Window *window)
                 WAYLAND_wl_display_dispatch(c->display);
             }
         }
+
+        /* Create the window decorations */
+        if (data->shell_surface.xdg.roleobj.toplevel && c->decoration_manager) {
+            data->server_decoration = zxdg_decoration_manager_v1_get_toplevel_decoration(c->decoration_manager, data->shell_surface.xdg.roleobj.toplevel);
+        }
     } else if (c->shell.zxdg) {
         if (data->shell_surface.zxdg.surface) {
             while (!data->shell_surface.zxdg.initial_configure_seen) {
                 WAYLAND_wl_display_flush(c->display);
                 WAYLAND_wl_display_dispatch(c->display);
             }
+        }
+    }
+
+    /* Unlike the rest of window state we have to set this _after_ flushing the
+     * display, because we need to create the decorations before possibly hiding
+     * them immediately afterward. But don't call it redundantly, the protocol
+     * may not interpret a redundant call nicely and cause weird stuff to happen
+     */
+    if (window->flags & SDL_WINDOW_BORDERLESS) {
+        Wayland_SetWindowBordered(_this, window, SDL_FALSE);
+    }
+
+    /* We're finally done putting the window together, raise if possible */
+    if (c->activation_manager) {
+        /* Note that we don't check for empty strings, as that is still
+         * considered a valid activation token!
+         */
+        const char *activation_token = SDL_getenv("XDG_ACTIVATION_TOKEN");
+        if (activation_token) {
+            xdg_activation_v1_activate(c->activation_manager,
+                                       activation_token,
+                                       data->surface);
+
+            /* Clear this variable, per the protocol's request */
+            unsetenv("XDG_ACTIVATION_TOKEN");
         }
     }
 }
@@ -768,6 +827,107 @@ void Wayland_HideWindow(_THIS, SDL_Window *window)
             wind->shell_surface.wl = NULL;
         }
     }
+}
+
+static void
+handle_xdg_activation_done(void *data,
+                           struct xdg_activation_token_v1 *xdg_activation_token_v1,
+                           const char *token)
+{
+    SDL_WindowData *window = data;
+    if (xdg_activation_token_v1 == window->activation_token) {
+        xdg_activation_v1_activate(window->waylandData->activation_manager,
+                                   token,
+                                   window->surface);
+        xdg_activation_token_v1_destroy(window->activation_token);
+        window->activation_token = NULL;
+    }
+}
+
+static const struct xdg_activation_token_v1_listener activation_listener_xdg = {
+    handle_xdg_activation_done
+};
+
+/* The xdg-activation protocol considers "activation" to be one of two things:
+ *
+ * 1: Raising a window to the top and flashing the titlebar
+ * 2: Flashing the titlebar while keeping the window where it is
+ *
+ * As you might expect from Wayland, the general policy is to go with #2 unless
+ * the client can prove to the compositor beyond a reasonable doubt that raising
+ * the window will not be malicuous behavior.
+ *
+ * For SDL this means RaiseWindow and FlashWindow both use the same protocol,
+ * but in different ways: RaiseWindow will provide as _much_ information as
+ * possible while FlashWindow will provide as _little_ information as possible,
+ * to nudge the compositor into doing what we want.
+ *
+ * This isn't _strictly_ what the protocol says will happen, but this is what
+ * current implementations are doing (as of writing, YMMV in the far distant
+ * future).
+ *
+ * -flibit
+ */
+static void
+Wayland_activate_window(SDL_VideoData *data, SDL_WindowData *wind,
+                        struct wl_surface *surface,
+                        uint32_t serial, struct wl_seat *seat)
+{
+    if (data->activation_manager) {
+        if (wind->activation_token != NULL) {
+            /* We're about to overwrite this with a new request */
+            xdg_activation_token_v1_destroy(wind->activation_token);
+        }
+
+        wind->activation_token = xdg_activation_v1_get_activation_token(data->activation_manager);
+        xdg_activation_token_v1_add_listener(wind->activation_token,
+                                             &activation_listener_xdg,
+                                             wind);
+
+        /* Note that we are not setting the app_id or serial here.
+         *
+         * Hypothetically we could set the app_id from data->classname, but
+         * that part of the API is for _external_ programs, not ourselves.
+         *
+         * -flibit
+         */
+        if (surface != NULL) {
+            xdg_activation_token_v1_set_surface(wind->activation_token, surface);
+        }
+        if (seat != NULL) {
+            xdg_activation_token_v1_set_serial(wind->activation_token, serial, seat);
+        }
+        xdg_activation_token_v1_commit(wind->activation_token);
+    }
+}
+
+void
+Wayland_RaiseWindow(_THIS, SDL_Window *window)
+{
+    SDL_WindowData *wind = window->driverdata;
+
+    /* FIXME: This Raise event is arbitrary and doesn't come from an event, so
+     * it's actually very likely that this token will be ignored! Maybe add
+     * support for passing serials (and the associated seat) so this can have
+     * a better chance of actually raising the window.
+     * -flibit
+     */
+    Wayland_activate_window(_this->driverdata,
+                            wind,
+                            wind->surface,
+                            0,
+                            NULL);
+}
+
+int
+Wayland_FlashWindow(_THIS, SDL_Window *window, Uint32 flash_count)
+{
+    Wayland_activate_window(_this->driverdata,
+                            window->driverdata,
+                            NULL,
+                            0,
+                            NULL);
+    return 0;
 }
 
 #ifdef SDL_VIDEO_DRIVER_WAYLAND_QT_TOUCH
@@ -1233,6 +1393,10 @@ void Wayland_DestroyWindow(_THIS, SDL_Window *window)
 
         if (wind->idle_inhibitor) {
             zwp_idle_inhibitor_v1_destroy(wind->idle_inhibitor);
+        }
+
+        if (wind->activation_token) {
+            xdg_activation_token_v1_destroy(wind->activation_token);
         }
 
         SDL_free(wind->outputs);

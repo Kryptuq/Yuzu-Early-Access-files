@@ -449,21 +449,52 @@ private:
     int fd{-1}; // memfd file descriptor, -1 is the error value of memfd_create
 };
 
-#else // ^^^ Linux ^^^
+#else // ^^^ Linux ^^^ vvv Generic vvv
 
-#error Please implement the host memory for your platform
+class HostMemory::Impl {
+public:
+    explicit Impl(size_t /*backing_size */, size_t /* virtual_size */) {
+        // This is just a place holder.
+        // Please implement fastmem in a propper way on your platform.
+        throw std::bad_alloc{};
+    }
 
-#endif
+    void Map(size_t virtual_offset, size_t host_offset, size_t length) {}
+
+    void Unmap(size_t virtual_offset, size_t length) {}
+
+    void Protect(size_t virtual_offset, size_t length, bool read, bool write) {}
+
+    u8* backing_base{nullptr};
+    u8* virtual_base{nullptr};
+};
+
+#endif // ^^^ Generic ^^^
 
 HostMemory::HostMemory(size_t backing_size_, size_t virtual_size_)
-    : backing_size(backing_size_),
-      virtual_size(virtual_size_), impl{std::make_unique<HostMemory::Impl>(
-                                       AlignUp(backing_size, PageAlignment),
-                                       AlignUp(virtual_size, PageAlignment) + 3 * HugePageSize)},
-      backing_base{impl->backing_base}, virtual_base{impl->virtual_base} {
-    virtual_base += 2 * HugePageSize - 1;
-    virtual_base -= reinterpret_cast<size_t>(virtual_base) & (HugePageSize - 1);
-    virtual_base_offset = virtual_base - impl->virtual_base;
+    : backing_size(backing_size_), virtual_size(virtual_size_) {
+    try {
+        // Try to allocate a fastmem arena.
+        // The implementation will fail with std::bad_alloc on errors.
+        impl = std::make_unique<HostMemory::Impl>(AlignUp(backing_size, PageAlignment),
+                                                  AlignUp(virtual_size, PageAlignment) +
+                                                      3 * HugePageSize);
+        backing_base = impl->backing_base;
+        virtual_base = impl->virtual_base;
+
+        if (virtual_base) {
+            virtual_base += 2 * HugePageSize - 1;
+            virtual_base -= reinterpret_cast<size_t>(virtual_base) & (HugePageSize - 1);
+            virtual_base_offset = virtual_base - impl->virtual_base;
+        }
+
+    } catch (const std::bad_alloc&) {
+        LOG_CRITICAL(HW_Memory,
+                     "Fastmem unavailable, falling back to VirtualBuffer for memory allocation");
+        fallback_buffer = std::make_unique<Common::VirtualBuffer<u8>>(backing_size);
+        backing_base = fallback_buffer->data();
+        virtual_base = nullptr;
+    }
 }
 
 HostMemory::~HostMemory() = default;
@@ -478,7 +509,7 @@ void HostMemory::Map(size_t virtual_offset, size_t host_offset, size_t length) {
     ASSERT(length % PageAlignment == 0);
     ASSERT(virtual_offset + length <= virtual_size);
     ASSERT(host_offset + length <= backing_size);
-    if (length == 0) {
+    if (length == 0 || !virtual_base || !impl) {
         return;
     }
     impl->Map(virtual_offset + virtual_base_offset, host_offset, length);
@@ -488,7 +519,7 @@ void HostMemory::Unmap(size_t virtual_offset, size_t length) {
     ASSERT(virtual_offset % PageAlignment == 0);
     ASSERT(length % PageAlignment == 0);
     ASSERT(virtual_offset + length <= virtual_size);
-    if (length == 0) {
+    if (length == 0 || !virtual_base || !impl) {
         return;
     }
     impl->Unmap(virtual_offset + virtual_base_offset, length);
@@ -498,7 +529,7 @@ void HostMemory::Protect(size_t virtual_offset, size_t length, bool read, bool w
     ASSERT(virtual_offset % PageAlignment == 0);
     ASSERT(length % PageAlignment == 0);
     ASSERT(virtual_offset + length <= virtual_size);
-    if (length == 0) {
+    if (length == 0 || !virtual_base || !impl) {
         return;
     }
     impl->Protect(virtual_offset + virtual_base_offset, length, read, write);

@@ -236,7 +236,7 @@ Hid::Hid(Core::System& system_) : ServiceFramework{system_, "hid"} {
         {80, &Hid::GetGyroscopeZeroDriftMode, "GetGyroscopeZeroDriftMode"},
         {81, &Hid::ResetGyroscopeZeroDriftMode, "ResetGyroscopeZeroDriftMode"},
         {82, &Hid::IsSixAxisSensorAtRest, "IsSixAxisSensorAtRest"},
-        {83, nullptr, "IsFirmwareUpdateAvailableForSixAxisSensor"},
+        {83, &Hid::IsFirmwareUpdateAvailableForSixAxisSensor, "IsFirmwareUpdateAvailableForSixAxisSensor"},
         {91, &Hid::ActivateGesture, "ActivateGesture"},
         {100, &Hid::SetSupportedNpadStyleSet, "SetSupportedNpadStyleSet"},
         {101, &Hid::GetSupportedNpadStyleSet, "GetSupportedNpadStyleSet"},
@@ -708,6 +708,27 @@ void Hid::IsSixAxisSensorAtRest(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
     rb.Push(applet_resource->GetController<Controller_NPad>(HidController::NPad)
                 .IsSixAxisSensorAtRest());
+}
+
+void Hid::IsFirmwareUpdateAvailableForSixAxisSensor(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    struct Parameters {
+        Controller_NPad::DeviceHandle sixaxis_handle;
+        INSERT_PADDING_WORDS_NOINIT(1);
+        u64 applet_resource_user_id;
+    };
+
+    const auto parameters{rp.PopRaw<Parameters>()};
+
+    LOG_WARNING(
+        Service_HID,
+        "(STUBBED) called, npad_type={}, npad_id={}, device_index={}, applet_resource_user_id={}",
+        parameters.sixaxis_handle.npad_type, parameters.sixaxis_handle.npad_id,
+        parameters.sixaxis_handle.device_index, parameters.applet_resource_user_id);
+
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(ResultSuccess);
+    rb.Push(false);
 }
 
 void Hid::ActivateGesture(Kernel::HLERequestContext& ctx) {

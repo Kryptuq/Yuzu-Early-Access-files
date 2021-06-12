@@ -1946,6 +1946,18 @@ void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pa
     const auto full = res == selections.constFirst();
     const auto entry_size = CalculateRomFSEntrySize(extracted, full);
 
+    // The minimum required space is the size of the extracted RomFS + 1 GiB
+    const auto minimum_free_space = extracted->GetSize() + 0x40000000;
+
+    if (full && Common::FS::GetFreeSpaceSize(path) < minimum_free_space) {
+        QMessageBox::warning(this, tr("RomFS Extraction Failed!"),
+                             tr("There is not enough free space at %1 to extract the RomFS. Please "
+                                "free up space or select a different dump directory at "
+                                "Emulation > Configure > System > Filesystem > Dump Root")
+                                 .arg(QString::fromStdString(path)));
+        return;
+    }
+
     QProgressDialog progress(tr("Extracting RomFS..."), tr("Cancel"), 0,
                              static_cast<s32>(entry_size), this);
     progress.setWindowModality(Qt::WindowModal);
