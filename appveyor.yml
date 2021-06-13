@@ -44,8 +44,6 @@ before_build:
     curl -L --silent --show-error --output VulkanSDK.exe https://vulkan.lunarg.com/sdk/download/1.2.135.0/windows/VulkanSDK-1.2.135.0-Installer.exe?Human=true
     VulkanSDK.exe /S
     set VULKAN_SDK=c:\Projects\yuzu-early-access\VulkanSDK\1.2.135.0
-    
-    #Main Building
     mkdir build
     cd build
     pip install conan
