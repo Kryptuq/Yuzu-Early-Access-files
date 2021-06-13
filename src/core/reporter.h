@@ -16,10 +16,6 @@ namespace Kernel {
 class HLERequestContext;
 } // namespace Kernel
 
-namespace Service::FileSystem {
-enum class LogMode : u32;
-}
-
 namespace Service::LM {
 struct LogMessage;
 } // namespace Service::LM
@@ -69,14 +65,15 @@ public:
                          std::optional<std::string> custom_text_main = {},
                          std::optional<std::string> custom_text_detail = {}) const;
 
-    void SaveFilesystemAccessReport(Service::FileSystem::LogMode log_mode,
-                                    std::string log_message) const;
+    void SaveFSAccessLog(std::string log_message) const;
 
     // Can be used anywhere to generate a backtrace and general info report at any point during
     // execution. Not intended to be used for anything other than debugging or testing.
     void SaveUserReport() const;
 
 private:
+    void ClearFSAccessLog() const;
+
     bool IsReportingEnabled() const;
 
     System& system;

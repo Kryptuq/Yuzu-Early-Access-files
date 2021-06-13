@@ -18,7 +18,7 @@ set(SHADER_FILES
     vulkan_uint8.comp
 )
 
-find_program(GLSLANGVALIDATOR "glslangValidator" PATHS "c:\Projects\yuzu-early-access\VulkanSDK\1.2.135.0\bin" REQUIRED)
+find_program(GLSLANGVALIDATOR "glslangValidator" REQUIRED)
 
 set(GLSL_FLAGS "")
 set(QUIET_FLAG "--quiet")

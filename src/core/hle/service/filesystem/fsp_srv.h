@@ -24,11 +24,10 @@ enum class AccessLogVersion : u32 {
     Latest = V7_0_0,
 };
 
-enum class LogMode : u32 {
-    Off,
+enum class AccessLogMode : u32 {
+    None,
     Log,
-    RedirectToSdCard,
-    LogToSdCard = Log | RedirectToSdCard,
+    SdCard,
 };
 
 class FSP_SRV final : public ServiceFramework<FSP_SRV> {
@@ -59,13 +58,12 @@ private:
 
     FileSystemController& fsc;
     const FileSys::ContentProvider& content_provider;
+    const Core::Reporter& reporter;
 
     FileSys::VirtualFile romfs;
     u64 current_process_id = 0;
     u32 access_log_program_index = 0;
-    LogMode log_mode = LogMode::LogToSdCard;
-
-    const Core::Reporter& reporter;
+    AccessLogMode log_mode = AccessLogMode::None;
 };
 
 } // namespace Service::FileSystem

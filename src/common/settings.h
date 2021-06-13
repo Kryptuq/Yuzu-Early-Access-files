@@ -218,6 +218,7 @@ struct Values {
     std::string program_args;
     bool dump_exefs;
     bool dump_nso;
+    bool enable_fs_access_log;
     bool reporting_services;
     bool quest_flag;
     bool disable_macro_jit;

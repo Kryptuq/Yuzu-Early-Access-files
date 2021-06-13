@@ -647,6 +647,8 @@ void Config::ReadDebuggingValues() {
         ReadSetting(QStringLiteral("program_args"), QString{}).toString().toStdString();
     Settings::values.dump_exefs = ReadSetting(QStringLiteral("dump_exefs"), false).toBool();
     Settings::values.dump_nso = ReadSetting(QStringLiteral("dump_nso"), false).toBool();
+    Settings::values.enable_fs_access_log =
+        ReadSetting(QStringLiteral("enable_fs_access_log"), false).toBool();
     Settings::values.reporting_services =
         ReadSetting(QStringLiteral("reporting_services"), false).toBool();
     Settings::values.quest_flag = ReadSetting(QStringLiteral("quest_flag"), false).toBool();
@@ -1258,6 +1260,8 @@ void Config::SaveDebuggingValues() {
                  QString::fromStdString(Settings::values.program_args), QString{});
     WriteSetting(QStringLiteral("dump_exefs"), Settings::values.dump_exefs, false);
     WriteSetting(QStringLiteral("dump_nso"), Settings::values.dump_nso, false);
+    WriteSetting(QStringLiteral("enable_fs_access_log"), Settings::values.enable_fs_access_log,
+                 false);
     WriteSetting(QStringLiteral("quest_flag"), Settings::values.quest_flag, false);
     WriteSetting(QStringLiteral("use_debug_asserts"), Settings::values.use_debug_asserts, false);
     WriteSetting(QStringLiteral("disable_macro_jit"), Settings::values.disable_macro_jit, false);

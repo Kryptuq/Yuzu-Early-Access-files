@@ -13,6 +13,7 @@
 #include "common/common_types.h"
 #include "common/hex_util.h"
 #include "common/logging/log.h"
+#include "common/settings.h"
 #include "common/string_util.h"
 #include "core/core.h"
 #include "core/file_sys/directory.h"
@@ -785,6 +786,10 @@ FSP_SRV::FSP_SRV(Core::System& system_)
     };
     // clang-format on
     RegisterHandlers(functions);
+
+    if (Settings::values.enable_fs_access_log) {
+        log_mode = AccessLogMode::SdCard;
+    }
 }
 
 FSP_SRV::~FSP_SRV() = default;
@@ -1041,9 +1046,9 @@ void FSP_SRV::DisableAutoSaveDataCreation(Kernel::HLERequestContext& ctx) {
 
 void FSP_SRV::SetGlobalAccessLogMode(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    log_mode = rp.PopEnum<LogMode>();
+    log_mode = rp.PopEnum<AccessLogMode>();
 
-    LOG_DEBUG(Service_FS, "called, log_mode={:08X}", log_mode);
+    LOG_DEBUG(Service_FS, "called, log_mode={}", log_mode);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
@@ -1062,9 +1067,9 @@ void FSP_SRV::OutputAccessLogToSdCard(Kernel::HLERequestContext& ctx) {
     auto log = Common::StringFromFixedZeroTerminatedBuffer(
         reinterpret_cast<const char*>(raw.data()), raw.size());
 
-    LOG_DEBUG(Service_FS, "called, log='{}'", log);
+    LOG_DEBUG(Service_FS, "called");
 
-    reporter.SaveFilesystemAccessReport(log_mode, std::move(log));
+    reporter.SaveFSAccessLog(std::move(log));
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);

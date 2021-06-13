@@ -477,6 +477,8 @@ void Config::ReadValues() {
     Settings::values.program_args = sdl2_config->Get("Debugging", "program_args", "");
     Settings::values.dump_exefs = sdl2_config->GetBoolean("Debugging", "dump_exefs", false);
     Settings::values.dump_nso = sdl2_config->GetBoolean("Debugging", "dump_nso", false);
+    Settings::values.enable_fs_access_log =
+        sdl2_config->GetBoolean("Debugging", "enable_fs_access_log", false);
     Settings::values.reporting_services =
         sdl2_config->GetBoolean("Debugging", "reporting_services", false);
     Settings::values.quest_flag = sdl2_config->GetBoolean("Debugging", "quest_flag", false);

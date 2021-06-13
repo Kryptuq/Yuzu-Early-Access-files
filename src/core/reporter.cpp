@@ -195,7 +195,9 @@ json GetHLERequestContextData(Kernel::HLERequestContext& ctx, Core::Memory::Memo
 
 namespace Core {
 
-Reporter::Reporter(System& system_) : system(system_) {}
+Reporter::Reporter(System& system_) : system(system_) {
+    ClearFSAccessLog();
+}
 
 Reporter::~Reporter() = default;
 
@@ -362,22 +364,11 @@ void Reporter::SaveErrorReport(u64 title_id, ResultCode result,
     SaveToFile(std::move(out), GetPath("error_report", title_id, timestamp));
 }
 
-void Reporter::SaveFilesystemAccessReport(Service::FileSystem::LogMode log_mode,
-                                          std::string log_message) const {
-    if (!IsReportingEnabled())
-        return;
+void Reporter::SaveFSAccessLog(std::string log_message) const {
+    const auto log_file =
+        Common::FS::GetYuzuPath(Common::FS::YuzuPath::SDMCDir) / "FsAccessLog.txt";
 
-    const auto timestamp = GetTimestamp();
-    const auto title_id = system.CurrentProcess()->GetTitleID();
-    json out;
-
-    out["yuzu_version"] = GetYuzuVersionData();
-    out["report_common"] = GetReportCommonData(title_id, ResultSuccess, timestamp);
-
-    out["log_mode"] = fmt::format("{:08X}", static_cast<u32>(log_mode));
-    out["log_message"] = std::move(log_message);
-
-    SaveToFile(std::move(out), GetPath("filesystem_access_report", title_id, timestamp));
+    void(Common::FS::AppendStringToFile(log_file, Common::FS::FileType::TextFile, log_message));
 }
 
 void Reporter::SaveUserReport() const {
@@ -390,6 +381,18 @@ void Reporter::SaveUserReport() const {
 
     SaveToFile(GetFullDataAuto(timestamp, title_id, system),
                GetPath("user_report", title_id, timestamp));
+}
+
+void Reporter::ClearFSAccessLog() const {
+    const auto log_path =
+        Common::FS::GetYuzuPath(Common::FS::YuzuPath::SDMCDir) / "FsAccessLog.txt";
+
+    Common::FS::IOFile log_file{log_path, Common::FS::FileAccessMode::Write,
+                                Common::FS::FileType::TextFile};
+
+    if (!log_file.IsOpen()) {
+        LOG_ERROR(Common_Filesystem, "Failed to clear the filesystem access log.");
+    }
 }
 
 bool Reporter::IsReportingEnabled() const {

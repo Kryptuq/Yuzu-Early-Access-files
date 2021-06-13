@@ -144,9 +144,16 @@
    <item>
     <widget class="QGroupBox" name="groupBox_5">
      <property name="title">
-      <string>Dump</string>
+      <string>Debugging</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_7">
+      <item>
+       <widget class="QCheckBox" name="fs_access_log">
+        <property name="text">
+         <string>Enable FS Access Log</string>
+        </property>
+       </widget>
+      </item>
       <item>
        <widget class="QCheckBox" name="reporting_services">
         <property name="text">
