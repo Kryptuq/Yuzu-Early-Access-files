@@ -40,13 +40,10 @@ init:
 
 
 before_build:
-- ps: |-
-    #Install Vulkan SDK
-    ps: Start-FileDownload 'https://vulkan.lunarg.com/sdk/download/1.2.135.0/windows/VulkanSDK-1.2.135.0-Installer.exe?Human=true'
-    
 - cmd: |-
+    curl -L --silent --show-error --output VulkanSDK.exe https://vulkan.lunarg.com/sdk/download/1.2.135.0/windows/VulkanSDK-1.2.135.0-Installer.exe?Human=true
     VulkanSDK-1.2.135.0-Installer.exe /S
-    set VULKAN_SDK=C:\VulkanSDK\1.2.135.0
+    set VULKAN_SDK=c:\Projects\yuzu-early-access\VulkanSDK\1.2.135.0
     
     #Main Building
     mkdir build
