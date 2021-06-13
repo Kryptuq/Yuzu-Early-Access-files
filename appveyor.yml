@@ -20,9 +20,6 @@ environment:
   
 # skip unsupported combinations
 init:
-- set VULKAN_SDK=C:\Projects\yuzu-early-access\VulkanSDK\1.2.135.0
-- set VK_SDK_PATH=C:\Projects\yuzu-early-access\VulkanSDK\1.2.135.0
-- set PATH=%PATH%;C:\Projects\yuzu-early-access\VulkanSDK\1.2.135.0\Bin
 - set arch= Win64
 - echo %APPVEYOR_BUILD_WORKER_IMAGE%
 - set generator="Visual Studio 16 2019"
@@ -40,8 +37,18 @@ init:
 - python -m pip install --upgrade pip
 - python --version
 
+
+
 before_build:
+- ps: |-
+    #Install Vulkan SDK
+    ps: Start-FileDownload 'https://vulkan.lunarg.com/sdk/download/1.2.135.0/windows/VulkanSDK-1.2.135.0-Installer.exe?Human=true'
+    
 - cmd: |-
+    VulkanSDK-1.2.135.0-Installer.exe /S
+    set VULKAN_SDK=C:\VulkanSDK\1.2.135.0
+    
+    #Main Building
     mkdir build
     cd build
     pip install conan
