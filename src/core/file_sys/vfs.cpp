@@ -6,7 +6,6 @@
 #include <numeric>
 #include <string>
 #include "common/fs/path_util.h"
-#include "common/logging/backend.h"
 #include "core/file_sys/mode.h"
 #include "core/file_sys/vfs.h"
 

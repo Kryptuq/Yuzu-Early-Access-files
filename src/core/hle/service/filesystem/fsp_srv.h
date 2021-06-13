@@ -63,7 +63,7 @@ private:
     FileSys::VirtualFile romfs;
     u64 current_process_id = 0;
     u32 access_log_program_index = 0;
-    AccessLogMode log_mode = AccessLogMode::None;
+    AccessLogMode access_log_mode = AccessLogMode::None;
 };
 
 } // namespace Service::FileSystem

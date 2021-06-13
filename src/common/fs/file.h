@@ -71,7 +71,7 @@ template <typename Path>
 
 /**
  * Writes a string to a file at path and returns the number of characters successfully written.
- * If an file already exists at path, its contents will be erased.
+ * If a file already exists at path, its contents will be erased.
  * If the filesystem object at path is not a file, this function returns 0.
  *
  * @param path Filesystem path
@@ -95,7 +95,6 @@ template <typename Path>
 
 /**
  * Appends a string to a file at path and returns the number of characters successfully written.
- * If a file does not exist at path, WriteStringToFile is called instead.
  * If the filesystem object at path is not a file, this function returns 0.
  *
  * @param path Filesystem path

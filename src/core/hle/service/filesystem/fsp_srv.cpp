@@ -788,7 +788,7 @@ FSP_SRV::FSP_SRV(Core::System& system_)
     RegisterHandlers(functions);
 
     if (Settings::values.enable_fs_access_log) {
-        log_mode = AccessLogMode::SdCard;
+        access_log_mode = AccessLogMode::SdCard;
     }
 }
 
@@ -1046,9 +1046,9 @@ void FSP_SRV::DisableAutoSaveDataCreation(Kernel::HLERequestContext& ctx) {
 
 void FSP_SRV::SetGlobalAccessLogMode(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    log_mode = rp.PopEnum<AccessLogMode>();
+    access_log_mode = rp.PopEnum<AccessLogMode>();
 
-    LOG_DEBUG(Service_FS, "called, log_mode={}", log_mode);
+    LOG_DEBUG(Service_FS, "called, access_log_mode={}", access_log_mode);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
@@ -1059,7 +1059,7 @@ void FSP_SRV::GetGlobalAccessLogMode(Kernel::HLERequestContext& ctx) {
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);
-    rb.PushEnum(log_mode);
+    rb.PushEnum(access_log_mode);
 }
 
 void FSP_SRV::OutputAccessLogToSdCard(Kernel::HLERequestContext& ctx) {

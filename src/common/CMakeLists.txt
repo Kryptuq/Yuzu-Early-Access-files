@@ -141,6 +141,7 @@ add_library(common STATIC
     logging/log.h
     logging/text_formatter.cpp
     logging/text_formatter.h
+    logging/types.h
     lz4_compression.cpp
     lz4_compression.h
     math_util.h

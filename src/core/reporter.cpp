@@ -365,10 +365,11 @@ void Reporter::SaveErrorReport(u64 title_id, ResultCode result,
 }
 
 void Reporter::SaveFSAccessLog(std::string log_message) const {
-    const auto log_file =
+    const auto access_log_path =
         Common::FS::GetYuzuPath(Common::FS::YuzuPath::SDMCDir) / "FsAccessLog.txt";
 
-    void(Common::FS::AppendStringToFile(log_file, Common::FS::FileType::TextFile, log_message));
+    void(Common::FS::AppendStringToFile(access_log_path, Common::FS::FileType::TextFile,
+                                        log_message));
 }
 
 void Reporter::SaveUserReport() const {
@@ -384,13 +385,13 @@ void Reporter::SaveUserReport() const {
 }
 
 void Reporter::ClearFSAccessLog() const {
-    const auto log_path =
+    const auto access_log_path =
         Common::FS::GetYuzuPath(Common::FS::YuzuPath::SDMCDir) / "FsAccessLog.txt";
 
-    Common::FS::IOFile log_file{log_path, Common::FS::FileAccessMode::Write,
-                                Common::FS::FileType::TextFile};
+    Common::FS::IOFile access_log_file{access_log_path, Common::FS::FileAccessMode::Write,
+                                       Common::FS::FileType::TextFile};
 
-    if (!log_file.IsOpen()) {
+    if (!access_log_file.IsOpen()) {
         LOG_ERROR(Common_Filesystem, "Failed to clear the filesystem access log.");
     }
 }
