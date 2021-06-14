@@ -61,7 +61,7 @@ after_build:
   7z a yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip
   
 artifacts:
-    - path: yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip c:\Projects\yuzu-early-access\build\bin\Release
+    - path: yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip
   
 deploy:
   release: yuzu-early-access-$(APPVEYOR_BUILD_VERSION)
