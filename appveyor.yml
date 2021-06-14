@@ -69,7 +69,7 @@ deploy:
   provider: GitHub
   auth_token:
     secure: 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 # your encrypted token from GitHub
-  artifact: bin\release\yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip # upload all yuzu builds to release assets
+  artifact: yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip # upload all yuzu builds to release assets
   draft: false
   prerelease: false
   on:
