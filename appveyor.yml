@@ -58,11 +58,10 @@ build:
   parallel: true
   
 after_build:
-  cd c:\Projects\yuzu-early-access\build\bin
-  7z a yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip c:\Projects\yuzu-early-access\build\bin
+  7z a yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip c:\Projects\yuzu-early-access\build\bin\Release
   
 artifacts:
-    - path: yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip
+    - path: yuzu-early-access-$env:APPVEYOR_BUILD_VERSION.zip
   
 deploy:
   release: yuzu-early-access-$(APPVEYOR_BUILD_VERSION)
