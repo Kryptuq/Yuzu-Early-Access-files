@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <bit>
 #include <concepts>
 #include <numeric>
 #include <type_traits>
@@ -32,6 +33,60 @@ template <class T>
 requires std::is_nothrow_move_assignable_v<T>&&
     std::is_nothrow_move_constructible_v<T> class SlotVector {
 public:
+    class Iterator {
+        friend SlotVector<T>;
+
+    public:
+        constexpr Iterator() = default;
+
+        Iterator& operator++() noexcept {
+            const u64* const bitset = slot_vector->stored_bitset.data();
+            const u32 size = static_cast<u32>(slot_vector->stored_bitset.size()) * 64;
+            if (id.index < size) {
+                do {
+                    ++id.index;
+                } while (id.index < size && !IsValid(bitset));
+                if (id.index == size) {
+                    id.index = SlotId::INVALID_INDEX;
+                }
+            }
+            return *this;
+        }
+
+        Iterator operator++(int) noexcept {
+            const Iterator copy{*this};
+            ++*this;
+            return copy;
+        }
+
+        bool operator==(const Iterator& other) const noexcept {
+            return id.index == other.id.index;
+        }
+
+        bool operator!=(const Iterator& other) const noexcept {
+            return id.index != other.id.index;
+        }
+
+        std::pair<SlotId, T*> operator*() const noexcept {
+            return {id, std::addressof((*slot_vector)[id])};
+        }
+
+        T* operator->() const noexcept {
+            return std::addressof((*slot_vector)[id]);
+        }
+
+    private:
+        Iterator(SlotVector<T>* slot_vector_, SlotId id_) noexcept
+            : slot_vector{slot_vector_}, id{id_} {}
+
+        bool IsValid(const u64* bitset) noexcept {
+            return ((bitset[id.index / 64] >> (id.index % 64)) & 1) != 0;
+        }
+
+        SlotVector<T>* slot_vector;
+        SlotId id;
+    };
+
     ~SlotVector() noexcept {
         size_t index = 0;
         for (u64 bits : stored_bitset) {
@@ -68,6 +123,20 @@ public:
         values[id.index].object.~T();
         free_list.push_back(id.index);
         ResetStorageBit(id.index);
+    }
+
+    [[nodiscard]] Iterator begin() noexcept {
+        const auto it = std::ranges::find_if(stored_bitset, [](u64 value) { return value != 0; });
+        if (it == stored_bitset.end()) {
+            return end();
+        }
+        const u32 word_index = static_cast<u32>(std::distance(it, stored_bitset.begin()));
+        const SlotId first_id{word_index * 64 + static_cast<u32>(std::countr_zero(*it))};
+        return Iterator(this, first_id);
+    }
+
+    [[nodiscard]] Iterator end() noexcept {
+        return Iterator(this, SlotId{SlotId::INVALID_INDEX});
     }
 
 private:
@@ -140,7 +209,6 @@ private:
 
     Entry* values = nullptr;
     size_t values_capacity = 0;
-    size_t values_size = 0;
 
     std::vector<u64> stored_bitset;
     std::vector<u32> free_list;

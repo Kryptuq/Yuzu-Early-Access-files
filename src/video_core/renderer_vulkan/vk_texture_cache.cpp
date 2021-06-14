@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "common/bit_cast.h"
+#include "common/settings.h"
 
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/renderer_vulkan/blit_image.h"
@@ -828,7 +829,11 @@ Image::Image(TextureCacheRuntime& runtime, const ImageInfo& info_, GPUVAddr gpu_
         commit = runtime.memory_allocator.Commit(buffer, MemoryUsage::DeviceLocal);
     }
     if (IsPixelFormatASTC(info.format) && !runtime.device.IsOptimalAstcSupported()) {
-        flags |= VideoCommon::ImageFlagBits::AcceleratedUpload;
+        if (Settings::values.accelerate_astc.GetValue()) {
+            flags |= VideoCommon::ImageFlagBits::AcceleratedUpload;
+        } else {
+            flags |= VideoCommon::ImageFlagBits::Converted;
+        }
     }
     if (runtime.device.HasDebuggingToolAttached()) {
         if (image) {

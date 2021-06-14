@@ -70,10 +70,12 @@ void ConfigureGraphics::SetConfiguration() {
     ui->use_asynchronous_gpu_emulation->setEnabled(runtime_lock);
     ui->use_disk_shader_cache->setEnabled(runtime_lock);
     ui->use_nvdec_emulation->setEnabled(runtime_lock);
+    ui->accelerate_astc->setEnabled(runtime_lock);
     ui->use_disk_shader_cache->setChecked(Settings::values.use_disk_shader_cache.GetValue());
     ui->use_asynchronous_gpu_emulation->setChecked(
         Settings::values.use_asynchronous_gpu_emulation.GetValue());
     ui->use_nvdec_emulation->setChecked(Settings::values.use_nvdec_emulation.GetValue());
+    ui->accelerate_astc->setChecked(Settings::values.accelerate_astc.GetValue());
 
     if (Settings::IsConfiguringGlobal()) {
         ui->api->setCurrentIndex(static_cast<int>(Settings::values.renderer_backend.GetValue()));
@@ -118,6 +120,8 @@ void ConfigureGraphics::ApplyConfiguration() {
                                              use_asynchronous_gpu_emulation);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_nvdec_emulation,
                                              ui->use_nvdec_emulation, use_nvdec_emulation);
+    ConfigurationShared::ApplyPerGameSetting(&Settings::values.accelerate_astc, ui->accelerate_astc,
+                                             accelerate_astc);
 
     if (Settings::IsConfiguringGlobal()) {
         // Guard if during game and set to game-specific value
@@ -254,6 +258,7 @@ void ConfigureGraphics::SetupPerGameUI() {
         ui->use_asynchronous_gpu_emulation->setEnabled(
             Settings::values.use_asynchronous_gpu_emulation.UsingGlobal());
         ui->use_nvdec_emulation->setEnabled(Settings::values.use_nvdec_emulation.UsingGlobal());
+        ui->accelerate_astc->setEnabled(Settings::values.accelerate_astc.UsingGlobal());
         ui->use_disk_shader_cache->setEnabled(Settings::values.use_disk_shader_cache.UsingGlobal());
         ui->bg_button->setEnabled(Settings::values.bg_red.UsingGlobal());
 
@@ -269,6 +274,8 @@ void ConfigureGraphics::SetupPerGameUI() {
         ui->use_disk_shader_cache, Settings::values.use_disk_shader_cache, use_disk_shader_cache);
     ConfigurationShared::SetColoredTristate(
         ui->use_nvdec_emulation, Settings::values.use_nvdec_emulation, use_nvdec_emulation);
+    ConfigurationShared::SetColoredTristate(ui->accelerate_astc, Settings::values.accelerate_astc,
+                                            accelerate_astc);
     ConfigurationShared::SetColoredTristate(ui->use_asynchronous_gpu_emulation,
                                             Settings::values.use_asynchronous_gpu_emulation,
                                             use_asynchronous_gpu_emulation);

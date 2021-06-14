@@ -809,6 +809,7 @@ void Config::ReadRendererValues() {
                       QStringLiteral("use_asynchronous_gpu_emulation"), true);
     ReadSettingGlobal(Settings::values.use_nvdec_emulation, QStringLiteral("use_nvdec_emulation"),
                       true);
+    ReadSettingGlobal(Settings::values.accelerate_astc, QStringLiteral("accelerate_astc"), true);
     ReadSettingGlobal(Settings::values.use_vsync, QStringLiteral("use_vsync"), true);
     ReadSettingGlobal(Settings::values.use_assembly_shaders, QStringLiteral("use_assembly_shaders"),
                       false);
@@ -816,6 +817,7 @@ void Config::ReadRendererValues() {
                       QStringLiteral("use_asynchronous_shaders"), false);
     ReadSettingGlobal(Settings::values.use_fast_gpu_time, QStringLiteral("use_fast_gpu_time"),
                       true);
+    ReadSettingGlobal(Settings::values.use_caches_gc, QStringLiteral("use_caches_gc"), false);
     ReadSettingGlobal(Settings::values.bg_red, QStringLiteral("bg_red"), 0.0);
     ReadSettingGlobal(Settings::values.bg_green, QStringLiteral("bg_green"), 0.0);
     ReadSettingGlobal(Settings::values.bg_blue, QStringLiteral("bg_blue"), 0.0);
@@ -1392,6 +1394,7 @@ void Config::SaveRendererValues() {
                        Settings::values.use_asynchronous_gpu_emulation, true);
     WriteSettingGlobal(QStringLiteral("use_nvdec_emulation"), Settings::values.use_nvdec_emulation,
                        true);
+    WriteSettingGlobal(QStringLiteral("accelerate_astc"), Settings::values.accelerate_astc, true);
     WriteSettingGlobal(QStringLiteral("use_vsync"), Settings::values.use_vsync, true);
     WriteSettingGlobal(QStringLiteral("use_assembly_shaders"),
                        Settings::values.use_assembly_shaders, false);
@@ -1399,6 +1402,7 @@ void Config::SaveRendererValues() {
                        Settings::values.use_asynchronous_shaders, false);
     WriteSettingGlobal(QStringLiteral("use_fast_gpu_time"), Settings::values.use_fast_gpu_time,
                        true);
+    WriteSettingGlobal(QStringLiteral("use_caches_gc"), Settings::values.use_caches_gc, false);
     // Cast to double because Qt's written float values are not human-readable
     WriteSettingGlobal(QStringLiteral("bg_red"), Settings::values.bg_red, 0.0);
     WriteSettingGlobal(QStringLiteral("bg_green"), Settings::values.bg_green, 0.0);

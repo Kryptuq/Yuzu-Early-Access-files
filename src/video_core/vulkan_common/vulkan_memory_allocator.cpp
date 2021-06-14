@@ -69,10 +69,10 @@ constexpr VkExportMemoryAllocateInfo EXPORT_ALLOCATE_INFO{
 
 class MemoryAllocation {
 public:
-    explicit MemoryAllocation(vk::DeviceMemory memory_, VkMemoryPropertyFlags properties,
-                              u64 allocation_size_, u32 type)
-        : memory{std::move(memory_)}, allocation_size{allocation_size_}, property_flags{properties},
-          shifted_memory_type{1U << type} {}
+    explicit MemoryAllocation(MemoryAllocator* const allocator_, vk::DeviceMemory memory_,
+                              VkMemoryPropertyFlags properties, u64 allocation_size_, u32 type)
+        : allocator{allocator_}, memory{std::move(memory_)}, allocation_size{allocation_size_},
+          property_flags{properties}, shifted_memory_type{1U << type} {}
 
 #if defined(_WIN32) || defined(__unix__)
     ~MemoryAllocation() {
@@ -106,6 +106,10 @@ public:
         const auto it = std::ranges::find(commits, begin, &Range::begin);
         ASSERT_MSG(it != commits.end(), "Invalid commit");
         commits.erase(it);
+        if (commits.empty()) {
+            // Do not call any code involving 'this' after this call, the object will be destroyed
+            allocator->ReleaseMemory(this);
+        }
     }
 
     [[nodiscard]] std::span<u8> Map() {
@@ -171,6 +175,7 @@ private:
         return candidate;
     }
 
+    MemoryAllocator* const allocator;           ///< Parent memory allocation.
     const vk::DeviceMemory memory;              ///< Vulkan memory allocation handler.
     const u64 allocation_size;                  ///< Size of this allocation.
     const VkMemoryPropertyFlags property_flags; ///< Vulkan memory property flags.
@@ -275,8 +280,15 @@ bool MemoryAllocator::TryAllocMemory(VkMemoryPropertyFlags flags, u32 type_mask,
             return false;
         }
     }
-    allocations.push_back(std::make_unique<MemoryAllocation>(std::move(memory), flags, size, type));
+    allocations.push_back(
+        std::make_unique<MemoryAllocation>(this, std::move(memory), flags, size, type));
     return true;
+}
+
+void MemoryAllocator::ReleaseMemory(MemoryAllocation* alloc) {
+    const auto it = std::ranges::find(allocations, alloc, &std::unique_ptr<MemoryAllocation>::get);
+    ASSERT(it != allocations.end());
+    allocations.erase(it);
 }
 
 std::optional<MemoryCommit> MemoryAllocator::TryCommit(const VkMemoryRequirements& requirements,

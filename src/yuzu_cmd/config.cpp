@@ -447,8 +447,10 @@ void Config::ReadValues() {
         sdl2_config->GetBoolean("Renderer", "use_assembly_shaders", true));
     Settings::values.use_asynchronous_shaders.SetValue(
         sdl2_config->GetBoolean("Renderer", "use_asynchronous_shaders", false));
-    Settings::values.use_asynchronous_shaders.SetValue(
-        sdl2_config->GetBoolean("Renderer", "use_asynchronous_shaders", false));
+    Settings::values.use_nvdec_emulation.SetValue(
+        sdl2_config->GetBoolean("Renderer", "use_nvdec_emulation", true));
+    Settings::values.accelerate_astc.SetValue(
+        sdl2_config->GetBoolean("Renderer", "accelerate_astc", true));
     Settings::values.use_fast_gpu_time.SetValue(
         sdl2_config->GetBoolean("Renderer", "use_fast_gpu_time", true));
 

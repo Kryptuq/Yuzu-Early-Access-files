@@ -9,6 +9,8 @@
 
 #include <glad/glad.h>
 
+#include "common/settings.h"
+
 #include "video_core/renderer_opengl/gl_device.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
 #include "video_core/renderer_opengl/gl_state_tracker.h"
@@ -307,7 +309,9 @@ void ApplySwizzle(GLuint handle, PixelFormat format, std::array<SwizzleSource, 4
 
 [[nodiscard]] bool CanBeAccelerated(const TextureCacheRuntime& runtime,
                                     const VideoCommon::ImageInfo& info) {
-    return !runtime.HasNativeASTC() && IsPixelFormatASTC(info.format);
+    if (IsPixelFormatASTC(info.format)) {
+        return !runtime.HasNativeASTC() && Settings::values.accelerate_astc.GetValue();
+    }
     // Disable other accelerated uploads for now as they don't implement swizzled uploads
     return false;
     switch (info.type) {

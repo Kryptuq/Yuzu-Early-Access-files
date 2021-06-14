@@ -105,6 +105,13 @@
          </widget>
         </item>
         <item>
+          <widget class="QCheckBox" name="accelerate_astc">
+            <property name="text">
+              <string>Accelerate ASTC texture decoding</string>
+            </property>
+          </widget>
+        </item>
+        <item>
          <widget class="QWidget" name="fullscreen_mode_layout" native="true">
           <layout class="QHBoxLayout" name="horizontalLayout_1">
            <property name="leftMargin">

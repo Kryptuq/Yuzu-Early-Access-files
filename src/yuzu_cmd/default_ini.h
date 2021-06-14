@@ -194,6 +194,14 @@ use_assembly_shaders =
 # 0 (default): Off, 1: On
 use_asynchronous_shaders =
 
+# Enable NVDEC emulation.
+# 0: Off, 1 (default): On
+use_nvdec_emulation =
+
+# Accelerate ASTC texture decoding.
+# 0: Off, 1 (default): On
+accelerate_astc =
+
 # Turns on the frame limiter, which will limit frames output to the target game speed
 # 0: Off, 1: On (default)
 use_frame_limit =
@@ -218,6 +226,10 @@ use_asynchronous_gpu_emulation =
 # so only turn this off if you notice a speed difference.
 # 0: Off, 1 (default): On
 use_vsync =
+
+# Whether to use garbage collection or not.
+# 0 (default): Off, 1: On
+use_caches_gc =
 
 # The clear color for the renderer. What shows up on the sides of the bottom screen.
 # Must be in range of 0.0-1.0. Defaults to 1.0 for all.

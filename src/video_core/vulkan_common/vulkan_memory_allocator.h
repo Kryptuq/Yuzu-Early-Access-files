@@ -69,6 +69,8 @@ private:
 /// Memory allocator container.
 /// Allocates and releases memory allocations on demand.
 class MemoryAllocator {
+    friend MemoryAllocation;
+
 public:
     /**
      * Construct memory allocator
@@ -103,6 +105,9 @@ public:
 private:
     /// Tries to allocate a chunk of memory.
     bool TryAllocMemory(VkMemoryPropertyFlags flags, u32 type_mask, u64 size);
+
+    /// Releases a chunk of memory.
+    void ReleaseMemory(MemoryAllocation* alloc);
 
     /// Tries to allocate a memory commit.
     std::optional<MemoryCommit> TryCommit(const VkMemoryRequirements& requirements,

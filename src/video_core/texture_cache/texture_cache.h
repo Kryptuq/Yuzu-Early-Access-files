@@ -22,6 +22,7 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"
+#include "common/settings.h"
 #include "video_core/compatible_formats.h"
 #include "video_core/delayed_destruction_ring.h"
 #include "video_core/dirty_flags.h"
@@ -74,6 +75,9 @@ class TextureCache {
     static constexpr ImageViewId NULL_IMAGE_VIEW_ID{0};
     /// Sampler ID for bugged sampler ids
     static constexpr SamplerId NULL_SAMPLER_ID{0};
+
+    static constexpr u64 expected_memory = 1024ULL * 1024ULL * 1024ULL;
+    static constexpr u64 critical_memory = 2 * 1024ULL * 1024ULL * 1024ULL;
 
     using Runtime = typename P::Runtime;
     using Image = typename P::Image;
@@ -333,6 +337,7 @@ private:
     std::unordered_map<u64, std::vector<ImageId>, IdentityHash<u64>> page_table;
 
     bool has_deleted_images = false;
+    u64 total_used_memory = 0;
 
     SlotVector<Image> slot_images;
     SlotVector<ImageView> slot_image_views;
@@ -353,6 +358,7 @@ private:
 
     u64 modification_tick = 0;
     u64 frame_tick = 0;
+    typename SlotVector<Image>::Iterator deletion_iterator;
 };
 
 template <class P>
@@ -373,11 +379,82 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
     // This way the null resource becomes a compile time constant
     void(slot_image_views.insert(runtime, NullImageParams{}));
     void(slot_samplers.insert(runtime, sampler_descriptor));
+
+    deletion_iterator = slot_images.begin();
 }
 
 template <class P>
 void TextureCache<P>::TickFrame() {
-    // Tick sentenced resources in this order to ensure they are destroyed in the right order
+    const bool enabled_gc = Settings::values.use_caches_gc.GetValue();
+    if (!enabled_gc) {
+        // @Note(Blinkhawk): compile error with SCOPE_EXIT on msvc.
+        sentenced_images.Tick();
+        sentenced_framebuffers.Tick();
+        sentenced_image_view.Tick();
+        ++frame_tick;
+        return;
+    }
+    const bool high_priority_mode = total_used_memory >= expected_memory;
+    const bool aggressive_mode = total_used_memory >= critical_memory;
+    const u64 ticks_to_destroy = high_priority_mode ? 60 : 100;
+    int num_iterations = aggressive_mode ? 256 : (high_priority_mode ? 128 : 64);
+    for (; num_iterations > 0; --num_iterations) {
+        if (deletion_iterator == slot_images.end()) {
+            deletion_iterator = slot_images.begin();
+            if (deletion_iterator == slot_images.end()) {
+                break;
+            }
+        }
+        auto [image_id, image_tmp] = *deletion_iterator;
+        Image* image = image_tmp; // fix clang error.
+        const bool is_alias = True(image->flags & ImageFlagBits::Alias);
+        const bool is_bad_overlap = True(image->flags & ImageFlagBits::BadOverlap);
+        const bool must_download = image->IsSafeDownload();
+        bool should_care = is_bad_overlap || is_alias || (high_priority_mode && !must_download);
+        const u64 ticks_needed =
+            is_bad_overlap
+                ? ticks_to_destroy >> 4
+                : ((should_care && aggressive_mode) ? ticks_to_destroy >> 1 : ticks_to_destroy);
+        should_care |= aggressive_mode;
+        if (should_care && image->frame_tick + ticks_needed < frame_tick) {
+            if (is_bad_overlap) {
+                const bool overlap_check = std::ranges::all_of(
+                    image->overlapping_images, [&, image](const ImageId& overlap_id) {
+                        auto& overlap = slot_images[overlap_id];
+                        return overlap.frame_tick >= image->frame_tick;
+                    });
+                if (!overlap_check) {
+                    ++deletion_iterator;
+                    continue;
+                }
+            }
+            if (!is_bad_overlap && must_download) {
+                const bool alias_check = std::ranges::none_of(
+                    image->aliased_images, [&, image](const AliasedImage& alias) {
+                        auto& alias_image = slot_images[alias.id];
+                        return (alias_image.frame_tick < image->frame_tick) ||
+                               (alias_image.modification_tick < image->modification_tick);
+                    });
+
+                if (alias_check) {
+                    auto map = runtime.DownloadStagingBuffer(image->unswizzled_size_bytes);
+                    const auto copies = FullDownloadCopies(image->info);
+                    image->DownloadMemory(map, copies);
+                    runtime.Finish();
+                    SwizzleImage(gpu_memory, image->gpu_addr, image->info, copies, map.mapped_span);
+                }
+            }
+            if (True(image->flags & ImageFlagBits::Tracked)) {
+                UntrackImage(*image);
+            }
+            UnregisterImage(image_id);
+            DeleteImage(image_id);
+            if (is_bad_overlap) {
+                num_iterations++;
+            }
+        }
+        ++deletion_iterator;
+    }
     sentenced_images.Tick();
     sentenced_framebuffers.Tick();
     sentenced_image_view.Tick();
@@ -568,17 +645,7 @@ template <class P>
 void TextureCache<P>::DownloadMemory(VAddr cpu_addr, size_t size) {
     std::vector<ImageId> images;
     ForEachImageInRegion(cpu_addr, size, [this, &images](ImageId image_id, ImageBase& image) {
-        // Skip images that were not modified from the GPU
-        if (False(image.flags & ImageFlagBits::GpuModified)) {
-            return;
-        }
-        // Skip images that .are. modified from the CPU
-        // We don't want to write sensitive data from the guest
-        if (True(image.flags & ImageFlagBits::CpuModified)) {
-            return;
-        }
-        if (image.info.num_samples > 1) {
-            LOG_WARNING(HW_GPU, "MSAA image downloads are not implemented");
+        if (!image.IsSafeDownload()) {
             return;
         }
         image.flags &= ~ImageFlagBits::GpuModified;
@@ -967,6 +1034,7 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
     std::vector<ImageId> overlap_ids;
     std::vector<ImageId> left_aliased_ids;
     std::vector<ImageId> right_aliased_ids;
+    std::vector<ImageId> bad_overlap_ids;
     ForEachImageInRegion(cpu_addr, size_bytes, [&](ImageId overlap_id, ImageBase& overlap) {
         if (info.type != overlap.info.type) {
             return;
@@ -992,9 +1060,14 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
         const ImageBase new_image_base(new_info, gpu_addr, cpu_addr);
         if (IsSubresource(new_info, overlap, gpu_addr, options, broken_views, native_bgr)) {
             left_aliased_ids.push_back(overlap_id);
+            overlap.flags |= ImageFlagBits::Alias;
         } else if (IsSubresource(overlap.info, new_image_base, overlap.gpu_addr, options,
                                  broken_views, native_bgr)) {
             right_aliased_ids.push_back(overlap_id);
+            overlap.flags |= ImageFlagBits::Alias;
+        } else {
+            bad_overlap_ids.push_back(overlap_id);
+            overlap.flags |= ImageFlagBits::BadOverlap;
         }
     });
     const ImageId new_image_id = slot_images.insert(runtime, new_info, gpu_addr, cpu_addr);
@@ -1022,10 +1095,18 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
     for (const ImageId aliased_id : right_aliased_ids) {
         ImageBase& aliased = slot_images[aliased_id];
         AddImageAlias(new_image_base, aliased, new_image_id, aliased_id);
+        new_image.flags |= ImageFlagBits::Alias;
     }
     for (const ImageId aliased_id : left_aliased_ids) {
         ImageBase& aliased = slot_images[aliased_id];
         AddImageAlias(aliased, new_image_base, aliased_id, new_image_id);
+        new_image.flags |= ImageFlagBits::Alias;
+    }
+    for (const ImageId aliased_id : bad_overlap_ids) {
+        ImageBase& aliased = slot_images[aliased_id];
+        aliased.overlapping_images.push_back(new_image_id);
+        new_image.overlapping_images.push_back(aliased_id);
+        new_image.flags |= ImageFlagBits::BadOverlap;
     }
     RegisterImage(new_image_id);
     return new_image_id;
@@ -1195,6 +1276,8 @@ void TextureCache<P>::RegisterImage(ImageId image_id) {
     image.flags |= ImageFlagBits::Registered;
     ForEachPage(image.cpu_addr, image.guest_size_bytes,
                 [this, image_id](u64 page) { page_table[page].push_back(image_id); });
+    total_used_memory +=
+        Common::AlignUp(std::max(image.guest_size_bytes, image.unswizzled_size_bytes), 1024);
 }
 
 template <class P>
@@ -1203,6 +1286,9 @@ void TextureCache<P>::UnregisterImage(ImageId image_id) {
     ASSERT_MSG(True(image.flags & ImageFlagBits::Registered),
                "Trying to unregister an already registered image");
     image.flags &= ~ImageFlagBits::Registered;
+    image.flags &= ~ImageFlagBits::BadOverlap;
+    total_used_memory -=
+        Common::AlignUp(std::max(image.guest_size_bytes, image.unswizzled_size_bytes), 1024);
     ForEachPage(image.cpu_addr, image.guest_size_bytes, [this, image_id](u64 page) {
         const auto page_it = page_table.find(page);
         if (page_it == page_table.end()) {
@@ -1276,8 +1362,18 @@ void TextureCache<P>::DeleteImage(ImageId image_id) {
             std::erase_if(other_image.aliased_images, [image_id](const AliasedImage& other_alias) {
                 return other_alias.id == image_id;
             });
+        other_image.CheckAliasState();
         ASSERT_MSG(num_removed_aliases == 1, "Invalid number of removed aliases: {}",
                    num_removed_aliases);
+    }
+    for (const ImageId overlap_id : image.overlapping_images) {
+        ImageBase& other_image = slot_images[overlap_id];
+        [[maybe_unused]] const size_t num_removed_overlaps = std::erase_if(
+            other_image.overlapping_images,
+            [image_id](const ImageId other_overlap_id) { return other_overlap_id == image_id; });
+        other_image.CheckBadOverlapState();
+        ASSERT_MSG(num_removed_overlaps == 1, "Invalid number of removed overlapps: {}",
+                   num_removed_overlaps);
     }
     for (const ImageViewId image_view_id : image_view_ids) {
         sentenced_image_view.Push(std::move(slot_image_views[image_view_id]));

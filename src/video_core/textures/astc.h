@@ -129,4 +129,7 @@ struct AstcBufferData {
     decltype(REPLICATE_BYTE_TO_16_TABLE) replicate_byte_to_16 = REPLICATE_BYTE_TO_16_TABLE;
 } constexpr ASTC_BUFFER_DATA;
 
+void Decompress(std::span<const uint8_t> data, uint32_t width, uint32_t height, uint32_t depth,
+                uint32_t block_width, uint32_t block_height, std::span<uint8_t> output);
+
 } // namespace Tegra::Texture::ASTC
