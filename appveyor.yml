@@ -61,7 +61,8 @@ after_build:
   7z a yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip ./bin
   
 artifacts:
-    - path: ./bin/*
+    - path: c:\Projects\yuzu-early-access\build\bin\Release
+      name: yuzu_build
   
 deploy:
   release: yuzu-early-access-$(APPVEYOR_BUILD_VERSION)
@@ -69,7 +70,7 @@ deploy:
   provider: GitHub
   auth_token:
     secure: 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 # your encrypted token from GitHub
-  artifact: 
+  artifact: yuzu_build
   draft: false
   prerelease: false
   on:
