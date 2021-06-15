@@ -11,6 +11,9 @@
 #ifdef HAVE_CUBEB
 #include "audio_core/cubeb_sink.h"
 #endif
+#ifdef HAVE_SDL2
+#include "audio_core/sdl2_sink.h"
+#endif
 #include "common/logging/log.h"
 
 namespace AudioCore {
@@ -35,6 +38,13 @@ constexpr SinkDetails sink_details[] = {
                     return std::make_unique<CubebSink>(device_id);
                 },
                 &ListCubebSinkDevices},
+#endif
+#ifdef HAVE_SDL2
+    SinkDetails{"sdl2",
+                [](std::string_view device_id) -> std::unique_ptr<Sink> {
+                    return std::make_unique<SDLSink>(device_id);
+                },
+                &ListSDLSinkDevices},
 #endif
     SinkDetails{"null",
                 [](std::string_view device_id) -> std::unique_ptr<Sink> {

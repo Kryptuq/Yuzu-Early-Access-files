@@ -34,7 +34,7 @@
             &lt;br&gt;
             If you're not sure what these do, keep all of these enabled.
             &lt;br&gt;
-            These settings only take effect when CPU Accuracy is "Debug Mode".
+            These settings, when disabled, only take effect when CPU Accuracy is "Debug Mode".
             &lt;/div&gt;
            </string>
           </property>
