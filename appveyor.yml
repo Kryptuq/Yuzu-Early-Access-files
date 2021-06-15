@@ -58,24 +58,25 @@ build:
   parallel: true
   
 after_build:
-  7z a yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip ./bin
+  7z a yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip %APPVEYOR_BUILD_FOLDER%\build\bin\Release
+  
   
 artifacts:
-    - path: c:\Projects\yuzu-early-access\build\bin\Release
-      name: yuzu_build
+    - path: build\bin\Release
+      name: yuzu-early-access-%APPVEYOR_BUILD_VERSION%
   
-deploy:
-  release: yuzu-early-access-$(APPVEYOR_BUILD_VERSION)
-  description: 'Yuzu Early Access CI Builds with Appveyor'
-  provider: GitHub
-  auth_token:
-    secure: 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 # your encrypted token from GitHub
-  artifact: yuzu_build
-  draft: false
-  prerelease: false
-  on:
-    branch: main                 # release from master branch only
-    APPVEYOR_REPO_TAG: true        # deploy on tag push only
+#deploy:
+#  release: yuzu-early-access-$(APPVEYOR_BUILD_VERSION)
+#  description: 'Yuzu Early Access CI Builds with Appveyor'
+#  provider: GitHub
+#  auth_token:
+#    secure: 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 # your encrypted token from GitHub
+#  artifact: yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip # upload all yuzu builds to release assets
+#  draft: false
+#  prerelease: false
+#  on:
+#    branch: main                 # release from master branch only
+#    APPVEYOR_REPO_TAG: true        # deploy on tag push only
 
 only_commits:
   files:
