@@ -1098,7 +1098,15 @@ std::optional<SubresourceBase> FindSubresource(const ImageInfo& candidate, const
         return std::nullopt;
     }
     const ImageInfo& existing = image.info;
-    if (False(options & RelaxedOptions::Format)) {
+    if (True(options & RelaxedOptions::Format)) {
+        // Format checking is relaxed, but we still have to check for matching bytes per block.
+        // This avoids creating a view for blits on UE4 titles where formats with different bytes
+        // per block are aliased.
+        if (BytesPerBlock(existing.format) != BytesPerBlock(candidate.format)) {
+            return std::nullopt;
+        }
+    } else {
+        // Format comaptibility is not relaxed, ensure we are creating a view on a compatible format
         if (!IsViewCompatible(existing.format, candidate.format, broken_views, native_bgr)) {
             return std::nullopt;
         }

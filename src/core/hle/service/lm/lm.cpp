@@ -51,6 +51,24 @@ struct hash<Service::LM::LogPacketHeaderEntry> {
 } // namespace std
 
 namespace Service::LM {
+namespace {
+std::string_view NameOf(LogSeverity severity) {
+    switch (severity) {
+    case LogSeverity::Trace:
+        return "TRACE";
+    case LogSeverity::Info:
+        return "INFO";
+    case LogSeverity::Warning:
+        return "WARNING";
+    case LogSeverity::Error:
+        return "ERROR";
+    case LogSeverity::Fatal:
+        return "FATAL";
+    default:
+        return "UNKNOWN";
+    }
+}
+} // Anonymous namespace
 
 enum class LogDestination : u32 {
     TargetManager = 1 << 0,
@@ -262,33 +280,8 @@ private:
         if (text_log) {
             output_log += fmt::format("Log Text: {}\n", *text_log);
         }
-
-        switch (entry.severity) {
-        case LogSeverity::Trace:
-            LOG_DEBUG(Service_LM, "LogManager TRACE ({}):\n{}", DestinationToString(destination),
-                      output_log);
-            break;
-        case LogSeverity::Info:
-            LOG_INFO(Service_LM, "LogManager INFO ({}):\n{}", DestinationToString(destination),
-                     output_log);
-            break;
-        case LogSeverity::Warning:
-            LOG_WARNING(Service_LM, "LogManager WARNING ({}):\n{}",
-                        DestinationToString(destination), output_log);
-            break;
-        case LogSeverity::Error:
-            LOG_ERROR(Service_LM, "LogManager ERROR ({}):\n{}", DestinationToString(destination),
-                      output_log);
-            break;
-        case LogSeverity::Fatal:
-            LOG_CRITICAL(Service_LM, "LogManager FATAL ({}):\n{}", DestinationToString(destination),
-                         output_log);
-            break;
-        default:
-            LOG_CRITICAL(Service_LM, "LogManager UNKNOWN ({}):\n{}",
-                         DestinationToString(destination), output_log);
-            break;
-        }
+        LOG_DEBUG(Service_LM, "LogManager {} ({}):\n{}", NameOf(entry.severity),
+                  DestinationToString(destination), output_log);
     }
 
     static std::string DestinationToString(LogDestination destination) {
