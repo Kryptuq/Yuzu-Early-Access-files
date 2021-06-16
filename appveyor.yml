@@ -58,12 +58,12 @@ build:
   parallel: true
   
 after_build:
-  7z a yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip %APPVEYOR_BUILD_FOLDER%\build\bin\Release
+  7z a yuzu-early-access-%APPVEYOR_REPO_COMMIT_MESSAGE%.zip %APPVEYOR_BUILD_FOLDER%\build\bin\Release
   
   
 artifacts:
     - path: build\bin\Release
-      name: yuzu-early-access-%APPVEYOR_BUILD_VERSION%
+      name: yuzu-early-access-%APPVEYOR_REPO_COMMIT_MESSAGE%
   
 #deploy:
 #  release: yuzu-early-access-$(APPVEYOR_BUILD_VERSION)
@@ -79,8 +79,7 @@ artifacts:
 #    APPVEYOR_REPO_TAG: true        # deploy on tag push only
 
 only_commits:
-  files:
-    - CMakeLists.txt
-    - appveyor.yml
-    - source/
-    - cmake/
+  message: \EA\
+    
+skip_commits:
+  author: MostlyWhat
