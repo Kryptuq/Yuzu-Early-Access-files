@@ -57,10 +57,6 @@ build:
   verbosity: minimal
   parallel: true
   
-after_build:
-  7z a yuzu-early-access-%APPVEYOR_REPO_COMMIT_MESSAGE%.zip %APPVEYOR_BUILD_FOLDER%\build\bin\Release
-  
-  
 artifacts:
     - path: build\bin\Release
       name: yuzu-early-access-%APPVEYOR_REPO_COMMIT_MESSAGE%
