@@ -20,6 +20,7 @@ environment:
   
 # enable patching of AssemblyInfo.* files
 assembly_info:
+  patch: true
   file: AssemblyInfo.*
   assembly_version: "EA{build}"
   assembly_file_version: "EA{version}"
