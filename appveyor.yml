@@ -78,11 +78,8 @@ deploy:
   prerelease: false
   tag: $(APPVEYOR_REPO_TAG_NAME)
   on:
-    branch: master                 # release from master branch only
+    branch: main                 # release from master branch only
     APPVEYOR_REPO_TAG: true        # deploy on tag push only
 
-only_commits:
-  message: \EA\
-    
 skip_commits:
   author: MostlyWhat
