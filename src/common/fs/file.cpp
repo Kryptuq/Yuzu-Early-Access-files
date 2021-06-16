@@ -305,7 +305,11 @@ bool IOFile::Flush() const {
 
     errno = 0;
 
-    const auto flush_result = std::fflush(file) == 0;
+#ifdef _WIN32
+    const auto flush_result = std::fflush(file) == 0 && _commit(fileno(file)) == 0;
+#else
+    const auto flush_result = std::fflush(file) == 0 && fsync(fileno(file)) == 0;
+#endif
 
     if (!flush_result) {
         const auto ec = std::error_code{errno, std::generic_category()};

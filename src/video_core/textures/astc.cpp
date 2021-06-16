@@ -1070,7 +1070,7 @@ static void UnquantizeTexelWeights(u32 out[2][144], const IntegerEncodedVector& 
 }
 
 // Transfers a bit as described in C.2.14
-static inline void BitTransferSigned(s32& a, s32& b) {
+static inline void BitTransferSigned(int& a, int& b) {
     b >>= 1;
     b |= a & 0x80;
     a >>= 1;
@@ -1193,8 +1193,8 @@ static inline u32 Select2DPartition(s32 seed, s32 x, s32 y, s32 partitionCount, 
 }
 
 // Section C.2.14
-static void ComputeEndpos32s(Pixel& ep1, Pixel& ep2, const u32*& colorValues,
-                             u32 colorEndpos32Mode) {
+static void ComputeEndpoints(Pixel& ep1, Pixel& ep2, const u32*& colorValues,
+                             u32 colorEndpointMode) {
 #define READ_UINT_VALUES(N)                                                                        \
     u32 v[N];                                                                                      \
     for (u32 i = 0; i < N; i++) {                                                                  \
@@ -1204,10 +1204,10 @@ static void ComputeEndpos32s(Pixel& ep1, Pixel& ep2, const u32*& colorValues,
 #define READ_INT_VALUES(N)                                                                         \
     s32 v[N];                                                                                      \
     for (u32 i = 0; i < N; i++) {                                                                  \
-        v[i] = static_cast<s32>(*(colorValues++));                                                 \
+        v[i] = static_cast<int>(*(colorValues++));                                                 \
     }
 
-    switch (colorEndpos32Mode) {
+    switch (colorEndpointMode) {
     case 0: {
         READ_UINT_VALUES(2)
         ep1 = Pixel(0xFF, v[0], v[0], v[0]);
@@ -1217,7 +1217,7 @@ static void ComputeEndpos32s(Pixel& ep1, Pixel& ep2, const u32*& colorValues,
     case 1: {
         READ_UINT_VALUES(2)
         u32 L0 = (v[0] >> 2) | (v[1] & 0xC0);
-        u32 L1 = std::max(L0 + (v[1] & 0x3F), 0xFFU);
+        u32 L1 = std::min(L0 + (v[1] & 0x3F), 0xFFU);
         ep1 = Pixel(0xFF, L0, L0, L0);
         ep2 = Pixel(0xFF, L1, L1, L1);
     } break;
@@ -1359,23 +1359,23 @@ static void DecompressBlock(std::span<const u8, 16> inBuf, const u32 blockWidth,
         return;
     }
 
-    // Based on the number of partitions, read the color endpos32 mode for
+    // Based on the number of partitions, read the color endpoint mode for
     // each partition.
 
-    // Determine partitions, partition index, and color endpos32 modes
+    // Determine partitions, partition index, and color endpoint modes
     s32 planeIdx = -1;
     u32 partitionIndex;
-    u32 colorEndpos32Mode[4] = {0, 0, 0, 0};
+    u32 colorEndpointMode[4] = {0, 0, 0, 0};
 
     // Define color data.
-    u8 colorEndpos32Data[16];
-    memset(colorEndpos32Data, 0, sizeof(colorEndpos32Data));
-    OutputBitStream colorEndpos32Stream(colorEndpos32Data, 16 * 8, 0);
+    u8 colorEndpointData[16];
+    memset(colorEndpointData, 0, sizeof(colorEndpointData));
+    OutputBitStream colorEndpointStream(colorEndpointData, 16 * 8, 0);
 
     // Read extra config data...
     u32 baseCEM = 0;
     if (nPartitions == 1) {
-        colorEndpos32Mode[0] = strm.ReadBits<4>();
+        colorEndpointMode[0] = strm.ReadBits<4>();
         partitionIndex = 0;
     } else {
         partitionIndex = strm.ReadBits<10>();
@@ -1383,9 +1383,9 @@ static void DecompressBlock(std::span<const u8, 16> inBuf, const u32 blockWidth,
     }
     u32 baseMode = (baseCEM & 3);
 
-    // Remaining bits are color endpos32 data...
+    // Remaining bits are color endpoint data...
     u32 nWeightBits = weightParams.GetPackedBitSize();
-    s32 remainingBits = 128 - nWeightBits - static_cast<s32>(strm.GetBitsRead());
+    s32 remainingBits = 128 - nWeightBits - static_cast<int>(strm.GetBitsRead());
 
     // Consider extra bits prior to texel data...
     u32 extraCEMbits = 0;
@@ -1419,7 +1419,7 @@ static void DecompressBlock(std::span<const u8, 16> inBuf, const u32 blockWidth,
     while (remainingBits > 0) {
         u32 nb = std::min(remainingBits, 8);
         u32 b = strm.ReadBits(nb);
-        colorEndpos32Stream.WriteBits(b, nb);
+        colorEndpointStream.WriteBits(b, nb);
         remainingBits -= 8;
     }
 
@@ -1446,34 +1446,34 @@ static void DecompressBlock(std::span<const u8, 16> inBuf, const u32 blockWidth,
         }
 
         for (u32 i = 0; i < nPartitions; i++) {
-            colorEndpos32Mode[i] = baseMode;
+            colorEndpointMode[i] = baseMode;
             if (!(C[i]))
-                colorEndpos32Mode[i] -= 1;
-            colorEndpos32Mode[i] <<= 2;
-            colorEndpos32Mode[i] |= M[i];
+                colorEndpointMode[i] -= 1;
+            colorEndpointMode[i] <<= 2;
+            colorEndpointMode[i] |= M[i];
         }
     } else if (nPartitions > 1) {
         u32 CEM = baseCEM >> 2;
         for (u32 i = 0; i < nPartitions; i++) {
-            colorEndpos32Mode[i] = CEM;
+            colorEndpointMode[i] = CEM;
         }
     }
 
     // Make sure everything up till here is sane.
     for (u32 i = 0; i < nPartitions; i++) {
-        assert(colorEndpos32Mode[i] < 16);
+        assert(colorEndpointMode[i] < 16);
     }
     assert(strm.GetBitsRead() + weightParams.GetPackedBitSize() == 128);
 
     // Decode both color data and texel weight data
-    u32 colorValues[32]; // Four values, two endpos32s, four maximum paritions
-    DecodeColorValues(colorValues, colorEndpos32Data, colorEndpos32Mode, nPartitions,
+    u32 colorValues[32]; // Four values, two endpoints, four maximum paritions
+    DecodeColorValues(colorValues, colorEndpointData, colorEndpointMode, nPartitions,
                       colorDataBits);
 
-    Pixel endpos32s[4][2];
+    Pixel endpoints[4][2];
     const u32* colorValuesPtr = colorValues;
     for (u32 i = 0; i < nPartitions; i++) {
-        ComputeEndpos32s(endpos32s[i][0], endpos32s[i][1], colorValuesPtr, colorEndpos32Mode[i]);
+        ComputeEndpoints(endpoints[i][0], endpoints[i][1], colorValuesPtr, colorEndpointMode[i]);
     }
 
     // Read the texel weight data..
@@ -1512,7 +1512,7 @@ static void DecompressBlock(std::span<const u8, 16> inBuf, const u32 blockWidth,
     u32 weights[2][144];
     UnquantizeTexelWeights(weights, texelWeightValues, weightParams, blockWidth, blockHeight);
 
-    // Now that we have endpos32s and weights, we can s32erpolate and generate
+    // Now that we have endpoints and weights, we can interpolate and generate
     // the proper decoding...
     for (u32 j = 0; j < blockHeight; j++)
         for (u32 i = 0; i < blockWidth; i++) {
@@ -1522,9 +1522,9 @@ static void DecompressBlock(std::span<const u8, 16> inBuf, const u32 blockWidth,
 
             Pixel p;
             for (u32 c = 0; c < 4; c++) {
-                u32 C0 = endpos32s[partition][0].Component(c);
+                u32 C0 = endpoints[partition][0].Component(c);
                 C0 = ReplicateByteTo16(C0);
-                u32 C1 = endpos32s[partition][1].Component(c);
+                u32 C1 = endpoints[partition][1].Component(c);
                 C1 = ReplicateByteTo16(C1);
 
                 u32 plane = 0;
