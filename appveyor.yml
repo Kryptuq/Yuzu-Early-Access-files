@@ -61,18 +61,18 @@ artifacts:
     - path: build\bin\Release
       name: yuzu-early-access-%APPVEYOR_REPO_COMMIT_MESSAGE%
   
-#deploy:
-#  release: yuzu-early-access-$(APPVEYOR_REPO_COMMIT_MESSAGE)
-#  description: 'Yuzu Early Access CI Builds with Appveyor'
-#  provider: GitHub
-#  auth_token:
-#    secure: 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 # your encrypted token from GitHub
-#  artifact: yuzu-early-access-%APPVEYOR_REPO_COMMIT_MESSAGE%.zip # upload all yuzu builds to release assets
-#  draft: false
-#  prerelease: false
-#  on:
-#    branch: main                 # release from master branch only
-#    APPVEYOR_REPO_TAG: true        # deploy on tag push only
+deploy:
+  release: yuzu-early-access-$(APPVEYOR_REPO_COMMIT_MESSAGE)
+  description: 'Yuzu Early Access CI Builds with Appveyor'
+  provider: GitHub
+  auth_token:
+    secure: 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 # your encrypted token from GitHub
+  artifact: yuzu-early-access-%APPVEYOR_REPO_COMMIT_MESSAGE%.zip # upload all yuzu builds to release assets
+  draft: false
+  prerelease: false
+  on:
+    branch: main                 # release from master branch only
+    APPVEYOR_REPO_TAG: true        # deploy on tag push only
 
 only_commits:
   message: \EA\
