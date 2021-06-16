@@ -12,11 +12,13 @@ Do you want to check which games are compatible and which ones are not? Please v
 
 yuzu is licensed under the GPLv2 (or any later version). Refer to the license.txt file included.
 
-For development discussion, please join us on [Discord](https://discord.com/invite/u77vRWY).
+### Downloader and Updator
+
+__Being Implemented__: Avaliable Soon
 
 ### Development
 
-TBD
+__Credits__: Kryptuq for Source Codes and MostlyWhat for Build Script
 
 ### Building
 
