@@ -1,4 +1,4 @@
-yuzu The Nintendo Switch Emulator
+yuzu (Nintendo Switch Emulator)
 =============
 [![Appveyor Build Status](https://ci.appveyor.com/api/projects/status/github/Kryptuq/Yuzu-Early-Access-files?svg=true)](https://ci.appveyor.com/project/Kryptuq/Yuzu-Early-Access-files)
 
@@ -17,6 +17,8 @@ yuzu is licensed under the GPLv2 (or any later version). Refer to the license.tx
 __Being Implemented__: Avaliable Soon
 
 ### Development
+
+__Building System__: Built with Appveyor
 
 __Credits__: Kryptuq for Source Codes and MostlyWhat for Build Script
 
