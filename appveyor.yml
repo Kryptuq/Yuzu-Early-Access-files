@@ -70,6 +70,7 @@ deploy:
   artifact: yuzu-early-access-%APPVEYOR_BUILD_VERSION%.zip # upload all yuzu builds to release assets
   draft: false
   prerelease: false
+  tag: $(APPVEYOR_BUILD_VERSION)
   on:
     branch: main                 # release from master branch only
     APPVEYOR_REPO_TAG: true        # deploy on tag push only
