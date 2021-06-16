@@ -72,8 +72,9 @@ deploy:
   description: 'Yuzu Early Access CI Builds with Appveyor'
   provider: GitHub
   auth_token:
-    secure: vGVQJi8lIOwPkQC8XKiFUy9BhfJVirH2hZePsxosyFPQBIuHYbSrAKC5lxaTk5HQ # your encrypted token from GitHub
+    secure: aCv+cazXM4cEq+Jn6ZMOhXAfr0wmdeE9VD0IQcGEEYDIgU6+j4SzuzIYpcq5LMb/
   on:
+    branch: main
     APPVEYOR_REPO_TAG: false        # deploy on tag push only
 
 skip_commits:
