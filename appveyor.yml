@@ -18,6 +18,12 @@ environment:
   matrix:
   - PYTHON_VERSION: 3.9
   
+# enable patching of AssemblyInfo.* files
+assembly_info:
+  file: AssemblyInfo.*
+  assembly_version: "EA{build}"
+  assembly_file_version: "EA{version}"
+  
 # skip unsupported combinations
 init:
 - set arch= Win64
