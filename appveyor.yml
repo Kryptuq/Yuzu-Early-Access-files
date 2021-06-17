@@ -73,6 +73,7 @@ deploy:
   provider: GitHub
   auth_token:
     secure: aCv+cazXM4cEq+Jn6ZMOhXAfr0wmdeE9VD0IQcGEEYDIgU6+j4SzuzIYpcq5LMb/
+  tag: $(APPVEYOR_REPO_TAG_NAME)
   on:
     branch: main
     APPVEYOR_REPO_TAG: false        # deploy on tag push only
