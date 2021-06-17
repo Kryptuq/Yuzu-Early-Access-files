@@ -1,5 +1,4 @@
 version: 'EA{build}'
-package_version: $(APPVEYOR_BUILD_VERSION)
 clone_folder: c:\Projects\yuzu-early-access
 skip_tags: true
 skip_non_tags: false
