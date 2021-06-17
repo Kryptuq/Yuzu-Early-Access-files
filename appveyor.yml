@@ -20,13 +20,6 @@ environment:
   matrix:
   - PYTHON_VERSION: 3.9
   
-# enable patching of AssemblyInfo.* files
-assembly_info:
-  patch: true
-  file: AssemblyInfo.*
-  assembly_version: "EA{build}"
-  assembly_file_version: "EA{version}"
-  
 # skip unsupported combinations
 init:
 - set arch= Win64
@@ -65,7 +58,14 @@ build:
   project: c:\Projects\yuzu-early-access\build\yuzu.sln
   verbosity: minimal
   parallel: true
-  
+
+# enable patching of AssemblyInfo.* files
+assembly_info:
+  patch: true
+  file: AssemblyInfo.*
+  assembly_version: "EA{build}"
+  assembly_file_version: "EA{version}"
+
 after_build:
     mv .\build\bin\Release .\build\bin\yuzu-early-access
   
@@ -84,3 +84,5 @@ deploy:
 
 skip_commits:
   author: MostlyWhat
+  files:
+    - README.md
