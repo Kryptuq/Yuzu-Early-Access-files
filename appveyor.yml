@@ -27,12 +27,8 @@ init:
 - set generator="Visual Studio 16 2019"
 - echo %generator%
 
-#Testing to See Variable Values
-- set RELEASE_DIST='Early Access'
-- set RELEASE_VERSION=%APPVEYOR_BUILD_VERSION%
-- echo %RELEASE_DIST%
-- echo %RELEASE_VERSION%
-- echo %APPVEYOR_REPO_TAG_NAME%
+#Updating the Build Version
+- ps: Update-AppveyorBuild -Version "EA$APPVEYOR_BUILD_VERSION"
 
 # Update Environment Variables based on matrix/platform
 - set PY_VER=%PYTHON_VERSION:.=%
