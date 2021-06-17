@@ -64,7 +64,7 @@ assembly_info:
   assembly_file_version: "EA{version}"
 
 after_build:
-    mv .\build\bin\Release .\build\bin\yuzu-early-access
+    mv build\bin\Release build\bin\yuzu-early-access
   
 artifacts:
     - path: build\bin
