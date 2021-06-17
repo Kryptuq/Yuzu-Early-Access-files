@@ -1025,7 +1025,9 @@ void GMainWindow::InitializeHotkeys() {
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Mute Audio"), this),
             &QShortcut::activated, this,
             [] { Settings::values.audio_muted = !Settings::values.audio_muted; });
-
+    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Toggle Frame Limiter"), this),
+            &QShortcut::activated, this,
+            [] { Settings::values.unlimit_fps = !Settings::values.unlimit_fps; });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Toggle Mouse Panning"), this),
             &QShortcut::activated, this, [&] {
                 Settings::values.mouse_panning = !Settings::values.mouse_panning;

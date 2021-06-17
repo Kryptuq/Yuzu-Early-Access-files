@@ -24,6 +24,7 @@ enum : u64 {
     Size_128_MB = 128ULL * Size_1_MB,
     Size_448_MB = 448ULL * Size_1_MB,
     Size_507_MB = 507ULL * Size_1_MB,
+    Size_512_MB = 512ULL * Size_1_MB,
     Size_562_MB = 562ULL * Size_1_MB,
     Size_1554_MB = 1554ULL * Size_1_MB,
     Size_2048_MB = 2048ULL * Size_1_MB,

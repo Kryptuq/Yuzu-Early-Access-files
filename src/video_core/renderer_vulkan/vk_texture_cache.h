@@ -97,6 +97,8 @@ struct TextureCacheRuntime {
         // All known Vulkan drivers can natively handle BGR textures
         return true;
     }
+
+    u64 GetDeviceLocalMemory() const;
 };
 
 class Image : public VideoCommon::ImageBase {
@@ -257,6 +259,7 @@ struct TextureCacheParams {
     static constexpr bool ENABLE_VALIDATION = true;
     static constexpr bool FRAMEBUFFER_BLITS = false;
     static constexpr bool HAS_EMULATED_COPIES = false;
+    static constexpr bool HAS_DEVICE_MEMORY_INFO = true;
 
     using Runtime = Vulkan::TextureCacheRuntime;
     using Image = Vulkan::Image;

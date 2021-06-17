@@ -364,7 +364,7 @@ void Reporter::SaveErrorReport(u64 title_id, ResultCode result,
     SaveToFile(std::move(out), GetPath("error_report", title_id, timestamp));
 }
 
-void Reporter::SaveFSAccessLog(std::string log_message) const {
+void Reporter::SaveFSAccessLog(std::string_view log_message) const {
     const auto access_log_path =
         Common::FS::GetYuzuPath(Common::FS::YuzuPath::SDMCDir) / "FsAccessLog.txt";
 

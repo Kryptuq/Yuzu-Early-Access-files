@@ -818,6 +818,10 @@ void TextureCacheRuntime::CopyImage(Image& dst, Image& src,
     });
 }
 
+u64 TextureCacheRuntime::GetDeviceLocalMemory() const {
+    return device.GetDeviceLocalMemory();
+}
+
 Image::Image(TextureCacheRuntime& runtime, const ImageInfo& info_, GPUVAddr gpu_addr_,
              VAddr cpu_addr_)
     : VideoCommon::ImageBase(info_, gpu_addr_, cpu_addr_), scheduler{&runtime.scheduler},

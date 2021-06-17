@@ -225,6 +225,10 @@ public:
         return use_asynchronous_shaders;
     }
 
+    u64 GetDeviceLocalMemory() const {
+        return device_access_memory;
+    }
+
 private:
     /// Checks if the physical device is suitable.
     void CheckSuitability(bool requires_swapchain) const;
@@ -243,6 +247,9 @@ private:
 
     /// Collects information about attached tools.
     void CollectToolingInfo();
+
+    /// Collects information about the device's local memory.
+    void CollectPhysicalMemoryInfo();
 
     /// Returns a list of queue initialization descriptors.
     std::vector<VkDeviceQueueCreateInfo> GetDeviceQueueCreateInfos() const;
@@ -302,6 +309,8 @@ private:
 
     /// Nsight Aftermath GPU crash tracker
     std::unique_ptr<NsightAftermathTracker> nsight_aftermath_tracker;
+
+    u64 device_access_memory;
 };
 
 } // namespace Vulkan

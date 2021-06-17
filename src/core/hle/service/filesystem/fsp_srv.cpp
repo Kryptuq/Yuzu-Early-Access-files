@@ -1069,7 +1069,7 @@ void FSP_SRV::OutputAccessLogToSdCard(Kernel::HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_FS, "called");
 
-    reporter.SaveFSAccessLog(std::move(log));
+    reporter.SaveFSAccessLog(log);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);

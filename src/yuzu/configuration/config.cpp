@@ -221,7 +221,7 @@ const std::array<int, Settings::NativeKeyboard::NumKeyboardMods> Config::default
 // This must be in alphabetical order according to action name as it must have the same order as
 // UISetting::values.shortcuts, which is alphabetically ordered.
 // clang-format off
-const std::array<UISettings::Shortcut, 17> Config::default_hotkeys{{
+const std::array<UISettings::Shortcut, 18> Config::default_hotkeys{{
     {QStringLiteral("Capture Screenshot"),       QStringLiteral("Main Window"), {QStringLiteral("Ctrl+P"), Qt::WidgetWithChildrenShortcut}},
     {QStringLiteral("Change Docked Mode"),       QStringLiteral("Main Window"), {QStringLiteral("F10"), Qt::ApplicationShortcut}},
     {QStringLiteral("Continue/Pause Emulation"), QStringLiteral("Main Window"), {QStringLiteral("F4"), Qt::WindowShortcut}},
@@ -238,6 +238,7 @@ const std::array<UISettings::Shortcut, 17> Config::default_hotkeys{{
     {QStringLiteral("Toggle Filter Bar"),        QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F"), Qt::WindowShortcut}},
     {QStringLiteral("Toggle Mouse Panning"),     QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F9"), Qt::ApplicationShortcut}},
     {QStringLiteral("Toggle Speed Limit"),       QStringLiteral("Main Window"), {QStringLiteral("Ctrl+Z"), Qt::ApplicationShortcut}},
+    {QStringLiteral("Toggle Frame Limiter"),     QStringLiteral("Main Window"), {QStringLiteral("Ctrl+U"), Qt::ApplicationShortcut}},
     {QStringLiteral("Toggle Status Bar"),        QStringLiteral("Main Window"), {QStringLiteral("Ctrl+S"), Qt::WindowShortcut}},
 }};
 // clang-format on
@@ -654,6 +655,7 @@ void Config::ReadDebuggingValues() {
     Settings::values.quest_flag = ReadSetting(QStringLiteral("quest_flag"), false).toBool();
     Settings::values.disable_macro_jit =
         ReadSetting(QStringLiteral("disable_macro_jit"), false).toBool();
+    Settings::values.unlimit_fps = ReadSetting(QStringLiteral("unlimit_fps"), false).toBool();
     Settings::values.extended_logging =
         ReadSetting(QStringLiteral("extended_logging"), false).toBool();
     Settings::values.use_debug_asserts =
@@ -1267,6 +1269,7 @@ void Config::SaveDebuggingValues() {
     WriteSetting(QStringLiteral("quest_flag"), Settings::values.quest_flag, false);
     WriteSetting(QStringLiteral("use_debug_asserts"), Settings::values.use_debug_asserts, false);
     WriteSetting(QStringLiteral("disable_macro_jit"), Settings::values.disable_macro_jit, false);
+    WriteSetting(QStringLiteral("unlimit_fps"), Settings::values.unlimit_fps, false);
 
     qt_config->endGroup();
 }

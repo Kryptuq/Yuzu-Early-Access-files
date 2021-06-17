@@ -138,6 +138,24 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QCheckBox" name="unlimit_fps">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>
+          &lt;html&gt;&lt;head/&gt;&lt;body&gt;
+           &lt;p&gt;Presents guest frames as they become available, disabling the fps limit in most titles.&lt;/p&gt;
+           &lt;p&gt;NOTE: Will cause instabilities.&lt;/p&gt;
+          &lt;/body&gt;&lt;/html&gt;
+         </string>
+        </property>
+        <property name="text">
+         <string>Unlimit Framerate (Experimental)</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>

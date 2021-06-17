@@ -224,6 +224,7 @@ struct Values {
     bool reporting_services;
     bool quest_flag;
     bool disable_macro_jit;
+    bool unlimit_fps;
     bool extended_logging;
     bool use_debug_asserts;
     bool use_auto_stub;

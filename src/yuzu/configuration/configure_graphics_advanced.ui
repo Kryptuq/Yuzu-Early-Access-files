@@ -109,7 +109,7 @@
            <string>Enables garbage collection for the GPU caches, this will try to keep VRAM within 3-4 GB by flushing the least used textures/buffers. May cause issues in a few games.</string>
           </property>
           <property name="text">
-           <string>Enable GPU caches garbage collection (unsafe)</string>
+           <string>Enable GPU cache garbage collection (unsafe)</string>
           </property>
          </widget>
         </item>

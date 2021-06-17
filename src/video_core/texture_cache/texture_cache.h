@@ -20,6 +20,7 @@
 
 #include "common/alignment.h"
 #include "common/common_funcs.h"
+#include "common/common_sizes.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"
 #include "common/settings.h"
@@ -70,14 +71,16 @@ class TextureCache {
     static constexpr bool FRAMEBUFFER_BLITS = P::FRAMEBUFFER_BLITS;
     /// True when some copies have to be emulated
     static constexpr bool HAS_EMULATED_COPIES = P::HAS_EMULATED_COPIES;
+    /// True when the API can provide info about the memory of the device.
+    static constexpr bool HAS_DEVICE_MEMORY_INFO = P::HAS_DEVICE_MEMORY_INFO;
 
     /// Image view ID for null descriptors
     static constexpr ImageViewId NULL_IMAGE_VIEW_ID{0};
     /// Sampler ID for bugged sampler ids
     static constexpr SamplerId NULL_SAMPLER_ID{0};
 
-    static constexpr u64 expected_memory = 1024ULL * 1024ULL * 1024ULL;
-    static constexpr u64 critical_memory = 2 * 1024ULL * 1024ULL * 1024ULL;
+    static constexpr u64 DEFAULT_EXPECTED_MEMORY = Common::Size_1_GB;
+    static constexpr u64 DEFAULT_CRITICAL_MEMORY = Common::Size_2_GB;
 
     using Runtime = typename P::Runtime;
     using Image = typename P::Image;
@@ -106,6 +109,9 @@ public:
 
     /// Notify the cache that a new frame has been queued
     void TickFrame();
+
+    /// Runs the Garbage Collector.
+    void RunGarbageCollector();
 
     /// Return a constant reference to the given image view id
     [[nodiscard]] const ImageView& GetImageView(ImageViewId id) const noexcept;
@@ -338,6 +344,8 @@ private:
 
     bool has_deleted_images = false;
     u64 total_used_memory = 0;
+    u64 expected_memory;
+    u64 critical_memory;
 
     SlotVector<Image> slot_images;
     SlotVector<ImageView> slot_image_views;
@@ -381,19 +389,21 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
     void(slot_samplers.insert(runtime, sampler_descriptor));
 
     deletion_iterator = slot_images.begin();
+
+    if constexpr (HAS_DEVICE_MEMORY_INFO) {
+        const auto device_memory = runtime.GetDeviceLocalMemory();
+        const u64 possible_expected_memory = (device_memory * 3) / 10;
+        const u64 possible_critical_memory = (device_memory * 6) / 10;
+        expected_memory = std::max(possible_expected_memory, DEFAULT_EXPECTED_MEMORY);
+        critical_memory = std::max(possible_critical_memory, DEFAULT_CRITICAL_MEMORY);
+    } else {
+        expected_memory = DEFAULT_EXPECTED_MEMORY;
+        critical_memory = DEFAULT_CRITICAL_MEMORY;
+    }
 }
 
 template <class P>
-void TextureCache<P>::TickFrame() {
-    const bool enabled_gc = Settings::values.use_caches_gc.GetValue();
-    if (!enabled_gc) {
-        // @Note(Blinkhawk): compile error with SCOPE_EXIT on msvc.
-        sentenced_images.Tick();
-        sentenced_framebuffers.Tick();
-        sentenced_image_view.Tick();
-        ++frame_tick;
-        return;
-    }
+void TextureCache<P>::RunGarbageCollector() {
     const bool high_priority_mode = total_used_memory >= expected_memory;
     const bool aggressive_mode = total_used_memory >= critical_memory;
     const u64 ticks_to_destroy = high_priority_mode ? 60 : 100;
@@ -450,10 +460,17 @@ void TextureCache<P>::TickFrame() {
             UnregisterImage(image_id);
             DeleteImage(image_id);
             if (is_bad_overlap) {
-                num_iterations++;
+                ++num_iterations;
             }
         }
         ++deletion_iterator;
+    }
+}
+
+template <class P>
+void TextureCache<P>::TickFrame() {
+    if (Settings::values.use_caches_gc.GetValue()) {
+        RunGarbageCollector();
     }
     sentenced_images.Tick();
     sentenced_framebuffers.Tick();
@@ -1276,8 +1293,13 @@ void TextureCache<P>::RegisterImage(ImageId image_id) {
     image.flags |= ImageFlagBits::Registered;
     ForEachPage(image.cpu_addr, image.guest_size_bytes,
                 [this, image_id](u64 page) { page_table[page].push_back(image_id); });
-    total_used_memory +=
-        Common::AlignUp(std::max(image.guest_size_bytes, image.unswizzled_size_bytes), 1024);
+    u64 tentative_size = std::max(image.guest_size_bytes, image.unswizzled_size_bytes);
+    if ((IsPixelFormatASTC(image.info.format) &&
+         True(image.flags & ImageFlagBits::AcceleratedUpload)) ||
+        True(image.flags & ImageFlagBits::Converted)) {
+        tentative_size = EstimatedDecompressedSize(tentative_size, image.info.format);
+    }
+    total_used_memory += Common::AlignUp(tentative_size, 1024);
 }
 
 template <class P>
@@ -1287,8 +1309,13 @@ void TextureCache<P>::UnregisterImage(ImageId image_id) {
                "Trying to unregister an already registered image");
     image.flags &= ~ImageFlagBits::Registered;
     image.flags &= ~ImageFlagBits::BadOverlap;
-    total_used_memory -=
-        Common::AlignUp(std::max(image.guest_size_bytes, image.unswizzled_size_bytes), 1024);
+    u64 tentative_size = std::max(image.guest_size_bytes, image.unswizzled_size_bytes);
+    if ((IsPixelFormatASTC(image.info.format) &&
+         True(image.flags & ImageFlagBits::AcceleratedUpload)) ||
+        True(image.flags & ImageFlagBits::Converted)) {
+        tentative_size = EstimatedDecompressedSize(tentative_size, image.info.format);
+    }
+    total_used_memory -= Common::AlignUp(tentative_size, 1024);
     ForEachPage(image.cpu_addr, image.guest_size_bytes, [this, image_id](u64 page) {
         const auto page_it = page_table.find(page);
         if (page_it == page_table.end()) {

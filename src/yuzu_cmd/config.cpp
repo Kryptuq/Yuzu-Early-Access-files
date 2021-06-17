@@ -490,6 +490,7 @@ void Config::ReadValues() {
 
     Settings::values.disable_macro_jit =
         sdl2_config->GetBoolean("Debugging", "disable_macro_jit", false);
+    Settings::values.unlimit_fps = sdl2_config->GetBoolean("Debugging", "unlimit_fps", false);
 
     const auto title_list = sdl2_config->Get("AddOns", "title_ids", "");
     std::stringstream ss(title_list);

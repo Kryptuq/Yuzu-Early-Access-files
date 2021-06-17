@@ -79,7 +79,7 @@ public:
         Iterator(SlotVector<T>* slot_vector_, SlotId id_) noexcept
             : slot_vector{slot_vector_}, id{id_} {}
 
-        bool IsValid(const u64* bitset) noexcept {
+        bool IsValid(const u64* bitset) const noexcept {
             return ((bitset[id.index / 64] >> (id.index % 64)) & 1) != 0;
         }
 

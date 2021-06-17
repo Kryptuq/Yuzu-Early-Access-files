@@ -227,7 +227,7 @@ use_asynchronous_gpu_emulation =
 # 0: Off, 1 (default): On
 use_vsync =
 
-# Whether to use garbage collection or not.
+# Whether to use garbage collection or not for GPU caches.
 # 0 (default): Off, 1: On
 use_caches_gc =
 
@@ -366,6 +366,9 @@ use_debug_asserts =
 use_auto_stub =
 # Enables/Disables the macro JIT compiler
 disable_macro_jit=false
+# Presents guest frames as they become available. Experimental.
+# false: Disabled (default), true: Enabled
+unlimit_fps=false
 
 [WebService]
 # Whether or not to enable telemetry

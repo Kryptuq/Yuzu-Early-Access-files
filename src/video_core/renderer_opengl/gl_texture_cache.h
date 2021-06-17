@@ -235,6 +235,7 @@ struct TextureCacheParams {
     static constexpr bool ENABLE_VALIDATION = true;
     static constexpr bool FRAMEBUFFER_BLITS = true;
     static constexpr bool HAS_EMULATED_COPIES = true;
+    static constexpr bool HAS_DEVICE_MEMORY_INFO = false;
 
     using Runtime = OpenGL::TextureCacheRuntime;
     using Image = OpenGL::Image;

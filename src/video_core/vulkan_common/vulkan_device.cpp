@@ -408,6 +408,7 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     }
     logical = vk::Device::Create(physical, queue_cis, extensions, first_next, dld);
 
+    CollectPhysicalMemoryInfo();
     CollectTelemetryParameters();
     CollectToolingInfo();
 
@@ -815,6 +816,19 @@ void Device::CollectTelemetryParameters() {
     reported_extensions.reserve(std::size(extensions));
     for (const auto& extension : extensions) {
         reported_extensions.emplace_back(extension.extensionName);
+    }
+}
+
+void Device::CollectPhysicalMemoryInfo() {
+    const auto mem_properties = physical.GetMemoryProperties();
+    const std::size_t num_properties = mem_properties.memoryTypeCount;
+    device_access_memory = 0;
+    for (std::size_t element = 0; element < num_properties; element++) {
+        if ((mem_properties.memoryTypes[element].propertyFlags &
+             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) != 0) {
+            const std::size_t heap_index = mem_properties.memoryTypes[element].heapIndex;
+            device_access_memory += mem_properties.memoryHeaps[heap_index].size;
+        }
     }
 }
 

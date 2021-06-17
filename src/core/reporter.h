@@ -65,7 +65,7 @@ public:
                          std::optional<std::string> custom_text_main = {},
                          std::optional<std::string> custom_text_detail = {}) const;
 
-    void SaveFSAccessLog(std::string log_message) const;
+    void SaveFSAccessLog(std::string_view log_message) const;
 
     // Can be used anywhere to generate a backtrace and general info report at any point during
     // execution. Not intended to be used for anything other than debugging or testing.
