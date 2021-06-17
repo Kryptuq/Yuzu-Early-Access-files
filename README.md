@@ -14,7 +14,7 @@ yuzu is licensed under the GPLv2 (or any later version). Refer to the license.tx
 
 ### Downloader and Updater
 
-__Download Link__: [128Bit Downloader](https://github.com/MostlyWhat/128Bit-Yuzu-Installer/releases)
+__Download Link__: [128Bit Downloader](https://mostlywhat.github.io/128Bit-Yuzu-Installer/)
 
 ### Development
 
