@@ -37,9 +37,6 @@ init:
 - set PATH=%PYTHON%;%PYTHON%\Scripts;%PATH%
 
 - python -m pip install --upgrade pip
-- python --version
-
-
 
 before_build:
 - cmd: |-
@@ -59,13 +56,6 @@ build:
   verbosity: minimal
   parallel: true
 
-# enable patching of AssemblyInfo.* files
-assembly_info:
-  patch: true
-  file: AssemblyInfo.*
-  assembly_version: "EA{build}"
-  assembly_file_version: "EA{version}"
-
 after_build:
     mv .\build\bin\Release .\build\bin\yuzu-early-access
   
@@ -81,8 +71,3 @@ deploy:
   on:
     branch: main
     APPVEYOR_REPO_TAG: false        # deploy on tag push only
-
-skip_commits:
-  author: MostlyWhat
-  files:
-    - README.md
