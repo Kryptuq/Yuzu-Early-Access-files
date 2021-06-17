@@ -67,7 +67,7 @@ build:
   parallel: true
   
 artifacts:
-    - path: build\bin\Release
+    - path: build\bin
       name: yuzu-early-access-%APPVEYOR_BUILD_VERSION%
   
 deploy:
