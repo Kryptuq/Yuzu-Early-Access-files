@@ -66,6 +66,9 @@ build:
   verbosity: minimal
   parallel: true
   
+after_build:
+    mv .\build\bin\Release .\build\bin\yuzu-early-access
+  
 artifacts:
     - path: build\bin
       name: yuzu-early-access-%APPVEYOR_BUILD_VERSION%
