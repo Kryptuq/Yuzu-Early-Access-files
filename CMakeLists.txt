@@ -6,7 +6,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externals/find-module
 include(DownloadExternals)
 include(CMakeDependentOption)
 
-project(yuzu)
+project(yuzu VERSION "${APPVEYOR_BUILD_NUMBER}")
 
 # Set bundled sdl2/qt as dependent options.
 # OFF by default, but if ENABLE_SDL2 and MSVC are true then ON
