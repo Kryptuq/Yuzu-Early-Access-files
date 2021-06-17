@@ -27,13 +27,13 @@ option(YUZU_USE_BUNDLED_LIBUSB "Compile bundled libusb" OFF)
 
 CMAKE_DEPENDENT_OPTION(YUZU_USE_BUNDLED_FFMPEG "Download/Build bundled FFmpeg" ON "WIN32" OFF)
 
-option(YUZU_USE_QT_WEB_ENGINE "Use QtWebEngine for web applet implementation" OFF)
+option(YUZU_USE_QT_WEB_ENGINE "Use QtWebEngine for web applet implementation" ON)
 
 option(YUZU_ENABLE_BOXCAT "Enable the Boxcat service, a yuzu high-level implementation of BCAT" ON)
 
 option(ENABLE_CUBEB "Enables the cubeb audio backend" ON)
 
-option(USE_DISCORD_PRESENCE "Enables Discord Rich Presence" OFF)
+option(USE_DISCORD_PRESENCE "Enables Discord Rich Presence" ON)
 
 if (NOT ENABLE_WEB_SERVICE)
     set(YUZU_ENABLE_BOXCAT OFF)
