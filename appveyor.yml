@@ -28,7 +28,7 @@ init:
 - echo %generator%
 
 #Updating the Build Version
-- ps: Update-AppveyorBuild -Version "($env:APPVEYOR_REPO_COMMIT_MESSAGE)"
+- ps: Update-AppveyorBuild -Version "($env:APPVEYOR_REPO_COMMIT_MESSAGE)" s
 
 # Update Environment Variables based on matrix/platform
 - set PY_VER=%PYTHON_VERSION:.=%
