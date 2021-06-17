@@ -70,6 +70,7 @@ artifacts:
   
 deploy:
   description: 'Yuzu Early Access CI Builds with Appveyor'
+  tag: $(APPVEYOR_REPO_TAG_NAME)
   provider: GitHub
   auth_token:
     secure: aCv+cazXM4cEq+Jn6ZMOhXAfr0wmdeE9VD0IQcGEEYDIgU6+j4SzuzIYpcq5LMb/
