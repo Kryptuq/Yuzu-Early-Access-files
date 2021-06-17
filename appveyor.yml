@@ -28,6 +28,8 @@ init:
 - echo %generator%
 
 #Testing to See Variable Values
+- set RELEASE_DIST='Early Access'
+- set RELEASE_VERSION=%APPVEYOR_BUILD_VERSION%
 - echo %RELEASE_DIST%
 - echo %RELEASE_VERSION%
 - echo %APPVEYOR_REPO_TAG_NAME%
@@ -60,13 +62,6 @@ build:
   project: c:\Projects\yuzu-early-access\build\yuzu.sln
   verbosity: minimal
   parallel: true
-
-# enable patching of AssemblyInfo.* files
-assembly_info:
-  patch: true
-  file: AssemblyInfo.*
-  assembly_version: "EA{build}"
-  assembly_file_version: "EA{version}"
 
 after_build:
     mv c:\Projects\yuzu-early-access\build\bin\Release c:\Projects\yuzu-early-access\build\bin\yuzu-early-access
