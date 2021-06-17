@@ -27,6 +27,11 @@ init:
 - set generator="Visual Studio 16 2019"
 - echo %generator%
 
+#Testing to See Variable Values
+- echo $RELEASE_DIST
+- echo $RELEASE_VERSION
+- echo $APPVEYOR_REPO_TAG_NAME
+
 # Update Environment Variables based on matrix/platform
 - set PY_VER=%PYTHON_VERSION:.=%
 - set PYTHON=C:\PYTHON%PY_VER%
