@@ -44,7 +44,7 @@ init:
 # Put desired Python version first in PATH
 - set PATH=%PYTHON%;%PYTHON%\Scripts;%PATH%
 
-- python -m pip install --upgrade pips
+- python -m pip install --upgrade pip
 
 before_build:
 - cmd: |-
