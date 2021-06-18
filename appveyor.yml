@@ -29,6 +29,11 @@ init:
 
 #Updating the Build Version
 - ps: Update-AppveyorBuild -Version "$env:APPVEYOR_REPO_COMMIT_MESSAGE"
+- echo %BUILD_FULLNAME%
+- echo %BUILD_VERSION%
+- echo %BUILD_ID%
+- echo %TITLE_BAR_FORMAT_IDLE%
+- echo %TITLE_BAR_FORMAT_RUNNING%
 
 # Update Environment Variables based on matrix/platform
 - set PY_VER=%PYTHON_VERSION:.=%
