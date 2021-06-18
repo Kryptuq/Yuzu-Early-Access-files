@@ -77,6 +77,24 @@
          </widget>
         </item>
         <item>
+         <widget class="QCheckBox" name="disable_fps_limit">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;html&gt;&lt;head/&gt;&lt;body&gt;
+            &lt;p&gt;Presents guest frames as they become available, disabling the FPS limit in most titles.&lt;/p&gt;
+            &lt;p&gt;NOTE: Will cause instabilities.&lt;/p&gt;
+            &lt;/body&gt;&lt;/html&gt;
+           </string>
+          </property>
+          <property name="text">
+           <string>Disable framerate limit (experimental)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QCheckBox" name="use_assembly_shaders">
           <property name="toolTip">
            <string>Enabling this reduces shader stutter. Enables OpenGL assembly shaders on supported Nvidia devices (NV_gpu_program5 is required). This feature is experimental.</string>
@@ -109,7 +127,7 @@
            <string>Enables garbage collection for the GPU caches, this will try to keep VRAM within 3-4 GB by flushing the least used textures/buffers. May cause issues in a few games.</string>
           </property>
           <property name="text">
-           <string>Enable GPU cache garbage collection (unsafe)</string>
+           <string>Enable GPU cache garbage collection (experimental)</string>
           </property>
          </widget>
         </item>

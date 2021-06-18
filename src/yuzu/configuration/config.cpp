@@ -236,9 +236,9 @@ const std::array<UISettings::Shortcut, 18> Config::default_hotkeys{{
     {QStringLiteral("Restart Emulation"),        QStringLiteral("Main Window"), {QStringLiteral("F6"), Qt::WindowShortcut}},
     {QStringLiteral("Stop Emulation"),           QStringLiteral("Main Window"), {QStringLiteral("F5"), Qt::WindowShortcut}},
     {QStringLiteral("Toggle Filter Bar"),        QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F"), Qt::WindowShortcut}},
+    {QStringLiteral("Toggle Framerate Limit"),   QStringLiteral("Main Window"), {QStringLiteral("Ctrl+U"), Qt::ApplicationShortcut}},
     {QStringLiteral("Toggle Mouse Panning"),     QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F9"), Qt::ApplicationShortcut}},
     {QStringLiteral("Toggle Speed Limit"),       QStringLiteral("Main Window"), {QStringLiteral("Ctrl+Z"), Qt::ApplicationShortcut}},
-    {QStringLiteral("Toggle Frame Limiter"),     QStringLiteral("Main Window"), {QStringLiteral("Ctrl+U"), Qt::ApplicationShortcut}},
     {QStringLiteral("Toggle Status Bar"),        QStringLiteral("Main Window"), {QStringLiteral("Ctrl+S"), Qt::WindowShortcut}},
 }};
 // clang-format on
@@ -655,7 +655,6 @@ void Config::ReadDebuggingValues() {
     Settings::values.quest_flag = ReadSetting(QStringLiteral("quest_flag"), false).toBool();
     Settings::values.disable_macro_jit =
         ReadSetting(QStringLiteral("disable_macro_jit"), false).toBool();
-    Settings::values.unlimit_fps = ReadSetting(QStringLiteral("unlimit_fps"), false).toBool();
     Settings::values.extended_logging =
         ReadSetting(QStringLiteral("extended_logging"), false).toBool();
     Settings::values.use_debug_asserts =
@@ -813,6 +812,8 @@ void Config::ReadRendererValues() {
                       true);
     ReadSettingGlobal(Settings::values.accelerate_astc, QStringLiteral("accelerate_astc"), true);
     ReadSettingGlobal(Settings::values.use_vsync, QStringLiteral("use_vsync"), true);
+    ReadSettingGlobal(Settings::values.disable_fps_limit, QStringLiteral("disable_fps_limit"),
+                      false);
     ReadSettingGlobal(Settings::values.use_assembly_shaders, QStringLiteral("use_assembly_shaders"),
                       false);
     ReadSettingGlobal(Settings::values.use_asynchronous_shaders,
@@ -1269,7 +1270,6 @@ void Config::SaveDebuggingValues() {
     WriteSetting(QStringLiteral("quest_flag"), Settings::values.quest_flag, false);
     WriteSetting(QStringLiteral("use_debug_asserts"), Settings::values.use_debug_asserts, false);
     WriteSetting(QStringLiteral("disable_macro_jit"), Settings::values.disable_macro_jit, false);
-    WriteSetting(QStringLiteral("unlimit_fps"), Settings::values.unlimit_fps, false);
 
     qt_config->endGroup();
 }
@@ -1399,6 +1399,8 @@ void Config::SaveRendererValues() {
                        true);
     WriteSettingGlobal(QStringLiteral("accelerate_astc"), Settings::values.accelerate_astc, true);
     WriteSettingGlobal(QStringLiteral("use_vsync"), Settings::values.use_vsync, true);
+    WriteSettingGlobal(QStringLiteral("disable_fps_limit"), Settings::values.disable_fps_limit,
+                       false);
     WriteSettingGlobal(QStringLiteral("use_assembly_shaders"),
                        Settings::values.use_assembly_shaders, false);
     WriteSettingGlobal(QStringLiteral("use_asynchronous_shaders"),

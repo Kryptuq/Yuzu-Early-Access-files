@@ -28,6 +28,7 @@ void ConfigureGraphicsAdvanced::SetConfiguration() {
     ui->anisotropic_filtering_combobox->setEnabled(runtime_lock);
 
     ui->use_vsync->setChecked(Settings::values.use_vsync.GetValue());
+    ui->disable_fps_limit->setChecked(Settings::values.disable_fps_limit.GetValue());
     ui->use_assembly_shaders->setChecked(Settings::values.use_assembly_shaders.GetValue());
     ui->use_asynchronous_shaders->setChecked(Settings::values.use_asynchronous_shaders.GetValue());
     ui->use_caches_gc->setChecked(Settings::values.use_caches_gc.GetValue());
@@ -58,6 +59,8 @@ void ConfigureGraphicsAdvanced::ApplyConfiguration() {
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.max_anisotropy,
                                              ui->anisotropic_filtering_combobox);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_vsync, ui->use_vsync, use_vsync);
+    ConfigurationShared::ApplyPerGameSetting(&Settings::values.disable_fps_limit,
+                                             ui->disable_fps_limit, disable_fps_limit);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_assembly_shaders,
                                              ui->use_assembly_shaders, use_assembly_shaders);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_asynchronous_shaders,
@@ -100,6 +103,7 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
     if (Settings::IsConfiguringGlobal()) {
         ui->gpu_accuracy->setEnabled(Settings::values.gpu_accuracy.UsingGlobal());
         ui->use_vsync->setEnabled(Settings::values.use_vsync.UsingGlobal());
+        ui->disable_fps_limit->setEnabled(Settings::values.disable_fps_limit.UsingGlobal());
         ui->use_assembly_shaders->setEnabled(Settings::values.use_assembly_shaders.UsingGlobal());
         ui->use_asynchronous_shaders->setEnabled(
             Settings::values.use_asynchronous_shaders.UsingGlobal());
@@ -112,6 +116,8 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
     }
 
     ConfigurationShared::SetColoredTristate(ui->use_vsync, Settings::values.use_vsync, use_vsync);
+    ConfigurationShared::SetColoredTristate(ui->disable_fps_limit,
+                                            Settings::values.disable_fps_limit, disable_fps_limit);
     ConfigurationShared::SetColoredTristate(
         ui->use_assembly_shaders, Settings::values.use_assembly_shaders, use_assembly_shaders);
     ConfigurationShared::SetColoredTristate(ui->use_asynchronous_shaders,

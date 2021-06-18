@@ -307,7 +307,7 @@ void NVFlinger::Compose() {
 }
 
 s64 NVFlinger::GetNextTicks() const {
-    if (Settings::values.unlimit_fps) {
+    if (Settings::values.disable_fps_limit.GetValue()) {
         return 0;
     }
     constexpr s64 max_hertz = 120LL;

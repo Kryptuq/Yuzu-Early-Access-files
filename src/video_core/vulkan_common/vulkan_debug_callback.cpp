@@ -12,6 +12,14 @@ VkBool32 Callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
                   VkDebugUtilsMessageTypeFlagsEXT type,
                   const VkDebugUtilsMessengerCallbackDataEXT* data,
                   [[maybe_unused]] void* user_data) {
+    // Skip logging known false-positive validation errors
+    switch (static_cast<u32>(data->messageIdNumber)) {
+    case 0x682a878au: // VUID-vkCmdBindVertexBuffers2EXT-pBuffers-parameter
+    case 0x99fb7dfdu: // UNASSIGNED-RequiredParameter (vkCmdBindVertexBuffers2EXT pBuffers[0])
+        return VK_FALSE;
+    default:
+        break;
+    }
     const std::string_view message{data->pMessage};
     if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
         LOG_CRITICAL(Render_Vulkan, "{}", message);

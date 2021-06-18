@@ -443,6 +443,8 @@ void Config::ReadValues() {
         sdl2_config->GetBoolean("Renderer", "use_asynchronous_gpu_emulation", true));
     Settings::values.use_vsync.SetValue(
         static_cast<u16>(sdl2_config->GetInteger("Renderer", "use_vsync", 1)));
+    Settings::values.disable_fps_limit.SetValue(
+        sdl2_config->GetBoolean("Renderer", "disable_fps_limit", false));
     Settings::values.use_assembly_shaders.SetValue(
         sdl2_config->GetBoolean("Renderer", "use_assembly_shaders", true));
     Settings::values.use_asynchronous_shaders.SetValue(
@@ -490,7 +492,6 @@ void Config::ReadValues() {
 
     Settings::values.disable_macro_jit =
         sdl2_config->GetBoolean("Debugging", "disable_macro_jit", false);
-    Settings::values.unlimit_fps = sdl2_config->GetBoolean("Debugging", "unlimit_fps", false);
 
     const auto title_list = sdl2_config->Get("AddOns", "title_ids", "");
     std::stringstream ss(title_list);

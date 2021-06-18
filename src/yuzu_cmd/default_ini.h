@@ -368,7 +368,7 @@ use_auto_stub =
 disable_macro_jit=false
 # Presents guest frames as they become available. Experimental.
 # false: Disabled (default), true: Enabled
-unlimit_fps=false
+disable_fps_limit=false
 
 [WebService]
 # Whether or not to enable telemetry

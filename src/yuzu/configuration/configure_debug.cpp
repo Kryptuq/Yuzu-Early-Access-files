@@ -44,7 +44,6 @@ void ConfigureDebug::SetConfiguration() {
     ui->enable_graphics_debugging->setChecked(Settings::values.renderer_debug);
     ui->disable_macro_jit->setEnabled(runtime_lock);
     ui->disable_macro_jit->setChecked(Settings::values.disable_macro_jit);
-    ui->unlimit_fps->setChecked(Settings::values.unlimit_fps);
     ui->extended_logging->setChecked(Settings::values.extended_logging);
 }
 
@@ -59,7 +58,6 @@ void ConfigureDebug::ApplyConfiguration() {
     Settings::values.use_auto_stub = ui->use_auto_stub->isChecked();
     Settings::values.renderer_debug = ui->enable_graphics_debugging->isChecked();
     Settings::values.disable_macro_jit = ui->disable_macro_jit->isChecked();
-    Settings::values.unlimit_fps = ui->unlimit_fps->isChecked();
     Settings::values.extended_logging = ui->extended_logging->isChecked();
     Debugger::ToggleConsole();
     Common::Log::Filter filter;
