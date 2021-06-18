@@ -2,35 +2,44 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
+using AOT;
 
 public class DiscordRpc
 {
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void ReadyCallback(ref DiscordUser connectedUser);
+    [MonoPInvokeCallback(typeof(OnReadyInfo))]
+    public static void ReadyCallback(ref DiscordUser connectedUser) { Callbacks.readyCallback(ref connectedUser); }
+    public delegate void OnReadyInfo(ref DiscordUser connectedUser);
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void DisconnectedCallback(int errorCode, string message);
+    [MonoPInvokeCallback(typeof(OnDisconnectedInfo))]
+    public static void DisconnectedCallback(int errorCode, string message) { Callbacks.disconnectedCallback(errorCode, message); }
+    public delegate void OnDisconnectedInfo(int errorCode, string message);
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void ErrorCallback(int errorCode, string message);
+    [MonoPInvokeCallback(typeof(OnErrorInfo))]
+    public static void ErrorCallback(int errorCode, string message) { Callbacks.errorCallback(errorCode, message); }
+    public delegate void OnErrorInfo(int errorCode, string message);
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void JoinCallback(string secret);
+    [MonoPInvokeCallback(typeof(OnJoinInfo))]
+    public static void JoinCallback(string secret) { Callbacks.joinCallback(secret); }
+    public delegate void OnJoinInfo(string secret);
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void SpectateCallback(string secret);
+    [MonoPInvokeCallback(typeof(OnSpectateInfo))]
+    public static void SpectateCallback(string secret) { Callbacks.spectateCallback(secret); }
+    public delegate void OnSpectateInfo(string secret);
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void RequestCallback(ref DiscordUser request);
+    [MonoPInvokeCallback(typeof(OnRequestInfo))]
+    public static void RequestCallback(ref DiscordUser request) { Callbacks.requestCallback(ref request); }
+    public delegate void OnRequestInfo(ref DiscordUser request);
+
+    static EventHandlers Callbacks { get; set; }
 
     public struct EventHandlers
     {
-        public ReadyCallback readyCallback;
-        public DisconnectedCallback disconnectedCallback;
-        public ErrorCallback errorCallback;
-        public JoinCallback joinCallback;
-        public SpectateCallback spectateCallback;
-        public RequestCallback requestCallback;
+        public OnReadyInfo readyCallback;
+        public OnDisconnectedInfo disconnectedCallback;
+        public OnErrorInfo errorCallback;
+        public OnJoinInfo joinCallback;
+        public OnSpectateInfo spectateCallback;
+        public OnRequestInfo requestCallback;
     }
 
     [Serializable, StructLayout(LayoutKind.Sequential)]
@@ -47,6 +56,7 @@ public class DiscordRpc
         public IntPtr partyId; /* max 128 bytes */
         public int partySize;
         public int partyMax;
+        public int partyPrivacy;
         public IntPtr matchSecret; /* max 128 bytes */
         public IntPtr joinSecret; /* max 128 bytes */
         public IntPtr spectateSecret; /* max 128 bytes */
@@ -69,8 +79,29 @@ public class DiscordRpc
         Ignore = 2
     }
 
+    public enum PartyPrivacy
+    {
+        Private = 0,
+        Public = 1
+    }
+
+    public static void Initialize(string applicationId, ref EventHandlers handlers, bool autoRegister, string optionalSteamId)
+    {
+        Callbacks = handlers;
+
+        EventHandlers staticEventHandlers = new EventHandlers();
+        staticEventHandlers.readyCallback += DiscordRpc.ReadyCallback;
+        staticEventHandlers.disconnectedCallback += DiscordRpc.DisconnectedCallback;
+        staticEventHandlers.errorCallback += DiscordRpc.ErrorCallback;
+        staticEventHandlers.joinCallback += DiscordRpc.JoinCallback;
+        staticEventHandlers.spectateCallback += DiscordRpc.SpectateCallback;
+        staticEventHandlers.requestCallback += DiscordRpc.RequestCallback;
+
+        InitializeInternal(applicationId, ref staticEventHandlers, autoRegister, optionalSteamId);
+    }
+
     [DllImport("discord-rpc", EntryPoint = "Discord_Initialize", CallingConvention = CallingConvention.Cdecl)]
-    public static extern void Initialize(string applicationId, ref EventHandlers handlers, bool autoRegister, string optionalSteamId);
+    static extern void InitializeInternal(string applicationId, ref EventHandlers handlers, bool autoRegister, string optionalSteamId);
 
     [DllImport("discord-rpc", EntryPoint = "Discord_Shutdown", CallingConvention = CallingConvention.Cdecl)]
     public static extern void Shutdown();
@@ -113,6 +144,7 @@ public class DiscordRpc
         public string partyId; /* max 128 bytes */
         public int partySize;
         public int partyMax;
+        public PartyPrivacy partyPrivacy;
         public string matchSecret; /* max 128 bytes */
         public string joinSecret; /* max 128 bytes */
         public string spectateSecret; /* max 128 bytes */
@@ -140,6 +172,7 @@ public class DiscordRpc
             _presence.partyId = StrToPtr(partyId);
             _presence.partySize = partySize;
             _presence.partyMax = partyMax;
+            _presence.partyPrivacy = (int)partyPrivacy;
             _presence.matchSecret = StrToPtr(matchSecret);
             _presence.joinSecret = StrToPtr(joinSecret);
             _presence.spectateSecret = StrToPtr(spectateSecret);
@@ -160,7 +193,7 @@ public class DiscordRpc
             var buffer = Marshal.AllocHGlobal(convbytecnt + 1);
             for (int i = 0; i < convbytecnt + 1; i++)
             {
-                Marshal.WriteByte(buffer, i , 0);
+                Marshal.WriteByte(buffer, i, 0);
             }
             _buffers.Add(buffer);
             Marshal.Copy(Encoding.UTF8.GetBytes(input), 0, buffer, convbytecnt);
