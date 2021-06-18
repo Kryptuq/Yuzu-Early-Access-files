@@ -72,7 +72,7 @@ artifacts:
       name: yuzu-early-access-%APPVEYOR_BUILD_VERSION%
   
 deploy:
-  description: 'Yuzu Early Access CI Builds with Appveyor'
+  description: 'Yuzu Early Access CI Builds with Appveyor [Current Build: %APPVEYOR_BUILD_VERSION%]'
   provider: GitHub
   auth_token:
     secure: aCv+cazXM4cEq+Jn6ZMOhXAfr0wmdeE9VD0IQcGEEYDIgU6+j4SzuzIYpcq5LMb/
