@@ -75,6 +75,5 @@ deploy:
     branch: main
     APPVEYOR_REPO_TAG: false        # deploy on tag push only
 
-skip_commits:
-  files:
-    - README.md
+only_commits:
+  message: /EA/
