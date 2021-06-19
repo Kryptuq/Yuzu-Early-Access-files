@@ -77,7 +77,7 @@ constexpr std::array<IntegerEncodedValue, 256> MakeEncodedValues() {
     return encodings;
 }
 
-constexpr std::array<IntegerEncodedValue, 256> EncodingsValues = MakeEncodedValues();
+constexpr std::array<IntegerEncodedValue, 256> ASTC_ENCODINGS_VALUES = MakeEncodedValues();
 
 // Replicates low num_bits such that [(to_bit - 1):(to_bit - 1 - from_bit)]
 // is the same as [(num_bits - 1):0] and repeats all the way down.
@@ -116,18 +116,9 @@ constexpr auto MakeReplicateTable() {
     return table;
 }
 
-constexpr auto REPLICATE_BYTE_TO_16_TABLE = MakeReplicateTable<u32, 8, 16>();
 constexpr auto REPLICATE_6_BIT_TO_8_TABLE = MakeReplicateTable<u32, 6, 8>();
 constexpr auto REPLICATE_7_BIT_TO_8_TABLE = MakeReplicateTable<u32, 7, 8>();
 constexpr auto REPLICATE_8_BIT_TO_8_TABLE = MakeReplicateTable<u32, 8, 8>();
-
-struct AstcBufferData {
-    decltype(EncodingsValues) encoding_values = EncodingsValues;
-    decltype(REPLICATE_6_BIT_TO_8_TABLE) replicate_6_to_8 = REPLICATE_6_BIT_TO_8_TABLE;
-    decltype(REPLICATE_7_BIT_TO_8_TABLE) replicate_7_to_8 = REPLICATE_7_BIT_TO_8_TABLE;
-    decltype(REPLICATE_8_BIT_TO_8_TABLE) replicate_8_to_8 = REPLICATE_8_BIT_TO_8_TABLE;
-    decltype(REPLICATE_BYTE_TO_16_TABLE) replicate_byte_to_16 = REPLICATE_BYTE_TO_16_TABLE;
-} constexpr ASTC_BUFFER_DATA;
 
 void Decompress(std::span<const uint8_t> data, uint32_t width, uint32_t height, uint32_t depth,
                 uint32_t block_width, uint32_t block_height, std::span<uint8_t> output);

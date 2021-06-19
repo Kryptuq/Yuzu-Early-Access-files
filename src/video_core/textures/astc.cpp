@@ -273,7 +273,7 @@ static void DecodeQuintBlock(InputBitStream& bits, IntegerEncodedVector& result,
 static void DecodeIntegerSequence(IntegerEncodedVector& result, InputBitStream& bits, u32 maxRange,
                                   u32 nValues) {
     // Determine encoding parameters
-    IntegerEncodedValue val = EncodingsValues[maxRange];
+    IntegerEncodedValue val = ASTC_ENCODINGS_VALUES[maxRange];
 
     // Start decoding
     u32 nValsDecoded = 0;
@@ -314,7 +314,7 @@ struct TexelWeightParams {
             nIdxs *= 2;
         }
 
-        return EncodingsValues[m_MaxWeight].GetBitLength(nIdxs);
+        return ASTC_ENCODINGS_VALUES[m_MaxWeight].GetBitLength(nIdxs);
     }
 
     u32 GetNumWeightValues() const {
@@ -555,6 +555,8 @@ static void FillError(std::span<u32> outBuf, u32 blockWidth, u32 blockHeight) {
         }
     }
 }
+
+static constexpr auto REPLICATE_BYTE_TO_16_TABLE = MakeReplicateTable<u32, 8, 16>();
 static constexpr u32 ReplicateByteTo16(std::size_t value) {
     return REPLICATE_BYTE_TO_16_TABLE[value];
 }
@@ -757,12 +759,12 @@ static void DecodeColorValues(u32* out, std::span<u8> data, const u32* modes, co
     // figure out the max value for each of them...
     u32 range = 256;
     while (--range > 0) {
-        IntegerEncodedValue val = EncodingsValues[range];
+        IntegerEncodedValue val = ASTC_ENCODINGS_VALUES[range];
         u32 bitLength = val.GetBitLength(nValues);
         if (bitLength <= nBitsForColorData) {
             // Find the smallest possible range that matches the given encoding
             while (--range > 0) {
-                IntegerEncodedValue newval = EncodingsValues[range];
+                IntegerEncodedValue newval = ASTC_ENCODINGS_VALUES[range];
                 if (!newval.MatchesEncoding(val)) {
                     break;
                 }

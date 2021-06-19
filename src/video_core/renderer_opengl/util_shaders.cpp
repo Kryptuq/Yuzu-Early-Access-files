@@ -69,7 +69,8 @@ UtilShaders::UtilShaders(ProgramManager& program_manager_)
     swizzle_table_buffer.Create();
     astc_buffer.Create();
     glNamedBufferStorage(swizzle_table_buffer.handle, sizeof(swizzle_table), &swizzle_table, 0);
-    glNamedBufferStorage(astc_buffer.handle, sizeof(ASTC_BUFFER_DATA), &ASTC_BUFFER_DATA, 0);
+    glNamedBufferStorage(astc_buffer.handle, sizeof(ASTC_ENCODINGS_VALUES), &ASTC_ENCODINGS_VALUES,
+                         0);
 }
 
 UtilShaders::~UtilShaders() = default;
@@ -79,12 +80,6 @@ void UtilShaders::ASTCDecode(Image& image, const ImageBufferMap& map,
     static constexpr GLuint BINDING_SWIZZLE_BUFFER = 0;
     static constexpr GLuint BINDING_INPUT_BUFFER = 1;
     static constexpr GLuint BINDING_ENC_BUFFER = 2;
-
-    static constexpr GLuint BINDING_6_TO_8_BUFFER = 3;
-    static constexpr GLuint BINDING_7_TO_8_BUFFER = 4;
-    static constexpr GLuint BINDING_8_TO_8_BUFFER = 5;
-    static constexpr GLuint BINDING_BYTE_TO_16_BUFFER = 6;
-
     static constexpr GLuint BINDING_OUTPUT_IMAGE = 0;
 
     const Extent2D tile_size{
@@ -93,21 +88,7 @@ void UtilShaders::ASTCDecode(Image& image, const ImageBufferMap& map,
     };
     program_manager.BindHostCompute(astc_decoder_program.handle);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_SWIZZLE_BUFFER, swizzle_table_buffer.handle);
-    glBindBufferRange(GL_SHADER_STORAGE_BUFFER, BINDING_ENC_BUFFER, astc_buffer.handle,
-                      offsetof(AstcBufferData, encoding_values),
-                      sizeof(AstcBufferData::encoding_values));
-    glBindBufferRange(GL_SHADER_STORAGE_BUFFER, BINDING_6_TO_8_BUFFER, astc_buffer.handle,
-                      offsetof(AstcBufferData, replicate_6_to_8),
-                      sizeof(AstcBufferData::replicate_6_to_8));
-    glBindBufferRange(GL_SHADER_STORAGE_BUFFER, BINDING_7_TO_8_BUFFER, astc_buffer.handle,
-                      offsetof(AstcBufferData, replicate_7_to_8),
-                      sizeof(AstcBufferData::replicate_7_to_8));
-    glBindBufferRange(GL_SHADER_STORAGE_BUFFER, BINDING_8_TO_8_BUFFER, astc_buffer.handle,
-                      offsetof(AstcBufferData, replicate_8_to_8),
-                      sizeof(AstcBufferData::replicate_8_to_8));
-    glBindBufferRange(GL_SHADER_STORAGE_BUFFER, BINDING_BYTE_TO_16_BUFFER, astc_buffer.handle,
-                      offsetof(AstcBufferData, replicate_byte_to_16),
-                      sizeof(AstcBufferData::replicate_byte_to_16));
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_ENC_BUFFER, astc_buffer.handle);
 
     glFlushMappedNamedBufferRange(map.buffer, map.offset, image.guest_size_bytes);
     glUniform2ui(1, tile_size.width, tile_size.height);
@@ -137,6 +118,12 @@ void UtilShaders::ASTCDecode(Image& image, const ImageBufferMap& map,
 
         glDispatchCompute(num_dispatches_x, num_dispatches_y, image.info.resources.layers);
     }
+    // Precautionary barrier to ensure the compute shader is done decoding prior to texture access.
+    // GL_TEXTURE_FETCH_BARRIER_BIT and GL_SHADER_IMAGE_ACCESS_BARRIER_BIT are used in a separate
+    // glMemoryBarrier call by the texture cache runtime
+    glMemoryBarrier(GL_UNIFORM_BARRIER_BIT | GL_COMMAND_BARRIER_BIT | GL_PIXEL_BUFFER_BARRIER_BIT |
+                    GL_TEXTURE_UPDATE_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT |
+                    GL_SHADER_STORAGE_BARRIER_BIT | GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
     program_manager.RestoreGuestCompute();
 }
 

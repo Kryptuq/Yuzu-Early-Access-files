@@ -11,12 +11,8 @@
 #define UNIFORM(n)
 #define BINDING_INPUT_BUFFER 0
 #define BINDING_ENC_BUFFER 1
-#define BINDING_6_TO_8_BUFFER 2
-#define BINDING_7_TO_8_BUFFER 3
-#define BINDING_8_TO_8_BUFFER 4
-#define BINDING_BYTE_TO_16_BUFFER 5
-#define BINDING_SWIZZLE_BUFFER 6
-#define BINDING_OUTPUT_IMAGE 7
+#define BINDING_SWIZZLE_BUFFER 2
+#define BINDING_OUTPUT_IMAGE 3
 
 #else // ^^^ Vulkan ^^^ // vvv OpenGL vvv
 
@@ -26,10 +22,6 @@
 #define BINDING_SWIZZLE_BUFFER 0
 #define BINDING_INPUT_BUFFER 1
 #define BINDING_ENC_BUFFER 2
-#define BINDING_6_TO_8_BUFFER 3
-#define BINDING_7_TO_8_BUFFER 4
-#define BINDING_8_TO_8_BUFFER 5
-#define BINDING_BYTE_TO_16_BUFFER 6
 #define BINDING_OUTPUT_IMAGE 0
 
 #endif
@@ -75,19 +67,6 @@ layout(binding = BINDING_INPUT_BUFFER, std430) readonly buffer InputBufferU32 {
 // ASTC Encodings data
 layout(binding = BINDING_ENC_BUFFER, std430) readonly buffer EncodingsValues {
     EncodingData encoding_values[];
-};
-// ASTC Precompiled tables
-layout(binding = BINDING_6_TO_8_BUFFER, std430) readonly buffer REPLICATE_6_BIT_TO_8 {
-    uint REPLICATE_6_BIT_TO_8_TABLE[];
-};
-layout(binding = BINDING_7_TO_8_BUFFER, std430) readonly buffer REPLICATE_7_BIT_TO_8 {
-    uint REPLICATE_7_BIT_TO_8_TABLE[];
-};
-layout(binding = BINDING_8_TO_8_BUFFER, std430) readonly buffer REPLICATE_8_BIT_TO_8 {
-    uint REPLICATE_8_BIT_TO_8_TABLE[];
-};
-layout(binding = BINDING_BYTE_TO_16_BUFFER, std430) readonly buffer REPLICATE_BYTE_TO_16 {
-    uint REPLICATE_BYTE_TO_16_TABLE[];
 };
 
 layout(binding = BINDING_OUTPUT_IMAGE, rgba8) uniform writeonly image2DArray dest_image;
@@ -139,6 +118,19 @@ const uint REPLICATE_4_BIT_TO_6_TABLE[16] =
 const uint REPLICATE_5_BIT_TO_6_TABLE[32] =
     uint[](0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 33, 35, 37, 39, 41, 43, 45,
            47, 49, 51, 53, 55, 57, 59, 61, 63);
+const uint REPLICATE_6_BIT_TO_8_TABLE[64] =
+    uint[](0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 65, 69, 73, 77, 81, 85, 89,
+           93, 97, 101, 105, 109, 113, 117, 121, 125, 130, 134, 138, 142, 146, 150, 154, 158, 162,
+           166, 170, 174, 178, 182, 186, 190, 195, 199, 203, 207, 211, 215, 219, 223, 227, 231, 235,
+           239, 243, 247, 251, 255);
+const uint REPLICATE_7_BIT_TO_8_TABLE[128] =
+    uint[](0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44,
+           46, 48, 50, 52, 54, 56, 58, 60, 62, 64, 66, 68, 70, 72, 74, 76, 78, 80, 82, 84, 86, 88,
+           90, 92, 94, 96, 98, 100, 102, 104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124, 126,
+           129, 131, 133, 135, 137, 139, 141, 143, 145, 147, 149, 151, 153, 155, 157, 159, 161, 163,
+           165, 167, 169, 171, 173, 175, 177, 179, 181, 183, 185, 187, 189, 191, 193, 195, 197, 199,
+           201, 203, 205, 207, 209, 211, 213, 215, 217, 219, 221, 223, 225, 227, 229, 231, 233, 235,
+           237, 239, 241, 243, 245, 247, 249, 251, 253, 255);
 
 // Input ASTC texture globals
 uint current_index = 0;
@@ -207,8 +199,7 @@ uint Replicate(uint val, uint num_bits, uint to_bit) {
 }
 
 uvec4 ReplicateByteTo16(uvec4 value) {
-    return uvec4(REPLICATE_BYTE_TO_16_TABLE[value.x], REPLICATE_BYTE_TO_16_TABLE[value.y],
-                 REPLICATE_BYTE_TO_16_TABLE[value.z], REPLICATE_BYTE_TO_16_TABLE[value.w]);
+    return value * 0x101;
 }
 
 uint ReplicateBitTo7(uint value) {
@@ -236,7 +227,7 @@ uint FastReplicateTo8(uint value, uint num_bits) {
     case 7:
         return REPLICATE_7_BIT_TO_8_TABLE[value];
     case 8:
-        return REPLICATE_8_BIT_TO_8_TABLE[value];
+        return value;
     }
     return Replicate(value, num_bits, 8);
 }
@@ -1327,6 +1318,9 @@ void main() {
     offset += swizzle;
 
     const ivec3 coord = ivec3(gl_GlobalInvocationID * uvec3(block_dims, 1));
+    if (any(greaterThanEqual(coord, imageSize(dest_image)))) {
+        return;
+    }
     uint block_index =
         pos.z * gl_WorkGroupSize.x * gl_WorkGroupSize.y + pos.y * gl_WorkGroupSize.x + pos.x;
 
