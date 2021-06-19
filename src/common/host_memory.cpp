@@ -34,7 +34,7 @@ constexpr size_t HugePageSize = 0x200000;
 
 // Manually imported for MinGW compatibility
 #ifndef MEM_RESERVE_PLACEHOLDER
-#define MEM_RESERVE_PLACEHOLDER 0x0004000
+#define MEM_RESERVE_PLACEHOLDER 0x00040000
 #endif
 #ifndef MEM_REPLACE_PLACEHOLDER
 #define MEM_REPLACE_PLACEHOLDER 0x00004000
