@@ -110,17 +110,19 @@ private:
     void Start(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_Audio, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        const auto result = renderer->Start();
 
-        rb.Push(ResultSuccess);
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(result);
     }
 
     void Stop(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_Audio, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        const auto result = renderer->Stop();
 
-        rb.Push(ResultSuccess);
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(result);
     }
 
     void QuerySystemEvent(Kernel::HLERequestContext& ctx) {

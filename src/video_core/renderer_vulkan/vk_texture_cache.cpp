@@ -880,6 +880,8 @@ Image::Image(TextureCacheRuntime& runtime, const ImageInfo& info_, GPUVAddr gpu_
     }
 }
 
+Image::~Image() = default;
+
 void Image::UploadMemory(const StagingBufferRef& map, std::span<const BufferImageCopy> copies) {
     // TODO: Move this to another API
     scheduler->RequestOutsideRenderPassOperationContext();

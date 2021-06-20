@@ -737,6 +737,8 @@ Image::Image(TextureCacheRuntime& runtime, const VideoCommon::ImageInfo& info_, 
     }
 }
 
+Image::~Image() = default;
+
 void Image::UploadMemory(const ImageBufferMap& map,
                          std::span<const VideoCommon::BufferImageCopy> copies) {
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, map.buffer);

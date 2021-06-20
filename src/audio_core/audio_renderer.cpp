@@ -12,6 +12,7 @@
 #include "audio_core/voice_context.h"
 #include "common/logging/log.h"
 #include "common/settings.h"
+#include "core/core_timing.h"
 #include "core/memory.h"
 
 namespace {
@@ -68,7 +69,7 @@ namespace {
 } // namespace
 
 namespace AudioCore {
-AudioRenderer::AudioRenderer(Core::Timing::CoreTiming& core_timing, Core::Memory::Memory& memory_,
+AudioRenderer::AudioRenderer(Core::Timing::CoreTiming& core_timing_, Core::Memory::Memory& memory_,
                              AudioCommon::AudioRendererParameter params,
                              Stream::ReleaseCallback&& release_callback,
                              std::size_t instance_number)
@@ -77,7 +78,8 @@ AudioRenderer::AudioRenderer(Core::Timing::CoreTiming& core_timing, Core::Memory
       sink_context(params.sink_count), splitter_context(),
       voices(params.voice_count), memory{memory_},
       command_generator(worker_params, voice_context, mix_context, splitter_context, effect_context,
-                        memory) {
+                        memory),
+      core_timing{core_timing_} {
     behavior_info.SetUserRevision(params.revision);
     splitter_context.Initialize(behavior_info, params.splitter_count,
                                 params.num_splitter_send_channels);
@@ -86,15 +88,26 @@ AudioRenderer::AudioRenderer(Core::Timing::CoreTiming& core_timing, Core::Memory
     stream = audio_out->OpenStream(
         core_timing, params.sample_rate, AudioCommon::STREAM_NUM_CHANNELS,
         fmt::format("AudioRenderer-Instance{}", instance_number), std::move(release_callback));
-    audio_out->StartStream(stream);
-
-    QueueMixedBuffer(0);
-    QueueMixedBuffer(1);
-    QueueMixedBuffer(2);
-    QueueMixedBuffer(3);
+    process_event = Core::Timing::CreateEvent(
+        fmt::format("AudioRenderer-Instance{}-Consume", instance_number),
+        [this](std::uintptr_t, std::chrono::nanoseconds) { ReleaseAndQueueBuffers(); });
+    for (size_t i = 0; i < NUM_BUFFERS; ++i) {
+        QueueMixedBuffer(i);
+    }
 }
 
 AudioRenderer::~AudioRenderer() = default;
+
+ResultCode AudioRenderer::Start() {
+    audio_out->StartStream(stream);
+    ReleaseAndQueueBuffers();
+    return ResultSuccess;
+}
+
+ResultCode AudioRenderer::Stop() {
+    audio_out->StopStream(stream);
+    return ResultSuccess;
+}
 
 u32 AudioRenderer::GetSampleRate() const {
     return worker_params.sample_rate;
@@ -114,89 +127,88 @@ Stream::State AudioRenderer::GetStreamState() const {
 
 ResultCode AudioRenderer::UpdateAudioRenderer(const std::vector<u8>& input_params,
                                               std::vector<u8>& output_params) {
+    {
+        std::scoped_lock l{lock};
+        InfoUpdater info_updater{input_params, output_params, behavior_info};
 
-    InfoUpdater info_updater{input_params, output_params, behavior_info};
+        if (!info_updater.UpdateBehaviorInfo(behavior_info)) {
+            LOG_ERROR(Audio, "Failed to update behavior info input parameters");
+            return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
+        }
 
-    if (!info_updater.UpdateBehaviorInfo(behavior_info)) {
-        LOG_ERROR(Audio, "Failed to update behavior info input parameters");
-        return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
-    }
+        if (!info_updater.UpdateMemoryPools(memory_pool_info)) {
+            LOG_ERROR(Audio, "Failed to update memory pool parameters");
+            return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
+        }
 
-    if (!info_updater.UpdateMemoryPools(memory_pool_info)) {
-        LOG_ERROR(Audio, "Failed to update memory pool parameters");
-        return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
-    }
+        if (!info_updater.UpdateVoiceChannelResources(voice_context)) {
+            LOG_ERROR(Audio, "Failed to update voice channel resource parameters");
+            return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
+        }
 
-    if (!info_updater.UpdateVoiceChannelResources(voice_context)) {
-        LOG_ERROR(Audio, "Failed to update voice channel resource parameters");
-        return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
-    }
+        if (!info_updater.UpdateVoices(voice_context, memory_pool_info, 0)) {
+            LOG_ERROR(Audio, "Failed to update voice parameters");
+            return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
+        }
 
-    if (!info_updater.UpdateVoices(voice_context, memory_pool_info, 0)) {
-        LOG_ERROR(Audio, "Failed to update voice parameters");
-        return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
-    }
+        // TODO(ogniK): Deal with stopped audio renderer but updates still taking place
+        if (!info_updater.UpdateEffects(effect_context, true)) {
+            LOG_ERROR(Audio, "Failed to update effect parameters");
+            return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
+        }
 
-    // TODO(ogniK): Deal with stopped audio renderer but updates still taking place
-    if (!info_updater.UpdateEffects(effect_context, true)) {
-        LOG_ERROR(Audio, "Failed to update effect parameters");
-        return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
-    }
+        if (behavior_info.IsSplitterSupported()) {
+            if (!info_updater.UpdateSplitterInfo(splitter_context)) {
+                LOG_ERROR(Audio, "Failed to update splitter parameters");
+                return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
+            }
+        }
 
-    if (behavior_info.IsSplitterSupported()) {
-        if (!info_updater.UpdateSplitterInfo(splitter_context)) {
-            LOG_ERROR(Audio, "Failed to update splitter parameters");
+        const auto mix_result = info_updater.UpdateMixes(
+            mix_context, worker_params.mix_buffer_count, splitter_context, effect_context);
+
+        if (mix_result.IsError()) {
+            LOG_ERROR(Audio, "Failed to update mix parameters");
+            return mix_result;
+        }
+
+        // TODO(ogniK): Sinks
+        if (!info_updater.UpdateSinks(sink_context)) {
+            LOG_ERROR(Audio, "Failed to update sink parameters");
+            return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
+        }
+
+        // TODO(ogniK): Performance buffer
+        if (!info_updater.UpdatePerformanceBuffer()) {
+            LOG_ERROR(Audio, "Failed to update performance buffer parameters");
+            return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
+        }
+
+        if (!info_updater.UpdateErrorInfo(behavior_info)) {
+            LOG_ERROR(Audio, "Failed to update error info");
+            return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
+        }
+
+        if (behavior_info.IsElapsedFrameCountSupported()) {
+            if (!info_updater.UpdateRendererInfo(elapsed_frame_count)) {
+                LOG_ERROR(Audio, "Failed to update renderer info");
+                return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
+            }
+        }
+        // TODO(ogniK): Statistics
+
+        if (!info_updater.WriteOutputHeader()) {
+            LOG_ERROR(Audio, "Failed to write output header");
+            return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
+        }
+
+        // TODO(ogniK): Check when all sections are implemented
+
+        if (!info_updater.CheckConsumedSize()) {
+            LOG_ERROR(Audio, "Audio buffers were not consumed!");
             return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
         }
     }
-
-    const auto mix_result = info_updater.UpdateMixes(mix_context, worker_params.mix_buffer_count,
-                                                     splitter_context, effect_context);
-
-    if (mix_result.IsError()) {
-        LOG_ERROR(Audio, "Failed to update mix parameters");
-        return mix_result;
-    }
-
-    // TODO(ogniK): Sinks
-    if (!info_updater.UpdateSinks(sink_context)) {
-        LOG_ERROR(Audio, "Failed to update sink parameters");
-        return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
-    }
-
-    // TODO(ogniK): Performance buffer
-    if (!info_updater.UpdatePerformanceBuffer()) {
-        LOG_ERROR(Audio, "Failed to update performance buffer parameters");
-        return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
-    }
-
-    if (!info_updater.UpdateErrorInfo(behavior_info)) {
-        LOG_ERROR(Audio, "Failed to update error info");
-        return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
-    }
-
-    if (behavior_info.IsElapsedFrameCountSupported()) {
-        if (!info_updater.UpdateRendererInfo(elapsed_frame_count)) {
-            LOG_ERROR(Audio, "Failed to update renderer info");
-            return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
-        }
-    }
-    // TODO(ogniK): Statistics
-
-    if (!info_updater.WriteOutputHeader()) {
-        LOG_ERROR(Audio, "Failed to write output header");
-        return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
-    }
-
-    // TODO(ogniK): Check when all sections are implemented
-
-    if (!info_updater.CheckConsumedSize()) {
-        LOG_ERROR(Audio, "Audio buffers were not consumed!");
-        return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
-    }
-
-    ReleaseAndQueueBuffers();
-
     return ResultSuccess;
 }
 
@@ -315,10 +327,24 @@ void AudioRenderer::QueueMixedBuffer(Buffer::Tag tag) {
 }
 
 void AudioRenderer::ReleaseAndQueueBuffers() {
-    const auto released_buffers{audio_out->GetTagsAndReleaseBuffers(stream)};
-    for (const auto& tag : released_buffers) {
-        QueueMixedBuffer(tag);
+    if (!stream->IsPlaying()) {
+        return;
     }
+
+    {
+        std::scoped_lock l{lock};
+        const auto released_buffers{audio_out->GetTagsAndReleaseBuffers(stream)};
+        for (const auto& tag : released_buffers) {
+            QueueMixedBuffer(tag);
+        }
+    }
+
+    const f32 sampleRate = static_cast<f32>(GetSampleRate());
+    const f32 sampleCount = static_cast<f32>(GetSampleCount());
+    const f32 consumeRate = sampleRate / (sampleCount * (sampleCount / 240));
+    const s32 ms = (1000 / static_cast<s32>(consumeRate)) - 1;
+    const std::chrono::milliseconds next_event_time(std::max(ms / NUM_BUFFERS, 1));
+    core_timing.ScheduleEvent(next_event_time, process_event, {});
 }
 
 } // namespace AudioCore

@@ -397,8 +397,9 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
         expected_memory = std::max(possible_expected_memory, DEFAULT_EXPECTED_MEMORY);
         critical_memory = std::max(possible_critical_memory, DEFAULT_CRITICAL_MEMORY);
     } else {
-        expected_memory = DEFAULT_EXPECTED_MEMORY;
-        critical_memory = DEFAULT_CRITICAL_MEMORY;
+        // on OGL we can be more conservatives as the driver takes care.
+        expected_memory = DEFAULT_EXPECTED_MEMORY + Common::Size_512_MB;
+        critical_memory = DEFAULT_CRITICAL_MEMORY + Common::Size_1_GB;
     }
 }
 
