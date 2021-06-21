@@ -1,5 +1,5 @@
 version: 'EA{build}'
-clone_folder: c:\Projects\yuzu-early-accesss
+clone_folder: c:\Projects\yuzu-early-access
 skip_tags: true
 skip_non_tags: false
 branches:
