@@ -27,13 +27,8 @@ init:
 - set generator="Visual Studio 16 2019"
 - echo %generator%
 
-#Updating the Build Version
+#Updating the Build Version to Commit Name
 - ps: Update-AppveyorBuild -Version "$env:APPVEYOR_REPO_COMMIT_MESSAGE"
-- echo %BUILD_FULLNAME%
-- echo %BUILD_VERSION%
-- echo %BUILD_ID%
-- echo %TITLE_BAR_FORMAT_IDLE%
-- echo %TITLE_BAR_FORMAT_RUNNING%
 
 # Update Environment Variables based on matrix/platform
 - set PY_VER=%PYTHON_VERSION:.=%
@@ -69,10 +64,12 @@ after_build:
   
 artifacts:
     - path: build\bin
-      name: yuzu-early-access-%APPVEYOR_BUILD_VERSION%
+      name: yuzu-early-access-EA%APPVEYOR_BUILD_VERSION%
   
 deploy:
-  description: 'Yuzu Early Access CI Builds with Appveyor [Current Build: %APPVEYOR_BUILD_VERSION%]'
+  tag: EA%APPVEYOR_BUILD_VERSION%
+  release: EA%APPVEYOR_BUILD_VERSION%
+  description: 'Yuzu Early Access CI Builds with Appveyor [Current Build: yuzu Early Access %APPVEYOR_BUILD_VERSION%]'
   provider: GitHub
   auth_token:
     secure: aCv+cazXM4cEq+Jn6ZMOhXAfr0wmdeE9VD0IQcGEEYDIgU6+j4SzuzIYpcq5LMb/
@@ -80,5 +77,6 @@ deploy:
     branch: main
     APPVEYOR_REPO_TAG: false        # deploy on tag push only
 
-only_commits:
-  message: /EA/
+skip_commits:
+  files:
+    - appveyor.yml
