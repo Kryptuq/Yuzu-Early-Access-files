@@ -27,13 +27,8 @@ init:
 - set generator="Visual Studio 16 2019"
 - echo %generator%
 
-#Updating the Build Version
-- ps: Update-AppveyorBuild -Version "$env:APPVEYOR_REPO_COMMIT_MESSAGE"
-- echo %BUILD_FULLNAME%
-- echo %BUILD_VERSION%
-- echo %BUILD_ID%
-- echo %TITLE_BAR_FORMAT_IDLE%
-- echo %TITLE_BAR_FORMAT_RUNNING%
+#Updating the Build Version to Commit Name
+- ps: Update-AppveyorBuild -Version "EA$env:APPVEYOR_REPO_COMMIT_MESSAGE"
 
 # Update Environment Variables based on matrix/platform
 - set PY_VER=%PYTHON_VERSION:.=%
