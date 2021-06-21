@@ -55,9 +55,11 @@ public:
 
     IR::U32 GetCpsr();
     void SetCpsr(const IR::U32& value);
-    void SetCpsrNZCV(const IR::U32& value);
+    void SetCpsrNZCV(const IR::NZCV& value);
+    void SetCpsrNZCVRaw(const IR::U32& value);
     void SetCpsrNZCVQ(const IR::U32& value);
     void SetCheckBit(const IR::U1& value);
+    IR::U1 GetOverflowFrom(const IR::Value& value);
     IR::U1 GetCFlag();
     void SetNFlag(const IR::U1& value);
     void SetZFlag(const IR::U1& value);

@@ -440,11 +440,11 @@ void EmitX64::EmitVectorAnd(EmitContext& ctx, IR::Inst* inst) {
 }
 
 static void ArithmeticShiftRightByte(EmitContext& ctx, BlockOfCode& code, const Xbyak::Xmm& result, u8 shift_amount) {
-    if (code.HasHostFeature(HostFeature::AVX512VL | HostFeature::GFNI)) {
+    if (code.HasHostFeature(HostFeature::GFNI)) {
         const u64 shift_matrix = shift_amount < 8
                                    ? (0x0102040810204080 << (shift_amount * 8)) | (0x8080808080808080 >> (64 - shift_amount * 8))
                                    : 0x8080808080808080;
-        code.vgf2p8affineqb(result, result, code.MConst(xword_b, shift_matrix), 0);
+        code.gf2p8affineqb(result, code.MConst(xword, shift_matrix, shift_matrix), 0);
         return;
     }
 
@@ -1472,9 +1472,9 @@ void EmitX64::EmitVectorLogicalShiftLeft8(EmitContext& ctx, IR::Inst* inst) {
         code.pxor(result, result);
     } else if (shift_amount == 1) {
         code.paddb(result, result);
-    } else if (code.HasHostFeature(HostFeature::AVX512VL | HostFeature::GFNI)) {
+    } else if (code.HasHostFeature(HostFeature::GFNI)) {
         const u64 shift_matrix = 0x0102040810204080 >> (shift_amount * 8);
-        code.vgf2p8affineqb(result, result, code.MConst(xword_b, shift_matrix), 0);
+        code.gf2p8affineqb(result, code.MConst(xword, shift_matrix, shift_matrix), 0);
     } else {
         const u64 replicand = (0xFFULL << shift_amount) & 0xFF;
         const u64 mask = Common::Replicate(replicand, Common::BitSize<u8>());
@@ -1529,9 +1529,9 @@ void EmitX64::EmitVectorLogicalShiftRight8(EmitContext& ctx, IR::Inst* inst) {
         // Do nothing
     } else if (shift_amount >= 8) {
         code.pxor(result, result);
-    } else if (code.HasHostFeature(HostFeature::AVX512VL | HostFeature::GFNI)) {
+    } else if (code.HasHostFeature(HostFeature::GFNI)) {
         const u64 shift_matrix = 0x0102040810204080 << (shift_amount * 8);
-        code.vgf2p8affineqb(result, result, code.MConst(xword_b, shift_matrix), 0);
+        code.gf2p8affineqb(result, code.MConst(xword, shift_matrix, shift_matrix), 0);
     } else {
         const u64 replicand = 0xFEULL >> shift_amount;
         const u64 mask = Common::Replicate(replicand, Common::BitSize<u8>());
@@ -2137,12 +2137,18 @@ void EmitX64::EmitVectorNarrow64(EmitContext& ctx, IR::Inst* inst) {
 void EmitX64::EmitVectorNot(EmitContext& ctx, IR::Inst* inst) {
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
 
+    if (code.HasHostFeature(HostFeature::AVX512_Ortho)) {
+        const Xbyak::Xmm result = ctx.reg_alloc.ScratchXmm();
+        const Xbyak::Xmm operand = ctx.reg_alloc.UseXmm(args[0]);
+        code.vpternlogq(result, operand, operand, u8(~Tern::c));
+        ctx.reg_alloc.DefineValue(inst, result);
+        return;
+    }
+
     const Xbyak::Xmm xmm_a = ctx.reg_alloc.UseScratchXmm(args[0]);
     const Xbyak::Xmm xmm_b = ctx.reg_alloc.ScratchXmm();
-
     code.pcmpeqw(xmm_b, xmm_b);
     code.pxor(xmm_a, xmm_b);
-
     ctx.reg_alloc.DefineValue(inst, xmm_a);
 }
 
@@ -2789,8 +2795,8 @@ void EmitX64::EmitVectorReverseBits(EmitContext& ctx, IR::Inst* inst) {
 
     const Xbyak::Xmm data = ctx.reg_alloc.UseScratchXmm(args[0]);
 
-    if (code.HasHostFeature(HostFeature::AVX512VL | HostFeature::GFNI)) {
-        code.vgf2p8affineqb(data, data, code.MConst(xword_b, 0x8040201008040201), 0);
+    if (code.HasHostFeature(HostFeature::GFNI)) {
+        code.gf2p8affineqb(data, code.MConst(xword, 0x8040201008040201, 0x8040201008040201), 0);
     } else {
         const Xbyak::Xmm high_nibble_reg = ctx.reg_alloc.ScratchXmm();
         code.movdqa(high_nibble_reg, code.MConst(xword, 0xF0F0F0F0F0F0F0F0, 0xF0F0F0F0F0F0F0F0));

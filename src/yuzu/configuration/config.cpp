@@ -757,6 +757,8 @@ void Config::ReadCpuValues() {
                       QStringLiteral("cpuopt_unsafe_unfuse_fma"), true);
     ReadSettingGlobal(Settings::values.cpuopt_unsafe_reduce_fp_error,
                       QStringLiteral("cpuopt_unsafe_reduce_fp_error"), true);
+    ReadSettingGlobal(Settings::values.cpuopt_unsafe_ignore_standard_fpcr,
+                      QStringLiteral("cpuopt_unsafe_ignore_standard_fpcr"), true);
     ReadSettingGlobal(Settings::values.cpuopt_unsafe_inaccurate_nan,
                       QStringLiteral("cpuopt_unsafe_inaccurate_nan"), true);
     ReadSettingGlobal(Settings::values.cpuopt_unsafe_fastmem_check,
@@ -1343,6 +1345,8 @@ void Config::SaveCpuValues() {
                        Settings::values.cpuopt_unsafe_unfuse_fma, true);
     WriteSettingGlobal(QStringLiteral("cpuopt_unsafe_reduce_fp_error"),
                        Settings::values.cpuopt_unsafe_reduce_fp_error, true);
+    WriteSettingGlobal(QStringLiteral("cpuopt_unsafe_ignore_standard_fpcr"),
+                       Settings::values.cpuopt_unsafe_ignore_standard_fpcr, true);
     WriteSettingGlobal(QStringLiteral("cpuopt_unsafe_inaccurate_nan"),
                        Settings::values.cpuopt_unsafe_inaccurate_nan, true);
     WriteSettingGlobal(QStringLiteral("cpuopt_unsafe_fastmem_check"),

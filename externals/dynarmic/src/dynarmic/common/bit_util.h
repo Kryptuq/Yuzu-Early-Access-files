@@ -199,7 +199,7 @@ constexpr bool MostSignificantBit(T value) {
 }
 
 template<typename T>
-inline T Replicate(T value, size_t element_size) {
+constexpr T Replicate(T value, size_t element_size) {
     ASSERT_MSG(BitSize<T>() % element_size == 0, "bitsize of T not divisible by element_size");
     if (element_size == BitSize<T>())
         return value;

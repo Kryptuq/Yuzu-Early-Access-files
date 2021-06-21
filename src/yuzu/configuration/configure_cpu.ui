@@ -112,6 +112,18 @@
          </widget>
         </item>
         <item>
+         <widget class="QCheckBox" name="cpuopt_unsafe_ignore_standard_fpcr">
+          <property name="toolTip">
+           <string>
+            &lt;div&gt;This option improves the speed of 32 bits ASIMD floating-point functions by running with incorrect rounding modes.&lt;/div&gt;
+           </string>
+          </property>
+          <property name="text">
+           <string>Faster ASIMD instructions (32 bits only)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QCheckBox" name="cpuopt_unsafe_inaccurate_nan">
           <property name="toolTip">
            <string>

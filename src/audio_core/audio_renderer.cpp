@@ -69,6 +69,8 @@ namespace {
 } // namespace
 
 namespace AudioCore {
+constexpr s32 NUM_BUFFERS = 2;
+
 AudioRenderer::AudioRenderer(Core::Timing::CoreTiming& core_timing_, Core::Memory::Memory& memory_,
                              AudioCommon::AudioRendererParameter params,
                              Stream::ReleaseCallback&& release_callback,
@@ -89,9 +91,9 @@ AudioRenderer::AudioRenderer(Core::Timing::CoreTiming& core_timing_, Core::Memor
         core_timing, params.sample_rate, AudioCommon::STREAM_NUM_CHANNELS,
         fmt::format("AudioRenderer-Instance{}", instance_number), std::move(release_callback));
     process_event = Core::Timing::CreateEvent(
-        fmt::format("AudioRenderer-Instance{}-Consume", instance_number),
+        fmt::format("AudioRenderer-Instance{}-Process", instance_number),
         [this](std::uintptr_t, std::chrono::nanoseconds) { ReleaseAndQueueBuffers(); });
-    for (size_t i = 0; i < NUM_BUFFERS; ++i) {
+    for (s32 i = 0; i < NUM_BUFFERS; ++i) {
         QueueMixedBuffer(i);
     }
 }
@@ -128,7 +130,7 @@ Stream::State AudioRenderer::GetStreamState() const {
 ResultCode AudioRenderer::UpdateAudioRenderer(const std::vector<u8>& input_params,
                                               std::vector<u8>& output_params) {
     {
-        std::scoped_lock l{lock};
+        std::scoped_lock lock{mutex};
         InfoUpdater info_updater{input_params, output_params, behavior_info};
 
         if (!info_updater.UpdateBehaviorInfo(behavior_info)) {
@@ -332,17 +334,17 @@ void AudioRenderer::ReleaseAndQueueBuffers() {
     }
 
     {
-        std::scoped_lock l{lock};
+        std::scoped_lock lock{mutex};
         const auto released_buffers{audio_out->GetTagsAndReleaseBuffers(stream)};
         for (const auto& tag : released_buffers) {
             QueueMixedBuffer(tag);
         }
     }
 
-    const f32 sampleRate = static_cast<f32>(GetSampleRate());
-    const f32 sampleCount = static_cast<f32>(GetSampleCount());
-    const f32 consumeRate = sampleRate / (sampleCount * (sampleCount / 240));
-    const s32 ms = (1000 / static_cast<s32>(consumeRate)) - 1;
+    const f32 sample_rate = static_cast<f32>(GetSampleRate());
+    const f32 sample_count = static_cast<f32>(GetSampleCount());
+    const f32 consume_rate = sample_rate / (sample_count * (sample_count / 240));
+    const s32 ms = (1000 / static_cast<s32>(consume_rate)) - 1;
     const std::chrono::milliseconds next_event_time(std::max(ms / NUM_BUFFERS, 1));
     core_timing.ScheduleEvent(next_event_time, process_event, {});
 }

@@ -454,6 +454,116 @@ TEST_CASE("A64: FABD", "[a64]") {
     REQUIRE(jit.GetVector(22) == Vector{0x56d3f0857fc90e2b, 0x6e4b0a4144873176});
 }
 
+TEST_CASE("A64: FABS", "[a64]") {
+    A64TestEnv env;
+    A64::Jit jit{A64::UserConfig{&env}};
+
+    env.code_mem.emplace_back(0x4ef8f804);  // FABS v4.8h, v0.8h
+    env.code_mem.emplace_back(0x4ea0f825);  // FABS v5.4s, v1.4s
+    env.code_mem.emplace_back(0x4ee0f846);  // FABS v6.2d, v2.2d
+    env.code_mem.emplace_back(0x14000000);  // B .
+
+    jit.SetPC(0);
+    jit.SetVector(0, {0xffffffffffffffff, 0xffffffffffff8000});
+    jit.SetVector(1, {0xffbfffffffc00000, 0xff80000080000000});
+    jit.SetVector(2, {0xffffffffffffffff, 0x8000000000000000});
+
+    env.ticks_left = 4;
+    jit.Run();
+
+    REQUIRE(jit.GetVector(4) == Vector{0x7fff7fff7fff7fff, 0x7fff7fff7fff0000});
+    REQUIRE(jit.GetVector(5) == Vector{0x7fbfffff7fc00000, 0x7f80000000000000});
+    REQUIRE(jit.GetVector(6) == Vector{0x7fffffffffffffff, 0x0000000000000000});
+}
+
+TEST_CASE("A64: FMIN", "[a64]") {
+    A64TestEnv env;
+    A64::Jit jit{A64::UserConfig{&env}};
+
+    env.code_mem.emplace_back(0x4ea1f400);  // FMIN.4S V0, V0, V1
+    env.code_mem.emplace_back(0x4ee3f442);  // FMIN.2D V2, V2, V3
+    env.code_mem.emplace_back(0x14000000);  // B .
+
+    jit.SetPC(0);
+    jit.SetVector(0, {0x7fc00000'09503366, 0x00000000'7f984a37});
+    jit.SetVector(1, {0xc1200000'00000001, 0x6e4b0a41'ffffffff});
+
+    jit.SetVector(2, {0x7fc0000009503366, 0x3ff0000000000000});
+    jit.SetVector(3, {0xbff0000000000000, 0x6e4b0a41ffffffff});
+
+    env.ticks_left = 2;
+    jit.Run();
+
+    REQUIRE(jit.GetVector(0) == Vector{0x7fc00000'00000001, 0x00000000'7fd84a37});
+    REQUIRE(jit.GetVector(2) == Vector{0xbff0000000000000, 0x3ff0000000000000});
+}
+
+TEST_CASE("A64: FMAX", "[a64]") {
+    A64TestEnv env;
+    A64::Jit jit{A64::UserConfig{&env}};
+
+    env.code_mem.emplace_back(0x4e21f400);  // FMAX.4S V0, V0, V1
+    env.code_mem.emplace_back(0x4e63f442);  // FMAX.2D V2, V2, V3
+    env.code_mem.emplace_back(0x14000000);  // B .
+
+    jit.SetPC(0);
+    jit.SetVector(0, {0x7fc00000'09503366, 0x00000000'7f984a37});
+    jit.SetVector(1, {0xc1200000'00000001, 0x6e4b0a41'ffffffff});
+
+    jit.SetVector(2, {0x7fc0000009503366, 0x3ff0000000000000});
+    jit.SetVector(3, {0xbff0000000000000, 0x6e4b0a41ffffffff});
+
+    env.ticks_left = 2;
+    jit.Run();
+
+    REQUIRE(jit.GetVector(0) == Vector{0x7fc00000'09503366, 0x6e4b0a41'7fd84a37});
+    REQUIRE(jit.GetVector(2) == Vector{0x7fc0000009503366, 0x6e4b0a41ffffffff});
+}
+
+TEST_CASE("A64: FMINNM", "[a64]") {
+    A64TestEnv env;
+    A64::Jit jit{A64::UserConfig{&env}};
+
+    env.code_mem.emplace_back(0x4ea1c400);  // FMINNM.4S V0, V0, V1
+    env.code_mem.emplace_back(0x4ee3c442);  // FMINNM.2D V2, V2, V3
+    env.code_mem.emplace_back(0x14000000);  // B .
+
+    jit.SetPC(0);
+    jit.SetVector(0, {0x7fc00000'09503366, 0x00000000'7f984a37});
+    jit.SetVector(1, {0xc1200000'00000001, 0x6e4b0a41'ffffffff});
+
+    jit.SetVector(2, {0x7fc0000009503366, 0x3ff0000000000000});
+    jit.SetVector(3, {0xfff0000000000000, 0xffffffffffffffff});
+
+    env.ticks_left = 2;
+    jit.Run();
+
+    REQUIRE(jit.GetVector(0) == Vector{0xc1200000'00000001, 0x00000000'7fd84a37});
+    REQUIRE(jit.GetVector(2) == Vector{0xfff0000000000000, 0x3ff0000000000000});
+}
+
+TEST_CASE("A64: FMAXNM", "[a64]") {
+    A64TestEnv env;
+    A64::Jit jit{A64::UserConfig{&env}};
+
+    env.code_mem.emplace_back(0x4e21c400);  // FMAXNM.4S V0, V0, V1
+    env.code_mem.emplace_back(0x4e63c442);  // FMAXNM.2D V2, V2, V3
+    env.code_mem.emplace_back(0x14000000);  // B .
+
+    jit.SetPC(0);
+    jit.SetVector(0, {0x7fc00000'09503366, 0x00000000'7f984a37});
+    jit.SetVector(1, {0xc1200000'00000001, 0x6e4b0a41'ffffffff});
+
+    jit.SetVector(2, {0x7fc0000009503366, 0x3ff0000000000000});
+    jit.SetVector(3, {0xfff0000000000000, 0xffffffffffffffff});
+
+    env.ticks_left = 2;
+    jit.Run();
+
+    REQUIRE(jit.GetVector(0) == Vector{0xc1200000'09503366, 0x6e4b0a41'7fd84a37});
+    REQUIRE(jit.GetVector(2) == Vector{0x7fc0000009503366, 0x3ff0000000000000});
+}
+
 TEST_CASE("A64: 128-bit exclusive read/write", "[a64]") {
     A64TestEnv env;
     ExclusiveMonitor monitor{1};

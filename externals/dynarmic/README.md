@@ -44,7 +44,7 @@ More general alternatives:
 * [VisUAL](https://salmanarif.bitbucket.io/visual/index.html) - Visual ARM UAL emulator intended for education
 * A wide variety of other recompilers, interpreters and emulators can be found embedded in other projects, here are some we would recommend looking at:
   * [firebird's recompiler](https://github.com/nspire-emus/firebird) - Takes more of a call-threaded approach to recompilation
-  * [higan's arm7tdmi emulator](https://gitlab.com/higan/higan/tree/master/higan/component/processor/arm7tdmi) - Very clean code-style
+  * [higan's arm7tdmi emulator](https://github.com/higan-emu/higan/tree/master/higan/component/processor/arm7tdmi) - Very clean code-style
   * [arm-js by ozaki-r](https://github.com/ozaki-r/arm-js) - Emulates ARMv7A and some peripherals of Versatile Express, in the browser
 
 Disadvantages of Dynarmic

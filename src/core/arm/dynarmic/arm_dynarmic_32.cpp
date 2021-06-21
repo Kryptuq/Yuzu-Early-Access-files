@@ -186,6 +186,9 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
         if (Settings::values.cpuopt_unsafe_reduce_fp_error.GetValue()) {
             config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_ReducedErrorFP;
         }
+        if (Settings::values.cpuopt_unsafe_ignore_standard_fpcr.GetValue()) {
+            config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_IgnoreStandardFPCRValue;
+        }
         if (Settings::values.cpuopt_unsafe_inaccurate_nan.GetValue()) {
             config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_InaccurateNaN;
         }

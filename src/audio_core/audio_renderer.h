@@ -34,7 +34,6 @@ class Memory;
 
 namespace AudioCore {
 using DSPStateHolder = std::array<VoiceState*, AudioCommon::MAX_CHANNEL_COUNT>;
-constexpr s32 NUM_BUFFERS = 2;
 
 class AudioOut;
 
@@ -74,7 +73,7 @@ private:
     std::size_t elapsed_frame_count{};
     Core::Timing::CoreTiming& core_timing;
     std::shared_ptr<Core::Timing::EventType> process_event;
-    std::mutex lock;
+    std::mutex mutex;
 };
 
 } // namespace AudioCore

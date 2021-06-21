@@ -134,8 +134,6 @@ public:
     U32U64 ArithmeticShiftRightMasked(const U32U64& value_in, const U32U64& shift_amount);
     U32U64 RotateRightMasked(const U32U64& value_in, const U32U64& shift_amount);
     ResultAndCarry<U32> RotateRightExtended(const U32& value_in, const U1& carry_in);
-    ResultAndCarryAndOverflow<U32> AddWithCarry(const U32& a, const U32& b, const U1& carry_in);
-    ResultAndCarryAndOverflow<U32> SubWithCarry(const U32& a, const U32& b, const U1& carry_in);
     U32U64 AddWithCarry(const U32U64& a, const U32U64& b, const U1& carry_in);
     U32U64 SubWithCarry(const U32U64& a, const U32U64& b, const U1& carry_in);
     U32U64 Add(const U32U64& a, const U32U64& b);

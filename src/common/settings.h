@@ -129,6 +129,7 @@ struct Values {
 
     Setting<bool> cpuopt_unsafe_unfuse_fma;
     Setting<bool> cpuopt_unsafe_reduce_fp_error;
+    Setting<bool> cpuopt_unsafe_ignore_standard_fpcr;
     Setting<bool> cpuopt_unsafe_inaccurate_nan;
     Setting<bool> cpuopt_unsafe_fastmem_check;
 

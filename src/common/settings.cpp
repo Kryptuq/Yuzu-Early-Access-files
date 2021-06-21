@@ -123,6 +123,7 @@ void RestoreGlobalState(bool is_powered_on) {
     values.cpu_accuracy.SetGlobal(true);
     values.cpuopt_unsafe_unfuse_fma.SetGlobal(true);
     values.cpuopt_unsafe_reduce_fp_error.SetGlobal(true);
+    values.cpuopt_unsafe_ignore_standard_fpcr.SetGlobal(true);
     values.cpuopt_unsafe_inaccurate_nan.SetGlobal(true);
     values.cpuopt_unsafe_fastmem_check.SetGlobal(true);
 

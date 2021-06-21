@@ -1155,7 +1155,7 @@ bool TranslatorVisitor::vfp_VMRS(Cond cond, Reg t) {
     if (t == Reg::R15) {
         // This encodes ASPR_nzcv access
         const auto nzcv = ir.GetFpscrNZCV();
-        ir.SetCpsrNZCV(nzcv);
+        ir.SetCpsrNZCVRaw(nzcv);
     } else {
         ir.SetRegister(t, ir.GetFpscr());
     }

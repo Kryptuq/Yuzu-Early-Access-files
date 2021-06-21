@@ -240,13 +240,6 @@ U32U64 IREmitter::RotateRightMasked(const U32U64& value_in, const U32U64& shift_
     }
 }
 
-ResultAndCarryAndOverflow<U32> IREmitter::AddWithCarry(const U32& a, const U32& b, const U1& carry_in) {
-    const auto result = Inst<U32>(Opcode::Add32, a, b, carry_in);
-    const auto carry_out = Inst<U1>(Opcode::GetCarryFromOp, result);
-    const auto overflow = Inst<U1>(Opcode::GetOverflowFromOp, result);
-    return {result, carry_out, overflow};
-}
-
 U32U64 IREmitter::AddWithCarry(const U32U64& a, const U32U64& b, const U1& carry_in) {
     ASSERT(a.GetType() == b.GetType());
     if (a.GetType() == Type::U32) {
@@ -263,14 +256,6 @@ U32U64 IREmitter::Add(const U32U64& a, const U32U64& b) {
     } else {
         return Inst<U64>(Opcode::Add64, a, b, Imm1(0));
     }
-}
-
-ResultAndCarryAndOverflow<U32> IREmitter::SubWithCarry(const U32& a, const U32& b, const U1& carry_in) {
-    // This is equivalent to AddWithCarry(a, Not(b), carry_in).
-    const auto result = Inst<U32>(Opcode::Sub32, a, b, carry_in);
-    const auto carry_out = Inst<U1>(Opcode::GetCarryFromOp, result);
-    const auto overflow = Inst<U1>(Opcode::GetOverflowFromOp, result);
-    return {result, carry_out, overflow};
 }
 
 U32U64 IREmitter::SubWithCarry(const U32U64& a, const U32U64& b, const U1& carry_in) {

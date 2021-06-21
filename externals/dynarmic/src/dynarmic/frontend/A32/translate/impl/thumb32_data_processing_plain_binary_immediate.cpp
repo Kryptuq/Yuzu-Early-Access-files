@@ -85,7 +85,7 @@ bool TranslatorVisitor::thumb32_ADD_imm_2(Imm<1> imm1, Reg n, Imm<3> imm3, Reg d
     const auto reg_n = ir.GetRegister(n);
     const auto result = ir.AddWithCarry(reg_n, ir.Imm32(imm), ir.Imm1(0));
 
-    ir.SetRegister(d, result.result);
+    ir.SetRegister(d, result);
     return true;
 }
 
@@ -196,7 +196,7 @@ bool TranslatorVisitor::thumb32_SUB_imm_2(Imm<1> imm1, Reg n, Imm<3> imm3, Reg d
     const auto reg_n = ir.GetRegister(n);
     const auto result = ir.SubWithCarry(reg_n, ir.Imm32(imm), ir.Imm1(1));
 
-    ir.SetRegister(d, result.result);
+    ir.SetRegister(d, result);
     return true;
 }
 

@@ -68,12 +68,12 @@ bool TranslatorVisitor::thumb32_SMLAD(Reg n, Reg a, Reg d, bool X, Reg m) {
     const IR::U32 product_hi = ir.Mul(n_hi, m_hi);
     const IR::U32 addend = ir.GetRegister(a);
 
-    auto result_overflow = ir.AddWithCarry(product_lo, product_hi, ir.Imm1(0));
-    ir.OrQFlag(result_overflow.overflow);
-    result_overflow = ir.AddWithCarry(result_overflow.result, addend, ir.Imm1(0));
+    auto result = ir.AddWithCarry(product_lo, product_hi, ir.Imm1(0));
+    ir.OrQFlag(ir.GetOverflowFrom(result));
+    result = ir.AddWithCarry(result, addend, ir.Imm1(0));
 
-    ir.SetRegister(d, result_overflow.result);
-    ir.OrQFlag(result_overflow.overflow);
+    ir.SetRegister(d, result);
+    ir.OrQFlag(ir.GetOverflowFrom(result));
     return true;
 }
 
@@ -97,10 +97,10 @@ bool TranslatorVisitor::thumb32_SMLSD(Reg n, Reg a, Reg d, bool X, Reg m) {
     const IR::U32 product_hi = ir.Mul(n_hi, m_hi);
     const IR::U32 addend = ir.GetRegister(a);
     const IR::U32 product = ir.Sub(product_lo, product_hi);
-    auto result_overflow = ir.AddWithCarry(product, addend, ir.Imm1(0));
+    auto result = ir.AddWithCarry(product, addend, ir.Imm1(0));
 
-    ir.SetRegister(d, result_overflow.result);
-    ir.OrQFlag(result_overflow.overflow);
+    ir.SetRegister(d, result);
+    ir.OrQFlag(ir.GetOverflowFrom(result));
     return true;
 }
 
@@ -116,10 +116,10 @@ bool TranslatorVisitor::thumb32_SMLAXY(Reg n, Reg a, Reg d, bool N, bool M, Reg 
     const IR::U32 m16 = M ? ir.ArithmeticShiftRight(m32, ir.Imm8(16), ir.Imm1(0)).result
                           : ir.SignExtendHalfToWord(ir.LeastSignificantHalf(m32));
     const IR::U32 product = ir.Mul(n16, m16);
-    const auto result_overflow = ir.AddWithCarry(product, ir.GetRegister(a), ir.Imm1(0));
+    const auto result = ir.AddWithCarry(product, ir.GetRegister(a), ir.Imm1(0));
 
-    ir.SetRegister(d, result_overflow.result);
-    ir.OrQFlag(result_overflow.overflow);
+    ir.SetRegister(d, result);
+    ir.OrQFlag(ir.GetOverflowFrom(result));
     return true;
 }
 
@@ -135,7 +135,7 @@ bool TranslatorVisitor::thumb32_SMMLA(Reg n, Reg a, Reg d, bool R, Reg m) {
     const auto result_carry = ir.MostSignificantWord(temp);
     auto result = result_carry.result;
     if (R) {
-        result = ir.AddWithCarry(result, ir.Imm32(0), result_carry.carry).result;
+        result = ir.AddWithCarry(result, ir.Imm32(0), result_carry.carry);
     }
 
     ir.SetRegister(d, result);
@@ -154,7 +154,7 @@ bool TranslatorVisitor::thumb32_SMMLS(Reg n, Reg a, Reg d, bool R, Reg m) {
     const auto result_carry = ir.MostSignificantWord(temp);
     auto result = result_carry.result;
     if (R) {
-        result = ir.AddWithCarry(result, ir.Imm32(0), result_carry.carry).result;
+        result = ir.AddWithCarry(result, ir.Imm32(0), result_carry.carry);
     }
 
     ir.SetRegister(d, result);
@@ -172,7 +172,7 @@ bool TranslatorVisitor::thumb32_SMMUL(Reg n, Reg d, bool R, Reg m) {
     const auto result_carry = ir.MostSignificantWord(product);
     auto result = result_carry.result;
     if (R) {
-        result = ir.AddWithCarry(result, ir.Imm32(0), result_carry.carry).result;
+        result = ir.AddWithCarry(result, ir.Imm32(0), result_carry.carry);
     }
 
     ir.SetRegister(d, result);
@@ -197,10 +197,10 @@ bool TranslatorVisitor::thumb32_SMUAD(Reg n, Reg d, bool M, Reg m) {
 
     const IR::U32 product_lo = ir.Mul(n_lo, m_lo);
     const IR::U32 product_hi = ir.Mul(n_hi, m_hi);
-    const auto result_overflow = ir.AddWithCarry(product_lo, product_hi, ir.Imm1(0));
+    const auto result = ir.AddWithCarry(product_lo, product_hi, ir.Imm1(0));
 
-    ir.SetRegister(d, result_overflow.result);
-    ir.OrQFlag(result_overflow.overflow);
+    ir.SetRegister(d, result);
+    ir.OrQFlag(ir.GetOverflowFrom(result));
     return true;
 }
 
@@ -257,10 +257,10 @@ bool TranslatorVisitor::thumb32_SMLAWY(Reg n, Reg a, Reg d, bool M, Reg m) {
     }
     const IR::U64 m16 = ir.SignExtendWordToLong(ir.SignExtendHalfToWord(ir.LeastSignificantHalf(m32)));
     const auto product = ir.LeastSignificantWord(ir.LogicalShiftRight(ir.Mul(n32, m16), ir.Imm8(16)));
-    const auto result_overflow = ir.AddWithCarry(product, ir.GetRegister(a), ir.Imm1(0));
+    const auto result = ir.AddWithCarry(product, ir.GetRegister(a), ir.Imm1(0));
 
-    ir.SetRegister(d, result_overflow.result);
-    ir.OrQFlag(result_overflow.overflow);
+    ir.SetRegister(d, result);
+    ir.OrQFlag(ir.GetOverflowFrom(result));
     return true;
 }
 
@@ -305,7 +305,7 @@ bool TranslatorVisitor::thumb32_USADA8(Reg n, Reg a, Reg d, Reg m) {
     const auto tmp = ir.PackedAbsDiffSumS8(reg_n, reg_m);
     const auto result = ir.AddWithCarry(reg_a, tmp, ir.Imm1(0));
 
-    ir.SetRegister(d, result.result);
+    ir.SetRegister(d, result);
     return true;
 }
 

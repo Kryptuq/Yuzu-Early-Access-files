@@ -141,8 +141,12 @@ void IREmitter::SetCpsr(const IR::U32& value) {
     Inst(Opcode::A32SetCpsr, value);
 }
 
-void IREmitter::SetCpsrNZCV(const IR::U32& value) {
+void IREmitter::SetCpsrNZCV(const IR::NZCV& value) {
     Inst(Opcode::A32SetCpsrNZCV, value);
+}
+
+void IREmitter::SetCpsrNZCVRaw(const IR::U32& value) {
+    Inst(Opcode::A32SetCpsrNZCVRaw, value);
 }
 
 void IREmitter::SetCpsrNZCVQ(const IR::U32& value) {
@@ -151,6 +155,10 @@ void IREmitter::SetCpsrNZCVQ(const IR::U32& value) {
 
 void IREmitter::SetCheckBit(const IR::U1& value) {
     Inst(Opcode::A32SetCheckBit, value);
+}
+
+IR::U1 IREmitter::GetOverflowFrom(const IR::Value& value) {
+    return Inst<IR::U1>(Opcode::GetOverflowFromOp, value);
 }
 
 IR::U1 IREmitter::GetCFlag() {

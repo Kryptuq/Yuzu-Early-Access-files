@@ -102,7 +102,7 @@ bool TranslatorVisitor::arm_MRC(Cond cond, size_t opc1, CoprocReg CRn, Reg t, si
             ir.SetRegister(t, word);
         } else {
             const auto new_cpsr_nzcv = ir.And(word, ir.Imm32(0xF0000000));
-            ir.SetCpsrNZCV(new_cpsr_nzcv);
+            ir.SetCpsrNZCVRaw(new_cpsr_nzcv);
         }
     }
     return true;

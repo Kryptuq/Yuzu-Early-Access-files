@@ -194,7 +194,7 @@ bool TranslatorVisitor::arm_USADA8(Cond cond, Reg d, Reg a, Reg m, Reg n) {
 
     const auto tmp = ir.PackedAbsDiffSumS8(ir.GetRegister(n), ir.GetRegister(m));
     const auto result = ir.AddWithCarry(ir.GetRegister(a), tmp, ir.Imm1(0));
-    ir.SetRegister(d, result.result);
+    ir.SetRegister(d, result);
     return true;
 }
 

@@ -42,6 +42,9 @@ enum class OptimizationFlag : std::uint32_t {
     /// This is an UNSAFE optimization that causes floating-point instructions to not produce correct NaNs.
     /// This may also result in inaccurate results when instructions are given certain special values.
     Unsafe_InaccurateNaN = 0x00040000,
+    /// This is an UNSAFE optimization that causes ASIMD floating-point instructions to be run with incorrect
+    /// rounding modes. This may result in inaccurate results with all floating-point ASIMD instructions.
+    Unsafe_IgnoreStandardFPCRValue = 0x00080000,
 };
 
 constexpr OptimizationFlag no_optimizations = static_cast<OptimizationFlag>(0);

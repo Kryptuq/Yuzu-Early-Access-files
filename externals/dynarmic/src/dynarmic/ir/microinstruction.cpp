@@ -176,6 +176,7 @@ bool Inst::ReadsFromCPSR() const {
 bool Inst::WritesToCPSR() const {
     switch (op) {
     case Opcode::A32SetCpsr:
+    case Opcode::A32SetCpsrNZCVRaw:
     case Opcode::A32SetCpsrNZCV:
     case Opcode::A32SetCpsrNZCVQ:
     case Opcode::A32SetNFlag:

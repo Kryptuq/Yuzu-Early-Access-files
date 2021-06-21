@@ -62,12 +62,9 @@ bool TranslatorVisitor::thumb16_ASR_imm(Imm<5> imm5, Reg m, Reg d) {
 bool TranslatorVisitor::thumb16_ADD_reg_t1(Reg m, Reg n, Reg d) {
     const auto result = ir.AddWithCarry(ir.GetRegister(n), ir.GetRegister(m), ir.Imm1(0));
 
-    ir.SetRegister(d, result.result);
+    ir.SetRegister(d, result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result.result));
-        ir.SetZFlag(ir.IsZero(result.result));
-        ir.SetCFlag(result.carry);
-        ir.SetVFlag(result.overflow);
+        ir.SetCpsrNZCV(ir.NZCVFrom(result));
     }
     return true;
 }
@@ -77,12 +74,9 @@ bool TranslatorVisitor::thumb16_ADD_reg_t1(Reg m, Reg n, Reg d) {
 bool TranslatorVisitor::thumb16_SUB_reg(Reg m, Reg n, Reg d) {
     const auto result = ir.SubWithCarry(ir.GetRegister(n), ir.GetRegister(m), ir.Imm1(1));
 
-    ir.SetRegister(d, result.result);
+    ir.SetRegister(d, result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result.result));
-        ir.SetZFlag(ir.IsZero(result.result));
-        ir.SetCFlag(result.carry);
-        ir.SetVFlag(result.overflow);
+        ir.SetCpsrNZCV(ir.NZCVFrom(result));
     }
     return true;
 }
@@ -93,12 +87,9 @@ bool TranslatorVisitor::thumb16_ADD_imm_t1(Imm<3> imm3, Reg n, Reg d) {
     const u32 imm32 = imm3.ZeroExtend();
     const auto result = ir.AddWithCarry(ir.GetRegister(n), ir.Imm32(imm32), ir.Imm1(0));
 
-    ir.SetRegister(d, result.result);
+    ir.SetRegister(d, result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result.result));
-        ir.SetZFlag(ir.IsZero(result.result));
-        ir.SetCFlag(result.carry);
-        ir.SetVFlag(result.overflow);
+        ir.SetCpsrNZCV(ir.NZCVFrom(result));
     }
     return true;
 }
@@ -109,12 +100,9 @@ bool TranslatorVisitor::thumb16_SUB_imm_t1(Imm<3> imm3, Reg n, Reg d) {
     const u32 imm32 = imm3.ZeroExtend();
     const auto result = ir.SubWithCarry(ir.GetRegister(n), ir.Imm32(imm32), ir.Imm1(1));
 
-    ir.SetRegister(d, result.result);
+    ir.SetRegister(d, result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result.result));
-        ir.SetZFlag(ir.IsZero(result.result));
-        ir.SetCFlag(result.carry);
-        ir.SetVFlag(result.overflow);
+        ir.SetCpsrNZCV(ir.NZCVFrom(result));
     }
     return true;
 }
@@ -138,10 +126,7 @@ bool TranslatorVisitor::thumb16_CMP_imm(Reg n, Imm<8> imm8) {
     const u32 imm32 = imm8.ZeroExtend();
     const auto result = ir.SubWithCarry(ir.GetRegister(n), ir.Imm32(imm32), ir.Imm1(1));
 
-    ir.SetNFlag(ir.MostSignificantBit(result.result));
-    ir.SetZFlag(ir.IsZero(result.result));
-    ir.SetCFlag(result.carry);
-    ir.SetVFlag(result.overflow);
+    ir.SetCpsrNZCV(ir.NZCVFrom(result));
     return true;
 }
 
@@ -153,12 +138,9 @@ bool TranslatorVisitor::thumb16_ADD_imm_t2(Reg d_n, Imm<8> imm8) {
     const Reg n = d_n;
     const auto result = ir.AddWithCarry(ir.GetRegister(n), ir.Imm32(imm32), ir.Imm1(0));
 
-    ir.SetRegister(d, result.result);
+    ir.SetRegister(d, result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result.result));
-        ir.SetZFlag(ir.IsZero(result.result));
-        ir.SetCFlag(result.carry);
-        ir.SetVFlag(result.overflow);
+        ir.SetCpsrNZCV(ir.NZCVFrom(result));
     }
     return true;
 }
@@ -171,12 +153,9 @@ bool TranslatorVisitor::thumb16_SUB_imm_t2(Reg d_n, Imm<8> imm8) {
     const Reg n = d_n;
     const auto result = ir.SubWithCarry(ir.GetRegister(n), ir.Imm32(imm32), ir.Imm1(1));
 
-    ir.SetRegister(d, result.result);
+    ir.SetRegister(d, result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result.result));
-        ir.SetZFlag(ir.IsZero(result.result));
-        ir.SetCFlag(result.carry);
-        ir.SetVFlag(result.overflow);
+        ir.SetCpsrNZCV(ir.NZCVFrom(result));
     }
     return true;
 }
@@ -270,12 +249,9 @@ bool TranslatorVisitor::thumb16_ADC_reg(Reg m, Reg d_n) {
     const auto aspr_c = ir.GetCFlag();
     const auto result = ir.AddWithCarry(ir.GetRegister(n), ir.GetRegister(m), aspr_c);
 
-    ir.SetRegister(d, result.result);
+    ir.SetRegister(d, result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result.result));
-        ir.SetZFlag(ir.IsZero(result.result));
-        ir.SetCFlag(result.carry);
-        ir.SetVFlag(result.overflow);
+        ir.SetCpsrNZCV(ir.NZCVFrom(result));
     }
     return true;
 }
@@ -288,12 +264,9 @@ bool TranslatorVisitor::thumb16_SBC_reg(Reg m, Reg d_n) {
     const auto aspr_c = ir.GetCFlag();
     const auto result = ir.SubWithCarry(ir.GetRegister(n), ir.GetRegister(m), aspr_c);
 
-    ir.SetRegister(d, result.result);
+    ir.SetRegister(d, result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result.result));
-        ir.SetZFlag(ir.IsZero(result.result));
-        ir.SetCFlag(result.carry);
-        ir.SetVFlag(result.overflow);
+        ir.SetCpsrNZCV(ir.NZCVFrom(result));
     }
     return true;
 }
@@ -327,12 +300,9 @@ bool TranslatorVisitor::thumb16_TST_reg(Reg m, Reg n) {
 // Rd can never encode R15.
 bool TranslatorVisitor::thumb16_RSB_imm(Reg n, Reg d) {
     const auto result = ir.SubWithCarry(ir.Imm32(0), ir.GetRegister(n), ir.Imm1(1));
-    ir.SetRegister(d, result.result);
+    ir.SetRegister(d, result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result.result));
-        ir.SetZFlag(ir.IsZero(result.result));
-        ir.SetCFlag(result.carry);
-        ir.SetVFlag(result.overflow);
+        ir.SetCpsrNZCV(ir.NZCVFrom(result));
     }
     return true;
 }
@@ -340,20 +310,14 @@ bool TranslatorVisitor::thumb16_RSB_imm(Reg n, Reg d) {
 // CMP <Rn>, <Rm>
 bool TranslatorVisitor::thumb16_CMP_reg_t1(Reg m, Reg n) {
     const auto result = ir.SubWithCarry(ir.GetRegister(n), ir.GetRegister(m), ir.Imm1(1));
-    ir.SetNFlag(ir.MostSignificantBit(result.result));
-    ir.SetZFlag(ir.IsZero(result.result));
-    ir.SetCFlag(result.carry);
-    ir.SetVFlag(result.overflow);
+    ir.SetCpsrNZCV(ir.NZCVFrom(result));
     return true;
 }
 
 // CMN <Rn>, <Rm>
 bool TranslatorVisitor::thumb16_CMN_reg(Reg m, Reg n) {
     const auto result = ir.AddWithCarry(ir.GetRegister(n), ir.GetRegister(m), ir.Imm1(0));
-    ir.SetNFlag(ir.MostSignificantBit(result.result));
-    ir.SetZFlag(ir.IsZero(result.result));
-    ir.SetCFlag(result.carry);
-    ir.SetVFlag(result.overflow);
+    ir.SetCpsrNZCV(ir.NZCVFrom(result));
     return true;
 }
 
@@ -430,12 +394,12 @@ bool TranslatorVisitor::thumb16_ADD_reg_t2(bool d_n_hi, Reg m, Reg d_n_lo) {
     const auto result = ir.AddWithCarry(ir.GetRegister(n), ir.GetRegister(m), ir.Imm1(0));
     if (d == Reg::PC) {
         ir.UpdateUpperLocationDescriptor();
-        ir.ALUWritePC(result.result);
+        ir.ALUWritePC(result);
         // Return to dispatch as we can't predict what PC is going to be. Stop compilation.
         ir.SetTerm(IR::Term::FastDispatchHint{});
         return false;
     } else {
-        ir.SetRegister(d, result.result);
+        ir.SetRegister(d, result);
         return true;
     }
 }
@@ -451,10 +415,7 @@ bool TranslatorVisitor::thumb16_CMP_reg_t2(bool n_hi, Reg m, Reg n_lo) {
     }
 
     const auto result = ir.SubWithCarry(ir.GetRegister(n), ir.GetRegister(m), ir.Imm1(1));
-    ir.SetNFlag(ir.MostSignificantBit(result.result));
-    ir.SetZFlag(ir.IsZero(result.result));
-    ir.SetCFlag(result.carry);
-    ir.SetVFlag(result.overflow);
+    ir.SetCpsrNZCV(ir.NZCVFrom(result));
     return true;
 }
 
@@ -672,7 +633,7 @@ bool TranslatorVisitor::thumb16_ADD_sp_t1(Reg d, Imm<8> imm8) {
     const u32 imm32 = imm8.ZeroExtend() << 2;
     const auto result = ir.AddWithCarry(ir.GetRegister(Reg::SP), ir.Imm32(imm32), ir.Imm1(0));
 
-    ir.SetRegister(d, result.result);
+    ir.SetRegister(d, result);
     return true;
 }
 
@@ -682,7 +643,7 @@ bool TranslatorVisitor::thumb16_ADD_sp_t2(Imm<7> imm7) {
     const Reg d = Reg::SP;
     const auto result = ir.AddWithCarry(ir.GetRegister(Reg::SP), ir.Imm32(imm32), ir.Imm1(0));
 
-    ir.SetRegister(d, result.result);
+    ir.SetRegister(d, result);
     return true;
 }
 
@@ -692,7 +653,7 @@ bool TranslatorVisitor::thumb16_SUB_sp(Imm<7> imm7) {
     const Reg d = Reg::SP;
     const auto result = ir.SubWithCarry(ir.GetRegister(Reg::SP), ir.Imm32(imm32), ir.Imm1(1));
 
-    ir.SetRegister(d, result.result);
+    ir.SetRegister(d, result);
     return true;
 }
 
