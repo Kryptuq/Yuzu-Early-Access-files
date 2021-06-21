@@ -69,10 +69,10 @@ after_build:
   
 artifacts:
     - path: build\bin
-      name: yuzu-early-access-%APPVEYOR_BUILD_VERSION%
+      name: yuzu-early-access-EA%APPVEYOR_BUILD_VERSION%
   
 deploy:
-  description: 'Yuzu Early Access CI Builds with Appveyor [Current Build: %APPVEYOR_BUILD_VERSION%]'
+  description: 'Yuzu Early Access CI Builds with Appveyor [Current Build: yuzu Early Access %APPVEYOR_BUILD_VERSION%]'
   provider: GitHub
   auth_token:
     secure: aCv+cazXM4cEq+Jn6ZMOhXAfr0wmdeE9VD0IQcGEEYDIgU6+j4SzuzIYpcq5LMb/
@@ -80,5 +80,6 @@ deploy:
     branch: main
     APPVEYOR_REPO_TAG: false        # deploy on tag push only
 
-only_commits:
-  message: /EA/
+skip_commits:
+  files:
+    - appveyor.yml
