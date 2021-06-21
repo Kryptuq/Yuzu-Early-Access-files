@@ -100,8 +100,9 @@ struct Client::Impl {
         request.body = data;
 
         httplib::Response response;
+        httplib::Error error;
 
-        if (!cli->send(request, response)) {
+        if (!cli->send(request, response, error)) {
             LOG_ERROR(WebService, "{} to {} returned null", method, host + path);
             return WebResult{WebResult::Code::LibError, "Null response", ""};
         }
