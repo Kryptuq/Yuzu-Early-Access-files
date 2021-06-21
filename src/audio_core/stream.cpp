@@ -107,9 +107,12 @@ void Stream::PlayNextBuffer(std::chrono::nanoseconds ns_late) {
     active_buffer = queued_buffers.front();
     queued_buffers.pop();
 
-    VolumeAdjustSamples(active_buffer->GetSamples(), game_volume);
+    auto& samples = active_buffer->GetSamples();
 
-    sink_stream.EnqueueSamples(GetNumChannels(), active_buffer->GetSamples());
+    VolumeAdjustSamples(samples, game_volume);
+
+    sink_stream.EnqueueSamples(GetNumChannels(), samples);
+    played_samples += samples.size();
 
     const auto buffer_release_ns = GetBufferReleaseNS(*active_buffer);
 

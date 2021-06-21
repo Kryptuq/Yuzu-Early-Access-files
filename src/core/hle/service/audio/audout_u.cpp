@@ -58,7 +58,7 @@ public:
             {7, &IAudioOut::AppendAudioOutBufferImpl, "AppendAudioOutBufferAuto"},
             {8, &IAudioOut::GetReleasedAudioOutBufferImpl, "GetReleasedAudioOutBufferAuto"},
             {9, &IAudioOut::GetAudioOutBufferCount, "GetAudioOutBufferCount"},
-            {10, nullptr, "GetAudioOutPlayedSampleCount"},
+            {10, &IAudioOut::GetAudioOutPlayedSampleCount, "GetAudioOutPlayedSampleCount"},
             {11, &IAudioOut::FlushAudioOutBuffers, "FlushAudioOutBuffers"},
             {12, &IAudioOut::SetAudioOutVolume, "SetAudioOutVolume"},
             {13, &IAudioOut::GetAudioOutVolume, "GetAudioOutVolume"},
@@ -184,6 +184,14 @@ private:
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
         rb.Push(static_cast<u32>(stream->GetQueueSize()));
+    }
+
+    void GetAudioOutPlayedSampleCount(Kernel::HLERequestContext& ctx) {
+        LOG_DEBUG(Service_Audio, "called");
+
+        IPC::ResponseBuilder rb{ctx, 4};
+        rb.Push(ResultSuccess);
+        rb.Push(stream->GetPlayedSampleCount());
     }
 
     void FlushAudioOutBuffers(Kernel::HLERequestContext& ctx) {
