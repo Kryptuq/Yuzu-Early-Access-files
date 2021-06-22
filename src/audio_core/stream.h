@@ -111,7 +111,7 @@ private:
     [[nodiscard]] std::chrono::nanoseconds GetBufferReleaseNS(const Buffer& buffer) const;
 
     u32 sample_rate;                  ///< Sample rate of the stream
-    u64 played_samples;               ///< The current played sample count
+    u64 played_samples{};             ///< The current played sample count
     Format format;                    ///< Format of the stream
     float game_volume = 1.0f;         ///< The volume the game currently has set
     ReleaseCallback release_callback; ///< Buffer release callback for the stream

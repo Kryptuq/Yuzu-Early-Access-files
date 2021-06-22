@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <array>
+#include <atomic>
 #include <memory>
 #include <utility>
 
@@ -377,7 +378,7 @@ struct System::Impl {
     std::unique_ptr<Core::DeviceMemory> device_memory;
     Core::Memory::Memory memory;
     CpuManager cpu_manager;
-    bool is_powered_on = false;
+    std::atomic_bool is_powered_on{};
     bool exit_lock = false;
 
     Reporter reporter;
@@ -463,7 +464,7 @@ System::ResultStatus System::Load(Frontend::EmuWindow& emu_window, const std::st
 }
 
 bool System::IsPoweredOn() const {
-    return impl->is_powered_on;
+    return impl->is_powered_on.load(std::memory_order::relaxed);
 }
 
 void System::PrepareReschedule() {

@@ -79,6 +79,7 @@ ResultCode KResourceLimit::SetLimitValue(LimitableResource which, s64 value) {
     R_UNLESS(current_values[index] <= value, ResultInvalidState);
 
     limit_values[index] = value;
+    peak_values[index] = current_values[index];
 
     return ResultSuccess;
 }
