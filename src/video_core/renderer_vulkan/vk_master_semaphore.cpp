@@ -2,8 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <atomic>
-#include <chrono>
+#include <thread>
 
 #include "common/settings.h"
 #include "video_core/renderer_vulkan/vk_master_semaphore.h"
@@ -11,8 +10,6 @@
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace Vulkan {
-
-using namespace std::chrono_literals;
 
 MasterSemaphore::MasterSemaphore(const Device& device) {
     static constexpr VkSemaphoreTypeCreateInfoKHR semaphore_type_ci{
@@ -34,9 +31,9 @@ MasterSemaphore::MasterSemaphore(const Device& device) {
     // Validation layers have a bug where they fail to track resource usage when using timeline
     // semaphores and synchronizing with GetSemaphoreCounterValueKHR. To workaround this issue, have
     // a separate thread waiting for each timeline semaphore value.
-    debug_thread = std::thread([this] {
+    debug_thread = std::jthread([this](std::stop_token stop_token) {
         u64 counter = 0;
-        while (!shutdown) {
+        while (!stop_token.stop_requested()) {
             if (semaphore.Wait(counter, 10'000'000)) {
                 ++counter;
             }
@@ -44,13 +41,6 @@ MasterSemaphore::MasterSemaphore(const Device& device) {
     });
 }
 
-MasterSemaphore::~MasterSemaphore() {
-    shutdown = true;
-
-    // This thread might not be started
-    if (debug_thread.joinable()) {
-        debug_thread.join();
-    }
-}
+MasterSemaphore::~MasterSemaphore() = default;
 
 } // namespace Vulkan

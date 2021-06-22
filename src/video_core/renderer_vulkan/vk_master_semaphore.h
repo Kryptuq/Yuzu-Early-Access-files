@@ -65,11 +65,10 @@ public:
     }
 
 private:
-    vk::Semaphore semaphore;           ///< Timeline semaphore.
-    std::atomic<u64> gpu_tick{0};      ///< Current known GPU tick.
-    std::atomic<u64> current_tick{1};  ///< Current logical tick.
-    std::atomic<bool> shutdown{false}; ///< True when the object is being destroyed.
-    std::thread debug_thread;          ///< Debug thread to workaround validation layer bugs.
+    vk::Semaphore semaphore;          ///< Timeline semaphore.
+    std::atomic<u64> gpu_tick{0};     ///< Current known GPU tick.
+    std::atomic<u64> current_tick{1}; ///< Current logical tick.
+    std::jthread debug_thread;        ///< Debug thread to workaround validation layer bugs.
 };
 
 } // namespace Vulkan
