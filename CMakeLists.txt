@@ -6,7 +6,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externals/find-module
 include(DownloadExternals)
 include(CMakeDependentOption)
 
-project(yuzu VERSION "${APPVEYOR_BUILD_NUMBER}")
+project(yuzu)
 
 # Set bundled sdl2/qt as dependent options.
 # OFF by default, but if ENABLE_SDL2 and MSVC are true then ON
@@ -33,7 +33,7 @@ option(YUZU_ENABLE_BOXCAT "Enable the Boxcat service, a yuzu high-level implemen
 
 option(ENABLE_CUBEB "Enables the cubeb audio backend" ON)
 
-option(USE_DISCORD_PRESENCE "Enables Discord Rich Presence" ON)
+option(USE_DISCORD_PRESENCE "Enables Discord Rich Presence" OFF)
 
 if (NOT ENABLE_WEB_SERVICE)
     set(YUZU_ENABLE_BOXCAT OFF)
@@ -600,6 +600,8 @@ endif()
 # Setup a custom clang-format target (if clang-format can be found) that will run
 # against all the src files. This should be used before making a pull request.
 # =======================================================================
+
+find_program(GLSLANGVALIDATOR "glslangValidator" HINTS "c:/Projects/yuzu-early-access/glslang/glslang/bin" REQUIRED)
 
 set(CLANG_FORMAT_POSTFIX "-10")
 find_program(CLANG_FORMAT
