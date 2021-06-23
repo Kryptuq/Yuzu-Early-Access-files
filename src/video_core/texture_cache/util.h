@@ -40,6 +40,8 @@ struct OverlapResult {
 
 [[nodiscard]] LevelArray CalculateMipLevelOffsets(const ImageInfo& info) noexcept;
 
+[[nodiscard]] LevelArray CalculateMipLevelSizes(const ImageInfo& info) noexcept;
+
 [[nodiscard]] std::vector<u32> CalculateSliceOffsets(const ImageInfo& info);
 
 [[nodiscard]] std::vector<SubresourceBase> CalculateSliceSubresources(const ImageInfo& info);
@@ -55,7 +57,7 @@ struct OverlapResult {
                                                            const ImageInfo& src,
                                                            SubresourceBase base);
 
-[[nodiscard]] bool IsValidAddress(const Tegra::MemoryManager& gpu_memory, const TICEntry& config);
+[[nodiscard]] bool IsValidEntry(const Tegra::MemoryManager& gpu_memory, const TICEntry& config);
 
 [[nodiscard]] std::vector<BufferImageCopy> UnswizzleImage(Tegra::MemoryManager& gpu_memory,
                                                           GPUVAddr gpu_addr, const ImageInfo& info,

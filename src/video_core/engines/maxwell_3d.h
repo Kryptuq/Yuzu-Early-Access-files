@@ -242,6 +242,7 @@ public:
                     return 4;
                 default:
                     UNREACHABLE();
+                    return 1;
                 }
             }
 

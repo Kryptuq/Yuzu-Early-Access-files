@@ -69,6 +69,9 @@ ImageBase::ImageBase(const ImageInfo& info_, GPUVAddr gpu_addr_, VAddr cpu_addr_
     }
 }
 
+ImageMapView::ImageMapView(GPUVAddr gpu_addr_, VAddr cpu_addr_, size_t size_, ImageId image_id_)
+    : gpu_addr{gpu_addr_}, cpu_addr{cpu_addr_}, size{size_}, image_id{image_id_} {}
+
 std::optional<SubresourceBase> ImageBase::TryFindBase(GPUVAddr other_addr) const noexcept {
     if (other_addr < gpu_addr) {
         // Subresource address can't be lower than the base

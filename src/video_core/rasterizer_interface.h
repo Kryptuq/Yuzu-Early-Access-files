@@ -93,6 +93,9 @@ public:
     /// Unmap memory range
     virtual void UnmapMemory(VAddr addr, u64 size) = 0;
 
+    /// Remap GPU memory range. This means underneath backing memory changed
+    virtual void ModifyGPUMemory(GPUVAddr addr, u64 size) = 0;
+
     /// Notify rasterizer that any caches of the specified region should be flushed to Switch memory
     /// and invalidated
     virtual void FlushAndInvalidateRegion(VAddr addr, u64 size) = 0;
