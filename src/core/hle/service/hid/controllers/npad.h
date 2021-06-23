@@ -6,6 +6,8 @@
 
 #include <array>
 #include <atomic>
+#include <mutex>
+
 #include "common/bit_field.h"
 #include "common/common_types.h"
 #include "common/quaternion.h"
@@ -563,6 +565,8 @@ private:
     using MotionArray = std::array<
         std::array<std::unique_ptr<Input::MotionDevice>, Settings::NativeMotion::NUM_MOTIONS_HID>,
         10>;
+
+    std::mutex mutex;
     ButtonArray buttons;
     StickArray sticks;
     VibrationArray vibrations;

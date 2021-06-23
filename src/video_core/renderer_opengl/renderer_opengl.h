@@ -70,6 +70,10 @@ public:
         return &rasterizer;
     }
 
+    [[nodiscard]] std::string GetDeviceVendor() const override {
+        return device.GetVendorName();
+    }
+
 private:
     /// Initializes the OpenGL state and creates persistent objects.
     void InitOpenGLObjects();

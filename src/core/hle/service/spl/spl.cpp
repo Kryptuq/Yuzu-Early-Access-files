@@ -10,13 +10,13 @@ SPL::SPL(Core::System& system_, std::shared_ptr<Module> module_)
     : Interface(system_, std::move(module_), "spl:") {
     // clang-format off
     static const FunctionInfo functions[] = {
-        {0, nullptr, "GetConfig"},
-        {1, nullptr, "ModularExponentiate"},
-        {5, nullptr, "SetConfig"},
-        {7, &SPL::GetRandomBytes, "GetRandomBytes"},
-        {11, nullptr, "IsDevelopment"},
-        {24, nullptr, "SetBootReason"},
-        {25, nullptr, "GetBootReason"},
+        {0, &SPL::GetConfig, "GetConfig"},
+        {1, &SPL::ModularExponentiate, "ModularExponentiate"},
+        {5, &SPL::SetConfig, "SetConfig"},
+        {7, &SPL::GenerateRandomBytes, "GenerateRandomBytes"},
+        {11, &SPL::IsDevelopment, "IsDevelopment"},
+        {24, &SPL::SetBootReason, "SetBootReason"},
+        {25, &SPL::GetBootReason, "GetBootReason"},
     };
     // clang-format on
 
@@ -27,22 +27,22 @@ SPL_MIG::SPL_MIG(Core::System& system_, std::shared_ptr<Module> module_)
     : Interface(system_, std::move(module_), "spl:mig") {
     // clang-format off
     static const FunctionInfo functions[] = {
-        {0, nullptr, "GetConfig"},
-        {1, nullptr, "ModularExponentiate"},
+        {0, &SPL::GetConfig, "GetConfig"},
+        {1, &SPL::ModularExponentiate, "ModularExponentiate"},
         {2, nullptr, "GenerateAesKek"},
         {3, nullptr, "LoadAesKey"},
         {4, nullptr, "GenerateAesKey"},
-        {5, nullptr, "SetConfig"},
-        {7, &SPL::GetRandomBytes, "GenerateRandomBytes"},
-        {11, nullptr, "IsDevelopment"},
+        {5, &SPL::SetConfig, "SetConfig"},
+        {7, &SPL::GenerateRandomBytes, "GenerateRandomBytes"},
+        {11, &SPL::IsDevelopment, "IsDevelopment"},
         {14, nullptr, "DecryptAesKey"},
         {15, nullptr, "CryptAesCtr"},
         {16, nullptr, "ComputeCmac"},
         {21, nullptr, "AllocateAesKeyslot"},
         {22, nullptr, "DeallocateAesKeySlot"},
         {23, nullptr, "GetAesKeyslotAvailableEvent"},
-        {24, nullptr, "SetBootReason"},
-        {25, nullptr, "GetBootReason"},
+        {24, &SPL::SetBootReason, "SetBootReason"},
+        {25, &SPL::GetBootReason, "GetBootReason"},
     };
     // clang-format on
 
@@ -53,16 +53,16 @@ SPL_FS::SPL_FS(Core::System& system_, std::shared_ptr<Module> module_)
     : Interface(system_, std::move(module_), "spl:fs") {
     // clang-format off
     static const FunctionInfo functions[] = {
-        {0, nullptr, "GetConfig"},
-        {1, nullptr, "ModularExponentiate"},
+        {0, &SPL::GetConfig, "GetConfig"},
+        {1, &SPL::ModularExponentiate, "ModularExponentiate"},
         {2, nullptr, "GenerateAesKek"},
         {3, nullptr, "LoadAesKey"},
         {4, nullptr, "GenerateAesKey"},
-        {5, nullptr, "SetConfig"},
-        {7, &SPL::GetRandomBytes, "GenerateRandomBytes"},
+        {5, &SPL::SetConfig, "SetConfig"},
+        {7, &SPL::GenerateRandomBytes, "GenerateRandomBytes"},
         {9, nullptr, "ImportLotusKey"},
         {10, nullptr, "DecryptLotusMessage"},
-        {11, nullptr, "IsDevelopment"},
+        {11, &SPL::IsDevelopment, "IsDevelopment"},
         {12, nullptr, "GenerateSpecificAesKey"},
         {14, nullptr, "DecryptAesKey"},
         {15, nullptr, "CryptAesCtr"},
@@ -71,8 +71,8 @@ SPL_FS::SPL_FS(Core::System& system_, std::shared_ptr<Module> module_)
         {21, nullptr, "AllocateAesKeyslot"},
         {22, nullptr, "DeallocateAesKeySlot"},
         {23, nullptr, "GetAesKeyslotAvailableEvent"},
-        {24, nullptr, "SetBootReason"},
-        {25, nullptr, "GetBootReason"},
+        {24, &SPL::SetBootReason, "SetBootReason"},
+        {25, &SPL::GetBootReason, "GetBootReason"},
         {31, nullptr, "GetPackage2Hash"},
     };
     // clang-format on
@@ -84,14 +84,14 @@ SPL_SSL::SPL_SSL(Core::System& system_, std::shared_ptr<Module> module_)
     : Interface(system_, std::move(module_), "spl:ssl") {
     // clang-format off
     static const FunctionInfo functions[] = {
-        {0, nullptr, "GetConfig"},
-        {1, nullptr, "ModularExponentiate"},
+        {0, &SPL::GetConfig, "GetConfig"},
+        {1, &SPL::ModularExponentiate, "ModularExponentiate"},
         {2, nullptr, "GenerateAesKek"},
         {3, nullptr, "LoadAesKey"},
         {4, nullptr, "GenerateAesKey"},
-        {5, nullptr, "SetConfig"},
-        {7, &SPL::GetRandomBytes, "GetRandomBytes"},
-        {11, nullptr, "IsDevelopment"},
+        {5, &SPL::SetConfig, "SetConfig"},
+        {7, &SPL::GenerateRandomBytes, "GenerateRandomBytes"},
+        {11, &SPL::IsDevelopment, "IsDevelopment"},
         {13, nullptr, "DecryptDeviceUniqueData"},
         {14, nullptr, "DecryptAesKey"},
         {15, nullptr, "CryptAesCtr"},
@@ -99,8 +99,8 @@ SPL_SSL::SPL_SSL(Core::System& system_, std::shared_ptr<Module> module_)
         {21, nullptr, "AllocateAesKeyslot"},
         {22, nullptr, "DeallocateAesKeySlot"},
         {23, nullptr, "GetAesKeyslotAvailableEvent"},
-        {24, nullptr, "SetBootReason"},
-        {25, nullptr, "GetBootReason"},
+        {24, &SPL::SetBootReason, "SetBootReason"},
+        {25, &SPL::GetBootReason, "GetBootReason"},
         {26, nullptr, "DecryptAndStoreSslClientCertKey"},
         {27, nullptr, "ModularExponentiateWithSslClientCertKey"},
     };
@@ -113,14 +113,14 @@ SPL_ES::SPL_ES(Core::System& system_, std::shared_ptr<Module> module_)
     : Interface(system_, std::move(module_), "spl:es") {
     // clang-format off
     static const FunctionInfo functions[] = {
-        {0, nullptr, "GetConfig"},
-        {1, nullptr, "ModularExponentiate"},
+        {0, &SPL::GetConfig, "GetConfig"},
+        {1, &SPL::ModularExponentiate, "ModularExponentiate"},
         {2, nullptr, "GenerateAesKek"},
         {3, nullptr, "LoadAesKey"},
         {4, nullptr, "GenerateAesKey"},
-        {5, nullptr, "SetConfig"},
-        {7, &SPL::GetRandomBytes, "GenerateRandomBytes"},
-        {11, nullptr, "IsDevelopment"},
+        {5, &SPL::SetConfig, "SetConfig"},
+        {7, &SPL::GenerateRandomBytes, "GenerateRandomBytes"},
+        {11, &SPL::IsDevelopment, "IsDevelopment"},
         {13, nullptr, "DecryptDeviceUniqueData"},
         {14, nullptr, "DecryptAesKey"},
         {15, nullptr, "CryptAesCtr"},
@@ -131,8 +131,8 @@ SPL_ES::SPL_ES(Core::System& system_, std::shared_ptr<Module> module_)
         {21, nullptr, "AllocateAesKeyslot"},
         {22, nullptr, "DeallocateAesKeySlot"},
         {23, nullptr, "GetAesKeyslotAvailableEvent"},
-        {24, nullptr, "SetBootReason"},
-        {25, nullptr, "GetBootReason"},
+        {24, &SPL::SetBootReason, "SetBootReason"},
+        {25, &SPL::GetBootReason, "GetBootReason"},
         {28, nullptr, "DecryptAndStoreDrmDeviceCertKey"},
         {29, nullptr, "ModularExponentiateWithDrmDeviceCertKey"},
         {31, nullptr, "PrepareEsArchiveKey"},
@@ -147,14 +147,14 @@ SPL_MANU::SPL_MANU(Core::System& system_, std::shared_ptr<Module> module_)
     : Interface(system_, std::move(module_), "spl:manu") {
     // clang-format off
     static const FunctionInfo functions[] = {
-        {0, nullptr, "GetConfig"},
-        {1, nullptr, "ModularExponentiate"},
+        {0, &SPL::GetConfig, "GetConfig"},
+        {1, &SPL::ModularExponentiate, "ModularExponentiate"},
         {2, nullptr, "GenerateAesKek"},
         {3, nullptr, "LoadAesKey"},
         {4, nullptr, "GenerateAesKey"},
-        {5, nullptr, "SetConfig"},
-        {7, &SPL::GetRandomBytes, "GetRandomBytes"},
-        {11, nullptr, "IsDevelopment"},
+        {5, &SPL::SetConfig, "SetConfig"},
+        {7, &SPL::GenerateRandomBytes, "GenerateRandomBytes"},
+        {11, &SPL::IsDevelopment, "IsDevelopment"},
         {13, nullptr, "DecryptDeviceUniqueData"},
         {14, nullptr, "DecryptAesKey"},
         {15, nullptr, "CryptAesCtr"},
@@ -162,8 +162,8 @@ SPL_MANU::SPL_MANU(Core::System& system_, std::shared_ptr<Module> module_)
         {21, nullptr, "AllocateAesKeyslot"},
         {22, nullptr, "DeallocateAesKeySlot"},
         {23, nullptr, "GetAesKeyslotAvailableEvent"},
-        {24, nullptr, "SetBootReason"},
-        {25, nullptr, "GetBootReason"},
+        {24, &SPL::SetBootReason, "SetBootReason"},
+        {25, &SPL::GetBootReason, "GetBootReason"},
         {30, nullptr, "ReencryptDeviceUniqueData"},
     };
     // clang-format on

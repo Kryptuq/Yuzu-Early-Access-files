@@ -532,6 +532,27 @@ bool Device::IsFormatSupported(VkFormat wanted_format, VkFormatFeatureFlags want
     return (supported_usage & wanted_usage) == wanted_usage;
 }
 
+std::string Device::GetDriverName() const {
+    switch (driver_id) {
+    case VK_DRIVER_ID_AMD_PROPRIETARY:
+        return "AMD";
+    case VK_DRIVER_ID_AMD_OPEN_SOURCE:
+        return "AMDVLK";
+    case VK_DRIVER_ID_MESA_RADV:
+        return "RADV";
+    case VK_DRIVER_ID_NVIDIA_PROPRIETARY:
+        return "NVIDIA";
+    case VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS:
+        return "INTEL";
+    case VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA:
+        return "ANV";
+    case VK_DRIVER_ID_MESA_LLVMPIPE:
+        return "LAVAPIPE";
+    default:
+        return vendor_name;
+    }
+}
+
 void Device::CheckSuitability(bool requires_swapchain) const {
     std::bitset<REQUIRED_EXTENSIONS.size()> available_extensions;
     bool has_swapchain = false;

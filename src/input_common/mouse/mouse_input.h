@@ -6,6 +6,7 @@
 
 #include <array>
 #include <mutex>
+#include <stop_token>
 #include <thread>
 
 #include "common/common_types.h"
@@ -85,7 +86,7 @@ public:
     [[nodiscard]] const MouseData& GetMouseState(std::size_t button) const;
 
 private:
-    void UpdateThread();
+    void UpdateThread(std::stop_token stop_token);
     void UpdateYuzuSettings();
     void StopPanning();
 
@@ -105,12 +106,11 @@ private:
     u16 buttons{};
     u16 toggle_buttons{};
     u16 lock_buttons{};
-    std::thread update_thread;
+    std::jthread update_thread;
     MouseButton last_button{MouseButton::Undefined};
     std::array<MouseInfo, 7> mouse_info;
     Common::SPSCQueue<MouseStatus> mouse_queue;
     bool configuring{false};
-    bool update_thread_running{true};
     int mouse_panning_timout{};
 };
 } // namespace MouseInput

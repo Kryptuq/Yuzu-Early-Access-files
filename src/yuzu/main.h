@@ -34,6 +34,7 @@ class QProgressDialog;
 class WaitTreeWidget;
 enum class GameListOpenTarget;
 enum class GameListRemoveTarget;
+enum class DumpRomFSTarget;
 enum class InstalledEntryType;
 class GameListPlaceholder;
 
@@ -244,7 +245,7 @@ private slots:
     void OnGameListRemoveInstalledEntry(u64 program_id, InstalledEntryType type);
     void OnGameListRemoveFile(u64 program_id, GameListRemoveTarget target,
                               const std::string& game_path);
-    void OnGameListDumpRomFS(u64 program_id, const std::string& game_path);
+    void OnGameListDumpRomFS(u64 program_id, const std::string& game_path, DumpRomFSTarget target);
     void OnGameListCopyTID(u64 program_id);
     void OnGameListNavigateToGamedbEntry(u64 program_id,
                                          const CompatibilityList& compatibility_list);
@@ -287,8 +288,8 @@ private:
     InstallResult InstallNSPXCI(const QString& filename);
     InstallResult InstallNCA(const QString& filename);
     void MigrateConfigFiles();
-    void UpdateWindowTitle(const std::string& title_name = {},
-                           const std::string& title_version = {});
+    void UpdateWindowTitle(std::string_view title_name = {}, std::string_view title_version = {},
+                           std::string_view gpu_vendor = {});
     void UpdateStatusBar();
     void UpdateStatusButtons();
     void UpdateUISettings();

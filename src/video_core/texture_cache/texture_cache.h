@@ -344,6 +344,7 @@ private:
 
     bool has_deleted_images = false;
     u64 total_used_memory = 0;
+    u64 minimum_memory;
     u64 expected_memory;
     u64 critical_memory;
 
@@ -396,10 +397,12 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
         const u64 possible_critical_memory = (device_memory * 6) / 10;
         expected_memory = std::max(possible_expected_memory, DEFAULT_EXPECTED_MEMORY);
         critical_memory = std::max(possible_critical_memory, DEFAULT_CRITICAL_MEMORY);
+        minimum_memory = 0;
     } else {
         // on OGL we can be more conservatives as the driver takes care.
         expected_memory = DEFAULT_EXPECTED_MEMORY + Common::Size_512_MB;
         critical_memory = DEFAULT_CRITICAL_MEMORY + Common::Size_1_GB;
+        minimum_memory = expected_memory;
     }
 }
 
@@ -470,7 +473,7 @@ void TextureCache<P>::RunGarbageCollector() {
 
 template <class P>
 void TextureCache<P>::TickFrame() {
-    if (Settings::values.use_caches_gc.GetValue()) {
+    if (Settings::values.use_caches_gc.GetValue() && total_used_memory > minimum_memory) {
         RunGarbageCollector();
     }
     sentenced_images.Tick();

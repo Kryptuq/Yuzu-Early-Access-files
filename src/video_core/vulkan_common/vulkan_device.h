@@ -45,6 +45,9 @@ public:
     /// Reports a shader to Nsight Aftermath.
     void SaveShader(const std::vector<u32>& spirv) const;
 
+    /// Returns the name of the VkDriverId reported from Vulkan.
+    std::string GetDriverName() const;
+
     /// Returns the dispatch loader with direct function pointers of the device.
     const vk::DeviceDispatch& GetDispatchLoader() const {
         return dld;

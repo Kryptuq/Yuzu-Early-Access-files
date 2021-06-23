@@ -314,6 +314,8 @@ void Controller_NPad::OnInit() {
 
 void Controller_NPad::OnLoadInputDevices() {
     const auto& players = Settings::values.players.GetValue();
+
+    std::lock_guard lock{mutex};
     for (std::size_t i = 0; i < players.size(); ++i) {
         std::transform(players[i].buttons.begin() + Settings::NativeButton::BUTTON_HID_BEGIN,
                        players[i].buttons.begin() + Settings::NativeButton::BUTTON_HID_END,
@@ -348,6 +350,8 @@ void Controller_NPad::OnRelease() {
 }
 
 void Controller_NPad::RequestPadStateUpdate(u32 npad_id) {
+    std::lock_guard lock{mutex};
+
     const auto controller_idx = NPadIdToIndex(npad_id);
     const auto controller_type = connected_controllers[controller_idx].type;
     if (!connected_controllers[controller_idx].is_connected) {

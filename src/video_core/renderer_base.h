@@ -42,6 +42,8 @@ public:
 
     [[nodiscard]] virtual RasterizerInterface* ReadRasterizer() = 0;
 
+    [[nodiscard]] virtual std::string GetDeviceVendor() const = 0;
+
     // Getter/setter functions:
     // ------------------------
 

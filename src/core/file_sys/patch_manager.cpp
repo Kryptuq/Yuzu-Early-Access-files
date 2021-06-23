@@ -345,8 +345,10 @@ std::vector<Core::Memory::CheatEntry> PatchManager::CreateCheatList(
 static void ApplyLayeredFS(VirtualFile& romfs, u64 title_id, ContentRecordType type,
                            const Service::FileSystem::FileSystemController& fs_controller) {
     const auto load_dir = fs_controller.GetModificationLoadRoot(title_id);
+    const auto sdmc_load_dir = fs_controller.GetSDMCModificationLoadRoot(title_id);
     if ((type != ContentRecordType::Program && type != ContentRecordType::Data) ||
-        load_dir == nullptr || load_dir->GetSize() <= 0) {
+        ((load_dir == nullptr || load_dir->GetSize() <= 0) &&
+         (sdmc_load_dir == nullptr || sdmc_load_dir->GetSize() <= 0))) {
         return;
     }
 
@@ -356,7 +358,10 @@ static void ApplyLayeredFS(VirtualFile& romfs, u64 title_id, ContentRecordType t
     }
 
     const auto& disabled = Settings::values.disabled_addons[title_id];
-    auto patch_dirs = load_dir->GetSubdirectories();
+    std::vector<VirtualDir> patch_dirs = load_dir->GetSubdirectories();
+    if (std::find(disabled.cbegin(), disabled.cend(), "SDMC") == disabled.cend()) {
+        patch_dirs.push_back(sdmc_load_dir);
+    }
     std::sort(patch_dirs.begin(), patch_dirs.end(),
               [](const VirtualDir& l, const VirtualDir& r) { return l->GetName() < r->GetName(); });
 
@@ -522,6 +527,15 @@ PatchManager::PatchVersionNames PatchManager::GetPatchVersionNames(VirtualFile u
                 std::find(disabled.begin(), disabled.end(), mod->GetName()) != disabled.end();
             out.insert_or_assign(mod_disabled ? "[D] " + mod->GetName() : mod->GetName(), types);
         }
+    }
+
+    // SDMC mod directory (RomFS LayeredFS)
+    const auto sdmc_mod_dir = fs_controller.GetSDMCModificationLoadRoot(title_id);
+    if (sdmc_mod_dir != nullptr && sdmc_mod_dir->GetSize() > 0 &&
+        IsDirValidAndNonEmpty(FindSubdirectoryCaseless(sdmc_mod_dir, "romfs"))) {
+        const auto mod_disabled =
+            std::find(disabled.begin(), disabled.end(), "SDMC") != disabled.end();
+        out.insert_or_assign(mod_disabled ? "[D] SDMC" : "SDMC", "LayeredFS");
     }
 
     // DLC

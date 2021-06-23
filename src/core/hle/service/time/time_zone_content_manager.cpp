@@ -125,7 +125,7 @@ ResultCode TimeZoneContentManager::GetTimeZoneInfoFile(const std::string& locati
         return ERROR_TIME_NOT_FOUND;
     }
 
-    vfs_file = zoneinfo_dir->GetFile(location_name);
+    vfs_file = zoneinfo_dir->GetFileRelative(location_name);
     if (!vfs_file) {
         LOG_ERROR(Service_Time, "{:016X} has no file \"{}\"! Using default timezone.",
                   time_zone_binary_titleid, location_name);

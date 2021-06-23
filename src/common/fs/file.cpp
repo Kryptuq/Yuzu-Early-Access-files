@@ -172,7 +172,7 @@ std::string ReadStringFromFile(const std::filesystem::path& path, FileType type)
 
 size_t WriteStringToFile(const std::filesystem::path& path, FileType type,
                          std::string_view string) {
-    if (!IsFile(path)) {
+    if (Exists(path) && !IsFile(path)) {
         return 0;
     }
 
@@ -183,7 +183,7 @@ size_t WriteStringToFile(const std::filesystem::path& path, FileType type,
 
 size_t AppendStringToFile(const std::filesystem::path& path, FileType type,
                           std::string_view string) {
-    if (!IsFile(path)) {
+    if (Exists(path) && !IsFile(path)) {
         return 0;
     }
 

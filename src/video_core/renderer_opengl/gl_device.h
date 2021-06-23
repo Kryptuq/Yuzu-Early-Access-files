@@ -22,6 +22,8 @@ public:
     explicit Device();
     explicit Device(std::nullptr_t);
 
+    [[nodiscard]] std::string GetVendorName() const;
+
     u32 GetMaxUniformBuffers(Tegra::Engines::ShaderType shader_type) const noexcept {
         return max_uniform_buffers[static_cast<std::size_t>(shader_type)];
     }
@@ -130,6 +132,7 @@ private:
     static bool TestVariableAoffi();
     static bool TestPreciseBug();
 
+    std::string vendor_name;
     std::array<u32, Tegra::Engines::MaxShaderTypes> max_uniform_buffers{};
     std::array<BaseBindings, Tegra::Engines::MaxShaderTypes> base_bindings{};
     size_t uniform_buffer_alignment{};

@@ -50,7 +50,7 @@ NsightAftermathTracker::NsightAftermathTracker() {
     }
     dump_dir = Common::FS::GetYuzuPath(Common::FS::YuzuPath::LogDir) / "gpucrash";
 
-    void(Common::FS::RemoveDirRecursively(dump_dir));
+    Common::FS::RemoveDirRecursively(dump_dir);
     if (!Common::FS::CreateDir(dump_dir)) {
         LOG_ERROR(Render_Vulkan, "Failed to create Nsight Aftermath dump directory");
         return;

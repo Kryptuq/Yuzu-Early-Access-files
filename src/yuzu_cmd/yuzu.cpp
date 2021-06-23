@@ -219,7 +219,7 @@ int main(int argc, char** argv) {
     system.GPU().Start();
 
     system.Renderer().ReadRasterizer()->LoadDiskResources(
-        system.CurrentProcess()->GetTitleID(), false,
+        system.CurrentProcess()->GetTitleID(), std::stop_token{},
         [](VideoCore::LoadCallbackStage, size_t value, size_t total) {});
 
     void(system.Run());

@@ -47,6 +47,10 @@ public:
         return &rasterizer;
     }
 
+    [[nodiscard]] std::string GetDeviceVendor() const override {
+        return device.GetDriverName();
+    }
+
 private:
     void Report() const;
 

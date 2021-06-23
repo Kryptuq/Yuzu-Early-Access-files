@@ -79,8 +79,8 @@ void ConfigurePerGameAddons::ApplyConfiguration() {
     std::sort(disabled_addons.begin(), disabled_addons.end());
     std::sort(current.begin(), current.end());
     if (disabled_addons != current) {
-        void(Common::FS::RemoveFile(Common::FS::GetYuzuPath(Common::FS::YuzuPath::CacheDir) /
-                                    "game_list" / fmt::format("{:016X}.pv.txt", title_id)));
+        Common::FS::RemoveFile(Common::FS::GetYuzuPath(Common::FS::YuzuPath::CacheDir) /
+                               "game_list" / fmt::format("{:016X}.pv.txt", title_id));
     }
 
     Settings::values.disabled_addons[title_id] = disabled_addons;

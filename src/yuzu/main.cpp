@@ -104,6 +104,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "input_common/main.h"
 #include "util/overlay_dialog.h"
 #include "video_core/gpu.h"
+#include "video_core/renderer_base.h"
 #include "video_core/shader_notify.h"
 #include "yuzu/about_dialog.h"
 #include "yuzu/bootmanager.h"
@@ -194,10 +195,10 @@ static void RemoveCachedContents() {
     const auto offline_legal_information = cache_dir / "offline_web_applet_legal_information";
     const auto offline_system_data = cache_dir / "offline_web_applet_system_data";
 
-    void(Common::FS::RemoveDirRecursively(offline_fonts));
-    void(Common::FS::RemoveDirRecursively(offline_manual));
-    void(Common::FS::RemoveDirRecursively(offline_legal_information));
-    void(Common::FS::RemoveDirRecursively(offline_system_data));
+    Common::FS::RemoveDirRecursively(offline_fonts);
+    Common::FS::RemoveDirRecursively(offline_manual);
+    Common::FS::RemoveDirRecursively(offline_legal_information);
+    Common::FS::RemoveDirRecursively(offline_system_data);
 }
 
 GMainWindow::GMainWindow()
@@ -1422,7 +1423,8 @@ void GMainWindow::BootGame(const QString& filename, std::size_t program_index, S
             std::filesystem::path{filename.toStdU16String()}.filename());
     }
     LOG_INFO(Frontend, "Booting game: {:016X} | {} | {}", title_id, title_name, title_version);
-    UpdateWindowTitle(title_name, title_version);
+    const auto gpu_vendor = system.GPU().Renderer().GetDeviceVendor();
+    UpdateWindowTitle(title_name, title_version, gpu_vendor);
 
     loading_screen->Prepare(system.GetAppLoader());
     loading_screen->show();
@@ -1743,8 +1745,8 @@ void GMainWindow::OnGameListRemoveInstalledEntry(u64 program_id, InstalledEntryT
         RemoveAddOnContent(program_id, entry_type);
         break;
     }
-    void(Common::FS::RemoveDirRecursively(Common::FS::GetYuzuPath(Common::FS::YuzuPath::CacheDir) /
-                                          "game_list"));
+    Common::FS::RemoveDirRecursively(Common::FS::GetYuzuPath(Common::FS::YuzuPath::CacheDir) /
+                                     "game_list");
     game_list->PopulateAsync(UISettings::values.game_dirs);
 }
 
@@ -1876,7 +1878,8 @@ void GMainWindow::RemoveCustomConfiguration(u64 program_id, const std::string& g
     }
 }
 
-void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_path) {
+void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_path,
+                                      DumpRomFSTarget target) {
     const auto failed = [this] {
         QMessageBox::warning(this, tr("RomFS Extraction Failed!"),
                              tr("There was an error copying the RomFS files or the user "
@@ -1904,7 +1907,10 @@ void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pa
         return;
     }
 
-    const auto dump_dir = Common::FS::GetYuzuPath(Common::FS::YuzuPath::DumpDir);
+    const auto dump_dir =
+        target == DumpRomFSTarget::Normal
+            ? Common::FS::GetYuzuPath(Common::FS::YuzuPath::DumpDir)
+            : Common::FS::GetYuzuPath(Common::FS::YuzuPath::SDMCDir) / "atmosphere" / "contents";
     const auto romfs_dir = fmt::format("{:016X}/romfs", *romfs_title_id);
 
     const auto path = Common::FS::PathToUTF8String(dump_dir / romfs_dir);
@@ -2213,8 +2219,8 @@ void GMainWindow::OnMenuInstallToNAND() {
                                 : tr("%n file(s) failed to install\n", "", failed_files.size()));
 
     QMessageBox::information(this, tr("Install Results"), install_results);
-    void(Common::FS::RemoveDirRecursively(Common::FS::GetYuzuPath(Common::FS::YuzuPath::CacheDir) /
-                                          "game_list"));
+    Common::FS::RemoveDirRecursively(Common::FS::GetYuzuPath(Common::FS::YuzuPath::CacheDir) /
+                                     "game_list");
     game_list->PopulateAsync(UISettings::values.game_dirs);
     ui.action_Install_File_NAND->setEnabled(true);
 }
@@ -2846,13 +2852,13 @@ void GMainWindow::MigrateConfigFiles() {
         LOG_INFO(Frontend, "Migrating config file from {} to {}", origin, destination);
         if (!Common::FS::RenameFile(origin, destination)) {
             // Delete the old config file if one already exists in the new location.
-            void(Common::FS::RemoveFile(origin));
+            Common::FS::RemoveFile(origin);
         }
     }
 }
 
-void GMainWindow::UpdateWindowTitle(const std::string& title_name,
-                                    const std::string& title_version) {
+void GMainWindow::UpdateWindowTitle(std::string_view title_name, std::string_view title_version,
+                                    std::string_view gpu_vendor) {
     const auto branch_name = std::string(Common::g_scm_branch);
     const auto description = std::string(Common::g_scm_desc);
     const auto build_id = std::string(Common::g_build_id);
@@ -2864,7 +2870,8 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
     if (title_name.empty()) {
         setWindowTitle(QString::fromStdString(window_title));
     } else {
-        const auto run_title = fmt::format("{} | {} | {}", window_title, title_name, title_version);
+        const auto run_title =
+            fmt::format("{} | {} | {} | {}", window_title, title_name, title_version, gpu_vendor);
         setWindowTitle(QString::fromStdString(run_title));
     }
 }
@@ -3040,9 +3047,9 @@ void GMainWindow::OnReinitializeKeys(ReinitializeKeyBehavior behavior) {
 
         const auto keys_dir = Common::FS::GetYuzuPath(Common::FS::YuzuPath::KeysDir);
 
-        void(Common::FS::RemoveFile(keys_dir / "prod.keys_autogenerated"));
-        void(Common::FS::RemoveFile(keys_dir / "console.keys_autogenerated"));
-        void(Common::FS::RemoveFile(keys_dir / "title.keys_autogenerated"));
+        Common::FS::RemoveFile(keys_dir / "prod.keys_autogenerated");
+        Common::FS::RemoveFile(keys_dir / "console.keys_autogenerated");
+        Common::FS::RemoveFile(keys_dir / "title.keys_autogenerated");
     }
 
     Core::Crypto::KeyManager& keys = Core::Crypto::KeyManager::Instance();

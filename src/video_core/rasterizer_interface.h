@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include <atomic>
 #include <functional>
 #include <optional>
 #include <span>
+#include <stop_token>
 #include "common/common_types.h"
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/gpu.h"
@@ -129,7 +129,7 @@ public:
     virtual void UpdatePagesCachedCount(VAddr addr, u64 size, int delta) {}
 
     /// Initialize disk cached resources for the game being emulated
-    virtual void LoadDiskResources(u64 title_id, const std::atomic_bool& stop_loading,
+    virtual void LoadDiskResources(u64 title_id, std::stop_token stop_loading,
                                    const DiskResourceLoadCallback& callback) {}
 
     /// Grant access to the Guest Driver Profile for recording/obtaining info on the guest driver.

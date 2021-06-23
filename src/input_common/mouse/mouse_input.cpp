@@ -2,25 +2,23 @@
 // Licensed under GPLv2+
 // Refer to the license.txt file included.
 
+#include <stop_token>
+#include <thread>
+
 #include "common/settings.h"
 #include "input_common/mouse/mouse_input.h"
 
 namespace MouseInput {
 
 Mouse::Mouse() {
-    update_thread = std::thread(&Mouse::UpdateThread, this);
+    update_thread = std::jthread([this](std::stop_token stop_token) { UpdateThread(stop_token); });
 }
 
-Mouse::~Mouse() {
-    update_thread_running = false;
-    if (update_thread.joinable()) {
-        update_thread.join();
-    }
-}
+Mouse::~Mouse() = default;
 
-void Mouse::UpdateThread() {
+void Mouse::UpdateThread(std::stop_token stop_token) {
     constexpr int update_time = 10;
-    while (update_thread_running) {
+    while (!stop_token.stop_requested()) {
         for (MouseInfo& info : mouse_info) {
             const Common::Vec3f angular_direction{
                 -info.tilt_direction.y,

@@ -21,6 +21,8 @@ void DetachedTasks::WaitForAllTasks() {
 }
 
 DetachedTasks::~DetachedTasks() {
+    WaitForAllTasks();
+
     std::unique_lock lock{mutex};
     ASSERT(count == 0);
     instance = nullptr;

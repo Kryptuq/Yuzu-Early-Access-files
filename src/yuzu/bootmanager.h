@@ -89,16 +89,16 @@ public:
      * Requests for the emulation thread to stop running
      */
     void RequestStop() {
-        stop_run = true;
+        stop_source.request_stop();
         SetRunning(false);
     }
 
 private:
     bool exec_step = false;
     bool running = false;
-    std::atomic_bool stop_run{false};
+    std::stop_source stop_source;
     std::mutex running_mutex;
-    std::condition_variable running_cv;
+    std::condition_variable_any running_cv;
     Common::Event running_wait{};
     std::atomic_bool running_guard{false};
 

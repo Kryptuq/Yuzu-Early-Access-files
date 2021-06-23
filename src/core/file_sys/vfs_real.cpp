@@ -24,17 +24,12 @@ constexpr FS::FileAccessMode ModeFlagsToFileAccessMode(Mode mode) {
     case Mode::Read:
         return FS::FileAccessMode::Read;
     case Mode::Write:
-        return FS::FileAccessMode::Write;
     case Mode::ReadWrite:
-        return FS::FileAccessMode::ReadWrite;
     case Mode::Append:
-        return FS::FileAccessMode::Append;
     case Mode::ReadAppend:
-        return FS::FileAccessMode::ReadAppend;
     case Mode::WriteAppend:
-        return FS::FileAccessMode::Append;
     case Mode::All:
-        return FS::FileAccessMode::ReadAppend;
+        return FS::FileAccessMode::ReadWrite;
     default:
         return {};
     }

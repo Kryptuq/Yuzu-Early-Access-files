@@ -21,6 +21,7 @@ public:
 
     ResultVal<VirtualDir> Open() const;
 
+    VirtualDir GetSDMCModificationLoadRoot(u64 title_id) const;
     VirtualDir GetSDMCContentDirectory() const;
 
     RegisteredCache* GetSDMCContents() const;

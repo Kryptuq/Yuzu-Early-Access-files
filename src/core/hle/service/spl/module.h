@@ -6,6 +6,8 @@
 
 #include <random>
 #include "core/hle/service/service.h"
+#include "core/hle/service/spl/spl_results.h"
+#include "core/hle/service/spl/spl_types.h"
 
 namespace Core {
 class System;
@@ -21,12 +23,21 @@ public:
                            const char* name);
         ~Interface() override;
 
-        void GetRandomBytes(Kernel::HLERequestContext& ctx);
+        // General
+        void GetConfig(Kernel::HLERequestContext& ctx);
+        void ModularExponentiate(Kernel::HLERequestContext& ctx);
+        void SetConfig(Kernel::HLERequestContext& ctx);
+        void GenerateRandomBytes(Kernel::HLERequestContext& ctx);
+        void IsDevelopment(Kernel::HLERequestContext& ctx);
+        void SetBootReason(Kernel::HLERequestContext& ctx);
+        void GetBootReason(Kernel::HLERequestContext& ctx);
 
     protected:
         std::shared_ptr<Module> module;
 
     private:
+        ResultVal<u64> GetConfigImpl(ConfigItem config_item) const;
+
         std::mt19937 rng;
     };
 };

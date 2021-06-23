@@ -51,10 +51,10 @@ void EmuThread::run() {
     Common::SetCurrentThreadName(name.c_str());
 
     auto& system = Core::System::GetInstance();
+    auto& gpu = system.GPU();
+    auto stop_token = stop_source.get_token();
 
     system.RegisterHostThread();
-
-    auto& gpu = system.GPU();
 
     // Main process has been loaded. Make the context current to this thread and begin GPU and CPU
     // execution.
@@ -65,7 +65,7 @@ void EmuThread::run() {
     emit LoadProgress(VideoCore::LoadCallbackStage::Prepare, 0, 0);
 
     system.Renderer().ReadRasterizer()->LoadDiskResources(
-        system.CurrentProcess()->GetTitleID(), stop_run,
+        system.CurrentProcess()->GetTitleID(), stop_token,
         [this](VideoCore::LoadCallbackStage stage, std::size_t value, std::size_t total) {
             emit LoadProgress(stage, value, total);
         });
@@ -78,7 +78,7 @@ void EmuThread::run() {
     // so that the DebugModeLeft signal can be emitted before the
     // next execution step
     bool was_active = false;
-    while (!stop_run) {
+    while (!stop_token.stop_requested()) {
         if (running) {
             if (was_active) {
                 emit DebugModeLeft();
@@ -100,7 +100,7 @@ void EmuThread::run() {
             }
             running_guard = false;
 
-            if (!stop_run) {
+            if (!stop_token.stop_requested()) {
                 was_active = true;
                 emit DebugModeEntered();
             }
@@ -108,7 +108,7 @@ void EmuThread::run() {
             UNIMPLEMENTED();
         } else {
             std::unique_lock lock{running_mutex};
-            running_cv.wait(lock, [this] { return IsRunning() || exec_step || stop_run; });
+            running_cv.wait(lock, stop_token, [this] { return IsRunning() || exec_step; });
         }
     }
 

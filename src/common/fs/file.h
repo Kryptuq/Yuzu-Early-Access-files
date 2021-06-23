@@ -49,7 +49,7 @@ void OpenFileStream(FileStream& file_stream, const Path& path, std::ios_base::op
 
 /**
  * Reads an entire file at path and returns a string of the contents read from the file.
- * If the filesystem object at path is not a file, this function returns an empty string.
+ * If the filesystem object at path is not a regular file, this function returns an empty string.
  *
  * @param path Filesystem path
  * @param type File type
@@ -72,7 +72,8 @@ template <typename Path>
 /**
  * Writes a string to a file at path and returns the number of characters successfully written.
  * If a file already exists at path, its contents will be erased.
- * If the filesystem object at path is not a file, this function returns 0.
+ * If a file does not exist at path, it creates and opens a new empty file for writing.
+ * If the filesystem object at path exists and is not a regular file, this function returns 0.
  *
  * @param path Filesystem path
  * @param type File type
@@ -95,7 +96,8 @@ template <typename Path>
 
 /**
  * Appends a string to a file at path and returns the number of characters successfully written.
- * If the filesystem object at path is not a file, this function returns 0.
+ * If a file does not exist at path, it creates and opens a new empty file for appending.
+ * If the filesystem object at path exists and is not a regular file, this function returns 0.
  *
  * @param path Filesystem path
  * @param type File type
@@ -394,11 +396,11 @@ public:
     [[nodiscard]] size_t WriteString(std::span<const char> string) const;
 
     /**
-     * Flushes any unwritten buffered data into the file.
+     * Attempts to flush any unwritten buffered data into the file and flush the file into the disk.
      *
      * @returns True if the flush was successful, false otherwise.
      */
-    [[nodiscard]] bool Flush() const;
+    bool Flush() const;
 
     /**
      * Resizes the file to a given size.

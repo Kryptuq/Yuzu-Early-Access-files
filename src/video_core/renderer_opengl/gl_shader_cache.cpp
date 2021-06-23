@@ -331,7 +331,7 @@ ShaderCacheOpenGL::ShaderCacheOpenGL(RasterizerOpenGL& rasterizer_,
 
 ShaderCacheOpenGL::~ShaderCacheOpenGL() = default;
 
-void ShaderCacheOpenGL::LoadDiskCache(u64 title_id, const std::atomic_bool& stop_loading,
+void ShaderCacheOpenGL::LoadDiskCache(u64 title_id, std::stop_token stop_loading,
                                       const VideoCore::DiskResourceLoadCallback& callback) {
     disk_cache.BindTitleID(title_id);
     const std::optional transferable = disk_cache.LoadTransferable();
@@ -372,7 +372,7 @@ void ShaderCacheOpenGL::LoadDiskCache(u64 title_id, const std::atomic_bool& stop
         const auto scope = context->Acquire();
 
         for (std::size_t i = begin; i < end; ++i) {
-            if (stop_loading) {
+            if (stop_loading.stop_requested()) {
                 return;
             }
             const auto& entry = (*transferable)[i];
@@ -435,7 +435,7 @@ void ShaderCacheOpenGL::LoadDiskCache(u64 title_id, const std::atomic_bool& stop
         precompiled_cache_altered = true;
         return;
     }
-    if (stop_loading) {
+    if (stop_loading.stop_requested()) {
         return;
     }
 

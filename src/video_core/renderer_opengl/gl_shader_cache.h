@@ -127,7 +127,7 @@ public:
     ~ShaderCacheOpenGL() override;
 
     /// Loads disk cache for the current game
-    void LoadDiskCache(u64 title_id, const std::atomic_bool& stop_loading,
+    void LoadDiskCache(u64 title_id, std::stop_token stop_loading,
                        const VideoCore::DiskResourceLoadCallback& callback);
 
     /// Gets the current specified shader stage program

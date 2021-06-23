@@ -139,6 +139,7 @@ add_library(core STATIC
     frontend/input.h
     hardware_interrupt_manager.cpp
     hardware_interrupt_manager.h
+    hle/api_version.h
     hle/ipc.h
     hle/ipc_helpers.h
     hle/kernel/board/nintendo/nx/k_system_control.cpp
@@ -550,6 +551,8 @@ add_library(core STATIC
     hle/service/spl/module.h
     hle/service/spl/spl.cpp
     hle/service/spl/spl.h
+    hle/service/spl/spl_results.h
+    hle/service/spl/spl_types.h
     hle/service/ssl/ssl.cpp
     hle/service/ssl/ssl.h
     hle/service/time/clock_types.h

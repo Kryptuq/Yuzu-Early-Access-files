@@ -48,18 +48,18 @@ template <typename Path>
  *
  * Failures occur when:
  * - Input path is not valid
- * - Filesystem object at path is not a file
+ * - Filesystem object at path is not a regular file
  * - Filesystem at path is read only
  *
  * @param path Filesystem path
  *
  * @returns True if file removal succeeds or file does not exist, false otherwise.
  */
-[[nodiscard]] bool RemoveFile(const std::filesystem::path& path);
+bool RemoveFile(const std::filesystem::path& path);
 
 #ifdef _WIN32
 template <typename Path>
-[[nodiscard]] bool RemoveFile(const Path& path) {
+bool RemoveFile(const Path& path) {
     if constexpr (IsChar<typename Path::value_type>) {
         return RemoveFile(ToU8String(path));
     } else {
@@ -74,7 +74,7 @@ template <typename Path>
  * Failures occur when:
  * - One or both input path(s) is not valid
  * - Filesystem object at old_path does not exist
- * - Filesystem object at old_path is not a file
+ * - Filesystem object at old_path is not a regular file
  * - Filesystem object at new_path exists
  * - Filesystem at either path is read only
  *
@@ -110,8 +110,8 @@ template <typename Path1, typename Path2>
  *
  * Failures occur when:
  * - Input path is not valid
- * - Filesystem object at path is not a file
- * - The file is not opened
+ * - Filesystem object at path exists and is not a regular file
+ * - The file is not open
  *
  * @param path Filesystem path
  * @param mode File access mode
@@ -251,11 +251,11 @@ template <typename Path>
  *
  * @returns True if directory removal succeeds or directory does not exist, false otherwise.
  */
-[[nodiscard]] bool RemoveDir(const std::filesystem::path& path);
+bool RemoveDir(const std::filesystem::path& path);
 
 #ifdef _WIN32
 template <typename Path>
-[[nodiscard]] bool RemoveDir(const Path& path) {
+bool RemoveDir(const Path& path) {
     if constexpr (IsChar<typename Path::value_type>) {
         return RemoveDir(ToU8String(path));
     } else {
@@ -276,11 +276,11 @@ template <typename Path>
  *
  * @returns True if the directory and all of its contents are removed successfully, false otherwise.
  */
-[[nodiscard]] bool RemoveDirRecursively(const std::filesystem::path& path);
+bool RemoveDirRecursively(const std::filesystem::path& path);
 
 #ifdef _WIN32
 template <typename Path>
-[[nodiscard]] bool RemoveDirRecursively(const Path& path) {
+bool RemoveDirRecursively(const Path& path) {
     if constexpr (IsChar<typename Path::value_type>) {
         return RemoveDirRecursively(ToU8String(path));
     } else {
@@ -301,11 +301,11 @@ template <typename Path>
  *
  * @returns True if all of the directory's contents are removed successfully, false otherwise.
  */
-[[nodiscard]] bool RemoveDirContentsRecursively(const std::filesystem::path& path);
+bool RemoveDirContentsRecursively(const std::filesystem::path& path);
 
 #ifdef _WIN32
 template <typename Path>
-[[nodiscard]] bool RemoveDirContentsRecursively(const Path& path) {
+bool RemoveDirContentsRecursively(const Path& path) {
     if constexpr (IsChar<typename Path::value_type>) {
         return RemoveDirContentsRecursively(ToU8String(path));
     } else {
@@ -435,11 +435,13 @@ template <typename Path>
 #endif
 
 /**
- * Returns whether a filesystem object at path is a file.
+ * Returns whether a filesystem object at path is a regular file.
+ * A regular file is a file that stores text or binary data.
+ * It is not a directory, symlink, FIFO, socket, block device, or character device.
  *
  * @param path Filesystem path
  *
- * @returns True if a filesystem object at path is a file, false otherwise.
+ * @returns True if a filesystem object at path is a regular file, false otherwise.
  */
 [[nodiscard]] bool IsFile(const std::filesystem::path& path);
 

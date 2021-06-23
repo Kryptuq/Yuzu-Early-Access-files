@@ -96,7 +96,7 @@ public:
                                const Tegra::Engines::Fermi2D::Config& copy_config) override;
     bool AccelerateDisplay(const Tegra::FramebufferConfig& config, VAddr framebuffer_addr,
                            u32 pixel_stride) override;
-    void LoadDiskResources(u64 title_id, const std::atomic_bool& stop_loading,
+    void LoadDiskResources(u64 title_id, std::stop_token stop_loading,
                            const VideoCore::DiskResourceLoadCallback& callback) override;
 
     /// Returns true when there are commands queued to the OpenGL server.

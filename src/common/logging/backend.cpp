@@ -159,7 +159,7 @@ FileBackend::FileBackend(const std::filesystem::path& filename) {
 
     // Existence checks are done within the functions themselves.
     // We don't particularly care if these succeed or not.
-    void(FS::RemoveFile(old_filename));
+    FS::RemoveFile(old_filename);
     void(FS::RenameFile(filename, old_filename));
 
     file =
@@ -186,7 +186,7 @@ void FileBackend::Write(const Entry& entry) {
 
     bytes_written += file->WriteString(FormatLogMessage(entry).append(1, '\n'));
     if (entry.log_level >= Level::Error) {
-        void(file->Flush());
+        file->Flush();
     }
 }
 
