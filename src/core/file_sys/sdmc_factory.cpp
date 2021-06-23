@@ -27,14 +27,6 @@ ResultVal<VirtualDir> SDMCFactory::Open() const {
     return MakeResult<VirtualDir>(dir);
 }
 
-VirtualDir SDMCFactory::GetSDMCModificationLoadRoot(u64 title_id) const {
-    // LayeredFS doesn't work on updates and title id-less homebrew
-    if (title_id == 0 || (title_id & 0xFFF) == 0x800) {
-        return nullptr;
-    }
-    return GetOrCreateDirectoryRelative(dir, fmt::format("/atmosphere/contents/{:016X}", title_id));
-}
-
 VirtualDir SDMCFactory::GetSDMCContentDirectory() const {
     return GetOrCreateDirectoryRelative(dir, "/Nintendo/Contents");
 }

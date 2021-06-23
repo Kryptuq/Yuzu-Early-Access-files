@@ -1878,8 +1878,7 @@ void GMainWindow::RemoveCustomConfiguration(u64 program_id, const std::string& g
     }
 }
 
-void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_path,
-                                      DumpRomFSTarget target) {
+void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_path) {
     const auto failed = [this] {
         QMessageBox::warning(this, tr("RomFS Extraction Failed!"),
                              tr("There was an error copying the RomFS files or the user "
@@ -1907,10 +1906,7 @@ void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pa
         return;
     }
 
-    const auto dump_dir =
-        target == DumpRomFSTarget::Normal
-            ? Common::FS::GetYuzuPath(Common::FS::YuzuPath::DumpDir)
-            : Common::FS::GetYuzuPath(Common::FS::YuzuPath::SDMCDir) / "atmosphere" / "contents";
+    const auto dump_dir = Common::FS::GetYuzuPath(Common::FS::YuzuPath::DumpDir);
     const auto romfs_dir = fmt::format("{:016X}/romfs", *romfs_title_id);
 
     const auto path = Common::FS::PathToUTF8String(dump_dir / romfs_dir);

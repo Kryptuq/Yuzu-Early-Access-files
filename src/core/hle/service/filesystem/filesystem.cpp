@@ -703,16 +703,6 @@ FileSys::VirtualDir FileSystemController::GetModificationLoadRoot(u64 title_id) 
     return bis_factory->GetModificationLoadRoot(title_id);
 }
 
-FileSys::VirtualDir FileSystemController::GetSDMCModificationLoadRoot(u64 title_id) const {
-    LOG_TRACE(Service_FS, "Opening SDMC mod load root for tid={:016X}", title_id);
-
-    if (sdmc_factory == nullptr) {
-        return nullptr;
-    }
-
-    return sdmc_factory->GetSDMCModificationLoadRoot(title_id);
-}
-
 FileSys::VirtualDir FileSystemController::GetModificationDumpRoot(u64 title_id) const {
     LOG_TRACE(Service_FS, "Opening mod dump root for tid={:016X}", title_id);
 
