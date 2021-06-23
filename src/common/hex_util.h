@@ -53,8 +53,9 @@ template <typename ContiguousContainer>
     std::string out;
     out.reserve(std::size(data) * pad_width);
 
+    const auto format_str = fmt::runtime(upper ? "{:02X}" : "{:02x}");
     for (const u8 c : data) {
-        out += fmt::format(upper ? "{:02X}" : "{:02x}", c);
+        out += fmt::format(format_str, c);
     }
 
     return out;

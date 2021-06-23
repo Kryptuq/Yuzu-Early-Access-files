@@ -101,7 +101,7 @@ public:
     // etc).
     template <typename... Args>
     void AddLine(std::string_view text, Args&&... args) {
-        AddExpression(fmt::format(text, std::forward<Args>(args)...));
+        AddExpression(fmt::format(fmt::runtime(text), std::forward<Args>(args)...));
         AddNewLine();
     }
 

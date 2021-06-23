@@ -208,10 +208,10 @@ static void RunTestInstance(Dynarmic::A64::Jit& jit, A64Unicorn& uni, A64TestEnv
 
         fmt::print("Initial register listing:\n");
         for (size_t i = 0; i < regs.size(); ++i) {
-            fmt::print("{:3s}: {:016x}\n", static_cast<A64::Reg>(i), regs[i]);
+            fmt::print("{:3s}: {:016x}\n", A64::RegToString(static_cast<A64::Reg>(i)), regs[i]);
         }
         for (size_t i = 0; i < vecs.size(); ++i) {
-            fmt::print("{:3s}: {}\n", static_cast<A64::Vec>(i), vecs[i]);
+            fmt::print("{:3s}: {}{}\n", A64::VecToString(static_cast<A64::Vec>(i)), vecs[i][1], vecs[i][0]);
         }
         fmt::print("sp : {:016x}\n", initial_sp);
         fmt::print("pc : {:016x}\n", instructions_start);
@@ -228,11 +228,14 @@ static void RunTestInstance(Dynarmic::A64::Jit& jit, A64Unicorn& uni, A64TestEnv
         fmt::print("     unicorn          dynarmic\n");
         const auto uni_regs = uni.GetRegisters();
         for (size_t i = 0; i < regs.size(); ++i) {
-            fmt::print("{:3s}: {:016x} {:016x} {}\n", static_cast<A64::Reg>(i), uni_regs[i], jit.GetRegisters()[i], uni_regs[i] != jit.GetRegisters()[i] ? "*" : "");
+            fmt::print("{:3s}: {:016x} {:016x} {}\n", A64::RegToString(static_cast<A64::Reg>(i)), uni_regs[i], jit.GetRegisters()[i], uni_regs[i] != jit.GetRegisters()[i] ? "*" : "");
         }
         const auto uni_vecs = uni.GetVectors();
         for (size_t i = 0; i < vecs.size(); ++i) {
-            fmt::print("{:3s}: {} {} {}\n", static_cast<A64::Vec>(i), uni_vecs[i], jit.GetVectors()[i], uni_vecs[i] != jit.GetVectors()[i] ? "*" : "");
+            fmt::print("{:3s}: {}{} {}{} {}\n", A64::VecToString(static_cast<A64::Vec>(i)),
+                       uni_vecs[i][1], uni_vecs[i][0],
+                       jit.GetVectors()[i][1], jit.GetVectors()[i][0],
+                       uni_vecs[i] != jit.GetVectors()[i] ? "*" : "");
         }
         fmt::print("sp : {:016x} {:016x} {}\n", uni.GetSP(), jit.GetSP(), uni.GetSP() != jit.GetSP() ? "*" : "");
         fmt::print("pc : {:016x} {:016x} {}\n", uni.GetPC(), jit.GetPC(), uni.GetPC() != jit.GetPC() ? "*" : "");

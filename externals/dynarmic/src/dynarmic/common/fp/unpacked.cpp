@@ -5,6 +5,8 @@
 
 #include "dynarmic/common/fp/unpacked.h"
 
+#include <algorithm>
+
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/fp/info.h"
 #include "dynarmic/common/fp/mantissa_util.h"

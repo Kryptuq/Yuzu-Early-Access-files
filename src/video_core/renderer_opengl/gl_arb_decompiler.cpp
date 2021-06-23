@@ -454,7 +454,7 @@ private:
 
     template <typename... Args>
     void AddExpression(std::string_view text, Args&&... args) {
-        shader_source += fmt::format(text, std::forward<Args>(args)...);
+        shader_source += fmt::format(fmt::runtime(text), std::forward<Args>(args)...);
     }
 
     template <typename... Args>

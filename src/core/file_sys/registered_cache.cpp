@@ -58,14 +58,17 @@ static bool FollowsNcaIdFormat(std::string_view name) {
 
 static std::string GetRelativePathFromNcaID(const std::array<u8, 16>& nca_id, bool second_hex_upper,
                                             bool within_two_digit, bool cnmt_suffix) {
-    if (!within_two_digit)
-        return fmt::format(cnmt_suffix ? "{}.cnmt.nca" : "/{}.nca",
-                           Common::HexToString(nca_id, second_hex_upper));
+    if (!within_two_digit) {
+        const auto format_str = fmt::runtime(cnmt_suffix ? "{}.cnmt.nca" : "/{}.nca");
+        return fmt::format(format_str, Common::HexToString(nca_id, second_hex_upper));
+    }
 
     Core::Crypto::SHA256Hash hash{};
     mbedtls_sha256_ret(nca_id.data(), nca_id.size(), hash.data(), 0);
-    return fmt::format(cnmt_suffix ? "/000000{:02X}/{}.cnmt.nca" : "/000000{:02X}/{}.nca", hash[0],
-                       Common::HexToString(nca_id, second_hex_upper));
+
+    const auto format_str =
+        fmt::runtime(cnmt_suffix ? "/000000{:02X}/{}.cnmt.nca" : "/000000{:02X}/{}.nca");
+    return fmt::format(format_str, hash[0], Common::HexToString(nca_id, second_hex_upper));
 }
 
 static std::string GetCNMTName(TitleType type, u64 title_id) {

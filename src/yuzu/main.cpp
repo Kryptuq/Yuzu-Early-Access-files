@@ -237,7 +237,8 @@ GMainWindow::GMainWindow()
     const auto build_id = std::string(Common::g_build_id);
 
     const auto yuzu_build = fmt::format("yuzu Development Build | {}-{}", branch_name, description);
-    const auto override_build = fmt::format(std::string(Common::g_title_bar_format_idle), build_id);
+    const auto override_build =
+        fmt::format(fmt::runtime(std::string(Common::g_title_bar_format_idle)), build_id);
     const auto yuzu_build_version = override_build.empty() ? yuzu_build : override_build;
 
     LOG_INFO(Frontend, "yuzu Version: {}", yuzu_build_version);
@@ -2860,7 +2861,8 @@ void GMainWindow::UpdateWindowTitle(std::string_view title_name, std::string_vie
     const auto build_id = std::string(Common::g_build_id);
 
     const auto yuzu_title = fmt::format("yuzu | {}-{}", branch_name, description);
-    const auto override_title = fmt::format(std::string(Common::g_title_bar_format_idle), build_id);
+    const auto override_title =
+        fmt::format(fmt::runtime(std::string(Common::g_title_bar_format_idle)), build_id);
     const auto window_title = override_title.empty() ? yuzu_title : override_title;
 
     if (title_name.empty()) {

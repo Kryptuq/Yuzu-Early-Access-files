@@ -835,7 +835,7 @@ void KeyManager::SetKey(S128KeyType id, Key128 key, u64 field1, u64 field2) {
             "key_area_key_ocean_{:02X}",
             "key_area_key_system_{:02X}",
         };
-        WriteKeyToFile(category, fmt::format(kak_names.at(field2), field1), key);
+        WriteKeyToFile(category, fmt::format(fmt::runtime(kak_names.at(field2)), field1), key);
     } else if (id == S128KeyType::Master) {
         WriteKeyToFile(category, fmt::format("master_key_{:02X}", field1), key);
     } else if (id == S128KeyType::Package1) {

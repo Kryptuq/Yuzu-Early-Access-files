@@ -14,7 +14,8 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent), ui(new Ui::AboutDia
     const auto build_id = std::string(Common::g_build_id);
 
     const auto yuzu_build = fmt::format("yuzu Development Build | {}-{}", branch_name, description);
-    const auto override_build = fmt::format(std::string(Common::g_title_bar_format_idle), build_id);
+    const auto override_build =
+        fmt::format(fmt::runtime(std::string(Common::g_title_bar_format_idle)), build_id);
     const auto yuzu_build_version = override_build.empty() ? yuzu_build : override_build;
 
     ui->setupUi(this);

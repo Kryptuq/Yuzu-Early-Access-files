@@ -19,7 +19,7 @@ namespace detail {
 
 template<size_t N>
 inline constexpr std::array<char, N> StringToArray(const char (&str)[N + 1]) {
-    std::array<char, N> result;
+    std::array<char, N> result{};
     for (size_t i = 0; i < N; i++) {
         result[i] = str[i];
     }
