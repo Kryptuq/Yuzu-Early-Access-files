@@ -146,14 +146,6 @@ NvResult nvhost_as_gpu::Remap(const std::vector<u8>& input, std::vector<u8>& out
         LOG_DEBUG(Service_NVDRV, "remap entry, offset=0x{:X} handle=0x{:X} pages=0x{:X}",
                   entry.offset, entry.nvmap_handle, entry.pages);
 
-        if (entry.nvmap_handle == 0) {
-            // If nvmap handle is null, we should unmap instead.
-            const auto offset{static_cast<GPUVAddr>(entry.offset) << 0x10};
-            const auto size{static_cast<u64>(entry.pages) << 0x10};
-            system.GPU().MemoryManager().Unmap(offset, size);
-            continue;
-        }
-
         const auto object{nvmap_dev->GetObject(entry.nvmap_handle)};
         if (!object) {
             LOG_CRITICAL(Service_NVDRV, "invalid nvmap_handle={:X}", entry.nvmap_handle);

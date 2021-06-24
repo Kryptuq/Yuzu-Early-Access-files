@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <algorithm>
 #include "common/settings.h"
 #include "core/frontend/framebuffer_layout.h"
 #include "input_common/touch_from_button.h"
