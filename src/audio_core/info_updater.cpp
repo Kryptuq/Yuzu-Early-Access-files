@@ -168,7 +168,8 @@ bool InfoUpdater::UpdateVoices(VoiceContext& voice_context,
         auto& voice_in_params = voice_in[i];
         const auto channel_count = static_cast<std::size_t>(voice_in_params.channel_count);
         // Skip if it's not currently in use
-        if (!voice_in_params.is_in_use) {
+        // TODO: in-use voices shouldn't have 0 channels, investigate why this happens
+        if (!voice_in_params.is_in_use || channel_count == 0) {
             continue;
         }
         // Voice states for each channel
