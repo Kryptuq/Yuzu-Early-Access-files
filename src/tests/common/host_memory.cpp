@@ -5,11 +5,13 @@
 #include <catch2/catch.hpp>
 
 #include "common/host_memory.h"
+#include "common/literals.h"
 
 using Common::HostMemory;
+using namespace Common::Literals;
 
 static constexpr size_t VIRTUAL_SIZE = 1ULL << 39;
-static constexpr size_t BACKING_SIZE = 4ULL * 1024 * 1024 * 1024;
+static constexpr size_t BACKING_SIZE = 4_GiB;
 
 TEST_CASE("HostMemory: Initialize and deinitialize", "[common]") {
     { HostMemory mem(BACKING_SIZE, VIRTUAL_SIZE); }

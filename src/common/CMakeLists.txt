@@ -110,7 +110,6 @@ add_library(common STATIC
     cityhash.cpp
     cityhash.h
     common_funcs.h
-    common_sizes.h
     common_types.h
     concepts.h
     div_ceil.h
@@ -134,6 +133,7 @@ add_library(common STATIC
     host_memory.cpp
     host_memory.h
     intrusive_red_black_tree.h
+    literals.h
     logging/backend.cpp
     logging/backend.h
     logging/filter.cpp

@@ -345,8 +345,12 @@ public:
     explicit RequestParser(u32* command_buffer) : RequestHelperBase(command_buffer) {}
 
     explicit RequestParser(Kernel::HLERequestContext& ctx) : RequestHelperBase(ctx) {
-        ASSERT_MSG(ctx.GetDataPayloadOffset(), "context is incomplete");
-        Skip(ctx.GetDataPayloadOffset(), false);
+        // TIPC does not have data payload offset
+        if (!ctx.IsTipc()) {
+            ASSERT_MSG(ctx.GetDataPayloadOffset(), "context is incomplete");
+            Skip(ctx.GetDataPayloadOffset(), false);
+        }
+
         // Skip the u64 command id, it's already stored in the context
         static constexpr u32 CommandIdSize = 2;
         Skip(CommandIdSize, false);

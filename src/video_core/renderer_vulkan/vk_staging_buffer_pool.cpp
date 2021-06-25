@@ -12,6 +12,7 @@
 #include "common/assert.h"
 #include "common/bit_util.h"
 #include "common/common_types.h"
+#include "common/literals.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_staging_buffer_pool.h"
 #include "video_core/vulkan_common/vulkan_device.h"
@@ -19,12 +20,15 @@
 
 namespace Vulkan {
 namespace {
+
+using namespace Common::Literals;
+
 // Maximum potential alignment of a Vulkan buffer
 constexpr VkDeviceSize MAX_ALIGNMENT = 256;
 // Maximum size to put elements in the stream buffer
-constexpr VkDeviceSize MAX_STREAM_BUFFER_REQUEST_SIZE = 8 * 1024 * 1024;
+constexpr VkDeviceSize MAX_STREAM_BUFFER_REQUEST_SIZE = 8_MiB;
 // Stream buffer size in bytes
-constexpr VkDeviceSize STREAM_BUFFER_SIZE = 128 * 1024 * 1024;
+constexpr VkDeviceSize STREAM_BUFFER_SIZE = 128_MiB;
 constexpr VkDeviceSize REGION_SIZE = STREAM_BUFFER_SIZE / StagingBufferPool::NUM_SYNCS;
 
 constexpr VkMemoryPropertyFlags HOST_FLAGS =

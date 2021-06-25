@@ -16,9 +16,9 @@
 
 #include <boost/container/small_vector.hpp>
 
-#include "common/common_sizes.h"
 #include "common/common_types.h"
 #include "common/div_ceil.h"
+#include "common/literals.h"
 #include "common/microprofile.h"
 #include "common/scope_exit.h"
 #include "common/settings.h"
@@ -48,8 +48,11 @@ constexpr u32 NUM_COMPUTE_UNIFORM_BUFFERS = 8;
 constexpr u32 NUM_STORAGE_BUFFERS = 16;
 constexpr u32 NUM_STAGES = 5;
 
+using namespace Common::Literals;
+
 template <typename P>
 class BufferCache {
+
     // Page size for caching purposes.
     // This is unrelated to the CPU page size and it can be changed as it seems optimal.
     static constexpr u32 PAGE_BITS = 16;
@@ -66,8 +69,8 @@ class BufferCache {
 
     static constexpr BufferId NULL_BUFFER_ID{0};
 
-    static constexpr u64 EXPECTED_MEMORY = Common::Size_512_MB;
-    static constexpr u64 CRITICAL_MEMORY = Common::Size_1_GB;
+    static constexpr u64 EXPECTED_MEMORY = 512_MiB;
+    static constexpr u64 CRITICAL_MEMORY = 1_GiB;
 
     using Maxwell = Tegra::Engines::Maxwell3D::Regs;
 
@@ -96,7 +99,7 @@ class BufferCache {
     };
 
 public:
-    static constexpr u32 DEFAULT_SKIP_CACHE_SIZE = 4096;
+    static constexpr u32 DEFAULT_SKIP_CACHE_SIZE = 4_KiB;
 
     explicit BufferCache(VideoCore::RasterizerInterface& rasterizer_,
                          Tegra::Engines::Maxwell3D& maxwell3d_,

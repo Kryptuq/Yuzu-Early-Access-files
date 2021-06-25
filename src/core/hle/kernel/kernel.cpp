@@ -12,7 +12,6 @@
 #include <utility>
 
 #include "common/assert.h"
-#include "common/common_sizes.h"
 #include "common/logging/log.h"
 #include "common/microprofile.h"
 #include "common/thread.h"
@@ -180,7 +179,7 @@ struct KernelCore::Impl {
         system_resource_limit->Reserve(LimitableResource::PhysicalMemory, kernel_size);
 
         // Reserve secure applet memory, introduced in firmware 5.0.0
-        constexpr u64 secure_applet_memory_size{Common::Size_4_MB};
+        constexpr u64 secure_applet_memory_size{4_MiB};
         ASSERT(system_resource_limit->Reserve(LimitableResource::PhysicalMemory,
                                               secure_applet_memory_size));
 
@@ -320,8 +319,8 @@ struct KernelCore::Impl {
         const VAddr code_end_virt_addr = KernelVirtualAddressCodeEnd;
 
         // Setup the containing kernel region.
-        constexpr size_t KernelRegionSize = Common::Size_1_GB;
-        constexpr size_t KernelRegionAlign = Common::Size_1_GB;
+        constexpr size_t KernelRegionSize = 1_GiB;
+        constexpr size_t KernelRegionAlign = 1_GiB;
         constexpr VAddr kernel_region_start =
             Common::AlignDown(code_start_virt_addr, KernelRegionAlign);
         size_t kernel_region_size = KernelRegionSize;
@@ -368,7 +367,7 @@ struct KernelCore::Impl {
 
         // Decide on the actual size for the misc region.
         constexpr size_t MiscRegionAlign = KernelAslrAlignment;
-        constexpr size_t MiscRegionMinimumSize = Common::Size_32_MB;
+        constexpr size_t MiscRegionMinimumSize = 32_MiB;
         const size_t misc_region_size = Common::AlignUp(
             std::max(misc_region_needed_size, MiscRegionMinimumSize), MiscRegionAlign);
         ASSERT(misc_region_size > 0);
@@ -381,7 +380,7 @@ struct KernelCore::Impl {
             misc_region_start, misc_region_size, KMemoryRegionType_KernelMisc));
 
         // Setup the stack region.
-        constexpr size_t StackRegionSize = Common::Size_14_MB;
+        constexpr size_t StackRegionSize = 14_MiB;
         constexpr size_t StackRegionAlign = KernelAslrAlignment;
         const VAddr stack_region_start =
             memory_layout.GetVirtualMemoryRegionTree().GetRandomAlignedRegion(
@@ -414,7 +413,7 @@ struct KernelCore::Impl {
             slab_region_start, slab_region_size, KMemoryRegionType_KernelSlab));
 
         // Setup the temp region.
-        constexpr size_t TempRegionSize = Common::Size_128_MB;
+        constexpr size_t TempRegionSize = 128_MiB;
         constexpr size_t TempRegionAlign = KernelAslrAlignment;
         const VAddr temp_region_start =
             memory_layout.GetVirtualMemoryRegionTree().GetRandomAlignedRegion(
@@ -470,7 +469,7 @@ struct KernelCore::Impl {
         // Determine size available for kernel page table heaps, requiring > 8 MB.
         const PAddr resource_end_phys_addr = slab_start_phys_addr + resource_region_size;
         const size_t page_table_heap_size = resource_end_phys_addr - slab_end_phys_addr;
-        ASSERT(page_table_heap_size / Common::Size_4_MB > 2);
+        ASSERT(page_table_heap_size / 4_MiB > 2);
 
         // Insert a physical region for the kernel page table heap region
         ASSERT(memory_layout.GetPhysicalMemoryRegionTree().Insert(
@@ -495,7 +494,7 @@ struct KernelCore::Impl {
         ASSERT(linear_extents.GetEndAddress() != 0);
 
         // Setup the linear mapping region.
-        constexpr size_t LinearRegionAlign = Common::Size_1_GB;
+        constexpr size_t LinearRegionAlign = 1_GiB;
         const PAddr aligned_linear_phys_start =
             Common::AlignDown(linear_extents.GetAddress(), LinearRegionAlign);
         const size_t linear_region_size =

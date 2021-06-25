@@ -117,7 +117,7 @@ AOC_U::AOC_U(Core::System& system_)
         {7, &AOC_U::PrepareAddOnContent, "PrepareAddOnContent"},
         {8, &AOC_U::GetAddOnContentListChangedEvent, "GetAddOnContentListChangedEvent"},
         {9, nullptr, "GetAddOnContentLostErrorCode"},
-        {10, nullptr, "GetAddOnContentListChangedEventWithProcessId"},
+        {10, &AOC_U::GetAddOnContentListChangedEventWithProcessId, "GetAddOnContentListChangedEventWithProcessId"},
         {100, &AOC_U::CreateEcPurchasedEventManager, "CreateEcPurchasedEventManager"},
         {101, &AOC_U::CreatePermanentEcPurchasedEventManager, "CreatePermanentEcPurchasedEventManager"},
         {110, nullptr, "CreateContentsServiceManager"},
@@ -250,6 +250,14 @@ void AOC_U::PrepareAddOnContent(Kernel::HLERequestContext& ctx) {
 }
 
 void AOC_U::GetAddOnContentListChangedEvent(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_AOC, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2, 1};
+    rb.Push(ResultSuccess);
+    rb.PushCopyObjects(aoc_change_event.GetReadableEvent());
+}
+
+void AOC_U::GetAddOnContentListChangedEventWithProcessId(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_AOC, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2, 1};

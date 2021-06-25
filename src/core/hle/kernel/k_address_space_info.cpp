@@ -5,34 +5,37 @@
 #include <array>
 
 #include "common/assert.h"
-#include "common/common_sizes.h"
+#include "common/literals.h"
 #include "core/hle/kernel/k_address_space_info.h"
 
 namespace Kernel {
 
 namespace {
 
+using namespace Common::Literals;
+
+constexpr u64 Size_Invalid = UINT64_MAX;
+
 // clang-format off
 constexpr std::array<KAddressSpaceInfo, 13> AddressSpaceInfos{{
-   { .bit_width = 32, .address = Common::Size_2_MB   , .size = Common::Size_1_GB   - Common::Size_2_MB  , .type = KAddressSpaceInfo::Type::MapSmall, },
-   { .bit_width = 32, .address = Common::Size_1_GB   , .size = Common::Size_4_GB   - Common::Size_1_GB  , .type = KAddressSpaceInfo::Type::MapLarge, },
-   { .bit_width = 32, .address = Common::Size_Invalid, .size = Common::Size_1_GB                        , .type = KAddressSpaceInfo::Type::Alias,    },
-   { .bit_width = 32, .address = Common::Size_Invalid, .size = Common::Size_1_GB                        , .type = KAddressSpaceInfo::Type::Heap,     },
-   { .bit_width = 36, .address = Common::Size_128_MB , .size = Common::Size_2_GB   - Common::Size_128_MB, .type = KAddressSpaceInfo::Type::MapSmall, },
-   { .bit_width = 36, .address = Common::Size_2_GB   , .size = Common::Size_64_GB  - Common::Size_2_GB  , .type = KAddressSpaceInfo::Type::MapLarge, },
-   { .bit_width = 36, .address = Common::Size_Invalid, .size = Common::Size_6_GB                        , .type = KAddressSpaceInfo::Type::Heap,     },
-   { .bit_width = 36, .address = Common::Size_Invalid, .size = Common::Size_6_GB                        , .type = KAddressSpaceInfo::Type::Alias,    },
-   { .bit_width = 39, .address = Common::Size_128_MB , .size = Common::Size_512_GB - Common::Size_128_MB, .type = KAddressSpaceInfo::Type::Map39Bit, },
-   { .bit_width = 39, .address = Common::Size_Invalid, .size = Common::Size_64_GB                       , .type = KAddressSpaceInfo::Type::MapSmall  },
-   { .bit_width = 39, .address = Common::Size_Invalid, .size = Common::Size_6_GB                        , .type = KAddressSpaceInfo::Type::Heap,     },
-   { .bit_width = 39, .address = Common::Size_Invalid, .size = Common::Size_64_GB                       , .type = KAddressSpaceInfo::Type::Alias,    },
-   { .bit_width = 39, .address = Common::Size_Invalid, .size = Common::Size_2_GB                        , .type = KAddressSpaceInfo::Type::Stack,    },
+   { .bit_width = 32, .address = 2_MiB       , .size = 1_GiB   - 2_MiB  , .type = KAddressSpaceInfo::Type::MapSmall, },
+   { .bit_width = 32, .address = 1_GiB       , .size = 4_GiB   - 1_GiB  , .type = KAddressSpaceInfo::Type::MapLarge, },
+   { .bit_width = 32, .address = Size_Invalid, .size = 1_GiB            , .type = KAddressSpaceInfo::Type::Alias,    },
+   { .bit_width = 32, .address = Size_Invalid, .size = 1_GiB            , .type = KAddressSpaceInfo::Type::Heap,     },
+   { .bit_width = 36, .address = 128_MiB     , .size = 2_GiB   - 128_MiB, .type = KAddressSpaceInfo::Type::MapSmall, },
+   { .bit_width = 36, .address = 2_GiB       , .size = 64_GiB  - 2_GiB  , .type = KAddressSpaceInfo::Type::MapLarge, },
+   { .bit_width = 36, .address = Size_Invalid, .size = 6_GiB            , .type = KAddressSpaceInfo::Type::Heap,     },
+   { .bit_width = 36, .address = Size_Invalid, .size = 6_GiB            , .type = KAddressSpaceInfo::Type::Alias,    },
+   { .bit_width = 39, .address = 128_MiB     , .size = 512_GiB - 128_MiB, .type = KAddressSpaceInfo::Type::Map39Bit, },
+   { .bit_width = 39, .address = Size_Invalid, .size = 64_GiB           , .type = KAddressSpaceInfo::Type::MapSmall  },
+   { .bit_width = 39, .address = Size_Invalid, .size = 6_GiB            , .type = KAddressSpaceInfo::Type::Heap,     },
+   { .bit_width = 39, .address = Size_Invalid, .size = 64_GiB           , .type = KAddressSpaceInfo::Type::Alias,    },
+   { .bit_width = 39, .address = Size_Invalid, .size = 2_GiB            , .type = KAddressSpaceInfo::Type::Stack,    },
 }};
 // clang-format on
 
 constexpr bool IsAllowedIndexForAddress(std::size_t index) {
-    return index < AddressSpaceInfos.size() &&
-           AddressSpaceInfos[index].address != Common::Size_Invalid;
+    return index < AddressSpaceInfos.size() && AddressSpaceInfos[index].address != Size_Invalid;
 }
 
 using IndexArray =

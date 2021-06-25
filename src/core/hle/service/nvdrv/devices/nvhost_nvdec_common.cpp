@@ -19,26 +19,29 @@
 namespace Service::Nvidia::Devices {
 
 namespace {
-// Splice vectors will copy count amount of type T from the input vector into the dst vector.
+// Copies count amount of type T from the input vector into the dst vector.
+// Returns the number of bytes written into dst.
 template <typename T>
 std::size_t SpliceVectors(const std::vector<u8>& input, std::vector<T>& dst, std::size_t count,
                           std::size_t offset) {
-    if (!dst.empty()) {
-        std::memcpy(dst.data(), input.data() + offset, count * sizeof(T));
+    if (dst.empty()) {
+        return 0;
     }
-    return 0;
+    const size_t bytes_copied = count * sizeof(T);
+    std::memcpy(dst.data(), input.data() + offset, bytes_copied);
+    return bytes_copied;
 }
 
-// Write vectors will write data to the output buffer
+// Writes the data in src to an offset into the dst vector. The offset is specified in bytes
+// Returns the number of bytes written into dst.
 template <typename T>
 std::size_t WriteVectors(std::vector<u8>& dst, const std::vector<T>& src, std::size_t offset) {
     if (src.empty()) {
         return 0;
-    } else {
-        std::memcpy(dst.data() + offset, src.data(), src.size() * sizeof(T));
-        offset += src.size() * sizeof(T);
-        return offset;
     }
+    const size_t bytes_copied = src.size() * sizeof(T);
+    std::memcpy(dst.data() + offset, src.data(), bytes_copied);
+    return bytes_copied;
 }
 } // Anonymous namespace
 
@@ -62,7 +65,6 @@ NvResult nvhost_nvdec_common::Submit(const std::vector<u8>& input, std::vector<u
     LOG_DEBUG(Service_NVDRV, "called NVDEC Submit, cmd_buffer_count={}", params.cmd_buffer_count);
 
     // Instantiate param buffers
-    std::size_t offset = sizeof(IoctlSubmit);
     std::vector<CommandBuffer> command_buffers(params.cmd_buffer_count);
     std::vector<Reloc> relocs(params.relocation_count);
     std::vector<u32> reloc_shifts(params.relocation_count);
@@ -71,12 +73,13 @@ NvResult nvhost_nvdec_common::Submit(const std::vector<u8>& input, std::vector<u
     std::vector<Fence> fences(params.fence_count);
 
     // Splice input into their respective buffers
-    offset = SpliceVectors(input, command_buffers, params.cmd_buffer_count, offset);
-    offset = SpliceVectors(input, relocs, params.relocation_count, offset);
-    offset = SpliceVectors(input, reloc_shifts, params.relocation_count, offset);
-    offset = SpliceVectors(input, syncpt_increments, params.syncpoint_count, offset);
-    offset = SpliceVectors(input, wait_checks, params.syncpoint_count, offset);
-    offset = SpliceVectors(input, fences, params.fence_count, offset);
+    std::size_t offset = sizeof(IoctlSubmit);
+    offset += SpliceVectors(input, command_buffers, params.cmd_buffer_count, offset);
+    offset += SpliceVectors(input, relocs, params.relocation_count, offset);
+    offset += SpliceVectors(input, reloc_shifts, params.relocation_count, offset);
+    offset += SpliceVectors(input, syncpt_increments, params.syncpoint_count, offset);
+    offset += SpliceVectors(input, wait_checks, params.syncpoint_count, offset);
+    offset += SpliceVectors(input, fences, params.fence_count, offset);
 
     auto& gpu = system.GPU();
     if (gpu.UseNvdec()) {
@@ -88,7 +91,7 @@ NvResult nvhost_nvdec_common::Submit(const std::vector<u8>& input, std::vector<u
         }
     }
     for (const auto& cmd_buffer : command_buffers) {
-        auto object = nvmap_dev->GetObject(cmd_buffer.memory_id);
+        const auto object = nvmap_dev->GetObject(cmd_buffer.memory_id);
         ASSERT_OR_EXECUTE(object, return NvResult::InvalidState;);
         const auto map = FindBufferMap(object->dma_map_addr);
         if (!map) {
@@ -102,21 +105,19 @@ NvResult nvhost_nvdec_common::Submit(const std::vector<u8>& input, std::vector<u
         gpu.PushCommandBuffer(cmdlist);
     }
     if (gpu.UseNvdec()) {
-
         fences[0].value = syncpoint_manager.IncreaseSyncpoint(fences[0].id, 1);
-
         Tegra::ChCommandHeaderList cmdlist{{(4 << 28) | fences[0].id}};
         gpu.PushCommandBuffer(cmdlist);
     }
     std::memcpy(output.data(), &params, sizeof(IoctlSubmit));
     // Some games expect command_buffers to be written back
     offset = sizeof(IoctlSubmit);
-    offset = WriteVectors(output, command_buffers, offset);
-    offset = WriteVectors(output, relocs, offset);
-    offset = WriteVectors(output, reloc_shifts, offset);
-    offset = WriteVectors(output, syncpt_increments, offset);
-    offset = WriteVectors(output, wait_checks, offset);
-    offset = WriteVectors(output, fences, offset);
+    offset += WriteVectors(output, command_buffers, offset);
+    offset += WriteVectors(output, relocs, offset);
+    offset += WriteVectors(output, reloc_shifts, offset);
+    offset += WriteVectors(output, syncpt_increments, offset);
+    offset += WriteVectors(output, wait_checks, offset);
+    offset += WriteVectors(output, fences, offset);
 
     return NvResult::Success;
 }
@@ -152,10 +153,10 @@ NvResult nvhost_nvdec_common::MapBuffer(const std::vector<u8>& input, std::vecto
 
     auto& gpu = system.GPU();
 
-    for (auto& cmf_buff : cmd_buffer_handles) {
-        auto object{nvmap_dev->GetObject(cmf_buff.map_handle)};
+    for (auto& cmd_buffer : cmd_buffer_handles) {
+        auto object{nvmap_dev->GetObject(cmd_buffer.map_handle)};
         if (!object) {
-            LOG_ERROR(Service_NVDRV, "invalid cmd_buffer nvmap_handle={:X}", cmf_buff.map_handle);
+            LOG_ERROR(Service_NVDRV, "invalid cmd_buffer nvmap_handle={:X}", cmd_buffer.map_handle);
             std::memcpy(output.data(), &params, output.size());
             return NvResult::InvalidState;
         }
@@ -170,7 +171,7 @@ NvResult nvhost_nvdec_common::MapBuffer(const std::vector<u8>& input, std::vecto
         if (!object->dma_map_addr) {
             LOG_ERROR(Service_NVDRV, "failed to map size={}", object->size);
         } else {
-            cmf_buff.map_address = object->dma_map_addr;
+            cmd_buffer.map_address = object->dma_map_addr;
             AddBufferMap(object->dma_map_addr, object->size, object->addr,
                          object->status == nvmap::Object::Status::Allocated);
         }
@@ -190,10 +191,10 @@ NvResult nvhost_nvdec_common::UnmapBuffer(const std::vector<u8>& input, std::vec
 
     auto& gpu = system.GPU();
 
-    for (auto& cmf_buff : cmd_buffer_handles) {
-        const auto object{nvmap_dev->GetObject(cmf_buff.map_handle)};
+    for (auto& cmd_buffer : cmd_buffer_handles) {
+        const auto object{nvmap_dev->GetObject(cmd_buffer.map_handle)};
         if (!object) {
-            LOG_ERROR(Service_NVDRV, "invalid cmd_buffer nvmap_handle={:X}", cmf_buff.map_handle);
+            LOG_ERROR(Service_NVDRV, "invalid cmd_buffer nvmap_handle={:X}", cmd_buffer.map_handle);
             std::memcpy(output.data(), &params, output.size());
             return NvResult::InvalidState;
         }

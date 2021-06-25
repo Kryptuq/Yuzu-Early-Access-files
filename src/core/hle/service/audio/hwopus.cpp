@@ -253,7 +253,11 @@ void HwOpus::GetWorkBufferSize(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(worker_buffer_sz);
 }
 
-void HwOpus::OpenOpusDecoder(Kernel::HLERequestContext& ctx) {
+void HwOpus::GetWorkBufferSizeEx(Kernel::HLERequestContext& ctx) {
+    GetWorkBufferSize(ctx);
+}
+
+void HwOpus::OpenHardwareOpusDecoder(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto sample_rate = rp.Pop<u32>();
     const auto channel_count = rp.Pop<u32>();
@@ -291,14 +295,18 @@ void HwOpus::OpenOpusDecoder(Kernel::HLERequestContext& ctx) {
         system, OpusDecoderState{std::move(decoder), sample_rate, channel_count});
 }
 
+void HwOpus::OpenHardwareOpusDecoderEx(Kernel::HLERequestContext& ctx) {
+    OpenHardwareOpusDecoder(ctx);
+}
+
 HwOpus::HwOpus(Core::System& system_) : ServiceFramework{system_, "hwopus"} {
     static const FunctionInfo functions[] = {
-        {0, &HwOpus::OpenOpusDecoder, "OpenOpusDecoder"},
+        {0, &HwOpus::OpenHardwareOpusDecoder, "OpenHardwareOpusDecoder"},
         {1, &HwOpus::GetWorkBufferSize, "GetWorkBufferSize"},
         {2, nullptr, "OpenOpusDecoderForMultiStream"},
         {3, nullptr, "GetWorkBufferSizeForMultiStream"},
-        {4, nullptr, "OpenHardwareOpusDecoderEx"},
-        {5, nullptr, "GetWorkBufferSizeEx"},
+        {4, &HwOpus::OpenHardwareOpusDecoderEx, "OpenHardwareOpusDecoderEx"},
+        {5, &HwOpus::GetWorkBufferSizeEx, "GetWorkBufferSizeEx"},
         {6, nullptr, "OpenHardwareOpusDecoderForMultiStreamEx"},
         {7, nullptr, "GetWorkBufferSizeForMultiStreamEx"},
     };

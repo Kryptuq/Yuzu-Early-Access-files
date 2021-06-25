@@ -19,6 +19,8 @@
 #include "common/assert.h"
 #include "common/fs/file.h"
 #include "common/fs/fs.h"
+#include "common/literals.h"
+
 #include "common/logging/backend.h"
 #include "common/logging/log.h"
 #include "common/logging/text_formatter.h"
@@ -98,8 +100,8 @@ private:
                 write_logs(entry);
             }
 
-            // Drain the logging queue. Only writes out up to MAX_LOGS_TO_WRITE to prevent a case
-            // where a system is repeatedly spamming logs even on close.
+            // Drain the logging queue. Only writes out up to MAX_LOGS_TO_WRITE to prevent a
+            // case where a system is repeatedly spamming logs even on close.
             const int MAX_LOGS_TO_WRITE = filter.IsDebug() ? INT_MAX : 100;
             int logs_written = 0;
             while (logs_written++ < MAX_LOGS_TO_WRITE && message_queue.Pop(entry)) {
@@ -169,10 +171,11 @@ FileBackend::FileBackend(const std::filesystem::path& filename) {
 FileBackend::~FileBackend() = default;
 
 void FileBackend::Write(const Entry& entry) {
+    using namespace Common::Literals;
     // prevent logs from going over the maximum size (in case its spamming and the user doesn't
     // know)
-    constexpr std::size_t MAX_BYTES_WRITTEN = 100 * 1024 * 1024;
-    constexpr std::size_t MAX_BYTES_WRITTEN_EXTENDED = 1024 * 1024 * 1024;
+    constexpr std::size_t MAX_BYTES_WRITTEN = 100_MiB;
+    constexpr std::size_t MAX_BYTES_WRITTEN_EXTENDED = 1_GiB;
 
     if (!file->IsOpen()) {
         return;

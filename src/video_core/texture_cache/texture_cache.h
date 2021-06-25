@@ -20,9 +20,8 @@
 #include <boost/container/small_vector.hpp>
 
 #include "common/alignment.h"
-#include "common/common_funcs.h"
-#include "common/common_sizes.h"
 #include "common/common_types.h"
+#include "common/literals.h"
 #include "common/logging/log.h"
 #include "common/settings.h"
 #include "video_core/compatible_formats.h"
@@ -60,6 +59,7 @@ using VideoCore::Surface::PixelFormat;
 using VideoCore::Surface::PixelFormatFromDepthFormat;
 using VideoCore::Surface::PixelFormatFromRenderTargetFormat;
 using VideoCore::Surface::SurfaceType;
+using namespace Common::Literals;
 
 template <class P>
 class TextureCache {
@@ -80,8 +80,8 @@ class TextureCache {
     /// Sampler ID for bugged sampler ids
     static constexpr SamplerId NULL_SAMPLER_ID{0};
 
-    static constexpr u64 DEFAULT_EXPECTED_MEMORY = Common::Size_1_GB;
-    static constexpr u64 DEFAULT_CRITICAL_MEMORY = Common::Size_2_GB;
+    static constexpr u64 DEFAULT_EXPECTED_MEMORY = 1_GiB;
+    static constexpr u64 DEFAULT_CRITICAL_MEMORY = 2_GiB;
 
     using Runtime = typename P::Runtime;
     using Image = typename P::Image;
@@ -436,8 +436,8 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
         minimum_memory = 0;
     } else {
         // on OGL we can be more conservatives as the driver takes care.
-        expected_memory = DEFAULT_EXPECTED_MEMORY + Common::Size_512_MB;
-        critical_memory = DEFAULT_CRITICAL_MEMORY + Common::Size_1_GB;
+        expected_memory = DEFAULT_EXPECTED_MEMORY + 512_MiB;
+        critical_memory = DEFAULT_CRITICAL_MEMORY + 1_GiB;
         minimum_memory = expected_memory;
     }
 }

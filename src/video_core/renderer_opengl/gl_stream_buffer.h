@@ -12,12 +12,15 @@
 #include <glad/glad.h>
 
 #include "common/common_types.h"
+#include "common/literals.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 
 namespace OpenGL {
 
+using namespace Common::Literals;
+
 class StreamBuffer {
-    static constexpr size_t STREAM_BUFFER_SIZE = 64 * 1024 * 1024;
+    static constexpr size_t STREAM_BUFFER_SIZE = 64_MiB;
     static constexpr size_t NUM_SYNCS = 16;
     static constexpr size_t REGION_SIZE = STREAM_BUFFER_SIZE / NUM_SYNCS;
     static constexpr size_t MAX_ALIGNMENT = 256;

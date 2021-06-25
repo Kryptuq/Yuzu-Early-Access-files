@@ -10,6 +10,7 @@
 
 #include "common/alignment.h"
 #include "common/assert.h"
+#include "common/literals.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_stream_buffer.h"
 #include "video_core/vulkan_common/vulkan_device.h"
@@ -19,6 +20,8 @@ namespace Vulkan {
 
 namespace {
 
+using namespace Common::Literals;
+
 constexpr VkBufferUsageFlags BUFFER_USAGE =
     VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -26,7 +29,7 @@ constexpr VkBufferUsageFlags BUFFER_USAGE =
 constexpr u64 WATCHES_INITIAL_RESERVE = 0x4000;
 constexpr u64 WATCHES_RESERVE_CHUNK = 0x1000;
 
-constexpr u64 PREFERRED_STREAM_BUFFER_SIZE = 256 * 1024 * 1024;
+constexpr u64 PREFERRED_STREAM_BUFFER_SIZE = 256_MiB;
 
 /// Find a memory type with the passed requirements
 std::optional<u32> FindMemoryType(const VkPhysicalDeviceMemoryProperties& properties,

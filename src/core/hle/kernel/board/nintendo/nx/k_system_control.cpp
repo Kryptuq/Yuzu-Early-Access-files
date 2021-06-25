@@ -4,7 +4,8 @@
 
 #include <random>
 
-#include "common/common_sizes.h"
+#include "common/literals.h"
+
 #include "core/hle/kernel/board/nintendo/nx/k_system_control.h"
 #include "core/hle/kernel/board/nintendo/nx/secure_monitor.h"
 #include "core/hle/kernel/k_trace.h"
@@ -24,6 +25,8 @@ constexpr const std::size_t RequiredNonSecureSystemMemorySize =
     impl::RequiredNonSecureSystemMemorySizeMisc;
 
 namespace {
+
+using namespace Common::Literals;
 
 u32 GetMemoryModeForInit() {
     return 0x01;
@@ -57,11 +60,11 @@ size_t KSystemControl::Init::GetIntendedMemorySize() {
     switch (GetMemorySizeForInit()) {
     case Smc::MemorySize_4GB:
     default: // All invalid modes should go to 4GB.
-        return Common::Size_4_GB;
+        return 4_GiB;
     case Smc::MemorySize_6GB:
-        return Common::Size_6_GB;
+        return 6_GiB;
     case Smc::MemorySize_8GB:
-        return Common::Size_8_GB;
+        return 8_GiB;
     }
 }
 
@@ -79,17 +82,17 @@ std::size_t KSystemControl::Init::GetApplicationPoolSize() {
         switch (GetMemoryArrangeForInit()) {
         case Smc::MemoryArrangement_4GB:
         default:
-            return Common::Size_3285_MB;
+            return 3285_MiB;
         case Smc::MemoryArrangement_4GBForAppletDev:
-            return Common::Size_2048_MB;
+            return 2048_MiB;
         case Smc::MemoryArrangement_4GBForSystemDev:
-            return Common::Size_3285_MB;
+            return 3285_MiB;
         case Smc::MemoryArrangement_6GB:
-            return Common::Size_4916_MB;
+            return 4916_MiB;
         case Smc::MemoryArrangement_6GBForAppletDev:
-            return Common::Size_3285_MB;
+            return 3285_MiB;
         case Smc::MemoryArrangement_8GB:
-            return Common::Size_4916_MB;
+            return 4916_MiB;
         }
     }();
 
@@ -103,22 +106,22 @@ size_t KSystemControl::Init::GetAppletPoolSize() {
         switch (GetMemoryArrangeForInit()) {
         case Smc::MemoryArrangement_4GB:
         default:
-            return Common::Size_507_MB;
+            return 507_MiB;
         case Smc::MemoryArrangement_4GBForAppletDev:
-            return Common::Size_1554_MB;
+            return 1554_MiB;
         case Smc::MemoryArrangement_4GBForSystemDev:
-            return Common::Size_448_MB;
+            return 448_MiB;
         case Smc::MemoryArrangement_6GB:
-            return Common::Size_562_MB;
+            return 562_MiB;
         case Smc::MemoryArrangement_6GBForAppletDev:
-            return Common::Size_2193_MB;
+            return 2193_MiB;
         case Smc::MemoryArrangement_8GB:
-            return Common::Size_2193_MB;
+            return 2193_MiB;
         }
     }();
 
     // Return (possibly) adjusted size.
-    constexpr size_t ExtraSystemMemoryForAtmosphere = Common::Size_33_MB;
+    constexpr size_t ExtraSystemMemoryForAtmosphere = 33_MiB;
     return base_pool_size - ExtraSystemMemoryForAtmosphere - KTraceBufferSize;
 }
 

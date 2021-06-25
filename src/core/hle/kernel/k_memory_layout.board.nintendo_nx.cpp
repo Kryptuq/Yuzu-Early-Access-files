@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include "common/alignment.h"
+#include "common/literals.h"
 #include "core/hle/kernel/k_memory_layout.h"
 #include "core/hle/kernel/k_memory_manager.h"
 #include "core/hle/kernel/k_system_control.h"
@@ -12,8 +13,10 @@ namespace Kernel {
 
 namespace {
 
+using namespace Common::Literals;
+
 constexpr size_t CarveoutAlignment = 0x20000;
-constexpr size_t CarveoutSizeMax = (512ULL * 1024 * 1024) - CarveoutAlignment;
+constexpr size_t CarveoutSizeMax = (512_MiB) - CarveoutAlignment;
 
 bool SetupPowerManagementControllerMemoryRegion(KMemoryLayout& memory_layout) {
     // Above firmware 2.0.0, the PMC is not mappable.

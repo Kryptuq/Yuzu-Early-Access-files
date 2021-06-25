@@ -28,6 +28,7 @@ private:
     void GetAddOnContentBaseId(Kernel::HLERequestContext& ctx);
     void PrepareAddOnContent(Kernel::HLERequestContext& ctx);
     void GetAddOnContentListChangedEvent(Kernel::HLERequestContext& ctx);
+    void GetAddOnContentListChangedEventWithProcessId(Kernel::HLERequestContext& ctx);
     void CreateEcPurchasedEventManager(Kernel::HLERequestContext& ctx);
     void CreatePermanentEcPurchasedEventManager(Kernel::HLERequestContext& ctx);
 

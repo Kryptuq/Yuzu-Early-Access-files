@@ -7,8 +7,7 @@
 #include <utility>
 
 #include "common/alignment.h"
-#include "common/common_sizes.h"
-#include "common/common_types.h"
+#include "common/literals.h"
 #include "core/device_memory.h"
 #include "core/hle/kernel/k_memory_region.h"
 #include "core/hle/kernel/k_memory_region_type.h"
@@ -16,20 +15,22 @@
 
 namespace Kernel {
 
-constexpr std::size_t L1BlockSize = Common::Size_1_GB;
-constexpr std::size_t L2BlockSize = Common::Size_2_MB;
+using namespace Common::Literals;
+
+constexpr std::size_t L1BlockSize = 1_GiB;
+constexpr std::size_t L2BlockSize = 2_MiB;
 
 constexpr std::size_t GetMaximumOverheadSize(std::size_t size) {
     return (Common::DivideUp(size, L1BlockSize) + Common::DivideUp(size, L2BlockSize)) * PageSize;
 }
 
-constexpr std::size_t MainMemorySize = Common::Size_4_GB;
-constexpr std::size_t MainMemorySizeMax = Common::Size_8_GB;
+constexpr std::size_t MainMemorySize = 4_GiB;
+constexpr std::size_t MainMemorySizeMax = 8_GiB;
 
-constexpr std::size_t ReservedEarlyDramSize = 0x60000;
+constexpr std::size_t ReservedEarlyDramSize = 384_KiB;
 constexpr std::size_t DramPhysicalAddress = 0x80000000;
 
-constexpr std::size_t KernelAslrAlignment = Common::Size_2_MB;
+constexpr std::size_t KernelAslrAlignment = 2_MiB;
 constexpr std::size_t KernelVirtualAddressSpaceWidth = 1ULL << 39;
 constexpr std::size_t KernelPhysicalAddressSpaceWidth = 1ULL << 48;
 
@@ -40,7 +41,7 @@ constexpr std::size_t KernelVirtualAddressSpaceLast = KernelVirtualAddressSpaceE
 constexpr std::size_t KernelVirtualAddressSpaceSize =
     KernelVirtualAddressSpaceEnd - KernelVirtualAddressSpaceBase;
 constexpr std::size_t KernelVirtualAddressCodeBase = KernelVirtualAddressSpaceBase;
-constexpr std::size_t KernelVirtualAddressCodeSize = 0x62000;
+constexpr std::size_t KernelVirtualAddressCodeSize = 392_KiB;
 constexpr std::size_t KernelVirtualAddressCodeEnd =
     KernelVirtualAddressCodeBase + KernelVirtualAddressCodeSize;
 
@@ -53,14 +54,14 @@ constexpr std::size_t KernelPhysicalAddressSpaceSize =
 constexpr std::size_t KernelPhysicalAddressCodeBase = DramPhysicalAddress + ReservedEarlyDramSize;
 
 constexpr std::size_t KernelPageTableHeapSize = GetMaximumOverheadSize(MainMemorySizeMax);
-constexpr std::size_t KernelInitialPageHeapSize = Common::Size_128_KB;
+constexpr std::size_t KernelInitialPageHeapSize = 128_KiB;
 
-constexpr std::size_t KernelSlabHeapDataSize = Common::Size_5_MB;
-constexpr std::size_t KernelSlabHeapGapsSize = Common::Size_2_MB - Common::Size_64_KB;
+constexpr std::size_t KernelSlabHeapDataSize = 5_MiB;
+constexpr std::size_t KernelSlabHeapGapsSize = 2_MiB - 64_KiB;
 constexpr std::size_t KernelSlabHeapSize = KernelSlabHeapDataSize + KernelSlabHeapGapsSize;
 
 // NOTE: This is calculated from KThread slab counts, assuming KThread size <= 0x860.
-constexpr std::size_t KernelSlabHeapAdditionalSize = 0x68000ULL;
+constexpr std::size_t KernelSlabHeapAdditionalSize = 416_KiB;
 
 constexpr std::size_t KernelResourceSize =
     KernelPageTableHeapSize + KernelInitialPageHeapSize + KernelSlabHeapSize;

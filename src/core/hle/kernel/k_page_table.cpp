@@ -4,6 +4,7 @@
 
 #include "common/alignment.h"
 #include "common/assert.h"
+#include "common/literals.h"
 #include "common/scope_exit.h"
 #include "core/core.h"
 #include "core/hle/kernel/k_address_space_info.h"
@@ -22,6 +23,8 @@
 namespace Kernel {
 
 namespace {
+
+using namespace Common::Literals;
 
 constexpr std::size_t GetAddressSpaceWidthFromType(FileSys::ProgramAddressSpaceType as_type) {
     switch (as_type) {
@@ -89,7 +92,7 @@ ResultCode KPageTable::InitializeForProcess(FileSys::ProgramAddressSpaceType as_
     }
 
     // Set code regions and determine remaining
-    constexpr std::size_t RegionAlignment{2 * 1024 * 1024};
+    constexpr std::size_t RegionAlignment{2_MiB};
     VAddr process_code_start{};
     VAddr process_code_end{};
     std::size_t stack_region_size{};

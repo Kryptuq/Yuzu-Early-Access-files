@@ -8,6 +8,7 @@
 #include <dynarmic/interface/A32/config.h>
 #include <dynarmic/interface/A32/context.h>
 #include "common/assert.h"
+#include "common/literals.h"
 #include "common/logging/log.h"
 #include "common/page_table.h"
 #include "common/settings.h"
@@ -21,6 +22,8 @@
 #include "core/memory.h"
 
 namespace Core {
+
+using namespace Common::Literals;
 
 class DynarmicCallbacks32 : public Dynarmic::A32::UserCallbacks {
 public:
@@ -143,8 +146,8 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
     config.wall_clock_cntpct = uses_wall_clock;
 
     // Code cache size
-    config.code_cache_size = 512 * 1024 * 1024;
-    config.far_code_offset = 400 * 1024 * 1024;
+    config.code_cache_size = 512_MiB;
+    config.far_code_offset = 400_MiB;
 
     // Safe optimizations
     if (Settings::values.cpu_accuracy.GetValue() == Settings::CPUAccuracy::DebugMode) {

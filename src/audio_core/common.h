@@ -15,7 +15,7 @@ constexpr ResultCode ERR_INVALID_PARAMETERS{ErrorModule::Audio, 41};
 constexpr ResultCode ERR_SPLITTER_SORT_FAILED{ErrorModule::Audio, 43};
 } // namespace Audren
 
-constexpr u32_le CURRENT_PROCESS_REVISION = Common::MakeMagic('R', 'E', 'V', '8');
+constexpr u32_le CURRENT_PROCESS_REVISION = Common::MakeMagic('R', 'E', 'V', '9');
 constexpr std::size_t MAX_MIX_BUFFERS = 24;
 constexpr std::size_t MAX_BIQUAD_FILTERS = 2;
 constexpr std::size_t MAX_CHANNEL_COUNT = 6;

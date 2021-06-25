@@ -4,9 +4,13 @@
 
 #pragma once
 
+#include "common/common_funcs.h"
+
 namespace Kernel {
 
+using namespace Common::Literals;
+
 constexpr bool IsKTraceEnabled = false;
-constexpr std::size_t KTraceBufferSize = IsKTraceEnabled ? 16 * 1024 * 1024 : 0;
+constexpr std::size_t KTraceBufferSize = IsKTraceEnabled ? 16_MiB : 0;
 
 } // namespace Kernel
