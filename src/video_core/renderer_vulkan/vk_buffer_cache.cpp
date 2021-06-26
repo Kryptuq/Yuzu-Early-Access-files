@@ -55,8 +55,9 @@ size_t BytesPerIndex(VkIndexType index_type) {
 template <typename T>
 std::array<T, 6> MakeQuadIndices(u32 quad, u32 first) {
     std::array<T, 6> indices{0, 1, 2, 0, 2, 3};
-    std::ranges::transform(indices, indices.begin(),
-                           [quad, first](u32 index) { return first + index + quad * 4; });
+    for (T& index : indices) {
+        index = static_cast<T>(first + index + quad * 4);
+    }
     return indices;
 }
 } // Anonymous namespace

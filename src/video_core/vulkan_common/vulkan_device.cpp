@@ -842,9 +842,9 @@ void Device::CollectTelemetryParameters() {
 
 void Device::CollectPhysicalMemoryInfo() {
     const auto mem_properties = physical.GetMemoryProperties();
-    const std::size_t num_properties = mem_properties.memoryHeapCount;
+    const size_t num_properties = mem_properties.memoryHeapCount;
     device_access_memory = 0;
-    for (std::size_t element = 0; element < num_properties; element++) {
+    for (size_t element = 0; element < num_properties; ++element) {
         if ((mem_properties.memoryHeaps[element].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) != 0) {
             device_access_memory += mem_properties.memoryHeaps[element].size;
         }

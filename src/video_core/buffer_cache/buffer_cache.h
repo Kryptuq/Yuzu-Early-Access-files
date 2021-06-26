@@ -99,7 +99,7 @@ class BufferCache {
     };
 
 public:
-    static constexpr u32 DEFAULT_SKIP_CACHE_SIZE = 4_KiB;
+    static constexpr u32 DEFAULT_SKIP_CACHE_SIZE = static_cast<u32>(4_KiB);
 
     explicit BufferCache(VideoCore::RasterizerInterface& rasterizer_,
                          Tegra::Engines::Maxwell3D& maxwell3d_,
@@ -108,8 +108,6 @@ public:
                          Runtime& runtime_);
 
     void TickFrame();
-
-    void RunGarbageCollector();
 
     void WriteMemory(VAddr cpu_addr, u64 size);
 
@@ -196,6 +194,8 @@ private:
         return (cpu_addr & ~Core::Memory::PAGE_MASK) ==
                ((cpu_addr + size) & ~Core::Memory::PAGE_MASK);
     }
+
+    void RunGarbageCollector();
 
     void BindHostIndexBuffer();
 
@@ -416,8 +416,9 @@ void BufferCache<P>::CachedWriteMemory(VAddr cpu_addr, u64 size) {
 
 template <class P>
 void BufferCache<P>::DownloadMemory(VAddr cpu_addr, u64 size) {
-    ForEachBufferInRange(cpu_addr, size,
-                         [&](BufferId, Buffer& buffer) { DownloadBufferMemory(buffer); });
+    ForEachBufferInRange(cpu_addr, size, [&](BufferId, Buffer& buffer) {
+        DownloadBufferMemory(buffer, cpu_addr, size);
+    });
 }
 
 template <class P>

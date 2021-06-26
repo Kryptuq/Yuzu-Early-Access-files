@@ -14,9 +14,17 @@ extern "C" {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
 #endif
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4242) // conversion from 'type' to 'type', possible loss of data
+#pragma warning(disable : 4244) // conversion from 'type' to 'type', possible loss of data
+#endif
 #include <libavcodec/avcodec.h>
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
+#endif
+#ifdef _MSC_VER
+#pragma warning(pop)
 #endif
 }
 

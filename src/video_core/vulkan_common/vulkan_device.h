@@ -267,21 +267,22 @@ private:
     bool IsFormatSupported(VkFormat wanted_format, VkFormatFeatureFlags wanted_usage,
                            FormatType format_type) const;
 
-    VkInstance instance;                    ///< Vulkan instance.
-    vk::DeviceDispatch dld;                 ///< Device function pointers.
-    vk::PhysicalDevice physical;            ///< Physical device.
-    VkPhysicalDeviceProperties properties;  ///< Device properties.
-    vk::Device logical;                     ///< Logical device.
-    vk::Queue graphics_queue;               ///< Main graphics queue.
-    vk::Queue present_queue;                ///< Main present queue.
-    u32 instance_version{};                 ///< Vulkan onstance version.
-    u32 graphics_family{};                  ///< Main graphics queue family index.
-    u32 present_family{};                   ///< Main present queue family index.
-    VkDriverIdKHR driver_id{};              ///< Driver ID.
-    VkShaderStageFlags guest_warp_stages{}; ///< Stages where the guest warp size can be forced.ed
-    bool is_optimal_astc_supported{};       ///< Support for native ASTC.
-    bool is_float16_supported{};            ///< Support for float16 arithmetics.
-    bool is_warp_potentially_bigger{};      ///< Host warp size can be bigger than guest.
+    VkInstance instance;                        ///< Vulkan instance.
+    vk::DeviceDispatch dld;                     ///< Device function pointers.
+    vk::PhysicalDevice physical;                ///< Physical device.
+    VkPhysicalDeviceProperties properties;      ///< Device properties.
+    vk::Device logical;                         ///< Logical device.
+    vk::Queue graphics_queue;                   ///< Main graphics queue.
+    vk::Queue present_queue;                    ///< Main present queue.
+    u32 instance_version{};                     ///< Vulkan onstance version.
+    u32 graphics_family{};                      ///< Main graphics queue family index.
+    u32 present_family{};                       ///< Main present queue family index.
+    VkDriverIdKHR driver_id{};                  ///< Driver ID.
+    VkShaderStageFlags guest_warp_stages{};     ///< Stages where the guest warp size can be forced.
+    u64 device_access_memory{};                 ///< Total size of device local memory in bytes.
+    bool is_optimal_astc_supported{};           ///< Support for native ASTC.
+    bool is_float16_supported{};                ///< Support for float16 arithmetics.
+    bool is_warp_potentially_bigger{};          ///< Host warp size can be bigger than guest.
     bool is_formatless_image_load_supported{};  ///< Support for shader image read without format.
     bool is_shader_storage_image_multisample{}; ///< Support for image operations on MSAA images.
     bool is_blit_depth_stencil_supported{};     ///< Support for blitting from and to depth stencil.
@@ -312,8 +313,6 @@ private:
 
     /// Nsight Aftermath GPU crash tracker
     std::unique_ptr<NsightAftermathTracker> nsight_aftermath_tracker;
-
-    u64 device_access_memory;
 };
 
 } // namespace Vulkan
