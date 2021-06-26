@@ -296,7 +296,36 @@ void HwOpus::OpenHardwareOpusDecoder(Kernel::HLERequestContext& ctx) {
 }
 
 void HwOpus::OpenHardwareOpusDecoderEx(Kernel::HLERequestContext& ctx) {
-    OpenHardwareOpusDecoder(ctx);
+    IPC::RequestParser rp{ctx};
+    const auto sample_rate = rp.Pop<u32>();
+    const auto channel_count = rp.Pop<u32>();
+
+    LOG_CRITICAL(Audio, "called sample_rate={}, channel_count={}", sample_rate, channel_count);
+
+    ASSERT_MSG(sample_rate == 48000 || sample_rate == 24000 || sample_rate == 16000 ||
+                   sample_rate == 12000 || sample_rate == 8000,
+               "Invalid sample rate");
+    ASSERT_MSG(channel_count == 1 || channel_count == 2, "Invalid channel count");
+
+    const int num_stereo_streams = channel_count == 2 ? 1 : 0;
+    const auto mapping_table = CreateMappingTable(channel_count);
+
+    int error = 0;
+    OpusDecoderPtr decoder{
+        opus_multistream_decoder_create(sample_rate, static_cast<int>(channel_count), 1,
+                                        num_stereo_streams, mapping_table.data(), &error)};
+    if (error != OPUS_OK || decoder == nullptr) {
+        LOG_ERROR(Audio, "Failed to create Opus decoder (error={}).", error);
+        IPC::ResponseBuilder rb{ctx, 2};
+        // TODO(ogniK): Use correct error code
+        rb.Push(ResultUnknown);
+        return;
+    }
+
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(ResultSuccess);
+    rb.PushIpcInterface<IHardwareOpusDecoderManager>(
+        system, OpusDecoderState{std::move(decoder), sample_rate, channel_count});
 }
 
 HwOpus::HwOpus(Core::System& system_) : ServiceFramework{system_, "hwopus"} {
