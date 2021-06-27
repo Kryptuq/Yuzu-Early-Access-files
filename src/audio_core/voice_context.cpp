@@ -66,7 +66,7 @@ void ServerVoiceInfo::Initialize() {
     in_params.last_volume = 0.0f;
     in_params.biquad_filter.fill({});
     in_params.wave_buffer_count = 0;
-    in_params.wave_bufffer_head = 0;
+    in_params.wave_buffer_head = 0;
     in_params.mix_id = AudioCommon::NO_MIX;
     in_params.splitter_info_id = AudioCommon::NO_SPLITTER;
     in_params.additional_params_address = 0;
@@ -75,7 +75,7 @@ void ServerVoiceInfo::Initialize() {
     out_params.played_sample_count = 0;
     out_params.wave_buffer_consumed = 0;
     in_params.voice_drop_flag = false;
-    in_params.buffer_mapped = false;
+    in_params.buffer_mapped = true;
     in_params.wave_buffer_flush_request_count = 0;
     in_params.was_biquad_filter_enabled.fill(false);
 
@@ -126,7 +126,7 @@ void ServerVoiceInfo::UpdateParameters(const VoiceInfo::InParams& voice_in,
     in_params.volume = voice_in.volume;
     in_params.biquad_filter = voice_in.biquad_filter;
     in_params.wave_buffer_count = voice_in.wave_buffer_count;
-    in_params.wave_bufffer_head = voice_in.wave_buffer_head;
+    in_params.wave_buffer_head = voice_in.wave_buffer_head;
     if (behavior_info.IsFlushVoiceWaveBuffersSupported()) {
         const auto in_request_count = in_params.wave_buffer_flush_request_count;
         const auto voice_request_count = voice_in.wave_buffer_flush_request_count;
@@ -185,14 +185,16 @@ void ServerVoiceInfo::UpdateWaveBuffers(
             wave_buffer.buffer_size = 0;
             wave_buffer.context_address = 0;
             wave_buffer.context_size = 0;
+            wave_buffer.loop_start_sample = 0;
+            wave_buffer.loop_end_sample = 0;
             wave_buffer.sent_to_dsp = true;
         }
 
         // Mark all our wave buffers as invalid
         for (std::size_t channel = 0; channel < static_cast<std::size_t>(in_params.channel_count);
              channel++) {
-            for (auto& is_valid : voice_states[channel]->is_wave_buffer_valid) {
-                is_valid = false;
+            for (std::size_t i = 0; i < AudioCommon::MAX_WAVE_BUFFERS; ++i) {
+                voice_states[channel]->is_wave_buffer_valid[i] = false;
             }
         }
     }
@@ -211,7 +213,7 @@ void ServerVoiceInfo::UpdateWaveBuffer(ServerWaveBuffer& out_wavebuffer,
                                        const WaveBuffer& in_wave_buffer, SampleFormat sample_format,
                                        bool is_buffer_valid,
                                        [[maybe_unused]] BehaviorInfo& behavior_info) {
-    if (!is_buffer_valid && out_wavebuffer.sent_to_dsp) {
+    if (!is_buffer_valid && out_wavebuffer.sent_to_dsp && out_wavebuffer.buffer_address != 0) {
         out_wavebuffer.buffer_address = 0;
         out_wavebuffer.buffer_size = 0;
     }
@@ -239,6 +241,8 @@ void ServerVoiceInfo::UpdateWaveBuffer(ServerWaveBuffer& out_wavebuffer,
         out_wavebuffer.buffer_size = in_wave_buffer.buffer_size;
         out_wavebuffer.context_address = in_wave_buffer.context_address;
         out_wavebuffer.context_size = in_wave_buffer.context_size;
+        out_wavebuffer.loop_start_sample = in_wave_buffer.loop_start_sample;
+        out_wavebuffer.loop_end_sample = in_wave_buffer.loop_end_sample;
         in_params.buffer_mapped =
             in_wave_buffer.buffer_address != 0 && in_wave_buffer.buffer_size != 0;
         // TODO(ogniK): Pool mapper attachment
@@ -249,19 +253,16 @@ void ServerVoiceInfo::UpdateWaveBuffer(ServerWaveBuffer& out_wavebuffer,
 void ServerVoiceInfo::WriteOutStatus(
     VoiceInfo::OutParams& voice_out, VoiceInfo::InParams& voice_in,
     std::array<VoiceState*, AudioCommon::MAX_CHANNEL_COUNT>& voice_states) {
-    if (voice_in.is_new) {
+    if (voice_in.is_new || in_params.is_new) {
         in_params.is_new = true;
         voice_out.wave_buffer_consumed = 0;
         voice_out.played_sample_count = 0;
         voice_out.voice_dropped = false;
-    } else if (!in_params.is_new) {
-        voice_out.wave_buffer_consumed = voice_states[0]->wave_buffer_consumed;
-        voice_out.played_sample_count = voice_states[0]->played_sample_count;
-        voice_out.voice_dropped = in_params.voice_drop_flag;
     } else {
-        voice_out.wave_buffer_consumed = 0;
-        voice_out.played_sample_count = 0;
-        voice_out.voice_dropped = false;
+        const auto& state = voice_states[0];
+        voice_out.wave_buffer_consumed = state->wave_buffer_consumed;
+        voice_out.played_sample_count = state->played_sample_count;
+        voice_out.voice_dropped = state->voice_dropped;
     }
 }
 
@@ -283,7 +284,8 @@ ServerVoiceInfo::OutParams& ServerVoiceInfo::GetOutParams() {
 
 bool ServerVoiceInfo::ShouldSkip() const {
     // TODO(ogniK): Handle unmapped wave buffers or parameters
-    return !in_params.in_use || (in_params.wave_buffer_count == 0) || in_params.voice_drop_flag;
+    return !in_params.in_use || in_params.wave_buffer_count == 0 || !in_params.buffer_mapped ||
+           in_params.voice_drop_flag;
 }
 
 bool ServerVoiceInfo::UpdateForCommandGeneration(VoiceContext& voice_context) {
@@ -381,7 +383,7 @@ bool ServerVoiceInfo::UpdateParametersForCommandGeneration(
 void ServerVoiceInfo::FlushWaveBuffers(
     u8 flush_count, std::array<VoiceState*, AudioCommon::MAX_CHANNEL_COUNT>& dsp_voice_states,
     s32 channel_count) {
-    auto wave_head = in_params.wave_bufffer_head;
+    auto wave_head = in_params.wave_buffer_head;
 
     for (u8 i = 0; i < flush_count; i++) {
         in_params.wave_buffer[wave_head].sent_to_dsp = true;
@@ -399,6 +401,17 @@ void ServerVoiceInfo::FlushWaveBuffers(
 bool ServerVoiceInfo::HasValidWaveBuffer(const VoiceState* state) const {
     const auto& valid_wb = state->is_wave_buffer_valid;
     return std::find(valid_wb.begin(), valid_wb.end(), true) != valid_wb.end();
+}
+
+void ServerVoiceInfo::SetWaveBufferCompleted(VoiceState& dsp_state,
+                                             const ServerWaveBuffer& wave_buffer) {
+    dsp_state.is_wave_buffer_valid[dsp_state.wave_buffer_index] = false;
+    dsp_state.wave_buffer_consumed++;
+    dsp_state.wave_buffer_index = (dsp_state.wave_buffer_index + 1) % AudioCommon::MAX_WAVE_BUFFERS;
+    dsp_state.loop_count = 0;
+    if (wave_buffer.end_of_stream) {
+        dsp_state.played_sample_count = 0;
+    }
 }
 
 VoiceContext::VoiceContext(std::size_t voice_count_) : voice_count{voice_count_} {

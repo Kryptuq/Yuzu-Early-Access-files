@@ -103,9 +103,8 @@ void Adapter::AdapterInputThread(std::stop_token stop_token) {
     AdapterPayload adapter_payload{};
 
     adapter_scan_thread = {};
-    adapter_input_thread_running = true;
 
-    while (adapter_input_thread_running && !stop_token.stop_requested()) {
+    while (!stop_token.stop_requested()) {
         libusb_interrupt_transfer(usb_adapter_handle->get(), input_endpoint, adapter_payload.data(),
                                   static_cast<s32>(adapter_payload.size()), &payload_size, 16);
         if (IsPayloadCorrect(adapter_payload, payload_size)) {
@@ -129,7 +128,7 @@ bool Adapter::IsPayloadCorrect(const AdapterPayload& adapter_payload, s32 payloa
                   adapter_payload[0]);
         if (input_error_counter++ > 20) {
             LOG_ERROR(Input, "GC adapter timeout, Is the adapter connected?");
-            adapter_input_thread_running = false;
+            adapter_input_thread.request_stop();
             restart_scan_thread = true;
         }
         return false;
@@ -303,14 +302,15 @@ void Adapter::AdapterScanThread(std::stop_token stop_token) {
     usb_adapter_handle = nullptr;
     pads = {};
     while (!stop_token.stop_requested() && !Setup()) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::seconds(2));
     }
 }
 
 bool Adapter::Setup() {
-    constexpr u16 vid = 0x057e; // Nintendo
-    constexpr u16 pid = 0x0337; // GC Adapter
-    usb_adapter_handle = std::make_unique<LibUSBDeviceHandle>(libusb_ctx->get(), vid, pid);
+    constexpr u16 nintendo_vid = 0x057e;
+    constexpr u16 gc_adapter_pid = 0x0337;
+    usb_adapter_handle =
+        std::make_unique<LibUSBDeviceHandle>(libusb_ctx->get(), nintendo_vid, gc_adapter_pid);
     if (!usb_adapter_handle->get()) {
         return false;
     }

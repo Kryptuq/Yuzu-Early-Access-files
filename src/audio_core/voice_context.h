@@ -60,10 +60,12 @@ struct WaveBuffer {
     u8 is_looping{};
     u8 end_of_stream{};
     u8 sent_to_server{};
-    INSERT_PADDING_BYTES(5);
+    INSERT_PADDING_BYTES(1);
+    s32 loop_count{};
     u64 context_address{};
     u64 context_size{};
-    INSERT_PADDING_BYTES(8);
+    u32 loop_start_sample{};
+    u32 loop_end_sample{};
 };
 static_assert(sizeof(WaveBuffer) == 0x38, "WaveBuffer is an invalid size");
 
@@ -76,6 +78,9 @@ struct ServerWaveBuffer {
     bool end_of_stream{};
     VAddr context_address{};
     std::size_t context_size{};
+    s32 loop_count{};
+    u32 loop_start_sample{};
+    u32 loop_end_sample{};
     bool sent_to_dsp{true};
 };
 
@@ -108,6 +113,7 @@ struct VoiceState {
     u32 external_context_size;
     bool is_external_context_used;
     bool voice_dropped;
+    s32 loop_count;
 };
 
 class VoiceChannelResource {
@@ -206,7 +212,7 @@ public:
         float last_volume{};
         std::array<BiquadFilterParameter, AudioCommon::MAX_BIQUAD_FILTERS> biquad_filter{};
         s32 wave_buffer_count{};
-        s16 wave_bufffer_head{};
+        s16 wave_buffer_head{};
         INSERT_PADDING_BYTES(2);
         BehaviorFlags behavior_flags{};
         VAddr additional_params_address{};
@@ -252,6 +258,7 @@ public:
     void FlushWaveBuffers(u8 flush_count,
                           std::array<VoiceState*, AudioCommon::MAX_CHANNEL_COUNT>& dsp_voice_states,
                           s32 channel_count);
+    void SetWaveBufferCompleted(VoiceState& dsp_state, const ServerWaveBuffer& wave_buffer);
 
 private:
     std::vector<s16> stored_samples;

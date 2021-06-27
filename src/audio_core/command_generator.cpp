@@ -795,7 +795,7 @@ void CommandGenerator::UpdateI3dl2Reverb(I3dl2ReverbParams& info, I3dl2ReverbSta
         state.lowpass_1 = 0.0f;
     } else {
         const auto a = 1.0f - hf_gain;
-        const auto b = 2.0f * (1.0f - hf_gain * CosD(256.0f * info.hf_reference /
+        const auto b = 2.0f * (2.0f - hf_gain * CosD(256.0f * info.hf_reference /
                                                      static_cast<f32>(info.sample_rate)));
         const auto c = std::sqrt(b * b - 4.0f * a * a);
 
@@ -843,7 +843,7 @@ void CommandGenerator::UpdateI3dl2Reverb(I3dl2ReverbParams& info, I3dl2ReverbSta
     }
 
     const auto max_early_delay = state.early_delay_line.GetMaxDelay();
-    const auto reflection_time = 1000.0f * (0.0098f * info.reverb_delay + 0.02f);
+    const auto reflection_time = 1000.0f * (0.9998f * info.reverb_delay + 0.02f);
     for (std::size_t tap = 0; tap < AudioCommon::I3DL2REVERB_TAPS; tap++) {
         const auto length = AudioCommon::CalculateDelaySamples(
             sample_rate, 1000.0f * info.reflection_delay + reflection_time * EARLY_TAP_TIMES[tap]);
@@ -1004,7 +1004,8 @@ void CommandGenerator::GenerateFinalMixCommand() {
 }
 
 s32 CommandGenerator::DecodePcm16(ServerVoiceInfo& voice_info, VoiceState& dsp_state,
-                                  s32 sample_count, s32 channel, std::size_t mix_offset) {
+                                  s32 sample_start_offset, s32 sample_end_offset, s32 sample_count,
+                                  s32 channel, std::size_t mix_offset) {
     const auto& in_params = voice_info.GetInParams();
     const auto& wave_buffer = in_params.wave_buffer[dsp_state.wave_buffer_index];
     if (wave_buffer.buffer_address == 0) {
@@ -1013,14 +1014,12 @@ s32 CommandGenerator::DecodePcm16(ServerVoiceInfo& voice_info, VoiceState& dsp_s
     if (wave_buffer.buffer_size == 0) {
         return 0;
     }
-    if (wave_buffer.end_sample_offset < wave_buffer.start_sample_offset) {
+    if (sample_end_offset < sample_start_offset) {
         return 0;
     }
-    const auto samples_remaining =
-        (wave_buffer.end_sample_offset - wave_buffer.start_sample_offset) - dsp_state.offset;
+    const auto samples_remaining = (sample_end_offset - sample_start_offset) - dsp_state.offset;
     const auto start_offset =
-        ((wave_buffer.start_sample_offset + dsp_state.offset) * in_params.channel_count) *
-        sizeof(s16);
+        ((dsp_state.offset + sample_start_offset) * in_params.channel_count) * sizeof(s16);
     const auto buffer_pos = wave_buffer.buffer_address + start_offset;
     const auto samples_processed = std::min(sample_count, samples_remaining);
 
@@ -1044,8 +1043,8 @@ s32 CommandGenerator::DecodePcm16(ServerVoiceInfo& voice_info, VoiceState& dsp_s
 }
 
 s32 CommandGenerator::DecodeAdpcm(ServerVoiceInfo& voice_info, VoiceState& dsp_state,
-                                  s32 sample_count, [[maybe_unused]] s32 channel,
-                                  std::size_t mix_offset) {
+                                  s32 sample_start_offset, s32 sample_end_offset, s32 sample_count,
+                                  [[maybe_unused]] s32 channel, std::size_t mix_offset) {
     const auto& in_params = voice_info.GetInParams();
     const auto& wave_buffer = in_params.wave_buffer[dsp_state.wave_buffer_index];
     if (wave_buffer.buffer_address == 0) {
@@ -1054,7 +1053,7 @@ s32 CommandGenerator::DecodeAdpcm(ServerVoiceInfo& voice_info, VoiceState& dsp_s
     if (wave_buffer.buffer_size == 0) {
         return 0;
     }
-    if (wave_buffer.end_sample_offset < wave_buffer.start_sample_offset) {
+    if (sample_end_offset < sample_start_offset) {
         return 0;
     }
 
@@ -1079,10 +1078,9 @@ s32 CommandGenerator::DecodeAdpcm(ServerVoiceInfo& voice_info, VoiceState& dsp_s
     s32 coef1 = coeffs[idx * 2];
     s32 coef2 = coeffs[idx * 2 + 1];
 
-    const auto samples_remaining =
-        (wave_buffer.end_sample_offset - wave_buffer.start_sample_offset) - dsp_state.offset;
+    const auto samples_remaining = (sample_end_offset - sample_start_offset) - dsp_state.offset;
     const auto samples_processed = std::min(sample_count, samples_remaining);
-    const auto sample_pos = wave_buffer.start_sample_offset + dsp_state.offset;
+    const auto sample_pos = dsp_state.offset + sample_start_offset;
 
     const auto samples_remaining_in_frame = sample_pos % SAMPLES_PER_FRAME;
     auto position_in_frame = ((sample_pos / SAMPLES_PER_FRAME) * NIBBLES_PER_SAMPLE) +
@@ -1210,9 +1208,8 @@ void CommandGenerator::DecodeFromWaveBuffers(ServerVoiceInfo& voice_info, s32* o
     }
 
     std::size_t temp_mix_offset{};
-    bool is_buffer_completed{false};
     auto samples_remaining = sample_count;
-    while (samples_remaining > 0 && !is_buffer_completed) {
+    while (samples_remaining > 0) {
         const auto samples_to_output = std::min(samples_remaining, min_required_samples);
         const auto samples_to_read = (samples_to_output * resample_rate + dsp_state.fraction) >> 15;
 
@@ -1229,7 +1226,6 @@ void CommandGenerator::DecodeFromWaveBuffers(ServerVoiceInfo& voice_info, s32* o
             const auto& wave_buffer = in_params.wave_buffer[dsp_state.wave_buffer_index];
             // No more data can be read
             if (!dsp_state.is_wave_buffer_valid[dsp_state.wave_buffer_index]) {
-                is_buffer_completed = true;
                 break;
             }
 
@@ -1238,15 +1234,29 @@ void CommandGenerator::DecodeFromWaveBuffers(ServerVoiceInfo& voice_info, s32* o
                 // TODO(ogniK): ADPCM loop context
             }
 
+            s32 samples_offset_start;
+            s32 samples_offset_end;
+            if (dsp_state.loop_count > 0 ||
+                (wave_buffer.loop_start_sample != 0 && wave_buffer.loop_end_sample != 0 &&
+                 wave_buffer.loop_start_sample <= wave_buffer.loop_end_sample)) {
+                samples_offset_start = wave_buffer.loop_start_sample;
+                samples_offset_end = wave_buffer.loop_end_sample;
+            } else {
+                samples_offset_start = wave_buffer.start_sample_offset;
+                samples_offset_end = wave_buffer.end_sample_offset;
+            }
+
             s32 samples_decoded{0};
             switch (in_params.sample_format) {
             case SampleFormat::Pcm16:
-                samples_decoded = DecodePcm16(voice_info, dsp_state, samples_to_read - samples_read,
-                                              channel, temp_mix_offset);
+                samples_decoded =
+                    DecodePcm16(voice_info, dsp_state, samples_offset_start, samples_offset_end,
+                                samples_to_read - samples_read, channel, temp_mix_offset);
                 break;
             case SampleFormat::Adpcm:
-                samples_decoded = DecodeAdpcm(voice_info, dsp_state, samples_to_read - samples_read,
-                                              channel, temp_mix_offset);
+                samples_decoded =
+                    DecodeAdpcm(voice_info, dsp_state, samples_offset_start, samples_offset_end,
+                                samples_to_read - samples_read, channel, temp_mix_offset);
                 break;
             default:
                 UNREACHABLE_MSG("Unimplemented sample format={}", in_params.sample_format);
@@ -1257,15 +1267,19 @@ void CommandGenerator::DecodeFromWaveBuffers(ServerVoiceInfo& voice_info, s32* o
             dsp_state.offset += samples_decoded;
             dsp_state.played_sample_count += samples_decoded;
 
-            if (dsp_state.offset >=
-                    (wave_buffer.end_sample_offset - wave_buffer.start_sample_offset) ||
+            if (dsp_state.offset >= (samples_offset_end - samples_offset_start) ||
                 samples_decoded == 0) {
                 // Reset our sample offset
                 dsp_state.offset = 0;
                 if (wave_buffer.is_looping) {
-                    if (samples_decoded == 0) {
+                    dsp_state.loop_count++;
+                    if (wave_buffer.loop_count > 0 &&
+                        (dsp_state.loop_count > wave_buffer.loop_count || samples_decoded == 0)) {
                         // End of our buffer
-                        is_buffer_completed = true;
+                        voice_info.SetWaveBufferCompleted(dsp_state, wave_buffer);
+                    }
+
+                    if (samples_decoded == 0) {
                         break;
                     }
 
@@ -1273,15 +1287,8 @@ void CommandGenerator::DecodeFromWaveBuffers(ServerVoiceInfo& voice_info, s32* o
                         dsp_state.played_sample_count = 0;
                     }
                 } else {
-
                     // Update our wave buffer states
-                    dsp_state.is_wave_buffer_valid[dsp_state.wave_buffer_index] = false;
-                    dsp_state.wave_buffer_consumed++;
-                    dsp_state.wave_buffer_index =
-                        (dsp_state.wave_buffer_index + 1) % AudioCommon::MAX_WAVE_BUFFERS;
-                    if (wave_buffer.end_of_stream) {
-                        dsp_state.played_sample_count = 0;
-                    }
+                    voice_info.SetWaveBufferCompleted(dsp_state, wave_buffer);
                 }
             }
         }

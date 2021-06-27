@@ -156,6 +156,5 @@ private:
     bool configuring{false};
     bool rumble_enabled{true};
     bool vibration_changed{true};
-    bool adapter_input_thread_running{false};
 };
 } // namespace GCAdapter
