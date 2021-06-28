@@ -1924,7 +1924,8 @@ void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pa
     if (*romfs_title_id == program_id) {
         const u64 ivfc_offset = loader->ReadRomFSIVFCOffset();
         const FileSys::PatchManager pm{program_id, system.GetFileSystemController(), installed};
-        romfs = pm.PatchRomFS(file, ivfc_offset, FileSys::ContentRecordType::Program);
+        romfs =
+            pm.PatchRomFS(file, ivfc_offset, FileSys::ContentRecordType::Program, nullptr, false);
     } else {
         romfs = installed.GetEntry(*romfs_title_id, FileSys::ContentRecordType::Data)->GetRomFS();
     }

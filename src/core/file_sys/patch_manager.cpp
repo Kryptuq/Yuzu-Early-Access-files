@@ -407,7 +407,7 @@ static void ApplyLayeredFS(VirtualFile& romfs, u64 title_id, ContentRecordType t
 }
 
 VirtualFile PatchManager::PatchRomFS(VirtualFile romfs, u64 ivfc_offset, ContentRecordType type,
-                                     VirtualFile update_raw) const {
+                                     VirtualFile update_raw, bool apply_layeredfs) const {
     const auto log_string = fmt::format("Patching RomFS for title_id={:016X}, type={:02X}",
                                         title_id, static_cast<u8>(type));
 
@@ -447,7 +447,9 @@ VirtualFile PatchManager::PatchRomFS(VirtualFile romfs, u64 ivfc_offset, Content
     }
 
     // LayeredFS
-    ApplyLayeredFS(romfs, title_id, type, fs_controller);
+    if (apply_layeredfs) {
+        ApplyLayeredFS(romfs, title_id, type, fs_controller);
+    }
 
     return romfs;
 }
