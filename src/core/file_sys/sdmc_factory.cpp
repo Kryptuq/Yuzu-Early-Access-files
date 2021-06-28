@@ -12,23 +12,32 @@ namespace FileSys {
 
 constexpr u64 SDMC_TOTAL_SIZE = 0x10000000000; // 1 TiB
 
-SDMCFactory::SDMCFactory(VirtualDir dir_)
-    : dir(std::move(dir_)), contents(std::make_unique<RegisteredCache>(
-                                GetOrCreateDirectoryRelative(dir, "/Nintendo/Contents/registered"),
-                                [](const VirtualFile& file, const NcaID& id) {
-                                    return NAX{file, id}.GetDecrypted();
-                                })),
+SDMCFactory::SDMCFactory(VirtualDir sd_dir_, VirtualDir sd_mod_dir_)
+    : sd_dir(std::move(sd_dir_)), sd_mod_dir(std::move(sd_mod_dir_)),
+      contents(std::make_unique<RegisteredCache>(
+          GetOrCreateDirectoryRelative(sd_dir, "/Nintendo/Contents/registered"),
+          [](const VirtualFile& file, const NcaID& id) {
+              return NAX{file, id}.GetDecrypted();
+          })),
       placeholder(std::make_unique<PlaceholderCache>(
-          GetOrCreateDirectoryRelative(dir, "/Nintendo/Contents/placehld"))) {}
+          GetOrCreateDirectoryRelative(sd_dir, "/Nintendo/Contents/placehld"))) {}
 
 SDMCFactory::~SDMCFactory() = default;
 
 ResultVal<VirtualDir> SDMCFactory::Open() const {
-    return MakeResult<VirtualDir>(dir);
+    return MakeResult<VirtualDir>(sd_dir);
+}
+
+VirtualDir SDMCFactory::GetSDMCModificationLoadRoot(u64 title_id) const {
+    // LayeredFS doesn't work on updates and title id-less homebrew
+    if (title_id == 0 || (title_id & 0xFFF) == 0x800) {
+        return nullptr;
+    }
+    return GetOrCreateDirectoryRelative(sd_mod_dir, fmt::format("/{:016X}", title_id));
 }
 
 VirtualDir SDMCFactory::GetSDMCContentDirectory() const {
-    return GetOrCreateDirectoryRelative(dir, "/Nintendo/Contents");
+    return GetOrCreateDirectoryRelative(sd_dir, "/Nintendo/Contents");
 }
 
 RegisteredCache* SDMCFactory::GetSDMCContents() const {
@@ -40,11 +49,11 @@ PlaceholderCache* SDMCFactory::GetSDMCPlaceholder() const {
 }
 
 VirtualDir SDMCFactory::GetImageDirectory() const {
-    return GetOrCreateDirectoryRelative(dir, "/Nintendo/Album");
+    return GetOrCreateDirectoryRelative(sd_dir, "/Nintendo/Album");
 }
 
 u64 SDMCFactory::GetSDMCFreeSpace() const {
-    return GetSDMCTotalSpace() - dir->GetSize();
+    return GetSDMCTotalSpace() - sd_dir->GetSize();
 }
 
 u64 SDMCFactory::GetSDMCTotalSpace() const {

@@ -703,6 +703,16 @@ FileSys::VirtualDir FileSystemController::GetModificationLoadRoot(u64 title_id) 
     return bis_factory->GetModificationLoadRoot(title_id);
 }
 
+FileSys::VirtualDir FileSystemController::GetSDMCModificationLoadRoot(u64 title_id) const {
+    LOG_TRACE(Service_FS, "Opening SDMC mod load root for tid={:016X}", title_id);
+
+    if (sdmc_factory == nullptr) {
+        return nullptr;
+    }
+
+    return sdmc_factory->GetSDMCModificationLoadRoot(title_id);
+}
+
 FileSys::VirtualDir FileSystemController::GetModificationDumpRoot(u64 title_id) const {
     LOG_TRACE(Service_FS, "Opening mod dump root for tid={:016X}", title_id);
 
@@ -733,20 +743,23 @@ void FileSystemController::CreateFactories(FileSys::VfsFilesystem& vfs, bool ove
     }
 
     using YuzuPath = Common::FS::YuzuPath;
+    const auto sdmc_dir_path = Common::FS::GetYuzuPath(YuzuPath::SDMCDir);
+    const auto sdmc_load_dir_path = sdmc_dir_path / "atmosphere/contents";
     const auto rw_mode = FileSys::Mode::ReadWrite;
 
     auto nand_directory =
         vfs.OpenDirectory(Common::FS::GetYuzuPathString(YuzuPath::NANDDir), rw_mode);
-    auto sd_directory =
-        vfs.OpenDirectory(Common::FS::GetYuzuPathString(YuzuPath::SDMCDir), rw_mode);
+    auto sd_directory = vfs.OpenDirectory(Common::FS::PathToUTF8String(sdmc_dir_path), rw_mode);
     auto load_directory =
         vfs.OpenDirectory(Common::FS::GetYuzuPathString(YuzuPath::LoadDir), FileSys::Mode::Read);
+    auto sd_load_directory =
+        vfs.OpenDirectory(Common::FS::PathToUTF8String(sdmc_load_dir_path), FileSys::Mode::Read);
     auto dump_directory =
         vfs.OpenDirectory(Common::FS::GetYuzuPathString(YuzuPath::DumpDir), rw_mode);
 
     if (bis_factory == nullptr) {
-        bis_factory =
-            std::make_unique<FileSys::BISFactory>(nand_directory, load_directory, dump_directory);
+        bis_factory = std::make_unique<FileSys::BISFactory>(
+            nand_directory, std::move(load_directory), std::move(dump_directory));
         system.RegisterContentProvider(FileSys::ContentProviderUnionSlot::SysNAND,
                                        bis_factory->GetSystemNANDContents());
         system.RegisterContentProvider(FileSys::ContentProviderUnionSlot::UserNAND,
@@ -759,7 +772,8 @@ void FileSystemController::CreateFactories(FileSys::VfsFilesystem& vfs, bool ove
     }
 
     if (sdmc_factory == nullptr) {
-        sdmc_factory = std::make_unique<FileSys::SDMCFactory>(std::move(sd_directory));
+        sdmc_factory = std::make_unique<FileSys::SDMCFactory>(std::move(sd_directory),
+                                                              std::move(sd_load_directory));
         system.RegisterContentProvider(FileSys::ContentProviderUnionSlot::SDMC,
                                        sdmc_factory->GetSDMCContents());
     }

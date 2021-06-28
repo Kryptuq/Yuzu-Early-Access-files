@@ -1423,6 +1423,9 @@ void GMainWindow::BootGame(const QString& filename, std::size_t program_index, S
         title_name = Common::FS::PathToUTF8String(
             std::filesystem::path{filename.toStdU16String()}.filename());
     }
+    const bool is_64bit = system.Kernel().CurrentProcess()->Is64BitProcess();
+    const auto instruction_set_suffix = is_64bit ? " (64-bit)" : " (32-bit)";
+    title_name += instruction_set_suffix;
     LOG_INFO(Frontend, "Booting game: {:016X} | {} | {}", title_id, title_name, title_version);
     const auto gpu_vendor = system.GPU().Renderer().GetDeviceVendor();
     UpdateWindowTitle(title_name, title_version, gpu_vendor);
@@ -1879,7 +1882,8 @@ void GMainWindow::RemoveCustomConfiguration(u64 program_id, const std::string& g
     }
 }
 
-void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_path) {
+void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_path,
+                                      DumpRomFSTarget target) {
     const auto failed = [this] {
         QMessageBox::warning(this, tr("RomFS Extraction Failed!"),
                              tr("There was an error copying the RomFS files or the user "
@@ -1907,7 +1911,10 @@ void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pa
         return;
     }
 
-    const auto dump_dir = Common::FS::GetYuzuPath(Common::FS::YuzuPath::DumpDir);
+    const auto dump_dir =
+        target == DumpRomFSTarget::Normal
+            ? Common::FS::GetYuzuPath(Common::FS::YuzuPath::DumpDir)
+            : Common::FS::GetYuzuPath(Common::FS::YuzuPath::SDMCDir) / "atmosphere" / "contents";
     const auto romfs_dir = fmt::format("{:016X}/romfs", *romfs_title_id);
 
     const auto path = Common::FS::PathToUTF8String(dump_dir / romfs_dir);

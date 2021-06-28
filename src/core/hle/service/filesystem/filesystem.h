@@ -115,6 +115,7 @@ public:
     FileSys::VirtualDir GetContentDirectory(ContentStorageId id) const;
     FileSys::VirtualDir GetImageDirectory(ImageDirectoryId id) const;
 
+    FileSys::VirtualDir GetSDMCModificationLoadRoot(u64 title_id) const;
     FileSys::VirtualDir GetModificationLoadRoot(u64 title_id) const;
     FileSys::VirtualDir GetModificationDumpRoot(u64 title_id) const;
 

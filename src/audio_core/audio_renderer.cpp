@@ -69,7 +69,7 @@ namespace {
 } // namespace
 
 namespace AudioCore {
-constexpr s32 NUM_BUFFERS = 4;
+constexpr s32 NUM_BUFFERS = 2;
 
 AudioRenderer::AudioRenderer(Core::Timing::CoreTiming& core_timing_, Core::Memory::Memory& memory_,
                              AudioCommon::AudioRendererParameter params,

@@ -34,6 +34,7 @@ class QProgressDialog;
 class WaitTreeWidget;
 enum class GameListOpenTarget;
 enum class GameListRemoveTarget;
+enum class DumpRomFSTarget;
 enum class InstalledEntryType;
 class GameListPlaceholder;
 
@@ -244,7 +245,7 @@ private slots:
     void OnGameListRemoveInstalledEntry(u64 program_id, InstalledEntryType type);
     void OnGameListRemoveFile(u64 program_id, GameListRemoveTarget target,
                               const std::string& game_path);
-    void OnGameListDumpRomFS(u64 program_id, const std::string& game_path);
+    void OnGameListDumpRomFS(u64 program_id, const std::string& game_path, DumpRomFSTarget target);
     void OnGameListCopyTID(u64 program_id);
     void OnGameListNavigateToGamedbEntry(u64 program_id,
                                          const CompatibilityList& compatibility_list);

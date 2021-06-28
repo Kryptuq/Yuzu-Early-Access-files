@@ -1578,7 +1578,7 @@ void Decompress(std::span<const uint8_t> data, uint32_t width, uint32_t height, 
         const u32 y = stride.index * block_height;
         const u32 depth_offset = stride.z * height * width * 4;
         for (u32 x_index = 0; x_index < cols; ++x_index) {
-            const u32 block_index = stride.index * cols + x_index;
+            const u32 block_index = (stride.z * rows * cols) + (stride.index * cols) + x_index;
             const u32 x = x_index * block_width;
 
             const std::span<const u8, 16> blockPtr{data.subspan(block_index * 16, 16)};
@@ -1614,7 +1614,7 @@ void Decompress(std::span<const uint8_t> data, uint32_t width, uint32_t height, 
     //     for (u32 y_index = 0; y_index < rows; ++y_index) {
     //         const u32 y = y_index * block_height;
     //         for (u32 x_index = 0; x_index < cols; ++x_index) {
-    //             const u32 block_index = y_index * cols + x_index;
+    //             const u32 block_index = (z * rows * cols) + (y_index * cols) + x_index;
     //             const u32 x = x_index * block_width;
 
     //             const std::span<const u8, 16> blockPtr{data.subspan(block_index * 16, 16)};

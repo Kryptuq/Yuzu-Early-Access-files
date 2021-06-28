@@ -96,7 +96,7 @@ private:
     void RequestUpdateImpl(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "(STUBBED) called");
 
-        std::vector<u8> output_params(ctx.GetWriteBufferSize());
+        std::vector<u8> output_params(ctx.GetWriteBufferSize(), 0);
         auto result = renderer->UpdateAudioRenderer(ctx.ReadBuffer(), output_params);
 
         if (result.IsSuccess()) {
