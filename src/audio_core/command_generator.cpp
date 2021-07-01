@@ -1231,14 +1231,15 @@ void CommandGenerator::DecodeFromWaveBuffers(ServerVoiceInfo& voice_info, s32* o
 
             if (in_params.sample_format == SampleFormat::Adpcm && dsp_state.offset == 0 &&
                 wave_buffer.context_address != 0 && wave_buffer.context_size != 0) {
-                // TODO(ogniK): ADPCM loop context
+                memory.ReadBlock(wave_buffer.context_address, &dsp_state.context,
+                                 sizeof(ADPCMContext));
             }
 
             s32 samples_offset_start;
             s32 samples_offset_end;
-            if (dsp_state.loop_count > 0 ||
-                (wave_buffer.loop_start_sample != 0 && wave_buffer.loop_end_sample != 0 &&
-                 wave_buffer.loop_start_sample <= wave_buffer.loop_end_sample)) {
+            if (dsp_state.loop_count > 0 && wave_buffer.loop_start_sample != 0 &&
+                wave_buffer.loop_end_sample != 0 &&
+                wave_buffer.loop_start_sample <= wave_buffer.loop_end_sample) {
                 samples_offset_start = wave_buffer.loop_start_sample;
                 samples_offset_end = wave_buffer.loop_end_sample;
             } else {

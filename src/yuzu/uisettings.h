@@ -13,6 +13,7 @@
 #include <QStringList>
 #include <QVector>
 #include "common/common_types.h"
+#include "common/settings.h"
 
 namespace UISettings {
 
@@ -48,26 +49,26 @@ struct Values {
     QByteArray gamelist_header_state;
 
     QByteArray microprofile_geometry;
-    bool microprofile_visible;
+    Settings::BasicSetting<bool> microprofile_visible{false, "microProfileDialogVisible"};
 
-    bool single_window_mode;
-    bool fullscreen;
-    bool display_titlebar;
-    bool show_filter_bar;
-    bool show_status_bar;
+    Settings::BasicSetting<bool> single_window_mode{true, "singleWindowMode"};
+    Settings::BasicSetting<bool> fullscreen{false, "fullscreen"};
+    Settings::BasicSetting<bool> display_titlebar{true, "displayTitleBars"};
+    Settings::BasicSetting<bool> show_filter_bar{true, "showFilterBar"};
+    Settings::BasicSetting<bool> show_status_bar{true, "showStatusBar"};
 
-    bool confirm_before_closing;
-    bool first_start;
-    bool pause_when_in_background;
-    bool hide_mouse;
+    Settings::BasicSetting<bool> confirm_before_closing{true, "confirmClose"};
+    Settings::BasicSetting<bool> first_start{true, "firstStart"};
+    Settings::BasicSetting<bool> pause_when_in_background{false, "pauseWhenInBackground"};
+    Settings::BasicSetting<bool> hide_mouse{false, "hideInactiveMouse"};
 
-    bool select_user_on_boot;
+    Settings::BasicSetting<bool> select_user_on_boot{false, "select_user_on_boot"};
 
     // Discord RPC
-    bool enable_discord_presence;
+    Settings::BasicSetting<bool> enable_discord_presence{true, "enable_discord_presence"};
 
-    bool enable_screenshot_save_as;
-    u16 screenshot_resolution_factor;
+    Settings::BasicSetting<bool> enable_screenshot_save_as{true, "enable_screenshot_save_as"};
+    Settings::BasicSetting<u16> screenshot_resolution_factor{0, "screenshot_resolution_factor"};
 
     QString roms_path;
     QString symbols_path;
@@ -83,18 +84,18 @@ struct Values {
     // Shortcut name <Shortcut, context>
     std::vector<Shortcut> shortcuts;
 
-    uint32_t callout_flags;
+    Settings::BasicSetting<uint32_t> callout_flags{0, "calloutFlags"};
 
     // logging
-    bool show_console;
+    Settings::BasicSetting<bool> show_console{false, "showConsole"};
 
     // Game List
-    bool show_add_ons;
-    uint32_t icon_size;
-    uint8_t row_1_text_id;
-    uint8_t row_2_text_id;
+    Settings::BasicSetting<bool> show_add_ons{true, "show_add_ons"};
+    Settings::BasicSetting<uint32_t> icon_size{64, "icon_size"};
+    Settings::BasicSetting<uint8_t> row_1_text_id{3, "row_1_text_id"};
+    Settings::BasicSetting<uint8_t> row_2_text_id{2, "row_2_text_id"};
     std::atomic_bool is_game_list_reload_pending{false};
-    bool cache_game_list;
+    Settings::BasicSetting<bool> cache_game_list{true, "cache_game_list"};
 
     bool configuration_applied;
     bool reset_to_defaults;

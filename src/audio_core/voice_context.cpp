@@ -221,11 +221,40 @@ void ServerVoiceInfo::UpdateWaveBuffer(ServerWaveBuffer& out_wavebuffer,
     if (!in_wave_buffer.sent_to_server || !in_params.buffer_mapped) {
         // Validate sample offset sizings
         if (sample_format == SampleFormat::Pcm16) {
-            const auto buffer_size = in_wave_buffer.buffer_size;
-            if (in_wave_buffer.start_sample_offset < 0 || in_wave_buffer.end_sample_offset < 0 ||
-                (buffer_size < (sizeof(s16) * in_wave_buffer.start_sample_offset)) ||
-                (buffer_size < (sizeof(s16) * in_wave_buffer.end_sample_offset))) {
+            const s64 buffer_size = static_cast<s64>(in_wave_buffer.buffer_size);
+            const s64 start = sizeof(s16) * in_wave_buffer.start_sample_offset;
+            const s64 end = sizeof(s16) * in_wave_buffer.end_sample_offset;
+            if (0 > start || start > buffer_size || 0 > end || end > buffer_size) {
                 // TODO(ogniK): Write error info
+                LOG_ERROR(Audio,
+                          "PCM16 wavebuffer has an invalid size. Buffer has size 0x{:08X}, but "
+                          "offsets were "
+                          "{:08X} - 0x{:08X}",
+                          buffer_size, sizeof(s16) * in_wave_buffer.start_sample_offset,
+                          sizeof(s16) * in_wave_buffer.end_sample_offset);
+                return;
+            }
+        } else if (sample_format == SampleFormat::Adpcm) {
+            const s64 buffer_size = static_cast<s64>(in_wave_buffer.buffer_size);
+            const s64 start_frames = in_wave_buffer.start_sample_offset / 14;
+            const s64 start_extra = in_wave_buffer.start_sample_offset % 14 == 0
+                                        ? 0
+                                        : (in_wave_buffer.start_sample_offset % 14) / 2 + 1 +
+                                              (in_wave_buffer.start_sample_offset % 2);
+            const s64 start = start_frames * 8 + start_extra;
+            const s64 end_frames = in_wave_buffer.end_sample_offset / 14;
+            const s64 end_extra = in_wave_buffer.end_sample_offset % 14 == 0
+                                      ? 0
+                                      : (in_wave_buffer.end_sample_offset % 14) / 2 + 1 +
+                                            (in_wave_buffer.end_sample_offset % 2);
+            const s64 end = end_frames * 8 + end_extra;
+            if (in_wave_buffer.start_sample_offset < 0 || start > buffer_size ||
+                in_wave_buffer.end_sample_offset < 0 || end > buffer_size) {
+                LOG_ERROR(Audio,
+                          "ADPMC wavebuffer has an invalid size. Buffer has size 0x{:08X}, but "
+                          "offsets were "
+                          "{:08X} - 0x{:08X}",
+                          in_wave_buffer.buffer_size, start, end);
                 return;
             }
         }
@@ -247,6 +276,12 @@ void ServerVoiceInfo::UpdateWaveBuffer(ServerWaveBuffer& out_wavebuffer,
             in_wave_buffer.buffer_address != 0 && in_wave_buffer.buffer_size != 0;
         // TODO(ogniK): Pool mapper attachment
         // TODO(ogniK): IsAdpcmLoopContextBugFixed
+        if (sample_format == SampleFormat::Adpcm && in_wave_buffer.context_address != 0 &&
+            in_wave_buffer.context_size != 0 && behavior_info.IsAdpcmLoopContextBugFixed()) {
+        } else {
+            out_wavebuffer.context_address = 0;
+            out_wavebuffer.context_size = 0;
+        }
     }
 }
 

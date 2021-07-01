@@ -113,11 +113,12 @@ void ConfigureUi::SetConfiguration() {
     ui->theme_combobox->setCurrentIndex(ui->theme_combobox->findData(UISettings::values.theme));
     ui->language_combobox->setCurrentIndex(
         ui->language_combobox->findData(UISettings::values.language));
-    ui->show_add_ons->setChecked(UISettings::values.show_add_ons);
+    ui->show_add_ons->setChecked(UISettings::values.show_add_ons.GetValue());
     ui->icon_size_combobox->setCurrentIndex(
-        ui->icon_size_combobox->findData(UISettings::values.icon_size));
+        ui->icon_size_combobox->findData(UISettings::values.icon_size.GetValue()));
 
-    ui->enable_screenshot_save_as->setChecked(UISettings::values.enable_screenshot_save_as);
+    ui->enable_screenshot_save_as->setChecked(
+        UISettings::values.enable_screenshot_save_as.GetValue());
     ui->screenshot_path_edit->setText(QString::fromStdString(
         Common::FS::GetYuzuPathString(Common::FS::YuzuPath::ScreenshotsDir)));
 }
@@ -178,7 +179,7 @@ void ConfigureUi::InitializeRowComboBoxes() {
 
 void ConfigureUi::UpdateFirstRowComboBox(bool init) {
     const int currentIndex =
-        init ? UISettings::values.row_1_text_id
+        init ? UISettings::values.row_1_text_id.GetValue()
              : ui->row_1_text_combobox->findData(ui->row_1_text_combobox->currentData());
 
     ui->row_1_text_combobox->clear();
@@ -197,7 +198,7 @@ void ConfigureUi::UpdateFirstRowComboBox(bool init) {
 
 void ConfigureUi::UpdateSecondRowComboBox(bool init) {
     const int currentIndex =
-        init ? UISettings::values.row_2_text_id
+        init ? UISettings::values.row_2_text_id.GetValue()
              : ui->row_2_text_combobox->findData(ui->row_2_text_combobox->currentData());
 
     ui->row_2_text_combobox->clear();

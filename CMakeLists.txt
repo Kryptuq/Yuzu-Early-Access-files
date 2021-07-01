@@ -253,11 +253,82 @@ if(ENABLE_QT)
 
     # Check for system Qt on Linux, fallback to bundled Qt
     if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-        if (NOT YUZU_USE_BUNDLED_QT)
-            find_package(Qt5 ${QT_VERSION} COMPONENTS Widgets QUIET)
-            if (NOT Qt5_FOUND)
-                set(YUZU_USE_BUNDLED_QT ON CACHE BOOL "Download bundled Qt" FORCE)
+        find_package(Qt5 ${QT_VERSION} COMPONENTS Widgets)
+        if (NOT Qt5_FOUND OR YUZU_USE_BUNDLED_QT)
+            # Check for dependencies, then enable bundled Qt download
+
+            # Check that the system GLIBCXX version is compatible
+            find_program(OBJDUMP objdump)
+            if ("${OBJDUMP}" STREQUAL "OBJDUMP-NOTFOUND")
+                message(FATAL_ERROR "Required program `objdump` not found.")
             endif()
+            find_library(LIBSTDCXX libstdc++.so.6)
+            execute_process(
+                COMMAND
+                    ${OBJDUMP} -T ${LIBSTDCXX}
+                COMMAND
+                    grep GLIBCXX_3.4.28
+                COMMAND
+                    sed "s/[0-9a-f]*.*  //"
+                COMMAND
+                    sed "s/ .*//"
+                COMMAND
+                    sort -u
+                OUTPUT_VARIABLE
+                    GLIBCXX_MET
+            )
+            if (NOT GLIBCXX_MET)
+                message(FATAL_ERROR "Qt too old or not found, and bundled Qt package is not \
+                    compatible with this system. Either install Qt ${QT_VERSION}, or provide the path \
+                    to Qt by setting the variable Qt5_ROOT.")
+            endif()
+
+            # Check for headers
+            Include(FindPkgConfig REQUIRED)
+            pkg_check_modules(QT_DEP_GLU QUIET glu>=9.0.0)
+            if (NOT QT_DEP_GLU_FOUND)
+                message(FATAL_ERROR "Qt bundled pacakge dependency `glu` not found. \
+                    Perhaps `libglu1-mesa-dev` needs to be installed?")
+            endif()
+            pkg_check_modules(QT_DEP_MESA QUIET dri>=20.0.8)
+            if (NOT QT_DEP_MESA_FOUND)
+                message(FATAL_ERROR "Qt bundled pacakge dependency `dri` not found. \
+                    Perhaps `mesa-common-dev` needs to be installed?")
+            endif()
+
+            # Check for X libraries
+            set(BUNDLED_QT_REQUIREMENTS
+                libxcb-icccm.so.4
+                libxcb-image.so.0
+                libxcb-keysyms.so.1
+                libxcb-randr.so.0
+                libxcb-render-util.so.0
+                libxcb-render.so.0
+                libxcb-shape.so.0
+                libxcb-shm.so.0
+                libxcb-sync.so.1
+                libxcb-xfixes.so.0
+                libxcb-xinerama.so.0
+                libxcb-xkb.so.1
+                libxcb.so.1
+                libxkbcommon-x11.so.0
+                libxkbcommon.so.0
+            )
+            set(UNRESOLVED_QT_DEPS "")
+            foreach (REQUIREMENT ${BUNDLED_QT_REQUIREMENTS})
+                find_library(BUNDLED_QT_${REQUIREMENT} ${REQUIREMENT})
+                if ("${BUNDLED_QT_${REQUIREMENT}}" STREQUAL "BUNDLED_QT_${REQUIREMENT}-NOTFOUND")
+                    set(UNRESOLVED_QT_DEPS ${UNRESOLVED_QT_DEPS} ${REQUIREMENT})
+                endif()
+                unset(BUNDLED_QT_${REQUIREMENT})
+            endforeach()
+            unset(BUNDLED_QT_REQUIREMENTS)
+
+            if (NOT "${UNRESOLVED_QT_DEPS}" STREQUAL "")
+                message(FATAL_ERROR "Bundled Qt package missing required dependencies: ${UNRESOLVED_QT_DEPS}")
+            endif()
+
+            set(YUZU_USE_BUNDLED_QT ON CACHE BOOL "Download bundled Qt" FORCE)
         endif()
         if (YUZU_USE_BUNDLED_QT)
             # Binary package currently does not support Qt webengine, so make sure it's disabled
@@ -473,7 +544,15 @@ if (YUZU_USE_BUNDLED_FFMPEG)
 
         # FFmpeg has source that requires one of nasm or yasm to assemble it.
         # REQUIRED throws an error if not found here during configuration rather than during compilation.
-        find_program(ASSEMBLER NAMES nasm yasm REQUIRED)
+        find_program(ASSEMBLER NAMES nasm yasm)
+        if ("${ASSEMBLER}" STREQUAL "ASSEMBLER-NOTFOUND")
+            message(FATAL_ERROR "One of either `nasm` or `yasm` not found but is required.")
+        endif()
+
+        find_program(AUTOCONF autoconf)
+        if ("${AUTOCONF}" STREQUAL "AUTOCONF-NOTFOUND")
+            message(FATAL_ERROR "Required program `autoconf` not found.")
+        endif()
 
         set(FFmpeg_PREFIX ${PROJECT_SOURCE_DIR}/externals/ffmpeg)
         set(FFmpeg_BUILD_DIR ${PROJECT_BINARY_DIR}/externals/ffmpeg)

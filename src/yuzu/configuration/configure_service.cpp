@@ -65,7 +65,7 @@ void ConfigureService::RetranslateUi() {
 
 void ConfigureService::SetConfiguration() {
     const int index =
-        ui->bcat_source->findData(QString::fromStdString(Settings::values.bcat_backend));
+        ui->bcat_source->findData(QString::fromStdString(Settings::values.bcat_backend.GetValue()));
     ui->bcat_source->setCurrentIndex(index == -1 ? 0 : index);
 }
 

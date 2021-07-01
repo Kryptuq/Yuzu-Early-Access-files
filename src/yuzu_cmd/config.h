@@ -8,6 +8,8 @@
 #include <memory>
 #include <string>
 
+#include "common/settings.h"
+
 class INIReader;
 
 class Config {
@@ -22,4 +24,14 @@ public:
     ~Config();
 
     void Reload();
+
+private:
+    /**
+     * Applies a value read from the sdl2_config to a BasicSetting.
+     *
+     * @param group The name of the INI group
+     * @param setting The yuzu setting to modify
+     */
+    template <typename Type>
+    void ReadSetting(const std::string& group, Settings::BasicSetting<Type>& setting);
 };

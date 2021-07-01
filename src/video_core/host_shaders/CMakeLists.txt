@@ -18,7 +18,10 @@ set(SHADER_FILES
     vulkan_uint8.comp
 )
 
-find_program(GLSLANGVALIDATOR "glslangValidator" REQUIRED)
+find_program(GLSLANGVALIDATOR "glslangValidator")
+if ("${GLSLANGVALIDATOR}" STREQUAL "GLSLANGVALIDATOR-NOTFOUND")
+    message(FATAL_ERROR "Required program `glslangValidator` not found.")
+endif()
 
 set(GLSL_FLAGS "")
 set(QUIET_FLAG "--quiet")

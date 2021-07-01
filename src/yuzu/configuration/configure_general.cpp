@@ -40,10 +40,10 @@ void ConfigureGeneral::SetConfiguration() {
     ui->use_multi_core->setEnabled(runtime_lock);
     ui->use_multi_core->setChecked(Settings::values.use_multi_core.GetValue());
 
-    ui->toggle_check_exit->setChecked(UISettings::values.confirm_before_closing);
-    ui->toggle_user_on_boot->setChecked(UISettings::values.select_user_on_boot);
-    ui->toggle_background_pause->setChecked(UISettings::values.pause_when_in_background);
-    ui->toggle_hide_mouse->setChecked(UISettings::values.hide_mouse);
+    ui->toggle_check_exit->setChecked(UISettings::values.confirm_before_closing.GetValue());
+    ui->toggle_user_on_boot->setChecked(UISettings::values.select_user_on_boot.GetValue());
+    ui->toggle_background_pause->setChecked(UISettings::values.pause_when_in_background.GetValue());
+    ui->toggle_hide_mouse->setChecked(UISettings::values.hide_mouse.GetValue());
 
     ui->toggle_frame_limit->setChecked(Settings::values.use_frame_limit.GetValue());
     ui->frame_limit->setValue(Settings::values.frame_limit.GetValue());

@@ -78,7 +78,7 @@ static void InitializeLogging() {
     using namespace Common;
 
     Log::Filter log_filter(Log::Level::Debug);
-    log_filter.ParseFilterString(Settings::values.log_filter);
+    log_filter.ParseFilterString(static_cast<std::string>(Settings::values.log_filter));
     Log::SetGlobalFilter(log_filter);
 
     Log::AddBackend(std::make_unique<Log::ColorConsoleBackend>());

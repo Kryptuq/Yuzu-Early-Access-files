@@ -101,15 +101,16 @@ ConfigureMotionTouch::ConfigureMotionTouch(QWidget* parent,
 ConfigureMotionTouch::~ConfigureMotionTouch() = default;
 
 void ConfigureMotionTouch::SetConfiguration() {
-    const Common::ParamPackage motion_param(Settings::values.motion_device);
-    const Common::ParamPackage touch_param(Settings::values.touch_device);
+    const Common::ParamPackage motion_param(Settings::values.motion_device.GetValue());
+    const Common::ParamPackage touch_param(Settings::values.touch_device.GetValue());
 
-    ui->touch_from_button_checkbox->setChecked(Settings::values.use_touch_from_button);
+    ui->touch_from_button_checkbox->setChecked(Settings::values.use_touch_from_button.GetValue());
     touch_from_button_maps = Settings::values.touch_from_button_maps;
     for (const auto& touch_map : touch_from_button_maps) {
         ui->touch_from_button_map->addItem(QString::fromStdString(touch_map.name));
     }
-    ui->touch_from_button_map->setCurrentIndex(Settings::values.touch_from_button_map_index);
+    ui->touch_from_button_map->setCurrentIndex(
+        Settings::values.touch_from_button_map_index.GetValue());
     ui->motion_sensitivity->setValue(motion_param.Get("sensitivity", 0.01f));
 
     min_x = touch_param.Get("min_x", 100);
@@ -124,7 +125,7 @@ void ConfigureMotionTouch::SetConfiguration() {
     udp_server_list_model->setStringList({});
     ui->udp_server_list->setModel(udp_server_list_model);
 
-    std::stringstream ss(Settings::values.udp_input_servers);
+    std::stringstream ss(Settings::values.udp_input_servers.GetValue());
     std::string token;
 
     while (std::getline(ss, token, ',')) {

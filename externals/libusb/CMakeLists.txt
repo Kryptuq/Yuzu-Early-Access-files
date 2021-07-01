@@ -5,6 +5,17 @@ if (MINGW OR (${CMAKE_SYSTEM_NAME} MATCHES "Linux") OR APPLE)
     # GNU toolchains for some reason doesn't work with the later half of this CMakeLists after
     # updating to 1.0.24, so we do it the old-fashioned way for now.
 
+    # Require autoconf and libtoolize here, rather than crash during compilation
+    find_program(AUTOCONF autoconf)
+    if ("${AUTOCONF}" STREQUAL "AUTOCONF-NOTFOUND")
+        message(FATAL_ERROR "Required program `autoconf` not found.")
+    endif()
+
+    find_program(LIBTOOLIZE libtoolize)
+    if ("${LIBTOOLIZE}" STREQUAL "LIBTOOLIZE-NOTFOUND")
+        message(FATAL_ERROR "Required program `libtoolize` not found.")
+    endif()
+
     set(LIBUSB_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/libusb")
     set(LIBUSB_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libusb")
 

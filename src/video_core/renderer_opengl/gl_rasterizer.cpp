@@ -705,11 +705,12 @@ void RasterizerOpenGL::TickFrame() {
 }
 
 bool RasterizerOpenGL::AccelerateSurfaceCopy(const Tegra::Engines::Fermi2D::Surface& src,
+                                             s32 src_address_offset,
                                              const Tegra::Engines::Fermi2D::Surface& dst,
                                              const Tegra::Engines::Fermi2D::Config& copy_config) {
     MICROPROFILE_SCOPE(OpenGL_Blits);
     std::scoped_lock lock{texture_cache.mutex};
-    texture_cache.BlitImage(dst, src, copy_config);
+    texture_cache.BlitImage(dst, src, src_address_offset, copy_config);
     return true;
 }
 

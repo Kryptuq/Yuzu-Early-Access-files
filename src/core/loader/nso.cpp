@@ -104,8 +104,8 @@ std::optional<VAddr> AppLoader_NSO::LoadModule(Kernel::KProcess& process, Core::
         codeset.segments[i].size = nso_header.segments[i].size;
     }
 
-    if (should_pass_arguments && !Settings::values.program_args.empty()) {
-        const auto arg_data{Settings::values.program_args};
+    if (should_pass_arguments && !Settings::values.program_args.GetValue().empty()) {
+        const auto arg_data{Settings::values.program_args.GetValue()};
 
         codeset.DataSegment().size += NSO_ARGUMENT_DATA_ALLOCATION_SIZE;
         NSOArgumentHeader args_header{
