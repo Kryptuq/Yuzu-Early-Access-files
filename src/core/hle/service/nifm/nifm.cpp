@@ -179,7 +179,7 @@ private:
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
 
-        if (Settings::values.bcat_backend.GetValue() == "none") {
+        if (Settings::values.bcat_backend == "none") {
             rb.PushEnum(RequestState::NotSubmitted);
         } else {
             rb.PushEnum(RequestState::Connected);
@@ -384,7 +384,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
-        if (Settings::values.bcat_backend.GetValue() == "none") {
+        if (Settings::values.bcat_backend == "none") {
             rb.Push<u8>(0);
         } else {
             rb.Push<u8>(1);
@@ -395,7 +395,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
-        if (Settings::values.bcat_backend.GetValue() == "none") {
+        if (Settings::values.bcat_backend == "none") {
             rb.Push<u8>(0);
         } else {
             rb.Push<u8>(1);

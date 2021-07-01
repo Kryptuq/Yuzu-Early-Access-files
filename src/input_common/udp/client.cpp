@@ -201,7 +201,7 @@ bool Client::DeviceConnected(std::size_t pad) const {
 void Client::ReloadSockets() {
     Reset();
 
-    std::stringstream servers_ss(static_cast<std::string>(Settings::values.udp_input_servers));
+    std::stringstream servers_ss(Settings::values.udp_input_servers);
     std::string server_token;
     std::size_t client = 0;
     while (std::getline(servers_ss, server_token, ',')) {
@@ -370,7 +370,7 @@ std::optional<std::size_t> Client::GetUnusedFingerID() const {
 
 void Client::UpdateTouchInput(Response::TouchPad& touch_pad, std::size_t client, std::size_t id) {
     // TODO: Use custom calibration per device
-    const Common::ParamPackage touch_param(Settings::values.touch_device.GetValue());
+    const Common::ParamPackage touch_param(Settings::values.touch_device);
     const u16 min_x = static_cast<u16>(touch_param.Get("min_x", 100));
     const u16 min_y = static_cast<u16>(touch_param.Get("min_y", 50));
     const u16 max_x = static_cast<u16>(touch_param.Get("max_x", 1800));

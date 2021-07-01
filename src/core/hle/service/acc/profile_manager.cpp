@@ -48,8 +48,7 @@ ProfileManager::ProfileManager() {
         CreateNewUser(UUID::Generate(), "yuzu");
     }
 
-    auto current =
-        std::clamp<int>(static_cast<s32>(Settings::values.current_user), 0, MAX_USERS - 1);
+    auto current = std::clamp<int>(Settings::values.current_user, 0, MAX_USERS - 1);
 
     // If user index don't exist. Load the first user and change the active user
     if (!UserExistsIndex(current)) {

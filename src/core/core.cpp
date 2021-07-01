@@ -263,9 +263,9 @@ struct System::Impl {
         if (Settings::values.gamecard_inserted) {
             if (Settings::values.gamecard_current_game) {
                 fs_controller.SetGameCard(GetGameFileFromPath(virtual_filesystem, filepath));
-            } else if (!Settings::values.gamecard_path.GetValue().empty()) {
-                fs_controller.SetGameCard(GetGameFileFromPath(
-                    virtual_filesystem, static_cast<std::string>(Settings::values.gamecard_path)));
+            } else if (!Settings::values.gamecard_path.empty()) {
+                fs_controller.SetGameCard(
+                    GetGameFileFromPath(virtual_filesystem, Settings::values.gamecard_path));
             }
         }
 

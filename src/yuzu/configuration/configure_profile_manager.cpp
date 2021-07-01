@@ -166,7 +166,7 @@ void ConfigureProfileManager::PopulateUserList() {
 void ConfigureProfileManager::UpdateCurrentUser() {
     ui->pm_add->setEnabled(profile_manager->GetUserCount() < Service::Account::MAX_USERS);
 
-    const auto& current_user = profile_manager->GetUser(Settings::values.current_user.GetValue());
+    const auto& current_user = profile_manager->GetUser(Settings::values.current_user);
     ASSERT(current_user);
     const auto username = GetAccountUsername(*profile_manager, *current_user);
 
@@ -245,18 +245,15 @@ void ConfigureProfileManager::DeleteUser() {
         this, tr("Confirm Delete"),
         tr("You are about to delete user with name \"%1\". Are you sure?").arg(username));
 
-    if (confirm == QMessageBox::No) {
+    if (confirm == QMessageBox::No)
         return;
-    }
 
-    if (Settings::values.current_user.GetValue() == tree_view->currentIndex().row()) {
+    if (Settings::values.current_user == tree_view->currentIndex().row())
         Settings::values.current_user = 0;
-    }
     UpdateCurrentUser();
 
-    if (!profile_manager->RemoveUser(*uuid)) {
+    if (!profile_manager->RemoveUser(*uuid))
         return;
-    }
 
     item_model->removeRows(tree_view->currentIndex().row(), 1);
     tree_view->clearSelection();

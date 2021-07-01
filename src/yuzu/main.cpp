@@ -156,13 +156,11 @@ enum class CalloutFlag : uint32_t {
 };
 
 void GMainWindow::ShowTelemetryCallout() {
-    if (UISettings::values.callout_flags.GetValue() &
-        static_cast<uint32_t>(CalloutFlag::Telemetry)) {
+    if (UISettings::values.callout_flags & static_cast<uint32_t>(CalloutFlag::Telemetry)) {
         return;
     }
 
-    UISettings::values.callout_flags =
-        UISettings::values.callout_flags.GetValue() | static_cast<uint32_t>(CalloutFlag::Telemetry);
+    UISettings::values.callout_flags |= static_cast<uint32_t>(CalloutFlag::Telemetry);
     const QString telemetry_message =
         tr("<a href='https://yuzu-emu.org/help/feature/telemetry/'>Anonymous "
            "data is collected</a> to help improve yuzu. "
@@ -179,7 +177,7 @@ static void InitializeLogging() {
     using namespace Common;
 
     Log::Filter log_filter;
-    log_filter.ParseFilterString(Settings::values.log_filter.GetValue());
+    log_filter.ParseFilterString(Settings::values.log_filter);
     Log::SetGlobalFilter(log_filter);
 
     const auto log_dir = FS::GetYuzuPath(FS::YuzuPath::LogDir);
@@ -218,7 +216,7 @@ GMainWindow::GMainWindow()
     default_theme_paths = QIcon::themeSearchPaths();
     UpdateUITheme();
 
-    SetDiscordEnabled(UISettings::values.enable_discord_presence.GetValue());
+    SetDiscordEnabled(UISettings::values.enable_discord_presence);
     discord_rpc->Update();
 
     RegisterMetaTypes();
@@ -1062,24 +1060,23 @@ void GMainWindow::RestoreUIState() {
     render_window->restoreGeometry(UISettings::values.renderwindow_geometry);
 #if MICROPROFILE_ENABLED
     microProfileDialog->restoreGeometry(UISettings::values.microprofile_geometry);
-    microProfileDialog->setVisible(UISettings::values.microprofile_visible.GetValue());
+    microProfileDialog->setVisible(UISettings::values.microprofile_visible);
 #endif
 
     game_list->LoadInterfaceLayout();
 
-    ui.action_Single_Window_Mode->setChecked(UISettings::values.single_window_mode.GetValue());
+    ui.action_Single_Window_Mode->setChecked(UISettings::values.single_window_mode);
     ToggleWindowMode();
 
-    ui.action_Fullscreen->setChecked(UISettings::values.fullscreen.GetValue());
+    ui.action_Fullscreen->setChecked(UISettings::values.fullscreen);
 
-    ui.action_Display_Dock_Widget_Headers->setChecked(
-        UISettings::values.display_titlebar.GetValue());
+    ui.action_Display_Dock_Widget_Headers->setChecked(UISettings::values.display_titlebar);
     OnDisplayTitleBars(ui.action_Display_Dock_Widget_Headers->isChecked());
 
-    ui.action_Show_Filter_Bar->setChecked(UISettings::values.show_filter_bar.GetValue());
+    ui.action_Show_Filter_Bar->setChecked(UISettings::values.show_filter_bar);
     game_list->SetFilterVisible(ui.action_Show_Filter_Bar->isChecked());
 
-    ui.action_Show_Status_Bar->setChecked(UISettings::values.show_status_bar.GetValue());
+    ui.action_Show_Status_Bar->setChecked(UISettings::values.show_status_bar);
     statusBar()->setVisible(ui.action_Show_Status_Bar->isChecked());
     Debugger::ToggleConsole();
 }
@@ -1246,14 +1243,13 @@ bool GMainWindow::LoadROM(const QString& filename, std::size_t program_index) {
     const Core::System::ResultStatus result{
         system.Load(*render_window, filename.toStdString(), program_index)};
 
-    const auto drd_callout = (UISettings::values.callout_flags.GetValue() &
-                              static_cast<u32>(CalloutFlag::DRDDeprecation)) == 0;
+    const auto drd_callout =
+        (UISettings::values.callout_flags & static_cast<u32>(CalloutFlag::DRDDeprecation)) == 0;
 
     if (result == Core::System::ResultStatus::Success &&
         system.GetAppLoader().GetFileType() == Loader::FileType::DeconstructedRomDirectory &&
         drd_callout) {
-        UISettings::values.callout_flags = UISettings::values.callout_flags.GetValue() |
-                                           static_cast<u32>(CalloutFlag::DRDDeprecation);
+        UISettings::values.callout_flags |= static_cast<u32>(CalloutFlag::DRDDeprecation);
         QMessageBox::warning(
             this, tr("Warning Outdated Game Format"),
             tr("You are using the deconstructed ROM directory format for this game, which is an "
@@ -2457,8 +2453,7 @@ void GMainWindow::ErrorDisplayDisplayError(QString error_code, QString error_tex
 }
 
 void GMainWindow::OnMenuReportCompatibility() {
-    if (!Settings::values.yuzu_token.GetValue().empty() &&
-        !Settings::values.yuzu_username.GetValue().empty()) {
+    if (!Settings::values.yuzu_token.empty() && !Settings::values.yuzu_username.empty()) {
         CompatDB compatdb{this};
         compatdb.exec();
     } else {
@@ -2623,7 +2618,7 @@ void GMainWindow::ResetWindowSize1080() {
 
 void GMainWindow::OnConfigure() {
     const auto old_theme = UISettings::values.theme;
-    const bool old_discord_presence = UISettings::values.enable_discord_presence.GetValue();
+    const bool old_discord_presence = UISettings::values.enable_discord_presence;
 
     ConfigureDialog configure_dialog(this, hotkey_registry, input_subsystem.get());
     connect(&configure_dialog, &ConfigureDialog::LanguageChanged, this,
@@ -2680,8 +2675,8 @@ void GMainWindow::OnConfigure() {
     if (UISettings::values.theme != old_theme) {
         UpdateUITheme();
     }
-    if (UISettings::values.enable_discord_presence.GetValue() != old_discord_presence) {
-        SetDiscordEnabled(UISettings::values.enable_discord_presence.GetValue());
+    if (UISettings::values.enable_discord_presence != old_discord_presence) {
+        SetDiscordEnabled(UISettings::values.enable_discord_presence);
     }
     emit UpdateThemedIcons();
 
@@ -2837,8 +2832,7 @@ void GMainWindow::OnCaptureScreenshot() {
         }
     }
 #endif
-    render_window->CaptureScreenshot(UISettings::values.screenshot_resolution_factor.GetValue(),
-                                     filename);
+    render_window->CaptureScreenshot(UISettings::values.screenshot_resolution_factor, filename);
     OnStartGame();
 }
 

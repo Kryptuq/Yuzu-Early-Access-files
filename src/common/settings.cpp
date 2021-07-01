@@ -41,7 +41,7 @@ void LogSettings() {
     LOG_INFO(Config, "yuzu Configuration:");
     log_setting("Controls_UseDockedMode", values.use_docked_mode.GetValue());
     log_setting("System_RngSeed", values.rng_seed.GetValue().value_or(0));
-    log_setting("System_CurrentUser", values.current_user.GetValue());
+    log_setting("System_CurrentUser", values.current_user);
     log_setting("System_LanguageIndex", values.language_index.GetValue());
     log_setting("System_RegionIndex", values.region_index.GetValue());
     log_setting("System_TimeZoneIndex", values.time_zone_index.GetValue());
@@ -61,18 +61,18 @@ void LogSettings() {
     log_setting("Renderer_UseAsynchronousShaders", values.use_asynchronous_shaders.GetValue());
     log_setting("Renderer_UseGarbageCollection", values.use_caches_gc.GetValue());
     log_setting("Renderer_AnisotropicFilteringLevel", values.max_anisotropy.GetValue());
-    log_setting("Audio_OutputEngine", values.sink_id.GetValue());
+    log_setting("Audio_OutputEngine", values.sink_id);
     log_setting("Audio_EnableAudioStretching", values.enable_audio_stretching.GetValue());
-    log_setting("Audio_OutputDevice", values.audio_device_id.GetValue());
-    log_setting("DataStorage_UseVirtualSd", values.use_virtual_sd.GetValue());
+    log_setting("Audio_OutputDevice", values.audio_device_id);
+    log_setting("DataStorage_UseVirtualSd", values.use_virtual_sd);
     log_path("DataStorage_CacheDir", Common::FS::GetYuzuPath(Common::FS::YuzuPath::CacheDir));
     log_path("DataStorage_ConfigDir", Common::FS::GetYuzuPath(Common::FS::YuzuPath::ConfigDir));
     log_path("DataStorage_LoadDir", Common::FS::GetYuzuPath(Common::FS::YuzuPath::LoadDir));
     log_path("DataStorage_NANDDir", Common::FS::GetYuzuPath(Common::FS::YuzuPath::NANDDir));
     log_path("DataStorage_SDMCDir", Common::FS::GetYuzuPath(Common::FS::YuzuPath::SDMCDir));
-    log_setting("Debugging_ProgramArgs", values.program_args.GetValue());
-    log_setting("Services_BCATBackend", values.bcat_backend.GetValue());
-    log_setting("Services_BCATBoxcatLocal", values.bcat_boxcat_local.GetValue());
+    log_setting("Debugging_ProgramArgs", values.program_args);
+    log_setting("Services_BCATBackend", values.bcat_backend);
+    log_setting("Services_BCATBoxcatLocal", values.bcat_boxcat_local);
 }
 
 bool IsConfiguringGlobal() {
@@ -94,7 +94,7 @@ bool IsGPULevelHigh() {
 
 bool IsFastmemEnabled() {
     if (values.cpu_accuracy.GetValue() == CPUAccuracy::DebugMode) {
-        return static_cast<bool>(values.cpuopt_fastmem);
+        return values.cpuopt_fastmem;
     }
     return true;
 }

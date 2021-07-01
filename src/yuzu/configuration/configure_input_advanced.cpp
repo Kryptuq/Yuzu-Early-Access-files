@@ -148,12 +148,12 @@ void ConfigureInputAdvanced::LoadConfiguration() {
         }
     }
 
-    ui->debug_enabled->setChecked(Settings::values.debug_pad_enabled.GetValue());
-    ui->mouse_enabled->setChecked(Settings::values.mouse_enabled.GetValue());
-    ui->keyboard_enabled->setChecked(Settings::values.keyboard_enabled.GetValue());
-    ui->emulate_analog_keyboard->setChecked(Settings::values.emulate_analog_keyboard.GetValue());
-    ui->mouse_panning->setChecked(Settings::values.mouse_panning.GetValue());
-    ui->mouse_panning_sensitivity->setValue(Settings::values.mouse_panning_sensitivity.GetValue());
+    ui->debug_enabled->setChecked(Settings::values.debug_pad_enabled);
+    ui->mouse_enabled->setChecked(Settings::values.mouse_enabled);
+    ui->keyboard_enabled->setChecked(Settings::values.keyboard_enabled);
+    ui->emulate_analog_keyboard->setChecked(Settings::values.emulate_analog_keyboard);
+    ui->mouse_panning->setChecked(Settings::values.mouse_panning);
+    ui->mouse_panning_sensitivity->setValue(Settings::values.mouse_panning_sensitivity);
     ui->touchscreen_enabled->setChecked(Settings::values.touchscreen.enabled);
 
     UpdateUIEnabled();

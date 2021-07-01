@@ -397,7 +397,7 @@ void Reporter::ClearFSAccessLog() const {
 }
 
 bool Reporter::IsReportingEnabled() const {
-    return Settings::values.reporting_services.GetValue();
+    return Settings::values.reporting_services;
 }
 
 } // namespace Core

@@ -24,26 +24,23 @@ void ConfigureCpuDebug::SetConfiguration() {
     const bool runtime_lock = !Core::System::GetInstance().IsPoweredOn();
 
     ui->cpuopt_page_tables->setEnabled(runtime_lock);
-    ui->cpuopt_page_tables->setChecked(Settings::values.cpuopt_page_tables.GetValue());
+    ui->cpuopt_page_tables->setChecked(Settings::values.cpuopt_page_tables);
     ui->cpuopt_block_linking->setEnabled(runtime_lock);
-    ui->cpuopt_block_linking->setChecked(Settings::values.cpuopt_block_linking.GetValue());
+    ui->cpuopt_block_linking->setChecked(Settings::values.cpuopt_block_linking);
     ui->cpuopt_return_stack_buffer->setEnabled(runtime_lock);
-    ui->cpuopt_return_stack_buffer->setChecked(
-        Settings::values.cpuopt_return_stack_buffer.GetValue());
+    ui->cpuopt_return_stack_buffer->setChecked(Settings::values.cpuopt_return_stack_buffer);
     ui->cpuopt_fast_dispatcher->setEnabled(runtime_lock);
-    ui->cpuopt_fast_dispatcher->setChecked(Settings::values.cpuopt_fast_dispatcher.GetValue());
+    ui->cpuopt_fast_dispatcher->setChecked(Settings::values.cpuopt_fast_dispatcher);
     ui->cpuopt_context_elimination->setEnabled(runtime_lock);
-    ui->cpuopt_context_elimination->setChecked(
-        Settings::values.cpuopt_context_elimination.GetValue());
+    ui->cpuopt_context_elimination->setChecked(Settings::values.cpuopt_context_elimination);
     ui->cpuopt_const_prop->setEnabled(runtime_lock);
-    ui->cpuopt_const_prop->setChecked(Settings::values.cpuopt_const_prop.GetValue());
+    ui->cpuopt_const_prop->setChecked(Settings::values.cpuopt_const_prop);
     ui->cpuopt_misc_ir->setEnabled(runtime_lock);
-    ui->cpuopt_misc_ir->setChecked(Settings::values.cpuopt_misc_ir.GetValue());
+    ui->cpuopt_misc_ir->setChecked(Settings::values.cpuopt_misc_ir);
     ui->cpuopt_reduce_misalign_checks->setEnabled(runtime_lock);
-    ui->cpuopt_reduce_misalign_checks->setChecked(
-        Settings::values.cpuopt_reduce_misalign_checks.GetValue());
+    ui->cpuopt_reduce_misalign_checks->setChecked(Settings::values.cpuopt_reduce_misalign_checks);
     ui->cpuopt_fastmem->setEnabled(runtime_lock);
-    ui->cpuopt_fastmem->setChecked(Settings::values.cpuopt_fastmem.GetValue());
+    ui->cpuopt_fastmem->setChecked(Settings::values.cpuopt_fastmem);
 }
 
 void ConfigureCpuDebug::ApplyConfiguration() {

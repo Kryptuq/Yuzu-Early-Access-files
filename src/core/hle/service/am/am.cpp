@@ -1443,7 +1443,7 @@ void IApplicationFunctions::PopLaunchParameter(Kernel::HLERequestContext& ctx) {
         params.is_account_selected = 1;
 
         Account::ProfileManager profile_manager{};
-        const auto uuid = profile_manager.GetUser(static_cast<s32>(Settings::values.current_user));
+        const auto uuid = profile_manager.GetUser(Settings::values.current_user);
         ASSERT(uuid);
         params.current_user = uuid->uuid;
 
