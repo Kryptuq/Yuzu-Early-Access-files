@@ -16,7 +16,6 @@ constexpr size_t MAX_MIP_LEVELS = 14;
 constexpr SlotId CORRUPT_ID{0xfffffffe};
 
 using ImageId = SlotId;
-using ImageMapId = SlotId;
 using ImageViewId = SlotId;
 using ImageAllocId = SlotId;
 using SamplerId = SlotId;

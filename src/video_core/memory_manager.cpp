@@ -69,16 +69,11 @@ void MemoryManager::Unmap(GPUVAddr gpu_addr, std::size_t size) {
     } else {
         UNREACHABLE_MSG("Unmapping non-existent GPU address=0x{:x}", gpu_addr);
     }
+    // Flush and invalidate through the GPU interface, to be asynchronous if possible.
+    const std::optional<VAddr> cpu_addr = GpuToCpuAddress(gpu_addr);
+    ASSERT(cpu_addr);
 
-    const auto submapped_ranges = GetSubmappedRange(gpu_addr, size);
-
-    for (const auto& map : submapped_ranges) {
-        // Flush and invalidate through the GPU interface, to be asynchronous if possible.
-        const std::optional<VAddr> cpu_addr = GpuToCpuAddress(map.first);
-        ASSERT(cpu_addr);
-
-        rasterizer->UnmapMemory(*cpu_addr, map.second);
-    }
+    rasterizer->UnmapMemory(*cpu_addr, size);
 
     UpdateRange(gpu_addr, PageEntry::State::Unmapped, size);
 }
@@ -151,14 +146,8 @@ void MemoryManager::SetPageEntry(GPUVAddr gpu_addr, PageEntry page_entry, std::s
 
     //// Lock the new page
     // TryLockPage(page_entry, size);
-    auto& current_page = page_table[PageEntryIndex(gpu_addr)];
 
-    if ((!current_page.IsValid() && page_entry.IsValid()) ||
-        current_page.ToAddress() != page_entry.ToAddress()) {
-        rasterizer->ModifyGPUMemory(gpu_addr, size);
-    }
-
-    current_page = page_entry;
+    page_table[PageEntryIndex(gpu_addr)] = page_entry;
 }
 
 std::optional<GPUVAddr> MemoryManager::FindFreeRange(std::size_t size, std::size_t align,
@@ -202,19 +191,6 @@ std::optional<VAddr> MemoryManager::GpuToCpuAddress(GPUVAddr gpu_addr) const {
     }
 
     return page_entry.ToAddress() + (gpu_addr & page_mask);
-}
-
-std::optional<VAddr> MemoryManager::GpuToCpuAddress(GPUVAddr addr, std::size_t size) const {
-    size_t page_index{addr >> page_bits};
-    const size_t page_last{(addr + size + page_size - 1) >> page_bits};
-    while (page_index < page_last) {
-        const auto page_addr{GpuToCpuAddress(page_index << page_bits)};
-        if (page_addr && *page_addr != 0) {
-            return page_addr;
-        }
-        ++page_index;
-    }
-    return std::nullopt;
 }
 
 template <typename T>
@@ -411,81 +387,6 @@ bool MemoryManager::IsGranularRange(GPUVAddr gpu_addr, std::size_t size) const {
     }
     const std::size_t page{(*cpu_addr & Core::Memory::PAGE_MASK) + size};
     return page <= Core::Memory::PAGE_SIZE;
-}
-
-bool MemoryManager::IsContinousRange(GPUVAddr gpu_addr, std::size_t size) const {
-    size_t page_index{gpu_addr >> page_bits};
-    const size_t page_last{(gpu_addr + size + page_size - 1) >> page_bits};
-    std::optional<VAddr> old_page_addr{};
-    while (page_index != page_last) {
-        const auto page_addr{GpuToCpuAddress(page_index << page_bits)};
-        if (!page_addr || *page_addr == 0) {
-            return false;
-        }
-        if (old_page_addr) {
-            if (*old_page_addr + page_size != *page_addr) {
-                return false;
-            }
-        }
-        old_page_addr = page_addr;
-        ++page_index;
-    }
-    return true;
-}
-
-bool MemoryManager::IsFullyMappedRange(GPUVAddr gpu_addr, std::size_t size) const {
-    size_t page_index{gpu_addr >> page_bits};
-    const size_t page_last{(gpu_addr + size + page_size - 1) >> page_bits};
-    while (page_index < page_last) {
-        if (!page_table[page_index].IsValid() || page_table[page_index].ToAddress() == 0) {
-            return false;
-        }
-        ++page_index;
-    }
-    return true;
-}
-
-std::vector<std::pair<GPUVAddr, std::size_t>> MemoryManager::GetSubmappedRange(
-    GPUVAddr gpu_addr, std::size_t size) const {
-    std::vector<std::pair<GPUVAddr, std::size_t>> result{};
-    size_t page_index{gpu_addr >> page_bits};
-    size_t remaining_size{size};
-    size_t page_offset{gpu_addr & page_mask};
-    std::optional<std::pair<GPUVAddr, std::size_t>> last_segment{};
-    std::optional<VAddr> old_page_addr{};
-    const auto extend_size = [this, &last_segment, &page_index](std::size_t bytes) {
-        if (!last_segment) {
-            GPUVAddr new_base_addr = page_index << page_bits;
-            last_segment = {new_base_addr, bytes};
-        } else {
-            last_segment->second += bytes;
-        }
-    };
-    const auto split = [this, &last_segment, &result] {
-        if (last_segment) {
-            result.push_back(*last_segment);
-            last_segment = std::nullopt;
-        }
-    };
-    while (remaining_size > 0) {
-        const size_t num_bytes{std::min(page_size - page_offset, remaining_size)};
-        const auto page_addr{GpuToCpuAddress(page_index << page_bits)};
-        if (!page_addr) {
-            split();
-        } else if (old_page_addr) {
-            if (*old_page_addr + page_size != *page_addr) {
-                split();
-            }
-            extend_size(num_bytes);
-        } else {
-            extend_size(num_bytes);
-        }
-        ++page_index;
-        page_offset = 0;
-        remaining_size -= num_bytes;
-    }
-    split();
-    return result;
 }
 
 } // namespace Tegra

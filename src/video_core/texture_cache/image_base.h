@@ -25,14 +25,12 @@ enum class ImageFlagBits : u32 {
     Strong = 1 << 5,      ///< Exists in the image table, the dimensions are can be trusted
     Registered = 1 << 6,  ///< True when the image is registered
     Picked = 1 << 7,      ///< Temporary flag to mark the image as picked
-    Remapped = 1 << 8,    ///< Image has been remapped.
-    Sparse = 1 << 9,      ///< Image has non continous submemory.
 
     // Garbage Collection Flags
-    BadOverlap = 1 << 10, ///< This image overlaps other but doesn't fit, has higher
-                          ///< garbage collection priority
-    Alias = 1 << 11,      ///< This image has aliases and has priority on garbage
-                          ///< collection
+    BadOverlap = 1 << 8, ///< This image overlaps other but doesn't fit, has higher
+                         ///< garbage collection priority
+    Alias = 1 << 9,      ///< This image has aliases and has priority on garbage
+                         ///< collection
 };
 DECLARE_ENUM_FLAG_OPERATORS(ImageFlagBits)
 
@@ -57,12 +55,6 @@ struct ImageBase {
     [[nodiscard]] bool Overlaps(VAddr overlap_cpu_addr, size_t overlap_size) const noexcept {
         const VAddr overlap_end = overlap_cpu_addr + overlap_size;
         return cpu_addr < overlap_end && overlap_cpu_addr < cpu_addr_end;
-    }
-
-    [[nodiscard]] bool OverlapsGPU(GPUVAddr overlap_gpu_addr, size_t overlap_size) const noexcept {
-        const VAddr overlap_end = overlap_gpu_addr + overlap_size;
-        const GPUVAddr gpu_addr_end = gpu_addr + guest_size_bytes;
-        return gpu_addr < overlap_end && overlap_gpu_addr < gpu_addr_end;
     }
 
     void CheckBadOverlapState();
@@ -92,29 +84,6 @@ struct ImageBase {
 
     std::vector<AliasedImage> aliased_images;
     std::vector<ImageId> overlapping_images;
-    ImageMapId map_view_id{};
-};
-
-struct ImageMapView {
-    explicit ImageMapView(GPUVAddr gpu_addr, VAddr cpu_addr, size_t size, ImageId image_id);
-
-    [[nodiscard]] bool Overlaps(VAddr overlap_cpu_addr, size_t overlap_size) const noexcept {
-        const VAddr overlap_end = overlap_cpu_addr + overlap_size;
-        const VAddr cpu_addr_end = cpu_addr + size;
-        return cpu_addr < overlap_end && overlap_cpu_addr < cpu_addr_end;
-    }
-
-    [[nodiscard]] bool OverlapsGPU(GPUVAddr overlap_gpu_addr, size_t overlap_size) const noexcept {
-        const GPUVAddr overlap_end = overlap_gpu_addr + overlap_size;
-        const GPUVAddr gpu_addr_end = gpu_addr + size;
-        return gpu_addr < overlap_end && overlap_gpu_addr < gpu_addr_end;
-    }
-
-    GPUVAddr gpu_addr;
-    VAddr cpu_addr;
-    size_t size;
-    ImageId image_id;
-    bool picked{};
 };
 
 struct ImageAllocBase {

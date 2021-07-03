@@ -664,16 +664,6 @@ LevelArray CalculateMipLevelOffsets(const ImageInfo& info) noexcept {
     return offsets;
 }
 
-LevelArray CalculateMipLevelSizes(const ImageInfo& info) noexcept {
-    const u32 num_levels = info.resources.levels;
-    const LevelInfo level_info = MakeLevelInfo(info);
-    LevelArray sizes{};
-    for (u32 level = 0; level < num_levels; ++level) {
-        sizes[level] = CalculateLevelSize(level_info, level);
-    }
-    return sizes;
-}
-
 std::vector<u32> CalculateSliceOffsets(const ImageInfo& info) {
     ASSERT(info.type == ImageType::e3D);
     std::vector<u32> offsets;
@@ -786,20 +776,14 @@ std::vector<ImageCopy> MakeShrinkImageCopies(const ImageInfo& dst, const ImageIn
     return copies;
 }
 
-bool IsValidEntry(const Tegra::MemoryManager& gpu_memory, const TICEntry& config) {
-    const GPUVAddr address = config.Address();
-    if (address == 0) {
+bool IsValidAddress(const Tegra::MemoryManager& gpu_memory, const TICEntry& config) {
+    if (config.Address() == 0) {
         return false;
     }
-    if (address > (1ULL << 48)) {
+    if (config.Address() > (u64(1) << 48)) {
         return false;
     }
-    if (gpu_memory.GpuToCpuAddress(address).has_value()) {
-        return true;
-    }
-    const ImageInfo info{config};
-    const size_t guest_size_bytes = CalculateGuestSizeInBytes(info);
-    return gpu_memory.GpuToCpuAddress(address, guest_size_bytes).has_value();
+    return gpu_memory.GpuToCpuAddress(config.Address()).has_value();
 }
 
 std::vector<BufferImageCopy> UnswizzleImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr,

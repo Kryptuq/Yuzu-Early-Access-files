@@ -82,7 +82,6 @@ public:
     void OnCPUWrite(VAddr addr, u64 size) override;
     void SyncGuestHost() override;
     void UnmapMemory(VAddr addr, u64 size) override;
-    void ModifyGPUMemory(GPUVAddr addr, u64 size) override;
     void SignalSemaphore(GPUVAddr addr, u32 value) override;
     void SignalSyncPoint(u32 value) override;
     void ReleaseFences() override;

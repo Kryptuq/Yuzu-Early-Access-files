@@ -341,6 +341,20 @@ void ApplySwizzle(GLuint handle, PixelFormat format, std::array<SwizzleSource, 4
 [[nodiscard]] CopyOrigin MakeCopyOrigin(VideoCommon::Offset3D offset,
                                         VideoCommon::SubresourceLayers subresource, GLenum target) {
     switch (target) {
+    case GL_TEXTURE_1D:
+        return CopyOrigin{
+            .level = static_cast<GLint>(subresource.base_level),
+            .x = static_cast<GLint>(offset.x),
+            .y = static_cast<GLint>(0),
+            .z = static_cast<GLint>(0),
+        };
+    case GL_TEXTURE_1D_ARRAY:
+        return CopyOrigin{
+            .level = static_cast<GLint>(subresource.base_level),
+            .x = static_cast<GLint>(offset.x),
+            .y = static_cast<GLint>(0),
+            .z = static_cast<GLint>(subresource.base_layer),
+        };
     case GL_TEXTURE_2D_ARRAY:
     case GL_TEXTURE_2D_MULTISAMPLE_ARRAY:
         return CopyOrigin{
@@ -366,6 +380,18 @@ void ApplySwizzle(GLuint handle, PixelFormat format, std::array<SwizzleSource, 4
                                         VideoCommon::SubresourceLayers dst_subresource,
                                         GLenum target) {
     switch (target) {
+    case GL_TEXTURE_1D:
+        return CopyRegion{
+            .width = static_cast<GLsizei>(extent.width),
+            .height = static_cast<GLsizei>(1),
+            .depth = static_cast<GLsizei>(1),
+        };
+    case GL_TEXTURE_1D_ARRAY:
+        return CopyRegion{
+            .width = static_cast<GLsizei>(extent.width),
+            .height = static_cast<GLsizei>(1),
+            .depth = static_cast<GLsizei>(dst_subresource.num_layers),
+        };
     case GL_TEXTURE_2D_ARRAY:
     case GL_TEXTURE_2D_MULTISAMPLE_ARRAY:
         return CopyRegion{
