@@ -579,7 +579,7 @@ void Module::Interface::CreateDeliveryCacheStorageServiceWithApplicationId(
 std::unique_ptr<Backend> CreateBackendFromSettings([[maybe_unused]] Core::System& system,
                                                    DirectoryGetter getter) {
 #ifdef YUZU_ENABLE_BOXCAT
-    if (Settings::values.bcat_backend == "boxcat") {
+    if (Settings::values.bcat_backend.GetValue() == "boxcat") {
         return std::make_unique<Boxcat>(system.GetAppletManager(), std::move(getter));
     }
 #endif

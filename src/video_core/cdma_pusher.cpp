@@ -103,8 +103,7 @@ void CDmaPusher::ExecuteCommand(u32 state_offset, u32 data) {
         case ThiMethod::SetMethod1:
             LOG_DEBUG(Service_NVDRV, "NVDEC method 0x{:X}",
                       static_cast<u32>(nvdec_thi_state.method_0));
-            nvdec_processor->ProcessMethod(static_cast<Nvdec::Method>(nvdec_thi_state.method_0),
-                                           data);
+            nvdec_processor->ProcessMethod(nvdec_thi_state.method_0, data);
             break;
         default:
             break;

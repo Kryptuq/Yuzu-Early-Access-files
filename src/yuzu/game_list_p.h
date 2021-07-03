@@ -80,7 +80,7 @@ public:
         setData(qulonglong(program_id), ProgramIdRole);
         setData(game_type, FileTypeRole);
 
-        const u32 size = UISettings::values.icon_size;
+        const u32 size = UISettings::values.icon_size.GetValue();
 
         QPixmap picture;
         if (!picture.loadFromData(picture_data.data(), static_cast<u32>(picture_data.size()))) {
@@ -108,8 +108,8 @@ public:
                 data(TitleRole).toString(),
             }};
 
-            const auto& row1 = row_data.at(UISettings::values.row_1_text_id);
-            const int row2_id = UISettings::values.row_2_text_id;
+            const auto& row1 = row_data.at(UISettings::values.row_1_text_id.GetValue());
+            const int row2_id = UISettings::values.row_2_text_id.GetValue();
 
             if (role == SortRole) {
                 return row1.toLower();
@@ -233,7 +233,8 @@ public:
         UISettings::GameDir* game_dir = &directory;
         setData(QVariant(UISettings::values.game_dirs.indexOf(directory)), GameDirRole);
 
-        const int icon_size = std::min(static_cast<int>(UISettings::values.icon_size), 64);
+        const int icon_size =
+            std::min(static_cast<int>(UISettings::values.icon_size.GetValue()), 64);
         switch (dir_type) {
         case GameListItemType::SdmcDir:
             setData(
@@ -294,7 +295,8 @@ public:
     explicit GameListAddDir() {
         setData(type(), TypeRole);
 
-        const int icon_size = std::min(static_cast<int>(UISettings::values.icon_size), 64);
+        const int icon_size =
+            std::min(static_cast<int>(UISettings::values.icon_size.GetValue()), 64);
         setData(QIcon::fromTheme(QStringLiteral("plus"))
                     .pixmap(icon_size)
                     .scaled(icon_size, icon_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation),
@@ -316,7 +318,8 @@ public:
     explicit GameListFavorites() {
         setData(type(), TypeRole);
 
-        const int icon_size = std::min(static_cast<int>(UISettings::values.icon_size), 64);
+        const int icon_size =
+            std::min(static_cast<int>(UISettings::values.icon_size.GetValue()), 64);
         setData(QIcon::fromTheme(QStringLiteral("star"))
                     .pixmap(icon_size)
                     .scaled(icon_size, icon_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation),

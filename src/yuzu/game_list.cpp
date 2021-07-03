@@ -244,7 +244,8 @@ void GameList::OnUpdateThemedIcons() {
     for (int i = 0; i < item_model->invisibleRootItem()->rowCount(); i++) {
         QStandardItem* child = item_model->invisibleRootItem()->child(i);
 
-        const int icon_size = std::min(static_cast<int>(UISettings::values.icon_size), 64);
+        const int icon_size =
+            std::min(static_cast<int>(UISettings::values.icon_size.GetValue()), 64);
         switch (child->data(GameListItem::TypeRole).value<GameListItemType>()) {
         case GameListItemType::SdmcDir:
             child->setData(

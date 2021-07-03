@@ -10,10 +10,12 @@
 #include <map>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "common/common_types.h"
 #include "common/settings_input.h"
+#include "input_common/udp/client.h"
 
 namespace Settings {
 
@@ -34,68 +36,236 @@ enum class CPUAccuracy : u32 {
     DebugMode = 2,
 };
 
+/** The BasicSetting class is a simple resource manager. It defines a label and default value
+ * alongside the actual value of the setting for simpler and less-error prone use with frontend
+ * configurations. Setting a default value and label is required, though subclasses may deviate from
+ * this requirement.
+ */
 template <typename Type>
-class Setting final {
+class BasicSetting {
+protected:
+    BasicSetting() = default;
+
+    /**
+     * Only sets the setting to the given initializer, leaving the other members to their default
+     * initializers.
+     *
+     * @param global_val Initial value of the setting
+     */
+    explicit BasicSetting(const Type& global_val) : global{global_val} {}
+
 public:
-    Setting() = default;
-    explicit Setting(Type val) : global{val} {}
-    ~Setting() = default;
-    void SetGlobal(bool to_global) {
-        use_global = to_global;
-    }
-    bool UsingGlobal() const {
-        return use_global;
-    }
-    Type GetValue(bool need_global = false) const {
-        if (use_global || need_global) {
-            return global;
-        }
-        return local;
-    }
-    void SetValue(const Type& value) {
-        if (use_global) {
-            global = value;
-        } else {
-            local = value;
-        }
+    /**
+     * Sets a default value, label, and setting value.
+     *
+     * @param default_val Intial value of the setting, and default value of the setting
+     * @param name Label for the setting
+     */
+    explicit BasicSetting(const Type& default_val, const std::string& name)
+        : default_value{default_val}, global{default_val}, label{name} {}
+    ~BasicSetting() = default;
+
+    /**
+     *  Returns a reference to the setting's value.
+     *
+     * @returns A reference to the setting
+     */
+    [[nodiscard]] const Type& GetValue() const {
+        return global;
     }
 
-private:
-    bool use_global = true;
-    Type global{};
-    Type local{};
+    /**
+     * Sets the setting to the given value.
+     *
+     * @param value The desired value
+     */
+    void SetValue(const Type& value) {
+        Type temp{value};
+        std::swap(global, temp);
+    }
+
+    /**
+     * Returns the value that this setting was created with.
+     *
+     * @returns A reference to the default value
+     */
+    [[nodiscard]] const Type& GetDefault() const {
+        return default_value;
+    }
+
+    /**
+     * Returns the label this setting was created with.
+     *
+     * @returns A reference to the label
+     */
+    [[nodiscard]] const std::string& GetLabel() const {
+        return label;
+    }
+
+    /**
+     * Assigns a value to the setting.
+     *
+     * @param value The desired setting value
+     *
+     * @returns A reference to the setting
+     */
+    const Type& operator=(const Type& value) {
+        Type temp{value};
+        std::swap(global, temp);
+        return global;
+    }
+
+    /**
+     * Returns a reference to the setting.
+     *
+     * @returns A reference to the setting
+     */
+    explicit operator const Type&() const {
+        return global;
+    }
+
+protected:
+    const Type default_value{}; ///< The default value
+    Type global{};              ///< The setting
+    const std::string label{};  ///< The setting's label
 };
 
 /**
- * The InputSetting class allows for getting a reference to either the global or local members.
+ * The Setting class is a slightly more complex version of the BasicSetting class. This adds a
+ * custom setting to switch to when a guest application specifically requires it. The effect is that
+ * other components of the emulator can access the setting's intended value without any need for the
+ * component to ask whether the custom or global setting is needed at the moment.
+ *
+ * By default, the global setting is used.
+ *
+ * Like the BasicSetting, this requires setting a default value and label to use.
+ */
+template <typename Type>
+class Setting final : public BasicSetting<Type> {
+public:
+    /**
+     * Sets a default value, label, and setting value.
+     *
+     * @param default_val Intial value of the setting, and default value of the setting
+     * @param name Label for the setting
+     */
+    explicit Setting(const Type& default_val, const std::string& name)
+        : BasicSetting<Type>(default_val, name) {}
+    ~Setting() = default;
+
+    /**
+     * Tells this setting to represent either the global or custom setting when other member
+     * functions are used. Setting to_global to true means using the global setting, to false
+     * false for the custom setting.
+     *
+     * @param to_global Whether to use the global or custom setting.
+     */
+    void SetGlobal(bool to_global) {
+        use_global = to_global;
+    }
+
+    /**
+     * Returns whether this setting is using the global setting or not.
+     *
+     * @returns The global state
+     */
+    [[nodiscard]] bool UsingGlobal() const {
+        return use_global;
+    }
+
+    /**
+     * Returns either the global or custom setting depending on the values of this setting's global
+     * state or if the global value was specifically requested.
+     *
+     * @param need_global Request global value regardless of setting's state; defaults to false
+     *
+     * @returns The required value of the setting
+     */
+    [[nodiscard]] const Type& GetValue(bool need_global = false) const {
+        if (use_global || need_global) {
+            return this->global;
+        }
+        return custom;
+    }
+
+    /**
+     * Sets the current setting value depending on the global state.
+     *
+     * @param value The new value
+     */
+    void SetValue(const Type& value) {
+        Type temp{value};
+        if (use_global) {
+            std::swap(this->global, temp);
+        } else {
+            std::swap(custom, temp);
+        }
+    }
+
+    /**
+     * Assigns the current setting value depending on the global state.
+     *
+     * @param value The new value
+     *
+     * @returns A reference to the current setting value
+     */
+    const Type& operator=(const Type& value) {
+        Type temp{value};
+        if (use_global) {
+            std::swap(this->global, temp);
+            return this->global;
+        }
+        std::swap(custom, temp);
+        return custom;
+    }
+
+    /**
+     * Returns the current setting value depending on the global state.
+     *
+     * @returns A reference to the current setting value
+     */
+    explicit operator const Type&() const {
+        if (use_global) {
+            return this->global;
+        }
+        return custom;
+    }
+
+private:
+    bool use_global{true}; ///< The setting's global state
+    Type custom{};         ///< The custom value of the setting
+};
+
+/**
+ * The InputSetting class allows for getting a reference to either the global or custom members.
  * This is required as we cannot easily modify the values of user-defined types within containers
  * using the SetValue() member function found in the Setting class. The primary purpose of this
- * class is to store an array of 10 PlayerInput structs for both the global and local (per-game)
- * setting and allows for easily accessing and modifying both settings.
+ * class is to store an array of 10 PlayerInput structs for both the global and custom setting and
+ * allows for easily accessing and modifying both settings.
  */
 template <typename Type>
 class InputSetting final {
 public:
     InputSetting() = default;
-    explicit InputSetting(Type val) : global{val} {}
+    explicit InputSetting(Type val) : BasicSetting<Type>(val) {}
     ~InputSetting() = default;
     void SetGlobal(bool to_global) {
         use_global = to_global;
     }
-    bool UsingGlobal() const {
+    [[nodiscard]] bool UsingGlobal() const {
         return use_global;
     }
-    Type& GetValue(bool need_global = false) {
+    [[nodiscard]] Type& GetValue(bool need_global = false) {
         if (use_global || need_global) {
             return global;
         }
-        return local;
+        return custom;
     }
 
 private:
-    bool use_global = true;
-    Type global{};
-    Type local{};
+    bool use_global{true}; ///< The setting's global state
+    Type global{};         ///< The setting
+    Type custom{};         ///< The custom setting value
 };
 
 struct TouchFromButtonMap {
@@ -105,144 +275,155 @@ struct TouchFromButtonMap {
 
 struct Values {
     // Audio
-    std::string audio_device_id;
-    std::string sink_id;
-    bool audio_muted;
-    Setting<bool> enable_audio_stretching;
-    Setting<float> volume;
+    BasicSetting<std::string> audio_device_id{"auto", "output_device"};
+    BasicSetting<std::string> sink_id{"auto", "output_engine"};
+    BasicSetting<bool> audio_muted{false, "audio_muted"};
+    Setting<bool> enable_audio_stretching{true, "enable_audio_stretching"};
+    Setting<float> volume{1.0f, "volume"};
 
     // Core
-    Setting<bool> use_multi_core;
+    Setting<bool> use_multi_core{true, "use_multi_core"};
 
     // Cpu
-    Setting<CPUAccuracy> cpu_accuracy;
+    Setting<CPUAccuracy> cpu_accuracy{CPUAccuracy::Accurate, "cpu_accuracy"};
 
-    bool cpuopt_page_tables;
-    bool cpuopt_block_linking;
-    bool cpuopt_return_stack_buffer;
-    bool cpuopt_fast_dispatcher;
-    bool cpuopt_context_elimination;
-    bool cpuopt_const_prop;
-    bool cpuopt_misc_ir;
-    bool cpuopt_reduce_misalign_checks;
-    bool cpuopt_fastmem;
+    BasicSetting<bool> cpuopt_page_tables{true, "cpuopt_page_tables"};
+    BasicSetting<bool> cpuopt_block_linking{true, "cpuopt_block_linking"};
+    BasicSetting<bool> cpuopt_return_stack_buffer{true, "cpuopt_return_stack_buffer"};
+    BasicSetting<bool> cpuopt_fast_dispatcher{true, "cpuopt_fast_dispatcher"};
+    BasicSetting<bool> cpuopt_context_elimination{true, "cpuopt_context_elimination"};
+    BasicSetting<bool> cpuopt_const_prop{true, "cpuopt_const_prop"};
+    BasicSetting<bool> cpuopt_misc_ir{true, "cpuopt_misc_ir"};
+    BasicSetting<bool> cpuopt_reduce_misalign_checks{true, "cpuopt_reduce_misalign_checks"};
+    BasicSetting<bool> cpuopt_fastmem{true, "cpuopt_fastmem"};
 
-    Setting<bool> cpuopt_unsafe_unfuse_fma;
-    Setting<bool> cpuopt_unsafe_reduce_fp_error;
-    Setting<bool> cpuopt_unsafe_ignore_standard_fpcr;
-    Setting<bool> cpuopt_unsafe_inaccurate_nan;
-    Setting<bool> cpuopt_unsafe_fastmem_check;
+    Setting<bool> cpuopt_unsafe_unfuse_fma{true, "cpuopt_unsafe_unfuse_fma"};
+    Setting<bool> cpuopt_unsafe_reduce_fp_error{true, "cpuopt_unsafe_reduce_fp_error"};
+    Setting<bool> cpuopt_unsafe_ignore_standard_fpcr{true, "cpuopt_unsafe_ignore_standard_fpcr"};
+    Setting<bool> cpuopt_unsafe_inaccurate_nan{true, "cpuopt_unsafe_inaccurate_nan"};
+    Setting<bool> cpuopt_unsafe_fastmem_check{true, "cpuopt_unsafe_fastmem_check"};
 
     // Renderer
-    Setting<RendererBackend> renderer_backend;
-    bool renderer_debug;
-    Setting<int> vulkan_device;
+    Setting<RendererBackend> renderer_backend{RendererBackend::OpenGL, "backend"};
+    BasicSetting<bool> renderer_debug{false, "debug"};
+    Setting<int> vulkan_device{0, "vulkan_device"};
 
-    Setting<u16> resolution_factor{1};
-    Setting<int> fullscreen_mode;
-    Setting<int> aspect_ratio;
-    Setting<int> max_anisotropy;
-    Setting<bool> use_frame_limit;
-    Setting<u16> frame_limit;
-    Setting<bool> use_disk_shader_cache;
-    Setting<GPUAccuracy> gpu_accuracy;
-    Setting<bool> use_asynchronous_gpu_emulation;
-    Setting<bool> use_nvdec_emulation;
-    Setting<bool> accelerate_astc;
-    Setting<bool> use_vsync;
-    Setting<bool> disable_fps_limit;
-    Setting<bool> use_assembly_shaders;
-    Setting<bool> use_asynchronous_shaders;
-    Setting<bool> use_fast_gpu_time;
-    Setting<bool> use_caches_gc;
+    Setting<u16> resolution_factor{1, "resolution_factor"};
+    // *nix platforms may have issues with the borderless windowed fullscreen mode.
+    // Default to exclusive fullscreen on these platforms for now.
+    Setting<int> fullscreen_mode{
+#ifdef _WIN32
+        0,
+#else
+        1,
+#endif
+        "fullscreen_mode"};
+    Setting<int> aspect_ratio{0, "aspect_ratio"};
+    Setting<int> max_anisotropy{0, "max_anisotropy"};
+    Setting<bool> use_frame_limit{true, "use_frame_limit"};
+    Setting<u16> frame_limit{100, "frame_limit"};
+    Setting<bool> use_disk_shader_cache{true, "use_disk_shader_cache"};
+    Setting<GPUAccuracy> gpu_accuracy{GPUAccuracy::High, "gpu_accuracy"};
+    Setting<bool> use_asynchronous_gpu_emulation{true, "use_asynchronous_gpu_emulation"};
+    Setting<bool> use_nvdec_emulation{true, "use_nvdec_emulation"};
+    Setting<bool> accelerate_astc{true, "accelerate_astc"};
+    Setting<bool> use_vsync{true, "use_vsync"};
+    Setting<bool> disable_fps_limit{false, "disable_fps_limit"};
+    Setting<bool> use_assembly_shaders{false, "use_assembly_shaders"};
+    Setting<bool> use_asynchronous_shaders{false, "use_asynchronous_shaders"};
+    Setting<bool> use_fast_gpu_time{true, "use_fast_gpu_time"};
+    Setting<bool> use_caches_gc{false, "use_caches_gc"};
 
-    Setting<float> bg_red;
-    Setting<float> bg_green;
-    Setting<float> bg_blue;
+    Setting<float> bg_red{0.0f, "bg_red"};
+    Setting<float> bg_green{0.0f, "bg_green"};
+    Setting<float> bg_blue{0.0f, "bg_blue"};
 
     // System
-    Setting<std::optional<u32>> rng_seed;
+    Setting<std::optional<u32>> rng_seed{std::optional<u32>(), "rng_seed"};
     // Measured in seconds since epoch
     std::optional<std::chrono::seconds> custom_rtc;
     // Set on game boot, reset on stop. Seconds difference between current time and `custom_rtc`
     std::chrono::seconds custom_rtc_differential;
 
-    s32 current_user;
-    Setting<s32> language_index;
-    Setting<s32> region_index;
-    Setting<s32> time_zone_index;
-    Setting<s32> sound_index;
+    BasicSetting<s32> current_user{0, "current_user"};
+    Setting<s32> language_index{1, "language_index"};
+    Setting<s32> region_index{1, "region_index"};
+    Setting<s32> time_zone_index{0, "time_zone_index"};
+    Setting<s32> sound_index{1, "sound_index"};
 
     // Controls
     InputSetting<std::array<PlayerInput, 10>> players;
 
-    Setting<bool> use_docked_mode;
+    Setting<bool> use_docked_mode{true, "use_docked_mode"};
 
-    Setting<bool> vibration_enabled;
-    Setting<bool> enable_accurate_vibrations;
+    Setting<bool> vibration_enabled{true, "vibration_enabled"};
+    Setting<bool> enable_accurate_vibrations{false, "enable_accurate_vibrations"};
 
-    Setting<bool> motion_enabled;
-    std::string motion_device;
-    std::string udp_input_servers;
+    Setting<bool> motion_enabled{true, "motion_enabled"};
+    BasicSetting<std::string> motion_device{"engine:motion_emu,update_period:100,sensitivity:0.01",
+                                            "motion_device"};
+    BasicSetting<std::string> udp_input_servers{InputCommon::CemuhookUDP::DEFAULT_SRV,
+                                                "udp_input_servers"};
 
-    bool mouse_panning;
-    float mouse_panning_sensitivity;
-    bool mouse_enabled;
+    BasicSetting<bool> mouse_panning{false, "mouse_panning"};
+    BasicSetting<float> mouse_panning_sensitivity{1.0f, "mouse_panning_sensitivity"};
+    BasicSetting<bool> mouse_enabled{false, "mouse_enabled"};
     std::string mouse_device;
     MouseButtonsRaw mouse_buttons;
 
-    bool emulate_analog_keyboard;
-    bool keyboard_enabled;
+    BasicSetting<bool> emulate_analog_keyboard{false, "emulate_analog_keyboard"};
+    BasicSetting<bool> keyboard_enabled{false, "keyboard_enabled"};
     KeyboardKeysRaw keyboard_keys;
     KeyboardModsRaw keyboard_mods;
 
-    bool debug_pad_enabled;
+    BasicSetting<bool> debug_pad_enabled{false, "debug_pad_enabled"};
     ButtonsRaw debug_pad_buttons;
     AnalogsRaw debug_pad_analogs;
 
     TouchscreenInput touchscreen;
 
-    bool use_touch_from_button;
-    std::string touch_device;
-    int touch_from_button_map_index;
+    BasicSetting<bool> use_touch_from_button{false, "use_touch_from_button"};
+    BasicSetting<std::string> touch_device{"min_x:100,min_y:50,max_x:1800,max_y:850",
+                                           "touch_device"};
+    BasicSetting<int> touch_from_button_map_index{0, "touch_from_button_map"};
     std::vector<TouchFromButtonMap> touch_from_button_maps;
 
     std::atomic_bool is_device_reload_pending{true};
 
     // Data Storage
-    bool use_virtual_sd;
-    bool gamecard_inserted;
-    bool gamecard_current_game;
-    std::string gamecard_path;
+    BasicSetting<bool> use_virtual_sd{true, "use_virtual_sd"};
+    BasicSetting<bool> gamecard_inserted{false, "gamecard_inserted"};
+    BasicSetting<bool> gamecard_current_game{false, "gamecard_current_game"};
+    BasicSetting<std::string> gamecard_path{std::string(), "gamecard_path"};
 
     // Debugging
     bool record_frame_times;
-    bool use_gdbstub;
-    u16 gdbstub_port;
-    std::string program_args;
-    bool dump_exefs;
-    bool dump_nso;
-    bool enable_fs_access_log;
-    bool reporting_services;
-    bool quest_flag;
-    bool disable_macro_jit;
-    bool extended_logging;
-    bool use_debug_asserts;
-    bool use_auto_stub;
+    BasicSetting<bool> use_gdbstub{false, "use_gdbstub"};
+    BasicSetting<u16> gdbstub_port{0, "gdbstub_port"};
+    BasicSetting<std::string> program_args{std::string(), "program_args"};
+    BasicSetting<bool> dump_exefs{false, "dump_exefs"};
+    BasicSetting<bool> dump_nso{false, "dump_nso"};
+    BasicSetting<bool> enable_fs_access_log{false, "enable_fs_access_log"};
+    BasicSetting<bool> reporting_services{false, "reporting_services"};
+    BasicSetting<bool> quest_flag{false, "quest_flag"};
+    BasicSetting<bool> disable_macro_jit{false, "disable_macro_jit"};
+    BasicSetting<bool> extended_logging{false, "extended_logging"};
+    BasicSetting<bool> use_debug_asserts{false, "use_debug_asserts"};
+    BasicSetting<bool> use_auto_stub{false, "use_auto_stub"};
 
     // Miscellaneous
-    std::string log_filter;
-    bool use_dev_keys;
+    BasicSetting<std::string> log_filter{"*:Info", "log_filter"};
+    BasicSetting<bool> use_dev_keys{false, "use_dev_keys"};
 
     // Services
-    std::string bcat_backend;
-    bool bcat_boxcat_local;
+    BasicSetting<std::string> bcat_backend{"none", "bcat_backend"};
+    BasicSetting<bool> bcat_boxcat_local{false, "bcat_boxcat_local"};
 
     // WebService
-    bool enable_telemetry;
-    std::string web_api_url;
-    std::string yuzu_username;
-    std::string yuzu_token;
+    BasicSetting<bool> enable_telemetry{true, "enable_telemetry"};
+    BasicSetting<std::string> web_api_url{"https://api.yuzu-emu.org", "web_api_url"};
+    BasicSetting<std::string> yuzu_username{std::string(), "yuzu_username"};
+    BasicSetting<std::string> yuzu_token{std::string(), "yuzu_token"};
 
     // Add-Ons
     std::map<u64, std::vector<std::string>> disabled_addons;

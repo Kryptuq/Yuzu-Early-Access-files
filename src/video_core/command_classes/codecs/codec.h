@@ -42,14 +42,14 @@ class VP9;
 
 class Codec {
 public:
-    explicit Codec(GPU& gpu);
+    explicit Codec(GPU& gpu, const NvdecCommon::NvdecRegisters& regs);
     ~Codec();
+
+    /// Initialize the codec, returning success or failure
+    void Initialize();
 
     /// Sets NVDEC video stream codec
     void SetTargetCodec(NvdecCommon::VideoCodec codec);
-
-    /// Populate NvdecRegisters state with argument value at the provided offset
-    void StateWrite(u32 offset, u64 arguments);
 
     /// Call decoders to construct headers, decode AVFrame with ffmpeg
     void Decode();
@@ -59,6 +59,8 @@ public:
 
     /// Returns the value of current_codec
     [[nodiscard]] NvdecCommon::VideoCodec GetCurrentCodec() const;
+    /// Return name of the current codec
+    [[nodiscard]] std::string_view GetCurrentCodecName() const;
 
 private:
     bool initialized{};
@@ -68,10 +70,10 @@ private:
     AVCodecContext* av_codec_ctx{nullptr};
 
     GPU& gpu;
+    const NvdecCommon::NvdecRegisters& state;
     std::unique_ptr<Decoder::H264> h264_decoder;
     std::unique_ptr<Decoder::VP9> vp9_decoder;
 
-    NvdecCommon::NvdecRegisters state{};
     std::queue<AVFramePtr> av_frames{};
 };
 

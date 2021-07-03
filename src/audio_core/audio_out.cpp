@@ -30,7 +30,8 @@ StreamPtr AudioOut::OpenStream(Core::Timing::CoreTiming& core_timing, u32 sample
                                u32 num_channels, std::string&& name,
                                Stream::ReleaseCallback&& release_callback) {
     if (!sink) {
-        sink = CreateSinkFromID(Settings::values.sink_id, Settings::values.audio_device_id);
+        sink = CreateSinkFromID(Settings::values.sink_id.GetValue(),
+                                Settings::values.audio_device_id.GetValue());
     }
 
     return std::make_shared<Stream>(

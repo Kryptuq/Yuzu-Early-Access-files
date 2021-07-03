@@ -354,7 +354,7 @@ void VP9::WriteMvProbabilityUpdate(VpxRangeEncoder& writer, u8 new_prob, u8 old_
 }
 
 Vp9PictureInfo VP9::GetVp9PictureInfo(const NvdecCommon::NvdecRegisters& state) {
-    PictureInfo picture_info{};
+    PictureInfo picture_info;
     gpu.MemoryManager().ReadBlock(state.picture_info_offset, &picture_info, sizeof(PictureInfo));
     Vp9PictureInfo vp9_info = picture_info.Convert();
 
@@ -370,7 +370,7 @@ Vp9PictureInfo VP9::GetVp9PictureInfo(const NvdecCommon::NvdecRegisters& state) 
 }
 
 void VP9::InsertEntropy(u64 offset, Vp9EntropyProbs& dst) {
-    EntropyProbs entropy{};
+    EntropyProbs entropy;
     gpu.MemoryManager().ReadBlock(offset, &entropy, sizeof(EntropyProbs));
     entropy.Convert(dst);
 }

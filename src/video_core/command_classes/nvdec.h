@@ -14,16 +14,11 @@ class GPU;
 
 class Nvdec {
 public:
-    enum class Method : u32 {
-        SetVideoCodec = 0x80,
-        Execute = 0xc0,
-    };
-
     explicit Nvdec(GPU& gpu);
     ~Nvdec();
 
     /// Writes the method into the state, Invoke Execute() if encountered
-    void ProcessMethod(Method method, u32 argument);
+    void ProcessMethod(u32 method, u32 argument);
 
     /// Return most recently decoded frame
     [[nodiscard]] AVFramePtr GetFrame();
@@ -33,6 +28,7 @@ private:
     void Execute();
 
     GPU& gpu;
+    NvdecCommon::NvdecRegisters state;
     std::unique_ptr<Codec> codec;
 };
 } // namespace Tegra

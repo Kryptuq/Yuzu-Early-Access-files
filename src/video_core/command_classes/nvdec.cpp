@@ -8,22 +8,21 @@
 
 namespace Tegra {
 
-Nvdec::Nvdec(GPU& gpu_) : gpu(gpu_), codec(std::make_unique<Codec>(gpu)) {}
+#define NVDEC_REG_INDEX(field_name)                                                                \
+    (offsetof(NvdecCommon::NvdecRegisters, field_name) / sizeof(u64))
+
+Nvdec::Nvdec(GPU& gpu_) : gpu(gpu_), state{}, codec(std::make_unique<Codec>(gpu, state)) {}
 
 Nvdec::~Nvdec() = default;
 
-void Nvdec::ProcessMethod(Method method, u32 argument) {
-    if (method == Method::SetVideoCodec) {
-        codec->StateWrite(static_cast<u32>(method), argument);
-    } else {
-        codec->StateWrite(static_cast<u32>(method), static_cast<u64>(argument) << 8);
-    }
+void Nvdec::ProcessMethod(u32 method, u32 argument) {
+    state.reg_array[method] = static_cast<u64>(argument) << 8;
 
     switch (method) {
-    case Method::SetVideoCodec:
+    case NVDEC_REG_INDEX(set_codec_id):
         codec->SetTargetCodec(static_cast<NvdecCommon::VideoCodec>(argument));
         break;
-    case Method::Execute:
+    case NVDEC_REG_INDEX(execute):
         Execute();
         break;
     }

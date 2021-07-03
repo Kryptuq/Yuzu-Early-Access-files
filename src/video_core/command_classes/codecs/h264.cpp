@@ -45,134 +45,129 @@ H264::~H264() = default;
 
 const std::vector<u8>& H264::ComposeFrameHeader(const NvdecCommon::NvdecRegisters& state,
                                                 bool is_first_frame) {
-    H264DecoderContext context{};
+    H264DecoderContext context;
     gpu.MemoryManager().ReadBlock(state.picture_info_offset, &context, sizeof(H264DecoderContext));
 
-    const s32 frame_number = static_cast<s32>((context.h264_parameter_set.flags >> 46) & 0x1ffff);
+    const s64 frame_number = context.h264_parameter_set.frame_number.Value();
     if (!is_first_frame && frame_number != 0) {
-        frame.resize(context.frame_data_size);
-
+        frame.resize(context.stream_len);
         gpu.MemoryManager().ReadBlock(state.frame_bitstream_offset, frame.data(), frame.size());
-    } else {
-        /// Encode header
-        H264BitWriter writer{};
-        writer.WriteU(1, 24);
-        writer.WriteU(0, 1);
-        writer.WriteU(3, 2);
-        writer.WriteU(7, 5);
-        writer.WriteU(100, 8);
-        writer.WriteU(0, 8);
-        writer.WriteU(31, 8);
-        writer.WriteUe(0);
-        const auto chroma_format_idc =
-            static_cast<u32>((context.h264_parameter_set.flags >> 12) & 3);
-        writer.WriteUe(chroma_format_idc);
-        if (chroma_format_idc == 3) {
-            writer.WriteBit(false);
-        }
-
-        writer.WriteUe(0);
-        writer.WriteUe(0);
-        writer.WriteBit(false); // QpprimeYZeroTransformBypassFlag
-        writer.WriteBit(false); // Scaling matrix present flag
-
-        const auto order_cnt_type = static_cast<u32>((context.h264_parameter_set.flags >> 14) & 3);
-        writer.WriteUe(static_cast<u32>((context.h264_parameter_set.flags >> 8) & 0xf));
-        writer.WriteUe(order_cnt_type);
-        if (order_cnt_type == 0) {
-            writer.WriteUe(context.h264_parameter_set.log2_max_pic_order_cnt);
-        } else if (order_cnt_type == 1) {
-            writer.WriteBit(context.h264_parameter_set.delta_pic_order_always_zero_flag != 0);
-
-            writer.WriteSe(0);
-            writer.WriteSe(0);
-            writer.WriteUe(0);
-        }
-
-        const s32 pic_height = context.h264_parameter_set.pic_height_in_map_units /
-                               (context.h264_parameter_set.frame_mbs_only_flag ? 1 : 2);
-
-        writer.WriteUe(16);
-        writer.WriteBit(false);
-        writer.WriteUe(context.h264_parameter_set.pic_width_in_mbs - 1);
-        writer.WriteUe(pic_height - 1);
-        writer.WriteBit(context.h264_parameter_set.frame_mbs_only_flag != 0);
-
-        if (!context.h264_parameter_set.frame_mbs_only_flag) {
-            writer.WriteBit(((context.h264_parameter_set.flags >> 0) & 1) != 0);
-        }
-
-        writer.WriteBit(((context.h264_parameter_set.flags >> 1) & 1) != 0);
-        writer.WriteBit(false); // Frame cropping flag
-        writer.WriteBit(false); // VUI parameter present flag
-
-        writer.End();
-
-        // H264 PPS
-        writer.WriteU(1, 24);
-        writer.WriteU(0, 1);
-        writer.WriteU(3, 2);
-        writer.WriteU(8, 5);
-
-        writer.WriteUe(0);
-        writer.WriteUe(0);
-
-        writer.WriteBit(context.h264_parameter_set.entropy_coding_mode_flag != 0);
-        writer.WriteBit(false);
-        writer.WriteUe(0);
-        writer.WriteUe(context.h264_parameter_set.num_refidx_l0_default_active);
-        writer.WriteUe(context.h264_parameter_set.num_refidx_l1_default_active);
-        writer.WriteBit(((context.h264_parameter_set.flags >> 2) & 1) != 0);
-        writer.WriteU(static_cast<s32>((context.h264_parameter_set.flags >> 32) & 0x3), 2);
-        s32 pic_init_qp = static_cast<s32>((context.h264_parameter_set.flags >> 16) & 0x3f);
-        pic_init_qp = (pic_init_qp << 26) >> 26;
-        writer.WriteSe(pic_init_qp);
-        writer.WriteSe(0);
-        s32 chroma_qp_index_offset =
-            static_cast<s32>((context.h264_parameter_set.flags >> 22) & 0x1f);
-        chroma_qp_index_offset = (chroma_qp_index_offset << 27) >> 27;
-
-        writer.WriteSe(chroma_qp_index_offset);
-        writer.WriteBit(context.h264_parameter_set.deblocking_filter_control_flag != 0);
-        writer.WriteBit(((context.h264_parameter_set.flags >> 3) & 1) != 0);
-        writer.WriteBit(context.h264_parameter_set.redundant_pic_count_flag != 0);
-        writer.WriteBit(context.h264_parameter_set.transform_8x8_mode_flag != 0);
-
-        writer.WriteBit(true);
-
-        for (s32 index = 0; index < 6; index++) {
-            writer.WriteBit(true);
-            const auto matrix_x4 =
-                std::vector<u8>(context.scaling_matrix_4.begin(), context.scaling_matrix_4.end());
-            writer.WriteScalingList(matrix_x4, index * 16, 16);
-        }
-
-        if (context.h264_parameter_set.transform_8x8_mode_flag) {
-            for (s32 index = 0; index < 2; index++) {
-                writer.WriteBit(true);
-                const auto matrix_x8 = std::vector<u8>(context.scaling_matrix_8.begin(),
-                                                       context.scaling_matrix_8.end());
-
-                writer.WriteScalingList(matrix_x8, index * 64, 64);
-            }
-        }
-
-        s32 chroma_qp_index_offset2 =
-            static_cast<s32>((context.h264_parameter_set.flags >> 27) & 0x1f);
-        chroma_qp_index_offset2 = (chroma_qp_index_offset2 << 27) >> 27;
-
-        writer.WriteSe(chroma_qp_index_offset2);
-
-        writer.End();
-
-        const auto& encoded_header = writer.GetByteArray();
-        frame.resize(encoded_header.size() + context.frame_data_size);
-        std::memcpy(frame.data(), encoded_header.data(), encoded_header.size());
-
-        gpu.MemoryManager().ReadBlock(state.frame_bitstream_offset,
-                                      frame.data() + encoded_header.size(),
-                                      context.frame_data_size);
+        return frame;
     }
+
+    // Encode header
+    H264BitWriter writer{};
+    writer.WriteU(1, 24);
+    writer.WriteU(0, 1);
+    writer.WriteU(3, 2);
+    writer.WriteU(7, 5);
+    writer.WriteU(100, 8);
+    writer.WriteU(0, 8);
+    writer.WriteU(31, 8);
+    writer.WriteUe(0);
+    const u32 chroma_format_idc =
+        static_cast<u32>(context.h264_parameter_set.chroma_format_idc.Value());
+    writer.WriteUe(chroma_format_idc);
+    if (chroma_format_idc == 3) {
+        writer.WriteBit(false);
+    }
+
+    writer.WriteUe(0);
+    writer.WriteUe(0);
+    writer.WriteBit(false); // QpprimeYZeroTransformBypassFlag
+    writer.WriteBit(false); // Scaling matrix present flag
+
+    writer.WriteUe(static_cast<u32>(context.h264_parameter_set.log2_max_frame_num_minus4.Value()));
+
+    const auto order_cnt_type =
+        static_cast<u32>(context.h264_parameter_set.pic_order_cnt_type.Value());
+    writer.WriteUe(order_cnt_type);
+    if (order_cnt_type == 0) {
+        writer.WriteUe(context.h264_parameter_set.log2_max_pic_order_cnt_lsb_minus4);
+    } else if (order_cnt_type == 1) {
+        writer.WriteBit(context.h264_parameter_set.delta_pic_order_always_zero_flag != 0);
+
+        writer.WriteSe(0);
+        writer.WriteSe(0);
+        writer.WriteUe(0);
+    }
+
+    const s32 pic_height = context.h264_parameter_set.frame_height_in_map_units /
+                           (context.h264_parameter_set.frame_mbs_only_flag ? 1 : 2);
+
+    writer.WriteUe(16);
+    writer.WriteBit(false);
+    writer.WriteUe(context.h264_parameter_set.pic_width_in_mbs - 1);
+    writer.WriteUe(pic_height - 1);
+    writer.WriteBit(context.h264_parameter_set.frame_mbs_only_flag != 0);
+
+    if (!context.h264_parameter_set.frame_mbs_only_flag) {
+        writer.WriteBit(context.h264_parameter_set.flags.mbaff_frame.Value() != 0);
+    }
+
+    writer.WriteBit(context.h264_parameter_set.flags.direct_8x8_inference.Value() != 0);
+    writer.WriteBit(false); // Frame cropping flag
+    writer.WriteBit(false); // VUI parameter present flag
+
+    writer.End();
+
+    // H264 PPS
+    writer.WriteU(1, 24);
+    writer.WriteU(0, 1);
+    writer.WriteU(3, 2);
+    writer.WriteU(8, 5);
+
+    writer.WriteUe(0);
+    writer.WriteUe(0);
+
+    writer.WriteBit(context.h264_parameter_set.entropy_coding_mode_flag != 0);
+    writer.WriteBit(false);
+    writer.WriteUe(0);
+    writer.WriteUe(context.h264_parameter_set.num_refidx_l0_default_active);
+    writer.WriteUe(context.h264_parameter_set.num_refidx_l1_default_active);
+    writer.WriteBit(context.h264_parameter_set.flags.weighted_pred.Value() != 0);
+    writer.WriteU(static_cast<s32>(context.h264_parameter_set.weighted_bipred_idc.Value()), 2);
+    s32 pic_init_qp = static_cast<s32>(context.h264_parameter_set.pic_init_qp_minus26.Value());
+    writer.WriteSe(pic_init_qp);
+    writer.WriteSe(0);
+    s32 chroma_qp_index_offset =
+        static_cast<s32>(context.h264_parameter_set.chroma_qp_index_offset.Value());
+
+    writer.WriteSe(chroma_qp_index_offset);
+    writer.WriteBit(context.h264_parameter_set.deblocking_filter_control_present_flag != 0);
+    writer.WriteBit(context.h264_parameter_set.flags.constrained_intra_pred.Value() != 0);
+    writer.WriteBit(context.h264_parameter_set.redundant_pic_cnt_present_flag != 0);
+    writer.WriteBit(context.h264_parameter_set.transform_8x8_mode_flag != 0);
+
+    writer.WriteBit(true);
+
+    for (s32 index = 0; index < 6; index++) {
+        writer.WriteBit(true);
+        std::span<const u8> matrix{context.weight_scale};
+        writer.WriteScalingList(matrix, index * 16, 16);
+    }
+
+    if (context.h264_parameter_set.transform_8x8_mode_flag) {
+        for (s32 index = 0; index < 2; index++) {
+            writer.WriteBit(true);
+            std::span<const u8> matrix{context.weight_scale_8x8};
+            writer.WriteScalingList(matrix, index * 64, 64);
+        }
+    }
+
+    s32 chroma_qp_index_offset2 =
+        static_cast<s32>(context.h264_parameter_set.second_chroma_qp_index_offset.Value());
+
+    writer.WriteSe(chroma_qp_index_offset2);
+
+    writer.End();
+
+    const auto& encoded_header = writer.GetByteArray();
+    frame.resize(encoded_header.size() + context.stream_len);
+    std::memcpy(frame.data(), encoded_header.data(), encoded_header.size());
+
+    gpu.MemoryManager().ReadBlock(state.frame_bitstream_offset,
+                                  frame.data() + encoded_header.size(), context.stream_len);
 
     return frame;
 }
@@ -202,7 +197,7 @@ void H264BitWriter::WriteBit(bool state) {
     WriteBits(state ? 1 : 0, 1);
 }
 
-void H264BitWriter::WriteScalingList(const std::vector<u8>& list, s32 start, s32 count) {
+void H264BitWriter::WriteScalingList(std::span<const u8> list, s32 start, s32 count) {
     std::vector<u8> scan(count);
     if (count == 16) {
         std::memcpy(scan.data(), zig_zag_scan.data(), scan.size());

@@ -43,18 +43,19 @@ void ConfigureFilesystem::setConfiguration() {
         QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::NANDDir)));
     ui->sdmc_directory_edit->setText(
         QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::SDMCDir)));
-    ui->gamecard_path_edit->setText(QString::fromStdString(Settings::values.gamecard_path));
+    ui->gamecard_path_edit->setText(
+        QString::fromStdString(Settings::values.gamecard_path.GetValue()));
     ui->dump_path_edit->setText(
         QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::DumpDir)));
     ui->load_path_edit->setText(
         QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::LoadDir)));
 
-    ui->gamecard_inserted->setChecked(Settings::values.gamecard_inserted);
-    ui->gamecard_current_game->setChecked(Settings::values.gamecard_current_game);
-    ui->dump_exefs->setChecked(Settings::values.dump_exefs);
-    ui->dump_nso->setChecked(Settings::values.dump_nso);
+    ui->gamecard_inserted->setChecked(Settings::values.gamecard_inserted.GetValue());
+    ui->gamecard_current_game->setChecked(Settings::values.gamecard_current_game.GetValue());
+    ui->dump_exefs->setChecked(Settings::values.dump_exefs.GetValue());
+    ui->dump_nso->setChecked(Settings::values.dump_nso.GetValue());
 
-    ui->cache_game_list->setChecked(UISettings::values.cache_game_list);
+    ui->cache_game_list->setChecked(UISettings::values.cache_game_list.GetValue());
 
     UpdateEnabledControls();
 }

@@ -23,8 +23,8 @@ void AVFrameDeleter(AVFrame* ptr) {
     av_free(ptr);
 }
 
-Codec::Codec(GPU& gpu_)
-    : gpu(gpu_), h264_decoder(std::make_unique<Decoder::H264>(gpu)),
+Codec::Codec(GPU& gpu_, const NvdecCommon::NvdecRegisters& regs)
+    : gpu(gpu_), state{regs}, h264_decoder(std::make_unique<Decoder::H264>(gpu)),
       vp9_decoder(std::make_unique<Decoder::VP9>(gpu)) {}
 
 Codec::~Codec() {
@@ -43,46 +43,48 @@ Codec::~Codec() {
     avcodec_close(av_codec_ctx);
 }
 
-void Codec::SetTargetCodec(NvdecCommon::VideoCodec codec) {
-    if (current_codec != codec) {
-        LOG_INFO(Service_NVDRV, "NVDEC video codec initialized to {}", static_cast<u32>(codec));
-        current_codec = codec;
+void Codec::Initialize() {
+    AVCodecID codec{AV_CODEC_ID_NONE};
+    switch (current_codec) {
+    case NvdecCommon::VideoCodec::H264:
+        codec = AV_CODEC_ID_H264;
+        break;
+    case NvdecCommon::VideoCodec::Vp9:
+        codec = AV_CODEC_ID_VP9;
+        break;
+    default:
+        return;
     }
+    av_codec = avcodec_find_decoder(codec);
+    av_codec_ctx = avcodec_alloc_context3(av_codec);
+    av_opt_set(av_codec_ctx->priv_data, "tune", "zerolatency", 0);
+
+    // TODO(ameerj): libavcodec gpu hw acceleration
+
+    const auto av_error = avcodec_open2(av_codec_ctx, av_codec, nullptr);
+    if (av_error < 0) {
+        LOG_ERROR(Service_NVDRV, "avcodec_open2() Failed.");
+        avcodec_close(av_codec_ctx);
+        return;
+    }
+    initialized = true;
+    return;
 }
 
-void Codec::StateWrite(u32 offset, u64 arguments) {
-    u8* const state_offset = reinterpret_cast<u8*>(&state) + offset * sizeof(u64);
-    std::memcpy(state_offset, &arguments, sizeof(u64));
+void Codec::SetTargetCodec(NvdecCommon::VideoCodec codec) {
+    if (current_codec != codec) {
+        current_codec = codec;
+        LOG_INFO(Service_NVDRV, "NVDEC video codec initialized to {}", GetCurrentCodecName());
+    }
 }
 
 void Codec::Decode() {
-    bool is_first_frame = false;
+    const bool is_first_frame = !initialized;
     if (!initialized) {
-        if (current_codec == NvdecCommon::VideoCodec::H264) {
-            av_codec = avcodec_find_decoder(AV_CODEC_ID_H264);
-        } else if (current_codec == NvdecCommon::VideoCodec::Vp9) {
-            av_codec = avcodec_find_decoder(AV_CODEC_ID_VP9);
-        } else {
-            LOG_ERROR(Service_NVDRV, "Unknown video codec {}", current_codec);
-            return;
-        }
-
-        av_codec_ctx = avcodec_alloc_context3(av_codec);
-        av_opt_set(av_codec_ctx->priv_data, "tune", "zerolatency", 0);
-
-        // TODO(ameerj): libavcodec gpu hw acceleration
-
-        const auto av_error = avcodec_open2(av_codec_ctx, av_codec, nullptr);
-        if (av_error < 0) {
-            LOG_ERROR(Service_NVDRV, "avcodec_open2() Failed.");
-            avcodec_close(av_codec_ctx);
-            return;
-        }
-        initialized = true;
-        is_first_frame = true;
+        Initialize();
     }
-    bool vp9_hidden_frame = false;
 
+    bool vp9_hidden_frame = false;
     AVPacket packet{};
     av_init_packet(&packet);
     std::vector<u8> frame_data;
@@ -95,7 +97,7 @@ void Codec::Decode() {
     }
 
     packet.data = frame_data.data();
-    packet.size = static_cast<int>(frame_data.size());
+    packet.size = static_cast<s32>(frame_data.size());
 
     avcodec_send_packet(av_codec_ctx, &packet);
 
@@ -126,5 +128,22 @@ AVFramePtr Codec::GetCurrentFrame() {
 NvdecCommon::VideoCodec Codec::GetCurrentCodec() const {
     return current_codec;
 }
+
+std::string_view Codec::GetCurrentCodecName() const {
+    switch (current_codec) {
+    case NvdecCommon::VideoCodec::None:
+        return "None";
+    case NvdecCommon::VideoCodec::H264:
+        return "H264";
+    case NvdecCommon::VideoCodec::Vp8:
+        return "VP8";
+    case NvdecCommon::VideoCodec::H265:
+        return "H265";
+    case NvdecCommon::VideoCodec::Vp9:
+        return "VP9";
+    default:
+        return "Unknown";
+    }
+};
 
 } // namespace Tegra
