@@ -15,7 +15,6 @@
 #include <vector>
 
 #include <boost/container/small_vector.hpp>
-#include <boost/icl/interval_set.hpp>
 
 #include "common/common_types.h"
 #include "common/div_ceil.h"
@@ -77,9 +76,6 @@ class BufferCache {
 
     using Runtime = typename P::Runtime;
     using Buffer = typename P::Buffer;
-
-    using IntervalSet = boost::icl::interval_set<VAddr>;
-    using IntervalType = typename IntervalSet::interval_type;
 
     struct Empty {};
 
@@ -157,16 +153,12 @@ public:
 
     /// Commit asynchronous downloads
     void CommitAsyncFlushes();
-    void CommitAsyncFlushesHigh();
 
     /// Pop asynchronous downloads
     void PopAsyncFlushes();
 
     /// Return true when a CPU region is modified from the GPU
     [[nodiscard]] bool IsRegionGpuModified(VAddr addr, size_t size);
-
-    /// Return true when a CPU region is modified from the GPU
-    [[nodiscard]] bool IsRegionCpuModified(VAddr addr, size_t size);
 
     std::mutex mutex;
 
@@ -280,6 +272,8 @@ private:
 
     void DeleteBuffer(BufferId buffer_id);
 
+    void ReplaceBufferDownloads(BufferId old_buffer_id, BufferId new_buffer_id);
+
     void NotifyBufferDeletion();
 
     [[nodiscard]] Binding StorageBufferBinding(GPUVAddr ssbo_addr) const;
@@ -333,7 +327,9 @@ private:
 
     std::vector<BufferId> cached_write_buffer_ids;
 
-    IntervalSet uncommitted_ranges;
+    // TODO: This data structure is not optimal and it should be reworked
+    std::vector<BufferId> uncommitted_downloads;
+    std::deque<std::vector<BufferId>> committed_downloads;
 
     size_t immediate_buffer_capacity = 0;
     std::unique_ptr<u8[]> immediate_buffer_alloc;
@@ -551,18 +547,29 @@ void BufferCache<P>::FlushCachedWrites() {
 
 template <class P>
 bool BufferCache<P>::HasUncommittedFlushes() const noexcept {
-    return !uncommitted_ranges.empty();
+    return !uncommitted_downloads.empty();
 }
 
 template <class P>
 bool BufferCache<P>::ShouldWaitAsyncFlushes() const noexcept {
-    return false;
+    return !committed_downloads.empty() && !committed_downloads.front().empty();
 }
 
 template <class P>
-void BufferCache<P>::CommitAsyncFlushesHigh() {
-    const IntervalSet& intervals = uncommitted_ranges;
-    if (intervals.empty()) {
+void BufferCache<P>::CommitAsyncFlushes() {
+    // This is intentionally passing the value by copy
+    committed_downloads.push_front(uncommitted_downloads);
+    uncommitted_downloads.clear();
+}
+
+template <class P>
+void BufferCache<P>::PopAsyncFlushes() {
+    if (committed_downloads.empty()) {
+        return;
+    }
+    auto scope_exit_pop_download = detail::ScopeExit([this] { committed_downloads.pop_back(); });
+    const std::span<const BufferId> download_ids = committed_downloads.back();
+    if (download_ids.empty()) {
         return;
     }
     MICROPROFILE_SCOPE(GPU_DownloadMemory);
@@ -570,35 +577,18 @@ void BufferCache<P>::CommitAsyncFlushesHigh() {
     boost::container::small_vector<std::pair<BufferCopy, BufferId>, 1> downloads;
     u64 total_size_bytes = 0;
     u64 largest_copy = 0;
-    for (auto& interval : intervals) {
-        const std::size_t size = interval.upper() - interval.lower();
-        const VAddr cpu_addr = interval.lower();
-        const VAddr cpu_addr_end = interval.upper();
-        ForEachBufferInRange(cpu_addr, size, [&](BufferId buffer_id, Buffer& buffer) {
-            boost::container::small_vector<BufferCopy, 1> copies;
-            buffer.ForEachDownloadRange(
-                cpu_addr, size, false, [&](u64 range_offset, u64 range_size) {
-                    VAddr cpu_addr_base = buffer.CpuAddr() + range_offset;
-                    VAddr cpu_addr_end2 = cpu_addr_base + range_size;
-                    const s64 difference = s64(cpu_addr_end2 - cpu_addr_end);
-                    cpu_addr_end2 -= u64(std::max<s64>(difference, 0));
-                    const s64 difference2 = s64(cpu_addr - cpu_addr_base);
-                    cpu_addr_base += u64(std::max<s64>(difference2, 0));
-                    const u64 new_size = cpu_addr_end2 - cpu_addr_base;
-                    const u64 new_offset = cpu_addr_base - buffer.CpuAddr();
-                    ASSERT(!IsRegionCpuModified(cpu_addr_base, new_size));
-                    downloads.push_back({
-                        BufferCopy{
-                            .src_offset = new_offset,
-                            .dst_offset = total_size_bytes,
-                            .size = new_size,
-                        },
-                        buffer_id,
-                    });
-                    total_size_bytes += new_size;
-                    buffer.UnmarkRegionAsGpuModified(cpu_addr_base, new_size);
-                    largest_copy = std::max(largest_copy, new_size);
-                });
+    for (const BufferId buffer_id : download_ids) {
+        slot_buffers[buffer_id].ForEachDownloadRange([&](u64 range_offset, u64 range_size) {
+            downloads.push_back({
+                BufferCopy{
+                    .src_offset = range_offset,
+                    .dst_offset = total_size_bytes,
+                    .size = range_size,
+                },
+                buffer_id,
+            });
+            total_size_bytes += range_size;
+            largest_copy = std::max(largest_copy, range_size);
         });
     }
     if (downloads.empty()) {
@@ -633,18 +623,6 @@ void BufferCache<P>::CommitAsyncFlushesHigh() {
 }
 
 template <class P>
-void BufferCache<P>::CommitAsyncFlushes() {
-    if (Settings::values.gpu_accuracy.GetValue() == Settings::GPUAccuracy::High) {
-        CommitAsyncFlushesHigh();
-    } else {
-        uncommitted_ranges.clear();
-    }
-}
-
-template <class P>
-void BufferCache<P>::PopAsyncFlushes() {}
-
-template <class P>
 bool BufferCache<P>::IsRegionGpuModified(VAddr addr, size_t size) {
     const u64 page_end = Common::DivCeil(addr + size, PAGE_SIZE);
     for (u64 page = addr >> PAGE_BITS; page < page_end;) {
@@ -655,25 +633,6 @@ bool BufferCache<P>::IsRegionGpuModified(VAddr addr, size_t size) {
         }
         Buffer& buffer = slot_buffers[image_id];
         if (buffer.IsRegionGpuModified(addr, size)) {
-            return true;
-        }
-        const VAddr end_addr = buffer.CpuAddr() + buffer.SizeBytes();
-        page = Common::DivCeil(end_addr, PAGE_SIZE);
-    }
-    return false;
-}
-
-template <class P>
-bool BufferCache<P>::IsRegionCpuModified(VAddr addr, size_t size) {
-    const u64 page_end = Common::DivCeil(addr + size, PAGE_SIZE);
-    for (u64 page = addr >> PAGE_BITS; page < page_end;) {
-        const BufferId image_id = page_table[page];
-        if (!image_id) {
-            ++page;
-            continue;
-        }
-        Buffer& buffer = slot_buffers[image_id];
-        if (buffer.IsRegionCpuModified(addr, size)) {
             return true;
         }
         const VAddr end_addr = buffer.CpuAddr() + buffer.SizeBytes();
@@ -1051,14 +1010,16 @@ void BufferCache<P>::MarkWrittenBuffer(BufferId buffer_id, VAddr cpu_addr, u32 s
     Buffer& buffer = slot_buffers[buffer_id];
     buffer.MarkRegionAsGpuModified(cpu_addr, size);
 
-    const bool is_accuracy_high =
-        Settings::values.gpu_accuracy.GetValue() == Settings::GPUAccuracy::High;
+    const bool is_accuracy_high = Settings::IsGPULevelHigh();
     const bool is_async = Settings::values.use_asynchronous_gpu_emulation.GetValue();
-    if (!is_async && !is_accuracy_high) {
+    if (!is_accuracy_high || !is_async) {
         return;
     }
-    const IntervalType base_interval{cpu_addr, cpu_addr + size};
-    uncommitted_ranges.add(base_interval);
+    if (std::ranges::find(uncommitted_downloads, buffer_id) != uncommitted_downloads.end()) {
+        // Already inserted
+        return;
+    }
+    uncommitted_downloads.push_back(buffer_id);
 }
 
 template <class P>
@@ -1142,6 +1103,7 @@ void BufferCache<P>::JoinOverlap(BufferId new_buffer_id, BufferId overlap_id,
     if (!copies.empty()) {
         runtime.CopyBuffer(slot_buffers[new_buffer_id], overlap, copies);
     }
+    ReplaceBufferDownloads(overlap_id, new_buffer_id);
     DeleteBuffer(overlap_id);
 }
 
@@ -1282,7 +1244,7 @@ void BufferCache<P>::DownloadBufferMemory(Buffer& buffer, VAddr cpu_addr, u64 si
     boost::container::small_vector<BufferCopy, 1> copies;
     u64 total_size_bytes = 0;
     u64 largest_copy = 0;
-    buffer.ForEachDownloadRange(cpu_addr, size, true, [&](u64 range_offset, u64 range_size) {
+    buffer.ForEachDownloadRange(cpu_addr, size, [&](u64 range_offset, u64 range_size) {
         copies.push_back(BufferCopy{
             .src_offset = range_offset,
             .dst_offset = total_size_bytes,
@@ -1351,6 +1313,18 @@ void BufferCache<P>::DeleteBuffer(BufferId buffer_id) {
     slot_buffers.erase(buffer_id);
 
     NotifyBufferDeletion();
+}
+
+template <class P>
+void BufferCache<P>::ReplaceBufferDownloads(BufferId old_buffer_id, BufferId new_buffer_id) {
+    const auto replace = [old_buffer_id, new_buffer_id](std::vector<BufferId>& buffers) {
+        std::ranges::replace(buffers, old_buffer_id, new_buffer_id);
+        if (auto it = std::ranges::find(buffers, new_buffer_id); it != buffers.end()) {
+            buffers.erase(std::remove(it + 1, buffers.end(), new_buffer_id), buffers.end());
+        }
+    };
+    replace(uncommitted_downloads);
+    std::ranges::for_each(committed_downloads, replace);
 }
 
 template <class P>

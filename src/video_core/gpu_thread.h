@@ -20,10 +20,6 @@ class DmaPusher;
 } // namespace Tegra
 
 namespace Core {
-namespace Timing {
-class CoreTiming;
-struct EventType;
-} // namespace Timing
 namespace Frontend {
 class GraphicsContext;
 }
@@ -154,7 +150,6 @@ private:
 
     SynchState state;
     std::thread thread;
-    std::shared_ptr<Core::Timing::EventType> gpu_sync_event;
 };
 
 } // namespace VideoCommon::GPUThread

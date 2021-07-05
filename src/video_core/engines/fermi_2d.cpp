@@ -67,10 +67,10 @@ void Fermi2D::Blit() {
     };
     Surface src = regs.src;
     const auto bytes_per_pixel = BytesPerBlock(PixelFormatFromRenderTargetFormat(src.format));
-    const auto is_copy_out_of_bound =
+    const auto need_align_to_pitch =
         src.linear == Tegra::Engines::Fermi2D::MemoryLayout::Pitch && src.width == config.src_x1 &&
         config.src_x1 > static_cast<s32>(src.pitch / bytes_per_pixel) && config.src_x0 > 0;
-    if (is_copy_out_of_bound) {
+    if (need_align_to_pitch) {
         auto address = src.Address() + config.src_x0 * bytes_per_pixel;
         src.addr_upper = static_cast<u32>(address >> 32);
         src.addr_lower = static_cast<u32>(address);

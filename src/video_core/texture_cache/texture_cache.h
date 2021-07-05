@@ -769,20 +769,20 @@ void TextureCache<P>::BlitImage(const Tegra::Engines::Fermi2D::Surface& dst,
     const ImageBase& src_image = slot_images[src_id];
 
     // TODO: Deduplicate
-    const std::optional dst_base = dst_image.TryFindBase(dst.Address());
-    const SubresourceRange dst_range{.base = dst_base.value(), .extent = {1, 1}};
-    const ImageViewInfo dst_view_info(ImageViewType::e2D, images.dst_format, dst_range);
-    const auto [dst_framebuffer_id, dst_view_id] = RenderTargetFromImage(dst_id, dst_view_info);
+    const std::optional src_base = src_image.TryFindBase(src.Address());
+    const SubresourceRange src_range{.base = src_base.value(), .extent = {1, 1}};
+    const ImageViewInfo src_view_info(ImageViewType::e2D, images.src_format, src_range);
+    const auto [src_framebuffer_id, src_view_id] = RenderTargetFromImage(src_id, src_view_info);
     const auto [src_samples_x, src_samples_y] = SamplesLog2(src_image.info.num_samples);
     const Region2D src_region{
         Offset2D{.x = copy.src_x0 >> src_samples_x, .y = copy.src_y0 >> src_samples_y},
         Offset2D{.x = copy.src_x1 >> src_samples_x, .y = copy.src_y1 >> src_samples_y},
     };
 
-    const std::optional src_base = src_image.TryFindBase(src.Address());
-    const SubresourceRange src_range{.base = src_base.value(), .extent = {1, 1}};
-    const ImageViewInfo src_view_info(ImageViewType::e2D, images.src_format, src_range);
-    const auto [src_framebuffer_id, src_view_id] = RenderTargetFromImage(src_id, src_view_info);
+    const std::optional dst_base = dst_image.TryFindBase(dst.Address());
+    const SubresourceRange dst_range{.base = dst_base.value(), .extent = {1, 1}};
+    const ImageViewInfo dst_view_info(ImageViewType::e2D, images.dst_format, dst_range);
+    const auto [dst_framebuffer_id, dst_view_id] = RenderTargetFromImage(dst_id, dst_view_info);
     const auto [dst_samples_x, dst_samples_y] = SamplesLog2(dst_image.info.num_samples);
     const Region2D dst_region{
         Offset2D{.x = copy.dst_x0 >> dst_samples_x, .y = copy.dst_y0 >> dst_samples_y},
