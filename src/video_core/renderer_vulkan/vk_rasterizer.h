@@ -74,6 +74,7 @@ public:
     void OnCPUWrite(VAddr addr, u64 size) override;
     void SyncGuestHost() override;
     void UnmapMemory(VAddr addr, u64 size) override;
+    void ModifyGPUMemory(GPUVAddr addr, u64 size) override;
     void SignalSemaphore(GPUVAddr addr, u32 value) override;
     void SignalSyncPoint(u32 value) override;
     void ReleaseFences() override;
@@ -83,7 +84,7 @@ public:
     void TiledCacheBarrier() override;
     void FlushCommands() override;
     void TickFrame() override;
-    bool AccelerateSurfaceCopy(const Tegra::Engines::Fermi2D::Surface& src, s32 src_address_offset,
+    bool AccelerateSurfaceCopy(const Tegra::Engines::Fermi2D::Surface& src,
                                const Tegra::Engines::Fermi2D::Surface& dst,
                                const Tegra::Engines::Fermi2D::Config& copy_config) override;
     bool AccelerateDisplay(const Tegra::FramebufferConfig& config, VAddr framebuffer_addr,

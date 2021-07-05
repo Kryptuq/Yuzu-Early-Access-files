@@ -8,6 +8,7 @@
 #include "common/settings.h"
 #include "common/thread.h"
 #include "core/core.h"
+#include "core/core_timing.h"
 #include "core/frontend/emu_window.h"
 #include "video_core/dma_pusher.h"
 #include "video_core/gpu.h"
@@ -83,6 +84,17 @@ void ThreadManager::StartThread(VideoCore::RendererBase& renderer,
     rasterizer = renderer.ReadRasterizer();
     thread = std::thread(RunThread, std::ref(system), std::ref(renderer), std::ref(context),
                          std::ref(dma_pusher), std::ref(state));
+    gpu_sync_event = Core::Timing::CreateEvent(
+        "GPUHostSyncCallback", [this](std::uintptr_t, std::chrono::nanoseconds) {
+            if (!state.is_running) {
+                return;
+            }
+
+            OnCommandListEnd();
+            const auto time_interval = std::chrono::nanoseconds{500 * 1000};
+            system.CoreTiming().ScheduleEvent(time_interval, gpu_sync_event);
+        });
+    system.CoreTiming().ScheduleEvent(std::chrono::nanoseconds{500 * 1000}, gpu_sync_event);
 }
 
 void ThreadManager::SubmitList(Tegra::CommandList&& entries) {
@@ -127,6 +139,9 @@ void ThreadManager::ShutDown() {
         state.is_running = false;
         state.cv.notify_all();
     }
+
+    system.CoreTiming().UnscheduleEvent(gpu_sync_event, 0);
+    system.CoreTiming().RemoveEvent(gpu_sync_event);
 
     if (!thread.joinable()) {
         return;

@@ -631,6 +631,13 @@ void RasterizerOpenGL::UnmapMemory(VAddr addr, u64 size) {
     shader_cache.OnCPUWrite(addr, size);
 }
 
+void RasterizerOpenGL::ModifyGPUMemory(GPUVAddr addr, u64 size) {
+    {
+        std::scoped_lock lock{texture_cache.mutex};
+        texture_cache.UnmapGPUMemory(addr, size);
+    }
+}
+
 void RasterizerOpenGL::SignalSemaphore(GPUVAddr addr, u32 value) {
     if (!gpu.IsAsync()) {
         gpu_memory.Write<u32>(addr, value);
@@ -698,12 +705,11 @@ void RasterizerOpenGL::TickFrame() {
 }
 
 bool RasterizerOpenGL::AccelerateSurfaceCopy(const Tegra::Engines::Fermi2D::Surface& src,
-                                             s32 src_address_offset,
                                              const Tegra::Engines::Fermi2D::Surface& dst,
                                              const Tegra::Engines::Fermi2D::Config& copy_config) {
     MICROPROFILE_SCOPE(OpenGL_Blits);
     std::scoped_lock lock{texture_cache.mutex};
-    texture_cache.BlitImage(dst, src, src_address_offset, copy_config);
+    texture_cache.BlitImage(dst, src, copy_config);
     return true;
 }
 

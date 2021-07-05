@@ -34,6 +34,10 @@ bool InnerFence::IsSignaled() const {
     if (is_stubbed) {
         return true;
     }
+    if (scheduler.IsFree(wait_tick)) {
+        return true;
+    }
+    scheduler.Refresh();
     return scheduler.IsFree(wait_tick);
 }
 

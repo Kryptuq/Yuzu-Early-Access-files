@@ -65,19 +65,20 @@ void Fermi2D::Blit() {
         .src_x1 = static_cast<s32>((args.du_dx * args.dst_width + args.src_x0) >> 32),
         .src_y1 = static_cast<s32>((args.dv_dy * args.dst_height + args.src_y0) >> 32),
     };
-
     Surface src = regs.src;
-    s32 src_address_offset = 0;
     const auto bytes_per_pixel = BytesPerBlock(PixelFormatFromRenderTargetFormat(src.format));
-    if (src.linear == Tegra::Engines::Fermi2D::MemoryLayout::Pitch && src.width == config.src_x1 &&
-        config.src_x1 > static_cast<s32>(src.pitch / bytes_per_pixel) && config.src_x0 > 0) {
-        src_address_offset = config.src_x0 * bytes_per_pixel;
+    const auto is_copy_out_of_bound =
+        src.linear == Tegra::Engines::Fermi2D::MemoryLayout::Pitch && src.width == config.src_x1 &&
+        config.src_x1 > static_cast<s32>(src.pitch / bytes_per_pixel) && config.src_x0 > 0;
+    if (is_copy_out_of_bound) {
+        auto address = src.Address() + config.src_x0 * bytes_per_pixel;
+        src.addr_upper = static_cast<u32>(address >> 32);
+        src.addr_lower = static_cast<u32>(address);
         src.width -= config.src_x0;
         config.src_x1 -= config.src_x0;
         config.src_x0 = 0;
     }
-
-    if (!rasterizer->AccelerateSurfaceCopy(src, src_address_offset, regs.dst, config)) {
+    if (!rasterizer->AccelerateSurfaceCopy(src, regs.dst, config)) {
         UNIMPLEMENTED();
     }
 }

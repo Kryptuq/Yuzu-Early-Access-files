@@ -49,6 +49,7 @@ if (MSVC)
         /W3
         /we4062 # enumerator 'identifier' in a switch of enum 'enumeration' is not handled
         /we4101 # 'identifier': unreferenced local variable
+        /we4189 # 'identifier': local variable is initialized but not referenced
         /we4265 # 'class': class has virtual functions, but destructor is not virtual
         /we4388 # signed/unsigned mismatch
         /we4547 # 'operator' : operator before comma has no effect; expected operator with side-effect
