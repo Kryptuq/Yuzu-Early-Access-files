@@ -396,11 +396,20 @@ public:
     [[nodiscard]] size_t WriteString(std::span<const char> string) const;
 
     /**
-     * Attempts to flush any unwritten buffered data into the file and flush the file into the disk.
+     * Attempts to flush any unwritten buffered data into the file.
      *
      * @returns True if the flush was successful, false otherwise.
      */
     bool Flush() const;
+
+    /**
+     * Attempts to commit the file into the disk.
+     * Note that this is an expensive operation as this forces the operating system to write
+     * the contents of the file associated with the file descriptor into the disk.
+     *
+     * @returns True if the commit was successful, false otherwise.
+     */
+    bool Commit() const;
 
     /**
      * Resizes the file to a given size.

@@ -180,7 +180,6 @@ add_library(common STATIC
     thread.cpp
     thread.h
     thread_queue_list.h
-    thread_worker.cpp
     thread_worker.h
     threadsafe_queue.h
     time_zone.cpp
@@ -188,6 +187,7 @@ add_library(common STATIC
     tiny_mt.h
     tree.h
     uint128.h
+    unique_function.h
     uuid.cpp
     uuid.h
     vector_math.h

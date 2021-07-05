@@ -20,6 +20,7 @@ namespace {
 
 constexpr ResultCode ERROR_CANNOT_FIND_ENTRY{ErrorModule::Mii, 4};
 
+constexpr std::size_t BaseMiiCount{2};
 constexpr std::size_t DefaultMiiCount{RawData::DefaultMii.size()};
 
 constexpr MiiStoreData::Name DefaultMiiName{u'y', u'u', u'z', u'u'};
@@ -415,7 +416,7 @@ u32 MiiManager::GetCount(SourceFlag source_flag) const {
         count += 0;
     }
     if ((source_flag & SourceFlag::Default) != SourceFlag::None) {
-        count += DefaultMiiCount;
+        count += (DefaultMiiCount - BaseMiiCount);
     }
     return static_cast<u32>(count);
 }
@@ -445,7 +446,7 @@ ResultVal<std::vector<MiiInfoElement>> MiiManager::GetDefault(SourceFlag source_
         return MakeResult(std::move(result));
     }
 
-    for (std::size_t index = 0; index < DefaultMiiCount; index++) {
+    for (std::size_t index = BaseMiiCount; index < DefaultMiiCount; index++) {
         result.emplace_back(BuildDefault(index), Source::Default);
     }
 

@@ -306,9 +306,9 @@ bool IOFile::Flush() const {
     errno = 0;
 
 #ifdef _WIN32
-    const auto flush_result = std::fflush(file) == 0 && _commit(fileno(file)) == 0;
+    const auto flush_result = std::fflush(file) == 0;
 #else
-    const auto flush_result = std::fflush(file) == 0 && fsync(fileno(file)) == 0;
+    const auto flush_result = std::fflush(file) == 0;
 #endif
 
     if (!flush_result) {
@@ -318,6 +318,28 @@ bool IOFile::Flush() const {
     }
 
     return flush_result;
+}
+
+bool IOFile::Commit() const {
+    if (!IsOpen()) {
+        return false;
+    }
+
+    errno = 0;
+
+#ifdef _WIN32
+    const auto commit_result = std::fflush(file) == 0 && _commit(fileno(file)) == 0;
+#else
+    const auto commit_result = std::fflush(file) == 0 && fsync(fileno(file)) == 0;
+#endif
+
+    if (!commit_result) {
+        const auto ec = std::error_code{errno, std::generic_category()};
+        LOG_ERROR(Common_Filesystem, "Failed to commit the file at path={}, ec_message={}",
+                  PathToUTF8String(file_path), ec.message());
+    }
+
+    return commit_result;
 }
 
 bool IOFile::SetSize(u64 size) const {
@@ -346,6 +368,9 @@ u64 IOFile::GetSize() const {
     if (!IsOpen()) {
         return 0;
     }
+
+    // Flush any unwritten buffered data into the file prior to retrieving the file size.
+    std::fflush(file);
 
     std::error_code ec;
 

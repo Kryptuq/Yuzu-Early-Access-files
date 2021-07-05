@@ -171,19 +171,22 @@ FileBackend::FileBackend(const std::filesystem::path& filename) {
 FileBackend::~FileBackend() = default;
 
 void FileBackend::Write(const Entry& entry) {
-    using namespace Common::Literals;
-    // prevent logs from going over the maximum size (in case its spamming and the user doesn't
-    // know)
-    constexpr std::size_t MAX_BYTES_WRITTEN = 100_MiB;
-    constexpr std::size_t MAX_BYTES_WRITTEN_EXTENDED = 1_GiB;
-
     if (!file->IsOpen()) {
         return;
     }
 
-    if (Settings::values.extended_logging && bytes_written > MAX_BYTES_WRITTEN_EXTENDED) {
-        return;
-    } else if (!Settings::values.extended_logging && bytes_written > MAX_BYTES_WRITTEN) {
+    using namespace Common::Literals;
+    // Prevent logs from exceeding a set maximum size in the event that log entries are spammed.
+    constexpr std::size_t MAX_BYTES_WRITTEN = 100_MiB;
+    constexpr std::size_t MAX_BYTES_WRITTEN_EXTENDED = 1_GiB;
+
+    const bool write_limit_exceeded =
+        bytes_written > MAX_BYTES_WRITTEN_EXTENDED ||
+        (bytes_written > MAX_BYTES_WRITTEN && !Settings::values.extended_logging);
+
+    // Close the file after the write limit is exceeded.
+    if (write_limit_exceeded) {
+        file->Close();
         return;
     }
 
