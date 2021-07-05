@@ -27,6 +27,7 @@ public:
         down->SetCallback(callbacks);
         left->SetCallback(callbacks);
         right->SetCallback(callbacks);
+        modifier->SetCallback(callbacks);
     }
 
     bool IsAngleGreater(float old_angle, float new_angle) const {
