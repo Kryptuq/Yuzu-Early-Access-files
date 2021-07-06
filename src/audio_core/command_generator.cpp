@@ -400,7 +400,10 @@ void CommandGenerator::GenerateDataSourceCommand(ServerVoiceInfo& voice_info, Vo
         }
     } else {
         switch (in_params.sample_format) {
+        case SampleFormat::Pcm8:
         case SampleFormat::Pcm16:
+        case SampleFormat::Pcm32:
+        case SampleFormat::PcmFloat:
             DecodeFromWaveBuffers(voice_info, GetChannelMixBuffer(channel), dsp_state, channel,
                                   worker_params.sample_rate, worker_params.sample_count,
                                   in_params.node_id);
@@ -1003,9 +1006,10 @@ void CommandGenerator::GenerateFinalMixCommand() {
     }
 }
 
-s32 CommandGenerator::DecodePcm16(ServerVoiceInfo& voice_info, VoiceState& dsp_state,
-                                  s32 sample_start_offset, s32 sample_end_offset, s32 sample_count,
-                                  s32 channel, std::size_t mix_offset) {
+template <typename T>
+s32 CommandGenerator::DecodePcm(ServerVoiceInfo& voice_info, VoiceState& dsp_state,
+                                s32 sample_start_offset, s32 sample_end_offset, s32 sample_count,
+                                s32 channel, std::size_t mix_offset) {
     const auto& in_params = voice_info.GetInParams();
     const auto& wave_buffer = in_params.wave_buffer[dsp_state.wave_buffer_index];
     if (wave_buffer.buffer_address == 0) {
@@ -1019,21 +1023,20 @@ s32 CommandGenerator::DecodePcm16(ServerVoiceInfo& voice_info, VoiceState& dsp_s
     }
     const auto samples_remaining = (sample_end_offset - sample_start_offset) - dsp_state.offset;
     const auto start_offset =
-        ((dsp_state.offset + sample_start_offset) * in_params.channel_count) * sizeof(s16);
+        ((dsp_state.offset + sample_start_offset) * in_params.channel_count) * sizeof(T);
     const auto buffer_pos = wave_buffer.buffer_address + start_offset;
     const auto samples_processed = std::min(sample_count, samples_remaining);
 
-    if (in_params.channel_count == 1) {
-        std::vector<s16> buffer(samples_processed);
-        memory.ReadBlock(buffer_pos, buffer.data(), buffer.size() * sizeof(s16));
-        for (std::size_t i = 0; i < buffer.size(); i++) {
-            sample_buffer[mix_offset + i] = buffer[i];
+    const auto channel_count = in_params.channel_count;
+    std::vector<T> buffer(samples_processed * channel_count);
+    memory.ReadBlock(buffer_pos, buffer.data(), buffer.size() * sizeof(T));
+
+    if constexpr (std::is_floating_point_v<T>) {
+        for (std::size_t i = 0; i < static_cast<std::size_t>(samples_processed); i++) {
+            sample_buffer[mix_offset + i] = static_cast<s32>(buffer[i * channel_count + channel] *
+                                                             std::numeric_limits<s16>::max());
         }
     } else {
-        const auto channel_count = in_params.channel_count;
-        std::vector<s16> buffer(samples_processed * channel_count);
-        memory.ReadBlock(buffer_pos, buffer.data(), buffer.size() * sizeof(s16));
-
         for (std::size_t i = 0; i < static_cast<std::size_t>(samples_processed); i++) {
             sample_buffer[mix_offset + i] = buffer[i * channel_count + channel];
         }
@@ -1249,10 +1252,25 @@ void CommandGenerator::DecodeFromWaveBuffers(ServerVoiceInfo& voice_info, s32* o
 
             s32 samples_decoded{0};
             switch (in_params.sample_format) {
+            case SampleFormat::Pcm8:
+                samples_decoded =
+                    DecodePcm<s8>(voice_info, dsp_state, samples_offset_start, samples_offset_end,
+                                  samples_to_read - samples_read, channel, temp_mix_offset);
+                break;
             case SampleFormat::Pcm16:
                 samples_decoded =
-                    DecodePcm16(voice_info, dsp_state, samples_offset_start, samples_offset_end,
-                                samples_to_read - samples_read, channel, temp_mix_offset);
+                    DecodePcm<s16>(voice_info, dsp_state, samples_offset_start, samples_offset_end,
+                                   samples_to_read - samples_read, channel, temp_mix_offset);
+                break;
+            case SampleFormat::Pcm32:
+                samples_decoded =
+                    DecodePcm<s32>(voice_info, dsp_state, samples_offset_start, samples_offset_end,
+                                   samples_to_read - samples_read, channel, temp_mix_offset);
+                break;
+            case SampleFormat::PcmFloat:
+                samples_decoded =
+                    DecodePcm<f32>(voice_info, dsp_state, samples_offset_start, samples_offset_end,
+                                   samples_to_read - samples_read, channel, temp_mix_offset);
                 break;
             case SampleFormat::Adpcm:
                 samples_decoded =

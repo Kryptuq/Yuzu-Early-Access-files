@@ -656,17 +656,14 @@ endif()
 
 if (MSVC)
     target_compile_options(core PRIVATE
-        /we4018 # 'expression' : signed/unsigned mismatch
-        /we4244 # 'argument' : conversion from 'type1' to 'type2', possible loss of data (floating-point)
-        /we4245 # 'conversion' : conversion from 'type1' to 'type2', signed/unsigned mismatch
+        /we4242 # 'identifier': conversion from 'type1' to 'type2', possible loss of data
+        /we4244 # 'conversion': conversion from 'type1' to 'type2', possible loss of data
+        /we4245 # 'conversion': conversion from 'type1' to 'type2', signed/unsigned mismatch
         /we4254 # 'operator': conversion from 'type1:field_bits' to 'type2:field_bits', possible loss of data
-        /we4267 # 'var' : conversion from 'size_t' to 'type', possible loss of data
-        /we4305 # 'context' : truncation from 'type1' to 'type2'
         /we4456 # Declaration of 'identifier' hides previous local declaration
         /we4457 # Declaration of 'identifier' hides function parameter
         /we4458 # Declaration of 'identifier' hides class member
         /we4459 # Declaration of 'identifier' hides global declaration
-        /we4715 # 'function' : not all control paths return a value
     )
 else()
     target_compile_options(core PRIVATE

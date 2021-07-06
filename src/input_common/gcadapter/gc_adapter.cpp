@@ -5,14 +5,7 @@
 #include <chrono>
 #include <thread>
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4200) // nonstandard extension used : zero-sized array in struct/union
-#endif
 #include <libusb.h>
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 #include "common/logging/log.h"
 #include "common/param_package.h"

@@ -7,10 +7,6 @@
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/memory_manager.h"
 #include "video_core/rasterizer_interface.h"
-#include "video_core/surface.h"
-
-using VideoCore::Surface::BytesPerBlock;
-using VideoCore::Surface::PixelFormatFromRenderTargetFormat;
 
 namespace Tegra::Engines {
 
@@ -53,7 +49,7 @@ void Fermi2D::Blit() {
     UNIMPLEMENTED_IF_MSG(regs.clip_enable != 0, "Clipped blit enabled");
 
     const auto& args = regs.pixels_from_memory;
-    Config config{
+    const Config config{
         .operation = regs.operation,
         .filter = args.sample_mode.filter,
         .dst_x0 = args.dst_x0,
@@ -65,20 +61,7 @@ void Fermi2D::Blit() {
         .src_x1 = static_cast<s32>((args.du_dx * args.dst_width + args.src_x0) >> 32),
         .src_y1 = static_cast<s32>((args.dv_dy * args.dst_height + args.src_y0) >> 32),
     };
-    Surface src = regs.src;
-    const auto bytes_per_pixel = BytesPerBlock(PixelFormatFromRenderTargetFormat(src.format));
-    const auto need_align_to_pitch =
-        src.linear == Tegra::Engines::Fermi2D::MemoryLayout::Pitch && src.width == config.src_x1 &&
-        config.src_x1 > static_cast<s32>(src.pitch / bytes_per_pixel) && config.src_x0 > 0;
-    if (need_align_to_pitch) {
-        auto address = src.Address() + config.src_x0 * bytes_per_pixel;
-        src.addr_upper = static_cast<u32>(address >> 32);
-        src.addr_lower = static_cast<u32>(address);
-        src.width -= config.src_x0;
-        config.src_x1 -= config.src_x0;
-        config.src_x0 = 0;
-    }
-    if (!rasterizer->AccelerateSurfaceCopy(src, regs.dst, config)) {
+    if (!rasterizer->AccelerateSurfaceCopy(regs.src, regs.dst, config)) {
         UNIMPLEMENTED();
     }
 }

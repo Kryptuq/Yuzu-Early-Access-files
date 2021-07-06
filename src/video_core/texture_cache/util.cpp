@@ -394,7 +394,7 @@ template <u32 GOB_EXTENT>
     const s32 mip_offset = diff % layer_stride;
     const std::array offsets = CalculateMipLevelOffsets(new_info);
     const auto end = offsets.begin() + new_info.resources.levels;
-    const auto it = std::find(offsets.begin(), end, mip_offset);
+    const auto it = std::find(offsets.begin(), end, static_cast<u32>(mip_offset));
     if (it == end) {
         // Mipmap is not aligned to any valid size
         return std::nullopt;

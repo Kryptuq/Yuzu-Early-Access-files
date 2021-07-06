@@ -1369,8 +1369,8 @@ static void DecompressBlock(std::span<const u8, 16> inBuf, const u32 blockWidth,
     // each partition.
 
     // Determine partitions, partition index, and color endpoint modes
-    s32 planeIdx = -1;
-    u32 partitionIndex;
+    u32 planeIdx{UINT32_MAX};
+    u32 partitionIndex{};
     u32 colorEndpointMode[4] = {0, 0, 0, 0};
 
     // Define color data.

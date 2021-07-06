@@ -327,7 +327,8 @@ void ApplySwizzle(GLuint handle, PixelFormat format, std::array<SwizzleSource, 4
     if (format_info.is_compressed) {
         return false;
     }
-    if (std::ranges::find(ACCELERATED_FORMATS, internal_format) == ACCELERATED_FORMATS.end()) {
+    if (std::ranges::find(ACCELERATED_FORMATS, static_cast<int>(internal_format)) ==
+        ACCELERATED_FORMATS.end()) {
         return false;
     }
     if (format_info.compatibility_by_size) {

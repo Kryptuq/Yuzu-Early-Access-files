@@ -86,8 +86,9 @@ private:
                                std::vector<u8>& work_buffer);
     void UpdateI3dl2Reverb(I3dl2ReverbParams& info, I3dl2ReverbState& state, bool should_clear);
     // DSP Code
-    s32 DecodePcm16(ServerVoiceInfo& voice_info, VoiceState& dsp_state, s32 sample_start_offset,
-                    s32 sample_end_offset, s32 sample_count, s32 channel, std::size_t mix_offset);
+    template <typename T>
+    s32 DecodePcm(ServerVoiceInfo& voice_info, VoiceState& dsp_state, s32 sample_start_offset,
+                  s32 sample_end_offset, s32 sample_count, s32 channel, std::size_t mix_offset);
     s32 DecodeAdpcm(ServerVoiceInfo& voice_info, VoiceState& dsp_state, s32 sample_start_offset,
                     s32 sample_end_offset, s32 sample_count, s32 channel, std::size_t mix_offset);
     void DecodeFromWaveBuffers(ServerVoiceInfo& voice_info, s32* output, VoiceState& dsp_state,

@@ -8,14 +8,7 @@
 #include <optional>
 #include <type_traits>
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4701)
-#endif
 #include <boost/crc.hpp>
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 #include "common/bit_field.h"
 #include "common/swap.h"
