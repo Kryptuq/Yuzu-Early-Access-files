@@ -21,3 +21,5 @@ __Download Link__: [128Bit Downloader](https://mostlywhat.github.io/128Bit-Yuzu-
 __Building System__: Built with Appveyor
 
 __Credits__: Kryptuq for Source Codes and MostlyWhat for Build Script
+
+__Current Lastest Early Access__: yuzu Early Access 1848
