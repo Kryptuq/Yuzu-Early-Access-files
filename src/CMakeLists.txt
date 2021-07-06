@@ -82,6 +82,7 @@ else()
         -Werror=missing-declarations
         -Werror=missing-field-initializers
         -Werror=reorder
+        -Werror=sign-compare
         -Werror=switch
         -Werror=uninitialized
         -Werror=unused-function

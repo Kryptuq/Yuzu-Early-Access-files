@@ -1036,9 +1036,23 @@ s32 CommandGenerator::DecodePcm(ServerVoiceInfo& voice_info, VoiceState& dsp_sta
             sample_buffer[mix_offset + i] = static_cast<s32>(buffer[i * channel_count + channel] *
                                                              std::numeric_limits<s16>::max());
         }
-    } else {
+    } else if constexpr (sizeof(T) == 1) {
+        for (std::size_t i = 0; i < static_cast<std::size_t>(samples_processed); i++) {
+            sample_buffer[mix_offset + i] =
+                static_cast<s32>(static_cast<f32>(buffer[i * channel_count + channel] /
+                                                  std::numeric_limits<s8>::max()) *
+                                 std::numeric_limits<s16>::max());
+        }
+    } else if constexpr (sizeof(T) == 2) {
         for (std::size_t i = 0; i < static_cast<std::size_t>(samples_processed); i++) {
             sample_buffer[mix_offset + i] = buffer[i * channel_count + channel];
+        }
+    } else {
+        for (std::size_t i = 0; i < static_cast<std::size_t>(samples_processed); i++) {
+            sample_buffer[mix_offset + i] =
+                static_cast<s32>(static_cast<f32>(buffer[i * channel_count + channel] /
+                                                  std::numeric_limits<s32>::max()) *
+                                 std::numeric_limits<s16>::max());
         }
     }
 

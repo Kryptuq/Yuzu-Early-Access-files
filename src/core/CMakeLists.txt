@@ -669,8 +669,6 @@ else()
     target_compile_options(core PRIVATE
         -Werror=conversion
         -Werror=ignored-qualifiers
-        -Werror=implicit-fallthrough
-        -Werror=sign-compare
         -Werror=shadow
 
         $<$<CXX_COMPILER_ID:GNU>:-Werror=class-memaccess>

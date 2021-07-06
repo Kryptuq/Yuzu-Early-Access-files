@@ -44,10 +44,7 @@ else()
         -Werror
         -Werror=conversion
         -Werror=ignored-qualifiers
-        -Werror=implicit-fallthrough
-        -Werror=reorder
         -Werror=shadow
-        -Werror=sign-compare
         $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-parameter>
         $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-variable>
         -Werror=unused-variable

@@ -290,7 +290,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
-        rb.Push<u32>(1);
+        rb.Push<u32>(2);
     }
 
     // Should be similar to QueryAudioDeviceOutputEvent

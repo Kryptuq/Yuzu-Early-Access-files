@@ -51,9 +51,6 @@ if (NOT MSVC)
     target_compile_options(audio_core PRIVATE
         -Werror=conversion
         -Werror=ignored-qualifiers
-        -Werror=implicit-fallthrough
-        -Werror=reorder
-        -Werror=sign-compare
         -Werror=shadow
         -Werror=unused-parameter
         -Werror=unused-variable
