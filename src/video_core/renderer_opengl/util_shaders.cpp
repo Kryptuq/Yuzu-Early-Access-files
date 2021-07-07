@@ -261,9 +261,9 @@ void UtilShaders::CopyBC4(Image& dst_image, Image& src_image, std::span<const Im
         glUniform3ui(LOC_SRC_OFFSET, copy.src_offset.x, copy.src_offset.y, copy.src_offset.z);
         glUniform3ui(LOC_DST_OFFSET, copy.dst_offset.x, copy.dst_offset.y, copy.dst_offset.z);
         glBindImageTexture(BINDING_INPUT_IMAGE, src_image.StorageHandle(),
-                           copy.src_subresource.base_level, GL_FALSE, 0, GL_READ_ONLY, GL_RG32UI);
+                           copy.src_subresource.base_level, GL_TRUE, 0, GL_READ_ONLY, GL_RG32UI);
         glBindImageTexture(BINDING_OUTPUT_IMAGE, dst_image.StorageHandle(),
-                           copy.dst_subresource.base_level, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8UI);
+                           copy.dst_subresource.base_level, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8UI);
         glDispatchCompute(copy.extent.width, copy.extent.height, copy.extent.depth);
     }
     program_manager.RestoreGuestCompute();

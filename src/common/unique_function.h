@@ -14,7 +14,7 @@ class UniqueFunction {
     class CallableBase {
     public:
         virtual ~CallableBase() = default;
-        virtual ResultType operator()(Args...) = 0;
+        virtual ResultType operator()(Args&&...) = 0;
     };
 
     template <typename Functor>
@@ -23,7 +23,7 @@ class UniqueFunction {
         Callable(Functor&& functor_) : functor{std::move(functor_)} {}
         ~Callable() override = default;
 
-        ResultType operator()(Args... args) override {
+        ResultType operator()(Args&&... args) override {
             return functor(std::forward<Args>(args)...);
         }
 
@@ -38,24 +38,19 @@ public:
     UniqueFunction(Functor&& functor)
         : callable{std::make_unique<Callable<Functor>>(std::move(functor))} {}
 
-    UniqueFunction& operator=(UniqueFunction<ResultType, Args...>&& rhs) noexcept {
-        callable = std::move(rhs.callable);
-        return *this;
-    }
+    UniqueFunction& operator=(UniqueFunction&& rhs) noexcept = default;
+    UniqueFunction(UniqueFunction&& rhs) noexcept = default;
 
-    UniqueFunction(UniqueFunction<ResultType, Args...>&& rhs) noexcept
-        : callable{std::move(rhs.callable)} {}
+    UniqueFunction& operator=(const UniqueFunction&) = delete;
+    UniqueFunction(const UniqueFunction&) = delete;
 
-    ResultType operator()(Args... args) const {
+    ResultType operator()(Args&&... args) const {
         return (*callable)(std::forward<Args>(args)...);
     }
 
     explicit operator bool() const noexcept {
-        return callable != nullptr;
+        return static_cast<bool>(callable);
     }
-
-    UniqueFunction& operator=(const UniqueFunction<ResultType, Args...>&) = delete;
-    UniqueFunction(const UniqueFunction<ResultType, Args...>&) = delete;
 
 private:
     std::unique_ptr<CallableBase> callable;

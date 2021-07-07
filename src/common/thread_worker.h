@@ -81,7 +81,7 @@ public:
         {
             std::unique_lock lock{queue_mutex};
             requests.emplace(std::move(work));
-            ++work_scherduled;
+            ++work_scheduled;
         }
         condition.notify_one();
     }
@@ -94,7 +94,7 @@ public:
         });
         std::unique_lock lock{queue_mutex};
         wait_condition.wait(lock, [this] {
-            return workers_stopped >= workers_queued || work_done >= work_scherduled;
+            return workers_stopped >= workers_queued || work_done >= work_scheduled;
         });
     }
 
@@ -103,7 +103,7 @@ private:
     std::mutex queue_mutex;
     std::condition_variable_any condition;
     std::condition_variable wait_condition;
-    std::atomic<size_t> work_scherduled{};
+    std::atomic<size_t> work_scheduled{};
     std::atomic<size_t> work_done{};
     std::atomic<size_t> workers_stopped{};
     std::atomic<size_t> workers_queued{};

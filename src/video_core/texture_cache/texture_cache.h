@@ -159,9 +159,7 @@ public:
     /// Blit an image with the given parameters
     void BlitImage(const Tegra::Engines::Fermi2D::Surface& dst,
                    const Tegra::Engines::Fermi2D::Surface& src,
-                   const Tegra::Engines::Fermi2D::Config& copy,
-                   std::optional<Region2D> src_region_override = {},
-                   std::optional<Region2D> dst_region_override = {});
+                   const Tegra::Engines::Fermi2D::Config& copy);
 
     /// Invalidate the contents of the color buffer index
     /// These contents become unspecified, the cache can assume aggressive optimizations.
@@ -760,9 +758,7 @@ void TextureCache<P>::UnmapGPUMemory(GPUVAddr gpu_addr, size_t size) {
 template <class P>
 void TextureCache<P>::BlitImage(const Tegra::Engines::Fermi2D::Surface& dst,
                                 const Tegra::Engines::Fermi2D::Surface& src,
-                                const Tegra::Engines::Fermi2D::Config& copy,
-                                std::optional<Region2D> src_override,
-                                std::optional<Region2D> dst_override) {
+                                const Tegra::Engines::Fermi2D::Config& copy) {
     const BlitImages images = GetBlitImages(dst, src);
     const ImageId dst_id = images.dst_id;
     const ImageId src_id = images.src_id;
@@ -773,47 +769,25 @@ void TextureCache<P>::BlitImage(const Tegra::Engines::Fermi2D::Surface& dst,
     const ImageBase& src_image = slot_images[src_id];
 
     // TODO: Deduplicate
-    const std::optional dst_base = dst_image.TryFindBase(dst.Address());
-    const SubresourceRange dst_range{.base = dst_base.value(), .extent = {1, 1}};
-    const ImageViewInfo dst_view_info(ImageViewType::e2D, images.dst_format, dst_range);
-    const auto [dst_framebuffer_id, dst_view_id] = RenderTargetFromImage(dst_id, dst_view_info);
-    const auto [src_samples_x, src_samples_y] = SamplesLog2(src_image.info.num_samples);
-
-    // out of bounds texture blit checking
-    const bool use_override = src_override.has_value();
-    const s32 src_x0 = copy.src_x0 >> src_samples_x;
-    s32 src_x1 = use_override ? src_override->end.x : copy.src_x1 >> src_samples_x;
-    const s32 src_y0 = copy.src_y0 >> src_samples_y;
-    const s32 src_y1 = copy.src_y1 >> src_samples_y;
-
-    const auto src_width = static_cast<s32>(src_image.info.size.width);
-    const bool width_oob = src_x1 > src_width;
-    const auto width_diff = width_oob ? src_x1 - src_width : 0;
-    if (width_oob) {
-        src_x1 = src_width;
-    }
-
-    const Region2D src_dimensions{
-        Offset2D{.x = src_x0, .y = src_y0},
-        Offset2D{.x = src_x1, .y = src_y1},
-    };
-    const auto src_region = use_override ? *src_override : src_dimensions;
-
     const std::optional src_base = src_image.TryFindBase(src.Address());
     const SubresourceRange src_range{.base = src_base.value(), .extent = {1, 1}};
     const ImageViewInfo src_view_info(ImageViewType::e2D, images.src_format, src_range);
     const auto [src_framebuffer_id, src_view_id] = RenderTargetFromImage(src_id, src_view_info);
-    const auto [dst_samples_x, dst_samples_y] = SamplesLog2(dst_image.info.num_samples);
-
-    const s32 dst_x0 = copy.dst_x0 >> dst_samples_x;
-    const s32 dst_x1 = copy.dst_x1 >> dst_samples_x;
-    const s32 dst_y0 = copy.dst_y0 >> dst_samples_y;
-    const s32 dst_y1 = copy.dst_y1 >> dst_samples_y;
-    const Region2D dst_dimensions{
-        Offset2D{.x = dst_x0, .y = dst_y0},
-        Offset2D{.x = dst_x1 - width_diff, .y = dst_y1},
+    const auto [src_samples_x, src_samples_y] = SamplesLog2(src_image.info.num_samples);
+    const Region2D src_region{
+        Offset2D{.x = copy.src_x0 >> src_samples_x, .y = copy.src_y0 >> src_samples_y},
+        Offset2D{.x = copy.src_x1 >> src_samples_x, .y = copy.src_y1 >> src_samples_y},
     };
-    const auto dst_region = use_override ? *dst_override : dst_dimensions;
+
+    const std::optional dst_base = dst_image.TryFindBase(dst.Address());
+    const SubresourceRange dst_range{.base = dst_base.value(), .extent = {1, 1}};
+    const ImageViewInfo dst_view_info(ImageViewType::e2D, images.dst_format, dst_range);
+    const auto [dst_framebuffer_id, dst_view_id] = RenderTargetFromImage(dst_id, dst_view_info);
+    const auto [dst_samples_x, dst_samples_y] = SamplesLog2(dst_image.info.num_samples);
+    const Region2D dst_region{
+        Offset2D{.x = copy.dst_x0 >> dst_samples_x, .y = copy.dst_y0 >> dst_samples_y},
+        Offset2D{.x = copy.dst_x1 >> dst_samples_x, .y = copy.dst_y1 >> dst_samples_y},
+    };
 
     // Always call this after src_framebuffer_id was queried, as the address might be invalidated.
     Framebuffer* const dst_framebuffer = &slot_framebuffers[dst_framebuffer_id];
@@ -829,21 +803,6 @@ void TextureCache<P>::BlitImage(const Tegra::Engines::Fermi2D::Surface& dst,
         ImageView& src_view = slot_image_views[src_view_id];
         runtime.BlitImage(dst_framebuffer, dst_view, src_view, dst_region, src_region, copy.filter,
                           copy.operation);
-    }
-
-    if (width_oob) {
-        // Continue copy of the oob region of the texture on the next row
-        auto oob_src = src;
-        oob_src.height++;
-        const Region2D src_region_override{
-            Offset2D{.x = 0, .y = src_y0 + 1},
-            Offset2D{.x = width_diff, .y = src_y1 + 1},
-        };
-        const Region2D dst_region_override{
-            Offset2D{.x = dst_x1 - width_diff, .y = dst_y0},
-            Offset2D{.x = dst_x1, .y = dst_y1},
-        };
-        BlitImage(dst, oob_src, copy, src_region_override, dst_region_override);
     }
 }
 
