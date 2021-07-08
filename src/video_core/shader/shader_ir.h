@@ -26,7 +26,7 @@ namespace VideoCommon::Shader {
 
 struct ShaderBlock;
 
-constexpr u32 MAX_PROGRAM_LENGTH = 0x2000;
+constexpr u32 MAX_PROGRAM_LENGTH = 0x1000;
 
 struct ConstBuffer {
     constexpr explicit ConstBuffer(u32 max_offset_, bool is_indirect_)
@@ -64,67 +64,15 @@ struct GlobalMemoryUsage {
     bool is_written{};
 };
 
-class ShaderFunctionIR final {
-public:
-    explicit ShaderFunctionIR(std::map<u32, NodeBlock>&& basic_blocks_, bool disable_flow_stack_,
-                              u32 id_, u32 coverage_begin_, u32 coverage_end_)
-        : basic_blocks{std::move(basic_blocks_)}, decompiled{false},
-          disable_flow_stack{disable_flow_stack_}, id{id_}, coverage_begin{coverage_begin_},
-          coverage_end{coverage_end_} {}
-    explicit ShaderFunctionIR(ASTManager&& program_manager_, u32 id_, u32 coverage_begin_,
-                              u32 coverage_end_)
-        : program_manager{std::move(program_manager_)}, decompiled{true}, disable_flow_stack{true},
-          id{id_}, coverage_begin{coverage_begin_}, coverage_end{coverage_end_} {}
-
-    const std::map<u32, NodeBlock>& GetBasicBlocks() const {
-        return basic_blocks;
-    }
-
-    [[nodiscard]] bool IsFlowStackDisabled() const {
-        return disable_flow_stack;
-    }
-
-    [[nodiscard]] bool IsDecompiled() const {
-        return decompiled;
-    }
-
-    const ASTManager& GetASTManager() const {
-        return program_manager;
-    }
-
-    [[nodiscard]] ASTNode GetASTProgram() const {
-        return program_manager.GetProgram();
-    }
-
-    [[nodiscard]] u32 GetASTNumVariables() const {
-        return program_manager.GetVariables();
-    }
-
-    [[nodiscard]] bool IsMain() const {
-        return id == 0;
-    }
-
-    [[nodiscard]] u32 GetId() const {
-        return id;
-    }
-
-private:
-    std::map<u32, NodeBlock> basic_blocks;
-    ASTManager program_manager{true, true};
-
-    bool decompiled{};
-    bool disable_flow_stack{};
-    u32 id{};
-
-    u32 coverage_begin{};
-    u32 coverage_end{};
-};
-
 class ShaderIR final {
 public:
     explicit ShaderIR(const ProgramCode& program_code_, u32 main_offset_,
                       CompilerSettings settings_, Registry& registry_);
     ~ShaderIR();
+
+    const std::map<u32, NodeBlock>& GetBasicBlocks() const {
+        return basic_blocks;
+    }
 
     const std::set<u32>& GetRegisters() const {
         return used_registers;
@@ -207,6 +155,26 @@ public:
         return header;
     }
 
+    bool IsFlowStackDisabled() const {
+        return disable_flow_stack;
+    }
+
+    bool IsDecompiled() const {
+        return decompiled;
+    }
+
+    const ASTManager& GetASTManager() const {
+        return program_manager;
+    }
+
+    ASTNode GetASTProgram() const {
+        return program_manager.GetProgram();
+    }
+
+    u32 GetASTNumVariables() const {
+        return program_manager.GetVariables();
+    }
+
     u32 ConvertAddressToNvidiaSpace(u32 address) const {
         return (address - main_offset) * static_cast<u32>(sizeof(Tegra::Shader::Instruction));
     }
@@ -222,16 +190,7 @@ public:
         return num_custom_variables;
     }
 
-    std::shared_ptr<ShaderFunctionIR> GetMainFunction() const {
-        return main_function;
-    }
-
-    const std::vector<std::shared_ptr<ShaderFunctionIR>>& GetSubFunctions() const {
-        return subfunctions;
-    }
-
 private:
-    friend class ExprDecoder;
     friend class ASTDecoder;
 
     struct SamplerInfo {
@@ -493,10 +452,6 @@ private:
     ASTManager program_manager{true, true};
     std::vector<Node> amend_code;
     u32 num_custom_variables{};
-
-    std::shared_ptr<ShaderFunctionIR> main_function;
-    std::vector<std::shared_ptr<ShaderFunctionIR>> subfunctions;
-    std::unordered_map<u32, u32> func_map;
 
     std::set<u32> used_registers;
     std::set<Tegra::Shader::Pred> used_predicates;

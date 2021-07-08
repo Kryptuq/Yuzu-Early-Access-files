@@ -64,52 +64,9 @@ std::optional<u32> TryDeduceSamplerSize(const SamplerEntry& sampler_to_deduce,
 
 } // Anonymous namespace
 
-class ExprDecoder {
-public:
-    explicit ExprDecoder(ShaderIR& ir_) : ir(ir_) {}
-
-    void operator()(const ExprAnd& expr) {
-        Visit(expr.operand1);
-        Visit(expr.operand2);
-    }
-
-    void operator()(const ExprOr& expr) {
-        Visit(expr.operand1);
-        Visit(expr.operand2);
-    }
-
-    void operator()(const ExprNot& expr) {
-        Visit(expr.operand1);
-    }
-
-    void operator()(const ExprPredicate& expr) {
-        const auto pred = static_cast<Tegra::Shader::Pred>(expr.predicate);
-        if (pred != Pred::UnusedIndex && pred != Pred::NeverExecute) {
-            ir.used_predicates.insert(pred);
-        }
-    }
-
-    void operator()(const ExprCondCode& expr) {}
-
-    void operator()(const ExprVar& expr) {}
-
-    void operator()(const ExprBoolean& expr) {}
-
-    void operator()(const ExprGprEqual& expr) {
-        ir.used_registers.insert(expr.gpr);
-    }
-
-    void Visit(const Expr& node) {
-        return std::visit(*this, *node);
-    }
-
-private:
-    ShaderIR& ir;
-};
-
 class ASTDecoder {
 public:
-    explicit ASTDecoder(ShaderIR& ir_) : ir(ir_), decoder(ir_) {}
+    explicit ASTDecoder(ShaderIR& ir_) : ir(ir_) {}
 
     void operator()(ASTProgram& ast) {
         ASTNode current = ast.nodes.GetFirst();
@@ -120,7 +77,6 @@ public:
     }
 
     void operator()(ASTIfThen& ast) {
-        decoder.Visit(ast.condition);
         ASTNode current = ast.nodes.GetFirst();
         while (current) {
             Visit(current);
@@ -140,18 +96,13 @@ public:
 
     void operator()(ASTBlockDecoded& ast) {}
 
-    void operator()(ASTVarSet& ast) {
-        decoder.Visit(ast.condition);
-    }
+    void operator()(ASTVarSet& ast) {}
 
     void operator()(ASTLabel& ast) {}
 
-    void operator()(ASTGoto& ast) {
-        decoder.Visit(ast.condition);
-    }
+    void operator()(ASTGoto& ast) {}
 
     void operator()(ASTDoWhile& ast) {
-        decoder.Visit(ast.condition);
         ASTNode current = ast.nodes.GetFirst();
         while (current) {
             Visit(current);
@@ -159,13 +110,9 @@ public:
         }
     }
 
-    void operator()(ASTReturn& ast) {
-        decoder.Visit(ast.condition);
-    }
+    void operator()(ASTReturn& ast) {}
 
-    void operator()(ASTBreak& ast) {
-        decoder.Visit(ast.condition);
-    }
+    void operator()(ASTBreak& ast) {}
 
     void Visit(ASTNode& node) {
         std::visit(*this, *node->GetInnerData());
@@ -178,113 +125,77 @@ public:
 
 private:
     ShaderIR& ir;
-    ExprDecoder decoder;
 };
 
 void ShaderIR::Decode() {
-    const auto decode_function = ([this](ShaderFunction& shader_info) {
-        coverage_end = std::max<u32>(0, shader_info.end);
-        switch (shader_info.settings.depth) {
-        case CompileDepth::FlowStack: {
-            for (const auto& block : shader_info.blocks) {
-                basic_blocks.insert({block.start, DecodeRange(block.start, block.end + 1)});
-            }
-            break;
-        }
-        case CompileDepth::NoFlowStack: {
-            disable_flow_stack = true;
-            const auto insert_block = [this](NodeBlock& nodes, u32 label) {
-                if (label == static_cast<u32>(exit_branch)) {
-                    return;
-                }
-                basic_blocks.insert({label, nodes});
-            };
-            const auto& blocks = shader_info.blocks;
-            NodeBlock current_block;
-            u32 current_label = static_cast<u32>(exit_branch);
-            for (const auto& block : blocks) {
-                if (shader_info.labels.contains(block.start)) {
-                    insert_block(current_block, current_label);
-                    current_block.clear();
-                    current_label = block.start;
-                }
-                if (!block.ignore_branch) {
-                    DecodeRangeInner(current_block, block.start, block.end);
-                    InsertControlFlow(current_block, block);
-                } else {
-                    DecodeRangeInner(current_block, block.start, block.end + 1);
-                }
-            }
-            insert_block(current_block, current_label);
-            break;
-        }
-        case CompileDepth::DecompileBackwards:
-        case CompileDepth::FullDecompile: {
-            program_manager = std::move(shader_info.manager);
-            disable_flow_stack = true;
-            decompiled = true;
-            ASTDecoder decoder{*this};
-            ASTNode program = program_manager.GetProgram();
-            decoder.Visit(program);
-            break;
-        }
-        default:
-            LOG_CRITICAL(HW_GPU, "Unknown decompilation mode!");
-            [[fallthrough]];
-        case CompileDepth::BruteForce: {
-            const auto shader_end = static_cast<u32>(program_code.size());
-            coverage_begin = main_offset;
-            coverage_end = shader_end;
-            for (u32 label = main_offset; label < shader_end; ++label) {
-                basic_blocks.insert({label, DecodeRange(label, label + 1)});
-            }
-            break;
-        }
-        }
-        if (settings.depth != shader_info.settings.depth) {
-            LOG_WARNING(
-                HW_GPU,
-                "Decompiling to this setting \"{}\" failed, downgrading to this setting \"{}\"",
-                CompileDepthAsString(settings.depth),
-                CompileDepthAsString(shader_info.settings.depth));
-        }
-    });
-    const auto gen_function =
-        ([this](ShaderFunction& shader_info, u32 id) -> std::shared_ptr<ShaderFunctionIR> {
-            std::shared_ptr<ShaderFunctionIR> result;
-            if (decompiled) {
-                result = std::make_shared<ShaderFunctionIR>(std::move(program_manager), id,
-                                                            shader_info.start, shader_info.end);
-            } else {
-                result =
-                    std::make_shared<ShaderFunctionIR>(std::move(basic_blocks), disable_flow_stack,
-                                                       id, shader_info.start, shader_info.end);
-            }
-            decompiled = false;
-            disable_flow_stack = false;
-            basic_blocks.clear();
-            program_manager.Clear();
-            return result;
-        });
     std::memcpy(&header, program_code.data(), sizeof(Tegra::Shader::Header));
 
     decompiled = false;
     auto info = ScanFlow(program_code, main_offset, settings, registry);
-    u32 id_start = 1;
-    for (auto& pair : info->subfunctions) {
-        func_map.emplace(pair.first, id_start);
-        id_start++;
+    auto& shader_info = *info;
+    coverage_begin = shader_info.start;
+    coverage_end = shader_info.end;
+    switch (shader_info.settings.depth) {
+    case CompileDepth::FlowStack: {
+        for (const auto& block : shader_info.blocks) {
+            basic_blocks.insert({block.start, DecodeRange(block.start, block.end + 1)});
+        }
+        break;
     }
-    coverage_begin = info->main.start;
-    coverage_end = 0;
-    decode_function(info->main);
-    main_function = gen_function(info->main, 0);
-    subfunctions.resize(info->subfunctions.size());
-    for (auto& pair : info->subfunctions) {
-        auto& func_info = pair.second;
-        decode_function(func_info);
-        u32 id = func_map[pair.first];
-        subfunctions[id - 1] = gen_function(func_info, id);
+    case CompileDepth::NoFlowStack: {
+        disable_flow_stack = true;
+        const auto insert_block = [this](NodeBlock& nodes, u32 label) {
+            if (label == static_cast<u32>(exit_branch)) {
+                return;
+            }
+            basic_blocks.insert({label, nodes});
+        };
+        const auto& blocks = shader_info.blocks;
+        NodeBlock current_block;
+        u32 current_label = static_cast<u32>(exit_branch);
+        for (const auto& block : blocks) {
+            if (shader_info.labels.contains(block.start)) {
+                insert_block(current_block, current_label);
+                current_block.clear();
+                current_label = block.start;
+            }
+            if (!block.ignore_branch) {
+                DecodeRangeInner(current_block, block.start, block.end);
+                InsertControlFlow(current_block, block);
+            } else {
+                DecodeRangeInner(current_block, block.start, block.end + 1);
+            }
+        }
+        insert_block(current_block, current_label);
+        break;
+    }
+    case CompileDepth::DecompileBackwards:
+    case CompileDepth::FullDecompile: {
+        program_manager = std::move(shader_info.manager);
+        disable_flow_stack = true;
+        decompiled = true;
+        ASTDecoder decoder{*this};
+        ASTNode program = GetASTProgram();
+        decoder.Visit(program);
+        break;
+    }
+    default:
+        LOG_CRITICAL(HW_GPU, "Unknown decompilation mode!");
+        [[fallthrough]];
+    case CompileDepth::BruteForce: {
+        const auto shader_end = static_cast<u32>(program_code.size());
+        coverage_begin = main_offset;
+        coverage_end = shader_end;
+        for (u32 label = main_offset; label < shader_end; ++label) {
+            basic_blocks.insert({label, DecodeRange(label, label + 1)});
+        }
+        break;
+    }
+    }
+    if (settings.depth != shader_info.settings.depth) {
+        LOG_WARNING(
+            HW_GPU, "Decompiling to this setting \"{}\" failed, downgrading to this setting \"{}\"",
+            CompileDepthAsString(settings.depth), CompileDepthAsString(shader_info.settings.depth));
     }
 }
 

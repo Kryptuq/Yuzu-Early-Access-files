@@ -19,11 +19,6 @@ Node Comment(std::string text) {
     return MakeNode<CommentNode>(std::move(text));
 }
 
-/// Creates a function call
-Node FunctionCall(u32 func_id) {
-    return MakeNode<FunctionCallNode>(func_id);
-}
-
 Node Immediate(u32 value) {
     return MakeNode<ImmediateNode>(value);
 }

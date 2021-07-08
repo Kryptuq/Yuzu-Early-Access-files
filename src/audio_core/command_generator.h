@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <span>
 #include "audio_core/common.h"
 #include "audio_core/voice_context.h"
 #include "common/common_types.h"
@@ -41,10 +42,10 @@ public:
     void PreCommand();
     void PostCommand();
 
-    [[nodiscard]] s32* GetChannelMixBuffer(s32 channel);
-    [[nodiscard]] const s32* GetChannelMixBuffer(s32 channel) const;
-    [[nodiscard]] s32* GetMixBuffer(std::size_t index);
-    [[nodiscard]] const s32* GetMixBuffer(std::size_t index) const;
+    [[nodiscard]] std::span<s32> GetChannelMixBuffer(s32 channel);
+    [[nodiscard]] std::span<const s32> GetChannelMixBuffer(s32 channel) const;
+    [[nodiscard]] std::span<s32> GetMixBuffer(std::size_t index);
+    [[nodiscard]] std::span<const s32> GetMixBuffer(std::size_t index) const;
     [[nodiscard]] std::size_t GetMixChannelBufferOffset(s32 channel) const;
 
     [[nodiscard]] std::size_t GetTotalMixBufferCount() const;
@@ -77,10 +78,11 @@ private:
     void GenerateAuxCommand(s32 mix_buffer_offset, EffectBase* info, bool enabled);
     [[nodiscard]] ServerSplitterDestinationData* GetDestinationData(s32 splitter_id, s32 index);
 
-    s32 WriteAuxBuffer(AuxInfoDSP& dsp_info, VAddr send_buffer, u32 max_samples, const s32* data,
-                       u32 sample_count, u32 write_offset, u32 write_count);
-    s32 ReadAuxBuffer(AuxInfoDSP& recv_info, VAddr recv_buffer, u32 max_samples, s32* out_data,
-                      u32 sample_count, u32 read_offset, u32 read_count);
+    s32 WriteAuxBuffer(AuxInfoDSP& dsp_info, VAddr send_buffer, u32 max_samples,
+                       std::span<const s32> data, u32 sample_count, u32 write_offset,
+                       u32 write_count);
+    s32 ReadAuxBuffer(AuxInfoDSP& recv_info, VAddr recv_buffer, u32 max_samples,
+                      std::span<s32> out_data, u32 sample_count, u32 read_offset, u32 read_count);
 
     void InitializeI3dl2Reverb(I3dl2ReverbParams& info, I3dl2ReverbState& state,
                                std::vector<u8>& work_buffer);
@@ -91,8 +93,9 @@ private:
                   s32 sample_end_offset, s32 sample_count, s32 channel, std::size_t mix_offset);
     s32 DecodeAdpcm(ServerVoiceInfo& voice_info, VoiceState& dsp_state, s32 sample_start_offset,
                     s32 sample_end_offset, s32 sample_count, s32 channel, std::size_t mix_offset);
-    void DecodeFromWaveBuffers(ServerVoiceInfo& voice_info, s32* output, VoiceState& dsp_state,
-                               s32 channel, s32 target_sample_rate, s32 sample_count, s32 node_id);
+    void DecodeFromWaveBuffers(ServerVoiceInfo& voice_info, std::span<s32> output,
+                               VoiceState& dsp_state, s32 channel, s32 target_sample_rate,
+                               s32 sample_count, s32 node_id);
 
     AudioCommon::AudioRendererParameter& worker_params;
     VoiceContext& voice_context;

@@ -27,9 +27,6 @@ Node Conditional(Node condition, std::vector<Node> code);
 /// Creates a commentary node
 Node Comment(std::string text);
 
-/// Creates a function call
-Node FunctionCall(u32 func_id);
-
 /// Creates an u32 immediate
 Node Immediate(u32 value);
 

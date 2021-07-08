@@ -491,9 +491,6 @@ private:
     const Registry& registry;
     const ShaderType stage;
 
-    std::shared_ptr<ShaderFunctionIR> context_func;
-    u32 ast_var_base{};
-
     std::size_t num_temporaries = 0;
     std::size_t max_temporaries = 0;
 
@@ -810,33 +807,13 @@ ARBDecompiler::ARBDecompiler(const Device& device_, const ShaderIR& ir_, const R
     : device{device_}, ir{ir_}, registry{registry_}, stage{stage_} {
     DefineGlobalMemory();
 
-    context_func = ir.GetMainFunction();
-    ast_var_base = 0;
-
     AddLine("TEMP RC;");
     AddLine("TEMP FSWZA[4];");
     AddLine("TEMP FSWZB[4];");
-    InitializeVariables();
-    AddLine("main:");
-    if (context_func->IsDecompiled()) {
+    if (ir.IsDecompiled()) {
         DecompileAST();
     } else {
         DecompileBranchMode();
-        AddLine("RET;");
-    }
-
-    const auto& subfunctions = ir.GetSubFunctions();
-    auto it = subfunctions.begin();
-    while (it != subfunctions.end()) {
-        context_func = *it;
-        AddLine("func_{}:", context_func->GetId());
-        if (context_func->IsDecompiled()) {
-            DecompileAST();
-        } else {
-            DecompileBranchMode();
-            AddLine("RET;");
-        }
-        it++;
     }
     AddLine("END");
 
@@ -1083,38 +1060,41 @@ void ARBDecompiler::InitializeVariables() {
 }
 
 void ARBDecompiler::DecompileAST() {
-    const u32 num_flow_variables = context_func->GetASTNumVariables();
+    const u32 num_flow_variables = ir.GetASTNumVariables();
     for (u32 i = 0; i < num_flow_variables; ++i) {
-        AddLine("TEMP F{};", i + ast_var_base);
+        AddLine("TEMP F{};", i);
     }
     for (u32 i = 0; i < num_flow_variables; ++i) {
-        AddLine("MOV.U F{}, {{0, 0, 0, 0}};", i + ast_var_base);
+        AddLine("MOV.U F{}, {{0, 0, 0, 0}};", i);
     }
 
-    VisitAST(context_func->GetASTProgram());
-    ast_var_base += num_flow_variables;
+    InitializeVariables();
+
+    VisitAST(ir.GetASTProgram());
 }
 
 void ARBDecompiler::DecompileBranchMode() {
     static constexpr u32 FLOW_STACK_SIZE = 20;
-    if (!context_func->IsFlowStackDisabled()) {
+    if (!ir.IsFlowStackDisabled()) {
         AddLine("TEMP SSY[{}];", FLOW_STACK_SIZE);
         AddLine("TEMP PBK[{}];", FLOW_STACK_SIZE);
         AddLine("TEMP SSY_TOP;");
         AddLine("TEMP PBK_TOP;");
     }
 
-    AddLine("TEMP PC{};", context_func->GetId());
+    AddLine("TEMP PC;");
 
-    if (!context_func->IsFlowStackDisabled()) {
+    if (!ir.IsFlowStackDisabled()) {
         AddLine("MOV.U SSY_TOP.x, 0;");
         AddLine("MOV.U PBK_TOP.x, 0;");
     }
 
-    const auto basic_block_end = context_func->GetBasicBlocks().end();
-    auto basic_block_it = context_func->GetBasicBlocks().begin();
+    InitializeVariables();
+
+    const auto basic_block_end = ir.GetBasicBlocks().end();
+    auto basic_block_it = ir.GetBasicBlocks().begin();
     const u32 first_address = basic_block_it->first;
-    AddLine("MOV.U PC{}.x, {};", context_func->GetId(), first_address);
+    AddLine("MOV.U PC.x, {};", first_address);
 
     AddLine("REP;");
 
@@ -1123,7 +1103,7 @@ void ARBDecompiler::DecompileBranchMode() {
         const auto& [address, bb] = *basic_block_it;
         ++num_blocks;
 
-        AddLine("SEQ.S.CC RC.x, PC{}.x, {};", context_func->GetId(), address);
+        AddLine("SEQ.S.CC RC.x, PC.x, {};", address);
         AddLine("IF NE.x;");
 
         VisitBlock(bb);
@@ -1134,7 +1114,7 @@ void ARBDecompiler::DecompileBranchMode() {
             const auto op = std::get_if<OperationNode>(&*bb[bb.size() - 1]);
             if (!op || op->GetCode() != OperationCode::Branch) {
                 const u32 next_address = basic_block_it->first;
-                AddLine("MOV.U PC{}.x, {};", context_func->GetId(), next_address);
+                AddLine("MOV.U PC.x, {};", next_address);
                 AddLine("CONT;");
             }
         }
@@ -1172,8 +1152,7 @@ void ARBDecompiler::VisitAST(const ASTNode& node) {
     } else if (const auto decoded = std::get_if<ASTBlockDecoded>(&*node->GetInnerData())) {
         VisitBlock(decoded->nodes);
     } else if (const auto var_set = std::get_if<ASTVarSet>(&*node->GetInnerData())) {
-        AddLine("MOV.U F{}, {};", var_set->index + ast_var_base,
-                VisitExpression(var_set->condition));
+        AddLine("MOV.U F{}, {};", var_set->index, VisitExpression(var_set->condition));
         ResetTemporaries();
     } else if (const auto do_while = std::get_if<ASTDoWhile>(&*node->GetInnerData())) {
         const std::string condition = VisitExpression(do_while->condition);
@@ -1193,11 +1172,7 @@ void ARBDecompiler::VisitAST(const ASTNode& node) {
             ResetTemporaries();
         }
         if (ast_return->kills) {
-            if (stage == ShaderType::Fragment) {
-                AddLine("KIL TR;");
-            } else {
-                AddLine("RET;");
-            }
+            AddLine("KIL TR;");
         } else {
             Exit();
         }
@@ -1244,7 +1219,7 @@ std::string ARBDecompiler::VisitExpression(const Expr& node) {
         return Visit(ir.GetConditionCode(expr->cc));
     }
     if (const auto expr = std::get_if<ExprVar>(&*node)) {
-        return fmt::format("F{}.x", expr->var_index + ast_var_base);
+        return fmt::format("F{}.x", expr->var_index);
     }
     if (const auto expr = std::get_if<ExprBoolean>(&*node)) {
         return expr->value ? "0xffffffff" : "0";
@@ -1431,11 +1406,6 @@ std::string ARBDecompiler::Visit(const Node& node) {
         return {};
     }
 
-    if (const auto func_call = std::get_if<FunctionCallNode>(&*node)) {
-        AddLine("CAL func_{};", func_call->GetFuncId());
-        return {};
-    }
-
     if ([[maybe_unused]] const auto cmt = std::get_if<CommentNode>(&*node)) {
         // Uncommenting this will generate invalid code. GLASM lacks comments.
         // AddLine("// {}", cmt->GetText());
@@ -1509,7 +1479,7 @@ std::string ARBDecompiler::GlobalMemoryPointer(const GmemNode& gmem) {
 }
 
 void ARBDecompiler::Exit() {
-    if (!context_func->IsMain() || stage != ShaderType::Fragment) {
+    if (stage != ShaderType::Fragment) {
         AddLine("RET;");
         return;
     }
@@ -2051,13 +2021,13 @@ std::string ARBDecompiler::ImageStore(Operation operation) {
 
 std::string ARBDecompiler::Branch(Operation operation) {
     const auto target = std::get<ImmediateNode>(*operation[0]);
-    AddLine("MOV.U PC{}.x, {};", context_func->GetId(), target.GetValue());
+    AddLine("MOV.U PC.x, {};", target.GetValue());
     AddLine("CONT;");
     return {};
 }
 
 std::string ARBDecompiler::BranchIndirect(Operation operation) {
-    AddLine("MOV.U PC{}.x, {};", context_func->GetId(), Visit(operation[0]));
+    AddLine("MOV.U PC.x, {};", Visit(operation[0]));
     AddLine("CONT;");
     return {};
 }
@@ -2075,7 +2045,7 @@ std::string ARBDecompiler::PopFlowStack(Operation operation) {
     const auto stack = std::get<MetaStackClass>(operation.GetMeta());
     const std::string_view stack_name = StackName(stack);
     AddLine("SUB.S {}_TOP.x, {}_TOP.x, 1;", stack_name, stack_name);
-    AddLine("MOV.U PC{}.x, {}[{}_TOP.x].x;", context_func->GetId(), stack_name, stack_name);
+    AddLine("MOV.U PC.x, {}[{}_TOP.x].x;", stack_name, stack_name);
     AddLine("CONT;");
     return {};
 }
@@ -2086,10 +2056,6 @@ std::string ARBDecompiler::Exit(Operation) {
 }
 
 std::string ARBDecompiler::Discard(Operation) {
-    if (stage != ShaderType::Fragment) {
-        AddLine("RET;");
-        return {};
-    }
     AddLine("KIL TR;");
     return {};
 }

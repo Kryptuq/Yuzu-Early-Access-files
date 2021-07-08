@@ -29,10 +29,9 @@ namespace {
                                        (static_cast<float>(r_channel) * r_mix_amount)));
 }
 
-[[nodiscard]] static constexpr std::tuple<s16, s16> Mix6To2(s16 fl_channel, s16 fr_channel,
-                                                            s16 fc_channel,
-                                                            [[maybe_unused]] s16 lf_channel,
-                                                            s16 bl_channel, s16 br_channel) {
+[[maybe_unused, nodiscard]] static constexpr std::tuple<s16, s16> Mix6To2(
+    s16 fl_channel, s16 fr_channel, s16 fc_channel, [[maybe_unused]] s16 lf_channel, s16 bl_channel,
+    s16 br_channel) {
     // Front channels are mixed 36.94%, Center channels are mixed to be 26.12% & the back channels
     // are mixed to be 36.94%
 
@@ -57,11 +56,11 @@ namespace {
     const std::array<float_le, 4>& coeff) {
     const auto left =
         static_cast<float>(fl_channel) * coeff[0] + static_cast<float>(fc_channel) * coeff[1] +
-        static_cast<float>(lf_channel) * coeff[2] + static_cast<float>(bl_channel) * coeff[0];
+        static_cast<float>(lf_channel) * coeff[2] + static_cast<float>(bl_channel) * coeff[3];
 
     const auto right =
         static_cast<float>(fr_channel) * coeff[0] + static_cast<float>(fc_channel) * coeff[1] +
-        static_cast<float>(lf_channel) * coeff[2] + static_cast<float>(br_channel) * coeff[0];
+        static_cast<float>(lf_channel) * coeff[2] + static_cast<float>(br_channel) * coeff[3];
 
     return {ClampToS16(static_cast<s32>(left)), ClampToS16(static_cast<s32>(right))};
 }
@@ -241,7 +240,7 @@ void AudioRenderer::QueueMixedBuffer(Buffer::Tag tag) {
         const auto channel_count = buffer_offsets.size();
         const auto& final_mix = mix_context.GetFinalMixInfo();
         const auto& in_params = final_mix.GetInParams();
-        std::vector<s32*> mix_buffers(channel_count);
+        std::vector<std::span<s32>> mix_buffers(channel_count);
         for (std::size_t i = 0; i < channel_count; i++) {
             mix_buffers[i] =
                 command_generator.GetMixBuffer(in_params.buffer_offset + buffer_offsets[i]);
@@ -294,18 +293,11 @@ void AudioRenderer::QueueMixedBuffer(Buffer::Tag tag) {
                     buffer[i * stream_channel_count + 0] = Mix2To1(fl_sample, fr_sample);
                 } else if (stream_channel_count == 2) {
                     // Mix all channels into 2 channels
-                    if (sink_context.HasDownMixingCoefficients()) {
-                        const auto [left, right] = Mix6To2WithCoefficients(
-                            fl_sample, fr_sample, fc_sample, lf_sample, bl_sample, br_sample,
-                            sink_context.GetDownmixCoefficients());
-                        buffer[i * stream_channel_count + 0] = left;
-                        buffer[i * stream_channel_count + 1] = right;
-                    } else {
-                        const auto [left, right] = Mix6To2(fl_sample, fr_sample, fc_sample,
-                                                           lf_sample, bl_sample, br_sample);
-                        buffer[i * stream_channel_count + 0] = left;
-                        buffer[i * stream_channel_count + 1] = right;
-                    }
+                    const auto [left, right] = Mix6To2WithCoefficients(
+                        fl_sample, fr_sample, fc_sample, lf_sample, bl_sample, br_sample,
+                        sink_context.GetDownmixCoefficients());
+                    buffer[i * stream_channel_count + 0] = left;
+                    buffer[i * stream_channel_count + 1] = right;
                 } else if (stream_channel_count == 6) {
                     // Pass through
                     buffer[i * stream_channel_count + 0] = fl_sample;

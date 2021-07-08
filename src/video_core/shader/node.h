@@ -267,11 +267,10 @@ class PatchNode;
 class SmemNode;
 class GmemNode;
 class CommentNode;
-class FunctionCallNode;
 
 using NodeData = std::variant<OperationNode, ConditionalNode, GprNode, CustomVarNode, ImmediateNode,
                               InternalFlagNode, PredicateNode, AbufNode, PatchNode, CbufNode,
-                              LmemNode, SmemNode, GmemNode, FunctionCallNode, CommentNode>;
+                              LmemNode, SmemNode, GmemNode, CommentNode>;
 using Node = std::shared_ptr<NodeData>;
 using Node4 = std::array<Node, 4>;
 using NodeBlock = std::vector<Node>;
@@ -493,18 +492,6 @@ public:
 private:
     Node condition;         ///< Condition to be satisfied
     std::vector<Node> code; ///< Code to execute
-};
-
-class FunctionCallNode final : public AmendNode {
-public:
-    explicit FunctionCallNode(u32 func_id_) : func_id{func_id_} {}
-
-    [[nodiscard]] u32 GetFuncId() const {
-        return func_id;
-    }
-
-private:
-    u32 func_id; ///< Id of the function to call
 };
 
 /// A general purpose register

@@ -33,7 +33,6 @@ u32 ShaderIR::DecodeOther(NodeBlock& bb, u32 pc) {
         // With the previous preconditions, this instruction is a no-operation.
         break;
     }
-    case OpCode::Id::RET:
     case OpCode::Id::EXIT: {
         const ConditionCode cc = instr.flow_condition_code;
         UNIMPLEMENTED_IF_MSG(cc != ConditionCode::T, "EXIT condition code used: {}", cc);
@@ -311,16 +310,6 @@ u32 ShaderIR::DecodeOther(NodeBlock& bb, u32 pc) {
     }
     case OpCode::Id::DEPBAR: {
         LOG_DEBUG(HW_GPU, "DEPBAR instruction is stubbed");
-        break;
-    }
-    case OpCode::Id::CAL: {
-        const u32 target = pc + instr.bra.GetBranchTarget();
-        const auto it = func_map.find(target);
-        if (it == func_map.end()) {
-            UNREACHABLE();
-            break;
-        }
-        bb.push_back(FunctionCall(it->second));
         break;
     }
     default:

@@ -406,38 +406,10 @@ private:
         binding = DeclareStorageTexels(binding);
         binding = DeclareImages(binding);
 
-        const auto& subfunctions = ir.GetSubFunctions();
-
-        labels.resize(subfunctions.size() + 1);
-        other_functions.resize(subfunctions.size());
-
-        auto it = subfunctions.rbegin();
-        while (it != subfunctions.rend()) {
-            context_func = *it;
-            other_functions[context_func->GetId() - 1] =
-                OpFunction(t_void, {}, TypeFunction(t_void));
-            AddLabel();
-
-            if (context_func->IsDecompiled()) {
-                DeclareFlowVariables();
-                DecompileAST();
-            } else {
-                AllocateLabels();
-                DecompileBranchMode();
-            }
-
-            OpReturn();
-            OpFunctionEnd();
-
-            it++;
-        }
-
-        context_func = ir.GetMainFunction();
-
         const Id main = OpFunction(t_void, {}, TypeFunction(t_void));
         AddLabel();
 
-        if (context_func->IsDecompiled()) {
+        if (ir.IsDecompiled()) {
             DeclareFlowVariables();
             DecompileAST();
         } else {
@@ -469,18 +441,16 @@ private:
     void DecompileAST();
 
     void DecompileBranchMode() {
-        const u32 first_address = context_func->GetBasicBlocks().begin()->first;
-        const u32 func_id = context_func->GetId();
-        const std::string func_id_msg = std::to_string(func_id);
-        const Id loop_label = OpLabel("loop_" + func_id_msg);
-        const Id merge_label = OpLabel("merge_" + func_id_msg);
+        const u32 first_address = ir.GetBasicBlocks().begin()->first;
+        const Id loop_label = OpLabel("loop");
+        const Id merge_label = OpLabel("merge");
         const Id dummy_label = OpLabel();
         const Id jump_label = OpLabel();
-        continue_label = OpLabel("continue_" + func_id_msg);
+        continue_label = OpLabel("continue");
 
         std::vector<Sirit::Literal> literals;
         std::vector<Id> branch_labels;
-        for (const auto& [literal, label] : labels[func_id]) {
+        for (const auto& [literal, label] : labels) {
             literals.push_back(literal);
             branch_labels.push_back(label);
         }
@@ -492,11 +462,11 @@ private:
         std::tie(ssy_flow_stack, ssy_flow_stack_top) = CreateFlowStack();
         std::tie(pbk_flow_stack, pbk_flow_stack_top) = CreateFlowStack();
 
-        Name(jmp_to, "jmp_to_" + func_id_msg);
-        Name(ssy_flow_stack, "ssy_flow_stack_" + func_id_msg);
-        Name(ssy_flow_stack_top, "ssy_flow_stack_top_" + func_id_msg);
-        Name(pbk_flow_stack, "pbk_flow_stack_" + func_id_msg);
-        Name(pbk_flow_stack_top, "pbk_flow_stack_top_" + func_id_msg);
+        Name(jmp_to, "jmp_to");
+        Name(ssy_flow_stack, "ssy_flow_stack");
+        Name(ssy_flow_stack_top, "ssy_flow_stack_top");
+        Name(pbk_flow_stack, "pbk_flow_stack");
+        Name(pbk_flow_stack_top, "pbk_flow_stack_top");
 
         DefinePrologue();
 
@@ -514,14 +484,13 @@ private:
         AddLabel(default_branch);
         OpReturn();
 
-        for (const auto& [address, bb] : context_func->GetBasicBlocks()) {
-            AddLabel(labels[func_id].at(address));
+        for (const auto& [address, bb] : ir.GetBasicBlocks()) {
+            AddLabel(labels.at(address));
 
             VisitBasicBlock(bb);
 
-            const auto next_it = labels[func_id].lower_bound(address + 1);
-            const Id next_label =
-                next_it != labels[func_id].end() ? next_it->second : default_branch;
+            const auto next_it = labels.lower_bound(address + 1);
+            const Id next_label = next_it != labels.end() ? next_it->second : default_branch;
             OpBranch(next_label);
         }
 
@@ -539,10 +508,9 @@ private:
     static constexpr auto INTERNAL_FLAGS_COUNT = static_cast<std::size_t>(InternalFlag::Amount);
 
     void AllocateLabels() {
-        const u32 func_id = context_func->GetId();
-        for (const auto& pair : context_func->GetBasicBlocks()) {
+        for (const auto& pair : ir.GetBasicBlocks()) {
             const u32 address = pair.first;
-            labels[func_id].emplace(address, OpLabel(fmt::format("label_0x{:x}", address)));
+            labels.emplace(address, OpLabel(fmt::format("label_0x{:x}", address)));
         }
     }
 
@@ -621,14 +589,6 @@ private:
         DeclareOutputVertex();
     }
 
-    void SafeKill() {
-        if (stage != ShaderType::Fragment) {
-            OpReturn();
-            return;
-        }
-        OpKill();
-    }
-
     void DeclareFragment() {
         if (stage != ShaderType::Fragment) {
             return;
@@ -696,7 +656,7 @@ private:
     }
 
     void DeclareFlowVariables() {
-        for (u32 i = 0; i < context_func->GetASTNumVariables(); i++) {
+        for (u32 i = 0; i < ir.GetASTNumVariables(); i++) {
             const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private, v_false);
             Name(id, fmt::format("flow_var_{}", static_cast<u32>(i)));
             flow_variables.emplace(i, AddGlobalVariable(id));
@@ -1370,12 +1330,6 @@ private:
                 inside_branch = false;
             }
             AddLabel(skip_label);
-            return {};
-        }
-
-        if (const auto func_call = std::get_if<FunctionCallNode>(&*node)) {
-            const u32 func_id = func_call->GetFuncId();
-            OpFunctionCall(t_void, other_functions[func_id - 1]);
             return {};
         }
 
@@ -2170,7 +2124,7 @@ private:
 
         OpBranchConditional(condition, true_label, discard_label);
         AddLabel(discard_label);
-        SafeKill();
+        OpKill();
         AddLabel(true_label);
     }
 
@@ -2221,9 +2175,7 @@ private:
     }
 
     Expression Exit(Operation operation) {
-        if (context_func->IsMain()) {
-            PreExit();
-        }
+        PreExit();
         inside_branch = true;
         if (conditional_branch_set) {
             OpReturn();
@@ -2240,12 +2192,12 @@ private:
     Expression Discard(Operation operation) {
         inside_branch = true;
         if (conditional_branch_set) {
-            SafeKill();
+            OpKill();
         } else {
             const Id dummy = OpLabel();
             OpBranch(dummy);
             AddLabel(dummy);
-            SafeKill();
+            OpKill();
             AddLabel();
         }
         return {};
@@ -2324,7 +2276,7 @@ private:
     }
 
     Expression Barrier(Operation) {
-        if (!context_func->IsDecompiled()) {
+        if (!ir.IsDecompiled()) {
             LOG_ERROR(Render_Vulkan, "OpBarrier used by shader is not decompiled");
             return {};
         }
@@ -2818,8 +2770,6 @@ private:
     const Specialization& specialization;
     std::unordered_map<u8, VaryingTFB> transform_feedback;
 
-    std::shared_ptr<ShaderFunctionIR> context_func;
-
     const Id t_void = Name(TypeVoid(), "void");
 
     const Id t_bool = Name(TypeBool(), "bool");
@@ -2946,8 +2896,7 @@ private:
     Id ssy_flow_stack{};
     Id pbk_flow_stack{};
     Id continue_label{};
-    std::vector<std::map<u32, Id>> labels;
-    std::vector<Id> other_functions;
+    std::map<u32, Id> labels;
 
     bool conditional_branch_set{};
     bool inside_branch{};
@@ -3098,11 +3047,9 @@ public:
             decomp.OpBranchConditional(condition, then_label, endif_label);
             decomp.AddLabel(then_label);
             if (ast.kills) {
-                decomp.SafeKill();
+                decomp.OpKill();
             } else {
-                if (decomp.context_func->IsMain()) {
-                    decomp.PreExit();
-                }
+                decomp.PreExit();
                 decomp.OpReturn();
             }
             decomp.AddLabel(endif_label);
@@ -3111,11 +3058,9 @@ public:
             decomp.OpBranch(next_block);
             decomp.AddLabel(next_block);
             if (ast.kills) {
-                decomp.SafeKill();
+                decomp.OpKill();
             } else {
-                if (decomp.context_func->IsMain()) {
-                    decomp.PreExit();
-                }
+                decomp.PreExit();
                 decomp.OpReturn();
             }
             decomp.AddLabel(decomp.OpLabel());
@@ -3152,7 +3097,7 @@ private:
 };
 
 void SPIRVDecompiler::DecompileAST() {
-    const u32 num_flow_variables = context_func->GetASTNumVariables();
+    const u32 num_flow_variables = ir.GetASTNumVariables();
     for (u32 i = 0; i < num_flow_variables; i++) {
         const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private, v_false);
         Name(id, fmt::format("flow_var_{}", i));
@@ -3161,7 +3106,7 @@ void SPIRVDecompiler::DecompileAST() {
 
     DefinePrologue();
 
-    const ASTNode program = context_func->GetASTProgram();
+    const ASTNode program = ir.GetASTProgram();
     ASTDecompiler decompiler{*this};
     decompiler.Visit(program);
 

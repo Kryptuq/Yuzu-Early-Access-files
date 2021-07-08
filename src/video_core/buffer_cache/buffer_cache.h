@@ -591,7 +591,6 @@ void BufferCache<P>::CommitAsyncFlushesHigh() {
         for (auto& interval : intervals) {
             const std::size_t size = interval.upper() - interval.lower();
             const VAddr cpu_addr = interval.lower();
-            const VAddr cpu_addr_end = interval.upper();
             ForEachBufferInRange(cpu_addr, size, [&](BufferId buffer_id, Buffer& buffer) {
                 boost::container::small_vector<BufferCopy, 1> copies;
                 buffer.ForEachDownloadRange(

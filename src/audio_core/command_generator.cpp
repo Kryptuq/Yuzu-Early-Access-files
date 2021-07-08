@@ -31,7 +31,7 @@ constexpr std::array<f32, AudioCommon::I3DL2REVERB_TAPS> EARLY_GAIN{
     0.72867f, 0.69794f, 0.5464f,  0.24563f, 0.45214f, 0.44042f};
 
 template <std::size_t N>
-void ApplyMix(s32* output, const s32* input, s32 gain, s32 sample_count) {
+void ApplyMix(std::span<s32> output, std::span<const s32> input, s32 gain, s32 sample_count) {
     for (std::size_t i = 0; i < static_cast<std::size_t>(sample_count); i += N) {
         for (std::size_t j = 0; j < N; j++) {
             output[i + j] +=
@@ -40,7 +40,17 @@ void ApplyMix(s32* output, const s32* input, s32 gain, s32 sample_count) {
     }
 }
 
-s32 ApplyMixRamp(s32* output, const s32* input, float gain, float delta, s32 sample_count) {
+s32 ApplyMixRamp(std::span<s32> output, std::span<const s32> input, float gain, float delta,
+                 s32 sample_count) {
+    // XC2 passes in NaN mix volumes, causing further issues as we handle everything as s32 rather
+    // than float, so the NaN propogation is lost. As the samples get further modified for
+    // volume etc, they can get out of NaN range, so a later heuristic for catching this is
+    // more difficult. Handle it here by setting these samples to silence.
+    if (std::isnan(gain)) {
+        gain = 0.0f;
+        delta = 0.0f;
+    }
+
     s32 x = 0;
     for (s32 i = 0; i < sample_count; i++) {
         x = static_cast<s32>(static_cast<float>(input[i]) * gain);
@@ -50,20 +60,22 @@ s32 ApplyMixRamp(s32* output, const s32* input, float gain, float delta, s32 sam
     return x;
 }
 
-void ApplyGain(s32* output, const s32* input, s32 gain, s32 delta, s32 sample_count) {
+void ApplyGain(std::span<s32> output, std::span<const s32> input, s32 gain, s32 delta,
+               s32 sample_count) {
     for (s32 i = 0; i < sample_count; i++) {
         output[i] = static_cast<s32>((static_cast<s64>(input[i]) * gain + 0x4000) >> 15);
         gain += delta;
     }
 }
 
-void ApplyGainWithoutDelta(s32* output, const s32* input, s32 gain, s32 sample_count) {
+void ApplyGainWithoutDelta(std::span<s32> output, std::span<const s32> input, s32 gain,
+                           s32 sample_count) {
     for (s32 i = 0; i < sample_count; i++) {
         output[i] = static_cast<s32>((static_cast<s64>(input[i]) * gain + 0x4000) >> 15);
     }
 }
 
-s32 ApplyMixDepop(s32* output, s32 first_sample, s32 delta, s32 sample_count) {
+s32 ApplyMixDepop(std::span<s32> output, s32 first_sample, s32 delta, s32 sample_count) {
     const bool positive = first_sample > 0;
     auto final_sample = std::abs(first_sample);
     for (s32 i = 0; i < sample_count; i++) {
@@ -128,10 +140,10 @@ constexpr std::array<std::size_t, 20> REVERB_TAP_INDEX_6CH{4, 0, 0, 1, 1, 1, 1, 
                                                            1, 1, 1, 0, 0, 0, 0, 3, 3, 3};
 
 template <std::size_t CHANNEL_COUNT>
-void ApplyReverbGeneric(I3dl2ReverbState& state,
-                        const std::array<const s32*, AudioCommon::MAX_CHANNEL_COUNT>& input,
-                        const std::array<s32*, AudioCommon::MAX_CHANNEL_COUNT>& output,
-                        s32 sample_count) {
+void ApplyReverbGeneric(
+    I3dl2ReverbState& state,
+    const std::array<std::span<const s32>, AudioCommon::MAX_CHANNEL_COUNT>& input,
+    const std::array<std::span<s32>, AudioCommon::MAX_CHANNEL_COUNT>& output, s32 sample_count) {
 
     auto GetTapLookup = []() {
         if constexpr (CHANNEL_COUNT == 1) {
@@ -457,8 +469,8 @@ void CommandGenerator::GenerateBiquadFilterCommand([[maybe_unused]] s32 mix_buff
                   "input_mix_buffer={}, output_mix_buffer={}",
                   node_id, input_offset, output_offset);
     }
-    const auto* input = GetMixBuffer(input_offset);
-    auto* output = GetMixBuffer(output_offset);
+    std::span<const s32> input = GetMixBuffer(input_offset);
+    std::span<s32> output = GetMixBuffer(output_offset);
 
     // Biquad filter parameters
     const auto [n0, n1, n2] = params.numerator;
@@ -551,8 +563,8 @@ void CommandGenerator::GenerateI3dl2ReverbEffectCommand(s32 mix_buffer_offset, E
         return;
     }
 
-    std::array<const s32*, AudioCommon::MAX_CHANNEL_COUNT> input{};
-    std::array<s32*, AudioCommon::MAX_CHANNEL_COUNT> output{};
+    std::array<std::span<const s32>, AudioCommon::MAX_CHANNEL_COUNT> input{};
+    std::array<std::span<s32>, AudioCommon::MAX_CHANNEL_COUNT> output{};
 
     const auto status = params.status;
     for (s32 i = 0; i < channel_count; i++) {
@@ -587,7 +599,8 @@ void CommandGenerator::GenerateI3dl2ReverbEffectCommand(s32 mix_buffer_offset, E
         for (s32 i = 0; i < channel_count; i++) {
             // Only copy if the buffer input and output do not match!
             if ((mix_buffer_offset + params.input[i]) != (mix_buffer_offset + params.output[i])) {
-                std::memcpy(output[i], input[i], worker_params.sample_count * sizeof(s32));
+                std::memcpy(output[i].data(), input[i].data(),
+                            worker_params.sample_count * sizeof(s32));
             }
         }
     }
@@ -603,8 +616,8 @@ void CommandGenerator::GenerateBiquadFilterEffectCommand(s32 mix_buffer_offset, 
     for (s32 i = 0; i < channel_count; i++) {
         // TODO(ogniK): Actually implement biquad filter
         if (params.input[i] != params.output[i]) {
-            const auto* input = GetMixBuffer(mix_buffer_offset + params.input[i]);
-            auto* output = GetMixBuffer(mix_buffer_offset + params.output[i]);
+            std::span<const s32> input = GetMixBuffer(mix_buffer_offset + params.input[i]);
+            std::span<s32> output = GetMixBuffer(mix_buffer_offset + params.output[i]);
             ApplyMix<1>(output, input, 32768, worker_params.sample_count);
         }
     }
@@ -643,14 +656,15 @@ void CommandGenerator::GenerateAuxCommand(s32 mix_buffer_offset, EffectBase* inf
 
                 if (samples_read != static_cast<int>(worker_params.sample_count) &&
                     samples_read <= params.sample_count) {
-                    std::memset(GetMixBuffer(output_index), 0, params.sample_count - samples_read);
+                    std::memset(GetMixBuffer(output_index).data(), 0,
+                                params.sample_count - samples_read);
                 }
             } else {
                 AuxInfoDSP empty{};
                 memory.WriteBlock(aux->GetSendInfo(), &empty, sizeof(AuxInfoDSP));
                 memory.WriteBlock(aux->GetRecvInfo(), &empty, sizeof(AuxInfoDSP));
                 if (output_index != input_index) {
-                    std::memcpy(GetMixBuffer(output_index), GetMixBuffer(input_index),
+                    std::memcpy(GetMixBuffer(output_index).data(), GetMixBuffer(input_index).data(),
                                 worker_params.sample_count * sizeof(s32));
                 }
             }
@@ -668,7 +682,7 @@ ServerSplitterDestinationData* CommandGenerator::GetDestinationData(s32 splitter
 }
 
 s32 CommandGenerator::WriteAuxBuffer(AuxInfoDSP& dsp_info, VAddr send_buffer, u32 max_samples,
-                                     const s32* data, u32 sample_count, u32 write_offset,
+                                     std::span<const s32> data, u32 sample_count, u32 write_offset,
                                      u32 write_count) {
     if (max_samples == 0) {
         return 0;
@@ -678,14 +692,14 @@ s32 CommandGenerator::WriteAuxBuffer(AuxInfoDSP& dsp_info, VAddr send_buffer, u3
         return 0;
     }
 
-    std::size_t data_offset{};
+    s32 data_offset{};
     u32 remaining = sample_count;
     while (remaining > 0) {
         // Get position in buffer
         const auto base = send_buffer + (offset * sizeof(u32));
         const auto samples_to_grab = std::min(max_samples - offset, remaining);
         // Write to output
-        memory.WriteBlock(base, (data + data_offset), samples_to_grab * sizeof(u32));
+        memory.WriteBlock(base, (data.data() + data_offset), samples_to_grab * sizeof(u32));
         offset = (offset + samples_to_grab) % max_samples;
         remaining -= samples_to_grab;
         data_offset += samples_to_grab;
@@ -698,7 +712,7 @@ s32 CommandGenerator::WriteAuxBuffer(AuxInfoDSP& dsp_info, VAddr send_buffer, u3
 }
 
 s32 CommandGenerator::ReadAuxBuffer(AuxInfoDSP& recv_info, VAddr recv_buffer, u32 max_samples,
-                                    s32* out_data, u32 sample_count, u32 read_offset,
+                                    std::span<s32> out_data, u32 sample_count, u32 read_offset,
                                     u32 read_count) {
     if (max_samples == 0) {
         return 0;
@@ -710,15 +724,16 @@ s32 CommandGenerator::ReadAuxBuffer(AuxInfoDSP& recv_info, VAddr recv_buffer, u3
     }
 
     u32 remaining = sample_count;
+    s32 data_offset{};
     while (remaining > 0) {
         const auto base = recv_buffer + (offset * sizeof(u32));
         const auto samples_to_grab = std::min(max_samples - offset, remaining);
         std::vector<s32> buffer(samples_to_grab);
         memory.ReadBlock(base, buffer.data(), buffer.size() * sizeof(u32));
-        std::memcpy(out_data, buffer.data(), buffer.size() * sizeof(u32));
-        out_data += samples_to_grab;
+        std::memcpy(out_data.data() + data_offset, buffer.data(), buffer.size() * sizeof(u32));
         offset = (offset + samples_to_grab) % max_samples;
         remaining -= samples_to_grab;
+        data_offset += samples_to_grab;
     }
 
     if (read_count != 0) {
@@ -965,8 +980,8 @@ void CommandGenerator::GenerateMixCommand(std::size_t output_offset, std::size_t
                   node_id, input_offset, output_offset, volume);
     }
 
-    auto* output = GetMixBuffer(output_offset);
-    const auto* input = GetMixBuffer(input_offset);
+    std::span<s32> output = GetMixBuffer(output_offset);
+    std::span<const s32> input = GetMixBuffer(input_offset);
 
     const s32 gain = static_cast<s32>(volume * 32768.0f);
     // Mix with loop unrolling
@@ -1172,12 +1187,14 @@ s32 CommandGenerator::DecodeAdpcm(ServerVoiceInfo& voice_info, VoiceState& dsp_s
     return samples_processed;
 }
 
-s32* CommandGenerator::GetMixBuffer(std::size_t index) {
-    return mix_buffer.data() + (index * worker_params.sample_count);
+std::span<s32> CommandGenerator::GetMixBuffer(std::size_t index) {
+    return std::span<s32>(mix_buffer.data() + (index * worker_params.sample_count),
+                          worker_params.sample_count);
 }
 
-const s32* CommandGenerator::GetMixBuffer(std::size_t index) const {
-    return mix_buffer.data() + (index * worker_params.sample_count);
+std::span<const s32> CommandGenerator::GetMixBuffer(std::size_t index) const {
+    return std::span<const s32>(mix_buffer.data() + (index * worker_params.sample_count),
+                                worker_params.sample_count);
 }
 
 std::size_t CommandGenerator::GetMixChannelBufferOffset(s32 channel) const {
@@ -1188,15 +1205,15 @@ std::size_t CommandGenerator::GetTotalMixBufferCount() const {
     return worker_params.mix_buffer_count + AudioCommon::MAX_CHANNEL_COUNT;
 }
 
-s32* CommandGenerator::GetChannelMixBuffer(s32 channel) {
+std::span<s32> CommandGenerator::GetChannelMixBuffer(s32 channel) {
     return GetMixBuffer(worker_params.mix_buffer_count + channel);
 }
 
-const s32* CommandGenerator::GetChannelMixBuffer(s32 channel) const {
+std::span<const s32> CommandGenerator::GetChannelMixBuffer(s32 channel) const {
     return GetMixBuffer(worker_params.mix_buffer_count + channel);
 }
 
-void CommandGenerator::DecodeFromWaveBuffers(ServerVoiceInfo& voice_info, s32* output,
+void CommandGenerator::DecodeFromWaveBuffers(ServerVoiceInfo& voice_info, std::span<s32> output,
                                              VoiceState& dsp_state, s32 channel,
                                              s32 target_sample_rate, s32 sample_count,
                                              s32 node_id) {
@@ -1208,7 +1225,7 @@ void CommandGenerator::DecodeFromWaveBuffers(ServerVoiceInfo& voice_info, s32* o
                   node_id, channel, in_params.sample_format, sample_count, in_params.sample_rate,
                   in_params.mix_id, in_params.splitter_info_id);
     }
-    ASSERT_OR_EXECUTE(output != nullptr, { return; });
+    ASSERT_OR_EXECUTE(output.data() != nullptr, { return; });
 
     const auto resample_rate = static_cast<s32>(
         static_cast<float>(in_params.sample_rate) / static_cast<float>(target_sample_rate) *
@@ -1225,6 +1242,7 @@ void CommandGenerator::DecodeFromWaveBuffers(ServerVoiceInfo& voice_info, s32* o
     }
 
     std::size_t temp_mix_offset{};
+    s32 samples_output{};
     auto samples_remaining = sample_count;
     while (samples_remaining > 0) {
         const auto samples_to_output = std::min(samples_remaining, min_required_samples);
@@ -1328,20 +1346,21 @@ void CommandGenerator::DecodeFromWaveBuffers(ServerVoiceInfo& voice_info, s32* o
 
         if (in_params.behavior_flags.is_pitch_and_src_skipped.Value()) {
             // No need to resample
-            std::memcpy(output, sample_buffer.data(), samples_read * sizeof(s32));
+            std::memcpy(output.data() + samples_output, sample_buffer.data(),
+                        samples_read * sizeof(s32));
         } else {
             std::fill(sample_buffer.begin() + temp_mix_offset,
                       sample_buffer.begin() + temp_mix_offset + (samples_to_read - samples_read),
                       0);
-            AudioCore::Resample(output, sample_buffer.data(), resample_rate, dsp_state.fraction,
-                                samples_to_output);
+            AudioCore::Resample(output.data() + samples_output, sample_buffer.data(), resample_rate,
+                                dsp_state.fraction, samples_to_output);
             // Resample
             for (std::size_t i = 0; i < AudioCommon::MAX_SAMPLE_HISTORY; i++) {
                 dsp_state.sample_history[i] = sample_buffer[samples_to_read + i];
             }
         }
-        output += samples_to_output;
         samples_remaining -= samples_to_output;
+        samples_output += samples_to_output;
     }
 }
 

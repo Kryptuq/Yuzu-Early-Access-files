@@ -339,6 +339,8 @@ u32 ShaderIR::DecodeTexture(NodeBlock& bb, u32 pc) {
         const TextureType texture_type{instr.tlds.GetTextureType()};
         const bool is_array{instr.tlds.IsArrayTexture()};
 
+        UNIMPLEMENTED_IF_MSG(instr.tlds.UsesMiscMode(TextureMiscMode::AOFFI),
+                             "AOFFI is not implemented");
         UNIMPLEMENTED_IF_MSG(instr.tlds.UsesMiscMode(TextureMiscMode::MZ), "MZ is not implemented");
 
         const Node4 components = GetTldsCode(instr, texture_type, is_array);
@@ -820,7 +822,7 @@ Node4 ShaderIR::GetTldsCode(Instruction instr, TextureType texture_type, bool is
     for (std::size_t i = 0; i < type_coord_count; ++i) {
         const bool last = (i == (type_coord_count - 1)) && (type_coord_count > 1);
         coords.push_back(
-            GetRegister(last && !aoffi_enabled ? last_coord_register : (coord_register + i)));
+            GetRegister(last && !aoffi_enabled ? last_coord_register : coord_register + i));
     }
 
     const Node array = is_array ? GetRegister(array_register) : nullptr;

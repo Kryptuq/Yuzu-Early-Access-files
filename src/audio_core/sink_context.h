@@ -84,7 +84,6 @@ public:
     [[nodiscard]] bool InUse() const;
     [[nodiscard]] std::vector<u8> OutputBuffers() const;
 
-    [[nodiscard]] bool HasDownMixingCoefficients() const;
     [[nodiscard]] const DownmixCoefficients& GetDownmixCoefficients() const;
 
 private:
@@ -92,7 +91,6 @@ private:
     s32 use_count{};
     std::array<u8, AudioCommon::MAX_CHANNEL_COUNT> buffers{};
     std::size_t sink_count{};
-    bool has_downmix_coefs{false};
     DownmixCoefficients downmix_coefficients{};
 };
 } // namespace AudioCore
