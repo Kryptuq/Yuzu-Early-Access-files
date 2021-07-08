@@ -133,8 +133,8 @@ struct BufferImageCopy {
 };
 
 struct BufferCopy {
-    size_t src_offset;
-    size_t dst_offset;
+    u64 src_offset;
+    u64 dst_offset;
     size_t size;
 };
 

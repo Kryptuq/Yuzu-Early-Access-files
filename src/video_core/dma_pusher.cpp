@@ -4,6 +4,7 @@
 
 #include "common/cityhash.h"
 #include "common/microprofile.h"
+#include "common/settings.h"
 #include "core/core.h"
 #include "core/memory.h"
 #include "video_core/dma_pusher.h"
@@ -76,8 +77,13 @@ bool DmaPusher::Step() {
 
         // Push buffer non-empty, read a word
         command_headers.resize(command_list_header.size);
-        gpu.MemoryManager().ReadBlockUnsafe(dma_get, command_headers.data(),
-                                            command_list_header.size * sizeof(u32));
+        if (Settings::IsGPULevelHigh()) {
+            gpu.MemoryManager().ReadBlock(dma_get, command_headers.data(),
+                                          command_list_header.size * sizeof(u32));
+        } else {
+            gpu.MemoryManager().ReadBlockUnsafe(dma_get, command_headers.data(),
+                                                command_list_header.size * sizeof(u32));
+        }
     }
     for (std::size_t index = 0; index < command_headers.size();) {
         const CommandHeader& command_header = command_headers[index];

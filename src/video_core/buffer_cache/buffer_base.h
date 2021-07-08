@@ -226,19 +226,19 @@ public:
     /// Call 'func' for each CPU modified range and unmark those pages as CPU modified
     template <typename Func>
     void ForEachUploadRange(VAddr query_cpu_range, u64 size, Func&& func) {
-        ForEachModifiedRange<Type::CPU>(query_cpu_range, size, func);
+        ForEachModifiedRange<Type::CPU>(query_cpu_range, size, true, func);
     }
 
     /// Call 'func' for each GPU modified range and unmark those pages as GPU modified
     template <typename Func>
-    void ForEachDownloadRange(VAddr query_cpu_range, u64 size, Func&& func) {
-        ForEachModifiedRange<Type::GPU>(query_cpu_range, size, func);
+    void ForEachDownloadRange(VAddr query_cpu_range, u64 size, bool clear, Func&& func) {
+        ForEachModifiedRange<Type::GPU>(query_cpu_range, size, clear, func);
     }
 
     /// Call 'func' for each GPU modified range and unmark those pages as GPU modified
     template <typename Func>
     void ForEachDownloadRange(Func&& func) {
-        ForEachModifiedRange<Type::GPU>(cpu_addr, SizeBytes(), func);
+        ForEachModifiedRange<Type::GPU>(cpu_addr, SizeBytes(), true, func);
     }
 
     /// Mark buffer as picked
@@ -415,7 +415,7 @@ private:
      * @param func            Function to call for each turned off region
      */
     template <Type type, typename Func>
-    void ForEachModifiedRange(VAddr query_cpu_range, s64 size, Func&& func) {
+    void ForEachModifiedRange(VAddr query_cpu_range, s64 size, bool clear, Func&& func) {
         static_assert(type != Type::Untracked);
 
         const s64 difference = query_cpu_range - cpu_addr;
@@ -467,7 +467,9 @@ private:
             bits = (bits << left_offset) >> left_offset;
 
             const u64 current_word = state_words[word_index] & bits;
-            state_words[word_index] &= ~bits;
+            if (clear) {
+                state_words[word_index] &= ~bits;
+            }
 
             if constexpr (type == Type::CPU) {
                 const u64 current_bits = untracked_words[word_index] & bits;

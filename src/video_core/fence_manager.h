@@ -8,6 +8,7 @@
 #include <queue>
 
 #include "common/common_types.h"
+#include "common/settings.h"
 #include "core/core.h"
 #include "video_core/delayed_destruction_ring.h"
 #include "video_core/gpu.h"
@@ -53,6 +54,12 @@ public:
         delayed_destruction_ring.Tick();
     }
 
+    // Unlike other fences, this one doesn't
+    void SignalOrdering() {
+        std::scoped_lock lock{buffer_cache.mutex};
+        buffer_cache.AccumulateFlushes();
+    }
+
     void SignalSemaphore(GPUVAddr addr, u32 value) {
         TryReleasePendingFences();
         const bool should_flush = ShouldFlush();
@@ -96,6 +103,23 @@ public:
         }
     }
 
+    void TryReleasePendingFences() {
+        while (!fences.empty()) {
+            TFence& current_fence = fences.front();
+            if (ShouldWait() && !IsFenceSignaled(current_fence)) {
+                return;
+            }
+            PopAsyncFlushes();
+            if (current_fence->IsSemaphore()) {
+                gpu_memory.template Write<u32>(current_fence->GetAddress(),
+                                               current_fence->GetPayload());
+            } else {
+                gpu.IncrementSyncPoint(current_fence->GetPayload());
+            }
+            PopFence();
+        }
+    }
+
 protected:
     explicit FenceManager(VideoCore::RasterizerInterface& rasterizer_, Tegra::GPU& gpu_,
                           TTextureCache& texture_cache_, TTBufferCache& buffer_cache_,
@@ -125,23 +149,6 @@ protected:
     TQueryCache& query_cache;
 
 private:
-    void TryReleasePendingFences() {
-        while (!fences.empty()) {
-            TFence& current_fence = fences.front();
-            if (ShouldWait() && !IsFenceSignaled(current_fence)) {
-                return;
-            }
-            PopAsyncFlushes();
-            if (current_fence->IsSemaphore()) {
-                gpu_memory.template Write<u32>(current_fence->GetAddress(),
-                                               current_fence->GetPayload());
-            } else {
-                gpu.IncrementSyncPoint(current_fence->GetPayload());
-            }
-            PopFence();
-        }
-    }
-
     bool ShouldWait() const {
         std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
         return texture_cache.ShouldWaitAsyncFlushes() || buffer_cache.ShouldWaitAsyncFlushes() ||

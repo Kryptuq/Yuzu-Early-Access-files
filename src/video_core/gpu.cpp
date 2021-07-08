@@ -268,10 +268,12 @@ void GPU::CallPullerMethod(const MethodCall& method_call) {
     case BufferMethods::SemaphoreAddressHigh:
     case BufferMethods::SemaphoreAddressLow:
     case BufferMethods::SemaphoreSequence:
-    case BufferMethods::RefCnt:
     case BufferMethods::UnkCacheFlush:
     case BufferMethods::WrcacheFlush:
     case BufferMethods::FenceValue:
+        break;
+    case BufferMethods::RefCnt:
+        rasterizer->SignalReference();
         break;
     case BufferMethods::FenceAction:
         ProcessFenceActionMethod();

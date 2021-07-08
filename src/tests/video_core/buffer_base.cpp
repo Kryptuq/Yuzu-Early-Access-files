@@ -536,7 +536,7 @@ TEST_CASE("BufferBase: Cached write downloads") {
     REQUIRE(rasterizer.Count() == 63);
     buffer.MarkRegionAsGpuModified(c + PAGE, PAGE);
     int num = 0;
-    buffer.ForEachDownloadRange(c, WORD, [&](u64 offset, u64 size) { ++num; });
+    buffer.ForEachDownloadRange(c, WORD, true, [&](u64 offset, u64 size) { ++num; });
     buffer.ForEachUploadRange(c, WORD, [&](u64 offset, u64 size) { ++num; });
     REQUIRE(num == 0);
     REQUIRE(!buffer.IsRegionCpuModified(c + PAGE, PAGE));

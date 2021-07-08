@@ -63,6 +63,9 @@ public:
     /// Signal a GPU based syncpoint as a fence
     virtual void SignalSyncPoint(u32 value) = 0;
 
+    /// Signal a GPU based reference as point
+    virtual void SignalReference() = 0;
+
     /// Release all pending fences.
     virtual void ReleaseFences() = 0;
 
