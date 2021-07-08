@@ -282,22 +282,23 @@ void Config::Initialize(const std::string& config_name) {
 template <>
 void Config::ReadBasicSetting(Settings::BasicSetting<std::string>& setting) {
     const QString name = QString::fromStdString(setting.GetLabel());
+    const auto default_value = QString::fromStdString(setting.GetDefault());
     if (qt_config->value(name + QStringLiteral("/default"), false).toBool()) {
-        setting.SetValue(setting.GetDefault());
+        setting.SetValue(default_value.toStdString());
     } else {
-        setting.SetValue(qt_config->value(name, QString::fromStdString(setting.GetDefault()))
-                             .toString()
-                             .toStdString());
+        setting.SetValue(qt_config->value(name, default_value).toString().toStdString());
     }
 }
+
 template <typename Type>
 void Config::ReadBasicSetting(Settings::BasicSetting<Type>& setting) {
     const QString name = QString::fromStdString(setting.GetLabel());
+    const Type default_value = setting.GetDefault();
     if (qt_config->value(name + QStringLiteral("/default"), false).toBool()) {
-        setting.SetValue(setting.GetDefault());
+        setting.SetValue(default_value);
     } else {
         setting.SetValue(
-            static_cast<QVariant>(qt_config->value(name, setting.GetDefault())).value<Type>());
+            static_cast<QVariant>(qt_config->value(name, default_value)).value<Type>());
     }
 }
 
@@ -305,10 +306,11 @@ void Config::ReadBasicSetting(Settings::BasicSetting<Type>& setting) {
 template <>
 void Config::WriteBasicSetting(const Settings::BasicSetting<std::string>& setting) {
     const QString name = QString::fromStdString(setting.GetLabel());
-    qt_config->setValue(name + QStringLiteral("/default"),
-                        setting.GetValue() == setting.GetDefault());
-    qt_config->setValue(name, QString::fromStdString(setting.GetValue()));
+    const std::string& value = setting.GetValue();
+    qt_config->setValue(name + QStringLiteral("/default"), value == setting.GetDefault());
+    qt_config->setValue(name, QString::fromStdString(value));
 }
+
 // Explicit float definition: use a double as Qt doesn't write legible floats to config files
 template <>
 void Config::WriteBasicSetting(const Settings::BasicSetting<float>& setting) {
@@ -318,12 +320,13 @@ void Config::WriteBasicSetting(const Settings::BasicSetting<float>& setting) {
                         setting.GetValue() == setting.GetDefault());
     qt_config->setValue(name, value);
 }
+
 template <typename Type>
 void Config::WriteBasicSetting(const Settings::BasicSetting<Type>& setting) {
     const QString name = QString::fromStdString(setting.GetLabel());
-    qt_config->setValue(name + QStringLiteral("/default"),
-                        setting.GetValue() == setting.GetDefault());
-    qt_config->setValue(name, setting.GetValue());
+    const Type value = setting.GetValue();
+    qt_config->setValue(name + QStringLiteral("/default"), value == setting.GetDefault());
+    qt_config->setValue(name, value);
 }
 
 // Explicit float definition: use a double as Qt doesn't write legible floats to config files
@@ -340,16 +343,17 @@ void Config::WriteGlobalSetting(const Settings::Setting<float>& setting) {
         qt_config->setValue(name, value);
     }
 }
+
 template <typename Type>
 void Config::WriteGlobalSetting(const Settings::Setting<Type>& setting) {
-    QString name = QString::fromStdString(setting.GetLabel());
+    const QString name = QString::fromStdString(setting.GetLabel());
+    const Type& value = setting.GetValue(global);
     if (!global) {
         qt_config->setValue(name + QStringLiteral("/use_global"), setting.UsingGlobal());
     }
     if (global || !setting.UsingGlobal()) {
-        qt_config->setValue(name + QStringLiteral("/default"),
-                            setting.GetValue(global) == setting.GetDefault());
-        qt_config->setValue(name, setting.GetValue(global));
+        qt_config->setValue(name + QStringLiteral("/default"), value == setting.GetDefault());
+        qt_config->setValue(name, value);
     }
 }
 

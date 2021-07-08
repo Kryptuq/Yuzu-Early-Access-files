@@ -155,8 +155,7 @@ public:
 
     /**
      * Tells this setting to represent either the global or custom setting when other member
-     * functions are used. Setting to_global to true means using the global setting, to false
-     * false for the custom setting.
+     * functions are used.
      *
      * @param to_global Whether to use the global or custom setting.
      */
