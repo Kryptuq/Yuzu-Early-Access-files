@@ -2907,12 +2907,12 @@ void GMainWindow::UpdateStatusBar() {
 void GMainWindow::UpdateGPUAccuracyButton() {
     switch (Settings::values.gpu_accuracy.GetValue()) {
     case Settings::GPUAccuracy::Normal: {
-        gpu_accuracy_button->setText(tr("GPU NORMAL "));
+        gpu_accuracy_button->setText(tr("GPU NORMAL"));
         gpu_accuracy_button->setChecked(false);
         break;
     }
     case Settings::GPUAccuracy::High: {
-        gpu_accuracy_button->setText(tr("GPU HIGH   "));
+        gpu_accuracy_button->setText(tr("GPU HIGH"));
         gpu_accuracy_button->setChecked(true);
         break;
     }
