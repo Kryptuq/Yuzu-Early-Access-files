@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>486</height>
+    <height>777</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -192,34 +192,41 @@
         </property>
        </widget>
       </item>
-       <item>
-         <widget class="QCheckBox" name="use_debug_asserts">
-           <property name="text">
-             <string>Enable Debug Asserts</string>
-           </property>
-         </widget>
-       </item>
-       <item>
-         <widget class="QCheckBox" name="use_auto_stub">
-           <property name="text">
-             <string>Enable Auto-Stub</string>
-           </property>
-         </widget>
-       </item>
       <item>
-        <widget class="QLabel" name="label_5">
-          <property name="font">
-            <font>
-              <italic>true</italic>
-            </font>
-          </property>
-          <property name="text">
-            <string>This will be reset automatically when yuzu closes.</string>
-          </property>
-          <property name="indent">
-            <number>20</number>
-          </property>
-        </widget>
+       <widget class="QCheckBox" name="enable_cpu_debugging">
+        <property name="text">
+         <string>Enable CPU Debugging</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="use_debug_asserts">
+        <property name="text">
+         <string>Enable Debug Asserts</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="use_auto_stub">
+        <property name="text">
+         <string>Enable Auto-Stub</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_5">
+        <property name="font">
+         <font>
+          <italic>true</italic>
+         </font>
+        </property>
+        <property name="text">
+         <string>This will be reset automatically when yuzu closes.</string>
+        </property>
+        <property name="indent">
+         <number>20</number>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>

@@ -8,6 +8,7 @@
 #include <QListWidgetItem>
 #include <QPushButton>
 #include <QSignalBlocker>
+#include <QTabWidget>
 #include "common/settings.h"
 #include "core/core.h"
 #include "ui_configure.h"
@@ -32,6 +33,8 @@ ConfigureDialog::ConfigureDialog(QWidget* parent, HotkeyRegistry& registry,
     SetConfiguration();
     PopulateSelectionList();
 
+    connect(ui->tabWidget, &QTabWidget::currentChanged, this,
+            [this]() { ui->debugTab->SetCurrentIndex(0); });
     connect(ui->uiTab, &ConfigureUi::LanguageChanged, this, &ConfigureDialog::OnLanguageChanged);
     connect(ui->selectorList, &QListWidget::itemSelectionChanged, this,
             &ConfigureDialog::UpdateVisibleTabs);
@@ -59,7 +62,6 @@ void ConfigureDialog::ApplyConfiguration() {
     ui->inputTab->ApplyConfiguration();
     ui->hotkeysTab->ApplyConfiguration(registry);
     ui->cpuTab->ApplyConfiguration();
-    ui->cpuDebugTab->ApplyConfiguration();
     ui->graphicsTab->ApplyConfiguration();
     ui->graphicsAdvancedTab->ApplyConfiguration();
     ui->audioTab->ApplyConfiguration();
@@ -102,7 +104,7 @@ void ConfigureDialog::PopulateSelectionList() {
     const std::array<std::pair<QString, QList<QWidget*>>, 6> items{
         {{tr("General"), {ui->generalTab, ui->hotkeysTab, ui->uiTab, ui->webTab, ui->debugTab}},
          {tr("System"), {ui->systemTab, ui->profileManagerTab, ui->serviceTab, ui->filesystemTab}},
-         {tr("CPU"), {ui->cpuTab, ui->cpuDebugTab}},
+         {tr("CPU"), {ui->cpuTab}},
          {tr("Graphics"), {ui->graphicsTab, ui->graphicsAdvancedTab}},
          {tr("Audio"), {ui->audioTab}},
          {tr("Controls"), ui->inputTab->GetSubTabs()}},

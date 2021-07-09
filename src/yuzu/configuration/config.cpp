@@ -793,7 +793,13 @@ void Config::ReadPathValues() {
 void Config::ReadCpuValues() {
     qt_config->beginGroup(QStringLiteral("Cpu"));
 
-    ReadGlobalSetting(Settings::values.cpu_accuracy);
+    ReadBasicSetting(Settings::values.cpu_accuracy_first_time);
+    if (Settings::values.cpu_accuracy_first_time) {
+        Settings::values.cpu_accuracy.SetValue(Settings::values.cpu_accuracy.GetDefault());
+        Settings::values.cpu_accuracy_first_time.SetValue(false);
+    } else {
+        ReadGlobalSetting(Settings::values.cpu_accuracy);
+    }
 
     ReadGlobalSetting(Settings::values.cpuopt_unsafe_unfuse_fma);
     ReadGlobalSetting(Settings::values.cpuopt_unsafe_reduce_fp_error);
@@ -802,6 +808,7 @@ void Config::ReadCpuValues() {
     ReadGlobalSetting(Settings::values.cpuopt_unsafe_fastmem_check);
 
     if (global) {
+        ReadBasicSetting(Settings::values.cpu_debug_mode);
         ReadBasicSetting(Settings::values.cpuopt_page_tables);
         ReadBasicSetting(Settings::values.cpuopt_block_linking);
         ReadBasicSetting(Settings::values.cpuopt_return_stack_buffer);
@@ -1309,6 +1316,7 @@ void Config::SavePathValues() {
 void Config::SaveCpuValues() {
     qt_config->beginGroup(QStringLiteral("Cpu"));
 
+    WriteBasicSetting(Settings::values.cpu_accuracy_first_time);
     WriteSetting(QStringLiteral("cpu_accuracy"),
                  static_cast<u32>(Settings::values.cpu_accuracy.GetValue(global)),
                  static_cast<u32>(Settings::values.cpu_accuracy.GetDefault()),
@@ -1321,6 +1329,7 @@ void Config::SaveCpuValues() {
     WriteGlobalSetting(Settings::values.cpuopt_unsafe_fastmem_check);
 
     if (global) {
+        WriteBasicSetting(Settings::values.cpu_debug_mode);
         WriteBasicSetting(Settings::values.cpuopt_page_tables);
         WriteBasicSetting(Settings::values.cpuopt_block_linking);
         WriteBasicSetting(Settings::values.cpuopt_return_stack_buffer);

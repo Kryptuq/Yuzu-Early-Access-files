@@ -29,7 +29,6 @@ private:
     void changeEvent(QEvent* event) override;
     void RetranslateUI();
 
-    void AccuracyUpdated(int index);
     void UpdateGroup(int index);
 
     void SetConfiguration();

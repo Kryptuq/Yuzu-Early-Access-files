@@ -43,6 +43,8 @@ void ConfigureDebug::SetConfiguration() {
     ui->use_auto_stub->setChecked(Settings::values.use_auto_stub.GetValue());
     ui->enable_graphics_debugging->setEnabled(runtime_lock);
     ui->enable_graphics_debugging->setChecked(Settings::values.renderer_debug.GetValue());
+    ui->enable_cpu_debugging->setEnabled(runtime_lock);
+    ui->enable_cpu_debugging->setChecked(Settings::values.cpu_debug_mode.GetValue());
     ui->disable_macro_jit->setEnabled(runtime_lock);
     ui->disable_macro_jit->setChecked(Settings::values.disable_macro_jit.GetValue());
     ui->extended_logging->setChecked(Settings::values.extended_logging.GetValue());
@@ -58,6 +60,7 @@ void ConfigureDebug::ApplyConfiguration() {
     Settings::values.use_debug_asserts = ui->use_debug_asserts->isChecked();
     Settings::values.use_auto_stub = ui->use_auto_stub->isChecked();
     Settings::values.renderer_debug = ui->enable_graphics_debugging->isChecked();
+    Settings::values.cpu_debug_mode = ui->enable_cpu_debugging->isChecked();
     Settings::values.disable_macro_jit = ui->disable_macro_jit->isChecked();
     Settings::values.extended_logging = ui->extended_logging->isChecked();
     Debugger::ToggleConsole();

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>321</height>
+    <width>448</width>
+    <height>433</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <item>
     <layout class="QVBoxLayout">
      <item>
-      <widget class="QGroupBox">
+      <widget class="QGroupBox" name="groupBox">
        <property name="title">
         <string>General</string>
        </property>
@@ -36,17 +36,17 @@
             <widget class="QComboBox" name="accuracy">
              <item>
               <property name="text">
+               <string>Auto</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
                <string>Accurate</string>
               </property>
              </item>
              <item>
               <property name="text">
                <string>Unsafe</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Enable Debug Mode</string>
               </property>
              </item>
             </widget>
@@ -57,7 +57,7 @@
         <item>
          <widget class="QLabel" name="label_recommended_accuracy">
           <property name="text">
-           <string>We recommend setting accuracy to &quot;Accurate&quot;.</string>
+           <string>We recommend setting accuracy to &quot;Auto&quot;.</string>
           </property>
           <property name="wordWrap">
            <bool>false</bool>

@@ -103,23 +103,6 @@ public:
         }
     }
 
-    void TryReleasePendingFences() {
-        while (!fences.empty()) {
-            TFence& current_fence = fences.front();
-            if (ShouldWait() && !IsFenceSignaled(current_fence)) {
-                return;
-            }
-            PopAsyncFlushes();
-            if (current_fence->IsSemaphore()) {
-                gpu_memory.template Write<u32>(current_fence->GetAddress(),
-                                               current_fence->GetPayload());
-            } else {
-                gpu.IncrementSyncPoint(current_fence->GetPayload());
-            }
-            PopFence();
-        }
-    }
-
 protected:
     explicit FenceManager(VideoCore::RasterizerInterface& rasterizer_, Tegra::GPU& gpu_,
                           TTextureCache& texture_cache_, TTBufferCache& buffer_cache_,
@@ -149,6 +132,23 @@ protected:
     TQueryCache& query_cache;
 
 private:
+    void TryReleasePendingFences() {
+        while (!fences.empty()) {
+            TFence& current_fence = fences.front();
+            if (ShouldWait() && !IsFenceSignaled(current_fence)) {
+                return;
+            }
+            PopAsyncFlushes();
+            if (current_fence->IsSemaphore()) {
+                gpu_memory.template Write<u32>(current_fence->GetAddress(),
+                                               current_fence->GetPayload());
+            } else {
+                gpu.IncrementSyncPoint(current_fence->GetPayload());
+            }
+            PopFence();
+        }
+    }
+
     bool ShouldWait() const {
         std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
         return texture_cache.ShouldWaitAsyncFlushes() || buffer_cache.ShouldWaitAsyncFlushes() ||

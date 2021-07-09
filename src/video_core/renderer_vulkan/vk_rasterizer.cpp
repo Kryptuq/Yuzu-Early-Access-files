@@ -611,7 +611,7 @@ void RasterizerVulkan::ReleaseFences() {
     if (!gpu.IsAsync()) {
         return;
     }
-    fence_manager.TryReleasePendingFences();
+    fence_manager.WaitPendingFences();
 }
 
 void RasterizerVulkan::FlushAndInvalidateRegion(VAddr addr, u64 size) {

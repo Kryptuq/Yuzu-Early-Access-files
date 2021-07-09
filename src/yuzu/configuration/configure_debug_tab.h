@@ -1,4 +1,4 @@
-// Copyright 2020 yuzu Emulator Project
+// Copyright 2021 yuzu Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
@@ -8,17 +8,19 @@
 #include <QWidget>
 
 namespace Ui {
-class ConfigureCpuDebug;
+class ConfigureDebugTab;
 }
 
-class ConfigureCpuDebug : public QWidget {
+class ConfigureDebugTab : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ConfigureCpuDebug(QWidget* parent = nullptr);
-    ~ConfigureCpuDebug() override;
+    explicit ConfigureDebugTab(QWidget* parent = nullptr);
+    ~ConfigureDebugTab() override;
 
     void ApplyConfiguration();
+
+    void SetCurrentIndex(int index);
 
 private:
     void changeEvent(QEvent* event) override;
@@ -26,5 +28,5 @@ private:
 
     void SetConfiguration();
 
-    std::unique_ptr<Ui::ConfigureCpuDebug> ui;
+    std::unique_ptr<Ui::ConfigureDebugTab> ui;
 };

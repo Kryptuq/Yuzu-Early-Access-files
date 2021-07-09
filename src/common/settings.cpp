@@ -93,7 +93,7 @@ bool IsGPULevelHigh() {
 }
 
 bool IsFastmemEnabled() {
-    if (values.cpu_accuracy.GetValue() == CPUAccuracy::DebugMode) {
+    if (values.cpu_debug_mode) {
         return static_cast<bool>(values.cpuopt_fastmem);
     }
     return true;

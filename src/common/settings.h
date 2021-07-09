@@ -31,9 +31,9 @@ enum class GPUAccuracy : u32 {
 };
 
 enum class CPUAccuracy : u32 {
-    Accurate = 0,
-    Unsafe = 1,
-    DebugMode = 2,
+    Auto = 0,
+    Accurate = 1,
+    Unsafe = 2,
 };
 
 /** The BasicSetting class is a simple resource manager. It defines a label and default value
@@ -284,7 +284,10 @@ struct Values {
     Setting<bool> use_multi_core{true, "use_multi_core"};
 
     // Cpu
-    Setting<CPUAccuracy> cpu_accuracy{CPUAccuracy::Accurate, "cpu_accuracy"};
+    Setting<CPUAccuracy> cpu_accuracy{CPUAccuracy::Auto, "cpu_accuracy"};
+    // TODO: remove cpu_accuracy_first_time, migration setting added 8 July 2021
+    BasicSetting<bool> cpu_accuracy_first_time{true, "cpu_accuracy_first_time"};
+    BasicSetting<bool> cpu_debug_mode{false, "cpu_debug_mode"};
 
     BasicSetting<bool> cpuopt_page_tables{true, "cpuopt_page_tables"};
     BasicSetting<bool> cpuopt_block_linking{true, "cpuopt_block_linking"};

@@ -83,10 +83,6 @@ public:
         return master_semaphore->IsFree(tick);
     }
 
-    void Refresh() const noexcept {
-        return master_semaphore->Refresh();
-    }
-
     /// Waits for the given tick to trigger on the GPU.
     void Wait(u64 tick) {
         master_semaphore->Wait(tick);
