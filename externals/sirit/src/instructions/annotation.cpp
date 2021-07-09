@@ -4,32 +4,24 @@
  * 3-Clause BSD License
  */
 
-#include <memory>
-#include <vector>
-#include "common_types.h"
-#include "op.h"
+#include <span>
+
 #include "sirit/sirit.h"
+
+#include "stream.h"
 
 namespace Sirit {
 
-Id Module::Decorate(Id target, spv::Decoration decoration, const std::vector<Literal>& literals) {
-    auto op{std::make_unique<Op>(spv::Op::OpDecorate)};
-    op->Add(target);
-    op->Add(static_cast<u32>(decoration));
-    op->Add(literals);
-    AddAnnotation(std::move(op));
-    return target;
+Id Module::Decorate(Id target, spv::Decoration decoration, std::span<const Literal> literals) {
+    annotations->Reserve(3 + literals.size());
+    return *annotations << spv::Op::OpDecorate << target << decoration << literals << EndOp{};
 }
 
 Id Module::MemberDecorate(Id structure_type, Literal member, spv::Decoration decoration,
-                          const std::vector<Literal>& literals) {
-    auto op{std::make_unique<Op>(spv::Op::OpMemberDecorate)};
-    op->Add(structure_type);
-    op->Add(member);
-    op->Add(static_cast<u32>(decoration));
-    op->Add(literals);
-    AddAnnotation(std::move(op));
-    return structure_type;
+                          std::span<const Literal> literals) {
+    annotations->Reserve(4 + literals.size());
+    return *annotations << spv::Op::OpMemberDecorate << structure_type << member << decoration
+                        << literals << EndOp{};
 }
 
 } // namespace Sirit

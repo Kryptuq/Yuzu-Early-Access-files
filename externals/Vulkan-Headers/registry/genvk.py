@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# Copyright (c) 2013-2020 The Khronos Group Inc.
+# Copyright 2013-2021 The Khronos Group Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -17,6 +17,7 @@ from extensionmetadocgenerator import (ExtensionMetaDocGeneratorOptions,
                                        ExtensionMetaDocOutputGenerator)
 from interfacedocgenerator import InterfaceDocGenerator
 from generator import write
+from spirvcapgenerator import SpirvCapabilityOutputGenerator
 from hostsyncgenerator import HostSynchronizationOutputGenerator
 from pygenerator import PyOutputGenerator
 from reflib import logDiag, logWarn, setLogFile
@@ -73,6 +74,9 @@ def makeGenOpts(args):
     # Extensions to emit (list of extensions)
     emitExtensions = args.emitExtensions
 
+    # SPIR-V capabilities / features to emit (list of extensions & capabilities)
+    emitSpirv = args.emitSpirv
+
     # Features to include (list of features)
     features = args.feature
 
@@ -85,21 +89,28 @@ def makeGenOpts(args):
     # Path to generated files, particularly api.py
     genpath = args.genpath
 
+    # Generate MISRA C-friendly headers
+    misracstyle = args.misracstyle;
+
+    # Generate MISRA C++-friendly headers
+    misracppstyle = args.misracppstyle;
+
     # Descriptive names for various regexp patterns used to select
     # versions and extensions
-    allFeatures = allExtensions = r'.*'
+    allSpirv = allFeatures = allExtensions = r'.*'
 
     # Turn lists of names/patterns into matching regular expressions
     addExtensionsPat     = makeREstring(extensions, None)
     removeExtensionsPat  = makeREstring(removeExtensions, None)
     emitExtensionsPat    = makeREstring(emitExtensions, allExtensions)
+    emitSpirvPat         = makeREstring(emitSpirv, allSpirv)
     featuresPat          = makeREstring(features, allFeatures)
 
     # Copyright text prefixing all headers (list of strings).
     # The SPDX formatting below works around constraints of the 'reuse' tool
     prefixStrings = [
         '/*',
-        '** Copyright (c) 2015-2020 The Khronos Group Inc.',
+        '** Copyright 2015-2021 The Khronos Group Inc.',
         '**',
         '** SPDX' + '-License-Identifier: Apache-2.0',
         '*/',
@@ -249,6 +260,25 @@ def makeGenOpts(args):
             reparentEnums     = False)
         ]
 
+    genOpts['spirvcapinc'] = [
+          SpirvCapabilityOutputGenerator,
+          DocGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'timeMarker',
+            directory         = directory,
+            genpath           = None,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = None,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            emitSpirv         = emitSpirvPat,
+            reparentEnums     = False)
+        ]
+
     # Platform extensions, in their own header files
     # Each element of the platforms[] array defines information for
     # generating a single platform:
@@ -269,14 +299,25 @@ def makeGenOpts(args):
     # Extensions required and suppressed for beta "platform". This can
     # probably eventually be derived from the requires= attributes of
     # the extension blocks.
-    betaRequireExtensions = [ 'VK_KHR_ray_tracing', 'VK_KHR_deferred_host_operations', 'VK_KHR_pipeline_library' ]
-    betaSuppressExtensions = [ 'VK_NV_ray_tracing' ]
+    betaRequireExtensions = [
+        'VK_KHR_portability_subset',
+        'VK_KHR_video_queue',
+        'VK_KHR_video_decode_queue',
+        'VK_KHR_video_encode_queue',
+        'VK_EXT_video_decode_h264',
+        'VK_EXT_video_decode_h265',
+        'VK_EXT_video_encode_h264',
+    ]
+
+    betaSuppressExtensions = []
 
     platforms = [
         [ 'vulkan_android.h',     [ 'VK_KHR_android_surface',
                                     'VK_ANDROID_external_memory_android_hardware_buffer'
                                                                   ], commonSuppressExtensions ],
-        [ 'vulkan_fuchsia.h',     [ 'VK_FUCHSIA_imagepipe_surface'], commonSuppressExtensions ],
+        [ 'vulkan_fuchsia.h',     [ 'VK_FUCHSIA_imagepipe_surface',
+                                    'VK_FUCHSIA_external_memory',
+                                    'VK_FUCHSIA_external_semaphore' ], commonSuppressExtensions ],
         [ 'vulkan_ggp.h',         [ 'VK_GGP_stream_descriptor_surface',
                                     'VK_GGP_frame_token'          ], commonSuppressExtensions ],
         [ 'vulkan_ios.h',         [ 'VK_MVK_ios_surface'          ], commonSuppressExtensions ],
@@ -294,8 +335,10 @@ def makeGenOpts(args):
                                                                      ] ],
         [ 'vulkan_xcb.h',         [ 'VK_KHR_xcb_surface'          ], commonSuppressExtensions ],
         [ 'vulkan_xlib.h',        [ 'VK_KHR_xlib_surface'         ], commonSuppressExtensions ],
+        [ 'vulkan_directfb.h',    [ 'VK_EXT_directfb_surface'     ], commonSuppressExtensions ],
         [ 'vulkan_xlib_xrandr.h', [ 'VK_EXT_acquire_xlib_display' ], commonSuppressExtensions ],
         [ 'vulkan_metal.h',       [ 'VK_EXT_metal_surface'        ], commonSuppressExtensions ],
+        [ 'vulkan_screen.h',      [ 'VK_QNX_screen_surface'       ], commonSuppressExtensions ],
         [ 'vulkan_beta.h',        betaRequireExtensions,             betaSuppressExtensions ],
     ]
 
@@ -331,7 +374,9 @@ def makeGenOpts(args):
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
-            alignFuncParam    = 48)
+            alignFuncParam    = 48,
+            misracstyle       = misracstyle,
+            misracppstyle     = misracppstyle)
 
         genOpts[headername] = [ COutputGenerator, opts ]
 
@@ -370,7 +415,9 @@ def makeGenOpts(args):
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
-            alignFuncParam    = 48)
+            alignFuncParam    = 48,
+            misracstyle       = misracstyle,
+            misracppstyle     = misracppstyle)
         ]
 
     # Unused - vulkan10.h target.
@@ -402,7 +449,9 @@ def makeGenOpts(args):
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
-            alignFuncParam    = 48)
+            alignFuncParam    = 48,
+            misracstyle       = misracstyle,
+            misracppstyle     = misracppstyle)
         ]
 
     # Unused - vulkan11.h target.
@@ -434,7 +483,9 @@ def makeGenOpts(args):
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
-            alignFuncParam    = 48)
+            alignFuncParam    = 48,
+            misracstyle       = misracstyle,
+            misracppstyle     = misracppstyle)
         ]
 
     genOpts['alias.h'] = [
@@ -481,6 +532,8 @@ def genTarget(args):
     # Create generator options with parameters specified on command line
     makeGenOpts(args)
 
+    # pdb.set_trace()
+
     # Select a generator matching the requested target
     if args.target in genOpts:
         createGenerator = genOpts[args.target][0]
@@ -522,6 +575,9 @@ if __name__ == '__main__':
     parser.add_argument('-emitExtensions', action='append',
                         default=[],
                         help='Specify an extension or extensions to emit in targets')
+    parser.add_argument('-emitSpirv', action='append',
+                        default=[],
+                        help='Specify a SPIR-V extension or capability to emit in targets')
     parser.add_argument('-feature', action='append',
                         default=[],
                         help='Specify a core API feature name or names to add to targets')
@@ -557,6 +613,10 @@ if __name__ == '__main__':
                         help='Suppress script output during normal execution.')
     parser.add_argument('-verbose', action='store_false', dest='quiet', default=True,
                         help='Enable script output during normal execution.')
+    parser.add_argument('-misracstyle', dest='misracstyle', action='store_true',
+                        help='generate MISRA C-friendly headers')
+    parser.add_argument('-misracppstyle', dest='misracppstyle', action='store_true',
+                        help='generate MISRA C++-friendly headers')
 
     args = parser.parse_args()
 

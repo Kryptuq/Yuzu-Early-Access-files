@@ -1,22 +1,14 @@
 add_library(sirit
     ../include/sirit/sirit.h
     sirit.cpp
-    op.cpp
-    op.h
-    stream.cpp
     stream.h
-    operand.cpp
-    operand.h
-    literal_number.cpp
-    literal_number.h
-    literal_string.cpp
-    literal_string.h
     common_types.h
     instructions/type.cpp
     instructions/constant.cpp
     instructions/function.cpp
     instructions/flow.cpp
     instructions/debug.cpp
+    instructions/derivatives.cpp
     instructions/memory.cpp
     instructions/annotation.cpp
     instructions/misc.cpp

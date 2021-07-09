@@ -4,20 +4,18 @@
  * 3-Clause BSD License
  */
 
-#include <memory>
 #include <spirv/unified1/GLSL.std.450.h>
-#include "common_types.h"
-#include "op.h"
+
 #include "sirit/sirit.h"
+
+#include "stream.h"
 
 namespace Sirit {
 
-Id Module::OpExtInst(Id result_type, Id set, u32 instruction, const std::vector<Id>& operands) {
-    auto op{std::make_unique<Op>(spv::Op::OpExtInst, bound++, result_type)};
-    op->Add(set);
-    op->Add(instruction);
-    op->Add(operands);
-    return AddCode(std::move(op));
+Id Module::OpExtInst(Id result_type, Id set, u32 instruction, std::span<const Id> operands) {
+    code->Reserve(5 + operands.size());
+    return *code << OpId{spv::Op::OpExtInst, result_type} << set << instruction << operands
+                 << EndOp{};
 }
 
 #define DEFINE_UNARY(funcname, opcode)                                                             \
@@ -74,4 +72,5 @@ DEFINE_UNARY(OpFindUMsb, GLSLstd450FindUMsb)
 DEFINE_UNARY(OpInterpolateAtCentroid, GLSLstd450InterpolateAtCentroid)
 DEFINE_BINARY(OpInterpolateAtSample, GLSLstd450InterpolateAtSample)
 DEFINE_BINARY(OpInterpolateAtOffset, GLSLstd450InterpolateAtOffset)
+
 } // namespace Sirit

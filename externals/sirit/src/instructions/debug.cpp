@@ -4,44 +4,33 @@
  * 3-Clause BSD License
  */
 
-#include <memory>
-#include <string>
-#include "op.h"
 #include "sirit/sirit.h"
+
+#include "common_types.h"
+#include "stream.h"
 
 namespace Sirit {
 
-Id Module::Name(Id target, std::string name) {
-    auto op{std::make_unique<Op>(spv::Op::OpName)};
-    op->Add(target);
-    op->Add(std::move(name));
-    debug.push_back(std::move(op));
+Id Module::Name(Id target, std::string_view name) {
+    debug->Reserve(3 + WordsInString(name));
+    *debug << spv::Op::OpName << target << name << EndOp{};
     return target;
 }
 
-Id Module::MemberName(Id type, u32 member, std::string name) {
-    auto op{std::make_unique<Op>(spv::Op::OpMemberName)};
-    op->Add(type);
-    op->Add(member);
-    op->Add(std::move(name));
-    debug.push_back(std::move(op));
+Id Module::MemberName(Id type, u32 member, std::string_view name) {
+    debug->Reserve(4 + WordsInString(name));
+    *debug << spv::Op::OpMemberName << type << member << name << EndOp{};
     return type;
 }
 
-Id Module::String(std::string string) {
-    auto op{std::make_unique<Op>(spv::Op::OpString, bound++)};
-    op->Add(std::move(string));
-    const auto id = op.get();
-    debug.push_back(std::move(op));
-    return id;
+Id Module::String(std::string_view string) {
+    debug->Reserve(3 + WordsInString(string));
+    return *debug << OpId{spv::Op::OpString} << string << EndOp{};
 }
 
 Id Module::OpLine(Id file, Literal line, Literal column) {
-    auto op{std::make_unique<Op>(spv::Op::OpLine)};
-    op->Add(file);
-    op->Add(line);
-    op->Add(column);
-    return AddCode(std::move(op));
+    debug->Reserve(4);
+    return *debug << spv::Op::OpLine << file << line << column << EndOp{};
 }
 
 } // namespace Sirit

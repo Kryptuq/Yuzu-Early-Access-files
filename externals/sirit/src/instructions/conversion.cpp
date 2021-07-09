@@ -4,18 +4,16 @@
  * 3-Clause BSD License
  */
 
-#include <memory>
-#include "common_types.h"
-#include "op.h"
 #include "sirit/sirit.h"
+
+#include "stream.h"
 
 namespace Sirit {
 
 #define DEFINE_UNARY(opcode)                                                                       \
     Id Module::opcode(Id result_type, Id operand) {                                                \
-        auto op{std::make_unique<Op>(spv::Op::opcode, bound++, result_type)};                      \
-        op->Add(operand);                                                                          \
-        return AddCode(std::move(op));                                                             \
+        code->Reserve(4);                                                                          \
+        return *code << OpId{spv::Op::opcode, result_type} << operand << EndOp{};                  \
     }
 
 DEFINE_UNARY(OpConvertFToU)

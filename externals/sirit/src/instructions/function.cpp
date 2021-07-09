@@ -4,28 +4,31 @@
  * 3-Clause BSD License
  */
 
-#include "common_types.h"
-#include "op.h"
 #include "sirit/sirit.h"
+
+#include "stream.h"
 
 namespace Sirit {
 
 Id Module::OpFunction(Id result_type, spv::FunctionControlMask function_control, Id function_type) {
-    auto op{std::make_unique<Op>(spv::Op::OpFunction, bound++, result_type)};
-    op->Add(static_cast<u32>(function_control));
-    op->Add(function_type);
-    return AddCode(std::move(op));
+    code->Reserve(5);
+    return *code << OpId{spv::Op::OpFunction, result_type} << function_control << function_type
+                 << EndOp{};
 }
 
-Id Module::OpFunctionEnd() {
-    return AddCode(spv::Op::OpFunctionEnd);
+void Module::OpFunctionEnd() {
+    code->Reserve(1);
+    *code << spv::Op::OpFunctionEnd << EndOp{};
 }
 
-Id Module::OpFunctionCall(Id result_type, Id function, const std::vector<Id>& arguments) {
-    auto op{std::make_unique<Op>(spv::Op::OpFunctionCall, bound++, result_type)};
-    op->Add(function);
-    op->Add(arguments);
-    return AddCode(std::move(op));
+Id Module::OpFunctionCall(Id result_type, Id function, std::span<const Id> arguments) {
+    code->Reserve(4 + arguments.size());
+    return *code << OpId{spv::Op::OpFunctionCall, result_type} << function << arguments << EndOp{};
+}
+
+Id Module::OpFunctionParameter(Id result_type) {
+    code->Reserve(3);
+    return *code << OpId{spv::Op::OpFunctionParameter, result_type} << EndOp{};
 }
 
 } // namespace Sirit

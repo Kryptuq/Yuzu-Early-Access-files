@@ -4,79 +4,86 @@
 
 #pragma once
 
-#include <cstddef>
+#include <array>
+#include <span>
 
 #include <glad/glad.h>
 
+#include "video_core/renderer_opengl/gl_device.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
-#include "video_core/renderer_opengl/maxwell_to_gl.h"
 
 namespace OpenGL {
 
-class Device;
-
-/// Uniform structure for the Uniform Buffer Object, all vectors must be 16-byte aligned
-/// @note Always keep a vec4 at the end. The GL spec is not clear whether the alignment at
-///       the end of a uniform block is included in UNIFORM_BLOCK_DATA_SIZE or not.
-///       Not following that rule will cause problems on some AMD drivers.
-struct alignas(16) MaxwellUniformData {
-    void SetFromRegs(const Tegra::Engines::Maxwell3D& maxwell);
-
-    GLfloat y_direction;
-};
-static_assert(sizeof(MaxwellUniformData) == 16, "MaxwellUniformData structure size is incorrect");
-static_assert(sizeof(MaxwellUniformData) < 16384,
-              "MaxwellUniformData structure must be less than 16kb as per the OpenGL spec");
-
 class ProgramManager {
-public:
-    explicit ProgramManager(const Device& device);
-    ~ProgramManager();
+    static constexpr size_t NUM_STAGES = 5;
 
-    /// Binds a compute program
-    void BindCompute(GLuint program);
-
-    /// Updates bound programs.
-    void BindGraphicsPipeline();
-
-    /// Binds an OpenGL pipeline object unsynchronized with the guest state.
-    void BindHostPipeline(GLuint pipeline);
-
-    /// Rewinds BindHostPipeline state changes.
-    void RestoreGuestPipeline();
-
-    /// Binds an OpenGL GLSL program object unsynchronized with the guest state.
-    void BindHostCompute(GLuint program);
-
-    /// Rewinds BindHostCompute state changes.
-    void RestoreGuestCompute();
-
-    void UseVertexShader(GLuint program);
-    void UseGeometryShader(GLuint program);
-    void UseFragmentShader(GLuint program);
-
-private:
-    struct PipelineState {
-        GLuint vertex = 0;
-        GLuint geometry = 0;
-        GLuint fragment = 0;
+    static constexpr std::array ASSEMBLY_PROGRAM_ENUMS{
+        GL_VERTEX_PROGRAM_NV,   GL_TESS_CONTROL_PROGRAM_NV, GL_TESS_EVALUATION_PROGRAM_NV,
+        GL_GEOMETRY_PROGRAM_NV, GL_FRAGMENT_PROGRAM_NV,
     };
 
-    /// Update GLSL programs.
-    void UpdateSourcePrograms();
+public:
+    explicit ProgramManager(const Device& device) {
+        if (device.UseAssemblyShaders()) {
+            glEnable(GL_COMPUTE_PROGRAM_NV);
+        }
+    }
 
-    OGLPipeline graphics_pipeline;
+    void BindProgram(GLuint program) {
+        if (current_source_program == program) {
+            return;
+        }
+        current_source_program = program;
+        glUseProgram(program);
+    }
 
-    PipelineState current_state;
-    PipelineState old_state;
+    void BindComputeAssemblyProgram(GLuint program) {
+        if (current_compute_assembly_program != program) {
+            current_compute_assembly_program = program;
+            glBindProgramARB(GL_COMPUTE_PROGRAM_NV, program);
+        }
+        if (current_source_program != 0) {
+            current_source_program = 0;
+            glUseProgram(0);
+        }
+    }
 
-    bool use_assembly_programs = false;
+    void BindAssemblyPrograms(std::span<const OGLAssemblyProgram, NUM_STAGES> programs,
+                              u32 stage_mask) {
+        const u32 changed_mask = current_assembly_mask ^ stage_mask;
+        current_assembly_mask = stage_mask;
 
-    bool is_graphics_bound = true;
+        if (changed_mask != 0) {
+            for (size_t stage = 0; stage < NUM_STAGES; ++stage) {
+                if (((changed_mask >> stage) & 1) != 0) {
+                    if (((stage_mask >> stage) & 1) != 0) {
+                        glEnable(ASSEMBLY_PROGRAM_ENUMS[stage]);
+                    } else {
+                        glDisable(ASSEMBLY_PROGRAM_ENUMS[stage]);
+                    }
+                }
+            }
+        }
+        for (size_t stage = 0; stage < NUM_STAGES; ++stage) {
+            if (current_assembly_programs[stage] != programs[stage].handle) {
+                current_assembly_programs[stage] = programs[stage].handle;
+                glBindProgramARB(ASSEMBLY_PROGRAM_ENUMS[stage], programs[stage].handle);
+            }
+        }
+        if (current_source_program != 0) {
+            current_source_program = 0;
+            glUseProgram(0);
+        }
+    }
 
-    bool vertex_enabled = false;
-    bool geometry_enabled = false;
-    bool fragment_enabled = false;
+    void RestoreGuestCompute() {}
+
+private:
+    GLuint current_source_program = 0;
+
+    u32 current_assembly_mask = 0;
+    std::array<GLuint, NUM_STAGES> current_assembly_programs{};
+    GLuint current_compute_assembly_program = 0;
 };
 
 } // namespace OpenGL

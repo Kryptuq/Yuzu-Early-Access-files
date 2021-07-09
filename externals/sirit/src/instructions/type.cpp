@@ -5,137 +5,118 @@
  */
 
 #include <cassert>
-#include <memory>
 #include <optional>
 
-#include "op.h"
 #include "sirit/sirit.h"
+
+#include "stream.h"
 
 namespace Sirit {
 
 Id Module::TypeVoid() {
-    return AddDeclaration(std::make_unique<Op>(spv::Op::OpTypeVoid, bound));
+    declarations->Reserve(2);
+    return *declarations << OpId{spv::Op::OpTypeVoid} << EndOp{};
 }
 
 Id Module::TypeBool() {
-    return AddDeclaration(std::make_unique<Op>(spv::Op::OpTypeBool, bound));
+    declarations->Reserve(2);
+    return *declarations << OpId{spv::Op::OpTypeBool} << EndOp{};
 }
 
 Id Module::TypeInt(int width, bool is_signed) {
-    auto op{std::make_unique<Op>(spv::Op::OpTypeInt, bound)};
-    op->Add(width);
-    op->Add(is_signed ? 1 : 0);
-    return AddDeclaration(std::move(op));
+    declarations->Reserve(4);
+    return *declarations << OpId{spv::Op::OpTypeInt} << width << is_signed << EndOp{};
 }
 
 Id Module::TypeFloat(int width) {
-    auto op{std::make_unique<Op>(spv::Op::OpTypeFloat, bound)};
-    op->Add(width);
-    return AddDeclaration(std::move(op));
+    declarations->Reserve(3);
+    return *declarations << OpId{spv::Op::OpTypeFloat} << width << EndOp{};
 }
 
 Id Module::TypeVector(Id component_type, int component_count) {
     assert(component_count >= 2);
-    auto op{std::make_unique<Op>(spv::Op::OpTypeVector, bound)};
-    op->Add(component_type);
-    op->Add(component_count);
-    return AddDeclaration(std::move(op));
+    declarations->Reserve(4);
+    return *declarations << OpId{spv::Op::OpTypeVector} << component_type << component_count
+                         << EndOp{};
 }
 
 Id Module::TypeMatrix(Id column_type, int column_count) {
     assert(column_count >= 2);
-    auto op{std::make_unique<Op>(spv::Op::OpTypeMatrix, bound)};
-    op->Add(column_type);
-    op->Add(column_count);
-    return AddDeclaration(std::move(op));
+    declarations->Reserve(4);
+    return *declarations << OpId{spv::Op::OpTypeMatrix} << column_type << column_count << EndOp{};
 }
 
 Id Module::TypeImage(Id sampled_type, spv::Dim dim, int depth, bool arrayed, bool ms, int sampled,
                      spv::ImageFormat image_format,
                      std::optional<spv::AccessQualifier> access_qualifier) {
-    auto op{std::make_unique<Op>(spv::Op::OpTypeImage, bound)};
-    op->Add(sampled_type);
-    op->Add(static_cast<u32>(dim));
-    op->Add(depth);
-    op->Add(arrayed ? 1 : 0);
-    op->Add(ms ? 1 : 0);
-    op->Add(sampled);
-    op->Add(static_cast<u32>(image_format));
-    if (access_qualifier.has_value()) {
-        op->Add(static_cast<u32>(access_qualifier.value()));
-    }
-    return AddDeclaration(std::move(op));
+    declarations->Reserve(10);
+    return *declarations << OpId{spv::Op::OpTypeImage} << sampled_type << dim << depth << arrayed
+                         << ms << sampled << image_format << access_qualifier << EndOp{};
 }
 
 Id Module::TypeSampler() {
-    return AddDeclaration(std::make_unique<Op>(spv::Op::OpTypeSampler, bound));
+    declarations->Reserve(2);
+    return *declarations << OpId{spv::Op::OpTypeSampler} << EndOp{};
 }
 
 Id Module::TypeSampledImage(Id image_type) {
-    auto op{std::make_unique<Op>(spv::Op::OpTypeSampledImage, bound)};
-    op->Add(image_type);
-    return AddDeclaration(std::move(op));
+    declarations->Reserve(3);
+    return *declarations << OpId{spv::Op::OpTypeSampledImage} << image_type << EndOp{};
 }
 
 Id Module::TypeArray(Id element_type, Id length) {
-    auto op{std::make_unique<Op>(spv::Op::OpTypeArray, bound)};
-    op->Add(element_type);
-    op->Add(length);
-    return AddDeclaration(std::move(op));
+    declarations->Reserve(4);
+    return *declarations << OpId{spv::Op::OpTypeArray} << element_type << length << EndOp{};
 }
 
 Id Module::TypeRuntimeArray(Id element_type) {
-    auto op{std::make_unique<Op>(spv::Op::OpTypeRuntimeArray, bound)};
-    op->Add(element_type);
-    return AddDeclaration(std::move(op));
+    declarations->Reserve(3);
+    return *declarations << OpId{spv::Op::OpTypeRuntimeArray} << element_type << EndOp{};
 }
 
-Id Module::TypeStruct(const std::vector<Id>& members) {
-    auto op{std::make_unique<Op>(spv::Op::OpTypeStruct, bound)};
-    op->Add(members);
-    return AddDeclaration(std::move(op));
+Id Module::TypeStruct(std::span<const Id> members) {
+    declarations->Reserve(2 + members.size());
+    return *declarations << OpId{spv::Op::OpTypeStruct} << members << EndOp{};
 }
 
-Id Module::TypeOpaque(std::string name) {
-    auto op{std::make_unique<Op>(spv::Op::OpTypeOpaque, bound)};
-    op->Add(std::move(name));
-    return AddDeclaration(std::move(op));
+Id Module::TypeOpaque(std::string_view name) {
+    declarations->Reserve(3 + WordsInString(name));
+    return *declarations << OpId{spv::Op::OpTypeOpaque} << name << EndOp{};
 }
 
 Id Module::TypePointer(spv::StorageClass storage_class, Id type) {
-    auto op{std::make_unique<Op>(spv::Op::OpTypePointer, bound)};
-    op->Add(static_cast<u32>(storage_class));
-    op->Add(type);
-    return AddDeclaration(std::move(op));
+    declarations->Reserve(4);
+    return *declarations << OpId{spv::Op::OpTypePointer} << storage_class << type << EndOp{};
 }
 
-Id Module::TypeFunction(Id return_type, const std::vector<Id>& arguments) {
-    auto op{std::make_unique<Op>(spv::Op::OpTypeFunction, bound)};
-    op->Add(return_type);
-    op->Add(arguments);
-    return AddDeclaration(std::move(op));
+Id Module::TypeFunction(Id return_type, std::span<const Id> arguments) {
+    declarations->Reserve(3 + arguments.size());
+    return *declarations << OpId{spv::Op::OpTypeFunction} << return_type << arguments << EndOp{};
 }
 
 Id Module::TypeEvent() {
-    return AddDeclaration(std::make_unique<Op>(spv::Op::OpTypeEvent, bound));
+    declarations->Reserve(2);
+    return *declarations << OpId{spv::Op::OpTypeEvent} << EndOp{};
 }
 
 Id Module::TypeDeviceEvent() {
-    return AddDeclaration(std::make_unique<Op>(spv::Op::OpTypeDeviceEvent, bound));
+    declarations->Reserve(2);
+    return *declarations << OpId{spv::Op::OpTypeDeviceEvent} << EndOp{};
 }
 
 Id Module::TypeReserveId() {
-    return AddDeclaration(std::make_unique<Op>(spv::Op::OpTypeReserveId, bound));
+    declarations->Reserve(2);
+    return *declarations << OpId{spv::Op::OpTypeReserveId} << EndOp{};
 }
 
 Id Module::TypeQueue() {
-    return AddDeclaration(std::make_unique<Op>(spv::Op::OpTypeQueue, bound));
+    declarations->Reserve(2);
+    return *declarations << OpId{spv::Op::OpTypeQueue} << EndOp{};
 }
 
 Id Module::TypePipe(spv::AccessQualifier access_qualifier) {
-    auto op{std::make_unique<Op>(spv::Op::OpTypePipe, bound)};
-    op->Add(static_cast<u32>(access_qualifier));
-    return AddDeclaration(std::move(op));
+    declarations->Reserve(2);
+    return *declarations << OpId{spv::Op::OpTypePipe} << access_qualifier << EndOp{};
 }
 
 } // namespace Sirit

@@ -4,145 +4,101 @@
  * 3-Clause BSD License
  */
 
-#include "common_types.h"
-#include "op.h"
 #include "sirit/sirit.h"
+
+#include "stream.h"
 
 namespace Sirit {
 
 Id Module::OpAtomicLoad(Id result_type, Id pointer, Id memory, Id semantics) {
-    auto op{std::make_unique<Op>(spv::Op::OpAtomicLoad, bound++, result_type)};
-    op->Add(pointer);
-    op->Add(memory);
-    op->Add(semantics);
-    return AddCode(std::move(op));
+    code->Reserve(6);
+    return *code << OpId{spv::Op::OpAtomicLoad, result_type} << pointer << memory << semantics
+                 << EndOp{};
 }
 
 Id Module::OpAtomicStore(Id pointer, Id memory, Id semantics, Id value) {
-    auto op{std::make_unique<Op>(spv::Op::OpAtomicStore)};
-    op->Add(pointer);
-    op->Add(memory);
-    op->Add(semantics);
-    op->Add(value);
-    return AddCode(std::move(op));
+    code->Reserve(5);
+    return *code << OpId{spv::Op::OpAtomicStore} << pointer << memory << semantics << value
+                 << EndOp{};
 }
 
 Id Module::OpAtomicExchange(Id result_type, Id pointer, Id memory, Id semantics, Id value) {
-    auto op{std::make_unique<Op>(spv::Op::OpAtomicExchange, bound++, result_type)};
-    op->Add(pointer);
-    op->Add(memory);
-    op->Add(semantics);
-    op->Add(value);
-    return AddCode(std::move(op));
+    code->Reserve(7);
+    return *code << OpId{spv::Op::OpAtomicExchange, result_type} << pointer << memory << semantics
+                 << value << EndOp{};
 }
 
 Id Module::OpAtomicCompareExchange(Id result_type, Id pointer, Id memory, Id equal, Id unequal,
                                    Id value, Id comparator) {
-    auto op{std::make_unique<Op>(spv::Op::OpAtomicCompareExchange, bound++, result_type)};
-    op->Add(pointer);
-    op->Add(memory);
-    op->Add(equal);
-    op->Add(unequal);
-    op->Add(value);
-    op->Add(comparator);
-    return AddCode(std::move(op));
+    code->Reserve(9);
+    return *code << OpId{spv::Op::OpAtomicCompareExchange, result_type} << pointer << memory
+                 << equal << unequal << value << comparator << EndOp{};
 }
 
 Id Module::OpAtomicIIncrement(Id result_type, Id pointer, Id memory, Id semantics) {
-    auto op{std::make_unique<Op>(spv::Op::OpAtomicIIncrement, bound++, result_type)};
-    op->Add(pointer);
-    op->Add(memory);
-    op->Add(semantics);
-    return AddCode(std::move(op));
+    code->Reserve(6);
+    return *code << OpId{spv::Op::OpAtomicIIncrement, result_type} << pointer << memory << semantics
+                 << EndOp{};
 }
 
 Id Module::OpAtomicIDecrement(Id result_type, Id pointer, Id memory, Id semantics) {
-    auto op{std::make_unique<Op>(spv::Op::OpAtomicIDecrement, bound++, result_type)};
-    op->Add(pointer);
-    op->Add(memory);
-    op->Add(semantics);
-    return AddCode(std::move(op));
+    code->Reserve(6);
+    return *code << OpId{spv::Op::OpAtomicIDecrement, result_type} << pointer << memory << semantics
+                 << EndOp{};
 }
 
 Id Module::OpAtomicIAdd(Id result_type, Id pointer, Id memory, Id semantics, Id value) {
-    auto op{std::make_unique<Op>(spv::Op::OpAtomicIAdd, bound++, result_type)};
-    op->Add(pointer);
-    op->Add(memory);
-    op->Add(semantics);
-    op->Add(value);
-    return AddCode(std::move(op));
+    code->Reserve(7);
+    return *code << OpId{spv::Op::OpAtomicIAdd, result_type} << pointer << memory << semantics
+                 << value << EndOp{};
 }
 
 Id Module::OpAtomicISub(Id result_type, Id pointer, Id memory, Id semantics, Id value) {
-    auto op{std::make_unique<Op>(spv::Op::OpAtomicISub, bound++, result_type)};
-    op->Add(pointer);
-    op->Add(memory);
-    op->Add(semantics);
-    op->Add(value);
-    return AddCode(std::move(op));
+    code->Reserve(7);
+    return *code << OpId{spv::Op::OpAtomicISub, result_type} << pointer << memory << semantics
+                 << value << EndOp{};
 }
 
 Id Module::OpAtomicSMin(Id result_type, Id pointer, Id memory, Id semantics, Id value) {
-    auto op{std::make_unique<Op>(spv::Op::OpAtomicSMin, bound++, result_type)};
-    op->Add(pointer);
-    op->Add(memory);
-    op->Add(semantics);
-    op->Add(value);
-    return AddCode(std::move(op));
+    code->Reserve(7);
+    return *code << OpId{spv::Op::OpAtomicSMin, result_type} << pointer << memory << semantics
+                 << value << EndOp{};
 }
 
 Id Module::OpAtomicUMin(Id result_type, Id pointer, Id memory, Id semantics, Id value) {
-    auto op{std::make_unique<Op>(spv::Op::OpAtomicUMin, bound++, result_type)};
-    op->Add(pointer);
-    op->Add(memory);
-    op->Add(semantics);
-    op->Add(value);
-    return AddCode(std::move(op));
+    code->Reserve(7);
+    return *code << OpId{spv::Op::OpAtomicUMin, result_type} << pointer << memory << semantics
+                 << value << EndOp{};
 }
 
 Id Module::OpAtomicSMax(Id result_type, Id pointer, Id memory, Id semantics, Id value) {
-    auto op{std::make_unique<Op>(spv::Op::OpAtomicSMax, bound++, result_type)};
-    op->Add(pointer);
-    op->Add(memory);
-    op->Add(semantics);
-    op->Add(value);
-    return AddCode(std::move(op));
+    code->Reserve(7);
+    return *code << OpId{spv::Op::OpAtomicSMax, result_type} << pointer << memory << semantics
+                 << value << EndOp{};
 }
 
 Id Module::OpAtomicUMax(Id result_type, Id pointer, Id memory, Id semantics, Id value) {
-    auto op{std::make_unique<Op>(spv::Op::OpAtomicUMax, bound++, result_type)};
-    op->Add(pointer);
-    op->Add(memory);
-    op->Add(semantics);
-    op->Add(value);
-    return AddCode(std::move(op));
+    code->Reserve(7);
+    return *code << OpId{spv::Op::OpAtomicUMax, result_type} << pointer << memory << semantics
+                 << value << EndOp{};
 }
 
 Id Module::OpAtomicAnd(Id result_type, Id pointer, Id memory, Id semantics, Id value) {
-    auto op{std::make_unique<Op>(spv::Op::OpAtomicAnd, bound++, result_type)};
-    op->Add(pointer);
-    op->Add(memory);
-    op->Add(semantics);
-    op->Add(value);
-    return AddCode(std::move(op));
+    code->Reserve(7);
+    return *code << OpId{spv::Op::OpAtomicAnd, result_type} << pointer << memory << semantics
+                 << value << EndOp{};
 }
 
 Id Module::OpAtomicOr(Id result_type, Id pointer, Id memory, Id semantics, Id value) {
-    auto op{std::make_unique<Op>(spv::Op::OpAtomicOr, bound++, result_type)};
-    op->Add(pointer);
-    op->Add(memory);
-    op->Add(semantics);
-    op->Add(value);
-    return AddCode(std::move(op));
+    code->Reserve(7);
+    return *code << OpId{spv::Op::OpAtomicOr, result_type} << pointer << memory << semantics
+                 << value << EndOp{};
 }
 
 Id Module::OpAtomicXor(Id result_type, Id pointer, Id memory, Id semantics, Id value) {
-    auto op{std::make_unique<Op>(spv::Op::OpAtomicXor, bound++, result_type)};
-    op->Add(pointer);
-    op->Add(memory);
-    op->Add(semantics);
-    op->Add(value);
-    return AddCode(std::move(op));
+    code->Reserve(7);
+    return *code << OpId{spv::Op::OpAtomicXor, result_type} << pointer << memory << semantics
+                 << value << EndOp{};
 }
 
 } // namespace Sirit

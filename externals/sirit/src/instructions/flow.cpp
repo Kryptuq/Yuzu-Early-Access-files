@@ -5,79 +5,96 @@
  */
 
 #include <cassert>
-#include <vector>
-#include "common_types.h"
-#include "op.h"
+
 #include "sirit/sirit.h"
+
+#include "stream.h"
 
 namespace Sirit {
 
+Id Module::OpPhi(Id result_type, std::span<const Id> operands) {
+    assert(operands.size() % 2 == 0);
+    code->Reserve(3 + operands.size());
+    return *code << OpId{spv::Op::OpPhi, result_type} << operands << EndOp{};
+}
+
+Id Module::DeferredOpPhi(Id result_type, std::span<const Id> blocks) {
+    deferred_phi_nodes.push_back(code->LocalAddress());
+    code->Reserve(3 + blocks.size() * 2);
+    *code << OpId{spv::Op::OpPhi, result_type};
+    for (const Id block : blocks) {
+        *code << u32{0} << block;
+    }
+    return *code << EndOp{};
+}
+
 Id Module::OpLoopMerge(Id merge_block, Id continue_target, spv::LoopControlMask loop_control,
-                       const std::vector<Id>& literals) {
-    auto op{std::make_unique<Op>(spv::Op::OpLoopMerge)};
-    op->Add(merge_block);
-    op->Add(continue_target);
-    op->Add(static_cast<u32>(loop_control));
-    op->Add(literals);
-    return AddCode(std::move(op));
+                       std::span<const Id> literals) {
+    code->Reserve(4 + literals.size());
+    return *code << spv::Op::OpLoopMerge << merge_block << continue_target << loop_control
+                 << literals << EndOp{};
 }
 
 Id Module::OpSelectionMerge(Id merge_block, spv::SelectionControlMask selection_control) {
-    auto op{std::make_unique<Op>(spv::Op::OpSelectionMerge)};
-    op->Add(merge_block);
-    op->Add(static_cast<u32>(selection_control));
-    return AddCode(std::move(op));
+    code->Reserve(3);
+    return *code << spv::Op::OpSelectionMerge << merge_block << selection_control << EndOp{};
 }
 
 Id Module::OpLabel() {
-    return code_store.emplace_back(std::make_unique<Op>(spv::Op::OpLabel, bound++)).get();
+    return Id{++bound};
 }
 
 Id Module::OpBranch(Id target_label) {
-    auto op{std::make_unique<Op>(spv::Op::OpBranch)};
-    op->Add(target_label);
-    return AddCode(std::move(op));
+    code->Reserve(2);
+    return *code << spv::Op::OpBranch << target_label << EndOp{};
 }
 
 Id Module::OpBranchConditional(Id condition, Id true_label, Id false_label, u32 true_weight,
                                u32 false_weight) {
-    auto op{std::make_unique<Op>(spv::Op::OpBranchConditional)};
-    op->Add(condition);
-    op->Add(true_label);
-    op->Add(false_label);
+    code->Reserve(6);
+    *code << spv::Op::OpBranchConditional << condition << true_label << false_label;
     if (true_weight != 0 || false_weight != 0) {
-        op->Add(true_weight);
-        op->Add(false_weight);
+        *code << true_weight << false_weight;
     }
-    return AddCode(std::move(op));
+    return *code << EndOp{};
 }
 
-Id Module::OpSwitch(Id selector, Id default_label, const std::vector<Literal>& literals,
-                    const std::vector<Id>& labels) {
-    const std::size_t size = literals.size();
+Id Module::OpSwitch(Id selector, Id default_label, std::span<const Literal> literals,
+                    std::span<const Id> labels) {
     assert(literals.size() == labels.size());
-    auto op{std::make_unique<Op>(spv::Op::OpSwitch)};
-    op->Add(selector);
-    op->Add(default_label);
+    const size_t size = literals.size();
+    code->Reserve(3 + size * 2);
+
+    *code << spv::Op::OpSwitch << selector << default_label;
     for (std::size_t i = 0; i < size; ++i) {
-        op->Add(literals[i]);
-        op->Add(labels[i]);
+        *code << literals[i] << labels[i];
     }
-    return AddCode(std::move(op));
+    return *code << EndOp{};
 }
 
-Id Module::OpReturn() {
-    return AddCode(spv::Op::OpReturn);
+void Module::OpReturn() {
+    code->Reserve(1);
+    *code << spv::Op::OpReturn << EndOp{};
+}
+
+void Module::OpUnreachable() {
+    code->Reserve(1);
+    *code << spv::Op::OpUnreachable << EndOp{};
 }
 
 Id Module::OpReturnValue(Id value) {
-    auto op{std::make_unique<Op>(spv::Op::OpReturnValue)};
-    op->Add(value);
-    return AddCode(std::move(op));
+    code->Reserve(2);
+    return *code << spv::Op::OpReturnValue << value << EndOp{};
 }
 
-Id Module::OpKill() {
-    return AddCode(std::make_unique<Op>(spv::Op::OpKill));
+void Module::OpKill() {
+    code->Reserve(1);
+    *code << spv::Op::OpKill << EndOp{};
+}
+
+void Module::OpDemoteToHelperInvocationEXT() {
+    code->Reserve(1);
+    *code << spv::Op::OpDemoteToHelperInvocationEXT << EndOp{};
 }
 
 } // namespace Sirit

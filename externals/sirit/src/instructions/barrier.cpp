@@ -4,25 +4,20 @@
  * 3-Clause BSD License
  */
 
-#include <memory>
-#include "op.h"
 #include "sirit/sirit.h"
+
+#include "stream.h"
 
 namespace Sirit {
 
 Id Module::OpControlBarrier(Id execution, Id memory, Id semantics) {
-    auto op = std::make_unique<Op>(spv::Op::OpControlBarrier);
-    op->Add(execution);
-    op->Add(memory);
-    op->Add(semantics);
-    return AddCode(std::move(op));
+    code->Reserve(4);
+    return *code << spv::Op::OpControlBarrier << execution << memory << semantics << EndOp{};
 }
 
 Id Module::OpMemoryBarrier(Id scope, Id semantics) {
-    auto op = std::make_unique<Op>(spv::Op::OpMemoryBarrier);
-    op->Add(scope);
-    op->Add(semantics);
-    return AddCode(std::move(op));
+    code->Reserve(3);
+    return *code << spv::Op::OpMemoryBarrier << scope << semantics << EndOp{};
 }
 
 } // namespace Sirit

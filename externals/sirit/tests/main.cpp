@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
 #include <sirit/sirit.h>
 
 class MyModule : public Sirit::Module {
@@ -31,18 +32,15 @@ public:
         const auto gl_per_vertex_ptr =
             Name(TypePointer(spv::StorageClass::Output, gl_per_vertex), "out_gl_PerVertex");
 
-        const auto in_pos = Name(OpVariable(in_float4, spv::StorageClass::Input), "in_pos");
+        const auto in_pos = Name(AddGlobalVariable(in_float4, spv::StorageClass::Input), "in_pos");
         const auto per_vertex =
-            Name(OpVariable(gl_per_vertex_ptr, spv::StorageClass::Output), "per_vertex");
+            Name(AddGlobalVariable(gl_per_vertex_ptr, spv::StorageClass::Output), "per_vertex");
 
         Decorate(in_pos, spv::Decoration::Location, 0);
         Decorate(gl_per_vertex, spv::Decoration::Block);
         Decorate(gl_per_vertex, spv::Decoration::Block);
         MemberDecorate(gl_per_vertex, 0, spv::Decoration::BuiltIn,
                        static_cast<std::uint32_t>(spv::BuiltIn::Position));
-
-        AddGlobalVariable(in_pos);
-        AddGlobalVariable(per_vertex);
 
         const auto main_func = Name(
             OpFunction(t_void, spv::FunctionControlMask::MaskNone, TypeFunction(t_void)), "main");
@@ -57,8 +55,8 @@ public:
         auto tmp_position = OpUndef(float4);
         tmp_position = OpCompositeInsert(float4, pos_x, tmp_position, 0);
         tmp_position = OpCompositeInsert(float4, pos_y, tmp_position, 1);
-        tmp_position = OpCompositeInsert(float4, Constant(t_float, 0.f), tmp_position, 2);
-        tmp_position = OpCompositeInsert(float4, Constant(t_float, 1.f), tmp_position, 3);
+        tmp_position = OpCompositeInsert(float4, Constant(t_float, 0.0f), tmp_position, 2);
+        tmp_position = OpCompositeInsert(float4, Constant(t_float, 1.0f), tmp_position, 3);
 
         const auto gl_position = OpAccessChain(out_float4, per_vertex, Constant(t_uint, 0u));
         OpStore(gl_position, tmp_position);
@@ -123,7 +121,8 @@ static constexpr std::uint8_t expected_binary[] = {
     0x1b, 0x00, 0x00, 0x00, 0x1a, 0x00, 0x00, 0x00, 0x19, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00,
     0x41, 0x00, 0x05, 0x00, 0x07, 0x00, 0x00, 0x00, 0x1c, 0x00, 0x00, 0x00, 0x0b, 0x00, 0x00, 0x00,
     0x0f, 0x00, 0x00, 0x00, 0x3e, 0x00, 0x03, 0x00, 0x1c, 0x00, 0x00, 0x00, 0x1b, 0x00, 0x00, 0x00,
-    0xfd, 0x00, 0x01, 0x00, 0x38, 0x00, 0x01, 0x00};
+    0xfd, 0x00, 0x01, 0x00, 0x38, 0x00, 0x01, 0x00,
+};
 
 int main(int argc, char** argv) {
     MyModule module;

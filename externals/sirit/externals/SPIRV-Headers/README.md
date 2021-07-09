@@ -23,11 +23,32 @@ When a new version or revision of the SPIR-V specification is published,
 the SPIR-V Working Group will push new commits onto master, updating
 the files under [include](include).
 
-The SPIR-V XML registry file is updated by Khronos whenever a new enum range is allocated.
+[The SPIR-V XML registry file](include/spirv/spir-v.xml)
+is updated by Khronos whenever a new enum range is allocated.
 
-Pull requests can be made to 
+Pull requests can be made to
 - request allocation of new enum ranges in the XML registry file
+- register a new magic number for a SPIR-V generator
 - reserve specific tokens in the JSON grammar
+
+### Registering a SPIR-V Generator Magic Number
+
+Tools that generate SPIR-V should use a magic number in the SPIR-V to help identify the
+generator.
+
+Care should be taken to follow existing precedent in populating the details of reserved tokens.
+This includes:
+- keeping generator numbers in numeric order
+- filling out all the existing fields
+
+### Reserving tokens in the JSON grammar
+
+Care should be taken to follow existing precedent in populating the details of reserved tokens.
+This includes:
+- pointing to what extension has more information, when possible
+- keeping enumerants in numeric order
+- when there are aliases, listing the preferred spelling first
+- adding the statement `"version" : "None"`
 
 ## How to install the headers
 
@@ -45,6 +66,7 @@ If you want to install them somewhere else, then use
 
 ## Using the headers without installing
 
+### Using CMake
 A CMake-based project can use the headers without installing, as follows:
 
 1. Add an `add_subdirectory` directive to include this source tree.
@@ -61,7 +83,56 @@ A CMake-based project can use the headers without installing, as follows:
 See also the [example](example/) subdirectory.  But since that example is
 *inside* this repostory, it doesn't use and `add_subdirectory` directive.
 
-## Generating the headers from the JSON grammar
+### Using Bazel
+A Bazel-based project can use the headers without installing, as follows:
+
+1. Add SPIRV-Headers as a submodule of your project, and add a
+`local_repository` to your `WORKSPACE` file. For example, if you place
+SPIRV-Headers under `external/spirv-headers`, then add the following to your
+`WORKSPACE` file:
+
+```
+local_repository(
+    name = "spirv_headers",
+    path = "external/spirv-headers",
+)
+```
+
+2. Add one of the following to the `deps` attribute of your build target based
+on your needs:
+```
+@spirv_headers//:spirv_c_headers
+@spirv_headers//:spirv_cpp_headers
+@spirv_headers//:spirv_cpp11_headers
+```
+
+For example:
+
+```
+cc_library(
+  name = "project",
+  srcs = [
+    # Path to project sources
+  ],
+  hdrs = [
+    # Path to project headers
+  ],
+  deps = [
+    "@spirv_tools//:spirv_c_headers",
+    # Other dependencies,
+  ],
+)
+```
+
+3. In your C or C++ source code use `#include` directives that explicitly mention
+   the `spirv` path component.
+```
+#include "spirv/unified1/GLSL.std.450.h"
+#include "spirv/unified1/OpenCL.std.h"
+#include "spirv/unified1/spirv.hpp"
+```
+
+## Generating headers from the JSON grammar for the SPIR-V core instruction set
 
 This will generally be done by Khronos, for a change to the JSON grammar.
 However, the project for the tool to do this is included in this repository,
@@ -78,6 +149,26 @@ Notes:
 - this generator is used in a broader context within Khronos to generate the specification,
   and that influences the languages used, for legacy reasons
 - the C++ structures built may similarly include more than strictly necessary, for the same reason
+
+## Generating C headers for extended instruction sets
+
+The [GLSL.std.450.h](include/spirv/unified1/GLSL.std.450.h)
+and [OpenCL.std.h](include/spirv/unified1/OpenCL.std.h) extended instruction set headers
+are maintained manually.
+
+The C/C++ header for each of the other extended instruction sets
+is generated from the corresponding JSON grammar file.  For example, the
+[OpenCLDebugInfo100.h](include/spirv/unified1/OpenCLDebugInfo100.h) header
+is generated from the
+[extinst.opencl.debuginfo.100.grammar.json](include/spirv/unified1/extinst.opencl.debuginfo.100.grammar.json)
+grammar file.
+
+To generate these C/C++ headers, first make sure `python3` is in your PATH, then
+invoke the build script as follows:
+```
+cd tools/buildHeaders
+python3 bin/makeExtinstHeaders.py
+```
 
 ## FAQ
 

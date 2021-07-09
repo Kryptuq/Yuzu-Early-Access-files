@@ -24,6 +24,7 @@
 #include "video_core/host_shaders/opengl_present_frag.h"
 #include "video_core/host_shaders/opengl_present_vert.h"
 #include "video_core/renderer_opengl/gl_rasterizer.h"
+#include "video_core/renderer_opengl/gl_shader_util.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
 #include "video_core/renderer_opengl/renderer_opengl.h"
 #include "video_core/textures/decoders.h"
@@ -139,6 +140,26 @@ RendererOpenGL::RendererOpenGL(Core::TelemetrySession& telemetry_session_,
     }
     AddTelemetryFields();
     InitOpenGLObjects();
+
+    // Initialize default attributes to match hardware's disabled attributes
+    GLint max_attribs{};
+    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &max_attribs);
+    for (GLint attrib = 0; attrib < max_attribs; ++attrib) {
+        glVertexAttrib4f(attrib, 0.0f, 0.0f, 0.0f, 0.0f);
+    }
+    // Enable seamless cubemaps when per texture parameters are not available
+    if (!GLAD_GL_ARB_seamless_cubemap_per_texture && !GLAD_GL_AMD_seamless_cubemap_per_texture) {
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    }
+    // Enable unified vertex attributes and query vertex buffer address when the driver supports it
+    if (device.HasVertexBufferUnifiedMemory()) {
+        glEnableClientState(GL_VERTEX_ATTRIB_ARRAY_UNIFIED_NV);
+        glEnableClientState(GL_ELEMENT_ARRAY_UNIFIED_NV);
+
+        glMakeNamedBufferResidentNV(vertex_buffer.handle, GL_READ_ONLY);
+        glGetNamedBufferParameterui64vNV(vertex_buffer.handle, GL_BUFFER_GPU_ADDRESS_NV,
+                                         &vertex_buffer_address);
+    }
 }
 
 RendererOpenGL::~RendererOpenGL() = default;
@@ -233,18 +254,10 @@ void RendererOpenGL::InitOpenGLObjects() {
                  Settings::values.bg_blue.GetValue(), 0.0f);
 
     // Create shader programs
-    OGLShader vertex_shader;
-    vertex_shader.Create(HostShaders::OPENGL_PRESENT_VERT, GL_VERTEX_SHADER);
-
-    OGLShader fragment_shader;
-    fragment_shader.Create(HostShaders::OPENGL_PRESENT_FRAG, GL_FRAGMENT_SHADER);
-
-    vertex_program.Create(true, false, vertex_shader.handle);
-    fragment_program.Create(true, false, fragment_shader.handle);
-
-    pipeline.Create();
-    glUseProgramStages(pipeline.handle, GL_VERTEX_SHADER_BIT, vertex_program.handle);
-    glUseProgramStages(pipeline.handle, GL_FRAGMENT_SHADER_BIT, fragment_program.handle);
+    present_program.handle = glCreateProgram();
+    AttachShader(GL_VERTEX_SHADER, present_program.handle, HostShaders::OPENGL_PRESENT_VERT);
+    AttachShader(GL_FRAGMENT_SHADER, present_program.handle, HostShaders::OPENGL_PRESENT_FRAG);
+    LinkProgram(present_program.handle);
 
     // Generate presentation sampler
     present_sampler.Create();
@@ -266,21 +279,6 @@ void RendererOpenGL::InitOpenGLObjects() {
 
     // Clear screen to black
     LoadColorToActiveGLTexture(0, 0, 0, 0, screen_info.texture);
-
-    // Enable seamless cubemaps when per texture parameters are not available
-    if (!GLAD_GL_ARB_seamless_cubemap_per_texture && !GLAD_GL_AMD_seamless_cubemap_per_texture) {
-        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-    }
-
-    // Enable unified vertex attributes and query vertex buffer address when the driver supports it
-    if (device.HasVertexBufferUnifiedMemory()) {
-        glEnableClientState(GL_VERTEX_ATTRIB_ARRAY_UNIFIED_NV);
-        glEnableClientState(GL_ELEMENT_ARRAY_UNIFIED_NV);
-
-        glMakeNamedBufferResidentNV(vertex_buffer.handle, GL_READ_ONLY);
-        glGetNamedBufferParameterui64vNV(vertex_buffer.handle, GL_BUFFER_GPU_ADDRESS_NV,
-                                         &vertex_buffer_address);
-    }
 }
 
 void RendererOpenGL::AddTelemetryFields() {
@@ -340,12 +338,11 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
         glClearColor(Settings::values.bg_red.GetValue(), Settings::values.bg_green.GetValue(),
                      Settings::values.bg_blue.GetValue(), 0.0f);
     }
-
     // Set projection matrix
     const std::array ortho_matrix =
         MakeOrthographicMatrix(static_cast<float>(layout.width), static_cast<float>(layout.height));
-    glProgramUniformMatrix3x2fv(vertex_program.handle, ModelViewMatrixLocation, 1, GL_FALSE,
-                                std::data(ortho_matrix));
+    program_manager.BindProgram(present_program.handle);
+    glUniformMatrix3x2fv(ModelViewMatrixLocation, 1, GL_FALSE, ortho_matrix.data());
 
     const auto& texcoords = screen_info.display_texcoords;
     auto left = texcoords.left;
@@ -406,8 +403,6 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
     state_tracker.NotifyClipControl();
     state_tracker.NotifyAlphaTest();
 
-    program_manager.BindHostPipeline(pipeline.handle);
-
     state_tracker.ClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
     glEnable(GL_CULL_FACE);
     if (screen_info.display_srgb) {
@@ -455,7 +450,8 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
     glClear(GL_COLOR_BUFFER_BIT);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-    program_manager.RestoreGuestPipeline();
+    // TODO
+    // program_manager.RestoreGuestPipeline();
 }
 
 void RendererOpenGL::RenderScreenshot() {

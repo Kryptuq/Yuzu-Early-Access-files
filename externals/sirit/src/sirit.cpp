@@ -4,66 +4,82 @@
  * 3-Clause BSD License
  */
 
-#include <algorithm>
 #include <cassert>
-#include "common_types.h"
-#include "op.h"
+
 #include "sirit/sirit.h"
+
+#include "common_types.h"
 #include "stream.h"
 
 namespace Sirit {
 
-template <typename T>
-static void WriteSet(Stream& stream, const T& set) {
-    for (const auto& item : set) {
-        item->Write(stream);
-    }
+constexpr u32 MakeWord0(spv::Op op, size_t word_count) {
+    return static_cast<u32>(op) | static_cast<u32>(word_count) << 16;
 }
 
-Module::Module(u32 version_) : version{version_} {}
+Module::Module(u32 version_)
+    : version{version_}, ext_inst_imports{std::make_unique<Stream>(&bound)},
+      entry_points{std::make_unique<Stream>(&bound)},
+      execution_modes{std::make_unique<Stream>(&bound)}, debug{std::make_unique<Stream>(&bound)},
+      annotations{std::make_unique<Stream>(&bound)}, declarations{std::make_unique<Declarations>(
+                                                         &bound)},
+      global_variables{std::make_unique<Stream>(&bound)}, code{std::make_unique<Stream>(&bound)} {}
 
 Module::~Module() = default;
 
 std::vector<u32> Module::Assemble() const {
-    std::vector<u32> bytes;
-    Stream stream{bytes};
+    std::vector<u32> words = {spv::MagicNumber, version, GENERATOR_MAGIC_NUMBER, bound + 1, 0};
+    const auto insert = [&words](std::span<const u32> input) {
+        words.insert(words.end(), input.begin(), input.end());
+    };
 
-    stream.Write(spv::MagicNumber);
-    stream.Write(version);
-    stream.Write(GENERATOR_MAGIC_NUMBER);
-    stream.Write(bound);
-    stream.Write(static_cast<u32>(0));
-
-    for (const auto capability : capabilities) {
-        Op op(spv::Op::OpCapability);
-        op.Add(static_cast<u32>(capability));
-        op.Write(stream);
+    words.reserve(words.size() + capabilities.size() * 2);
+    for (const spv::Capability capability : capabilities) {
+        insert(std::array{
+            MakeWord0(spv::Op::OpCapability, 2),
+            static_cast<u32>(capability),
+        });
     }
 
-    for (const auto& extension_name : extensions) {
-        Op op(spv::Op::OpExtension);
-        op.Add(extension_name);
-        op.Write(stream);
+    for (const std::string_view extension_name : extensions) {
+        size_t string_words = WordsInString(extension_name);
+        words.push_back(MakeWord0(spv::Op::OpExtension, string_words + 1));
+        size_t insert_index = words.size();
+        words.resize(words.size() + string_words);
+        InsertStringView(words, insert_index, extension_name);
     }
 
-    if (glsl_std_450) {
-        glsl_std_450->Write(stream);
+    insert(ext_inst_imports->Words());
+
+    insert(std::array{
+        MakeWord0(spv::Op::OpMemoryModel, 3),
+        static_cast<u32>(addressing_model),
+        static_cast<u32>(memory_model),
+    });
+
+    insert(entry_points->Words());
+    insert(execution_modes->Words());
+    insert(debug->Words());
+    insert(annotations->Words());
+    insert(declarations->Words());
+    insert(global_variables->Words());
+    insert(code->Words());
+
+    return words;
+}
+
+void Module::PatchDeferredPhi(const std::function<Id(std::size_t index)>& func) {
+    for (const u32 phi_index : deferred_phi_nodes) {
+        const u32 first_word = code->Value(phi_index);
+        [[maybe_unused]] const spv::Op op = static_cast<spv::Op>(first_word & 0xffff);
+        assert(op == spv::Op::OpPhi);
+        const u32 num_words = first_word >> 16;
+        const u32 num_args = (num_words - 3) / 2;
+        u32 cursor = phi_index + 3;
+        for (u32 arg = 0; arg < num_args; ++arg, cursor += 2) {
+            code->SetValue(cursor, func(arg).value);
+        }
     }
-
-    Op memory_model_ref{spv::Op::OpMemoryModel};
-    memory_model_ref.Add(static_cast<u32>(addressing_model));
-    memory_model_ref.Add(static_cast<u32>(memory_model));
-    memory_model_ref.Write(stream);
-
-    WriteSet(stream, entry_points);
-    WriteSet(stream, execution_modes);
-    WriteSet(stream, debug);
-    WriteSet(stream, annotations);
-    WriteSet(stream, declarations);
-    WriteSet(stream, global_variables);
-    WriteSet(stream, code);
-
-    return bytes;
 }
 
 void Module::AddExtension(std::string extension_name) {
@@ -74,76 +90,53 @@ void Module::AddCapability(spv::Capability capability) {
     capabilities.insert(capability);
 }
 
-void Module::SetMemoryModel(spv::AddressingModel addressing_model_, spv::MemoryModel memory_model_) {
-    this->addressing_model = addressing_model_;
-    this->memory_model = memory_model_;
+void Module::SetMemoryModel(spv::AddressingModel addressing_model_,
+                            spv::MemoryModel memory_model_) {
+    addressing_model = addressing_model_;
+    memory_model = memory_model_;
 }
 
 void Module::AddEntryPoint(spv::ExecutionModel execution_model, Id entry_point,
-                           std::string name, const std::vector<Id>& interfaces) {
-    auto op{std::make_unique<Op>(spv::Op::OpEntryPoint)};
-    op->Add(static_cast<u32>(execution_model));
-    op->Add(entry_point);
-    op->Add(std::move(name));
-    op->Add(interfaces);
-    entry_points.push_back(std::move(op));
+                           std::string_view name, std::span<const Id> interfaces) {
+    entry_points->Reserve(4 + WordsInString(name) + interfaces.size());
+    *entry_points << spv::Op::OpEntryPoint << execution_model << entry_point << name << interfaces
+                  << EndOp{};
 }
 
 void Module::AddExecutionMode(Id entry_point, spv::ExecutionMode mode,
-                              const std::vector<Literal>& literals) {
-    auto op{std::make_unique<Op>(spv::Op::OpExecutionMode)};
-    op->Add(entry_point);
-    op->Add(static_cast<u32>(mode));
-    op->Add(literals);
-    execution_modes.push_back(std::move(op));
+                              std::span<const Literal> literals) {
+    execution_modes->Reserve(3 + literals.size());
+    *execution_modes << spv::Op::OpExecutionMode << entry_point << mode << literals << EndOp{};
 }
 
 Id Module::AddLabel(Id label) {
-    assert(label != nullptr);
-    return code.emplace_back(label);
+    assert(label.value != 0);
+    code->Reserve(2);
+    *code << MakeWord0(spv::Op::OpLabel, 2) << label.value;
+    return label;
 }
 
-Id Module::AddLocalVariable(Id variable) {
-    assert(variable != nullptr);
-    return code.emplace_back(variable);
+Id Module::AddLocalVariable(Id result_type, spv::StorageClass storage_class,
+                            std::optional<Id> initializer) {
+    code->Reserve(5);
+    return *code << OpId{spv::Op::OpVariable, result_type} << storage_class << initializer
+                 << EndOp{};
 }
 
-Id Module::AddGlobalVariable(Id variable) {
-    assert(variable);
-    return global_variables.emplace_back(variable);
-}
-
-Id Module::AddCode(std::unique_ptr<Op> op) {
-    const Id id = code_store.emplace_back(std::move(op)).get();
-    return code.emplace_back(id);
-}
-
-Id Module::AddCode(spv::Op opcode, std::optional<u32> id) {
-    return AddCode(std::make_unique<Op>(opcode, id));
-}
-
-Id Module::AddDeclaration(std::unique_ptr<Op> op) {
-    const auto& found{std::find_if(declarations.begin(), declarations.end(),
-                                   [&op](const auto& other) { return *other == *op; })};
-    if (found != declarations.end()) {
-        return found->get();
-    }
-    const auto id = op.get();
-    declarations.push_back(std::move(op));
-    bound++;
-    return id;
-}
-
-void Module::AddAnnotation(std::unique_ptr<Op> op) {
-    annotations.push_back(std::move(op));
+Id Module::AddGlobalVariable(Id result_type, spv::StorageClass storage_class,
+                             std::optional<Id> initializer) {
+    global_variables->Reserve(5);
+    return *global_variables << OpId{spv::Op::OpVariable, result_type} << storage_class
+                             << initializer << EndOp{};
 }
 
 Id Module::GetGLSLstd450() {
     if (!glsl_std_450) {
-        glsl_std_450 = std::make_unique<Op>(spv::Op::OpExtInstImport, bound++);
-        glsl_std_450->Add("GLSL.std.450");
+        ext_inst_imports->Reserve(3 + 4);
+        glsl_std_450 = *ext_inst_imports << OpId{spv::Op::OpExtInstImport} << "GLSL.std.450"
+                                         << EndOp{};
     }
-    return glsl_std_450.get();
+    return *glsl_std_450;
 }
 
 } // namespace Sirit

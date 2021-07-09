@@ -4,21 +4,35 @@
  * 3-Clause BSD License
  */
 
-#include "op.h"
 #include "sirit/sirit.h"
+
+#include "stream.h"
 
 namespace Sirit {
 
 Id Module::OpUndef(Id result_type) {
-    return AddCode(std::make_unique<Op>(spv::Op::OpUndef, bound++, result_type));
+    code->Reserve(3);
+    return *code << OpId{spv::Op::OpUndef, result_type} << EndOp{};
 }
 
-Id Module::OpEmitVertex() {
-    return AddCode(std::make_unique<Op>(spv::Op::OpEmitVertex));
+void Module::OpEmitVertex() {
+    code->Reserve(1);
+    *code << spv::Op::OpEmitVertex << EndOp{};
 }
 
-Id Module::OpEndPrimitive() {
-    return AddCode(std::make_unique<Op>(spv::Op::OpEndPrimitive));
+void Module::OpEndPrimitive() {
+    code->Reserve(1);
+    *code << spv::Op::OpEndPrimitive << EndOp{};
+}
+
+void Module::OpEmitStreamVertex(Id stream) {
+    code->Reserve(2);
+    *code << spv::Op::OpEmitStreamVertex << stream << EndOp{};
+}
+
+void Module::OpEndStreamPrimitive(Id stream) {
+    code->Reserve(2);
+    *code << spv::Op::OpEndStreamPrimitive << stream << EndOp{};
 }
 
 } // namespace Sirit

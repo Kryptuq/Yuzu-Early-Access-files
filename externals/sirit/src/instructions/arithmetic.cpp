@@ -4,35 +4,22 @@
  * 3-Clause BSD License
  */
 
-#include <memory>
-#include "common_types.h"
-#include "op.h"
 #include "sirit/sirit.h"
+
+#include "stream.h"
 
 namespace Sirit {
 
 #define DEFINE_UNARY(funcname, opcode)                                                             \
     Id Module::funcname(Id result_type, Id operand) {                                              \
-        auto op{std::make_unique<Op>(opcode, bound++, result_type)};                               \
-        op->Add(operand);                                                                          \
-        return AddCode(std::move(op));                                                             \
+        code->Reserve(4);                                                                          \
+        return *code << OpId{opcode, result_type} << operand << EndOp{};                           \
     }
 
 #define DEFINE_BINARY(funcname, opcode)                                                            \
     Id Module::funcname(Id result_type, Id operand_1, Id operand_2) {                              \
-        auto op{std::make_unique<Op>(opcode, bound++, result_type)};                               \
-        op->Add(operand_1);                                                                        \
-        op->Add(operand_2);                                                                        \
-        return AddCode(std::move(op));                                                             \
-    }
-
-#define DEFINE_TRINARY(funcname, opcode)                                                           \
-    Id Module::funcname(Id result_type, Id operand_1, Id operand_2, Id operand_3) {                \
-        auto op{std::make_unique<Op>(opcode, bound++, result_type)};                               \
-        op->Add(operand_1);                                                                        \
-        op->Add(operand_2);                                                                        \
-        op->Add(operand_3);                                                                        \
-        return AddCode(std::move(op));                                                             \
+        code->Reserve(5);                                                                          \
+        return *code << OpId{opcode, result_type} << operand_1 << operand_2 << EndOp{};            \
     }
 
 DEFINE_UNARY(OpSNegate, spv::Op::OpSNegate)
