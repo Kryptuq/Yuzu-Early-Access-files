@@ -47,9 +47,10 @@ if (NOT IS_MULTI_CONFIG AND NOT CMAKE_BUILD_TYPE)
 endif()
 
 if(EXISTS ${PROJECT_SOURCE_DIR}/hooks/pre-commit AND NOT EXISTS ${PROJECT_SOURCE_DIR}/.git/hooks/pre-commit)
-    message(STATUS "Copying pre-commit hook")
-    file(COPY hooks/pre-commit
-        DESTINATION ${PROJECT_SOURCE_DIR}/.git/hooks)
+    if (EXISTS ${PROJECT_SOURCE_DIR}/.git/)
+        message(STATUS "Copying pre-commit hook")
+        file(COPY hooks/pre-commit DESTINATION ${PROJECT_SOURCE_DIR}/.git/hooks)
+    endif()
 endif()
 
 # Sanity check : Check that all submodules are present

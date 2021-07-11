@@ -6,6 +6,8 @@
 
 #include <string>
 #include <utility>
+#include <vector>
+
 #include <fmt/format.h>
 
 #include "shader_recompiler/backend/glsl/var_alloc.h"

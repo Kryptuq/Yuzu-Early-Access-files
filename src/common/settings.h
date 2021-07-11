@@ -339,7 +339,7 @@ struct Values {
     Setting<bool> use_nvdec_emulation{true, "use_nvdec_emulation"};
     Setting<bool> accelerate_astc{true, "accelerate_astc"};
     Setting<bool> use_vsync{true, "use_vsync"};
-    Setting<bool> disable_fps_limit{false, "disable_fps_limit"};
+    BasicSetting<bool> disable_fps_limit{false, "disable_fps_limit"};
     Setting<ShaderBackend> shader_backend{ShaderBackend::GLASM, "shader_backend"};
     Setting<bool> use_asynchronous_shaders{false, "use_asynchronous_shaders"};
     Setting<bool> use_fast_gpu_time{true, "use_fast_gpu_time"};
