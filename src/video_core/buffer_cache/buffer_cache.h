@@ -189,7 +189,7 @@ public:
     /// Return true when a CPU region is modified from the GPU
     [[nodiscard]] bool IsRegionGpuModified(VAddr addr, size_t size);
 
-    /// Return true when a CPU region is modified from the GPU
+    /// Return true when a CPU region is modified from the CPU
     [[nodiscard]] bool IsRegionCpuModified(VAddr addr, size_t size);
 
     std::mutex mutex;
@@ -688,8 +688,8 @@ void BufferCache<P>::CommitAsyncFlushesHigh() {
             const VAddr cpu_addr = interval.lower();
             ForEachBufferInRange(cpu_addr, size, [&](BufferId buffer_id, Buffer& buffer) {
                 boost::container::small_vector<BufferCopy, 1> copies;
-                buffer.ForEachDownloadRange(
-                    cpu_addr, size, true, [&](u64 range_offset, u64 range_size) {
+                buffer.ForEachDownloadRangeAndClear(
+                    cpu_addr, size, [&](u64 range_offset, u64 range_size) {
                         const VAddr buffer_addr = buffer.CpuAddr();
                         const auto add_download = [&](VAddr start, VAddr end) {
                             const u64 new_offset = start - buffer_addr;
@@ -1516,7 +1516,7 @@ void BufferCache<P>::DownloadBufferMemory(Buffer& buffer, VAddr cpu_addr, u64 si
     boost::container::small_vector<BufferCopy, 1> copies;
     u64 total_size_bytes = 0;
     u64 largest_copy = 0;
-    buffer.ForEachDownloadRange(cpu_addr, size, true, [&](u64 range_offset, u64 range_size) {
+    buffer.ForEachDownloadRangeAndClear(cpu_addr, size, [&](u64 range_offset, u64 range_size) {
         const VAddr buffer_addr = buffer.CpuAddr();
         const auto add_download = [&](VAddr start, VAddr end) {
             const u64 new_offset = start - buffer_addr;

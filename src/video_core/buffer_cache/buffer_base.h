@@ -235,6 +235,11 @@ public:
         ForEachModifiedRange<Type::GPU>(query_cpu_range, size, clear, func);
     }
 
+    template <typename Func>
+    void ForEachDownloadRangeAndClear(VAddr query_cpu_range, u64 size, Func&& func) {
+        ForEachModifiedRange<Type::GPU>(query_cpu_range, size, true, func);
+    }
+
     /// Call 'func' for each GPU modified range and unmark those pages as GPU modified
     template <typename Func>
     void ForEachDownloadRange(Func&& func) {
