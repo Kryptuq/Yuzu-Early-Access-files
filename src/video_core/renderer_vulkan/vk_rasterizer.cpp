@@ -141,7 +141,7 @@ RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra
       pipeline_cache(*this, maxwell3d, kepler_compute, gpu_memory, device, scheduler,
                      descriptor_pool, update_descriptor_queue, render_pass_cache, buffer_cache,
                      texture_cache, gpu.ShaderNotify()),
-      query_cache{*this, maxwell3d, gpu_memory, device, scheduler},
+      query_cache{*this, maxwell3d, gpu_memory, device, scheduler}, accelerate_dma{ buffer_cache },
       fence_manager(*this, gpu, texture_cache, buffer_cache, query_cache, device, scheduler),
       wfi_event(device.GetLogical().CreateEvent()) {
     scheduler.SetQueryCache(query_cache);
@@ -494,6 +494,10 @@ bool RasterizerVulkan::AccelerateSurfaceCopy(const Tegra::Engines::Fermi2D::Surf
     return true;
 }
 
+Tegra::Engines::AccelerateDMAInterface& RasterizerVulkan::AccessAccelerateDMA() {
+    return accelerate_dma;
+}
+
 bool RasterizerVulkan::AccelerateDisplay(const Tegra::FramebufferConfig& config,
                                          VAddr framebuffer_addr, u32 pixel_stride) {
     if (!framebuffer_addr) {
@@ -533,6 +537,13 @@ void RasterizerVulkan::FlushWork() {
     // This submits commands to the Vulkan driver.
     scheduler.Flush();
     draw_counter = 0;
+}
+
+AccelerateDMA::AccelerateDMA(BufferCache& buffer_cache_) : buffer_cache{buffer_cache_} {}
+
+bool AccelerateDMA::BufferCopy(GPUVAddr src_address, GPUVAddr dest_address, u64 amount) {
+    std::scoped_lock lock{buffer_cache.mutex};
+    return buffer_cache.DMACopy(src_address, dest_address, amount);
 }
 
 void RasterizerVulkan::UpdateDynamicStates() {

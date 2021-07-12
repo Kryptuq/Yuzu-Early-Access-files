@@ -14,7 +14,10 @@
 
 namespace Tegra {
 class MemoryManager;
+namespace Engines {
+class AccelerateDMAInterface;
 }
+} // namespace Tegra
 
 namespace VideoCore {
 
@@ -123,6 +126,8 @@ public:
         const Tegra::Engines::Fermi2D::Config& copy_config) {
         return false;
     }
+
+    [[nodiscard]] virtual Tegra::Engines::AccelerateDMAInterface& AccessAccelerateDMA() = 0;
 
     /// Attempt to use a faster method to display the framebuffer to screen
     [[nodiscard]] virtual bool AccelerateDisplay(const Tegra::FramebufferConfig& config,

@@ -21,6 +21,10 @@ MaxwellDMA::MaxwellDMA(Core::System& system_, MemoryManager& memory_manager_)
 
 MaxwellDMA::~MaxwellDMA() = default;
 
+void MaxwellDMA::BindRasterizer(VideoCore::RasterizerInterface* rasterizer_) {
+    rasterizer = rasterizer_;
+}
+
 void MaxwellDMA::CallMethod(u32 method, u32 method_argument, bool is_last_call) {
     ASSERT_MSG(method < NUM_REGS, "Invalid MaxwellDMA register");
 
@@ -44,7 +48,6 @@ void MaxwellDMA::Launch() {
 
     // TODO(Subv): Perform more research and implement all features of this engine.
     const LaunchDMA& launch = regs.launch_dma;
-    ASSERT(launch.remap_enable == 0);
     ASSERT(launch.semaphore_type == LaunchDMA::SemaphoreType::NONE);
     ASSERT(launch.interrupt_type == LaunchDMA::InterruptType::NONE);
     ASSERT(launch.data_transfer_type == LaunchDMA::DataTransferType::NON_PIPELINED);
@@ -77,10 +80,28 @@ void MaxwellDMA::CopyPitchToPitch() {
     // When `multi_line_enable` bit is disabled the copy is performed as if we were copying a 1D
     // buffer of length `line_length_in`.
     // Otherwise we copy a 2D image of dimensions (line_length_in, line_count).
+    auto& accelerate = rasterizer->AccessAccelerateDMA();
     if (!regs.launch_dma.multi_line_enable) {
-        memory_manager.CopyBlock(regs.offset_out, regs.offset_in, regs.line_length_in);
+        const bool is_buffer_clear = regs.launch_dma.remap_enable != 0 &&
+                                     regs.remap_const.dst_x == RemapConst::Swizzle::CONST_A;
+        // TODO: allow multisized components.
+        if (is_buffer_clear) {
+            ASSERT(regs.remap_const.component_size_minus_one == 3);
+            std::vector<u32> tmp_buffer(regs.line_length_in, regs.remap_consta_value);
+            memory_manager.WriteBlock(regs.offset_out, reinterpret_cast<u8*>(tmp_buffer.data()),
+                                      regs.line_length_in * sizeof(u32));
+            return;
+        }
+        UNIMPLEMENTED_IF(regs.launch_dma.remap_enable != 0);
+        if (!accelerate.BufferCopy(regs.offset_in, regs.offset_out, regs.line_length_in)) {
+            std::vector<u8> tmp_buffer(regs.line_length_in);
+            memory_manager.ReadBlockUnsafe(regs.offset_in, tmp_buffer.data(), regs.line_length_in);
+            memory_manager.WriteBlock(regs.offset_out, tmp_buffer.data(), regs.line_length_in);
+        }
         return;
     }
+
+    UNIMPLEMENTED_IF(regs.launch_dma.remap_enable != 0);
 
     // Perform a line-by-line copy.
     // We're going to take a subrect of size (line_length_in, line_count) from the source rectangle.
@@ -106,6 +127,7 @@ void MaxwellDMA::CopyBlockLinearToPitch() {
     }
 
     // Deswizzle the input and copy it over.
+    UNIMPLEMENTED_IF(regs.launch_dma.remap_enable != 0);
     const u32 bytes_per_pixel = regs.pitch_out / regs.line_length_in;
     const Parameters& src_params = regs.src_params;
     const u32 width = src_params.width;
@@ -135,6 +157,7 @@ void MaxwellDMA::CopyBlockLinearToPitch() {
 
 void MaxwellDMA::CopyPitchToBlockLinear() {
     UNIMPLEMENTED_IF_MSG(regs.dst_params.block_size.width != 0, "Block width is not one");
+    UNIMPLEMENTED_IF(regs.launch_dma.remap_enable != 0);
 
     const auto& dst_params = regs.dst_params;
     const u32 bytes_per_pixel = regs.pitch_in / regs.line_length_in;
@@ -157,13 +180,8 @@ void MaxwellDMA::CopyPitchToBlockLinear() {
         write_buffer.resize(dst_size);
     }
 
-    if (Settings::IsGPULevelExtreme()) {
-        memory_manager.ReadBlock(regs.offset_in, read_buffer.data(), src_size);
-        memory_manager.ReadBlock(regs.offset_out, write_buffer.data(), dst_size);
-    } else {
-        memory_manager.ReadBlockUnsafe(regs.offset_in, read_buffer.data(), src_size);
-        memory_manager.ReadBlockUnsafe(regs.offset_out, write_buffer.data(), dst_size);
-    }
+    memory_manager.ReadBlock(regs.offset_in, read_buffer.data(), src_size);
+    memory_manager.ReadBlock(regs.offset_out, write_buffer.data(), dst_size);
 
     // If the input is linear and the output is tiled, swizzle the input and copy it over.
     if (regs.dst_params.block_size.depth > 0) {

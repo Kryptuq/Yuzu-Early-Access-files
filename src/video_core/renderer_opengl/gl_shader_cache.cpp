@@ -211,6 +211,7 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
           .has_gl_component_indexing_bug = device.HasComponentIndexingBug(),
           .has_gl_precise_bug = device.HasPreciseBug(),
           .ignore_nan_fp_comparisons = true,
+          .gl_max_compute_smem_size = device.GetMaxComputeSharedMemorySize(),
       },
       host_info{
           .support_float16 = false,
@@ -318,7 +319,7 @@ GraphicsPipeline* ShaderCache::CurrentGraphicsPipeline() {
         SetXfbState(graphics_key.xfb_state, regs);
     }
     if (current_pipeline && graphics_key == current_pipeline->Key()) {
-        return current_pipeline->IsBuilt() ? current_pipeline : nullptr;
+        return BuiltPipeline(current_pipeline);
     }
     return CurrentGraphicsPipelineSlowPath();
 }

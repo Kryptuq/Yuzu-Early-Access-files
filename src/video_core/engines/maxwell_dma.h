@@ -21,7 +21,17 @@ namespace Tegra {
 class MemoryManager;
 }
 
+namespace VideoCore {
+class RasterizerInterface;
+}
+
 namespace Tegra::Engines {
+
+class AccelerateDMAInterface {
+public:
+    /// Write the value to the register identified by method.
+    virtual bool BufferCopy(GPUVAddr src_address, GPUVAddr dest_address, u64 amount) = 0;
+};
 
 /**
  * This engine is known as gk104_copy. Documentation can be found in:
@@ -187,6 +197,8 @@ public:
     };
     static_assert(sizeof(RemapConst) == 12);
 
+    void BindRasterizer(VideoCore::RasterizerInterface* rasterizer);
+
     explicit MaxwellDMA(Core::System& system_, MemoryManager& memory_manager_);
     ~MaxwellDMA() override;
 
@@ -213,6 +225,7 @@ private:
     Core::System& system;
 
     MemoryManager& memory_manager;
+    VideoCore::RasterizerInterface* rasterizer;
 
     std::vector<u8> read_buffer;
     std::vector<u8> write_buffer;
@@ -240,7 +253,9 @@ private:
                 u32 pitch_out;
                 u32 line_length_in;
                 u32 line_count;
-                u32 reserved06[0xb8];
+                u32 reserved06[0xb6];
+                u32 remap_consta_value;
+                u32 remap_constb_value;
                 RemapConst remap_const;
                 Parameters dst_params;
                 u32 reserved07[0x1];

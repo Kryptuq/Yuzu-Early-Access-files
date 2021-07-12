@@ -50,6 +50,7 @@ void GPU::BindRenderer(std::unique_ptr<VideoCore::RendererBase> renderer_) {
     maxwell_3d->BindRasterizer(rasterizer);
     fermi_2d->BindRasterizer(rasterizer);
     kepler_compute->BindRasterizer(rasterizer);
+    maxwell_dma->BindRasterizer(rasterizer);
 }
 
 Engines::Maxwell3D& GPU::Maxwell3D() {

@@ -2,8 +2,10 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <ranges>
+#include <algorithm>
 #include <string>
+#include <tuple>
+#include <type_traits>
 
 #include "common/div_ceil.h"
 #include "common/settings.h"
@@ -120,7 +122,10 @@ void PrecolorInst(IR::Inst& phi) {
 
 void Precolor(const IR::Program& program) {
     for (IR::Block* const block : program.blocks) {
-        for (IR::Inst& phi : block->Instructions() | std::views::take_while(IR::IsPhi)) {
+        for (IR::Inst& phi : block->Instructions()) {
+            if (!IR::IsPhi(phi)) {
+                break;
+            }
             PrecolorInst(phi);
         }
     }
@@ -218,8 +223,15 @@ std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info, IR
     const std::string version{fmt::format("#version 450{}\n", GlslVersionSpecifier(ctx))};
     ctx.header.insert(0, version);
     if (program.shared_memory_size > 0) {
-        ctx.header +=
-            fmt::format("shared uint smem[{}];", Common::DivCeil(program.shared_memory_size, 4U));
+        const auto requested_size{program.shared_memory_size};
+        const auto max_size{profile.gl_max_compute_smem_size};
+        const bool needs_clamp{requested_size > max_size};
+        if (needs_clamp) {
+            LOG_WARNING(Shader_GLSL, "Requested shared memory size ({}) exceeds device limit ({})",
+                        requested_size, max_size);
+        }
+        const auto smem_size{needs_clamp ? max_size : requested_size};
+        ctx.header += fmt::format("shared uint smem[{}];", Common::DivCeil(smem_size, 4U));
     }
     ctx.header += "void main(){\n";
     if (program.local_memory_size > 0) {

@@ -186,6 +186,8 @@ public:
     /// Pop asynchronous downloads
     void PopAsyncFlushes();
 
+    [[nodiscard]] bool DMACopy(GPUVAddr src_address, GPUVAddr dest_address, u64 amount);
+
     /// Return true when a CPU region is modified from the GPU
     [[nodiscard]] bool IsRegionGpuModified(VAddr addr, size_t size);
 
@@ -220,6 +222,36 @@ private:
 
             const VAddr end_addr = buffer.CpuAddr() + buffer.SizeBytes();
             page = Common::DivCeil(end_addr, PAGE_SIZE);
+        }
+    }
+
+    template <typename Func>
+    void ForEachWrittenRange(VAddr cpu_addr, u64 size, Func&& func) {
+        const VAddr start_address = cpu_addr;
+        const VAddr end_address = start_address + size;
+        const VAddr search_base =
+            static_cast<VAddr>(std::min<s64>(0LL, static_cast<s64>(start_address - size)));
+        const IntervalType search_interval{search_base, search_base + 1};
+        auto it = common_ranges.lower_bound(search_interval);
+        if (it == common_ranges.end()) {
+            it = common_ranges.begin();
+        }
+        for (; it != common_ranges.end(); it++) {
+            VAddr inter_addr_end = it->upper();
+            VAddr inter_addr = it->lower();
+            if (inter_addr >= end_address) {
+                break;
+            }
+            if (inter_addr_end <= start_address) {
+                continue;
+            }
+            if (inter_addr_end > end_address) {
+                inter_addr_end = end_address;
+            }
+            if (inter_addr < start_address) {
+                inter_addr = start_address;
+            }
+            func(inter_addr, inter_addr_end);
         }
     }
 
@@ -478,6 +510,68 @@ void BufferCache<P>::DownloadMemory(VAddr cpu_addr, u64 size) {
 }
 
 template <class P>
+bool BufferCache<P>::DMACopy(GPUVAddr src_address, GPUVAddr dest_address, u64 amount) {
+    const std::optional<VAddr> cpu_src_address = gpu_memory.GpuToCpuAddress(src_address);
+    const std::optional<VAddr> cpu_dest_address = gpu_memory.GpuToCpuAddress(dest_address);
+    if (!cpu_src_address || !cpu_dest_address) {
+        return false;
+    }
+    const bool source_dirty = IsRegionGpuModified(*cpu_src_address, amount);
+    const bool dest_dirty = IsRegionGpuModified(*cpu_dest_address, amount);
+    if (!source_dirty && !dest_dirty) {
+        return false;
+    }
+
+    const IntervalType subtract_interval{*cpu_dest_address, *cpu_dest_address + amount};
+    uncommitted_ranges.subtract(subtract_interval);
+    for (auto& interval_set : committed_ranges) {
+        interval_set.subtract(subtract_interval);
+    }
+
+    BufferId buffer_a;
+    BufferId buffer_b;
+    do {
+        has_deleted_buffers = false;
+        buffer_a = FindBuffer(*cpu_src_address, static_cast<u32>(amount));
+        buffer_b = FindBuffer(*cpu_dest_address, static_cast<u32>(amount));
+    } while (has_deleted_buffers);
+    auto& src_buffer = slot_buffers[buffer_a];
+    auto& dest_buffer = slot_buffers[buffer_b];
+    SynchronizeBuffer(src_buffer, *cpu_src_address, static_cast<u32>(amount));
+    SynchronizeBuffer(dest_buffer, *cpu_dest_address, static_cast<u32>(amount));
+    std::array copies{BufferCopy{
+        .src_offset = src_buffer.Offset(*cpu_src_address),
+        .dst_offset = dest_buffer.Offset(*cpu_dest_address),
+        .size = amount,
+    }};
+
+    boost::container::small_vector<IntervalType, 4> tmp_intervals;
+    auto mirror = [&](VAddr base_address, VAddr base_address_end) {
+        const u64 size = base_address_end - base_address;
+        const VAddr diff = base_address - *cpu_src_address;
+        const VAddr new_base_address = *cpu_dest_address + diff;
+        const IntervalType add_interval{new_base_address, new_base_address + size};
+        uncommitted_ranges.add(add_interval);
+        tmp_intervals.push_back(add_interval);
+    };
+    ForEachWrittenRange(*cpu_src_address, amount, mirror);
+    // This subtraction in this order is important for overlapping copies.
+    common_ranges.subtract(subtract_interval);
+    for (const IntervalType add_interval : tmp_intervals) {
+        common_ranges.add(add_interval);
+    }
+
+    runtime.CopyBuffer(dest_buffer, src_buffer, copies);
+    if (source_dirty) {
+        dest_buffer.MarkRegionAsGpuModified(*cpu_dest_address, amount);
+    }
+    std::vector<u8> tmp_buffer(amount);
+    cpu_memory.ReadBlockUnsafe(*cpu_src_address, tmp_buffer.data(), amount);
+    cpu_memory.WriteBlockUnsafe(*cpu_dest_address, tmp_buffer.data(), amount);
+    return true;
+}
+
+template <class P>
 void BufferCache<P>::BindGraphicsUniformBuffer(size_t stage, u32 index, GPUVAddr gpu_addr,
                                                u32 size) {
     const std::optional<VAddr> cpu_addr = gpu_memory.GpuToCpuAddress(gpu_addr);
@@ -711,30 +805,7 @@ void BufferCache<P>::CommitAsyncFlushesHigh() {
 
                         const VAddr start_address = buffer_addr + range_offset;
                         const VAddr end_address = start_address + range_size;
-                        const IntervalType search_interval{cpu_addr, 1};
-                        auto it = common_ranges.lower_bound(search_interval);
-                        if (it == common_ranges.end()) {
-                            it = common_ranges.begin();
-                        }
-                        while (it != common_ranges.end()) {
-                            VAddr inter_addr_end = it->upper();
-                            VAddr inter_addr = it->lower();
-                            if (inter_addr >= end_address) {
-                                break;
-                            }
-                            if (inter_addr_end <= start_address) {
-                                it++;
-                                continue;
-                            }
-                            if (inter_addr_end > end_address) {
-                                inter_addr_end = end_address;
-                            }
-                            if (inter_addr < start_address) {
-                                inter_addr = start_address;
-                            }
-                            add_download(inter_addr, inter_addr_end);
-                            it++;
-                        }
+                        ForEachWrittenRange(start_address, range_size, add_download);
                         const IntervalType subtract_interval{start_address, end_address};
                         common_ranges.subtract(subtract_interval);
                     });
@@ -832,7 +903,9 @@ void BufferCache<P>::BindHostIndexBuffer() {
     const u32 size = index_buffer.size;
     SynchronizeBuffer(buffer, index_buffer.cpu_addr, size);
     if constexpr (HAS_FULL_INDEX_AND_PRIMITIVE_SUPPORT) {
-        runtime.BindIndexBuffer(buffer, offset, size);
+        const u32 new_offset = offset + maxwell3d.regs.index_array.first *
+                                            maxwell3d.regs.index_array.FormatSizeInBytes();
+        runtime.BindIndexBuffer(buffer, new_offset, size);
     } else {
         runtime.BindIndexBuffer(maxwell3d.regs.draw.topology, maxwell3d.regs.index_array.format,
                                 maxwell3d.regs.index_array.first, maxwell3d.regs.index_array.count,
@@ -1113,7 +1186,7 @@ void BufferCache<P>::UpdateIndexBuffer() {
     const GPUVAddr gpu_addr_end = index_array.EndAddress();
     const std::optional<VAddr> cpu_addr = gpu_memory.GpuToCpuAddress(gpu_addr_begin);
     const u32 address_size = static_cast<u32>(gpu_addr_end - gpu_addr_begin);
-    const u32 draw_size = index_array.count * index_array.FormatSizeInBytes();
+    const u32 draw_size = (index_array.count + index_array.first) * index_array.FormatSizeInBytes();
     const u32 size = std::min(address_size, draw_size);
     if (size == 0 || !cpu_addr) {
         index_buffer = NULL_BINDING;
@@ -1535,30 +1608,7 @@ void BufferCache<P>::DownloadBufferMemory(Buffer& buffer, VAddr cpu_addr, u64 si
 
         const VAddr start_address = buffer_addr + range_offset;
         const VAddr end_address = start_address + range_size;
-        const IntervalType search_interval{start_address - range_size, 1};
-        auto it = common_ranges.lower_bound(search_interval);
-        if (it == common_ranges.end()) {
-            it = common_ranges.begin();
-        }
-        while (it != common_ranges.end()) {
-            VAddr inter_addr_end = it->upper();
-            VAddr inter_addr = it->lower();
-            if (inter_addr >= end_address) {
-                break;
-            }
-            if (inter_addr_end <= start_address) {
-                it++;
-                continue;
-            }
-            if (inter_addr_end > end_address) {
-                inter_addr_end = end_address;
-            }
-            if (inter_addr < start_address) {
-                inter_addr = start_address;
-            }
-            add_download(inter_addr, inter_addr_end);
-            it++;
-        }
+        ForEachWrittenRange(start_address, range_size, add_download);
         const IntervalType subtract_interval{start_address, end_address};
         common_ranges.subtract(subtract_interval);
     });
