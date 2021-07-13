@@ -363,6 +363,8 @@ private:
 
     [[nodiscard]] bool HasFastUniformBufferBound(size_t stage, u32 binding_index) const noexcept;
 
+    void ClearDownload(IntervalType subtract_interval);
+
     VideoCore::RasterizerInterface& rasterizer;
     Tegra::Engines::Maxwell3D& maxwell3d;
     Tegra::Engines::KeplerCompute& kepler_compute;
@@ -515,6 +517,14 @@ void BufferCache<P>::DownloadMemory(VAddr cpu_addr, u64 size) {
 }
 
 template <class P>
+void BufferCache<P>::ClearDownload(IntervalType subtract_interval) {
+    uncommitted_ranges.subtract(subtract_interval);
+    for (auto& interval_set : committed_ranges) {
+        interval_set.subtract(subtract_interval);
+    }
+}
+
+template <class P>
 bool BufferCache<P>::DMACopy(GPUVAddr src_address, GPUVAddr dest_address, u64 amount) {
     const std::optional<VAddr> cpu_src_address = gpu_memory.GpuToCpuAddress(src_address);
     const std::optional<VAddr> cpu_dest_address = gpu_memory.GpuToCpuAddress(dest_address);
@@ -528,10 +538,7 @@ bool BufferCache<P>::DMACopy(GPUVAddr src_address, GPUVAddr dest_address, u64 am
     }
 
     const IntervalType subtract_interval{*cpu_dest_address, *cpu_dest_address + amount};
-    uncommitted_ranges.subtract(subtract_interval);
-    for (auto& interval_set : committed_ranges) {
-        interval_set.subtract(subtract_interval);
-    }
+    ClearDownload(subtract_interval);
 
     BufferId buffer_a;
     BufferId buffer_b;
@@ -588,10 +595,7 @@ bool BufferCache<P>::DMAClear(GPUVAddr dst_address, u64 amount, u32 value) {
     }
 
     const IntervalType subtract_interval{*cpu_dst_address, *cpu_dst_address + amount * sizeof(u32)};
-    uncommitted_ranges.subtract(subtract_interval);
-    for (auto& interval_set : committed_ranges) {
-        interval_set.subtract(subtract_interval);
-    }
+    ClearDownload(subtract_interval);
     common_ranges.subtract(subtract_interval);
 
     const size_t size = amount * sizeof(u32);
@@ -604,6 +608,7 @@ bool BufferCache<P>::DMAClear(GPUVAddr dst_address, u64 amount, u32 value) {
     auto& dest_buffer = slot_buffers[buffer];
     const u32 offset = static_cast<u32>(*cpu_dst_address - dest_buffer.CpuAddr());
     runtime.ClearBuffer(dest_buffer, offset, size, value);
+    dest_buffer.UnmarkRegionAsCpuModified(*cpu_dst_address, size);
     return true;
 }
 
@@ -1667,6 +1672,7 @@ void BufferCache<P>::DownloadBufferMemory(Buffer& buffer, VAddr cpu_addr, u64 si
         const VAddr end_address = start_address + range_size;
         ForEachWrittenRange(start_address, range_size, add_download);
         const IntervalType subtract_interval{start_address, end_address};
+        ClearDownload(subtract_interval);
         common_ranges.subtract(subtract_interval);
     });
     if (total_size_bytes == 0) {

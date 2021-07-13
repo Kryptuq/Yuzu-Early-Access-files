@@ -942,6 +942,11 @@ void Controller_NPad::InitializeVibrationDevice(const DeviceHandle& vibration_de
 
 void Controller_NPad::InitializeVibrationDeviceAtIndex(std::size_t npad_index,
                                                        std::size_t device_index) {
+    if (!Settings::values.vibration_enabled.GetValue()) {
+        vibration_devices_mounted[npad_index][device_index] = false;
+        return;
+    }
+
     if (vibrations[npad_index][device_index]) {
         vibration_devices_mounted[npad_index][device_index] =
             vibrations[npad_index][device_index]->GetStatus() == 1;
