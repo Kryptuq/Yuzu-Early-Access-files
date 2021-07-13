@@ -1417,8 +1417,10 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
             std::filesystem::path{filename.toStdU16String()}.filename());
     }
     const bool is_64bit = system.Kernel().CurrentProcess()->Is64BitProcess();
-    const auto instruction_set_suffix = is_64bit ? " (64-bit)" : " (32-bit)";
-    title_name += instruction_set_suffix;
+    const auto instruction_set_suffix = is_64bit ? tr("(64-bit)") : tr("(32-bit)");
+    title_name = tr("%1 %2", "%1 is the title name. %2 indicates if the title is 64-bit or 32-bit")
+                     .arg(QString::fromStdString(title_name), instruction_set_suffix)
+                     .toStdString();
     LOG_INFO(Frontend, "Booting game: {:016X} | {} | {}", title_id, title_name, title_version);
     const auto gpu_vendor = system.GPU().Renderer().GetDeviceVendor();
     UpdateWindowTitle(title_name, title_version, gpu_vendor);

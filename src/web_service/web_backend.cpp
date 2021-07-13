@@ -8,7 +8,17 @@
 #include <string>
 
 #include <fmt/format.h>
+
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#ifndef __clang__
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+#endif
 #include <httplib.h>
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 #include "common/logging/log.h"
 #include "web_service/web_backend.h"

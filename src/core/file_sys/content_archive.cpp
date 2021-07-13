@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <cstring>
 #include <optional>
-#include <ranges>
 #include <utility>
 
 #include "common/logging/log.h"

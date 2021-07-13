@@ -186,10 +186,15 @@ public:
     /// Pop asynchronous downloads
     void PopAsyncFlushes();
 
-    [[nodiscard]] bool DMACopy(GPUVAddr src_address, GPUVAddr dest_address, u64 amount);
+    bool DMACopy(GPUVAddr src_address, GPUVAddr dest_address, u64 amount);
+
+    bool DMAClear(GPUVAddr src_address, u64 amount, u32 value);
 
     /// Return true when a CPU region is modified from the GPU
     [[nodiscard]] bool IsRegionGpuModified(VAddr addr, size_t size);
+
+    /// Return true when a region is registered on the cache
+    [[nodiscard]] bool IsRegionRegistered(VAddr addr, size_t size);
 
     /// Return true when a CPU region is modified from the CPU
     [[nodiscard]] bool IsRegionCpuModified(VAddr addr, size_t size);
@@ -516,8 +521,8 @@ bool BufferCache<P>::DMACopy(GPUVAddr src_address, GPUVAddr dest_address, u64 am
     if (!cpu_src_address || !cpu_dest_address) {
         return false;
     }
-    const bool source_dirty = IsRegionGpuModified(*cpu_src_address, amount);
-    const bool dest_dirty = IsRegionGpuModified(*cpu_dest_address, amount);
+    const bool source_dirty = IsRegionRegistered(*cpu_src_address, amount);
+    const bool dest_dirty = IsRegionRegistered(*cpu_dest_address, amount);
     if (!source_dirty && !dest_dirty) {
         return false;
     }
@@ -562,12 +567,43 @@ bool BufferCache<P>::DMACopy(GPUVAddr src_address, GPUVAddr dest_address, u64 am
     }
 
     runtime.CopyBuffer(dest_buffer, src_buffer, copies);
-    if (source_dirty) {
+    if (IsRegionGpuModified(*cpu_src_address, amount)) {
         dest_buffer.MarkRegionAsGpuModified(*cpu_dest_address, amount);
     }
     std::vector<u8> tmp_buffer(amount);
     cpu_memory.ReadBlockUnsafe(*cpu_src_address, tmp_buffer.data(), amount);
     cpu_memory.WriteBlockUnsafe(*cpu_dest_address, tmp_buffer.data(), amount);
+    return true;
+}
+
+template <class P>
+bool BufferCache<P>::DMAClear(GPUVAddr dst_address, u64 amount, u32 value) {
+    const std::optional<VAddr> cpu_dst_address = gpu_memory.GpuToCpuAddress(dst_address);
+    if (!cpu_dst_address) {
+        return false;
+    }
+    const bool dest_dirty = IsRegionRegistered(*cpu_dst_address, amount);
+    if (!dest_dirty) {
+        return false;
+    }
+
+    const IntervalType subtract_interval{*cpu_dst_address, *cpu_dst_address + amount * sizeof(u32)};
+    uncommitted_ranges.subtract(subtract_interval);
+    for (auto& interval_set : committed_ranges) {
+        interval_set.subtract(subtract_interval);
+    }
+    common_ranges.subtract(subtract_interval);
+
+    const size_t size = amount * sizeof(u32);
+    BufferId buffer;
+    do {
+        has_deleted_buffers = false;
+        buffer = FindBuffer(*cpu_dst_address, static_cast<u32>(size));
+    } while (has_deleted_buffers);
+
+    auto& dest_buffer = slot_buffers[buffer];
+    const u32 offset = static_cast<u32>(*cpu_dst_address - dest_buffer.CpuAddr());
+    runtime.ClearBuffer(dest_buffer, offset, size, value);
     return true;
 }
 
@@ -871,6 +907,27 @@ bool BufferCache<P>::IsRegionGpuModified(VAddr addr, size_t size) {
             return true;
         }
         const VAddr end_addr = buffer.CpuAddr() + buffer.SizeBytes();
+        page = Common::DivCeil(end_addr, PAGE_SIZE);
+    }
+    return false;
+}
+
+template <class P>
+bool BufferCache<P>::IsRegionRegistered(VAddr addr, size_t size) {
+    const VAddr end_addr = addr + size;
+    const u64 page_end = Common::DivCeil(end_addr, PAGE_SIZE);
+    for (u64 page = addr >> PAGE_BITS; page < page_end;) {
+        const BufferId buffer_id = page_table[page];
+        if (!buffer_id) {
+            ++page;
+            continue;
+        }
+        Buffer& buffer = slot_buffers[buffer_id];
+        const VAddr buf_start_addr = buffer.CpuAddr();
+        const VAddr buf_end_addr = buf_start_addr + buffer.SizeBytes();
+        if (buf_start_addr < end_addr && addr < buf_end_addr) {
+            return true;
+        }
         page = Common::DivCeil(end_addr, PAGE_SIZE);
     }
     return false;

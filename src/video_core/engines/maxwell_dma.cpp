@@ -87,9 +87,11 @@ void MaxwellDMA::CopyPitchToPitch() {
         // TODO: allow multisized components.
         if (is_buffer_clear) {
             ASSERT(regs.remap_const.component_size_minus_one == 3);
+            accelerate.BufferClear(regs.offset_out, regs.line_length_in, regs.remap_consta_value);
             std::vector<u32> tmp_buffer(regs.line_length_in, regs.remap_consta_value);
-            memory_manager.WriteBlock(regs.offset_out, reinterpret_cast<u8*>(tmp_buffer.data()),
-                                      regs.line_length_in * sizeof(u32));
+            memory_manager.WriteBlockUnsafe(regs.offset_out,
+                                            reinterpret_cast<u8*>(tmp_buffer.data()),
+                                            regs.line_length_in * sizeof(u32));
             return;
         }
         UNIMPLEMENTED_IF(regs.launch_dma.remap_enable != 0);
