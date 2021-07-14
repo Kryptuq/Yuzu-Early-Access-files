@@ -222,11 +222,13 @@ void RasterizerVulkan::Clear() {
         .height = std::min(clear_rect.rect.extent.height, render_area.height),
     };
 
-    if (use_color) {
+    const u32 color_attachment = regs.clear_buffers.RT;
+    const auto attachment_aspect_mask = framebuffer->ImageRanges()[color_attachment].aspectMask;
+    const bool is_color_rt = (attachment_aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != 0;
+    if (use_color && is_color_rt) {
         VkClearValue clear_value;
         std::memcpy(clear_value.color.float32, regs.clear_color, sizeof(regs.clear_color));
 
-        const u32 color_attachment = regs.clear_buffers.RT;
         scheduler.Record([color_attachment, clear_value, clear_rect](vk::CommandBuffer cmdbuf) {
             const VkClearAttachment attachment{
                 .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
