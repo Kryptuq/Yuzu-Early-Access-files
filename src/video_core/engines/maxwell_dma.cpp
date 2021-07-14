@@ -182,8 +182,13 @@ void MaxwellDMA::CopyPitchToBlockLinear() {
         write_buffer.resize(dst_size);
     }
 
-    memory_manager.ReadBlock(regs.offset_in, read_buffer.data(), src_size);
-    memory_manager.ReadBlock(regs.offset_out, write_buffer.data(), dst_size);
+    if (Settings::IsGPULevelExtreme()) {
+        memory_manager.ReadBlock(regs.offset_in, read_buffer.data(), src_size);
+        memory_manager.ReadBlock(regs.offset_out, write_buffer.data(), dst_size);
+    } else {
+        memory_manager.ReadBlockUnsafe(regs.offset_in, read_buffer.data(), src_size);
+        memory_manager.ReadBlockUnsafe(regs.offset_out, write_buffer.data(), dst_size);
+    }
 
     // If the input is linear and the output is tiled, swizzle the input and copy it over.
     if (regs.dst_params.block_size.depth > 0) {

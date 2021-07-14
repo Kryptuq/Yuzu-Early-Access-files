@@ -550,6 +550,10 @@ bool BufferCache<P>::DMACopy(GPUVAddr src_address, GPUVAddr dest_address, u64 am
     auto& src_buffer = slot_buffers[buffer_a];
     auto& dest_buffer = slot_buffers[buffer_b];
     SynchronizeBuffer(src_buffer, *cpu_src_address, static_cast<u32>(amount));
+    const VAddr aligned_dst = Common::AlignUp(*cpu_dest_address, 64);
+    const u64 align_diff = aligned_dst - *cpu_dest_address;
+    const u64 new_amount = align_diff > amount ? 0 : amount - align_diff;
+    dest_buffer.UnmarkRegionAsCpuModified(aligned_dst, Common::AlignDown(new_amount, 64));
     SynchronizeBuffer(dest_buffer, *cpu_dest_address, static_cast<u32>(amount));
     std::array copies{BufferCopy{
         .src_offset = src_buffer.Offset(*cpu_src_address),
@@ -569,12 +573,13 @@ bool BufferCache<P>::DMACopy(GPUVAddr src_address, GPUVAddr dest_address, u64 am
     ForEachWrittenRange(*cpu_src_address, amount, mirror);
     // This subtraction in this order is important for overlapping copies.
     common_ranges.subtract(subtract_interval);
+    bool atleast_1_download = tmp_intervals.size() != 0;
     for (const IntervalType add_interval : tmp_intervals) {
         common_ranges.add(add_interval);
     }
 
     runtime.CopyBuffer(dest_buffer, src_buffer, copies);
-    if (IsRegionGpuModified(*cpu_src_address, amount)) {
+    if (atleast_1_download) {
         dest_buffer.MarkRegionAsGpuModified(*cpu_dest_address, amount);
     }
     std::vector<u8> tmp_buffer(amount);
