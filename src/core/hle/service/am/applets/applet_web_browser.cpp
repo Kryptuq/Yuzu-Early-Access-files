@@ -58,6 +58,16 @@ std::string GetMainURL(const std::string& url) {
     return url.substr(0, index);
 }
 
+std::string ResolveURL(const std::string& url) {
+    const auto index = url.find_first_of('%');
+
+    if (index == std::string::npos) {
+        return url;
+    }
+
+    return url.substr(0, index) + "lp1" + url.substr(index + 1);
+}
+
 WebArgInputTLVMap ReadWebArgs(const std::vector<u8>& web_arg, WebArgHeader& web_arg_header) {
     std::memcpy(&web_arg_header, web_arg.data(), sizeof(WebArgHeader));
 
@@ -407,6 +417,9 @@ void WebBrowser::InitializeShare() {}
 
 void WebBrowser::InitializeWeb() {
     external_url = ParseStringValue(GetInputTLVData(WebArgInputTLVType::InitialURL).value());
+
+    // Resolve Nintendo CDN URLs.
+    external_url = ResolveURL(external_url);
 }
 
 void WebBrowser::InitializeWifi() {}
