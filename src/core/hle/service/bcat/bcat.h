@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "core/hle/service/bcat/module.h"
+#include "core/hle/service/bcat/bcat_module.h"
 
 namespace Core {
 class System;

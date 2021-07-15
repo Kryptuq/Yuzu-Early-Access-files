@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "core/hle/service/pctl/module.h"
+#include "core/hle/service/pctl/pctl_module.h"
 
 namespace Core {
 class System;

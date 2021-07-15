@@ -272,22 +272,22 @@ add_library(core STATIC
     hle/service/am/applet_ae.h
     hle/service/am/applet_oe.cpp
     hle/service/am/applet_oe.h
+    hle/service/am/applets/applet_controller.cpp
+    hle/service/am/applets/applet_controller.h
+    hle/service/am/applets/applet_error.cpp
+    hle/service/am/applets/applet_error.h
+    hle/service/am/applets/applet_general_backend.cpp
+    hle/service/am/applets/applet_general_backend.h
+    hle/service/am/applets/applet_profile_select.cpp
+    hle/service/am/applets/applet_profile_select.h
+    hle/service/am/applets/applet_software_keyboard.cpp
+    hle/service/am/applets/applet_software_keyboard.h
+    hle/service/am/applets/applet_software_keyboard_types.h
+    hle/service/am/applets/applet_web_browser.cpp
+    hle/service/am/applets/applet_web_browser.h
+    hle/service/am/applets/applet_web_browser_types.h
     hle/service/am/applets/applets.cpp
     hle/service/am/applets/applets.h
-    hle/service/am/applets/controller.cpp
-    hle/service/am/applets/controller.h
-    hle/service/am/applets/error.cpp
-    hle/service/am/applets/error.h
-    hle/service/am/applets/general_backend.cpp
-    hle/service/am/applets/general_backend.h
-    hle/service/am/applets/profile_select.cpp
-    hle/service/am/applets/profile_select.h
-    hle/service/am/applets/software_keyboard.cpp
-    hle/service/am/applets/software_keyboard.h
-    hle/service/am/applets/software_keyboard_types.h
-    hle/service/am/applets/web_browser.cpp
-    hle/service/am/applets/web_browser.h
-    hle/service/am/applets/web_types.h
     hle/service/am/idle.cpp
     hle/service/am/idle.h
     hle/service/am/omm.cpp
@@ -300,10 +300,10 @@ add_library(core STATIC
     hle/service/aoc/aoc_u.h
     hle/service/apm/apm.cpp
     hle/service/apm/apm.h
-    hle/service/apm/controller.cpp
-    hle/service/apm/controller.h
-    hle/service/apm/interface.cpp
-    hle/service/apm/interface.h
+    hle/service/apm/apm_controller.cpp
+    hle/service/apm/apm_controller.h
+    hle/service/apm/apm_interface.cpp
+    hle/service/apm/apm_interface.h
     hle/service/audio/audctl.cpp
     hle/service/audio/audctl.h
     hle/service/audio/auddbg.cpp
@@ -335,8 +335,8 @@ add_library(core STATIC
     hle/service/bcat/backend/backend.h
     hle/service/bcat/bcat.cpp
     hle/service/bcat/bcat.h
-    hle/service/bcat/module.cpp
-    hle/service/bcat/module.h
+    hle/service/bcat/bcat_module.cpp
+    hle/service/bcat/bcat_module.h
     hle/service/bpc/bpc.cpp
     hle/service/bpc/bpc.h
     hle/service/btdrv/btdrv.cpp
@@ -382,8 +382,8 @@ add_library(core STATIC
     hle/service/friend/errors.h
     hle/service/friend/friend.cpp
     hle/service/friend/friend.h
-    hle/service/friend/interface.cpp
-    hle/service/friend/interface.h
+    hle/service/friend/friend_interface.cpp
+    hle/service/friend/friend_interface.h
     hle/service/glue/arp.cpp
     hle/service/glue/arp.h
     hle/service/glue/bgtc.cpp
@@ -393,8 +393,8 @@ add_library(core STATIC
     hle/service/glue/errors.h
     hle/service/glue/glue.cpp
     hle/service/glue/glue.h
-    hle/service/glue/manager.cpp
-    hle/service/glue/manager.h
+    hle/service/glue/glue_manager.cpp
+    hle/service/glue/glue_manager.h
     hle/service/grc/grc.cpp
     hle/service/grc/grc.h
     hle/service/hid/hid.cpp
@@ -435,10 +435,10 @@ add_library(core STATIC
     hle/service/lm/lm.h
     hle/service/mig/mig.cpp
     hle/service/mig/mig.h
-    hle/service/mii/manager.cpp
-    hle/service/mii/manager.h
     hle/service/mii/mii.cpp
     hle/service/mii/mii.h
+    hle/service/mii/mii_manager.cpp
+    hle/service/mii/mii_manager.h
     hle/service/mii/raw_data.cpp
     hle/service/mii/raw_data.h
     hle/service/mii/types.h
@@ -486,11 +486,11 @@ add_library(core STATIC
     hle/service/nvdrv/devices/nvhost_vic.h
     hle/service/nvdrv/devices/nvmap.cpp
     hle/service/nvdrv/devices/nvmap.h
-    hle/service/nvdrv/interface.cpp
-    hle/service/nvdrv/interface.h
     hle/service/nvdrv/nvdata.h
     hle/service/nvdrv/nvdrv.cpp
     hle/service/nvdrv/nvdrv.h
+    hle/service/nvdrv/nvdrv_interface.cpp
+    hle/service/nvdrv/nvdrv_interface.h
     hle/service/nvdrv/nvmemp.cpp
     hle/service/nvdrv/nvmemp.h
     hle/service/nvdrv/syncpoint_manager.cpp
@@ -503,10 +503,10 @@ add_library(core STATIC
     hle/service/olsc/olsc.h
     hle/service/pcie/pcie.cpp
     hle/service/pcie/pcie.h
-    hle/service/pctl/module.cpp
-    hle/service/pctl/module.h
     hle/service/pctl/pctl.cpp
     hle/service/pctl/pctl.h
+    hle/service/pctl/pctl_module.cpp
+    hle/service/pctl/pctl_module.h
     hle/service/pcv/pcv.cpp
     hle/service/pcv/pcv.h
     hle/service/pm/pm.cpp
@@ -531,10 +531,10 @@ add_library(core STATIC
     hle/service/set/set_sys.h
     hle/service/set/settings.cpp
     hle/service/set/settings.h
-    hle/service/sm/controller.cpp
-    hle/service/sm/controller.h
     hle/service/sm/sm.cpp
     hle/service/sm/sm.h
+    hle/service/sm/sm_controller.cpp
+    hle/service/sm/sm_controller.h
     hle/service/sockets/bsd.cpp
     hle/service/sockets/bsd.h
     hle/service/sockets/ethc.cpp
@@ -549,10 +549,10 @@ add_library(core STATIC
     hle/service/sockets/sockets_translate.h
     hle/service/spl/csrng.cpp
     hle/service/spl/csrng.h
-    hle/service/spl/module.cpp
-    hle/service/spl/module.h
     hle/service/spl/spl.cpp
     hle/service/spl/spl.h
+    hle/service/spl/spl_module.cpp
+    hle/service/spl/spl_module.h
     hle/service/spl/spl_results.h
     hle/service/spl/spl_types.h
     hle/service/ssl/ssl.cpp
@@ -561,8 +561,6 @@ add_library(core STATIC
     hle/service/time/ephemeral_network_system_clock_context_writer.h
     hle/service/time/ephemeral_network_system_clock_core.h
     hle/service/time/errors.h
-    hle/service/time/interface.cpp
-    hle/service/time/interface.h
     hle/service/time/local_system_clock_context_writer.h
     hle/service/time/network_system_clock_context_writer.h
     hle/service/time/standard_local_system_clock_core.h
@@ -580,6 +578,8 @@ add_library(core STATIC
     hle/service/time/tick_based_steady_clock_core.h
     hle/service/time/time.cpp
     hle/service/time/time.h
+    hle/service/time/time_interface.cpp
+    hle/service/time/time_interface.h
     hle/service/time/time_manager.cpp
     hle/service/time/time_manager.h
     hle/service/time/time_sharedmemory.cpp

@@ -13,7 +13,7 @@
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/glue/arp.h"
 #include "core/hle/service/glue/errors.h"
-#include "core/hle/service/glue/manager.h"
+#include "core/hle/service/glue/glue_manager.h"
 #include "core/hle/service/service.h"
 
 namespace Service::Glue {

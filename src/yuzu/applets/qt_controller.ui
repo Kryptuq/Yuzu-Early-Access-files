@@ -1,0 +1,2653 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>QtControllerSelectorDialog</class>
+ <widget class="QDialog" name="QtControllerSelectorDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>839</width>
+    <height>630</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Controller Applet</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout" stretch="0">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QWidget" name="mainControllerApplet" native="true">
+     <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,3,0">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QWidget" name="topControllerApplet" native="true">
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <property name="spacing">
+          <number>10</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>10</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>10</number>
+         </property>
+         <item>
+          <spacer name="controllerAppletHorizontalSpacer2">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QWidget" name="controllersSupported" native="true">
+           <property name="minimumSize">
+            <size>
+             <width>70</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>70</width>
+             <height>70</height>
+            </size>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_21">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="controllersSupportedLabel">
+              <property name="minimumSize">
+               <size>
+                <width>70</width>
+                <height>70</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>70</width>
+                <height>70</height>
+               </size>
+              </property>
+              <property name="font">
+               <font>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Supported Controller Types:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="wordWrap">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QWidget" name="controllerSupported1" native="true">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>70</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>70</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="styleSheet">
+            <string notr="true"/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QWidget" name="controllerSupported2" native="true">
+           <property name="minimumSize">
+            <size>
+             <width>70</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>70</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="styleSheet">
+            <string notr="true"/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QWidget" name="controllerSupported3" native="true">
+           <property name="minimumSize">
+            <size>
+             <width>70</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>70</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="styleSheet">
+            <string notr="true"/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QWidget" name="controllerSupported4" native="true">
+           <property name="minimumSize">
+            <size>
+             <width>70</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>70</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="styleSheet">
+            <string notr="true"/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QWidget" name="controllerSupported5" native="true">
+           <property name="minimumSize">
+            <size>
+             <width>70</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>70</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="styleSheet">
+            <string notr="true"/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QWidget" name="playersSupported" native="true">
+           <property name="minimumSize">
+            <size>
+             <width>70</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>70</width>
+             <height>70</height>
+            </size>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_20">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>16</number>
+            </property>
+            <property name="rightMargin">
+             <number>14</number>
+            </property>
+            <property name="bottomMargin">
+             <number>16</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="maxSupportedLabel">
+              <property name="font">
+               <font>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Players:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="wordWrap">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="numberSupportedLabel">
+              <property name="font">
+               <font>
+                <pointsize>14</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>1 - 8</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <spacer name="controllerAppletHorizontalSpacer3">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QWidget" name="middleControllerApplet" native="true">
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <layout class="QGridLayout" name="gridLayout">
+           <property name="spacing">
+            <number>5</number>
+           </property>
+           <item row="1" column="7">
+            <widget class="QWidget" name="widgetPlayer4" native="true">
+             <layout class="QVBoxLayout" name="verticalLayout_27">
+              <property name="spacing">
+               <number>5</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item alignment="Qt::AlignHCenter">
+               <widget class="QGroupBox" name="groupPlayer4Connected">
+                <property name="minimumSize">
+                 <size>
+                  <width>100</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>100</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="title">
+                 <string/>
+                </property>
+                <property name="checkable">
+                 <bool>true</bool>
+                </property>
+                <property name="checked">
+                 <bool>false</bool>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_7" stretch="1,0">
+                 <property name="spacing">
+                  <number>7</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>14</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>7</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>14</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>4</number>
+                 </property>
+                 <item>
+                  <widget class="QWidget" name="controllerPlayer4" native="true">
+                   <property name="styleSheet">
+                    <string notr="true"/>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_15">
+                    <property name="topMargin">
+                     <number>16</number>
+                    </property>
+                    <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+                     <widget class="QLabel" name="labelPlayer4">
+                      <property name="text">
+                       <string>P4</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item alignment="Qt::AlignHCenter">
+                  <widget class="QWidget" name="Player4LEDs" native="true">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>10</height>
+                    </size>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_10">
+                    <property name="spacing">
+                     <number>4</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer4LED1"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer4LED2"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer4LED3"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer4LED4"/>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QWidget" name="Player4Explain" native="true">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>10</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>150</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_39">
+                 <property name="spacing">
+                  <number>0</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="labelPlayer4Explain">
+                   <property name="alignment">
+                    <set>Qt::AlignCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboPlayer4Emulated">
+                <item>
+                 <property name="text">
+                  <string>Pro Controller</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Dual Joycons</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Left Joycon</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Right Joycon</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboPlayer4Profile">
+                <item>
+                 <property name="text">
+                  <string>Use Current Config</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="1" column="3">
+            <widget class="QWidget" name="widgetPlayer2" native="true">
+             <layout class="QVBoxLayout" name="verticalLayout_29">
+              <property name="spacing">
+               <number>5</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item alignment="Qt::AlignHCenter">
+               <widget class="QGroupBox" name="groupPlayer2Connected">
+                <property name="minimumSize">
+                 <size>
+                  <width>100</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>100</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="title">
+                 <string/>
+                </property>
+                <property name="checkable">
+                 <bool>true</bool>
+                </property>
+                <property name="checked">
+                 <bool>false</bool>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_5" stretch="1,0">
+                 <property name="spacing">
+                  <number>7</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>14</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>7</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>14</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>4</number>
+                 </property>
+                 <item>
+                  <widget class="QWidget" name="controllerPlayer2" native="true">
+                   <property name="styleSheet">
+                    <string notr="true"/>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_13">
+                    <property name="topMargin">
+                     <number>16</number>
+                    </property>
+                    <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+                     <widget class="QLabel" name="labelPlayer2">
+                      <property name="text">
+                       <string>P2</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item alignment="Qt::AlignHCenter">
+                  <widget class="QWidget" name="Player2LEDs" native="true">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>10</height>
+                    </size>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_8">
+                    <property name="spacing">
+                     <number>4</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer2LED1"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer2LED2"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer2LED3"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer2LED4"/>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QWidget" name="Player2Explain" native="true">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>10</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>150</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_37">
+                 <property name="spacing">
+                  <number>0</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="labelPlayer2Explain">
+                   <property name="alignment">
+                    <set>Qt::AlignCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboPlayer2Emulated">
+                <item>
+                 <property name="text">
+                  <string>Pro Controller</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Dual Joycons</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Left Joycon</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Right Joycon</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboPlayer2Profile">
+                <item>
+                 <property name="text">
+                  <string>Use Current Config</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QWidget" name="widgetPlayer1" native="true">
+             <layout class="QVBoxLayout" name="verticalLayout_30">
+              <property name="spacing">
+               <number>5</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item alignment="Qt::AlignHCenter">
+               <widget class="QGroupBox" name="groupPlayer1Connected">
+                <property name="minimumSize">
+                 <size>
+                  <width>100</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>100</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="title">
+                 <string/>
+                </property>
+                <property name="checkable">
+                 <bool>true</bool>
+                </property>
+                <property name="checked">
+                 <bool>false</bool>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_4" stretch="1,0">
+                 <property name="spacing">
+                  <number>7</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>14</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>7</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>14</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>4</number>
+                 </property>
+                 <item>
+                  <widget class="QWidget" name="controllerPlayer1" native="true">
+                   <property name="styleSheet">
+                    <string notr="true"/>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_12">
+                    <property name="topMargin">
+                     <number>16</number>
+                    </property>
+                    <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+                     <widget class="QLabel" name="labelPlayer1">
+                      <property name="text">
+                       <string>P1</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item alignment="Qt::AlignHCenter">
+                  <widget class="QWidget" name="Player1LEDs" native="true">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>10</height>
+                    </size>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_2">
+                    <property name="spacing">
+                     <number>4</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer1LED1">
+                      <property name="layoutDirection">
+                       <enum>Qt::LeftToRight</enum>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer1LED2"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer1LED3"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer1LED4"/>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QWidget" name="Player1Explain" native="true">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>10</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>150</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_36">
+                 <property name="spacing">
+                  <number>0</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="labelPlayer1Explain">
+                   <property name="alignment">
+                    <set>Qt::AlignCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboPlayer1Emulated">
+                <item>
+                 <property name="text">
+                  <string>Pro Controller</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Dual Joycons</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Left Joycon</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Right Joycon</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Handheld</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboPlayer1Profile">
+                <item>
+                 <property name="text">
+                  <string>Use Current Config</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="1" column="8">
+            <widget class="QWidget" name="widgetSpacer2" native="true">
+             <property name="minimumSize">
+              <size>
+               <width>25</width>
+               <height>0</height>
+              </size>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_31">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <spacer name="controllerAppletHorizontalSpacer8">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>25</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="1" column="4">
+            <widget class="QWidget" name="widgetSpacer4" native="true">
+             <layout class="QVBoxLayout" name="verticalLayout_33">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <spacer name="controllerAppletHorizontalSpacer6">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>0</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="1" column="6">
+            <widget class="QWidget" name="widgetSpacer3" native="true">
+             <layout class="QVBoxLayout" name="verticalLayout_32">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <spacer name="controllerAppletHorizontalSpacer7">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>0</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="1" column="5">
+            <widget class="QWidget" name="widgetPlayer3" native="true">
+             <layout class="QVBoxLayout" name="verticalLayout_28">
+              <property name="spacing">
+               <number>5</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item alignment="Qt::AlignHCenter">
+               <widget class="QGroupBox" name="groupPlayer3Connected">
+                <property name="minimumSize">
+                 <size>
+                  <width>100</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>100</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="title">
+                 <string/>
+                </property>
+                <property name="checkable">
+                 <bool>true</bool>
+                </property>
+                <property name="checked">
+                 <bool>false</bool>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_6" stretch="1,0">
+                 <property name="spacing">
+                  <number>7</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>14</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>7</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>14</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>4</number>
+                 </property>
+                 <item>
+                  <widget class="QWidget" name="controllerPlayer3" native="true">
+                   <property name="styleSheet">
+                    <string notr="true"/>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_14">
+                    <property name="topMargin">
+                     <number>16</number>
+                    </property>
+                    <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+                     <widget class="QLabel" name="labelPlayer3">
+                      <property name="text">
+                       <string>P3</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item alignment="Qt::AlignHCenter">
+                  <widget class="QWidget" name="Player3LEDs" native="true">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>10</height>
+                    </size>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_9">
+                    <property name="spacing">
+                     <number>4</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer3LED1"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer3LED2"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer3LED3"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer3LED4"/>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QWidget" name="Player3Explain" native="true">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>10</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>150</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_38">
+                 <property name="spacing">
+                  <number>0</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="labelPlayer3Explain">
+                   <property name="alignment">
+                    <set>Qt::AlignCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboPlayer3Emulated">
+                <item>
+                 <property name="text">
+                  <string>Pro Controller</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Dual Joycons</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Left Joycon</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Right Joycon</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboPlayer3Profile">
+                <item>
+                 <property name="text">
+                  <string>Use Current Config</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QWidget" name="widgetSpacer5" native="true">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>25</height>
+              </size>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_34">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <spacer name="controllerAppletVerticalSpacer3">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>25</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="6" column="5">
+            <widget class="QWidget" name="widgetPlayer7" native="true">
+             <layout class="QVBoxLayout" name="verticalLayout_25">
+              <property name="spacing">
+               <number>5</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item alignment="Qt::AlignHCenter">
+               <widget class="QGroupBox" name="groupPlayer7Connected">
+                <property name="minimumSize">
+                 <size>
+                  <width>100</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>100</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="title">
+                 <string/>
+                </property>
+                <property name="checkable">
+                 <bool>true</bool>
+                </property>
+                <property name="checked">
+                 <bool>false</bool>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_10" stretch="1,0">
+                 <property name="spacing">
+                  <number>7</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>14</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>7</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>14</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>4</number>
+                 </property>
+                 <item>
+                  <widget class="QWidget" name="controllerPlayer7" native="true">
+                   <property name="styleSheet">
+                    <string notr="true"/>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_18">
+                    <property name="topMargin">
+                     <number>16</number>
+                    </property>
+                    <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+                     <widget class="QLabel" name="labelPlayer7">
+                      <property name="text">
+                       <string>P7</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item alignment="Qt::AlignHCenter">
+                  <widget class="QWidget" name="Player7LEDs" native="true">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>10</height>
+                    </size>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_13">
+                    <property name="spacing">
+                     <number>4</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer7LED1"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer7LED2"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer7LED3"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer7LED4"/>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QWidget" name="Player7Explain" native="true">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>10</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>150</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_42">
+                 <property name="spacing">
+                  <number>0</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="labelPlayer7Explain">
+                   <property name="alignment">
+                    <set>Qt::AlignCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboPlayer7Emulated">
+                <item>
+                 <property name="text">
+                  <string>Pro Controller</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Dual Joycons</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Left Joycon</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Right Joycon</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboPlayer7Profile">
+                <item>
+                 <property name="text">
+                  <string>Use Current Config</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="6" column="7">
+            <widget class="QWidget" name="widgetPlayer8" native="true">
+             <layout class="QVBoxLayout" name="verticalLayout_26">
+              <property name="spacing">
+               <number>5</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item alignment="Qt::AlignHCenter">
+               <widget class="QGroupBox" name="groupPlayer8Connected">
+                <property name="minimumSize">
+                 <size>
+                  <width>100</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>100</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="title">
+                 <string/>
+                </property>
+                <property name="checkable">
+                 <bool>true</bool>
+                </property>
+                <property name="checked">
+                 <bool>false</bool>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_11" stretch="1,0">
+                 <property name="spacing">
+                  <number>7</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>14</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>7</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>14</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>4</number>
+                 </property>
+                 <item>
+                  <widget class="QWidget" name="controllerPlayer8" native="true">
+                   <property name="styleSheet">
+                    <string notr="true"/>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_19">
+                    <property name="topMargin">
+                     <number>16</number>
+                    </property>
+                    <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+                     <widget class="QLabel" name="labelPlayer8">
+                      <property name="text">
+                       <string>P8</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item alignment="Qt::AlignHCenter">
+                  <widget class="QWidget" name="Player8LEDs" native="true">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>10</height>
+                    </size>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_14">
+                    <property name="spacing">
+                     <number>4</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer8LED1"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer8LED2"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer8LED3"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer8LED4"/>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QWidget" name="Player8Explain" native="true">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>10</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>150</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_35">
+                 <property name="spacing">
+                  <number>0</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="labelPlayer8Explain">
+                   <property name="alignment">
+                    <set>Qt::AlignCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboPlayer8Emulated">
+                <item>
+                 <property name="text">
+                  <string>Pro Controller</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Dual Joycons</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Left Joycon</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Right Joycon</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboPlayer8Profile">
+                <item>
+                 <property name="text">
+                  <string>Use Current Config</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="6" column="1">
+            <widget class="QWidget" name="widgetPlayer5" native="true">
+             <layout class="QVBoxLayout" name="verticalLayout_23">
+              <property name="spacing">
+               <number>5</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item alignment="Qt::AlignHCenter">
+               <widget class="QGroupBox" name="groupPlayer5Connected">
+                <property name="minimumSize">
+                 <size>
+                  <width>100</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>100</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="title">
+                 <string/>
+                </property>
+                <property name="checkable">
+                 <bool>true</bool>
+                </property>
+                <property name="checked">
+                 <bool>false</bool>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_8" stretch="1,0">
+                 <property name="spacing">
+                  <number>7</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>14</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>7</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>14</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>4</number>
+                 </property>
+                 <item>
+                  <widget class="QWidget" name="controllerPlayer5" native="true">
+                   <property name="styleSheet">
+                    <string notr="true"/>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_16">
+                    <property name="topMargin">
+                     <number>16</number>
+                    </property>
+                    <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+                     <widget class="QLabel" name="labelPlayer5">
+                      <property name="text">
+                       <string>P5</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item alignment="Qt::AlignHCenter">
+                  <widget class="QWidget" name="Player5LEDs" native="true">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>10</height>
+                    </size>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_11">
+                    <property name="spacing">
+                     <number>4</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer5LED1">
+                      <property name="layoutDirection">
+                       <enum>Qt::LeftToRight</enum>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer5LED2"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer5LED3"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer5LED4"/>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QWidget" name="Player5Explain" native="true">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>10</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>150</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_40">
+                 <property name="spacing">
+                  <number>0</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="labelPlayer5Explain">
+                   <property name="alignment">
+                    <set>Qt::AlignCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboPlayer5Emulated">
+                <item>
+                 <property name="text">
+                  <string>Pro Controller</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Dual Joycons</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Left Joycon</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Right Joycon</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboPlayer5Profile">
+                <item>
+                 <property name="text">
+                  <string>Use Current Config</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="6" column="3">
+            <widget class="QWidget" name="widgetPlayer6" native="true">
+             <layout class="QVBoxLayout" name="verticalLayout_24">
+              <property name="spacing">
+               <number>5</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item alignment="Qt::AlignHCenter">
+               <widget class="QGroupBox" name="groupPlayer6Connected">
+                <property name="minimumSize">
+                 <size>
+                  <width>100</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>100</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="title">
+                 <string/>
+                </property>
+                <property name="checkable">
+                 <bool>true</bool>
+                </property>
+                <property name="checked">
+                 <bool>false</bool>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_9" stretch="1,0">
+                 <property name="spacing">
+                  <number>7</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>14</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>7</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>14</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>4</number>
+                 </property>
+                 <item>
+                  <widget class="QWidget" name="controllerPlayer6" native="true">
+                   <property name="styleSheet">
+                    <string notr="true"/>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_17">
+                    <property name="topMargin">
+                     <number>16</number>
+                    </property>
+                    <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+                     <widget class="QLabel" name="labelPlayer6">
+                      <property name="text">
+                       <string>P6</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item alignment="Qt::AlignHCenter">
+                  <widget class="QWidget" name="Player6LEDs" native="true">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>10</height>
+                    </size>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_12">
+                    <property name="spacing">
+                     <number>4</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer6LED1"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer6LED2"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer6LED3"/>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="checkboxPlayer6LED4"/>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QWidget" name="Player6Explain" native="true">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>10</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>150</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_41">
+                 <property name="spacing">
+                  <number>0</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="labelPlayer6Explain">
+                   <property name="alignment">
+                    <set>Qt::AlignCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboPlayer6Emulated">
+                <item>
+                 <property name="text">
+                  <string>Pro Controller</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Dual Joycons</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Left Joycon</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Right Joycon</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboPlayer6Profile">
+                <item>
+                 <property name="text">
+                  <string>Use Current Config</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="10" column="1">
+            <widget class="QWidget" name="widgetSpacer" native="true">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>25</height>
+              </size>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_22">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <spacer name="controllerAppletVerticalSpacer">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>25</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QWidget" name="widgetSpacer6" native="true">
+             <layout class="QHBoxLayout" name="horizontalLayout_15">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <spacer name="controllerAppletHorizontalSpacer5">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>0</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QWidget" name="widgetSpacer7" native="true">
+             <property name="minimumSize">
+              <size>
+               <width>25</width>
+               <height>0</height>
+              </size>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_16">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <spacer name="controllerAppletHorizontalSpacer4">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>25</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QWidget" name="widgetSpacer9" native="true">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>25</height>
+              </size>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_17">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <spacer name="controllerAppletVerticalSpacer2">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>25</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QWidget" name="bottomControllerApplet" native="true">
+        <layout class="QHBoxLayout" name="horizontalLayout_6">
+         <property name="spacing">
+          <number>15</number>
+         </property>
+         <property name="leftMargin">
+          <number>15</number>
+         </property>
+         <property name="topMargin">
+          <number>8</number>
+         </property>
+         <property name="rightMargin">
+          <number>15</number>
+         </property>
+         <property name="bottomMargin">
+          <number>15</number>
+         </property>
+         <item>
+          <widget class="QGroupBox" name="handheldGroup">
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="title">
+            <string>Console Mode</string>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <property name="spacing">
+             <number>6</number>
+            </property>
+            <property name="leftMargin">
+             <number>8</number>
+            </property>
+            <property name="topMargin">
+             <number>6</number>
+            </property>
+            <property name="rightMargin">
+             <number>3</number>
+            </property>
+            <property name="bottomMargin">
+             <number>6</number>
+            </property>
+            <item>
+             <widget class="QRadioButton" name="radioDocked">
+              <property name="text">
+               <string>Docked</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="radioUndocked">
+              <property name="text">
+               <string>Undocked</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="vibrationGroup">
+           <property name="title">
+            <string>Vibration</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_5">
+            <property name="leftMargin">
+             <number>3</number>
+            </property>
+            <property name="topMargin">
+             <number>3</number>
+            </property>
+            <property name="rightMargin">
+             <number>3</number>
+            </property>
+            <property name="bottomMargin">
+             <number>3</number>
+            </property>
+            <item>
+             <widget class="QPushButton" name="vibrationButton">
+              <property name="minimumSize">
+               <size>
+                <width>68</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>68</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">min-width: 68px;</string>
+              </property>
+              <property name="text">
+               <string>Configure</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="motionGroup">
+           <property name="title">
+            <string>Motion</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_4">
+            <property name="leftMargin">
+             <number>3</number>
+            </property>
+            <property name="topMargin">
+             <number>3</number>
+            </property>
+            <property name="rightMargin">
+             <number>3</number>
+            </property>
+            <property name="bottomMargin">
+             <number>3</number>
+            </property>
+            <item>
+             <widget class="QPushButton" name="motionButton">
+              <property name="minimumSize">
+               <size>
+                <width>68</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>68</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">min-width: 68px;</string>
+              </property>
+              <property name="text">
+               <string>Configure</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="inputConfigGroup">
+           <property name="title">
+            <string>Profiles</string>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_7">
+            <property name="leftMargin">
+             <number>3</number>
+            </property>
+            <property name="topMargin">
+             <number>3</number>
+            </property>
+            <property name="rightMargin">
+             <number>3</number>
+            </property>
+            <property name="bottomMargin">
+             <number>3</number>
+            </property>
+            <item>
+             <widget class="QPushButton" name="inputConfigButton">
+              <property name="maximumSize">
+               <size>
+                <width>68</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">min-width: 68px;</string>
+              </property>
+              <property name="text">
+               <string>Create</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QWidget" name="connectedControllers" native="true">
+           <layout class="QGridLayout" name="gridLayout_2">
+            <property name="leftMargin">
+             <number>5</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <property name="spacing">
+             <number>3</number>
+            </property>
+            <item row="1" column="4">
+             <widget class="QCheckBox" name="checkboxPlayer4Connected">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="labelControllers">
+              <property name="text">
+               <string>Controllers</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="2">
+             <widget class="QCheckBox" name="checkboxPlayer2Connected">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLabel" name="labelConnectedPlayer1">
+              <property name="text">
+               <string>1</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="3">
+             <widget class="QCheckBox" name="checkboxPlayer3Connected">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QCheckBox" name="checkboxPlayer1Connected">
+              <property name="layoutDirection">
+               <enum>Qt::LeftToRight</enum>
+              </property>
+              <property name="checked">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="2">
+             <widget class="QLabel" name="labelConnectedPlayer2">
+              <property name="text">
+               <string>2</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="4">
+             <widget class="QLabel" name="labelConnectedPlayer4">
+              <property name="text">
+               <string>4</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="3">
+             <widget class="QLabel" name="labelConnectedPlayer3">
+              <property name="text">
+               <string>3</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="labelConnected">
+              <property name="text">
+               <string>Connected</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="7">
+             <widget class="QCheckBox" name="checkboxPlayer7Connected">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="5">
+             <widget class="QLabel" name="labelConnectedPlayer5">
+              <property name="text">
+               <string>5</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="6">
+             <widget class="QCheckBox" name="checkboxPlayer6Connected">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="7">
+             <widget class="QLabel" name="labelConnectedPlayer7">
+              <property name="text">
+               <string>7</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="5">
+             <widget class="QCheckBox" name="checkboxPlayer5Connected">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="6">
+             <widget class="QLabel" name="labelConnectedPlayer6">
+              <property name="text">
+               <string>6</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="8">
+             <widget class="QLabel" name="labelConnectedPlayer8">
+              <property name="text">
+               <string>8</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="8">
+             <widget class="QCheckBox" name="checkboxPlayer8Connected">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <spacer name="controllerAppletHorizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>0</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item alignment="Qt::AlignBottom">
+          <widget class="QDialogButtonBox" name="buttonBox">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="standardButtons">
+            <set>QDialogButtonBox::Ok</set>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>QtControllerSelectorDialog</receiver>
+   <slot>accept()</slot>
+  </connection>
+ </connections>
+</ui>

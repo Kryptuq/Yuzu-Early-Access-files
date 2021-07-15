@@ -7,7 +7,7 @@
 #include <functional>
 #include <string_view>
 
-#include "core/hle/service/am/applets/web_types.h"
+#include "core/hle/service/am/applets/applet_web_browser_types.h"
 
 namespace Core::Frontend {
 

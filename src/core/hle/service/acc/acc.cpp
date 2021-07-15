@@ -26,7 +26,7 @@
 #include "core/hle/service/acc/errors.h"
 #include "core/hle/service/acc/profile_manager.h"
 #include "core/hle/service/glue/arp.h"
-#include "core/hle/service/glue/manager.h"
+#include "core/hle/service/glue/glue_manager.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/loader/loader.h"
 

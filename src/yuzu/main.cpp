@@ -11,11 +11,11 @@
 #endif
 
 // VFS includes must be before glad as they will conflict with Windows file api, which uses defines.
-#include "applets/controller.h"
-#include "applets/error.h"
-#include "applets/profile_select.h"
-#include "applets/software_keyboard.h"
-#include "applets/web_browser.h"
+#include "applets/qt_controller.h"
+#include "applets/qt_error.h"
+#include "applets/qt_profile_select.h"
+#include "applets/qt_software_keyboard.h"
+#include "applets/qt_web_browser.h"
 #include "common/nvidia_flags.h"
 #include "configuration/configure_input.h"
 #include "configuration/configure_per_game.h"

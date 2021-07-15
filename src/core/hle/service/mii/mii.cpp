@@ -7,8 +7,8 @@
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/hle_ipc.h"
-#include "core/hle/service/mii/manager.h"
 #include "core/hle/service/mii/mii.h"
+#include "core/hle/service/mii/mii_manager.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/sm.h"
 

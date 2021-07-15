@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "core/hle/service/spl/module.h"
+#include "core/hle/service/spl/spl_module.h"
 
 namespace Core {
 class System;

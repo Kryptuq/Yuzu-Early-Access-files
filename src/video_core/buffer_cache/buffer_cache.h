@@ -595,20 +595,16 @@ bool BufferCache<P>::DMAClear(GPUVAddr dst_address, u64 amount, u32 value) {
         return false;
     }
 
-    const IntervalType subtract_interval{*cpu_dst_address, *cpu_dst_address + amount * sizeof(u32)};
+    const size_t size = amount * sizeof(u32);
+    const IntervalType subtract_interval{*cpu_dst_address, *cpu_dst_address + size};
     ClearDownload(subtract_interval);
     common_ranges.subtract(subtract_interval);
 
-    const size_t size = amount * sizeof(u32);
     BufferId buffer;
     do {
         has_deleted_buffers = false;
         buffer = FindBuffer(*cpu_dst_address, static_cast<u32>(size));
     } while (has_deleted_buffers);
-
-    const VAddr aligned_dst = Common::AlignUp(*cpu_dst_address, 64);
-    const u64 align_diff = aligned_dst - *cpu_dst_address;
-    const u64 new_amount = align_diff > size ? 0 : size - align_diff;
     auto& dest_buffer = slot_buffers[buffer];
     const u32 offset = static_cast<u32>(*cpu_dst_address - dest_buffer.CpuAddr());
     runtime.ClearBuffer(dest_buffer, offset, size, value);

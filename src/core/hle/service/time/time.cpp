@@ -11,8 +11,8 @@
 #include "core/hle/kernel/k_client_port.h"
 #include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/kernel.h"
-#include "core/hle/service/time/interface.h"
 #include "core/hle/service/time/time.h"
+#include "core/hle/service/time/time_interface.h"
 #include "core/hle/service/time/time_sharedmemory.h"
 #include "core/hle/service/time/time_zone_service.h"
 

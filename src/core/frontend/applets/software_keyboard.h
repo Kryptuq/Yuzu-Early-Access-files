@@ -9,7 +9,7 @@
 
 #include "common/common_types.h"
 
-#include "core/hle/service/am/applets/software_keyboard_types.h"
+#include "core/hle/service/am/applets/applet_software_keyboard_types.h"
 
 namespace Core::Frontend {
 

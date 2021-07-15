@@ -15,18 +15,19 @@ add_executable(yuzu
     about_dialog.cpp
     about_dialog.h
     aboutdialog.ui
-    applets/controller.cpp
-    applets/controller.h
-    applets/controller.ui
-    applets/error.cpp
-    applets/error.h
-    applets/profile_select.cpp
-    applets/profile_select.h
-    applets/software_keyboard.cpp
-    applets/software_keyboard.h
-    applets/software_keyboard.ui
-    applets/web_browser.cpp
-    applets/web_browser.h
+    applets/qt_controller.cpp
+    applets/qt_controller.h
+    applets/qt_controller.ui
+    applets/qt_error.cpp
+    applets/qt_error.h
+    applets/qt_profile_select.cpp
+    applets/qt_profile_select.h
+    applets/qt_software_keyboard.cpp
+    applets/qt_software_keyboard.h
+    applets/qt_software_keyboard.ui
+    applets/qt_web_browser.cpp
+    applets/qt_web_browser.h
+    applets/qt_web_browser_scripts.h
     bootmanager.cpp
     bootmanager.h
     compatdb.ui

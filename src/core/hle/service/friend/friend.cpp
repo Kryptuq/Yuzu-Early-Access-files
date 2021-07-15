@@ -12,7 +12,7 @@
 #include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/service/friend/errors.h"
 #include "core/hle/service/friend/friend.h"
-#include "core/hle/service/friend/interface.h"
+#include "core/hle/service/friend/friend_interface.h"
 
 namespace Service::Friend {
 

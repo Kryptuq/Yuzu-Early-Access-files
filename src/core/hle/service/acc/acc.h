@@ -5,7 +5,7 @@
 #pragma once
 
 #include "common/uuid.h"
-#include "core/hle/service/glue/manager.h"
+#include "core/hle/service/glue/glue_manager.h"
 #include "core/hle/service/service.h"
 
 namespace Service::Account {

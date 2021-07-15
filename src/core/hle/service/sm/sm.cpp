@@ -15,8 +15,8 @@
 #include "core/hle/kernel/k_server_session.h"
 #include "core/hle/kernel/k_session.h"
 #include "core/hle/result.h"
-#include "core/hle/service/sm/controller.h"
 #include "core/hle/service/sm/sm.h"
+#include "core/hle/service/sm/sm_controller.h"
 
 namespace Service::SM {
 
