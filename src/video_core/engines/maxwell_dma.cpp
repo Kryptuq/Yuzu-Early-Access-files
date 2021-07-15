@@ -4,6 +4,7 @@
 
 #include "common/assert.h"
 #include "common/logging/log.h"
+#include "common/microprofile.h"
 #include "common/settings.h"
 #include "core/core.h"
 #include "video_core/engines/maxwell_3d.h"
@@ -11,6 +12,9 @@
 #include "video_core/memory_manager.h"
 #include "video_core/renderer_base.h"
 #include "video_core/textures/decoders.h"
+
+MICROPROFILE_DECLARE(GPU_DMAEngine);
+MICROPROFILE_DEFINE(GPU_DMAEngine, "GPU", "DMA Engine", MP_RGB(224, 224, 128));
 
 namespace Tegra::Engines {
 
@@ -43,6 +47,7 @@ void MaxwellDMA::CallMultiMethod(u32 method, const u32* base_start, u32 amount,
 }
 
 void MaxwellDMA::Launch() {
+    MICROPROFILE_SCOPE(GPU_DMAEngine);
     LOG_TRACE(Render_OpenGL, "DMA copy 0x{:x} -> 0x{:x}", static_cast<GPUVAddr>(regs.offset_in),
               static_cast<GPUVAddr>(regs.offset_out));
 

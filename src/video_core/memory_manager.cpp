@@ -345,7 +345,7 @@ void MemoryManager::WriteBlock(GPUVAddr gpu_dest_addr, const void* src_buffer, s
 
             // Invalidate must happen on the rasterizer interface, such that memory is always
             // synchronous when it is written (even when in asynchronous GPU mode).
-            rasterizer->UnmapMemory(dest_addr, copy_amount);
+            rasterizer->InvalidateRegion(dest_addr, copy_amount);
             system.Memory().WriteBlockUnsafe(dest_addr, src_buffer, copy_amount);
         }
 
