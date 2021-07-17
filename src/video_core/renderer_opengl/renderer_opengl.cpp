@@ -145,7 +145,7 @@ RendererOpenGL::RendererOpenGL(Core::TelemetrySession& telemetry_session_,
     GLint max_attribs{};
     glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &max_attribs);
     for (GLint attrib = 0; attrib < max_attribs; ++attrib) {
-        glVertexAttrib4f(attrib, 0.0f, 0.0f, 0.0f, 0.0f);
+        glVertexAttrib4f(attrib, 0.0f, 0.0f, 0.0f, 1.0f);
     }
     // Enable seamless cubemaps when per texture parameters are not available
     if (!GLAD_GL_ARB_seamless_cubemap_per_texture && !GLAD_GL_AMD_seamless_cubemap_per_texture) {

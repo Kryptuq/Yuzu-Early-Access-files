@@ -377,7 +377,7 @@ struct Values {
                                                 "udp_input_servers"};
 
     BasicSetting<bool> mouse_panning{false, "mouse_panning"};
-    BasicSetting<u8> mouse_panning_sensitivity{1, "mouse_panning_sensitivity"};
+    BasicSetting<u8> mouse_panning_sensitivity{10, "mouse_panning_sensitivity"};
     BasicSetting<bool> mouse_enabled{false, "mouse_enabled"};
     std::string mouse_device;
     MouseButtonsRaw mouse_buttons;

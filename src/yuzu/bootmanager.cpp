@@ -412,8 +412,9 @@ void GRenderWindow::mousePressEvent(QMouseEvent* event) {
     if (event->source() == Qt::MouseEventSynthesizedBySystem) {
         return;
     }
-
-    auto pos = event->pos();
+    // Qt sometimes returns the parent coordinates. To avoid this we read the global mouse
+    // coordinates and map them to the current render area
+    const auto pos = mapFromGlobal(QCursor::pos());
     const auto [x, y] = ScaleTouch(pos);
     const auto button = QtButtonToMouseButton(event->button());
     input_subsystem->GetMouse()->PressButton(x, y, button);
@@ -430,7 +431,9 @@ void GRenderWindow::mouseMoveEvent(QMouseEvent* event) {
     if (event->source() == Qt::MouseEventSynthesizedBySystem) {
         return;
     }
-    auto pos = event->pos();
+    // Qt sometimes returns the parent coordinates. To avoid this we read the global mouse
+    // coordinates and map them to the current render area
+    const auto pos = mapFromGlobal(QCursor::pos());
     const auto [x, y] = ScaleTouch(pos);
     const int center_x = width() / 2;
     const int center_y = height() / 2;
@@ -564,6 +567,12 @@ std::unique_ptr<Core::Frontend::GraphicsContext> GRenderWindow::CreateSharedCont
 
 bool GRenderWindow::InitRenderTarget() {
     ReleaseRenderTarget();
+
+    {
+        // Create a dummy render widget so that Qt
+        // places the render window at the correct position.
+        const RenderWidget dummy_widget{this};
+    }
 
     first_frame = false;
 

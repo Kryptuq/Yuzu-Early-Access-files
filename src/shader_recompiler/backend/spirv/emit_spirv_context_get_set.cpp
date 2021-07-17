@@ -300,7 +300,7 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, Id vertex) {
         const std::optional<AttrInfo> type{AttrTypes(ctx, index)};
         if (!type) {
             // Attribute is disabled
-            return ctx.Const(0.0f);
+            return ctx.Const(element == 3 ? 1.0f : 0.0f);
         }
         if (!ctx.runtime_info.previous_stage_stores.Generic(index, element)) {
             // Varying component is not written

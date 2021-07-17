@@ -322,8 +322,16 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                                 this, tr("Set threshold"), tr("Choose a value between 0% and 100%"),
                                 button_threshold, 0, 100);
                             buttons_param[button_id].Set("threshold", new_threshold / 100.0f);
+
+                            if (button_id == Settings::NativeButton::ZL) {
+                                ui->sliderZLThreshold->setValue(new_threshold);
+                            }
+                            if (button_id == Settings::NativeButton::ZR) {
+                                ui->sliderZRThreshold->setValue(new_threshold);
+                            }
                         });
                     }
+
                     context_menu.exec(button_map[button_id]->mapToGlobal(menu_location));
                     ui->controllerFrame->SetPlayerInput(player_index, buttons_param, analogs_param);
                 });
@@ -351,6 +359,20 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                     context_menu.exec(motion_map[motion_id]->mapToGlobal(menu_location));
                 });
     }
+
+    connect(ui->sliderZLThreshold, &QSlider::valueChanged, [=, this] {
+        if (buttons_param[Settings::NativeButton::ZL].Has("threshold")) {
+            const auto slider_value = ui->sliderZLThreshold->value();
+            buttons_param[Settings::NativeButton::ZL].Set("threshold", slider_value / 100.0f);
+        }
+    });
+
+    connect(ui->sliderZRThreshold, &QSlider::valueChanged, [=, this] {
+        if (buttons_param[Settings::NativeButton::ZR].Has("threshold")) {
+            const auto slider_value = ui->sliderZRThreshold->value();
+            buttons_param[Settings::NativeButton::ZR].Set("threshold", slider_value / 100.0f);
+        }
+    });
 
     for (int analog_id = 0; analog_id < Settings::NativeAnalog::NumAnalogs; ++analog_id) {
         for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM; ++sub_button_id) {
@@ -858,6 +880,18 @@ void ConfigureInputPlayer::ClearAll() {
 void ConfigureInputPlayer::UpdateUI() {
     for (int button = 0; button < Settings::NativeButton::NumButtons; ++button) {
         button_map[button]->setText(ButtonToText(buttons_param[button]));
+    }
+
+    if (buttons_param[Settings::NativeButton::ZL].Has("threshold")) {
+        const int button_threshold = static_cast<int>(
+            buttons_param[Settings::NativeButton::ZL].Get("threshold", 0.5f) * 100.0f);
+        ui->sliderZLThreshold->setValue(button_threshold);
+    }
+
+    if (buttons_param[Settings::NativeButton::ZR].Has("threshold")) {
+        const int button_threshold = static_cast<int>(
+            buttons_param[Settings::NativeButton::ZR].Get("threshold", 0.5f) * 100.0f);
+        ui->sliderZRThreshold->setValue(button_threshold);
     }
 
     for (int motion_id = 0; motion_id < Settings::NativeMotion::NumMotions; ++motion_id) {

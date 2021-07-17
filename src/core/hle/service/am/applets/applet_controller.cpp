@@ -87,6 +87,10 @@ void Controller::Initialize() {
         case sizeof(ControllerUpdateFirmwareArg):
             controller_private_arg.mode = ControllerSupportMode::ShowControllerFirmwareUpdate;
             break;
+        case sizeof(ControllerKeyRemappingArg):
+            controller_private_arg.mode =
+                ControllerSupportMode::ShowControllerKeyRemappingForSystem;
+            break;
         default:
             UNIMPLEMENTED_MSG("Unknown ControllerPrivateArg mode={} with arg_size={}",
                               controller_private_arg.mode, controller_private_arg.arg_size);
@@ -99,7 +103,9 @@ void Controller::Initialize() {
     // This is always 0 (Application) except with ShowControllerFirmwareUpdateForSystem.
     if (controller_private_arg.caller >= ControllerSupportCaller::MaxControllerSupportCaller) {
         if (controller_private_arg.flag_1 &&
-            controller_private_arg.mode == ControllerSupportMode::ShowControllerFirmwareUpdate) {
+            (controller_private_arg.mode == ControllerSupportMode::ShowControllerFirmwareUpdate ||
+             controller_private_arg.mode ==
+                 ControllerSupportMode::ShowControllerKeyRemappingForSystem)) {
             controller_private_arg.caller = ControllerSupportCaller::System;
         } else {
             controller_private_arg.caller = ControllerSupportCaller::Application;
@@ -121,6 +127,7 @@ void Controller::Initialize() {
             std::memcpy(&controller_user_arg_old, user_arg.data(), user_arg.size());
             break;
         case ControllerAppletVersion::Version7:
+        case ControllerAppletVersion::Version8:
             ASSERT(user_arg.size() == sizeof(ControllerSupportArgNew));
             std::memcpy(&controller_user_arg_new, user_arg.data(), user_arg.size());
             break;
@@ -141,6 +148,16 @@ void Controller::Initialize() {
         ASSERT(update_arg.size() == sizeof(ControllerUpdateFirmwareArg));
 
         std::memcpy(&controller_update_arg, update_arg.data(), update_arg.size());
+        break;
+    }
+    case ControllerSupportMode::ShowControllerKeyRemappingForSystem: {
+        const auto remapping_arg_storage = broker.PopNormalDataToApplet();
+        ASSERT(remapping_arg_storage != nullptr);
+
+        const auto& remapping_arg = remapping_arg_storage->GetData();
+        ASSERT(remapping_arg.size() == sizeof(ControllerKeyRemappingArg));
+
+        std::memcpy(&controller_key_remapping_arg, remapping_arg.data(), remapping_arg.size());
         break;
     }
     default: {
@@ -179,6 +196,7 @@ void Controller::Execute() {
                     std::vector<ExplainText>(controller_user_arg_old.explain_text.begin(),
                                              controller_user_arg_old.explain_text.end()));
             case ControllerAppletVersion::Version7:
+            case ControllerAppletVersion::Version8:
             default:
                 return ConvertToFrontendParameters(
                     controller_private_arg, controller_user_arg_new.header,
@@ -210,6 +228,7 @@ void Controller::Execute() {
     }
     case ControllerSupportMode::ShowControllerStrapGuide:
     case ControllerSupportMode::ShowControllerFirmwareUpdate:
+    case ControllerSupportMode::ShowControllerKeyRemappingForSystem:
         UNIMPLEMENTED_MSG("ControllerSupportMode={} is not implemented",
                           controller_private_arg.mode);
         ConfigurationComplete();

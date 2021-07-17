@@ -172,16 +172,14 @@ Device::Device() {
     // uniform buffers as "push constants"
     has_fast_buffer_sub_data = is_nvidia && !disable_fast_buffer_sub_data;
 
-    use_assembly_shaders =
-        Settings::values.shader_backend.GetValue() == Settings::ShaderBackend::GLASM &&
-        GLAD_GL_NV_gpu_program5 && GLAD_GL_NV_compute_program5 && GLAD_GL_NV_transform_feedback &&
-        GLAD_GL_NV_transform_feedback2;
-
-    shader_backend = (Settings::values.shader_backend.GetValue() ==
-                      Settings::ShaderBackend::GLASM) == use_assembly_shaders
-                         ? Settings::values.shader_backend.GetValue()
-                         : Settings::ShaderBackend::GLSL;
-
+    shader_backend = Settings::values.shader_backend.GetValue();
+    use_assembly_shaders = shader_backend == Settings::ShaderBackend::GLASM &&
+                           GLAD_GL_NV_gpu_program5 && GLAD_GL_NV_compute_program5 &&
+                           GLAD_GL_NV_transform_feedback && GLAD_GL_NV_transform_feedback2;
+    if (shader_backend == Settings::ShaderBackend::GLASM && !use_assembly_shaders) {
+        LOG_ERROR(Render_OpenGL, "Assembly shaders enabled but not supported");
+        shader_backend = Settings::ShaderBackend::GLSL;
+    }
     // Completely disable async shaders for now, as it causes graphical glitches
     use_asynchronous_shaders = false;
     // Blocks AMD and Intel OpenGL drivers on Windows from using asynchronous shader compilation.
@@ -194,11 +192,6 @@ Device::Device() {
     LOG_INFO(Render_OpenGL, "Renderer_PreciseBug: {}", has_precise_bug);
     LOG_INFO(Render_OpenGL, "Renderer_BrokenTextureViewFormats: {}",
              has_broken_texture_view_formats);
-
-    if (shader_backend == Settings::ShaderBackend::GLASM && !use_assembly_shaders) {
-        LOG_ERROR(Render_OpenGL, "Assembly shaders enabled but not supported");
-    }
-
     if (Settings::values.use_asynchronous_shaders.GetValue() && !use_asynchronous_shaders) {
         LOG_WARNING(Render_OpenGL, "Asynchronous shader compilation enabled but not supported");
     }

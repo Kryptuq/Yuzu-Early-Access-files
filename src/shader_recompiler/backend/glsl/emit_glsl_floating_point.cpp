@@ -13,12 +13,10 @@ namespace Shader::Backend::GLSL {
 namespace {
 void Compare(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string_view rhs,
              std::string_view op, bool ordered) {
-    ctx.AddU1("{}={}{}{}", inst, lhs, op, rhs, lhs, rhs);
-    if (ordered) {
-        ctx.Add("&&!isnan({})&&!isnan({});", lhs, rhs);
-    } else {
-        ctx.Add("||isnan({})||isnan({});", lhs, rhs);
-    }
+    const auto nan_op{ordered ? "&&!" : "||"};
+    ctx.AddU1("{}={}{}{}"
+              "{}isnan({}){}isnan({});",
+              inst, lhs, op, rhs, nan_op, lhs, nan_op, rhs);
 }
 
 bool IsPrecise(const IR::Inst& inst) {

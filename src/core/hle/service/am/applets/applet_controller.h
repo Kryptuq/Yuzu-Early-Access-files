@@ -25,13 +25,15 @@ enum class ControllerAppletVersion : u32_le {
     Version3 = 0x3, // 1.0.0 - 2.3.0
     Version4 = 0x4, // 3.0.0 - 5.1.0
     Version5 = 0x5, // 6.0.0 - 7.0.1
-    Version7 = 0x7, // 8.0.0+
+    Version7 = 0x7, // 8.0.0 - 10.2.0
+    Version8 = 0x8, // 11.0.0+
 };
 
 enum class ControllerSupportMode : u8 {
     ShowControllerSupport,
     ShowControllerStrapGuide,
     ShowControllerFirmwareUpdate,
+    ShowControllerKeyRemappingForSystem,
 
     MaxControllerSupportMode,
 };
@@ -95,6 +97,14 @@ struct ControllerUpdateFirmwareArg {
 static_assert(sizeof(ControllerUpdateFirmwareArg) == 0x4,
               "ControllerUpdateFirmwareArg has incorrect size.");
 
+struct ControllerKeyRemappingArg {
+    u64 unknown{};
+    u32 unknown_2{};
+    INSERT_PADDING_WORDS(1);
+};
+static_assert(sizeof(ControllerKeyRemappingArg) == 0x10,
+              "ControllerKeyRemappingArg has incorrect size.");
+
 struct ControllerSupportResultInfo {
     s8 player_count{};
     INSERT_PADDING_BYTES(3);
@@ -128,6 +138,7 @@ private:
     ControllerSupportArgOld controller_user_arg_old;
     ControllerSupportArgNew controller_user_arg_new;
     ControllerUpdateFirmwareArg controller_update_arg;
+    ControllerKeyRemappingArg controller_key_remapping_arg;
     bool complete{false};
     ResultCode status{ResultSuccess};
     bool is_single_mode{false};
