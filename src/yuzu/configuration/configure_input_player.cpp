@@ -149,8 +149,9 @@ QString ButtonToText(const Common::ParamPackage& param) {
 
         if (param.Has("button")) {
             const QString button_str = QString::fromStdString(param.Get("button", ""));
+            const QString toggle = QString::fromStdString(param.Get("toggle", false) ? "~" : "");
 
-            return QObject::tr("Button %1").arg(button_str);
+            return QObject::tr("%1Button %2").arg(toggle, button_str);
         }
 
         if (param.Has("motion")) {
@@ -313,6 +314,16 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                         buttons_param[button_id].Set("toggle", toggle_value);
                         button_map[button_id]->setText(ButtonToText(buttons_param[button_id]));
                     });
+                    if (buttons_param[button_id].Has("threshold")) {
+                        context_menu.addAction(tr("Set threshold"), [&] {
+                            const int button_threshold = static_cast<int>(
+                                buttons_param[button_id].Get("threshold", 0.5f) * 100.0f);
+                            const int new_threshold = QInputDialog::getInt(
+                                this, tr("Set threshold"), tr("Choose a value between 0% and 100%"),
+                                button_threshold, 0, 100);
+                            buttons_param[button_id].Set("threshold", new_threshold / 100.0f);
+                        });
+                    }
                     context_menu.exec(button_map[button_id]->mapToGlobal(menu_location));
                     ui->controllerFrame->SetPlayerInput(player_index, buttons_param, analogs_param);
                 });

@@ -2573,27 +2573,24 @@
                   </widget>
                 </item>
                 <item row="2" column="2">
-                    <widget class="QDoubleSpinBox" name="mouse_panning_sensitivity">
+                    <widget class="QSpinBox" name="mouse_panning_sensitivity">
                       <property name="toolTip">
                         <string>Mouse sensitivity</string>
                       </property>
                       <property name="alignment">
                         <set>Qt::AlignCenter</set>
                       </property>
-                      <property name="decimals">
-                        <number>2</number>
+                      <property name="suffix">
+                        <string>%</string>
                       </property>
                       <property name="minimum">
-                        <double>0.100000000000000</double>
+                        <number>1</number>
                       </property>
                       <property name="maximum">
-                        <double>16.000000000000000</double>
-                      </property>
-                      <property name="singleStep">
-                        <double>0.010000000000000</double>
+                        <number>100</number>
                       </property>
                       <property name="value">
-                        <double>1.000000000000000</double>
+                        <number>100</number>
                       </property>
                     </widget>
                 </item>

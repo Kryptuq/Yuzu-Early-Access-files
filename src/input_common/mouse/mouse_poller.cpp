@@ -84,7 +84,7 @@ public:
         std::lock_guard lock{mutex};
         const auto axis_value =
             static_cast<float>(mouse_input->GetMouseState(button).axis.at(axis));
-        const float sensitivity = Settings::values.mouse_panning_sensitivity.GetValue();
+        const float sensitivity = Settings::values.mouse_panning_sensitivity.GetValue() * 0.15f;
         return axis_value * sensitivity / (100.0f * range);
     }
 

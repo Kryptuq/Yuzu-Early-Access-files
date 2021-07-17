@@ -221,8 +221,11 @@ VkSemaphore VKBlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer, bool
         });
     }
     scheduler.Record([this, image_index, size = swapchain.GetSize()](vk::CommandBuffer cmdbuf) {
+        const f32 bg_red = Settings::values.bg_red.GetValue() / 255.0f;
+        const f32 bg_green = Settings::values.bg_green.GetValue() / 255.0f;
+        const f32 bg_blue = Settings::values.bg_blue.GetValue() / 255.0f;
         const VkClearValue clear_color{
-            .color = {.float32 = {0.0f, 0.0f, 0.0f, 0.0f}},
+            .color = {.float32 = {bg_red, bg_green, bg_blue, 1.0f}},
         };
         const VkRenderPassBeginInfo renderpass_bi{
             .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,

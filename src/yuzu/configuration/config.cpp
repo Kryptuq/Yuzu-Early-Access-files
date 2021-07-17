@@ -311,37 +311,12 @@ void Config::WriteBasicSetting(const Settings::BasicSetting<std::string>& settin
     qt_config->setValue(name, QString::fromStdString(value));
 }
 
-// Explicit float definition: use a double as Qt doesn't write legible floats to config files
-template <>
-void Config::WriteBasicSetting(const Settings::BasicSetting<float>& setting) {
-    const QString name = QString::fromStdString(setting.GetLabel());
-    const double value = setting.GetValue();
-    qt_config->setValue(name + QStringLiteral("/default"),
-                        setting.GetValue() == setting.GetDefault());
-    qt_config->setValue(name, value);
-}
-
 template <typename Type>
 void Config::WriteBasicSetting(const Settings::BasicSetting<Type>& setting) {
     const QString name = QString::fromStdString(setting.GetLabel());
     const Type value = setting.GetValue();
     qt_config->setValue(name + QStringLiteral("/default"), value == setting.GetDefault());
     qt_config->setValue(name, value);
-}
-
-// Explicit float definition: use a double as Qt doesn't write legible floats to config files
-template <>
-void Config::WriteGlobalSetting(const Settings::Setting<float>& setting) {
-    const QString name = QString::fromStdString(setting.GetLabel());
-    const double value = setting.GetValue(global);
-    if (!global) {
-        qt_config->setValue(name + QStringLiteral("/use_global"), setting.UsingGlobal());
-    }
-    if (global || !setting.UsingGlobal()) {
-        qt_config->setValue(name + QStringLiteral("/default"),
-                            setting.GetValue(global) == setting.GetDefault());
-        qt_config->setValue(name, value);
-    }
 }
 
 template <typename Type>

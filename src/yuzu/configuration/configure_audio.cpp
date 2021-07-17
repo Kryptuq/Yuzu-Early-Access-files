@@ -47,7 +47,8 @@ void ConfigureAudio::SetConfiguration() {
 
     SetAudioDeviceFromDeviceID();
 
-    ui->volume_slider->setValue(Settings::values.volume.GetValue() * ui->volume_slider->maximum());
+    const auto volume_value = static_cast<int>(Settings::values.volume.GetValue());
+    ui->volume_slider->setValue(volume_value);
 
     ui->toggle_audio_stretching->setChecked(Settings::values.enable_audio_stretching.GetValue());
 
@@ -112,18 +113,16 @@ void ConfigureAudio::ApplyConfiguration() {
 
         // Guard if during game and set to game-specific value
         if (Settings::values.volume.UsingGlobal()) {
-            Settings::values.volume.SetValue(
-                static_cast<float>(ui->volume_slider->sliderPosition()) /
-                ui->volume_slider->maximum());
+            const auto volume = static_cast<u8>(ui->volume_slider->value());
+            Settings::values.volume.SetValue(volume);
         }
     } else {
         if (ui->volume_combo_box->currentIndex() == 0) {
             Settings::values.volume.SetGlobal(true);
         } else {
             Settings::values.volume.SetGlobal(false);
-            Settings::values.volume.SetValue(
-                static_cast<float>(ui->volume_slider->sliderPosition()) /
-                ui->volume_slider->maximum());
+            const auto volume = static_cast<u8>(ui->volume_slider->value());
+            Settings::values.volume.SetValue(volume);
         }
     }
 }

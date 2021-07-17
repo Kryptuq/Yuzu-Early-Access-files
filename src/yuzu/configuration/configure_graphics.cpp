@@ -119,10 +119,9 @@ void ConfigureGraphics::SetConfiguration() {
         ui->bg_button->setEnabled(!Settings::values.bg_red.UsingGlobal());
         ConfigurationShared::SetHighlight(ui->bg_layout, !Settings::values.bg_red.UsingGlobal());
     }
-
-    UpdateBackgroundColorButton(QColor::fromRgbF(Settings::values.bg_red.GetValue(),
-                                                 Settings::values.bg_green.GetValue(),
-                                                 Settings::values.bg_blue.GetValue()));
+    UpdateBackgroundColorButton(QColor::fromRgb(Settings::values.bg_red.GetValue(),
+                                                Settings::values.bg_green.GetValue(),
+                                                Settings::values.bg_blue.GetValue()));
     UpdateAPILayout();
 }
 
@@ -154,9 +153,9 @@ void ConfigureGraphics::ApplyConfiguration() {
             Settings::values.vulkan_device.SetValue(vulkan_device);
         }
         if (Settings::values.bg_red.UsingGlobal()) {
-            Settings::values.bg_red.SetValue(static_cast<float>(bg_color.redF()));
-            Settings::values.bg_green.SetValue(static_cast<float>(bg_color.greenF()));
-            Settings::values.bg_blue.SetValue(static_cast<float>(bg_color.blueF()));
+            Settings::values.bg_red.SetValue(static_cast<u8>(bg_color.red()));
+            Settings::values.bg_green.SetValue(static_cast<u8>(bg_color.green()));
+            Settings::values.bg_blue.SetValue(static_cast<u8>(bg_color.blue()));
         }
     } else {
         if (ui->api->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
@@ -188,9 +187,9 @@ void ConfigureGraphics::ApplyConfiguration() {
             Settings::values.bg_red.SetGlobal(false);
             Settings::values.bg_green.SetGlobal(false);
             Settings::values.bg_blue.SetGlobal(false);
-            Settings::values.bg_red.SetValue(static_cast<float>(bg_color.redF()));
-            Settings::values.bg_green.SetValue(static_cast<float>(bg_color.greenF()));
-            Settings::values.bg_blue.SetValue(static_cast<float>(bg_color.blueF()));
+            Settings::values.bg_red.SetValue(static_cast<u8>(bg_color.red()));
+            Settings::values.bg_green.SetValue(static_cast<u8>(bg_color.green()));
+            Settings::values.bg_blue.SetValue(static_cast<u8>(bg_color.blue()));
         }
     }
 }

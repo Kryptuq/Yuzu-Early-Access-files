@@ -242,17 +242,15 @@ static const std::array<int, 8> keyboard_mods{
 };
 
 template <>
-void Config::ReadSetting(const std::string& group, Settings::BasicSetting<float>& setting) {
-    setting = sdl2_config->GetReal(group, setting.GetLabel(), setting.GetDefault());
-}
-template <>
 void Config::ReadSetting(const std::string& group, Settings::BasicSetting<std::string>& setting) {
     setting = sdl2_config->Get(group, setting.GetLabel(), setting.GetDefault());
 }
+
 template <>
 void Config::ReadSetting(const std::string& group, Settings::BasicSetting<bool>& setting) {
     setting = sdl2_config->GetBoolean(group, setting.GetLabel(), setting.GetDefault());
 }
+
 template <typename Type>
 void Config::ReadSetting(const std::string& group, Settings::BasicSetting<Type>& setting) {
     setting = static_cast<Type>(sdl2_config->GetInteger(group, setting.GetLabel(),

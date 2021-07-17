@@ -250,9 +250,6 @@ void RendererOpenGL::LoadColorToActiveGLTexture(u8 color_r, u8 color_g, u8 color
 }
 
 void RendererOpenGL::InitOpenGLObjects() {
-    glClearColor(Settings::values.bg_red.GetValue(), Settings::values.bg_green.GetValue(),
-                 Settings::values.bg_blue.GetValue(), 0.0f);
-
     // Create shader programs
     present_vertex = CreateProgram(HostShaders::OPENGL_PRESENT_VERT, GL_VERTEX_SHADER);
     present_fragment = CreateProgram(HostShaders::OPENGL_PRESENT_FRAG, GL_FRAGMENT_SHADER);
@@ -333,8 +330,9 @@ void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
 void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
     if (renderer_settings.set_background_color) {
         // Update background color before drawing
-        glClearColor(Settings::values.bg_red.GetValue(), Settings::values.bg_green.GetValue(),
-                     Settings::values.bg_blue.GetValue(), 0.0f);
+        glClearColor(Settings::values.bg_red.GetValue() / 255.0f,
+                     Settings::values.bg_green.GetValue() / 255.0f,
+                     Settings::values.bg_blue.GetValue() / 255.0f, 1.0f);
     }
     // Set projection matrix
     const std::array ortho_matrix =

@@ -103,7 +103,7 @@ float Volume() {
     if (values.audio_muted) {
         return 0.0f;
     }
-    return values.volume.GetValue();
+    return values.volume.GetValue() / 100.0f;
 }
 
 void RestoreGlobalState(bool is_powered_on) {

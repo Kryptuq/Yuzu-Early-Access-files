@@ -241,7 +241,7 @@ use_vsync =
 use_caches_gc =
 
 # The clear color for the renderer. What shows up on the sides of the bottom screen.
-# Must be in range of 0.0-1.0. Defaults to 1.0 for all.
+# Must be in range of 0-255. Defaults to 0 for all.
 bg_red =
 bg_blue =
 bg_green =
@@ -290,7 +290,7 @@ enable_audio_stretching =
 output_device =
 
 # Output volume.
-# 1.0 (default): 100%, 0.0; mute
+# 100 (default): 100%, 0; mute
 volume =
 
 [Data Storage]
