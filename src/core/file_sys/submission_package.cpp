@@ -60,7 +60,7 @@ Loader::ResultStatus NSP::GetProgramStatus() const {
 
 u64 NSP::GetProgramTitleID() const {
     if (IsExtractedType()) {
-        return GetExtractedTitleID();
+        return GetExtractedTitleID() + program_index;
     }
 
     auto program_id = expected_program_id;
@@ -142,12 +142,11 @@ NSP::GetNCAs() const {
     return ncas;
 }
 
-std::shared_ptr<NCA> NSP::GetNCA(u64 title_id_, ContentRecordType type,
-                                 TitleType title_type) const {
+std::shared_ptr<NCA> NSP::GetNCA(u64 title_id, ContentRecordType type, TitleType title_type) const {
     if (extracted)
         LOG_WARNING(Service_FS, "called on an NSP that is of type extracted.");
 
-    const auto title_id_iter = ncas.find(title_id_);
+    const auto title_id_iter = ncas.find(title_id);
     if (title_id_iter == ncas.end())
         return nullptr;
 
@@ -158,10 +157,10 @@ std::shared_ptr<NCA> NSP::GetNCA(u64 title_id_, ContentRecordType type,
     return type_iter->second;
 }
 
-VirtualFile NSP::GetNCAFile(u64 title_id_, ContentRecordType type, TitleType title_type) const {
+VirtualFile NSP::GetNCAFile(u64 title_id, ContentRecordType type, TitleType title_type) const {
     if (extracted)
         LOG_WARNING(Service_FS, "called on an NSP that is of type extracted.");
-    const auto nca = GetNCA(title_id_, type, title_type);
+    const auto nca = GetNCA(title_id, type, title_type);
     if (nca != nullptr)
         return nca->GetBaseFile();
     return nullptr;

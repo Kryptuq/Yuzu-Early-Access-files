@@ -112,6 +112,7 @@ void QtNXWebEngineView::LoadLocalWebPage(const std::string& main_url,
     SetExitReason(Service::AM::Applets::WebExitReason::EndButtonPressed);
     SetLastURL("http://localhost/");
     StartInputThread();
+    FocusFirstLinkElement();
 
     load(QUrl(QUrl::fromLocalFile(QString::fromStdString(main_url)).toString() +
               QString::fromStdString(additional_args)));
@@ -128,6 +129,8 @@ void QtNXWebEngineView::LoadExternalWebPage(const std::string& main_url,
     StartInputThread();
 
     load(QUrl(QString::fromStdString(main_url) + QString::fromStdString(additional_args)));
+
+    FocusFirstLinkElement();
 }
 
 void QtNXWebEngineView::SetUserAgent(UserAgent user_agent) {
@@ -208,7 +211,7 @@ void QtNXWebEngineView::HandleWindowFooterButtonPressedOnce() {
         if (input_interpreter->IsButtonPressedOnce(button)) {
             page()->runJavaScript(
                 QStringLiteral("yuzu_key_callbacks[%1] == null;").arg(static_cast<u8>(button)),
-                [&](const QVariant& variant) {
+                [this, button](const QVariant& variant) {
                     if (variant.toBool()) {
                         switch (button) {
                         case HIDButton::A:
@@ -362,6 +365,20 @@ void QtNXWebEngineView::LoadExtractedFonts() {
             page()->runJavaScript(QString::fromStdString(LOAD_NX_FONT));
         },
         Qt::QueuedConnection);
+}
+
+void QtNXWebEngineView::FocusFirstLinkElement() {
+    QWebEngineScript focus_link_element;
+
+    constexpr char FOCUS_LINK_ELEMENT_SCRIPT[] =
+        R"(document.getElementsByTagName("a")[0].focus();)";
+
+    focus_link_element.setName(QStringLiteral("focus_link_element.js"));
+    focus_link_element.setSourceCode(QString::fromStdString(FOCUS_LINK_ELEMENT_SCRIPT));
+    focus_link_element.setWorldId(QWebEngineScript::MainWorld);
+    focus_link_element.setInjectionPoint(QWebEngineScript::Deferred);
+    focus_link_element.setRunsOnSubFrames(true);
+    default_profile->scripts()->insert(focus_link_element);
 }
 
 #endif

@@ -161,6 +161,9 @@ private:
     /// Loads the extracted fonts using JavaScript.
     void LoadExtractedFonts();
 
+    /// Brings focus to the first available link element.
+    void FocusFirstLinkElement();
+
     InputCommon::InputSubsystem* input_subsystem;
 
     std::unique_ptr<UrlRequestInterceptor> url_interceptor;
