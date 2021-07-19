@@ -888,6 +888,7 @@ void Image::UploadMemory(const StagingBufferRef& map, std::span<const BufferImag
 
 void Image::DownloadMemory(const StagingBufferRef& map, std::span<const BufferImageCopy> copies) {
     std::vector vk_copies = TransformBufferImageCopies(copies, map.offset, aspect_mask);
+    scheduler->RequestOutsideRenderPassOperationContext();
     scheduler->Record([buffer = map.buffer, image = *image, aspect_mask = aspect_mask,
                        vk_copies](vk::CommandBuffer cmdbuf) {
         const VkImageMemoryBarrier read_barrier{

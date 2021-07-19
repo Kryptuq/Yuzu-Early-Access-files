@@ -378,20 +378,20 @@ void ASTCDecoderPass::MakeDataBuffer() {
 
     scheduler.Record([src = staging_ref.buffer, offset = staging_ref.offset, dst = *data_buffer,
                       TOTAL_BUFFER_SIZE](vk::CommandBuffer cmdbuf) {
-        cmdbuf.CopyBuffer(src, dst,
-                          VkBufferCopy{
-                              .srcOffset = offset,
-                              .dstOffset = 0,
-                              .size = TOTAL_BUFFER_SIZE,
-                          });
-        cmdbuf.PipelineBarrier(
-            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
-            VkMemoryBarrier{
-                .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
-                .pNext = nullptr,
-                .srcAccessMask = 0,
-                .dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
-            });
+        static constexpr VkMemoryBarrier write_barrier{
+            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+        };
+        const VkBufferCopy copy{
+            .srcOffset = offset,
+            .dstOffset = 0,
+            .size = TOTAL_BUFFER_SIZE,
+        };
+        cmdbuf.CopyBuffer(src, dst, copy);
+        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                               0, write_barrier);
     });
 }
 
@@ -415,7 +415,7 @@ void ASTCDecoderPass::Assemble(Image& image, const StagingBufferRef& map,
             const VkImageMemoryBarrier image_barrier{
                 .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
                 .pNext = nullptr,
-                .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
+                .srcAccessMask = is_initialized ? VK_ACCESS_SHADER_WRITE_BIT : VkAccessFlags{},
                 .dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
                 .oldLayout = is_initialized ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_UNDEFINED,
                 .newLayout = VK_IMAGE_LAYOUT_GENERAL,
@@ -430,7 +430,8 @@ void ASTCDecoderPass::Assemble(Image& image, const StagingBufferRef& map,
                     .layerCount = VK_REMAINING_ARRAY_LAYERS,
                 },
             };
-            cmdbuf.PipelineBarrier(is_initialized ? VK_PIPELINE_STAGE_ALL_COMMANDS_BIT : 0,
+            cmdbuf.PipelineBarrier(is_initialized ? VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+                                                  : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, image_barrier);
             cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, vk_pipeline);
         });
