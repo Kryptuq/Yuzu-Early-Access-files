@@ -14,7 +14,6 @@
 #define BUILD_ID "@BUILD_ID@"
 #define TITLE_BAR_FORMAT_IDLE "@TITLE_BAR_FORMAT_IDLE@"
 #define TITLE_BAR_FORMAT_RUNNING "@TITLE_BAR_FORMAT_RUNNING@"
-#define SHADER_CACHE_VERSION "@SHADER_CACHE_VERSION@"
 
 namespace Common {
 
@@ -28,7 +27,6 @@ const char g_build_version[]  = BUILD_VERSION;
 const char g_build_id[] = BUILD_ID;
 const char g_title_bar_format_idle[] = TITLE_BAR_FORMAT_IDLE;
 const char g_title_bar_format_running[] = TITLE_BAR_FORMAT_RUNNING;
-const char g_shader_cache_version[] = SHADER_CACHE_VERSION;
 
 } // namespace
 

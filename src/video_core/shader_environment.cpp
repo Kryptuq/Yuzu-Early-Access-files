@@ -22,7 +22,6 @@
 namespace VideoCommon {
 
 constexpr std::array<char, 8> MAGIC_NUMBER{'y', 'u', 'z', 'u', 'c', 'a', 'c', 'h'};
-constexpr u32 CACHE_VERSION = 5;
 
 constexpr size_t INST_SIZE = sizeof(u64);
 
@@ -370,7 +369,7 @@ std::array<u32, 3> FileEnvironment::WorkgroupSize() const {
 }
 
 void SerializePipeline(std::span<const char> key, std::span<const GenericEnvironment* const> envs,
-                       const std::filesystem::path& filename) try {
+                       const std::filesystem::path& filename, u32 cache_version) try {
     std::ofstream file(filename, std::ios::binary | std::ios::ate | std::ios::app);
     file.exceptions(std::ifstream::failbit);
     if (!file.is_open()) {
@@ -381,7 +380,7 @@ void SerializePipeline(std::span<const char> key, std::span<const GenericEnviron
     if (file.tellp() == 0) {
         // Write header
         file.write(MAGIC_NUMBER.data(), MAGIC_NUMBER.size())
-            .write(reinterpret_cast<const char*>(&CACHE_VERSION), sizeof(CACHE_VERSION));
+            .write(reinterpret_cast<const char*>(&cache_version), sizeof(cache_version));
     }
     if (!std::ranges::all_of(envs, &GenericEnvironment::CanBeSerialized)) {
         return;
@@ -402,7 +401,7 @@ void SerializePipeline(std::span<const char> key, std::span<const GenericEnviron
 }
 
 void LoadPipelines(
-    std::stop_token stop_loading, const std::filesystem::path& filename,
+    std::stop_token stop_loading, const std::filesystem::path& filename, u32 expected_cache_version,
     Common::UniqueFunction<void, std::ifstream&, FileEnvironment> load_compute,
     Common::UniqueFunction<void, std::ifstream&, std::vector<FileEnvironment>> load_graphics) try {
     std::ifstream file(filename, std::ios::binary | std::ios::ate);
@@ -417,13 +416,13 @@ void LoadPipelines(
     u32 cache_version;
     file.read(magic_number.data(), magic_number.size())
         .read(reinterpret_cast<char*>(&cache_version), sizeof(cache_version));
-    if (magic_number != MAGIC_NUMBER || cache_version != CACHE_VERSION) {
+    if (magic_number != MAGIC_NUMBER || cache_version != expected_cache_version) {
         file.close();
         if (Common::FS::RemoveFile(filename)) {
             if (magic_number != MAGIC_NUMBER) {
                 LOG_ERROR(Common_Filesystem, "Invalid pipeline cache file");
             }
-            if (cache_version != CACHE_VERSION) {
+            if (cache_version != expected_cache_version) {
                 LOG_INFO(Common_Filesystem, "Deleting old pipeline cache");
             }
         } else {

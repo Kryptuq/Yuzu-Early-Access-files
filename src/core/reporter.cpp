@@ -62,7 +62,6 @@ json GetYuzuVersionData() {
         {"build_date", std::string(Common::g_build_date)},
         {"build_fullname", std::string(Common::g_build_fullname)},
         {"build_version", std::string(Common::g_build_version)},
-        {"shader_cache_version", std::string(Common::g_shader_cache_version)},
     };
 }
 

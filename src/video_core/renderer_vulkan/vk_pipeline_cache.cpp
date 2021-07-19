@@ -54,6 +54,8 @@ using VideoCommon::FileEnvironment;
 using VideoCommon::GenericEnvironment;
 using VideoCommon::GraphicsEnvironment;
 
+constexpr u32 CACHE_VERSION = 5;
+
 template <typename Container>
 auto MakeSpan(Container& container) {
     return std::span(container.data(), container.size());
@@ -434,7 +436,8 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
         });
         ++state.total;
     }};
-    VideoCommon::LoadPipelines(stop_loading, pipeline_cache_filename, load_compute, load_graphics);
+    VideoCommon::LoadPipelines(stop_loading, pipeline_cache_filename, CACHE_VERSION, load_compute,
+                               load_graphics);
 
     std::unique_lock lock{state.mutex};
     callback(VideoCore::LoadCallbackStage::Build, 0, state.total);
@@ -562,7 +565,7 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline() {
                 env_ptrs.push_back(&envs[index]);
             }
         }
-        SerializePipeline(key, env_ptrs, pipeline_cache_filename);
+        SerializePipeline(key, env_ptrs, pipeline_cache_filename, CACHE_VERSION);
     });
     return pipeline;
 }
@@ -581,7 +584,7 @@ std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
     }
     serialization_thread.QueueWork([this, key, env = std::move(env)] {
         SerializePipeline(key, std::array<const GenericEnvironment*, 1>{&env},
-                          pipeline_cache_filename);
+                          pipeline_cache_filename, CACHE_VERSION);
     });
     return pipeline;
 }

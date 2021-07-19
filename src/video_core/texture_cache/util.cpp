@@ -169,23 +169,6 @@ template <u32 GOB_EXTENT>
     return Common::DivCeil(AdjustMipSize(size, level), block_size);
 }
 
-[[nodiscard]] constexpr std::pair<int, int> Samples(int num_samples) {
-    switch (num_samples) {
-    case 1:
-        return {1, 1};
-    case 2:
-        return {2, 1};
-    case 4:
-        return {2, 2};
-    case 8:
-        return {4, 2};
-    case 16:
-        return {4, 4};
-    }
-    UNREACHABLE_MSG("Invalid number of samples={}", num_samples);
-    return {1, 1};
-}
-
 [[nodiscard]] constexpr Extent2D DefaultBlockSize(PixelFormat format) {
     return {DefaultBlockWidth(format), DefaultBlockHeight(format)};
 }
@@ -283,14 +266,13 @@ template <u32 GOB_EXTENT>
 }
 
 [[nodiscard]] constexpr LevelInfo MakeLevelInfo(PixelFormat format, Extent3D size, Extent3D block,
-                                                u32 num_samples, u32 tile_width_spacing) {
-    const auto [samples_x, samples_y] = Samples(num_samples);
+                                                u32 tile_width_spacing) {
     const u32 bytes_per_block = BytesPerBlock(format);
     return {
         .size =
             {
-                .width = size.width * samples_x,
-                .height = size.height * samples_y,
+                .width = size.width,
+                .height = size.height,
                 .depth = size.depth,
             },
         .block = block,
@@ -301,14 +283,12 @@ template <u32 GOB_EXTENT>
 }
 
 [[nodiscard]] constexpr LevelInfo MakeLevelInfo(const ImageInfo& info) {
-    return MakeLevelInfo(info.format, info.size, info.block, info.num_samples,
-                         info.tile_width_spacing);
+    return MakeLevelInfo(info.format, info.size, info.block, info.tile_width_spacing);
 }
 
 [[nodiscard]] constexpr u32 CalculateLevelOffset(PixelFormat format, Extent3D size, Extent3D block,
-                                                 u32 num_samples, u32 tile_width_spacing,
-                                                 u32 level) {
-    const LevelInfo info = MakeLevelInfo(format, size, block, num_samples, tile_width_spacing);
+                                                 u32 tile_width_spacing, u32 level) {
+    const LevelInfo info = MakeLevelInfo(format, size, block, tile_width_spacing);
     u32 offset = 0;
     for (u32 current_level = 0; current_level < level; ++current_level) {
         offset += CalculateLevelSize(info, current_level);
@@ -645,8 +625,8 @@ u32 CalculateLayerStride(const ImageInfo& info) noexcept {
 
 u32 CalculateLayerSize(const ImageInfo& info) noexcept {
     ASSERT(info.type != ImageType::Linear);
-    return CalculateLevelOffset(info.format, info.size, info.block, info.num_samples,
-                                info.tile_width_spacing, info.resources.levels);
+    return CalculateLevelOffset(info.format, info.size, info.block, info.tile_width_spacing,
+                                info.resources.levels);
 }
 
 LevelArray CalculateMipLevelOffsets(const ImageInfo& info) noexcept {
@@ -1195,37 +1175,37 @@ static_assert(CalculateLevelSize(LevelInfo{{1920, 1080, 1}, {0, 2, 0}, {1, 1}, 2
               0x7f8000);
 static_assert(CalculateLevelSize(LevelInfo{{32, 32, 1}, {0, 0, 4}, {1, 1}, 4, 0}, 0) == 0x4000);
 
-static_assert(CalculateLevelOffset(PixelFormat::R8_SINT, {1920, 1080, 1}, {0, 2, 0}, 1, 0, 7) ==
+static_assert(CalculateLevelOffset(PixelFormat::R8_SINT, {1920, 1080, 1}, {0, 2, 0}, 0, 7) ==
               0x2afc00);
-static_assert(CalculateLevelOffset(PixelFormat::ASTC_2D_12X12_UNORM, {8192, 4096, 1}, {0, 2, 0}, 1,
-                                   0, 12) == 0x50d200);
+static_assert(CalculateLevelOffset(PixelFormat::ASTC_2D_12X12_UNORM, {8192, 4096, 1}, {0, 2, 0}, 0,
+                                   12) == 0x50d200);
 
-static_assert(CalculateLevelOffset(PixelFormat::A8B8G8R8_UNORM, {1024, 1024, 1}, {0, 4, 0}, 1, 0,
-                                   0) == 0);
-static_assert(CalculateLevelOffset(PixelFormat::A8B8G8R8_UNORM, {1024, 1024, 1}, {0, 4, 0}, 1, 0,
-                                   1) == 0x400000);
-static_assert(CalculateLevelOffset(PixelFormat::A8B8G8R8_UNORM, {1024, 1024, 1}, {0, 4, 0}, 1, 0,
-                                   2) == 0x500000);
-static_assert(CalculateLevelOffset(PixelFormat::A8B8G8R8_UNORM, {1024, 1024, 1}, {0, 4, 0}, 1, 0,
-                                   3) == 0x540000);
-static_assert(CalculateLevelOffset(PixelFormat::A8B8G8R8_UNORM, {1024, 1024, 1}, {0, 4, 0}, 1, 0,
-                                   4) == 0x550000);
-static_assert(CalculateLevelOffset(PixelFormat::A8B8G8R8_UNORM, {1024, 1024, 1}, {0, 4, 0}, 1, 0,
-                                   5) == 0x554000);
-static_assert(CalculateLevelOffset(PixelFormat::A8B8G8R8_UNORM, {1024, 1024, 1}, {0, 4, 0}, 1, 0,
-                                   6) == 0x555000);
-static_assert(CalculateLevelOffset(PixelFormat::A8B8G8R8_UNORM, {1024, 1024, 1}, {0, 4, 0}, 1, 0,
-                                   7) == 0x555400);
-static_assert(CalculateLevelOffset(PixelFormat::A8B8G8R8_UNORM, {1024, 1024, 1}, {0, 4, 0}, 1, 0,
-                                   8) == 0x555600);
-static_assert(CalculateLevelOffset(PixelFormat::A8B8G8R8_UNORM, {1024, 1024, 1}, {0, 4, 0}, 1, 0,
-                                   9) == 0x555800);
+static_assert(CalculateLevelOffset(PixelFormat::A8B8G8R8_UNORM, {1024, 1024, 1}, {0, 4, 0}, 0, 0) ==
+              0);
+static_assert(CalculateLevelOffset(PixelFormat::A8B8G8R8_UNORM, {1024, 1024, 1}, {0, 4, 0}, 0, 1) ==
+              0x400000);
+static_assert(CalculateLevelOffset(PixelFormat::A8B8G8R8_UNORM, {1024, 1024, 1}, {0, 4, 0}, 0, 2) ==
+              0x500000);
+static_assert(CalculateLevelOffset(PixelFormat::A8B8G8R8_UNORM, {1024, 1024, 1}, {0, 4, 0}, 0, 3) ==
+              0x540000);
+static_assert(CalculateLevelOffset(PixelFormat::A8B8G8R8_UNORM, {1024, 1024, 1}, {0, 4, 0}, 0, 4) ==
+              0x550000);
+static_assert(CalculateLevelOffset(PixelFormat::A8B8G8R8_UNORM, {1024, 1024, 1}, {0, 4, 0}, 0, 5) ==
+              0x554000);
+static_assert(CalculateLevelOffset(PixelFormat::A8B8G8R8_UNORM, {1024, 1024, 1}, {0, 4, 0}, 0, 6) ==
+              0x555000);
+static_assert(CalculateLevelOffset(PixelFormat::A8B8G8R8_UNORM, {1024, 1024, 1}, {0, 4, 0}, 0, 7) ==
+              0x555400);
+static_assert(CalculateLevelOffset(PixelFormat::A8B8G8R8_UNORM, {1024, 1024, 1}, {0, 4, 0}, 0, 8) ==
+              0x555600);
+static_assert(CalculateLevelOffset(PixelFormat::A8B8G8R8_UNORM, {1024, 1024, 1}, {0, 4, 0}, 0, 9) ==
+              0x555800);
 
 constexpr u32 ValidateLayerSize(PixelFormat format, u32 width, u32 height, u32 block_height,
                                 u32 tile_width_spacing, u32 level) {
     const Extent3D size{width, height, 1};
     const Extent3D block{0, block_height, 0};
-    const u32 offset = CalculateLevelOffset(format, size, block, 1, tile_width_spacing, level);
+    const u32 offset = CalculateLevelOffset(format, size, block, tile_width_spacing, level);
     return AlignLayerSize(offset, size, block, DefaultBlockHeight(format), tile_width_spacing);
 }
 

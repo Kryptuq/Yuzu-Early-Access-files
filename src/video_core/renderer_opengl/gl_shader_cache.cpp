@@ -48,8 +48,11 @@ using VideoCommon::ComputeEnvironment;
 using VideoCommon::FileEnvironment;
 using VideoCommon::GenericEnvironment;
 using VideoCommon::GraphicsEnvironment;
+using VideoCommon::LoadPipelines;
 using VideoCommon::SerializePipeline;
 using Context = ShaderContext::Context;
+
+constexpr u32 CACHE_VERSION = 5;
 
 template <typename Container>
 auto MakeSpan(Container& container) {
@@ -287,7 +290,7 @@ void ShaderCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
             });
         ++state.total;
     }};
-    VideoCommon::LoadPipelines(stop_loading, shader_cache_filename, load_compute, load_graphics);
+    LoadPipelines(stop_loading, shader_cache_filename, CACHE_VERSION, load_compute, load_graphics);
 
     std::unique_lock lock{state.mutex};
     callback(VideoCore::LoadCallbackStage::Build, 0, state.total);
@@ -394,7 +397,7 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline() {
             env_ptrs.push_back(&environments.envs[index]);
         }
     }
-    SerializePipeline(graphics_key, env_ptrs, shader_cache_filename);
+    SerializePipeline(graphics_key, env_ptrs, shader_cache_filename, CACHE_VERSION);
     return pipeline;
 }
 
@@ -492,7 +495,8 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(
     if (!pipeline || shader_cache_filename.empty()) {
         return pipeline;
     }
-    SerializePipeline(key, std::array<const GenericEnvironment*, 1>{&env}, shader_cache_filename);
+    SerializePipeline(key, std::array<const GenericEnvironment*, 1>{&env}, shader_cache_filename,
+                      CACHE_VERSION);
     return pipeline;
 }
 

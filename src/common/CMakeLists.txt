@@ -1,8 +1,3 @@
-# Add a custom command to generate a new shader_cache_version hash when any of the following files change
-# NOTE: This is an approximation of what files affect shader generation, its possible something else
-# could affect the result, but much more unlikely than the following files. Keeping a list of files
-# like this allows for much better caching since it doesn't force the user to recompile binary shaders every update
-set(VIDEO_CORE "${CMAKE_SOURCE_DIR}/src/video_core")
 if (DEFINED ENV{AZURECIREPO})
   set(BUILD_REPOSITORY $ENV{AZURECIREPO})
 endif()
@@ -30,10 +25,7 @@ add_custom_command(OUTPUT scm_rev.cpp
       -DGIT_EXECUTABLE=${GIT_EXECUTABLE}
       -P ${CMAKE_SOURCE_DIR}/CMakeModules/GenerateSCMRev.cmake
     DEPENDS
-      # WARNING! It was too much work to try and make a common location for this list,
-      # so if you need to change it, please update CMakeModules/GenerateSCMRev.cmake as well
-      # ...
-      # and also check that the scm_rev files haven't changed
+      # Check that the scm_rev files haven't changed
       "${CMAKE_CURRENT_SOURCE_DIR}/scm_rev.cpp.in"
       "${CMAKE_CURRENT_SOURCE_DIR}/scm_rev.h"
       # technically we should regenerate if the git version changed, but its not worth the effort imo
