@@ -48,15 +48,6 @@ if (BUILD_REPOSITORY)
   endif()
 endif()
 
-# The variable SRC_DIR must be passed into the script (since it uses the current build directory for all values of CMAKE_*_DIR)
-set(VIDEO_CORE "${SRC_DIR}/src/video_core")
-set(HASH_FILES
-    # ...
-)
-set(COMBINED "")
-foreach (F IN LISTS HASH_FILES)
-    file(READ ${F} TMP)
-    set(COMBINED "${COMBINED}${TMP}")
-endforeach()
-string(MD5 SHADER_CACHE_VERSION "${COMBINED}")
+# The variable SRC_DIR must be passed into the script
+# (since it uses the current build directory for all values of CMAKE_*_DIR)
 configure_file("${SRC_DIR}/src/common/scm_rev.cpp.in" "scm_rev.cpp" @ONLY)

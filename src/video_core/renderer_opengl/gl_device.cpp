@@ -180,11 +180,9 @@ Device::Device() {
         LOG_ERROR(Render_OpenGL, "Assembly shaders enabled but not supported");
         shader_backend = Settings::ShaderBackend::GLSL;
     }
-    // Completely disable async shaders for now, as it causes graphical glitches
-    use_asynchronous_shaders = false;
     // Blocks AMD and Intel OpenGL drivers on Windows from using asynchronous shader compilation.
-    // use_asynchronous_shaders = Settings::values.use_asynchronous_shaders.GetValue() &&
-    //                            !(is_amd || (is_intel && !is_linux));
+    use_asynchronous_shaders = Settings::values.use_asynchronous_shaders.GetValue() &&
+                               !(is_amd || (is_intel && !is_linux));
     use_driver_cache = is_nvidia;
 
     LOG_INFO(Render_OpenGL, "Renderer_VariableAOFFI: {}", has_variable_aoffi);

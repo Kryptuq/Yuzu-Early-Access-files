@@ -82,7 +82,7 @@
            <string>Enables asynchronous shader compilation, which may reduce shader stutter. This feature is experimental.</string>
           </property>
           <property name="text">
-           <string>Use asynchronous shader building (experimental)</string>
+           <string>Use asynchronous shader building</string>
           </property>
          </widget>
         </item>

@@ -119,6 +119,8 @@ private:
 
     void GenerateTransformFeedbackState();
 
+    void WaitForBuild();
+
     TextureCache& texture_cache;
     BufferCache& buffer_cache;
     Tegra::MemoryManager& gpu_memory;
@@ -143,13 +145,16 @@ private:
 
     bool use_storage_buffers{};
     bool writes_global_memory{};
-    std::atomic_bool is_built{false};
 
     static constexpr std::size_t XFB_ENTRY_STRIDE = 3;
     GLsizei num_xfb_attribs{};
     GLsizei num_xfb_strides{};
     std::array<GLint, 128 * XFB_ENTRY_STRIDE * Maxwell::NumTransformFeedbackBuffers> xfb_attribs{};
     std::array<GLint, Maxwell::NumTransformFeedbackBuffers> xfb_streams{};
+
+    std::mutex built_mutex;
+    std::condition_variable built_condvar;
+    std::atomic_bool is_built{false};
 };
 
 } // namespace OpenGL

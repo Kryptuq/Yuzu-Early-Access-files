@@ -165,10 +165,10 @@ public:
 
         if (sdl_controller) {
             return SDL_GameControllerRumble(sdl_controller.get(), amp_low, amp_high,
-                                            rumble_max_duration_ms) == 0;
+                                            rumble_max_duration_ms) != -1;
         } else if (sdl_joystick) {
             return SDL_JoystickRumble(sdl_joystick.get(), amp_low, amp_high,
-                                      rumble_max_duration_ms) == 0;
+                                      rumble_max_duration_ms) != -1;
         }
 
         return false;

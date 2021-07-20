@@ -237,10 +237,12 @@ GraphicsPipeline::GraphicsPipeline(
     if (key.xfb_enabled && device.UseAssemblyShaders()) {
         GenerateTransformFeedbackState();
     }
-    auto func{[this, device, sources, sources_spirv,
-               shader_notify](ShaderContext::Context*) mutable {
+    const bool in_parallel = thread_worker != nullptr;
+    const auto backend = device.GetShaderBackend();
+    auto func{[this, sources = std::move(sources), sources_spirv = std::move(sources_spirv),
+               shader_notify, backend, in_parallel](ShaderContext::Context*) mutable {
         for (size_t stage = 0; stage < 5; ++stage) {
-            switch (device.GetShaderBackend()) {
+            switch (backend) {
             case Settings::ShaderBackend::GLSL:
                 if (!sources[stage].empty()) {
                     source_programs[stage] = CreateProgram(sources[stage], Stage(stage));
@@ -249,6 +251,10 @@ GraphicsPipeline::GraphicsPipeline(
             case Settings::ShaderBackend::GLASM:
                 if (!sources[stage].empty()) {
                     assembly_programs[stage] = CompileProgram(sources[stage], AssemblyStage(stage));
+                    if (in_parallel) {
+                        // Make sure program is built before continuing when building in parallel
+                        glGetString(GL_PROGRAM_ERROR_STRING_NV);
+                    }
                 }
                 break;
             case Settings::ShaderBackend::SPIRV:
@@ -258,10 +264,20 @@ GraphicsPipeline::GraphicsPipeline(
                 break;
             }
         }
+        if (in_parallel && backend != Settings::ShaderBackend::GLASM) {
+            // Make sure programs have built if we are building shaders in parallel
+            for (OGLProgram& program : source_programs) {
+                if (program.handle != 0) {
+                    GLint status{};
+                    glGetProgramiv(program.handle, GL_LINK_STATUS, &status);
+                }
+            }
+        }
         if (shader_notify) {
             shader_notify->MarkShaderComplete();
         }
         is_built = true;
+        built_condvar.notify_one();
     }};
     if (thread_worker) {
         thread_worker->QueueWork(std::move(func));
@@ -434,6 +450,9 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
     buffer_cache.UpdateGraphicsBuffers(is_indexed);
     buffer_cache.BindHostGeometryBuffers(is_indexed);
 
+    if (!is_built.load(std::memory_order::relaxed)) {
+        WaitForBuild();
+    }
     if (assembly_programs[0].handle != 0) {
         program_manager.BindAssemblyPrograms(assembly_programs, enabled_stages_mask);
     } else {
@@ -543,6 +562,11 @@ void GraphicsPipeline::GenerateTransformFeedbackState() {
     }
     num_xfb_attribs = static_cast<GLsizei>((cursor - xfb_attribs.data()) / XFB_ENTRY_STRIDE);
     num_xfb_strides = static_cast<GLsizei>(current_stream - xfb_streams.data());
+}
+
+void GraphicsPipeline::WaitForBuild() {
+    std::unique_lock lock{built_mutex};
+    built_condvar.wait(lock, [this] { return is_built.load(std::memory_order::relaxed); });
 }
 
 } // namespace OpenGL

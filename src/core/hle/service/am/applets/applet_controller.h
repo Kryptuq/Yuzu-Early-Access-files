@@ -80,7 +80,7 @@ struct ControllerSupportArgOld {
 static_assert(sizeof(ControllerSupportArgOld) == 0x21C,
               "ControllerSupportArgOld has incorrect size.");
 
-// LibraryAppletVersion 0x7
+// LibraryAppletVersion 0x7, 0x8
 struct ControllerSupportArgNew {
     ControllerSupportArgHeader header{};
     std::array<IdentificationColor, 8> identification_colors{};
