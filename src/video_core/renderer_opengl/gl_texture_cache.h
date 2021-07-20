@@ -123,7 +123,7 @@ private:
     bool has_broken_texture_view_formats = false;
 
     StagingBuffers upload_buffers{GL_MAP_WRITE_BIT, GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT};
-    StagingBuffers download_buffers{GL_MAP_READ_BIT, GL_MAP_READ_BIT};
+    StagingBuffers download_buffers{GL_MAP_READ_BIT | GL_CLIENT_STORAGE_BIT, GL_MAP_READ_BIT};
 
     OGLTexture null_image_1d_array;
     OGLTexture null_image_cube_array;
