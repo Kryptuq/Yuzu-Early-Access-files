@@ -376,11 +376,11 @@ void BlitImageHelper::BlitColor(const Framebuffer* dst_framebuffer, const ImageV
     const VkImageView src_view = src_image_view.Handle(Shader::TextureType::Color2D);
     const VkSampler sampler = is_linear ? *linear_sampler : *nearest_sampler;
     const VkPipeline pipeline = FindOrEmplacePipeline(key);
-    const VkDescriptorSet descriptor_set = one_texture_descriptor_allocator.Commit();
     scheduler.RequestRenderpass(dst_framebuffer);
-    scheduler.Record([dst_region, src_region, pipeline, layout, sampler, src_view, descriptor_set,
-                      &device = device](vk::CommandBuffer cmdbuf) {
+    scheduler.Record([this, dst_region, src_region, pipeline, layout, sampler,
+                      src_view](vk::CommandBuffer cmdbuf) {
         // TODO: Barriers
+        const VkDescriptorSet descriptor_set = one_texture_descriptor_allocator.Commit();
         UpdateOneTextureDescriptorSet(device, descriptor_set, sampler, src_view);
         cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
         cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, descriptor_set,
@@ -402,12 +402,11 @@ void BlitImageHelper::BlitDepthStencil(const Framebuffer* dst_framebuffer,
     const VkPipelineLayout layout = *two_textures_pipeline_layout;
     const VkSampler sampler = *nearest_sampler;
     const VkPipeline pipeline = BlitDepthStencilPipeline(dst_framebuffer->RenderPass());
-    const VkDescriptorSet descriptor_set = two_textures_descriptor_allocator.Commit();
     scheduler.RequestRenderpass(dst_framebuffer);
     scheduler.Record([dst_region, src_region, pipeline, layout, sampler, src_depth_view,
-                      src_stencil_view, descriptor_set,
-                      &device = device](vk::CommandBuffer cmdbuf) {
+                      src_stencil_view, this](vk::CommandBuffer cmdbuf) {
         // TODO: Barriers
+        const VkDescriptorSet descriptor_set = two_textures_descriptor_allocator.Commit();
         UpdateTwoTexturesDescriptorSet(device, descriptor_set, sampler, src_depth_view,
                                        src_stencil_view);
         cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
@@ -448,14 +447,12 @@ void BlitImageHelper::Convert(VkPipeline pipeline, const Framebuffer* dst_frameb
     const VkPipelineLayout layout = *one_texture_pipeline_layout;
     const VkImageView src_view = src_image_view.Handle(Shader::TextureType::Color2D);
     const VkSampler sampler = *nearest_sampler;
-    const VkDescriptorSet descriptor_set = one_texture_descriptor_allocator.Commit();
     const VkExtent2D extent{
         .width = src_image_view.size.width,
         .height = src_image_view.size.height,
     };
     scheduler.RequestRenderpass(dst_framebuffer);
-    scheduler.Record([pipeline, layout, sampler, src_view, descriptor_set, extent,
-                      &device = device](vk::CommandBuffer cmdbuf) {
+    scheduler.Record([pipeline, layout, sampler, src_view, extent, this](vk::CommandBuffer cmdbuf) {
         const VkOffset2D offset{
             .x = 0,
             .y = 0,
@@ -476,6 +473,7 @@ void BlitImageHelper::Convert(VkPipeline pipeline, const Framebuffer* dst_frameb
             .tex_scale = {viewport.width, viewport.height},
             .tex_offset = {0.0f, 0.0f},
         };
+        const VkDescriptorSet descriptor_set = one_texture_descriptor_allocator.Commit();
         UpdateOneTextureDescriptorSet(device, descriptor_set, sampler, src_view);
 
         // TODO: Barriers

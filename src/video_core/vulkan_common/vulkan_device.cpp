@@ -34,6 +34,12 @@ constexpr std::array DEPTH16_UNORM_STENCIL8_UINT{
 };
 } // namespace Alternatives
 
+enum class NvidiaArchitecture {
+    AmpereOrNewer,
+    Turing,
+    VoltaOrOlder,
+};
+
 constexpr std::array REQUIRED_EXTENSIONS{
     VK_KHR_MAINTENANCE1_EXTENSION_NAME,
     VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME,
@@ -198,13 +204,34 @@ std::unordered_map<VkFormat, VkFormatProperties> GetFormatProperties(vk::Physica
 
 std::vector<std::string> GetSupportedExtensions(vk::PhysicalDevice physical) {
     const std::vector extensions = physical.EnumerateDeviceExtensionProperties();
-    std::vector<std::string> supported_extensions(std::size(extensions));
+    std::vector<std::string> supported_extensions;
+    supported_extensions.reserve(extensions.size());
     for (const auto& extension : extensions) {
         supported_extensions.emplace_back(extension.extensionName);
     }
     return supported_extensions;
 }
 
+NvidiaArchitecture GetNvidiaArchitecture(vk::PhysicalDevice physical,
+                                         std::span<const std::string> exts) {
+    if (std::ranges::find(exts, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME) != exts.end()) {
+        VkPhysicalDeviceFragmentShadingRatePropertiesKHR shading_rate_props{};
+        shading_rate_props.sType =
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_PROPERTIES_KHR;
+        VkPhysicalDeviceProperties2KHR physical_properties{};
+        physical_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
+        physical_properties.pNext = &shading_rate_props;
+        physical.GetProperties2KHR(physical_properties);
+        if (shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports) {
+            // Only Ampere and newer support this feature
+            return NvidiaArchitecture::AmpereOrNewer;
+        }
+    }
+    if (std::ranges::find(exts, VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME) != exts.end()) {
+        return NvidiaArchitecture::Turing;
+    }
+    return NvidiaArchitecture::VoltaOrOlder;
+}
 } // Anonymous namespace
 
 Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR surface,
@@ -522,11 +549,19 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     CollectTelemetryParameters();
     CollectToolingInfo();
 
-    if (driver_id == VK_DRIVER_ID_NVIDIA_PROPRIETARY_KHR && is_float16_supported) {
-        if (std::ranges::find(supported_extensions, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME) !=
-            supported_extensions.end()) {
+    if (driver_id == VK_DRIVER_ID_NVIDIA_PROPRIETARY_KHR) {
+        const auto arch = GetNvidiaArchitecture(physical, supported_extensions);
+        switch (arch) {
+        case NvidiaArchitecture::AmpereOrNewer:
             LOG_WARNING(Render_Vulkan, "Blacklisting Ampere devices from float16 math");
             is_float16_supported = false;
+            break;
+        case NvidiaArchitecture::Turing:
+            break;
+        case NvidiaArchitecture::VoltaOrOlder:
+            LOG_WARNING(Render_Vulkan, "Blacklisting Volta and older from VK_KHR_push_descriptor");
+            khr_push_descriptor = false;
+            break;
         }
     }
     if (ext_extended_dynamic_state && driver_id == VK_DRIVER_ID_MESA_RADV) {
