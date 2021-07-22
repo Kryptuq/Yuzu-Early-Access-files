@@ -6,6 +6,7 @@
 
 #include "common/logging/log.h"
 #include "common/scm_rev.h"
+#include "common/settings.h"
 #include "core/core.h"
 #include "core/perf_stats.h"
 #include "input_common/keyboard.h"
@@ -122,24 +123,37 @@ void EmuWindow_SDL2::OnResize() {
 }
 
 void EmuWindow_SDL2::Fullscreen() {
-    // Try a different fullscreening method
-    LOG_INFO(Frontend, "Attempting to use borderless fullscreen...");
-    if (SDL_SetWindowFullscreen(render_window, SDL_WINDOW_FULLSCREEN_DESKTOP) == 0) {
-        return;
+    switch (Settings::values.fullscreen_mode.GetValue()) {
+    case 1: // Exclusive fullscreen
+        // Set window size to render size before entering fullscreen -- SDL does not resize to
+        // display dimensions in this mode.
+        // TODO: Multiply the window size by resolution_factor (for both docked modes)
+        if (Settings::values.use_docked_mode) {
+            SDL_SetWindowSize(render_window, Layout::ScreenDocked::Width,
+                              Layout::ScreenDocked::Height);
+        }
+
+        if (SDL_SetWindowFullscreen(render_window, SDL_WINDOW_FULLSCREEN) == 0) {
+            return;
+        }
+
+        LOG_ERROR(Frontend, "Fullscreening failed: {}", SDL_GetError());
+        LOG_INFO(Frontend, "Attempting to use borderless fullscreen...");
+        [[fallthrough]];
+    case 0: // Borderless window
+        if (SDL_SetWindowFullscreen(render_window, SDL_WINDOW_FULLSCREEN_DESKTOP) == 0) {
+            return;
+        }
+
+        LOG_ERROR(Frontend, "Borderless fullscreening failed: {}", SDL_GetError());
+        [[fallthrough]];
+    default:
+        // Fallback algorithm: Maximise window.
+        // Works on all systems (unless something is seriously wrong), so no fallback for this one.
+        LOG_INFO(Frontend, "Falling back on a maximised window...");
+        SDL_MaximizeWindow(render_window);
+        break;
     }
-
-    LOG_ERROR(Frontend, "Borderless fullscreening failed: {}", SDL_GetError());
-
-    if (SDL_SetWindowFullscreen(render_window, SDL_WINDOW_FULLSCREEN) == 0) {
-        return;
-    }
-
-    LOG_ERROR(Frontend, "Fullscreening failed: {}", SDL_GetError());
-
-    // Fallback algorithm: Maximise window.
-    // Works on all systems (unless something is seriously wrong), so no fallback for this one.
-    LOG_INFO(Frontend, "Falling back on a maximised window...");
-    SDL_MaximizeWindow(render_window);
 }
 
 void EmuWindow_SDL2::WaitEvent() {

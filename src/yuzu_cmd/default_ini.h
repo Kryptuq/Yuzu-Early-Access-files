@@ -232,6 +232,10 @@ disable_shader_loop_safety_checks =
 # Which Vulkan physical device to use (defaults to 0)
 vulkan_device =
 
+# Whether to use fullscreen or borderless window mode
+# 0 (Windows default): Borderless window, 1 (All other default): Exclusive fullscreen
+fullscreen_mode =
+
 # Aspect ratio
 # 0: Default (16:9), 1: Force 4:3, 2: Force 21:9, 3: Stretch to Window
 aspect_ratio =
