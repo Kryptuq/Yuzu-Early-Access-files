@@ -175,7 +175,7 @@ int main(int argc, char** argv) {
         emu_window = std::make_unique<EmuWindow_SDL2_GL>(&input_subsystem, fullscreen);
         break;
     case Settings::RendererBackend::Vulkan:
-        emu_window = std::make_unique<EmuWindow_SDL2_VK>(&input_subsystem);
+        emu_window = std::make_unique<EmuWindow_SDL2_VK>(&input_subsystem, fullscreen);
         break;
     }
 

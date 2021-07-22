@@ -19,7 +19,7 @@ class InputSubsystem;
 
 class EmuWindow_SDL2_VK final : public EmuWindow_SDL2 {
 public:
-    explicit EmuWindow_SDL2_VK(InputCommon::InputSubsystem* input_subsystem);
+    explicit EmuWindow_SDL2_VK(InputCommon::InputSubsystem* input_subsystem, bool fullscreen);
     ~EmuWindow_SDL2_VK() override;
 
     std::unique_ptr<Core::Frontend::GraphicsContext> CreateSharedContext() const override;

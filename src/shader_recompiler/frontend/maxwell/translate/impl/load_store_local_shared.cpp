@@ -85,21 +85,28 @@ IR::U32 ByteOffset(IR::IREmitter& ir, const IR::U32& offset) {
 IR::U32 ShortOffset(IR::IREmitter& ir, const IR::U32& offset) {
     return ir.BitwiseAnd(ir.ShiftLeftLogical(offset, ir.Imm32(3)), ir.Imm32(16));
 }
+
+IR::U32 LoadLocal(TranslatorVisitor& v, const IR::U32& word_offset, const IR::U32& offset) {
+    const IR::U32 local_memory_size{v.ir.Imm32(v.env.LocalMemorySize())};
+    const IR::U1 in_bounds{v.ir.ILessThan(offset, local_memory_size, false)};
+    return IR::U32{v.ir.Select(in_bounds, v.ir.LoadLocal(word_offset), v.ir.Imm32(0))};
+}
 } // Anonymous namespace
 
 void TranslatorVisitor::LDL(u64 insn) {
     const auto [word_offset, offset]{WordOffset(*this, insn)};
+    const IR::U32 word{LoadLocal(*this, word_offset, offset)};
     const IR::Reg dest{Reg(insn)};
     const auto [bit_size, is_signed]{GetSize(insn)};
     switch (bit_size) {
     case 8: {
         const IR::U32 bit{ByteOffset(ir, offset)};
-        X(dest, ir.BitFieldExtract(ir.LoadLocal(word_offset), bit, ir.Imm32(8), is_signed));
+        X(dest, ir.BitFieldExtract(word, bit, ir.Imm32(8), is_signed));
         break;
     }
     case 16: {
         const IR::U32 bit{ShortOffset(ir, offset)};
-        X(dest, ir.BitFieldExtract(ir.LoadLocal(word_offset), bit, ir.Imm32(16), is_signed));
+        X(dest, ir.BitFieldExtract(word, bit, ir.Imm32(16), is_signed));
         break;
     }
     case 32:
@@ -108,9 +115,11 @@ void TranslatorVisitor::LDL(u64 insn) {
         if (!IR::IsAligned(dest, static_cast<size_t>(bit_size / 32))) {
             throw NotImplementedException("Unaligned destination register {}", dest);
         }
-        X(dest, ir.LoadLocal(word_offset));
+        X(dest, word);
         for (int i = 1; i < bit_size / 32; ++i) {
-            X(dest + i, ir.LoadLocal(ir.IAdd(word_offset, ir.Imm32(i))));
+            const IR::U32 sub_word_offset{ir.IAdd(word_offset, ir.Imm32(i))};
+            const IR::U32 sub_offset{ir.IAdd(offset, ir.Imm32(i * 4))};
+            X(dest + i, LoadLocal(*this, sub_word_offset, sub_offset));
         }
         break;
     }
@@ -141,6 +150,14 @@ void TranslatorVisitor::LDS(u64 insn) {
 
 void TranslatorVisitor::STL(u64 insn) {
     const auto [word_offset, offset]{WordOffset(*this, insn)};
+    if (offset.IsImmediate()) {
+        // TODO: Support storing out of bounds at runtime
+        if (offset.U32() >= env.LocalMemorySize()) {
+            LOG_WARNING(Shader, "Storing local memory at 0x{:x} with a size of 0x{:x}, dropping",
+                        offset.U32(), env.LocalMemorySize());
+            return;
+        }
+    }
     const IR::Reg reg{Reg(insn)};
     const IR::U32 src{X(reg)};
     const int bit_size{GetSize(insn).first};

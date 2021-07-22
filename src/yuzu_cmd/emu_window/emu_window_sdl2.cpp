@@ -122,12 +122,6 @@ void EmuWindow_SDL2::OnResize() {
 }
 
 void EmuWindow_SDL2::Fullscreen() {
-    if (SDL_SetWindowFullscreen(render_window, SDL_WINDOW_FULLSCREEN) == 0) {
-        return;
-    }
-
-    LOG_ERROR(Frontend, "Fullscreening failed: {}", SDL_GetError());
-
     // Try a different fullscreening method
     LOG_INFO(Frontend, "Attempting to use borderless fullscreen...");
     if (SDL_SetWindowFullscreen(render_window, SDL_WINDOW_FULLSCREEN_DESKTOP) == 0) {
@@ -135,6 +129,12 @@ void EmuWindow_SDL2::Fullscreen() {
     }
 
     LOG_ERROR(Frontend, "Borderless fullscreening failed: {}", SDL_GetError());
+
+    if (SDL_SetWindowFullscreen(render_window, SDL_WINDOW_FULLSCREEN) == 0) {
+        return;
+    }
+
+    LOG_ERROR(Frontend, "Fullscreening failed: {}", SDL_GetError());
 
     // Fallback algorithm: Maximise window.
     // Works on all systems (unless something is seriously wrong), so no fallback for this one.
