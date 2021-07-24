@@ -334,6 +334,7 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
                      Settings::values.bg_green.GetValue() / 255.0f,
                      Settings::values.bg_blue.GetValue() / 255.0f, 1.0f);
     }
+
     // Set projection matrix
     const std::array ortho_matrix =
         MakeOrthographicMatrix(static_cast<float>(layout.width), static_cast<float>(layout.height));
