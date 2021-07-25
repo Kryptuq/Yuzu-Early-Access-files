@@ -3,14 +3,11 @@
 // Refer to the license.txt file included.
 
 #pragma once
-
 #include <algorithm>
 #include <functional>
 #include <mutex>
-#include <stop_token>
 #include <thread>
 #include <unordered_map>
-
 #include "common/common_types.h"
 #include "common/threadsafe_queue.h"
 #include "input_common/main.h"
@@ -20,9 +17,6 @@ struct libusb_device;
 struct libusb_device_handle;
 
 namespace GCAdapter {
-
-class LibUSBContext;
-class LibUSBDeviceHandle;
 
 enum class PadButton {
     Undefined = 0x0000,
@@ -69,11 +63,11 @@ struct GCPadStatus {
 };
 
 struct GCController {
-    ControllerTypes type = ControllerTypes::None;
-    bool enable_vibration = false;
-    u8 rumble_amplitude = 0;
-    u16 buttons = 0;
-    PadButton last_button = PadButton::Undefined;
+    ControllerTypes type{};
+    bool enable_vibration{};
+    u8 rumble_amplitude{};
+    u16 buttons{};
+    PadButton last_button{};
     std::array<s16, 6> axis_values{};
     std::array<u8, 6> axis_origin{};
     u8 reset_origin_counter{};
@@ -115,9 +109,9 @@ private:
     void UpdateStateAxes(std::size_t port, const AdapterPayload& adapter_payload);
     void UpdateVibrations();
 
-    void AdapterInputThread(std::stop_token stop_token);
+    void AdapterInputThread();
 
-    void AdapterScanThread(std::stop_token stop_token);
+    void AdapterScanThread();
 
     bool IsPayloadCorrect(const AdapterPayload& adapter_payload, s32 payload_size);
 
@@ -125,7 +119,13 @@ private:
     void SendVibrations();
 
     /// For use in initialization, querying devices to find the adapter
-    bool Setup();
+    void Setup();
+
+    /// Resets status of all GC controller devices to a disconnected state
+    void ResetDevices();
+
+    /// Resets status of device connected to a disconnected state
+    void ResetDevice(std::size_t port);
 
     /// Returns true if we successfully gain access to GC Adapter
     bool CheckDeviceAccess();
@@ -137,15 +137,23 @@ private:
     /// For shutting down, clear all data, join all threads, release usb
     void Reset();
 
-    std::unique_ptr<LibUSBDeviceHandle> usb_adapter_handle;
+    // Join all threads
+    void JoinThreads();
+
+    // Release usb handles
+    void ClearLibusbHandle();
+
+    libusb_device_handle* usb_adapter_handle = nullptr;
     std::array<GCController, 4> pads;
     Common::SPSCQueue<GCPadStatus> pad_queue;
 
-    std::jthread adapter_input_thread;
-    std::jthread adapter_scan_thread;
-    bool restart_scan_thread{};
+    std::thread adapter_input_thread;
+    std::thread adapter_scan_thread;
+    bool adapter_input_thread_running;
+    bool adapter_scan_thread_running;
+    bool restart_scan_thread;
 
-    std::unique_ptr<LibUSBContext> libusb_ctx;
+    libusb_context* libusb_ctx;
 
     u8 input_endpoint{0};
     u8 output_endpoint{0};

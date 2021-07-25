@@ -2821,7 +2821,7 @@ void GMainWindow::OnCaptureScreenshot() {
         QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::ScreenshotsDir));
     const auto date =
         QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd_hh-mm-ss-zzz"));
-    QString filename = QStringLiteral("%1%2_%3.png")
+    QString filename = QStringLiteral("%1/%2_%3.png")
                            .arg(screenshot_path)
                            .arg(title_id, 16, 16, QLatin1Char{'0'})
                            .arg(date);

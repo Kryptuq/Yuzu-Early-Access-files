@@ -38,7 +38,7 @@ void DiscordImpl::Update() {
     if (Core::System::GetInstance().IsPoweredOn())
         Core::System::GetInstance().GetAppLoader().ReadTitle(title);
     DiscordRichPresence presence{};
-    presence.largeImageKey = "yuzu_logo_ea";
+    presence.largeImageKey = "yuzu_logo";
     presence.largeImageText = "yuzu is an emulator for the Nintendo Switch";
     if (Core::System::GetInstance().IsPoweredOn()) {
         presence.state = title.c_str();
