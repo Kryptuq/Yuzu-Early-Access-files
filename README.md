@@ -22,4 +22,4 @@ __Building System__: Built with Appveyor
 
 __Credits__: Kryptuq for Source Codes and MostlyWhat for Build Script
 
-__Current Lastest Early Access__: yuzu Early Access 1911
+__Current Lastest Early Access__: yuzu Early Access 1912

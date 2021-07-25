@@ -370,9 +370,6 @@ void QtNXWebEngineView::LoadExtractedFonts() {
 void QtNXWebEngineView::FocusFirstLinkElement() {
     QWebEngineScript focus_link_element;
 
-    constexpr char FOCUS_LINK_ELEMENT_SCRIPT[] =
-        R"(if(document.getElementsByTagName("a").length > 0) document.getElementsByTagName("a")[0].focus();)";
-
     focus_link_element.setName(QStringLiteral("focus_link_element.js"));
     focus_link_element.setSourceCode(QString::fromStdString(FOCUS_LINK_ELEMENT_SCRIPT));
     focus_link_element.setWorldId(QWebEngineScript::MainWorld);

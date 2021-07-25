@@ -73,6 +73,12 @@ constexpr char LOAD_NX_FONT[] = R"(
 })();
 )";
 
+constexpr char FOCUS_LINK_ELEMENT_SCRIPT[] = R"(
+if (document.getElementsByTagName("a").length > 0) {
+    document.getElementsByTagName("a")[0].focus();
+}
+)";
+
 constexpr char GAMEPAD_SCRIPT[] = R"(
 window.addEventListener("gamepadconnected", function(e) {
     console.log("Gamepad connected at index %d: %s. %d buttons, %d axes.",
