@@ -73,7 +73,7 @@ Token OpcodeToken(Opcode opcode) {
         return Token::PBK;
     case Opcode::PCNT:
     case Opcode::CONT:
-        return Token::PBK;
+        return Token::PCNT;
     case Opcode::PEXIT:
     case Opcode::EXIT:
         return Token::PEXIT;

@@ -107,12 +107,12 @@ void QtNXWebEngineView::LoadLocalWebPage(const std::string& main_url,
     is_local = true;
 
     LoadExtractedFonts();
+    FocusFirstLinkElement();
     SetUserAgent(UserAgent::WebApplet);
     SetFinished(false);
     SetExitReason(Service::AM::Applets::WebExitReason::EndButtonPressed);
     SetLastURL("http://localhost/");
     StartInputThread();
-    FocusFirstLinkElement();
 
     load(QUrl(QUrl::fromLocalFile(QString::fromStdString(main_url)).toString() +
               QString::fromStdString(additional_args)));
@@ -122,6 +122,7 @@ void QtNXWebEngineView::LoadExternalWebPage(const std::string& main_url,
                                             const std::string& additional_args) {
     is_local = false;
 
+    FocusFirstLinkElement();
     SetUserAgent(UserAgent::WebApplet);
     SetFinished(false);
     SetExitReason(Service::AM::Applets::WebExitReason::EndButtonPressed);
@@ -129,8 +130,6 @@ void QtNXWebEngineView::LoadExternalWebPage(const std::string& main_url,
     StartInputThread();
 
     load(QUrl(QString::fromStdString(main_url) + QString::fromStdString(additional_args)));
-
-    FocusFirstLinkElement();
 }
 
 void QtNXWebEngineView::SetUserAgent(UserAgent user_agent) {

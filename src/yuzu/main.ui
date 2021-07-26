@@ -72,7 +72,6 @@
     <addaction name="action_Restart"/>
     <addaction name="separator"/>
     <addaction name="action_Configure"/>
-    <addaction name="action_Configure_Tas"/>
     <addaction name="action_Configure_Current_Game"/>
    </widget>
    <widget class="QMenu" name="menu_View">
@@ -101,6 +100,7 @@
     <addaction name="action_Rederive"/>
     <addaction name="separator"/>
     <addaction name="action_Capture_Screenshot"/>
+    <addaction name="action_Configure_Tas"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
     <property name="title">

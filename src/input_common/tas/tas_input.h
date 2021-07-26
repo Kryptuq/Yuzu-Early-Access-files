@@ -13,8 +13,8 @@
 
 /*
 To play back TAS scripts on Yuzu, select the folder with scripts in the configuration menu below
-Emulation -> Configure TAS. The file itself has normal text format and has to be called
-script0-1.txt for controller 1, script0-2.txt for controller 2 and so forth (with max. 8 players).
+Tools -> Configure TAS. The file itself has normal text format and has to be called script0-1.txt
+for controller 1, script0-2.txt for controller 2 and so forth (with max. 8 players).
 
 A script file has the same format as TAS-nx uses, so final files will look like this:
 

@@ -63,6 +63,7 @@ private:
             used_objects = std::exchange(rhs.used_objects, 0);
             num_objects = std::exchange(rhs.num_objects, 0);
             storage = std::move(rhs.storage);
+            return *this;
         }
 
         Chunk(Chunk&& rhs) noexcept
