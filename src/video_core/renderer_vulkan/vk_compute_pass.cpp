@@ -326,7 +326,7 @@ std::pair<VkBuffer, VkDeviceSize> QuadIndexedPass::Assemble(
             .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
             .pNext = nullptr,
             .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
-            .dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
+            .dstAccessMask = VK_ACCESS_INDEX_READ_BIT,
         };
         const std::array push_constants{base_vertex, index_shift};
         const VkDescriptorSet set = descriptor_allocator.Commit();

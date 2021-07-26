@@ -350,7 +350,7 @@ std::string_view InputPrimitive(InputTopology topology) {
     case InputTopology::Lines:
         return "LINES";
     case InputTopology::LinesAdjacency:
-        return "LINESS_ADJACENCY";
+        return "LINES_ADJACENCY";
     case InputTopology::Triangles:
         return "TRIANGLES";
     case InputTopology::TrianglesAdjacency:

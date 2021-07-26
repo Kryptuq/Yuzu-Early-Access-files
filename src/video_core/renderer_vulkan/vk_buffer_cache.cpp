@@ -358,7 +358,7 @@ void BufferCacheRuntime::ReserveNullBuffer() {
     if (null_buffer) {
         return;
     }
-    null_buffer = device.GetLogical().CreateBuffer(VkBufferCreateInfo{
+    VkBufferCreateInfo create_info{
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
@@ -367,9 +367,13 @@ void BufferCacheRuntime::ReserveNullBuffer() {
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
         .queueFamilyIndexCount = 0,
         .pQueueFamilyIndices = nullptr,
-    });
+    };
+    if (device.IsExtTransformFeedbackSupported()) {
+        create_info.usage |= VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
+    }
+    null_buffer = device.GetLogical().CreateBuffer(create_info);
     if (device.HasDebuggingToolAttached()) {
-        null_buffer.SetObjectNameEXT("Null index buffer");
+        null_buffer.SetObjectNameEXT("Null buffer");
     }
     null_buffer_commit = memory_allocator.Commit(null_buffer, MemoryUsage::DeviceLocal);
 

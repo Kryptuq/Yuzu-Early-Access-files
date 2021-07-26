@@ -327,8 +327,8 @@ public:
                                       const Value& derivates, const Value& offset,
                                       const F32& lod_clamp, TextureInstInfo info);
     [[nodiscard]] Value ImageRead(const Value& handle, const Value& coords, TextureInstInfo info);
-    [[nodiscard]] void ImageWrite(const Value& handle, const Value& coords, const Value& color,
-                                  TextureInstInfo info);
+    void ImageWrite(const Value& handle, const Value& coords, const Value& color,
+                    TextureInstInfo info);
 
     [[nodiscard]] Value ImageAtomicIAdd(const Value& handle, const Value& coords,
                                         const Value& value, TextureInstInfo info);

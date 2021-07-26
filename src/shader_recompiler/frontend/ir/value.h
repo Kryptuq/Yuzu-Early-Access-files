@@ -197,8 +197,8 @@ public:
     }
 
     template <typename FlagsType>
-    requires(sizeof(FlagsType) <= sizeof(u32) && std::is_trivially_copyable_v<FlagsType>)
-        [[nodiscard]] void SetFlags(FlagsType value) noexcept {
+    requires(sizeof(FlagsType) <= sizeof(u32) &&
+             std::is_trivially_copyable_v<FlagsType>) void SetFlags(FlagsType value) noexcept {
         std::memcpy(&flags, &value, sizeof(value));
     }
 
