@@ -339,6 +339,7 @@ struct Values {
     Setting<bool> use_nvdec_emulation{true, "use_nvdec_emulation"};
     Setting<bool> accelerate_astc{true, "accelerate_astc"};
     Setting<bool> use_vsync{true, "use_vsync"};
+    BasicSetting<u16> fps_cap{1000, "fps_cap"};
     BasicSetting<bool> disable_fps_limit{false, "disable_fps_limit"};
     Setting<ShaderBackend> shader_backend{ShaderBackend::GLASM, "shader_backend"};
     Setting<bool> use_asynchronous_shaders{false, "use_asynchronous_shaders"};
@@ -375,6 +376,11 @@ struct Values {
                                             "motion_device"};
     BasicSetting<std::string> udp_input_servers{InputCommon::CemuhookUDP::DEFAULT_SRV,
                                                 "udp_input_servers"};
+
+    BasicSetting<bool> pause_tas_on_load{true, "pause_tas_on_load"};
+    BasicSetting<bool> tas_enable{false, "tas_enable"};
+    BasicSetting<bool> tas_loop{false, "tas_loop"};
+    BasicSetting<bool> tas_swap_controllers{true, "tas_swap_controllers"};
 
     BasicSetting<bool> mouse_panning{false, "mouse_panning"};
     BasicSetting<u8> mouse_panning_sensitivity{10, "mouse_panning_sensitivity"};

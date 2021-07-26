@@ -52,6 +52,36 @@
            </layout>
           </item>
           <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <item>
+             <widget class="QLabel" name="fps_cap_label">
+              <property name="text">
+               <string>Framerate Cap</string>
+              </property>
+              <property name="toolTip">
+                <string>Requires the use of the FPS Limiter Toggle hotkey to take effect.</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="fps_cap">
+              <property name="suffix">
+               <string>x</string>
+              </property>
+              <property name="minimum">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <number>1000</number>
+              </property>
+              <property name="value">
+               <number>500</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
            <widget class="QCheckBox" name="use_multi_core">
             <property name="text">
              <string>Multicore CPU Emulation</string>

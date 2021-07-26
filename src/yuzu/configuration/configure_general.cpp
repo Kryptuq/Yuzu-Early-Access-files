@@ -48,6 +48,8 @@ void ConfigureGeneral::SetConfiguration() {
     ui->toggle_frame_limit->setChecked(Settings::values.use_frame_limit.GetValue());
     ui->frame_limit->setValue(Settings::values.frame_limit.GetValue());
 
+    ui->fps_cap->setValue(Settings::values.fps_cap.GetValue());
+
     ui->button_reset_defaults->setEnabled(runtime_lock);
 
     if (Settings::IsConfiguringGlobal()) {
@@ -86,6 +88,8 @@ void ConfigureGeneral::ApplyConfiguration() {
         UISettings::values.select_user_on_boot = ui->toggle_user_on_boot->isChecked();
         UISettings::values.pause_when_in_background = ui->toggle_background_pause->isChecked();
         UISettings::values.hide_mouse = ui->toggle_hide_mouse->isChecked();
+
+        Settings::values.fps_cap.SetValue(ui->fps_cap->value());
 
         // Guard if during game and set to game-specific value
         if (Settings::values.use_frame_limit.UsingGlobal()) {

@@ -299,6 +299,10 @@ bg_red =
 bg_blue =
 bg_green =
 
+# Caps the unlocked framerate to a multiple of the title's target FPS.
+# 1 - 1000: Target FPS multiple cap. 1000 (default)
+fps_cap =
+
 [Audio]
 # Which audio output engine to use.
 # auto (default): Auto-select

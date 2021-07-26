@@ -307,11 +307,12 @@ void NVFlinger::Compose() {
 }
 
 s64 NVFlinger::GetNextTicks() const {
-    if (Settings::values.disable_fps_limit.GetValue()) {
-        return 0;
-    }
-    constexpr s64 max_hertz = 120LL;
-    return (1000000000 * (1LL << swap_interval)) / max_hertz;
+    static constexpr s64 max_hertz = 120LL;
+
+    const auto& settings = Settings::values;
+    const bool unlocked_fps = settings.disable_fps_limit.GetValue();
+    const s64 fps_cap = unlocked_fps ? static_cast<s64>(settings.fps_cap.GetValue()) : 1;
+    return (1000000000 * (1LL << swap_interval)) / (max_hertz * fps_cap);
 }
 
 } // namespace Service::NVFlinger
