@@ -441,7 +441,6 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
 
     std::array<const Shader::Info*, Maxwell::MaxShaderStage> infos{};
 
-    OGLProgram source_program;
     std::array<std::string, 5> sources;
     std::array<std::vector<u32>, 5> sources_spirv;
     Shader::Backend::Bindings binding;

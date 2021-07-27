@@ -258,10 +258,9 @@ std::pair<VkBuffer, VkDeviceSize> Uint8Pass::Assemble(u32 num_vertices, VkBuffer
     update_descriptor_queue.AddBuffer(src_buffer, src_offset, num_vertices);
     update_descriptor_queue.AddBuffer(staging.buffer, staging.offset, staging_size);
     const void* const descriptor_data{update_descriptor_queue.UpdateData()};
-    const VkBuffer buffer{staging.buffer};
 
     scheduler.RequestOutsideRenderPassOperationContext();
-    scheduler.Record([this, buffer, descriptor_data, num_vertices](vk::CommandBuffer cmdbuf) {
+    scheduler.Record([this, descriptor_data, num_vertices](vk::CommandBuffer cmdbuf) {
         static constexpr u32 DISPATCH_SIZE = 1024;
         static constexpr VkMemoryBarrier WRITE_BARRIER{
             .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
@@ -319,7 +318,7 @@ std::pair<VkBuffer, VkDeviceSize> QuadIndexedPass::Assemble(
     const void* const descriptor_data{update_descriptor_queue.UpdateData()};
 
     scheduler.RequestOutsideRenderPassOperationContext();
-    scheduler.Record([this, buffer = staging.buffer, descriptor_data, num_tri_vertices, base_vertex,
+    scheduler.Record([this, descriptor_data, num_tri_vertices, base_vertex,
                       index_shift](vk::CommandBuffer cmdbuf) {
         static constexpr u32 DISPATCH_SIZE = 1024;
         static constexpr VkMemoryBarrier WRITE_BARRIER{
