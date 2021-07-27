@@ -54,8 +54,6 @@ public:
 private:
     void Report() const;
 
-    void RenderScreenshot();
-
     Core::TelemetrySession& telemetry_session;
     Core::Memory::Memory& cpu_memory;
     Tegra::GPU& gpu;

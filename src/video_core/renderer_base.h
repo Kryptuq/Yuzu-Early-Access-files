@@ -24,7 +24,7 @@ struct RendererSettings {
     // Screenshot
     std::atomic<bool> screenshot_requested{false};
     void* screenshot_bits{};
-    std::function<void(bool)> screenshot_complete_callback;
+    std::function<void()> screenshot_complete_callback;
     Layout::FramebufferLayout screenshot_framebuffer_layout;
 };
 
@@ -80,7 +80,7 @@ public:
     void RefreshBaseSettings();
 
     /// Request a screenshot of the next frame
-    void RequestScreenshot(void* data, std::function<void(bool)> callback,
+    void RequestScreenshot(void* data, std::function<void()> callback,
                            const Layout::FramebufferLayout& layout);
 
 protected:

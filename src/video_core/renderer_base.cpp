@@ -27,7 +27,7 @@ void RendererBase::UpdateCurrentFramebufferLayout() {
     render_window.UpdateCurrentFramebufferLayout(layout.width, layout.height);
 }
 
-void RendererBase::RequestScreenshot(void* data, std::function<void(bool)> callback,
+void RendererBase::RequestScreenshot(void* data, std::function<void()> callback,
                                      const Layout::FramebufferLayout& layout) {
     if (renderer_settings.screenshot_requested) {
         LOG_ERROR(Render, "A screenshot is already requested or in progress, ignoring the request");

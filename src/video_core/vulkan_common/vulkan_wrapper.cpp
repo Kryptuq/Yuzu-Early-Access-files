@@ -202,7 +202,7 @@ void SetObjectName(const DeviceDispatch* dld, VkDevice device, T handle, VkObjec
     const VkDebugUtilsObjectNameInfoEXT name_info{
         .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
         .pNext = nullptr,
-        .objectType = VK_OBJECT_TYPE_IMAGE,
+        .objectType = type,
         .objectHandle = reinterpret_cast<u64>(handle),
         .pObjectName = name,
     };
