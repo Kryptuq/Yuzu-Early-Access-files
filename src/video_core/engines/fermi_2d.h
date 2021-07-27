@@ -299,7 +299,7 @@ public:
     };
 
 private:
-    VideoCore::RasterizerInterface* rasterizer;
+    VideoCore::RasterizerInterface* rasterizer = nullptr;
 
     /// Performs the copy from the source surface to the destination surface as configured in the
     /// registers.

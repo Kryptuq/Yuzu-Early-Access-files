@@ -227,7 +227,7 @@ private:
     Core::System& system;
 
     MemoryManager& memory_manager;
-    VideoCore::RasterizerInterface* rasterizer;
+    VideoCore::RasterizerInterface* rasterizer = nullptr;
 
     std::vector<u8> read_buffer;
     std::vector<u8> write_buffer;
