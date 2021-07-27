@@ -61,11 +61,15 @@ std::optional<u32> FindMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& p
     return std::nullopt;
 }
 
-u32 FindMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& props, u32 type_mask) {
-    // Try to find a DEVICE_LOCAL_BIT type, Nvidia and AMD have a dedicated heap for this
-    std::optional<u32> type = FindMemoryTypeIndex(props, type_mask, STREAM_FLAGS);
-    if (type) {
-        return *type;
+u32 FindMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& props, u32 type_mask,
+                        bool try_device_local) {
+    std::optional<u32> type;
+    if (try_device_local) {
+        // Try to find a DEVICE_LOCAL_BIT type, Nvidia and AMD have a dedicated heap for this
+        type = FindMemoryTypeIndex(props, type_mask, STREAM_FLAGS);
+        if (type) {
+            return *type;
+        }
     }
     // Otherwise try without the DEVICE_LOCAL_BIT
     type = FindMemoryTypeIndex(props, type_mask, HOST_FLAGS);
@@ -115,12 +119,21 @@ StagingBufferPool::StagingBufferPool(const Device& device_, MemoryAllocator& mem
         .buffer = *stream_buffer,
     };
     const auto memory_properties = device.GetPhysical().GetMemoryProperties();
-    stream_memory = dev.AllocateMemory(VkMemoryAllocateInfo{
+    VkMemoryAllocateInfo stream_memory_info{
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
         .pNext = make_dedicated ? &dedicated_info : nullptr,
         .allocationSize = requirements.size,
-        .memoryTypeIndex = FindMemoryTypeIndex(memory_properties, requirements.memoryTypeBits),
-    });
+        .memoryTypeIndex =
+            FindMemoryTypeIndex(memory_properties, requirements.memoryTypeBits, true),
+    };
+    stream_memory = dev.TryAllocateMemory(stream_memory_info);
+    if (!stream_memory) {
+        LOG_INFO(Render_Vulkan, "Dynamic memory allocation failed, trying with system memory");
+        stream_memory_info.memoryTypeIndex =
+            FindMemoryTypeIndex(memory_properties, requirements.memoryTypeBits, false);
+        stream_memory = dev.AllocateMemory(stream_memory_info);
+    }
+
     if (device.HasDebuggingToolAttached()) {
         stream_memory.SetObjectNameEXT("Stream Buffer Memory");
     }
