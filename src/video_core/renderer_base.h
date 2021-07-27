@@ -21,13 +21,10 @@ class GraphicsContext;
 namespace VideoCore {
 
 struct RendererSettings {
-    std::atomic_bool use_framelimiter{false};
-    std::atomic_bool set_background_color{false};
-
     // Screenshot
     std::atomic<bool> screenshot_requested{false};
     void* screenshot_bits{};
-    std::function<void()> screenshot_complete_callback;
+    std::function<void(bool)> screenshot_complete_callback;
     Layout::FramebufferLayout screenshot_framebuffer_layout;
 };
 
@@ -83,7 +80,7 @@ public:
     void RefreshBaseSettings();
 
     /// Request a screenshot of the next frame
-    void RequestScreenshot(void* data, std::function<void()> callback,
+    void RequestScreenshot(void* data, std::function<void(bool)> callback,
                            const Layout::FramebufferLayout& layout);
 
 protected:

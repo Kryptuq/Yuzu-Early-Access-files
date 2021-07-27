@@ -43,6 +43,6 @@ private:
 
     std::unique_ptr<Ui::ConfigureGeneral> ui;
 
-    ConfigurationShared::CheckState use_frame_limit;
+    ConfigurationShared::CheckState use_speed_limit;
     ConfigurationShared::CheckState use_multi_core;
 };

@@ -165,6 +165,7 @@ void RendererVulkan::SwapBuffers(const Tegra::FramebufferConfig* framebuffer) {
     const VkSemaphore render_semaphore = blit_screen.Draw(*framebuffer, use_accelerated);
     scheduler.Flush(render_semaphore);
     scheduler.WaitWorker();
+    RenderScreenshot();
     swapchain.Present(render_semaphore);
 
     gpu.RendererFrameEndNotify();
@@ -191,6 +192,104 @@ void RendererVulkan::Report() const {
     telemetry_session.AddField(field, "GPU_Vulkan_Driver", driver_name);
     telemetry_session.AddField(field, "GPU_Vulkan_Version", api_version);
     telemetry_session.AddField(field, "GPU_Vulkan_Extensions", extensions);
+}
+
+void Vulkan::RendererVulkan::RenderScreenshot() {
+    if (!renderer_settings.screenshot_requested) {
+        return;
+    }
+    const Layout::FramebufferLayout layout{renderer_settings.screenshot_framebuffer_layout};
+    const auto buffer_size = static_cast<VkDeviceSize>(layout.width * layout.height * 4);
+    const VkBufferCreateInfo dst_info{
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .size = buffer_size,
+        .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0,
+        .pQueueFamilyIndices = nullptr,
+    };
+    const VkImage src_image = swapchain.GetImageIndex(swapchain.GetImageIndex());
+    const vk::Buffer dst_buffer = device.GetLogical().CreateBuffer(dst_info);
+    MemoryCommit dst_memory = memory_allocator.Commit(dst_buffer, MemoryUsage::Download);
+
+    scheduler.RequestOutsideRenderPassOperationContext();
+    scheduler.Record([buffer = *dst_buffer, src_image, layout](vk::CommandBuffer cmdbuf) {
+        const VkImageMemoryBarrier read_barrier{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+            .newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = src_image,
+            .subresourceRange{
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1,
+            },
+        };
+        const VkImageMemoryBarrier image_write_barrier{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = 0,
+            .dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = src_image,
+            .subresourceRange{
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1,
+            },
+        };
+        static constexpr VkMemoryBarrier memory_write_barrier{
+            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT,
+        };
+        const VkBufferImageCopy copy{
+            .bufferOffset = 0,
+            .bufferRowLength = layout.width,
+            .bufferImageHeight = layout.height,
+            .imageSubresource{
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .mipLevel = 0,
+                .baseArrayLayer = 0,
+                .layerCount = 1,
+            },
+            .imageOffset{.x = 0, .y = 0, .z = 0},
+            .imageExtent{
+                .width = layout.width,
+                .height = layout.height,
+                .depth = 1,
+            },
+
+        };
+        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                               0, read_barrier);
+        cmdbuf.CopyImageToBuffer(src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer, copy);
+        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                               0, memory_write_barrier, nullptr, image_write_barrier);
+    });
+    // Ensure the copy is fully completed before saving the screenshot
+    scheduler.Finish();
+
+    // Copy backing image data to the QImage screenshot buffer
+    std::memcpy(renderer_settings.screenshot_bits, dst_memory.Map().data(),
+                dst_memory.Map().size());
+    renderer_settings.screenshot_complete_callback(false);
+    renderer_settings.screenshot_requested = false;
 }
 
 } // namespace Vulkan

@@ -127,15 +127,15 @@ double PerfStats::GetLastFrameTimeScale() const {
     return duration_cast<DoubleSecs>(previous_frame_length).count() / FRAME_LENGTH;
 }
 
-void FrameLimiter::DoFrameLimiting(microseconds current_system_time_us) {
-    if (!Settings::values.use_frame_limit.GetValue() ||
+void SpeedLimiter::DoSpeedLimiting(microseconds current_system_time_us) {
+    if (!Settings::values.use_speed_limit.GetValue() ||
         Settings::values.use_multi_core.GetValue()) {
         return;
     }
 
     auto now = Clock::now();
 
-    const double sleep_scale = Settings::values.frame_limit.GetValue() / 100.0;
+    const double sleep_scale = Settings::values.speed_limit.GetValue() / 100.0;
 
     // Max lag caused by slow frames. Shouldn't be more than the length of a frame at the current
     // speed percent or it will clamp too much and prevent this from properly limiting to that
@@ -143,17 +143,17 @@ void FrameLimiter::DoFrameLimiting(microseconds current_system_time_us) {
     // limiting
     const microseconds max_lag_time_us = duration_cast<microseconds>(
         std::chrono::duration<double, std::chrono::microseconds::period>(25ms / sleep_scale));
-    frame_limiting_delta_err += duration_cast<microseconds>(
+    speed_limiting_delta_err += duration_cast<microseconds>(
         std::chrono::duration<double, std::chrono::microseconds::period>(
             (current_system_time_us - previous_system_time_us) / sleep_scale));
-    frame_limiting_delta_err -= duration_cast<microseconds>(now - previous_walltime);
-    frame_limiting_delta_err =
-        std::clamp(frame_limiting_delta_err, -max_lag_time_us, max_lag_time_us);
+    speed_limiting_delta_err -= duration_cast<microseconds>(now - previous_walltime);
+    speed_limiting_delta_err =
+        std::clamp(speed_limiting_delta_err, -max_lag_time_us, max_lag_time_us);
 
-    if (frame_limiting_delta_err > microseconds::zero()) {
-        std::this_thread::sleep_for(frame_limiting_delta_err);
+    if (speed_limiting_delta_err > microseconds::zero()) {
+        std::this_thread::sleep_for(speed_limiting_delta_err);
         auto now_after_sleep = Clock::now();
-        frame_limiting_delta_err -= duration_cast<microseconds>(now_after_sleep - now);
+        speed_limiting_delta_err -= duration_cast<microseconds>(now_after_sleep - now);
         now = now_after_sleep;
     }
 

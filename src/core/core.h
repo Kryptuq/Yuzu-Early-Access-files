@@ -94,7 +94,7 @@ class ARM_Interface;
 class CpuManager;
 class DeviceMemory;
 class ExclusiveMonitor;
-class FrameLimiter;
+class SpeedLimiter;
 class PerfStats;
 class Reporter;
 class TelemetrySession;
@@ -292,11 +292,11 @@ public:
     /// Provides a constant reference to the internal PerfStats instance.
     [[nodiscard]] const Core::PerfStats& GetPerfStats() const;
 
-    /// Provides a reference to the frame limiter;
-    [[nodiscard]] Core::FrameLimiter& FrameLimiter();
+    /// Provides a reference to the speed limiter;
+    [[nodiscard]] Core::SpeedLimiter& SpeedLimiter();
 
-    /// Provides a constant referent to the frame limiter
-    [[nodiscard]] const Core::FrameLimiter& FrameLimiter() const;
+    /// Provides a constant reference to the speed limiter
+    [[nodiscard]] const Core::SpeedLimiter& SpeedLimiter() const;
 
     /// Gets the name of the current game
     [[nodiscard]] Loader::ResultStatus GetGameName(std::string& out) const;

@@ -331,8 +331,8 @@ struct Values {
         "fullscreen_mode"};
     Setting<int> aspect_ratio{0, "aspect_ratio"};
     Setting<int> max_anisotropy{0, "max_anisotropy"};
-    Setting<bool> use_frame_limit{true, "use_frame_limit"};
-    Setting<u16> frame_limit{100, "frame_limit"};
+    Setting<bool> use_speed_limit{true, "use_speed_limit"};
+    Setting<u16> speed_limit{100, "speed_limit"};
     Setting<bool> use_disk_shader_cache{true, "use_disk_shader_cache"};
     Setting<GPUAccuracy> gpu_accuracy{GPUAccuracy::High, "gpu_accuracy"};
     Setting<bool> use_asynchronous_gpu_emulation{true, "use_asynchronous_gpu_emulation"};

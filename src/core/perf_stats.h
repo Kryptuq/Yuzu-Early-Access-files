@@ -85,11 +85,11 @@ private:
     double previous_fps = 0;
 };
 
-class FrameLimiter {
+class SpeedLimiter {
 public:
     using Clock = std::chrono::high_resolution_clock;
 
-    void DoFrameLimiting(std::chrono::microseconds current_system_time_us);
+    void DoSpeedLimiting(std::chrono::microseconds current_system_time_us);
 
 private:
     /// Emulated system time (in microseconds) at the last limiter invocation
@@ -98,7 +98,7 @@ private:
     Clock::time_point previous_walltime = Clock::now();
 
     /// Accumulated difference between walltime and emulated time
-    std::chrono::microseconds frame_limiting_delta_err{0};
+    std::chrono::microseconds speed_limiting_delta_err{0};
 };
 
 } // namespace Core

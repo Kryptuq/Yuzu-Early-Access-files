@@ -221,8 +221,8 @@ void TelemetrySession::AddInitialInfo(Loader::AppLoader& app_loader,
              TranslateRenderer(Settings::values.renderer_backend.GetValue()));
     AddField(field_type, "Renderer_ResolutionFactor",
              Settings::values.resolution_factor.GetValue());
-    AddField(field_type, "Renderer_UseFrameLimit", Settings::values.use_frame_limit.GetValue());
-    AddField(field_type, "Renderer_FrameLimit", Settings::values.frame_limit.GetValue());
+    AddField(field_type, "Renderer_UseSpeedLimit", Settings::values.use_speed_limit.GetValue());
+    AddField(field_type, "Renderer_SpeedLimit", Settings::values.speed_limit.GetValue());
     AddField(field_type, "Renderer_UseDiskShaderCache",
              Settings::values.use_disk_shader_cache.GetValue());
     AddField(field_type, "Renderer_GPUAccuracyLevel",

@@ -821,8 +821,8 @@ void Config::ReadRendererValues() {
     ReadGlobalSetting(Settings::values.fullscreen_mode);
     ReadGlobalSetting(Settings::values.aspect_ratio);
     ReadGlobalSetting(Settings::values.max_anisotropy);
-    ReadGlobalSetting(Settings::values.use_frame_limit);
-    ReadGlobalSetting(Settings::values.frame_limit);
+    ReadGlobalSetting(Settings::values.use_speed_limit);
+    ReadGlobalSetting(Settings::values.speed_limit);
     ReadGlobalSetting(Settings::values.use_disk_shader_cache);
     ReadGlobalSetting(Settings::values.gpu_accuracy);
     ReadGlobalSetting(Settings::values.use_asynchronous_gpu_emulation);
@@ -1359,8 +1359,8 @@ void Config::SaveRendererValues() {
     WriteGlobalSetting(Settings::values.fullscreen_mode);
     WriteGlobalSetting(Settings::values.aspect_ratio);
     WriteGlobalSetting(Settings::values.max_anisotropy);
-    WriteGlobalSetting(Settings::values.use_frame_limit);
-    WriteGlobalSetting(Settings::values.frame_limit);
+    WriteGlobalSetting(Settings::values.use_speed_limit);
+    WriteGlobalSetting(Settings::values.speed_limit);
     WriteGlobalSetting(Settings::values.use_disk_shader_cache);
     WriteSetting(QString::fromStdString(Settings::values.gpu_accuracy.GetLabel()),
                  static_cast<u32>(Settings::values.gpu_accuracy.GetValue(global)),

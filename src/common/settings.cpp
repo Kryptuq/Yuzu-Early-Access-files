@@ -48,8 +48,8 @@ void LogSettings() {
     log_setting("Core_UseMultiCore", values.use_multi_core.GetValue());
     log_setting("CPU_Accuracy", values.cpu_accuracy.GetValue());
     log_setting("Renderer_UseResolutionFactor", values.resolution_factor.GetValue());
-    log_setting("Renderer_UseFrameLimit", values.use_frame_limit.GetValue());
-    log_setting("Renderer_FrameLimit", values.frame_limit.GetValue());
+    log_setting("Renderer_UseSpeedLimit", values.use_speed_limit.GetValue());
+    log_setting("Renderer_SpeedLimit", values.speed_limit.GetValue());
     log_setting("Renderer_UseDiskShaderCache", values.use_disk_shader_cache.GetValue());
     log_setting("Renderer_GPUAccuracyLevel", values.gpu_accuracy.GetValue());
     log_setting("Renderer_UseAsynchronousGpuEmulation",
@@ -132,8 +132,8 @@ void RestoreGlobalState(bool is_powered_on) {
     values.vulkan_device.SetGlobal(true);
     values.aspect_ratio.SetGlobal(true);
     values.max_anisotropy.SetGlobal(true);
-    values.use_frame_limit.SetGlobal(true);
-    values.frame_limit.SetGlobal(true);
+    values.use_speed_limit.SetGlobal(true);
+    values.speed_limit.SetGlobal(true);
     values.use_disk_shader_cache.SetGlobal(true);
     values.gpu_accuracy.SetGlobal(true);
     values.use_asynchronous_gpu_emulation.SetGlobal(true);

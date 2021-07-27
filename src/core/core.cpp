@@ -411,7 +411,7 @@ struct System::Impl {
     std::string status_details = "";
 
     std::unique_ptr<Core::PerfStats> perf_stats;
-    Core::FrameLimiter frame_limiter;
+    Core::SpeedLimiter speed_limiter;
 
     bool is_multicore{};
     bool is_async_gpu{};
@@ -606,12 +606,12 @@ const Core::PerfStats& System::GetPerfStats() const {
     return *impl->perf_stats;
 }
 
-Core::FrameLimiter& System::FrameLimiter() {
-    return impl->frame_limiter;
+Core::SpeedLimiter& System::SpeedLimiter() {
+    return impl->speed_limiter;
 }
 
-const Core::FrameLimiter& System::FrameLimiter() const {
-    return impl->frame_limiter;
+const Core::SpeedLimiter& System::SpeedLimiter() const {
+    return impl->speed_limiter;
 }
 
 Loader::ResultStatus System::GetGameName(std::string& out) const {

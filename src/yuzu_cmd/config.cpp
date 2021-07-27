@@ -451,8 +451,8 @@ void Config::ReadValues() {
     ReadSetting("Renderer", Settings::values.fullscreen_mode);
     ReadSetting("Renderer", Settings::values.aspect_ratio);
     ReadSetting("Renderer", Settings::values.max_anisotropy);
-    ReadSetting("Renderer", Settings::values.use_frame_limit);
-    ReadSetting("Renderer", Settings::values.frame_limit);
+    ReadSetting("Renderer", Settings::values.use_speed_limit);
+    ReadSetting("Renderer", Settings::values.speed_limit);
     ReadSetting("Renderer", Settings::values.use_disk_shader_cache);
     ReadSetting("Renderer", Settings::values.gpu_accuracy);
     ReadSetting("Renderer", Settings::values.use_asynchronous_gpu_emulation);

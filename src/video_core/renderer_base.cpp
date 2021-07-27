@@ -19,9 +19,6 @@ RendererBase::~RendererBase() = default;
 
 void RendererBase::RefreshBaseSettings() {
     UpdateCurrentFramebufferLayout();
-
-    renderer_settings.use_framelimiter = Settings::values.use_frame_limit.GetValue();
-    renderer_settings.set_background_color = true;
 }
 
 void RendererBase::UpdateCurrentFramebufferLayout() {
@@ -30,7 +27,7 @@ void RendererBase::UpdateCurrentFramebufferLayout() {
     render_window.UpdateCurrentFramebufferLayout(layout.width, layout.height);
 }
 
-void RendererBase::RequestScreenshot(void* data, std::function<void()> callback,
+void RendererBase::RequestScreenshot(void* data, std::function<void(bool)> callback,
                                      const Layout::FramebufferLayout& layout) {
     if (renderer_settings.screenshot_requested) {
         LOG_ERROR(Render, "A screenshot is already requested or in progress, ignoring the request");

@@ -54,7 +54,7 @@ void nvdisp_disp0::flip(u32 buffer_handle, u32 offset, u32 format, u32 width, u3
 
     system.GetPerfStats().EndSystemFrame();
     system.GPU().SwapBuffers(&framebuffer);
-    system.FrameLimiter().DoFrameLimiting(system.CoreTiming().GetGlobalTimeUs());
+    system.SpeedLimiter().DoSpeedLimiting(system.CoreTiming().GetGlobalTimeUs());
     system.GetPerfStats().BeginSystemFrame();
 }
 

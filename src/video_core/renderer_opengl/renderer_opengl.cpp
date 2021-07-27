@@ -328,12 +328,10 @@ void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
 }
 
 void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
-    if (renderer_settings.set_background_color) {
-        // Update background color before drawing
-        glClearColor(Settings::values.bg_red.GetValue() / 255.0f,
-                     Settings::values.bg_green.GetValue() / 255.0f,
-                     Settings::values.bg_blue.GetValue() / 255.0f, 1.0f);
-    }
+    // Update background color before drawing
+    glClearColor(Settings::values.bg_red.GetValue() / 255.0f,
+                 Settings::values.bg_green.GetValue() / 255.0f,
+                 Settings::values.bg_blue.GetValue() / 255.0f, 1.0f);
 
     // Set projection matrix
     const std::array ortho_matrix =
@@ -488,7 +486,7 @@ void RendererOpenGL::RenderScreenshot() {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, old_read_fb);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, old_draw_fb);
 
-    renderer_settings.screenshot_complete_callback();
+    renderer_settings.screenshot_complete_callback(true);
     renderer_settings.screenshot_requested = false;
 }
 
