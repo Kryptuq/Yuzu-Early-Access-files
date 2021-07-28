@@ -20,6 +20,10 @@ std::string ToUTF8String(std::u8string_view u8_string) {
     return std::string{u8_string.begin(), u8_string.end()};
 }
 
+std::string BufferToUTF8String(std::span<const u8> buffer) {
+    return std::string{buffer.begin(), std::ranges::find(buffer, u8{0})};
+}
+
 std::string PathToUTF8String(const std::filesystem::path& path) {
     return ToUTF8String(path.u8string());
 }

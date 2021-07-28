@@ -47,6 +47,17 @@ concept IsChar = std::same_as<T, char>;
 [[nodiscard]] std::string ToUTF8String(std::u8string_view u8_string);
 
 /**
+ * Converts a buffer of bytes to a UTF8-encoded std::string.
+ * This converts from the start of the buffer until the first encountered null-terminator.
+ * If no null-terminator is found, this converts the entire buffer instead.
+ *
+ * @param buffer Buffer of bytes
+ *
+ * @returns UTF-8 encoded std::string.
+ */
+[[nodiscard]] std::string BufferToUTF8String(std::span<const u8> buffer);
+
+/**
  * Converts a filesystem path to a UTF-8 encoded std::string.
  *
  * @param path Filesystem path
