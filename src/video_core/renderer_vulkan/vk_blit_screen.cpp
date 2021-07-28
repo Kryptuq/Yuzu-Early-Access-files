@@ -130,7 +130,10 @@ void VKBlitScreen::Recreate() {
     CreateDynamicResources();
 }
 
-VkSemaphore VKBlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer, bool use_accelerated) {
+VkSemaphore VKBlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
+                               const VkFramebuffer& host_framebuffer,
+                               const Layout::FramebufferLayout layout, VkExtent2D render_area,
+                               bool use_accelerated) {
     RefreshResources(framebuffer);
 
     // Finish any pending renderpass
@@ -145,8 +148,8 @@ VkSemaphore VKBlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer, bool
                         use_accelerated ? screen_info.image_view : *raw_image_views[image_index]);
 
     BufferData data;
-    SetUniformData(data, framebuffer);
-    SetVertexData(data, framebuffer);
+    SetUniformData(data, layout);
+    SetVertexData(data, framebuffer, layout);
 
     const std::span<u8> mapped_span = buffer_commit.Map();
     std::memcpy(mapped_span.data(), &data, sizeof(data));
@@ -220,50 +223,73 @@ VkSemaphore VKBlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer, bool
                                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, write_barrier);
         });
     }
-    scheduler.Record([this, image_index, size = swapchain.GetSize()](vk::CommandBuffer cmdbuf) {
-        const f32 bg_red = Settings::values.bg_red.GetValue() / 255.0f;
-        const f32 bg_green = Settings::values.bg_green.GetValue() / 255.0f;
-        const f32 bg_blue = Settings::values.bg_blue.GetValue() / 255.0f;
-        const VkClearValue clear_color{
-            .color = {.float32 = {bg_red, bg_green, bg_blue, 1.0f}},
-        };
-        const VkRenderPassBeginInfo renderpass_bi{
-            .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-            .pNext = nullptr,
-            .renderPass = *renderpass,
-            .framebuffer = *framebuffers[image_index],
-            .renderArea =
-                {
-                    .offset = {0, 0},
-                    .extent = size,
-                },
-            .clearValueCount = 1,
-            .pClearValues = &clear_color,
-        };
-        const VkViewport viewport{
-            .x = 0.0f,
-            .y = 0.0f,
-            .width = static_cast<float>(size.width),
-            .height = static_cast<float>(size.height),
-            .minDepth = 0.0f,
-            .maxDepth = 1.0f,
-        };
-        const VkRect2D scissor{
-            .offset = {0, 0},
-            .extent = size,
-        };
-        cmdbuf.BeginRenderPass(renderpass_bi, VK_SUBPASS_CONTENTS_INLINE);
-        cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline);
-        cmdbuf.SetViewport(0, viewport);
-        cmdbuf.SetScissor(0, scissor);
+    scheduler.Record(
+        [this, host_framebuffer, image_index, size = render_area](vk::CommandBuffer cmdbuf) {
+            const f32 bg_red = Settings::values.bg_red.GetValue() / 255.0f;
+            const f32 bg_green = Settings::values.bg_green.GetValue() / 255.0f;
+            const f32 bg_blue = Settings::values.bg_blue.GetValue() / 255.0f;
+            const VkClearValue clear_color{
+                .color = {.float32 = {bg_red, bg_green, bg_blue, 1.0f}},
+            };
+            const VkRenderPassBeginInfo renderpass_bi{
+                .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+                .pNext = nullptr,
+                .renderPass = *renderpass,
+                .framebuffer = host_framebuffer,
+                .renderArea =
+                    {
+                        .offset = {0, 0},
+                        .extent = size,
+                    },
+                .clearValueCount = 1,
+                .pClearValues = &clear_color,
+            };
+            const VkViewport viewport{
+                .x = 0.0f,
+                .y = 0.0f,
+                .width = static_cast<float>(size.width),
+                .height = static_cast<float>(size.height),
+                .minDepth = 0.0f,
+                .maxDepth = 1.0f,
+            };
+            const VkRect2D scissor{
+                .offset = {0, 0},
+                .extent = size,
+            };
+            cmdbuf.BeginRenderPass(renderpass_bi, VK_SUBPASS_CONTENTS_INLINE);
+            cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline);
+            cmdbuf.SetViewport(0, viewport);
+            cmdbuf.SetScissor(0, scissor);
 
-        cmdbuf.BindVertexBuffer(0, *buffer, offsetof(BufferData, vertices));
-        cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline_layout, 0,
-                                  descriptor_sets[image_index], {});
-        cmdbuf.Draw(4, 1, 0, 0);
-        cmdbuf.EndRenderPass();
-    });
+            cmdbuf.BindVertexBuffer(0, *buffer, offsetof(BufferData, vertices));
+            cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline_layout, 0,
+                                      descriptor_sets[image_index], {});
+            cmdbuf.Draw(4, 1, 0, 0);
+            cmdbuf.EndRenderPass();
+        });
     return *semaphores[image_index];
+}
+
+VkSemaphore VKBlitScreen::DrawToSwapchain(const Tegra::FramebufferConfig& framebuffer,
+                                          bool use_accelerated) {
+    const std::size_t image_index = swapchain.GetImageIndex();
+    const VkExtent2D render_area = swapchain.GetSize();
+    const Layout::FramebufferLayout layout = render_window.GetFramebufferLayout();
+    return Draw(framebuffer, *framebuffers[image_index], layout, render_area, use_accelerated);
+}
+
+vk::Framebuffer VKBlitScreen::CreateFramebuffer(const VkImageView& image_view, VkExtent2D extent) {
+    return device.GetLogical().CreateFramebuffer(VkFramebufferCreateInfo{
+        .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .renderPass = *renderpass,
+        .attachmentCount = 1,
+        .pAttachments = &image_view,
+        .width = extent.width,
+        .height = extent.height,
+        .layers = 1,
+    });
 }
 
 void VKBlitScreen::CreateStaticResources() {
@@ -752,15 +778,13 @@ void VKBlitScreen::UpdateDescriptorSet(std::size_t image_index, VkImageView imag
     device.GetLogical().UpdateDescriptorSets(std::array{ubo_write, sampler_write}, {});
 }
 
-void VKBlitScreen::SetUniformData(BufferData& data,
-                                  const Tegra::FramebufferConfig& framebuffer) const {
-    const auto& layout = render_window.GetFramebufferLayout();
+void VKBlitScreen::SetUniformData(BufferData& data, const Layout::FramebufferLayout layout) const {
     data.uniform.modelview_matrix =
         MakeOrthographicMatrix(static_cast<f32>(layout.width), static_cast<f32>(layout.height));
 }
 
-void VKBlitScreen::SetVertexData(BufferData& data,
-                                 const Tegra::FramebufferConfig& framebuffer) const {
+void VKBlitScreen::SetVertexData(BufferData& data, const Tegra::FramebufferConfig& framebuffer,
+                                 const Layout::FramebufferLayout layout) const {
     const auto& framebuffer_transform_flags = framebuffer.transform_flags;
     const auto& framebuffer_crop_rect = framebuffer.crop_rect;
 
@@ -798,7 +822,7 @@ void VKBlitScreen::SetVertexData(BufferData& data,
                   static_cast<f32>(screen_info.height);
     }
 
-    const auto& screen = render_window.GetFramebufferLayout().screen;
+    const auto& screen = layout.screen;
     const auto x = static_cast<f32>(screen.left);
     const auto y = static_cast<f32>(screen.top);
     const auto w = static_cast<f32>(screen.GetWidth());

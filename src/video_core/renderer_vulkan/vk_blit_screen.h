@@ -56,7 +56,15 @@ public:
     void Recreate();
 
     [[nodiscard]] VkSemaphore Draw(const Tegra::FramebufferConfig& framebuffer,
+                                   const VkFramebuffer& host_framebuffer,
+                                   const Layout::FramebufferLayout layout, VkExtent2D render_area,
                                    bool use_accelerated);
+
+    [[nodiscard]] VkSemaphore DrawToSwapchain(const Tegra::FramebufferConfig& framebuffer,
+                                              bool use_accelerated);
+
+    [[nodiscard]] vk::Framebuffer CreateFramebuffer(const VkImageView& image_view,
+                                                    VkExtent2D extent);
 
 private:
     struct BufferData;
@@ -81,8 +89,9 @@ private:
     void CreateRawImages(const Tegra::FramebufferConfig& framebuffer);
 
     void UpdateDescriptorSet(std::size_t image_index, VkImageView image_view) const;
-    void SetUniformData(BufferData& data, const Tegra::FramebufferConfig& framebuffer) const;
-    void SetVertexData(BufferData& data, const Tegra::FramebufferConfig& framebuffer) const;
+    void SetUniformData(BufferData& data, const Layout::FramebufferLayout layout) const;
+    void SetVertexData(BufferData& data, const Tegra::FramebufferConfig& framebuffer,
+                       const Layout::FramebufferLayout layout) const;
 
     u64 CalculateBufferSize(const Tegra::FramebufferConfig& framebuffer) const;
     u64 GetRawImageOffset(const Tegra::FramebufferConfig& framebuffer,

@@ -24,10 +24,10 @@ struct RenderTargets {
         return std::ranges::any_of(color_buffer_ids, contains) || contains(depth_buffer_id);
     }
 
-    std::array<ImageViewId, NUM_RT> color_buffer_ids;
-    ImageViewId depth_buffer_id;
+    std::array<ImageViewId, NUM_RT> color_buffer_ids{};
+    ImageViewId depth_buffer_id{};
     std::array<u8, NUM_RT> draw_buffers{};
-    Extent2D size;
+    Extent2D size{};
 };
 
 } // namespace VideoCommon

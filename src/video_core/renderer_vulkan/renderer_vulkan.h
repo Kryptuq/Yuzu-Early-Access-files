@@ -54,6 +54,8 @@ public:
 private:
     void Report() const;
 
+    void RenderScreenshot(const Tegra::FramebufferConfig& framebuffer, bool use_accelerated);
+
     Core::TelemetrySession& telemetry_session;
     Core::Memory::Memory& cpu_memory;
     Tegra::GPU& gpu;

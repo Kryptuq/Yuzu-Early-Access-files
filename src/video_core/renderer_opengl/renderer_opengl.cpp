@@ -486,7 +486,7 @@ void RendererOpenGL::RenderScreenshot() {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, old_read_fb);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, old_draw_fb);
 
-    renderer_settings.screenshot_complete_callback();
+    renderer_settings.screenshot_complete_callback(true);
     renderer_settings.screenshot_requested = false;
 }
 

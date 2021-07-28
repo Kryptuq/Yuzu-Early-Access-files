@@ -316,7 +316,8 @@ void Tas::SwapToTasController() {
             continue;
         }
 
-        auto tas_param = Common::ParamPackage{{"pad", static_cast<u8>(index)}};
+        Common::ParamPackage tas_param;
+        tas_param.Set("pad", static_cast<u8>(index));
         auto button_mapping = GetButtonMappingForDevice(tas_param);
         auto analog_mapping = GetAnalogMappingForDevice(tas_param);
         auto& buttons = player.buttons;

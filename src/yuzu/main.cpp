@@ -1501,6 +1501,7 @@ void GMainWindow::ShutdownGame() {
         game_list->show();
     }
     game_list->SetFilterFocus();
+    tas_label->clear();
 
     render_window->removeEventFilter(render_window);
     render_window->setAttribute(Qt::WA_Hover, false);

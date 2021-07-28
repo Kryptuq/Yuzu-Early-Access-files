@@ -138,6 +138,7 @@ void RendererVulkan::SwapBuffers(const Tegra::FramebufferConfig* framebuffer) {
     const bool use_accelerated =
         rasterizer.AccelerateDisplay(*framebuffer, framebuffer_addr, framebuffer->stride);
     const bool is_srgb = use_accelerated && screen_info.is_srgb;
+    RenderScreenshot(*framebuffer, use_accelerated);
 
     bool has_been_recreated = false;
     const auto recreate_swapchain = [&] {
@@ -162,7 +163,7 @@ void RendererVulkan::SwapBuffers(const Tegra::FramebufferConfig* framebuffer) {
     if (has_been_recreated) {
         blit_screen.Recreate();
     }
-    const VkSemaphore render_semaphore = blit_screen.Draw(*framebuffer, use_accelerated);
+    const VkSemaphore render_semaphore = blit_screen.DrawToSwapchain(*framebuffer, use_accelerated);
     scheduler.Flush(render_semaphore);
     scheduler.WaitWorker();
     swapchain.Present(render_semaphore);
@@ -191,6 +192,155 @@ void RendererVulkan::Report() const {
     telemetry_session.AddField(field, "GPU_Vulkan_Driver", driver_name);
     telemetry_session.AddField(field, "GPU_Vulkan_Version", api_version);
     telemetry_session.AddField(field, "GPU_Vulkan_Extensions", extensions);
+}
+
+void Vulkan::RendererVulkan::RenderScreenshot(const Tegra::FramebufferConfig& framebuffer,
+                                              bool use_accelerated) {
+    if (!renderer_settings.screenshot_requested) {
+        return;
+    }
+    const Layout::FramebufferLayout layout{renderer_settings.screenshot_framebuffer_layout};
+    vk::Image staging_image = device.GetLogical().CreateImage(VkImageCreateInfo{
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
+        .imageType = VK_IMAGE_TYPE_2D,
+        .format = VK_FORMAT_B8G8R8A8_UNORM,
+        .extent =
+            {
+                .width = layout.width,
+                .height = layout.height,
+                .depth = 1,
+            },
+        .mipLevels = 1,
+        .arrayLayers = 1,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0,
+        .pQueueFamilyIndices = nullptr,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+    });
+    const auto image_commit = memory_allocator.Commit(staging_image, MemoryUsage::DeviceLocal);
+
+    const vk::ImageView dst_view = device.GetLogical().CreateImageView(VkImageViewCreateInfo{
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .image = *staging_image,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        .format = screen_info.is_srgb ? VK_FORMAT_B8G8R8A8_SRGB : VK_FORMAT_B8G8R8A8_UNORM,
+        .components{
+            .r = VK_COMPONENT_SWIZZLE_IDENTITY,
+            .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+            .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+            .a = VK_COMPONENT_SWIZZLE_IDENTITY,
+        },
+        .subresourceRange{
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = VK_REMAINING_ARRAY_LAYERS,
+        },
+    });
+    const VkExtent2D render_area{.width = layout.width, .height = layout.height};
+    const vk::Framebuffer screenshot_fb = blit_screen.CreateFramebuffer(*dst_view, render_area);
+    // Since we're not rendering to the screen, ignore the render semaphore.
+    void(blit_screen.Draw(framebuffer, *screenshot_fb, layout, render_area, use_accelerated));
+
+    const auto buffer_size = static_cast<VkDeviceSize>(layout.width * layout.height * 4);
+    const VkBufferCreateInfo dst_buffer_info{
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .size = buffer_size,
+        .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0,
+        .pQueueFamilyIndices = nullptr,
+    };
+    const vk::Buffer dst_buffer = device.GetLogical().CreateBuffer(dst_buffer_info);
+    MemoryCommit dst_buffer_memory = memory_allocator.Commit(dst_buffer, MemoryUsage::Download);
+
+    scheduler.RequestOutsideRenderPassOperationContext();
+    scheduler.Record([&](vk::CommandBuffer cmdbuf) {
+        const VkImageMemoryBarrier read_barrier{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+            .newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = *staging_image,
+            .subresourceRange{
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = VK_REMAINING_MIP_LEVELS,
+                .baseArrayLayer = 0,
+                .layerCount = VK_REMAINING_ARRAY_LAYERS,
+            },
+        };
+        const VkImageMemoryBarrier image_write_barrier{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = 0,
+            .dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = *staging_image,
+            .subresourceRange{
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = VK_REMAINING_MIP_LEVELS,
+                .baseArrayLayer = 0,
+                .layerCount = VK_REMAINING_ARRAY_LAYERS,
+            },
+        };
+        static constexpr VkMemoryBarrier memory_write_barrier{
+            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT,
+        };
+        const VkBufferImageCopy copy{
+            .bufferOffset = 0,
+            .bufferRowLength = 0,
+            .bufferImageHeight = 0,
+            .imageSubresource{
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .mipLevel = 0,
+                .baseArrayLayer = 0,
+                .layerCount = 1,
+            },
+            .imageOffset{.x = 0, .y = 0, .z = 0},
+            .imageExtent{
+                .width = layout.width,
+                .height = layout.height,
+                .depth = 1,
+            },
+        };
+        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                               0, read_barrier);
+        cmdbuf.CopyImageToBuffer(*staging_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, *dst_buffer,
+                                 copy);
+        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                               0, memory_write_barrier, nullptr, image_write_barrier);
+    });
+    // Ensure the copy is fully completed before saving the screenshot
+    scheduler.Finish();
+
+    // Copy backing image data to the QImage screenshot buffer
+    const auto dst_memory_map = dst_buffer_memory.Map();
+    std::memcpy(renderer_settings.screenshot_bits, dst_memory_map.data(), dst_memory_map.size());
+    renderer_settings.screenshot_complete_callback(false);
+    renderer_settings.screenshot_requested = false;
 }
 
 } // namespace Vulkan

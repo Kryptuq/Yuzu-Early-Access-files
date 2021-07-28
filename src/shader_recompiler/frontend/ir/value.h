@@ -57,6 +57,7 @@ public:
 
     [[nodiscard]] IR::Inst* Inst() const;
     [[nodiscard]] IR::Inst* InstRecursive() const;
+    [[nodiscard]] IR::Inst* TryInstRecursive() const;
     [[nodiscard]] IR::Value Resolve() const;
     [[nodiscard]] IR::Reg Reg() const;
     [[nodiscard]] IR::Pred Pred() const;
@@ -306,6 +307,13 @@ inline IR::Inst* Value::InstRecursive() const {
         return inst->Arg(0).InstRecursive();
     }
     return inst;
+}
+
+inline IR::Inst* Value::TryInstRecursive() const {
+    if (IsIdentity()) {
+        return inst->Arg(0).TryInstRecursive();
+    }
+    return type == Type::Opaque ? inst : nullptr;
 }
 
 inline IR::Value Value::Resolve() const {

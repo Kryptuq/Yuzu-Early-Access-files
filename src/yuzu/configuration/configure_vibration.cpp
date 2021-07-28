@@ -99,7 +99,7 @@ void ConfigureVibration::SetVibrationDevices(std::size_t player_index) {
         const auto guid = param.Get("guid", "");
         const auto port = param.Get("port", "");
 
-        if (engine.empty() || engine == "keyboard" || engine == "mouse") {
+        if (engine.empty() || engine == "keyboard" || engine == "mouse" || engine == "tas") {
             continue;
         }
 
