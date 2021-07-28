@@ -356,10 +356,10 @@ std::vector<std::unique_ptr<Polling::DevicePoller>> InputSubsystem::GetPollers([
 }
 
 std::string GenerateKeyboardParam(int key_code) {
-    Common::ParamPackage param{
-        {"engine", "keyboard"},
-        {"code", std::to_string(key_code)},
-    };
+    Common::ParamPackage param;
+    param.Set("engine", "keyboard");
+    param.Set("code", key_code);
+    param.Set("toggle", false);
     return param.Serialize();
 }
 

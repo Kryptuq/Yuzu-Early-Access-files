@@ -65,6 +65,7 @@ void ConfigureCpu::UpdateGroup(int index) {
 }
 
 void ConfigureCpu::ApplyConfiguration() {
+    ConfigurationShared::ApplyPerGameSetting(&Settings::values.cpu_accuracy, ui->accuracy);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.cpuopt_unsafe_unfuse_fma,
                                              ui->cpuopt_unsafe_unfuse_fma,
                                              cpuopt_unsafe_unfuse_fma);
@@ -80,22 +81,6 @@ void ConfigureCpu::ApplyConfiguration() {
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.cpuopt_unsafe_fastmem_check,
                                              ui->cpuopt_unsafe_fastmem_check,
                                              cpuopt_unsafe_fastmem_check);
-
-    if (Settings::IsConfiguringGlobal()) {
-        // Guard if during game and set to game-specific value
-        if (Settings::values.cpu_accuracy.UsingGlobal()) {
-            Settings::values.cpu_accuracy.SetValue(
-                static_cast<Settings::CPUAccuracy>(ui->accuracy->currentIndex()));
-        }
-    } else {
-        if (ui->accuracy->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
-            Settings::values.cpu_accuracy.SetGlobal(true);
-        } else {
-            Settings::values.cpu_accuracy.SetGlobal(false);
-            Settings::values.cpu_accuracy.SetValue(static_cast<Settings::CPUAccuracy>(
-                ui->accuracy->currentIndex() - ConfigurationShared::USE_GLOBAL_OFFSET));
-        }
-    }
 }
 
 void ConfigureCpu::changeEvent(QEvent* event) {

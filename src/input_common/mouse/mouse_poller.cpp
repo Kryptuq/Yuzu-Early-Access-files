@@ -57,6 +57,7 @@ Common::ParamPackage MouseButtonFactory::GetNextInput() const {
         if (pad.button != MouseInput::MouseButton::Undefined) {
             params.Set("engine", "mouse");
             params.Set("button", static_cast<u16>(pad.button));
+            params.Set("toggle", false);
             return params;
         }
     }

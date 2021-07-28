@@ -48,11 +48,7 @@ void ConfigureGraphicsAdvanced::SetConfiguration() {
 }
 
 void ConfigureGraphicsAdvanced::ApplyConfiguration() {
-    // Subtract 2 if configuring per-game (separator and "use global configuration" take 2 slots)
-    const auto gpu_accuracy = static_cast<Settings::GPUAccuracy>(
-        ui->gpu_accuracy->currentIndex() -
-        ((Settings::IsConfiguringGlobal()) ? 0 : ConfigurationShared::USE_GLOBAL_OFFSET));
-
+    ConfigurationShared::ApplyPerGameSetting(&Settings::values.gpu_accuracy, ui->gpu_accuracy);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.max_anisotropy,
                                              ui->anisotropic_filtering_combobox);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_vsync, ui->use_vsync, use_vsync);
@@ -63,20 +59,6 @@ void ConfigureGraphicsAdvanced::ApplyConfiguration() {
                                              use_caches_gc);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_fast_gpu_time,
                                              ui->use_fast_gpu_time, use_fast_gpu_time);
-
-    if (Settings::IsConfiguringGlobal()) {
-        // Must guard in case of a during-game configuration when set to be game-specific.
-        if (Settings::values.gpu_accuracy.UsingGlobal()) {
-            Settings::values.gpu_accuracy.SetValue(gpu_accuracy);
-        }
-    } else {
-        if (ui->gpu_accuracy->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
-            Settings::values.gpu_accuracy.SetGlobal(true);
-        } else {
-            Settings::values.gpu_accuracy.SetGlobal(false);
-            Settings::values.gpu_accuracy.SetValue(gpu_accuracy);
-        }
-    }
 }
 
 void ConfigureGraphicsAdvanced::changeEvent(QEvent* event) {

@@ -82,6 +82,12 @@ public:
         state.buttons.insert_or_assign(button, value);
     }
 
+    void PreSetButton(int button) {
+        if (!state.buttons.contains(button)) {
+            SetButton(button, false);
+        }
+    }
+
     void SetMotion(SDL_ControllerSensorEvent event) {
         constexpr float gravity_constant = 9.80665f;
         std::lock_guard lock{mutex};
@@ -155,9 +161,16 @@ public:
         state.axes.insert_or_assign(axis, value);
     }
 
-    float GetAxis(int axis, float range) const {
+    void PreSetAxis(int axis) {
+        if (!state.axes.contains(axis)) {
+            SetAxis(axis, 0);
+        }
+    }
+
+    float GetAxis(int axis, float range, float offset) const {
         std::lock_guard lock{mutex};
-        return static_cast<float>(state.axes.at(axis)) / (32767.0f * range);
+        const float value = static_cast<float>(state.axes.at(axis)) / 32767.0f;
+        return (value + offset) * range;
     }
 
     bool RumblePlay(u16 amp_low, u16 amp_high) {
@@ -174,9 +187,10 @@ public:
         return false;
     }
 
-    std::tuple<float, float> GetAnalog(int axis_x, int axis_y, float range) const {
-        float x = GetAxis(axis_x, range);
-        float y = GetAxis(axis_y, range);
+    std::tuple<float, float> GetAnalog(int axis_x, int axis_y, float range, float offset_x,
+                                       float offset_y) const {
+        float x = GetAxis(axis_x, range, offset_x);
+        float y = GetAxis(axis_y, range, offset_y);
         y = -y; // 3DS uses an y-axis inverse from SDL
 
         // Make sure the coordinates are in the unit circle,
@@ -483,7 +497,7 @@ public:
           trigger_if_greater(trigger_if_greater_) {}
 
     bool GetStatus() const override {
-        const float axis_value = joystick->GetAxis(axis, 1.0f);
+        const float axis_value = joystick->GetAxis(axis, 1.0f, 0.0f);
         if (trigger_if_greater) {
             return axis_value > threshold;
         }
@@ -500,12 +514,14 @@ private:
 class SDLAnalog final : public Input::AnalogDevice {
 public:
     explicit SDLAnalog(std::shared_ptr<SDLJoystick> joystick_, int axis_x_, int axis_y_,
-                       bool invert_x_, bool invert_y_, float deadzone_, float range_)
+                       bool invert_x_, bool invert_y_, float deadzone_, float range_,
+                       float offset_x_, float offset_y_)
         : joystick(std::move(joystick_)), axis_x(axis_x_), axis_y(axis_y_), invert_x(invert_x_),
-          invert_y(invert_y_), deadzone(deadzone_), range(range_) {}
+          invert_y(invert_y_), deadzone(deadzone_), range(range_), offset_x(offset_x_),
+          offset_y(offset_y_) {}
 
     std::tuple<float, float> GetStatus() const override {
-        auto [x, y] = joystick->GetAnalog(axis_x, axis_y, range);
+        auto [x, y] = joystick->GetAnalog(axis_x, axis_y, range, offset_x, offset_y);
         const float r = std::sqrt((x * x) + (y * y));
         if (invert_x) {
             x = -x;
@@ -522,8 +538,8 @@ public:
     }
 
     std::tuple<float, float> GetRawStatus() const override {
-        const float x = joystick->GetAxis(axis_x, range);
-        const float y = joystick->GetAxis(axis_y, range);
+        const float x = joystick->GetAxis(axis_x, 1.0f, offset_x);
+        const float y = joystick->GetAxis(axis_y, 1.0f, offset_y);
         return {x, -y};
     }
 
@@ -555,6 +571,8 @@ private:
     const bool invert_y;
     const float deadzone;
     const float range;
+    const float offset_x;
+    const float offset_y;
 };
 
 class SDLVibration final : public Input::VibrationDevice {
@@ -621,7 +639,7 @@ public:
           trigger_if_greater(trigger_if_greater_) {}
 
     Input::MotionStatus GetStatus() const override {
-        const float axis_value = joystick->GetAxis(axis, 1.0f);
+        const float axis_value = joystick->GetAxis(axis, 1.0f, 0.0f);
         bool trigger = axis_value < threshold;
         if (trigger_if_greater) {
             trigger = axis_value > threshold;
@@ -720,13 +738,13 @@ public:
                 LOG_ERROR(Input, "Unknown direction {}", direction_name);
             }
             // This is necessary so accessing GetAxis with axis won't crash
-            joystick->SetAxis(axis, 0);
+            joystick->PreSetAxis(axis);
             return std::make_unique<SDLAxisButton>(joystick, axis, threshold, trigger_if_greater);
         }
 
         const int button = params.Get("button", 0);
         // This is necessary so accessing GetButton with button won't crash
-        joystick->SetButton(button, false);
+        joystick->PreSetButton(button);
         return std::make_unique<SDLButton>(joystick, button, toggle);
     }
 
@@ -757,13 +775,15 @@ public:
         const std::string invert_y_value = params.Get("invert_y", "+");
         const bool invert_x = invert_x_value == "-";
         const bool invert_y = invert_y_value == "-";
+        const float offset_x = params.Get("offset_x", 0.0f);
+        const float offset_y = params.Get("offset_y", 0.0f);
         auto joystick = state.GetSDLJoystickByGUID(guid, port);
 
         // This is necessary so accessing GetAxis with axis_x and axis_y won't crash
-        joystick->SetAxis(axis_x, 0);
-        joystick->SetAxis(axis_y, 0);
+        joystick->PreSetAxis(axis_x);
+        joystick->PreSetAxis(axis_y);
         return std::make_unique<SDLAnalog>(joystick, axis_x, axis_y, invert_x, invert_y, deadzone,
-                                           range);
+                                           range, offset_x, offset_y);
     }
 
 private:
@@ -844,13 +864,13 @@ public:
                 LOG_ERROR(Input, "Unknown direction {}", direction_name);
             }
             // This is necessary so accessing GetAxis with axis won't crash
-            joystick->SetAxis(axis, 0);
+            joystick->PreSetAxis(axis);
             return std::make_unique<SDLAxisMotion>(joystick, axis, threshold, trigger_if_greater);
         }
 
         const int button = params.Get("button", 0);
         // This is necessary so accessing GetButton with button won't crash
-        joystick->SetButton(button, false);
+        joystick->PreSetButton(button);
         return std::make_unique<SDLButtonMotion>(joystick, button);
     }
 
@@ -995,6 +1015,7 @@ Common::ParamPackage BuildButtonParamPackageForButton(int port, std::string guid
     params.Set("port", port);
     params.Set("guid", std::move(guid));
     params.Set("button", button);
+    params.Set("toggle", false);
     return params;
 }
 
@@ -1134,13 +1155,15 @@ Common::ParamPackage BuildParamPackageForBinding(int port, const std::string& gu
 }
 
 Common::ParamPackage BuildParamPackageForAnalog(int port, const std::string& guid, int axis_x,
-                                                int axis_y) {
+                                                int axis_y, float offset_x, float offset_y) {
     Common::ParamPackage params;
     params.Set("engine", "sdl");
     params.Set("port", port);
     params.Set("guid", guid);
     params.Set("axis_x", axis_x);
     params.Set("axis_y", axis_y);
+    params.Set("offset_x", offset_x);
+    params.Set("offset_y", offset_y);
     params.Set("invert_x", "+");
     params.Set("invert_y", "+");
     return params;
@@ -1342,24 +1365,39 @@ AnalogMapping SDLState::GetAnalogMappingForDevice(const Common::ParamPackage& pa
     const auto& binding_left_y =
         SDL_GameControllerGetBindForAxis(controller, SDL_CONTROLLER_AXIS_LEFTY);
     if (params.Has("guid2")) {
+        joystick2->PreSetAxis(binding_left_x.value.axis);
+        joystick2->PreSetAxis(binding_left_y.value.axis);
+        const auto left_offset_x = -joystick2->GetAxis(binding_left_x.value.axis, 1.0f, 0);
+        const auto left_offset_y = -joystick2->GetAxis(binding_left_y.value.axis, 1.0f, 0);
         mapping.insert_or_assign(
             Settings::NativeAnalog::LStick,
             BuildParamPackageForAnalog(joystick2->GetPort(), joystick2->GetGUID(),
-                                       binding_left_x.value.axis, binding_left_y.value.axis));
+                                       binding_left_x.value.axis, binding_left_y.value.axis,
+                                       left_offset_x, left_offset_y));
     } else {
+        joystick->PreSetAxis(binding_left_x.value.axis);
+        joystick->PreSetAxis(binding_left_y.value.axis);
+        const auto left_offset_x = -joystick->GetAxis(binding_left_x.value.axis, 1.0f, 0);
+        const auto left_offset_y = -joystick->GetAxis(binding_left_y.value.axis, 1.0f, 0);
         mapping.insert_or_assign(
             Settings::NativeAnalog::LStick,
             BuildParamPackageForAnalog(joystick->GetPort(), joystick->GetGUID(),
-                                       binding_left_x.value.axis, binding_left_y.value.axis));
+                                       binding_left_x.value.axis, binding_left_y.value.axis,
+                                       left_offset_x, left_offset_y));
     }
     const auto& binding_right_x =
         SDL_GameControllerGetBindForAxis(controller, SDL_CONTROLLER_AXIS_RIGHTX);
     const auto& binding_right_y =
         SDL_GameControllerGetBindForAxis(controller, SDL_CONTROLLER_AXIS_RIGHTY);
+    joystick->PreSetAxis(binding_right_x.value.axis);
+    joystick->PreSetAxis(binding_right_y.value.axis);
+    const auto right_offset_x = -joystick->GetAxis(binding_right_x.value.axis, 1.0f, 0);
+    const auto right_offset_y = -joystick->GetAxis(binding_right_y.value.axis, 1.0f, 0);
     mapping.insert_or_assign(Settings::NativeAnalog::RStick,
                              BuildParamPackageForAnalog(joystick->GetPort(), joystick->GetGUID(),
                                                         binding_right_x.value.axis,
-                                                        binding_right_y.value.axis));
+                                                        binding_right_y.value.axis, right_offset_x,
+                                                        right_offset_y));
     return mapping;
 }
 
@@ -1563,8 +1601,9 @@ public:
             }
 
             if (const auto joystick = state.GetSDLJoystickBySDLID(event.jaxis.which)) {
+                // Set offset to zero since the joystick is not on center
                 auto params = BuildParamPackageForAnalog(joystick->GetPort(), joystick->GetGUID(),
-                                                         first_axis, axis);
+                                                         first_axis, axis, 0, 0);
                 first_axis = -1;
                 return params;
             }

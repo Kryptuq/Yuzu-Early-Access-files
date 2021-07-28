@@ -40,12 +40,16 @@ constexpr std::array<std::pair<std::string_view, TasButton>, 20> text_to_tas_but
 
 Tas::Tas() {
     if (!Settings::values.tas_enable) {
+        needs_reset = true;
         return;
     }
     LoadTasFiles();
 }
 
-Tas::~Tas() = default;
+Tas::~Tas() {
+    SwapToStoredController();
+    is_running = false;
+};
 
 void Tas::LoadTasFiles() {
     script_length = 0;
@@ -184,6 +188,10 @@ std::string Tas::ButtonsToString(u32 button) const {
 
 void Tas::UpdateThread() {
     if (!Settings::values.tas_enable) {
+        if (is_running) {
+            SwapToStoredController();
+            is_running = false;
+        }
         return;
     }
 
@@ -294,6 +302,9 @@ std::string Tas::WriteCommandButtons(u32 data) const {
 }
 
 void Tas::StartStop() {
+    if (!Settings::values.tas_enable) {
+        return;
+    }
     is_running = !is_running;
     if (is_running) {
         SwapToTasController();
@@ -330,25 +341,33 @@ void Tas::SwapToTasController() {
             analogs[i] = analog_mapping[static_cast<Settings::NativeAnalog::Values>(i)].Serialize();
         }
     }
+    is_old_input_saved = true;
     Settings::values.is_device_reload_pending.store(true);
 }
 
 void Tas::SwapToStoredController() {
-    if (!Settings::values.tas_swap_controllers) {
+    if (!is_old_input_saved) {
         return;
     }
     auto& players = Settings::values.players.GetValue();
     for (std::size_t index = 0; index < players.size(); index++) {
         players[index] = player_mappings[index];
     }
+    is_old_input_saved = false;
     Settings::values.is_device_reload_pending.store(true);
 }
 
 void Tas::Reset() {
+    if (!Settings::values.tas_enable) {
+        return;
+    }
     needs_reset = true;
 }
 
 bool Tas::Record() {
+    if (!Settings::values.tas_enable) {
+        return true;
+    }
     is_recording = !is_recording;
     return is_recording;
 }

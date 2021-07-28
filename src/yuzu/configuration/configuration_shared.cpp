@@ -25,20 +25,6 @@ void ConfigurationShared::ApplyPerGameSetting(Settings::Setting<bool>* setting,
     }
 }
 
-void ConfigurationShared::ApplyPerGameSetting(Settings::Setting<int>* setting,
-                                              const QComboBox* combobox) {
-    if (Settings::IsConfiguringGlobal() && setting->UsingGlobal()) {
-        setting->SetValue(combobox->currentIndex());
-    } else if (!Settings::IsConfiguringGlobal()) {
-        if (combobox->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
-            setting->SetGlobal(true);
-        } else {
-            setting->SetGlobal(false);
-            setting->SetValue(combobox->currentIndex() - ConfigurationShared::USE_GLOBAL_OFFSET);
-        }
-    }
-}
-
 void ConfigurationShared::SetPerGameSetting(QCheckBox* checkbox,
                                             const Settings::Setting<bool>* setting) {
     if (setting->UsingGlobal()) {

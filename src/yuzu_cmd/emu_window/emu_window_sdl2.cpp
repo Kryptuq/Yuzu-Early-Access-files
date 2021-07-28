@@ -124,7 +124,7 @@ void EmuWindow_SDL2::OnResize() {
 
 void EmuWindow_SDL2::Fullscreen() {
     switch (Settings::values.fullscreen_mode.GetValue()) {
-    case 1: // Exclusive fullscreen
+    case Settings::FullscreenMode::Exclusive:
         // Set window size to render size before entering fullscreen -- SDL does not resize to
         // display dimensions in this mode.
         // TODO: Multiply the window size by resolution_factor (for both docked modes)
@@ -140,7 +140,7 @@ void EmuWindow_SDL2::Fullscreen() {
         LOG_ERROR(Frontend, "Fullscreening failed: {}", SDL_GetError());
         LOG_INFO(Frontend, "Attempting to use borderless fullscreen...");
         [[fallthrough]];
-    case 0: // Borderless window
+    case Settings::FullscreenMode::Borderless:
         if (SDL_SetWindowFullscreen(render_window, SDL_WINDOW_FULLSCREEN_DESKTOP) == 0) {
             return;
         }

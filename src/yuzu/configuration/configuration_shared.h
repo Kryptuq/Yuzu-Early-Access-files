@@ -28,7 +28,20 @@ enum class CheckState {
 // ApplyPerGameSetting, given a Settings::Setting and a Qt UI element, properly applies a Setting
 void ApplyPerGameSetting(Settings::Setting<bool>* setting, const QCheckBox* checkbox,
                          const CheckState& tracker);
-void ApplyPerGameSetting(Settings::Setting<int>* setting, const QComboBox* combobox);
+template <typename Type>
+void ApplyPerGameSetting(Settings::Setting<Type>* setting, const QComboBox* combobox) {
+    if (Settings::IsConfiguringGlobal() && setting->UsingGlobal()) {
+        setting->SetValue(static_cast<Type>(combobox->currentIndex()));
+    } else if (!Settings::IsConfiguringGlobal()) {
+        if (combobox->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
+            setting->SetGlobal(true);
+        } else {
+            setting->SetGlobal(false);
+            setting->SetValue(static_cast<Type>(combobox->currentIndex() -
+                                                ConfigurationShared::USE_GLOBAL_OFFSET));
+        }
+    }
+}
 
 // Sets a Qt UI element given a Settings::Setting
 void SetPerGameSetting(QCheckBox* checkbox, const Settings::Setting<bool>* setting);

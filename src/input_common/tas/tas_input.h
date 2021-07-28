@@ -219,6 +219,7 @@ private:
 
     size_t script_length{0};
     std::array<TasData, PLAYER_NUMBER> tas_data;
+    bool is_old_input_saved{false};
     bool is_recording{false};
     bool is_running{false};
     bool needs_reset{false};

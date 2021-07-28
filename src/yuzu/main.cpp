@@ -1037,11 +1037,24 @@ void GMainWindow::InitializeHotkeys() {
                 }
             });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("TAS Start/Stop"), this),
-            &QShortcut::activated, this, [&] { input_subsystem->GetTas()->StartStop(); });
+            &QShortcut::activated, this, [&] {
+                if (!emulation_running) {
+                    return;
+                }
+                input_subsystem->GetTas()->StartStop();
+            });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("TAS Reset"), this),
-            &QShortcut::activated, this, [&] { input_subsystem->GetTas()->Reset(); });
+            &QShortcut::activated, this, [&] {
+                if (emulation_running) {
+                    input_subsystem->GetTas()->Reset();
+                }
+                input_subsystem->GetTas()->Reset();
+            });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("TAS Record"), this),
             &QShortcut::activated, this, [&] {
+                if (!emulation_running) {
+                    return;
+                }
                 bool is_recording = input_subsystem->GetTas()->Record();
                 if (!is_recording) {
                     const auto res = QMessageBox::question(this, tr("TAS Recording"),
@@ -1502,6 +1515,7 @@ void GMainWindow::ShutdownGame() {
     }
     game_list->SetFilterFocus();
     tas_label->clear();
+    input_subsystem->GetTas()->~Tas();
 
     render_window->removeEventFilter(render_window);
     render_window->setAttribute(Qt::WA_Hover, false);
@@ -2536,7 +2550,7 @@ void GMainWindow::ShowFullscreen() {
         ui.menubar->hide();
         statusBar()->hide();
 
-        if (Settings::values.fullscreen_mode.GetValue() == 1) {
+        if (Settings::values.fullscreen_mode.GetValue() == Settings::FullscreenMode::Exclusive) {
             showFullScreen();
             return;
         }
@@ -2551,7 +2565,7 @@ void GMainWindow::ShowFullscreen() {
     } else {
         UISettings::values.renderwindow_geometry = render_window->saveGeometry();
 
-        if (Settings::values.fullscreen_mode.GetValue() == 1) {
+        if (Settings::values.fullscreen_mode.GetValue() == Settings::FullscreenMode::Exclusive) {
             render_window->showFullScreen();
             return;
         }
@@ -2568,7 +2582,7 @@ void GMainWindow::ShowFullscreen() {
 
 void GMainWindow::HideFullscreen() {
     if (ui.action_Single_Window_Mode->isChecked()) {
-        if (Settings::values.fullscreen_mode.GetValue() == 1) {
+        if (Settings::values.fullscreen_mode.GetValue() == Settings::FullscreenMode::Exclusive) {
             showNormal();
             restoreGeometry(UISettings::values.geometry);
         } else {
@@ -2582,7 +2596,7 @@ void GMainWindow::HideFullscreen() {
         statusBar()->setVisible(ui.action_Show_Status_Bar->isChecked());
         ui.menubar->show();
     } else {
-        if (Settings::values.fullscreen_mode.GetValue() == 1) {
+        if (Settings::values.fullscreen_mode.GetValue() == Settings::FullscreenMode::Exclusive) {
             render_window->showNormal();
             render_window->restoreGeometry(UISettings::values.renderwindow_geometry);
         } else {

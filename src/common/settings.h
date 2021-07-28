@@ -42,6 +42,11 @@ enum class CPUAccuracy : u32 {
     Unsafe = 2,
 };
 
+enum class FullscreenMode : u32 {
+    Borderless = 0,
+    Exclusive = 1,
+};
+
 /** The BasicSetting class is a simple resource manager. It defines a label and default value
  * alongside the actual value of the setting for simpler and less-error prone use with frontend
  * configurations. Setting a default value and label is required, though subclasses may deviate from
@@ -322,11 +327,11 @@ struct Values {
     Setting<u16> resolution_factor{1, "resolution_factor"};
     // *nix platforms may have issues with the borderless windowed fullscreen mode.
     // Default to exclusive fullscreen on these platforms for now.
-    Setting<int> fullscreen_mode{
+    Setting<FullscreenMode> fullscreen_mode{
 #ifdef _WIN32
-        0,
+        FullscreenMode::Borderless,
 #else
-        1,
+        FullscreenMode::Exclusive,
 #endif
         "fullscreen_mode"};
     Setting<int> aspect_ratio{0, "aspect_ratio"};
