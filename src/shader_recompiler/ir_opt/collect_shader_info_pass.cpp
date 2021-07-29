@@ -111,6 +111,8 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::ConvertF16U16:
     case IR::Opcode::ConvertF16U32:
     case IR::Opcode::ConvertF16U64:
+    case IR::Opcode::ConvertF16F32:
+    case IR::Opcode::ConvertF32F16:
     case IR::Opcode::FPAbs16:
     case IR::Opcode::FPAdd16:
     case IR::Opcode::FPCeil16:
