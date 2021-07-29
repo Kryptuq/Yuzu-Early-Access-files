@@ -635,22 +635,9 @@ void VKBlitScreen::CreateFramebuffers() {
     const VkExtent2D size{swapchain.GetSize()};
     framebuffers.resize(image_count);
 
-    VkFramebufferCreateInfo ci{
-        .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .renderPass = *renderpass,
-        .attachmentCount = 1,
-        .pAttachments = nullptr,
-        .width = size.width,
-        .height = size.height,
-        .layers = 1,
-    };
-
     for (std::size_t i = 0; i < image_count; ++i) {
         const VkImageView image_view{swapchain.GetImageViewIndex(i)};
-        ci.pAttachments = &image_view;
-        framebuffers[i] = device.GetLogical().CreateFramebuffer(ci);
+        framebuffers[i] = CreateFramebuffer(image_view, size);
     }
 }
 

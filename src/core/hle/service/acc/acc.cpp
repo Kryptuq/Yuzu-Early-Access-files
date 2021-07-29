@@ -292,7 +292,7 @@ public:
 
 protected:
     void Get(Kernel::HLERequestContext& ctx) {
-        LOG_DEBUG(Service_ACC, "called user_id={}", user_id.Format());
+        LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.Format());
         ProfileBase profile_base{};
         ProfileData data{};
         if (profile_manager.GetProfileBaseAndData(user_id, profile_base, data)) {
@@ -301,7 +301,7 @@ protected:
             rb.Push(ResultSuccess);
             rb.PushRaw(profile_base);
         } else {
-            LOG_ERROR(Service_ACC, "Failed to get profile base and data for user={}",
+            LOG_ERROR(Service_ACC, "Failed to get profile base and data for user=0x{}",
                       user_id.Format());
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ResultUnknown); // TODO(ogniK): Get actual error code
@@ -309,14 +309,14 @@ protected:
     }
 
     void GetBase(Kernel::HLERequestContext& ctx) {
-        LOG_DEBUG(Service_ACC, "called user_id={}", user_id.Format());
+        LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.Format());
         ProfileBase profile_base{};
         if (profile_manager.GetProfileBase(user_id, profile_base)) {
             IPC::ResponseBuilder rb{ctx, 16};
             rb.Push(ResultSuccess);
             rb.PushRaw(profile_base);
         } else {
-            LOG_ERROR(Service_ACC, "Failed to get profile base for user={}", user_id.Format());
+            LOG_ERROR(Service_ACC, "Failed to get profile base for user=0x{}", user_id.Format());
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ResultUnknown); // TODO(ogniK): Get actual error code
         }
@@ -372,7 +372,7 @@ protected:
 
         const auto user_data = ctx.ReadBuffer();
 
-        LOG_DEBUG(Service_ACC, "called, username='{}', timestamp={:016X}, uuid={}",
+        LOG_DEBUG(Service_ACC, "called, username='{}', timestamp={:016X}, uuid=0x{}",
                   Common::StringFromFixedZeroTerminatedBuffer(
                       reinterpret_cast<const char*>(base.username.data()), base.username.size()),
                   base.timestamp, base.user_uuid.Format());
@@ -405,7 +405,7 @@ protected:
         const auto user_data = ctx.ReadBuffer();
         const auto image_data = ctx.ReadBuffer(1);
 
-        LOG_DEBUG(Service_ACC, "called, username='{}', timestamp={:016X}, uuid={}",
+        LOG_DEBUG(Service_ACC, "called, username='{}', timestamp={:016X}, uuid=0x{}",
                   Common::StringFromFixedZeroTerminatedBuffer(
                       reinterpret_cast<const char*>(base.username.data()), base.username.size()),
                   base.timestamp, base.user_uuid.Format());
@@ -662,7 +662,7 @@ void Module::Interface::GetUserCount(Kernel::HLERequestContext& ctx) {
 void Module::Interface::GetUserExistence(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     Common::UUID user_id = rp.PopRaw<Common::UUID>();
-    LOG_DEBUG(Service_ACC, "called user_id={}", user_id.Format());
+    LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.Format());
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);
@@ -693,7 +693,7 @@ void Module::Interface::GetLastOpenedUser(Kernel::HLERequestContext& ctx) {
 void Module::Interface::GetProfile(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     Common::UUID user_id = rp.PopRaw<Common::UUID>();
-    LOG_DEBUG(Service_ACC, "called user_id={}", user_id.Format());
+    LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.Format());
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);
@@ -802,7 +802,7 @@ void Module::Interface::GetProfileEditor(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     Common::UUID user_id = rp.PopRaw<Common::UUID>();
 
-    LOG_DEBUG(Service_ACC, "called, user_id={}", user_id.Format());
+    LOG_DEBUG(Service_ACC, "called, user_id=0x{}", user_id.Format());
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);
@@ -844,7 +844,7 @@ void Module::Interface::StoreSaveDataThumbnailApplication(Kernel::HLERequestCont
     IPC::RequestParser rp{ctx};
     const auto uuid = rp.PopRaw<Common::UUID>();
 
-    LOG_WARNING(Service_ACC, "(STUBBED) called, uuid={}", uuid.Format());
+    LOG_WARNING(Service_ACC, "(STUBBED) called, uuid=0x{}", uuid.Format());
 
     // TODO(ogniK): Check if application ID is zero on acc initialize. As we don't have a reliable
     // way of confirming things like the TID, we're going to assume a non zero value for the time
@@ -858,7 +858,7 @@ void Module::Interface::StoreSaveDataThumbnailSystem(Kernel::HLERequestContext& 
     const auto uuid = rp.PopRaw<Common::UUID>();
     const auto tid = rp.Pop<u64_le>();
 
-    LOG_WARNING(Service_ACC, "(STUBBED) called, uuid={}, tid={:016X}", uuid.Format(), tid);
+    LOG_WARNING(Service_ACC, "(STUBBED) called, uuid=0x{}, tid={:016X}", uuid.Format(), tid);
     StoreSaveDataThumbnail(ctx, uuid, tid);
 }
 

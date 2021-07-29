@@ -47,8 +47,7 @@ Tas::Tas() {
 }
 
 Tas::~Tas() {
-    SwapToStoredController();
-    is_running = false;
+    Stop();
 };
 
 void Tas::LoadTasFiles() {
@@ -189,8 +188,7 @@ std::string Tas::ButtonsToString(u32 button) const {
 void Tas::UpdateThread() {
     if (!Settings::values.tas_enable) {
         if (is_running) {
-            SwapToStoredController();
-            is_running = false;
+            Stop();
         }
         return;
     }
@@ -305,12 +303,17 @@ void Tas::StartStop() {
     if (!Settings::values.tas_enable) {
         return;
     }
-    is_running = !is_running;
     if (is_running) {
-        SwapToTasController();
+        Stop();
     } else {
-        SwapToStoredController();
+        is_running = true;
+        SwapToTasController();
     }
+}
+
+void Tas::Stop() {
+    is_running = false;
+    SwapToStoredController();
 }
 
 void Tas::SwapToTasController() {

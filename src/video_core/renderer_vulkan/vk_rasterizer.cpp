@@ -61,11 +61,16 @@ struct DrawParams {
 VkViewport GetViewportState(const Device& device, const Maxwell& regs, size_t index) {
     const auto& src = regs.viewport_transform[index];
     const float width = src.scale_x * 2.0f;
-    const float height = src.scale_y * 2.0f;
+    float y = src.translate_y - src.scale_y;
+    float height = src.scale_y * 2.0f;
+    if (regs.screen_y_control.y_negate) {
+        y += height;
+        height = -height;
+    }
     const float reduce_z = regs.depth_mode == Maxwell::DepthMode::MinusOneToOne ? 1.0f : 0.0f;
     VkViewport viewport{
         .x = src.translate_x - src.scale_x,
-        .y = src.translate_y - src.scale_y,
+        .y = y,
         .width = width != 0.0f ? width : 1.0f,
         .height = height != 0.0f ? height : 1.0f,
         .minDepth = src.translate_z - src.scale_z * reduce_z,

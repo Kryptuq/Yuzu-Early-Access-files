@@ -1044,12 +1044,7 @@ void GMainWindow::InitializeHotkeys() {
                 input_subsystem->GetTas()->StartStop();
             });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("TAS Reset"), this),
-            &QShortcut::activated, this, [&] {
-                if (emulation_running) {
-                    input_subsystem->GetTas()->Reset();
-                }
-                input_subsystem->GetTas()->Reset();
-            });
+            &QShortcut::activated, this, [&] { input_subsystem->GetTas()->Reset(); });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("TAS Record"), this),
             &QShortcut::activated, this, [&] {
                 if (!emulation_running) {
@@ -1515,7 +1510,7 @@ void GMainWindow::ShutdownGame() {
     }
     game_list->SetFilterFocus();
     tas_label->clear();
-    input_subsystem->GetTas()->~Tas();
+    input_subsystem->GetTas()->Stop();
 
     render_window->removeEventFilter(render_window);
     render_window->setAttribute(Qt::WA_Hover, false);

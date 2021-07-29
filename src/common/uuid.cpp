@@ -18,7 +18,7 @@ UUID UUID::Generate() {
 }
 
 std::string UUID::Format() const {
-    return fmt::format("0x{:016X}{:016X}", uuid[1], uuid[0]);
+    return fmt::format("{:016x}{:016x}", uuid[1], uuid[0]);
 }
 
 std::string UUID::FormatSwitch() const {

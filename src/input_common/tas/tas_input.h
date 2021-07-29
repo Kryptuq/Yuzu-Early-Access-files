@@ -105,6 +105,9 @@ public:
     //  Sets the flag to start or stop the TAS command excecution and swaps controllers profiles
     void StartStop();
 
+    //  Stop the TAS and reverts any controller profile
+    void Stop();
+
     // Sets the flag to reload the file and start from the begining in the next update
     void Reset();
 
