@@ -172,10 +172,10 @@ int main(int argc, char** argv) {
     std::unique_ptr<EmuWindow_SDL2> emu_window;
     switch (Settings::values.renderer_backend.GetValue()) {
     case Settings::RendererBackend::OpenGL:
-        emu_window = std::make_unique<EmuWindow_SDL2_GL>(&input_subsystem, fullscreen);
+        emu_window = std::make_unique<EmuWindow_SDL2_GL>(&input_subsystem, system, fullscreen);
         break;
     case Settings::RendererBackend::Vulkan:
-        emu_window = std::make_unique<EmuWindow_SDL2_VK>(&input_subsystem, fullscreen);
+        emu_window = std::make_unique<EmuWindow_SDL2_VK>(&input_subsystem, system, fullscreen);
         break;
     }
 

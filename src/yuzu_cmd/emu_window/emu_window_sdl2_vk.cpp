@@ -24,8 +24,9 @@
 #include <SDL.h>
 #include <SDL_syswm.h>
 
-EmuWindow_SDL2_VK::EmuWindow_SDL2_VK(InputCommon::InputSubsystem* input_subsystem, bool fullscreen)
-    : EmuWindow_SDL2{input_subsystem} {
+EmuWindow_SDL2_VK::EmuWindow_SDL2_VK(InputCommon::InputSubsystem* input_subsystem,
+                                     Core::System& system_, bool fullscreen)
+    : EmuWindow_SDL2{input_subsystem, system_} {
     const std::string window_title = fmt::format("yuzu {} | {}-{} (Vulkan)", Common::g_build_name,
                                                  Common::g_scm_branch, Common::g_scm_desc);
     render_window =

@@ -24,7 +24,7 @@ enum class MouseButton;
 
 class EmuWindow_SDL2 : public Core::Frontend::EmuWindow {
 public:
-    explicit EmuWindow_SDL2(InputCommon::InputSubsystem* input_subsystem);
+    explicit EmuWindow_SDL2(InputCommon::InputSubsystem* input_subsystem, Core::System& system_);
     ~EmuWindow_SDL2();
 
     /// Whether the window is still open, and a close request hasn't yet been sent
@@ -87,4 +87,7 @@ protected:
 
     /// Input subsystem to use with this window.
     InputCommon::InputSubsystem* input_subsystem;
+
+    /// yuzu core instance
+    Core::System& system;
 };
