@@ -526,6 +526,17 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
         SetNext(next, workgroup_layout);
     }
 
+    VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR executable_properties;
+    if (khr_pipeline_executable_properties) {
+        LOG_INFO(Render_Vulkan, "Enabling shader feedback, expect slower shader build times");
+        executable_properties = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR,
+            .pNext = nullptr,
+            .pipelineExecutableInfo = VK_TRUE,
+        };
+        SetNext(next, executable_properties);
+    }
+
     if (!ext_depth_range_unrestricted) {
         LOG_INFO(Render_Vulkan, "Device doesn't support depth range unrestricted");
     }
@@ -824,6 +835,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
 
     bool has_khr_shader_float16_int8{};
     bool has_khr_workgroup_memory_explicit_layout{};
+    bool has_khr_pipeline_executable_properties{};
     bool has_ext_subgroup_size_control{};
     bool has_ext_transform_feedback{};
     bool has_ext_custom_border_color{};
@@ -877,6 +889,10 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         if (Settings::values.enable_nsight_aftermath) {
             test(nv_device_diagnostics_config, VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME,
                  true);
+        }
+        if (Settings::values.renderer_shader_feedback) {
+            test(has_khr_pipeline_executable_properties,
+                 VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME, false);
         }
     }
     VkPhysicalDeviceFeatures2KHR features{};
@@ -1031,6 +1047,19 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
             layout.workgroupMemoryExplicitLayoutScalarBlockLayout) {
             extensions.push_back(VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME);
             khr_workgroup_memory_explicit_layout = true;
+        }
+    }
+    if (has_khr_pipeline_executable_properties) {
+        VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR executable_properties;
+        executable_properties.sType =
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR;
+        executable_properties.pNext = nullptr;
+        features.pNext = &executable_properties;
+        physical.GetFeatures2KHR(features);
+
+        if (executable_properties.pipelineExecutableInfo) {
+            extensions.push_back(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
+            khr_pipeline_executable_properties = true;
         }
     }
     if (khr_push_descriptor) {

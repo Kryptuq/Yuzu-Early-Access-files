@@ -221,6 +221,10 @@ backend =
 # 0 (default): Disabled, 1: Enabled
 debug =
 
+# Enable shader feedback.
+# 0 (default): Disabled, 1: Enabled
+renderer_shader_feedback =
+
 # Enable Nsight Aftermath crash dumps
 # 0 (default): Disabled, 1: Enabled
 nsight_aftermath =

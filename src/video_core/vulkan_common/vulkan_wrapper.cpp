@@ -181,6 +181,8 @@ void Load(VkDevice device, DeviceDispatch& dld) noexcept {
     X(vkGetMemoryWin32HandleKHR);
 #endif
     X(vkGetQueryPoolResults);
+    X(vkGetPipelineExecutablePropertiesKHR);
+    X(vkGetPipelineExecutableStatisticsKHR);
     X(vkGetSemaphoreCounterValueKHR);
     X(vkMapMemory);
     X(vkQueueSubmit);
@@ -807,6 +809,42 @@ VkMemoryRequirements Device::GetImageMemoryRequirements(VkImage image) const noe
     VkMemoryRequirements requirements;
     dld->vkGetImageMemoryRequirements(handle, image, &requirements);
     return requirements;
+}
+
+std::vector<VkPipelineExecutablePropertiesKHR> Device::GetPipelineExecutablePropertiesKHR(
+    VkPipeline pipeline) const {
+    const VkPipelineInfoKHR info{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_INFO_KHR,
+        .pNext = nullptr,
+        .pipeline = pipeline,
+    };
+    u32 num{};
+    dld->vkGetPipelineExecutablePropertiesKHR(handle, &info, &num, nullptr);
+    std::vector<VkPipelineExecutablePropertiesKHR> properties(num);
+    for (auto& property : properties) {
+        property.sType = VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_PROPERTIES_KHR;
+    }
+    Check(dld->vkGetPipelineExecutablePropertiesKHR(handle, &info, &num, properties.data()));
+    return properties;
+}
+
+std::vector<VkPipelineExecutableStatisticKHR> Device::GetPipelineExecutableStatisticsKHR(
+    VkPipeline pipeline, u32 executable_index) const {
+    const VkPipelineExecutableInfoKHR executable_info{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INFO_KHR,
+        .pNext = nullptr,
+        .pipeline = pipeline,
+        .executableIndex = executable_index,
+    };
+    u32 num{};
+    dld->vkGetPipelineExecutableStatisticsKHR(handle, &executable_info, &num, nullptr);
+    std::vector<VkPipelineExecutableStatisticKHR> statistics(num);
+    for (auto& statistic : statistics) {
+        statistic.sType = VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_STATISTIC_KHR;
+    }
+    Check(dld->vkGetPipelineExecutableStatisticsKHR(handle, &executable_info, &num,
+                                                    statistics.data()));
+    return statistics;
 }
 
 void Device::UpdateDescriptorSets(Span<VkWriteDescriptorSet> writes,

@@ -111,8 +111,8 @@
      <property name="title">
       <string>Graphics</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_6">
-      <item>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="0">
        <widget class="QCheckBox" name="enable_graphics_debugging">
         <property name="enabled">
          <bool>true</bool>
@@ -125,7 +125,7 @@
         </property>
        </widget>
       </item>
-      <item>
+      <item row="2" column="0">
        <widget class="QCheckBox" name="enable_nsight_aftermath">
         <property name="toolTip">
          <string>When checked, it enables Nsight Aftermath crash dumps</string>
@@ -135,7 +135,7 @@
         </property>
        </widget>
       </item>
-      <item>
+      <item row="0" column="1">
        <widget class="QCheckBox" name="disable_macro_jit">
         <property name="enabled">
          <bool>true</bool>
@@ -148,7 +148,17 @@
         </property>
        </widget>
       </item>
-      <item>
+      <item row="1" column="0">
+       <widget class="QCheckBox" name="enable_shader_feedback">
+        <property name="toolTip">
+         <string>When checked, yuzu will log statistics about the compiled pipeline cache</string>
+        </property>
+        <property name="text">
+         <string>Enable Shader Feedback</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
        <widget class="QCheckBox" name="disable_loop_safety_checks">
         <property name="toolTip">
          <string>When checked, it executes shaders without loop logic changes</string>
@@ -276,11 +286,14 @@
   <tabstop>open_log_button</tabstop>
   <tabstop>homebrew_args_edit</tabstop>
   <tabstop>enable_graphics_debugging</tabstop>
+  <tabstop>enable_shader_feedback</tabstop>
   <tabstop>enable_nsight_aftermath</tabstop>
   <tabstop>disable_macro_jit</tabstop>
   <tabstop>disable_loop_safety_checks</tabstop>
+  <tabstop>fs_access_log</tabstop>
   <tabstop>reporting_services</tabstop>
   <tabstop>quest_flag</tabstop>
+  <tabstop>enable_cpu_debugging</tabstop>
   <tabstop>use_debug_asserts</tabstop>
   <tabstop>use_auto_stub</tabstop>
  </tabstops>

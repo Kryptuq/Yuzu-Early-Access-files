@@ -319,6 +319,7 @@ struct Values {
     // Renderer
     Setting<RendererBackend> renderer_backend{RendererBackend::OpenGL, "backend"};
     BasicSetting<bool> renderer_debug{false, "debug"};
+    BasicSetting<bool> renderer_shader_feedback{false, "shader_feedback"};
     BasicSetting<bool> enable_nsight_aftermath{false, "nsight_aftermath"};
     BasicSetting<bool> disable_shader_loop_safety_checks{false,
                                                          "disable_shader_loop_safety_checks"};

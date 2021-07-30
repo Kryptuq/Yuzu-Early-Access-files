@@ -8,6 +8,7 @@
 #include <boost/container/small_vector.hpp>
 
 #include "video_core/renderer_vulkan/pipeline_helper.h"
+#include "video_core/renderer_vulkan/pipeline_statistics.h"
 #include "video_core/renderer_vulkan/vk_buffer_cache.h"
 #include "video_core/renderer_vulkan/vk_compute_pipeline.h"
 #include "video_core/renderer_vulkan/vk_descriptor_pool.h"
@@ -26,6 +27,7 @@ using Tegra::Texture::TexturePair;
 ComputePipeline::ComputePipeline(const Device& device_, DescriptorPool& descriptor_pool,
                                  VKUpdateDescriptorQueue& update_descriptor_queue_,
                                  Common::ThreadWorker* thread_worker,
+                                 PipelineStatistics* pipeline_statistics,
                                  VideoCore::ShaderNotify* shader_notify, const Shader::Info& info_,
                                  vk::ShaderModule spv_module_)
     : device{device_}, update_descriptor_queue{update_descriptor_queue_}, info{info_},
@@ -36,7 +38,7 @@ ComputePipeline::ComputePipeline(const Device& device_, DescriptorPool& descript
     std::copy_n(info.constant_buffer_used_sizes.begin(), uniform_buffer_sizes.size(),
                 uniform_buffer_sizes.begin());
 
-    auto func{[this, &descriptor_pool, shader_notify] {
+    auto func{[this, &descriptor_pool, shader_notify, pipeline_statistics] {
         DescriptorLayoutBuilder builder{device};
         builder.Add(info, VK_SHADER_STAGE_COMPUTE_BIT);
 
@@ -50,10 +52,14 @@ ComputePipeline::ComputePipeline(const Device& device_, DescriptorPool& descript
             .pNext = nullptr,
             .requiredSubgroupSize = GuestWarpSize,
         };
+        VkPipelineCreateFlags flags{};
+        if (device.IsKhrPipelineEexecutablePropertiesEnabled()) {
+            flags |= VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR;
+        }
         pipeline = device.GetLogical().CreateComputePipeline({
             .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
             .pNext = nullptr,
-            .flags = 0,
+            .flags = flags,
             .stage{
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
                 .pNext = device.IsExtSubgroupSizeControlSupported() ? &subgroup_size_ci : nullptr,
@@ -67,6 +73,9 @@ ComputePipeline::ComputePipeline(const Device& device_, DescriptorPool& descript
             .basePipelineHandle = 0,
             .basePipelineIndex = 0,
         });
+        if (pipeline_statistics) {
+            pipeline_statistics->Collect(*pipeline);
+        }
         std::lock_guard lock{build_mutex};
         is_built = true;
         build_condvar.notify_one();

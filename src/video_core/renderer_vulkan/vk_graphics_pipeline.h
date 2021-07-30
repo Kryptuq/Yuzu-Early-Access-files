@@ -60,6 +60,7 @@ struct hash<Vulkan::GraphicsPipelineCacheKey> {
 namespace Vulkan {
 
 class Device;
+class PipelineStatistics;
 class RenderPassCache;
 class VKScheduler;
 class VKUpdateDescriptorQueue;
@@ -73,8 +74,9 @@ public:
         VKScheduler& scheduler, BufferCache& buffer_cache, TextureCache& texture_cache,
         VideoCore::ShaderNotify* shader_notify, const Device& device,
         DescriptorPool& descriptor_pool, VKUpdateDescriptorQueue& update_descriptor_queue,
-        Common::ThreadWorker* worker_thread, RenderPassCache& render_pass_cache,
-        const GraphicsPipelineCacheKey& key, std::array<vk::ShaderModule, NUM_STAGES> stages,
+        Common::ThreadWorker* worker_thread, PipelineStatistics* pipeline_statistics,
+        RenderPassCache& render_pass_cache, const GraphicsPipelineCacheKey& key,
+        std::array<vk::ShaderModule, NUM_STAGES> stages,
         const std::array<const Shader::Info*, NUM_STAGES>& infos);
 
     GraphicsPipeline& operator=(GraphicsPipeline&&) noexcept = delete;

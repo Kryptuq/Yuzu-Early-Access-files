@@ -80,8 +80,9 @@ struct hash<Vulkan::ComputePipelineCacheKey> {
 namespace Vulkan {
 
 class ComputePipeline;
-class Device;
 class DescriptorPool;
+class Device;
+class PipelineStatistics;
 class RasterizerVulkan;
 class RenderPassCache;
 class VKScheduler;
@@ -128,7 +129,8 @@ private:
 
     std::unique_ptr<GraphicsPipeline> CreateGraphicsPipeline(
         ShaderPools& pools, const GraphicsPipelineCacheKey& key,
-        std::span<Shader::Environment* const> envs, bool build_in_parallel);
+        std::span<Shader::Environment* const> envs, PipelineStatistics* statistics,
+        bool build_in_parallel);
 
     std::unique_ptr<ComputePipeline> CreateComputePipeline(const ComputePipelineCacheKey& key,
                                                            const ShaderInfo* shader);
@@ -136,6 +138,7 @@ private:
     std::unique_ptr<ComputePipeline> CreateComputePipeline(ShaderPools& pools,
                                                            const ComputePipelineCacheKey& key,
                                                            Shader::Environment& env,
+                                                           PipelineStatistics* statistics,
                                                            bool build_in_parallel);
 
     const Device& device;

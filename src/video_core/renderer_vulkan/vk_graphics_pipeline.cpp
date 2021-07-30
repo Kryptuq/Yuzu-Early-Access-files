@@ -11,6 +11,7 @@
 #include "common/bit_field.h"
 #include "video_core/renderer_vulkan/maxwell_to_vk.h"
 #include "video_core/renderer_vulkan/pipeline_helper.h"
+#include "video_core/renderer_vulkan/pipeline_statistics.h"
 #include "video_core/renderer_vulkan/vk_buffer_cache.h"
 #include "video_core/renderer_vulkan/vk_graphics_pipeline.h"
 #include "video_core/renderer_vulkan/vk_render_pass_cache.h"
@@ -217,8 +218,8 @@ GraphicsPipeline::GraphicsPipeline(
     VKScheduler& scheduler_, BufferCache& buffer_cache_, TextureCache& texture_cache_,
     VideoCore::ShaderNotify* shader_notify, const Device& device_, DescriptorPool& descriptor_pool,
     VKUpdateDescriptorQueue& update_descriptor_queue_, Common::ThreadWorker* worker_thread,
-    RenderPassCache& render_pass_cache, const GraphicsPipelineCacheKey& key_,
-    std::array<vk::ShaderModule, NUM_STAGES> stages,
+    PipelineStatistics* pipeline_statistics, RenderPassCache& render_pass_cache,
+    const GraphicsPipelineCacheKey& key_, std::array<vk::ShaderModule, NUM_STAGES> stages,
     const std::array<const Shader::Info*, NUM_STAGES>& infos)
     : key{key_}, maxwell3d{maxwell3d_}, gpu_memory{gpu_memory_}, device{device_},
       texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, scheduler{scheduler_},
@@ -235,7 +236,7 @@ GraphicsPipeline::GraphicsPipeline(
         enabled_uniform_buffer_masks[stage] = info->constant_buffer_mask;
         std::ranges::copy(info->constant_buffer_used_sizes, uniform_buffer_sizes[stage].begin());
     }
-    auto func{[this, shader_notify, &render_pass_cache, &descriptor_pool] {
+    auto func{[this, shader_notify, &render_pass_cache, &descriptor_pool, pipeline_statistics] {
         DescriptorLayoutBuilder builder{MakeBuilder(device, stage_infos)};
         uses_push_descriptor = builder.CanUsePushDescriptor();
         descriptor_set_layout = builder.CreateDescriptorSetLayout(uses_push_descriptor);
@@ -250,6 +251,9 @@ GraphicsPipeline::GraphicsPipeline(
         const VkRenderPass render_pass{render_pass_cache.Get(MakeRenderPassKey(key.state))};
         Validate();
         MakePipeline(render_pass);
+        if (pipeline_statistics) {
+            pipeline_statistics->Collect(*pipeline);
+        }
 
         std::lock_guard lock{build_mutex};
         is_built = true;
@@ -782,10 +786,14 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
         }
         */
     }
+    VkPipelineCreateFlags flags{};
+    if (device.IsKhrPipelineEexecutablePropertiesEnabled()) {
+        flags |= VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR;
+    }
     pipeline = device.GetLogical().CreateGraphicsPipeline({
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
         .pNext = nullptr,
-        .flags = 0,
+        .flags = flags,
         .stageCount = static_cast<u32>(shader_stages.size()),
         .pStages = shader_stages.data(),
         .pVertexInputState = &vertex_input_ci,

@@ -377,7 +377,7 @@ void SoftwareKeyboard::SubmitForTextCheck(std::u16string submitted_text) {
 
     if (swkbd_config_common.use_utf8) {
         std::string utf8_submitted_text = Common::UTF16ToUTF8(current_text);
-        const u64 buffer_size = sizeof(u64) + utf8_submitted_text.size();
+        const u64 buffer_size = utf8_submitted_text.size();
 
         LOG_DEBUG(Service_AM, "\nBuffer Size: {}\nUTF-8 Submitted Text: {}", buffer_size,
                   utf8_submitted_text);
@@ -386,7 +386,7 @@ void SoftwareKeyboard::SubmitForTextCheck(std::u16string submitted_text) {
         std::memcpy(out_data.data() + sizeof(u64), utf8_submitted_text.data(),
                     utf8_submitted_text.size());
     } else {
-        const u64 buffer_size = sizeof(u64) + current_text.size() * sizeof(char16_t);
+        const u64 buffer_size = current_text.size() * sizeof(char16_t);
 
         LOG_DEBUG(Service_AM, "\nBuffer Size: {}\nUTF-16 Submitted Text: {}", buffer_size,
                   Common::UTF16ToUTF8(current_text));

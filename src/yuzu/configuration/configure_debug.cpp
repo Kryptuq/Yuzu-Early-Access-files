@@ -43,6 +43,8 @@ void ConfigureDebug::SetConfiguration() {
     ui->use_auto_stub->setChecked(Settings::values.use_auto_stub.GetValue());
     ui->enable_graphics_debugging->setEnabled(runtime_lock);
     ui->enable_graphics_debugging->setChecked(Settings::values.renderer_debug.GetValue());
+    ui->enable_shader_feedback->setEnabled(runtime_lock);
+    ui->enable_shader_feedback->setChecked(Settings::values.renderer_shader_feedback.GetValue());
     ui->enable_cpu_debugging->setEnabled(runtime_lock);
     ui->enable_cpu_debugging->setChecked(Settings::values.cpu_debug_mode.GetValue());
     ui->enable_nsight_aftermath->setEnabled(runtime_lock);
@@ -65,6 +67,7 @@ void ConfigureDebug::ApplyConfiguration() {
     Settings::values.use_debug_asserts = ui->use_debug_asserts->isChecked();
     Settings::values.use_auto_stub = ui->use_auto_stub->isChecked();
     Settings::values.renderer_debug = ui->enable_graphics_debugging->isChecked();
+    Settings::values.renderer_shader_feedback = ui->enable_shader_feedback->isChecked();
     Settings::values.cpu_debug_mode = ui->enable_cpu_debugging->isChecked();
     Settings::values.enable_nsight_aftermath = ui->enable_nsight_aftermath->isChecked();
     Settings::values.disable_shader_loop_safety_checks =
