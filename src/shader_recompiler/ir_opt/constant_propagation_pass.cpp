@@ -649,6 +649,10 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
         return FoldInverseFunc(inst, IR::Opcode::UnpackHalf2x16);
     case IR::Opcode::UnpackHalf2x16:
         return FoldInverseFunc(inst, IR::Opcode::PackHalf2x16);
+    case IR::Opcode::PackFloat2x16:
+        return FoldInverseFunc(inst, IR::Opcode::UnpackFloat2x16);
+    case IR::Opcode::UnpackFloat2x16:
+        return FoldInverseFunc(inst, IR::Opcode::PackFloat2x16);
     case IR::Opcode::SelectU1:
     case IR::Opcode::SelectU8:
     case IR::Opcode::SelectU16:
