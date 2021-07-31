@@ -339,6 +339,7 @@ std::optional<ApplicationLanguage> ConvertToApplicationLanguage(
     case Set::LanguageCode::FR_CA:
         return ApplicationLanguage::CanadianFrench;
     case Set::LanguageCode::PT:
+    case Set::LanguageCode::PT_BR:
         return ApplicationLanguage::Portuguese;
     case Set::LanguageCode::RU:
         return ApplicationLanguage::Russian;

@@ -31,6 +31,7 @@ enum class LanguageCode : u64 {
     ES_419 = 0x00003931342D7365,
     ZH_HANS = 0x00736E61482D687A,
     ZH_HANT = 0x00746E61482D687A,
+    PT_BR = 0x00000052422D7470,
 };
 LanguageCode GetLanguageCodeFromIndex(std::size_t idx);
 

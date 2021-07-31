@@ -401,6 +401,11 @@
               <string>Traditional Chinese (正體中文)</string>
              </property>
             </item>
+            <item>
+             <property name="text">
+              <string>Brazilian Portuguese (português do Brasil)</string>
+             </property>
+            </item>
            </widget>
           </item>
           <item row="5" column="0">
