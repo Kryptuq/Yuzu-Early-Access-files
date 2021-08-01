@@ -81,16 +81,30 @@
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="icon_size_qhbox_layout_2">
+         <layout class="QHBoxLayout" name="game_icon_size_qhbox_layout_2">
           <item>
-           <widget class="QLabel" name="icon_size_label">
+           <widget class="QLabel" name="game_icon_size_label">
             <property name="text">
-             <string>Icon Size:</string>
+             <string>Game Icon Size:</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QComboBox" name="icon_size_combobox"/>
+           <widget class="QComboBox" name="game_icon_size_combobox"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="folder_icon_size_qhbox_layout_2">
+          <item>
+           <widget class="QLabel" name="folder_icon_size_label">
+            <property name="text">
+             <string>Folder Icon Size:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="folder_icon_size_combobox"/>
           </item>
          </layout>
         </item>

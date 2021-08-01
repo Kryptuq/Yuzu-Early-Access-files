@@ -91,7 +91,8 @@ struct Values {
 
     // Game List
     Settings::BasicSetting<bool> show_add_ons{true, "show_add_ons"};
-    Settings::BasicSetting<uint32_t> icon_size{64, "icon_size"};
+    Settings::BasicSetting<uint32_t> game_icon_size{64, "game_icon_size"};
+    Settings::BasicSetting<uint32_t> folder_icon_size{48, "folder_icon_size"};
     Settings::BasicSetting<uint8_t> row_1_text_id{3, "row_1_text_id"};
     Settings::BasicSetting<uint8_t> row_2_text_id{2, "row_2_text_id"};
     std::atomic_bool is_game_list_reload_pending{false};

@@ -961,7 +961,8 @@ void Config::ReadUIGamelistValues() {
     qt_config->beginGroup(QStringLiteral("UIGameList"));
 
     ReadBasicSetting(UISettings::values.show_add_ons);
-    ReadBasicSetting(UISettings::values.icon_size);
+    ReadBasicSetting(UISettings::values.game_icon_size);
+    ReadBasicSetting(UISettings::values.folder_icon_size);
     ReadBasicSetting(UISettings::values.row_1_text_id);
     ReadBasicSetting(UISettings::values.row_2_text_id);
     ReadBasicSetting(UISettings::values.cache_game_list);
@@ -1487,7 +1488,8 @@ void Config::SaveUIGamelistValues() {
     qt_config->beginGroup(QStringLiteral("UIGameList"));
 
     WriteBasicSetting(UISettings::values.show_add_ons);
-    WriteBasicSetting(UISettings::values.icon_size);
+    WriteBasicSetting(UISettings::values.game_icon_size);
+    WriteBasicSetting(UISettings::values.folder_icon_size);
     WriteBasicSetting(UISettings::values.row_1_text_id);
     WriteBasicSetting(UISettings::values.row_2_text_id);
     WriteBasicSetting(UISettings::values.cache_game_list);

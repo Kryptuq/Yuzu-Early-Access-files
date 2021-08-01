@@ -80,7 +80,7 @@ public:
         setData(qulonglong(program_id), ProgramIdRole);
         setData(game_type, FileTypeRole);
 
-        const u32 size = UISettings::values.icon_size.GetValue();
+        const u32 size = UISettings::values.game_icon_size.GetValue();
 
         QPixmap picture;
         if (!picture.loadFromData(picture_data.data(), static_cast<u32>(picture_data.size()))) {
@@ -233,8 +233,7 @@ public:
         UISettings::GameDir* game_dir = &directory;
         setData(QVariant(UISettings::values.game_dirs.indexOf(directory)), GameDirRole);
 
-        const int icon_size =
-            std::min(static_cast<int>(UISettings::values.icon_size.GetValue()), 64);
+        const int icon_size = UISettings::values.folder_icon_size.GetValue();
         switch (dir_type) {
         case GameListItemType::SdmcDir:
             setData(
@@ -295,8 +294,8 @@ public:
     explicit GameListAddDir() {
         setData(type(), TypeRole);
 
-        const int icon_size =
-            std::min(static_cast<int>(UISettings::values.icon_size.GetValue()), 64);
+        const int icon_size = UISettings::values.folder_icon_size.GetValue();
+
         setData(QIcon::fromTheme(QStringLiteral("plus"))
                     .pixmap(icon_size)
                     .scaled(icon_size, icon_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation),
@@ -318,8 +317,8 @@ public:
     explicit GameListFavorites() {
         setData(type(), TypeRole);
 
-        const int icon_size =
-            std::min(static_cast<int>(UISettings::values.icon_size.GetValue()), 64);
+        const int icon_size = UISettings::values.folder_icon_size.GetValue();
+
         setData(QIcon::fromTheme(QStringLiteral("star"))
                     .pixmap(icon_size)
                     .scaled(icon_size, icon_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation),
