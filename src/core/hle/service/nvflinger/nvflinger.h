@@ -77,6 +77,8 @@ public:
     /// Obtains a buffer queue identified by the ID.
     [[nodiscard]] BufferQueue* FindBufferQueue(u32 id);
 
+    void PrequeueFrame(u32 buffer_queue_id, u32 slot);
+
     /// Performs a composition request to the emulated nvidia GPU and triggers the vsync events when
     /// finished.
     void Compose();

@@ -274,8 +274,6 @@ void NVFlinger::Compose() {
             continue;
         }
 
-        const auto& igbp_buffer = buffer->get().igbp_buffer;
-
         if (!system.IsPoweredOn()) {
             return; // We are likely shutting down
         }
@@ -289,21 +287,29 @@ void NVFlinger::Compose() {
         }
         guard->lock();
 
+        system.GetPerfStats().EndSystemFrame();
         MicroProfileFlip();
-
-        // Now send the buffer to the GPU for drawing.
-        // TODO(Subv): Support more than just disp0. The display device selection is probably based
-        // on which display we're drawing (Default, Internal, External, etc)
-        auto nvdisp = nvdrv->GetDevice<Nvidia::Devices::nvdisp_disp0>("/dev/nvdisp_disp0");
-        ASSERT(nvdisp);
-
-        nvdisp->flip(igbp_buffer.gpu_buffer_id, igbp_buffer.offset, igbp_buffer.format,
-                     igbp_buffer.width, igbp_buffer.height, igbp_buffer.stride,
-                     buffer->get().transform, buffer->get().crop_rect);
+        system.SpeedLimiter().DoSpeedLimiting(system.CoreTiming().GetGlobalTimeUs());
+        system.GetPerfStats().BeginSystemFrame();
 
         swap_interval = buffer->get().swap_interval;
         buffer_queue.ReleaseBuffer(buffer->get().slot);
     }
+}
+
+void NVFlinger::PrequeueFrame(u32 buffer_queue_id, u32 slot) {
+    auto& buffer_queue = *FindBufferQueue(buffer_queue_id);
+    const auto& buffer = buffer_queue.AccessBuffer(slot);
+    const auto& igbp_buffer = buffer.igbp_buffer;
+
+    // Now send the buffer to the GPU for drawing.
+    // TODO(Subv): Support more than just disp0. The display device selection is probably based
+    // on which display we're drawing (Default, Internal, External, etc)
+    auto nvdisp = nvdrv->GetDevice<Nvidia::Devices::nvdisp_disp0>("/dev/nvdisp_disp0");
+    ASSERT(nvdisp);
+    nvdisp->flip(igbp_buffer.gpu_buffer_id, igbp_buffer.offset, igbp_buffer.format,
+                 igbp_buffer.width, igbp_buffer.height, igbp_buffer.stride, buffer.transform,
+                 buffer.crop_rect, buffer.multi_fence);
 }
 
 s64 NVFlinger::GetNextTicks() const {

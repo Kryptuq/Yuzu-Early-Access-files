@@ -214,6 +214,8 @@ void RasterizerOpenGL::Clear() {
 void RasterizerOpenGL::Draw(bool is_indexed, bool is_instanced) {
     MICROPROFILE_SCOPE(OpenGL_Drawing);
 
+    SCOPE_EXIT({ gpu.TickWork(); });
+
     query_cache.UpdateCounters();
 
     SyncState();
@@ -269,8 +271,6 @@ void RasterizerOpenGL::Draw(bool is_indexed, bool is_instanced) {
 
     ++num_queued_commands;
     has_written_global_memory |= pipeline->WritesGlobalMemory();
-
-    gpu.TickWork();
 }
 
 void RasterizerOpenGL::DispatchCompute() {
@@ -421,6 +421,7 @@ void RasterizerOpenGL::SignalSemaphore(GPUVAddr addr, u32 value) {
 }
 
 void RasterizerOpenGL::SignalSyncPoint(u32 value) {
+    gpu.IncrementSyncPointGuest(value);
     if (!gpu.IsAsync()) {
         gpu.IncrementSyncPoint(value);
         return;

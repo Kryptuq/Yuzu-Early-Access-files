@@ -159,11 +159,16 @@ public:
     void OnCommandListEnd();
 
     /// Request a host GPU memory flush from the CPU.
-    [[nodiscard]] u64 RequestFlush(VAddr addr, std::size_t size);
+    u64 RequestFlush(VAddr addr, std::size_t size);
+
+    void WaitOnWorkRequest(u64 fence);
+
+    void QueueFrame(const Tegra::FramebufferConfig* framebuffer,
+                    const Service::Nvidia::MultiFence& fence);
 
     /// Obtains current flush request fence id.
-    [[nodiscard]] u64 CurrentFlushRequestFence() const {
-        return current_flush_fence.load(std::memory_order_relaxed);
+    [[nodiscard]] u64 CurrentWorkRequestFence() const {
+        return current_request_fence.load(std::memory_order_relaxed);
     }
 
     /// Tick pending requests within the GPU.
@@ -225,6 +230,7 @@ public:
     /// Allows the CPU/NvFlinger to wait on the GPU before presenting a frame.
     void WaitFence(u32 syncpoint_id, u32 value);
 
+    void IncrementSyncPointGuest(u32 syncpoint_id);
     void IncrementSyncPoint(u32 syncpoint_id);
 
     [[nodiscard]] u32 GetSyncpointValue(u32 syncpoint_id) const;
@@ -365,6 +371,34 @@ private:
     /// Determines where the method should be executed.
     [[nodiscard]] bool ExecuteMethodOnEngine(u32 method);
 
+    struct FrameRequest {
+        Tegra::FramebufferConfig frame_info;
+        size_t count;
+        u64 id;
+    };
+
+    struct FrameTrigger {
+        u64 id;
+        u32 sync_point_value;
+    };
+
+    struct FrameQueue {
+        Tegra::FramebufferConfig frame_info;
+        u64 id;
+    };
+
+    /// Request a frame release on the GPU thread
+    u64 RequestQueueFrame(u64 id);
+
+    void ProcessFrameRequests(u32 syncpoint_id, u32 new_value);
+
+    std::mutex frame_requests_mutex;
+    std::unordered_map<u32, std::list<FrameTrigger>> frame_triggers;
+    std::unordered_map<u64, FrameRequest> frame_requests;
+    std::list<FrameQueue> frame_queue_items;
+    u64 frame_queue_ids{};
+    u64 frame_request_ids{};
+
 protected:
     Core::System& system;
     std::unique_ptr<Tegra::MemoryManager> memory_manager;
@@ -392,27 +426,50 @@ private:
     /// When true, we are about to shut down emulation session, so terminate outstanding tasks
     std::atomic_bool shutting_down{};
 
+    std::array<std::atomic<u32>, Service::Nvidia::MaxSyncPoints> pre_syncpoints{};
     std::array<std::atomic<u32>, Service::Nvidia::MaxSyncPoints> syncpoints{};
 
     std::array<std::list<u32>, Service::Nvidia::MaxSyncPoints> syncpt_interrupts;
 
+    std::mutex pre_sync_mutex;
     std::mutex sync_mutex;
     std::mutex device_mutex;
 
     std::condition_variable sync_cv;
 
-    struct FlushRequest {
-        explicit FlushRequest(u64 fence_, VAddr addr_, std::size_t size_)
-            : fence{fence_}, addr{addr_}, size{size_} {}
-        u64 fence;
-        VAddr addr;
-        std::size_t size;
+    enum class RequestType : u32 {
+        Flush = 0,
+        QueueFrame = 1,
     };
 
-    std::list<FlushRequest> flush_requests;
-    std::atomic<u64> current_flush_fence{};
-    u64 last_flush_fence{};
-    std::mutex flush_request_mutex;
+    struct WorkRequest {
+        explicit WorkRequest(u64 fence_, VAddr addr_, std::size_t size_)
+            : fence{fence_}, type{RequestType::Flush} {
+            flush.addr = addr_;
+            flush.size = size_;
+        }
+
+        explicit WorkRequest(u64 fence_, u64 id) : fence{fence_}, type{RequestType::QueueFrame} {
+            queue_frame.id = id;
+        }
+        u64 fence;
+        union {
+            struct {
+                VAddr addr;
+                std::size_t size;
+            } flush;
+            struct {
+                u64 id;
+            } queue_frame;
+        };
+        RequestType type;
+    }; // namespace Tegra
+
+    std::list<WorkRequest> work_requests;
+    std::atomic<u64> current_request_fence{};
+    u64 last_request_fence{};
+    std::mutex work_request_mutex;
+    std::condition_variable request_cv;
 
     const bool is_async;
 

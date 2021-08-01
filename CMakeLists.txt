@@ -25,7 +25,7 @@ option(YUZU_USE_BUNDLED_BOOST "Download bundled Boost" OFF)
 
 option(YUZU_USE_BUNDLED_LIBUSB "Compile bundled libusb" OFF)
 
-CMAKE_DEPENDENT_OPTION(YUZU_USE_BUNDLED_FFMPEG "Download/Build bundled FFmpeg" ON "WIN32" OFF)
+option(YUZU_USE_BUNDLED_FFMPEG "Download/Build bundled FFmpeg" "${WIN32}")
 
 option(YUZU_USE_QT_WEB_ENGINE "Use QtWebEngine for web applet implementation" OFF)
 
@@ -604,6 +604,8 @@ if (YUZU_USE_BUNDLED_FFMPEG)
                     --disable-vdpau
                     --enable-decoder=h264
                     --enable-decoder=vp9
+                    --cc="${CMAKE_C_COMPILER}"
+                    --cxx="${CMAKE_CXX_COMPILER}"
             WORKING_DIRECTORY
                 ${FFmpeg_BUILD_DIR}
         )

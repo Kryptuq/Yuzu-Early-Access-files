@@ -96,15 +96,10 @@ public:
                   std::span<const VideoCommon::SwizzleParameters> swizzles);
 
 private:
-    void MakeDataBuffer();
-
     VKScheduler& scheduler;
     StagingBufferPool& staging_buffer_pool;
     VKUpdateDescriptorQueue& update_descriptor_queue;
     MemoryAllocator& memory_allocator;
-
-    vk::Buffer data_buffer;
-    MemoryCommit data_buffer_commit;
 };
 
 } // namespace Vulkan

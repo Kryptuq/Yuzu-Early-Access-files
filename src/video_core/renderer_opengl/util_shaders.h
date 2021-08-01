@@ -62,7 +62,6 @@ private:
     ProgramManager& program_manager;
 
     OGLBuffer swizzle_table_buffer;
-    OGLBuffer astc_buffer;
 
     OGLProgram astc_decoder_program;
     OGLProgram block_linear_unswizzle_2d_program;

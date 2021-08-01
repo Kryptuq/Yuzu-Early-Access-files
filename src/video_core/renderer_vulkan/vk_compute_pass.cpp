@@ -30,16 +30,12 @@
 namespace Vulkan {
 
 using Tegra::Texture::SWIZZLE_TABLE;
-using Tegra::Texture::ASTC::ASTC_ENCODINGS_VALUES;
-using namespace Tegra::Texture::ASTC;
 
 namespace {
 
 constexpr u32 ASTC_BINDING_INPUT_BUFFER = 0;
-constexpr u32 ASTC_BINDING_ENC_BUFFER = 1;
-constexpr u32 ASTC_BINDING_SWIZZLE_BUFFER = 2;
-constexpr u32 ASTC_BINDING_OUTPUT_IMAGE = 3;
-constexpr size_t ASTC_NUM_BINDINGS = 4;
+constexpr u32 ASTC_BINDING_OUTPUT_IMAGE = 1;
+constexpr size_t ASTC_NUM_BINDINGS = 2;
 
 template <size_t size>
 inline constexpr VkPushConstantRange COMPUTE_PUSH_CONSTANT_RANGE{
@@ -75,23 +71,9 @@ constexpr DescriptorBankInfo INPUT_OUTPUT_BANK_INFO{
     .score = 2,
 };
 
-constexpr std::array<VkDescriptorSetLayoutBinding, 4> ASTC_DESCRIPTOR_SET_BINDINGS{{
+constexpr std::array<VkDescriptorSetLayoutBinding, ASTC_NUM_BINDINGS> ASTC_DESCRIPTOR_SET_BINDINGS{{
     {
         .binding = ASTC_BINDING_INPUT_BUFFER,
-        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-        .descriptorCount = 1,
-        .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-        .pImmutableSamplers = nullptr,
-    },
-    {
-        .binding = ASTC_BINDING_ENC_BUFFER,
-        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-        .descriptorCount = 1,
-        .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-        .pImmutableSamplers = nullptr,
-    },
-    {
-        .binding = ASTC_BINDING_SWIZZLE_BUFFER,
         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         .descriptorCount = 1,
         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
@@ -108,12 +90,12 @@ constexpr std::array<VkDescriptorSetLayoutBinding, 4> ASTC_DESCRIPTOR_SET_BINDIN
 
 constexpr DescriptorBankInfo ASTC_BANK_INFO{
     .uniform_buffers = 0,
-    .storage_buffers = 3,
+    .storage_buffers = 1,
     .texture_buffers = 0,
     .image_buffers = 0,
     .textures = 0,
     .images = 1,
-    .score = 4,
+    .score = 2,
 };
 
 constexpr VkDescriptorUpdateTemplateEntryKHR INPUT_OUTPUT_DESCRIPTOR_UPDATE_TEMPLATE{
@@ -136,22 +118,6 @@ constexpr std::array<VkDescriptorUpdateTemplateEntryKHR, ASTC_NUM_BINDINGS>
             .stride = sizeof(DescriptorUpdateEntry),
         },
         {
-            .dstBinding = ASTC_BINDING_ENC_BUFFER,
-            .dstArrayElement = 0,
-            .descriptorCount = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .offset = ASTC_BINDING_ENC_BUFFER * sizeof(DescriptorUpdateEntry),
-            .stride = sizeof(DescriptorUpdateEntry),
-        },
-        {
-            .dstBinding = ASTC_BINDING_SWIZZLE_BUFFER,
-            .dstArrayElement = 0,
-            .descriptorCount = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .offset = ASTC_BINDING_SWIZZLE_BUFFER * sizeof(DescriptorUpdateEntry),
-            .stride = sizeof(DescriptorUpdateEntry),
-        },
-        {
             .dstBinding = ASTC_BINDING_OUTPUT_IMAGE,
             .dstArrayElement = 0,
             .descriptorCount = 1,
@@ -163,7 +129,6 @@ constexpr std::array<VkDescriptorUpdateTemplateEntryKHR, ASTC_NUM_BINDINGS>
 
 struct AstcPushConstants {
     std::array<u32, 2> blocks_dims;
-    u32 bytes_per_block_log2;
     u32 layer_stride;
     u32 block_size;
     u32 x_shift;
@@ -354,46 +319,6 @@ ASTCDecoderPass::ASTCDecoderPass(const Device& device_, VKScheduler& scheduler_,
 
 ASTCDecoderPass::~ASTCDecoderPass() = default;
 
-void ASTCDecoderPass::MakeDataBuffer() {
-    constexpr size_t TOTAL_BUFFER_SIZE = sizeof(ASTC_ENCODINGS_VALUES) + sizeof(SWIZZLE_TABLE);
-    data_buffer = device.GetLogical().CreateBuffer(VkBufferCreateInfo{
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .size = TOTAL_BUFFER_SIZE,
-        .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-        .queueFamilyIndexCount = 0,
-        .pQueueFamilyIndices = nullptr,
-    });
-    data_buffer_commit = memory_allocator.Commit(data_buffer, MemoryUsage::Upload);
-
-    const auto staging_ref = staging_buffer_pool.Request(TOTAL_BUFFER_SIZE, MemoryUsage::Upload);
-    std::memcpy(staging_ref.mapped_span.data(), &ASTC_ENCODINGS_VALUES,
-                sizeof(ASTC_ENCODINGS_VALUES));
-    // Tack on the swizzle table at the end of the buffer
-    std::memcpy(staging_ref.mapped_span.data() + sizeof(ASTC_ENCODINGS_VALUES), &SWIZZLE_TABLE,
-                sizeof(SWIZZLE_TABLE));
-
-    scheduler.Record([src = staging_ref.buffer, offset = staging_ref.offset, dst = *data_buffer,
-                      TOTAL_BUFFER_SIZE](vk::CommandBuffer cmdbuf) {
-        static constexpr VkMemoryBarrier write_barrier{
-            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
-            .pNext = nullptr,
-            .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-            .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
-        };
-        const VkBufferCopy copy{
-            .srcOffset = offset,
-            .dstOffset = 0,
-            .size = TOTAL_BUFFER_SIZE,
-        };
-        cmdbuf.CopyBuffer(src, dst, copy);
-        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                               0, write_barrier);
-    });
-}
-
 void ASTCDecoderPass::Assemble(Image& image, const StagingBufferRef& map,
                                std::span<const VideoCommon::SwizzleParameters> swizzles) {
     using namespace VideoCommon::Accelerated;
@@ -402,9 +327,6 @@ void ASTCDecoderPass::Assemble(Image& image, const StagingBufferRef& map,
         VideoCore::Surface::DefaultBlockHeight(image.info.format),
     };
     scheduler.RequestOutsideRenderPassOperationContext();
-    if (!data_buffer) {
-        MakeDataBuffer();
-    }
     const VkPipeline vk_pipeline = *pipeline;
     const VkImageAspectFlags aspect_mask = image.AspectMask();
     const VkImage vk_image = image.Handle();
@@ -436,16 +358,13 @@ void ASTCDecoderPass::Assemble(Image& image, const StagingBufferRef& map,
         });
     for (const VideoCommon::SwizzleParameters& swizzle : swizzles) {
         const size_t input_offset = swizzle.buffer_offset + map.offset;
-        const u32 num_dispatches_x = Common::DivCeil(swizzle.num_tiles.width, 32U);
-        const u32 num_dispatches_y = Common::DivCeil(swizzle.num_tiles.height, 32U);
+        const u32 num_dispatches_x = Common::DivCeil(swizzle.num_tiles.width, 8U);
+        const u32 num_dispatches_y = Common::DivCeil(swizzle.num_tiles.height, 8U);
         const u32 num_dispatches_z = image.info.resources.layers;
 
         update_descriptor_queue.Acquire();
         update_descriptor_queue.AddBuffer(map.buffer, input_offset,
                                           image.guest_size_bytes - swizzle.buffer_offset);
-        update_descriptor_queue.AddBuffer(*data_buffer, 0, sizeof(ASTC_ENCODINGS_VALUES));
-        update_descriptor_queue.AddBuffer(*data_buffer, sizeof(ASTC_ENCODINGS_VALUES),
-                                          sizeof(SWIZZLE_TABLE));
         update_descriptor_queue.AddImage(image.StorageImageView(swizzle.level));
         const void* const descriptor_data{update_descriptor_queue.UpdateData()};
 
@@ -453,11 +372,11 @@ void ASTCDecoderPass::Assemble(Image& image, const StagingBufferRef& map,
         const auto params = MakeBlockLinearSwizzle2DParams(swizzle, image.info);
         ASSERT(params.origin == (std::array<u32, 3>{0, 0, 0}));
         ASSERT(params.destination == (std::array<s32, 3>{0, 0, 0}));
+        ASSERT(params.bytes_per_block_log2 == 4);
         scheduler.Record([this, num_dispatches_x, num_dispatches_y, num_dispatches_z, block_dims,
                           params, descriptor_data](vk::CommandBuffer cmdbuf) {
             const AstcPushConstants uniforms{
                 .blocks_dims = block_dims,
-                .bytes_per_block_log2 = params.bytes_per_block_log2,
                 .layer_stride = params.layer_stride,
                 .block_size = params.block_size,
                 .x_shift = params.x_shift,

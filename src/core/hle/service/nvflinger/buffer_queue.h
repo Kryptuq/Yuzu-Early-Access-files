@@ -107,6 +107,7 @@ public:
     void Connect();
     void Disconnect();
     u32 Query(QueryType type);
+    const Buffer& AccessBuffer(u32 slot) const;
 
     u32 GetId() const {
         return id;

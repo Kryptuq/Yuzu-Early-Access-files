@@ -10,33 +10,27 @@
 #define END_PUSH_CONSTANTS };
 #define UNIFORM(n)
 #define BINDING_INPUT_BUFFER 0
-#define BINDING_ENC_BUFFER 1
-#define BINDING_SWIZZLE_BUFFER 2
-#define BINDING_OUTPUT_IMAGE 3
+#define BINDING_OUTPUT_IMAGE 1
 
 #else // ^^^ Vulkan ^^^ // vvv OpenGL vvv
 
 #define BEGIN_PUSH_CONSTANTS
 #define END_PUSH_CONSTANTS
 #define UNIFORM(n) layout(location = n) uniform
-#define BINDING_SWIZZLE_BUFFER 0
-#define BINDING_INPUT_BUFFER 1
-#define BINDING_ENC_BUFFER 2
+#define BINDING_INPUT_BUFFER 0
 #define BINDING_OUTPUT_IMAGE 0
 
 #endif
 
-layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 BEGIN_PUSH_CONSTANTS
 UNIFORM(1) uvec2 block_dims;
-
-UNIFORM(2) uint bytes_per_block_log2;
-UNIFORM(3) uint layer_stride;
-UNIFORM(4) uint block_size;
-UNIFORM(5) uint x_shift;
-UNIFORM(6) uint block_height;
-UNIFORM(7) uint block_height_mask;
+UNIFORM(2) uint layer_stride;
+UNIFORM(3) uint block_size;
+UNIFORM(4) uint x_shift;
+UNIFORM(5) uint block_height;
+UNIFORM(6) uint block_height_mask;
 END_PUSH_CONSTANTS
 
 struct EncodingData {
@@ -55,44 +49,34 @@ struct TexelWeightParams {
     bool void_extent_hdr;
 };
 
-// Swizzle data
-layout(binding = BINDING_SWIZZLE_BUFFER, std430) readonly buffer SwizzleTable {
-    uint swizzle_table[];
-};
-
 layout(binding = BINDING_INPUT_BUFFER, std430) readonly buffer InputBufferU32 {
-    uint astc_data[];
-};
-
-// ASTC Encodings data
-layout(binding = BINDING_ENC_BUFFER, std430) readonly buffer EncodingsValues {
-    EncodingData encoding_values[];
+    uvec4 astc_data[];
 };
 
 layout(binding = BINDING_OUTPUT_IMAGE, rgba8) uniform writeonly image2DArray dest_image;
 
-const uint GOB_SIZE_X = 64;
-const uint GOB_SIZE_Y = 8;
-const uint GOB_SIZE_Z = 1;
-const uint GOB_SIZE = GOB_SIZE_X * GOB_SIZE_Y * GOB_SIZE_Z;
-
 const uint GOB_SIZE_X_SHIFT = 6;
 const uint GOB_SIZE_Y_SHIFT = 3;
-const uint GOB_SIZE_Z_SHIFT = 0;
-const uint GOB_SIZE_SHIFT = GOB_SIZE_X_SHIFT + GOB_SIZE_Y_SHIFT + GOB_SIZE_Z_SHIFT;
+const uint GOB_SIZE_SHIFT = GOB_SIZE_X_SHIFT + GOB_SIZE_Y_SHIFT;
 
-const uvec2 SWIZZLE_MASK = uvec2(GOB_SIZE_X - 1, GOB_SIZE_Y - 1);
-
-const int BLOCK_SIZE_IN_BYTES = 16;
-
-const int BLOCK_INFO_ERROR = 0;
-const int BLOCK_INFO_VOID_EXTENT_HDR = 1;
-const int BLOCK_INFO_VOID_EXTENT_LDR = 2;
-const int BLOCK_INFO_NORMAL = 3;
+const uint BYTES_PER_BLOCK_LOG2 = 4;
 
 const int JUST_BITS = 0;
 const int QUINT = 1;
 const int TRIT = 2;
+
+// ASTC Encodings data, sorted in ascending order based on their BitLength value
+// (see GetBitLength() function)
+EncodingData encoding_values[22] = EncodingData[](
+    EncodingData(JUST_BITS, 0, 0, 0), EncodingData(JUST_BITS, 1, 0, 0), EncodingData(TRIT, 0, 0, 0),
+    EncodingData(JUST_BITS, 2, 0, 0), EncodingData(QUINT, 0, 0, 0), EncodingData(TRIT, 1, 0, 0),
+    EncodingData(JUST_BITS, 3, 0, 0), EncodingData(QUINT, 1, 0, 0), EncodingData(TRIT, 2, 0, 0),
+    EncodingData(JUST_BITS, 4, 0, 0), EncodingData(QUINT, 2, 0, 0), EncodingData(TRIT, 3, 0, 0),
+    EncodingData(JUST_BITS, 5, 0, 0), EncodingData(QUINT, 3, 0, 0), EncodingData(TRIT, 4, 0, 0),
+    EncodingData(JUST_BITS, 6, 0, 0), EncodingData(QUINT, 4, 0, 0), EncodingData(TRIT, 5, 0, 0),
+    EncodingData(JUST_BITS, 7, 0, 0), EncodingData(QUINT, 5, 0, 0), EncodingData(TRIT, 6, 0, 0),
+    EncodingData(JUST_BITS, 8, 0, 0)
+);
 
 // The following constants are expanded variants of the Replicate()
 // function calls corresponding to the following arguments:
@@ -135,44 +119,37 @@ const uint REPLICATE_7_BIT_TO_8_TABLE[128] =
 // Input ASTC texture globals
 uint current_index = 0;
 int bitsread = 0;
-uint total_bitsread = 0;
-uint local_buff[16];
+int total_bitsread = 0;
+uvec4 local_buff;
 
 // Color data globals
-uint color_endpoint_data[16];
+uvec4 color_endpoint_data;
 int color_bitsread = 0;
-uint total_color_bitsread = 0;
-int color_index = 0;
 
 // Four values, two endpoints, four maximum paritions
 uint color_values[32];
 int colvals_index = 0;
 
 // Weight data globals
-uint texel_weight_data[16];
+uvec4 texel_weight_data;
 int texel_bitsread = 0;
-uint total_texel_bitsread = 0;
-int texel_index = 0;
 
 bool texel_flag = false;
 
 // Global "vectors" to be pushed into when decoding
-EncodingData result_vector[100];
+EncodingData result_vector[144];
 int result_index = 0;
 
-EncodingData texel_vector[100];
+EncodingData texel_vector[144];
 int texel_vector_index = 0;
 
 uint unquantized_texel_weights[2][144];
 
 uint SwizzleOffset(uvec2 pos) {
-    pos = pos & SWIZZLE_MASK;
-    return swizzle_table[pos.y * 64 + pos.x];
-}
-
-uint ReadTexel(uint offset) {
-    // extract the 8-bit value from the 32-bit packed data.
-    return bitfieldExtract(astc_data[offset / 4], int((offset * 8) & 24), 8);
+    uint x = pos.x;
+    uint y = pos.y;
+    return ((x % 64) / 32) * 256 + ((y % 8) / 2) * 64 + ((x % 32) / 16) * 32 +
+                          (y % 2) * 16 + (x % 16);
 }
 
 // Replicates low num_bits such that [(to_bit - 1):(to_bit - 1 - from_bit)]
@@ -278,14 +255,10 @@ uint Hash52(uint p) {
     return p;
 }
 
-uint SelectPartition(uint seed, uint x, uint y, uint z, uint partition_count, bool small_block) {
-    if (partition_count == 1) {
-        return 0;
-    }
+uint Select2DPartition(uint seed, uint x, uint y, uint partition_count, bool small_block) {
     if (small_block) {
         x <<= 1;
         y <<= 1;
-        z <<= 1;
     }
 
     seed += (partition_count - 1) * 1024;
@@ -299,10 +272,6 @@ uint SelectPartition(uint seed, uint x, uint y, uint z, uint partition_count, bo
     uint seed6 = uint((rnum >> 20) & 0xF);
     uint seed7 = uint((rnum >> 24) & 0xF);
     uint seed8 = uint((rnum >> 28) & 0xF);
-    uint seed9 = uint((rnum >> 18) & 0xF);
-    uint seed10 = uint((rnum >> 22) & 0xF);
-    uint seed11 = uint((rnum >> 26) & 0xF);
-    uint seed12 = uint(((rnum >> 30) | (rnum << 2)) & 0xF);
 
     seed1 = (seed1 * seed1);
     seed2 = (seed2 * seed2);
@@ -312,12 +281,8 @@ uint SelectPartition(uint seed, uint x, uint y, uint z, uint partition_count, bo
     seed6 = (seed6 * seed6);
     seed7 = (seed7 * seed7);
     seed8 = (seed8 * seed8);
-    seed9 = (seed9 * seed9);
-    seed10 = (seed10 * seed10);
-    seed11 = (seed11 * seed11);
-    seed12 = (seed12 * seed12);
 
-    int sh1, sh2, sh3;
+    uint sh1, sh2;
     if ((seed & 1) > 0) {
         sh1 = (seed & 2) > 0 ? 4 : 5;
         sh2 = (partition_count == 3) ? 6 : 5;
@@ -325,25 +290,19 @@ uint SelectPartition(uint seed, uint x, uint y, uint z, uint partition_count, bo
         sh1 = (partition_count == 3) ? 6 : 5;
         sh2 = (seed & 2) > 0 ? 4 : 5;
     }
-    sh3 = (seed & 0x10) > 0 ? sh1 : sh2;
+    seed1 >>= sh1;
+    seed2 >>= sh2;
+    seed3 >>= sh1;
+    seed4 >>= sh2;
+    seed5 >>= sh1;
+    seed6 >>= sh2;
+    seed7 >>= sh1;
+    seed8 >>= sh2;
 
-    seed1 = (seed1 >> sh1);
-    seed2 = (seed2 >> sh2);
-    seed3 = (seed3 >> sh1);
-    seed4 = (seed4 >> sh2);
-    seed5 = (seed5 >> sh1);
-    seed6 = (seed6 >> sh2);
-    seed7 = (seed7 >> sh1);
-    seed8 = (seed8 >> sh2);
-    seed9 = (seed9 >> sh3);
-    seed10 = (seed10 >> sh3);
-    seed11 = (seed11 >> sh3);
-    seed12 = (seed12 >> sh3);
-
-    uint a = seed1 * x + seed2 * y + seed11 * z + (rnum >> 14);
-    uint b = seed3 * x + seed4 * y + seed12 * z + (rnum >> 10);
-    uint c = seed5 * x + seed6 * y + seed9 * z + (rnum >> 6);
-    uint d = seed7 * x + seed8 * y + seed10 * z + (rnum >> 2);
+    uint a = seed1 * x + seed2 * y + (rnum >> 14);
+    uint b = seed3 * x + seed4 * y + (rnum >> 10);
+    uint c = seed5 * x + seed6 * y + (rnum >> 6);
+    uint d = seed7 * x + seed8 * y + (rnum >> 2);
 
     a &= 0x3F;
     b &= 0x3F;
@@ -368,58 +327,37 @@ uint SelectPartition(uint seed, uint x, uint y, uint z, uint partition_count, bo
     }
 }
 
-uint Select2DPartition(uint seed, uint x, uint y, uint partition_count, bool small_block) {
-    return SelectPartition(seed, x, y, 0, partition_count, small_block);
-}
-
-uint ReadBit() {
-    if (current_index >= local_buff.length()) {
+uint ExtractBits(uvec4 payload, int offset, int bits) {
+    if (bits <= 0) {
         return 0;
     }
-    uint bit = bitfieldExtract(local_buff[current_index], bitsread, 1);
-    ++bitsread;
-    ++total_bitsread;
-    if (bitsread == 8) {
-        ++current_index;
-        bitsread = 0;
+    int last_offset = offset + bits - 1;
+    int shifted_offset = offset >> 5;
+    if ((last_offset >> 5) == shifted_offset) {
+        return bitfieldExtract(payload[shifted_offset], offset & 31, bits);
     }
-    return bit;
+    int first_bits = 32 - (offset & 31);
+    int result_first = int(bitfieldExtract(payload[shifted_offset], offset & 31, first_bits));
+    int result_second = int(bitfieldExtract(payload[shifted_offset + 1], 0, bits - first_bits));
+    return result_first | (result_second << first_bits);
 }
 
 uint StreamBits(uint num_bits) {
-    uint ret = 0;
-    for (uint i = 0; i < num_bits; i++) {
-        ret |= ((ReadBit() & 1) << i);
-    }
+    int int_bits = int(num_bits);
+    uint ret = ExtractBits(local_buff, total_bitsread, int_bits);
+    total_bitsread += int_bits;
     return ret;
-}
-
-uint ReadColorBit() {
-    uint bit = 0;
-    if (texel_flag) {
-        bit = bitfieldExtract(texel_weight_data[texel_index], texel_bitsread, 1);
-        ++texel_bitsread;
-        ++total_texel_bitsread;
-        if (texel_bitsread == 8) {
-            ++texel_index;
-            texel_bitsread = 0;
-        }
-    } else {
-        bit = bitfieldExtract(color_endpoint_data[color_index], color_bitsread, 1);
-        ++color_bitsread;
-        ++total_color_bitsread;
-        if (color_bitsread == 8) {
-            ++color_index;
-            color_bitsread = 0;
-        }
-    }
-    return bit;
 }
 
 uint StreamColorBits(uint num_bits) {
     uint ret = 0;
-    for (uint i = 0; i < num_bits; i++) {
-        ret |= ((ReadColorBit() & 1) << i);
+    int int_bits = int(num_bits);
+    if (texel_flag) {
+        ret = ExtractBits(texel_weight_data, texel_bitsread, int_bits);
+        texel_bitsread += int_bits;
+    } else {
+        ret = ExtractBits(color_endpoint_data, color_bitsread, int_bits);
+        color_bitsread += int_bits;
     }
     return ret;
 }
@@ -596,22 +534,16 @@ void DecodeColorValues(uvec4 modes, uint num_partitions, uint color_data_bits) {
     for (uint i = 0; i < num_partitions; i++) {
         num_values += ((modes[i] >> 2) + 1) << 1;
     }
-    int range = 256;
-    while (--range > 0) {
-        EncodingData val = encoding_values[range];
+    // Find the largest encoding that's within color_data_bits
+    // TODO(ameerj): profile with binary search
+    int range = 0;
+    while (++range < encoding_values.length()) {
         uint bit_length = GetBitLength(num_values, range);
-        if (bit_length <= color_data_bits) {
-            while (--range > 0) {
-                EncodingData newval = encoding_values[range];
-                if (newval.encoding != val.encoding && newval.num_bits != val.num_bits) {
-                    break;
-                }
-            }
-            ++range;
+        if (bit_length > color_data_bits) {
             break;
         }
     }
-    DecodeIntegerSequence(range, num_values);
+    DecodeIntegerSequence(range - 1, num_values);
     uint out_index = 0;
     for (int itr = 0; itr < result_index; ++itr) {
         if (out_index >= num_values) {
@@ -1028,7 +960,7 @@ int FindLayout(uint mode) {
     return 5;
 }
 
-TexelWeightParams DecodeBlockInfo(uint block_index) {
+TexelWeightParams DecodeBlockInfo() {
     TexelWeightParams params = TexelWeightParams(uvec2(0), 0, false, false, false, false);
     uint mode = StreamBits(11);
     if ((mode & 0x1ff) == 0x1fc) {
@@ -1110,10 +1042,10 @@ TexelWeightParams DecodeBlockInfo(uint block_index) {
     }
     weight_index -= 2;
     if ((mode_layout != 9) && ((mode & 0x200) != 0)) {
-        const int max_weights[6] = int[6](9, 11, 15, 19, 23, 31);
+        const int max_weights[6] = int[6](7, 8, 9, 10, 11, 12);
         params.max_weight = max_weights[weight_index];
     } else {
-        const int max_weights[6] = int[6](1, 2, 3, 4, 5, 7);
+        const int max_weights[6] = int[6](1, 2, 3, 4, 5, 6);
         params.max_weight = max_weights[weight_index];
     }
     return params;
@@ -1144,8 +1076,8 @@ void FillVoidExtentLDR(ivec3 coord) {
     }
 }
 
-void DecompressBlock(ivec3 coord, uint block_index) {
-    TexelWeightParams params = DecodeBlockInfo(block_index);
+void DecompressBlock(ivec3 coord) {
+    TexelWeightParams params = DecodeBlockInfo();
     if (params.error_state) {
         FillError(coord);
         return;
@@ -1212,7 +1144,7 @@ void DecompressBlock(ivec3 coord, uint block_index) {
     // Read color data...
     uint color_data_bits = remaining_bits;
     while (remaining_bits > 0) {
-        int nb = int(min(remaining_bits, 8U));
+        int nb = int(min(remaining_bits, 32U));
         uint b = StreamBits(nb);
         color_endpoint_data[ced_pointer] = uint(bitfieldExtract(b, 0, nb));
         ++ced_pointer;
@@ -1254,25 +1186,20 @@ void DecompressBlock(ivec3 coord, uint block_index) {
         ComputeEndpoints(endpoints[i][0], endpoints[i][1], color_endpoint_mode[i]);
     }
 
-    for (uint i = 0; i < 16; i++) {
-        texel_weight_data[i] = local_buff[i];
-    }
-    for (uint i = 0; i < 8; i++) {
-#define REVERSE_BYTE(b) ((b * 0x0802U & 0x22110U) | (b * 0x8020U & 0x88440U)) * 0x10101U >> 16
-        uint a = REVERSE_BYTE(texel_weight_data[i]);
-        uint b = REVERSE_BYTE(texel_weight_data[15 - i]);
-#undef REVERSE_BYTE
-        texel_weight_data[i] = uint(bitfieldExtract(b, 0, 8));
-        texel_weight_data[15 - i] = uint(bitfieldExtract(a, 0, 8));
-    }
+    texel_weight_data = local_buff;
+    texel_weight_data = bitfieldReverse(texel_weight_data).wzyx;
     uint clear_byte_start =
         (GetPackedBitSize(params.size, params.dual_plane, params.max_weight) >> 3) + 1;
-    texel_weight_data[clear_byte_start - 1] =
-        texel_weight_data[clear_byte_start - 1] &
+
+    uint byte_insert = ExtractBits(texel_weight_data, int(clear_byte_start - 1) * 8, 8) &
         uint(
             ((1 << (GetPackedBitSize(params.size, params.dual_plane, params.max_weight) % 8)) - 1));
-    for (uint i = 0; i < 16 - clear_byte_start; i++) {
-        texel_weight_data[clear_byte_start + i] = 0U;
+    uint vec_index = (clear_byte_start - 1) >> 2;
+    texel_weight_data[vec_index] =
+        bitfieldInsert(texel_weight_data[vec_index], byte_insert, int((clear_byte_start - 1) % 4) * 8, 8);
+    for (uint i = clear_byte_start; i < 16; ++i) {
+        uint idx = i >> 2;
+        texel_weight_data[idx] = bitfieldInsert(texel_weight_data[idx], 0, int(i % 4) * 8, 8);
     }
     texel_flag = true; // use texel "vector" and bit stream in integer decoding
     DecodeIntegerSequence(params.max_weight, GetNumWeightValues(params.size, params.dual_plane));
@@ -1281,8 +1208,11 @@ void DecompressBlock(ivec3 coord, uint block_index) {
 
     for (uint j = 0; j < block_dims.y; j++) {
         for (uint i = 0; i < block_dims.x; i++) {
-            uint local_partition = Select2DPartition(partition_index, i, j, num_partitions,
+            uint local_partition = 0;
+            if (num_partitions > 1) {
+                local_partition = Select2DPartition(partition_index, i, j, num_partitions,
                                                      (block_dims.y * block_dims.x) < 32);
+            }
             vec4 p;
             uvec4 C0 = ReplicateByteTo16(endpoints[local_partition][0]);
             uvec4 C1 = ReplicateByteTo16(endpoints[local_partition][1]);
@@ -1303,7 +1233,7 @@ void DecompressBlock(ivec3 coord, uint block_index) {
 
 void main() {
     uvec3 pos = gl_GlobalInvocationID;
-    pos.x <<= bytes_per_block_log2;
+    pos.x <<= BYTES_PER_BLOCK_LOG2;
 
     // Read as soon as possible due to its latency
     const uint swizzle = SwizzleOffset(pos.xy);
@@ -1321,13 +1251,8 @@ void main() {
     if (any(greaterThanEqual(coord, imageSize(dest_image)))) {
         return;
     }
-    uint block_index =
-        pos.z * gl_WorkGroupSize.x * gl_WorkGroupSize.y + pos.y * gl_WorkGroupSize.x + pos.x;
-
     current_index = 0;
     bitsread = 0;
-    for (int i = 0; i < 16; i++) {
-        local_buff[i] = ReadTexel(offset + i);
-    }
-    DecompressBlock(coord, block_index);
+    local_buff = astc_data[offset / 16];
+    DecompressBlock(coord);
 }
