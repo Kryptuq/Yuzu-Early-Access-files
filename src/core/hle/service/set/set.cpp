@@ -85,7 +85,8 @@ void PushResponseLanguageCode(Kernel::HLERequestContext& ctx, std::size_t num_la
 
 void GetAvailableLanguageCodesImpl(Kernel::HLERequestContext& ctx, std::size_t max_entries) {
     const std::size_t requested_amount = ctx.GetWriteBufferSize() / sizeof(LanguageCode);
-    const std::size_t copy_amount = std::min(requested_amount, max_entries);
+    const std::size_t max_amount = std::min(requested_amount, max_entries);
+    const std::size_t copy_amount = std::min(available_language_codes.size(), max_amount);
     const std::size_t copy_size = copy_amount * sizeof(LanguageCode);
 
     ctx.WriteBuffer(available_language_codes.data(), copy_size);

@@ -22,8 +22,8 @@ public:
         SetControlParams = 0x1c1,
         SetConfigStructOffset = 0x1c2,
         SetOutputSurfaceLumaOffset = 0x1c8,
-        SetOutputSurfaceChromaUOffset = 0x1c9,
-        SetOutputSurfaceChromaVOffset = 0x1ca
+        SetOutputSurfaceChromaOffset = 0x1c9,
+        SetOutputSurfaceChromaUnusedOffset = 0x1ca
     };
 
     explicit Vic(GPU& gpu, std::shared_ptr<Nvdec> nvdec_processor);
@@ -64,8 +64,7 @@ private:
 
     GPUVAddr config_struct_address{};
     GPUVAddr output_surface_luma_address{};
-    GPUVAddr output_surface_chroma_u_address{};
-    GPUVAddr output_surface_chroma_v_address{};
+    GPUVAddr output_surface_chroma_address{};
 
     SwsContext* scaler_ctx{};
     s32 scaler_width{};

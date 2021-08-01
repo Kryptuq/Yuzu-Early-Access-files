@@ -2,7 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <cstring>
 #include <fstream>
 #include <vector>
 #include "common/assert.h"
@@ -19,8 +18,7 @@ extern "C" {
 namespace Tegra {
 
 void AVFrameDeleter(AVFrame* ptr) {
-    av_frame_unref(ptr);
-    av_free(ptr);
+    av_frame_free(&ptr);
 }
 
 Codec::Codec(GPU& gpu_, const NvdecCommon::NvdecRegisters& regs)
@@ -31,8 +29,9 @@ Codec::~Codec() {
     if (!initialized) {
         return;
     }
+
     // Free libav memory
-    AVFrame* av_frame{nullptr};
+    AVFrame* av_frame;
     avcodec_send_packet(av_codec_ctx, nullptr);
     av_frame = av_frame_alloc();
     avcodec_receive_frame(av_codec_ctx, av_frame);
@@ -41,10 +40,121 @@ Codec::~Codec() {
     av_frame_unref(av_frame);
     av_free(av_frame);
     avcodec_close(av_codec_ctx);
+    av_buffer_unref(&av_hw_device);
+}
+
+// Hardware acceleration code from FFmpeg/doc/examples/hw_decode.c under MIT license
+#if defined(LIBVA_FOUND)
+namespace {
+AVPixelFormat GetHwFormat(AVCodecContext*, const AVPixelFormat* pix_fmts) {
+    for (const AVPixelFormat* p = pix_fmts; *p != AV_PIX_FMT_NONE; ++p) {
+        if (*p == AV_PIX_FMT_VAAPI) {
+            return AV_PIX_FMT_VAAPI;
+        }
+    }
+    LOG_INFO(Service_NVDRV, "Could not find compatible GPU AV format, falling back to CPU");
+    return *pix_fmts;
+}
+
+constexpr std::array<const char*, 2> VAAPI_DRIVERS = {
+    "i915",
+    "amdgpu",
+};
+
+bool CreateVaapiHwdevice(AVBufferRef** av_hw_device) {
+    AVDictionary* hwdevice_options = nullptr;
+    av_dict_set(&hwdevice_options, "connection_type", "drm", 0);
+    for (auto driver : VAAPI_DRIVERS) {
+        av_dict_set(&hwdevice_options, "kernel_driver", driver, 0);
+        const int hwdevice_error = av_hwdevice_ctx_create(av_hw_device, AV_HWDEVICE_TYPE_VAAPI,
+                                                          nullptr, hwdevice_options, 0);
+        if (hwdevice_error >= 0) {
+            LOG_INFO(Service_NVDRV, "Using VA-API with {}", driver);
+            av_dict_free(&hwdevice_options);
+            return true;
+        }
+        LOG_DEBUG(Service_NVDRV, "VA-API av_hwdevice_ctx_create failed {}", hwdevice_error);
+    }
+    LOG_DEBUG(Service_NVDRV, "VA-API av_hwdevice_ctx_create failed for all drivers");
+    av_dict_free(&hwdevice_options);
+    return false;
+}
+} // namespace
+#endif
+
+void Codec::InitializeHwdec() {
+#if defined(LIBVA_FOUND)
+    if (CreateVaapiHwdevice(&av_hw_device)) {
+        const auto hw_device_ctx = av_buffer_ref(av_hw_device);
+        ASSERT_MSG(hw_device_ctx, "av_buffer_ref failed");
+        av_codec_ctx->hw_device_ctx = hw_device_ctx;
+        av_codec_ctx->get_format = GetHwFormat;
+        return;
+    }
+#endif
+
+    // TODO NVDEC, but integrated GPU should be used first to avoid PCI
+}
+
+[[nodiscard]] AVFrame* Codec::DecodeImpl(RawFrame& raw_frame) {
+    AVPacket packet{};
+    av_init_packet(&packet);
+    packet.data = raw_frame.frame_data.data();
+    packet.size = static_cast<s32>(raw_frame.frame_data.size());
+
+    if (const int ret = avcodec_send_packet(av_codec_ctx, &packet); ret) {
+        LOG_DEBUG(Service_NVDRV, "avcodec_send_packet error {}", ret);
+        return nullptr;
+    }
+
+    // Only receive/store visible frames
+    if (raw_frame.vp9_hidden_frame) {
+        return nullptr;
+    }
+    AVFrame* hw_frame = av_frame_alloc();
+    AVFrame* sw_frame = hw_frame;
+    ASSERT_MSG(hw_frame, "av_frame_alloc hw_frame failed");
+    if (const int ret = avcodec_receive_frame(av_codec_ctx, hw_frame); ret) {
+        LOG_DEBUG(Service_NVDRV, "avcodec_receive_frame error {}", ret);
+        av_frame_free(&hw_frame);
+        return nullptr;
+    }
+
+    if (!hw_frame->width || !hw_frame->height) {
+        LOG_WARNING(Service_NVDRV, "Zero width or height in frame");
+        av_frame_free(&hw_frame);
+        return nullptr;
+    }
+
+#if defined(LIBVA_FOUND)
+    // Hardware acceleration code from FFmpeg/doc/examples/hw_decode.c under MIT license
+    if (hw_frame->format == AV_PIX_FMT_VAAPI) {
+        sw_frame = av_frame_alloc();
+        ASSERT_MSG(sw_frame, "av_frame_alloc sw_frame failed");
+        // Can't use AV_PIX_FMT_YUV420P and share code with software decoding in vic.cpp
+        // because Intel drivers crash unless using AV_PIX_FMT_NV12
+        sw_frame->format = AV_PIX_FMT_NV12;
+        const int transfer_data_ret = av_hwframe_transfer_data(sw_frame, hw_frame, 0);
+        ASSERT_MSG(!transfer_data_ret, "av_hwframe_transfer_data error {}", transfer_data_ret);
+        av_frame_free(&hw_frame);
+    }
+#endif
+
+    switch (sw_frame->format) {
+    case AV_PIX_FMT_YUV420P:
+    case AV_PIX_FMT_NV12:
+        break;
+    default:
+        UNIMPLEMENTED_MSG("Unexpected video format from host graphics: {}", sw_frame->format);
+        av_frame_free(&sw_frame);
+        return nullptr;
+    }
+
+    return sw_frame;
 }
 
 void Codec::Initialize() {
-    AVCodecID codec{AV_CODEC_ID_NONE};
+    AVCodecID codec;
     switch (current_codec) {
     case NvdecCommon::VideoCodec::H264:
         codec = AV_CODEC_ID_H264;
@@ -53,22 +163,27 @@ void Codec::Initialize() {
         codec = AV_CODEC_ID_VP9;
         break;
     default:
+        UNIMPLEMENTED_MSG("Unknown codec {}", current_codec);
         return;
     }
     av_codec = avcodec_find_decoder(codec);
     av_codec_ctx = avcodec_alloc_context3(av_codec);
     av_opt_set(av_codec_ctx->priv_data, "tune", "zerolatency", 0);
 
-    // TODO(ameerj): libavcodec gpu hw acceleration
+    InitializeHwdec();
+    if (!av_codec_ctx->hw_device_ctx) {
+        LOG_INFO(Service_NVDRV, "Using FFmpeg software decoding");
+    }
 
     const auto av_error = avcodec_open2(av_codec_ctx, av_codec, nullptr);
     if (av_error < 0) {
         LOG_ERROR(Service_NVDRV, "avcodec_open2() Failed.");
         avcodec_close(av_codec_ctx);
+        av_buffer_unref(&av_hw_device);
         return;
     }
+
     initialized = true;
-    return;
 }
 
 void Codec::SetTargetCodec(NvdecCommon::VideoCodec codec) {
@@ -80,13 +195,11 @@ void Codec::SetTargetCodec(NvdecCommon::VideoCodec codec) {
 
 void Codec::Decode() {
     const bool is_first_frame = !initialized;
-    if (!initialized) {
+    if (is_first_frame) {
         Initialize();
     }
 
     bool vp9_hidden_frame = false;
-    AVPacket packet{};
-    av_init_packet(&packet);
     std::vector<u8> frame_data;
 
     if (current_codec == NvdecCommon::VideoCodec::H264) {
@@ -96,18 +209,15 @@ void Codec::Decode() {
         vp9_hidden_frame = vp9_decoder->WasFrameHidden();
     }
 
-    packet.data = frame_data.data();
-    packet.size = static_cast<s32>(frame_data.size());
-
-    avcodec_send_packet(av_codec_ctx, &packet);
-
-    if (!vp9_hidden_frame) {
-        // Only receive/store visible frames
-        AVFramePtr frame = AVFramePtr{av_frame_alloc(), AVFrameDeleter};
-        avcodec_receive_frame(av_codec_ctx, frame.get());
-        av_frames.push(std::move(frame));
-        // Limit queue to 10 frames. Workaround for ZLA decode and queue spam
-        if (av_frames.size() > 10) {
+    RawFrame raw_frame{
+        .frame_data = frame_data,
+        .vp9_hidden_frame = vp9_hidden_frame,
+    };
+    // TODO async
+    AVFrame* sw_frame = DecodeImpl(raw_frame);
+    if (sw_frame) {
+        if (av_frames.push(AVFramePtr{sw_frame, AVFrameDeleter}); av_frames.size() > 10) {
+            LOG_TRACE(Service_NVDRV, "av_frames.push overflow dropped frame");
             av_frames.pop();
         }
     }
@@ -144,6 +254,6 @@ std::string_view Codec::GetCurrentCodecName() const {
     default:
         return "Unknown";
     }
-};
+}
 
 } // namespace Tegra
