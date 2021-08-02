@@ -296,12 +296,6 @@ struct RefPoolElement {
     bool refresh{};
 };
 
-struct FrameContexts {
-    s64 from;
-    bool adapted;
-    Vp9EntropyProbs probs;
-};
-
 #define ASSERT_POSITION(field_name, position)                                                      \
     static_assert(offsetof(Vp9EntropyProbs, field_name) == position,                               \
                   "Field " #field_name " has invalid position")

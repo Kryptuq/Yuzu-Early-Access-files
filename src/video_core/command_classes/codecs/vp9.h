@@ -14,7 +14,6 @@
 
 namespace Tegra {
 class GPU;
-enum class FrameType { KeyFrame = 0, InterFrame = 1 };
 namespace Decoder {
 
 /// The VpxRangeEncoder, and VpxBitStreamWriter classes are used to compose the
@@ -124,7 +123,7 @@ public:
 
     /// Returns true if the most recent frame was a hidden frame.
     [[nodiscard]] bool WasFrameHidden() const {
-        return hidden;
+        return !current_frame_info.show_frame;
     }
 
 private:
@@ -178,19 +177,12 @@ private:
     std::array<s8, 4> loop_filter_ref_deltas{};
     std::array<s8, 2> loop_filter_mode_deltas{};
 
-    bool hidden = false;
-    s64 current_frame_number = -2; // since we buffer 2 frames
-    s32 grace_period = 6;          // frame offsets need to stabilize
-    std::array<FrameContexts, 4> frame_ctxs{};
     Vp9FrameContainer next_frame{};
-    Vp9FrameContainer next_next_frame{};
-    bool swap_next_golden{};
+    std::array<Vp9EntropyProbs, 4> frame_ctxs{};
+    bool swap_ref_indices{};
 
     Vp9PictureInfo current_frame_info{};
     Vp9EntropyProbs prev_frame_probs{};
-
-    s32 diff_update_probability = 252;
-    s32 frame_sync_code = 0x498342;
 };
 
 } // namespace Decoder

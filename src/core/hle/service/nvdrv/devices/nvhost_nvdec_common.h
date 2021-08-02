@@ -23,45 +23,6 @@ public:
     ~nvhost_nvdec_common() override;
 
 protected:
-    class BufferMap final {
-    public:
-        constexpr BufferMap() = default;
-
-        constexpr BufferMap(GPUVAddr start_addr_, std::size_t size_)
-            : start_addr{start_addr_}, end_addr{start_addr_ + size_} {}
-
-        constexpr BufferMap(GPUVAddr start_addr_, std::size_t size_, VAddr cpu_addr_,
-                            bool is_allocated_)
-            : start_addr{start_addr_}, end_addr{start_addr_ + size_}, cpu_addr{cpu_addr_},
-              is_allocated{is_allocated_} {}
-
-        constexpr VAddr StartAddr() const {
-            return start_addr;
-        }
-
-        constexpr VAddr EndAddr() const {
-            return end_addr;
-        }
-
-        constexpr std::size_t Size() const {
-            return end_addr - start_addr;
-        }
-
-        constexpr VAddr CpuAddr() const {
-            return cpu_addr;
-        }
-
-        constexpr bool IsAllocated() const {
-            return is_allocated;
-        }
-
-    private:
-        GPUVAddr start_addr{};
-        GPUVAddr end_addr{};
-        VAddr cpu_addr{};
-        bool is_allocated{};
-    };
-
     struct IoctlSetNvmapFD {
         s32_le nvmap_fd{};
     };
@@ -154,18 +115,11 @@ protected:
     NvResult UnmapBuffer(const std::vector<u8>& input, std::vector<u8>& output);
     NvResult SetSubmitTimeout(const std::vector<u8>& input, std::vector<u8>& output);
 
-    std::optional<BufferMap> FindBufferMap(GPUVAddr gpu_addr) const;
-    void AddBufferMap(GPUVAddr gpu_addr, std::size_t size, VAddr cpu_addr, bool is_allocated);
-    std::optional<std::size_t> RemoveBufferMap(GPUVAddr gpu_addr);
-
     s32_le nvmap_fd{};
     u32_le submit_timeout{};
-    bool vic_device{};
     std::shared_ptr<nvmap> nvmap_dev;
     SyncpointManager& syncpoint_manager;
     std::array<u32, MaxSyncPoints> device_syncpoints{};
-    // This is expected to be ordered, therefore we must use a map, not unordered_map
-    std::map<GPUVAddr, BufferMap> buffer_mappings;
 };
 }; // namespace Devices
 } // namespace Service::Nvidia
