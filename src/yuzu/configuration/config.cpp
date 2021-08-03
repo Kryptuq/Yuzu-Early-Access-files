@@ -888,10 +888,6 @@ void Config::ReadShortcutValues() {
 void Config::ReadSystemValues() {
     qt_config->beginGroup(QStringLiteral("System"));
 
-    ReadBasicSetting(Settings::values.current_user);
-    Settings::values.current_user = std::clamp<int>(Settings::values.current_user.GetValue(), 0,
-                                                    Service::Account::MAX_USERS - 1);
-
     ReadGlobalSetting(Settings::values.language_index);
 
     ReadGlobalSetting(Settings::values.region_index);
@@ -912,6 +908,10 @@ void Config::ReadSystemValues() {
     }
 
     if (global) {
+        ReadBasicSetting(Settings::values.current_user);
+        Settings::values.current_user = std::clamp<int>(Settings::values.current_user.GetValue(), 0,
+                                                        Service::Account::MAX_USERS - 1);
+
         const auto custom_rtc_enabled =
             ReadSetting(QStringLiteral("custom_rtc_enabled"), false).toBool();
         if (custom_rtc_enabled) {
@@ -1430,7 +1430,6 @@ void Config::SaveShortcutValues() {
 void Config::SaveSystemValues() {
     qt_config->beginGroup(QStringLiteral("System"));
 
-    WriteBasicSetting(Settings::values.current_user);
     WriteGlobalSetting(Settings::values.language_index);
     WriteGlobalSetting(Settings::values.region_index);
     WriteGlobalSetting(Settings::values.time_zone_index);
@@ -1442,6 +1441,8 @@ void Config::SaveSystemValues() {
                  0, Settings::values.rng_seed.UsingGlobal());
 
     if (global) {
+        WriteBasicSetting(Settings::values.current_user);
+
         WriteSetting(QStringLiteral("custom_rtc_enabled"), Settings::values.custom_rtc.has_value(),
                      false);
         WriteSetting(QStringLiteral("custom_rtc"),

@@ -570,7 +570,7 @@ std::pair<s32, Errno> Socket::SendTo(u32 flags, const std::vector<u8>& message,
     ASSERT(flags == 0);
 
     const sockaddr* to = nullptr;
-    const int tolen = addr ? 0 : sizeof(sockaddr);
+    const int tolen = addr ? sizeof(sockaddr) : 0;
     sockaddr host_addr_in;
 
     if (addr) {
