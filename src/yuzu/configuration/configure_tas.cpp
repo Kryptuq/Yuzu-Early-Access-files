@@ -55,7 +55,7 @@ void ConfigureTasDialog::SetDirectory(DirectoryTarget target, QLineEdit* edit) {
 
     QString str = QFileDialog::getExistingDirectory(this, caption, edit->text());
 
-    if (str.isNull() || str.isEmpty()) {
+    if (str.isEmpty()) {
         return;
     }
 

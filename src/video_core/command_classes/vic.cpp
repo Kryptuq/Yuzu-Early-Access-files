@@ -88,7 +88,9 @@ void Vic::Execute() {
             scaler_height = frame->height;
         }
         // Get Converted frame
-        const std::size_t linear_size = static_cast<u32>(frame->width * frame->height * 4);
+        const u32 width = static_cast<u32>(frame->width);
+        const u32 height = static_cast<u32>(frame->height);
+        const std::size_t linear_size = width * height * 4;
 
         // Only allocate frame_buffer once per stream, as the size is not expected to change
         if (!converted_frame_buffer) {
@@ -105,8 +107,6 @@ void Vic::Execute() {
         if (blk_kind != 0) {
             // swizzle pitch linear to block linear
             const u32 block_height = static_cast<u32>(config.block_linear_height_log2);
-            const u32 width = static_cast<u32>(frame->width);
-            const u32 height = static_cast<u32>(frame->height);
             const auto size =
                 Tegra::Texture::CalculateSize(true, 4, width, height, 1, block_height, 0);
             luma_buffer.resize(size);

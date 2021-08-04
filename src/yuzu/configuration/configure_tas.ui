@@ -19,13 +19,13 @@
           <item>
             <widget class="QGroupBox" name="groupBox">
               <property name="title">
-                <string>Tool Assisted Speedrun tool</string>
+                <string>TAS</string>
               </property>
               <layout class="QGridLayout" name="gridLayout">
                 <item row="0" column="0" colspan="1">
                   <widget class="QLabel" name="label_1">
                     <property name="text">
-                      <string>This tool reads controller input from a script files under the same format as TAS-nx files. For more delailed explanation please consult the FAQ on the yuzu website.</string>
+                      <string>Reads controller input from scripts in the same format as TAS-nx scripts. For a more detailed explanation please consult the FAQ on the yuzu website.</string>
                     </property>
                     <property name="wordWrap">
                       <bool>true</bool>
@@ -35,31 +35,10 @@
                 <item row="1" column="0" colspan="1">
                   <widget class="QLabel" name="label_2">
                     <property name="text">
-                      <string>How to use it:</string>
+                      <string>To check which hotkeys control the playback/recording, please refer to the Hotkey settings (General -> Hotkeys).</string>
                     </property>
                     <property name="wordWrap">
                       <bool>true</bool>
-                    </property>
-                  </widget>
-                </item>
-                <item row="2" column="0" colspan="1">
-                  <widget class="QLabel" name="label_3">
-                    <property name="text">
-                      <string>Ctrl + F5: Start or stop TAS bot</string>
-                    </property>
-                  </widget>
-                </item>
-                <item row="3" column="0" colspan="1">
-                  <widget class="QLabel" name="label_4">
-                    <property name="text">
-                      <string>Ctrl + F6: Reload file or restart bot from the beggining</string>
-                    </property>
-                  </widget>
-                </item>
-                <item row="4" column="0" colspan="1">
-                  <widget class="QLabel" name="label_5">
-                    <property name="text">
-                      <string>Ctrl + F7: Start or stop recording input from player 1</string>
                     </property>
                   </widget>
                 </item>
@@ -73,7 +52,7 @@
           <item>
             <widget class="QGroupBox" name="groupBox">
               <property name="title">
-                <string>TAS Settings</string>
+                <string>Settings</string>
               </property>
               <layout class="QGridLayout" name="gridLayout">
                 <item row="0" column="0" colspan="4">
@@ -117,7 +96,7 @@
           <item>
             <widget class="QGroupBox" name="groupBox">
               <property name="title">
-                <string>TAS Directories</string>
+                <string>Script Directory</string>
               </property>
               <layout class="QGridLayout" name="gridLayout">
                 <item row="0" column="0">

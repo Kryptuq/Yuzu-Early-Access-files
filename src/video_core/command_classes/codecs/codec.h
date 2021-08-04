@@ -54,13 +54,7 @@ public:
     [[nodiscard]] std::string_view GetCurrentCodecName() const;
 
 private:
-    struct RawFrame {
-        std::vector<u8> frame_data;
-        bool vp9_hidden_frame;
-    };
-
     void InitializeHwdec();
-    AVFrame* DecodeImpl(RawFrame&);
 
     bool initialized{};
     NvdecCommon::VideoCodec current_codec{NvdecCommon::VideoCodec::None};
