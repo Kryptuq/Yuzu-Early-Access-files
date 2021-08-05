@@ -278,6 +278,9 @@ void Config::ReadValues() {
             if (Settings::values.players.GetValue()[p].analogs[i].empty())
                 Settings::values.players.GetValue()[p].analogs[i] = default_param;
         }
+
+        Settings::values.players.GetValue()[p].connected =
+            sdl2_config->GetBoolean(group, "connected", false);
     }
 
     ReadSetting("ControlsGeneral", Settings::values.mouse_enabled);

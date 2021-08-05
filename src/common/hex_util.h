@@ -61,7 +61,7 @@ template <typename ContiguousContainer>
     return out;
 }
 
-[[nodiscard]] constexpr std::array<u8, 16> AsArray(const char (&data)[17]) {
+[[nodiscard]] constexpr std::array<u8, 16> AsArray(const char (&data)[33]) {
     return HexStringToArray<16>(data);
 }
 
