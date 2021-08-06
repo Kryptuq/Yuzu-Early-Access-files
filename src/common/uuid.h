@@ -5,6 +5,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 
 #include "common/common_types.h"
 
@@ -12,12 +13,30 @@ namespace Common {
 
 constexpr u128 INVALID_UUID{{0, 0}};
 
+/**
+ * Converts a hex string to a 128-bit unsigned integer.
+ *
+ * The hex string can be formatted in lowercase or uppercase, with or without the "0x" prefix.
+ *
+ * This function will assert and return INVALID_UUID under the following conditions:
+ * - If the hex string is more than 32 characters long
+ * - If the hex string contains non-hexadecimal characters
+ *
+ * @param hex_string Hexadecimal string
+ *
+ * @returns A 128-bit unsigned integer if successfully converted, INVALID_UUID otherwise.
+ */
+[[nodiscard]] u128 HexStringToU128(std::string_view hex_string);
+
 struct UUID {
     // UUIDs which are 0 are considered invalid!
     u128 uuid;
     UUID() = default;
     constexpr explicit UUID(const u128& id) : uuid{id} {}
     constexpr explicit UUID(const u64 lo, const u64 hi) : uuid{{lo, hi}} {}
+    explicit UUID(std::string_view hex_string) {
+        uuid = HexStringToU128(hex_string);
+    }
 
     [[nodiscard]] constexpr explicit operator bool() const {
         return uuid != INVALID_UUID;
