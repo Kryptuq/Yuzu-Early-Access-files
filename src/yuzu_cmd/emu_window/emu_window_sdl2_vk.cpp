@@ -45,6 +45,7 @@ EmuWindow_SDL2_VK::EmuWindow_SDL2_VK(InputCommon::InputSubsystem* input_subsyste
 
     if (fullscreen) {
         Fullscreen();
+        ShowCursor(false);
     }
 
     switch (wm.subsystem) {

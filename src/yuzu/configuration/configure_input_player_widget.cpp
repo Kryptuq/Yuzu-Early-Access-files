@@ -122,6 +122,7 @@ void PlayerControlPreview::UpdateColors() {
         colors.slider_arrow = QColor(14, 15, 18);
         colors.font2 = QColor(255, 255, 255);
         colors.indicator = QColor(170, 238, 255);
+        colors.indicator2 = QColor(100, 255, 100);
         colors.deadzone = QColor(204, 136, 136);
         colors.slider_button = colors.button;
     }
@@ -139,6 +140,7 @@ void PlayerControlPreview::UpdateColors() {
         colors.slider_arrow = QColor(65, 68, 73);
         colors.font2 = QColor(0, 0, 0);
         colors.indicator = QColor(0, 0, 200);
+        colors.indicator2 = QColor(0, 150, 0);
         colors.deadzone = QColor(170, 0, 0);
         colors.slider_button = QColor(153, 149, 149);
     }
@@ -334,8 +336,7 @@ void PlayerControlPreview::DrawLeftController(QPainter& p, const QPointF center)
         using namespace Settings::NativeAnalog;
         DrawJoystick(p, center + QPointF(9, -69) + (axis_values[LStick].value * 8), 1.8f,
                      button_values[Settings::NativeButton::LStick]);
-        DrawRawJoystick(p, center + QPointF(-140, 90), axis_values[LStick].raw_value,
-                        axis_values[LStick].properties);
+        DrawRawJoystick(p, center + QPointF(-140, 90), QPointF(0, 0));
     }
 
     using namespace Settings::NativeButton;
@@ -449,8 +450,7 @@ void PlayerControlPreview::DrawRightController(QPainter& p, const QPointF center
         using namespace Settings::NativeAnalog;
         DrawJoystick(p, center + QPointF(-9, 11) + (axis_values[RStick].value * 8), 1.8f,
                      button_values[Settings::NativeButton::RStick]);
-        DrawRawJoystick(p, center + QPointF(140, 90), axis_values[RStick].raw_value,
-                        axis_values[RStick].properties);
+        DrawRawJoystick(p, QPointF(0, 0), center + QPointF(140, 90));
     }
 
     using namespace Settings::NativeButton;
@@ -564,8 +564,7 @@ void PlayerControlPreview::DrawDualController(QPainter& p, const QPointF center)
 
         DrawJoystick(p, center + QPointF(-65, -65) + (l_stick.value * 7), 1.62f, l_button);
         DrawJoystick(p, center + QPointF(65, 12) + (r_stick.value * 7), 1.62f, r_button);
-        DrawRawJoystick(p, center + QPointF(-180, 90), l_stick.raw_value, l_stick.properties);
-        DrawRawJoystick(p, center + QPointF(180, 90), r_stick.raw_value, r_stick.properties);
+        DrawRawJoystick(p, center + QPointF(-180, 90), center + QPointF(180, 90));
     }
 
     using namespace Settings::NativeButton;
@@ -651,8 +650,7 @@ void PlayerControlPreview::DrawHandheldController(QPainter& p, const QPointF cen
 
         DrawJoystick(p, center + QPointF(-171, -41) + (l_stick.value * 4), 1.0f, l_button);
         DrawJoystick(p, center + QPointF(171, 8) + (r_stick.value * 4), 1.0f, r_button);
-        DrawRawJoystick(p, center + QPointF(-50, 0), l_stick.raw_value, l_stick.properties);
-        DrawRawJoystick(p, center + QPointF(50, 0), r_stick.raw_value, r_stick.properties);
+        DrawRawJoystick(p, center + QPointF(-50, 0), center + QPointF(50, 0));
     }
 
     using namespace Settings::NativeButton;
@@ -745,10 +743,7 @@ void PlayerControlPreview::DrawProController(QPainter& p, const QPointF center) 
                         button_values[Settings::NativeButton::LStick]);
         DrawProJoystick(p, center + QPointF(51, 0), axis_values[RStick].value, 11,
                         button_values[Settings::NativeButton::RStick]);
-        DrawRawJoystick(p, center + QPointF(-50, 105), axis_values[LStick].raw_value,
-                        axis_values[LStick].properties);
-        DrawRawJoystick(p, center + QPointF(50, 105), axis_values[RStick].raw_value,
-                        axis_values[RStick].properties);
+        DrawRawJoystick(p, center + QPointF(-50, 105), center + QPointF(50, 105));
     }
 
     using namespace Settings::NativeButton;
@@ -838,10 +833,7 @@ void PlayerControlPreview::DrawGCController(QPainter& p, const QPointF center) {
         p.setBrush(colors.font);
         DrawSymbol(p, center + QPointF(61, 37) + (axis_values[RStick].value * 9.5f), Symbol::C,
                    1.0f);
-        DrawRawJoystick(p, center + QPointF(-198, -125), axis_values[LStick].raw_value,
-                        axis_values[LStick].properties);
-        DrawRawJoystick(p, center + QPointF(198, -125), axis_values[RStick].raw_value,
-                        axis_values[RStick].properties);
+        DrawRawJoystick(p, center + QPointF(-198, -125), center + QPointF(198, -125));
     }
 
     using namespace Settings::NativeButton;
@@ -2375,8 +2367,33 @@ void PlayerControlPreview::DrawGCJoystick(QPainter& p, const QPointF center, boo
     DrawCircle(p, center, 7.5f);
 }
 
-void PlayerControlPreview::DrawRawJoystick(QPainter& p, const QPointF center, const QPointF value,
-                                           const Input::AnalogProperties& properties) {
+void PlayerControlPreview::DrawRawJoystick(QPainter& p, QPointF center_left, QPointF center_right) {
+    using namespace Settings::NativeAnalog;
+    if (controller_type != Settings::ControllerType::LeftJoycon) {
+        DrawJoystickProperties(p, center_right, axis_values[RStick].properties);
+        p.setPen(colors.indicator);
+        p.setBrush(colors.indicator);
+        DrawJoystickDot(p, center_right, axis_values[RStick].raw_value,
+                        axis_values[RStick].properties);
+        p.setPen(colors.indicator2);
+        p.setBrush(colors.indicator2);
+        DrawJoystickDot(p, center_right, axis_values[RStick].value, axis_values[RStick].properties);
+    }
+
+    if (controller_type != Settings::ControllerType::RightJoycon) {
+        DrawJoystickProperties(p, center_left, axis_values[LStick].properties);
+        p.setPen(colors.indicator);
+        p.setBrush(colors.indicator);
+        DrawJoystickDot(p, center_left, axis_values[LStick].raw_value,
+                        axis_values[LStick].properties);
+        p.setPen(colors.indicator2);
+        p.setBrush(colors.indicator2);
+        DrawJoystickDot(p, center_left, axis_values[LStick].value, axis_values[LStick].properties);
+    }
+}
+
+void PlayerControlPreview::DrawJoystickProperties(QPainter& p, const QPointF center,
+                                                  const Input::AnalogProperties& properties) {
     constexpr float size = 45.0f;
     const float range = size * properties.range;
     const float deadzone = size * properties.deadzone;
@@ -2393,10 +2410,14 @@ void PlayerControlPreview::DrawRawJoystick(QPainter& p, const QPointF center, co
     pen.setColor(colors.deadzone);
     p.setPen(pen);
     DrawCircle(p, center, deadzone);
+}
+
+void PlayerControlPreview::DrawJoystickDot(QPainter& p, const QPointF center, const QPointF value,
+                                           const Input::AnalogProperties& properties) {
+    constexpr float size = 45.0f;
+    const float range = size * properties.range;
 
     // Dot pointer
-    p.setPen(colors.indicator);
-    p.setBrush(colors.indicator);
     DrawCircle(p, center + (value * range), 2);
 }
 

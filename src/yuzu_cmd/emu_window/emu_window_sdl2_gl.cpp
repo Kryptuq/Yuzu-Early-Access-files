@@ -111,6 +111,7 @@ EmuWindow_SDL2_GL::EmuWindow_SDL2_GL(InputCommon::InputSubsystem* input_subsyste
 
     if (fullscreen) {
         Fullscreen();
+        ShowCursor(false);
     }
 
     window_context = SDL_GL_CreateContext(render_window);

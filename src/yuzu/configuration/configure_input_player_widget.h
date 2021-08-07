@@ -92,6 +92,7 @@ private:
         QColor highlight2{};
         QColor transparent{};
         QColor indicator{};
+        QColor indicator2{};
         QColor led_on{};
         QColor led_off{};
         QColor slider{};
@@ -141,7 +142,10 @@ private:
     // Draw joystick functions
     void DrawJoystick(QPainter& p, QPointF center, float size, bool pressed);
     void DrawJoystickSideview(QPainter& p, QPointF center, float angle, float size, bool pressed);
-    void DrawRawJoystick(QPainter& p, QPointF center, QPointF value,
+    void DrawRawJoystick(QPainter& p, QPointF center_left, QPointF center_right);
+    void DrawJoystickProperties(QPainter& p, QPointF center,
+                                const Input::AnalogProperties& properties);
+    void DrawJoystickDot(QPainter& p, QPointF center, QPointF value,
                          const Input::AnalogProperties& properties);
     void DrawProJoystick(QPainter& p, QPointF center, QPointF offset, float scalar, bool pressed);
     void DrawGCJoystick(QPainter& p, QPointF center, bool pressed);

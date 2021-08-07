@@ -176,11 +176,11 @@ NvResult nvhost_nvdec_common::MapBuffer(const std::vector<u8>& input, std::vecto
 }
 
 NvResult nvhost_nvdec_common::UnmapBuffer(const std::vector<u8>& input, std::vector<u8>& output) {
-    // This is intentionally left stubbed.
-    // By unmapping GPU buffers here, we break the continuity of the VP9 reference frame addresses,
-    // and risk invalidating data before the async GPU thread is done with it
-    LOG_DEBUG(Service_NVDRV, "(STUBBED) called");
+    // This is intntionally stubbed.
+    // Skip unmapping buffers here, as to not break the continuity of the VP9 reference frame
+    // addresses, and risk invalidating data before the async GPU thread is done with it
     std::memset(output.data(), 0, output.size());
+    LOG_DEBUG(Service_NVDRV, "(STUBBED) called");
     return NvResult::Success;
 }
 

@@ -51,11 +51,11 @@ QPushButton#GPUStatusBarButton:hover {
 }
 
 QPushButton#GPUStatusBarButton:checked {
-    color: #ff8040;
+    color: #b06020;
 }
 
 QPushButton#GPUStatusBarButton:!checked {
-    color: #40dd40;
+    color: #109010;
 }
 
 QPushButton#buttonRefreshDevices {

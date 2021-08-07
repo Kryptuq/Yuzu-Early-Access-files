@@ -122,6 +122,10 @@ void EmuWindow_SDL2::OnResize() {
     UpdateCurrentFramebufferLayout(width, height);
 }
 
+void EmuWindow_SDL2::ShowCursor(bool show_cursor) {
+    SDL_ShowCursor(show_cursor ? SDL_ENABLE : SDL_DISABLE);
+}
+
 void EmuWindow_SDL2::Fullscreen() {
     switch (Settings::values.fullscreen_mode.GetValue()) {
     case Settings::FullscreenMode::Exclusive:

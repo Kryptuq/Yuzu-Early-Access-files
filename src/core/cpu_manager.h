@@ -78,9 +78,9 @@ private:
     void SingleCoreRunSuspendThread();
     void SingleCorePause(bool paused);
 
-    static void ThreadStart(CpuManager& cpu_manager, std::size_t core);
+    static void ThreadStart(std::stop_token stop_token, CpuManager& cpu_manager, std::size_t core);
 
-    void RunThread(std::size_t core);
+    void RunThread(std::stop_token stop_token, std::size_t core);
 
     struct CoreData {
         std::shared_ptr<Common::Fiber> host_context;
@@ -89,7 +89,7 @@ private:
         std::atomic<bool> is_running;
         std::atomic<bool> is_paused;
         std::atomic<bool> initialized;
-        std::unique_ptr<std::thread> host_thread;
+        std::jthread host_thread;
     };
 
     std::atomic<bool> running_mode{};

@@ -877,7 +877,7 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, Handle
             const u64 thread_ticks = current_thread->GetCpuTime();
 
             out_ticks = thread_ticks + (core_timing.GetCPUTicks() - prev_ctx_ticks);
-        } else if (same_thread && info_sub_id == system.CurrentCoreIndex()) {
+        } else if (same_thread && info_sub_id == system.Kernel().CurrentPhysicalCoreIndex()) {
             out_ticks = core_timing.GetCPUTicks() - prev_ctx_ticks;
         }
 

@@ -67,6 +67,9 @@ protected:
     /// Called by WaitEvent when any event that may cause the window to be resized occurs
     void OnResize();
 
+    /// Called when users want to hide the mouse cursor
+    void ShowCursor(bool show_cursor);
+
     /// Called when user passes the fullscreen parameter flag
     void Fullscreen();
 
