@@ -228,7 +228,9 @@ void MemoryCommit::Release() {
 
 MemoryAllocator::MemoryAllocator(const Device& device_, bool export_allocations_)
     : device{device_}, properties{device_.GetPhysical().GetMemoryProperties()},
-      export_allocations{export_allocations_} {}
+      export_allocations{export_allocations_},
+      buffer_image_granularity{
+          device_.GetPhysical().GetProperties().limits.bufferImageGranularity} {}
 
 MemoryAllocator::~MemoryAllocator() = default;
 
@@ -258,7 +260,9 @@ MemoryCommit MemoryAllocator::Commit(const vk::Buffer& buffer, MemoryUsage usage
 }
 
 MemoryCommit MemoryAllocator::Commit(const vk::Image& image, MemoryUsage usage) {
-    auto commit = Commit(device.GetLogical().GetImageMemoryRequirements(*image), usage);
+    VkMemoryRequirements requirements = device.GetLogical().GetImageMemoryRequirements(*image);
+    requirements.size = Common::AlignUp(requirements.size, buffer_image_granularity);
+    auto commit = Commit(requirements, usage);
     image.BindMemory(commit.Memory(), commit.Offset());
     return commit;
 }

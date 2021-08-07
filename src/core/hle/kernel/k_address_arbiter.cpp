@@ -28,7 +28,7 @@ bool ReadFromUser(Core::System& system, s32* out, VAddr address) {
 
 bool DecrementIfLessThan(Core::System& system, s32* out, VAddr address, s32 value) {
     auto& monitor = system.Monitor();
-    const auto current_core = system.CurrentCoreIndex();
+    const auto current_core = system.Kernel().CurrentPhysicalCoreIndex();
 
     // TODO(bunnei): We should disable interrupts here via KScopedInterruptDisable.
     // TODO(bunnei): We should call CanAccessAtomic(..) here.
@@ -58,7 +58,7 @@ bool DecrementIfLessThan(Core::System& system, s32* out, VAddr address, s32 valu
 
 bool UpdateIfEqual(Core::System& system, s32* out, VAddr address, s32 value, s32 new_value) {
     auto& monitor = system.Monitor();
-    const auto current_core = system.CurrentCoreIndex();
+    const auto current_core = system.Kernel().CurrentPhysicalCoreIndex();
 
     // TODO(bunnei): We should disable interrupts here via KScopedInterruptDisable.
     // TODO(bunnei): We should call CanAccessAtomic(..) here.

@@ -494,12 +494,6 @@ const ARM_Interface& System::CurrentArmInterface() const {
     return impl->kernel.CurrentPhysicalCore().ArmInterface();
 }
 
-std::size_t System::CurrentCoreIndex() const {
-    std::size_t core = impl->kernel.GetCurrentHostThreadID();
-    ASSERT(core < Core::Hardware::NUM_CPU_CORES);
-    return core;
-}
-
 Kernel::PhysicalCore& System::CurrentPhysicalCore() {
     return impl->kernel.CurrentPhysicalCore();
 }

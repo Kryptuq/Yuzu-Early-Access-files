@@ -205,9 +205,6 @@ public:
     /// Gets an ARM interface to the CPU core that is currently running
     [[nodiscard]] const ARM_Interface& CurrentArmInterface() const;
 
-    /// Gets the index of the currently running CPU core
-    [[nodiscard]] std::size_t CurrentCoreIndex() const;
-
     /// Gets the physical core for the CPU core that is currently running
     [[nodiscard]] Kernel::PhysicalCore& CurrentPhysicalCore();
 

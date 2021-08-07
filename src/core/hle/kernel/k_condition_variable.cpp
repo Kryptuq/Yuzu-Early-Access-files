@@ -35,7 +35,7 @@ bool WriteToUser(Core::System& system, VAddr address, const u32* p) {
 bool UpdateLockAtomic(Core::System& system, u32* out, VAddr address, u32 if_zero,
                       u32 new_orr_mask) {
     auto& monitor = system.Monitor();
-    const auto current_core = system.CurrentCoreIndex();
+    const auto current_core = system.Kernel().CurrentPhysicalCoreIndex();
 
     // Load the value from the address.
     const auto expected = monitor.ExclusiveRead32(current_core, address);

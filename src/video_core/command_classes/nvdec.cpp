@@ -39,7 +39,7 @@ void Nvdec::Execute() {
         codec->Decode();
         break;
     default:
-        UNIMPLEMENTED_MSG("Unknown codec {}", static_cast<u32>(codec->GetCurrentCodec()));
+        UNIMPLEMENTED_MSG("Codec {}", codec->GetCurrentCodecName());
         break;
     }
 }

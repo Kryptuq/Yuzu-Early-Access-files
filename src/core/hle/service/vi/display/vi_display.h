@@ -18,6 +18,9 @@ class KEvent;
 namespace Service::NVFlinger {
 class BufferQueue;
 }
+namespace Service::KernelHelpers {
+class ServiceContext;
+} // namespace Service::KernelHelpers
 
 namespace Service::VI {
 
@@ -31,10 +34,13 @@ class Display {
 public:
     /// Constructs a display with a given unique ID and name.
     ///
-    /// @param id   The unique ID for this display.
+    /// @param id The unique ID for this display.
+    /// @param service_context_ The ServiceContext for the owning service.
     /// @param name_ The name for this display.
+    /// @param system_ The global system instance.
     ///
-    Display(u64 id, std::string name_, Core::System& system);
+    Display(u64 id, std::string name_, KernelHelpers::ServiceContext& service_context_,
+            Core::System& system_);
     ~Display();
 
     /// Gets the unique ID assigned to this display.
@@ -98,9 +104,10 @@ public:
 private:
     u64 display_id;
     std::string name;
+    KernelHelpers::ServiceContext& service_context;
 
     std::vector<std::shared_ptr<Layer>> layers;
-    Kernel::KEvent vsync_event;
+    Kernel::KEvent* vsync_event{};
 };
 
 } // namespace Service::VI

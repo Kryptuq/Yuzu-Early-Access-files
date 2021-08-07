@@ -123,6 +123,8 @@ private:
     const VkPhysicalDeviceMemoryProperties properties; ///< Physical device properties.
     const bool export_allocations; ///< True when memory allocations have to be exported.
     std::vector<std::unique_ptr<MemoryAllocation>> allocations; ///< Current allocations.
+    VkDeviceSize buffer_image_granularity; // The granularity for adjacent offsets between buffers
+                                           // and optimal images
 };
 
 /// Returns true when a memory usage is guaranteed to be host visible.
