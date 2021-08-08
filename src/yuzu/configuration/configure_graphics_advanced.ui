@@ -82,24 +82,17 @@
            <string>Enables asynchronous shader compilation, which may reduce shader stutter. This feature is experimental.</string>
           </property>
           <property name="text">
-           <string>Use asynchronous shader building</string>
+           <string>Use asynchronous shader building (hack)</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QCheckBox" name="use_fast_gpu_time">
-          <property name="text">
-           <string>Use Fast GPU Time</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="use_caches_gc">
           <property name="toolTip">
-           <string>Enables garbage collection for the GPU caches, this will try to keep VRAM within 3-4 GB by flushing the least used textures/buffers. May cause issues in a few games.</string>
+            <string>Enables Fast GPU Time. This option will force most games to run at their highest native resolution.</string>
           </property>
           <property name="text">
-           <string>Enable GPU cache garbage collection (experimental)</string>
+           <string>Use Fast GPU Time (hack)</string>
           </property>
          </widget>
         </item>

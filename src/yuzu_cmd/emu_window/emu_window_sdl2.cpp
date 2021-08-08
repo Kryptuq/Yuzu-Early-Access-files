@@ -232,6 +232,7 @@ void EmuWindow_SDL2::WaitEvent() {
     }
 }
 
+// Credits to PinappleEA team for this function.
 void EmuWindow_SDL2::SetWindowIcon() {
     SDL_RWops* const yuzu_icon_stream = SDL_RWFromConstMem((void*)yuzu_icon, yuzu_icon_size);
     if (yuzu_icon_stream == nullptr) {

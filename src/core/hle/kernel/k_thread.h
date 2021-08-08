@@ -450,35 +450,16 @@ public:
         sleeping_queue = q;
     }
 
-    [[nodiscard]] bool IsKernelThread() const {
-        return GetActiveCore() == 3;
-    }
-
     [[nodiscard]] s32 GetDisableDispatchCount() const {
-        if (IsKernelThread()) {
-            // TODO(bunnei): Until kernel threads are emulated, we cannot enable/disable dispatch.
-            return 1;
-        }
-
         return this->GetStackParameters().disable_count;
     }
 
     void DisableDispatch() {
-        if (IsKernelThread()) {
-            // TODO(bunnei): Until kernel threads are emulated, we cannot enable/disable dispatch.
-            return;
-        }
-
         ASSERT(GetCurrentThread(kernel).GetDisableDispatchCount() >= 0);
         this->GetStackParameters().disable_count++;
     }
 
     void EnableDispatch() {
-        if (IsKernelThread()) {
-            // TODO(bunnei): Until kernel threads are emulated, we cannot enable/disable dispatch.
-            return;
-        }
-
         ASSERT(GetCurrentThread(kernel).GetDisableDispatchCount() > 0);
         this->GetStackParameters().disable_count--;
     }
@@ -769,18 +750,6 @@ public:
     [[nodiscard]] ConditionVariableThreadTree* GetConditionVariableTree() const {
         return condvar_tree;
     }
-};
-
-class KScopedDisableDispatch {
-public:
-    [[nodiscard]] explicit KScopedDisableDispatch(KernelCore& kernel_) : kernel{kernel_} {
-        GetCurrentThread(kernel).DisableDispatch();
-    }
-
-    ~KScopedDisableDispatch();
-
-private:
-    KernelCore& kernel;
 };
 
 } // namespace Kernel

@@ -170,7 +170,7 @@ public:
     float GetAxis(int axis, float range, float offset) const {
         std::lock_guard lock{mutex};
         const float value = static_cast<float>(state.axes.at(axis)) / 32767.0f;
-        return (value + offset) * range;
+        return (value + offset) / range;
     }
 
     bool RumblePlay(u16 amp_low, u16 amp_high) {
@@ -538,8 +538,8 @@ public:
     }
 
     std::tuple<float, float> GetRawStatus() const override {
-        const float x = joystick->GetAxis(axis_x, 1.0f, offset_x);
-        const float y = joystick->GetAxis(axis_y, 1.0f, offset_y);
+        const float x = joystick->GetAxis(axis_x, range, offset_x);
+        const float y = joystick->GetAxis(axis_y, range, offset_y);
         return {x, -y};
     }
 

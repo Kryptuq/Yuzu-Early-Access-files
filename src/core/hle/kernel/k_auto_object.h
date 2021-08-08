@@ -170,10 +170,6 @@ public:
         }
     }
 
-    const std::string& GetName() const {
-        return name;
-    }
-
 private:
     void RegisterWithKernel();
     void UnregisterWithKernel();

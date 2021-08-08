@@ -59,7 +59,6 @@ void SetupMainThread(Core::System& system, KProcess& owner_process, u32 priority
     thread->GetContext64().cpu_registers[0] = 0;
     thread->GetContext32().cpu_registers[1] = thread_handle;
     thread->GetContext64().cpu_registers[1] = thread_handle;
-    thread->DisableDispatch();
 
     auto& kernel = system.Kernel();
     // Threads by default are dormant, wake up the main thread so it runs when the scheduler fires
