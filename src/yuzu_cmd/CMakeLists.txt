@@ -1,6 +1,6 @@
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMakeModules)
 
-# Credits to PinappleEA team for this function.
+# Credits to Samantas5855 and others for this function.
 function(create_resource file output filename)
     # Read hex data from file
     file(READ ${file} filedata HEX)
