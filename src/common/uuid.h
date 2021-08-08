@@ -69,3 +69,14 @@ struct UUID {
 static_assert(sizeof(UUID) == 16, "UUID is an invalid size!");
 
 } // namespace Common
+
+namespace std {
+
+template <>
+struct hash<Common::UUID> {
+    size_t operator()(const Common::UUID& uuid) const noexcept {
+        return uuid.uuid[1] ^ uuid.uuid[0];
+    }
+};
+
+} // namespace std
