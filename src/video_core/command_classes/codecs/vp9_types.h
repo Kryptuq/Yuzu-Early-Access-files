@@ -176,7 +176,7 @@ struct PictureInfo {
             .frame_size_changed = (vp9_flags & FrameFlags::FrameSizeChanged) != 0,
             .error_resilient_mode = (vp9_flags & FrameFlags::ErrorResilientMode) != 0,
             .last_frame_shown = (vp9_flags & FrameFlags::LastShowFrame) != 0,
-            .show_frame = false,
+            .show_frame = true,
             .ref_frame_sign_bias = ref_frame_sign_bias,
             .base_q_index = base_q_index,
             .y_dc_delta_q = y_dc_delta_q,

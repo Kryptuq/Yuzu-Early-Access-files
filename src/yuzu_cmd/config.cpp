@@ -465,7 +465,7 @@ void Config::ReadValues() {
     ReadSetting("Renderer", Settings::values.disable_fps_limit);
     ReadSetting("Renderer", Settings::values.shader_backend);
     ReadSetting("Renderer", Settings::values.use_asynchronous_shaders);
-    ReadSetting("Renderer", Settings::values.use_nvdec_emulation);
+    ReadSetting("Renderer", Settings::values.nvdec_emulation);
     ReadSetting("Renderer", Settings::values.accelerate_astc);
     ReadSetting("Renderer", Settings::values.use_fast_gpu_time);
 

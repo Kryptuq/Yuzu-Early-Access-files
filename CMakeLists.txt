@@ -518,6 +518,10 @@ set(FFmpeg_COMPONENTS
     avutil
     swscale)
 
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    Include(FindPkgConfig REQUIRED)
+    pkg_check_modules(LIBVA libva)
+endif()
 if (NOT YUZU_USE_BUNDLED_FFMPEG)
     # Use system installed FFmpeg
     find_package(FFmpeg QUIET COMPONENTS ${FFmpeg_COMPONENTS})
@@ -540,6 +544,9 @@ endif()
 
 if (YUZU_USE_BUNDLED_FFMPEG)
     if (NOT WIN32)
+        # TODO(lat9nq): Move this to externals/ffmpeg/CMakeLists.txt (and move externals/ffmpeg to
+        # externals/ffmpeg/ffmpeg)
+
         # Build FFmpeg from externals
         message(STATUS "Using FFmpeg from externals")
 
@@ -579,20 +586,23 @@ if (YUZU_USE_BUNDLED_FFMPEG)
                 CACHE PATH "Paths to FFmpeg libraries" FORCE)
         endforeach()
 
-        set(FFmpeg_INCLUDE_DIR
-            "${FFmpeg_PREFIX};${FFmpeg_BUILD_DIR}"
-            CACHE PATH "Path to FFmpeg headers" FORCE)
+        Include(FindPkgConfig REQUIRED)
+        pkg_check_modules(LIBVA libva)
+        pkg_check_modules(CUDA cuda)
+        pkg_check_modules(FFNVCODEC ffnvcodec)
+        pkg_check_modules(VDPAU vdpau)
 
-        if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-            Include(FindPkgConfig REQUIRED)
-            pkg_check_modules(LIBVA libva)
-        endif()
+        set(FFmpeg_HWACCEL_LIBRARIES)
+        set(FFmpeg_HWACCEL_FLAGS)
+        set(FFmpeg_HWACCEL_INCLUDE_DIRS)
+        set(FFmpeg_HWACCEL_LDFLAGS)
+
         if(LIBVA_FOUND)
             pkg_check_modules(LIBDRM libdrm REQUIRED)
             find_package(X11 REQUIRED)
             pkg_check_modules(LIBVA-DRM libva-drm REQUIRED)
             pkg_check_modules(LIBVA-X11 libva-x11 REQUIRED)
-            set(FFmpeg_LIBVA_LIBRARIES
+            list(APPEND FFmpeg_HWACCEL_LIBRARIES
                 ${LIBDRM_LIBRARIES}
                 ${X11_LIBRARIES}
                 ${LIBVA-DRM_LIBRARIES}
@@ -602,9 +612,55 @@ if (YUZU_USE_BUNDLED_FFMPEG)
                 --enable-hwaccel=h264_vaapi
                 --enable-hwaccel=vp9_vaapi
                 --enable-libdrm)
+            list(APPEND FFmpeg_HWACCEL_INCLUDE_DIRS
+                ${LIBDRM_INCLUDE_DIRS}
+                ${X11_INCLUDE_DIRS}
+                ${LIBVA-DRM_INCLUDE_DIRS}
+                ${LIBVA-X11_INCLUDE_DIRS}
+                ${LIBVA_INCLUDE_DIRS}
+            )
             message(STATUS "VA-API found")
         else()
             set(FFmpeg_HWACCEL_FLAGS --disable-vaapi)
+        endif()
+
+        if (FFNVCODEC_FOUND AND CUDA_FOUND)
+            list(APPEND FFmpeg_HWACCEL_FLAGS
+                --enable-cuvid
+                --enable-ffnvcodec
+                --enable-nvdec
+                --enable-cuda-llvm
+                --enable-hwaccel=h264_nvdec
+                --enable-hwaccel=vp9_nvdec
+                --extra-cflags=-I${CUDA_INCLUDE_DIRS}
+            )
+            list(APPEND FFmpeg_HWACCEL_LIBRARIES
+                ${FFNVCODEC_LIBRARIES}
+                ${CUDA_LIBRARIES}
+            )
+            list(APPEND FFmpeg_HWACCEL_INCLUDE_DIRS
+                ${FFNVCODEC_INCLUDE_DIRS}
+                ${CUDA_INCLUDE_DIRS}
+            )
+            list(APPEND FFmpeg_HWACCEL_LDFLAGS
+                ${FFNVCODEC_LDFLAGS}
+                ${CUDA_LDFLAGS}
+            )
+            message(STATUS "ffnvcodec libraries version ${FFNVCODEC_VERSION} found")
+        endif()
+
+        if (VDPAU_FOUND)
+            list(APPEND FFmpeg_HWACCEL_FLAGS
+                --enable-vdpau
+                --enable-hwaccel=h264_vdpau
+                --enable-hwaccel=vp9_vdpau
+            )
+            list(APPEND FFmpeg_HWACCEL_LIBRARIES ${VDPAU_LIBRARIES})
+            list(APPEND FFmpeg_HWACCEL_INCLUDE_DIRS ${VDPAU_INCLUDE_DIRS})
+            list(APPEND FFmpeg_HWACCEL_LDFLAGS ${VDPAU_LDFLAGS})
+            message(STATUS "vdpau libraries version ${VDPAU_VERSION} found")
+        else()
+            list(APPEND FFmpeg_HWACCEL_FLAGS --disable-vdpau)
         endif()
 
         # `configure` parameters builds only exactly what yuzu needs from FFmpeg
@@ -624,7 +680,6 @@ if (YUZU_USE_BUNDLED_FFMPEG)
                     --disable-network
                     --disable-postproc
                     --disable-swresample
-                    --disable-vdpau
                     --enable-decoder=h264
                     --enable-decoder=vp9
                     --cc="${CMAKE_C_COMPILER}"
@@ -653,15 +708,26 @@ if (YUZU_USE_BUNDLED_FFMPEG)
                 ${FFmpeg_BUILD_DIR}
         )
 
+        set(FFmpeg_INCLUDE_DIR
+            "${FFmpeg_PREFIX};${FFmpeg_BUILD_DIR};${FFmpeg_HWACCEL_INCLUDE_DIRS}"
+            CACHE PATH "Path to FFmpeg headers" FORCE)
+
+        set(FFmpeg_LDFLAGS
+            "${FFmpeg_HWACCEL_LDFLAGS}"
+            CACHE STRING "FFmpeg linker flags" FORCE)
+
         # ALL makes this custom target build every time
         # but it won't actually build if the DEPENDS parameter is up to date
         add_custom_target(ffmpeg-configure ALL DEPENDS ${FFmpeg_MAKEFILE})
         add_custom_target(ffmpeg-build ALL DEPENDS ${FFmpeg_BUILD_LIBRARIES} ffmpeg-configure)
         link_libraries(${FFmpeg_LIBVA_LIBRARIES})
-        set(FFmpeg_LIBRARIES ${FFmpeg_LIBVA_LIBRARIES} ${FFmpeg_BUILD_LIBRARIES}
+        set(FFmpeg_LIBRARIES ${FFmpeg_BUILD_LIBRARIES} ${FFmpeg_HWACCEL_LIBRARIES}
             CACHE PATH "Paths to FFmpeg libraries" FORCE)
         unset(FFmpeg_BUILD_LIBRARIES)
-        unset(FFmpeg_LIBVA_LIBRARIES)
+        unset(FFmpeg_HWACCEL_FLAGS)
+        unset(FFmpeg_HWACCEL_INCLUDE_DIRS)
+        unset(FFmpeg_HWACCEL_LDFLAGS)
+        unset(FFmpeg_HWACCEL_LIBRARIES)
 
         if (FFmpeg_FOUND)
             message(STATUS "Found FFmpeg version ${FFmpeg_VERSION}")
@@ -670,12 +736,13 @@ if (YUZU_USE_BUNDLED_FFMPEG)
         endif()
     else() # WIN32
         # Use yuzu FFmpeg binaries
-        set(FFmpeg_EXT_NAME "ffmpeg-4.3.1")
+        set(FFmpeg_EXT_NAME "ffmpeg-4.4")
         set(FFmpeg_PATH "${CMAKE_BINARY_DIR}/externals/${FFmpeg_EXT_NAME}")
         download_bundled_external("ffmpeg/" ${FFmpeg_EXT_NAME} "")
         set(FFmpeg_FOUND YES)
         set(FFmpeg_INCLUDE_DIR "${FFmpeg_PATH}/include" CACHE PATH "Path to FFmpeg headers" FORCE)
         set(FFmpeg_LIBRARY_DIR "${FFmpeg_PATH}/bin" CACHE PATH "Path to FFmpeg library directory" FORCE)
+        set(FFmpeg_LDFLAGS "" CACHE STRING "FFmpeg linker flags" FORCE)
         set(FFmpeg_DLL_DIR "${FFmpeg_PATH}/bin" CACHE PATH "Path to FFmpeg dll's" FORCE)
         set(FFmpeg_LIBRARIES
             ${FFmpeg_LIBRARY_DIR}/swscale.lib

@@ -168,18 +168,55 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="use_nvdec_emulation">
-          <property name="text">
-           <string>Use NVDEC emulation</string>
-          </property>
-         </widget>
-        </item>
-        <item>
           <widget class="QCheckBox" name="accelerate_astc">
             <property name="text">
               <string>Accelerate ASTC texture decoding</string>
             </property>
           </widget>
+        </item>
+        <item>
+         <widget class="QWidget" name="nvdec_emulation_widget" native="true">
+          <layout class="QHBoxLayout" name="nvdec_emulation_layout">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="nvdec_emulation_label">
+             <property name="text">
+              <string>NVDEC emulation:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="nvdec_emulation">
+             <item>
+              <property name="text">
+               <string>Disabled</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>CPU Decoding</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>GPU Decoding</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </item>
         <item>
          <widget class="QWidget" name="fullscreen_mode_layout" native="true">

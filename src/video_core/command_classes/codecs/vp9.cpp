@@ -397,14 +397,14 @@ Vp9FrameContainer VP9::GetCurrentFrame(const NvdecCommon::NvdecRegisters& state)
         next_frame = std::move(temp);
     } else {
         next_frame.info = current_frame.info;
-        next_frame.bit_stream = std::move(current_frame.bit_stream);
+        next_frame.bit_stream = current_frame.bit_stream;
     }
     return current_frame;
 }
 
 std::vector<u8> VP9::ComposeCompressedHeader() {
     VpxRangeEncoder writer{};
-    const bool update_probs = current_frame_info.show_frame && !current_frame_info.is_key_frame;
+    const bool update_probs = !current_frame_info.is_key_frame && current_frame_info.show_frame;
     if (!current_frame_info.lossless) {
         if (static_cast<u32>(current_frame_info.transform_mode) >= 3) {
             writer.Write(3, 2);
