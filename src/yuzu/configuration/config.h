@@ -182,6 +182,5 @@ private:
 Q_DECLARE_METATYPE(Settings::CPUAccuracy);
 Q_DECLARE_METATYPE(Settings::GPUAccuracy);
 Q_DECLARE_METATYPE(Settings::FullscreenMode);
-Q_DECLARE_METATYPE(Settings::NvdecEmulation);
 Q_DECLARE_METATYPE(Settings::RendererBackend);
 Q_DECLARE_METATYPE(Settings::ShaderBackend);

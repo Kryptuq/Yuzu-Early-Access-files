@@ -50,26 +50,18 @@ public:
 
     /// Returns the value of current_codec
     [[nodiscard]] NvdecCommon::VideoCodec GetCurrentCodec() const;
-
     /// Return name of the current codec
     [[nodiscard]] std::string_view GetCurrentCodecName() const;
 
 private:
-    void InitializeAvCodecContext();
-
-    void InitializeGpuDecoder();
-
-    void TestGpuDecoder();
-
-    bool CreateGpuAvDevice();
+    void InitializeHwdec();
 
     bool initialized{};
-    bool using_gpu_decode{};
     NvdecCommon::VideoCodec current_codec{NvdecCommon::VideoCodec::None};
 
     AVCodec* av_codec{nullptr};
+    AVBufferRef* av_hw_device{nullptr};
     AVCodecContext* av_codec_ctx{nullptr};
-    AVBufferRef* av_gpu_decoder{nullptr};
 
     GPU& gpu;
     const NvdecCommon::NvdecRegisters& state;

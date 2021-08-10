@@ -18,10 +18,8 @@
 #include "video_core/renderer_opengl/maxwell_to_gl.h"
 #include "video_core/renderer_opengl/util_shaders.h"
 #include "video_core/surface.h"
-#include "video_core/texture_cache/format_lookup_table.h"
+#include "video_core/texture_cache/formatter.h"
 #include "video_core/texture_cache/samples_helper.h"
-#include "video_core/texture_cache/texture_cache.h"
-#include "video_core/textures/decoders.h"
 
 namespace OpenGL {
 namespace {

@@ -37,4 +37,5 @@ private:
     ConfigurationShared::CheckState use_vsync;
     ConfigurationShared::CheckState use_asynchronous_shaders;
     ConfigurationShared::CheckState use_fast_gpu_time;
+    ConfigurationShared::CheckState use_caches_gc;
 };

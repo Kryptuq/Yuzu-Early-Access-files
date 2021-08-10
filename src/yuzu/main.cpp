@@ -2859,8 +2859,6 @@ void GMainWindow::OnToggleFilterBar() {
 }
 
 void GMainWindow::OnCaptureScreenshot() {
-    OnPauseGame();
-
     const u64 title_id = Core::System::GetInstance().CurrentProcess()->GetTitleID();
     const auto screenshot_path =
         QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::ScreenshotsDir));
@@ -2872,23 +2870,22 @@ void GMainWindow::OnCaptureScreenshot() {
                            .arg(date);
 
     if (!Common::FS::CreateDir(screenshot_path.toStdString())) {
-        OnStartGame();
         return;
     }
 
 #ifdef _WIN32
     if (UISettings::values.enable_screenshot_save_as) {
+        OnPauseGame();
         filename = QFileDialog::getSaveFileName(this, tr("Capture Screenshot"), filename,
                                                 tr("PNG Image (*.png)"));
+        OnStartGame();
         if (filename.isEmpty()) {
-            OnStartGame();
             return;
         }
     }
 #endif
     render_window->CaptureScreenshot(UISettings::values.screenshot_resolution_factor.GetValue(),
                                      filename);
-    OnStartGame();
 }
 
 // TODO: Written 2020-10-01: Remove per-game config migration code when it is irrelevant

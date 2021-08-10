@@ -15,7 +15,7 @@
 #include "video_core/renderer_opengl/gl_shader_util.h"
 #include "video_core/renderer_opengl/gl_state_tracker.h"
 #include "video_core/shader_notify.h"
-#include "video_core/texture_cache/texture_cache.h"
+#include "video_core/texture_cache/texture_cache_base.h"
 
 #if defined(_MSC_VER) && defined(NDEBUG)
 #define LAMBDA_FORCEINLINE [[msvc::forceinline]]

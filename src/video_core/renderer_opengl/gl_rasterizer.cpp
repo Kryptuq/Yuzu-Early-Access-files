@@ -32,7 +32,7 @@
 #include "video_core/renderer_opengl/maxwell_to_gl.h"
 #include "video_core/renderer_opengl/renderer_opengl.h"
 #include "video_core/shader_cache.h"
-#include "video_core/texture_cache/texture_cache.h"
+#include "video_core/texture_cache/texture_cache_base.h"
 
 namespace OpenGL {
 

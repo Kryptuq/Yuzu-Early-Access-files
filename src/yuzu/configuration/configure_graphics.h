@@ -43,7 +43,6 @@ private:
     void SetupPerGameUI();
 
     Settings::RendererBackend GetCurrentGraphicsBackend() const;
-    Settings::NvdecEmulation GetCurrentNvdecEmulation() const;
 
     std::unique_ptr<Ui::ConfigureGraphics> ui;
     QColor bg_color;

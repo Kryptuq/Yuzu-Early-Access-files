@@ -6,13 +6,15 @@
 
 #include "common/assert.h"
 #include "video_core/texture_cache/image_view_info.h"
-#include "video_core/texture_cache/texture_cache.h"
+#include "video_core/texture_cache/texture_cache_base.h"
 #include "video_core/texture_cache/types.h"
 #include "video_core/textures/texture.h"
 
 namespace VideoCommon {
 
 namespace {
+
+using Tegra::Texture::TextureType;
 
 constexpr u8 RENDER_TARGET_SWIZZLE = std::numeric_limits<u8>::max();
 
