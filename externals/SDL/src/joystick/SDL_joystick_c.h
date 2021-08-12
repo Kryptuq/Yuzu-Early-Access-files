@@ -65,8 +65,8 @@ extern SDL_GameControllerType SDL_GetJoystickGameControllerType(const char *name
 /* Function to return whether a joystick is an Xbox One Elite controller */
 extern SDL_bool SDL_IsJoystickXboxOneElite(Uint16 vendor_id, Uint16 product_id);
 
-/* Function to return whether a joystick is an Xbox One Series X controller */
-extern SDL_bool SDL_IsJoystickXboxOneSeriesX(Uint16 vendor_id, Uint16 product_id);
+/* Function to return whether a joystick is an Xbox Series X controller */
+extern SDL_bool SDL_IsJoystickXboxSeriesX(Uint16 vendor_id, Uint16 product_id);
 
 /* Function to return whether a joystick is an Xbox One controller connected via Bluetooth */
 extern SDL_bool SDL_IsJoystickBluetoothXboxOne(Uint16 vendor_id, Uint16 product_id);
@@ -116,7 +116,7 @@ extern void SDL_GameControllerHandleDelayedGuideButton(SDL_Joystick *joystick);
 
 /* Internal event queueing functions */
 extern void SDL_PrivateJoystickAddTouchpad(SDL_Joystick *joystick, int nfingers);
-extern void SDL_PrivateJoystickAddSensor(SDL_Joystick *joystick, SDL_SensorType type);
+extern void SDL_PrivateJoystickAddSensor(SDL_Joystick *joystick, SDL_SensorType type, float rate);
 extern void SDL_PrivateJoystickAdded(SDL_JoystickID device_instance);
 extern void SDL_PrivateJoystickRemoved(SDL_JoystickID device_instance);
 extern int SDL_PrivateJoystickAxis(SDL_Joystick *joystick,

@@ -103,10 +103,12 @@ Cocoa_CreateDevice(int devindex)
     device->SetWindowGammaRamp = Cocoa_SetWindowGammaRamp;
     device->GetWindowGammaRamp = Cocoa_GetWindowGammaRamp;
     device->SetWindowMouseGrab = Cocoa_SetWindowMouseGrab;
+    device->SetWindowKeyboardGrab = Cocoa_SetWindowKeyboardGrab;
     device->DestroyWindow = Cocoa_DestroyWindow;
     device->GetWindowWMInfo = Cocoa_GetWindowWMInfo;
     device->SetWindowHitTest = Cocoa_SetWindowHitTest;
     device->AcceptDragAndDrop = Cocoa_AcceptDragAndDrop;
+    device->FlashWindow = Cocoa_FlashWindow;
 
     device->shape_driver.CreateShaper = Cocoa_CreateShaper;
     device->shape_driver.SetWindowShape = Cocoa_SetWindowShape;

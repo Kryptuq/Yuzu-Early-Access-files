@@ -72,6 +72,18 @@ static const char* TranslateGPUAccuracyLevel(Settings::GPUAccuracy backend) {
     return "Unknown";
 }
 
+static const char* TranslateNvdecEmulation(Settings::NvdecEmulation backend) {
+    switch (backend) {
+    case Settings::NvdecEmulation::Off:
+        return "Off";
+    case Settings::NvdecEmulation::CPU:
+        return "CPU";
+    case Settings::NvdecEmulation::GPU:
+        return "GPU";
+    }
+    return "Unknown";
+}
+
 u64 GetTelemetryId() {
     u64 telemetry_id{};
     const auto filename = Common::FS::GetYuzuPath(Common::FS::YuzuPath::ConfigDir) / "telemetry_id";
@@ -229,8 +241,8 @@ void TelemetrySession::AddInitialInfo(Loader::AppLoader& app_loader,
              TranslateGPUAccuracyLevel(Settings::values.gpu_accuracy.GetValue()));
     AddField(field_type, "Renderer_UseAsynchronousGpuEmulation",
              Settings::values.use_asynchronous_gpu_emulation.GetValue());
-    AddField(field_type, "Renderer_UseNvdecEmulation",
-             Settings::values.use_nvdec_emulation.GetValue());
+    AddField(field_type, "Renderer_NvdecEmulation",
+             TranslateNvdecEmulation(Settings::values.nvdec_emulation.GetValue()));
     AddField(field_type, "Renderer_AccelerateASTC", Settings::values.accelerate_astc.GetValue());
     AddField(field_type, "Renderer_UseVsync", Settings::values.use_vsync.GetValue());
     AddField(field_type, "Renderer_ShaderBackend",

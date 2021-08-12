@@ -5,6 +5,7 @@
 #include <fstream>
 #include <vector>
 #include "common/assert.h"
+#include "common/settings.h"
 #include "video_core/command_classes/codecs/codec.h"
 #include "video_core/command_classes/codecs/h264.h"
 #include "video_core/command_classes/codecs/vp9.h"
@@ -16,44 +17,28 @@ extern "C" {
 }
 
 namespace Tegra {
-#if defined(LIBVA_FOUND)
-// Hardware acceleration code from FFmpeg/doc/examples/hw_decode.c originally under MIT license
 namespace {
-constexpr std::array<const char*, 2> VAAPI_DRIVERS = {
-    "i915",
-    "amdgpu",
-};
+constexpr AVPixelFormat PREFERRED_GPU_FMT = AV_PIX_FMT_NV12;
+constexpr AVPixelFormat PREFERRED_CPU_FMT = AV_PIX_FMT_YUV420P;
 
-AVPixelFormat GetHwFormat(AVCodecContext*, const AVPixelFormat* pix_fmts) {
+void AVPacketDeleter(AVPacket* ptr) {
+    av_packet_free(&ptr);
+}
+
+using AVPacketPtr = std::unique_ptr<AVPacket, decltype(&AVPacketDeleter)>;
+
+AVPixelFormat GetGpuFormat(AVCodecContext* av_codec_ctx, const AVPixelFormat* pix_fmts) {
     for (const AVPixelFormat* p = pix_fmts; *p != AV_PIX_FMT_NONE; ++p) {
-        if (*p == AV_PIX_FMT_VAAPI) {
-            return AV_PIX_FMT_VAAPI;
+        if (*p == av_codec_ctx->pix_fmt) {
+            return av_codec_ctx->pix_fmt;
         }
     }
     LOG_INFO(Service_NVDRV, "Could not find compatible GPU AV format, falling back to CPU");
-    return *pix_fmts;
-}
-
-bool CreateVaapiHwdevice(AVBufferRef** av_hw_device) {
-    AVDictionary* hwdevice_options = nullptr;
-    av_dict_set(&hwdevice_options, "connection_type", "drm", 0);
-    for (const auto& driver : VAAPI_DRIVERS) {
-        av_dict_set(&hwdevice_options, "kernel_driver", driver, 0);
-        const int hwdevice_error = av_hwdevice_ctx_create(av_hw_device, AV_HWDEVICE_TYPE_VAAPI,
-                                                          nullptr, hwdevice_options, 0);
-        if (hwdevice_error >= 0) {
-            LOG_INFO(Service_NVDRV, "Using VA-API with {}", driver);
-            av_dict_free(&hwdevice_options);
-            return true;
-        }
-        LOG_DEBUG(Service_NVDRV, "VA-API av_hwdevice_ctx_create failed {}", hwdevice_error);
-    }
-    LOG_DEBUG(Service_NVDRV, "VA-API av_hwdevice_ctx_create failed for all drivers");
-    av_dict_free(&hwdevice_options);
-    return false;
+    av_buffer_unref(&av_codec_ctx->hw_device_ctx);
+    av_codec_ctx->pix_fmt = PREFERRED_CPU_FMT;
+    return PREFERRED_CPU_FMT;
 }
 } // namespace
-#endif
 
 void AVFrameDeleter(AVFrame* ptr) {
     av_frame_free(&ptr);
@@ -68,55 +53,109 @@ Codec::~Codec() {
         return;
     }
     // Free libav memory
-    avcodec_send_packet(av_codec_ctx, nullptr);
-    AVFrame* av_frame = av_frame_alloc();
-    avcodec_receive_frame(av_codec_ctx, av_frame);
-    avcodec_flush_buffers(av_codec_ctx);
-    av_frame_free(&av_frame);
-    avcodec_close(av_codec_ctx);
-    av_buffer_unref(&av_hw_device);
+    avcodec_free_context(&av_codec_ctx);
+    av_buffer_unref(&av_gpu_decoder);
 }
 
-void Codec::InitializeHwdec() {
-    // Prioritize integrated GPU to mitigate bandwidth bottlenecks
+bool Codec::CreateGpuAvDevice() {
 #if defined(LIBVA_FOUND)
-    if (CreateVaapiHwdevice(&av_hw_device)) {
-        const auto hw_device_ctx = av_buffer_ref(av_hw_device);
-        ASSERT_MSG(hw_device_ctx, "av_buffer_ref failed");
-        av_codec_ctx->hw_device_ctx = hw_device_ctx;
-        av_codec_ctx->get_format = GetHwFormat;
+    static constexpr std::array<const char*, 3> VAAPI_DRIVERS = {
+        "i915",
+        "iHD",
+        "amdgpu",
+    };
+    AVDictionary* hwdevice_options = nullptr;
+    av_dict_set(&hwdevice_options, "connection_type", "drm", 0);
+    for (const auto& driver : VAAPI_DRIVERS) {
+        av_dict_set(&hwdevice_options, "kernel_driver", driver, 0);
+        const int hwdevice_error = av_hwdevice_ctx_create(&av_gpu_decoder, AV_HWDEVICE_TYPE_VAAPI,
+                                                          nullptr, hwdevice_options, 0);
+        if (hwdevice_error >= 0) {
+            LOG_INFO(Service_NVDRV, "Using VA-API with {}", driver);
+            av_dict_free(&hwdevice_options);
+            av_codec_ctx->pix_fmt = AV_PIX_FMT_VAAPI;
+            return true;
+        }
+        LOG_DEBUG(Service_NVDRV, "VA-API av_hwdevice_ctx_create failed {}", hwdevice_error);
+    }
+    LOG_DEBUG(Service_NVDRV, "VA-API av_hwdevice_ctx_create failed for all drivers");
+    av_dict_free(&hwdevice_options);
+#endif
+    static constexpr auto HW_CONFIG_METHOD = AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX;
+    static constexpr std::array GPU_DECODER_TYPES{
+        AV_HWDEVICE_TYPE_CUDA,
+#ifdef _WIN32
+        AV_HWDEVICE_TYPE_D3D11VA,
+#else
+        AV_HWDEVICE_TYPE_VDPAU,
+#endif
+    };
+    for (const auto& type : GPU_DECODER_TYPES) {
+        const int hwdevice_res = av_hwdevice_ctx_create(&av_gpu_decoder, type, nullptr, nullptr, 0);
+        if (hwdevice_res < 0) {
+            LOG_DEBUG(Service_NVDRV, "{} av_hwdevice_ctx_create failed {}",
+                      av_hwdevice_get_type_name(type), hwdevice_res);
+            continue;
+        }
+        for (int i = 0;; i++) {
+            const AVCodecHWConfig* config = avcodec_get_hw_config(av_codec, i);
+            if (!config) {
+                LOG_DEBUG(Service_NVDRV, "{} decoder does not support device type {}.",
+                          av_codec->name, av_hwdevice_get_type_name(type));
+                break;
+            }
+            if (config->methods & HW_CONFIG_METHOD && config->device_type == type) {
+                av_codec_ctx->pix_fmt = config->pix_fmt;
+                LOG_INFO(Service_NVDRV, "Using {} GPU decoder", av_hwdevice_get_type_name(type));
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void Codec::InitializeAvCodecContext() {
+    av_codec_ctx = avcodec_alloc_context3(av_codec);
+    av_opt_set(av_codec_ctx->priv_data, "tune", "zerolatency", 0);
+}
+
+void Codec::InitializeGpuDecoder() {
+    if (!CreateGpuAvDevice()) {
+        av_buffer_unref(&av_gpu_decoder);
         return;
     }
-#endif
-    // TODO more GPU accelerated decoders
+    auto* hw_device_ctx = av_buffer_ref(av_gpu_decoder);
+    ASSERT_MSG(hw_device_ctx, "av_buffer_ref failed");
+    av_codec_ctx->hw_device_ctx = hw_device_ctx;
+    av_codec_ctx->get_format = GetGpuFormat;
 }
 
 void Codec::Initialize() {
-    AVCodecID codec;
-    switch (current_codec) {
-    case NvdecCommon::VideoCodec::H264:
-        codec = AV_CODEC_ID_H264;
-        break;
-    case NvdecCommon::VideoCodec::Vp9:
-        codec = AV_CODEC_ID_VP9;
-        break;
-    default:
-        UNIMPLEMENTED_MSG("Unknown codec {}", current_codec);
+    const AVCodecID codec = [&] {
+        switch (current_codec) {
+        case NvdecCommon::VideoCodec::H264:
+            return AV_CODEC_ID_H264;
+        case NvdecCommon::VideoCodec::Vp9:
+            return AV_CODEC_ID_VP9;
+        default:
+            UNIMPLEMENTED_MSG("Unknown codec {}", current_codec);
+            return AV_CODEC_ID_NONE;
+        }
+    }();
+    av_codec = avcodec_find_decoder(codec);
+
+    InitializeAvCodecContext();
+    if (Settings::values.nvdec_emulation.GetValue() == Settings::NvdecEmulation::GPU) {
+        InitializeGpuDecoder();
+    }
+    if (const int res = avcodec_open2(av_codec_ctx, av_codec, nullptr); res < 0) {
+        LOG_ERROR(Service_NVDRV, "avcodec_open2() Failed with result {}", res);
+        avcodec_free_context(&av_codec_ctx);
+        av_buffer_unref(&av_gpu_decoder);
         return;
     }
-    av_codec = avcodec_find_decoder(codec);
-    av_codec_ctx = avcodec_alloc_context3(av_codec);
-    av_opt_set(av_codec_ctx->priv_data, "tune", "zerolatency", 0);
-    InitializeHwdec();
     if (!av_codec_ctx->hw_device_ctx) {
         LOG_INFO(Service_NVDRV, "Using FFmpeg software decoding");
-    }
-    const auto av_error = avcodec_open2(av_codec_ctx, av_codec, nullptr);
-    if (av_error < 0) {
-        LOG_ERROR(Service_NVDRV, "avcodec_open2() Failed.");
-        avcodec_close(av_codec_ctx);
-        av_buffer_unref(&av_hw_device);
-        return;
     }
     initialized = true;
 }
@@ -133,6 +172,9 @@ void Codec::Decode() {
     if (is_first_frame) {
         Initialize();
     }
+    if (!initialized) {
+        return;
+    }
     bool vp9_hidden_frame = false;
     std::vector<u8> frame_data;
     if (current_codec == NvdecCommon::VideoCodec::H264) {
@@ -141,50 +183,48 @@ void Codec::Decode() {
         frame_data = vp9_decoder->ComposeFrameHeader(state);
         vp9_hidden_frame = vp9_decoder->WasFrameHidden();
     }
-    AVPacket packet{};
-    av_init_packet(&packet);
-    packet.data = frame_data.data();
-    packet.size = static_cast<s32>(frame_data.size());
-    if (const int ret = avcodec_send_packet(av_codec_ctx, &packet); ret) {
-        LOG_DEBUG(Service_NVDRV, "avcodec_send_packet error {}", ret);
+    AVPacketPtr packet{av_packet_alloc(), AVPacketDeleter};
+    if (!packet) {
+        LOG_ERROR(Service_NVDRV, "av_packet_alloc failed");
+        return;
+    }
+    packet->data = frame_data.data();
+    packet->size = static_cast<s32>(frame_data.size());
+    if (const int res = avcodec_send_packet(av_codec_ctx, packet.get()); res != 0) {
+        LOG_DEBUG(Service_NVDRV, "avcodec_send_packet error {}", res);
         return;
     }
     // Only receive/store visible frames
     if (vp9_hidden_frame) {
         return;
     }
-    AVFrame* hw_frame = av_frame_alloc();
-    AVFrame* sw_frame = hw_frame;
-    ASSERT_MSG(hw_frame, "av_frame_alloc hw_frame failed");
-    if (const int ret = avcodec_receive_frame(av_codec_ctx, hw_frame); ret) {
+    AVFramePtr initial_frame{av_frame_alloc(), AVFrameDeleter};
+    AVFramePtr final_frame{nullptr, AVFrameDeleter};
+    ASSERT_MSG(initial_frame, "av_frame_alloc initial_frame failed");
+    if (const int ret = avcodec_receive_frame(av_codec_ctx, initial_frame.get()); ret) {
         LOG_DEBUG(Service_NVDRV, "avcodec_receive_frame error {}", ret);
-        av_frame_free(&hw_frame);
         return;
     }
-    if (!hw_frame->width || !hw_frame->height) {
+    if (initial_frame->width == 0 || initial_frame->height == 0) {
         LOG_WARNING(Service_NVDRV, "Zero width or height in frame");
-        av_frame_free(&hw_frame);
         return;
     }
-#if defined(LIBVA_FOUND)
-    // Hardware acceleration code from FFmpeg/doc/examples/hw_decode.c under MIT license
-    if (hw_frame->format == AV_PIX_FMT_VAAPI) {
-        sw_frame = av_frame_alloc();
-        ASSERT_MSG(sw_frame, "av_frame_alloc sw_frame failed");
+    if (av_codec_ctx->hw_device_ctx) {
+        final_frame = AVFramePtr{av_frame_alloc(), AVFrameDeleter};
+        ASSERT_MSG(final_frame, "av_frame_alloc final_frame failed");
         // Can't use AV_PIX_FMT_YUV420P and share code with software decoding in vic.cpp
         // because Intel drivers crash unless using AV_PIX_FMT_NV12
-        sw_frame->format = AV_PIX_FMT_NV12;
-        const int transfer_data_ret = av_hwframe_transfer_data(sw_frame, hw_frame, 0);
-        ASSERT_MSG(!transfer_data_ret, "av_hwframe_transfer_data error {}", transfer_data_ret);
-        av_frame_free(&hw_frame);
+        final_frame->format = PREFERRED_GPU_FMT;
+        const int ret = av_hwframe_transfer_data(final_frame.get(), initial_frame.get(), 0);
+        ASSERT_MSG(!ret, "av_hwframe_transfer_data error {}", ret);
+    } else {
+        final_frame = std::move(initial_frame);
     }
-#endif
-    if (sw_frame->format != AV_PIX_FMT_YUV420P && sw_frame->format != AV_PIX_FMT_NV12) {
-        UNIMPLEMENTED_MSG("Unexpected video format from host graphics: {}", sw_frame->format);
-        av_frame_free(&sw_frame);
+    if (final_frame->format != PREFERRED_CPU_FMT && final_frame->format != PREFERRED_GPU_FMT) {
+        UNIMPLEMENTED_MSG("Unexpected video format: {}", final_frame->format);
         return;
     }
-    av_frames.push(AVFramePtr{sw_frame, AVFrameDeleter});
+    av_frames.push(std::move(final_frame));
     if (av_frames.size() > 10) {
         LOG_TRACE(Service_NVDRV, "av_frames.push overflow dropped frame");
         av_frames.pop();

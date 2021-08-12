@@ -95,7 +95,8 @@ const std::vector<u8>& H264::ComposeFrameHeader(const NvdecCommon::NvdecRegister
     const s32 pic_height = context.h264_parameter_set.frame_height_in_map_units /
                            (context.h264_parameter_set.frame_mbs_only_flag ? 1 : 2);
 
-    writer.WriteUe(16);
+    // TODO (ameerj): Find a way to compute this number, it seems to differ depending on the stream
+    writer.WriteUe(14); // Max number of reference frames
     writer.WriteBit(false);
     writer.WriteUe(context.h264_parameter_set.pic_width_in_mbs - 1);
     writer.WriteUe(pic_height - 1);

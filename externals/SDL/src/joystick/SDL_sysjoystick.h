@@ -56,6 +56,7 @@ typedef struct _SDL_JoystickSensorInfo
 {
     SDL_SensorType type;
     SDL_bool enabled;
+    float rate;
     float data[3];      /* If this needs to expand, update SDL_ControllerSensorEvent */
 } SDL_JoystickSensorInfo;
 
@@ -165,6 +166,9 @@ typedef struct _SDL_JoystickDriver
     /* LED functionality */
     SDL_bool (*HasLED)(SDL_Joystick *joystick);
     int (*SetLED)(SDL_Joystick *joystick, Uint8 red, Uint8 green, Uint8 blue);
+
+    /* General effects */
+    int (*SendEffect)(SDL_Joystick *joystick, const void *data, int size);
 
     /* Sensor functionality */
     int (*SetSensorsEnabled)(SDL_Joystick *joystick, SDL_bool enabled);

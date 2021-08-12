@@ -12,6 +12,7 @@ my $copy_direction = 0;
 foreach (@ARGV) {
     $warn_about_missing = 1, next if $_ eq '--warn-about-missing';
     $copy_direction = 1, next if $_ eq '--copy-to-headers';
+    $copy_direction = 1, next if $_ eq '--copy-to-header';
     $copy_direction = -1, next if $_ eq '--copy-to-wiki';
     $srcpath = $_, next if not defined $srcpath;
     $wikipath = $_, next if not defined $wikipath;
@@ -28,11 +29,15 @@ sub wordwrap_with_bullet_indent {  # don't call this directly.
     my $str = shift;
     my $retval = '';
 
+    #print("WORDWRAP BULLET ('$bullet'):\n\n$str\n\n");
+
     # You _can't_ (at least with Pandoc) have a bullet item with a newline in
     #  MediaWiki, so _remove_ wrapping!
     if ($wordwrap_mode eq 'mediawiki') {
         $retval = "$bullet$str";
         $retval =~ s/\n/ /gms;
+        $retval =~ s/\s+$//gms;
+        #print("WORDWRAP BULLET DONE:\n\n$retval\n\n");
         return "$retval\n";
     }
 
@@ -103,25 +108,38 @@ sub wordwrap {
 
     my $retval = '';
 
-    while ($str =~ s/(.*?)(\n+\`\`\`.*?\`\`\`\n+|\n+\<syntaxhighlight.*?\<\/syntaxhighlight\>\n+)//ms) {
+    #print("\n\nWORDWRAP:\n\n$str\n\n\n");
+
+    $str =~ s/\A\n+//ms;
+
+    while ($str =~ s/(.*?)(\`\`\`.*?\`\`\`|\<syntaxhighlight.*?\<\/syntaxhighlight\>)//ms) {
+        #print("\n\nWORDWRAP BLOCK:\n\n$1\n\n ===\n\n$2\n\n\n");
         $retval .= wordwrap_paragraphs($1); # wrap it.
-        $retval .= $2;  # don't wrap it.
+        $retval .= "$2\n\n";  # don't wrap it.
     }
 
-    return $retval . wordwrap_paragraphs($str);  # wrap what's left.
+    $retval .= wordwrap_paragraphs($str);  # wrap what's left.
+    $retval =~ s/\n+\Z//ms;
+
+    #print("\n\nWORDWRAP DONE:\n\n$retval\n\n\n");
+    return $retval;
 }
 
-
-sub wikify {
+# This assumes you're moving from Markdown (in the Doxygen data) to Wiki, which
+#  is why the 'md' section is so sparse.
+sub wikify_chunk {
     my $wikitype = shift;
     my $str = shift;
+    my $codelang = shift;
+    my $code = shift;
+
+    #print("\n\nWIKIFY CHUNK:\n\n$str\n\n\n");
 
     if ($wikitype eq 'mediawiki') {
         # Convert obvious SDL things to wikilinks.
         $str =~ s/\b(SDL_[a-zA-Z0-9_]+)/[[$1]]/gms;
 
         # Make some Markdown things into MediaWiki...
-        $str =~ s/\`\`\`(c|c++)(.*?)\`\`\`/<syntaxhighlight lang='$1'>$2<\/syntaxhighlight>/gms;
 
         # <code></code> is also popular.  :/
         $str =~ s/\`(.*?)\`/<code>$1<\/code>/gms;
@@ -137,70 +155,54 @@ sub wikify {
 
         # bullets
         $str =~ s/^\- /* /gm;
+
+        if (defined $code) {
+            $str .= "<syntaxhighlight lang='$codelang'>$code<\/syntaxhighlight>";
+        }
     } elsif ($wikitype eq 'md') {
         # Convert obvious SDL things to wikilinks.
         $str =~ s/\b(SDL_[a-zA-Z0-9_]+)/[$1]($1)/gms;
+        if (defined $code) {
+            $str .= "```$codelang$code```";
+        }
     }
+
+    #print("\n\nWIKIFY CHUNK DONE:\n\n$str\n\n\n");
+
     return $str;
 }
 
-sub dewikify {
+sub wikify {
     my $wikitype = shift;
     my $str = shift;
-    return '' if not defined $str;
-    my @lines = split /\n/, $str;
-    return '' if scalar(@lines) == 0;
+    my $retval = '';
 
-    my $iwikitype = 0;
+    #print("WIKIFY WHOLE:\n\n$str\n\n\n");
+
+    while ($str =~ s/\A(.*?)\`\`\`(c\+\+|c)(.*?)\`\`\`//ms) {
+        $retval .= wikify_chunk($wikitype, $1, $2, $3);
+    }
+    $retval .= wikify_chunk($wikitype, $str, undef, undef);
+
+    #print("WIKIFY WHOLE DONE:\n\n$retval\n\n\n");
+
+    return $retval;
+}
+
+
+sub dewikify_chunk {
+    my $wikitype = shift;
+    my $str = shift;
+    my $codelang = shift;
+    my $code = shift;
+
+    #print("\n\nDEWIKIFY CHUNK:\n\n$str\n\n\n");
+
     if ($wikitype eq 'mediawiki') {
-        $iwikitype = 1;
-    } elsif ($wikitype eq 'md') {
-        $iwikitype = 2;
-    } else {
-        die("Unexpected wikitype '$wikitype'\n");
-    }
-
-    while (1) {
-        my $l = shift @lines;
-        last if not defined $l;
-        chomp($l);
-        $l =~ s/\A\s*//;
-        $l =~ s/\s*\Z//;
-        next if ($l eq '');
-        next if ($iwikitype == 1) and ($l =~ /\A\= .*? \=\Z/);
-        next if ($iwikitype == 1) and ($l =~ /\A\=\= .*? \=\=\Z/);
-        next if ($iwikitype == 2) and ($l =~ /\A\#\# /);
-        unshift @lines, $l;
-        last;
-    }
-
-    while (1) {
-        my $l = pop @lines;
-        last if not defined $l;
-        chomp($l);
-        $l =~ s/\A\s*//;
-        $l =~ s/\s*\Z//;
-        next if ($l eq '');
-        push @lines, $l;
-        last;
-    }
-
-    $str = '';
-    foreach (@lines) {
-        chomp;
-        s/\A\s*//;
-        s/\s*\Z//;
-        $str .= "$_\n";
-    }
-
-    if ($iwikitype == 1) {  #($wikitype eq 'mediawiki')
         # Doxygen supports Markdown (and it just simply looks better than MediaWiki
-        # when looking at the raw headers, so do some conversions here as necessary.
+        # when looking at the raw headers), so do some conversions here as necessary.
 
         $str =~ s/\[\[(SDL_[a-zA-Z0-9_]+)\]\]/$1/gms;  # Dump obvious wikilinks.
-
-        # convert mediawiki syntax highlighting to Markdown backticks.
-        $str =~ s/\<syntaxhighlight lang='?(.*?)'?>(.*?)<\/syntaxhighlight>/```$1$2```/gms;
 
         # <code></code> is also popular.  :/
         $str =~ s/\<code>(.*?)<\/code>/`$1`/gms;
@@ -218,7 +220,34 @@ sub dewikify {
         $str =~ s/^\* /- /gm;
     }
 
+    if (defined $code) {
+        $str .= "```$codelang$code```";
+    }
+
+    #print("\n\nDEWIKIFY CHUNK DONE:\n\n$str\n\n\n");
+
     return $str;
+}
+
+sub dewikify {
+    my $wikitype = shift;
+    my $str = shift;
+    return '' if not defined $str;
+
+    #print("DEWIKIFY WHOLE:\n\n$str\n\n\n");
+
+    $str =~ s/\A[\s\n]*\= .*? \=\s*?\n+//ms;
+    $str =~ s/\A[\s\n]*\=\= .*? \=\=\s*?\n+//ms;
+
+    my $retval = '';
+    while ($str =~ s/\A(.*?)<syntaxhighlight lang='?(.*?)'?>(.*?)<\/syntaxhighlight\>//ms) {
+        $retval .= dewikify_chunk($wikitype, $1, $2, $3);
+    }
+    $retval .= dewikify_chunk($wikitype, $str, undef, undef);
+
+    #print("DEWIKIFY WHOLE DONE:\n\n$retval\n\n\n");
+
+    return $retval;
 }
 
 sub usage {
@@ -266,7 +295,7 @@ while (readdir(DH)) {
 
     while (<FH>) {
         chomp;
-        if (not /\A\/\*\*/) {  # not doxygen comment start?
+        if (not /\A\/\*\*\s*\Z/) {  # not doxygen comment start?
             push @contents, $_;
             next;
         }
@@ -278,8 +307,23 @@ while (readdir(DH)) {
             chomp;
             push @templines, $_;
             last if /\A\s*\*\/\Z/;
-            s/\A\s*\*\s*//;
-            $str .= "$_\n";
+            if (s/\A\s*\*\s*\`\`\`/```/) {  # this is a hack, but a lot of other code relies on the whitespace being trimmed, but we can't trim it in code blocks...
+                $str .= "$_\n";
+                while (<FH>) {
+                    chomp;
+                    push @templines, $_;
+                    s/\A\s*\*\s?//;
+                    if (s/\A\s*\`\`\`/```/) {
+                        $str .= "$_\n";
+                        last;
+                    } else {
+                        $str .= "$_\n";
+                    }
+                }
+            } else {
+                s/\A\s*\*\s*//;
+                $str .= "$_\n";
+            }
         }
 
         my $decl = <FH>;
@@ -339,6 +383,7 @@ while (readdir(DH)) {
         }
 
         #print("$fn:\n$str\n\n");
+
         $headerfuncs{$fn} = $str;
         $headerdecls{$fn} = $decl;
         $headerfuncslocation{$fn} = $dent;
@@ -422,8 +467,7 @@ while (readdir(DH)) {
             die("Unexpected wiki file type. Fixme!\n");
         }
 
-        my $str = ($current_section eq 'Code Examples') ? $orig : $_;
-        $sections{$current_section} .= "$str\n";
+        $sections{$current_section} .= "$orig\n";
     }
     close(FH);
 
@@ -574,6 +618,7 @@ if ($copy_direction == 1) {  # --copy-to-headers
             my @desclines = split /\n/, $v;
             foreach (@desclines) {
                 s/\A(\:|\* )//;
+                s/\(\)\Z//;  # Convert "SDL_Func()" to "SDL_Func"
                 $str .= "\\sa $_\n";
             }
         }
@@ -644,13 +689,24 @@ if ($copy_direction == 1) {  # --copy-to-headers
         @doxygenlines = (@briefsplit, @doxygenlines);
 
         my $remarks = '';
+        # !!! FIXME: wordwrap and wikify might handle this, now.
         while (@doxygenlines) {
             last if $doxygenlines[0] =~ /\A\\/;  # some sort of doxygen command, assume we're past the general remarks.
             my $l = shift @doxygenlines;
-            $l =~ s/\A\s*//;
-            $l =~ s/\s*\Z//;
-            $remarks .= "$l\n";
+            if ($l =~ /\A\`\`\`/) {  # syntax highlighting, don't reformat.
+                $remarks .= "$l\n";
+                while ((@doxygenlines) && (not $l =~ /\`\`\`\Z/)) {
+                    $l = shift @doxygenlines;
+                    $remarks .= "$l\n";
+                }
+            } else {
+                $l =~ s/\A\s*//;
+                $l =~ s/\s*\Z//;
+                $remarks .= "$l\n";
+            }
         }
+
+        #print("REMARKS:\n\n $remarks\n\n");
 
         $remarks = wordwrap(wikify($wikitype, $remarks));
         $remarks =~ s/\A\s*//;
@@ -683,10 +739,15 @@ if ($copy_direction == 1) {  # --copy-to-headers
                     my $subline = $doxygenlines[0];
                     $subline =~ s/\A\s*//;
                     last if $subline =~ /\A\\/;  # some sort of doxygen command, assume we're past this thing.
-                    last if $subline eq '';  # empty line, this param is done.
                     shift @doxygenlines;  # dump this line from the array; we're using it.
-                    $desc .= " $subline";
+                    if ($subline eq '') {  # empty line, make sure it keeps the newline char.
+                        $desc .= "\n";
+                    } else {
+                        $desc .= " $subline";
+                    }
                 }
+
+                $desc =~ s/[\s\n]+\Z//ms;
 
                 # We need to know the length of the longest string to make Markdown tables, so we just store these off until everything is parsed.
                 push @params, $arg;
@@ -698,24 +759,33 @@ if ($copy_direction == 1) {  # --copy-to-headers
                     my $subline = $doxygenlines[0];
                     $subline =~ s/\A\s*//;
                     last if $subline =~ /\A\\/;  # some sort of doxygen command, assume we're past this thing.
-                    last if $subline eq '';  # empty line, this param is done.
                     shift @doxygenlines;  # dump this line from the array; we're using it.
-                    $desc .= wikify($wikitype, " $subline");
+                    if ($subline eq '') {  # empty line, make sure it keeps the newline char.
+                        $desc .= "\n";
+                    } else {
+                        $desc .= " $subline";
+                    }
                 }
-                $sections{'Return Value'} = wordwrap("$retstr $desc") . "\n";
+                $desc =~ s/[\s\n]+\Z//ms;
+                $sections{'Return Value'} = wordwrap("$retstr " . wikify($wikitype, $desc)) . "\n";
             } elsif ($l =~ /\A\\since\s+(.*)\Z/) {
                 my $desc = $1;
                 while (@doxygenlines) {
                     my $subline = $doxygenlines[0];
                     $subline =~ s/\A\s*//;
                     last if $subline =~ /\A\\/;  # some sort of doxygen command, assume we're past this thing.
-                    last if $subline eq '';  # empty line, this param is done.
                     shift @doxygenlines;  # dump this line from the array; we're using it.
-                    $desc .= wikify($wikitype, " $subline");
+                    if ($subline eq '') {  # empty line, make sure it keeps the newline char.
+                        $desc .= "\n";
+                    } else {
+                        $desc .= " $subline";
+                    }
                 }
-                $sections{'Version'} = wordwrap($desc) . "\n";
+                $desc =~ s/[\s\n]+\Z//ms;
+                $sections{'Version'} = wordwrap(wikify($wikitype, $desc)) . "\n";
             } elsif ($l =~ /\A\\sa\s+(.*)\Z/) {
                 my $sa = $1;
+                $sa =~ s/\(\)\Z//;  # Convert "SDL_Func()" to "SDL_Func"
                 $sections{'Related Functions'} = '' if not defined $sections{'Related Functions'};
                 if ($wikitype eq 'mediawiki') {
                     $sections{'Related Functions'} .= ":[[$sa]]\n";

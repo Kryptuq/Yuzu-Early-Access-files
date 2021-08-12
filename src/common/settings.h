@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <chrono>
@@ -47,6 +48,12 @@ enum class FullscreenMode : u32 {
     Exclusive = 1,
 };
 
+enum class NvdecEmulation : u32 {
+    Off = 0,
+    CPU = 1,
+    GPU = 2,
+};
+
 /** The BasicSetting class is a simple resource manager. It defines a label and default value
  * alongside the actual value of the setting for simpler and less-error prone use with frontend
  * configurations. Setting a default value and label is required, though subclasses may deviate from
@@ -74,14 +81,14 @@ public:
      */
     explicit BasicSetting(const Type& default_val, const std::string& name)
         : default_value{default_val}, global{default_val}, label{name} {}
-    ~BasicSetting() = default;
+    virtual ~BasicSetting() = default;
 
     /**
      *  Returns a reference to the setting's value.
      *
      * @returns A reference to the setting
      */
-    [[nodiscard]] const Type& GetValue() const {
+    [[nodiscard]] virtual const Type& GetValue() const {
         return global;
     }
 
@@ -90,7 +97,7 @@ public:
      *
      * @param value The desired value
      */
-    void SetValue(const Type& value) {
+    virtual void SetValue(const Type& value) {
         Type temp{value};
         std::swap(global, temp);
     }
@@ -120,7 +127,7 @@ public:
      *
      * @returns A reference to the setting
      */
-    const Type& operator=(const Type& value) {
+    virtual const Type& operator=(const Type& value) {
         Type temp{value};
         std::swap(global, temp);
         return global;
@@ -131,7 +138,7 @@ public:
      *
      * @returns A reference to the setting
      */
-    explicit operator const Type&() const {
+    explicit virtual operator const Type&() const {
         return global;
     }
 
@@ -139,6 +146,51 @@ protected:
     const Type default_value{}; ///< The default value
     Type global{};              ///< The setting
     const std::string label{};  ///< The setting's label
+};
+
+/**
+ * BasicRangedSetting class is intended for use with quantifiable settings that need a more
+ * restrictive range than implicitly defined by its type. Implements a minimum and maximum that is
+ * simply used to sanitize SetValue and the assignment overload.
+ */
+template <typename Type>
+class BasicRangedSetting : virtual public BasicSetting<Type> {
+public:
+    /**
+     * Sets a default value, minimum value, maximum value, and label.
+     *
+     * @param default_val Intial value of the setting, and default value of the setting
+     * @param min_val Sets the minimum allowed value of the setting
+     * @param max_val Sets the maximum allowed value of the setting
+     * @param name Label for the setting
+     */
+    explicit BasicRangedSetting(const Type& default_val, const Type& min_val, const Type& max_val,
+                                const std::string& name)
+        : BasicSetting<Type>{default_val, name}, minimum{min_val}, maximum{max_val} {}
+    virtual ~BasicRangedSetting() = default;
+
+    /**
+     * Like BasicSetting's SetValue, except value is clamped to the range of the setting.
+     *
+     * @param value The desired value
+     */
+    void SetValue(const Type& value) override {
+        this->global = std::clamp(value, minimum, maximum);
+    }
+
+    /**
+     * Like BasicSetting's assignment overload, except value is clamped to the range of the setting.
+     *
+     * @param value The desired value
+     * @returns A reference to the setting's value
+     */
+    const Type& operator=(const Type& value) override {
+        this->global = std::clamp(value, minimum, maximum);
+        return this->global;
+    }
+
+    const Type minimum; ///< Minimum allowed value of the setting
+    const Type maximum; ///< Maximum allowed value of the setting
 };
 
 /**
@@ -152,7 +204,7 @@ protected:
  * Like the BasicSetting, this requires setting a default value and label to use.
  */
 template <typename Type>
-class Setting final : public BasicSetting<Type> {
+class Setting : virtual public BasicSetting<Type> {
 public:
     /**
      * Sets a default value, label, and setting value.
@@ -162,7 +214,7 @@ public:
      */
     explicit Setting(const Type& default_val, const std::string& name)
         : BasicSetting<Type>(default_val, name) {}
-    ~Setting() = default;
+    virtual ~Setting() = default;
 
     /**
      * Tells this setting to represent either the global or custom setting when other member
@@ -191,7 +243,13 @@ public:
      *
      * @returns The required value of the setting
      */
-    [[nodiscard]] const Type& GetValue(bool need_global = false) const {
+    [[nodiscard]] virtual const Type& GetValue() const override {
+        if (use_global) {
+            return this->global;
+        }
+        return custom;
+    }
+    [[nodiscard]] virtual const Type& GetValue(bool need_global) const {
         if (use_global || need_global) {
             return this->global;
         }
@@ -203,7 +261,7 @@ public:
      *
      * @param value The new value
      */
-    void SetValue(const Type& value) {
+    void SetValue(const Type& value) override {
         Type temp{value};
         if (use_global) {
             std::swap(this->global, temp);
@@ -219,7 +277,7 @@ public:
      *
      * @returns A reference to the current setting value
      */
-    const Type& operator=(const Type& value) {
+    const Type& operator=(const Type& value) override {
         Type temp{value};
         if (use_global) {
             std::swap(this->global, temp);
@@ -234,16 +292,85 @@ public:
      *
      * @returns A reference to the current setting value
      */
-    explicit operator const Type&() const {
+    virtual explicit operator const Type&() const override {
         if (use_global) {
             return this->global;
         }
         return custom;
     }
 
-private:
+protected:
     bool use_global{true}; ///< The setting's global state
     Type custom{};         ///< The custom value of the setting
+};
+
+/**
+ * RangedSetting is a Setting that implements a maximum and minimum value for its setting. Intended
+ * for use with quantifiable settings.
+ */
+template <typename Type>
+class RangedSetting final : public BasicRangedSetting<Type>, public Setting<Type> {
+public:
+    /**
+     * Sets a default value, minimum value, maximum value, and label.
+     *
+     * @param default_val Intial value of the setting, and default value of the setting
+     * @param min_val Sets the minimum allowed value of the setting
+     * @param max_val Sets the maximum allowed value of the setting
+     * @param name Label for the setting
+     */
+    explicit RangedSetting(const Type& default_val, const Type& min_val, const Type& max_val,
+                           const std::string& name)
+        : BasicSetting<Type>{default_val, name},
+          BasicRangedSetting<Type>{default_val, min_val, max_val, name}, Setting<Type>{default_val,
+                                                                                       name} {}
+    virtual ~RangedSetting() = default;
+
+    // The following are needed to avoid a MSVC bug
+    // (source: https://stackoverflow.com/questions/469508)
+    [[nodiscard]] const Type& GetValue() const override {
+        return Setting<Type>::GetValue();
+    }
+    [[nodiscard]] const Type& GetValue(bool need_global) const override {
+        return Setting<Type>::GetValue(need_global);
+    }
+    explicit operator const Type&() const override {
+        if (this->use_global) {
+            return this->global;
+        }
+        return this->custom;
+    }
+
+    /**
+     * Like BasicSetting's SetValue, except value is clamped to the range of the setting. Sets the
+     * appropriate value depending on the global state.
+     *
+     * @param value The desired value
+     */
+    void SetValue(const Type& value) override {
+        const Type temp = std::clamp(value, this->minimum, this->maximum);
+        if (this->use_global) {
+            this->global = temp;
+        }
+        this->custom = temp;
+    }
+
+    /**
+     * Like BasicSetting's assignment overload, except value is clamped to the range of the setting.
+     * Uses the appropriate value depending on the global state.
+     *
+     * @param value The desired value
+     * @returns A reference to the setting's value
+     */
+    const Type& operator=(const Type& value) override {
+        const Type temp = std::clamp(value, this->minimum, this->maximum);
+        if (this->use_global) {
+            this->global = temp;
+            return this->global;
+        }
+        this->custom = temp;
+        return this->custom;
+    }
 };
 
 /**
@@ -289,13 +416,14 @@ struct Values {
     BasicSetting<std::string> sink_id{"auto", "output_engine"};
     BasicSetting<bool> audio_muted{false, "audio_muted"};
     Setting<bool> enable_audio_stretching{true, "enable_audio_stretching"};
-    Setting<u8> volume{100, "volume"};
+    RangedSetting<u8> volume{100, 0, 100, "volume"};
 
     // Core
     Setting<bool> use_multi_core{true, "use_multi_core"};
 
     // Cpu
-    Setting<CPUAccuracy> cpu_accuracy{CPUAccuracy::Auto, "cpu_accuracy"};
+    RangedSetting<CPUAccuracy> cpu_accuracy{CPUAccuracy::Auto, CPUAccuracy::Auto,
+                                            CPUAccuracy::Unsafe, "cpu_accuracy"};
     // TODO: remove cpu_accuracy_first_time, migration setting added 8 July 2021
     BasicSetting<bool> cpu_accuracy_first_time{true, "cpu_accuracy_first_time"};
     BasicSetting<bool> cpu_debug_mode{false, "cpu_debug_mode"};
@@ -317,7 +445,8 @@ struct Values {
     Setting<bool> cpuopt_unsafe_fastmem_check{true, "cpuopt_unsafe_fastmem_check"};
 
     // Renderer
-    Setting<RendererBackend> renderer_backend{RendererBackend::OpenGL, "backend"};
+    RangedSetting<RendererBackend> renderer_backend{
+        RendererBackend::OpenGL, RendererBackend::OpenGL, RendererBackend::Vulkan, "backend"};
     BasicSetting<bool> renderer_debug{false, "debug"};
     BasicSetting<bool> renderer_shader_feedback{false, "shader_feedback"};
     BasicSetting<bool> enable_nsight_aftermath{false, "nsight_aftermath"};
@@ -328,26 +457,28 @@ struct Values {
     Setting<u16> resolution_factor{1, "resolution_factor"};
     // *nix platforms may have issues with the borderless windowed fullscreen mode.
     // Default to exclusive fullscreen on these platforms for now.
-    Setting<FullscreenMode> fullscreen_mode{
+    RangedSetting<FullscreenMode> fullscreen_mode{
 #ifdef _WIN32
         FullscreenMode::Borderless,
 #else
         FullscreenMode::Exclusive,
 #endif
-        "fullscreen_mode"};
-    Setting<int> aspect_ratio{0, "aspect_ratio"};
-    Setting<int> max_anisotropy{0, "max_anisotropy"};
+        FullscreenMode::Borderless, FullscreenMode::Exclusive, "fullscreen_mode"};
+    RangedSetting<int> aspect_ratio{0, 0, 3, "aspect_ratio"};
+    RangedSetting<int> max_anisotropy{0, 0, 4, "max_anisotropy"};
     Setting<bool> use_speed_limit{true, "use_speed_limit"};
-    Setting<u16> speed_limit{100, "speed_limit"};
+    RangedSetting<u16> speed_limit{100, 0, 9999, "speed_limit"};
     Setting<bool> use_disk_shader_cache{true, "use_disk_shader_cache"};
-    Setting<GPUAccuracy> gpu_accuracy{GPUAccuracy::High, "gpu_accuracy"};
+    RangedSetting<GPUAccuracy> gpu_accuracy{GPUAccuracy::High, GPUAccuracy::Normal,
+                                            GPUAccuracy::Extreme, "gpu_accuracy"};
     Setting<bool> use_asynchronous_gpu_emulation{true, "use_asynchronous_gpu_emulation"};
-    Setting<bool> use_nvdec_emulation{true, "use_nvdec_emulation"};
+    Setting<NvdecEmulation> nvdec_emulation{NvdecEmulation::GPU, "nvdec_emulation"};
     Setting<bool> accelerate_astc{true, "accelerate_astc"};
     Setting<bool> use_vsync{true, "use_vsync"};
-    BasicSetting<u16> fps_cap{1000, "fps_cap"};
+    BasicRangedSetting<u16> fps_cap{1000, 1, 1000, "fps_cap"};
     BasicSetting<bool> disable_fps_limit{false, "disable_fps_limit"};
-    Setting<ShaderBackend> shader_backend{ShaderBackend::GLASM, "shader_backend"};
+    RangedSetting<ShaderBackend> shader_backend{ShaderBackend::GLASM, ShaderBackend::GLSL,
+                                                ShaderBackend::SPIRV, "shader_backend"};
     Setting<bool> use_asynchronous_shaders{false, "use_asynchronous_shaders"};
     Setting<bool> use_fast_gpu_time{true, "use_fast_gpu_time"};
     Setting<bool> use_caches_gc{false, "use_caches_gc"};
@@ -364,10 +495,10 @@ struct Values {
     std::chrono::seconds custom_rtc_differential;
 
     BasicSetting<s32> current_user{0, "current_user"};
-    Setting<s32> language_index{1, "language_index"};
-    Setting<s32> region_index{1, "region_index"};
-    Setting<s32> time_zone_index{0, "time_zone_index"};
-    Setting<s32> sound_index{1, "sound_index"};
+    RangedSetting<s32> language_index{1, 0, 16, "language_index"};
+    RangedSetting<s32> region_index{1, 0, 6, "region_index"};
+    RangedSetting<s32> time_zone_index{0, 0, 45, "time_zone_index"};
+    RangedSetting<s32> sound_index{1, 0, 2, "sound_index"};
 
     // Controls
     InputSetting<std::array<PlayerInput, 10>> players;
@@ -389,7 +520,7 @@ struct Values {
     BasicSetting<bool> tas_swap_controllers{true, "tas_swap_controllers"};
 
     BasicSetting<bool> mouse_panning{false, "mouse_panning"};
-    BasicSetting<u8> mouse_panning_sensitivity{10, "mouse_panning_sensitivity"};
+    BasicRangedSetting<u8> mouse_panning_sensitivity{10, 1, 100, "mouse_panning_sensitivity"};
     BasicSetting<bool> mouse_enabled{false, "mouse_enabled"};
     std::string mouse_device;
     MouseButtonsRaw mouse_buttons;

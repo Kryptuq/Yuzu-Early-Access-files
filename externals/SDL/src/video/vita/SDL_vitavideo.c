@@ -38,7 +38,7 @@
 #include "SDL_vitakeyboard.h"
 #include "SDL_vitamouse_c.h"
 #include "SDL_vitaframebuffer.h"
-#if SDL_VIDEO_OPENGL_ES2
+#if SDL_VIDEO_VITA_PIB
 #include "SDL_vitagl_c.h"
 #endif
 #include <psp2/ime_dialog.h>
@@ -62,7 +62,7 @@ VITA_Create()
 {
     SDL_VideoDevice *device;
     SDL_VideoData *phdata;
-#if SDL_VIDEO_OPENGL_ES2
+#if SDL_VIDEO_VITA_PIB
     SDL_GLDriverData *gldata;
 #endif
     /* Initialize SDL_VideoDevice structure */
@@ -79,7 +79,7 @@ VITA_Create()
         SDL_free(device);
         return NULL;
     }
-#if SDL_VIDEO_OPENGL_ES2
+#if SDL_VIDEO_VITA_PIB
 
     gldata = (SDL_GLDriverData *) SDL_calloc(1, sizeof(SDL_GLDriverData));
     if (gldata == NULL) {
@@ -130,7 +130,7 @@ VITA_Create()
     device->DestroyWindowFramebuffer = VITA_DestroyWindowFramebuffer;
 */
 
-#if SDL_VIDEO_OPENGL_ES2
+#if SDL_VIDEO_VITA_PIB
     device->GL_LoadLibrary = VITA_GL_LoadLibrary;
     device->GL_GetProcAddress = VITA_GL_GetProcAddress;
     device->GL_UnloadLibrary = VITA_GL_UnloadLibrary;
@@ -418,6 +418,7 @@ void VITA_PumpEvents(_THIS)
 {
     SDL_VideoData *videodata = (SDL_VideoData *)_this->driverdata;
 
+
     VITA_PollTouch();
     VITA_PollKeyboard();
     VITA_PollMouse();
@@ -435,8 +436,12 @@ void VITA_PumpEvents(_THIS)
             // Convert UTF16 to UTF8
             utf16_to_utf8(videodata->ime_buffer, utf8_buffer);
 
-            // send sdl event
+            // Send SDL event
             SDL_SendKeyboardText((const char*)utf8_buffer);
+
+            // Send enter key only on enter
+            if (result.button == SCE_IME_DIALOG_BUTTON_ENTER)
+                SDL_SendKeyboardKeyAutoRelease(SDL_SCANCODE_RETURN);
 
             sceImeDialogTerm();
 
@@ -449,3 +454,4 @@ void VITA_PumpEvents(_THIS)
 #endif /* SDL_VIDEO_DRIVER_VITA */
 
 /* vi: set ts=4 sw=4 expandtab: */
+

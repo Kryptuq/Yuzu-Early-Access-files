@@ -145,7 +145,7 @@ ControllerHasTriggerRumble(Uint16 vendor_id, Uint16 product_id)
 static SDL_bool
 ControllerHasShareButton(Uint16 vendor_id, Uint16 product_id)
 {
-    return SDL_IsJoystickXboxOneSeriesX(vendor_id, product_id);
+    return SDL_IsJoystickXboxSeriesX(vendor_id, product_id);
 }
 
 static void
@@ -440,6 +440,12 @@ HIDAPI_DriverXboxOne_SetJoystickLED(SDL_HIDAPI_Device *device, SDL_Joystick *joy
 }
 
 static int
+HIDAPI_DriverXboxOne_SendJoystickEffect(SDL_HIDAPI_Device *device, SDL_Joystick *joystick, const void *data, int size)
+{
+    return SDL_Unsupported();
+}
+
+static int
 HIDAPI_DriverXboxOne_SetJoystickSensorsEnabled(SDL_HIDAPI_Device *device, SDL_Joystick *joystick, SDL_bool enabled)
 {
     return SDL_Unsupported();
@@ -480,14 +486,19 @@ HIDAPI_DriverXboxOne_HandleStatePacket(SDL_Joystick *joystick, SDL_DriverXboxOne
         /* Xbox Series X firmware version 5.0, report is 36 bytes, share button is in byte 18
          * Xbox Series X firmware version 5.1, report is 44 bytes, share button is in byte 18
          * Xbox Series X firmware version 5.5, report is 48 bytes, share button is in byte 22
+         * Victrix Gambit Tournament Controller, report is 50 bytes, share button is in byte 32
          */
         if (size < 48) {
             if (ctx->last_state[18] != data[18]) {
                 SDL_PrivateJoystickButton(joystick, SDL_CONTROLLER_BUTTON_MISC1, (data[18] & 0x01) ? SDL_PRESSED : SDL_RELEASED);
             }
-        } else {
+        } else if (size == 48) {
             if (ctx->last_state[22] != data[22]) {
                 SDL_PrivateJoystickButton(joystick, SDL_CONTROLLER_BUTTON_MISC1, (data[22] & 0x01) ? SDL_PRESSED : SDL_RELEASED);
+            }
+        } else if (size == 50) {
+            if (ctx->last_state[32] != data[32]) {
+                SDL_PrivateJoystickButton(joystick, SDL_CONTROLLER_BUTTON_MISC1, (data[32] & 0x01) ? SDL_PRESSED : SDL_RELEASED);
             }
         }
     }
@@ -618,7 +629,7 @@ HIDAPI_DriverXboxOneBluetooth_HandleButtons16(SDL_Joystick *joystick, SDL_Driver
  * Xbox One S with firmware 4.8.1923 uses a 17 byte packet with BACK button in byte 16 and the GUIDE button in a separate packet (on Windows), or in byte 15 (on Linux)
  * Xbox One Elite Series 2 with firmware 4.7.1872 uses a 55 byte packet with BACK button in byte 16, paddles starting at byte 33, and the GUIDE button in a separate packet
  * Xbox One Elite Series 2 with firmware 4.8.1908 uses a 33 byte packet with BACK button in byte 16, paddles starting at byte 17, and the GUIDE button in a separate packet
- * Xbox One Series X with firmware 5.5.2641 uses a 17 byte packet with BACK and GUIDE buttons in byte 15, and SHARE button in byte 17
+ * Xbox Series X with firmware 5.5.2641 uses a 17 byte packet with BACK and GUIDE buttons in byte 15, and SHARE button in byte 17
  */
 static void
 HIDAPI_DriverXboxOneBluetooth_HandleButtons(SDL_Joystick *joystick, SDL_DriverXboxOne_Context *ctx, Uint8 *data, int size)
@@ -1078,6 +1089,7 @@ SDL_HIDAPI_DeviceDriver SDL_HIDAPI_DriverXboxOne =
     HIDAPI_DriverXboxOne_RumbleJoystickTriggers,
     HIDAPI_DriverXboxOne_HasJoystickLED,
     HIDAPI_DriverXboxOne_SetJoystickLED,
+    HIDAPI_DriverXboxOne_SendJoystickEffect,
     HIDAPI_DriverXboxOne_SetJoystickSensorsEnabled,
     HIDAPI_DriverXboxOne_CloseJoystick,
     HIDAPI_DriverXboxOne_FreeDevice,

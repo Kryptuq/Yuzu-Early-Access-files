@@ -88,23 +88,29 @@ void ConfigureGraphics::SetConfiguration() {
     ui->api_widget->setEnabled(runtime_lock);
     ui->use_asynchronous_gpu_emulation->setEnabled(runtime_lock);
     ui->use_disk_shader_cache->setEnabled(runtime_lock);
-    ui->use_nvdec_emulation->setEnabled(runtime_lock);
+    ui->nvdec_emulation_widget->setEnabled(runtime_lock);
     ui->accelerate_astc->setEnabled(runtime_lock);
     ui->use_disk_shader_cache->setChecked(Settings::values.use_disk_shader_cache.GetValue());
     ui->use_asynchronous_gpu_emulation->setChecked(
         Settings::values.use_asynchronous_gpu_emulation.GetValue());
-    ui->use_nvdec_emulation->setChecked(Settings::values.use_nvdec_emulation.GetValue());
     ui->accelerate_astc->setChecked(Settings::values.accelerate_astc.GetValue());
 
     if (Settings::IsConfiguringGlobal()) {
         ui->api->setCurrentIndex(static_cast<int>(Settings::values.renderer_backend.GetValue()));
         ui->fullscreen_mode_combobox->setCurrentIndex(
             static_cast<int>(Settings::values.fullscreen_mode.GetValue()));
+        ui->nvdec_emulation->setCurrentIndex(
+            static_cast<int>(Settings::values.nvdec_emulation.GetValue()));
         ui->aspect_ratio_combobox->setCurrentIndex(Settings::values.aspect_ratio.GetValue());
     } else {
         ConfigurationShared::SetPerGameSetting(ui->api, &Settings::values.renderer_backend);
         ConfigurationShared::SetHighlight(ui->api_widget,
                                           !Settings::values.renderer_backend.UsingGlobal());
+
+        ConfigurationShared::SetPerGameSetting(ui->nvdec_emulation,
+                                               &Settings::values.nvdec_emulation);
+        ConfigurationShared::SetHighlight(ui->nvdec_emulation_widget,
+                                          !Settings::values.nvdec_emulation.UsingGlobal());
 
         ConfigurationShared::SetPerGameSetting(ui->fullscreen_mode_combobox,
                                                &Settings::values.fullscreen_mode);
@@ -137,8 +143,6 @@ void ConfigureGraphics::ApplyConfiguration() {
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_asynchronous_gpu_emulation,
                                              ui->use_asynchronous_gpu_emulation,
                                              use_asynchronous_gpu_emulation);
-    ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_nvdec_emulation,
-                                             ui->use_nvdec_emulation, use_nvdec_emulation);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.accelerate_astc, ui->accelerate_astc,
                                              accelerate_astc);
 
@@ -146,6 +150,9 @@ void ConfigureGraphics::ApplyConfiguration() {
         // Guard if during game and set to game-specific value
         if (Settings::values.renderer_backend.UsingGlobal()) {
             Settings::values.renderer_backend.SetValue(GetCurrentGraphicsBackend());
+        }
+        if (Settings::values.nvdec_emulation.UsingGlobal()) {
+            Settings::values.nvdec_emulation.SetValue(GetCurrentNvdecEmulation());
         }
         if (Settings::values.shader_backend.UsingGlobal()) {
             Settings::values.shader_backend.SetValue(shader_backend);
@@ -178,6 +185,13 @@ void ConfigureGraphics::ApplyConfiguration() {
                 Settings::values.vulkan_device.SetValue(vulkan_device);
                 break;
             }
+        }
+
+        if (ui->nvdec_emulation->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
+            Settings::values.nvdec_emulation.SetGlobal(true);
+        } else {
+            Settings::values.nvdec_emulation.SetGlobal(false);
+            Settings::values.nvdec_emulation.SetValue(GetCurrentNvdecEmulation());
         }
 
         if (ui->bg_combobox->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
@@ -278,6 +292,20 @@ Settings::RendererBackend ConfigureGraphics::GetCurrentGraphicsBackend() const {
                                                   ConfigurationShared::USE_GLOBAL_OFFSET);
 }
 
+Settings::NvdecEmulation ConfigureGraphics::GetCurrentNvdecEmulation() const {
+    if (Settings::IsConfiguringGlobal()) {
+        return static_cast<Settings::NvdecEmulation>(ui->nvdec_emulation->currentIndex());
+    }
+
+    if (ui->nvdec_emulation->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
+        Settings::values.nvdec_emulation.SetGlobal(true);
+        return Settings::values.nvdec_emulation.GetValue();
+    }
+    Settings::values.nvdec_emulation.SetGlobal(false);
+    return static_cast<Settings::NvdecEmulation>(ui->nvdec_emulation->currentIndex() -
+                                                 ConfigurationShared::USE_GLOBAL_OFFSET);
+}
+
 void ConfigureGraphics::SetupPerGameUI() {
     if (Settings::IsConfiguringGlobal()) {
         ui->api->setEnabled(Settings::values.renderer_backend.UsingGlobal());
@@ -286,7 +314,7 @@ void ConfigureGraphics::SetupPerGameUI() {
         ui->aspect_ratio_combobox->setEnabled(Settings::values.aspect_ratio.UsingGlobal());
         ui->use_asynchronous_gpu_emulation->setEnabled(
             Settings::values.use_asynchronous_gpu_emulation.UsingGlobal());
-        ui->use_nvdec_emulation->setEnabled(Settings::values.use_nvdec_emulation.UsingGlobal());
+        ui->nvdec_emulation->setEnabled(Settings::values.nvdec_emulation.UsingGlobal());
         ui->accelerate_astc->setEnabled(Settings::values.accelerate_astc.UsingGlobal());
         ui->use_disk_shader_cache->setEnabled(Settings::values.use_disk_shader_cache.UsingGlobal());
         ui->bg_button->setEnabled(Settings::values.bg_red.UsingGlobal());
@@ -301,8 +329,6 @@ void ConfigureGraphics::SetupPerGameUI() {
 
     ConfigurationShared::SetColoredTristate(
         ui->use_disk_shader_cache, Settings::values.use_disk_shader_cache, use_disk_shader_cache);
-    ConfigurationShared::SetColoredTristate(
-        ui->use_nvdec_emulation, Settings::values.use_nvdec_emulation, use_nvdec_emulation);
     ConfigurationShared::SetColoredTristate(ui->accelerate_astc, Settings::values.accelerate_astc,
                                             accelerate_astc);
     ConfigurationShared::SetColoredTristate(ui->use_asynchronous_gpu_emulation,
@@ -316,4 +342,6 @@ void ConfigureGraphics::SetupPerGameUI() {
         static_cast<int>(Settings::values.fullscreen_mode.GetValue(true)));
     ConfigurationShared::InsertGlobalItem(
         ui->api, static_cast<int>(Settings::values.renderer_backend.GetValue(true)));
+    ConfigurationShared::InsertGlobalItem(
+        ui->nvdec_emulation, static_cast<int>(Settings::values.nvdec_emulation.GetValue(true)));
 }

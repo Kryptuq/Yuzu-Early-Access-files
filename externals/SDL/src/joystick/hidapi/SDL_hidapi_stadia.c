@@ -51,10 +51,7 @@ typedef struct {
 static SDL_bool
 HIDAPI_DriverStadia_IsSupportedDevice(const char *name, SDL_GameControllerType type, Uint16 vendor_id, Uint16 product_id, Uint16 version, int interface_number, int interface_class, int interface_subclass, int interface_protocol)
 {
-    if (vendor_id == USB_VENDOR_GOOGLE && product_id == USB_PRODUCT_GOOGLE_STADIA_CONTROLLER) {
-        return SDL_TRUE;
-    }
-    return SDL_FALSE;
+    return (type == SDL_CONTROLLER_TYPE_GOOGLE_STADIA) ? SDL_TRUE : SDL_FALSE;
 }
 
 static const char *
@@ -137,6 +134,12 @@ HIDAPI_DriverStadia_HasJoystickLED(SDL_HIDAPI_Device *device, SDL_Joystick *joys
 
 static int
 HIDAPI_DriverStadia_SetJoystickLED(SDL_HIDAPI_Device *device, SDL_Joystick *joystick, Uint8 red, Uint8 green, Uint8 blue)
+{
+    return SDL_Unsupported();
+}
+
+static int
+HIDAPI_DriverStadia_SendJoystickEffect(SDL_HIDAPI_Device *device, SDL_Joystick *joystick, const void *data, int size)
 {
     return SDL_Unsupported();
 }
@@ -314,6 +317,7 @@ SDL_HIDAPI_DeviceDriver SDL_HIDAPI_DriverStadia =
     HIDAPI_DriverStadia_RumbleJoystickTriggers,
     HIDAPI_DriverStadia_HasJoystickLED,
     HIDAPI_DriverStadia_SetJoystickLED,
+    HIDAPI_DriverStadia_SendJoystickEffect,
     HIDAPI_DriverStadia_SetJoystickSensorsEnabled,
     HIDAPI_DriverStadia_CloseJoystick,
     HIDAPI_DriverStadia_FreeDevice,

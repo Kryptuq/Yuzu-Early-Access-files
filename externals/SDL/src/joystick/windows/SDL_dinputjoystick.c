@@ -34,7 +34,7 @@
 #define DIDFT_OPTIONAL      0x80000000
 #endif
 
-#define INPUT_QSIZE 32      /* Buffer up to 32 input messages */
+#define INPUT_QSIZE 128      /* Buffer up to 128 input messages */
 #define JOY_AXIS_THRESHOLD  (((SDL_JOYSTICK_AXIS_MAX)-(SDL_JOYSTICK_AXIS_MIN))/100)   /* 1% motion */
 
 #define CONVERT_MAGNITUDE(x)    (((x)*10000) / 0x7FFF)
@@ -245,7 +245,7 @@ SDL_IsXInputDevice(Uint16 vendor_id, Uint16 product_id, const char* hidPath)
     type = SDL_GetJoystickGameControllerType("", vendor_id, product_id, -1, 0, 0, 0);
     if (type == SDL_CONTROLLER_TYPE_XBOX360 ||
         type == SDL_CONTROLLER_TYPE_XBOXONE ||
-        (vendor_id == 0x28DE && product_id == 0x11FF)) {
+        (vendor_id == USB_VENDOR_VALVE && product_id == USB_PRODUCT_STEAM_VIRTUAL_GAMEPAD)) {
         return SDL_TRUE;
     }
 
@@ -425,7 +425,7 @@ SDL_DINPUT_JoystickInit(void)
 
 /* helper function for direct input, gets called for each connected joystick */
 static BOOL CALLBACK
-EnumJoysticksCallback(LPCDIDEVICEINSTANCE pDeviceInstance, LPVOID pContext)
+EnumJoystickDetectCallback(LPCDIDEVICEINSTANCE pDeviceInstance, LPVOID pContext)
 {
 #define CHECK(exp) { if(!(exp)) goto err; }
     JoyStick_DeviceData *pNewJoystick = NULL;
@@ -534,31 +534,56 @@ err:
 void
 SDL_DINPUT_JoystickDetect(JoyStick_DeviceData **pContext)
 {
-    IDirectInput8_EnumDevices(dinput, DI8DEVCLASS_GAMECTRL, EnumJoysticksCallback, pContext, DIEDFL_ATTACHEDONLY);
+    IDirectInput8_EnumDevices(dinput, DI8DEVCLASS_GAMECTRL, EnumJoystickDetectCallback, pContext, DIEDFL_ATTACHEDONLY);
+}
+
+/* helper function for direct input, gets called for each connected joystick */
+typedef struct
+{
+    Uint16 vendor;
+    Uint16 product;
+    SDL_bool present;
+} Joystick_PresentData;
+
+static BOOL CALLBACK
+EnumJoystickPresentCallback(LPCDIDEVICEINSTANCE pDeviceInstance, LPVOID pContext)
+{
+#define CHECK(exp) { if(!(exp)) goto err; }
+    Joystick_PresentData *pData = (Joystick_PresentData *)pContext;
+    Uint16 vendor = 0;
+    Uint16 product = 0;
+    LPDIRECTINPUTDEVICE8 device = NULL;
+
+    /* We are only supporting HID devices. */
+    CHECK((pDeviceInstance->dwDevType & DIDEVTYPE_HID) != 0);
+
+    CHECK(SUCCEEDED(IDirectInput8_CreateDevice(dinput, &pDeviceInstance->guidInstance, &device, NULL)));
+    CHECK(QueryDeviceInfo(device, &vendor, &product));
+
+    if (vendor == pData->vendor && product == pData->product) {
+        pData->present = SDL_TRUE;
+        return DIENUM_STOP; /* get next device, please */
+    }
+
+err:
+    if (device) {
+        IDirectInputDevice8_Release(device);
+    }
+
+    return DIENUM_CONTINUE; /* get next device, please */
+#undef CHECK
 }
 
 SDL_bool
 SDL_DINPUT_JoystickPresent(Uint16 vendor_id, Uint16 product_id, Uint16 version_number)
 {
-    JoyStick_DeviceData* joystick = SYS_Joystick;
-    Uint16 vendor = 0;
-    Uint16 product = 0;
-    Uint16 version = 0;
+    Joystick_PresentData data;
 
-    while (joystick) {
-        SDL_GetJoystickGUIDInfo(joystick->guid, &vendor, &product, &version);
-
-        if (!joystick->bXInputDevice &&
-            vendor == vendor_id &&
-            product == product_id &&
-            version == version_number) {
-            return SDL_TRUE;
-        }
-
-        joystick = joystick->pNext;
-    }
-
-    return SDL_FALSE;
+    data.vendor = vendor_id;
+    data.product = product_id;
+    data.present = SDL_FALSE;
+    IDirectInput8_EnumDevices(dinput, DI8DEVCLASS_GAMECTRL, EnumJoystickPresentCallback, &data, DIEDFL_ATTACHEDONLY);
+    return data.present;
 }
 
 static BOOL CALLBACK
@@ -922,60 +947,6 @@ TranslatePOV(DWORD value)
     return HAT_VALS[value];
 }
 
-static void
-UpdateDINPUTJoystickState_Buffered(SDL_Joystick * joystick)
-{
-    int i;
-    HRESULT result;
-    DWORD numevents;
-    DIDEVICEOBJECTDATA evtbuf[INPUT_QSIZE];
-
-    numevents = INPUT_QSIZE;
-    result =
-        IDirectInputDevice8_GetDeviceData(joystick->hwdata->InputDevice,
-        sizeof(DIDEVICEOBJECTDATA), evtbuf,
-        &numevents, 0);
-    if (result == DIERR_INPUTLOST || result == DIERR_NOTACQUIRED) {
-        IDirectInputDevice8_Acquire(joystick->hwdata->InputDevice);
-        result =
-            IDirectInputDevice8_GetDeviceData(joystick->hwdata->InputDevice,
-            sizeof(DIDEVICEOBJECTDATA),
-            evtbuf, &numevents, 0);
-    }
-
-    /* Handle the events or punt */
-    if (FAILED(result)) {
-        return;
-    }
-
-    for (i = 0; i < (int)numevents; ++i) {
-        int j;
-
-        for (j = 0; j < joystick->hwdata->NumInputs; ++j) {
-            const input_t *in = &joystick->hwdata->Inputs[j];
-
-            if (evtbuf[i].dwOfs != in->ofs)
-                continue;
-
-            switch (in->type) {
-            case AXIS:
-                SDL_PrivateJoystickAxis(joystick, in->num, (Sint16)evtbuf[i].dwData);
-                break;
-            case BUTTON:
-                SDL_PrivateJoystickButton(joystick, in->num,
-                    (Uint8)(evtbuf[i].dwData ? SDL_PRESSED : SDL_RELEASED));
-                break;
-            case HAT:
-                {
-                    Uint8 pos = TranslatePOV(evtbuf[i].dwData);
-                    SDL_PrivateJoystickHat(joystick, in->num, pos);
-                }
-                break;
-            }
-        }
-    }
-}
-
 /* Function to update the state of a joystick - called as a device poll.
  * This function shouldn't update the joystick structure directly,
  * but instead should call SDL_PrivateJoystick*() to deliver events
@@ -1047,6 +1018,67 @@ UpdateDINPUTJoystickState_Polled(SDL_Joystick * joystick)
             break;
         }
         }
+    }
+}
+
+static void
+UpdateDINPUTJoystickState_Buffered(SDL_Joystick * joystick)
+{
+    int i;
+    HRESULT result;
+    DWORD numevents;
+    DIDEVICEOBJECTDATA evtbuf[INPUT_QSIZE];
+
+    numevents = INPUT_QSIZE;
+    result =
+        IDirectInputDevice8_GetDeviceData(joystick->hwdata->InputDevice,
+        sizeof(DIDEVICEOBJECTDATA), evtbuf,
+        &numevents, 0);
+    if (result == DIERR_INPUTLOST || result == DIERR_NOTACQUIRED) {
+        IDirectInputDevice8_Acquire(joystick->hwdata->InputDevice);
+        result =
+            IDirectInputDevice8_GetDeviceData(joystick->hwdata->InputDevice,
+            sizeof(DIDEVICEOBJECTDATA),
+            evtbuf, &numevents, 0);
+    }
+
+    /* Handle the events or punt */
+    if (FAILED(result)) {
+        return;
+    }
+
+    for (i = 0; i < (int)numevents; ++i) {
+        int j;
+
+        for (j = 0; j < joystick->hwdata->NumInputs; ++j) {
+            const input_t *in = &joystick->hwdata->Inputs[j];
+
+            if (evtbuf[i].dwOfs != in->ofs)
+                continue;
+
+            switch (in->type) {
+            case AXIS:
+                SDL_PrivateJoystickAxis(joystick, in->num, (Sint16)evtbuf[i].dwData);
+                break;
+            case BUTTON:
+                SDL_PrivateJoystickButton(joystick, in->num,
+                    (Uint8)(evtbuf[i].dwData ? SDL_PRESSED : SDL_RELEASED));
+                break;
+            case HAT:
+                {
+                    Uint8 pos = TranslatePOV(evtbuf[i].dwData);
+                    SDL_PrivateJoystickHat(joystick, in->num, pos);
+                }
+                break;
+            }
+        }
+    }
+
+    if (result == DI_BUFFEROVERFLOW) {
+        /* Our buffer wasn't big enough to hold all the queued events,
+         * so poll the device to make sure we have the complete state.
+         */
+        UpdateDINPUTJoystickState_Polled(joystick);
     }
 }
 
