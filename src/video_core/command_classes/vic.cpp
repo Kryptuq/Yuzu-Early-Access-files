@@ -96,12 +96,11 @@ void Vic::Execute() {
         if (!converted_frame_buffer) {
             converted_frame_buffer = AVMallocPtr{static_cast<u8*>(av_malloc(linear_size)), av_free};
         }
-
-        const int converted_stride{frame->width * 4};
+        const std::array<int, 4> converted_stride{frame->width * 4, frame->height * 4, 0, 0};
         u8* const converted_frame_buf_addr{converted_frame_buffer.get()};
 
         sws_scale(scaler_ctx, frame->data, frame->linesize, 0, frame->height,
-                  &converted_frame_buf_addr, &converted_stride);
+                  &converted_frame_buf_addr, converted_stride.data());
 
         const u32 blk_kind = static_cast<u32>(config.block_linear_kind);
         if (blk_kind != 0) {

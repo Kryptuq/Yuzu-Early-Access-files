@@ -889,6 +889,9 @@ SDLState::SDLState() {
     RegisterFactory<VibrationDevice>("sdl", vibration_factory);
     RegisterFactory<MotionDevice>("sdl", motion_factory);
 
+    // Disable raw input. When enabled this setting causes SDL to die when a web applet opens
+    SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT, "0");
+
     // Enable HIDAPI rumble. This prevents SDL from disabling motion on PS4 and PS5 controllers
     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4_RUMBLE, "1");
     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1");
