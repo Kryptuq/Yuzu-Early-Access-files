@@ -102,9 +102,9 @@ add_executable(yuzu
     configuration/configure_profile_manager.cpp
     configuration/configure_profile_manager.h
     configuration/configure_profile_manager.ui
-    configuration/configure_service.cpp
-    configuration/configure_service.h
-    configuration/configure_service.ui
+    configuration/configure_network.cpp
+    configuration/configure_network.h
+    configuration/configure_network.ui
     configuration/configure_system.cpp
     configuration/configure_system.h
     configuration/configure_system.ui

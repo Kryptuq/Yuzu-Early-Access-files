@@ -636,6 +636,8 @@ add_library(core STATIC
     memory.h
     network/network.cpp
     network/network.h
+    network/network_interface.cpp
+    network/network_interface.h
     network/sockets.h
     perf_stats.cpp
     perf_stats.h

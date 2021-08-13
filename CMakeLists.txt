@@ -768,7 +768,7 @@ if (APPLE)
 elseif (WIN32)
     # WSAPoll and SHGetKnownFolderPath (AppData/Roaming) didn't exist before WinNT 6.x (Vista)
     add_definitions(-D_WIN32_WINNT=0x0600 -DWINVER=0x0600)
-    set(PLATFORM_LIBRARIES winmm ws2_32)
+    set(PLATFORM_LIBRARIES winmm ws2_32 iphlpapi)
     if (MINGW)
         # PSAPI is the Process Status API
         set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES} psapi imm32 version)

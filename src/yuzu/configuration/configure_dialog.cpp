@@ -67,7 +67,7 @@ void ConfigureDialog::ApplyConfiguration() {
     ui->audioTab->ApplyConfiguration();
     ui->debugTab->ApplyConfiguration();
     ui->webTab->ApplyConfiguration();
-    ui->serviceTab->ApplyConfiguration();
+    ui->networkTab->ApplyConfiguration();
     Core::System::GetInstance().ApplySettings();
     Settings::LogSettings();
 }
@@ -103,7 +103,7 @@ Q_DECLARE_METATYPE(QList<QWidget*>);
 void ConfigureDialog::PopulateSelectionList() {
     const std::array<std::pair<QString, QList<QWidget*>>, 6> items{
         {{tr("General"), {ui->generalTab, ui->hotkeysTab, ui->uiTab, ui->webTab, ui->debugTab}},
-         {tr("System"), {ui->systemTab, ui->profileManagerTab, ui->serviceTab, ui->filesystemTab}},
+         {tr("System"), {ui->systemTab, ui->profileManagerTab, ui->networkTab, ui->filesystemTab}},
          {tr("CPU"), {ui->cpuTab}},
          {tr("Graphics"), {ui->graphicsTab, ui->graphicsAdvancedTab}},
          {tr("Audio"), {ui->audioTab}},

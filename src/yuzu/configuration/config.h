@@ -88,7 +88,7 @@ private:
     void SaveCoreValues();
     void SaveDataStorageValues();
     void SaveDebuggingValues();
-    void SaveServiceValues();
+    void SaveNetworkValues();
     void SaveDisabledAddOnValues();
     void SaveMiscellaneousValues();
     void SavePathValues();

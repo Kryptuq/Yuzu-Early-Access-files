@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <optional>
 #include <utility>
 
 #include "common/common_funcs.h"
@@ -93,7 +94,7 @@ public:
 };
 
 /// @brief Returns host's IPv4 address
-/// @return Pair of an array of human ordered IPv4 address (e.g. 192.168.0.1) and an error code
-std::pair<IPv4Address, Errno> GetHostIPv4Address();
+/// @return human ordered IPv4 address (e.g. 192.168.0.1) as an array
+std::optional<IPv4Address> GetHostIPv4Address();
 
 } // namespace Network

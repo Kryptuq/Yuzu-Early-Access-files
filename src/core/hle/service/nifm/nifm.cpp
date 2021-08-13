@@ -179,10 +179,10 @@ private:
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
 
-        if (Settings::values.bcat_backend.GetValue() == "none") {
-            rb.PushEnum(RequestState::NotSubmitted);
-        } else {
+        if (Network::GetHostIPv4Address().has_value()) {
             rb.PushEnum(RequestState::Connected);
+        } else {
+            rb.PushEnum(RequestState::NotSubmitted);
         }
     }
 
@@ -322,12 +322,15 @@ private:
     void GetCurrentIpAddress(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
-        const auto [ipv4, error] = Network::GetHostIPv4Address();
-        UNIMPLEMENTED_IF(error != Network::Errno::SUCCESS);
+        auto ipv4 = Network::GetHostIPv4Address();
+        if (!ipv4) {
+            LOG_ERROR(Service_NIFM, "Couldn't get host IPv4 address, defaulting to 0.0.0.0");
+            ipv4.emplace(Network::IPv4Address{0, 0, 0, 0});
+        }
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
-        rb.PushRaw(ipv4);
+        rb.PushRaw(*ipv4);
     }
     void CreateTemporaryNetworkProfile(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIFM, "called");
@@ -354,10 +357,16 @@ private:
         static_assert(sizeof(IpConfigInfo) == sizeof(IpAddressSetting) + sizeof(DnsSetting),
                       "IpConfigInfo has incorrect size.");
 
+        auto ipv4 = Network::GetHostIPv4Address();
+        if (!ipv4) {
+            LOG_ERROR(Service_NIFM, "Couldn't get host IPv4 address, defaulting to 0.0.0.0");
+            ipv4.emplace(Network::IPv4Address{0, 0, 0, 0});
+        }
+
         const IpConfigInfo ip_config_info{
             .ip_address_setting{
                 .is_automatic{true},
-                .current_address{192, 168, 1, 100},
+                .current_address{*ipv4},
                 .subnet_mask{255, 255, 255, 0},
                 .gateway{192, 168, 1, 1},
             },
@@ -384,10 +393,10 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
-        if (Settings::values.bcat_backend.GetValue() == "none") {
-            rb.Push<u8>(0);
-        } else {
+        if (Network::GetHostIPv4Address().has_value()) {
             rb.Push<u8>(1);
+        } else {
+            rb.Push<u8>(0);
         }
     }
     void IsAnyInternetRequestAccepted(Kernel::HLERequestContext& ctx) {
@@ -395,10 +404,10 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
-        if (Settings::values.bcat_backend.GetValue() == "none") {
-            rb.Push<u8>(0);
-        } else {
+        if (Network::GetHostIPv4Address().has_value()) {
             rb.Push<u8>(1);
+        } else {
+            rb.Push<u8>(0);
         }
     }
 };

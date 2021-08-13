@@ -147,12 +147,12 @@
          <string>Web</string>
         </attribute>
        </widget>
-       <widget class="ConfigureService" name="serviceTab">
+       <widget class="ConfigureNetwork" name="networkTab">
         <property name="accessibleName">
-         <string>Services</string>
+         <string>Network</string>
         </property>
         <attribute name="title">
-         <string>Services</string>
+         <string>Network</string>
         </attribute>
        </widget>
       </widget>
@@ -242,9 +242,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>ConfigureService</class>
+   <class>ConfigureNetwork</class>
    <extends>QWidget</extends>
-   <header>configuration/configure_service.h</header>
+   <header>configuration/configure_network.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
