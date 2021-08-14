@@ -50,8 +50,8 @@ ConfigureNetwork::ConfigureNetwork(QWidget* parent)
 #endif
 
     ui->network_interface->addItem(tr("None"));
-    for (const auto& interface : Network::GetAvailableNetworkInterfaces()) {
-        ui->network_interface->addItem(QString::fromStdString(interface.name));
+    for (const auto& iface : Network::GetAvailableNetworkInterfaces()) {
+        ui->network_interface->addItem(QString::fromStdString(iface.name));
     }
 
     connect(ui->bcat_source, QOverload<int>::of(&QComboBox::currentIndexChanged), this,

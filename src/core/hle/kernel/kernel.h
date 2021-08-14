@@ -146,6 +146,9 @@ public:
     /// Gets the an instance of the respective physical CPU core.
     const Kernel::PhysicalCore& PhysicalCore(std::size_t id) const;
 
+    /// Gets the current physical core index for the running host thread.
+    std::size_t CurrentPhysicalCoreIndex() const;
+
     /// Gets the sole instance of the Scheduler at the current running core.
     Kernel::KScheduler* CurrentScheduler();
 

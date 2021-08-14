@@ -363,13 +363,15 @@ NetworkInstance::~NetworkInstance() {
 std::optional<IPv4Address> GetHostIPv4Address() {
     const std::string& selected_network_interface = Settings::values.network_interface.GetValue();
     const auto network_interfaces = Network::GetAvailableNetworkInterfaces();
-    ASSERT_MSG(network_interfaces.size() > 0,
-               "GetAvailableNetworkInterfaces returned no interfaces");
+    if (network_interfaces.size() == 0) {
+        LOG_ERROR(Network, "GetAvailableNetworkInterfaces returned no interfaces");
+        return {};
+    }
 
-    const auto res = std::ranges::find_if(network_interfaces,
-                                          [&selected_network_interface](const auto& interface) {
-                                              return interface.name == selected_network_interface;
-                                          });
+    const auto res =
+        std::ranges::find_if(network_interfaces, [&selected_network_interface](const auto& iface) {
+            return iface.name == selected_network_interface;
+        });
 
     if (res != network_interfaces.end()) {
         char ip_addr[16] = {};

@@ -23,20 +23,17 @@ namespace Network {
 #ifdef _WIN32
 
 std::vector<NetworkInterface> GetAvailableNetworkInterfaces() {
-    std::vector<u8> adapter_addresses_raw;
-    auto adapter_addresses = reinterpret_cast<PIP_ADAPTER_ADDRESSES>(adapter_addresses_raw.data());
+    std::vector<IP_ADAPTER_ADDRESSES> adapter_addresses;
     DWORD ret = ERROR_BUFFER_OVERFLOW;
     DWORD buf_size = 0;
 
     // retry up to 5 times
     for (int i = 0; i < 5 && ret == ERROR_BUFFER_OVERFLOW; i++) {
         ret = GetAdaptersAddresses(AF_INET, GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_DNS_SERVER,
-                                   nullptr, adapter_addresses, &buf_size);
+                                   nullptr, adapter_addresses.data(), &buf_size);
 
         if (ret == ERROR_BUFFER_OVERFLOW) {
-            adapter_addresses_raw.resize(buf_size);
-            adapter_addresses =
-                reinterpret_cast<PIP_ADAPTER_ADDRESSES>(adapter_addresses_raw.data());
+            adapter_addresses.resize((buf_size / sizeof(IP_ADAPTER_ADDRESSES)) + 1);
         } else {
             break;
         }
@@ -45,7 +42,7 @@ std::vector<NetworkInterface> GetAvailableNetworkInterfaces() {
     if (ret == NO_ERROR) {
         std::vector<NetworkInterface> result;
 
-        for (auto current_address = adapter_addresses; current_address != nullptr;
+        for (auto current_address = adapter_addresses.data(); current_address != nullptr;
              current_address = current_address->Next) {
             if (current_address->FirstUnicastAddress == nullptr ||
                 current_address->FirstUnicastAddress->Address.lpSockaddr == nullptr) {
