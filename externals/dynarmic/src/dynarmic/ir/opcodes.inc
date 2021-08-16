@@ -1,3 +1,5 @@
+// clang-format off
+
 //     opcode name,                                         return type,    arg1 type,      arg2 type,      arg3 type,      arg4 type,      ...
 
 OPCODE(Void,                                                Void,                                                                           )
@@ -20,13 +22,10 @@ A32OPC(SetCpsr,                                             Void,           U32 
 A32OPC(SetCpsrNZCV,                                         Void,           NZCV                                                            )
 A32OPC(SetCpsrNZCVRaw,                                      Void,           U32                                                             )
 A32OPC(SetCpsrNZCVQ,                                        Void,           U32                                                             )
-A32OPC(GetNFlag,                                            U1,                                                                             )
 A32OPC(SetNFlag,                                            Void,           U1                                                              )
-A32OPC(GetZFlag,                                            U1,                                                                             )
 A32OPC(SetZFlag,                                            Void,           U1                                                              )
 A32OPC(GetCFlag,                                            U1,                                                                             )
 A32OPC(SetCFlag,                                            Void,           U1                                                              )
-A32OPC(GetVFlag,                                            U1,                                                                             )
 A32OPC(SetVFlag,                                            Void,           U1                                                              )
 A32OPC(OrQFlag,                                             Void,           U1                                                              )
 A32OPC(GetGEFlags,                                          U32,                                                                            )
@@ -141,6 +140,8 @@ OPCODE(SignedDiv32,                                         U32,            U32,
 OPCODE(SignedDiv64,                                         U64,            U64,            U64                                             )
 OPCODE(And32,                                               U32,            U32,            U32                                             )
 OPCODE(And64,                                               U64,            U64,            U64                                             )
+OPCODE(AndNot32,                                            U32,            U32,            U32                                             )
+OPCODE(AndNot64,                                            U64,            U64,            U64                                             )
 OPCODE(Eor32,                                               U32,            U32,            U32                                             )
 OPCODE(Eor64,                                               U64,            U64,            U64                                             )
 OPCODE(Or32,                                                U32,            U32,            U32                                             )
@@ -289,6 +290,7 @@ OPCODE(VectorAdd16,                                         U128,           U128
 OPCODE(VectorAdd32,                                         U128,           U128,           U128                                            )
 OPCODE(VectorAdd64,                                         U128,           U128,           U128                                            )
 OPCODE(VectorAnd,                                           U128,           U128,           U128                                            )
+OPCODE(VectorAndNot,                                        U128,           U128,           U128                                            )
 OPCODE(VectorArithmeticShiftRight8,                         U128,           U128,           U8                                              )
 OPCODE(VectorArithmeticShiftRight16,                        U128,           U128,           U8                                              )
 OPCODE(VectorArithmeticShiftRight32,                        U128,           U128,           U8                                              )
@@ -304,6 +306,13 @@ OPCODE(VectorBroadcast8,                                    U128,           U8  
 OPCODE(VectorBroadcast16,                                   U128,           U16                                                             )
 OPCODE(VectorBroadcast32,                                   U128,           U32                                                             )
 OPCODE(VectorBroadcast64,                                   U128,           U64                                                             )
+OPCODE(VectorBroadcastElementLower8,                        U128,           U128,           U8                                              )
+OPCODE(VectorBroadcastElementLower16,                       U128,           U128,           U8                                              )
+OPCODE(VectorBroadcastElementLower32,                       U128,           U128,           U8                                              )
+OPCODE(VectorBroadcastElement8,                             U128,           U128,           U8                                              )
+OPCODE(VectorBroadcastElement16,                            U128,           U128,           U8                                              )
+OPCODE(VectorBroadcastElement32,                            U128,           U128,           U8                                              )
+OPCODE(VectorBroadcastElement64,                            U128,           U128,           U8                                              )
 OPCODE(VectorCountLeadingZeros8,                            U128,           U128                                                            )
 OPCODE(VectorCountLeadingZeros16,                           U128,           U128                                                            )
 OPCODE(VectorCountLeadingZeros32,                           U128,           U128                                                            )
@@ -718,3 +727,5 @@ A32OPC(CoprocGetOneWord,                                    U32,            Copr
 A32OPC(CoprocGetTwoWords,                                   U64,            CoprocInfo                                                      )
 A32OPC(CoprocLoadWords,                                     Void,           CoprocInfo,     U32                                             )
 A32OPC(CoprocStoreWords,                                    Void,           CoprocInfo,     U32                                             )
+
+// clang-format on

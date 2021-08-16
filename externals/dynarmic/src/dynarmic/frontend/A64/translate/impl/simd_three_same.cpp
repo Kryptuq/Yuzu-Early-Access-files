@@ -773,7 +773,7 @@ bool TranslatorVisitor::BIC_asimd_reg(bool Q, Vec Vm, Vec Vn, Vec Vd) {
     const IR::U128 operand1 = V(datasize, Vn);
     const IR::U128 operand2 = V(datasize, Vm);
 
-    IR::U128 result = ir.VectorAnd(operand1, ir.VectorNot(operand2));
+    IR::U128 result = ir.VectorAndNot(operand1, operand2);
     if (datasize == 64) {
         result = ir.VectorZeroUpper(result);
     }

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "./testenv.h"
 #include "dynarmic/frontend/A32/location_descriptor.h"

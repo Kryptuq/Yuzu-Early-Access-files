@@ -5,14 +5,14 @@ support for other versions of the ARM architecture, having a interpreter mode, a
 for other architectures.
 
 Users of this library interact with it primarily through the interface provided in
-[`include/dynarmic`](../include/dynarmic). Users specify how dynarmic's CPU core interacts with
+[`src/dynarmic/interface`](../src/dynarmic/interface). Users specify how dynarmic's CPU core interacts with
 the rest of their system providing an implementation of the relevant `UserCallbacks` interface.
 Users setup the CPU state using member functions of `Jit`, then call `Jit::Execute` to start CPU
 execution. The callbacks defined on `UserCallbacks` may be called from dynamically generated code,
 so users of the library should not depend on the stack being in a walkable state for unwinding.
 
-* A32: [`Jit`](../include/dynarmic/A32/a32.h), [`UserCallbacks`](../include/dynarmic/A32/config.h)
-* A64: [`Jit`](../include/dynarmic/A64/a64.h), [`UserCallbacks`](../include/dynarmic/A64/config.h)
+* A32: [`Jit`](../src/dynarmic/interface/A32/a32.h), [`UserCallbacks`](../src/dynarmic/interface/A32/config.h)
+* A64: [`Jit`](../src/dynarmic/interface/A64/a64.h), [`UserCallbacks`](../src/dynarmic/interface/A64/config.h)
 
 Dynarmic reads instructions from memory by calling `UserCallbacks::MemoryReadCode`. These
 instructions then pass through several stages:
@@ -26,19 +26,19 @@ instructions then pass through several stages:
 Using the A32 frontend with the x64 backend as an example:
 
 * Decoding is done by [double dispatch](https://en.wikipedia.org/wiki/Visitor_pattern) in
-  [`src/frontend/A32/decoder/{arm.h,thumb16.h,thumb32.h}`](../src/frontend/A32/decoder/).
-* Translation is done by the visitors in `src/frontend/A32/translate/translate_{arm,thumb}.cpp`.
-  The function [`Translate`](../src/frontend/A32/translate/translate.h) takes a starting memory location,
+  [`src/frontend/A32/decoder/{arm.h,thumb16.h,thumb32.h}`](../src/dynarmic/frontend/A32/decoder/).
+* Translation is done by the visitors in [`src/dynarmic/frontend/A32/translate/translate_{arm,thumb}.cpp`](../src/dynarmic/frontend/A32/translate/).
+  The function [`Translate`](../src/dynarmic/frontend/A32/translate/translate.h) takes a starting memory location,
   some CPU state, and memory reader callback and returns a basic block of IR.
-* The IR can be found under [`src/frontend/ir/`](../src/frontend/ir/).
-* Optimizations can be found under [`src/ir_opt/`](../src/ir_opt/).
-* Emission is done by `EmitX64` which can be found in `src/backend_x64/emit_x64.{h,cpp}`.
-* Execution is performed by calling `BlockOfCode::RunCode` in `src/backend_x64/block_of_code.{h,cpp}`.
+* The IR can be found under [`src/frontend/ir/`](../src/dynarmic/ir/).
+* Optimizations can be found under [`src/ir_opt/`](../src/dynarmic/ir/opt/).
+* Emission is done by `EmitX64` which can be found in [`src/dynarmic/backend/x64/emit_x64.{h,cpp}`](../src/dynarmic/backend/x64/).
+* Execution is performed by calling `BlockOfCode::RunCode` in [`src/dynarmic/backend/x64/block_of_code.{h,cpp}`](../src/dynarmic/backend/x64/).
 
 ## Decoder
 
 The decoder is a double dispatch decoder. Each instruction is represented by a line in the relevant
-instruction table. Here is an example line from [`arm.h`](../src/frontend/A32/decoder/arm.h):
+instruction table. Here is an example line from [`arm.h`](../src/dynarmic/frontend/A32/decoder/arm.h):
 
     INST(&V::arm_ADC_imm,     "ADC (imm)",           "cccc0010101Snnnnddddrrrrvvvvvvvv")
 
@@ -61,7 +61,7 @@ error results.
 ## Translator
 
 The translator is a visitor that uses the decoder to decode instructions. The translator generates IR code with the
-help of the [`IREmitter` class](../src/frontend/ir/ir_emitter.h). An example of a translation function follows:
+help of the [`IREmitter` class](../src/dynarmic/ir/ir_emitter.h). An example of a translation function follows:
 
     bool ArmTranslatorVisitor::arm_ADC_imm(Cond cond, bool S, Reg n, Reg d, int rotate, Imm8 imm8) {
         u32 imm32 = ArmExpandImm(rotate, imm8);
@@ -107,7 +107,7 @@ function analyser in the medium-term future.
 Dynarmic's intermediate representation is typed. Each microinstruction may take zero or more arguments and may
 return zero or more arguments. A subset of the microinstructions available is documented below.
 
-A complete list of microinstructions can be found in [src/frontend/ir/opcodes.inc](../src/frontend/ir/opcodes.inc).
+A complete list of microinstructions can be found in [src/dynarmic/ir/opcodes.inc](../src/dynarmic/ir/opcodes.inc).
 
 The below lists some commonly used microinstructions.
 

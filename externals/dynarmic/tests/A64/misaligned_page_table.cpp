@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "./testenv.h"
 #include "dynarmic/interface/A64/a64.h"

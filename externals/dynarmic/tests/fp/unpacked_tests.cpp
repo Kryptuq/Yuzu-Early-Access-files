@@ -6,7 +6,7 @@
 #include <tuple>
 #include <vector>
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "../rand_int.h"
 #include "dynarmic/common/common_types.h"

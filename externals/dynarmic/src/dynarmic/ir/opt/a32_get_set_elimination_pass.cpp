@@ -170,16 +170,8 @@ void A32GetSetElimination(IR::Block& block) {
             do_set(cpsr_info.n, inst->GetArg(0), inst);
             break;
         }
-        case IR::Opcode::A32GetNFlag: {
-            do_get(cpsr_info.n, inst);
-            break;
-        }
         case IR::Opcode::A32SetZFlag: {
             do_set(cpsr_info.z, inst->GetArg(0), inst);
-            break;
-        }
-        case IR::Opcode::A32GetZFlag: {
-            do_get(cpsr_info.z, inst);
             break;
         }
         case IR::Opcode::A32SetCFlag: {
@@ -192,10 +184,6 @@ void A32GetSetElimination(IR::Block& block) {
         }
         case IR::Opcode::A32SetVFlag: {
             do_set(cpsr_info.v, inst->GetArg(0), inst);
-            break;
-        }
-        case IR::Opcode::A32GetVFlag: {
-            do_get(cpsr_info.v, inst);
             break;
         }
         case IR::Opcode::A32SetGEFlags: {

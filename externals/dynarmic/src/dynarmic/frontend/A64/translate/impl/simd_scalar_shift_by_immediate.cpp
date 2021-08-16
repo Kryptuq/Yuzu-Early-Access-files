@@ -156,7 +156,7 @@ bool ShiftAndInsert(TranslatorVisitor& v, Imm<4> immh, Imm<3> immb, Vec Vn, Vec 
         return v.ir.LogicalShiftLeft(operand1, v.ir.Imm8(shift_amount));
     }();
 
-    const IR::U64 result = v.ir.Or(v.ir.And(operand2, v.ir.Not(v.ir.Imm64(mask))), shifted);
+    const IR::U64 result = v.ir.Or(v.ir.AndNot(operand2, v.ir.Imm64(mask)), shifted);
     v.V_scalar(esize, Vd, result);
     return true;
 }

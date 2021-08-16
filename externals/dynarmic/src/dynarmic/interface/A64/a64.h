@@ -114,11 +114,8 @@ public:
      */
     bool IsExecuting() const;
 
-    /**
-     * Debugging: Disassemble all of compiled code.
-     * @return A string containing disassembly of all host machine code produced.
-     */
-    std::string Disassemble() const;
+    /// Debugging: Dump a disassembly all of compiled code to the console.
+    void DumpDisassembly() const;
 
 private:
     struct Impl;

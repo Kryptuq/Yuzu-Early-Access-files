@@ -45,7 +45,7 @@ bool TranslatorVisitor::thumb32_BIC_imm(Imm<1> i, bool S, Reg n, Imm<3> imm3, Re
     }
 
     const auto imm_carry = ThumbExpandImm_C(i, imm3, imm8, ir.GetCFlag());
-    const auto result = ir.And(ir.GetRegister(n), ir.Not(ir.Imm32(imm_carry.imm32)));
+    const auto result = ir.AndNot(ir.GetRegister(n), ir.Imm32(imm_carry.imm32));
 
     ir.SetRegister(d, result);
     if (S) {

@@ -36,7 +36,7 @@ bool MultiplyByElement(TranslatorVisitor& v, bool Q, Imm<2> size, Imm<1> L, Imm<
     const size_t datasize = Q ? 128 : 64;
 
     const IR::U128 operand1 = v.V(datasize, Vn);
-    const IR::U128 operand2 = v.ir.VectorBroadcast(esize, v.ir.VectorGetElement(esize, v.V(idxdsize, Vm), index));
+    const IR::U128 operand2 = v.ir.VectorBroadcastElement(esize, v.V(idxdsize, Vm), index);
     const IR::U128 operand3 = v.V(datasize, Vd);
 
     IR::U128 result = v.ir.VectorMultiply(esize, operand1, operand2);
@@ -64,9 +64,8 @@ bool FPMultiplyByElement(TranslatorVisitor& v, bool Q, bool sz, Imm<1> L, Imm<1>
     const size_t esize = sz ? 64 : 32;
     const size_t datasize = Q ? 128 : 64;
 
-    const IR::UAny element2 = v.ir.VectorGetElement(esize, v.V(idxdsize, Vm), index);
     const IR::U128 operand1 = v.V(datasize, Vn);
-    const IR::U128 operand2 = Q ? v.ir.VectorBroadcast(esize, element2) : v.ir.VectorBroadcastLower(esize, element2);
+    const IR::U128 operand2 = Q ? v.ir.VectorBroadcastElement(esize, v.V(idxdsize, Vm), index) : v.ir.VectorBroadcastElementLower(esize, v.V(idxdsize, Vm), index);
     const IR::U128 operand3 = v.V(datasize, Vd);
 
     const IR::U128 result = [&] {
@@ -93,9 +92,8 @@ bool FPMultiplyByElementHalfPrecision(TranslatorVisitor& v, bool Q, Imm<1> L, Im
     const size_t esize = 16;
     const size_t datasize = Q ? 128 : 64;
 
-    const IR::UAny element2 = v.ir.VectorGetElement(esize, v.V(idxdsize, Vm), index);
     const IR::U128 operand1 = v.V(datasize, Vn);
-    const IR::U128 operand2 = Q ? v.ir.VectorBroadcast(esize, element2) : v.ir.VectorBroadcastLower(esize, element2);
+    const IR::U128 operand2 = Q ? v.ir.VectorBroadcastElement(esize, v.V(idxdsize, Vm), index) : v.ir.VectorBroadcastElementLower(esize, v.V(idxdsize, Vm), index);
     const IR::U128 operand3 = v.V(datasize, Vd);
 
     // TODO: We currently don't implement half-precision paths for
@@ -179,7 +177,7 @@ bool MultiplyLong(TranslatorVisitor& v, bool Q, Imm<2> size, Imm<1> L, Imm<1> M,
 
     const IR::U128 operand1 = v.Vpart(datasize, Vn, Q);
     const IR::U128 operand2 = v.V(idxsize, Vm);
-    const IR::U128 index_vector = v.ir.VectorBroadcast(esize, v.ir.VectorGetElement(esize, operand2, index));
+    const IR::U128 index_vector = v.ir.VectorBroadcastElement(esize, operand2, index);
 
     const IR::U128 result = [&] {
         const auto [extended_op1, extended_index] = extend_operands(operand1, index_vector);
@@ -349,7 +347,7 @@ bool TranslatorVisitor::SQDMULL_elt_2(bool Q, Imm<2> size, Imm<1> L, Imm<1> M, I
 
     const IR::U128 operand1 = Vpart(datasize, Vn, part);
     const IR::U128 operand2 = V(idxsize, Vm);
-    const IR::U128 index_vector = ir.VectorBroadcast(esize, ir.VectorGetElement(esize, operand2, index));
+    const IR::U128 index_vector = ir.VectorBroadcastElement(esize, operand2, index);
     const IR::U128 result = ir.VectorSignedSaturatedDoublingMultiplyLong(esize, operand1, index_vector);
 
     V(128, Vd, result);
@@ -368,7 +366,7 @@ bool TranslatorVisitor::SQDMULH_elt_2(bool Q, Imm<2> size, Imm<1> L, Imm<1> M, I
 
     const IR::U128 operand1 = V(datasize, Vn);
     const IR::U128 operand2 = V(idxsize, Vm);
-    const IR::U128 index_vector = ir.VectorBroadcast(esize, ir.VectorGetElement(esize, operand2, index));
+    const IR::U128 index_vector = ir.VectorBroadcastElement(esize, operand2, index);
     const IR::U128 result = ir.VectorSignedSaturatedDoublingMultiply(esize, operand1, index_vector).upper;
 
     V(datasize, Vd, result);
@@ -387,7 +385,7 @@ bool TranslatorVisitor::SQRDMULH_elt_2(bool Q, Imm<2> size, Imm<1> L, Imm<1> M, 
 
     const IR::U128 operand1 = V(datasize, Vn);
     const IR::U128 operand2 = V(idxsize, Vm);
-    const IR::U128 index_vector = ir.VectorBroadcast(esize, ir.VectorGetElement(esize, operand2, index));
+    const IR::U128 index_vector = ir.VectorBroadcastElement(esize, operand2, index);
     const IR::UpperAndLower multiply = ir.VectorSignedSaturatedDoublingMultiply(esize, operand1, index_vector);
     const IR::U128 result = ir.VectorAdd(esize, multiply.upper, ir.VectorLogicalShiftRight(esize, multiply.lower, static_cast<u8>(esize - 1)));
 

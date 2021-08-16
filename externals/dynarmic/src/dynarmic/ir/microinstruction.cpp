@@ -155,10 +155,7 @@ bool Inst::IsMemoryReadOrWrite() const {
 bool Inst::ReadsFromCPSR() const {
     switch (op) {
     case Opcode::A32GetCpsr:
-    case Opcode::A32GetNFlag:
-    case Opcode::A32GetZFlag:
     case Opcode::A32GetCFlag:
-    case Opcode::A32GetVFlag:
     case Opcode::A32GetGEFlags:
     case Opcode::A32UpdateUpperLocationDescriptor:
     case Opcode::A64GetCFlag:
@@ -566,6 +563,8 @@ bool Inst::MayGetNZCVFromOp() const {
     case Opcode::Sub64:
     case Opcode::And32:
     case Opcode::And64:
+    case Opcode::AndNot32:
+    case Opcode::AndNot64:
     case Opcode::Eor32:
     case Opcode::Eor64:
     case Opcode::Or32:

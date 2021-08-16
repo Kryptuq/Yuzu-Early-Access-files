@@ -3,4 +3,4 @@ build/
 build-*/
 docs/Doxygen/
 # Generated files
-src/backend/x64/mig/
+src/dynarmic/backend/x64/mig/

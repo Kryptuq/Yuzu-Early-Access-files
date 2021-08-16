@@ -15,7 +15,7 @@ bool TranslatorVisitor::AXFlag() {
     const IR::U32 v = ir.And(nzcv, ir.Imm32(0x10000000));
 
     const IR::U32 new_z = ir.Or(ir.LogicalShiftLeft(v, ir.Imm8(2)), z);
-    const IR::U32 new_c = ir.And(ir.And(c, ir.Not(ir.LogicalShiftLeft(v, ir.Imm8(1)))), ir.Imm32(0x20000000));
+    const IR::U32 new_c = ir.And(ir.AndNot(c, ir.LogicalShiftLeft(v, ir.Imm8(1))), ir.Imm32(0x20000000));
 
     ir.SetNZCVRaw(ir.Or(new_z, new_c));
     return true;
@@ -27,8 +27,8 @@ bool TranslatorVisitor::XAFlag() {
     const IR::U32 z = ir.And(nzcv, ir.Imm32(0x40000000));
     const IR::U32 c = ir.And(nzcv, ir.Imm32(0x20000000));
 
-    const IR::U32 not_z = ir.And(ir.Not(z), ir.Imm32(0x40000000));
-    const IR::U32 not_c = ir.And(ir.Not(c), ir.Imm32(0x20000000));
+    const IR::U32 not_z = ir.AndNot(ir.Imm32(0x40000000), z);
+    const IR::U32 not_c = ir.AndNot(ir.Imm32(0x20000000), c);
 
     const IR::U32 new_n = ir.And(ir.LogicalShiftLeft(not_c, ir.Imm8(2)),
                                  ir.LogicalShiftLeft(not_z, ir.Imm8(1)));

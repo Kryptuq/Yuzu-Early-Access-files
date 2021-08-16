@@ -32,6 +32,7 @@ bool IsConditionPassed(TranslatorVisitor& v, IR::Cond cond) {
 
     if (cond == IR::Cond::NV) {
         // NV conditional is obsolete
+        v.cond_state = ConditionalState::Break;
         v.RaiseException(Exception::UnpredictableInstruction);
         return false;
     }

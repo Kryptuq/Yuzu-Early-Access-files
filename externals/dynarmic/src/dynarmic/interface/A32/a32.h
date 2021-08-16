@@ -88,11 +88,8 @@ public:
         return is_executing;
     }
 
-    /**
-     * Debugging: Disassemble all of compiled code.
-     * @return A string containing disassembly of all host machine code produced.
-     */
-    std::string Disassemble() const;
+    /// Debugging: Dump a disassembly all compiled code to the console.
+    void DumpDisassembly() const;
 
 private:
     bool is_executing = false;

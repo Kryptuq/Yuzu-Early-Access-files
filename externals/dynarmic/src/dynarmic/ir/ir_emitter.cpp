@@ -317,6 +317,15 @@ U32U64 IREmitter::And(const U32U64& a, const U32U64& b) {
     }
 }
 
+U32U64 IREmitter::AndNot(const U32U64& a, const U32U64& b) {
+    ASSERT(a.GetType() == b.GetType());
+    if (a.GetType() == Type::U32) {
+        return Inst<U32>(Opcode::AndNot32, a, b);
+    } else {
+        return Inst<U64>(Opcode::AndNot64, a, b);
+    }
+}
+
 U32U64 IREmitter::Eor(const U32U64& a, const U32U64& b) {
     ASSERT(a.GetType() == b.GetType());
     if (a.GetType() == Type::U32) {
@@ -958,6 +967,10 @@ U128 IREmitter::VectorAnd(const U128& a, const U128& b) {
     return Inst<U128>(Opcode::VectorAnd, a, b);
 }
 
+U128 IREmitter::VectorAndNot(const U128& a, const U128& b) {
+    return Inst<U128>(Opcode::VectorAndNot, a, b);
+}
+
 U128 IREmitter::VectorArithmeticShiftRight(size_t esize, const U128& a, u8 shift_amount) {
     switch (esize) {
     case 8:
@@ -1008,6 +1021,34 @@ U128 IREmitter::VectorBroadcast(size_t esize, const UAny& a) {
         return Inst<U128>(Opcode::VectorBroadcast32, U32(a));
     case 64:
         return Inst<U128>(Opcode::VectorBroadcast64, U64(a));
+    }
+    UNREACHABLE();
+}
+
+U128 IREmitter::VectorBroadcastElementLower(size_t esize, const U128& a, size_t index) {
+    ASSERT_MSG(esize * index < 128, "Invalid index");
+    switch (esize) {
+    case 8:
+        return Inst<U128>(Opcode::VectorBroadcastElementLower8, a, u8(index));
+    case 16:
+        return Inst<U128>(Opcode::VectorBroadcastElementLower16, a, u8(index));
+    case 32:
+        return Inst<U128>(Opcode::VectorBroadcastElementLower32, a, u8(index));
+    }
+    UNREACHABLE();
+}
+
+U128 IREmitter::VectorBroadcastElement(size_t esize, const U128& a, size_t index) {
+    ASSERT_MSG(esize * index < 128, "Invalid index");
+    switch (esize) {
+    case 8:
+        return Inst<U128>(Opcode::VectorBroadcastElement8, a, u8(index));
+    case 16:
+        return Inst<U128>(Opcode::VectorBroadcastElement16, a, u8(index));
+    case 32:
+        return Inst<U128>(Opcode::VectorBroadcastElement32, a, u8(index));
+    case 64:
+        return Inst<U128>(Opcode::VectorBroadcastElement64, a, u8(index));
     }
     UNREACHABLE();
 }

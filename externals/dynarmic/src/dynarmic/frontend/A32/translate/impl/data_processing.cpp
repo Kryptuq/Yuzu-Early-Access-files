@@ -250,7 +250,7 @@ bool TranslatorVisitor::arm_BIC_imm(Cond cond, bool S, Reg n, Reg d, int rotate,
     }
 
     const auto imm_carry = ArmExpandImm_C(rotate, imm8, ir.GetCFlag());
-    const auto result = ir.And(ir.GetRegister(n), ir.Not(ir.Imm32(imm_carry.imm32)));
+    const auto result = ir.AndNot(ir.GetRegister(n), ir.Imm32(imm_carry.imm32));
     if (d == Reg::PC) {
         if (S) {
             // This is UNPREDICTABLE when in user-mode.
@@ -280,7 +280,7 @@ bool TranslatorVisitor::arm_BIC_reg(Cond cond, bool S, Reg n, Reg d, Imm<5> imm5
 
     const auto carry_in = ir.GetCFlag();
     const auto shifted = EmitImmShift(ir.GetRegister(m), shift, imm5, carry_in);
-    const auto result = ir.And(ir.GetRegister(n), ir.Not(shifted.result));
+    const auto result = ir.AndNot(ir.GetRegister(n), shifted.result);
     if (d == Reg::PC) {
         if (S) {
             // This is UNPREDICTABLE when in user-mode.
@@ -315,7 +315,7 @@ bool TranslatorVisitor::arm_BIC_rsr(Cond cond, bool S, Reg n, Reg d, Reg s, Shif
     const auto shift_n = ir.LeastSignificantByte(ir.GetRegister(s));
     const auto carry_in = ir.GetCFlag();
     const auto shifted = EmitRegShift(ir.GetRegister(m), shift, shift_n, carry_in);
-    const auto result = ir.And(ir.GetRegister(n), ir.Not(shifted.result));
+    const auto result = ir.AndNot(ir.GetRegister(n), shifted.result);
 
     ir.SetRegister(d, result);
     if (S) {

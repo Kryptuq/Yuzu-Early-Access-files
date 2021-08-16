@@ -12,7 +12,7 @@
 #include <string_view>
 #include <tuple>
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "../rand_int.h"
 #include "../unicorn_emu/a32_unicorn.h"
@@ -183,7 +183,8 @@ static void RunInstance(size_t run_number, ThumbTestEnv& test_env, A32Unicorn<Th
             Optimization::DeadCodeElimination(ir_block);
             Optimization::VerificationPass(ir_block);
             printf("\n\nIR:\n%s", IR::DumpBlock(ir_block).c_str());
-            printf("\n\nx86_64:\n%s", jit.Disassemble().c_str());
+            printf("\n\nx86_64:\n");
+            jit.DumpDisassembly();
             num_insts += ir_block.CycleCount();
         }
 

@@ -45,7 +45,7 @@ bool TranslatorVisitor::thumb32_BIC_reg(bool S, Reg n, Imm<3> imm3, Reg d, Imm<2
     }
 
     const auto shifted = EmitImmShift(ir.GetRegister(m), type, imm3, imm2, ir.GetCFlag());
-    const auto result = ir.And(ir.GetRegister(n), ir.Not(shifted.result));
+    const auto result = ir.AndNot(ir.GetRegister(n), shifted.result);
     ir.SetRegister(d, result);
     if (S) {
         ir.SetNFlag(ir.MostSignificantBit(result));

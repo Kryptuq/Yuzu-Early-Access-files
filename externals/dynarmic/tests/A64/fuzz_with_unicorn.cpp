@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "../fuzz_util.h"
 #include "../rand_int.h"
@@ -232,7 +232,7 @@ static void RunTestInstance(Dynarmic::A64::Jit& jit, A64Unicorn& uni, A64TestEnv
         }
         const auto uni_vecs = uni.GetVectors();
         for (size_t i = 0; i < vecs.size(); ++i) {
-            fmt::print("{:3s}: {}{} {}{} {}\n", A64::VecToString(static_cast<A64::Vec>(i)),
+            fmt::print("{:3s}: {:016x}{:016x} {:016x}{:016x} {}\n", A64::VecToString(static_cast<A64::Vec>(i)),
                        uni_vecs[i][1], uni_vecs[i][0],
                        jit.GetVectors()[i][1], jit.GetVectors()[i][0],
                        uni_vecs[i] != jit.GetVectors()[i] ? "*" : "");
@@ -276,7 +276,7 @@ static void RunTestInstance(Dynarmic::A64::Jit& jit, A64Unicorn& uni, A64TestEnv
         fmt::print("{}\n", IR::DumpBlock(ir_block));
 
         fmt::print("x86_64:\n");
-        fmt::print("{}\n", jit.Disassemble());
+        jit.DumpDisassembly();
 
         fmt::print("Interrupts:\n");
         for (auto& i : uni_env.interrupts) {

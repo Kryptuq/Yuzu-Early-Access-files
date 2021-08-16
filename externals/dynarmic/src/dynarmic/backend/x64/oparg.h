@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <xbyak.h>
+#include <xbyak/xbyak.h>
 
 #include "dynarmic/common/assert.h"
 

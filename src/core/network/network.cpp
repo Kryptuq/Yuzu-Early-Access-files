@@ -50,11 +50,6 @@ void Finalize() {
     WSACleanup();
 }
 
-constexpr IPv4Address TranslateIPv4(in_addr addr) {
-    auto& bytes = addr.S_un.S_un_b;
-    return IPv4Address{bytes.s_b1, bytes.s_b2, bytes.s_b3, bytes.s_b4};
-}
-
 sockaddr TranslateFromSockAddrIn(SockAddrIn input) {
     sockaddr_in result;
 
@@ -140,12 +135,6 @@ constexpr int SD_BOTH = SHUT_RDWR;
 void Initialize() {}
 
 void Finalize() {}
-
-constexpr IPv4Address TranslateIPv4(in_addr addr) {
-    const u32 bytes = addr.s_addr;
-    return IPv4Address{static_cast<u8>(bytes), static_cast<u8>(bytes >> 8),
-                       static_cast<u8>(bytes >> 16), static_cast<u8>(bytes >> 24)};
-}
 
 sockaddr TranslateFromSockAddrIn(SockAddrIn input) {
     sockaddr_in result;

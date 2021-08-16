@@ -8,7 +8,7 @@
 #include <map>
 #include <tuple>
 
-#include <xbyak.h>
+#include <xbyak/xbyak.h>
 
 #include "dynarmic/common/common_types.h"
 

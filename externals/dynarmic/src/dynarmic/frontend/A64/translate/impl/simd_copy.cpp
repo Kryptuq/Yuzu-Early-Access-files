@@ -41,8 +41,7 @@ bool TranslatorVisitor::DUP_elt_2(bool Q, Imm<5> imm5, Vec Vn, Vec Vd) {
     const size_t datasize = Q ? 128 : 64;
 
     const IR::U128 operand = V(idxdsize, Vn);
-    const IR::UAny element = ir.VectorGetElement(esize, operand, index);
-    const IR::U128 result = Q ? ir.VectorBroadcast(esize, element) : ir.VectorBroadcastLower(esize, element);
+    const IR::U128 result = Q ? ir.VectorBroadcastElement(esize, operand, index) : ir.VectorBroadcastElementLower(esize, operand, index);
     V(datasize, Vd, result);
     return true;
 }

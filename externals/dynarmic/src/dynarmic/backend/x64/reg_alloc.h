@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-#include <xbyak.h>
+#include <xbyak/xbyak.h>
 
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/hostloc.h"

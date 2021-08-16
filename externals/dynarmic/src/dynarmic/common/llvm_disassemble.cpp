@@ -13,6 +13,7 @@
 #endif
 
 #include "dynarmic/common/assert.h"
+#include "dynarmic/common/cast_util.h"
 #include "dynarmic/common/common_types.h"
 #include "dynarmic/common/llvm_disassemble.h"
 
@@ -48,7 +49,7 @@ std::string DisassembleX64(const void* begin, const void* end) {
     LLVMDisasmDispose(llvm_ctx);
 #else
     result += fmt::format("(recompile with DYNARMIC_USE_LLVM=ON to disassemble the generated x86_64 code)\n");
-    result += fmt::format("start: {:016x}, end: {:016x}\n", begin, end);
+    result += fmt::format("start: {:016x}, end: {:016x}\n", BitCast<u64>(begin), BitCast<u64>(end));
 #endif
 
     return result;

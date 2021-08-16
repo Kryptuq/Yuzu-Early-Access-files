@@ -13,7 +13,7 @@
 
 #include <tsl/robin_map.h>
 #include <tsl/robin_set.h>
-#include <xbyak_util.h>
+#include <xbyak/xbyak_util.h>
 
 #include "dynarmic/backend/x64/exception_handler.h"
 #include "dynarmic/backend/x64/reg_alloc.h"

@@ -12,6 +12,7 @@ endif()
 option(DYNARMIC_ENABLE_CPU_FEATURE_DETECTION "Turning this off causes dynarmic to assume the host CPU doesn't support anything later than SSE3" ON)
 option(DYNARMIC_ENABLE_NO_EXECUTE_SUPPORT "Enables support for systems that require W^X" OFF)
 option(DYNARMIC_FATAL_ERRORS "Errors are fatal" OFF)
+option(DYNARMIC_IGNORE_ASSERTS "Ignore asserts" OFF)
 option(DYNARMIC_TESTS "Build tests" ${MASTER_PROJECT})
 option(DYNARMIC_TESTS_USE_UNICORN "Enable fuzzing tests against unicorn" OFF)
 option(DYNARMIC_USE_LLVM "Support disassembly of jitted x86_64 code using LLVM" OFF)
@@ -27,7 +28,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Set hard requirements for C++
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 

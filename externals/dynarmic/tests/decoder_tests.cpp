@@ -7,7 +7,7 @@
 #include <iomanip>
 #include <iostream>
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "dynarmic/common/assert.h"
 #include "dynarmic/frontend/A32/decoder/asimd.h"

@@ -14,8 +14,8 @@
 #include "dynarmic/backend/x64/devirtualize.h"
 #include "dynarmic/backend/x64/jitstate_info.h"
 #include "dynarmic/common/assert.h"
-#include "dynarmic/common/llvm_disassemble.h"
 #include "dynarmic/common/scope_exit.h"
+#include "dynarmic/common/x64_disassemble.h"
 #include "dynarmic/frontend/A64/translate/translate.h"
 #include "dynarmic/interface/A64/a64.h"
 #include "dynarmic/ir/basic_block.h"
@@ -199,8 +199,9 @@ public:
         return is_executing;
     }
 
-    std::string Disassemble() const {
-        return Common::DisassembleX64(block_of_code.GetCodeBegin(), block_of_code.getCurr());
+    void DumpDisassembly() const {
+        const size_t size = (const char*)block_of_code.getCurr() - (const char*)block_of_code.GetCodeBegin();
+        Common::DumpDisassembledX64(block_of_code.GetCodeBegin(), size);
     }
 
 private:
@@ -397,8 +398,8 @@ bool Jit::IsExecuting() const {
     return impl->IsExecuting();
 }
 
-std::string Jit::Disassemble() const {
-    return impl->Disassemble();
+void Jit::DumpDisassembly() const {
+    return impl->DumpDisassembly();
 }
 
 }  // namespace Dynarmic::A64

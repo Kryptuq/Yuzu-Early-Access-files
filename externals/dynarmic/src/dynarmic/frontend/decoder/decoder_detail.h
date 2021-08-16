@@ -104,7 +104,10 @@ struct detail {
             }
         }
 
+#ifndef DYNARMIC_IGNORE_ASSERTS
+        // Avoids a MSVC ICE.
         ASSERT(std::all_of(masks.begin(), masks.end(), [](auto m) { return m != 0; }));
+#endif
 
         return std::make_tuple(masks, shifts);
     }

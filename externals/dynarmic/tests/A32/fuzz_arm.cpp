@@ -10,7 +10,7 @@
 #include <tuple>
 #include <vector>
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "../fuzz_util.h"
 #include "../rand_int.h"
@@ -372,7 +372,7 @@ static void RunTestInstance(Dynarmic::A32::Jit& jit,
         fmt::print("\n");
 
         fmt::print("x86_64:\n");
-        fmt::print("{}\n", jit.Disassemble());
+        jit.DumpDisassembly();
 
         fmt::print("Interrupts:\n");
         for (const auto& i : uni_env.interrupts) {

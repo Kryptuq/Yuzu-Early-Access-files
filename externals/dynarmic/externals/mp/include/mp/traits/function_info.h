@@ -36,11 +36,15 @@ struct function_info<R(*)(As...)> : function_info<R(As...)> {};
 template<class C, class R, class... As>
 struct function_info<R(C::*)(As...)> : function_info<R(As...)> {
     using class_type = C;
+
+    using equivalent_function_type_with_class = R(C*, As...);
 };
 
 template<class C, class R, class... As>
 struct function_info<R(C::*)(As...) const> : function_info<R(As...)> {
     using class_type = C;
+
+    using equivalent_function_type_with_class = R(C*, As...);
 };
 
 template<class F>
@@ -54,6 +58,9 @@ using get_parameter = typename function_info<F>::template parameter<I>::type;
 
 template<class F>
 using equivalent_function_type = typename function_info<F>::equivalent_function_type;
+
+template<class F>
+using equivalent_function_type_with_class = typename function_info<F>::equivalent_function_type_with_class;
 
 template<class F>
 using return_type = typename function_info<F>::return_type;

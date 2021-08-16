@@ -15,7 +15,7 @@
 #include <array>
 #include <cstring>
 
-#include <xbyak.h>
+#include <xbyak/xbyak.h>
 
 #include "dynarmic/backend/x64/a32_jitstate.h"
 #include "dynarmic/backend/x64/abi.h"
@@ -257,8 +257,6 @@ void BlockOfCode::GenRunCode(std::function<void(BlockOfCode&)> rcp) {
 
     SwitchMxcsrOnEntry();
     jmp(ABI_PARAM2);
-
-    align();
 
     // Dispatcher loop
 

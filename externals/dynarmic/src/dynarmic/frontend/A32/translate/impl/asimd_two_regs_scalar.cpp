@@ -46,9 +46,8 @@ bool ScalarMultiply(TranslatorVisitor& v, bool Q, bool D, size_t sz, size_t Vn, 
     const auto n = ToVector(Q, Vn, N);
     const auto [m, index] = GetScalarLocation(esize, M, Vm);
 
-    const auto scalar = v.ir.VectorGetElement(esize, v.ir.GetVector(m), index);
     const auto reg_n = v.ir.GetVector(n);
-    const auto reg_m = v.ir.VectorBroadcast(esize, scalar);
+    const auto reg_m = v.ir.VectorBroadcastElement(esize, v.ir.GetVector(m), index);
     const auto addend = F ? v.ir.FPVectorMul(esize, reg_n, reg_m, false)
                           : v.ir.VectorMultiply(esize, reg_n, reg_m);
     const auto result = [&] {
@@ -125,9 +124,8 @@ bool ScalarMultiplyReturnHigh(TranslatorVisitor& v, bool Q, bool D, size_t sz, s
     const auto n = ToVector(Q, Vn, N);
     const auto [m, index] = GetScalarLocation(esize, M, Vm);
 
-    const auto scalar = v.ir.VectorGetElement(esize, v.ir.GetVector(m), index);
     const auto reg_n = v.ir.GetVector(n);
-    const auto reg_m = v.ir.VectorBroadcast(esize, scalar);
+    const auto reg_m = v.ir.VectorBroadcastElement(esize, v.ir.GetVector(m), index);
     const auto result = [&] {
         const auto tmp = v.ir.VectorSignedSaturatedDoublingMultiply(esize, reg_n, reg_m);
 
@@ -177,9 +175,8 @@ bool TranslatorVisitor::asimd_VQDMULL_scalar(bool D, size_t sz, size_t Vn, size_
     const auto n = ToVector(false, Vn, N);
     const auto [m, index] = GetScalarLocation(esize, M, Vm);
 
-    const auto scalar = ir.VectorGetElement(esize, ir.GetVector(m), index);
     const auto reg_n = ir.GetVector(n);
-    const auto reg_m = ir.VectorBroadcast(esize, scalar);
+    const auto reg_m = ir.VectorBroadcastElement(esize, ir.GetVector(m), index);
     const auto result = ir.VectorSignedSaturatedDoublingMultiplyLong(esize, reg_n, reg_m);
 
     ir.SetVector(d, result);

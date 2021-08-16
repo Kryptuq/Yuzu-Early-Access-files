@@ -103,6 +103,7 @@ Type traits not in the standard library.
 * `mp::parameter_list`: Get a typelist of the parameter types
 * `mp::get_parameter`: Get the type of a parameter by index
 * `mp::equivalent_function_type`: Get an equivalent function type (for MFPs this does not include the class)
+* `mp::equivalent_function_type_with_class`: Get an equivalent function type with explicit `this` argument (MFPs only)
 * `mp::return_type`: Return type of the function
 * `mp::class_type`: Only valid for member function pointer types. Gets the class the member function is associated with.
 

@@ -1283,6 +1283,72 @@ void EmitX64::EmitAnd64(EmitContext& ctx, IR::Inst* inst) {
     ctx.reg_alloc.DefineValue(inst, result);
 }
 
+void EmitX64::EmitAndNot32(EmitContext& ctx, IR::Inst* inst) {
+    auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+
+    if (!args[0].IsImmediate() && !args[1].IsImmediate() && code.HasHostFeature(HostFeature::BMI1)) {
+        Xbyak::Reg32 op_a = ctx.reg_alloc.UseGpr(args[0]).cvt32();
+        Xbyak::Reg32 op_b = ctx.reg_alloc.UseGpr(args[1]).cvt32();
+        Xbyak::Reg32 result = ctx.reg_alloc.ScratchGpr().cvt32();
+        code.andn(result, op_b, op_a);
+        ctx.reg_alloc.DefineValue(inst, result);
+        return;
+    }
+
+    Xbyak::Reg32 result;
+    if (args[1].IsImmediate()) {
+        result = ctx.reg_alloc.ScratchGpr().cvt32();
+        code.mov(result, u32(~args[1].GetImmediateU32()));
+    } else {
+        result = ctx.reg_alloc.UseScratchGpr(args[1]).cvt32();
+        code.not_(result);
+    }
+
+    if (args[0].IsImmediate()) {
+        const u32 op_arg = args[0].GetImmediateU32();
+        code.and_(result, op_arg);
+    } else {
+        OpArg op_arg = ctx.reg_alloc.UseOpArg(args[0]);
+        op_arg.setBit(32);
+        code.and_(result, *op_arg);
+    }
+
+    ctx.reg_alloc.DefineValue(inst, result);
+}
+
+void EmitX64::EmitAndNot64(EmitContext& ctx, IR::Inst* inst) {
+    auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+
+    if (!args[0].IsImmediate() && !args[1].IsImmediate() && code.HasHostFeature(HostFeature::BMI1)) {
+        Xbyak::Reg64 op_a = ctx.reg_alloc.UseGpr(args[0]);
+        Xbyak::Reg64 op_b = ctx.reg_alloc.UseGpr(args[1]);
+        Xbyak::Reg64 result = ctx.reg_alloc.ScratchGpr();
+        code.andn(result, op_b, op_a);
+        ctx.reg_alloc.DefineValue(inst, result);
+        return;
+    }
+
+    Xbyak::Reg64 result;
+    if (args[1].IsImmediate()) {
+        result = ctx.reg_alloc.ScratchGpr();
+        code.mov(result, ~args[1].GetImmediateU64());
+    } else {
+        result = ctx.reg_alloc.UseScratchGpr(args[1]);
+        code.not_(result);
+    }
+
+    if (args[0].FitsInImmediateS32()) {
+        const u32 op_arg = u32(args[0].GetImmediateS32());
+        code.and_(result, op_arg);
+    } else {
+        OpArg op_arg = ctx.reg_alloc.UseOpArg(args[0]);
+        op_arg.setBit(64);
+        code.and_(result, *op_arg);
+    }
+
+    ctx.reg_alloc.DefineValue(inst, result);
+}
+
 void EmitX64::EmitEor32(EmitContext& ctx, IR::Inst* inst) {
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
 

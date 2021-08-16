@@ -165,7 +165,7 @@ void EmitX64::EmitVectorGetElement8(EmitContext& ctx, IR::Inst* inst) {
     if (code.HasHostFeature(HostFeature::SSE41)) {
         code.pextrb(dest, source, index);
     } else {
-        code.pextrw(dest, source, index / 2);
+        code.pextrw(dest, source, u8(index / 2));
         if (index % 2 == 1) {
             code.shr(dest, 8);
         } else {
@@ -437,6 +437,17 @@ void EmitX64::EmitVectorAdd64(EmitContext& ctx, IR::Inst* inst) {
 
 void EmitX64::EmitVectorAnd(EmitContext& ctx, IR::Inst* inst) {
     EmitVectorOperation(code, ctx, inst, &Xbyak::CodeGenerator::pand);
+}
+
+void EmitX64::EmitVectorAndNot(EmitContext& ctx, IR::Inst* inst) {
+    auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+
+    const Xbyak::Xmm xmm_a = ctx.reg_alloc.UseXmm(args[0]);
+    const Xbyak::Xmm xmm_b = ctx.reg_alloc.UseScratchXmm(args[1]);
+
+    code.pandn(xmm_b, xmm_a);
+
+    ctx.reg_alloc.DefineValue(inst, xmm_b);
 }
 
 static void ArithmeticShiftRightByte(EmitContext& ctx, BlockOfCode& code, const Xbyak::Xmm& result, u8 shift_amount) {
@@ -738,6 +749,148 @@ void EmitX64::EmitVectorBroadcast64(EmitContext& ctx, IR::Inst* inst) {
         code.punpcklqdq(a, a);
     }
 
+    ctx.reg_alloc.DefineValue(inst, a);
+}
+
+void EmitX64::EmitVectorBroadcastElementLower8(EmitContext& ctx, IR::Inst* inst) {
+    auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+    const Xbyak::Xmm a = ctx.reg_alloc.UseScratchXmm(args[0]);
+    ASSERT(args[1].IsImmediate());
+    const u8 index = args[1].GetImmediateU8();
+    ASSERT(index < 16);
+
+    if (index > 0) {
+        code.psrldq(a, index);
+    }
+
+    if (code.HasHostFeature(HostFeature::AVX2)) {
+        code.vpbroadcastb(a, a);
+        code.vmovq(a, a);
+    } else if (code.HasHostFeature(HostFeature::SSSE3)) {
+        const Xbyak::Xmm tmp = ctx.reg_alloc.ScratchXmm();
+
+        code.pxor(tmp, tmp);
+        code.pshufb(a, tmp);
+        code.movq(a, a);
+    } else {
+        code.punpcklbw(a, a);
+        code.pshuflw(a, a, 0);
+    }
+
+    ctx.reg_alloc.DefineValue(inst, a);
+}
+
+void EmitX64::EmitVectorBroadcastElementLower16(EmitContext& ctx, IR::Inst* inst) {
+    auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+    const Xbyak::Xmm a = ctx.reg_alloc.UseScratchXmm(args[0]);
+    ASSERT(args[1].IsImmediate());
+    const u8 index = args[1].GetImmediateU8();
+    ASSERT(index < 8);
+
+    if (index > 0) {
+        code.psrldq(a, u8(index * 2));
+    }
+
+    code.pshuflw(a, a, 0);
+
+    ctx.reg_alloc.DefineValue(inst, a);
+}
+
+void EmitX64::EmitVectorBroadcastElementLower32(EmitContext& ctx, IR::Inst* inst) {
+    auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+    const Xbyak::Xmm a = ctx.reg_alloc.UseScratchXmm(args[0]);
+    ASSERT(args[1].IsImmediate());
+    const u8 index = args[1].GetImmediateU8();
+    ASSERT(index < 4);
+
+    if (index > 0) {
+        code.psrldq(a, u8(index * 4));
+    }
+
+    code.pshuflw(a, a, 0b01'00'01'00);
+
+    ctx.reg_alloc.DefineValue(inst, a);
+}
+
+void EmitX64::EmitVectorBroadcastElement8(EmitContext& ctx, IR::Inst* inst) {
+    auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+    const Xbyak::Xmm a = ctx.reg_alloc.UseScratchXmm(args[0]);
+    ASSERT(args[1].IsImmediate());
+    const u8 index = args[1].GetImmediateU8();
+    ASSERT(index < 16);
+
+    if (index > 0) {
+        code.psrldq(a, index);
+    }
+
+    if (code.HasHostFeature(HostFeature::AVX2)) {
+        code.vpbroadcastb(a, a);
+    } else if (code.HasHostFeature(HostFeature::SSSE3)) {
+        const Xbyak::Xmm tmp = ctx.reg_alloc.ScratchXmm();
+
+        code.pxor(tmp, tmp);
+        code.pshufb(a, tmp);
+    } else {
+        code.punpcklbw(a, a);
+        code.pshuflw(a, a, 0);
+        code.punpcklqdq(a, a);
+    }
+    ctx.reg_alloc.DefineValue(inst, a);
+}
+
+void EmitX64::EmitVectorBroadcastElement16(EmitContext& ctx, IR::Inst* inst) {
+    auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+    const Xbyak::Xmm a = ctx.reg_alloc.UseScratchXmm(args[0]);
+    ASSERT(args[1].IsImmediate());
+    const u8 index = args[1].GetImmediateU8();
+    ASSERT(index < 8);
+
+    if (index == 0 && code.HasHostFeature(HostFeature::AVX2)) {
+        code.vpbroadcastw(a, a);
+
+        ctx.reg_alloc.DefineValue(inst, a);
+        return;
+    }
+
+    if (index < 4) {
+        code.pshuflw(a, a, Common::Replicate<u8>(index, 2));
+        code.punpcklqdq(a, a);
+    } else {
+        code.pshufhw(a, a, Common::Replicate<u8>(u8(index - 4), 2));
+        code.punpckhqdq(a, a);
+    }
+
+    ctx.reg_alloc.DefineValue(inst, a);
+}
+
+void EmitX64::EmitVectorBroadcastElement32(EmitContext& ctx, IR::Inst* inst) {
+    auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+    const Xbyak::Xmm a = ctx.reg_alloc.UseScratchXmm(args[0]);
+    ASSERT(args[1].IsImmediate());
+    const u8 index = args[1].GetImmediateU8();
+    ASSERT(index < 4);
+
+    code.pshufd(a, a, Common::Replicate<u8>(index, 2));
+
+    ctx.reg_alloc.DefineValue(inst, a);
+}
+
+void EmitX64::EmitVectorBroadcastElement64(EmitContext& ctx, IR::Inst* inst) {
+    auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+    const Xbyak::Xmm a = ctx.reg_alloc.UseScratchXmm(args[0]);
+    ASSERT(args[1].IsImmediate());
+    const u8 index = args[1].GetImmediateU8();
+    ASSERT(index < 2);
+
+    if (code.HasHostFeature(HostFeature::AVX)) {
+        code.vpermilpd(a, a, Common::Replicate<u8>(index, 1));
+    } else {
+        if (index == 0) {
+            code.punpcklqdq(a, a);
+        } else {
+            code.punpckhqdq(a, a);
+        }
+    }
     ctx.reg_alloc.DefineValue(inst, a);
 }
 

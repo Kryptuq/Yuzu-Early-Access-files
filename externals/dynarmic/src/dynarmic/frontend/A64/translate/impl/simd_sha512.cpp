@@ -50,7 +50,7 @@ IR::U128 SHA512Hash(IREmitter& ir, Vec Vm, Vec Vn, Vec Vd, SHA512HashPart part) 
         const IR::U64 tmp1 = ir.And(a, b);
 
         if (part == SHA512HashPart::Part1) {
-            const IR::U64 tmp2 = ir.And(ir.Not(a), c);
+            const IR::U64 tmp2 = ir.AndNot(c, a);
             return ir.Eor(tmp1, tmp2);
         }
 

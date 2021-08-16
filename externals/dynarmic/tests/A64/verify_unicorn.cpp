@@ -5,7 +5,7 @@
 
 #include <array>
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "../rand_int.h"
 #include "../unicorn_emu/a64_unicorn.h"

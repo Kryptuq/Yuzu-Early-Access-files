@@ -23,7 +23,7 @@ bool TranslatorVisitor::BCAX(Vec Vm, Vec Va, Vec Vn, Vec Vd) {
     const IR::U128 m = ir.GetQ(Vm);
     const IR::U128 n = ir.GetQ(Vn);
 
-    const IR::U128 result = ir.VectorEor(n, ir.VectorAnd(m, ir.VectorNot(a)));
+    const IR::U128 result = ir.VectorEor(n, ir.VectorAndNot(m, a));
 
     ir.SetQ(Vd, result);
     return true;

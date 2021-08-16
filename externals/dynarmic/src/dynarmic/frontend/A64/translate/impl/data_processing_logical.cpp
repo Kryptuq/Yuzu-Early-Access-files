@@ -128,8 +128,8 @@ bool TranslatorVisitor::BIC_shift(bool sf, Imm<2> shift, Reg Rm, Imm<6> imm6, Re
     const u8 shift_amount = imm6.ZeroExtend<u8>();
 
     const auto operand1 = X(datasize, Rn);
-    const auto operand2 = ir.Not(ShiftReg(datasize, Rm, shift, ir.Imm8(shift_amount)));
-    const auto result = ir.And(operand1, operand2);
+    const auto operand2 = ShiftReg(datasize, Rm, shift, ir.Imm8(shift_amount));
+    const auto result = ir.AndNot(operand1, operand2);
 
     X(datasize, Rd, result);
     return true;
@@ -225,8 +225,8 @@ bool TranslatorVisitor::BICS(bool sf, Imm<2> shift, Reg Rm, Imm<6> imm6, Reg Rn,
     const u8 shift_amount = imm6.ZeroExtend<u8>();
 
     const auto operand1 = X(datasize, Rn);
-    const auto operand2 = ir.Not(ShiftReg(datasize, Rm, shift, ir.Imm8(shift_amount)));
-    const auto result = ir.And(operand1, operand2);
+    const auto operand2 = ShiftReg(datasize, Rm, shift, ir.Imm8(shift_amount));
+    const auto result = ir.AndNot(operand1, operand2);
 
     ir.SetNZCV(ir.NZCVFrom(result));
     X(datasize, Rd, result);

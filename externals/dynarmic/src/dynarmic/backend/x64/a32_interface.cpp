@@ -18,8 +18,8 @@
 #include "dynarmic/common/assert.h"
 #include "dynarmic/common/cast_util.h"
 #include "dynarmic/common/common_types.h"
-#include "dynarmic/common/llvm_disassemble.h"
 #include "dynarmic/common/scope_exit.h"
+#include "dynarmic/common/x64_disassemble.h"
 #include "dynarmic/frontend/A32/translate/translate.h"
 #include "dynarmic/interface/A32/a32.h"
 #include "dynarmic/interface/A32/context.h"
@@ -89,13 +89,6 @@ struct Jit::Impl {
 
     void ClearExclusiveState() {
         jit_state.exclusive_state = 0;
-    }
-
-    std::string Disassemble(const IR::LocationDescriptor& descriptor) {
-        auto block = GetBasicBlock(descriptor);
-        std::string result = fmt::format("address: {}\nsize: {} bytes\n", block.entrypoint, block.size);
-        result += Common::DisassembleX64(block.entrypoint, reinterpret_cast<const char*>(block.entrypoint) + block.size);
-        return result;
     }
 
     void PerformCacheInvalidation() {
@@ -324,8 +317,9 @@ void Jit::LoadContext(const Context& ctx) {
     impl->jit_state.TransferJitState(ctx.impl->jit_state, reset_rsb);
 }
 
-std::string Jit::Disassemble() const {
-    return Common::DisassembleX64(impl->block_of_code.GetCodeBegin(), impl->block_of_code.getCurr());
+void Jit::DumpDisassembly() const {
+    const size_t size = (const char*)impl->block_of_code.getCurr() - (const char*)impl->block_of_code.GetCodeBegin();
+    Common::DumpDisassembledX64(impl->block_of_code.GetCodeBegin(), size);
 }
 
 }  // namespace Dynarmic::A32

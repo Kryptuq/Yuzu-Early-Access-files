@@ -203,7 +203,7 @@ constexpr T Replicate(T value, size_t element_size) {
     ASSERT_MSG(BitSize<T>() % element_size == 0, "bitsize of T not divisible by element_size");
     if (element_size == BitSize<T>())
         return value;
-    return Replicate(value | (value << element_size), element_size * 2);
+    return Replicate<T>(T(value | value << element_size), element_size * 2);
 }
 
 template<typename T>

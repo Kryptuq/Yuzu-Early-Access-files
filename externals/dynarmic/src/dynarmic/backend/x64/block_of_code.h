@@ -10,8 +10,8 @@
 #include <memory>
 #include <type_traits>
 
-#include <xbyak.h>
-#include <xbyak_util.h>
+#include <xbyak/xbyak.h>
+#include <xbyak/xbyak_util.h>
 
 #include "dynarmic/backend/x64/abi.h"
 #include "dynarmic/backend/x64/callback.h"

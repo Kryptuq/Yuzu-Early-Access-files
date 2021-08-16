@@ -356,7 +356,7 @@ bool TranslatorVisitor::thumb16_MUL_reg(Reg n, Reg d_m) {
 bool TranslatorVisitor::thumb16_BIC_reg(Reg m, Reg d_n) {
     const Reg d = d_n;
     const Reg n = d_n;
-    const auto result = ir.And(ir.GetRegister(n), ir.Not(ir.GetRegister(m)));
+    const auto result = ir.AndNot(ir.GetRegister(n), ir.GetRegister(m));
 
     ir.SetRegister(d, result);
     if (!ir.current_location.IT().IsInITBlock()) {

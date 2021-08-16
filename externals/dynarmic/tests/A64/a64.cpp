@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "./testenv.h"
 #include "dynarmic/common/fp/fpsr.h"
@@ -673,6 +673,57 @@ TEST_CASE("A64: FMADD", "[a64]") {
     jit.Run();
 
     REQUIRE(jit.GetVector(10) == Vector{0x3f059921bf0dbfff, 0x0000000000000000});
+}
+
+TEST_CASE("A64: FMLA.4S(lane)", "[a64]") {
+    A64TestEnv env;
+    A64::Jit jit{A64::UserConfig{&env}};
+
+    env.code_mem.emplace_back(0x4f8f11c0);  // FMLA.4S V0, V14, V15[0]
+    env.code_mem.emplace_back(0x4faf11c1);  // FMLA.4S V1, V14, V15[1]
+    env.code_mem.emplace_back(0x4f8f19c2);  // FMLA.4S V2, V14, V15[2]
+    env.code_mem.emplace_back(0x4faf19c3);  // FMLA.4S V3, V14, V15[3]
+    env.code_mem.emplace_back(0x14000000);  // B .
+
+    jit.SetPC(0);
+    jit.SetVector(0, {0x3ff00000'3ff00000, 0x00000000'00000000});
+    jit.SetVector(1, {0x3ff00000'3ff00000, 0x00000000'00000000});
+    jit.SetVector(2, {0x3ff00000'3ff00000, 0x00000000'00000000});
+    jit.SetVector(3, {0x3ff00000'3ff00000, 0x00000000'00000000});
+
+    jit.SetVector(14, {0x3ff00000'3ff00000, 0x3ff00000'3ff00000});
+    jit.SetVector(15, {0x3ff00000'40000000, 0x40400000'40800000});
+
+    env.ticks_left = 5;
+    jit.Run();
+
+    REQUIRE(jit.GetVector(0) == Vector{0x40b4000040b40000, 0x4070000040700000});
+    REQUIRE(jit.GetVector(1) == Vector{0x40ac800040ac8000, 0x4061000040610000});
+    REQUIRE(jit.GetVector(2) == Vector{0x4116000041160000, 0x40f0000040f00000});
+    REQUIRE(jit.GetVector(3) == Vector{0x40f0000040f00000, 0x40b4000040b40000});
+}
+
+TEST_CASE("A64: FMUL.4S(lane)", "[a64]") {
+    A64TestEnv env;
+    A64::Jit jit{A64::UserConfig{&env}};
+
+    env.code_mem.emplace_back(0x4f8f91c0);  // FMUL.4S V0, V14, V15[0]
+    env.code_mem.emplace_back(0x4faf91c1);  // FMUL.4S V1, V14, V15[1]
+    env.code_mem.emplace_back(0x4f8f99c2);  // FMUL.4S V2, V14, V15[2]
+    env.code_mem.emplace_back(0x4faf99c3);  // FMUL.4S V3, V14, V15[3]
+    env.code_mem.emplace_back(0x14000000);  // B .
+
+    jit.SetPC(0);
+    jit.SetVector(14, {0x3ff00000'3ff00000, 0x3ff00000'3ff00000});
+    jit.SetVector(15, {0x3ff00000'40000000, 0x40400000'40800000});
+
+    env.ticks_left = 5;
+    jit.Run();
+
+    REQUIRE(jit.GetVector(0) == Vector{0x4070000040700000, 0x4070000040700000});
+    REQUIRE(jit.GetVector(1) == Vector{0x4061000040610000, 0x4061000040610000});
+    REQUIRE(jit.GetVector(2) == Vector{0x40f0000040f00000, 0x40f0000040f00000});
+    REQUIRE(jit.GetVector(3) == Vector{0x40b4000040b40000, 0x40b4000040b40000});
 }
 
 TEST_CASE("A64: FMLA.4S (denormal)", "[a64]") {

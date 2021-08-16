@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <vector>
 
-#include <xbyak.h>
+#include <xbyak/xbyak.h>
 
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/common/common_types.h"

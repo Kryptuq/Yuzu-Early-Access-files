@@ -6,7 +6,7 @@
 
 #include <array>
 #include <bitset>
-#include <xbyak.h>
+#include <xbyak/xbyak.h>
 #include "common/bit_field.h"
 #include "common/common_types.h"
 #include "common/x64/xbyak_abi.h"

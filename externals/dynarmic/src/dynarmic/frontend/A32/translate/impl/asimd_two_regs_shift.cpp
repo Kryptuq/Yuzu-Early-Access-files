@@ -177,7 +177,7 @@ bool TranslatorVisitor::asimd_VSRI(bool D, size_t imm6, size_t Vd, bool L, bool 
 
     const auto shifted = ir.VectorLogicalShiftRight(esize, reg_m, static_cast<u8>(shift_amount));
     const auto mask_vec = ir.VectorBroadcast(esize, I(esize, mask));
-    const auto result = ir.VectorOr(ir.VectorAnd(reg_d, ir.VectorNot(mask_vec)), shifted);
+    const auto result = ir.VectorOr(ir.VectorAndNot(reg_d, mask_vec), shifted);
 
     ir.SetVector(d, result);
     return true;
@@ -203,7 +203,7 @@ bool TranslatorVisitor::asimd_VSLI(bool D, size_t imm6, size_t Vd, bool L, bool 
 
     const auto shifted = ir.VectorLogicalShiftLeft(esize, reg_m, static_cast<u8>(shift_amount));
     const auto mask_vec = ir.VectorBroadcast(esize, I(esize, mask));
-    const auto result = ir.VectorOr(ir.VectorAnd(reg_d, ir.VectorNot(mask_vec)), shifted);
+    const auto result = ir.VectorOr(ir.VectorAndNot(reg_d, mask_vec), shifted);
 
     ir.SetVector(d, result);
     return true;

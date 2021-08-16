@@ -1288,12 +1288,16 @@ static void EmitRecipEstimate(BlockOfCode& code, EmitContext& ctx, IR::Inst* ins
             const Xbyak::Xmm operand = ctx.reg_alloc.UseXmm(args[0]);
             const Xbyak::Xmm result = ctx.reg_alloc.ScratchXmm();
 
-            if constexpr (fsize == 32) {
-                code.rcpps(result, operand);
+            if (code.HasHostFeature(HostFeature::AVX512_OrthoFloat)) {
+                FCODE(vrcp14p)(result, operand);
             } else {
-                code.cvtpd2ps(result, operand);
-                code.rcpps(result, result);
-                code.cvtps2pd(result, result);
+                if constexpr (fsize == 32) {
+                    code.rcpps(result, operand);
+                } else {
+                    code.cvtpd2ps(result, operand);
+                    code.rcpps(result, result);
+                    code.cvtps2pd(result, result);
+                }
             }
 
             ctx.reg_alloc.DefineValue(inst, result);
@@ -1502,12 +1506,16 @@ static void EmitRSqrtEstimate(BlockOfCode& code, EmitContext& ctx, IR::Inst* ins
             const Xbyak::Xmm operand = ctx.reg_alloc.UseXmm(args[0]);
             const Xbyak::Xmm result = ctx.reg_alloc.ScratchXmm();
 
-            if constexpr (fsize == 32) {
-                code.rsqrtps(result, operand);
+            if (code.HasHostFeature(HostFeature::AVX512_OrthoFloat)) {
+                FCODE(vrsqrt14p)(result, operand);
             } else {
-                code.cvtpd2ps(result, operand);
-                code.rsqrtps(result, result);
-                code.cvtps2pd(result, result);
+                if constexpr (fsize == 32) {
+                    code.rsqrtps(result, operand);
+                } else {
+                    code.cvtpd2ps(result, operand);
+                    code.rsqrtps(result, result);
+                    code.cvtps2pd(result, result);
+                }
             }
 
             ctx.reg_alloc.DefineValue(inst, result);
@@ -1707,8 +1715,6 @@ void EmitFPVectorToFixed(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
     const auto rounding = static_cast<FP::RoundingMode>(inst->GetArg(2).GetU8());
     [[maybe_unused]] const bool fpcr_controlled = inst->GetArg(3).GetU1();
 
-    // TODO: AVX512 implementation
-
     if constexpr (fsize != 16) {
         if (code.HasHostFeature(HostFeature::SSE41) && rounding != FP::RoundingMode::ToNearest_TieAwayFromZero) {
             auto args = ctx.reg_alloc.GetArgumentInfo(inst);
@@ -1737,17 +1743,21 @@ void EmitFPVectorToFixed(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
                     if constexpr (fsize == 32) {
                         code.cvttps2dq(src, src);
                     } else {
-                        const Xbyak::Reg64 hi = ctx.reg_alloc.ScratchGpr();
-                        const Xbyak::Reg64 lo = ctx.reg_alloc.ScratchGpr();
+                        if (code.HasHostFeature(HostFeature::AVX512_OrthoFloat)) {
+                            code.vcvttpd2qq(src, src);
+                        } else {
+                            const Xbyak::Reg64 hi = ctx.reg_alloc.ScratchGpr();
+                            const Xbyak::Reg64 lo = ctx.reg_alloc.ScratchGpr();
 
-                        code.cvttsd2si(lo, src);
-                        code.punpckhqdq(src, src);
-                        code.cvttsd2si(hi, src);
-                        code.movq(src, lo);
-                        code.pinsrq(src, hi, 1);
+                            code.cvttsd2si(lo, src);
+                            code.punpckhqdq(src, src);
+                            code.cvttsd2si(hi, src);
+                            code.movq(src, lo);
+                            code.pinsrq(src, hi, 1);
 
-                        ctx.reg_alloc.Release(hi);
-                        ctx.reg_alloc.Release(lo);
+                            ctx.reg_alloc.Release(hi);
+                            ctx.reg_alloc.Release(lo);
+                        }
                     }
                 };
 
@@ -1765,29 +1775,43 @@ void EmitFPVectorToFixed(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
                 [[maybe_unused]] constexpr u64 float_upper_limit_unsigned = fsize == 32 ? 0x4f800000 : 0x43f0000000000000;
 
                 if constexpr (unsigned_) {
-                    // Zero is minimum
-                    code.xorps(xmm0, xmm0);
-                    FCODE(cmplep)(xmm0, src);
-                    FCODE(andp)(src, xmm0);
+                    if (code.HasHostFeature(HostFeature::AVX512_OrthoFloat)) {
+                        // Mask positive values
+                        code.xorps(xmm0, xmm0);
+                        FCODE(vcmpp)(k1, src, xmm0, Cmp::GreaterEqual_OQ);
 
-                    // Will we exceed unsigned range?
-                    const Xbyak::Xmm exceed_unsigned = ctx.reg_alloc.ScratchXmm();
-                    code.movaps(exceed_unsigned, GetVectorOf<fsize, float_upper_limit_unsigned>(code));
-                    FCODE(cmplep)(exceed_unsigned, src);
+                        // Convert positive values to unsigned integers, write 0 anywhere else
+                        // vcvttp*2u*q already saturates out-of-range values to (0xFFFF...)
+                        if constexpr (fsize == 32) {
+                            code.vcvttps2udq(src | k1 | T_z, src);
+                        } else {
+                            code.vcvttpd2uqq(src | k1 | T_z, src);
+                        }
+                    } else {
+                        // Zero is minimum
+                        code.xorps(xmm0, xmm0);
+                        FCODE(cmplep)(xmm0, src);
+                        FCODE(andp)(src, xmm0);
 
-                    // Will be exceed signed range?
-                    const Xbyak::Xmm tmp = ctx.reg_alloc.ScratchXmm();
-                    code.movaps(tmp, GetVectorOf<fsize, float_upper_limit_signed>(code));
-                    code.movaps(xmm0, tmp);
-                    FCODE(cmplep)(xmm0, src);
-                    FCODE(andp)(tmp, xmm0);
-                    FCODE(subp)(src, tmp);
-                    perform_conversion(src);
-                    ICODE(psll)(xmm0, static_cast<u8>(fsize - 1));
-                    FCODE(orp)(src, xmm0);
+                        // Will we exceed unsigned range?
+                        const Xbyak::Xmm exceed_unsigned = ctx.reg_alloc.ScratchXmm();
+                        code.movaps(exceed_unsigned, GetVectorOf<fsize, float_upper_limit_unsigned>(code));
+                        FCODE(cmplep)(exceed_unsigned, src);
 
-                    // Saturate to max
-                    FCODE(orp)(src, exceed_unsigned);
+                        // Will be exceed signed range?
+                        const Xbyak::Xmm tmp = ctx.reg_alloc.ScratchXmm();
+                        code.movaps(tmp, GetVectorOf<fsize, float_upper_limit_signed>(code));
+                        code.movaps(xmm0, tmp);
+                        FCODE(cmplep)(xmm0, src);
+                        FCODE(andp)(tmp, xmm0);
+                        FCODE(subp)(src, tmp);
+                        perform_conversion(src);
+                        ICODE(psll)(xmm0, static_cast<u8>(fsize - 1));
+                        FCODE(orp)(src, xmm0);
+
+                        // Saturate to max
+                        FCODE(orp)(src, exceed_unsigned);
+                    }
                 } else {
                     constexpr u64 integer_max = static_cast<FPT>(std::numeric_limits<std::conditional_t<unsigned_, FPT, std::make_signed_t<FPT>>>::max());
 

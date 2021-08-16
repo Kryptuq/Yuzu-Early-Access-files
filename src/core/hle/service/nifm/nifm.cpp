@@ -11,6 +11,7 @@
 #include "core/hle/service/nifm/nifm.h"
 #include "core/hle/service/service.h"
 #include "core/network/network.h"
+#include "core/network/network_interface.h"
 
 namespace Service::NIFM {
 
@@ -357,16 +358,10 @@ private:
         static_assert(sizeof(IpConfigInfo) == sizeof(IpAddressSetting) + sizeof(DnsSetting),
                       "IpConfigInfo has incorrect size.");
 
-        auto ipv4 = Network::GetHostIPv4Address();
-        if (!ipv4) {
-            LOG_ERROR(Service_NIFM, "Couldn't get host IPv4 address, defaulting to 0.0.0.0");
-            ipv4.emplace(Network::IPv4Address{0, 0, 0, 0});
-        }
-
-        const IpConfigInfo ip_config_info{
+        IpConfigInfo ip_config_info{
             .ip_address_setting{
                 .is_automatic{true},
-                .current_address{*ipv4},
+                .current_address{0, 0, 0, 0},
                 .subnet_mask{255, 255, 255, 0},
                 .gateway{192, 168, 1, 1},
             },
@@ -376,6 +371,19 @@ private:
                 .secondary_dns{1, 0, 0, 1},
             },
         };
+
+        const auto iface = Network::GetSelectedNetworkInterface();
+        if (iface) {
+            ip_config_info.ip_address_setting =
+                IpAddressSetting{.is_automatic{true},
+                                 .current_address{Network::TranslateIPv4(iface->ip_address)},
+                                 .subnet_mask{Network::TranslateIPv4(iface->subnet_mask)},
+                                 .gateway{Network::TranslateIPv4(iface->gateway)}};
+
+        } else {
+            LOG_ERROR(Service_NIFM,
+                      "Couldn't get host network configuration info, using default values");
+        }
 
         IPC::ResponseBuilder rb{ctx, 2 + (sizeof(IpConfigInfo) + 3) / sizeof(u32)};
         rb.Push(ResultSuccess);

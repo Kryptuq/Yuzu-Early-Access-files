@@ -766,12 +766,16 @@ static void EmitFPRecipEstimate(BlockOfCode& code, EmitContext& ctx, IR::Inst* i
             const Xbyak::Xmm operand = ctx.reg_alloc.UseXmm(args[0]);
             const Xbyak::Xmm result = ctx.reg_alloc.ScratchXmm();
 
-            if constexpr (fsize == 32) {
-                code.rcpss(result, operand);
+            if (code.HasHostFeature(HostFeature::AVX512_OrthoFloat)) {
+                FCODE(vrcp14s)(result, operand, operand);
             } else {
-                code.cvtsd2ss(result, operand);
-                code.rcpss(result, result);
-                code.cvtss2sd(result, result);
+                if constexpr (fsize == 32) {
+                    code.rcpss(result, operand);
+                } else {
+                    code.cvtsd2ss(result, operand);
+                    code.rcpss(result, result);
+                    code.cvtss2sd(result, result);
+                }
             }
 
             ctx.reg_alloc.DefineValue(inst, result);
@@ -984,19 +988,21 @@ static void EmitFPRSqrtEstimate(BlockOfCode& code, EmitContext& ctx, IR::Inst* i
             const Xbyak::Xmm operand = ctx.reg_alloc.UseXmm(args[0]);
             const Xbyak::Xmm result = ctx.reg_alloc.ScratchXmm();
 
-            if constexpr (fsize == 32) {
-                code.rsqrtss(result, operand);
+            if (code.HasHostFeature(HostFeature::AVX512_OrthoFloat)) {
+                FCODE(vrsqrt14s)(result, operand, operand);
             } else {
-                code.cvtsd2ss(result, operand);
-                code.rsqrtss(result, result);
-                code.cvtss2sd(result, result);
+                if constexpr (fsize == 32) {
+                    code.rsqrtss(result, operand);
+                } else {
+                    code.cvtsd2ss(result, operand);
+                    code.rsqrtss(result, result);
+                    code.cvtss2sd(result, result);
+                }
             }
 
             ctx.reg_alloc.DefineValue(inst, result);
             return;
         }
-
-        // TODO: VRSQRT14SS implementation (AVX512F)
 
         auto args = ctx.reg_alloc.GetArgumentInfo(inst);
 

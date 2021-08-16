@@ -629,16 +629,8 @@ static void EmitSetFlag(BlockOfCode& code, A32EmitContext& ctx, IR::Inst* inst, 
     }
 }
 
-void A32EmitX64::EmitA32GetNFlag(A32EmitContext& ctx, IR::Inst* inst) {
-    EmitGetFlag(code, ctx, inst, NZCV::x64_n_flag_bit);
-}
-
 void A32EmitX64::EmitA32SetNFlag(A32EmitContext& ctx, IR::Inst* inst) {
     EmitSetFlag(code, ctx, inst, NZCV::x64_n_flag_bit);
-}
-
-void A32EmitX64::EmitA32GetZFlag(A32EmitContext& ctx, IR::Inst* inst) {
-    EmitGetFlag(code, ctx, inst, NZCV::x64_z_flag_bit);
 }
 
 void A32EmitX64::EmitA32SetZFlag(A32EmitContext& ctx, IR::Inst* inst) {
@@ -651,10 +643,6 @@ void A32EmitX64::EmitA32GetCFlag(A32EmitContext& ctx, IR::Inst* inst) {
 
 void A32EmitX64::EmitA32SetCFlag(A32EmitContext& ctx, IR::Inst* inst) {
     EmitSetFlag(code, ctx, inst, NZCV::x64_c_flag_bit);
-}
-
-void A32EmitX64::EmitA32GetVFlag(A32EmitContext& ctx, IR::Inst* inst) {
-    EmitGetFlag(code, ctx, inst, NZCV::x64_v_flag_bit);
 }
 
 void A32EmitX64::EmitA32SetVFlag(A32EmitContext& ctx, IR::Inst* inst) {

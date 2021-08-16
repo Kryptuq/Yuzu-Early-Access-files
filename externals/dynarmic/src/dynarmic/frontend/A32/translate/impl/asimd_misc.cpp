@@ -80,8 +80,7 @@ bool TranslatorVisitor::asimd_VDUP_scalar(bool D, Imm<4> imm4, size_t Vd, bool Q
     const auto m = ToVector(false, Vm, M);
 
     const auto reg_m = ir.GetVector(m);
-    const auto scalar = ir.VectorGetElement(esize, reg_m, index);
-    const auto result = ir.VectorBroadcast(esize, scalar);
+    const auto result = ir.VectorBroadcastElement(esize, reg_m, index);
 
     ir.SetVector(d, result);
     return true;

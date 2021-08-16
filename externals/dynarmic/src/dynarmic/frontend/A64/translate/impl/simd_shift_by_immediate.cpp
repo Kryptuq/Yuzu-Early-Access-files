@@ -350,7 +350,7 @@ bool TranslatorVisitor::SRI_2(bool Q, Imm<4> immh, Imm<3> immb, Vec Vn, Vec Vd) 
 
     const IR::U128 shifted = ir.VectorLogicalShiftRight(esize, operand1, shift_amount);
     const IR::U128 mask_vec = ir.VectorBroadcast(esize, I(esize, mask));
-    const IR::U128 result = ir.VectorOr(ir.VectorAnd(operand2, ir.VectorNot(mask_vec)), shifted);
+    const IR::U128 result = ir.VectorOr(ir.VectorAndNot(operand2, mask_vec), shifted);
 
     V(datasize, Vd, result);
     return true;
@@ -376,7 +376,7 @@ bool TranslatorVisitor::SLI_2(bool Q, Imm<4> immh, Imm<3> immb, Vec Vn, Vec Vd) 
 
     const IR::U128 shifted = ir.VectorLogicalShiftLeft(esize, operand1, shift_amount);
     const IR::U128 mask_vec = ir.VectorBroadcast(esize, I(esize, mask));
-    const IR::U128 result = ir.VectorOr(ir.VectorAnd(operand2, ir.VectorNot(mask_vec)), shifted);
+    const IR::U128 result = ir.VectorOr(ir.VectorAndNot(operand2, mask_vec), shifted);
 
     V(datasize, Vd, result);
     return true;

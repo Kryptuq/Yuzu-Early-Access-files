@@ -7,8 +7,6 @@
 
 #include <array>
 
-#include <xbyak.h>
-
 #include "dynarmic/backend/x64/nzcv_util.h"
 #include "dynarmic/common/common_types.h"
 #include "dynarmic/frontend/A64/location_descriptor.h"

@@ -5,7 +5,7 @@
 
 #include "dynarmic/backend/x64/hostloc.h"
 
-#include <xbyak.h>
+#include <xbyak/xbyak.h>
 
 #include "dynarmic/backend/x64/abi.h"
 #include "dynarmic/backend/x64/stack_layout.h"

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -18,8 +19,11 @@ namespace Network {
 struct NetworkInterface {
     std::string name;
     struct in_addr ip_address;
+    struct in_addr subnet_mask;
+    struct in_addr gateway;
 };
 
 std::vector<NetworkInterface> GetAvailableNetworkInterfaces();
+std::optional<NetworkInterface> GetSelectedNetworkInterface();
 
 } // namespace Network

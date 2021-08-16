@@ -65,7 +65,7 @@ bool SM3TT2(TranslatorVisitor& v, Vec Vm, Imm<2> imm2, Vec Vn, Vec Vd, SM3TTVari
             return v.ir.Eor(after_low_d, v.ir.Eor(top_d, before_top_d));
         }
         const IR::U32 tmp1 = v.ir.And(top_d, before_top_d);
-        const IR::U32 tmp2 = v.ir.And(v.ir.Not(top_d), after_low_d);
+        const IR::U32 tmp2 = v.ir.AndNot(after_low_d, top_d);
         return v.ir.Or(tmp1, tmp2);
     }();
     const IR::U32 final_tt2 = v.ir.Add(tt2, v.ir.Add(low_d, v.ir.Add(top_n, wj)));

@@ -261,20 +261,23 @@ struct KernelCore::Impl {
         current_process = process;
     }
 
-    /// Creates a new host thread ID, should only be called by GetHostThreadId
-    u32 AllocateHostThreadId(std::optional<std::size_t> core_id) {
-        if (core_id) {
+    static inline thread_local u32 host_thread_id = UINT32_MAX;
+
+    /// Gets the host thread ID for the caller, allocating a new one if this is the first time
+    u32 GetHostThreadId(std::size_t core_id) {
+        if (static_cast<s32>(host_thread_id) < 0) {
             // The first for slots are reserved for CPU core threads
-            ASSERT(*core_id < Core::Hardware::NUM_CPU_CORES);
-            return static_cast<u32>(*core_id);
-        } else {
-            return next_host_thread_id++;
+            ASSERT(core_id < Core::Hardware::NUM_CPU_CORES);
+            host_thread_id = static_cast<u32>(core_id);
         }
+        return host_thread_id;
     }
 
     /// Gets the host thread ID for the caller, allocating a new one if this is the first time
-    u32 GetHostThreadId(std::optional<std::size_t> core_id = std::nullopt) {
-        const thread_local auto host_thread_id{AllocateHostThreadId(core_id)};
+    u32 GetHostThreadId() {
+        if (static_cast<s32>(host_thread_id) < 0) {
+            host_thread_id = next_host_thread_id++;
+        }
         return host_thread_id;
     }
 
