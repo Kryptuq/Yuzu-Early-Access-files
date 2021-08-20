@@ -84,6 +84,8 @@ FileSys::StorageId GetStorageIdForFrontendSlot(
 
 } // Anonymous namespace
 
+/*static*/ System System::s_instance;
+
 FileSys::VirtualFile GetGameFileFromPath(const FileSys::VirtualFilesystem& vfs,
                                          const std::string& path) {
     // To account for split 00+01+etc files.
@@ -422,13 +424,6 @@ struct System::Impl {
 
 System::System() : impl{std::make_unique<Impl>(*this)} {}
 System::~System() = default;
-
-void System::InitializeGlobalInstance() {
-    if (s_instance) {
-        abort();
-    }
-    s_instance = std::unique_ptr<System>(new System);
-}
 
 CpuManager& System::GetCpuManager() {
     return impl->cpu_manager;

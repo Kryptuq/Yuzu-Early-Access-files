@@ -43,8 +43,6 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
     void(slot_image_views.insert(runtime, NullImageParams{}));
     void(slot_samplers.insert(runtime, sampler_descriptor));
 
-    deletion_iterator = slot_images.begin();
-
     if constexpr (HAS_DEVICE_MEMORY_INFO) {
         const auto device_memory = runtime.GetDeviceLocalMemory();
         const u64 possible_expected_memory = (device_memory * 3) / 10;
@@ -64,65 +62,33 @@ template <class P>
 void TextureCache<P>::RunGarbageCollector() {
     const bool high_priority_mode = total_used_memory >= expected_memory;
     const bool aggressive_mode = total_used_memory >= critical_memory;
-    const u64 ticks_to_destroy = high_priority_mode ? 60 : 100;
-    int num_iterations = aggressive_mode ? 256 : (high_priority_mode ? 128 : 64);
-    for (; num_iterations > 0; --num_iterations) {
-        if (deletion_iterator == slot_images.end()) {
-            deletion_iterator = slot_images.begin();
-            if (deletion_iterator == slot_images.end()) {
-                break;
-            }
+    const u64 ticks_to_destroy = aggressive_mode ? 10ULL : high_priority_mode ? 50ULL : 100ULL;
+    size_t num_iterations = aggressive_mode ? 10000 : (high_priority_mode ? 50 : 5);
+    const auto clean_up = [this, &num_iterations, high_priority_mode](ImageId image_id) {
+        if (num_iterations == 0) {
+            return true;
         }
-        auto [image_id, image_tmp] = *deletion_iterator;
-        Image* image = image_tmp; // fix clang error.
-        const bool is_alias = True(image->flags & ImageFlagBits::Alias);
-        const bool is_bad_overlap = True(image->flags & ImageFlagBits::BadOverlap);
-        const bool must_download = image->IsSafeDownload();
-        bool should_care = is_bad_overlap || is_alias || (high_priority_mode && !must_download);
-        const u64 ticks_needed =
-            is_bad_overlap
-                ? ticks_to_destroy >> 4
-                : ((should_care && aggressive_mode) ? ticks_to_destroy >> 1 : ticks_to_destroy);
-        should_care |= aggressive_mode;
-        if (should_care && image->frame_tick + ticks_needed < frame_tick) {
-            if (is_bad_overlap) {
-                const bool overlap_check = std::ranges::all_of(
-                    image->overlapping_images, [&, image](const ImageId& overlap_id) {
-                        auto& overlap = slot_images[overlap_id];
-                        return overlap.frame_tick >= image->frame_tick;
-                    });
-                if (!overlap_check) {
-                    ++deletion_iterator;
-                    continue;
-                }
-            }
-            if (!is_bad_overlap && must_download) {
-                const bool alias_check = std::ranges::none_of(
-                    image->aliased_images, [&, image](const AliasedImage& alias) {
-                        auto& alias_image = slot_images[alias.id];
-                        return (alias_image.frame_tick < image->frame_tick) ||
-                               (alias_image.modification_tick < image->modification_tick);
-                    });
-
-                if (alias_check) {
-                    auto map = runtime.DownloadStagingBuffer(image->unswizzled_size_bytes);
-                    const auto copies = FullDownloadCopies(image->info);
-                    image->DownloadMemory(map, copies);
-                    runtime.Finish();
-                    SwizzleImage(gpu_memory, image->gpu_addr, image->info, copies, map.mapped_span);
-                }
-            }
-            if (True(image->flags & ImageFlagBits::Tracked)) {
-                UntrackImage(*image, image_id);
-            }
-            UnregisterImage(image_id);
-            DeleteImage(image_id);
-            if (is_bad_overlap) {
-                ++num_iterations;
-            }
+        --num_iterations;
+        auto& image = slot_images[image_id];
+        const bool must_download = image.IsSafeDownload();
+        if (!high_priority_mode && must_download) {
+            return false;
         }
-        ++deletion_iterator;
-    }
+        if (must_download) {
+            auto map = runtime.DownloadStagingBuffer(image.unswizzled_size_bytes);
+            const auto copies = FullDownloadCopies(image.info);
+            image.DownloadMemory(map, copies);
+            runtime.Finish();
+            SwizzleImage(gpu_memory, image.gpu_addr, image.info, copies, map.mapped_span);
+        }
+        if (True(image.flags & ImageFlagBits::Tracked)) {
+            UntrackImage(image, image_id);
+        }
+        UnregisterImage(image_id);
+        DeleteImage(image_id);
+        return false;
+    };
+    lru_cache.ForEachItemBelow(frame_tick - ticks_to_destroy, clean_up);
 }
 
 template <class P>
@@ -1078,6 +1044,8 @@ void TextureCache<P>::RegisterImage(ImageId image_id) {
         tentative_size = EstimatedDecompressedSize(tentative_size, image.info.format);
     }
     total_used_memory += Common::AlignUp(tentative_size, 1024);
+    image.lru_index = lru_cache.Insert(image_id, frame_tick);
+
     ForEachGPUPage(image.gpu_addr, image.guest_size_bytes,
                    [this, image_id](u64 page) { gpu_page_table[page].push_back(image_id); });
     if (False(image.flags & ImageFlagBits::Sparse)) {
@@ -1115,6 +1083,7 @@ void TextureCache<P>::UnregisterImage(ImageId image_id) {
         tentative_size = EstimatedDecompressedSize(tentative_size, image.info.format);
     }
     total_used_memory -= Common::AlignUp(tentative_size, 1024);
+    lru_cache.Free(image.lru_index);
     const auto& clear_page_table =
         [this, image_id](
             u64 page,
@@ -1384,7 +1353,7 @@ void TextureCache<P>::PrepareImage(ImageId image_id, bool is_modification, bool 
     if (is_modification) {
         MarkModification(image);
     }
-    image.frame_tick = frame_tick;
+    lru_cache.Touch(image.lru_index, frame_tick);
 }
 
 template <class P>

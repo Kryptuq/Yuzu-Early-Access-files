@@ -14,6 +14,7 @@
 
 #include "common/common_types.h"
 #include "common/literals.h"
+#include "common/lru_cache.h"
 #include "video_core/compatible_formats.h"
 #include "video_core/delayed_destruction_ring.h"
 #include "video_core/engines/fermi_2d.h"
@@ -370,6 +371,12 @@ private:
     std::vector<ImageId> uncommitted_downloads;
     std::queue<std::vector<ImageId>> committed_downloads;
 
+    struct LRUItemParams {
+        using ObjectType = ImageId;
+        using TickType = u64;
+    };
+    Common::LeastRecentlyUsedCache<LRUItemParams> lru_cache;
+
     static constexpr size_t TICKS_TO_DESTROY = 6;
     DelayedDestructionRing<Image, TICKS_TO_DESTROY> sentenced_images;
     DelayedDestructionRing<ImageView, TICKS_TO_DESTROY> sentenced_image_view;
@@ -379,7 +386,6 @@ private:
 
     u64 modification_tick = 0;
     u64 frame_tick = 0;
-    typename SlotVector<Image>::Iterator deletion_iterator;
 };
 
 } // namespace VideoCommon

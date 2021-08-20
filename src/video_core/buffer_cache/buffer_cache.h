@@ -20,6 +20,7 @@
 #include "common/common_types.h"
 #include "common/div_ceil.h"
 #include "common/literals.h"
+#include "common/lru_cache.h"
 #include "common/microprofile.h"
 #include "common/scope_exit.h"
 #include "common/settings.h"
@@ -77,7 +78,7 @@ class BufferCache {
 
     static constexpr BufferId NULL_BUFFER_ID{0};
 
-    static constexpr u64 EXPECTED_MEMORY = 512_MiB;
+    static constexpr u64 EXPECTED_MEMORY = 256_MiB;
     static constexpr u64 CRITICAL_MEMORY = 1_GiB;
 
     using Maxwell = Tegra::Engines::Maxwell3D::Regs;
@@ -330,7 +331,7 @@ private:
     template <bool insert>
     void ChangeRegister(BufferId buffer_id);
 
-    void TouchBuffer(Buffer& buffer) const noexcept;
+    void TouchBuffer(Buffer& buffer, BufferId buffer_id) noexcept;
 
     bool SynchronizeBuffer(Buffer& buffer, VAddr cpu_addr, u32 size);
 
@@ -428,7 +429,11 @@ private:
     size_t immediate_buffer_capacity = 0;
     std::unique_ptr<u8[]> immediate_buffer_alloc;
 
-    typename SlotVector<Buffer>::Iterator deletion_iterator;
+    struct LRUItemParams {
+        using ObjectType = BufferId;
+        using TickType = u64;
+    };
+    Common::LeastRecentlyUsedCache<LRUItemParams> lru_cache;
     u64 frame_tick = 0;
     u64 total_used_memory = 0;
 
@@ -445,7 +450,6 @@ BufferCache<P>::BufferCache(VideoCore::RasterizerInterface& rasterizer_,
       kepler_compute{kepler_compute_}, gpu_memory{gpu_memory_}, cpu_memory{cpu_memory_} {
     // Ensure the first slot is used for the null buffer
     void(slot_buffers.insert(runtime, NullBufferParams{}));
-    deletion_iterator = slot_buffers.end();
     common_ranges.clear();
 }
 
@@ -454,20 +458,17 @@ void BufferCache<P>::RunGarbageCollector() {
     const bool aggressive_gc = total_used_memory >= CRITICAL_MEMORY;
     const u64 ticks_to_destroy = aggressive_gc ? 60 : 120;
     int num_iterations = aggressive_gc ? 64 : 32;
-    for (; num_iterations > 0; --num_iterations) {
-        if (deletion_iterator == slot_buffers.end()) {
-            deletion_iterator = slot_buffers.begin();
+    const auto clean_up = [this, &num_iterations](BufferId buffer_id) {
+        if (num_iterations == 0) {
+            return true;
         }
-        ++deletion_iterator;
-        if (deletion_iterator == slot_buffers.end()) {
-            break;
-        }
-        const auto [buffer_id, buffer] = *deletion_iterator;
-        if (buffer->FrameTick() + ticks_to_destroy < frame_tick) {
-            DownloadBufferMemory(*buffer);
-            DeleteBuffer(buffer_id);
-        }
-    }
+        --num_iterations;
+        auto& buffer = slot_buffers[buffer_id];
+        DownloadBufferMemory(buffer);
+        DeleteBuffer(buffer_id);
+        return false;
+    };
+    lru_cache.ForEachItemBelow(frame_tick - ticks_to_destroy, clean_up);
 }
 
 template <class P>
@@ -954,7 +955,7 @@ bool BufferCache<P>::IsRegionCpuModified(VAddr addr, size_t size) {
 template <class P>
 void BufferCache<P>::BindHostIndexBuffer() {
     Buffer& buffer = slot_buffers[index_buffer.buffer_id];
-    TouchBuffer(buffer);
+    TouchBuffer(buffer, index_buffer.buffer_id);
     const u32 offset = buffer.Offset(index_buffer.cpu_addr);
     const u32 size = index_buffer.size;
     SynchronizeBuffer(buffer, index_buffer.cpu_addr, size);
@@ -975,7 +976,7 @@ void BufferCache<P>::BindHostVertexBuffers() {
     for (u32 index = 0; index < NUM_VERTEX_BUFFERS; ++index) {
         const Binding& binding = vertex_buffers[index];
         Buffer& buffer = slot_buffers[binding.buffer_id];
-        TouchBuffer(buffer);
+        TouchBuffer(buffer, binding.buffer_id);
         SynchronizeBuffer(buffer, binding.cpu_addr, binding.size);
         if (!flags[Dirty::VertexBuffer0 + index]) {
             continue;
@@ -1011,7 +1012,7 @@ void BufferCache<P>::BindHostGraphicsUniformBuffer(size_t stage, u32 index, u32 
     const VAddr cpu_addr = binding.cpu_addr;
     const u32 size = std::min(binding.size, (*uniform_buffer_sizes)[stage][index]);
     Buffer& buffer = slot_buffers[binding.buffer_id];
-    TouchBuffer(buffer);
+    TouchBuffer(buffer, binding.buffer_id);
     const bool use_fast_buffer = binding.buffer_id != NULL_BUFFER_ID &&
                                  size <= uniform_buffer_skip_cache_size &&
                                  !buffer.IsRegionGpuModified(cpu_addr, size);
@@ -1083,7 +1084,7 @@ void BufferCache<P>::BindHostGraphicsStorageBuffers(size_t stage) {
     ForEachEnabledBit(enabled_storage_buffers[stage], [&](u32 index) {
         const Binding& binding = storage_buffers[stage][index];
         Buffer& buffer = slot_buffers[binding.buffer_id];
-        TouchBuffer(buffer);
+        TouchBuffer(buffer, binding.buffer_id);
         const u32 size = binding.size;
         SynchronizeBuffer(buffer, binding.cpu_addr, size);
 
@@ -1128,7 +1129,7 @@ void BufferCache<P>::BindHostTransformFeedbackBuffers() {
     for (u32 index = 0; index < NUM_TRANSFORM_FEEDBACK_BUFFERS; ++index) {
         const Binding& binding = transform_feedback_buffers[index];
         Buffer& buffer = slot_buffers[binding.buffer_id];
-        TouchBuffer(buffer);
+        TouchBuffer(buffer, binding.buffer_id);
         const u32 size = binding.size;
         SynchronizeBuffer(buffer, binding.cpu_addr, size);
 
@@ -1148,7 +1149,7 @@ void BufferCache<P>::BindHostComputeUniformBuffers() {
     ForEachEnabledBit(enabled_compute_uniform_buffer_mask, [&](u32 index) {
         const Binding& binding = compute_uniform_buffers[index];
         Buffer& buffer = slot_buffers[binding.buffer_id];
-        TouchBuffer(buffer);
+        TouchBuffer(buffer, binding.buffer_id);
         const u32 size = std::min(binding.size, (*compute_uniform_buffer_sizes)[index]);
         SynchronizeBuffer(buffer, binding.cpu_addr, size);
 
@@ -1168,7 +1169,7 @@ void BufferCache<P>::BindHostComputeStorageBuffers() {
     ForEachEnabledBit(enabled_compute_storage_buffers, [&](u32 index) {
         const Binding& binding = compute_storage_buffers[index];
         Buffer& buffer = slot_buffers[binding.buffer_id];
-        TouchBuffer(buffer);
+        TouchBuffer(buffer, binding.buffer_id);
         const u32 size = binding.size;
         SynchronizeBuffer(buffer, binding.cpu_addr, size);
 
@@ -1513,11 +1514,11 @@ BufferId BufferCache<P>::CreateBuffer(VAddr cpu_addr, u32 wanted_size) {
     const OverlapResult overlap = ResolveOverlaps(cpu_addr, wanted_size);
     const u32 size = static_cast<u32>(overlap.end - overlap.begin);
     const BufferId new_buffer_id = slot_buffers.insert(runtime, rasterizer, overlap.begin, size);
-    TouchBuffer(slot_buffers[new_buffer_id]);
     for (const BufferId overlap_id : overlap.ids) {
         JoinOverlap(new_buffer_id, overlap_id, !overlap.has_stream_leap);
     }
     Register(new_buffer_id);
+    TouchBuffer(slot_buffers[new_buffer_id], new_buffer_id);
     return new_buffer_id;
 }
 
@@ -1534,12 +1535,14 @@ void BufferCache<P>::Unregister(BufferId buffer_id) {
 template <class P>
 template <bool insert>
 void BufferCache<P>::ChangeRegister(BufferId buffer_id) {
-    const Buffer& buffer = slot_buffers[buffer_id];
+    Buffer& buffer = slot_buffers[buffer_id];
     const auto size = buffer.SizeBytes();
     if (insert) {
         total_used_memory += Common::AlignUp(size, 1024);
+        buffer.lru_id = lru_cache.Insert(buffer_id, frame_tick);
     } else {
         total_used_memory -= Common::AlignUp(size, 1024);
+        lru_cache.Free(buffer.lru_id);
     }
     const VAddr cpu_addr_begin = buffer.CpuAddr();
     const VAddr cpu_addr_end = cpu_addr_begin + size;
@@ -1555,8 +1558,10 @@ void BufferCache<P>::ChangeRegister(BufferId buffer_id) {
 }
 
 template <class P>
-void BufferCache<P>::TouchBuffer(Buffer& buffer) const noexcept {
-    buffer.SetFrameTick(frame_tick);
+void BufferCache<P>::TouchBuffer(Buffer& buffer, BufferId buffer_id) noexcept {
+    if (buffer_id != NULL_BUFFER_ID) {
+        lru_cache.Touch(buffer.lru_id, frame_tick);
+    }
 }
 
 template <class P>

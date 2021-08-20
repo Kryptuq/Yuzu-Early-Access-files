@@ -463,6 +463,7 @@ std::vector<std::pair<GPUVAddr, std::size_t>> MemoryManager::GetSubmappedRange(
         ++page_index;
         page_offset = 0;
         remaining_size -= num_bytes;
+        old_page_addr = page_addr;
     }
     split();
     return result;

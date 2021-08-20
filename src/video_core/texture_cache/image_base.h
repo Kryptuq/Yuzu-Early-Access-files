@@ -80,7 +80,7 @@ struct ImageBase {
     VAddr cpu_addr_end = 0;
 
     u64 modification_tick = 0;
-    u64 frame_tick = 0;
+    size_t lru_index = ~0;
 
     std::array<u32, MAX_MIP_LEVELS> mip_level_offsets{};
 

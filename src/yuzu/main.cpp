@@ -177,6 +177,21 @@ void GMainWindow::ShowTelemetryCallout() {
 
 const int GMainWindow::max_recent_files_item;
 
+static void InitializeLogging() {
+    using namespace Common;
+
+    Log::Filter log_filter;
+    log_filter.ParseFilterString(Settings::values.log_filter.GetValue());
+    Log::SetGlobalFilter(log_filter);
+
+    const auto log_dir = FS::GetYuzuPath(FS::YuzuPath::LogDir);
+    void(FS::CreateDir(log_dir));
+    Log::AddBackend(std::make_unique<Log::FileBackend>(log_dir / LOG_FILE));
+#ifdef _WIN32
+    Log::AddBackend(std::make_unique<Log::DebuggerBackend>());
+#endif
+}
+
 static void RemoveCachedContents() {
     const auto cache_dir = Common::FS::GetYuzuPath(Common::FS::YuzuPath::CacheDir);
     const auto offline_fonts = cache_dir / "fonts";
@@ -194,6 +209,8 @@ GMainWindow::GMainWindow()
     : input_subsystem{std::make_shared<InputCommon::InputSubsystem>()},
       config{std::make_unique<Config>()}, vfs{std::make_shared<FileSys::RealVfsFilesystem>()},
       provider{std::make_unique<FileSys::ManualContentProvider>()} {
+    InitializeLogging();
+
     LoadTranslation();
 
     setAcceptDrops(true);
@@ -3446,7 +3463,6 @@ void GMainWindow::SetDiscordEnabled([[maybe_unused]] bool state) {
 #endif
 
 int main(int argc, char* argv[]) {
-    Common::Log::Initialize();
     Common::DetachedTasks detached_tasks;
     MicroProfileOnThreadCreate("Frontend");
     SCOPE_EXIT({ MicroProfileShutdown(); });
@@ -3486,7 +3502,6 @@ int main(int argc, char* argv[]) {
     // generating shaders
     setlocale(LC_ALL, "C");
 
-    Core::System::InitializeGlobalInstance();
     GMainWindow main_window;
     // After settings have been loaded by GMainWindow, apply the filter
     main_window.show();

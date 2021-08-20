@@ -121,13 +121,8 @@ public:
      * @returns Reference to the instance of the System singleton class.
      */
     [[deprecated("Use of the global system instance is deprecated")]] static System& GetInstance() {
-        if (!s_instance) {
-            abort();
-        }
-        return *s_instance;
+        return s_instance;
     }
-
-    static void InitializeGlobalInstance();
 
     /// Enumeration representing the return values of the System Initialize and Load process.
     enum class ResultStatus : u32 {
@@ -398,7 +393,7 @@ private:
     struct Impl;
     std::unique_ptr<Impl> impl;
 
-    inline static std::unique_ptr<System> s_instance{};
+    static System s_instance;
 };
 
 } // namespace Core
