@@ -16,6 +16,30 @@
 
 namespace Service::AM::Applets {
 
+struct ErrorCode {
+    u32 error_category{};
+    u32 error_number{};
+
+    static constexpr ErrorCode FromU64(u64 error_code) {
+        return {
+            .error_category{static_cast<u32>(error_code >> 32)},
+            .error_number{static_cast<u32>(error_code & 0xFFFFFFFF)},
+        };
+    }
+
+    static constexpr ErrorCode FromResultCode(ResultCode result) {
+        return {
+            .error_category{2000 + static_cast<u32>(result.module.Value())},
+            .error_number{result.description.Value()},
+        };
+    }
+
+    constexpr ResultCode ToResultCode() const {
+        return ResultCode{static_cast<ErrorModule>(error_category - 2000), error_number};
+    }
+};
+static_assert(sizeof(ErrorCode) == 0x8, "ErrorCode has incorrect size.");
+
 #pragma pack(push, 4)
 struct ShowError {
     u8 mode;
@@ -76,12 +100,7 @@ void CopyArgumentData(const std::vector<u8>& data, T& variable) {
 }
 
 ResultCode Decode64BitError(u64 error) {
-    const auto description = (error >> 32) & 0x1FFF;
-    auto module = error & 0x3FF;
-    if (module >= 2000)
-        module -= 2000;
-    module &= 0x1FF;
-    return {static_cast<ErrorModule>(module), static_cast<u32>(description)};
+    return ErrorCode::FromU64(error).ToResultCode();
 }
 
 } // Anonymous namespace

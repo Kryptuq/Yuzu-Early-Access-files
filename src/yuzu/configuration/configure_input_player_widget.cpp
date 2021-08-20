@@ -664,18 +664,18 @@ void PlayerControlPreview::DrawHandheldController(QPainter& p, const QPointF cen
     // Face buttons
     p.setPen(colors.outline);
     button_color = colors.button;
-    DrawCircleButton(p, face_center + QPoint(face_distance, 0), button_values[A], face_radius);
-    DrawCircleButton(p, face_center + QPoint(0, face_distance), button_values[B], face_radius);
-    DrawCircleButton(p, face_center + QPoint(0, -face_distance), button_values[X], face_radius);
-    DrawCircleButton(p, face_center + QPoint(-face_distance, 0), button_values[Y], face_radius);
+    DrawCircleButton(p, face_center + QPointF(face_distance, 0), button_values[A], face_radius);
+    DrawCircleButton(p, face_center + QPointF(0, face_distance), button_values[B], face_radius);
+    DrawCircleButton(p, face_center + QPointF(0, -face_distance), button_values[X], face_radius);
+    DrawCircleButton(p, face_center + QPointF(-face_distance, 0), button_values[Y], face_radius);
 
     // Face buttons text
     p.setPen(colors.transparent);
     p.setBrush(colors.font);
-    DrawSymbol(p, face_center + QPoint(face_distance, 0), Symbol::A, text_size);
-    DrawSymbol(p, face_center + QPoint(0, face_distance), Symbol::B, text_size);
-    DrawSymbol(p, face_center + QPoint(0, -face_distance), Symbol::X, text_size);
-    DrawSymbol(p, face_center + QPoint(-face_distance, 1), Symbol::Y, text_size);
+    DrawSymbol(p, face_center + QPointF(face_distance, 0), Symbol::A, text_size);
+    DrawSymbol(p, face_center + QPointF(0, face_distance), Symbol::B, text_size);
+    DrawSymbol(p, face_center + QPointF(0, -face_distance), Symbol::X, text_size);
+    DrawSymbol(p, face_center + QPointF(-face_distance, 1), Symbol::Y, text_size);
 
     // D-pad constants
     const QPointF dpad_center = center + QPoint(-171, 8);
@@ -686,18 +686,20 @@ void PlayerControlPreview::DrawHandheldController(QPainter& p, const QPointF cen
     // D-pad buttons
     p.setPen(colors.outline);
     button_color = colors.button;
-    DrawCircleButton(p, dpad_center + QPoint(dpad_distance, 0), button_values[DRight], dpad_radius);
-    DrawCircleButton(p, dpad_center + QPoint(0, dpad_distance), button_values[DDown], dpad_radius);
-    DrawCircleButton(p, dpad_center + QPoint(0, -dpad_distance), button_values[DUp], dpad_radius);
-    DrawCircleButton(p, dpad_center + QPoint(-dpad_distance, 0), button_values[DLeft], dpad_radius);
+    DrawCircleButton(p, dpad_center + QPointF(dpad_distance, 0), button_values[DRight],
+                     dpad_radius);
+    DrawCircleButton(p, dpad_center + QPointF(0, dpad_distance), button_values[DDown], dpad_radius);
+    DrawCircleButton(p, dpad_center + QPointF(0, -dpad_distance), button_values[DUp], dpad_radius);
+    DrawCircleButton(p, dpad_center + QPointF(-dpad_distance, 0), button_values[DLeft],
+                     dpad_radius);
 
     // D-pad arrows
     p.setPen(colors.font2);
     p.setBrush(colors.font2);
-    DrawArrow(p, dpad_center + QPoint(dpad_distance, 0), Direction::Right, dpad_arrow_size);
-    DrawArrow(p, dpad_center + QPoint(0, dpad_distance), Direction::Down, dpad_arrow_size);
-    DrawArrow(p, dpad_center + QPoint(0, -dpad_distance), Direction::Up, dpad_arrow_size);
-    DrawArrow(p, dpad_center + QPoint(-dpad_distance, 0), Direction::Left, dpad_arrow_size);
+    DrawArrow(p, dpad_center + QPointF(dpad_distance, 0), Direction::Right, dpad_arrow_size);
+    DrawArrow(p, dpad_center + QPointF(0, dpad_distance), Direction::Down, dpad_arrow_size);
+    DrawArrow(p, dpad_center + QPointF(0, -dpad_distance), Direction::Up, dpad_arrow_size);
+    DrawArrow(p, dpad_center + QPointF(-dpad_distance, 0), Direction::Left, dpad_arrow_size);
 
     // ZL and ZR buttons
     p.setPen(colors.outline);
