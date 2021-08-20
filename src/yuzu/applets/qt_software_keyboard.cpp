@@ -438,7 +438,7 @@ void QtSoftwareKeyboardDialog::ShowInlineKeyboard(
     initialize_parameters.key_disable_flags = appear_parameters.key_disable_flags;
     initialize_parameters.enable_backspace_button = appear_parameters.enable_backspace_button;
     initialize_parameters.enable_return_button = appear_parameters.enable_return_button;
-    initialize_parameters.disable_cancel_button = initialize_parameters.disable_cancel_button;
+    initialize_parameters.disable_cancel_button = appear_parameters.disable_cancel_button;
 
     SetKeyboardType();
     SetControllerImage();

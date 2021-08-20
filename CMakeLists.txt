@@ -629,7 +629,6 @@ if (YUZU_USE_BUNDLED_FFMPEG)
                 --enable-cuvid
                 --enable-ffnvcodec
                 --enable-nvdec
-                --enable-cuda-llvm
                 --enable-hwaccel=h264_nvdec
                 --enable-hwaccel=vp9_nvdec
                 --extra-cflags=-I${CUDA_INCLUDE_DIRS}

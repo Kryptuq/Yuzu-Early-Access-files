@@ -1159,7 +1159,7 @@ private:
 
         const auto layer_id = nv_flinger.CreateLayer(display_id);
         if (!layer_id) {
-            LOG_ERROR(Service_VI, "Layer not found! layer_id={}", *layer_id);
+            LOG_ERROR(Service_VI, "Layer not found! display_id={}", display_id);
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ERR_NOT_FOUND);
             return;

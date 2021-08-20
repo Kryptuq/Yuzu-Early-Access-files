@@ -1078,8 +1078,8 @@ static ResultCode GetThreadContext(Core::System& system, VAddr out_context, Hand
             for (auto i = 0; i < static_cast<s32>(Core::Hardware::NUM_CPU_CORES); ++i) {
                 if (thread.GetPointerUnsafe() == kernel.Scheduler(i).GetCurrentThread()) {
                     current = true;
+                    break;
                 }
-                break;
             }
 
             // If the thread is current, retry until it isn't.
