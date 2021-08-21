@@ -74,31 +74,14 @@ static void PrintVersion() {
     std::cout << "yuzu " << Common::g_scm_branch << " " << Common::g_scm_desc << std::endl;
 }
 
-static void InitializeLogging() {
-    using namespace Common;
-
-    Log::Filter log_filter(Log::Level::Debug);
-    log_filter.ParseFilterString(static_cast<std::string>(Settings::values.log_filter));
-    Log::SetGlobalFilter(log_filter);
-
-    Log::AddBackend(std::make_unique<Log::ColorConsoleBackend>());
-
-    const auto& log_dir = FS::GetYuzuPath(FS::YuzuPath::LogDir);
-    void(FS::CreateDir(log_dir));
-    Log::AddBackend(std::make_unique<Log::FileBackend>(log_dir / LOG_FILE));
-#ifdef _WIN32
-    Log::AddBackend(std::make_unique<Log::DebuggerBackend>());
-#endif
-}
-
 /// Application entry point
 int main(int argc, char** argv) {
+    Common::Log::Initialize();
+    Common::Log::SetColorConsoleBackendEnabled(true);
     Common::DetachedTasks detached_tasks;
     Config config;
 
     int option_index = 0;
-
-    InitializeLogging();
 #ifdef _WIN32
     int argc_w;
     auto argv_w = CommandLineToArgvW(GetCommandLineW(), &argc_w);
@@ -163,6 +146,7 @@ int main(int argc, char** argv) {
         return -1;
     }
 
+    Core::System::InitializeGlobalInstance();
     auto& system{Core::System::GetInstance()};
     InputCommon::InputSubsystem input_subsystem;
 

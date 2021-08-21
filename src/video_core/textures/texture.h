@@ -159,7 +159,7 @@ static_assert(sizeof(TextureHandle) == 4, "TextureHandle has wrong size");
         return {raw, raw};
     } else {
         const Tegra::Texture::TextureHandle handle{raw};
-        return {handle.tic_id, via_header_index ? handle.tic_id : handle.tsc_id};
+        return {handle.tic_id, handle.tsc_id};
     }
 }
 

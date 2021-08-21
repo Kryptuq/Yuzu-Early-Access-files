@@ -178,6 +178,7 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
 
     Optimization::ConstantPropagationPass(program);
     Optimization::DeadCodeEliminationPass(program);
+    Optimization::GetAttributeReorderPass(program);
     if (Settings::values.renderer_debug) {
         Optimization::VerificationPass(program);
     }

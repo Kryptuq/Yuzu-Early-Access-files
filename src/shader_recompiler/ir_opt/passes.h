@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include <span>
-
 #include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/program.h"
@@ -15,6 +13,7 @@ namespace Shader::Optimization {
 void CollectShaderInfoPass(Environment& env, IR::Program& program);
 void ConstantPropagationPass(IR::Program& program);
 void DeadCodeEliminationPass(IR::Program& program);
+void GetAttributeReorderPass(IR::Program& program);
 void GlobalMemoryToStorageBufferPass(IR::Program& program);
 void IdentityRemovalPass(IR::Program& program);
 void LowerFp16ToFp32(IR::Program& program);
