@@ -495,7 +495,7 @@ struct Values {
     std::chrono::seconds custom_rtc_differential;
 
     BasicSetting<s32> current_user{0, "current_user"};
-    RangedSetting<s32> language_index{1, 0, 16, "language_index"};
+    RangedSetting<s32> language_index{1, 0, 17, "language_index"};
     RangedSetting<s32> region_index{1, 0, 6, "region_index"};
     RangedSetting<s32> time_zone_index{0, 0, 45, "time_zone_index"};
     RangedSetting<s32> sound_index{1, 0, 2, "sound_index"};

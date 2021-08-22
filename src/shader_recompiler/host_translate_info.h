@@ -11,8 +11,9 @@ namespace Shader {
 
 /// Misc information about the host
 struct HostTranslateInfo {
-    bool support_float16{}; ///< True when the device supports 16-bit floats
-    bool support_int64{};   ///< True when the device supports 64-bit integers
+    bool support_float16{};             ///< True when the device supports 16-bit floats
+    bool support_int64{};               ///< True when the device supports 64-bit integers
+    bool needs_get_attribute_reorder{}; ///< True when the device needs GetAttribute reordered
 };
 
 } // namespace Shader

@@ -156,6 +156,10 @@ public:
         return shader_backend;
     }
 
+    bool IsAmd() const {
+        return vendor_name == "ATI Technologies Inc.";
+    }
+
 private:
     static bool TestVariableAoffi();
     static bool TestPreciseBug();
