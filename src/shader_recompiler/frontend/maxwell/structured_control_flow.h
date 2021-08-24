@@ -11,10 +11,13 @@
 #include "shader_recompiler/frontend/maxwell/control_flow.h"
 #include "shader_recompiler/object_pool.h"
 
-namespace Shader::Maxwell {
+namespace Shader {
+struct HostTranslateInfo;
+namespace Maxwell {
 
 [[nodiscard]] IR::AbstractSyntaxList BuildASL(ObjectPool<IR::Inst>& inst_pool,
                                               ObjectPool<IR::Block>& block_pool, Environment& env,
-                                              Flow::CFG& cfg);
+                                              Flow::CFG& cfg, const HostTranslateInfo& host_info);
 
-} // namespace Shader::Maxwell
+} // namespace Maxwell
+} // namespace Shader

@@ -185,7 +185,14 @@ if (ENABLE_QT_TRANSLATION)
     # Update source TS file if enabled
     if (GENERATE_QT_TRANSLATION)
         get_target_property(SRCS yuzu SOURCES)
-        qt5_create_translation(QM_FILES ${SRCS} ${UIS} ${YUZU_QT_LANGUAGES}/en.ts)
+        qt5_create_translation(QM_FILES
+            ${SRCS}
+            ${UIS}
+            ${YUZU_QT_LANGUAGES}/en.ts
+        OPTIONS
+            -source-language en_US
+            -target-language en_US
+        )
         add_custom_target(translation ALL DEPENDS ${YUZU_QT_LANGUAGES}/en.ts)
     endif()
 

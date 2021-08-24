@@ -130,7 +130,7 @@ void AddNVNStorageBuffers(IR::Program& program) {
 IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Block>& block_pool,
                              Environment& env, Flow::CFG& cfg, const HostTranslateInfo& host_info) {
     IR::Program program;
-    program.syntax_list = BuildASL(inst_pool, block_pool, env, cfg);
+    program.syntax_list = BuildASL(inst_pool, block_pool, env, cfg, host_info);
     program.blocks = GenerateBlocks(program.syntax_list);
     program.post_order_blocks = PostOrder(program.syntax_list.front());
     program.stage = env.ShaderStage();
@@ -178,13 +178,10 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
 
     Optimization::ConstantPropagationPass(program);
     Optimization::DeadCodeEliminationPass(program);
-    Optimization::CollectShaderInfoPass(env, program);
-    if (program.info.uses_demote_to_helper_invocation) {
-        Optimization::GetAttributeReorderPass(program);
-    }
     if (Settings::values.renderer_debug) {
         Optimization::VerificationPass(program);
     }
+    Optimization::CollectShaderInfoPass(env, program);
     CollectInterpolationInfo(env, program);
     AddNVNStorageBuffers(program);
     return program;
