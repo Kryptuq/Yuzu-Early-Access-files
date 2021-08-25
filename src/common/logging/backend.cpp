@@ -5,6 +5,7 @@
 #include <atomic>
 #include <chrono>
 #include <climits>
+#include <exception>
 #include <thread>
 #include <vector>
 
@@ -152,7 +153,7 @@ public:
     void EnableForStacktrace() override {}
 };
 
-bool initialization_in_progress_suppress_logging = false;
+bool initialization_in_progress_suppress_logging = true;
 
 /**
  * Static state as a singleton.
@@ -161,17 +162,17 @@ class Impl {
 public:
     static Impl& Instance() {
         if (!instance) {
-            abort();
+            throw std::runtime_error("Using Logging instance before its initialization");
         }
         return *instance;
     }
 
     static void Initialize() {
         if (instance) {
-            abort();
+            LOG_WARNING(Log, "Reinitializing logging backend");
+            return;
         }
         using namespace Common::FS;
-        initialization_in_progress_suppress_logging = true;
         const auto& log_dir = GetYuzuPath(YuzuPath::LogDir);
         void(CreateDir(log_dir));
         Filter filter;

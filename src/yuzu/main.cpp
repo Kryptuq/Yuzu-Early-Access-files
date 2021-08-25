@@ -194,6 +194,7 @@ GMainWindow::GMainWindow()
     : input_subsystem{std::make_shared<InputCommon::InputSubsystem>()},
       config{std::make_unique<Config>()}, vfs{std::make_shared<FileSys::RealVfsFilesystem>()},
       provider{std::make_unique<FileSys::ManualContentProvider>()} {
+    Common::Log::Initialize();
     LoadTranslation();
 
     setAcceptDrops(true);
@@ -3446,7 +3447,6 @@ void GMainWindow::SetDiscordEnabled([[maybe_unused]] bool state) {
 #endif
 
 int main(int argc, char* argv[]) {
-    Common::Log::Initialize();
     Common::DetachedTasks detached_tasks;
     MicroProfileOnThreadCreate("Frontend");
     SCOPE_EXIT({ MicroProfileShutdown(); });
