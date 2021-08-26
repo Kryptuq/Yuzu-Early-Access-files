@@ -368,17 +368,20 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     };
     SetNext(next, demote);
 
-    VkPhysicalDeviceFloat16Int8FeaturesKHR float16_int8;
-    if (is_float16_supported) {
-        float16_int8 = {
+    if (is_int8_supported || is_float16_supported) {
+        VkPhysicalDeviceFloat16Int8FeaturesKHR float16_int8{
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT16_INT8_FEATURES_KHR,
             .pNext = nullptr,
-            .shaderFloat16 = true,
-            .shaderInt8 = false,
+            .shaderFloat16 = is_float16_supported,
+            .shaderInt8 = is_int8_supported,
         };
         SetNext(next, float16_int8);
-    } else {
+    }
+    if (!is_float16_supported) {
         LOG_INFO(Render_Vulkan, "Device doesn't support float16 natively");
+    }
+    if (!is_int8_supported) {
+        LOG_INFO(Render_Vulkan, "Device doesn't support int8 natively");
     }
 
     if (!nv_viewport_swizzle) {
@@ -909,6 +912,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
 
         physical.GetFeatures2KHR(features);
         is_float16_supported = float16_int8_features.shaderFloat16;
+        is_int8_supported = float16_int8_features.shaderInt8;
         extensions.push_back(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     }
     if (has_ext_subgroup_size_control) {

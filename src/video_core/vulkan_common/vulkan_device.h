@@ -139,9 +139,14 @@ public:
         return is_optimal_astc_supported;
     }
 
-    /// Returns true if the device supports float16 natively
+    /// Returns true if the device supports float16 natively.
     bool IsFloat16Supported() const {
         return is_float16_supported;
+    }
+
+    /// Returns true if the device supports int8 natively.
+    bool IsInt8Supported() const {
+        return is_int8_supported;
     }
 
     /// Returns true if the device warp size can potentially be bigger than guest's warp size.
@@ -367,7 +372,8 @@ private:
     u64 device_access_memory{};                 ///< Total size of device local memory in bytes.
     u32 max_push_descriptors{};                 ///< Maximum number of push descriptors
     bool is_optimal_astc_supported{};           ///< Support for native ASTC.
-    bool is_float16_supported{};                ///< Support for float16 arithmetics.
+    bool is_float16_supported{};                ///< Support for float16 arithmetic.
+    bool is_int8_supported{};                   ///< Support for int8 arithmetic.
     bool is_warp_potentially_bigger{};          ///< Host warp size can be bigger than guest.
     bool is_formatless_image_load_supported{};  ///< Support for shader image read without format.
     bool is_depth_bounds_supported{};           ///< Support for depth bounds.

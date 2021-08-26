@@ -875,8 +875,19 @@ private:
         std::vector<IR::Block*> demote_blocks;
         std::vector<IR::U1> demote_conds;
         u32 num_epilogues{};
+        u32 branch_depth{};
         for (const IR::AbstractSyntaxNode& node : syntax_list) {
+            if (node.type == Type::If) {
+                ++branch_depth;
+            }
+            if (node.type == Type::EndIf) {
+                --branch_depth;
+            }
             if (node.type != Type::Block) {
+                continue;
+            }
+            if (branch_depth > 1) {
+                // Skip reordering nested demote branches.
                 continue;
             }
             for (const IR::Inst& inst : node.data.block->Instructions()) {
