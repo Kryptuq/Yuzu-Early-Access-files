@@ -9,20 +9,17 @@
 #include "core/core.h"
 #include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/kernel/kernel.h"
-#include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/nvflinger/buffer_queue.h"
 
 namespace Service::NVFlinger {
 
-BufferQueue::BufferQueue(Kernel::KernelCore& kernel, u32 id_, u64 layer_id_,
-                         KernelHelpers::ServiceContext& service_context_)
-    : id(id_), layer_id(layer_id_), service_context{service_context_} {
-    buffer_wait_event = service_context.CreateEvent("BufferQueue:WaitEvent");
+BufferQueue::BufferQueue(Kernel::KernelCore& kernel, u32 id_, u64 layer_id_)
+    : id(id_), layer_id(layer_id_), buffer_wait_event{kernel} {
+    Kernel::KAutoObject::Create(std::addressof(buffer_wait_event));
+    buffer_wait_event.Initialize("BufferQueue:WaitEvent");
 }
 
-BufferQueue::~BufferQueue() {
-    service_context.CloseEvent(buffer_wait_event);
-}
+BufferQueue::~BufferQueue() = default;
 
 void BufferQueue::SetPreallocatedBuffer(u32 slot, const IGBPBuffer& igbp_buffer) {
     ASSERT(slot < buffer_slots);
@@ -44,7 +41,7 @@ void BufferQueue::SetPreallocatedBuffer(u32 slot, const IGBPBuffer& igbp_buffer)
         .multi_fence = {},
     };
 
-    buffer_wait_event->GetWritableEvent().Signal();
+    buffer_wait_event.GetWritableEvent().Signal();
 }
 
 std::optional<std::pair<u32, Service::Nvidia::MultiFence*>> BufferQueue::DequeueBuffer(u32 width,
@@ -126,7 +123,7 @@ void BufferQueue::CancelBuffer(u32 slot, const Service::Nvidia::MultiFence& mult
     }
     free_buffers_condition.notify_one();
 
-    buffer_wait_event->GetWritableEvent().Signal();
+    buffer_wait_event.GetWritableEvent().Signal();
 }
 
 std::optional<std::reference_wrapper<const BufferQueue::Buffer>> BufferQueue::AcquireBuffer() {
@@ -161,7 +158,7 @@ void BufferQueue::ReleaseBuffer(u32 slot) {
     }
     free_buffers_condition.notify_one();
 
-    buffer_wait_event->GetWritableEvent().Signal();
+    buffer_wait_event.GetWritableEvent().Signal();
 }
 
 void BufferQueue::Connect() {
@@ -176,7 +173,7 @@ void BufferQueue::Disconnect() {
         std::unique_lock lock{queue_sequence_mutex};
         queue_sequence.clear();
     }
-    buffer_wait_event->GetWritableEvent().Signal();
+    buffer_wait_event.GetWritableEvent().Signal();
     is_connect = false;
     free_buffers_condition.notify_one();
 }
@@ -196,11 +193,11 @@ u32 BufferQueue::Query(QueryType type) {
 }
 
 Kernel::KWritableEvent& BufferQueue::GetWritableBufferWaitEvent() {
-    return buffer_wait_event->GetWritableEvent();
+    return buffer_wait_event.GetWritableEvent();
 }
 
 Kernel::KReadableEvent& BufferQueue::GetBufferWaitEvent() {
-    return buffer_wait_event->GetReadableEvent();
+    return buffer_wait_event.GetReadableEvent();
 }
 
 } // namespace Service::NVFlinger

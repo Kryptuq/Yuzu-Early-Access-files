@@ -232,6 +232,18 @@ public:
         return image_ranges;
     }
 
+    [[nodiscard]] bool HasAspectColorBit(size_t index) const noexcept {
+        return (image_ranges.at(index).aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) != 0;
+    }
+
+    [[nodiscard]] bool HasAspectDepthBit() const noexcept {
+        return has_depth;
+    }
+
+    [[nodiscard]] bool HasAspectStencilBit() const noexcept {
+        return has_stencil;
+    }
+
 private:
     vk::Framebuffer framebuffer;
     VkRenderPass renderpass{};
@@ -241,6 +253,8 @@ private:
     u32 num_images = 0;
     std::array<VkImage, 9> images{};
     std::array<VkImageSubresourceRange, 9> image_ranges{};
+    bool has_depth{};
+    bool has_stencil{};
 };
 
 struct TextureCacheParams {

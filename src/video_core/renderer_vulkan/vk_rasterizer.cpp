@@ -228,9 +228,7 @@ void RasterizerVulkan::Clear() {
     };
 
     const u32 color_attachment = regs.clear_buffers.RT;
-    const auto attachment_aspect_mask = framebuffer->ImageRanges()[color_attachment].aspectMask;
-    const bool is_color_rt = (attachment_aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != 0;
-    if (use_color && is_color_rt) {
+    if (use_color && framebuffer->HasAspectColorBit(color_attachment)) {
         VkClearValue clear_value;
         std::memcpy(clear_value.color.float32, regs.clear_color, sizeof(regs.clear_color));
 
@@ -248,11 +246,14 @@ void RasterizerVulkan::Clear() {
         return;
     }
     VkImageAspectFlags aspect_flags = 0;
-    if (use_depth) {
+    if (use_depth && framebuffer->HasAspectDepthBit()) {
         aspect_flags |= VK_IMAGE_ASPECT_DEPTH_BIT;
     }
-    if (use_stencil) {
+    if (use_stencil && framebuffer->HasAspectStencilBit()) {
         aspect_flags |= VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+    if (aspect_flags == 0) {
+        return;
     }
     scheduler.Record([clear_depth = regs.clear_depth, clear_stencil = regs.clear_stencil,
                       clear_rect, aspect_flags](vk::CommandBuffer cmdbuf) {

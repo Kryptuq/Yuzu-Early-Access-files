@@ -24,10 +24,6 @@ class KReadableEvent;
 class KWritableEvent;
 } // namespace Kernel
 
-namespace Service::KernelHelpers {
-class ServiceContext;
-} // namespace Service::KernelHelpers
-
 namespace Service::NVFlinger {
 
 constexpr u32 buffer_slots = 0x40;
@@ -58,8 +54,7 @@ public:
         NativeWindowFormat = 2,
     };
 
-    explicit BufferQueue(Kernel::KernelCore& kernel, u32 id_, u64 layer_id_,
-                         KernelHelpers::ServiceContext& service_context_);
+    explicit BufferQueue(Kernel::KernelCore& kernel, u32 id_, u64 layer_id_);
     ~BufferQueue();
 
     enum class BufferTransformFlags : u32 {
@@ -136,14 +131,12 @@ private:
     std::list<u32> free_buffers;
     std::array<Buffer, buffer_slots> buffers;
     std::list<u32> queue_sequence;
-    Kernel::KEvent* buffer_wait_event{};
+    Kernel::KEvent buffer_wait_event;
 
     std::mutex free_buffers_mutex;
     std::condition_variable free_buffers_condition;
 
     std::mutex queue_sequence_mutex;
-
-    KernelHelpers::ServiceContext& service_context;
 };
 
 } // namespace Service::NVFlinger

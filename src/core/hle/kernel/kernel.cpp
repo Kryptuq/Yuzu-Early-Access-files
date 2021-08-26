@@ -85,9 +85,8 @@ struct KernelCore::Impl {
     }
 
     void InitializeCores() {
-        for (u32 core_id = 0; core_id < Core::Hardware::NUM_CPU_CORES; core_id++) {
-            cores[core_id].Initialize(current_process->Is64BitProcess());
-            system.Memory().SetCurrentPageTable(*current_process, core_id);
+        for (auto& core : cores) {
+            core.Initialize(current_process->Is64BitProcess());
         }
     }
 
@@ -132,6 +131,15 @@ struct KernelCore::Impl {
         next_user_process_id = KProcess::ProcessIDMin;
         next_thread_id = 1;
 
+        for (u32 core_id = 0; core_id < Core::Hardware::NUM_CPU_CORES; core_id++) {
+            if (suspend_threads[core_id]) {
+                suspend_threads[core_id]->Close();
+                suspend_threads[core_id] = nullptr;
+            }
+
+            schedulers[core_id].reset();
+        }
+
         cores.clear();
 
         global_handle_table->Finalize();
@@ -158,16 +166,6 @@ struct KernelCore::Impl {
         CleanupObject(irs_shared_mem);
         CleanupObject(time_shared_mem);
         CleanupObject(system_resource_limit);
-
-        for (u32 core_id = 0; core_id < Core::Hardware::NUM_CPU_CORES; core_id++) {
-            if (suspend_threads[core_id]) {
-                suspend_threads[core_id]->Close();
-                suspend_threads[core_id] = nullptr;
-            }
-
-            schedulers[core_id]->Finalize();
-            schedulers[core_id].reset();
-        }
 
         // Next host thead ID to use, 0-3 IDs represent core threads, >3 represent others
         next_host_thread_id = Core::Hardware::NUM_CPU_CORES;
@@ -259,6 +257,14 @@ struct KernelCore::Impl {
 
     void MakeCurrentProcess(KProcess* process) {
         current_process = process;
+        if (process == nullptr) {
+            return;
+        }
+
+        const u32 core_id = GetCurrentHostThreadID();
+        if (core_id < Core::Hardware::NUM_CPU_CORES) {
+            system.Memory().SetCurrentPageTable(*process, core_id);
+        }
     }
 
     static inline thread_local u32 host_thread_id = UINT32_MAX;
@@ -821,20 +827,16 @@ const Kernel::PhysicalCore& KernelCore::PhysicalCore(std::size_t id) const {
     return impl->cores[id];
 }
 
-size_t KernelCore::CurrentPhysicalCoreIndex() const {
-    const u32 core_id = impl->GetCurrentHostThreadID();
-    if (core_id >= Core::Hardware::NUM_CPU_CORES) {
-        return Core::Hardware::NUM_CPU_CORES - 1;
-    }
-    return core_id;
-}
-
 Kernel::PhysicalCore& KernelCore::CurrentPhysicalCore() {
-    return impl->cores[CurrentPhysicalCoreIndex()];
+    u32 core_id = impl->GetCurrentHostThreadID();
+    ASSERT(core_id < Core::Hardware::NUM_CPU_CORES);
+    return impl->cores[core_id];
 }
 
 const Kernel::PhysicalCore& KernelCore::CurrentPhysicalCore() const {
-    return impl->cores[CurrentPhysicalCoreIndex()];
+    u32 core_id = impl->GetCurrentHostThreadID();
+    ASSERT(core_id < Core::Hardware::NUM_CPU_CORES);
+    return impl->cores[core_id];
 }
 
 Kernel::KScheduler* KernelCore::CurrentScheduler() {
@@ -1027,9 +1029,6 @@ void KernelCore::Suspend(bool in_suspention) {
             impl->suspend_threads[core_id]->SetState(state);
             impl->suspend_threads[core_id]->SetWaitReasonForDebugging(
                 ThreadWaitReasonForDebugging::Suspended);
-            if (!should_suspend) {
-                impl->suspend_threads[core_id]->DisableDispatch();
-            }
         }
     }
 }
@@ -1044,11 +1043,13 @@ void KernelCore::ExceptionalExit() {
 }
 
 void KernelCore::EnterSVCProfile() {
-    impl->svc_ticks[CurrentPhysicalCoreIndex()] = MicroProfileEnter(MICROPROFILE_TOKEN(Kernel_SVC));
+    std::size_t core = impl->GetCurrentHostThreadID();
+    impl->svc_ticks[core] = MicroProfileEnter(MICROPROFILE_TOKEN(Kernel_SVC));
 }
 
 void KernelCore::ExitSVCProfile() {
-    MicroProfileLeave(MICROPROFILE_TOKEN(Kernel_SVC), impl->svc_ticks[CurrentPhysicalCoreIndex()]);
+    std::size_t core = impl->GetCurrentHostThreadID();
+    MicroProfileLeave(MICROPROFILE_TOKEN(Kernel_SVC), impl->svc_ticks[core]);
 }
 
 std::weak_ptr<Kernel::ServiceThread> KernelCore::CreateServiceThread(const std::string& name) {

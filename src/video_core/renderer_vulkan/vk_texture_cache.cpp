@@ -1186,9 +1186,12 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM
         renderpass_key.depth_format = depth_buffer->format;
         num_layers = std::max(num_layers, depth_buffer->range.extent.layers);
         images[num_images] = depth_buffer->ImageHandle();
-        image_ranges[num_images] = MakeSubresourceRange(depth_buffer);
+        const VkImageSubresourceRange subresource_range = MakeSubresourceRange(depth_buffer);
+        image_ranges[num_images] = subresource_range;
         samples = depth_buffer->Samples();
         ++num_images;
+        has_depth = (subresource_range.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
+        has_stencil = (subresource_range.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
     } else {
         renderpass_key.depth_format = PixelFormat::Invalid;
     }

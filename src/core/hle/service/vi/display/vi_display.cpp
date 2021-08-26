@@ -12,21 +12,18 @@
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/k_writable_event.h"
-#include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/vi/display/vi_display.h"
 #include "core/hle/service/vi/layer/vi_layer.h"
 
 namespace Service::VI {
 
-Display::Display(u64 id, std::string name_, KernelHelpers::ServiceContext& service_context_,
-                 Core::System& system_)
-    : display_id{id}, name{std::move(name_)}, service_context{service_context_} {
-    vsync_event = service_context.CreateEvent(fmt::format("Display VSync Event {}", id));
+Display::Display(u64 id, std::string name_, Core::System& system)
+    : display_id{id}, name{std::move(name_)}, vsync_event{system.Kernel()} {
+    Kernel::KAutoObject::Create(std::addressof(vsync_event));
+    vsync_event.Initialize(fmt::format("Display VSync Event {}", id));
 }
 
-Display::~Display() {
-    service_context.CloseEvent(vsync_event);
-}
+Display::~Display() = default;
 
 Layer& Display::GetLayer(std::size_t index) {
     return *layers.at(index);
@@ -37,11 +34,11 @@ const Layer& Display::GetLayer(std::size_t index) const {
 }
 
 Kernel::KReadableEvent& Display::GetVSyncEvent() {
-    return vsync_event->GetReadableEvent();
+    return vsync_event.GetReadableEvent();
 }
 
 void Display::SignalVSyncEvent() {
-    vsync_event->GetWritableEvent().Signal();
+    vsync_event.GetWritableEvent().Signal();
 }
 
 void Display::CreateLayer(u64 layer_id, NVFlinger::BufferQueue& buffer_queue) {
