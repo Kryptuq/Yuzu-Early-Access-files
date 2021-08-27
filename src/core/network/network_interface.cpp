@@ -37,72 +37,72 @@ std::vector<NetworkInterface> GetAvailableNetworkInterfaces() {
             AF_INET, GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_DNS_SERVER | GAA_FLAG_INCLUDE_GATEWAYS,
             nullptr, adapter_addresses.data(), &buf_size);
 
-        if (ret == ERROR_BUFFER_OVERFLOW) {
-            adapter_addresses.resize((buf_size / sizeof(IP_ADAPTER_ADDRESSES)) + 1);
-        } else {
+        if (ret != ERROR_BUFFER_OVERFLOW) {
             break;
         }
+
+        adapter_addresses.resize((buf_size / sizeof(IP_ADAPTER_ADDRESSES)) + 1);
     }
 
-    if (ret == NO_ERROR) {
-        std::vector<NetworkInterface> result;
-
-        for (auto current_address = adapter_addresses.data(); current_address != nullptr;
-             current_address = current_address->Next) {
-            if (current_address->FirstUnicastAddress == nullptr ||
-                current_address->FirstUnicastAddress->Address.lpSockaddr == nullptr) {
-                continue;
-            }
-
-            if (current_address->OperStatus != IfOperStatusUp) {
-                continue;
-            }
-
-            const auto ip_addr = Common::BitCast<struct sockaddr_in>(
-                                     *current_address->FirstUnicastAddress->Address.lpSockaddr)
-                                     .sin_addr;
-
-            ULONG mask = 0;
-            if (ConvertLengthToIpv4Mask(current_address->FirstUnicastAddress->OnLinkPrefixLength,
-                                        &mask) != NO_ERROR) {
-                LOG_ERROR(Network, "Failed to convert IPv4 prefix length to subnet mask");
-                continue;
-            }
-
-            struct in_addr gateway = {.S_un{.S_addr{0}}};
-            if (current_address->FirstGatewayAddress != nullptr &&
-                current_address->FirstGatewayAddress->Address.lpSockaddr != nullptr) {
-                gateway = Common::BitCast<struct sockaddr_in>(
-                              *current_address->FirstGatewayAddress->Address.lpSockaddr)
-                              .sin_addr;
-            }
-
-            result.push_back(NetworkInterface{
-                .name{Common::UTF16ToUTF8(std::wstring{current_address->FriendlyName})},
-                .ip_address{ip_addr},
-                .subnet_mask = in_addr{.S_un{.S_addr{mask}}},
-                .gateway = gateway});
-        }
-
-        return result;
-    } else {
+    if (ret != NO_ERROR) {
         LOG_ERROR(Network, "Failed to get network interfaces with GetAdaptersAddresses");
         return {};
     }
+
+    std::vector<NetworkInterface> result;
+
+    for (auto current_address = adapter_addresses.data(); current_address != nullptr;
+         current_address = current_address->Next) {
+        if (current_address->FirstUnicastAddress == nullptr ||
+            current_address->FirstUnicastAddress->Address.lpSockaddr == nullptr) {
+            continue;
+        }
+
+        if (current_address->OperStatus != IfOperStatusUp) {
+            continue;
+        }
+
+        const auto ip_addr = Common::BitCast<struct sockaddr_in>(
+                                 *current_address->FirstUnicastAddress->Address.lpSockaddr)
+                                 .sin_addr;
+
+        ULONG mask = 0;
+        if (ConvertLengthToIpv4Mask(current_address->FirstUnicastAddress->OnLinkPrefixLength,
+                                    &mask) != NO_ERROR) {
+            LOG_ERROR(Network, "Failed to convert IPv4 prefix length to subnet mask");
+            continue;
+        }
+
+        struct in_addr gateway = {.S_un{.S_addr{0}}};
+        if (current_address->FirstGatewayAddress != nullptr &&
+            current_address->FirstGatewayAddress->Address.lpSockaddr != nullptr) {
+            gateway = Common::BitCast<struct sockaddr_in>(
+                          *current_address->FirstGatewayAddress->Address.lpSockaddr)
+                          .sin_addr;
+        }
+
+        result.emplace_back(NetworkInterface{
+            .name{Common::UTF16ToUTF8(std::wstring{current_address->FriendlyName})},
+            .ip_address{ip_addr},
+            .subnet_mask = in_addr{.S_un{.S_addr{mask}}},
+            .gateway = gateway});
+    }
+
+    return result;
 }
 
 #else
 
 std::vector<NetworkInterface> GetAvailableNetworkInterfaces() {
-    std::vector<NetworkInterface> result;
-
     struct ifaddrs* ifaddr = nullptr;
 
     if (getifaddrs(&ifaddr) != 0) {
         LOG_ERROR(Network, "Failed to get network interfaces with getifaddrs: {}",
                   std::strerror(errno));
-        return result;
+        return {};
     }
+
+    std::vector<NetworkInterface> result;
 
     for (auto ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
         if (ifa->ifa_addr == nullptr || ifa->ifa_netmask == nullptr) {
@@ -117,55 +117,62 @@ std::vector<NetworkInterface> GetAvailableNetworkInterfaces() {
             continue;
         }
 
-        std::uint32_t gateway{0};
+        u32 gateway{};
+
         std::ifstream file{"/proc/net/route"};
-        if (file.is_open()) {
-
-            // ignore header
-            file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-            bool gateway_found = false;
-
-            for (std::string line; std::getline(file, line);) {
-                std::istringstream iss{line};
-
-                std::string iface_name{};
-                iss >> iface_name;
-                if (iface_name != ifa->ifa_name) {
-                    continue;
-                }
-
-                iss >> std::hex;
-
-                std::uint32_t dest{0};
-                iss >> dest;
-                if (dest != 0) {
-                    // not the default route
-                    continue;
-                }
-
-                iss >> gateway;
-
-                std::uint16_t flags{0};
-                iss >> flags;
-
-                // flag RTF_GATEWAY (defined in <linux/route.h>)
-                if ((flags & 0x2) == 0) {
-                    continue;
-                }
-
-                gateway_found = true;
-                break;
-            }
-
-            if (!gateway_found) {
-                gateway = 0;
-            }
-        } else {
+        if (!file.is_open()) {
             LOG_ERROR(Network, "Failed to open \"/proc/net/route\"");
+
+            result.emplace_back(NetworkInterface{
+                .name{ifa->ifa_name},
+                .ip_address{Common::BitCast<struct sockaddr_in>(*ifa->ifa_addr).sin_addr},
+                .subnet_mask{Common::BitCast<struct sockaddr_in>(*ifa->ifa_netmask).sin_addr},
+                .gateway{in_addr{.s_addr = gateway}}});
+            continue;
         }
 
-        result.push_back(NetworkInterface{
+        // ignore header
+        file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+        bool gateway_found = false;
+
+        for (std::string line; std::getline(file, line);) {
+            std::istringstream iss{line};
+
+            std::string iface_name;
+            iss >> iface_name;
+            if (iface_name != ifa->ifa_name) {
+                continue;
+            }
+
+            iss >> std::hex;
+
+            u32 dest{};
+            iss >> dest;
+            if (dest != 0) {
+                // not the default route
+                continue;
+            }
+
+            iss >> gateway;
+
+            u16 flags{};
+            iss >> flags;
+
+            // flag RTF_GATEWAY (defined in <linux/route.h>)
+            if ((flags & 0x2) == 0) {
+                continue;
+            }
+
+            gateway_found = true;
+            break;
+        }
+
+        if (!gateway_found) {
+            gateway = 0;
+        }
+
+        result.emplace_back(NetworkInterface{
             .name{ifa->ifa_name},
             .ip_address{Common::BitCast<struct sockaddr_in>(*ifa->ifa_addr).sin_addr},
             .subnet_mask{Common::BitCast<struct sockaddr_in>(*ifa->ifa_netmask).sin_addr},
@@ -180,11 +187,11 @@ std::vector<NetworkInterface> GetAvailableNetworkInterfaces() {
 #endif
 
 std::optional<NetworkInterface> GetSelectedNetworkInterface() {
-    const std::string& selected_network_interface = Settings::values.network_interface.GetValue();
+    const auto& selected_network_interface = Settings::values.network_interface.GetValue();
     const auto network_interfaces = Network::GetAvailableNetworkInterfaces();
     if (network_interfaces.size() == 0) {
         LOG_ERROR(Network, "GetAvailableNetworkInterfaces returned no interfaces");
-        return {};
+        return std::nullopt;
     }
 
     const auto res =
@@ -192,12 +199,12 @@ std::optional<NetworkInterface> GetSelectedNetworkInterface() {
             return iface.name == selected_network_interface;
         });
 
-    if (res != network_interfaces.end()) {
-        return *res;
-    } else {
+    if (res == network_interfaces.end()) {
         LOG_ERROR(Network, "Couldn't find selected interface \"{}\"", selected_network_interface);
-        return {};
+        return std::nullopt;
     }
+
+    return *res;
 }
 
 } // namespace Network

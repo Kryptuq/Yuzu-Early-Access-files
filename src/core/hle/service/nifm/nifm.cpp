@@ -277,37 +277,45 @@ private:
     void GetCurrentNetworkProfile(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
-        const SfNetworkProfileData network_profile_data{
-            .ip_setting_data{
-                .ip_address_setting{
-                    .is_automatic{true},
-                    .current_address{192, 168, 1, 100},
-                    .subnet_mask{255, 255, 255, 0},
-                    .gateway{192, 168, 1, 1},
+        const auto net_iface = Network::GetSelectedNetworkInterface();
+
+        const SfNetworkProfileData network_profile_data = [&net_iface] {
+            if (!net_iface) {
+                return SfNetworkProfileData{};
+            }
+
+            return SfNetworkProfileData{
+                .ip_setting_data{
+                    .ip_address_setting{
+                        .is_automatic{true},
+                        .current_address{Network::TranslateIPv4(net_iface->ip_address)},
+                        .subnet_mask{Network::TranslateIPv4(net_iface->subnet_mask)},
+                        .gateway{Network::TranslateIPv4(net_iface->gateway)},
+                    },
+                    .dns_setting{
+                        .is_automatic{true},
+                        .primary_dns{1, 1, 1, 1},
+                        .secondary_dns{1, 0, 0, 1},
+                    },
+                    .proxy_setting{
+                        .enabled{false},
+                        .port{},
+                        .proxy_server{},
+                        .automatic_auth_enabled{},
+                        .user{},
+                        .password{},
+                    },
+                    .mtu{1500},
                 },
-                .dns_setting{
-                    .is_automatic{true},
-                    .primary_dns{1, 1, 1, 1},
-                    .secondary_dns{1, 0, 0, 1},
+                .uuid{0xdeadbeef, 0xdeadbeef},
+                .network_name{"yuzu Network"},
+                .wireless_setting_data{
+                    .ssid_length{12},
+                    .ssid{"yuzu Network"},
+                    .passphrase{"yuzupassword"},
                 },
-                .proxy_setting{
-                    .enabled{false},
-                    .port{},
-                    .proxy_server{},
-                    .automatic_auth_enabled{},
-                    .user{},
-                    .password{},
-                },
-                .mtu{1500},
-            },
-            .uuid{0xdeadbeef, 0xdeadbeef},
-            .network_name{"yuzu Network"},
-            .wireless_setting_data{
-                .ssid_length{12},
-                .ssid{"yuzu Network"},
-                .passphrase{"yuzupassword"},
-            },
-        };
+            };
+        }();
 
         ctx.WriteBuffer(network_profile_data);
 
@@ -352,38 +360,33 @@ private:
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
         struct IpConfigInfo {
-            IpAddressSetting ip_address_setting;
-            DnsSetting dns_setting;
+            IpAddressSetting ip_address_setting{};
+            DnsSetting dns_setting{};
         };
         static_assert(sizeof(IpConfigInfo) == sizeof(IpAddressSetting) + sizeof(DnsSetting),
                       "IpConfigInfo has incorrect size.");
 
-        IpConfigInfo ip_config_info{
-            .ip_address_setting{
-                .is_automatic{true},
-                .current_address{0, 0, 0, 0},
-                .subnet_mask{255, 255, 255, 0},
-                .gateway{192, 168, 1, 1},
-            },
-            .dns_setting{
-                .is_automatic{true},
-                .primary_dns{1, 1, 1, 1},
-                .secondary_dns{1, 0, 0, 1},
-            },
-        };
+        const auto net_iface = Network::GetSelectedNetworkInterface();
 
-        const auto iface = Network::GetSelectedNetworkInterface();
-        if (iface) {
-            ip_config_info.ip_address_setting =
-                IpAddressSetting{.is_automatic{true},
-                                 .current_address{Network::TranslateIPv4(iface->ip_address)},
-                                 .subnet_mask{Network::TranslateIPv4(iface->subnet_mask)},
-                                 .gateway{Network::TranslateIPv4(iface->gateway)}};
+        const IpConfigInfo ip_config_info = [&net_iface] {
+            if (!net_iface) {
+                return IpConfigInfo{};
+            }
 
-        } else {
-            LOG_ERROR(Service_NIFM,
-                      "Couldn't get host network configuration info, using default values");
-        }
+            return IpConfigInfo{
+                .ip_address_setting{
+                    .is_automatic{true},
+                    .current_address{Network::TranslateIPv4(net_iface->ip_address)},
+                    .subnet_mask{Network::TranslateIPv4(net_iface->subnet_mask)},
+                    .gateway{Network::TranslateIPv4(net_iface->gateway)},
+                },
+                .dns_setting{
+                    .is_automatic{true},
+                    .primary_dns{1, 1, 1, 1},
+                    .secondary_dns{1, 0, 0, 1},
+                },
+            };
+        }();
 
         IPC::ResponseBuilder rb{ctx, 2 + (sizeof(IpConfigInfo) + 3) / sizeof(u32)};
         rb.Push(ResultSuccess);

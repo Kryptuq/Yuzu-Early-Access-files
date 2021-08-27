@@ -742,6 +742,7 @@ VpxBitStreamWriter VP9::ComposeUncompressedHeader() {
     uncomp_writer.WriteDeltaQ(current_frame_info.uv_dc_delta_q);
     uncomp_writer.WriteDeltaQ(current_frame_info.uv_ac_delta_q);
 
+    ASSERT(!current_frame_info.segment_enabled);
     uncomp_writer.WriteBit(false); // Segmentation enabled (TODO).
 
     const s32 min_tile_cols_log2 = CalcMinLog2TileCols(current_frame_info.frame_size.width);

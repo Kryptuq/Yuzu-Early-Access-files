@@ -159,11 +159,13 @@ VkSemaphore VKBlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
 
         const VAddr framebuffer_addr = framebuffer.address + framebuffer.offset;
         const u8* const host_ptr = cpu_memory.GetPointer(framebuffer_addr);
-        const size_t size_bytes = GetSizeInBytes(framebuffer);
 
         // TODO(Rodrigo): Read this from HLE
         constexpr u32 block_height_log2 = 4;
         const u32 bytes_per_pixel = GetBytesPerPixel(framebuffer);
+        const u64 size_bytes{Tegra::Texture::CalculateSize(true, bytes_per_pixel,
+                                                           framebuffer.stride, framebuffer.height,
+                                                           1, block_height_log2, 0)};
         Tegra::Texture::UnswizzleTexture(
             mapped_span.subspan(image_offset, size_bytes), std::span(host_ptr, size_bytes),
             bytes_per_pixel, framebuffer.width, framebuffer.height, 1, block_height_log2, 0);

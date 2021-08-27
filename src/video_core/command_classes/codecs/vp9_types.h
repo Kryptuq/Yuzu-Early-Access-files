@@ -22,7 +22,7 @@ struct Vp9FrameDimensions {
 };
 static_assert(sizeof(Vp9FrameDimensions) == 0x8, "Vp9 Vp9FrameDimensions is an invalid size");
 
-enum FrameFlags : u32 {
+enum class FrameFlags : u32 {
     IsKeyFrame = 1 << 0,
     LastFrameIsKeyFrame = 1 << 1,
     FrameSizeChanged = 1 << 2,
@@ -30,6 +30,7 @@ enum FrameFlags : u32 {
     LastShowFrame = 1 << 4,
     IntraOnly = 1 << 5,
 };
+DECLARE_ENUM_FLAG_OPERATORS(FrameFlags)
 
 enum class TxSize {
     Tx4x4 = 0,   // 4x4 transform
@@ -92,44 +93,34 @@ struct Vp9EntropyProbs {
 static_assert(sizeof(Vp9EntropyProbs) == 0x7B4, "Vp9EntropyProbs is an invalid size");
 
 struct Vp9PictureInfo {
-    bool is_key_frame;
-    bool intra_only;
-    bool last_frame_was_key;
-    bool frame_size_changed;
-    bool error_resilient_mode;
-    bool last_frame_shown;
-    bool show_frame;
+    u32 bitstream_size;
+    std::array<u64, 4> frame_offsets;
     std::array<s8, 4> ref_frame_sign_bias;
     s32 base_q_index;
     s32 y_dc_delta_q;
     s32 uv_dc_delta_q;
     s32 uv_ac_delta_q;
-    bool lossless;
     s32 transform_mode;
-    bool allow_high_precision_mv;
     s32 interp_filter;
     s32 reference_mode;
-    s8 comp_fixed_ref;
-    std::array<s8, 2> comp_var_ref;
     s32 log2_tile_cols;
     s32 log2_tile_rows;
-    bool segment_enabled;
-    bool segment_map_update;
-    bool segment_map_temporal_update;
-    s32 segment_abs_delta;
-    std::array<u32, 8> segment_feature_enable;
-    std::array<std::array<s16, 4>, 8> segment_feature_data;
-    bool mode_ref_delta_enabled;
-    bool use_prev_in_find_mv_refs;
     std::array<s8, 4> ref_deltas;
     std::array<s8, 2> mode_deltas;
     Vp9EntropyProbs entropy;
     Vp9FrameDimensions frame_size;
     u8 first_level;
     u8 sharpness_level;
-    u32 bitstream_size;
-    std::array<u64, 4> frame_offsets;
-    std::array<bool, 4> refresh_frame;
+    bool is_key_frame;
+    bool intra_only;
+    bool last_frame_was_key;
+    bool error_resilient_mode;
+    bool last_frame_shown;
+    bool show_frame;
+    bool lossless;
+    bool allow_high_precision_mv;
+    bool segment_enabled;
+    bool mode_ref_delta_enabled;
 };
 
 struct Vp9FrameContainer {
@@ -145,7 +136,7 @@ struct PictureInfo {
     Vp9FrameDimensions golden_frame_size;  ///< 0x50
     Vp9FrameDimensions alt_frame_size;     ///< 0x58
     Vp9FrameDimensions current_frame_size; ///< 0x60
-    u32 vp9_flags;                         ///< 0x68
+    FrameFlags vp9_flags;                  ///< 0x68
     std::array<s8, 4> ref_frame_sign_bias; ///< 0x6C
     u8 first_level;                        ///< 0x70
     u8 sharpness_level;                    ///< 0x71
@@ -158,60 +149,43 @@ struct PictureInfo {
     u8 allow_high_precision_mv;            ///< 0x78
     u8 interp_filter;                      ///< 0x79
     u8 reference_mode;                     ///< 0x7A
-    s8 comp_fixed_ref;                     ///< 0x7B
-    std::array<s8, 2> comp_var_ref;        ///< 0x7C
+    INSERT_PADDING_BYTES_NOINIT(3);        ///< 0x7B
     u8 log2_tile_cols;                     ///< 0x7E
     u8 log2_tile_rows;                     ///< 0x7F
     Segmentation segmentation;             ///< 0x80
     LoopFilter loop_filter;                ///< 0xE4
-    INSERT_PADDING_BYTES_NOINIT(5);        ///< 0xEB
-    u32 surface_params;                    ///< 0xF0
-    INSERT_PADDING_WORDS_NOINIT(3);        ///< 0xF4
+    INSERT_PADDING_BYTES_NOINIT(21);       ///< 0xEB
 
     [[nodiscard]] Vp9PictureInfo Convert() const {
         return {
-            .is_key_frame = (vp9_flags & FrameFlags::IsKeyFrame) != 0,
-            .intra_only = (vp9_flags & FrameFlags::IntraOnly) != 0,
-            .last_frame_was_key = (vp9_flags & FrameFlags::LastFrameIsKeyFrame) != 0,
-            .frame_size_changed = (vp9_flags & FrameFlags::FrameSizeChanged) != 0,
-            .error_resilient_mode = (vp9_flags & FrameFlags::ErrorResilientMode) != 0,
-            .last_frame_shown = (vp9_flags & FrameFlags::LastShowFrame) != 0,
-            .show_frame = true,
+            .bitstream_size = bitstream_size,
+            .frame_offsets{},
             .ref_frame_sign_bias = ref_frame_sign_bias,
             .base_q_index = base_q_index,
             .y_dc_delta_q = y_dc_delta_q,
             .uv_dc_delta_q = uv_dc_delta_q,
             .uv_ac_delta_q = uv_ac_delta_q,
-            .lossless = lossless != 0,
             .transform_mode = tx_mode,
-            .allow_high_precision_mv = allow_high_precision_mv != 0,
             .interp_filter = interp_filter,
             .reference_mode = reference_mode,
-            .comp_fixed_ref = comp_fixed_ref,
-            .comp_var_ref = comp_var_ref,
             .log2_tile_cols = log2_tile_cols,
             .log2_tile_rows = log2_tile_rows,
-            .segment_enabled = segmentation.enabled != 0,
-            .segment_map_update = segmentation.update_map != 0,
-            .segment_map_temporal_update = segmentation.temporal_update != 0,
-            .segment_abs_delta = segmentation.abs_delta,
-            .segment_feature_enable = segmentation.feature_mask,
-            .segment_feature_data = segmentation.feature_data,
-            .mode_ref_delta_enabled = loop_filter.mode_ref_delta_enabled != 0,
-            .use_prev_in_find_mv_refs = !(vp9_flags == (FrameFlags::ErrorResilientMode)) &&
-                                        !(vp9_flags == (FrameFlags::FrameSizeChanged)) &&
-                                        !(vp9_flags == (FrameFlags::IntraOnly)) &&
-                                        (vp9_flags == (FrameFlags::LastShowFrame)) &&
-                                        !(vp9_flags == (FrameFlags::LastFrameIsKeyFrame)),
             .ref_deltas = loop_filter.ref_deltas,
             .mode_deltas = loop_filter.mode_deltas,
             .entropy{},
             .frame_size = current_frame_size,
             .first_level = first_level,
             .sharpness_level = sharpness_level,
-            .bitstream_size = bitstream_size,
-            .frame_offsets{},
-            .refresh_frame{},
+            .is_key_frame = True(vp9_flags & FrameFlags::IsKeyFrame),
+            .intra_only = True(vp9_flags & FrameFlags::IntraOnly),
+            .last_frame_was_key = True(vp9_flags & FrameFlags::LastFrameIsKeyFrame),
+            .error_resilient_mode = True(vp9_flags & FrameFlags::ErrorResilientMode),
+            .last_frame_shown = True(vp9_flags & FrameFlags::LastShowFrame),
+            .show_frame = true,
+            .lossless = lossless != 0,
+            .allow_high_precision_mv = allow_high_precision_mv != 0,
+            .segment_enabled = segmentation.enabled != 0,
+            .mode_ref_delta_enabled = loop_filter.mode_ref_delta_enabled != 0,
         };
     }
 };
@@ -316,7 +290,6 @@ ASSERT_POSITION(last_frame_size, 0x48);
 ASSERT_POSITION(first_level, 0x70);
 ASSERT_POSITION(segmentation, 0x80);
 ASSERT_POSITION(loop_filter, 0xE4);
-ASSERT_POSITION(surface_params, 0xF0);
 #undef ASSERT_POSITION
 
 #define ASSERT_POSITION(field_name, position)                                                      \
