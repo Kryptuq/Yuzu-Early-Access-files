@@ -323,6 +323,10 @@ public:
         return device_access_memory;
     }
 
+    u32 GetSetsPerPool() const {
+        return sets_per_pool;
+    }
+
 private:
     /// Checks if the physical device is suitable.
     void CheckSuitability(bool requires_swapchain) const;
@@ -376,6 +380,7 @@ private:
     VkShaderStageFlags guest_warp_stages{};     ///< Stages where the guest warp size can be forced.
     u64 device_access_memory{};                 ///< Total size of device local memory in bytes.
     u32 max_push_descriptors{};                 ///< Maximum number of push descriptors
+    u32 sets_per_pool{};                        ///< Sets per Description Pool
     bool is_optimal_astc_supported{};           ///< Support for native ASTC.
     bool is_float16_supported{};                ///< Support for float16 arithmetic.
     bool is_int8_supported{};                   ///< Support for int8 arithmetic.

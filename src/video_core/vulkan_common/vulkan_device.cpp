@@ -587,6 +587,13 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             ext_extended_dynamic_state = false;
         }
     }
+    if (ext_sampler_filter_minmax) {
+        if (driver_id == VK_DRIVER_ID_AMD_PROPRIETARY ||
+            driver_id == VK_DRIVER_ID_AMD_OPEN_SOURCE || driver_id == VK_DRIVER_ID_MESA_RADV) {
+            // Disable ext_sampler_filter_minmax in GCN as it is broken.
+            ext_sampler_filter_minmax = is_float16_supported;
+        }
+    }
     if (ext_vertex_input_dynamic_state && driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS) {
         LOG_WARNING(Render_Vulkan, "Blacklisting Intel for VK_EXT_vertex_input_dynamic_state");
         ext_vertex_input_dynamic_state = false;
@@ -599,6 +606,11 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
 
     graphics_queue = logical.GetQueue(graphics_family);
     present_queue = logical.GetQueue(present_family);
+
+    sets_per_pool = 64;
+    if (driver_id == VK_DRIVER_ID_AMD_PROPRIETARY || driver_id == VK_DRIVER_ID_AMD_OPEN_SOURCE) {
+        sets_per_pool = 96;
+    }
 }
 
 Device::~Device() = default;

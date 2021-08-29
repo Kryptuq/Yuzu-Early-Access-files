@@ -58,11 +58,12 @@ static DescriptorBankInfo MakeBankInfo(std::span<const Shader::Info> infos) {
 static void AllocatePool(const Device& device, DescriptorBank& bank) {
     std::array<VkDescriptorPoolSize, 6> pool_sizes;
     size_t pool_cursor{};
+    const u32 sets_per_pool = device.GetSetsPerPool();
     const auto add = [&](VkDescriptorType type, u32 count) {
         if (count > 0) {
             pool_sizes[pool_cursor++] = {
                 .type = type,
-                .descriptorCount = count * SETS_PER_POOL,
+                .descriptorCount = count * sets_per_pool,
             };
         }
     };
@@ -77,7 +78,7 @@ static void AllocatePool(const Device& device, DescriptorBank& bank) {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
         .pNext = nullptr,
         .flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
-        .maxSets = SETS_PER_POOL,
+        .maxSets = sets_per_pool,
         .poolSizeCount = static_cast<u32>(pool_cursor),
         .pPoolSizes = std::data(pool_sizes),
     }));

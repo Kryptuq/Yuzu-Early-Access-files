@@ -298,11 +298,11 @@ public:
     }
 
     size_t getLRUID() const noexcept {
-      return lru_id;
+        return lru_id;
     }
 
     void setLRUID(size_t lru_id_) {
-      lru_id = lru_id_;
+        lru_id = lru_id_;
     }
 
 private:
