@@ -653,8 +653,7 @@ class TranslatePass {
 public:
     TranslatePass(ObjectPool<IR::Inst>& inst_pool_, ObjectPool<IR::Block>& block_pool_,
                   ObjectPool<Statement>& stmt_pool_, Environment& env_, Statement& root_stmt,
-                  IR::AbstractSyntaxList& syntax_list_,
-                  [[maybe_unused]] const HostTranslateInfo& host_info)
+                  IR::AbstractSyntaxList& syntax_list_, const HostTranslateInfo& host_info)
         : stmt_pool{stmt_pool_}, inst_pool{inst_pool_}, block_pool{block_pool_}, env{env_},
           syntax_list{syntax_list_} {
         Visit(root_stmt, nullptr, nullptr);
@@ -662,9 +661,7 @@ public:
         IR::Block& first_block{*syntax_list.front().data.block};
         IR::IREmitter ir(first_block, first_block.begin());
         ir.Prologue();
-        // TODO(ameerj): Enable only on devices that require the reorder after testing
-        // if (uses_demote_to_helper && host_info.needs_demote_reorder ) {
-        if (uses_demote_to_helper) {
+        if (uses_demote_to_helper && host_info.needs_demote_reorder) {
             DemoteCombinationPass();
         }
     }

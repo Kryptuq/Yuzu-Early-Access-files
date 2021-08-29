@@ -81,6 +81,7 @@ enum class Class : u8 {
     Service_NCM,       ///< The NCM service
     Service_NFC,       ///< The NFC (Near-field communication) service
     Service_NFP,       ///< The NFP service
+    Service_NGCT,      ///< The NGCT (No Good Content for Terra) service
     Service_NIFM,      ///< The NIFM (Network interface) service
     Service_NIM,       ///< The NIM service
     Service_NPNS,      ///< The NPNS service

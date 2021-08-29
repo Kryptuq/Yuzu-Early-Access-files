@@ -46,6 +46,7 @@
 #include "core/hle/service/ncm/ncm.h"
 #include "core/hle/service/nfc/nfc.h"
 #include "core/hle/service/nfp/nfp.h"
+#include "core/hle/service/ngct/ngct.h"
 #include "core/hle/service/nifm/nifm.h"
 #include "core/hle/service/nim/nim.h"
 #include "core/hle/service/npns/npns.h"
@@ -271,6 +272,7 @@ Services::Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system
     NCM::InstallInterfaces(*sm, system);
     NFC::InstallInterfaces(*sm, system);
     NFP::InstallInterfaces(*sm, system);
+    NGCT::InstallInterfaces(*sm, system);
     NIFM::InstallInterfaces(*sm, system);
     NIM::InstallInterfaces(*sm, system);
     NPNS::InstallInterfaces(*sm, system);

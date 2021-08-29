@@ -452,6 +452,8 @@ add_library(core STATIC
     hle/service/nfp/nfp.h
     hle/service/nfp/nfp_user.cpp
     hle/service/nfp/nfp_user.h
+    hle/service/ngct/ngct.cpp
+    hle/service/ngct/ngct.h
     hle/service/nifm/nifm.cpp
     hle/service/nifm/nifm.h
     hle/service/nim/nim.cpp
