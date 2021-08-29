@@ -358,7 +358,7 @@ void VKBlitScreen::CreateDescriptorPool() {
 void VKBlitScreen::CreateRenderPass() {
     const VkAttachmentDescription color_attachment{
         .flags = 0,
-        .format = swapchain.GetImageFormat(),
+        .format = swapchain.GetImageViewFormat(),
         .samples = VK_SAMPLE_COUNT_1_BIT,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,

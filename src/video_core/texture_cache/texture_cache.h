@@ -5,7 +5,6 @@
 #pragma once
 
 #include "common/alignment.h"
-#include "common/settings.h"
 #include "video_core/dirty_flags.h"
 #include "video_core/texture_cache/samples_helper.h"
 #include "video_core/texture_cache/texture_cache_base.h"
@@ -62,8 +61,8 @@ template <class P>
 void TextureCache<P>::RunGarbageCollector() {
     const bool high_priority_mode = total_used_memory >= expected_memory;
     const bool aggressive_mode = total_used_memory >= critical_memory;
-    const u64 ticks_to_destroy = aggressive_mode ? 10ULL : high_priority_mode ? 50ULL : 100ULL;
-    size_t num_iterations = aggressive_mode ? 10000 : (high_priority_mode ? 50 : 5);
+    const u64 ticks_to_destroy = aggressive_mode ? 10ULL : high_priority_mode ? 25ULL : 100ULL;
+    size_t num_iterations = aggressive_mode ? 10000 : (high_priority_mode ? 100 : 5);
     const auto clean_up = [this, &num_iterations, high_priority_mode](ImageId image_id) {
         if (num_iterations == 0) {
             return true;
@@ -93,7 +92,7 @@ void TextureCache<P>::RunGarbageCollector() {
 
 template <class P>
 void TextureCache<P>::TickFrame() {
-    if (Settings::values.use_caches_gc.GetValue() && total_used_memory > minimum_memory) {
+    if (total_used_memory > minimum_memory) {
         RunGarbageCollector();
     }
     sentenced_images.Tick();

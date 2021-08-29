@@ -68,8 +68,8 @@ public:
         return *image_views[index];
     }
 
-    VkFormat GetImageFormat() const {
-        return image_format;
+    VkFormat GetImageViewFormat() const {
+        return image_view_format;
     }
 
 private:
@@ -96,7 +96,7 @@ private:
     u32 image_index{};
     u32 frame_index{};
 
-    VkFormat image_format{};
+    VkFormat image_view_format{};
     VkExtent2D extent{};
 
     bool current_srgb{};

@@ -78,7 +78,7 @@ class BufferCache {
 
     static constexpr BufferId NULL_BUFFER_ID{0};
 
-    static constexpr u64 EXPECTED_MEMORY = 256_MiB;
+    static constexpr u64 EXPECTED_MEMORY = 512_MiB;
     static constexpr u64 CRITICAL_MEMORY = 1_GiB;
 
     using Maxwell = Tegra::Engines::Maxwell3D::Regs;
@@ -486,7 +486,7 @@ void BufferCache<P>::TickFrame() {
     const bool skip_preferred = hits * 256 < shots * 251;
     uniform_buffer_skip_cache_size = skip_preferred ? DEFAULT_SKIP_CACHE_SIZE : 0;
 
-    if (Settings::values.use_caches_gc.GetValue() && total_used_memory >= EXPECTED_MEMORY) {
+    if (total_used_memory >= EXPECTED_MEMORY) {
         RunGarbageCollector();
     }
     ++frame_tick;
@@ -1539,10 +1539,10 @@ void BufferCache<P>::ChangeRegister(BufferId buffer_id) {
     const auto size = buffer.SizeBytes();
     if (insert) {
         total_used_memory += Common::AlignUp(size, 1024);
-        buffer.lru_id = lru_cache.Insert(buffer_id, frame_tick);
+        buffer.setLRUID(lru_cache.Insert(buffer_id, frame_tick));
     } else {
         total_used_memory -= Common::AlignUp(size, 1024);
-        lru_cache.Free(buffer.lru_id);
+        lru_cache.Free(buffer.getLRUID());
     }
     const VAddr cpu_addr_begin = buffer.CpuAddr();
     const VAddr cpu_addr_end = cpu_addr_begin + size;
@@ -1560,7 +1560,7 @@ void BufferCache<P>::ChangeRegister(BufferId buffer_id) {
 template <class P>
 void BufferCache<P>::TouchBuffer(Buffer& buffer, BufferId buffer_id) noexcept {
     if (buffer_id != NULL_BUFFER_ID) {
-        lru_cache.Touch(buffer.lru_id, frame_tick);
+        lru_cache.Touch(buffer.getLRUID(), frame_tick);
     }
 }
 

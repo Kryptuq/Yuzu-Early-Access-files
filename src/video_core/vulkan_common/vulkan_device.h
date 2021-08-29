@@ -224,6 +224,11 @@ public:
         return khr_pipeline_executable_properties;
     }
 
+    /// Returns true if VK_KHR_swapchain_mutable_format is enabled.
+    bool IsKhrSwapchainMutableFormatEnabled() const {
+        return khr_swapchain_mutable_format;
+    }
+
     /// Returns true if the device supports VK_KHR_workgroup_memory_explicit_layout.
     bool IsKhrWorkgroupMemoryExplicitLayoutSupported() const {
         return khr_workgroup_memory_explicit_layout;
@@ -390,6 +395,7 @@ private:
     bool khr_workgroup_memory_explicit_layout{}; ///< Support for explicit workgroup layouts.
     bool khr_push_descriptor{};                  ///< Support for VK_KHR_push_descritor.
     bool khr_pipeline_executable_properties{};   ///< Support for executable properties.
+    bool khr_swapchain_mutable_format{};         ///< Support for VK_KHR_swapchain_mutable_format.
     bool ext_index_type_uint8{};                 ///< Support for VK_EXT_index_type_uint8.
     bool ext_sampler_filter_minmax{};            ///< Support for VK_EXT_sampler_filter_minmax.
     bool ext_depth_range_unrestricted{};         ///< Support for VK_EXT_depth_range_unrestricted.

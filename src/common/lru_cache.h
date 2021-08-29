@@ -29,11 +29,11 @@ public:
     ~LeastRecentlyUsedCache() = default;
 
     size_t Insert(ObjectType obj, TickType tick) {
-        const auto new_id = build();
+        const auto new_id = Build();
         auto& item = item_pool[new_id];
         item.obj = obj;
         item.tick = tick;
-        attach(item);
+        Attach(item);
         return new_id;
     }
 
@@ -46,13 +46,13 @@ public:
         if (&item == last_item) {
             return;
         }
-        detach(item);
-        attach(item);
+        Detach(item);
+        Attach(item);
     }
 
     void Free(size_t id) {
         auto& item = item_pool[id];
-        detach(item);
+        Detach(item);
         item.prev = nullptr;
         item.next = nullptr;
         free_items.push_back(id);
@@ -80,11 +80,10 @@ public:
     }
 
 private:
-    size_t build() {
+    size_t Build() {
         if (free_items.empty()) {
             const size_t item_id = item_pool.size();
-            item_pool.emplace_back();
-            auto& item = item_pool[item_id];
+            auto& item = item_pool.emplace_back();
             item.next = nullptr;
             item.prev = nullptr;
             return item_id;
@@ -97,7 +96,7 @@ private:
         return item_id;
     }
 
-    void attach(Item& item) {
+    void Attach(Item& item) {
         if (!first_item) {
             first_item = &item;
         }
@@ -111,7 +110,7 @@ private:
         }
     }
 
-    void detach(Item& item) {
+    void Detach(Item& item) {
         if (item.prev) {
             item.prev->next = item.next;
         }
@@ -134,8 +133,8 @@ private:
 
     std::deque<Item> item_pool;
     std::deque<size_t> free_items;
-    Item* first_item;
-    Item* last_item;
+    Item* first_item{};
+    Item* last_item{};
 };
 
 } // namespace Common

@@ -297,7 +297,13 @@ public:
         return words.size_bytes;
     }
 
-    size_t lru_id;
+    size_t getLRUID() const noexcept {
+      return lru_id;
+    }
+
+    void setLRUID(size_t lru_id_) {
+      lru_id = lru_id_;
+    }
 
 private:
     template <Type type>
@@ -597,6 +603,7 @@ private:
     Words words;
     BufferFlagBits flags{};
     int stream_score = 0;
+    size_t lru_id = SIZE_MAX;
 };
 
 } // namespace VideoCommon

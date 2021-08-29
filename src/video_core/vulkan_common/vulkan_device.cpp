@@ -839,6 +839,8 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
     bool has_khr_shader_float16_int8{};
     bool has_khr_workgroup_memory_explicit_layout{};
     bool has_khr_pipeline_executable_properties{};
+    bool has_khr_image_format_list{};
+    bool has_khr_swapchain_mutable_format{};
     bool has_ext_subgroup_size_control{};
     bool has_ext_transform_feedback{};
     bool has_ext_custom_border_color{};
@@ -888,6 +890,9 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         test(has_ext_shader_atomic_int64, VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME, false);
         test(has_khr_workgroup_memory_explicit_layout,
              VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME, false);
+        test(has_khr_image_format_list, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME, false);
+        test(has_khr_swapchain_mutable_format, VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME,
+             false);
         test(has_ext_line_rasterization, VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME, false);
         if (Settings::values.enable_nsight_aftermath) {
             test(nv_device_diagnostics_config, VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME,
@@ -1065,6 +1070,11 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
             extensions.push_back(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
             khr_pipeline_executable_properties = true;
         }
+    }
+    if (has_khr_image_format_list && has_khr_swapchain_mutable_format) {
+        extensions.push_back(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
+        extensions.push_back(VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME);
+        khr_swapchain_mutable_format = true;
     }
     if (khr_push_descriptor) {
         VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor;

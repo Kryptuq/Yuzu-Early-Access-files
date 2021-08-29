@@ -481,7 +481,6 @@ struct Values {
                                                 ShaderBackend::SPIRV, "shader_backend"};
     Setting<bool> use_asynchronous_shaders{false, "use_asynchronous_shaders"};
     Setting<bool> use_fast_gpu_time{true, "use_fast_gpu_time"};
-    Setting<bool> use_caches_gc{false, "use_caches_gc"};
 
     Setting<u8> bg_red{0, "bg_red"};
     Setting<u8> bg_green{0, "bg_green"};
