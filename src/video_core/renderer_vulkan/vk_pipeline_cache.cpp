@@ -325,7 +325,8 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::Engines::Maxw
     host_info = Shader::HostTranslateInfo{
         .support_float16 = device.IsFloat16Supported(),
         .support_int64 = device.IsShaderInt64Supported(),
-        .needs_demote_reorder = driver_id == VK_DRIVER_ID_AMD_PROPRIETARY_KHR,
+        .needs_demote_reorder = driver_id == VK_DRIVER_ID_AMD_PROPRIETARY_KHR ||
+                                driver_id == VK_DRIVER_ID_AMD_OPEN_SOURCE_KHR,
     };
 }
 
