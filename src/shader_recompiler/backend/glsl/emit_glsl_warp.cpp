@@ -11,6 +11,8 @@
 
 namespace Shader::Backend::GLSL {
 namespace {
+constexpr char THREAD_ID[]{"gl_SubGroupInvocationARB"};
+
 void SetInBoundsFlag(EmitContext& ctx, IR::Inst& inst) {
     IR::Inst* const in_bounds{inst.GetAssociatedPseudoOperation(IR::Opcode::GetInBoundsFromOp)};
     if (!in_bounds) {
@@ -43,84 +45,100 @@ void UseShuffleNv(EmitContext& ctx, IR::Inst& inst, std::string_view shfl_op,
     ctx.AddU32("{}={}({},{},{},shfl_in_bounds);", inst, shfl_op, value, index, width);
     SetInBoundsFlag(ctx, inst);
 }
+
+std::string_view BallotIndex(EmitContext& ctx) {
+    if (!ctx.profile.warp_size_potentially_larger_than_guest) {
+        return ".x";
+    }
+    return "[gl_SubGroupInvocationARB>>5]";
+}
+
+std::string GetMask(EmitContext& ctx, std::string_view mask) {
+    const auto ballot_index{BallotIndex(ctx)};
+    return fmt::format("uint(uvec2({}){})", mask, ballot_index);
+}
 } // Anonymous namespace
 
 void EmitLaneId(EmitContext& ctx, IR::Inst& inst) {
-    ctx.AddU32("{}=gl_SubGroupInvocationARB&31u;", inst);
+    ctx.AddU32("{}={}&31u;", inst, THREAD_ID);
 }
 
 void EmitVoteAll(EmitContext& ctx, IR::Inst& inst, std::string_view pred) {
     if (!ctx.profile.warp_size_potentially_larger_than_guest) {
         ctx.AddU1("{}=allInvocationsEqualARB({});", inst, pred);
-    } else {
-        const auto active_mask{fmt::format("uvec2(ballotARB(true))[gl_SubGroupInvocationARB]")};
-        const auto ballot{fmt::format("uvec2(ballotARB({}))[gl_SubGroupInvocationARB]", pred)};
-        ctx.AddU1("{}=({}&{})=={};", inst, ballot, active_mask, active_mask);
+        return;
     }
+    const auto ballot_index{BallotIndex(ctx)};
+    const auto active_mask{fmt::format("uvec2(ballotARB(true)){}", ballot_index)};
+    const auto ballot{fmt::format("uvec2(ballotARB({})){}", pred, ballot_index)};
+    ctx.AddU1("{}=({}&{})=={};", inst, ballot, active_mask, active_mask);
 }
 
 void EmitVoteAny(EmitContext& ctx, IR::Inst& inst, std::string_view pred) {
     if (!ctx.profile.warp_size_potentially_larger_than_guest) {
         ctx.AddU1("{}=anyInvocationARB({});", inst, pred);
-    } else {
-        const auto active_mask{fmt::format("uvec2(ballotARB(true))[gl_SubGroupInvocationARB]")};
-        const auto ballot{fmt::format("uvec2(ballotARB({}))[gl_SubGroupInvocationARB]", pred)};
-        ctx.AddU1("{}=({}&{})!=0u;", inst, ballot, active_mask, active_mask);
+        return;
     }
+    const auto ballot_index{BallotIndex(ctx)};
+    const auto active_mask{fmt::format("uvec2(ballotARB(true)){}", ballot_index)};
+    const auto ballot{fmt::format("uvec2(ballotARB({})){}", pred, ballot_index)};
+    ctx.AddU1("{}=({}&{})!=0u;", inst, ballot, active_mask, active_mask);
 }
 
 void EmitVoteEqual(EmitContext& ctx, IR::Inst& inst, std::string_view pred) {
     if (!ctx.profile.warp_size_potentially_larger_than_guest) {
         ctx.AddU1("{}=allInvocationsEqualARB({});", inst, pred);
-    } else {
-        const auto active_mask{fmt::format("uvec2(ballotARB(true))[gl_SubGroupInvocationARB]")};
-        const auto ballot{fmt::format("uvec2(ballotARB({}))[gl_SubGroupInvocationARB]", pred)};
-        const auto value{fmt::format("({}^{})", ballot, active_mask)};
-        ctx.AddU1("{}=({}==0)||({}=={});", inst, value, value, active_mask);
+        return;
     }
+    const auto ballot_index{BallotIndex(ctx)};
+    const auto active_mask{fmt::format("uvec2(ballotARB(true)){}", ballot_index)};
+    const auto ballot{fmt::format("uvec2(ballotARB({})){}", pred, ballot_index)};
+    const auto value{fmt::format("({}^{})", ballot, active_mask)};
+    ctx.AddU1("{}=({}==0)||({}=={});", inst, value, value, active_mask);
 }
 
 void EmitSubgroupBallot(EmitContext& ctx, IR::Inst& inst, std::string_view pred) {
-    if (!ctx.profile.warp_size_potentially_larger_than_guest) {
-        ctx.AddU32("{}=uvec2(ballotARB({})).x;", inst, pred);
-    } else {
-        ctx.AddU32("{}=uvec2(ballotARB({}))[gl_SubGroupInvocationARB];", inst, pred);
-    }
+    const auto ballot_index{BallotIndex(ctx)};
+    ctx.AddU32("{}=uvec2(ballotARB({})){};", inst, pred, ballot_index);
 }
 
 void EmitSubgroupEqMask(EmitContext& ctx, IR::Inst& inst) {
-    ctx.AddU32("{}=uint(gl_SubGroupEqMaskARB.x);", inst);
+    ctx.AddU32("{}={};", inst, GetMask(ctx, "gl_SubGroupEqMaskARB"));
 }
 
 void EmitSubgroupLtMask(EmitContext& ctx, IR::Inst& inst) {
-    ctx.AddU32("{}=uint(gl_SubGroupLtMaskARB.x);", inst);
+    ctx.AddU32("{}={};", inst, GetMask(ctx, "gl_SubGroupLtMaskARB"));
 }
 
 void EmitSubgroupLeMask(EmitContext& ctx, IR::Inst& inst) {
-    ctx.AddU32("{}=uint(gl_SubGroupLeMaskARB.x);", inst);
+    ctx.AddU32("{}={};", inst, GetMask(ctx, "gl_SubGroupLeMaskARB"));
 }
 
 void EmitSubgroupGtMask(EmitContext& ctx, IR::Inst& inst) {
-    ctx.AddU32("{}=uint(gl_SubGroupGtMaskARB.x);", inst);
+    ctx.AddU32("{}={};", inst, GetMask(ctx, "gl_SubGroupGtMaskARB"));
 }
 
 void EmitSubgroupGeMask(EmitContext& ctx, IR::Inst& inst) {
-    ctx.AddU32("{}=uint(gl_SubGroupGeMaskARB.x);", inst);
+    ctx.AddU32("{}={};", inst, GetMask(ctx, "gl_SubGroupGeMaskARB"));
 }
 
 void EmitShuffleIndex(EmitContext& ctx, IR::Inst& inst, std::string_view value,
-                      std::string_view index, std::string_view clamp,
-                      std::string_view segmentation_mask) {
+                      std::string_view index, std::string_view clamp, std::string_view seg_mask) {
     if (ctx.profile.support_gl_warp_intrinsics) {
-        UseShuffleNv(ctx, inst, "shuffleNV", value, index, clamp, segmentation_mask);
+        UseShuffleNv(ctx, inst, "shuffleNV", value, index, clamp, seg_mask);
         return;
     }
-    const auto not_seg_mask{fmt::format("(~{})", segmentation_mask)};
-    const auto thread_id{"gl_SubGroupInvocationARB"};
-    const auto min_thread_id{ComputeMinThreadId(thread_id, segmentation_mask)};
-    const auto max_thread_id{ComputeMaxThreadId(min_thread_id, clamp, not_seg_mask)};
+    const bool big_warp{ctx.profile.warp_size_potentially_larger_than_guest};
+    const auto is_upper_partition{"int(gl_SubGroupInvocationARB)>=32"};
+    const auto upper_index{fmt::format("{}?{}+32:{}", is_upper_partition, index, index)};
+    const auto upper_clamp{fmt::format("{}?{}+32:{}", is_upper_partition, clamp, clamp)};
 
-    const auto lhs{fmt::format("({}&{})", index, not_seg_mask)};
+    const auto not_seg_mask{fmt::format("(~{})", seg_mask)};
+    const auto min_thread_id{ComputeMinThreadId(THREAD_ID, seg_mask)};
+    const auto max_thread_id{
+        ComputeMaxThreadId(min_thread_id, big_warp ? upper_clamp : clamp, not_seg_mask)};
+
+    const auto lhs{fmt::format("({}&{})", big_warp ? upper_index : index, not_seg_mask)};
     const auto src_thread_id{fmt::format("({})|({})", lhs, min_thread_id)};
     ctx.Add("shfl_in_bounds=int({})<=int({});", src_thread_id, max_thread_id);
     SetInBoundsFlag(ctx, inst);
@@ -128,29 +146,34 @@ void EmitShuffleIndex(EmitContext& ctx, IR::Inst& inst, std::string_view value,
 }
 
 void EmitShuffleUp(EmitContext& ctx, IR::Inst& inst, std::string_view value, std::string_view index,
-                   std::string_view clamp, std::string_view segmentation_mask) {
+                   std::string_view clamp, std::string_view seg_mask) {
     if (ctx.profile.support_gl_warp_intrinsics) {
-        UseShuffleNv(ctx, inst, "shuffleUpNV", value, index, clamp, segmentation_mask);
+        UseShuffleNv(ctx, inst, "shuffleUpNV", value, index, clamp, seg_mask);
         return;
     }
-    const auto thread_id{"gl_SubGroupInvocationARB"};
-    const auto max_thread_id{GetMaxThreadId(thread_id, clamp, segmentation_mask)};
-    const auto src_thread_id{fmt::format("({}-{})", thread_id, index)};
+    const bool big_warp{ctx.profile.warp_size_potentially_larger_than_guest};
+    const auto is_upper_partition{"int(gl_SubGroupInvocationARB)>=32"};
+    const auto upper_clamp{fmt::format("{}?{}+32:{}", is_upper_partition, clamp, clamp)};
+
+    const auto max_thread_id{GetMaxThreadId(THREAD_ID, big_warp ? upper_clamp : clamp, seg_mask)};
+    const auto src_thread_id{fmt::format("({}-{})", THREAD_ID, index)};
     ctx.Add("shfl_in_bounds=int({})>=int({});", src_thread_id, max_thread_id);
     SetInBoundsFlag(ctx, inst);
     ctx.AddU32("{}=shfl_in_bounds?readInvocationARB({},{}):{};", inst, value, src_thread_id, value);
 }
 
 void EmitShuffleDown(EmitContext& ctx, IR::Inst& inst, std::string_view value,
-                     std::string_view index, std::string_view clamp,
-                     std::string_view segmentation_mask) {
+                     std::string_view index, std::string_view clamp, std::string_view seg_mask) {
     if (ctx.profile.support_gl_warp_intrinsics) {
-        UseShuffleNv(ctx, inst, "shuffleDownNV", value, index, clamp, segmentation_mask);
+        UseShuffleNv(ctx, inst, "shuffleDownNV", value, index, clamp, seg_mask);
         return;
     }
-    const auto thread_id{"gl_SubGroupInvocationARB"};
-    const auto max_thread_id{GetMaxThreadId(thread_id, clamp, segmentation_mask)};
-    const auto src_thread_id{fmt::format("({}+{})", thread_id, index)};
+    const bool big_warp{ctx.profile.warp_size_potentially_larger_than_guest};
+    const auto is_upper_partition{"int(gl_SubGroupInvocationARB)>=32"};
+    const auto upper_clamp{fmt::format("{}?{}+32:{}", is_upper_partition, clamp, clamp)};
+
+    const auto max_thread_id{GetMaxThreadId(THREAD_ID, big_warp ? upper_clamp : clamp, seg_mask)};
+    const auto src_thread_id{fmt::format("({}+{})", THREAD_ID, index)};
     ctx.Add("shfl_in_bounds=int({})<=int({});", src_thread_id, max_thread_id);
     SetInBoundsFlag(ctx, inst);
     ctx.AddU32("{}=shfl_in_bounds?readInvocationARB({},{}):{};", inst, value, src_thread_id, value);
@@ -158,14 +181,17 @@ void EmitShuffleDown(EmitContext& ctx, IR::Inst& inst, std::string_view value,
 
 void EmitShuffleButterfly(EmitContext& ctx, IR::Inst& inst, std::string_view value,
                           std::string_view index, std::string_view clamp,
-                          std::string_view segmentation_mask) {
+                          std::string_view seg_mask) {
     if (ctx.profile.support_gl_warp_intrinsics) {
-        UseShuffleNv(ctx, inst, "shuffleXorNV", value, index, clamp, segmentation_mask);
+        UseShuffleNv(ctx, inst, "shuffleXorNV", value, index, clamp, seg_mask);
         return;
     }
-    const auto thread_id{"gl_SubGroupInvocationARB"};
-    const auto max_thread_id{GetMaxThreadId(thread_id, clamp, segmentation_mask)};
-    const auto src_thread_id{fmt::format("({}^{})", thread_id, index)};
+    const bool big_warp{ctx.profile.warp_size_potentially_larger_than_guest};
+    const auto is_upper_partition{"int(gl_SubGroupInvocationARB)>=32"};
+    const auto upper_clamp{fmt::format("{}?{}+32:{}", is_upper_partition, clamp, clamp)};
+
+    const auto max_thread_id{GetMaxThreadId(THREAD_ID, big_warp ? upper_clamp : clamp, seg_mask)};
+    const auto src_thread_id{fmt::format("({}^{})", THREAD_ID, index)};
     ctx.Add("shfl_in_bounds=int({})<=int({});", src_thread_id, max_thread_id);
     SetInBoundsFlag(ctx, inst);
     ctx.AddU32("{}=shfl_in_bounds?readInvocationARB({},{}):{};", inst, value, src_thread_id, value);
