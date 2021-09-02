@@ -18,6 +18,7 @@
 #include "common/fs/fs_paths.h"
 #include "common/fs/path_util.h"
 #include "common/literals.h"
+#include "common/thread.h"
 
 #include "common/logging/backend.h"
 #include "common/logging/log.h"
