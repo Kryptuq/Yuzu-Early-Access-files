@@ -34,10 +34,10 @@ public:
     ~VKScheduler();
 
     /// Sends the current execution context to the GPU.
-    void Flush(VkSemaphore semaphore = nullptr);
+    void Flush(VkSemaphore signal_semaphore = nullptr, VkSemaphore wait_semaphore = nullptr);
 
     /// Sends the current execution context to the GPU and waits for it to complete.
-    void Finish(VkSemaphore semaphore = nullptr);
+    void Finish(VkSemaphore signal_semaphore = nullptr, VkSemaphore wait_semaphore = nullptr);
 
     /// Waits for the worker thread to finish executing everything. After this function returns it's
     /// safe to touch worker resources.
@@ -191,7 +191,7 @@ private:
 
     void AllocateWorkerCommandBuffer();
 
-    void SubmitExecution(VkSemaphore semaphore);
+    void SubmitExecution(VkSemaphore signal_semaphore, VkSemaphore wait_semaphore);
 
     void AllocateNewContext();
 

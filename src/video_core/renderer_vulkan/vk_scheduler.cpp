@@ -55,14 +55,14 @@ VKScheduler::~VKScheduler() {
     worker_thread.join();
 }
 
-void VKScheduler::Flush(VkSemaphore semaphore) {
-    SubmitExecution(semaphore);
+void VKScheduler::Flush(VkSemaphore signal_semaphore, VkSemaphore wait_semaphore) {
+    SubmitExecution(signal_semaphore, wait_semaphore);
     AllocateNewContext();
 }
 
-void VKScheduler::Finish(VkSemaphore semaphore) {
+void VKScheduler::Finish(VkSemaphore signal_semaphore, VkSemaphore wait_semaphore) {
     const u64 presubmit_tick = CurrentTick();
-    SubmitExecution(semaphore);
+    SubmitExecution(signal_semaphore, wait_semaphore);
     WaitWorker();
     Wait(presubmit_tick);
     AllocateNewContext();
@@ -171,37 +171,41 @@ void VKScheduler::AllocateWorkerCommandBuffer() {
     });
 }
 
-void VKScheduler::SubmitExecution(VkSemaphore semaphore) {
+void VKScheduler::SubmitExecution(VkSemaphore signal_semaphore, VkSemaphore wait_semaphore) {
     EndPendingOperations();
     InvalidateState();
 
     const u64 signal_value = master_semaphore->NextTick();
-    Record([semaphore, signal_value, this](vk::CommandBuffer cmdbuf) {
+    Record([signal_semaphore, wait_semaphore, signal_value, this](vk::CommandBuffer cmdbuf) {
         cmdbuf.End();
-
-        const u32 num_signal_semaphores = semaphore ? 2U : 1U;
-
-        const u64 wait_value = signal_value - 1;
-        const VkPipelineStageFlags wait_stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-
         const VkSemaphore timeline_semaphore = master_semaphore->Handle();
+
+        const u32 num_signal_semaphores = signal_semaphore ? 2U : 1U;
         const std::array signal_values{signal_value, u64(0)};
-        const std::array signal_semaphores{timeline_semaphore, semaphore};
+        const std::array signal_semaphores{timeline_semaphore, signal_semaphore};
+
+        const u32 num_wait_semaphores = wait_semaphore ? 2U : 1U;
+        const std::array wait_values{signal_value - 1, u64(1)};
+        const std::array wait_semaphores{timeline_semaphore, wait_semaphore};
+        static constexpr std::array<VkPipelineStageFlags, 2> wait_stage_masks{
+            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        };
 
         const VkTimelineSemaphoreSubmitInfoKHR timeline_si{
             .sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO_KHR,
             .pNext = nullptr,
-            .waitSemaphoreValueCount = 1,
-            .pWaitSemaphoreValues = &wait_value,
+            .waitSemaphoreValueCount = num_wait_semaphores,
+            .pWaitSemaphoreValues = wait_values.data(),
             .signalSemaphoreValueCount = num_signal_semaphores,
             .pSignalSemaphoreValues = signal_values.data(),
         };
         const VkSubmitInfo submit_info{
             .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
             .pNext = &timeline_si,
-            .waitSemaphoreCount = 1,
-            .pWaitSemaphores = &timeline_semaphore,
-            .pWaitDstStageMask = &wait_stage_mask,
+            .waitSemaphoreCount = num_wait_semaphores,
+            .pWaitSemaphores = wait_semaphores.data(),
+            .pWaitDstStageMask = wait_stage_masks.data(),
             .commandBufferCount = 1,
             .pCommandBuffers = cmdbuf.address(),
             .signalSemaphoreCount = num_signal_semaphores,

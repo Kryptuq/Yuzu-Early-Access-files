@@ -72,6 +72,10 @@ public:
         return image_view_format;
     }
 
+    VkSemaphore CurrentPresentSemaphore() const {
+        return *present_semaphores[frame_index];
+    }
+
 private:
     void CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, u32 width, u32 height,
                          bool srgb);

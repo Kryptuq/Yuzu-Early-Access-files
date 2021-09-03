@@ -106,14 +106,12 @@ void VKSwapchain::AcquireNextImage() {
 }
 
 void VKSwapchain::Present(VkSemaphore render_semaphore) {
-    const VkSemaphore present_semaphore{*present_semaphores[frame_index]};
-    const std::array<VkSemaphore, 2> semaphores{present_semaphore, render_semaphore};
     const auto present_queue{device.GetPresentQueue()};
     const VkPresentInfoKHR present_info{
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
         .pNext = nullptr,
-        .waitSemaphoreCount = render_semaphore ? 2U : 1U,
-        .pWaitSemaphores = semaphores.data(),
+        .waitSemaphoreCount = render_semaphore ? 1U : 0U,
+        .pWaitSemaphores = &render_semaphore,
         .swapchainCount = 1,
         .pSwapchains = swapchain.address(),
         .pImageIndices = &image_index,
