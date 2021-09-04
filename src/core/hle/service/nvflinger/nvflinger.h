@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "common/common_types.h"
+#include "core/hle/service/kernel_helpers.h"
 
 namespace Common {
 class Event;
@@ -137,6 +138,8 @@ private:
     std::unique_ptr<std::thread> vsync_thread;
     std::unique_ptr<Common::Event> wait_event;
     std::atomic<bool> is_running{};
+
+    KernelHelpers::ServiceContext service_context;
 };
 
 } // namespace Service::NVFlinger

@@ -21,34 +21,25 @@ namespace Core {
 CpuManager::CpuManager(System& system_) : system{system_} {}
 CpuManager::~CpuManager() = default;
 
-void CpuManager::ThreadStart(CpuManager& cpu_manager, std::size_t core) {
-    cpu_manager.RunThread(core);
+void CpuManager::ThreadStart(std::stop_token stop_token, CpuManager& cpu_manager,
+                             std::size_t core) {
+    cpu_manager.RunThread(stop_token, core);
 }
 
 void CpuManager::Initialize() {
     running_mode = true;
     if (is_multicore) {
         for (std::size_t core = 0; core < Core::Hardware::NUM_CPU_CORES; core++) {
-            core_data[core].host_thread =
-                std::make_unique<std::thread>(ThreadStart, std::ref(*this), core);
+            core_data[core].host_thread = std::jthread(ThreadStart, std::ref(*this), core);
         }
     } else {
-        core_data[0].host_thread = std::make_unique<std::thread>(ThreadStart, std::ref(*this), 0);
+        core_data[0].host_thread = std::jthread(ThreadStart, std::ref(*this), 0);
     }
 }
 
 void CpuManager::Shutdown() {
     running_mode = false;
     Pause(false);
-    if (is_multicore) {
-        for (auto& data : core_data) {
-            data.host_thread->join();
-            data.host_thread.reset();
-        }
-    } else {
-        core_data[0].host_thread->join();
-        core_data[0].host_thread.reset();
-    }
 }
 
 std::function<void(void*)> CpuManager::GetGuestThreadStartFunc() {
@@ -317,7 +308,7 @@ void CpuManager::Pause(bool paused) {
     }
 }
 
-void CpuManager::RunThread(std::size_t core) {
+void CpuManager::RunThread(std::stop_token stop_token, std::size_t core) {
     /// Initialization
     system.RegisterCoreThread(core);
     std::string name;
@@ -359,6 +350,10 @@ void CpuManager::RunThread(std::size_t core) {
         // Abort if emulation was killed before the session really starts
         if (!system.IsPoweredOn()) {
             return;
+        }
+
+        if (stop_token.stop_requested()) {
+            break;
         }
 
         auto current_thread = system.Kernel().CurrentScheduler()->GetCurrentThread();

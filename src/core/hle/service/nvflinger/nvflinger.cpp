@@ -61,12 +61,13 @@ void NVFlinger::SplitVSync() {
     }
 }
 
-NVFlinger::NVFlinger(Core::System& system_) : system(system_) {
-    displays.emplace_back(0, "Default", system);
-    displays.emplace_back(1, "External", system);
-    displays.emplace_back(2, "Edid", system);
-    displays.emplace_back(3, "Internal", system);
-    displays.emplace_back(4, "Null", system);
+NVFlinger::NVFlinger(Core::System& system_)
+    : system(system_), service_context(system_, "nvflinger") {
+    displays.emplace_back(0, "Default", service_context, system);
+    displays.emplace_back(1, "External", service_context, system);
+    displays.emplace_back(2, "Edid", service_context, system);
+    displays.emplace_back(3, "Internal", service_context, system);
+    displays.emplace_back(4, "Null", service_context, system);
     guard = std::make_shared<std::mutex>();
 
     // Schedule the screen composition events
