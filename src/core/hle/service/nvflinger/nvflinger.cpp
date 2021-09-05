@@ -147,7 +147,7 @@ std::optional<u64> NVFlinger::CreateLayer(u64 display_id) {
 void NVFlinger::CreateLayerAtId(VI::Display& display, u64 layer_id) {
     const u32 buffer_queue_id = next_buffer_queue_id++;
     buffer_queues.emplace_back(
-        std::make_unique<BufferQueue>(system.Kernel(), buffer_queue_id, layer_id));
+        std::make_unique<BufferQueue>(system.Kernel(), buffer_queue_id, layer_id, service_context));
     display.CreateLayer(layer_id, *buffer_queues.back());
 }
 
