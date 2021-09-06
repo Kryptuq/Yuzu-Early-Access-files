@@ -97,14 +97,19 @@ ResultCode VfsDirectoryServiceWrapper::DeleteFile(const std::string& path_) cons
 
 ResultCode VfsDirectoryServiceWrapper::CreateDirectory(const std::string& path_) const {
     std::string path(Common::FS::SanitizePath(path_));
-    auto dir = GetDirectoryRelativeWrapped(backing, Common::FS::GetParentPath(path));
-    if (dir == nullptr || Common::FS::GetFilename(Common::FS::GetParentPath(path)).empty()) {
-        dir = backing;
-    }
-    auto new_dir = dir->CreateSubdirectory(Common::FS::GetFilename(path));
-    if (new_dir == nullptr) {
-        // TODO(DarkLordZach): Find a better error code for this
-        return ResultUnknown;
+    const auto components = Common::FS::SplitPathComponents(path);
+    std::string relative_path = "";
+    for (const auto& component : components) {
+        // Skip empty path components
+        if (component.empty()) {
+            continue;
+        }
+        relative_path = Common::FS::SanitizePath(relative_path + '/' + component);
+        auto new_dir = backing->CreateSubdirectory(relative_path);
+        if (new_dir == nullptr) {
+            // TODO(DarkLordZach): Find a better error code for this
+            return ResultUnknown;
+        }
     }
     return ResultSuccess;
 }
