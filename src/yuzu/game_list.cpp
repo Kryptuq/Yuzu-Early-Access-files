@@ -515,16 +515,16 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
     QAction* open_save_location = context_menu.addAction(tr("Open Save Data Location"));
     QAction* open_mod_location = context_menu.addAction(tr("Open Mod Data Location"));
     QAction* open_transferable_shader_cache =
-        context_menu.addAction(tr("Open Transferable Shader Cache"));
+        context_menu.addAction(tr("Open Transferable Pipeline Cache"));
     context_menu.addSeparator();
     QMenu* remove_menu = context_menu.addMenu(tr("Remove"));
     QAction* remove_update = remove_menu->addAction(tr("Remove Installed Update"));
     QAction* remove_dlc = remove_menu->addAction(tr("Remove All Installed DLC"));
     QAction* remove_custom_config = remove_menu->addAction(tr("Remove Custom Configuration"));
-    QAction* remove_gl_shader_cache = remove_menu->addAction(tr("Remove OpenGL Shader Cache"));
-    QAction* remove_vk_shader_cache = remove_menu->addAction(tr("Remove Vulkan Shader Cache"));
+    QAction* remove_gl_shader_cache = remove_menu->addAction(tr("Remove OpenGL Pipeline Cache"));
+    QAction* remove_vk_shader_cache = remove_menu->addAction(tr("Remove Vulkan Pipeline Cache"));
     remove_menu->addSeparator();
-    QAction* remove_shader_cache = remove_menu->addAction(tr("Remove All Shader Caches"));
+    QAction* remove_shader_cache = remove_menu->addAction(tr("Remove All Pipeline Caches"));
     QAction* remove_all_content = remove_menu->addAction(tr("Remove All Installed Contents"));
     QMenu* dump_romfs_menu = context_menu.addMenu(tr("Dump RomFS"));
     QAction* dump_romfs = dump_romfs_menu->addAction(tr("Dump RomFS"));

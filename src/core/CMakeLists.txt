@@ -263,6 +263,8 @@ add_library(core STATIC
     hle/service/acc/acc_u0.h
     hle/service/acc/acc_u1.cpp
     hle/service/acc/acc_u1.h
+    hle/service/acc/async_context.cpp
+    hle/service/acc/async_context.h
     hle/service/acc/errors.h
     hle/service/acc/profile_manager.cpp
     hle/service/acc/profile_manager.h

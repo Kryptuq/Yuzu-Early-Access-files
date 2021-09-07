@@ -82,7 +82,7 @@
            <string>Enables asynchronous shader compilation, which may reduce shader stutter. This feature is experimental.</string>
           </property>
           <property name="text">
-           <string>Use asynchronous shader building (hack)</string>
+           <string>Use asynchronous shader building (Hack)</string>
           </property>
          </widget>
         </item>
@@ -92,7 +92,7 @@
             <string>Enables Fast GPU Time. This option will force most games to run at their highest native resolution.</string>
           </property>
           <property name="text">
-           <string>Use Fast GPU Time (hack)</string>
+           <string>Use Fast GPU Time (Hack)</string>
           </property>
          </widget>
         </item>

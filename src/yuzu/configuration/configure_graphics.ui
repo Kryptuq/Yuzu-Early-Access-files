@@ -156,7 +156,7 @@
         <item>
          <widget class="QCheckBox" name="use_disk_shader_cache">
           <property name="text">
-           <string>Use disk shader cache</string>
+           <string>Use disk pipeline cache</string>
           </property>
          </widget>
         </item>

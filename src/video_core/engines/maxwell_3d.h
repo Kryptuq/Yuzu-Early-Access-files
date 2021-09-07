@@ -475,10 +475,10 @@ public:
 
                 // These values are used by Nouveau and some games.
                 AddGL = 0x8006,
-                SubtractGL = 0x8007,
-                ReverseSubtractGL = 0x8008,
-                MinGL = 0x800a,
-                MaxGL = 0x800b
+                MinGL = 0x8007,
+                MaxGL = 0x8008,
+                SubtractGL = 0x800a,
+                ReverseSubtractGL = 0x800b
             };
 
             enum class Factor : u32 {
