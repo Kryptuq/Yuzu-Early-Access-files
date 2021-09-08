@@ -126,6 +126,7 @@ void ConfigureInputAdvanced::ApplyConfiguration() {
     Settings::values.mouse_panning_sensitivity =
         static_cast<float>(ui->mouse_panning_sensitivity->value());
     Settings::values.touchscreen.enabled = ui->touchscreen_enabled->isChecked();
+    Settings::values.enable_raw_input = ui->enable_raw_input->isChecked();
 }
 
 void ConfigureInputAdvanced::LoadConfiguration() {
@@ -155,6 +156,7 @@ void ConfigureInputAdvanced::LoadConfiguration() {
     ui->mouse_panning->setChecked(Settings::values.mouse_panning.GetValue());
     ui->mouse_panning_sensitivity->setValue(Settings::values.mouse_panning_sensitivity.GetValue());
     ui->touchscreen_enabled->setChecked(Settings::values.touchscreen.enabled);
+    ui->enable_raw_input->setChecked(Settings::values.enable_raw_input.GetValue());
 
     UpdateUIEnabled();
 }

@@ -563,6 +563,7 @@ void Config::ReadControlValues() {
     ReadTouchscreenValues();
     ReadMotionTouchValues();
 
+    ReadBasicSetting(Settings::values.enable_raw_input);
     ReadBasicSetting(Settings::values.emulate_analog_keyboard);
     Settings::values.mouse_panning = false;
     ReadBasicSetting(Settings::values.mouse_panning_sensitivity);
@@ -1199,6 +1200,7 @@ void Config::SaveControlValues() {
     WriteGlobalSetting(Settings::values.vibration_enabled);
     WriteGlobalSetting(Settings::values.enable_accurate_vibrations);
     WriteGlobalSetting(Settings::values.motion_enabled);
+    WriteBasicSetting(Settings::values.enable_raw_input);
     WriteBasicSetting(Settings::values.keyboard_enabled);
     WriteBasicSetting(Settings::values.emulate_analog_keyboard);
     WriteBasicSetting(Settings::values.mouse_panning_sensitivity);

@@ -559,7 +559,8 @@ void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,
                                         const std::string& additional_args, bool is_local) {
 #ifdef YUZU_USE_QT_WEB_ENGINE
 
-    if (disable_web_applet) {
+    // Raw input breaks with the web applet, Disable web applets if enabled
+    if (disable_web_applet || Settings::values.enable_raw_input) {
         emit WebBrowserClosed(Service::AM::Applets::WebExitReason::WindowClosed,
                               "http://localhost/");
         return;

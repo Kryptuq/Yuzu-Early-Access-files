@@ -21,8 +21,6 @@
 
 namespace InputCommon::CemuhookUDP {
 
-constexpr char DEFAULT_SRV[] = "127.0.0.1:26760";
-
 class Socket;
 
 namespace Response {

@@ -16,7 +16,6 @@
 
 #include "common/common_types.h"
 #include "common/settings_input.h"
-#include "input_common/udp/client.h"
 
 namespace Settings {
 
@@ -504,14 +503,15 @@ struct Values {
 
     Setting<bool> use_docked_mode{true, "use_docked_mode"};
 
+    BasicSetting<bool> enable_raw_input{false, "enable_raw_input"};
+
     Setting<bool> vibration_enabled{true, "vibration_enabled"};
     Setting<bool> enable_accurate_vibrations{false, "enable_accurate_vibrations"};
 
     Setting<bool> motion_enabled{true, "motion_enabled"};
     BasicSetting<std::string> motion_device{"engine:motion_emu,update_period:100,sensitivity:0.01",
                                             "motion_device"};
-    BasicSetting<std::string> udp_input_servers{InputCommon::CemuhookUDP::DEFAULT_SRV,
-                                                "udp_input_servers"};
+    BasicSetting<std::string> udp_input_servers{"127.0.0.1:26760", "udp_input_servers"};
 
     BasicSetting<bool> pause_tas_on_load{true, "pause_tas_on_load"};
     BasicSetting<bool> tas_enable{false, "tas_enable"};
