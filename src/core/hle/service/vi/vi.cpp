@@ -592,7 +592,6 @@ private:
             buffer_queue.QueueBuffer(request.data.slot, request.data.transform,
                                      request.data.GetCropRect(), request.data.swap_interval,
                                      request.data.multi_fence);
-            nv_flinger.PrequeueFrame(id, request.data.slot);
 
             IGBPQueueBufferResponseParcel response{1280, 720};
             ctx.WriteBuffer(response.Serialize());

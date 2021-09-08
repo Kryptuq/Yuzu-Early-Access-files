@@ -393,7 +393,6 @@ void RasterizerVulkan::SignalSemaphore(GPUVAddr addr, u32 value) {
 }
 
 void RasterizerVulkan::SignalSyncPoint(u32 value) {
-    gpu.IncrementSyncPointGuest(value);
     if (!gpu.IsAsync()) {
         gpu.IncrementSyncPoint(value);
         return;

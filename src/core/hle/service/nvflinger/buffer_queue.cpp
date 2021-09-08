@@ -91,10 +91,6 @@ const IGBPBuffer& BufferQueue::RequestBuffer(u32 slot) const {
     return buffers[slot].igbp_buffer;
 }
 
-const BufferQueue::Buffer& BufferQueue::AccessBuffer(u32 slot) const {
-    return buffers[slot];
-}
-
 void BufferQueue::QueueBuffer(u32 slot, BufferTransformFlags transform,
                               const Common::Rectangle<int>& crop_rect, u32 swap_interval,
                               Service::Nvidia::MultiFence& multi_fence) {

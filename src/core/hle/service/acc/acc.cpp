@@ -491,7 +491,7 @@ public:
 
 class EnsureTokenIdCacheAsyncInterface final : public IAsyncContext {
 public:
-    explicit EnsureTokenIdCacheAsyncInterface(Core::System& system_) : IAsyncContext(system_) {
+    explicit EnsureTokenIdCacheAsyncInterface(Core::System& system_) : IAsyncContext{system_} {
         MarkComplete();
     }
     ~EnsureTokenIdCacheAsyncInterface() = default;
@@ -504,13 +504,13 @@ public:
     }
 
 protected:
-    bool IsComplete() override {
+    bool IsComplete() const override {
         return true;
     }
 
     void Cancel() override {}
 
-    ResultCode GetResult() override {
+    ResultCode GetResult() const override {
         return ResultSuccess;
     }
 };
@@ -518,7 +518,9 @@ protected:
 class IManagerForApplication final : public ServiceFramework<IManagerForApplication> {
 public:
     explicit IManagerForApplication(Core::System& system_, Common::UUID user_id_)
-        : ServiceFramework{system_, "IManagerForApplication"}, user_id{user_id_}, system(system_) {
+        : ServiceFramework{system_, "IManagerForApplication"},
+          ensure_token_id{std::make_shared<EnsureTokenIdCacheAsyncInterface>(system)},
+          user_id{user_id_} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &IManagerForApplication::CheckAvailability, "CheckAvailability"},
@@ -533,8 +535,6 @@ public:
         // clang-format on
 
         RegisterHandlers(functions);
-
-        ensure_token_id = std::make_shared<EnsureTokenIdCacheAsyncInterface>(system);
     }
 
 private:
@@ -591,7 +591,6 @@ private:
 
     std::shared_ptr<EnsureTokenIdCacheAsyncInterface> ensure_token_id{};
     Common::UUID user_id{Common::INVALID_UUID};
-    Core::System& system;
 };
 
 // 6.0.0+

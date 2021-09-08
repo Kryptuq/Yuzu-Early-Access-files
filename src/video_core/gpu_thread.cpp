@@ -105,7 +105,7 @@ void ThreadManager::FlushRegion(VAddr addr, u64 size) {
     auto& gpu = system.GPU();
     u64 fence = gpu.RequestFlush(addr, size);
     PushCommand(GPUTickCommand(), true);
-    ASSERT(fence <= gpu.CurrentWorkRequestFence());
+    ASSERT(fence <= gpu.CurrentFlushRequestFence());
 }
 
 void ThreadManager::InvalidateRegion(VAddr addr, u64 size) {

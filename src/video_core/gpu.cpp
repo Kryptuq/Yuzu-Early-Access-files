@@ -114,17 +114,10 @@ void GPU::WaitFence(u32 syncpoint_id, u32 value) {
     });
 }
 
-void GPU::IncrementSyncPointGuest(const u32 syncpoint_id) {
-    std::lock_guard lock{pre_sync_mutex};
-    auto& syncpoint = pre_syncpoints.at(syncpoint_id);
-    syncpoint++;
-    ProcessFrameRequests(syncpoint_id, syncpoint);
-}
-
 void GPU::IncrementSyncPoint(const u32 syncpoint_id) {
-    std::lock_guard lock{sync_mutex};
     auto& syncpoint = syncpoints.at(syncpoint_id);
     syncpoint++;
+    std::lock_guard lock{sync_mutex};
     sync_cv.notify_all();
     auto& interrupt = syncpt_interrupts.at(syncpoint_id);
     if (!interrupt.empty()) {
@@ -169,121 +162,25 @@ bool GPU::CancelSyncptInterrupt(const u32 syncpoint_id, const u32 value) {
     return true;
 }
 
-void GPU::WaitOnWorkRequest(u64 fence) {
-    std::unique_lock lck{work_request_mutex};
-    request_cv.wait(lck,
-                    [&] { return fence >= current_request_fence.load(std::memory_order_relaxed); });
-}
-
 u64 GPU::RequestFlush(VAddr addr, std::size_t size) {
-    std::unique_lock lck{work_request_mutex};
-    const u64 fence = ++last_request_fence;
-    work_requests.emplace_back(fence, addr, size);
-    return fence;
-}
-
-u64 GPU::RequestQueueFrame(u64 id) {
-    std::unique_lock lck{work_request_mutex};
-    const u64 fence = ++last_request_fence;
-    work_requests.emplace_back(fence, id);
+    std::unique_lock lck{flush_request_mutex};
+    const u64 fence = ++last_flush_fence;
+    flush_requests.emplace_back(fence, addr, size);
     return fence;
 }
 
 void GPU::TickWork() {
-    std::unique_lock lck{work_request_mutex};
-    while (!work_requests.empty()) {
-        auto request = work_requests.front();
+    std::unique_lock lck{flush_request_mutex};
+    while (!flush_requests.empty()) {
+        auto& request = flush_requests.front();
         const u64 fence = request.fence;
-        work_requests.pop_front();
-        work_request_mutex.unlock();
-        switch (request.type) {
-        case RequestType::Flush: {
-            rasterizer->FlushRegion(request.flush.addr, request.flush.size);
-            break;
-        }
-        case RequestType::QueueFrame: {
-            Tegra::FramebufferConfig frame_info;
-            {
-                std::unique_lock<std::mutex> lock(frame_requests_mutex);
-                const u64 searching_id = request.queue_frame.id;
-                auto it = std::find_if(
-                    frame_queue_items.begin(), frame_queue_items.end(),
-                    [searching_id](const FrameQueue& item) { return item.id == searching_id; });
-                ASSERT(it != frame_queue_items.end());
-                frame_info = it->frame_info;
-                frame_queue_items.erase(it);
-            }
-            renderer->SwapBuffers(&frame_info);
-            break;
-        }
-        default: {
-            LOG_ERROR(HW_GPU, "Unknown work request type={}", request.type);
-        }
-        }
-        current_request_fence.store(fence, std::memory_order_release);
-        work_request_mutex.lock();
-        request_cv.notify_all();
-    }
-}
-
-void GPU::QueueFrame(const Tegra::FramebufferConfig* framebuffer,
-                     const Service::Nvidia::MultiFence& fences) {
-    std::unique_lock<std::mutex> lock(frame_requests_mutex);
-    if (fences.num_fences == 0) {
-        u64 new_queue_id = frame_queue_ids++;
-        FrameQueue item{
-            .frame_info = *framebuffer,
-            .id = new_queue_id,
-        };
-        frame_queue_items.push_back(item);
-        RequestQueueFrame(new_queue_id);
-        return;
-    }
-    u64 new_id = frame_request_ids++;
-    FrameRequest request{
-        .frame_info = *framebuffer,
-        .count = 0,
-        .id = new_id,
-    };
-    std::unique_lock lck{pre_sync_mutex};
-    for (size_t i = 0; i < fences.num_fences; i++) {
-        auto& fence = fences.fences[i];
-        if (pre_syncpoints[fence.id].load(std::memory_order_relaxed) < fence.value) {
-            const FrameTrigger trigger{
-                .id = new_id,
-                .sync_point_value = fence.value,
-            };
-            frame_triggers[fence.id].push_back(trigger);
-            ++request.count;
-        }
-    }
-    if (request.count == 0) {
-        lck.unlock();
-        gpu_thread.SwapBuffers(framebuffer);
-        return;
-    }
-    frame_requests.emplace(new_id, request);
-}
-
-void GPU::ProcessFrameRequests(u32 syncpoint_id, u32 new_value) {
-    auto& list = frame_triggers[syncpoint_id];
-    if (list.empty()) {
-        return;
-    }
-    auto it = list.begin();
-    while (it != list.end()) {
-        if (it->sync_point_value <= new_value) {
-            auto obj = frame_requests.find(it->id);
-            --obj->second.count;
-            if (obj->second.count == 0) {
-                rasterizer->FlushCommands();
-                renderer->SwapBuffers(&obj->second.frame_info);
-                frame_requests.erase(obj);
-            }
-            it = list.erase(it);
-            continue;
-        }
-        ++it;
+        const VAddr addr = request.addr;
+        const std::size_t size = request.size;
+        flush_requests.pop_front();
+        flush_request_mutex.unlock();
+        rasterizer->FlushRegion(addr, size);
+        current_flush_fence.store(fence);
+        flush_request_mutex.lock();
     }
 }
 
@@ -502,7 +399,7 @@ void GPU::ProcessFenceActionMethod() {
         WaitFence(regs.fence_action.syncpoint_id, regs.fence_value);
         break;
     case FenceOperation::Increment:
-        rasterizer->SignalSyncPoint(regs.fence_action.syncpoint_id);
+        IncrementSyncPoint(regs.fence_action.syncpoint_id);
         break;
     default:
         UNIMPLEMENTED_MSG("Unimplemented operation {}", regs.fence_action.op.Value());

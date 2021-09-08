@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <atomic>
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/service/service.h"
 
@@ -23,13 +24,13 @@ public:
     void GetResult(Kernel::HLERequestContext& ctx);
 
 protected:
-    virtual bool IsComplete() = 0;
+    virtual bool IsComplete() const = 0;
     virtual void Cancel() = 0;
-    virtual ResultCode GetResult() = 0;
+    virtual ResultCode GetResult() const = 0;
 
     void MarkComplete();
 
-    bool is_complete{false};
+    std::atomic<bool> is_complete{false};
     Kernel::KEvent compeletion_event;
 };
 

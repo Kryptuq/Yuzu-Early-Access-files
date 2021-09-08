@@ -98,7 +98,7 @@ ResultCode VfsDirectoryServiceWrapper::DeleteFile(const std::string& path_) cons
 ResultCode VfsDirectoryServiceWrapper::CreateDirectory(const std::string& path_) const {
     std::string path(Common::FS::SanitizePath(path_));
     const auto components = Common::FS::SplitPathComponents(path);
-    std::string relative_path = "";
+    std::string relative_path;
     for (const auto& component : components) {
         // Skip empty path components
         if (component.empty()) {
