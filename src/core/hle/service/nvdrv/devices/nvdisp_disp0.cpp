@@ -42,15 +42,14 @@ void nvdisp_disp0::OnClose(DeviceFD fd) {}
 void nvdisp_disp0::flip(u32 buffer_handle, u32 offset, u32 format, u32 width, u32 height,
                         u32 stride, NVFlinger::BufferQueue::BufferTransformFlags transform,
                         const Common::Rectangle<int>& crop_rect) {
-    VAddr addr = nvmap_dev->GetObjectAddress(buffer_handle);
+    const VAddr addr = nvmap_dev->GetObjectAddress(buffer_handle);
     LOG_TRACE(Service,
               "Drawing from address {:X} offset {:08X} Width {} Height {} Stride {} Format {}",
               addr, offset, width, height, stride, format);
 
-    using PixelFormat = Tegra::FramebufferConfig::PixelFormat;
-    const Tegra::FramebufferConfig framebuffer{
-        addr,      offset,   width, height, stride, static_cast<PixelFormat>(format),
-        transform, crop_rect};
+    const auto pixel_format = static_cast<Tegra::FramebufferConfig::PixelFormat>(format);
+    const Tegra::FramebufferConfig framebuffer{addr,   offset,       width,     height,
+                                               stride, pixel_format, transform, crop_rect};
 
     system.GetPerfStats().EndSystemFrame();
     system.GPU().SwapBuffers(&framebuffer);

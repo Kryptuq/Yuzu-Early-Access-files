@@ -42,7 +42,9 @@ struct IGBPBuffer {
     u32_le index;
     INSERT_PADDING_WORDS(3);
     u32_le gpu_buffer_id;
-    INSERT_PADDING_WORDS(17);
+    INSERT_PADDING_WORDS(6);
+    u32_le external_format;
+    INSERT_PADDING_WORDS(10);
     u32_le nvmap_handle;
     u32_le offset;
     INSERT_PADDING_WORDS(60);

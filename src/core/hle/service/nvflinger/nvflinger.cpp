@@ -298,7 +298,7 @@ void NVFlinger::Compose() {
         auto nvdisp = nvdrv->GetDevice<Nvidia::Devices::nvdisp_disp0>("/dev/nvdisp_disp0");
         ASSERT(nvdisp);
 
-        nvdisp->flip(igbp_buffer.gpu_buffer_id, igbp_buffer.offset, igbp_buffer.format,
+        nvdisp->flip(igbp_buffer.gpu_buffer_id, igbp_buffer.offset, igbp_buffer.external_format,
                      igbp_buffer.width, igbp_buffer.height, igbp_buffer.stride,
                      buffer->get().transform, buffer->get().crop_rect);
 

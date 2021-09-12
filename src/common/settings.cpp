@@ -73,7 +73,7 @@ void LogSettings() {
     log_setting("Services_BCATBackend", values.bcat_backend.GetValue());
     log_setting("Services_BCATBoxcatLocal", values.bcat_boxcat_local.GetValue());
     log_setting("Input_EnableMotion", values.motion_enabled.GetValue());
-    log_setting("Input_EnableVibrations", values.vibration_enabled.GetValue());
+    log_setting("Input_EnableVibration", values.vibration_enabled.GetValue());
     log_setting("Input_EnableRawInput", values.enable_raw_input.GetValue());
 }
 

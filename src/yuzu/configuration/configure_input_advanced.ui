@@ -2684,7 +2684,7 @@
                      </size>
                    </property>
                    <property name="text">
-                     <string>Enable Xinput 8 player support (disables web applet)</string>
+                     <string>Enable XInput 8 player support (disables web applet)</string>
                    </property>
                  </widget>
                </item>
