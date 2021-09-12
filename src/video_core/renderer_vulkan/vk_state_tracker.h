@@ -110,10 +110,6 @@ public:
         return Exchange(Dirty::DepthTestEnable, false);
     }
 
-    bool TouchDepthBoundsEnable() {
-        return Exchange(Dirty::DepthBoundsEnable, false);
-    }
-
     bool TouchDepthWriteEnable() {
         return Exchange(Dirty::DepthWriteEnable, false);
     }

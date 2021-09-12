@@ -295,6 +295,7 @@ private:
     void GetGpuErrorDetectedSystemEvent(Kernel::HLERequestContext& ctx);
     void GetFriendInvitationStorageChannelEvent(Kernel::HLERequestContext& ctx);
     void TryPopFromFriendInvitationStorageChannel(Kernel::HLERequestContext& ctx);
+    void GetNotificationStorageChannelEvent(Kernel::HLERequestContext& ctx);
     void GetHealthWarningDisappearedSystemEvent(Kernel::HLERequestContext& ctx);
 
     bool launch_popped_application_specific = false;
@@ -302,6 +303,7 @@ private:
     s32 previous_program_index{-1};
     Kernel::KEvent gpu_error_detected_event;
     Kernel::KEvent friend_invitation_storage_channel_event;
+    Kernel::KEvent notification_storage_channel_event;
     Kernel::KEvent health_warning_disappeared_system_event;
 };
 

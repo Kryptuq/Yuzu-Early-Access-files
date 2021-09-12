@@ -159,6 +159,7 @@ private:
     void SetPalmaBoostMode(Kernel::HLERequestContext& ctx);
     void SetNpadCommunicationMode(Kernel::HLERequestContext& ctx);
     void GetNpadCommunicationMode(Kernel::HLERequestContext& ctx);
+    void SetTouchScreenConfiguration(Kernel::HLERequestContext& ctx);
 
     enum class VibrationDeviceType : u32 {
         Unknown = 0,

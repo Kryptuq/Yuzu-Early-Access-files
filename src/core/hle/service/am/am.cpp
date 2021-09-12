@@ -1270,7 +1270,8 @@ void ILibraryAppletCreator::CreateHandleStorage(Kernel::HLERequestContext& ctx) 
 IApplicationFunctions::IApplicationFunctions(Core::System& system_)
     : ServiceFramework{system_, "IApplicationFunctions"}, gpu_error_detected_event{system.Kernel()},
       friend_invitation_storage_channel_event{system.Kernel()},
-      health_warning_disappeared_system_event{system.Kernel()} {
+      notification_storage_channel_event{system.Kernel()}, health_warning_disappeared_system_event{
+                                                               system.Kernel()} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {1, &IApplicationFunctions::PopLaunchParameter, "PopLaunchParameter"},
@@ -1322,7 +1323,7 @@ IApplicationFunctions::IApplicationFunctions(Core::System& system_)
         {131, nullptr, "SetDelayTimeToAbortOnGpuError"},
         {140, &IApplicationFunctions::GetFriendInvitationStorageChannelEvent, "GetFriendInvitationStorageChannelEvent"},
         {141, &IApplicationFunctions::TryPopFromFriendInvitationStorageChannel, "TryPopFromFriendInvitationStorageChannel"},
-        {150, nullptr, "GetNotificationStorageChannelEvent"},
+        {150, &IApplicationFunctions::GetNotificationStorageChannelEvent, "GetNotificationStorageChannelEvent"},
         {151, nullptr, "TryPopFromNotificationStorageChannel"},
         {160, &IApplicationFunctions::GetHealthWarningDisappearedSystemEvent, "GetHealthWarningDisappearedSystemEvent"},
         {170, nullptr, "SetHdcpAuthenticationActivated"},
@@ -1340,11 +1341,14 @@ IApplicationFunctions::IApplicationFunctions(Core::System& system_)
 
     Kernel::KAutoObject::Create(std::addressof(gpu_error_detected_event));
     Kernel::KAutoObject::Create(std::addressof(friend_invitation_storage_channel_event));
+    Kernel::KAutoObject::Create(std::addressof(notification_storage_channel_event));
     Kernel::KAutoObject::Create(std::addressof(health_warning_disappeared_system_event));
 
     gpu_error_detected_event.Initialize("IApplicationFunctions:GpuErrorDetectedSystemEvent");
     friend_invitation_storage_channel_event.Initialize(
         "IApplicationFunctions:FriendInvitationStorageChannelEvent");
+    notification_storage_channel_event.Initialize(
+        "IApplicationFunctions:NotificationStorageChannelEvent");
     health_warning_disappeared_system_event.Initialize(
         "IApplicationFunctions:HealthWarningDisappearedSystemEvent");
 }
@@ -1760,6 +1764,14 @@ void IApplicationFunctions::TryPopFromFriendInvitationStorageChannel(
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ERR_NO_DATA_IN_CHANNEL);
+}
+
+void IApplicationFunctions::GetNotificationStorageChannelEvent(Kernel::HLERequestContext& ctx) {
+    LOG_DEBUG(Service_AM, "called");
+
+    IPC::ResponseBuilder rb{ctx, 2, 1};
+    rb.Push(ResultSuccess);
+    rb.PushCopyObjects(notification_storage_channel_event.GetReadableEvent());
 }
 
 void IApplicationFunctions::GetHealthWarningDisappearedSystemEvent(Kernel::HLERequestContext& ctx) {

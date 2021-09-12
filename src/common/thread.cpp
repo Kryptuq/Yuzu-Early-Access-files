@@ -2,7 +2,9 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include "common/common_funcs.h"
+#include <string>
+
+#include "common/error.h"
 #include "common/logging/log.h"
 #include "common/thread.h"
 #ifdef __APPLE__
@@ -20,8 +22,6 @@
 #ifndef _WIN32
 #include <unistd.h>
 #endif
-
-#include <string>
 
 #ifdef __FreeBSD__
 #define cpu_set_t cpuset_t

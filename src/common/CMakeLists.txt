@@ -53,6 +53,8 @@ add_library(common STATIC
     div_ceil.h
     dynamic_library.cpp
     dynamic_library.h
+    error.cpp
+    error.h
     fiber.cpp
     fiber.h
     fs/file.cpp
@@ -88,7 +90,6 @@ add_library(common STATIC
     microprofile.cpp
     microprofile.h
     microprofileui.h
-    misc.cpp
     nvidia_flags.cpp
     nvidia_flags.h
     page_table.cpp

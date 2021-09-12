@@ -7,7 +7,8 @@
 #include <limits>
 #include <utility>
 #include <vector>
-#include "common/common_funcs.h"
+
+#include "common/error.h"
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -223,7 +224,7 @@ Errno GetAndLogLastError() {
     if (err == Errno::AGAIN) {
         return err;
     }
-    LOG_ERROR(Network, "Socket operation error: {}", NativeErrorToString(e));
+    LOG_ERROR(Network, "Socket operation error: {}", Common::NativeErrorToString(e));
     return err;
 }
 

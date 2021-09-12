@@ -15,6 +15,20 @@
 namespace Service::HID {
 class Controller_Touchscreen final : public ControllerBase {
 public:
+    enum class TouchScreenModeForNx : u8 {
+        UseSystemSetting,
+        Finger,
+        Heat2,
+    };
+
+    struct TouchScreenConfigurationForNx {
+        TouchScreenModeForNx mode;
+        INSERT_PADDING_BYTES_NOINIT(0x7);
+        INSERT_PADDING_BYTES_NOINIT(0xF); // Reserved
+    };
+    static_assert(sizeof(TouchScreenConfigurationForNx) == 0x17,
+                  "TouchScreenConfigurationForNx is an invalid size");
+
     explicit Controller_Touchscreen(Core::System& system_);
     ~Controller_Touchscreen() override;
 

@@ -765,12 +765,7 @@ void RasterizerVulkan::UpdateStencilOp(Tegra::Engines::Maxwell3D::Regs& regs) {
     const Maxwell::StencilOp zpass = regs.stencil_front_op_zpass;
     const Maxwell::ComparisonOp compare = regs.stencil_front_func_func;
     if (regs.stencil_two_side_enable) {
-        scheduler.Record([fail, zfail, zpass, compare](vk::CommandBuffer cmdbuf) {
-            cmdbuf.SetStencilOpEXT(VK_STENCIL_FACE_FRONT_AND_BACK, MaxwellToVK::StencilOp(fail),
-                                   MaxwellToVK::StencilOp(zpass), MaxwellToVK::StencilOp(zfail),
-                                   MaxwellToVK::ComparisonOp(compare));
-        });
-    } else {
+        // Separate stencil op per face
         const Maxwell::StencilOp back_fail = regs.stencil_back_op_fail;
         const Maxwell::StencilOp back_zfail = regs.stencil_back_op_zfail;
         const Maxwell::StencilOp back_zpass = regs.stencil_back_op_zpass;
@@ -784,6 +779,13 @@ void RasterizerVulkan::UpdateStencilOp(Tegra::Engines::Maxwell3D::Regs& regs) {
                                    MaxwellToVK::StencilOp(back_zpass),
                                    MaxwellToVK::StencilOp(back_zfail),
                                    MaxwellToVK::ComparisonOp(back_compare));
+        });
+    } else {
+        // Front face defines the stencil op of both faces
+        scheduler.Record([fail, zfail, zpass, compare](vk::CommandBuffer cmdbuf) {
+            cmdbuf.SetStencilOpEXT(VK_STENCIL_FACE_FRONT_AND_BACK, MaxwellToVK::StencilOp(fail),
+                                   MaxwellToVK::StencilOp(zpass), MaxwellToVK::StencilOp(zfail),
+                                   MaxwellToVK::ComparisonOp(compare));
         });
     }
 }

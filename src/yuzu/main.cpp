@@ -3240,12 +3240,11 @@ std::optional<u64> GMainWindow::SelectRomFSDumpTarget(const FileSys::ContentProv
 }
 
 bool GMainWindow::ConfirmClose() {
-    if (emu_thread == nullptr || !UISettings::values.confirm_before_closing)
+    if (emu_thread == nullptr || !UISettings::values.confirm_before_closing) {
         return true;
-
-    QMessageBox::StandardButton answer =
-        QMessageBox::question(this, tr("yuzu"), tr("Are you sure you want to close yuzu?"),
-                              QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    }
+    const auto text = tr("Are you sure you want to close yuzu?");
+    const auto answer = QMessageBox::question(this, tr("yuzu"), text);
     return answer != QMessageBox::No;
 }
 
@@ -3327,14 +3326,13 @@ bool GMainWindow::ConfirmChangeGame() {
 }
 
 bool GMainWindow::ConfirmForceLockedExit() {
-    if (emu_thread == nullptr)
+    if (emu_thread == nullptr || !UISettings::values.confirm_before_closing) {
         return true;
+    }
+    const auto text = tr("The currently running application has requested yuzu to not exit.\n\n"
+                         "Would you like to bypass this and exit anyway?");
 
-    const auto answer =
-        QMessageBox::question(this, tr("yuzu"),
-                              tr("The currently running application has requested yuzu to not "
-                                 "exit.\n\nWould you like to bypass this and exit anyway?"),
-                              QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    const auto answer = QMessageBox::question(this, tr("yuzu"), text);
     return answer != QMessageBox::No;
 }
 

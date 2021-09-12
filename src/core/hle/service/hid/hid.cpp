@@ -331,7 +331,7 @@ Hid::Hid(Core::System& system_)
         {529, nullptr, "SetDisallowedPalmaConnection"},
         {1000, &Hid::SetNpadCommunicationMode, "SetNpadCommunicationMode"},
         {1001, &Hid::GetNpadCommunicationMode, "GetNpadCommunicationMode"},
-        {1002, nullptr, "SetTouchScreenConfiguration"},
+        {1002, &Hid::SetTouchScreenConfiguration, "SetTouchScreenConfiguration"},
         {1003, nullptr, "IsFirmwareUpdateNeededForNotification"},
         {2000, nullptr, "ActivateDigitizer"},
     };
@@ -1629,6 +1629,18 @@ void Hid::GetNpadCommunicationMode(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
     rb.PushEnum(applet_resource->GetController<Controller_NPad>(HidController::NPad)
                     .GetNpadCommunicationMode());
+}
+
+void Hid::SetTouchScreenConfiguration(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto touchscreen_mode{rp.PopRaw<Controller_Touchscreen::TouchScreenConfigurationForNx>()};
+    const auto applet_resource_user_id{rp.Pop<u64>()};
+
+    LOG_WARNING(Service_HID, "(STUBBED) called, touchscreen_mode={}, applet_resource_user_id={}",
+                touchscreen_mode.mode, applet_resource_user_id);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
 }
 
 class HidDbg final : public ServiceFramework<HidDbg> {
