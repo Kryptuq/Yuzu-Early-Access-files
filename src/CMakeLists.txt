@@ -44,6 +44,7 @@ if (MSVC)
         /Zc:externConstexpr
         /Zc:inline
         /Zc:throwingNew
+        /GT
 
         # External headers diagnostics
         /experimental:external  # Enables the external headers options. This option isn't required in Visual Studio 2019 version 16.10 and later
@@ -68,6 +69,10 @@ if (MSVC)
         /we4834 # Discarding return value of function with 'nodiscard' attribute
         /we5038 # data member 'member1' will be initialized after data member 'member2'
     )
+
+    if (ARCHITECTURE_x86_64)
+        add_compile_options(/QIntel-jcc-erratum)
+    endif()
 
     # /GS- - No stack buffer overflow checks
     add_compile_options("$<$<CONFIG:Release>:/GS->")
@@ -103,6 +108,7 @@ else()
 
     if (ARCHITECTURE_x86_64)
         add_compile_options("-mcx16")
+        add_compile_options("-mbranches-within-32B-boundaries")
     endif()
 
     if (APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL Clang)
