@@ -9,6 +9,7 @@
 
 #include "common/assert.h"
 #include "common/logging/log.h"
+#include "common/settings.h"
 #include "core/core.h"
 #include "core/frontend/framebuffer_layout.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
@@ -36,8 +37,19 @@ VkSurfaceFormatKHR ChooseSwapSurfaceFormat(vk::Span<VkSurfaceFormatKHR> formats)
 
 VkPresentModeKHR ChooseSwapPresentMode(vk::Span<VkPresentModeKHR> modes) {
     // Mailbox doesn't lock the application like fifo (vsync), prefer it
-    const auto found = std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_MAILBOX_KHR);
-    return found != modes.end() ? *found : VK_PRESENT_MODE_FIFO_KHR;
+    const auto found_mailbox = std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_MAILBOX_KHR);
+    if (found_mailbox != modes.end()) {
+        return VK_PRESENT_MODE_MAILBOX_KHR;
+    }
+    if (Settings::values.disable_fps_limit.GetValue()) {
+        // FIFO present mode locks the framerate to the monitor's refresh rate,
+        // Find an alternative to surpass this limitation if FPS is unlocked.
+        const auto found_imm = std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_IMMEDIATE_KHR);
+        if (found_imm != modes.end()) {
+            return VK_PRESENT_MODE_IMMEDIATE_KHR;
+        }
+    }
+    return VK_PRESENT_MODE_FIFO_KHR;
 }
 
 VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, u32 width, u32 height) {
@@ -143,7 +155,7 @@ void VKSwapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, 
     const auto present_modes{physical_device.GetSurfacePresentModesKHR(surface)};
 
     const VkSurfaceFormatKHR surface_format{ChooseSwapSurfaceFormat(formats)};
-    const VkPresentModeKHR present_mode{ChooseSwapPresentMode(present_modes)};
+    present_mode = ChooseSwapPresentMode(present_modes);
 
     u32 requested_image_count{capabilities.minImageCount + 1};
     if (capabilities.maxImageCount > 0 && requested_image_count > capabilities.maxImageCount) {
@@ -196,6 +208,7 @@ void VKSwapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, 
 
     extent = swapchain_ci.imageExtent;
     current_srgb = srgb;
+    current_fps_unlocked = Settings::values.disable_fps_limit.GetValue();
 
     images = swapchain.GetImages();
     image_count = static_cast<u32>(images.size());
@@ -246,6 +259,16 @@ void VKSwapchain::Destroy() {
     framebuffers.clear();
     image_views.clear();
     swapchain.reset();
+}
+
+bool VKSwapchain::HasFpsUnlockChanged() const {
+    return current_fps_unlocked != Settings::values.disable_fps_limit.GetValue();
+}
+
+bool VKSwapchain::NeedsPresentModeUpdate() const {
+    // Mailbox present mode is the ideal for all scenarios. If it is not available,
+    // A different present mode is needed to support unlocked FPS above the monitor's refresh rate.
+    return present_mode != VK_PRESENT_MODE_MAILBOX_KHR && HasFpsUnlockChanged();
 }
 
 } // namespace Vulkan

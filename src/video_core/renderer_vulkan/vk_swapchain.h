@@ -33,6 +33,11 @@ public:
     /// Presents the rendered image to the swapchain.
     void Present(VkSemaphore render_semaphore);
 
+    /// Returns true when the swapchain needs to be recreated.
+    bool NeedsRecreation(bool is_srgb) const {
+        return HasColorSpaceChanged(is_srgb) || IsSubOptimal() || NeedsPresentModeUpdate();
+    }
+
     /// Returns true when the color space has changed.
     bool HasColorSpaceChanged(bool is_srgb) const {
         return current_srgb != is_srgb;
@@ -84,6 +89,10 @@ private:
 
     void Destroy();
 
+    bool HasFpsUnlockChanged() const;
+
+    bool NeedsPresentModeUpdate() const;
+
     const VkSurfaceKHR surface;
     const Device& device;
     VKScheduler& scheduler;
@@ -102,8 +111,10 @@ private:
 
     VkFormat image_view_format{};
     VkExtent2D extent{};
+    VkPresentModeKHR present_mode{};
 
     bool current_srgb{};
+    bool current_fps_unlocked{};
     bool is_outdated{};
     bool is_suboptimal{};
 };

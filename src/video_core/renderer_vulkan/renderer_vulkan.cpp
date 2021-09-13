@@ -149,7 +149,7 @@ void RendererVulkan::SwapBuffers(const Tegra::FramebufferConfig* framebuffer) {
         const Layout::FramebufferLayout layout = render_window.GetFramebufferLayout();
         swapchain.Create(layout.width, layout.height, is_srgb);
     };
-    if (swapchain.IsSubOptimal() || swapchain.HasColorSpaceChanged(is_srgb)) {
+    if (swapchain.NeedsRecreation(is_srgb)) {
         recreate_swapchain();
     }
     bool is_outdated;
