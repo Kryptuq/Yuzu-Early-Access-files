@@ -370,9 +370,12 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     SetNext(next, demote);
 
     if (driver_id == VK_DRIVER_ID_AMD_PROPRIETARY || driver_id == VK_DRIVER_ID_AMD_OPEN_SOURCE) {
-        const u32 version = (properties.driverVersion << 3) >> 3;
+        const u32 version = properties.driverVersion;
         // Broken in this driver
-        if (version >= 0x008000c6) {
+        if (version > VK_MAKE_API_VERSION(0, 2, 0, 193)) {
+            LOG_WARNING(Render_Vulkan, "AMD proprietary driver versions newer than 21.9.1 "
+                                       "(windows) / 0.2.0.194 (amdvlk) have "
+                                       "broken VkPhysicalDeviceFloat16Int8FeaturesKHR");
             is_int8_supported = false;
             is_float16_supported = false;
         }
@@ -596,13 +599,26 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             ext_extended_dynamic_state = false;
         }
     }
-    if (ext_sampler_filter_minmax) {
-        if (driver_id == VK_DRIVER_ID_AMD_PROPRIETARY ||
-            driver_id == VK_DRIVER_ID_AMD_OPEN_SOURCE || driver_id == VK_DRIVER_ID_MESA_RADV) {
-            // Disable ext_sampler_filter_minmax in GCN as it is broken.
-            ext_sampler_filter_minmax = is_float16_supported;
+
+    sets_per_pool = 64;
+    if (driver_id == VK_DRIVER_ID_AMD_PROPRIETARY || driver_id == VK_DRIVER_ID_AMD_OPEN_SOURCE) {
+        // AMD drivers need a higher amount of Sets per Pool in certain circunstances like in XC2.
+        sets_per_pool = 96;
+    }
+
+    const bool is_amd = driver_id == VK_DRIVER_ID_AMD_PROPRIETARY ||
+                        driver_id == VK_DRIVER_ID_MESA_RADV ||
+                        driver_id == VK_DRIVER_ID_AMD_OPEN_SOURCE;
+    if (ext_sampler_filter_minmax && is_amd) {
+        // Disable ext_sampler_filter_minmax on AMD GCN4 and lower as it is broken.
+        if (!is_float16_supported) {
+            LOG_WARNING(
+                Render_Vulkan,
+                "Blacklisting AMD GCN4 and lower for VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME");
+            ext_sampler_filter_minmax = false;
         }
     }
+
     if (ext_vertex_input_dynamic_state && driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS) {
         LOG_WARNING(Render_Vulkan, "Blacklisting Intel for VK_EXT_vertex_input_dynamic_state");
         ext_vertex_input_dynamic_state = false;
@@ -615,11 +631,6 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
 
     graphics_queue = logical.GetQueue(graphics_family);
     present_queue = logical.GetQueue(present_family);
-
-    sets_per_pool = 64;
-    if (driver_id == VK_DRIVER_ID_AMD_PROPRIETARY || driver_id == VK_DRIVER_ID_AMD_OPEN_SOURCE) {
-        sets_per_pool = 96;
-    }
 }
 
 Device::~Device() = default;

@@ -83,6 +83,14 @@ FileSys::StorageId GetStorageIdForFrontendSlot(
     }
 }
 
+void KProcessDeleter(Kernel::KProcess* process) {
+    if (process) {
+        process->Destroy();
+    }
+}
+
+using KProcessPtr = std::unique_ptr<Kernel::KProcess, decltype(&KProcessDeleter)>;
+
 } // Anonymous namespace
 
 FileSys::VirtualFile GetGameFileFromPath(const FileSys::VirtualFilesystem& vfs,
@@ -233,8 +241,8 @@ struct System::Impl {
         }
 
         telemetry_session->AddInitialInfo(*app_loader, fs_controller, *content_provider);
-        auto main_process = Kernel::KProcess::Create(system.Kernel());
-        ASSERT(Kernel::KProcess::Initialize(main_process, system, "main",
+        main_process = KProcessPtr{Kernel::KProcess::Create(system.Kernel()), KProcessDeleter};
+        ASSERT(Kernel::KProcess::Initialize(main_process.get(), system, "main",
                                             Kernel::KProcess::ProcessType::Userland)
                    .IsSuccess());
         main_process->Open();
@@ -247,7 +255,7 @@ struct System::Impl {
                                              static_cast<u32>(load_result));
         }
         AddGlueRegistrationForProcess(*app_loader, *main_process);
-        kernel.MakeCurrentProcess(main_process);
+        kernel.MakeCurrentProcess(main_process.get());
         kernel.InitializeCores();
 
         // Initialize cheat engine
@@ -316,6 +324,7 @@ struct System::Impl {
         kernel.Shutdown();
         memory.Reset();
         applet_manager.ClearAll();
+        main_process.reset();
 
         LOG_DEBUG(Core, "Shutdown OK");
     }
@@ -374,6 +383,7 @@ struct System::Impl {
     std::unique_ptr<Tegra::GPU> gpu_core;
     std::unique_ptr<Hardware::InterruptManager> interrupt_manager;
     std::unique_ptr<Core::DeviceMemory> device_memory;
+    KProcessPtr main_process{nullptr, KProcessDeleter};
     Core::Memory::Memory memory;
     CpuManager cpu_manager;
     std::atomic_bool is_powered_on{};

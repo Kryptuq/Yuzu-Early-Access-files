@@ -19,7 +19,6 @@ namespace Vulkan {
 // Prefer small grow rates to avoid saturating the descriptor pool with barely used pipelines
 constexpr size_t SETS_GROW_RATE = 16;
 constexpr s32 SCORE_THRESHOLD = 3;
-constexpr u32 SETS_PER_POOL = 64;
 
 struct DescriptorBank {
     DescriptorBankInfo info;
