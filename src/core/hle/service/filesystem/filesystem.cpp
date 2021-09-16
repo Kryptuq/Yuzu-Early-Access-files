@@ -261,6 +261,18 @@ ResultVal<FileSys::EntryType> VfsDirectoryServiceWrapper::GetEntryType(
     return FileSys::ERROR_PATH_NOT_FOUND;
 }
 
+ResultVal<FileSys::FileTimeStampRaw> VfsDirectoryServiceWrapper::GetFileTimeStampRaw(
+    const std::string& path) const {
+    auto dir = GetDirectoryRelativeWrapped(backing, Common::FS::GetParentPath(path));
+    if (dir == nullptr) {
+        return FileSys::ERROR_PATH_NOT_FOUND;
+    }
+    if (GetEntryType(path).Failed()) {
+        return FileSys::ERROR_PATH_NOT_FOUND;
+    }
+    return MakeResult(dir->GetFileTimeStamp(Common::FS::GetFilename(path)));
+}
+
 FileSystemController::FileSystemController(Core::System& system_) : system{system_} {}
 
 FileSystemController::~FileSystemController() = default;

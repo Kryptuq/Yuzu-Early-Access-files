@@ -326,7 +326,7 @@ public:
             {11, &IFileSystem::GetFreeSpaceSize, "GetFreeSpaceSize"},
             {12, &IFileSystem::GetTotalSpaceSize, "GetTotalSpaceSize"},
             {13, &IFileSystem::CleanDirectoryRecursively, "CleanDirectoryRecursively"},
-            {14, nullptr, "GetFileTimeStampRaw"},
+            {14, &IFileSystem::GetFileTimeStampRaw, "GetFileTimeStampRaw"},
             {15, nullptr, "QueryEntry"},
         };
         RegisterHandlers(functions);
@@ -499,6 +499,24 @@ public:
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(ResultSuccess);
         rb.Push(size.get_total_size());
+    }
+
+    void GetFileTimeStampRaw(Kernel::HLERequestContext& ctx) {
+        const auto file_buffer = ctx.ReadBuffer();
+        const std::string name = Common::StringFromBuffer(file_buffer);
+
+        LOG_WARNING(Service_FS, "(Partial Implementation) called. file={}", name);
+
+        auto result = backend.GetFileTimeStampRaw(name);
+        if (result.Failed()) {
+            IPC::ResponseBuilder rb{ctx, 2};
+            rb.Push(result.Code());
+            return;
+        }
+
+        IPC::ResponseBuilder rb{ctx, 10};
+        rb.Push(ResultSuccess);
+        rb.PushRaw(*result);
     }
 
 private:

@@ -15,7 +15,7 @@ public:
     explicit IService(Core::System& system_) : ServiceFramework{system_, "ngct:u"} {
         // clang-format off
         static const FunctionInfo functions[] = {
-            {0, nullptr, "Match"},
+            {0, &IService::Match, "Match"},
             {1, &IService::Filter, "Filter"},
         };
         // clang-format on
@@ -24,6 +24,19 @@ public:
     }
 
 private:
+    void Match(Kernel::HLERequestContext& ctx) {
+        const auto buffer = ctx.ReadBuffer();
+        const auto text = Common::StringFromFixedZeroTerminatedBuffer(
+            reinterpret_cast<const char*>(buffer.data()), buffer.size());
+
+        LOG_WARNING(Service_NGCT, "(STUBBED) called, text={}", text);
+
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(ResultSuccess);
+        // Return false since we don't censor anything
+        rb.Push(false);
+    }
+
     void Filter(Kernel::HLERequestContext& ctx) {
         const auto buffer = ctx.ReadBuffer();
         const auto text = Common::StringFromFixedZeroTerminatedBuffer(

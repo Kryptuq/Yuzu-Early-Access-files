@@ -84,9 +84,7 @@ FileSys::StorageId GetStorageIdForFrontendSlot(
 }
 
 void KProcessDeleter(Kernel::KProcess* process) {
-    if (process) {
-        process->Destroy();
-    }
+    process->Destroy();
 }
 
 using KProcessPtr = std::unique_ptr<Kernel::KProcess, decltype(&KProcessDeleter)>;
@@ -307,10 +305,7 @@ struct System::Impl {
         is_powered_on = false;
         exit_lock = false;
 
-        if (gpu_core) {
-            gpu_core->ShutDown();
-        }
-
+        gpu_core.reset();
         services.reset();
         service_manager.reset();
         cheat_engine.reset();
@@ -319,11 +314,11 @@ struct System::Impl {
         time_manager.Shutdown();
         core_timing.Shutdown();
         app_loader.reset();
-        gpu_core.reset();
         perf_stats.reset();
         kernel.Shutdown();
         memory.Reset();
         applet_manager.ClearAll();
+        // TODO: The main process should be freed based on KAutoObject ref counting.
         main_process.reset();
 
         LOG_DEBUG(Core, "Shutdown OK");

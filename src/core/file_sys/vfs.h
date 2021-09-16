@@ -199,6 +199,9 @@ public:
     // file with name.
     virtual VirtualFile GetFile(std::string_view name) const;
 
+    // Returns a struct containing the file's timestamp.
+    virtual FileTimeStampRaw GetFileTimeStamp(std::string_view path) const;
+
     // Returns a vector containing all of the subdirectories in this directory.
     virtual std::vector<VirtualDir> GetSubdirectories() const = 0;
     // Returns the directory with name matching name. Returns nullptr if directory dosen't have a

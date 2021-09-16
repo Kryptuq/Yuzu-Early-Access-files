@@ -43,17 +43,10 @@ VKScheduler::VKScheduler(const Device& device_, StateTracker& state_tracker_)
       command_pool{std::make_unique<CommandPool>(*master_semaphore, device)} {
     AcquireNewChunk();
     AllocateWorkerCommandBuffer();
-    worker_thread = std::thread(&VKScheduler::WorkerThread, this);
+    worker_thread = std::jthread([this](std::stop_token token) { WorkerThread(token); });
 }
 
-VKScheduler::~VKScheduler() {
-    {
-        std::lock_guard lock{work_mutex};
-        quit = true;
-    }
-    work_cv.notify_all();
-    worker_thread.join();
-}
+VKScheduler::~VKScheduler() = default;
 
 void VKScheduler::Flush(VkSemaphore signal_semaphore, VkSemaphore wait_semaphore) {
     SubmitExecution(signal_semaphore, wait_semaphore);
@@ -135,7 +128,7 @@ bool VKScheduler::UpdateGraphicsPipeline(GraphicsPipeline* pipeline) {
     return true;
 }
 
-void VKScheduler::WorkerThread() {
+void VKScheduler::WorkerThread(std::stop_token stop_token) {
     Common::SetCurrentThreadName("yuzu:VulkanWorker");
     do {
         if (work_queue.empty()) {
@@ -144,8 +137,8 @@ void VKScheduler::WorkerThread() {
         std::unique_ptr<CommandChunk> work;
         {
             std::unique_lock lock{work_mutex};
-            work_cv.wait(lock, [this] { return !work_queue.empty() || quit; });
-            if (quit) {
+            work_cv.wait(lock, stop_token, [this] { return !work_queue.empty(); });
+            if (stop_token.stop_requested()) {
                 continue;
             }
             work = std::move(work_queue.front());
@@ -158,7 +151,7 @@ void VKScheduler::WorkerThread() {
         }
         std::lock_guard reserve_lock{reserve_mutex};
         chunk_reserve.push_back(std::move(work));
-    } while (!quit);
+    } while (!stop_token.stop_requested());
 }
 
 void VKScheduler::AllocateWorkerCommandBuffer() {

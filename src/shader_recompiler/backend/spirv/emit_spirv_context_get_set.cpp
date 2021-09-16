@@ -477,7 +477,13 @@ void EmitSetSampleMask(EmitContext& ctx, Id value) {
 }
 
 void EmitSetFragDepth(EmitContext& ctx, Id value) {
-    ctx.OpStore(ctx.frag_depth, value);
+    if (!ctx.runtime_info.convert_depth_mode) {
+        ctx.OpStore(ctx.frag_depth, value);
+        return;
+    }
+    const Id unit{ctx.Const(0.5f)};
+    const Id new_depth{ctx.OpFma(ctx.F32[1], value, unit, unit)};
+    ctx.OpStore(ctx.frag_depth, new_depth);
 }
 
 void EmitGetZFlag(EmitContext&) {

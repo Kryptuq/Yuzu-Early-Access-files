@@ -531,14 +531,6 @@ void GPU::TriggerCpuInterrupt(const u32 syncpoint_id, const u32 value) const {
     interrupt_manager.GPUInterruptSyncpt(syncpoint_id, value);
 }
 
-void GPU::ShutDown() {
-    // Signal that threads should no longer block on syncpoint fences
-    shutting_down.store(true, std::memory_order_relaxed);
-    sync_cv.notify_all();
-
-    gpu_thread.ShutDown();
-}
-
 void GPU::OnCommandListEnd() {
     if (is_async) {
         // This command only applies to asynchronous GPU mode

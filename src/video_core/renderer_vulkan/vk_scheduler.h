@@ -187,7 +187,7 @@ private:
         GraphicsPipeline* graphics_pipeline = nullptr;
     };
 
-    void WorkerThread();
+    void WorkerThread(std::stop_token stop_token);
 
     void AllocateWorkerCommandBuffer();
 
@@ -212,7 +212,7 @@ private:
     vk::CommandBuffer current_cmdbuf;
 
     std::unique_ptr<CommandChunk> chunk;
-    std::thread worker_thread;
+    std::jthread worker_thread;
 
     State state;
 
@@ -224,9 +224,8 @@ private:
     std::vector<std::unique_ptr<CommandChunk>> chunk_reserve;
     std::mutex reserve_mutex;
     std::mutex work_mutex;
-    std::condition_variable work_cv;
+    std::condition_variable_any work_cv;
     std::condition_variable wait_cv;
-    std::atomic_bool quit{};
 };
 
 } // namespace Vulkan

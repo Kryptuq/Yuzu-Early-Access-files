@@ -13,6 +13,13 @@
 #include "common/logging/log.h"
 #include "core/file_sys/vfs_real.h"
 
+// For FileTimeStampRaw
+#include <sys/stat.h>
+
+#ifdef _MSC_VER
+#define stat _stat64
+#endif
+
 namespace FileSys {
 
 namespace FS = Common::FS;
@@ -390,6 +397,28 @@ bool RealVfsDirectory::DeleteSubdirectoryRecursive(std::string_view name) {
 
 std::vector<VirtualFile> RealVfsDirectory::GetFiles() const {
     return IterateEntries<RealVfsFile, VfsFile>();
+}
+
+FileTimeStampRaw RealVfsDirectory::GetFileTimeStamp(std::string_view path_) const {
+    const auto full_path = FS::SanitizePath(path + '/' + std::string(path_));
+    const auto fs_path = std::filesystem::path{FS::ToU8String(full_path)};
+    struct stat file_status;
+
+#ifdef _WIN32
+    const auto stat_result = _wstat64(fs_path.c_str(), &file_status);
+#else
+    const auto stat_result = stat(fs_path.c_str(), &file_status);
+#endif
+
+    if (stat_result != 0) {
+        return {};
+    }
+
+    return {
+        .created{static_cast<u64>(file_status.st_ctime)},
+        .accessed{static_cast<u64>(file_status.st_atime)},
+        .modified{static_cast<u64>(file_status.st_mtime)},
+    };
 }
 
 std::vector<VirtualDir> RealVfsDirectory::GetSubdirectories() const {

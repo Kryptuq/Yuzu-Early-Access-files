@@ -293,6 +293,8 @@ void ShaderCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
     }};
     LoadPipelines(stop_loading, shader_cache_filename, CACHE_VERSION, load_compute, load_graphics);
 
+    LOG_INFO(Render_OpenGL, "Total Pipeline Count: {}", state.total);
+
     std::unique_lock lock{state.mutex};
     callback(VideoCore::LoadCallbackStage::Build, 0, state.total);
     state.has_loaded = true;

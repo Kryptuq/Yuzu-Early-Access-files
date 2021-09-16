@@ -86,6 +86,7 @@ public:
     VirtualDir CreateDirectoryRelative(std::string_view relative_path) override;
     bool DeleteSubdirectoryRecursive(std::string_view name) override;
     std::vector<VirtualFile> GetFiles() const override;
+    FileTimeStampRaw GetFileTimeStamp(std::string_view path) const override;
     std::vector<VirtualDir> GetSubdirectories() const override;
     bool IsWritable() const override;
     bool IsReadable() const override;

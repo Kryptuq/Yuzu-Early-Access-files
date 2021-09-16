@@ -273,6 +273,10 @@ VirtualFile VfsDirectory::GetFile(std::string_view name) const {
     return iter == files.end() ? nullptr : *iter;
 }
 
+FileTimeStampRaw VfsDirectory::GetFileTimeStamp([[maybe_unused]] std::string_view path) const {
+    return {};
+}
+
 VirtualDir VfsDirectory::GetSubdirectory(std::string_view name) const {
     const auto& subs = GetSubdirectories();
     const auto iter = std::find_if(subs.begin(), subs.end(),

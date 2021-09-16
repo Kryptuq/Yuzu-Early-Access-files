@@ -219,9 +219,6 @@ public:
         return *shader_notify;
     }
 
-    // Stops the GPU execution and waits for the GPU to finish working
-    void ShutDown();
-
     /// Allows the CPU/NvFlinger to wait on the GPU before presenting a frame.
     void WaitFence(u32 syncpoint_id, u32 value);
 

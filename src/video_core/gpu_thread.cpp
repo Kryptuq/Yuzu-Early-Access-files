@@ -17,9 +17,9 @@
 namespace VideoCommon::GPUThread {
 
 /// Runs the GPU thread
-static void RunThread(Core::System& system, VideoCore::RendererBase& renderer,
-                      Core::Frontend::GraphicsContext& context, Tegra::DmaPusher& dma_pusher,
-                      SynchState& state) {
+static void RunThread(std::stop_token stop_token, Core::System& system,
+                      VideoCore::RendererBase& renderer, Core::Frontend::GraphicsContext& context,
+                      Tegra::DmaPusher& dma_pusher, SynchState& state) {
     std::string name = "yuzu:GPU";
     MicroProfileOnThreadCreate(name.c_str());
     SCOPE_EXIT({ MicroProfileOnThreadExit(); });
@@ -28,20 +28,14 @@ static void RunThread(Core::System& system, VideoCore::RendererBase& renderer,
     Common::SetCurrentThreadPriority(Common::ThreadPriority::High);
     system.RegisterHostThread();
 
-    // Wait for first GPU command before acquiring the window context
-    state.queue.Wait();
-
-    // If emulation was stopped during disk shader loading, abort before trying to acquire context
-    if (!state.is_running) {
-        return;
-    }
-
     auto current_context = context.Acquire();
     VideoCore::RasterizerInterface* const rasterizer = renderer.ReadRasterizer();
 
-    CommandDataContainer next;
-    while (state.is_running) {
-        next = state.queue.PopWait();
+    while (!stop_token.stop_requested()) {
+        CommandDataContainer next = state.queue.PopWait(stop_token);
+        if (stop_token.stop_requested()) {
+            break;
+        }
         if (auto* submit_list = std::get_if<SubmitListCommand>(&next.data)) {
             dma_pusher.Push(std::move(submit_list->entries));
             dma_pusher.DispatchCalls();
@@ -55,8 +49,6 @@ static void RunThread(Core::System& system, VideoCore::RendererBase& renderer,
             rasterizer->FlushRegion(flush->addr, flush->size);
         } else if (const auto* invalidate = std::get_if<InvalidateRegionCommand>(&next.data)) {
             rasterizer->OnCPUWrite(invalidate->addr, invalidate->size);
-        } else if (std::holds_alternative<EndProcessingCommand>(next.data)) {
-            ASSERT(state.is_running == false);
         } else {
             UNREACHABLE();
         }
@@ -73,16 +65,14 @@ static void RunThread(Core::System& system, VideoCore::RendererBase& renderer,
 ThreadManager::ThreadManager(Core::System& system_, bool is_async_)
     : system{system_}, is_async{is_async_} {}
 
-ThreadManager::~ThreadManager() {
-    ShutDown();
-}
+ThreadManager::~ThreadManager() = default;
 
 void ThreadManager::StartThread(VideoCore::RendererBase& renderer,
                                 Core::Frontend::GraphicsContext& context,
                                 Tegra::DmaPusher& dma_pusher) {
     rasterizer = renderer.ReadRasterizer();
-    thread = std::thread(RunThread, std::ref(system), std::ref(renderer), std::ref(context),
-                         std::ref(dma_pusher), std::ref(state));
+    thread = std::jthread(RunThread, std::ref(system), std::ref(renderer), std::ref(context),
+                          std::ref(dma_pusher), std::ref(state));
 }
 
 void ThreadManager::SubmitList(Tegra::CommandList&& entries) {
@@ -117,26 +107,6 @@ void ThreadManager::FlushAndInvalidateRegion(VAddr addr, u64 size) {
     rasterizer->OnCPUWrite(addr, size);
 }
 
-void ThreadManager::ShutDown() {
-    if (!state.is_running) {
-        return;
-    }
-
-    {
-        std::lock_guard lk(state.write_lock);
-        state.is_running = false;
-        state.cv.notify_all();
-    }
-
-    if (!thread.joinable()) {
-        return;
-    }
-
-    // Notify GPU thread that a shutdown is pending
-    PushCommand(EndProcessingCommand());
-    thread.join();
-}
-
 void ThreadManager::OnCommandListEnd() {
     PushCommand(OnCommandListEndCommand());
 }
@@ -152,9 +122,8 @@ u64 ThreadManager::PushCommand(CommandData&& command_data, bool block) {
     state.queue.Push(CommandDataContainer(std::move(command_data), fence, block));
 
     if (block) {
-        state.cv.wait(lk, [this, fence] {
-            return fence <= state.signaled_fence.load(std::memory_order_relaxed) ||
-                   !state.is_running;
+        state.cv.wait(lk, thread.get_stop_token(), [this, fence] {
+            return fence <= state.signaled_fence.load(std::memory_order_relaxed);
         });
     }
 

@@ -243,7 +243,6 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     SetupFamilies(surface);
     SetupFeatures();
     SetupProperties();
-    CollectTelemetryParameters();
 
     const auto queue_cis = GetDeviceQueueCreateInfos();
     const std::vector extensions = LoadExtensions(surface != nullptr);
@@ -369,20 +368,9 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     };
     SetNext(next, demote);
 
-    if (driver_id == VK_DRIVER_ID_AMD_PROPRIETARY || driver_id == VK_DRIVER_ID_AMD_OPEN_SOURCE) {
-        const u32 version = properties.driverVersion;
-        // Broken in this driver
-        if (version > VK_MAKE_API_VERSION(0, 2, 0, 193)) {
-            LOG_WARNING(Render_Vulkan, "AMD proprietary driver versions newer than 21.9.1 "
-                                       "(windows) / 0.2.0.194 (amdvlk) have "
-                                       "broken VkPhysicalDeviceFloat16Int8FeaturesKHR");
-            is_int8_supported = false;
-            is_float16_supported = false;
-        }
-    }
-
+    VkPhysicalDeviceFloat16Int8FeaturesKHR float16_int8;
     if (is_int8_supported || is_float16_supported) {
-        VkPhysicalDeviceFloat16Int8FeaturesKHR float16_int8{
+        float16_int8 = {
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT16_INT8_FEATURES_KHR,
             .pNext = nullptr,
             .shaderFloat16 = is_float16_supported,
@@ -573,6 +561,7 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     logical = vk::Device::Create(physical, queue_cis, extensions, first_next, dld);
 
     CollectPhysicalMemoryInfo();
+    CollectTelemetryParameters();
     CollectToolingInfo();
 
     if (driver_id == VK_DRIVER_ID_NVIDIA_PROPRIETARY_KHR) {

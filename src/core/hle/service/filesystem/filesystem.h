@@ -240,6 +240,12 @@ public:
      */
     ResultVal<FileSys::EntryType> GetEntryType(const std::string& path) const;
 
+    /**
+     * Get the timestamp of the specified path
+     * @return The timestamp of the specified path or error code
+     */
+    ResultVal<FileSys::FileTimeStampRaw> GetFileTimeStampRaw(const std::string& path) const;
+
 private:
     FileSys::VirtualDir backing;
 };
