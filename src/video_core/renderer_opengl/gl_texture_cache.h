@@ -47,6 +47,19 @@ struct FormatProperties {
     bool is_compressed;
 };
 
+class BGRCopyPass {
+public:
+    BGRCopyPass() = default;
+    ~BGRCopyPass() = default;
+
+    void CopyBGR(Image& dst_image, Image& src_image,
+                 std::span<const VideoCommon::ImageCopy> copies);
+
+private:
+    OGLBuffer bgr_pbo;
+    size_t bgr_pbo_size{};
+};
+
 class TextureCacheRuntime {
     friend Framebuffer;
     friend Image;
@@ -118,6 +131,7 @@ private:
     const Device& device;
     StateTracker& state_tracker;
     UtilShaders util_shaders;
+    BGRCopyPass bgr_copy_pass;
 
     std::array<std::unordered_map<GLenum, FormatProperties>, 3> format_properties;
     bool has_broken_texture_view_formats = false;
@@ -160,6 +174,14 @@ public:
 
     GLuint Handle() const noexcept {
         return texture.handle;
+    }
+
+    GLuint GlFormat() const noexcept {
+        return gl_format;
+    }
+
+    GLuint GlType() const noexcept {
+        return gl_type;
     }
 
 private:

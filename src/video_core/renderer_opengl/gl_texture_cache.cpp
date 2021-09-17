@@ -461,7 +461,7 @@ bool TextureCacheRuntime::CanImageBeCopied(const Image& dst, const Image& src) {
     if (dst.info.type == ImageType::e3D && dst.info.format == PixelFormat::BC4_UNORM) {
         return false;
     }
-    if (IsPixelFormatBGR(dst.info.format) || IsPixelFormatBGR(src.info.format)) {
+    if (IsPixelFormatBGR(dst.info.format) != IsPixelFormatBGR(src.info.format)) {
         return false;
     }
     return true;
@@ -473,7 +473,7 @@ void TextureCacheRuntime::EmulateCopyImage(Image& dst, Image& src,
         ASSERT(src.info.type == ImageType::e3D);
         util_shaders.CopyBC4(dst, src, copies);
     } else if (IsPixelFormatBGR(dst.info.format) || IsPixelFormatBGR(src.info.format)) {
-        util_shaders.CopyBGR(dst, src, copies);
+        bgr_copy_pass.CopyBGR(dst, src, copies);
     } else {
         UNREACHABLE();
     }
@@ -1110,6 +1110,39 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM
         glObjectLabel(GL_FRAMEBUFFER, handle, static_cast<GLsizei>(name.size()), name.data());
     }
     framebuffer.handle = handle;
+}
+
+void BGRCopyPass::CopyBGR(Image& dst_image, Image& src_image,
+                          std::span<const VideoCommon::ImageCopy> copies) {
+    static constexpr VideoCommon::Offset3D zero_offset{0, 0, 0};
+    const u32 requested_pbo_size =
+        std::max(src_image.unswizzled_size_bytes, dst_image.unswizzled_size_bytes);
+
+    if (bgr_pbo_size < requested_pbo_size) {
+        bgr_pbo.Create();
+        bgr_pbo_size = requested_pbo_size;
+        glNamedBufferData(bgr_pbo.handle, bgr_pbo_size, nullptr, GL_STREAM_COPY);
+    }
+    for (const ImageCopy& copy : copies) {
+        ASSERT(copy.src_offset == zero_offset);
+        ASSERT(copy.dst_offset == zero_offset);
+
+        // Copy from source to PBO
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        glPixelStorei(GL_PACK_ROW_LENGTH, copy.extent.width);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, bgr_pbo.handle);
+        glGetTextureSubImage(src_image.Handle(), 0, 0, 0, 0, copy.extent.width, copy.extent.height,
+                             copy.src_subresource.num_layers, src_image.GlFormat(),
+                             src_image.GlType(), static_cast<GLsizei>(bgr_pbo_size), nullptr);
+
+        // Copy from PBO to destination in desired GL format
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, copy.extent.width);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, bgr_pbo.handle);
+        glTextureSubImage3D(dst_image.Handle(), 0, 0, 0, 0, copy.extent.width, copy.extent.height,
+                            copy.dst_subresource.num_layers, dst_image.GlFormat(),
+                            dst_image.GlType(), nullptr);
+    }
 }
 
 } // namespace OpenGL

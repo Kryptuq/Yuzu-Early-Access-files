@@ -6,7 +6,6 @@ set(SHADER_FILES
     convert_float_to_depth.frag
     full_screen_triangle.vert
     opengl_copy_bc4.comp
-    opengl_copy_bgra.comp
     opengl_present.frag
     opengl_present.vert
     pitch_unswizzle.comp
