@@ -414,7 +414,6 @@ struct Values {
     BasicSetting<std::string> audio_device_id{"auto", "output_device"};
     BasicSetting<std::string> sink_id{"auto", "output_engine"};
     BasicSetting<bool> audio_muted{false, "audio_muted"};
-    Setting<bool> enable_audio_stretching{true, "enable_audio_stretching"};
     RangedSetting<u8> volume{100, 0, 100, "volume"};
 
     // Core

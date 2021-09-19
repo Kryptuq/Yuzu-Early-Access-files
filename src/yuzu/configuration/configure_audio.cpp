@@ -50,8 +50,6 @@ void ConfigureAudio::SetConfiguration() {
     const auto volume_value = static_cast<int>(Settings::values.volume.GetValue());
     ui->volume_slider->setValue(volume_value);
 
-    ui->toggle_audio_stretching->setChecked(Settings::values.enable_audio_stretching.GetValue());
-
     if (!Settings::IsConfiguringGlobal()) {
         if (Settings::values.volume.UsingGlobal()) {
             ui->volume_combo_box->setCurrentIndex(0);
@@ -100,8 +98,6 @@ void ConfigureAudio::SetVolumeIndicatorText(int percentage) {
 }
 
 void ConfigureAudio::ApplyConfiguration() {
-    ConfigurationShared::ApplyPerGameSetting(&Settings::values.enable_audio_stretching,
-                                             ui->toggle_audio_stretching, enable_audio_stretching);
 
     if (Settings::IsConfiguringGlobal()) {
         Settings::values.sink_id =
@@ -162,15 +158,10 @@ void ConfigureAudio::RetranslateUI() {
 void ConfigureAudio::SetupPerGameUI() {
     if (Settings::IsConfiguringGlobal()) {
         ui->volume_slider->setEnabled(Settings::values.volume.UsingGlobal());
-        ui->toggle_audio_stretching->setEnabled(
-            Settings::values.enable_audio_stretching.UsingGlobal());
 
         return;
     }
 
-    ConfigurationShared::SetColoredTristate(ui->toggle_audio_stretching,
-                                            Settings::values.enable_audio_stretching,
-                                            enable_audio_stretching);
     connect(ui->volume_combo_box, qOverload<int>(&QComboBox::activated), this, [this](int index) {
         ui->volume_slider->setEnabled(index == 1);
         ConfigurationShared::SetHighlight(ui->volume_layout, index == 1);

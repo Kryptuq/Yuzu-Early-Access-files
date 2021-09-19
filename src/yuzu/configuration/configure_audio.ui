@@ -32,16 +32,6 @@
        </layout>
       </item>
       <item>
-       <widget class="QCheckBox" name="toggle_audio_stretching">
-        <property name="toolTip">
-         <string>This post-processing effect adjusts audio speed to match emulation speed and helps prevent audio stutter. This however increases audio latency.</string>
-        </property>
-        <property name="text">
-         <string>Enable audio stretching</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <layout class="QHBoxLayout" name="_2">
         <item>
          <widget class="QLabel" name="audio_device_label">

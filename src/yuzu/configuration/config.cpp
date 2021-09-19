@@ -545,7 +545,6 @@ void Config::ReadAudioValues() {
         ReadBasicSetting(Settings::values.audio_device_id);
         ReadBasicSetting(Settings::values.sink_id);
     }
-    ReadGlobalSetting(Settings::values.enable_audio_stretching);
     ReadGlobalSetting(Settings::values.volume);
 
     qt_config->endGroup();
@@ -1179,7 +1178,6 @@ void Config::SaveAudioValues() {
         WriteBasicSetting(Settings::values.sink_id);
         WriteBasicSetting(Settings::values.audio_device_id);
     }
-    WriteGlobalSetting(Settings::values.enable_audio_stretching);
     WriteGlobalSetting(Settings::values.volume);
 
     qt_config->endGroup();

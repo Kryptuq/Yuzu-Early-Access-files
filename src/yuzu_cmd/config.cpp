@@ -475,7 +475,6 @@ void Config::ReadValues() {
 
     // Audio
     ReadSetting("Audio", Settings::values.sink_id);
-    ReadSetting("Audio", Settings::values.enable_audio_stretching);
     ReadSetting("Audio", Settings::values.audio_device_id);
     ReadSetting("Audio", Settings::values.volume);
 

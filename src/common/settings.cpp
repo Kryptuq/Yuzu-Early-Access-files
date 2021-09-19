@@ -61,7 +61,6 @@ void LogSettings() {
     log_setting("Renderer_UseAsynchronousShaders", values.use_asynchronous_shaders.GetValue());
     log_setting("Renderer_AnisotropicFilteringLevel", values.max_anisotropy.GetValue());
     log_setting("Audio_OutputEngine", values.sink_id.GetValue());
-    log_setting("Audio_EnableAudioStretching", values.enable_audio_stretching.GetValue());
     log_setting("Audio_OutputDevice", values.audio_device_id.GetValue());
     log_setting("DataStorage_UseVirtualSd", values.use_virtual_sd.GetValue());
     log_path("DataStorage_CacheDir", Common::FS::GetYuzuPath(Common::FS::YuzuPath::CacheDir));
@@ -115,7 +114,6 @@ void RestoreGlobalState(bool is_powered_on) {
     }
 
     // Audio
-    values.enable_audio_stretching.SetGlobal(true);
     values.volume.SetGlobal(true);
 
     // Core
