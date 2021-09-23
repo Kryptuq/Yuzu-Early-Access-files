@@ -633,8 +633,7 @@ void RasterizerVulkan::UpdateDepthBias(Tegra::Engines::Maxwell3D::Regs& regs) {
                         regs.zeta.format == Tegra::DepthFormat::D24S8_UNORM ||
                         regs.zeta.format == Tegra::DepthFormat::D24C8_UNORM;
     if (is_d24 && !device.SupportsD24DepthBuffer()) {
-        const double f =
-            static_cast<double>(1ULL << (32 - 24)) / (static_cast<double>(0x1.ep+127) * 2.0);
+        const double f = static_cast<double>(1ULL << (32 - 24)) / (static_cast<double>(0x1.ep+127));
         units = static_cast<float>(static_cast<double>(units) * f);
     }
 

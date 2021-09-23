@@ -2,37 +2,23 @@
 <ui version="4.0">
   <class>ConfigureTas</class>
   <widget class="QDialog" name="ConfigureTas">
-    <property name="geometry">
-      <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>800</width>
-        <height>300</height>
-      </rect>
-    </property>
-    <property name="windowTitle">
-      <string>Dialog</string>
-    </property>
     <layout class="QVBoxLayout" name="verticalLayout_1">
       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout">
+        <layout class="QHBoxLayout" name="horizontalLayout_1">
           <item>
-            <widget class="QGroupBox" name="groupBox">
+            <widget class="QGroupBox" name="groupBox_1">
               <property name="title">
                 <string>TAS</string>
               </property>
-              <layout class="QGridLayout" name="gridLayout">
-                <item row="0" column="0" colspan="1">
+              <layout class="QGridLayout" name="gridLayout_1">
+                <item row="0" column="0" colspan="4">
                   <widget class="QLabel" name="label_1">
                     <property name="text">
-                      <string>Reads controller input from scripts in the same format as TAS-nx scripts. For a more detailed explanation please consult the FAQ on the yuzu website.</string>
-                    </property>
-                    <property name="wordWrap">
-                      <bool>true</bool>
+                      <string>Reads controller input from scripts in the same format as TAS-nx scripts.&lt;br/&gt;For a more detailed explanation please consult the FAQ on the yuzu website.</string>
                     </property>
                   </widget>
                 </item>
-                <item row="1" column="0" colspan="1">
+                <item row="1" column="0" colspan="4">
                   <widget class="QLabel" name="label_2">
                     <property name="text">
                       <string>To check which hotkeys control the playback/recording, please refer to the Hotkey settings (General -> Hotkeys).</string>
@@ -42,10 +28,10 @@
                     </property>
                   </widget>
                 </item>
-                <item row="2" column="0" colspan="1">
-                  <widget class="QLabel" name="label_2">
+                <item row="2" column="0" colspan="4">
+                  <widget class="QLabel" name="label_3">
                     <property name="text">
-                      <string>WARNING: This is an experimental feature. It will not play back scripts frame perfectly with the current, imperfect syncing method.</string>
+                      <string>WARNING: This is an experimental feature.&lt;br/&gt;It will not play back scripts frame perfectly with the current, imperfect syncing method.</string>
                     </property>
                     <property name="wordWrap">
                       <bool>true</bool>
@@ -58,13 +44,13 @@
         </layout>
       </item>
       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout">
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
-            <widget class="QGroupBox" name="groupBox">
+            <widget class="QGroupBox" name="groupBox_2">
               <property name="title">
                 <string>Settings</string>
               </property>
-              <layout class="QGridLayout" name="gridLayout">
+              <layout class="QGridLayout" name="gridLayout_2">
                 <item row="0" column="0" colspan="4">
                   <widget class="QCheckBox" name="tas_enable">
                     <property name="text">
@@ -102,15 +88,15 @@
         </layout>
       </item>
       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout">
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
           <item>
-            <widget class="QGroupBox" name="groupBox">
+            <widget class="QGroupBox" name="groupBox_3">
               <property name="title">
                 <string>Script Directory</string>
               </property>
-              <layout class="QGridLayout" name="gridLayout">
+              <layout class="QGridLayout" name="gridLayout_3">
                 <item row="0" column="0">
-                  <widget class="QLabel" name="label">
+                  <widget class="QLabel" name="label_4">
                     <property name="text">
                       <string>Path</string>
                     </property>
@@ -125,22 +111,6 @@
                 </item>
                 <item row="0" column="2">
                   <widget class="QLineEdit" name="tas_path_edit"/>
-                </item>
-                <item row="0" column="1">
-                  <spacer name="horizontalSpacer">
-                    <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                    </property>
-                    <property name="sizeType">
-                      <enum>QSizePolicy::Maximum</enum>
-                    </property>
-                    <property name="sizeHint" stdset="0">
-                      <size>
-                        <width>60</width>
-                        <height>20</height>
-                      </size>
-                    </property>
-                  </spacer>
                 </item>
               </layout>
             </widget>
