@@ -79,7 +79,8 @@ public:
     }
 
     bool TouchDepthBias() {
-        return Exchange(Dirty::DepthBias, false);
+        return Exchange(Dirty::DepthBias, false) ||
+               Exchange(VideoCommon::Dirty::DepthBiasGlobal, false);
     }
 
     bool TouchBlendConstants() {

@@ -618,6 +618,10 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
         is_float16_supported = false;
     }
 
+    supports_d24_depth =
+        IsFormatSupported(VK_FORMAT_D24_UNORM_S8_UINT,
+                          VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT, FormatType::Optimal);
+
     graphics_queue = logical.GetQueue(graphics_family);
     present_queue = logical.GetQueue(present_family);
 }

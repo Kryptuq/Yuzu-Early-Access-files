@@ -38,6 +38,9 @@ enum : u8 {
 
     Shaders,
 
+    // Special entries
+    DepthBiasGlobal,
+
     LastCommonEntry,
 };
 

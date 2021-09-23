@@ -216,6 +216,7 @@ void TextureCache<P>::UpdateRenderTargets(bool is_clear) {
         BindRenderTarget(&render_targets.depth_buffer_id, FindDepthBuffer(is_clear));
     }
     const ImageViewId depth_buffer_id = render_targets.depth_buffer_id;
+
     PrepareImageView(depth_buffer_id, true, is_clear && IsFullClear(depth_buffer_id));
 
     for (size_t index = 0; index < NUM_RT; ++index) {
@@ -225,6 +226,8 @@ void TextureCache<P>::UpdateRenderTargets(bool is_clear) {
         maxwell3d.regs.render_area.width,
         maxwell3d.regs.render_area.height,
     };
+
+    flags[Dirty::DepthBiasGlobal] = true;
 }
 
 template <class P>

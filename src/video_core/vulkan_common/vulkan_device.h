@@ -327,6 +327,10 @@ public:
         return sets_per_pool;
     }
 
+    bool SupportsD24DepthBuffer() const {
+        return supports_d24_depth;
+    }
+
 private:
     /// Checks if the physical device is suitable.
     void CheckSuitability(bool requires_swapchain) const;
@@ -419,6 +423,7 @@ private:
     bool nv_device_diagnostics_config{};    ///< Support for VK_NV_device_diagnostics_config.
     bool has_renderdoc{};                   ///< Has RenderDoc attached
     bool has_nsight_graphics{};             ///< Has Nsight Graphics attached
+    bool supports_d24_depth{};              ///< Supports D24 depth buffers.
 
     // Telemetry parameters
     std::string vendor_name;                       ///< Device's driver name.
