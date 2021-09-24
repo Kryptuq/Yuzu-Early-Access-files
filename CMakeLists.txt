@@ -135,7 +135,7 @@ endif()
 # boost asio's concept usage doesn't play nicely with some compilers yet.
 add_definitions(-DBOOST_ASIO_DISABLE_CONCEPTS)
 if (MSVC)
-    add_compile_options(/std:c++latest)
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/std:c++latest>)
 
     # cubeb and boost still make use of deprecated result_of.
     add_definitions(-D_HAS_DEPRECATED_RESULT_OF)

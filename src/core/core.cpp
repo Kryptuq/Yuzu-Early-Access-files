@@ -305,7 +305,6 @@ struct System::Impl {
         is_powered_on = false;
         exit_lock = false;
 
-        gpu_core.reset();
         services.reset();
         service_manager.reset();
         cheat_engine.reset();
@@ -315,6 +314,7 @@ struct System::Impl {
         core_timing.Shutdown();
         app_loader.reset();
         perf_stats.reset();
+        gpu_core.reset();
         kernel.Shutdown();
         memory.Reset();
         applet_manager.ClearAll();

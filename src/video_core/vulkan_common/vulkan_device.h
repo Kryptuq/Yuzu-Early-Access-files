@@ -309,6 +309,11 @@ public:
         return has_renderdoc || has_nsight_graphics;
     }
 
+    /// Returns true when the device does not properly support cube compatibility.
+    bool HasBrokenCubeImageCompability() const {
+        return has_broken_cube_compatibility;
+    }
+
     /// Returns the vendor name reported from Vulkan.
     std::string_view GetVendorName() const {
         return vendor_name;
@@ -421,6 +426,7 @@ private:
     bool ext_conservative_rasterization{};  ///< Support for VK_EXT_conservative_rasterization.
     bool ext_provoking_vertex{};            ///< Support for VK_EXT_provoking_vertex.
     bool nv_device_diagnostics_config{};    ///< Support for VK_NV_device_diagnostics_config.
+    bool has_broken_cube_compatibility{};   ///< Has broken cube compatiblity bit
     bool has_renderdoc{};                   ///< Has RenderDoc attached
     bool has_nsight_graphics{};             ///< Has Nsight Graphics attached
     bool supports_d24_depth{};              ///< Supports D24 depth buffers.

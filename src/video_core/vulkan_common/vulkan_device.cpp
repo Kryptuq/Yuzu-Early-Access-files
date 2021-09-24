@@ -588,22 +588,27 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             ext_extended_dynamic_state = false;
         }
     }
-
     sets_per_pool = 64;
-    if (driver_id == VK_DRIVER_ID_AMD_PROPRIETARY || driver_id == VK_DRIVER_ID_AMD_OPEN_SOURCE) {
+
+    const bool is_amd =
+        driver_id == VK_DRIVER_ID_AMD_PROPRIETARY || driver_id == VK_DRIVER_ID_AMD_OPEN_SOURCE;
+    if (is_amd) {
         // AMD drivers need a higher amount of Sets per Pool in certain circunstances like in XC2.
         sets_per_pool = 96;
-    }
-
-    const bool is_amd = driver_id == VK_DRIVER_ID_AMD_PROPRIETARY ||
-                        driver_id == VK_DRIVER_ID_MESA_RADV ||
-                        driver_id == VK_DRIVER_ID_AMD_OPEN_SOURCE;
-    if (ext_sampler_filter_minmax && is_amd) {
-        // Disable ext_sampler_filter_minmax on AMD GCN4 and lower as it is broken.
+        // Disable VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT on AMD GCN4 and lower as it is broken.
         if (!is_float16_supported) {
             LOG_WARNING(
                 Render_Vulkan,
-                "Blacklisting AMD GCN4 and lower for VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME");
+                "AMD GCN4 and earlier do not properly support VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT");
+            has_broken_cube_compatibility = true;
+        }
+    }
+    const bool is_amd_or_radv = is_amd || driver_id == VK_DRIVER_ID_MESA_RADV;
+    if (ext_sampler_filter_minmax && is_amd_or_radv) {
+        // Disable ext_sampler_filter_minmax on AMD GCN4 and lower as it is broken.
+        if (!is_float16_supported) {
+            LOG_WARNING(Render_Vulkan,
+                        "Blacklisting AMD GCN4 and earlier for VK_EXT_sampler_filter_minmax");
             ext_sampler_filter_minmax = false;
         }
     }

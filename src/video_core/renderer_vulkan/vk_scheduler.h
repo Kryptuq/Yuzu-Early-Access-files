@@ -212,7 +212,6 @@ private:
     vk::CommandBuffer current_cmdbuf;
 
     std::unique_ptr<CommandChunk> chunk;
-    std::jthread worker_thread;
 
     State state;
 
@@ -226,6 +225,7 @@ private:
     std::mutex work_mutex;
     std::condition_variable_any work_cv;
     std::condition_variable wait_cv;
+    std::jthread worker_thread;
 };
 
 } // namespace Vulkan

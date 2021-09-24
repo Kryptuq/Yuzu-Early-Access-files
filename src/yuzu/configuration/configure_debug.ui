@@ -2,85 +2,55 @@
 <ui version="4.0">
  <class>ConfigureDebug</class>
  <widget class="QWidget" name="ConfigureDebug">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>400</width>
-    <height>777</height>
-   </rect>
-  </property>
-  <property name="windowTitle">
-   <string>Form</string>
-  </property>
   <layout class="QVBoxLayout" name="verticalLayout_1">
    <item>
     <widget class="QGroupBox" name="groupBox_2">
      <property name="title">
       <string>Logging</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_4">
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
-        <item>
-         <widget class="QLabel" name="label_1">
-          <property name="text">
-           <string>Global Log Filter</string>
+        <layout class="QGridLayout" name="gridLayout_1">
+         <item row="0" column="0" colspan="2">
+          <layout class="QHBoxLayout" name="horizontalLayout_1">
+          <item>
+           <widget class="QLabel" name="label_1">
+           <property name="text">
+            <string>Global Log Filter</string>
+           </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="log_filter_edit"/>
+         </item>
+        </layout>
+         </item>
+         <item row="1" column="0">
+          <widget class="QCheckBox" name="toggle_console">
+           <property name="text">
+            <string>Show Log in Console</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+           <widget class="QPushButton" name="open_log_button">
+            <property name="text">
+             <string>Open Log Location</string>
+            </property>
+           </widget>
+          </item>
+         <item row="2" column="0">
+          <widget class="QCheckBox" name="extended_logging">
+          <property name="enabled">
+           <bool>true</bool>
           </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="log_filter_edit"/>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_3">
-        <item>
-         <widget class="QCheckBox" name="toggle_console">
-          <property name="text">
-           <string>Show Log in Console</string>
+          <property name="toolTip">
+           <string>When checked, the max size of the log increases from 100 MB to 1 GB</string>
           </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="open_log_button">
           <property name="text">
-           <string>Open Log Location</string>
+           <string>Enable Extended Logging**</string>
           </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="extended_logging">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="toolTip">
-         <string>When checked, the max size of the log increases from 100 MB to 1 GB</string>
-        </property>
-        <property name="text">
-         <string>Enable Extended Logging</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label_2">
-        <property name="font">
-         <font>
-          <italic>true</italic>
-         </font>
-        </property>
-        <property name="text">
-         <string>This will be reset automatically when yuzu closes.</string>
-        </property>
-        <property name="indent">
-         <number>20</number>
-        </property>
-       </widget>
-      </item>
-     </layout>
+          </widget>
+         </item>
+        </layout>
     </widget>
    </item>
    <item>
@@ -111,7 +81,7 @@
      <property name="title">
       <string>Graphics</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout_3">
+     <layout class="QGridLayout" name="gridLayout_2">
       <item row="0" column="0">
        <widget class="QCheckBox" name="enable_graphics_debugging">
         <property name="enabled">
@@ -176,33 +146,18 @@
      <property name="title">
       <string>Debugging</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_7">
-      <item>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="0">
        <widget class="QCheckBox" name="fs_access_log">
         <property name="text">
          <string>Enable FS Access Log</string>
         </property>
        </widget>
       </item>
-      <item>
+      <item row="1" column="0">
        <widget class="QCheckBox" name="reporting_services">
         <property name="text">
-         <string>Enable Verbose Reporting Services</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label_4">
-        <property name="font">
-         <font>
-          <italic>true</italic>
-         </font>
-        </property>
-        <property name="text">
-         <string>This will be reset automatically when yuzu closes.</string>
-        </property>
-        <property name="indent">
-         <number>20</number>
+         <string>Enable Verbose Reporting Services**</string>
         </property>
        </widget>
       </item>
@@ -214,47 +169,32 @@
      <property name="title">
       <string>Advanced</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_8">
-      <item>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item> row="0" column="0">
        <widget class="QCheckBox" name="quest_flag">
         <property name="text">
          <string>Kiosk (Quest) Mode</string>
         </property>
        </widget>
       </item>
-      <item>
+      <item row="1" column="0">
        <widget class="QCheckBox" name="enable_cpu_debugging">
         <property name="text">
          <string>Enable CPU Debugging</string>
         </property>
        </widget>
       </item>
-      <item>
+      <item row="2" column="0">
        <widget class="QCheckBox" name="use_debug_asserts">
         <property name="text">
          <string>Enable Debug Asserts</string>
         </property>
        </widget>
       </item>
-      <item>
+      <item row="0" column="1">
        <widget class="QCheckBox" name="use_auto_stub">
         <property name="text">
-         <string>Enable Auto-Stub</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label_5">
-        <property name="font">
-         <font>
-          <italic>true</italic>
-         </font>
-        </property>
-        <property name="text">
-         <string>This will be reset automatically when yuzu closes.</string>
-        </property>
-        <property name="indent">
-         <number>20</number>
+         <string>Enable Auto-Stub**</string>
         </property>
        </widget>
       </item>
@@ -262,20 +202,19 @@
     </widget>
    </item>
    <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
+    <widget class="QLabel" name="label_5">
+     <property name="font">
+      <font>
+       <italic>true</italic>
+      </font>
      </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Expanding</enum>
+     <property name="text">
+      <string>**This will be reset automatically when yuzu closes.</string>
      </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
+     <property name="indent">
+      <number>20</number>
      </property>
-    </spacer>
+    </widget>
    </item>
   </layout>
  </widget>

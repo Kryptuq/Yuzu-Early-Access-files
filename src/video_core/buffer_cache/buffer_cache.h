@@ -570,13 +570,12 @@ bool BufferCache<P>::DMACopy(GPUVAddr src_address, GPUVAddr dest_address, u64 am
     ForEachWrittenRange(*cpu_src_address, amount, mirror);
     // This subtraction in this order is important for overlapping copies.
     common_ranges.subtract(subtract_interval);
-    bool atleast_1_download = tmp_intervals.size() != 0;
-    for (const IntervalType add_interval : tmp_intervals) {
+    const bool has_new_downloads = tmp_intervals.size() != 0;
+    for (const IntervalType& add_interval : tmp_intervals) {
         common_ranges.add(add_interval);
     }
-
     runtime.CopyBuffer(dest_buffer, src_buffer, copies);
-    if (atleast_1_download) {
+    if (has_new_downloads) {
         dest_buffer.MarkRegionAsGpuModified(*cpu_dest_address, amount);
     }
     std::vector<u8> tmp_buffer(amount);

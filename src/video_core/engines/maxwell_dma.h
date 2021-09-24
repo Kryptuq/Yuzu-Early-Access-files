@@ -175,7 +175,7 @@ public:
     static_assert(sizeof(LaunchDMA) == 4);
 
     struct RemapConst {
-        enum Swizzle : u32 {
+        enum class Swizzle : u32 {
             SRC_X = 0,
             SRC_Y = 1,
             SRC_Z = 2,

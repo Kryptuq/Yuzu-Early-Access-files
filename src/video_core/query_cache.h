@@ -257,9 +257,9 @@ private:
 
     void AsyncFlushQuery(VAddr addr) {
         if (!uncommitted_flushes) {
-            uncommitted_flushes = std::make_shared<std::unordered_set<VAddr>>();
+            uncommitted_flushes = std::make_shared<std::vector<VAddr>>();
         }
-        uncommitted_flushes->insert(addr);
+        uncommitted_flushes->push_back(addr);
     }
 
     static constexpr std::uintptr_t PAGE_SIZE = 4096;
@@ -275,8 +275,8 @@ private:
 
     std::array<CounterStream, VideoCore::NumQueryTypes> streams;
 
-    std::shared_ptr<std::unordered_set<VAddr>> uncommitted_flushes{};
-    std::list<std::shared_ptr<std::unordered_set<VAddr>>> committed_flushes;
+    std::shared_ptr<std::vector<VAddr>> uncommitted_flushes{};
+    std::list<std::shared_ptr<std::vector<VAddr>>> committed_flushes;
 };
 
 template <class QueryCache, class HostCounter>
