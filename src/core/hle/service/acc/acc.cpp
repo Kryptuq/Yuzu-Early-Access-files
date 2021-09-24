@@ -929,8 +929,7 @@ void Module::Interface::TrySelectUserWithoutInteraction(Kernel::HLERequestContex
     }
 
     const auto user_list = profile_manager->GetAllUsers();
-    if (std::all_of(user_list.begin(), user_list.end(),
-                    [](const auto& user) { return user.uuid == Common::INVALID_UUID; })) {
+    if (std::ranges::all_of(user_list, [](const auto& user) { return user.IsInvalid(); })) {
         rb.Push(ResultUnknown); // TODO(ogniK): Find the correct error code
         rb.PushRaw<u128>(Common::INVALID_UUID);
         return;

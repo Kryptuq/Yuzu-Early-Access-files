@@ -58,6 +58,13 @@ struct UUID {
         uuid = INVALID_UUID;
     }
 
+    [[nodiscard]] constexpr bool IsInvalid() const {
+        return uuid == INVALID_UUID;
+    }
+    [[nodiscard]] constexpr bool IsValid() const {
+        return !IsInvalid();
+    }
+
     // TODO(ogniK): Properly generate a Nintendo ID
     [[nodiscard]] constexpr u64 GetNintendoID() const {
         return uuid[0];

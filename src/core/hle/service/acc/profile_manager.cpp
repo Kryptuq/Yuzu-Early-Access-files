@@ -208,9 +208,10 @@ bool ProfileManager::UserExists(UUID uuid) const {
 }
 
 bool ProfileManager::UserExistsIndex(std::size_t index) const {
-    if (index >= MAX_USERS)
+    if (index >= MAX_USERS) {
         return false;
-    return profiles[index].user_uuid.uuid != Common::INVALID_UUID;
+    }
+    return profiles[index].user_uuid.IsValid();
 }
 
 /// Opens a specific user
@@ -304,7 +305,7 @@ bool ProfileManager::RemoveUser(UUID uuid) {
 
 bool ProfileManager::SetProfileBase(UUID uuid, const ProfileBase& profile_new) {
     const auto index = GetUserIndex(uuid);
-    if (!index || profile_new.user_uuid == UUID(Common::INVALID_UUID)) {
+    if (!index || profile_new.user_uuid.IsInvalid()) {
         return false;
     }
 
@@ -346,7 +347,7 @@ void ProfileManager::ParseUserSaveFile() {
     }
 
     for (const auto& user : data.users) {
-        if (user.uuid == UUID(Common::INVALID_UUID)) {
+        if (user.uuid.IsInvalid()) {
             continue;
         }
 

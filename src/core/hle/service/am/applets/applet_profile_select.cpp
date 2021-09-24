@@ -60,7 +60,7 @@ void ProfileSelect::Execute() {
 void ProfileSelect::SelectionComplete(std::optional<Common::UUID> uuid) {
     UserSelectionOutput output{};
 
-    if (uuid.has_value() && uuid->uuid != Common::INVALID_UUID) {
+    if (uuid.has_value() && uuid->IsValid()) {
         output.result = 0;
         output.uuid_selected = uuid->uuid;
     } else {
