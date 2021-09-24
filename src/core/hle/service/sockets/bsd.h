@@ -135,6 +135,7 @@ private:
     void Send(Kernel::HLERequestContext& ctx);
     void SendTo(Kernel::HLERequestContext& ctx);
     void Write(Kernel::HLERequestContext& ctx);
+    void Read(Kernel::HLERequestContext& ctx);
     void Close(Kernel::HLERequestContext& ctx);
     void EventFd(Kernel::HLERequestContext& ctx);
 

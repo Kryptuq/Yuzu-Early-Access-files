@@ -415,6 +415,19 @@ void BSD::Write(Kernel::HLERequestContext& ctx) {
                      });
 }
 
+void BSD::Read(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const s32 fd = rp.Pop<s32>();
+
+    LOG_DEBUG(Service, "called. fd={} len={}", fd, ctx.GetWriteBufferSize());
+
+    ExecuteWork(ctx, RecvWork{
+                         .fd = fd,
+                         .flags = 0,
+                         .message = std::vector<u8>(ctx.GetWriteBufferSize()),
+                     });
+}
+
 void BSD::Close(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 fd = rp.Pop<s32>();
@@ -855,7 +868,7 @@ BSD::BSD(Core::System& system_, const char* name) : ServiceFramework{system_, na
         {22, &BSD::Shutdown, "Shutdown"},
         {23, nullptr, "ShutdownAllSockets"},
         {24, &BSD::Write, "Write"},
-        {25, nullptr, "Read"},
+        {25, &BSD::Read, "Read"},
         {26, &BSD::Close, "Close"},
         {27, nullptr, "DuplicateSocket"},
         {28, nullptr, "GetResourceStatistics"},

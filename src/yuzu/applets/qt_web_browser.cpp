@@ -54,6 +54,9 @@ QtNXWebEngineView::QtNXWebEngineView(QWidget* parent, Core::System& system,
       input_interpreter(std::make_unique<InputInterpreter>(system)),
       default_profile{QWebEngineProfile::defaultProfile()},
       global_settings{QWebEngineSettings::globalSettings()} {
+    default_profile->setPersistentStoragePath(QString::fromStdString(Common::FS::PathToUTF8String(
+        Common::FS::GetYuzuPath(Common::FS::YuzuPath::YuzuDir) / "qtwebengine")));
+
     QWebEngineScript gamepad;
     QWebEngineScript window_nx;
 
