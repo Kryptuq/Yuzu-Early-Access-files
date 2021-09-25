@@ -235,20 +235,19 @@ public:
 
 template <typename T>
 concept HasLightCompareType = requires {
-    { std::is_same<typename T::LightCompareType, void>::value }
-    ->std::convertible_to<bool>;
+    { std::is_same<typename T::LightCompareType, void>::value } -> std::convertible_to<bool>;
 };
 
 namespace impl {
 
-template <typename T, typename Default>
-consteval auto* GetLightCompareType() {
-    if constexpr (HasLightCompareType<T>) {
-        return static_cast<typename T::LightCompareType*>(nullptr);
-    } else {
-        return static_cast<Default*>(nullptr);
+    template <typename T, typename Default>
+    consteval auto* GetLightCompareType() {
+        if constexpr (HasLightCompareType<T>) {
+            return static_cast<typename T::LightCompareType*>(nullptr);
+        } else {
+            return static_cast<Default*>(nullptr);
+        }
     }
-}
 
 } // namespace impl
 

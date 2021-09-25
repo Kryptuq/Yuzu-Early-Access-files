@@ -346,8 +346,8 @@ void InputSubsystem::ReloadInputDevices() {
     impl->udp->ReloadSockets();
 }
 
-std::vector<std::unique_ptr<Polling::DevicePoller>> InputSubsystem::GetPollers([
-    [maybe_unused]] Polling::DeviceType type) const {
+std::vector<std::unique_ptr<Polling::DevicePoller>> InputSubsystem::GetPollers(
+    [[maybe_unused]] Polling::DeviceType type) const {
 #ifdef HAVE_SDL2
     return impl->sdl->GetPollers(type);
 #else

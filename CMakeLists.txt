@@ -782,7 +782,7 @@ endif()
 
 find_program(GLSLANGVALIDATOR "glslangValidator" HINTS "c:/Projects/yuzu-early-access/glslang/glslang/bin" REQUIRED)
 
-set(CLANG_FORMAT_POSTFIX "-10")
+set(CLANG_FORMAT_POSTFIX "-12")
 find_program(CLANG_FORMAT
     NAMES clang-format${CLANG_FORMAT_POSTFIX}
           clang-format

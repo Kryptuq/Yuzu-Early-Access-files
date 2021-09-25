@@ -31,8 +31,8 @@ struct SlotId {
 };
 
 template <class T>
-requires std::is_nothrow_move_assignable_v<T>&&
-    std::is_nothrow_move_constructible_v<T> class SlotVector {
+requires std::is_nothrow_move_assignable_v<T> && std::is_nothrow_move_constructible_v<T>
+class SlotVector {
 public:
     class Iterator {
         friend SlotVector<T>;
