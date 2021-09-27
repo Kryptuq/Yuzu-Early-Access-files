@@ -329,10 +329,10 @@ ISelfController::~ISelfController() = default;
 void ISelfController::Exit(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_AM, "called");
 
-    system.Shutdown();
-
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
+
+    system.Exit();
 }
 
 void ISelfController::LockExit(Kernel::HLERequestContext& ctx) {

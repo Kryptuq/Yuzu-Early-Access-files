@@ -421,6 +421,7 @@ struct System::Impl {
     bool is_async_gpu{};
 
     ExecuteProgramCallback execute_program_callback;
+    ExitCallback exit_callback;
 
     std::array<u64, Core::Hardware::NUM_CPU_CORES> dynarmic_ticks{};
     std::array<MicroProfileToken, Core::Hardware::NUM_CPU_CORES> microprofile_dynarmic{};
@@ -795,6 +796,18 @@ void System::ExecuteProgram(std::size_t program_index) {
         impl->execute_program_callback(program_index);
     } else {
         LOG_CRITICAL(Core, "execute_program_callback must be initialized by the frontend");
+    }
+}
+
+void System::RegisterExitCallback(ExitCallback&& callback) {
+    impl->exit_callback = std::move(callback);
+}
+
+void System::Exit() {
+    if (impl->exit_callback) {
+        impl->exit_callback();
+    } else {
+        LOG_CRITICAL(Core, "exit_callback must be initialized by the frontend");
     }
 }
 

@@ -387,6 +387,18 @@ public:
      */
     void ExecuteProgram(std::size_t program_index);
 
+    /// Type used for the frontend to designate a callback for System to exit the application.
+    using ExitCallback = std::function<void()>;
+
+    /**
+     * Registers a callback from the frontend for System to exit the application.
+     * @param callback Callback from the frontend to exit the application.
+     */
+    void RegisterExitCallback(ExitCallback&& callback);
+
+    /// Instructs the frontend to exit the application.
+    void Exit();
+
     /// Applies any changes to settings to this core instance.
     void ApplySettings();
 

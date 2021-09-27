@@ -181,6 +181,9 @@ public:
      */
     void ExecuteProgram(std::size_t program_index);
 
+    /// Instructs the window to exit the application.
+    void Exit();
+
 public slots:
     void OnEmulationStarting(EmuThread* emu_thread);
     void OnEmulationStopping();
@@ -191,6 +194,7 @@ signals:
     void Closed();
     void FirstFrameDisplayed();
     void ExecuteProgramSignal(std::size_t program_index);
+    void ExitSignal();
     void MouseActivity();
 
 private:
