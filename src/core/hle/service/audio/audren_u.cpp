@@ -187,7 +187,8 @@ public:
             {10, &IAudioDevice::GetActiveAudioDeviceName, "GetActiveAudioDeviceNameAuto"},
             {11, &IAudioDevice::QueryAudioDeviceInputEvent, "QueryAudioDeviceInputEvent"},
             {12, &IAudioDevice::QueryAudioDeviceOutputEvent, "QueryAudioDeviceOutputEvent"},
-            {13, nullptr, "GetAudioSystemMasterVolumeSetting"},
+            {13, nullptr, "GetActiveAudioOutputDeviceName"},
+            {14, nullptr, "ListAudioOutputDeviceName"},
         };
         RegisterHandlers(functions);
     }

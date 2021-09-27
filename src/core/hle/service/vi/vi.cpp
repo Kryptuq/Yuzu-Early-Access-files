@@ -831,6 +831,7 @@ public:
             {6010, nullptr, "GetLayerPresentationAllFencesExpiredEvent"},
             {6011, nullptr, "EnableLayerAutoClearTransitionBuffer"},
             {6012, nullptr, "DisableLayerAutoClearTransitionBuffer"},
+            {6013, nullptr, "SetLayerOpacity"},
             {7000, nullptr, "SetContentVisibility"},
             {8000, nullptr, "SetConductorLayer"},
             {8001, nullptr, "SetTimestampTracking"},

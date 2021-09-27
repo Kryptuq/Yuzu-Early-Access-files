@@ -41,6 +41,14 @@ AudCtl::AudCtl(Core::System& system_) : ServiceFramework{system_, "audctl"} {
         {27, nullptr, "SetVolumeMappingTableForDev"},
         {28, nullptr, "GetAudioOutputChannelCountForPlayReport"},
         {29, nullptr, "BindAudioOutputChannelCountUpdateEventForPlayReport"},
+        {30, nullptr, "Unknown30"},
+        {31, nullptr, "Unknown31"},
+        {32, nullptr, "Unknown32"},
+        {33, nullptr, "Unknown33"},
+        {34, nullptr, "Unknown34"},
+        {10000, nullptr, "Unknown10000"},
+        {10001, nullptr, "Unknown10001"},
+        {10002, nullptr, "Unknown10002"},
     };
     // clang-format on
 

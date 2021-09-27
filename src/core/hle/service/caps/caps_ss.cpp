@@ -15,6 +15,7 @@ CAPS_SS::CAPS_SS(Core::System& system_) : ServiceFramework{system_, "caps:ss"} {
         {204, nullptr, "SaveEditedScreenShotEx0"},
         {206, nullptr, "Unknown206"},
         {208, nullptr, "SaveScreenShotOfMovieEx1"},
+        {1000, nullptr, "Unknown1000"},
     };
     // clang-format on
 

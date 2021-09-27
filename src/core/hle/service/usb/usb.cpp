@@ -97,7 +97,7 @@ public:
             {3, nullptr, "GetAlternateInterface"},
             {4, nullptr, "GetCurrentFrame"},
             {5, nullptr, "CtrlXferAsync"},
-            {6, nullptr, "Unknown6"},
+            {6, nullptr, "GetCtrlXferCompletionEvent"},
             {7, nullptr, "GetCtrlXferReport"},
             {8, nullptr, "ResetDevice"},
             {9, nullptr, "OpenUsbEp"},
@@ -183,8 +183,8 @@ public:
             {4, nullptr, "GetHostPdcFirmwareRevision"},
             {5, nullptr, "GetHostPdcManufactureId"},
             {6, nullptr, "GetHostPdcDeviceId"},
-            {7, nullptr, "AwakeCradle"},
-            {8, nullptr, "SleepCradle"},
+            {7, nullptr, "EnableCradleRecovery"},
+            {8, nullptr, "DisableCradleRecovery"},
         };
         // clang-format on
 

@@ -507,6 +507,7 @@ private:
         LarkNesRight = 18,
         Lucia = 19,
         Verification = 20,
+        Lagon = 21,
     };
 
     struct NPadEntry {
