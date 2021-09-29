@@ -6,10 +6,21 @@
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
-#include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/nifm/nifm.h"
 #include "core/hle/service/service.h"
+
+namespace {
+
+// Avoids name conflict with Windows' CreateEvent macro.
+[[nodiscard]] Kernel::KEvent* CreateKEvent(Service::KernelHelpers::ServiceContext& service_context,
+                                           std::string&& name) {
+    return service_context.CreateEvent(std::move(name));
+}
+
+} // Anonymous namespace
+
 #include "core/network/network.h"
 #include "core/network/network_interface.h"
 
@@ -129,7 +140,7 @@ public:
 class IRequest final : public ServiceFramework<IRequest> {
 public:
     explicit IRequest(Core::System& system_)
-        : ServiceFramework{system_, "IRequest"}, event1{system.Kernel()}, event2{system.Kernel()} {
+        : ServiceFramework{system_, "IRequest"}, service_context{system_, "IRequest"} {
         static const FunctionInfo functions[] = {
             {0, &IRequest::GetRequestState, "GetRequestState"},
             {1, &IRequest::GetResult, "GetResult"},
@@ -159,11 +170,13 @@ public:
         };
         RegisterHandlers(functions);
 
-        Kernel::KAutoObject::Create(std::addressof(event1));
-        Kernel::KAutoObject::Create(std::addressof(event2));
+        event1 = CreateKEvent(service_context, "IRequest:Event1");
+        event2 = CreateKEvent(service_context, "IRequest:Event2");
+    }
 
-        event1.Initialize("IRequest:Event1");
-        event2.Initialize("IRequest:Event2");
+    ~IRequest() override {
+        service_context.CloseEvent(event1);
+        service_context.CloseEvent(event2);
     }
 
 private:
@@ -199,7 +212,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2, 2};
         rb.Push(ResultSuccess);
-        rb.PushCopyObjects(event1.GetReadableEvent(), event2.GetReadableEvent());
+        rb.PushCopyObjects(event1->GetReadableEvent(), event2->GetReadableEvent());
     }
 
     void Cancel(Kernel::HLERequestContext& ctx) {
@@ -230,7 +243,10 @@ private:
         rb.Push<u32>(0);
     }
 
-    Kernel::KEvent event1, event2;
+    KernelHelpers::ServiceContext service_context;
+
+    Kernel::KEvent* event1;
+    Kernel::KEvent* event2;
 };
 
 class INetworkProfile final : public ServiceFramework<INetworkProfile> {

@@ -34,6 +34,7 @@ class KernelCore;
 class KPageTable;
 class KResourceLimit;
 class KThread;
+class KSharedMemoryInfo;
 class TLSPage;
 
 struct CodeSet;
@@ -447,6 +448,9 @@ private:
 
     /// List of threads that are running with this process as their owner.
     std::list<const KThread*> thread_list;
+
+    /// List of shared memory that are running with this process as their owner.
+    std::list<KSharedMemoryInfo*> shared_memory_list;
 
     /// Address of the top of the main thread's stack
     VAddr main_thread_stack_top{};

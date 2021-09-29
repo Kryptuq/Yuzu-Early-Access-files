@@ -428,11 +428,6 @@ web_api_url = https://api.yuzu-emu.org
 yuzu_username =
 yuzu_token =
 
-[Services]
-# The name of the backend to use for BCAT
-# If this is set to 'boxcat' boxcat will be used, otherwise a null implementation will be used
-bcat_backend =
-
 [AddOns]
 # Used to disable add-ons
 # List of title IDs of games that will have add-ons disabled (separated by '|'):

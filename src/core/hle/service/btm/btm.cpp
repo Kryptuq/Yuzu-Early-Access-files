@@ -9,9 +9,9 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/k_event.h"
-#include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/btm/btm.h"
+#include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/service.h"
 
 namespace Service::BTM {
@@ -19,9 +19,7 @@ namespace Service::BTM {
 class IBtmUserCore final : public ServiceFramework<IBtmUserCore> {
 public:
     explicit IBtmUserCore(Core::System& system_)
-        : ServiceFramework{system_, "IBtmUserCore"}, scan_event{system.Kernel()},
-          connection_event{system.Kernel()}, service_discovery{system.Kernel()},
-          config_event{system.Kernel()} {
+        : ServiceFramework{system_, "IBtmUserCore"}, service_context{system_, "IBtmUserCore"} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &IBtmUserCore::AcquireBleScanEvent, "AcquireBleScanEvent"},
@@ -60,15 +58,17 @@ public:
         // clang-format on
         RegisterHandlers(functions);
 
-        Kernel::KAutoObject::Create(std::addressof(scan_event));
-        Kernel::KAutoObject::Create(std::addressof(connection_event));
-        Kernel::KAutoObject::Create(std::addressof(service_discovery));
-        Kernel::KAutoObject::Create(std::addressof(config_event));
+        scan_event = service_context.CreateEvent("IBtmUserCore:ScanEvent");
+        connection_event = service_context.CreateEvent("IBtmUserCore:ConnectionEvent");
+        service_discovery_event = service_context.CreateEvent("IBtmUserCore:DiscoveryEvent");
+        config_event = service_context.CreateEvent("IBtmUserCore:ConfigEvent");
+    }
 
-        scan_event.Initialize("IBtmUserCore:ScanEvent");
-        connection_event.Initialize("IBtmUserCore:ConnectionEvent");
-        service_discovery.Initialize("IBtmUserCore:Discovery");
-        config_event.Initialize("IBtmUserCore:ConfigEvent");
+    ~IBtmUserCore() override {
+        service_context.CloseEvent(scan_event);
+        service_context.CloseEvent(connection_event);
+        service_context.CloseEvent(service_discovery_event);
+        service_context.CloseEvent(config_event);
     }
 
 private:
@@ -77,7 +77,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(ResultSuccess);
-        rb.PushCopyObjects(scan_event.GetReadableEvent());
+        rb.PushCopyObjects(scan_event->GetReadableEvent());
     }
 
     void AcquireBleConnectionEvent(Kernel::HLERequestContext& ctx) {
@@ -85,7 +85,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(ResultSuccess);
-        rb.PushCopyObjects(connection_event.GetReadableEvent());
+        rb.PushCopyObjects(connection_event->GetReadableEvent());
     }
 
     void AcquireBleServiceDiscoveryEvent(Kernel::HLERequestContext& ctx) {
@@ -93,7 +93,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(ResultSuccess);
-        rb.PushCopyObjects(service_discovery.GetReadableEvent());
+        rb.PushCopyObjects(service_discovery_event->GetReadableEvent());
     }
 
     void AcquireBleMtuConfigEvent(Kernel::HLERequestContext& ctx) {
@@ -101,13 +101,15 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(ResultSuccess);
-        rb.PushCopyObjects(config_event.GetReadableEvent());
+        rb.PushCopyObjects(config_event->GetReadableEvent());
     }
 
-    Kernel::KEvent scan_event;
-    Kernel::KEvent connection_event;
-    Kernel::KEvent service_discovery;
-    Kernel::KEvent config_event;
+    KernelHelpers::ServiceContext service_context;
+
+    Kernel::KEvent* scan_event;
+    Kernel::KEvent* connection_event;
+    Kernel::KEvent* service_discovery_event;
+    Kernel::KEvent* config_event;
 };
 
 class BTM_USR final : public ServiceFramework<BTM_USR> {

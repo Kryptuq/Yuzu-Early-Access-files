@@ -15,11 +15,10 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/k_event.h"
-#include "core/hle/kernel/k_readable_event.h"
-#include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/audio/audout_u.h"
 #include "core/hle/service/audio/errors.h"
+#include "core/hle/service/kernel_helpers.h"
 #include "core/memory.h"
 
 namespace Service::Audio {
@@ -41,11 +40,12 @@ enum class AudioState : u32 {
 
 class IAudioOut final : public ServiceFramework<IAudioOut> {
 public:
-    IAudioOut(Core::System& system_, AudoutParams audio_params_, AudioCore::AudioOut& audio_core_,
-              std::string&& device_name_, std::string&& unique_name)
-        : ServiceFramework{system_, "IAudioOut"}, audio_core{audio_core_}, device_name{std::move(
-                                                                               device_name_)},
-          audio_params{audio_params_}, buffer_event{system.Kernel()}, main_memory{system.Memory()} {
+    explicit IAudioOut(Core::System& system_, AudoutParams audio_params_,
+                       AudioCore::AudioOut& audio_core_, std::string&& device_name_,
+                       std::string&& unique_name)
+        : ServiceFramework{system_, "IAudioOut"}, audio_core{audio_core_},
+          device_name{std::move(device_name_)}, audio_params{audio_params_},
+          main_memory{system.Memory()}, service_context{system_, "IAudioOut"} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &IAudioOut::GetAudioOutState, "GetAudioOutState"},
@@ -67,14 +67,17 @@ public:
         RegisterHandlers(functions);
 
         // This is the event handle used to check if the audio buffer was released
-        Kernel::KAutoObject::Create(std::addressof(buffer_event));
-        buffer_event.Initialize("IAudioOutBufferReleased");
+        buffer_event = service_context.CreateEvent("IAudioOutBufferReleased");
 
         stream = audio_core.OpenStream(system.CoreTiming(), audio_params.sample_rate,
                                        audio_params.channel_count, std::move(unique_name), [this] {
                                            const auto guard = LockService();
-                                           buffer_event.GetWritableEvent().Signal();
+                                           buffer_event->GetWritableEvent().Signal();
                                        });
+    }
+
+    ~IAudioOut() override {
+        service_context.CloseEvent(buffer_event);
     }
 
 private:
@@ -126,7 +129,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(ResultSuccess);
-        rb.PushCopyObjects(buffer_event.GetReadableEvent());
+        rb.PushCopyObjects(buffer_event->GetReadableEvent());
     }
 
     void AppendAudioOutBufferImpl(Kernel::HLERequestContext& ctx) {
@@ -227,9 +230,12 @@ private:
 
     [[maybe_unused]] AudoutParams audio_params{};
 
-    /// This is the event handle used to check if the audio buffer was released
-    Kernel::KEvent buffer_event;
     Core::Memory::Memory& main_memory;
+
+    KernelHelpers::ServiceContext service_context;
+
+    /// This is the event handle used to check if the audio buffer was released
+    Kernel::KEvent* buffer_event;
 };
 
 AudOutU::AudOutU(Core::System& system_) : ServiceFramework{system_, "audout:u"} {

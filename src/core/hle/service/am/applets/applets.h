@@ -8,7 +8,7 @@
 #include <queue>
 
 #include "common/swap.h"
-#include "core/hle/kernel/k_event.h"
+#include "core/hle/service/kernel_helpers.h"
 
 union ResultCode;
 
@@ -105,6 +105,8 @@ private:
     Core::System& system;
     LibraryAppletMode applet_mode;
 
+    KernelHelpers::ServiceContext service_context;
+
     // Queues are named from applet's perspective
 
     // PopNormalDataToApplet and PushNormalDataFromGame
@@ -119,13 +121,13 @@ private:
     // PopInteractiveDataToGame and PushInteractiveDataFromApplet
     std::deque<std::shared_ptr<IStorage>> out_interactive_channel;
 
-    Kernel::KEvent state_changed_event;
+    Kernel::KEvent* state_changed_event;
 
     // Signaled on PushNormalDataFromApplet
-    Kernel::KEvent pop_out_data_event;
+    Kernel::KEvent* pop_out_data_event;
 
     // Signaled on PushInteractiveDataFromApplet
-    Kernel::KEvent pop_interactive_out_data_event;
+    Kernel::KEvent* pop_interactive_out_data_event;
 };
 
 class Applet {

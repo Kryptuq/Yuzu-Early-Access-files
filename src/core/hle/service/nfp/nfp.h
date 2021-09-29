@@ -7,7 +7,7 @@
 #include <array>
 #include <vector>
 
-#include "core/hle/kernel/k_event.h"
+#include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/service.h"
 
 namespace Kernel {
@@ -42,12 +42,13 @@ public:
         Kernel::KReadableEvent& GetNFCEvent();
         const AmiiboFile& GetAmiiboBuffer() const;
 
-    private:
-        Kernel::KEvent nfc_tag_load;
-        AmiiboFile amiibo{};
-
     protected:
         std::shared_ptr<Module> module;
+
+    private:
+        KernelHelpers::ServiceContext service_context;
+        Kernel::KEvent* nfc_tag_load;
+        AmiiboFile amiibo{};
     };
 };
 

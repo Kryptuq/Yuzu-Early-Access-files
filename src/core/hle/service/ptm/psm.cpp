@@ -8,9 +8,8 @@
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
-#include "core/hle/kernel/k_readable_event.h"
-#include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/ptm/psm.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/sm.h"
@@ -20,7 +19,7 @@ namespace Service::PSM {
 class IPsmSession final : public ServiceFramework<IPsmSession> {
 public:
     explicit IPsmSession(Core::System& system_)
-        : ServiceFramework{system_, "IPsmSession"}, state_change_event{system.Kernel()} {
+        : ServiceFramework{system_, "IPsmSession"}, service_context{system_, "IPsmSession"} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &IPsmSession::BindStateChangeEvent, "BindStateChangeEvent"},
@@ -33,27 +32,28 @@ public:
 
         RegisterHandlers(functions);
 
-        Kernel::KAutoObject::Create(std::addressof(state_change_event));
-        state_change_event.Initialize("IPsmSession::state_change_event");
+        state_change_event = service_context.CreateEvent("IPsmSession::state_change_event");
     }
 
-    ~IPsmSession() override = default;
+    ~IPsmSession() override {
+        service_context.CloseEvent(state_change_event);
+    }
 
     void SignalChargerTypeChanged() {
         if (should_signal && should_signal_charger_type) {
-            state_change_event.GetWritableEvent().Signal();
+            state_change_event->GetWritableEvent().Signal();
         }
     }
 
     void SignalPowerSupplyChanged() {
         if (should_signal && should_signal_power_supply) {
-            state_change_event.GetWritableEvent().Signal();
+            state_change_event->GetWritableEvent().Signal();
         }
     }
 
     void SignalBatteryVoltageStateChanged() {
         if (should_signal && should_signal_battery_voltage) {
-            state_change_event.GetWritableEvent().Signal();
+            state_change_event->GetWritableEvent().Signal();
         }
     }
 
@@ -65,7 +65,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(ResultSuccess);
-        rb.PushCopyObjects(state_change_event.GetReadableEvent());
+        rb.PushCopyObjects(state_change_event->GetReadableEvent());
     }
 
     void UnbindStateChangeEvent(Kernel::HLERequestContext& ctx) {
@@ -110,11 +110,13 @@ private:
         rb.Push(ResultSuccess);
     }
 
+    KernelHelpers::ServiceContext service_context;
+
     bool should_signal_charger_type{};
     bool should_signal_power_supply{};
     bool should_signal_battery_voltage{};
     bool should_signal{};
-    Kernel::KEvent state_change_event;
+    Kernel::KEvent* state_change_event;
 };
 
 class PSM final : public ServiceFramework<PSM> {

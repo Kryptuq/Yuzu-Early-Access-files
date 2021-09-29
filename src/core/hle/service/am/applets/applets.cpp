@@ -12,8 +12,7 @@
 #include "core/frontend/applets/profile_select.h"
 #include "core/frontend/applets/software_keyboard.h"
 #include "core/frontend/applets/web_browser.h"
-#include "core/hle/kernel/k_readable_event.h"
-#include "core/hle/kernel/k_writable_event.h"
+#include "core/hle/kernel/k_event.h"
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/am/applet_ae.h"
 #include "core/hle/service/am/applet_oe.h"
@@ -29,19 +28,19 @@
 namespace Service::AM::Applets {
 
 AppletDataBroker::AppletDataBroker(Core::System& system_, LibraryAppletMode applet_mode_)
-    : system{system_}, applet_mode{applet_mode_}, state_changed_event{system.Kernel()},
-      pop_out_data_event{system.Kernel()}, pop_interactive_out_data_event{system.Kernel()} {
-
-    Kernel::KAutoObject::Create(std::addressof(state_changed_event));
-    Kernel::KAutoObject::Create(std::addressof(pop_out_data_event));
-    Kernel::KAutoObject::Create(std::addressof(pop_interactive_out_data_event));
-
-    state_changed_event.Initialize("ILibraryAppletAccessor:StateChangedEvent");
-    pop_out_data_event.Initialize("ILibraryAppletAccessor:PopDataOutEvent");
-    pop_interactive_out_data_event.Initialize("ILibraryAppletAccessor:PopInteractiveDataOutEvent");
+    : system{system_}, applet_mode{applet_mode_}, service_context{system,
+                                                                  "ILibraryAppletAccessor"} {
+    state_changed_event = service_context.CreateEvent("ILibraryAppletAccessor:StateChangedEvent");
+    pop_out_data_event = service_context.CreateEvent("ILibraryAppletAccessor:PopDataOutEvent");
+    pop_interactive_out_data_event =
+        service_context.CreateEvent("ILibraryAppletAccessor:PopInteractiveDataOutEvent");
 }
 
-AppletDataBroker::~AppletDataBroker() = default;
+AppletDataBroker::~AppletDataBroker() {
+    service_context.CloseEvent(state_changed_event);
+    service_context.CloseEvent(pop_out_data_event);
+    service_context.CloseEvent(pop_interactive_out_data_event);
+}
 
 AppletDataBroker::RawChannelData AppletDataBroker::PeekDataToAppletForDebug() const {
     std::vector<std::vector<u8>> out_normal;
@@ -65,7 +64,7 @@ std::shared_ptr<IStorage> AppletDataBroker::PopNormalDataToGame() {
 
     auto out = std::move(out_channel.front());
     out_channel.pop_front();
-    pop_out_data_event.GetWritableEvent().Clear();
+    pop_out_data_event->GetWritableEvent().Clear();
     return out;
 }
 
@@ -84,7 +83,7 @@ std::shared_ptr<IStorage> AppletDataBroker::PopInteractiveDataToGame() {
 
     auto out = std::move(out_interactive_channel.front());
     out_interactive_channel.pop_front();
-    pop_interactive_out_data_event.GetWritableEvent().Clear();
+    pop_interactive_out_data_event->GetWritableEvent().Clear();
     return out;
 }
 
@@ -103,7 +102,7 @@ void AppletDataBroker::PushNormalDataFromGame(std::shared_ptr<IStorage>&& storag
 
 void AppletDataBroker::PushNormalDataFromApplet(std::shared_ptr<IStorage>&& storage) {
     out_channel.emplace_back(std::move(storage));
-    pop_out_data_event.GetWritableEvent().Signal();
+    pop_out_data_event->GetWritableEvent().Signal();
 }
 
 void AppletDataBroker::PushInteractiveDataFromGame(std::shared_ptr<IStorage>&& storage) {
@@ -112,11 +111,11 @@ void AppletDataBroker::PushInteractiveDataFromGame(std::shared_ptr<IStorage>&& s
 
 void AppletDataBroker::PushInteractiveDataFromApplet(std::shared_ptr<IStorage>&& storage) {
     out_interactive_channel.emplace_back(std::move(storage));
-    pop_interactive_out_data_event.GetWritableEvent().Signal();
+    pop_interactive_out_data_event->GetWritableEvent().Signal();
 }
 
 void AppletDataBroker::SignalStateChanged() {
-    state_changed_event.GetWritableEvent().Signal();
+    state_changed_event->GetWritableEvent().Signal();
 
     switch (applet_mode) {
     case LibraryAppletMode::AllForeground:
@@ -141,15 +140,15 @@ void AppletDataBroker::SignalStateChanged() {
 }
 
 Kernel::KReadableEvent& AppletDataBroker::GetNormalDataEvent() {
-    return pop_out_data_event.GetReadableEvent();
+    return pop_out_data_event->GetReadableEvent();
 }
 
 Kernel::KReadableEvent& AppletDataBroker::GetInteractiveDataEvent() {
-    return pop_interactive_out_data_event.GetReadableEvent();
+    return pop_interactive_out_data_event->GetReadableEvent();
 }
 
 Kernel::KReadableEvent& AppletDataBroker::GetStateChangedEvent() {
-    return state_changed_event.GetReadableEvent();
+    return state_changed_event->GetReadableEvent();
 }
 
 Applet::Applet(Core::System& system_, LibraryAppletMode applet_mode_)

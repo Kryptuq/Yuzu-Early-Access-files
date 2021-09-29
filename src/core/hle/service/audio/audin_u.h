@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "core/hle/kernel/k_event.h"
+#include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/service.h"
 
 namespace Core {
@@ -27,7 +27,9 @@ private:
     void RegisterBufferEvent(Kernel::HLERequestContext& ctx);
     void AppendAudioInBufferAuto(Kernel::HLERequestContext& ctx);
 
-    Kernel::KEvent buffer_event;
+    KernelHelpers::ServiceContext service_context;
+
+    Kernel::KEvent* buffer_event;
 };
 
 class AudInU final : public ServiceFramework<AudInU> {

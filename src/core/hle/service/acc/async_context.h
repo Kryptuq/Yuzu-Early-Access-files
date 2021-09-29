@@ -5,7 +5,7 @@
 #pragma once
 
 #include <atomic>
-#include "core/hle/kernel/k_event.h"
+#include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/service.h"
 
 namespace Core {
@@ -17,6 +17,7 @@ namespace Service::Account {
 class IAsyncContext : public ServiceFramework<IAsyncContext> {
 public:
     explicit IAsyncContext(Core::System& system_);
+    ~IAsyncContext() override;
 
     void GetSystemEvent(Kernel::HLERequestContext& ctx);
     void Cancel(Kernel::HLERequestContext& ctx);
@@ -30,8 +31,10 @@ protected:
 
     void MarkComplete();
 
+    KernelHelpers::ServiceContext service_context;
+
     std::atomic<bool> is_complete{false};
-    Kernel::KEvent compeletion_event;
+    Kernel::KEvent* completion_event;
 };
 
 } // namespace Service::Account

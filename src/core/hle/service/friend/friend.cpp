@@ -8,11 +8,10 @@
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
-#include "core/hle/kernel/k_readable_event.h"
-#include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/service/friend/errors.h"
 #include "core/hle/service/friend/friend.h"
 #include "core/hle/service/friend/friend_interface.h"
+#include "core/hle/service/kernel_helpers.h"
 
 namespace Service::Friend {
 
@@ -184,9 +183,9 @@ private:
 
 class INotificationService final : public ServiceFramework<INotificationService> {
 public:
-    explicit INotificationService(Common::UUID uuid_, Core::System& system_)
-        : ServiceFramework{system_, "INotificationService"}, uuid{uuid_}, notification_event{
-                                                                              system.Kernel()} {
+    explicit INotificationService(Core::System& system_, Common::UUID uuid_)
+        : ServiceFramework{system_, "INotificationService"}, uuid{uuid_},
+          service_context{system_, "INotificationService"} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &INotificationService::GetEvent, "GetEvent"},
@@ -197,8 +196,11 @@ public:
 
         RegisterHandlers(functions);
 
-        Kernel::KAutoObject::Create(std::addressof(notification_event));
-        notification_event.Initialize("INotificationService:NotifyEvent");
+        notification_event = service_context.CreateEvent("INotificationService:NotifyEvent");
+    }
+
+    ~INotificationService() override {
+        service_context.CloseEvent(notification_event);
     }
 
 private:
@@ -207,7 +209,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(ResultSuccess);
-        rb.PushCopyObjects(notification_event.GetReadableEvent());
+        rb.PushCopyObjects(notification_event->GetReadableEvent());
     }
 
     void Clear(Kernel::HLERequestContext& ctx) {
@@ -272,8 +274,10 @@ private:
         bool has_received_friend_request;
     };
 
-    Common::UUID uuid{Common::INVALID_UUID};
-    Kernel::KEvent notification_event;
+    Common::UUID uuid;
+    KernelHelpers::ServiceContext service_context;
+
+    Kernel::KEvent* notification_event;
     std::queue<SizedNotificationInfo> notifications;
     States states{};
 };
@@ -293,7 +297,7 @@ void Module::Interface::CreateNotificationService(Kernel::HLERequestContext& ctx
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);
-    rb.PushIpcInterface<INotificationService>(uuid, system);
+    rb.PushIpcInterface<INotificationService>(system, uuid);
 }
 
 Module::Interface::Interface(std::shared_ptr<Module> module_, Core::System& system_,

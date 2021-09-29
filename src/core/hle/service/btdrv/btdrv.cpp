@@ -7,9 +7,9 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/k_event.h"
-#include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/btdrv/btdrv.h"
+#include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/sm.h"
 
@@ -18,7 +18,7 @@ namespace Service::BtDrv {
 class Bt final : public ServiceFramework<Bt> {
 public:
     explicit Bt(Core::System& system_)
-        : ServiceFramework{system_, "bt"}, register_event{system.Kernel()} {
+        : ServiceFramework{system_, "bt"}, service_context{system_, "bt"} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, nullptr, "LeClientReadCharacteristic"},
@@ -35,8 +35,11 @@ public:
         // clang-format on
         RegisterHandlers(functions);
 
-        Kernel::KAutoObject::Create(std::addressof(register_event));
-        register_event.Initialize("BT:RegisterEvent");
+        register_event = service_context.CreateEvent("BT:RegisterEvent");
+    }
+
+    ~Bt() override {
+        service_context.CloseEvent(register_event);
     }
 
 private:
@@ -45,10 +48,12 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(ResultSuccess);
-        rb.PushCopyObjects(register_event.GetReadableEvent());
+        rb.PushCopyObjects(register_event->GetReadableEvent());
     }
 
-    Kernel::KEvent register_event;
+    KernelHelpers::ServiceContext service_context;
+
+    Kernel::KEvent* register_event;
 };
 
 class BtDrv final : public ServiceFramework<BtDrv> {

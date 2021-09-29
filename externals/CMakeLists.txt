@@ -93,13 +93,6 @@ endif()
 # Sirit
 add_subdirectory(sirit)
 
-# libzip
-find_package(libzip 1.5)
-if (NOT libzip_FOUND)
-    message(STATUS "libzip 1.5 or newer not found, falling back to externals")
-    add_subdirectory(libzip EXCLUDE_FROM_ALL)
-endif()
-
 if (ENABLE_WEB_SERVICE)
     find_package(OpenSSL 1.1)
     if (OPENSSL_FOUND)

@@ -23,6 +23,7 @@
 #include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/k_scoped_resource_reservation.h"
 #include "core/hle/kernel/k_shared_memory.h"
+#include "core/hle/kernel/k_shared_memory_info.h"
 #include "core/hle/kernel/k_slab_heap.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
@@ -254,10 +255,26 @@ ResultCode KProcess::AddSharedMemory(KSharedMemory* shmem, [[maybe_unused]] VAdd
     // Lock ourselves, to prevent concurrent access.
     KScopedLightLock lk(state_lock);
 
-    // TODO(bunnei): Manage KSharedMemoryInfo list here.
+    // Try to find an existing info for the memory.
+    KSharedMemoryInfo* shemen_info = nullptr;
+    const auto iter = std::find_if(
+        shared_memory_list.begin(), shared_memory_list.end(),
+        [shmem](const KSharedMemoryInfo* info) { return info->GetSharedMemory() == shmem; });
+    if (iter != shared_memory_list.end()) {
+        shemen_info = *iter;
+    }
 
-    // Open a reference to the shared memory.
+    if (shemen_info == nullptr) {
+        shemen_info = KSharedMemoryInfo::Allocate(kernel);
+        R_UNLESS(shemen_info != nullptr, ResultOutOfMemory);
+
+        shemen_info->Initialize(shmem);
+        shared_memory_list.push_back(shemen_info);
+    }
+
+    // Open a reference to the shared memory and its info.
     shmem->Open();
+    shemen_info->Open();
 
     return ResultSuccess;
 }
@@ -267,7 +284,20 @@ void KProcess::RemoveSharedMemory(KSharedMemory* shmem, [[maybe_unused]] VAddr a
     // Lock ourselves, to prevent concurrent access.
     KScopedLightLock lk(state_lock);
 
-    // TODO(bunnei): Manage KSharedMemoryInfo list here.
+    KSharedMemoryInfo* shemen_info = nullptr;
+    const auto iter = std::find_if(
+        shared_memory_list.begin(), shared_memory_list.end(),
+        [shmem](const KSharedMemoryInfo* info) { return info->GetSharedMemory() == shmem; });
+    if (iter != shared_memory_list.end()) {
+        shemen_info = *iter;
+    }
+
+    ASSERT(shemen_info != nullptr);
+
+    if (shemen_info->Close()) {
+        shared_memory_list.erase(iter);
+        KSharedMemoryInfo::Free(kernel, shemen_info);
+    }
 
     // Close a reference to the shared memory.
     shmem->Close();
@@ -411,6 +441,24 @@ void KProcess::Finalize() {
 
     // Finalize the handle table and close any open handles.
     handle_table.Finalize();
+
+    // Free all shared memory infos.
+    {
+        auto it = shared_memory_list.begin();
+        while (it != shared_memory_list.end()) {
+            KSharedMemoryInfo* info = *it;
+            KSharedMemory* shmem = info->GetSharedMemory();
+
+            while (!info->Close()) {
+                shmem->Close();
+            }
+
+            shmem->Close();
+
+            it = shared_memory_list.erase(it);
+            KSharedMemoryInfo::Free(kernel, info);
+        }
+    }
 
     // Perform inherited finalization.
     KAutoObjectWithSlabHeapAndContainer<KProcess, KSynchronizationObject>::Finalize();

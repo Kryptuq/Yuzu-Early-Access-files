@@ -12,7 +12,7 @@
 namespace Service::Audio {
 
 IAudioIn::IAudioIn(Core::System& system_)
-    : ServiceFramework{system_, "IAudioIn"}, buffer_event{system_.Kernel()} {
+    : ServiceFramework{system_, "IAudioIn"}, service_context{system_, "IAudioIn"} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, nullptr, "GetAudioInState"},
@@ -35,11 +35,12 @@ IAudioIn::IAudioIn(Core::System& system_)
 
     RegisterHandlers(functions);
 
-    Kernel::KAutoObject::Create(std::addressof(buffer_event));
-    buffer_event.Initialize("IAudioIn:BufferEvent");
+    buffer_event = service_context.CreateEvent("IAudioIn:BufferEvent");
 }
 
-IAudioIn::~IAudioIn() = default;
+IAudioIn::~IAudioIn() {
+    service_context.CloseEvent(buffer_event);
+}
 
 void IAudioIn::Start(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_Audio, "(STUBBED) called");
@@ -53,7 +54,7 @@ void IAudioIn::RegisterBufferEvent(Kernel::HLERequestContext& ctx) {
 
     IPC::ResponseBuilder rb{ctx, 2, 1};
     rb.Push(ResultSuccess);
-    rb.PushCopyObjects(buffer_event.GetReadableEvent());
+    rb.PushCopyObjects(buffer_event->GetReadableEvent());
 }
 
 void IAudioIn::AppendAudioInBufferAuto(Kernel::HLERequestContext& ctx) {

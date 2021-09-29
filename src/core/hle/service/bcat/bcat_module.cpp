@@ -4,7 +4,6 @@
 
 #include <cctype>
 #include <mbedtls/md5.h>
-#include "backend/boxcat.h"
 #include "common/hex_util.h"
 #include "common/logging/log.h"
 #include "common/settings.h"
@@ -128,8 +127,8 @@ public:
     explicit IBcatService(Core::System& system_, Backend& backend_)
         : ServiceFramework{system_, "IBcatService"}, backend{backend_},
           progress{{
-              ProgressServiceBackend{system_.Kernel(), "Normal"},
-              ProgressServiceBackend{system_.Kernel(), "Directory"},
+              ProgressServiceBackend{system_, "Normal"},
+              ProgressServiceBackend{system_, "Directory"},
           }} {
         // clang-format off
         static const FunctionInfo functions[] = {
@@ -578,12 +577,6 @@ void Module::Interface::CreateDeliveryCacheStorageServiceWithApplicationId(
 
 std::unique_ptr<Backend> CreateBackendFromSettings([[maybe_unused]] Core::System& system,
                                                    DirectoryGetter getter) {
-#ifdef YUZU_ENABLE_BOXCAT
-    if (Settings::values.bcat_backend.GetValue() == "boxcat") {
-        return std::make_unique<Boxcat>(system.GetAppletManager(), std::move(getter));
-    }
-#endif
-
     return std::make_unique<NullBackend>(std::move(getter));
 }
 

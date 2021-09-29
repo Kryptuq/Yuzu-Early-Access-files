@@ -4,15 +4,12 @@
 
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/kernel/k_event.h"
 #include "core/hle/service/acc/async_context.h"
 
 namespace Service::Account {
 IAsyncContext::IAsyncContext(Core::System& system_)
-    : ServiceFramework{system_, "IAsyncContext"}, compeletion_event{system_.Kernel()} {
-
-    Kernel::KAutoObject::Create(std::addressof(compeletion_event));
-    compeletion_event.Initialize("IAsyncContext:CompletionEvent");
-
+    : ServiceFramework{system_, "IAsyncContext"}, service_context{system_, "IAsyncContext"} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, &IAsyncContext::GetSystemEvent, "GetSystemEvent"},
@@ -23,6 +20,12 @@ IAsyncContext::IAsyncContext(Core::System& system_)
     // clang-format on
 
     RegisterHandlers(functions);
+
+    completion_event = service_context.CreateEvent("IAsyncContext:CompletionEvent");
+}
+
+IAsyncContext::~IAsyncContext() {
+    service_context.CloseEvent(completion_event);
 }
 
 void IAsyncContext::GetSystemEvent(Kernel::HLERequestContext& ctx) {
@@ -30,7 +33,7 @@ void IAsyncContext::GetSystemEvent(Kernel::HLERequestContext& ctx) {
 
     IPC::ResponseBuilder rb{ctx, 2, 1};
     rb.Push(ResultSuccess);
-    rb.PushCopyObjects(compeletion_event.GetReadableEvent());
+    rb.PushCopyObjects(completion_event->GetReadableEvent());
 }
 
 void IAsyncContext::Cancel(Kernel::HLERequestContext& ctx) {
@@ -62,7 +65,7 @@ void IAsyncContext::GetResult(Kernel::HLERequestContext& ctx) {
 
 void IAsyncContext::MarkComplete() {
     is_complete.store(true);
-    compeletion_event.GetWritableEvent().Signal();
+    completion_event->GetWritableEvent().Signal();
 }
 
 } // namespace Service::Account

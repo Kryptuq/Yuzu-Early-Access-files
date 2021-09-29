@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "core/hle/kernel/k_event.h"
+#include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/time/clock_types.h"
 #include "core/hle/service/time/system_clock_core.h"
 
@@ -26,6 +26,8 @@ public:
     StandardUserSystemClockCore(StandardLocalSystemClockCore& local_system_clock_core_,
                                 StandardNetworkSystemClockCore& network_system_clock_core_,
                                 Core::System& system_);
+
+    ~StandardUserSystemClockCore() override;
 
     ResultCode SetAutomaticCorrectionEnabled(Core::System& system, bool value);
 
@@ -55,7 +57,8 @@ private:
     StandardNetworkSystemClockCore& network_system_clock_core;
     bool auto_correction_enabled{};
     SteadyClockTimePoint auto_correction_time;
-    Kernel::KEvent auto_correction_event;
+    KernelHelpers::ServiceContext service_context;
+    Kernel::KEvent* auto_correction_event;
 };
 
 } // namespace Service::Time::Clock

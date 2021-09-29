@@ -25,10 +25,5 @@ public:
 private:
     void SetConfiguration();
 
-    std::pair<QString, QString> BCATDownloadEvents();
-    void OnBCATImplChanged();
-    void OnUpdateBCATEmptyLabel(std::pair<QString, QString> string);
-
     std::unique_ptr<Ui::ConfigureNetwork> ui;
-    QFutureWatcher<std::pair<QString, QString>> watcher{this};
 };

@@ -106,8 +106,6 @@ add_library(core STATIC
     file_sys/vfs_concat.h
     file_sys/vfs_layered.cpp
     file_sys/vfs_layered.h
-    file_sys/vfs_libzip.cpp
-    file_sys/vfs_libzip.h
     file_sys/vfs_offset.cpp
     file_sys/vfs_offset.h
     file_sys/vfs_real.cpp
@@ -218,6 +216,7 @@ add_library(core STATIC
     hle/kernel/k_session.h
     hle/kernel/k_shared_memory.cpp
     hle/kernel/k_shared_memory.h
+    hle/kernel/k_shared_memory_info.h
     hle/kernel/k_slab_heap.h
     hle/kernel/k_spin_lock.cpp
     hle/kernel/k_spin_lock.h
@@ -653,13 +652,6 @@ add_library(core STATIC
     tools/freezer.h
 )
 
-if (YUZU_ENABLE_BOXCAT)
-    target_sources(core PRIVATE
-        hle/service/bcat/backend/boxcat.cpp
-        hle/service/bcat/backend/boxcat.h
-    )
-endif()
-
 if (MSVC)
     target_compile_options(core PRIVATE
         /we4242 # 'identifier': conversion from 'type1' to 'type2', possible loss of data
@@ -690,12 +682,7 @@ endif()
 create_target_directory_groups(core)
 
 target_link_libraries(core PUBLIC common PRIVATE audio_core video_core)
-target_link_libraries(core PUBLIC Boost::boost PRIVATE fmt::fmt nlohmann_json::nlohmann_json mbedtls Opus::Opus zip)
-
-if (YUZU_ENABLE_BOXCAT)
-    target_compile_definitions(core PRIVATE -DYUZU_ENABLE_BOXCAT)
-    target_link_libraries(core PRIVATE httplib nlohmann_json::nlohmann_json)
-endif()
+target_link_libraries(core PUBLIC Boost::boost PRIVATE fmt::fmt nlohmann_json::nlohmann_json mbedtls Opus::Opus)
 
 if (ENABLE_WEB_SERVICE)
     target_compile_definitions(core PRIVATE -DENABLE_WEB_SERVICE)

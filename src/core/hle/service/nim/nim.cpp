@@ -7,9 +7,8 @@
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
-#include "core/hle/kernel/k_readable_event.h"
-#include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/nim/nim.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/sm.h"
@@ -301,7 +300,7 @@ class IEnsureNetworkClockAvailabilityService final
 public:
     explicit IEnsureNetworkClockAvailabilityService(Core::System& system_)
         : ServiceFramework{system_, "IEnsureNetworkClockAvailabilityService"},
-          finished_event{system.Kernel()} {
+          service_context{system_, "IEnsureNetworkClockAvailabilityService"} {
         static const FunctionInfo functions[] = {
             {0, &IEnsureNetworkClockAvailabilityService::StartTask, "StartTask"},
             {1, &IEnsureNetworkClockAvailabilityService::GetFinishNotificationEvent,
@@ -313,17 +312,19 @@ public:
         };
         RegisterHandlers(functions);
 
-        Kernel::KAutoObject::Create(std::addressof(finished_event));
-        finished_event.Initialize("IEnsureNetworkClockAvailabilityService:FinishEvent");
+        finished_event =
+            service_context.CreateEvent("IEnsureNetworkClockAvailabilityService:FinishEvent");
+    }
+
+    ~IEnsureNetworkClockAvailabilityService() override {
+        service_context.CloseEvent(finished_event);
     }
 
 private:
-    Kernel::KEvent finished_event;
-
     void StartTask(Kernel::HLERequestContext& ctx) {
         // No need to connect to the internet, just finish the task straight away.
         LOG_DEBUG(Service_NIM, "called");
-        finished_event.GetWritableEvent().Signal();
+        finished_event->GetWritableEvent().Signal();
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
@@ -333,7 +334,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(ResultSuccess);
-        rb.PushCopyObjects(finished_event.GetReadableEvent());
+        rb.PushCopyObjects(finished_event->GetReadableEvent());
     }
 
     void GetResult(Kernel::HLERequestContext& ctx) {
@@ -345,7 +346,7 @@ private:
 
     void Cancel(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIM, "called");
-        finished_event.GetWritableEvent().Clear();
+        finished_event->GetWritableEvent().Clear();
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
@@ -368,6 +369,10 @@ private:
         rb.Push(ResultSuccess);
         rb.PushRaw<s64>(server_time);
     }
+
+    KernelHelpers::ServiceContext service_context;
+
+    Kernel::KEvent* finished_event;
 };
 
 class NTC final : public ServiceFramework<NTC> {

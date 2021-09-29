@@ -49,6 +49,7 @@ class KScheduler;
 class KServerSession;
 class KSession;
 class KSharedMemory;
+class KSharedMemoryInfo;
 class KThread;
 class KTransferMemory;
 class KWritableEvent;
@@ -309,6 +310,8 @@ public:
             return slab_heap_container->session;
         } else if constexpr (std::is_same_v<T, KSharedMemory>) {
             return slab_heap_container->shared_memory;
+        } else if constexpr (std::is_same_v<T, KSharedMemoryInfo>) {
+            return slab_heap_container->shared_memory_info;
         } else if constexpr (std::is_same_v<T, KThread>) {
             return slab_heap_container->thread;
         } else if constexpr (std::is_same_v<T, KTransferMemory>) {
@@ -362,6 +365,7 @@ private:
         KSlabHeap<KResourceLimit> resource_limit;
         KSlabHeap<KSession> session;
         KSlabHeap<KSharedMemory> shared_memory;
+        KSlabHeap<KSharedMemoryInfo> shared_memory_info;
         KSlabHeap<KThread> thread;
         KSlabHeap<KTransferMemory> transfer_memory;
         KSlabHeap<KWritableEvent> writeable_event;

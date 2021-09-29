@@ -709,8 +709,6 @@ void Config::ReadDebuggingValues() {
 
 void Config::ReadServiceValues() {
     qt_config->beginGroup(QStringLiteral("Services"));
-    ReadBasicSetting(Settings::values.bcat_backend);
-    ReadBasicSetting(Settings::values.bcat_boxcat_local);
     ReadBasicSetting(Settings::values.network_interface);
     qt_config->endGroup();
 }
@@ -1269,8 +1267,6 @@ void Config::SaveDebuggingValues() {
 void Config::SaveNetworkValues() {
     qt_config->beginGroup(QStringLiteral("Services"));
 
-    WriteBasicSetting(Settings::values.bcat_backend);
-    WriteBasicSetting(Settings::values.bcat_boxcat_local);
     WriteBasicSetting(Settings::values.network_interface);
 
     qt_config->endGroup();

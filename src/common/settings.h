@@ -568,8 +568,6 @@ struct Values {
     BasicSetting<bool> use_dev_keys{false, "use_dev_keys"};
 
     // Network
-    BasicSetting<std::string> bcat_backend{"none", "bcat_backend"};
-    BasicSetting<bool> bcat_boxcat_local{false, "bcat_boxcat_local"};
     BasicSetting<std::string> network_interface{std::string(), "network_interface"};
 
     // WebService

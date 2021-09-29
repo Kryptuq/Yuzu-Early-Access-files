@@ -314,8 +314,8 @@ private:
     }
 
     void UntrackPlaceholder(boost::icl::separate_interval_set<size_t>::iterator it) {
-        placeholders.erase(it);
         placeholder_host_pointers.erase(it->lower());
+        placeholders.erase(it);
     }
 
     /// Return true when a given memory region is a "nieche" and the placeholders don't have to be

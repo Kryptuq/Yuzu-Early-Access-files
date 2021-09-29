@@ -320,17 +320,19 @@ static ResultCode SendSyncRequest(Core::System& system, Handle handle) {
 
     auto& kernel = system.Kernel();
 
-    KScopedAutoObject session =
-        kernel.CurrentProcess()->GetHandleTable().GetObject<KClientSession>(handle);
-    R_UNLESS(session.IsNotNull(), ResultInvalidHandle);
-    LOG_TRACE(Kernel_SVC, "called handle=0x{:08X}({})", handle, session->GetName());
-
     auto thread = kernel.CurrentScheduler()->GetCurrentThread();
     {
         KScopedSchedulerLock lock(kernel);
         thread->SetState(ThreadState::Waiting);
         thread->SetWaitReasonForDebugging(ThreadWaitReasonForDebugging::IPC);
-        session->SendSyncRequest(thread, system.Memory(), system.CoreTiming());
+
+        {
+            KScopedAutoObject session =
+                kernel.CurrentProcess()->GetHandleTable().GetObject<KClientSession>(handle);
+            R_UNLESS(session.IsNotNull(), ResultInvalidHandle);
+            LOG_TRACE(Kernel_SVC, "called handle=0x{:08X}({})", handle, session->GetName());
+            session->SendSyncRequest(thread, system.Memory(), system.CoreTiming());
+        }
     }
 
     KSynchronizationObject* dummy{};

@@ -518,10 +518,6 @@ void Config::ReadValues() {
     ReadSetting("WebService", Settings::values.web_api_url);
     ReadSetting("WebService", Settings::values.yuzu_username);
     ReadSetting("WebService", Settings::values.yuzu_token);
-
-    // Services
-    ReadSetting("Services", Settings::values.bcat_backend);
-    ReadSetting("Services", Settings::values.bcat_boxcat_local);
 }
 
 void Config::Reload() {

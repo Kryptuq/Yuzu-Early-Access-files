@@ -290,10 +290,6 @@ if (YUZU_USE_QT_WEB_ENGINE)
     target_compile_definitions(yuzu PRIVATE -DYUZU_USE_QT_WEB_ENGINE)
 endif ()
 
-if (YUZU_ENABLE_BOXCAT)
-    target_compile_definitions(yuzu PRIVATE -DYUZU_ENABLE_BOXCAT)
-endif ()
-
 if(UNIX AND NOT APPLE)
     install(TARGETS yuzu RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
 endif()

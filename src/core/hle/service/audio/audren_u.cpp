@@ -17,8 +17,6 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/k_event.h"
-#include "core/hle/kernel/k_readable_event.h"
-#include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/audio/audren_u.h"
 #include "core/hle/service/audio/errors.h"
@@ -30,7 +28,7 @@ public:
     explicit IAudioRenderer(Core::System& system_,
                             const AudioCommon::AudioRendererParameter& audren_params,
                             const std::size_t instance_number)
-        : ServiceFramework{system_, "IAudioRenderer"}, system_event{system.Kernel()} {
+        : ServiceFramework{system_, "IAudioRenderer"}, service_context{system_, "IAudioRenderer"} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &IAudioRenderer::GetSampleRate, "GetSampleRate"},
@@ -49,15 +47,18 @@ public:
         // clang-format on
         RegisterHandlers(functions);
 
-        Kernel::KAutoObject::Create(std::addressof(system_event));
-        system_event.Initialize("IAudioRenderer:SystemEvent");
+        system_event = service_context.CreateEvent("IAudioRenderer:SystemEvent");
         renderer = std::make_unique<AudioCore::AudioRenderer>(
             system.CoreTiming(), system.Memory(), audren_params,
             [this]() {
                 const auto guard = LockService();
-                system_event.GetWritableEvent().Signal();
+                system_event->GetWritableEvent().Signal();
             },
             instance_number);
+    }
+
+    ~IAudioRenderer() override {
+        service_context.CloseEvent(system_event);
     }
 
 private:
@@ -130,7 +131,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(ResultSuccess);
-        rb.PushCopyObjects(system_event.GetReadableEvent());
+        rb.PushCopyObjects(system_event->GetReadableEvent());
     }
 
     void SetRenderingTimeLimit(Kernel::HLERequestContext& ctx) {
@@ -164,14 +165,16 @@ private:
         rb.Push(ERR_NOT_SUPPORTED);
     }
 
-    Kernel::KEvent system_event;
+    KernelHelpers::ServiceContext service_context;
+
+    Kernel::KEvent* system_event;
     std::unique_ptr<AudioCore::AudioRenderer> renderer;
     u32 rendering_time_limit_percent = 100;
 };
 
 class IAudioDevice final : public ServiceFramework<IAudioDevice> {
 public:
-    explicit IAudioDevice(Core::System& system_, Kernel::KEvent& buffer_event_, u32_le revision_)
+    explicit IAudioDevice(Core::System& system_, Kernel::KEvent* buffer_event_, u32_le revision_)
         : ServiceFramework{system_, "IAudioDevice"}, buffer_event{buffer_event_}, revision{
                                                                                       revision_} {
         static const FunctionInfo functions[] = {
@@ -279,11 +282,11 @@ private:
     void QueryAudioDeviceSystemEvent(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_Audio, "(STUBBED) called");
 
-        buffer_event.GetWritableEvent().Signal();
+        buffer_event->GetWritableEvent().Signal();
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(ResultSuccess);
-        rb.PushCopyObjects(buffer_event.GetReadableEvent());
+        rb.PushCopyObjects(buffer_event->GetReadableEvent());
     }
 
     void GetActiveChannelCount(Kernel::HLERequestContext& ctx) {
@@ -300,7 +303,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(ResultSuccess);
-        rb.PushCopyObjects(buffer_event.GetReadableEvent());
+        rb.PushCopyObjects(buffer_event->GetReadableEvent());
     }
 
     void QueryAudioDeviceOutputEvent(Kernel::HLERequestContext& ctx) {
@@ -308,16 +311,15 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(ResultSuccess);
-        rb.PushCopyObjects(buffer_event.GetReadableEvent());
+        rb.PushCopyObjects(buffer_event->GetReadableEvent());
     }
 
-    Kernel::KEvent& buffer_event;
+    Kernel::KEvent* buffer_event;
     u32_le revision = 0;
 };
 
 AudRenU::AudRenU(Core::System& system_)
-    : ServiceFramework{system_, "audren:u"}, buffer_event{system.Kernel()} {
-
+    : ServiceFramework{system_, "audren:u"}, service_context{system_, "audren:u"} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, &AudRenU::OpenAudioRenderer, "OpenAudioRenderer"},
@@ -330,11 +332,12 @@ AudRenU::AudRenU(Core::System& system_)
 
     RegisterHandlers(functions);
 
-    Kernel::KAutoObject::Create(std::addressof(buffer_event));
-    buffer_event.Initialize("IAudioOutBufferReleasedEvent");
+    buffer_event = service_context.CreateEvent("IAudioOutBufferReleasedEvent");
 }
 
-AudRenU::~AudRenU() = default;
+AudRenU::~AudRenU() {
+    service_context.CloseEvent(buffer_event);
+}
 
 void AudRenU::OpenAudioRenderer(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_Audio, "called");

@@ -29,15 +29,9 @@ option(YUZU_USE_BUNDLED_FFMPEG "Download/Build bundled FFmpeg" "${WIN32}")
 
 option(YUZU_USE_QT_WEB_ENGINE "Use QtWebEngine for web applet implementation" OFF)
 
-option(YUZU_ENABLE_BOXCAT "Enable the Boxcat service, a yuzu high-level implementation of BCAT" ON)
-
 option(ENABLE_CUBEB "Enables the cubeb audio backend" ON)
 
 option(USE_DISCORD_PRESENCE "Enables Discord Rich Presence" OFF)
-
-if (NOT ENABLE_WEB_SERVICE)
-    set(YUZU_ENABLE_BOXCAT OFF)
-endif()
 
 # Default to a Release build
 get_property(IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
@@ -421,11 +415,6 @@ if (CONAN_REQUIRED_LIBS)
                         "${CMAKE_BINARY_DIR}/conan.cmake")
     endif()
     include(${CMAKE_BINARY_DIR}/conan.cmake)
-
-    set(CONAN_LIB_OPTIONS
-        libzip:with_openssl=False
-        libzip:enable_windows_crypto=False
-    )
 
     conan_check(VERSION 1.24.0 REQUIRED)
 

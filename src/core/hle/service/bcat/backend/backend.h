@@ -11,8 +11,8 @@
 
 #include "common/common_types.h"
 #include "core/file_sys/vfs_types.h"
-#include "core/hle/kernel/k_event.h"
 #include "core/hle/result.h"
+#include "core/hle/service/kernel_helpers.h"
 
 namespace Core {
 class System;
@@ -70,6 +70,8 @@ class ProgressServiceBackend {
     friend class IBcatService;
 
 public:
+    ~ProgressServiceBackend();
+
     // Clients should call this with true if any of the functions are going to be called from a
     // non-HLE thread and this class need to lock the hle mutex. (default is false)
     void SetNeedHLELock(bool need);
@@ -97,15 +99,17 @@ public:
     void FinishDownload(ResultCode result);
 
 private:
-    explicit ProgressServiceBackend(Kernel::KernelCore& kernel, std::string_view event_name);
+    explicit ProgressServiceBackend(Core::System& system, std::string_view event_name);
 
     Kernel::KReadableEvent& GetEvent();
     DeliveryCacheProgressImpl& GetImpl();
 
     void SignalUpdate();
 
+    KernelHelpers::ServiceContext service_context;
+
     DeliveryCacheProgressImpl impl{};
-    Kernel::KEvent update_event;
+    Kernel::KEvent* update_event;
     bool need_hle_lock = false;
 };
 
