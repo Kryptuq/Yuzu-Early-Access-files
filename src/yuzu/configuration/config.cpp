@@ -562,7 +562,11 @@ void Config::ReadControlValues() {
     ReadTouchscreenValues();
     ReadMotionTouchValues();
 
+#ifdef _WIN32
     ReadBasicSetting(Settings::values.enable_raw_input);
+#else
+    Settings::values.enable_raw_input = false;
+#endif
     ReadBasicSetting(Settings::values.emulate_analog_keyboard);
     Settings::values.mouse_panning = false;
     ReadBasicSetting(Settings::values.mouse_panning_sensitivity);

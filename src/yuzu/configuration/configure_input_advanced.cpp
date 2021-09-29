@@ -88,6 +88,10 @@ ConfigureInputAdvanced::ConfigureInputAdvanced(QWidget* parent)
     connect(ui->buttonMotionTouch, &QPushButton::clicked, this,
             &ConfigureInputAdvanced::CallMotionTouchConfigDialog);
 
+#ifndef _WIN32
+    ui->enable_raw_input->setVisible(false);
+#endif
+
     LoadConfiguration();
 }
 

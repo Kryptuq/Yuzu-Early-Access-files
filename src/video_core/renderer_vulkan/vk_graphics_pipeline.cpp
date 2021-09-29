@@ -568,11 +568,20 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
     if (!vertex_binding_divisors.empty()) {
         vertex_input_ci.pNext = &input_divisor_ci;
     }
+    const bool has_tess_stages = spv_modules[1] || spv_modules[2];
     auto input_assembly_topology = MaxwellToVK::PrimitiveTopology(device, key.state.topology);
     if (input_assembly_topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
-        if (!spv_modules[1] && !spv_modules[2]) {
+        if (!has_tess_stages) {
             LOG_WARNING(Render_Vulkan, "Patch topology used without tessellation, using points");
             input_assembly_topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        }
+    } else {
+        if (has_tess_stages) {
+            // The Vulkan spec requires patch list IA topology be used with tessellation
+            // shader stages. Forcing it fixes a crash on some drivers
+            LOG_WARNING(Render_Vulkan,
+                        "Patch topology not used with tessellation, using patch list");
+            input_assembly_topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
         }
     }
     const VkPipelineInputAssemblyStateCreateInfo input_assembly_ci{
