@@ -16,7 +16,7 @@ namespace Service::Nvidia::Devices {
 
 nvdisp_disp0::nvdisp_disp0(Core::System& system_, std::shared_ptr<nvmap> nvmap_dev_)
     : nvdevice{system_}, nvmap_dev{std::move(nvmap_dev_)} {}
-nvdisp_disp0 ::~nvdisp_disp0() = default;
+nvdisp_disp0::~nvdisp_disp0() = default;
 
 NvResult nvdisp_disp0::Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
                               std::vector<u8>& output) {

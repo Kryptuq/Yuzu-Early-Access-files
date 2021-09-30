@@ -106,7 +106,7 @@ void IAppletResource::DeactivateController(HidController controller) {
     controllers[static_cast<size_t>(controller)]->DeactivateController();
 }
 
-IAppletResource ::~IAppletResource() {
+IAppletResource::~IAppletResource() {
     system.CoreTiming().UnscheduleEvent(pad_update_event, 0);
     system.CoreTiming().UnscheduleEvent(motion_update_event, 0);
 }

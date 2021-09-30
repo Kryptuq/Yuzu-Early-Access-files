@@ -7,7 +7,7 @@
 namespace Kernel {
 
 KHandleTable::KHandleTable(KernelCore& kernel_) : kernel{kernel_} {}
-KHandleTable ::~KHandleTable() = default;
+KHandleTable::~KHandleTable() = default;
 
 ResultCode KHandleTable::Finalize() {
     // Get the table and clear our record of it.

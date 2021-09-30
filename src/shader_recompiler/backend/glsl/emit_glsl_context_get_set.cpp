@@ -58,8 +58,8 @@ void GetCbuf(EmitContext& ctx, std::string_view ret, const IR::Value& binding,
     const auto cbuf{fmt::format("{}_cbuf{}", ctx.stage_name, binding.U32())};
     const auto cbuf_cast{fmt::format("{}({}[{}]{{}})", cast, cbuf, index)};
     const auto extraction{num_bits == 32 ? cbuf_cast
-                                         : fmt ::format("bitfieldExtract({},int({}),{})", cbuf_cast,
-                                                        bit_offset, num_bits)};
+                                         : fmt::format("bitfieldExtract({},int({}),{})", cbuf_cast,
+                                                       bit_offset, num_bits)};
     if (!component_indexing_bug) {
         const auto result{fmt::format(fmt::runtime(extraction), swizzle)};
         ctx.Add("{}={};", ret, result);

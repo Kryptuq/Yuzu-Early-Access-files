@@ -77,7 +77,7 @@ void ProgramMetadata::LoadManual(bool is_64_bit, ProgramAddressSpaceType address
     aci_header.title_id = title_id;
     aci_file_access.permissions = filesystem_permissions;
     npdm_header.system_resource_size = system_resource_size;
-    aci_kernel_capabilities = std ::move(capabilities);
+    aci_kernel_capabilities = std::move(capabilities);
 }
 
 bool ProgramMetadata::Is64BitProgram() const {

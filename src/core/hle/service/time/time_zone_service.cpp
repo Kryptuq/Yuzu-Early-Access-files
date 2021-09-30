@@ -10,8 +10,8 @@
 
 namespace Service::Time {
 
-ITimeZoneService ::ITimeZoneService(Core::System& system_,
-                                    TimeZone::TimeZoneContentManager& time_zone_manager_)
+ITimeZoneService::ITimeZoneService(Core::System& system_,
+                                   TimeZone::TimeZoneContentManager& time_zone_manager_)
     : ServiceFramework{system_, "ITimeZoneService"}, time_zone_content_manager{time_zone_manager_} {
     static const FunctionInfo functions[] = {
         {0, &ITimeZoneService::GetDeviceLocationName, "GetDeviceLocationName"},

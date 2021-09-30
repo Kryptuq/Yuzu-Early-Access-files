@@ -13,7 +13,7 @@ SystemClockCore::SystemClockCore(SteadyClockCore& steady_clock_core_)
     context.steady_time_point.clock_source_id = steady_clock_core.GetClockSourceId();
 }
 
-SystemClockCore ::~SystemClockCore() = default;
+SystemClockCore::~SystemClockCore() = default;
 
 ResultCode SystemClockCore::GetCurrentTime(Core::System& system, s64& posix_time) const {
     posix_time = 0;
