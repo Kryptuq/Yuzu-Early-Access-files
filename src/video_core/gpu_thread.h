@@ -130,9 +130,6 @@ public:
     /// Notify rasterizer that any caches of the specified region should be flushed and invalidated
     void FlushAndInvalidateRegion(VAddr addr, u64 size);
 
-    // Stops the GPU execution and waits for the GPU to finish working
-    void ShutDown();
-
     void OnCommandListEnd();
 
 private:

@@ -4,13 +4,13 @@
 
 #pragma once
 
-#include <array>
 #include <mutex>
 #include <span>
 #include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <queue>
 
 #include "common/common_types.h"
 #include "common/literals.h"

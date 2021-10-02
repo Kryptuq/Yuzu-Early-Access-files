@@ -9,13 +9,13 @@
 
 #include "common/bit_field.h"
 #include "common/common_types.h"
-#include "video_core/command_classes/sync_manager.h"
 
 namespace Tegra {
 
 class GPU;
 class Host1x;
 class Nvdec;
+class SyncptIncrManager;
 class Vic;
 
 enum class ChSubmissionMode : u32 {

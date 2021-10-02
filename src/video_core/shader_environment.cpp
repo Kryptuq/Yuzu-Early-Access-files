@@ -16,6 +16,7 @@
 #include "common/fs/fs.h"
 #include "common/logging/log.h"
 #include "shader_recompiler/environment.h"
+#include "video_core/engines/kepler_compute.h"
 #include "video_core/memory_manager.h"
 #include "video_core/shader_environment.h"
 #include "video_core/textures/texture.h"

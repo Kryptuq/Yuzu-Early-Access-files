@@ -13,28 +13,20 @@
 #include "common/thread.h"
 #include "core/core.h"
 #include "core/core_timing.h"
-#include "core/core_timing_util.h"
-#include "core/hardware_properties.h"
 #include "core/hle/kernel/k_readable_event.h"
-#include "core/hle/kernel/kernel.h"
 #include "core/hle/service/nvdrv/devices/nvdisp_disp0.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/nvflinger/buffer_queue.h"
 #include "core/hle/service/nvflinger/nvflinger.h"
 #include "core/hle/service/vi/display/vi_display.h"
 #include "core/hle/service/vi/layer/vi_layer.h"
-#include "core/perf_stats.h"
-#include "video_core/renderer_base.h"
+#include "video_core/gpu.h"
 
 namespace Service::NVFlinger {
 
 constexpr auto frame_ns = std::chrono::nanoseconds{1000000000 / 60};
 
-void NVFlinger::VSyncThread(NVFlinger& nv_flinger) {
-    nv_flinger.SplitVSync();
-}
-
-void NVFlinger::SplitVSync() {
+void NVFlinger::SplitVSync(std::stop_token stop_token) {
     system.RegisterHostThread();
     std::string name = "yuzu:VSyncThread";
     MicroProfileOnThreadCreate(name.c_str());
@@ -45,7 +37,7 @@ void NVFlinger::SplitVSync() {
     Common::SetCurrentThreadName(name.c_str());
     Common::SetCurrentThreadPriority(Common::ThreadPriority::High);
     s64 delay = 0;
-    while (is_running) {
+    while (!stop_token.stop_requested()) {
         guard->lock();
         const s64 time_start = system.CoreTiming().GetGlobalTimeNs().count();
         Compose();
@@ -55,7 +47,7 @@ void NVFlinger::SplitVSync() {
         const s64 next_time = std::max<s64>(0, ticks - time_passed - delay);
         guard->unlock();
         if (next_time > 0) {
-            wait_event->WaitFor(std::chrono::nanoseconds{next_time});
+            std::this_thread::sleep_for(std::chrono::nanoseconds{next_time});
         }
         delay = (system.CoreTiming().GetGlobalTimeNs().count() - time_end) - next_time;
     }
@@ -84,9 +76,7 @@ NVFlinger::NVFlinger(Core::System& system_)
         });
 
     if (system.IsMulticore()) {
-        is_running = true;
-        wait_event = std::make_unique<Common::Event>();
-        vsync_thread = std::make_unique<std::thread>(VSyncThread, std::ref(*this));
+        vsync_thread = std::jthread([this](std::stop_token token) { SplitVSync(token); });
     } else {
         system.CoreTiming().ScheduleEvent(frame_ns, composition_event);
     }
@@ -96,14 +86,7 @@ NVFlinger::~NVFlinger() {
     for (auto& buffer_queue : buffer_queues) {
         buffer_queue->Disconnect();
     }
-
-    if (system.IsMulticore()) {
-        is_running = false;
-        wait_event->Set();
-        vsync_thread->join();
-        vsync_thread.reset();
-        wait_event.reset();
-    } else {
+    if (!system.IsMulticore()) {
         system.CoreTiming().UnscheduleEvent(composition_event, 0);
     }
 }

@@ -8,6 +8,7 @@
 #include <array>
 #include <cstring>
 #include <iterator>
+#include <list>
 #include <memory>
 #include <mutex>
 #include <optional>

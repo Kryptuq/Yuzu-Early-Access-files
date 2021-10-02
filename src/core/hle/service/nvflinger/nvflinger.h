@@ -4,13 +4,10 @@
 
 #pragma once
 
-#include <atomic>
 #include <list>
 #include <memory>
 #include <mutex>
 #include <optional>
-#include <string>
-#include <string_view>
 #include <thread>
 #include <vector>
 
@@ -109,9 +106,7 @@ private:
     /// Creates a layer with the specified layer ID in the desired display.
     void CreateLayerAtId(VI::Display& display, u64 layer_id);
 
-    static void VSyncThread(NVFlinger& nv_flinger);
-
-    void SplitVSync();
+    void SplitVSync(std::stop_token stop_token);
 
     std::shared_ptr<Nvidia::Module> nvdrv;
 
@@ -133,9 +128,7 @@ private:
 
     Core::System& system;
 
-    std::unique_ptr<std::thread> vsync_thread;
-    std::unique_ptr<Common::Event> wait_event;
-    std::atomic<bool> is_running{};
+    std::jthread vsync_thread;
 
     KernelHelpers::ServiceContext service_context;
 };

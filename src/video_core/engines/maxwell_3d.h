@@ -6,6 +6,7 @@
 
 #include <array>
 #include <bitset>
+#include <cmath>
 #include <limits>
 #include <optional>
 #include <type_traits>

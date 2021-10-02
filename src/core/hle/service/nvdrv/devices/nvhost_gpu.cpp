@@ -13,6 +13,14 @@
 #include "video_core/memory_manager.h"
 
 namespace Service::Nvidia::Devices {
+namespace {
+Tegra::CommandHeader BuildFenceAction(Tegra::GPU::FenceOperation op, u32 syncpoint_id) {
+    Tegra::GPU::FenceAction result{};
+    result.op.Assign(op);
+    result.syncpoint_id.Assign(syncpoint_id);
+    return {result.raw};
+}
+} // namespace
 
 nvhost_gpu::nvhost_gpu(Core::System& system_, std::shared_ptr<nvmap> nvmap_dev_,
                        SyncpointManager& syncpoint_manager_)
@@ -187,7 +195,7 @@ static std::vector<Tegra::CommandHeader> BuildWaitCommandList(Fence fence) {
         {fence.value},
         Tegra::BuildCommandHeader(Tegra::BufferMethods::FenceAction, 1,
                                   Tegra::SubmissionMode::Increasing),
-        Tegra::GPU::FenceAction::Build(Tegra::GPU::FenceOperation::Acquire, fence.id),
+        BuildFenceAction(Tegra::GPU::FenceOperation::Acquire, fence.id),
     };
 }
 
@@ -200,8 +208,7 @@ static std::vector<Tegra::CommandHeader> BuildIncrementCommandList(Fence fence, 
     for (u32 count = 0; count < add_increment; ++count) {
         result.emplace_back(Tegra::BuildCommandHeader(Tegra::BufferMethods::FenceAction, 1,
                                                       Tegra::SubmissionMode::Increasing));
-        result.emplace_back(
-            Tegra::GPU::FenceAction::Build(Tegra::GPU::FenceOperation::Increment, fence.id));
+        result.emplace_back(BuildFenceAction(Tegra::GPU::FenceOperation::Increment, fence.id));
     }
 
     return result;

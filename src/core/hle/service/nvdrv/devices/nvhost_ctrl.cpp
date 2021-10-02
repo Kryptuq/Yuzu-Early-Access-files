@@ -111,7 +111,6 @@ NvResult nvhost_ctrl::IocCtrlEventWait(const std::vector<u8>& input, std::vector
         event.event->GetWritableEvent().Signal();
         return NvResult::Success;
     }
-    auto lock = gpu.LockSync();
     const u32 current_syncpoint_value = event.fence.value;
     const s32 diff = current_syncpoint_value - params.threshold;
     if (diff >= 0) {
@@ -132,23 +131,24 @@ NvResult nvhost_ctrl::IocCtrlEventWait(const std::vector<u8>& input, std::vector
     }
 
     EventState status = events_interface.status[event_id];
-    if (event_id < MaxNvEvents || status == EventState::Free || status == EventState::Registered) {
-        events_interface.SetEventStatus(event_id, EventState::Waiting);
-        events_interface.assigned_syncpt[event_id] = params.syncpt_id;
-        events_interface.assigned_value[event_id] = target_value;
-        if (is_async) {
-            params.value = params.syncpt_id << 4;
-        } else {
-            params.value = ((params.syncpt_id & 0xfff) << 16) | 0x10000000;
-        }
-        params.value |= event_id;
-        event.event->GetWritableEvent().Clear();
-        gpu.RegisterSyncptInterrupt(params.syncpt_id, target_value);
+    const bool bad_parameter = status != EventState::Free && status != EventState::Registered;
+    if (bad_parameter) {
         std::memcpy(output.data(), &params, sizeof(params));
-        return NvResult::Timeout;
+        return NvResult::BadParameter;
     }
+    events_interface.SetEventStatus(event_id, EventState::Waiting);
+    events_interface.assigned_syncpt[event_id] = params.syncpt_id;
+    events_interface.assigned_value[event_id] = target_value;
+    if (is_async) {
+        params.value = params.syncpt_id << 4;
+    } else {
+        params.value = ((params.syncpt_id & 0xfff) << 16) | 0x10000000;
+    }
+    params.value |= event_id;
+    event.event->GetWritableEvent().Clear();
+    gpu.RegisterSyncptInterrupt(params.syncpt_id, target_value);
     std::memcpy(output.data(), &params, sizeof(params));
-    return NvResult::BadParameter;
+    return NvResult::Timeout;
 }
 
 NvResult nvhost_ctrl::IocCtrlEventRegister(const std::vector<u8>& input, std::vector<u8>& output) {

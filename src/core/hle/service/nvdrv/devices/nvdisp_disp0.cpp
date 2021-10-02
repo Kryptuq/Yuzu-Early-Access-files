@@ -48,8 +48,9 @@ void nvdisp_disp0::flip(u32 buffer_handle, u32 offset, u32 format, u32 width, u3
               addr, offset, width, height, stride, format);
 
     const auto pixel_format = static_cast<Tegra::FramebufferConfig::PixelFormat>(format);
-    const Tegra::FramebufferConfig framebuffer{addr,   offset,       width,     height,
-                                               stride, pixel_format, transform, crop_rect};
+    const auto transform_flags = static_cast<Tegra::FramebufferConfig::TransformFlags>(transform);
+    const Tegra::FramebufferConfig framebuffer{addr,   offset,       width,           height,
+                                               stride, pixel_format, transform_flags, crop_rect};
 
     system.GetPerfStats().EndSystemFrame();
     system.GPU().SwapBuffers(&framebuffer);

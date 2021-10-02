@@ -5,13 +5,13 @@
 #pragma once
 
 #include <array>
-#include <atomic>
 #include <filesystem>
 #include <iosfwd>
 #include <limits>
 #include <memory>
 #include <optional>
 #include <span>
+#include <stop_token>
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
@@ -19,9 +19,7 @@
 #include "common/common_types.h"
 #include "common/unique_function.h"
 #include "shader_recompiler/environment.h"
-#include "video_core/engines/kepler_compute.h"
 #include "video_core/engines/maxwell_3d.h"
-#include "video_core/textures/texture.h"
 
 namespace Tegra {
 class Memorymanager;
