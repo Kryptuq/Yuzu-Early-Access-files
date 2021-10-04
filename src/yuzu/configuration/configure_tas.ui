@@ -1,153 +1,194 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
-  <class>ConfigureTas</class>
-  <widget class="QDialog" name="ConfigureTas">
-    <layout class="QVBoxLayout" name="verticalLayout_1">
-      <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_1">
-          <item>
-            <widget class="QGroupBox" name="groupBox_1">
-              <property name="title">
-                <string>TAS</string>
-              </property>
-              <layout class="QGridLayout" name="gridLayout_1">
-                <item row="0" column="0" colspan="4">
-                  <widget class="QLabel" name="label_1">
-                    <property name="text">
-                      <string>Reads controller input from scripts in the same format as TAS-nx scripts.&lt;br/&gt;For a more detailed explanation please consult the FAQ on the yuzu website.</string>
-                    </property>
-                  </widget>
-                </item>
-                <item row="1" column="0" colspan="4">
-                  <widget class="QLabel" name="label_2">
-                    <property name="text">
-                      <string>To check which hotkeys control the playback/recording, please refer to the Hotkey settings (General -> Hotkeys).</string>
-                    </property>
-                    <property name="wordWrap">
-                      <bool>true</bool>
-                    </property>
-                  </widget>
-                </item>
-                <item row="2" column="0" colspan="4">
-                  <widget class="QLabel" name="label_3">
-                    <property name="text">
-                      <string>WARNING: This is an experimental feature.&lt;br/&gt;It will not play back scripts frame perfectly with the current, imperfect syncing method.</string>
-                    </property>
-                    <property name="wordWrap">
-                      <bool>true</bool>
-                    </property>
-                  </widget>
-                </item>
-              </layout>
-            </widget>
-          </item>
-        </layout>
-      </item>
-      <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_2">
-          <item>
-            <widget class="QGroupBox" name="groupBox_2">
-              <property name="title">
-                <string>Settings</string>
-              </property>
-              <layout class="QGridLayout" name="gridLayout_2">
-                <item row="0" column="0" colspan="4">
-                  <widget class="QCheckBox" name="tas_enable">
-                    <property name="text">
-                      <string>Enable TAS features</string>
-                    </property>
-                  </widget>
-                </item>
-                <item row="1" column="0" colspan="4">
-                  <widget class="QCheckBox" name="tas_control_swap">
-                    <property name="text">
-                      <string>Automatic controller profile swapping</string>
-                    </property>
-                  </widget>
-                </item>
-                <item row="2" column="0" colspan="4">
-                  <widget class="QCheckBox" name="tas_loop_script">
-                    <property name="text">
-                      <string>Loop script</string>
-                    </property>
-                  </widget>
-                </item>
-                <item row="3" column="0" colspan="4">
-                  <widget class="QCheckBox" name="tas_pause_on_load">
-                    <property name="enabled">
-                      <bool>false</bool>
-                    </property>
-                    <property name="text">
-                      <string>Pause execution during loads</string>
-                    </property>
-                  </widget>
-                </item>
-              </layout>
-            </widget>
-          </item>
-        </layout>
-      </item>
-      <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
-          <item>
-            <widget class="QGroupBox" name="groupBox_3">
-              <property name="title">
-                <string>Script Directory</string>
-              </property>
-              <layout class="QGridLayout" name="gridLayout_3">
-                <item row="0" column="0">
-                  <widget class="QLabel" name="label_4">
-                    <property name="text">
-                      <string>Path</string>
-                    </property>
-                  </widget>
-                </item>
-                <item row="0" column="3">
-                  <widget class="QToolButton" name="tas_path_button">
-                    <property name="text">
-                      <string>...</string>
-                    </property>
-                  </widget>
-                </item>
-                <item row="0" column="2">
-                  <widget class="QLineEdit" name="tas_path_edit"/>
-                </item>
-              </layout>
-            </widget>
-          </item>
-        </layout>
-      </item>
-      <item>
-        <widget class="QDialogButtonBox" name="buttonBox">
-          <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-            </sizepolicy>
+ <class>ConfigureTas</class>
+ <widget class="QDialog" name="ConfigureTas">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>337</width>
+    <height>316</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_1">
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_1">
+     <item>
+      <widget class="QGroupBox" name="groupBox_1">
+       <property name="title">
+        <string>TAS</string>
+       </property>
+       <layout class="QGridLayout" name="gridLayout_1">
+        <item row="0" column="0" colspan="4">
+         <widget class="QLabel" name="label_1">
+          <property name="text">
+           <string>Reads controller input from scripts in the same format as TAS-nx scripts.&lt;br/&gt;For a more detailed explanation please consult the FAQ on the yuzu website.</string>
           </property>
-          <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="4">
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>To check which hotkeys control the playback/recording, please refer to the Hotkey settings (General -&gt; Hotkeys).</string>
           </property>
-          <property name="standardButtons">
-            <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+          <property name="wordWrap">
+           <bool>true</bool>
           </property>
-        </widget>
-      </item>
+         </widget>
+        </item>
+        <item row="2" column="0" colspan="4">
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string>WARNING: This is an experimental feature.&lt;br/&gt;It will not play back scripts frame perfectly with the current, imperfect syncing method.</string>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
     </layout>
-  </widget>
-  <resources/>
-  <connections>
-    <connection>
-      <sender>buttonBox</sender>
-      <signal>accepted()</signal>
-      <receiver>ConfigureTas</receiver>
-      <slot>accept()</slot>
-    </connection>
-    <connection>
-      <sender>buttonBox</sender>
-      <signal>rejected()</signal>
-      <receiver>ConfigureTas</receiver>
-      <slot>reject()</slot>
-    </connection>
-  </connections>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QGroupBox" name="groupBox_2">
+       <property name="title">
+        <string>Settings</string>
+       </property>
+       <layout class="QGridLayout" name="gridLayout_2">
+        <item row="0" column="0" colspan="4">
+         <widget class="QCheckBox" name="tas_enable">
+          <property name="text">
+           <string>Enable TAS features</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="4">
+         <widget class="QCheckBox" name="tas_control_swap">
+          <property name="text">
+           <string>Automatic controller profile swapping</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0" colspan="4">
+         <widget class="QCheckBox" name="tas_loop_script">
+          <property name="text">
+           <string>Loop script</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0" colspan="4">
+         <widget class="QCheckBox" name="tas_pause_on_load">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Pause execution during loads</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <widget class="QGroupBox" name="groupBox_3">
+       <property name="title">
+        <string>Script Directory</string>
+       </property>
+       <layout class="QGridLayout" name="gridLayout_3">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>Path</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="3">
+         <widget class="QToolButton" name="tas_path_button">
+          <property name="text">
+           <string>...</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QLineEdit" name="tas_path_edit"/>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>ConfigureTas</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>ConfigureTas</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

@@ -24,6 +24,7 @@
 #include "core/hle/service/am/applets/applet_web_browser.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/ns/pl_u.h"
+#include "core/loader/loader.h"
 
 namespace Service::AM::Applets {
 
@@ -122,6 +123,15 @@ FileSys::VirtualFile GetOfflineRomFS(Core::System& system, u64 title_id,
         const auto nca = system.GetContentProvider().GetEntry(title_id, nca_type);
 
         if (nca == nullptr) {
+            if (nca_type == FileSys::ContentRecordType::HtmlDocument) {
+                LOG_WARNING(Service_AM, "Falling back to AppLoader to get the RomFS.");
+                FileSys::VirtualFile romfs;
+                system.GetAppLoader().ReadManualRomFS(romfs);
+                if (romfs != nullptr) {
+                    return romfs;
+                }
+            }
+
             LOG_ERROR(Service_AM,
                       "NCA of type={} with title_id={:016X} is not found in the ContentProvider!",
                       nca_type, title_id);

@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <algorithm>
+
 #include "audio_core/behavior_info.h"
 #include "audio_core/voice_context.h"
 #include "core/memory.h"

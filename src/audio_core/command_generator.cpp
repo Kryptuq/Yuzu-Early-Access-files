@@ -2,13 +2,16 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <algorithm>
 #include <cmath>
 #include <numbers>
+
 #include "audio_core/algorithm/interpolate.h"
 #include "audio_core/command_generator.h"
 #include "audio_core/effect_context.h"
 #include "audio_core/mix_context.h"
 #include "audio_core/voice_context.h"
+#include "common/common_types.h"
 #include "core/memory.h"
 
 namespace AudioCore {

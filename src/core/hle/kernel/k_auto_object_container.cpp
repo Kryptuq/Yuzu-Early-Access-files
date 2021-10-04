@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <algorithm>
+
 #include "core/hle/kernel/k_auto_object_container.h"
 
 namespace Kernel {

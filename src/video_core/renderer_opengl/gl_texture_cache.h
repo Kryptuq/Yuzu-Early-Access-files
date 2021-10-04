@@ -12,6 +12,7 @@
 #include "shader_recompiler/shader_info.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/renderer_opengl/util_shaders.h"
+#include "video_core/texture_cache/image_view_base.h"
 #include "video_core/texture_cache/texture_cache_base.h"
 
 namespace OpenGL {

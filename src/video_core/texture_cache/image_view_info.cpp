@@ -8,6 +8,7 @@
 #include "video_core/texture_cache/image_view_info.h"
 #include "video_core/texture_cache/texture_cache_base.h"
 #include "video_core/texture_cache/types.h"
+#include "video_core/texture_cache/util.h"
 #include "video_core/textures/texture.h"
 
 namespace VideoCommon {

@@ -4,10 +4,15 @@
 
 #pragma once
 
+#include <unordered_set>
+
 #include "common/alignment.h"
 #include "video_core/dirty_flags.h"
+#include "video_core/engines/kepler_compute.h"
+#include "video_core/texture_cache/image_view_base.h"
 #include "video_core/texture_cache/samples_helper.h"
 #include "video_core/texture_cache/texture_cache_base.h"
+#include "video_core/texture_cache/util.h"
 
 namespace VideoCommon {
 

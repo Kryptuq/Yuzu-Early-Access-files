@@ -9,6 +9,8 @@
 #include <thread>
 #include <vector>
 
+#include <fmt/format.h>
+
 #ifdef _WIN32
 #include <windows.h> // For OutputDebugStringW
 #endif
@@ -22,6 +24,7 @@
 
 #include "common/logging/backend.h"
 #include "common/logging/log.h"
+#include "common/logging/log_entry.h"
 #include "common/logging/text_formatter.h"
 #include "common/settings.h"
 #ifdef _WIN32

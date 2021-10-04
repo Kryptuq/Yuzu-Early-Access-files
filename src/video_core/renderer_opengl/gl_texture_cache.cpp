@@ -20,6 +20,7 @@
 #include "video_core/surface.h"
 #include "video_core/texture_cache/formatter.h"
 #include "video_core/texture_cache/samples_helper.h"
+#include "video_core/texture_cache/util.h"
 
 namespace OpenGL {
 namespace {

@@ -2920,8 +2920,13 @@ void GMainWindow::UpdateWindowTitle(std::string_view title_name, std::string_vie
     if (title_name.empty()) {
         setWindowTitle(QString::fromStdString(window_title));
     } else {
-        const auto run_title =
-            fmt::format("{} | {} | {} | {}", window_title, title_name, title_version, gpu_vendor);
+        const auto run_title = [window_title, title_name, title_version, gpu_vendor]() {
+            if (title_version.empty()) {
+                return fmt::format("{} | {} | {}", window_title, title_name, gpu_vendor);
+            }
+            return fmt::format("{} | {} | {} | {}", window_title, title_name, title_version,
+                               gpu_vendor);
+        }();
         setWindowTitle(QString::fromStdString(run_title));
     }
 }

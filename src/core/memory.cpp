@@ -587,7 +587,11 @@ void Memory::UnmapRegion(Common::PageTable& page_table, VAddr base, u64 size) {
 bool Memory::IsValidVirtualAddress(const VAddr vaddr) const {
     const Kernel::KProcess& process = *system.CurrentProcess();
     const auto& page_table = process.PageTable().PageTableImpl();
-    const auto [pointer, type] = page_table.pointers[vaddr >> PAGE_BITS].PointerType();
+    const size_t page = vaddr >> PAGE_BITS;
+    if (page >= page_table.pointers.size()) {
+        return false;
+    }
+    const auto [pointer, type] = page_table.pointers[page].PointerType();
     return pointer != nullptr || type == Common::PageType::RasterizerCachedMemory;
 }
 

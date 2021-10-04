@@ -33,6 +33,7 @@ function(copy_yuzu_Qt5_deps target_dir)
                 Qt5Positioning$<$<CONFIG:Debug>:d>.*
                 Qt5PrintSupport$<$<CONFIG:Debug>:d>.*
                 Qt5Qml$<$<CONFIG:Debug>:d>.*
+                Qt5QmlModels$<$<CONFIG:Debug>:d>.*
                 Qt5Quick$<$<CONFIG:Debug>:d>.*
                 Qt5QuickWidgets$<$<CONFIG:Debug>:d>.*
                 Qt5WebChannel$<$<CONFIG:Debug>:d>.*

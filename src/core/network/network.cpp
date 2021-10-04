@@ -366,8 +366,6 @@ std::optional<IPv4Address> GetHostIPv4Address() {
     if (res != network_interfaces.end()) {
         char ip_addr[16] = {};
         ASSERT(inet_ntop(AF_INET, &res->ip_address, ip_addr, sizeof(ip_addr)) != nullptr);
-        LOG_INFO(Network, "IP address: {}", ip_addr);
-
         return TranslateIPv4(res->ip_address);
     } else {
         LOG_ERROR(Network, "Couldn't find selected interface \"{}\"", selected_network_interface);
