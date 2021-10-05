@@ -21,12 +21,12 @@ public:
 
     /// Returns the current logical tick.
     [[nodiscard]] u64 CurrentTick() const noexcept {
-        return current_tick.load(std::memory_order_relaxed);
+        return current_tick.load(std::memory_order_acquire);
     }
 
     /// Returns the last known GPU tick.
     [[nodiscard]] u64 KnownGpuTick() const noexcept {
-        return gpu_tick.load(std::memory_order_relaxed);
+        return gpu_tick.load(std::memory_order_acquire);
     }
 
     /// Returns the timeline semaphore handle.
@@ -41,12 +41,21 @@ public:
 
     /// Advance to the logical tick and return the old one
     [[nodiscard]] u64 NextTick() noexcept {
-        return current_tick.fetch_add(1, std::memory_order::relaxed);
+        return current_tick.fetch_add(1, std::memory_order_release);
     }
 
     /// Refresh the known GPU tick
     void Refresh() {
-        gpu_tick.store(semaphore.GetCounter(), std::memory_order_relaxed);
+        u64 this_tick{};
+        u64 counter{};
+        do {
+            this_tick = gpu_tick.load(std::memory_order_acquire);
+            counter = semaphore.GetCounter();
+            if (counter < this_tick) {
+                return;
+            }
+        } while (!gpu_tick.compare_exchange_weak(this_tick, counter, std::memory_order_release,
+                                                 std::memory_order_relaxed));
     }
 
     /// Waits for a tick to be hit on the GPU

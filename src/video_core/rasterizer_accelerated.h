@@ -42,7 +42,7 @@ private:
     };
     static_assert(sizeof(CacheEntry) == 8, "CacheEntry should be 8 bytes!");
 
-    std::array<CacheEntry, 0x1000000> cached_pages;
+    std::array<CacheEntry, 0x2000000> cached_pages;
     Core::Memory::Memory& cpu_memory;
 };
 
