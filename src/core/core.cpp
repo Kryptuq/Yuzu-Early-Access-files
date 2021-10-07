@@ -140,23 +140,43 @@ struct System::Impl {
           cpu_manager{system}, reporter{system}, applet_manager{system}, time_manager{system} {}
 
     ResultStatus Run() {
+        std::unique_lock<std::mutex> lk(suspend_guard);
         status = ResultStatus::Success;
 
         kernel.Suspend(false);
         core_timing.SyncPause(false);
         cpu_manager.Pause(false);
+        is_paused = false;
 
         return status;
     }
 
     ResultStatus Pause() {
+        std::unique_lock<std::mutex> lk(suspend_guard);
         status = ResultStatus::Success;
 
         core_timing.SyncPause(true);
         kernel.Suspend(true);
         cpu_manager.Pause(true);
+        is_paused = true;
 
         return status;
+    }
+
+    void stallForGPU(bool pause) {
+        if (pause) {
+            suspend_guard.lock();
+            kernel.Suspend(pause);
+            core_timing.SyncPause(pause);
+            cpu_manager.Pause(pause);
+        } else {
+            if (!is_paused) {
+                core_timing.SyncPause(pause);
+                kernel.Suspend(pause);
+                cpu_manager.Pause(pause);
+            }
+            suspend_guard.unlock();
+        }
     }
 
     ResultStatus Init(System& system, Frontend::EmuWindow& emu_window) {
@@ -366,6 +386,9 @@ struct System::Impl {
         return perf_stats->GetAndResetStats(core_timing.GetGlobalTimeUs());
     }
 
+    std::mutex suspend_guard;
+    bool is_paused{};
+
     Timing::CoreTiming core_timing;
     Kernel::KernelCore kernel;
     /// RealVfsFilesystem instance
@@ -474,6 +497,10 @@ void System::InvalidateCpuInstructionCacheRange(VAddr addr, std::size_t size) {
 
 void System::Shutdown() {
     impl->Shutdown();
+}
+
+void System::stallForGPU(bool pause) {
+    impl->stallForGPU(pause);
 }
 
 System::ResultStatus System::Load(Frontend::EmuWindow& emu_window, const std::string& filepath,
