@@ -6,7 +6,6 @@
 
 #include <memory>
 #include <vector>
-#include "common/bit_field.h"
 #include "common/common_types.h"
 
 struct SwsContext;
@@ -14,6 +13,7 @@ struct SwsContext;
 namespace Tegra {
 class GPU;
 class Nvdec;
+union VicConfig;
 
 class Vic {
 public:
@@ -27,6 +27,7 @@ public:
     };
 
     explicit Vic(GPU& gpu, std::shared_ptr<Nvdec> nvdec_processor);
+
     ~Vic();
 
     /// Write to the device state.
@@ -35,22 +36,9 @@ public:
 private:
     void Execute();
 
-    enum class VideoPixelFormat : u64_le {
-        RGBA8 = 0x1f,
-        BGRA8 = 0x20,
-        Yuv420 = 0x44,
-    };
+    void WriteRGBFrame(const AVFrame* frame, const VicConfig& config);
 
-    union VicConfig {
-        u64_le raw{};
-        BitField<0, 7, u64_le> pixel_format;
-        BitField<7, 2, u64_le> chroma_loc_horiz;
-        BitField<9, 2, u64_le> chroma_loc_vert;
-        BitField<11, 4, u64_le> block_linear_kind;
-        BitField<15, 4, u64_le> block_linear_height_log2;
-        BitField<32, 14, u64_le> surface_width_minus1;
-        BitField<46, 14, u64_le> surface_height_minus1;
-    };
+    void WriteYUVFrame(const AVFrame* frame, const VicConfig& config);
 
     GPU& gpu;
     std::shared_ptr<Tegra::Nvdec> nvdec_processor;
