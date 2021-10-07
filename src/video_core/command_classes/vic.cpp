@@ -34,7 +34,7 @@ enum class VideoPixelFormat : u64_le {
     RGBX8 = 0x23,
     Yuv420 = 0x44,
 };
-} // namespace
+} // Anonymous namespace
 
 union VicConfig {
     u64_le raw{};
@@ -124,6 +124,7 @@ void Vic::WriteRGBFrame(const AVFrame* frame, const VicConfig& config) {
                                     frame->height, target_format, 0, nullptr, nullptr, nullptr);
         scaler_width = frame->width;
         scaler_height = frame->height;
+        converted_frame_buffer.reset();
     }
     // Get Converted frame
     const u32 width = static_cast<u32>(frame->width);
