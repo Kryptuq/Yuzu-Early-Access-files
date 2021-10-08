@@ -9,7 +9,6 @@
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/vfs.h"
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/service/ns/errors.h"
 #include "core/hle/service/ns/language.h"
 #include "core/hle/service/ns/ns.h"

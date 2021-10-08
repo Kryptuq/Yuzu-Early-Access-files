@@ -13,7 +13,6 @@
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/service/audio/hwopus.h"
 
 namespace Service::Audio {

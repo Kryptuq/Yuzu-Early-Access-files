@@ -4,11 +4,15 @@
 
 #pragma once
 
+#include "common/common_funcs.h"
 #include "common/common_types.h"
-#include "core/hle/service/service.h"
 
 namespace Core {
 class System;
+}
+
+namespace Service::SM {
+class ServiceManager;
 }
 
 namespace Service::Sockets {

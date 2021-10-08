@@ -4,17 +4,14 @@
 
 #pragma once
 
-#include <array>
 #include <cstring>
 #include <memory>
-#include <tuple>
 #include <type_traits>
 #include <utility>
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "core/hle/ipc.h"
 #include "core/hle/kernel/hle_ipc.h"
-#include "core/hle/kernel/k_client_port.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_resource_limit.h"
 #include "core/hle/kernel/k_session.h"

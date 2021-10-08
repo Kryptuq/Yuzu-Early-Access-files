@@ -3,10 +3,8 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
-#include <chrono>
 #include <cstdlib>
 #include <ctime>
-#include <functional>
 #include <vector>
 #include "common/logging/log.h"
 #include "common/settings.h"

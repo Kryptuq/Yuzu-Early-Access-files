@@ -17,7 +17,6 @@
 #include "common/concepts.h"
 #include "common/swap.h"
 #include "core/hle/ipc.h"
-#include "core/hle/kernel/k_auto_object.h"
 #include "core/hle/kernel/svc_common.h"
 
 union ResultCode;
@@ -38,6 +37,7 @@ namespace Kernel {
 
 class Domain;
 class HLERequestContext;
+class KAutoObject;
 class KernelCore;
 class KHandleTable;
 class KProcess;

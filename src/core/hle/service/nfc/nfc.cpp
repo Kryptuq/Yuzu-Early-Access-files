@@ -7,7 +7,6 @@
 #include "common/logging/log.h"
 #include "common/settings.h"
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/service/nfc/nfc.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/sm.h"

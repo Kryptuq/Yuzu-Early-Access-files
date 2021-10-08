@@ -5,7 +5,7 @@
 #pragma once
 
 #include <memory>
-#include "core/hle/kernel/hle_ipc.h"
+
 #include "core/hle/service/service.h"
 
 namespace Service {

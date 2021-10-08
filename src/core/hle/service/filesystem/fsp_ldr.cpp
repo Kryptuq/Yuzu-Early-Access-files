@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include "core/hle/service/filesystem/fsp_ldr.h"
-#include "core/hle/service/service.h"
 
 namespace Service::FileSystem {
 

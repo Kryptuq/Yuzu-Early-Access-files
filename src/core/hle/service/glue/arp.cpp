@@ -8,13 +8,11 @@
 #include "core/core.h"
 #include "core/file_sys/control_metadata.h"
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/glue/arp.h"
 #include "core/hle/service/glue/errors.h"
 #include "core/hle/service/glue/glue_manager.h"
-#include "core/hle/service/service.h"
 
 namespace Service::Glue {
 

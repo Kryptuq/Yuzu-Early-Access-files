@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/service/olsc/olsc.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/sm.h"

@@ -7,7 +7,6 @@
 #include "core/file_sys/errors.h"
 #include "core/file_sys/system_archive/system_version.h"
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/kernel/k_client_port.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/set/set_sys.h"
 

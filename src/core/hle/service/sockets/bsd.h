@@ -5,11 +5,9 @@
 #pragma once
 
 #include <memory>
-#include <string_view>
 #include <vector>
 
 #include "common/common_types.h"
-#include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/sockets/sockets.h"
 
