@@ -10,6 +10,10 @@
 #include <QWidget>
 #include "common/settings.h"
 
+namespace Core {
+class System;
+}
+
 namespace ConfigurationShared {
 enum class CheckState;
 }
@@ -22,16 +26,15 @@ class ConfigureGraphics : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ConfigureGraphics(QWidget* parent = nullptr);
+    explicit ConfigureGraphics(const Core::System& system_, QWidget* parent = nullptr);
     ~ConfigureGraphics() override;
 
     void ApplyConfiguration();
+    void SetConfiguration();
 
 private:
     void changeEvent(QEvent* event) override;
     void RetranslateUI();
-
-    void SetConfiguration();
 
     void UpdateBackgroundColorButton(QColor color);
     void UpdateAPILayout();
@@ -56,4 +59,6 @@ private:
     std::vector<QString> vulkan_devices;
     u32 vulkan_device{};
     Settings::ShaderBackend shader_backend{};
+
+    const Core::System& system;
 };

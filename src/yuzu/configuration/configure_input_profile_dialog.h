@@ -13,6 +13,10 @@ class ConfigureInputPlayer;
 
 class InputProfiles;
 
+namespace Core {
+class System;
+}
+
 namespace InputCommon {
 class InputSubsystem;
 }
@@ -27,7 +31,7 @@ class ConfigureInputProfileDialog : public QDialog {
 public:
     explicit ConfigureInputProfileDialog(QWidget* parent,
                                          InputCommon::InputSubsystem* input_subsystem,
-                                         InputProfiles* profiles);
+                                         InputProfiles* profiles, Core::System& system);
     ~ConfigureInputProfileDialog() override;
 
 private:

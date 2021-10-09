@@ -19,8 +19,8 @@
 #include "yuzu/configuration/configuration_shared.h"
 #include "yuzu/configuration/configure_graphics.h"
 
-ConfigureGraphics::ConfigureGraphics(QWidget* parent)
-    : QWidget(parent), ui(new Ui::ConfigureGraphics) {
+ConfigureGraphics::ConfigureGraphics(const Core::System& system_, QWidget* parent)
+    : QWidget(parent), ui(new Ui::ConfigureGraphics), system{system_} {
     vulkan_device = Settings::values.vulkan_device.GetValue();
     RetrieveVulkanDevices();
 
@@ -83,7 +83,7 @@ void ConfigureGraphics::UpdateShaderBackendSelection(int backend) {
 ConfigureGraphics::~ConfigureGraphics() = default;
 
 void ConfigureGraphics::SetConfiguration() {
-    const bool runtime_lock = !Core::System::GetInstance().IsPoweredOn();
+    const bool runtime_lock = !system.IsPoweredOn();
 
     ui->api_widget->setEnabled(runtime_lock);
     ui->use_asynchronous_gpu_emulation->setEnabled(runtime_lock);

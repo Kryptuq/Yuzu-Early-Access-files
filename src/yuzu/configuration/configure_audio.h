@@ -7,6 +7,10 @@
 #include <memory>
 #include <QWidget>
 
+namespace Core {
+class System;
+}
+
 namespace ConfigurationShared {
 enum class CheckState;
 }
@@ -19,10 +23,11 @@ class ConfigureAudio : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ConfigureAudio(QWidget* parent = nullptr);
+    explicit ConfigureAudio(const Core::System& system_, QWidget* parent = nullptr);
     ~ConfigureAudio() override;
 
     void ApplyConfiguration();
+    void SetConfiguration();
 
 private:
     void changeEvent(QEvent* event) override;
@@ -33,7 +38,6 @@ private:
 
     void UpdateAudioDevices(int sink_index);
 
-    void SetConfiguration();
     void SetOutputSinkFromSinkID();
     void SetAudioDeviceFromDeviceID();
     void SetVolumeIndicatorText(int percentage);
@@ -41,4 +45,6 @@ private:
     void SetupPerGameUI();
 
     std::unique_ptr<Ui::ConfigureAudio> ui;
+
+    const Core::System& system;
 };

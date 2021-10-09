@@ -7,11 +7,14 @@
     <x>0</x>
     <y>0</y>
     <width>363</width>
-    <height>391</height>
+    <height>507</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
+  </property>
+  <property name="accessibleName">
+   <string>UI</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

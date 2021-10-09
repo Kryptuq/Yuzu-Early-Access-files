@@ -19,6 +19,10 @@
 #include "common/common_types.h"
 #include "yuzu/compatibility_list.h"
 
+namespace Core {
+class System;
+}
+
 class QStandardItem;
 
 namespace FileSys {
@@ -37,7 +41,7 @@ public:
     explicit GameListWorker(std::shared_ptr<FileSys::VfsFilesystem> vfs,
                             FileSys::ManualContentProvider* provider,
                             QVector<UISettings::GameDir>& game_dirs,
-                            const CompatibilityList& compatibility_list);
+                            const CompatibilityList& compatibility_list, Core::System& system_);
     ~GameListWorker() override;
 
     /// Starts the processing of directory tree information.
@@ -80,4 +84,6 @@ private:
 
     QStringList watch_list;
     std::atomic_bool stop_processing;
+
+    Core::System& system;
 };

@@ -42,7 +42,7 @@
 #include "yuzu/bootmanager.h"
 #include "yuzu/main.h"
 
-EmuThread::EmuThread() = default;
+EmuThread::EmuThread(Core::System& system_) : system{system_} {}
 
 EmuThread::~EmuThread() = default;
 
@@ -51,7 +51,6 @@ void EmuThread::run() {
     MicroProfileOnThreadCreate(name.c_str());
     Common::SetCurrentThreadName(name.c_str());
 
-    auto& system = Core::System::GetInstance();
     auto& gpu = system.GPU();
     auto stop_token = stop_source.get_token();
 
@@ -285,8 +284,10 @@ static Core::Frontend::EmuWindow::WindowSystemInfo GetWindowSystemInfo(QWindow* 
 }
 
 GRenderWindow::GRenderWindow(GMainWindow* parent, EmuThread* emu_thread_,
-                             std::shared_ptr<InputCommon::InputSubsystem> input_subsystem_)
-    : QWidget(parent), emu_thread(emu_thread_), input_subsystem{std::move(input_subsystem_)} {
+                             std::shared_ptr<InputCommon::InputSubsystem> input_subsystem_,
+                             Core::System& system_)
+    : QWidget(parent),
+      emu_thread(emu_thread_), input_subsystem{std::move(input_subsystem_)}, system{system_} {
     setWindowTitle(QStringLiteral("yuzu %1 | %2-%3")
                        .arg(QString::fromUtf8(Common::g_build_name),
                             QString::fromUtf8(Common::g_scm_branch),
@@ -629,8 +630,7 @@ void GRenderWindow::ReleaseRenderTarget() {
 }
 
 void GRenderWindow::CaptureScreenshot(u32 res_scale, const QString& screenshot_path) {
-    auto& renderer = Core::System::GetInstance().Renderer();
-
+    VideoCore::RendererBase& renderer = system.Renderer();
     if (res_scale == 0) {
         res_scale = VideoCore::GetResolutionScaleFactor(renderer);
     }

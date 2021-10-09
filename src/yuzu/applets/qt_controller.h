@@ -7,6 +7,7 @@
 #include <array>
 #include <memory>
 #include <QDialog>
+#include "core/core.h"
 #include "core/frontend/applets/controller.h"
 
 class GMainWindow;
@@ -36,7 +37,8 @@ class QtControllerSelectorDialog final : public QDialog {
 public:
     explicit QtControllerSelectorDialog(QWidget* parent,
                                         Core::Frontend::ControllerParameters parameters_,
-                                        InputCommon::InputSubsystem* input_subsystem_);
+                                        InputCommon::InputSubsystem* input_subsystem_,
+                                        Core::System& system_);
     ~QtControllerSelectorDialog() override;
 
     int exec() override;
@@ -102,6 +104,8 @@ private:
     InputCommon::InputSubsystem* input_subsystem;
 
     std::unique_ptr<InputProfiles> input_profiles;
+
+    Core::System& system;
 
     // This is true if and only if all parameters are met. Otherwise, this is false.
     // This determines whether the "OK" button can be clicked to exit the applet.

@@ -2,14 +2,17 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include "core/core.h"
 #include "ui_configure_input_profile_dialog.h"
 #include "yuzu/configuration/configure_input_player.h"
 #include "yuzu/configuration/configure_input_profile_dialog.h"
 
 ConfigureInputProfileDialog::ConfigureInputProfileDialog(
-    QWidget* parent, InputCommon::InputSubsystem* input_subsystem, InputProfiles* profiles)
+    QWidget* parent, InputCommon::InputSubsystem* input_subsystem, InputProfiles* profiles,
+    Core::System& system)
     : QDialog(parent), ui(std::make_unique<Ui::ConfigureInputProfileDialog>()),
-      profile_widget(new ConfigureInputPlayer(this, 9, nullptr, input_subsystem, profiles, false)) {
+      profile_widget(
+          new ConfigureInputPlayer(this, 9, nullptr, input_subsystem, profiles, system, false)) {
     ui->setupUi(this);
 
     ui->controllerLayout->addWidget(profile_widget);

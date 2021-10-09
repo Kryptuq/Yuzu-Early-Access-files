@@ -29,6 +29,10 @@ class QWidget;
 
 class InputProfiles;
 
+namespace Core {
+class System;
+}
+
 namespace InputCommon {
 class InputSubsystem;
 }
@@ -48,7 +52,8 @@ class ConfigureInputPlayer : public QWidget {
 public:
     explicit ConfigureInputPlayer(QWidget* parent, std::size_t player_index, QWidget* bottom_row,
                                   InputCommon::InputSubsystem* input_subsystem_,
-                                  InputProfiles* profiles_, bool debug = false);
+                                  InputProfiles* profiles_, Core::System& system_,
+                                  bool debug = false);
     ~ConfigureInputPlayer() override;
 
     /// Save all button configurations to settings file.
@@ -233,4 +238,6 @@ private:
     /// ConfigureInput widget. On show, add this widget to the main layout. This will change the
     /// parent of the widget to this widget (but thats fine).
     QWidget* bottom_row;
+
+    Core::System& system;
 };

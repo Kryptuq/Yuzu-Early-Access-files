@@ -13,7 +13,7 @@
 
 namespace DiscordRPC {
 
-DiscordImpl::DiscordImpl() {
+DiscordImpl::DiscordImpl(Core::System& system_) : system{system_} {
     DiscordEventHandlers handlers{};
 
     // The number is the client ID for yuzu, it's used for images and the
@@ -35,12 +35,13 @@ void DiscordImpl::Update() {
                          std::chrono::system_clock::now().time_since_epoch())
                          .count();
     std::string title;
-    if (Core::System::GetInstance().IsPoweredOn())
-        Core::System::GetInstance().GetAppLoader().ReadTitle(title);
+    if (system.IsPoweredOn()) {
+        system.GetAppLoader().ReadTitle(title);
+    }
     DiscordRichPresence presence{};
     presence.largeImageKey = "yuzu_logo_ea";
     presence.largeImageText = "yuzu is an emulator for the Nintendo Switch";
-    if (Core::System::GetInstance().IsPoweredOn()) {
+    if (system.IsPoweredOn()) {
         presence.state = title.c_str();
         presence.details = "Currently in game";
     } else {

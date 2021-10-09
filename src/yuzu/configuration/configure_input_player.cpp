@@ -44,8 +44,7 @@ namespace {
 constexpr std::size_t HANDHELD_INDEX = 8;
 
 void UpdateController(Settings::ControllerType controller_type, std::size_t npad_index,
-                      bool connected) {
-    Core::System& system{Core::System::GetInstance()};
+                      bool connected, Core::System& system) {
     if (!system.IsPoweredOn()) {
         return;
     }
@@ -232,11 +231,12 @@ QString AnalogToText(const Common::ParamPackage& param, const std::string& dir) 
 ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_index,
                                            QWidget* bottom_row,
                                            InputCommon::InputSubsystem* input_subsystem_,
-                                           InputProfiles* profiles_, bool debug)
+                                           InputProfiles* profiles_, Core::System& system_,
+                                           bool debug)
     : QWidget(parent), ui(std::make_unique<Ui::ConfigureInputPlayer>()), player_index(player_index),
       debug(debug), input_subsystem{input_subsystem_}, profiles(profiles_),
       timeout_timer(std::make_unique<QTimer>()), poll_timer(std::make_unique<QTimer>()),
-      bottom_row(bottom_row) {
+      bottom_row(bottom_row), system{system_} {
     ui->setupUi(this);
 
     setFocusPolicy(Qt::ClickFocus);
@@ -683,7 +683,7 @@ void ConfigureInputPlayer::TryConnectSelectedController() {
                                         controller_type == Settings::ControllerType::Handheld;
         // Connect only if handheld is going from disconnected to connected
         if (!handheld.connected && handheld_connected) {
-            UpdateController(controller_type, HANDHELD_INDEX, true);
+            UpdateController(controller_type, HANDHELD_INDEX, true, system);
         }
         handheld.connected = handheld_connected;
     }
@@ -703,7 +703,7 @@ void ConfigureInputPlayer::TryConnectSelectedController() {
         return;
     }
 
-    UpdateController(controller_type, player_index, true);
+    UpdateController(controller_type, player_index, true, system);
 }
 
 void ConfigureInputPlayer::TryDisconnectSelectedController() {
@@ -721,7 +721,7 @@ void ConfigureInputPlayer::TryDisconnectSelectedController() {
                                         controller_type == Settings::ControllerType::Handheld;
         // Disconnect only if handheld is going from connected to disconnected
         if (handheld.connected && !handheld_connected) {
-            UpdateController(controller_type, HANDHELD_INDEX, false);
+            UpdateController(controller_type, HANDHELD_INDEX, false, system);
         }
         return;
     }
@@ -737,7 +737,7 @@ void ConfigureInputPlayer::TryDisconnectSelectedController() {
     }
 
     // Disconnect the controller first.
-    UpdateController(controller_type, player_index, false);
+    UpdateController(controller_type, player_index, false, system);
 }
 
 void ConfigureInputPlayer::showEvent(QShowEvent* event) {
@@ -1016,8 +1016,6 @@ void ConfigureInputPlayer::SetConnectableControllers() {
             ui->comboControllerType->addItem(tr("GameCube Controller"));
         }
     };
-
-    Core::System& system{Core::System::GetInstance()};
 
     if (!system.IsPoweredOn()) {
         add_controllers(true);

@@ -37,17 +37,14 @@ constexpr std::array<std::array<bool, 4>, 8> led_patterns{{
 }};
 
 void UpdateController(Settings::ControllerType controller_type, std::size_t npad_index,
-                      bool connected) {
-    Core::System& system{Core::System::GetInstance()};
-
+                      bool connected, Core::System& system) {
     if (!system.IsPoweredOn()) {
         return;
     }
 
-    Service::SM::ServiceManager& sm = system.ServiceManager();
-
     auto& npad =
-        sm.GetService<Service::HID::Hid>("hid")
+        system.ServiceManager()
+            .GetService<Service::HID::Hid>("hid")
             ->GetAppletResource()
             ->GetController<Service::HID::Controller_NPad>(Service::HID::HidController::NPad);
 
@@ -79,10 +76,10 @@ bool IsControllerCompatible(Settings::ControllerType controller_type,
 
 QtControllerSelectorDialog::QtControllerSelectorDialog(
     QWidget* parent, Core::Frontend::ControllerParameters parameters_,
-    InputCommon::InputSubsystem* input_subsystem_)
+    InputCommon::InputSubsystem* input_subsystem_, Core::System& system_)
     : QDialog(parent), ui(std::make_unique<Ui::QtControllerSelectorDialog>()),
       parameters(std::move(parameters_)), input_subsystem{input_subsystem_},
-      input_profiles(std::make_unique<InputProfiles>()) {
+      input_profiles(std::make_unique<InputProfiles>(system_)), system{system_} {
     ui->setupUi(this);
 
     player_widgets = {
@@ -245,7 +242,7 @@ int QtControllerSelectorDialog::exec() {
 void QtControllerSelectorDialog::ApplyConfiguration() {
     const bool pre_docked_mode = Settings::values.use_docked_mode.GetValue();
     Settings::values.use_docked_mode.SetValue(ui->radioDocked->isChecked());
-    OnDockedModeChanged(pre_docked_mode, Settings::values.use_docked_mode.GetValue());
+    OnDockedModeChanged(pre_docked_mode, Settings::values.use_docked_mode.GetValue(), system);
 
     Settings::values.vibration_enabled.SetValue(ui->vibrationGroup->isChecked());
     Settings::values.motion_enabled.SetValue(ui->motionGroup->isChecked());
@@ -293,7 +290,7 @@ void QtControllerSelectorDialog::CallConfigureMotionTouchDialog() {
 }
 
 void QtControllerSelectorDialog::CallConfigureInputProfileDialog() {
-    ConfigureInputProfileDialog dialog(this, input_subsystem, input_profiles.get());
+    ConfigureInputProfileDialog dialog(this, input_subsystem, input_profiles.get(), system);
 
     dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
                           Qt::WindowSystemMenuHint);
@@ -533,7 +530,7 @@ void QtControllerSelectorDialog::UpdateControllerState(std::size_t player_index)
     }
 
     // Disconnect the controller first.
-    UpdateController(controller_type, player_index, false);
+    UpdateController(controller_type, player_index, false, system);
 
     player.controller_type = controller_type;
     player.connected = player_connected;
@@ -548,7 +545,7 @@ void QtControllerSelectorDialog::UpdateControllerState(std::size_t player_index)
         }
         handheld.connected = player_groupboxes[player_index]->isChecked() &&
                              controller_type == Settings::ControllerType::Handheld;
-        UpdateController(Settings::ControllerType::Handheld, 8, handheld.connected);
+        UpdateController(Settings::ControllerType::Handheld, 8, handheld.connected, system);
     }
 
     if (!player.connected) {
@@ -560,7 +557,7 @@ void QtControllerSelectorDialog::UpdateControllerState(std::size_t player_index)
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(60ms);
 
-    UpdateController(controller_type, player_index, player_connected);
+    UpdateController(controller_type, player_index, player_connected, system);
 }
 
 void QtControllerSelectorDialog::UpdateLEDPattern(std::size_t player_index) {
@@ -659,7 +656,8 @@ void QtControllerSelectorDialog::DisableUnsupportedPlayers() {
     for (std::size_t index = max_supported_players; index < NUM_PLAYERS; ++index) {
         // Disconnect any unsupported players here and disable or hide them if applicable.
         Settings::values.players.GetValue()[index].connected = false;
-        UpdateController(Settings::values.players.GetValue()[index].controller_type, index, false);
+        UpdateController(Settings::values.players.GetValue()[index].controller_type, index, false,
+                         system);
         // Hide the player widgets when max_supported_controllers is less than or equal to 4.
         if (max_supported_players <= 4) {
             player_widgets[index]->hide();

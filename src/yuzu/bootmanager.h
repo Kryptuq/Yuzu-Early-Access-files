@@ -34,13 +34,14 @@ enum class MouseButton;
 
 namespace VideoCore {
 enum class LoadCallbackStage;
-}
+class RendererBase;
+} // namespace VideoCore
 
 class EmuThread final : public QThread {
     Q_OBJECT
 
 public:
-    explicit EmuThread();
+    explicit EmuThread(Core::System& system_);
     ~EmuThread() override;
 
     /**
@@ -101,6 +102,7 @@ private:
     std::condition_variable_any running_cv;
     Common::Event running_wait{};
     std::atomic_bool running_guard{false};
+    Core::System& system;
 
 signals:
     /**
@@ -131,7 +133,8 @@ class GRenderWindow : public QWidget, public Core::Frontend::EmuWindow {
 
 public:
     explicit GRenderWindow(GMainWindow* parent, EmuThread* emu_thread_,
-                           std::shared_ptr<InputCommon::InputSubsystem> input_subsystem_);
+                           std::shared_ptr<InputCommon::InputSubsystem> input_subsystem_,
+                           Core::System& system_);
     ~GRenderWindow() override;
 
     // EmuWindow implementation.
@@ -231,6 +234,8 @@ private:
     bool first_frame = false;
 
     std::array<std::size_t, 16> touch_ids{};
+
+    Core::System& system;
 
 protected:
     void showEvent(QShowEvent* event) override;

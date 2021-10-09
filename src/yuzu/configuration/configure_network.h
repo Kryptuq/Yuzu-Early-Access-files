@@ -16,7 +16,7 @@ class ConfigureNetwork : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ConfigureNetwork(QWidget* parent = nullptr);
+    explicit ConfigureNetwork(const Core::System& system_, QWidget* parent = nullptr);
     ~ConfigureNetwork() override;
 
     void ApplyConfiguration();
@@ -26,4 +26,6 @@ private:
     void SetConfiguration();
 
     std::unique_ptr<Ui::ConfigureNetwork> ui;
+
+    const Core::System& system;
 };

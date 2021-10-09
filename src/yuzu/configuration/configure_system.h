@@ -9,6 +9,10 @@
 #include <QList>
 #include <QWidget>
 
+namespace Core {
+class System;
+}
+
 namespace ConfigurationShared {
 enum class CheckState;
 }
@@ -21,16 +25,15 @@ class ConfigureSystem : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ConfigureSystem(QWidget* parent = nullptr);
+    explicit ConfigureSystem(Core::System& system_, QWidget* parent = nullptr);
     ~ConfigureSystem() override;
 
     void ApplyConfiguration();
+    void SetConfiguration();
 
 private:
     void changeEvent(QEvent* event) override;
     void RetranslateUI();
-
-    void SetConfiguration();
 
     void ReadSystemSettings();
 
@@ -48,4 +51,6 @@ private:
 
     ConfigurationShared::CheckState use_rng_seed;
     ConfigurationShared::CheckState use_custom_rtc;
+
+    Core::System& system;
 };

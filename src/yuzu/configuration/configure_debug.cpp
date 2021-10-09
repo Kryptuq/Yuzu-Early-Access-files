@@ -14,7 +14,8 @@
 #include "yuzu/debugger/console.h"
 #include "yuzu/uisettings.h"
 
-ConfigureDebug::ConfigureDebug(QWidget* parent) : QWidget(parent), ui(new Ui::ConfigureDebug) {
+ConfigureDebug::ConfigureDebug(const Core::System& system_, QWidget* parent)
+    : QWidget(parent), ui(new Ui::ConfigureDebug), system{system_} {
     ui->setupUi(this);
     SetConfiguration();
 
@@ -28,7 +29,7 @@ ConfigureDebug::ConfigureDebug(QWidget* parent) : QWidget(parent), ui(new Ui::Co
 ConfigureDebug::~ConfigureDebug() = default;
 
 void ConfigureDebug::SetConfiguration() {
-    const bool runtime_lock = !Core::System::GetInstance().IsPoweredOn();
+    const bool runtime_lock = !system.IsPoweredOn();
 
     ui->toggle_console->setEnabled(runtime_lock);
     ui->toggle_console->setChecked(UISettings::values.show_console.GetValue());

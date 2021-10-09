@@ -15,8 +15,8 @@
 #include "yuzu/configuration/configure_general.h"
 #include "yuzu/uisettings.h"
 
-ConfigureGeneral::ConfigureGeneral(QWidget* parent)
-    : QWidget(parent), ui(new Ui::ConfigureGeneral) {
+ConfigureGeneral::ConfigureGeneral(const Core::System& system_, QWidget* parent)
+    : QWidget(parent), ui(new Ui::ConfigureGeneral), system{system_} {
     ui->setupUi(this);
 
     SetupPerGameUI();
@@ -35,7 +35,7 @@ ConfigureGeneral::ConfigureGeneral(QWidget* parent)
 ConfigureGeneral::~ConfigureGeneral() = default;
 
 void ConfigureGeneral::SetConfiguration() {
-    const bool runtime_lock = !Core::System::GetInstance().IsPoweredOn();
+    const bool runtime_lock = !system.IsPoweredOn();
 
     ui->use_multi_core->setEnabled(runtime_lock);
     ui->use_multi_core->setChecked(Settings::values.use_multi_core.GetValue());

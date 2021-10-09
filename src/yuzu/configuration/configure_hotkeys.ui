@@ -13,6 +13,9 @@
   <property name="windowTitle">
    <string>Hotkey Settings</string>
   </property>
+  <property name="accessibleName">
+   <string>Hotkeys</string>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">

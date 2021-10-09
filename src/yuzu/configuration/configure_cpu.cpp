@@ -13,7 +13,8 @@
 #include "yuzu/configuration/configuration_shared.h"
 #include "yuzu/configuration/configure_cpu.h"
 
-ConfigureCpu::ConfigureCpu(QWidget* parent) : QWidget(parent), ui(new Ui::ConfigureCpu) {
+ConfigureCpu::ConfigureCpu(const Core::System& system_, QWidget* parent)
+    : QWidget(parent), ui(new Ui::ConfigureCpu), system{system_} {
     ui->setupUi(this);
 
     SetupPerGameUI();
@@ -27,7 +28,7 @@ ConfigureCpu::ConfigureCpu(QWidget* parent) : QWidget(parent), ui(new Ui::Config
 ConfigureCpu::~ConfigureCpu() = default;
 
 void ConfigureCpu::SetConfiguration() {
-    const bool runtime_lock = !Core::System::GetInstance().IsPoweredOn();
+    const bool runtime_lock = !system.IsPoweredOn();
 
     ui->accuracy->setEnabled(runtime_lock);
     ui->cpuopt_unsafe_unfuse_fma->setEnabled(runtime_lock);

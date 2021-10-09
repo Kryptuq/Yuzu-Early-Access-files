@@ -6,15 +6,21 @@
 
 #include "yuzu/discord.h"
 
+namespace Core {
+class System;
+}
+
 namespace DiscordRPC {
 
 class DiscordImpl : public DiscordInterface {
 public:
-    DiscordImpl();
+    DiscordImpl(Core::System& system_);
     ~DiscordImpl() override;
 
     void Pause() override;
     void Update() override;
+
+    Core::System& system;
 };
 
 } // namespace DiscordRPC

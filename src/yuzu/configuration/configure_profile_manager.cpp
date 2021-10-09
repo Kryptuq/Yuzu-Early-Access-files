@@ -76,9 +76,9 @@ QString GetProfileUsernameFromUser(QWidget* parent, const QString& description_t
 }
 } // Anonymous namespace
 
-ConfigureProfileManager::ConfigureProfileManager(QWidget* parent)
+ConfigureProfileManager::ConfigureProfileManager(const Core::System& system_, QWidget* parent)
     : QWidget(parent), ui(new Ui::ConfigureProfileManager),
-      profile_manager(std::make_unique<Service::Account::ProfileManager>()) {
+      profile_manager(std::make_unique<Service::Account::ProfileManager>()), system{system_} {
     ui->setupUi(this);
 
     tree_view = new QTreeView;
@@ -137,7 +137,7 @@ void ConfigureProfileManager::RetranslateUI() {
 }
 
 void ConfigureProfileManager::SetConfiguration() {
-    enabled = !Core::System::GetInstance().IsPoweredOn();
+    enabled = !system.IsPoweredOn();
     item_model->removeRows(0, item_model->rowCount());
     list_items.clear();
 
@@ -180,8 +180,6 @@ void ConfigureProfileManager::ApplyConfiguration() {
     if (!enabled) {
         return;
     }
-
-    Core::System::GetInstance().ApplySettings();
 }
 
 void ConfigureProfileManager::SelectUser(const QModelIndex& index) {

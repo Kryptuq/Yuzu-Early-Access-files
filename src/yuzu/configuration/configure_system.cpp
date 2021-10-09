@@ -17,7 +17,8 @@
 #include "yuzu/configuration/configuration_shared.h"
 #include "yuzu/configuration/configure_system.h"
 
-ConfigureSystem::ConfigureSystem(QWidget* parent) : QWidget(parent), ui(new Ui::ConfigureSystem) {
+ConfigureSystem::ConfigureSystem(Core::System& system_, QWidget* parent)
+    : QWidget(parent), ui(new Ui::ConfigureSystem), system{system_} {
     ui->setupUi(this);
     connect(ui->button_regenerate_console_id, &QPushButton::clicked, this,
             &ConfigureSystem::RefreshConsoleID);
@@ -59,7 +60,7 @@ void ConfigureSystem::RetranslateUI() {
 }
 
 void ConfigureSystem::SetConfiguration() {
-    enabled = !Core::System::GetInstance().IsPoweredOn();
+    enabled = !system.IsPoweredOn();
     const auto rng_seed =
         QStringLiteral("%1")
             .arg(Settings::values.rng_seed.GetValue().value_or(0), 8, 16, QLatin1Char{'0'})
@@ -103,8 +104,6 @@ void ConfigureSystem::SetConfiguration() {
 void ConfigureSystem::ReadSystemSettings() {}
 
 void ConfigureSystem::ApplyConfiguration() {
-    auto& system = Core::System::GetInstance();
-
     // Allow setting custom RTC even if system is powered on,
     // to allow in-game time to be fast forwarded
     if (Settings::IsConfiguringGlobal()) {
@@ -162,8 +161,6 @@ void ConfigureSystem::ApplyConfiguration() {
             break;
         }
     }
-
-    system.ApplySettings();
 }
 
 void ConfigureSystem::RefreshConsoleID() {

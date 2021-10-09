@@ -10,6 +10,9 @@
     <height>368</height>
    </rect>
   </property>
+  <property name="accessibleName">
+   <string>Audio</string>
+  </property>
   <layout class="QVBoxLayout">
    <item>
     <widget class="QGroupBox" name="groupBox">

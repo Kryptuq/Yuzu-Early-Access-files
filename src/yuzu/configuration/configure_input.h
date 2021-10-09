@@ -11,6 +11,10 @@
 #include <QList>
 #include <QWidget>
 
+namespace Core {
+class System;
+}
+
 class QCheckBox;
 class QString;
 class QTimer;
@@ -28,13 +32,13 @@ namespace Ui {
 class ConfigureInput;
 }
 
-void OnDockedModeChanged(bool last_state, bool new_state);
+void OnDockedModeChanged(bool last_state, bool new_state, Core::System& system);
 
 class ConfigureInput : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ConfigureInput(QWidget* parent = nullptr);
+    explicit ConfigureInput(Core::System& system_, QWidget* parent = nullptr);
     ~ConfigureInput() override;
 
     /// Initializes the input dialog with the given input subsystem.
@@ -69,4 +73,6 @@ private:
     std::array<QWidget*, 8> player_tabs;
     std::array<QCheckBox*, 8> player_connected;
     ConfigureInputAdvanced* advanced;
+
+    Core::System& system;
 };

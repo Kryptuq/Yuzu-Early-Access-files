@@ -14,6 +14,18 @@
 #include "core/file_sys/vfs_types.h"
 #include "yuzu/configuration/config.h"
 
+namespace Core {
+class System;
+}
+
+class ConfigurePerGameAddons;
+class ConfigureAudio;
+class ConfigureCpu;
+class ConfigureGeneral;
+class ConfigureGraphics;
+class ConfigureGraphicsAdvanced;
+class ConfigureSystem;
+
 class QGraphicsScene;
 class QStandardItem;
 class QStandardItemModel;
@@ -29,7 +41,8 @@ class ConfigurePerGame : public QDialog {
 
 public:
     // Cannot use std::filesystem::path due to https://bugreports.qt.io/browse/QTBUG-73263
-    explicit ConfigurePerGame(QWidget* parent, u64 title_id, const std::string& file_name);
+    explicit ConfigurePerGame(QWidget* parent, u64 title_id, const std::string& file_name,
+                              Core::System& system_);
     ~ConfigurePerGame() override;
 
     /// Save all button configurations to settings file
@@ -52,4 +65,14 @@ private:
     QGraphicsScene* scene;
 
     std::unique_ptr<Config> game_config;
+
+    Core::System& system;
+
+    std::unique_ptr<ConfigurePerGameAddons> addons_tab;
+    std::unique_ptr<ConfigureAudio> audio_tab;
+    std::unique_ptr<ConfigureCpu> cpu_tab;
+    std::unique_ptr<ConfigureGeneral> general_tab;
+    std::unique_ptr<ConfigureGraphics> graphics_tab;
+    std::unique_ptr<ConfigureGraphicsAdvanced> graphics_advanced_tab;
+    std::unique_ptr<ConfigureSystem> system_tab;
 };

@@ -7,12 +7,13 @@
     <x>0</x>
     <y>0</y>
     <width>900</width>
-    <height>600</height>
+    <height>630</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
     <width>900</width>
+    <height>0</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -214,7 +215,7 @@
           <bool>true</bool>
          </property>
          <property name="currentIndex">
-          <number>0</number>
+          <number>-1</number>
          </property>
          <property name="usesScrollButtons">
           <bool>true</bool>
@@ -225,41 +226,6 @@
          <property name="tabsClosable">
           <bool>false</bool>
          </property>
-         <widget class="ConfigurePerGameAddons" name="addonsTab">
-          <attribute name="title">
-           <string>Add-Ons</string>
-          </attribute>
-         </widget>
-         <widget class="ConfigureGeneral" name="generalTab">
-          <attribute name="title">
-           <string>General</string>
-          </attribute>
-         </widget>
-         <widget class="ConfigureSystem" name="systemTab">
-          <attribute name="title">
-           <string>System</string>
-          </attribute>
-         </widget>
-         <widget class="ConfigureCpu" name="cpuTab">
-          <attribute name="title">
-           <string>CPU</string>
-          </attribute>
-         </widget>
-         <widget class="ConfigureGraphics" name="graphicsTab">
-          <attribute name="title">
-           <string>Graphics</string>
-          </attribute>
-         </widget>
-         <widget class="ConfigureGraphicsAdvanced" name="graphicsAdvancedTab">
-          <attribute name="title">
-           <string>Adv. Graphics</string>
-          </attribute>
-         </widget>
-         <widget class="ConfigureAudio" name="audioTab">
-          <attribute name="title">
-           <string>Audio</string>
-          </attribute>
-         </widget>
         </widget>
        </item>
       </layout>
@@ -284,50 +250,6 @@
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>ConfigureGeneral</class>
-   <extends>QWidget</extends>
-   <header>configuration/configure_general.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ConfigureSystem</class>
-   <extends>QWidget</extends>
-   <header>configuration/configure_system.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ConfigureAudio</class>
-   <extends>QWidget</extends>
-   <header>configuration/configure_audio.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ConfigureGraphics</class>
-   <extends>QWidget</extends>
-   <header>configuration/configure_graphics.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ConfigureGraphicsAdvanced</class>
-   <extends>QWidget</extends>
-   <header>configuration/configure_graphics_advanced.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ConfigurePerGameAddons</class>
-   <extends>QWidget</extends>
-   <header>configuration/configure_per_game_addons.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ConfigureCpu</class>
-   <extends>QWidget</extends>
-   <header>configuration/configure_cpu.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections>
   <connection>
@@ -335,12 +257,32 @@
    <signal>accepted()</signal>
    <receiver>ConfigurePerGame</receiver>
    <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
   </connection>
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
    <receiver>ConfigurePerGame</receiver>
    <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
   </connection>
  </connections>
 </ui>

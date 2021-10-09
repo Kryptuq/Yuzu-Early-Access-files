@@ -39,12 +39,11 @@ void CallConfigureDialog(ConfigureInput& parent, Args&&... args) {
 }
 } // Anonymous namespace
 
-void OnDockedModeChanged(bool last_state, bool new_state) {
+void OnDockedModeChanged(bool last_state, bool new_state, Core::System& system) {
     if (last_state == new_state) {
         return;
     }
 
-    Core::System& system{Core::System::GetInstance()};
     if (!system.IsPoweredOn()) {
         return;
     }
@@ -66,9 +65,9 @@ void OnDockedModeChanged(bool last_state, bool new_state) {
     }
 }
 
-ConfigureInput::ConfigureInput(QWidget* parent)
+ConfigureInput::ConfigureInput(Core::System& system_, QWidget* parent)
     : QWidget(parent), ui(std::make_unique<Ui::ConfigureInput>()),
-      profiles(std::make_unique<InputProfiles>()) {
+      profiles(std::make_unique<InputProfiles>(system_)), system{system_} {
     ui->setupUi(this);
 }
 
@@ -77,22 +76,22 @@ ConfigureInput::~ConfigureInput() = default;
 void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem,
                                 std::size_t max_players) {
     player_controllers = {
-        new ConfigureInputPlayer(this, 0, ui->consoleInputSettings, input_subsystem,
-                                 profiles.get()),
-        new ConfigureInputPlayer(this, 1, ui->consoleInputSettings, input_subsystem,
-                                 profiles.get()),
-        new ConfigureInputPlayer(this, 2, ui->consoleInputSettings, input_subsystem,
-                                 profiles.get()),
-        new ConfigureInputPlayer(this, 3, ui->consoleInputSettings, input_subsystem,
-                                 profiles.get()),
-        new ConfigureInputPlayer(this, 4, ui->consoleInputSettings, input_subsystem,
-                                 profiles.get()),
-        new ConfigureInputPlayer(this, 5, ui->consoleInputSettings, input_subsystem,
-                                 profiles.get()),
-        new ConfigureInputPlayer(this, 6, ui->consoleInputSettings, input_subsystem,
-                                 profiles.get()),
-        new ConfigureInputPlayer(this, 7, ui->consoleInputSettings, input_subsystem,
-                                 profiles.get()),
+        new ConfigureInputPlayer(this, 0, ui->consoleInputSettings, input_subsystem, profiles.get(),
+                                 system),
+        new ConfigureInputPlayer(this, 1, ui->consoleInputSettings, input_subsystem, profiles.get(),
+                                 system),
+        new ConfigureInputPlayer(this, 2, ui->consoleInputSettings, input_subsystem, profiles.get(),
+                                 system),
+        new ConfigureInputPlayer(this, 3, ui->consoleInputSettings, input_subsystem, profiles.get(),
+                                 system),
+        new ConfigureInputPlayer(this, 4, ui->consoleInputSettings, input_subsystem, profiles.get(),
+                                 system),
+        new ConfigureInputPlayer(this, 5, ui->consoleInputSettings, input_subsystem, profiles.get(),
+                                 system),
+        new ConfigureInputPlayer(this, 6, ui->consoleInputSettings, input_subsystem, profiles.get(),
+                                 system),
+        new ConfigureInputPlayer(this, 7, ui->consoleInputSettings, input_subsystem, profiles.get(),
+                                 system),
     };
 
     player_tabs = {
@@ -148,7 +147,8 @@ void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem,
     ui->tabAdvanced->setLayout(new QHBoxLayout(ui->tabAdvanced));
     ui->tabAdvanced->layout()->addWidget(advanced);
     connect(advanced, &ConfigureInputAdvanced::CallDebugControllerDialog, [this, input_subsystem] {
-        CallConfigureDialog<ConfigureDebugController>(*this, input_subsystem, profiles.get());
+        CallConfigureDialog<ConfigureDebugController>(*this, input_subsystem, profiles.get(),
+                                                      system);
     });
     connect(advanced, &ConfigureInputAdvanced::CallMouseConfigDialog, [this, input_subsystem] {
         CallConfigureDialog<ConfigureMouseAdvanced>(*this, input_subsystem);
@@ -204,7 +204,7 @@ void ConfigureInput::ApplyConfiguration() {
 
     const bool pre_docked_mode = Settings::values.use_docked_mode.GetValue();
     Settings::values.use_docked_mode.SetValue(ui->radioDocked->isChecked());
-    OnDockedModeChanged(pre_docked_mode, Settings::values.use_docked_mode.GetValue());
+    OnDockedModeChanged(pre_docked_mode, Settings::values.use_docked_mode.GetValue(), system);
 
     Settings::values.vibration_enabled.SetValue(ui->vibrationGroup->isChecked());
     Settings::values.motion_enabled.SetValue(ui->motionGroup->isChecked());

@@ -9,6 +9,10 @@
 #include <QList>
 #include <QWidget>
 
+namespace Core {
+class System;
+}
+
 class QGraphicsScene;
 class QStandardItem;
 class QStandardItemModel;
@@ -27,7 +31,7 @@ class ConfigureProfileManager : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ConfigureProfileManager(QWidget* parent = nullptr);
+    explicit ConfigureProfileManager(const Core::System& system_, QWidget* parent = nullptr);
     ~ConfigureProfileManager() override;
 
     void ApplyConfiguration();
@@ -58,4 +62,6 @@ private:
     bool enabled = false;
 
     std::unique_ptr<Service::Account::ProfileManager> profile_manager;
+
+    const Core::System& system;
 };

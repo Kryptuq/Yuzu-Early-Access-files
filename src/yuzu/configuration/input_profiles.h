@@ -8,12 +8,16 @@
 #include <string_view>
 #include <unordered_map>
 
+namespace Core {
+class System;
+}
+
 class Config;
 
 class InputProfiles {
 
 public:
-    explicit InputProfiles();
+    explicit InputProfiles(Core::System& system_);
     virtual ~InputProfiles();
 
     std::vector<std::string> GetInputProfileNames();
@@ -29,4 +33,6 @@ private:
     bool ProfileExistsInMap(const std::string& profile_name) const;
 
     std::unordered_map<std::string, std::unique_ptr<Config>> map_profiles;
+
+    Core::System& system;
 };

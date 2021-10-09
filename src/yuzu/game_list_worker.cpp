@@ -228,16 +228,15 @@ QList<QStandardItem*> MakeGameListEntry(const std::string& path, const std::stri
 GameListWorker::GameListWorker(FileSys::VirtualFilesystem vfs,
                                FileSys::ManualContentProvider* provider,
                                QVector<UISettings::GameDir>& game_dirs,
-                               const CompatibilityList& compatibility_list)
+                               const CompatibilityList& compatibility_list, Core::System& system_)
     : vfs(std::move(vfs)), provider(provider), game_dirs(game_dirs),
-      compatibility_list(compatibility_list) {}
+      compatibility_list(compatibility_list), system{system_} {}
 
 GameListWorker::~GameListWorker() = default;
 
 void GameListWorker::AddTitlesToGameList(GameListDir* parent_dir) {
     using namespace FileSys;
 
-    auto& system = Core::System::GetInstance();
     const auto& cache = dynamic_cast<ContentProviderUnion&>(system.GetContentProvider());
 
     auto installed_games = cache.ListEntriesFilterOrigin(std::nullopt, TitleType::Application,
@@ -285,10 +284,7 @@ void GameListWorker::AddTitlesToGameList(GameListDir* parent_dir) {
 
 void GameListWorker::ScanFileSystem(ScanTarget target, const std::string& dir_path, bool deep_scan,
                                     GameListDir* parent_dir) {
-    auto& system = Core::System::GetInstance();
-
-    const auto callback = [this, target, parent_dir,
-                           &system](const std::filesystem::path& path) -> bool {
+    const auto callback = [this, target, parent_dir](const std::filesystem::path& path) -> bool {
         if (stop_processing) {
             // Breaks the callback loop.
             return false;

@@ -305,8 +305,8 @@ void GameList::OnFilterCloseClicked() {
 }
 
 GameList::GameList(FileSys::VirtualFilesystem vfs, FileSys::ManualContentProvider* provider,
-                   GMainWindow* parent)
-    : QWidget{parent}, vfs(std::move(vfs)), provider(provider) {
+                   Core::System& system_, GMainWindow* parent)
+    : QWidget{parent}, vfs(std::move(vfs)), provider(provider), system{system_} {
     watcher = new QFileSystemWatcher(this);
     connect(watcher, &QFileSystemWatcher::directoryChanged, this, &GameList::RefreshGameDirectory);
 
@@ -738,7 +738,8 @@ void GameList::PopulateAsync(QVector<UISettings::GameDir>& game_dirs) {
 
     emit ShouldCancelWorker();
 
-    GameListWorker* worker = new GameListWorker(vfs, provider, game_dirs, compatibility_list);
+    GameListWorker* worker =
+        new GameListWorker(vfs, provider, game_dirs, compatibility_list, system);
 
     connect(worker, &GameListWorker::EntryReady, this, &GameList::AddEntry, Qt::QueuedConnection);
     connect(worker, &GameListWorker::DirEntryReady, this, &GameList::AddDirEntry,

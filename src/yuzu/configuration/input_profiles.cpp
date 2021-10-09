@@ -28,7 +28,7 @@ std::filesystem::path GetNameWithoutExtension(std::filesystem::path filename) {
 
 } // namespace
 
-InputProfiles::InputProfiles() {
+InputProfiles::InputProfiles(Core::System& system_) : system{system_} {
     const auto input_profile_loc = FS::GetYuzuPath(FS::YuzuPath::ConfigDir) / "input";
 
     if (!FS::IsDir(input_profile_loc)) {
@@ -44,8 +44,8 @@ InputProfiles::InputProfiles() {
 
             if (IsINI(filename) && IsProfileNameValid(name_without_ext)) {
                 map_profiles.insert_or_assign(
-                    name_without_ext,
-                    std::make_unique<Config>(name_without_ext, Config::ConfigType::InputProfile));
+                    name_without_ext, std::make_unique<Config>(system, name_without_ext,
+                                                               Config::ConfigType::InputProfile));
             }
 
             return true;
@@ -81,7 +81,8 @@ bool InputProfiles::CreateProfile(const std::string& profile_name, std::size_t p
     }
 
     map_profiles.insert_or_assign(
-        profile_name, std::make_unique<Config>(profile_name, Config::ConfigType::InputProfile));
+        profile_name,
+        std::make_unique<Config>(system, profile_name, Config::ConfigType::InputProfile));
 
     return SaveProfile(profile_name, player_index);
 }

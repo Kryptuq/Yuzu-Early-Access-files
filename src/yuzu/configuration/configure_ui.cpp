@@ -54,7 +54,8 @@ QString GetTranslatedRowTextName(size_t index) {
 }
 } // Anonymous namespace
 
-ConfigureUi::ConfigureUi(QWidget* parent) : QWidget(parent), ui(new Ui::ConfigureUi) {
+ConfigureUi::ConfigureUi(Core::System& system_, QWidget* parent)
+    : QWidget(parent), ui(new Ui::ConfigureUi), system{system_} {
     ui->setupUi(this);
 
     InitializeLanguageComboBox();
@@ -116,7 +117,7 @@ void ConfigureUi::ApplyConfiguration() {
     UISettings::values.enable_screenshot_save_as = ui->enable_screenshot_save_as->isChecked();
     Common::FS::SetYuzuPath(Common::FS::YuzuPath::ScreenshotsDir,
                             ui->screenshot_path_edit->text().toStdString());
-    Core::System::GetInstance().ApplySettings();
+    system.ApplySettings();
 }
 
 void ConfigureUi::RequestGameListUpdate() {

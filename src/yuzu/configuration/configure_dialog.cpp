@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <memory>
 #include <QAbstractButton>
 #include <QDialogButtonBox>
 #include <QHash>
@@ -9,37 +10,84 @@
 #include <QPushButton>
 #include <QSignalBlocker>
 #include <QTabWidget>
+#include "common/logging/log.h"
 #include "common/settings.h"
 #include "core/core.h"
 #include "ui_configure.h"
 #include "yuzu/configuration/config.h"
+#include "yuzu/configuration/configure_audio.h"
+#include "yuzu/configuration/configure_cpu.h"
+#include "yuzu/configuration/configure_debug_tab.h"
 #include "yuzu/configuration/configure_dialog.h"
+#include "yuzu/configuration/configure_filesystem.h"
+#include "yuzu/configuration/configure_general.h"
+#include "yuzu/configuration/configure_graphics.h"
+#include "yuzu/configuration/configure_graphics_advanced.h"
+#include "yuzu/configuration/configure_hotkeys.h"
+#include "yuzu/configuration/configure_input.h"
 #include "yuzu/configuration/configure_input_player.h"
+#include "yuzu/configuration/configure_network.h"
+#include "yuzu/configuration/configure_profile_manager.h"
+#include "yuzu/configuration/configure_system.h"
+#include "yuzu/configuration/configure_ui.h"
+#include "yuzu/configuration/configure_web.h"
 #include "yuzu/hotkeys.h"
 
 ConfigureDialog::ConfigureDialog(QWidget* parent, HotkeyRegistry& registry,
-                                 InputCommon::InputSubsystem* input_subsystem)
-    : QDialog(parent), ui(new Ui::ConfigureDialog), registry(registry) {
+                                 InputCommon::InputSubsystem* input_subsystem,
+                                 Core::System& system_)
+    : QDialog(parent), ui(new Ui::ConfigureDialog),
+      registry(registry), system{system_}, audio_tab{std::make_unique<ConfigureAudio>(system_,
+                                                                                      this)},
+      cpu_tab{std::make_unique<ConfigureCpu>(system_, this)},
+      debug_tab_tab{std::make_unique<ConfigureDebugTab>(system_, this)},
+      filesystem_tab{std::make_unique<ConfigureFilesystem>(this)},
+      general_tab{std::make_unique<ConfigureGeneral>(system_, this)},
+      graphics_tab{std::make_unique<ConfigureGraphics>(system_, this)},
+      graphics_advanced_tab{std::make_unique<ConfigureGraphicsAdvanced>(system_, this)},
+      hotkeys_tab{std::make_unique<ConfigureHotkeys>(this)},
+      input_tab{std::make_unique<ConfigureInput>(system_, this)},
+      network_tab{std::make_unique<ConfigureNetwork>(system_, this)},
+      profile_tab{std::make_unique<ConfigureProfileManager>(system_, this)},
+      system_tab{std::make_unique<ConfigureSystem>(system_, this)},
+      ui_tab{std::make_unique<ConfigureUi>(system_, this)}, web_tab{std::make_unique<ConfigureWeb>(
+                                                                this)} {
     Settings::SetConfiguringGlobal(true);
 
     ui->setupUi(this);
-    ui->hotkeysTab->Populate(registry);
+
+    ui->tabWidget->addTab(audio_tab.get(), tr("Audio"));
+    ui->tabWidget->addTab(cpu_tab.get(), tr("CPU"));
+    ui->tabWidget->addTab(debug_tab_tab.get(), tr("Debug"));
+    ui->tabWidget->addTab(filesystem_tab.get(), tr("Filesystem"));
+    ui->tabWidget->addTab(general_tab.get(), tr("General"));
+    ui->tabWidget->addTab(graphics_tab.get(), tr("Graphics"));
+    ui->tabWidget->addTab(graphics_advanced_tab.get(), tr("GraphicsAdvanced"));
+    ui->tabWidget->addTab(hotkeys_tab.get(), tr("Hotkeys"));
+    ui->tabWidget->addTab(input_tab.get(), tr("Controls"));
+    ui->tabWidget->addTab(profile_tab.get(), tr("Profiles"));
+    ui->tabWidget->addTab(network_tab.get(), tr("Network"));
+    ui->tabWidget->addTab(system_tab.get(), tr("System"));
+    ui->tabWidget->addTab(ui_tab.get(), tr("Game List"));
+    ui->tabWidget->addTab(web_tab.get(), tr("Web"));
+
+    hotkeys_tab->Populate(registry);
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
-    ui->inputTab->Initialize(input_subsystem);
+    input_tab->Initialize(input_subsystem);
 
-    ui->generalTab->SetResetCallback([&] { this->close(); });
+    general_tab->SetResetCallback([&] { this->close(); });
 
     SetConfiguration();
     PopulateSelectionList();
 
     connect(ui->tabWidget, &QTabWidget::currentChanged, this,
-            [this]() { ui->debugTab->SetCurrentIndex(0); });
-    connect(ui->uiTab, &ConfigureUi::LanguageChanged, this, &ConfigureDialog::OnLanguageChanged);
+            [this]() { debug_tab_tab->SetCurrentIndex(0); });
+    connect(ui_tab.get(), &ConfigureUi::LanguageChanged, this, &ConfigureDialog::OnLanguageChanged);
     connect(ui->selectorList, &QListWidget::itemSelectionChanged, this,
             &ConfigureDialog::UpdateVisibleTabs);
 
-    if (Core::System::GetInstance().IsPoweredOn()) {
+    if (system.IsPoweredOn()) {
         QPushButton* apply_button = ui->buttonBox->addButton(QDialogButtonBox::Apply);
         connect(apply_button, &QAbstractButton::clicked, this,
                 &ConfigureDialog::HandleApplyButtonClicked);
@@ -54,21 +102,21 @@ ConfigureDialog::~ConfigureDialog() = default;
 void ConfigureDialog::SetConfiguration() {}
 
 void ConfigureDialog::ApplyConfiguration() {
-    ui->generalTab->ApplyConfiguration();
-    ui->uiTab->ApplyConfiguration();
-    ui->systemTab->ApplyConfiguration();
-    ui->profileManagerTab->ApplyConfiguration();
-    ui->filesystemTab->applyConfiguration();
-    ui->inputTab->ApplyConfiguration();
-    ui->hotkeysTab->ApplyConfiguration(registry);
-    ui->cpuTab->ApplyConfiguration();
-    ui->graphicsTab->ApplyConfiguration();
-    ui->graphicsAdvancedTab->ApplyConfiguration();
-    ui->audioTab->ApplyConfiguration();
-    ui->debugTab->ApplyConfiguration();
-    ui->webTab->ApplyConfiguration();
-    ui->networkTab->ApplyConfiguration();
-    Core::System::GetInstance().ApplySettings();
+    general_tab->ApplyConfiguration();
+    ui_tab->ApplyConfiguration();
+    system_tab->ApplyConfiguration();
+    profile_tab->ApplyConfiguration();
+    filesystem_tab->applyConfiguration();
+    input_tab->ApplyConfiguration();
+    hotkeys_tab->ApplyConfiguration(registry);
+    cpu_tab->ApplyConfiguration();
+    graphics_tab->ApplyConfiguration();
+    graphics_advanced_tab->ApplyConfiguration();
+    audio_tab->ApplyConfiguration();
+    debug_tab_tab->ApplyConfiguration();
+    web_tab->ApplyConfiguration();
+    network_tab->ApplyConfiguration();
+    system.ApplySettings();
     Settings::LogSettings();
 }
 
@@ -102,12 +150,14 @@ Q_DECLARE_METATYPE(QList<QWidget*>);
 
 void ConfigureDialog::PopulateSelectionList() {
     const std::array<std::pair<QString, QList<QWidget*>>, 6> items{
-        {{tr("General"), {ui->generalTab, ui->hotkeysTab, ui->uiTab, ui->webTab, ui->debugTab}},
-         {tr("System"), {ui->systemTab, ui->profileManagerTab, ui->networkTab, ui->filesystemTab}},
-         {tr("CPU"), {ui->cpuTab}},
-         {tr("Graphics"), {ui->graphicsTab, ui->graphicsAdvancedTab}},
-         {tr("Audio"), {ui->audioTab}},
-         {tr("Controls"), ui->inputTab->GetSubTabs()}},
+        {{tr("General"),
+          {general_tab.get(), hotkeys_tab.get(), ui_tab.get(), web_tab.get(), debug_tab_tab.get()}},
+         {tr("System"),
+          {system_tab.get(), profile_tab.get(), network_tab.get(), filesystem_tab.get()}},
+         {tr("CPU"), {cpu_tab.get()}},
+         {tr("Graphics"), {graphics_tab.get(), graphics_advanced_tab.get()}},
+         {tr("Audio"), {audio_tab.get()}},
+         {tr("Controls"), input_tab->GetSubTabs()}},
     };
 
     [[maybe_unused]] const QSignalBlocker blocker(ui->selectorList);
@@ -142,6 +192,7 @@ void ConfigureDialog::UpdateVisibleTabs() {
     const auto tabs = qvariant_cast<QList<QWidget*>>(items[0]->data(Qt::UserRole));
 
     for (auto* const tab : tabs) {
+        LOG_DEBUG(Frontend, "{}", tab->accessibleName().toStdString());
         ui->tabWidget->addTab(tab, tab->accessibleName());
     }
 }

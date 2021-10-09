@@ -26,8 +26,8 @@
 #include "yuzu/uisettings.h"
 #include "yuzu/util/util.h"
 
-ConfigurePerGameAddons::ConfigurePerGameAddons(QWidget* parent)
-    : QWidget(parent), ui(new Ui::ConfigurePerGameAddons) {
+ConfigurePerGameAddons::ConfigurePerGameAddons(Core::System& system_, QWidget* parent)
+    : QWidget(parent), ui(new Ui::ConfigurePerGameAddons), system{system_} {
     ui->setupUi(this);
 
     layout = new QVBoxLayout;
@@ -58,7 +58,7 @@ ConfigurePerGameAddons::ConfigurePerGameAddons(QWidget* parent)
 
     ui->scrollArea->setLayout(layout);
 
-    ui->scrollArea->setEnabled(!Core::System::GetInstance().IsPoweredOn());
+    ui->scrollArea->setEnabled(!system.IsPoweredOn());
 
     connect(item_model, &QStandardItemModel::itemChanged,
             [] { UISettings::values.is_game_list_reload_pending.exchange(true); });
@@ -112,7 +112,6 @@ void ConfigurePerGameAddons::LoadConfiguration() {
         return;
     }
 
-    auto& system = Core::System::GetInstance();
     const FileSys::PatchManager pm{title_id, system.GetFileSystemController(),
                                    system.GetContentProvider()};
     const auto loader = Loader::GetLoader(system, file);

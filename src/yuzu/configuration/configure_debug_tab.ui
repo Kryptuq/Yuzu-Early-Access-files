@@ -13,40 +13,19 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
+  <property name="accessibleName">
+   <string>Debug</string>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>-1</number>
      </property>
-     <widget class="ConfigureDebug" name="debugTab">
-      <attribute name="title">
-       <string>General</string>
-      </attribute>
-     </widget>
-     <widget class="ConfigureCpuDebug" name="cpuDebugTab">
-      <attribute name="title">
-       <string>CPU</string>
-      </attribute>
-     </widget>
     </widget>
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>ConfigureDebug</class>
-   <extends>QWidget</extends>
-   <header>configuration/configure_debug.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ConfigureCpuDebug</class>
-   <extends>QWidget</extends>
-   <header>configuration/configure_cpu_debug.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>

@@ -11,8 +11,8 @@
 #include "ui_configure_cpu_debug.h"
 #include "yuzu/configuration/configure_cpu_debug.h"
 
-ConfigureCpuDebug::ConfigureCpuDebug(QWidget* parent)
-    : QWidget(parent), ui(new Ui::ConfigureCpuDebug) {
+ConfigureCpuDebug::ConfigureCpuDebug(const Core::System& system_, QWidget* parent)
+    : QWidget(parent), ui(new Ui::ConfigureCpuDebug), system{system_} {
     ui->setupUi(this);
 
     SetConfiguration();
@@ -21,7 +21,7 @@ ConfigureCpuDebug::ConfigureCpuDebug(QWidget* parent)
 ConfigureCpuDebug::~ConfigureCpuDebug() = default;
 
 void ConfigureCpuDebug::SetConfiguration() {
-    const bool runtime_lock = !Core::System::GetInstance().IsPoweredOn();
+    const bool runtime_lock = !system.IsPoweredOn();
 
     ui->cpuopt_page_tables->setEnabled(runtime_lock);
     ui->cpuopt_page_tables->setChecked(Settings::values.cpuopt_page_tables.GetValue());

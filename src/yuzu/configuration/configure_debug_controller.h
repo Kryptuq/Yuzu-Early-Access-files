@@ -13,6 +13,10 @@ class ConfigureInputPlayer;
 
 class InputProfiles;
 
+namespace Core {
+class System;
+}
+
 namespace InputCommon {
 class InputSubsystem;
 }
@@ -26,7 +30,7 @@ class ConfigureDebugController : public QDialog {
 
 public:
     explicit ConfigureDebugController(QWidget* parent, InputCommon::InputSubsystem* input_subsystem,
-                                      InputProfiles* profiles);
+                                      InputProfiles* profiles, Core::System& system);
     ~ConfigureDebugController() override;
 
     void ApplyConfiguration();

@@ -13,6 +13,9 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
+  <property name="accessibleName">
+   <string>General</string>
+  </property>
   <layout class="QHBoxLayout" name="HorizontalLayout">
    <item>
     <layout class="QVBoxLayout" name="VerticalLayout">

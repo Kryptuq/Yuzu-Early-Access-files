@@ -107,7 +107,7 @@ class GMainWindow : public QMainWindow {
 public:
     void filterBarSetChecked(bool state);
     void UpdateUITheme();
-    GMainWindow();
+    GMainWindow(Core::System& system_);
     ~GMainWindow() override;
 
     bool DropAction(QDropEvent* event);
@@ -308,6 +308,8 @@ private:
 
     std::unique_ptr<DiscordRPC::DiscordInterface> discord_rpc;
     std::shared_ptr<InputCommon::InputSubsystem> input_subsystem;
+
+    Core::System& system;
 
     GRenderWindow* render_window;
     GameList* game_list;

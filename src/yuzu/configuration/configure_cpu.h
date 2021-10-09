@@ -8,6 +8,10 @@
 #include <QWidget>
 #include "common/settings.h"
 
+namespace Core {
+class System;
+}
+
 namespace ConfigurationShared {
 enum class CheckState;
 }
@@ -20,18 +24,17 @@ class ConfigureCpu : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ConfigureCpu(QWidget* parent = nullptr);
+    explicit ConfigureCpu(const Core::System& system_, QWidget* parent = nullptr);
     ~ConfigureCpu() override;
 
     void ApplyConfiguration();
+    void SetConfiguration();
 
 private:
     void changeEvent(QEvent* event) override;
     void RetranslateUI();
 
     void UpdateGroup(int index);
-
-    void SetConfiguration();
 
     void SetupPerGameUI();
 
@@ -42,4 +45,6 @@ private:
     ConfigurationShared::CheckState cpuopt_unsafe_ignore_standard_fpcr;
     ConfigurationShared::CheckState cpuopt_unsafe_inaccurate_nan;
     ConfigurationShared::CheckState cpuopt_unsafe_fastmem_check;
+
+    const Core::System& system;
 };

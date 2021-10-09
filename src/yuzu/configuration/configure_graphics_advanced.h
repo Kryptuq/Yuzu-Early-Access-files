@@ -7,6 +7,10 @@
 #include <memory>
 #include <QWidget>
 
+namespace Core {
+class System;
+}
+
 namespace ConfigurationShared {
 enum class CheckState;
 }
@@ -19,16 +23,15 @@ class ConfigureGraphicsAdvanced : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ConfigureGraphicsAdvanced(QWidget* parent = nullptr);
+    explicit ConfigureGraphicsAdvanced(const Core::System& system_, QWidget* parent = nullptr);
     ~ConfigureGraphicsAdvanced() override;
 
     void ApplyConfiguration();
+    void SetConfiguration();
 
 private:
     void changeEvent(QEvent* event) override;
     void RetranslateUI();
-
-    void SetConfiguration();
 
     void SetupPerGameUI();
 
@@ -37,4 +40,6 @@ private:
     ConfigurationShared::CheckState use_vsync;
     ConfigurationShared::CheckState use_asynchronous_shaders;
     ConfigurationShared::CheckState use_fast_gpu_time;
+
+    const Core::System& system;
 };

@@ -7,6 +7,10 @@
 #include <memory>
 #include <QWidget>
 
+namespace Core {
+class System;
+}
+
 namespace Ui {
 class ConfigureUi;
 }
@@ -15,7 +19,7 @@ class ConfigureUi : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ConfigureUi(QWidget* parent = nullptr);
+    explicit ConfigureUi(Core::System& system_, QWidget* parent = nullptr);
     ~ConfigureUi() override;
 
     void ApplyConfiguration();
@@ -42,4 +46,6 @@ private:
     void UpdateSecondRowComboBox(bool init = false);
 
     std::unique_ptr<Ui::ConfigureUi> ui;
+
+    Core::System& system;
 };

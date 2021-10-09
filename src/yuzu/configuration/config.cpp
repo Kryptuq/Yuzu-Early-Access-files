@@ -16,7 +16,8 @@
 
 namespace FS = Common::FS;
 
-Config::Config(const std::string& config_name, ConfigType config_type) : type(config_type) {
+Config::Config(Core::System& system_, const std::string& config_name, ConfigType config_type)
+    : type(config_type), system{system_} {
     global = config_type == ConfigType::GlobalConfig;
 
     Initialize(config_name);
@@ -1593,7 +1594,7 @@ void Config::Reload() {
     ReadValues();
     // To apply default value changes
     SaveValues();
-    Core::System::GetInstance().ApplySettings();
+    system.ApplySettings();
 }
 
 void Config::Save() {

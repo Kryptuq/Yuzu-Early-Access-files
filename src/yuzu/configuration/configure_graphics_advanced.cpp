@@ -8,8 +8,8 @@
 #include "yuzu/configuration/configuration_shared.h"
 #include "yuzu/configuration/configure_graphics_advanced.h"
 
-ConfigureGraphicsAdvanced::ConfigureGraphicsAdvanced(QWidget* parent)
-    : QWidget(parent), ui(new Ui::ConfigureGraphicsAdvanced) {
+ConfigureGraphicsAdvanced::ConfigureGraphicsAdvanced(const Core::System& system_, QWidget* parent)
+    : QWidget(parent), ui(new Ui::ConfigureGraphicsAdvanced), system{system_} {
 
     ui->setupUi(this);
 
@@ -21,7 +21,7 @@ ConfigureGraphicsAdvanced::ConfigureGraphicsAdvanced(QWidget* parent)
 ConfigureGraphicsAdvanced::~ConfigureGraphicsAdvanced() = default;
 
 void ConfigureGraphicsAdvanced::SetConfiguration() {
-    const bool runtime_lock = !Core::System::GetInstance().IsPoweredOn();
+    const bool runtime_lock = !system.IsPoweredOn();
     ui->use_vsync->setEnabled(runtime_lock);
     ui->use_asynchronous_shaders->setEnabled(runtime_lock);
     ui->anisotropic_filtering_combobox->setEnabled(runtime_lock);

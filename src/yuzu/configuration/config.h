@@ -14,6 +14,10 @@
 
 class QSettings;
 
+namespace Core {
+class System;
+}
+
 class Config {
 public:
     enum class ConfigType {
@@ -22,7 +26,7 @@ public:
         InputProfile,
     };
 
-    explicit Config(const std::string& config_name = "qt-config",
+    explicit Config(Core::System& system_, const std::string& config_name = "qt-config",
                     ConfigType config_type = ConfigType::GlobalConfig);
     ~Config();
 
@@ -176,6 +180,8 @@ private:
     std::unique_ptr<QSettings> qt_config;
     std::string qt_config_loc;
     bool global;
+
+    Core::System& system;
 };
 
 // These metatype declarations cannot be in common/settings.h because core is devoid of QT

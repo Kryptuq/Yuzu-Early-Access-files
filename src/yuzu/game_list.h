@@ -72,7 +72,8 @@ public:
     };
 
     explicit GameList(std::shared_ptr<FileSys::VfsFilesystem> vfs,
-                      FileSys::ManualContentProvider* provider, GMainWindow* parent = nullptr);
+                      FileSys::ManualContentProvider* provider, Core::System& system_,
+                      GMainWindow* parent = nullptr);
     ~GameList() override;
 
     QString GetLastFilterResultItem() const;
@@ -145,6 +146,8 @@ private:
     CompatibilityList compatibility_list;
 
     friend class GameListSearchField;
+
+    Core::System& system;
 };
 
 class GameListPlaceholder : public QWidget {

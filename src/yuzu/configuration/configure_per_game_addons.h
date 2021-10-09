@@ -11,6 +11,10 @@
 
 #include "core/file_sys/vfs_types.h"
 
+namespace Core {
+class System;
+}
+
 class QGraphicsScene;
 class QStandardItem;
 class QStandardItemModel;
@@ -25,7 +29,7 @@ class ConfigurePerGameAddons : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ConfigurePerGameAddons(QWidget* parent = nullptr);
+    explicit ConfigurePerGameAddons(Core::System& system_, QWidget* parent = nullptr);
     ~ConfigurePerGameAddons() override;
 
     /// Save all button configurations to settings file
@@ -50,4 +54,6 @@ private:
     QStandardItemModel* item_model;
 
     std::vector<QList<QStandardItem*>> list_items;
+
+    Core::System& system;
 };
