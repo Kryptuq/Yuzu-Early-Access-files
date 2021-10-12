@@ -1837,7 +1837,7 @@ void PlayerControlPreview::DrawLeftBody(QPainter& p, const QPointF center) {
     const float led_size = 5.0f;
     const QPointF led_position = sideview_center + QPointF(0, -36);
     int led_count = 0;
-    for (const auto color : led_color) {
+    for (const auto& color : led_color) {
         p.setBrush(color);
         DrawRectangle(p, led_position + QPointF(0, 12 * led_count++), led_size, led_size);
     }
@@ -1933,7 +1933,7 @@ void PlayerControlPreview::DrawRightBody(QPainter& p, const QPointF center) {
     const float led_size = 5.0f;
     const QPointF led_position = sideview_center + QPointF(0, -36);
     int led_count = 0;
-    for (const auto color : led_color) {
+    for (const auto& color : led_color) {
         p.setBrush(color);
         DrawRectangle(p, led_position + QPointF(0, 12 * led_count++), led_size, led_size);
     }

@@ -82,32 +82,35 @@ public:
 
 private:
     PathManagerImpl() {
+        fs::path yuzu_path;
+        fs::path yuzu_path_cache;
+        fs::path yuzu_path_config;
+
 #ifdef _WIN32
-        auto yuzu_path = GetExeDirectory() / PORTABLE_DIR;
+        yuzu_path = GetExeDirectory() / PORTABLE_DIR;
 
         if (!IsDir(yuzu_path)) {
             yuzu_path = GetAppDataRoamingDirectory() / YUZU_DIR;
         }
 
-        GenerateYuzuPath(YuzuPath::YuzuDir, yuzu_path);
-        GenerateYuzuPath(YuzuPath::CacheDir, yuzu_path / CACHE_DIR);
-        GenerateYuzuPath(YuzuPath::ConfigDir, yuzu_path / CONFIG_DIR);
+        yuzu_path_cache = yuzu_path / CACHE_DIR;
+        yuzu_path_config = yuzu_path / CONFIG_DIR;
 #else
-        auto yuzu_path = GetCurrentDir() / PORTABLE_DIR;
+        yuzu_path = GetCurrentDir() / PORTABLE_DIR;
 
         if (Exists(yuzu_path) && IsDir(yuzu_path)) {
-            GenerateYuzuPath(YuzuPath::YuzuDir, yuzu_path);
-            GenerateYuzuPath(YuzuPath::CacheDir, yuzu_path / CACHE_DIR);
-            GenerateYuzuPath(YuzuPath::ConfigDir, yuzu_path / CONFIG_DIR);
+            yuzu_path_cache = yuzu_path / CACHE_DIR;
+            yuzu_path_config = yuzu_path / CONFIG_DIR;
         } else {
             yuzu_path = GetDataDirectory("XDG_DATA_HOME") / YUZU_DIR;
-
-            GenerateYuzuPath(YuzuPath::YuzuDir, yuzu_path);
-            GenerateYuzuPath(YuzuPath::CacheDir, GetDataDirectory("XDG_CACHE_HOME") / YUZU_DIR);
-            GenerateYuzuPath(YuzuPath::ConfigDir, GetDataDirectory("XDG_CONFIG_HOME") / YUZU_DIR);
+            yuzu_path_cache = GetDataDirectory("XDG_CACHE_HOME") / YUZU_DIR;
+            yuzu_path_config = GetDataDirectory("XDG_CONFIG_HOME") / YUZU_DIR;
         }
 #endif
 
+        GenerateYuzuPath(YuzuPath::YuzuDir, yuzu_path);
+        GenerateYuzuPath(YuzuPath::CacheDir, yuzu_path_cache);
+        GenerateYuzuPath(YuzuPath::ConfigDir, yuzu_path_config);
         GenerateYuzuPath(YuzuPath::DumpDir, yuzu_path / DUMP_DIR);
         GenerateYuzuPath(YuzuPath::KeysDir, yuzu_path / KEYS_DIR);
         GenerateYuzuPath(YuzuPath::LoadDir, yuzu_path / LOAD_DIR);

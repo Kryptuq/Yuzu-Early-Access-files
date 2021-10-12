@@ -272,7 +272,9 @@ private slots:
     void ShowFullscreen();
     void HideFullscreen();
     void ToggleWindowMode();
+    void ResetWindowSize(u32 width, u32 height);
     void ResetWindowSize720();
+    void ResetWindowSize900();
     void ResetWindowSize1080();
     void OnCaptureScreenshot();
     void OnCoreError(Core::System::ResultStatus, std::string);

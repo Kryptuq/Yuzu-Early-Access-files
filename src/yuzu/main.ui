@@ -78,6 +78,35 @@
     <property name="title">
      <string>&amp;View</string>
     </property>
+    <widget class="QMenu" name="menu_Reset_Window_Size">
+      <property name="title">
+        <string>&amp;Reset Window Size</string>
+      </property>
+    </widget>
+    <action name="action_Reset_Window_Size_720">
+      <property name="text">
+        <string>Reset Window Size to &amp;720p</string>
+      </property>
+      <property name="iconText">
+        <string>Reset Window Size to 720p</string>
+      </property>
+    </action>
+    <action name="action_Reset_Window_Size_900">
+      <property name="text">
+        <string>Reset Window Size to &amp;900p</string>
+      </property>
+      <property name="iconText">
+        <string>Reset Window Size to 900p</string>
+      </property>
+    </action>
+    <action name="action_Reset_Window_Size_1080">
+      <property name="text">
+        <string>Reset Window Size to &amp;1080p</string>
+      </property>
+      <property name="iconText">
+        <string>Reset Window Size to 1080p</string>
+      </property>
+    </action>
     <widget class="QMenu" name="menu_View_Debugging">
      <property name="title">
       <string>&amp;Debugging</string>
@@ -88,9 +117,8 @@
     <addaction name="action_Display_Dock_Widget_Headers"/>
     <addaction name="action_Show_Filter_Bar"/>
     <addaction name="action_Show_Status_Bar"/>
-    <addaction name="action_Reset_Window_Size_720"/>
-    <addaction name="action_Reset_Window_Size_1080"/>
     <addaction name="separator"/>
+    <addaction name="menu_Reset_Window_Size"/>
     <addaction name="menu_View_Debugging"/>
    </widget>
    <widget class="QMenu" name="menu_Tools">
@@ -214,22 +242,6 @@
    </property>
    <property name="iconText">
     <string>Show Status Bar</string>
-   </property>
-  </action>
-  <action name="action_Reset_Window_Size_720">
-   <property name="text">
-    <string>Reset Window Size to &amp;720p</string>
-   </property>
-   <property name="iconText">
-    <string>Reset Window Size to 720p</string>
-   </property>
-  </action>
-  <action name="action_Reset_Window_Size_1080">
-   <property name="text">
-    <string>Reset Window Size to &amp;1080p</string>
-   </property>
-   <property name="iconText">
-    <string>Reset Window Size to 1080p</string>
    </property>
   </action>
   <action name="action_Fullscreen">

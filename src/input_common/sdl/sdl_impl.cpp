@@ -170,7 +170,8 @@ public:
     float GetAxis(int axis, float range, float offset) const {
         std::lock_guard lock{mutex};
         const float value = static_cast<float>(state.axes.at(axis)) / 32767.0f;
-        return (value + offset) / range;
+        const float offset_scale = (value + offset) > 0.0f ? 1.0f + offset : 1.0f - offset;
+        return (value + offset) / range / offset_scale;
     }
 
     bool RumblePlay(u16 amp_low, u16 amp_high) {
@@ -789,8 +790,8 @@ public:
         const std::string invert_y_value = params.Get("invert_y", "+");
         const bool invert_x = invert_x_value == "-";
         const bool invert_y = invert_y_value == "-";
-        const float offset_x = params.Get("offset_x", 0.0f);
-        const float offset_y = params.Get("offset_y", 0.0f);
+        const float offset_x = std::clamp(params.Get("offset_x", 0.0f), -0.99f, 0.99f);
+        const float offset_y = std::clamp(params.Get("offset_y", 0.0f), -0.99f, 0.99f);
         auto joystick = state.GetSDLJoystickByGUID(guid, port);
 
         // This is necessary so accessing GetAxis with axis_x and axis_y won't crash

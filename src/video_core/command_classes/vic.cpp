@@ -32,7 +32,7 @@ enum class VideoPixelFormat : u64_le {
     RGBA8 = 0x1f,
     BGRA8 = 0x20,
     RGBX8 = 0x23,
-    Yuv420 = 0x44,
+    YUV420 = 0x44,
 };
 } // Anonymous namespace
 
@@ -90,9 +90,8 @@ void Vic::Execute() {
     if (static_cast<u64>(frame->width) != surface_width ||
         static_cast<u64>(frame->height) != surface_height) {
         // TODO: Properly support multiple video streams with differing frame dimensions
-        LOG_WARNING(Debug, "Frame dimensions {}x{} do not match expected surface dimensions {}x{}",
+        LOG_WARNING(Service_NVDRV, "Frame dimensions {}x{} don't match surface dimensions {}x{}",
                     frame->width, frame->height, surface_width, surface_height);
-        return;
     }
     switch (config.pixel_format) {
     case VideoPixelFormat::RGBA8:
@@ -100,7 +99,7 @@ void Vic::Execute() {
     case VideoPixelFormat::RGBX8:
         WriteRGBFrame(frame, config);
         break;
-    case VideoPixelFormat::Yuv420:
+    case VideoPixelFormat::YUV420:
         WriteYUVFrame(frame, config);
         break;
     default:
@@ -135,21 +134,20 @@ void Vic::WriteRGBFrame(const AVFrame* frame, const VicConfig& config) {
         scaler_height = frame->height;
         converted_frame_buffer.reset();
     }
-    // Get Converted frame
-    const u32 width = static_cast<u32>(frame->width);
-    const u32 height = static_cast<u32>(frame->height);
-    const std::size_t linear_size = width * height * 4;
-
-    // Only allocate frame_buffer once per stream, as the size is not expected to change
     if (!converted_frame_buffer) {
-        converted_frame_buffer = AVMallocPtr{static_cast<u8*>(av_malloc(linear_size)), av_free};
+        const size_t frame_size = frame->width * frame->height * 4;
+        converted_frame_buffer = AVMallocPtr{static_cast<u8*>(av_malloc(frame_size)), av_free};
     }
     const std::array<int, 4> converted_stride{frame->width * 4, frame->height * 4, 0, 0};
     u8* const converted_frame_buf_addr{converted_frame_buffer.get()};
-
     sws_scale(scaler_ctx, frame->data, frame->linesize, 0, frame->height, &converted_frame_buf_addr,
               converted_stride.data());
 
+    // Use the minimum of surface/frame dimensions to avoid buffer overflow.
+    const u32 surface_width = static_cast<u32>(config.surface_width_minus1) + 1;
+    const u32 surface_height = static_cast<u32>(config.surface_height_minus1) + 1;
+    const u32 width = std::min(surface_width, static_cast<u32>(frame->width));
+    const u32 height = std::min(surface_height, static_cast<u32>(frame->height));
     const u32 blk_kind = static_cast<u32>(config.block_linear_kind);
     if (blk_kind != 0) {
         // swizzle pitch linear to block linear
@@ -157,11 +155,12 @@ void Vic::WriteRGBFrame(const AVFrame* frame, const VicConfig& config) {
         const auto size = Texture::CalculateSize(true, 4, width, height, 1, block_height, 0);
         luma_buffer.resize(size);
         Texture::SwizzleSubrect(width, height, width * 4, width, 4, luma_buffer.data(),
-                                converted_frame_buffer.get(), block_height, 0, 0);
+                                converted_frame_buf_addr, block_height, 0, 0);
 
         gpu.MemoryManager().WriteBlock(output_surface_luma_address, luma_buffer.data(), size);
     } else {
         // send pitch linear frame
+        const size_t linear_size = width * height * 4;
         gpu.MemoryManager().WriteBlock(output_surface_luma_address, converted_frame_buf_addr,
                                        linear_size);
     }
@@ -172,9 +171,10 @@ void Vic::WriteYUVFrame(const AVFrame* frame, const VicConfig& config) {
 
     const std::size_t surface_width = config.surface_width_minus1 + 1;
     const std::size_t surface_height = config.surface_height_minus1 + 1;
+    const std::size_t aligned_width = (surface_width + 0xff) & ~0xffUL;
+    // Use the minimum of surface/frame dimensions to avoid buffer overflow.
     const auto frame_width = std::min(surface_width, static_cast<size_t>(frame->width));
     const auto frame_height = std::min(surface_height, static_cast<size_t>(frame->height));
-    const std::size_t aligned_width = (surface_width + 0xff) & ~0xffUL;
 
     const auto stride = static_cast<size_t>(frame->linesize[0]);
 

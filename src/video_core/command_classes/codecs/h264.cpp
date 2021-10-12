@@ -20,6 +20,8 @@
 
 #include <array>
 #include <bit>
+
+#include "common/settings.h"
 #include "video_core/command_classes/codecs/h264.h"
 #include "video_core/gpu.h"
 #include "video_core/memory_manager.h"
@@ -96,7 +98,10 @@ const std::vector<u8>& H264::ComposeFrameHeader(const NvdecCommon::NvdecRegister
                            (context.h264_parameter_set.frame_mbs_only_flag ? 1 : 2);
 
     // TODO (ameerj): Where do we get this number, it seems to be particular for each stream
-    writer.WriteUe(6); // Max number of reference frames
+    const auto nvdec_decoding = Settings::values.nvdec_emulation.GetValue();
+    const bool uses_gpu_decoding = nvdec_decoding == Settings::NvdecEmulation::GPU;
+    const u32 max_num_ref_frames = uses_gpu_decoding ? 6u : 16u;
+    writer.WriteUe(max_num_ref_frames);
     writer.WriteBit(false);
     writer.WriteUe(context.h264_parameter_set.pic_width_in_mbs - 1);
     writer.WriteUe(pic_height - 1);

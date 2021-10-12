@@ -1172,10 +1172,16 @@ void GMainWindow::ConnectMenuEvents() {
             &GMainWindow::OnDisplayTitleBars);
     connect(ui.action_Show_Filter_Bar, &QAction::triggered, this, &GMainWindow::OnToggleFilterBar);
     connect(ui.action_Show_Status_Bar, &QAction::triggered, statusBar(), &QStatusBar::setVisible);
+
     connect(ui.action_Reset_Window_Size_720, &QAction::triggered, this,
             &GMainWindow::ResetWindowSize720);
+    connect(ui.action_Reset_Window_Size_900, &QAction::triggered, this,
+            &GMainWindow::ResetWindowSize900);
     connect(ui.action_Reset_Window_Size_1080, &QAction::triggered, this,
             &GMainWindow::ResetWindowSize1080);
+    ui.menu_Reset_Window_Size->addAction(ui.action_Reset_Window_Size_720);
+    ui.menu_Reset_Window_Size->addAction(ui.action_Reset_Window_Size_900);
+    ui.menu_Reset_Window_Size->addAction(ui.action_Reset_Window_Size_1080);
 
     // Fullscreen
     connect(ui.action_Fullscreen, &QAction::triggered, this, &GMainWindow::ToggleFullscreen);
@@ -2611,32 +2617,29 @@ void GMainWindow::ToggleWindowMode() {
     }
 }
 
-void GMainWindow::ResetWindowSize720() {
+void GMainWindow::ResetWindowSize(u32 width, u32 height) {
     const auto aspect_ratio = Layout::EmulationAspectRatio(
         static_cast<Layout::AspectRatio>(Settings::values.aspect_ratio.GetValue()),
-        static_cast<float>(Layout::ScreenUndocked::Height) / Layout::ScreenUndocked::Width);
+        static_cast<float>(height) / width);
     if (!ui.action_Single_Window_Mode->isChecked()) {
-        render_window->resize(Layout::ScreenUndocked::Height / aspect_ratio,
-                              Layout::ScreenUndocked::Height);
+        render_window->resize(height / aspect_ratio, height);
     } else {
-        resize(Layout::ScreenUndocked::Height / aspect_ratio,
-               Layout::ScreenUndocked::Height + menuBar()->height() +
-                   (ui.action_Show_Status_Bar->isChecked() ? statusBar()->height() : 0));
+        const bool show_status_bar = ui.action_Show_Status_Bar->isChecked();
+        const auto status_bar_height = show_status_bar ? statusBar()->height() : 0;
+        resize(height / aspect_ratio, height + menuBar()->height() + status_bar_height);
     }
 }
 
+void GMainWindow::ResetWindowSize720() {
+    ResetWindowSize(Layout::ScreenUndocked::Width, Layout::ScreenUndocked::Height);
+}
+
+void GMainWindow::ResetWindowSize900() {
+    ResetWindowSize(1600U, 900U);
+}
+
 void GMainWindow::ResetWindowSize1080() {
-    const auto aspect_ratio = Layout::EmulationAspectRatio(
-        static_cast<Layout::AspectRatio>(Settings::values.aspect_ratio.GetValue()),
-        static_cast<float>(Layout::ScreenDocked::Height) / Layout::ScreenDocked::Width);
-    if (!ui.action_Single_Window_Mode->isChecked()) {
-        render_window->resize(Layout::ScreenDocked::Height / aspect_ratio,
-                              Layout::ScreenDocked::Height);
-    } else {
-        resize(Layout::ScreenDocked::Height / aspect_ratio,
-               Layout::ScreenDocked::Height + menuBar()->height() +
-                   (ui.action_Show_Status_Bar->isChecked() ? statusBar()->height() : 0));
-    }
+    ResetWindowSize(Layout::ScreenDocked::Width, Layout::ScreenDocked::Height);
 }
 
 void GMainWindow::OnConfigure() {
