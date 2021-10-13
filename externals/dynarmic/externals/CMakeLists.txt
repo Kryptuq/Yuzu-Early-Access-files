@@ -4,12 +4,14 @@
 
 # catch
 
-add_library(catch INTERFACE)
-target_include_directories(catch INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/catch/include>)
+if (DYNARMIC_TESTS AND NOT TARGET catch)
+    add_library(catch INTERFACE)
+    target_include_directories(catch INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/catch/include>)
+endif()
 
 # fmt
 
-if (NOT DYNARMIC_NO_BUNDLED_FMT)
+if (NOT TARGET fmt AND NOT TARGET fmt::fmt)
     # fmtlib formatting library
     add_subdirectory(fmt)
 endif()
@@ -21,9 +23,11 @@ target_include_directories(mp INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE
 
 # robin-map
 
-add_library(robin_map INTERFACE)
-add_library(tsl::robin_map ALIAS robin_map)
-target_include_directories(robin_map SYSTEM INTERFACE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/robin-map/include>")
+if (NOT TARGET tsl::robin_map)
+    add_library(robin_map INTERFACE)
+    add_library(tsl::robin_map ALIAS robin_map)
+    target_include_directories(robin_map SYSTEM INTERFACE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/robin-map/include>")
+endif()
 
 # vixl
 
@@ -45,7 +49,9 @@ endif()
 
 # zydis
 
-option(ZYDIS_BUILD_TOOLS "" OFF)
-option(ZYDIS_BUILD_EXAMPLES "" OFF)
-set(ZYDIS_ZYCORE_PATH "${CMAKE_CURRENT_LIST_DIR}/zycore" CACHE PATH "")
-add_subdirectory(zydis EXCLUDE_FROM_ALL)
+if (NOT TARGET Zydis)
+    option(ZYDIS_BUILD_TOOLS "" OFF)
+    option(ZYDIS_BUILD_EXAMPLES "" OFF)
+    set(ZYDIS_ZYCORE_PATH "${CMAKE_CURRENT_LIST_DIR}/zycore" CACHE PATH "")
+    add_subdirectory(zydis EXCLUDE_FROM_ALL)
+endif()

@@ -364,6 +364,10 @@ include(CreateDirectoryGroups)
 create_target_directory_groups(dynarmic)
 
 target_include_directories(dynarmic PUBLIC ..)
+set_target_properties(dynarmic PROPERTIES
+    VERSION ${dynarmic_VERSION}
+    SOVERSION ${dynarmic_VERSION_MAJOR}
+)
 target_compile_options(dynarmic PRIVATE ${DYNARMIC_CXX_FLAGS})
 target_link_libraries(dynarmic
     PUBLIC

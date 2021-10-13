@@ -73,8 +73,6 @@ TEST_CASE("Host CPU supports", "[a64]") {
         std::make_pair(Xbyak::util::Cpu::tSSE3, "SSE3"),
         std::make_pair(Xbyak::util::Cpu::tSSE41, "SSE41"),
         std::make_pair(Xbyak::util::Cpu::tSSE42, "SSE42"),
-        std::make_pair(Xbyak::util::Cpu::tSSE4a, "SSE4a"),
-        std::make_pair(Xbyak::util::Cpu::tSSE5, "SSE5"),
         std::make_pair(Xbyak::util::Cpu::tSSSE3, "SSSE3"),
         std::make_pair(Xbyak::util::Cpu::tVAES, "VAES"),
         std::make_pair(Xbyak::util::Cpu::tVPCLMULQDQ, "VPCLMULQDQ"),

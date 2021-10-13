@@ -46,7 +46,7 @@ constexpr FPUnpacked ToNormalized(bool sign, int exponent, u64 value) {
     const int highest_bit = Common::HighestSetBit(value);
     const int offset = static_cast<int>(normalized_point_position) - highest_bit;
     value <<= offset;
-    exponent -= offset - normalized_point_position;
+    exponent -= offset - static_cast<int>(normalized_point_position);
     return {sign, exponent, value};
 }
 

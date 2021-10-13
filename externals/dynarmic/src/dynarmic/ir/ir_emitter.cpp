@@ -1526,6 +1526,21 @@ U128 IREmitter::VectorReverseBits(const U128& a) {
     return Inst<U128>(Opcode::VectorReverseBits, a);
 }
 
+U128 IREmitter::VectorReduceAdd(size_t esize, const U128& a) {
+    switch (esize) {
+    case 8:
+        return Inst<U128>(Opcode::VectorReduceAdd8, a);
+    case 16:
+        return Inst<U128>(Opcode::VectorReduceAdd16, a);
+    case 32:
+        return Inst<U128>(Opcode::VectorReduceAdd32, a);
+    case 64:
+        return Inst<U128>(Opcode::VectorReduceAdd64, a);
+    }
+
+    UNREACHABLE();
+}
+
 U128 IREmitter::VectorRotateLeft(size_t esize, const U128& a, u8 amount) {
     ASSERT(amount < esize);
 

@@ -294,6 +294,7 @@ public:
     U128 VectorPolynomialMultiplyLong(size_t esize, const U128& a, const U128& b);
     U128 VectorPopulationCount(const U128& a);
     U128 VectorReverseBits(const U128& a);
+    U128 VectorReduceAdd(size_t esize, const U128& a);
     U128 VectorRotateLeft(size_t esize, const U128& a, u8 amount);
     U128 VectorRotateRight(size_t esize, const U128& a, u8 amount);
     U128 VectorRoundingHalvingAddSigned(size_t esize, const U128& a, const U128& b);

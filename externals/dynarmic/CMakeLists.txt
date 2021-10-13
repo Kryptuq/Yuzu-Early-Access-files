@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(dynarmic C CXX ASM)
+project(dynarmic LANGUAGES C CXX ASM VERSION 5)
 
 # Determine if we're built as a subproject (using add_subdirectory)
 # or if this is the master project.
@@ -122,6 +122,27 @@ if (NOT TARGET boost)
     target_include_directories(boost SYSTEM INTERFACE ${Boost_INCLUDE_DIRS})
 endif()
 
+if (DYNARMIC_NO_BUNDLED_FMT AND NOT TARGET fmt AND NOT TARGET fmt::fmt)
+    find_package(fmt REQUIRED)
+    add_library(fmt ALIAS fmt::fmt)
+endif()
+
+if (DYNARMIC_NO_BUNDLED_ROBIN_MAP AND NOT TARGET tsl::robin_map)
+    find_package(tsl-robin-map REQUIRED)
+endif()
+
+if (DYNARMIC_NO_BUNDLED_XBYAK AND NOT TARGET xbyak)
+    if (ARCHITECTURE STREQUAL "x86" OR ARCHITECTURE STREQUAL "x86_64")
+        find_package(xbyak REQUIRED)
+        add_library(xbyak ALIAS xbyak::xbyak)
+    endif()
+endif()
+
+if (DYNARMIC_NO_BUNDLED_ZYDIS AND NOT TARGET Zydis)
+    find_package(Zydis REQUIRED)
+    add_library(Zydis ALIAS Zydis::Zydis)
+endif()
+
 # Enable unit-testing.
 enable_testing(true)
 
@@ -135,6 +156,11 @@ endif()
 
 if (DYNARMIC_TESTS_USE_UNICORN)
     find_package(Unicorn REQUIRED)
+endif()
+
+if (DYNARMIC_TESTS AND DYNARMIC_NO_BUNDLED_CATCH AND NOT TARGET catch)
+    find_package(Catch2 REQUIRED)
+    add_library(catch ALIAS Catch2::Catch2)
 endif()
 
 # Pull in externals CMakeLists for libs where available

@@ -64,7 +64,7 @@ private:
 SigHandler sig_handler;
 
 SigHandler::SigHandler() {
-    constexpr size_t signal_stack_size = std::max(SIGSTKSZ, 2 * 1024 * 1024);
+    const size_t signal_stack_size = std::max<size_t>(SIGSTKSZ, 2 * 1024 * 1024);
 
     signal_stack_memory = std::malloc(signal_stack_size);
 

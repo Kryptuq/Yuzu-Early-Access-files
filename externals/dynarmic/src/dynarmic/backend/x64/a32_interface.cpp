@@ -318,8 +318,12 @@ void Jit::LoadContext(const Context& ctx) {
 }
 
 void Jit::DumpDisassembly() const {
-    const size_t size = (const char*)impl->block_of_code.getCurr() - (const char*)impl->block_of_code.GetCodeBegin();
+    const size_t size = reinterpret_cast<const char*>(impl->block_of_code.getCurr()) - reinterpret_cast<const char*>(impl->block_of_code.GetCodeBegin());
     Common::DumpDisassembledX64(impl->block_of_code.GetCodeBegin(), size);
 }
 
+std::vector<std::string> Jit::Disassemble() const {
+    const size_t size = reinterpret_cast<const char*>(impl->block_of_code.getCurr()) - reinterpret_cast<const char*>(impl->block_of_code.GetCodeBegin());
+    return Common::DisassembleX64(impl->block_of_code.GetCodeBegin(), size);
+}
 }  // namespace Dynarmic::A32

@@ -32,6 +32,84 @@ TEST_CASE("A64: ADD", "[a64]") {
     REQUIRE(jit.GetPC() == 4);
 }
 
+TEST_CASE("A64: ADD{V,P}", "[a64]") {
+    A64TestEnv env;
+    A64::Jit jit{A64::UserConfig{&env}};
+
+    env.code_mem.emplace_back(0x0E31B801);  // ADDV b1, v0.8b
+    env.code_mem.emplace_back(0x4E31B802);  // ADDV b2, v0.16b
+    env.code_mem.emplace_back(0x0E71B803);  // ADDV h3, v0.4h
+    env.code_mem.emplace_back(0x4E71B804);  // ADDV h4, v0.8h
+    env.code_mem.emplace_back(0x0EA0BC05);  // ADDP v5.2s, v0.2s, v0.2s
+    env.code_mem.emplace_back(0x4EB1B806);  // ADDV s6, v0.4s
+    env.code_mem.emplace_back(0x14000000);  // B .
+
+    jit.SetVector(0, {0x0101010101010101, 0x0101010101010101});
+    jit.SetPC(0);
+
+    env.ticks_left = 7;
+    jit.Run();
+
+    REQUIRE(jit.GetVector(1) == Vector{0x0000000000000008, 0x0000000000000000});
+    REQUIRE(jit.GetVector(2) == Vector{0x0000000000000010, 0x0000000000000000});
+    REQUIRE(jit.GetVector(3) == Vector{0x0000000000000404, 0x0000000000000000});
+    REQUIRE(jit.GetVector(4) == Vector{0x0000000000000808, 0x0000000000000000});
+    REQUIRE(jit.GetVector(5) == Vector{0x0202020202020202, 0x0000000000000000});
+    REQUIRE(jit.GetVector(6) == Vector{0x0000000004040404, 0x0000000000000000});
+}
+
+TEST_CASE("A64: UADDL{V,P}", "[a64]") {
+    A64TestEnv env;
+    A64::Jit jit{A64::UserConfig{&env}};
+
+    env.code_mem.emplace_back(0x2E303801);  // UADDLV h1, v0.8b
+    env.code_mem.emplace_back(0x6E303802);  // UADDLV h2, v0.16b
+    env.code_mem.emplace_back(0x2E703803);  // UADDLV s3, v0.4h
+    env.code_mem.emplace_back(0x6E703804);  // UADDLV s4, v0.8h
+    env.code_mem.emplace_back(0x2EA02805);  // UADDLP v5.1d, v0.2s
+    env.code_mem.emplace_back(0x6EB03806);  // UADDLV d6, v0.4s
+    env.code_mem.emplace_back(0x14000000);  // B .
+
+    jit.SetVector(0, {0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF});
+    jit.SetPC(0);
+
+    env.ticks_left = 7;
+    jit.Run();
+
+    REQUIRE(jit.GetVector(1) == Vector{0x00000000000007f8, 0x0000000000000000});
+    REQUIRE(jit.GetVector(2) == Vector{0x0000000000000ff0, 0x0000000000000000});
+    REQUIRE(jit.GetVector(3) == Vector{0x000000000003fffc, 0x0000000000000000});
+    REQUIRE(jit.GetVector(4) == Vector{0x000000000007fff8, 0x0000000000000000});
+    REQUIRE(jit.GetVector(5) == Vector{0x00000001fffffffe, 0x0000000000000000});
+    REQUIRE(jit.GetVector(6) == Vector{0x00000003fffffffc, 0x0000000000000000});
+}
+
+TEST_CASE("A64: SADDL{V,P}", "[a64]") {
+    A64TestEnv env;
+    A64::Jit jit{A64::UserConfig{&env}};
+
+    env.code_mem.emplace_back(0x0E303801);  // SADDLV h1, v0.8b
+    env.code_mem.emplace_back(0x4E303802);  // SADDLV h2, v0.16b
+    env.code_mem.emplace_back(0x0E703803);  // SADDLV s3, v0.4h
+    env.code_mem.emplace_back(0x4E703804);  // SADDLV s4, v0.8h
+    env.code_mem.emplace_back(0x0EA02805);  // SADDLP v5.1d, v0.2s
+    env.code_mem.emplace_back(0x4EB03806);  // SADDLV d6, v0.4s
+    env.code_mem.emplace_back(0x14000000);  // B .
+
+    jit.SetVector(0, {0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF});
+    jit.SetPC(0);
+
+    env.ticks_left = 7;
+    jit.Run();
+
+    REQUIRE(jit.GetVector(1) == Vector{0x000000000000fff8, 0x0000000000000000});
+    REQUIRE(jit.GetVector(2) == Vector{0x000000000000fff0, 0x0000000000000000});
+    REQUIRE(jit.GetVector(3) == Vector{0x00000000fffffffc, 0x0000000000000000});
+    REQUIRE(jit.GetVector(4) == Vector{0x00000000fffffff8, 0x0000000000000000});
+    REQUIRE(jit.GetVector(5) == Vector{0xfffffffffffffffe, 0x0000000000000000});
+    REQUIRE(jit.GetVector(6) == Vector{0xfffffffffffffffc, 0x0000000000000000});
+}
+
 TEST_CASE("A64: VQADD", "[a64]") {
     A64TestEnv env;
     A64::Jit jit{A64::UserConfig{&env}};

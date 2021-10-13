@@ -2990,6 +2990,98 @@ void EmitX64::EmitVectorReverseBits(EmitContext& ctx, IR::Inst* inst) {
     ctx.reg_alloc.DefineValue(inst, data);
 }
 
+void EmitX64::EmitVectorReduceAdd8(EmitContext& ctx, IR::Inst* inst) {
+    auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+
+    const Xbyak::Xmm data = ctx.reg_alloc.UseScratchXmm(args[0]);
+    const Xbyak::Xmm temp = xmm0;
+
+    // Add upper elements to lower elements
+    code.pshufd(temp, data, 0b01'00'11'10);
+    code.paddb(data, temp);
+
+    // Add adjacent 8-bit values into 64-bit lanes
+    code.pxor(temp, temp);
+    code.psadbw(data, temp);
+
+    // Zero-extend lower 8-bits
+    code.pslldq(data, 15);
+    code.psrldq(data, 15);
+
+    ctx.reg_alloc.DefineValue(inst, data);
+}
+
+void EmitX64::EmitVectorReduceAdd16(EmitContext& ctx, IR::Inst* inst) {
+    auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+
+    const Xbyak::Xmm data = ctx.reg_alloc.UseScratchXmm(args[0]);
+    const Xbyak::Xmm temp = xmm0;
+
+    if (code.HasHostFeature(HostFeature::SSSE3)) {
+        code.pxor(temp, temp);
+        code.phaddw(data, xmm0);
+        code.phaddw(data, xmm0);
+        code.phaddw(data, xmm0);
+    } else {
+        // Add upper elements to lower elements
+        code.pshufd(temp, data, 0b00'01'10'11);
+        code.paddw(data, temp);
+
+        // Add pairs of 16-bit values into 32-bit lanes
+        code.movdqa(temp, code.MConst(xword, 0x0001000100010001, 0x0001000100010001));
+        code.pmaddwd(data, temp);
+
+        // Sum adjacent 32-bit lanes
+        code.pshufd(temp, data, 0b10'11'00'01);
+        code.paddd(data, temp);
+        // Zero-extend lower 16-bits
+        code.pslldq(data, 14);
+        code.psrldq(data, 14);
+    }
+
+    ctx.reg_alloc.DefineValue(inst, data);
+}
+
+void EmitX64::EmitVectorReduceAdd32(EmitContext& ctx, IR::Inst* inst) {
+    auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+
+    const Xbyak::Xmm data = ctx.reg_alloc.UseScratchXmm(args[0]);
+    const Xbyak::Xmm temp = xmm0;
+
+    // Add upper elements to lower elements(reversed)
+    code.pshufd(temp, data, 0b00'01'10'11);
+    code.paddd(data, temp);
+
+    // Sum adjacent 32-bit lanes
+    if (code.HasHostFeature(HostFeature::SSSE3)) {
+        code.phaddd(data, data);
+    } else {
+        code.pshufd(temp, data, 0b10'11'00'01);
+        code.paddd(data, temp);
+    }
+
+    // shift upper-most result into lower-most lane
+    code.psrldq(data, 12);
+
+    ctx.reg_alloc.DefineValue(inst, data);
+}
+
+void EmitX64::EmitVectorReduceAdd64(EmitContext& ctx, IR::Inst* inst) {
+    auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+
+    const Xbyak::Xmm data = ctx.reg_alloc.UseScratchXmm(args[0]);
+    const Xbyak::Xmm temp = xmm0;
+
+    // Add upper elements to lower elements
+    code.pshufd(temp, data, 0b01'00'11'10);
+    code.paddq(data, temp);
+
+    // Zero-extend lower 64-bits
+    code.movq(data, data);
+
+    ctx.reg_alloc.DefineValue(inst, data);
+}
+
 static void EmitVectorRoundingHalvingAddSigned(size_t esize, EmitContext& ctx, IR::Inst* inst, BlockOfCode& code) {
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
 
