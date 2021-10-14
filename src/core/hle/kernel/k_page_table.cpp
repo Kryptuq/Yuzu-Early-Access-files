@@ -363,6 +363,8 @@ ResultCode KPageTable::UnmapProcessCodeMemory(VAddr dst_addr, VAddr src_addr, st
     block_manager->Update(src_addr, num_pages, KMemoryState::Normal,
                           KMemoryPermission::ReadAndWrite);
 
+    system.InvalidateCpuInstructionCacheRange(dst_addr, size);
+
     return ResultSuccess;
 }
 
