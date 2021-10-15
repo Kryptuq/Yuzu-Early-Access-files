@@ -285,6 +285,11 @@ if (USE_DISCORD_PRESENCE)
     target_compile_definitions(yuzu PRIVATE -DUSE_DISCORD_PRESENCE)
 endif()
 
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    find_package(Qt5 ${QT_VERSION} REQUIRED COMPONENTS DBus ${QT_PREFIX_HINT} ${YUZU_QT_NO_CMAKE_SYSTEM_PATH} REQUIRED)
+    target_link_libraries(yuzu PRIVATE Qt5::DBus)
+endif()
+
 if (YUZU_USE_QT_WEB_ENGINE)
     target_link_libraries(yuzu PRIVATE Qt5::WebEngineCore Qt5::WebEngineWidgets)
     target_compile_definitions(yuzu PRIVATE -DYUZU_USE_QT_WEB_ENGINE)

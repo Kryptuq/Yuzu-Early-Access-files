@@ -48,6 +48,12 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 
 #define QT_NO_OPENGL
 #include <QClipboard>
+#ifdef __linux__
+#include <QDBusConnection>
+#include <QDBusError>
+#include <QDBusInterface>
+#include <QDBusReply>
+#endif
 #include <QDesktopServices>
 #include <QDesktopWidget>
 #include <QDialogButtonBox>
@@ -1220,12 +1226,72 @@ void GMainWindow::OnDisplayTitleBars(bool show) {
 void GMainWindow::PreventOSSleep() {
 #ifdef _WIN32
     SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
+#elif defined(__linux__)
+    QDBusConnection bus = QDBusConnection::sessionBus();
+    if (bus.isConnected()) {
+        // Specs: https://specifications.freedesktop.org/idle-inhibit-spec/0.1/re01.html
+        const QString service = QStringLiteral("org.freedesktop.ScreenSaver");
+        const QString path = QStringLiteral("/org/freedesktop/ScreenSaver");
+
+        QDBusInterface screen_saver_interface(service, path, service, bus, this);
+        if (screen_saver_interface.isValid()) {
+            const QString method = QStringLiteral("Inhibit");
+            const QString application_name = QStringLiteral("org.yuzu-emu.Yuzu");
+            const QString reason_for_inhibit = QStringLiteral("Playing a game");
+
+            QDBusReply<uint32_t> reply =
+                screen_saver_interface.call(method, application_name, reason_for_inhibit);
+
+            if (reply.isValid()) {
+                screensaver_dbus_cookie = reply.value();
+                screensaver_inhibited = true;
+
+                LOG_INFO(Frontend, "Screen saver disabled successfully (cookie: {})",
+                         screensaver_dbus_cookie);
+            } else {
+                QDBusError error = reply.error();
+                LOG_ERROR(Frontend, "Could not disable screen saver: {} {}",
+                          error.message().toStdString(), error.name().toStdString());
+            }
+        }
+    }
 #endif
 }
 
 void GMainWindow::AllowOSSleep() {
 #ifdef _WIN32
     SetThreadExecutionState(ES_CONTINUOUS);
+#elif defined(__linux__)
+    if (!screensaver_inhibited) {
+        LOG_WARNING(Frontend, "Screen saver already enabled.");
+        return;
+    }
+
+    QDBusConnection bus = QDBusConnection::sessionBus();
+    if (bus.isConnected()) {
+        // Specs: https://specifications.freedesktop.org/idle-inhibit-spec/0.1/re01.html
+        const QString service = QStringLiteral("org.freedesktop.ScreenSaver");
+        const QString path = QStringLiteral("/org/freedesktop/ScreenSaver");
+
+        QDBusInterface screen_saver_interface(service, path, service, bus, this);
+        if (screen_saver_interface.isValid()) {
+            const QString method = QStringLiteral("UnInhibit");
+
+            QDBusReply<void> reply = screen_saver_interface.call(method, screensaver_dbus_cookie);
+
+            if (reply.isValid()) {
+                LOG_INFO(Frontend, "Screen saver enabled successfully (cookie: {})",
+                         screensaver_dbus_cookie);
+
+                screensaver_dbus_cookie = 0;
+                screensaver_inhibited = false;
+            } else {
+                QDBusError error = reply.error();
+                LOG_ERROR(Frontend, "Could not disable screen saver: {} {}",
+                          error.message().toStdString(), error.name().toStdString());
+            }
+        }
+    }
 #endif
 }
 

@@ -518,6 +518,9 @@ void Config::ReadValues() {
     ReadSetting("WebService", Settings::values.web_api_url);
     ReadSetting("WebService", Settings::values.yuzu_username);
     ReadSetting("WebService", Settings::values.yuzu_token);
+
+    // Network
+    ReadSetting("Network", Settings::values.network_interface);
 }
 
 void Config::Reload() {

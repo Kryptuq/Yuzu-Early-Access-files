@@ -428,6 +428,12 @@ web_api_url = https://api.yuzu-emu.org
 yuzu_username =
 yuzu_token =
 
+[Network]
+# Name of the network interface device to use with yuzu LAN play.
+# e.g. On *nix: 'enp7s0', 'wlp6s0u1u3u3', 'lo'
+# e.g. On Windows: 'Ethernet', 'Wi-Fi'
+network_interface =
+
 [AddOns]
 # Used to disable add-ons
 # List of title IDs of games that will have add-ons disabled (separated by '|'):

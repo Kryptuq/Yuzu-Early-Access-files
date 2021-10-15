@@ -342,6 +342,11 @@ private:
     bool auto_paused = false;
     QTimer mouse_hide_timer;
 
+#ifdef __linux__
+    bool screensaver_inhibited = false;
+    uint32_t screensaver_dbus_cookie;
+#endif
+
     // FS
     std::shared_ptr<FileSys::VfsFilesystem> vfs;
     std::unique_ptr<FileSys::ManualContentProvider> provider;

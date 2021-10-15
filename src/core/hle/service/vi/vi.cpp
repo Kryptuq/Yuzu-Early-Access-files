@@ -524,7 +524,9 @@ private:
         Disconnect = 11,
 
         AllocateBuffers = 13,
-        SetPreallocatedBuffer = 14
+        SetPreallocatedBuffer = 14,
+
+        GetBufferHistory = 17
     };
 
     void TransactParcel(Kernel::HLERequestContext& ctx) {
@@ -635,6 +637,14 @@ private:
         }
         case TransactionId::SetBufferCount: {
             LOG_WARNING(Service_VI, "(STUBBED) called, transaction=SetBufferCount");
+            [[maybe_unused]] const auto buffer = ctx.ReadBuffer();
+
+            IGBPEmptyResponseParcel response{};
+            ctx.WriteBuffer(response.Serialize());
+            break;
+        }
+        case TransactionId::GetBufferHistory: {
+            LOG_WARNING(Service_VI, "(STUBBED) called, transaction=GetBufferHistory");
             [[maybe_unused]] const auto buffer = ctx.ReadBuffer();
 
             IGBPEmptyResponseParcel response{};
