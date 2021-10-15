@@ -203,17 +203,17 @@
             <widget class="QComboBox" name="nvdec_emulation">
              <item>
               <property name="text">
-               <string>Disabled</string>
+               <string>No Video Output</string>
               </property>
              </item>
              <item>
               <property name="text">
-               <string>CPU Decoding</string>
+               <string>CPU Video Decoding</string>
               </property>
              </item>
              <item>
               <property name="text">
-               <string>GPU Decoding</string>
+               <string>GPU Video Decoding (Default)</string>
               </property>
              </item>
             </widget>
