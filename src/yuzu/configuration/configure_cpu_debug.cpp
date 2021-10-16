@@ -12,7 +12,7 @@
 #include "yuzu/configuration/configure_cpu_debug.h"
 
 ConfigureCpuDebug::ConfigureCpuDebug(const Core::System& system_, QWidget* parent)
-    : QWidget(parent), ui(new Ui::ConfigureCpuDebug), system{system_} {
+    : QWidget(parent), ui{std::make_unique<Ui::ConfigureCpuDebug>()}, system{system_} {
     ui->setupUi(this);
 
     SetConfiguration();

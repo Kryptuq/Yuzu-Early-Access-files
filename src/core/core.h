@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -104,9 +105,25 @@ struct PerfStatsResults;
 FileSys::VirtualFile GetGameFileFromPath(const FileSys::VirtualFilesystem& vfs,
                                          const std::string& path);
 
+/// Enumeration representing the return values of the System Initialize and Load process.
+enum class SystemResultStatus : u32 {
+    Success,             ///< Succeeded
+    ErrorNotInitialized, ///< Error trying to use core prior to initialization
+    ErrorGetLoader,      ///< Error finding the correct application loader
+    ErrorSystemFiles,    ///< Error in finding system files
+    ErrorSharedFont,     ///< Error in finding shared font
+    ErrorVideoCore,      ///< Error in the video core
+    ErrorUnknown,        ///< Any other error
+    ErrorLoader,         ///< The base for loader errors (too many to repeat)
+};
+
 class System {
 public:
     using CurrentBuildProcessID = std::array<u8, 0x20>;
+
+    explicit System();
+
+    ~System();
 
     System(const System&) = delete;
     System& operator=(const System&) = delete;
@@ -114,45 +131,23 @@ public:
     System(System&&) = delete;
     System& operator=(System&&) = delete;
 
-    ~System();
-
-    /**
-     * Gets the instance of the System singleton class.
-     * @returns Reference to the instance of the System singleton class.
-     */
-    [[deprecated("Use of the global system instance is deprecated")]] static System& GetInstance();
-
-    static void InitializeGlobalInstance();
-
-    /// Enumeration representing the return values of the System Initialize and Load process.
-    enum class ResultStatus : u32 {
-        Success,             ///< Succeeded
-        ErrorNotInitialized, ///< Error trying to use core prior to initialization
-        ErrorGetLoader,      ///< Error finding the correct application loader
-        ErrorSystemFiles,    ///< Error in finding system files
-        ErrorSharedFont,     ///< Error in finding shared font
-        ErrorVideoCore,      ///< Error in the video core
-        ErrorUnknown,        ///< Any other error
-        ErrorLoader,         ///< The base for loader errors (too many to repeat)
-    };
-
     /**
      * Run the OS and Application
      * This function will start emulation and run the relevant devices
      */
-    [[nodiscard]] ResultStatus Run();
+    [[nodiscard]] SystemResultStatus Run();
 
     /**
      * Pause the OS and Application
      * This function will pause emulation and stop the relevant devices
      */
-    [[nodiscard]] ResultStatus Pause();
+    [[nodiscard]] SystemResultStatus Pause();
 
     /**
      * Step the CPU one instruction
      * @return Result status, indicating whether or not the operation succeeded.
      */
-    [[nodiscard]] ResultStatus SingleStep();
+    [[nodiscard]] SystemResultStatus SingleStep();
 
     /**
      * Invalidate the CPU instruction caches
@@ -166,7 +161,8 @@ public:
     /// Shutdown the emulated system.
     void Shutdown();
 
-    void stallForGPU(bool pause);
+    std::unique_lock<std::mutex> StallCPU();
+    void UnstallCPU();
 
     /**
      * Load an executable application.
@@ -174,10 +170,11 @@ public:
      *                   input.
      * @param filepath String path to the executable application to load on the host file system.
      * @param program_index Specifies the index within the container of the program to launch.
-     * @returns ResultStatus code, indicating if the operation succeeded.
+     * @returns SystemResultStatus code, indicating if the operation succeeded.
      */
-    [[nodiscard]] ResultStatus Load(Frontend::EmuWindow& emu_window, const std::string& filepath,
-                                    u64 program_id = 0, std::size_t program_index = 0);
+    [[nodiscard]] SystemResultStatus Load(Frontend::EmuWindow& emu_window,
+                                          const std::string& filepath, u64 program_id = 0,
+                                          std::size_t program_index = 0);
 
     /**
      * Indicates if the emulated system is powered on (all subsystems initialized and able to run an
@@ -303,7 +300,7 @@ public:
     /// Gets the name of the current game
     [[nodiscard]] Loader::ResultStatus GetGameName(std::string& out) const;
 
-    void SetStatus(ResultStatus new_status, const char* details);
+    void SetStatus(SystemResultStatus new_status, const char* details);
 
     [[nodiscard]] const std::string& GetStatusDetails() const;
 
@@ -405,12 +402,8 @@ public:
     void ApplySettings();
 
 private:
-    System();
-
     struct Impl;
     std::unique_ptr<Impl> impl;
-
-    inline static std::unique_ptr<System> s_instance{};
 };
 
 } // namespace Core

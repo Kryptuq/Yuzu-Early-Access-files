@@ -8,7 +8,8 @@
 #include "ui_aboutdialog.h"
 #include "yuzu/about_dialog.h"
 
-AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent), ui(new Ui::AboutDialog) {
+AboutDialog::AboutDialog(QWidget* parent)
+    : QDialog(parent), ui{std::make_unique<Ui::AboutDialog>()} {
     const auto branch_name = std::string(Common::g_scm_branch);
     const auto description = std::string(Common::g_scm_desc);
     const auto build_id = std::string(Common::g_build_id);

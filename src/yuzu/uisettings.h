@@ -60,7 +60,7 @@ struct Values {
     Settings::BasicSetting<bool> confirm_before_closing{true, "confirmClose"};
     Settings::BasicSetting<bool> first_start{true, "firstStart"};
     Settings::BasicSetting<bool> pause_when_in_background{false, "pauseWhenInBackground"};
-    Settings::BasicSetting<bool> hide_mouse{false, "hideInactiveMouse"};
+    Settings::BasicSetting<bool> hide_mouse{true, "hideInactiveMouse"};
 
     Settings::BasicSetting<bool> select_user_on_boot{false, "select_user_on_boot"};
 

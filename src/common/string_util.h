@@ -63,7 +63,7 @@ template <typename InIt>
  * Creates a std::string from a fixed-size NUL-terminated char buffer. If the buffer isn't
  * NUL-terminated then the string ends at max_len characters.
  */
-[[nodiscard]] std::string StringFromFixedZeroTerminatedBuffer(const char* buffer,
+[[nodiscard]] std::string StringFromFixedZeroTerminatedBuffer(std::string_view buffer,
                                                               std::size_t max_len);
 
 /**

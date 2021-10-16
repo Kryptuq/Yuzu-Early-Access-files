@@ -86,15 +86,15 @@ void EmuThread::run() {
             }
 
             running_guard = true;
-            Core::System::ResultStatus result = system.Run();
-            if (result != Core::System::ResultStatus::Success) {
+            Core::SystemResultStatus result = system.Run();
+            if (result != Core::SystemResultStatus::Success) {
                 running_guard = false;
                 this->SetRunning(false);
                 emit ErrorThrown(result, system.GetStatusDetails());
             }
             running_wait.Wait();
             result = system.Pause();
-            if (result != Core::System::ResultStatus::Success) {
+            if (result != Core::SystemResultStatus::Success) {
                 running_guard = false;
                 this->SetRunning(false);
                 emit ErrorThrown(result, system.GetStatusDetails());

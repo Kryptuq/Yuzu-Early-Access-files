@@ -15,7 +15,7 @@
 #include "yuzu/uisettings.h"
 
 ConfigureDebug::ConfigureDebug(const Core::System& system_, QWidget* parent)
-    : QWidget(parent), ui(new Ui::ConfigureDebug), system{system_} {
+    : QWidget(parent), ui{std::make_unique<Ui::ConfigureDebug>()}, system{system_} {
     ui->setupUi(this);
     SetConfiguration();
 

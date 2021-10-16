@@ -16,7 +16,7 @@
 #include "yuzu/uisettings.h"
 
 ConfigureGeneral::ConfigureGeneral(const Core::System& system_, QWidget* parent)
-    : QWidget(parent), ui(new Ui::ConfigureGeneral), system{system_} {
+    : QWidget(parent), ui{std::make_unique<Ui::ConfigureGeneral>()}, system{system_} {
     ui->setupUi(this);
 
     SetupPerGameUI();

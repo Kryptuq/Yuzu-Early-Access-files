@@ -16,13 +16,17 @@
 #include <QWindow>
 
 #include "common/thread.h"
-#include "core/core.h"
 #include "core/frontend/emu_window.h"
 
 class GRenderWindow;
 class GMainWindow;
 class QKeyEvent;
 class QStringList;
+
+namespace Core {
+enum class SystemResultStatus : u32;
+class System;
+} // namespace Core
 
 namespace InputCommon {
 class InputSubsystem;
@@ -123,7 +127,7 @@ signals:
      */
     void DebugModeLeft();
 
-    void ErrorThrown(Core::System::ResultStatus, std::string);
+    void ErrorThrown(Core::SystemResultStatus, std::string);
 
     void LoadProgress(VideoCore::LoadCallbackStage stage, std::size_t value, std::size_t total);
 };

@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #ifdef YUZU_USE_QT_WEB_ENGINE
+#include <QApplication>
 #include <QKeyEvent>
 
 #include <QWebEngineProfile>

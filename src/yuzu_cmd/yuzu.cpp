@@ -146,9 +146,8 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    Core::System::InitializeGlobalInstance();
-    auto& system{Core::System::GetInstance()};
-    InputCommon::InputSubsystem input_subsystem;
+    Core::System system{};
+    InputCommon::InputSubsystem input_subsystem{};
 
     // Apply the command line arguments
     system.ApplySettings();
@@ -167,27 +166,27 @@ int main(int argc, char** argv) {
     system.SetFilesystem(std::make_shared<FileSys::RealVfsFilesystem>());
     system.GetFileSystemController().CreateFactories(*system.GetFilesystem());
 
-    const Core::System::ResultStatus load_result{system.Load(*emu_window, filepath)};
+    const Core::SystemResultStatus load_result{system.Load(*emu_window, filepath)};
 
     switch (load_result) {
-    case Core::System::ResultStatus::ErrorGetLoader:
+    case Core::SystemResultStatus::ErrorGetLoader:
         LOG_CRITICAL(Frontend, "Failed to obtain loader for {}!", filepath);
         return -1;
-    case Core::System::ResultStatus::ErrorLoader:
+    case Core::SystemResultStatus::ErrorLoader:
         LOG_CRITICAL(Frontend, "Failed to load ROM!");
         return -1;
-    case Core::System::ResultStatus::ErrorNotInitialized:
+    case Core::SystemResultStatus::ErrorNotInitialized:
         LOG_CRITICAL(Frontend, "CPUCore not initialized");
         return -1;
-    case Core::System::ResultStatus::ErrorVideoCore:
+    case Core::SystemResultStatus::ErrorVideoCore:
         LOG_CRITICAL(Frontend, "Failed to initialize VideoCore!");
         return -1;
-    case Core::System::ResultStatus::Success:
+    case Core::SystemResultStatus::Success:
         break; // Expected case
     default:
         if (static_cast<u32>(load_result) >
-            static_cast<u32>(Core::System::ResultStatus::ErrorLoader)) {
-            const u16 loader_id = static_cast<u16>(Core::System::ResultStatus::ErrorLoader);
+            static_cast<u32>(Core::SystemResultStatus::ErrorLoader)) {
+            const u16 loader_id = static_cast<u16>(Core::SystemResultStatus::ErrorLoader);
             const u16 error_id = static_cast<u16>(load_result) - loader_id;
             LOG_CRITICAL(Frontend,
                          "While attempting to load the ROM requested, an error occurred. Please "

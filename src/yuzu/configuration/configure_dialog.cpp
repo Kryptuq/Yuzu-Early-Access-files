@@ -36,7 +36,7 @@
 ConfigureDialog::ConfigureDialog(QWidget* parent, HotkeyRegistry& registry,
                                  InputCommon::InputSubsystem* input_subsystem,
                                  Core::System& system_)
-    : QDialog(parent), ui(new Ui::ConfigureDialog),
+    : QDialog(parent), ui{std::make_unique<Ui::ConfigureDialog>()},
       registry(registry), system{system_}, audio_tab{std::make_unique<ConfigureAudio>(system_,
                                                                                       this)},
       cpu_tab{std::make_unique<ConfigureCpu>(system_, this)},

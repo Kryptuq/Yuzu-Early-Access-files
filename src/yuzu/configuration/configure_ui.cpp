@@ -55,7 +55,7 @@ QString GetTranslatedRowTextName(size_t index) {
 } // Anonymous namespace
 
 ConfigureUi::ConfigureUi(Core::System& system_, QWidget* parent)
-    : QWidget(parent), ui(new Ui::ConfigureUi), system{system_} {
+    : QWidget(parent), ui{std::make_unique<Ui::ConfigureUi>()}, system{system_} {
     ui->setupUi(this);
 
     InitializeLanguageComboBox();

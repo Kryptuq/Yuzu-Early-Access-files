@@ -9,8 +9,8 @@
 #include "yuzu/configuration/configure_debug_tab.h"
 
 ConfigureDebugTab::ConfigureDebugTab(const Core::System& system_, QWidget* parent)
-    : QWidget(parent),
-      ui(new Ui::ConfigureDebugTab), debug_tab{std::make_unique<ConfigureDebug>(system_, this)},
+    : QWidget(parent), ui{std::make_unique<Ui::ConfigureDebugTab>()},
+      debug_tab{std::make_unique<ConfigureDebug>(system_, this)},
       cpu_debug_tab{std::make_unique<ConfigureCpuDebug>(system_, this)} {
     ui->setupUi(this);
 

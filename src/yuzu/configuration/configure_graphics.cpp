@@ -20,7 +20,7 @@
 #include "yuzu/configuration/configure_graphics.h"
 
 ConfigureGraphics::ConfigureGraphics(const Core::System& system_, QWidget* parent)
-    : QWidget(parent), ui(new Ui::ConfigureGraphics), system{system_} {
+    : QWidget(parent), ui{std::make_unique<Ui::ConfigureGraphics>()}, system{system_} {
     vulkan_device = Settings::values.vulkan_device.GetValue();
     RetrieveVulkanDevices();
 
