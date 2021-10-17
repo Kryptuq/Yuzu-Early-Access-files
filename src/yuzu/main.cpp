@@ -1732,7 +1732,7 @@ void GMainWindow::OnTransferableShaderCacheOpenFile(u64 program_id) {
     const auto shader_cache_folder_path{shader_cache_dir / fmt::format("{:016x}", program_id)};
     if (!Common::FS::CreateDirs(shader_cache_folder_path)) {
         QMessageBox::warning(this, tr("Error Opening Transferable Shader Cache"),
-                             tr("Filed to create the shader cache directory for this title."));
+                             tr("Failed to create the shader cache directory for this title."));
         return;
     }
     const auto shader_path_string{Common::FS::PathToUTF8String(shader_cache_folder_path)};

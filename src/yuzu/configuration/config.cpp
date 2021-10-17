@@ -918,8 +918,7 @@ void Config::ReadSystemValues() {
         const auto custom_rtc_enabled =
             ReadSetting(QStringLiteral("custom_rtc_enabled"), false).toBool();
         if (custom_rtc_enabled) {
-            Settings::values.custom_rtc =
-                std::chrono::seconds(ReadSetting(QStringLiteral("custom_rtc"), 0).toULongLong());
+            Settings::values.custom_rtc = ReadSetting(QStringLiteral("custom_rtc"), 0).toLongLong();
         } else {
             Settings::values.custom_rtc = std::nullopt;
         }
@@ -1450,9 +1449,7 @@ void Config::SaveSystemValues() {
         WriteSetting(QStringLiteral("custom_rtc_enabled"), Settings::values.custom_rtc.has_value(),
                      false);
         WriteSetting(QStringLiteral("custom_rtc"),
-                     QVariant::fromValue<long long>(
-                         Settings::values.custom_rtc.value_or(std::chrono::seconds{}).count()),
-                     0);
+                     QVariant::fromValue<long long>(Settings::values.custom_rtc.value_or(0)), 0);
     }
 
     WriteGlobalSetting(Settings::values.sound_index);

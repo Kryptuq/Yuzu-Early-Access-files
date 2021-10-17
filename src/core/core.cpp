@@ -196,8 +196,9 @@ struct System::Impl {
         cpu_manager.Initialize();
         core_timing.Initialize([&system]() { system.RegisterHostThread(); });
 
-        const auto current_time = std::chrono::duration_cast<std::chrono::seconds>(
-            std::chrono::system_clock::now().time_since_epoch());
+        const auto posix_time = std::chrono::system_clock::now().time_since_epoch();
+        const auto current_time =
+            std::chrono::duration_cast<std::chrono::seconds>(posix_time).count();
         Settings::values.custom_rtc_differential =
             Settings::values.custom_rtc.value_or(current_time) - current_time;
 

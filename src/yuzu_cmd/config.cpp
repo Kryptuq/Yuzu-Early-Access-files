@@ -412,8 +412,7 @@ void Config::ReadValues() {
 
     const auto custom_rtc_enabled = sdl2_config->GetBoolean("System", "custom_rtc_enabled", false);
     if (custom_rtc_enabled) {
-        Settings::values.custom_rtc =
-            std::chrono::seconds(sdl2_config->GetInteger("System", "custom_rtc", 0));
+        Settings::values.custom_rtc = sdl2_config->GetInteger("System", "custom_rtc", 0);
     } else {
         Settings::values.custom_rtc = std::nullopt;
     }

@@ -65,8 +65,7 @@ void ConfigureSystem::SetConfiguration() {
         QStringLiteral("%1")
             .arg(Settings::values.rng_seed.GetValue().value_or(0), 8, 16, QLatin1Char{'0'})
             .toUpper();
-    const auto rtc_time = Settings::values.custom_rtc.value_or(
-        std::chrono::seconds(QDateTime::currentSecsSinceEpoch()));
+    const auto rtc_time = Settings::values.custom_rtc.value_or(QDateTime::currentSecsSinceEpoch());
 
     ui->rng_seed_checkbox->setChecked(Settings::values.rng_seed.GetValue().has_value());
     ui->rng_seed_edit->setEnabled(Settings::values.rng_seed.GetValue().has_value() &&
@@ -75,7 +74,7 @@ void ConfigureSystem::SetConfiguration() {
 
     ui->custom_rtc_checkbox->setChecked(Settings::values.custom_rtc.has_value());
     ui->custom_rtc_edit->setEnabled(Settings::values.custom_rtc.has_value());
-    ui->custom_rtc_edit->setDateTime(QDateTime::fromSecsSinceEpoch(rtc_time.count()));
+    ui->custom_rtc_edit->setDateTime(QDateTime::fromSecsSinceEpoch(rtc_time));
 
     if (Settings::IsConfiguringGlobal()) {
         ui->combo_language->setCurrentIndex(Settings::values.language_index.GetValue());
@@ -108,10 +107,9 @@ void ConfigureSystem::ApplyConfiguration() {
     // to allow in-game time to be fast forwarded
     if (Settings::IsConfiguringGlobal()) {
         if (ui->custom_rtc_checkbox->isChecked()) {
-            Settings::values.custom_rtc =
-                std::chrono::seconds(ui->custom_rtc_edit->dateTime().toSecsSinceEpoch());
+            Settings::values.custom_rtc = ui->custom_rtc_edit->dateTime().toSecsSinceEpoch();
             if (system.IsPoweredOn()) {
-                const s64 posix_time{Settings::values.custom_rtc->count() +
+                const s64 posix_time{*Settings::values.custom_rtc +
                                      Service::Time::TimeManager::GetExternalTimeZoneOffset()};
                 system.GetTimeManager().UpdateLocalSystemClockTime(posix_time);
             }

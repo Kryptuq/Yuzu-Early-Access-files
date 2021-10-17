@@ -13,18 +13,19 @@
 #include "core/hle/service/time/time_manager.h"
 
 namespace Service::Time {
-
+namespace {
 constexpr Clock::TimeSpanType standard_network_clock_accuracy{0x0009356907420000ULL};
 
-static std::chrono::seconds GetSecondsSinceEpoch() {
-    return std::chrono::duration_cast<std::chrono::seconds>(
-               std::chrono::system_clock::now().time_since_epoch()) +
+s64 GetSecondsSinceEpoch() {
+    const auto time_since_epoch = std::chrono::system_clock::now().time_since_epoch();
+    return std::chrono::duration_cast<std::chrono::seconds>(time_since_epoch).count() +
            Settings::values.custom_rtc_differential;
 }
 
-static s64 GetExternalRtcValue() {
-    return GetSecondsSinceEpoch().count() + TimeManager::GetExternalTimeZoneOffset();
+s64 GetExternalRtcValue() {
+    return GetSecondsSinceEpoch() + TimeManager::GetExternalTimeZoneOffset();
 }
+} // Anonymous namespace
 
 struct TimeManager::Impl final {
     explicit Impl(Core::System& system)

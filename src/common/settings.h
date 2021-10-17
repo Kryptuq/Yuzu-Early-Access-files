@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
-#include <chrono>
 #include <map>
 #include <optional>
 #include <string>
@@ -487,9 +486,9 @@ struct Values {
     // System
     Setting<std::optional<u32>> rng_seed{std::optional<u32>(), "rng_seed"};
     // Measured in seconds since epoch
-    std::optional<std::chrono::seconds> custom_rtc;
+    std::optional<s64> custom_rtc;
     // Set on game boot, reset on stop. Seconds difference between current time and `custom_rtc`
-    std::chrono::seconds custom_rtc_differential;
+    s64 custom_rtc_differential;
 
     BasicSetting<s32> current_user{0, "current_user"};
     RangedSetting<s32> language_index{1, 0, 17, "language_index"};
