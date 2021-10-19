@@ -592,7 +592,8 @@ void RasterizerVulkan::EndTransformFeedback() {
 }
 
 void RasterizerVulkan::UpdateViewportsState(Tegra::Engines::Maxwell3D::Regs& regs) {
-    if (!state_tracker.TouchViewports()) {
+    if (!state_tracker.TouchViewports() &&
+        !state_tracker.ChangedYNegate(regs.screen_y_control.y_negate)) {
         return;
     }
     const std::array viewports{

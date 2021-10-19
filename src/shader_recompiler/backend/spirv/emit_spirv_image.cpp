@@ -355,11 +355,22 @@ Id EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value&
 Id EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
                                   Id coords, Id dref, Id bias_lc, const IR::Value& offset) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
-    const ImageOperands operands(ctx, info.has_bias != 0, false, info.has_lod_clamp != 0, bias_lc,
-                                 offset);
-    return Emit(&EmitContext::OpImageSparseSampleDrefImplicitLod,
-                &EmitContext::OpImageSampleDrefImplicitLod, ctx, inst, ctx.F32[1],
-                Texture(ctx, info, index), coords, dref, operands.MaskOptional(), operands.Span());
+    if (ctx.stage == Stage::Fragment) {
+        const ImageOperands operands(ctx, info.has_bias != 0, false, info.has_lod_clamp != 0,
+                                     bias_lc, offset);
+        return Emit(&EmitContext::OpImageSparseSampleDrefImplicitLod,
+                    &EmitContext::OpImageSampleDrefImplicitLod, ctx, inst, ctx.F32[1],
+                    Texture(ctx, info, index), coords, dref, operands.MaskOptional(),
+                    operands.Span());
+    } else {
+        // Implicit lods in compute behave on hardware as if sampling from LOD 0.
+        // This check is to ensure all drivers behave this way.
+        const Id lod{ctx.Const(0.0f)};
+        const ImageOperands operands(ctx, false, true, false, lod, offset);
+        return Emit(&EmitContext::OpImageSparseSampleDrefExplicitLod,
+                    &EmitContext::OpImageSampleDrefExplicitLod, ctx, inst, ctx.F32[1],
+                    Texture(ctx, info, index), coords, dref, operands.Mask(), operands.Span());
+    }
 }
 
 Id EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
