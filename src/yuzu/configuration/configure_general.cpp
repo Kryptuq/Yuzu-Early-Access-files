@@ -44,6 +44,7 @@ void ConfigureGeneral::SetConfiguration() {
     ui->toggle_user_on_boot->setChecked(UISettings::values.select_user_on_boot.GetValue());
     ui->toggle_background_pause->setChecked(UISettings::values.pause_when_in_background.GetValue());
     ui->toggle_hide_mouse->setChecked(UISettings::values.hide_mouse.GetValue());
+    ui->toggle_screen_saver->setChecked(Settings::values.disable_screen_saver.GetValue());
 
     ui->toggle_speed_limit->setChecked(Settings::values.use_speed_limit.GetValue());
     ui->speed_limit->setValue(Settings::values.speed_limit.GetValue());
@@ -88,6 +89,7 @@ void ConfigureGeneral::ApplyConfiguration() {
         UISettings::values.select_user_on_boot = ui->toggle_user_on_boot->isChecked();
         UISettings::values.pause_when_in_background = ui->toggle_background_pause->isChecked();
         UISettings::values.hide_mouse = ui->toggle_hide_mouse->isChecked();
+        Settings::values.disable_screen_saver = ui->toggle_screen_saver->isChecked();
 
         Settings::values.fps_cap.SetValue(ui->fps_cap->value());
 
@@ -136,6 +138,7 @@ void ConfigureGeneral::SetupPerGameUI() {
     ui->toggle_user_on_boot->setVisible(false);
     ui->toggle_background_pause->setVisible(false);
     ui->toggle_hide_mouse->setVisible(false);
+    ui->toggle_screen_saver->setVisible(false);
 
     ui->button_reset_defaults->setVisible(false);
 

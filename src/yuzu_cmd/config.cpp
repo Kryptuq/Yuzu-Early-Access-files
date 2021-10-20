@@ -482,6 +482,7 @@ void Config::ReadValues() {
     Settings::values.log_filter =
         sdl2_config->Get("Miscellaneous", Settings::values.log_filter.GetLabel(), "*:Trace");
     ReadSetting("Miscellaneous", Settings::values.use_dev_keys);
+    ReadSetting("Miscellaneous", Settings::values.disable_screen_saver);
 
     // Debugging
     Settings::values.record_frame_times =

@@ -565,6 +565,7 @@ struct Values {
     // Miscellaneous
     BasicSetting<std::string> log_filter{"*:Info", "log_filter"};
     BasicSetting<bool> use_dev_keys{false, "use_dev_keys"};
+    BasicSetting<bool> disable_screen_saver{true, "disable_screen_saver"};
 
     // Network
     BasicSetting<std::string> network_interface{std::string(), "network_interface"};

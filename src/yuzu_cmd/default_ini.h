@@ -391,6 +391,10 @@ log_filter = *:Trace
 # 0 (default): Disabled, 1: Enabled
 use_dev_keys =
 
+# Disables the screensaver while yuzu is in session.
+# 1 (defualt): Yes, 0 : No
+disable_screen_saver =
+
 [Debugging]
 # Record frame time data, can be found in the log directory. Boolean value
 record_frame_times =

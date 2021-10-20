@@ -48,12 +48,6 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 
 #define QT_NO_OPENGL
 #include <QClipboard>
-#ifdef __linux__
-#include <QDBusConnection>
-#include <QDBusError>
-#include <QDBusInterface>
-#include <QDBusReply>
-#endif
 #include <QDesktopServices>
 #include <QDesktopWidget>
 #include <QDialogButtonBox>
@@ -71,6 +65,10 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include <QSysInfo>
 #include <QUrl>
 #include <QtConcurrent/QtConcurrent>
+
+#ifdef HAVE_SDL2
+#include <SDL.h> // For SDL ScreenSaver functions
+#endif
 
 #include <fmt/format.h>
 #include "common/detached_tasks.h"
@@ -1094,20 +1092,23 @@ void GMainWindow::RestoreUIState() {
 }
 
 void GMainWindow::OnAppFocusStateChanged(Qt::ApplicationState state) {
-    if (!UISettings::values.pause_when_in_background) {
-        return;
-    }
     if (state != Qt::ApplicationHidden && state != Qt::ApplicationInactive &&
         state != Qt::ApplicationActive) {
         LOG_DEBUG(Frontend, "ApplicationState unusual flag: {} ", state);
     }
-    if (ui->action_Pause->isEnabled() &&
-        (state & (Qt::ApplicationHidden | Qt::ApplicationInactive))) {
-        auto_paused = true;
-        OnPauseGame();
-    } else if (ui->action_Start->isEnabled() && auto_paused && state == Qt::ApplicationActive) {
-        auto_paused = false;
-        OnStartGame();
+    if (state & (Qt::ApplicationHidden | Qt::ApplicationInactive)) {
+        if (UISettings::values.pause_when_in_background && ui->action_Pause->isEnabled()) {
+            auto_paused = true;
+            OnPauseGame();
+        }
+        AllowOSSleep();
+    } else if (state == Qt::ApplicationActive) {
+        if (UISettings::values.pause_when_in_background && ui->action_Start->isEnabled() &&
+            auto_paused) {
+            auto_paused = false;
+            OnStartGame();
+        }
+        PreventOSSleep();
     }
 }
 
@@ -1227,74 +1228,20 @@ void GMainWindow::OnDisplayTitleBars(bool show) {
 }
 
 void GMainWindow::PreventOSSleep() {
+    if (Settings::values.disable_screen_saver) {
 #ifdef _WIN32
-    SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
-#elif defined(__linux__)
-    QDBusConnection bus = QDBusConnection::sessionBus();
-    if (bus.isConnected()) {
-        // Specs: https://specifications.freedesktop.org/idle-inhibit-spec/0.1/re01.html
-        const QString service = QStringLiteral("org.freedesktop.ScreenSaver");
-        const QString path = QStringLiteral("/org/freedesktop/ScreenSaver");
-
-        QDBusInterface screen_saver_interface(service, path, service, bus, this);
-        if (screen_saver_interface.isValid()) {
-            const QString method = QStringLiteral("Inhibit");
-            const QString application_name = QStringLiteral("org.yuzu-emu.Yuzu");
-            const QString reason_for_inhibit = QStringLiteral("Playing a game");
-
-            QDBusReply<uint32_t> reply =
-                screen_saver_interface.call(method, application_name, reason_for_inhibit);
-
-            if (reply.isValid()) {
-                screensaver_dbus_cookie = reply.value();
-                screensaver_inhibited = true;
-
-                LOG_INFO(Frontend, "Screen saver disabled successfully (cookie: {})",
-                         screensaver_dbus_cookie);
-            } else {
-                QDBusError error = reply.error();
-                LOG_ERROR(Frontend, "Could not disable screen saver: {} {}",
-                          error.message().toStdString(), error.name().toStdString());
-            }
-        }
-    }
+        SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
+#elif defined(HAVE_SDL2)
+        SDL_DisableScreenSaver();
 #endif
+    }
 }
 
 void GMainWindow::AllowOSSleep() {
 #ifdef _WIN32
     SetThreadExecutionState(ES_CONTINUOUS);
-#elif defined(__linux__)
-    if (!screensaver_inhibited) {
-        LOG_WARNING(Frontend, "Screen saver already enabled.");
-        return;
-    }
-
-    QDBusConnection bus = QDBusConnection::sessionBus();
-    if (bus.isConnected()) {
-        // Specs: https://specifications.freedesktop.org/idle-inhibit-spec/0.1/re01.html
-        const QString service = QStringLiteral("org.freedesktop.ScreenSaver");
-        const QString path = QStringLiteral("/org/freedesktop/ScreenSaver");
-
-        QDBusInterface screen_saver_interface(service, path, service, bus, this);
-        if (screen_saver_interface.isValid()) {
-            const QString method = QStringLiteral("UnInhibit");
-
-            QDBusReply<void> reply = screen_saver_interface.call(method, screensaver_dbus_cookie);
-
-            if (reply.isValid()) {
-                LOG_INFO(Frontend, "Screen saver enabled successfully (cookie: {})",
-                         screensaver_dbus_cookie);
-
-                screensaver_dbus_cookie = 0;
-                screensaver_inhibited = false;
-            } else {
-                QDBusError error = reply.error();
-                LOG_ERROR(Frontend, "Could not disable screen saver: {} {}",
-                          error.message().toStdString(), error.name().toStdString());
-            }
-        }
-    }
+#elif defined(HAVE_SDL2)
+    SDL_EnableScreenSaver();
 #endif
 }
 
@@ -1332,10 +1279,12 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
                                            static_cast<u32>(CalloutFlag::DRDDeprecation);
         QMessageBox::warning(
             this, tr("Warning Outdated Game Format"),
-            tr("You are using the deconstructed ROM directory format for this game, which is an "
+            tr("You are using the deconstructed ROM directory format for this game, which is "
+               "an "
                "outdated format that has been superseded by others such as NCA, NAX, XCI, or "
                "NSP. Deconstructed ROM directories lack icons, metadata, and update "
-               "support.<br><br>For an explanation of the various Switch formats yuzu supports, <a "
+               "support.<br><br>For an explanation of the various Switch formats yuzu "
+               "supports, <a "
                "href='https://yuzu-emu.org/wiki/overview-of-switch-game-formats'>check out our "
                "wiki</a>. This message will not be shown again."));
     }
@@ -1353,7 +1302,9 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
                 tr("yuzu has encountered an error while running the video core, please see the "
                    "log for more details."
                    "For more information on accessing the log, please see the following page: "
-                   "<a href='https://community.citra-emu.org/t/how-to-upload-the-log-file/296'>How "
+                   "<a "
+                   "href='https://community.citra-emu.org/t/how-to-upload-the-log-file/"
+                   "296'>How "
                    "to "
                    "Upload the Log File</a>."
                    "Ensure that you have the latest graphics drivers for your GPU."));
@@ -1371,7 +1322,8 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
                     tr("Error while loading ROM! %1", "%1 signifies a numeric error code.")
                         .arg(QString::fromStdString(error_code));
                 const auto description =
-                    tr("%1<br>Please follow <a href='https://yuzu-emu.org/help/quickstart/'>the "
+                    tr("%1<br>Please follow <a "
+                       "href='https://yuzu-emu.org/help/quickstart/'>the "
                        "yuzu quickstart guide</a> to redump your files.<br>You can refer "
                        "to the yuzu wiki</a> or the yuzu Discord</a> for help.",
                        "%1 signifies an error string.")
@@ -1445,6 +1397,14 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
         SelectAndSetCurrentUser();
     }
 
+#if defined(HAVE_SDL2) && !defined(_WIN32)
+    SDL_InitSubSystem(SDL_INIT_VIDEO);
+    // SDL disables the screen saver by default, and setting the hint
+    // SDL_HINT_VIDEO_ALLOW_SCREENSAVER doesn't seem to work, so we just enable the screen saver
+    // for now.
+    SDL_EnableScreenSaver();
+#endif
+
     if (!LoadROM(filename, program_id, program_index))
         return;
 
@@ -1462,8 +1422,8 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
 
     connect(render_window, &GRenderWindow::Closed, this, &GMainWindow::OnStopGame);
     connect(render_window, &GRenderWindow::MouseActivity, this, &GMainWindow::OnMouseActivity);
-    // BlockingQueuedConnection is important here, it makes sure we've finished refreshing our views
-    // before the CPU continues
+    // BlockingQueuedConnection is important here, it makes sure we've finished refreshing our
+    // views before the CPU continues
     connect(emu_thread.get(), &EmuThread::DebugModeEntered, waitTreeWidget,
             &WaitTreeWidget::OnDebugModeEntered, Qt::BlockingQueuedConnection);
     connect(emu_thread.get(), &EmuThread::DebugModeLeft, waitTreeWidget,
@@ -1536,6 +1496,10 @@ void GMainWindow::ShutdownGame() {
     }
 
     AllowOSSleep();
+
+#if defined(HAVE_SDL2) && !defined(_WIN32)
+    SDL_QuitSubSystem(SDL_INIT_VIDEO);
+#endif
 
     discord_rpc->Pause();
     emu_thread->RequestStop();
@@ -2047,7 +2011,8 @@ void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pa
     const QStringList selections{tr("Full"), tr("Skeleton")};
     const auto res = QInputDialog::getItem(
         this, tr("Select RomFS Dump Mode"),
-        tr("Please select the how you would like the RomFS dumped.<br>Full will copy all of the "
+        tr("Please select the how you would like the RomFS dumped.<br>Full will copy all of "
+           "the "
            "files into the new directory while <br>skeleton will only create the directory "
            "structure."),
         selections, 0, false, &ok);
@@ -2309,7 +2274,8 @@ void GMainWindow::OnMenuInstallToNAND() {
     if (detected_base_install) {
         QMessageBox::warning(
             this, tr("Install Results"),
-            tr("To avoid possible conflicts, we discourage users from installing base games to the "
+            tr("To avoid possible conflicts, we discourage users from installing base games to "
+               "the "
                "NAND.\nPlease, only use this feature to install updates and DLC."));
     }
 
@@ -2721,13 +2687,13 @@ void GMainWindow::OnConfigure() {
     const auto result = configure_dialog.exec();
     if (result != QDialog::Accepted && !UISettings::values.configuration_applied &&
         !UISettings::values.reset_to_defaults) {
-        // Runs if the user hit Cancel or closed the window, and did not ever press the Apply button
-        // or `Reset to Defaults` button
+        // Runs if the user hit Cancel or closed the window, and did not ever press the Apply
+        // button or `Reset to Defaults` button
         return;
     } else if (result == QDialog::Accepted) {
         // Only apply new changes if user hit Okay
-        // This is here to avoid applying changes if the user hit Apply, made some changes, then hit
-        // Cancel
+        // This is here to avoid applying changes if the user hit Apply, made some changes, then
+        // hit Cancel
         configure_dialog.ApplyConfiguration();
     } else if (UISettings::values.reset_to_defaults) {
         LOG_INFO(Frontend, "Resetting all settings to defaults");
@@ -2743,8 +2709,8 @@ void GMainWindow::OnConfigure() {
             LOG_WARNING(Frontend, "Failed to remove game metadata cache files");
         }
 
-        // Explicitly save the game directories, since reinitializing config does not explicitly do
-        // so.
+        // Explicitly save the game directories, since reinitializing config does not explicitly
+        // do so.
         QVector<UISettings::GameDir> old_game_dirs = std::move(UISettings::values.game_dirs);
         QVector<u64> old_favorited_ids = std::move(UISettings::values.favorited_ids);
 
@@ -2789,6 +2755,12 @@ void GMainWindow::OnConfigure() {
     } else {
         render_window->removeEventFilter(render_window);
         render_window->setAttribute(Qt::WA_Hover, false);
+    }
+
+    if (emulation_running) {
+        PreventOSSleep();
+    } else {
+        AllowOSSleep();
     }
 
     if (UISettings::values.hide_mouse) {

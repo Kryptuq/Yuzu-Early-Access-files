@@ -738,6 +738,7 @@ void Config::ReadMiscellaneousValues() {
 
     ReadBasicSetting(Settings::values.log_filter);
     ReadBasicSetting(Settings::values.use_dev_keys);
+    ReadBasicSetting(Settings::values.disable_screen_saver);
 
     qt_config->endGroup();
 }
@@ -1296,6 +1297,7 @@ void Config::SaveMiscellaneousValues() {
 
     WriteBasicSetting(Settings::values.log_filter);
     WriteBasicSetting(Settings::values.use_dev_keys);
+    WriteBasicSetting(Settings::values.disable_screen_saver);
 
     qt_config->endGroup();
 }

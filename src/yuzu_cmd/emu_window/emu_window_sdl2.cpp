@@ -22,6 +22,9 @@ EmuWindow_SDL2::EmuWindow_SDL2(InputCommon::InputSubsystem* input_subsystem_, Co
         LOG_CRITICAL(Frontend, "Failed to initialize SDL2! Exiting...");
         exit(1);
     }
+    if (!Settings::values.disable_screen_saver) {
+        SDL_EnableScreenSaver();
+    }
     input_subsystem->Initialize();
     SDL_SetMainReady();
 }
