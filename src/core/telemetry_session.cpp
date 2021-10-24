@@ -229,8 +229,6 @@ void TelemetrySession::AddInitialInfo(Loader::AppLoader& app_loader,
     AddField(field_type, "Core_UseMultiCore", Settings::values.use_multi_core.GetValue());
     AddField(field_type, "Renderer_Backend",
              TranslateRenderer(Settings::values.renderer_backend.GetValue()));
-    AddField(field_type, "Renderer_ResolutionFactor",
-             Settings::values.resolution_factor.GetValue());
     AddField(field_type, "Renderer_UseSpeedLimit", Settings::values.use_speed_limit.GetValue());
     AddField(field_type, "Renderer_SpeedLimit", Settings::values.speed_limit.GetValue());
     AddField(field_type, "Renderer_UseDiskShaderCache",

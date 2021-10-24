@@ -21,8 +21,13 @@
 #include "core/memory.h"
 #include "core/perf_stats.h"
 #include "core/telemetry_session.h"
+#include "video_core/host_shaders/fxaa_frag.h"
+#include "video_core/host_shaders/fxaa_vert.h"
 #include "video_core/host_shaders/opengl_present_frag.h"
+#include "video_core/host_shaders/opengl_present_scaleforce_frag.h"
 #include "video_core/host_shaders/opengl_present_vert.h"
+#include "video_core/host_shaders/present_bicubic_frag.h"
+#include "video_core/host_shaders/present_gaussian_frag.h"
 #include "video_core/renderer_opengl/gl_rasterizer.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
 #include "video_core/renderer_opengl/gl_shader_util.h"
@@ -208,7 +213,9 @@ void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuf
     framebuffer_crop_rect = framebuffer.crop_rect;
 
     const VAddr framebuffer_addr{framebuffer.address + framebuffer.offset};
-    if (rasterizer.AccelerateDisplay(framebuffer, framebuffer_addr, framebuffer.stride)) {
+    screen_info.was_accelerated =
+        rasterizer.AccelerateDisplay(framebuffer, framebuffer_addr, framebuffer.stride);
+    if (screen_info.was_accelerated) {
         return;
     }
 
@@ -251,12 +258,25 @@ void RendererOpenGL::LoadColorToActiveGLTexture(u8 color_r, u8 color_g, u8 color
 
 void RendererOpenGL::InitOpenGLObjects() {
     // Create shader programs
+    fxaa_vertex = CreateProgram(HostShaders::FXAA_VERT, GL_VERTEX_SHADER);
+    fxaa_fragment = CreateProgram(HostShaders::FXAA_FRAG, GL_FRAGMENT_SHADER);
     present_vertex = CreateProgram(HostShaders::OPENGL_PRESENT_VERT, GL_VERTEX_SHADER);
-    present_fragment = CreateProgram(HostShaders::OPENGL_PRESENT_FRAG, GL_FRAGMENT_SHADER);
+    present_bilinear_fragment = CreateProgram(HostShaders::OPENGL_PRESENT_FRAG, GL_FRAGMENT_SHADER);
+    present_bicubic_fragment = CreateProgram(HostShaders::PRESENT_BICUBIC_FRAG, GL_FRAGMENT_SHADER);
+    present_gaussian_fragment =
+        CreateProgram(HostShaders::PRESENT_GAUSSIAN_FRAG, GL_FRAGMENT_SHADER);
+    present_scaleforce_fragment =
+        CreateProgram(fmt::format("#version 460\n{}", HostShaders::OPENGL_PRESENT_SCALEFORCE_FRAG),
+                      GL_FRAGMENT_SHADER);
 
     // Generate presentation sampler
     present_sampler.Create();
     glSamplerParameteri(present_sampler.handle, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glSamplerParameteri(present_sampler.handle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    present_sampler_nn.Create();
+    glSamplerParameteri(present_sampler_nn.handle, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glSamplerParameteri(present_sampler_nn.handle, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     // Generate VBO handle for drawing
     vertex_buffer.Create();
@@ -274,6 +294,8 @@ void RendererOpenGL::InitOpenGLObjects() {
 
     // Clear screen to black
     LoadColorToActiveGLTexture(0, 0, 0, 0, screen_info.texture);
+
+    fxaa_framebuffer.Create();
 }
 
 void RendererOpenGL::AddTelemetryFields() {
@@ -325,18 +347,130 @@ void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
     texture.resource.Release();
     texture.resource.Create(GL_TEXTURE_2D);
     glTextureStorage2D(texture.resource.handle, 1, internal_format, texture.width, texture.height);
+    fxaa_texture.Release();
+    fxaa_texture.Create(GL_TEXTURE_2D);
+    glTextureStorage2D(fxaa_texture.handle, 1, GL_RGBA16F,
+                       Settings::values.resolution_info.ScaleUp(screen_info.texture.width),
+                       Settings::values.resolution_info.ScaleUp(screen_info.texture.height));
+    glNamedFramebufferTexture(fxaa_framebuffer.handle, GL_COLOR_ATTACHMENT0, fxaa_texture.handle,
+                              0);
 }
 
 void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
+    // TODO: Signal state tracker about these changes
+    state_tracker.NotifyScreenDrawVertexArray();
+    state_tracker.NotifyPolygonModes();
+    state_tracker.NotifyViewport0();
+    state_tracker.NotifyScissor0();
+    state_tracker.NotifyColorMask(0);
+    state_tracker.NotifyBlend0();
+    state_tracker.NotifyFramebuffer();
+    state_tracker.NotifyFrontFace();
+    state_tracker.NotifyCullTest();
+    state_tracker.NotifyDepthTest();
+    state_tracker.NotifyStencilTest();
+    state_tracker.NotifyPolygonOffset();
+    state_tracker.NotifyRasterizeEnable();
+    state_tracker.NotifyFramebufferSRGB();
+    state_tracker.NotifyLogicOp();
+    state_tracker.NotifyClipControl();
+    state_tracker.NotifyAlphaTest();
+
+    state_tracker.ClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+
     // Update background color before drawing
     glClearColor(Settings::values.bg_red.GetValue() / 255.0f,
                  Settings::values.bg_green.GetValue() / 255.0f,
                  Settings::values.bg_blue.GetValue() / 255.0f, 1.0f);
 
+    glEnable(GL_CULL_FACE);
+    glDisable(GL_COLOR_LOGIC_OP);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_STENCIL_TEST);
+    glDisable(GL_POLYGON_OFFSET_FILL);
+    glDisable(GL_RASTERIZER_DISCARD);
+    glDisable(GL_ALPHA_TEST);
+    glDisablei(GL_BLEND, 0);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CW);
+    glColorMaski(0, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+    glBindTextureUnit(0, screen_info.display_texture);
+
+    if (Settings::values.anti_aliasing.GetValue() == Settings::AntiAliasing::Fxaa) {
+        program_manager.BindPresentPrograms(fxaa_vertex.handle, fxaa_fragment.handle);
+
+        glEnablei(GL_SCISSOR_TEST, 0);
+        auto viewport_width = screen_info.texture.width;
+        auto scissor_width = framebuffer_crop_rect.GetWidth();
+        if (scissor_width <= 0) {
+            scissor_width = viewport_width;
+        }
+        auto viewport_height = screen_info.texture.height;
+        auto scissor_height = framebuffer_crop_rect.GetHeight();
+        if (scissor_height <= 0) {
+            scissor_height = viewport_height;
+        }
+        if (screen_info.was_accelerated) {
+            viewport_width = Settings::values.resolution_info.ScaleUp(viewport_width);
+            scissor_width = Settings::values.resolution_info.ScaleUp(scissor_width);
+            viewport_height = Settings::values.resolution_info.ScaleUp(viewport_height);
+            scissor_height = Settings::values.resolution_info.ScaleUp(scissor_height);
+        }
+        glScissorIndexed(0, 0, 0, scissor_width, scissor_height);
+        glViewportIndexedf(0, 0.0f, 0.0f, static_cast<GLfloat>(viewport_width),
+                           static_cast<GLfloat>(viewport_height));
+        glDepthRangeIndexed(0, 0.0, 0.0);
+
+        glBindSampler(0, present_sampler.handle);
+        GLint old_read_fb;
+        GLint old_draw_fb;
+        glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &old_read_fb);
+        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &old_draw_fb);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fxaa_framebuffer.handle);
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, old_read_fb);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, old_draw_fb);
+
+        glBindTextureUnit(0, fxaa_texture.handle);
+    }
+
     // Set projection matrix
     const std::array ortho_matrix =
         MakeOrthographicMatrix(static_cast<float>(layout.width), static_cast<float>(layout.height));
-    program_manager.BindPresentPrograms(present_vertex.handle, present_fragment.handle);
+
+    GLuint fragment_handle;
+    const auto filter = Settings::values.scaling_filter.GetValue();
+    switch (filter) {
+    case Settings::ScalingFilter::NearestNeighbor:
+        fragment_handle = present_bilinear_fragment.handle;
+        break;
+    case Settings::ScalingFilter::Bilinear:
+        fragment_handle = present_bilinear_fragment.handle;
+        break;
+    case Settings::ScalingFilter::Bicubic:
+        fragment_handle = present_bicubic_fragment.handle;
+        break;
+    case Settings::ScalingFilter::Gaussian:
+        fragment_handle = present_gaussian_fragment.handle;
+        break;
+    case Settings::ScalingFilter::ScaleForce:
+        fragment_handle = present_scaleforce_fragment.handle;
+        break;
+    case Settings::ScalingFilter::Fsr:
+        LOG_WARNING(
+            Render_OpenGL,
+            "FidelityFX FSR Super Sampling is not supported in OpenGL, changing to ScaleForce");
+        fragment_handle = present_scaleforce_fragment.handle;
+        break;
+    default:
+        fragment_handle = present_bilinear_fragment.handle;
+        break;
+    }
+    program_manager.BindPresentPrograms(present_vertex.handle, fragment_handle);
     glProgramUniformMatrix3x2fv(present_vertex.handle, ModelViewMatrixLocation, 1, GL_FALSE,
                                 ortho_matrix.data());
 
@@ -370,6 +504,11 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
         scale_v = static_cast<f32>(framebuffer_crop_rect.GetHeight()) /
                   static_cast<f32>(screen_info.texture.height);
     }
+    if (Settings::values.anti_aliasing.GetValue() == Settings::AntiAliasing::Fxaa &&
+        !screen_info.was_accelerated) {
+        scale_u /= Settings::values.resolution_info.up_factor;
+        scale_v /= Settings::values.resolution_info.up_factor;
+    }
 
     const auto& screen = layout.screen;
     const std::array vertices = {
@@ -380,47 +519,14 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
     };
     glNamedBufferSubData(vertex_buffer.handle, 0, sizeof(vertices), std::data(vertices));
 
-    // TODO: Signal state tracker about these changes
-    state_tracker.NotifyScreenDrawVertexArray();
-    state_tracker.NotifyPolygonModes();
-    state_tracker.NotifyViewport0();
-    state_tracker.NotifyScissor0();
-    state_tracker.NotifyColorMask(0);
-    state_tracker.NotifyBlend0();
-    state_tracker.NotifyFramebuffer();
-    state_tracker.NotifyFrontFace();
-    state_tracker.NotifyCullTest();
-    state_tracker.NotifyDepthTest();
-    state_tracker.NotifyStencilTest();
-    state_tracker.NotifyPolygonOffset();
-    state_tracker.NotifyRasterizeEnable();
-    state_tracker.NotifyFramebufferSRGB();
-    state_tracker.NotifyLogicOp();
-    state_tracker.NotifyClipControl();
-    state_tracker.NotifyAlphaTest();
-
-    state_tracker.ClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
-    glEnable(GL_CULL_FACE);
     if (screen_info.display_srgb) {
         glEnable(GL_FRAMEBUFFER_SRGB);
     } else {
         glDisable(GL_FRAMEBUFFER_SRGB);
     }
-    glDisable(GL_COLOR_LOGIC_OP);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_STENCIL_TEST);
-    glDisable(GL_POLYGON_OFFSET_FILL);
-    glDisable(GL_RASTERIZER_DISCARD);
-    glDisable(GL_ALPHA_TEST);
-    glDisablei(GL_BLEND, 0);
     glDisablei(GL_SCISSOR_TEST, 0);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glCullFace(GL_BACK);
-    glFrontFace(GL_CW);
-    glColorMaski(0, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glViewportIndexedf(0, 0.0f, 0.0f, static_cast<GLfloat>(layout.width),
                        static_cast<GLfloat>(layout.height));
-    glDepthRangeIndexed(0, 0.0, 0.0);
 
     glEnableVertexAttribArray(PositionLocation);
     glEnableVertexAttribArray(TexCoordLocation);
@@ -440,8 +546,11 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
         glBindVertexBuffer(0, vertex_buffer.handle, 0, sizeof(ScreenRectVertex));
     }
 
-    glBindTextureUnit(0, screen_info.display_texture);
-    glBindSampler(0, present_sampler.handle);
+    if (Settings::values.scaling_filter.GetValue() != Settings::ScalingFilter::NearestNeighbor) {
+        glBindSampler(0, present_sampler.handle);
+    } else {
+        glBindSampler(0, present_sampler_nn.handle);
+    }
 
     glClear(GL_COLOR_BUFFER_BIT);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

@@ -411,12 +411,13 @@ if (CONAN_REQUIRED_LIBS)
     # Download conan.cmake automatically, you can also just copy the conan.cmake file
     if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
         message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-        file(DOWNLOAD "https://github.com/conan-io/cmake-conan/raw/v0.15/conan.cmake"
+        # TODO: Use a tagged release. The latest tagged release does not support VS2022 as of this writing.
+        file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/43e385830ee35377dbd2dcbe8d5a9e750301ea00/conan.cmake"
                         "${CMAKE_BINARY_DIR}/conan.cmake")
     endif()
     include(${CMAKE_BINARY_DIR}/conan.cmake)
 
-    conan_check(VERSION 1.24.0 REQUIRED)
+    conan_check(VERSION 1.41.0 REQUIRED)
 
     # Manually add iconv to fix a dep conflict between qt and sdl2
     # We don't need to add it through find_package or anything since the other two can find it just fine

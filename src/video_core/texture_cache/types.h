@@ -22,6 +22,13 @@ using ImageAllocId = SlotId;
 using SamplerId = SlotId;
 using FramebufferId = SlotId;
 
+/// Fake image ID for null image views
+constexpr ImageId NULL_IMAGE_ID{0};
+/// Image view ID for null descriptors
+constexpr ImageViewId NULL_IMAGE_VIEW_ID{0};
+/// Sampler ID for bugged sampler ids
+constexpr SamplerId NULL_SAMPLER_ID{0};
+
 enum class ImageType : u32 {
     e1D,
     e2D,

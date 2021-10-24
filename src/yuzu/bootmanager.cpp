@@ -629,11 +629,9 @@ void GRenderWindow::ReleaseRenderTarget() {
     main_context.reset();
 }
 
-void GRenderWindow::CaptureScreenshot(u32 res_scale, const QString& screenshot_path) {
-    VideoCore::RendererBase& renderer = system.Renderer();
-    if (res_scale == 0) {
-        res_scale = VideoCore::GetResolutionScaleFactor(renderer);
-    }
+void GRenderWindow::CaptureScreenshot(const QString& screenshot_path) {
+    auto& renderer = system.Renderer();
+    const f32 res_scale = VideoCore::GetResolutionScaleFactor(renderer);
 
     const Layout::FramebufferLayout layout{Layout::FrameLayoutFromResolutionScale(res_scale)};
     screenshot_image = QImage(QSize(layout.width, layout.height), QImage::Format_RGB32);

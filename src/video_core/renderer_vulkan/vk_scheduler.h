@@ -56,6 +56,9 @@ public:
     /// Update the pipeline to the current execution context.
     bool UpdateGraphicsPipeline(GraphicsPipeline* pipeline);
 
+    /// Update the rescaling state. Returns true if the state has to be updated.
+    bool UpdateRescaling(bool is_rescaling);
+
     /// Invalidates current command buffer state except for render passes
     void InvalidateState();
 
@@ -185,6 +188,8 @@ private:
         VkFramebuffer framebuffer = nullptr;
         VkExtent2D render_area = {0, 0};
         GraphicsPipeline* graphics_pipeline = nullptr;
+        bool is_rescaling = false;
+        bool rescaling_defined = false;
     };
 
     void WorkerThread(std::stop_token stop_token);

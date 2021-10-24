@@ -445,6 +445,10 @@ void EmitYDirection(EmitContext& ctx, IR::Inst& inst) {
     ctx.AddF32("{}=gl_FrontMaterial.ambient.a;", inst);
 }
 
+void EmitResolutionDownFactor(EmitContext& ctx, IR::Inst& inst) {
+    ctx.AddF32("{}=scaling.z;", inst);
+}
+
 void EmitLoadLocal(EmitContext& ctx, IR::Inst& inst, std::string_view word_offset) {
     ctx.AddU32("{}=lmem[{}];", inst, word_offset);
 }

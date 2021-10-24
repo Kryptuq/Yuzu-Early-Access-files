@@ -62,6 +62,7 @@ OPCODE(InvocationId,                                        U32,                
 OPCODE(SampleId,                                            U32,                                                                                            )
 OPCODE(IsHelperInvocation,                                  U1,                                                                                             )
 OPCODE(YDirection,                                          F32,                                                                                            )
+OPCODE(ResolutionDownFactor,                                F32,                                                                                            )
 
 // Undefined
 OPCODE(UndefU1,                                             U1,                                                                                             )
@@ -286,6 +287,8 @@ OPCODE(IAdd64,                                              U64,            U64,
 OPCODE(ISub32,                                              U32,            U32,            U32,                                                            )
 OPCODE(ISub64,                                              U64,            U64,            U64,                                                            )
 OPCODE(IMul32,                                              U32,            U32,            U32,                                                            )
+OPCODE(SDiv32,                                              U32,            U32,            U32,                                                            )
+OPCODE(UDiv32,                                              U32,            U32,            U32,                                                            )
 OPCODE(INeg32,                                              U32,            U32,                                                                            )
 OPCODE(INeg64,                                              U64,            U64,                                                                            )
 OPCODE(IAbs32,                                              U32,            U32,                                                                            )
@@ -489,6 +492,9 @@ OPCODE(ImageQueryLod,                                       F32x4,          Opaq
 OPCODE(ImageGradient,                                       F32x4,          Opaque,         Opaque,         Opaque,         Opaque,         Opaque,         )
 OPCODE(ImageRead,                                           U32x4,          Opaque,         Opaque,                                                         )
 OPCODE(ImageWrite,                                          Void,           Opaque,         Opaque,         U32x4,                                          )
+
+OPCODE(IsTextureScaled,                                     U1,             U32,                                                                            )
+OPCODE(IsImageScaled,                                       U1,             U32,                                                                            )
 
 // Atomic Image operations
 

@@ -19,15 +19,6 @@ using VideoCommon::ImageId;
 constexpr u32 MAX_TEXTURES = 64;
 constexpr u32 MAX_IMAGES = 16;
 
-template <typename Range>
-u32 AccumulateCount(const Range& range) {
-    u32 num{};
-    for (const auto& desc : range) {
-        num += desc.count;
-    }
-    return num;
-}
-
 size_t ComputePipelineKey::Hash() const noexcept {
     return static_cast<size_t>(
         Common::CityHash64(reinterpret_cast<const char*>(this), sizeof *this));
@@ -58,17 +49,17 @@ ComputePipeline::ComputePipeline(const Device& device, TextureCache& texture_cac
     std::copy_n(info.constant_buffer_used_sizes.begin(), uniform_buffer_sizes.size(),
                 uniform_buffer_sizes.begin());
 
-    num_texture_buffers = AccumulateCount(info.texture_buffer_descriptors);
-    num_image_buffers = AccumulateCount(info.image_buffer_descriptors);
+    num_texture_buffers = Shader::NumDescriptors(info.texture_buffer_descriptors);
+    num_image_buffers = Shader::NumDescriptors(info.image_buffer_descriptors);
 
-    const u32 num_textures{num_texture_buffers + AccumulateCount(info.texture_descriptors)};
+    const u32 num_textures{num_texture_buffers + Shader::NumDescriptors(info.texture_descriptors)};
     ASSERT(num_textures <= MAX_TEXTURES);
 
-    const u32 num_images{num_image_buffers + AccumulateCount(info.image_descriptors)};
+    const u32 num_images{num_image_buffers + Shader::NumDescriptors(info.image_descriptors)};
     ASSERT(num_images <= MAX_IMAGES);
 
     const bool is_glasm{assembly_program.handle != 0};
-    const u32 num_storage_buffers{AccumulateCount(info.storage_buffers_descriptors)};
+    const u32 num_storage_buffers{Shader::NumDescriptors(info.storage_buffers_descriptors)};
     use_storage_buffers =
         !is_glasm || num_storage_buffers < device.GetMaxGLASMStorageBufferBlocks();
     writes_global_memory = !use_storage_buffers &&
@@ -88,8 +79,7 @@ void ComputePipeline::Configure() {
     }
     texture_cache.SynchronizeComputeDescriptors();
 
-    std::array<ImageViewId, MAX_TEXTURES + MAX_IMAGES> image_view_ids;
-    boost::container::static_vector<u32, MAX_TEXTURES + MAX_IMAGES> image_view_indices;
+    boost::container::static_vector<VideoCommon::ImageViewInOut, MAX_TEXTURES + MAX_IMAGES> views;
     std::array<GLuint, MAX_TEXTURES> samplers;
     std::array<GLuint, MAX_TEXTURES> textures;
     std::array<GLuint, MAX_IMAGES> images;
@@ -119,33 +109,39 @@ void ComputePipeline::Configure() {
         }
         return TexturePair(gpu_memory.Read<u32>(addr), via_header_index);
     }};
-    const auto add_image{[&](const auto& desc) {
+    const auto add_image{[&](const auto& desc, bool blacklist) {
         for (u32 index = 0; index < desc.count; ++index) {
             const auto handle{read_handle(desc, index)};
-            image_view_indices.push_back(handle.first);
+            views.push_back({
+                .index = handle.first,
+                .blacklist = blacklist,
+                .id = {},
+            });
         }
     }};
     for (const auto& desc : info.texture_buffer_descriptors) {
         for (u32 index = 0; index < desc.count; ++index) {
             const auto handle{read_handle(desc, index)};
-            image_view_indices.push_back(handle.first);
+            views.push_back({handle.first});
             samplers[sampler_binding++] = 0;
         }
     }
-    std::ranges::for_each(info.image_buffer_descriptors, add_image);
+    for (const auto& desc : info.image_buffer_descriptors) {
+        add_image(desc, false);
+    }
     for (const auto& desc : info.texture_descriptors) {
         for (u32 index = 0; index < desc.count; ++index) {
             const auto handle{read_handle(desc, index)};
-            image_view_indices.push_back(handle.first);
+            views.push_back({handle.first});
 
             Sampler* const sampler = texture_cache.GetComputeSampler(handle.second);
             samplers[sampler_binding++] = sampler->Handle();
         }
     }
-    std::ranges::for_each(info.image_descriptors, add_image);
-
-    const std::span indices_span(image_view_indices.data(), image_view_indices.size());
-    texture_cache.FillComputeImageViews(indices_span, image_view_ids);
+    for (const auto& desc : info.image_descriptors) {
+        add_image(desc, desc.is_written);
+    }
+    texture_cache.FillComputeImageViews(std::span(views.data(), views.size()));
 
     if (assembly_program.handle != 0) {
         program_manager.BindComputeAssemblyProgram(assembly_program.handle);
@@ -161,7 +157,7 @@ void ComputePipeline::Configure() {
             if constexpr (is_image) {
                 is_written = desc.is_written;
             }
-            ImageView& image_view{texture_cache.GetImageView(image_view_ids[texbuf_index])};
+            ImageView& image_view{texture_cache.GetImageView(views[texbuf_index].id)};
             buffer_cache.BindComputeTextureBuffer(texbuf_index, image_view.GpuAddr(),
                                                   image_view.BufferSize(), image_view.format,
                                                   is_written, is_image);
@@ -177,23 +173,45 @@ void ComputePipeline::Configure() {
     buffer_cache.runtime.SetImagePointers(textures.data(), images.data());
     buffer_cache.BindHostComputeBuffers();
 
-    const ImageId* views_it{image_view_ids.data() + num_texture_buffers + num_image_buffers};
+    const VideoCommon::ImageViewInOut* views_it{views.data() + num_texture_buffers +
+                                                num_image_buffers};
     texture_binding += num_texture_buffers;
     image_binding += num_image_buffers;
 
+    u32 texture_scaling_mask{};
     for (const auto& desc : info.texture_descriptors) {
         for (u32 index = 0; index < desc.count; ++index) {
-            ImageView& image_view{texture_cache.GetImageView(*(views_it++))};
-            textures[texture_binding++] = image_view.Handle(desc.type);
+            ImageView& image_view{texture_cache.GetImageView((views_it++)->id)};
+            textures[texture_binding] = image_view.Handle(desc.type);
+            if (texture_cache.IsRescaling(image_view)) {
+                texture_scaling_mask |= 1u << texture_binding;
+            }
+            ++texture_binding;
         }
     }
+    u32 image_scaling_mask{};
     for (const auto& desc : info.image_descriptors) {
         for (u32 index = 0; index < desc.count; ++index) {
-            ImageView& image_view{texture_cache.GetImageView(*(views_it++))};
+            ImageView& image_view{texture_cache.GetImageView((views_it++)->id)};
             if (desc.is_written) {
                 texture_cache.MarkModification(image_view.image_id);
             }
-            images[image_binding++] = image_view.StorageView(desc.type, desc.format);
+            images[image_binding] = image_view.StorageView(desc.type, desc.format);
+            if (texture_cache.IsRescaling(image_view)) {
+                image_scaling_mask |= 1u << image_binding;
+            }
+            ++image_binding;
+        }
+    }
+    if (info.uses_rescaling_uniform) {
+        const f32 float_texture_scaling_mask{Common::BitCast<f32>(texture_scaling_mask)};
+        const f32 float_image_scaling_mask{Common::BitCast<f32>(image_scaling_mask)};
+        if (assembly_program.handle != 0) {
+            glProgramLocalParameter4fARB(GL_COMPUTE_PROGRAM_NV, 0, float_texture_scaling_mask,
+                                         float_image_scaling_mask, 0.0f, 0.0f);
+        } else {
+            glProgramUniform4f(source_program.handle, 0, float_texture_scaling_mask,
+                               float_image_scaling_mask, 0.0f, 0.0f);
         }
     }
     if (texture_binding != 0) {

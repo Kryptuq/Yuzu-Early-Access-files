@@ -60,7 +60,7 @@ FramebufferLayout DefaultFrameLayout(u32 width, u32 height);
  * Convenience method to get frame layout by resolution scale
  * @param res_scale resolution scale factor
  */
-FramebufferLayout FrameLayoutFromResolutionScale(u32 res_scale);
+FramebufferLayout FrameLayoutFromResolutionScale(f32 res_scale);
 
 /**
  * Convenience method to determine emulation aspect ratio

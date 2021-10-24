@@ -448,6 +448,9 @@ std::string EmitGLASM(const Profile& profile, const RuntimeInfo& runtime_info, I
         header += fmt::format("SHARED_MEMORY {};", program.shared_memory_size);
         header += fmt::format("SHARED shared_mem[]={{program.sharedmem}};");
     }
+    if (program.info.uses_rescaling_uniform) {
+        header += "PARAM scaling[1]={program.local[0..0]};";
+    }
     header += "TEMP ";
     for (size_t index = 0; index < ctx.reg_alloc.NumUsedRegisters(); ++index) {
         header += fmt::format("R{},", index);

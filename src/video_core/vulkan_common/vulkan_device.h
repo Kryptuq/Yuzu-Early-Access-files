@@ -40,6 +40,10 @@ public:
     VkFormat GetSupportedFormat(VkFormat wanted_format, VkFormatFeatureFlags wanted_usage,
                                 FormatType format_type) const;
 
+    /// Returns true if a format is supported.
+    bool IsFormatSupported(VkFormat wanted_format, VkFormatFeatureFlags wanted_usage,
+                           FormatType format_type) const;
+
     /// Reports a device loss.
     void ReportLoss() const;
 
@@ -369,10 +373,6 @@ private:
 
     /// Returns true if the device natively supports blitting depth stencil images.
     bool TestDepthStencilBlits() const;
-
-    /// Returns true if a format is supported.
-    bool IsFormatSupported(VkFormat wanted_format, VkFormatFeatureFlags wanted_usage,
-                           FormatType format_type) const;
 
     VkInstance instance;                                         ///< Vulkan instance.
     vk::DeviceDispatch dld;                                      ///< Device function pointers.

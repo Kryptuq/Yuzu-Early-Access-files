@@ -128,6 +128,15 @@ bool VKScheduler::UpdateGraphicsPipeline(GraphicsPipeline* pipeline) {
     return true;
 }
 
+bool VKScheduler::UpdateRescaling(bool is_rescaling) {
+    if (state.rescaling_defined && is_rescaling == state.is_rescaling) {
+        return false;
+    }
+    state.rescaling_defined = true;
+    state.is_rescaling = is_rescaling;
+    return true;
+}
+
 void VKScheduler::WorkerThread(std::stop_token stop_token) {
     Common::SetCurrentThreadName("yuzu:VulkanWorker");
     do {
@@ -227,6 +236,7 @@ void VKScheduler::AllocateNewContext() {
 
 void VKScheduler::InvalidateState() {
     state.graphics_pipeline = nullptr;
+    state.rescaling_defined = false;
     state_tracker.InvalidateCommandBufferState();
 }
 

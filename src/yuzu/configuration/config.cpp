@@ -825,6 +825,9 @@ void Config::ReadRendererValues() {
     ReadGlobalSetting(Settings::values.vulkan_device);
     ReadGlobalSetting(Settings::values.fullscreen_mode);
     ReadGlobalSetting(Settings::values.aspect_ratio);
+    ReadGlobalSetting(Settings::values.resolution_setup);
+    ReadGlobalSetting(Settings::values.scaling_filter);
+    ReadGlobalSetting(Settings::values.anti_aliasing);
     ReadGlobalSetting(Settings::values.max_anisotropy);
     ReadGlobalSetting(Settings::values.use_speed_limit);
     ReadGlobalSetting(Settings::values.speed_limit);
@@ -1366,6 +1369,18 @@ void Config::SaveRendererValues() {
                  static_cast<u32>(Settings::values.fullscreen_mode.GetDefault()),
                  Settings::values.fullscreen_mode.UsingGlobal());
     WriteGlobalSetting(Settings::values.aspect_ratio);
+    WriteSetting(QString::fromStdString(Settings::values.resolution_setup.GetLabel()),
+                 static_cast<u32>(Settings::values.resolution_setup.GetValue(global)),
+                 static_cast<u32>(Settings::values.resolution_setup.GetDefault()),
+                 Settings::values.resolution_setup.UsingGlobal());
+    WriteSetting(QString::fromStdString(Settings::values.scaling_filter.GetLabel()),
+                 static_cast<u32>(Settings::values.scaling_filter.GetValue(global)),
+                 static_cast<u32>(Settings::values.scaling_filter.GetDefault()),
+                 Settings::values.scaling_filter.UsingGlobal());
+    WriteSetting(QString::fromStdString(Settings::values.anti_aliasing.GetLabel()),
+                 static_cast<u32>(Settings::values.anti_aliasing.GetValue(global)),
+                 static_cast<u32>(Settings::values.anti_aliasing.GetDefault()),
+                 Settings::values.anti_aliasing.UsingGlobal());
     WriteGlobalSetting(Settings::values.max_anisotropy);
     WriteGlobalSetting(Settings::values.use_speed_limit);
     WriteGlobalSetting(Settings::values.speed_limit);

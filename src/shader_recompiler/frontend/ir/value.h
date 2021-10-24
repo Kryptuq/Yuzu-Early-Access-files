@@ -116,10 +116,10 @@ public:
 class Inst : public boost::intrusive::list_base_hook<> {
 public:
     explicit Inst(IR::Opcode op_, u32 flags_) noexcept;
+    explicit Inst(const Inst& base);
     ~Inst();
 
     Inst& operator=(const Inst&) = delete;
-    Inst(const Inst&) = delete;
 
     Inst& operator=(Inst&&) = delete;
     Inst(Inst&&) = delete;

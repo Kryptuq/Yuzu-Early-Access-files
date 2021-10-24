@@ -735,6 +735,8 @@ void GMainWindow::InitializeWidgets() {
 
     shader_building_label = new QLabel();
     shader_building_label->setToolTip(tr("The amount of shaders currently being built"));
+    res_scale_label = new QLabel();
+    res_scale_label->setToolTip(tr("The current selected resolution scaling multiplier."));
     emu_speed_label = new QLabel();
     emu_speed_label->setToolTip(
         tr("Current emulation speed. Values higher or lower than 100% "
@@ -747,8 +749,8 @@ void GMainWindow::InitializeWidgets() {
         tr("Time taken to emulate a Switch frame, not counting framelimiting or v-sync. For "
            "full-speed emulation this should be at most 16.67 ms."));
 
-    for (auto& label :
-         {shader_building_label, emu_speed_label, game_fps_label, emu_frametime_label}) {
+    for (auto& label : {shader_building_label, res_scale_label, emu_speed_label, game_fps_label,
+                        emu_frametime_label}) {
         label->setVisible(false);
         label->setFrameStyle(QFrame::NoFrame);
         label->setContentsMargins(4, 0, 4, 0);
@@ -759,6 +761,55 @@ void GMainWindow::InitializeWidgets() {
     tas_label->setObjectName(QStringLiteral("TASlabel"));
     tas_label->setFocusPolicy(Qt::NoFocus);
     statusBar()->insertPermanentWidget(0, tas_label);
+
+    // setup AA button
+    aa_status_button = new QPushButton();
+    aa_status_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
+    aa_status_button->setFocusPolicy(Qt::NoFocus);
+    connect(aa_status_button, &QPushButton::clicked, [&] {
+        auto aa_mode = Settings::values.anti_aliasing.GetValue();
+        if (aa_mode == Settings::AntiAliasing::LastAA) {
+            aa_mode = Settings::AntiAliasing::None;
+        } else {
+            aa_mode = static_cast<Settings::AntiAliasing>(static_cast<u32>(aa_mode) + 1);
+        }
+        Settings::values.anti_aliasing.SetValue(aa_mode);
+        aa_status_button->setChecked(true);
+        UpdateAAText();
+    });
+    UpdateAAText();
+    aa_status_button->setCheckable(true);
+    aa_status_button->setChecked(true);
+    statusBar()->insertPermanentWidget(0, aa_status_button);
+
+    // Setup Filter button
+    filter_status_button = new QPushButton();
+    filter_status_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
+    filter_status_button->setFocusPolicy(Qt::NoFocus);
+    connect(filter_status_button, &QPushButton::clicked, [&] {
+        auto filter = Settings::values.scaling_filter.GetValue();
+        if (filter == Settings::ScalingFilter::LastFilter) {
+            filter = Settings::ScalingFilter::NearestNeighbor;
+        } else {
+            filter = static_cast<Settings::ScalingFilter>(static_cast<u32>(filter) + 1);
+        }
+        if (Settings::values.renderer_backend.GetValue() == Settings::RendererBackend::OpenGL &&
+            filter == Settings::ScalingFilter::Fsr) {
+            filter = Settings::ScalingFilter::NearestNeighbor;
+        }
+        Settings::values.scaling_filter.SetValue(filter);
+        filter_status_button->setChecked(true);
+        UpdateFilterText();
+    });
+    auto filter = Settings::values.scaling_filter.GetValue();
+    if (Settings::values.renderer_backend.GetValue() == Settings::RendererBackend::OpenGL &&
+        filter == Settings::ScalingFilter::Fsr) {
+        Settings::values.scaling_filter.SetValue(Settings::ScalingFilter::NearestNeighbor);
+    }
+    UpdateFilterText();
+    filter_status_button->setCheckable(true);
+    filter_status_button->setChecked(true);
+    statusBar()->insertPermanentWidget(0, filter_status_button);
 
     // Setup Dock button
     dock_status_button = new QPushButton();
@@ -830,6 +881,11 @@ void GMainWindow::InitializeWidgets() {
             Settings::values.renderer_backend.SetValue(Settings::RendererBackend::Vulkan);
         } else {
             Settings::values.renderer_backend.SetValue(Settings::RendererBackend::OpenGL);
+            const auto filter = Settings::values.scaling_filter.GetValue();
+            if (filter == Settings::ScalingFilter::Fsr) {
+                Settings::values.scaling_filter.SetValue(Settings::ScalingFilter::NearestNeighbor);
+                UpdateFilterText();
+            }
         }
 
         system->ApplySettings();
@@ -1545,6 +1601,7 @@ void GMainWindow::ShutdownGame() {
     // Disable status bar updates
     status_bar_update_timer.stop();
     shader_building_label->setVisible(false);
+    res_scale_label->setVisible(false);
     emu_speed_label->setVisible(false);
     game_fps_label->setVisible(false);
     emu_frametime_label->setVisible(false);
@@ -2907,8 +2964,7 @@ void GMainWindow::OnCaptureScreenshot() {
         }
     }
 #endif
-    render_window->CaptureScreenshot(UISettings::values.screenshot_resolution_factor.GetValue(),
-                                     filename);
+    render_window->CaptureScreenshot(filename);
 }
 
 // TODO: Written 2020-10-01: Remove per-game config migration code when it is irrelevant
@@ -2999,6 +3055,11 @@ void GMainWindow::UpdateStatusBar() {
         shader_building_label->setVisible(false);
     }
 
+    const auto res_info = Settings::values.resolution_info;
+    const auto res_scale = res_info.up_factor;
+    res_scale_label->setText(
+        tr("Scale: %1x", "%1 is the resolution scaling factor").arg(res_scale));
+
     if (Settings::values.use_speed_limit.GetValue()) {
         emu_speed_label->setText(tr("Speed: %1% / %2%")
                                      .arg(results.emulation_speed * 100.0, 0, 'f', 0)
@@ -3014,6 +3075,7 @@ void GMainWindow::UpdateStatusBar() {
     }
     emu_frametime_label->setText(tr("Frame: %1 ms").arg(results.frametime * 1000.0, 0, 'f', 2));
 
+    res_scale_label->setVisible(true);
     emu_speed_label->setVisible(!Settings::values.use_multi_core.GetValue());
     game_fps_label->setVisible(true);
     emu_frametime_label->setVisible(true);
@@ -3043,11 +3105,55 @@ void GMainWindow::UpdateGPUAccuracyButton() {
     }
 }
 
+void GMainWindow::UpdateFilterText() {
+    const auto filter = Settings::values.scaling_filter.GetValue();
+    switch (filter) {
+    case Settings::ScalingFilter::NearestNeighbor:
+        filter_status_button->setText(tr("NEAREST"));
+        break;
+    case Settings::ScalingFilter::Bilinear:
+        filter_status_button->setText(tr("BILINEAR"));
+        break;
+    case Settings::ScalingFilter::Bicubic:
+        filter_status_button->setText(tr("BICUBIC"));
+        break;
+    case Settings::ScalingFilter::Gaussian:
+        filter_status_button->setText(tr("GAUSSIAN"));
+        break;
+    case Settings::ScalingFilter::ScaleForce:
+        filter_status_button->setText(tr("SCALEFORCE"));
+        break;
+    case Settings::ScalingFilter::Fsr:
+        filter_status_button->setText(tr("AMD'S FIDELITYFX SR"));
+        break;
+    default:
+        filter_status_button->setText(tr("BILINEAR"));
+        break;
+    }
+}
+
+void GMainWindow::UpdateAAText() {
+    const auto aa_mode = Settings::values.anti_aliasing.GetValue();
+    switch (aa_mode) {
+    case Settings::AntiAliasing::Fxaa:
+        aa_status_button->setText(tr("FXAA"));
+        break;
+    case Settings::AntiAliasing::None:
+        aa_status_button->setText(tr("NO AA"));
+        break;
+    default:
+        aa_status_button->setText(tr("FXAA"));
+        break;
+    }
+}
+
 void GMainWindow::UpdateStatusButtons() {
     dock_status_button->setChecked(Settings::values.use_docked_mode.GetValue());
     renderer_status_button->setChecked(Settings::values.renderer_backend.GetValue() ==
                                        Settings::RendererBackend::Vulkan);
     UpdateGPUAccuracyButton();
+    UpdateFilterText();
+    UpdateAAText();
 }
 
 void GMainWindow::UpdateUISettings() {

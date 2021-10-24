@@ -69,8 +69,7 @@ NvResult nvhost_nvdec_common::Submit(const std::vector<u8>& input, std::vector<u
     std::vector<Reloc> relocs(params.relocation_count);
     std::vector<u32> reloc_shifts(params.relocation_count);
     std::vector<SyncptIncr> syncpt_increments(params.syncpoint_count);
-    std::vector<SyncptIncr> wait_checks(params.syncpoint_count);
-    std::vector<Fence> fences(params.fence_count);
+    std::vector<u32> fence_thresholds(params.fence_count);
 
     // Slice input into their respective buffers
     std::size_t offset = sizeof(IoctlSubmit);
@@ -78,15 +77,13 @@ NvResult nvhost_nvdec_common::Submit(const std::vector<u8>& input, std::vector<u
     offset += SliceVectors(input, relocs, params.relocation_count, offset);
     offset += SliceVectors(input, reloc_shifts, params.relocation_count, offset);
     offset += SliceVectors(input, syncpt_increments, params.syncpoint_count, offset);
-    offset += SliceVectors(input, wait_checks, params.syncpoint_count, offset);
-    offset += SliceVectors(input, fences, params.fence_count, offset);
+    offset += SliceVectors(input, fence_thresholds, params.fence_count, offset);
 
     auto& gpu = system.GPU();
     if (gpu.UseNvdec()) {
         for (std::size_t i = 0; i < syncpt_increments.size(); i++) {
             const SyncptIncr& syncpt_incr = syncpt_increments[i];
-            fences[i].id = syncpt_incr.id;
-            fences[i].value =
+            fence_thresholds[i] =
                 syncpoint_manager.IncreaseSyncpoint(syncpt_incr.id, syncpt_incr.increments);
         }
     }
@@ -98,11 +95,6 @@ NvResult nvhost_nvdec_common::Submit(const std::vector<u8>& input, std::vector<u
                                   cmdlist.size() * sizeof(u32));
         gpu.PushCommandBuffer(cmdlist);
     }
-    if (gpu.UseNvdec()) {
-        fences[0].value = syncpoint_manager.IncreaseSyncpoint(fences[0].id, 1);
-        Tegra::ChCommandHeaderList cmdlist{{(4 << 28) | fences[0].id}};
-        gpu.PushCommandBuffer(cmdlist);
-    }
     std::memcpy(output.data(), &params, sizeof(IoctlSubmit));
     // Some games expect command_buffers to be written back
     offset = sizeof(IoctlSubmit);
@@ -110,8 +102,7 @@ NvResult nvhost_nvdec_common::Submit(const std::vector<u8>& input, std::vector<u
     offset += WriteVectors(output, relocs, offset);
     offset += WriteVectors(output, reloc_shifts, offset);
     offset += WriteVectors(output, syncpt_increments, offset);
-    offset += WriteVectors(output, wait_checks, offset);
-    offset += WriteVectors(output, fences, offset);
+    offset += WriteVectors(output, fence_thresholds, offset);
 
     return NvResult::Success;
 }

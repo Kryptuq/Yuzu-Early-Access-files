@@ -12,8 +12,8 @@
 
 #include <SDL.h>
 
+#include "common/atomic_threadsafe_queue.h"
 #include "common/common_types.h"
-#include "common/threadsafe_queue.h"
 #include "input_common/sdl/sdl.h"
 
 union SDL_Event;
@@ -59,7 +59,7 @@ public:
 
     /// Used by the Pollers during config
     std::atomic<bool> polling = false;
-    Common::SPSCQueue<SDL_Event> event_queue;
+    Common::MPMCQueue<SDL_Event> event_queue{1024};
 
     std::vector<Common::ParamPackage> GetInputDevices() override;
 

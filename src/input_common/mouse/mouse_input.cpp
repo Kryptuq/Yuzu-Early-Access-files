@@ -52,7 +52,7 @@ void Mouse::UpdateYuzuSettings() {
         return;
     }
 
-    mouse_queue.Push(MouseStatus{
+    mouse_queue.push(MouseStatus{
         .button = last_button,
     });
 }
@@ -153,7 +153,6 @@ void Mouse::ReleaseAllButtons() {
 void Mouse::BeginConfiguration() {
     buttons = 0;
     last_button = MouseButton::Undefined;
-    mouse_queue.Clear();
     configuring = true;
 }
 
@@ -165,7 +164,6 @@ void Mouse::EndConfiguration() {
         info.data.axis = {0, 0};
     }
     last_button = MouseButton::Undefined;
-    mouse_queue.Clear();
     configuring = false;
 }
 
@@ -205,11 +203,11 @@ bool Mouse::UnlockButton(std::size_t button_) {
     return button_state;
 }
 
-Common::SPSCQueue<MouseStatus>& Mouse::GetMouseQueue() {
+Common::MPMCQueue<MouseStatus>& Mouse::GetMouseQueue() {
     return mouse_queue;
 }
 
-const Common::SPSCQueue<MouseStatus>& Mouse::GetMouseQueue() const {
+const Common::MPMCQueue<MouseStatus>& Mouse::GetMouseQueue() const {
     return mouse_queue;
 }
 

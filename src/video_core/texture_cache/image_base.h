@@ -33,6 +33,12 @@ enum class ImageFlagBits : u32 {
                           ///< garbage collection priority
     Alias = 1 << 11,      ///< This image has aliases and has priority on garbage
                           ///< collection
+
+    // Rescaler
+    Rescaled = 1 << 12,
+    CheckingRescalable = 1 << 13,
+    IsRescalable = 1 << 14,
+    Blacklisted = 1 << 15,
 };
 DECLARE_ENUM_FLAG_OPERATORS(ImageFlagBits)
 
@@ -43,8 +49,11 @@ struct AliasedImage {
     ImageId id;
 };
 
+struct NullImageParams {};
+
 struct ImageBase {
     explicit ImageBase(const ImageInfo& info, GPUVAddr gpu_addr, VAddr cpu_addr);
+    explicit ImageBase(const NullImageParams&);
 
     [[nodiscard]] std::optional<SubresourceBase> TryFindBase(GPUVAddr other_addr) const noexcept;
 
@@ -68,11 +77,18 @@ struct ImageBase {
     void CheckBadOverlapState();
     void CheckAliasState();
 
+    bool HasScaled() {
+        return has_scaled;
+    }
+
     ImageInfo info;
 
     u32 guest_size_bytes = 0;
     u32 unswizzled_size_bytes = 0;
     u32 converted_size_bytes = 0;
+    u32 scale_rating = 0;
+    u64 scale_tick = 0;
+    bool has_scaled = false;
     ImageFlagBits flags = ImageFlagBits::CpuModified;
 
     GPUVAddr gpu_addr = 0;

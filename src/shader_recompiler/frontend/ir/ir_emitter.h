@@ -102,6 +102,8 @@ public:
     [[nodiscard]] U1 IsHelperInvocation();
     [[nodiscard]] F32 YDirection();
 
+    [[nodiscard]] F32 ResolutionDownFactor();
+
     [[nodiscard]] U32 LaneId();
 
     [[nodiscard]] U32 LoadGlobalU8(const U64& address);
@@ -207,6 +209,7 @@ public:
     [[nodiscard]] U32U64 IAdd(const U32U64& a, const U32U64& b);
     [[nodiscard]] U32U64 ISub(const U32U64& a, const U32U64& b);
     [[nodiscard]] U32 IMul(const U32& a, const U32& b);
+    [[nodiscard]] U32 IDiv(const U32& a, const U32& b, bool is_signed = false);
     [[nodiscard]] U32U64 INeg(const U32U64& value);
     [[nodiscard]] U32 IAbs(const U32& value);
     [[nodiscard]] U32U64 ShiftLeftLogical(const U32U64& base, const U32& shift);
@@ -356,6 +359,10 @@ public:
                                        TextureInstInfo info);
     [[nodiscard]] Value ImageAtomicExchange(const Value& handle, const Value& coords,
                                             const Value& value, TextureInstInfo info);
+
+    [[nodiscard]] U1 IsTextureScaled(const U32& index);
+    [[nodiscard]] U1 IsImageScaled(const U32& index);
+
     [[nodiscard]] U1 VoteAll(const U1& value);
     [[nodiscard]] U1 VoteAny(const U1& value);
     [[nodiscard]] U1 VoteEqual(const U1& value);

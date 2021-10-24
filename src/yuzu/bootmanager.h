@@ -178,7 +178,7 @@ public:
 
     bool IsLoadingComplete() const;
 
-    void CaptureScreenshot(u32 res_scale, const QString& screenshot_path);
+    void CaptureScreenshot(const QString& screenshot_path);
 
     std::pair<u32, u32> ScaleTouch(const QPointF& pos) const;
 

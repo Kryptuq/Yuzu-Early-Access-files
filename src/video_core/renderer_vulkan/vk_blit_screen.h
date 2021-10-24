@@ -34,6 +34,7 @@ namespace Vulkan {
 struct ScreenInfo;
 
 class Device;
+class FSR;
 class RasterizerVulkan;
 class VKScheduler;
 class VKSwapchain;
@@ -66,6 +67,9 @@ public:
     [[nodiscard]] vk::Framebuffer CreateFramebuffer(const VkImageView& image_view,
                                                     VkExtent2D extent);
 
+    [[nodiscard]] vk::Framebuffer CreateFramebuffer(const VkImageView& image_view,
+                                                    VkExtent2D extent, vk::RenderPass& rd);
+
 private:
     struct BufferData;
 
@@ -74,6 +78,7 @@ private:
     void CreateSemaphores();
     void CreateDescriptorPool();
     void CreateRenderPass();
+    vk::RenderPass CreateRenderPassImpl(VkFormat, bool is_present = true);
     void CreateDescriptorSetLayout();
     void CreateDescriptorSets();
     void CreatePipelineLayout();
@@ -88,10 +93,13 @@ private:
     void CreateStagingBuffer(const Tegra::FramebufferConfig& framebuffer);
     void CreateRawImages(const Tegra::FramebufferConfig& framebuffer);
 
-    void UpdateDescriptorSet(std::size_t image_index, VkImageView image_view) const;
+    void UpdateDescriptorSet(std::size_t image_index, VkImageView image_view, bool nn) const;
+    void UpdateAADescriptorSet(std::size_t image_index, VkImageView image_view, bool nn) const;
     void SetUniformData(BufferData& data, const Layout::FramebufferLayout layout) const;
     void SetVertexData(BufferData& data, const Tegra::FramebufferConfig& framebuffer,
                        const Layout::FramebufferLayout layout) const;
+
+    void CreateFSR();
 
     u64 CalculateBufferSize(const Tegra::FramebufferConfig& framebuffer) const;
     u64 GetRawImageOffset(const Tegra::FramebufferConfig& framebuffer,
@@ -107,14 +115,24 @@ private:
     const VKScreenInfo& screen_info;
 
     vk::ShaderModule vertex_shader;
-    vk::ShaderModule fragment_shader;
+    vk::ShaderModule fxaa_vertex_shader;
+    vk::ShaderModule fxaa_fragment_shader;
+    vk::ShaderModule bilinear_fragment_shader;
+    vk::ShaderModule bicubic_fragment_shader;
+    vk::ShaderModule gaussian_fragment_shader;
+    vk::ShaderModule scaleforce_fragment_shader;
     vk::DescriptorPool descriptor_pool;
     vk::DescriptorSetLayout descriptor_set_layout;
     vk::PipelineLayout pipeline_layout;
-    vk::Pipeline pipeline;
+    vk::Pipeline nearest_neightbor_pipeline;
+    vk::Pipeline bilinear_pipeline;
+    vk::Pipeline bicubic_pipeline;
+    vk::Pipeline gaussian_pipeline;
+    vk::Pipeline scaleforce_pipeline;
     vk::RenderPass renderpass;
     std::vector<vk::Framebuffer> framebuffers;
     vk::DescriptorSets descriptor_sets;
+    vk::Sampler nn_sampler;
     vk::Sampler sampler;
 
     vk::Buffer buffer;
@@ -126,8 +144,22 @@ private:
     std::vector<vk::Image> raw_images;
     std::vector<vk::ImageView> raw_image_views;
     std::vector<MemoryCommit> raw_buffer_commits;
+
+    vk::DescriptorPool aa_descriptor_pool;
+    vk::DescriptorSetLayout aa_descriptor_set_layout;
+    vk::PipelineLayout aa_pipeline_layout;
+    vk::Pipeline aa_pipeline;
+    vk::RenderPass aa_renderpass;
+    vk::Framebuffer aa_framebuffer;
+    vk::DescriptorSets aa_descriptor_sets;
+    vk::Image aa_image;
+    vk::ImageView aa_image_view;
+    MemoryCommit aa_commit;
+
     u32 raw_width = 0;
     u32 raw_height = 0;
+
+    std::unique_ptr<FSR> fsr;
 };
 
 } // namespace Vulkan

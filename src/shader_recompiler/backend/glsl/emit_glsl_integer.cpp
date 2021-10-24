@@ -78,6 +78,14 @@ void EmitIMul32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::strin
     ctx.AddU32("{}=uint({}*{});", inst, a, b);
 }
 
+void EmitSDiv32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
+    ctx.AddU32("{}=uint(int({})/int({}));", inst, a, b);
+}
+
+void EmitUDiv32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
+    ctx.AddU32("{}={}/{};", inst, a, b);
+}
+
 void EmitINeg32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
     ctx.AddU32("{}=uint(-({}));", inst, value);
 }

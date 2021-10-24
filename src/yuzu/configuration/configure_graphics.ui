@@ -310,6 +310,173 @@
          </widget>
         </item>
         <item>
+         <widget class="QWidget" name="resolution_layout" native="true">
+          <layout class="QHBoxLayout" name="horizontalLayout_5">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="resolution_label">
+             <property name="text">
+              <string>Resolution:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="resolution_combobox">
+             <item>
+              <property name="text">
+               <string>0.5X  (360p/540p) [EXPERIMENTAL]</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>0.75X (540p/810p) [EXPERIMENTAL]</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>1X (720p/1080p)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>2X (1440p/2160p)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>3X (2160p/3240p)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>4X (2880p/4320p)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>5X (3600p/5400p)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>6X (4320p/6480p)</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QWidget" name="scaling_filter_layout" native="true">
+          <layout class="QHBoxLayout" name="horizontalLayout_6">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="scaling_filter_label">
+             <property name="text">
+              <string>Window Adapting Filter:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="scaling_filter_combobox">
+             <item>
+              <property name="text">
+               <string>Nearest Neighbor</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Bilinear</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Bicubic</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Gaussian</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>ScaleForce</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>AMD's FidelityFX™️ Super Resolution [Vulkan Only]</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+          <widget class="QWidget" name="anti_aliasing_layout" native="true">
+            <layout class="QHBoxLayout" name="horizontalLayout_7">
+              <property name="leftMargin">
+                <number>0</number>
+              </property>
+              <property name="topMargin">
+                <number>0</number>
+              </property>
+              <property name="rightMargin">
+                <number>0</number>
+              </property>
+              <property name="bottomMargin">
+                <number>0</number>
+              </property>
+              <item>
+                <widget class="QLabel" name="anti_aliasing_label">
+                  <property name="text">
+                    <string>Anti-Aliasing Method:</string>
+                  </property>
+                </widget>
+              </item>
+              <item>
+                <widget class="QComboBox" name="anti_aliasing_combobox">
+                  <item>
+                    <property name="text">
+                      <string>None</string>
+                    </property>
+                  </item>
+                  <item>
+                    <property name="text">
+                      <string>FXAA</string>
+                    </property>
+                  </item>
+                </widget>
+              </item>
+            </layout>
+          </widget>
+        </item>
+        <item>
          <widget class="QWidget" name="bg_layout" native="true">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">

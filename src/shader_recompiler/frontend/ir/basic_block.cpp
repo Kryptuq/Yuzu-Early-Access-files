@@ -22,6 +22,11 @@ void Block::AppendNewInst(Opcode op, std::initializer_list<Value> args) {
     PrependNewInst(end(), op, args);
 }
 
+Block::iterator Block::PrependNewInst(iterator insertion_point, const Inst& base_inst) {
+    Inst* const inst{inst_pool->Create(base_inst)};
+    return instructions.insert(insertion_point, *inst);
+}
+
 Block::iterator Block::PrependNewInst(iterator insertion_point, Opcode op,
                                       std::initializer_list<Value> args, u32 flags) {
     Inst* const inst{inst_pool->Create(op, flags)};

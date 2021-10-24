@@ -302,6 +302,8 @@ private:
     void MigrateConfigFiles();
     void UpdateWindowTitle(std::string_view title_name = {}, std::string_view title_version = {},
                            std::string_view gpu_vendor = {});
+    void UpdateFilterText();
+    void UpdateAAText();
     void UpdateStatusBar();
     void UpdateGPUAccuracyButton();
     void UpdateStatusButtons();
@@ -328,6 +330,7 @@ private:
     // Status bar elements
     QLabel* message_label = nullptr;
     QLabel* shader_building_label = nullptr;
+    QLabel* res_scale_label = nullptr;
     QLabel* emu_speed_label = nullptr;
     QLabel* game_fps_label = nullptr;
     QLabel* emu_frametime_label = nullptr;
@@ -335,6 +338,8 @@ private:
     QPushButton* gpu_accuracy_button = nullptr;
     QPushButton* renderer_status_button = nullptr;
     QPushButton* dock_status_button = nullptr;
+    QPushButton* filter_status_button = nullptr;
+    QPushButton* aa_status_button = nullptr;
     QTimer status_bar_update_timer;
 
     std::unique_ptr<Config> config;

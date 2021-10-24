@@ -85,6 +85,7 @@ void EmitInvocationId(EmitContext& ctx, IR::Inst& inst);
 void EmitSampleId(EmitContext& ctx, IR::Inst& inst);
 void EmitIsHelperInvocation(EmitContext& ctx, IR::Inst& inst);
 void EmitYDirection(EmitContext& ctx, IR::Inst& inst);
+void EmitResolutionDownFactor(EmitContext& ctx, IR::Inst& inst);
 void EmitLoadLocal(EmitContext& ctx, IR::Inst& inst, std::string_view word_offset);
 void EmitWriteLocal(EmitContext& ctx, std::string_view word_offset, std::string_view value);
 void EmitUndefU1(EmitContext& ctx, IR::Inst& inst);
@@ -362,6 +363,8 @@ void EmitIAdd64(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::strin
 void EmitISub32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b);
 void EmitISub64(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b);
 void EmitIMul32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b);
+void EmitSDiv32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b);
+void EmitUDiv32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b);
 void EmitINeg32(EmitContext& ctx, IR::Inst& inst, std::string_view value);
 void EmitINeg64(EmitContext& ctx, IR::Inst& inst, std::string_view value);
 void EmitIAbs32(EmitContext& ctx, IR::Inst& inst, std::string_view value);
@@ -627,6 +630,8 @@ void EmitImageRead(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                    std::string_view coords);
 void EmitImageWrite(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                     std::string_view coords, std::string_view color);
+void EmitIsTextureScaled(EmitContext& ctx, IR::Inst& inst, const IR::Value& index);
+void EmitIsImageScaled(EmitContext& ctx, IR::Inst& inst, const IR::Value& index);
 void EmitBindlessImageAtomicIAdd32(EmitContext&);
 void EmitBindlessImageAtomicSMin32(EmitContext&);
 void EmitBindlessImageAtomicUMin32(EmitContext&);

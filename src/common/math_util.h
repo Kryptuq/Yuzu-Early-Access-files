@@ -48,8 +48,8 @@ struct Rectangle {
     }
 
     [[nodiscard]] Rectangle<T> Scale(const float s) const {
-        return Rectangle{left, top, static_cast<T>(left + GetWidth() * s),
-                         static_cast<T>(top + GetHeight() * s)};
+        return Rectangle{left, top, static_cast<T>(static_cast<float>(left + GetWidth()) * s),
+                         static_cast<T>(static_cast<float>(top + GetHeight()) * s)};
     }
 };
 

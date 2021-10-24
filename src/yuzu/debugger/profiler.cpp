@@ -163,7 +163,7 @@ void MicroProfileWidget::mouseReleaseEvent(QMouseEvent* ev) {
 }
 
 void MicroProfileWidget::wheelEvent(QWheelEvent* ev) {
-    const auto wheel_position = ev->position().toPoint();
+    const auto wheel_position = ev->pos();
     MicroProfileMousePosition(wheel_position.x() / x_scale, wheel_position.y() / y_scale,
                               ev->angleDelta().y() / 120);
     ev->accept();

@@ -430,6 +430,11 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::IsHelperInvocation:
         info.uses_is_helper_invocation = true;
         break;
+    case IR::Opcode::ResolutionDownFactor:
+    case IR::Opcode::IsTextureScaled:
+    case IR::Opcode::IsImageScaled:
+        info.uses_rescaling_uniform = true;
+        break;
     case IR::Opcode::LaneId:
         info.uses_subgroup_invocation_id = true;
         break;

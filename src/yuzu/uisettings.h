@@ -68,7 +68,6 @@ struct Values {
     Settings::BasicSetting<bool> enable_discord_presence{true, "enable_discord_presence"};
 
     Settings::BasicSetting<bool> enable_screenshot_save_as{true, "enable_screenshot_save_as"};
-    Settings::BasicSetting<u16> screenshot_resolution_factor{0, "screenshot_resolution_factor"};
 
     QString roms_path;
     QString symbols_path;

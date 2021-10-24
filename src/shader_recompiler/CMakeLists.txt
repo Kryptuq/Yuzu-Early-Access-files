@@ -221,6 +221,7 @@ add_library(shader_recompiler STATIC
     ir_opt/lower_fp16_to_fp32.cpp
     ir_opt/lower_int64_to_int32.cpp
     ir_opt/passes.h
+    ir_opt/rescaling_pass.cpp
     ir_opt/ssa_rewrite_pass.cpp
     ir_opt/texture_pass.cpp
     ir_opt/verification_pass.cpp

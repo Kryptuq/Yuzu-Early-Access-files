@@ -55,7 +55,8 @@ struct OverlapResult {
 
 [[nodiscard]] std::vector<ImageCopy> MakeShrinkImageCopies(const ImageInfo& dst,
                                                            const ImageInfo& src,
-                                                           SubresourceBase base);
+                                                           SubresourceBase base, u32 up_scale = 1,
+                                                           u32 down_shift = 0);
 
 [[nodiscard]] bool IsValidEntry(const Tegra::MemoryManager& gpu_memory, const TICEntry& config);
 

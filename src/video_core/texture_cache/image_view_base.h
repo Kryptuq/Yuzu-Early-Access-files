@@ -15,7 +15,7 @@ using VideoCore::Surface::PixelFormat;
 struct ImageViewInfo;
 struct ImageInfo;
 
-struct NullImageParams {};
+struct NullImageViewParams {};
 
 enum class ImageViewFlagBits : u16 {
     PreemtiveDownload = 1 << 0,
@@ -28,7 +28,7 @@ struct ImageViewBase {
     explicit ImageViewBase(const ImageViewInfo& info, const ImageInfo& image_info,
                            ImageId image_id);
     explicit ImageViewBase(const ImageInfo& info, const ImageViewInfo& view_info);
-    explicit ImageViewBase(const NullImageParams&);
+    explicit ImageViewBase(const NullImageViewParams&);
 
     [[nodiscard]] bool IsBuffer() const noexcept {
         return type == ImageViewType::Buffer;

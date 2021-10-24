@@ -56,19 +56,16 @@ protected:
         s32 target{};
         s32 target_offset{};
     };
-    static_assert(sizeof(Reloc) == 0x10, "CommandBuffer has incorrect size");
+    static_assert(sizeof(Reloc) == 0x10, "Reloc has incorrect size");
 
     struct SyncptIncr {
         u32 id{};
         u32 increments{};
+        u32 unk0{};
+        u32 unk1{};
+        u32 unk2{};
     };
-    static_assert(sizeof(SyncptIncr) == 0x8, "CommandBuffer has incorrect size");
-
-    struct Fence {
-        u32 id{};
-        u32 value{};
-    };
-    static_assert(sizeof(Fence) == 0x8, "CommandBuffer has incorrect size");
+    static_assert(sizeof(SyncptIncr) == 0x14, "SyncptIncr has incorrect size");
 
     struct IoctlGetSyncpoint {
         // Input

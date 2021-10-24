@@ -70,7 +70,9 @@ public:
             return;
         }
         // If none of the above is hit, fallback to a regular wait
-        semaphore.Wait(tick);
+        while (!semaphore.Wait(tick)) {
+        }
+        Refresh();
     }
 
 private:

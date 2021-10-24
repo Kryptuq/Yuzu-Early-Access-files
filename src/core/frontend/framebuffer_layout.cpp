@@ -44,16 +44,13 @@ FramebufferLayout DefaultFrameLayout(u32 width, u32 height) {
     return res;
 }
 
-FramebufferLayout FrameLayoutFromResolutionScale(u32 res_scale) {
-    u32 width, height;
+FramebufferLayout FrameLayoutFromResolutionScale(f32 res_scale) {
+    const bool is_docked = Settings::values.use_docked_mode.GetValue();
+    const u32 screen_width = is_docked ? ScreenDocked::Width : ScreenUndocked::Width;
+    const u32 screen_height = is_docked ? ScreenDocked::Height : ScreenUndocked::Height;
 
-    if (Settings::values.use_docked_mode.GetValue()) {
-        width = ScreenDocked::Width * res_scale;
-        height = ScreenDocked::Height * res_scale;
-    } else {
-        width = ScreenUndocked::Width * res_scale;
-        height = ScreenUndocked::Height * res_scale;
-    }
+    const u32 width = static_cast<u32>(static_cast<f32>(screen_width) * res_scale);
+    const u32 height = static_cast<u32>(static_cast<f32>(screen_height) * res_scale);
 
     return DefaultFrameLayout(width, height);
 }

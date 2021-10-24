@@ -279,6 +279,80 @@ bool IsPixelFormatSRGB(PixelFormat format) {
     }
 }
 
+bool IsPixelFormatInteger(PixelFormat format) {
+    switch (format) {
+    case PixelFormat::A8B8G8R8_SINT:
+    case PixelFormat::A8B8G8R8_UINT:
+    case PixelFormat::A2B10G10R10_UINT:
+    case PixelFormat::R8_SINT:
+    case PixelFormat::R8_UINT:
+    case PixelFormat::R16G16B16A16_SINT:
+    case PixelFormat::R16G16B16A16_UINT:
+    case PixelFormat::R32G32B32A32_UINT:
+    case PixelFormat::R32G32B32A32_SINT:
+    case PixelFormat::R32G32_SINT:
+    case PixelFormat::R16_UINT:
+    case PixelFormat::R16_SINT:
+    case PixelFormat::R16G16_UINT:
+    case PixelFormat::R16G16_SINT:
+    case PixelFormat::R8G8_SINT:
+    case PixelFormat::R8G8_UINT:
+    case PixelFormat::R32G32_UINT:
+    case PixelFormat::R32_UINT:
+    case PixelFormat::R32_SINT:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool IsPixelFormatSignedInteger(PixelFormat format) {
+    switch (format) {
+    case PixelFormat::A8B8G8R8_SINT:
+    case PixelFormat::R8_SINT:
+    case PixelFormat::R16G16B16A16_SINT:
+    case PixelFormat::R32G32B32A32_SINT:
+    case PixelFormat::R32G32_SINT:
+    case PixelFormat::R16_SINT:
+    case PixelFormat::R16G16_SINT:
+    case PixelFormat::R8G8_SINT:
+    case PixelFormat::R32_SINT:
+        return true;
+    default:
+        return false;
+    }
+}
+
+size_t PixelComponentSizeBitsInteger(PixelFormat format) {
+    switch (format) {
+    case PixelFormat::A8B8G8R8_SINT:
+    case PixelFormat::A8B8G8R8_UINT:
+    case PixelFormat::R8_SINT:
+    case PixelFormat::R8_UINT:
+    case PixelFormat::R8G8_SINT:
+    case PixelFormat::R8G8_UINT:
+        return 8;
+    case PixelFormat::A2B10G10R10_UINT:
+        return 10;
+    case PixelFormat::R16G16B16A16_SINT:
+    case PixelFormat::R16G16B16A16_UINT:
+    case PixelFormat::R16_UINT:
+    case PixelFormat::R16_SINT:
+    case PixelFormat::R16G16_UINT:
+    case PixelFormat::R16G16_SINT:
+        return 16;
+    case PixelFormat::R32G32B32A32_UINT:
+    case PixelFormat::R32G32B32A32_SINT:
+    case PixelFormat::R32G32_SINT:
+    case PixelFormat::R32G32_UINT:
+    case PixelFormat::R32_UINT:
+    case PixelFormat::R32_SINT:
+        return 32;
+    default:
+        return 0;
+    }
+}
+
 std::pair<u32, u32> GetASTCBlockSize(PixelFormat format) {
     return {DefaultBlockWidth(format), DefaultBlockHeight(format)};
 }

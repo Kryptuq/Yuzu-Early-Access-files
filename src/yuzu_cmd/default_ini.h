@@ -236,6 +236,29 @@ disable_shader_loop_safety_checks =
 # Which Vulkan physical device to use (defaults to 0)
 vulkan_device =
 
+# 0: 0.5x (360p/540p) [EXPERIMENTAL]
+# 1: 0.75x (540p/810p) [EXPERIMENTAL]
+# 2 (default): 1x (720p/1080p)
+# 3: 2x (1440p/2160p)
+# 4: 3x (2160p/3240p)
+# 5: 4x (2880p/4320p)
+# 6: 5x (3600p/5400p)
+# 7: 6x (4320p/6480p)
+resolution_setup =
+
+# Pixel filter to use when up- or down-sampling rendered frames.
+# 0: Nearest Neighbor
+# 1 (default): Bilinear
+# 2: Bicubic
+# 3: Gaussian
+# 4: ScaleForce
+# 5: AMD FidelityFX™️ Super Resolution [Vulkan Only]
+scaling_filter =
+
+# Anti-Aliasing (AA)
+# 0 (default): None, 1: FXAA
+anti_aliasing =
+
 # Whether to use fullscreen or borderless window mode
 # 0 (Windows default): Borderless window, 1 (All other default): Exclusive fullscreen
 fullscreen_mode =

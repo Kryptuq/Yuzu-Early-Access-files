@@ -15,7 +15,7 @@ using Tegra::Texture::TICEntry;
 using VideoCore::Surface::PixelFormat;
 
 struct ImageInfo {
-    explicit ImageInfo() = default;
+    ImageInfo() = default;
     explicit ImageInfo(const TICEntry& config) noexcept;
     explicit ImageInfo(const Tegra::Engines::Maxwell3D::Regs& regs, size_t index) noexcept;
     explicit ImageInfo(const Tegra::Engines::Maxwell3D::Regs& regs) noexcept;
@@ -33,6 +33,8 @@ struct ImageInfo {
     u32 maybe_unaligned_layer_stride = 0;
     u32 num_samples = 1;
     u32 tile_width_spacing = 0;
+    bool rescaleable = false;
+    bool downscaleable = false;
 };
 
 } // namespace VideoCommon

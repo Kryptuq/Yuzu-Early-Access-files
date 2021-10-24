@@ -64,7 +64,7 @@ public:
     using propagate_on_container_copy_assignment = std::true_type;
     using propagate_on_container_move_assignment = std::true_type;
     using propagate_on_container_swap = std::true_type;
-    using is_always_equal = std::true_type;
+    using is_always_equal = std::false_type;
 
     constexpr AlignmentAllocator() noexcept = default;
 
@@ -83,6 +83,11 @@ public:
     struct rebind {
         using other = AlignmentAllocator<T2, Align>;
     };
+
+    template <typename T2, size_t Align2>
+    constexpr bool operator==(const AlignmentAllocator<T2, Align2>&) const noexcept {
+        return std::is_same_v<T, T2> && Align == Align2;
+    }
 };
 
 } // namespace Common

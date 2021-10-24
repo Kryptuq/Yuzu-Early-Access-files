@@ -69,8 +69,12 @@ public:
 
     [[nodiscard]] StagingBufferRef DownloadStagingBuffer(size_t size);
 
+    void PreCopyBarrier();
+
     void CopyBuffer(VkBuffer src_buffer, VkBuffer dst_buffer,
-                    std::span<const VideoCommon::BufferCopy> copies);
+                    std::span<const VideoCommon::BufferCopy> copies, bool barrier = true);
+
+    void PostCopyBarrier();
 
     void ClearBuffer(VkBuffer dest_buffer, u32 offset, size_t size, u32 value);
 

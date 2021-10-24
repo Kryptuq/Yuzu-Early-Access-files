@@ -50,6 +50,7 @@ struct TextureInfo {
 /// Structure used for storing information about the display target for the Switch screen
 struct ScreenInfo {
     GLuint display_texture{};
+    bool was_accelerated = false;
     bool display_srgb{};
     const Common::Rectangle<float> display_texcoords{0.0f, 0.0f, 1.0f, 1.0f};
     TextureInfo texture;
@@ -109,9 +110,15 @@ private:
 
     // OpenGL object IDs
     OGLSampler present_sampler;
+    OGLSampler present_sampler_nn;
     OGLBuffer vertex_buffer;
+    OGLProgram fxaa_vertex;
+    OGLProgram fxaa_fragment;
     OGLProgram present_vertex;
-    OGLProgram present_fragment;
+    OGLProgram present_bilinear_fragment;
+    OGLProgram present_bicubic_fragment;
+    OGLProgram present_gaussian_fragment;
+    OGLProgram present_scaleforce_fragment;
     OGLFramebuffer screenshot_framebuffer;
 
     // GPU address of the vertex buffer
@@ -119,6 +126,8 @@ private:
 
     /// Display information for Switch screen
     ScreenInfo screen_info;
+    OGLTexture fxaa_texture;
+    OGLFramebuffer fxaa_framebuffer;
 
     /// OpenGL framebuffer data
     std::vector<u8> gl_framebuffer_data;

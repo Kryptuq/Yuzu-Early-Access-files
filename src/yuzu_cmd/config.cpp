@@ -451,6 +451,9 @@ void Config::ReadValues() {
     ReadSetting("Renderer", Settings::values.disable_shader_loop_safety_checks);
     ReadSetting("Renderer", Settings::values.vulkan_device);
 
+    ReadSetting("Renderer", Settings::values.resolution_setup);
+    ReadSetting("Renderer", Settings::values.scaling_filter);
+    ReadSetting("Renderer", Settings::values.anti_aliasing);
     ReadSetting("Renderer", Settings::values.fullscreen_mode);
     ReadSetting("Renderer", Settings::values.aspect_ratio);
     ReadSetting("Renderer", Settings::values.max_anisotropy);

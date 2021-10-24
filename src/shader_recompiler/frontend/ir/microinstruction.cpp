@@ -46,6 +46,17 @@ Inst::Inst(IR::Opcode op_, u32 flags_) noexcept : op{op_}, flags{flags_} {
     }
 }
 
+Inst::Inst(const Inst& base) : op{base.op}, flags{base.flags} {
+    if (base.op == Opcode::Phi) {
+        throw NotImplementedException("Copying phi node");
+    }
+    std::construct_at(&args);
+    const size_t num_args{base.NumArgs()};
+    for (size_t index = 0; index < num_args; ++index) {
+        SetArg(index, base.Arg(index));
+    }
+}
+
 Inst::~Inst() {
     if (op == Opcode::Phi) {
         std::destroy_at(&phi_args);

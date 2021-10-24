@@ -89,6 +89,7 @@ void ConfigureGraphics::SetConfiguration() {
     ui->use_asynchronous_gpu_emulation->setEnabled(runtime_lock);
     ui->use_disk_shader_cache->setEnabled(runtime_lock);
     ui->nvdec_emulation_widget->setEnabled(runtime_lock);
+    ui->resolution_combobox->setEnabled(runtime_lock);
     ui->accelerate_astc->setEnabled(runtime_lock);
     ui->use_disk_shader_cache->setChecked(Settings::values.use_disk_shader_cache.GetValue());
     ui->use_asynchronous_gpu_emulation->setChecked(
@@ -102,6 +103,12 @@ void ConfigureGraphics::SetConfiguration() {
         ui->nvdec_emulation->setCurrentIndex(
             static_cast<int>(Settings::values.nvdec_emulation.GetValue()));
         ui->aspect_ratio_combobox->setCurrentIndex(Settings::values.aspect_ratio.GetValue());
+        ui->resolution_combobox->setCurrentIndex(
+            static_cast<int>(Settings::values.resolution_setup.GetValue()));
+        ui->scaling_filter_combobox->setCurrentIndex(
+            static_cast<int>(Settings::values.scaling_filter.GetValue()));
+        ui->anti_aliasing_combobox->setCurrentIndex(
+            static_cast<int>(Settings::values.anti_aliasing.GetValue()));
     } else {
         ConfigurationShared::SetPerGameSetting(ui->api, &Settings::values.renderer_backend);
         ConfigurationShared::SetHighlight(ui->api_widget,
@@ -122,6 +129,21 @@ void ConfigureGraphics::SetConfiguration() {
         ConfigurationShared::SetHighlight(ui->ar_label,
                                           !Settings::values.aspect_ratio.UsingGlobal());
 
+        ConfigurationShared::SetPerGameSetting(ui->resolution_combobox,
+                                               &Settings::values.resolution_setup);
+        ConfigurationShared::SetHighlight(ui->resolution_label,
+                                          !Settings::values.resolution_setup.UsingGlobal());
+
+        ConfigurationShared::SetPerGameSetting(ui->scaling_filter_combobox,
+                                               &Settings::values.scaling_filter);
+        ConfigurationShared::SetHighlight(ui->scaling_filter_label,
+                                          !Settings::values.scaling_filter.UsingGlobal());
+
+        ConfigurationShared::SetPerGameSetting(ui->anti_aliasing_combobox,
+                                               &Settings::values.anti_aliasing);
+        ConfigurationShared::SetHighlight(ui->anti_aliasing_label,
+                                          !Settings::values.anti_aliasing.UsingGlobal());
+
         ui->bg_combobox->setCurrentIndex(Settings::values.bg_red.UsingGlobal() ? 0 : 1);
         ui->bg_button->setEnabled(!Settings::values.bg_red.UsingGlobal());
         ConfigurationShared::SetHighlight(ui->bg_layout, !Settings::values.bg_red.UsingGlobal());
@@ -133,11 +155,22 @@ void ConfigureGraphics::SetConfiguration() {
 }
 
 void ConfigureGraphics::ApplyConfiguration() {
+    const auto resolution_setup = static_cast<Settings::ResolutionSetup>(
+        ui->resolution_combobox->currentIndex() -
+        ((Settings::IsConfiguringGlobal()) ? 0 : ConfigurationShared::USE_GLOBAL_OFFSET));
+
+    const auto scaling_filter = static_cast<Settings::ScalingFilter>(
+        ui->scaling_filter_combobox->currentIndex() -
+        ((Settings::IsConfiguringGlobal()) ? 0 : ConfigurationShared::USE_GLOBAL_OFFSET));
+
+    const auto anti_aliasing = static_cast<Settings::AntiAliasing>(
+        ui->anti_aliasing_combobox->currentIndex() -
+        ((Settings::IsConfiguringGlobal()) ? 0 : ConfigurationShared::USE_GLOBAL_OFFSET));
+
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.fullscreen_mode,
                                              ui->fullscreen_mode_combobox);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.aspect_ratio,
                                              ui->aspect_ratio_combobox);
-
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_disk_shader_cache,
                                              ui->use_disk_shader_cache, use_disk_shader_cache);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_asynchronous_gpu_emulation,
@@ -165,7 +198,34 @@ void ConfigureGraphics::ApplyConfiguration() {
             Settings::values.bg_green.SetValue(static_cast<u8>(bg_color.green()));
             Settings::values.bg_blue.SetValue(static_cast<u8>(bg_color.blue()));
         }
+        if (Settings::values.resolution_setup.UsingGlobal()) {
+            Settings::values.resolution_setup.SetValue(resolution_setup);
+        }
+        if (Settings::values.scaling_filter.UsingGlobal()) {
+            Settings::values.scaling_filter.SetValue(scaling_filter);
+        }
+        if (Settings::values.anti_aliasing.UsingGlobal()) {
+            Settings::values.anti_aliasing.SetValue(anti_aliasing);
+        }
     } else {
+        if (ui->resolution_combobox->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
+            Settings::values.resolution_setup.SetGlobal(true);
+        } else {
+            Settings::values.resolution_setup.SetGlobal(false);
+            Settings::values.resolution_setup.SetValue(resolution_setup);
+        }
+        if (ui->scaling_filter_combobox->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
+            Settings::values.scaling_filter.SetGlobal(true);
+        } else {
+            Settings::values.scaling_filter.SetGlobal(false);
+            Settings::values.scaling_filter.SetValue(scaling_filter);
+        }
+        if (ui->anti_aliasing_combobox->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
+            Settings::values.anti_aliasing.SetGlobal(true);
+        } else {
+            Settings::values.anti_aliasing.SetGlobal(false);
+            Settings::values.anti_aliasing.SetValue(anti_aliasing);
+        }
         if (ui->api->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
             Settings::values.renderer_backend.SetGlobal(true);
             Settings::values.shader_backend.SetGlobal(true);
@@ -312,6 +372,9 @@ void ConfigureGraphics::SetupPerGameUI() {
         ui->device->setEnabled(Settings::values.renderer_backend.UsingGlobal());
         ui->fullscreen_mode_combobox->setEnabled(Settings::values.fullscreen_mode.UsingGlobal());
         ui->aspect_ratio_combobox->setEnabled(Settings::values.aspect_ratio.UsingGlobal());
+        ui->resolution_combobox->setEnabled(Settings::values.resolution_setup.UsingGlobal());
+        ui->scaling_filter_combobox->setEnabled(Settings::values.scaling_filter.UsingGlobal());
+        ui->anti_aliasing_combobox->setEnabled(Settings::values.anti_aliasing.UsingGlobal());
         ui->use_asynchronous_gpu_emulation->setEnabled(
             Settings::values.use_asynchronous_gpu_emulation.UsingGlobal());
         ui->nvdec_emulation->setEnabled(Settings::values.nvdec_emulation.UsingGlobal());
@@ -340,6 +403,15 @@ void ConfigureGraphics::SetupPerGameUI() {
     ConfigurationShared::SetColoredComboBox(
         ui->fullscreen_mode_combobox, ui->fullscreen_mode_label,
         static_cast<int>(Settings::values.fullscreen_mode.GetValue(true)));
+    ConfigurationShared::SetColoredComboBox(
+        ui->resolution_combobox, ui->resolution_label,
+        static_cast<int>(Settings::values.resolution_setup.GetValue(true)));
+    ConfigurationShared::SetColoredComboBox(
+        ui->scaling_filter_combobox, ui->scaling_filter_label,
+        static_cast<int>(Settings::values.scaling_filter.GetValue(true)));
+    ConfigurationShared::SetColoredComboBox(
+        ui->anti_aliasing_combobox, ui->anti_aliasing_label,
+        static_cast<int>(Settings::values.anti_aliasing.GetValue(true)));
     ConfigurationShared::InsertGlobalItem(
         ui->api, static_cast<int>(Settings::values.renderer_backend.GetValue(true)));
     ConfigurationShared::InsertGlobalItem(

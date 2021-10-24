@@ -186,6 +186,10 @@ void RasterizerOpenGL::Clear() {
     SyncRasterizeEnable();
     SyncStencilTestState();
 
+    std::scoped_lock lock{texture_cache.mutex};
+    texture_cache.UpdateRenderTargets(true);
+    state_tracker.BindFramebuffer(texture_cache.GetFramebuffer()->Handle());
+    SyncViewport();
     if (regs.clear_flags.scissor) {
         SyncScissorTest();
     } else {
@@ -193,10 +197,6 @@ void RasterizerOpenGL::Clear() {
         glDisablei(GL_SCISSOR_TEST, 0);
     }
     UNIMPLEMENTED_IF(regs.clear_flags.viewport);
-
-    std::scoped_lock lock{texture_cache.mutex};
-    texture_cache.UpdateRenderTargets(true);
-    state_tracker.BindFramebuffer(texture_cache.GetFramebuffer()->Handle());
 
     if (use_color) {
         glClearBufferfv(GL_COLOR, regs.clear_buffers.RT, regs.clear_color);
@@ -216,14 +216,14 @@ void RasterizerOpenGL::Draw(bool is_indexed, bool is_instanced) {
 
     query_cache.UpdateCounters();
 
-    SyncState();
-
     GraphicsPipeline* const pipeline{shader_cache.CurrentGraphicsPipeline()};
     if (!pipeline) {
         return;
     }
     std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
     pipeline->Configure(is_indexed);
+
+    SyncState();
 
     const GLenum primitive_mode = MaxwellToGL::PrimitiveTopology(maxwell3d.regs.draw.topology);
     BeginTransformFeedback(pipeline, primitive_mode);
@@ -535,7 +535,8 @@ void RasterizerOpenGL::SyncViewport() {
     auto& flags = maxwell3d.dirty.flags;
     const auto& regs = maxwell3d.regs;
 
-    const bool dirty_viewport = flags[Dirty::Viewports];
+    const bool rescale_viewports = flags[VideoCommon::Dirty::RescaleViewports];
+    const bool dirty_viewport = flags[Dirty::Viewports] || rescale_viewports;
     const bool dirty_clip_control = flags[Dirty::ClipControl];
 
     if (dirty_clip_control || flags[Dirty::FrontFace]) {
@@ -555,8 +556,7 @@ void RasterizerOpenGL::SyncViewport() {
         }
         glFrontFace(mode);
     }
-
-    if (dirty_viewport || flags[Dirty::ClipControl]) {
+    if (dirty_viewport || dirty_clip_control) {
         flags[Dirty::ClipControl] = false;
 
         bool flip_y = false;
@@ -572,37 +572,58 @@ void RasterizerOpenGL::SyncViewport() {
         state_tracker.ClipControl(origin, depth);
         state_tracker.SetYNegate(regs.screen_y_control.y_negate != 0);
     }
+    const bool is_rescaling{texture_cache.IsRescaling()};
+    const float scale = is_rescaling ? Settings::values.resolution_info.up_factor : 1.0f;
+    const auto conv = [scale](float value) -> GLfloat {
+        float new_value = value * scale;
+        if (scale < 1.0f) {
+            const bool sign = std::signbit(value);
+            new_value = std::round(std::abs(new_value));
+            new_value = sign ? -new_value : new_value;
+        }
+        return static_cast<GLfloat>(new_value);
+    };
 
     if (dirty_viewport) {
         flags[Dirty::Viewports] = false;
 
-        const bool force = flags[Dirty::ViewportTransform];
+        const bool force = flags[Dirty::ViewportTransform] || rescale_viewports;
         flags[Dirty::ViewportTransform] = false;
+        flags[VideoCommon::Dirty::RescaleViewports] = false;
 
-        for (std::size_t i = 0; i < Maxwell::NumViewports; ++i) {
-            if (!force && !flags[Dirty::Viewport0 + i]) {
+        for (size_t index = 0; index < Maxwell::NumViewports; ++index) {
+            if (!force && !flags[Dirty::Viewport0 + index]) {
                 continue;
             }
-            flags[Dirty::Viewport0 + i] = false;
+            flags[Dirty::Viewport0 + index] = false;
 
-            const auto& src = regs.viewport_transform[i];
-            const Common::Rectangle<f32> rect{src.GetRect()};
-            glViewportIndexedf(static_cast<GLuint>(i), rect.left, rect.bottom, rect.GetWidth(),
-                               rect.GetHeight());
+            const auto& src = regs.viewport_transform[index];
+            GLfloat x = conv(src.translate_x - src.scale_x);
+            GLfloat y = conv(src.translate_y - src.scale_y);
+            GLfloat width = conv(src.scale_x * 2.0f);
+            GLfloat height = conv(src.scale_y * 2.0f);
+
+            if (height < 0) {
+                y += height;
+                height = -height;
+            }
+            glViewportIndexedf(static_cast<GLuint>(index), x, y, width != 0.0f ? width : 1.0f,
+                               height != 0.0f ? height : 1.0f);
 
             const GLdouble reduce_z = regs.depth_mode == Maxwell::DepthMode::MinusOneToOne;
             const GLdouble near_depth = src.translate_z - src.scale_z * reduce_z;
             const GLdouble far_depth = src.translate_z + src.scale_z;
             if (device.HasDepthBufferFloat()) {
-                glDepthRangeIndexeddNV(static_cast<GLuint>(i), near_depth, far_depth);
+                glDepthRangeIndexeddNV(static_cast<GLuint>(index), near_depth, far_depth);
             } else {
-                glDepthRangeIndexed(static_cast<GLuint>(i), near_depth, far_depth);
+                glDepthRangeIndexed(static_cast<GLuint>(index), near_depth, far_depth);
             }
 
             if (!GLAD_GL_NV_viewport_swizzle) {
                 continue;
             }
-            glViewportSwizzleNV(static_cast<GLuint>(i), MaxwellToGL::ViewportSwizzle(src.swizzle.x),
+            glViewportSwizzleNV(static_cast<GLuint>(index),
+                                MaxwellToGL::ViewportSwizzle(src.swizzle.x),
                                 MaxwellToGL::ViewportSwizzle(src.swizzle.y),
                                 MaxwellToGL::ViewportSwizzle(src.swizzle.z),
                                 MaxwellToGL::ViewportSwizzle(src.swizzle.w));
@@ -905,14 +926,34 @@ void RasterizerOpenGL::SyncLogicOpState() {
 
 void RasterizerOpenGL::SyncScissorTest() {
     auto& flags = maxwell3d.dirty.flags;
-    if (!flags[Dirty::Scissors]) {
+    if (!flags[Dirty::Scissors] && !flags[VideoCommon::Dirty::RescaleScissors]) {
         return;
     }
     flags[Dirty::Scissors] = false;
 
+    const bool force = flags[VideoCommon::Dirty::RescaleScissors];
+    flags[VideoCommon::Dirty::RescaleScissors] = false;
+
     const auto& regs = maxwell3d.regs;
+
+    const auto& resolution = Settings::values.resolution_info;
+    const bool is_rescaling{texture_cache.IsRescaling()};
+    const u32 up_scale = is_rescaling ? resolution.up_scale : 1U;
+    const u32 down_shift = is_rescaling ? resolution.down_shift : 0U;
+    const auto scale_up = [up_scale, down_shift](u32 value) -> u32 {
+        if (value == 0) {
+            return 0U;
+        }
+        const u32 upset = value * up_scale;
+        u32 acumm{};
+        if ((up_scale >> down_shift) == 0) {
+            acumm = upset % 2;
+        }
+        const u32 converted_value = upset >> down_shift;
+        return std::max<u32>(converted_value + acumm, 1U);
+    };
     for (std::size_t index = 0; index < Maxwell::NumViewports; ++index) {
-        if (!flags[Dirty::Scissor0 + index]) {
+        if (!force && !flags[Dirty::Scissor0 + index]) {
             continue;
         }
         flags[Dirty::Scissor0 + index] = false;
@@ -920,8 +961,8 @@ void RasterizerOpenGL::SyncScissorTest() {
         const auto& src = regs.scissor_test[index];
         if (src.enable) {
             glEnablei(GL_SCISSOR_TEST, static_cast<GLuint>(index));
-            glScissorIndexed(static_cast<GLuint>(index), src.min_x, src.min_y,
-                             src.max_x - src.min_x, src.max_y - src.min_y);
+            glScissorIndexed(static_cast<GLuint>(index), scale_up(src.min_x), scale_up(src.min_y),
+                             scale_up(src.max_x - src.min_x), scale_up(src.max_y - src.min_y));
         } else {
             glDisablei(GL_SCISSOR_TEST, static_cast<GLuint>(index));
         }

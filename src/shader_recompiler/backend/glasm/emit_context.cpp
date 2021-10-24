@@ -6,6 +6,7 @@
 
 #include "shader_recompiler/backend/bindings.h"
 #include "shader_recompiler/backend/glasm/emit_context.h"
+#include "shader_recompiler/backend/glasm/emit_glasm.h"
 #include "shader_recompiler/frontend/ir/program.h"
 #include "shader_recompiler/profile.h"
 #include "shader_recompiler/runtime_info.h"
@@ -55,7 +56,8 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     }
     if (!runtime_info.glasm_use_storage_buffers) {
         if (const size_t num = info.storage_buffers_descriptors.size(); num > 0) {
-            Add("PARAM c[{}]={{program.local[0..{}]}};", num, num - 1);
+            const size_t index{num + PROGRAM_LOCAL_PARAMETER_STORAGE_BUFFER_BASE};
+            Add("PARAM c[{}]={{program.local[0..{}]}};", index, index - 1);
         }
     }
     stage = program.stage;

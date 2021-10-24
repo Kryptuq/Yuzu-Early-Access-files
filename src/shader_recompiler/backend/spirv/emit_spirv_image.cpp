@@ -224,6 +224,36 @@ Id Emit(MethodPtrType sparse_ptr, MethodPtrType non_sparse_ptr, EmitContext& ctx
     Decorate(ctx, inst, sample);
     return ctx.OpCompositeExtract(result_type, sample, 1U);
 }
+
+Id IsScaled(EmitContext& ctx, const IR::Value& index, Id member_index, u32 base_index) {
+    const Id push_constant_u32{ctx.TypePointer(spv::StorageClass::PushConstant, ctx.U32[1])};
+    Id bit{};
+    if (index.IsImmediate()) {
+        // Use BitwiseAnd instead of BitfieldExtract for better codegen on Nvidia OpenGL.
+        // LOP32I.NZ is used to set the predicate rather than BFE+ISETP.
+        const u32 index_value{index.U32() + base_index};
+        const Id word_index{ctx.Const(index_value / 32)};
+        const Id bit_index_mask{ctx.Const(1u << (index_value % 32))};
+        const Id pointer{ctx.OpAccessChain(push_constant_u32, ctx.rescaling_push_constants,
+                                           member_index, word_index)};
+        const Id word{ctx.OpLoad(ctx.U32[1], pointer)};
+        bit = ctx.OpBitwiseAnd(ctx.U32[1], word, bit_index_mask);
+    } else {
+        Id index_value{ctx.Def(index)};
+        if (base_index != 0) {
+            index_value = ctx.OpIAdd(ctx.U32[1], index_value, ctx.Const(base_index));
+        }
+        const Id bit_index{ctx.OpBitwiseAnd(ctx.U32[1], index_value, ctx.Const(31u))};
+        bit = ctx.OpBitFieldUExtract(ctx.U32[1], index_value, bit_index, ctx.Const(1u));
+    }
+    return ctx.OpINotEqual(ctx.U1, bit, ctx.u32_zero_value);
+}
+
+Id BitTest(EmitContext& ctx, Id mask, Id bit) {
+    const Id shifted{ctx.OpShiftRightLogical(ctx.U32[1], mask, bit)};
+    const Id bit_value{ctx.OpBitwiseAnd(ctx.U32[1], shifted, ctx.Const(1u))};
+    return ctx.OpINotEqual(ctx.U1, bit_value, ctx.u32_zero_value);
+}
 } // Anonymous namespace
 
 Id EmitBindlessImageSampleImplicitLod(EmitContext&) {
@@ -468,6 +498,30 @@ Id EmitImageRead(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id co
 void EmitImageWrite(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords, Id color) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
     ctx.OpImageWrite(Image(ctx, index, info), coords, color);
+}
+
+Id EmitIsTextureScaled(EmitContext& ctx, const IR::Value& index) {
+    if (ctx.profile.unified_descriptor_binding) {
+        const Id member_index{ctx.Const(ctx.rescaling_textures_member_index)};
+        return IsScaled(ctx, index, member_index, ctx.texture_rescaling_index);
+    } else {
+        const Id composite{ctx.OpLoad(ctx.F32[4], ctx.rescaling_uniform_constant)};
+        const Id mask_f32{ctx.OpCompositeExtract(ctx.F32[1], composite, 0u)};
+        const Id mask{ctx.OpBitcast(ctx.U32[1], mask_f32)};
+        return BitTest(ctx, mask, ctx.Def(index));
+    }
+}
+
+Id EmitIsImageScaled(EmitContext& ctx, const IR::Value& index) {
+    if (ctx.profile.unified_descriptor_binding) {
+        const Id member_index{ctx.Const(ctx.rescaling_images_member_index)};
+        return IsScaled(ctx, index, member_index, ctx.image_rescaling_index);
+    } else {
+        const Id composite{ctx.OpLoad(ctx.F32[4], ctx.rescaling_uniform_constant)};
+        const Id mask_f32{ctx.OpCompositeExtract(ctx.F32[1], composite, 1u)};
+        const Id mask{ctx.OpBitcast(ctx.U32[1], mask_f32)};
+        return BitTest(ctx, mask, ctx.Def(index));
+    }
 }
 
 } // namespace Shader::Backend::SPIRV

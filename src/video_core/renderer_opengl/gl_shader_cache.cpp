@@ -426,16 +426,14 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
             // Normal path
             programs[index] = TranslateProgram(pools.inst, pools.block, env, cfg, host_info);
 
-            for (const auto& desc : programs[index].info.storage_buffers_descriptors) {
-                total_storage_buffers += desc.count;
-            }
+            total_storage_buffers +=
+                Shader::NumDescriptors(programs[index].info.storage_buffers_descriptors);
         } else {
             // VertexB path when VertexA is present.
             auto& program_va{programs[0]};
             auto program_vb{TranslateProgram(pools.inst, pools.block, env, cfg, host_info)};
-            for (const auto& desc : program_vb.info.storage_buffers_descriptors) {
-                total_storage_buffers += desc.count;
-            }
+            total_storage_buffers +=
+                Shader::NumDescriptors(program_vb.info.storage_buffers_descriptors);
             programs[index] = MergeDualVertexPrograms(program_va, program_vb, env);
         }
     }
@@ -510,10 +508,7 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(
     Shader::Maxwell::Flow::CFG cfg{env, pools.flow_block, env.StartAddress()};
     auto program{TranslateProgram(pools.inst, pools.block, env, cfg, host_info)};
 
-    u32 num_storage_buffers{};
-    for (const auto& desc : program.info.storage_buffers_descriptors) {
-        num_storage_buffers += desc.count;
-    }
+    const u32 num_storage_buffers{Shader::NumDescriptors(program.info.storage_buffers_descriptors)};
     Shader::RuntimeInfo info;
     info.glasm_use_storage_buffers = num_storage_buffers <= device.GetMaxGLASMStorageBufferBlocks();
 

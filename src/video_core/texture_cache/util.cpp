@@ -723,7 +723,7 @@ ImageViewType RenderTargetImageViewType(const ImageInfo& info) noexcept {
 }
 
 std::vector<ImageCopy> MakeShrinkImageCopies(const ImageInfo& dst, const ImageInfo& src,
-                                             SubresourceBase base) {
+                                             SubresourceBase base, u32 up_scale, u32 down_shift) {
     ASSERT(dst.resources.levels >= src.resources.levels);
     ASSERT(dst.num_samples == src.num_samples);
 
@@ -732,7 +732,7 @@ std::vector<ImageCopy> MakeShrinkImageCopies(const ImageInfo& dst, const ImageIn
         ASSERT(src.type == ImageType::e3D);
         ASSERT(src.resources.levels == 1);
     }
-
+    const bool both_2d{src.type == ImageType::e2D && dst.type == ImageType::e2D};
     std::vector<ImageCopy> copies;
     copies.reserve(src.resources.levels);
     for (s32 level = 0; level < src.resources.levels; ++level) {
@@ -761,6 +761,10 @@ std::vector<ImageCopy> MakeShrinkImageCopies(const ImageInfo& dst, const ImageIn
         copy.extent = AdjustSamplesSize(mip_size, dst.num_samples);
         if (is_dst_3d) {
             copy.extent.depth = src.size.depth;
+        }
+        copy.extent.width = std::max<u32>((copy.extent.width * up_scale) >> down_shift, 1);
+        if (both_2d) {
+            copy.extent.height = std::max<u32>((copy.extent.height * up_scale) >> down_shift, 1);
         }
     }
     return copies;
@@ -1153,10 +1157,10 @@ void DeduceBlitImages(ImageInfo& dst_info, ImageInfo& src_info, const ImageBase*
     if (dst && GetFormatType(dst->info.format) != SurfaceType::ColorTexture) {
         dst_info.format = dst->info.format;
     }
-    if (!dst && src && GetFormatType(src->info.format) != SurfaceType::ColorTexture) {
+    if (src && GetFormatType(src->info.format) != SurfaceType::ColorTexture) {
         dst_info.format = src->info.format;
     }
-    if (!src && dst && GetFormatType(dst->info.format) != SurfaceType::ColorTexture) {
+    if (dst && GetFormatType(dst->info.format) != SurfaceType::ColorTexture) {
         src_info.format = dst->info.format;
     }
 }

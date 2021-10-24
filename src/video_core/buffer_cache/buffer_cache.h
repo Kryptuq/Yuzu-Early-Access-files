@@ -853,12 +853,14 @@ void BufferCache<P>::CommitAsyncFlushesHigh() {
     }
     if constexpr (USE_MEMORY_MAPS) {
         auto download_staging = runtime.DownloadStagingBuffer(total_size_bytes);
+        runtime.PreCopyBarrier();
         for (auto& [copy, buffer_id] : downloads) {
             // Have in mind the staging buffer offset for the copy
             copy.dst_offset += download_staging.offset;
             const std::array copies{copy};
-            runtime.CopyBuffer(download_staging.buffer, slot_buffers[buffer_id], copies);
+            runtime.CopyBuffer(download_staging.buffer, slot_buffers[buffer_id], copies, false);
         }
+        runtime.PostCopyBarrier();
         runtime.Finish();
         for (const auto& [copy, buffer_id] : downloads) {
             const Buffer& buffer = slot_buffers[buffer_id];

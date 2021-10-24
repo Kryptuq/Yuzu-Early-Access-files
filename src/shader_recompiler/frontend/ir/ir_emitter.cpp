@@ -375,6 +375,10 @@ F32 IREmitter::YDirection() {
     return Inst<F32>(Opcode::YDirection);
 }
 
+F32 IREmitter::ResolutionDownFactor() {
+    return Inst<F32>(Opcode::ResolutionDownFactor);
+}
+
 U32 IREmitter::LaneId() {
     return Inst<U32>(Opcode::LaneId);
 }
@@ -1139,6 +1143,10 @@ U32U64 IREmitter::ISub(const U32U64& a, const U32U64& b) {
 
 U32 IREmitter::IMul(const U32& a, const U32& b) {
     return Inst<U32>(Opcode::IMul32, a, b);
+}
+
+U32 IREmitter::IDiv(const U32& a, const U32& b, bool is_signed) {
+    return Inst<U32>(is_signed ? Opcode::SDiv32 : Opcode::UDiv32, a, b);
 }
 
 U32U64 IREmitter::INeg(const U32U64& value) {
@@ -1936,6 +1944,14 @@ Value IREmitter::ImageAtomicExchange(const Value& handle, const Value& coords, c
     const Opcode op{handle.IsImmediate() ? Opcode::BoundImageAtomicExchange32
                                          : Opcode::BindlessImageAtomicExchange32};
     return Inst(op, Flags{info}, handle, coords, value);
+}
+
+U1 IREmitter::IsTextureScaled(const U32& index) {
+    return Inst<U1>(Opcode::IsTextureScaled, index);
+}
+
+U1 IREmitter::IsImageScaled(const U32& index) {
+    return Inst<U1>(Opcode::IsImageScaled, index);
 }
 
 U1 IREmitter::VoteAll(const U1& value) {

@@ -543,11 +543,8 @@ private:
         switch (transaction) {
         case TransactionId::Connect: {
             IGBPConnectRequestParcel request{ctx.ReadBuffer()};
-            IGBPConnectResponseParcel response{
-                static_cast<u32>(static_cast<u32>(DisplayResolution::UndockedWidth) *
-                                 Settings::values.resolution_factor.GetValue()),
-                static_cast<u32>(static_cast<u32>(DisplayResolution::UndockedHeight) *
-                                 Settings::values.resolution_factor.GetValue())};
+            IGBPConnectResponseParcel response{static_cast<u32>(DisplayResolution::UndockedWidth),
+                                               static_cast<u32>(DisplayResolution::UndockedHeight)};
 
             buffer_queue.Connect();
 
@@ -777,15 +774,11 @@ private:
         rb.Push(ResultSuccess);
 
         if (Settings::values.use_docked_mode.GetValue()) {
-            rb.Push(static_cast<u32>(Service::VI::DisplayResolution::DockedWidth) *
-                    static_cast<u32>(Settings::values.resolution_factor.GetValue()));
-            rb.Push(static_cast<u32>(Service::VI::DisplayResolution::DockedHeight) *
-                    static_cast<u32>(Settings::values.resolution_factor.GetValue()));
+            rb.Push(static_cast<u32>(Service::VI::DisplayResolution::DockedWidth));
+            rb.Push(static_cast<u32>(Service::VI::DisplayResolution::DockedHeight));
         } else {
-            rb.Push(static_cast<u32>(Service::VI::DisplayResolution::UndockedWidth) *
-                    static_cast<u32>(Settings::values.resolution_factor.GetValue()));
-            rb.Push(static_cast<u32>(Service::VI::DisplayResolution::UndockedHeight) *
-                    static_cast<u32>(Settings::values.resolution_factor.GetValue()));
+            rb.Push(static_cast<u32>(Service::VI::DisplayResolution::UndockedWidth));
+            rb.Push(static_cast<u32>(Service::VI::DisplayResolution::UndockedHeight));
         }
 
         rb.PushRaw<float>(60.0f); // This wouldn't seem to be correct for 30 fps games.
@@ -1065,10 +1058,8 @@ private:
         // This only returns the fixed values of 1280x720 and makes no distinguishing
         // between docked and undocked dimensions. We take the liberty of applying
         // the resolution scaling factor here.
-        rb.Push(static_cast<u64>(DisplayResolution::UndockedWidth) *
-                static_cast<u32>(Settings::values.resolution_factor.GetValue()));
-        rb.Push(static_cast<u64>(DisplayResolution::UndockedHeight) *
-                static_cast<u32>(Settings::values.resolution_factor.GetValue()));
+        rb.Push(static_cast<u64>(DisplayResolution::UndockedWidth));
+        rb.Push(static_cast<u64>(DisplayResolution::UndockedHeight));
     }
 
     void SetLayerScalingMode(Kernel::HLERequestContext& ctx) {
@@ -1101,8 +1092,6 @@ private:
         LOG_WARNING(Service_VI, "(STUBBED) called");
 
         DisplayInfo display_info;
-        display_info.width *= static_cast<u64>(Settings::values.resolution_factor.GetValue());
-        display_info.height *= static_cast<u64>(Settings::values.resolution_factor.GetValue());
         ctx.WriteBuffer(&display_info, sizeof(DisplayInfo));
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(ResultSuccess);

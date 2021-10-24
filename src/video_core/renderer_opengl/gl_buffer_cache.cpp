@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <span>
 
+#include "shader_recompiler/backend/glasm/emit_glasm.h"
 #include "video_core/buffer_cache/buffer_cache.h"
 #include "video_core/renderer_opengl/gl_buffer_cache.h"
 #include "video_core/renderer_opengl/gl_device.h"
@@ -229,8 +230,10 @@ void BufferCacheRuntime::BindStorageBuffer(size_t stage, u32 binding_index, Buff
             .padding = 0,
         };
         buffer.MakeResident(is_written ? GL_READ_WRITE : GL_READ_ONLY);
-        glProgramLocalParametersI4uivNV(PROGRAM_LUT[stage], binding_index, 1,
-                                        reinterpret_cast<const GLuint*>(&ssbo));
+        glProgramLocalParametersI4uivNV(
+            PROGRAM_LUT[stage],
+            Shader::Backend::GLASM::PROGRAM_LOCAL_PARAMETER_STORAGE_BUFFER_BASE + binding_index, 1,
+            reinterpret_cast<const GLuint*>(&ssbo));
     }
 }
 
@@ -250,8 +253,10 @@ void BufferCacheRuntime::BindComputeStorageBuffer(u32 binding_index, Buffer& buf
             .padding = 0,
         };
         buffer.MakeResident(is_written ? GL_READ_WRITE : GL_READ_ONLY);
-        glProgramLocalParametersI4uivNV(GL_COMPUTE_PROGRAM_NV, binding_index, 1,
-                                        reinterpret_cast<const GLuint*>(&ssbo));
+        glProgramLocalParametersI4uivNV(
+            GL_COMPUTE_PROGRAM_NV,
+            Shader::Backend::GLASM::PROGRAM_LOCAL_PARAMETER_STORAGE_BUFFER_BASE + binding_index, 1,
+            reinterpret_cast<const GLuint*>(&ssbo));
     }
 }
 

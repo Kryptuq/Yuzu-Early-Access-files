@@ -21,6 +21,7 @@
 #include "video_core/texture_cache/descriptor_table.h"
 #include "video_core/texture_cache/image_base.h"
 #include "video_core/texture_cache/image_info.h"
+#include "video_core/texture_cache/image_view_base.h"
 #include "video_core/texture_cache/image_view_info.h"
 #include "video_core/texture_cache/render_targets.h"
 #include "video_core/texture_cache/slot_vector.h"
@@ -39,6 +40,12 @@ using VideoCore::Surface::PixelFormatFromDepthFormat;
 using VideoCore::Surface::PixelFormatFromRenderTargetFormat;
 using namespace Common::Literals;
 
+struct ImageViewInOut {
+    u32 index{};
+    bool blacklist{};
+    ImageViewId id{};
+};
+
 template <class P>
 class TextureCache {
     /// Address shift for caching images into a hash table
@@ -52,11 +59,6 @@ class TextureCache {
     static constexpr bool HAS_EMULATED_COPIES = P::HAS_EMULATED_COPIES;
     /// True when the API can provide info about the memory of the device.
     static constexpr bool HAS_DEVICE_MEMORY_INFO = P::HAS_DEVICE_MEMORY_INFO;
-
-    /// Image view ID for null descriptors
-    static constexpr ImageViewId NULL_IMAGE_VIEW_ID{0};
-    /// Sampler ID for bugged sampler ids
-    static constexpr SamplerId NULL_SAMPLER_ID{0};
 
     static constexpr u64 DEFAULT_EXPECTED_MEMORY = 1_GiB;
     static constexpr u64 DEFAULT_CRITICAL_MEMORY = 2_GiB;
@@ -99,11 +101,11 @@ public:
     void MarkModification(ImageId id) noexcept;
 
     /// Fill image_view_ids with the graphics images in indices
-    void FillGraphicsImageViews(std::span<const u32> indices,
-                                std::span<ImageViewId> image_view_ids);
+    template <bool has_blacklists>
+    void FillGraphicsImageViews(std::span<ImageViewInOut> views);
 
     /// Fill image_view_ids with the compute images in indices
-    void FillComputeImageViews(std::span<const u32> indices, std::span<ImageViewId> image_view_ids);
+    void FillComputeImageViews(std::span<ImageViewInOut> views);
 
     /// Get the sampler from the graphics descriptor table in the specified index
     Sampler* GetGraphicsSampler(u32 index);
@@ -160,6 +162,10 @@ public:
     /// Return true when a CPU region is modified from the GPU
     [[nodiscard]] bool IsRegionGpuModified(VAddr addr, size_t size);
 
+    [[nodiscard]] bool IsRescaling() const noexcept;
+
+    [[nodiscard]] bool IsRescaling(const ImageViewBase& image_view) const noexcept;
+
     std::mutex mutex;
 
 private:
@@ -198,9 +204,10 @@ private:
     void RunGarbageCollector();
 
     /// Fills image_view_ids in the image views in indices
+    template <bool has_blacklists>
     void FillImageViews(DescriptorTable<TICEntry>& table,
-                        std::span<ImageViewId> cached_image_view_ids, std::span<const u32> indices,
-                        std::span<ImageViewId> image_view_ids);
+                        std::span<ImageViewId> cached_image_view_ids,
+                        std::span<ImageViewInOut> views);
 
     /// Find or create an image view in the guest descriptor table
     ImageViewId VisitImageView(DescriptorTable<TICEntry>& table,
@@ -285,7 +292,7 @@ private:
     void UntrackImage(ImageBase& image, ImageId image_id);
 
     /// Delete image from the cache
-    void DeleteImage(ImageId image);
+    void DeleteImage(ImageId image, bool immediate_delete = false);
 
     /// Remove image views references from the cache
     void RemoveImageViewReferences(std::span<const ImageViewId> removed_views);
@@ -306,7 +313,7 @@ private:
     void PrepareImageView(ImageViewId image_view_id, bool is_modification, bool invalidate);
 
     /// Execute copies from one image to the other, even if they are incompatible
-    void CopyImage(ImageId dst_id, ImageId src_id, std::span<const ImageCopy> copies);
+    void CopyImage(ImageId dst_id, ImageId src_id, std::vector<ImageCopy> copies);
 
     /// Bind an image view as render target, downloading resources preemtively if needed
     void BindRenderTarget(ImageViewId* old_id, ImageViewId new_id);
@@ -317,6 +324,12 @@ private:
 
     /// Returns true if the current clear parameters clear the whole image of a given image view
     [[nodiscard]] bool IsFullClear(ImageViewId id);
+
+    bool ImageCanRescale(ImageBase& image);
+    void InvalidateScale(Image& image);
+    bool ScaleUp(Image& image);
+    bool ScaleDown(Image& image);
+    u64 GetScaledImageSizeBytes(ImageBase& image);
 
     Runtime& runtime;
     VideoCore::RasterizerInterface& rasterizer;
@@ -349,6 +362,7 @@ private:
     VAddr virtual_invalid_space{};
 
     bool has_deleted_images = false;
+    bool is_rescaling = false;
     u64 total_used_memory = 0;
     u64 minimum_memory;
     u64 expected_memory;

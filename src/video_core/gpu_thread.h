@@ -11,7 +11,7 @@
 #include <thread>
 #include <variant>
 
-#include "common/threadsafe_queue.h"
+#include "common/atomic_threadsafe_queue.h"
 #include "video_core/framebuffer_config.h"
 
 namespace Tegra {
@@ -97,9 +97,9 @@ struct CommandDataContainer {
 
 /// Struct used to synchronize the GPU thread
 struct SynchState final {
-    using CommandQueue = Common::SPSCQueue<CommandDataContainer, true>;
+    using CommandQueue = Common::MPMCQueue<CommandDataContainer>;
     std::mutex write_lock;
-    CommandQueue queue;
+    CommandQueue queue{100000};
     u64 last_fence{};
     std::atomic<u64> signaled_fence{};
     std::condition_variable_any cv;

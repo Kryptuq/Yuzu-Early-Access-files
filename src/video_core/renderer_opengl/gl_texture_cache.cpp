@@ -316,6 +316,52 @@ void AttachTexture(GLuint fbo, GLenum attachment, const ImageView* image_view) {
     }
 }
 
+OGLTexture MakeImage(const VideoCommon::ImageInfo& info, GLenum gl_internal_format) {
+    const GLenum target = ImageTarget(info);
+    const GLsizei width = info.size.width;
+    const GLsizei height = info.size.height;
+    const GLsizei depth = info.size.depth;
+    const int max_host_mip_levels = std::bit_width(info.size.width);
+    const GLsizei num_levels = std::min(info.resources.levels, max_host_mip_levels);
+    const GLsizei num_layers = info.resources.layers;
+    const GLsizei num_samples = info.num_samples;
+
+    GLuint handle = 0;
+    OGLTexture texture;
+    if (target != GL_TEXTURE_BUFFER) {
+        texture.Create(target);
+        handle = texture.handle;
+    }
+    switch (target) {
+    case GL_TEXTURE_1D_ARRAY:
+        glTextureStorage2D(handle, num_levels, gl_internal_format, width, num_layers);
+        break;
+    case GL_TEXTURE_2D_ARRAY:
+        glTextureStorage3D(handle, num_levels, gl_internal_format, width, height, num_layers);
+        break;
+    case GL_TEXTURE_2D_MULTISAMPLE_ARRAY: {
+        // TODO: Where should 'fixedsamplelocations' come from?
+        const auto [samples_x, samples_y] = SamplesLog2(info.num_samples);
+        glTextureStorage3DMultisample(handle, num_samples, gl_internal_format, width >> samples_x,
+                                      height >> samples_y, num_layers, GL_FALSE);
+        break;
+    }
+    case GL_TEXTURE_RECTANGLE:
+        glTextureStorage2D(handle, num_levels, gl_internal_format, width, height);
+        break;
+    case GL_TEXTURE_3D:
+        glTextureStorage3D(handle, num_levels, gl_internal_format, width, height, depth);
+        break;
+    case GL_TEXTURE_BUFFER:
+        UNREACHABLE();
+        break;
+    default:
+        UNREACHABLE_MSG("Invalid target=0x{:x}", target);
+        break;
+    }
+    return texture;
+}
+
 [[nodiscard]] bool IsPixelFormatBGR(PixelFormat format) {
     switch (format) {
     case PixelFormat::B5G6R5_UNORM:
@@ -359,7 +405,8 @@ ImageBufferMap::~ImageBufferMap() {
 
 TextureCacheRuntime::TextureCacheRuntime(const Device& device_, ProgramManager& program_manager,
                                          StateTracker& state_tracker_)
-    : device{device_}, state_tracker{state_tracker_}, util_shaders(program_manager) {
+    : device{device_}, state_tracker{state_tracker_},
+      util_shaders(program_manager), resolution{Settings::values.resolution_info} {
     static constexpr std::array TARGETS{GL_TEXTURE_1D_ARRAY, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D};
     for (size_t i = 0; i < TARGETS.size(); ++i) {
         const GLenum target = TARGETS[i];
@@ -426,6 +473,17 @@ TextureCacheRuntime::TextureCacheRuntime(const Device& device_, ProgramManager& 
     set_view(Shader::TextureType::ColorArray1D, null_image_1d_array.handle);
     set_view(Shader::TextureType::ColorArray2D, null_image_view_2d_array.handle);
     set_view(Shader::TextureType::ColorArrayCube, null_image_cube_array.handle);
+
+    if (resolution.active) {
+        for (size_t i = 0; i < rescale_draw_fbos.size(); ++i) {
+            rescale_draw_fbos[i].Create();
+            rescale_read_fbos[i].Create();
+
+            // Make sure the framebuffer is created without DSA
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, rescale_draw_fbos[i].handle);
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, rescale_read_fbos[i].handle);
+        }
+    }
 }
 
 TextureCacheRuntime::~TextureCacheRuntime() = default;
@@ -605,13 +663,13 @@ std::optional<size_t> TextureCacheRuntime::StagingBuffers::FindBuffer(size_t req
     return found;
 }
 
-Image::Image(TextureCacheRuntime& runtime, const VideoCommon::ImageInfo& info_, GPUVAddr gpu_addr_,
+Image::Image(TextureCacheRuntime& runtime_, const VideoCommon::ImageInfo& info_, GPUVAddr gpu_addr_,
              VAddr cpu_addr_)
-    : VideoCommon::ImageBase(info_, gpu_addr_, cpu_addr_) {
-    if (CanBeAccelerated(runtime, info)) {
+    : VideoCommon::ImageBase(info_, gpu_addr_, cpu_addr_), runtime{&runtime_} {
+    if (CanBeAccelerated(*runtime, info)) {
         flags |= ImageFlagBits::AcceleratedUpload;
     }
-    if (IsConverted(runtime.device, info.format, info.type)) {
+    if (IsConverted(runtime->device, info.format, info.type)) {
         flags |= ImageFlagBits::Converted;
         gl_internal_format = IsPixelFormatSRGB(info.format) ? GL_SRGB8_ALPHA8 : GL_RGBA8;
         gl_format = GL_RGBA;
@@ -622,58 +680,25 @@ Image::Image(TextureCacheRuntime& runtime, const VideoCommon::ImageInfo& info_, 
         gl_format = tuple.format;
         gl_type = tuple.type;
     }
-    const GLenum target = ImageTarget(info);
-    const GLsizei width = info.size.width;
-    const GLsizei height = info.size.height;
-    const GLsizei depth = info.size.depth;
-    const int max_host_mip_levels = std::bit_width(info.size.width);
-    const GLsizei num_levels = std::min(info.resources.levels, max_host_mip_levels);
-    const GLsizei num_layers = info.resources.layers;
-    const GLsizei num_samples = info.num_samples;
-
-    GLuint handle = 0;
-    if (target != GL_TEXTURE_BUFFER) {
-        texture.Create(target);
-        handle = texture.handle;
-    }
-    switch (target) {
-    case GL_TEXTURE_1D_ARRAY:
-        glTextureStorage2D(handle, num_levels, gl_internal_format, width, num_layers);
-        break;
-    case GL_TEXTURE_2D_ARRAY:
-        glTextureStorage3D(handle, num_levels, gl_internal_format, width, height, num_layers);
-        break;
-    case GL_TEXTURE_2D_MULTISAMPLE_ARRAY: {
-        // TODO: Where should 'fixedsamplelocations' come from?
-        const auto [samples_x, samples_y] = SamplesLog2(info.num_samples);
-        glTextureStorage3DMultisample(handle, num_samples, gl_internal_format, width >> samples_x,
-                                      height >> samples_y, num_layers, GL_FALSE);
-        break;
-    }
-    case GL_TEXTURE_RECTANGLE:
-        glTextureStorage2D(handle, num_levels, gl_internal_format, width, height);
-        break;
-    case GL_TEXTURE_3D:
-        glTextureStorage3D(handle, num_levels, gl_internal_format, width, height, depth);
-        break;
-    case GL_TEXTURE_BUFFER:
-        UNREACHABLE();
-        break;
-    default:
-        UNREACHABLE_MSG("Invalid target=0x{:x}", target);
-        break;
-    }
-    if (runtime.device.HasDebuggingToolAttached()) {
+    texture = MakeImage(info, gl_internal_format);
+    current_texture = texture.handle;
+    if (runtime->device.HasDebuggingToolAttached()) {
         const std::string name = VideoCommon::Name(*this);
-        glObjectLabel(target == GL_TEXTURE_BUFFER ? GL_BUFFER : GL_TEXTURE, handle,
-                      static_cast<GLsizei>(name.size()), name.data());
+        glObjectLabel(ImageTarget(info) == GL_TEXTURE_BUFFER ? GL_BUFFER : GL_TEXTURE,
+                      texture.handle, static_cast<GLsizei>(name.size()), name.data());
     }
 }
+
+Image::Image(const VideoCommon::NullImageParams& params) : VideoCommon::ImageBase{params} {}
 
 Image::~Image() = default;
 
 void Image::UploadMemory(const ImageBufferMap& map,
                          std::span<const VideoCommon::BufferImageCopy> copies) {
+    const bool is_rescaled = True(flags & ImageFlagBits::Rescaled);
+    if (is_rescaled) {
+        ScaleDown(true);
+    }
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, map.buffer);
     glFlushMappedBufferRange(GL_PIXEL_UNPACK_BUFFER, map.offset, unswizzled_size_bytes);
 
@@ -693,12 +718,18 @@ void Image::UploadMemory(const ImageBufferMap& map,
         }
         CopyBufferToImage(copy, map.offset);
     }
+    if (is_rescaled) {
+        ScaleUp();
+    }
 }
 
 void Image::DownloadMemory(ImageBufferMap& map,
                            std::span<const VideoCommon::BufferImageCopy> copies) {
+    const bool is_rescaled = True(flags & ImageFlagBits::Rescaled);
+    if (is_rescaled) {
+        ScaleDown();
+    }
     glMemoryBarrier(GL_PIXEL_BUFFER_BARRIER_BIT); // TODO: Move this to its own API
-
     glBindBuffer(GL_PIXEL_PACK_BUFFER, map.buffer);
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
@@ -715,6 +746,9 @@ void Image::DownloadMemory(ImageBufferMap& map,
             glPixelStorei(GL_PACK_IMAGE_HEIGHT, current_image_height);
         }
         CopyImageToBuffer(copy, map.offset);
+    }
+    if (is_rescaled) {
+        ScaleUp(true);
     }
 }
 
@@ -741,11 +775,11 @@ GLuint Image::StorageHandle() noexcept {
             return store_view.handle;
         }
         store_view.Create();
-        glTextureView(store_view.handle, ImageTarget(info), texture.handle, GL_RGBA8, 0,
+        glTextureView(store_view.handle, ImageTarget(info), current_texture, GL_RGBA8, 0,
                       info.resources.levels, 0, info.resources.layers);
         return store_view.handle;
     default:
-        return texture.handle;
+        return current_texture;
     }
 }
 
@@ -849,6 +883,140 @@ void Image::CopyImageToBuffer(const VideoCommon::BufferImageCopy& copy, size_t b
     }
 }
 
+void Image::Scale(bool up_scale) {
+    const auto format_type = GetFormatType(info.format);
+    const GLenum attachment = [format_type] {
+        switch (format_type) {
+        case SurfaceType::ColorTexture:
+            return GL_COLOR_ATTACHMENT0;
+        case SurfaceType::Depth:
+            return GL_DEPTH_ATTACHMENT;
+        case SurfaceType::DepthStencil:
+            return GL_DEPTH_STENCIL_ATTACHMENT;
+        default:
+            UNREACHABLE();
+            return GL_COLOR_ATTACHMENT0;
+        }
+    }();
+    const GLenum mask = [format_type] {
+        switch (format_type) {
+        case SurfaceType::ColorTexture:
+            return GL_COLOR_BUFFER_BIT;
+        case SurfaceType::Depth:
+            return GL_DEPTH_BUFFER_BIT;
+        case SurfaceType::DepthStencil:
+            return GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
+        default:
+            UNREACHABLE();
+            return GL_COLOR_BUFFER_BIT;
+        }
+    }();
+    const size_t fbo_index = [format_type] {
+        switch (format_type) {
+        case SurfaceType::ColorTexture:
+            return 0;
+        case SurfaceType::Depth:
+            return 1;
+        case SurfaceType::DepthStencil:
+            return 2;
+        default:
+            UNREACHABLE();
+            return 0;
+        }
+    }();
+    const bool is_2d = info.type == ImageType::e2D;
+    const bool is_color{(mask & GL_COLOR_BUFFER_BIT) != 0};
+    // Integer formats must use NEAREST filter
+    const bool linear_color_format{is_color && !IsPixelFormatInteger(info.format)};
+    const GLenum filter = linear_color_format ? GL_LINEAR : GL_NEAREST;
+
+    const auto& resolution = runtime->resolution;
+    const u32 scaled_width = resolution.ScaleUp(info.size.width);
+    const u32 scaled_height = is_2d ? resolution.ScaleUp(info.size.height) : info.size.height;
+    const u32 original_width = info.size.width;
+    const u32 original_height = info.size.height;
+
+    if (!upscaled_backup.handle) {
+        auto dst_info = info;
+        dst_info.size.width = scaled_width;
+        dst_info.size.height = scaled_height;
+        upscaled_backup = MakeImage(dst_info, gl_internal_format);
+    }
+    const u32 src_width = up_scale ? original_width : scaled_width;
+    const u32 src_height = up_scale ? original_height : scaled_height;
+    const u32 dst_width = up_scale ? scaled_width : original_width;
+    const u32 dst_height = up_scale ? scaled_height : original_height;
+    const auto src_handle = up_scale ? texture.handle : upscaled_backup.handle;
+    const auto dst_handle = up_scale ? upscaled_backup.handle : texture.handle;
+
+    // TODO (ameerj): Investigate other GL states that affect blitting.
+    glDisablei(GL_SCISSOR_TEST, 0);
+    glViewportIndexedf(0, 0.0f, 0.0f, static_cast<GLfloat>(dst_width),
+                       static_cast<GLfloat>(dst_height));
+
+    const GLuint read_fbo = runtime->rescale_read_fbos[fbo_index].handle;
+    const GLuint draw_fbo = runtime->rescale_draw_fbos[fbo_index].handle;
+    for (s32 layer = 0; layer < info.resources.layers; ++layer) {
+        for (s32 level = 0; level < info.resources.levels; ++level) {
+            const u32 src_level_width = std::max(1u, src_width >> level);
+            const u32 src_level_height = std::max(1u, src_height >> level);
+            const u32 dst_level_width = std::max(1u, dst_width >> level);
+            const u32 dst_level_height = std::max(1u, dst_height >> level);
+
+            glNamedFramebufferTextureLayer(read_fbo, attachment, src_handle, level, layer);
+            glNamedFramebufferTextureLayer(draw_fbo, attachment, dst_handle, level, layer);
+
+            glBlitNamedFramebuffer(read_fbo, draw_fbo, 0, 0, src_level_width, src_level_height, 0,
+                                   0, dst_level_width, dst_level_height, mask, filter);
+        }
+    }
+    current_texture = dst_handle;
+    auto& state_tracker = runtime->GetStateTracker();
+    state_tracker.NotifyViewport0();
+    state_tracker.NotifyScissor0();
+}
+
+bool Image::ScaleUp(bool ignore) {
+    if (True(flags & ImageFlagBits::Rescaled)) {
+        return false;
+    }
+    if (gl_format == 0 && gl_type == 0) {
+        // compressed textures
+        return false;
+    }
+    if (info.type == ImageType::Linear) {
+        UNREACHABLE();
+        return false;
+    }
+    flags |= ImageFlagBits::Rescaled;
+    if (!runtime->resolution.active) {
+        return false;
+    }
+    has_scaled = true;
+    if (ignore) {
+        current_texture = upscaled_backup.handle;
+        return true;
+    }
+    Scale(true);
+    return true;
+}
+
+bool Image::ScaleDown(bool ignore) {
+    if (False(flags & ImageFlagBits::Rescaled)) {
+        return false;
+    }
+    flags &= ~ImageFlagBits::Rescaled;
+    if (!runtime->resolution.active) {
+        return false;
+    }
+    if (ignore) {
+        current_texture = texture.handle;
+        return true;
+    }
+    Scale(false);
+    return true;
+}
+
 ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewInfo& info,
                      ImageId image_id_, Image& image)
     : VideoCommon::ImageViewBase{info, image.info, image_id_}, views{runtime.null_image_views} {
@@ -862,7 +1030,7 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
     flat_range = info.range;
     set_object_label = device.HasDebuggingToolAttached();
     is_render_target = info.IsRenderTarget();
-    original_texture = image.texture.handle;
+    original_texture = image.Handle();
     num_samples = image.info.num_samples;
     if (!is_render_target) {
         swizzle[0] = info.x_source;
@@ -950,7 +1118,7 @@ ImageView::ImageView(TextureCacheRuntime&, const VideoCommon::ImageInfo& info,
                      const VideoCommon::ImageViewInfo& view_info)
     : VideoCommon::ImageViewBase{info, view_info} {}
 
-ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::NullImageParams& params)
+ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::NullImageViewParams& params)
     : VideoCommon::ImageViewBase{params}, views{runtime.null_image_views} {}
 
 GLuint ImageView::StorageView(Shader::TextureType texture_type, Shader::ImageFormat image_format) {
@@ -1116,25 +1284,24 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM
 void BGRCopyPass::CopyBGR(Image& dst_image, Image& src_image,
                           std::span<const VideoCommon::ImageCopy> copies) {
     static constexpr VideoCommon::Offset3D zero_offset{0, 0, 0};
-    const u32 requested_pbo_size =
-        std::max(src_image.unswizzled_size_bytes, dst_image.unswizzled_size_bytes);
-
-    if (bgr_pbo_size < requested_pbo_size) {
-        bgr_pbo.Create();
-        bgr_pbo_size = requested_pbo_size;
-        glNamedBufferData(bgr_pbo.handle, bgr_pbo_size, nullptr, GL_STREAM_COPY);
-    }
+    const u32 img_bpp = BytesPerBlock(src_image.info.format);
     for (const ImageCopy& copy : copies) {
         ASSERT(copy.src_offset == zero_offset);
         ASSERT(copy.dst_offset == zero_offset);
-
+        const u32 num_src_layers = static_cast<u32>(copy.src_subresource.num_layers);
+        const u32 copy_size = copy.extent.width * copy.extent.height * num_src_layers * img_bpp;
+        if (bgr_pbo_size < copy_size) {
+            bgr_pbo.Create();
+            bgr_pbo_size = copy_size;
+            glNamedBufferData(bgr_pbo.handle, bgr_pbo_size, nullptr, GL_STREAM_COPY);
+        }
         // Copy from source to PBO
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
         glPixelStorei(GL_PACK_ROW_LENGTH, copy.extent.width);
         glBindBuffer(GL_PIXEL_PACK_BUFFER, bgr_pbo.handle);
         glGetTextureSubImage(src_image.Handle(), 0, 0, 0, 0, copy.extent.width, copy.extent.height,
-                             copy.src_subresource.num_layers, src_image.GlFormat(),
-                             src_image.GlType(), static_cast<GLsizei>(bgr_pbo_size), nullptr);
+                             num_src_layers, src_image.GlFormat(), src_image.GlType(),
+                             static_cast<GLsizei>(bgr_pbo_size), nullptr);
 
         // Copy from PBO to destination in desired GL format
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);

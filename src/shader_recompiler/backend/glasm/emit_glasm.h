@@ -13,6 +13,8 @@
 
 namespace Shader::Backend::GLASM {
 
+constexpr u32 PROGRAM_LOCAL_PARAMETER_STORAGE_BUFFER_BASE = 1;
+
 [[nodiscard]] std::string EmitGLASM(const Profile& profile, const RuntimeInfo& runtime_info,
                                     IR::Program& program, Bindings& bindings);
 

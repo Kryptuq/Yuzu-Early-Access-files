@@ -166,7 +166,7 @@ void OGLFramebuffer::Create() {
         return;
 
     MICROPROFILE_SCOPE(OpenGL_ResourceCreation);
-    glGenFramebuffers(1, &handle);
+    glCreateFramebuffers(1, &handle);
 }
 
 void OGLFramebuffer::Release() {

@@ -90,6 +90,14 @@ void EmitIMul32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b) {
     ctx.Add("MUL.S {}.x,{},{};", inst, a, b);
 }
 
+void EmitSDiv32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b) {
+    ctx.Add("DIV.S {}.x,{},{};", inst, a, b);
+}
+
+void EmitUDiv32(EmitContext& ctx, IR::Inst& inst, ScalarU32 a, ScalarU32 b) {
+    ctx.Add("DIV.U {}.x,{},{};", inst, a, b);
+}
+
 void EmitINeg32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value) {
     if (value.type != Type::Register && static_cast<s32>(value.imm_u32) < 0) {
         ctx.Add("MOV.S {},{};", inst, -static_cast<s32>(value.imm_u32));

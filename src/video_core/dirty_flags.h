@@ -29,6 +29,8 @@ enum : u8 {
     ColorBuffer6,
     ColorBuffer7,
     ZetaBuffer,
+    RescaleViewports,
+    RescaleScissors,
 
     VertexBuffers,
     VertexBuffer0,

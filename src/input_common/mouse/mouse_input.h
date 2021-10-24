@@ -9,8 +9,8 @@
 #include <stop_token>
 #include <thread>
 
+#include "common/atomic_threadsafe_queue.h"
 #include "common/common_types.h"
-#include "common/threadsafe_queue.h"
 #include "common/vector_math.h"
 #include "core/frontend/input.h"
 #include "input_common/motion_input.h"
@@ -79,8 +79,8 @@ public:
     [[nodiscard]] bool ToggleButton(std::size_t button_);
     [[nodiscard]] bool UnlockButton(std::size_t button_);
 
-    [[nodiscard]] Common::SPSCQueue<MouseStatus>& GetMouseQueue();
-    [[nodiscard]] const Common::SPSCQueue<MouseStatus>& GetMouseQueue() const;
+    [[nodiscard]] Common::MPMCQueue<MouseStatus>& GetMouseQueue();
+    [[nodiscard]] const Common::MPMCQueue<MouseStatus>& GetMouseQueue() const;
 
     [[nodiscard]] MouseData& GetMouseState(std::size_t button);
     [[nodiscard]] const MouseData& GetMouseState(std::size_t button) const;
@@ -109,7 +109,7 @@ private:
     std::jthread update_thread;
     MouseButton last_button{MouseButton::Undefined};
     std::array<MouseInfo, 7> mouse_info;
-    Common::SPSCQueue<MouseStatus> mouse_queue;
+    Common::MPMCQueue<MouseStatus> mouse_queue{1024};
     bool configuring{false};
     int mouse_panning_timout{};
 };

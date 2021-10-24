@@ -59,7 +59,7 @@ Common::ParamPackage UDPMotionFactory::GetNextInput() {
     Common::ParamPackage params;
     CemuhookUDP::UDPPadStatus pad;
     auto& queue = client->GetPadQueue();
-    while (queue.Pop(pad)) {
+    while (queue.try_pop(pad)) {
         if (pad.motion == CemuhookUDP::PadMotion::Undefined || std::abs(pad.motion_value) < 1) {
             continue;
         }

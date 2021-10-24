@@ -47,7 +47,9 @@ void LogSettings() {
     log_setting("System_TimeZoneIndex", values.time_zone_index.GetValue());
     log_setting("Core_UseMultiCore", values.use_multi_core.GetValue());
     log_setting("CPU_Accuracy", values.cpu_accuracy.GetValue());
-    log_setting("Renderer_UseResolutionFactor", values.resolution_factor.GetValue());
+    log_setting("Renderer_UseResolutionScaling", values.resolution_setup.GetValue());
+    log_setting("Renderer_ScalingFilter", values.scaling_filter.GetValue());
+    log_setting("Renderer_AntiAliasing", values.anti_aliasing.GetValue());
     log_setting("Renderer_UseSpeedLimit", values.use_speed_limit.GetValue());
     log_setting("Renderer_SpeedLimit", values.speed_limit.GetValue());
     log_setting("Renderer_UseDiskShaderCache", values.use_disk_shader_cache.GetValue());
@@ -103,6 +105,55 @@ float Volume() {
         return 0.0f;
     }
     return values.volume.GetValue() / 100.0f;
+}
+
+void UpdateRescalingInfo() {
+    const auto setup = values.resolution_setup.GetValue();
+    auto& info = values.resolution_info;
+    info.downscale = false;
+    switch (setup) {
+    case ResolutionSetup::Res1_2X:
+        info.up_scale = 1;
+        info.down_shift = 1;
+        info.downscale = true;
+        break;
+    case ResolutionSetup::Res3_4X:
+        info.up_scale = 3;
+        info.down_shift = 2;
+        info.downscale = true;
+        break;
+    case ResolutionSetup::Res1X:
+        info.up_scale = 1;
+        info.down_shift = 0;
+        break;
+    case ResolutionSetup::Res2X:
+        info.up_scale = 2;
+        info.down_shift = 0;
+        break;
+    case ResolutionSetup::Res3X:
+        info.up_scale = 3;
+        info.down_shift = 0;
+        break;
+    case ResolutionSetup::Res4X:
+        info.up_scale = 4;
+        info.down_shift = 0;
+        break;
+    case ResolutionSetup::Res5X:
+        info.up_scale = 5;
+        info.down_shift = 0;
+        break;
+    case ResolutionSetup::Res6X:
+        info.up_scale = 6;
+        info.down_shift = 0;
+        break;
+    default:
+        UNREACHABLE();
+        info.up_scale = 1;
+        info.down_shift = 0;
+    }
+    info.up_factor = static_cast<f32>(info.up_scale) / (1U << info.down_shift);
+    info.down_factor = static_cast<f32>(1U << info.down_shift) / info.up_scale;
+    info.active = info.up_scale != 1 || info.down_shift != 0;
 }
 
 void RestoreGlobalState(bool is_powered_on) {

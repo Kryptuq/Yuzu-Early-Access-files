@@ -22,6 +22,7 @@
 namespace Vulkan {
 
 using Shader::ImageBufferDescriptor;
+using Shader::Backend::SPIRV::RESCALING_LAYOUT_WORDS_OFFSET;
 using Tegra::Texture::TexturePair;
 
 ComputePipeline::ComputePipeline(const Device& device_, DescriptorPool& descriptor_pool,
@@ -108,8 +109,7 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
     texture_cache.SynchronizeComputeDescriptors();
 
     static constexpr size_t max_elements = 64;
-    std::array<ImageId, max_elements> image_view_ids;
-    boost::container::static_vector<u32, max_elements> image_view_indices;
+    boost::container::static_vector<VideoCommon::ImageViewInOut, max_elements> views;
     boost::container::static_vector<VkSampler, max_elements> samplers;
 
     const auto& qmd{kepler_compute.launch_description};
@@ -134,30 +134,37 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
         }
         return TexturePair(gpu_memory.Read<u32>(addr), via_header_index);
     }};
-    const auto add_image{[&](const auto& desc) {
+    const auto add_image{[&](const auto& desc, bool blacklist) {
         for (u32 index = 0; index < desc.count; ++index) {
             const auto handle{read_handle(desc, index)};
-            image_view_indices.push_back(handle.first);
+            views.push_back({
+                .index = handle.first,
+                .blacklist = blacklist,
+                .id = {},
+            });
         }
     }};
-    std::ranges::for_each(info.texture_buffer_descriptors, add_image);
-    std::ranges::for_each(info.image_buffer_descriptors, add_image);
+    for (const auto& desc : info.texture_buffer_descriptors) {
+        add_image(desc, false);
+    }
+    for (const auto& desc : info.image_buffer_descriptors) {
+        add_image(desc, false);
+    }
     for (const auto& desc : info.texture_descriptors) {
         for (u32 index = 0; index < desc.count; ++index) {
             const auto handle{read_handle(desc, index)};
-            image_view_indices.push_back(handle.first);
+            views.push_back({handle.first});
 
             Sampler* const sampler = texture_cache.GetComputeSampler(handle.second);
             samplers.push_back(sampler->Handle());
         }
     }
-    std::ranges::for_each(info.image_descriptors, add_image);
-
-    const std::span indices_span(image_view_indices.data(), image_view_indices.size());
-    texture_cache.FillComputeImageViews(indices_span, image_view_ids);
+    for (const auto& desc : info.image_descriptors) {
+        add_image(desc, desc.is_written);
+    }
+    texture_cache.FillComputeImageViews(std::span(views.data(), views.size()));
 
     buffer_cache.UnbindComputeTextureBuffers();
-    ImageId* texture_buffer_ids{image_view_ids.data()};
     size_t index{};
     const auto add_buffer{[&](const auto& desc) {
         constexpr bool is_image = std::is_same_v<decltype(desc), const ImageBufferDescriptor&>;
@@ -166,11 +173,10 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
             if constexpr (is_image) {
                 is_written = desc.is_written;
             }
-            ImageView& image_view = texture_cache.GetImageView(*texture_buffer_ids);
+            ImageView& image_view = texture_cache.GetImageView(views[index].id);
             buffer_cache.BindComputeTextureBuffer(index, image_view.GpuAddr(),
                                                   image_view.BufferSize(), image_view.format,
                                                   is_written, is_image);
-            ++texture_buffer_ids;
             ++index;
         }
     }};
@@ -180,9 +186,11 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
     buffer_cache.UpdateComputeBuffers();
     buffer_cache.BindHostComputeBuffers();
 
+    RescalingPushConstant rescaling;
     const VkSampler* samplers_it{samplers.data()};
-    const ImageId* views_it{image_view_ids.data()};
-    PushImageDescriptors(info, samplers_it, views_it, texture_cache, update_descriptor_queue);
+    const VideoCommon::ImageViewInOut* views_it{views.data()};
+    PushImageDescriptors(texture_cache, update_descriptor_queue, info, rescaling, samplers_it,
+                         views_it);
 
     if (!is_built.load(std::memory_order::relaxed)) {
         // Wait for the pipeline to be built
@@ -192,10 +200,17 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
         });
     }
     const void* const descriptor_data{update_descriptor_queue.UpdateData()};
-    scheduler.Record([this, descriptor_data](vk::CommandBuffer cmdbuf) {
+    const bool is_rescaling = !info.texture_descriptors.empty() || !info.image_descriptors.empty();
+    scheduler.Record([this, descriptor_data, is_rescaling,
+                      rescaling_data = rescaling.Data()](vk::CommandBuffer cmdbuf) {
         cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline);
         if (!descriptor_set_layout) {
             return;
+        }
+        if (is_rescaling) {
+            cmdbuf.PushConstants(*pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT,
+                                 RESCALING_LAYOUT_WORDS_OFFSET, sizeof(rescaling_data),
+                                 rescaling_data.data());
         }
         const VkDescriptorSet descriptor_set{descriptor_allocator.Commit()};
         const vk::Device& dev{device.GetLogical()};

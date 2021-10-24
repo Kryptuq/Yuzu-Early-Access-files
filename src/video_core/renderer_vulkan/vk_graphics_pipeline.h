@@ -62,6 +62,7 @@ namespace Vulkan {
 class Device;
 class PipelineStatistics;
 class RenderPassCache;
+class RescalingPushConstant;
 class VKScheduler;
 class VKUpdateDescriptorQueue;
 
@@ -113,7 +114,7 @@ private:
     template <typename Spec>
     void ConfigureImpl(bool is_indexed);
 
-    void ConfigureDraw();
+    void ConfigureDraw(const RescalingPushConstant& rescaling);
 
     void MakePipeline(VkRenderPass render_pass);
 
@@ -138,6 +139,7 @@ private:
     std::array<Shader::Info, NUM_STAGES> stage_infos;
     std::array<u32, 5> enabled_uniform_buffer_masks{};
     VideoCommon::UniformBufferSizes uniform_buffer_sizes{};
+    u32 num_textures{};
 
     vk::DescriptorSetLayout descriptor_set_layout;
     DescriptorAllocator descriptor_allocator;

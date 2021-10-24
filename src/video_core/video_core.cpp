@@ -37,6 +37,8 @@ std::unique_ptr<VideoCore::RendererBase> CreateRenderer(
 namespace VideoCore {
 
 std::unique_ptr<Tegra::GPU> CreateGPU(Core::Frontend::EmuWindow& emu_window, Core::System& system) {
+    Settings::UpdateRescalingInfo();
+
     const auto nvdec_value = Settings::values.nvdec_emulation.GetValue();
     const bool use_nvdec = nvdec_value != Settings::NvdecEmulation::Off;
     const bool use_async = Settings::values.use_asynchronous_gpu_emulation.GetValue();
@@ -53,11 +55,10 @@ std::unique_ptr<Tegra::GPU> CreateGPU(Core::Frontend::EmuWindow& emu_window, Cor
     }
 }
 
-u16 GetResolutionScaleFactor(const RendererBase& renderer) {
-    return static_cast<u16>(
-        Settings::values.resolution_factor.GetValue() != 0
-            ? Settings::values.resolution_factor.GetValue()
-            : renderer.GetRenderWindow().GetFramebufferLayout().GetScalingRatio());
+float GetResolutionScaleFactor(const RendererBase& renderer) {
+    return Settings::values.resolution_info.active
+               ? Settings::values.resolution_info.up_factor
+               : renderer.GetRenderWindow().GetFramebufferLayout().GetScalingRatio();
 }
 
 } // namespace VideoCore

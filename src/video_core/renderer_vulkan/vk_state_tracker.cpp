@@ -54,6 +54,7 @@ void SetupDirtyViewports(Tables& tables) {
     FillBlock(tables[0], OFF(viewport_transform), NUM(viewport_transform), Viewports);
     FillBlock(tables[0], OFF(viewports), NUM(viewports), Viewports);
     tables[0][OFF(viewport_transform_enabled)] = Viewports;
+    tables[1][OFF(screen_y_control)] = Viewports;
 }
 
 void SetupDirtyScissors(Tables& tables) {

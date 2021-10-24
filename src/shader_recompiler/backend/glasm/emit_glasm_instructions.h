@@ -72,6 +72,7 @@ void EmitInvocationId(EmitContext& ctx, IR::Inst& inst);
 void EmitSampleId(EmitContext& ctx, IR::Inst& inst);
 void EmitIsHelperInvocation(EmitContext& ctx, IR::Inst& inst);
 void EmitYDirection(EmitContext& ctx, IR::Inst& inst);
+void EmitResolutionDownFactor(EmitContext& ctx, IR::Inst& inst);
 void EmitLoadLocal(EmitContext& ctx, IR::Inst& inst, ScalarU32 word_offset);
 void EmitWriteLocal(EmitContext& ctx, ScalarU32 word_offset, ScalarU32 value);
 void EmitUndefU1(EmitContext& ctx, IR::Inst& inst);
@@ -303,6 +304,8 @@ void EmitIAdd64(EmitContext& ctx, IR::Inst& inst, Register a, Register b);
 void EmitISub32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b);
 void EmitISub64(EmitContext& ctx, IR::Inst& inst, Register a, Register b);
 void EmitIMul32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b);
+void EmitSDiv32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b);
+void EmitUDiv32(EmitContext& ctx, IR::Inst& inst, ScalarU32 a, ScalarU32 b);
 void EmitINeg32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value);
 void EmitINeg64(EmitContext& ctx, IR::Inst& inst, Register value);
 void EmitIAbs32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value);
@@ -553,6 +556,8 @@ void EmitImageGradient(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
 void EmitImageRead(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord);
 void EmitImageWrite(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
                     Register color);
+void EmitIsTextureScaled(EmitContext& ctx, IR::Inst& inst, const IR::Value& index);
+void EmitIsImageScaled(EmitContext& ctx, IR::Inst& inst, const IR::Value& index);
 void EmitBindlessImageAtomicIAdd32(EmitContext&);
 void EmitBindlessImageAtomicSMin32(EmitContext&);
 void EmitBindlessImageAtomicUMin32(EmitContext&);

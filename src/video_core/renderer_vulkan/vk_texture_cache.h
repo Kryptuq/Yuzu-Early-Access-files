@@ -13,6 +13,10 @@
 #include "video_core/vulkan_common/vulkan_memory_allocator.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
+namespace Settings {
+struct ResolutionScalingInfo;
+}
+
 namespace Vulkan {
 
 using VideoCommon::ImageId;
@@ -31,20 +35,24 @@ class RenderPassCache;
 class StagingBufferPool;
 class VKScheduler;
 
-struct TextureCacheRuntime {
-    const Device& device;
-    VKScheduler& scheduler;
-    MemoryAllocator& memory_allocator;
-    StagingBufferPool& staging_buffer_pool;
-    BlitImageHelper& blit_image_helper;
-    ASTCDecoderPass& astc_decoder_pass;
-    RenderPassCache& render_pass_cache;
+class TextureCacheRuntime {
+public:
+    explicit TextureCacheRuntime(const Device& device_, VKScheduler& scheduler_,
+                                 MemoryAllocator& memory_allocator_,
+                                 StagingBufferPool& staging_buffer_pool_,
+                                 BlitImageHelper& blit_image_helper_,
+                                 ASTCDecoderPass& astc_decoder_pass_,
+                                 RenderPassCache& render_pass_cache_);
 
     void Finish();
 
     StagingBufferRef UploadStagingBuffer(size_t size);
 
     StagingBufferRef DownloadStagingBuffer(size_t size);
+
+    void TickFrame();
+
+    u64 GetDeviceLocalMemory() const;
 
     void BlitImage(Framebuffer* dst_framebuffer, ImageView& dst, ImageView& src,
                    const Region2D& dst_region, const Region2D& src_region,
@@ -53,7 +61,7 @@ struct TextureCacheRuntime {
 
     void CopyImage(Image& dst, Image& src, std::span<const VideoCommon::ImageCopy> copies);
 
-    void ConvertImage(Framebuffer* dst, ImageView& dst_view, ImageView& src_view);
+    void ConvertImage(Framebuffer* dst, ImageView& dst_view, ImageView& src_view, bool rescaled);
 
     bool CanAccelerateImageUpload(Image&) const noexcept {
         return false;
@@ -74,13 +82,21 @@ struct TextureCacheRuntime {
         return true;
     }
 
-    u64 GetDeviceLocalMemory() const;
+    const Device& device;
+    VKScheduler& scheduler;
+    MemoryAllocator& memory_allocator;
+    StagingBufferPool& staging_buffer_pool;
+    BlitImageHelper& blit_image_helper;
+    ASTCDecoderPass& astc_decoder_pass;
+    RenderPassCache& render_pass_cache;
+    const Settings::ResolutionScalingInfo& resolution;
 };
 
 class Image : public VideoCommon::ImageBase {
 public:
     explicit Image(TextureCacheRuntime&, const VideoCommon::ImageInfo& info, GPUVAddr gpu_addr,
                    VAddr cpu_addr);
+    explicit Image(const VideoCommon::NullImageParams&);
 
     ~Image();
 
@@ -97,7 +113,7 @@ public:
                         std::span<const VideoCommon::BufferImageCopy> copies);
 
     [[nodiscard]] VkImage Handle() const noexcept {
-        return *image;
+        return current_image;
     }
 
     [[nodiscard]] VkImageAspectFlags AspectMask() const noexcept {
@@ -113,14 +129,30 @@ public:
         return std::exchange(initialized, true);
     }
 
+    bool ScaleUp(bool ignore = false);
+
+    bool ScaleDown(bool ignore = false);
+
 private:
-    VKScheduler* scheduler;
-    vk::Image image;
+    bool BlitScaleHelper(bool scale_up);
+
+    VKScheduler* scheduler{};
+    TextureCacheRuntime* runtime{};
+
+    vk::Image original_image;
     MemoryCommit commit;
-    vk::ImageView image_view;
     std::vector<vk::ImageView> storage_image_views;
     VkImageAspectFlags aspect_mask = 0;
     bool initialized = false;
+    vk::Image scaled_image{};
+    MemoryCommit scaled_commit{};
+    VkImage current_image{};
+
+    std::unique_ptr<Framebuffer> scale_framebuffer;
+    std::unique_ptr<ImageView> scale_view;
+
+    std::unique_ptr<Framebuffer> normal_framebuffer;
+    std::unique_ptr<ImageView> normal_view;
 };
 
 class ImageView : public VideoCommon::ImageViewBase {
@@ -128,7 +160,7 @@ public:
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageViewInfo&, ImageId, Image&);
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageInfo&,
                        const VideoCommon::ImageViewInfo&, GPUVAddr);
-    explicit ImageView(TextureCacheRuntime&, const VideoCommon::NullImageParams&);
+    explicit ImageView(TextureCacheRuntime&, const VideoCommon::NullImageViewParams&);
 
     [[nodiscard]] VkImageView DepthView();
 
@@ -197,8 +229,14 @@ private:
 
 class Framebuffer {
 public:
-    explicit Framebuffer(TextureCacheRuntime&, std::span<ImageView*, NUM_RT> color_buffers,
+    explicit Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM_RT> color_buffers,
                          ImageView* depth_buffer, const VideoCommon::RenderTargets& key);
+
+    explicit Framebuffer(TextureCacheRuntime& runtime, ImageView* color_buffer,
+                         ImageView* depth_buffer, VkExtent2D extent);
+
+    void CreateFramebuffer(TextureCacheRuntime& runtime,
+                           std::span<ImageView*, NUM_RT> color_buffers, ImageView* depth_buffer);
 
     [[nodiscard]] VkFramebuffer Handle() const noexcept {
         return *framebuffer;

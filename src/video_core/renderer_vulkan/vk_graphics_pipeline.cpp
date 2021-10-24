@@ -32,6 +32,8 @@ namespace {
 using boost::container::small_vector;
 using boost::container::static_vector;
 using Shader::ImageBufferDescriptor;
+using Shader::Backend::SPIRV::RESCALING_LAYOUT_DOWN_FACTOR_OFFSET;
+using Shader::Backend::SPIRV::RESCALING_LAYOUT_WORDS_OFFSET;
 using Tegra::Texture::TexturePair;
 using VideoCore::Surface::PixelFormat;
 using VideoCore::Surface::PixelFormatFromDepthFormat;
@@ -235,6 +237,7 @@ GraphicsPipeline::GraphicsPipeline(
         stage_infos[stage] = *info;
         enabled_uniform_buffer_masks[stage] = info->constant_buffer_mask;
         std::ranges::copy(info->constant_buffer_used_sizes, uniform_buffer_sizes[stage].begin());
+        num_textures += Shader::NumDescriptors(info->texture_descriptors);
     }
     auto func{[this, shader_notify, &render_pass_cache, &descriptor_pool, pipeline_statistics] {
         DescriptorLayoutBuilder builder{MakeBuilder(device, stage_infos)};
@@ -277,11 +280,10 @@ void GraphicsPipeline::AddTransition(GraphicsPipeline* transition) {
 
 template <typename Spec>
 void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
-    std::array<ImageId, MAX_IMAGE_ELEMENTS> image_view_ids;
-    std::array<u32, MAX_IMAGE_ELEMENTS> image_view_indices;
+    std::array<VideoCommon::ImageViewInOut, MAX_IMAGE_ELEMENTS> views;
     std::array<VkSampler, MAX_IMAGE_ELEMENTS> samplers;
     size_t sampler_index{};
-    size_t image_index{};
+    size_t view_index{};
 
     texture_cache.SynchronizeGraphicsDescriptors();
 
@@ -322,26 +324,30 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
             }
             return TexturePair(gpu_memory.Read<u32>(addr), via_header_index);
         }};
-        const auto add_image{[&](const auto& desc) {
+        const auto add_image{[&](const auto& desc, bool blacklist) LAMBDA_FORCEINLINE {
             for (u32 index = 0; index < desc.count; ++index) {
                 const auto handle{read_handle(desc, index)};
-                image_view_indices[image_index++] = handle.first;
+                views[view_index++] = {
+                    .index = handle.first,
+                    .blacklist = blacklist,
+                    .id = {},
+                };
             }
         }};
         if constexpr (Spec::has_texture_buffers) {
             for (const auto& desc : info.texture_buffer_descriptors) {
-                add_image(desc);
+                add_image(desc, false);
             }
         }
         if constexpr (Spec::has_image_buffers) {
             for (const auto& desc : info.image_buffer_descriptors) {
-                add_image(desc);
+                add_image(desc, false);
             }
         }
         for (const auto& desc : info.texture_descriptors) {
             for (u32 index = 0; index < desc.count; ++index) {
                 const auto handle{read_handle(desc, index)};
-                image_view_indices[image_index++] = handle.first;
+                views[view_index++] = {handle.first};
 
                 Sampler* const sampler{texture_cache.GetGraphicsSampler(handle.second)};
                 samplers[sampler_index++] = sampler->Handle();
@@ -349,7 +355,7 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
         }
         if constexpr (Spec::has_images) {
             for (const auto& desc : info.image_descriptors) {
-                add_image(desc);
+                add_image(desc, desc.is_written);
             }
         }
     }};
@@ -368,10 +374,9 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
     if constexpr (Spec::enabled_stages[4]) {
         config_stage(4);
     }
-    const std::span indices_span(image_view_indices.data(), image_index);
-    texture_cache.FillGraphicsImageViews(indices_span, image_view_ids);
+    texture_cache.FillGraphicsImageViews<Spec::has_images>(std::span(views.data(), view_index));
 
-    ImageId* texture_buffer_index{image_view_ids.data()};
+    VideoCommon::ImageViewInOut* texture_buffer_it{views.data()};
     const auto bind_stage_info{[&](size_t stage) LAMBDA_FORCEINLINE {
         size_t index{};
         const auto add_buffer{[&](const auto& desc) {
@@ -381,12 +386,12 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
                 if constexpr (is_image) {
                     is_written = desc.is_written;
                 }
-                ImageView& image_view{texture_cache.GetImageView(*texture_buffer_index)};
+                ImageView& image_view{texture_cache.GetImageView(texture_buffer_it->id)};
                 buffer_cache.BindGraphicsTextureBuffer(stage, index, image_view.GpuAddr(),
                                                        image_view.BufferSize(), image_view.format,
                                                        is_written, is_image);
                 ++index;
-                ++texture_buffer_index;
+                ++texture_buffer_it;
             }
         }};
         buffer_cache.UnbindGraphicsTextureBuffers(stage);
@@ -402,13 +407,9 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
                 add_buffer(desc);
             }
         }
-        for (const auto& desc : info.texture_descriptors) {
-            texture_buffer_index += desc.count;
-        }
+        texture_buffer_it += Shader::NumDescriptors(info.texture_descriptors);
         if constexpr (Spec::has_images) {
-            for (const auto& desc : info.image_descriptors) {
-                texture_buffer_index += desc.count;
-            }
+            texture_buffer_it += Shader::NumDescriptors(info.image_descriptors);
         }
     }};
     if constexpr (Spec::enabled_stages[0]) {
@@ -432,12 +433,13 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
 
     update_descriptor_queue.Acquire();
 
+    RescalingPushConstant rescaling;
     const VkSampler* samplers_it{samplers.data()};
-    const ImageId* views_it{image_view_ids.data()};
+    const VideoCommon::ImageViewInOut* views_it{views.data()};
     const auto prepare_stage{[&](size_t stage) LAMBDA_FORCEINLINE {
         buffer_cache.BindHostStageBuffers(stage);
-        PushImageDescriptors(stage_infos[stage], samplers_it, views_it, texture_cache,
-                             update_descriptor_queue);
+        PushImageDescriptors(texture_cache, update_descriptor_queue, stage_infos[stage], rescaling,
+                             samplers_it, views_it);
     }};
     if constexpr (Spec::enabled_stages[0]) {
         prepare_stage(0);
@@ -454,10 +456,10 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
     if constexpr (Spec::enabled_stages[4]) {
         prepare_stage(4);
     }
-    ConfigureDraw();
+    ConfigureDraw(rescaling);
 }
 
-void GraphicsPipeline::ConfigureDraw() {
+void GraphicsPipeline::ConfigureDraw(const RescalingPushConstant& rescaling) {
     texture_cache.UpdateRenderTargets(false);
     scheduler.RequestRenderpass(texture_cache.GetFramebuffer());
 
@@ -468,11 +470,24 @@ void GraphicsPipeline::ConfigureDraw() {
             build_condvar.wait(lock, [this] { return is_built.load(std::memory_order::relaxed); });
         });
     }
+    const bool is_rescaling{texture_cache.IsRescaling()};
+    const bool update_rescaling{scheduler.UpdateRescaling(is_rescaling)};
     const bool bind_pipeline{scheduler.UpdateGraphicsPipeline(this)};
     const void* const descriptor_data{update_descriptor_queue.UpdateData()};
-    scheduler.Record([this, descriptor_data, bind_pipeline](vk::CommandBuffer cmdbuf) {
+    scheduler.Record([this, descriptor_data, bind_pipeline, rescaling_data = rescaling.Data(),
+                      is_rescaling, update_rescaling](vk::CommandBuffer cmdbuf) {
         if (bind_pipeline) {
             cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline);
+        }
+        cmdbuf.PushConstants(*pipeline_layout, VK_SHADER_STAGE_ALL_GRAPHICS,
+                             RESCALING_LAYOUT_WORDS_OFFSET, sizeof(rescaling_data),
+                             rescaling_data.data());
+        if (update_rescaling) {
+            const f32 config_down_factor{Settings::values.resolution_info.down_factor};
+            const f32 scale_down_factor{is_rescaling ? config_down_factor : 1.0f};
+            cmdbuf.PushConstants(*pipeline_layout, VK_SHADER_STAGE_ALL_GRAPHICS,
+                                 RESCALING_LAYOUT_DOWN_FACTOR_OFFSET, sizeof(scale_down_factor),
+                                 &scale_down_factor);
         }
         if (!descriptor_set_layout) {
             return;
@@ -826,18 +841,10 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
 void GraphicsPipeline::Validate() {
     size_t num_images{};
     for (const auto& info : stage_infos) {
-        for (const auto& desc : info.texture_buffer_descriptors) {
-            num_images += desc.count;
-        }
-        for (const auto& desc : info.image_buffer_descriptors) {
-            num_images += desc.count;
-        }
-        for (const auto& desc : info.texture_descriptors) {
-            num_images += desc.count;
-        }
-        for (const auto& desc : info.image_descriptors) {
-            num_images += desc.count;
-        }
+        num_images += Shader::NumDescriptors(info.texture_buffer_descriptors);
+        num_images += Shader::NumDescriptors(info.image_buffer_descriptors);
+        num_images += Shader::NumDescriptors(info.texture_descriptors);
+        num_images += Shader::NumDescriptors(info.image_descriptors);
     }
     ASSERT(num_images <= MAX_IMAGE_ELEMENTS);
 }

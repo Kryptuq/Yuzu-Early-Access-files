@@ -52,6 +52,56 @@ enum class NvdecEmulation : u32 {
     GPU = 2,
 };
 
+enum class ResolutionSetup : u32 {
+    Res1_2X = 0,
+    Res3_4X = 1,
+    Res1X = 2,
+    Res2X = 3,
+    Res3X = 4,
+    Res4X = 5,
+    Res5X = 6,
+    Res6X = 7,
+};
+
+enum class ScalingFilter : u32 {
+    NearestNeighbor = 0,
+    Bilinear = 1,
+    Bicubic = 2,
+    Gaussian = 3,
+    ScaleForce = 4,
+    Fsr = 5,
+    LastFilter = Fsr,
+};
+
+enum class AntiAliasing : u32 {
+    None = 0,
+    Fxaa = 1,
+    LastAA = Fxaa,
+};
+
+struct ResolutionScalingInfo {
+    u32 up_scale{1};
+    u32 down_shift{0};
+    f32 up_factor{1.0f};
+    f32 down_factor{1.0f};
+    bool active{};
+    bool downscale{};
+
+    s32 ScaleUp(s32 value) const {
+        if (value == 0) {
+            return 0;
+        }
+        return std::max((value * static_cast<s32>(up_scale)) >> static_cast<s32>(down_shift), 1);
+    }
+
+    u32 ScaleUp(u32 value) const {
+        if (value == 0U) {
+            return 0U;
+        }
+        return std::max((value * up_scale) >> down_shift, 1U);
+    }
+};
+
 /** The BasicSetting class is a simple resource manager. It defines a label and default value
  * alongside the actual value of the setting for simpler and less-error prone use with frontend
  * configurations. Setting a default value and label is required, though subclasses may deviate from
@@ -451,7 +501,10 @@ struct Values {
                                                          "disable_shader_loop_safety_checks"};
     Setting<int> vulkan_device{0, "vulkan_device"};
 
-    Setting<u16> resolution_factor{1, "resolution_factor"};
+    ResolutionScalingInfo resolution_info{};
+    Setting<ResolutionSetup> resolution_setup{ResolutionSetup::Res1X, "resolution_setup"};
+    Setting<ScalingFilter> scaling_filter{ScalingFilter::Bilinear, "scaling_filter"};
+    Setting<AntiAliasing> anti_aliasing{AntiAliasing::None, "anti_aliasing"};
     // *nix platforms may have issues with the borderless windowed fullscreen mode.
     // Default to exclusive fullscreen on these platforms for now.
     RangedSetting<FullscreenMode> fullscreen_mode{
@@ -595,6 +648,8 @@ float Volume();
 std::string GetTimeZoneString();
 
 void LogSettings();
+
+void UpdateRescalingInfo();
 
 // Restore the global state of all applicable settings in the Values struct
 void RestoreGlobalState(bool is_powered_on);

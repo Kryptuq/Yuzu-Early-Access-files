@@ -31,6 +31,7 @@ ImageInfo::ImageInfo(const TICEntry& config) noexcept {
             .depth = config.block_depth,
         };
     }
+    rescaleable = false;
     tile_width_spacing = config.tile_width_spacing;
     if (config.texture_type != TextureType::Texture2D &&
         config.texture_type != TextureType::Texture2DNoMipmap) {
@@ -41,6 +42,7 @@ ImageInfo::ImageInfo(const TICEntry& config) noexcept {
         ASSERT(config.BaseLayer() == 0);
         type = ImageType::e1D;
         size.width = config.Width();
+        resources.layers = 1;
         break;
     case TextureType::Texture1DArray:
         UNIMPLEMENTED_IF(config.BaseLayer() != 0);
@@ -52,12 +54,14 @@ ImageInfo::ImageInfo(const TICEntry& config) noexcept {
     case TextureType::Texture2DNoMipmap:
         ASSERT(config.Depth() == 1);
         type = config.IsPitchLinear() ? ImageType::Linear : ImageType::e2D;
+        rescaleable = !config.IsPitchLinear();
         size.width = config.Width();
         size.height = config.Height();
         resources.layers = config.BaseLayer() + 1;
         break;
     case TextureType::Texture2DArray:
         type = ImageType::e2D;
+        rescaleable = true;
         size.width = config.Width();
         size.height = config.Height();
         resources.layers = config.BaseLayer() + config.Depth();
@@ -82,10 +86,12 @@ ImageInfo::ImageInfo(const TICEntry& config) noexcept {
         size.width = config.Width();
         size.height = config.Height();
         size.depth = config.Depth();
+        resources.layers = 1;
         break;
     case TextureType::Texture1DBuffer:
         type = ImageType::Buffer;
         size.width = config.Width();
+        resources.layers = 1;
         break;
     default:
         UNREACHABLE_MSG("Invalid texture_type={}", static_cast<int>(config.texture_type.Value()));
@@ -95,12 +101,15 @@ ImageInfo::ImageInfo(const TICEntry& config) noexcept {
         // FIXME: Call this without passing *this
         layer_stride = CalculateLayerStride(*this);
         maybe_unaligned_layer_stride = CalculateLayerSize(*this);
+        rescaleable &= (block.depth == 0) && resources.levels == 1;
+        downscaleable = size.height > 512;
     }
 }
 
 ImageInfo::ImageInfo(const Tegra::Engines::Maxwell3D::Regs& regs, size_t index) noexcept {
     const auto& rt = regs.rt[index];
     format = VideoCore::Surface::PixelFormatFromRenderTargetFormat(rt.format);
+    rescaleable = false;
     if (rt.tile_mode.is_pitch_linear) {
         ASSERT(rt.tile_mode.is_3d == 0);
         type = ImageType::Linear;
@@ -126,6 +135,8 @@ ImageInfo::ImageInfo(const Tegra::Engines::Maxwell3D::Regs& regs, size_t index) 
         type = ImageType::e3D;
         size.depth = rt.depth;
     } else {
+        rescaleable = block.depth == 0 && size.height > 256;
+        downscaleable = size.height > 512;
         type = ImageType::e2D;
         resources.layers = rt.depth;
     }
@@ -135,6 +146,7 @@ ImageInfo::ImageInfo(const Tegra::Engines::Maxwell3D::Regs& regs) noexcept {
     format = VideoCore::Surface::PixelFormatFromDepthFormat(regs.zeta.format);
     size.width = regs.zeta_width;
     size.height = regs.zeta_height;
+    rescaleable = false;
     resources.levels = 1;
     layer_stride = regs.zeta.layer_stride * 4;
     maybe_unaligned_layer_stride = layer_stride;
@@ -153,6 +165,8 @@ ImageInfo::ImageInfo(const Tegra::Engines::Maxwell3D::Regs& regs) noexcept {
         type = ImageType::e3D;
         size.depth = regs.zeta_depth;
     } else {
+        rescaleable = block.depth == 0 && size.height > 256;
+        downscaleable = size.height > 512;
         type = ImageType::e2D;
         resources.layers = regs.zeta_depth;
     }
@@ -161,6 +175,7 @@ ImageInfo::ImageInfo(const Tegra::Engines::Maxwell3D::Regs& regs) noexcept {
 ImageInfo::ImageInfo(const Tegra::Engines::Fermi2D::Surface& config) noexcept {
     UNIMPLEMENTED_IF_MSG(config.layer != 0, "Surface layer is not zero");
     format = VideoCore::Surface::PixelFormatFromRenderTargetFormat(config.format);
+    rescaleable = false;
     if (config.linear == Tegra::Engines::Fermi2D::MemoryLayout::Pitch) {
         type = ImageType::Linear;
         size = Extent3D{
@@ -171,6 +186,7 @@ ImageInfo::ImageInfo(const Tegra::Engines::Fermi2D::Surface& config) noexcept {
         pitch = config.pitch;
     } else {
         type = config.block_depth > 0 ? ImageType::e3D : ImageType::e2D;
+
         block = Extent3D{
             .width = config.block_width,
             .height = config.block_height,
@@ -183,6 +199,8 @@ ImageInfo::ImageInfo(const Tegra::Engines::Fermi2D::Surface& config) noexcept {
             .height = config.height,
             .depth = 1,
         };
+        rescaleable = block.depth == 0 && size.height > 256;
+        downscaleable = size.height > 512;
     }
 }
 
