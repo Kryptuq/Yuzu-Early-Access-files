@@ -492,7 +492,7 @@ void TexturePass(Environment& env, IR::Program& program) {
             const auto insert_point{IR::Block::InstructionList::s_iterator_to(*inst)};
             IR::IREmitter ir{*texture_inst.block, insert_point};
             const IR::U32 shift{ir.Imm32(std::countr_zero(DESCRIPTOR_SIZE))};
-            inst->SetArg(0, ir.SMin(ir.ShiftRightArithmetic(cbuf.dynamic_offset, shift),
+            inst->SetArg(0, ir.UMin(ir.ShiftRightArithmetic(cbuf.dynamic_offset, shift),
                                     ir.Imm32(DESCRIPTOR_SIZE - 1)));
         } else {
             inst->SetArg(0, IR::Value{});

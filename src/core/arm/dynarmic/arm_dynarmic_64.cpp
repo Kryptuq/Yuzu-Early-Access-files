@@ -263,7 +263,7 @@ void ARM_Dynarmic_64::Run() {
 }
 
 void ARM_Dynarmic_64::Step() {
-    cb->InterpreterFallback(jit->GetPC(), 1);
+    jit->Step();
 }
 
 ARM_Dynarmic_64::ARM_Dynarmic_64(System& system_, CPUInterrupts& interrupt_handlers_,
