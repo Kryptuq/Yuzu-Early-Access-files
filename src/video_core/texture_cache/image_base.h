@@ -77,7 +77,7 @@ struct ImageBase {
     void CheckBadOverlapState();
     void CheckAliasState();
 
-    bool HasScaled() {
+    bool HasScaled() const {
         return has_scaled;
     }
 

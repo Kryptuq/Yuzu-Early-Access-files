@@ -49,6 +49,11 @@ public:
     /// Gets the current running thread
     [[nodiscard]] KThread* GetCurrentThread() const;
 
+    /// Gets the idle thread
+    [[nodiscard]] KThread* GetIdleThread() const {
+        return idle_thread;
+    }
+
     /// Returns true if the scheduler is idle
     [[nodiscard]] bool IsIdle() const {
         return GetCurrentThread() == idle_thread;

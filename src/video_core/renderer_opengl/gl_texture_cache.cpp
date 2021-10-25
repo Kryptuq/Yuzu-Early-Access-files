@@ -478,10 +478,6 @@ TextureCacheRuntime::TextureCacheRuntime(const Device& device_, ProgramManager& 
         for (size_t i = 0; i < rescale_draw_fbos.size(); ++i) {
             rescale_draw_fbos[i].Create();
             rescale_read_fbos[i].Create();
-
-            // Make sure the framebuffer is created without DSA
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, rescale_draw_fbos[i].handle);
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, rescale_read_fbos[i].handle);
         }
     }
 }
@@ -1224,13 +1220,8 @@ Sampler::Sampler(TextureCacheRuntime& runtime, const TSCEntry& config) {
 
 Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM_RT> color_buffers,
                          ImageView* depth_buffer, const VideoCommon::RenderTargets& key) {
-    // Bind to READ_FRAMEBUFFER to stop Nvidia's driver from creating an EXT_framebuffer instead of
-    // a core framebuffer. EXT framebuffer attachments have to match in size and can be shared
-    // across contexts. yuzu doesn't share framebuffers across contexts and we need attachments with
-    // mismatching size, this is why core framebuffers are preferred.
-    GLuint handle;
-    glGenFramebuffers(1, &handle);
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, handle);
+    framebuffer.Create();
+    GLuint handle = framebuffer.handle;
 
     GLsizei num_buffers = 0;
     std::array<GLenum, NUM_RT> gl_draw_buffers;
@@ -1278,7 +1269,6 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM
         const std::string name = VideoCommon::Name(key);
         glObjectLabel(GL_FRAMEBUFFER, handle, static_cast<GLsizei>(name.size()), name.data());
     }
-    framebuffer.handle = handle;
 }
 
 void BGRCopyPass::CopyBGR(Image& dst_image, Image& src_image,

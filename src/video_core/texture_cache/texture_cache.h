@@ -192,19 +192,8 @@ void TextureCache<P>::SynchronizeComputeDescriptors() {
 }
 
 template <class P>
-void TextureCache<P>::UpdateRenderTargets(bool is_clear) {
-    using namespace VideoCommon::Dirty;
+bool TextureCache<P>::RescaleRenderTargets(bool is_clear) {
     auto& flags = maxwell3d.dirty.flags;
-    if (!flags[Dirty::RenderTargets]) {
-        for (size_t index = 0; index < NUM_RT; ++index) {
-            ImageViewId& color_buffer_id = render_targets.color_buffer_ids[index];
-            PrepareImageView(color_buffer_id, true, is_clear && IsFullClear(color_buffer_id));
-        }
-        const ImageViewId depth_buffer_id = render_targets.depth_buffer_id;
-        PrepareImageView(depth_buffer_id, true, is_clear && IsFullClear(depth_buffer_id));
-        return;
-    }
-
     u32 scale_rating = 0;
     bool rescaled = false;
     std::array<ImageId, NUM_RT> tmp_color_images{};
@@ -281,8 +270,6 @@ void TextureCache<P>::UpdateRenderTargets(bool is_clear) {
             scale_rating = 1;
         }
     } while (has_deleted_images);
-    // Rescale End
-
     const auto set_rating = [this, scale_rating](ImageId image_id) {
         if (image_id != CORRUPT_ID) {
             Image& image = slot_images[image_id];
@@ -297,6 +284,24 @@ void TextureCache<P>::UpdateRenderTargets(bool is_clear) {
     }
     set_rating(tmp_depth_image);
 
+    return rescaled;
+}
+
+template <class P>
+void TextureCache<P>::UpdateRenderTargets(bool is_clear) {
+    using namespace VideoCommon::Dirty;
+    auto& flags = maxwell3d.dirty.flags;
+    if (!flags[Dirty::RenderTargets]) {
+        for (size_t index = 0; index < NUM_RT; ++index) {
+            ImageViewId& color_buffer_id = render_targets.color_buffer_ids[index];
+            PrepareImageView(color_buffer_id, true, is_clear && IsFullClear(color_buffer_id));
+        }
+        const ImageViewId depth_buffer_id = render_targets.depth_buffer_id;
+        PrepareImageView(depth_buffer_id, true, is_clear && IsFullClear(depth_buffer_id));
+        return;
+    }
+
+    const bool rescaled = RescaleRenderTargets(is_clear);
     if (is_rescaling != rescaled) {
         flags[Dirty::RescaleViewports] = true;
         flags[Dirty::RescaleScissors] = true;

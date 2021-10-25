@@ -119,6 +119,11 @@ public:
     /// Refresh the state for compute image view and sampler descriptors
     void SynchronizeComputeDescriptors();
 
+    /// Updates the Render Targets if they can be rescaled
+    /// @param is_clear True when the render targets are being used for clears
+    /// @retval True if the Render Targets have been rescaled.
+    bool RescaleRenderTargets(bool is_clear);
+
     /// Update bound render targets and upload memory if necessary
     /// @param is_clear True when the render targets are being used for clears
     void UpdateRenderTargets(bool is_clear);

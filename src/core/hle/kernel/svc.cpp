@@ -886,7 +886,24 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, Handle
         *result = out_ticks;
         return ResultSuccess;
     }
+    case GetInfoType::IdleTickCount: {
+        if (handle == 0) {
+            LOG_ERROR(Kernel_SVC, "Thread handle does not exist, handle=0x{:08X}",
+                      static_cast<Handle>(handle));
+            return ResultInvalidHandle;
+        }
 
+        if (info_sub_id != 0xFFFFFFFFFFFFFFFF && info_sub_id != system.CurrentCoreIndex()) {
+            LOG_ERROR(Kernel_SVC, "Core is not the current core, got {}", info_sub_id);
+            return ResultInvalidCombination;
+        }
+
+        const auto& scheduler = *system.Kernel().CurrentScheduler();
+        const auto* const idle_thread = scheduler.GetIdleThread();
+
+        *result = idle_thread->GetCpuTime();
+        return ResultSuccess;
+    }
     default:
         LOG_ERROR(Kernel_SVC, "Unimplemented svcGetInfo id=0x{:016X}", info_id);
         return ResultInvalidEnumValue;

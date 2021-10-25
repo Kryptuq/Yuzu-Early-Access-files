@@ -166,7 +166,12 @@ void OGLFramebuffer::Create() {
         return;
 
     MICROPROFILE_SCOPE(OpenGL_ResourceCreation);
-    glCreateFramebuffers(1, &handle);
+    // Bind to READ_FRAMEBUFFER to stop Nvidia's driver from creating an EXT_framebuffer instead of
+    // a core framebuffer. EXT framebuffer attachments have to match in size and can be shared
+    // across contexts. yuzu doesn't share framebuffers across contexts and we need attachments with
+    // mismatching size, this is why core framebuffers are preferred.
+    glGenFramebuffers(1, &handle);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, handle);
 }
 
 void OGLFramebuffer::Release() {
