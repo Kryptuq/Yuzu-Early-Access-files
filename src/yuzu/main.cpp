@@ -291,6 +291,14 @@ GMainWindow::GMainWindow()
 
     ui->action_Fullscreen->setChecked(false);
 
+#if defined(HAVE_SDL2) && !defined(_WIN32)
+    SDL_InitSubSystem(SDL_INIT_VIDEO);
+    // SDL disables the screen saver by default, and setting the hint
+    // SDL_HINT_VIDEO_ALLOW_SCREENSAVER doesn't seem to work, so we just enable the screen saver
+    // for now.
+    SDL_EnableScreenSaver();
+#endif
+
     QStringList args = QApplication::arguments();
 
     if (args.size() < 2) {
@@ -361,8 +369,13 @@ GMainWindow::GMainWindow()
 
 GMainWindow::~GMainWindow() {
     // will get automatically deleted otherwise
-    if (render_window->parent() == nullptr)
+    if (render_window->parent() == nullptr) {
         delete render_window;
+    }
+
+#if defined(HAVE_SDL2) && !defined(_WIN32)
+    SDL_QuitSubSystem(SDL_INIT_VIDEO);
+#endif
 }
 
 void GMainWindow::RegisterMetaTypes() {
@@ -1453,14 +1466,6 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
         SelectAndSetCurrentUser();
     }
 
-#if defined(HAVE_SDL2) && !defined(_WIN32)
-    SDL_InitSubSystem(SDL_INIT_VIDEO);
-    // SDL disables the screen saver by default, and setting the hint
-    // SDL_HINT_VIDEO_ALLOW_SCREENSAVER doesn't seem to work, so we just enable the screen saver
-    // for now.
-    SDL_EnableScreenSaver();
-#endif
-
     if (!LoadROM(filename, program_id, program_index))
         return;
 
@@ -1552,10 +1557,6 @@ void GMainWindow::ShutdownGame() {
     }
 
     AllowOSSleep();
-
-#if defined(HAVE_SDL2) && !defined(_WIN32)
-    SDL_QuitSubSystem(SDL_INIT_VIDEO);
-#endif
 
     discord_rpc->Pause();
     emu_thread->RequestStop();

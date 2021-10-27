@@ -11,10 +11,10 @@
 #include <string>
 #include <thread>
 #include <tuple>
-#include "common/atomic_threadsafe_queue.h"
 #include "common/common_types.h"
 #include "common/param_package.h"
 #include "common/thread.h"
+#include "common/threadsafe_queue.h"
 #include "common/vector_math.h"
 #include "core/frontend/input.h"
 #include "input_common/motion_input.h"
@@ -46,7 +46,7 @@ enum class PadTouch {
 };
 
 struct UDPPadStatus {
-    const char* host{"127.0.0.1"};
+    std::string host{"127.0.0.1"};
     u16 port{26760};
     std::size_t pad_index{};
     PadMotion motion{PadMotion::Undefined};
@@ -85,8 +85,8 @@ public:
     bool DeviceConnected(std::size_t pad) const;
     void ReloadSockets();
 
-    Common::MPMCQueue<UDPPadStatus>& GetPadQueue();
-    const Common::MPMCQueue<UDPPadStatus>& GetPadQueue() const;
+    Common::SPSCQueue<UDPPadStatus>& GetPadQueue();
+    const Common::SPSCQueue<UDPPadStatus>& GetPadQueue() const;
 
     DeviceStatus& GetPadState(const std::string& host, u16 port, std::size_t pad);
     const DeviceStatus& GetPadState(const std::string& host, u16 port, std::size_t pad) const;
@@ -146,7 +146,7 @@ private:
     static constexpr std::size_t MAX_TOUCH_FINGERS = MAX_UDP_CLIENTS * 2;
     std::array<PadData, MAX_UDP_CLIENTS * PADS_PER_CLIENT> pads{};
     std::array<ClientConnection, MAX_UDP_CLIENTS> clients{};
-    Common::MPMCQueue<UDPPadStatus> pad_queue{1024};
+    Common::SPSCQueue<UDPPadStatus> pad_queue{};
     Input::TouchStatus touch_status{};
     std::array<std::size_t, MAX_TOUCH_FINGERS> finger_id{};
 };

@@ -66,7 +66,7 @@ ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id, const std::str
     ui->tabWidget->addTab(system_tab.get(), tr("System"));
     ui->tabWidget->addTab(cpu_tab.get(), tr("CPU"));
     ui->tabWidget->addTab(graphics_tab.get(), tr("Graphics"));
-    ui->tabWidget->addTab(graphics_advanced_tab.get(), tr("GraphicsAdvanced"));
+    ui->tabWidget->addTab(graphics_advanced_tab.get(), tr("Adv. Graphics"));
     ui->tabWidget->addTab(audio_tab.get(), tr("Audio"));
 
     setFocusPolicy(Qt::ClickFocus);

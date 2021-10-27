@@ -8,8 +8,8 @@
 #include <mutex>
 #include <thread>
 #include <unordered_map>
-#include "common/atomic_threadsafe_queue.h"
 #include "common/common_types.h"
+#include "common/threadsafe_queue.h"
 #include "input_common/main.h"
 
 struct libusb_context;
@@ -85,8 +85,8 @@ public:
     void BeginConfiguration();
     void EndConfiguration();
 
-    Common::MPMCQueue<GCPadStatus>& GetPadQueue();
-    const Common::MPMCQueue<GCPadStatus>& GetPadQueue() const;
+    Common::SPSCQueue<GCPadStatus>& GetPadQueue();
+    const Common::SPSCQueue<GCPadStatus>& GetPadQueue() const;
 
     GCController& GetPadState(std::size_t port);
     const GCController& GetPadState(std::size_t port) const;
@@ -145,7 +145,7 @@ private:
 
     libusb_device_handle* usb_adapter_handle = nullptr;
     std::array<GCController, 4> pads;
-    Common::MPMCQueue<GCPadStatus> pad_queue{1024};
+    Common::SPSCQueue<GCPadStatus> pad_queue;
 
     std::thread adapter_input_thread;
     std::thread adapter_scan_thread;

@@ -81,8 +81,11 @@ ConfigureDialog::ConfigureDialog(QWidget* parent, HotkeyRegistry& registry,
     SetConfiguration();
     PopulateSelectionList();
 
-    connect(ui->tabWidget, &QTabWidget::currentChanged, this,
-            [this]() { debug_tab_tab->SetCurrentIndex(0); });
+    connect(ui->tabWidget, &QTabWidget::currentChanged, this, [this](int index) {
+        if (index != -1) {
+            debug_tab_tab->SetCurrentIndex(0);
+        }
+    });
     connect(ui_tab.get(), &ConfigureUi::LanguageChanged, this, &ConfigureDialog::OnLanguageChanged);
     connect(ui->selectorList, &QListWidget::itemSelectionChanged, this,
             &ConfigureDialog::UpdateVisibleTabs);

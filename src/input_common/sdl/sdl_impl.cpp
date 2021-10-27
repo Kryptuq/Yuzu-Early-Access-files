@@ -46,7 +46,7 @@ static int SDLEventWatcher(void* user_data, SDL_Event* event) {
 
     // Don't handle the event if we are configuring
     if (sdl_state->polling) {
-        sdl_state->event_queue.push(*event);
+        sdl_state->event_queue.Push(*event);
     } else {
         sdl_state->HandleGameControllerEvent(*event);
     }
@@ -1460,6 +1460,7 @@ public:
     explicit SDLPoller(SDLState& state_) : state(state_) {}
 
     void Start([[maybe_unused]] const std::string& device_id) override {
+        state.event_queue.Clear();
         state.polling = true;
     }
 
@@ -1477,7 +1478,7 @@ public:
 
     Common::ParamPackage GetNextInput() override {
         SDL_Event event;
-        while (state.event_queue.try_pop(event)) {
+        while (state.event_queue.Pop(event)) {
             const auto package = FromEvent(event);
             if (package) {
                 return *package;
@@ -1549,7 +1550,7 @@ public:
 
     Common::ParamPackage GetNextInput() override {
         SDL_Event event;
-        while (state.event_queue.try_pop(event)) {
+        while (state.event_queue.Pop(event)) {
             const auto package = FromEvent(event);
             if (package) {
                 return *package;
@@ -1591,7 +1592,7 @@ public:
 
     Common::ParamPackage GetNextInput() override {
         SDL_Event event;
-        while (state.event_queue.try_pop(event)) {
+        while (state.event_queue.Pop(event)) {
             if (event.type != SDL_JOYAXISMOTION) {
                 // Check for a button press
                 auto button_press = button_poller.FromEvent(event);

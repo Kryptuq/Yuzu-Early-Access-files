@@ -52,7 +52,7 @@ Common::ParamPackage MouseButtonFactory::GetNextInput() const {
     MouseInput::MouseStatus pad;
     Common::ParamPackage params;
     auto& queue = mouse_input->GetMouseQueue();
-    while (queue.try_pop(pad)) {
+    while (queue.Pop(pad)) {
         // This while loop will break on the earliest detected button
         if (pad.button != MouseInput::MouseButton::Undefined) {
             params.Set("engine", "mouse");
@@ -184,7 +184,7 @@ Common::ParamPackage MouseAnalogFactory::GetNextInput() const {
     MouseInput::MouseStatus pad;
     Common::ParamPackage params;
     auto& queue = mouse_input->GetMouseQueue();
-    while (queue.try_pop(pad)) {
+    while (queue.Pop(pad)) {
         // This while loop will break on the earliest detected button
         if (pad.button != MouseInput::MouseButton::Undefined) {
             params.Set("engine", "mouse");
@@ -227,7 +227,7 @@ Common::ParamPackage MouseMotionFactory::GetNextInput() const {
     MouseInput::MouseStatus pad;
     Common::ParamPackage params;
     auto& queue = mouse_input->GetMouseQueue();
-    while (queue.try_pop(pad)) {
+    while (queue.Pop(pad)) {
         // This while loop will break on the earliest detected button
         if (pad.button != MouseInput::MouseButton::Undefined) {
             params.Set("engine", "mouse");
@@ -275,7 +275,7 @@ Common::ParamPackage MouseTouchFactory::GetNextInput() const {
     MouseInput::MouseStatus pad;
     Common::ParamPackage params;
     auto& queue = mouse_input->GetMouseQueue();
-    while (queue.try_pop(pad)) {
+    while (queue.Pop(pad)) {
         // This while loop will break on the earliest detected button
         if (pad.button != MouseInput::MouseButton::Undefined) {
             params.Set("engine", "mouse");

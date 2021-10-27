@@ -2,14 +2,6 @@
 <ui version="4.0">
  <class>ConfigurePerGame</class>
  <widget class="QDialog" name="ConfigurePerGame">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>900</width>
-    <height>630</height>
-   </rect>
-  </property>
   <property name="minimumSize">
    <size>
     <width>900</width>

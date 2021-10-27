@@ -170,7 +170,7 @@ void Adapter::UpdateYuzuSettings(std::size_t port) {
 
     if (pads[port].buttons != 0) {
         pad_status.button = pads[port].last_button;
-        pad_queue.push(pad_status);
+        pad_queue.Push(pad_status);
     }
 
     // Accounting for a threshold here to ensure an intentional press
@@ -181,7 +181,7 @@ void Adapter::UpdateYuzuSettings(std::size_t port) {
             pad_status.axis = static_cast<PadAxes>(i);
             pad_status.axis_value = value;
             pad_status.axis_threshold = axis_threshold;
-            pad_queue.push(pad_status);
+            pad_queue.Push(pad_status);
         }
     }
 }
@@ -478,18 +478,20 @@ bool Adapter::DeviceConnected(std::size_t port) const {
 }
 
 void Adapter::BeginConfiguration() {
+    pad_queue.Clear();
     configuring = true;
 }
 
 void Adapter::EndConfiguration() {
+    pad_queue.Clear();
     configuring = false;
 }
 
-Common::MPMCQueue<GCPadStatus>& Adapter::GetPadQueue() {
+Common::SPSCQueue<GCPadStatus>& Adapter::GetPadQueue() {
     return pad_queue;
 }
 
-const Common::MPMCQueue<GCPadStatus>& Adapter::GetPadQueue() const {
+const Common::SPSCQueue<GCPadStatus>& Adapter::GetPadQueue() const {
     return pad_queue;
 }
 

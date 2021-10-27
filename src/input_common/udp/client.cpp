@@ -338,7 +338,7 @@ void Client::UpdateYuzuSettings(std::size_t client, std::size_t pad_index,
                   gyro[0], gyro[1], gyro[2], acc[0], acc[1], acc[2]);
     }
     UDPPadStatus pad{
-        .host = clients[client].host.c_str(),
+        .host = clients[client].host,
         .port = clients[client].port,
         .pad_index = pad_index,
     };
@@ -346,12 +346,12 @@ void Client::UpdateYuzuSettings(std::size_t client, std::size_t pad_index,
         if (gyro[i] > 5.0f || gyro[i] < -5.0f) {
             pad.motion = static_cast<PadMotion>(i);
             pad.motion_value = gyro[i];
-            pad_queue.push(pad);
+            pad_queue.Push(pad);
         }
         if (acc[i] > 1.75f || acc[i] < -1.75f) {
             pad.motion = static_cast<PadMotion>(i + 3);
             pad.motion_value = acc[i];
-            pad_queue.push(pad);
+            pad_queue.Push(pad);
         }
     }
 }
@@ -401,10 +401,12 @@ void Client::UpdateTouchInput(Response::TouchPad& touch_pad, std::size_t client,
 }
 
 void Client::BeginConfiguration() {
+    pad_queue.Clear();
     configuring = true;
 }
 
 void Client::EndConfiguration() {
+    pad_queue.Clear();
     configuring = false;
 }
 
@@ -432,11 +434,11 @@ const Input::TouchStatus& Client::GetTouchState() const {
     return touch_status;
 }
 
-Common::MPMCQueue<UDPPadStatus>& Client::GetPadQueue() {
+Common::SPSCQueue<UDPPadStatus>& Client::GetPadQueue() {
     return pad_queue;
 }
 
-const Common::MPMCQueue<UDPPadStatus>& Client::GetPadQueue() const {
+const Common::SPSCQueue<UDPPadStatus>& Client::GetPadQueue() const {
     return pad_queue;
 }
 
