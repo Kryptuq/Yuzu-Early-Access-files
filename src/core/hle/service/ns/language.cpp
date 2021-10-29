@@ -277,6 +277,25 @@ constexpr ApplicationLanguagePriorityList priority_list_simplified_chinese = {{
     ApplicationLanguage::Korean,
 }};
 
+constexpr ApplicationLanguagePriorityList priority_list_brazilian_portuguese = {{
+    ApplicationLanguage::BrazilianPortuguese,
+    ApplicationLanguage::Portuguese,
+    ApplicationLanguage::LatinAmericanSpanish,
+    ApplicationLanguage::AmericanEnglish,
+    ApplicationLanguage::BritishEnglish,
+    ApplicationLanguage::Japanese,
+    ApplicationLanguage::French,
+    ApplicationLanguage::German,
+    ApplicationLanguage::Spanish,
+    ApplicationLanguage::Italian,
+    ApplicationLanguage::Dutch,
+    ApplicationLanguage::CanadianFrench,
+    ApplicationLanguage::Russian,
+    ApplicationLanguage::Korean,
+    ApplicationLanguage::SimplifiedChinese,
+    ApplicationLanguage::TraditionalChinese,
+}};
+
 const ApplicationLanguagePriorityList* GetApplicationLanguagePriorityList(
     const ApplicationLanguage lang) {
     switch (lang) {
@@ -310,6 +329,8 @@ const ApplicationLanguagePriorityList* GetApplicationLanguagePriorityList(
         return &priority_list_traditional_chinese;
     case ApplicationLanguage::SimplifiedChinese:
         return &priority_list_simplified_chinese;
+    case ApplicationLanguage::BrazilianPortuguese:
+        return &priority_list_brazilian_portuguese;
     default:
         return nullptr;
     }
@@ -339,7 +360,6 @@ std::optional<ApplicationLanguage> ConvertToApplicationLanguage(
     case Set::LanguageCode::FR_CA:
         return ApplicationLanguage::CanadianFrench;
     case Set::LanguageCode::PT:
-    case Set::LanguageCode::PT_BR:
         return ApplicationLanguage::Portuguese;
     case Set::LanguageCode::RU:
         return ApplicationLanguage::Russian;
@@ -351,6 +371,8 @@ std::optional<ApplicationLanguage> ConvertToApplicationLanguage(
     case Set::LanguageCode::ZH_CN:
     case Set::LanguageCode::ZH_HANS:
         return ApplicationLanguage::SimplifiedChinese;
+    case Set::LanguageCode::PT_BR:
+        return ApplicationLanguage::BrazilianPortuguese;
     default:
         return std::nullopt;
     }
@@ -388,6 +410,8 @@ std::optional<Set::LanguageCode> ConvertToLanguageCode(const ApplicationLanguage
         return Set::LanguageCode::ZH_HANT;
     case ApplicationLanguage::SimplifiedChinese:
         return Set::LanguageCode::ZH_HANS;
+    case ApplicationLanguage::BrazilianPortuguese:
+        return Set::LanguageCode::PT_BR;
     default:
         return std::nullopt;
     }

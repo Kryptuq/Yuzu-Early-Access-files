@@ -88,11 +88,12 @@ enum class Language : u8 {
     Korean = 12,
     Taiwanese = 13,
     Chinese = 14,
+    BrazilianPortuguese = 15,
 
     Default = 255,
 };
 
-extern const std::array<const char*, 15> LANGUAGE_NAMES;
+extern const std::array<const char*, 16> LANGUAGE_NAMES;
 
 // A class representing the format used by NX metadata files, typically named Control.nacp.
 // These store application name, dev name, title id, and other miscellaneous data.

@@ -9,7 +9,7 @@
 
 namespace FileSys {
 
-const std::array<const char*, 15> LANGUAGE_NAMES{{
+const std::array<const char*, 16> LANGUAGE_NAMES{{
     "AmericanEnglish",
     "BritishEnglish",
     "Japanese",
@@ -25,6 +25,7 @@ const std::array<const char*, 15> LANGUAGE_NAMES{{
     "Korean",
     "Taiwanese",
     "Chinese",
+    "BrazilianPortuguese",
 }};
 
 std::string LanguageEntry::GetApplicationName() const {

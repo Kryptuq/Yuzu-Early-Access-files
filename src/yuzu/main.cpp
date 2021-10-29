@@ -372,10 +372,6 @@ GMainWindow::~GMainWindow() {
     if (render_window->parent() == nullptr) {
         delete render_window;
     }
-
-#if defined(HAVE_SDL2) && !defined(_WIN32)
-    SDL_QuitSubSystem(SDL_INIT_VIDEO);
-#endif
 }
 
 void GMainWindow::RegisterMetaTypes() {

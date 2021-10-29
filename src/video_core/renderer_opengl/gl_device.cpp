@@ -181,6 +181,21 @@ Device::Device() {
         LOG_ERROR(Render_OpenGL, "Assembly shaders enabled but not supported");
         shader_backend = Settings::ShaderBackend::GLSL;
     }
+
+    if (shader_backend == Settings::ShaderBackend::GLSL && is_nvidia &&
+        !Settings::values.renderer_debug) {
+        const std::string_view driver_version = version.substr(13);
+        const int version_major =
+            std::atoi(driver_version.substr(0, driver_version.find(".")).data());
+
+        if (version_major >= 495) {
+            LOG_WARNING(Render_OpenGL, "NVIDIA drivers 495 and later causes significant problems "
+                                       "with yuzu. Forcing GLASM as a mitigation.");
+            shader_backend = Settings::ShaderBackend::GLASM;
+            use_assembly_shaders = true;
+        }
+    }
+
     // Blocks AMD and Intel OpenGL drivers on Windows from using asynchronous shader compilation.
     use_asynchronous_shaders = Settings::values.use_asynchronous_shaders.GetValue() &&
                                !(is_amd || (is_intel && !is_linux));
