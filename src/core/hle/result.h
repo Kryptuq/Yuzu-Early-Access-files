@@ -349,8 +349,8 @@ template <typename T, typename... Args>
  * copy or move constructing.
  */
 template <typename Arg>
-[[nodiscard]] ResultVal<std::remove_reference_t<Arg>> MakeResult(Arg&& arg) {
-    return ResultVal<std::remove_reference_t<Arg>>::WithCode(ResultSuccess, std::forward<Arg>(arg));
+[[nodiscard]] ResultVal<std::remove_cvref_t<Arg>> MakeResult(Arg&& arg) {
+    return ResultVal<std::remove_cvref_t<Arg>>::WithCode(ResultSuccess, std::forward<Arg>(arg));
 }
 
 /**

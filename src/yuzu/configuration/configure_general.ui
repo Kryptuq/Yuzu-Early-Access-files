@@ -119,13 +119,6 @@
             </property>
            </widget>
           </item>
-          <item>
-           <widget class="QCheckBox" name="toggle_screen_saver">
-            <property name="text">
-             <string>Disable screen saver while in game</string>
-            </property>
-           </widget>
-          </item>
          </layout>
         </item>
        </layout>
