@@ -53,8 +53,8 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
         const auto device_memory = runtime.GetDeviceLocalMemory();
         const u64 possible_expected_memory = (device_memory * 4) / 10;
         const u64 possible_critical_memory = (device_memory * 7) / 10;
-        expected_memory = std::max(possible_expected_memory, DEFAULT_EXPECTED_MEMORY);
-        critical_memory = std::max(possible_critical_memory, DEFAULT_CRITICAL_MEMORY);
+        expected_memory = std::max(possible_expected_memory, DEFAULT_EXPECTED_MEMORY - 256_MiB);
+        critical_memory = std::max(possible_critical_memory, DEFAULT_CRITICAL_MEMORY - 512_MiB);
         minimum_memory = 0;
     } else {
         // On OpenGL we can be more conservatives as the driver takes care.
@@ -355,7 +355,6 @@ void TextureCache<P>::FillImageViews(DescriptorTable<TICEntry>& table,
                 if (view.blacklist && view.id != NULL_IMAGE_VIEW_ID) {
                     const ImageViewBase& image_view{slot_image_views[view.id]};
                     auto& image = slot_images[image_view.image_id];
-                    image.flags |= ImageFlagBits::Blacklisted;
                     has_blacklisted |= ScaleDown(image);
                     image.scale_rating = 0;
                 }
@@ -985,7 +984,6 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
 
     bool can_rescale = info.rescaleable;
     bool any_rescaled = false;
-    bool any_blacklisted = false;
     for (const ImageId sibling_id : all_siblings) {
         if (!can_rescale) {
             break;
@@ -993,7 +991,6 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
         Image& sibling = slot_images[sibling_id];
         can_rescale &= ImageCanRescale(sibling);
         any_rescaled |= True(sibling.flags & ImageFlagBits::Rescaled);
-        any_blacklisted |= True(sibling.flags & ImageFlagBits::Blacklisted);
     }
 
     can_rescale &= any_rescaled;
@@ -1007,9 +1004,6 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
         for (const ImageId sibling_id : all_siblings) {
             Image& sibling = slot_images[sibling_id];
             ScaleDown(sibling);
-            if (any_blacklisted) {
-                sibling.flags |= ImageFlagBits::Blacklisted;
-            }
         }
     }
 
@@ -1644,7 +1638,6 @@ void TextureCache<P>::SynchronizeAliases(ImageId image_id) {
     boost::container::small_vector<const AliasedImage*, 1> aliased_images;
     Image& image = slot_images[image_id];
     bool any_rescaled = True(image.flags & ImageFlagBits::Rescaled);
-    bool any_blacklisted = True(image.flags & ImageFlagBits::Blacklisted);
     u64 most_recent_tick = image.modification_tick;
     for (const AliasedImage& aliased : image.aliased_images) {
         ImageBase& aliased_image = slot_images[aliased.id];
@@ -1652,7 +1645,6 @@ void TextureCache<P>::SynchronizeAliases(ImageId image_id) {
             most_recent_tick = std::max(most_recent_tick, aliased_image.modification_tick);
             aliased_images.push_back(&aliased);
             any_rescaled |= True(aliased_image.flags & ImageFlagBits::Rescaled);
-            any_blacklisted |= True(aliased_image.flags & ImageFlagBits::Blacklisted);
         }
     }
     if (aliased_images.empty()) {
@@ -1664,9 +1656,6 @@ void TextureCache<P>::SynchronizeAliases(ImageId image_id) {
             ScaleUp(image);
         } else {
             ScaleDown(image);
-            if (any_blacklisted) {
-                image.flags |= ImageFlagBits::Blacklisted;
-            }
         }
     }
     image.modification_tick = most_recent_tick;
@@ -1684,9 +1673,6 @@ void TextureCache<P>::SynchronizeAliases(ImageId image_id) {
         Image& aliased_image = slot_images[aliased->id];
         if (!can_rescale) {
             ScaleDown(aliased_image);
-            if (any_blacklisted) {
-                aliased_image.flags |= ImageFlagBits::Blacklisted;
-            }
             CopyImage(image_id, aliased->id, aliased->copies);
             continue;
         }

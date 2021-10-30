@@ -204,6 +204,14 @@ public:
     /// destroyed during the current emulation session.
     void UnregisterKernelObject(KAutoObject* object);
 
+    /// Registers kernel objects with guest in use state, this is purely for close
+    /// after emulation has been shutdown.
+    void RegisterInUseObject(KAutoObject* object);
+
+    /// Unregisters a kernel object previously registered with RegisterInUseObject when it was
+    /// destroyed during the current emulation session.
+    void UnregisterInUseObject(KAutoObject* object);
+
     /// Determines whether or not the given port is a valid named port.
     bool IsValidNamedPort(NamedPortTable::const_iterator port) const;
 

@@ -427,11 +427,15 @@ static ResultCode WaitSynchronization(Core::System& system, s32* index, VAddr ha
         R_UNLESS(handle_table.GetMultipleObjects<KSynchronizationObject>(objs.data(), handles,
                                                                          num_handles),
                  ResultInvalidHandle);
+        for (const auto& obj : objs) {
+            kernel.RegisterInUseObject(obj);
+        }
     }
 
     // Ensure handles are closed when we're done.
     SCOPE_EXIT({
         for (u64 i = 0; i < num_handles; ++i) {
+            kernel.UnregisterInUseObject(objs[i]);
             objs[i]->Close();
         }
     });
@@ -1561,6 +1565,7 @@ static ResultCode StartThread(Core::System& system, Handle thread_handle) {
 
     // If we succeeded, persist a reference to the thread.
     thread->Open();
+    system.Kernel().RegisterInUseObject(thread.GetPointerUnsafe());
 
     return ResultSuccess;
 }
@@ -1576,6 +1581,7 @@ static void ExitThread(Core::System& system) {
     auto* const current_thread = system.Kernel().CurrentScheduler()->GetCurrentThread();
     system.GlobalSchedulerContext().RemoveThread(current_thread);
     current_thread->Exit();
+    system.Kernel().UnregisterInUseObject(current_thread);
 }
 
 static void ExitThread32(Core::System& system) {

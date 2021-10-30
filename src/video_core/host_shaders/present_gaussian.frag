@@ -63,8 +63,8 @@ void main() {
     // TODO(Blinkhawk): This code can be optimized through shader group instructions.
     vec3 horizontal = blurHorizontal(color_texture, frag_tex_coord, tex_offset).rgb;
     vec3 vertical = blurVertical(color_texture, frag_tex_coord, tex_offset).rgb;
-    vec3 diagonalA = blurVertical(color_texture, frag_tex_coord, tex_offset).rgb;
-    vec3 diagonalB = blurVertical(color_texture, frag_tex_coord, tex_offset * vec2(1.0, -1.0)).rgb;
+    vec3 diagonalA = blurDiagonal(color_texture, frag_tex_coord, tex_offset).rgb;
+    vec3 diagonalB = blurDiagonal(color_texture, frag_tex_coord, tex_offset * vec2(1.0, -1.0)).rgb;
     vec3 combination = mix(mix(horizontal, vertical, 0.5f), mix(diagonalA, diagonalB, 0.5f), 0.5f);
     color = vec4(combination + base, 1.0f);
 }

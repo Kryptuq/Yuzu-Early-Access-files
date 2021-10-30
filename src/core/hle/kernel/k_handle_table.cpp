@@ -56,6 +56,7 @@ bool KHandleTable::Remove(Handle handle) {
     }
 
     // Close the object.
+    kernel.UnregisterInUseObject(obj);
     obj->Close();
     return true;
 }

@@ -434,11 +434,6 @@ void KProcess::PrepareForTermination() {
 }
 
 void KProcess::Finalize() {
-    // Release memory to the resource limit.
-    if (resource_limit != nullptr) {
-        resource_limit->Close();
-    }
-
     // Finalize the handle table and close any open handles.
     handle_table.Finalize();
 
@@ -458,6 +453,12 @@ void KProcess::Finalize() {
             it = shared_memory_list.erase(it);
             KSharedMemoryInfo::Free(kernel, info);
         }
+    }
+
+    // Release memory to the resource limit.
+    if (resource_limit != nullptr) {
+        resource_limit->Close();
+        resource_limit = nullptr;
     }
 
     // Perform inherited finalization.

@@ -30,7 +30,7 @@ namespace {
     return false;
 }
 
-void VisitMark(const IR::Inst& inst) {
+void VisitMark(IR::Block& block, IR::Inst& inst) {
     switch (inst.GetOpcode()) {
     case IR::Opcode::ShuffleIndex:
     case IR::Opcode::ShuffleUp:
@@ -49,19 +49,30 @@ void VisitMark(const IR::Inst& inst) {
             break;
         }
         IR::Inst* const bitcast_inst{bitcast_arg.InstRecursive()};
+        bool must_patch_outside = false;
         if (bitcast_inst->GetOpcode() == IR::Opcode::GetAttribute) {
             const IR::Attribute attr{bitcast_inst->Arg(0).Attribute()};
             switch (attr) {
             case IR::Attribute::PositionX:
             case IR::Attribute::PositionY:
                 bitcast_inst->SetFlags<u32>(0xDEADBEEF);
+                must_patch_outside = true;
                 break;
             default:
                 break;
             }
         }
+        if (must_patch_outside) {
+            const auto it{IR::Block::InstructionList::s_iterator_to(inst)};
+            IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
+            const IR::F32 new_inst{&*block.PrependNewInst(it, inst)};
+            const IR::F32 up_factor{ir.FPRecip(ir.ResolutionDownFactor())};
+            const IR::Value converted{ir.FPMul(new_inst, up_factor)};
+            inst.ReplaceUsesWith(converted);
+        }
         break;
     }
+
     default:
         break;
     }
@@ -73,6 +84,14 @@ void PatchFragCoord(IR::Block& block, IR::Inst& inst) {
     const IR::F32 frag_coord{ir.GetAttribute(inst.Arg(0).Attribute())};
     const IR::F32 downscaled_frag_coord{ir.FPMul(frag_coord, down_factor)};
     inst.ReplaceUsesWith(downscaled_frag_coord);
+}
+
+void PatchPointSize(IR::Block& block, IR::Inst& inst) {
+    IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
+    const IR::F32 point_value{inst.Arg(1)};
+    const IR::F32 up_factor{ir.FPRecip(ir.ResolutionDownFactor())};
+    const IR::F32 upscaled_point_value{ir.FPMul(point_value, up_factor)};
+    inst.SetArg(1, upscaled_point_value);
 }
 
 [[nodiscard]] IR::U32 Scale(IR::IREmitter& ir, const IR::U1& is_scaled, const IR::U32& value) {
@@ -253,6 +272,19 @@ void Visit(const IR::Program& program, IR::Block& block, IR::Inst& inst) {
         }
         break;
     }
+    case IR::Opcode::SetAttribute: {
+        const IR::Attribute attr{inst.Arg(0).Attribute()};
+        switch (attr) {
+        case IR::Attribute::PointSize:
+            if (inst.Flags<u32>() != 0xDEADBEEF) {
+                PatchPointSize(block, inst);
+            }
+            break;
+        default:
+            break;
+        }
+        break;
+    }
     case IR::Opcode::ImageQueryDimensions:
         PatchImageQueryDimensions(block, inst);
         break;
@@ -281,7 +313,7 @@ void RescalingPass(IR::Program& program) {
     if (is_fragment_shader) {
         for (IR::Block* const block : program.post_order_blocks) {
             for (IR::Inst& inst : block->Instructions()) {
-                VisitMark(inst);
+                VisitMark(*block, inst);
             }
         }
     }

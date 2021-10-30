@@ -206,7 +206,7 @@ public:
         return result;
     }
 
-    ResultVal(const ResultVal& o) : result_code(o.result_code) {
+    ResultVal(const ResultVal& o) noexcept : result_code(o.result_code) {
         if (!o.empty()) {
             new (&object) T(o.object);
         }
@@ -224,7 +224,7 @@ public:
         }
     }
 
-    ResultVal& operator=(const ResultVal& o) {
+    ResultVal& operator=(const ResultVal& o) noexcept {
         if (this == &o) {
             return *this;
         }
@@ -237,6 +237,26 @@ public:
         } else {
             if (!o.empty()) {
                 new (&object) T(o.object);
+            }
+        }
+        result_code = o.result_code;
+
+        return *this;
+    }
+
+    ResultVal& operator=(ResultVal&& o) noexcept {
+        if (this == &o) {
+            return *this;
+        }
+        if (!empty()) {
+            if (!o.empty()) {
+                object = std::move(o.object);
+            } else {
+                object.~T();
+            }
+        } else {
+            if (!o.empty()) {
+                new (&object) T(std::move(o.object));
             }
         }
         result_code = o.result_code;

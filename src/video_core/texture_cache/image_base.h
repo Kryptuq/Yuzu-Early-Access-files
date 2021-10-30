@@ -38,7 +38,6 @@ enum class ImageFlagBits : u32 {
     Rescaled = 1 << 12,
     CheckingRescalable = 1 << 13,
     IsRescalable = 1 << 14,
-    Blacklisted = 1 << 15,
 };
 DECLARE_ENUM_FLAG_OPERATORS(ImageFlagBits)
 

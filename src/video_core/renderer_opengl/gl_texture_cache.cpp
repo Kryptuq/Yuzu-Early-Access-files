@@ -1201,7 +1201,14 @@ Sampler::Sampler(TextureCacheRuntime& runtime, const TSCEntry& config) {
     glSamplerParameterfv(handle, GL_TEXTURE_BORDER_COLOR, config.BorderColor().data());
 
     if (GLAD_GL_ARB_texture_filter_anisotropic || GLAD_GL_EXT_texture_filter_anisotropic) {
-        glSamplerParameterf(handle, GL_TEXTURE_MAX_ANISOTROPY, config.MaxAnisotropy());
+        const f32 setting_anisotropic =
+            static_cast<f32>(1U << Settings::values.max_anisotropy.GetValue());
+        const f32 game_anisotropic = std::clamp(config.MaxAnisotropy(), 1.0f, 16.0f);
+        const bool aument_anisotropic =
+            game_anisotropic > 1.0f || config.mipmap_filter == TextureMipmapFilter::Linear;
+        const f32 max_anisotropy =
+            aument_anisotropic ? std::max(game_anisotropic, setting_anisotropic) : game_anisotropic;
+        glSamplerParameterf(handle, GL_TEXTURE_MAX_ANISOTROPY, max_anisotropy);
     } else {
         LOG_WARNING(Render_OpenGL, "GL_ARB_texture_filter_anisotropic is required");
     }

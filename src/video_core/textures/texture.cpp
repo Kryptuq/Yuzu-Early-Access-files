@@ -6,7 +6,6 @@
 #include <array>
 
 #include "common/cityhash.h"
-#include "common/settings.h"
 #include "video_core/textures/texture.h"
 
 using Tegra::Texture::TICEntry;
@@ -51,22 +50,6 @@ constexpr std::array<float, 256> SRGB_CONVERSION_LUT = {
     0.917104f, 0.929242f, 0.941493f, 0.953859f, 0.966338f, 1.000000f, 1.000000f, 1.000000f,
 };
 
-unsigned SettingsMinimumAnisotropy() noexcept {
-    switch (static_cast<Anisotropy>(Settings::values.max_anisotropy.GetValue())) {
-    default:
-    case Anisotropy::Default:
-        return 1U;
-    case Anisotropy::Filter2x:
-        return 2U;
-    case Anisotropy::Filter4x:
-        return 4U;
-    case Anisotropy::Filter8x:
-        return 8U;
-    case Anisotropy::Filter16x:
-        return 16U;
-    }
-}
-
 } // Anonymous namespace
 
 std::array<float, 4> TSCEntry::BorderColor() const noexcept {
@@ -78,7 +61,7 @@ std::array<float, 4> TSCEntry::BorderColor() const noexcept {
 }
 
 float TSCEntry::MaxAnisotropy() const noexcept {
-    return static_cast<float>(std::max(1U << max_anisotropy, SettingsMinimumAnisotropy()));
+    return static_cast<float>(1U << max_anisotropy);
 }
 
 } // namespace Tegra::Texture
