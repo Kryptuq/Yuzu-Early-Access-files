@@ -27,9 +27,11 @@ IR::BlockList GenerateBlocks(const IR::AbstractSyntaxList& syntax_list) {
     }
     IR::BlockList blocks;
     blocks.reserve(num_syntax_blocks);
+    u32 order_index{};
     for (const auto& node : syntax_list) {
         if (node.type == IR::AbstractSyntaxNode::Type::Block) {
             blocks.push_back(node.data.block);
+            blocks.back()->SetOrder(order_index++);
         }
     }
     return blocks;

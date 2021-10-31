@@ -378,6 +378,13 @@ void SsaRewritePass(IR::Program& program) {
     for (auto block = program.post_order_blocks.rbegin(); block != end; ++block) {
         VisitBlock(pass, *block);
     }
+    for (auto block = program.post_order_blocks.rbegin(); block != end; ++block) {
+        for (IR::Inst& inst : (*block)->Instructions()) {
+            if (inst.GetOpcode() == IR::Opcode::Phi) {
+                inst.OrderPhiArgs();
+            }
+        }
+    }
 }
 
 } // namespace Shader::Optimization

@@ -155,6 +155,17 @@ public:
         return instructions.crend();
     }
 
+    // Set the order of the block, it can be set pre order, the user decides
+    void SetOrder(u32 new_order) {
+        order = new_order;
+    }
+
+    // Get the order of the block.
+    // The higher, the closer is the block to the end.
+    [[nodiscard]] u32 GetOrder() const {
+        return order;
+    }
+
 private:
     /// Memory pool for instruction list
     ObjectPool<Inst>* inst_pool;
@@ -174,6 +185,9 @@ private:
 
     /// Intrusively stored host definition of this block.
     u32 definition{};
+
+    /// Order of the block.
+    u32 order{};
 };
 
 using BlockList = std::vector<Block*>;

@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "shader_recompiler/exception.h"
+#include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/type.h"
 #include "shader_recompiler/frontend/ir/value.h"
 
@@ -300,6 +301,16 @@ void Inst::AddPhiOperand(Block* predecessor, const Value& value) {
         Use(value);
     }
     phi_args.emplace_back(predecessor, value);
+}
+
+void Inst::OrderPhiArgs() {
+    if (op != Opcode::Phi) {
+        throw LogicError("{} is not a Phi instruction", op);
+    }
+    std::sort(phi_args.begin(), phi_args.end(),
+              [](const std::pair<Block*, Value>& a, const std::pair<Block*, Value>& b) {
+                  return a.first->GetOrder() < b.first->GetOrder();
+              });
 }
 
 void Inst::Invalidate() {
