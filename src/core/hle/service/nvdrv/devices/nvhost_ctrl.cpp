@@ -92,7 +92,7 @@ NvResult nvhost_ctrl::IocCtrlEventWait(const std::vector<u8>& input, std::vector
     if (syncpoint_manager.IsSyncpointExpired(params.syncpt_id, params.threshold)) {
         params.value = syncpoint_manager.GetSyncpointMin(params.syncpt_id);
         std::memcpy(output.data(), &params, sizeof(params));
-        events_interface.failed[event_id] = false;
+        events_interface.fails[event_id] = 0;
         return NvResult::Success;
     }
 
@@ -100,25 +100,26 @@ NvResult nvhost_ctrl::IocCtrlEventWait(const std::vector<u8>& input, std::vector
         syncpoint_manager.IsSyncpointExpired(params.syncpt_id, params.threshold)) {
         params.value = new_value;
         std::memcpy(output.data(), &params, sizeof(params));
-        events_interface.failed[event_id] = false;
+        events_interface.fails[event_id] = 0;
         return NvResult::Success;
     }
 
-    auto& event = events_interface.events[event_id];
     auto& gpu = system.GPU();
-    const u32 current_syncpoint_value = event.fence.value;
-    const s32 diff = current_syncpoint_value - params.threshold;
-    const u32 target_value = params.value;
+    const u32 target_value = syncpoint_manager.GetSyncpointMax(params.syncpt_id);
 
     if (!is_async) {
         params.value = 0;
     }
 
     const auto check_failing = [&]() {
-        if (events_interface.failed[event_id]) {
-            gpu.WaitFence(params.syncpt_id, target_value);
+        if (events_interface.fails[event_id] > 1) {
+            {
+                auto lk = system.StallCPU();
+                gpu.WaitFence(params.syncpt_id, target_value);
+                system.UnstallCPU();
+            }
             std::memcpy(output.data(), &params, sizeof(params));
-            events_interface.failed[event_id] = false;
+            events_interface.fails[event_id] = 0;
             return true;
         }
         return false;
@@ -204,7 +205,7 @@ NvResult nvhost_ctrl::IocCtrlClearEventWait(const std::vector<u8>& input, std::v
     if (events_interface.status[event_id] == EventState::Waiting) {
         events_interface.LiberateEvent(event_id);
     }
-    events_interface.failed[event_id] = true;
+    events_interface.fails[event_id]++;
 
     syncpoint_manager.RefreshSyncpoint(events_interface.events[event_id].fence.id);
 
