@@ -19,7 +19,7 @@
     <message>
         <location filename="../../src/yuzu/aboutdialog.ui" line="73"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;%1 (%2)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;%1 (%2)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/aboutdialog.ui" line="86"/>
@@ -183,7 +183,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/compatdb.cpp" line="73"/>
         <source>An error occurred while sending the Testcase</source>
-        <translation type="unfinished"/>
+        <translation>Testcase gönderilirken bir hata oldu</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/compatdb.cpp" line="75"/>
@@ -246,7 +246,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu.ui" line="17"/>
         <source>CPU</source>
-        <translation type="unfinished"/>
+        <translation>CPU</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu.ui" line="25"/>
@@ -261,7 +261,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu.ui" line="42"/>
         <source>Auto</source>
-        <translation type="unfinished"/>
+        <translation>Otomatik</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu.ui" line="47"/>
@@ -276,7 +276,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu.ui" line="63"/>
         <source>We recommend setting accuracy to &quot;Auto&quot;.</source>
-        <translation type="unfinished"/>
+        <translation>Kesinlik ayarının &quot;Otomatik&quot; olmasını öneririz.</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu.ui" line="80"/>
@@ -368,7 +368,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu_debug.ui" line="17"/>
         <source>CPU</source>
-        <translation type="unfinished"/>
+        <translation>CPU</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu_debug.ui" line="25"/>
@@ -378,7 +378,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu_debug.ui" line="31"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;For debugging only.&lt;/span&gt;&lt;br/&gt;If you&apos;re not sure what these do, keep all of these enabled. &lt;br/&gt;These settings, when disabled, only take effect when CPU Debugging is enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Sadece hata ayıklama içindir.&lt;/span&gt;&lt;br/&gt;Eğer bunların ne yaptığından emin değilseniz hepsini etkinleştirilmiş halde bırakın.&lt;br/&gt;Bu ayarlar, devre dışı bırakıldıklarında, sadece CPU Hata Ayıklama Modu etkinleştirildiğinde çalışırlar.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt; </translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu_debug.ui" line="41"/>
@@ -533,7 +533,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_debug.ui" line="29"/>
         <source>Show Log in Console</source>
-        <translation type="unfinished"/>
+        <translation>Konsolda Log&apos;u Göster</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_debug.ui" line="36"/>
@@ -543,7 +543,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_debug.ui" line="46"/>
         <source>When checked, the max size of the log increases from 100 MB to 1 GB</source>
-        <translation type="unfinished"/>
+        <translation>Etkinleştirildiğinde log&apos;un boyut sınırı 100 MB&apos;tan 1 GB&apos;a çıkar</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_debug.ui" line="49"/>
@@ -568,12 +568,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_debug.ui" line="91"/>
         <source>When checked, the graphics API enters a slower debugging mode</source>
-        <translation type="unfinished"/>
+        <translation>Etkinleştirildiğinde, grafik API&apos;ı daha yavaş bir hata ayıklama moduna girer.</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_debug.ui" line="94"/>
         <source>Enable Graphics Debugging</source>
-        <translation>Grafik Debug Modunu Etkinleştir</translation>
+        <translation>Grafik Hata Ayıklama Modunu Etkinleştir</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_debug.ui" line="101"/>
@@ -598,7 +598,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_debug.ui" line="124"/>
         <source>When checked, yuzu will log statistics about the compiled pipeline cache</source>
-        <translation type="unfinished"/>
+        <translation>Etkinleştirildiğinde, yuzu derlenen pipeline cache istatistiklerini log&apos;a kaydeder.</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_debug.ui" line="127"/>
@@ -618,7 +618,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_debug.ui" line="147"/>
         <source>Debugging</source>
-        <translation type="unfinished"/>
+        <translation>Hata ayıklama</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_debug.ui" line="153"/>
@@ -643,12 +643,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_debug.ui" line="183"/>
         <source>Enable CPU Debugging</source>
-        <translation type="unfinished"/>
+        <translation>CPU Hata Ayıklama Modu&apos;nu Etkinleştir</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_debug.ui" line="190"/>
         <source>Enable Debug Asserts</source>
-        <translation type="unfinished"/>
+        <translation>Hata Ayıklama Assert&apos;lerini Etkinleştir</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_debug.ui" line="197"/>
@@ -658,7 +658,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_debug.ui" line="212"/>
         <source>**This will be reset automatically when yuzu closes.</source>
-        <translation type="unfinished"/>
+        <translation>**Bu yuzu kapandığında otomatik olarak eski haline dönecektir.</translation>
     </message>
 </context>
 <context>
@@ -666,7 +666,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_debug_controller.ui" line="14"/>
         <source>Configure Debug Controller</source>
-        <translation>Debug Kontrolcüsünü Yapılandır</translation>
+        <translation>Hata Ayıklama Kontrolcüsünü Yapılandır</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_debug_controller.ui" line="40"/>
@@ -684,18 +684,18 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_debug_tab.ui" line="14"/>
         <source>Form</source>
-        <translation type="unfinished"/>
+        <translation>Form</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_debug_tab.ui" line="17"/>
         <location filename="../../src/yuzu/configuration/configure_debug_tab.cpp" line="17"/>
         <source>Debug</source>
-        <translation type="unfinished"/>
+        <translation>Hata Ayıklama</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_debug_tab.cpp" line="18"/>
         <source>CPU</source>
-        <translation type="unfinished"/>
+        <translation>CPU</translation>
     </message>
 </context>
 <context>
@@ -707,13 +707,13 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_dialog.cpp" line="59"/>
-        <location filename="../../src/yuzu/configuration/configure_dialog.cpp" line="159"/>
+        <location filename="../../src/yuzu/configuration/configure_dialog.cpp" line="162"/>
         <source>Audio</source>
         <translation>Ses</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_dialog.cpp" line="60"/>
-        <location filename="../../src/yuzu/configuration/configure_dialog.cpp" line="157"/>
+        <location filename="../../src/yuzu/configuration/configure_dialog.cpp" line="160"/>
         <source>CPU</source>
         <translation>CPU</translation>
     </message>
@@ -729,13 +729,13 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_dialog.cpp" line="63"/>
-        <location filename="../../src/yuzu/configuration/configure_dialog.cpp" line="153"/>
+        <location filename="../../src/yuzu/configuration/configure_dialog.cpp" line="156"/>
         <source>General</source>
         <translation>Genel</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_dialog.cpp" line="64"/>
-        <location filename="../../src/yuzu/configuration/configure_dialog.cpp" line="158"/>
+        <location filename="../../src/yuzu/configuration/configure_dialog.cpp" line="161"/>
         <source>Graphics</source>
         <translation>Grafikler</translation>
     </message>
@@ -751,7 +751,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_dialog.cpp" line="67"/>
-        <location filename="../../src/yuzu/configuration/configure_dialog.cpp" line="160"/>
+        <location filename="../../src/yuzu/configuration/configure_dialog.cpp" line="163"/>
         <source>Controls</source>
         <translation>Kontroller</translation>
     </message>
@@ -763,11 +763,11 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_dialog.cpp" line="69"/>
         <source>Network</source>
-        <translation type="unfinished"/>
+        <translation>Ağ</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_dialog.cpp" line="70"/>
-        <location filename="../../src/yuzu/configuration/configure_dialog.cpp" line="155"/>
+        <location filename="../../src/yuzu/configuration/configure_dialog.cpp" line="158"/>
         <source>System</source>
         <translation>Sistem</translation>
     </message>
@@ -792,7 +792,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_filesystem.ui" line="17"/>
         <source>Filesystem</source>
-        <translation type="unfinished"/>
+        <translation>Dosya sistemi</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_filesystem.ui" line="25"/>
@@ -826,7 +826,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_filesystem.ui" line="90"/>
         <source>Path</source>
-        <translation>Dizin</translation>
+        <translation>Konum</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_filesystem.ui" line="100"/>
@@ -938,7 +938,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_general.ui" line="35"/>
         <source>Framerate Cap</source>
-        <translation type="unfinished"/>
+        <translation>FPS Sınırı</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_general.ui" line="38"/>
@@ -948,7 +948,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_general.ui" line="45"/>
         <source>x</source>
-        <translation type="unfinished"/>
+        <translation>x</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_general.ui" line="65"/>
@@ -988,12 +988,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_general.ui" line="160"/>
         <source>Reset All Settings</source>
-        <translation type="unfinished"/>
+        <translation>Tüm Ayarları Sıfırla</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_general.cpp" line="70"/>
         <source>yuzu</source>
-        <translation type="unfinished"/>
+        <translation>yuzu</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_general.cpp" line="71"/>
@@ -1011,7 +1011,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics.ui" line="17"/>
         <source>Graphics</source>
-        <translation type="unfinished"/>
+        <translation>Grrafikler</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics.ui" line="25"/>
@@ -1041,7 +1041,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics.ui" line="162"/>
         <source>Use disk pipeline cache</source>
-        <translation type="unfinished"/>
+        <translation>Disk pipeline cache&apos;ini kullan</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics.ui" line="169"/>
@@ -1056,32 +1056,32 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics.ui" line="198"/>
         <source>NVDEC emulation:</source>
-        <translation type="unfinished"/>
+        <translation>NVDEC emülasyonu:</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics.ui" line="206"/>
         <source>No Video Output</source>
-        <translation type="unfinished"/>
+        <translation>Video Çıkışı Yok</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics.ui" line="211"/>
         <source>CPU Video Decoding</source>
-        <translation type="unfinished"/>
+        <translation>CPU Video Decoding</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics.ui" line="216"/>
         <source>GPU Video Decoding (Default)</source>
-        <translation type="unfinished"/>
+        <translation>GPU Video Decoding (Varsayılan)</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics.ui" line="242"/>
         <source>Fullscreen Mode:</source>
-        <translation type="unfinished"/>
+        <translation>Tam Ekran Modu:</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics.ui" line="250"/>
         <source>Borderless Windowed</source>
-        <translation type="unfinished"/>
+        <translation>Kenarlıksız Tam Ekran</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics.ui" line="255"/>
@@ -1145,7 +1145,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="17"/>
         <source>Advanced</source>
-        <translation type="unfinished"/>
+        <translation>Gelişmiş</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="25"/>
@@ -1175,7 +1175,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="88"/>
         <source>Use asynchronous shader building (Hack)</source>
-        <translation type="unfinished"/>
+        <translation>Asenkronize shader derlemesini kullan (Hack)</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="95"/>
@@ -1185,7 +1185,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="98"/>
         <source>Use Fast GPU Time (Hack)</source>
-        <translation type="unfinished"/>
+        <translation>Hızlı GPU Saati Kullan (Hack)</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="120"/>
@@ -1200,22 +1200,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="133"/>
         <source>2x (WILL BREAK THINGS)</source>
-        <translation type="unfinished"/>
+        <translation>2x (BİR ŞEYLERİ BOZACAK)</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="138"/>
         <source>4x (WILL BREAK THINGS)</source>
-        <translation type="unfinished"/>
+        <translation>4x (BİR ŞEYLERİ BOZACAK)</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="143"/>
         <source>8x (WILL BREAK THINGS)</source>
-        <translation type="unfinished"/>
+        <translation>8x (BİR ŞEYLERİ BOZACAK)</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="148"/>
         <source>16x (WILL BREAK THINGS)</source>
-        <translation type="unfinished"/>
+        <translation>16x (BİR ŞEYLERİ BOZACAK)</translation>
     </message>
 </context>
 <context>
@@ -1228,7 +1228,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_hotkeys.ui" line="17"/>
         <source>Hotkeys</source>
-        <translation type="unfinished"/>
+        <translation>Kısayollar</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_hotkeys.ui" line="25"/>
@@ -1553,22 +1553,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2558"/>
         <source>Emulate Analog with Keyboard Input</source>
-        <translation type="unfinished"/>
+        <translation>Klavye Tuşlarıyla Analog Emülasyonu</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2571"/>
         <source>Enable mouse panning</source>
-        <translation type="unfinished"/>
+        <translation>Mouse ile kaydırmayı etkinleştir</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2578"/>
         <source>Mouse sensitivity</source>
-        <translation type="unfinished"/>
+        <translation>Fare hassasiyeti </translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2584"/>
         <source>%</source>
-        <translation type="unfinished"/>
+        <translation>%</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2600"/>
@@ -1600,17 +1600,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2664"/>
         <source>Debug Controller</source>
-        <translation>Debug Kontrolcüsü</translation>
+        <translation>Hata Ayıklama Kontrolcüsü</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2678"/>
         <source>Requires restarting yuzu</source>
-        <translation type="unfinished"/>
+        <translation>Yuzu&apos;yu yeniden başlatmayı gerektirir </translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2687"/>
         <source>Enable XInput 8 player support (disables web applet)</source>
-        <translation type="unfinished"/>
+        <translation>XInput 8 oyuncu desteğini etkinleştir (web uygulamasını devre dışı bırakır)</translation>
     </message>
 </context>
 <context>
@@ -1654,7 +1654,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../../src/yuzu/configuration/configure_input_player.ui" line="114"/>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1010"/>
         <source>Handheld</source>
-        <translation>Taşınabilir</translation>
+        <translation>Handheld</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.ui" line="125"/>
@@ -1853,12 +1853,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.ui" line="2068"/>
         <source>Motion 1</source>
-        <translation type="unfinished"/>
+        <translation>Hareket 1</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.ui" line="2117"/>
         <source>Motion 2</source>
-        <translation type="unfinished"/>
+        <translation>Hareket 2</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.ui" line="2208"/>
@@ -1901,7 +1901,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="430"/>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="474"/>
         <source>Clear</source>
-        <translation type="unfinished"/>
+        <translation>Temizle</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="324"/>
@@ -1909,40 +1909,41 @@ p, li { white-space: pre-wrap; }
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="432"/>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="476"/>
         <source>[not set]</source>
-        <translation type="unfinished"/>
+        <translation>[belirlenmedi]</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="327"/>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="478"/>
         <source>Toggle button</source>
-        <translation type="unfinished"/>
+        <translation>Tuş ayarla</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="335"/>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="339"/>
         <source>Set threshold</source>
-        <translation type="unfinished"/>
+        <translation>Alt sınır ayarla</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="339"/>
         <source>Choose a value between 0% and 100%</source>
-        <translation type="unfinished"/>
+        <translation>%0 ve %100 arasında bir değer seçin</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="406"/>
         <source>Map Analog Stick</source>
-        <translation type="unfinished"/>
+        <translation>Analog Çubuğu Ayarla</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="407"/>
         <source>After pressing OK, first move your joystick horizontally, and then vertically.
 To invert the axes, first move your joystick vertically, and then horizontally.</source>
-        <translation type="unfinished"/>
+        <translation>Tamama bastıktan sonra, joystikinizi önce yatay sonra dikey olarak hareket ettirin.
+Eksenleri ters çevirmek için, önce joystickinizi dikey sonra yatay olarak hareket ettirin.</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="434"/>
         <source>Invert axis</source>
-        <translation type="unfinished"/>
+        <translation>Ekseni ters çevir</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="500"/>
@@ -1959,22 +1960,22 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1016"/>
         <source>GameCube Controller</source>
-        <translation type="unfinished"/>
+        <translation>GameCube Kontrolcüsü</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1271"/>
         <source>Start / Pause</source>
-        <translation type="unfinished"/>
+        <translation>Başlat / Durdur</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1274"/>
         <source>Z</source>
-        <translation type="unfinished"/>
+        <translation>Z</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1275"/>
         <source>Control Stick</source>
-        <translation type="unfinished"/>
+        <translation>Kontrol Çubuğu</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1276"/>
@@ -1984,7 +1985,7 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1335"/>
         <source>Shake!</source>
-        <translation type="unfinished"/>
+        <translation>Salla!</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1337"/>
@@ -1994,58 +1995,58 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1462"/>
         <source>New Profile</source>
-        <translation type="unfinished"/>
+        <translation>Yeni Profil</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1462"/>
         <source>Enter a profile name:</source>
-        <translation type="unfinished"/>
+        <translation>Bir profil ismi girin:</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1470"/>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1478"/>
         <source>Create Input Profile</source>
-        <translation type="unfinished"/>
+        <translation>Kontrol Profili Oluştur</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1471"/>
         <source>The given profile name is not valid!</source>
-        <translation type="unfinished"/>
+        <translation>Girilen profil ismi geçerli değil!</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1479"/>
         <source>Failed to create the input profile &quot;%1&quot;</source>
-        <translation type="unfinished"/>
+        <translation>&quot;%1&quot; kontrol profili oluşturulamadı </translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1499"/>
         <source>Delete Input Profile</source>
-        <translation type="unfinished"/>
+        <translation>Kontrol Profilini Kaldır</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1500"/>
         <source>Failed to delete the input profile &quot;%1&quot;</source>
-        <translation type="unfinished"/>
+        <translation>&quot;%1&quot; kontrol profili kaldırılamadı</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1522"/>
         <source>Load Input Profile</source>
-        <translation type="unfinished"/>
+        <translation>Kontrol Profilini Yükle</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1523"/>
         <source>Failed to load the input profile &quot;%1&quot;</source>
-        <translation type="unfinished"/>
+        <translation>&quot;%1&quot; kontrol profili yüklenemedi</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1542"/>
         <source>Save Input Profile</source>
-        <translation type="unfinished"/>
+        <translation>Kontrol Profilini Kaydet</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1543"/>
         <source>Failed to save the input profile &quot;%1&quot;</source>
-        <translation type="unfinished"/>
+        <translation>&quot;%1&quot; kontrol profili kaydedilemedi</translation>
     </message>
 </context>
 <context>
@@ -2053,17 +2054,17 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_profile_dialog.ui" line="14"/>
         <source>Create Input Profile</source>
-        <translation type="unfinished"/>
+        <translation>Kontrol Profili Oluştur</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_profile_dialog.ui" line="40"/>
         <source>Clear</source>
-        <translation type="unfinished"/>
+        <translation>Temizle</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_profile_dialog.ui" line="47"/>
         <source>Defaults</source>
-        <translation type="unfinished"/>
+        <translation>Varsayılanlar</translation>
     </message>
 </context>
 <context>
@@ -2076,7 +2077,7 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
     <message>
         <location filename="../../src/yuzu/configuration/configure_motion_touch.ui" line="23"/>
         <source>Mouse Motion</source>
-        <translation type="unfinished"/>
+        <translation>Fare Hareketi</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_motion_touch.ui" line="31"/>
@@ -2091,7 +2092,7 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
     <message>
         <location filename="../../src/yuzu/configuration/configure_motion_touch.ui" line="73"/>
         <source>UDP Calibration:</source>
-        <translation type="unfinished"/>
+        <translation>UDP Kalibrasyonu:</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_motion_touch.ui" line="80"/>
@@ -2144,12 +2145,12 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
     <message>
         <location filename="../../src/yuzu/configuration/configure_motion_touch.ui" line="270"/>
         <source>Add Server</source>
-        <translation type="unfinished"/>
+        <translation>Server Ekle</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_motion_touch.ui" line="303"/>
         <source>Remove Server</source>
-        <translation type="unfinished"/>
+        <translation>Server&apos;ı Kaldır</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_motion_touch.cpp" line="91"/>
@@ -2159,7 +2160,7 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
     <message>
         <location filename="../../src/yuzu/configuration/configure_motion_touch.cpp" line="176"/>
         <source>%1:%2</source>
-        <translation type="unfinished"/>
+        <translation>%1:%2</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_motion_touch.cpp" line="181"/>
@@ -2169,32 +2170,32 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
         <location filename="../../src/yuzu/configuration/configure_motion_touch.cpp" line="201"/>
         <location filename="../../src/yuzu/configuration/configure_motion_touch.cpp" line="295"/>
         <source>yuzu</source>
-        <translation type="unfinished"/>
+        <translation>yuzu</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_motion_touch.cpp" line="181"/>
         <source>Port number has invalid characters</source>
-        <translation type="unfinished"/>
+        <translation>Port numarasında geçersiz karakterler var</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_motion_touch.cpp" line="185"/>
         <source>Port has to be in range 0 and 65353</source>
-        <translation type="unfinished"/>
+        <translation>Port 0 ila 65353 aralığında olmalıdır</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_motion_touch.cpp" line="189"/>
         <source>IP address is not valid</source>
-        <translation type="unfinished"/>
+        <translation>IP adresi geçerli değil</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_motion_touch.cpp" line="195"/>
         <source>This UDP server already exists</source>
-        <translation type="unfinished"/>
+        <translation>Bu UDP sunucusu zaten var</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_motion_touch.cpp" line="201"/>
         <source>Unable to add more than 8 servers</source>
-        <translation type="unfinished"/>
+        <translation>8&apos;den fazla server eklenemez</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_motion_touch.cpp" line="217"/>
@@ -2301,73 +2302,73 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
     <message>
         <location filename="../../src/yuzu/configuration/configure_network.ui" line="14"/>
         <source>Form</source>
-        <translation type="unfinished"/>
+        <translation>Form</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_network.ui" line="17"/>
         <source>Network</source>
-        <translation type="unfinished"/>
+        <translation>Ağ</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_network.ui" line="25"/>
         <source>General</source>
-        <translation type="unfinished"/>
+        <translation>Genel</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_network.ui" line="34"/>
         <source>Network Interface</source>
-        <translation type="unfinished"/>
+        <translation>Ağ Arayüzü </translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_network.cpp" line="17"/>
         <source>None</source>
-        <translation type="unfinished"/>
+        <translation>Hiçbiri</translation>
     </message>
 </context>
 <context>
     <name>ConfigurePerGame</name>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_per_game.ui" line="20"/>
+        <location filename="../../src/yuzu/configuration/configure_per_game.ui" line="12"/>
         <source>Dialog</source>
         <translation>Diyalog</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_per_game.ui" line="34"/>
+        <location filename="../../src/yuzu/configuration/configure_per_game.ui" line="26"/>
         <source>Info</source>
         <translation>Bilgi</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_per_game.ui" line="93"/>
+        <location filename="../../src/yuzu/configuration/configure_per_game.ui" line="85"/>
         <source>Name</source>
         <translation>İsim</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_per_game.ui" line="100"/>
+        <location filename="../../src/yuzu/configuration/configure_per_game.ui" line="92"/>
         <source>Title ID</source>
         <translation>Oyun ID</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_per_game.ui" line="137"/>
+        <location filename="../../src/yuzu/configuration/configure_per_game.ui" line="129"/>
         <source>Filename</source>
         <translation>Dosya adı</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_per_game.ui" line="164"/>
+        <location filename="../../src/yuzu/configuration/configure_per_game.ui" line="156"/>
         <source>Format</source>
         <translation>Biçim</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_per_game.ui" line="171"/>
+        <location filename="../../src/yuzu/configuration/configure_per_game.ui" line="163"/>
         <source>Version</source>
         <translation>Versiyon</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_per_game.ui" line="178"/>
+        <location filename="../../src/yuzu/configuration/configure_per_game.ui" line="170"/>
         <source>Size</source>
         <translation>Boyut</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_per_game.ui" line="185"/>
+        <location filename="../../src/yuzu/configuration/configure_per_game.ui" line="177"/>
         <source>Developer</source>
         <translation>Geliştirici</translation>
     </message>
@@ -2389,7 +2390,7 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
     <message>
         <location filename="../../src/yuzu/configuration/configure_per_game.cpp" line="67"/>
         <source>CPU</source>
-        <translation type="unfinished"/>
+        <translation>CPU</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_per_game.cpp" line="68"/>
@@ -2398,7 +2399,7 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_per_game.cpp" line="69"/>
-        <source>GraphicsAdvanced</source>
+        <source>Adv. Graphics</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -2427,7 +2428,7 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
     <message>
         <location filename="../../src/yuzu/configuration/configure_per_game_addons.ui" line="17"/>
         <source>Add-Ons</source>
-        <translation type="unfinished"/>
+        <translation>Eklentiler</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_per_game_addons.cpp" line="48"/>
@@ -2450,7 +2451,7 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
     <message>
         <location filename="../../src/yuzu/configuration/configure_profile_manager.ui" line="17"/>
         <source>Profiles</source>
-        <translation type="unfinished"/>
+        <translation>Profiller</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_profile_manager.ui" line="25"/>
@@ -2580,6 +2581,16 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
         <source>Unable to copy image from %1 to %2</source>
         <translation>Görüntü %1&apos;den %2&apos;ye kopyalanamadı</translation>
     </message>
+    <message>
+        <location filename="../../src/yuzu/configuration/configure_profile_manager.cpp" line="314"/>
+        <source>Error resizing user image</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <location filename="../../src/yuzu/configuration/configure_profile_manager.cpp" line="315"/>
+        <source>Unable to resize image</source>
+        <translation type="unfinished"/>
+    </message>
 </context>
 <context>
     <name>ConfigureSystem</name>
@@ -2591,7 +2602,7 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
     <message>
         <location filename="../../src/yuzu/configuration/configure_system.ui" line="17"/>
         <source>System</source>
-        <translation type="unfinished"/>
+        <translation>Sistem</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_system.ui" line="25"/>
@@ -2962,7 +2973,7 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
     <message>
         <location filename="../../src/yuzu/configuration/configure_system.ui" line="409"/>
         <source>Brazilian Portuguese (português do Brasil)</source>
-        <translation type="unfinished"/>
+        <translation>Brezilya Portekizcesi (português do Brasil)</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_system.ui" line="417"/>
@@ -3020,17 +3031,17 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
         <translation>Sistem ayarlarına sadece oyun çalışmıyorken erişilebilir.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_system.cpp" line="168"/>
+        <location filename="../../src/yuzu/configuration/configure_system.cpp" line="166"/>
         <source>This will replace your current virtual Switch with a new one. Your current virtual Switch will not be recoverable. This might have unexpected effects in games. This might fail, if you use an outdated config savegame. Continue?</source>
         <translation>Bu sanal Switchinizi yeni biriyle değiştirir. Geçerli sanal switchiniz geri getirilemez. Bu oyunlarda beklenmeyen etkilere neden olabilir. Eski bir oyun yapılandırma kayıt dosyası kullanıyorsanız bu başarısız olabilir. Devam?</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_system.cpp" line="172"/>
+        <location filename="../../src/yuzu/configuration/configure_system.cpp" line="170"/>
         <source>Warning</source>
         <translation>Uyarı</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_system.cpp" line="180"/>
+        <location filename="../../src/yuzu/configuration/configure_system.cpp" line="178"/>
         <source>Console ID: 0x%1</source>
         <translation>Konsol ID: 0x%1</translation>
     </message>
@@ -3044,12 +3055,12 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_tas.ui" line="17"/>
-        <source>Reads controller input from scripts in the same format as TAS-nx scripts.&lt;br/&gt;For a more detailed explanation please consult the FAQ on the yuzu website.</source>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reads controller input from scripts in the same format as TAS-nx scripts.&lt;br/&gt;For a more detailed explanation, please consult the &lt;a href=&quot;https://yuzu-emu.org/help/feature/tas/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#039be5;&quot;&gt;help page&lt;/span&gt;&lt;/a&gt; on the yuzu website.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"/>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_tas.ui" line="24"/>
-        <source>To check which hotkeys control the playback/recording, please refer to the Hotkey settings (General -&gt; Hotkeys).</source>
+        <source>To check which hotkeys control the playback/recording, please refer to the Hotkey settings (Configure -&gt; General -&gt; Hotkeys).</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -3060,7 +3071,7 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
     <message>
         <location filename="../../src/yuzu/configuration/configure_tas.ui" line="51"/>
         <source>Settings</source>
-        <translation type="unfinished"/>
+        <translation>Ayarlar</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_tas.ui" line="57"/>
@@ -3070,7 +3081,7 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
     <message>
         <location filename="../../src/yuzu/configuration/configure_tas.ui" line="64"/>
         <source>Automatic controller profile swapping</source>
-        <translation type="unfinished"/>
+        <translation>Otomatik kontrolcü profili değiştirme</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_tas.ui" line="71"/>
@@ -3085,17 +3096,17 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
     <message>
         <location filename="../../src/yuzu/configuration/configure_tas.ui" line="95"/>
         <source>Script Directory</source>
-        <translation type="unfinished"/>
+        <translation>Script Konumu</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_tas.ui" line="101"/>
         <source>Path</source>
-        <translation type="unfinished"/>
+        <translation>Konum</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_tas.ui" line="108"/>
         <source>...</source>
-        <translation type="unfinished"/>
+        <translation>...</translation>
     </message>
 </context>
 <context>
@@ -3248,62 +3259,62 @@ Noktanın konumunu değiştirmek için sürükleyin ya da sayıların üstüne �
         <location filename="../../src/yuzu/configuration/configure_ui.cpp" line="28"/>
         <location filename="../../src/yuzu/configuration/configure_ui.cpp" line="40"/>
         <source>None</source>
-        <translation type="unfinished"/>
+        <translation>Hiçbiri</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ui.cpp" line="21"/>
         <source>Small (32x32)</source>
-        <translation type="unfinished"/>
+        <translation>Küçük (32x32)</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ui.cpp" line="22"/>
         <source>Standard (64x64)</source>
-        <translation type="unfinished"/>
+        <translation>Standart (64x64)</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ui.cpp" line="23"/>
         <source>Large (128x128)</source>
-        <translation type="unfinished"/>
+        <translation>Büyük (128x128)</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ui.cpp" line="24"/>
         <source>Full Size (256x256)</source>
-        <translation type="unfinished"/>
+        <translation>Tam Boyut (256x256)</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ui.cpp" line="29"/>
         <source>Small (24x24)</source>
-        <translation type="unfinished"/>
+        <translation>Küçük (24x24)</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ui.cpp" line="30"/>
         <source>Standard (48x48)</source>
-        <translation type="unfinished"/>
+        <translation>Standart (48x48)</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ui.cpp" line="31"/>
         <source>Large (72x72)</source>
-        <translation type="unfinished"/>
+        <translation>Büyük (72x72)</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ui.cpp" line="36"/>
         <source>Filename</source>
-        <translation type="unfinished"/>
+        <translation>Dosya adı</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ui.cpp" line="37"/>
         <source>Filetype</source>
-        <translation type="unfinished"/>
+        <translation>Dosya türü</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ui.cpp" line="38"/>
         <source>Title ID</source>
-        <translation type="unfinished"/>
+        <translation>Oyun ID</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ui.cpp" line="39"/>
         <source>Title Name</source>
-        <translation type="unfinished"/>
+        <translation>Oyun Adı</translation>
     </message>
 </context>
 <context>
@@ -3316,7 +3327,7 @@ Noktanın konumunu değiştirmek için sürükleyin ya da sayıların üstüne �
     <message>
         <location filename="../../src/yuzu/configuration/configure_ui.ui" line="17"/>
         <source>UI</source>
-        <translation type="unfinished"/>
+        <translation>Arayüz</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ui.ui" line="23"/>
@@ -3351,12 +3362,12 @@ Noktanın konumunu değiştirmek için sürükleyin ya da sayıların üstüne �
     <message>
         <location filename="../../src/yuzu/configuration/configure_ui.ui" line="91"/>
         <source>Game Icon Size:</source>
-        <translation type="unfinished"/>
+        <translation>Oyun Simge Boyutu:</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ui.ui" line="105"/>
         <source>Folder Icon Size:</source>
-        <translation type="unfinished"/>
+        <translation>Dosya Simge Boyutu:</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ui.ui" line="119"/>
@@ -3409,17 +3420,17 @@ Noktanın konumunu değiştirmek için sürükleyin ya da sayıların üstüne �
     <message>
         <location filename="../../src/yuzu/configuration/configure_vibration.ui" line="14"/>
         <source>Configure Vibration</source>
-        <translation type="unfinished"/>
+        <translation>Titreşimi Ayarla</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_vibration.ui" line="23"/>
         <source>Vibration</source>
-        <translation type="unfinished"/>
+        <translation>Titreşim</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_vibration.ui" line="56"/>
         <source>Player 1</source>
-        <translation type="unfinished"/>
+        <translation>Oyuncu 1</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_vibration.ui" line="89"/>
@@ -3431,47 +3442,47 @@ Noktanın konumunu değiştirmek için sürükleyin ya da sayıların üstüne �
         <location filename="../../src/yuzu/configuration/configure_vibration.ui" line="419"/>
         <location filename="../../src/yuzu/configuration/configure_vibration.ui" line="471"/>
         <source>%</source>
-        <translation type="unfinished"/>
+        <translation>%</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_vibration.ui" line="108"/>
         <source>Player 2</source>
-        <translation type="unfinished"/>
+        <translation>Oyuncu 2</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_vibration.ui" line="160"/>
         <source>Player 3</source>
-        <translation type="unfinished"/>
+        <translation>Oyuncu 3</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_vibration.ui" line="212"/>
         <source>Player 4</source>
-        <translation type="unfinished"/>
+        <translation>Oyuncu 4</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_vibration.ui" line="282"/>
         <source>Player 5</source>
-        <translation type="unfinished"/>
+        <translation>Oyuncu 5</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_vibration.ui" line="334"/>
         <source>Player 6</source>
-        <translation type="unfinished"/>
+        <translation>Oyuncu 6</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_vibration.ui" line="386"/>
         <source>Player 7</source>
-        <translation type="unfinished"/>
+        <translation>Oyuncu 7</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_vibration.ui" line="438"/>
         <source>Player 8</source>
-        <translation type="unfinished"/>
+        <translation>Oyuncu 8</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_vibration.ui" line="496"/>
         <source>Settings</source>
-        <translation type="unfinished"/>
+        <translation>Ayarlar</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_vibration.ui" line="502"/>
@@ -3489,7 +3500,7 @@ Noktanın konumunu değiştirmek için sürükleyin ya da sayıların üstüne �
     <message>
         <location filename="../../src/yuzu/configuration/configure_web.ui" line="17"/>
         <source>Web</source>
-        <translation type="unfinished"/>
+        <translation>Web</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_web.ui" line="25"/>
@@ -3620,801 +3631,808 @@ Noktanın konumunu değiştirmek için sürükleyin ya da sayıların üstüne �
     <message>
         <location filename="../../src/yuzu/debugger/controller.cpp" line="17"/>
         <source>Controller P1</source>
-        <translation type="unfinished"/>
+        <translation>Kontrolcü O1</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/debugger/controller.cpp" line="52"/>
         <source>&amp;Controller P1</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Kontrolcü O1</translation>
     </message>
 </context>
 <context>
     <name>GMainWindow</name>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="170"/>
+        <location filename="../../src/yuzu/main.cpp" line="174"/>
         <source>&lt;a href=&apos;https://yuzu-emu.org/help/feature/telemetry/&apos;&gt;Anonymous data is collected&lt;/a&gt; to help improve yuzu. &lt;br/&gt;&lt;br/&gt;Would you like to share your usage data with us?</source>
         <translation>&lt;a href=&apos;https://yuzu-emu.org/help/feature/telemetry/&apos;&gt;Yuzuyu geliştirmeye yardımcı olmak için &lt;/a&gt; anonim veri toplandı. &lt;br/&gt;&lt;br/&gt;Kullanım verinizi bizimle paylaşmak ister misiniz?</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="173"/>
+        <location filename="../../src/yuzu/main.cpp" line="177"/>
         <source>Telemetry</source>
         <translation>Telemetri</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="579"/>
+        <location filename="../../src/yuzu/main.cpp" line="592"/>
         <source>Loading Web Applet...</source>
         <translation>Web Uygulaması Yükleniyor...</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="626"/>
-        <location filename="../../src/yuzu/main.cpp" line="629"/>
+        <location filename="../../src/yuzu/main.cpp" line="639"/>
+        <location filename="../../src/yuzu/main.cpp" line="642"/>
         <source>Disable Web Applet</source>
-        <translation type="unfinished"/>
+        <translation>Web Uygulamasını Devre Dışı Bırak</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="630"/>
+        <location filename="../../src/yuzu/main.cpp" line="643"/>
         <source>Disabling the web applet will cause it to not be shown again for the rest of the emulated session. This can lead to undefined behavior and should only be used with Super Mario 3D All-Stars. Are you sure you want to disable the web applet?</source>
-        <translation type="unfinished"/>
+        <translation>Web uygulamasını devre dışı bırakmak emülasyon seansının sonuna kadar bir daha gösterilmemesine sebep olur. Bu, belirsiz davranışlara sebep olabilir ve sadece Super Mario 3D All-Stars&apos;da kullanılmalıdır. Web uygulamasını devre dışı bırakmak istediğinize emin misiniz?</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="733"/>
+        <location filename="../../src/yuzu/main.cpp" line="746"/>
         <source>The amount of shaders currently being built</source>
         <translation>Şu anda derlenen shader miktarı</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="736"/>
+        <location filename="../../src/yuzu/main.cpp" line="749"/>
         <source>Current emulation speed. Values higher or lower than 100% indicate emulation is running faster or slower than a Switch.</source>
         <translation>Geçerli emülasyon hızı. %100&apos;den yüksek veya düşük değerler emülasyonun bir Switch&apos;den daha hızlı veya daha yavaş çalıştığını gösterir.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="739"/>
+        <location filename="../../src/yuzu/main.cpp" line="752"/>
         <source>How many frames per second the game is currently displaying. This will vary from game to game and scene to scene.</source>
         <translation>Oyunun şuanda saniye başına kaç kare gösterdiği. Bu oyundan oyuna ve sahneden sahneye değişiklik gösterir.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="743"/>
+        <location filename="../../src/yuzu/main.cpp" line="756"/>
         <source>Time taken to emulate a Switch frame, not counting framelimiting or v-sync. For full-speed emulation this should be at most 16.67 ms.</source>
         <translation>Bir Switch karesini emüle etmekte geçen zaman, karelimitleme ve v-sync hariç. Tam hız emülasyon için bu en çok 16,67 ms olmalı.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="768"/>
-        <source>Invalid config detected</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location filename="../../src/yuzu/main.cpp" line="769"/>
-        <source>Handheld controller can&apos;t be used on docked mode. Pro controller will be selected.</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
         <location filename="../../src/yuzu/main.cpp" line="781"/>
+        <source>Invalid config detected</source>
+        <translation>Geçersiz yapılandırma tespit edildi</translation>
+    </message>
+    <message>
+        <location filename="../../src/yuzu/main.cpp" line="782"/>
+        <source>Handheld controller can&apos;t be used on docked mode. Pro controller will be selected.</source>
+        <translation>Handheld kontrolcü dock modunda kullanılamaz. Pro kontrolcü seçilecek.</translation>
+    </message>
+    <message>
+        <location filename="../../src/yuzu/main.cpp" line="794"/>
         <source>DOCK</source>
         <translation>DOCK</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="815"/>
+        <location filename="../../src/yuzu/main.cpp" line="828"/>
         <source>VULKAN</source>
         <translation>VULKAN</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="815"/>
+        <location filename="../../src/yuzu/main.cpp" line="828"/>
         <source>OPENGL</source>
         <translation>OPENGL</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="873"/>
+        <location filename="../../src/yuzu/main.cpp" line="886"/>
         <source>&amp;Clear Recent Files</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Son Dosyaları Temizle</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1042"/>
+        <location filename="../../src/yuzu/main.cpp" line="1055"/>
         <source>TAS Recording</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1043"/>
+        <location filename="../../src/yuzu/main.cpp" line="1056"/>
         <source>Overwrite file of player 1?</source>
-        <translation type="unfinished"/>
+        <translation>Oyuncu 1&apos;in dosyasının üstüne yazılsın mı?</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1268"/>
+        <location filename="../../src/yuzu/main.cpp" line="1285"/>
         <source>Warning Outdated Game Format</source>
         <translation>Uyarı, Eski Oyun Formatı</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1269"/>
+        <location filename="../../src/yuzu/main.cpp" line="1286"/>
         <source>You are using the deconstructed ROM directory format for this game, which is an outdated format that has been superseded by others such as NCA, NAX, XCI, or NSP. Deconstructed ROM directories lack icons, metadata, and update support.&lt;br&gt;&lt;br&gt;For an explanation of the various Switch formats yuzu supports, &lt;a href=&apos;https://yuzu-emu.org/wiki/overview-of-switch-game-formats&apos;&gt;check out our wiki&lt;/a&gt;. This message will not be shown again.</source>
         <translation>Bu oyun için dekonstrükte ROM formatı kullanıyorsunuz, bu fromatın yerine NCA, NAX, XCI ve NSP formatları kullanılmaktadır. Dekonstrükte ROM formatları ikon, üst veri ve güncelleme desteği içermemektedir.&lt;br&gt;&lt;br&gt;Yuzu&apos;nun desteklediği çeşitli Switch formatları için&lt;a href=&apos;https://yuzu-emu.org/wiki/overview-of-switch-game-formats&apos;&gt;Wiki&apos;yi ziyaret edin&lt;/a&gt;. Bu mesaj yeniden gösterilmeyecektir.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1281"/>
-        <location filename="../../src/yuzu/main.cpp" line="1318"/>
+        <location filename="../../src/yuzu/main.cpp" line="1298"/>
+        <location filename="../../src/yuzu/main.cpp" line="1335"/>
         <source>Error while loading ROM!</source>
         <translation>ROM yüklenirken hata oluştu!</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1282"/>
+        <location filename="../../src/yuzu/main.cpp" line="1299"/>
         <source>The ROM format is not supported.</source>
         <translation>Bu ROM biçimi desteklenmiyor.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1286"/>
+        <location filename="../../src/yuzu/main.cpp" line="1303"/>
         <source>An error occurred initializing the video core.</source>
         <translation>Video çekirdeğini başlatılırken bir hata oluştu.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1287"/>
+        <location filename="../../src/yuzu/main.cpp" line="1304"/>
         <source>yuzu has encountered an error while running the video core, please see the log for more details.For more information on accessing the log, please see the following page: &lt;a href=&apos;https://community.citra-emu.org/t/how-to-upload-the-log-file/296&apos;&gt;How to Upload the Log File&lt;/a&gt;.Ensure that you have the latest graphics drivers for your GPU.</source>
         <translation>yuzu video çekirdeğini yürütürken bir hatayla karşılaştı, lütfen daha fazla detay için kütüğe bakınız. Kütüğe erişmek hakkında daha fazla bilgi için, lütfen bu sayfaya göz atınız: &lt;a href=&apos;https://community.citra-emu.org/t/how-to-upload-the-log-file/296&apos;&gt;Nasıl Kütük Dosyası Yüklenir&lt;/a&gt;. Güncel bir grafik sürücüsüne sahip olduğunuzdan emin olunuz.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1305"/>
+        <location filename="../../src/yuzu/main.cpp" line="1322"/>
         <source>Error while loading ROM! %1</source>
         <comment>%1 signifies a numeric error code.</comment>
-        <translation type="unfinished"/>
+        <translation>ROM yüklenirken hata oluştu! %1</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1308"/>
+        <location filename="../../src/yuzu/main.cpp" line="1325"/>
         <source>%1&lt;br&gt;Please follow &lt;a href=&apos;https://yuzu-emu.org/help/quickstart/&apos;&gt;the yuzu quickstart guide&lt;/a&gt; to redump your files.&lt;br&gt;You can refer to the yuzu wiki&lt;/a&gt; or the yuzu Discord&lt;/a&gt; for help.</source>
         <comment>%1 signifies an error string.</comment>
-        <translation type="unfinished"/>
+        <translation>%1&lt;br&gt;Lütfen dosyalarınızı yeniden dump etmek için&lt;a href=&apos;https://yuzu-emu.org/help/quickstart/&apos;&gt;yuzu hızlı başlangıç kılavuzu&apos;nu&lt;/a&gt; takip edin.&lt;br&gt; Yardım için yuzu wiki&lt;/a&gt;veya yuzu Discord&apos;una&lt;/a&gt; bakabilirsiniz.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1319"/>
+        <location filename="../../src/yuzu/main.cpp" line="1336"/>
         <source>An unknown error occurred. Please see the log for more details.</source>
         <translation>Bilinmeyen bir hata oluştu. Lütfen daha fazla detay için kütüğe göz atınız.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1445"/>
+        <location filename="../../src/yuzu/main.cpp" line="1462"/>
         <source>(64-bit)</source>
-        <translation type="unfinished"/>
+        <translation>(64-bit)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1445"/>
+        <location filename="../../src/yuzu/main.cpp" line="1462"/>
         <source>(32-bit)</source>
-        <translation type="unfinished"/>
+        <translation>(32-bit)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1446"/>
+        <location filename="../../src/yuzu/main.cpp" line="1463"/>
         <source>%1 %2</source>
         <comment>%1 is the title name. %2 indicates if the title is 64-bit or 32-bit</comment>
-        <translation type="unfinished"/>
+        <translation>%1 %2</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1490"/>
+        <location filename="../../src/yuzu/main.cpp" line="1507"/>
         <source>Start</source>
         <translation>Başlat</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1595"/>
+        <location filename="../../src/yuzu/main.cpp" line="1612"/>
         <source>Save Data</source>
         <translation>Kayıt Verisi</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1643"/>
+        <location filename="../../src/yuzu/main.cpp" line="1660"/>
         <source>Mod Data</source>
         <translation>Mod Verisi</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1655"/>
+        <location filename="../../src/yuzu/main.cpp" line="1672"/>
         <source>Error Opening %1 Folder</source>
         <translation>%1 klasörü açılırken hata</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1656"/>
-        <location filename="../../src/yuzu/main.cpp" line="2062"/>
+        <location filename="../../src/yuzu/main.cpp" line="1673"/>
+        <location filename="../../src/yuzu/main.cpp" line="2079"/>
         <source>Folder does not exist!</source>
         <translation>Klasör mevcut değil!</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1668"/>
+        <location filename="../../src/yuzu/main.cpp" line="1685"/>
         <source>Error Opening Transferable Shader Cache</source>
         <translation>Transfer Edilebilir Shader Cache&apos;ini Açarken Bir Hata Oluştu</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1669"/>
-        <source>Filed to create the shader cache directory for this title.</source>
-        <translation type="unfinished"/>
+        <location filename="../../src/yuzu/main.cpp" line="1686"/>
+        <source>Failed to create the shader cache directory for this title.</source>
+        <translation>Bu oyun için shader cache konumu oluşturulamadı.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1721"/>
+        <location filename="../../src/yuzu/main.cpp" line="1738"/>
         <source>Contents</source>
         <translation>İçerikler</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1723"/>
+        <location filename="../../src/yuzu/main.cpp" line="1740"/>
         <source>Update</source>
         <translation>Güncelleme</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1725"/>
+        <location filename="../../src/yuzu/main.cpp" line="1742"/>
         <source>DLC</source>
         <translation>DLC</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1732"/>
+        <location filename="../../src/yuzu/main.cpp" line="1749"/>
         <source>Remove Entry</source>
         <translation>Girdiyi Kaldır</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1732"/>
+        <location filename="../../src/yuzu/main.cpp" line="1749"/>
         <source>Remove Installed Game %1?</source>
         <translation>%1 Adlı Oyunu Kaldırmak İstediğinize Emin Misiniz?</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1762"/>
-        <location filename="../../src/yuzu/main.cpp" line="1778"/>
-        <location filename="../../src/yuzu/main.cpp" line="1809"/>
-        <location filename="../../src/yuzu/main.cpp" line="1870"/>
-        <location filename="../../src/yuzu/main.cpp" line="1888"/>
-        <location filename="../../src/yuzu/main.cpp" line="1911"/>
+        <location filename="../../src/yuzu/main.cpp" line="1779"/>
+        <location filename="../../src/yuzu/main.cpp" line="1795"/>
+        <location filename="../../src/yuzu/main.cpp" line="1826"/>
+        <location filename="../../src/yuzu/main.cpp" line="1887"/>
+        <location filename="../../src/yuzu/main.cpp" line="1905"/>
+        <location filename="../../src/yuzu/main.cpp" line="1928"/>
         <source>Successfully Removed</source>
         <translation>Başarıyla Kaldırıldı</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1763"/>
+        <location filename="../../src/yuzu/main.cpp" line="1780"/>
         <source>Successfully removed the installed base game.</source>
         <translation>Yüklenmiş oyun başarıyla kaldırıldı.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1766"/>
-        <location filename="../../src/yuzu/main.cpp" line="1781"/>
-        <location filename="../../src/yuzu/main.cpp" line="1804"/>
+        <location filename="../../src/yuzu/main.cpp" line="1783"/>
+        <location filename="../../src/yuzu/main.cpp" line="1798"/>
+        <location filename="../../src/yuzu/main.cpp" line="1821"/>
         <source>Error Removing %1</source>
         <translation>%1 Adlı Oyun Kaldırılırken Bir Hata Oluştu</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1767"/>
+        <location filename="../../src/yuzu/main.cpp" line="1784"/>
         <source>The base game is not installed in the NAND and cannot be removed.</source>
         <translation>Asıl oyun NAND&apos;de kurulu değil ve kaldırılamaz.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1779"/>
+        <location filename="../../src/yuzu/main.cpp" line="1796"/>
         <source>Successfully removed the installed update.</source>
         <translation>Yüklenmiş güncelleme başarıyla kaldırıldı.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1782"/>
+        <location filename="../../src/yuzu/main.cpp" line="1799"/>
         <source>There is no update installed for this title.</source>
         <translation>Bu oyun için yüklenmiş bir güncelleme yok.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1805"/>
+        <location filename="../../src/yuzu/main.cpp" line="1822"/>
         <source>There are no DLC installed for this title.</source>
         <translation>Bu oyun için yüklenmiş bir DLC yok.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1810"/>
+        <location filename="../../src/yuzu/main.cpp" line="1827"/>
         <source>Successfully removed %1 installed DLC.</source>
         <translation>%1 yüklenmiş DLC başarıyla kaldırıldı.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1818"/>
+        <location filename="../../src/yuzu/main.cpp" line="1835"/>
         <source>Delete OpenGL Transferable Shader Cache?</source>
-        <translation type="unfinished"/>
+        <translation>OpenGL Transfer Edilebilir Shader Cache&apos;ini Kaldırmak İstediğinize Emin Misiniz?</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1820"/>
+        <location filename="../../src/yuzu/main.cpp" line="1837"/>
         <source>Delete Vulkan Transferable Shader Cache?</source>
-        <translation type="unfinished"/>
+        <translation>Vulkan Transfer Edilebilir Shader Cache&apos;ini Kaldırmak İstediğinize Emin Misiniz?</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1822"/>
+        <location filename="../../src/yuzu/main.cpp" line="1839"/>
         <source>Delete All Transferable Shader Caches?</source>
-        <translation type="unfinished"/>
+        <translation>Tüm Transfer Edilebilir Shader Cache&apos;leri Kaldırmak İstediğinize Emin Misiniz?</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1824"/>
+        <location filename="../../src/yuzu/main.cpp" line="1841"/>
         <source>Remove Custom Game Configuration?</source>
         <translation>Oyuna Özel Yapılandırmayı Kaldırmak İstediğinize Emin Misiniz?</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1830"/>
+        <location filename="../../src/yuzu/main.cpp" line="1847"/>
         <source>Remove File</source>
         <translation>Dosyayı Sil</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1865"/>
-        <location filename="../../src/yuzu/main.cpp" line="1873"/>
+        <location filename="../../src/yuzu/main.cpp" line="1882"/>
+        <location filename="../../src/yuzu/main.cpp" line="1890"/>
         <source>Error Removing Transferable Shader Cache</source>
         <translation>Transfer Edilebilir Shader Cache Kaldırılırken Bir Hata Oluştu</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1866"/>
-        <location filename="../../src/yuzu/main.cpp" line="1884"/>
+        <location filename="../../src/yuzu/main.cpp" line="1883"/>
+        <location filename="../../src/yuzu/main.cpp" line="1901"/>
         <source>A shader cache for this title does not exist.</source>
         <translation>Bu oyun için oluşturulmuş bir shader cache yok.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1871"/>
+        <location filename="../../src/yuzu/main.cpp" line="1888"/>
         <source>Successfully removed the transferable shader cache.</source>
         <translation>Transfer edilebilir shader cache başarıyla kaldırıldı.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1874"/>
+        <location filename="../../src/yuzu/main.cpp" line="1891"/>
         <source>Failed to remove the transferable shader cache.</source>
         <translation>Transfer edilebilir shader cache kaldırılamadı.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1883"/>
-        <location filename="../../src/yuzu/main.cpp" line="1891"/>
+        <location filename="../../src/yuzu/main.cpp" line="1900"/>
+        <location filename="../../src/yuzu/main.cpp" line="1908"/>
         <source>Error Removing Transferable Shader Caches</source>
-        <translation type="unfinished"/>
+        <translation>Transfer Edilebilir Shader Cache&apos;ler Kaldırılırken Bir Hata Oluştu</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1889"/>
+        <location filename="../../src/yuzu/main.cpp" line="1906"/>
         <source>Successfully removed the transferable shader caches.</source>
-        <translation type="unfinished"/>
+        <translation>Transfer edilebilir shader cacheler başarıyla kaldırıldı.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1892"/>
+        <location filename="../../src/yuzu/main.cpp" line="1909"/>
         <source>Failed to remove the transferable shader cache directory.</source>
-        <translation type="unfinished"/>
+        <translation>Transfer edilebilir shader cache konumu kaldırılamadı.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1905"/>
-        <location filename="../../src/yuzu/main.cpp" line="1914"/>
+        <location filename="../../src/yuzu/main.cpp" line="1922"/>
+        <location filename="../../src/yuzu/main.cpp" line="1931"/>
         <source>Error Removing Custom Configuration</source>
         <translation>Oyuna Özel Yapılandırma Kaldırılırken Bir Hata Oluştu.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1906"/>
+        <location filename="../../src/yuzu/main.cpp" line="1923"/>
         <source>A custom configuration for this title does not exist.</source>
         <translation>Bu oyun için bir özel yapılandırma yok.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1912"/>
+        <location filename="../../src/yuzu/main.cpp" line="1929"/>
         <source>Successfully removed the custom game configuration.</source>
         <translation>Oyuna özel yapılandırma başarıyla kaldırıldı.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1915"/>
+        <location filename="../../src/yuzu/main.cpp" line="1932"/>
         <source>Failed to remove the custom game configuration.</source>
         <translation>Oyuna özel yapılandırma kaldırılamadı.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1922"/>
-        <location filename="../../src/yuzu/main.cpp" line="2001"/>
+        <location filename="../../src/yuzu/main.cpp" line="1939"/>
+        <location filename="../../src/yuzu/main.cpp" line="2018"/>
         <source>RomFS Extraction Failed!</source>
         <translation>RomFS Çıkartımı Başarısız!</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1923"/>
+        <location filename="../../src/yuzu/main.cpp" line="1940"/>
         <source>There was an error copying the RomFS files or the user cancelled the operation.</source>
         <translation>RomFS dosyaları kopyalanırken bir hata oluştu veya kullanıcı işlemi iptal etti.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1981"/>
+        <location filename="../../src/yuzu/main.cpp" line="1998"/>
         <source>Full</source>
         <translation>Full</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1981"/>
+        <location filename="../../src/yuzu/main.cpp" line="1998"/>
         <source>Skeleton</source>
         <translation>Gövde</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1983"/>
+        <location filename="../../src/yuzu/main.cpp" line="2000"/>
         <source>Select RomFS Dump Mode</source>
         <translation>RomFS Dump Modunu Seçiniz</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1984"/>
+        <location filename="../../src/yuzu/main.cpp" line="2001"/>
         <source>Please select the how you would like the RomFS dumped.&lt;br&gt;Full will copy all of the files into the new directory while &lt;br&gt;skeleton will only create the directory structure.</source>
         <translation>Lütfen RomFS&apos;in nasıl dump edilmesini istediğinizi seçin.&lt;br&gt;&quot;Full&quot; tüm dosyaları yeni bir klasöre kopyalarken &lt;br&gt;&quot;skeleton&quot; sadece klasör yapısını oluşturur.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2002"/>
+        <location filename="../../src/yuzu/main.cpp" line="2019"/>
         <source>There is not enough free space at %1 to extract the RomFS. Please free up space or select a different dump directory at Emulation &gt; Configure &gt; System &gt; Filesystem &gt; Dump Root</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2009"/>
+        <location filename="../../src/yuzu/main.cpp" line="2026"/>
         <source>Extracting RomFS...</source>
         <translation>RomFS çıkartılıyor...</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2009"/>
-        <location filename="../../src/yuzu/main.cpp" line="2189"/>
+        <location filename="../../src/yuzu/main.cpp" line="2026"/>
+        <location filename="../../src/yuzu/main.cpp" line="2206"/>
         <source>Cancel</source>
         <translation>İptal</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2016"/>
+        <location filename="../../src/yuzu/main.cpp" line="2033"/>
         <source>RomFS Extraction Succeeded!</source>
         <translation>RomFS Çıkartımı Başarılı!</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2017"/>
+        <location filename="../../src/yuzu/main.cpp" line="2034"/>
         <source>The operation completed successfully.</source>
         <translation>İşlem başarıyla tamamlandı.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2061"/>
+        <location filename="../../src/yuzu/main.cpp" line="2078"/>
         <source>Error Opening %1</source>
         <translation>%1 Açılırken Bir Hata Oluştu</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2070"/>
+        <location filename="../../src/yuzu/main.cpp" line="2087"/>
         <source>Select Directory</source>
         <translation>Klasör Seç</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2097"/>
+        <location filename="../../src/yuzu/main.cpp" line="2114"/>
         <source>Properties</source>
         <translation>Özellikler</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2098"/>
+        <location filename="../../src/yuzu/main.cpp" line="2115"/>
         <source>The game properties could not be loaded.</source>
         <translation>Oyun özellikleri yüklenemedi.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2110"/>
+        <location filename="../../src/yuzu/main.cpp" line="2127"/>
         <source>Switch Executable (%1);;All Files (*.*)</source>
         <comment>%1 is an identifier for the Switch executable file extensions.</comment>
         <translation>Switch Çalıştırılabilir Dosyası (%1);;Tüm Dosyalar (*.*)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2114"/>
+        <location filename="../../src/yuzu/main.cpp" line="2131"/>
         <source>Load File</source>
         <translation>Dosya Aç</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2126"/>
+        <location filename="../../src/yuzu/main.cpp" line="2143"/>
         <source>Open Extracted ROM Directory</source>
         <translation>Çıkartılmış ROM klasörünü aç</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2137"/>
+        <location filename="../../src/yuzu/main.cpp" line="2154"/>
         <source>Invalid Directory Selected</source>
         <translation>Geçersiz Klasör Seçildi</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2138"/>
+        <location filename="../../src/yuzu/main.cpp" line="2155"/>
         <source>The directory you have selected does not contain a &apos;main&apos; file.</source>
         <translation>Seçtiğiniz klasör bir &quot;main&quot; dosyası içermiyor.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2148"/>
+        <location filename="../../src/yuzu/main.cpp" line="2165"/>
         <source>Installable Switch File (*.nca *.nsp *.xci);;Nintendo Content Archive (*.nca);;Nintendo Submission Package (*.nsp);;NX Cartridge Image (*.xci)</source>
         <translation>Yüklenilebilir Switch Dosyası (*.nca *.nsp *.xci);;Nintendo Content Archive (*.nca);;Nintendo Submissions Package (*.nsp);;NX Cartridge Image (*.xci)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2153"/>
+        <location filename="../../src/yuzu/main.cpp" line="2170"/>
         <source>Install Files</source>
         <translation>Dosya Kur</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../src/yuzu/main.cpp" line="2197"/>
+        <location filename="../../src/yuzu/main.cpp" line="2214"/>
         <source>%n file(s) remaining</source>
-        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform></translation>
+        <translation><numerusform>%n dosya kaldı</numerusform><numerusform>%n dosya kaldı</numerusform></translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2199"/>
+        <location filename="../../src/yuzu/main.cpp" line="2216"/>
         <source>Installing file &quot;%1&quot;...</source>
         <translation>&quot;%1&quot; dosyası kuruluyor...</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2245"/>
-        <location filename="../../src/yuzu/main.cpp" line="2259"/>
+        <location filename="../../src/yuzu/main.cpp" line="2262"/>
+        <location filename="../../src/yuzu/main.cpp" line="2276"/>
         <source>Install Results</source>
         <translation>Kurulum Sonuçları</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2246"/>
+        <location filename="../../src/yuzu/main.cpp" line="2263"/>
         <source>To avoid possible conflicts, we discourage users from installing base games to the NAND.
 Please, only use this feature to install updates and DLC.</source>
-        <translation type="unfinished"/>
+        <translation>Olası çakışmaları önlemek için oyunları NAND&apos;e yüklememenizi tavsiye ediyoruz.
+Lütfen bu özelliği sadece güncelleme ve DLC yüklemek için kullanın.</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../src/yuzu/main.cpp" line="2252"/>
+        <location filename="../../src/yuzu/main.cpp" line="2269"/>
         <source>%n file(s) were newly installed
 </source>
-        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform></translation>
+        <translation><numerusform>%n dosya güncel olarak yüklendi
+</numerusform><numerusform>%n dosya güncel olarak yüklendi
+</numerusform></translation>
     </message>
     <message numerus="yes">
-        <location filename="../../src/yuzu/main.cpp" line="2255"/>
+        <location filename="../../src/yuzu/main.cpp" line="2272"/>
         <source>%n file(s) were overwritten
 </source>
-        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform></translation>
+        <translation><numerusform>%n dosyanın üstüne yazıldı
+</numerusform><numerusform>%n dosyanın üstüne yazıldı
+</numerusform></translation>
     </message>
     <message numerus="yes">
-        <location filename="../../src/yuzu/main.cpp" line="2257"/>
+        <location filename="../../src/yuzu/main.cpp" line="2274"/>
         <source>%n file(s) failed to install
 </source>
-        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform></translation>
+        <translation><numerusform>%n dosya yüklenemedi
+</numerusform><numerusform>%n dosya yüklenemedi
+</numerusform></translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2358"/>
+        <location filename="../../src/yuzu/main.cpp" line="2375"/>
         <source>System Application</source>
         <translation>Sistem Uygulaması</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2359"/>
+        <location filename="../../src/yuzu/main.cpp" line="2376"/>
         <source>System Archive</source>
         <translation>Sistem Arşivi</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2360"/>
+        <location filename="../../src/yuzu/main.cpp" line="2377"/>
         <source>System Application Update</source>
         <translation>Sistem Uygulama Güncellemesi</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2361"/>
+        <location filename="../../src/yuzu/main.cpp" line="2378"/>
         <source>Firmware Package (Type A)</source>
         <translation>Yazılım Paketi (Tür A)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2362"/>
+        <location filename="../../src/yuzu/main.cpp" line="2379"/>
         <source>Firmware Package (Type B)</source>
         <translation>Yazılım Paketi (Tür B)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2363"/>
+        <location filename="../../src/yuzu/main.cpp" line="2380"/>
         <source>Game</source>
         <translation>Oyun</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2364"/>
+        <location filename="../../src/yuzu/main.cpp" line="2381"/>
         <source>Game Update</source>
         <translation>Oyun Güncellemesi</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2365"/>
+        <location filename="../../src/yuzu/main.cpp" line="2382"/>
         <source>Game DLC</source>
         <translation>Oyun DLC&apos;si</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2366"/>
+        <location filename="../../src/yuzu/main.cpp" line="2383"/>
         <source>Delta Title</source>
         <translation>Delta Başlık</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2369"/>
+        <location filename="../../src/yuzu/main.cpp" line="2386"/>
         <source>Select NCA Install Type...</source>
         <translation>NCA Kurulum Tipi Seçin...</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2370"/>
+        <location filename="../../src/yuzu/main.cpp" line="2387"/>
         <source>Please select the type of title you would like to install this NCA as:
 (In most instances, the default &apos;Game&apos; is fine.)</source>
         <translation>Lütfen bu NCA dosyası için belirlemek istediğiniz başlık türünü seçiniz:
 (Çoğu durumda, varsayılan olan &apos;Oyun&apos; kullanılabilir.)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2376"/>
+        <location filename="../../src/yuzu/main.cpp" line="2393"/>
         <source>Failed to Install</source>
         <translation>Kurulum Başarısız Oldu</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2377"/>
+        <location filename="../../src/yuzu/main.cpp" line="2394"/>
         <source>The title type you selected for the NCA is invalid.</source>
         <translation>NCA için seçtiğiniz başlık türü geçersiz</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2412"/>
+        <location filename="../../src/yuzu/main.cpp" line="2429"/>
         <source>File not found</source>
         <translation>Dosya Bulunamadı</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2413"/>
+        <location filename="../../src/yuzu/main.cpp" line="2430"/>
         <source>File &quot;%1&quot; not found</source>
         <translation>Dosya &quot;%1&quot; Bulunamadı</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2428"/>
-        <location filename="../../src/yuzu/main.cpp" line="3431"/>
+        <location filename="../../src/yuzu/main.cpp" line="2445"/>
+        <location filename="../../src/yuzu/main.cpp" line="3448"/>
         <source>&amp;Continue</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Devam Et</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2477"/>
+        <location filename="../../src/yuzu/main.cpp" line="2494"/>
         <source>OK</source>
-        <translation type="unfinished"/>
+        <translation>Tamam</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2491"/>
+        <location filename="../../src/yuzu/main.cpp" line="2508"/>
         <source>Missing yuzu Account</source>
         <translation>Kayıp yuzu Hesabı</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2492"/>
+        <location filename="../../src/yuzu/main.cpp" line="2509"/>
         <source>In order to submit a game compatibility test case, you must link your yuzu account.&lt;br&gt;&lt;br/&gt;To link your yuzu account, go to Emulation &amp;gt; Configuration &amp;gt; Web.</source>
         <translation>Oyun uyumluluk test çalışması göndermek için öncelikle yuzu hesabınla giriş yapmanız gerekiyor.&lt;br&gt;&lt;br/&gt;Yuzu hesabınızla giriş yapmak için, Emülasyon &amp;gt; Yapılandırma &amp;gt; Web&apos;e gidiniz.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2502"/>
+        <location filename="../../src/yuzu/main.cpp" line="2519"/>
         <source>Error opening URL</source>
         <translation>URL açılırken bir hata oluştu</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2503"/>
+        <location filename="../../src/yuzu/main.cpp" line="2520"/>
         <source>Unable to open the URL &quot;%1&quot;.</source>
         <translation>URL &quot;%1&quot; açılamıyor.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2785"/>
+        <location filename="../../src/yuzu/main.cpp" line="2802"/>
         <source>Amiibo File (%1);; All Files (*.*)</source>
         <translation>Amiibo Dosyası (%1);; Tüm Dosyalar (*.*)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2786"/>
+        <location filename="../../src/yuzu/main.cpp" line="2803"/>
         <source>Load Amiibo</source>
         <translation>Amiibo Yükle</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2804"/>
+        <location filename="../../src/yuzu/main.cpp" line="2821"/>
         <source>Error opening Amiibo data file</source>
         <translation>Amiibo veri dosyasını açarken hata</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2805"/>
+        <location filename="../../src/yuzu/main.cpp" line="2822"/>
         <source>Unable to open Amiibo file &quot;%1&quot; for reading.</source>
         <translation>&quot;%1&quot; Amiibo dosyası okunamadı</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2813"/>
+        <location filename="../../src/yuzu/main.cpp" line="2830"/>
         <source>Error reading Amiibo data file</source>
         <translation>Amiibo veri dosyasını okurken hata</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2814"/>
+        <location filename="../../src/yuzu/main.cpp" line="2831"/>
         <source>Unable to fully read Amiibo data. Expected to read %1 bytes, but was only able to read %2 bytes.</source>
         <translation>Amiibo verisi tamamen okunamadı. %1 byte okunması bekleniyordu, fakat bunun sadece %2&apos;si okunabildi.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2822"/>
+        <location filename="../../src/yuzu/main.cpp" line="2839"/>
         <source>Error loading Amiibo data</source>
         <translation>Amiibo verisi yüklenirken hata</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2823"/>
+        <location filename="../../src/yuzu/main.cpp" line="2840"/>
         <source>Unable to load Amiibo data.</source>
         <translation>Amiibo verisi yüklenemedi</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2864"/>
+        <location filename="../../src/yuzu/main.cpp" line="2881"/>
         <source>Capture Screenshot</source>
         <translation>Ekran Görüntüsü Al</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2865"/>
+        <location filename="../../src/yuzu/main.cpp" line="2882"/>
         <source>PNG Image (*.png)</source>
         <translation>PNG görüntüsü (*.png)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2931"/>
+        <location filename="../../src/yuzu/main.cpp" line="2948"/>
         <source>TAS state: Running %1/%2</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2933"/>
+        <location filename="../../src/yuzu/main.cpp" line="2950"/>
         <source>TAS state: Recording %1</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2935"/>
+        <location filename="../../src/yuzu/main.cpp" line="2952"/>
         <source>TAS state: Idle %1/%2</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2937"/>
+        <location filename="../../src/yuzu/main.cpp" line="2954"/>
         <source>TAS State: Invalid</source>
         <translation type="unfinished"/>
     </message>
     <message numerus="yes">
-        <location filename="../../src/yuzu/main.cpp" line="2958"/>
+        <location filename="../../src/yuzu/main.cpp" line="2975"/>
         <source>Building: %n shader(s)</source>
-        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform></translation>
+        <translation><numerusform>Oluşturuluyor: %n shader</numerusform><numerusform>Oluşturuluyor: %n shader</numerusform></translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2965"/>
+        <location filename="../../src/yuzu/main.cpp" line="2982"/>
         <source>Speed: %1% / %2%</source>
         <translation>Hız %1% / %2%</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2969"/>
+        <location filename="../../src/yuzu/main.cpp" line="2986"/>
         <source>Speed: %1%</source>
         <translation>Hız: %1%</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2973"/>
+        <location filename="../../src/yuzu/main.cpp" line="2990"/>
         <source>Game: %1 FPS (Unlocked)</source>
-        <translation type="unfinished"/>
+        <translation>Oyun: %1 FPS (Sınırsız)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2975"/>
+        <location filename="../../src/yuzu/main.cpp" line="2992"/>
         <source>Game: %1 FPS</source>
         <translation>Oyun: %1 FPS</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2977"/>
+        <location filename="../../src/yuzu/main.cpp" line="2994"/>
         <source>Frame: %1 ms</source>
         <translation>Kare: %1 ms</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2987"/>
+        <location filename="../../src/yuzu/main.cpp" line="3004"/>
         <source>GPU NORMAL</source>
-        <translation type="unfinished"/>
+        <translation>GPU NORMAL</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2992"/>
+        <location filename="../../src/yuzu/main.cpp" line="3009"/>
         <source>GPU HIGH</source>
-        <translation type="unfinished"/>
+        <translation>GPU YÜKSEK</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2997"/>
+        <location filename="../../src/yuzu/main.cpp" line="3014"/>
         <source>GPU EXTREME</source>
-        <translation type="unfinished"/>
+        <translation>GPU EKSTREM</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3002"/>
+        <location filename="../../src/yuzu/main.cpp" line="3019"/>
         <source>GPU ERROR</source>
-        <translation type="unfinished"/>
+        <translation>GPU HATASI</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3059"/>
+        <location filename="../../src/yuzu/main.cpp" line="3076"/>
         <source>The game you are trying to load requires additional files from your Switch to be dumped before playing.&lt;br/&gt;&lt;br/&gt;For more information on dumping these files, please see the following wiki page: &lt;a href=&apos;https://yuzu-emu.org/wiki/dumping-system-archives-and-the-shared-fonts-from-a-switch-console/&apos;&gt;Dumping System Archives and the Shared Fonts from a Switch Console&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;Would you like to quit back to the game list? Continuing emulation may result in crashes, corrupted save data, or other bugs.</source>
         <translation>Yüklemeye çalıştığınız oyun oynanmadan önce Switch&apos;inizden ek dosyaların alınmasını gerektiriyor.&lt;br/&gt;&lt;br/&gt;Bu dosyaları nasıl alacağınız hakkında daha fazla bilgi için, lütfen bu wiki sayfasına göz atınız: &lt;a href=&apos;https://yuzu-emu.org/wiki/dumping-system-archives-and-the-shared-fonts-from-a-switch-console/&apos;&gt;Konsolunuzdan Sistem Arşivleri ve Shared Fontları Almak&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;oyun listesine geri dönmek ister misiniz? Emülasyona devam etmek çökmelere, kayıt dosyalarının bozulmasına veya başka hatalara sebep verebilir.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3074"/>
+        <location filename="../../src/yuzu/main.cpp" line="3091"/>
         <source>yuzu was unable to locate a Switch system archive. %1</source>
         <translation>Yuzu bir Switch sistem arşivi bulamadı. %1</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3076"/>
+        <location filename="../../src/yuzu/main.cpp" line="3093"/>
         <source>yuzu was unable to locate a Switch system archive: %1. %2</source>
         <translation>Yuzu bir Switch sistem arşivi bulamadı: %1. %2</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3080"/>
+        <location filename="../../src/yuzu/main.cpp" line="3097"/>
         <source>System Archive Not Found</source>
         <translation>Sistem Arşivi Bulunamadı</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3082"/>
+        <location filename="../../src/yuzu/main.cpp" line="3099"/>
         <source>System Archive Missing</source>
         <translation>Sistem Arşivi Kayıp</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3088"/>
+        <location filename="../../src/yuzu/main.cpp" line="3105"/>
         <source>yuzu was unable to locate the Switch shared fonts. %1</source>
         <translation>Yuzu Switch shared fontlarını bulamadı. %1</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3089"/>
+        <location filename="../../src/yuzu/main.cpp" line="3106"/>
         <source>Shared Fonts Not Found</source>
         <translation>Shared Font&apos;lar Bulunamadı</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3091"/>
+        <location filename="../../src/yuzu/main.cpp" line="3108"/>
         <source>Shared Font Missing</source>
         <translation>Shared Font Kayıp</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3097"/>
+        <location filename="../../src/yuzu/main.cpp" line="3114"/>
         <source>Fatal Error</source>
         <translation>Önemli Hata</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3098"/>
+        <location filename="../../src/yuzu/main.cpp" line="3115"/>
         <source>yuzu has encountered a fatal error, please see the log for more details. For more information on accessing the log, please see the following page: &lt;a href=&apos;https://community.citra-emu.org/t/how-to-upload-the-log-file/296&apos;&gt;How to Upload the Log File&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;Would you like to quit back to the game list? Continuing emulation may result in crashes, corrupted save data, or other bugs.</source>
         <translation>Yuzu önemli bir hatayla karşılaştı, lütfen daha fazla detay için kütüğe bakınız. Kütüğe erişmek hakkında daha fazla bilgi için, lütfen bu sayfaya göz atınız: &lt;a href=&apos;https://community.citra-emu.org/t/how-to-upload-the-log-file/296&apos;&gt;Log Dosyası Nasıl Yüklenir&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;Oyun listesine geri dönmek ister misiniz? Emülasyona devam etmek çökmelere, kayıt dosyalarının bozulmasına veya başka hatalara sebep olabilir.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3107"/>
+        <location filename="../../src/yuzu/main.cpp" line="3124"/>
         <source>Fatal Error encountered</source>
         <translation>Önemli Bir Hatayla Karşılaşıldı</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3130"/>
+        <location filename="../../src/yuzu/main.cpp" line="3147"/>
         <source>Confirm Key Rederivation</source>
         <translation>Anahtar Yeniden Türetimini Onayla</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3131"/>
+        <location filename="../../src/yuzu/main.cpp" line="3148"/>
         <source>You are about to force rederive all of your keys. 
 If you do not know what this means or what you are doing, 
 this is a potentially destructive action. 
@@ -4431,37 +4449,37 @@ ve opsiyonel olarak yedekler alın.
 Bu sizin otomatik oluşturulmuş anahtar dosyalarınızı silecek ve anahtar türetme modülünü tekrar çalıştıracak.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3163"/>
+        <location filename="../../src/yuzu/main.cpp" line="3180"/>
         <source>Missing fuses</source>
         <translation>Anahtarlar Kayıp</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3166"/>
+        <location filename="../../src/yuzu/main.cpp" line="3183"/>
         <source> - Missing BOOT0</source>
         <translation>- BOOT0 Kayıp</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3169"/>
+        <location filename="../../src/yuzu/main.cpp" line="3186"/>
         <source> - Missing BCPKG2-1-Normal-Main</source>
         <translation>- BCPKG2-1-Normal-Main Kayıp</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3172"/>
+        <location filename="../../src/yuzu/main.cpp" line="3189"/>
         <source> - Missing PRODINFO</source>
         <translation>- PRODINFO Kayıp</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3176"/>
+        <location filename="../../src/yuzu/main.cpp" line="3193"/>
         <source>Derivation Components Missing</source>
         <translation>Türeten Bileşenleri Kayıp</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3177"/>
+        <location filename="../../src/yuzu/main.cpp" line="3194"/>
         <source>Components are missing that may hinder key derivation from completing. &lt;br&gt;Please follow &lt;a href=&apos;https://yuzu-emu.org/help/quickstart/&apos;&gt;the yuzu quickstart guide&lt;/a&gt; to get all your keys and games.&lt;br&gt;&lt;br&gt;&lt;small&gt;(%1)&lt;/small&gt;</source>
         <translation>Bazı bileşenler kayıp, bu anahtar türetimini yarıda bırakabilir.&lt;br&gt;Lütfen tüm anahtar ve oyunlarınıza erişmek için&lt;a href=&apos;https://yuzu-emu.org/help/quickstart/&apos;&gt;Yuzu Hızlı Başlangıç Kılavuzu&lt;/a&gt;&apos;nu takip edin&lt;br&gt;&lt;br&gt;&lt;small&gt;(%1)&lt;/small&gt;</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3186"/>
+        <location filename="../../src/yuzu/main.cpp" line="3203"/>
         <source>Deriving keys...
 This may take up to a minute depending 
 on your system&apos;s performance.</source>
@@ -4470,39 +4488,39 @@ Bu sistem performansınıza bağlı olarak
 bir dakika kadar zaman alabilir.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3188"/>
+        <location filename="../../src/yuzu/main.cpp" line="3205"/>
         <source>Deriving Keys</source>
         <translation>Anahtarlar Türetiliyor</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3233"/>
+        <location filename="../../src/yuzu/main.cpp" line="3250"/>
         <source>Select RomFS Dump Target</source>
         <translation>RomFS Dump Hedefini Seçiniz</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3234"/>
+        <location filename="../../src/yuzu/main.cpp" line="3251"/>
         <source>Please select which RomFS you would like to dump.</source>
         <translation>Lütfen dump etmek istediğiniz RomFS&apos;i seçiniz.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3249"/>
+        <location filename="../../src/yuzu/main.cpp" line="3266"/>
         <source>Are you sure you want to close yuzu?</source>
         <translation>yuzu&apos;yu kapatmak istediğinizden emin misiniz?</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3250"/>
-        <location filename="../../src/yuzu/main.cpp" line="3325"/>
-        <location filename="../../src/yuzu/main.cpp" line="3338"/>
+        <location filename="../../src/yuzu/main.cpp" line="3267"/>
+        <location filename="../../src/yuzu/main.cpp" line="3342"/>
+        <location filename="../../src/yuzu/main.cpp" line="3355"/>
         <source>yuzu</source>
         <translation>yuzu</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3326"/>
+        <location filename="../../src/yuzu/main.cpp" line="3343"/>
         <source>Are you sure you want to stop the emulation? Any unsaved progress will be lost.</source>
         <translation>Emülasyonu durdurmak istediğinizden emin misiniz? Kaydedilmemiş veriler kaybolur.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3335"/>
+        <location filename="../../src/yuzu/main.cpp" line="3352"/>
         <source>The currently running application has requested yuzu to not exit.
 
 Would you like to bypass this and exit anyway?</source>
@@ -4532,22 +4550,22 @@ Görmezden gelip kapatmak ister misiniz?</translation>
     <message>
         <location filename="../../src/yuzu/bootmanager.cpp" line="696"/>
         <source>Your GPU may not support OpenGL, or you do not have the latest graphics driver.</source>
-        <translation type="unfinished"/>
+        <translation>GPU&apos;nuz OpenGL  desteklemiyor veya güncel bir grafik sürücüsüne sahip değilsiniz.</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/bootmanager.cpp" line="705"/>
         <source>Error while initializing OpenGL 4.6!</source>
-        <translation type="unfinished"/>
+        <translation>OpenGl 4.6 başlatılırken bir hata oluştu!</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/bootmanager.cpp" line="706"/>
         <source>Your GPU may not support OpenGL 4.6, or you do not have the latest graphics driver.&lt;br&gt;&lt;br&gt;GL Renderer:&lt;br&gt;%1</source>
-        <translation type="unfinished"/>
+        <translation>GPU&apos;nuz OpenGL 4.6&apos;yı desteklemiyor veya güncel bir grafik sürücüsüne sahip değilsiniz.&lt;br&gt;&lt;br&gt;GL Renderer:&lt;br&gt;%1</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/bootmanager.cpp" line="716"/>
         <source>Your GPU may not support one or more required OpenGL extensions. Please ensure you have the latest graphics driver.&lt;br&gt;&lt;br&gt;GL Renderer:&lt;br&gt;%1&lt;br&gt;&lt;br&gt;Unsupported extensions:&lt;br&gt;%2</source>
-        <translation type="unfinished"/>
+        <translation>GPU&apos;nuz gereken bir yada daha fazla OpenGL eklentisini desteklemiyor Lütfen güncel bir grafik sürücüsüne sahip olduğunuzdan emin olun.&lt;br&gt;&lt;br&gt;GL Renderer:&lt;br&gt;%1&lt;br&gt;&lt;br&gt; Desteklenmeyen Eklentiler:&lt;br&gt;%2</translation>
     </message>
 </context>
 <context>
@@ -4580,17 +4598,17 @@ Görmezden gelip kapatmak ister misiniz?</translation>
     <message>
         <location filename="../../src/yuzu/game_list.cpp" line="508"/>
         <source>Favorite</source>
-        <translation type="unfinished"/>
+        <translation>Favori</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/game_list.cpp" line="510"/>
         <source>Start Game</source>
-        <translation type="unfinished"/>
+        <translation>Oyunu Başlat</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/game_list.cpp" line="512"/>
         <source>Start Game without Custom Configuration</source>
-        <translation type="unfinished"/>
+        <translation>Oyunu Özel Yapılandırma Olmadan Başlat</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/game_list.cpp" line="514"/>
@@ -4605,7 +4623,7 @@ Görmezden gelip kapatmak ister misiniz?</translation>
     <message>
         <location filename="../../src/yuzu/game_list.cpp" line="517"/>
         <source>Open Transferable Pipeline Cache</source>
-        <translation type="unfinished"/>
+        <translation>Transfer Edilebilir Pipeline Cache&apos;ini Aç</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/game_list.cpp" line="519"/>
@@ -4630,17 +4648,17 @@ Görmezden gelip kapatmak ister misiniz?</translation>
     <message>
         <location filename="../../src/yuzu/game_list.cpp" line="523"/>
         <source>Remove OpenGL Pipeline Cache</source>
-        <translation type="unfinished"/>
+        <translation>OpenGL Pipeline Cache&apos;ini Kaldır</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/game_list.cpp" line="524"/>
         <source>Remove Vulkan Pipeline Cache</source>
-        <translation type="unfinished"/>
+        <translation>Vulkan Pipeline Cache&apos;ini Kaldır</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/game_list.cpp" line="526"/>
         <source>Remove All Pipeline Caches</source>
-        <translation type="unfinished"/>
+        <translation>Bütün Pipeline Cache&apos;lerini Kaldır</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/game_list.cpp" line="527"/>
@@ -4701,7 +4719,7 @@ Görmezden gelip kapatmak ister misiniz?</translation>
     <message>
         <location filename="../../src/yuzu/game_list.cpp" line="673"/>
         <source>Clear</source>
-        <translation type="unfinished"/>
+        <translation>Temizle</translation>
     </message>
 </context>
 <context>
@@ -4803,7 +4821,7 @@ Screen.</source>
     <message numerus="yes">
         <location filename="../../src/yuzu/game_list.cpp" line="85"/>
         <source>%1 of %n result(s)</source>
-        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform></translation>
+        <translation><numerusform>%n sonucun %1&apos;i</numerusform><numerusform>%n sonucun %1&apos;i</numerusform></translation>
     </message>
     <message>
         <location filename="../../src/yuzu/game_list.cpp" line="128"/>
@@ -4845,7 +4863,8 @@ Screen.</source>
         <location filename="../../src/yuzu/util/limitable_input_dialog.cpp" line="62"/>
         <source>The text can't contain any of the following characters:
 %1</source>
-        <translation type="unfinished"/>
+        <translation>Yazı bu karakterleri içeremez:
+%1</translation>
     </message>
 </context>
 <context>
@@ -4901,7 +4920,7 @@ Screen.</source>
     <message>
         <location filename="../../src/yuzu/main.ui" line="48"/>
         <source>&amp;Recent Files</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Son kullanılan Dosyalar</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="67"/>
@@ -4916,47 +4935,47 @@ Screen.</source>
     <message>
         <location filename="../../src/yuzu/main.ui" line="83"/>
         <source>&amp;Reset Window Size</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Pencere Boyutunu Sıfırla</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="88"/>
         <source>Reset Window Size to &amp;720p</source>
-        <translation type="unfinished"/>
+        <translation>Pencere Boyutunu &amp;720p&apos;ye Sıfırla</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="91"/>
         <source>Reset Window Size to 720p</source>
-        <translation type="unfinished"/>
+        <translation>Pencere Boyutunu 720p&apos;ye Sıfırla</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="96"/>
         <source>Reset Window Size to &amp;900p</source>
-        <translation type="unfinished"/>
+        <translation>Pencere Boyutunu &amp;900p&apos;ye Sıfırla</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="99"/>
         <source>Reset Window Size to 900p</source>
-        <translation type="unfinished"/>
+        <translation>Pencere Boyutunu 900p&apos;ye Sıfırla</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="104"/>
         <source>Reset Window Size to &amp;1080p</source>
-        <translation type="unfinished"/>
+        <translation>Pencere Boyutunu &amp;1080p&apos;ye Sıfırla</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="107"/>
         <source>Reset Window Size to 1080p</source>
-        <translation type="unfinished"/>
+        <translation>Pencere Boyutunu 1080p&apos;ye Sıfırla</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="112"/>
         <source>&amp;Debugging</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Hata Ayıklama</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="126"/>
         <source>&amp;Tools</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Aletler</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="135"/>
@@ -4966,17 +4985,17 @@ Screen.</source>
     <message>
         <location filename="../../src/yuzu/main.ui" line="155"/>
         <source>&amp;Install Files to NAND...</source>
-        <translation type="unfinished"/>
+        <translation>&amp;NAND&apos;e Dosya Kur...</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="160"/>
         <source>L&amp;oad File...</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Dosyayı Yükle...</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="165"/>
         <source>Load &amp;Folder...</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Klasörü Yükle...</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="170"/>
@@ -5001,22 +5020,22 @@ Screen.</source>
     <message>
         <location filename="../../src/yuzu/main.ui" line="199"/>
         <source>&amp;Reinitialize keys...</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Anahtarları Yeniden Kur...</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="204"/>
         <source>&amp;About yuzu</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Yuzu Hakkında</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="212"/>
         <source>Single &amp;Window Mode</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Tek Pencere Modu</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="217"/>
         <source>Con&amp;figure...</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Yapılandır...</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="225"/>
@@ -5041,47 +5060,47 @@ Screen.</source>
     <message>
         <location filename="../../src/yuzu/main.ui" line="252"/>
         <source>F&amp;ullscreen</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Tam Ekran</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="260"/>
         <source>&amp;Restart</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Yeniden Başlat</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="268"/>
         <source>Load &amp;Amiibo...</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Amiibo Yükle...</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="276"/>
         <source>&amp;Report Compatibility</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Uyumluluk Bildir</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="284"/>
         <source>Open &amp;Mods Page</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Mod Sayfasını Aç</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="289"/>
         <source>Open &amp;Quickstart Guide</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Hızlı Başlangıç Kılavuzunu Aç</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="294"/>
         <source>&amp;FAQ</source>
-        <translation type="unfinished"/>
+        <translation>&amp;SSS</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="299"/>
         <source>Open &amp;yuzu Folder</source>
-        <translation type="unfinished"/>
+        <translation>&amp;yuzu Klasörünü Aç</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="307"/>
         <source>&amp;Capture Screenshot</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Ekran Görüntüsü Al</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="312"/>
@@ -5091,7 +5110,7 @@ Screen.</source>
     <message>
         <location filename="../../src/yuzu/main.ui" line="320"/>
         <source>Configure C&amp;urrent Game...</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Geçerli Oyunu Yapılandır...</translation>
     </message>
 </context>
 <context>
@@ -5107,19 +5126,19 @@ Screen.</source>
     <message>
         <location filename="../../src/yuzu/util/overlay_dialog.ui" line="14"/>
         <source>Dialog</source>
-        <translation type="unfinished"/>
+        <translation>Diyalog</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/util/overlay_dialog.ui" line="134"/>
         <location filename="../../src/yuzu/util/overlay_dialog.ui" line="353"/>
         <source>Cancel</source>
-        <translation type="unfinished"/>
+        <translation>İptal</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/util/overlay_dialog.ui" line="152"/>
         <location filename="../../src/yuzu/util/overlay_dialog.ui" line="371"/>
         <source>OK</source>
-        <translation type="unfinished"/>
+        <translation>Tamam</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/util/overlay_dialog.ui" line="313"/>
@@ -5128,7 +5147,11 @@ Screen.</source>
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:18pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;MS Shell Dlg 2&apos;; font-size:18pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
 </context>
 <context>
@@ -5136,7 +5159,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player_widget.cpp" line="1566"/>
         <source>START/PAUSE</source>
-        <translation type="unfinished"/>
+        <translation>BAŞLAT/DURDUR</translation>
     </message>
 </context>
 <context>
@@ -5164,7 +5187,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/game_list_p.h" line="326"/>
         <source>Favorites</source>
-        <translation type="unfinished"/>
+        <translation>Favoriler</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_touch_from_button.cpp" line="23"/>
@@ -5260,7 +5283,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="109"/>
         <source>%1%2</source>
-        <translation type="unfinished"/>
+        <translation>%1%2</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="117"/>
@@ -5285,12 +5308,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="142"/>
         <source>Motion %1</source>
-        <translation type="unfinished"/>
+        <translation>Hareket %1</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="166"/>
         <source>%1Button %2</source>
-        <translation type="unfinished"/>
+        <translation>%1Tuş %2</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="170"/>
@@ -5300,7 +5323,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="180"/>
         <source>%1Click %2</source>
-        <translation type="unfinished"/>
+        <translation>%1Tıklama %2</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="205"/>
@@ -5313,27 +5336,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="14"/>
         <source>Controller Applet</source>
-        <translation type="unfinished"/>
+        <translation>Kontrolcü Uygulaması</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="129"/>
         <source>Supported Controller Types:</source>
-        <translation type="unfinished"/>
+        <translation>Desteklenen Kontrolcü Türleri:</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="282"/>
         <source>Players:</source>
-        <translation type="unfinished"/>
+        <translation>Oyuncular:</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="300"/>
         <source>1 - 8</source>
-        <translation type="unfinished"/>
+        <translation>1 - 8</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="418"/>
         <source>P4</source>
-        <translation type="unfinished"/>
+        <translation>O4</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="514"/>
@@ -5346,7 +5369,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2054"/>
         <location filename="../../src/yuzu/applets/qt_controller.cpp" line="419"/>
         <source>Pro Controller</source>
-        <translation type="unfinished"/>
+        <translation>Pro Controller</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="519"/>
@@ -5359,7 +5382,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2059"/>
         <location filename="../../src/yuzu/applets/qt_controller.cpp" line="423"/>
         <source>Dual Joycons</source>
-        <translation type="unfinished"/>
+        <translation>İkili Joyconlar</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="524"/>
@@ -5372,7 +5395,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2064"/>
         <location filename="../../src/yuzu/applets/qt_controller.cpp" line="427"/>
         <source>Left Joycon</source>
-        <translation type="unfinished"/>
+        <translation>Sol Joycon</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="529"/>
@@ -5385,7 +5408,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2069"/>
         <location filename="../../src/yuzu/applets/qt_controller.cpp" line="431"/>
         <source>Right Joycon</source>
-        <translation type="unfinished"/>
+        <translation>Sağ Joycon</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="538"/>
@@ -5397,144 +5420,144 @@ p, li { white-space: pre-wrap; }
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="1881"/>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2078"/>
         <source>Use Current Config</source>
-        <translation type="unfinished"/>
+        <translation>Hali Hazırdaki Yapılandırmayı Kullan</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="615"/>
         <source>P2</source>
-        <translation type="unfinished"/>
+        <translation>O2</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="812"/>
         <source>P1</source>
-        <translation type="unfinished"/>
+        <translation>O1</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="932"/>
         <location filename="../../src/yuzu/applets/qt_controller.cpp" line="436"/>
         <source>Handheld</source>
-        <translation type="unfinished"/>
+        <translation>Handheld</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="1126"/>
         <source>P3</source>
-        <translation type="unfinished"/>
+        <translation>O3</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="1363"/>
         <source>P7</source>
-        <translation type="unfinished"/>
+        <translation>O7</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="1560"/>
         <source>P8</source>
-        <translation type="unfinished"/>
+        <translation>O8</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="1757"/>
         <source>P5</source>
-        <translation type="unfinished"/>
+        <translation>O5</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="1958"/>
         <source>P6</source>
-        <translation type="unfinished"/>
+        <translation>O6</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2272"/>
         <source>Console Mode</source>
-        <translation type="unfinished"/>
+        <translation>Konsol Modu</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2293"/>
         <source>Docked</source>
-        <translation type="unfinished"/>
+        <translation>Dock Modu Aktif</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2303"/>
         <source>Undocked</source>
-        <translation type="unfinished"/>
+        <translation>Dock Modu Devre Dışı</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2313"/>
         <source>Vibration</source>
-        <translation type="unfinished"/>
+        <translation>Titreşim</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2349"/>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2395"/>
         <source>Configure</source>
-        <translation type="unfinished"/>
+        <translation>Yapılandır</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2359"/>
         <source>Motion</source>
-        <translation type="unfinished"/>
+        <translation>Hareket</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2405"/>
         <source>Profiles</source>
-        <translation type="unfinished"/>
+        <translation>Profiller</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2432"/>
         <source>Create</source>
-        <translation type="unfinished"/>
+        <translation>Oluştur</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2467"/>
         <source>Controllers</source>
-        <translation type="unfinished"/>
+        <translation>Kontrolcüler</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2481"/>
         <source>1</source>
-        <translation type="unfinished"/>
+        <translation>1</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2508"/>
         <source>2</source>
-        <translation type="unfinished"/>
+        <translation>2</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2518"/>
         <source>4</source>
-        <translation type="unfinished"/>
+        <translation>4</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2528"/>
         <source>3</source>
-        <translation type="unfinished"/>
+        <translation>3</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2538"/>
         <source>Connected</source>
-        <translation type="unfinished"/>
+        <translation>Bağlandı</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2552"/>
         <source>5</source>
-        <translation type="unfinished"/>
+        <translation>5</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2569"/>
         <source>7</source>
-        <translation type="unfinished"/>
+        <translation>7</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2586"/>
         <source>6</source>
-        <translation type="unfinished"/>
+        <translation>6</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.ui" line="2596"/>
         <source>8</source>
-        <translation type="unfinished"/>
+        <translation>8</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_controller.cpp" line="441"/>
         <source>GameCube Controller</source>
-        <translation type="unfinished"/>
+        <translation>GameCube Kontrolcüsü</translation>
     </message>
 </context>
 <context>
@@ -5544,19 +5567,21 @@ p, li { white-space: pre-wrap; }
         <location filename="../../src/yuzu/applets/qt_error.cpp" line="35"/>
         <location filename="../../src/yuzu/applets/qt_error.cpp" line="50"/>
         <source>Error Code: %1-%2 (0x%3)</source>
-        <translation type="unfinished"/>
+        <translation>Hata Kodu: %1-%2 (0x%3)</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_error.cpp" line="26"/>
         <source>An error has occurred.
 Please try again or contact the developer of the software.</source>
-        <translation type="unfinished"/>
+        <translation>Bir hata oluştu.
+Lütfen tekrar deneyin ya da yazılımın geliştiricisiyle iletişime geçin.</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_error.cpp" line="39"/>
         <source>An error occurred on %1 at %2.
 Please try again or contact the developer of the software.</source>
-        <translation type="unfinished"/>
+        <translation>%1 %2&apos;de bir hata oluştu.
+Lütfen tekrar deneyin ya da yazılımın geliştiricisiyle iletişime geçin.</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_error.cpp" line="54"/>
@@ -5565,7 +5590,11 @@ Please try again or contact the developer of the software.</source>
 %1
 
 %2</source>
-        <translation type="unfinished"/>
+        <translation>Bir hata oluştu.
+
+%1
+
+%2</translation>
     </message>
 </context>
 <context>
@@ -5604,7 +5633,7 @@ Please try again or contact the developer of the software.</source>
     <message>
         <location filename="../../src/yuzu/applets/qt_software_keyboard.ui" line="199"/>
         <source>Enter Text</source>
-        <translation type="unfinished"/>
+        <translation>Yazı Girin</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_software_keyboard.ui" line="479"/>
@@ -5613,18 +5642,22 @@ Please try again or contact the developer of the software.</source>
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:26pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;MS Shell Dlg 2&apos;; font-size:26pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_software_keyboard.cpp" line="396"/>
         <location filename="../../src/yuzu/applets/qt_software_keyboard.cpp" line="406"/>
         <source>OK</source>
-        <translation type="unfinished"/>
+        <translation>Tamam</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/applets/qt_software_keyboard.cpp" line="406"/>
         <source>Cancel</source>
-        <translation type="unfinished"/>
+        <translation>İptal</translation>
     </message>
 </context>
 <context>
@@ -5679,7 +5712,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/debugger/wait_tree.cpp" line="188"/>
         <source>[%1] %2 %3</source>
-        <translation type="unfinished"/>
+        <translation>[%1] %2 %3</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/debugger/wait_tree.cpp" line="215"/>
@@ -5732,22 +5765,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/debugger/wait_tree.cpp" line="279"/>
         <source>waiting</source>
-        <translation type="unfinished"/>
+        <translation>bekleniyor</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/debugger/wait_tree.cpp" line="284"/>
         <source>initialized</source>
-        <translation type="unfinished"/>
+        <translation>başlatıldı</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/debugger/wait_tree.cpp" line="287"/>
         <source>terminated</source>
-        <translation type="unfinished"/>
+        <translation>sonlandırıldı </translation>
     </message>
     <message>
         <location filename="../../src/yuzu/debugger/wait_tree.cpp" line="290"/>
         <source>unknown</source>
-        <translation type="unfinished"/>
+        <translation>bilinmeyen</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/debugger/wait_tree.cpp" line="295"/>

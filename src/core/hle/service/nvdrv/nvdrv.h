@@ -50,7 +50,7 @@ struct EventInterface {
     // Tells if an NVEvent is registered or not
     std::array<bool, MaxNvEvents> registered{};
     // Tells the NVEvent that it has failed.
-    std::array<u32, MaxNvEvents> fails{};
+    std::array<bool, MaxNvEvents> failed{};
     // When an NVEvent is waiting on GPU interrupt, this is the sync_point
     // associated with it.
     std::array<u32, MaxNvEvents> assigned_syncpt{};
