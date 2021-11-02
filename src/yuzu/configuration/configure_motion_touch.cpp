@@ -15,9 +15,9 @@
 
 #include "common/logging/log.h"
 #include "common/settings.h"
+#include "input_common/drivers/udp_client.h"
+#include "input_common/helpers/udp_protocol.h"
 #include "input_common/main.h"
-#include "input_common/udp/client.h"
-#include "input_common/udp/udp.h"
 #include "ui_configure_motion_touch.h"
 #include "yuzu/configuration/configure_motion_touch.h"
 #include "yuzu/configuration/configure_touch_from_button.h"

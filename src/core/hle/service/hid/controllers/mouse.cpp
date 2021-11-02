@@ -4,14 +4,20 @@
 
 #include <cstring>
 #include "common/common_types.h"
+#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/frontend/emu_window.h"
+#include "core/hid/emulated_devices.h"
+#include "core/hid/hid_core.h"
 #include "core/hle/service/hid/controllers/mouse.h"
 
 namespace Service::HID {
 constexpr std::size_t SHARED_MEMORY_OFFSET = 0x3400;
 
-Controller_Mouse::Controller_Mouse(Core::System& system_) : ControllerBase{system_} {}
+Controller_Mouse::Controller_Mouse(Core::System& system_) : ControllerBase{system_} {
+    emulated_devices = system.HIDCore().GetEmulatedDevices();
+}
+
 Controller_Mouse::~Controller_Mouse() = default;
 
 void Controller_Mouse::OnInit() {}
@@ -19,50 +25,33 @@ void Controller_Mouse::OnRelease() {}
 
 void Controller_Mouse::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* data,
                                 std::size_t size) {
-    shared_memory.header.timestamp = core_timing.GetCPUTicks();
-    shared_memory.header.total_entry_count = 17;
-
     if (!IsControllerActivated()) {
-        shared_memory.header.entry_count = 0;
-        shared_memory.header.last_entry_index = 0;
+        mouse_lifo.buffer_count = 0;
+        mouse_lifo.buffer_tail = 0;
+        std::memcpy(data + SHARED_MEMORY_OFFSET, &mouse_lifo, sizeof(mouse_lifo));
         return;
     }
-    shared_memory.header.entry_count = 16;
 
-    auto& last_entry = shared_memory.mouse_states[shared_memory.header.last_entry_index];
-    shared_memory.header.last_entry_index = (shared_memory.header.last_entry_index + 1) % 17;
-    auto& cur_entry = shared_memory.mouse_states[shared_memory.header.last_entry_index];
+    const auto& last_entry = mouse_lifo.ReadCurrentEntry().state;
+    next_state.sampling_number = last_entry.sampling_number + 1;
 
-    cur_entry.sampling_number = last_entry.sampling_number + 1;
-    cur_entry.sampling_number2 = cur_entry.sampling_number;
-
-    cur_entry.attribute.raw = 0;
+    next_state.attribute.raw = 0;
     if (Settings::values.mouse_enabled) {
-        const auto [px, py, sx, sy] = mouse_device->GetStatus();
-        const auto x = static_cast<s32>(px * Layout::ScreenUndocked::Width);
-        const auto y = static_cast<s32>(py * Layout::ScreenUndocked::Height);
-        cur_entry.x = x;
-        cur_entry.y = y;
-        cur_entry.delta_x = x - last_entry.x;
-        cur_entry.delta_y = y - last_entry.y;
-        cur_entry.mouse_wheel_x = sx;
-        cur_entry.mouse_wheel_y = sy;
-        cur_entry.attribute.is_connected.Assign(1);
+        const auto& mouse_button_state = emulated_devices->GetMouseButtons();
+        const auto& mouse_position_state = emulated_devices->GetMousePosition();
+        next_state.attribute.is_connected.Assign(1);
+        next_state.x = mouse_position_state.x;
+        next_state.y = mouse_position_state.y;
+        next_state.delta_x = next_state.x - last_entry.x;
+        next_state.delta_y = next_state.y - last_entry.y;
+        next_state.delta_wheel_x = mouse_position_state.delta_wheel_x;
+        next_state.delta_wheel_y = mouse_position_state.delta_wheel_y;
 
-        using namespace Settings::NativeMouseButton;
-        cur_entry.button.left.Assign(mouse_button_devices[Left]->GetStatus());
-        cur_entry.button.right.Assign(mouse_button_devices[Right]->GetStatus());
-        cur_entry.button.middle.Assign(mouse_button_devices[Middle]->GetStatus());
-        cur_entry.button.forward.Assign(mouse_button_devices[Forward]->GetStatus());
-        cur_entry.button.back.Assign(mouse_button_devices[Back]->GetStatus());
+        next_state.button = mouse_button_state;
     }
 
-    std::memcpy(data + SHARED_MEMORY_OFFSET, &shared_memory, sizeof(SharedMemory));
+    mouse_lifo.WriteNextEntry(next_state);
+    std::memcpy(data + SHARED_MEMORY_OFFSET, &mouse_lifo, sizeof(mouse_lifo));
 }
 
-void Controller_Mouse::OnLoadInputDevices() {
-    mouse_device = Input::CreateDevice<Input::MouseDevice>(Settings::values.mouse_device);
-    std::transform(Settings::values.mouse_buttons.begin(), Settings::values.mouse_buttons.end(),
-                   mouse_button_devices.begin(), Input::CreateDevice<Input::ButtonDevice>);
-}
 } // namespace Service::HID

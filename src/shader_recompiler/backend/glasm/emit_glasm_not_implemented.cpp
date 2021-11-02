@@ -18,7 +18,7 @@ namespace Shader::Backend::GLASM {
 #define NotImplemented() throw NotImplementedException("GLASM instruction {}", __LINE__)
 
 static void DefinePhi(EmitContext& ctx, IR::Inst& phi) {
-    switch (phi.Arg(0).Type()) {
+    switch (phi.Type()) {
     case IR::Type::U1:
     case IR::Type::U32:
     case IR::Type::F32:

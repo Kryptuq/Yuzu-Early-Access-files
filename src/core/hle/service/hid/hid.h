@@ -161,37 +161,10 @@ private:
     void GetNpadCommunicationMode(Kernel::HLERequestContext& ctx);
     void SetTouchScreenConfiguration(Kernel::HLERequestContext& ctx);
 
-    enum class VibrationDeviceType : u32 {
-        Unknown = 0,
-        LinearResonantActuator = 1,
-        GcErm = 2,
-    };
-
-    enum class VibrationDevicePosition : u32 {
-        None = 0,
-        Left = 1,
-        Right = 2,
-    };
-
-    enum class VibrationGcErmCommand : u64 {
-        Stop = 0,
-        Start = 1,
-        StopHard = 2,
-    };
-
-    struct VibrationDeviceInfo {
-        VibrationDeviceType type{};
-        VibrationDevicePosition position{};
-    };
-    static_assert(sizeof(VibrationDeviceInfo) == 0x8, "VibrationDeviceInfo has incorrect size.");
-
     std::shared_ptr<IAppletResource> applet_resource;
 
     KernelHelpers::ServiceContext service_context;
 };
-
-/// Reload input devices. Used when input configuration changed
-void ReloadInputDevices();
 
 /// Registers all HID services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system);

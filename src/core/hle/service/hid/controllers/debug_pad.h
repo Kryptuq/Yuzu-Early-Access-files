@@ -10,8 +10,14 @@
 #include "common/common_types.h"
 #include "common/settings.h"
 #include "common/swap.h"
-#include "core/frontend/input.h"
 #include "core/hle/service/hid/controllers/controller_base.h"
+#include "core/hle/service/hid/ring_lifo.h"
+
+namespace Core::HID {
+class EmulatedController;
+struct DebugPadButton;
+struct AnalogStickState;
+} // namespace Core::HID
 
 namespace Service::HID {
 class Controller_DebugPad final : public ControllerBase {
@@ -28,66 +34,31 @@ public:
     // When the controller is requesting an update for the shared memory
     void OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* data, std::size_t size) override;
 
-    // Called when input devices should be loaded
-    void OnLoadInputDevices() override;
-
 private:
-    struct AnalogStick {
-        s32_le x;
-        s32_le y;
-    };
-    static_assert(sizeof(AnalogStick) == 0x8);
-
-    struct PadState {
+    // This is nn::hid::DebugPadAttribute
+    struct DebugPadAttribute {
         union {
-            u32_le raw{};
-            BitField<0, 1, u32> a;
-            BitField<1, 1, u32> b;
-            BitField<2, 1, u32> x;
-            BitField<3, 1, u32> y;
-            BitField<4, 1, u32> l;
-            BitField<5, 1, u32> r;
-            BitField<6, 1, u32> zl;
-            BitField<7, 1, u32> zr;
-            BitField<8, 1, u32> plus;
-            BitField<9, 1, u32> minus;
-            BitField<10, 1, u32> d_left;
-            BitField<11, 1, u32> d_up;
-            BitField<12, 1, u32> d_right;
-            BitField<13, 1, u32> d_down;
-        };
-    };
-    static_assert(sizeof(PadState) == 0x4, "PadState is an invalid size");
-
-    struct Attributes {
-        union {
-            u32_le raw{};
+            u32 raw{};
             BitField<0, 1, u32> connected;
         };
     };
-    static_assert(sizeof(Attributes) == 0x4, "Attributes is an invalid size");
+    static_assert(sizeof(DebugPadAttribute) == 0x4, "DebugPadAttribute is an invalid size");
 
-    struct PadStates {
-        s64_le sampling_number;
-        s64_le sampling_number2;
-        Attributes attribute;
-        PadState pad_state;
-        AnalogStick r_stick;
-        AnalogStick l_stick;
+    // This is nn::hid::DebugPadState
+    struct DebugPadState {
+        s64 sampling_number;
+        DebugPadAttribute attribute;
+        Core::HID::DebugPadButton pad_state;
+        Core::HID::AnalogStickState r_stick;
+        Core::HID::AnalogStickState l_stick;
     };
-    static_assert(sizeof(PadStates) == 0x28, "PadStates is an invalid state");
+    static_assert(sizeof(DebugPadState) == 0x20, "DebugPadState is an invalid state");
 
-    struct SharedMemory {
-        CommonHeader header;
-        std::array<PadStates, 17> pad_states;
-        INSERT_PADDING_BYTES(0x138);
-    };
-    static_assert(sizeof(SharedMemory) == 0x400, "SharedMemory is an invalid size");
-    SharedMemory shared_memory{};
+    // This is nn::hid::detail::DebugPadLifo
+    Lifo<DebugPadState> debug_pad_lifo{};
+    static_assert(sizeof(debug_pad_lifo) == 0x2C8, "debug_pad_lifo is an invalid size");
+    DebugPadState next_state{};
 
-    std::array<std::unique_ptr<Input::ButtonDevice>, Settings::NativeButton::NUM_BUTTONS_HID>
-        buttons;
-    std::array<std::unique_ptr<Input::AnalogDevice>, Settings::NativeAnalog::NUM_STICKS_HID>
-        analogs;
+    Core::HID::EmulatedController* controller;
 };
 } // namespace Service::HID

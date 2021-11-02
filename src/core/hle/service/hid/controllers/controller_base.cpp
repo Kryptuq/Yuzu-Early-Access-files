@@ -11,7 +11,7 @@ ControllerBase::~ControllerBase() = default;
 
 void ControllerBase::ActivateController() {
     if (is_activated) {
-        OnRelease();
+        return;
     }
     is_activated = true;
     OnInit();

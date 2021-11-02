@@ -265,6 +265,10 @@ Inst* Inst::GetAssociatedPseudoOperation(IR::Opcode opcode) {
 }
 
 IR::Type Inst::Type() const {
+    if (op == IR::Opcode::Phi) {
+        // The type of a phi node is stored in its flags
+        return Flags<IR::Type>();
+    }
     return TypeOf(op);
 }
 

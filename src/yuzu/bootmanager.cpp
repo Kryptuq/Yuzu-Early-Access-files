@@ -27,16 +27,18 @@
 
 #include "common/assert.h"
 #include "common/microprofile.h"
+#include "common/param_package.h"
 #include "common/scm_rev.h"
 #include "common/scope_exit.h"
 #include "common/settings.h"
 #include "core/core.h"
 #include "core/frontend/framebuffer_layout.h"
 #include "core/hle/kernel/k_process.h"
-#include "input_common/keyboard.h"
+#include "input_common/drivers/keyboard.h"
+#include "input_common/drivers/mouse.h"
+#include "input_common/drivers/tas_input.h"
+#include "input_common/drivers/touch_screen.h"
 #include "input_common/main.h"
-#include "input_common/mouse/mouse_input.h"
-#include "input_common/tas/tas_input.h"
 #include "video_core/renderer_base.h"
 #include "video_core/video_core.h"
 #include "yuzu/bootmanager.h"
@@ -297,7 +299,6 @@ GRenderWindow::GRenderWindow(GMainWindow* parent, EmuThread* emu_thread_,
     layout->setContentsMargins(0, 0, 0, 0);
     setLayout(layout);
     input_subsystem->Initialize();
-
     this->setMouseTracking(true);
 
     connect(this, &GRenderWindow::FirstFrameDisplayed, parent, &GMainWindow::OnLoadComplete);
@@ -396,22 +397,22 @@ void GRenderWindow::keyReleaseEvent(QKeyEvent* event) {
     }
 }
 
-MouseInput::MouseButton GRenderWindow::QtButtonToMouseButton(Qt::MouseButton button) {
+InputCommon::MouseButton GRenderWindow::QtButtonToMouseButton(Qt::MouseButton button) {
     switch (button) {
     case Qt::LeftButton:
-        return MouseInput::MouseButton::Left;
+        return InputCommon::MouseButton::Left;
     case Qt::RightButton:
-        return MouseInput::MouseButton::Right;
+        return InputCommon::MouseButton::Right;
     case Qt::MiddleButton:
-        return MouseInput::MouseButton::Wheel;
+        return InputCommon::MouseButton::Wheel;
     case Qt::BackButton:
-        return MouseInput::MouseButton::Backward;
+        return InputCommon::MouseButton::Backward;
     case Qt::ForwardButton:
-        return MouseInput::MouseButton::Forward;
+        return InputCommon::MouseButton::Forward;
     case Qt::TaskButton:
-        return MouseInput::MouseButton::Task;
+        return InputCommon::MouseButton::Task;
     default:
-        return MouseInput::MouseButton::Extra;
+        return InputCommon::MouseButton::Extra;
     }
 }
 
@@ -424,12 +425,9 @@ void GRenderWindow::mousePressEvent(QMouseEvent* event) {
     // coordinates and map them to the current render area
     const auto pos = mapFromGlobal(QCursor::pos());
     const auto [x, y] = ScaleTouch(pos);
+    const auto [touch_x, touch_y] = MapToTouchScreen(x, y);
     const auto button = QtButtonToMouseButton(event->button());
-    input_subsystem->GetMouse()->PressButton(x, y, button);
-
-    if (event->button() == Qt::LeftButton) {
-        this->TouchPressed(x, y, 0);
-    }
+    input_subsystem->GetMouse()->PressButton(x, y, touch_x, touch_y, button);
 
     emit MouseActivity();
 }
@@ -443,10 +441,10 @@ void GRenderWindow::mouseMoveEvent(QMouseEvent* event) {
     // coordinates and map them to the current render area
     const auto pos = mapFromGlobal(QCursor::pos());
     const auto [x, y] = ScaleTouch(pos);
+    const auto [touch_x, touch_y] = MapToTouchScreen(x, y);
     const int center_x = width() / 2;
     const int center_y = height() / 2;
-    input_subsystem->GetMouse()->MouseMove(x, y, center_x, center_y);
-    this->TouchMoved(x, y, 0);
+    input_subsystem->GetMouse()->MouseMove(x, y, touch_x, touch_y, center_x, center_y);
 
     if (Settings::values.mouse_panning) {
         QCursor::setPos(mapToGlobal({center_x, center_y}));
@@ -463,10 +461,6 @@ void GRenderWindow::mouseReleaseEvent(QMouseEvent* event) {
 
     const auto button = QtButtonToMouseButton(event->button());
     input_subsystem->GetMouse()->ReleaseButton(button);
-
-    if (event->button() == Qt::LeftButton) {
-        this->TouchReleased(0);
-    }
 }
 
 void GRenderWindow::TouchBeginEvent(const QTouchEvent* event) {
@@ -489,7 +483,7 @@ void GRenderWindow::TouchUpdateEvent(const QTouchEvent* event) {
     for (std::size_t id = 0; id < touch_ids.size(); ++id) {
         if (!TouchExist(touch_ids[id], touch_points)) {
             touch_ids[id] = 0;
-            this->TouchReleased(id + 1);
+            input_subsystem->GetTouchScreen()->TouchReleased(id);
         }
     }
 }
@@ -498,28 +492,28 @@ void GRenderWindow::TouchEndEvent() {
     for (std::size_t id = 0; id < touch_ids.size(); ++id) {
         if (touch_ids[id] != 0) {
             touch_ids[id] = 0;
-            this->TouchReleased(id + 1);
+            input_subsystem->GetTouchScreen()->TouchReleased(id);
         }
     }
 }
 
-bool GRenderWindow::TouchStart(const QTouchEvent::TouchPoint& touch_point) {
+void GRenderWindow::TouchStart(const QTouchEvent::TouchPoint& touch_point) {
     for (std::size_t id = 0; id < touch_ids.size(); ++id) {
         if (touch_ids[id] == 0) {
             touch_ids[id] = touch_point.id() + 1;
             const auto [x, y] = ScaleTouch(touch_point.pos());
-            this->TouchPressed(x, y, id + 1);
-            return true;
+            const auto [touch_x, touch_y] = MapToTouchScreen(x, y);
+            input_subsystem->GetTouchScreen()->TouchPressed(touch_x, touch_y, id);
         }
     }
-    return false;
 }
 
 bool GRenderWindow::TouchUpdate(const QTouchEvent::TouchPoint& touch_point) {
     for (std::size_t id = 0; id < touch_ids.size(); ++id) {
         if (touch_ids[id] == static_cast<std::size_t>(touch_point.id() + 1)) {
             const auto [x, y] = ScaleTouch(touch_point.pos());
-            this->TouchMoved(x, y, id + 1);
+            const auto [touch_x, touch_y] = MapToTouchScreen(x, y);
+            input_subsystem->GetTouchScreen()->TouchMoved(touch_x, touch_y, id);
             return true;
         }
     }
@@ -552,7 +546,7 @@ void GRenderWindow::focusOutEvent(QFocusEvent* event) {
     QWidget::focusOutEvent(event);
     input_subsystem->GetKeyboard()->ReleaseAllKeys();
     input_subsystem->GetMouse()->ReleaseAllButtons();
-    this->TouchReleased(0);
+    input_subsystem->GetTouchScreen()->ReleaseAllTouch();
 }
 
 void GRenderWindow::resizeEvent(QResizeEvent* event) {

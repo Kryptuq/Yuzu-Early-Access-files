@@ -89,31 +89,6 @@
               <height>21</height>
              </size>
             </property>
-            <item>
-             <property name="text">
-              <string>Pro Controller</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Dual Joycons</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Left Joycon</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Right Joycon</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Handheld</string>
-             </property>
-            </item>
            </widget>
           </item>
          </layout>
@@ -148,16 +123,6 @@
               <height>21</height>
              </size>
             </property>
-            <item>
-             <property name="text">
-              <string>Any</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Keyboard/Mouse</string>
-             </property>
-            </item>
            </widget>
           </item>
           <item>

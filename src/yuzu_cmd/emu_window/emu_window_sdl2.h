@@ -16,11 +16,8 @@ class System;
 
 namespace InputCommon {
 class InputSubsystem;
-}
-
-namespace MouseInput {
 enum class MouseButton;
-}
+} // namespace InputCommon
 
 class EmuWindow_SDL2 : public Core::Frontend::EmuWindow {
 public:
@@ -47,7 +44,7 @@ protected:
     void OnMouseMotion(s32 x, s32 y);
 
     /// Converts a SDL mouse button into MouseInput mouse button
-    MouseInput::MouseButton SDLButtonToMouseButton(u32 button) const;
+    InputCommon::MouseButton SDLButtonToMouseButton(u32 button) const;
 
     /// Called by WaitEvent when a mouse button is pressed or released
     void OnMouseButton(u32 button, u8 state, s32 x, s32 y);
@@ -56,10 +53,10 @@ protected:
     std::pair<unsigned, unsigned> TouchToPixelPos(float touch_x, float touch_y) const;
 
     /// Called by WaitEvent when a finger starts touching the touchscreen
-    void OnFingerDown(float x, float y);
+    void OnFingerDown(float x, float y, std::size_t id);
 
     /// Called by WaitEvent when a finger moves while touching the touchscreen
-    void OnFingerMotion(float x, float y);
+    void OnFingerMotion(float x, float y, std::size_t id);
 
     /// Called by WaitEvent when a finger stops touching the touchscreen
     void OnFingerUp();

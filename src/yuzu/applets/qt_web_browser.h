@@ -16,14 +16,16 @@
 
 #include "core/frontend/applets/web_browser.h"
 
-enum class HIDButton : u8;
-
 class GMainWindow;
 class InputInterpreter;
 class UrlRequestInterceptor;
 
 namespace Core {
 class System;
+}
+
+namespace Core::HID {
+enum class NpadButton : u64;
 }
 
 namespace InputCommon {
@@ -114,7 +116,7 @@ private:
      *
      * @tparam HIDButton The list of buttons contained in yuzu_key_callbacks
      */
-    template <HIDButton... T>
+    template <Core::HID::NpadButton... T>
     void HandleWindowFooterButtonPressedOnce();
 
     /**
@@ -123,7 +125,7 @@ private:
      *
      * @tparam HIDButton The list of buttons that can be converted into keyboard input.
      */
-    template <HIDButton... T>
+    template <Core::HID::NpadButton... T>
     void HandleWindowKeyButtonPressedOnce();
 
     /**
@@ -132,7 +134,7 @@ private:
      *
      * @tparam HIDButton The list of buttons that can be converted into keyboard input.
      */
-    template <HIDButton... T>
+    template <Core::HID::NpadButton... T>
     void HandleWindowKeyButtonHold();
 
     /**

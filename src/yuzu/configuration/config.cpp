@@ -11,7 +11,6 @@
 #include "core/hle/service/acc/profile_manager.h"
 #include "core/hle/service/hid/controllers/npad.h"
 #include "input_common/main.h"
-#include "input_common/udp/client.h"
 #include "yuzu/configuration/config.h"
 
 namespace FS = Common::FS;
@@ -574,7 +573,6 @@ void Config::ReadControlValues() {
 
     ReadBasicSetting(Settings::values.tas_enable);
     ReadBasicSetting(Settings::values.tas_loop);
-    ReadBasicSetting(Settings::values.tas_swap_controllers);
     ReadBasicSetting(Settings::values.pause_tas_on_load);
 
     ReadGlobalSetting(Settings::values.use_docked_mode);
@@ -1210,7 +1208,6 @@ void Config::SaveControlValues() {
 
     WriteBasicSetting(Settings::values.tas_enable);
     WriteBasicSetting(Settings::values.tas_loop);
-    WriteBasicSetting(Settings::values.tas_swap_controllers);
     WriteBasicSetting(Settings::values.pause_tas_on_load);
 
     qt_config->endGroup();

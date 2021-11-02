@@ -73,7 +73,7 @@ ConfigureInput::ConfigureInput(Core::System& system_, QWidget* parent)
 
 ConfigureInput::~ConfigureInput() = default;
 
-void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem,
+void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem, Core::System& system,
                                 std::size_t max_players) {
     player_controllers = {
         new ConfigureInputPlayer(this, 0, ui->consoleInputSettings, input_subsystem, profiles.get(),
@@ -114,6 +114,7 @@ void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem,
         player_tabs[i]->setLayout(new QHBoxLayout(player_tabs[i]));
         player_tabs[i]->layout()->addWidget(player_controllers[i]);
         connect(player_controllers[i], &ConfigureInputPlayer::Connected, [&, i](bool is_connected) {
+            // Ensures that the controllers are always connected in sequential order
             if (is_connected) {
                 for (std::size_t index = 0; index <= i; ++index) {
                     player_connected[index]->setChecked(is_connected);
@@ -146,10 +147,11 @@ void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem,
     advanced = new ConfigureInputAdvanced(this);
     ui->tabAdvanced->setLayout(new QHBoxLayout(ui->tabAdvanced));
     ui->tabAdvanced->layout()->addWidget(advanced);
-    connect(advanced, &ConfigureInputAdvanced::CallDebugControllerDialog, [this, input_subsystem] {
-        CallConfigureDialog<ConfigureDebugController>(*this, input_subsystem, profiles.get(),
-                                                      system);
-    });
+    connect(advanced, &ConfigureInputAdvanced::CallDebugControllerDialog,
+            [this, input_subsystem, &system] {
+                CallConfigureDialog<ConfigureDebugController>(*this, input_subsystem,
+                                                              profiles.get(), system);
+            });
     connect(advanced, &ConfigureInputAdvanced::CallMouseConfigDialog, [this, input_subsystem] {
         CallConfigureDialog<ConfigureMouseAdvanced>(*this, input_subsystem);
     });
@@ -184,21 +186,7 @@ QList<QWidget*> ConfigureInput::GetSubTabs() const {
 void ConfigureInput::ApplyConfiguration() {
     for (auto* controller : player_controllers) {
         controller->ApplyConfiguration();
-        controller->TryDisconnectSelectedController();
     }
-
-    // This emulates a delay between disconnecting and reconnecting controllers as some games
-    // do not respond to a change in controller type if it was instantaneous.
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(150ms);
-
-    for (auto* controller : player_controllers) {
-        controller->TryConnectSelectedController();
-    }
-
-    // This emulates a delay between disconnecting and reconnecting controllers as some games
-    // do not respond to a change in controller type if it was instantaneous.
-    std::this_thread::sleep_for(150ms);
 
     advanced->ApplyConfiguration();
 
@@ -223,8 +211,10 @@ void ConfigureInput::RetranslateUI() {
 }
 
 void ConfigureInput::LoadConfiguration() {
+    const auto* handheld = system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Handheld);
+
     LoadPlayerControllerIndices();
-    UpdateDockedState(Settings::values.players.GetValue()[8].connected);
+    UpdateDockedState(handheld->IsConnected());
 
     ui->vibrationGroup->setChecked(Settings::values.vibration_enabled.GetValue());
     ui->motionGroup->setChecked(Settings::values.motion_enabled.GetValue());
@@ -232,9 +222,16 @@ void ConfigureInput::LoadConfiguration() {
 
 void ConfigureInput::LoadPlayerControllerIndices() {
     for (std::size_t i = 0; i < player_connected.size(); ++i) {
-        const auto connected = Settings::values.players.GetValue()[i].connected ||
-                               (i == 0 && Settings::values.players.GetValue()[8].connected);
-        player_connected[i]->setChecked(connected);
+        if (i == 0) {
+            auto* handheld =
+                system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Handheld);
+            if (handheld->IsConnected()) {
+                player_connected[i]->setChecked(true);
+                continue;
+            }
+        }
+        const auto* controller = system.HIDCore().GetEmulatedControllerByIndex(i);
+        player_connected[i]->setChecked(controller->IsConnected());
     }
 }
 

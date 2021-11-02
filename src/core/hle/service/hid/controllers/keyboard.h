@@ -10,8 +10,14 @@
 #include "common/common_types.h"
 #include "common/settings.h"
 #include "common/swap.h"
-#include "core/frontend/input.h"
 #include "core/hle/service/hid/controllers/controller_base.h"
+#include "core/hle/service/hid/ring_lifo.h"
+
+namespace Core::HID {
+class EmulatedDevices;
+struct KeyboardModifier;
+struct KeyboardKey;
+} // namespace Core::HID
 
 namespace Service::HID {
 class Controller_Keyboard final : public ControllerBase {
@@ -28,47 +34,20 @@ public:
     // When the controller is requesting an update for the shared memory
     void OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* data, std::size_t size) override;
 
-    // Called when input devices should be loaded
-    void OnLoadInputDevices() override;
-
 private:
-    struct Modifiers {
-        union {
-            u32_le raw{};
-            BitField<0, 1, u32> control;
-            BitField<1, 1, u32> shift;
-            BitField<2, 1, u32> left_alt;
-            BitField<3, 1, u32> right_alt;
-            BitField<4, 1, u32> gui;
-            BitField<8, 1, u32> caps_lock;
-            BitField<9, 1, u32> scroll_lock;
-            BitField<10, 1, u32> num_lock;
-            BitField<11, 1, u32> katakana;
-            BitField<12, 1, u32> hiragana;
-        };
-    };
-    static_assert(sizeof(Modifiers) == 0x4, "Modifiers is an invalid size");
-
+    // This is nn::hid::detail::KeyboardState
     struct KeyboardState {
-        s64_le sampling_number;
-        s64_le sampling_number2;
-
-        Modifiers modifier;
-        std::array<u8, 32> key;
+        s64 sampling_number;
+        Core::HID::KeyboardModifier modifier;
+        Core::HID::KeyboardKey key;
     };
-    static_assert(sizeof(KeyboardState) == 0x38, "KeyboardState is an invalid size");
+    static_assert(sizeof(KeyboardState) == 0x30, "KeyboardState is an invalid size");
 
-    struct SharedMemory {
-        CommonHeader header;
-        std::array<KeyboardState, 17> pad_states;
-        INSERT_PADDING_BYTES(0x28);
-    };
-    static_assert(sizeof(SharedMemory) == 0x400, "SharedMemory is an invalid size");
-    SharedMemory shared_memory{};
+    // This is nn::hid::detail::KeyboardLifo
+    Lifo<KeyboardState> keyboard_lifo{};
+    static_assert(sizeof(keyboard_lifo) == 0x3D8, "keyboard_lifo is an invalid size");
+    KeyboardState next_state{};
 
-    std::array<std::unique_ptr<Input::ButtonDevice>, Settings::NativeKeyboard::NumKeyboardKeys>
-        keyboard_keys;
-    std::array<std::unique_ptr<Input::ButtonDevice>, Settings::NativeKeyboard::NumKeyboardMods>
-        keyboard_mods;
+    Core::HID::EmulatedDevices* emulated_devices;
 };
 } // namespace Service::HID

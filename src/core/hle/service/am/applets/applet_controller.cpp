@@ -10,6 +10,8 @@
 #include "common/string_util.h"
 #include "core/core.h"
 #include "core/frontend/applets/controller.h"
+#include "core/hid/emulated_controller.h"
+#include "core/hid/hid_core.h"
 #include "core/hle/result.h"
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/am/applets/applet_controller.h"
@@ -25,7 +27,7 @@ namespace Service::AM::Applets {
 static Core::Frontend::ControllerParameters ConvertToFrontendParameters(
     ControllerSupportArgPrivate private_arg, ControllerSupportArgHeader header, bool enable_text,
     std::vector<IdentificationColor> identification_colors, std::vector<ExplainText> text) {
-    HID::Controller_NPad::NpadStyleSet npad_style_set;
+    Core::HID::NpadStyleTag npad_style_set;
     npad_style_set.raw = private_arg.style_set;
 
     return {
@@ -243,19 +245,11 @@ void Controller::Execute() {
 void Controller::ConfigurationComplete() {
     ControllerSupportResultInfo result_info{};
 
-    const auto& players = Settings::values.players.GetValue();
-
     // If enable_single_mode is enabled, player_count is 1 regardless of any other parameters.
     // Otherwise, only count connected players from P1-P8.
-    result_info.player_count =
-        is_single_mode
-            ? 1
-            : static_cast<s8>(std::count_if(players.begin(), players.end() - 2,
-                                            [](const auto& player) { return player.connected; }));
+    result_info.player_count = is_single_mode ? 1 : system.HIDCore().GetPlayerCount();
 
-    result_info.selected_id = HID::Controller_NPad::IndexToNPad(std::distance(
-        players.begin(), std::find_if(players.begin(), players.end(),
-                                      [](const auto& player) { return player.connected; })));
+    result_info.selected_id = static_cast<u32>(system.HIDCore().GetFirstNpadId());
 
     result_info.result = 0;
 

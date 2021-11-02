@@ -9,7 +9,6 @@
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/frontend/emu_window.h"
-#include "core/frontend/input.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/k_shared_memory.h"
@@ -36,10 +35,9 @@
 namespace Service::HID {
 
 // Updating period for each HID device.
-// HID is polled every 15ms, this value was derived from
-// https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering#joy-con-status-data-packet
-constexpr auto pad_update_ns = std::chrono::nanoseconds{1000 * 1000};         // (1ms, 1000Hz)
-constexpr auto motion_update_ns = std::chrono::nanoseconds{15 * 1000 * 1000}; // (15ms, 66.666Hz)
+// Period time is obtained by measuring the number of samples in a second on HW using a homebrew
+constexpr auto pad_update_ns = std::chrono::nanoseconds{4 * 1000 * 1000};    // (4ms, 250Hz)
+constexpr auto motion_update_ns = std::chrono::nanoseconds{5 * 1000 * 1000}; // (5ms, 200Hz)
 constexpr std::size_t SHARED_MEMORY_SIZE = 0x40000;
 
 IAppletResource::IAppletResource(Core::System& system_,
@@ -91,7 +89,7 @@ IAppletResource::IAppletResource(Core::System& system_,
     system.CoreTiming().ScheduleEvent(pad_update_ns, pad_update_event);
     system.CoreTiming().ScheduleEvent(motion_update_ns, motion_update_event);
 
-    ReloadInputDevices();
+    system.HIDCore().ReloadInputDevices();
 }
 
 void IAppletResource::ActivateController(HidController controller) {
@@ -119,11 +117,7 @@ void IAppletResource::UpdateControllers(std::uintptr_t user_data,
                                         std::chrono::nanoseconds ns_late) {
     auto& core_timing = system.CoreTiming();
 
-    const bool should_reload = Settings::values.is_device_reload_pending.exchange(false);
     for (const auto& controller : controllers) {
-        if (should_reload) {
-            controller->OnLoadInputDevices();
-        }
         controller->OnUpdate(core_timing, system.Kernel().GetHidSharedMem().GetPointer(),
                              SHARED_MEMORY_SIZE);
     }
@@ -893,7 +887,7 @@ void Hid::ActivateNpadWithRevision(Kernel::HLERequestContext& ctx) {
 void Hid::SetNpadJoyHoldType(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
-    const auto hold_type{rp.PopEnum<Controller_NPad::NpadHoldType>()};
+    const auto hold_type{rp.PopEnum<Controller_NPad::NpadJoyHoldType>()};
 
     applet_resource->GetController<Controller_NPad>(HidController::NPad).SetHoldType(hold_type);
 
@@ -926,7 +920,7 @@ void Hid::SetNpadJoyAssignmentModeSingleByDefault(Kernel::HLERequestContext& ctx
     const auto parameters{rp.PopRaw<Parameters>()};
 
     applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .SetNpadMode(parameters.npad_id, Controller_NPad::NpadAssignments::Single);
+        .SetNpadMode(parameters.npad_id, Controller_NPad::NpadJoyAssignmentMode::Single);
 
     LOG_WARNING(Service_HID, "(STUBBED) called, npad_id={}, applet_resource_user_id={}",
                 parameters.npad_id, parameters.applet_resource_user_id);
@@ -948,7 +942,7 @@ void Hid::SetNpadJoyAssignmentModeSingle(Kernel::HLERequestContext& ctx) {
     const auto parameters{rp.PopRaw<Parameters>()};
 
     applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .SetNpadMode(parameters.npad_id, Controller_NPad::NpadAssignments::Single);
+        .SetNpadMode(parameters.npad_id, Controller_NPad::NpadJoyAssignmentMode::Single);
 
     LOG_WARNING(Service_HID,
                 "(STUBBED) called, npad_id={}, applet_resource_user_id={}, npad_joy_device_type={}",
@@ -970,7 +964,7 @@ void Hid::SetNpadJoyAssignmentModeDual(Kernel::HLERequestContext& ctx) {
     const auto parameters{rp.PopRaw<Parameters>()};
 
     applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .SetNpadMode(parameters.npad_id, Controller_NPad::NpadAssignments::Dual);
+        .SetNpadMode(parameters.npad_id, Controller_NPad::NpadJoyAssignmentMode::Dual);
 
     LOG_WARNING(Service_HID, "(STUBBED) called, npad_id={}, applet_resource_user_id={}",
                 parameters.npad_id, parameters.applet_resource_user_id);
@@ -1136,36 +1130,36 @@ void Hid::GetVibrationDeviceInfo(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto vibration_device_handle{rp.PopRaw<Controller_NPad::DeviceHandle>()};
 
-    VibrationDeviceInfo vibration_device_info;
+    Core::HID::VibrationDeviceInfo vibration_device_info;
 
     switch (vibration_device_handle.npad_type) {
-    case Controller_NPad::NpadType::ProController:
-    case Controller_NPad::NpadType::Handheld:
-    case Controller_NPad::NpadType::JoyconDual:
-    case Controller_NPad::NpadType::JoyconLeft:
-    case Controller_NPad::NpadType::JoyconRight:
+    case Core::HID::NpadType::ProController:
+    case Core::HID::NpadType::Handheld:
+    case Core::HID::NpadType::JoyconDual:
+    case Core::HID::NpadType::JoyconLeft:
+    case Core::HID::NpadType::JoyconRight:
     default:
-        vibration_device_info.type = VibrationDeviceType::LinearResonantActuator;
+        vibration_device_info.type = Core::HID::VibrationDeviceType::LinearResonantActuator;
         break;
-    case Controller_NPad::NpadType::GameCube:
-        vibration_device_info.type = VibrationDeviceType::GcErm;
+    case Core::HID::NpadType::GameCube:
+        vibration_device_info.type = Core::HID::VibrationDeviceType::GcErm;
         break;
-    case Controller_NPad::NpadType::Pokeball:
-        vibration_device_info.type = VibrationDeviceType::Unknown;
+    case Core::HID::NpadType::Pokeball:
+        vibration_device_info.type = Core::HID::VibrationDeviceType::Unknown;
         break;
     }
 
     switch (vibration_device_handle.device_index) {
     case Controller_NPad::DeviceIndex::Left:
-        vibration_device_info.position = VibrationDevicePosition::Left;
+        vibration_device_info.position = Core::HID::VibrationDevicePosition::Left;
         break;
     case Controller_NPad::DeviceIndex::Right:
-        vibration_device_info.position = VibrationDevicePosition::Right;
+        vibration_device_info.position = Core::HID::VibrationDevicePosition::Right;
         break;
     case Controller_NPad::DeviceIndex::None:
     default:
         UNREACHABLE_MSG("DeviceIndex should never be None!");
-        vibration_device_info.position = VibrationDevicePosition::None;
+        vibration_device_info.position = Core::HID::VibrationDevicePosition::None;
         break;
     }
 
@@ -1280,7 +1274,7 @@ void Hid::SendVibrationGcErmCommand(Kernel::HLERequestContext& ctx) {
     struct Parameters {
         Controller_NPad::DeviceHandle vibration_device_handle;
         u64 applet_resource_user_id;
-        VibrationGcErmCommand gc_erm_command;
+        Core::HID::VibrationGcErmCommand gc_erm_command;
     };
     static_assert(sizeof(Parameters) == 0x18, "Parameters has incorrect size.");
 
@@ -1294,21 +1288,21 @@ void Hid::SendVibrationGcErmCommand(Kernel::HLERequestContext& ctx) {
      */
     const auto vibration_value = [parameters] {
         switch (parameters.gc_erm_command) {
-        case VibrationGcErmCommand::Stop:
+        case Core::HID::VibrationGcErmCommand::Stop:
             return Controller_NPad::VibrationValue{
                 .amp_low = 0.0f,
                 .freq_low = 160.0f,
                 .amp_high = 0.0f,
                 .freq_high = 320.0f,
             };
-        case VibrationGcErmCommand::Start:
+        case Core::HID::VibrationGcErmCommand::Start:
             return Controller_NPad::VibrationValue{
                 .amp_low = 1.0f,
                 .freq_low = 160.0f,
                 .amp_high = 1.0f,
                 .freq_high = 320.0f,
             };
-        case VibrationGcErmCommand::StopHard:
+        case Core::HID::VibrationGcErmCommand::StopHard:
             return Controller_NPad::VibrationValue{
                 .amp_low = 0.0f,
                 .freq_low = 0.0f,
@@ -1350,7 +1344,7 @@ void Hid::GetActualVibrationGcErmCommand(Kernel::HLERequestContext& ctx) {
 
     const auto gc_erm_command = [last_vibration] {
         if (last_vibration.amp_low != 0.0f || last_vibration.amp_high != 0.0f) {
-            return VibrationGcErmCommand::Start;
+            return Core::HID::VibrationGcErmCommand::Start;
         }
 
         /**
@@ -1360,10 +1354,10 @@ void Hid::GetActualVibrationGcErmCommand(Kernel::HLERequestContext& ctx) {
          * This is done to reuse the controller vibration functions made for regular controllers.
          */
         if (last_vibration.freq_low == 0.0f && last_vibration.freq_high == 0.0f) {
-            return VibrationGcErmCommand::StopHard;
+            return Core::HID::VibrationGcErmCommand::StopHard;
         }
 
-        return VibrationGcErmCommand::Stop;
+        return Core::HID::VibrationGcErmCommand::Stop;
     }();
 
     LOG_DEBUG(Service_HID,
@@ -2038,10 +2032,6 @@ public:
         RegisterHandlers(functions);
     }
 };
-
-void ReloadInputDevices() {
-    Settings::values.is_device_reload_pending.store(true);
-}
 
 void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
     std::make_shared<Hid>(system)->InstallAsService(service_manager);

@@ -8,8 +8,8 @@
 
 #include "common/common_types.h"
 
-namespace Service::SM {
-class ServiceManager;
+namespace Core::HID {
+class HIDCore;
 }
 
 namespace Core::Frontend {
@@ -44,14 +44,14 @@ public:
 
 class DefaultControllerApplet final : public ControllerApplet {
 public:
-    explicit DefaultControllerApplet(Service::SM::ServiceManager& service_manager_);
+    explicit DefaultControllerApplet(HID::HIDCore& hid_core_);
     ~DefaultControllerApplet() override;
 
     void ReconfigureControllers(std::function<void()> callback,
                                 const ControllerParameters& parameters) const override;
 
 private:
-    Service::SM::ServiceManager& service_manager;
+    HID::HIDCore& hid_core;
 };
 
 } // namespace Core::Frontend

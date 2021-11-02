@@ -24,7 +24,6 @@
 #include "common/settings.h"
 #include "core/hle/service/acc/profile_manager.h"
 #include "input_common/main.h"
-#include "input_common/udp/client.h"
 #include "yuzu_cmd/config.h"
 #include "yuzu_cmd/default_ini.h"
 

@@ -7,72 +7,79 @@
 #include "common/common_types.h"
 #include "common/logging/log.h"
 #include "common/settings.h"
+#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/frontend/emu_window.h"
-#include "core/frontend/input.h"
 #include "core/hle/service/hid/controllers/touchscreen.h"
 
 namespace Service::HID {
 constexpr std::size_t SHARED_MEMORY_OFFSET = 0x400;
 
-Controller_Touchscreen::Controller_Touchscreen(Core::System& system_) : ControllerBase{system_} {}
+Controller_Touchscreen::Controller_Touchscreen(Core::System& system_) : ControllerBase{system_} {
+    console = system.HIDCore().GetEmulatedConsole();
+}
+
 Controller_Touchscreen::~Controller_Touchscreen() = default;
 
-void Controller_Touchscreen::OnInit() {
-    for (std::size_t id = 0; id < MAX_FINGERS; ++id) {
-        mouse_finger_id[id] = MAX_FINGERS;
-        keyboard_finger_id[id] = MAX_FINGERS;
-        udp_finger_id[id] = MAX_FINGERS;
-    }
-}
+void Controller_Touchscreen::OnInit() {}
 
 void Controller_Touchscreen::OnRelease() {}
 
 void Controller_Touchscreen::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* data,
                                       std::size_t size) {
-    shared_memory.header.timestamp = core_timing.GetCPUTicks();
-    shared_memory.header.total_entry_count = 17;
+    touch_screen_lifo.timestamp = core_timing.GetCPUTicks();
 
     if (!IsControllerActivated()) {
-        shared_memory.header.entry_count = 0;
-        shared_memory.header.last_entry_index = 0;
+        touch_screen_lifo.buffer_count = 0;
+        touch_screen_lifo.buffer_tail = 0;
+        std::memcpy(data, &touch_screen_lifo, sizeof(touch_screen_lifo));
         return;
     }
-    shared_memory.header.entry_count = 16;
 
-    const auto& last_entry =
-        shared_memory.shared_memory_entries[shared_memory.header.last_entry_index];
-    shared_memory.header.last_entry_index = (shared_memory.header.last_entry_index + 1) % 17;
-    auto& cur_entry = shared_memory.shared_memory_entries[shared_memory.header.last_entry_index];
+    const auto touch_status = console->GetTouch();
+    for (std::size_t id = 0; id < MAX_FINGERS; id++) {
+        const auto& current_touch = touch_status[id];
+        auto& finger = fingers[id];
+        finger.position = current_touch.position;
+        finger.id = current_touch.id;
 
-    cur_entry.sampling_number = last_entry.sampling_number + 1;
-    cur_entry.sampling_number2 = cur_entry.sampling_number;
+        if (finger.attribute.start_touch) {
+            finger.attribute.raw = 0;
+            continue;
+        }
 
-    const Input::TouchStatus& mouse_status = touch_mouse_device->GetStatus();
-    const Input::TouchStatus& udp_status = touch_udp_device->GetStatus();
-    for (std::size_t id = 0; id < mouse_status.size(); ++id) {
-        mouse_finger_id[id] = UpdateTouchInputEvent(mouse_status[id], mouse_finger_id[id]);
-        udp_finger_id[id] = UpdateTouchInputEvent(udp_status[id], udp_finger_id[id]);
-    }
+        if (finger.attribute.end_touch) {
+            finger.attribute.raw = 0;
+            finger.pressed = false;
+            continue;
+        }
 
-    if (Settings::values.use_touch_from_button) {
-        const Input::TouchStatus& keyboard_status = touch_btn_device->GetStatus();
-        for (std::size_t id = 0; id < mouse_status.size(); ++id) {
-            keyboard_finger_id[id] =
-                UpdateTouchInputEvent(keyboard_status[id], keyboard_finger_id[id]);
+        if (!finger.pressed && current_touch.pressed) {
+            finger.attribute.start_touch.Assign(1);
+            finger.pressed = true;
+            continue;
+        }
+
+        if (finger.pressed && !current_touch.pressed) {
+            finger.attribute.raw = 0;
+            finger.attribute.end_touch.Assign(1);
         }
     }
 
-    std::array<Finger, 16> active_fingers;
+    std::array<Core::HID::TouchFinger, MAX_FINGERS> active_fingers;
     const auto end_iter = std::copy_if(fingers.begin(), fingers.end(), active_fingers.begin(),
                                        [](const auto& finger) { return finger.pressed; });
     const auto active_fingers_count =
         static_cast<std::size_t>(std::distance(active_fingers.begin(), end_iter));
 
     const u64 tick = core_timing.GetCPUTicks();
-    cur_entry.entry_count = static_cast<s32_le>(active_fingers_count);
+    const auto& last_entry = touch_screen_lifo.ReadCurrentEntry().state;
+
+    next_state.sampling_number = last_entry.sampling_number + 1;
+    next_state.entry_count = static_cast<s32>(active_fingers_count);
+
     for (std::size_t id = 0; id < MAX_FINGERS; ++id) {
-        auto& touch_entry = cur_entry.states[id];
+        auto& touch_entry = next_state.states[id];
         if (id < active_fingers_count) {
             const auto& [active_x, active_y] = active_fingers[id].position;
             touch_entry.position = {
@@ -97,66 +104,9 @@ void Controller_Touchscreen::OnUpdate(const Core::Timing::CoreTiming& core_timin
             touch_entry.finger = 0;
         }
     }
-    std::memcpy(data + SHARED_MEMORY_OFFSET, &shared_memory, sizeof(TouchScreenSharedMemory));
-}
 
-void Controller_Touchscreen::OnLoadInputDevices() {
-    touch_mouse_device = Input::CreateDevice<Input::TouchDevice>("engine:emu_window");
-    touch_udp_device = Input::CreateDevice<Input::TouchDevice>("engine:cemuhookudp");
-    touch_btn_device = Input::CreateDevice<Input::TouchDevice>("engine:touch_from_button");
-}
-
-std::optional<std::size_t> Controller_Touchscreen::GetUnusedFingerID() const {
-    // Dont assign any touch input to a finger if disabled
-    if (!Settings::values.touchscreen.enabled) {
-        return std::nullopt;
-    }
-    std::size_t first_free_id = 0;
-    while (first_free_id < MAX_FINGERS) {
-        if (!fingers[first_free_id].pressed) {
-            return first_free_id;
-        } else {
-            first_free_id++;
-        }
-    }
-    return std::nullopt;
-}
-
-std::size_t Controller_Touchscreen::UpdateTouchInputEvent(
-    const std::tuple<float, float, bool>& touch_input, std::size_t finger_id) {
-    const auto& [x, y, pressed] = touch_input;
-    if (finger_id > MAX_FINGERS) {
-        LOG_ERROR(Service_HID, "Invalid finger id {}", finger_id);
-        return MAX_FINGERS;
-    }
-    if (pressed) {
-        Attributes attribute{};
-        if (finger_id == MAX_FINGERS) {
-            const auto first_free_id = GetUnusedFingerID();
-            if (!first_free_id) {
-                // Invalid finger id do nothing
-                return MAX_FINGERS;
-            }
-            finger_id = first_free_id.value();
-            fingers[finger_id].pressed = true;
-            fingers[finger_id].id = static_cast<u32_le>(finger_id);
-            attribute.start_touch.Assign(1);
-        }
-        fingers[finger_id].position = {x, y};
-        fingers[finger_id].attribute = attribute;
-        return finger_id;
-    }
-
-    if (finger_id != MAX_FINGERS) {
-        if (!fingers[finger_id].attribute.end_touch) {
-            fingers[finger_id].attribute.end_touch.Assign(1);
-            fingers[finger_id].attribute.start_touch.Assign(0);
-            return finger_id;
-        }
-        fingers[finger_id].pressed = false;
-    }
-
-    return MAX_FINGERS;
+    touch_screen_lifo.WriteNextEntry(next_state);
+    std::memcpy(data + SHARED_MEMORY_OFFSET, &touch_screen_lifo, sizeof(touch_screen_lifo));
 }
 
 } // namespace Service::HID

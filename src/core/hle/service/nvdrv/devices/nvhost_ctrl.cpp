@@ -2,10 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-// SPDX-License-Identifier: MPL-2.0
-// Copyright 2021 Skyline Team and Contributors (https://github.com/skyline-emu/)
-// Copyright 2019-2020 Ryujinx Team and Contributors
-
 #include <cstdlib>
 #include <cstring>
 
@@ -42,8 +38,6 @@ NvResult nvhost_ctrl::Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& 
             return IocCtrlEventRegister(input, output);
         case 0x20:
             return IocCtrlEventUnregister(input, output);
-        case 0x21:
-            return IocCtrlFreeEventBatch(input, output);
         }
         break;
     default:
@@ -227,18 +221,4 @@ NvResult nvhost_ctrl::IocCtrlClearEventWait(const std::vector<u8>& input, std::v
     return NvResult::Success;
 }
 
-NvResult nvhost_ctrl::IocCtrlFreeEventBatch(const std::vector<u8>& input, std::vector<u8>& output) {
-    IocCtrlFreeEventBatchParams params{};
-    std::memcpy(&params, input.data(), sizeof(params));
-
-    LOG_DEBUG(Service_NVDRV, "called, bit_mask={}", params.bit_mask);
-
-    for (u32 event_id = 0; event_id < MaxNvEvents; ++event_id) {
-        if (params.bit_mask & (1ULL << event_id)) {
-            events_interface.UnregisterEvent(event_id);
-        }
-    }
-
-    return NvResult::Success;
-}
 } // namespace Service::Nvidia::Devices

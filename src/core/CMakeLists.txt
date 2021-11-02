@@ -132,11 +132,23 @@ add_library(core STATIC
     frontend/emu_window.h
     frontend/framebuffer_layout.cpp
     frontend/framebuffer_layout.h
-    frontend/input_interpreter.cpp
-    frontend/input_interpreter.h
-    frontend/input.h
     hardware_interrupt_manager.cpp
     hardware_interrupt_manager.h
+    hid/emulated_console.cpp
+    hid/emulated_console.h
+    hid/emulated_controller.cpp
+    hid/emulated_controller.h
+    hid/emulated_devices.cpp
+    hid/emulated_devices.h
+    hid/hid_core.cpp
+    hid/hid_core.h
+    hid/hid_types.h
+    hid/input_converter.cpp
+    hid/input_converter.h
+    hid/input_interpreter.cpp
+    hid/input_interpreter.h
+    hid/motion_input.cpp
+    hid/motion_input.h
     hle/api_version.h
     hle/ipc.h
     hle/ipc_helpers.h
@@ -402,6 +414,7 @@ add_library(core STATIC
     hle/service/hid/hid.h
     hle/service/hid/irs.cpp
     hle/service/hid/irs.h
+    hle/service/hid/ring_lifo.h
     hle/service/hid/xcd.cpp
     hle/service/hid/xcd.h
     hle/service/hid/errors.h

@@ -62,10 +62,21 @@ enum Values : int {
 
 constexpr int STICK_HID_BEGIN = LStick;
 constexpr int STICK_HID_END = NumAnalogs;
-constexpr int NUM_STICKS_HID = NumAnalogs;
 
 extern const std::array<const char*, NumAnalogs> mapping;
 } // namespace NativeAnalog
+
+namespace NativeTrigger {
+enum Values : int {
+    LTrigger,
+    RTrigger,
+
+    NumTriggers,
+};
+
+constexpr int TRIGGER_HID_BEGIN = LTrigger;
+constexpr int TRIGGER_HID_END = NumTriggers;
+} // namespace NativeTrigger
 
 namespace NativeVibration {
 enum Values : int {

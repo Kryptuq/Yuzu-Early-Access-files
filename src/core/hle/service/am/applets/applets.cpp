@@ -231,7 +231,7 @@ void AppletManager::SetDefaultAppletFrontendSet() {
 void AppletManager::SetDefaultAppletsIfMissing() {
     if (frontend.controller == nullptr) {
         frontend.controller =
-            std::make_unique<Core::Frontend::DefaultControllerApplet>(system.ServiceManager());
+            std::make_unique<Core::Frontend::DefaultControllerApplet>(system.HIDCore());
     }
 
     if (frontend.error == nullptr) {

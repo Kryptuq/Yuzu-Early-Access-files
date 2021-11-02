@@ -89,6 +89,10 @@ namespace Core::Hardware {
 class InterruptManager;
 }
 
+namespace Core::HID {
+class HIDCore;
+}
+
 namespace Core {
 
 class ARM_Interface;
@@ -284,6 +288,12 @@ public:
 
     /// Provides a constant reference to the kernel instance.
     [[nodiscard]] const Kernel::KernelCore& Kernel() const;
+
+    /// Gets a mutable reference to the HID interface.
+    [[nodiscard]] HID::HIDCore& HIDCore();
+
+    /// Gets an immutable reference to the HID interface.
+    [[nodiscard]] const HID::HIDCore& HIDCore() const;
 
     /// Provides a reference to the internal PerfStats instance.
     [[nodiscard]] Core::PerfStats& GetPerfStats();

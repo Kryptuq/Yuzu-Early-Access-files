@@ -14,6 +14,7 @@
 //      https://link.springer.com/chapter/10.1007/978-3-642-37051-9_6
 //
 
+#include <deque>
 #include <span>
 #include <variant>
 #include <vector>
@@ -370,6 +371,26 @@ void VisitBlock(Pass& pass, IR::Block* block) {
     }
     pass.SealBlock(block);
 }
+
+IR::Type GetConcreteType(IR::Inst* inst) {
+    std::deque<IR::Inst*> queue;
+    queue.push_back(inst);
+    while (!queue.empty()) {
+        IR::Inst* current = queue.front();
+        queue.pop_front();
+        const size_t num_args{current->NumArgs()};
+        for (size_t i = 0; i < num_args; ++i) {
+            const auto set_type = current->Arg(i).Type();
+            if (set_type != IR::Type::Opaque) {
+                return set_type;
+            }
+            if (!current->Arg(i).IsImmediate()) {
+                queue.push_back(current->Arg(i).Inst());
+            }
+        }
+    }
+    return IR::Type::Opaque;
+}
 } // Anonymous namespace
 
 void SsaRewritePass(IR::Program& program) {
@@ -381,6 +402,9 @@ void SsaRewritePass(IR::Program& program) {
     for (auto block = program.post_order_blocks.rbegin(); block != end; ++block) {
         for (IR::Inst& inst : (*block)->Instructions()) {
             if (inst.GetOpcode() == IR::Opcode::Phi) {
+                if (inst.Type() == IR::Type::Opaque) {
+                    inst.SetFlags(GetConcreteType(&inst));
+                }
                 inst.OrderPhiArgs();
             }
         }

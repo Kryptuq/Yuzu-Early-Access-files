@@ -119,18 +119,16 @@ private:
     static_assert(sizeof(IocCtrlEventUnregisterParams) == 4,
                   "IocCtrlEventUnregisterParams is incorrect size");
 
-    struct IocCtrlFreeEventBatchParams {
-        u64_le bit_mask{};
+    struct IocCtrlEventKill {
+        u64_le user_events{};
     };
-    static_assert(sizeof(IocCtrlFreeEventBatchParams) == 8,
-                  "IocCtrlFreeEventBatchParams is incorrect size");
+    static_assert(sizeof(IocCtrlEventKill) == 8, "IocCtrlEventKill is incorrect size");
 
     NvResult NvOsGetConfigU32(const std::vector<u8>& input, std::vector<u8>& output);
     NvResult IocCtrlEventWait(const std::vector<u8>& input, std::vector<u8>& output, bool is_async);
     NvResult IocCtrlEventRegister(const std::vector<u8>& input, std::vector<u8>& output);
     NvResult IocCtrlEventUnregister(const std::vector<u8>& input, std::vector<u8>& output);
     NvResult IocCtrlClearEventWait(const std::vector<u8>& input, std::vector<u8>& output);
-    NvResult IocCtrlFreeEventBatch(const std::vector<u8>& input, std::vector<u8>& output);
 
     EventInterface& events_interface;
     SyncpointManager& syncpoint_manager;

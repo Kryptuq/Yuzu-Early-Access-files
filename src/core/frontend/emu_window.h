@@ -114,28 +114,6 @@ public:
     virtual bool IsShown() const = 0;
 
     /**
-     * Signal that a touch pressed event has occurred (e.g. mouse click pressed)
-     * @param framebuffer_x Framebuffer x-coordinate that was pressed
-     * @param framebuffer_y Framebuffer y-coordinate that was pressed
-     * @param id Touch event ID
-     */
-    void TouchPressed(u32 framebuffer_x, u32 framebuffer_y, size_t id);
-
-    /**
-     * Signal that a touch released event has occurred (e.g. mouse click released)
-     * @param id Touch event ID
-     */
-    void TouchReleased(size_t id);
-
-    /**
-     * Signal that a touch movement event has occurred (e.g. mouse was moved over the emu window)
-     * @param framebuffer_x Framebuffer x-coordinate
-     * @param framebuffer_y Framebuffer y-coordinate
-     * @param id Touch event ID
-     */
-    void TouchMoved(u32 framebuffer_x, u32 framebuffer_y, size_t id);
-
-    /**
      * Returns currently active configuration.
      * @note Accesses to the returned object need not be consistent because it may be modified in
      * another thread
@@ -213,6 +191,11 @@ protected:
         client_area_height = size.second;
     }
 
+    /**
+     * Converts a screen postion into the equivalent touchscreen position.
+     */
+    std::pair<f32, f32> MapToTouchScreen(u32 framebuffer_x, u32 framebuffer_y) const;
+
     WindowSystemInfo window_info;
 
 private:
@@ -238,9 +221,6 @@ private:
     WindowConfig config;        ///< Internal configuration (changes pending for being applied in
                                 /// ProcessConfigurationChanges)
     WindowConfig active_config; ///< Internal active configuration
-
-    class TouchState;
-    std::shared_ptr<TouchState> touch_state;
 };
 
 } // namespace Core::Frontend

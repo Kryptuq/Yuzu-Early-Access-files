@@ -1,36 +1,32 @@
 add_library(input_common STATIC
-    analog_from_button.cpp
-    analog_from_button.h
-    keyboard.cpp
-    keyboard.h
+    drivers/gc_adapter.cpp
+    drivers/gc_adapter.h
+    drivers/keyboard.cpp
+    drivers/keyboard.h
+    drivers/mouse.cpp
+    drivers/mouse.h
+    drivers/sdl_driver.cpp
+    drivers/sdl_driver.h
+    drivers/tas_input.cpp
+    drivers/tas_input.h
+    drivers/touch_screen.cpp
+    drivers/touch_screen.h
+    drivers/udp_client.cpp
+    drivers/udp_client.h
+    helpers/stick_from_buttons.cpp
+    helpers/stick_from_buttons.h
+    helpers/touch_from_buttons.cpp
+    helpers/touch_from_buttons.h
+    helpers/udp_protocol.cpp
+    helpers/udp_protocol.h
+    input_engine.cpp
+    input_engine.h
+    input_mapping.cpp
+    input_mapping.h
+    input_poller.cpp
+    input_poller.h
     main.cpp
     main.h
-    motion_from_button.cpp
-    motion_from_button.h
-    motion_input.cpp
-    motion_input.h
-    touch_from_button.cpp
-    touch_from_button.h
-    gcadapter/gc_adapter.cpp
-    gcadapter/gc_adapter.h
-    gcadapter/gc_poller.cpp
-    gcadapter/gc_poller.h
-    mouse/mouse_input.cpp
-    mouse/mouse_input.h
-    mouse/mouse_poller.cpp
-    mouse/mouse_poller.h
-    sdl/sdl.cpp
-    sdl/sdl.h
-    tas/tas_input.cpp
-    tas/tas_input.h
-    tas/tas_poller.cpp
-    tas/tas_poller.h
-    udp/client.cpp
-    udp/client.h
-    udp/protocol.cpp
-    udp/protocol.h
-    udp/udp.cpp
-    udp/udp.h
 )
 
 if (MSVC)
@@ -57,8 +53,8 @@ endif()
 
 if (ENABLE_SDL2)
     target_sources(input_common PRIVATE
-        sdl/sdl_impl.cpp
-        sdl/sdl_impl.h
+        drivers/sdl_driver.cpp
+        drivers/sdl_driver.h
     )
     target_link_libraries(input_common PRIVATE SDL2)
     target_compile_definitions(input_common PRIVATE HAVE_SDL2)

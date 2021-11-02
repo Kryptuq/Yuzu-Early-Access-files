@@ -23,12 +23,16 @@ namespace InputCommon {
 class InputSubsystem;
 }
 
-namespace Settings {
-enum class ControllerType;
-}
-
 namespace Ui {
 class QtControllerSelectorDialog;
+}
+
+namespace Core {
+class System;
+}
+
+namespace Core::HID {
+enum class NpadType : u8;
 }
 
 class QtControllerSelectorDialog final : public QDialog {
@@ -70,10 +74,10 @@ private:
     void SetEmulatedControllers(std::size_t player_index);
 
     // Gets the Controller Type for a given controller combobox index per player.
-    Settings::ControllerType GetControllerTypeFromIndex(int index, std::size_t player_index) const;
+    Core::HID::NpadType GetControllerTypeFromIndex(int index, std::size_t player_index) const;
 
     // Gets the controller combobox index for a given Controller Type per player.
-    int GetIndexFromControllerType(Settings::ControllerType type, std::size_t player_index) const;
+    int GetIndexFromControllerType(Core::HID::NpadType type, std::size_t player_index) const;
 
     // Updates the controller icons per player.
     void UpdateControllerIcon(std::size_t player_index);
@@ -135,7 +139,7 @@ private:
     std::array<QComboBox*, NUM_PLAYERS> emulated_controllers;
 
     /// Pairs of emulated controller index and Controller Type enum per player.
-    std::array<std::vector<std::pair<int, Settings::ControllerType>>, NUM_PLAYERS>
+    std::array<std::vector<std::pair<int, Core::HID::NpadType>>, NUM_PLAYERS>
         index_controller_type_pairs;
 
     // Labels representing the number of connected controllers

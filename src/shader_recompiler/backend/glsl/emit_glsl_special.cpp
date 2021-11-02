@@ -68,7 +68,7 @@ void EmitPhi(EmitContext& ctx, IR::Inst& phi) {
     }
     if (!phi.Definition<Id>().is_valid) {
         // The phi node wasn't forward defined
-        ctx.var_alloc.PhiDefine(phi, phi.Arg(0).Type());
+        ctx.var_alloc.PhiDefine(phi, phi.Type());
     }
 }
 
@@ -80,7 +80,7 @@ void EmitReference(EmitContext& ctx, const IR::Value& value) {
 
 void EmitPhiMove(EmitContext& ctx, const IR::Value& phi_value, const IR::Value& value) {
     IR::Inst& phi{*phi_value.InstRecursive()};
-    const auto phi_type{phi.Arg(0).Type()};
+    const auto phi_type{phi.Type()};
     if (!phi.Definition<Id>().is_valid) {
         // The phi node wasn't forward defined
         ctx.var_alloc.PhiDefine(phi, phi_type);

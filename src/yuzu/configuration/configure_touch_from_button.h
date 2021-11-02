@@ -24,10 +24,6 @@ namespace InputCommon {
 class InputSubsystem;
 }
 
-namespace InputCommon::Polling {
-class DevicePoller;
-}
-
 namespace Settings {
 struct TouchFromButtonMap;
 }
@@ -85,7 +81,6 @@ private:
 
     std::unique_ptr<QTimer> timeout_timer;
     std::unique_ptr<QTimer> poll_timer;
-    std::vector<std::unique_ptr<InputCommon::Polling::DevicePoller>> device_pollers;
     std::optional<std::function<void(const Common::ParamPackage&, bool)>> input_setter;
 
     static constexpr int DataRoleDot = Qt::ItemDataRole::UserRole + 2;

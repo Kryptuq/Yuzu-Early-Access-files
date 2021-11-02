@@ -163,13 +163,10 @@ void ConfigureTouchFromButton::ConnectEvents() {
     connect(timeout_timer.get(), &QTimer::timeout, [this]() { SetPollingResult({}, true); });
 
     connect(poll_timer.get(), &QTimer::timeout, [this]() {
-        Common::ParamPackage params;
-        for (auto& poller : device_pollers) {
-            params = poller->GetNextInput();
-            if (params.Has("engine")) {
-                SetPollingResult(params, false);
-                return;
-            }
+        const auto& params = input_subsystem->GetNextInput();
+        if (params.Has("engine")) {
+            SetPollingResult(params, false);
+            return;
         }
     });
 }
@@ -248,11 +245,7 @@ void ConfigureTouchFromButton::GetButtonInput(const int row_index, const bool is
         }
     };
 
-    device_pollers = input_subsystem->GetPollers(InputCommon::Polling::DeviceType::Button);
-
-    for (auto& poller : device_pollers) {
-        poller->Start();
-    }
+    input_subsystem->BeginMapping(InputCommon::Polling::InputType::Button);
 
     grabKeyboard();
     grabMouse();
@@ -365,14 +358,14 @@ void ConfigureTouchFromButton::SetCoordinates(const int dot_id, const QPoint& po
 
 void ConfigureTouchFromButton::SetPollingResult(const Common::ParamPackage& params,
                                                 const bool cancel) {
+    timeout_timer->stop();
+    poll_timer->stop();
+    input_subsystem->StopMapping();
+
     releaseKeyboard();
     releaseMouse();
     qApp->restoreOverrideCursor();
-    timeout_timer->stop();
-    poll_timer->stop();
-    for (auto& poller : device_pollers) {
-        poller->Stop();
-    }
+
     if (input_setter) {
         (*input_setter)(params, cancel);
         input_setter.reset();

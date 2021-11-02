@@ -38,13 +38,21 @@ class InputSubsystem;
 }
 
 namespace InputCommon::Polling {
-class DevicePoller;
-enum class DeviceType;
+enum class InputType;
 } // namespace InputCommon::Polling
 
 namespace Ui {
 class ConfigureInputPlayer;
 }
+
+namespace Core {
+class System;
+}
+
+namespace Core::HID {
+class EmulatedController;
+enum class NpadType : u8;
+} // namespace Core::HID
 
 class ConfigureInputPlayer : public QWidget {
     Q_OBJECT
@@ -58,18 +66,6 @@ public:
 
     /// Save all button configurations to settings file.
     void ApplyConfiguration();
-
-    /**
-     * Attempts to connect the currently selected controller in the HID backend.
-     * This function will not do anything if it is not connected in the frontend.
-     */
-    void TryConnectSelectedController();
-
-    /**
-     * Attempts to disconnect the currently selected controller in the HID backend.
-     * This function will not do anything if the configuration has not changed.
-     */
-    void TryDisconnectSelectedController();
 
     /// Set the connection state checkbox (used to sync state).
     void ConnectPlayer(bool connected);
@@ -104,6 +100,10 @@ protected:
     void showEvent(QShowEvent* event) override;
 
 private:
+    QString ButtonToText(const Common::ParamPackage& param);
+
+    QString AnalogToText(const Common::ParamPackage& param, const std::string& dir);
+
     void changeEvent(QEvent* event) override;
     void RetranslateUI();
 
@@ -113,7 +113,7 @@ private:
     /// Called when the button was pressed.
     void HandleClick(QPushButton* button, std::size_t button_id,
                      std::function<void(const Common::ParamPackage&)> new_input_setter,
-                     InputCommon::Polling::DeviceType type);
+                     InputCommon::Polling::InputType type);
 
     /// Finish polling and configure input using the input_setter.
     void SetPollingResult(const Common::ParamPackage& params, bool abort);
@@ -134,16 +134,13 @@ private:
     void SetConnectableControllers();
 
     /// Gets the Controller Type for a given controller combobox index.
-    Settings::ControllerType GetControllerTypeFromIndex(int index) const;
+    Core::HID::NpadType GetControllerTypeFromIndex(int index) const;
 
     /// Gets the controller combobox index for a given Controller Type.
-    int GetIndexFromControllerType(Settings::ControllerType type) const;
+    int GetIndexFromControllerType(Core::HID::NpadType type) const;
 
     /// Update the available input devices.
     void UpdateInputDevices();
-
-    /// Update the current controller icon.
-    void UpdateControllerIcon();
 
     /// Hides and disables controller settings based on the current controller type.
     void UpdateControllerAvailableButtons();
@@ -185,7 +182,7 @@ private:
     std::unique_ptr<QTimer> poll_timer;
 
     /// Stores a pair of "Connected Controllers" combobox index and Controller Type enum.
-    std::vector<std::pair<int, Settings::ControllerType>> index_controller_type_pairs;
+    std::vector<std::pair<int, Core::HID::NpadType>> index_controller_type_pairs;
 
     static constexpr int PLAYER_COUNT = 8;
     std::array<QCheckBox*, PLAYER_COUNT> player_connected_checkbox;
@@ -193,9 +190,7 @@ private:
     /// This will be the the setting function when an input is awaiting configuration.
     std::optional<std::function<void(const Common::ParamPackage&)>> input_setter;
 
-    std::array<Common::ParamPackage, Settings::NativeButton::NumButtons> buttons_param;
-    std::array<Common::ParamPackage, Settings::NativeAnalog::NumAnalogs> analogs_param;
-    std::array<Common::ParamPackage, Settings::NativeMotion::NumMotions> motions_param;
+    Core::HID::EmulatedController* emulated_controller;
 
     static constexpr int ANALOG_SUB_BUTTONS_NUM = 4;
 
@@ -221,14 +216,8 @@ private:
 
     static const std::array<std::string, ANALOG_SUB_BUTTONS_NUM> analog_sub_buttons;
 
-    std::vector<std::unique_ptr<InputCommon::Polling::DevicePoller>> device_pollers;
-
     /// A flag to indicate that the "Map Analog Stick" pop-up has been shown and accepted once.
     bool map_analog_stick_accepted{};
-
-    /// A flag to indicate if keyboard keys are okay when configuring an input. If this is false,
-    /// keyboard events are ignored.
-    bool want_keyboard_mouse{};
 
     /// List of physical devices users can map with. If a SDL backed device is selected, then you
     /// can use this device to get a default mapping.
