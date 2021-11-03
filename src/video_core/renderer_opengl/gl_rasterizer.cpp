@@ -10,16 +10,14 @@
 #include <string_view>
 #include <tuple>
 #include <utility>
+
 #include <glad/glad.h>
-#include "common/alignment.h"
+
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "common/math_util.h"
 #include "common/microprofile.h"
-#include "common/scope_exit.h"
 #include "common/settings.h"
-#include "core/core.h"
-#include "core/hle/kernel/k_process.h"
 #include "core/memory.h"
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/engines/maxwell_3d.h"

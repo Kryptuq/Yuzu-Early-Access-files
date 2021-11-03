@@ -414,7 +414,7 @@ ResultVal<u8> IApplicationManagerInterface::GetApplicationDesiredLanguage(
     for (const auto lang : *priority_list) {
         const auto supported_flag = GetSupportedLanguageFlag(lang);
         if (supported_languages == 0 || (supported_languages & supported_flag) == supported_flag) {
-            return MakeResult(static_cast<u8>(lang));
+            return static_cast<u8>(lang);
         }
     }
 
@@ -448,7 +448,7 @@ ResultVal<u64> IApplicationManagerInterface::ConvertApplicationLanguageToLanguag
         return ERR_APPLICATION_LANGUAGE_NOT_FOUND;
     }
 
-    return MakeResult(static_cast<u64>(*language_code));
+    return static_cast<u64>(*language_code);
 }
 
 IApplicationVersionInterface::IApplicationVersionInterface(Core::System& system_)

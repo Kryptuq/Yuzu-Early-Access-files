@@ -120,40 +120,40 @@ ResultVal<u64> Module::Interface::GetConfigImpl(ConfigItem config_item) const {
         return ResultSecureMonitorNotImplemented;
     case ConfigItem::ExosphereApiVersion:
         // Get information about the current exosphere version.
-        return MakeResult((u64{HLE::ApiVersion::ATMOSPHERE_RELEASE_VERSION_MAJOR} << 56) |
-                          (u64{HLE::ApiVersion::ATMOSPHERE_RELEASE_VERSION_MINOR} << 48) |
-                          (u64{HLE::ApiVersion::ATMOSPHERE_RELEASE_VERSION_MICRO} << 40) |
-                          (static_cast<u64>(HLE::ApiVersion::GetTargetFirmware())));
+        return (u64{HLE::ApiVersion::ATMOSPHERE_RELEASE_VERSION_MAJOR} << 56) |
+               (u64{HLE::ApiVersion::ATMOSPHERE_RELEASE_VERSION_MINOR} << 48) |
+               (u64{HLE::ApiVersion::ATMOSPHERE_RELEASE_VERSION_MICRO} << 40) |
+               (static_cast<u64>(HLE::ApiVersion::GetTargetFirmware()));
     case ConfigItem::ExosphereNeedsReboot:
         // We are executing, so we aren't in the process of rebooting.
-        return MakeResult(u64{0});
+        return u64{0};
     case ConfigItem::ExosphereNeedsShutdown:
         // We are executing, so we aren't in the process of shutting down.
-        return MakeResult(u64{0});
+        return u64{0};
     case ConfigItem::ExosphereGitCommitHash:
         // Get information about the current exosphere git commit hash.
-        return MakeResult(u64{0});
+        return u64{0};
     case ConfigItem::ExosphereHasRcmBugPatch:
         // Get information about whether this unit has the RCM bug patched.
-        return MakeResult(u64{0});
+        return u64{0};
     case ConfigItem::ExosphereBlankProdInfo:
         // Get whether this unit should simulate a "blanked" PRODINFO.
-        return MakeResult(u64{0});
+        return u64{0};
     case ConfigItem::ExosphereAllowCalWrites:
         // Get whether this unit should allow writing to the calibration partition.
-        return MakeResult(u64{0});
+        return u64{0};
     case ConfigItem::ExosphereEmummcType:
         // Get what kind of emummc this unit has active.
-        return MakeResult(u64{0});
+        return u64{0};
     case ConfigItem::ExospherePayloadAddress:
         // Gets the physical address of the reboot payload buffer, if one exists.
         return ResultSecureMonitorNotInitialized;
     case ConfigItem::ExosphereLogConfiguration:
         // Get the log configuration.
-        return MakeResult(u64{0});
+        return u64{0};
     case ConfigItem::ExosphereForceEnableUsb30:
         // Get whether usb 3.0 should be force-enabled.
-        return MakeResult(u64{0});
+        return u64{0};
     default:
         return ResultSecureMonitorInvalidArgument;
     }

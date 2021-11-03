@@ -39,13 +39,12 @@ void RomFSFactory::SetPackedUpdate(VirtualFile update_raw_file) {
 
 ResultVal<VirtualFile> RomFSFactory::OpenCurrentProcess(u64 current_process_title_id) const {
     if (!updatable) {
-        return MakeResult<VirtualFile>(file);
+        return file;
     }
 
     const PatchManager patch_manager{current_process_title_id, filesystem_controller,
                                      content_provider};
-    return MakeResult<VirtualFile>(
-        patch_manager.PatchRomFS(file, ivfc_offset, ContentRecordType::Program, update_raw));
+    return patch_manager.PatchRomFS(file, ivfc_offset, ContentRecordType::Program, update_raw);
 }
 
 ResultVal<VirtualFile> RomFSFactory::OpenPatchedRomFS(u64 title_id, ContentRecordType type) const {
@@ -58,8 +57,7 @@ ResultVal<VirtualFile> RomFSFactory::OpenPatchedRomFS(u64 title_id, ContentRecor
 
     const PatchManager patch_manager{title_id, filesystem_controller, content_provider};
 
-    return MakeResult<VirtualFile>(
-        patch_manager.PatchRomFS(nca->GetRomFS(), nca->GetBaseIVFCOffset(), type));
+    return patch_manager.PatchRomFS(nca->GetRomFS(), nca->GetBaseIVFCOffset(), type);
 }
 
 ResultVal<VirtualFile> RomFSFactory::OpenPatchedRomFSWithProgramIndex(
@@ -83,7 +81,7 @@ ResultVal<VirtualFile> RomFSFactory::Open(u64 title_id, StorageId storage,
         return ResultUnknown;
     }
 
-    return MakeResult<VirtualFile>(romfs);
+    return romfs;
 }
 
 std::shared_ptr<NCA> RomFSFactory::GetEntry(u64 title_id, StorageId storage,

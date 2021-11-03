@@ -6,6 +6,7 @@
 #include <chrono>
 #include <climits>
 #include <exception>
+#include <stop_token>
 #include <thread>
 #include <vector>
 
@@ -186,6 +187,10 @@ public:
         initialization_in_progress_suppress_logging = false;
     }
 
+    static void Start() {
+        instance->StartBackendThread();
+    }
+
     Impl(const Impl&) = delete;
     Impl& operator=(const Impl&) = delete;
 
@@ -201,7 +206,7 @@ public:
     }
 
     void PushEntry(Class log_class, Level log_level, const char* filename, unsigned int line_num,
-                   const char* function, std::string message) {
+                   const char* function, std::string&& message) {
         if (!filter.CheckMessage(log_class, log_level))
             return;
         const Entry& entry =
@@ -211,40 +216,41 @@ public:
 
 private:
     Impl(const std::filesystem::path& file_backend_filename, const Filter& filter_)
-        : filter{filter_}, file_backend{file_backend_filename}, backend_thread{std::thread([this] {
-              Common::SetCurrentThreadName("yuzu:Log");
-              Entry entry;
-              const auto write_logs = [this, &entry]() {
-                  ForEachBackend([&entry](Backend& backend) { backend.Write(entry); });
-              };
-              while (true) {
-                  entry = message_queue.PopWait();
-                  if (entry.final_entry) {
-                      break;
-                  }
-                  write_logs();
-              }
-              // Drain the logging queue. Only writes out up to MAX_LOGS_TO_WRITE to prevent a
-              // case where a system is repeatedly spamming logs even on close.
-              int max_logs_to_write = filter.IsDebug() ? INT_MAX : 100;
-              while (max_logs_to_write-- && message_queue.Pop(entry)) {
-                  write_logs();
-              }
-          })} {}
+        : filter{filter_}, file_backend{file_backend_filename} {}
 
     ~Impl() {
         StopBackendThread();
     }
 
+    void StartBackendThread() {
+        backend_thread = std::thread([this] {
+            Common::SetCurrentThreadName("yuzu:Log");
+            Entry entry;
+            const auto write_logs = [this, &entry]() {
+                ForEachBackend([&entry](Backend& backend) { backend.Write(entry); });
+            };
+            while (!stop.stop_requested()) {
+                entry = message_queue.PopWait(stop.get_token());
+                if (entry.filename != nullptr) {
+                    write_logs();
+                }
+            }
+            // Drain the logging queue. Only writes out up to MAX_LOGS_TO_WRITE to prevent a
+            // case where a system is repeatedly spamming logs even on close.
+            int max_logs_to_write = filter.IsDebug() ? INT_MAX : 100;
+            while (max_logs_to_write-- && message_queue.Pop(entry)) {
+                write_logs();
+            }
+        });
+    }
+
     void StopBackendThread() {
-        Entry stop_entry{};
-        stop_entry.final_entry = true;
-        message_queue.Push(stop_entry);
+        stop.request_stop();
         backend_thread.join();
     }
 
     Entry CreateEntry(Class log_class, Level log_level, const char* filename, unsigned int line_nr,
-                      const char* function, std::string message) const {
+                      const char* function, std::string&& message) const {
         using std::chrono::duration_cast;
         using std::chrono::microseconds;
         using std::chrono::steady_clock;
@@ -257,7 +263,6 @@ private:
             .line_num = line_nr,
             .function = function,
             .message = std::move(message),
-            .final_entry = false,
         };
     }
 
@@ -278,14 +283,19 @@ private:
     ColorConsoleBackend color_console_backend{};
     FileBackend file_backend;
 
+    std::stop_source stop;
     std::thread backend_thread;
-    MPSCQueue<Entry> message_queue{};
+    MPSCQueue<Entry, true> message_queue{};
     std::chrono::steady_clock::time_point time_origin{std::chrono::steady_clock::now()};
 };
 } // namespace
 
 void Initialize() {
     Impl::Initialize();
+}
+
+void Start() {
+    Impl::Start();
 }
 
 void DisableLoggingInTests() {

@@ -55,6 +55,7 @@ add_library(common STATIC
     dynamic_library.h
     error.cpp
     error.h
+    expected.h
     fiber.cpp
     fiber.h
     fs/file.cpp

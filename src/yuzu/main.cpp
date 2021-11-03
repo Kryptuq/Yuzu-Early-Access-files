@@ -303,6 +303,8 @@ GMainWindow::GMainWindow()
     SDL_EnableScreenSaver();
 #endif
 
+    Common::Log::Start();
+
     QStringList args = QApplication::arguments();
 
     if (args.size() < 2) {

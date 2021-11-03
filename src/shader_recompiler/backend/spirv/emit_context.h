@@ -113,6 +113,9 @@ public:
     [[nodiscard]] Id BitOffset8(const IR::Value& offset);
     [[nodiscard]] Id BitOffset16(const IR::Value& offset);
 
+    Id InputLegacyAttribute(IR::Attribute attribute);
+    Id OutputLegacyAttribute(IR::Attribute attribute);
+
     Id Const(u32 value) {
         return Constant(U32[1], value);
     }
@@ -279,12 +282,20 @@ public:
 
     Id input_position{};
     Id input_front_color{};
+    Id input_front_secondary_color{};
+    Id input_back_color{};
+    Id input_back_secondary_color{};
+    Id input_fog_frag_coord{};
     std::array<Id, 10> input_fixed_fnc_textures{};
     std::array<Id, 32> input_generics{};
 
     Id output_point_size{};
     Id output_position{};
     Id output_front_color{};
+    Id output_front_secondary_color{};
+    Id output_back_color{};
+    Id output_back_secondary_color{};
+    Id output_fog_frag_coord{};
     std::array<Id, 10> output_fixed_fnc_textures{};
     std::array<std::array<GenericElementInfo, 4>, 32> output_generics{};
 

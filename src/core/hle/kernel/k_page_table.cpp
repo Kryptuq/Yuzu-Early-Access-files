@@ -859,7 +859,7 @@ ResultVal<VAddr> KPageTable::SetHeapSize(std::size_t size) {
         current_heap_addr = heap_region_start + size;
     }
 
-    return MakeResult<VAddr>(heap_region_start);
+    return heap_region_start;
 }
 
 ResultVal<VAddr> KPageTable::AllocateAndMapMemory(std::size_t needed_num_pages, std::size_t align,
@@ -893,7 +893,7 @@ ResultVal<VAddr> KPageTable::AllocateAndMapMemory(std::size_t needed_num_pages, 
 
     block_manager->Update(addr, needed_num_pages, state, perm);
 
-    return MakeResult<VAddr>(addr);
+    return addr;
 }
 
 ResultCode KPageTable::LockForDeviceAddressSpace(VAddr addr, std::size_t size) {

@@ -25,7 +25,7 @@ SDMCFactory::SDMCFactory(VirtualDir sd_dir_, VirtualDir sd_mod_dir_)
 SDMCFactory::~SDMCFactory() = default;
 
 ResultVal<VirtualDir> SDMCFactory::Open() const {
-    return MakeResult<VirtualDir>(sd_dir);
+    return sd_dir;
 }
 
 VirtualDir SDMCFactory::GetSDMCModificationLoadRoot(u64 title_id) const {

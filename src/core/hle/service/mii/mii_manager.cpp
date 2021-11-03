@@ -443,14 +443,14 @@ ResultVal<std::vector<MiiInfoElement>> MiiManager::GetDefault(SourceFlag source_
     std::vector<MiiInfoElement> result;
 
     if ((source_flag & SourceFlag::Default) == SourceFlag::None) {
-        return MakeResult(std::move(result));
+        return result;
     }
 
     for (std::size_t index = BaseMiiCount; index < DefaultMiiCount; index++) {
         result.emplace_back(BuildDefault(index), Source::Default);
     }
 
-    return MakeResult(std::move(result));
+    return result;
 }
 
 ResultCode MiiManager::GetIndex([[maybe_unused]] const MiiInfo& info, u32& index) {

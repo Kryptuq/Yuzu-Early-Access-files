@@ -335,7 +335,7 @@ public:
             CASCADE_CODE(result);
 
             if (ValidateRegionForMap(page_table, addr, size)) {
-                return MakeResult<VAddr>(addr);
+                return addr;
             }
         }
 
@@ -371,7 +371,7 @@ public:
             }
 
             if (ValidateRegionForMap(page_table, addr, size)) {
-                return MakeResult<VAddr>(addr);
+                return addr;
             }
         }
 

@@ -94,7 +94,7 @@ ResultVal<VirtualDir> SaveDataFactory::Create(SaveDataSpaceId space,
         return ResultUnknown;
     }
 
-    return MakeResult<VirtualDir>(std::move(out));
+    return out;
 }
 
 ResultVal<VirtualDir> SaveDataFactory::Open(SaveDataSpaceId space,
@@ -115,7 +115,7 @@ ResultVal<VirtualDir> SaveDataFactory::Open(SaveDataSpaceId space,
         return ResultUnknown;
     }
 
-    return MakeResult<VirtualDir>(std::move(out));
+    return out;
 }
 
 VirtualDir SaveDataFactory::GetSaveDataSpaceDirectory(SaveDataSpaceId space) const {

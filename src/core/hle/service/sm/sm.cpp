@@ -87,7 +87,7 @@ ResultVal<Kernel::KPort*> ServiceManager::GetServicePort(const std::string& name
     auto handler = it->second;
     port->GetServerPort().SetSessionHandler(std::move(handler));
 
-    return MakeResult(port);
+    return port;
 }
 
 /**
@@ -165,7 +165,7 @@ ResultVal<Kernel::KClientSession*> SM::GetServiceImpl(Kernel::HLERequestContext&
 
     LOG_DEBUG(Service_SM, "called service={} -> session={}", name, session->GetId());
 
-    return MakeResult(session);
+    return session;
 }
 
 void SM::RegisterService(Kernel::HLERequestContext& ctx) {

@@ -226,11 +226,10 @@ ResultVal<FileSys::VirtualFile> VfsDirectoryServiceWrapper::OpenFile(const std::
     }
 
     if (mode == FileSys::Mode::Append) {
-        return MakeResult<FileSys::VirtualFile>(
-            std::make_shared<FileSys::OffsetVfsFile>(file, 0, file->GetSize()));
+        return std::make_shared<FileSys::OffsetVfsFile>(file, 0, file->GetSize());
     }
 
-    return MakeResult<FileSys::VirtualFile>(file);
+    return file;
 }
 
 ResultVal<FileSys::VirtualDir> VfsDirectoryServiceWrapper::OpenDirectory(const std::string& path_) {
@@ -240,7 +239,7 @@ ResultVal<FileSys::VirtualDir> VfsDirectoryServiceWrapper::OpenDirectory(const s
         // TODO(DarkLordZach): Find a better error code for this
         return FileSys::ERROR_PATH_NOT_FOUND;
     }
-    return MakeResult(dir);
+    return dir;
 }
 
 ResultVal<FileSys::EntryType> VfsDirectoryServiceWrapper::GetEntryType(
@@ -252,12 +251,12 @@ ResultVal<FileSys::EntryType> VfsDirectoryServiceWrapper::GetEntryType(
     auto filename = Common::FS::GetFilename(path);
     // TODO(Subv): Some games use the '/' path, find out what this means.
     if (filename.empty())
-        return MakeResult(FileSys::EntryType::Directory);
+        return FileSys::EntryType::Directory;
 
     if (dir->GetFile(filename) != nullptr)
-        return MakeResult(FileSys::EntryType::File);
+        return FileSys::EntryType::File;
     if (dir->GetSubdirectory(filename) != nullptr)
-        return MakeResult(FileSys::EntryType::Directory);
+        return FileSys::EntryType::Directory;
     return FileSys::ERROR_PATH_NOT_FOUND;
 }
 
@@ -270,7 +269,7 @@ ResultVal<FileSys::FileTimeStampRaw> VfsDirectoryServiceWrapper::GetFileTimeStam
     if (GetEntryType(path).Failed()) {
         return FileSys::ERROR_PATH_NOT_FOUND;
     }
-    return MakeResult(dir->GetFileTimeStamp(Common::FS::GetFilename(path)));
+    return dir->GetFileTimeStamp(Common::FS::GetFilename(path));
 }
 
 FileSystemController::FileSystemController(Core::System& system_) : system{system_} {}
@@ -395,7 +394,7 @@ ResultVal<FileSys::VirtualDir> FileSystemController::OpenSaveDataSpace(
         return FileSys::ERROR_ENTITY_NOT_FOUND;
     }
 
-    return MakeResult(save_data_factory->GetSaveDataSpaceDirectory(space));
+    return save_data_factory->GetSaveDataSpaceDirectory(space);
 }
 
 ResultVal<FileSys::VirtualDir> FileSystemController::OpenSDMC() const {
@@ -421,7 +420,7 @@ ResultVal<FileSys::VirtualDir> FileSystemController::OpenBISPartition(
         return FileSys::ERROR_INVALID_ARGUMENT;
     }
 
-    return MakeResult<FileSys::VirtualDir>(std::move(part));
+    return part;
 }
 
 ResultVal<FileSys::VirtualFile> FileSystemController::OpenBISPartitionStorage(
@@ -437,7 +436,7 @@ ResultVal<FileSys::VirtualFile> FileSystemController::OpenBISPartitionStorage(
         return FileSys::ERROR_INVALID_ARGUMENT;
     }
 
-    return MakeResult<FileSys::VirtualFile>(std::move(part));
+    return part;
 }
 
 u64 FileSystemController::GetFreeSpaceSize(FileSys::StorageId id) const {

@@ -26,7 +26,7 @@ ResultVal<ApplicationLaunchProperty> ARPManager::GetLaunchProperty(u64 title_id)
         return ERR_NOT_REGISTERED;
     }
 
-    return MakeResult<ApplicationLaunchProperty>(iter->second.launch);
+    return iter->second.launch;
 }
 
 ResultVal<std::vector<u8>> ARPManager::GetControlProperty(u64 title_id) const {
@@ -39,7 +39,7 @@ ResultVal<std::vector<u8>> ARPManager::GetControlProperty(u64 title_id) const {
         return ERR_NOT_REGISTERED;
     }
 
-    return MakeResult<std::vector<u8>>(iter->second.control);
+    return iter->second.control;
 }
 
 ResultCode ARPManager::Register(u64 title_id, ApplicationLaunchProperty launch,

@@ -1273,15 +1273,15 @@ private:
     static ResultVal<ConvertedScaleMode> ConvertScalingModeImpl(NintendoScaleMode mode) {
         switch (mode) {
         case NintendoScaleMode::None:
-            return MakeResult(ConvertedScaleMode::None);
+            return ConvertedScaleMode::None;
         case NintendoScaleMode::Freeze:
-            return MakeResult(ConvertedScaleMode::Freeze);
+            return ConvertedScaleMode::Freeze;
         case NintendoScaleMode::ScaleToWindow:
-            return MakeResult(ConvertedScaleMode::ScaleToWindow);
+            return ConvertedScaleMode::ScaleToWindow;
         case NintendoScaleMode::ScaleAndCrop:
-            return MakeResult(ConvertedScaleMode::ScaleAndCrop);
+            return ConvertedScaleMode::ScaleAndCrop;
         case NintendoScaleMode::PreserveAspectRatio:
-            return MakeResult(ConvertedScaleMode::PreserveAspectRatio);
+            return ConvertedScaleMode::PreserveAspectRatio;
         default:
             LOG_ERROR(Service_VI, "Invalid scaling mode specified, mode={}", mode);
             return ERR_OPERATION_FAILED;

@@ -74,7 +74,7 @@ private:
     // Minimum gyro amplitude to detect if the device is moving
     f32 gyro_threshold = 0.0f;
 
-    // Number of invalid secuential data
+    // Number of invalid sequential data
     u32 reset_counter = 0;
 
     // If the provided data is invalid the device will be autocalibrated
