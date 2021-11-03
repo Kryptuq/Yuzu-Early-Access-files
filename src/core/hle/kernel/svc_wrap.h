@@ -248,10 +248,10 @@ void SvcWrap64(Core::System& system) {
 }
 
 // Used by WaitSynchronization
-template <ResultCode func(Core::System&, s32*, u64, u64, s64)>
+template <ResultCode func(Core::System&, s32*, u64, s32, s64)>
 void SvcWrap64(Core::System& system) {
     s32 param_1 = 0;
-    const u32 retval = func(system, &param_1, Param(system, 1), static_cast<u32>(Param(system, 2)),
+    const u32 retval = func(system, &param_1, Param(system, 1), static_cast<s32>(Param(system, 2)),
                             static_cast<s64>(Param(system, 3)))
                            .raw;
 

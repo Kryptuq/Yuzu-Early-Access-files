@@ -11,6 +11,7 @@
 #include <utility>
 #include "common/logging/log.h"
 #include "common/param_package.h"
+#include "common/uuid.h"
 
 namespace Common::Input {
 
@@ -81,6 +82,7 @@ struct AnalogStatus {
 };
 
 struct ButtonStatus {
+    Common::UUID uuid{};
     bool value{};
     bool inverted{};
     bool toggle{};
@@ -90,6 +92,7 @@ struct ButtonStatus {
 using BatteryStatus = BatteryLevel;
 
 struct StickStatus {
+    Common::UUID uuid{};
     AnalogStatus x{};
     AnalogStatus y{};
     bool left{};
@@ -99,6 +102,7 @@ struct StickStatus {
 };
 
 struct TriggerStatus {
+    Common::UUID uuid{};
     AnalogStatus analog{};
     ButtonStatus pressed{};
 };

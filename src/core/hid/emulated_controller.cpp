@@ -183,8 +183,11 @@ void EmulatedController::ReloadInput() {
         if (!button_devices[index]) {
             continue;
         }
+        const auto uuid = Common::UUID{button_params[index].Get("guid", "")};
         Common::Input::InputCallback button_callback{
-            [this, index](Common::Input::CallbackStatus callback) { SetButton(callback, index); }};
+            [this, index, uuid](Common::Input::CallbackStatus callback) {
+                SetButton(callback, index, uuid);
+            }};
         button_devices[index]->SetCallback(button_callback);
         button_devices[index]->ForceUpdate();
     }
@@ -193,8 +196,11 @@ void EmulatedController::ReloadInput() {
         if (!stick_devices[index]) {
             continue;
         }
+        const auto uuid = Common::UUID{stick_params[index].Get("guid", "")};
         Common::Input::InputCallback stick_callback{
-            [this, index](Common::Input::CallbackStatus callback) { SetStick(callback, index); }};
+            [this, index, uuid](Common::Input::CallbackStatus callback) {
+                SetStick(callback, index, uuid);
+            }};
         stick_devices[index]->SetCallback(stick_callback);
         stick_devices[index]->ForceUpdate();
     }
@@ -203,8 +209,11 @@ void EmulatedController::ReloadInput() {
         if (!trigger_devices[index]) {
             continue;
         }
+        const auto uuid = Common::UUID{trigger_params[index].Get("guid", "")};
         Common::Input::InputCallback trigger_callback{
-            [this, index](Common::Input::CallbackStatus callback) { SetTrigger(callback, index); }};
+            [this, index, uuid](Common::Input::CallbackStatus callback) {
+                SetTrigger(callback, index, uuid);
+            }};
         trigger_devices[index]->SetCallback(trigger_callback);
         trigger_devices[index]->ForceUpdate();
     }
@@ -229,13 +238,18 @@ void EmulatedController::ReloadInput() {
         motion_devices[index]->ForceUpdate();
     }
 
+    // Use a common UUID for TAS
+    const auto tas_uuid = Common::UUID{0x0, 0x7A5};
+
     // Register TAS devices. No need to force update
     for (std::size_t index = 0; index < tas_button_devices.size(); ++index) {
         if (!tas_button_devices[index]) {
             continue;
         }
         Common::Input::InputCallback button_callback{
-            [this, index](Common::Input::CallbackStatus callback) { SetButton(callback, index); }};
+            [this, index, tas_uuid](Common::Input::CallbackStatus callback) {
+                SetButton(callback, index, tas_uuid);
+            }};
         tas_button_devices[index]->SetCallback(button_callback);
     }
 
@@ -244,7 +258,9 @@ void EmulatedController::ReloadInput() {
             continue;
         }
         Common::Input::InputCallback stick_callback{
-            [this, index](Common::Input::CallbackStatus callback) { SetStick(callback, index); }};
+            [this, index, tas_uuid](Common::Input::CallbackStatus callback) {
+                SetStick(callback, index, tas_uuid);
+            }};
         tas_stick_devices[index]->SetCallback(stick_callback);
     }
 }
@@ -423,7 +439,8 @@ void EmulatedController::SetMotionParam(std::size_t index, Common::ParamPackage 
     ReloadInput();
 }
 
-void EmulatedController::SetButton(Common::Input::CallbackStatus callback, std::size_t index) {
+void EmulatedController::SetButton(Common::Input::CallbackStatus callback, std::size_t index,
+                                   Common::UUID uuid) {
     if (index >= controller.button_values.size()) {
         return;
     }
@@ -432,7 +449,16 @@ void EmulatedController::SetButton(Common::Input::CallbackStatus callback, std::
         bool value_changed = false;
         const auto new_status = TransformToButton(callback);
         auto& current_status = controller.button_values[index];
+
+        // Only read button values that have the same uuid or are pressed once
+        if (current_status.uuid != uuid) {
+            if (!new_status.value) {
+                return;
+            }
+        }
+
         current_status.toggle = new_status.toggle;
+        current_status.uuid = uuid;
 
         // Update button status with current
         if (!current_status.toggle) {
@@ -553,12 +579,23 @@ void EmulatedController::SetButton(Common::Input::CallbackStatus callback, std::
     TriggerOnChange(ControllerTriggerType::Button, true);
 }
 
-void EmulatedController::SetStick(Common::Input::CallbackStatus callback, std::size_t index) {
+void EmulatedController::SetStick(Common::Input::CallbackStatus callback, std::size_t index,
+                                  Common::UUID uuid) {
     if (index >= controller.stick_values.size()) {
         return;
     }
     std::lock_guard lock{mutex};
-    controller.stick_values[index] = TransformToStick(callback);
+    const auto stick_value = TransformToStick(callback);
+
+    // Only read stick values that have the same uuid or are over the threshold to avoid flapping
+    if (controller.stick_values[index].uuid != uuid) {
+        if (!stick_value.down && !stick_value.up && !stick_value.left && !stick_value.right) {
+            return;
+        }
+    }
+
+    controller.stick_values[index] = stick_value;
+    controller.stick_values[index].uuid = uuid;
 
     if (is_configuring) {
         controller.analog_stick_state.left = {};
@@ -592,12 +629,23 @@ void EmulatedController::SetStick(Common::Input::CallbackStatus callback, std::s
     TriggerOnChange(ControllerTriggerType::Stick, true);
 }
 
-void EmulatedController::SetTrigger(Common::Input::CallbackStatus callback, std::size_t index) {
+void EmulatedController::SetTrigger(Common::Input::CallbackStatus callback, std::size_t index,
+                                    Common::UUID uuid) {
     if (index >= controller.trigger_values.size()) {
         return;
     }
     std::lock_guard lock{mutex};
-    controller.trigger_values[index] = TransformToTrigger(callback);
+    const auto trigger_value = TransformToTrigger(callback);
+
+    // Only read trigger values that have the same uuid or are pressed once
+    if (controller.stick_values[index].uuid != uuid) {
+        if (!trigger_value.pressed.value) {
+            return;
+        }
+    }
+
+    controller.trigger_values[index] = trigger_value;
+    controller.trigger_values[index].uuid = uuid;
 
     if (is_configuring) {
         controller.gc_trigger_state.left = 0;

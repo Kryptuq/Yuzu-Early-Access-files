@@ -71,21 +71,21 @@ Tas::~Tas() {
 void Tas::LoadTasFiles() {
     script_length = 0;
     for (size_t i = 0; i < commands.size(); i++) {
-        LoadTasFile(i);
+        LoadTasFile(i, 0);
         if (commands[i].size() > script_length) {
             script_length = commands[i].size();
         }
     }
 }
 
-void Tas::LoadTasFile(size_t player_index) {
+void Tas::LoadTasFile(size_t player_index, size_t file_index) {
     if (!commands[player_index].empty()) {
         commands[player_index].clear();
     }
-    std::string file =
-        Common::FS::ReadStringFromFile(Common::FS::GetYuzuPath(Common::FS::YuzuPath::TASDir) /
-                                           fmt::format("script0-{}.txt", player_index + 1),
-                                       Common::FS::FileType::BinaryFile);
+    std::string file = Common::FS::ReadStringFromFile(
+        Common::FS::GetYuzuPath(Common::FS::YuzuPath::TASDir) /
+            fmt::format("script{}-{}.txt", file_index, player_index + 1),
+        Common::FS::FileType::BinaryFile);
     std::stringstream command_line(file);
     std::string line;
     int frame_no = 0;
@@ -144,15 +144,8 @@ void Tas::WriteTasFile(std::u8string file_name) {
 void Tas::RecordInput(u64 buttons, TasAnalog left_axis, TasAnalog right_axis) {
     last_input = {
         .buttons = buttons,
-        .l_axis = FlipAxisY(left_axis),
-        .r_axis = FlipAxisY(right_axis),
-    };
-}
-
-TasAnalog Tas::FlipAxisY(TasAnalog old) {
-    return {
-        .x = old.x,
-        .y = -old.y,
+        .l_axis = left_axis,
+        .r_axis = right_axis,
     };
 }
 
@@ -219,6 +212,7 @@ void Tas::UpdateThread() {
         }
     } else {
         is_running = Settings::values.tas_loop.GetValue();
+        LoadTasFiles();
         current_command = 0;
         ClearInput();
     }

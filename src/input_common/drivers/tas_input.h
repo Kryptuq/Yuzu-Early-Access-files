@@ -138,20 +138,15 @@ private:
     void LoadTasFiles();
 
     /** Loads TAS file from the specified player
-     * @param player_index: player number where data is going to be stored
+     * @param player_index: player number to save the script
+     * @param file_index: script number of the file
      */
-    void LoadTasFile(size_t player_index);
+    void LoadTasFile(size_t player_index, size_t file_index);
 
     /** Writes a TAS file from the recorded commands
      * @param file_name: name of the file to be written
      */
     void WriteTasFile(std::u8string file_name);
-
-    /** Inverts the Y axis polarity
-     * @param old: value of the axis
-     * @return new value of the axis
-     */
-    TasAnalog FlipAxisY(TasAnalog old);
 
     /**
      * Parses a string containing the axis values. X and Y have a range from -32767 to 32767

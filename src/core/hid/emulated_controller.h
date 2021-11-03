@@ -313,21 +313,21 @@ private:
      * @param callback: A CallbackStatus containing the button status
      * @param index: Button ID of the to be updated
      */
-    void SetButton(Common::Input::CallbackStatus callback, std::size_t index);
+    void SetButton(Common::Input::CallbackStatus callback, std::size_t index, Common::UUID uuid);
 
     /**
      * Updates the analog stick status of the controller
      * @param callback: A CallbackStatus containing the analog stick status
      * @param index: stick ID of the to be updated
      */
-    void SetStick(Common::Input::CallbackStatus callback, std::size_t index);
+    void SetStick(Common::Input::CallbackStatus callback, std::size_t index, Common::UUID uuid);
 
     /**
      * Updates the trigger status of the controller
      * @param callback: A CallbackStatus containing the trigger status
      * @param index: trigger ID of the to be updated
      */
-    void SetTrigger(Common::Input::CallbackStatus callback, std::size_t index);
+    void SetTrigger(Common::Input::CallbackStatus callback, std::size_t index, Common::UUID uuid);
 
     /**
      * Updates the motion status of the controller

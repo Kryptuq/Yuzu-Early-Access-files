@@ -409,7 +409,7 @@ static ResultCode GetProcessId32(Core::System& system, u32* out_process_id_low,
 
 /// Wait for the given handles to synchronize, timeout after the specified nanoseconds
 static ResultCode WaitSynchronization(Core::System& system, s32* index, VAddr handles_address,
-                                      u64 num_handles, s64 nano_seconds) {
+                                      s32 num_handles, s64 nano_seconds) {
     LOG_TRACE(Kernel_SVC, "called handles_address=0x{:X}, num_handles={}, nano_seconds={}",
               handles_address, num_handles, nano_seconds);
 
@@ -434,7 +434,7 @@ static ResultCode WaitSynchronization(Core::System& system, s32* index, VAddr ha
 
     // Ensure handles are closed when we're done.
     SCOPE_EXIT({
-        for (u64 i = 0; i < num_handles; ++i) {
+        for (s32 i = 0; i < num_handles; ++i) {
             kernel.UnregisterInUseObject(objs[i]);
             objs[i]->Close();
         }
