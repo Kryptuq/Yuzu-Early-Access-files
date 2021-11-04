@@ -826,7 +826,7 @@ void Module::Interface::IsUserAccountSwitchLocked(Kernel::HLERequestContext& ctx
     rb.Push(is_locked);
 }
 
-void Module::Interface::Unknown160(Kernel::HLERequestContext& ctx) {
+void Module::Interface::InitializeApplicationInfoV2(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_ACC, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};

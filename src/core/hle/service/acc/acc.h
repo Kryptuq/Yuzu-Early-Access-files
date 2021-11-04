@@ -33,7 +33,7 @@ public:
         void IsUserRegistrationRequestPermitted(Kernel::HLERequestContext& ctx);
         void TrySelectUserWithoutInteraction(Kernel::HLERequestContext& ctx);
         void IsUserAccountSwitchLocked(Kernel::HLERequestContext& ctx);
-        void Unknown160(Kernel::HLERequestContext& ctx);
+        void InitializeApplicationInfoV2(Kernel::HLERequestContext& ctx);
         void GetProfileEditor(Kernel::HLERequestContext& ctx);
         void ListQualifiedUsers(Kernel::HLERequestContext& ctx);
         void LoadOpenContext(Kernel::HLERequestContext& ctx);
