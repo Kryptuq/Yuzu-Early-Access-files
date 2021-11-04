@@ -623,9 +623,7 @@ void Config::ReadMotionTouchValues() {
     }
     qt_config->endArray();
 
-    ReadBasicSetting(Settings::values.motion_device);
     ReadBasicSetting(Settings::values.touch_device);
-    ReadBasicSetting(Settings::values.use_touch_from_button);
     ReadBasicSetting(Settings::values.touch_from_button_map_index);
     Settings::values.touch_from_button_map_index = std::clamp(
         Settings::values.touch_from_button_map_index.GetValue(), 0, num_touch_from_button_maps - 1);
@@ -1131,9 +1129,7 @@ void Config::SaveTouchscreenValues() {
 }
 
 void Config::SaveMotionTouchValues() {
-    WriteBasicSetting(Settings::values.motion_device);
     WriteBasicSetting(Settings::values.touch_device);
-    WriteBasicSetting(Settings::values.use_touch_from_button);
     WriteBasicSetting(Settings::values.touch_from_button_map_index);
     WriteBasicSetting(Settings::values.udp_input_servers);
 

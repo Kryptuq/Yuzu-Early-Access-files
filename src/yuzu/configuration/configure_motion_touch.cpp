@@ -93,6 +93,7 @@ ConfigureMotionTouch::ConfigureMotionTouch(QWidget* parent,
            "using-a-controller-or-android-phone-for-motion-or-touch-input'><span "
            "style=\"text-decoration: underline; color:#039be5;\">Learn More</span></a>"));
 
+    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
     SetConfiguration();
     UpdateUiDisplay();
     ConnectEvents();
@@ -101,17 +102,14 @@ ConfigureMotionTouch::ConfigureMotionTouch(QWidget* parent,
 ConfigureMotionTouch::~ConfigureMotionTouch() = default;
 
 void ConfigureMotionTouch::SetConfiguration() {
-    const Common::ParamPackage motion_param(Settings::values.motion_device.GetValue());
     const Common::ParamPackage touch_param(Settings::values.touch_device.GetValue());
 
-    ui->touch_from_button_checkbox->setChecked(Settings::values.use_touch_from_button.GetValue());
     touch_from_button_maps = Settings::values.touch_from_button_maps;
     for (const auto& touch_map : touch_from_button_maps) {
         ui->touch_from_button_map->addItem(QString::fromStdString(touch_map.name));
     }
     ui->touch_from_button_map->setCurrentIndex(
         Settings::values.touch_from_button_map_index.GetValue());
-    ui->motion_sensitivity->setValue(motion_param.Get("sensitivity", 0.01f));
 
     min_x = touch_param.Get("min_x", 100);
     min_y = touch_param.Get("min_y", 50);
@@ -138,9 +136,6 @@ void ConfigureMotionTouch::SetConfiguration() {
 
 void ConfigureMotionTouch::UpdateUiDisplay() {
     const QString cemuhook_udp = QStringLiteral("cemuhookudp");
-
-    ui->motion_sensitivity_label->setVisible(true);
-    ui->motion_sensitivity->setVisible(true);
 
     ui->touch_calibration->setVisible(true);
     ui->touch_calibration_config->setVisible(true);
@@ -312,7 +307,6 @@ void ConfigureMotionTouch::ApplyConfiguration() {
     touch_param.Set("max_y", max_y);
 
     Settings::values.touch_device = touch_param.Serialize();
-    Settings::values.use_touch_from_button = ui->touch_from_button_checkbox->isChecked();
     Settings::values.touch_from_button_map_index = ui->touch_from_button_map->currentIndex();
     Settings::values.touch_from_button_maps = touch_from_button_maps;
     Settings::values.udp_input_servers = GetUDPServerString();

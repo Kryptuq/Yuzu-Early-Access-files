@@ -292,8 +292,6 @@ void Config::ReadValues() {
             Settings::values.mouse_buttons[i] = default_param;
     }
 
-    ReadSetting("ControlsGeneral", Settings::values.motion_device);
-
     ReadSetting("ControlsGeneral", Settings::values.touch_device);
 
     ReadSetting("ControlsGeneral", Settings::values.keyboard_enabled);
@@ -362,7 +360,6 @@ void Config::ReadValues() {
             Settings::TouchFromButtonMap{"default", {}});
         num_touch_from_button_maps = 1;
     }
-    ReadSetting("ControlsGeneral", Settings::values.use_touch_from_button);
     Settings::values.touch_from_button_map_index = std::clamp(
         Settings::values.touch_from_button_map_index.GetValue(), 0, num_touch_from_button_maps - 1);
 

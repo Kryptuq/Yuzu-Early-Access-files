@@ -2,14 +2,6 @@
 <ui version="4.0">
  <class>ConfigureMotionTouch</class>
  <widget class="QDialog" name="ConfigureMotionTouch">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>500</width>
-    <height>482</height>
-   </rect>
-  </property>
   <property name="windowTitle">
    <string>Configure Motion / Touch</string>
   </property>
@@ -17,48 +9,6 @@
    <string notr="true"/>
   </property>
   <layout class="QVBoxLayout">
-   <item>
-    <widget class="QGroupBox" name="motion_group_box">
-     <property name="title">
-      <string>Mouse Motion</string>
-     </property>
-     <layout class="QVBoxLayout">
-      <item>
-       <layout class="QHBoxLayout">
-        <item>
-         <widget class="QLabel" name="motion_sensitivity_label">
-          <property name="text">
-           <string>Sensitivity:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QDoubleSpinBox" name="motion_sensitivity">
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-          <property name="decimals">
-           <number>4</number>
-          </property>
-          <property name="minimum">
-           <double>0.010000000000000</double>
-          </property>
-          <property name="maximum">
-           <double>10.000000000000000</double>
-          </property>
-          <property name="singleStep">
-           <double>0.001000000000000</double>
-          </property>
-          <property name="value">
-           <double>0.010000000000000</double>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-     </layout>
-    </widget>
-   </item>
    <item>
     <widget class="QGroupBox" name="touch_group_box">
      <property name="title">
@@ -101,19 +51,13 @@
       </item>
       <item>
        <layout class="QHBoxLayout">
-        <item>
-         <widget class="QCheckBox" name="touch_from_button_checkbox">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>Use button mapping:</string>
-          </property>
-         </widget>
-        </item>
+         <item>
+           <widget class="QLabel" name="touch_from_button_label">
+             <property name="text">
+               <string>Touch from button profile:</string>
+             </property>
+           </widget>
+         </item>
         <item>
          <widget class="QComboBox" name="touch_from_button_map"/>
         </item>

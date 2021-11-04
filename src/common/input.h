@@ -15,6 +15,7 @@
 
 namespace Common::Input {
 
+// Type of data that is expected to recieve or send
 enum class InputType {
     None,
     Battery,
@@ -30,6 +31,7 @@ enum class InputType {
     Ir,
 };
 
+// Internal battery charge level
 enum class BatteryLevel : u32 {
     None,
     Empty,
@@ -41,13 +43,17 @@ enum class BatteryLevel : u32 {
 };
 
 enum class PollingMode {
+    // Constant polling of buttons, analogs and motion data
     Active,
+    // Only update on button change, digital analogs
     Pasive,
-    Camera,
-    NCF,
+    // Enable near field communication polling
+    NFC,
+    // Enable infrared camera polling
     IR,
 };
 
+// Vibration reply from the controller
 enum class VibrationError {
     None,
     NotSupported,
@@ -55,6 +61,7 @@ enum class VibrationError {
     Unknown,
 };
 
+// Polling mode reply from the controller
 enum class PollingError {
     None,
     NotSupported,
@@ -67,20 +74,28 @@ enum class VibrationAmplificationType {
     Exponential,
 };
 
+// Analog properties for calibration
 struct AnalogProperties {
+    // Anything below this value will be detected as zero
     float deadzone{};
+    // Anyting above this values will be detected as one
     float range{1.0f};
+    // Minimum value to be detected as active
     float threshold{0.5f};
+    // Drift correction applied to the raw data
     float offset{};
+    // Invert direction of the sensor data
     bool inverted{};
 };
 
+// Single analog sensor data
 struct AnalogStatus {
     float value{};
     float raw_value{};
     AnalogProperties properties{};
 };
 
+// Button data
 struct ButtonStatus {
     Common::UUID uuid{};
     bool value{};
@@ -89,8 +104,10 @@ struct ButtonStatus {
     bool locked{};
 };
 
+// Internal battery data
 using BatteryStatus = BatteryLevel;
 
+// Analog and digital joystick data
 struct StickStatus {
     Common::UUID uuid{};
     AnalogStatus x{};
@@ -101,18 +118,21 @@ struct StickStatus {
     bool down{};
 };
 
+// Analog and digital trigger data
 struct TriggerStatus {
     Common::UUID uuid{};
     AnalogStatus analog{};
     ButtonStatus pressed{};
 };
 
+// 3D vector representing motion input
 struct MotionSensor {
     AnalogStatus x{};
     AnalogStatus y{};
     AnalogStatus z{};
 };
 
+// Motion data used to calculate controller orientation
 struct MotionStatus {
     // Gyroscope vector measurement in radians/s.
     MotionSensor gyro{};
@@ -124,6 +144,7 @@ struct MotionStatus {
     bool force_update{};
 };
 
+// Data of a single point on a touch screen
 struct TouchStatus {
     ButtonStatus pressed{};
     AnalogStatus x{};
@@ -131,11 +152,13 @@ struct TouchStatus {
     int id{};
 };
 
+// Physical controller color in RGB format
 struct BodyColorStatus {
     u32 body{};
     u32 buttons{};
 };
 
+// HD rumble data
 struct VibrationStatus {
     f32 low_amplitude{};
     f32 low_frequency{};
@@ -144,6 +167,7 @@ struct VibrationStatus {
     VibrationAmplificationType type;
 };
 
+// Physical controller LED pattern
 struct LedStatus {
     bool led_1{};
     bool led_2{};
@@ -151,6 +175,7 @@ struct LedStatus {
     bool led_4{};
 };
 
+// Callback data consisting of an input type and the equivalent data status
 struct CallbackStatus {
     InputType type{InputType::None};
     ButtonStatus button_status{};
@@ -164,6 +189,7 @@ struct CallbackStatus {
     VibrationStatus vibration_status{};
 };
 
+// Triggered once every input change
 struct InputCallback {
     std::function<void(CallbackStatus)> on_change;
 };
@@ -178,15 +204,17 @@ public:
         return;
     }
 
-    // Force input device to update data regarless of the current state
+    // Force input device to update data regardless of the current state
     virtual void ForceUpdate() {
         return;
     }
 
+    // Sets the function to be triggered when input changes
     void SetCallback(InputCallback callback_) {
         callback = std::move(callback_);
     }
 
+    // Triggers the function set in the callback
     void TriggerOnChange(CallbackStatus status) {
         if (callback.on_change) {
             callback.on_change(status);

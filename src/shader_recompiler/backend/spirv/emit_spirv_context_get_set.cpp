@@ -328,7 +328,6 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, Id vertex) {
     }
     if (IsLegacyAttribute(attr)) {
         if (attr == IR::Attribute::FogCoordinate) {
-            LOG_WARNING(Shader_SPIRV, "Get FogCoordinate Attribute called");
             const Id attr_ptr{AttrPointer(ctx, ctx.input_f32, vertex,
                                           ctx.InputLegacyAttribute(attr), ctx.Const(0u))};
             return ctx.OpLoad(ctx.F32[1], attr_ptr);

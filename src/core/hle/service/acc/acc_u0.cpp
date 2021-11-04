@@ -34,6 +34,7 @@ ACC_U0::ACC_U0(std::shared_ptr<Module> module_, std::shared_ptr<ProfileManager> 
         {140, &ACC_U0::InitializeApplicationInfoRestricted, "InitializeApplicationInfoRestricted"}, // 6.0.0+
         {141, &ACC_U0::ListQualifiedUsers, "ListQualifiedUsers"}, // 6.0.0+
         {150, &ACC_U0::IsUserAccountSwitchLocked, "IsUserAccountSwitchLocked"}, // 6.0.0+
+        {160, &ACC_U0::Unknown160, "Unknown160"},
     };
     // clang-format on
 

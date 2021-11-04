@@ -11,7 +11,7 @@ EmulatedConsole::EmulatedConsole() = default;
 EmulatedConsole::~EmulatedConsole() = default;
 
 void EmulatedConsole::ReloadFromSettings() {
-    // Using first motion device from player 1. No need to assign a special config at the moment
+    // Using first motion device from player 1. No need to assign any unique config at the moment
     const auto& player = Settings::values.players.GetValue()[0];
     motion_params = Common::ParamPackage(player.motions[0]);
 
@@ -33,6 +33,7 @@ void EmulatedConsole::SetTouchParams() {
         static_cast<u64>(Settings::values.touch_from_button_map_index.GetValue());
     const auto& touch_buttons = Settings::values.touch_from_button_maps[button_index].buttons;
 
+    // Map the rest of the fingers from touch from button configuration
     for (const auto& config_entry : touch_buttons) {
         Common::ParamPackage params{config_entry};
         Common::ParamPackage touch_button_params;
@@ -54,7 +55,9 @@ void EmulatedConsole::SetTouchParams() {
 }
 
 void EmulatedConsole::ReloadInput() {
+    // If you load any device here add the equivalent to the UnloadInput() function
     SetTouchParams();
+
     motion_devices = Common::Input::CreateDevice<Common::Input::InputDevice>(motion_params);
     if (motion_devices) {
         Common::Input::InputCallback motion_callback{
@@ -62,6 +65,7 @@ void EmulatedConsole::ReloadInput() {
         motion_devices->SetCallback(motion_callback);
     }
 
+    // Unique index for identifying touch device source
     std::size_t index = 0;
     for (auto& touch_device : touch_devices) {
         touch_device = Common::Input::CreateDevice<Common::Input::InputDevice>(touch_params[index]);

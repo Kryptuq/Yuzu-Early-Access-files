@@ -84,22 +84,9 @@ enable_accurate_vibrations=
 # 0: Disabled, 1 (default): Enabled
 motion_enabled =
 
-# for motion input, the following devices are available:
-#  - "motion_emu" (default) for emulating motion input from mouse input. Required parameters:
-#      - "update_period": update period in milliseconds (default to 100)
-#      - "sensitivity": the coefficient converting mouse movement to tilting angle (default to 0.01)
-#  - "cemuhookudp" reads motion input from a udp server that uses cemuhook's udp protocol
-motion_device=
-
-# for touch input, the following devices are available:
-#  - "emu_window" (default) for emulating touch input from mouse input to the emulation window. No parameters required
-#  - "cemuhookudp" reads touch input from a udp server that uses cemuhook's udp protocol
-#      - "min_x", "min_y", "max_x", "max_y": defines the udp device's touch screen coordinate system
+# Defines the udp device's touch screen coordinate system for cemuhookudp devices
+#  - "min_x", "min_y", "max_x", "max_y"
 touch_device=
-
-# Whether to enable or disable touch input from button
-# 0 (default): Disabled, 1: Enabled
-use_touch_from_button=
 
 # for mapping buttons to touch inputs.
 #touch_from_button_map=1

@@ -559,8 +559,6 @@ struct Values {
     Setting<bool> enable_accurate_vibrations{false, "enable_accurate_vibrations"};
 
     Setting<bool> motion_enabled{true, "motion_enabled"};
-    BasicSetting<std::string> motion_device{"engine:motion_emu,update_period:100,sensitivity:0.01",
-                                            "motion_device"};
     BasicSetting<std::string> udp_input_servers{"127.0.0.1:26760", "udp_input_servers"};
 
     BasicSetting<bool> pause_tas_on_load{true, "pause_tas_on_load"};
@@ -583,7 +581,6 @@ struct Values {
 
     TouchscreenInput touchscreen;
 
-    BasicSetting<bool> use_touch_from_button{false, "use_touch_from_button"};
     BasicSetting<std::string> touch_device{"min_x:100,min_y:50,max_x:1800,max_y:850",
                                            "touch_device"};
     BasicSetting<int> touch_from_button_map_index{0, "touch_from_button_map"};
