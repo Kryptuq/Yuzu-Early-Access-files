@@ -10,7 +10,6 @@
 #include "common/common_types.h"
 #include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/k_scoped_scheduler_lock_and_sleep.h"
-#include "core/hle/kernel/k_thread_queue.h"
 #include "core/hle/kernel/time_manager.h"
 
 namespace Kernel {

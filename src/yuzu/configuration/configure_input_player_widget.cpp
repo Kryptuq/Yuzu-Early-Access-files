@@ -147,7 +147,7 @@ void PlayerControlPreview::ControllerUpdate(Core::HID::ControllerTriggerType typ
         needs_redraw = true;
         break;
     case Core::HID::ControllerTriggerType::Type:
-        controller_type = controller->GetNpadType(true);
+        controller_type = controller->GetNpadStyleIndex(true);
         needs_redraw = true;
         break;
     case Core::HID::ControllerTriggerType::Color:
@@ -221,22 +221,22 @@ void PlayerControlPreview::paintEvent(QPaintEvent* event) {
     const QPointF center = rect().center();
 
     switch (controller_type) {
-    case Core::HID::NpadType::Handheld:
+    case Core::HID::NpadStyleIndex::Handheld:
         DrawHandheldController(p, center);
         break;
-    case Core::HID::NpadType::JoyconDual:
+    case Core::HID::NpadStyleIndex::JoyconDual:
         DrawDualController(p, center);
         break;
-    case Core::HID::NpadType::JoyconLeft:
+    case Core::HID::NpadStyleIndex::JoyconLeft:
         DrawLeftController(p, center);
         break;
-    case Core::HID::NpadType::JoyconRight:
+    case Core::HID::NpadStyleIndex::JoyconRight:
         DrawRightController(p, center);
         break;
-    case Core::HID::NpadType::GameCube:
+    case Core::HID::NpadStyleIndex::GameCube:
         DrawGCController(p, center);
         break;
-    case Core::HID::NpadType::ProController:
+    case Core::HID::NpadStyleIndex::ProController:
     default:
         DrawProController(p, center);
         break;
@@ -2394,7 +2394,7 @@ void PlayerControlPreview::DrawGCJoystick(QPainter& p, const QPointF center,
 
 void PlayerControlPreview::DrawRawJoystick(QPainter& p, QPointF center_left, QPointF center_right) {
     using namespace Settings::NativeAnalog;
-    if (controller_type != Core::HID::NpadType::JoyconLeft) {
+    if (center_right != QPointF(0, 0)) {
         DrawJoystickProperties(p, center_right, stick_values[RStick].x.properties);
         p.setPen(colors.indicator);
         p.setBrush(colors.indicator);
@@ -2404,7 +2404,7 @@ void PlayerControlPreview::DrawRawJoystick(QPainter& p, QPointF center_left, QPo
         DrawJoystickDot(p, center_right, stick_values[RStick], false);
     }
 
-    if (controller_type != Core::HID::NpadType::JoyconRight) {
+    if (center_left != QPointF(0, 0)) {
         DrawJoystickProperties(p, center_left, stick_values[LStick].x.properties);
         p.setPen(colors.indicator);
         p.setBrush(colors.indicator);

@@ -13,7 +13,6 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_readable_event.h"
-#include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/service/bcat/backend/backend.h"
 #include "core/hle/service/bcat/bcat.h"
 #include "core/hle/service/bcat/bcat_module.h"

@@ -9,8 +9,6 @@
 #include "core/file_sys/content_archive.h"
 #include "core/file_sys/nca_metadata.h"
 #include "core/file_sys/registered_cache.h"
-#include "core/file_sys/romfs.h"
-#include "core/file_sys/system_archive/system_archive.h"
 #include "core/hle/service/time/time_zone_manager.h"
 
 namespace Service::Time::TimeZone {

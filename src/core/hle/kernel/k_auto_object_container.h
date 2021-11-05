@@ -4,14 +4,9 @@
 
 #pragma once
 
-#include <atomic>
-
 #include <boost/intrusive/rbtree.hpp>
 
-#include "common/assert.h"
 #include "common/common_funcs.h"
-#include "common/common_types.h"
-#include "common/intrusive_red_black_tree.h"
 #include "core/hle/kernel/k_auto_object.h"
 #include "core/hle/kernel/k_light_lock.h"
 

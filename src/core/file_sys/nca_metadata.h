@@ -5,7 +5,6 @@
 #pragma once
 
 #include <array>
-#include <memory>
 #include <vector>
 #include "common/common_funcs.h"
 #include "common/common_types.h"

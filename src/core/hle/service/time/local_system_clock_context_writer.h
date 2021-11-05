@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "core/hle/service/time/errors.h"
 #include "core/hle/service/time/system_clock_context_update_callback.h"
 #include "core/hle/service/time/time_sharedmemory.h"
 

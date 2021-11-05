@@ -9,8 +9,6 @@
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
-#include "core/hle/kernel/k_thread.h"
-#include "core/hle/kernel/kernel.h"
 #include "core/hle/lock.h"
 #include "core/hle/service/nfp/nfp.h"
 #include "core/hle/service/nfp/nfp_user.h"

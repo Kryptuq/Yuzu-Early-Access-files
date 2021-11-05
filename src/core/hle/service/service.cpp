@@ -2,19 +2,15 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <algorithm>
 #include <fmt/format.h>
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "common/settings.h"
-#include "common/string_util.h"
 #include "core/core.h"
 #include "core/hle/ipc.h"
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/kernel/k_client_port.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_server_port.h"
-#include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/acc/acc.h"
 #include "core/hle/service/am/am.h"

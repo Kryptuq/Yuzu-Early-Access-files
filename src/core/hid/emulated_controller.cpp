@@ -13,38 +13,38 @@ EmulatedController::EmulatedController(NpadIdType npad_id_type_) : npad_id_type(
 
 EmulatedController::~EmulatedController() = default;
 
-NpadType EmulatedController::MapSettingsTypeToNPad(Settings::ControllerType type) {
+NpadStyleIndex EmulatedController::MapSettingsTypeToNPad(Settings::ControllerType type) {
     switch (type) {
     case Settings::ControllerType::ProController:
-        return NpadType::ProController;
+        return NpadStyleIndex::ProController;
     case Settings::ControllerType::DualJoyconDetached:
-        return NpadType::JoyconDual;
+        return NpadStyleIndex::JoyconDual;
     case Settings::ControllerType::LeftJoycon:
-        return NpadType::JoyconLeft;
+        return NpadStyleIndex::JoyconLeft;
     case Settings::ControllerType::RightJoycon:
-        return NpadType::JoyconRight;
+        return NpadStyleIndex::JoyconRight;
     case Settings::ControllerType::Handheld:
-        return NpadType::Handheld;
+        return NpadStyleIndex::Handheld;
     case Settings::ControllerType::GameCube:
-        return NpadType::GameCube;
+        return NpadStyleIndex::GameCube;
     default:
-        return NpadType::ProController;
+        return NpadStyleIndex::ProController;
     }
 }
 
-Settings::ControllerType EmulatedController::MapNPadToSettingsType(NpadType type) {
+Settings::ControllerType EmulatedController::MapNPadToSettingsType(NpadStyleIndex type) {
     switch (type) {
-    case NpadType::ProController:
+    case NpadStyleIndex::ProController:
         return Settings::ControllerType::ProController;
-    case NpadType::JoyconDual:
+    case NpadStyleIndex::JoyconDual:
         return Settings::ControllerType::DualJoyconDetached;
-    case NpadType::JoyconLeft:
+    case NpadStyleIndex::JoyconLeft:
         return Settings::ControllerType::LeftJoycon;
-    case NpadType::JoyconRight:
+    case NpadStyleIndex::JoyconRight:
         return Settings::ControllerType::RightJoycon;
-    case NpadType::Handheld:
+    case NpadStyleIndex::Handheld:
         return Settings::ControllerType::Handheld;
-    case NpadType::GameCube:
+    case NpadStyleIndex::GameCube:
         return Settings::ControllerType::GameCube;
     default:
         return Settings::ControllerType::ProController;
@@ -79,9 +79,9 @@ void EmulatedController::ReloadFromSettings() {
 
     // Other or debug controller should always be a pro controller
     if (npad_id_type != NpadIdType::Other) {
-        SetNpadType(MapSettingsTypeToNPad(player.controller_type));
+        SetNpadStyleIndex(MapSettingsTypeToNPad(player.controller_type));
     } else {
-        SetNpadType(NpadType::ProController);
+        SetNpadStyleIndex(NpadStyleIndex::ProController);
     }
 
     if (player.connected) {
@@ -306,7 +306,7 @@ void EmulatedController::DisableConfiguration() {
         if (is_connected) {
             Disconnect();
         }
-        SetNpadType(tmp_npad_type);
+        SetNpadStyleIndex(tmp_npad_type);
     }
 
     // Apply temporary connected status to the real controller
@@ -569,10 +569,10 @@ void EmulatedController::SetButton(Common::Input::CallbackStatus callback, std::
         }
     }
     if (!is_connected) {
-        if (npad_id_type == NpadIdType::Player1 && npad_type != NpadType::Handheld) {
+        if (npad_id_type == NpadIdType::Player1 && npad_type != NpadStyleIndex::Handheld) {
             Connect();
         }
-        if (npad_id_type == NpadIdType::Handheld && npad_type == NpadType::Handheld) {
+        if (npad_id_type == NpadIdType::Handheld && npad_type == NpadStyleIndex::Handheld) {
             Connect();
         }
     }
@@ -880,7 +880,7 @@ void EmulatedController::Disconnect() {
 }
 
 bool EmulatedController::IsConnected(bool get_temporary_value) const {
-    if (get_temporary_value) {
+    if (get_temporary_value && is_configuring) {
         return tmp_is_connected;
     }
     return is_connected;
@@ -896,14 +896,14 @@ NpadIdType EmulatedController::GetNpadIdType() const {
     return npad_id_type;
 }
 
-NpadType EmulatedController::GetNpadType(bool get_temporary_value) const {
-    if (get_temporary_value) {
+NpadStyleIndex EmulatedController::GetNpadStyleIndex(bool get_temporary_value) const {
+    if (get_temporary_value && is_configuring) {
         return tmp_npad_type;
     }
     return npad_type;
 }
 
-void EmulatedController::SetNpadType(NpadType npad_type_) {
+void EmulatedController::SetNpadStyleIndex(NpadStyleIndex npad_type_) {
     {
         std::lock_guard lock{mutex};
 

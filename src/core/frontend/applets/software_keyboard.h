@@ -5,7 +5,6 @@
 #pragma once
 
 #include <functional>
-#include <thread>
 
 #include "common/common_types.h"
 

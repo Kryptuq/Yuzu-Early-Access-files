@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <string>
 #include "core/file_sys/vfs_types.h"
 
 namespace FileSys::SystemArchive {

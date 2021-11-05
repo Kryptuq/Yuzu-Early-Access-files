@@ -18,7 +18,6 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_process.h"
-#include "core/hle/kernel/kernel.h"
 #include "core/hle/service/aoc/aoc_u.h"
 #include "core/loader/loader.h"
 
@@ -124,9 +123,14 @@ AOC_U::AOC_U(Core::System& system_)
         {8, &AOC_U::GetAddOnContentListChangedEvent, "GetAddOnContentListChangedEvent"},
         {9, nullptr, "GetAddOnContentLostErrorCode"},
         {10, &AOC_U::GetAddOnContentListChangedEventWithProcessId, "GetAddOnContentListChangedEventWithProcessId"},
+        {11, &AOC_U::NotifyMountAddOnContent, "NotifyMountAddOnContent"},
+        {12, &AOC_U::NotifyUnmountAddOnContent, "NotifyUnmountAddOnContent"},
+        {13, nullptr, "IsAddOnContentMountedForDebug"},
+        {50, &AOC_U::CheckAddOnContentMountStatus, "CheckAddOnContentMountStatus"},
         {100, &AOC_U::CreateEcPurchasedEventManager, "CreateEcPurchasedEventManager"},
         {101, &AOC_U::CreatePermanentEcPurchasedEventManager, "CreatePermanentEcPurchasedEventManager"},
         {110, nullptr, "CreateContentsServiceManager"},
+        {200, nullptr, "SetRequiredAddOnContentsOnContentsAvailabilityTransition"},
     };
     // clang-format on
 
@@ -270,6 +274,27 @@ void AOC_U::GetAddOnContentListChangedEventWithProcessId(Kernel::HLERequestConte
     IPC::ResponseBuilder rb{ctx, 2, 1};
     rb.Push(ResultSuccess);
     rb.PushCopyObjects(aoc_change_event->GetReadableEvent());
+}
+
+void AOC_U::NotifyMountAddOnContent(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_AOC, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void AOC_U::NotifyUnmountAddOnContent(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_AOC, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void AOC_U::CheckAddOnContentMountStatus(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_AOC, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
 }
 
 void AOC_U::CreateEcPurchasedEventManager(Kernel::HLERequestContext& ctx) {

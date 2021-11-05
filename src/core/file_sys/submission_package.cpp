@@ -4,7 +4,6 @@
 
 #include <algorithm>
 #include <cstring>
-#include <string_view>
 
 #include <fmt/ostream.h>
 

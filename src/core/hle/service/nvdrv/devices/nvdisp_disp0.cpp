@@ -10,7 +10,6 @@
 #include "core/hle/service/nvdrv/devices/nvmap.h"
 #include "core/perf_stats.h"
 #include "video_core/gpu.h"
-#include "video_core/renderer_base.h"
 
 namespace Service::Nvidia::Devices {
 

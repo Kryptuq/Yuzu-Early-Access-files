@@ -801,7 +801,7 @@ void QtSoftwareKeyboardDialog::SetControllerImage() {
     const auto* handheld = system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Handheld);
     const auto* player_1 = system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Player1);
     const auto controller_type =
-        handheld->IsConnected() ? handheld->GetNpadType() : player_1->GetNpadType();
+        handheld->IsConnected() ? handheld->GetNpadStyleIndex() : player_1->GetNpadStyleIndex();
 
     const QString theme = [] {
         if (QIcon::themeName().contains(QStringLiteral("dark")) ||
@@ -813,8 +813,8 @@ void QtSoftwareKeyboardDialog::SetControllerImage() {
     }();
 
     switch (controller_type) {
-    case Core::HID::NpadType::ProController:
-    case Core::HID::NpadType::GameCube:
+    case Core::HID::NpadStyleIndex::ProController:
+    case Core::HID::NpadStyleIndex::GameCube:
         ui->icon_controller->setStyleSheet(
             QStringLiteral("image: url(:/overlay/controller_pro%1.png);").arg(theme));
         ui->icon_controller_shift->setStyleSheet(
@@ -822,7 +822,7 @@ void QtSoftwareKeyboardDialog::SetControllerImage() {
         ui->icon_controller_num->setStyleSheet(
             QStringLiteral("image: url(:/overlay/controller_pro%1.png);").arg(theme));
         break;
-    case Core::HID::NpadType::JoyconDual:
+    case Core::HID::NpadStyleIndex::JoyconDual:
         ui->icon_controller->setStyleSheet(
             QStringLiteral("image: url(:/overlay/controller_dual_joycon%1.png);").arg(theme));
         ui->icon_controller_shift->setStyleSheet(
@@ -830,7 +830,7 @@ void QtSoftwareKeyboardDialog::SetControllerImage() {
         ui->icon_controller_num->setStyleSheet(
             QStringLiteral("image: url(:/overlay/controller_dual_joycon%1.png);").arg(theme));
         break;
-    case Core::HID::NpadType::JoyconLeft:
+    case Core::HID::NpadStyleIndex::JoyconLeft:
         ui->icon_controller->setStyleSheet(
             QStringLiteral("image: url(:/overlay/controller_single_joycon_left%1.png);")
                 .arg(theme));
@@ -841,7 +841,7 @@ void QtSoftwareKeyboardDialog::SetControllerImage() {
             QStringLiteral("image: url(:/overlay/controller_single_joycon_left%1.png);")
                 .arg(theme));
         break;
-    case Core::HID::NpadType::JoyconRight:
+    case Core::HID::NpadStyleIndex::JoyconRight:
         ui->icon_controller->setStyleSheet(
             QStringLiteral("image: url(:/overlay/controller_single_joycon_right%1.png);")
                 .arg(theme));
@@ -852,7 +852,7 @@ void QtSoftwareKeyboardDialog::SetControllerImage() {
             QStringLiteral("image: url(:/overlay/controller_single_joycon_right%1.png);")
                 .arg(theme));
         break;
-    case Core::HID::NpadType::Handheld:
+    case Core::HID::NpadStyleIndex::Handheld:
         ui->icon_controller->setStyleSheet(
             QStringLiteral("image: url(:/overlay/controller_handheld%1.png);").arg(theme));
         ui->icon_controller_shift->setStyleSheet(

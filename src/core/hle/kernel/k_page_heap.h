@@ -5,12 +5,9 @@
 #pragma once
 
 #include <array>
-#include <bit>
 #include <vector>
 
 #include "common/alignment.h"
-#include "common/assert.h"
-#include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "core/hle/kernel/k_page_bitmap.h"
 #include "core/hle/kernel/memory_types.h"

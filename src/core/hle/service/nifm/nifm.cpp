@@ -2,7 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include "common/settings.h"
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"

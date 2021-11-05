@@ -8,7 +8,6 @@
 #include "core/arm/dynarmic/arm_dynarmic_cp15.h"
 #include "core/core.h"
 #include "core/core_timing.h"
-#include "core/core_timing_util.h"
 
 using Callback = Dynarmic::A32::Coprocessor::Callback;
 using CallbackOrAccessOneWord = Dynarmic::A32::Coprocessor::CallbackOrAccessOneWord;

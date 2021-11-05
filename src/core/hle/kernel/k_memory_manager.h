@@ -8,7 +8,6 @@
 #include <mutex>
 #include <tuple>
 
-#include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "core/hle/kernel/k_page_heap.h"
 #include "core/hle/result.h"

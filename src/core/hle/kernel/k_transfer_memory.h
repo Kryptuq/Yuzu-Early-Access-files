@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include <memory>
-
 #include "core/hle/kernel/slab_helpers.h"
 #include "core/hle/kernel/svc_types.h"
 #include "core/hle/result.h"

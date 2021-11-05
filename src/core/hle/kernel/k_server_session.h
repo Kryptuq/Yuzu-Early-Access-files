@@ -7,14 +7,11 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include <boost/intrusive/list.hpp>
 
-#include "common/threadsafe_queue.h"
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/k_synchronization_object.h"
-#include "core/hle/kernel/service_thread.h"
 #include "core/hle/result.h"
 
 namespace Core::Memory {

@@ -8,8 +8,10 @@
 #include "common/settings.h"
 #include "common/time_zone.h"
 #include "core/hle/service/time/ephemeral_network_system_clock_context_writer.h"
+#include "core/hle/service/time/ephemeral_network_system_clock_core.h"
 #include "core/hle/service/time/local_system_clock_context_writer.h"
 #include "core/hle/service/time/network_system_clock_context_writer.h"
+#include "core/hle/service/time/tick_based_steady_clock_core.h"
 #include "core/hle/service/time/time_manager.h"
 
 namespace Service::Time {

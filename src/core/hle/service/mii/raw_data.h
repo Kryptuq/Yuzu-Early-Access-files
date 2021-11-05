@@ -6,7 +6,6 @@
 
 #include <array>
 
-#include "common/common_types.h"
 #include "core/hle/service/mii/mii_manager.h"
 
 namespace Service::Mii::RawData {

@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <memory>
 #include <unordered_map>
 
 #include <dynarmic/interface/exclusive_monitor.h>

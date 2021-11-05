@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <array>
 #include <sstream>
-#include <utility>
 
 #include <boost/range/algorithm_ext/erase.hpp>
 
@@ -19,14 +18,9 @@
 #include "core/hle/kernel/k_handle_table.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_readable_event.h"
-#include "core/hle/kernel/k_scheduler.h"
-#include "core/hle/kernel/k_scoped_scheduler_lock_and_sleep.h"
 #include "core/hle/kernel/k_server_session.h"
 #include "core/hle/kernel/k_thread.h"
-#include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/kernel/kernel.h"
-#include "core/hle/kernel/svc_results.h"
-#include "core/hle/kernel/time_manager.h"
 #include "core/memory.h"
 
 namespace Kernel {

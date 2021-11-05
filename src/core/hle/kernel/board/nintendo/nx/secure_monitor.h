@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include "common/common_types.h"
-
 namespace Kernel::Board::Nintendo::Nx::Smc {
 
 enum MemorySize {

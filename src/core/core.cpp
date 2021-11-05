@@ -19,21 +19,17 @@
 #include "core/cpu_manager.h"
 #include "core/device_memory.h"
 #include "core/file_sys/bis_factory.h"
-#include "core/file_sys/card_image.h"
 #include "core/file_sys/mode.h"
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/registered_cache.h"
 #include "core/file_sys/romfs_factory.h"
 #include "core/file_sys/savedata_factory.h"
-#include "core/file_sys/sdmc_factory.h"
 #include "core/file_sys/vfs_concat.h"
 #include "core/file_sys/vfs_real.h"
 #include "core/hardware_interrupt_manager.h"
 #include "core/hid/hid_core.h"
-#include "core/hle/kernel/k_client_port.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_scheduler.h"
-#include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/physical_core.h"
 #include "core/hle/service/am/applets/applets.h"
@@ -329,8 +325,8 @@ struct System::Impl {
         time_manager.Shutdown();
         core_timing.Shutdown();
         app_loader.reset();
-        perf_stats.reset();
         gpu_core.reset();
+        perf_stats.reset();
         kernel.Shutdown();
         memory.Reset();
         applet_manager.ClearAll();

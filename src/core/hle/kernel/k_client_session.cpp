@@ -7,7 +7,6 @@
 #include "core/hle/kernel/k_server_session.h"
 #include "core/hle/kernel/k_session.h"
 #include "core/hle/kernel/k_thread.h"
-#include "core/hle/kernel/svc_results.h"
 #include "core/hle/result.h"
 
 namespace Kernel {

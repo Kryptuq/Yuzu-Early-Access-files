@@ -6,7 +6,6 @@
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"
-#include "core/file_sys/card_image.h"
 #include "core/file_sys/common_funcs.h"
 #include "core/file_sys/content_archive.h"
 #include "core/file_sys/nca_metadata.h"

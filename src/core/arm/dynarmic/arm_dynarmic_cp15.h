@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <memory>
 #include <optional>
 
 #include <dynarmic/interface/A32/coprocessor.h>

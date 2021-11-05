@@ -203,7 +203,7 @@ private:
     bool is_controller_set{};
     bool is_connected{};
     bool needs_redraw{};
-    Core::HID::NpadType controller_type;
+    Core::HID::NpadStyleIndex controller_type;
 
     bool mapping_active{};
     int blink_counter{};

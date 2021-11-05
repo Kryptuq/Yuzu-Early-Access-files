@@ -5,7 +5,6 @@
 #pragma once
 
 #include <functional>
-#include <optional>
 #include "common/common_types.h"
 
 namespace Core::Frontend {

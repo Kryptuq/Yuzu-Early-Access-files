@@ -8,7 +8,6 @@
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
-#include "core/hle/kernel/kernel.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/ptm/psm.h"
 #include "core/hle/service/service.h"

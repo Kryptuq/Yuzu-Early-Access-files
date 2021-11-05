@@ -7,7 +7,6 @@
 #include <functional>
 #include <optional>
 #include <string>
-#include <string_view>
 
 #include "common/common_types.h"
 #include "core/file_sys/vfs_types.h"

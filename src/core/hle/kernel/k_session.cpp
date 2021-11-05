@@ -2,7 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include "common/assert.h"
 #include "core/hle/kernel/k_client_port.h"
 #include "core/hle/kernel/k_client_session.h"
 #include "core/hle/kernel/k_scoped_resource_reservation.h"

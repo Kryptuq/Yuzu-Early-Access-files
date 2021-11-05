@@ -5,15 +5,12 @@
 #pragma once
 
 #include "common/common_types.h"
-#include "common/time_zone.h"
 #include "core/file_sys/vfs_types.h"
 #include "core/hle/service/time/clock_types.h"
-#include "core/hle/service/time/ephemeral_network_system_clock_core.h"
 #include "core/hle/service/time/standard_local_system_clock_core.h"
 #include "core/hle/service/time/standard_network_system_clock_core.h"
 #include "core/hle/service/time/standard_steady_clock_core.h"
 #include "core/hle/service/time/standard_user_system_clock_core.h"
-#include "core/hle/service/time/tick_based_steady_clock_core.h"
 #include "core/hle/service/time/time_sharedmemory.h"
 #include "core/hle/service/time/time_zone_content_manager.h"
 

@@ -44,26 +44,26 @@ void DefaultControllerApplet::ReconfigureControllers(std::function<void()> callb
         // Connect controllers based on the following priority list from highest to lowest priority:
         // Pro Controller -> Dual Joycons -> Left Joycon/Right Joycon -> Handheld
         if (parameters.allow_pro_controller) {
-            controller->SetNpadType(Core::HID::NpadType::ProController);
+            controller->SetNpadStyleIndex(Core::HID::NpadStyleIndex::ProController);
             controller->Connect();
         } else if (parameters.allow_dual_joycons) {
-            controller->SetNpadType(Core::HID::NpadType::JoyconDual);
+            controller->SetNpadStyleIndex(Core::HID::NpadStyleIndex::JoyconDual);
             controller->Connect();
         } else if (parameters.allow_left_joycon && parameters.allow_right_joycon) {
             // Assign left joycons to even player indices and right joycons to odd player indices.
             // We do this since Captain Toad Treasure Tracker expects a left joycon for Player 1 and
             // a right Joycon for Player 2 in 2 Player Assist mode.
             if (index % 2 == 0) {
-                controller->SetNpadType(Core::HID::NpadType::JoyconLeft);
+                controller->SetNpadStyleIndex(Core::HID::NpadStyleIndex::JoyconLeft);
                 controller->Connect();
             } else {
-                controller->SetNpadType(Core::HID::NpadType::JoyconRight);
+                controller->SetNpadStyleIndex(Core::HID::NpadStyleIndex::JoyconRight);
                 controller->Connect();
             }
         } else if (index == 0 && parameters.enable_single_mode && parameters.allow_handheld &&
                    !Settings::values.use_docked_mode.GetValue()) {
             // We should *never* reach here under any normal circumstances.
-            controller->SetNpadType(Core::HID::NpadType::Handheld);
+            controller->SetNpadStyleIndex(Core::HID::NpadStyleIndex::Handheld);
             controller->Connect();
         } else {
             UNREACHABLE_MSG("Unable to add a new controller based on the given parameters!");

@@ -13,7 +13,6 @@
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/errors.h"
 #include "core/file_sys/mode.h"
-#include "core/file_sys/partition_filesystem.h"
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/registered_cache.h"
 #include "core/file_sys/romfs_factory.h"

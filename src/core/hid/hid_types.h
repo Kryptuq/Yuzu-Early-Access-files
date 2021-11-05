@@ -84,17 +84,24 @@ constexpr NpadIdType IndexToNpadIdType(size_t index) {
     }
 }
 
-// This is nn::hid::NpadType
-enum class NpadType : u8 {
+// This is nn::hid::NpadStyleIndex
+enum class NpadStyleIndex : u8 {
     None = 0,
     ProController = 3,
     Handheld = 4,
+    HandheldNES = 4,
     JoyconDual = 5,
     JoyconLeft = 6,
     JoyconRight = 7,
     GameCube = 8,
     Pokeball = 9,
-    MaxNpadType = 10,
+    NES = 10,
+    SNES = 12,
+    N64 = 13,
+    SegaGenesis = 14,
+    SystemExt = 32,
+    System = 33,
+    MaxNpadType = 34,
 };
 
 // This is nn::hid::NpadStyleTag

@@ -10,7 +10,6 @@
 #include "core/hle/kernel/k_server_port.h"
 #include "core/hle/kernel/k_server_session.h"
 #include "core/hle/kernel/k_thread.h"
-#include "core/hle/kernel/svc_results.h"
 
 namespace Kernel {
 

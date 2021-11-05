@@ -4,7 +4,6 @@
 
 #include <algorithm>
 #include <cstring>
-#include "common/assert.h"
 #include "core/crypto/xts_encryption_layer.h"
 
 namespace Core::Crypto {

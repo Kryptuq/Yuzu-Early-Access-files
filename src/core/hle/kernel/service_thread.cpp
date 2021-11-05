@@ -9,15 +9,11 @@
 #include <vector>
 #include <queue>
 
-#include "common/assert.h"
 #include "common/scope_exit.h"
 #include "common/thread.h"
-#include "core/core.h"
 #include "core/hle/kernel/k_session.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/service_thread.h"
-#include "core/hle/lock.h"
-#include "video_core/renderer_base.h"
 
 namespace Kernel {
 

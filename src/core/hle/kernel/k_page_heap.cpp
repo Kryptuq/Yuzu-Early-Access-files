@@ -4,7 +4,6 @@
 
 #include "core/core.h"
 #include "core/hle/kernel/k_page_heap.h"
-#include "core/memory.h"
 
 namespace Kernel {
 

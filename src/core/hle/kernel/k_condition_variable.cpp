@@ -2,8 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <vector>
-
 #include "core/arm/exclusive_monitor.h"
 #include "core/core.h"
 #include "core/hle/kernel/k_condition_variable.h"

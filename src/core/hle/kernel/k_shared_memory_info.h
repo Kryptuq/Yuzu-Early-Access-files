@@ -4,12 +4,8 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
-
 #include <boost/intrusive/list.hpp>
 
-#include "common/assert.h"
 #include "core/hle/kernel/slab_helpers.h"
 
 namespace Kernel {

@@ -96,7 +96,7 @@ public:
     };
 
     struct DeviceHandle {
-        Core::HID::NpadType npad_type;
+        Core::HID::NpadStyleIndex npad_type;
         u8 npad_id;
         DeviceIndex device_index;
         INSERT_PADDING_BYTES_NOINIT(1);
@@ -160,9 +160,10 @@ public:
     void SignalStyleSetChangedEvent(u32 npad_id) const;
 
     // Adds a new controller at an index.
-    void AddNewControllerAt(Core::HID::NpadType controller, std::size_t npad_index);
+    void AddNewControllerAt(Core::HID::NpadStyleIndex controller, std::size_t npad_index);
     // Adds a new controller at an index with connection status.
-    void UpdateControllerAt(Core::HID::NpadType controller, std::size_t npad_index, bool connected);
+    void UpdateControllerAt(Core::HID::NpadStyleIndex controller, std::size_t npad_index,
+                            bool connected);
 
     void DisconnectNpad(u32 npad_id);
     void DisconnectNpadAtIndex(std::size_t index);
@@ -496,7 +497,7 @@ private:
         std::array<VibrationData, 2> vibration{};
         bool unintended_home_button_input_protection{};
         bool is_connected{};
-        Core::HID::NpadType npad_type{Core::HID::NpadType::None};
+        Core::HID::NpadStyleIndex npad_type{Core::HID::NpadStyleIndex::None};
 
         // Current pad state
         NPadGenericState npad_pad_state{};
@@ -513,7 +514,7 @@ private:
 
     void ControllerUpdate(Core::HID::ControllerTriggerType type, std::size_t controller_idx);
     void InitNewlyAddedController(std::size_t controller_idx);
-    bool IsControllerSupported(Core::HID::NpadType controller) const;
+    bool IsControllerSupported(Core::HID::NpadStyleIndex controller) const;
     void RequestPadStateUpdate(u32 npad_id);
     void WriteEmptyEntry(NpadInternalState& npad);
 

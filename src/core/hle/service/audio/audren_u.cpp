@@ -2,10 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <algorithm>
 #include <array>
 #include <memory>
-#include <string_view>
 
 #include "audio_core/audio_renderer.h"
 #include "common/alignment.h"
@@ -16,7 +14,6 @@
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
-#include "core/hle/kernel/kernel.h"
 #include "core/hle/service/audio/audren_u.h"
 #include "core/hle/service/audio/errors.h"
 

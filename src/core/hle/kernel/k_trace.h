@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include "common/common_funcs.h"
-
 namespace Kernel {
 
 using namespace Common::Literals;

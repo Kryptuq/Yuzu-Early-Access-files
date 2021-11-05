@@ -5,7 +5,6 @@
 #pragma once
 
 #include "common/common_types.h"
-#include "core/file_sys/vfs.h"
 #include "core/loader/loader.h"
 
 namespace Core {

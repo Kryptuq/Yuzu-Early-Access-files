@@ -2,8 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <cinttypes>
-#include <memory>
 #include "core/arm/dynarmic/arm_exclusive_monitor.h"
 #include "core/memory.h"
 

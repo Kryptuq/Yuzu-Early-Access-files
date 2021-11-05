@@ -5,7 +5,6 @@
 #pragma once
 
 #include <cstddef>
-#include <vector>
 
 #include "common/common_types.h"
 #include "core/hle/kernel/physical_memory.h"

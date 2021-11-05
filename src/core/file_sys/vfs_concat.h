@@ -6,7 +6,6 @@
 
 #include <map>
 #include <memory>
-#include <string_view>
 #include "core/file_sys/vfs.h"
 
 namespace FileSys {

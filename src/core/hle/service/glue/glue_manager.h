@@ -7,7 +7,6 @@
 #include <map>
 #include <vector>
 #include "common/common_types.h"
-#include "core/file_sys/control_metadata.h"
 #include "core/file_sys/romfs_factory.h"
 #include "core/hle/result.h"
 

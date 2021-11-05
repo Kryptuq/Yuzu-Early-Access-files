@@ -5,7 +5,6 @@
 #pragma once
 
 #include <optional>
-#include <string>
 #include "common/common_types.h"
 
 namespace Service::Set {

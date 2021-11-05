@@ -12,8 +12,6 @@
 #include "core/hle/kernel/k_port.h"
 #include "core/hle/kernel/k_scoped_resource_reservation.h"
 #include "core/hle/kernel/k_server_port.h"
-#include "core/hle/kernel/k_server_session.h"
-#include "core/hle/kernel/k_session.h"
 #include "core/hle/result.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/hle/service/sm/sm_controller.h"

@@ -12,7 +12,6 @@
 #include <cctype>
 #include <cstring>
 #include <mbedtls/sha256.h>
-#include "common/assert.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/hex_util.h"

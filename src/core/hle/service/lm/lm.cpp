@@ -2,19 +2,16 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <sstream>
 #include <string>
 
 #include <optional>
 #include <unordered_map>
 #include <boost/container_hash/hash.hpp>
 #include "common/logging/log.h"
-#include "common/scope_exit.h"
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/lm/lm.h"
 #include "core/hle/service/service.h"
-#include "core/memory.h"
 
 namespace Service::LM {
 enum class LogSeverity : u8 {

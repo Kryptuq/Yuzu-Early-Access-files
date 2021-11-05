@@ -2,9 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <cinttypes>
 #include <cstring>
-#include "common/common_funcs.h"
 #include "common/logging/log.h"
 #include "core/core.h"
 #include "core/file_sys/content_archive.h"
@@ -13,7 +11,6 @@
 #include "core/file_sys/romfs_factory.h"
 #include "core/hle/kernel/k_page_table.h"
 #include "core/hle/kernel/k_process.h"
-#include "core/hle/kernel/kernel.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/loader/deconstructed_rom_directory.h"
 #include "core/loader/nso.h"

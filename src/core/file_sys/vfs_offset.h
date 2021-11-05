@@ -5,7 +5,6 @@
 #pragma once
 
 #include <memory>
-#include <string_view>
 
 #include "core/file_sys/vfs.h"
 

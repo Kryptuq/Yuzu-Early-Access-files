@@ -8,7 +8,6 @@
 
 #include "common/assert.h"
 #include "common/bit_field.h"
-#include "common/bit_util.h"
 #include "common/common_types.h"
 #include "core/hle/kernel/k_auto_object.h"
 #include "core/hle/kernel/k_spin_lock.h"

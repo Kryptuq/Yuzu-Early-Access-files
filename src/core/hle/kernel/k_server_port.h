@@ -7,14 +7,11 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include <boost/intrusive/list.hpp>
 
-#include "common/common_types.h"
 #include "core/hle/kernel/k_server_session.h"
 #include "core/hle/kernel/k_synchronization_object.h"
-#include "core/hle/result.h"
 
 namespace Kernel {
 

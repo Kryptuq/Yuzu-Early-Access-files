@@ -10,7 +10,6 @@
 #include "core/hle/service/nvdrv/syncpoint_manager.h"
 #include "core/memory.h"
 #include "video_core/gpu.h"
-#include "video_core/memory_manager.h"
 
 namespace Service::Nvidia::Devices {
 namespace {

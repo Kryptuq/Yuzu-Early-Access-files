@@ -20,8 +20,6 @@
 #include "core/hle/kernel/k_system_control.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/k_transfer_memory.h"
-#include "core/hle/kernel/memory_types.h"
-#include "core/memory.h"
 
 namespace Kernel::Init {
 

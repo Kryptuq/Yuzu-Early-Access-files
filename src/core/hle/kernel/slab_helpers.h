@@ -4,16 +4,8 @@
 
 #pragma once
 
-#include <atomic>
-
-#include "common/assert.h"
-#include "common/common_funcs.h"
-#include "common/common_types.h"
-#include "common/intrusive_red_black_tree.h"
 #include "core/hle/kernel/k_auto_object.h"
 #include "core/hle/kernel/k_auto_object_container.h"
-#include "core/hle/kernel/k_light_lock.h"
-#include "core/hle/kernel/k_slab_heap.h"
 #include "core/hle/kernel/kernel.h"
 
 namespace Kernel {

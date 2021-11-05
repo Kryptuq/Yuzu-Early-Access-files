@@ -6,7 +6,6 @@
 #include "common/logging/log.h"
 #include "core/core.h"
 #include "core/hle/service/nvdrv/devices/nvhost_vic.h"
-#include "video_core/memory_manager.h"
 #include "video_core/renderer_base.h"
 
 namespace Service::Nvidia::Devices {

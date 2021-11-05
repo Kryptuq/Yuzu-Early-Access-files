@@ -6,7 +6,6 @@
 
 #include <atomic>
 
-#include "common/common_types.h"
 #include "core/hle/kernel/k_scoped_lock.h"
 
 namespace Kernel {

@@ -6,7 +6,6 @@
 #include "common/microprofile.h"
 #include "common/scope_exit.h"
 #include "common/thread.h"
-#include "core/arm/exclusive_monitor.h"
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/cpu_manager.h"

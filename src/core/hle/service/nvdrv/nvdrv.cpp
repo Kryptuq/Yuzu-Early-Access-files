@@ -8,7 +8,6 @@
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
-#include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/service/nvdrv/devices/nvdevice.h"
 #include "core/hle/service/nvdrv/devices/nvdisp_disp0.h"

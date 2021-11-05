@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include "common/common_types.h"
+#include <concepts>
+#include <type_traits>
 
 namespace Kernel {
 

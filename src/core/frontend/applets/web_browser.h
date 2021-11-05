@@ -5,7 +5,6 @@
 #pragma once
 
 #include <functional>
-#include <string_view>
 
 #include "core/hle/service/am/applets/applet_web_browser_types.h"
 

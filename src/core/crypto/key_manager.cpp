@@ -10,14 +10,12 @@
 #include <locale>
 #include <map>
 #include <sstream>
-#include <string_view>
 #include <tuple>
 #include <vector>
 #include <mbedtls/bignum.h>
 #include <mbedtls/cipher.h>
 #include <mbedtls/cmac.h>
 #include <mbedtls/sha256.h>
-#include "common/common_funcs.h"
 #include "common/fs/file.h"
 #include "common/fs/fs.h"
 #include "common/fs/path_util.h"
@@ -30,7 +28,6 @@
 #include "core/crypto/partition_data_manager.h"
 #include "core/file_sys/content_archive.h"
 #include "core/file_sys/nca_metadata.h"
-#include "core/file_sys/partition_filesystem.h"
 #include "core/file_sys/registered_cache.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/loader/loader.h"

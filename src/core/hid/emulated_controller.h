@@ -142,23 +142,23 @@ public:
     YUZU_NON_MOVEABLE(EmulatedController);
 
     /// Converts the controller type from settings to npad type
-    static NpadType MapSettingsTypeToNPad(Settings::ControllerType type);
+    static NpadStyleIndex MapSettingsTypeToNPad(Settings::ControllerType type);
 
     /// Converts npad type to the equivalent of controller type from settings
-    static Settings::ControllerType MapNPadToSettingsType(NpadType type);
+    static Settings::ControllerType MapNPadToSettingsType(NpadStyleIndex type);
 
     /// Gets the NpadIdType for this controller
     NpadIdType GetNpadIdType() const;
 
-    /// Sets the NpadType for this controller
-    void SetNpadType(NpadType npad_type_);
+    /// Sets the NpadStyleIndex for this controller
+    void SetNpadStyleIndex(NpadStyleIndex npad_type_);
 
     /**
-     * Gets the NpadType for this controller
+     * Gets the NpadStyleIndex for this controller
      * @param If true tmp_npad_type will be returned
-     * @return NpadType set on the controller
+     * @return NpadStyleIndex set on the controller
      */
-    NpadType GetNpadType(bool get_temporary_value = false) const;
+    NpadStyleIndex GetNpadStyleIndex(bool get_temporary_value = false) const;
 
     /// Sets the connected status to true
     void Connect();
@@ -351,14 +351,14 @@ private:
     void TriggerOnChange(ControllerTriggerType type, bool is_service_update);
 
     NpadIdType npad_id_type;
-    NpadType npad_type{NpadType::None};
+    NpadStyleIndex npad_type{NpadStyleIndex::None};
     bool is_connected{false};
     bool is_configuring{false};
     f32 motion_sensitivity{0.01f};
     bool force_update_motion{false};
 
     // Temporary values to avoid doing changes while the controller is on configuration mode
-    NpadType tmp_npad_type{NpadType::None};
+    NpadStyleIndex tmp_npad_type{NpadStyleIndex::None};
     bool tmp_is_connected{false};
 
     ButtonParams button_params;

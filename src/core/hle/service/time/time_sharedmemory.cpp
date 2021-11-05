@@ -4,7 +4,6 @@
 
 #include "core/core.h"
 #include "core/core_timing.h"
-#include "core/core_timing_util.h"
 #include "core/hardware_properties.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/time/clock_types.h"

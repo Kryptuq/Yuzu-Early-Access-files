@@ -10,10 +10,8 @@
 #include "core/core.h"
 #include "core/hle/service/nvdrv/devices/nvhost_as_gpu.h"
 #include "core/hle/service/nvdrv/devices/nvmap.h"
-#include "core/memory.h"
 #include "video_core/memory_manager.h"
 #include "video_core/rasterizer_interface.h"
-#include "video_core/renderer_base.h"
 
 namespace Service::Nvidia::Devices {
 

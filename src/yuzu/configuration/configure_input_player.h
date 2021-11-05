@@ -51,7 +51,7 @@ class System;
 
 namespace Core::HID {
 class EmulatedController;
-enum class NpadType : u8;
+enum class NpadStyleIndex : u8;
 } // namespace Core::HID
 
 class ConfigureInputPlayer : public QWidget {
@@ -134,10 +134,10 @@ private:
     void SetConnectableControllers();
 
     /// Gets the Controller Type for a given controller combobox index.
-    Core::HID::NpadType GetControllerTypeFromIndex(int index) const;
+    Core::HID::NpadStyleIndex GetControllerTypeFromIndex(int index) const;
 
     /// Gets the controller combobox index for a given Controller Type.
-    int GetIndexFromControllerType(Core::HID::NpadType type) const;
+    int GetIndexFromControllerType(Core::HID::NpadStyleIndex type) const;
 
     /// Update the available input devices.
     void UpdateInputDevices();
@@ -182,7 +182,7 @@ private:
     std::unique_ptr<QTimer> poll_timer;
 
     /// Stores a pair of "Connected Controllers" combobox index and Controller Type enum.
-    std::vector<std::pair<int, Core::HID::NpadType>> index_controller_type_pairs;
+    std::vector<std::pair<int, Core::HID::NpadStyleIndex>> index_controller_type_pairs;
 
     static constexpr int PLAYER_COUNT = 8;
     std::array<QCheckBox*, PLAYER_COUNT> player_connected_checkbox;

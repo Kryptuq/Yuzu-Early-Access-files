@@ -455,7 +455,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         connect(ui->comboControllerType, qOverload<int>(&QComboBox::currentIndexChanged),
                 [this](int index) {
                     emit HandheldStateChanged(GetControllerTypeFromIndex(index) ==
-                                              Core::HID::NpadType::Handheld);
+                                              Core::HID::NpadStyleIndex::Handheld);
                 });
     }
 
@@ -482,7 +482,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                 UpdateControllerEnabledButtons();
                 UpdateControllerButtonNames();
                 UpdateMotionButtons();
-                const Core::HID::NpadType type =
+                const Core::HID::NpadStyleIndex type =
                     GetControllerTypeFromIndex(ui->comboControllerType->currentIndex());
 
                 if (player_index == 0) {
@@ -492,10 +492,10 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                         system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Handheld);
                     bool is_connected = emulated_controller->IsConnected(true);
 
-                    emulated_controller_p1->SetNpadType(type);
-                    emulated_controller_hanheld->SetNpadType(type);
+                    emulated_controller_p1->SetNpadStyleIndex(type);
+                    emulated_controller_hanheld->SetNpadStyleIndex(type);
                     if (is_connected) {
-                        if (type == Core::HID::NpadType::Handheld) {
+                        if (type == Core::HID::NpadStyleIndex::Handheld) {
                             emulated_controller_p1->Disconnect();
                             emulated_controller_hanheld->Connect();
                             emulated_controller = emulated_controller_hanheld;
@@ -507,7 +507,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                     }
                     ui->controllerFrame->SetController(emulated_controller);
                 }
-                emulated_controller->SetNpadType(type);
+                emulated_controller->SetNpadStyleIndex(type);
             });
 
     connect(ui->comboDevices, qOverload<int>(&QComboBox::activated), this,
@@ -607,7 +607,8 @@ void ConfigureInputPlayer::LoadConfiguration() {
         return;
     }
 
-    const int comboBoxIndex = GetIndexFromControllerType(emulated_controller->GetNpadType(true));
+    const int comboBoxIndex =
+        GetIndexFromControllerType(emulated_controller->GetNpadStyleIndex(true));
     ui->comboControllerType->setCurrentIndex(comboBoxIndex);
     ui->groupConnectedController->setChecked(emulated_controller->IsConnected(true));
 }
@@ -810,37 +811,37 @@ void ConfigureInputPlayer::SetConnectableControllers() {
 
         if (enable_all || npad_style_set.fullkey == 1) {
             index_controller_type_pairs.emplace_back(ui->comboControllerType->count(),
-                                                     Core::HID::NpadType::ProController);
+                                                     Core::HID::NpadStyleIndex::ProController);
             ui->comboControllerType->addItem(tr("Pro Controller"));
         }
 
         if (enable_all || npad_style_set.joycon_dual == 1) {
             index_controller_type_pairs.emplace_back(ui->comboControllerType->count(),
-                                                     Core::HID::NpadType::JoyconDual);
+                                                     Core::HID::NpadStyleIndex::JoyconDual);
             ui->comboControllerType->addItem(tr("Dual Joycons"));
         }
 
         if (enable_all || npad_style_set.joycon_left == 1) {
             index_controller_type_pairs.emplace_back(ui->comboControllerType->count(),
-                                                     Core::HID::NpadType::JoyconLeft);
+                                                     Core::HID::NpadStyleIndex::JoyconLeft);
             ui->comboControllerType->addItem(tr("Left Joycon"));
         }
 
         if (enable_all || npad_style_set.joycon_right == 1) {
             index_controller_type_pairs.emplace_back(ui->comboControllerType->count(),
-                                                     Core::HID::NpadType::JoyconRight);
+                                                     Core::HID::NpadStyleIndex::JoyconRight);
             ui->comboControllerType->addItem(tr("Right Joycon"));
         }
 
         if (player_index == 0 && (enable_all || npad_style_set.handheld == 1)) {
             index_controller_type_pairs.emplace_back(ui->comboControllerType->count(),
-                                                     Core::HID::NpadType::Handheld);
+                                                     Core::HID::NpadStyleIndex::Handheld);
             ui->comboControllerType->addItem(tr("Handheld"));
         }
 
         if (enable_all || npad_style_set.gamecube == 1) {
             index_controller_type_pairs.emplace_back(ui->comboControllerType->count(),
-                                                     Core::HID::NpadType::GameCube);
+                                                     Core::HID::NpadStyleIndex::GameCube);
             ui->comboControllerType->addItem(tr("GameCube Controller"));
         }
     };
@@ -853,19 +854,19 @@ void ConfigureInputPlayer::SetConnectableControllers() {
     add_controllers(false, system.HIDCore().GetSupportedStyleTag());
 }
 
-Core::HID::NpadType ConfigureInputPlayer::GetControllerTypeFromIndex(int index) const {
+Core::HID::NpadStyleIndex ConfigureInputPlayer::GetControllerTypeFromIndex(int index) const {
     const auto it =
         std::find_if(index_controller_type_pairs.begin(), index_controller_type_pairs.end(),
                      [index](const auto& pair) { return pair.first == index; });
 
     if (it == index_controller_type_pairs.end()) {
-        return Core::HID::NpadType::ProController;
+        return Core::HID::NpadStyleIndex::ProController;
     }
 
     return it->second;
 }
 
-int ConfigureInputPlayer::GetIndexFromControllerType(Core::HID::NpadType type) const {
+int ConfigureInputPlayer::GetIndexFromControllerType(Core::HID::NpadStyleIndex type) const {
     const auto it =
         std::find_if(index_controller_type_pairs.begin(), index_controller_type_pairs.end(),
                      [type](const auto& pair) { return pair.second == type; });
@@ -888,7 +889,7 @@ void ConfigureInputPlayer::UpdateInputDevices() {
 void ConfigureInputPlayer::UpdateControllerAvailableButtons() {
     auto layout = GetControllerTypeFromIndex(ui->comboControllerType->currentIndex());
     if (debug) {
-        layout = Core::HID::NpadType::ProController;
+        layout = Core::HID::NpadStyleIndex::ProController;
     }
 
     // List of all the widgets that will be hidden by any of the following layouts that need
@@ -913,15 +914,15 @@ void ConfigureInputPlayer::UpdateControllerAvailableButtons() {
 
     std::vector<QWidget*> layout_hidden;
     switch (layout) {
-    case Core::HID::NpadType::ProController:
-    case Core::HID::NpadType::JoyconDual:
-    case Core::HID::NpadType::Handheld:
+    case Core::HID::NpadStyleIndex::ProController:
+    case Core::HID::NpadStyleIndex::JoyconDual:
+    case Core::HID::NpadStyleIndex::Handheld:
         layout_hidden = {
             ui->buttonShoulderButtonsSLSR,
             ui->horizontalSpacerShoulderButtonsWidget2,
         };
         break;
-    case Core::HID::NpadType::JoyconLeft:
+    case Core::HID::NpadStyleIndex::JoyconLeft:
         layout_hidden = {
             ui->horizontalSpacerShoulderButtonsWidget2,
             ui->buttonShoulderButtonsRight,
@@ -929,7 +930,7 @@ void ConfigureInputPlayer::UpdateControllerAvailableButtons() {
             ui->bottomRight,
         };
         break;
-    case Core::HID::NpadType::JoyconRight:
+    case Core::HID::NpadStyleIndex::JoyconRight:
         layout_hidden = {
             ui->horizontalSpacerShoulderButtonsWidget,
             ui->buttonShoulderButtonsLeft,
@@ -937,7 +938,7 @@ void ConfigureInputPlayer::UpdateControllerAvailableButtons() {
             ui->bottomLeft,
         };
         break;
-    case Core::HID::NpadType::GameCube:
+    case Core::HID::NpadStyleIndex::GameCube:
         layout_hidden = {
             ui->buttonShoulderButtonsSLSR,
             ui->horizontalSpacerShoulderButtonsWidget2,
@@ -957,7 +958,7 @@ void ConfigureInputPlayer::UpdateControllerAvailableButtons() {
 void ConfigureInputPlayer::UpdateControllerEnabledButtons() {
     auto layout = GetControllerTypeFromIndex(ui->comboControllerType->currentIndex());
     if (debug) {
-        layout = Core::HID::NpadType::ProController;
+        layout = Core::HID::NpadStyleIndex::ProController;
     }
 
     // List of all the widgets that will be disabled by any of the following layouts that need
@@ -974,13 +975,13 @@ void ConfigureInputPlayer::UpdateControllerEnabledButtons() {
 
     std::vector<QWidget*> layout_disable;
     switch (layout) {
-    case Core::HID::NpadType::ProController:
-    case Core::HID::NpadType::JoyconDual:
-    case Core::HID::NpadType::Handheld:
-    case Core::HID::NpadType::JoyconLeft:
-    case Core::HID::NpadType::JoyconRight:
+    case Core::HID::NpadStyleIndex::ProController:
+    case Core::HID::NpadStyleIndex::JoyconDual:
+    case Core::HID::NpadStyleIndex::Handheld:
+    case Core::HID::NpadStyleIndex::JoyconLeft:
+    case Core::HID::NpadStyleIndex::JoyconRight:
         break;
-    case Core::HID::NpadType::GameCube:
+    case Core::HID::NpadStyleIndex::GameCube:
         layout_disable = {
             ui->buttonHome,
             ui->buttonLStickPressedGroup,
@@ -1007,24 +1008,24 @@ void ConfigureInputPlayer::UpdateMotionButtons() {
 
     // Show/hide the "Motion 1/2" groupboxes depending on the currently selected controller.
     switch (GetControllerTypeFromIndex(ui->comboControllerType->currentIndex())) {
-    case Core::HID::NpadType::ProController:
-    case Core::HID::NpadType::JoyconLeft:
-    case Core::HID::NpadType::Handheld:
+    case Core::HID::NpadStyleIndex::ProController:
+    case Core::HID::NpadStyleIndex::JoyconLeft:
+    case Core::HID::NpadStyleIndex::Handheld:
         // Show "Motion 1" and hide "Motion 2".
         ui->buttonMotionLeftGroup->show();
         ui->buttonMotionRightGroup->hide();
         break;
-    case Core::HID::NpadType::JoyconRight:
+    case Core::HID::NpadStyleIndex::JoyconRight:
         // Show "Motion 2" and hide "Motion 1".
         ui->buttonMotionLeftGroup->hide();
         ui->buttonMotionRightGroup->show();
         break;
-    case Core::HID::NpadType::GameCube:
+    case Core::HID::NpadStyleIndex::GameCube:
         // Hide both "Motion 1/2".
         ui->buttonMotionLeftGroup->hide();
         ui->buttonMotionRightGroup->hide();
         break;
-    case Core::HID::NpadType::JoyconDual:
+    case Core::HID::NpadStyleIndex::JoyconDual:
     default:
         // Show both "Motion 1/2".
         ui->buttonMotionLeftGroup->show();
@@ -1036,15 +1037,15 @@ void ConfigureInputPlayer::UpdateMotionButtons() {
 void ConfigureInputPlayer::UpdateControllerButtonNames() {
     auto layout = GetControllerTypeFromIndex(ui->comboControllerType->currentIndex());
     if (debug) {
-        layout = Core::HID::NpadType::ProController;
+        layout = Core::HID::NpadStyleIndex::ProController;
     }
 
     switch (layout) {
-    case Core::HID::NpadType::ProController:
-    case Core::HID::NpadType::JoyconDual:
-    case Core::HID::NpadType::Handheld:
-    case Core::HID::NpadType::JoyconLeft:
-    case Core::HID::NpadType::JoyconRight:
+    case Core::HID::NpadStyleIndex::ProController:
+    case Core::HID::NpadStyleIndex::JoyconDual:
+    case Core::HID::NpadStyleIndex::Handheld:
+    case Core::HID::NpadStyleIndex::JoyconLeft:
+    case Core::HID::NpadStyleIndex::JoyconRight:
         ui->buttonMiscButtonsPlusGroup->setTitle(tr("Plus"));
         ui->buttonShoulderButtonsButtonZLGroup->setTitle(tr("ZL"));
         ui->buttonShoulderButtonsZRGroup->setTitle(tr("ZR"));
@@ -1052,7 +1053,7 @@ void ConfigureInputPlayer::UpdateControllerButtonNames() {
         ui->LStick->setTitle(tr("Left Stick"));
         ui->RStick->setTitle(tr("Right Stick"));
         break;
-    case Core::HID::NpadType::GameCube:
+    case Core::HID::NpadStyleIndex::GameCube:
         ui->buttonMiscButtonsPlusGroup->setTitle(tr("Start / Pause"));
         ui->buttonShoulderButtonsButtonZLGroup->setTitle(tr("L"));
         ui->buttonShoulderButtonsZRGroup->setTitle(tr("R"));

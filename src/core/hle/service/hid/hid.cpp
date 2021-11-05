@@ -8,12 +8,10 @@
 #include "common/settings.h"
 #include "core/core.h"
 #include "core/core_timing.h"
-#include "core/frontend/emu_window.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/k_shared_memory.h"
 #include "core/hle/kernel/k_transfer_memory.h"
-#include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/hid/errors.h"
 #include "core/hle/service/hid/hid.h"
@@ -1133,18 +1131,18 @@ void Hid::GetVibrationDeviceInfo(Kernel::HLERequestContext& ctx) {
     Core::HID::VibrationDeviceInfo vibration_device_info;
 
     switch (vibration_device_handle.npad_type) {
-    case Core::HID::NpadType::ProController:
-    case Core::HID::NpadType::Handheld:
-    case Core::HID::NpadType::JoyconDual:
-    case Core::HID::NpadType::JoyconLeft:
-    case Core::HID::NpadType::JoyconRight:
+    case Core::HID::NpadStyleIndex::ProController:
+    case Core::HID::NpadStyleIndex::Handheld:
+    case Core::HID::NpadStyleIndex::JoyconDual:
+    case Core::HID::NpadStyleIndex::JoyconLeft:
+    case Core::HID::NpadStyleIndex::JoyconRight:
     default:
         vibration_device_info.type = Core::HID::VibrationDeviceType::LinearResonantActuator;
         break;
-    case Core::HID::NpadType::GameCube:
+    case Core::HID::NpadStyleIndex::GameCube:
         vibration_device_info.type = Core::HID::VibrationDeviceType::GcErm;
         break;
-    case Core::HID::NpadType::Pokeball:
+    case Core::HID::NpadStyleIndex::Pokeball:
         vibration_device_info.type = Core::HID::VibrationDeviceType::Unknown;
         break;
     }

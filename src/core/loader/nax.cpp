@@ -2,7 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include "common/logging/log.h"
 #include "core/file_sys/content_archive.h"
 #include "core/file_sys/romfs.h"
 #include "core/file_sys/xts_archive.h"

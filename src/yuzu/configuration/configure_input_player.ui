@@ -117,11 +117,8 @@
           </property>
           <item>
            <widget class="QComboBox" name="comboDevices">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>21</height>
-             </size>
+            <property name="minimumContentsLength">
+             <number>60</number>
             </property>
            </widget>
           </item>
@@ -307,7 +304,7 @@
                <number>3</number>
               </property>
               <property name="topMargin">
-               <number>0</number>
+               <number>6</number>
               </property>
               <property name="rightMargin">
                <number>3</number>
@@ -883,7 +880,7 @@
                <number>3</number>
               </property>
               <property name="topMargin">
-               <number>0</number>
+               <number>6</number>
               </property>
               <property name="rightMargin">
                <number>3</number>
@@ -2186,7 +2183,7 @@
                <number>3</number>
               </property>
               <property name="topMargin">
-               <number>0</number>
+               <number>6</number>
               </property>
               <property name="rightMargin">
                <number>3</number>
@@ -2535,7 +2532,7 @@
                <number>3</number>
               </property>
               <property name="topMargin">
-               <number>0</number>
+               <number>6</number>
               </property>
               <property name="rightMargin">
                <number>3</number>

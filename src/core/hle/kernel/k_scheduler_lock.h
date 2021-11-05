@@ -5,7 +5,6 @@
 #pragma once
 
 #include "common/assert.h"
-#include "core/hardware_properties.h"
 #include "core/hle/kernel/k_spin_lock.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"

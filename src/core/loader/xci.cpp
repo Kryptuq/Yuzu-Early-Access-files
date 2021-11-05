@@ -11,7 +11,6 @@
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/registered_cache.h"
-#include "core/file_sys/romfs.h"
 #include "core/file_sys/submission_package.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/service/filesystem/filesystem.h"

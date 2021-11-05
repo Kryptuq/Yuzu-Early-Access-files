@@ -6,7 +6,6 @@
 
 #include <array>
 #include <optional>
-#include <utility>
 
 #include "common/common_funcs.h"
 #include "common/common_types.h"
