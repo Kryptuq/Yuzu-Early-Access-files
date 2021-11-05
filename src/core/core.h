@@ -307,6 +307,8 @@ public:
     /// Provides a constant reference to the speed limiter
     [[nodiscard]] const Core::SpeedLimiter& SpeedLimiter() const;
 
+    [[nodiscard]] u64 GetCurrentProcessProgramID() const;
+
     /// Gets the name of the current game
     [[nodiscard]] Loader::ResultStatus GetGameName(std::string& out) const;
 

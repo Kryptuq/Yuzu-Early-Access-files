@@ -15,7 +15,6 @@
 #include "common/param_package.h"
 #include "common/settings.h"
 #include "core/hid/hid_types.h"
-#include "core/hid/motion_input.h"
 
 namespace Core::HID {
 
@@ -103,7 +102,7 @@ public:
     /// Reverts any mapped changes made that weren't saved
     void RestoreConfig();
 
-    /// Returns the current mapped motion device
+    /// Returns the current mapped mouse button device
     Common::ParamPackage GetMouseButtonParam(std::size_t index) const;
 
     /**

@@ -7,10 +7,10 @@
 #include <array>
 #include <QFrame>
 #include <QPointer>
+
 #include "common/input.h"
-#include "common/settings.h"
+#include "common/settings_input.h"
 #include "core/hid/emulated_controller.h"
-#include "core/hid/hid_core.h"
 #include "core/hid/hid_types.h"
 
 class QLabel;

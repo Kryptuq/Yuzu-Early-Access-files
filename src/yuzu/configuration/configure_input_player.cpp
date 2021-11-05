@@ -12,7 +12,6 @@
 #include <QMessageBox>
 #include <QTimer>
 #include "common/param_package.h"
-#include "core/core.h"
 #include "core/hid/emulated_controller.h"
 #include "core/hid/hid_core.h"
 #include "core/hid/hid_types.h"
@@ -134,18 +133,17 @@ QString ConfigureInputPlayer::AnalogToText(const Common::ParamPackage& param,
 ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_index,
                                            QWidget* bottom_row,
                                            InputCommon::InputSubsystem* input_subsystem_,
-                                           InputProfiles* profiles_, Core::System& system_,
-                                           bool debug)
+                                           InputProfiles* profiles_, Core::HID::HIDCore& hid_core_,
+                                           bool is_powered_on_, bool debug)
     : QWidget(parent), ui(std::make_unique<Ui::ConfigureInputPlayer>()), player_index(player_index),
-      debug(debug), input_subsystem{input_subsystem_}, profiles(profiles_),
-      timeout_timer(std::make_unique<QTimer>()), poll_timer(std::make_unique<QTimer>()),
-      bottom_row(bottom_row), system{system_} {
-
+      debug(debug), is_powered_on{is_powered_on_}, input_subsystem{input_subsystem_},
+      profiles(profiles_), timeout_timer(std::make_unique<QTimer>()),
+      poll_timer(std::make_unique<QTimer>()), bottom_row(bottom_row), hid_core{hid_core_} {
     if (player_index == 0) {
         auto* emulated_controller_p1 =
-            system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Player1);
+            hid_core.GetEmulatedController(Core::HID::NpadIdType::Player1);
         auto* emulated_controller_hanheld =
-            system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Handheld);
+            hid_core.GetEmulatedController(Core::HID::NpadIdType::Handheld);
         emulated_controller_p1->SaveCurrentConfig();
         emulated_controller_p1->EnableConfiguration();
         emulated_controller_hanheld->SaveCurrentConfig();
@@ -157,7 +155,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
             emulated_controller = emulated_controller_p1;
         }
     } else {
-        emulated_controller = system_.HIDCore().GetEmulatedControllerByIndex(player_index);
+        emulated_controller = hid_core.GetEmulatedControllerByIndex(player_index);
         emulated_controller->SaveCurrentConfig();
         emulated_controller->EnableConfiguration();
     }
@@ -487,9 +485,9 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
 
                 if (player_index == 0) {
                     auto* emulated_controller_p1 =
-                        system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Player1);
+                        hid_core.GetEmulatedController(Core::HID::NpadIdType::Player1);
                     auto* emulated_controller_hanheld =
-                        system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Handheld);
+                        hid_core.GetEmulatedController(Core::HID::NpadIdType::Handheld);
                     bool is_connected = emulated_controller->IsConnected(true);
 
                     emulated_controller_p1->SetNpadStyleIndex(type);
@@ -547,9 +545,9 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
 ConfigureInputPlayer::~ConfigureInputPlayer() {
     if (player_index == 0) {
         auto* emulated_controller_p1 =
-            system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Player1);
+            hid_core.GetEmulatedController(Core::HID::NpadIdType::Player1);
         auto* emulated_controller_hanheld =
-            system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Handheld);
+            hid_core.GetEmulatedController(Core::HID::NpadIdType::Handheld);
         emulated_controller_p1->DisableConfiguration();
         emulated_controller_hanheld->DisableConfiguration();
     } else {
@@ -560,9 +558,9 @@ ConfigureInputPlayer::~ConfigureInputPlayer() {
 void ConfigureInputPlayer::ApplyConfiguration() {
     if (player_index == 0) {
         auto* emulated_controller_p1 =
-            system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Player1);
+            hid_core.GetEmulatedController(Core::HID::NpadIdType::Player1);
         auto* emulated_controller_hanheld =
-            system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Handheld);
+            hid_core.GetEmulatedController(Core::HID::NpadIdType::Handheld);
         emulated_controller_p1->DisableConfiguration();
         emulated_controller_p1->SaveCurrentConfig();
         emulated_controller_p1->EnableConfiguration();
@@ -846,12 +844,11 @@ void ConfigureInputPlayer::SetConnectableControllers() {
         }
     };
 
-    if (!system.IsPoweredOn()) {
+    if (!is_powered_on) {
         add_controllers(true);
-        return;
     }
 
-    add_controllers(false, system.HIDCore().GetSupportedStyleTag());
+    add_controllers(false, hid_core.GetSupportedStyleTag());
 }
 
 Core::HID::NpadStyleIndex ConfigureInputPlayer::GetControllerTypeFromIndex(int index) const {

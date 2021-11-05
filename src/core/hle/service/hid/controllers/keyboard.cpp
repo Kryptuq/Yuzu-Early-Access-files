@@ -5,7 +5,6 @@
 #include <cstring>
 #include "common/common_types.h"
 #include "common/settings.h"
-#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/hid/emulated_devices.h"
 #include "core/hid/hid_core.h"
@@ -14,8 +13,9 @@
 namespace Service::HID {
 constexpr std::size_t SHARED_MEMORY_OFFSET = 0x3800;
 
-Controller_Keyboard::Controller_Keyboard(Core::System& system_) : ControllerBase{system_} {
-    emulated_devices = system.HIDCore().GetEmulatedDevices();
+Controller_Keyboard::Controller_Keyboard(Core::HID::HIDCore& hid_core_)
+    : ControllerBase{hid_core_} {
+    emulated_devices = hid_core.GetEmulatedDevices();
 }
 
 Controller_Keyboard::~Controller_Keyboard() = default;

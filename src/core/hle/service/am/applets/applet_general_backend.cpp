@@ -7,7 +7,6 @@
 #include "common/logging/log.h"
 #include "core/core.h"
 #include "core/frontend/applets/general_frontend.h"
-#include "core/hle/kernel/k_process.h"
 #include "core/hle/result.h"
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/am/applets/applet_general_backend.h"
@@ -187,7 +186,7 @@ void PhotoViewer::Execute() {
     const auto callback = [this] { ViewFinished(); };
     switch (mode) {
     case PhotoViewerAppletMode::CurrentApp:
-        frontend.ShowPhotosForApplication(system.CurrentProcess()->GetTitleID(), callback);
+        frontend.ShowPhotosForApplication(system.GetCurrentProcessProgramID(), callback);
         break;
     case PhotoViewerAppletMode::AllApps:
         frontend.ShowAllPhotos(callback);

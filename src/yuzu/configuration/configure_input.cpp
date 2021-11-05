@@ -10,6 +10,8 @@
 #include <QTimer>
 
 #include "core/core.h"
+#include "core/hid/emulated_controller.h"
+#include "core/hid/hid_core.h"
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/am/applet_ae.h"
 #include "core/hle/service/am/applet_oe.h"
@@ -73,25 +75,27 @@ ConfigureInput::ConfigureInput(Core::System& system_, QWidget* parent)
 
 ConfigureInput::~ConfigureInput() = default;
 
-void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem, Core::System& system,
+void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem,
                                 std::size_t max_players) {
+    const bool is_powered_on = system.IsPoweredOn();
+    auto& hid_core = system.HIDCore();
     player_controllers = {
         new ConfigureInputPlayer(this, 0, ui->consoleInputSettings, input_subsystem, profiles.get(),
-                                 system),
+                                 hid_core, is_powered_on),
         new ConfigureInputPlayer(this, 1, ui->consoleInputSettings, input_subsystem, profiles.get(),
-                                 system),
+                                 hid_core, is_powered_on),
         new ConfigureInputPlayer(this, 2, ui->consoleInputSettings, input_subsystem, profiles.get(),
-                                 system),
+                                 hid_core, is_powered_on),
         new ConfigureInputPlayer(this, 3, ui->consoleInputSettings, input_subsystem, profiles.get(),
-                                 system),
+                                 hid_core, is_powered_on),
         new ConfigureInputPlayer(this, 4, ui->consoleInputSettings, input_subsystem, profiles.get(),
-                                 system),
+                                 hid_core, is_powered_on),
         new ConfigureInputPlayer(this, 5, ui->consoleInputSettings, input_subsystem, profiles.get(),
-                                 system),
+                                 hid_core, is_powered_on),
         new ConfigureInputPlayer(this, 6, ui->consoleInputSettings, input_subsystem, profiles.get(),
-                                 system),
+                                 hid_core, is_powered_on),
         new ConfigureInputPlayer(this, 7, ui->consoleInputSettings, input_subsystem, profiles.get(),
-                                 system),
+                                 hid_core, is_powered_on),
     };
 
     player_tabs = {
@@ -147,10 +151,11 @@ void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem, Co
     advanced = new ConfigureInputAdvanced(this);
     ui->tabAdvanced->setLayout(new QHBoxLayout(ui->tabAdvanced));
     ui->tabAdvanced->layout()->addWidget(advanced);
+
     connect(advanced, &ConfigureInputAdvanced::CallDebugControllerDialog,
-            [this, input_subsystem, &system] {
-                CallConfigureDialog<ConfigureDebugController>(*this, input_subsystem,
-                                                              profiles.get(), system);
+            [this, input_subsystem, &hid_core, is_powered_on] {
+                CallConfigureDialog<ConfigureDebugController>(
+                    *this, input_subsystem, profiles.get(), hid_core, is_powered_on);
             });
     connect(advanced, &ConfigureInputAdvanced::CallMouseConfigDialog, [this, input_subsystem] {
         CallConfigureDialog<ConfigureMouseAdvanced>(*this, input_subsystem);

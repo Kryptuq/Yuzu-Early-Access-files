@@ -9,11 +9,13 @@
 #include "common/common_types.h"
 #include "common/point.h"
 #include "common/swap.h"
-#include "core/hid/emulated_console.h"
-#include "core/hid/hid_core.h"
 #include "core/hid/hid_types.h"
 #include "core/hle/service/hid/controllers/controller_base.h"
 #include "core/hle/service/hid/ring_lifo.h"
+
+namespace Core::HID {
+class EmulatedConsole;
+} // namespace Core::HID
 
 namespace Service::HID {
 class Controller_Touchscreen final : public ControllerBase {
@@ -34,7 +36,7 @@ public:
     static_assert(sizeof(TouchScreenConfigurationForNx) == 0x17,
                   "TouchScreenConfigurationForNx is an invalid size");
 
-    explicit Controller_Touchscreen(Core::System& system_);
+    explicit Controller_Touchscreen(Core::HID::HIDCore& hid_core_);
     ~Controller_Touchscreen() override;
 
     // Called when the controller is initialized

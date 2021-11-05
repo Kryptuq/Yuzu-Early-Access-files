@@ -101,7 +101,7 @@ private:
 
         const auto process =
             SearchProcessList(kernel.GetProcessList(), [title_id](const auto& proc) {
-                return proc->GetTitleID() == title_id;
+                return proc->GetProgramID() == title_id;
             });
 
         if (!process.has_value()) {
@@ -152,7 +152,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(ResultSuccess);
-        rb.Push((*process)->GetTitleID());
+        rb.Push((*process)->GetProgramID());
     }
 
     const std::vector<Kernel::KProcess*>& process_list;

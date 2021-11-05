@@ -927,7 +927,7 @@ void GMainWindow::InitializeDebugWidgets() {
     waitTreeWidget->hide();
     debug_menu->addAction(waitTreeWidget->toggleViewAction());
 
-    controller_dialog = new ControllerDialog(*system, input_subsystem, this);
+    controller_dialog = new ControllerDialog(system->HIDCore(), input_subsystem, this);
     controller_dialog->hide();
     debug_menu->addAction(controller_dialog->toggleViewAction());
 
@@ -2827,7 +2827,7 @@ void GMainWindow::OnConfigureTas() {
 }
 
 void GMainWindow::OnConfigurePerGame() {
-    const u64 title_id = system->CurrentProcess()->GetTitleID();
+    const u64 title_id = system->GetCurrentProcessProgramID();
     OpenPerGameConfiguration(title_id, game_path.toStdString());
 }
 
@@ -2926,7 +2926,7 @@ void GMainWindow::OnToggleFilterBar() {
 }
 
 void GMainWindow::OnCaptureScreenshot() {
-    const u64 title_id = system->CurrentProcess()->GetTitleID();
+    const u64 title_id = system->GetCurrentProcessProgramID();
     const auto screenshot_path =
         QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::ScreenshotsDir));
     const auto date =

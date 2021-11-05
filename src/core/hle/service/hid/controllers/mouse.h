@@ -7,7 +7,6 @@
 #include <array>
 #include "common/bit_field.h"
 #include "common/common_types.h"
-#include "common/settings.h"
 #include "common/swap.h"
 #include "core/hle/service/hid/controllers/controller_base.h"
 #include "core/hle/service/hid/ring_lifo.h"
@@ -20,7 +19,7 @@ struct MouseState;
 namespace Service::HID {
 class Controller_Mouse final : public ControllerBase {
 public:
-    explicit Controller_Mouse(Core::System& system_);
+    explicit Controller_Mouse(Core::HID::HIDCore& hid_core_);
     ~Controller_Mouse() override;
 
     // Called when the controller is initialized

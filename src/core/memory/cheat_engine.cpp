@@ -192,7 +192,7 @@ void CheatEngine::Initialize() {
     core_timing.ScheduleEvent(CHEAT_ENGINE_NS, event);
 
     metadata.process_id = system.CurrentProcess()->GetProcessID();
-    metadata.title_id = system.CurrentProcess()->GetTitleID();
+    metadata.title_id = system.GetCurrentProcessProgramID();
 
     const auto& page_table = system.CurrentProcess()->PageTable();
     metadata.heap_extents = {

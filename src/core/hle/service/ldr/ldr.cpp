@@ -12,7 +12,6 @@
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_page_table.h"
-#include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_system_control.h"
 #include "core/hle/kernel/svc_results.h"
 #include "core/hle/service/ldr/ldr.h"
@@ -247,7 +246,7 @@ public:
             return;
         }
 
-        if (system.CurrentProcess()->GetTitleID() != header.application_id) {
+        if (system.GetCurrentProcessProgramID() != header.application_id) {
             LOG_ERROR(Service_LDR,
                       "Attempting to load NRR with title ID other than current process. (actual "
                       "{:016X})!",

@@ -5,7 +5,6 @@
 #include "common/logging/log.h"
 #include "common/math_util.h"
 #include "common/settings.h"
-#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/frontend/emu_window.h"
 #include "core/hid/hid_core.h"
@@ -25,8 +24,8 @@ constexpr f32 Square(s32 num) {
     return static_cast<f32>(num * num);
 }
 
-Controller_Gesture::Controller_Gesture(Core::System& system_) : ControllerBase(system_) {
-    console = system.HIDCore().GetEmulatedConsole();
+Controller_Gesture::Controller_Gesture(Core::HID::HIDCore& hid_core_) : ControllerBase(hid_core_) {
+    console = hid_core.GetEmulatedConsole();
 }
 Controller_Gesture::~Controller_Gesture() = default;
 

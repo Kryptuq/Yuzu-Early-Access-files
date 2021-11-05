@@ -3,17 +3,17 @@
 // Refer to the license.txt file included.
 
 #include "common/settings.h"
-#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/hid/emulated_console.h"
+#include "core/hid/hid_core.h"
 #include "core/hle/service/hid/controllers/console_sixaxis.h"
 
 namespace Service::HID {
 constexpr std::size_t SHARED_MEMORY_OFFSET = 0x3C200;
 
-Controller_ConsoleSixAxis::Controller_ConsoleSixAxis(Core::System& system_)
-    : ControllerBase{system_} {
-    console = system.HIDCore().GetEmulatedConsole();
+Controller_ConsoleSixAxis::Controller_ConsoleSixAxis(Core::HID::HIDCore& hid_core_)
+    : ControllerBase{hid_core_} {
+    console = hid_core.GetEmulatedConsole();
 }
 
 Controller_ConsoleSixAxis::~Controller_ConsoleSixAxis() = default;

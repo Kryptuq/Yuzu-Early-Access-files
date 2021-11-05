@@ -18,7 +18,6 @@
 #include "core/file_sys/system_archive/system_archive.h"
 #include "core/file_sys/vfs_vector.h"
 #include "core/frontend/applets/web_browser.h"
-#include "core/hle/kernel/k_process.h"
 #include "core/hle/result.h"
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/am/applets/applet_web_browser.h"
@@ -395,7 +394,7 @@ void WebBrowser::InitializeOffline() {
     switch (document_kind) {
     case DocumentKind::OfflineHtmlPage:
     default:
-        title_id = system.CurrentProcess()->GetTitleID();
+        title_id = system.GetCurrentProcessProgramID();
         nca_type = FileSys::ContentRecordType::HtmlDocument;
         additional_paths = "html-document";
         break;

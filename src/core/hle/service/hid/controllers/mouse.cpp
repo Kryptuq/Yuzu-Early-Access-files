@@ -4,7 +4,6 @@
 
 #include <cstring>
 #include "common/common_types.h"
-#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/frontend/emu_window.h"
 #include "core/hid/emulated_devices.h"
@@ -14,8 +13,8 @@
 namespace Service::HID {
 constexpr std::size_t SHARED_MEMORY_OFFSET = 0x3400;
 
-Controller_Mouse::Controller_Mouse(Core::System& system_) : ControllerBase{system_} {
-    emulated_devices = system.HIDCore().GetEmulatedDevices();
+Controller_Mouse::Controller_Mouse(Core::HID::HIDCore& hid_core_) : ControllerBase{hid_core_} {
+    emulated_devices = hid_core.GetEmulatedDevices();
 }
 
 Controller_Mouse::~Controller_Mouse() = default;

@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included
 
+#include "common/settings.h"
 #include "core/hid/emulated_console.h"
 #include "core/hid/input_converter.h"
 

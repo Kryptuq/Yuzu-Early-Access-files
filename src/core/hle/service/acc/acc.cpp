@@ -16,7 +16,6 @@
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/patch_manager.h"
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/acc/acc.h"
 #include "core/hle/service/acc/acc_aa.h"
@@ -759,9 +758,8 @@ ResultCode Module::Interface::InitializeApplicationInfoBase() {
     // TODO(ogniK): This should be changed to reflect the target process for when we have multiple
     // processes emulated. As we don't actually have pid support we should assume we're just using
     // our own process
-    const auto& current_process = system.Kernel().CurrentProcess();
     const auto launch_property =
-        system.GetARPManager().GetLaunchProperty(current_process->GetTitleID());
+        system.GetARPManager().GetLaunchProperty(system.GetCurrentProcessProgramID());
 
     if (launch_property.Failed()) {
         LOG_ERROR(Service_ACC, "Failed to get launch property");
@@ -805,7 +803,7 @@ void Module::Interface::IsUserAccountSwitchLocked(Kernel::HLERequestContext& ctx
     bool is_locked = false;
 
     if (res != Loader::ResultStatus::Success) {
-        const FileSys::PatchManager pm{system.CurrentProcess()->GetTitleID(),
+        const FileSys::PatchManager pm{system.GetCurrentProcessProgramID(),
                                        system.GetFileSystemController(),
                                        system.GetContentProvider()};
         const auto nacp_unique = pm.GetControlMetadata().first;

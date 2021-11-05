@@ -11,8 +11,8 @@ ConfigureInputProfileDialog::ConfigureInputProfileDialog(
     QWidget* parent, InputCommon::InputSubsystem* input_subsystem, InputProfiles* profiles,
     Core::System& system)
     : QDialog(parent), ui(std::make_unique<Ui::ConfigureInputProfileDialog>()),
-      profile_widget(
-          new ConfigureInputPlayer(this, 9, nullptr, input_subsystem, profiles, system, false)) {
+      profile_widget(new ConfigureInputPlayer(this, 9, nullptr, input_subsystem, profiles,
+                                              system.HIDCore(), system.IsPoweredOn(), false)) {
     ui->setupUi(this);
 
     ui->controllerLayout->addWidget(profile_widget);

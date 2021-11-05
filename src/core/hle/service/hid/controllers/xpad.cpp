@@ -5,12 +5,13 @@
 #include <cstring>
 #include "common/common_types.h"
 #include "core/core_timing.h"
+#include "core/hid/hid_core.h"
 #include "core/hle/service/hid/controllers/xpad.h"
 
 namespace Service::HID {
 constexpr std::size_t SHARED_MEMORY_OFFSET = 0x3C00;
 
-Controller_XPad::Controller_XPad(Core::System& system_) : ControllerBase{system_} {}
+Controller_XPad::Controller_XPad(Core::HID::HIDCore& hid_core_) : ControllerBase{hid_core_} {}
 Controller_XPad::~Controller_XPad() = default;
 
 void Controller_XPad::OnInit() {}

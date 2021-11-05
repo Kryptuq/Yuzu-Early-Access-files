@@ -11,14 +11,14 @@ namespace Core::Timing {
 class CoreTiming;
 }
 
-namespace Core {
-class System;
+namespace Core::HID {
+class HIDCore;
 }
 
 namespace Service::HID {
 class ControllerBase {
 public:
-    explicit ControllerBase(Core::System& system_);
+    explicit ControllerBase(Core::HID::HIDCore& hid_core_);
     virtual ~ControllerBase();
 
     // Called when the controller is initialized
@@ -44,6 +44,6 @@ public:
 protected:
     bool is_activated{false};
 
-    Core::System& system;
+    Core::HID::HIDCore& hid_core;
 };
 } // namespace Service::HID

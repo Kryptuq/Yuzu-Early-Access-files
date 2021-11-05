@@ -29,10 +29,6 @@ class QWidget;
 
 class InputProfiles;
 
-namespace Core {
-class System;
-}
-
 namespace InputCommon {
 class InputSubsystem;
 }
@@ -45,11 +41,8 @@ namespace Ui {
 class ConfigureInputPlayer;
 }
 
-namespace Core {
-class System;
-}
-
 namespace Core::HID {
+class HIDCore;
 class EmulatedController;
 enum class NpadStyleIndex : u8;
 } // namespace Core::HID
@@ -60,8 +53,8 @@ class ConfigureInputPlayer : public QWidget {
 public:
     explicit ConfigureInputPlayer(QWidget* parent, std::size_t player_index, QWidget* bottom_row,
                                   InputCommon::InputSubsystem* input_subsystem_,
-                                  InputProfiles* profiles_, Core::System& system_,
-                                  bool debug = false);
+                                  InputProfiles* profiles_, Core::HID::HIDCore& hid_core_,
+                                  bool is_powered_on_, bool debug = false);
     ~ConfigureInputPlayer() override;
 
     /// Save all button configurations to settings file.
@@ -173,6 +166,7 @@ private:
 
     std::size_t player_index;
     bool debug;
+    bool is_powered_on;
 
     InputCommon::InputSubsystem* input_subsystem;
 
@@ -228,5 +222,5 @@ private:
     /// parent of the widget to this widget (but thats fine).
     QWidget* bottom_row;
 
-    Core::System& system;
+    Core::HID::HIDCore& hid_core;
 };

@@ -9,7 +9,6 @@
 #include "core/core.h"
 #include "core/file_sys/savedata_factory.h"
 #include "core/file_sys/vfs.h"
-#include "core/hle/kernel/k_process.h"
 
 namespace FileSys {
 
@@ -143,7 +142,7 @@ std::string SaveDataFactory::GetFullPath(Core::System& system, SaveDataSpaceId s
     // be interpreted as the title id of the current process.
     if (type == SaveDataType::SaveData || type == SaveDataType::DeviceSaveData) {
         if (title_id == 0) {
-            title_id = system.CurrentProcess()->GetTitleID();
+            title_id = system.GetCurrentProcessProgramID();
         }
     }
 

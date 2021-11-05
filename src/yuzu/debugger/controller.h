@@ -15,11 +15,8 @@ namespace InputCommon {
 class InputSubsystem;
 }
 
-namespace Core {
-class System;
-}
-
 namespace Core::HID {
+class HIDCore;
 class EmulatedController;
 enum class ControllerTriggerType;
 } // namespace Core::HID
@@ -28,7 +25,7 @@ class ControllerDialog : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ControllerDialog(Core::System& system_,
+    explicit ControllerDialog(Core::HID::HIDCore& hid_core_,
                               std::shared_ptr<InputCommon::InputSubsystem> input_subsystem_,
                               QWidget* parent = nullptr);
 
@@ -55,6 +52,6 @@ private:
 
     QAction* toggle_view_action = nullptr;
     PlayerControlPreview* widget;
-    Core::System& system;
+    Core::HID::HIDCore& hid_core;
     std::shared_ptr<InputCommon::InputSubsystem> input_subsystem;
 };

@@ -6,7 +6,8 @@
 #include <QMenu>
 #include <QPainter>
 #include <QTimer>
-#include "core/core.h"
+
+#include "core/hid/emulated_controller.h"
 #include "yuzu/configuration/configure_input_player_widget.h"
 
 PlayerControlPreview::PlayerControlPreview(QWidget* parent) : QFrame(parent) {

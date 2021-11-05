@@ -10,13 +10,16 @@
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/frontend/emu_window.h"
+#include "core/hid/emulated_console.h"
+#include "core/hid/hid_core.h"
 #include "core/hle/service/hid/controllers/touchscreen.h"
 
 namespace Service::HID {
 constexpr std::size_t SHARED_MEMORY_OFFSET = 0x400;
 
-Controller_Touchscreen::Controller_Touchscreen(Core::System& system_) : ControllerBase{system_} {
-    console = system.HIDCore().GetEmulatedConsole();
+Controller_Touchscreen::Controller_Touchscreen(Core::HID::HIDCore& hid_core_)
+    : ControllerBase{hid_core_} {
+    console = hid_core.GetEmulatedConsole();
 }
 
 Controller_Touchscreen::~Controller_Touchscreen() = default;

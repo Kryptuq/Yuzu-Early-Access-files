@@ -5,7 +5,6 @@
 #include <cstring>
 #include "common/common_types.h"
 #include "common/settings.h"
-#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/hid/emulated_controller.h"
 #include "core/hid/hid_core.h"
@@ -15,8 +14,9 @@
 namespace Service::HID {
 constexpr std::size_t SHARED_MEMORY_OFFSET = 0x00000;
 
-Controller_DebugPad::Controller_DebugPad(Core::System& system_) : ControllerBase{system_} {
-    controller = system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Other);
+Controller_DebugPad::Controller_DebugPad(Core::HID::HIDCore& hid_core_)
+    : ControllerBase{hid_core_} {
+    controller = hid_core.GetEmulatedController(Core::HID::NpadIdType::Other);
 }
 
 Controller_DebugPad::~Controller_DebugPad() = default;

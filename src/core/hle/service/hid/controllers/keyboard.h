@@ -8,7 +8,6 @@
 #include "common/bit_field.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"
-#include "common/settings.h"
 #include "common/swap.h"
 #include "core/hle/service/hid/controllers/controller_base.h"
 #include "core/hle/service/hid/ring_lifo.h"
@@ -22,7 +21,7 @@ struct KeyboardKey;
 namespace Service::HID {
 class Controller_Keyboard final : public ControllerBase {
 public:
-    explicit Controller_Keyboard(Core::System& system_);
+    explicit Controller_Keyboard(Core::HID::HIDCore& hid_core_);
     ~Controller_Keyboard() override;
 
     // Called when the controller is initialized

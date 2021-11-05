@@ -20,7 +20,6 @@
 #include "core/file_sys/sdmc_factory.h"
 #include "core/file_sys/vfs.h"
 #include "core/file_sys/vfs_offset.h"
-#include "core/hle/kernel/k_process.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/filesystem/fsp_ldr.h"
 #include "core/hle/service/filesystem/fsp_pr.h"
@@ -320,7 +319,7 @@ ResultVal<FileSys::VirtualFile> FileSystemController::OpenRomFSCurrentProcess() 
         return ResultUnknown;
     }
 
-    return romfs_factory->OpenCurrentProcess(system.CurrentProcess()->GetTitleID());
+    return romfs_factory->OpenCurrentProcess(system.GetCurrentProcessProgramID());
 }
 
 ResultVal<FileSys::VirtualFile> FileSystemController::OpenPatchedRomFS(
@@ -505,7 +504,7 @@ FileSys::SaveDataSize FileSystemController::ReadSaveDataSize(FileSys::SaveDataTy
         const auto res = system.GetAppLoader().ReadControlData(nacp);
 
         if (res != Loader::ResultStatus::Success) {
-            const FileSys::PatchManager pm{system.CurrentProcess()->GetTitleID(),
+            const FileSys::PatchManager pm{system.GetCurrentProcessProgramID(),
                                            system.GetFileSystemController(),
                                            system.GetContentProvider()};
             const auto metadata = pm.GetControlMetadata();

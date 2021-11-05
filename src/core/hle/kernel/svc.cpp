@@ -768,7 +768,7 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, Handle
             return ResultSuccess;
 
         case GetInfoType::TitleId:
-            *result = process->GetTitleID();
+            *result = process->GetProgramID();
             return ResultSuccess;
 
         case GetInfoType::UserExceptionContextAddr:

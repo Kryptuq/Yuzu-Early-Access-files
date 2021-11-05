@@ -74,7 +74,7 @@ ConfigureDialog::ConfigureDialog(QWidget* parent, HotkeyRegistry& registry,
     hotkeys_tab->Populate(registry);
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
-    input_tab->Initialize(input_subsystem, system_);
+    input_tab->Initialize(input_subsystem);
 
     general_tab->SetResetCallback([&] { this->close(); });
 

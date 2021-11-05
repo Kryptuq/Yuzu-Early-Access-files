@@ -6,17 +6,17 @@
 #include <QLayout>
 #include <QString>
 #include "common/settings.h"
-#include "core/core.h"
 #include "core/hid/emulated_controller.h"
+#include "core/hid/hid_core.h"
 #include "input_common/drivers/tas_input.h"
 #include "input_common/main.h"
 #include "yuzu/configuration/configure_input_player_widget.h"
 #include "yuzu/debugger/controller.h"
 
-ControllerDialog::ControllerDialog(Core::System& system_,
+ControllerDialog::ControllerDialog(Core::HID::HIDCore& hid_core_,
                                    std::shared_ptr<InputCommon::InputSubsystem> input_subsystem_,
                                    QWidget* parent)
-    : QWidget(parent, Qt::Dialog), system{system_}, input_subsystem{input_subsystem_} {
+    : QWidget(parent, Qt::Dialog), hid_core{hid_core_}, input_subsystem{input_subsystem_} {
     setObjectName(QStringLiteral("Controller"));
     setWindowTitle(tr("Controller P1"));
     resize(500, 350);
@@ -41,8 +41,8 @@ ControllerDialog::ControllerDialog(Core::System& system_,
 
 void ControllerDialog::refreshConfiguration() {
     UnloadController();
-    auto* player_1 = system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Player1);
-    auto* handheld = system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Handheld);
+    auto* player_1 = hid_core.GetEmulatedController(Core::HID::NpadIdType::Player1);
+    auto* handheld = hid_core.GetEmulatedController(Core::HID::NpadIdType::Handheld);
     // Display the correct controller
     controller = handheld->IsConnected() ? handheld : player_1;
 

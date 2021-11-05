@@ -13,8 +13,8 @@ class ConfigureInputPlayer;
 
 class InputProfiles;
 
-namespace Core {
-class System;
+namespace Core::HID {
+class HIDCore;
 }
 
 namespace InputCommon {
@@ -30,7 +30,8 @@ class ConfigureDebugController : public QDialog {
 
 public:
     explicit ConfigureDebugController(QWidget* parent, InputCommon::InputSubsystem* input_subsystem,
-                                      InputProfiles* profiles, Core::System& system);
+                                      InputProfiles* profiles, Core::HID::HIDCore& hid_core,
+                                      bool is_powered_on);
     ~ConfigureDebugController() override;
 
     void ApplyConfiguration();

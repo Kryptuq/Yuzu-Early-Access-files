@@ -10,7 +10,6 @@
 #include "common/common_types.h"
 #include "common/logging/log.h"
 #include "common/settings.h"
-#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/hid/emulated_controller.h"
 #include "core/hid/hid_core.h"
@@ -97,12 +96,12 @@ bool Controller_NPad::IsDeviceHandleValid(const DeviceHandle& device_handle) {
            device_handle.device_index < DeviceIndex::MaxDeviceIndex;
 }
 
-Controller_NPad::Controller_NPad(Core::System& system_,
+Controller_NPad::Controller_NPad(Core::HID::HIDCore& hid_core_,
                                  KernelHelpers::ServiceContext& service_context_)
-    : ControllerBase{system_}, service_context{service_context_} {
+    : ControllerBase{hid_core_}, service_context{service_context_} {
     for (std::size_t i = 0; i < controller_data.size(); ++i) {
         auto& controller = controller_data[i];
-        controller.device = system.HIDCore().GetEmulatedControllerByIndex(i);
+        controller.device = hid_core.GetEmulatedControllerByIndex(i);
         controller.vibration[Core::HID::DeviceIndex::LeftIndex].latest_vibration_value =
             DEFAULT_VIBRATION_VALUE;
         controller.vibration[Core::HID::DeviceIndex::RightIndex].latest_vibration_value =
@@ -284,7 +283,7 @@ void Controller_NPad::OnInit() {
             service_context.CreateEvent(fmt::format("npad:NpadStyleSetChanged_{}", i));
     }
 
-    if (system.HIDCore().GetSupportedStyleTag().raw == 0) {
+    if (hid_core.GetSupportedStyleTag().raw == 0) {
         // We want to support all controllers
         Core::HID::NpadStyleTag style{};
         style.handheld.Assign(1);
@@ -294,7 +293,7 @@ void Controller_NPad::OnInit() {
         style.fullkey.Assign(1);
         style.gamecube.Assign(1);
         style.palma.Assign(1);
-        system.HIDCore().SetSupportedStyleTag(style);
+        hid_core.SetSupportedStyleTag(style);
     }
 
     supported_npad_id_types.resize(npad_id_list.size());
@@ -678,11 +677,11 @@ void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing
 }
 
 void Controller_NPad::SetSupportedStyleSet(Core::HID::NpadStyleTag style_set) {
-    system.HIDCore().SetSupportedStyleTag(style_set);
+    hid_core.SetSupportedStyleTag(style_set);
 }
 
 Core::HID::NpadStyleTag Controller_NPad::GetSupportedStyleSet() const {
-    return system.HIDCore().GetSupportedStyleTag();
+    return hid_core.GetSupportedStyleTag();
 }
 
 void Controller_NPad::SetSupportedNpadIdTypes(u8* data, std::size_t length) {

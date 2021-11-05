@@ -60,12 +60,12 @@ public:
 private:
     template <typename T>
     void MakeController(HidController controller) {
-        controllers[static_cast<std::size_t>(controller)] = std::make_unique<T>(system);
+        controllers[static_cast<std::size_t>(controller)] = std::make_unique<T>(system.HIDCore());
     }
     template <typename T>
     void MakeControllerWithServiceContext(HidController controller) {
         controllers[static_cast<std::size_t>(controller)] =
-            std::make_unique<T>(system, service_context);
+            std::make_unique<T>(system.HIDCore(), service_context);
     }
 
     void GetSharedMemoryHandle(Kernel::HLERequestContext& ctx);

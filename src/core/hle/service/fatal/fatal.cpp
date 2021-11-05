@@ -11,7 +11,6 @@
 #include "common/swap.h"
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/kernel/k_process.h"
 #include "core/hle/service/fatal/fatal.h"
 #include "core/hle/service/fatal/fatal_p.h"
 #include "core/hle/service/fatal/fatal_u.h"
@@ -66,7 +65,7 @@ enum class FatalType : u32 {
 
 static void GenerateErrorReport(Core::System& system, ResultCode error_code,
                                 const FatalInfo& info) {
-    const auto title_id = system.CurrentProcess()->GetTitleID();
+    const auto title_id = system.GetCurrentProcessProgramID();
     std::string crash_report = fmt::format(
         "Yuzu {}-{} crash report\n"
         "Title ID:                        {:016x}\n"

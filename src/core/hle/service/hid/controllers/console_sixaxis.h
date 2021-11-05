@@ -5,16 +5,20 @@
 #pragma once
 
 #include <array>
+
 #include "common/common_types.h"
 #include "common/quaternion.h"
-#include "core/hid/hid_core.h"
 #include "core/hid/hid_types.h"
 #include "core/hle/service/hid/controllers/controller_base.h"
+
+namespace Core::HID {
+class EmulatedConsole;
+} // namespace Core::HID
 
 namespace Service::HID {
 class Controller_ConsoleSixAxis final : public ControllerBase {
 public:
-    explicit Controller_ConsoleSixAxis(Core::System& system_);
+    explicit Controller_ConsoleSixAxis(Core::HID::HIDCore& hid_core_);
     ~Controller_ConsoleSixAxis() override;
 
     // Called when the controller is initialized

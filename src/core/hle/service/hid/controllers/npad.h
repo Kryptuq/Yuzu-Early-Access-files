@@ -11,7 +11,6 @@
 #include "common/bit_field.h"
 #include "common/common_types.h"
 #include "common/quaternion.h"
-#include "common/settings.h"
 #include "core/hid/hid_types.h"
 #include "core/hle/service/hid/controllers/controller_base.h"
 #include "core/hle/service/hid/ring_lifo.h"
@@ -37,7 +36,7 @@ constexpr u32 NPAD_UNKNOWN = 16; // TODO(ogniK): What is this?
 
 class Controller_NPad final : public ControllerBase {
 public:
-    explicit Controller_NPad(Core::System& system_,
+    explicit Controller_NPad(Core::HID::HIDCore& hid_core_,
                              KernelHelpers::ServiceContext& service_context_);
     ~Controller_NPad() override;
 

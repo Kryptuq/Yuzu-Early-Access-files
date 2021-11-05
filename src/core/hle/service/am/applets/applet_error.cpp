@@ -9,7 +9,6 @@
 #include "common/string_util.h"
 #include "core/core.h"
 #include "core/frontend/applets/error.h"
-#include "core/hle/kernel/k_process.h"
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/am/applets/applet_error.h"
 #include "core/reporter.h"
@@ -167,7 +166,7 @@ void Error::Execute() {
     }
 
     const auto callback = [this] { DisplayCompleted(); };
-    const auto title_id = system.CurrentProcess()->GetTitleID();
+    const auto title_id = system.GetCurrentProcessProgramID();
     const auto& reporter{system.GetReporter()};
 
     switch (mode) {

@@ -26,7 +26,7 @@ std::optional<u64> GetTitleIDForProcessID(const Core::System& system, u64 proces
         return std::nullopt;
     }
 
-    return (*iter)->GetTitleID();
+    return (*iter)->GetProgramID();
 }
 } // Anonymous namespace
 

@@ -15,7 +15,7 @@
 namespace Service::HID {
 class Controller_XPad final : public ControllerBase {
 public:
-    explicit Controller_XPad(Core::System& system_);
+    explicit Controller_XPad(Core::HID::HIDCore& hid_core_);
     ~Controller_XPad() override;
 
     // Called when the controller is initialized

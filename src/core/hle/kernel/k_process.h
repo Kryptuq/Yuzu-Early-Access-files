@@ -154,8 +154,8 @@ public:
         return process_id;
     }
 
-    /// Gets the title ID corresponding to this process.
-    u64 GetTitleID() const {
+    /// Gets the program ID corresponding to this process.
+    u64 GetProgramID() const {
         return program_id;
     }
 

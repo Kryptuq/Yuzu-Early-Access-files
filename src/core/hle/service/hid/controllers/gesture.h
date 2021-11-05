@@ -15,7 +15,7 @@
 namespace Service::HID {
 class Controller_Gesture final : public ControllerBase {
 public:
-    explicit Controller_Gesture(Core::System& system_);
+    explicit Controller_Gesture(Core::HID::HIDCore& hid_core_);
     ~Controller_Gesture() override;
 
     // Called when the controller is initialized

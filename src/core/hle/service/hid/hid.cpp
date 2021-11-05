@@ -8,6 +8,7 @@
 #include "common/settings.h"
 #include "core/core.h"
 #include "core/core_timing.h"
+#include "core/hid/hid_core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/k_shared_memory.h"

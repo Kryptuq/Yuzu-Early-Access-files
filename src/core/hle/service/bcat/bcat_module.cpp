@@ -11,7 +11,6 @@
 #include "core/core.h"
 #include "core/file_sys/vfs.h"
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/service/bcat/backend/backend.h"
 #include "core/hle/service/bcat/bcat.h"
@@ -178,7 +177,7 @@ private:
     void RequestSyncDeliveryCache(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_BCAT, "called");
 
-        backend.Synchronize({system.CurrentProcess()->GetTitleID(),
+        backend.Synchronize({system.GetCurrentProcessProgramID(),
                              GetCurrentBuildID(system.GetCurrentProcessBuildID())},
                             GetProgressBackend(SyncType::Normal));
 
@@ -195,7 +194,7 @@ private:
 
         LOG_DEBUG(Service_BCAT, "called, name={}", name);
 
-        backend.SynchronizeDirectory({system.CurrentProcess()->GetTitleID(),
+        backend.SynchronizeDirectory({system.GetCurrentProcessProgramID(),
                                       GetCurrentBuildID(system.GetCurrentProcessBuildID())},
                                      name, GetProgressBackend(SyncType::Directory));
 
@@ -556,7 +555,7 @@ private:
 void Module::Interface::CreateDeliveryCacheStorageService(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_BCAT, "called");
 
-    const auto title_id = system.CurrentProcess()->GetTitleID();
+    const auto title_id = system.GetCurrentProcessProgramID();
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IDeliveryCacheStorageService>(system, fsc.GetBCATDirectory(title_id));

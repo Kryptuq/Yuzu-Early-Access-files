@@ -6,7 +6,7 @@
 
 namespace Service::HID {
 
-ControllerBase::ControllerBase(Core::System& system_) : system(system_) {}
+ControllerBase::ControllerBase(Core::HID::HIDCore& hid_core_) : hid_core(hid_core_) {}
 ControllerBase::~ControllerBase() = default;
 
 void ControllerBase::ActivateController() {
