@@ -490,8 +490,9 @@ void GMainWindow::SoftwareKeyboardInitialize(
     } else {
         connect(
             software_keyboard, &QtSoftwareKeyboardDialog::SubmitNormalText, this,
-            [this](Service::AM::Applets::SwkbdResult result, std::u16string submitted_text) {
-                emit SoftwareKeyboardSubmitNormalText(result, submitted_text);
+            [this](Service::AM::Applets::SwkbdResult result, std::u16string submitted_text,
+                   bool confirmed) {
+                emit SoftwareKeyboardSubmitNormalText(result, submitted_text, confirmed);
             },
             Qt::QueuedConnection);
     }

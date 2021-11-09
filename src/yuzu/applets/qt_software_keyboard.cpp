@@ -416,7 +416,7 @@ void QtSoftwareKeyboardDialog::ShowTextCheckDialog(
                         ? ui->text_edit_osk->toPlainText().toStdU16String()
                         : ui->line_edit_osk->text().toStdU16String();
 
-        emit SubmitNormalText(SwkbdResult::Ok, std::move(text));
+        emit SubmitNormalText(SwkbdResult::Ok, std::move(text), true);
         break;
     }
     }
@@ -1520,7 +1520,8 @@ QtSoftwareKeyboard::~QtSoftwareKeyboard() = default;
 
 void QtSoftwareKeyboard::InitializeKeyboard(
     bool is_inline, Core::Frontend::KeyboardInitializeParameters initialize_parameters,
-    std::function<void(Service::AM::Applets::SwkbdResult, std::u16string)> submit_normal_callback_,
+    std::function<void(Service::AM::Applets::SwkbdResult, std::u16string, bool)>
+        submit_normal_callback_,
     std::function<void(Service::AM::Applets::SwkbdReplyType, std::u16string, s32)>
         submit_inline_callback_) {
     if (is_inline) {
@@ -1619,8 +1620,8 @@ void QtSoftwareKeyboard::ExitKeyboard() const {
 }
 
 void QtSoftwareKeyboard::SubmitNormalText(Service::AM::Applets::SwkbdResult result,
-                                          std::u16string submitted_text) const {
-    submit_normal_callback(result, submitted_text);
+                                          std::u16string submitted_text, bool confirmed) const {
+    submit_normal_callback(result, submitted_text, confirmed);
 }
 
 void QtSoftwareKeyboard::SubmitInlineText(Service::AM::Applets::SwkbdReplyType reply_type,

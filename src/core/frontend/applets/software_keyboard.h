@@ -57,7 +57,7 @@ public:
 
     virtual void InitializeKeyboard(
         bool is_inline, KeyboardInitializeParameters initialize_parameters,
-        std::function<void(Service::AM::Applets::SwkbdResult, std::u16string)>
+        std::function<void(Service::AM::Applets::SwkbdResult, std::u16string, bool)>
             submit_normal_callback_,
         std::function<void(Service::AM::Applets::SwkbdReplyType, std::u16string, s32)>
             submit_inline_callback_) = 0;
@@ -82,7 +82,7 @@ public:
 
     void InitializeKeyboard(
         bool is_inline, KeyboardInitializeParameters initialize_parameters,
-        std::function<void(Service::AM::Applets::SwkbdResult, std::u16string)>
+        std::function<void(Service::AM::Applets::SwkbdResult, std::u16string, bool)>
             submit_normal_callback_,
         std::function<void(Service::AM::Applets::SwkbdReplyType, std::u16string, s32)>
             submit_inline_callback_) override;
@@ -106,7 +106,7 @@ private:
 
     KeyboardInitializeParameters parameters;
 
-    mutable std::function<void(Service::AM::Applets::SwkbdResult, std::u16string)>
+    mutable std::function<void(Service::AM::Applets::SwkbdResult, std::u16string, bool)>
         submit_normal_callback;
     mutable std::function<void(Service::AM::Applets::SwkbdReplyType, std::u16string, s32)>
         submit_inline_callback;

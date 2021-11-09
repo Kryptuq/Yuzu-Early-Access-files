@@ -53,8 +53,8 @@ public:
     void ExitKeyboard();
 
 signals:
-    void SubmitNormalText(Service::AM::Applets::SwkbdResult result,
-                          std::u16string submitted_text) const;
+    void SubmitNormalText(Service::AM::Applets::SwkbdResult result, std::u16string submitted_text,
+                          bool confirmed = false) const;
 
     void SubmitInlineText(Service::AM::Applets::SwkbdReplyType reply_type,
                           std::u16string submitted_text, s32 cursor_position) const;
@@ -236,7 +236,7 @@ public:
 
     void InitializeKeyboard(
         bool is_inline, Core::Frontend::KeyboardInitializeParameters initialize_parameters,
-        std::function<void(Service::AM::Applets::SwkbdResult, std::u16string)>
+        std::function<void(Service::AM::Applets::SwkbdResult, std::u16string, bool)>
             submit_normal_callback_,
         std::function<void(Service::AM::Applets::SwkbdReplyType, std::u16string, s32)>
             submit_inline_callback_) override;
@@ -274,13 +274,13 @@ signals:
     void MainWindowExitKeyboard() const;
 
 private:
-    void SubmitNormalText(Service::AM::Applets::SwkbdResult result,
-                          std::u16string submitted_text) const;
+    void SubmitNormalText(Service::AM::Applets::SwkbdResult result, std::u16string submitted_text,
+                          bool confirmed) const;
 
     void SubmitInlineText(Service::AM::Applets::SwkbdReplyType reply_type,
                           std::u16string submitted_text, s32 cursor_position) const;
 
-    mutable std::function<void(Service::AM::Applets::SwkbdResult, std::u16string)>
+    mutable std::function<void(Service::AM::Applets::SwkbdResult, std::u16string, bool)>
         submit_normal_callback;
     mutable std::function<void(Service::AM::Applets::SwkbdReplyType, std::u16string, s32)>
         submit_inline_callback;

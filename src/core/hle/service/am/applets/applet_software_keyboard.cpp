@@ -109,13 +109,18 @@ void SoftwareKeyboard::Execute() {
     ShowNormalKeyboard();
 }
 
-void SoftwareKeyboard::SubmitTextNormal(SwkbdResult result, std::u16string submitted_text) {
+void SoftwareKeyboard::SubmitTextNormal(SwkbdResult result, std::u16string submitted_text,
+                                        bool confirmed) {
     if (complete) {
         return;
     }
 
     if (swkbd_config_common.use_text_check && result == SwkbdResult::Ok) {
-        SubmitForTextCheck(submitted_text);
+        if (confirmed) {
+            SubmitNormalOutputAndExit(result, submitted_text);
+        } else {
+            SubmitForTextCheck(submitted_text);
+        }
     } else {
         SubmitNormalOutputAndExit(result, submitted_text);
     }
@@ -583,11 +588,12 @@ void SoftwareKeyboard::InitializeFrontendKeyboard() {
             .disable_cancel_button{disable_cancel_button},
         };
 
-        frontend.InitializeKeyboard(false, std::move(initialize_parameters),
-                                    [this](SwkbdResult result, std::u16string submitted_text) {
-                                        SubmitTextNormal(result, submitted_text);
-                                    },
-                                    {});
+        frontend.InitializeKeyboard(
+            false, std::move(initialize_parameters),
+            [this](SwkbdResult result, std::u16string submitted_text, bool confirmed) {
+                SubmitTextNormal(result, submitted_text, confirmed);
+            },
+            {});
     }
 }
 

@@ -36,8 +36,9 @@ public:
      *
      * @param result SwkbdResult enum
      * @param submitted_text UTF-16 encoded string
+     * @param confirmed Whether the text has been confirmed after TextCheckResult::Confirm
      */
-    void SubmitTextNormal(SwkbdResult result, std::u16string submitted_text);
+    void SubmitTextNormal(SwkbdResult result, std::u16string submitted_text, bool confirmed);
 
     /**
      * Submits the input text to the application.

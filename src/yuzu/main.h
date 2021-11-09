@@ -150,7 +150,7 @@ signals:
     void ProfileSelectorFinishedSelection(std::optional<Common::UUID> uuid);
 
     void SoftwareKeyboardSubmitNormalText(Service::AM::Applets::SwkbdResult result,
-                                          std::u16string submitted_text);
+                                          std::u16string submitted_text, bool confirmed);
     void SoftwareKeyboardSubmitInlineText(Service::AM::Applets::SwkbdReplyType reply_type,
                                           std::u16string submitted_text, s32 cursor_position);
 
