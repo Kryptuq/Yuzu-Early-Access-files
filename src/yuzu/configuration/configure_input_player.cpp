@@ -627,7 +627,8 @@ void ConfigureInputPlayer::UpdateInputDeviceCombobox() {
         return;
     }
 
-    const auto devices = emulated_controller->GetMappedDevices(Core::HID::DeviceIndex::AllDevices);
+    const auto devices =
+        emulated_controller->GetMappedDevices(Core::HID::EmulatedDeviceIndex::AllDevices);
     UpdateInputDevices();
 
     if (devices.empty()) {
@@ -846,7 +847,6 @@ void ConfigureInputPlayer::SetConnectableControllers() {
 
     if (!is_powered_on) {
         add_controllers(true);
-        return;
     }
 
     add_controllers(false, hid_core.GetSupportedStyleTag());

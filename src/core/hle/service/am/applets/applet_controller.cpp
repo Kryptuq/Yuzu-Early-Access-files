@@ -12,6 +12,7 @@
 #include "core/frontend/applets/controller.h"
 #include "core/hid/emulated_controller.h"
 #include "core/hid/hid_core.h"
+#include "core/hid/hid_types.h"
 #include "core/hle/result.h"
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/am/applets/applet_controller.h"

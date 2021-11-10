@@ -13,7 +13,7 @@
 namespace Core::HID {
 
 // This is nn::hid::NpadIdType
-enum class NpadIdType : u8 {
+enum class NpadIdType : u32 {
     Player1 = 0x0,
     Player2 = 0x1,
     Player3 = 0x2,
@@ -25,7 +25,7 @@ enum class NpadIdType : u8 {
     Other = 0x10,
     Handheld = 0x20,
 
-    Invalid = 0xFF,
+    Invalid = 0xFFFFFFFF,
 };
 
 /// Converts a NpadIdType to an array index.
@@ -104,10 +104,30 @@ enum class NpadStyleIndex : u8 {
     MaxNpadType = 34,
 };
 
+// This is nn::hid::NpadStyleSet
+enum class NpadStyleSet : u32 {
+    None = 0,
+    Fullkey = 1U << 0,
+    Handheld = 1U << 1,
+    Joycon_dual = 1U << 2,
+    Joycon_left = 1U << 3,
+    Joycon_right = 1U << 4,
+    Gamecube = 1U << 5,
+    Palma = 1U << 6,
+    Lark = 1U << 7,
+    Handheld_lark = 1U << 8,
+    Lucia = 1U << 9,
+    Lagoon = 1U << 10,
+    Lager = 1U << 11,
+    System_ext = 1U << 29,
+    System = 1U << 30,
+};
+static_assert(sizeof(NpadStyleSet) == 4, "NpadStyleSet is an invalid size");
+
 // This is nn::hid::NpadStyleTag
 struct NpadStyleTag {
     union {
-        u32 raw{};
+        NpadStyleSet raw{};
 
         BitField<0, 1, u32> fullkey;
         BitField<1, 1, u32> handheld;
@@ -321,6 +341,47 @@ struct DebugPadButton {
     };
 };
 static_assert(sizeof(DebugPadButton) == 0x4, "DebugPadButton is an invalid size");
+
+enum class DeviceIndex : u8 {
+    Left = 0,
+    Right = 1,
+    None = 2,
+    MaxDeviceIndex = 3,
+};
+
+// This is nn::hid::ConsoleSixAxisSensorHandle
+struct ConsoleSixAxisSensorHandle {
+    u8 unknown_1;
+    u8 unknown_2;
+    INSERT_PADDING_BYTES_NOINIT(2);
+};
+static_assert(sizeof(ConsoleSixAxisSensorHandle) == 4,
+              "ConsoleSixAxisSensorHandle is an invalid size");
+
+// This is nn::hid::SixAxisSensorHandle
+struct SixAxisSensorHandle {
+    NpadStyleIndex npad_type;
+    u8 npad_id;
+    DeviceIndex device_index;
+    INSERT_PADDING_BYTES_NOINIT(1);
+};
+static_assert(sizeof(SixAxisSensorHandle) == 4, "SixAxisSensorHandle is an invalid size");
+
+struct SixAxisSensorFusionParameters {
+    f32 parameter1;
+    f32 parameter2;
+};
+static_assert(sizeof(SixAxisSensorFusionParameters) == 8,
+              "SixAxisSensorFusionParameters is an invalid size");
+
+// This is nn::hid::VibrationDeviceHandle
+struct VibrationDeviceHandle {
+    NpadStyleIndex npad_type;
+    u8 npad_id;
+    DeviceIndex device_index;
+    INSERT_PADDING_BYTES_NOINIT(1);
+};
+static_assert(sizeof(VibrationDeviceHandle) == 4, "SixAxisSensorHandle is an invalid size");
 
 // This is nn::hid::VibrationDeviceType
 enum class VibrationDeviceType : u32 {

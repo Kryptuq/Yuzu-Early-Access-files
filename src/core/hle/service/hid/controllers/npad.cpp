@@ -21,68 +21,25 @@
 
 namespace Service::HID {
 constexpr std::size_t NPAD_OFFSET = 0x9A00;
-constexpr u32 MAX_NPAD_ID = 7;
-constexpr std::size_t HANDHELD_INDEX = 8;
-constexpr std::array<u32, 10> npad_id_list{
-    0, 1, 2, 3, 4, 5, 6, 7, NPAD_HANDHELD, NPAD_UNKNOWN,
+constexpr std::array<Core::HID::NpadIdType, 10> npad_id_list{
+    Core::HID::NpadIdType::Player1,  Core::HID::NpadIdType::Player2, Core::HID::NpadIdType::Player3,
+    Core::HID::NpadIdType::Player4,  Core::HID::NpadIdType::Player5, Core::HID::NpadIdType::Player6,
+    Core::HID::NpadIdType::Player7,  Core::HID::NpadIdType::Player8, Core::HID::NpadIdType::Other,
+    Core::HID::NpadIdType::Handheld,
 };
 
-std::size_t Controller_NPad::NPadIdToIndex(u32 npad_id) {
+bool Controller_NPad::IsNpadIdValid(Core::HID::NpadIdType npad_id) {
     switch (npad_id) {
-    case 0:
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-    case 6:
-    case 7:
-        return npad_id;
-    case HANDHELD_INDEX:
-    case NPAD_HANDHELD:
-        return HANDHELD_INDEX;
-    case 9:
-    case NPAD_UNKNOWN:
-        return 9;
-    default:
-        UNIMPLEMENTED_MSG("Unknown npad id {}", npad_id);
-        return 0;
-    }
-}
-
-u32 Controller_NPad::IndexToNPad(std::size_t index) {
-    switch (index) {
-    case 0:
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-    case 6:
-    case 7:
-        return static_cast<u32>(index);
-    case HANDHELD_INDEX:
-        return NPAD_HANDHELD;
-    case 9:
-        return NPAD_UNKNOWN;
-    default:
-        UNIMPLEMENTED_MSG("Unknown npad index {}", index);
-        return 0;
-    }
-}
-
-bool Controller_NPad::IsNpadIdValid(u32 npad_id) {
-    switch (npad_id) {
-    case 0:
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-    case 6:
-    case 7:
-    case NPAD_UNKNOWN:
-    case NPAD_HANDHELD:
+    case Core::HID::NpadIdType::Player1:
+    case Core::HID::NpadIdType::Player2:
+    case Core::HID::NpadIdType::Player3:
+    case Core::HID::NpadIdType::Player4:
+    case Core::HID::NpadIdType::Player5:
+    case Core::HID::NpadIdType::Player6:
+    case Core::HID::NpadIdType::Player7:
+    case Core::HID::NpadIdType::Player8:
+    case Core::HID::NpadIdType::Other:
+    case Core::HID::NpadIdType::Handheld:
         return true;
     default:
         LOG_ERROR(Service_HID, "Invalid npad id {}", npad_id);
@@ -90,10 +47,16 @@ bool Controller_NPad::IsNpadIdValid(u32 npad_id) {
     }
 }
 
-bool Controller_NPad::IsDeviceHandleValid(const DeviceHandle& device_handle) {
-    return IsNpadIdValid(device_handle.npad_id) &&
+bool Controller_NPad::IsDeviceHandleValid(const Core::HID::VibrationDeviceHandle& device_handle) {
+    return IsNpadIdValid(static_cast<Core::HID::NpadIdType>(device_handle.npad_id)) &&
            device_handle.npad_type < Core::HID::NpadStyleIndex::MaxNpadType &&
-           device_handle.device_index < DeviceIndex::MaxDeviceIndex;
+           device_handle.device_index < Core::HID::DeviceIndex::MaxDeviceIndex;
+}
+
+bool Controller_NPad::IsDeviceHandleValid(const Core::HID::SixAxisSensorHandle& device_handle) {
+    return IsNpadIdValid(static_cast<Core::HID::NpadIdType>(device_handle.npad_id)) &&
+           device_handle.npad_type < Core::HID::NpadStyleIndex::MaxNpadType &&
+           device_handle.device_index < Core::HID::DeviceIndex::MaxDeviceIndex;
 }
 
 Controller_NPad::Controller_NPad(Core::HID::HIDCore& hid_core_,
@@ -102,9 +65,9 @@ Controller_NPad::Controller_NPad(Core::HID::HIDCore& hid_core_,
     for (std::size_t i = 0; i < controller_data.size(); ++i) {
         auto& controller = controller_data[i];
         controller.device = hid_core.GetEmulatedControllerByIndex(i);
-        controller.vibration[Core::HID::DeviceIndex::LeftIndex].latest_vibration_value =
+        controller.vibration[Core::HID::EmulatedDeviceIndex::LeftIndex].latest_vibration_value =
             DEFAULT_VIBRATION_VALUE;
-        controller.vibration[Core::HID::DeviceIndex::RightIndex].latest_vibration_value =
+        controller.vibration[Core::HID::EmulatedDeviceIndex::RightIndex].latest_vibration_value =
             DEFAULT_VIBRATION_VALUE;
         Core::HID::ControllerUpdateCallback engine_callback{
             .on_change = [this,
@@ -130,17 +93,21 @@ void Controller_NPad::ControllerUpdate(Core::HID::ControllerTriggerType type,
         ControllerUpdate(Core::HID::ControllerTriggerType::Battery, controller_idx);
         return;
     }
+    if (controller_idx >= controller_data.size()) {
+        return;
+    }
 
     auto& controller = controller_data[controller_idx];
     const auto is_connected = controller.device->IsConnected();
     const auto npad_type = controller.device->GetNpadStyleIndex();
+    const auto npad_id = controller.device->GetNpadIdType();
     switch (type) {
     case Core::HID::ControllerTriggerType::Connected:
     case Core::HID::ControllerTriggerType::Disconnected:
         if (is_connected == controller.is_connected) {
             return;
         }
-        UpdateControllerAt(npad_type, controller_idx, is_connected);
+        UpdateControllerAt(npad_type, npad_id, is_connected);
         break;
     case Core::HID::ControllerTriggerType::Battery: {
         if (!controller.is_connected) {
@@ -158,15 +125,16 @@ void Controller_NPad::ControllerUpdate(Core::HID::ControllerTriggerType type,
     }
 }
 
-void Controller_NPad::InitNewlyAddedController(std::size_t controller_idx) {
-    auto& controller = controller_data[controller_idx];
+void Controller_NPad::InitNewlyAddedController(Core::HID::NpadIdType npad_id) {
+    LOG_DEBUG(Service_HID, "Npad connected {}", npad_id);
+    auto& controller = GetControllerFromNpadIdType(npad_id);
     const auto controller_type = controller.device->GetNpadStyleIndex();
     auto& shared_memory = controller.shared_memory_entry;
     if (controller_type == Core::HID::NpadStyleIndex::None) {
         controller.styleset_changed_event->GetWritableEvent().Signal();
         return;
     }
-    shared_memory.style_set.raw = 0; // Zero out
+    shared_memory.style_tag.raw = Core::HID::NpadStyleSet::None;
     shared_memory.device_type.raw = 0;
     shared_memory.system_properties.raw = 0;
     switch (controller_type) {
@@ -174,7 +142,7 @@ void Controller_NPad::InitNewlyAddedController(std::size_t controller_idx) {
         UNREACHABLE();
         break;
     case Core::HID::NpadStyleIndex::ProController:
-        shared_memory.style_set.fullkey.Assign(1);
+        shared_memory.style_tag.fullkey.Assign(1);
         shared_memory.device_type.fullkey.Assign(1);
         shared_memory.system_properties.is_vertical.Assign(1);
         shared_memory.system_properties.use_plus.Assign(1);
@@ -183,7 +151,7 @@ void Controller_NPad::InitNewlyAddedController(std::size_t controller_idx) {
         shared_memory.applet_footer.type = AppletFooterUiType::SwitchProController;
         break;
     case Core::HID::NpadStyleIndex::Handheld:
-        shared_memory.style_set.handheld.Assign(1);
+        shared_memory.style_tag.handheld.Assign(1);
         shared_memory.device_type.handheld_left.Assign(1);
         shared_memory.device_type.handheld_right.Assign(1);
         shared_memory.system_properties.is_vertical.Assign(1);
@@ -193,7 +161,7 @@ void Controller_NPad::InitNewlyAddedController(std::size_t controller_idx) {
         shared_memory.applet_footer.type = AppletFooterUiType::HandheldJoyConLeftJoyConRight;
         break;
     case Core::HID::NpadStyleIndex::JoyconDual:
-        shared_memory.style_set.joycon_dual.Assign(1);
+        shared_memory.style_tag.joycon_dual.Assign(1);
         shared_memory.device_type.joycon_left.Assign(1);
         shared_memory.device_type.joycon_right.Assign(1);
         shared_memory.system_properties.is_vertical.Assign(1);
@@ -203,7 +171,7 @@ void Controller_NPad::InitNewlyAddedController(std::size_t controller_idx) {
         shared_memory.applet_footer.type = AppletFooterUiType::JoyDual;
         break;
     case Core::HID::NpadStyleIndex::JoyconLeft:
-        shared_memory.style_set.joycon_left.Assign(1);
+        shared_memory.style_tag.joycon_left.Assign(1);
         shared_memory.device_type.joycon_left.Assign(1);
         shared_memory.system_properties.is_horizontal.Assign(1);
         shared_memory.system_properties.use_minus.Assign(1);
@@ -211,7 +179,7 @@ void Controller_NPad::InitNewlyAddedController(std::size_t controller_idx) {
         shared_memory.applet_footer.type = AppletFooterUiType::JoyLeftHorizontal;
         break;
     case Core::HID::NpadStyleIndex::JoyconRight:
-        shared_memory.style_set.joycon_right.Assign(1);
+        shared_memory.style_tag.joycon_right.Assign(1);
         shared_memory.device_type.joycon_right.Assign(1);
         shared_memory.system_properties.is_horizontal.Assign(1);
         shared_memory.system_properties.use_plus.Assign(1);
@@ -219,32 +187,32 @@ void Controller_NPad::InitNewlyAddedController(std::size_t controller_idx) {
         shared_memory.applet_footer.type = AppletFooterUiType::JoyRightHorizontal;
         break;
     case Core::HID::NpadStyleIndex::GameCube:
-        shared_memory.style_set.gamecube.Assign(1);
+        shared_memory.style_tag.gamecube.Assign(1);
         shared_memory.device_type.fullkey.Assign(1);
         shared_memory.system_properties.is_vertical.Assign(1);
         shared_memory.system_properties.use_plus.Assign(1);
         break;
     case Core::HID::NpadStyleIndex::Pokeball:
-        shared_memory.style_set.palma.Assign(1);
+        shared_memory.style_tag.palma.Assign(1);
         shared_memory.device_type.palma.Assign(1);
         shared_memory.assignment_mode = NpadJoyAssignmentMode::Single;
         break;
     case Core::HID::NpadStyleIndex::NES:
-        shared_memory.style_set.lark.Assign(1);
+        shared_memory.style_tag.lark.Assign(1);
         shared_memory.device_type.fullkey.Assign(1);
         break;
     case Core::HID::NpadStyleIndex::SNES:
-        shared_memory.style_set.lucia.Assign(1);
+        shared_memory.style_tag.lucia.Assign(1);
         shared_memory.device_type.fullkey.Assign(1);
         shared_memory.applet_footer.type = AppletFooterUiType::Lucia;
         break;
     case Core::HID::NpadStyleIndex::N64:
-        shared_memory.style_set.lagoon.Assign(1);
+        shared_memory.style_tag.lagoon.Assign(1);
         shared_memory.device_type.fullkey.Assign(1);
         shared_memory.applet_footer.type = AppletFooterUiType::Lagon;
         break;
     case Core::HID::NpadStyleIndex::SegaGenesis:
-        shared_memory.style_set.lager.Assign(1);
+        shared_memory.style_tag.lager.Assign(1);
         shared_memory.device_type.fullkey.Assign(1);
         break;
     default:
@@ -268,7 +236,7 @@ void Controller_NPad::InitNewlyAddedController(std::size_t controller_idx) {
 
     controller.is_connected = true;
     controller.device->Connect();
-    SignalStyleSetChangedEvent(IndexToNPad(controller_idx));
+    SignalStyleSetChangedEvent(npad_id);
     WriteEmptyEntry(controller.shared_memory_entry);
 }
 
@@ -283,7 +251,7 @@ void Controller_NPad::OnInit() {
             service_context.CreateEvent(fmt::format("npad:NpadStyleSetChanged_{}", i));
     }
 
-    if (hid_core.GetSupportedStyleTag().raw == 0) {
+    if (hid_core.GetSupportedStyleTag().raw == Core::HID::NpadStyleSet::None) {
         // We want to support all controllers
         Core::HID::NpadStyleTag style{};
         style.handheld.Assign(1);
@@ -298,7 +266,7 @@ void Controller_NPad::OnInit() {
 
     supported_npad_id_types.resize(npad_id_list.size());
     std::memcpy(supported_npad_id_types.data(), npad_id_list.data(),
-                npad_id_list.size() * sizeof(u32));
+                npad_id_list.size() * sizeof(Core::HID::NpadIdType));
 
     // Prefill controller buffers
     for (auto& controller : controller_data) {
@@ -322,8 +290,7 @@ void Controller_NPad::OnInit() {
     for (auto& controller : controller_data) {
         const auto& device = controller.device;
         if (device->IsConnected()) {
-            const std::size_t index = Core::HID::NpadIdTypeToIndex(device->GetNpadIdType());
-            AddNewControllerAt(device->GetNpadStyleIndex(), index);
+            AddNewControllerAt(device->GetNpadStyleIndex(), device->GetNpadIdType());
         }
     }
 }
@@ -354,15 +321,14 @@ void Controller_NPad::OnRelease() {
         auto& controller = controller_data[i];
         service_context.CloseEvent(controller.styleset_changed_event);
         for (std::size_t device_idx = 0; device_idx < controller.vibration.size(); ++device_idx) {
-            VibrateControllerAtIndex(i, device_idx, {});
+            VibrateControllerAtIndex(controller.device->GetNpadIdType(), device_idx, {});
         }
     }
 }
 
-void Controller_NPad::RequestPadStateUpdate(u32 npad_id) {
+void Controller_NPad::RequestPadStateUpdate(Core::HID::NpadIdType npad_id) {
     std::lock_guard lock{mutex};
-    const auto controller_idx = NPadIdToIndex(npad_id);
-    auto& controller = controller_data[controller_idx];
+    auto& controller = GetControllerFromNpadIdType(npad_id);
     const auto controller_type = controller.device->GetNpadStyleIndex();
     if (!controller.device->IsConnected()) {
         return;
@@ -431,9 +397,8 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
                         &controller.shared_memory_entry, sizeof(NpadInternalState));
             continue;
         }
-        const u32 npad_index = static_cast<u32>(i);
 
-        RequestPadStateUpdate(npad_index);
+        RequestPadStateUpdate(controller.device->GetNpadIdType());
         auto& pad_state = controller.npad_pad_state;
         auto& libnx_state = controller.npad_libnx_state;
         auto& trigger_state = controller.npad_trigger_state;
@@ -571,10 +536,11 @@ void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing
         auto& sixaxis_left_lifo_state = controller.sixaxis_left_lifo_state;
         auto& sixaxis_right_lifo_state = controller.sixaxis_right_lifo_state;
 
-        if (sixaxis_sensors_enabled && Settings::values.motion_enabled.GetValue()) {
-            sixaxis_at_rest = true;
+        if (controller.sixaxis_sensor_enabled && Settings::values.motion_enabled.GetValue()) {
+            controller.sixaxis_at_rest = true;
             for (std::size_t e = 0; e < motion_state.size(); ++e) {
-                sixaxis_at_rest = sixaxis_at_rest && motion_state[e].is_at_rest;
+                controller.sixaxis_at_rest =
+                    controller.sixaxis_at_rest && motion_state[e].is_at_rest;
             }
         }
 
@@ -584,7 +550,7 @@ void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing
             break;
         case Core::HID::NpadStyleIndex::ProController:
             sixaxis_fullkey_state.attribute.raw = 0;
-            if (sixaxis_sensors_enabled) {
+            if (controller.sixaxis_sensor_enabled) {
                 sixaxis_fullkey_state.attribute.is_connected.Assign(1);
                 sixaxis_fullkey_state.accel = motion_state[0].accel;
                 sixaxis_fullkey_state.gyro = motion_state[0].gyro;
@@ -594,7 +560,7 @@ void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing
             break;
         case Core::HID::NpadStyleIndex::Handheld:
             sixaxis_handheld_state.attribute.raw = 0;
-            if (sixaxis_sensors_enabled) {
+            if (controller.sixaxis_sensor_enabled) {
                 sixaxis_handheld_state.attribute.is_connected.Assign(1);
                 sixaxis_handheld_state.accel = motion_state[0].accel;
                 sixaxis_handheld_state.gyro = motion_state[0].gyro;
@@ -605,7 +571,7 @@ void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing
         case Core::HID::NpadStyleIndex::JoyconDual:
             sixaxis_dual_left_state.attribute.raw = 0;
             sixaxis_dual_right_state.attribute.raw = 0;
-            if (sixaxis_sensors_enabled) {
+            if (controller.sixaxis_sensor_enabled) {
                 // Set motion for the left joycon
                 sixaxis_dual_left_state.attribute.is_connected.Assign(1);
                 sixaxis_dual_left_state.accel = motion_state[0].accel;
@@ -613,7 +579,7 @@ void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing
                 sixaxis_dual_left_state.rotation = motion_state[0].rotation;
                 sixaxis_dual_left_state.orientation = motion_state[0].orientation;
             }
-            if (sixaxis_sensors_enabled) {
+            if (controller.sixaxis_sensor_enabled) {
                 // Set motion for the right joycon
                 sixaxis_dual_right_state.attribute.is_connected.Assign(1);
                 sixaxis_dual_right_state.accel = motion_state[1].accel;
@@ -624,7 +590,7 @@ void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing
             break;
         case Core::HID::NpadStyleIndex::JoyconLeft:
             sixaxis_left_lifo_state.attribute.raw = 0;
-            if (sixaxis_sensors_enabled) {
+            if (controller.sixaxis_sensor_enabled) {
                 sixaxis_left_lifo_state.attribute.is_connected.Assign(1);
                 sixaxis_left_lifo_state.accel = motion_state[0].accel;
                 sixaxis_left_lifo_state.gyro = motion_state[0].gyro;
@@ -634,7 +600,7 @@ void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing
             break;
         case Core::HID::NpadStyleIndex::JoyconRight:
             sixaxis_right_lifo_state.attribute.raw = 0;
-            if (sixaxis_sensors_enabled) {
+            if (controller.sixaxis_sensor_enabled) {
                 sixaxis_right_lifo_state.attribute.is_connected.Assign(1);
                 sixaxis_right_lifo_state.accel = motion_state[1].accel;
                 sixaxis_right_lifo_state.gyro = motion_state[1].gyro;
@@ -724,26 +690,30 @@ Controller_NPad::NpadCommunicationMode Controller_NPad::GetNpadCommunicationMode
     return communication_mode;
 }
 
-void Controller_NPad::SetNpadMode(u32 npad_id, NpadJoyAssignmentMode assignment_mode) {
-    const std::size_t npad_index = NPadIdToIndex(npad_id);
-    ASSERT(npad_index < controller_data.size());
-    auto& controller = controller_data[npad_index];
+void Controller_NPad::SetNpadMode(Core::HID::NpadIdType npad_id,
+                                  NpadJoyAssignmentMode assignment_mode) {
+    if (!IsNpadIdValid(npad_id)) {
+        LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id:{}", npad_id);
+        return;
+    }
+
+    auto& controller = GetControllerFromNpadIdType(npad_id);
     if (controller.shared_memory_entry.assignment_mode != assignment_mode) {
         controller.shared_memory_entry.assignment_mode = assignment_mode;
     }
 }
 
-bool Controller_NPad::VibrateControllerAtIndex(std::size_t npad_index, std::size_t device_index,
-                                               const VibrationValue& vibration_value) {
-    auto& controller = controller_data[npad_index];
-
+bool Controller_NPad::VibrateControllerAtIndex(Core::HID::NpadIdType npad_id,
+                                               std::size_t device_index,
+                                               const Core::HID::VibrationValue& vibration_value) {
+    auto& controller = GetControllerFromNpadIdType(npad_id);
     if (!controller.device->IsConnected()) {
         return false;
     }
 
     if (!controller.device->IsVibrationEnabled()) {
-        if (controller.vibration[device_index].latest_vibration_value.amp_low != 0.0f ||
-            controller.vibration[device_index].latest_vibration_value.amp_high != 0.0f) {
+        if (controller.vibration[device_index].latest_vibration_value.low_amplitude != 0.0f ||
+            controller.vibration[device_index].latest_vibration_value.high_amplitude != 0.0f) {
             // Send an empty vibration to stop any vibrations.
             Core::HID::VibrationValue vibration{0.0f, 160.0f, 0.0f, 320.0f};
             controller.device->SetVibration(device_index, vibration);
@@ -762,7 +732,7 @@ bool Controller_NPad::VibrateControllerAtIndex(std::size_t npad_index, std::size
         const auto now = steady_clock::now();
 
         // Filter out non-zero vibrations that are within 10ms of each other.
-        if ((vibration_value.amp_low != 0.0f || vibration_value.amp_high != 0.0f) &&
+        if ((vibration_value.low_amplitude != 0.0f || vibration_value.high_amplitude != 0.0f) &&
             duration_cast<milliseconds>(
                 now - controller.vibration[device_index].last_vibration_timepoint) <
                 milliseconds(10)) {
@@ -772,13 +742,15 @@ bool Controller_NPad::VibrateControllerAtIndex(std::size_t npad_index, std::size
         controller.vibration[device_index].last_vibration_timepoint = now;
     }
 
-    Core::HID::VibrationValue vibration{vibration_value.amp_low, vibration_value.freq_low,
-                                        vibration_value.amp_high, vibration_value.freq_high};
+    Core::HID::VibrationValue vibration{
+        vibration_value.low_amplitude, vibration_value.low_frequency,
+        vibration_value.high_amplitude, vibration_value.high_frequency};
     return controller.device->SetVibration(device_index, vibration);
 }
 
-void Controller_NPad::VibrateController(const DeviceHandle& vibration_device_handle,
-                                        const VibrationValue& vibration_value) {
+void Controller_NPad::VibrateController(
+    const Core::HID::VibrationDeviceHandle& vibration_device_handle,
+    const Core::HID::VibrationValue& vibration_value) {
     if (!IsDeviceHandleValid(vibration_device_handle)) {
         return;
     }
@@ -787,15 +759,14 @@ void Controller_NPad::VibrateController(const DeviceHandle& vibration_device_han
         return;
     }
 
-    const auto npad_index = NPadIdToIndex(vibration_device_handle.npad_id);
-    auto& controller = controller_data[npad_index];
+    auto& controller = GetControllerFromHandle(vibration_device_handle);
     const auto device_index = static_cast<std::size_t>(vibration_device_handle.device_index);
 
     if (!controller.vibration[device_index].device_mounted || !controller.device->IsConnected()) {
         return;
     }
 
-    if (vibration_device_handle.device_index == DeviceIndex::None) {
+    if (vibration_device_handle.device_index == Core::HID::DeviceIndex::None) {
         UNREACHABLE_MSG("DeviceIndex should never be None!");
         return;
     }
@@ -803,28 +774,30 @@ void Controller_NPad::VibrateController(const DeviceHandle& vibration_device_han
     // Some games try to send mismatched parameters in the device handle, block these.
     if ((controller.device->GetNpadStyleIndex() == Core::HID::NpadStyleIndex::JoyconLeft &&
          (vibration_device_handle.npad_type == Core::HID::NpadStyleIndex::JoyconRight ||
-          vibration_device_handle.device_index == DeviceIndex::Right)) ||
+          vibration_device_handle.device_index == Core::HID::DeviceIndex::Right)) ||
         (controller.device->GetNpadStyleIndex() == Core::HID::NpadStyleIndex::JoyconRight &&
          (vibration_device_handle.npad_type == Core::HID::NpadStyleIndex::JoyconLeft ||
-          vibration_device_handle.device_index == DeviceIndex::Left))) {
+          vibration_device_handle.device_index == Core::HID::DeviceIndex::Left))) {
         return;
     }
 
     // Filter out vibrations with equivalent values to reduce unnecessary state changes.
-    if (vibration_value.amp_low ==
-            controller.vibration[device_index].latest_vibration_value.amp_low &&
-        vibration_value.amp_high ==
-            controller.vibration[device_index].latest_vibration_value.amp_high) {
+    if (vibration_value.low_amplitude ==
+            controller.vibration[device_index].latest_vibration_value.low_amplitude &&
+        vibration_value.high_amplitude ==
+            controller.vibration[device_index].latest_vibration_value.high_amplitude) {
         return;
     }
 
-    if (VibrateControllerAtIndex(npad_index, device_index, vibration_value)) {
+    if (VibrateControllerAtIndex(controller.device->GetNpadIdType(), device_index,
+                                 vibration_value)) {
         controller.vibration[device_index].latest_vibration_value = vibration_value;
     }
 }
 
-void Controller_NPad::VibrateControllers(const std::vector<DeviceHandle>& vibration_device_handles,
-                                         const std::vector<VibrationValue>& vibration_values) {
+void Controller_NPad::VibrateControllers(
+    const std::vector<Core::HID::VibrationDeviceHandle>& vibration_device_handles,
+    const std::vector<Core::HID::VibrationValue>& vibration_values) {
     if (!Settings::values.vibration_enabled.GetValue() && !permit_vibration_session_enabled) {
         return;
     }
@@ -839,31 +812,31 @@ void Controller_NPad::VibrateControllers(const std::vector<DeviceHandle>& vibrat
     }
 }
 
-Controller_NPad::VibrationValue Controller_NPad::GetLastVibration(
-    const DeviceHandle& vibration_device_handle) const {
+Core::HID::VibrationValue Controller_NPad::GetLastVibration(
+    const Core::HID::VibrationDeviceHandle& vibration_device_handle) const {
     if (!IsDeviceHandleValid(vibration_device_handle)) {
         return {};
     }
 
-    const auto npad_index = NPadIdToIndex(vibration_device_handle.npad_id);
-    const auto& controller = controller_data[npad_index];
+    const auto& controller = GetControllerFromHandle(vibration_device_handle);
     const auto device_index = static_cast<std::size_t>(vibration_device_handle.device_index);
     return controller.vibration[device_index].latest_vibration_value;
 }
 
-void Controller_NPad::InitializeVibrationDevice(const DeviceHandle& vibration_device_handle) {
+void Controller_NPad::InitializeVibrationDevice(
+    const Core::HID::VibrationDeviceHandle& vibration_device_handle) {
     if (!IsDeviceHandleValid(vibration_device_handle)) {
         return;
     }
 
-    const auto npad_index = NPadIdToIndex(vibration_device_handle.npad_id);
+    const auto npad_index = static_cast<Core::HID::NpadIdType>(vibration_device_handle.npad_id);
     const auto device_index = static_cast<std::size_t>(vibration_device_handle.device_index);
     InitializeVibrationDeviceAtIndex(npad_index, device_index);
 }
 
-void Controller_NPad::InitializeVibrationDeviceAtIndex(std::size_t npad_index,
+void Controller_NPad::InitializeVibrationDeviceAtIndex(Core::HID::NpadIdType npad_id,
                                                        std::size_t device_index) {
-    auto& controller = controller_data[npad_index];
+    auto& controller = GetControllerFromNpadIdType(npad_id);
     if (!Settings::values.vibration_enabled.GetValue()) {
         controller.vibration[device_index].device_mounted = false;
         return;
@@ -877,58 +850,67 @@ void Controller_NPad::SetPermitVibrationSession(bool permit_vibration_session) {
     permit_vibration_session_enabled = permit_vibration_session;
 }
 
-bool Controller_NPad::IsVibrationDeviceMounted(const DeviceHandle& vibration_device_handle) const {
+bool Controller_NPad::IsVibrationDeviceMounted(
+    const Core::HID::VibrationDeviceHandle& vibration_device_handle) const {
     if (!IsDeviceHandleValid(vibration_device_handle)) {
         return false;
     }
 
-    const auto npad_index = NPadIdToIndex(vibration_device_handle.npad_id);
-    const auto& controller = controller_data[npad_index];
+    const auto& controller = GetControllerFromHandle(vibration_device_handle);
     const auto device_index = static_cast<std::size_t>(vibration_device_handle.device_index);
     return controller.vibration[device_index].device_mounted;
 }
 
-Kernel::KReadableEvent& Controller_NPad::GetStyleSetChangedEvent(u32 npad_id) {
-    const auto& controller = controller_data[NPadIdToIndex(npad_id)];
+Kernel::KReadableEvent& Controller_NPad::GetStyleSetChangedEvent(Core::HID::NpadIdType npad_id) {
+    if (!IsNpadIdValid(npad_id)) {
+        LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id:{}", npad_id);
+        // Fallback to player 1
+        const auto& controller = GetControllerFromNpadIdType(Core::HID::NpadIdType::Player1);
+        return controller.styleset_changed_event->GetReadableEvent();
+    }
+
+    const auto& controller = GetControllerFromNpadIdType(npad_id);
     return controller.styleset_changed_event->GetReadableEvent();
 }
 
-void Controller_NPad::SignalStyleSetChangedEvent(u32 npad_id) const {
-    const auto& controller = controller_data[NPadIdToIndex(npad_id)];
+void Controller_NPad::SignalStyleSetChangedEvent(Core::HID::NpadIdType npad_id) const {
+    const auto& controller = GetControllerFromNpadIdType(npad_id);
     controller.styleset_changed_event->GetWritableEvent().Signal();
 }
 
 void Controller_NPad::AddNewControllerAt(Core::HID::NpadStyleIndex controller,
-                                         std::size_t npad_index) {
-    UpdateControllerAt(controller, npad_index, true);
+                                         Core::HID::NpadIdType npad_id) {
+    UpdateControllerAt(controller, npad_id, true);
 }
 
-void Controller_NPad::UpdateControllerAt(Core::HID::NpadStyleIndex type, std::size_t npad_index,
-                                         bool connected) {
-    auto& controller = controller_data[npad_index];
+void Controller_NPad::UpdateControllerAt(Core::HID::NpadStyleIndex type,
+                                         Core::HID::NpadIdType npad_id, bool connected) {
+    auto& controller = GetControllerFromNpadIdType(npad_id);
     if (!connected) {
-        DisconnectNpadAtIndex(npad_index);
+        DisconnectNpad(npad_id);
         return;
     }
 
     controller.device->SetNpadStyleIndex(type);
-    InitNewlyAddedController(npad_index);
+    InitNewlyAddedController(npad_id);
 }
 
-void Controller_NPad::DisconnectNpad(u32 npad_id) {
-    DisconnectNpadAtIndex(NPadIdToIndex(npad_id));
-}
+void Controller_NPad::DisconnectNpad(Core::HID::NpadIdType npad_id) {
+    if (!IsNpadIdValid(npad_id)) {
+        LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id:{}", npad_id);
+        return;
+    }
 
-void Controller_NPad::DisconnectNpadAtIndex(std::size_t npad_index) {
-    auto& controller = controller_data[npad_index];
+    LOG_DEBUG(Service_HID, "Npad disconnected {}", npad_id);
+    auto& controller = GetControllerFromNpadIdType(npad_id);
     for (std::size_t device_idx = 0; device_idx < controller.vibration.size(); ++device_idx) {
         // Send an empty vibration to stop any vibrations.
-        VibrateControllerAtIndex(npad_index, device_idx, {});
+        VibrateControllerAtIndex(npad_id, device_idx, {});
         controller.vibration[device_idx].device_mounted = false;
     }
 
     auto& shared_memory_entry = controller.shared_memory_entry;
-    shared_memory_entry.style_set.raw = 0; // Zero out
+    shared_memory_entry.style_tag.raw = Core::HID::NpadStyleSet::None; // Zero out
     shared_memory_entry.device_type.raw = 0;
     shared_memory_entry.system_properties.raw = 0;
     shared_memory_entry.button_properties.raw = 0;
@@ -949,48 +931,102 @@ void Controller_NPad::DisconnectNpadAtIndex(std::size_t npad_index) {
 
     controller.is_connected = false;
     controller.device->Disconnect();
-    SignalStyleSetChangedEvent(IndexToNPad(npad_index));
+    SignalStyleSetChangedEvent(npad_id);
     WriteEmptyEntry(controller.shared_memory_entry);
 }
 
-void Controller_NPad::SetGyroscopeZeroDriftMode(GyroscopeZeroDriftMode drift_mode) {
-    gyroscope_zero_drift_mode = drift_mode;
+void Controller_NPad::SetGyroscopeZeroDriftMode(Core::HID::SixAxisSensorHandle sixaxis_handle,
+                                                GyroscopeZeroDriftMode drift_mode) {
+    if (!IsDeviceHandleValid(sixaxis_handle)) {
+        LOG_ERROR(Service_HID, "Invalid handle");
+        return;
+    }
+    auto& controller = GetControllerFromHandle(sixaxis_handle);
+    controller.gyroscope_zero_drift_mode = drift_mode;
 }
 
-Controller_NPad::GyroscopeZeroDriftMode Controller_NPad::GetGyroscopeZeroDriftMode() const {
-    return gyroscope_zero_drift_mode;
+Controller_NPad::GyroscopeZeroDriftMode Controller_NPad::GetGyroscopeZeroDriftMode(
+    Core::HID::SixAxisSensorHandle sixaxis_handle) const {
+    if (!IsDeviceHandleValid(sixaxis_handle)) {
+        LOG_ERROR(Service_HID, "Invalid handle");
+        // Return the default value
+        return GyroscopeZeroDriftMode::Standard;
+    }
+    const auto& controller = GetControllerFromHandle(sixaxis_handle);
+    return controller.gyroscope_zero_drift_mode;
 }
 
-bool Controller_NPad::IsSixAxisSensorAtRest() const {
-    return sixaxis_at_rest;
+bool Controller_NPad::IsSixAxisSensorAtRest(Core::HID::SixAxisSensorHandle sixaxis_handle) const {
+    if (!IsDeviceHandleValid(sixaxis_handle)) {
+        LOG_ERROR(Service_HID, "Invalid handle");
+        // Return the default value
+        return true;
+    }
+    const auto& controller = GetControllerFromHandle(sixaxis_handle);
+    return controller.sixaxis_at_rest;
 }
 
-void Controller_NPad::SetSixAxisEnabled(bool six_axis_status) {
-    sixaxis_sensors_enabled = six_axis_status;
+void Controller_NPad::SetSixAxisEnabled(Core::HID::SixAxisSensorHandle sixaxis_handle,
+                                        bool sixaxis_status) {
+    if (!IsDeviceHandleValid(sixaxis_handle)) {
+        LOG_ERROR(Service_HID, "Invalid handle");
+        return;
+    }
+    auto& controller = GetControllerFromHandle(sixaxis_handle);
+    controller.sixaxis_sensor_enabled = sixaxis_status;
 }
 
-void Controller_NPad::SetSixAxisFusionParameters(f32 parameter1, f32 parameter2) {
-    sixaxis_fusion_parameter1 = parameter1;
-    sixaxis_fusion_parameter2 = parameter2;
+void Controller_NPad::SetSixAxisFusionEnabled(Core::HID::SixAxisSensorHandle sixaxis_handle,
+                                              bool sixaxis_fusion_status) {
+    if (!IsDeviceHandleValid(sixaxis_handle)) {
+        LOG_ERROR(Service_HID, "Invalid handle");
+        return;
+    }
+    auto& controller = GetControllerFromHandle(sixaxis_handle);
+    controller.sixaxis_fusion_enabled = sixaxis_fusion_status;
 }
 
-std::pair<f32, f32> Controller_NPad::GetSixAxisFusionParameters() {
-    return {
-        sixaxis_fusion_parameter1,
-        sixaxis_fusion_parameter2,
-    };
+void Controller_NPad::SetSixAxisFusionParameters(
+    Core::HID::SixAxisSensorHandle sixaxis_handle,
+    Core::HID::SixAxisSensorFusionParameters sixaxis_fusion_parameters) {
+    if (!IsDeviceHandleValid(sixaxis_handle)) {
+        LOG_ERROR(Service_HID, "Invalid handle");
+        return;
+    }
+    auto& controller = GetControllerFromHandle(sixaxis_handle);
+    controller.sixaxis_fusion = sixaxis_fusion_parameters;
 }
 
-void Controller_NPad::ResetSixAxisFusionParameters() {
-    sixaxis_fusion_parameter1 = 0.0f;
-    sixaxis_fusion_parameter2 = 0.0f;
+Core::HID::SixAxisSensorFusionParameters Controller_NPad::GetSixAxisFusionParameters(
+    Core::HID::SixAxisSensorHandle sixaxis_handle) {
+    if (!IsDeviceHandleValid(sixaxis_handle)) {
+        LOG_ERROR(Service_HID, "Invalid handle");
+        // Since these parameters are unknow just return zeros
+        return {};
+    }
+    auto& controller = GetControllerFromHandle(sixaxis_handle);
+    return controller.sixaxis_fusion;
 }
 
-void Controller_NPad::MergeSingleJoyAsDualJoy(u32 npad_id_1, u32 npad_id_2) {
-    const auto npad_index_1 = NPadIdToIndex(npad_id_1);
-    const auto npad_index_2 = NPadIdToIndex(npad_id_2);
-    const auto& controller_1 = controller_data[npad_index_1].device;
-    const auto& controller_2 = controller_data[npad_index_2].device;
+void Controller_NPad::ResetSixAxisFusionParameters(Core::HID::SixAxisSensorHandle sixaxis_handle) {
+    if (!IsDeviceHandleValid(sixaxis_handle)) {
+        LOG_ERROR(Service_HID, "Invalid handle");
+        return;
+    }
+    auto& controller = GetControllerFromHandle(sixaxis_handle);
+    // Since these parameters are unknow just fill with zeros
+    controller.sixaxis_fusion = {};
+}
+
+void Controller_NPad::MergeSingleJoyAsDualJoy(Core::HID::NpadIdType npad_id_1,
+                                              Core::HID::NpadIdType npad_id_2) {
+    if (!IsNpadIdValid(npad_id_1) || IsNpadIdValid(npad_id_2)) {
+        LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id_1:{}, npad_id_2:{}", npad_id_1,
+                  npad_id_2);
+        return;
+    }
+    auto& controller_1 = GetControllerFromNpadIdType(npad_id_1).device;
+    auto& controller_2 = GetControllerFromNpadIdType(npad_id_2).device;
 
     // If the controllers at both npad indices form a pair of left and right joycons, merge them.
     // Otherwise, do nothing.
@@ -1000,7 +1036,7 @@ void Controller_NPad::MergeSingleJoyAsDualJoy(u32 npad_id_1, u32 npad_id_2) {
          controller_1->GetNpadStyleIndex() == Core::HID::NpadStyleIndex::JoyconRight)) {
         // Disconnect the joycon at the second id and connect the dual joycon at the first index.
         DisconnectNpad(npad_id_2);
-        AddNewControllerAt(Core::HID::NpadStyleIndex::JoyconDual, npad_index_1);
+        AddNewControllerAt(Core::HID::NpadStyleIndex::JoyconDual, npad_id_1);
     }
 }
 
@@ -1014,15 +1050,20 @@ void Controller_NPad::StopLRAssignmentMode() {
     is_in_lr_assignment_mode = false;
 }
 
-bool Controller_NPad::SwapNpadAssignment(u32 npad_id_1, u32 npad_id_2) {
-    if (npad_id_1 == NPAD_HANDHELD || npad_id_2 == NPAD_HANDHELD || npad_id_1 == NPAD_UNKNOWN ||
-        npad_id_2 == NPAD_UNKNOWN) {
+bool Controller_NPad::SwapNpadAssignment(Core::HID::NpadIdType npad_id_1,
+                                         Core::HID::NpadIdType npad_id_2) {
+    if (!IsNpadIdValid(npad_id_1) || IsNpadIdValid(npad_id_2)) {
+        LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id_1:{}, npad_id_2:{}", npad_id_1,
+                  npad_id_2);
+        return false;
+    }
+    if (npad_id_1 == Core::HID::NpadIdType::Handheld ||
+        npad_id_2 == Core::HID::NpadIdType::Handheld || npad_id_1 == Core::HID::NpadIdType::Other ||
+        npad_id_2 == Core::HID::NpadIdType::Other) {
         return true;
     }
-    const auto npad_index_1 = NPadIdToIndex(npad_id_1);
-    const auto npad_index_2 = NPadIdToIndex(npad_id_2);
-    const auto& controller_1 = controller_data[npad_index_1].device;
-    const auto& controller_2 = controller_data[npad_index_2].device;
+    const auto& controller_1 = GetControllerFromNpadIdType(npad_id_1).device;
+    const auto& controller_2 = GetControllerFromNpadIdType(npad_id_2).device;
     const auto type_index_1 = controller_1->GetNpadStyleIndex();
     const auto type_index_2 = controller_2->GetNpadStyleIndex();
 
@@ -1030,28 +1071,39 @@ bool Controller_NPad::SwapNpadAssignment(u32 npad_id_1, u32 npad_id_2) {
         return false;
     }
 
-    AddNewControllerAt(type_index_2, npad_index_1);
-    AddNewControllerAt(type_index_1, npad_index_2);
+    AddNewControllerAt(type_index_2, npad_id_1);
+    AddNewControllerAt(type_index_1, npad_id_2);
 
     return true;
 }
 
-Core::HID::LedPattern Controller_NPad::GetLedPattern(u32 npad_id) {
-    if (npad_id == npad_id_list.back() || npad_id == npad_id_list[npad_id_list.size() - 2]) {
-        // These are controllers without led patterns
+Core::HID::LedPattern Controller_NPad::GetLedPattern(Core::HID::NpadIdType npad_id) {
+    if (!IsNpadIdValid(npad_id)) {
+        LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id:{}", npad_id);
         return Core::HID::LedPattern{0, 0, 0, 0};
     }
-    return controller_data[npad_id].device->GetLedPattern();
+    const auto& controller = GetControllerFromNpadIdType(npad_id).device;
+    return controller->GetLedPattern();
 }
 
-bool Controller_NPad::IsUnintendedHomeButtonInputProtectionEnabled(u32 npad_id) const {
-    auto& controller = controller_data[NPadIdToIndex(npad_id)];
+bool Controller_NPad::IsUnintendedHomeButtonInputProtectionEnabled(
+    Core::HID::NpadIdType npad_id) const {
+    if (!IsNpadIdValid(npad_id)) {
+        LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id:{}", npad_id);
+        // Return the default value
+        return false;
+    }
+    const auto& controller = GetControllerFromNpadIdType(npad_id);
     return controller.unintended_home_button_input_protection;
 }
 
 void Controller_NPad::SetUnintendedHomeButtonInputProtectionEnabled(bool is_protection_enabled,
-                                                                    u32 npad_id) {
-    auto& controller = controller_data[NPadIdToIndex(npad_id)];
+                                                                    Core::HID::NpadIdType npad_id) {
+    if (!IsNpadIdValid(npad_id)) {
+        LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id:{}", npad_id);
+        return;
+    }
+    auto& controller = GetControllerFromNpadIdType(npad_id);
     controller.unintended_home_button_input_protection = is_protection_enabled;
 }
 
@@ -1099,7 +1151,7 @@ bool Controller_NPad::IsControllerSupported(Core::HID::NpadStyleIndex controller
     if (controller == Core::HID::NpadStyleIndex::Handheld) {
         const bool support_handheld =
             std::find(supported_npad_id_types.begin(), supported_npad_id_types.end(),
-                      NPAD_HANDHELD) != supported_npad_id_types.end();
+                      Core::HID::NpadIdType::Handheld) != supported_npad_id_types.end();
         // Handheld is not even a supported type, lets stop here
         if (!support_handheld) {
             return false;
@@ -1113,7 +1165,9 @@ bool Controller_NPad::IsControllerSupported(Core::HID::NpadStyleIndex controller
     }
 
     if (std::any_of(supported_npad_id_types.begin(), supported_npad_id_types.end(),
-                    [](u32 npad_id) { return npad_id <= MAX_NPAD_ID; })) {
+                    [](Core::HID::NpadIdType npad_id) {
+                        return npad_id <= Core::HID::NpadIdType::Player8;
+                    })) {
         Core::HID::NpadStyleTag style = GetSupportedStyleSet();
         switch (controller) {
         case Core::HID::NpadStyleIndex::ProController:
@@ -1142,6 +1196,50 @@ bool Controller_NPad::IsControllerSupported(Core::HID::NpadStyleIndex controller
     }
 
     return false;
+}
+
+Controller_NPad::NpadControllerData& Controller_NPad::GetControllerFromHandle(
+    const Core::HID::SixAxisSensorHandle& device_handle) {
+    const auto npad_id = static_cast<Core::HID::NpadIdType>(device_handle.npad_id);
+    return GetControllerFromNpadIdType(npad_id);
+}
+
+const Controller_NPad::NpadControllerData& Controller_NPad::GetControllerFromHandle(
+    const Core::HID::SixAxisSensorHandle& device_handle) const {
+    const auto npad_id = static_cast<Core::HID::NpadIdType>(device_handle.npad_id);
+    return GetControllerFromNpadIdType(npad_id);
+}
+
+Controller_NPad::NpadControllerData& Controller_NPad::GetControllerFromHandle(
+    const Core::HID::VibrationDeviceHandle& device_handle) {
+    const auto npad_id = static_cast<Core::HID::NpadIdType>(device_handle.npad_id);
+    return GetControllerFromNpadIdType(npad_id);
+}
+
+const Controller_NPad::NpadControllerData& Controller_NPad::GetControllerFromHandle(
+    const Core::HID::VibrationDeviceHandle& device_handle) const {
+    const auto npad_id = static_cast<Core::HID::NpadIdType>(device_handle.npad_id);
+    return GetControllerFromNpadIdType(npad_id);
+}
+
+Controller_NPad::NpadControllerData& Controller_NPad::GetControllerFromNpadIdType(
+    Core::HID::NpadIdType npad_id) {
+    if (!IsNpadIdValid(npad_id)) {
+        LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id:{}", npad_id);
+        npad_id = Core::HID::NpadIdType::Player1;
+    }
+    const auto npad_index = Core::HID::NpadIdTypeToIndex(npad_id);
+    return controller_data[npad_index];
+}
+
+const Controller_NPad::NpadControllerData& Controller_NPad::GetControllerFromNpadIdType(
+    Core::HID::NpadIdType npad_id) const {
+    if (!IsNpadIdValid(npad_id)) {
+        LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id:{}", npad_id);
+        npad_id = Core::HID::NpadIdType::Player1;
+    }
+    const auto npad_index = Core::HID::NpadIdTypeToIndex(npad_id);
+    return controller_data[npad_index];
 }
 
 } // namespace Service::HID

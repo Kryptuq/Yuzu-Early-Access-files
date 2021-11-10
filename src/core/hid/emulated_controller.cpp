@@ -347,7 +347,7 @@ void EmulatedController::RestoreConfig() {
 }
 
 std::vector<Common::ParamPackage> EmulatedController::GetMappedDevices(
-    DeviceIndex device_index) const {
+    EmulatedDeviceIndex device_index) const {
     std::vector<Common::ParamPackage> devices;
     for (const auto& param : button_params) {
         if (!param.Has("engine")) {
@@ -704,7 +704,7 @@ void EmulatedController::SetMotion(Common::Input::CallbackStatus callback, std::
     motion.gyro = emulated.GetGyroscope();
     motion.rotation = emulated.GetRotations();
     motion.orientation = emulated.GetOrientation();
-    motion.is_at_rest = emulated.IsMoving(motion_sensitivity);
+    motion.is_at_rest = !emulated.IsMoving(motion_sensitivity);
 
     TriggerOnChange(ControllerTriggerType::Motion, true);
 }

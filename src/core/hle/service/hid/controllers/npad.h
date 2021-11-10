@@ -31,9 +31,6 @@ class ServiceContext;
 
 namespace Service::HID {
 
-constexpr u32 NPAD_HANDHELD = 32;
-constexpr u32 NPAD_UNKNOWN = 16; // TODO(ogniK): What is this?
-
 class Controller_NPad final : public ControllerBase {
 public:
     explicit Controller_NPad(Core::HID::HIDCore& hid_core_,
@@ -52,13 +49,6 @@ public:
     // When the controller is requesting a motion update for the shared memory
     void OnMotionUpdate(const Core::Timing::CoreTiming& core_timing, u8* data,
                         std::size_t size) override;
-
-    enum class DeviceIndex : u8 {
-        Left = 0,
-        Right = 1,
-        None = 2,
-        MaxDeviceIndex = 3,
-    };
 
     // This is nn::hid::GyroscopeZeroDriftMode
     enum class GyroscopeZeroDriftMode : u32 {
@@ -79,6 +69,12 @@ public:
         Single = 1,
     };
 
+    // This is nn::hid::NpadJoyDeviceType
+    enum class NpadJoyDeviceType : s64 {
+        Left = 0,
+        Right = 1,
+    };
+
     // This is nn::hid::NpadHandheldActivationMode
     enum class NpadHandheldActivationMode : u64 {
         Dual = 0,
@@ -94,28 +90,11 @@ public:
         Default = 3,
     };
 
-    struct DeviceHandle {
-        Core::HID::NpadStyleIndex npad_type;
-        u8 npad_id;
-        DeviceIndex device_index;
-        INSERT_PADDING_BYTES_NOINIT(1);
-    };
-    static_assert(sizeof(DeviceHandle) == 4, "DeviceHandle is an invalid size");
-
-    // This is nn::hid::VibrationValue
-    struct VibrationValue {
-        f32 amp_low;
-        f32 freq_low;
-        f32 amp_high;
-        f32 freq_high;
-    };
-    static_assert(sizeof(VibrationValue) == 0x10, "Vibration is an invalid size");
-
-    static constexpr VibrationValue DEFAULT_VIBRATION_VALUE{
-        .amp_low = 0.0f,
-        .freq_low = 160.0f,
-        .amp_high = 0.0f,
-        .freq_high = 320.0f,
+    static constexpr Core::HID::VibrationValue DEFAULT_VIBRATION_VALUE{
+        .low_amplitude = 0.0f,
+        .low_frequency = 160.0f,
+        .high_amplitude = 0.0f,
+        .high_frequency = 320.0f,
     };
 
     void SetSupportedStyleSet(Core::HID::NpadStyleTag style_set);
@@ -134,68 +113,77 @@ public:
     void SetNpadCommunicationMode(NpadCommunicationMode communication_mode_);
     NpadCommunicationMode GetNpadCommunicationMode() const;
 
-    void SetNpadMode(u32 npad_id, NpadJoyAssignmentMode assignment_mode);
+    void SetNpadMode(Core::HID::NpadIdType npad_id, NpadJoyAssignmentMode assignment_mode);
 
-    bool VibrateControllerAtIndex(std::size_t npad_index, std::size_t device_index,
-                                  const VibrationValue& vibration_value);
+    bool VibrateControllerAtIndex(Core::HID::NpadIdType npad_id, std::size_t device_index,
+                                  const Core::HID::VibrationValue& vibration_value);
 
-    void VibrateController(const DeviceHandle& vibration_device_handle,
-                           const VibrationValue& vibration_value);
+    void VibrateController(const Core::HID::VibrationDeviceHandle& vibration_device_handle,
+                           const Core::HID::VibrationValue& vibration_value);
 
-    void VibrateControllers(const std::vector<DeviceHandle>& vibration_device_handles,
-                            const std::vector<VibrationValue>& vibration_values);
+    void VibrateControllers(
+        const std::vector<Core::HID::VibrationDeviceHandle>& vibration_device_handles,
+        const std::vector<Core::HID::VibrationValue>& vibration_values);
 
-    VibrationValue GetLastVibration(const DeviceHandle& vibration_device_handle) const;
+    Core::HID::VibrationValue GetLastVibration(
+        const Core::HID::VibrationDeviceHandle& vibration_device_handle) const;
 
-    void InitializeVibrationDevice(const DeviceHandle& vibration_device_handle);
+    void InitializeVibrationDevice(const Core::HID::VibrationDeviceHandle& vibration_device_handle);
 
-    void InitializeVibrationDeviceAtIndex(std::size_t npad_index, std::size_t device_index);
+    void InitializeVibrationDeviceAtIndex(Core::HID::NpadIdType npad_id, std::size_t device_index);
 
     void SetPermitVibrationSession(bool permit_vibration_session);
 
-    bool IsVibrationDeviceMounted(const DeviceHandle& vibration_device_handle) const;
+    bool IsVibrationDeviceMounted(
+        const Core::HID::VibrationDeviceHandle& vibration_device_handle) const;
 
-    Kernel::KReadableEvent& GetStyleSetChangedEvent(u32 npad_id);
-    void SignalStyleSetChangedEvent(u32 npad_id) const;
+    Kernel::KReadableEvent& GetStyleSetChangedEvent(Core::HID::NpadIdType npad_id);
+    void SignalStyleSetChangedEvent(Core::HID::NpadIdType npad_id) const;
 
     // Adds a new controller at an index.
-    void AddNewControllerAt(Core::HID::NpadStyleIndex controller, std::size_t npad_index);
+    void AddNewControllerAt(Core::HID::NpadStyleIndex controller, Core::HID::NpadIdType npad_id);
     // Adds a new controller at an index with connection status.
-    void UpdateControllerAt(Core::HID::NpadStyleIndex controller, std::size_t npad_index,
+    void UpdateControllerAt(Core::HID::NpadStyleIndex controller, Core::HID::NpadIdType npad_id,
                             bool connected);
 
-    void DisconnectNpad(u32 npad_id);
-    void DisconnectNpadAtIndex(std::size_t index);
+    void DisconnectNpad(Core::HID::NpadIdType npad_id);
 
-    void SetGyroscopeZeroDriftMode(GyroscopeZeroDriftMode drift_mode);
-    GyroscopeZeroDriftMode GetGyroscopeZeroDriftMode() const;
-    bool IsSixAxisSensorAtRest() const;
-    void SetSixAxisEnabled(bool six_axis_status);
-    void SetSixAxisFusionParameters(f32 parameter1, f32 parameter2);
-    std::pair<f32, f32> GetSixAxisFusionParameters();
-    void ResetSixAxisFusionParameters();
-    Core::HID::LedPattern GetLedPattern(u32 npad_id);
-    bool IsUnintendedHomeButtonInputProtectionEnabled(u32 npad_id) const;
-    void SetUnintendedHomeButtonInputProtectionEnabled(bool is_protection_enabled, u32 npad_id);
+    void SetGyroscopeZeroDriftMode(Core::HID::SixAxisSensorHandle sixaxis_handle,
+                                   GyroscopeZeroDriftMode drift_mode);
+    GyroscopeZeroDriftMode GetGyroscopeZeroDriftMode(
+        Core::HID::SixAxisSensorHandle sixaxis_handle) const;
+    bool IsSixAxisSensorAtRest(Core::HID::SixAxisSensorHandle sixaxis_handle) const;
+    void SetSixAxisEnabled(Core::HID::SixAxisSensorHandle sixaxis_handle, bool sixaxis_status);
+    void SetSixAxisFusionEnabled(Core::HID::SixAxisSensorHandle sixaxis_handle,
+                                 bool sixaxis_fusion_status);
+    void SetSixAxisFusionParameters(
+        Core::HID::SixAxisSensorHandle sixaxis_handle,
+        Core::HID::SixAxisSensorFusionParameters sixaxis_fusion_parameters);
+    Core::HID::SixAxisSensorFusionParameters GetSixAxisFusionParameters(
+        Core::HID::SixAxisSensorHandle sixaxis_handle);
+    void ResetSixAxisFusionParameters(Core::HID::SixAxisSensorHandle sixaxis_handle);
+    Core::HID::LedPattern GetLedPattern(Core::HID::NpadIdType npad_id);
+    bool IsUnintendedHomeButtonInputProtectionEnabled(Core::HID::NpadIdType npad_id) const;
+    void SetUnintendedHomeButtonInputProtectionEnabled(bool is_protection_enabled,
+                                                       Core::HID::NpadIdType npad_id);
     void SetAnalogStickUseCenterClamp(bool use_center_clamp);
     void ClearAllConnectedControllers();
     void DisconnectAllConnectedControllers();
     void ConnectAllDisconnectedControllers();
     void ClearAllControllers();
 
-    void MergeSingleJoyAsDualJoy(u32 npad_id_1, u32 npad_id_2);
+    void MergeSingleJoyAsDualJoy(Core::HID::NpadIdType npad_id_1, Core::HID::NpadIdType npad_id_2);
     void StartLRAssignmentMode();
     void StopLRAssignmentMode();
-    bool SwapNpadAssignment(u32 npad_id_1, u32 npad_id_2);
+    bool SwapNpadAssignment(Core::HID::NpadIdType npad_id_1, Core::HID::NpadIdType npad_id_2);
 
     // Logical OR for all buttons presses on all controllers
     // Specifically for cheat engine and other features.
     u32 GetAndResetPressState();
 
-    static std::size_t NPadIdToIndex(u32 npad_id);
-    static u32 IndexToNPad(std::size_t index);
-    static bool IsNpadIdValid(u32 npad_id);
-    static bool IsDeviceHandleValid(const DeviceHandle& device_handle);
+    static bool IsNpadIdValid(Core::HID::NpadIdType npad_id);
+    static bool IsDeviceHandleValid(const Core::HID::SixAxisSensorHandle& device_handle);
+    static bool IsDeviceHandleValid(const Core::HID::VibrationDeviceHandle& device_handle);
 
 private:
     // This is nn::hid::detail::ColorAttribute
@@ -441,7 +429,7 @@ private:
 
     // This is nn::hid::detail::NpadInternalState
     struct NpadInternalState {
-        Core::HID::NpadStyleTag style_set;
+        Core::HID::NpadStyleTag style_tag;
         NpadJoyAssignmentMode assignment_mode;
         NpadFullKeyColorState fullkey_color;
         NpadJoyColorState joycon_color;
@@ -476,19 +464,19 @@ private:
         NpadLuciaType lucia_type;
         NpadLagonType lagon_type;
         NpadLagerType lager_type;
-        INSERT_PADDING_BYTES(
-            0x4); // FW 13.x Investigate there is some sort of bitflag related to joycons
+        // FW 13.x Investigate there is some sort of bitflag related to joycons
+        INSERT_PADDING_BYTES(0x4);
         INSERT_PADDING_BYTES(0xc08); // Unknown
     };
     static_assert(sizeof(NpadInternalState) == 0x5000, "NpadInternalState is an invalid size");
 
     struct VibrationData {
         bool device_mounted{};
-        VibrationValue latest_vibration_value{};
+        Core::HID::VibrationValue latest_vibration_value{};
         std::chrono::steady_clock::time_point last_vibration_timepoint{};
     };
 
-    struct ControllerData {
+    struct NpadControllerData {
         Core::HID::EmulatedController* device;
         Kernel::KEvent* styleset_changed_event{};
         NpadInternalState shared_memory_entry{};
@@ -497,6 +485,13 @@ private:
         bool unintended_home_button_input_protection{};
         bool is_connected{};
         Core::HID::NpadStyleIndex npad_type{Core::HID::NpadStyleIndex::None};
+
+        // Motion parameters
+        bool sixaxis_at_rest{true};
+        bool sixaxis_sensor_enabled{true};
+        bool sixaxis_fusion_enabled{false};
+        Core::HID::SixAxisSensorFusionParameters sixaxis_fusion{};
+        GyroscopeZeroDriftMode gyroscope_zero_drift_mode{GyroscopeZeroDriftMode::Standard};
 
         // Current pad state
         NPadGenericState npad_pad_state{};
@@ -512,27 +507,33 @@ private:
     };
 
     void ControllerUpdate(Core::HID::ControllerTriggerType type, std::size_t controller_idx);
-    void InitNewlyAddedController(std::size_t controller_idx);
+    void InitNewlyAddedController(Core::HID::NpadIdType npad_id);
     bool IsControllerSupported(Core::HID::NpadStyleIndex controller) const;
-    void RequestPadStateUpdate(u32 npad_id);
+    void RequestPadStateUpdate(Core::HID::NpadIdType npad_id);
     void WriteEmptyEntry(NpadInternalState& npad);
+
+    NpadControllerData& GetControllerFromHandle(
+        const Core::HID::SixAxisSensorHandle& device_handle);
+    const NpadControllerData& GetControllerFromHandle(
+        const Core::HID::SixAxisSensorHandle& device_handle) const;
+    NpadControllerData& GetControllerFromHandle(
+        const Core::HID::VibrationDeviceHandle& device_handle);
+    const NpadControllerData& GetControllerFromHandle(
+        const Core::HID::VibrationDeviceHandle& device_handle) const;
+    NpadControllerData& GetControllerFromNpadIdType(Core::HID::NpadIdType npad_id);
+    const NpadControllerData& GetControllerFromNpadIdType(Core::HID::NpadIdType npad_id) const;
 
     std::atomic<u32> press_state{};
 
-    std::array<ControllerData, 10> controller_data{};
+    std::array<NpadControllerData, 10> controller_data{};
     KernelHelpers::ServiceContext& service_context;
     std::mutex mutex;
-    std::vector<u32> supported_npad_id_types{};
+    std::vector<Core::HID::NpadIdType> supported_npad_id_types{};
     NpadJoyHoldType hold_type{NpadJoyHoldType::Vertical};
     NpadHandheldActivationMode handheld_activation_mode{NpadHandheldActivationMode::Dual};
     NpadCommunicationMode communication_mode{NpadCommunicationMode::Default};
     bool permit_vibration_session_enabled{false};
     bool analog_stick_use_center_clamp{};
-    GyroscopeZeroDriftMode gyroscope_zero_drift_mode{GyroscopeZeroDriftMode::Standard};
-    bool sixaxis_sensors_enabled{true};
-    f32 sixaxis_fusion_parameter1{};
-    f32 sixaxis_fusion_parameter2{};
-    bool sixaxis_at_rest{true};
     bool is_in_lr_assignment_mode{false};
 };
 } // namespace Service::HID

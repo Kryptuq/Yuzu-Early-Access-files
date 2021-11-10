@@ -152,7 +152,7 @@ void EmulatedConsole::SetMotion(Common::Input::CallbackStatus callback) {
     motion.rotation = emulated.GetGyroscope();
     motion.orientation = emulated.GetOrientation();
     motion.quaternion = emulated.GetQuaternion();
-    motion.is_at_rest = emulated.IsMoving(motion_sensitivity);
+    motion.is_at_rest = !emulated.IsMoving(motion_sensitivity);
 
     TriggerOnChange(ConsoleTriggerType::Motion);
 }
