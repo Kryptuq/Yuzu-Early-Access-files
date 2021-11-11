@@ -847,6 +847,7 @@ void ConfigureInputPlayer::SetConnectableControllers() {
 
     if (!is_powered_on) {
         add_controllers(true);
+        return;
     }
 
     add_controllers(false, hid_core.GetSupportedStyleTag());

@@ -405,6 +405,7 @@ void Hid::SendKeyboardLockKeyEvent(Kernel::HLERequestContext& ctx) {
     const auto flags{rp.Pop<u32>()};
 
     LOG_WARNING(Service_HID, "(STUBBED) called. flags={}", flags);
+
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
@@ -416,6 +417,7 @@ void Hid::ActivateXpad(Kernel::HLERequestContext& ctx) {
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -446,6 +448,7 @@ void Hid::ActivateSixAxisSensor(Kernel::HLERequestContext& ctx) {
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -465,6 +468,7 @@ void Hid::DeactivateSixAxisSensor(Kernel::HLERequestContext& ctx) {
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -484,6 +488,7 @@ void Hid::StartSixAxisSensor(Kernel::HLERequestContext& ctx) {
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -506,6 +511,7 @@ void Hid::StopSixAxisSensor(Kernel::HLERequestContext& ctx) {
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -550,18 +556,25 @@ void Hid::EnableSixAxisSensorFusion(Kernel::HLERequestContext& ctx) {
 
 void Hid::SetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    const auto sixaxis_handle{rp.PopRaw<Core::HID::SixAxisSensorHandle>()};
-    const auto sixaxis_fusion{rp.PopRaw<Core::HID::SixAxisSensorFusionParameters>()};
-    const auto applet_resource_user_id{rp.Pop<u64>()};
+    struct Parameters {
+        Core::HID::SixAxisSensorHandle sixaxis_handle;
+        Core::HID::SixAxisSensorFusionParameters sixaxis_fusion;
+        INSERT_PADDING_WORDS_NOINIT(1);
+        u64 applet_resource_user_id;
+    };
+    static_assert(sizeof(Parameters) == 0x18, "Parameters has incorrect size.");
+
+    const auto parameters{rp.PopRaw<Parameters>()};
 
     applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .SetSixAxisFusionParameters(sixaxis_handle, sixaxis_fusion);
+        .SetSixAxisFusionParameters(parameters.sixaxis_handle, parameters.sixaxis_fusion);
 
     LOG_DEBUG(Service_HID,
               "called, npad_type={}, npad_id={}, device_index={}, parameter1={}, "
               "parameter2={}, applet_resource_user_id={}",
-              sixaxis_handle.npad_type, sixaxis_handle.npad_id, sixaxis_handle.device_index,
-              sixaxis_fusion.parameter1, sixaxis_fusion.parameter2, applet_resource_user_id);
+              parameters.sixaxis_handle.npad_type, parameters.sixaxis_handle.npad_id,
+              parameters.sixaxis_handle.device_index, parameters.sixaxis_fusion.parameter1,
+              parameters.sixaxis_fusion.parameter2, parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
@@ -569,17 +582,23 @@ void Hid::SetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
 
 void Hid::GetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    const auto sixaxis_handle{rp.PopRaw<Core::HID::SixAxisSensorHandle>()};
-    const auto applet_resource_user_id{rp.Pop<u64>()};
+    struct Parameters {
+        Core::HID::SixAxisSensorHandle sixaxis_handle;
+        INSERT_PADDING_WORDS_NOINIT(1);
+        u64 applet_resource_user_id;
+    };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
+
+    const auto parameters{rp.PopRaw<Parameters>()};
 
     const auto sixaxis_fusion_parameters =
         applet_resource->GetController<Controller_NPad>(HidController::NPad)
-            .GetSixAxisFusionParameters(sixaxis_handle);
+            .GetSixAxisFusionParameters(parameters.sixaxis_handle);
 
     LOG_DEBUG(Service_HID,
               "called, npad_type={}, npad_id={}, device_index={}, applet_resource_user_id={}",
-              sixaxis_handle.npad_type, sixaxis_handle.npad_id, sixaxis_handle.device_index,
-              applet_resource_user_id);
+              parameters.sixaxis_handle.npad_type, parameters.sixaxis_handle.npad_id,
+              parameters.sixaxis_handle.device_index, parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(ResultSuccess);
@@ -588,16 +607,22 @@ void Hid::GetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
 
 void Hid::ResetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    const auto sixaxis_handle{rp.PopRaw<Core::HID::SixAxisSensorHandle>()};
-    const auto applet_resource_user_id{rp.Pop<u64>()};
+    struct Parameters {
+        Core::HID::SixAxisSensorHandle sixaxis_handle;
+        INSERT_PADDING_WORDS_NOINIT(1);
+        u64 applet_resource_user_id;
+    };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
+
+    const auto parameters{rp.PopRaw<Parameters>()};
 
     applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .ResetSixAxisFusionParameters(sixaxis_handle);
+        .ResetSixAxisFusionParameters(parameters.sixaxis_handle);
 
     LOG_DEBUG(Service_HID,
               "called, npad_type={}, npad_id={}, device_index={}, applet_resource_user_id={}",
-              sixaxis_handle.npad_type, sixaxis_handle.npad_id, sixaxis_handle.device_index,
-              applet_resource_user_id);
+              parameters.sixaxis_handle.npad_type, parameters.sixaxis_handle.npad_id,
+              parameters.sixaxis_handle.device_index, parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
@@ -629,6 +654,7 @@ void Hid::GetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -650,6 +676,7 @@ void Hid::ResetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
     const auto drift_mode{Controller_NPad::GyroscopeZeroDriftMode::Standard};
@@ -673,6 +700,7 @@ void Hid::IsSixAxisSensorAtRest(Kernel::HLERequestContext& ctx) {
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -694,6 +722,7 @@ void Hid::IsFirmwareUpdateAvailableForSixAxisSensor(Kernel::HLERequestContext& c
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -715,6 +744,7 @@ void Hid::ActivateGesture(Kernel::HLERequestContext& ctx) {
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -734,6 +764,7 @@ void Hid::SetSupportedNpadStyleSet(Kernel::HLERequestContext& ctx) {
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -805,6 +836,7 @@ void Hid::AcquireNpadStyleSetUpdateEventHandle(Kernel::HLERequestContext& ctx) {
         u64 applet_resource_user_id;
         u64 unknown;
     };
+    static_assert(sizeof(Parameters) == 0x18, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -824,6 +856,7 @@ void Hid::DisconnectNpad(Kernel::HLERequestContext& ctx) {
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -858,6 +891,7 @@ void Hid::ActivateNpadWithRevision(Kernel::HLERequestContext& ctx) {
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -872,7 +906,6 @@ void Hid::ActivateNpadWithRevision(Kernel::HLERequestContext& ctx) {
 
 void Hid::SetNpadJoyHoldType(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    // TODO(german77): Confirm the order of these parameters
     const auto applet_resource_user_id{rp.Pop<u64>()};
     const auto hold_type{rp.PopEnum<Controller_NPad::NpadJoyHoldType>()};
 
@@ -903,6 +936,7 @@ void Hid::SetNpadJoyAssignmentModeSingleByDefault(Kernel::HLERequestContext& ctx
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -925,6 +959,7 @@ void Hid::SetNpadJoyAssignmentModeSingle(Kernel::HLERequestContext& ctx) {
         u64 applet_resource_user_id;
         u64 npad_joy_device_type;
     };
+    static_assert(sizeof(Parameters) == 0x18, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -947,6 +982,7 @@ void Hid::SetNpadJoyAssignmentModeDual(Kernel::HLERequestContext& ctx) {
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -1055,6 +1091,7 @@ void Hid::IsUnintendedHomeButtonInputProtectionEnabled(Kernel::HLERequestContext
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -1075,6 +1112,7 @@ void Hid::EnableUnintendedHomeButtonInputProtection(Kernel::HLERequestContext& c
         Core::HID::NpadIdType npad_id;
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -1094,15 +1132,21 @@ void Hid::EnableUnintendedHomeButtonInputProtection(Kernel::HLERequestContext& c
 
 void Hid::SetNpadAnalogStickUseCenterClamp(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    const auto analog_stick_use_center_clamp{rp.Pop<bool>()};
-    const auto applet_resource_user_id{rp.Pop<u64>()};
+    struct Parameters {
+        bool analog_stick_use_center_clamp;
+        INSERT_PADDING_BYTES_NOINIT(7);
+        u64 applet_resource_user_id;
+    };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
+
+    const auto parameters{rp.PopRaw<Parameters>()};
 
     applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .SetAnalogStickUseCenterClamp(analog_stick_use_center_clamp);
+        .SetAnalogStickUseCenterClamp(parameters.analog_stick_use_center_clamp);
 
     LOG_WARNING(Service_HID,
                 "(STUBBED) called, analog_stick_use_center_clamp={}, applet_resource_user_id={}",
-                analog_stick_use_center_clamp, applet_resource_user_id);
+                parameters.analog_stick_use_center_clamp, parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
@@ -1161,6 +1205,7 @@ void Hid::SendVibrationValue(Kernel::HLERequestContext& ctx) {
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x20, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -1184,6 +1229,7 @@ void Hid::GetActualVibrationValue(Kernel::HLERequestContext& ctx) {
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -1384,6 +1430,7 @@ void Hid::IsVibrationDeviceMounted(Kernel::HLERequestContext& ctx) {
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -1418,6 +1465,7 @@ void Hid::StartConsoleSixAxisSensor(Kernel::HLERequestContext& ctx) {
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
@@ -1437,6 +1485,7 @@ void Hid::StopConsoleSixAxisSensor(Kernel::HLERequestContext& ctx) {
         INSERT_PADDING_WORDS_NOINIT(1);
         u64 applet_resource_user_id;
     };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
