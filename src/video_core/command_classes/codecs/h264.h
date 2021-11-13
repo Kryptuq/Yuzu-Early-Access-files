@@ -75,9 +75,9 @@ public:
     explicit H264(GPU& gpu);
     ~H264();
 
-    /// Compose the H264 header of the frame for FFmpeg decoding
-    [[nodiscard]] const std::vector<u8>& ComposeFrameHeader(
-        const NvdecCommon::NvdecRegisters& state, bool is_first_frame = false);
+    /// Compose the H264 frame for FFmpeg decoding
+    [[nodiscard]] const std::vector<u8>& ComposeFrame(const NvdecCommon::NvdecRegisters& state,
+                                                      bool is_first_frame = false);
 
 private:
     std::vector<u8> frame;

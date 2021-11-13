@@ -35,7 +35,8 @@ AVFramePtr Nvdec::GetFrame() {
 void Nvdec::Execute() {
     switch (codec->GetCurrentCodec()) {
     case NvdecCommon::VideoCodec::H264:
-    case NvdecCommon::VideoCodec::Vp9:
+    case NvdecCommon::VideoCodec::VP8:
+    case NvdecCommon::VideoCodec::VP9:
         codec->Decode();
         break;
     default:

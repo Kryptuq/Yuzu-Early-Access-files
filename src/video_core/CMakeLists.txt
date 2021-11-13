@@ -15,6 +15,8 @@ add_library(video_core STATIC
     command_classes/codecs/codec.h
     command_classes/codecs/h264.cpp
     command_classes/codecs/h264.h
+    command_classes/codecs/vp8.cpp
+    command_classes/codecs/vp8.h
     command_classes/codecs/vp9.cpp
     command_classes/codecs/vp9.h
     command_classes/codecs/vp9_types.h

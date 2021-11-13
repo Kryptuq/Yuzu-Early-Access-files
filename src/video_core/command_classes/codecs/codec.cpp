@@ -8,6 +8,7 @@
 #include "common/settings.h"
 #include "video_core/command_classes/codecs/codec.h"
 #include "video_core/command_classes/codecs/h264.h"
+#include "video_core/command_classes/codecs/vp8.h"
 #include "video_core/command_classes/codecs/vp9.h"
 #include "video_core/gpu.h"
 #include "video_core/memory_manager.h"
@@ -46,6 +47,7 @@ void AVFrameDeleter(AVFrame* ptr) {
 
 Codec::Codec(GPU& gpu_, const NvdecCommon::NvdecRegisters& regs)
     : gpu(gpu_), state{regs}, h264_decoder(std::make_unique<Decoder::H264>(gpu)),
+      vp8_decoder(std::make_unique<Decoder::VP8>(gpu)),
       vp9_decoder(std::make_unique<Decoder::VP9>(gpu)) {}
 
 Codec::~Codec() {
@@ -135,7 +137,9 @@ void Codec::Initialize() {
         switch (current_codec) {
         case NvdecCommon::VideoCodec::H264:
             return AV_CODEC_ID_H264;
-        case NvdecCommon::VideoCodec::Vp9:
+        case NvdecCommon::VideoCodec::VP8:
+            return AV_CODEC_ID_VP8;
+        case NvdecCommon::VideoCodec::VP9:
             return AV_CODEC_ID_VP9;
         default:
             UNIMPLEMENTED_MSG("Unknown codec {}", current_codec);
@@ -176,19 +180,27 @@ void Codec::Decode() {
         return;
     }
     bool vp9_hidden_frame = false;
-    std::vector<u8> frame_data;
-    if (current_codec == NvdecCommon::VideoCodec::H264) {
-        frame_data = h264_decoder->ComposeFrameHeader(state, is_first_frame);
-    } else if (current_codec == NvdecCommon::VideoCodec::Vp9) {
-        frame_data = vp9_decoder->ComposeFrameHeader(state);
-        vp9_hidden_frame = vp9_decoder->WasFrameHidden();
-    }
+    const auto& frame_data = [&]() {
+        switch (current_codec) {
+        case Tegra::NvdecCommon::VideoCodec::H264:
+            return h264_decoder->ComposeFrame(state, is_first_frame);
+        case Tegra::NvdecCommon::VideoCodec::VP8:
+            return vp8_decoder->ComposeFrame(state);
+        case Tegra::NvdecCommon::VideoCodec::VP9:
+            vp9_decoder->ComposeFrame(state);
+            vp9_hidden_frame = vp9_decoder->WasFrameHidden();
+            return vp9_decoder->GetFrameBytes();
+        default:
+            UNREACHABLE();
+            return std::vector<u8>{};
+        }
+    }();
     AVPacketPtr packet{av_packet_alloc(), AVPacketDeleter};
     if (!packet) {
         LOG_ERROR(Service_NVDRV, "av_packet_alloc failed");
         return;
     }
-    packet->data = frame_data.data();
+    packet->data = const_cast<u8*>(frame_data.data());
     packet->size = static_cast<s32>(frame_data.size());
     if (const int res = avcodec_send_packet(av_codec_ctx, packet.get()); res != 0) {
         LOG_DEBUG(Service_NVDRV, "avcodec_send_packet error {}", res);
@@ -252,11 +264,11 @@ std::string_view Codec::GetCurrentCodecName() const {
         return "None";
     case NvdecCommon::VideoCodec::H264:
         return "H264";
-    case NvdecCommon::VideoCodec::Vp8:
+    case NvdecCommon::VideoCodec::VP8:
         return "VP8";
     case NvdecCommon::VideoCodec::H265:
         return "H265";
-    case NvdecCommon::VideoCodec::Vp9:
+    case NvdecCommon::VideoCodec::VP9:
         return "VP9";
     default:
         return "Unknown";

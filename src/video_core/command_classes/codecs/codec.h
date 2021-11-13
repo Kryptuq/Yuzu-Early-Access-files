@@ -29,6 +29,7 @@ using AVFramePtr = std::unique_ptr<AVFrame, decltype(&AVFrameDeleter)>;
 
 namespace Decoder {
 class H264;
+class VP8;
 class VP9;
 } // namespace Decoder
 
@@ -72,6 +73,7 @@ private:
     GPU& gpu;
     const NvdecCommon::NvdecRegisters& state;
     std::unique_ptr<Decoder::H264> h264_decoder;
+    std::unique_ptr<Decoder::VP8> vp8_decoder;
     std::unique_ptr<Decoder::VP9> vp9_decoder;
 
     std::queue<AVFramePtr> av_frames{};

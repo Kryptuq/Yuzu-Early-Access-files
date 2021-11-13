@@ -13,9 +13,9 @@ namespace Tegra::NvdecCommon {
 enum class VideoCodec : u64 {
     None = 0x0,
     H264 = 0x3,
-    Vp8 = 0x5,
+    VP8 = 0x5,
     H265 = 0x7,
-    Vp9 = 0x9,
+    VP9 = 0x9,
 };
 
 // NVDEC should use a 32-bit address space, but is mapped to 64-bit,
@@ -50,7 +50,10 @@ struct NvdecRegisters {
             u64 h264_last_surface_chroma_offset;       ///< 0x0858
             std::array<u64, 17> surface_luma_offset;   ///< 0x0860
             std::array<u64, 17> surface_chroma_offset; ///< 0x08E8
-            INSERT_PADDING_WORDS_NOINIT(132);          ///< 0x0970
+            INSERT_PADDING_WORDS_NOINIT(68);           ///< 0x0970
+            u64 vp8_prob_data_offset;                  ///< 0x0A80
+            u64 vp8_header_partition_buf_offset;       ///< 0x0A88
+            INSERT_PADDING_WORDS_NOINIT(60);           ///< 0x0A90
             u64 vp9_entropy_probs_offset;              ///< 0x0B80
             u64 vp9_backward_updates_offset;           ///< 0x0B88
             u64 vp9_last_frame_segmap_offset;          ///< 0x0B90
@@ -81,6 +84,8 @@ ASSERT_REG_POSITION(h264_last_surface_luma_offset, 0x10A);
 ASSERT_REG_POSITION(h264_last_surface_chroma_offset, 0x10B);
 ASSERT_REG_POSITION(surface_luma_offset, 0x10C);
 ASSERT_REG_POSITION(surface_chroma_offset, 0x11D);
+ASSERT_REG_POSITION(vp8_prob_data_offset, 0x150);
+ASSERT_REG_POSITION(vp8_header_partition_buf_offset, 0x151);
 ASSERT_REG_POSITION(vp9_entropy_probs_offset, 0x170);
 ASSERT_REG_POSITION(vp9_backward_updates_offset, 0x171);
 ASSERT_REG_POSITION(vp9_last_frame_segmap_offset, 0x172);

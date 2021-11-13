@@ -770,7 +770,7 @@ VpxBitStreamWriter VP9::ComposeUncompressedHeader() {
     return uncomp_writer;
 }
 
-const std::vector<u8>& VP9::ComposeFrameHeader(const NvdecCommon::NvdecRegisters& state) {
+void VP9::ComposeFrame(const NvdecCommon::NvdecRegisters& state) {
     std::vector<u8> bitstream;
     {
         Vp9FrameContainer curr_frame = GetCurrentFrame(state);
@@ -792,7 +792,6 @@ const std::vector<u8>& VP9::ComposeFrameHeader(const NvdecCommon::NvdecRegisters
               frame.begin() + uncompressed_header.size());
     std::copy(bitstream.begin(), bitstream.end(),
               frame.begin() + uncompressed_header.size() + compressed_header.size());
-    return frame;
 }
 
 VpxRangeEncoder::VpxRangeEncoder() {

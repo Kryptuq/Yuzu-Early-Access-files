@@ -1020,7 +1020,7 @@ void Controller_NPad::ResetSixAxisFusionParameters(Core::HID::SixAxisSensorHandl
 
 void Controller_NPad::MergeSingleJoyAsDualJoy(Core::HID::NpadIdType npad_id_1,
                                               Core::HID::NpadIdType npad_id_2) {
-    if (!IsNpadIdValid(npad_id_1) || IsNpadIdValid(npad_id_2)) {
+    if (!IsNpadIdValid(npad_id_1) || !IsNpadIdValid(npad_id_2)) {
         LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id_1:{}, npad_id_2:{}", npad_id_1,
                   npad_id_2);
         return;
@@ -1052,7 +1052,7 @@ void Controller_NPad::StopLRAssignmentMode() {
 
 bool Controller_NPad::SwapNpadAssignment(Core::HID::NpadIdType npad_id_1,
                                          Core::HID::NpadIdType npad_id_2) {
-    if (!IsNpadIdValid(npad_id_1) || IsNpadIdValid(npad_id_2)) {
+    if (!IsNpadIdValid(npad_id_1) || !IsNpadIdValid(npad_id_2)) {
         LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id_1:{}, npad_id_2:{}", npad_id_1,
                   npad_id_2);
         return false;

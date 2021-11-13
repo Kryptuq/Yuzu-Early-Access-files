@@ -600,6 +600,7 @@ if (YUZU_USE_BUNDLED_FFMPEG)
                 ${LIBVA_LIBRARIES})
             set(FFmpeg_HWACCEL_FLAGS
                 --enable-hwaccel=h264_vaapi
+                --enable-hwaccel=vp8_vaapi
                 --enable-hwaccel=vp9_vaapi
                 --enable-libdrm)
             list(APPEND FFmpeg_HWACCEL_INCLUDE_DIRS
@@ -620,6 +621,7 @@ if (YUZU_USE_BUNDLED_FFMPEG)
                 --enable-ffnvcodec
                 --enable-nvdec
                 --enable-hwaccel=h264_nvdec
+                --enable-hwaccel=vp8_nvdec
                 --enable-hwaccel=vp9_nvdec
                 --extra-cflags=-I${CUDA_INCLUDE_DIRS}
             )
@@ -670,6 +672,7 @@ if (YUZU_USE_BUNDLED_FFMPEG)
                     --disable-postproc
                     --disable-swresample
                     --enable-decoder=h264
+                    --enable-decoder=vp8
                     --enable-decoder=vp9
                     --cc="${CMAKE_C_COMPILER}"
                     --cxx="${CMAKE_CXX_COMPILER}"
