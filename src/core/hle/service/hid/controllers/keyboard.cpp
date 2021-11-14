@@ -42,6 +42,8 @@ void Controller_Keyboard::OnUpdate(const Core::Timing::CoreTiming& core_timing, 
 
         next_state.key = keyboard_state;
         next_state.modifier = keyboard_modifier_state;
+        // This is always enabled on HW. Check what it actually does
+        next_state.modifier.unknown.Assign(1);
     }
 
     keyboard_lifo.WriteNextEntry(next_state);

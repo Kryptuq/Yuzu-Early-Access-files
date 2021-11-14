@@ -129,7 +129,6 @@ extern const std::array<const char*, NumMouseButtons> mapping;
 namespace NativeKeyboard {
 enum Keys {
     None,
-    Error,
 
     A = 4,
     B,
@@ -167,22 +166,22 @@ enum Keys {
     N8,
     N9,
     N0,
-    Enter,
+    Return,
     Escape,
     Backspace,
     Tab,
     Space,
     Minus,
-    Equal,
-    LeftBrace,
-    RightBrace,
-    Backslash,
+    Plus,
+    OpenBracket,
+    CloseBracket,
+    Pipe,
     Tilde,
     Semicolon,
-    Apostrophe,
-    Grave,
+    Quote,
+    Backquote,
     Comma,
-    Dot,
+    Period,
     Slash,
     CapsLockKey,
 
@@ -199,7 +198,7 @@ enum Keys {
     F11,
     F12,
 
-    SystemRequest,
+    PrintScreen,
     ScrollLockKey,
     Pause,
     Insert,
@@ -268,8 +267,18 @@ enum Keys {
     ScrollLockActive,
     KPComma,
 
-    KPLeftParenthesis,
-    KPRightParenthesis,
+    Ro = 0x87,
+    KatakanaHiragana,
+    Yen,
+    Henkan,
+    Muhenkan,
+    NumPadCommaPc98,
+
+    HangulEnglish = 0x90,
+    Hanja,
+    KatakanaKey,
+    HiraganaKey,
+    ZenkakuHankaku,
 
     LeftControlKey = 0xE0,
     LeftShiftKey,
@@ -318,6 +327,8 @@ enum Modifiers {
     CapsLock,
     ScrollLock,
     NumLock,
+    Katakana,
+    Hiragana,
 
     NumKeyboardMods,
 };

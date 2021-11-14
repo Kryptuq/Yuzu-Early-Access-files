@@ -28,6 +28,13 @@ public:
      */
     void ReleaseKey(int key_code);
 
+    /**
+     * Sets the status of all keyboard modifier keys
+     * @param key_modifiers the code of the key to release
+     */
+    void SetModifiers(int key_modifiers);
+
+    /// Sets all keys to the non pressed state
     void ReleaseAllKeys();
 
     /// Used for automapping features

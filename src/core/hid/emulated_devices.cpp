@@ -170,13 +170,14 @@ void EmulatedDevices::SetKeyboardButton(Common::Input::CallbackStatus callback, 
         return;
     }
 
+    // Index should be converted from NativeKeyboard to KeyboardKeyIndex
     UpdateKey(index, current_status.value);
 
     TriggerOnChange(DeviceTriggerType::Keyboard);
 }
 
 void EmulatedDevices::UpdateKey(std::size_t key_index, bool status) {
-    constexpr u8 KEYS_PER_BYTE = 8;
+    constexpr std::size_t KEYS_PER_BYTE = 8;
     auto& entry = device_status.keyboard_state.key[key_index / KEYS_PER_BYTE];
     const u8 mask = static_cast<u8>(1 << (key_index % KEYS_PER_BYTE));
     if (status) {

@@ -12,6 +12,195 @@
 
 namespace Core::HID {
 
+enum class DeviceIndex : u8 {
+    Left = 0,
+    Right = 1,
+    None = 2,
+    MaxDeviceIndex = 3,
+};
+
+// This is nn::hid::NpadButton
+enum class NpadButton : u64 {
+    None = 0,
+    A = 1U << 0,
+    B = 1U << 1,
+    X = 1U << 2,
+    Y = 1U << 3,
+    StickL = 1U << 4,
+    StickR = 1U << 5,
+    L = 1U << 6,
+    R = 1U << 7,
+    ZL = 1U << 8,
+    ZR = 1U << 9,
+    Plus = 1U << 10,
+    Minus = 1U << 11,
+
+    Left = 1U << 12,
+    Up = 1U << 13,
+    Right = 1U << 14,
+    Down = 1U << 15,
+
+    StickLLeft = 1U << 16,
+    StickLUp = 1U << 17,
+    StickLRight = 1U << 18,
+    StickLDown = 1U << 19,
+
+    StickRLeft = 1U << 20,
+    StickRUp = 1U << 21,
+    StickRRight = 1U << 22,
+    StickRDown = 1U << 23,
+
+    LeftSL = 1U << 24,
+    LeftSR = 1U << 25,
+
+    RightSL = 1U << 26,
+    RightSR = 1U << 27,
+
+    Palma = 1U << 28,
+    Verification = 1U << 29,
+    HandheldLeftB = 1U << 30,
+    LagonCLeft = 1U << 31,
+    LagonCUp = 1ULL << 32,
+    LagonCRight = 1ULL << 33,
+    LagonCDown = 1ULL << 34,
+};
+DECLARE_ENUM_FLAG_OPERATORS(NpadButton);
+
+enum class KeyboardKeyIndex : u32 {
+    A = 4,
+    B = 5,
+    C = 6,
+    D = 7,
+    E = 8,
+    F = 9,
+    G = 10,
+    H = 11,
+    I = 12,
+    J = 13,
+    K = 14,
+    L = 15,
+    M = 16,
+    N = 17,
+    O = 18,
+    P = 19,
+    Q = 20,
+    R = 21,
+    S = 22,
+    T = 23,
+    U = 24,
+    V = 25,
+    W = 26,
+    X = 27,
+    Y = 28,
+    Z = 29,
+    D1 = 30,
+    D2 = 31,
+    D3 = 32,
+    D4 = 33,
+    D5 = 34,
+    D6 = 35,
+    D7 = 36,
+    D8 = 37,
+    D9 = 38,
+    D0 = 39,
+    Return = 40,
+    Escape = 41,
+    Backspace = 42,
+    Tab = 43,
+    Space = 44,
+    Minus = 45,
+    Plus = 46,
+    OpenBracket = 47,
+    CloseBracket = 48,
+    Pipe = 49,
+    Tilde = 50,
+    Semicolon = 51,
+    Quote = 52,
+    Backquote = 53,
+    Comma = 54,
+    Period = 55,
+    Slash = 56,
+    CapsLock = 57,
+    F1 = 58,
+    F2 = 59,
+    F3 = 60,
+    F4 = 61,
+    F5 = 62,
+    F6 = 63,
+    F7 = 64,
+    F8 = 65,
+    F9 = 66,
+    F10 = 67,
+    F11 = 68,
+    F12 = 69,
+    PrintScreen = 70,
+    ScrollLock = 71,
+    Pause = 72,
+    Insert = 73,
+    Home = 74,
+    PageUp = 75,
+    Delete = 76,
+    End = 77,
+    PageDown = 78,
+    RightArrow = 79,
+    LeftArrow = 80,
+    DownArrow = 81,
+    UpArrow = 82,
+    NumLock = 83,
+    NumPadDivide = 84,
+    NumPadMultiply = 85,
+    NumPadSubtract = 86,
+    NumPadAdd = 87,
+    NumPadEnter = 88,
+    NumPad1 = 89,
+    NumPad2 = 90,
+    NumPad3 = 91,
+    NumPad4 = 92,
+    NumPad5 = 93,
+    NumPad6 = 94,
+    NumPad7 = 95,
+    NumPad8 = 96,
+    NumPad9 = 97,
+    NumPad0 = 98,
+    NumPadDot = 99,
+    Backslash = 100,
+    Application = 101,
+    Power = 102,
+    NumPadEquals = 103,
+    F13 = 104,
+    F14 = 105,
+    F15 = 106,
+    F16 = 107,
+    F17 = 108,
+    F18 = 109,
+    F19 = 110,
+    F20 = 111,
+    F21 = 112,
+    F22 = 113,
+    F23 = 114,
+    F24 = 115,
+    NumPadComma = 133,
+    Ro = 135,
+    KatakanaHiragana = 136,
+    Yen = 137,
+    Henkan = 138,
+    Muhenkan = 139,
+    NumPadCommaPc98 = 140,
+    HangulEnglish = 144,
+    Hanja = 145,
+    Katakana = 146,
+    Hiragana = 147,
+    ZenkakuHankaku = 148,
+    LeftControl = 224,
+    LeftShift = 225,
+    LeftAlt = 226,
+    LeftGui = 227,
+    RightControl = 228,
+    RightShift = 229,
+    RightAlt = 230,
+    RightGui = 231,
+};
+
 // This is nn::hid::NpadIdType
 enum class NpadIdType : u32 {
     Player1 = 0x0,
@@ -27,62 +216,6 @@ enum class NpadIdType : u32 {
 
     Invalid = 0xFFFFFFFF,
 };
-
-/// Converts a NpadIdType to an array index.
-constexpr size_t NpadIdTypeToIndex(NpadIdType npad_id_type) {
-    switch (npad_id_type) {
-    case NpadIdType::Player1:
-        return 0;
-    case NpadIdType::Player2:
-        return 1;
-    case NpadIdType::Player3:
-        return 2;
-    case NpadIdType::Player4:
-        return 3;
-    case NpadIdType::Player5:
-        return 4;
-    case NpadIdType::Player6:
-        return 5;
-    case NpadIdType::Player7:
-        return 6;
-    case NpadIdType::Player8:
-        return 7;
-    case NpadIdType::Handheld:
-        return 8;
-    case NpadIdType::Other:
-        return 9;
-    default:
-        return 0;
-    }
-}
-
-/// Converts an array index to a NpadIdType
-constexpr NpadIdType IndexToNpadIdType(size_t index) {
-    switch (index) {
-    case 0:
-        return NpadIdType::Player1;
-    case 1:
-        return NpadIdType::Player2;
-    case 2:
-        return NpadIdType::Player3;
-    case 3:
-        return NpadIdType::Player4;
-    case 4:
-        return NpadIdType::Player5;
-    case 5:
-        return NpadIdType::Player6;
-    case 6:
-        return NpadIdType::Player7;
-    case 7:
-        return NpadIdType::Player8;
-    case 8:
-        return NpadIdType::Handheld;
-    case 9:
-        return NpadIdType::Other;
-    default:
-        return NpadIdType::Invalid;
-    }
-}
 
 // This is nn::hid::NpadStyleIndex
 enum class NpadStyleIndex : u8 {
@@ -123,6 +256,27 @@ enum class NpadStyleSet : u32 {
     System = 1U << 30,
 };
 static_assert(sizeof(NpadStyleSet) == 4, "NpadStyleSet is an invalid size");
+
+// This is nn::hid::VibrationDevicePosition
+enum class VibrationDevicePosition : u32 {
+    None = 0,
+    Left = 1,
+    Right = 2,
+};
+
+// This is nn::hid::VibrationDeviceType
+enum class VibrationDeviceType : u32 {
+    Unknown = 0,
+    LinearResonantActuator = 1,
+    GcErm = 2,
+};
+
+// This is nn::hid::VibrationGcErmCommand
+enum class VibrationGcErmCommand : u64 {
+    Stop = 0,
+    Start = 1,
+    StopHard = 2,
+};
 
 // This is nn::hid::NpadStyleTag
 struct NpadStyleTag {
@@ -220,53 +374,6 @@ struct LedPattern {
     };
 };
 
-// This is nn::hid::NpadButton
-enum class NpadButton : u64 {
-    None = 0,
-    A = 1U << 0,
-    B = 1U << 1,
-    X = 1U << 2,
-    Y = 1U << 3,
-    StickL = 1U << 4,
-    StickR = 1U << 5,
-    L = 1U << 6,
-    R = 1U << 7,
-    ZL = 1U << 8,
-    ZR = 1U << 9,
-    Plus = 1U << 10,
-    Minus = 1U << 11,
-
-    Left = 1U << 12,
-    Up = 1U << 13,
-    Right = 1U << 14,
-    Down = 1U << 15,
-
-    StickLLeft = 1U << 16,
-    StickLUp = 1U << 17,
-    StickLRight = 1U << 18,
-    StickLDown = 1U << 19,
-
-    StickRLeft = 1U << 20,
-    StickRUp = 1U << 21,
-    StickRRight = 1U << 22,
-    StickRDown = 1U << 23,
-
-    LeftSL = 1U << 24,
-    LeftSR = 1U << 25,
-
-    RightSL = 1U << 26,
-    RightSR = 1U << 27,
-
-    Palma = 1U << 28,
-    Verification = 1U << 29,
-    HandheldLeftB = 1U << 30,
-    LagonCLeft = 1U << 31,
-    LagonCUp = 1ULL << 32,
-    LagonCRight = 1ULL << 33,
-    LagonCDown = 1ULL << 34,
-};
-DECLARE_ENUM_FLAG_OPERATORS(NpadButton);
-
 struct NpadButtonState {
     union {
         NpadButton raw{};
@@ -342,13 +449,6 @@ struct DebugPadButton {
 };
 static_assert(sizeof(DebugPadButton) == 0x4, "DebugPadButton is an invalid size");
 
-enum class DeviceIndex : u8 {
-    Left = 0,
-    Right = 1,
-    None = 2,
-    MaxDeviceIndex = 3,
-};
-
 // This is nn::hid::ConsoleSixAxisSensorHandle
 struct ConsoleSixAxisSensorHandle {
     u8 unknown_1;
@@ -383,20 +483,6 @@ struct VibrationDeviceHandle {
 };
 static_assert(sizeof(VibrationDeviceHandle) == 4, "SixAxisSensorHandle is an invalid size");
 
-// This is nn::hid::VibrationDeviceType
-enum class VibrationDeviceType : u32 {
-    Unknown = 0,
-    LinearResonantActuator = 1,
-    GcErm = 2,
-};
-
-// This is nn::hid::VibrationDevicePosition
-enum class VibrationDevicePosition : u32 {
-    None = 0,
-    Left = 1,
-    Right = 2,
-};
-
 // This is nn::hid::VibrationValue
 struct VibrationValue {
     f32 low_amplitude;
@@ -405,13 +491,6 @@ struct VibrationValue {
     f32 high_frequency;
 };
 static_assert(sizeof(VibrationValue) == 0x10, "VibrationValue has incorrect size.");
-
-// This is nn::hid::VibrationGcErmCommand
-enum class VibrationGcErmCommand : u64 {
-    Stop = 0,
-    Start = 1,
-    StopHard = 2,
-};
 
 // This is nn::hid::VibrationDeviceInfo
 struct VibrationDeviceInfo {
@@ -423,20 +502,21 @@ static_assert(sizeof(VibrationDeviceInfo) == 0x8, "VibrationDeviceInfo has incor
 // This is nn::hid::KeyboardModifier
 struct KeyboardModifier {
     union {
-        u32 raw{};
-        BitField<0, 1, u32> control;
-        BitField<1, 1, u32> shift;
-        BitField<2, 1, u32> left_alt;
-        BitField<3, 1, u32> right_alt;
-        BitField<4, 1, u32> gui;
-        BitField<8, 1, u32> caps_lock;
-        BitField<9, 1, u32> scroll_lock;
-        BitField<10, 1, u32> num_lock;
-        BitField<11, 1, u32> katakana;
-        BitField<12, 1, u32> hiragana;
+        u64 raw{};
+        BitField<0, 1, u64> control;
+        BitField<1, 1, u64> shift;
+        BitField<2, 1, u64> left_alt;
+        BitField<3, 1, u64> right_alt;
+        BitField<4, 1, u64> gui;
+        BitField<8, 1, u64> caps_lock;
+        BitField<9, 1, u64> scroll_lock;
+        BitField<10, 1, u64> num_lock;
+        BitField<11, 1, u64> katakana;
+        BitField<12, 1, u64> hiragana;
+        BitField<32, 1, u64> unknown;
     };
 };
-static_assert(sizeof(KeyboardModifier) == 0x4, "KeyboardModifier is an invalid size");
+static_assert(sizeof(KeyboardModifier) == 0x8, "KeyboardModifier is an invalid size");
 
 // This is nn::hid::KeyboardKey
 struct KeyboardKey {
@@ -481,4 +561,61 @@ struct MouseState {
     MouseAttribute attribute;
 };
 static_assert(sizeof(MouseState) == 0x28, "MouseState is an invalid size");
+
+/// Converts a NpadIdType to an array index.
+constexpr size_t NpadIdTypeToIndex(NpadIdType npad_id_type) {
+    switch (npad_id_type) {
+    case NpadIdType::Player1:
+        return 0;
+    case NpadIdType::Player2:
+        return 1;
+    case NpadIdType::Player3:
+        return 2;
+    case NpadIdType::Player4:
+        return 3;
+    case NpadIdType::Player5:
+        return 4;
+    case NpadIdType::Player6:
+        return 5;
+    case NpadIdType::Player7:
+        return 6;
+    case NpadIdType::Player8:
+        return 7;
+    case NpadIdType::Handheld:
+        return 8;
+    case NpadIdType::Other:
+        return 9;
+    default:
+        return 0;
+    }
+}
+
+/// Converts an array index to a NpadIdType
+constexpr NpadIdType IndexToNpadIdType(size_t index) {
+    switch (index) {
+    case 0:
+        return NpadIdType::Player1;
+    case 1:
+        return NpadIdType::Player2;
+    case 2:
+        return NpadIdType::Player3;
+    case 3:
+        return NpadIdType::Player4;
+    case 4:
+        return NpadIdType::Player5;
+    case 5:
+        return NpadIdType::Player6;
+    case 6:
+        return NpadIdType::Player7;
+    case 7:
+        return NpadIdType::Player8;
+    case 8:
+        return NpadIdType::Handheld;
+    case 9:
+        return NpadIdType::Other;
+    default:
+        return NpadIdType::Invalid;
+    }
+}
+
 } // namespace Core::HID

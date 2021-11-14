@@ -402,6 +402,15 @@ std::string GenerateKeyboardParam(int key_code) {
     return param.Serialize();
 }
 
+std::string GenerateModdifierKeyboardParam(int key_code) {
+    Common::ParamPackage param;
+    param.Set("engine", "keyboard");
+    param.Set("code", key_code);
+    param.Set("toggle", false);
+    param.Set("pad", 1);
+    return param.Serialize();
+}
+
 std::string GenerateAnalogParamFromKeys(int key_up, int key_down, int key_left, int key_right,
                                         int key_modifier, float modifier_scale) {
     Common::ParamPackage circle_pad_param{

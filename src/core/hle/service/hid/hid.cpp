@@ -35,8 +35,9 @@ namespace Service::HID {
 
 // Updating period for each HID device.
 // Period time is obtained by measuring the number of samples in a second on HW using a homebrew
-constexpr auto pad_update_ns = std::chrono::nanoseconds{4 * 1000 * 1000};    // (4ms, 250Hz)
-constexpr auto motion_update_ns = std::chrono::nanoseconds{5 * 1000 * 1000}; // (5ms, 200Hz)
+constexpr auto pad_update_ns = std::chrono::nanoseconds{4 * 1000 * 1000};      // (4ms, 250Hz)
+constexpr auto keyboard_update_ns = std::chrono::nanoseconds{8 * 1000 * 1000}; // (8ms, 125Hz)
+constexpr auto motion_update_ns = std::chrono::nanoseconds{5 * 1000 * 1000};   // (5ms, 200Hz)
 constexpr std::size_t SHARED_MEMORY_SIZE = 0x40000;
 
 IAppletResource::IAppletResource(Core::System& system_,
@@ -78,14 +79,21 @@ IAppletResource::IAppletResource(Core::System& system_,
             const auto guard = LockService();
             UpdateControllers(user_data, ns_late);
         });
+    keyboard_update_event = Core::Timing::CreateEvent(
+        "HID::UpdatekeyboardCallback",
+        [this](std::uintptr_t user_data, std::chrono::nanoseconds ns_late) {
+            const auto guard = LockService();
+            UpdateKeyboard(user_data, ns_late);
+        });
     motion_update_event = Core::Timing::CreateEvent(
-        "HID::MotionPadCallback",
+        "HID::UpdateMotionCallback",
         [this](std::uintptr_t user_data, std::chrono::nanoseconds ns_late) {
             const auto guard = LockService();
             UpdateMotion(user_data, ns_late);
         });
 
     system.CoreTiming().ScheduleEvent(pad_update_ns, pad_update_event);
+    system.CoreTiming().ScheduleEvent(keyboard_update_ns, keyboard_update_event);
     system.CoreTiming().ScheduleEvent(motion_update_ns, motion_update_event);
 
     system.HIDCore().ReloadInputDevices();
@@ -101,6 +109,7 @@ void IAppletResource::DeactivateController(HidController controller) {
 
 IAppletResource::~IAppletResource() {
     system.CoreTiming().UnscheduleEvent(pad_update_event, 0);
+    system.CoreTiming().UnscheduleEvent(keyboard_update_event, 0);
     system.CoreTiming().UnscheduleEvent(motion_update_event, 0);
 }
 
@@ -117,16 +126,34 @@ void IAppletResource::UpdateControllers(std::uintptr_t user_data,
     auto& core_timing = system.CoreTiming();
 
     for (const auto& controller : controllers) {
+        // Keyboard has it's own update event
+        if (controller == controllers[static_cast<size_t>(HidController::Keyboard)]) {
+            continue;
+        }
         controller->OnUpdate(core_timing, system.Kernel().GetHidSharedMem().GetPointer(),
                              SHARED_MEMORY_SIZE);
     }
 
     // If ns_late is higher than the update rate ignore the delay
-    if (ns_late > motion_update_ns) {
+    if (ns_late > pad_update_ns) {
         ns_late = {};
     }
 
     core_timing.ScheduleEvent(pad_update_ns - ns_late, pad_update_event);
+}
+
+void IAppletResource::UpdateKeyboard(std::uintptr_t user_data, std::chrono::nanoseconds ns_late) {
+    auto& core_timing = system.CoreTiming();
+
+    controllers[static_cast<size_t>(HidController::Keyboard)]->OnUpdate(
+        core_timing, system.Kernel().GetHidSharedMem().GetPointer(), SHARED_MEMORY_SIZE);
+
+    // If ns_late is higher than the update rate ignore the delay
+    if (ns_late > keyboard_update_ns) {
+        ns_late = {};
+    }
+
+    core_timing.ScheduleEvent(keyboard_update_ns - ns_late, keyboard_update_event);
 }
 
 void IAppletResource::UpdateMotion(std::uintptr_t user_data, std::chrono::nanoseconds ns_late) {
