@@ -175,6 +175,10 @@ Common::Input::TouchStatus TransformToTouch(const Common::Input::CallbackStatus&
     case Common::Input::InputType::Touch:
         status = callback.touch_status;
         break;
+    case Common::Input::InputType::Stick:
+        status.x = callback.stick_status.x;
+        status.y = callback.stick_status.y;
+        break;
     default:
         LOG_ERROR(Input, "Conversion from type {} to touch not implemented", callback.type);
         break;

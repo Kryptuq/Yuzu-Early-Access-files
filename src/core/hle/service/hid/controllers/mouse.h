@@ -14,6 +14,7 @@
 namespace Core::HID {
 class EmulatedDevices;
 struct MouseState;
+struct AnalogStickState;
 } // namespace Core::HID
 
 namespace Service::HID {
@@ -37,6 +38,7 @@ private:
     static_assert(sizeof(mouse_lifo) == 0x350, "mouse_lifo is an invalid size");
     Core::HID::MouseState next_state{};
 
+    Core::HID::AnalogStickState last_mouse_wheel_state;
     Core::HID::EmulatedDevices* emulated_devices;
 };
 } // namespace Service::HID

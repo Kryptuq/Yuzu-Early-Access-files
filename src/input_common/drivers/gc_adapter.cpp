@@ -486,42 +486,30 @@ std::string GCAdapter::GetUIButtonName(const Common::ParamPackage& params) const
     switch (button) {
     case PadButton::ButtonLeft:
         return "left";
-        break;
     case PadButton::ButtonRight:
         return "right";
-        break;
     case PadButton::ButtonDown:
         return "down";
-        break;
     case PadButton::ButtonUp:
         return "up";
-        break;
     case PadButton::TriggerZ:
         return "Z";
-        break;
     case PadButton::TriggerR:
         return "R";
-        break;
     case PadButton::TriggerL:
         return "L";
-        break;
     case PadButton::ButtonA:
         return "A";
-        break;
     case PadButton::ButtonB:
         return "B";
-        break;
     case PadButton::ButtonX:
         return "X";
-        break;
     case PadButton::ButtonY:
         return "Y";
-        break;
     case PadButton::ButtonStart:
         return "start";
-        break;
     default:
-        return "Unkown GC";
+        return "Unknown GC";
     }
 }
 

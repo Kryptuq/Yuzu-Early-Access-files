@@ -179,4 +179,6 @@ void ConfigureInputAdvanced::RetranslateUI() {
 void ConfigureInputAdvanced::UpdateUIEnabled() {
     ui->debug_configure->setEnabled(ui->debug_enabled->isChecked());
     ui->touchscreen_advanced->setEnabled(ui->touchscreen_enabled->isChecked());
+    ui->mouse_panning->setEnabled(!ui->mouse_enabled->isChecked());
+    ui->mouse_panning_sensitivity->setEnabled(!ui->mouse_enabled->isChecked());
 }

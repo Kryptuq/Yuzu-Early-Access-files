@@ -72,6 +72,7 @@ private:
     Common::Vec2<int> mouse_origin;
     Common::Vec2<int> last_mouse_position;
     Common::Vec2<float> last_mouse_change;
+    Common::Vec2<int> wheel_position;
     bool button_pressed;
     int mouse_panning_timout{};
     std::jthread update_thread;

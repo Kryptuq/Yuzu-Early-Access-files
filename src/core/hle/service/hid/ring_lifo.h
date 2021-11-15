@@ -7,7 +7,6 @@
 #include <array>
 
 #include "common/common_types.h"
-#include "common/swap.h"
 
 namespace Service::HID {
 constexpr std::size_t max_buffer_size = 17;
@@ -21,7 +20,7 @@ struct AtomicStorage {
 template <typename State>
 struct Lifo {
     s64 timestamp{};
-    s64 total_buffer_count = max_buffer_size;
+    s64 total_buffer_count = static_cast<s64>(max_buffer_size);
     s64 buffer_tail{};
     s64 buffer_count{};
     std::array<AtomicStorage<State>, max_buffer_size> entries{};
@@ -35,11 +34,11 @@ struct Lifo {
     }
 
     std::size_t GetPreviousEntryIndex() const {
-        return (buffer_tail + total_buffer_count - 1) % total_buffer_count;
+        return static_cast<size_t>((buffer_tail + total_buffer_count - 1) % total_buffer_count);
     }
 
     std::size_t GetNextEntryIndex() const {
-        return (buffer_tail + 1) % total_buffer_count;
+        return static_cast<size_t>((buffer_tail + 1) % total_buffer_count);
     }
 
     void WriteNextEntry(const State& new_state) {

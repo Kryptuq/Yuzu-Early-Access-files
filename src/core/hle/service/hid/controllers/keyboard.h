@@ -38,6 +38,7 @@ private:
     struct KeyboardState {
         s64 sampling_number;
         Core::HID::KeyboardModifier modifier;
+        Core::HID::KeyboardAttribute attribute;
         Core::HID::KeyboardKey key;
     };
     static_assert(sizeof(KeyboardState) == 0x30, "KeyboardState is an invalid size");

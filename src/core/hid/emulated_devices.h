@@ -38,7 +38,7 @@ using MouseButtonValues =
     std::array<Common::Input::ButtonStatus, Settings::NativeMouseButton::NumMouseButtons>;
 using MouseAnalogValues =
     std::array<Common::Input::AnalogStatus, Settings::NativeMouseWheel::NumMouseWheels>;
-using MouseStickValue = Common::Input::StickStatus;
+using MouseStickValue = Common::Input::TouchStatus;
 
 struct MousePosition {
     f32 x;
@@ -130,7 +130,7 @@ public:
     MousePosition GetMousePosition() const;
 
     /// Returns the latest mouse wheel change
-    AnalogStickState GetMouseDeltaWheel() const;
+    AnalogStickState GetMouseWheel() const;
 
     /**
      * Adds a callback to the list of events

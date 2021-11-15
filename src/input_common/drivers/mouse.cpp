@@ -26,6 +26,12 @@ constexpr PadIdentifier identifier = {
 
 Mouse::Mouse(const std::string input_engine_) : InputEngine(input_engine_) {
     PreSetController(identifier);
+    PreSetAxis(identifier, mouse_axis_x);
+    PreSetAxis(identifier, mouse_axis_y);
+    PreSetAxis(identifier, wheel_axis_x);
+    PreSetAxis(identifier, wheel_axis_y);
+    PreSetAxis(identifier, touch_axis_x);
+    PreSetAxis(identifier, touch_axis_x);
     update_thread = std::jthread([this](std::stop_token stop_token) { UpdateThread(stop_token); });
 }
 
@@ -33,7 +39,7 @@ void Mouse::UpdateThread(std::stop_token stop_token) {
     Common::SetCurrentThreadName("yuzu:input:Mouse");
     constexpr int update_time = 10;
     while (!stop_token.stop_requested()) {
-        if (Settings::values.mouse_panning) {
+        if (Settings::values.mouse_panning && !Settings::values.mouse_enabled) {
             // Slow movement by 4%
             last_mouse_change *= 0.96f;
             const float sensitivity =
@@ -46,14 +52,17 @@ void Mouse::UpdateThread(std::stop_token stop_token) {
             StopPanning();
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(update_time));
-
-        // Reset wheel position
-        SetAxis(identifier, wheel_axis_x, 0);
-        SetAxis(identifier, wheel_axis_y, 0);
     }
 }
 
 void Mouse::MouseMove(int x, int y, f32 touch_x, f32 touch_y, int center_x, int center_y) {
+    // If native mouse is enabled just set the screen coordinates
+    if (Settings::values.mouse_enabled) {
+        SetAxis(identifier, mouse_axis_x, touch_x);
+        SetAxis(identifier, mouse_axis_y, touch_y);
+        return;
+    }
+
     SetAxis(identifier, touch_axis_x, touch_x);
     SetAxis(identifier, touch_axis_y, touch_y);
 
@@ -115,7 +124,7 @@ void Mouse::PressButton(int x, int y, f32 touch_x, f32 touch_y, MouseButton butt
 void Mouse::ReleaseButton(MouseButton button) {
     SetButton(identifier, static_cast<int>(button), false);
 
-    if (!Settings::values.mouse_panning) {
+    if (!Settings::values.mouse_panning && !Settings::values.mouse_enabled) {
         SetAxis(identifier, mouse_axis_x, 0);
         SetAxis(identifier, mouse_axis_y, 0);
     }
@@ -123,8 +132,10 @@ void Mouse::ReleaseButton(MouseButton button) {
 }
 
 void Mouse::MouseWheelChange(int x, int y) {
-    SetAxis(identifier, wheel_axis_x, static_cast<f32>(x));
-    SetAxis(identifier, wheel_axis_y, static_cast<f32>(y));
+    wheel_position.x += x;
+    wheel_position.y += y;
+    SetAxis(identifier, wheel_axis_x, static_cast<f32>(wheel_position.x));
+    SetAxis(identifier, wheel_axis_y, static_cast<f32>(wheel_position.y));
 }
 
 void Mouse::ReleaseAllButtons() {

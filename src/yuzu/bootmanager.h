@@ -158,7 +158,7 @@ public:
     static int QtKeyToSwitchKey(Qt::Key qt_keys);
 
     /// Converts a Qt modifier keys into NativeKeyboard modifier keys
-    static int QtModifierToSwitchModdifier(quint32 qt_moddifiers);
+    static int QtModifierToSwitchModifier(quint32 qt_modifiers);
 
     void keyPressEvent(QKeyEvent* event) override;
     void keyReleaseEvent(QKeyEvent* event) override;

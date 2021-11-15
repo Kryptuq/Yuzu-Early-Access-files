@@ -502,21 +502,30 @@ static_assert(sizeof(VibrationDeviceInfo) == 0x8, "VibrationDeviceInfo has incor
 // This is nn::hid::KeyboardModifier
 struct KeyboardModifier {
     union {
-        u64 raw{};
-        BitField<0, 1, u64> control;
-        BitField<1, 1, u64> shift;
-        BitField<2, 1, u64> left_alt;
-        BitField<3, 1, u64> right_alt;
-        BitField<4, 1, u64> gui;
-        BitField<8, 1, u64> caps_lock;
-        BitField<9, 1, u64> scroll_lock;
-        BitField<10, 1, u64> num_lock;
-        BitField<11, 1, u64> katakana;
-        BitField<12, 1, u64> hiragana;
-        BitField<32, 1, u64> unknown;
+        u32 raw{};
+        BitField<0, 1, u32> control;
+        BitField<1, 1, u32> shift;
+        BitField<2, 1, u32> left_alt;
+        BitField<3, 1, u32> right_alt;
+        BitField<4, 1, u32> gui;
+        BitField<8, 1, u32> caps_lock;
+        BitField<9, 1, u32> scroll_lock;
+        BitField<10, 1, u32> num_lock;
+        BitField<11, 1, u32> katakana;
+        BitField<12, 1, u32> hiragana;
     };
 };
-static_assert(sizeof(KeyboardModifier) == 0x8, "KeyboardModifier is an invalid size");
+
+static_assert(sizeof(KeyboardModifier) == 0x4, "KeyboardModifier is an invalid size");
+
+// This is nn::hid::KeyboardAttribute
+struct KeyboardAttribute {
+    union {
+        u32 raw{};
+        BitField<0, 1, u32> is_connected;
+    };
+};
+static_assert(sizeof(KeyboardAttribute) == 0x4, "KeyboardAttribute is an invalid size");
 
 // This is nn::hid::KeyboardKey
 struct KeyboardKey {
@@ -555,8 +564,9 @@ struct MouseState {
     s32 y;
     s32 delta_x;
     s32 delta_y;
-    s32 delta_wheel_x;
+    // Axis Order in HW is switched for the wheel
     s32 delta_wheel_y;
+    s32 delta_wheel_x;
     MouseButton button;
     MouseAttribute attribute;
 };
