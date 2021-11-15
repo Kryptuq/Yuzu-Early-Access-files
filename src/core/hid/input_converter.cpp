@@ -242,6 +242,27 @@ Common::Input::TriggerStatus TransformToTrigger(const Common::Input::CallbackSta
     return status;
 }
 
+Common::Input::AnalogStatus TransformToAnalog(const Common::Input::CallbackStatus& callback) {
+    Common::Input::AnalogStatus status{};
+
+    switch (callback.type) {
+    case Common::Input::InputType::Analog:
+        status.properties = callback.analog_status.properties;
+        status.raw_value = callback.analog_status.raw_value;
+        break;
+    default:
+        LOG_ERROR(Input, "Conversion from type {} to analog not implemented", callback.type);
+        break;
+    }
+
+    SanitizeAnalog(status, false);
+
+    // Adjust if value is inverted
+    status.value = status.properties.inverted ? -status.value : status.value;
+
+    return status;
+}
+
 void SanitizeAnalog(Common::Input::AnalogStatus& analog, bool clamp_value) {
     const auto& properties = analog.properties;
     float& raw_value = analog.raw_value;

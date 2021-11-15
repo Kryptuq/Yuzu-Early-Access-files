@@ -24,7 +24,6 @@
 #include "yuzu/configuration/configure_input_advanced.h"
 #include "yuzu/configuration/configure_input_player.h"
 #include "yuzu/configuration/configure_motion_touch.h"
-#include "yuzu/configuration/configure_mouse_advanced.h"
 #include "yuzu/configuration/configure_touchscreen_advanced.h"
 #include "yuzu/configuration/configure_vibration.h"
 #include "yuzu/configuration/input_profiles.h"
@@ -157,9 +156,6 @@ void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem,
                 CallConfigureDialog<ConfigureDebugController>(
                     *this, input_subsystem, profiles.get(), hid_core, is_powered_on);
             });
-    connect(advanced, &ConfigureInputAdvanced::CallMouseConfigDialog, [this, input_subsystem] {
-        CallConfigureDialog<ConfigureMouseAdvanced>(*this, input_subsystem);
-    });
     connect(advanced, &ConfigureInputAdvanced::CallTouchscreenConfigDialog,
             [this] { CallConfigureDialog<ConfigureTouchscreenAdvanced>(*this); });
     connect(advanced, &ConfigureInputAdvanced::CallMotionTouchConfigDialog,

@@ -82,7 +82,6 @@ ConfigureInputAdvanced::ConfigureInputAdvanced(QWidget* parent)
 
     connect(ui->debug_configure, &QPushButton::clicked, this,
             [this] { CallDebugControllerDialog(); });
-    connect(ui->mouse_advanced, &QPushButton::clicked, this, [this] { CallMouseConfigDialog(); });
     connect(ui->touchscreen_advanced, &QPushButton::clicked, this,
             [this] { CallTouchscreenConfigDialog(); });
     connect(ui->buttonMotionTouch, &QPushButton::clicked, this,
@@ -178,7 +177,6 @@ void ConfigureInputAdvanced::RetranslateUI() {
 }
 
 void ConfigureInputAdvanced::UpdateUIEnabled() {
-    ui->mouse_advanced->setEnabled(ui->mouse_enabled->isChecked());
     ui->debug_configure->setEnabled(ui->debug_enabled->isChecked());
     ui->touchscreen_advanced->setEnabled(ui->touchscreen_enabled->isChecked());
 }

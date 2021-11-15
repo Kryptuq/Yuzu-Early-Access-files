@@ -17,13 +17,15 @@
 #include "core/hid/hid_types.h"
 
 namespace Core::HID {
-
 using KeyboardDevices = std::array<std::unique_ptr<Common::Input::InputDevice>,
                                    Settings::NativeKeyboard::NumKeyboardKeys>;
 using KeyboardModifierDevices = std::array<std::unique_ptr<Common::Input::InputDevice>,
                                            Settings::NativeKeyboard::NumKeyboardMods>;
 using MouseButtonDevices = std::array<std::unique_ptr<Common::Input::InputDevice>,
                                       Settings::NativeMouseButton::NumMouseButtons>;
+using MouseAnalogDevices = std::array<std::unique_ptr<Common::Input::InputDevice>,
+                                      Settings::NativeMouseWheel::NumMouseWheels>;
+using MouseStickDevice = std::unique_ptr<Common::Input::InputDevice>;
 
 using MouseButtonParams =
     std::array<Common::ParamPackage, Settings::NativeMouseButton::NumMouseButtons>;
@@ -34,12 +36,13 @@ using KeyboardModifierValues =
     std::array<Common::Input::ButtonStatus, Settings::NativeKeyboard::NumKeyboardMods>;
 using MouseButtonValues =
     std::array<Common::Input::ButtonStatus, Settings::NativeMouseButton::NumMouseButtons>;
+using MouseAnalogValues =
+    std::array<Common::Input::AnalogStatus, Settings::NativeMouseWheel::NumMouseWheels>;
+using MouseStickValue = Common::Input::StickStatus;
 
 struct MousePosition {
-    s32 x;
-    s32 y;
-    s32 delta_wheel_x;
-    s32 delta_wheel_y;
+    f32 x;
+    f32 y;
 };
 
 struct DeviceStatus {
@@ -47,12 +50,15 @@ struct DeviceStatus {
     KeyboardValues keyboard_values{};
     KeyboardModifierValues keyboard_moddifier_values{};
     MouseButtonValues mouse_button_values{};
+    MouseAnalogValues mouse_analog_values{};
+    MouseStickValue mouse_stick_value{};
 
     // Data for HID serices
     KeyboardKey keyboard_state{};
     KeyboardModifier keyboard_moddifier_state{};
     MouseButton mouse_button_state{};
     MousePosition mouse_position_state{};
+    AnalogStickState mouse_wheel_state{};
 };
 
 enum class DeviceTriggerType {
@@ -102,15 +108,6 @@ public:
     /// Reverts any mapped changes made that weren't saved
     void RestoreConfig();
 
-    /// Returns the current mapped mouse button device
-    Common::ParamPackage GetMouseButtonParam(std::size_t index) const;
-
-    /**
-     * Updates the current mapped mouse button device
-     * @param ParamPackage with controller data to be mapped
-     */
-    void SetMouseButtonParam(std::size_t index, Common::ParamPackage param);
-
     /// Returns the latest status of button input from the keyboard with parameters
     KeyboardValues GetKeyboardValues() const;
 
@@ -132,9 +129,12 @@ public:
     /// Returns the latest mouse coordinates
     MousePosition GetMousePosition() const;
 
+    /// Returns the latest mouse wheel change
+    AnalogStickState GetMouseDeltaWheel() const;
+
     /**
      * Adds a callback to the list of events
-     * @param ConsoleUpdateCallback that will be triggered
+     * @param InterfaceUpdateCallback that will be triggered
      * @return an unique key corresponding to the callback index in the list
      */
     int SetCallback(InterfaceUpdateCallback update_callback);
@@ -150,25 +150,39 @@ private:
     void UpdateKey(std::size_t key_index, bool status);
 
     /**
-     * Updates the touch status of the console
+     * Updates the touch status of the keyboard device
      * @param callback: A CallbackStatus containing the key status
      * @param index: key ID to be updated
      */
     void SetKeyboardButton(Common::Input::CallbackStatus callback, std::size_t index);
 
     /**
-     * Updates the touch status of the console
+     * Updates the keyboard status of the keyboard device
      * @param callback: A CallbackStatus containing the modifier key status
      * @param index: modifier key ID to be updated
      */
     void SetKeyboardModifier(Common::Input::CallbackStatus callback, std::size_t index);
 
     /**
-     * Updates the touch status of the console
+     * Updates the mouse button status of the mouse device
      * @param callback: A CallbackStatus containing the button status
-     * @param index: Button ID of the to be updated
+     * @param index: Button ID to be updated
      */
     void SetMouseButton(Common::Input::CallbackStatus callback, std::size_t index);
+
+    /**
+     * Updates the mouse wheel status of the mouse device
+     * @param callback: A CallbackStatus containing the wheel status
+     * @param index: wheel ID to be updated
+     */
+    void SetMouseAnalog(Common::Input::CallbackStatus callback, std::size_t index);
+
+    /**
+     * Updates the mouse position status of the mouse device
+     * @param callback: A CallbackStatus containing the position status
+     * @param index: stick ID to be updated
+     */
+    void SetMouseStick(Common::Input::CallbackStatus callback);
 
     /**
      * Triggers a callback that something has changed on the device status
@@ -178,11 +192,11 @@ private:
 
     bool is_configuring{false};
 
-    MouseButtonParams mouse_button_params;
-
     KeyboardDevices keyboard_devices;
     KeyboardModifierDevices keyboard_modifier_devices;
     MouseButtonDevices mouse_button_devices;
+    MouseAnalogDevices mouse_analog_devices;
+    MouseStickDevice mouse_stick_device;
 
     mutable std::mutex mutex;
     std::unordered_map<int, InterfaceUpdateCallback> callback_list;

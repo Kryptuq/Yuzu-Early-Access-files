@@ -90,9 +90,6 @@ add_executable(yuzu
     configuration/configure_motion_touch.cpp
     configuration/configure_motion_touch.h
     configuration/configure_motion_touch.ui
-    configuration/configure_mouse_advanced.cpp
-    configuration/configure_mouse_advanced.h
-    configuration/configure_mouse_advanced.ui
     configuration/configure_per_game.cpp
     configuration/configure_per_game.h
     configuration/configure_per_game.ui

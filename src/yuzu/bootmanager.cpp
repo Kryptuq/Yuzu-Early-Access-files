@@ -600,7 +600,7 @@ int GRenderWindow::QtKeyToSwitchKey(Qt::Key qt_key) {
         return Settings::NativeKeyboard::ZenkakuHankaku;
     // Modifier keys are handled by the modifier property
     default:
-        return 0;
+        return Settings::NativeKeyboard::None;
     }
 }
 
@@ -653,8 +653,10 @@ void GRenderWindow::keyPressEvent(QKeyEvent* event) {
         // Replace event->key() with event->nativeVirtualKey() since the second one provides raw key
         // buttons
         const auto key = QtKeyToSwitchKey(Qt::Key(event->key()));
-        input_subsystem->GetKeyboard()->SetModifiers(moddifier);
-        input_subsystem->GetKeyboard()->PressKey(key);
+        input_subsystem->GetKeyboard()->SetKeyboardModifiers(moddifier);
+        input_subsystem->GetKeyboard()->PressKeyboardKey(key);
+        // This is used for gamepads
+        input_subsystem->GetKeyboard()->PressKey(event->key());
     }
 }
 
@@ -662,8 +664,10 @@ void GRenderWindow::keyReleaseEvent(QKeyEvent* event) {
     if (!event->isAutoRepeat()) {
         const auto moddifier = QtModifierToSwitchModdifier(event->nativeModifiers());
         const auto key = QtKeyToSwitchKey(Qt::Key(event->key()));
-        input_subsystem->GetKeyboard()->SetModifiers(moddifier);
-        input_subsystem->GetKeyboard()->ReleaseKey(key);
+        input_subsystem->GetKeyboard()->SetKeyboardModifiers(moddifier);
+        input_subsystem->GetKeyboard()->ReleaseKeyboardKey(key);
+        // This is used for gamepads
+        input_subsystem->GetKeyboard()->ReleaseKey(event->key());
     }
 }
 
@@ -731,6 +735,12 @@ void GRenderWindow::mouseReleaseEvent(QMouseEvent* event) {
 
     const auto button = QtButtonToMouseButton(event->button());
     input_subsystem->GetMouse()->ReleaseButton(button);
+}
+
+void GRenderWindow::wheelEvent(QWheelEvent* event) {
+    const int x = event->delta();
+    const int y = 0;
+    input_subsystem->GetMouse()->MouseWheelChange(x, y);
 }
 
 void GRenderWindow::TouchBeginEvent(const QTouchEvent* event) {

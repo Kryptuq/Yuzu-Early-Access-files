@@ -28,6 +28,10 @@ void MappingFactory::RegisterInput(const MappingData& data) {
     if (!is_enabled) {
         return;
     }
+    if (!IsDriverValid(data)) {
+        return;
+    }
+
     switch (input_type) {
     case Polling::InputType::Button:
         RegisterButton(data);
@@ -166,6 +170,27 @@ void MappingFactory::RegisterMotion(const MappingData& data) {
         return;
     }
     input_queue.Push(new_input);
+}
+
+bool MappingFactory::IsDriverValid(const MappingData& data) const {
+    // Only port 0 can be mapped on the keyboard
+    if (data.engine == "keyboard" && data.pad.port != 0) {
+        return false;
+    }
+    // The following drivers don't need to be mapped
+    if (data.engine == "tas") {
+        return false;
+    }
+    if (data.engine == "touch") {
+        return false;
+    }
+    if (data.engine == "touch_from_button") {
+        return false;
+    }
+    if (data.engine == "analog_from_button") {
+        return false;
+    }
+    return true;
 }
 
 } // namespace InputCommon

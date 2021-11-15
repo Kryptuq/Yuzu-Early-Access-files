@@ -12,6 +12,10 @@
 #include "input_common/drivers/mouse.h"
 
 namespace InputCommon {
+constexpr int mouse_axis_x = 0;
+constexpr int mouse_axis_y = 1;
+constexpr int wheel_axis_x = 2;
+constexpr int wheel_axis_y = 3;
 constexpr int touch_axis_x = 10;
 constexpr int touch_axis_y = 11;
 constexpr PadIdentifier identifier = {
@@ -34,14 +38,18 @@ void Mouse::UpdateThread(std::stop_token stop_token) {
             last_mouse_change *= 0.96f;
             const float sensitivity =
                 Settings::values.mouse_panning_sensitivity.GetValue() * 0.022f;
-            SetAxis(identifier, 0, last_mouse_change.x * sensitivity);
-            SetAxis(identifier, 1, -last_mouse_change.y * sensitivity);
+            SetAxis(identifier, mouse_axis_x, last_mouse_change.x * sensitivity);
+            SetAxis(identifier, mouse_axis_y, -last_mouse_change.y * sensitivity);
         }
 
         if (mouse_panning_timout++ > 20) {
             StopPanning();
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(update_time));
+
+        // Reset wheel position
+        SetAxis(identifier, wheel_axis_x, 0);
+        SetAxis(identifier, wheel_axis_y, 0);
     }
 }
 
@@ -89,8 +97,8 @@ void Mouse::MouseMove(int x, int y, f32 touch_x, f32 touch_y, int center_x, int 
     if (button_pressed) {
         const auto mouse_move = Common::MakeVec<int>(x, y) - mouse_origin;
         const float sensitivity = Settings::values.mouse_panning_sensitivity.GetValue() * 0.0012f;
-        SetAxis(identifier, 0, static_cast<float>(mouse_move.x) * sensitivity);
-        SetAxis(identifier, 1, static_cast<float>(-mouse_move.y) * sensitivity);
+        SetAxis(identifier, mouse_axis_x, static_cast<float>(mouse_move.x) * sensitivity);
+        SetAxis(identifier, mouse_axis_y, static_cast<float>(-mouse_move.y) * sensitivity);
     }
 }
 
@@ -108,10 +116,15 @@ void Mouse::ReleaseButton(MouseButton button) {
     SetButton(identifier, static_cast<int>(button), false);
 
     if (!Settings::values.mouse_panning) {
-        SetAxis(identifier, 0, 0);
-        SetAxis(identifier, 1, 0);
+        SetAxis(identifier, mouse_axis_x, 0);
+        SetAxis(identifier, mouse_axis_y, 0);
     }
     button_pressed = false;
+}
+
+void Mouse::MouseWheelChange(int x, int y) {
+    SetAxis(identifier, wheel_axis_x, static_cast<f32>(x));
+    SetAxis(identifier, wheel_axis_y, static_cast<f32>(y));
 }
 
 void Mouse::ReleaseAllButtons() {

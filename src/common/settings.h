@@ -568,12 +568,9 @@ struct Values {
     BasicSetting<bool> mouse_panning{false, "mouse_panning"};
     BasicRangedSetting<u8> mouse_panning_sensitivity{10, 1, 100, "mouse_panning_sensitivity"};
     BasicSetting<bool> mouse_enabled{false, "mouse_enabled"};
-    MouseButtonsRaw mouse_buttons;
 
     BasicSetting<bool> emulate_analog_keyboard{false, "emulate_analog_keyboard"};
     BasicSetting<bool> keyboard_enabled{false, "keyboard_enabled"};
-    KeyboardKeysRaw keyboard_keys;
-    KeyboardModsRaw keyboard_mods;
 
     BasicSetting<bool> debug_pad_enabled{false, "debug_pad_enabled"};
     ButtonsRaw debug_pad_buttons;

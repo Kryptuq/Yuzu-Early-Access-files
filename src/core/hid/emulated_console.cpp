@@ -24,7 +24,10 @@ void EmulatedConsole::SetTouchParams() {
     std::size_t index = 0;
 
     // Hardcode mouse, touchscreen and cemuhook parameters
-    touch_params[index++] = Common::ParamPackage{"engine:mouse,axis_x:10,axis_y:11,button:0"};
+    if (!Settings::values.mouse_enabled) {
+        // We can't use mouse as touch if native mouse is enabled
+        touch_params[index++] = Common::ParamPackage{"engine:mouse,axis_x:10,axis_y:11,button:0"};
+    }
     touch_params[index++] = Common::ParamPackage{"engine:touch,axis_x:0,axis_y:1,button:0"};
     touch_params[index++] = Common::ParamPackage{"engine:touch,axis_x:2,axis_y:3,button:1"};
     touch_params[index++] = Common::ParamPackage{"engine:cemuhookudp,axis_x:0,axis_y:1,button:0"};
@@ -36,6 +39,9 @@ void EmulatedConsole::SetTouchParams() {
 
     // Map the rest of the fingers from touch from button configuration
     for (const auto& config_entry : touch_buttons) {
+        if (index >= touch_params.size()) {
+            continue;
+        }
         Common::ParamPackage params{config_entry};
         Common::ParamPackage touch_button_params;
         const int x = params.Get("x", 0);
@@ -49,9 +55,6 @@ void EmulatedConsole::SetTouchParams() {
         touch_button_params.Set("touch_id", static_cast<int>(index));
         touch_params[index] = touch_button_params;
         index++;
-        if (index >= touch_params.size()) {
-            return;
-        }
     }
 }
 

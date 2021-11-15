@@ -52,6 +52,13 @@ public:
      */
     void ReleaseButton(MouseButton button);
 
+    /**
+     * Sets the status of the mouse wheel
+     * @param x delta movement in the x direction
+     * @param y delta movement in the y direction
+     */
+    void MouseWheelChange(int x, int y);
+
     void ReleaseAllButtons();
 
     std::vector<Common::ParamPackage> GetInputDevices() const override;

@@ -69,6 +69,15 @@ Common::Input::TouchStatus TransformToTouch(const Common::Input::CallbackStatus&
 Common::Input::TriggerStatus TransformToTrigger(const Common::Input::CallbackStatus& callback);
 
 /**
+ * Converts raw input data into a valid analog status. Applies offset, deadzone, range and
+ * invert properties to the output.
+ *
+ * @param Supported callbacks: Analog.
+ * @return A valid AnalogStatus object.
+ */
+Common::Input::AnalogStatus TransformToAnalog(const Common::Input::CallbackStatus& callback);
+
+/**
  * Converts raw analog data into a valid analog value
  * @param An analog object containing raw data and properties, bool that determines if the value
  * needs to be clamped between -1.0f and 1.0f.

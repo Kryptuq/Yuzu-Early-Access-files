@@ -66,6 +66,13 @@ private:
      */
     void RegisterMotion(const MappingData& data);
 
+    /**
+     * Returns true if driver can be mapped
+     * @param "data": An struct containing all the information needed to create a proper
+     * ParamPackage
+     */
+    bool IsDriverValid(const MappingData& data) const;
+
     Common::SPSCQueue<Common::ParamPackage> input_queue;
     Polling::InputType input_type{Polling::InputType::None};
     bool is_enabled{};

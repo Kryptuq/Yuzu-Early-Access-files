@@ -126,6 +126,17 @@ constexpr int NUM_MOUSE_HID = NumMouseButtons;
 extern const std::array<const char*, NumMouseButtons> mapping;
 } // namespace NativeMouseButton
 
+namespace NativeMouseWheel {
+enum Values {
+    X,
+    Y,
+
+    NumMouseWheels,
+};
+
+extern const std::array<const char*, NumMouseWheels> mapping;
+} // namespace NativeMouseWheel
+
 namespace NativeKeyboard {
 enum Keys {
     None,
@@ -347,10 +358,6 @@ using AnalogsRaw = std::array<std::string, NativeAnalog::NumAnalogs>;
 using ButtonsRaw = std::array<std::string, NativeButton::NumButtons>;
 using MotionsRaw = std::array<std::string, NativeMotion::NumMotions>;
 using VibrationsRaw = std::array<std::string, NativeVibration::NumVibrations>;
-
-using MouseButtonsRaw = std::array<std::string, NativeMouseButton::NumMouseButtons>;
-using KeyboardKeysRaw = std::array<std::string, NativeKeyboard::NumKeyboardKeys>;
-using KeyboardModsRaw = std::array<std::string, NativeKeyboard::NumKeyboardMods>;
 
 constexpr u32 JOYCON_BODY_NEON_RED = 0xFF3C28;
 constexpr u32 JOYCON_BUTTONS_NEON_RED = 0x1E0A0A;
