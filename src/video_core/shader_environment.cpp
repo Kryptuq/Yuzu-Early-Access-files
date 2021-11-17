@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
+#include <bit>
 #include <filesystem>
 #include <fstream>
 #include <memory>
@@ -14,6 +15,7 @@
 #include "common/common_types.h"
 #include "common/div_ceil.h"
 #include "common/fs/fs.h"
+#include "common/fs/path_util.h"
 #include "common/logging/log.h"
 #include "shader_recompiler/environment.h"
 #include "video_core/engines/kepler_compute.h"
@@ -54,6 +56,47 @@ static Shader::TextureType ConvertType(const Tegra::Texture::TICEntry& entry) {
         return Shader::TextureType::ColorArrayCube;
     default:
         throw Shader::NotImplementedException("Unknown texture type");
+    }
+}
+
+static std::string_view StageToPreffix(Shader::Stage stage) {
+    switch (stage) {
+    case Shader::Stage::VertexB:
+        return "VB";
+    case Shader::Stage::TessellationControl:
+        return "TC";
+    case Shader::Stage::TessellationEval:
+        return "TE";
+    case Shader::Stage::Geometry:
+        return "GS";
+    case Shader::Stage::Fragment:
+        return "FS";
+    case Shader::Stage::Compute:
+        return "CS";
+    case Shader::Stage::VertexA:
+        return "VA";
+    default:
+        return "UK";
+    }
+}
+
+static void DumpImpl(u64 hash, const u64* code, u32 read_highest, u32 read_lowest,
+                     u32 initial_offset, Shader::Stage stage) {
+    const auto shader_dir{Common::FS::GetYuzuPath(Common::FS::YuzuPath::DumpDir)};
+    const auto base_dir{shader_dir / fmt::format("shaders")};
+    if (!Common::FS::CreateDir(shader_dir) || !Common::FS::CreateDir(base_dir)) {
+        LOG_ERROR(Common_Filesystem, "Failed to create shader dump directories");
+        return;
+    }
+    const auto prefix = StageToPreffix(stage);
+    const auto name{base_dir / fmt::format("{}{:016x}.ash", prefix, hash)};
+    const size_t real_size = read_highest - read_lowest + initial_offset;
+    const size_t padding_needed = ((32 - (real_size % 32)) % 32);
+    std::fstream shader_file(name, std::ios::out | std::ios::binary);
+    const size_t jump_index = initial_offset / sizeof(u64);
+    shader_file.write(reinterpret_cast<const char*>(code + jump_index), real_size);
+    for (size_t i = 0; i < padding_needed; i++) {
+        shader_file.put(0);
     }
 }
 
@@ -126,6 +169,10 @@ u64 GenericEnvironment::CalculateHash() const {
     const auto data{std::make_unique<char[]>(size)};
     gpu_memory->ReadBlock(program_base + read_lowest, data.get(), size);
     return Common::CityHash64(data.get(), size);
+}
+
+void GenericEnvironment::Dump(u64 hash) {
+    DumpImpl(hash, code.data(), read_highest, read_lowest, initial_offset, stage);
 }
 
 void GenericEnvironment::Serialize(std::ofstream& file) const {
@@ -207,6 +254,7 @@ GraphicsEnvironment::GraphicsEnvironment(Tegra::Engines::Maxwell3D& maxwell3d_,
                                          u32 start_address_)
     : GenericEnvironment{gpu_memory_, program_base_, start_address_}, maxwell3d{&maxwell3d_} {
     gpu_memory->ReadBlock(program_base + start_address, &sph, sizeof(sph));
+    initial_offset = sizeof(sph);
     gp_passthrough_mask = maxwell3d->regs.gp_passthrough_mask;
     switch (program) {
     case Maxwell::ShaderProgram::VertexA:
@@ -323,12 +371,18 @@ void FileEnvironment::Deserialize(std::ifstream& file) {
     if (stage == Shader::Stage::Compute) {
         file.read(reinterpret_cast<char*>(&workgroup_size), sizeof(workgroup_size))
             .read(reinterpret_cast<char*>(&shared_memory_size), sizeof(shared_memory_size));
+        initial_offset = 0;
     } else {
         file.read(reinterpret_cast<char*>(&sph), sizeof(sph));
+        initial_offset = sizeof(sph);
         if (stage == Shader::Stage::Geometry) {
             file.read(reinterpret_cast<char*>(&gp_passthrough_mask), sizeof(gp_passthrough_mask));
         }
     }
+}
+
+void FileEnvironment::Dump(u64 [[maybe_unused]] hash) {
+    DumpImpl(hash, code.get(), read_highest, read_lowest, initial_offset, stage);
 }
 
 u64 FileEnvironment::ReadInstruction(u32 address) {

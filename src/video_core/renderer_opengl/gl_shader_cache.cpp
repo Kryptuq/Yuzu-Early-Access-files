@@ -422,6 +422,11 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
 
         const u32 cfg_offset{static_cast<u32>(env.StartAddress() + sizeof(Shader::ProgramHeader))};
         Shader::Maxwell::Flow::CFG cfg(env, pools.flow_block, cfg_offset, index == 0);
+
+        if (Settings::values.dump_shaders) {
+            env.Dump(key.unique_hashes[index]);
+        }
+
         if (!uses_vertex_a || index != 1) {
             // Normal path
             programs[index] = TranslateProgram(pools.inst, pools.block, env, cfg, host_info);
@@ -506,8 +511,12 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(
     LOG_INFO(Render_OpenGL, "0x{:016x}", key.Hash());
 
     Shader::Maxwell::Flow::CFG cfg{env, pools.flow_block, env.StartAddress()};
-    auto program{TranslateProgram(pools.inst, pools.block, env, cfg, host_info)};
 
+    if (Settings::values.dump_shaders) {
+        env.Dump(key.Hash());
+    }
+
+    auto program{TranslateProgram(pools.inst, pools.block, env, cfg, host_info)};
     const u32 num_storage_buffers{Shader::NumDescriptors(program.info.storage_buffers_descriptors)};
     Shader::RuntimeInfo info;
     info.glasm_use_storage_buffers = num_storage_buffers <= device.GetMaxGLASMStorageBufferBlocks();

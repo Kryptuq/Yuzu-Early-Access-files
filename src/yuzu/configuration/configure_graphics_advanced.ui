@@ -125,6 +125,11 @@
             <widget class="QComboBox" name="anisotropic_filtering_combobox">
              <item>
               <property name="text">
+               <string>Automatic</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
                <string>Default</string>
               </property>
              </item>

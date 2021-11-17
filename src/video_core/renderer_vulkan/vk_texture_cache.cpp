@@ -1366,6 +1366,8 @@ ImageView::ImageView(TextureCacheRuntime&, const VideoCommon::ImageInfo& info,
 ImageView::ImageView(TextureCacheRuntime&, const VideoCommon::NullImageViewParams& params)
     : VideoCommon::ImageViewBase{params} {}
 
+ImageView::~ImageView() = default;
+
 VkImageView ImageView::DepthView() {
     if (depth_view) {
         return *depth_view;
@@ -1448,13 +1450,7 @@ Sampler::Sampler(TextureCacheRuntime& runtime, const Tegra::Texture::TSCEntry& t
         LOG_WARNING(Render_Vulkan, "VK_EXT_sampler_filter_minmax is required");
     }
     // Some games have samplers with garbage. Sanitize them here.
-    const f32 setting_anisotropic =
-        static_cast<f32>(1U << Settings::values.max_anisotropy.GetValue());
-    const f32 game_anisotropic = std::clamp(tsc.MaxAnisotropy(), 1.0f, 16.0f);
-    const bool aument_anisotropic =
-        game_anisotropic > 1.0f || tsc.mipmap_filter == TextureMipmapFilter::Linear;
-    const f32 max_anisotropy =
-        aument_anisotropic ? std::max(game_anisotropic, setting_anisotropic) : game_anisotropic;
+    const f32 max_anisotropy = std::clamp(tsc.MaxAnisotropy(), 1.0f, 16.0f);
 
     sampler = device.GetLogical().CreateSampler(VkSamplerCreateInfo{
         .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
@@ -1497,6 +1493,8 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, ImageView* color_buffer,
     std::array<ImageView*, NUM_RT> color_buffers{color_buffer};
     CreateFramebuffer(runtime, color_buffers, depth_buffer);
 }
+
+Framebuffer::~Framebuffer() = default;
 
 void Framebuffer::CreateFramebuffer(TextureCacheRuntime& runtime,
                                     std::span<ImageView*, NUM_RT> color_buffers,

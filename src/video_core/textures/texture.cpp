@@ -6,6 +6,7 @@
 #include <array>
 
 #include "common/cityhash.h"
+#include "common/settings.h"
 #include "video_core/textures/texture.h"
 
 using Tegra::Texture::TICEntry;
@@ -61,7 +62,18 @@ std::array<float, 4> TSCEntry::BorderColor() const noexcept {
 }
 
 float TSCEntry::MaxAnisotropy() const noexcept {
-    return static_cast<float>(1U << max_anisotropy);
+    if (max_anisotropy == 0 && mipmap_filter != TextureMipmapFilter::Linear) {
+        return 1.0f;
+    }
+    const auto anisotropic_settings = Settings::values.max_anisotropy.GetValue();
+    u32 added_anisotropic{};
+    if (anisotropic_settings == 0) {
+        added_anisotropic = Settings::values.resolution_info.up_scale >>
+                            Settings::values.resolution_info.down_shift;
+    } else {
+        added_anisotropic = Settings::values.max_anisotropy.GetValue() - 1U;
+    }
+    return static_cast<float>(1U << (max_anisotropy + added_anisotropic));
 }
 
 } // namespace Tegra::Texture

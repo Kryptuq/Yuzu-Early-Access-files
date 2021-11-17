@@ -52,17 +52,17 @@ struct FormatProperties {
     bool is_compressed;
 };
 
-class BGRCopyPass {
+class FormatConversionPass {
 public:
-    BGRCopyPass() = default;
-    ~BGRCopyPass() = default;
+    FormatConversionPass() = default;
+    ~FormatConversionPass() = default;
 
-    void CopyBGR(Image& dst_image, Image& src_image,
-                 std::span<const VideoCommon::ImageCopy> copies);
+    void ConvertImage(Image& dst_image, Image& src_image,
+                      std::span<const VideoCommon::ImageCopy> copies);
 
 private:
-    OGLBuffer bgr_pbo;
-    size_t bgr_pbo_size{};
+    OGLBuffer intermediate_pbo;
+    size_t pbo_size{};
 };
 
 class TextureCacheRuntime {
@@ -82,7 +82,11 @@ public:
 
     ImageBufferMap DownloadStagingBuffer(size_t size);
 
+    u64 GetDeviceLocalMemory() const;
+
     void CopyImage(Image& dst, Image& src, std::span<const VideoCommon::ImageCopy> copies);
+
+    void ConvertImage(Image& dst, Image& src, std::span<const VideoCommon::ImageCopy> copies);
 
     void ConvertImage(Framebuffer* dst, ImageView& dst_view, ImageView& src_view, bool rescaled) {
         UNIMPLEMENTED();
@@ -142,7 +146,7 @@ private:
     const Device& device;
     StateTracker& state_tracker;
     UtilShaders util_shaders;
-    BGRCopyPass bgr_copy_pass;
+    FormatConversionPass format_conversion_pass;
 
     std::array<std::unordered_map<GLenum, FormatProperties>, 3> format_properties;
     bool has_broken_texture_view_formats = false;
@@ -232,6 +236,14 @@ public:
                        const VideoCommon::ImageViewInfo& view_info);
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::NullImageViewParams&);
 
+    ~ImageView();
+
+    ImageView(const ImageView&) = delete;
+    ImageView& operator=(const ImageView&) = delete;
+
+    ImageView(ImageView&&) = default;
+    ImageView& operator=(ImageView&&) = default;
+
     [[nodiscard]] GLuint StorageView(Shader::TextureType texture_type,
                                      Shader::ImageFormat image_format);
 
@@ -300,6 +312,14 @@ public:
     explicit Framebuffer(TextureCacheRuntime&, std::span<ImageView*, NUM_RT> color_buffers,
                          ImageView* depth_buffer, const VideoCommon::RenderTargets& key);
 
+    ~Framebuffer();
+
+    Framebuffer(const Framebuffer&) = delete;
+    Framebuffer& operator=(const Framebuffer&) = delete;
+
+    Framebuffer(Framebuffer&&) = default;
+    Framebuffer& operator=(Framebuffer&&) = default;
+
     [[nodiscard]] GLuint Handle() const noexcept {
         return framebuffer.handle;
     }
@@ -317,7 +337,8 @@ struct TextureCacheParams {
     static constexpr bool ENABLE_VALIDATION = true;
     static constexpr bool FRAMEBUFFER_BLITS = true;
     static constexpr bool HAS_EMULATED_COPIES = true;
-    static constexpr bool HAS_DEVICE_MEMORY_INFO = false;
+    static constexpr bool HAS_DEVICE_MEMORY_INFO = true;
+    static constexpr bool HAS_PIXEL_FORMAT_CONVERSIONS = true;
 
     using Runtime = OpenGL::TextureCacheRuntime;
     using Image = OpenGL::Image;

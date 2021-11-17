@@ -57,6 +57,8 @@ public:
 
     [[nodiscard]] u64 CalculateHash() const;
 
+    void Dump(u64 hash);
+
     void Serialize(std::ofstream& file) const;
 
 protected:
@@ -82,6 +84,7 @@ protected:
 
     u32 cached_lowest = std::numeric_limits<u32>::max();
     u32 cached_highest = 0;
+    u32 initial_offset = 0;
 
     bool has_unbound_instructions = false;
 };
@@ -149,6 +152,8 @@ public:
 
     [[nodiscard]] std::array<u32, 3> WorkgroupSize() const override;
 
+    void Dump(u64 hash);
+
 private:
     std::unique_ptr<u64[]> code;
     std::unordered_map<u32, Shader::TextureType> texture_types;
@@ -159,6 +164,7 @@ private:
     u32 texture_bound{};
     u32 read_lowest{};
     u32 read_highest{};
+    u32 initial_offset{};
 };
 
 void SerializePipeline(std::span<const char> key, std::span<const GenericEnvironment* const> envs,

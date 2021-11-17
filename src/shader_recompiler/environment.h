@@ -27,6 +27,8 @@ public:
 
     [[nodiscard]] virtual std::array<u32, 3> WorkgroupSize() const = 0;
 
+    virtual void Dump(u64 hash) = 0;
+
     [[nodiscard]] const ProgramHeader& SPH() const noexcept {
         return sph;
     }

@@ -87,6 +87,14 @@ static void VolumeAdjustSamples(std::vector<s16>& samples, float game_volume) {
 }
 
 void Stream::PlayNextBuffer(std::chrono::nanoseconds ns_late) {
+    auto now = std::chrono::steady_clock::now();
+    auto duration = now.time_since_epoch();
+    auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration);
+
+    if (nanoseconds > expected_cb_time) {
+        ns_late = nanoseconds - expected_cb_time;
+    }
+
     if (!IsPlaying()) {
         // Ensure we are in playing state before playing the next buffer
         sink_stream.Flush();
@@ -121,6 +129,7 @@ void Stream::PlayNextBuffer(std::chrono::nanoseconds ns_late) {
         ns_late = {};
     }
 
+    expected_cb_time = nanoseconds + (buffer_release_ns - ns_late);
     core_timing.ScheduleEvent(buffer_release_ns - ns_late, release_event, {});
 }
 

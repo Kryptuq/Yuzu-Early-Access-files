@@ -162,6 +162,14 @@ public:
                        const VideoCommon::ImageViewInfo&, GPUVAddr);
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::NullImageViewParams&);
 
+    ~ImageView();
+
+    ImageView(const ImageView&) = delete;
+    ImageView& operator=(const ImageView&) = delete;
+
+    ImageView(ImageView&&) = default;
+    ImageView& operator=(ImageView&&) = default;
+
     [[nodiscard]] VkImageView DepthView();
 
     [[nodiscard]] VkImageView StencilView();
@@ -235,6 +243,14 @@ public:
     explicit Framebuffer(TextureCacheRuntime& runtime, ImageView* color_buffer,
                          ImageView* depth_buffer, VkExtent2D extent);
 
+    ~Framebuffer();
+
+    Framebuffer(const Framebuffer&) = delete;
+    Framebuffer& operator=(const Framebuffer&) = delete;
+
+    Framebuffer(Framebuffer&&) = default;
+    Framebuffer& operator=(Framebuffer&&) = default;
+
     void CreateFramebuffer(TextureCacheRuntime& runtime,
                            std::span<ImageView*, NUM_RT> color_buffers, ImageView* depth_buffer);
 
@@ -300,6 +316,7 @@ struct TextureCacheParams {
     static constexpr bool FRAMEBUFFER_BLITS = false;
     static constexpr bool HAS_EMULATED_COPIES = false;
     static constexpr bool HAS_DEVICE_MEMORY_INFO = true;
+    static constexpr bool HAS_PIXEL_FORMAT_CONVERSIONS = false;
 
     using Runtime = Vulkan::TextureCacheRuntime;
     using Image = Vulkan::Image;
