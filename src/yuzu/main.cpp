@@ -1037,7 +1037,7 @@ void GMainWindow::InitializeHotkeys() {
             &QShortcut::activatedAmbiguously, ui->action_Fullscreen, &QAction::trigger);
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Exit Fullscreen"), this),
             &QShortcut::activated, this, [&] {
-                if (emulation_running) {
+                if (emulation_running && ui->action_Fullscreen->isChecked()) {
                     ui->action_Fullscreen->setChecked(false);
                     ToggleFullscreen();
                 }
