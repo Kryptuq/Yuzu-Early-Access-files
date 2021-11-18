@@ -21,6 +21,13 @@
 namespace Vulkan {
 namespace {
 namespace Alternatives {
+constexpr std::array S8_UINT{
+    VK_FORMAT_D16_UNORM_S8_UINT,
+    VK_FORMAT_D24_UNORM_S8_UINT,
+    VK_FORMAT_D32_SFLOAT_S8_UINT,
+    VK_FORMAT_UNDEFINED,
+};
+
 constexpr std::array DEPTH24_UNORM_STENCIL8_UINT{
     VK_FORMAT_D32_SFLOAT_S8_UINT,
     VK_FORMAT_D16_UNORM_S8_UINT,
@@ -74,6 +81,8 @@ void SetNext(void**& next, T& data) {
 
 constexpr const VkFormat* GetFormatAlternatives(VkFormat format) {
     switch (format) {
+    case VK_FORMAT_S8_UINT:
+        return Alternatives::S8_UINT.data();
     case VK_FORMAT_D24_UNORM_S8_UINT:
         return Alternatives::DEPTH24_UNORM_STENCIL8_UINT.data();
     case VK_FORMAT_D16_UNORM_S8_UINT:
@@ -145,6 +154,7 @@ std::unordered_map<VkFormat, VkFormatProperties> GetFormatProperties(vk::Physica
         VK_FORMAT_R4G4B4A4_UNORM_PACK16,
         VK_FORMAT_D32_SFLOAT,
         VK_FORMAT_D16_UNORM,
+        VK_FORMAT_S8_UINT,
         VK_FORMAT_D16_UNORM_S8_UINT,
         VK_FORMAT_D24_UNORM_S8_UINT,
         VK_FORMAT_D32_SFLOAT_S8_UINT,

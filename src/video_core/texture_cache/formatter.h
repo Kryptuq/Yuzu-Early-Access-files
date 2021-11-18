@@ -194,6 +194,8 @@ struct fmt::formatter<VideoCore::Surface::PixelFormat> : fmt::formatter<fmt::str
                 return "D32_FLOAT";
             case PixelFormat::D16_UNORM:
                 return "D16_UNORM";
+            case PixelFormat::S8_UINT:
+                return "S8_UINT";
             case PixelFormat::D24_UNORM_S8_UINT:
                 return "D24_UNORM_S8_UINT";
             case PixelFormat::S8_UINT_D24_UNORM:

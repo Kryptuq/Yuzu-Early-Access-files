@@ -83,6 +83,7 @@ enum class DepthFormat : u32 {
     S8_UINT_Z24_UNORM = 0x14,
     D24X8_UNORM = 0x15,
     D24S8_UNORM = 0x16,
+    S8_UINT = 0x17,
     D24C8_UNORM = 0x18,
     D32_FLOAT_S8X24_UINT = 0x19,
 };

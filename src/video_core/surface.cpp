@@ -82,6 +82,8 @@ PixelFormat PixelFormatFromDepthFormat(Tegra::DepthFormat format) {
         return PixelFormat::D32_FLOAT;
     case Tegra::DepthFormat::D16_UNORM:
         return PixelFormat::D16_UNORM;
+    case Tegra::DepthFormat::S8_UINT:
+        return PixelFormat::S8_UINT;
     case Tegra::DepthFormat::D32_FLOAT_S8X24_UINT:
         return PixelFormat::D32_FLOAT_S8_UINT;
     default:
@@ -211,6 +213,11 @@ SurfaceType GetFormatType(PixelFormat pixel_format) {
     if (static_cast<std::size_t>(pixel_format) <
         static_cast<std::size_t>(PixelFormat::MaxDepthFormat)) {
         return SurfaceType::Depth;
+    }
+
+    if (static_cast<std::size_t>(pixel_format) <
+        static_cast<std::size_t>(PixelFormat::MaxStencilFormat)) {
+        return SurfaceType::Stencil;
     }
 
     if (static_cast<std::size_t>(pixel_format) <

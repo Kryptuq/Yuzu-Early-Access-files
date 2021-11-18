@@ -102,6 +102,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
             usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
             break;
         case VideoCore::Surface::SurfaceType::Depth:
+        case VideoCore::Surface::SurfaceType::Stencil:
         case VideoCore::Surface::SurfaceType::DepthStencil:
             usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
             break;
@@ -173,6 +174,8 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
         return VK_IMAGE_ASPECT_COLOR_BIT;
     case VideoCore::Surface::SurfaceType::Depth:
         return VK_IMAGE_ASPECT_DEPTH_BIT;
+    case VideoCore::Surface::SurfaceType::Stencil:
+        return VK_IMAGE_ASPECT_STENCIL_BIT;
     case VideoCore::Surface::SurfaceType::DepthStencil:
         return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     default:
@@ -195,6 +198,8 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     case PixelFormat::D16_UNORM:
     case PixelFormat::D32_FLOAT:
         return VK_IMAGE_ASPECT_DEPTH_BIT;
+    case PixelFormat::S8_UINT:
+        return VK_IMAGE_ASPECT_STENCIL_BIT;
     default:
         return VK_IMAGE_ASPECT_COLOR_BIT;
     }

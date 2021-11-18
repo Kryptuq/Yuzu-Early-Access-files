@@ -46,6 +46,8 @@ QShortcut* HotkeyRegistry::GetHotkey(const QString& group, const QString& action
     if (!hk.shortcut)
         hk.shortcut = new QShortcut(hk.keyseq, widget, nullptr, nullptr, hk.context);
 
+    hk.shortcut->setAutoRepeat(false);
+
     return hk.shortcut;
 }
 

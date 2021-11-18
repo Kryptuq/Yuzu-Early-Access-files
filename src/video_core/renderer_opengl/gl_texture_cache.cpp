@@ -148,6 +148,8 @@ GLenum AttachmentType(PixelFormat format) {
     switch (const SurfaceType type = VideoCore::Surface::GetFormatType(format); type) {
     case SurfaceType::Depth:
         return GL_DEPTH_ATTACHMENT;
+    case SurfaceType::Stencil:
+        return GL_STENCIL_ATTACHMENT;
     case SurfaceType::DepthStencil:
         return GL_DEPTH_STENCIL_ATTACHMENT;
     default:
@@ -317,13 +319,12 @@ void AttachTexture(GLuint fbo, GLenum attachment, const ImageView* image_view) {
     }
 }
 
-OGLTexture MakeImage(const VideoCommon::ImageInfo& info, GLenum gl_internal_format) {
+OGLTexture MakeImage(const VideoCommon::ImageInfo& info, GLenum gl_internal_format,
+                     GLsizei gl_num_levels) {
     const GLenum target = ImageTarget(info);
     const GLsizei width = info.size.width;
     const GLsizei height = info.size.height;
     const GLsizei depth = info.size.depth;
-    const int max_host_mip_levels = std::bit_width(info.size.width);
-    const GLsizei num_levels = std::min(info.resources.levels, max_host_mip_levels);
     const GLsizei num_layers = info.resources.layers;
     const GLsizei num_samples = info.num_samples;
 
@@ -335,10 +336,10 @@ OGLTexture MakeImage(const VideoCommon::ImageInfo& info, GLenum gl_internal_form
     }
     switch (target) {
     case GL_TEXTURE_1D_ARRAY:
-        glTextureStorage2D(handle, num_levels, gl_internal_format, width, num_layers);
+        glTextureStorage2D(handle, gl_num_levels, gl_internal_format, width, num_layers);
         break;
     case GL_TEXTURE_2D_ARRAY:
-        glTextureStorage3D(handle, num_levels, gl_internal_format, width, height, num_layers);
+        glTextureStorage3D(handle, gl_num_levels, gl_internal_format, width, height, num_layers);
         break;
     case GL_TEXTURE_2D_MULTISAMPLE_ARRAY: {
         // TODO: Where should 'fixedsamplelocations' come from?
@@ -348,10 +349,10 @@ OGLTexture MakeImage(const VideoCommon::ImageInfo& info, GLenum gl_internal_form
         break;
     }
     case GL_TEXTURE_RECTANGLE:
-        glTextureStorage2D(handle, num_levels, gl_internal_format, width, height);
+        glTextureStorage2D(handle, gl_num_levels, gl_internal_format, width, height);
         break;
     case GL_TEXTURE_3D:
-        glTextureStorage3D(handle, num_levels, gl_internal_format, width, height, depth);
+        glTextureStorage3D(handle, gl_num_levels, gl_internal_format, width, height, depth);
         break;
     case GL_TEXTURE_BUFFER:
         UNREACHABLE();
@@ -395,6 +396,10 @@ OGLTexture MakeImage(const VideoCommon::ImageInfo& info, GLenum gl_internal_form
     }
     UNREACHABLE_MSG("Invalid image format={}", format);
     return GL_R32UI;
+}
+
+[[nodiscard]] u32 NextPow2(u32 value) {
+    return 1U << (32U - std::countl_zero(value - 1U));
 }
 } // Anonymous namespace
 
@@ -692,7 +697,9 @@ Image::Image(TextureCacheRuntime& runtime_, const VideoCommon::ImageInfo& info_,
         gl_format = tuple.format;
         gl_type = tuple.type;
     }
-    texture = MakeImage(info, gl_internal_format);
+    const int max_host_mip_levels = std::bit_width(info.size.width);
+    gl_num_levels = std::min(info.resources.levels, max_host_mip_levels);
+    texture = MakeImage(info, gl_internal_format, gl_num_levels);
     current_texture = texture.handle;
     if (runtime->device.HasDebuggingToolAttached()) {
         const std::string name = VideoCommon::Name(*this);
@@ -720,6 +727,9 @@ void Image::UploadMemory(const ImageBufferMap& map,
     u32 current_image_height = std::numeric_limits<u32>::max();
 
     for (const VideoCommon::BufferImageCopy& copy : copies) {
+        if (copy.image_subresource.base_level >= gl_num_levels) {
+            continue;
+        }
         if (current_row_length != copy.buffer_row_length) {
             current_row_length = copy.buffer_row_length;
             glPixelStorei(GL_UNPACK_ROW_LENGTH, current_row_length);
@@ -749,6 +759,9 @@ void Image::DownloadMemory(ImageBufferMap& map,
     u32 current_image_height = std::numeric_limits<u32>::max();
 
     for (const VideoCommon::BufferImageCopy& copy : copies) {
+        if (copy.image_subresource.base_level >= gl_num_levels) {
+            continue;
+        }
         if (current_row_length != copy.buffer_row_length) {
             current_row_length = copy.buffer_row_length;
             glPixelStorei(GL_PACK_ROW_LENGTH, current_row_length);
@@ -788,7 +801,7 @@ GLuint Image::StorageHandle() noexcept {
         }
         store_view.Create();
         glTextureView(store_view.handle, ImageTarget(info), current_texture, GL_RGBA8, 0,
-                      info.resources.levels, 0, info.resources.layers);
+                      gl_num_levels, 0, info.resources.layers);
         return store_view.handle;
     default:
         return current_texture;
@@ -903,6 +916,8 @@ void Image::Scale(bool up_scale) {
             return GL_COLOR_ATTACHMENT0;
         case SurfaceType::Depth:
             return GL_DEPTH_ATTACHMENT;
+        case SurfaceType::Stencil:
+            return GL_STENCIL_ATTACHMENT;
         case SurfaceType::DepthStencil:
             return GL_DEPTH_STENCIL_ATTACHMENT;
         default:
@@ -916,8 +931,10 @@ void Image::Scale(bool up_scale) {
             return GL_COLOR_BUFFER_BIT;
         case SurfaceType::Depth:
             return GL_DEPTH_BUFFER_BIT;
+        case SurfaceType::Stencil:
+            return GL_STENCIL_BUFFER_BIT;
         case SurfaceType::DepthStencil:
-            return GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
+            return GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
         default:
             UNREACHABLE();
             return GL_COLOR_BUFFER_BIT;
@@ -929,8 +946,10 @@ void Image::Scale(bool up_scale) {
             return 0;
         case SurfaceType::Depth:
             return 1;
-        case SurfaceType::DepthStencil:
+        case SurfaceType::Stencil:
             return 2;
+        case SurfaceType::DepthStencil:
+            return 3;
         default:
             UNREACHABLE();
             return 0;
@@ -952,7 +971,7 @@ void Image::Scale(bool up_scale) {
         auto dst_info = info;
         dst_info.size.width = scaled_width;
         dst_info.size.height = scaled_height;
-        upscaled_backup = MakeImage(dst_info, gl_internal_format);
+        upscaled_backup = MakeImage(dst_info, gl_internal_format, gl_num_levels);
     }
     const u32 src_width = up_scale ? original_width : scaled_width;
     const u32 src_height = up_scale ? original_height : scaled_height;
@@ -1260,10 +1279,20 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM
     }
 
     if (const ImageView* const image_view = depth_buffer; image_view) {
-        if (GetFormatType(image_view->format) == SurfaceType::DepthStencil) {
-            buffer_bits |= GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
-        } else {
+        switch (GetFormatType(image_view->format)) {
+        case SurfaceType::Depth:
             buffer_bits |= GL_DEPTH_BUFFER_BIT;
+            break;
+        case SurfaceType::Stencil:
+            buffer_bits |= GL_STENCIL_BUFFER_BIT;
+            break;
+        case SurfaceType::DepthStencil:
+            buffer_bits |= GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
+            break;
+        default:
+            UNREACHABLE();
+            buffer_bits |= GL_DEPTH_BUFFER_BIT;
+            break;
         }
         const GLenum attachment = AttachmentType(image_view->format);
         AttachTexture(handle, attachment, image_view);
@@ -1304,7 +1333,7 @@ void FormatConversionPass::ConvertImage(Image& dst_image, Image& src_image,
         const u32 copy_size = region.width * region.height * region.depth * img_bpp;
         if (pbo_size < copy_size) {
             intermediate_pbo.Create();
-            pbo_size = copy_size;
+            pbo_size = NextPow2(copy_size);
             glNamedBufferData(intermediate_pbo.handle, pbo_size, nullptr, GL_STREAM_COPY);
         }
         // Copy from source to PBO

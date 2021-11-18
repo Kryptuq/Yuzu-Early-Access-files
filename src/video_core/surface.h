@@ -110,8 +110,12 @@ enum class PixelFormat {
 
     MaxDepthFormat,
 
+    // Stencil formats
+    S8_UINT = MaxDepthFormat,
+    MaxStencilFormat,
+
     // DepthStencil formats
-    D24_UNORM_S8_UINT = MaxDepthFormat,
+    D24_UNORM_S8_UINT = MaxStencilFormat,
     S8_UINT_D24_UNORM,
     D32_FLOAT_S8_UINT,
 
@@ -125,8 +129,9 @@ constexpr std::size_t MaxPixelFormat = static_cast<std::size_t>(PixelFormat::Max
 enum class SurfaceType {
     ColorTexture = 0,
     Depth = 1,
-    DepthStencil = 2,
-    Invalid = 3,
+    Stencil = 2,
+    DepthStencil = 3,
+    Invalid = 4,
 };
 
 enum class SurfaceTarget {
@@ -229,6 +234,7 @@ constexpr std::array<u32, MaxPixelFormat> BLOCK_WIDTH_TABLE = {{
     1,  // E5B9G9R9_FLOAT
     1,  // D32_FLOAT
     1,  // D16_UNORM
+    1,  // S8_UINT
     1,  // D24_UNORM_S8_UINT
     1,  // S8_UINT_D24_UNORM
     1,  // D32_FLOAT_S8_UINT
@@ -328,6 +334,7 @@ constexpr std::array<u32, MaxPixelFormat> BLOCK_HEIGHT_TABLE = {{
     1,  // E5B9G9R9_FLOAT
     1,  // D32_FLOAT
     1,  // D16_UNORM
+    1,  // S8_UINT
     1,  // D24_UNORM_S8_UINT
     1,  // S8_UINT_D24_UNORM
     1,  // D32_FLOAT_S8_UINT
@@ -427,6 +434,7 @@ constexpr std::array<u32, MaxPixelFormat> BITS_PER_BLOCK_TABLE = {{
     32,  // E5B9G9R9_FLOAT
     32,  // D32_FLOAT
     16,  // D16_UNORM
+    8,   // S8_UINT
     32,  // D24_UNORM_S8_UINT
     32,  // S8_UINT_D24_UNORM
     64,  // D32_FLOAT_S8_UINT
