@@ -52,7 +52,7 @@ public:
     void UnloadInputDevices();
 
     /// Number of emulated controllers
-    const std::size_t available_controllers{10};
+    static constexpr std::size_t available_controllers{10};
 
 private:
     std::unique_ptr<EmulatedController> player_1;

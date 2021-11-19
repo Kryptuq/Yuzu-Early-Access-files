@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "video_core/host_shaders/convert_abgr8_to_d24s8_frag_spv.h"
+#include "video_core/host_shaders/convert_b10g11r11_to_d24s8_frag_spv.h"
 #include "video_core/host_shaders/convert_d24s8_to_abgr8_frag_spv.h"
 #include "video_core/host_shaders/convert_d24s8_to_b10g11r11_frag_spv.h"
 #include "video_core/host_shaders/convert_d24s8_to_r16g16_frag_spv.h"
@@ -359,6 +360,7 @@ BlitImageHelper::BlitImageHelper(const Device& device_, VKScheduler& scheduler_,
       convert_depth_to_float_frag(BuildShader(device, CONVERT_DEPTH_TO_FLOAT_FRAG_SPV)),
       convert_float_to_depth_frag(BuildShader(device, CONVERT_FLOAT_TO_DEPTH_FRAG_SPV)),
       convert_abgr8_to_d24s8_frag(BuildShader(device, CONVERT_ABGR8_TO_D24S8_FRAG_SPV)),
+      convert_b10g11r11_to_d24s8_frag(BuildShader(device, CONVERT_B10G11R11_TO_D24S8_FRAG_SPV)),
       convert_d24s8_to_abgr8_frag(BuildShader(device, CONVERT_D24S8_TO_ABGR8_FRAG_SPV)),
       convert_d24s8_to_b10g11r11_frag(BuildShader(device, CONVERT_D24S8_TO_B10G11R11_FRAG_SPV)),
       convert_d24s8_to_r16g16_frag(BuildShader(device, CONVERT_D24S8_TO_R16G16_FRAG_SPV)),
@@ -459,16 +461,25 @@ void BlitImageHelper::ConvertR16ToD16(const Framebuffer* dst_framebuffer,
 void BlitImageHelper::ConvertABGR8ToD24S8(const Framebuffer* dst_framebuffer,
                                           const ImageView& src_image_view, u32 up_scale,
                                           u32 down_shift) {
-    ConvertPipelineEx(convert_abgr8_to_d24s8_pipeline, dst_framebuffer->RenderPass(),
-                      convert_abgr8_to_d24s8_frag, true);
+    ConvertPipelineDepthTargetEx(convert_abgr8_to_d24s8_pipeline, dst_framebuffer->RenderPass(),
+                                 convert_abgr8_to_d24s8_frag, true);
     Convert(*convert_abgr8_to_d24s8_pipeline, dst_framebuffer, src_image_view, up_scale,
+            down_shift);
+}
+
+void BlitImageHelper::ConvertB10G11R11ToD24S8(const Framebuffer* dst_framebuffer,
+                                              const ImageView& src_image_view, u32 up_scale,
+                                              u32 down_shift) {
+    ConvertPipelineDepthTargetEx(convert_b10g11r11_to_d24s8_pipeline, dst_framebuffer->RenderPass(),
+                                 convert_b10g11r11_to_d24s8_frag, true);
+    Convert(*convert_b10g11r11_to_d24s8_pipeline, dst_framebuffer, src_image_view, up_scale,
             down_shift);
 }
 
 void BlitImageHelper::ConvertD24S8ToABGR8(const Framebuffer* dst_framebuffer,
                                           ImageView& src_image_view, u32 up_scale, u32 down_shift) {
-    ConvertPipelineEx(convert_d24s8_to_abgr8_pipeline, dst_framebuffer->RenderPass(),
-                      convert_d24s8_to_abgr8_frag, false);
+    ConvertPipelineColorTargetEx(convert_d24s8_to_abgr8_pipeline, dst_framebuffer->RenderPass(),
+                                 convert_d24s8_to_abgr8_frag, false);
     ConvertDepthStencil(*convert_d24s8_to_abgr8_pipeline, dst_framebuffer, src_image_view, up_scale,
                         down_shift);
 }
@@ -476,8 +487,8 @@ void BlitImageHelper::ConvertD24S8ToABGR8(const Framebuffer* dst_framebuffer,
 void BlitImageHelper::ConvertD24S8ToB10G11R11(const Framebuffer* dst_framebuffer,
                                               ImageView& src_image_view, u32 up_scale,
                                               u32 down_shift) {
-    ConvertPipelineEx(convert_d24s8_to_b10g11r11_pipeline, dst_framebuffer->RenderPass(),
-                      convert_d24s8_to_b10g11r11_frag, false);
+    ConvertPipelineColorTargetEx(convert_d24s8_to_b10g11r11_pipeline, dst_framebuffer->RenderPass(),
+                                 convert_d24s8_to_b10g11r11_frag, false);
     ConvertDepthStencil(*convert_d24s8_to_b10g11r11_pipeline, dst_framebuffer, src_image_view,
                         up_scale, down_shift);
 }
@@ -485,8 +496,8 @@ void BlitImageHelper::ConvertD24S8ToB10G11R11(const Framebuffer* dst_framebuffer
 void BlitImageHelper::ConvertD24S8ToR16G16(const Framebuffer* dst_framebuffer,
                                            ImageView& src_image_view, u32 up_scale,
                                            u32 down_shift) {
-    ConvertPipelineEx(convert_d24s8_to_r16g16_pipeline, dst_framebuffer->RenderPass(),
-                      convert_d24s8_to_r16g16_frag, false);
+    ConvertPipelineColorTargetEx(convert_d24s8_to_r16g16_pipeline, dst_framebuffer->RenderPass(),
+                                 convert_d24s8_to_r16g16_frag, false);
     ConvertDepthStencil(*convert_d24s8_to_r16g16_pipeline, dst_framebuffer, src_image_view,
                         up_scale, down_shift);
 }
@@ -540,7 +551,7 @@ void BlitImageHelper::Convert(VkPipeline pipeline, const Framebuffer* dst_frameb
 
 void BlitImageHelper::ConvertDepthStencil(VkPipeline pipeline, const Framebuffer* dst_framebuffer,
                                           ImageView& src_image_view, u32 up_scale, u32 down_shift) {
-    const VkPipelineLayout layout = *one_texture_pipeline_layout;
+    const VkPipelineLayout layout = *two_textures_pipeline_layout;
     const VkImageView src_depth_view = src_image_view.DepthView();
     const VkImageView src_stencil_view = src_image_view.StencilView();
     const VkSampler sampler = *nearest_sampler;
@@ -727,8 +738,37 @@ void BlitImageHelper::ConvertColorToDepthPipeline(vk::Pipeline& pipeline, VkRend
     });
 }
 
-void BlitImageHelper::ConvertPipelineEx(vk::Pipeline& pipeline, VkRenderPass renderpass,
-                                        vk::ShaderModule& module, bool single_texture) {
+void BlitImageHelper::ConvertPipelineColorTargetEx(vk::Pipeline& pipeline, VkRenderPass renderpass,
+                                                   vk::ShaderModule& module, bool single_texture) {
+    if (pipeline) {
+        return;
+    }
+    const std::array stages = MakeStages(*full_screen_vert, *module);
+    pipeline = device.GetLogical().CreateGraphicsPipeline({
+        .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .stageCount = static_cast<u32>(stages.size()),
+        .pStages = stages.data(),
+        .pVertexInputState = &PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+        .pInputAssemblyState = &PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+        .pTessellationState = nullptr,
+        .pViewportState = &PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+        .pRasterizationState = &PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+        .pMultisampleState = &PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+        .pDepthStencilState = nullptr,
+        .pColorBlendState = &PIPELINE_COLOR_BLEND_STATE_GENERIC_CREATE_INFO,
+        .pDynamicState = &PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+        .layout = single_texture ? *one_texture_pipeline_layout : *two_textures_pipeline_layout,
+        .renderPass = renderpass,
+        .subpass = 0,
+        .basePipelineHandle = VK_NULL_HANDLE,
+        .basePipelineIndex = 0,
+    });
+}
+
+void BlitImageHelper::ConvertPipelineDepthTargetEx(vk::Pipeline& pipeline, VkRenderPass renderpass,
+                                                   vk::ShaderModule& module, bool single_texture) {
     if (pipeline) {
         return;
     }

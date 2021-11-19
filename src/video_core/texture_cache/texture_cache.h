@@ -1096,13 +1096,13 @@ typename TextureCache<P>::BlitImages TextureCache<P>::GetBlitImages(
         if (GetFormatType(dst_info.format) != GetFormatType(src_info.format)) {
             continue;
         }
-        src_id = FindOrInsertImage(src_info, src_addr);
-        RelaxedOptions dst_options{};
+        RelaxedOptions find_options{};
         if (src_info.num_samples > 1) {
             // it's a resolve, we must enforce the same format.
-            dst_options = RelaxedOptions::ForceBrokenViews;
+            find_options = RelaxedOptions::ForceBrokenViews;
         }
-        dst_id = FindOrInsertImage(dst_info, dst_addr, dst_options);
+        src_id = FindOrInsertImage(src_info, src_addr, find_options);
+        dst_id = FindOrInsertImage(dst_info, dst_addr, find_options);
     } while (has_deleted_images);
     return BlitImages{
         .dst_id = dst_id,

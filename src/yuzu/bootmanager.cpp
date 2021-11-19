@@ -604,69 +604,88 @@ int GRenderWindow::QtKeyToSwitchKey(Qt::Key qt_key) {
     }
 }
 
-int GRenderWindow::QtModifierToSwitchModifier(quint32 qt_modifiers) {
+int GRenderWindow::QtModifierToSwitchModifier(Qt::KeyboardModifiers qt_modifiers) {
     int modifier = 0;
-    // The values are obtained through testing, Qt doesn't seem to provide a proper enum
-    if ((qt_modifiers & 0x1) != 0) {
+
+    if ((qt_modifiers & Qt::KeyboardModifier::ShiftModifier) != 0) {
         modifier |= 1 << Settings::NativeKeyboard::LeftShift;
     }
-    if ((qt_modifiers & 0x2) != 0) {
+    if ((qt_modifiers & Qt::KeyboardModifier::ControlModifier) != 0) {
         modifier |= 1 << Settings::NativeKeyboard::LeftControl;
     }
-    if ((qt_modifiers & 0x4) != 0) {
+    if ((qt_modifiers & Qt::KeyboardModifier::AltModifier) != 0) {
         modifier |= 1 << Settings::NativeKeyboard::LeftAlt;
     }
-    if ((qt_modifiers & 0x08) != 0) {
+    if ((qt_modifiers & Qt::KeyboardModifier::MetaModifier) != 0) {
         modifier |= 1 << Settings::NativeKeyboard::LeftMeta;
     }
-    if ((qt_modifiers & 0x10) != 0) {
-        modifier |= 1 << Settings::NativeKeyboard::RightShift;
-    }
-    if ((qt_modifiers & 0x20) != 0) {
-        modifier |= 1 << Settings::NativeKeyboard::RightControl;
-    }
-    if ((qt_modifiers & 0x40) != 0) {
-        modifier |= 1 << Settings::NativeKeyboard::RightAlt;
-    }
-    if ((qt_modifiers & 0x80) != 0) {
-        modifier |= 1 << Settings::NativeKeyboard::RightMeta;
-    }
-    if ((qt_modifiers & 0x100) != 0) {
-        modifier |= 1 << Settings::NativeKeyboard::CapsLock;
-    }
-    if ((qt_modifiers & 0x200) != 0) {
-        modifier |= 1 << Settings::NativeKeyboard::NumLock;
-    }
-    // Verify the last two keys
-    if ((qt_modifiers & 0x400) != 0) {
-        modifier |= 1 << Settings::NativeKeyboard::Katakana;
-    }
-    if ((qt_modifiers & 0x800) != 0) {
-        modifier |= 1 << Settings::NativeKeyboard::Hiragana;
-    }
+
+    // TODO: These keys can't be obtained with Qt::KeyboardModifier
+
+    // if ((qt_modifiers & 0x10) != 0) {
+    //    modifier |= 1 << Settings::NativeKeyboard::RightShift;
+    // }
+    // if ((qt_modifiers & 0x20) != 0) {
+    //    modifier |= 1 << Settings::NativeKeyboard::RightControl;
+    // }
+    // if ((qt_modifiers & 0x40) != 0) {
+    //    modifier |= 1 << Settings::NativeKeyboard::RightAlt;
+    // }
+    // if ((qt_modifiers & 0x80) != 0) {
+    //    modifier |= 1 << Settings::NativeKeyboard::RightMeta;
+    // }
+    // if ((qt_modifiers & 0x100) != 0) {
+    //    modifier |= 1 << Settings::NativeKeyboard::CapsLock;
+    // }
+    // if ((qt_modifiers & 0x200) != 0) {
+    //    modifier |= 1 << Settings::NativeKeyboard::NumLock;
+    // }
+    // if ((qt_modifiers & ???) != 0) {
+    //    modifier |= 1 << Settings::NativeKeyboard::ScrollLock;
+    // }
+    // if ((qt_modifiers & ???) != 0) {
+    //    modifier |= 1 << Settings::NativeKeyboard::Katakana;
+    // }
+    // if ((qt_modifiers & ???) != 0) {
+    //    modifier |= 1 << Settings::NativeKeyboard::Hiragana;
+    // }
     return modifier;
 }
 
 void GRenderWindow::keyPressEvent(QKeyEvent* event) {
+    /**
+     * This feature can be enhanced with the following functions, but they do not provide
+     * cross-platform behavior.
+     *
+     * event->nativeVirtualKey() can distinguish between keys on the numpad.
+     * event->nativeModifiers() can distinguish between left and right keys and numlock,
+     * capslock, scroll lock.
+     */
     if (!event->isAutoRepeat()) {
-        const auto modifier = QtModifierToSwitchModifier(event->nativeModifiers());
-        // Replace event->key() with event->nativeVirtualKey() since the second one provides raw key
-        // buttons
+        const auto modifier = QtModifierToSwitchModifier(event->modifiers());
         const auto key = QtKeyToSwitchKey(Qt::Key(event->key()));
         input_subsystem->GetKeyboard()->SetKeyboardModifiers(modifier);
         input_subsystem->GetKeyboard()->PressKeyboardKey(key);
-        // This is used for gamepads
+        // This is used for gamepads that can have any key mapped
         input_subsystem->GetKeyboard()->PressKey(event->key());
     }
 }
 
 void GRenderWindow::keyReleaseEvent(QKeyEvent* event) {
+    /**
+     * This feature can be enhanced with the following functions, but they do not provide
+     * cross-platform behavior.
+     *
+     * event->nativeVirtualKey() can distinguish between keys on the numpad.
+     * event->nativeModifiers() can distinguish between left and right buttons and numlock,
+     * capslock, scroll lock.
+     */
     if (!event->isAutoRepeat()) {
-        const auto modifier = QtModifierToSwitchModifier(event->nativeModifiers());
+        const auto modifier = QtModifierToSwitchModifier(event->modifiers());
         const auto key = QtKeyToSwitchKey(Qt::Key(event->key()));
         input_subsystem->GetKeyboard()->SetKeyboardModifiers(modifier);
         input_subsystem->GetKeyboard()->ReleaseKeyboardKey(key);
-        // This is used for gamepads
+        // This is used for gamepads that can have any key mapped
         input_subsystem->GetKeyboard()->ReleaseKey(event->key());
     }
 }
