@@ -1151,17 +1151,37 @@ bool IsSubresource(const ImageInfo& candidate, const ImageBase& image, GPUVAddr 
 
 void DeduceBlitImages(ImageInfo& dst_info, ImageInfo& src_info, const ImageBase* dst,
                       const ImageBase* src) {
-    if (src && GetFormatType(src->info.format) != SurfaceType::ColorTexture) {
+    if (src) {
         src_info.format = src->info.format;
+        src_info.num_samples = src->info.num_samples;
+        src_info.size = src->info.size;
     }
-    if (dst && GetFormatType(dst->info.format) != SurfaceType::ColorTexture) {
+    if (dst) {
         dst_info.format = dst->info.format;
+        dst_info.num_samples = dst->info.num_samples;
+        dst_info.size = dst->info.size;
     }
     if (src && GetFormatType(src->info.format) != SurfaceType::ColorTexture) {
-        dst_info.format = src->info.format;
+        if (dst) {
+            src_info.format = dst_info.format;
+        } else {
+            dst_info.format = src->info.format;
+        }
     }
     if (dst && GetFormatType(dst->info.format) != SurfaceType::ColorTexture) {
-        src_info.format = dst->info.format;
+        if (src) {
+            if (GetFormatType(src->info.format) == SurfaceType::ColorTexture) {
+                dst_info.format = src->info.format;
+            }
+        } else {
+            src_info.format = dst->info.format;
+        }
+    }
+    if (src_info.num_samples > 1) {
+        dst_info.format = src_info.format;
+    }
+    if (dst_info.num_samples > 1) {
+        src_info.format = dst_info.format;
     }
 }
 
