@@ -14,7 +14,7 @@ namespace InputCommon {
  */
 class TouchScreen final : public InputCommon::InputEngine {
 public:
-    explicit TouchScreen(const std::string input_engine_);
+    explicit TouchScreen(const std::string& input_engine_);
 
     /**
      * Signals that mouse has moved.

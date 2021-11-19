@@ -29,7 +29,7 @@ enum class MouseButton {
  */
 class Mouse final : public InputCommon::InputEngine {
 public:
-    explicit Mouse(const std::string input_engine_);
+    explicit Mouse(const std::string& input_engine_);
 
     /**
      * Signals that mouse has moved.

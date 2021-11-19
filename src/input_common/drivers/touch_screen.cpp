@@ -13,7 +13,7 @@ constexpr PadIdentifier identifier = {
     .pad = 0,
 };
 
-TouchScreen::TouchScreen(const std::string input_engine_) : InputEngine(input_engine_) {
+TouchScreen::TouchScreen(const std::string& input_engine_) : InputEngine(input_engine_) {
     PreSetController(identifier);
 }
 

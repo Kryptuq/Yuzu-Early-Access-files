@@ -83,7 +83,7 @@ enum class TasState {
 
 class Tas final : public InputCommon::InputEngine {
 public:
-    explicit Tas(const std::string input_engine_);
+    explicit Tas(const std::string& input_engine_);
     ~Tas();
 
     /**

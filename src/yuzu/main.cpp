@@ -1335,8 +1335,14 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
         std::make_unique<QtWebBrowser>(*this),         // Web Browser
     });
 
-    const Core::SystemResultStatus result{
-        system->Load(*render_window, filename.toStdString(), program_id, program_index)};
+    Core::SystemResultStatus result{};
+    auto load_thread = std::jthread(
+        [this, filename, program_id, program_index](Core::SystemResultStatus& result) {
+            result =
+                system->Load(*render_window, filename.toStdString(), program_id, program_index);
+        },
+        std::ref(result));
+    load_thread.join();
 
     const auto drd_callout = (UISettings::values.callout_flags.GetValue() &
                               static_cast<u32>(CalloutFlag::DRDDeprecation)) == 0;
@@ -3112,7 +3118,7 @@ void GMainWindow::UpdateFilterText() {
         filter_status_button->setText(tr("SCALEFORCE"));
         break;
     case Settings::ScalingFilter::Fsr:
-        filter_status_button->setText(tr("AMD'S FIDELITYFX SR"));
+        filter_status_button->setText(tr("FSR"));
         break;
     default:
         filter_status_button->setText(tr("BILINEAR"));
@@ -3123,14 +3129,14 @@ void GMainWindow::UpdateFilterText() {
 void GMainWindow::UpdateAAText() {
     const auto aa_mode = Settings::values.anti_aliasing.GetValue();
     switch (aa_mode) {
-    case Settings::AntiAliasing::Fxaa:
-        aa_status_button->setText(tr("FXAA"));
-        break;
     case Settings::AntiAliasing::None:
         aa_status_button->setText(tr("NO AA"));
         break;
-    default:
+    case Settings::AntiAliasing::Fxaa:
         aa_status_button->setText(tr("FXAA"));
+        break;
+    default:
+        aa_status_button->setText(tr("NO AA"));
         break;
     }
 }
@@ -3306,9 +3312,9 @@ void GMainWindow::OnReinitializeKeys(ReinitializeKeyBehavior behavior) {
         if (!errors.isEmpty()) {
             QMessageBox::warning(
                 this, tr("Derivation Components Missing"),
-                tr("Components are missing that may hinder key derivation from completing. "
+                tr("Encryption keys are missing. "
                    "<br>Please follow <a href='https://yuzu-emu.org/help/quickstart/'>the yuzu "
-                   "quickstart guide</a> to get all your keys and "
+                   "quickstart guide</a> to get all your keys, firmware and "
                    "games.<br><br><small>(%1)</small>")
                     .arg(errors));
         }

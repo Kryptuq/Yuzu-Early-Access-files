@@ -166,7 +166,7 @@ public:
     };
 
     /// Retrieves the index number of the given hat button direction
-    virtual u8 GetHatButtonId([[maybe_unused]] const std::string direction_name) const {
+    virtual u8 GetHatButtonId([[maybe_unused]] const std::string& direction_name) const {
         return 0;
     };
 

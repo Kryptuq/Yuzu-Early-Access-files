@@ -300,8 +300,8 @@ void InputEngine::TriggerOnMotionChange(const PadIdentifier& identifier, int mot
     if (!configuring || !mapping_callback.on_data) {
         return;
     }
-    if (std::abs(value.gyro_x) < 1.0f && std::abs(value.gyro_y) < 1.0f &&
-        std::abs(value.gyro_z) < 1.0f) {
+    if (std::abs(value.gyro_x) < 0.6f && std::abs(value.gyro_y) < 0.6f &&
+        std::abs(value.gyro_z) < 0.6f) {
         return;
     }
     mapping_callback.on_data(MappingData{

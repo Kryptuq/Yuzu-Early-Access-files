@@ -47,7 +47,7 @@ constexpr std::array<std::pair<std::string_view, TasButton>, 20> text_to_tas_but
     {"KEY_ZR", TasButton::TRIGGER_ZR},
 };
 
-Tas::Tas(const std::string input_engine_) : InputCommon::InputEngine(input_engine_) {
+Tas::Tas(const std::string& input_engine_) : InputCommon::InputEngine(input_engine_) {
     for (size_t player_index = 0; player_index < PLAYER_NUMBER; player_index++) {
         PadIdentifier identifier{
             .guid = Common::UUID{},

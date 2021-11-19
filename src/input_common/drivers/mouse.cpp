@@ -24,7 +24,7 @@ constexpr PadIdentifier identifier = {
     .pad = 0,
 };
 
-Mouse::Mouse(const std::string input_engine_) : InputEngine(input_engine_) {
+Mouse::Mouse(const std::string& input_engine_) : InputEngine(input_engine_) {
     PreSetController(identifier);
     PreSetAxis(identifier, mouse_axis_x);
     PreSetAxis(identifier, mouse_axis_y);

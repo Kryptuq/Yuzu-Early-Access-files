@@ -929,7 +929,7 @@ std::string SDLDriver::GetHatButtonName(u8 direction_value) const {
     }
 }
 
-u8 SDLDriver::GetHatButtonId(const std::string direction_name) const {
+u8 SDLDriver::GetHatButtonId(const std::string& direction_name) const {
     Uint8 direction;
     if (direction_name == "up") {
         direction = SDL_HAT_UP;

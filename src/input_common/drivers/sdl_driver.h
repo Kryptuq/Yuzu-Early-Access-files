@@ -56,7 +56,7 @@ public:
     std::string GetUIName(const Common::ParamPackage& params) const override;
 
     std::string GetHatButtonName(u8 direction_value) const override;
-    u8 GetHatButtonId(const std::string direction_name) const override;
+    u8 GetHatButtonId(const std::string& direction_name) const override;
 
     Common::Input::VibrationError SetRumble(
         const PadIdentifier& identifier, const Common::Input::VibrationStatus vibration) override;

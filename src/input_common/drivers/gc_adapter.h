@@ -24,7 +24,7 @@ class LibUSBDeviceHandle;
 
 class GCAdapter : public InputCommon::InputEngine {
 public:
-    explicit GCAdapter(const std::string input_engine_);
+    explicit GCAdapter(const std::string& input_engine_);
     ~GCAdapter();
 
     Common::Input::VibrationError SetRumble(

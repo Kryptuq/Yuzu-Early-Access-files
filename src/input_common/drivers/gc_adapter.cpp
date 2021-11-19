@@ -69,7 +69,7 @@ private:
     libusb_device_handle* handle{};
 };
 
-GCAdapter::GCAdapter(const std::string input_engine_) : InputEngine(input_engine_) {
+GCAdapter::GCAdapter(const std::string& input_engine_) : InputEngine(input_engine_) {
     if (usb_adapter_handle) {
         return;
     }
