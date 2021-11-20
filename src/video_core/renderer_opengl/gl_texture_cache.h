@@ -221,6 +221,7 @@ private:
     GLenum gl_internal_format = GL_NONE;
     GLenum gl_format = GL_NONE;
     GLenum gl_type = GL_NONE;
+    GLsizei gl_num_levels{};
     TextureCacheRuntime* runtime{};
     GLuint current_texture{};
 };

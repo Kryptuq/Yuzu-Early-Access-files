@@ -319,13 +319,12 @@ void AttachTexture(GLuint fbo, GLenum attachment, const ImageView* image_view) {
     }
 }
 
-OGLTexture MakeImage(const VideoCommon::ImageInfo& info, GLenum gl_internal_format) {
+OGLTexture MakeImage(const VideoCommon::ImageInfo& info, GLenum gl_internal_format,
+                     GLsizei gl_num_levels) {
     const GLenum target = ImageTarget(info);
     const GLsizei width = info.size.width;
     const GLsizei height = info.size.height;
     const GLsizei depth = info.size.depth;
-    const int max_host_mip_levels = std::bit_width(info.size.width);
-    const GLsizei num_levels = std::min(info.resources.levels, max_host_mip_levels);
     const GLsizei num_layers = info.resources.layers;
     const GLsizei num_samples = info.num_samples;
 
@@ -337,10 +336,10 @@ OGLTexture MakeImage(const VideoCommon::ImageInfo& info, GLenum gl_internal_form
     }
     switch (target) {
     case GL_TEXTURE_1D_ARRAY:
-        glTextureStorage2D(handle, num_levels, gl_internal_format, width, num_layers);
+        glTextureStorage2D(handle, gl_num_levels, gl_internal_format, width, num_layers);
         break;
     case GL_TEXTURE_2D_ARRAY:
-        glTextureStorage3D(handle, num_levels, gl_internal_format, width, height, num_layers);
+        glTextureStorage3D(handle, gl_num_levels, gl_internal_format, width, height, num_layers);
         break;
     case GL_TEXTURE_2D_MULTISAMPLE_ARRAY: {
         // TODO: Where should 'fixedsamplelocations' come from?
@@ -350,10 +349,10 @@ OGLTexture MakeImage(const VideoCommon::ImageInfo& info, GLenum gl_internal_form
         break;
     }
     case GL_TEXTURE_RECTANGLE:
-        glTextureStorage2D(handle, num_levels, gl_internal_format, width, height);
+        glTextureStorage2D(handle, gl_num_levels, gl_internal_format, width, height);
         break;
     case GL_TEXTURE_3D:
-        glTextureStorage3D(handle, num_levels, gl_internal_format, width, height, depth);
+        glTextureStorage3D(handle, gl_num_levels, gl_internal_format, width, height, depth);
         break;
     case GL_TEXTURE_BUFFER:
         UNREACHABLE();
@@ -698,7 +697,9 @@ Image::Image(TextureCacheRuntime& runtime_, const VideoCommon::ImageInfo& info_,
         gl_format = tuple.format;
         gl_type = tuple.type;
     }
-    texture = MakeImage(info, gl_internal_format);
+    const int max_host_mip_levels = std::bit_width(info.size.width);
+    gl_num_levels = std::min(info.resources.levels, max_host_mip_levels);
+    texture = MakeImage(info, gl_internal_format, gl_num_levels);
     current_texture = texture.handle;
     if (runtime->device.HasDebuggingToolAttached()) {
         const std::string name = VideoCommon::Name(*this);
@@ -726,6 +727,9 @@ void Image::UploadMemory(const ImageBufferMap& map,
     u32 current_image_height = std::numeric_limits<u32>::max();
 
     for (const VideoCommon::BufferImageCopy& copy : copies) {
+        if (copy.image_subresource.base_level >= gl_num_levels) {
+            continue;
+        }
         if (current_row_length != copy.buffer_row_length) {
             current_row_length = copy.buffer_row_length;
             glPixelStorei(GL_UNPACK_ROW_LENGTH, current_row_length);
@@ -755,6 +759,9 @@ void Image::DownloadMemory(ImageBufferMap& map,
     u32 current_image_height = std::numeric_limits<u32>::max();
 
     for (const VideoCommon::BufferImageCopy& copy : copies) {
+        if (copy.image_subresource.base_level >= gl_num_levels) {
+            continue;
+        }
         if (current_row_length != copy.buffer_row_length) {
             current_row_length = copy.buffer_row_length;
             glPixelStorei(GL_PACK_ROW_LENGTH, current_row_length);
@@ -794,7 +801,7 @@ GLuint Image::StorageHandle() noexcept {
         }
         store_view.Create();
         glTextureView(store_view.handle, ImageTarget(info), current_texture, GL_RGBA8, 0,
-                      info.resources.levels, 0, info.resources.layers);
+                      gl_num_levels, 0, info.resources.layers);
         return store_view.handle;
     default:
         return current_texture;
@@ -964,7 +971,7 @@ void Image::Scale(bool up_scale) {
         auto dst_info = info;
         dst_info.size.width = scaled_width;
         dst_info.size.height = scaled_height;
-        upscaled_backup = MakeImage(dst_info, gl_internal_format);
+        upscaled_backup = MakeImage(dst_info, gl_internal_format, gl_num_levels);
     }
     const u32 src_width = up_scale ? original_width : scaled_width;
     const u32 src_height = up_scale ? original_height : scaled_height;
