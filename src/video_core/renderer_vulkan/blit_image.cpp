@@ -11,6 +11,7 @@
 #include "video_core/host_shaders/convert_d24s8_to_r16g16_frag_spv.h"
 #include "video_core/host_shaders/convert_depth_to_float_frag_spv.h"
 #include "video_core/host_shaders/convert_float_to_depth_frag_spv.h"
+#include "video_core/host_shaders/convert_r16g16_to_d24s8_frag_spv.h"
 #include "video_core/host_shaders/full_screen_triangle_vert_spv.h"
 #include "video_core/host_shaders/vulkan_blit_color_float_frag_spv.h"
 #include "video_core/host_shaders/vulkan_blit_depth_stencil_frag_spv.h"
@@ -361,6 +362,7 @@ BlitImageHelper::BlitImageHelper(const Device& device_, VKScheduler& scheduler_,
       convert_float_to_depth_frag(BuildShader(device, CONVERT_FLOAT_TO_DEPTH_FRAG_SPV)),
       convert_abgr8_to_d24s8_frag(BuildShader(device, CONVERT_ABGR8_TO_D24S8_FRAG_SPV)),
       convert_b10g11r11_to_d24s8_frag(BuildShader(device, CONVERT_B10G11R11_TO_D24S8_FRAG_SPV)),
+      convert_r16g16_to_d24s8_frag(BuildShader(device, CONVERT_R16G16_TO_D24S8_FRAG_SPV)),
       convert_d24s8_to_abgr8_frag(BuildShader(device, CONVERT_D24S8_TO_ABGR8_FRAG_SPV)),
       convert_d24s8_to_b10g11r11_frag(BuildShader(device, CONVERT_D24S8_TO_B10G11R11_FRAG_SPV)),
       convert_d24s8_to_r16g16_frag(BuildShader(device, CONVERT_D24S8_TO_R16G16_FRAG_SPV)),
@@ -473,6 +475,15 @@ void BlitImageHelper::ConvertB10G11R11ToD24S8(const Framebuffer* dst_framebuffer
     ConvertPipelineDepthTargetEx(convert_b10g11r11_to_d24s8_pipeline, dst_framebuffer->RenderPass(),
                                  convert_b10g11r11_to_d24s8_frag, true);
     Convert(*convert_b10g11r11_to_d24s8_pipeline, dst_framebuffer, src_image_view, up_scale,
+            down_shift);
+}
+
+void BlitImageHelper::ConvertR16G16ToD24S8(const Framebuffer* dst_framebuffer,
+                                           const ImageView& src_image_view, u32 up_scale,
+                                           u32 down_shift) {
+    ConvertPipelineDepthTargetEx(convert_r16g16_to_d24s8_pipeline, dst_framebuffer->RenderPass(),
+                                 convert_r16g16_to_d24s8_frag, true);
+    Convert(*convert_r16g16_to_d24s8_pipeline, dst_framebuffer, src_image_view, up_scale,
             down_shift);
 }
 

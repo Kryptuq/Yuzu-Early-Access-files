@@ -313,6 +313,19 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     };
 }
 
+[[nodiscard]] VkBufferImageCopy MakeBufferImageCopy(const VideoCommon::ImageCopy& copy, bool is_src,
+                                                    VkImageAspectFlags aspect_mask) noexcept {
+    return VkBufferImageCopy{
+        .bufferOffset = 0,
+        .bufferRowLength = 0,
+        .bufferImageHeight = 0,
+        .imageSubresource = MakeImageSubresourceLayers(
+            is_src ? copy.src_subresource : copy.dst_subresource, aspect_mask),
+        .imageOffset = MakeOffset3D(is_src ? copy.src_offset : copy.dst_offset),
+        .imageExtent = MakeExtent3D(copy.extent),
+    };
+}
+
 [[maybe_unused]] [[nodiscard]] std::vector<VkBufferCopy> TransformBufferCopies(
     std::span<const VideoCommon::BufferCopy> copies, size_t buffer_offset) {
     std::vector<VkBufferCopy> result(copies.size());
@@ -759,6 +772,167 @@ StagingBufferRef TextureCacheRuntime::DownloadStagingBuffer(size_t size) {
     return staging_buffer_pool.Request(size, MemoryUsage::Download);
 }
 
+bool TextureCacheRuntime::ShouldReinterpret(Image& dst, Image& src) {
+    if (VideoCore::Surface::GetFormatType(dst.info.format) ==
+        VideoCore::Surface::SurfaceType::DepthStencil) {
+        return !device.IsExtShaderStencilExportSupported();
+    }
+    return false;
+}
+
+[[nodiscard]] size_t NextPow2(size_t value) {
+    return static_cast<size_t>(1ULL << ((8U * sizeof(size_t)) - std::countl_zero(value - 1U)));
+}
+
+VkBuffer TextureCacheRuntime::GetTemporaryBuffer(size_t needed_size) {
+    const auto level = (8 * sizeof(size_t)) - std::countl_zero(needed_size - 1ULL);
+    if (buffer_commits[level]) {
+        return *buffers[level];
+    }
+    const auto new_size = NextPow2(needed_size);
+    VkBufferUsageFlags flags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                               VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT |
+                               VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
+    buffers[level] = device.GetLogical().CreateBuffer({
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .size = new_size,
+        .usage = flags,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0,
+        .pQueueFamilyIndices = nullptr,
+    });
+    buffer_commits[level] = std::make_unique<MemoryCommit>(
+        memory_allocator.Commit(buffers[level], MemoryUsage::DeviceLocal));
+    return *buffers[level];
+}
+
+void TextureCacheRuntime::ReinterpretImage(Image& dst, Image& src,
+                                           std::span<const VideoCommon::ImageCopy> copies) {
+    std::vector<VkBufferImageCopy> vk_in_copies(copies.size());
+    std::vector<VkBufferImageCopy> vk_out_copies(copies.size());
+    const VkImageAspectFlags src_aspect_mask = src.AspectMask();
+    const VkImageAspectFlags dst_aspect_mask = dst.AspectMask();
+
+    std::ranges::transform(copies, vk_in_copies.begin(), [src_aspect_mask](const auto& copy) {
+        return MakeBufferImageCopy(copy, true, src_aspect_mask);
+    });
+    std::ranges::transform(copies, vk_out_copies.begin(), [dst_aspect_mask](const auto& copy) {
+        return MakeBufferImageCopy(copy, false, dst_aspect_mask);
+    });
+    const u32 img_bpp = BytesPerBlock(src.info.format);
+    size_t total_size = 0;
+    for (const auto& copy : copies) {
+        total_size += copy.extent.width * copy.extent.height * copy.extent.depth * img_bpp;
+    }
+    const VkBuffer copy_buffer = GetTemporaryBuffer(total_size);
+    const VkImage dst_image = dst.Handle();
+    const VkImage src_image = src.Handle();
+    scheduler.RequestOutsideRenderPassOperationContext();
+    scheduler.Record([dst_image, src_image, copy_buffer, src_aspect_mask, dst_aspect_mask,
+                      vk_in_copies, vk_out_copies](vk::CommandBuffer cmdbuf) {
+        RangedBarrierRange dst_range;
+        RangedBarrierRange src_range;
+        for (const VkBufferImageCopy& copy : vk_in_copies) {
+            src_range.AddLayers(copy.imageSubresource);
+        }
+        for (const VkBufferImageCopy& copy : vk_out_copies) {
+            dst_range.AddLayers(copy.imageSubresource);
+        }
+        static constexpr VkMemoryBarrier READ_BARRIER{
+            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
+        };
+        static constexpr VkMemoryBarrier WRITE_BARRIER{
+            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT,
+        };
+        const std::array pre_barriers{
+            VkImageMemoryBarrier{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                .pNext = nullptr,
+                .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                 VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+                                 VK_ACCESS_TRANSFER_WRITE_BIT,
+                .dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT,
+                .oldLayout = VK_IMAGE_LAYOUT_GENERAL,
+                .newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .image = src_image,
+                .subresourceRange = src_range.SubresourceRange(src_aspect_mask),
+            },
+        };
+        const std::array middle_in_barrier{
+            VkImageMemoryBarrier{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                .pNext = nullptr,
+                .srcAccessMask = 0,
+                .dstAccessMask = 0,
+                .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .image = src_image,
+                .subresourceRange = src_range.SubresourceRange(src_aspect_mask),
+            },
+        };
+        const std::array middle_out_barrier{
+            VkImageMemoryBarrier{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                .pNext = nullptr,
+                .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                 VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+                                 VK_ACCESS_TRANSFER_WRITE_BIT,
+                .dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+                .oldLayout = VK_IMAGE_LAYOUT_GENERAL,
+                .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .image = dst_image,
+                .subresourceRange = dst_range.SubresourceRange(dst_aspect_mask),
+            },
+        };
+        const std::array post_barriers{
+            VkImageMemoryBarrier{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                .pNext = nullptr,
+                .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+                .dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT |
+                                 VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                 VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                 VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                 VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+                                 VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
+                .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .image = dst_image,
+                .subresourceRange = dst_range.SubresourceRange(dst_aspect_mask),
+            },
+        };
+        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                               0, {}, {}, pre_barriers);
+
+        cmdbuf.CopyImageToBuffer(src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, copy_buffer,
+                                 vk_in_copies);
+        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                               0, WRITE_BARRIER, nullptr, middle_in_barrier);
+
+        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                               0, READ_BARRIER, {}, middle_out_barrier);
+        cmdbuf.CopyBufferToImage(copy_buffer, dst_image, VK_IMAGE_LAYOUT_GENERAL, vk_out_copies);
+        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                               0, {}, {}, post_barriers);
+    });
+}
+
 void TextureCacheRuntime::BlitImage(Framebuffer* dst_framebuffer, ImageView& dst, ImageView& src,
                                     const Region2D& dst_region, const Region2D& src_region,
                                     Tegra::Engines::Fermi2D::Filter filter,
@@ -919,6 +1093,9 @@ void TextureCacheRuntime::ConvertImage(Framebuffer* dst, ImageView& dst_view, Im
         }
         if (src_view.format == PixelFormat::B10G11R11_FLOAT) {
             return blit_image_helper.ConvertB10G11R11ToD24S8(dst, src_view, up_scale, down_shift);
+        }
+        if (src_view.format == PixelFormat::R16G16_UNORM) {
+            return blit_image_helper.ConvertR16G16ToD24S8(dst, src_view, up_scale, down_shift);
         }
         break;
     case PixelFormat::D32_FLOAT:

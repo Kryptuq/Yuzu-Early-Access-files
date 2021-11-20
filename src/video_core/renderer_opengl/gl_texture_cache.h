@@ -84,9 +84,13 @@ public:
 
     u64 GetDeviceLocalMemory() const;
 
+    bool ShouldReinterpret([[maybe_unused]] Image& dst, [[maybe_unused]] Image& src) {
+        return true;
+    }
+
     void CopyImage(Image& dst, Image& src, std::span<const VideoCommon::ImageCopy> copies);
 
-    void ConvertImage(Image& dst, Image& src, std::span<const VideoCommon::ImageCopy> copies);
+    void ReinterpretImage(Image& dst, Image& src, std::span<const VideoCommon::ImageCopy> copies);
 
     void ConvertImage(Framebuffer* dst, ImageView& dst_view, ImageView& src_view, bool rescaled) {
         UNIMPLEMENTED();
@@ -339,7 +343,6 @@ struct TextureCacheParams {
     static constexpr bool FRAMEBUFFER_BLITS = true;
     static constexpr bool HAS_EMULATED_COPIES = true;
     static constexpr bool HAS_DEVICE_MEMORY_INFO = true;
-    static constexpr bool HAS_PIXEL_FORMAT_CONVERSIONS = true;
 
     using Runtime = OpenGL::TextureCacheRuntime;
     using Image = OpenGL::Image;

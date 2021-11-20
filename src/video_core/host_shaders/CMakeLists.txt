@@ -17,6 +17,7 @@ set(SHADER_FILES
     convert_d24s8_to_r16g16.frag
     convert_depth_to_float.frag
     convert_float_to_depth.frag
+    convert_r16g16_to_d24s8.frag
     full_screen_triangle.vert
     fxaa.frag
     fxaa.vert

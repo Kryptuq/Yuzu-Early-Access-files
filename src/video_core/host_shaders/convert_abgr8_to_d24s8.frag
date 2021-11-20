@@ -3,7 +3,7 @@
 // Refer to the license.txt file included.
 
 #version 450
-// #extension GL_ARB_shader_stencil_export : require
+#extension GL_ARB_shader_stencil_export : require
 
 layout(binding = 0) uniform sampler2D color_texture;
 
@@ -13,5 +13,5 @@ void main() {
     uint depth_unorm = (color.r << 16) | (color.g << 8) | color.b;
 
     gl_FragDepth = float(depth_unorm) / (exp2(24.0) - 1.0f);
-    // gl_FragStencilRefARB = int(color.a);
+    gl_FragStencilRefARB = int(color.a);
 }

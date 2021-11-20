@@ -527,8 +527,8 @@ void TextureCacheRuntime::CopyImage(Image& dst_image, Image& src_image,
     }
 }
 
-void TextureCacheRuntime::ConvertImage(Image& dst, Image& src,
-                                       std::span<const VideoCommon::ImageCopy> copies) {
+void TextureCacheRuntime::ReinterpretImage(Image& dst, Image& src,
+                                           std::span<const VideoCommon::ImageCopy> copies) {
     LOG_DEBUG(Render_OpenGL, "Converting {} to {}", src.info.format, dst.info.format);
     format_conversion_pass.ConvertImage(dst, src, copies);
 }

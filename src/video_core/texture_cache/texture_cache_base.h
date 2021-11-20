@@ -59,8 +59,6 @@ class TextureCache {
     static constexpr bool HAS_EMULATED_COPIES = P::HAS_EMULATED_COPIES;
     /// True when the API can provide info about the memory of the device.
     static constexpr bool HAS_DEVICE_MEMORY_INFO = P::HAS_DEVICE_MEMORY_INFO;
-    /// True when the API provides utilities for pixel format conversions.
-    static constexpr bool HAS_PIXEL_FORMAT_CONVERSIONS = P::HAS_PIXEL_FORMAT_CONVERSIONS;
 
     static constexpr u64 DEFAULT_EXPECTED_MEMORY = 1_GiB;
     static constexpr u64 DEFAULT_CRITICAL_MEMORY = 2_GiB;
