@@ -53,7 +53,7 @@ public:
     ButtonMapping GetButtonMappingForDevice(const Common::ParamPackage& params) override;
     AnalogMapping GetAnalogMappingForDevice(const Common::ParamPackage& params) override;
     MotionMapping GetMotionMappingForDevice(const Common::ParamPackage& params) override;
-    std::string GetUIName(const Common::ParamPackage& params) const override;
+    Common::Input::ButtonNames GetUIName(const Common::ParamPackage& params) const override;
 
     std::string GetHatButtonName(u8 direction_value) const override;
     u8 GetHatButtonId(const std::string& direction_name) const override;

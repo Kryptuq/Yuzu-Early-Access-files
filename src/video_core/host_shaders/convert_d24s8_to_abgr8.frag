@@ -14,8 +14,10 @@ void main() {
     uint depth = uint(textureLod(depth_tex, coord, 0).r * (exp2(24.0) - 1.0f));
     uint stencil = uint(textureLod(stencil_tex, coord, 0).r);
 
-    color.r = float(depth >> 16) / (exp2(8) - 1.0);
-    color.g = float((depth >> 8) & 0x00FF) / (exp2(8) - 1.0);
-    color.b = float(depth & 0x00FF) / (exp2(8) - 1.0);
-    color.a = float(stencil) / (exp2(8) - 1.0);
+    highp uint depth_val =
+        uint(textureLod(depth_tex, coord, 0).r * (exp2(32.0) - 1.0));
+    lowp uint stencil_val = textureLod(stencil_tex, coord, 0).r;
+    highp uvec4 components =
+        uvec4(stencil_val, (uvec3(depth_val) >> uvec3(24u, 16u, 8u)) & 0x000000FFu);
+    color = vec4(components) / (exp2(8.0) - 1.0);
 }

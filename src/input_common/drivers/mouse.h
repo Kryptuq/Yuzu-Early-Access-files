@@ -63,7 +63,7 @@ public:
 
     std::vector<Common::ParamPackage> GetInputDevices() const override;
     AnalogMapping GetAnalogMappingForDevice(const Common::ParamPackage& params) override;
-    std::string GetUIName(const Common::ParamPackage& params) const override;
+    Common::Input::ButtonNames GetUIName(const Common::ParamPackage& params) const override;
 
 private:
     void UpdateThread(std::stop_token stop_token);

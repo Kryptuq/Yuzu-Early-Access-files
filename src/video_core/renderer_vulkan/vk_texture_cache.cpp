@@ -775,8 +775,13 @@ StagingBufferRef TextureCacheRuntime::DownloadStagingBuffer(size_t size) {
 
 bool TextureCacheRuntime::ShouldReinterpret(Image& dst, Image& src) {
     if (VideoCore::Surface::GetFormatType(dst.info.format) ==
-        VideoCore::Surface::SurfaceType::DepthStencil) {
-        return !device.IsExtShaderStencilExportSupported();
+            VideoCore::Surface::SurfaceType::DepthStencil &&
+        !device.IsExtShaderStencilExportSupported()) {
+        return true;
+    }
+    if (dst.info.format == PixelFormat::D32_FLOAT_S8_UINT ||
+        src.info.format == PixelFormat::D32_FLOAT_S8_UINT) {
+        return true;
     }
     return false;
 }

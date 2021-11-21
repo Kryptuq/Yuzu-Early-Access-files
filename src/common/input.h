@@ -175,6 +175,28 @@ struct LedStatus {
     bool led_4{};
 };
 
+// List of buttons to be passed to Qt that can be translated
+enum class ButtonNames {
+    Undefined,
+    Invalid,
+    // This will display the engine name instead of the button name
+    Engine,
+    // This will display the button by value instead of the button name
+    Value,
+    ButtonLeft,
+    ButtonRight,
+    ButtonDown,
+    ButtonUp,
+    TriggerZ,
+    TriggerR,
+    TriggerL,
+    ButtonA,
+    ButtonB,
+    ButtonX,
+    ButtonY,
+    ButtonStart,
+};
+
 // Callback data consisting of an input type and the equivalent data status
 struct CallbackStatus {
     InputType type{InputType::None};

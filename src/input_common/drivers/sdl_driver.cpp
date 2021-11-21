@@ -220,24 +220,6 @@ public:
         return "Unknown";
     }
 
-    bool IsYAxis(u8 index) {
-        if (!sdl_controller) {
-            return false;
-        }
-
-        const auto& binding_left_y =
-            SDL_GameControllerGetBindForAxis(sdl_controller.get(), SDL_CONTROLLER_AXIS_LEFTY);
-        const auto& binding_right_y =
-            SDL_GameControllerGetBindForAxis(sdl_controller.get(), SDL_CONTROLLER_AXIS_RIGHTY);
-        if (index == binding_left_y.value.axis) {
-            return true;
-        }
-        if (index == binding_right_y.value.axis) {
-            return true;
-        }
-        return false;
-    }
-
 private:
     std::string guid;
     int port;
@@ -376,11 +358,6 @@ void SDLDriver::HandleGameControllerEvent(const SDL_Event& event) {
     case SDL_JOYAXISMOTION: {
         if (const auto joystick = GetSDLJoystickBySDLID(event.jaxis.which)) {
             const PadIdentifier identifier = joystick->GetPadIdentifier();
-            // Vertical axis is inverted on nintendo compared to SDL
-            if (joystick->IsYAxis(event.jaxis.axis)) {
-                SetAxis(identifier, event.jaxis.axis, -event.jaxis.value / 32767.0f);
-                break;
-            }
             SetAxis(identifier, event.jaxis.axis, event.jaxis.value / 32767.0f);
         }
         break;
@@ -892,26 +869,25 @@ MotionMapping SDLDriver::GetMotionMappingForDevice(const Common::ParamPackage& p
     return mapping;
 }
 
-std::string SDLDriver::GetUIName(const Common::ParamPackage& params) const {
+Common::Input::ButtonNames SDLDriver::GetUIName(const Common::ParamPackage& params) const {
     if (params.Has("button")) {
         // TODO(German77): Find how to substitue the values for real button names
-        return fmt::format("Button {}", params.Get("button", 0));
+        return Common::Input::ButtonNames::Value;
     }
     if (params.Has("hat")) {
-        return fmt::format("Hat {}", params.Get("direction", ""));
+        return Common::Input::ButtonNames::Value;
     }
     if (params.Has("axis")) {
-        return fmt::format("Axis {}", params.Get("axis", ""));
+        return Common::Input::ButtonNames::Value;
     }
     if (params.Has("axis_x") && params.Has("axis_y") && params.Has("axis_z")) {
-        return fmt::format("Axis {},{},{}", params.Get("axis_x", ""), params.Get("axis_y", ""),
-                           params.Get("axis_z", ""));
+        return Common::Input::ButtonNames::Value;
     }
     if (params.Has("motion")) {
-        return "SDL motion";
+        return Common::Input::ButtonNames::Engine;
     }
 
-    return "Bad SDL";
+    return Common::Input::ButtonNames::Invalid;
 }
 
 std::string SDLDriver::GetHatButtonName(u8 direction_value) const {

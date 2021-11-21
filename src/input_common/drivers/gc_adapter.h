@@ -34,7 +34,7 @@ public:
     std::vector<Common::ParamPackage> GetInputDevices() const override;
     ButtonMapping GetButtonMappingForDevice(const Common::ParamPackage& params) override;
     AnalogMapping GetAnalogMappingForDevice(const Common::ParamPackage& params) override;
-    std::string GetUIName(const Common::ParamPackage& params) const override;
+    Common::Input::ButtonNames GetUIName(const Common::ParamPackage& params) const override;
 
 private:
     enum class PadButton {
@@ -112,7 +112,7 @@ private:
     /// Updates vibration state of all controllers
     void SendVibrations();
 
-    std::string GetUIButtonName(const Common::ParamPackage& params) const;
+    Common::Input::ButtonNames GetUIButtonName(const Common::ParamPackage& params) const;
 
     std::unique_ptr<LibUSBDeviceHandle> usb_adapter_handle;
     std::array<GCController, 4> pads;

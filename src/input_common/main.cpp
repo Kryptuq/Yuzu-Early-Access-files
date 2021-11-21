@@ -205,9 +205,9 @@ struct InputSubsystem::Impl {
         return {};
     }
 
-    std::string GetButtonName(const Common::ParamPackage& params) const {
+    Common::Input::ButtonNames GetButtonName(const Common::ParamPackage& params) const {
         if (!params.Has("engine") || params.Get("engine", "") == "any") {
-            return "Unknown";
+            return Common::Input::ButtonNames::Undefined;
         }
         const std::string engine = params.Get("engine", "");
         if (engine == mouse->GetEngineName()) {
@@ -227,7 +227,7 @@ struct InputSubsystem::Impl {
             return sdl->GetUIName(params);
         }
 #endif
-        return "Bad engine";
+        return Common::Input::ButtonNames::Invalid;
     }
 
     bool IsController(const Common::ParamPackage& params) {
@@ -361,15 +361,8 @@ MotionMapping InputSubsystem::GetMotionMappingForDevice(const Common::ParamPacka
     return impl->GetMotionMappingForDevice(device);
 }
 
-std::string InputSubsystem::GetButtonName(const Common::ParamPackage& params) const {
-    const std::string toggle = params.Get("toggle", false) ? "~" : "";
-    const std::string inverted = params.Get("inverted", false) ? "!" : "";
-    const std::string button_name = impl->GetButtonName(params);
-    std::string axis_direction = "";
-    if (params.Has("axis")) {
-        axis_direction = params.Get("invert", "+");
-    }
-    return fmt::format("{}{}{}{}", toggle, inverted, button_name, axis_direction);
+Common::Input::ButtonNames InputSubsystem::GetButtonName(const Common::ParamPackage& params) const {
+    return impl->GetButtonName(params);
 }
 
 bool InputSubsystem::IsController(const Common::ParamPackage& params) const {

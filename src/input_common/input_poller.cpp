@@ -146,7 +146,8 @@ public:
                             Common::Input::AnalogProperties properties_y_,
                             InputEngine* input_engine_)
         : identifier(identifier_), axis_x(axis_x_), axis_y(axis_y_), properties_x(properties_x_),
-          properties_y(properties_y_), input_engine(input_engine_) {
+          properties_y(properties_y_),
+          input_engine(input_engine_), invert_axis_y{input_engine_->GetEngineName() == "sdl"} {
         UpdateCallback engine_callback{[this]() { OnChange(); }};
         const InputIdentifier x_input_identifier{
             .identifier = identifier,
@@ -181,6 +182,11 @@ public:
             .raw_value = input_engine->GetAxis(identifier, axis_y),
             .properties = properties_y,
         };
+        // This is a workaround too keep compatibility with old yuzu versions. Vertical axis is
+        // inverted on SDL compared to Nintendo
+        if (invert_axis_y) {
+            status.y.raw_value = -status.y.raw_value;
+        }
         return status;
     }
 
@@ -220,6 +226,7 @@ private:
     float last_axis_x_value;
     float last_axis_y_value;
     InputEngine* input_engine;
+    const bool invert_axis_y;
 };
 
 class InputFromTouch final : public Common::Input::InputDevice {

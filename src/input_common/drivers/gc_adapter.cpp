@@ -481,47 +481,47 @@ AnalogMapping GCAdapter::GetAnalogMappingForDevice(const Common::ParamPackage& p
     return mapping;
 }
 
-std::string GCAdapter::GetUIButtonName(const Common::ParamPackage& params) const {
+Common::Input::ButtonNames GCAdapter::GetUIButtonName(const Common::ParamPackage& params) const {
     PadButton button = static_cast<PadButton>(params.Get("button", 0));
     switch (button) {
     case PadButton::ButtonLeft:
-        return "left";
+        return Common::Input::ButtonNames::ButtonLeft;
     case PadButton::ButtonRight:
-        return "right";
+        return Common::Input::ButtonNames::ButtonRight;
     case PadButton::ButtonDown:
-        return "down";
+        return Common::Input::ButtonNames::ButtonDown;
     case PadButton::ButtonUp:
-        return "up";
+        return Common::Input::ButtonNames::ButtonUp;
     case PadButton::TriggerZ:
-        return "Z";
+        return Common::Input::ButtonNames::TriggerZ;
     case PadButton::TriggerR:
-        return "R";
+        return Common::Input::ButtonNames::TriggerR;
     case PadButton::TriggerL:
-        return "L";
+        return Common::Input::ButtonNames::TriggerL;
     case PadButton::ButtonA:
-        return "A";
+        return Common::Input::ButtonNames::ButtonA;
     case PadButton::ButtonB:
-        return "B";
+        return Common::Input::ButtonNames::ButtonB;
     case PadButton::ButtonX:
-        return "X";
+        return Common::Input::ButtonNames::ButtonX;
     case PadButton::ButtonY:
-        return "Y";
+        return Common::Input::ButtonNames::ButtonY;
     case PadButton::ButtonStart:
-        return "start";
+        return Common::Input::ButtonNames::ButtonStart;
     default:
-        return "Unknown GC";
+        return Common::Input::ButtonNames::Undefined;
     }
 }
 
-std::string GCAdapter::GetUIName(const Common::ParamPackage& params) const {
+Common::Input::ButtonNames GCAdapter::GetUIName(const Common::ParamPackage& params) const {
     if (params.Has("button")) {
-        return fmt::format("Button {}", GetUIButtonName(params));
+        return GetUIButtonName(params);
     }
     if (params.Has("axis")) {
-        return fmt::format("Axis {}", params.Get("axis", 0));
+        return Common::Input::ButtonNames::Value;
     }
 
-    return "Bad GC Adapter";
+    return Common::Input::ButtonNames::Invalid;
 }
 
 } // namespace InputCommon

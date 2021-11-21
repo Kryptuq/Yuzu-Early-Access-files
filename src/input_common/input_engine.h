@@ -161,8 +161,9 @@ public:
     };
 
     /// Retrieves the name of the given input.
-    virtual std::string GetUIName([[maybe_unused]] const Common::ParamPackage& params) const {
-        return GetEngineName();
+    virtual Common::Input::ButtonNames GetUIName(
+        [[maybe_unused]] const Common::ParamPackage& params) const {
+        return Common::Input::ButtonNames::Engine;
     };
 
     /// Retrieves the index number of the given hat button direction

@@ -10,9 +10,10 @@ layout(binding = 0) uniform sampler2D color_texture;
 void main() {
     ivec2 coord = ivec2(gl_FragCoord.xy);
     vec4 color = texelFetch(color_texture, coord, 0).rgba;
-    uint depth_stencil_unorm = (uint(color.r * (exp2(16) - 1.0f)) << 16)
-                      | (uint(color.g * (exp2(16) - 1.0f)) << 16);
+    uvec2 bytes = uvec2(color.rg * (exp2(16) - 1.0f)) << uvec2(0, 16);
+    uint depth_stencil_unorm =
+        uint(color.r * (exp2(16) - 1.0f)) | (uint(color.g * (exp2(16) - 1.0f)) << 16);
 
-    gl_FragDepth = float(depth_stencil_unorm >> 8) / (exp2(24.0) - 1.0f);
-    gl_FragStencilRefARB = int(depth_stencil_unorm & 0x00FF);
+    gl_FragDepth = float(depth_stencil_unorm & 0x00FFFFFFu) / (exp2(24.0) - 1.0f);
+    gl_FragStencilRefARB = int(depth_stencil_unorm >> 24);
 }

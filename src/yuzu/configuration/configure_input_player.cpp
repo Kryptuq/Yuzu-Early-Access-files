@@ -52,6 +52,37 @@ QString GetKeyName(int key_code) {
     }
 }
 
+QString GetButtonName(Common::Input::ButtonNames button_name) {
+    switch (button_name) {
+    case Common::Input::ButtonNames::ButtonLeft:
+        return QObject::tr("Left");
+    case Common::Input::ButtonNames::ButtonRight:
+        return QObject::tr("Right");
+    case Common::Input::ButtonNames::ButtonDown:
+        return QObject::tr("Down");
+    case Common::Input::ButtonNames::ButtonUp:
+        return QObject::tr("Up");
+    case Common::Input::ButtonNames::TriggerZ:
+        return QObject::tr("Z");
+    case Common::Input::ButtonNames::TriggerR:
+        return QObject::tr("R");
+    case Common::Input::ButtonNames::TriggerL:
+        return QObject::tr("L");
+    case Common::Input::ButtonNames::ButtonA:
+        return QObject::tr("A");
+    case Common::Input::ButtonNames::ButtonB:
+        return QObject::tr("B");
+    case Common::Input::ButtonNames::ButtonX:
+        return QObject::tr("X");
+    case Common::Input::ButtonNames::ButtonY:
+        return QObject::tr("Y");
+    case Common::Input::ButtonNames::ButtonStart:
+        return QObject::tr("Start");
+    default:
+        return QObject::tr("[undefined]");
+    }
+}
+
 void SetAnalogParam(const Common::ParamPackage& input_param, Common::ParamPackage& analog_param,
                     const std::string& button_name) {
     // The poller returned a complete axis, so set all the buttons
@@ -75,15 +106,64 @@ QString ConfigureInputPlayer::ButtonToText(const Common::ParamPackage& param) {
         return QObject::tr("[not set]");
     }
 
+    const QString toggle = QString::fromStdString(param.Get("toggle", false) ? "~" : "");
+    const QString inverted = QString::fromStdString(param.Get("inverted", false) ? "!" : "");
+    const auto common_button_name = input_subsystem->GetButtonName(param);
+
     // Retrieve the names from Qt
     if (param.Get("engine", "") == "keyboard") {
         const QString button_str = GetKeyName(param.Get("code", 0));
-        const QString toggle = QString::fromStdString(param.Get("toggle", false) ? "~" : "");
         return QObject::tr("%1%2").arg(toggle, button_str);
     }
 
-    std::string button_name = input_subsystem->GetButtonName(param);
-    return QString::fromStdString(button_name);
+    if (common_button_name == Common::Input::ButtonNames::Invalid) {
+        return QObject::tr("[invalid]");
+    }
+
+    if (common_button_name == Common::Input::ButtonNames::Engine) {
+        return QString::fromStdString(param.Get("engine", ""));
+    }
+
+    if (common_button_name == Common::Input::ButtonNames::Value) {
+        if (param.Has("hat")) {
+            const QString hat = QString::fromStdString(param.Get("direction", ""));
+            return QObject::tr("%1%2Hat %3").arg(toggle, inverted, hat);
+        }
+        if (param.Has("axis")) {
+            const QString axis = QString::fromStdString(param.Get("axis", ""));
+            return QObject::tr("%1%2Axis %3").arg(toggle, inverted, axis);
+        }
+        if (param.Has("axis_x") && param.Has("axis_y") && param.Has("axis_z")) {
+            const QString axis_x = QString::fromStdString(param.Get("axis_x", ""));
+            const QString axis_y = QString::fromStdString(param.Get("axis_y", ""));
+            const QString axis_z = QString::fromStdString(param.Get("axis_z", ""));
+            return QObject::tr("%1%2Axis %3,%4,%5").arg(toggle, inverted, axis_x, axis_y, axis_z);
+        }
+        if (param.Has("motion")) {
+            const QString motion = QString::fromStdString(param.Get("motion", ""));
+            return QObject::tr("%1%2Motion %3").arg(toggle, inverted, motion);
+        }
+        if (param.Has("button")) {
+            const QString button = QString::fromStdString(param.Get("button", ""));
+            return QObject::tr("%1%2Button %3").arg(toggle, inverted, button);
+        }
+    }
+
+    QString button_name = GetButtonName(common_button_name);
+    if (param.Has("hat")) {
+        return QObject::tr("%1%2Hat %3").arg(toggle, inverted, button_name);
+    }
+    if (param.Has("axis")) {
+        return QObject::tr("%1%2Axis %3").arg(toggle, inverted, button_name);
+    }
+    if (param.Has("motion")) {
+        return QObject::tr("%1%2Axis %3").arg(toggle, inverted, button_name);
+    }
+    if (param.Has("button")) {
+        return QObject::tr("%1%2Button %3").arg(toggle, inverted, button_name);
+    }
+
+    return QObject::tr("[unknown]");
 }
 
 QString ConfigureInputPlayer::AnalogToText(const Common::ParamPackage& param,

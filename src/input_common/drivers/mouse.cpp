@@ -171,12 +171,12 @@ AnalogMapping Mouse::GetAnalogMappingForDevice(
     return mapping;
 }
 
-std::string Mouse::GetUIName(const Common::ParamPackage& params) const {
+Common::Input::ButtonNames Mouse::GetUIName(const Common::ParamPackage& params) const {
     if (params.Has("button")) {
-        return fmt::format("Mouse {}", params.Get("button", 0));
+        return Common::Input::ButtonNames::Value;
     }
 
-    return "Bad Mouse";
+    return Common::Input::ButtonNames::Invalid;
 }
 
 } // namespace InputCommon
