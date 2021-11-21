@@ -25,7 +25,12 @@ FramebufferLayout DefaultFrameLayout(u32 width, u32 height) {
     ASSERT(height > 0);
     // The drawing code needs at least somewhat valid values for both screens
     // so just calculate them both even if the other isn't showing.
-    FramebufferLayout res{width, height, false, {}};
+    FramebufferLayout res{
+        .width = width,
+        .height = height,
+        .screen = {},
+        .is_srgb = false,
+    };
 
     const float window_aspect_ratio = static_cast<float>(height) / static_cast<float>(width);
     const float emulation_aspect_ratio = EmulationAspectRatio(

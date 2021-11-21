@@ -10,6 +10,7 @@
 #include "shader_recompiler/frontend/maxwell/control_flow.h"
 #include "shader_recompiler/host_translate_info.h"
 #include "shader_recompiler/object_pool.h"
+#include "shader_recompiler/runtime_info.h"
 
 namespace Shader::Maxwell {
 
@@ -19,5 +20,8 @@ namespace Shader::Maxwell {
 
 [[nodiscard]] IR::Program MergeDualVertexPrograms(IR::Program& vertex_a, IR::Program& vertex_b,
                                                   Environment& env_vertex_b);
+
+[[nodiscard]] void ConvertLegacyToGeneric(IR::Program& program,
+                                          const Shader::RuntimeInfo& runtime_info);
 
 } // namespace Shader::Maxwell

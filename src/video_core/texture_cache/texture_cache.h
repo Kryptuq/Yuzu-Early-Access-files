@@ -1079,7 +1079,7 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
 template <class P>
 typename TextureCache<P>::BlitImages TextureCache<P>::GetBlitImages(
     const Tegra::Engines::Fermi2D::Surface& dst, const Tegra::Engines::Fermi2D::Surface& src) {
-    static constexpr auto FIND_OPTIONS = RelaxedOptions::Format | RelaxedOptions::Samples;
+    static constexpr auto FIND_OPTIONS = RelaxedOptions::Samples;
     const GPUVAddr dst_addr = dst.Address();
     const GPUVAddr src_addr = src.Address();
     ImageInfo dst_info(dst);
@@ -1093,9 +1093,7 @@ typename TextureCache<P>::BlitImages TextureCache<P>::GetBlitImages(
         const ImageBase* const dst_image = dst_id ? &slot_images[dst_id] : nullptr;
         const ImageBase* const src_image = src_id ? &slot_images[src_id] : nullptr;
         DeduceBlitImages(dst_info, src_info, dst_image, src_image);
-        if (GetFormatType(dst_info.format) != GetFormatType(src_info.format)) {
-            continue;
-        }
+        ASSERT(GetFormatType(dst_info.format) == GetFormatType(src_info.format));
         RelaxedOptions find_options{};
         if (src_info.num_samples > 1) {
             // it's a resolve, we must enforce the same format.

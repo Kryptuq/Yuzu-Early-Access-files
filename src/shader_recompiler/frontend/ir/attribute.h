@@ -224,6 +224,8 @@ enum class Attribute : u64 {
 
 constexpr size_t NUM_GENERICS = 32;
 
+constexpr size_t NUM_FIXEDFNCTEXTURE = 10;
+
 [[nodiscard]] bool IsGeneric(Attribute attribute) noexcept;
 
 [[nodiscard]] u32 GenericAttributeIndex(Attribute attribute);

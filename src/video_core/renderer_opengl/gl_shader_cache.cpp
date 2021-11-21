@@ -42,6 +42,7 @@ namespace {
 using Shader::Backend::GLASM::EmitGLASM;
 using Shader::Backend::GLSL::EmitGLSL;
 using Shader::Backend::SPIRV::EmitSPIRV;
+using Shader::Maxwell::ConvertLegacyToGeneric;
 using Shader::Maxwell::MergeDualVertexPrograms;
 using Shader::Maxwell::TranslateProgram;
 using VideoCommon::ComputeEnvironment;
@@ -467,12 +468,14 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
             MakeRuntimeInfo(key, program, previous_program, glasm_use_storage_buffers, use_glasm)};
         switch (device.GetShaderBackend()) {
         case Settings::ShaderBackend::GLSL:
+            ConvertLegacyToGeneric(program, runtime_info);
             sources[stage_index] = EmitGLSL(profile, runtime_info, program, binding);
             break;
         case Settings::ShaderBackend::GLASM:
             sources[stage_index] = EmitGLASM(profile, runtime_info, program, binding);
             break;
         case Settings::ShaderBackend::SPIRV:
+            ConvertLegacyToGeneric(program, runtime_info);
             sources_spirv[stage_index] = EmitSPIRV(profile, runtime_info, program, binding);
             break;
         }

@@ -98,10 +98,6 @@ void GetCbuf16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, const
         GetCbuf(ctx, ret, binding, offset, 16, cast, bit_offset);
     }
 }
-
-u32 TexCoordIndex(IR::Attribute attr) {
-    return (static_cast<u32>(attr) - static_cast<u32>(IR::Attribute::FixedFncTexture0S)) / 4;
-}
 } // Anonymous namespace
 
 void EmitGetCbufU8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -190,18 +186,6 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
         ctx.AddF32("{}=in_attr{}{}.{};", inst, index, InputVertexIndex(ctx, vertex), swizzle);
         return;
     }
-    // GLSL only exposes 8 legacy texcoords
-    if (attr >= IR::Attribute::FixedFncTexture8S && attr <= IR::Attribute::FixedFncTexture9Q) {
-        LOG_WARNING(Shader_GLSL, "GLSL does not allow access to gl_TexCoord[{}]",
-                    TexCoordIndex(attr));
-        ctx.AddF32("{}=0.f;", inst);
-        return;
-    }
-    if (attr >= IR::Attribute::FixedFncTexture0S && attr <= IR::Attribute::FixedFncTexture7Q) {
-        const u32 index{TexCoordIndex(attr)};
-        ctx.AddF32("{}=gl_TexCoord[{}].{};", inst, index, swizzle);
-        return;
-    }
     switch (attr) {
     case IR::Attribute::PrimitiveId:
         ctx.AddF32("{}=itof(gl_PrimitiveID);", inst);
@@ -215,16 +199,6 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
         ctx.AddF32("{}={}{}.{};", inst, input_decorator, ctx.position_name, swizzle);
         break;
     }
-    case IR::Attribute::ColorFrontDiffuseR:
-    case IR::Attribute::ColorFrontDiffuseG:
-    case IR::Attribute::ColorFrontDiffuseB:
-    case IR::Attribute::ColorFrontDiffuseA:
-        if (ctx.stage == Stage::Fragment) {
-            ctx.AddF32("{}=gl_Color.{};", inst, swizzle);
-        } else {
-            ctx.AddF32("{}=gl_FrontColor.{};", inst, swizzle);
-        }
-        break;
     case IR::Attribute::PointSpriteS:
     case IR::Attribute::PointSpriteT:
         ctx.AddF32("{}=gl_PointCoord.{};", inst, swizzle);
@@ -264,17 +238,6 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
     }
     const u32 element{static_cast<u32>(attr) % 4};
     const char swizzle{"xyzw"[element]};
-    // GLSL only exposes 8 legacy texcoords
-    if (attr >= IR::Attribute::FixedFncTexture8S && attr <= IR::Attribute::FixedFncTexture9Q) {
-        LOG_WARNING(Shader_GLSL, "GLSL does not allow access to gl_TexCoord[{}]",
-                    TexCoordIndex(attr));
-        return;
-    }
-    if (attr >= IR::Attribute::FixedFncTexture0S && attr <= IR::Attribute::FixedFncTexture7Q) {
-        const u32 index{TexCoordIndex(attr)};
-        ctx.Add("gl_TexCoord[{}].{}={};", index, swizzle, value);
-        return;
-    }
     switch (attr) {
     case IR::Attribute::Layer:
         if (ctx.stage != Stage::Geometry &&
@@ -311,33 +274,6 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
     case IR::Attribute::PositionZ:
     case IR::Attribute::PositionW:
         ctx.Add("gl_Position.{}={};", swizzle, value);
-        break;
-    case IR::Attribute::ColorFrontDiffuseR:
-    case IR::Attribute::ColorFrontDiffuseG:
-    case IR::Attribute::ColorFrontDiffuseB:
-    case IR::Attribute::ColorFrontDiffuseA:
-        ctx.Add("gl_FrontColor.{}={};", swizzle, value);
-        break;
-    case IR::Attribute::ColorFrontSpecularR:
-    case IR::Attribute::ColorFrontSpecularG:
-    case IR::Attribute::ColorFrontSpecularB:
-    case IR::Attribute::ColorFrontSpecularA:
-        ctx.Add("gl_FrontSecondaryColor.{}={};", swizzle, value);
-        break;
-    case IR::Attribute::ColorBackDiffuseR:
-    case IR::Attribute::ColorBackDiffuseG:
-    case IR::Attribute::ColorBackDiffuseB:
-    case IR::Attribute::ColorBackDiffuseA:
-        ctx.Add("gl_BackColor.{}={};", swizzle, value);
-        break;
-    case IR::Attribute::ColorBackSpecularR:
-    case IR::Attribute::ColorBackSpecularG:
-    case IR::Attribute::ColorBackSpecularB:
-    case IR::Attribute::ColorBackSpecularA:
-        ctx.Add("gl_BackSecondaryColor.{}={};", swizzle, value);
-        break;
-    case IR::Attribute::FogCoordinate:
-        ctx.Add("gl_FogFragCoord={};", value);
         break;
     case IR::Attribute::ClipDistance0:
     case IR::Attribute::ClipDistance1:

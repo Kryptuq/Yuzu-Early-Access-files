@@ -43,14 +43,6 @@ Id AttrPointer(EmitContext& ctx, Id pointer_type, Id vertex, Id base, Args&&... 
     }
 }
 
-bool IsLegacyAttribute(IR::Attribute attribute) {
-    return (attribute >= IR::Attribute::ColorFrontDiffuseR &&
-            attribute <= IR::Attribute::ColorBackSpecularA) ||
-           attribute == IR::Attribute::FogCoordinate ||
-           (attribute >= IR::Attribute::FixedFncTexture0S &&
-            attribute <= IR::Attribute::FixedFncTexture9Q);
-}
-
 template <typename... Args>
 Id OutputAccessChain(EmitContext& ctx, Id result_type, Id base, Args&&... args) {
     if (ctx.stage == Stage::TessellationControl) {
@@ -80,17 +72,6 @@ std::optional<OutAttr> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
             const u32 index_element{element - info.first_element};
             const Id index_id{ctx.Const(index_element)};
             return OutputAccessChain(ctx, ctx.output_f32, info.id, index_id);
-        }
-    }
-    if (IsLegacyAttribute(attr)) {
-        if (attr == IR::Attribute::FogCoordinate) {
-            return OutputAccessChain(ctx, ctx.output_f32, ctx.OutputLegacyAttribute(attr),
-                                     ctx.Const(0u));
-        } else {
-            const u32 element{static_cast<u32>(attr) % 4};
-            const Id element_id{ctx.Const(element)};
-            return OutputAccessChain(ctx, ctx.output_f32, ctx.OutputLegacyAttribute(attr),
-                                     element_id);
         }
     }
     switch (attr) {
@@ -325,18 +306,6 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, Id vertex) {
         const Id pointer{AttrPointer(ctx, type->pointer, vertex, generic_id, ctx.Const(element))};
         const Id value{ctx.OpLoad(type->id, pointer)};
         return type->needs_cast ? ctx.OpBitcast(ctx.F32[1], value) : value;
-    }
-    if (IsLegacyAttribute(attr)) {
-        if (attr == IR::Attribute::FogCoordinate) {
-            const Id attr_ptr{AttrPointer(ctx, ctx.input_f32, vertex,
-                                          ctx.InputLegacyAttribute(attr), ctx.Const(0u))};
-            return ctx.OpLoad(ctx.F32[1], attr_ptr);
-        } else {
-            const Id element_id{ctx.Const(element)};
-            const Id attr_ptr{AttrPointer(ctx, ctx.input_f32, vertex,
-                                          ctx.InputLegacyAttribute(attr), element_id)};
-            return ctx.OpLoad(ctx.F32[1], attr_ptr);
-        }
     }
     switch (attr) {
     case IR::Attribute::PrimitiveId:

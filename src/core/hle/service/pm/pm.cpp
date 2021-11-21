@@ -13,7 +13,12 @@ namespace Service::PM {
 
 namespace {
 
-constexpr ResultCode ERROR_PROCESS_NOT_FOUND{ErrorModule::PM, 1};
+constexpr ResultCode ResultProcessNotFound{ErrorModule::PM, 1};
+[[maybe_unused]] constexpr ResultCode ResultAlreadyStarted{ErrorModule::PM, 2};
+[[maybe_unused]] constexpr ResultCode ResultNotTerminated{ErrorModule::PM, 3};
+[[maybe_unused]] constexpr ResultCode ResultDebugHookInUse{ErrorModule::PM, 4};
+[[maybe_unused]] constexpr ResultCode ResultApplicationRunning{ErrorModule::PM, 5};
+[[maybe_unused]] constexpr ResultCode ResultInvalidSize{ErrorModule::PM, 6};
 
 constexpr u64 NO_PROCESS_FOUND_PID{0};
 
@@ -95,18 +100,18 @@ public:
 private:
     void GetProcessId(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
-        const auto title_id = rp.PopRaw<u64>();
+        const auto program_id = rp.PopRaw<u64>();
 
-        LOG_DEBUG(Service_PM, "called, title_id={:016X}", title_id);
+        LOG_DEBUG(Service_PM, "called, program_id={:016X}", program_id);
 
         const auto process =
-            SearchProcessList(kernel.GetProcessList(), [title_id](const auto& proc) {
-                return proc->GetProgramID() == title_id;
+            SearchProcessList(kernel.GetProcessList(), [program_id](const auto& proc) {
+                return proc->GetProgramID() == program_id;
             });
 
         if (!process.has_value()) {
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERROR_PROCESS_NOT_FOUND);
+            rb.Push(ResultProcessNotFound);
             return;
         }
 
@@ -128,13 +133,16 @@ public:
     explicit Info(Core::System& system_, const std::vector<Kernel::KProcess*>& process_list_)
         : ServiceFramework{system_, "pm:info"}, process_list{process_list_} {
         static const FunctionInfo functions[] = {
-            {0, &Info::GetTitleId, "GetTitleId"},
+            {0, &Info::GetProgramId, "GetProgramId"},
+            {65000, &Info::AtmosphereGetProcessId, "AtmosphereGetProcessId"},
+            {65001, nullptr, "AtmosphereHasLaunchedProgram"},
+            {65002, nullptr, "AtmosphereGetProcessInfo"},
         };
         RegisterHandlers(functions);
     }
 
 private:
-    void GetTitleId(Kernel::HLERequestContext& ctx) {
+    void GetProgramId(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto process_id = rp.PopRaw<u64>();
 
@@ -146,13 +154,34 @@ private:
 
         if (!process.has_value()) {
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERROR_PROCESS_NOT_FOUND);
+            rb.Push(ResultProcessNotFound);
             return;
         }
 
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(ResultSuccess);
         rb.Push((*process)->GetProgramID());
+    }
+
+    void AtmosphereGetProcessId(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+        const auto program_id = rp.PopRaw<u64>();
+
+        LOG_DEBUG(Service_PM, "called, program_id={:016X}", program_id);
+
+        const auto process = SearchProcessList(process_list, [program_id](const auto& proc) {
+            return proc->GetProgramID() == program_id;
+        });
+
+        if (!process.has_value()) {
+            IPC::ResponseBuilder rb{ctx, 2};
+            rb.Push(ResultProcessNotFound);
+            return;
+        }
+
+        IPC::ResponseBuilder rb{ctx, 4};
+        rb.Push(ResultSuccess);
+        rb.Push((*process)->GetProcessID());
     }
 
     const std::vector<Kernel::KProcess*>& process_list;

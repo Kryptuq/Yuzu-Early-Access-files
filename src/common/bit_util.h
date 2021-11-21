@@ -7,6 +7,7 @@
 #include <bit>
 #include <climits>
 #include <cstddef>
+#include <type_traits>
 
 #include "common/common_types.h"
 
@@ -42,6 +43,12 @@ template <typename T>
 [[nodiscard]] constexpr u32 Log2Ceil64(const u64 value) {
     const u64 log2_f = Log2Floor64(value);
     return static_cast<u32>(log2_f + static_cast<u64>((value ^ (1ULL << log2_f)) != 0ULL));
+}
+
+template <typename T>
+requires std::is_integral_v<T>
+[[nodiscard]] T NextPow2(T value) {
+    return static_cast<T>(1ULL << ((8U * sizeof(T)) - std::countl_zero(value - 1U)));
 }
 
 } // namespace Common

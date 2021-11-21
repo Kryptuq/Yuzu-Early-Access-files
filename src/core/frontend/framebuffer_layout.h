@@ -35,17 +35,8 @@ enum class AspectRatio {
 struct FramebufferLayout {
     u32 width{ScreenUndocked::Width};
     u32 height{ScreenUndocked::Height};
-    bool is_srgb{};
-
     Common::Rectangle<u32> screen;
-
-    /**
-     * Returns the ration of pixel size of the screen, compared to the native size of the undocked
-     * Switch screen.
-     */
-    float GetScalingRatio() const {
-        return static_cast<float>(screen.GetWidth()) / ScreenUndocked::Width;
-    }
+    bool is_srgb{};
 };
 
 /**

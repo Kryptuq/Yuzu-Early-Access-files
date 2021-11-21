@@ -25,6 +25,4 @@ class RendererBase;
 /// Creates an emulated GPU instance using the given system context.
 std::unique_ptr<Tegra::GPU> CreateGPU(Core::Frontend::EmuWindow& emu_window, Core::System& system);
 
-float GetResolutionScaleFactor(const RendererBase& renderer);
-
 } // namespace VideoCore

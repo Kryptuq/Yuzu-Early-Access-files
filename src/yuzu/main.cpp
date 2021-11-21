@@ -1335,14 +1335,8 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
         std::make_unique<QtWebBrowser>(*this),         // Web Browser
     });
 
-    Core::SystemResultStatus result{};
-    auto load_thread = std::jthread(
-        [this, filename, program_id, program_index](Core::SystemResultStatus& result) {
-            result =
-                system->Load(*render_window, filename.toStdString(), program_id, program_index);
-        },
-        std::ref(result));
-    load_thread.join();
+    const Core::SystemResultStatus result{
+        system->Load(*render_window, filename.toStdString(), program_id, program_index)};
 
     const auto drd_callout = (UISettings::values.callout_flags.GetValue() &
                               static_cast<u32>(CalloutFlag::DRDDeprecation)) == 0;

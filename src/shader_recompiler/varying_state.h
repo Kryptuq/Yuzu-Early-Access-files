@@ -53,7 +53,8 @@ struct VaryingState {
         return AnyComponent(IR::Attribute::ColorFrontDiffuseR) ||
                AnyComponent(IR::Attribute::ColorFrontSpecularR) ||
                AnyComponent(IR::Attribute::ColorBackDiffuseR) ||
-               AnyComponent(IR::Attribute::ColorBackSpecularR) || FixedFunctionTexture();
+               AnyComponent(IR::Attribute::ColorBackSpecularR) || FixedFunctionTexture() ||
+               mask[static_cast<size_t>(IR::Attribute::FogCoordinate)];
     }
 
     [[nodiscard]] bool FixedFunctionTexture() const noexcept {

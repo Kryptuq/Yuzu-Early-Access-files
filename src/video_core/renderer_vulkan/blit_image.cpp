@@ -749,8 +749,9 @@ void BlitImageHelper::ConvertColorToDepthPipeline(vk::Pipeline& pipeline, VkRend
     });
 }
 
-void BlitImageHelper::ConvertPipelineColorTargetEx(vk::Pipeline& pipeline, VkRenderPass renderpass,
-                                                   vk::ShaderModule& module, bool single_texture) {
+void BlitImageHelper::ConvertPipelineEx(vk::Pipeline& pipeline, VkRenderPass renderpass,
+                                        vk::ShaderModule& module, bool is_target_depth,
+                                        bool single_texture) {
     if (pipeline) {
         return;
     }
@@ -767,7 +768,7 @@ void BlitImageHelper::ConvertPipelineColorTargetEx(vk::Pipeline& pipeline, VkRen
         .pViewportState = &PIPELINE_VIEWPORT_STATE_CREATE_INFO,
         .pRasterizationState = &PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
         .pMultisampleState = &PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-        .pDepthStencilState = nullptr,
+        .pDepthStencilState = is_target_depth ? &PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO : nullptr,
         .pColorBlendState = &PIPELINE_COLOR_BLEND_STATE_GENERIC_CREATE_INFO,
         .pDynamicState = &PIPELINE_DYNAMIC_STATE_CREATE_INFO,
         .layout = single_texture ? *one_texture_pipeline_layout : *two_textures_pipeline_layout,
@@ -778,33 +779,14 @@ void BlitImageHelper::ConvertPipelineColorTargetEx(vk::Pipeline& pipeline, VkRen
     });
 }
 
+void BlitImageHelper::ConvertPipelineColorTargetEx(vk::Pipeline& pipeline, VkRenderPass renderpass,
+                                                   vk::ShaderModule& module, bool single_texture) {
+    ConvertPipelineEx(pipeline, renderpass, module, false, single_texture);
+}
+
 void BlitImageHelper::ConvertPipelineDepthTargetEx(vk::Pipeline& pipeline, VkRenderPass renderpass,
                                                    vk::ShaderModule& module, bool single_texture) {
-    if (pipeline) {
-        return;
-    }
-    const std::array stages = MakeStages(*full_screen_vert, *module);
-    pipeline = device.GetLogical().CreateGraphicsPipeline({
-        .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .stageCount = static_cast<u32>(stages.size()),
-        .pStages = stages.data(),
-        .pVertexInputState = &PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .pInputAssemblyState = &PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-        .pTessellationState = nullptr,
-        .pViewportState = &PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-        .pRasterizationState = &PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-        .pMultisampleState = &PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-        .pDepthStencilState = &PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-        .pColorBlendState = &PIPELINE_COLOR_BLEND_STATE_EMPTY_CREATE_INFO,
-        .pDynamicState = &PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-        .layout = single_texture ? *one_texture_pipeline_layout : *two_textures_pipeline_layout,
-        .renderPass = renderpass,
-        .subpass = 0,
-        .basePipelineHandle = VK_NULL_HANDLE,
-        .basePipelineIndex = 0,
-    });
+    ConvertPipelineEx(pipeline, renderpass, module, true, single_texture);
 }
 
 } // namespace Vulkan

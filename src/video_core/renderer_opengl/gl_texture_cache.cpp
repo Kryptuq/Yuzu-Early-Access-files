@@ -9,6 +9,7 @@
 
 #include <glad/glad.h>
 
+#include "common/bit_util.h"
 #include "common/literals.h"
 #include "common/settings.h"
 #include "video_core/renderer_opengl/gl_device.h"
@@ -398,9 +399,6 @@ OGLTexture MakeImage(const VideoCommon::ImageInfo& info, GLenum gl_internal_form
     return GL_R32UI;
 }
 
-[[nodiscard]] u32 NextPow2(u32 value) {
-    return 1U << (32U - std::countl_zero(value - 1U));
-}
 } // Anonymous namespace
 
 ImageBufferMap::~ImageBufferMap() {
@@ -1333,7 +1331,7 @@ void FormatConversionPass::ConvertImage(Image& dst_image, Image& src_image,
         const u32 copy_size = region.width * region.height * region.depth * img_bpp;
         if (pbo_size < copy_size) {
             intermediate_pbo.Create();
-            pbo_size = NextPow2(copy_size);
+            pbo_size = Common::NextPow2(copy_size);
             glNamedBufferData(intermediate_pbo.handle, pbo_size, nullptr, GL_STREAM_COPY);
         }
         // Copy from source to PBO

@@ -924,7 +924,7 @@ void GRenderWindow::ReleaseRenderTarget() {
 
 void GRenderWindow::CaptureScreenshot(const QString& screenshot_path) {
     auto& renderer = system.Renderer();
-    const f32 res_scale = VideoCore::GetResolutionScaleFactor(renderer);
+    const f32 res_scale = Settings::values.resolution_info.up_factor;
 
     const Layout::FramebufferLayout layout{Layout::FrameLayoutFromResolutionScale(res_scale)};
     screenshot_image = QImage(QSize(layout.width, layout.height), QImage::Format_RGB32);

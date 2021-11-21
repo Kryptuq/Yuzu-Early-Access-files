@@ -272,13 +272,6 @@ bool GCAdapter::CheckDeviceAccess() {
         }
     }
 
-    // This fixes payload problems from offbrand GCAdapters
-    const s32 control_transfer_error =
-        libusb_control_transfer(usb_adapter_handle->get(), 0x21, 11, 0x0001, 0, nullptr, 0, 1000);
-    if (control_transfer_error < 0) {
-        LOG_ERROR(Input, "libusb_control_transfer failed with error= {}", control_transfer_error);
-    }
-
     if (kernel_driver_error && kernel_driver_error != LIBUSB_ERROR_NOT_SUPPORTED) {
         usb_adapter_handle = nullptr;
         return false;
@@ -289,6 +282,13 @@ bool GCAdapter::CheckDeviceAccess() {
         LOG_ERROR(Input, "libusb_claim_interface failed with error = {}", interface_claim_error);
         usb_adapter_handle = nullptr;
         return false;
+    }
+
+    // This fixes payload problems from offbrand GCAdapters
+    const s32 control_transfer_error =
+        libusb_control_transfer(usb_adapter_handle->get(), 0x21, 11, 0x0001, 0, nullptr, 0, 1000);
+    if (control_transfer_error < 0) {
+        LOG_ERROR(Input, "libusb_control_transfer failed with error= {}", control_transfer_error);
     }
 
     return true;
