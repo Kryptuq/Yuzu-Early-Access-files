@@ -61,6 +61,7 @@ void MappingFactory::RegisterButton(const MappingData& data) {
     }
     new_input.Set("port", static_cast<int>(data.pad.port));
     new_input.Set("pad", static_cast<int>(data.pad.pad));
+
     switch (data.type) {
     case EngineInputType::Button:
         // Workaround for old compatibility
@@ -75,6 +76,10 @@ void MappingFactory::RegisterButton(const MappingData& data) {
         new_input.Set("direction", data.hat_name);
         break;
     case EngineInputType::Analog:
+        // Ignore mouse axis when mapping buttons
+        if (data.engine == "mouse") {
+            return;
+        }
         new_input.Set("axis", data.index);
         new_input.Set("threshold", 0.5f);
         break;

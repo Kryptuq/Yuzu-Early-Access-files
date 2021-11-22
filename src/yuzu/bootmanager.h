@@ -33,6 +33,10 @@ class InputSubsystem;
 enum class MouseButton;
 } // namespace InputCommon
 
+namespace InputCommon::TasInput {
+enum class TasState;
+} // namespace InputCommon::TasInput
+
 namespace VideoCore {
 enum class LoadCallbackStage;
 class RendererBase;
@@ -207,6 +211,7 @@ signals:
     void ExecuteProgramSignal(std::size_t program_index);
     void ExitSignal();
     void MouseActivity();
+    void TasPlaybackStateChanged();
 
 private:
     void TouchBeginEvent(const QTouchEvent* event);
@@ -240,6 +245,7 @@ private:
     QWidget* child_widget = nullptr;
 
     bool first_frame = false;
+    InputCommon::TasInput::TasState last_tas_state;
 
     std::array<std::size_t, 16> touch_ids{};
 

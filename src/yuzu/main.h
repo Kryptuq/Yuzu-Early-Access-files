@@ -177,6 +177,7 @@ public slots:
     void WebBrowserOpenWebPage(const std::string& main_url, const std::string& additional_args,
                                bool is_local);
     void OnAppFocusStateChanged(Qt::ApplicationState state);
+    void OnTasStateChanged();
 
 private:
     void RegisterMetaTypes();
@@ -268,6 +269,9 @@ private slots:
     void OnMenuRecentFile();
     void OnConfigure();
     void OnConfigureTas();
+    void OnTasStartStop();
+    void OnTasRecord();
+    void OnTasReset();
     void OnConfigurePerGame();
     void OnLoadAmiibo();
     void OnOpenYuzuFolder();
@@ -313,6 +317,7 @@ private:
     void OpenURL(const QUrl& url);
     void LoadTranslation();
     void OpenPerGameConfiguration(u64 title_id, const std::string& file_name);
+
     QString GetTasStateDescription() const;
 
     std::unique_ptr<Ui::MainWindow> ui;

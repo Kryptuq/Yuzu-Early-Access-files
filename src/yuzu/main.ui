@@ -79,39 +79,39 @@
      <string>&amp;View</string>
     </property>
     <widget class="QMenu" name="menu_Reset_Window_Size">
-      <property name="title">
-        <string>&amp;Reset Window Size</string>
-      </property>
+     <property name="title">
+      <string>&amp;Reset Window Size</string>
+     </property>
     </widget>
-    <action name="action_Reset_Window_Size_720">
-      <property name="text">
-        <string>Reset Window Size to &amp;720p</string>
-      </property>
-      <property name="iconText">
-        <string>Reset Window Size to 720p</string>
-      </property>
-    </action>
-    <action name="action_Reset_Window_Size_900">
-      <property name="text">
-        <string>Reset Window Size to &amp;900p</string>
-      </property>
-      <property name="iconText">
-        <string>Reset Window Size to 900p</string>
-      </property>
-    </action>
-    <action name="action_Reset_Window_Size_1080">
-      <property name="text">
-        <string>Reset Window Size to &amp;1080p</string>
-      </property>
-      <property name="iconText">
-        <string>Reset Window Size to 1080p</string>
-      </property>
-    </action>
     <widget class="QMenu" name="menu_View_Debugging">
      <property name="title">
       <string>&amp;Debugging</string>
      </property>
     </widget>
+    <action name="action_Reset_Window_Size_720">
+     <property name="text">
+      <string>Reset Window Size to &amp;720p</string>
+     </property>
+     <property name="iconText">
+      <string>Reset Window Size to 720p</string>
+     </property>
+    </action>
+    <action name="action_Reset_Window_Size_900">
+     <property name="text">
+      <string>Reset Window Size to &amp;900p</string>
+     </property>
+     <property name="iconText">
+      <string>Reset Window Size to 900p</string>
+     </property>
+    </action>
+    <action name="action_Reset_Window_Size_1080">
+     <property name="text">
+      <string>Reset Window Size to &amp;1080p</string>
+     </property>
+     <property name="iconText">
+      <string>Reset Window Size to 1080p</string>
+     </property>
+    </action>
     <addaction name="action_Fullscreen"/>
     <addaction name="action_Single_Window_Mode"/>
     <addaction name="action_Display_Dock_Widget_Headers"/>
@@ -125,10 +125,20 @@
     <property name="title">
      <string>&amp;Tools</string>
     </property>
+    <widget class="QMenu" name="menuTAS">
+     <property name="title">
+      <string>&amp;TAS</string>
+     </property>
+     <addaction name="action_TAS_Start"/>
+     <addaction name="action_TAS_Record"/>
+     <addaction name="action_TAS_Reset"/>
+     <addaction name="separator"/>
+     <addaction name="action_Configure_Tas"/>
+    </widget>
     <addaction name="action_Rederive"/>
     <addaction name="separator"/>
     <addaction name="action_Capture_Screenshot"/>
-    <addaction name="action_Configure_Tas"/>
+    <addaction name="menuTAS"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
     <property name="title">
@@ -309,7 +319,7 @@
   </action>
   <action name="action_Configure_Tas">
    <property name="text">
-    <string>Configure &amp;TAS...</string>
+    <string>&amp;Configure TAS...</string>
    </property>
   </action>
   <action name="action_Configure_Current_Game">
@@ -318,6 +328,30 @@
    </property>
    <property name="text">
     <string>Configure C&amp;urrent Game...</string>
+   </property>
+  </action>
+  <action name="action_TAS_Start">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Start</string>
+   </property>
+  </action>
+  <action name="action_TAS_Reset">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Reset</string>
+   </property>
+  </action>
+  <action name="action_TAS_Record">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>R&amp;ecord</string>
    </property>
   </action>
  </widget>

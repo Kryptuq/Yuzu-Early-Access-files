@@ -1155,11 +1155,13 @@ void DeduceBlitImages(ImageInfo& dst_info, ImageInfo& src_info, const ImageBase*
     if (src) {
         is_resolve = src->info.num_samples > 1;
         src_info.num_samples = src->info.num_samples;
-        src_info.size = src->info.size;
+        src_info.size.width = src->info.size.width;
+        src_info.size.height = src->info.size.height;
     }
     if (dst) {
         dst_info.num_samples = dst->info.num_samples;
-        dst_info.size = dst->info.size;
+        dst_info.size.width = dst->info.size.width;
+        dst_info.size.height = dst->info.size.height;
     }
     ASSERT(!is_resolve || dst_info.format == src_info.format);
 }

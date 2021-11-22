@@ -175,6 +175,9 @@ Common::Input::ButtonNames Mouse::GetUIName(const Common::ParamPackage& params) 
     if (params.Has("button")) {
         return Common::Input::ButtonNames::Value;
     }
+    if (params.Has("axis")) {
+        return Common::Input::ButtonNames::Value;
+    }
 
     return Common::Input::ButtonNames::Invalid;
 }

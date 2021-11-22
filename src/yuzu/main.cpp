@@ -971,6 +971,9 @@ void GMainWindow::InitializeHotkeys() {
     const QString toggle_status_bar = QStringLiteral("Toggle Status Bar");
     const QString fullscreen = QStringLiteral("Fullscreen");
     const QString capture_screenshot = QStringLiteral("Capture Screenshot");
+    const QString tas_start_stop = QStringLiteral("TAS Start/Stop");
+    const QString tas_record = QStringLiteral("TAS Record");
+    const QString tas_reset = QStringLiteral("TAS Reset");
 
     ui->action_Load_File->setShortcut(hotkey_registry.GetKeySequence(main_window, load_file));
     ui->action_Load_File->setShortcutContext(
@@ -1010,6 +1013,18 @@ void GMainWindow::InitializeHotkeys() {
         hotkey_registry.GetHotkey(main_window, fullscreen, this)->key());
     ui->action_Fullscreen->setShortcutContext(
         hotkey_registry.GetShortcutContext(main_window, fullscreen));
+
+    ui->action_TAS_Start->setShortcut(hotkey_registry.GetKeySequence(main_window, tas_start_stop));
+    ui->action_TAS_Start->setShortcutContext(
+        hotkey_registry.GetShortcutContext(main_window, tas_start_stop));
+
+    ui->action_TAS_Record->setShortcut(hotkey_registry.GetKeySequence(main_window, tas_record));
+    ui->action_TAS_Record->setShortcutContext(
+        hotkey_registry.GetShortcutContext(main_window, tas_record));
+
+    ui->action_TAS_Reset->setShortcut(hotkey_registry.GetKeySequence(main_window, tas_reset));
+    ui->action_TAS_Reset->setShortcutContext(
+        hotkey_registry.GetShortcutContext(main_window, tas_reset));
 
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Load File"), this),
             &QShortcut::activated, this, &GMainWindow::OnMenuLoadFile);
@@ -1099,28 +1114,6 @@ void GMainWindow::InitializeHotkeys() {
                 if (Settings::values.mouse_panning) {
                     render_window->installEventFilter(render_window);
                     render_window->setAttribute(Qt::WA_Hover, true);
-                }
-            });
-    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("TAS Start/Stop"), this),
-            &QShortcut::activated, this, [&] {
-                if (!emulation_running) {
-                    return;
-                }
-                input_subsystem->GetTas()->StartStop();
-            });
-    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("TAS Reset"), this),
-            &QShortcut::activated, this, [&] { input_subsystem->GetTas()->Reset(); });
-    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("TAS Record"), this),
-            &QShortcut::activated, this, [&] {
-                if (!emulation_running) {
-                    return;
-                }
-                bool is_recording = input_subsystem->GetTas()->Record();
-                if (!is_recording) {
-                    const auto res = QMessageBox::question(this, tr("TAS Recording"),
-                                                           tr("Overwrite file of player 1?"),
-                                                           QMessageBox::Yes | QMessageBox::No);
-                    input_subsystem->GetTas()->SaveRecording(res == QMessageBox::Yes);
                 }
             });
 }
@@ -1242,11 +1235,11 @@ void GMainWindow::ConnectMenuEvents() {
     connect(ui->action_Restart, &QAction::triggered, this,
             [this] { BootGame(QString(game_path)); });
     connect(ui->action_Configure, &QAction::triggered, this, &GMainWindow::OnConfigure);
-    connect(ui->action_Configure_Tas, &QAction::triggered, this, &GMainWindow::OnConfigureTas);
     connect(ui->action_Configure_Current_Game, &QAction::triggered, this,
             &GMainWindow::OnConfigurePerGame);
 
     // View
+    connect(ui->action_Fullscreen, &QAction::triggered, this, &GMainWindow::ToggleFullscreen);
     connect(ui->action_Single_Window_Mode, &QAction::triggered, this,
             &GMainWindow::ToggleWindowMode);
     connect(ui->action_Display_Dock_Widget_Headers, &QAction::triggered, this,
@@ -1264,17 +1257,20 @@ void GMainWindow::ConnectMenuEvents() {
     ui->menu_Reset_Window_Size->addAction(ui->action_Reset_Window_Size_900);
     ui->menu_Reset_Window_Size->addAction(ui->action_Reset_Window_Size_1080);
 
-    // Fullscreen
-    connect(ui->action_Fullscreen, &QAction::triggered, this, &GMainWindow::ToggleFullscreen);
-
-    // Movie
+    // Tools
+    connect(ui->action_Rederive, &QAction::triggered, this,
+            std::bind(&GMainWindow::OnReinitializeKeys, this, ReinitializeKeyBehavior::Warning));
     connect(ui->action_Capture_Screenshot, &QAction::triggered, this,
             &GMainWindow::OnCaptureScreenshot);
 
+    // TAS
+    connect(ui->action_TAS_Start, &QAction::triggered, this, &GMainWindow::OnTasStartStop);
+    connect(ui->action_TAS_Record, &QAction::triggered, this, &GMainWindow::OnTasRecord);
+    connect(ui->action_TAS_Reset, &QAction::triggered, this, &GMainWindow::OnTasReset);
+    connect(ui->action_Configure_Tas, &QAction::triggered, this, &GMainWindow::OnConfigureTas);
+
     // Help
     connect(ui->action_Open_yuzu_Folder, &QAction::triggered, this, &GMainWindow::OnOpenYuzuFolder);
-    connect(ui->action_Rederive, &QAction::triggered, this,
-            std::bind(&GMainWindow::OnReinitializeKeys, this, ReinitializeKeyBehavior::Warning));
     connect(ui->action_About, &QAction::triggered, this, &GMainWindow::OnAbout);
 }
 
@@ -1588,6 +1584,7 @@ void GMainWindow::ShutdownGame() {
     game_list->SetFilterFocus();
     tas_label->clear();
     input_subsystem->GetTas()->Stop();
+    OnTasStateChanged();
 
     render_window->removeEventFilter(render_window);
     render_window->setAttribute(Qt::WA_Hover, false);
@@ -2515,6 +2512,7 @@ void GMainWindow::OnStartGame() {
     ui->action_Restart->setEnabled(true);
     ui->action_Configure_Current_Game->setEnabled(true);
     ui->action_Report_Compatibility->setEnabled(true);
+    OnTasStateChanged();
 
     discord_rpc->Update();
     ui->action_Load_Amiibo->setEnabled(true);
@@ -2827,6 +2825,32 @@ void GMainWindow::OnConfigureTas() {
     }
 }
 
+void GMainWindow::OnTasStartStop() {
+    if (!emulation_running) {
+        return;
+    }
+    input_subsystem->GetTas()->StartStop();
+    OnTasStateChanged();
+}
+
+void GMainWindow::OnTasRecord() {
+    if (!emulation_running) {
+        return;
+    }
+    const bool is_recording = input_subsystem->GetTas()->Record();
+    if (!is_recording) {
+        const auto res =
+            QMessageBox::question(this, tr("TAS Recording"), tr("Overwrite file of player 1?"),
+                                  QMessageBox::Yes | QMessageBox::No);
+        input_subsystem->GetTas()->SaveRecording(res == QMessageBox::Yes);
+    }
+    OnTasStateChanged();
+}
+
+void GMainWindow::OnTasReset() {
+    input_subsystem->GetTas()->Reset();
+}
+
 void GMainWindow::OnConfigurePerGame() {
     const u64 title_id = system->GetCurrentProcessProgramID();
     OpenPerGameConfiguration(title_id, game_path.toStdString());
@@ -3018,6 +3042,24 @@ QString GMainWindow::GetTasStateDescription() const {
     default:
         return tr("TAS State: Invalid");
     }
+}
+
+void GMainWindow::OnTasStateChanged() {
+    bool is_running = false;
+    bool is_recording = false;
+    if (emulation_running) {
+        const InputCommon::TasInput::TasState tas_status =
+            std::get<0>(input_subsystem->GetTas()->GetStatus());
+        is_running = tas_status == InputCommon::TasInput::TasState::Running;
+        is_recording = tas_status == InputCommon::TasInput::TasState::Recording;
+    }
+
+    ui->action_TAS_Start->setText(is_running ? tr("&Stop Running") : tr("&Start"));
+    ui->action_TAS_Record->setText(is_recording ? tr("Stop R&ecording") : tr("R&ecord"));
+
+    ui->action_TAS_Start->setEnabled(emulation_running);
+    ui->action_TAS_Record->setEnabled(emulation_running);
+    ui->action_TAS_Reset->setEnabled(emulation_running);
 }
 
 void GMainWindow::UpdateStatusBar() {

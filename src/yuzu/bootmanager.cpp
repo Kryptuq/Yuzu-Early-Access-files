@@ -303,6 +303,7 @@ GRenderWindow::GRenderWindow(GMainWindow* parent, EmuThread* emu_thread_,
     connect(this, &GRenderWindow::ExecuteProgramSignal, parent, &GMainWindow::OnExecuteProgram,
             Qt::QueuedConnection);
     connect(this, &GRenderWindow::ExitSignal, parent, &GMainWindow::OnExit, Qt::QueuedConnection);
+    connect(this, &GRenderWindow::TasPlaybackStateChanged, parent, &GMainWindow::OnTasStateChanged);
 }
 
 void GRenderWindow::ExecuteProgram(std::size_t program_index) {
@@ -319,9 +320,18 @@ GRenderWindow::~GRenderWindow() {
 
 void GRenderWindow::OnFrameDisplayed() {
     input_subsystem->GetTas()->UpdateThread();
+    const InputCommon::TasInput::TasState new_tas_state =
+        std::get<0>(input_subsystem->GetTas()->GetStatus());
+
     if (!first_frame) {
+        last_tas_state = new_tas_state;
         first_frame = true;
         emit FirstFrameDisplayed();
+    }
+
+    if (new_tas_state != last_tas_state) {
+        last_tas_state = new_tas_state;
+        emit TasPlaybackStateChanged();
     }
 }
 
