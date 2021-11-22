@@ -19,5 +19,5 @@ void main() {
     lowp uint stencil_val = textureLod(stencil_tex, coord, 0).r;
     highp uvec4 components =
         uvec4(stencil_val, (uvec3(depth_val) >> uvec3(24u, 16u, 8u)) & 0x000000FFu);
-    color = vec4(components) / (exp2(8.0) - 1.0);
+    color.abgr = vec4(components) / (exp2(8.0) - 1.0);
 }

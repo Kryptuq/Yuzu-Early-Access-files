@@ -184,6 +184,8 @@ public:
 
     [[nodiscard]] VkImageView StencilView();
 
+    [[nodiscard]] VkImageView ColorView();
+
     [[nodiscard]] VkImageView StorageView(Shader::TextureType texture_type,
                                           Shader::ImageFormat image_format);
 
@@ -224,6 +226,7 @@ private:
     std::unique_ptr<StorageViews> storage_views;
     vk::ImageView depth_view;
     vk::ImageView stencil_view;
+    vk::ImageView color_view;
     VkImage image_handle = VK_NULL_HANDLE;
     VkImageView render_target = VK_NULL_HANDLE;
     VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;

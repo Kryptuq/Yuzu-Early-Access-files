@@ -56,27 +56,18 @@ public:
     void ConvertR16ToD16(const Framebuffer* dst_framebuffer, const ImageView& src_image_view,
                          u32 up_scale, u32 down_shift);
 
-    void ConvertABGR8ToD24S8(const Framebuffer* dst_framebuffer, const ImageView& src_image_view,
+    void ConvertABGR8ToD24S8(const Framebuffer* dst_framebuffer, ImageView& src_image_view,
                              u32 up_scale, u32 down_shift);
-
-    void ConvertB10G11R11ToD24S8(const Framebuffer* dst_framebuffer,
-                                 const ImageView& src_image_view, u32 up_scale, u32 down_shift);
-
-    void ConvertR16G16ToD24S8(const Framebuffer* dst_framebuffer, const ImageView& src_image_view,
-                              u32 up_scale, u32 down_shift);
 
     void ConvertD24S8ToABGR8(const Framebuffer* dst_framebuffer, ImageView& src_image_view,
                              u32 up_scale, u32 down_shift);
 
-    void ConvertD24S8ToB10G11R11(const Framebuffer* dst_framebuffer, ImageView& src_image_view,
-                                 u32 up_scale, u32 down_shift);
-
-    void ConvertD24S8ToR16G16(const Framebuffer* dst_framebuffer, ImageView& src_image_view,
-                              u32 up_scale, u32 down_shift);
-
 private:
     void Convert(VkPipeline pipeline, const Framebuffer* dst_framebuffer,
                  const ImageView& src_image_view, u32 up_scale, u32 down_shift);
+
+    void ConvertColor(VkPipeline pipeline, const Framebuffer* dst_framebuffer,
+                      ImageView& src_image_view, u32 up_scale, u32 down_shift);
 
     void ConvertDepthStencil(VkPipeline pipeline, const Framebuffer* dst_framebuffer,
                              ImageView& src_image_view, u32 up_scale, u32 down_shift);
@@ -114,11 +105,7 @@ private:
     vk::ShaderModule convert_depth_to_float_frag;
     vk::ShaderModule convert_float_to_depth_frag;
     vk::ShaderModule convert_abgr8_to_d24s8_frag;
-    vk::ShaderModule convert_b10g11r11_to_d24s8_frag;
-    vk::ShaderModule convert_r16g16_to_d24s8_frag;
     vk::ShaderModule convert_d24s8_to_abgr8_frag;
-    vk::ShaderModule convert_d24s8_to_b10g11r11_frag;
-    vk::ShaderModule convert_d24s8_to_r16g16_frag;
     vk::Sampler linear_sampler;
     vk::Sampler nearest_sampler;
 
@@ -131,11 +118,7 @@ private:
     vk::Pipeline convert_d16_to_r16_pipeline;
     vk::Pipeline convert_r16_to_d16_pipeline;
     vk::Pipeline convert_abgr8_to_d24s8_pipeline;
-    vk::Pipeline convert_b10g11r11_to_d24s8_pipeline;
-    vk::Pipeline convert_r16g16_to_d24s8_pipeline;
     vk::Pipeline convert_d24s8_to_abgr8_pipeline;
-    vk::Pipeline convert_d24s8_to_b10g11r11_pipeline;
-    vk::Pipeline convert_d24s8_to_r16g16_pipeline;
 };
 
 } // namespace Vulkan

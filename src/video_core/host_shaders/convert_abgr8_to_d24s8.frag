@@ -9,7 +9,7 @@ layout(binding = 0) uniform sampler2D color_texture;
 
 void main() {
     ivec2 coord = ivec2(gl_FragCoord.xy);
-    uvec4 color = uvec4(texelFetch(color_texture, coord, 0).rgba * (exp2(8) - 1.0f));
+    uvec4 color = uvec4(texelFetch(color_texture, coord, 0).abgr * (exp2(8) - 1.0f));
     uvec4 bytes = color << uvec4(24, 16, 8, 0);
     uint depth_stencil_unorm = bytes.x | bytes.y | bytes.z | bytes.w;
 

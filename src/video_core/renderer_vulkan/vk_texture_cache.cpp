@@ -779,6 +779,11 @@ bool TextureCacheRuntime::ShouldReinterpret(Image& dst, Image& src) {
         !device.IsExtShaderStencilExportSupported()) {
         return true;
     }
+    if (VideoCore::Surface::GetFormatType(src.info.format) ==
+            VideoCore::Surface::SurfaceType::DepthStencil &&
+        !device.IsExtShaderStencilExportSupported()) {
+        return true;
+    }
     if (dst.info.format == PixelFormat::D32_FLOAT_S8_UINT ||
         src.info.format == PixelFormat::D32_FLOAT_S8_UINT) {
         return true;
@@ -1063,19 +1068,8 @@ void TextureCacheRuntime::ConvertImage(Framebuffer* dst, ImageView& dst_view, Im
         }
         break;
     case PixelFormat::A8B8G8R8_UNORM:
-    case PixelFormat::B8G8R8A8_UNORM:
         if (src_view.format == PixelFormat::S8_UINT_D24_UNORM) {
             return blit_image_helper.ConvertD24S8ToABGR8(dst, src_view, up_scale, down_shift);
-        }
-        break;
-    case PixelFormat::B10G11R11_FLOAT:
-        if (src_view.format == PixelFormat::S8_UINT_D24_UNORM) {
-            return blit_image_helper.ConvertD24S8ToB10G11R11(dst, src_view, up_scale, down_shift);
-        }
-        break;
-    case PixelFormat::R16G16_UNORM:
-        if (src_view.format == PixelFormat::S8_UINT_D24_UNORM) {
-            return blit_image_helper.ConvertD24S8ToR16G16(dst, src_view, up_scale, down_shift);
         }
         break;
     case PixelFormat::R32_FLOAT:
@@ -1089,16 +1083,7 @@ void TextureCacheRuntime::ConvertImage(Framebuffer* dst, ImageView& dst_view, Im
         }
         break;
     case PixelFormat::S8_UINT_D24_UNORM:
-        if (src_view.format == PixelFormat::A8B8G8R8_UNORM ||
-            src_view.format == PixelFormat::B8G8R8A8_UNORM) {
-            return blit_image_helper.ConvertABGR8ToD24S8(dst, src_view, up_scale, down_shift);
-        }
-        if (src_view.format == PixelFormat::B10G11R11_FLOAT) {
-            return blit_image_helper.ConvertB10G11R11ToD24S8(dst, src_view, up_scale, down_shift);
-        }
-        if (src_view.format == PixelFormat::R16G16_UNORM) {
-            return blit_image_helper.ConvertR16G16ToD24S8(dst, src_view, up_scale, down_shift);
-        }
+        return blit_image_helper.ConvertABGR8ToD24S8(dst, src_view, up_scale, down_shift);
         break;
     case PixelFormat::D32_FLOAT:
         if (src_view.format == PixelFormat::R32_FLOAT) {
@@ -1593,6 +1578,14 @@ VkImageView ImageView::StencilView() {
     const auto& info = MaxwellToVK::SurfaceFormat(*device, FormatType::Optimal, true, format);
     stencil_view = MakeView(info.format, VK_IMAGE_ASPECT_STENCIL_BIT);
     return *stencil_view;
+}
+
+VkImageView ImageView::ColorView() {
+    if (color_view) {
+        return *color_view;
+    }
+    color_view = MakeView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+    return *color_view;
 }
 
 VkImageView ImageView::StorageView(Shader::TextureType texture_type,
