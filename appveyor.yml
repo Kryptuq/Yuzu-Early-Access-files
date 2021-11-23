@@ -46,9 +46,9 @@ init:
 
 before_build:
 - cmd: |-
-    curl -L --silent --show-error --output VulkanSDK.exe https://vulkan.lunarg.com/sdk/download/1.2.198.0/windows/VulkanSDK-1.2.198.0-Installer.exe?Human=true
+    curl -L --silent --show-error --output VulkanSDK.exe https://vulkan.lunarg.com/sdk/download/1.2.135.0/windows/VulkanSDK-1.2.135.0-Installer.exe?Human=true
     VulkanSDK.exe /S
-    set VULKAN_SDK=c:\Projects\yuzu-early-access\VulkanSDK\1.2.198.0
+    set VULKAN_SDK=c:\Projects\yuzu-early-access\VulkanSDK\1.2.135.0
     git clone https://github.com/Kryptuq/glslang.git
     mkdir build
     cd build
