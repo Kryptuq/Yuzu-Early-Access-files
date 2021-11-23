@@ -685,8 +685,8 @@ ResultCode KPageTable::UnmapPages(VAddr addr, KPageLinkedList& page_linked_list,
     return ResultSuccess;
 }
 
-ResultCode KPageTable::SetCodeMemoryPermission(VAddr addr, std::size_t size,
-                                               KMemoryPermission perm) {
+ResultCode KPageTable::SetProcessMemoryPermission(VAddr addr, std::size_t size,
+                                                  KMemoryPermission perm) {
 
     std::lock_guard lock{page_table_lock};
 

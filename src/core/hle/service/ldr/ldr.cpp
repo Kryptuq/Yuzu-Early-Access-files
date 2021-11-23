@@ -396,12 +396,12 @@ public:
         CopyCode(nro_addr + nro_header.segment_headers[DATA_INDEX].memory_offset, data_start,
                  nro_header.segment_headers[DATA_INDEX].memory_size);
 
-        CASCADE_CODE(process->PageTable().SetCodeMemoryPermission(
+        CASCADE_CODE(process->PageTable().SetProcessMemoryPermission(
             text_start, ro_start - text_start, Kernel::KMemoryPermission::ReadAndExecute));
-        CASCADE_CODE(process->PageTable().SetCodeMemoryPermission(ro_start, data_start - ro_start,
-                                                                  Kernel::KMemoryPermission::Read));
+        CASCADE_CODE(process->PageTable().SetProcessMemoryPermission(
+            ro_start, data_start - ro_start, Kernel::KMemoryPermission::Read));
 
-        return process->PageTable().SetCodeMemoryPermission(
+        return process->PageTable().SetProcessMemoryPermission(
             data_start, bss_end_addr - data_start, Kernel::KMemoryPermission::ReadAndWrite);
     }
 

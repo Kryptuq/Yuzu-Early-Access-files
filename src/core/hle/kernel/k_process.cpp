@@ -528,7 +528,7 @@ void KProcess::LoadModule(CodeSet code_set, VAddr base_addr) {
     std::lock_guard lock{HLE::g_hle_lock};
     const auto ReprotectSegment = [&](const CodeSet::Segment& segment,
                                       KMemoryPermission permission) {
-        page_table->SetCodeMemoryPermission(segment.addr + base_addr, segment.size, permission);
+        page_table->SetProcessMemoryPermission(segment.addr + base_addr, segment.size, permission);
     };
 
     kernel.System().Memory().WriteBlock(*this, base_addr, code_set.memory.data(),
