@@ -1,7 +1,4 @@
 version: 'EA{build}'
-cache:
-  - C:\ProgramData\chocolatey\bin -> appveyor.yml
-  - C:\ProgramData\chocolatey\lib -> appveyor.yml
 clone_folder: c:\Projects\yuzu-early-access
 skip_tags: true
 skip_non_tags: false
