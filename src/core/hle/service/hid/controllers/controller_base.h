@@ -41,6 +41,8 @@ public:
 
     bool IsControllerActivated() const;
 
+    static const std::size_t hid_entry_count = 17;
+
 protected:
     bool is_activated{false};
 

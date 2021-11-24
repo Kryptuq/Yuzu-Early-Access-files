@@ -44,7 +44,7 @@ private:
     static_assert(sizeof(KeyboardState) == 0x30, "KeyboardState is an invalid size");
 
     // This is nn::hid::detail::KeyboardLifo
-    Lifo<KeyboardState> keyboard_lifo{};
+    Lifo<KeyboardState, hid_entry_count> keyboard_lifo{};
     static_assert(sizeof(keyboard_lifo) == 0x3D8, "keyboard_lifo is an invalid size");
     KeyboardState next_state{};
 

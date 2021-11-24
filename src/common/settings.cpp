@@ -183,6 +183,7 @@ void RestoreGlobalState(bool is_powered_on) {
     values.max_anisotropy.SetGlobal(true);
     values.use_speed_limit.SetGlobal(true);
     values.speed_limit.SetGlobal(true);
+    values.fps_cap.SetGlobal(true);
     values.use_disk_shader_cache.SetGlobal(true);
     values.gpu_accuracy.SetGlobal(true);
     values.use_asynchronous_gpu_emulation.SetGlobal(true);

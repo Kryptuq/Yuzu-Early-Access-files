@@ -9,7 +9,6 @@
 #include "common/common_types.h"
 
 namespace Service::HID {
-constexpr std::size_t max_buffer_size = 17;
 
 template <typename State>
 struct AtomicStorage {
@@ -17,7 +16,7 @@ struct AtomicStorage {
     State state;
 };
 
-template <typename State>
+template <typename State, std::size_t max_buffer_size>
 struct Lifo {
     s64 timestamp{};
     s64 total_buffer_count = static_cast<s64>(max_buffer_size);

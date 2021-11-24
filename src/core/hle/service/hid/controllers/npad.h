@@ -339,26 +339,6 @@ private:
     static_assert(sizeof(NfcXcdDeviceHandleStateImpl) == 0x18,
                   "NfcXcdDeviceHandleStateImpl is an invalid size");
 
-    // nn::hid::detail::NfcXcdDeviceHandleStateImplAtomicStorage
-    struct NfcXcdDeviceHandleStateImplAtomicStorage {
-        u64 sampling_number;
-        NfcXcdDeviceHandleStateImpl nfc_xcd_device_handle_state;
-    };
-    static_assert(sizeof(NfcXcdDeviceHandleStateImplAtomicStorage) == 0x20,
-                  "NfcXcdDeviceHandleStateImplAtomicStorage is an invalid size");
-
-    // This is nn::hid::detail::NfcXcdDeviceHandleState
-    struct NfcXcdDeviceHandleState {
-        // TODO(german77): Make this struct a ring lifo object
-        INSERT_PADDING_BYTES(0x8); // Unused
-        s64 total_buffer_count = max_buffer_size;
-        s64 buffer_tail{};
-        s64 buffer_count{};
-        std::array<NfcXcdDeviceHandleStateImplAtomicStorage, 2> nfc_xcd_device_handle_storage;
-    };
-    static_assert(sizeof(NfcXcdDeviceHandleState) == 0x60,
-                  "NfcXcdDeviceHandleState is an invalid size");
-
     // This is nn::hid::system::AppletFooterUiAttributesSet
     struct AppletFooterUiAttributes {
         INSERT_PADDING_BYTES(0x4);
@@ -433,32 +413,32 @@ private:
         NpadJoyAssignmentMode assignment_mode;
         NpadFullKeyColorState fullkey_color;
         NpadJoyColorState joycon_color;
-        Lifo<NPadGenericState> fullkey_lifo;
-        Lifo<NPadGenericState> handheld_lifo;
-        Lifo<NPadGenericState> joy_dual_lifo;
-        Lifo<NPadGenericState> joy_left_lifo;
-        Lifo<NPadGenericState> joy_right_lifo;
-        Lifo<NPadGenericState> palma_lifo;
-        Lifo<NPadGenericState> system_ext_lifo;
-        Lifo<SixAxisSensorState> sixaxis_fullkey_lifo;
-        Lifo<SixAxisSensorState> sixaxis_handheld_lifo;
-        Lifo<SixAxisSensorState> sixaxis_dual_left_lifo;
-        Lifo<SixAxisSensorState> sixaxis_dual_right_lifo;
-        Lifo<SixAxisSensorState> sixaxis_left_lifo;
-        Lifo<SixAxisSensorState> sixaxis_right_lifo;
+        Lifo<NPadGenericState, hid_entry_count> fullkey_lifo;
+        Lifo<NPadGenericState, hid_entry_count> handheld_lifo;
+        Lifo<NPadGenericState, hid_entry_count> joy_dual_lifo;
+        Lifo<NPadGenericState, hid_entry_count> joy_left_lifo;
+        Lifo<NPadGenericState, hid_entry_count> joy_right_lifo;
+        Lifo<NPadGenericState, hid_entry_count> palma_lifo;
+        Lifo<NPadGenericState, hid_entry_count> system_ext_lifo;
+        Lifo<SixAxisSensorState, hid_entry_count> sixaxis_fullkey_lifo;
+        Lifo<SixAxisSensorState, hid_entry_count> sixaxis_handheld_lifo;
+        Lifo<SixAxisSensorState, hid_entry_count> sixaxis_dual_left_lifo;
+        Lifo<SixAxisSensorState, hid_entry_count> sixaxis_dual_right_lifo;
+        Lifo<SixAxisSensorState, hid_entry_count> sixaxis_left_lifo;
+        Lifo<SixAxisSensorState, hid_entry_count> sixaxis_right_lifo;
         DeviceType device_type;
         INSERT_PADDING_BYTES(0x4); // Reserved
         NPadSystemProperties system_properties;
         NpadSystemButtonProperties button_properties;
-        Core::HID::BatteryLevel battery_level_dual;
-        Core::HID::BatteryLevel battery_level_left;
-        Core::HID::BatteryLevel battery_level_right;
+        Core::HID::NpadBatteryLevel battery_level_dual;
+        Core::HID::NpadBatteryLevel battery_level_left;
+        Core::HID::NpadBatteryLevel battery_level_right;
         union {
-            NfcXcdDeviceHandleState nfc_xcd_device_handle;
+            Lifo<NfcXcdDeviceHandleStateImpl, 0x2> nfc_xcd_device_lifo{};
             AppletFooterUi applet_footer;
         };
         INSERT_PADDING_BYTES(0x20); // Unknown
-        Lifo<NpadGcTriggerState> gc_trigger_lifo;
+        Lifo<NpadGcTriggerState, hid_entry_count> gc_trigger_lifo;
         NpadLarkType lark_type_l_and_main;
         NpadLarkType lark_type_r;
         NpadLuciaType lucia_type;

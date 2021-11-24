@@ -346,15 +346,15 @@ struct NpadGcTriggerState {
 static_assert(sizeof(NpadGcTriggerState) == 0x10, "NpadGcTriggerState is an invalid size");
 
 // This is nn::hid::system::NpadBatteryLevel
-using BatteryLevel = u32;
-static_assert(sizeof(BatteryLevel) == 0x4, "BatteryLevel is an invalid size");
+using NpadBatteryLevel = u32;
+static_assert(sizeof(NpadBatteryLevel) == 0x4, "NpadBatteryLevel is an invalid size");
 
 // This is nn::hid::system::NpadPowerInfo
 struct NpadPowerInfo {
     bool is_powered;
     bool is_charging;
     INSERT_PADDING_BYTES(0x6);
-    BatteryLevel battery_level;
+    NpadBatteryLevel battery_level;
 };
 static_assert(sizeof(NpadPowerInfo) == 0xC, "NpadPowerInfo is an invalid size");
 

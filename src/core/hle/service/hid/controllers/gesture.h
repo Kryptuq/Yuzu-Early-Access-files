@@ -136,7 +136,7 @@ private:
     GestureProperties GetGestureProperties();
 
     // This is nn::hid::detail::GestureLifo
-    Lifo<GestureState> gesture_lifo{};
+    Lifo<GestureState, hid_entry_count> gesture_lifo{};
     static_assert(sizeof(gesture_lifo) == 0x708, "gesture_lifo is an invalid size");
     GestureState next_state{};
 

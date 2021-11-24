@@ -157,6 +157,7 @@ void Controller_NPad::InitNewlyAddedController(Core::HID::NpadIdType npad_id) {
         shared_memory.system_properties.is_vertical.Assign(1);
         shared_memory.system_properties.use_plus.Assign(1);
         shared_memory.system_properties.use_minus.Assign(1);
+        shared_memory.system_properties.use_directional_buttons.Assign(1);
         shared_memory.assignment_mode = NpadJoyAssignmentMode::Dual;
         shared_memory.applet_footer.type = AppletFooterUiType::HandheldJoyConLeftJoyConRight;
         break;
@@ -167,6 +168,7 @@ void Controller_NPad::InitNewlyAddedController(Core::HID::NpadIdType npad_id) {
         shared_memory.system_properties.is_vertical.Assign(1);
         shared_memory.system_properties.use_plus.Assign(1);
         shared_memory.system_properties.use_minus.Assign(1);
+        shared_memory.system_properties.use_directional_buttons.Assign(1);
         shared_memory.assignment_mode = NpadJoyAssignmentMode::Dual;
         shared_memory.applet_footer.type = AppletFooterUiType::JoyDual;
         break;

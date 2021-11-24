@@ -524,7 +524,7 @@ struct Values {
     Setting<NvdecEmulation> nvdec_emulation{NvdecEmulation::GPU, "nvdec_emulation"};
     Setting<bool> accelerate_astc{true, "accelerate_astc"};
     Setting<bool> use_vsync{true, "use_vsync"};
-    BasicRangedSetting<u16> fps_cap{1000, 1, 1000, "fps_cap"};
+    RangedSetting<u16> fps_cap{1000, 1, 1000, "fps_cap"};
     BasicSetting<bool> disable_fps_limit{false, "disable_fps_limit"};
     RangedSetting<ShaderBackend> shader_backend{ShaderBackend::GLASM, ShaderBackend::GLSL,
                                                 ShaderBackend::SPIRV, "shader_backend"};

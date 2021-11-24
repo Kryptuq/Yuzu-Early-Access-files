@@ -30,6 +30,9 @@ ConfigureGeneral::ConfigureGeneral(const Core::System& system_, QWidget* parent)
 
     connect(ui->button_reset_defaults, &QPushButton::clicked, this,
             &ConfigureGeneral::ResetDefaults);
+
+    ui->fps_cap_label->setVisible(Settings::IsConfiguringGlobal());
+    ui->fps_cap_combobox->setVisible(!Settings::IsConfiguringGlobal());
 }
 
 ConfigureGeneral::~ConfigureGeneral() = default;
@@ -57,6 +60,11 @@ void ConfigureGeneral::SetConfiguration() {
     } else {
         ui->speed_limit->setEnabled(Settings::values.use_speed_limit.GetValue() &&
                                     use_speed_limit != ConfigurationShared::CheckState::Global);
+
+        ui->fps_cap_combobox->setCurrentIndex(Settings::values.fps_cap.UsingGlobal() ? 0 : 1);
+        ui->fps_cap->setEnabled(!Settings::values.fps_cap.UsingGlobal());
+        ConfigurationShared::SetHighlight(ui->fps_cap_layout,
+                                          !Settings::values.fps_cap.UsingGlobal());
     }
 }
 
@@ -106,6 +114,13 @@ void ConfigureGeneral::ApplyConfiguration() {
                                                       Qt::Checked);
             Settings::values.speed_limit.SetValue(ui->speed_limit->value());
         }
+
+        if (ui->fps_cap_combobox->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
+            Settings::values.fps_cap.SetGlobal(true);
+        } else {
+            Settings::values.fps_cap.SetGlobal(false);
+            Settings::values.fps_cap.SetValue(ui->fps_cap->value());
+        }
     }
 }
 
@@ -147,5 +162,10 @@ void ConfigureGeneral::SetupPerGameUI() {
     connect(ui->toggle_speed_limit, &QCheckBox::clicked, ui->speed_limit, [this]() {
         ui->speed_limit->setEnabled(ui->toggle_speed_limit->isChecked() &&
                                     (use_speed_limit != ConfigurationShared::CheckState::Global));
+    });
+
+    connect(ui->fps_cap_combobox, qOverload<int>(&QComboBox::activated), this, [this](int index) {
+        ui->fps_cap->setEnabled(index == 1);
+        ConfigurationShared::SetHighlight(ui->fps_cap_layout, index == 1);
     });
 }

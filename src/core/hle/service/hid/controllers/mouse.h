@@ -34,7 +34,7 @@ public:
 
 private:
     // This is nn::hid::detail::MouseLifo
-    Lifo<Core::HID::MouseState> mouse_lifo{};
+    Lifo<Core::HID::MouseState, hid_entry_count> mouse_lifo{};
     static_assert(sizeof(mouse_lifo) == 0x350, "mouse_lifo is an invalid size");
     Core::HID::MouseState next_state{};
 

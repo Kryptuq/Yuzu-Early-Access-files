@@ -61,7 +61,7 @@ private:
     static_assert(sizeof(TouchScreenState) == 0x290, "TouchScreenState is an invalid size");
 
     // This is nn::hid::detail::TouchScreenLifo
-    Lifo<TouchScreenState> touch_screen_lifo{};
+    Lifo<TouchScreenState, hid_entry_count> touch_screen_lifo{};
     static_assert(sizeof(touch_screen_lifo) == 0x2C38, "touch_screen_lifo is an invalid size");
     TouchScreenState next_state{};
 

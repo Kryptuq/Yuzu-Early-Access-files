@@ -102,7 +102,7 @@ private:
     static_assert(sizeof(BasicXpadState) == 0x20, "BasicXpadState is an invalid size");
 
     // This is nn::hid::detail::BasicXpadLifo
-    Lifo<BasicXpadState> basic_xpad_lifo{};
+    Lifo<BasicXpadState, hid_entry_count> basic_xpad_lifo{};
     static_assert(sizeof(basic_xpad_lifo) == 0x2C8, "basic_xpad_lifo is an invalid size");
     BasicXpadState next_state{};
 };

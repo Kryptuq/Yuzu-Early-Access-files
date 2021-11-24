@@ -723,7 +723,7 @@ void EmulatedController::SetBattery(Common::Input::CallbackStatus callback, std:
 
     bool is_charging = false;
     bool is_powered = false;
-    BatteryLevel battery_level = 0;
+    NpadBatteryLevel battery_level = 0;
     switch (controller.battery_values[index]) {
     case Common::Input::BatteryLevel::Charging:
         is_charging = true;

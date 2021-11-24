@@ -54,7 +54,7 @@ private:
     static_assert(sizeof(DebugPadState) == 0x20, "DebugPadState is an invalid state");
 
     // This is nn::hid::detail::DebugPadLifo
-    Lifo<DebugPadState> debug_pad_lifo{};
+    Lifo<DebugPadState, hid_entry_count> debug_pad_lifo{};
     static_assert(sizeof(debug_pad_lifo) == 0x2C8, "debug_pad_lifo is an invalid size");
     DebugPadState next_state{};
 

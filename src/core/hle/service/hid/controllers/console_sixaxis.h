@@ -10,6 +10,7 @@
 #include "common/quaternion.h"
 #include "core/hid/hid_types.h"
 #include "core/hle/service/hid/controllers/controller_base.h"
+#include "core/hle/service/hid/ring_lifo.h"
 
 namespace Core::HID {
 class EmulatedConsole;
@@ -40,50 +41,30 @@ private:
     struct SevenSixAxisState {
         INSERT_PADDING_WORDS(4); // unused
         s64 sampling_number{};
-        s64 sampling_number2{};
         u64 unknown{};
         Common::Vec3f accel{};
         Common::Vec3f gyro{};
         Common::Quaternion<f32> quaternion{};
     };
-    static_assert(sizeof(SevenSixAxisState) == 0x50, "SevenSixAxisState is an invalid size");
-
-    struct CommonHeader {
-        s64 timestamp;
-        s64 total_entry_count;
-        s64 last_entry_index;
-        s64 entry_count;
-    };
-    static_assert(sizeof(CommonHeader) == 0x20, "CommonHeader is an invalid size");
-
-    // TODO(german77): SevenSixAxisMemory doesn't follow the standard lifo. Investigate
-    struct SevenSixAxisMemory {
-        CommonHeader header{};
-        std::array<SevenSixAxisState, 0x21> sevensixaxis_states{};
-    };
-    static_assert(sizeof(SevenSixAxisMemory) == 0xA70, "SevenSixAxisMemory is an invalid size");
+    static_assert(sizeof(SevenSixAxisState) == 0x48, "SevenSixAxisState is an invalid size");
 
     // This is nn::hid::detail::ConsoleSixAxisSensorSharedMemoryFormat
     struct ConsoleSharedMemory {
         u64 sampling_number{};
         bool is_seven_six_axis_sensor_at_rest{};
+        INSERT_PADDING_BYTES(4); // padding
         f32 verticalization_error{};
         Common::Vec3f gyro_bias{};
     };
     static_assert(sizeof(ConsoleSharedMemory) == 0x20, "ConsoleSharedMemory is an invalid size");
 
-    struct MotionDevice {
-        Common::Vec3f accel;
-        Common::Vec3f gyro;
-        Common::Vec3f rotation;
-        std::array<Common::Vec3f, 3> orientation;
-        Common::Quaternion<f32> quaternion;
-    };
+    Lifo<SevenSixAxisState, 0x21> seven_sixaxis_lifo{};
+    static_assert(sizeof(seven_sixaxis_lifo) == 0xA70, "SevenSixAxisState is an invalid size");
 
     Core::HID::EmulatedConsole* console;
     u8* transfer_memory = nullptr;
     bool is_transfer_memory_set = false;
     ConsoleSharedMemory console_six_axis{};
-    SevenSixAxisMemory seven_six_axis{};
+    SevenSixAxisState next_seven_sixaxis_state{};
 };
 } // namespace Service::HID
