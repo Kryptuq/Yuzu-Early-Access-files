@@ -958,164 +958,80 @@ void GMainWindow::InitializeRecentFileMenuActions() {
     UpdateRecentFiles();
 }
 
+void GMainWindow::LinkActionShortcut(QAction* action, const QString& action_name) {
+    static const QString main_window = QStringLiteral("Main Window");
+    action->setShortcut(hotkey_registry.GetKeySequence(main_window, action_name));
+    action->setShortcutContext(hotkey_registry.GetShortcutContext(main_window, action_name));
+
+    this->addAction(action);
+}
+
 void GMainWindow::InitializeHotkeys() {
     hotkey_registry.LoadHotkeys();
 
-    const QString main_window = QStringLiteral("Main Window");
-    const QString load_file = QStringLiteral("Load File");
-    const QString load_amiibo = QStringLiteral("Load Amiibo");
-    const QString exit_yuzu = QStringLiteral("Exit yuzu");
-    const QString restart_emulation = QStringLiteral("Restart Emulation");
-    const QString stop_emulation = QStringLiteral("Stop Emulation");
-    const QString toggle_filter_bar = QStringLiteral("Toggle Filter Bar");
-    const QString toggle_status_bar = QStringLiteral("Toggle Status Bar");
-    const QString fullscreen = QStringLiteral("Fullscreen");
-    const QString capture_screenshot = QStringLiteral("Capture Screenshot");
-    const QString tas_start_stop = QStringLiteral("TAS Start/Stop");
-    const QString tas_record = QStringLiteral("TAS Record");
-    const QString tas_reset = QStringLiteral("TAS Reset");
+    LinkActionShortcut(ui->action_Load_File, QStringLiteral("Load File"));
+    LinkActionShortcut(ui->action_Load_Amiibo, QStringLiteral("Load Amiibo"));
+    LinkActionShortcut(ui->action_Exit, QStringLiteral("Exit yuzu"));
+    LinkActionShortcut(ui->action_Restart, QStringLiteral("Restart Emulation"));
+    LinkActionShortcut(ui->action_Pause, QStringLiteral("Continue/Pause Emulation"));
+    LinkActionShortcut(ui->action_Stop, QStringLiteral("Stop Emulation"));
+    LinkActionShortcut(ui->action_Show_Filter_Bar, QStringLiteral("Toggle Filter Bar"));
+    LinkActionShortcut(ui->action_Show_Status_Bar, QStringLiteral("Toggle Status Bar"));
+    LinkActionShortcut(ui->action_Fullscreen, QStringLiteral("Fullscreen"));
+    LinkActionShortcut(ui->action_Capture_Screenshot, QStringLiteral("Capture Screenshot"));
+    LinkActionShortcut(ui->action_TAS_Start, QStringLiteral("TAS Start/Stop"));
+    LinkActionShortcut(ui->action_TAS_Record, QStringLiteral("TAS Record"));
+    LinkActionShortcut(ui->action_TAS_Reset, QStringLiteral("TAS Reset"));
 
-    ui->action_Load_File->setShortcut(hotkey_registry.GetKeySequence(main_window, load_file));
-    ui->action_Load_File->setShortcutContext(
-        hotkey_registry.GetShortcutContext(main_window, load_file));
+    static const QString main_window = QStringLiteral("Main Window");
+    const auto connect_shortcut = [&]<typename Fn>(const QString& action_name, const Fn& function) {
+        const QShortcut* hotkey = hotkey_registry.GetHotkey(main_window, action_name, this);
+        connect(hotkey, &QShortcut::activated, this, function);
+    };
 
-    ui->action_Load_Amiibo->setShortcut(hotkey_registry.GetKeySequence(main_window, load_amiibo));
-    ui->action_Load_Amiibo->setShortcutContext(
-        hotkey_registry.GetShortcutContext(main_window, load_amiibo));
-
-    ui->action_Exit->setShortcut(hotkey_registry.GetKeySequence(main_window, exit_yuzu));
-    ui->action_Exit->setShortcutContext(hotkey_registry.GetShortcutContext(main_window, exit_yuzu));
-
-    ui->action_Restart->setShortcut(hotkey_registry.GetKeySequence(main_window, restart_emulation));
-    ui->action_Restart->setShortcutContext(
-        hotkey_registry.GetShortcutContext(main_window, restart_emulation));
-
-    ui->action_Stop->setShortcut(hotkey_registry.GetKeySequence(main_window, stop_emulation));
-    ui->action_Stop->setShortcutContext(
-        hotkey_registry.GetShortcutContext(main_window, stop_emulation));
-
-    ui->action_Show_Filter_Bar->setShortcut(
-        hotkey_registry.GetKeySequence(main_window, toggle_filter_bar));
-    ui->action_Show_Filter_Bar->setShortcutContext(
-        hotkey_registry.GetShortcutContext(main_window, toggle_filter_bar));
-
-    ui->action_Show_Status_Bar->setShortcut(
-        hotkey_registry.GetKeySequence(main_window, toggle_status_bar));
-    ui->action_Show_Status_Bar->setShortcutContext(
-        hotkey_registry.GetShortcutContext(main_window, toggle_status_bar));
-
-    ui->action_Capture_Screenshot->setShortcut(
-        hotkey_registry.GetKeySequence(main_window, capture_screenshot));
-    ui->action_Capture_Screenshot->setShortcutContext(
-        hotkey_registry.GetShortcutContext(main_window, capture_screenshot));
-
-    ui->action_Fullscreen->setShortcut(
-        hotkey_registry.GetHotkey(main_window, fullscreen, this)->key());
-    ui->action_Fullscreen->setShortcutContext(
-        hotkey_registry.GetShortcutContext(main_window, fullscreen));
-
-    ui->action_TAS_Start->setShortcut(hotkey_registry.GetKeySequence(main_window, tas_start_stop));
-    ui->action_TAS_Start->setShortcutContext(
-        hotkey_registry.GetShortcutContext(main_window, tas_start_stop));
-
-    ui->action_TAS_Record->setShortcut(hotkey_registry.GetKeySequence(main_window, tas_record));
-    ui->action_TAS_Record->setShortcutContext(
-        hotkey_registry.GetShortcutContext(main_window, tas_record));
-
-    ui->action_TAS_Reset->setShortcut(hotkey_registry.GetKeySequence(main_window, tas_reset));
-    ui->action_TAS_Reset->setShortcutContext(
-        hotkey_registry.GetShortcutContext(main_window, tas_reset));
-
-    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Load File"), this),
-            &QShortcut::activated, this, &GMainWindow::OnMenuLoadFile);
-    connect(
-        hotkey_registry.GetHotkey(main_window, QStringLiteral("Continue/Pause Emulation"), this),
-        &QShortcut::activated, this, [&] {
-            if (emulation_running) {
-                if (emu_thread->IsRunning()) {
-                    OnPauseGame();
-                } else {
-                    OnStartGame();
-                }
-            }
-        });
-    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Restart Emulation"), this),
-            &QShortcut::activated, this, [this] {
-                if (!system->IsPoweredOn()) {
-                    return;
-                }
-                BootGame(game_path);
-            });
-    connect(hotkey_registry.GetHotkey(main_window, fullscreen, render_window),
-            &QShortcut::activated, ui->action_Fullscreen, &QAction::trigger);
-    connect(hotkey_registry.GetHotkey(main_window, fullscreen, render_window),
-            &QShortcut::activatedAmbiguously, ui->action_Fullscreen, &QAction::trigger);
-    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Exit Fullscreen"), this),
-            &QShortcut::activated, this, [&] {
-                if (emulation_running && ui->action_Fullscreen->isChecked()) {
-                    ui->action_Fullscreen->setChecked(false);
-                    ToggleFullscreen();
-                }
-            });
-    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Toggle Speed Limit"), this),
-            &QShortcut::activated, this, [&] {
-                Settings::values.use_speed_limit.SetValue(
-                    !Settings::values.use_speed_limit.GetValue());
-                UpdateStatusBar();
-            });
+    connect_shortcut(QStringLiteral("Exit Fullscreen"), [&] {
+        if (emulation_running && ui->action_Fullscreen->isChecked()) {
+            ui->action_Fullscreen->setChecked(false);
+            ToggleFullscreen();
+        }
+    });
+    connect_shortcut(QStringLiteral("Toggle Speed Limit"), [&] {
+        Settings::values.use_speed_limit.SetValue(!Settings::values.use_speed_limit.GetValue());
+        UpdateStatusBar();
+    });
     constexpr u16 SPEED_LIMIT_STEP = 5;
-    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Increase Speed Limit"), this),
-            &QShortcut::activated, this, [&] {
-                if (Settings::values.speed_limit.GetValue() < 9999 - SPEED_LIMIT_STEP) {
-                    Settings::values.speed_limit.SetValue(SPEED_LIMIT_STEP +
-                                                          Settings::values.speed_limit.GetValue());
-                    UpdateStatusBar();
-                }
-            });
-    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Decrease Speed Limit"), this),
-            &QShortcut::activated, this, [&] {
-                if (Settings::values.speed_limit.GetValue() > SPEED_LIMIT_STEP) {
-                    Settings::values.speed_limit.SetValue(Settings::values.speed_limit.GetValue() -
-                                                          SPEED_LIMIT_STEP);
-                    UpdateStatusBar();
-                }
-            });
-    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Load Amiibo"), this),
-            &QShortcut::activated, this, [&] {
-                if (ui->action_Load_Amiibo->isEnabled()) {
-                    OnLoadAmiibo();
-                }
-            });
-    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Capture Screenshot"), this),
-            &QShortcut::activated, this, [&] {
-                if (emu_thread != nullptr && emu_thread->IsRunning()) {
-                    OnCaptureScreenshot();
-                }
-            });
-    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Change Docked Mode"), this),
-            &QShortcut::activated, this, [&] {
-                Settings::values.use_docked_mode.SetValue(
-                    !Settings::values.use_docked_mode.GetValue());
-                OnDockedModeChanged(!Settings::values.use_docked_mode.GetValue(),
-                                    Settings::values.use_docked_mode.GetValue(), *system);
-                dock_status_button->setChecked(Settings::values.use_docked_mode.GetValue());
-            });
-    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Mute Audio"), this),
-            &QShortcut::activated, this,
-            [] { Settings::values.audio_muted = !Settings::values.audio_muted; });
-    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Toggle Framerate Limit"), this),
-            &QShortcut::activated, this, [] {
-                Settings::values.disable_fps_limit.SetValue(
-                    !Settings::values.disable_fps_limit.GetValue());
-            });
-    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Toggle Mouse Panning"), this),
-            &QShortcut::activated, this, [&] {
-                Settings::values.mouse_panning = !Settings::values.mouse_panning;
-                if (Settings::values.mouse_panning) {
-                    render_window->installEventFilter(render_window);
-                    render_window->setAttribute(Qt::WA_Hover, true);
-                }
-            });
+    connect_shortcut(QStringLiteral("Increase Speed Limit"), [&] {
+        if (Settings::values.speed_limit.GetValue() < 9999 - SPEED_LIMIT_STEP) {
+            Settings::values.speed_limit.SetValue(SPEED_LIMIT_STEP +
+                                                  Settings::values.speed_limit.GetValue());
+            UpdateStatusBar();
+        }
+    });
+    connect_shortcut(QStringLiteral("Decrease Speed Limit"), [&] {
+        if (Settings::values.speed_limit.GetValue() > SPEED_LIMIT_STEP) {
+            Settings::values.speed_limit.SetValue(Settings::values.speed_limit.GetValue() -
+                                                  SPEED_LIMIT_STEP);
+            UpdateStatusBar();
+        }
+    });
+    connect_shortcut(QStringLiteral("Change Docked Mode"), [&] {
+        Settings::values.use_docked_mode.SetValue(!Settings::values.use_docked_mode.GetValue());
+        OnDockedModeChanged(!Settings::values.use_docked_mode.GetValue(),
+                            Settings::values.use_docked_mode.GetValue(), *system);
+        dock_status_button->setChecked(Settings::values.use_docked_mode.GetValue());
+    });
+    connect_shortcut(QStringLiteral("Mute Audio"),
+                     [] { Settings::values.audio_muted = !Settings::values.audio_muted; });
+    connect_shortcut(QStringLiteral("Toggle Framerate Limit"), [] {
+        Settings::values.disable_fps_limit.SetValue(!Settings::values.disable_fps_limit.GetValue());
+    });
+    connect_shortcut(QStringLiteral("Toggle Mouse Panning"), [&] {
+        Settings::values.mouse_panning = !Settings::values.mouse_panning;
+        if (Settings::values.mouse_panning) {
+            render_window->installEventFilter(render_window);
+            render_window->setAttribute(Qt::WA_Hover, true);
+        }
+    });
 }
 
 void GMainWindow::SetDefaultUIGeometry() {
@@ -1170,7 +1086,8 @@ void GMainWindow::OnAppFocusStateChanged(Qt::ApplicationState state) {
         (state & (Qt::ApplicationHidden | Qt::ApplicationInactive))) {
         auto_paused = true;
         OnPauseGame();
-    } else if (ui->action_Start->isEnabled() && auto_paused && state == Qt::ApplicationActive) {
+    } else if (emulation_running && !emu_thread->IsRunning() && auto_paused &&
+               state == Qt::ApplicationActive) {
         auto_paused = false;
         OnStartGame();
     }
@@ -1214,64 +1131,86 @@ void GMainWindow::ConnectWidgetEvents() {
 }
 
 void GMainWindow::ConnectMenuEvents() {
+    const auto connect_menu = [&]<typename Fn>(QAction* action, const Fn& event_fn) {
+        connect(action, &QAction::triggered, this, event_fn);
+        // Add actions to this window so that hiding menus in fullscreen won't disable them
+        addAction(action);
+        // Add actions to the render window so that they work outside of single window mode
+        render_window->addAction(action);
+    };
+
     // File
-    connect(ui->action_Load_File, &QAction::triggered, this, &GMainWindow::OnMenuLoadFile);
-    connect(ui->action_Load_Folder, &QAction::triggered, this, &GMainWindow::OnMenuLoadFolder);
-    connect(ui->action_Install_File_NAND, &QAction::triggered, this,
-            &GMainWindow::OnMenuInstallToNAND);
-    connect(ui->action_Exit, &QAction::triggered, this, &QMainWindow::close);
-    connect(ui->action_Load_Amiibo, &QAction::triggered, this, &GMainWindow::OnLoadAmiibo);
+    connect_menu(ui->action_Load_File, &GMainWindow::OnMenuLoadFile);
+    connect_menu(ui->action_Load_Folder, &GMainWindow::OnMenuLoadFolder);
+    connect_menu(ui->action_Install_File_NAND, &GMainWindow::OnMenuInstallToNAND);
+    connect_menu(ui->action_Exit, &QMainWindow::close);
+    connect_menu(ui->action_Load_Amiibo, &GMainWindow::OnLoadAmiibo);
 
     // Emulation
-    connect(ui->action_Start, &QAction::triggered, this, &GMainWindow::OnStartGame);
-    connect(ui->action_Pause, &QAction::triggered, this, &GMainWindow::OnPauseGame);
-    connect(ui->action_Stop, &QAction::triggered, this, &GMainWindow::OnStopGame);
-    connect(ui->action_Report_Compatibility, &QAction::triggered, this,
-            &GMainWindow::OnMenuReportCompatibility);
-    connect(ui->action_Open_Mods_Page, &QAction::triggered, this, &GMainWindow::OnOpenModsPage);
-    connect(ui->action_Open_Quickstart_Guide, &QAction::triggered, this,
-            &GMainWindow::OnOpenQuickstartGuide);
-    connect(ui->action_Open_FAQ, &QAction::triggered, this, &GMainWindow::OnOpenFAQ);
-    connect(ui->action_Restart, &QAction::triggered, this,
-            [this] { BootGame(QString(game_path)); });
-    connect(ui->action_Configure, &QAction::triggered, this, &GMainWindow::OnConfigure);
-    connect(ui->action_Configure_Current_Game, &QAction::triggered, this,
-            &GMainWindow::OnConfigurePerGame);
+    connect_menu(ui->action_Pause, &GMainWindow::OnPauseContinueGame);
+    connect_menu(ui->action_Stop, &GMainWindow::OnStopGame);
+    connect_menu(ui->action_Report_Compatibility, &GMainWindow::OnMenuReportCompatibility);
+    connect_menu(ui->action_Open_Mods_Page, &GMainWindow::OnOpenModsPage);
+    connect_menu(ui->action_Open_Quickstart_Guide, &GMainWindow::OnOpenQuickstartGuide);
+    connect_menu(ui->action_Open_FAQ, &GMainWindow::OnOpenFAQ);
+    connect_menu(ui->action_Restart, &GMainWindow::OnRestartGame);
+    connect_menu(ui->action_Configure, &GMainWindow::OnConfigure);
+    connect_menu(ui->action_Configure_Current_Game, &GMainWindow::OnConfigurePerGame);
 
     // View
-    connect(ui->action_Fullscreen, &QAction::triggered, this, &GMainWindow::ToggleFullscreen);
-    connect(ui->action_Single_Window_Mode, &QAction::triggered, this,
-            &GMainWindow::ToggleWindowMode);
-    connect(ui->action_Display_Dock_Widget_Headers, &QAction::triggered, this,
-            &GMainWindow::OnDisplayTitleBars);
-    connect(ui->action_Show_Filter_Bar, &QAction::triggered, this, &GMainWindow::OnToggleFilterBar);
+    connect_menu(ui->action_Fullscreen, &GMainWindow::ToggleFullscreen);
+    connect_menu(ui->action_Single_Window_Mode, &GMainWindow::ToggleWindowMode);
+    connect_menu(ui->action_Display_Dock_Widget_Headers, &GMainWindow::OnDisplayTitleBars);
+    connect_menu(ui->action_Show_Filter_Bar, &GMainWindow::OnToggleFilterBar);
+
     connect(ui->action_Show_Status_Bar, &QAction::triggered, statusBar(), &QStatusBar::setVisible);
 
-    connect(ui->action_Reset_Window_Size_720, &QAction::triggered, this,
-            &GMainWindow::ResetWindowSize720);
-    connect(ui->action_Reset_Window_Size_900, &QAction::triggered, this,
-            &GMainWindow::ResetWindowSize900);
-    connect(ui->action_Reset_Window_Size_1080, &QAction::triggered, this,
-            &GMainWindow::ResetWindowSize1080);
-    ui->menu_Reset_Window_Size->addAction(ui->action_Reset_Window_Size_720);
-    ui->menu_Reset_Window_Size->addAction(ui->action_Reset_Window_Size_900);
-    ui->menu_Reset_Window_Size->addAction(ui->action_Reset_Window_Size_1080);
+    connect_menu(ui->action_Reset_Window_Size_720, &GMainWindow::ResetWindowSize720);
+    connect_menu(ui->action_Reset_Window_Size_900, &GMainWindow::ResetWindowSize900);
+    connect_menu(ui->action_Reset_Window_Size_1080, &GMainWindow::ResetWindowSize1080);
+    ui->menu_Reset_Window_Size->addActions({ui->action_Reset_Window_Size_720,
+                                            ui->action_Reset_Window_Size_900,
+                                            ui->action_Reset_Window_Size_1080});
 
     // Tools
-    connect(ui->action_Rederive, &QAction::triggered, this,
-            std::bind(&GMainWindow::OnReinitializeKeys, this, ReinitializeKeyBehavior::Warning));
-    connect(ui->action_Capture_Screenshot, &QAction::triggered, this,
-            &GMainWindow::OnCaptureScreenshot);
+    connect_menu(ui->action_Rederive, std::bind(&GMainWindow::OnReinitializeKeys, this,
+                                                ReinitializeKeyBehavior::Warning));
+    connect_menu(ui->action_Capture_Screenshot, &GMainWindow::OnCaptureScreenshot);
 
     // TAS
-    connect(ui->action_TAS_Start, &QAction::triggered, this, &GMainWindow::OnTasStartStop);
-    connect(ui->action_TAS_Record, &QAction::triggered, this, &GMainWindow::OnTasRecord);
-    connect(ui->action_TAS_Reset, &QAction::triggered, this, &GMainWindow::OnTasReset);
-    connect(ui->action_Configure_Tas, &QAction::triggered, this, &GMainWindow::OnConfigureTas);
+    connect_menu(ui->action_TAS_Start, &GMainWindow::OnTasStartStop);
+    connect_menu(ui->action_TAS_Record, &GMainWindow::OnTasRecord);
+    connect_menu(ui->action_TAS_Reset, &GMainWindow::OnTasReset);
+    connect_menu(ui->action_Configure_Tas, &GMainWindow::OnConfigureTas);
 
     // Help
-    connect(ui->action_Open_yuzu_Folder, &QAction::triggered, this, &GMainWindow::OnOpenYuzuFolder);
-    connect(ui->action_About, &QAction::triggered, this, &GMainWindow::OnAbout);
+    connect_menu(ui->action_Open_yuzu_Folder, &GMainWindow::OnOpenYuzuFolder);
+    connect_menu(ui->action_About, &GMainWindow::OnAbout);
+}
+
+void GMainWindow::UpdateMenuState() {
+    const bool is_paused = emu_thread == nullptr || !emu_thread->IsRunning();
+
+    const std::array running_actions{
+        ui->action_Stop,
+        ui->action_Restart,
+        ui->action_Configure_Current_Game,
+        ui->action_Report_Compatibility,
+        ui->action_Load_Amiibo,
+        ui->action_Pause,
+    };
+
+    for (QAction* action : running_actions) {
+        action->setEnabled(emulation_running);
+    }
+
+    ui->action_Capture_Screenshot->setEnabled(emulation_running && !is_paused);
+
+    if (emulation_running && is_paused) {
+        ui->action_Pause->setText(tr("&Continue"));
+    } else {
+        ui->action_Pause->setText(tr("&Pause"));
+    }
 }
 
 void GMainWindow::OnDisplayTitleBars(bool show) {
@@ -1564,15 +1503,8 @@ void GMainWindow::ShutdownGame() {
     disconnect(render_window, &GRenderWindow::Closed, this, &GMainWindow::OnStopGame);
 
     // Update the GUI
-    ui->action_Start->setEnabled(false);
-    ui->action_Start->setText(tr("Start"));
-    ui->action_Pause->setEnabled(false);
-    ui->action_Stop->setEnabled(false);
-    ui->action_Restart->setEnabled(false);
-    ui->action_Configure_Current_Game->setEnabled(false);
-    ui->action_Report_Compatibility->setEnabled(false);
-    ui->action_Load_Amiibo->setEnabled(false);
-    ui->action_Capture_Screenshot->setEnabled(false);
+    UpdateMenuState();
+
     render_window->hide();
     loading_screen->hide();
     loading_screen->Clear();
@@ -2504,30 +2436,34 @@ void GMainWindow::OnStartGame() {
 
     connect(emu_thread.get(), &EmuThread::ErrorThrown, this, &GMainWindow::OnCoreError);
 
-    ui->action_Start->setEnabled(false);
-    ui->action_Start->setText(tr("&Continue"));
-
-    ui->action_Pause->setEnabled(true);
-    ui->action_Stop->setEnabled(true);
-    ui->action_Restart->setEnabled(true);
-    ui->action_Configure_Current_Game->setEnabled(true);
-    ui->action_Report_Compatibility->setEnabled(true);
+    UpdateMenuState();
     OnTasStateChanged();
 
     discord_rpc->Update();
-    ui->action_Load_Amiibo->setEnabled(true);
-    ui->action_Capture_Screenshot->setEnabled(true);
+}
+
+void GMainWindow::OnRestartGame() {
+    if (!system->IsPoweredOn()) {
+        return;
+    }
+    // Make a copy since BootGame edits game_path
+    BootGame(QString(game_path));
 }
 
 void GMainWindow::OnPauseGame() {
     emu_thread->SetRunning(false);
-
-    ui->action_Start->setEnabled(true);
-    ui->action_Pause->setEnabled(false);
-    ui->action_Stop->setEnabled(true);
-    ui->action_Capture_Screenshot->setEnabled(false);
-
+    UpdateMenuState();
     AllowOSSleep();
+}
+
+void GMainWindow::OnPauseContinueGame() {
+    if (emulation_running) {
+        if (emu_thread->IsRunning()) {
+            OnPauseGame();
+        } else {
+            OnStartGame();
+        }
+    }
 }
 
 void GMainWindow::OnStopGame() {
@@ -2888,6 +2824,10 @@ void GMainWindow::OpenPerGameConfiguration(u64 title_id, const std::string& file
 }
 
 void GMainWindow::OnLoadAmiibo() {
+    if (emu_thread == nullptr || !emu_thread->IsRunning()) {
+        return;
+    }
+
     const QString extensions{QStringLiteral("*.bin")};
     const QString file_filter = tr("Amiibo File (%1);; All Files (*.*)").arg(extensions);
     const QString filename = QFileDialog::getOpenFileName(this, tr("Load Amiibo"), {}, file_filter);
@@ -2951,6 +2891,10 @@ void GMainWindow::OnToggleFilterBar() {
 }
 
 void GMainWindow::OnCaptureScreenshot() {
+    if (emu_thread == nullptr || !emu_thread->IsRunning()) {
+        return;
+    }
+
     const u64 title_id = system->GetCurrentProcessProgramID();
     const auto screenshot_path =
         QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::ScreenshotsDir));
@@ -3537,36 +3481,38 @@ void GMainWindow::filterBarSetChecked(bool state) {
 }
 
 void GMainWindow::UpdateUITheme() {
-    const QString default_icons = QStringLiteral("default");
-    const QString& current_theme = UISettings::values.theme;
-    const bool is_default_theme = current_theme == QString::fromUtf8(UISettings::themes[0].second);
+    const QString default_theme = QStringLiteral("default");
+    QString current_theme = UISettings::values.theme;
     QStringList theme_paths(default_theme_paths);
 
-    if (is_default_theme || current_theme.isEmpty()) {
-        const QString theme_uri(QStringLiteral(":default/style.qss"));
-        QFile f(theme_uri);
-        if (f.open(QFile::ReadOnly | QFile::Text)) {
-            QTextStream ts(&f);
-            qApp->setStyleSheet(ts.readAll());
-            setStyleSheet(ts.readAll());
-        } else {
-            qApp->setStyleSheet({});
-            setStyleSheet({});
-        }
-        QIcon::setThemeName(default_icons);
-    } else {
-        const QString theme_uri(QLatin1Char{':'} + current_theme + QStringLiteral("/style.qss"));
-        QFile f(theme_uri);
-        if (f.open(QFile::ReadOnly | QFile::Text)) {
-            QTextStream ts(&f);
-            qApp->setStyleSheet(ts.readAll());
-            setStyleSheet(ts.readAll());
-        } else {
-            LOG_ERROR(Frontend, "Unable to set style, stylesheet file not found");
-        }
-        QIcon::setThemeName(current_theme);
+    if (current_theme.isEmpty()) {
+        current_theme = default_theme;
     }
 
+    if (current_theme != default_theme) {
+        QString theme_uri{QStringLiteral(":%1/style.qss").arg(current_theme)};
+        QFile f(theme_uri);
+        if (!f.open(QFile::ReadOnly | QFile::Text)) {
+            LOG_ERROR(Frontend, "Unable to open style \"{}\", fallback to the default theme",
+                      UISettings::values.theme.toStdString());
+            current_theme = default_theme;
+        }
+    }
+
+    QString theme_uri{QStringLiteral(":%1/style.qss").arg(current_theme)};
+    QFile f(theme_uri);
+    if (f.open(QFile::ReadOnly | QFile::Text)) {
+        QTextStream ts(&f);
+        qApp->setStyleSheet(ts.readAll());
+        setStyleSheet(ts.readAll());
+    } else {
+        LOG_ERROR(Frontend, "Unable to set style \"{}\", stylesheet file not found",
+                  UISettings::values.theme.toStdString());
+        qApp->setStyleSheet({});
+        setStyleSheet({});
+    }
+
+    QIcon::setThemeName(current_theme);
     QIcon::setThemeSearchPaths(theme_paths);
 }
 
@@ -3602,9 +3548,6 @@ void GMainWindow::OnLanguageChanged(const QString& locale) {
     LoadTranslation();
     ui->retranslateUi(this);
     UpdateWindowTitle();
-
-    if (emulation_running)
-        ui->action_Start->setText(tr("&Continue"));
 }
 
 void GMainWindow::SetDiscordEnabled([[maybe_unused]] bool state) {

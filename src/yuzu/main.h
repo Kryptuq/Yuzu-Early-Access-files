@@ -191,6 +191,7 @@ private:
 
     void ConnectWidgetEvents();
     void ConnectMenuEvents();
+    void UpdateMenuState();
 
     void PreventOSSleep();
     void AllowOSSleep();
@@ -240,7 +241,9 @@ private:
 
 private slots:
     void OnStartGame();
+    void OnRestartGame();
     void OnPauseGame();
+    void OnPauseContinueGame();
     void OnStopGame();
     void OnMenuReportCompatibility();
     void OnOpenModsPage();
@@ -294,6 +297,9 @@ private slots:
     void OnMouseActivity();
 
 private:
+    /// Updates an action's shortcut and text to reflect an updated hotkey from the hotkey registry.
+    void LinkActionShortcut(QAction* action, const QString& action_name);
+
     void RemoveBaseContent(u64 program_id, const QString& entry_type);
     void RemoveUpdateContent(u64 program_id, const QString& entry_type);
     void RemoveAddOnContent(u64 program_id, const QString& entry_type);
