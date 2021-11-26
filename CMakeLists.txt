@@ -167,7 +167,7 @@ macro(yuzu_find_packages)
     set(REQUIRED_LIBS
     #    Cmake Pkg Prefix  Version     Conan Pkg
         "Catch2            2.13.7      catch2/2.13.7"
-        "fmt               8.0         fmt/8.0.0"
+        "fmt               8.0.1       fmt/8.0.1"
         "lz4               1.8         lz4/1.9.2"
         "nlohmann_json     3.8         nlohmann_json/3.8.0"
         "ZLIB              1.2         zlib/1.2.11"
