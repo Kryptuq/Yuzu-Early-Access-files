@@ -252,7 +252,8 @@ private:
 
     /// Return a blit image pair from the given guest blit parameters
     [[nodiscard]] BlitImages GetBlitImages(const Tegra::Engines::Fermi2D::Surface& dst,
-                                           const Tegra::Engines::Fermi2D::Surface& src);
+                                           const Tegra::Engines::Fermi2D::Surface& src,
+                                           const Tegra::Engines::Fermi2D::Config& copy);
 
     /// Find or create a sampler from a guest descriptor sampler
     [[nodiscard]] SamplerId FindSampler(const TSCEntry& config);

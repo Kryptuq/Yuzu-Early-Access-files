@@ -56,7 +56,61 @@ public:
 
     void ReloadSockets();
 
+    /// Used for automapping features
+    std::vector<Common::ParamPackage> GetInputDevices() const override;
+    ButtonMapping GetButtonMappingForDevice(const Common::ParamPackage& params) override;
+    AnalogMapping GetAnalogMappingForDevice(const Common::ParamPackage& params) override;
+    MotionMapping GetMotionMappingForDevice(const Common::ParamPackage& params) override;
+    Common::Input::ButtonNames GetUIName(const Common::ParamPackage& params) const override;
+
 private:
+    enum class PadButton {
+        Undefined = 0x0000,
+        Share = 0x0001,
+        L3 = 0x0002,
+        R3 = 0x0004,
+        Options = 0x0008,
+        Up = 0x0010,
+        Right = 0x0020,
+        Down = 0x0040,
+        Left = 0x0080,
+        L2 = 0x0100,
+        R2 = 0x0200,
+        L1 = 0x0400,
+        R1 = 0x0800,
+        Triangle = 0x1000,
+        Circle = 0x2000,
+        Cross = 0x4000,
+        Square = 0x8000,
+        Touch1 = 0x10000,
+        touch2 = 0x20000,
+    };
+
+    enum class PadAxes : u8 {
+        LeftStickX,
+        LeftStickY,
+        RightStickX,
+        RightStickY,
+        AnalogLeft,
+        AnalogDown,
+        AnalogRight,
+        AnalogUp,
+        AnalogSquare,
+        AnalogCross,
+        AnalogCircle,
+        AnalogTriangle,
+        AnalogR1,
+        AnalogL1,
+        AnalogR2,
+        AnalogL3,
+        AnalogR3,
+        Touch1X,
+        Touch1Y,
+        Touch2X,
+        Touch2Y,
+        Undefined,
+    };
+
     struct PadData {
         std::size_t pad_index{};
         bool connected{};
@@ -89,6 +143,8 @@ private:
     void StartCommunication(std::size_t client, const std::string& host, u16 port);
     const PadIdentifier GetPadIdentifier(std::size_t pad_index) const;
     const Common::UUID GetHostUUID(const std::string host) const;
+
+    Common::Input::ButtonNames GetUIButtonName(const Common::ParamPackage& params) const;
 
     // Allocate clients for 8 udp servers
     static constexpr std::size_t MAX_UDP_CLIENTS = 8;

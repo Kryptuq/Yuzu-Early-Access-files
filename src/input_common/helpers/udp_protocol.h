@@ -56,6 +56,12 @@ constexpr Type GetMessageType();
 
 namespace Request {
 
+enum RegisterFlags : u8 {
+    AllPads,
+    PadID,
+    PadMACAdddress,
+};
+
 struct Version {};
 /**
  * Requests the server to send information about what controllers are plugged into the ports
@@ -77,13 +83,8 @@ static_assert(std::is_trivially_copyable_v<PortInfo>,
  * timeout seems to be 5 seconds.
  */
 struct PadData {
-    enum class Flags : u8 {
-        AllPorts,
-        Id,
-        Mac,
-    };
     /// Determines which method will be used as a look up for the controller
-    Flags flags{};
+    RegisterFlags flags{};
     /// Index of the port of the controller to retrieve data about
     u8 port_id{};
     /// Mac address of the controller to retrieve data about
@@ -113,6 +114,36 @@ Message<T> Create(const T data, const u32 client_id = 0) {
 
 namespace Response {
 
+enum class ConnectionType : u8 {
+    None,
+    Usb,
+    Bluetooth,
+};
+
+enum class State : u8 {
+    Disconnected,
+    Reserved,
+    Connected,
+};
+
+enum class Model : u8 {
+    None,
+    PartialGyro,
+    FullGyro,
+    Generic,
+};
+
+enum class Battery : u8 {
+    None = 0x00,
+    Dying = 0x01,
+    Low = 0x02,
+    Medium = 0x03,
+    High = 0x04,
+    Full = 0x05,
+    Charging = 0xEE,
+    Charged = 0xEF,
+};
+
 struct Version {
     u16_le version{};
 };
@@ -122,11 +153,11 @@ static_assert(std::is_trivially_copyable_v<Version>,
 
 struct PortInfo {
     u8 id{};
-    u8 state{};
-    u8 model{};
-    u8 connection_type{};
+    State state{};
+    Model model{};
+    ConnectionType connection_type{};
     MacAddress mac;
-    u8 battery{};
+    Battery battery{};
     u8 is_pad_active{};
 };
 static_assert(sizeof(PortInfo) == 12, "UDP Response PortInfo struct has wrong size");
@@ -177,18 +208,18 @@ struct PadData {
     u8 right_stick_y{};
 
     struct AnalogButton {
-        u8 button_8{};
-        u8 button_7{};
-        u8 button_6{};
-        u8 button_5{};
-        u8 button_12{};
-        u8 button_11{};
-        u8 button_10{};
-        u8 button_9{};
-        u8 button_16{};
-        u8 button_15{};
-        u8 button_14{};
-        u8 button_13{};
+        u8 button_dpad_left_analog{};
+        u8 button_dpad_down_analog{};
+        u8 button_dpad_right_analog{};
+        u8 button_dpad_up_analog{};
+        u8 button_square_analog{};
+        u8 button_cross_analog{};
+        u8 button_circle_analog{};
+        u8 button_triangle_analog{};
+        u8 button_r1_analog{};
+        u8 button_l1_analog{};
+        u8 trigger_r2{};
+        u8 trigger_l2{};
     } analog_button;
 
     std::array<TouchPad, 2> touch;

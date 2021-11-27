@@ -92,10 +92,11 @@ void EmulatedController::ReloadFromSettings() {
 
     ReloadInput();
 }
+
 void EmulatedController::LoadDevices() {
     // TODO(german77): Use more buttons to detect the correct device
-    const auto left_joycon = button_params[Settings::NativeButton::A];
-    const auto right_joycon = button_params[Settings::NativeButton::DRight];
+    const auto left_joycon = button_params[Settings::NativeButton::DRight];
+    const auto right_joycon = button_params[Settings::NativeButton::A];
 
     // Triggers for GC controllers
     trigger_params[LeftIndex] = button_params[Settings::NativeButton::ZL];

@@ -2642,6 +2642,19 @@
                      </widget>
                    </item>
                    <item row="3" column="0">
+                     <widget class="QCheckBox" name="enable_udp_controller">
+                       <property name="minimumSize">
+                         <size>
+                           <width>0</width>
+                           <height>23</height>
+                         </size>
+                       </property>
+                       <property name="text">
+                         <string>Enable UDP controllers (not needed for motion)</string>
+                       </property>
+                     </widget>
+                   </item>
+                   <item row="4" column="0">
                      <widget class="QCheckBox" name="mouse_panning">
                        <property name="minimumSize">
                          <size>
@@ -2654,7 +2667,7 @@
                        </property>
                      </widget>
                    </item>
-                   <item row="3" column="2">
+                   <item row="4" column="2">
                      <widget class="QSpinBox" name="mouse_panning_sensitivity">
                        <property name="toolTip">
                          <string>Mouse sensitivity</string>
@@ -2676,14 +2689,14 @@
                        </property>
                      </widget>
                    </item>
-                   <item row="4" column="0">
+                   <item row="5" column="0">
                      <widget class="QLabel" name="motion_touch">
                        <property name="text">
                          <string>Motion / Touch</string>
                        </property>
                      </widget>
                    </item>
-                   <item row="4" column="2">
+                   <item row="5" column="2">
                      <widget class="QPushButton" name="buttonMotionTouch">
                        <property name="text">
                          <string>Configure</string>

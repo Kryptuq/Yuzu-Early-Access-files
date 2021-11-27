@@ -29,7 +29,7 @@ namespace {
 
 void UpdateController(Core::HID::EmulatedController* controller,
                       Core::HID::NpadStyleIndex controller_type, bool connected) {
-    if (controller->IsConnected()) {
+    if (controller->IsConnected(true)) {
         controller->Disconnect();
     }
     controller->SetNpadStyleIndex(controller_type);
@@ -139,6 +139,7 @@ QtControllerSelectorDialog::QtControllerSelectorDialog(
     DisableUnsupportedPlayers();
 
     for (std::size_t player_index = 0; player_index < NUM_PLAYERS; ++player_index) {
+        system.HIDCore().GetEmulatedControllerByIndex(player_index)->EnableConfiguration();
         SetEmulatedControllers(player_index);
     }
 
@@ -233,20 +234,24 @@ void QtControllerSelectorDialog::ApplyConfiguration() {
 
     Settings::values.vibration_enabled.SetValue(ui->vibrationGroup->isChecked());
     Settings::values.motion_enabled.SetValue(ui->motionGroup->isChecked());
+    for (std::size_t player_index = 0; player_index < NUM_PLAYERS; ++player_index) {
+        system.HIDCore().GetEmulatedControllerByIndex(player_index)->DisableConfiguration();
+    }
 }
 
 void QtControllerSelectorDialog::LoadConfiguration() {
     const auto* handheld = system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Handheld);
     for (std::size_t index = 0; index < NUM_PLAYERS; ++index) {
         const auto* controller = system.HIDCore().GetEmulatedControllerByIndex(index);
-        const auto connected = controller->IsConnected() || (index == 0 && handheld->IsConnected());
+        const auto connected =
+            controller->IsConnected(true) || (index == 0 && handheld->IsConnected(true));
         player_groupboxes[index]->setChecked(connected);
         connected_controller_checkboxes[index]->setChecked(connected);
         emulated_controllers[index]->setCurrentIndex(
-            GetIndexFromControllerType(controller->GetNpadStyleIndex(), index));
+            GetIndexFromControllerType(controller->GetNpadStyleIndex(true), index));
     }
 
-    UpdateDockedState(handheld->IsConnected());
+    UpdateDockedState(handheld->IsConnected(true));
 
     ui->vibrationGroup->setChecked(Settings::values.vibration_enabled.GetValue());
     ui->motionGroup->setChecked(Settings::values.motion_enabled.GetValue());
@@ -510,17 +515,13 @@ void QtControllerSelectorDialog::UpdateControllerState(std::size_t player_index)
     const auto player_connected = player_groupboxes[player_index]->isChecked() &&
                                   controller_type != Core::HID::NpadStyleIndex::Handheld;
 
-    if (controller->GetNpadStyleIndex() == controller_type &&
-        controller->IsConnected() == player_connected) {
-        // Set vibration devices in the event that the input device has changed.
-        ConfigureVibration::SetVibrationDevices(player_index);
+    if (controller->GetNpadStyleIndex(true) == controller_type &&
+        controller->IsConnected(true) == player_connected) {
         return;
     }
 
     // Disconnect the controller first.
     UpdateController(controller, controller_type, false);
-
-    ConfigureVibration::SetVibrationDevices(player_index);
 
     // Handheld
     if (player_index == 0) {
@@ -633,7 +634,7 @@ void QtControllerSelectorDialog::DisableUnsupportedPlayers() {
     for (std::size_t index = max_supported_players; index < NUM_PLAYERS; ++index) {
         auto* controller = system.HIDCore().GetEmulatedControllerByIndex(index);
         // Disconnect any unsupported players here and disable or hide them if applicable.
-        UpdateController(controller, controller->GetNpadStyleIndex(), false);
+        UpdateController(controller, controller->GetNpadStyleIndex(true), false);
         // Hide the player widgets when max_supported_controllers is less than or equal to 4.
         if (max_supported_players <= 4) {
             player_widgets[index]->hide();

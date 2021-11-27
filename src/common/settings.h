@@ -560,6 +560,7 @@ struct Values {
 
     Setting<bool> motion_enabled{true, "motion_enabled"};
     BasicSetting<std::string> udp_input_servers{"127.0.0.1:26760", "udp_input_servers"};
+    BasicSetting<bool> enable_udp_controller{false, "enable_udp_controller"};
 
     BasicSetting<bool> pause_tas_on_load{true, "pause_tas_on_load"};
     BasicSetting<bool> tas_enable{false, "tas_enable"};

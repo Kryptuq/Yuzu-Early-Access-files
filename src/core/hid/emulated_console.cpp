@@ -30,8 +30,10 @@ void EmulatedConsole::SetTouchParams() {
     }
     touch_params[index++] = Common::ParamPackage{"engine:touch,axis_x:0,axis_y:1,button:0"};
     touch_params[index++] = Common::ParamPackage{"engine:touch,axis_x:2,axis_y:3,button:1"};
-    touch_params[index++] = Common::ParamPackage{"engine:cemuhookudp,axis_x:0,axis_y:1,button:0"};
-    touch_params[index++] = Common::ParamPackage{"engine:cemuhookudp,axis_x:2,axis_y:3,button:1"};
+    touch_params[index++] =
+        Common::ParamPackage{"engine:cemuhookudp,axis_x:17,axis_y:18,button:65536"};
+    touch_params[index++] =
+        Common::ParamPackage{"engine:cemuhookudp,axis_x:19,axis_y:20,button:131072"};
 
     const auto button_index =
         static_cast<u64>(Settings::values.touch_from_button_map_index.GetValue());

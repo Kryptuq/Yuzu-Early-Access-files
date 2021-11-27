@@ -63,9 +63,12 @@ struct InputSubsystem::Impl {
 
         udp_client = std::make_shared<CemuhookUDP::UDPClient>("cemuhookudp");
         udp_client->SetMappingCallback(mapping_callback);
-        udp_client_factory = std::make_shared<InputFactory>(udp_client);
+        udp_client_input_factory = std::make_shared<InputFactory>(udp_client);
+        udp_client_output_factory = std::make_shared<OutputFactory>(udp_client);
         Common::Input::RegisterFactory<Common::Input::InputDevice>(udp_client->GetEngineName(),
-                                                                   udp_client_factory);
+                                                                   udp_client_input_factory);
+        Common::Input::RegisterFactory<Common::Input::OutputDevice>(udp_client->GetEngineName(),
+                                                                    udp_client_output_factory);
 
         tas_input = std::make_shared<TasInput::Tas>("tas");
         tas_input->SetMappingCallback(mapping_callback);
@@ -110,6 +113,7 @@ struct InputSubsystem::Impl {
         gcadapter.reset();
 
         Common::Input::UnregisterFactory<Common::Input::InputDevice>(udp_client->GetEngineName());
+        Common::Input::UnregisterFactory<Common::Input::OutputDevice>(udp_client->GetEngineName());
         udp_client.reset();
 
         Common::Input::UnregisterFactory<Common::Input::InputDevice>(tas_input->GetEngineName());
@@ -137,6 +141,8 @@ struct InputSubsystem::Impl {
         devices.insert(devices.end(), mouse_devices.begin(), mouse_devices.end());
         auto gcadapter_devices = gcadapter->GetInputDevices();
         devices.insert(devices.end(), gcadapter_devices.begin(), gcadapter_devices.end());
+        auto udp_devices = udp_client->GetInputDevices();
+        devices.insert(devices.end(), udp_devices.begin(), udp_devices.end());
 #ifdef HAVE_SDL2
         auto sdl_devices = sdl->GetInputDevices();
         devices.insert(devices.end(), sdl_devices.begin(), sdl_devices.end());
@@ -156,6 +162,9 @@ struct InputSubsystem::Impl {
         }
         if (engine == gcadapter->GetEngineName()) {
             return gcadapter->GetAnalogMappingForDevice(params);
+        }
+        if (engine == udp_client->GetEngineName()) {
+            return udp_client->GetAnalogMappingForDevice(params);
         }
         if (engine == tas_input->GetEngineName()) {
             return tas_input->GetAnalogMappingForDevice(params);
@@ -177,6 +186,9 @@ struct InputSubsystem::Impl {
         if (engine == gcadapter->GetEngineName()) {
             return gcadapter->GetButtonMappingForDevice(params);
         }
+        if (engine == udp_client->GetEngineName()) {
+            return udp_client->GetButtonMappingForDevice(params);
+        }
         if (engine == tas_input->GetEngineName()) {
             return tas_input->GetButtonMappingForDevice(params);
         }
@@ -194,8 +206,8 @@ struct InputSubsystem::Impl {
             return {};
         }
         const std::string engine = params.Get("engine", "");
-        if (engine == gcadapter->GetEngineName()) {
-            return gcadapter->GetMotionMappingForDevice(params);
+        if (engine == udp_client->GetEngineName()) {
+            return udp_client->GetMotionMappingForDevice(params);
         }
 #ifdef HAVE_SDL2
         if (engine == sdl->GetEngineName()) {
@@ -236,6 +248,9 @@ struct InputSubsystem::Impl {
             return true;
         }
         if (engine == gcadapter->GetEngineName()) {
+            return true;
+        }
+        if (engine == udp_client->GetEngineName()) {
             return true;
         }
         if (engine == tas_input->GetEngineName()) {
@@ -286,12 +301,13 @@ struct InputSubsystem::Impl {
     std::shared_ptr<InputFactory> mouse_factory;
     std::shared_ptr<InputFactory> gcadapter_input_factory;
     std::shared_ptr<InputFactory> touch_screen_factory;
-    std::shared_ptr<InputFactory> udp_client_factory;
+    std::shared_ptr<InputFactory> udp_client_input_factory;
     std::shared_ptr<InputFactory> tas_input_factory;
 
     std::shared_ptr<OutputFactory> keyboard_output_factory;
     std::shared_ptr<OutputFactory> mouse_output_factory;
     std::shared_ptr<OutputFactory> gcadapter_output_factory;
+    std::shared_ptr<OutputFactory> udp_client_output_factory;
     std::shared_ptr<OutputFactory> tas_output_factory;
 
 #ifdef HAVE_SDL2

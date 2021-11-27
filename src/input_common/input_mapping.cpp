@@ -3,6 +3,7 @@
 // Refer to the license.txt file included
 
 #include "common/common_types.h"
+#include "common/settings.h"
 #include "input_common/input_engine.h"
 #include "input_common/input_mapping.h"
 
@@ -180,6 +181,11 @@ void MappingFactory::RegisterMotion(const MappingData& data) {
 bool MappingFactory::IsDriverValid(const MappingData& data) const {
     // Only port 0 can be mapped on the keyboard
     if (data.engine == "keyboard" && data.pad.port != 0) {
+        return false;
+    }
+    // To prevent mapping with two devices we disable any UDP except motion
+    if (!Settings::values.enable_udp_controller && data.engine == "cemuhookudp" &&
+        data.type != EngineInputType::Motion) {
         return false;
     }
     // The following drivers don't need to be mapped

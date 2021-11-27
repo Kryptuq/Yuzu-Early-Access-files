@@ -130,6 +130,7 @@ void ConfigureInputAdvanced::ApplyConfiguration() {
         static_cast<float>(ui->mouse_panning_sensitivity->value());
     Settings::values.touchscreen.enabled = ui->touchscreen_enabled->isChecked();
     Settings::values.enable_raw_input = ui->enable_raw_input->isChecked();
+    Settings::values.enable_udp_controller = ui->enable_udp_controller->isChecked();
 }
 
 void ConfigureInputAdvanced::LoadConfiguration() {
@@ -160,6 +161,7 @@ void ConfigureInputAdvanced::LoadConfiguration() {
     ui->mouse_panning_sensitivity->setValue(Settings::values.mouse_panning_sensitivity.GetValue());
     ui->touchscreen_enabled->setChecked(Settings::values.touchscreen.enabled);
     ui->enable_raw_input->setChecked(Settings::values.enable_raw_input.GetValue());
+    ui->enable_udp_controller->setChecked(Settings::values.enable_udp_controller.GetValue());
 
     UpdateUIEnabled();
 }

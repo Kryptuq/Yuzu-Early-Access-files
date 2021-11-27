@@ -195,6 +195,20 @@ enum class ButtonNames {
     ButtonX,
     ButtonY,
     ButtonStart,
+
+    // DS4 button names
+    L1,
+    L2,
+    L3,
+    R1,
+    R2,
+    R3,
+    Circle,
+    Cross,
+    Square,
+    Triangle,
+    Share,
+    Options,
 };
 
 // Callback data consisting of an input type and the equivalent data status

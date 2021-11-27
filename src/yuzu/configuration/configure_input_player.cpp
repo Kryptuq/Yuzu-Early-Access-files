@@ -78,6 +78,30 @@ QString GetButtonName(Common::Input::ButtonNames button_name) {
         return QObject::tr("Y");
     case Common::Input::ButtonNames::ButtonStart:
         return QObject::tr("Start");
+    case Common::Input::ButtonNames::L1:
+        return QObject::tr("L1");
+    case Common::Input::ButtonNames::L2:
+        return QObject::tr("L2");
+    case Common::Input::ButtonNames::L3:
+        return QObject::tr("L3");
+    case Common::Input::ButtonNames::R1:
+        return QObject::tr("R1");
+    case Common::Input::ButtonNames::R2:
+        return QObject::tr("R2");
+    case Common::Input::ButtonNames::R3:
+        return QObject::tr("R3");
+    case Common::Input::ButtonNames::Circle:
+        return QObject::tr("Circle");
+    case Common::Input::ButtonNames::Cross:
+        return QObject::tr("Cross");
+    case Common::Input::ButtonNames::Square:
+        return QObject::tr("Square");
+    case Common::Input::ButtonNames::Triangle:
+        return QObject::tr("Triangle");
+    case Common::Input::ButtonNames::Share:
+        return QObject::tr("Share");
+    case Common::Input::ButtonNames::Options:
+        return QObject::tr("Options");
     default:
         return QObject::tr("[undefined]");
     }

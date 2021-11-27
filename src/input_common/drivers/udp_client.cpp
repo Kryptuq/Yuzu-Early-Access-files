@@ -103,7 +103,7 @@ private:
 
         // Send a request for getting pad data for the pad
         const Request::PadData pad_data{
-            Request::PadData::Flags::AllPorts,
+            Request::RegisterFlags::AllPads,
             0,
             EMPTY_MAC_ADDRESS,
         };
@@ -247,7 +247,12 @@ void UDPClient::OnPadData(Response::PadData data, std::size_t client) {
 
     for (std::size_t id = 0; id < data.touch.size(); ++id) {
         const auto touch_pad = data.touch[id];
-        const int touch_id = static_cast<int>(client * 2 + id);
+        const auto touch_axis_x_id =
+            static_cast<int>(id == 0 ? PadAxes::Touch1X : PadAxes::Touch2X);
+        const auto touch_axis_y_id =
+            static_cast<int>(id == 0 ? PadAxes::Touch1Y : PadAxes::Touch2Y);
+        const auto touch_button_id =
+            static_cast<int>(id == 0 ? PadButton::Touch1 : PadButton::touch2);
 
         // TODO: Use custom calibration per device
         const Common::ParamPackage touch_param(Settings::values.touch_device.GetValue());
@@ -264,14 +269,35 @@ void UDPClient::OnPadData(Response::PadData data, std::size_t client) {
             static_cast<f32>(max_y - min_y);
 
         if (touch_pad.is_active) {
-            SetAxis(identifier, touch_id * 2, x);
-            SetAxis(identifier, touch_id * 2 + 1, y);
-            SetButton(identifier, touch_id, true);
+            SetAxis(identifier, touch_axis_x_id, x);
+            SetAxis(identifier, touch_axis_y_id, y);
+            SetButton(identifier, touch_button_id, true);
             continue;
         }
-        SetAxis(identifier, touch_id * 2, 0);
-        SetAxis(identifier, touch_id * 2 + 1, 0);
-        SetButton(identifier, touch_id, false);
+        SetAxis(identifier, touch_axis_x_id, 0);
+        SetAxis(identifier, touch_axis_y_id, 0);
+        SetButton(identifier, touch_button_id, false);
+    }
+
+    SetAxis(identifier, static_cast<int>(PadAxes::LeftStickX),
+            (data.left_stick_x - 127.0f) / 127.0f);
+    SetAxis(identifier, static_cast<int>(PadAxes::LeftStickY),
+            (data.left_stick_y - 127.0f) / 127.0f);
+    SetAxis(identifier, static_cast<int>(PadAxes::RightStickX),
+            (data.right_stick_x - 127.0f) / 127.0f);
+    SetAxis(identifier, static_cast<int>(PadAxes::RightStickY),
+            (data.right_stick_y - 127.0f) / 127.0f);
+
+    static constexpr std::array<PadButton, 16> buttons{
+        PadButton::Share,    PadButton::L3,     PadButton::R3,    PadButton::Options,
+        PadButton::Up,       PadButton::Right,  PadButton::Down,  PadButton::Left,
+        PadButton::L2,       PadButton::R2,     PadButton::L1,    PadButton::R1,
+        PadButton::Triangle, PadButton::Circle, PadButton::Cross, PadButton::Square};
+
+    for (std::size_t i = 0; i < buttons.size(); ++i) {
+        const bool button_status = (data.digital_button & (1U << i)) != 0;
+        const int button = static_cast<int>(buttons[i]);
+        SetButton(identifier, button, button_status);
     }
 }
 
@@ -315,6 +341,170 @@ void UDPClient::Reset() {
             client.thread.join();
         }
     }
+}
+
+std::vector<Common::ParamPackage> UDPClient::GetInputDevices() const {
+    std::vector<Common::ParamPackage> devices;
+    if (!Settings::values.enable_udp_controller) {
+        return devices;
+    }
+    for (std::size_t client = 0; client < clients.size(); client++) {
+        if (clients[client].active != 1) {
+            continue;
+        }
+        for (std::size_t index = 0; index < PADS_PER_CLIENT; ++index) {
+            const std::size_t pad_index = client * PADS_PER_CLIENT + index;
+            if (!pads[pad_index].connected) {
+                continue;
+            }
+            const auto pad_identifier = GetPadIdentifier(pad_index);
+            Common::ParamPackage identifier{};
+            identifier.Set("engine", GetEngineName());
+            identifier.Set("display", fmt::format("UDP Controller {}", pad_identifier.pad));
+            identifier.Set("guid", pad_identifier.guid.Format());
+            identifier.Set("port", static_cast<int>(pad_identifier.port));
+            identifier.Set("pad", static_cast<int>(pad_identifier.pad));
+            devices.emplace_back(identifier);
+        }
+    }
+    return devices;
+}
+
+ButtonMapping UDPClient::GetButtonMappingForDevice(const Common::ParamPackage& params) {
+    // This list excludes any button that can't be really mapped
+    static constexpr std::array<std::pair<Settings::NativeButton::Values, PadButton>, 18>
+        switch_to_dsu_button = {
+            std::pair{Settings::NativeButton::A, PadButton::Circle},
+            {Settings::NativeButton::B, PadButton::Cross},
+            {Settings::NativeButton::X, PadButton::Triangle},
+            {Settings::NativeButton::Y, PadButton::Square},
+            {Settings::NativeButton::Plus, PadButton::Options},
+            {Settings::NativeButton::Minus, PadButton::Share},
+            {Settings::NativeButton::DLeft, PadButton::Left},
+            {Settings::NativeButton::DUp, PadButton::Up},
+            {Settings::NativeButton::DRight, PadButton::Right},
+            {Settings::NativeButton::DDown, PadButton::Down},
+            {Settings::NativeButton::L, PadButton::L1},
+            {Settings::NativeButton::R, PadButton::R1},
+            {Settings::NativeButton::ZL, PadButton::L2},
+            {Settings::NativeButton::ZR, PadButton::R2},
+            {Settings::NativeButton::SL, PadButton::L2},
+            {Settings::NativeButton::SR, PadButton::R2},
+            {Settings::NativeButton::LStick, PadButton::L3},
+            {Settings::NativeButton::RStick, PadButton::R3},
+        };
+    if (!params.Has("guid") || !params.Has("port") || !params.Has("pad")) {
+        return {};
+    }
+
+    ButtonMapping mapping{};
+    for (const auto& [switch_button, dsu_button] : switch_to_dsu_button) {
+        Common::ParamPackage button_params{};
+        button_params.Set("engine", GetEngineName());
+        button_params.Set("guid", params.Get("guid", ""));
+        button_params.Set("port", params.Get("port", 0));
+        button_params.Set("pad", params.Get("pad", 0));
+        button_params.Set("button", static_cast<int>(dsu_button));
+        mapping.insert_or_assign(switch_button, std::move(button_params));
+    }
+
+    return mapping;
+}
+
+AnalogMapping UDPClient::GetAnalogMappingForDevice(const Common::ParamPackage& params) {
+    if (!params.Has("guid") || !params.Has("port") || !params.Has("pad")) {
+        return {};
+    }
+
+    AnalogMapping mapping = {};
+    Common::ParamPackage left_analog_params;
+    left_analog_params.Set("engine", GetEngineName());
+    left_analog_params.Set("guid", params.Get("guid", ""));
+    left_analog_params.Set("port", params.Get("port", 0));
+    left_analog_params.Set("pad", params.Get("pad", 0));
+    left_analog_params.Set("axis_x", static_cast<int>(PadAxes::LeftStickX));
+    left_analog_params.Set("axis_y", static_cast<int>(PadAxes::LeftStickY));
+    mapping.insert_or_assign(Settings::NativeAnalog::LStick, std::move(left_analog_params));
+    Common::ParamPackage right_analog_params;
+    right_analog_params.Set("engine", GetEngineName());
+    right_analog_params.Set("guid", params.Get("guid", ""));
+    right_analog_params.Set("port", params.Get("port", 0));
+    right_analog_params.Set("pad", params.Get("pad", 0));
+    right_analog_params.Set("axis_x", static_cast<int>(PadAxes::RightStickX));
+    right_analog_params.Set("axis_y", static_cast<int>(PadAxes::RightStickY));
+    mapping.insert_or_assign(Settings::NativeAnalog::RStick, std::move(right_analog_params));
+    return mapping;
+}
+
+MotionMapping UDPClient::GetMotionMappingForDevice(const Common::ParamPackage& params) {
+    if (!params.Has("guid") || !params.Has("port") || !params.Has("pad")) {
+        return {};
+    }
+
+    MotionMapping mapping = {};
+    Common::ParamPackage motion_params;
+    motion_params.Set("engine", GetEngineName());
+    motion_params.Set("guid", params.Get("guid", ""));
+    motion_params.Set("port", params.Get("port", 0));
+    motion_params.Set("pad", params.Get("pad", 0));
+    motion_params.Set("motion", 0);
+    mapping.insert_or_assign(Settings::NativeMotion::MotionLeft, std::move(motion_params));
+    mapping.insert_or_assign(Settings::NativeMotion::MotionRight, std::move(motion_params));
+    return mapping;
+}
+
+Common::Input::ButtonNames UDPClient::GetUIButtonName(const Common::ParamPackage& params) const {
+    PadButton button = static_cast<PadButton>(params.Get("button", 0));
+    switch (button) {
+    case PadButton::Left:
+        return Common::Input::ButtonNames::ButtonLeft;
+    case PadButton::Right:
+        return Common::Input::ButtonNames::ButtonRight;
+    case PadButton::Down:
+        return Common::Input::ButtonNames::ButtonDown;
+    case PadButton::Up:
+        return Common::Input::ButtonNames::ButtonUp;
+    case PadButton::L1:
+        return Common::Input::ButtonNames::L1;
+    case PadButton::L2:
+        return Common::Input::ButtonNames::L2;
+    case PadButton::L3:
+        return Common::Input::ButtonNames::L3;
+    case PadButton::R1:
+        return Common::Input::ButtonNames::R1;
+    case PadButton::R2:
+        return Common::Input::ButtonNames::R2;
+    case PadButton::R3:
+        return Common::Input::ButtonNames::R3;
+    case PadButton::Circle:
+        return Common::Input::ButtonNames::Circle;
+    case PadButton::Cross:
+        return Common::Input::ButtonNames::Cross;
+    case PadButton::Square:
+        return Common::Input::ButtonNames::Square;
+    case PadButton::Triangle:
+        return Common::Input::ButtonNames::Triangle;
+    case PadButton::Share:
+        return Common::Input::ButtonNames::Share;
+    case PadButton::Options:
+        return Common::Input::ButtonNames::Options;
+    default:
+        return Common::Input::ButtonNames::Undefined;
+    }
+}
+
+Common::Input::ButtonNames UDPClient::GetUIName(const Common::ParamPackage& params) const {
+    if (params.Has("button")) {
+        return GetUIButtonName(params);
+    }
+    if (params.Has("axis")) {
+        return Common::Input::ButtonNames::Value;
+    }
+    if (params.Has("motion")) {
+        return Common::Input::ButtonNames::Engine;
+    }
+
+    return Common::Input::ButtonNames::Invalid;
 }
 
 void TestCommunication(const std::string& host, u16 port,

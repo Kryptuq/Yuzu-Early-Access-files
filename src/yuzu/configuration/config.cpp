@@ -273,18 +273,6 @@ void Config::ReadPlayerValue(std::size_t player_index) {
         }
     }
 
-    for (int i = 0; i < Settings::NativeVibration::NumVibrations; ++i) {
-        auto& player_vibrations = player.vibrations[i];
-
-        player_vibrations =
-            qt_config
-                ->value(QStringLiteral("%1").arg(player_prefix) +
-                            QString::fromUtf8(Settings::NativeVibration::mapping[i]),
-                        QString{})
-                .toString()
-                .toStdString();
-    }
-
     for (int i = 0; i < Settings::NativeMotion::NumMotions; ++i) {
         const std::string default_param = InputCommon::GenerateKeyboardParam(default_motions[i]);
         auto& player_motions = player.motions[i];
@@ -447,6 +435,7 @@ void Config::ReadMotionTouchValues() {
     Settings::values.touch_from_button_map_index = std::clamp(
         Settings::values.touch_from_button_map_index.GetValue(), 0, num_touch_from_button_maps - 1);
     ReadBasicSetting(Settings::values.udp_input_servers);
+    ReadBasicSetting(Settings::values.enable_udp_controller);
 }
 
 void Config::ReadCoreValues() {
@@ -890,11 +879,6 @@ void Config::SavePlayerValue(std::size_t player_index) {
                      QString::fromStdString(player.analogs[i]),
                      QString::fromStdString(default_param));
     }
-    for (int i = 0; i < Settings::NativeVibration::NumVibrations; ++i) {
-        WriteSetting(QStringLiteral("%1").arg(player_prefix) +
-                         QString::fromStdString(Settings::NativeVibration::mapping[i]),
-                     QString::fromStdString(player.vibrations[i]), QString{});
-    }
     for (int i = 0; i < Settings::NativeMotion::NumMotions; ++i) {
         const std::string default_param = InputCommon::GenerateKeyboardParam(default_motions[i]);
         WriteSetting(QStringLiteral("%1").arg(player_prefix) +
@@ -942,6 +926,7 @@ void Config::SaveMotionTouchValues() {
     WriteBasicSetting(Settings::values.touch_device);
     WriteBasicSetting(Settings::values.touch_from_button_map_index);
     WriteBasicSetting(Settings::values.udp_input_servers);
+    WriteBasicSetting(Settings::values.enable_udp_controller);
 
     qt_config->beginWriteArray(QStringLiteral("touch_from_button_maps"));
     for (std::size_t p = 0; p < Settings::values.touch_from_button_maps.size(); ++p) {

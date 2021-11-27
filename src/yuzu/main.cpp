@@ -1380,8 +1380,6 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
         Config per_game_config(*system, config_file_name, Config::ConfigType::PerGameConfig);
     }
 
-    ConfigureVibration::SetAllVibrationDevices();
-
     // Disable fps limit toggle when booting a new title
     Settings::values.disable_fps_limit.SetValue(false);
 
