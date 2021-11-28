@@ -23,6 +23,7 @@
 #include "common/common_types.h"
 #include "uisettings.h"
 #include "yuzu/compatibility_list.h"
+#include "yuzu/controller_navigation.h"
 
 class GameListWorker;
 class GameListSearchField;
@@ -88,6 +89,9 @@ public:
     void SaveInterfaceLayout();
     void LoadInterfaceLayout();
 
+    /// Disables events from the emulated controller
+    void UnloadController();
+
     static const QStringList supported_file_extensions;
 
 signals:
@@ -143,6 +147,7 @@ private:
     QStandardItemModel* item_model = nullptr;
     GameListWorker* current_worker = nullptr;
     QFileSystemWatcher* watcher = nullptr;
+    ControllerNavigation* controller_navigation = nullptr;
     CompatibilityList compatibility_list;
 
     friend class GameListSearchField;

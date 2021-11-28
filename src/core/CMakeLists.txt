@@ -479,6 +479,8 @@ add_library(core STATIC
     hle/service/ns/language.h
     hle/service/ns/ns.cpp
     hle/service/ns/ns.h
+    hle/service/ns/pdm_qry.cpp
+    hle/service/ns/pdm_qry.h
     hle/service/ns/pl_u.cpp
     hle/service/ns/pl_u.h
     hle/service/nvdrv/devices/nvdevice.h

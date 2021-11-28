@@ -10,6 +10,7 @@
 #include <QTreeView>
 #include "core/frontend/applets/profile_select.h"
 #include "core/hle/service/acc/profile_manager.h"
+#include "yuzu/controller_navigation.h"
 
 class GMainWindow;
 class QDialogButtonBox;
@@ -24,7 +25,7 @@ class QtProfileSelectionDialog final : public QDialog {
     Q_OBJECT
 
 public:
-    explicit QtProfileSelectionDialog(QWidget* parent);
+    explicit QtProfileSelectionDialog(Core::HID::HIDCore& hid_core, QWidget* parent);
     ~QtProfileSelectionDialog() override;
 
     int exec() override;
@@ -51,6 +52,7 @@ private:
     QDialogButtonBox* buttons;
 
     std::unique_ptr<Service::Account::ProfileManager> profile_manager;
+    ControllerNavigation* controller_navigation = nullptr;
 };
 
 class QtProfileSelector final : public QObject, public Core::Frontend::ProfileSelectApplet {

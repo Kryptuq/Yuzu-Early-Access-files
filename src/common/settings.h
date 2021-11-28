@@ -605,6 +605,7 @@ struct Values {
     BasicSetting<bool> extended_logging{false, "extended_logging"};
     BasicSetting<bool> use_debug_asserts{false, "use_debug_asserts"};
     BasicSetting<bool> use_auto_stub{false, "use_auto_stub"};
+    BasicSetting<bool> enable_all_controllers{false, "enable_all_controllers"};
 
     // Miscellaneous
     BasicSetting<std::string> log_filter{"*:Info", "log_filter"};

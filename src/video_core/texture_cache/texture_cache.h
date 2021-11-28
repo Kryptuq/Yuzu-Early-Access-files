@@ -725,11 +725,7 @@ ImageViewId TextureCache<P>::CreateImageView(const TICEntry& config) {
     }
     const u32 layer_offset = config.BaseLayer() * info.layer_stride;
     const GPUVAddr image_gpu_addr = config.Address() - layer_offset;
-    ImageId image_id{};
-    do {
-        has_deleted_images = false;
-        image_id = FindOrInsertImage(info, image_gpu_addr);
-    } while (has_deleted_images);
+    const ImageId image_id = FindOrInsertImage(info, image_gpu_addr);
     if (!image_id) {
         return NULL_IMAGE_VIEW_ID;
     }
@@ -1204,10 +1200,13 @@ ImageViewId TextureCache<P>::FindRenderTargetView(const ImageInfo& info, GPUVAdd
                                                   bool is_clear) {
     const auto options = is_clear ? RelaxedOptions::Samples : RelaxedOptions{};
     ImageId image_id{};
+    bool delete_state = has_deleted_images;
     do {
         has_deleted_images = false;
         image_id = FindOrInsertImage(info, gpu_addr, options);
+        delete_state |= has_deleted_images;
     } while (has_deleted_images);
+    has_deleted_images = delete_state;
     if (!image_id) {
         return NULL_IMAGE_VIEW_ID;
     }

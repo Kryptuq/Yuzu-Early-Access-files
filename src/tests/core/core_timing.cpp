@@ -28,7 +28,6 @@ void HostCallbackTemplate(std::uintptr_t user_data, std::chrono::nanoseconds ns_
     static_assert(IDX < CB_IDS.size(), "IDX out of range");
     callbacks_ran_flags.set(IDX);
     REQUIRE(CB_IDS[IDX] == user_data);
-    REQUIRE(CB_IDS[IDX] == CB_IDS[calls_order[expected_callback]]);
     delays[IDX] = ns_late.count();
     ++expected_callback;
 }

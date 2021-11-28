@@ -370,6 +370,11 @@ enum class ControllerType {
     RightJoycon,
     Handheld,
     GameCube,
+    Pokeball,
+    NES,
+    SNES,
+    N64,
+    SegaGenesis,
 };
 
 struct PlayerInput {

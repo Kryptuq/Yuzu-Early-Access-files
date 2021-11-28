@@ -42,6 +42,7 @@ void ConfigureDebug::SetConfiguration() {
     ui->quest_flag->setChecked(Settings::values.quest_flag.GetValue());
     ui->use_debug_asserts->setChecked(Settings::values.use_debug_asserts.GetValue());
     ui->use_auto_stub->setChecked(Settings::values.use_auto_stub.GetValue());
+    ui->enable_all_controllers->setChecked(Settings::values.enable_all_controllers.GetValue());
     ui->enable_graphics_debugging->setEnabled(runtime_lock);
     ui->enable_graphics_debugging->setChecked(Settings::values.renderer_debug.GetValue());
     ui->enable_shader_feedback->setEnabled(runtime_lock);
@@ -69,6 +70,7 @@ void ConfigureDebug::ApplyConfiguration() {
     Settings::values.quest_flag = ui->quest_flag->isChecked();
     Settings::values.use_debug_asserts = ui->use_debug_asserts->isChecked();
     Settings::values.use_auto_stub = ui->use_auto_stub->isChecked();
+    Settings::values.enable_all_controllers = ui->enable_all_controllers->isChecked();
     Settings::values.renderer_debug = ui->enable_graphics_debugging->isChecked();
     Settings::values.renderer_shader_feedback = ui->enable_shader_feedback->isChecked();
     Settings::values.cpu_debug_mode = ui->enable_cpu_debugging->isChecked();

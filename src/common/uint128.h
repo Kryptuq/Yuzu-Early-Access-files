@@ -32,11 +32,16 @@ namespace Common {
     return _udiv128(r[1], r[0], d, &remainder);
 #endif
 #else
+#ifdef __SIZEOF_INT128__
+    const auto product = static_cast<unsigned __int128>(a) * static_cast<unsigned __int128>(b);
+    return static_cast<u64>(product / d);
+#else
     const u64 diva = a / d;
     const u64 moda = a % d;
     const u64 divb = b / d;
     const u64 modb = b % d;
     return diva * b + moda * divb + moda * modb / d;
+#endif
 #endif
 }
 

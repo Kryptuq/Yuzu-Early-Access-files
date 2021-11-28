@@ -201,6 +201,16 @@ QtControllerSelectorDialog::QtControllerSelectorDialog(
     connect(ui->buttonBox, &QDialogButtonBox::accepted, this,
             &QtControllerSelectorDialog::ApplyConfiguration);
 
+    controller_navigation = new ControllerNavigation(system.HIDCore(), this);
+    connect(controller_navigation, &ControllerNavigation::TriggerKeyboardEvent,
+            [this](Qt::Key key) {
+                if (!this->isActiveWindow()) {
+                    return;
+                }
+                QKeyEvent* event = new QKeyEvent(QEvent::KeyPress, key, Qt::NoModifier);
+                QCoreApplication::postEvent(this, event);
+            });
+
     // Enhancement: Check if the parameters have already been met before disconnecting controllers.
     // If all the parameters are met AND only allows a single player,
     // stop the constructor here as we do not need to continue.
@@ -218,7 +228,9 @@ QtControllerSelectorDialog::QtControllerSelectorDialog(
     resize(0, 0);
 }
 
-QtControllerSelectorDialog::~QtControllerSelectorDialog() = default;
+QtControllerSelectorDialog::~QtControllerSelectorDialog() {
+    controller_navigation->UnloadController();
+};
 
 int QtControllerSelectorDialog::exec() {
     if (parameters_met && parameters.enable_single_mode) {

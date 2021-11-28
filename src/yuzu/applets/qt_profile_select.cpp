@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <mutex>
+#include <QApplication>
 #include <QDialogButtonBox>
 #include <QHeaderView>
 #include <QLabel>
@@ -45,7 +46,7 @@ QPixmap GetIcon(Common::UUID uuid) {
 }
 } // Anonymous namespace
 
-QtProfileSelectionDialog::QtProfileSelectionDialog(QWidget* parent)
+QtProfileSelectionDialog::QtProfileSelectionDialog(Core::HID::HIDCore& hid_core, QWidget* parent)
     : QDialog(parent), profile_manager(std::make_unique<Service::Account::ProfileManager>()) {
     outer_layout = new QVBoxLayout;
 
@@ -65,6 +66,7 @@ QtProfileSelectionDialog::QtProfileSelectionDialog(QWidget* parent)
     tree_view = new QTreeView;
     item_model = new QStandardItemModel(tree_view);
     tree_view->setModel(item_model);
+    controller_navigation = new ControllerNavigation(hid_core, this);
 
     tree_view->setAlternatingRowColors(true);
     tree_view->setSelectionMode(QHeaderView::SingleSelection);
@@ -91,6 +93,14 @@ QtProfileSelectionDialog::QtProfileSelectionDialog(QWidget* parent)
     scroll_area->setLayout(layout);
 
     connect(tree_view, &QTreeView::clicked, this, &QtProfileSelectionDialog::SelectUser);
+    connect(controller_navigation, &ControllerNavigation::TriggerKeyboardEvent,
+            [this](Qt::Key key) {
+                if (!this->isActiveWindow()) {
+                    return;
+                }
+                QKeyEvent* event = new QKeyEvent(QEvent::KeyPress, key, Qt::NoModifier);
+                QCoreApplication::postEvent(tree_view, event);
+            });
 
     const auto& profiles = profile_manager->GetAllUsers();
     for (const auto& user : profiles) {
@@ -113,7 +123,9 @@ QtProfileSelectionDialog::QtProfileSelectionDialog(QWidget* parent)
     resize(550, 400);
 }
 
-QtProfileSelectionDialog::~QtProfileSelectionDialog() = default;
+QtProfileSelectionDialog::~QtProfileSelectionDialog() {
+    controller_navigation->UnloadController();
+};
 
 int QtProfileSelectionDialog::exec() {
     // Skip profile selection when there's only one.

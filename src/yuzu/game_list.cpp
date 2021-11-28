@@ -17,6 +17,7 @@
 #include <fmt/format.h>
 #include "common/common_types.h"
 #include "common/logging/log.h"
+#include "core/core.h"
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/registered_cache.h"
 #include "yuzu/compatibility_list.h"
@@ -312,6 +313,7 @@ GameList::GameList(FileSys::VirtualFilesystem vfs, FileSys::ManualContentProvide
     this->main_window = parent;
     layout = new QVBoxLayout;
     tree_view = new QTreeView;
+    controller_navigation = new ControllerNavigation(system.HIDCore(), this);
     search_field = new GameListSearchField(this);
     item_model = new QStandardItemModel(tree_view);
     tree_view->setModel(item_model);
@@ -341,6 +343,18 @@ GameList::GameList(FileSys::VirtualFilesystem vfs, FileSys::ManualContentProvide
     connect(tree_view, &QTreeView::customContextMenuRequested, this, &GameList::PopupContextMenu);
     connect(tree_view, &QTreeView::expanded, this, &GameList::OnItemExpanded);
     connect(tree_view, &QTreeView::collapsed, this, &GameList::OnItemExpanded);
+    connect(controller_navigation, &ControllerNavigation::TriggerKeyboardEvent,
+            [this](Qt::Key key) {
+                // Avoid pressing buttons while playing
+                if (system.IsPoweredOn()) {
+                    return;
+                }
+                if (!this->isActiveWindow()) {
+                    return;
+                }
+                QKeyEvent* event = new QKeyEvent(QEvent::KeyPress, key, Qt::NoModifier);
+                QCoreApplication::postEvent(tree_view, event);
+            });
 
     // We must register all custom types with the Qt Automoc system so that we are able to use
     // it with signals/slots. In this case, QList falls under the umbrells of custom types.
@@ -353,7 +367,12 @@ GameList::GameList(FileSys::VirtualFilesystem vfs, FileSys::ManualContentProvide
     setLayout(layout);
 }
 
+void GameList::UnloadController() {
+    controller_navigation->UnloadController();
+}
+
 GameList::~GameList() {
+    UnloadController();
     emit ShouldCancelWorker();
 }
 

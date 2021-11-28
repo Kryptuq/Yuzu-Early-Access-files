@@ -947,6 +947,40 @@ void ConfigureInputPlayer::SetConnectableControllers() {
                                                      Core::HID::NpadStyleIndex::GameCube);
             ui->comboControllerType->addItem(tr("GameCube Controller"));
         }
+
+        // Disable all unsupported controllers
+        if (!Settings::values.enable_all_controllers) {
+            return;
+        }
+        if (enable_all || npad_style_set.palma == 1) {
+            index_controller_type_pairs.emplace_back(ui->comboControllerType->count(),
+                                                     Core::HID::NpadStyleIndex::Pokeball);
+            ui->comboControllerType->addItem(tr("Poke Ball Plus"));
+        }
+
+        if (enable_all || npad_style_set.lark == 1) {
+            index_controller_type_pairs.emplace_back(ui->comboControllerType->count(),
+                                                     Core::HID::NpadStyleIndex::NES);
+            ui->comboControllerType->addItem(tr("NES Controller"));
+        }
+
+        if (enable_all || npad_style_set.lucia == 1) {
+            index_controller_type_pairs.emplace_back(ui->comboControllerType->count(),
+                                                     Core::HID::NpadStyleIndex::SNES);
+            ui->comboControllerType->addItem(tr("SNES Controller"));
+        }
+
+        if (enable_all || npad_style_set.lagoon == 1) {
+            index_controller_type_pairs.emplace_back(ui->comboControllerType->count(),
+                                                     Core::HID::NpadStyleIndex::N64);
+            ui->comboControllerType->addItem(tr("N64 Controller"));
+        }
+
+        if (enable_all || npad_style_set.lager == 1) {
+            index_controller_type_pairs.emplace_back(ui->comboControllerType->count(),
+                                                     Core::HID::NpadStyleIndex::SegaGenesis);
+            ui->comboControllerType->addItem(tr("Sega Genesis"));
+        }
     };
 
     if (!is_powered_on) {

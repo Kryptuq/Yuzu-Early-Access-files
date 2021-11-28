@@ -263,6 +263,10 @@ void Controller_NPad::OnInit() {
         style.fullkey.Assign(1);
         style.gamecube.Assign(1);
         style.palma.Assign(1);
+        style.lark.Assign(1);
+        style.lucia.Assign(1);
+        style.lagoon.Assign(1);
+        style.lager.Assign(1);
         hid_core.SetSupportedStyleTag(style);
     }
 

@@ -8,7 +8,6 @@
 #include <mutex>
 #include <thread>
 
-#include "common/atomic_ops.h"
 #include "common/uint128.h"
 #include "common/x64/native_clock.h"
 
@@ -44,12 +43,14 @@ NativeClock::NativeClock(u64 emulated_cpu_frequency_, u64 emulated_clock_frequen
                          u64 rtsc_frequency_)
     : WallClock(emulated_cpu_frequency_, emulated_clock_frequency_, true), rtsc_frequency{
                                                                                rtsc_frequency_} {
+    TimePoint new_time_point{};
     _mm_mfence();
-    time_point.inner.last_measure = __rdtsc();
-    time_point.inner.accumulated_ticks = 0U;
-    ns_rtsc_factor = GetFixedPoint64Factor(1000000000, rtsc_frequency);
-    us_rtsc_factor = GetFixedPoint64Factor(1000000, rtsc_frequency);
-    ms_rtsc_factor = GetFixedPoint64Factor(1000, rtsc_frequency);
+    new_time_point.last_measure = __rdtsc();
+    new_time_point.accumulated_ticks = 0U;
+    time_point.store(new_time_point);
+    ns_rtsc_factor = GetFixedPoint64Factor(1000'000'000ULL, rtsc_frequency);
+    us_rtsc_factor = GetFixedPoint64Factor(1000'000ULL, rtsc_frequency);
+    ms_rtsc_factor = GetFixedPoint64Factor(1000ULL, rtsc_frequency);
     clock_rtsc_factor = GetFixedPoint64Factor(emulated_clock_frequency, rtsc_frequency);
     cpu_rtsc_factor = GetFixedPoint64Factor(emulated_cpu_frequency, rtsc_frequency);
 }
@@ -58,19 +59,19 @@ u64 NativeClock::GetRTSC() {
     TimePoint new_time_point{};
     TimePoint current_time_point{};
     do {
-        current_time_point.pack = time_point.pack;
+        current_time_point = time_point.load(std::memory_order_acquire);
         _mm_mfence();
         const u64 current_measure = __rdtsc();
-        u64 diff = current_measure - current_time_point.inner.last_measure;
+        u64 diff = current_measure - current_time_point.last_measure;
         diff = diff & ~static_cast<u64>(static_cast<s64>(diff) >> 63); // max(diff, 0)
-        new_time_point.inner.last_measure = current_measure > current_time_point.inner.last_measure
-                                                ? current_measure
-                                                : current_time_point.inner.last_measure;
-        new_time_point.inner.accumulated_ticks = current_time_point.inner.accumulated_ticks + diff;
-    } while (!Common::AtomicCompareAndSwap(time_point.pack.data(), new_time_point.pack,
-                                           current_time_point.pack));
+        new_time_point.last_measure = current_measure > current_time_point.last_measure
+                                          ? current_measure
+                                          : current_time_point.last_measure;
+        new_time_point.accumulated_ticks = current_time_point.accumulated_ticks + diff;
+    } while (!time_point.compare_exchange_weak(
+        current_time_point, new_time_point, std::memory_order_release, std::memory_order_relaxed));
     /// The clock cannot be more precise than the guest timer, remove the lower bits
-    return new_time_point.inner.accumulated_ticks & inaccuracy_mask;
+    return new_time_point.accumulated_ticks & inaccuracy_mask;
 }
 
 void NativeClock::Pause(bool is_paused) {
@@ -78,12 +79,13 @@ void NativeClock::Pause(bool is_paused) {
         TimePoint current_time_point{};
         TimePoint new_time_point{};
         do {
-            current_time_point.pack = time_point.pack;
-            new_time_point.pack = current_time_point.pack;
+            current_time_point = time_point.load(std::memory_order_acquire);
+            new_time_point = current_time_point;
             _mm_mfence();
-            new_time_point.inner.last_measure = __rdtsc();
-        } while (!Common::AtomicCompareAndSwap(time_point.pack.data(), new_time_point.pack,
-                                               current_time_point.pack));
+            new_time_point.last_measure = __rdtsc();
+        } while (!time_point.compare_exchange_weak(current_time_point, new_time_point,
+                                                   std::memory_order_release,
+                                                   std::memory_order_relaxed));
     }
 }
 

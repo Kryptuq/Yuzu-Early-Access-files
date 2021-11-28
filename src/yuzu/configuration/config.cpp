@@ -508,6 +508,7 @@ void Config::ReadDebuggingValues() {
     ReadBasicSetting(Settings::values.extended_logging);
     ReadBasicSetting(Settings::values.use_debug_asserts);
     ReadBasicSetting(Settings::values.use_auto_stub);
+    ReadBasicSetting(Settings::values.enable_all_controllers);
 
     qt_config->endGroup();
 }
@@ -1051,6 +1052,7 @@ void Config::SaveDebuggingValues() {
     WriteBasicSetting(Settings::values.quest_flag);
     WriteBasicSetting(Settings::values.use_debug_asserts);
     WriteBasicSetting(Settings::values.disable_macro_jit);
+    WriteBasicSetting(Settings::values.enable_all_controllers);
 
     qt_config->endGroup();
 }

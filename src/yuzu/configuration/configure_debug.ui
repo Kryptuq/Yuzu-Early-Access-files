@@ -211,6 +211,13 @@
         </property>
        </widget>
       </item>
+      <item row="1" column="1">
+       <widget class="QCheckBox" name="enable_all_controllers">
+        <property name="text">
+         <string>Enable all Controller Types</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>

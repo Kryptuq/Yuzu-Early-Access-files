@@ -74,6 +74,13 @@ public:
     ~IFactoryResetInterface() override;
 };
 
+class IReadOnlyApplicationControlDataInterface final
+    : public ServiceFramework<IReadOnlyApplicationControlDataInterface> {
+public:
+    explicit IReadOnlyApplicationControlDataInterface(Core::System& system_);
+    ~IReadOnlyApplicationControlDataInterface() override;
+};
+
 class NS final : public ServiceFramework<NS> {
 public:
     explicit NS(const char* name, Core::System& system_);

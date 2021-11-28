@@ -12,6 +12,7 @@
 #include "core/hle/service/ns/errors.h"
 #include "core/hle/service/ns/language.h"
 #include "core/hle/service/ns/ns.h"
+#include "core/hle/service/ns/pdm_qry.h"
 #include "core/hle/service/ns/pl_u.h"
 #include "core/hle/service/set/set.h"
 
@@ -570,11 +571,29 @@ IFactoryResetInterface::IFactoryResetInterface(Core::System& system_)
 
 IFactoryResetInterface::~IFactoryResetInterface() = default;
 
+IReadOnlyApplicationControlDataInterface::IReadOnlyApplicationControlDataInterface(
+    Core::System& system_)
+    : ServiceFramework{system_, "IReadOnlyApplicationControlDataInterface"} {
+    // clang-format off
+    static const FunctionInfo functions[] = {
+        {0, nullptr, "GetApplicationControlData"},
+        {1, nullptr, "GetApplicationDesiredLanguage"},
+        {2, nullptr, "ConvertApplicationLanguageToLanguageCode"},
+        {3, nullptr, "ConvertLanguageCodeToApplicationLanguage"},
+        {4, nullptr, "SelectApplicationDesiredLanguage"},
+    };
+    // clang-format on
+
+    RegisterHandlers(functions);
+}
+
+IReadOnlyApplicationControlDataInterface::~IReadOnlyApplicationControlDataInterface() = default;
+
 NS::NS(const char* name, Core::System& system_) : ServiceFramework{system_, name} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {7988, nullptr, "GetDynamicRightsInterface"},
-        {7989, nullptr, "GetReadOnlyApplicationControlDataInterface"},
+        {7989, &NS::PushInterface<IReadOnlyApplicationControlDataInterface>, "GetReadOnlyApplicationControlDataInterface"},
         {7991, nullptr, "GetReadOnlyApplicationRecordInterface"},
         {7992, &NS::PushInterface<IECommerceInterface>, "GetECommerceInterface"},
         {7993, &NS::PushInterface<IApplicationVersionInterface>, "GetApplicationVersionInterface"},
@@ -737,6 +756,8 @@ void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system
     std::make_shared<NS_DEV>(system)->InstallAsService(service_manager);
     std::make_shared<NS_SU>(system)->InstallAsService(service_manager);
     std::make_shared<NS_VM>(system)->InstallAsService(service_manager);
+
+    std::make_shared<PDM_QRY>(system)->InstallAsService(service_manager);
 
     std::make_shared<PL_U>(system)->InstallAsService(service_manager);
 }

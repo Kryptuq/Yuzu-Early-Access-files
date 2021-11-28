@@ -556,6 +556,16 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
         LOG_INFO(Render_Vulkan, "Device doesn't support depth range unrestricted");
     }
 
+    VkPhysicalDeviceDepthClipControlFeaturesEXT depth_clip_control_features;
+    if (ext_depth_clip_control) {
+        depth_clip_control_features = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_CONTROL_FEATURES_EXT,
+            .pNext = nullptr,
+            .depthClipControl = VK_TRUE,
+        };
+        SetNext(next, depth_clip_control_features);
+    }
+
     VkDeviceDiagnosticsConfigCreateInfoNV diagnostics_nv;
     if (Settings::values.enable_nsight_aftermath && nv_device_diagnostics_config) {
         nsight_aftermath_tracker = std::make_unique<NsightAftermathTracker>();
@@ -890,6 +900,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
     bool has_ext_provoking_vertex{};
     bool has_ext_vertex_input_dynamic_state{};
     bool has_ext_line_rasterization{};
+    bool has_ext_depth_clip_control{};
     for (const std::string& extension : supported_extensions) {
         const auto test = [&](std::optional<std::reference_wrapper<bool>> status, const char* name,
                               bool push) {
@@ -921,6 +932,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         test(ext_shader_stencil_export, VK_EXT_SHADER_STENCIL_EXPORT_EXTENSION_NAME, true);
         test(ext_conservative_rasterization, VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME,
              true);
+        test(has_ext_depth_clip_control, VK_EXT_DEPTH_CLIP_CONTROL_EXTENSION_NAME, false);
         test(has_ext_transform_feedback, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME, false);
         test(has_ext_custom_border_color, VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME, false);
         test(has_ext_extended_dynamic_state, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME, false);
@@ -1081,6 +1093,19 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         if (line_raster.rectangularLines && line_raster.smoothLines) {
             extensions.push_back(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
             ext_line_rasterization = true;
+        }
+    }
+    if (has_ext_depth_clip_control) {
+        VkPhysicalDeviceDepthClipControlFeaturesEXT depth_clip_control_features;
+        depth_clip_control_features.sType =
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_CONTROL_FEATURES_EXT;
+        depth_clip_control_features.pNext = nullptr;
+        features.pNext = &depth_clip_control_features;
+        physical.GetFeatures2KHR(features);
+
+        if (depth_clip_control_features.depthClipControl) {
+            extensions.push_back(VK_EXT_DEPTH_CLIP_CONTROL_EXTENSION_NAME);
+            ext_depth_clip_control = true;
         }
     }
     if (has_khr_workgroup_memory_explicit_layout) {

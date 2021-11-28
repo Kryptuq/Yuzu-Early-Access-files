@@ -126,6 +126,8 @@ add_executable(yuzu
     configuration/configure_web.ui
     configuration/input_profiles.cpp
     configuration/input_profiles.h
+    controller_navigation.cpp
+    controller_navigation.h
     debugger/console.cpp
     debugger/console.h
     debugger/controller.cpp

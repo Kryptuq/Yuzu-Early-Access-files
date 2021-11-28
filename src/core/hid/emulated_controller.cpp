@@ -27,6 +27,16 @@ NpadStyleIndex EmulatedController::MapSettingsTypeToNPad(Settings::ControllerTyp
         return NpadStyleIndex::Handheld;
     case Settings::ControllerType::GameCube:
         return NpadStyleIndex::GameCube;
+    case Settings::ControllerType::Pokeball:
+        return NpadStyleIndex::Pokeball;
+    case Settings::ControllerType::NES:
+        return NpadStyleIndex::NES;
+    case Settings::ControllerType::SNES:
+        return NpadStyleIndex::SNES;
+    case Settings::ControllerType::N64:
+        return NpadStyleIndex::N64;
+    case Settings::ControllerType::SegaGenesis:
+        return NpadStyleIndex::SegaGenesis;
     default:
         return NpadStyleIndex::ProController;
     }
@@ -46,6 +56,16 @@ Settings::ControllerType EmulatedController::MapNPadToSettingsType(NpadStyleInde
         return Settings::ControllerType::Handheld;
     case NpadStyleIndex::GameCube:
         return Settings::ControllerType::GameCube;
+    case NpadStyleIndex::Pokeball:
+        return Settings::ControllerType::Pokeball;
+    case NpadStyleIndex::NES:
+        return Settings::ControllerType::NES;
+    case NpadStyleIndex::SNES:
+        return Settings::ControllerType::SNES;
+    case NpadStyleIndex::N64:
+        return Settings::ControllerType::N64;
+    case NpadStyleIndex::SegaGenesis:
+        return Settings::ControllerType::SegaGenesis;
     default:
         return Settings::ControllerType::ProController;
     }

@@ -1883,7 +1883,7 @@ public:
             {317, nullptr, "GetNpadLeftRightInterfaceType"},
             {318, nullptr, "HasBattery"},
             {319, nullptr, "HasLeftRightBattery"},
-            {321, nullptr, "GetUniquePadsFromNpad"},
+            {321, &HidSys::GetUniquePadsFromNpad, "GetUniquePadsFromNpad"},
             {322, nullptr, "GetIrSensorState"},
             {323, nullptr, "GetXcdHandleForNpadWithIrSensor"},
             {324, nullptr, "GetUniquePadButtonSet"},
@@ -2053,6 +2053,18 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
+    }
+
+    void GetUniquePadsFromNpad(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+        const auto npad_id_type{rp.PopEnum<Core::HID::NpadIdType>()};
+
+        const s64 total_entries = 0;
+        LOG_WARNING(Service_HID, "(STUBBED) called, npad_id_type={}", npad_id_type);
+
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(ResultSuccess);
+        rb.Push(total_entries);
     }
 };
 

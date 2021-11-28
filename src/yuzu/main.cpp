@@ -449,7 +449,7 @@ void GMainWindow::ControllerSelectorReconfigureControllers(
 }
 
 void GMainWindow::ProfileSelectorSelectProfile() {
-    QtProfileSelectionDialog dialog(this);
+    QtProfileSelectionDialog dialog(system->HIDCore(), this);
     dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowStaysOnTopHint |
                           Qt::WindowTitleHint | Qt::WindowSystemMenuHint |
                           Qt::WindowCloseButtonHint);
@@ -1346,7 +1346,7 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
 }
 
 void GMainWindow::SelectAndSetCurrentUser() {
-    QtProfileSelectionDialog dialog(this);
+    QtProfileSelectionDialog dialog(system->HIDCore(), this);
     dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
                           Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint);
     dialog.setWindowModality(Qt::WindowModal);
@@ -1608,7 +1608,7 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
         if (has_user_save) {
             // User save data
             const auto select_profile = [this] {
-                QtProfileSelectionDialog dialog(this);
+                QtProfileSelectionDialog dialog(system->HIDCore(), this);
                 dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
                                       Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint);
                 dialog.setWindowModality(Qt::WindowModal);
@@ -3376,7 +3376,10 @@ void GMainWindow::closeEvent(QCloseEvent* event) {
     UpdateUISettings();
     game_list->SaveInterfaceLayout();
     hotkey_registry.SaveHotkeys();
+
+    // Unload controllers early
     controller_dialog->UnloadController();
+    game_list->UnloadController();
     system->HIDCore().UnloadInputDevices();
 
     // Shutdown session if the emu thread is active...
