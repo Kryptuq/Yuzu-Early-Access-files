@@ -8,6 +8,7 @@
 #include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/k_scoped_scheduler_lock_and_sleep.h"
 #include "core/hle/kernel/k_thread.h"
+#include "core/hle/kernel/k_thread_queue.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/svc_results.h"
 #include "core/hle/kernel/time_manager.h"
@@ -28,7 +29,7 @@ bool ReadFromUser(Core::System& system, s32* out, VAddr address) {
 
 bool DecrementIfLessThan(Core::System& system, s32* out, VAddr address, s32 value) {
     auto& monitor = system.Monitor();
-    const auto current_core = system.CurrentCoreIndex();
+    const auto current_core = system.Kernel().CurrentPhysicalCoreIndex();
 
     // TODO(bunnei): We should disable interrupts here via KScopedInterruptDisable.
     // TODO(bunnei): We should call CanAccessAtomic(..) here.
@@ -58,7 +59,7 @@ bool DecrementIfLessThan(Core::System& system, s32* out, VAddr address, s32 valu
 
 bool UpdateIfEqual(Core::System& system, s32* out, VAddr address, s32 value, s32 new_value) {
     auto& monitor = system.Monitor();
-    const auto current_core = system.CurrentCoreIndex();
+    const auto current_core = system.Kernel().CurrentPhysicalCoreIndex();
 
     // TODO(bunnei): We should disable interrupts here via KScopedInterruptDisable.
     // TODO(bunnei): We should call CanAccessAtomic(..) here.
@@ -85,6 +86,27 @@ bool UpdateIfEqual(Core::System& system, s32* out, VAddr address, s32 value, s32
     return true;
 }
 
+class ThreadQueueImplForKAddressArbiter final : public KThreadQueue {
+public:
+    explicit ThreadQueueImplForKAddressArbiter(KernelCore& kernel_, KAddressArbiter::ThreadTree* t)
+        : KThreadQueue(kernel_), m_tree(t) {}
+
+    virtual void CancelWait(KThread* waiting_thread, ResultCode wait_result,
+                            bool cancel_timer_task) override {
+        // If the thread is waiting on an address arbiter, remove it from the tree.
+        if (waiting_thread->IsWaitingForAddressArbiter()) {
+            m_tree->erase(m_tree->iterator_to(*waiting_thread));
+            waiting_thread->ClearAddressArbiter();
+        }
+
+        // Invoke the base cancel wait handler.
+        KThreadQueue::CancelWait(waiting_thread, wait_result, cancel_timer_task);
+    }
+
+private:
+    KAddressArbiter::ThreadTree* m_tree;
+};
+
 } // namespace
 
 ResultCode KAddressArbiter::Signal(VAddr addr, s32 count) {
@@ -96,14 +118,14 @@ ResultCode KAddressArbiter::Signal(VAddr addr, s32 count) {
         auto it = thread_tree.nfind_light({addr, -1});
         while ((it != thread_tree.end()) && (count <= 0 || num_waiters < count) &&
                (it->GetAddressArbiterKey() == addr)) {
+            // End the thread's wait.
             KThread* target_thread = std::addressof(*it);
-            target_thread->SetSyncedObject(nullptr, ResultSuccess);
+            target_thread->EndWait(ResultSuccess);
 
             ASSERT(target_thread->IsWaitingForAddressArbiter());
-            target_thread->Wakeup();
+            target_thread->ClearAddressArbiter();
 
             it = thread_tree.erase(it);
-            target_thread->ClearAddressArbiter();
             ++num_waiters;
         }
     }
@@ -129,14 +151,14 @@ ResultCode KAddressArbiter::SignalAndIncrementIfEqual(VAddr addr, s32 value, s32
         auto it = thread_tree.nfind_light({addr, -1});
         while ((it != thread_tree.end()) && (count <= 0 || num_waiters < count) &&
                (it->GetAddressArbiterKey() == addr)) {
+            // End the thread's wait.
             KThread* target_thread = std::addressof(*it);
-            target_thread->SetSyncedObject(nullptr, ResultSuccess);
+            target_thread->EndWait(ResultSuccess);
 
             ASSERT(target_thread->IsWaitingForAddressArbiter());
-            target_thread->Wakeup();
+            target_thread->ClearAddressArbiter();
 
             it = thread_tree.erase(it);
-            target_thread->ClearAddressArbiter();
             ++num_waiters;
         }
     }
@@ -197,14 +219,14 @@ ResultCode KAddressArbiter::SignalAndModifyByWaitingCountIfEqual(VAddr addr, s32
 
         while ((it != thread_tree.end()) && (count <= 0 || num_waiters < count) &&
                (it->GetAddressArbiterKey() == addr)) {
+            // End the thread's wait.
             KThread* target_thread = std::addressof(*it);
-            target_thread->SetSyncedObject(nullptr, ResultSuccess);
+            target_thread->EndWait(ResultSuccess);
 
             ASSERT(target_thread->IsWaitingForAddressArbiter());
-            target_thread->Wakeup();
+            target_thread->ClearAddressArbiter();
 
             it = thread_tree.erase(it);
-            target_thread->ClearAddressArbiter();
             ++num_waiters;
         }
     }
@@ -214,6 +236,7 @@ ResultCode KAddressArbiter::SignalAndModifyByWaitingCountIfEqual(VAddr addr, s32
 ResultCode KAddressArbiter::WaitIfLessThan(VAddr addr, s32 value, bool decrement, s64 timeout) {
     // Prepare to wait.
     KThread* cur_thread = kernel.CurrentScheduler()->GetCurrentThread();
+    ThreadQueueImplForKAddressArbiter wait_queue(kernel, std::addressof(thread_tree));
 
     {
         KScopedSchedulerLockAndSleep slp{kernel, cur_thread, timeout};
@@ -223,9 +246,6 @@ ResultCode KAddressArbiter::WaitIfLessThan(VAddr addr, s32 value, bool decrement
             slp.CancelSleep();
             return ResultTerminationRequested;
         }
-
-        // Set the synced object.
-        cur_thread->SetSyncedObject(nullptr, ResultTimedOut);
 
         // Read the value from userspace.
         s32 user_value{};
@@ -256,31 +276,20 @@ ResultCode KAddressArbiter::WaitIfLessThan(VAddr addr, s32 value, bool decrement
         // Set the arbiter.
         cur_thread->SetAddressArbiter(&thread_tree, addr);
         thread_tree.insert(*cur_thread);
-        cur_thread->SetState(ThreadState::Waiting);
+
+        // Wait for the thread to finish.
+        cur_thread->BeginWait(std::addressof(wait_queue));
         cur_thread->SetWaitReasonForDebugging(ThreadWaitReasonForDebugging::Arbitration);
     }
 
-    // Cancel the timer wait.
-    kernel.TimeManager().UnscheduleTimeEvent(cur_thread);
-
-    // Remove from the address arbiter.
-    {
-        KScopedSchedulerLock sl(kernel);
-
-        if (cur_thread->IsWaitingForAddressArbiter()) {
-            thread_tree.erase(thread_tree.iterator_to(*cur_thread));
-            cur_thread->ClearAddressArbiter();
-        }
-    }
-
     // Get the result.
-    KSynchronizationObject* dummy{};
-    return cur_thread->GetWaitResult(&dummy);
+    return cur_thread->GetWaitResult();
 }
 
 ResultCode KAddressArbiter::WaitIfEqual(VAddr addr, s32 value, s64 timeout) {
     // Prepare to wait.
     KThread* cur_thread = kernel.CurrentScheduler()->GetCurrentThread();
+    ThreadQueueImplForKAddressArbiter wait_queue(kernel, std::addressof(thread_tree));
 
     {
         KScopedSchedulerLockAndSleep slp{kernel, cur_thread, timeout};
@@ -290,9 +299,6 @@ ResultCode KAddressArbiter::WaitIfEqual(VAddr addr, s32 value, s64 timeout) {
             slp.CancelSleep();
             return ResultTerminationRequested;
         }
-
-        // Set the synced object.
-        cur_thread->SetSyncedObject(nullptr, ResultTimedOut);
 
         // Read the value from userspace.
         s32 user_value{};
@@ -316,26 +322,14 @@ ResultCode KAddressArbiter::WaitIfEqual(VAddr addr, s32 value, s64 timeout) {
         // Set the arbiter.
         cur_thread->SetAddressArbiter(&thread_tree, addr);
         thread_tree.insert(*cur_thread);
-        cur_thread->SetState(ThreadState::Waiting);
+
+        // Wait for the thread to finish.
+        cur_thread->BeginWait(std::addressof(wait_queue));
         cur_thread->SetWaitReasonForDebugging(ThreadWaitReasonForDebugging::Arbitration);
     }
 
-    // Cancel the timer wait.
-    kernel.TimeManager().UnscheduleTimeEvent(cur_thread);
-
-    // Remove from the address arbiter.
-    {
-        KScopedSchedulerLock sl(kernel);
-
-        if (cur_thread->IsWaitingForAddressArbiter()) {
-            thread_tree.erase(thread_tree.iterator_to(*cur_thread));
-            cur_thread->ClearAddressArbiter();
-        }
-    }
-
     // Get the result.
-    KSynchronizationObject* dummy{};
-    return cur_thread->GetWaitResult(&dummy);
+    return cur_thread->GetWaitResult();
 }
 
 } // namespace Kernel

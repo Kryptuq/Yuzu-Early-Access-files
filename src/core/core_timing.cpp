@@ -8,7 +8,6 @@
 #include <tuple>
 
 #include "common/microprofile.h"
-#include "common/thread.h"
 #include "core/core_timing.h"
 #include "core/core_timing_util.h"
 #include "core/hardware_properties.h"
@@ -47,7 +46,7 @@ void CoreTiming::ThreadEntry(CoreTiming& instance) {
     constexpr char name[] = "yuzu:HostTiming";
     MicroProfileOnThreadCreate(name);
     Common::SetCurrentThreadName(name);
-    Common::SetCurrentThreadPriority(Common::ThreadPriority::Critical);
+    Common::SetCurrentThreadPriority(Common::ThreadPriority::VeryHigh);
     instance.on_thread_init();
     instance.ThreadLoop();
     MicroProfileOnThreadExit();
@@ -61,99 +60,68 @@ void CoreTiming::Initialize(std::function<void()>&& on_thread_init_) {
     const auto empty_timed_callback = [](std::uintptr_t, std::chrono::nanoseconds) {};
     ev_lost = CreateEvent("_lost_event", empty_timed_callback);
     if (is_multicore) {
-        const auto hardware_concurrency = std::thread::hardware_concurrency();
-        worker_threads.emplace_back(ThreadEntry, std::ref(*this));
-        if (hardware_concurrency >= 6) {
-            worker_threads.emplace_back(ThreadEntry, std::ref(*this));
-        }
-        if (hardware_concurrency >= 10) {
-            worker_threads.emplace_back(ThreadEntry, std::ref(*this));
-        }
+        timer_thread = std::make_unique<std::thread>(ThreadEntry, std::ref(*this));
     }
 }
 
 void CoreTiming::Shutdown() {
-    is_paused = true;
+    paused = true;
     shutting_down = true;
-    {
-        std::unique_lock<std::mutex> main_lock(event_mutex);
-        event_cv.notify_all();
-        wait_pause_cv.notify_all();
+    pause_event.Set();
+    event.Set();
+    if (timer_thread) {
+        timer_thread->join();
     }
-    for (auto& thread : worker_threads) {
-        thread.join();
-    }
-    worker_threads.clear();
     ClearPendingEvents();
+    timer_thread.reset();
     has_started = false;
 }
 
-void CoreTiming::Pause(bool is_paused_) {
-    std::unique_lock<std::mutex> main_lock(event_mutex);
-    if (is_paused_ == paused_state.load(std::memory_order_relaxed)) {
-        return;
-    }
-    if (is_multicore) {
-        is_paused = is_paused_;
-        event_cv.notify_all();
-        if (!is_paused_) {
-            wait_pause_cv.notify_all();
-        }
-    }
-    paused_state.store(is_paused_, std::memory_order_relaxed);
+void CoreTiming::Pause(bool is_paused) {
+    paused = is_paused;
+    pause_event.Set();
 }
 
-void CoreTiming::SyncPause(bool is_paused_) {
-    std::unique_lock<std::mutex> main_lock(event_mutex);
-    if (is_paused_ == paused_state.load(std::memory_order_relaxed)) {
+void CoreTiming::SyncPause(bool is_paused) {
+    if (is_paused == paused && paused_set == paused) {
         return;
     }
-
-    if (is_multicore) {
-        is_paused = is_paused_;
-        event_cv.notify_all();
-        if (!is_paused_) {
-            wait_pause_cv.notify_all();
+    Pause(is_paused);
+    if (timer_thread) {
+        if (!is_paused) {
+            pause_event.Set();
         }
-    }
-    paused_state.store(is_paused_, std::memory_order_relaxed);
-    if (is_multicore) {
-        if (is_paused_) {
-            wait_signal_cv.wait(main_lock, [this] { return pause_count == worker_threads.size(); });
-        } else {
-            wait_signal_cv.wait(main_lock, [this] { return pause_count == 0; });
-        }
+        event.Set();
+        while (paused_set != is_paused)
+            ;
     }
 }
 
 bool CoreTiming::IsRunning() const {
-    return !paused_state.load(std::memory_order_acquire);
+    return !paused_set;
 }
 
 bool CoreTiming::HasPendingEvents() const {
-    std::unique_lock<std::mutex> main_lock(event_mutex);
-    return !event_queue.empty();
+    return !(wait_set && event_queue.empty());
 }
 
 void CoreTiming::ScheduleEvent(std::chrono::nanoseconds ns_into_future,
                                const std::shared_ptr<EventType>& event_type,
                                std::uintptr_t user_data) {
+    {
+        std::scoped_lock scope{basic_lock};
+        const u64 timeout = static_cast<u64>((GetGlobalTimeNs() + ns_into_future).count());
 
-    std::unique_lock<std::mutex> main_lock(event_mutex);
-    const u64 timeout = static_cast<u64>((GetGlobalTimeNs() + ns_into_future).count());
+        event_queue.emplace_back(Event{timeout, event_fifo_id++, user_data, event_type});
 
-    event_queue.emplace_back(Event{timeout, event_fifo_id++, user_data, event_type});
-
-    std::push_heap(event_queue.begin(), event_queue.end(), std::greater<>());
-
-    if (is_multicore) {
-        event_cv.notify_one();
+        std::push_heap(event_queue.begin(), event_queue.end(), std::greater<>());
     }
+    event.Set();
 }
 
 void CoreTiming::UnscheduleEvent(const std::shared_ptr<EventType>& event_type,
                                  std::uintptr_t user_data) {
-    std::unique_lock<std::mutex> main_lock(event_mutex);
+    std::scoped_lock scope{basic_lock};
     const auto itr = std::remove_if(event_queue.begin(), event_queue.end(), [&](const Event& e) {
         return e.type.lock().get() == event_type.get() && e.user_data == user_data;
     });
@@ -201,12 +169,11 @@ u64 CoreTiming::GetClockTicks() const {
 }
 
 void CoreTiming::ClearPendingEvents() {
-    std::unique_lock<std::mutex> main_lock(event_mutex);
     event_queue.clear();
 }
 
 void CoreTiming::RemoveEvent(const std::shared_ptr<EventType>& event_type) {
-    std::unique_lock<std::mutex> main_lock(event_mutex);
+    std::scoped_lock lock{basic_lock};
 
     const auto itr = std::remove_if(event_queue.begin(), event_queue.end(), [&](const Event& e) {
         return e.type.lock().get() == event_type.get();
@@ -220,21 +187,21 @@ void CoreTiming::RemoveEvent(const std::shared_ptr<EventType>& event_type) {
 }
 
 std::optional<s64> CoreTiming::Advance() {
+    std::scoped_lock lock{advance_lock, basic_lock};
     global_timer = GetGlobalTimeNs().count();
 
-    std::unique_lock<std::mutex> main_lock(event_mutex);
     while (!event_queue.empty() && event_queue.front().time <= global_timer) {
         Event evt = std::move(event_queue.front());
         std::pop_heap(event_queue.begin(), event_queue.end(), std::greater<>());
         event_queue.pop_back();
-        event_mutex.unlock();
+        basic_lock.unlock();
 
         if (const auto event_type{evt.type.lock()}) {
-            event_type->callback(evt.user_data, std::chrono::nanoseconds{static_cast<s64>(
-                                                    GetGlobalTimeNs().count() - evt.time)});
+            event_type->callback(
+                evt.user_data, std::chrono::nanoseconds{static_cast<s64>(global_timer - evt.time)});
         }
 
-        event_mutex.lock();
+        basic_lock.lock();
         global_timer = GetGlobalTimeNs().count();
     }
 
@@ -247,34 +214,26 @@ std::optional<s64> CoreTiming::Advance() {
 }
 
 void CoreTiming::ThreadLoop() {
-    const auto predicate = [this] { return !event_queue.empty() || is_paused; };
     has_started = true;
     while (!shutting_down) {
-        while (!is_paused && !shutting_down) {
+        while (!paused) {
+            paused_set = false;
             const auto next_time = Advance();
             if (next_time) {
                 if (*next_time > 0) {
                     std::chrono::nanoseconds next_time_ns = std::chrono::nanoseconds(*next_time);
-                    std::unique_lock<std::mutex> main_lock(event_mutex);
-                    event_cv.wait_for(main_lock, next_time_ns, predicate);
+                    event.WaitFor(next_time_ns);
                 }
             } else {
-                std::unique_lock<std::mutex> main_lock(event_mutex);
-                event_cv.wait(main_lock, predicate);
+                wait_set = true;
+                event.Wait();
             }
+            wait_set = false;
         }
-        std::unique_lock<std::mutex> main_lock(event_mutex);
-        pause_count++;
-        if (pause_count == worker_threads.size()) {
-            clock->Pause(true);
-            wait_signal_cv.notify_all();
-        }
-        wait_pause_cv.wait(main_lock, [this] { return !is_paused || shutting_down; });
-        pause_count--;
-        if (pause_count == 0) {
-            clock->Pause(false);
-            wait_signal_cv.notify_all();
-        }
+        paused_set = true;
+        clock->Pause(true);
+        pause_event.Wait();
+        clock->Pause(false);
     }
 }
 

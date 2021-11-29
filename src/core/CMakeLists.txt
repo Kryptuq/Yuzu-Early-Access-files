@@ -185,6 +185,7 @@ add_library(core STATIC
     hle/kernel/k_event.h
     hle/kernel/k_handle_table.cpp
     hle/kernel/k_handle_table.h
+    hle/kernel/k_light_condition_variable.cpp
     hle/kernel/k_light_condition_variable.h
     hle/kernel/k_light_lock.cpp
     hle/kernel/k_light_lock.h
@@ -237,6 +238,7 @@ add_library(core STATIC
     hle/kernel/k_system_control.h
     hle/kernel/k_thread.cpp
     hle/kernel/k_thread.h
+    hle/kernel/k_thread_queue.cpp
     hle/kernel/k_thread_queue.h
     hle/kernel/k_trace.h
     hle/kernel/k_transfer_memory.cpp

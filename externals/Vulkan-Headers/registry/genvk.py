@@ -20,7 +20,6 @@ from generator import write
 from spirvcapgenerator import SpirvCapabilityOutputGenerator
 from hostsyncgenerator import HostSynchronizationOutputGenerator
 from pygenerator import PyOutputGenerator
-from rubygenerator import RubyOutputGenerator
 from reflib import logDiag, logWarn, setLogFile
 from reg import Registry
 from validitygenerator import ValidityOutputGenerator
@@ -78,9 +77,6 @@ def makeGenOpts(args):
     # SPIR-V capabilities / features to emit (list of extensions & capabilities)
     emitSpirv = args.emitSpirv
 
-    # Vulkan Formats to emit
-    emitFormats = args.emitFormats
-
     # Features to include (list of features)
     features = args.feature
 
@@ -101,14 +97,13 @@ def makeGenOpts(args):
 
     # Descriptive names for various regexp patterns used to select
     # versions and extensions
-    allFormats = allSpirv = allFeatures = allExtensions = r'.*'
+    allSpirv = allFeatures = allExtensions = r'.*'
 
     # Turn lists of names/patterns into matching regular expressions
     addExtensionsPat     = makeREstring(extensions, None)
     removeExtensionsPat  = makeREstring(removeExtensions, None)
     emitExtensionsPat    = makeREstring(emitExtensions, allExtensions)
     emitSpirvPat         = makeREstring(emitSpirv, allSpirv)
-    emitFormatsPat       = makeREstring(emitFormats, allFormats)
     featuresPat          = makeREstring(features, allFeatures)
 
     # Copyright text prefixing all headers (list of strings).
@@ -187,32 +182,7 @@ def makeGenOpts(args):
             reparentEnums     = False)
         ]
 
-    # Ruby representation of API information, used by scripts that
-    # don't need to load the full XML.
-    genOpts['api.rb'] = [
-          RubyOutputGenerator,
-          DocGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'api.rb',
-            directory         = directory,
-            genpath           = None,
-            apiname           = 'vulkan',
-            profile           = None,
-            versions          = featuresPat,
-            emitversions      = featuresPat,
-            defaultExtensions = None,
-            addExtensions     = addExtensionsPat,
-            removeExtensions  = removeExtensionsPat,
-            emitExtensions    = emitExtensionsPat,
-            reparentEnums     = False)
-        ]
-
-
     # API validity files for spec
-    #
-    # requireCommandAliases is set to True because we need validity files
-    # for the command something is promoted to even when the promoted-to
-    # feature is not included. This avoids wordy includes of validity files.
     genOpts['validinc'] = [
           ValidityOutputGenerator,
           DocGeneratorOptions(
@@ -227,9 +197,7 @@ def makeGenOpts(args):
             defaultExtensions = None,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
-            emitExtensions    = emitExtensionsPat,
-            requireCommandAliases = True,
-            )
+            emitExtensions    = emitExtensionsPat)
         ]
 
     # API host sync table files for spec
@@ -339,7 +307,6 @@ def makeGenOpts(args):
         'VK_EXT_video_decode_h264',
         'VK_EXT_video_decode_h265',
         'VK_EXT_video_encode_h264',
-        'VK_EXT_video_encode_h265',
     ]
 
     betaSuppressExtensions = []
@@ -347,13 +314,10 @@ def makeGenOpts(args):
     platforms = [
         [ 'vulkan_android.h',     [ 'VK_KHR_android_surface',
                                     'VK_ANDROID_external_memory_android_hardware_buffer'
-                                                                  ], commonSuppressExtensions +
-                                                                     [ 'VK_KHR_format_feature_flags2',
-                                                                     ] ],
+                                                                  ], commonSuppressExtensions ],
         [ 'vulkan_fuchsia.h',     [ 'VK_FUCHSIA_imagepipe_surface',
                                     'VK_FUCHSIA_external_memory',
-                                    'VK_FUCHSIA_external_semaphore',
-                                    'VK_FUCHSIA_buffer_collection' ], commonSuppressExtensions ],
+                                    'VK_FUCHSIA_external_semaphore' ], commonSuppressExtensions ],
         [ 'vulkan_ggp.h',         [ 'VK_GGP_stream_descriptor_surface',
                                     'VK_GGP_frame_token'          ], commonSuppressExtensions ],
         [ 'vulkan_ios.h',         [ 'VK_MVK_ios_surface'          ], commonSuppressExtensions ],
@@ -582,8 +546,6 @@ def genTarget(args):
         logDiag('* options.addExtensions     =', options.addExtensions)
         logDiag('* options.removeExtensions  =', options.removeExtensions)
         logDiag('* options.emitExtensions    =', options.emitExtensions)
-        logDiag('* options.emitSpirv         =', options.emitSpirv)
-        logDiag('* options.emitFormats       =', options.emitFormats)
 
         gen = createGenerator(errFile=errWarn,
                               warnFile=errWarn,
@@ -616,9 +578,6 @@ if __name__ == '__main__':
     parser.add_argument('-emitSpirv', action='append',
                         default=[],
                         help='Specify a SPIR-V extension or capability to emit in targets')
-    parser.add_argument('-emitFormats', action='append',
-                        default=[],
-                        help='Specify Vulkan Formats to emit in targets')
     parser.add_argument('-feature', action='append',
                         default=[],
                         help='Specify a core API feature name or names to add to targets')
@@ -642,7 +601,7 @@ if __name__ == '__main__':
     parser.add_argument('-time', action='store_true',
                         help='Enable timing')
     parser.add_argument('-validate', action='store_true',
-                        help='Validate the registry properties and exit')
+                        help='Enable XML group validation')
     parser.add_argument('-genpath', action='store', default='gen',
                         help='Path to generated files')
     parser.add_argument('-o', action='store', dest='directory',
@@ -676,14 +635,8 @@ if __name__ == '__main__':
     else:
         diag = None
 
-    if args.time:
-        # Log diagnostics and warnings
-        setLogFile(setDiag = True, setWarn = True, filename = '-')
-
-    (gen, options) = (None, None)
-    if not args.validate:
-      # Create the API generator & generator options
-      (gen, options) = genTarget(args)
+    # Create the API generator & generator options
+    (gen, options) = genTarget(args)
 
     # Create the registry object with the specified generator and generator
     # options. The options are set before XML loading as they may affect it.
@@ -700,8 +653,7 @@ if __name__ == '__main__':
     endTimer(args.time, '* Time to parse ElementTree =')
 
     if args.validate:
-        success = reg.validateRegistry()
-        sys.exit(0 if success else 1)
+        reg.validateGroups()
 
     if args.dump:
         logDiag('* Dumping registry to regdump.txt')

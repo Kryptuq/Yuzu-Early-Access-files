@@ -47,9 +47,6 @@ void SetCurrentThreadPriority(ThreadPriority new_priority) {
     case ThreadPriority::VeryHigh:
         windows_priority = THREAD_PRIORITY_HIGHEST;
         break;
-    case ThreadPriority::Critical:
-        windows_priority = THREAD_PRIORITY_TIME_CRITICAL;
-        break;
     default:
         windows_priority = THREAD_PRIORITY_NORMAL;
         break;
@@ -62,11 +59,9 @@ void SetCurrentThreadPriority(ThreadPriority new_priority) {
 void SetCurrentThreadPriority(ThreadPriority new_priority) {
     pthread_t this_thread = pthread_self();
 
-    const auto scheduling_type =
-        new_priority != ThreadPriority::Critical ? SCHED_OTHER : SCHED_FIFO;
-    s32 max_prio = sched_get_priority_max(scheduling_type);
-    s32 min_prio = sched_get_priority_min(scheduling_type);
-    u32 level = std::max(static_cast<u32>(new_priority) + 1, 4U);
+    s32 max_prio = sched_get_priority_max(SCHED_OTHER);
+    s32 min_prio = sched_get_priority_min(SCHED_OTHER);
+    u32 level = static_cast<u32>(new_priority) + 1;
 
     struct sched_param params;
     if (max_prio > min_prio) {
@@ -75,7 +70,7 @@ void SetCurrentThreadPriority(ThreadPriority new_priority) {
         params.sched_priority = min_prio - ((min_prio - max_prio) * level) / 4;
     }
 
-    pthread_setschedparam(this_thread, scheduling_type, &params);
+    pthread_setschedparam(this_thread, SCHED_OTHER, &params);
 }
 
 #endif

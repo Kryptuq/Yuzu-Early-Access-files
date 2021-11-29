@@ -253,11 +253,6 @@ public:
         return ext_depth_range_unrestricted;
     }
 
-    /// Returns true if the device supports VK_EXT_depth_clip_control.
-    bool IsExtDepthClipControlSupported() const {
-        return ext_depth_clip_control;
-    }
-
     /// Returns true if the device supports VK_EXT_shader_viewport_index_layer.
     bool IsExtShaderViewportIndexLayerSupported() const {
         return ext_shader_viewport_index_layer;
@@ -417,7 +412,6 @@ private:
     bool khr_swapchain_mutable_format{};         ///< Support for VK_KHR_swapchain_mutable_format.
     bool ext_index_type_uint8{};                 ///< Support for VK_EXT_index_type_uint8.
     bool ext_sampler_filter_minmax{};            ///< Support for VK_EXT_sampler_filter_minmax.
-    bool ext_depth_clip_control{};               ///< Support for VK_EXT_depth_clip_control
     bool ext_depth_range_unrestricted{};         ///< Support for VK_EXT_depth_range_unrestricted.
     bool ext_shader_viewport_index_layer{}; ///< Support for VK_EXT_shader_viewport_index_layer.
     bool ext_tooling_info{};                ///< Support for VK_EXT_tooling_info.

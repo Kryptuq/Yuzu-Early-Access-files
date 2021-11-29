@@ -43,10 +43,7 @@ def enquote(s):
     """Return string argument with surrounding quotes,
       for serialization into Python code."""
     if s:
-        if isinstance(s, str):
-            return "'{}'".format(s)
-        else:
-            return s
+        return "'{}'".format(s)
     return None
 
 
@@ -122,11 +119,8 @@ class GeneratorOptions:
                  removeExtensions=None,
                  emitExtensions=None,
                  emitSpirv=None,
-                 emitFormats=None,
                  reparentEnums=True,
-                 sortProcedure=regSortFeatures,
-                 requireCommandAliases=False,
-                ):
+                 sortProcedure=regSortFeatures):
         """Constructor.
 
         Arguments:
@@ -158,8 +152,6 @@ class GeneratorOptions:
         to None.
         - emitSpirv - regex matching names of extensions and capabilities
         to actually emit interfaces for.
-        - emitFormats - regex matching names of formats to actually emit
-        interfaces for.
         - reparentEnums - move <enum> elements which extend an enumerated
         type from <feature> or <extension> elements to the target <enums>
         element. This is required for almost all purposes, but the
@@ -225,10 +217,6 @@ class GeneratorOptions:
         """regex matching names of extensions and capabilities
         to actually emit interfaces for."""
 
-        self.emitFormats = self.emptyRegex(emitFormats)
-        """regex matching names of formats
-        to actually emit interfaces for."""
-
         self.reparentEnums = reparentEnums
         """boolean specifying whether to remove <enum> elements from
         <feature> or <extension> when extending an <enums> type."""
@@ -241,10 +229,6 @@ class GeneratorOptions:
 
         self.codeGenerator = False
         """True if this generator makes compilable code"""
-
-        self.requireCommandAliases = requireCommandAliases
-        """True if alias= attributes of <command> tags are transitively
-        required."""
 
     def emptyRegex(self, pat):
         """Substitute a regular expression which matches no version
@@ -272,17 +256,6 @@ class OutputGenerator:
         'define': 'defines',
         'basetype': 'basetypes',
     }
-
-    def breakName(self, name, msg):
-        """Break into debugger if this is a special name"""
-
-        # List of string names to break on
-        bad = (
-        )
-
-        if name in bad and True:
-            print('breakName {}: {}'.format(name, msg))
-            pdb.set_trace()
 
     def __init__(self, errFile=sys.stderr, warnFile=sys.stderr, diagFile=sys.stdout):
         """Constructor
@@ -580,7 +553,7 @@ class OutputGenerator:
                     # Work around this by chasing the aliases to get the actual value.
                     while numVal is None:
                         alias = self.registry.tree.find("enums/enum[@name='" + strVal + "']")
-                        (numVal, strVal) = self.enumToValue(alias, True, bitwidth, True)
+                        (numVal, strVal) = self.enumToValue(alias, True)
                     decl += "static const {} {} = {};\n".format(flagTypeName, name, strVal)
 
                 if numVal is not None:
@@ -805,6 +778,7 @@ class OutputGenerator:
             self.warnFile.flush()
         if self.diagFile:
             self.diagFile.flush()
+        self.outFile.flush()
         if self.outFile != sys.stdout and self.outFile != sys.stderr:
             self.outFile.close()
 
@@ -913,14 +887,6 @@ class OutputGenerator:
         Extend to generate as desired in your derived class."""
         return
 
-    def genFormat(self, format, formatinfo, alias):
-        """Generate interface for a format element.
-
-        - formatinfo - FormatInfo
-
-        Extend to generate as desired in your derived class."""
-        return
-
     def makeProtoName(self, name, tail):
         """Turn a `<proto>` `<name>` into C-language prototype
         and typedef declarations for that name.
@@ -973,9 +939,6 @@ class OutputGenerator:
 
             # Clear prefix for subsequent iterations
             prefix = ''
-
-        paramdecl = paramdecl + prefix
-
         if aligncol == 0:
             # Squeeze out multiple spaces other than the indentation
             paramdecl = indent + ' '.join(paramdecl.split())

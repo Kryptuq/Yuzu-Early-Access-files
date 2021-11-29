@@ -194,7 +194,6 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
           .support_int64_atomics = false,
           .support_derivative_control = device.HasDerivativeControl(),
           .support_geometry_shader_passthrough = device.HasGeometryShaderPassthrough(),
-          .support_native_ndc = true,
           .support_gl_nv_gpu_shader_5 = device.HasNvGpuShader5(),
           .support_gl_amd_gpu_shader_half_float = device.HasAmdShaderHalfFloat(),
           .support_gl_texture_shadow_lod = device.HasTextureShadowLod(),

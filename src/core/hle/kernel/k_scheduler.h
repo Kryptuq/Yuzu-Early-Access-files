@@ -33,6 +33,8 @@ public:
     explicit KScheduler(Core::System& system_, s32 core_id_);
     ~KScheduler();
 
+    void Finalize();
+
     /// Reschedules to the next available thread (call after current thread is suspended)
     void RescheduleCurrentCore();
 

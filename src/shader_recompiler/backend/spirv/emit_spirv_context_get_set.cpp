@@ -430,7 +430,7 @@ void EmitSetSampleMask(EmitContext& ctx, Id value) {
 }
 
 void EmitSetFragDepth(EmitContext& ctx, Id value) {
-    if (!ctx.runtime_info.convert_depth_mode || ctx.profile.support_native_ndc) {
+    if (!ctx.runtime_info.convert_depth_mode) {
         ctx.OpStore(ctx.frag_depth, value);
         return;
     }

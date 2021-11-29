@@ -613,35 +613,26 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
         .flags = 0,
         .patchControlPoints = key.state.patch_control_points_minus_one.Value() + 1,
     };
+
     std::array<VkViewportSwizzleNV, Maxwell::NumViewports> swizzles;
     std::ranges::transform(key.state.viewport_swizzles, swizzles.begin(), UnpackViewportSwizzle);
-    VkPipelineViewportSwizzleStateCreateInfoNV swizzle_ci{
+    const VkPipelineViewportSwizzleStateCreateInfoNV swizzle_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SWIZZLE_STATE_CREATE_INFO_NV,
         .pNext = nullptr,
         .flags = 0,
         .viewportCount = Maxwell::NumViewports,
         .pViewportSwizzles = swizzles.data(),
     };
-    VkPipelineViewportDepthClipControlCreateInfoEXT ndc_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLIP_CONTROL_CREATE_INFO_EXT,
-        .pNext = nullptr,
-        .negativeOneToOne = key.state.ndc_minus_one_to_one.Value() != 0 ? VK_TRUE : VK_FALSE,
-    };
-    VkPipelineViewportStateCreateInfo viewport_ci{
+    const VkPipelineViewportStateCreateInfo viewport_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-        .pNext = nullptr,
+        .pNext = device.IsNvViewportSwizzleSupported() ? &swizzle_ci : nullptr,
         .flags = 0,
         .viewportCount = Maxwell::NumViewports,
         .pViewports = nullptr,
         .scissorCount = Maxwell::NumViewports,
         .pScissors = nullptr,
     };
-    if (device.IsNvViewportSwizzleSupported()) {
-        swizzle_ci.pNext = std::exchange(viewport_ci.pNext, &swizzle_ci);
-    }
-    if (device.IsExtDepthClipControlSupported()) {
-        ndc_info.pNext = std::exchange(viewport_ci.pNext, &ndc_info);
-    }
+
     VkPipelineRasterizationStateCreateInfo rasterization_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
         .pNext = nullptr,

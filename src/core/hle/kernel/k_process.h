@@ -259,7 +259,7 @@ public:
 
     [[nodiscard]] KThread* GetPinnedThread(s32 core_id) const {
         ASSERT(0 <= core_id && core_id < static_cast<s32>(Core::Hardware::NUM_CPU_CORES));
-        return pinned_threads[core_id];
+        return pinned_threads.at(core_id);
     }
 
     /// Gets 8 bytes of random data for svcGetInfo RandomEntropy
@@ -347,6 +347,7 @@ public:
 
     void PinCurrentThread();
     void UnpinCurrentThread();
+    void UnpinThread(KThread* thread);
 
     KLightLock& GetStateLock() {
         return state_lock;
@@ -368,14 +369,14 @@ private:
     void PinThread(s32 core_id, KThread* thread) {
         ASSERT(0 <= core_id && core_id < static_cast<s32>(Core::Hardware::NUM_CPU_CORES));
         ASSERT(thread != nullptr);
-        ASSERT(pinned_threads[core_id] == nullptr);
+        ASSERT(pinned_threads.at(core_id) == nullptr);
         pinned_threads[core_id] = thread;
     }
 
     void UnpinThread(s32 core_id, KThread* thread) {
         ASSERT(0 <= core_id && core_id < static_cast<s32>(Core::Hardware::NUM_CPU_CORES));
         ASSERT(thread != nullptr);
-        ASSERT(pinned_threads[core_id] == thread);
+        ASSERT(pinned_threads.at(core_id) == thread);
         pinned_threads[core_id] = nullptr;
     }
 

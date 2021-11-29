@@ -117,17 +117,18 @@ void CpuManager::MultiCoreRunGuestLoop() {
             physical_core = &kernel.CurrentPhysicalCore();
         }
         system.ExitDynarmicProfile();
-        physical_core->ArmInterface().ClearExclusiveState();
-        kernel.CurrentScheduler()->RescheduleCurrentCore();
+        {
+            Kernel::KScopedDisableDispatch dd(kernel);
+            physical_core->ArmInterface().ClearExclusiveState();
+        }
     }
 }
 
 void CpuManager::MultiCoreRunIdleThread() {
     auto& kernel = system.Kernel();
     while (true) {
-        auto& physical_core = kernel.CurrentPhysicalCore();
-        physical_core.Idle();
-        kernel.CurrentScheduler()->RescheduleCurrentCore();
+        Kernel::KScopedDisableDispatch dd(kernel);
+        kernel.CurrentPhysicalCore().Idle();
     }
 }
 
@@ -135,12 +136,12 @@ void CpuManager::MultiCoreRunSuspendThread() {
     auto& kernel = system.Kernel();
     kernel.CurrentScheduler()->OnThreadStart();
     while (true) {
-        auto core = kernel.GetCurrentHostThreadID();
+        auto core = kernel.CurrentPhysicalCoreIndex();
         auto& scheduler = *kernel.CurrentScheduler();
         Kernel::KThread* current_thread = scheduler.GetCurrentThread();
         Common::Fiber::YieldTo(current_thread->GetHostContext(), *core_data[core].host_context);
         ASSERT(scheduler.ContextSwitchPending());
-        ASSERT(core == kernel.GetCurrentHostThreadID());
+        ASSERT(core == kernel.CurrentPhysicalCoreIndex());
         scheduler.RescheduleCurrentCore();
     }
 }
@@ -346,13 +347,9 @@ void CpuManager::RunThread(std::stop_token stop_token, std::size_t core) {
             sc_sync_first_use = false;
         }
 
-        // Abort if emulation was killed before the session really starts
-        if (!system.IsPoweredOn()) {
-            return;
-        }
-
+        // Emulation was stopped
         if (stop_token.stop_requested()) {
-            break;
+            return;
         }
 
         auto current_thread = system.Kernel().CurrentScheduler()->GetCurrentThread();

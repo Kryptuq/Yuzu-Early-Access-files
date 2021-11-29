@@ -6,16 +6,16 @@
 
 #include <atomic>
 #include <chrono>
-#include <condition_variable>
 #include <functional>
 #include <memory>
-#include <mutex>
 #include <optional>
 #include <string>
 #include <thread>
 #include <vector>
 
 #include "common/common_types.h"
+#include "common/spin_lock.h"
+#include "common/thread.h"
 #include "common/wall_clock.h"
 
 namespace Core::Timing {
@@ -147,21 +147,19 @@ private:
     u64 event_fifo_id = 0;
 
     std::shared_ptr<EventType> ev_lost;
+    Common::Event event{};
+    Common::Event pause_event{};
+    Common::SpinLock basic_lock{};
+    Common::SpinLock advance_lock{};
+    std::unique_ptr<std::thread> timer_thread;
+    std::atomic<bool> paused{};
+    std::atomic<bool> paused_set{};
+    std::atomic<bool> wait_set{};
+    std::atomic<bool> shutting_down{};
     std::atomic<bool> has_started{};
     std::function<void()> on_thread_init{};
 
-    std::vector<std::thread> worker_threads;
-
-    std::condition_variable event_cv;
-    std::condition_variable wait_pause_cv;
-    std::condition_variable wait_signal_cv;
-    mutable std::mutex event_mutex;
-
-    std::atomic<bool> paused_state{};
-    bool is_paused{};
-    bool shutting_down{};
     bool is_multicore{};
-    size_t pause_count{};
 
     /// Cycle timing
     u64 ticks{};

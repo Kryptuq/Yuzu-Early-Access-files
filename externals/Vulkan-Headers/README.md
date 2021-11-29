@@ -2,17 +2,6 @@
 
 Vulkan header files and API registry
 
-## Default branch changed to 'main' 2021-09-12
-
-As discussed in #222, the default branch of this repository is now 'main'. This change should be largely transparent to repository users, since github rewrites many references to the old 'master' branch to 'main'. However, if you have a checked-out local clone, you may wish to take the following steps as recommended by github:
-
-```sh
-git branch -m master main
-git fetch origin
-git branch -u origin/main main
-git remote set-head origin -a
-```
-
 ## Repository Content
 
 The contents of this repository are largely obtained from other repositories
@@ -46,23 +35,14 @@ Files in this repository originate from:
 * README.md
 * cmake/Copyright_cmake.txt
 * cmake/cmake_uninstall.cmake.in
-* Non-API headers (report issues to the [Vulkan-Loader/issues](https://github.com/KhronosGroup/Vulkan-Loader/issues) tracker)
+* Non-API headers (report issues against @lenny-lunarg)
   * include/vulkan/vk_icd.h
   * include/vulkan/vk_layer.h
   * include/vulkan/vk_sdk_platform.h
 
 ### Vulkan C++ Binding Repository (https://github.com/KhronosGroup/Vulkan-Hpp)
 
-As of the Vulkan-Docs 1.2.182 spec update, the Vulkan-Hpp headers have been
-split into multiple files. All of those files are now included in this
-repository.
-
 * include/vulkan/vulkan.hpp
-* include/vulkan/vulkan_enums.hpp
-* include/vulkan/vulkan_funcs.hpp
-* include/vulkan/vulkan_handles.hpp
-* include/vulkan/vulkan_raii.hpp
-* include/vulkan/vulkan_structs.hpp
 
 ## Version Tagging Scheme
 
