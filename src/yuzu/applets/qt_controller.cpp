@@ -215,6 +215,9 @@ QtControllerSelectorDialog::QtControllerSelectorDialog(
     // If all the parameters are met AND only allows a single player,
     // stop the constructor here as we do not need to continue.
     if (CheckIfParametersMet() && parameters.enable_single_mode) {
+        for (std::size_t player_index = 0; player_index < NUM_PLAYERS; ++player_index) {
+            system.HIDCore().GetEmulatedControllerByIndex(player_index)->DisableConfiguration();
+        }
         return;
     }
 
