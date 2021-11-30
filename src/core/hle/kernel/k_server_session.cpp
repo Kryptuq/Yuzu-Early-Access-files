@@ -175,7 +175,8 @@ ResultCode KServerSession::CompleteSyncRequest(HLERequestContext& context) {
     {
         KScopedSchedulerLock lock(kernel);
         if (!context.IsThreadWaiting()) {
-            context.GetThread().EndWait(result);
+            context.GetThread().Wakeup();
+            context.GetThread().SetSyncedObject(nullptr, result);
         }
     }
 

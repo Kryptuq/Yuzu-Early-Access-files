@@ -23,11 +23,6 @@ public:
     }
 
     void Lock() {
-        // If we are shutting down the kernel, none of this is relevant anymore.
-        if (kernel.IsShuttingDown()) {
-            return;
-        }
-
         if (IsLockedByCurrentThread()) {
             // If we already own the lock, we can just increment the count.
             ASSERT(lock_count > 0);
@@ -48,11 +43,6 @@ public:
     }
 
     void Unlock() {
-        // If we are shutting down the kernel, none of this is relevant anymore.
-        if (kernel.IsShuttingDown()) {
-            return;
-        }
-
         ASSERT(IsLockedByCurrentThread());
         ASSERT(lock_count > 0);
 

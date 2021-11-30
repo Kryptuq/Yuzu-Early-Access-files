@@ -8,65 +8,10 @@
 #include "core/hle/kernel/k_scoped_scheduler_lock_and_sleep.h"
 #include "core/hle/kernel/k_synchronization_object.h"
 #include "core/hle/kernel/k_thread.h"
-#include "core/hle/kernel/k_thread_queue.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/svc_results.h"
 
 namespace Kernel {
-
-namespace {
-
-class ThreadQueueImplForKSynchronizationObjectWait final : public KThreadQueueWithoutEndWait {
-public:
-    ThreadQueueImplForKSynchronizationObjectWait(KernelCore& kernel_, KSynchronizationObject** o,
-                                                 KSynchronizationObject::ThreadListNode* n, s32 c)
-        : KThreadQueueWithoutEndWait(kernel_), m_objects(o), m_nodes(n), m_count(c) {}
-
-    virtual void NotifyAvailable(KThread* waiting_thread, KSynchronizationObject* signaled_object,
-                                 ResultCode wait_result) override {
-        // Determine the sync index, and unlink all nodes.
-        s32 sync_index = -1;
-        for (auto i = 0; i < m_count; ++i) {
-            // Check if this is the signaled object.
-            if (m_objects[i] == signaled_object && sync_index == -1) {
-                sync_index = i;
-            }
-
-            // Unlink the current node from the current object.
-            m_objects[i]->UnlinkNode(std::addressof(m_nodes[i]));
-        }
-
-        // Set the waiting thread's sync index.
-        waiting_thread->SetSyncedIndex(sync_index);
-
-        // Set the waiting thread as not cancellable.
-        waiting_thread->ClearCancellable();
-
-        // Invoke the base end wait handler.
-        KThreadQueue::EndWait(waiting_thread, wait_result);
-    }
-
-    virtual void CancelWait(KThread* waiting_thread, ResultCode wait_result,
-                            bool cancel_timer_task) override {
-        // Remove all nodes from our list.
-        for (auto i = 0; i < m_count; ++i) {
-            m_objects[i]->UnlinkNode(std::addressof(m_nodes[i]));
-        }
-
-        // Set the waiting thread as not cancellable.
-        waiting_thread->ClearCancellable();
-
-        // Invoke the base cancel wait handler.
-        KThreadQueue::CancelWait(waiting_thread, wait_result, cancel_timer_task);
-    }
-
-private:
-    KSynchronizationObject** m_objects;
-    KSynchronizationObject::ThreadListNode* m_nodes;
-    s32 m_count;
-};
-
-} // namespace
 
 void KSynchronizationObject::Finalize() {
     this->OnFinalizeSynchronizationObject();
@@ -80,19 +25,11 @@ ResultCode KSynchronizationObject::Wait(KernelCore& kernel_ctx, s32* out_index,
     std::vector<ThreadListNode> thread_nodes(num_objects);
 
     // Prepare for wait.
-    KThread* thread = GetCurrentThreadPointer(kernel_ctx);
-    ThreadQueueImplForKSynchronizationObjectWait wait_queue(kernel_ctx, objects,
-                                                            thread_nodes.data(), num_objects);
+    KThread* thread = kernel_ctx.CurrentScheduler()->GetCurrentThread();
 
     {
         // Setup the scheduling lock and sleep.
-        KScopedSchedulerLockAndSleep slp(kernel_ctx, thread, timeout);
-
-        // Check if the thread should terminate.
-        if (thread->IsTerminationRequested()) {
-            slp.CancelSleep();
-            return ResultTerminationRequested;
-        }
+        KScopedSchedulerLockAndSleep slp{kernel_ctx, thread, timeout};
 
         // Check if any of the objects are already signaled.
         for (auto i = 0; i < num_objects; ++i) {
@@ -111,6 +48,12 @@ ResultCode KSynchronizationObject::Wait(KernelCore& kernel_ctx, s32* out_index,
             return ResultTimedOut;
         }
 
+        // Check if the thread should terminate.
+        if (thread->IsTerminationRequested()) {
+            slp.CancelSleep();
+            return ResultTerminationRequested;
+        }
+
         // Check if waiting was canceled.
         if (thread->IsWaitCancelled()) {
             slp.CancelSleep();
@@ -123,25 +66,73 @@ ResultCode KSynchronizationObject::Wait(KernelCore& kernel_ctx, s32* out_index,
             thread_nodes[i].thread = thread;
             thread_nodes[i].next = nullptr;
 
-            objects[i]->LinkNode(std::addressof(thread_nodes[i]));
+            if (objects[i]->thread_list_tail == nullptr) {
+                objects[i]->thread_list_head = std::addressof(thread_nodes[i]);
+            } else {
+                objects[i]->thread_list_tail->next = std::addressof(thread_nodes[i]);
+            }
+
+            objects[i]->thread_list_tail = std::addressof(thread_nodes[i]);
         }
 
-        // Mark the thread as cancellable.
+        // For debugging only
+        thread->SetWaitObjectsForDebugging({objects, static_cast<std::size_t>(num_objects)});
+
+        // Mark the thread as waiting.
         thread->SetCancellable();
-
-        // Clear the thread's synced index.
-        thread->SetSyncedIndex(-1);
-
-        // Wait for an object to be signaled.
-        thread->BeginWait(std::addressof(wait_queue));
+        thread->SetSyncedObject(nullptr, ResultTimedOut);
+        thread->SetState(ThreadState::Waiting);
         thread->SetWaitReasonForDebugging(ThreadWaitReasonForDebugging::Synchronization);
     }
 
-    // Set the output index.
-    *out_index = thread->GetSyncedIndex();
+    // The lock/sleep is done, so we should be able to get our result.
+
+    // Thread is no longer cancellable.
+    thread->ClearCancellable();
+
+    // For debugging only
+    thread->SetWaitObjectsForDebugging({});
+
+    // Cancel the timer as needed.
+    kernel_ctx.TimeManager().UnscheduleTimeEvent(thread);
 
     // Get the wait result.
-    return thread->GetWaitResult();
+    ResultCode wait_result{ResultSuccess};
+    s32 sync_index = -1;
+    {
+        KScopedSchedulerLock lock(kernel_ctx);
+        KSynchronizationObject* synced_obj;
+        wait_result = thread->GetWaitResult(std::addressof(synced_obj));
+
+        for (auto i = 0; i < num_objects; ++i) {
+            // Unlink the object from the list.
+            ThreadListNode* prev_ptr =
+                reinterpret_cast<ThreadListNode*>(std::addressof(objects[i]->thread_list_head));
+            ThreadListNode* prev_val = nullptr;
+            ThreadListNode *prev, *tail_prev;
+
+            do {
+                prev = prev_ptr;
+                prev_ptr = prev_ptr->next;
+                tail_prev = prev_val;
+                prev_val = prev_ptr;
+            } while (prev_ptr != std::addressof(thread_nodes[i]));
+
+            if (objects[i]->thread_list_tail == std::addressof(thread_nodes[i])) {
+                objects[i]->thread_list_tail = tail_prev;
+            }
+
+            prev->next = thread_nodes[i].next;
+
+            if (objects[i] == synced_obj) {
+                sync_index = i;
+            }
+        }
+    }
+
+    // Set output.
+    *out_index = sync_index;
+    return wait_result;
 }
 
 KSynchronizationObject::KSynchronizationObject(KernelCore& kernel_)
@@ -150,7 +141,7 @@ KSynchronizationObject::KSynchronizationObject(KernelCore& kernel_)
 KSynchronizationObject::~KSynchronizationObject() = default;
 
 void KSynchronizationObject::NotifyAvailable(ResultCode result) {
-    KScopedSchedulerLock sl(kernel);
+    KScopedSchedulerLock lock(kernel);
 
     // If we're not signaled, we've nothing to notify.
     if (!this->IsSignaled()) {
@@ -159,7 +150,11 @@ void KSynchronizationObject::NotifyAvailable(ResultCode result) {
 
     // Iterate over each thread.
     for (auto* cur_node = thread_list_head; cur_node != nullptr; cur_node = cur_node->next) {
-        cur_node->thread->NotifyAvailable(this, result);
+        KThread* thread = cur_node->thread;
+        if (thread->GetState() == ThreadState::Waiting) {
+            thread->SetSyncedObject(this, result);
+            thread->SetState(ThreadState::Runnable);
+        }
     }
 }
 

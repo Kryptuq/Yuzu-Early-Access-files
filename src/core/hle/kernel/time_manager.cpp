@@ -5,7 +5,6 @@
 #include "common/assert.h"
 #include "core/core.h"
 #include "core/core_timing.h"
-#include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/time_manager.h"
 
@@ -16,10 +15,7 @@ TimeManager::TimeManager(Core::System& system_) : system{system_} {
         Core::Timing::CreateEvent("Kernel::TimeManagerCallback",
                                   [this](std::uintptr_t thread_handle, std::chrono::nanoseconds) {
                                       KThread* thread = reinterpret_cast<KThread*>(thread_handle);
-                                      {
-                                          KScopedSchedulerLock sl(system.Kernel());
-                                          thread->OnTimer();
-                                      }
+                                      thread->Wakeup();
                                   });
 }
 

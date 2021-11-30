@@ -20,7 +20,7 @@ public:
 
     void Unlock();
 
-    bool LockSlowPath(uintptr_t owner, uintptr_t cur_thread);
+    void LockSlowPath(uintptr_t owner, uintptr_t cur_thread);
 
     void UnlockSlowPath(uintptr_t cur_thread);
 

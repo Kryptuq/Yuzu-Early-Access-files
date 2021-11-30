@@ -17,10 +17,11 @@ namespace Service::Friend {
 
 class IFriendService final : public ServiceFramework<IFriendService> {
 public:
-    explicit IFriendService(Core::System& system_) : ServiceFramework{system_, "IFriendService"} {
+    explicit IFriendService(Core::System& system_)
+        : ServiceFramework{system_, "IFriendService"}, service_context{system, "IFriendService"} {
         // clang-format off
         static const FunctionInfo functions[] = {
-            {0, nullptr, "GetCompletionEvent"},
+            {0, &IFriendService::GetCompletionEvent, "GetCompletionEvent"},
             {1, nullptr, "Cancel"},
             {10100, nullptr, "GetFriendListIds"},
             {10101, &IFriendService::GetFriendList, "GetFriendList"},
@@ -109,6 +110,12 @@ public:
         // clang-format on
 
         RegisterHandlers(functions);
+
+        completion_event = service_context.CreateEvent("IFriendService:CompletionEvent");
+    }
+
+    ~IFriendService() override {
+        service_context.CloseEvent(completion_event);
     }
 
 private:
@@ -128,6 +135,14 @@ private:
         u64 group_id;
     };
     static_assert(sizeof(SizedFriendFilter) == 0x10, "SizedFriendFilter is an invalid size");
+
+    void GetCompletionEvent(Kernel::HLERequestContext& ctx) {
+        LOG_DEBUG(Service_Friend, "called");
+
+        IPC::ResponseBuilder rb{ctx, 2, 1};
+        rb.Push(ResultSuccess);
+        rb.PushCopyObjects(completion_event->GetReadableEvent());
+    }
 
     void GetBlockedUserListIds(Kernel::HLERequestContext& ctx) {
         // This is safe to stub, as there should be no adverse consequences from reporting no
@@ -179,6 +194,10 @@ private:
         rb.Push<u32>(0); // Friend count
         // TODO(ogniK): Return a buffer of u64s which are the "NetworkServiceAccountId"
     }
+
+    KernelHelpers::ServiceContext service_context;
+
+    Kernel::KEvent* completion_event;
 };
 
 class INotificationService final : public ServiceFramework<INotificationService> {

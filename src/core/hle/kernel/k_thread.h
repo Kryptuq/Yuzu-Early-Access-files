@@ -48,7 +48,6 @@ enum class ThreadType : u32 {
     Kernel = 1,
     HighPriority = 2,
     User = 3,
-    Dummy = 100, // Special thread type for emulation purposes only
 };
 DECLARE_ENUM_FLAG_OPERATORS(ThreadType);
 
@@ -162,6 +161,8 @@ public:
         }
     }
 
+    void Wakeup();
+
     void SetBasePriority(s32 value);
 
     [[nodiscard]] ResultCode Run();
@@ -196,19 +197,13 @@ public:
 
     void Suspend();
 
-    constexpr void SetSyncedIndex(s32 index) {
-        synced_index = index;
-    }
-
-    [[nodiscard]] constexpr s32 GetSyncedIndex() const {
-        return synced_index;
-    }
-
-    constexpr void SetWaitResult(ResultCode wait_res) {
+    void SetSyncedObject(KSynchronizationObject* obj, ResultCode wait_res) {
+        synced_object = obj;
         wait_result = wait_res;
     }
 
-    [[nodiscard]] constexpr ResultCode GetWaitResult() const {
+    [[nodiscard]] ResultCode GetWaitResult(KSynchronizationObject** out) const {
+        *out = synced_object;
         return wait_result;
     }
 
@@ -379,8 +374,6 @@ public:
 
     [[nodiscard]] bool IsSignaled() const override;
 
-    void OnTimer();
-
     static void PostDestroy(uintptr_t arg);
 
     [[nodiscard]] static ResultCode InitializeDummyThread(KThread* thread);
@@ -453,39 +446,20 @@ public:
         return per_core_priority_queue_entry[core];
     }
 
-    [[nodiscard]] bool IsKernelThread() const {
-        return GetActiveCore() == 3;
-    }
-
-    [[nodiscard]] bool IsDispatchTrackingDisabled() const {
-        return is_single_core || IsKernelThread();
+    void SetSleepingQueue(KThreadQueue* q) {
+        sleeping_queue = q;
     }
 
     [[nodiscard]] s32 GetDisableDispatchCount() const {
-        if (IsDispatchTrackingDisabled()) {
-            // TODO(bunnei): Until kernel threads are emulated, we cannot enable/disable dispatch.
-            return 1;
-        }
-
         return this->GetStackParameters().disable_count;
     }
 
     void DisableDispatch() {
-        if (IsDispatchTrackingDisabled()) {
-            // TODO(bunnei): Until kernel threads are emulated, we cannot enable/disable dispatch.
-            return;
-        }
-
         ASSERT(GetCurrentThread(kernel).GetDisableDispatchCount() >= 0);
         this->GetStackParameters().disable_count++;
     }
 
     void EnableDispatch() {
-        if (IsDispatchTrackingDisabled()) {
-            // TODO(bunnei): Until kernel threads are emulated, we cannot enable/disable dispatch.
-            return;
-        }
-
         ASSERT(GetCurrentThread(kernel).GetDisableDispatchCount() > 0);
         this->GetStackParameters().disable_count--;
     }
@@ -599,15 +573,6 @@ public:
         address_key_value = val;
     }
 
-    void ClearWaitQueue() {
-        wait_queue = nullptr;
-    }
-
-    void BeginWait(KThreadQueue* queue);
-    void NotifyAvailable(KSynchronizationObject* signaled_object, ResultCode wait_result_);
-    void EndWait(ResultCode wait_result_);
-    void CancelWait(ResultCode wait_result_, bool cancel_timer_task);
-
     [[nodiscard]] bool HasWaiters() const {
         return !waiter_list.empty();
     }
@@ -702,6 +667,7 @@ private:
     KAffinityMask physical_affinity_mask{};
     u64 thread_id{};
     std::atomic<s64> cpu_time{};
+    KSynchronizationObject* synced_object{};
     VAddr address_key{};
     KProcess* parent{};
     VAddr kernel_stack_top{};
@@ -711,14 +677,13 @@ private:
     s64 schedule_count{};
     s64 last_scheduled_tick{};
     std::array<QueueEntry, Core::Hardware::NUM_CPU_CORES> per_core_priority_queue_entry{};
-    KThreadQueue* wait_queue{};
+    KThreadQueue* sleeping_queue{};
     WaiterList waiter_list{};
     WaiterList pinned_waiter_list{};
     KThread* lock_owner{};
     u32 address_key_value{};
     u32 suspend_request_flags{};
     u32 suspend_allowed_flags{};
-    s32 synced_index{};
     ResultCode wait_result{ResultSuccess};
     s32 base_priority{};
     s32 physical_ideal_core_id{};
@@ -743,7 +708,6 @@ private:
 
     // For emulation
     std::shared_ptr<Common::Fiber> host_context{};
-    bool is_single_core{};
 
     // For debugging
     std::vector<KSynchronizationObject*> wait_objects_for_debugging;
@@ -786,22 +750,6 @@ public:
     [[nodiscard]] ConditionVariableThreadTree* GetConditionVariableTree() const {
         return condvar_tree;
     }
-};
-
-class KScopedDisableDispatch {
-public:
-    [[nodiscard]] explicit KScopedDisableDispatch(KernelCore& kernel_) : kernel{kernel_} {
-        // If we are shutting down the kernel, none of this is relevant anymore.
-        if (kernel.IsShuttingDown()) {
-            return;
-        }
-        GetCurrentThread(kernel).DisableDispatch();
-    }
-
-    ~KScopedDisableDispatch();
-
-private:
-    KernelCore& kernel;
 };
 
 } // namespace Kernel

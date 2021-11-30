@@ -25,27 +25,24 @@ public:
     void QueueSyncRequest(KSession& session, std::shared_ptr<HLERequestContext>&& context);
 
 private:
-    std::vector<std::jthread> threads;
+    std::vector<std::thread> threads;
     std::queue<std::function<void()>> requests;
     std::mutex queue_mutex;
-    std::condition_variable_any condition;
+    std::condition_variable condition;
     const std::string service_name;
+    bool stop{};
 };
 
 ServiceThread::Impl::Impl(KernelCore& kernel, std::size_t num_threads, const std::string& name)
     : service_name{name} {
-    for (std::size_t i = 0; i < num_threads; ++i) {
-        threads.emplace_back([this, &kernel](std::stop_token stop_token) {
+    for (std::size_t i = 0; i < num_threads; ++i)
+        threads.emplace_back([this, &kernel] {
             Common::SetCurrentThreadName(std::string{"yuzu:HleService:" + service_name}.c_str());
 
             // Wait for first request before trying to acquire a render context
             {
                 std::unique_lock lock{queue_mutex};
-                condition.wait(lock, stop_token, [this] { return !requests.empty(); });
-            }
-
-            if (stop_token.stop_requested()) {
-                return;
+                condition.wait(lock, [this] { return stop || !requests.empty(); });
             }
 
             kernel.RegisterHostThread();
@@ -55,16 +52,10 @@ ServiceThread::Impl::Impl(KernelCore& kernel, std::size_t num_threads, const std
 
                 {
                     std::unique_lock lock{queue_mutex};
-                    condition.wait(lock, stop_token, [this] { return !requests.empty(); });
-
-                    if (stop_token.stop_requested()) {
+                    condition.wait(lock, [this] { return stop || !requests.empty(); });
+                    if (stop || requests.empty()) {
                         return;
                     }
-
-                    if (requests.empty()) {
-                        continue;
-                    }
-
                     task = std::move(requests.front());
                     requests.pop();
                 }
@@ -72,7 +63,6 @@ ServiceThread::Impl::Impl(KernelCore& kernel, std::size_t num_threads, const std
                 task();
             }
         });
-    }
 }
 
 void ServiceThread::Impl::QueueSyncRequest(KSession& session,
@@ -97,7 +87,16 @@ void ServiceThread::Impl::QueueSyncRequest(KSession& session,
     condition.notify_one();
 }
 
-ServiceThread::Impl::~Impl() = default;
+ServiceThread::Impl::~Impl() {
+    {
+        std::unique_lock lock{queue_mutex};
+        stop = true;
+    }
+    condition.notify_all();
+    for (std::thread& thread : threads) {
+        thread.join();
+    }
+}
 
 ServiceThread::ServiceThread(KernelCore& kernel, std::size_t num_threads, const std::string& name)
     : impl{std::make_unique<Impl>(kernel, num_threads, name)} {}
