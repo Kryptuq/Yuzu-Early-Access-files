@@ -10,8 +10,8 @@
 #include <QTreeView>
 #include "core/frontend/applets/profile_select.h"
 #include "core/hle/service/acc/profile_manager.h"
-#include "yuzu/controller_navigation.h"
 
+class ControllerNavigation;
 class GMainWindow;
 class QDialogButtonBox;
 class QGraphicsScene;
@@ -20,6 +20,10 @@ class QScrollArea;
 class QStandardItem;
 class QStandardItemModel;
 class QVBoxLayout;
+
+namespace Core::HID {
+class HIDCore;
+} // namespace Core::HID
 
 class QtProfileSelectionDialog final : public QDialog {
     Q_OBJECT

@@ -78,9 +78,9 @@ struct ConsoleUpdateCallback {
 class EmulatedConsole {
 public:
     /**
-     * Contains all input data related to the console like motion and touch input
+     * Contains all input data within the emulated switch console tablet such as touch and motion
      */
-    EmulatedConsole();
+    explicit EmulatedConsole();
     ~EmulatedConsole();
 
     YUZU_NON_COPYABLE(EmulatedConsole);
@@ -89,14 +89,16 @@ public:
     /// Removes all callbacks created from input devices
     void UnloadInput();
 
-    /// Sets the emulated console into configuring mode. Locking all HID service events from being
-    /// moddified
+    /**
+     * Sets the emulated console into configuring mode
+     * This prevents the modification of the HID state of the emulated console by input commands
+     */
     void EnableConfiguration();
 
-    /// Returns the emulated console to the normal behaivour
+    /// Returns the emulated console into normal mode, allowing the modification of the HID state
     void DisableConfiguration();
 
-    /// Returns true if the emulated console is on configuring mode
+    /// Returns true if the emulated console is in configuring mode
     bool IsConfiguring() const;
 
     /// Reload all input devices
@@ -116,7 +118,7 @@ public:
 
     /**
      * Updates the current mapped motion device
-     * @param ParamPackage with controller data to be mapped
+     * @param param ParamPackage with controller data to be mapped
      */
     void SetMotionParam(Common::ParamPackage param);
 
@@ -134,14 +136,14 @@ public:
 
     /**
      * Adds a callback to the list of events
-     * @param ConsoleUpdateCallback that will be triggered
+     * @param update_callback A ConsoleUpdateCallback that will be triggered
      * @return an unique key corresponding to the callback index in the list
      */
     int SetCallback(ConsoleUpdateCallback update_callback);
 
     /**
      * Removes a callback from the list stopping any future events to this object
-     * @param Key corresponding to the callback index in the list
+     * @param key Key corresponding to the callback index in the list
      */
     void DeleteCallback(int key);
 
@@ -151,20 +153,20 @@ private:
 
     /**
      * Updates the motion status of the console
-     * @param A CallbackStatus containing gyro and accelerometer data
+     * @param callback A CallbackStatus containing gyro and accelerometer data
      */
     void SetMotion(Common::Input::CallbackStatus callback);
 
     /**
      * Updates the touch status of the console
-     * @param callback: A CallbackStatus containing the touch position
-     * @param index: Finger ID to be updated
+     * @param callback A CallbackStatus containing the touch position
+     * @param index Finger ID to be updated
      */
     void SetTouch(Common::Input::CallbackStatus callback, std::size_t index);
 
     /**
      * Triggers a callback that something has changed on the console status
-     * @param Input type of the event to trigger
+     * @param type Input type of the event to trigger
      */
     void TriggerOnChange(ConsoleTriggerType type);
 

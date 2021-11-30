@@ -45,6 +45,12 @@ public:
     /// Returns the first connected npad id
     NpadIdType GetFirstNpadId() const;
 
+    /// Sets all emulated controllers into configuring mode.
+    void EnableAllControllerConfiguration();
+
+    /// Sets all emulated controllers into normal mode.
+    void DisableAllControllerConfiguration();
+
     /// Reloads all input devices from settings
     void ReloadInputDevices();
 

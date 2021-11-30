@@ -132,8 +132,8 @@ struct ControllerUpdateCallback {
 class EmulatedController {
 public:
     /**
-     * Contains all input data related to this controller. Like buttons, joysticks, motion.
-     * @param Npad id type for this specific controller
+     * Contains all input data (buttons, joysticks, vibration, and motion) within this controller.
+     * @param npad_id_type npad id type for this specific controller
      */
     explicit EmulatedController(NpadIdType npad_id_type_);
     ~EmulatedController();
@@ -155,7 +155,7 @@ public:
 
     /**
      * Gets the NpadStyleIndex for this controller
-     * @param If true tmp_npad_type will be returned
+     * @param get_temporary_value If true tmp_npad_type will be returned
      * @return NpadStyleIndex set on the controller
      */
     NpadStyleIndex GetNpadStyleIndex(bool get_temporary_value = false) const;
@@ -168,7 +168,7 @@ public:
 
     /**
      * Is the emulated connected
-     * @param If true tmp_is_connected will be returned
+     * @param get_temporary_value If true tmp_is_connected will be returned
      * @return true if the controller has the connected status
      */
     bool IsConnected(bool get_temporary_value = false) const;
@@ -179,14 +179,16 @@ public:
     /// Removes all callbacks created from input devices
     void UnloadInput();
 
-    /// Sets the emulated console into configuring mode. Locking all HID service events from being
-    /// moddified
+    /**
+     * Sets the emulated controller into configuring mode
+     * This prevents the modification of the HID state of the emulated controller by input commands
+     */
     void EnableConfiguration();
 
-    /// Returns the emulated console to the normal behaivour
+    /// Returns the emulated controller into normal mode, allowing the modification of the HID state
     void DisableConfiguration();
 
-    /// Returns true if the emulated device is on configuring mode
+    /// Returns true if the emulated controller is in configuring mode
     bool IsConfiguring() const;
 
     /// Reload all input devices
@@ -215,19 +217,19 @@ public:
 
     /**
      * Updates the current mapped button device
-     * @param ParamPackage with controller data to be mapped
+     * @param param ParamPackage with controller data to be mapped
      */
     void SetButtonParam(std::size_t index, Common::ParamPackage param);
 
     /**
      * Updates the current mapped stick device
-     * @param ParamPackage with controller data to be mapped
+     * @param param ParamPackage with controller data to be mapped
      */
     void SetStickParam(std::size_t index, Common::ParamPackage param);
 
     /**
      * Updates the current mapped motion device
-     * @param ParamPackage with controller data to be mapped
+     * @param param ParamPackage with controller data to be mapped
      */
     void SetMotionParam(std::size_t index, Common::ParamPackage param);
 
@@ -270,13 +272,13 @@ public:
     /// Returns the latest battery status from the controller
     BatteryLevelState GetBattery() const;
 
-    /*
+    /**
      * Sends a specific vibration to the output device
      * @return returns true if vibration had no errors
      */
     bool SetVibration(std::size_t device_index, VibrationValue vibration);
 
-    /*
+    /**
      * Sends a small vibration to the output device
      * @return returns true if SetVibration was successfull
      */
@@ -290,14 +292,14 @@ public:
 
     /**
      * Adds a callback to the list of events
-     * @param ConsoleUpdateCallback that will be triggered
+     * @param update_callback A ConsoleUpdateCallback that will be triggered
      * @return an unique key corresponding to the callback index in the list
      */
     int SetCallback(ControllerUpdateCallback update_callback);
 
     /**
      * Removes a callback from the list stopping any future events to this object
-     * @param Key corresponding to the callback index in the list
+     * @param key Key corresponding to the callback index in the list
      */
     void DeleteCallback(int key);
 
@@ -310,43 +312,43 @@ private:
 
     /**
      * Updates the button status of the controller
-     * @param callback: A CallbackStatus containing the button status
-     * @param index: Button ID of the to be updated
+     * @param callback A CallbackStatus containing the button status
+     * @param index Button ID of the to be updated
      */
     void SetButton(Common::Input::CallbackStatus callback, std::size_t index, Common::UUID uuid);
 
     /**
      * Updates the analog stick status of the controller
-     * @param callback: A CallbackStatus containing the analog stick status
-     * @param index: stick ID of the to be updated
+     * @param callback A CallbackStatus containing the analog stick status
+     * @param index stick ID of the to be updated
      */
     void SetStick(Common::Input::CallbackStatus callback, std::size_t index, Common::UUID uuid);
 
     /**
      * Updates the trigger status of the controller
-     * @param callback: A CallbackStatus containing the trigger status
-     * @param index: trigger ID of the to be updated
+     * @param callback A CallbackStatus containing the trigger status
+     * @param index trigger ID of the to be updated
      */
     void SetTrigger(Common::Input::CallbackStatus callback, std::size_t index, Common::UUID uuid);
 
     /**
      * Updates the motion status of the controller
-     * @param callback: A CallbackStatus containing gyro and accelerometer data
-     * @param index: motion ID of the to be updated
+     * @param callback A CallbackStatus containing gyro and accelerometer data
+     * @param index motion ID of the to be updated
      */
     void SetMotion(Common::Input::CallbackStatus callback, std::size_t index);
 
     /**
      * Updates the battery status of the controller
-     * @param callback: A CallbackStatus containing the battery status
-     * @param index: Button ID of the to be updated
+     * @param callback A CallbackStatus containing the battery status
+     * @param index Button ID of the to be updated
      */
     void SetBattery(Common::Input::CallbackStatus callback, std::size_t index);
 
     /**
      * Triggers a callback that something has changed on the controller status
-     * @param type: Input type of the event to trigger
-     * @param is_service_update: indicates if this event should be sended to only services
+     * @param type Input type of the event to trigger
+     * @param is_service_update indicates if this event should only be sent to HID services
      */
     void TriggerOnChange(ControllerTriggerType type, bool is_service_update);
 
@@ -357,7 +359,7 @@ private:
     f32 motion_sensitivity{0.01f};
     bool force_update_motion{false};
 
-    // Temporary values to avoid doing changes while the controller is on configuration mode
+    // Temporary values to avoid doing changes while the controller is in configuring mode
     NpadStyleIndex tmp_npad_type{NpadStyleIndex::None};
     bool tmp_is_connected{false};
 

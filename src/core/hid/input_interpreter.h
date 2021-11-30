@@ -105,7 +105,7 @@ private:
     Service::HID::Controller_NPad& npad;
 
     /// Stores 9 consecutive button states polled from HID.
-    std::array<u64, 9> button_states{};
+    std::array<Core::HID::NpadButton, 9> button_states{};
 
     std::size_t previous_index{};
     std::size_t current_index{};

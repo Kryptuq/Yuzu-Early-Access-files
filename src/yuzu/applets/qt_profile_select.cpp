@@ -17,6 +17,7 @@
 #include "core/hle/lock.h"
 #include "yuzu/applets/qt_profile_select.h"
 #include "yuzu/main.h"
+#include "yuzu/util/controller_navigation.h"
 
 namespace {
 QString FormatUserEntryText(const QString& username, Common::UUID uuid) {

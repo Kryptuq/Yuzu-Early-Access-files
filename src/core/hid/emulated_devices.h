@@ -75,9 +75,9 @@ class EmulatedDevices {
 public:
     /**
      * Contains all input data related to external devices that aren't necesarily a controller
-     * like keyboard and mouse
+     * This includes devices such as the keyboard or mouse
      */
-    EmulatedDevices();
+    explicit EmulatedDevices();
     ~EmulatedDevices();
 
     YUZU_NON_COPYABLE(EmulatedDevices);
@@ -86,14 +86,16 @@ public:
     /// Removes all callbacks created from input devices
     void UnloadInput();
 
-    /// Sets the emulated console into configuring mode. Locking all HID service events from being
-    /// moddified
+    /**
+     * Sets the emulated devices into configuring mode
+     * This prevents the modification of the HID state of the emulated devices by input commands
+     */
     void EnableConfiguration();
 
-    /// Returns the emulated console to the normal behaivour
+    /// Returns the emulated devices into normal mode, allowing the modification of the HID state
     void DisableConfiguration();
 
-    /// Returns true if the emulated device is on configuring mode
+    /// Returns true if the emulated device is in configuring mode
     bool IsConfiguring() const;
 
     /// Reload all input devices
@@ -134,14 +136,14 @@ public:
 
     /**
      * Adds a callback to the list of events
-     * @param InterfaceUpdateCallback that will be triggered
+     * @param update_callback InterfaceUpdateCallback that will be triggered
      * @return an unique key corresponding to the callback index in the list
      */
     int SetCallback(InterfaceUpdateCallback update_callback);
 
     /**
      * Removes a callback from the list stopping any future events to this object
-     * @param Key corresponding to the callback index in the list
+     * @param key Key corresponding to the callback index in the list
      */
     void DeleteCallback(int key);
 
@@ -151,42 +153,42 @@ private:
 
     /**
      * Updates the touch status of the keyboard device
-     * @param callback: A CallbackStatus containing the key status
-     * @param index: key ID to be updated
+     * @param callback A CallbackStatus containing the key status
+     * @param index key ID to be updated
      */
     void SetKeyboardButton(Common::Input::CallbackStatus callback, std::size_t index);
 
     /**
      * Updates the keyboard status of the keyboard device
-     * @param callback: A CallbackStatus containing the modifier key status
-     * @param index: modifier key ID to be updated
+     * @param callback A CallbackStatus containing the modifier key status
+     * @param index modifier key ID to be updated
      */
     void SetKeyboardModifier(Common::Input::CallbackStatus callback, std::size_t index);
 
     /**
      * Updates the mouse button status of the mouse device
-     * @param callback: A CallbackStatus containing the button status
-     * @param index: Button ID to be updated
+     * @param callback A CallbackStatus containing the button status
+     * @param index Button ID to be updated
      */
     void SetMouseButton(Common::Input::CallbackStatus callback, std::size_t index);
 
     /**
      * Updates the mouse wheel status of the mouse device
-     * @param callback: A CallbackStatus containing the wheel status
-     * @param index: wheel ID to be updated
+     * @param callback A CallbackStatus containing the wheel status
+     * @param index wheel ID to be updated
      */
     void SetMouseAnalog(Common::Input::CallbackStatus callback, std::size_t index);
 
     /**
      * Updates the mouse position status of the mouse device
-     * @param callback: A CallbackStatus containing the position status
-     * @param index: stick ID to be updated
+     * @param callback A CallbackStatus containing the position status
+     * @param index stick ID to be updated
      */
     void SetMouseStick(Common::Input::CallbackStatus callback);
 
     /**
      * Triggers a callback that something has changed on the device status
-     * @param Input type of the event to trigger
+     * @param type Input type of the event to trigger
      */
     void TriggerOnChange(DeviceTriggerType type);
 

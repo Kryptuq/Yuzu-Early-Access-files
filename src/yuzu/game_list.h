@@ -23,8 +23,8 @@
 #include "common/common_types.h"
 #include "uisettings.h"
 #include "yuzu/compatibility_list.h"
-#include "yuzu/controller_navigation.h"
 
+class ControllerNavigation;
 class GameListWorker;
 class GameListSearchField;
 class GameListDir;

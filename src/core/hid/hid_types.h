@@ -63,6 +63,8 @@ enum class NpadButton : u64 {
     LagonCUp = 1ULL << 32,
     LagonCRight = 1ULL << 33,
     LagonCDown = 1ULL << 34,
+
+    All = 0xFFFFFFFFFFFFFFFFULL,
 };
 DECLARE_ENUM_FLAG_OPERATORS(NpadButton);
 

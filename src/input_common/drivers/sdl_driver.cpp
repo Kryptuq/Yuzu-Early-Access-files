@@ -388,8 +388,6 @@ void SDLDriver::CloseJoysticks() {
 }
 
 SDLDriver::SDLDriver(const std::string& input_engine_) : InputEngine(input_engine_) {
-    Common::SetCurrentThreadName("yuzu:input:SDL");
-
     if (!Settings::values.enable_raw_input) {
         // Disable raw input. When enabled this setting causes SDL to die when a web applet opens
         SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT, "0");
@@ -422,6 +420,7 @@ SDLDriver::SDLDriver(const std::string& input_engine_) : InputEngine(input_engin
     initialized = true;
     if (start_thread) {
         poll_thread = std::thread([this] {
+            Common::SetCurrentThreadName("yuzu:input:SDL");
             using namespace std::chrono_literals;
             while (initialized) {
                 SDL_PumpEvents();

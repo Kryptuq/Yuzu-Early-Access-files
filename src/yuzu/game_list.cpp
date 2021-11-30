@@ -26,6 +26,7 @@
 #include "yuzu/game_list_worker.h"
 #include "yuzu/main.h"
 #include "yuzu/uisettings.h"
+#include "yuzu/util/controller_navigation.h"
 
 GameListSearchField::KeyReleaseEater::KeyReleaseEater(GameList* gamelist, QObject* parent)
     : QObject(parent), gamelist{gamelist} {}

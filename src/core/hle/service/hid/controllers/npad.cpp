@@ -510,7 +510,7 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
         libnx_state.r_stick = pad_state.r_stick;
         npad.system_ext_lifo.WriteNextEntry(pad_state);
 
-        press_state |= static_cast<u32>(pad_state.npad_buttons.raw);
+        press_state |= static_cast<u64>(pad_state.npad_buttons.raw);
 
         std::memcpy(data + NPAD_OFFSET + (i * sizeof(NpadInternalState)),
                     &controller.shared_memory_entry, sizeof(NpadInternalState));
@@ -635,7 +635,7 @@ void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing
             // This buffer only is updated on handheld on HW
             npad.sixaxis_handheld_lifo.WriteNextEntry(sixaxis_handheld_state);
         } else {
-            // Hanheld doesn't update this buffer on HW
+            // Handheld doesn't update this buffer on HW
             npad.sixaxis_fullkey_lifo.WriteNextEntry(sixaxis_fullkey_state);
         }
 
@@ -1149,8 +1149,8 @@ void Controller_NPad::ClearAllControllers() {
     }
 }
 
-u32 Controller_NPad::GetAndResetPressState() {
-    return press_state.exchange(0);
+Core::HID::NpadButton Controller_NPad::GetAndResetPressState() {
+    return static_cast<Core::HID::NpadButton>(press_state.exchange(0));
 }
 
 bool Controller_NPad::IsControllerSupported(Core::HID::NpadStyleIndex controller) const {

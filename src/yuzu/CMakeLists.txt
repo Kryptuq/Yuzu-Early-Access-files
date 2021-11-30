@@ -126,8 +126,6 @@ add_executable(yuzu
     configuration/configure_web.ui
     configuration/input_profiles.cpp
     configuration/input_profiles.h
-    controller_navigation.cpp
-    controller_navigation.h
     debugger/console.cpp
     debugger/console.h
     debugger/controller.cpp
@@ -154,6 +152,8 @@ add_executable(yuzu
     main.ui
     uisettings.cpp
     uisettings.h
+    util/controller_navigation.cpp
+    util/controller_navigation.h
     util/limitable_input_dialog.cpp
     util/limitable_input_dialog.h
     util/overlay_dialog.cpp

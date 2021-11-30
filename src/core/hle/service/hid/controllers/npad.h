@@ -179,7 +179,7 @@ public:
 
     // Logical OR for all buttons presses on all controllers
     // Specifically for cheat engine and other features.
-    u32 GetAndResetPressState();
+    Core::HID::NpadButton GetAndResetPressState();
 
     static bool IsNpadIdValid(Core::HID::NpadIdType npad_id);
     static bool IsDeviceHandleValid(const Core::HID::SixAxisSensorHandle& device_handle);
@@ -503,7 +503,7 @@ private:
     NpadControllerData& GetControllerFromNpadIdType(Core::HID::NpadIdType npad_id);
     const NpadControllerData& GetControllerFromNpadIdType(Core::HID::NpadIdType npad_id) const;
 
-    std::atomic<u32> press_state{};
+    std::atomic<u64> press_state{};
 
     std::array<NpadControllerData, 10> controller_data{};
     KernelHelpers::ServiceContext& service_context;

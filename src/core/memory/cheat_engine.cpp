@@ -19,7 +19,6 @@
 namespace Core::Memory {
 namespace {
 constexpr auto CHEAT_ENGINE_NS = std::chrono::nanoseconds{1000000000 / 12};
-constexpr u32 KEYPAD_BITMASK = 0x3FFFFFF;
 
 std::string_view ExtractName(std::string_view data, std::size_t start_index, char match) {
     auto end_index = start_index;
@@ -61,7 +60,7 @@ u64 StandardVmCallbacks::HidKeysDown() {
         applet_resource
             ->GetController<Service::HID::Controller_NPad>(Service::HID::HidController::NPad)
             .GetAndResetPressState();
-    return press_state & KEYPAD_BITMASK;
+    return static_cast<u64>(press_state & HID::NpadButton::All);
 }
 
 void StandardVmCallbacks::DebugLog(u8 id, u64 value) {

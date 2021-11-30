@@ -135,6 +135,32 @@ NpadIdType HIDCore::GetFirstNpadId() const {
     return NpadIdType::Player1;
 }
 
+void HIDCore::EnableAllControllerConfiguration() {
+    player_1->EnableConfiguration();
+    player_2->EnableConfiguration();
+    player_3->EnableConfiguration();
+    player_4->EnableConfiguration();
+    player_5->EnableConfiguration();
+    player_6->EnableConfiguration();
+    player_7->EnableConfiguration();
+    player_8->EnableConfiguration();
+    other->EnableConfiguration();
+    handheld->EnableConfiguration();
+}
+
+void HIDCore::DisableAllControllerConfiguration() {
+    player_1->DisableConfiguration();
+    player_2->DisableConfiguration();
+    player_3->DisableConfiguration();
+    player_4->DisableConfiguration();
+    player_5->DisableConfiguration();
+    player_6->DisableConfiguration();
+    player_7->DisableConfiguration();
+    player_8->DisableConfiguration();
+    other->DisableConfiguration();
+    handheld->DisableConfiguration();
+}
+
 void HIDCore::ReloadInputDevices() {
     player_1->ReloadFromSettings();
     player_2->ReloadFromSettings();
