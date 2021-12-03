@@ -18,7 +18,7 @@ int ShaderNotify::ShadersBuilding() noexcept {
     const int now_complete = num_complete.load(std::memory_order::relaxed);
     const int now_building = num_building.load(std::memory_order::relaxed);
     if (now_complete == now_building) {
-        const auto now = std::chrono::high_resolution_clock::now();
+        const auto now = std::chrono::steady_clock::now();
         if (completed && num_complete == num_when_completed) {
             if (now - complete_time > TIME_TO_STOP_REPORTING) {
                 report_base = now_complete;

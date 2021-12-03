@@ -33,7 +33,7 @@ public:
     explicit PerfStats(u64 title_id_);
     ~PerfStats();
 
-    using Clock = std::chrono::high_resolution_clock;
+    using Clock = std::chrono::steady_clock;
 
     void BeginSystemFrame();
     void EndSystemFrame();
@@ -87,7 +87,7 @@ private:
 
 class SpeedLimiter {
 public:
-    using Clock = std::chrono::high_resolution_clock;
+    using Clock = std::chrono::steady_clock;
 
     void DoSpeedLimiting(std::chrono::microseconds current_system_time_us);
 

@@ -24,7 +24,7 @@ enum class AlbumImageOrientation {
     Orientation3 = 3,
 };
 
-enum class AlbumReportOption {
+enum class AlbumReportOption : s32 {
     Disable = 0,
     Enable = 1,
 };

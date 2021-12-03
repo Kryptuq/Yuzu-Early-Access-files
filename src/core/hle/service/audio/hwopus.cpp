@@ -96,7 +96,7 @@ private:
 
     bool DecodeOpusData(u32& consumed, u32& sample_count, const std::vector<u8>& input,
                         std::vector<opus_int16>& output, u64* out_performance_time) const {
-        const auto start_time = std::chrono::high_resolution_clock::now();
+        const auto start_time = std::chrono::steady_clock::now();
         const std::size_t raw_output_sz = output.size() * sizeof(opus_int16);
         if (sizeof(OpusPacketHeader) > input.size()) {
             LOG_ERROR(Audio, "Input is smaller than the header size, header_sz={}, input_sz={}",
@@ -135,7 +135,7 @@ private:
             return false;
         }
 
-        const auto end_time = std::chrono::high_resolution_clock::now() - start_time;
+        const auto end_time = std::chrono::steady_clock::now() - start_time;
         sample_count = out_sample_count;
         consumed = static_cast<u32>(sizeof(OpusPacketHeader) + hdr.size);
         if (out_performance_time != nullptr) {

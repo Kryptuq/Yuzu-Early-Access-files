@@ -136,7 +136,7 @@ void LoadingScreen::OnLoadComplete() {
 void LoadingScreen::OnLoadProgress(VideoCore::LoadCallbackStage stage, std::size_t value,
                                    std::size_t total) {
     using namespace std::chrono;
-    const auto now = high_resolution_clock::now();
+    const auto now = steady_clock::now();
     // reset the timer if the stage changes
     if (stage != previous_stage) {
         ui->progress_bar->setStyleSheet(QString::fromUtf8(progressbar_style[stage]));
@@ -160,7 +160,7 @@ void LoadingScreen::OnLoadProgress(VideoCore::LoadCallbackStage stage, std::size
     // If theres a drastic slowdown in the rate, then display an estimate
     if (now - previous_time > milliseconds{50} || slow_shader_compile_start) {
         if (!slow_shader_compile_start) {
-            slow_shader_start = high_resolution_clock::now();
+            slow_shader_start = steady_clock::now();
             slow_shader_compile_start = true;
             slow_shader_first_value = value;
         }

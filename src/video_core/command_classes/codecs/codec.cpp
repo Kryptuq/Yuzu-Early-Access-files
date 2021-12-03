@@ -23,6 +23,17 @@ namespace Tegra {
 namespace {
 constexpr AVPixelFormat PREFERRED_GPU_FMT = AV_PIX_FMT_NV12;
 constexpr AVPixelFormat PREFERRED_CPU_FMT = AV_PIX_FMT_YUV420P;
+constexpr std::array PREFERRED_GPU_DECODERS = {
+    AV_HWDEVICE_TYPE_CUDA,
+#ifdef _WIN32
+    AV_HWDEVICE_TYPE_D3D11VA,
+    AV_HWDEVICE_TYPE_DXVA2,
+#elif defined(__linux__)
+    AV_HWDEVICE_TYPE_VDPAU,
+#endif
+    // last resort for Linux Flatpak (w/ NVIDIA)
+    AV_HWDEVICE_TYPE_VULKAN,
+};
 
 void AVPacketDeleter(AVPacket* ptr) {
     av_packet_free(&ptr);
@@ -59,6 +70,20 @@ Codec::~Codec() {
     // Free libav memory
     avcodec_free_context(&av_codec_ctx);
     av_buffer_unref(&av_gpu_decoder);
+}
+
+// List all the currently available hwcontext in ffmpeg
+static std::vector<AVHWDeviceType> ListSupportedContexts() {
+    std::vector<AVHWDeviceType> contexts{};
+    AVHWDeviceType current_device_type = AV_HWDEVICE_TYPE_NONE;
+    do {
+        current_device_type = av_hwdevice_iterate_types(current_device_type);
+        // filter out VA-API since we will try that first if supported
+        if (current_device_type != AV_HWDEVICE_TYPE_VAAPI) {
+            contexts.push_back(current_device_type);
+        }
+    } while (current_device_type != AV_HWDEVICE_TYPE_NONE);
+    return contexts;
 }
 
 #ifdef LIBVA_FOUND
@@ -122,16 +147,12 @@ bool Codec::CreateGpuAvDevice() {
     av_dict_free(&hwdevice_options);
 #endif
     static constexpr auto HW_CONFIG_METHOD = AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX;
-    static constexpr std::array GPU_DECODER_TYPES{
-#ifdef linux
-        AV_HWDEVICE_TYPE_VDPAU,
-#endif
-        AV_HWDEVICE_TYPE_CUDA,
-#ifdef _WIN32
-        AV_HWDEVICE_TYPE_D3D11VA,
-#endif
-    };
-    for (const auto& type : GPU_DECODER_TYPES) {
+    static const auto supported_contexts = ListSupportedContexts();
+    for (const auto& type : PREFERRED_GPU_DECODERS) {
+        if (std::none_of(supported_contexts.begin(), supported_contexts.end(),
+                         [&type](const auto& context) { return context == type; })) {
+            continue;
+        }
         const int hwdevice_res = av_hwdevice_ctx_create(&av_gpu_decoder, type, nullptr, nullptr, 0);
         if (hwdevice_res < 0) {
             LOG_DEBUG(Service_NVDRV, "{} av_hwdevice_ctx_create failed {}",

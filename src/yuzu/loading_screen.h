@@ -84,8 +84,8 @@ private:
     // shaders, it will start quickly but end slow if new shaders were added since previous launch.
     // These variables are used to detect the change in speed so we can generate an ETA
     bool slow_shader_compile_start = false;
-    std::chrono::high_resolution_clock::time_point slow_shader_start;
-    std::chrono::high_resolution_clock::time_point previous_time;
+    std::chrono::steady_clock::time_point slow_shader_start;
+    std::chrono::steady_clock::time_point previous_time;
     std::size_t slow_shader_first_value = 0;
 };
 

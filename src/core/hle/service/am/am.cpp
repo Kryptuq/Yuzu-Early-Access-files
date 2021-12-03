@@ -30,6 +30,7 @@
 #include "core/hle/service/apm/apm_controller.h"
 #include "core/hle/service/apm/apm_interface.h"
 #include "core/hle/service/bcat/backend/backend.h"
+#include "core/hle/service/caps/caps.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/ns/ns.h"
 #include "core/hle/service/nvflinger/nvflinger.h"
@@ -298,7 +299,7 @@ ISelfController::ISelfController(Core::System& system_, NVFlinger::NVFlinger& nv
         {91, &ISelfController::GetAccumulatedSuspendedTickChangedEvent, "GetAccumulatedSuspendedTickChangedEvent"},
         {100, &ISelfController::SetAlbumImageTakenNotificationEnabled, "SetAlbumImageTakenNotificationEnabled"},
         {110, nullptr, "SetApplicationAlbumUserData"},
-        {120, nullptr, "SaveCurrentScreenshot"},
+        {120, &ISelfController::SaveCurrentScreenshot, "SaveCurrentScreenshot"},
         {130, nullptr, "SetRecordVolumeMuted"},
         {1000, nullptr, "GetDebugStorageChannel"},
     };
@@ -574,6 +575,17 @@ void ISelfController::SetAlbumImageTakenNotificationEnabled(Kernel::HLERequestCo
 
     LOG_WARNING(Service_AM, "(STUBBED) called. album_image_taken_notification_enabled={}",
                 album_image_taken_notification_enabled);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void ISelfController::SaveCurrentScreenshot(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+
+    const auto album_report_option = rp.PopEnum<Capture::AlbumReportOption>();
+
+    LOG_WARNING(Service_AM, "(STUBBED) called. album_report_option={}", album_report_option);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);

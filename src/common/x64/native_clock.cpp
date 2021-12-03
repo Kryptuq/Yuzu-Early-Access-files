@@ -19,16 +19,16 @@ u64 EstimateRDTSCFrequency() {
     // get current time
     _mm_mfence();
     const u64 tscStart = __rdtsc();
-    const auto startTime = std::chrono::high_resolution_clock::now();
+    const auto startTime = std::chrono::steady_clock::now();
     // wait roughly 3 seconds
     while (true) {
         auto milli = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::high_resolution_clock::now() - startTime);
+            std::chrono::steady_clock::now() - startTime);
         if (milli.count() >= 3000)
             break;
         std::this_thread::sleep_for(milli_10);
     }
-    const auto endTime = std::chrono::high_resolution_clock::now();
+    const auto endTime = std::chrono::steady_clock::now();
     _mm_mfence();
     const u64 tscEnd = __rdtsc();
     // calculate difference

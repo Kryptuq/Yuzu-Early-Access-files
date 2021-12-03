@@ -8,10 +8,13 @@
 #include <QObject>
 
 #include "common/input.h"
-#include "common/settings.h"
-#include "core/hid/emulated_controller.h"
+#include "common/settings_input.h"
 
 namespace Core::HID {
+using ButtonValues = std::array<Common::Input::ButtonStatus, Settings::NativeButton::NumButtons>;
+using SticksValues = std::array<Common::Input::StickStatus, Settings::NativeAnalog::NumAnalogs>;
+enum class ControllerTriggerType;
+class EmulatedController;
 class HIDCore;
 } // namespace Core::HID
 
