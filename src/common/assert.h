@@ -32,14 +32,14 @@ assert_noinline_call(const Fn& fn) {
 
 #define ASSERT(_a_)                                                                                \
     do                                                                                             \
-        if (!(_a_)) {                                                                              \
+        if (!(_a_)) [[unlikely]] {                                                                 \
             assert_noinline_call([] { LOG_CRITICAL(Debug, "Assertion Failed!"); });                \
         }                                                                                          \
     while (0)
 
 #define ASSERT_MSG(_a_, ...)                                                                       \
     do                                                                                             \
-        if (!(_a_)) {                                                                              \
+        if (!(_a_)) [[unlikely]] {                                                                 \
             assert_noinline_call([&] { LOG_CRITICAL(Debug, "Assertion Failed!\n" __VA_ARGS__); }); \
         }                                                                                          \
     while (0)
@@ -70,7 +70,7 @@ assert_noinline_call(const Fn& fn) {
 #define ASSERT_OR_EXECUTE(_a_, _b_)                                                                \
     do {                                                                                           \
         ASSERT(_a_);                                                                               \
-        if (!(_a_)) {                                                                              \
+        if (!(_a_)) [[unlikely]] {                                                                 \
             _b_                                                                                    \
         }                                                                                          \
     } while (0)
@@ -79,7 +79,7 @@ assert_noinline_call(const Fn& fn) {
 #define ASSERT_OR_EXECUTE_MSG(_a_, _b_, ...)                                                       \
     do {                                                                                           \
         ASSERT_MSG(_a_, __VA_ARGS__);                                                              \
-        if (!(_a_)) {                                                                              \
+        if (!(_a_)) [[unlikely]] {                                                                 \
             _b_                                                                                    \
         }                                                                                          \
     } while (0)
