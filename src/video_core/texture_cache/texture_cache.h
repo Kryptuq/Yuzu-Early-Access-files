@@ -1122,7 +1122,7 @@ typename TextureCache<P>::BlitImages TextureCache<P>::GetBlitImages(
             break;
         }
         if (can_be_depth_blit) {
-            const ImageBase* const dst_image = src_id ? &slot_images[src_id] : nullptr;
+            const ImageBase* const dst_image = dst_id ? &slot_images[dst_id] : nullptr;
             DeduceBlitImages(dst_info, src_info, dst_image, src_image);
             if (GetFormatType(dst_info.format) != GetFormatType(src_info.format)) {
                 continue;
@@ -1135,8 +1135,11 @@ typename TextureCache<P>::BlitImages TextureCache<P>::GetBlitImages(
             dst_id = InsertImage(dst_info, dst_addr, RelaxedOptions{});
         }
     } while (has_deleted_images);
-    if (GetFormatType(dst_info.format) != SurfaceType::ColorTexture) {
-        // Make sure the images are depth and/or stencil textures.
+    const ImageBase& src_image = slot_images[src_id];
+    const ImageBase& dst_image = slot_images[dst_id];
+    if (GetFormatType(dst_info.format) != GetFormatType(dst_image.info.format) ||
+        GetFormatType(src_info.format) != GetFormatType(src_image.info.format)) {
+        // Make sure the images match the expected format.
         do {
             has_deleted_images = false;
             src_id = FindOrInsertImage(src_info, src_addr, RelaxedOptions{});

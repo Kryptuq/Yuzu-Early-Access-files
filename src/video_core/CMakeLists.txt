@@ -3,6 +3,7 @@ add_subdirectory(host_shaders)
 if(LIBVA_FOUND)
     set_source_files_properties(command_classes/codecs/codec.cpp
         PROPERTIES COMPILE_DEFINITIONS LIBVA_FOUND=1)
+    list(APPEND FFmpeg_LIBRARIES ${LIBVA_LIBRARIES})
 endif()
 
 add_library(video_core STATIC

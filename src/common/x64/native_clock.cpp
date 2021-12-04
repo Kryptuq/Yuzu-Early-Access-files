@@ -15,26 +15,26 @@
 namespace Common {
 
 u64 EstimateRDTSCFrequency() {
-    const auto milli_10 = std::chrono::milliseconds{10};
-    // get current time
+    // Discard the first result measuring the rdtsc.
     _mm_mfence();
-    const u64 tscStart = __rdtsc();
-    const auto startTime = std::chrono::steady_clock::now();
-    // wait roughly 3 seconds
-    while (true) {
-        auto milli = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::steady_clock::now() - startTime);
-        if (milli.count() >= 3000)
-            break;
-        std::this_thread::sleep_for(milli_10);
-    }
-    const auto endTime = std::chrono::steady_clock::now();
+    __rdtsc();
+    std::this_thread::sleep_for(std::chrono::milliseconds{1});
     _mm_mfence();
-    const u64 tscEnd = __rdtsc();
-    // calculate difference
-    const u64 timer_diff =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - startTime).count();
-    const u64 tsc_diff = tscEnd - tscStart;
+    __rdtsc();
+
+    // Get the current time.
+    const auto start_time = std::chrono::steady_clock::now();
+    _mm_mfence();
+    const u64 tsc_start = __rdtsc();
+    // Wait for 200 milliseconds.
+    std::this_thread::sleep_for(std::chrono::milliseconds{200});
+    const auto end_time = std::chrono::steady_clock::now();
+    _mm_mfence();
+    const u64 tsc_end = __rdtsc();
+    // Calculate differences.
+    const u64 timer_diff = static_cast<u64>(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
+    const u64 tsc_diff = tsc_end - tsc_start;
     const u64 tsc_freq = MultiplyAndDivide64(tsc_diff, 1000000000ULL, timer_diff);
     return tsc_freq;
 }
