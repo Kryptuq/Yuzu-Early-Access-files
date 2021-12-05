@@ -108,6 +108,16 @@ const EmulatedController* HIDCore::GetEmulatedControllerByIndex(std::size_t inde
 
 void HIDCore::SetSupportedStyleTag(NpadStyleTag style_tag) {
     supported_style_tag.raw = style_tag.raw;
+    player_1->SetSupportedNpadStyleTag(supported_style_tag);
+    player_2->SetSupportedNpadStyleTag(supported_style_tag);
+    player_3->SetSupportedNpadStyleTag(supported_style_tag);
+    player_4->SetSupportedNpadStyleTag(supported_style_tag);
+    player_5->SetSupportedNpadStyleTag(supported_style_tag);
+    player_6->SetSupportedNpadStyleTag(supported_style_tag);
+    player_7->SetSupportedNpadStyleTag(supported_style_tag);
+    player_8->SetSupportedNpadStyleTag(supported_style_tag);
+    other->SetSupportedNpadStyleTag(supported_style_tag);
+    handheld->SetSupportedNpadStyleTag(supported_style_tag);
 }
 
 NpadStyleTag HIDCore::GetSupportedStyleTag() const {

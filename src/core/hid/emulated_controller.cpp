@@ -866,7 +866,50 @@ void EmulatedController::SetLedPattern() {
     }
 }
 
+void EmulatedController::SetSupportedNpadStyleTag(NpadStyleTag supported_styles) {
+    supported_style_tag = supported_styles;
+    if (!is_connected) {
+        return;
+    }
+    if (!IsControllerSupported()) {
+        LOG_ERROR(Service_HID, "Controller type {} is not supported. Disconnecting controller",
+                  npad_type);
+        Disconnect();
+    }
+}
+
+bool EmulatedController::IsControllerSupported() const {
+    switch (npad_type) {
+    case NpadStyleIndex::ProController:
+        return supported_style_tag.fullkey;
+    case NpadStyleIndex::JoyconDual:
+        return supported_style_tag.joycon_dual;
+    case NpadStyleIndex::JoyconLeft:
+        return supported_style_tag.joycon_left;
+    case NpadStyleIndex::JoyconRight:
+        return supported_style_tag.joycon_right;
+    case NpadStyleIndex::GameCube:
+        return supported_style_tag.gamecube;
+    case NpadStyleIndex::Pokeball:
+        return supported_style_tag.palma;
+    case NpadStyleIndex::NES:
+        return supported_style_tag.lark;
+    case NpadStyleIndex::SNES:
+        return supported_style_tag.lucia;
+    case NpadStyleIndex::N64:
+        return supported_style_tag.lagoon;
+    case NpadStyleIndex::SegaGenesis:
+        return supported_style_tag.lager;
+    default:
+        return false;
+    }
+}
+
 void EmulatedController::Connect() {
+    if (!IsControllerSupported()) {
+        LOG_ERROR(Service_HID, "Controller type {} is not supported", npad_type);
+        return;
+    }
     {
         std::lock_guard lock{mutex};
         if (is_configuring) {

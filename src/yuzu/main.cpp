@@ -1516,6 +1516,9 @@ void GMainWindow::ShutdownGame() {
     input_subsystem->GetTas()->Stop();
     OnTasStateChanged();
 
+    // Enable all controllers
+    system->HIDCore().SetSupportedStyleTag({Core::HID::NpadStyleSet::All});
+
     render_window->removeEventFilter(render_window);
     render_window->setAttribute(Qt::WA_Hover, false);
 

@@ -160,6 +160,13 @@ public:
      */
     NpadStyleIndex GetNpadStyleIndex(bool get_temporary_value = false) const;
 
+    /**
+     * Sets the supported controller types. Disconnects the controller if current type is not
+     * supported
+     * @param supported_styles bitflag with supported types
+     */
+    void SetSupportedNpadStyleTag(NpadStyleTag supported_styles);
+
     /// Sets the connected status to true
     void Connect();
 
@@ -311,6 +318,12 @@ private:
     void LoadTASParams();
 
     /**
+     * Checks the current controller type against the supported_style_tag
+     * @return true if the controller is supported
+     */
+    bool IsControllerSupported() const;
+
+    /**
      * Updates the button status of the controller
      * @param callback A CallbackStatus containing the button status
      * @param index Button ID of the to be updated
@@ -354,6 +367,7 @@ private:
 
     NpadIdType npad_id_type;
     NpadStyleIndex npad_type{NpadStyleIndex::None};
+    NpadStyleTag supported_style_tag{NpadStyleSet::All};
     bool is_connected{false};
     bool is_configuring{false};
     f32 motion_sensitivity{0.01f};

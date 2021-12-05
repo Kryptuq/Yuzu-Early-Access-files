@@ -256,6 +256,8 @@ enum class NpadStyleSet : u32 {
     Lager = 1U << 11,
     SystemExt = 1U << 29,
     System = 1U << 30,
+
+    All = 0xFFFFFFFFU,
 };
 static_assert(sizeof(NpadStyleSet) == 4, "NpadStyleSet is an invalid size");
 

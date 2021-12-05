@@ -73,7 +73,7 @@ private:
     std::unique_ptr<EmulatedController> handheld;
     std::unique_ptr<EmulatedConsole> console;
     std::unique_ptr<EmulatedDevices> devices;
-    NpadStyleTag supported_style_tag;
+    NpadStyleTag supported_style_tag{NpadStyleSet::All};
 };
 
 } // namespace Core::HID

@@ -126,8 +126,11 @@ void Controller_NPad::ControllerUpdate(Core::HID::ControllerTriggerType type,
 }
 
 void Controller_NPad::InitNewlyAddedController(Core::HID::NpadIdType npad_id) {
-    LOG_DEBUG(Service_HID, "Npad connected {}", npad_id);
     auto& controller = GetControllerFromNpadIdType(npad_id);
+    if (!IsControllerSupported(controller.device->GetNpadStyleIndex())) {
+        return;
+    }
+    LOG_DEBUG(Service_HID, "Npad connected {}", npad_id);
     const auto controller_type = controller.device->GetNpadStyleIndex();
     auto& shared_memory = controller.shared_memory_entry;
     if (controller_type == Core::HID::NpadStyleIndex::None) {
@@ -255,19 +258,7 @@ void Controller_NPad::OnInit() {
 
     if (hid_core.GetSupportedStyleTag().raw == Core::HID::NpadStyleSet::None) {
         // We want to support all controllers
-        Core::HID::NpadStyleTag style{};
-        style.handheld.Assign(1);
-        style.joycon_left.Assign(1);
-        style.joycon_right.Assign(1);
-        style.joycon_dual.Assign(1);
-        style.fullkey.Assign(1);
-        style.gamecube.Assign(1);
-        style.palma.Assign(1);
-        style.lark.Assign(1);
-        style.lucia.Assign(1);
-        style.lagoon.Assign(1);
-        style.lager.Assign(1);
-        hid_core.SetSupportedStyleTag(style);
+        hid_core.SetSupportedStyleTag({Core::HID::NpadStyleSet::All});
     }
 
     supported_npad_id_types.resize(npad_id_list.size());
@@ -1072,13 +1063,18 @@ bool Controller_NPad::SwapNpadAssignment(Core::HID::NpadIdType npad_id_1,
     const auto& controller_2 = GetControllerFromNpadIdType(npad_id_2).device;
     const auto type_index_1 = controller_1->GetNpadStyleIndex();
     const auto type_index_2 = controller_2->GetNpadStyleIndex();
+    const auto is_connected_1 = controller_1->IsConnected();
+    const auto is_connected_2 = controller_2->IsConnected();
 
-    if (!IsControllerSupported(type_index_1) || !IsControllerSupported(type_index_2)) {
+    if (!IsControllerSupported(type_index_1) && is_connected_1) {
+        return false;
+    }
+    if (!IsControllerSupported(type_index_2) && is_connected_2) {
         return false;
     }
 
-    AddNewControllerAt(type_index_2, npad_id_1);
-    AddNewControllerAt(type_index_1, npad_id_2);
+    UpdateControllerAt(type_index_2, npad_id_1, is_connected_2);
+    UpdateControllerAt(type_index_1, npad_id_2, is_connected_1);
 
     return true;
 }
