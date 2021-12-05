@@ -23,5 +23,8 @@ public:
 
     void OnOpen(DeviceFD fd) override;
     void OnClose(DeviceFD fd) override;
+
+private:
+    u32 next_id{};
 };
 } // namespace Service::Nvidia::Devices

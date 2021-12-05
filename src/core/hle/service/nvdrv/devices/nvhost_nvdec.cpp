@@ -20,8 +20,12 @@ NvResult nvhost_nvdec::Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>&
     switch (command.group) {
     case 0x0:
         switch (command.cmd) {
-        case 0x1:
-            return Submit(input, output);
+        case 0x1: {
+            if (!fd_to_id.contains(fd)) {
+                fd_to_id[fd] = next_id++;
+            }
+            return Submit(fd, input, output);
+        }
         case 0x2:
             return GetSyncpoint(input, output);
         case 0x3:
@@ -66,7 +70,10 @@ void nvhost_nvdec::OnOpen(DeviceFD fd) {}
 
 void nvhost_nvdec::OnClose(DeviceFD fd) {
     LOG_INFO(Service_NVDRV, "NVDEC video stream ended");
-    system.GPU().ClearCdmaInstance();
+    const auto iter = fd_to_id.find(fd);
+    if (iter != fd_to_id.end()) {
+        system.GPU().ClearCdmaInstance(iter->second);
+    }
 }
 
 } // namespace Service::Nvidia::Devices

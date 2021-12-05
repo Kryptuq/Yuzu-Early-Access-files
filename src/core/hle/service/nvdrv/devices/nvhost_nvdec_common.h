@@ -104,13 +104,14 @@ protected:
 
     /// Ioctl command implementations
     NvResult SetNVMAPfd(const std::vector<u8>& input);
-    NvResult Submit(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult Submit(DeviceFD fd, const std::vector<u8>& input, std::vector<u8>& output);
     NvResult GetSyncpoint(const std::vector<u8>& input, std::vector<u8>& output);
     NvResult GetWaitbase(const std::vector<u8>& input, std::vector<u8>& output);
     NvResult MapBuffer(const std::vector<u8>& input, std::vector<u8>& output);
     NvResult UnmapBuffer(const std::vector<u8>& input, std::vector<u8>& output);
     NvResult SetSubmitTimeout(const std::vector<u8>& input, std::vector<u8>& output);
 
+    std::unordered_map<DeviceFD, u32> fd_to_id{};
     s32_le nvmap_fd{};
     u32_le submit_timeout{};
     std::shared_ptr<nvmap> nvmap_dev;

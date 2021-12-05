@@ -59,7 +59,8 @@ NvResult nvhost_nvdec_common::SetNVMAPfd(const std::vector<u8>& input) {
     return NvResult::Success;
 }
 
-NvResult nvhost_nvdec_common::Submit(const std::vector<u8>& input, std::vector<u8>& output) {
+NvResult nvhost_nvdec_common::Submit(DeviceFD fd, const std::vector<u8>& input,
+                                     std::vector<u8>& output) {
     IoctlSubmit params{};
     std::memcpy(&params, input.data(), sizeof(IoctlSubmit));
     LOG_DEBUG(Service_NVDRV, "called NVDEC Submit, cmd_buffer_count={}", params.cmd_buffer_count);
@@ -93,7 +94,7 @@ NvResult nvhost_nvdec_common::Submit(const std::vector<u8>& input, std::vector<u
         Tegra::ChCommandHeaderList cmdlist(cmd_buffer.word_count);
         system.Memory().ReadBlock(object->addr + cmd_buffer.offset, cmdlist.data(),
                                   cmdlist.size() * sizeof(u32));
-        gpu.PushCommandBuffer(cmdlist);
+        gpu.PushCommandBuffer(fd_to_id[fd], cmdlist);
     }
     std::memcpy(output.data(), &params, sizeof(IoctlSubmit));
     // Some games expect command_buffers to be written back
