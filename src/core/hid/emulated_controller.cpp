@@ -882,6 +882,8 @@ bool EmulatedController::IsControllerSupported() const {
     switch (npad_type) {
     case NpadStyleIndex::ProController:
         return supported_style_tag.fullkey;
+    case NpadStyleIndex::Handheld:
+        return supported_style_tag.handheld;
     case NpadStyleIndex::JoyconDual:
         return supported_style_tag.joycon_dual;
     case NpadStyleIndex::JoyconLeft:
