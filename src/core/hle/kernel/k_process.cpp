@@ -60,6 +60,7 @@ void SetupMainThread(Core::System& system, KProcess& owner_process, u32 priority
     thread->GetContext64().cpu_registers[0] = 0;
     thread->GetContext32().cpu_registers[1] = thread_handle;
     thread->GetContext64().cpu_registers[1] = thread_handle;
+    thread->DisableDispatch();
 
     auto& kernel = system.Kernel();
     // Threads by default are dormant, wake up the main thread so it runs when the scheduler fires
@@ -227,12 +228,15 @@ void KProcess::PinCurrentThread() {
     const s32 core_id = GetCurrentCoreId(kernel);
     KThread* cur_thread = GetCurrentThreadPointer(kernel);
 
-    // Pin it.
-    PinThread(core_id, cur_thread);
-    cur_thread->Pin();
+    // If the thread isn't terminated, pin it.
+    if (!cur_thread->IsTerminationRequested()) {
+        // Pin it.
+        PinThread(core_id, cur_thread);
+        cur_thread->Pin();
 
-    // An update is needed.
-    KScheduler::SetSchedulerUpdateNeeded(kernel);
+        // An update is needed.
+        KScheduler::SetSchedulerUpdateNeeded(kernel);
+    }
 }
 
 void KProcess::UnpinCurrentThread() {
@@ -245,6 +249,20 @@ void KProcess::UnpinCurrentThread() {
     // Unpin it.
     cur_thread->Unpin();
     UnpinThread(core_id, cur_thread);
+
+    // An update is needed.
+    KScheduler::SetSchedulerUpdateNeeded(kernel);
+}
+
+void KProcess::UnpinThread(KThread* thread) {
+    ASSERT(kernel.GlobalSchedulerContext().IsLocked());
+
+    // Get the thread's core id.
+    const auto core_id = thread->GetActiveCore();
+
+    // Unpin it.
+    UnpinThread(core_id, thread);
+    thread->Unpin();
 
     // An update is needed.
     KScheduler::SetSchedulerUpdateNeeded(kernel);

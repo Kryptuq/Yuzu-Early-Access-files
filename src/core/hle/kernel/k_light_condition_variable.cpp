@@ -18,8 +18,8 @@ public:
                                               bool term)
         : KThreadQueue(kernel_), m_wait_list(wl), m_allow_terminating_thread(term) {}
 
-    virtual void CancelWait(KThread* waiting_thread, ResultCode wait_result,
-                            bool cancel_timer_task) override {
+    void CancelWait(KThread* waiting_thread, ResultCode wait_result,
+                    bool cancel_timer_task) override {
         // Only process waits if we're allowed to.
         if (ResultTerminationRequested == wait_result && m_allow_terminating_thread) {
             return;

@@ -31,6 +31,7 @@
 #include "core/hle/kernel/k_shared_memory.h"
 #include "core/hle/kernel/k_synchronization_object.h"
 #include "core/hle/kernel/k_thread.h"
+#include "core/hle/kernel/k_thread_queue.h"
 #include "core/hle/kernel/k_transfer_memory.h"
 #include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/kernel/kernel.h"
@@ -307,26 +308,29 @@ static ResultCode ConnectToNamedPort32(Core::System& system, Handle* out_handle,
 
 /// Makes a blocking IPC call to an OS service.
 static ResultCode SendSyncRequest(Core::System& system, Handle handle) {
-
     auto& kernel = system.Kernel();
+
+    // Create the wait queue.
+    KThreadQueue wait_queue(kernel);
+
+    // Get the client session from its handle.
+    KScopedAutoObject session =
+        kernel.CurrentProcess()->GetHandleTable().GetObject<KClientSession>(handle);
+    R_UNLESS(session.IsNotNull(), ResultInvalidHandle);
+
+    LOG_TRACE(Kernel_SVC, "called handle=0x{:08X}({})", handle, session->GetName());
 
     auto thread = kernel.CurrentScheduler()->GetCurrentThread();
     {
         KScopedSchedulerLock lock(kernel);
-        thread->SetState(ThreadState::Waiting);
-        thread->SetWaitReasonForDebugging(ThreadWaitReasonForDebugging::IPC);
 
-        {
-            KScopedAutoObject session =
-                kernel.CurrentProcess()->GetHandleTable().GetObject<KClientSession>(handle);
-            R_UNLESS(session.IsNotNull(), ResultInvalidHandle);
-            LOG_TRACE(Kernel_SVC, "called handle=0x{:08X}({})", handle, session->GetName());
-            session->SendSyncRequest(thread, system.Memory(), system.CoreTiming());
-        }
+        // This is a synchronous request, so we should wait for our request to complete.
+        GetCurrentThread(kernel).BeginWait(std::addressof(wait_queue));
+        GetCurrentThread(kernel).SetWaitReasonForDebugging(ThreadWaitReasonForDebugging::IPC);
+        session->SendSyncRequest(&GetCurrentThread(kernel), system.Memory(), system.CoreTiming());
     }
 
-    KSynchronizationObject* dummy{};
-    return thread->GetWaitResult(std::addressof(dummy));
+    return thread->GetWaitResult();
 }
 
 static ResultCode SendSyncRequest32(Core::System& system, Handle handle) {
@@ -873,7 +877,7 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, Handle
             const u64 thread_ticks = current_thread->GetCpuTime();
 
             out_ticks = thread_ticks + (core_timing.GetCPUTicks() - prev_ctx_ticks);
-        } else if (same_thread && info_sub_id == system.CurrentCoreIndex()) {
+        } else if (same_thread && info_sub_id == system.Kernel().CurrentPhysicalCoreIndex()) {
             out_ticks = core_timing.GetCPUTicks() - prev_ctx_ticks;
         }
 
@@ -887,7 +891,8 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, Handle
             return ResultInvalidHandle;
         }
 
-        if (info_sub_id != 0xFFFFFFFFFFFFFFFF && info_sub_id != system.CurrentCoreIndex()) {
+        if (info_sub_id != 0xFFFFFFFFFFFFFFFF &&
+            info_sub_id != system.Kernel().CurrentPhysicalCoreIndex()) {
             LOG_ERROR(Kernel_SVC, "Core is not the current core, got {}", info_sub_id);
             return ResultInvalidCombination;
         }

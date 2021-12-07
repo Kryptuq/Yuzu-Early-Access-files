@@ -347,6 +347,7 @@ public:
 
     void PinCurrentThread();
     void UnpinCurrentThread();
+    void UnpinThread(KThread* thread);
 
     KLightLock& GetStateLock() {
         return state_lock;

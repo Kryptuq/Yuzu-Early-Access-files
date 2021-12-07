@@ -68,6 +68,7 @@ public:
     template <typename T = KAutoObject>
     KScopedAutoObject<T> GetObjectWithoutPseudoHandle(Handle handle) const {
         // Lock and look up in table.
+        KScopedDisableDispatch dd(kernel);
         KScopedSpinLock lk(m_lock);
 
         if constexpr (std::is_same_v<T, KAutoObject>) {
@@ -122,6 +123,7 @@ public:
         size_t num_opened;
         {
             // Lock the table.
+            KScopedDisableDispatch dd(kernel);
             KScopedSpinLock lk(m_lock);
             for (num_opened = 0; num_opened < num_handles; num_opened++) {
                 // Get the current handle.

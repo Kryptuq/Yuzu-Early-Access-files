@@ -13,6 +13,7 @@ ResultCode KHandleTable::Finalize() {
     // Get the table and clear our record of it.
     u16 saved_table_size = 0;
     {
+        KScopedDisableDispatch dd(kernel);
         KScopedSpinLock lk(m_lock);
 
         std::swap(m_table_size, saved_table_size);
@@ -43,6 +44,7 @@ bool KHandleTable::Remove(Handle handle) {
     // Find the object and free the entry.
     KAutoObject* obj = nullptr;
     {
+        KScopedDisableDispatch dd(kernel);
         KScopedSpinLock lk(m_lock);
 
         if (this->IsValidHandle(handle)) {
@@ -62,6 +64,7 @@ bool KHandleTable::Remove(Handle handle) {
 }
 
 ResultCode KHandleTable::Add(Handle* out_handle, KAutoObject* obj, u16 type) {
+    KScopedDisableDispatch dd(kernel);
     KScopedSpinLock lk(m_lock);
 
     // Never exceed our capacity.
@@ -84,6 +87,7 @@ ResultCode KHandleTable::Add(Handle* out_handle, KAutoObject* obj, u16 type) {
 }
 
 ResultCode KHandleTable::Reserve(Handle* out_handle) {
+    KScopedDisableDispatch dd(kernel);
     KScopedSpinLock lk(m_lock);
 
     // Never exceed our capacity.
@@ -94,6 +98,7 @@ ResultCode KHandleTable::Reserve(Handle* out_handle) {
 }
 
 void KHandleTable::Unreserve(Handle handle) {
+    KScopedDisableDispatch dd(kernel);
     KScopedSpinLock lk(m_lock);
 
     // Unpack the handle.
@@ -112,6 +117,7 @@ void KHandleTable::Unreserve(Handle handle) {
 }
 
 void KHandleTable::Register(Handle handle, KAutoObject* obj, u16 type) {
+    KScopedDisableDispatch dd(kernel);
     KScopedSpinLock lk(m_lock);
 
     // Unpack the handle.

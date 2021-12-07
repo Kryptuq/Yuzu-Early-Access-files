@@ -34,7 +34,7 @@ public:
     [[nodiscard]] ResultCode Wait(VAddr addr, u64 key, u32 value, s64 timeout);
 
 private:
-    [[nodiscard]] KThread* SignalImpl(KThread* thread);
+    void SignalImpl(KThread* thread);
 
     ThreadTree thread_tree;
 

@@ -8,6 +8,7 @@
 #pragma once
 
 #include "common/common_types.h"
+#include "core/hle/kernel/global_scheduler_context.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/time_manager.h"
