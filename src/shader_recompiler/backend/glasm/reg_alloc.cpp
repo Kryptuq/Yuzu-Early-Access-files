@@ -6,7 +6,7 @@
 
 #include <fmt/format.h>
 
-#include "shader_recompiler/backend/glasm/emit_context.h"
+#include "shader_recompiler/backend/glasm/glasm_emit_context.h"
 #include "shader_recompiler/backend/glasm/reg_alloc.h"
 #include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/ir/value.h"

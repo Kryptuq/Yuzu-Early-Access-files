@@ -1516,6 +1516,57 @@ SDL_GameControllerNumMappings(void)
 }
 
 /*
+ * Create a mapping string for a mapping
+ */
+static char *
+CreateMappingString(ControllerMapping_t *mapping, SDL_JoystickGUID guid)
+{
+    char *pMappingString, *pPlatformString;
+    char pchGUID[33];
+    size_t needed;
+    const char *platform = SDL_GetPlatform();
+
+    SDL_JoystickGetGUIDString(guid, pchGUID, sizeof(pchGUID));
+
+    /* allocate enough memory for GUID + ',' + name + ',' + mapping + \0 */
+    needed = SDL_strlen(pchGUID) + 1 + SDL_strlen(mapping->name) + 1 + SDL_strlen(mapping->mapping) + 1;
+
+    if (!SDL_strstr(mapping->mapping, SDL_CONTROLLER_PLATFORM_FIELD)) {
+        /* add memory for ',' + platform:PLATFORM */
+        if (mapping->mapping[SDL_strlen(mapping->mapping) - 1] != ',') {
+            needed += 1;
+        }
+        needed += SDL_strlen(SDL_CONTROLLER_PLATFORM_FIELD) + SDL_strlen(platform);
+    }
+
+    pMappingString = SDL_malloc(needed);
+    if (!pMappingString) {
+        SDL_OutOfMemory();
+        return NULL;
+    }
+
+    SDL_snprintf(pMappingString, needed, "%s,%s,%s", pchGUID, mapping->name, mapping->mapping);
+
+    if (!SDL_strstr(mapping->mapping, SDL_CONTROLLER_PLATFORM_FIELD)) {
+        if (mapping->mapping[SDL_strlen(mapping->mapping) - 1] != ',') {
+            SDL_strlcat(pMappingString, ",", needed);
+        }
+        SDL_strlcat(pMappingString, SDL_CONTROLLER_PLATFORM_FIELD, needed);
+        SDL_strlcat(pMappingString, platform, needed);
+    }
+
+    /* Make sure multiple platform strings haven't made their way into the mapping */
+    pPlatformString = SDL_strstr(pMappingString, SDL_CONTROLLER_PLATFORM_FIELD);
+    if (pPlatformString) {
+        pPlatformString = SDL_strstr(pPlatformString + 1, SDL_CONTROLLER_PLATFORM_FIELD);
+        if (pPlatformString) {
+            *pPlatformString = '\0';
+        }
+    }
+    return pMappingString;
+}
+
+/*
  *  Get the mapping at a particular index.
  */
 char *
@@ -1528,20 +1579,7 @@ SDL_GameControllerMappingForIndex(int mapping_index)
             continue;
         }
         if (mapping_index == 0) {
-            char *pMappingString;
-            char pchGUID[33];
-            size_t needed;
-
-            SDL_JoystickGetGUIDString(mapping->guid, pchGUID, sizeof(pchGUID));
-            /* allocate enough memory for GUID + ',' + name + ',' + mapping + \0 */
-            needed = SDL_strlen(pchGUID) + 1 + SDL_strlen(mapping->name) + 1 + SDL_strlen(mapping->mapping) + 1;
-            pMappingString = SDL_malloc(needed);
-            if (!pMappingString) {
-                SDL_OutOfMemory();
-                return NULL;
-            }
-            SDL_snprintf(pMappingString, needed, "%s,%s,%s", pchGUID, mapping->name, mapping->mapping);
-            return pMappingString;
+            return CreateMappingString(mapping, mapping->guid);
         }
         --mapping_index;
     }
@@ -1554,22 +1592,11 @@ SDL_GameControllerMappingForIndex(int mapping_index)
 char *
 SDL_GameControllerMappingForGUID(SDL_JoystickGUID guid)
 {
-    char *pMappingString = NULL;
     ControllerMapping_t *mapping = SDL_PrivateGetControllerMappingForGUID(guid, SDL_FALSE);
     if (mapping) {
-        char pchGUID[33];
-        size_t needed;
-        SDL_JoystickGetGUIDString(guid, pchGUID, sizeof(pchGUID));
-        /* allocate enough memory for GUID + ',' + name + ',' + mapping + \0 */
-        needed = SDL_strlen(pchGUID) + 1 + SDL_strlen(mapping->name) + 1 + SDL_strlen(mapping->mapping) + 1;
-        pMappingString = SDL_malloc(needed);
-        if (!pMappingString) {
-            SDL_OutOfMemory();
-            return NULL;
-        }
-        SDL_snprintf(pMappingString, needed, "%s,%s,%s", pchGUID, mapping->name, mapping->mapping);
+        return CreateMappingString(mapping, guid);
     }
-    return pMappingString;
+    return NULL;
 }
 
 /*
@@ -1789,6 +1816,13 @@ SDL_bool SDL_ShouldIgnoreGameController(const char *name, SDL_JoystickGUID guid)
 #if defined(__LINUX__)
     if (name && SDL_strstr(name, "Motion Sensors")) {
         /* Don't treat the PS3 and PS4 motion controls as a separate game controller */
+        return SDL_TRUE;
+    }
+#endif
+
+#if defined(__ANDROID__)
+    if (name && SDL_strcmp(name, "uinput-fpc") == 0) {
+        /* The Google Pixel fingerprint sensor reports itself as a joystick */
         return SDL_TRUE;
     }
 #endif
@@ -2447,6 +2481,18 @@ SDL_GameControllerHasLED(SDL_GameController *gamecontroller)
     return SDL_JoystickHasLED(SDL_GameControllerGetJoystick(gamecontroller));
 }
 
+SDL_bool
+SDL_GameControllerHasRumble(SDL_GameController *gamecontroller)
+{
+    return SDL_JoystickHasRumble(SDL_GameControllerGetJoystick(gamecontroller));
+}
+
+SDL_bool
+SDL_GameControllerHasRumbleTriggers(SDL_GameController *gamecontroller)
+{
+    return SDL_JoystickHasRumbleTriggers(SDL_GameControllerGetJoystick(gamecontroller));
+}
+
 int
 SDL_GameControllerSetLED(SDL_GameController *gamecontroller, Uint8 red, Uint8 green, Uint8 blue)
 {
@@ -2673,6 +2719,28 @@ SDL_GameControllerHandleDelayedGuideButton(SDL_Joystick *joystick)
         }
         controllerlist = controllerlist->next;
     }
+}
+
+const char *
+SDL_GameControllerGetAppleSFSymbolsNameForButton(SDL_GameController *gamecontroller, SDL_GameControllerButton button)
+{
+#if defined(SDL_JOYSTICK_MFI)
+    const char *IOS_GameControllerGetAppleSFSymbolsNameForButton(SDL_GameController *gamecontroller, SDL_GameControllerButton button);
+    return IOS_GameControllerGetAppleSFSymbolsNameForButton(gamecontroller, button);
+#else
+    return NULL;
+#endif
+}
+
+const char *
+SDL_GameControllerGetAppleSFSymbolsNameForAxis(SDL_GameController *gamecontroller, SDL_GameControllerAxis axis)
+{
+#if defined(SDL_JOYSTICK_MFI)
+    const char *IOS_GameControllerGetAppleSFSymbolsNameForAxis(SDL_GameController *gamecontroller, SDL_GameControllerAxis axis);
+    return IOS_GameControllerGetAppleSFSymbolsNameForAxis(gamecontroller, axis);
+#else
+    return NULL;
+#endif
 }
 
 /* vi: set ts=4 sw=4 expandtab: */

@@ -9,9 +9,9 @@
 
 #include "common/div_ceil.h"
 #include "common/settings.h"
-#include "shader_recompiler/backend/glsl/emit_context.h"
 #include "shader_recompiler/backend/glsl/emit_glsl.h"
 #include "shader_recompiler/backend/glsl/emit_glsl_instructions.h"
+#include "shader_recompiler/backend/glsl/glsl_emit_context.h"
 #include "shader_recompiler/frontend/ir/ir_emitter.h"
 
 namespace Shader::Backend::GLSL {

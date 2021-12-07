@@ -145,6 +145,16 @@ NpadIdType HIDCore::GetFirstNpadId() const {
     return NpadIdType::Player1;
 }
 
+NpadIdType HIDCore::GetFirstDisconnectedNpadId() const {
+    for (std::size_t player_index = 0; player_index < available_controllers; ++player_index) {
+        const auto* const controller = GetEmulatedControllerByIndex(player_index);
+        if (!controller->IsConnected()) {
+            return controller->GetNpadIdType();
+        }
+    }
+    return NpadIdType::Player1;
+}
+
 void HIDCore::EnableAllControllerConfiguration() {
     player_1->EnableConfiguration();
     player_2->EnableConfiguration();

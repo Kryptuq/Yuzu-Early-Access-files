@@ -31,7 +31,7 @@
 #include <X11/keysym.h>
 #include <X11/XKBlib.h>
 
-#include "imKStoUCS.h"
+#include "../../events/imKStoUCS.h"
 
 #ifdef X_HAVE_UTF8_STRING
 #include <locale.h>
@@ -205,7 +205,7 @@ X11_KeyCodeToUcs4(_THIS, KeyCode keycode, unsigned char group)
         return 0;
     }
 
-    return X11_KeySymToUcs4(keysym);
+    return SDL_KeySymToUcs4(keysym);
 }
 
 KeySym
@@ -278,7 +278,7 @@ X11_InitKeyboard(_THIS)
         int xkb_major = XkbMajorVersion;
         int xkb_minor = XkbMinorVersion;
 
-        if (X11_XkbQueryExtension(data->display, NULL, NULL, NULL, &xkb_major, &xkb_minor)) {
+        if (X11_XkbQueryExtension(data->display, NULL, &data->xkb_event, NULL, &xkb_major, &xkb_minor)) {
             data->xkb = X11_XkbGetMap(data->display, XkbAllClientInfoMask, XkbUseCoreKbd);
         }
 

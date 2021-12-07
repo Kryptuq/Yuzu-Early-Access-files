@@ -4,8 +4,8 @@
 
 #include <string_view>
 
-#include "shader_recompiler/backend/glasm/emit_context.h"
 #include "shader_recompiler/backend/glasm/emit_glasm_instructions.h"
+#include "shader_recompiler/backend/glasm/glasm_emit_context.h"
 #include "shader_recompiler/frontend/ir/value.h"
 #include "shader_recompiler/profile.h"
 #include "shader_recompiler/shader_info.h"
@@ -333,6 +333,35 @@ void EmitSetSampleMask(EmitContext& ctx, ScalarS32 value) {
 
 void EmitSetFragDepth(EmitContext& ctx, ScalarF32 value) {
     ctx.Add("MOV.F result.depth.z,{};", value);
+}
+
+void EmitWorkgroupId(EmitContext& ctx, IR::Inst& inst) {
+    ctx.Add("MOV.S {},invocation.groupid;", inst);
+}
+
+void EmitLocalInvocationId(EmitContext& ctx, IR::Inst& inst) {
+    ctx.Add("MOV.S {},invocation.localid;", inst);
+}
+
+void EmitInvocationId(EmitContext& ctx, IR::Inst& inst) {
+    ctx.Add("MOV.S {}.x,primitive_invocation.x;", inst);
+}
+
+void EmitSampleId(EmitContext& ctx, IR::Inst& inst) {
+    ctx.Add("MOV.S {}.x,fragment.sampleid.x;", inst);
+}
+
+void EmitIsHelperInvocation(EmitContext& ctx, IR::Inst& inst) {
+    ctx.Add("MOV.S {}.x,fragment.helperthread.x;", inst);
+}
+
+void EmitYDirection(EmitContext& ctx, IR::Inst& inst) {
+    ctx.uses_y_direction = true;
+    ctx.Add("MOV.F {}.x,y_direction[0].w;", inst);
+}
+
+void EmitResolutionDownFactor(EmitContext& ctx, IR::Inst& inst) {
+    ctx.Add("MOV.F {}.x,scaling[0].z;", inst);
 }
 
 void EmitLoadLocal(EmitContext& ctx, IR::Inst& inst, ScalarU32 word_offset) {

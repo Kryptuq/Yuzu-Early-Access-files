@@ -146,6 +146,11 @@ static struct
     { "US-ASCII", ENCODING_ASCII },
     { "8859-1", ENCODING_LATIN1 },
     { "ISO-8859-1", ENCODING_LATIN1 },
+#ifdef __WIN32__
+    { "WCHAR_T", ENCODING_UTF16LE },
+#else
+    { "WCHAR_T", ENCODING_UCS4NATIVE },
+#endif
     { "UTF8", ENCODING_UTF8 },
     { "UTF-8", ENCODING_UTF8 },
     { "UTF16", ENCODING_UTF16 },
@@ -753,7 +758,7 @@ SDL_iconv(SDL_iconv_t cd,
             if (ch > 0x10FFFF) {
                 ch = UNKNOWN_UNICODE;
             }
-            /* fallthrough */
+            SDL_FALLTHROUGH;
         case ENCODING_UCS4BE:
             if (ch > 0x7FFFFFFF) {
                 ch = UNKNOWN_UNICODE;
@@ -775,7 +780,7 @@ SDL_iconv(SDL_iconv_t cd,
             if (ch > 0x10FFFF) {
                 ch = UNKNOWN_UNICODE;
             }
-            /* fallthrough */
+            SDL_FALLTHROUGH;
         case ENCODING_UCS4LE:
             if (ch > 0x7FFFFFFF) {
                 ch = UNKNOWN_UNICODE;

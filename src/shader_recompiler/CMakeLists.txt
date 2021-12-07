@@ -1,7 +1,5 @@
 add_library(shader_recompiler STATIC
     backend/bindings.h
-    backend/glasm/emit_context.cpp
-    backend/glasm/emit_context.h
     backend/glasm/emit_glasm.cpp
     backend/glasm/emit_glasm.h
     backend/glasm/emit_glasm_barriers.cpp
@@ -22,10 +20,10 @@ add_library(shader_recompiler STATIC
     backend/glasm/emit_glasm_special.cpp
     backend/glasm/emit_glasm_undefined.cpp
     backend/glasm/emit_glasm_warp.cpp
+    backend/glasm/glasm_emit_context.cpp
+    backend/glasm/glasm_emit_context.h
     backend/glasm/reg_alloc.cpp
     backend/glasm/reg_alloc.h
-    backend/glsl/emit_context.cpp
-    backend/glsl/emit_context.h
     backend/glsl/emit_glsl.cpp
     backend/glsl/emit_glsl.h
     backend/glsl/emit_glsl_atomic.cpp
@@ -47,10 +45,10 @@ add_library(shader_recompiler STATIC
     backend/glsl/emit_glsl_special.cpp
     backend/glsl/emit_glsl_undefined.cpp
     backend/glsl/emit_glsl_warp.cpp
+    backend/glsl/glsl_emit_context.cpp
+    backend/glsl/glsl_emit_context.h
     backend/glsl/var_alloc.cpp
     backend/glsl/var_alloc.h
-    backend/spirv/emit_context.cpp
-    backend/spirv/emit_context.h
     backend/spirv/emit_spirv.cpp
     backend/spirv/emit_spirv.h
     backend/spirv/emit_spirv_atomic.cpp
@@ -72,6 +70,8 @@ add_library(shader_recompiler STATIC
     backend/spirv/emit_spirv_special.cpp
     backend/spirv/emit_spirv_undefined.cpp
     backend/spirv/emit_spirv_warp.cpp
+    backend/spirv/spirv_emit_context.cpp
+    backend/spirv/spirv_emit_context.h
     environment.h
     exception.h
     frontend/ir/abstract_syntax_list.h

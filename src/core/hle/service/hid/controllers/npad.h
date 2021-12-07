@@ -113,7 +113,8 @@ public:
     void SetNpadCommunicationMode(NpadCommunicationMode communication_mode_);
     NpadCommunicationMode GetNpadCommunicationMode() const;
 
-    void SetNpadMode(Core::HID::NpadIdType npad_id, NpadJoyAssignmentMode assignment_mode);
+    void SetNpadMode(Core::HID::NpadIdType npad_id, NpadJoyDeviceType npad_device_type,
+                     NpadJoyAssignmentMode assignment_mode);
 
     bool VibrateControllerAtIndex(Core::HID::NpadIdType npad_id, std::size_t device_index,
                                   const Core::HID::VibrationValue& vibration_value);
@@ -464,7 +465,10 @@ private:
         std::array<VibrationData, 2> vibration{};
         bool unintended_home_button_input_protection{};
         bool is_connected{};
-        Core::HID::NpadStyleIndex npad_type{Core::HID::NpadStyleIndex::None};
+
+        // Dual joycons can have only one side connected
+        bool is_dual_left_connected{true};
+        bool is_dual_right_connected{true};
 
         // Motion parameters
         bool sixaxis_at_rest{true};

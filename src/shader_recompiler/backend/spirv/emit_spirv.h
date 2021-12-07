@@ -6,13 +6,11 @@
 
 #include <vector>
 
-#include <sirit/sirit.h>
-
 #include "common/common_types.h"
 #include "shader_recompiler/backend/bindings.h"
-#include "shader_recompiler/backend/spirv/emit_context.h"
 #include "shader_recompiler/frontend/ir/program.h"
 #include "shader_recompiler/profile.h"
+#include "shader_recompiler/runtime_info.h"
 
 namespace Shader::Backend::SPIRV {
 

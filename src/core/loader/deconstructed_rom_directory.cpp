@@ -125,8 +125,9 @@ AppLoader_DeconstructedRomDirectory::LoadResult AppLoader_DeconstructedRomDirect
     }
     metadata.Print();
 
-    const auto static_modules = {"rtld",    "main",    "subsdk0", "subsdk1", "subsdk2", "subsdk3",
-                                 "subsdk4", "subsdk5", "subsdk6", "subsdk7", "sdk"};
+    const auto static_modules = {"rtld",    "main",    "subsdk0", "subsdk1", "subsdk2",
+                                 "subsdk3", "subsdk4", "subsdk5", "subsdk6", "subsdk7",
+                                 "subsdk8", "subsdk9", "sdk"};
 
     // Use the NSO module loader to figure out the code layout
     std::size_t code_size{};

@@ -8,6 +8,7 @@
 #include "core/hle/service/glue/bgtc.h"
 #include "core/hle/service/glue/ectx.h"
 #include "core/hle/service/glue/glue.h"
+#include "core/hle/service/glue/notif.h"
 
 namespace Service::Glue {
 
@@ -24,6 +25,9 @@ void InstallInterfaces(Core::System& system) {
 
     // Error Context
     std::make_shared<ECTX_AW>(system)->InstallAsService(system.ServiceManager());
+
+    // Notification Services for application
+    std::make_shared<NOTIF_A>(system)->InstallAsService(system.ServiceManager());
 }
 
 } // namespace Service::Glue

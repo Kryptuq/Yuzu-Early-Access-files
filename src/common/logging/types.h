@@ -82,6 +82,7 @@ enum class Class : u8 {
     Service_NGCT,      ///< The NGCT (No Good Content for Terra) service
     Service_NIFM,      ///< The NIFM (Network interface) service
     Service_NIM,       ///< The NIM service
+    Service_NOTIF,     ///< The NOTIF (Notification) service
     Service_NPNS,      ///< The NPNS service
     Service_NS,        ///< The NS services
     Service_NVDRV,     ///< The NVDRV (Nvidia driver) service

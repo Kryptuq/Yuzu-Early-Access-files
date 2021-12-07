@@ -110,7 +110,7 @@ void Controller_NPad::ControllerUpdate(Core::HID::ControllerTriggerType type,
         UpdateControllerAt(npad_type, npad_id, is_connected);
         break;
     case Core::HID::ControllerTriggerType::Battery: {
-        if (!controller.is_connected) {
+        if (!controller.device->IsConnected()) {
             return;
         }
         auto& shared_memory = controller.shared_memory_entry;
@@ -150,7 +150,6 @@ void Controller_NPad::InitNewlyAddedController(Core::HID::NpadIdType npad_id) {
         shared_memory.system_properties.is_vertical.Assign(1);
         shared_memory.system_properties.use_plus.Assign(1);
         shared_memory.system_properties.use_minus.Assign(1);
-        shared_memory.assignment_mode = NpadJoyAssignmentMode::Single;
         shared_memory.applet_footer.type = AppletFooterUiType::SwitchProController;
         break;
     case Core::HID::NpadStyleIndex::Handheld:
@@ -166,21 +165,30 @@ void Controller_NPad::InitNewlyAddedController(Core::HID::NpadIdType npad_id) {
         break;
     case Core::HID::NpadStyleIndex::JoyconDual:
         shared_memory.style_tag.joycon_dual.Assign(1);
-        shared_memory.device_type.joycon_left.Assign(1);
-        shared_memory.device_type.joycon_right.Assign(1);
-        shared_memory.system_properties.is_vertical.Assign(1);
-        shared_memory.system_properties.use_plus.Assign(1);
-        shared_memory.system_properties.use_minus.Assign(1);
+        if (controller.is_dual_left_connected) {
+            shared_memory.device_type.joycon_left.Assign(1);
+            shared_memory.system_properties.use_minus.Assign(1);
+        }
+        if (controller.is_dual_right_connected) {
+            shared_memory.device_type.joycon_right.Assign(1);
+            shared_memory.system_properties.use_plus.Assign(1);
+        }
         shared_memory.system_properties.use_directional_buttons.Assign(1);
+        shared_memory.system_properties.is_vertical.Assign(1);
         shared_memory.assignment_mode = NpadJoyAssignmentMode::Dual;
-        shared_memory.applet_footer.type = AppletFooterUiType::JoyDual;
+        if (controller.is_dual_left_connected && controller.is_dual_right_connected) {
+            shared_memory.applet_footer.type = AppletFooterUiType::JoyDual;
+        } else if (controller.is_dual_left_connected) {
+            shared_memory.applet_footer.type = AppletFooterUiType::JoyDualLeftOnly;
+        } else {
+            shared_memory.applet_footer.type = AppletFooterUiType::JoyDualRightOnly;
+        }
         break;
     case Core::HID::NpadStyleIndex::JoyconLeft:
         shared_memory.style_tag.joycon_left.Assign(1);
         shared_memory.device_type.joycon_left.Assign(1);
         shared_memory.system_properties.is_horizontal.Assign(1);
         shared_memory.system_properties.use_minus.Assign(1);
-        shared_memory.assignment_mode = NpadJoyAssignmentMode::Single;
         shared_memory.applet_footer.type = AppletFooterUiType::JoyLeftHorizontal;
         break;
     case Core::HID::NpadStyleIndex::JoyconRight:
@@ -188,7 +196,6 @@ void Controller_NPad::InitNewlyAddedController(Core::HID::NpadIdType npad_id) {
         shared_memory.device_type.joycon_right.Assign(1);
         shared_memory.system_properties.is_horizontal.Assign(1);
         shared_memory.system_properties.use_plus.Assign(1);
-        shared_memory.assignment_mode = NpadJoyAssignmentMode::Single;
         shared_memory.applet_footer.type = AppletFooterUiType::JoyRightHorizontal;
         break;
     case Core::HID::NpadStyleIndex::GameCube:
@@ -200,7 +207,6 @@ void Controller_NPad::InitNewlyAddedController(Core::HID::NpadIdType npad_id) {
     case Core::HID::NpadStyleIndex::Pokeball:
         shared_memory.style_tag.palma.Assign(1);
         shared_memory.device_type.palma.Assign(1);
-        shared_memory.assignment_mode = NpadJoyAssignmentMode::Single;
         break;
     case Core::HID::NpadStyleIndex::NES:
         shared_memory.style_tag.lark.Assign(1);
@@ -443,11 +449,15 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
         case Core::HID::NpadStyleIndex::JoyconDual:
             pad_state.connection_status.raw = 0;
             pad_state.connection_status.is_connected.Assign(1);
-            pad_state.connection_status.is_left_connected.Assign(1);
-            pad_state.connection_status.is_right_connected.Assign(1);
+            if (controller.is_dual_left_connected) {
+                pad_state.connection_status.is_left_connected.Assign(1);
+                libnx_state.connection_status.is_left_connected.Assign(1);
+            }
+            if (controller.is_dual_right_connected) {
+                pad_state.connection_status.is_right_connected.Assign(1);
+                libnx_state.connection_status.is_right_connected.Assign(1);
+            }
 
-            libnx_state.connection_status.is_left_connected.Assign(1);
-            libnx_state.connection_status.is_right_connected.Assign(1);
             pad_state.sampling_number =
                 npad.joy_dual_lifo.ReadCurrentEntry().state.sampling_number + 1;
             npad.joy_dual_lifo.WriteNextEntry(pad_state);
@@ -687,7 +697,7 @@ Controller_NPad::NpadCommunicationMode Controller_NPad::GetNpadCommunicationMode
     return communication_mode;
 }
 
-void Controller_NPad::SetNpadMode(Core::HID::NpadIdType npad_id,
+void Controller_NPad::SetNpadMode(Core::HID::NpadIdType npad_id, NpadJoyDeviceType npad_device_type,
                                   NpadJoyAssignmentMode assignment_mode) {
     if (!IsNpadIdValid(npad_id)) {
         LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id:{}", npad_id);
@@ -697,6 +707,62 @@ void Controller_NPad::SetNpadMode(Core::HID::NpadIdType npad_id,
     auto& controller = GetControllerFromNpadIdType(npad_id);
     if (controller.shared_memory_entry.assignment_mode != assignment_mode) {
         controller.shared_memory_entry.assignment_mode = assignment_mode;
+    }
+
+    if (!controller.device->IsConnected()) {
+        return;
+    }
+
+    if (assignment_mode == NpadJoyAssignmentMode::Dual) {
+        if (controller.device->GetNpadStyleIndex() == Core::HID::NpadStyleIndex::JoyconLeft) {
+            DisconnectNpad(npad_id);
+            controller.is_dual_left_connected = true;
+            controller.is_dual_right_connected = false;
+            UpdateControllerAt(Core::HID::NpadStyleIndex::JoyconDual, npad_id, true);
+            return;
+        }
+        if (controller.device->GetNpadStyleIndex() == Core::HID::NpadStyleIndex::JoyconRight) {
+            DisconnectNpad(npad_id);
+            controller.is_dual_left_connected = false;
+            controller.is_dual_right_connected = true;
+            UpdateControllerAt(Core::HID::NpadStyleIndex::JoyconDual, npad_id, true);
+            return;
+        }
+        return;
+    }
+
+    // This is for NpadJoyAssignmentMode::Single
+
+    // Only JoyconDual get affected by this function
+    if (controller.device->GetNpadStyleIndex() != Core::HID::NpadStyleIndex::JoyconDual) {
+        return;
+    }
+
+    if (controller.is_dual_left_connected && !controller.is_dual_right_connected) {
+        DisconnectNpad(npad_id);
+        UpdateControllerAt(Core::HID::NpadStyleIndex::JoyconLeft, npad_id, true);
+        return;
+    }
+    if (!controller.is_dual_left_connected && controller.is_dual_right_connected) {
+        DisconnectNpad(npad_id);
+        UpdateControllerAt(Core::HID::NpadStyleIndex::JoyconRight, npad_id, true);
+        return;
+    }
+
+    // We have two controllers connected to the same npad_id we need to split them
+    const auto npad_id_2 = hid_core.GetFirstDisconnectedNpadId();
+    auto& controller_2 = GetControllerFromNpadIdType(npad_id_2);
+    DisconnectNpad(npad_id);
+    if (npad_device_type == NpadJoyDeviceType::Left) {
+        UpdateControllerAt(Core::HID::NpadStyleIndex::JoyconLeft, npad_id, true);
+        controller_2.is_dual_left_connected = false;
+        controller_2.is_dual_right_connected = true;
+        UpdateControllerAt(Core::HID::NpadStyleIndex::JoyconDual, npad_id_2, true);
+    } else {
+        UpdateControllerAt(Core::HID::NpadStyleIndex::JoyconRight, npad_id, true);
+        controller_2.is_dual_left_connected = true;
+        controller_2.is_dual_right_connected = false;
+        UpdateControllerAt(Core::HID::NpadStyleIndex::JoyconDual, npad_id_2, true);
     }
 }
 
@@ -907,6 +973,7 @@ void Controller_NPad::DisconnectNpad(Core::HID::NpadIdType npad_id) {
     }
 
     auto& shared_memory_entry = controller.shared_memory_entry;
+    // Don't reset shared_memory_entry.assignment_mode this value is persistent
     shared_memory_entry.style_tag.raw = Core::HID::NpadStyleSet::None; // Zero out
     shared_memory_entry.device_type.raw = 0;
     shared_memory_entry.system_properties.raw = 0;
@@ -923,9 +990,10 @@ void Controller_NPad::DisconnectNpad(Core::HID::NpadIdType npad_id) {
         .left = {},
         .right = {},
     };
-    shared_memory_entry.assignment_mode = NpadJoyAssignmentMode::Dual;
     shared_memory_entry.applet_footer.type = AppletFooterUiType::None;
 
+    controller.is_dual_left_connected = true;
+    controller.is_dual_right_connected = true;
     controller.is_connected = false;
     controller.device->Disconnect();
     SignalStyleSetChangedEvent(npad_id);
@@ -1022,19 +1090,70 @@ void Controller_NPad::MergeSingleJoyAsDualJoy(Core::HID::NpadIdType npad_id_1,
                   npad_id_2);
         return;
     }
-    auto& controller_1 = GetControllerFromNpadIdType(npad_id_1).device;
-    auto& controller_2 = GetControllerFromNpadIdType(npad_id_2).device;
+    auto& controller_1 = GetControllerFromNpadIdType(npad_id_1);
+    auto& controller_2 = GetControllerFromNpadIdType(npad_id_2);
+    const auto controller_style_1 = controller_1.device->GetNpadStyleIndex();
+    const auto controller_style_2 = controller_2.device->GetNpadStyleIndex();
+    bool merge_controllers = false;
 
     // If the controllers at both npad indices form a pair of left and right joycons, merge them.
     // Otherwise, do nothing.
-    if ((controller_1->GetNpadStyleIndex() == Core::HID::NpadStyleIndex::JoyconLeft &&
-         controller_2->GetNpadStyleIndex() == Core::HID::NpadStyleIndex::JoyconRight) ||
-        (controller_2->GetNpadStyleIndex() == Core::HID::NpadStyleIndex::JoyconLeft &&
-         controller_1->GetNpadStyleIndex() == Core::HID::NpadStyleIndex::JoyconRight)) {
+    if (controller_style_1 == Core::HID::NpadStyleIndex::JoyconLeft &&
+        controller_style_2 == Core::HID::NpadStyleIndex::JoyconRight) {
+        merge_controllers = true;
+    }
+    if (controller_style_2 == Core::HID::NpadStyleIndex::JoyconLeft &&
+        controller_style_1 == Core::HID::NpadStyleIndex::JoyconRight) {
+        merge_controllers = true;
+    }
+    if (controller_style_1 == Core::HID::NpadStyleIndex::JoyconDual &&
+        controller_style_2 == Core::HID::NpadStyleIndex::JoyconRight &&
+        controller_1.is_dual_left_connected && !controller_1.is_dual_right_connected) {
+        merge_controllers = true;
+    }
+    if (controller_style_1 == Core::HID::NpadStyleIndex::JoyconDual &&
+        controller_style_2 == Core::HID::NpadStyleIndex::JoyconLeft &&
+        !controller_1.is_dual_left_connected && controller_1.is_dual_right_connected) {
+        merge_controllers = true;
+    }
+    if (controller_style_2 == Core::HID::NpadStyleIndex::JoyconDual &&
+        controller_style_1 == Core::HID::NpadStyleIndex::JoyconRight &&
+        controller_2.is_dual_left_connected && !controller_2.is_dual_right_connected) {
+        merge_controllers = true;
+    }
+    if (controller_style_2 == Core::HID::NpadStyleIndex::JoyconDual &&
+        controller_style_1 == Core::HID::NpadStyleIndex::JoyconLeft &&
+        !controller_2.is_dual_left_connected && controller_2.is_dual_right_connected) {
+        merge_controllers = true;
+    }
+    if (controller_style_1 == Core::HID::NpadStyleIndex::JoyconDual &&
+        controller_style_2 == Core::HID::NpadStyleIndex::JoyconDual &&
+        controller_1.is_dual_left_connected && !controller_1.is_dual_right_connected &&
+        !controller_2.is_dual_left_connected && controller_2.is_dual_right_connected) {
+        merge_controllers = true;
+    }
+    if (controller_style_1 == Core::HID::NpadStyleIndex::JoyconDual &&
+        controller_style_2 == Core::HID::NpadStyleIndex::JoyconDual &&
+        !controller_1.is_dual_left_connected && controller_1.is_dual_right_connected &&
+        controller_2.is_dual_left_connected && !controller_2.is_dual_right_connected) {
+        merge_controllers = true;
+    }
+
+    if (merge_controllers) {
         // Disconnect the joycon at the second id and connect the dual joycon at the first index.
         DisconnectNpad(npad_id_2);
+        controller_1.is_dual_left_connected = true;
+        controller_1.is_dual_right_connected = true;
         AddNewControllerAt(Core::HID::NpadStyleIndex::JoyconDual, npad_id_1);
+        return;
     }
+    LOG_WARNING(Service_HID,
+                "Controllers can't be merged npad_id_1:{}, npad_id_2:{}, type_1:{}, type_2:{}, "
+                "dual_1(left/right):{}/{}, dual_2(left/right):{}/{}",
+                npad_id_1, npad_id_2, controller_1.device->GetNpadStyleIndex(),
+                controller_2.device->GetNpadStyleIndex(), controller_1.is_dual_left_connected,
+                controller_1.is_dual_right_connected, controller_2.is_dual_left_connected,
+                controller_2.is_dual_right_connected);
 }
 
 void Controller_NPad::StartLRAssignmentMode() {

@@ -408,6 +408,8 @@ add_library(core STATIC
     hle/service/glue/glue.h
     hle/service/glue/glue_manager.cpp
     hle/service/glue/glue_manager.h
+    hle/service/glue/notif.cpp
+    hle/service/glue/notif.h
     hle/service/grc/grc.cpp
     hle/service/grc/grc.h
     hle/service/hid/hid.cpp
