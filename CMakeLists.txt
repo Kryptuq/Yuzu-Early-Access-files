@@ -131,7 +131,7 @@ add_definitions(-DBOOST_ASIO_DISABLE_CONCEPTS)
 if (MSVC)
     add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/std:c++latest>)
 
-    # cubeb and boost still make use of deprecated result_of.
+    # boost still makes use of deprecated result_of.
     add_definitions(-D_HAS_DEPRECATED_RESULT_OF)
 else()
     set(CMAKE_CXX_STANDARD 20)
