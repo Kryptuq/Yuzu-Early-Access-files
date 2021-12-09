@@ -130,6 +130,7 @@ std::unordered_map<VkFormat, VkFormatProperties> GetFormatProperties(vk::Physica
         VK_FORMAT_R16G16_UNORM,
         VK_FORMAT_R16G16_SNORM,
         VK_FORMAT_R16G16_SFLOAT,
+        VK_FORMAT_R16G16_UINT,
         VK_FORMAT_R16G16_SINT,
         VK_FORMAT_R16_UNORM,
         VK_FORMAT_R16_SNORM,
