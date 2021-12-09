@@ -6,6 +6,7 @@
 #include "core/hle/kernel/k_class_token.h"
 #include "core/hle/kernel/k_client_port.h"
 #include "core/hle/kernel/k_client_session.h"
+#include "core/hle/kernel/k_code_memory.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_port.h"
 #include "core/hle/kernel/k_process.h"
@@ -48,7 +49,7 @@ static_assert(ClassToken<KWritableEvent> == 0b10001001'00000000);
 static_assert(ClassToken<KTransferMemory> == 0b10010001'00000000);
 // static_assert(ClassToken<KDeviceAddressSpace> == 0b01100001'00000000);
 // static_assert(ClassToken<KSessionRequest> == 0b10100001'00000000);
-// static_assert(ClassToken<KCodeMemory> == 0b11000001'00000000);
+static_assert(ClassToken<KCodeMemory> == 0b11000001'00000000);
 
 // Ensure that the token hierarchy is correct.
 
@@ -79,7 +80,7 @@ static_assert(ClassToken<KWritableEvent> == ((0b10001001 << 8) | ClassToken<KAut
 static_assert(ClassToken<KTransferMemory> == ((0b10010001 << 8) | ClassToken<KAutoObject>));
 // static_assert(ClassToken<KDeviceAddressSpace> == ((0b01100001 << 8) | ClassToken<KAutoObject>));
 // static_assert(ClassToken<KSessionRequest> == ((0b10100001 << 8) | ClassToken<KAutoObject>));
-// static_assert(ClassToken<KCodeMemory> == ((0b11000001 << 8) | ClassToken<KAutoObject>));
+static_assert(ClassToken<KCodeMemory> == ((0b11000001 << 8) | ClassToken<KAutoObject>));
 
 // Ensure that the token hierarchy reflects the class hierarchy.
 

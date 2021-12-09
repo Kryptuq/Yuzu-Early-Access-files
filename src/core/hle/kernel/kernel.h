@@ -53,6 +53,7 @@ class KSharedMemoryInfo;
 class KThread;
 class KTransferMemory;
 class KWritableEvent;
+class KCodeMemory;
 class PhysicalCore;
 class ServiceThread;
 class Synchronization;
@@ -331,6 +332,8 @@ public:
             return slab_heap_container->transfer_memory;
         } else if constexpr (std::is_same_v<T, KWritableEvent>) {
             return slab_heap_container->writeable_event;
+        } else if constexpr (std::is_same_v<T, KCodeMemory>) {
+            return slab_heap_container->code_memory;
         }
     }
 
@@ -382,6 +385,7 @@ private:
         KSlabHeap<KThread> thread;
         KSlabHeap<KTransferMemory> transfer_memory;
         KSlabHeap<KWritableEvent> writeable_event;
+        KSlabHeap<KCodeMemory> code_memory;
     };
 
     std::unique_ptr<SlabHeapContainer> slab_heap_container;

@@ -131,6 +131,26 @@ enum class KMemoryPermission : u8 {
 
     UserMask = static_cast<u8>(Svc::MemoryPermission::Read | Svc::MemoryPermission::Write |
                                Svc::MemoryPermission::Execute),
+
+    KernelShift = 3,
+
+    KernelRead = Read << KernelShift,
+    KernelWrite = Write << KernelShift,
+    KernelExecute = Execute << KernelShift,
+
+    NotMapped = (1 << (2 * KernelShift)),
+
+    KernelReadWrite = KernelRead | KernelWrite,
+    KernelReadExecute = KernelRead | KernelExecute,
+
+    UserRead = Read | KernelRead,
+    UserWrite = Write | KernelWrite,
+    UserExecute = Execute,
+
+    UserReadWrite = UserRead | UserWrite,
+    UserReadExecute = UserRead | UserExecute,
+
+    IpcLockChangeMask = NotMapped | UserReadWrite
 };
 DECLARE_ENUM_FLAG_OPERATORS(KMemoryPermission);
 

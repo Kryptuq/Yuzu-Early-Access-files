@@ -27,6 +27,10 @@ public:
             return num_pages;
         }
 
+        constexpr std::size_t GetSize() const {
+            return GetNumPages() * PageSize;
+        }
+
     private:
         u64 addr{};
         std::size_t num_pages{};

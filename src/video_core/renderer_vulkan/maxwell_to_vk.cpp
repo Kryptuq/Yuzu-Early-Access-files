@@ -176,7 +176,7 @@ struct FormatTuple {
     {VK_FORMAT_R32_UINT, Attachable | Storage},                // R32_UINT
     {VK_FORMAT_R32_SINT, Attachable | Storage},                // R32_SINT
     {VK_FORMAT_ASTC_8x8_UNORM_BLOCK},                          // ASTC_2D_8X8_UNORM
-    {VK_FORMAT_UNDEFINED},                                     // ASTC_2D_8X5_UNORM
+    {VK_FORMAT_ASTC_8x5_UNORM_BLOCK},                          // ASTC_2D_8X5_UNORM
     {VK_FORMAT_UNDEFINED},                                     // ASTC_2D_5X4_UNORM
     {VK_FORMAT_B8G8R8A8_SRGB, Attachable},                     // B8G8R8A8_SRGB
     {VK_FORMAT_BC1_RGBA_SRGB_BLOCK},                           // BC1_RGBA_SRGB

@@ -179,6 +179,8 @@ add_library(core STATIC
     hle/kernel/k_client_port.h
     hle/kernel/k_client_session.cpp
     hle/kernel/k_client_session.h
+    hle/kernel/k_code_memory.cpp
+    hle/kernel/k_code_memory.h
     hle/kernel/k_condition_variable.cpp
     hle/kernel/k_condition_variable.h
     hle/kernel/k_event.cpp

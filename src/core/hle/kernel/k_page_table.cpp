@@ -368,6 +368,33 @@ ResultCode KPageTable::UnmapProcessCodeMemory(VAddr dst_addr, VAddr src_addr, st
     return ResultSuccess;
 }
 
+ResultCode KPageTable::UnmapProcessMemory(VAddr dst_addr, std::size_t size,
+                                          KPageTable& src_page_table, VAddr src_addr) {
+    std::lock_guard lock{page_table_lock};
+
+    const std::size_t num_pages{size / PageSize};
+
+    // Check that the memory is mapped in the destination process.
+    size_t num_allocator_blocks;
+    R_TRY(CheckMemoryState(&num_allocator_blocks, dst_addr, size, KMemoryState::All,
+                           KMemoryState::SharedCode, KMemoryPermission::UserReadWrite,
+                           KMemoryPermission::UserReadWrite, KMemoryAttribute::All,
+                           KMemoryAttribute::None));
+
+    // Check that the memory is mapped in the source process.
+    R_TRY(src_page_table.CheckMemoryState(src_addr, size, KMemoryState::FlagCanMapProcess,
+                                          KMemoryState::FlagCanMapProcess, KMemoryPermission::None,
+                                          KMemoryPermission::None, KMemoryAttribute::All,
+                                          KMemoryAttribute::None));
+
+    CASCADE_CODE(Operate(dst_addr, num_pages, KMemoryPermission::None, OperationType::Unmap));
+
+    // Apply the memory block update.
+    block_manager->Update(dst_addr, num_pages, KMemoryState::Free, KMemoryPermission::None,
+                          KMemoryAttribute::None);
+
+    return ResultSuccess;
+}
 void KPageTable::MapPhysicalMemory(KPageLinkedList& page_linked_list, VAddr start, VAddr end) {
     auto node{page_linked_list.Nodes().begin()};
     PAddr map_addr{node->GetAddress()};
@@ -942,6 +969,60 @@ ResultCode KPageTable::UnlockForDeviceAddressSpace(VAddr addr, std::size_t size)
     return ResultSuccess;
 }
 
+ResultCode KPageTable::LockForCodeMemory(VAddr addr, std::size_t size) {
+    std::lock_guard lock{page_table_lock};
+
+    KMemoryPermission new_perm = KMemoryPermission::NotMapped | KMemoryPermission::KernelReadWrite;
+
+    KMemoryPermission old_perm{};
+
+    if (const ResultCode result{CheckMemoryState(
+            nullptr, &old_perm, nullptr, addr, size, KMemoryState::FlagCanCodeMemory,
+            KMemoryState::FlagCanCodeMemory, KMemoryPermission::Mask,
+            KMemoryPermission::UserReadWrite, KMemoryAttribute::All, KMemoryAttribute::None)};
+        result.IsError()) {
+        return result;
+    }
+
+    new_perm = (new_perm != KMemoryPermission::None) ? new_perm : old_perm;
+
+    block_manager->UpdateLock(
+        addr, size / PageSize,
+        [](KMemoryBlockManager::iterator block, KMemoryPermission permission) {
+            block->ShareToDevice(permission);
+        },
+        new_perm);
+
+    return ResultSuccess;
+}
+
+ResultCode KPageTable::UnlockForCodeMemory(VAddr addr, std::size_t size) {
+    std::lock_guard lock{page_table_lock};
+
+    KMemoryPermission new_perm = KMemoryPermission::UserReadWrite;
+
+    KMemoryPermission old_perm{};
+
+    if (const ResultCode result{CheckMemoryState(
+            nullptr, &old_perm, nullptr, addr, size, KMemoryState::FlagCanCodeMemory,
+            KMemoryState::FlagCanCodeMemory, KMemoryPermission::None, KMemoryPermission::None,
+            KMemoryAttribute::All, KMemoryAttribute::Locked)};
+        result.IsError()) {
+        return result;
+    }
+
+    new_perm = (new_perm != KMemoryPermission::None) ? new_perm : old_perm;
+
+    block_manager->UpdateLock(
+        addr, size / PageSize,
+        [](KMemoryBlockManager::iterator block, KMemoryPermission permission) {
+            block->UnshareToDevice(permission);
+        },
+        new_perm);
+
+    return ResultSuccess;
+}
+
 ResultCode KPageTable::InitializeMemoryLayout(VAddr start, VAddr end) {
     block_manager = std::make_unique<KMemoryBlockManager>(start, end);
 
@@ -1226,6 +1307,44 @@ ResultCode KPageTable::CheckMemoryState(KMemoryState* out_state, KMemoryPermissi
     }
     if (out_attr) {
         *out_attr = first_attr & static_cast<KMemoryAttribute>(~ignore_attr);
+    }
+
+    return ResultSuccess;
+}
+
+ResultCode KPageTable::CheckMemoryState(size_t* out_blocks_needed, VAddr addr, size_t size,
+                                        KMemoryState state_mask, KMemoryState state,
+                                        KMemoryPermission perm_mask, KMemoryPermission perm,
+                                        KMemoryAttribute attr_mask, KMemoryAttribute attr) const {
+    // Get information about the first block.
+    const VAddr last_addr = addr + size - 1;
+    KMemoryBlockManager::const_iterator it{block_manager->FindIterator(addr)};
+    KMemoryInfo info = it->GetMemoryInfo();
+
+    // If the start address isn't aligned, we need a block.
+    const size_t blocks_for_start_align =
+        (Common::AlignDown(addr, PageSize) != info.GetAddress()) ? 1 : 0;
+
+    while (true) {
+        // Validate against the provided masks.
+        R_TRY(CheckMemoryState(info, state_mask, state, perm_mask, perm, attr_mask, attr));
+
+        // Break once we're done.
+        if (last_addr <= info.GetLastAddress()) {
+            break;
+        }
+
+        // Advance our iterator.
+        it++;
+        info = it->GetMemoryInfo();
+    }
+
+    // If the end address isn't aligned, we need a block.
+    const size_t blocks_for_end_align =
+        (Common::AlignUp(addr + size, PageSize) != info.GetEndAddress()) ? 1 : 0;
+
+    if (out_blocks_needed != nullptr) {
+        *out_blocks_needed = blocks_for_start_align + blocks_for_end_align;
     }
 
     return ResultSuccess;

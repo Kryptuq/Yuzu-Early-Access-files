@@ -9,6 +9,7 @@
 #include "core/core.h"
 #include "core/hardware_properties.h"
 #include "core/hle/kernel/init/init_slab_setup.h"
+#include "core/hle/kernel/k_code_memory.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_memory_layout.h"
 #include "core/hle/kernel/k_memory_manager.h"
@@ -32,6 +33,7 @@ namespace Kernel::Init {
     HANDLER(KPort, (SLAB_COUNT(KPort)), ##__VA_ARGS__)                                             \
     HANDLER(KSharedMemory, (SLAB_COUNT(KSharedMemory)), ##__VA_ARGS__)                             \
     HANDLER(KTransferMemory, (SLAB_COUNT(KTransferMemory)), ##__VA_ARGS__)                         \
+    HANDLER(KCodeMemory, (SLAB_COUNT(KCodeMemory)), ##__VA_ARGS__)                                 \
     HANDLER(KSession, (SLAB_COUNT(KSession)), ##__VA_ARGS__)                                       \
     HANDLER(KResourceLimit, (SLAB_COUNT(KResourceLimit)), ##__VA_ARGS__)
 

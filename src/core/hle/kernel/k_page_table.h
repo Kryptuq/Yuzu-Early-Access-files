@@ -33,6 +33,8 @@ public:
                               KMemoryPermission perm);
     ResultCode MapProcessCodeMemory(VAddr dst_addr, VAddr src_addr, std::size_t size);
     ResultCode UnmapProcessCodeMemory(VAddr dst_addr, VAddr src_addr, std::size_t size);
+    ResultCode UnmapProcessMemory(VAddr dst_addr, std::size_t size, KPageTable& src_page_table,
+                                  VAddr src_addr);
     ResultCode MapPhysicalMemory(VAddr addr, std::size_t size);
     ResultCode UnmapPhysicalMemory(VAddr addr, std::size_t size);
     ResultCode UnmapMemory(VAddr addr, std::size_t size);
@@ -55,6 +57,8 @@ public:
                                           KMemoryPermission perm, PAddr map_addr = 0);
     ResultCode LockForDeviceAddressSpace(VAddr addr, std::size_t size);
     ResultCode UnlockForDeviceAddressSpace(VAddr addr, std::size_t size);
+    ResultCode LockForCodeMemory(VAddr addr, std::size_t size);
+    ResultCode UnlockForCodeMemory(VAddr addr, std::size_t size);
 
     Common::PageTable& PageTableImpl() {
         return page_table_impl;
@@ -115,6 +119,10 @@ private:
         return CheckMemoryState(nullptr, nullptr, nullptr, addr, size, state_mask, state, perm_mask,
                                 perm, attr_mask, attr, ignore_attr);
     }
+    ResultCode CheckMemoryState(size_t* out_blocks_needed, VAddr addr, size_t size,
+                                KMemoryState state_mask, KMemoryState state,
+                                KMemoryPermission perm_mask, KMemoryPermission perm,
+                                KMemoryAttribute attr_mask, KMemoryAttribute attr) const;
 
     std::recursive_mutex page_table_lock;
     std::unique_ptr<KMemoryBlockManager> block_manager;

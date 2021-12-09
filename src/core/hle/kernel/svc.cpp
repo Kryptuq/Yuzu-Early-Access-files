@@ -18,6 +18,7 @@
 #include "core/core_timing.h"
 #include "core/hle/kernel/k_client_port.h"
 #include "core/hle/kernel/k_client_session.h"
+#include "core/hle/kernel/k_code_memory.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_handle_table.h"
 #include "core/hle/kernel/k_memory_block.h"
@@ -1202,6 +1203,22 @@ constexpr bool IsValidProcessMemoryPermission(Svc::MemoryPermission perm) {
     }
 }
 
+constexpr bool IsValidMapCodeMemoryPermission(Svc::MemoryPermission perm) {
+    return perm == Svc::MemoryPermission::ReadWrite;
+}
+
+constexpr bool IsValidMapToOwnerCodeMemoryPermission(Svc::MemoryPermission perm) {
+    return perm == Svc::MemoryPermission::Read || perm == Svc::MemoryPermission::ReadExecute;
+}
+
+constexpr bool IsValidUnmapCodeMemoryPermission(Svc::MemoryPermission perm) {
+    return perm == Svc::MemoryPermission::None;
+}
+
+constexpr bool IsValidUnmapFromOwnerCodeMemoryPermission(Svc::MemoryPermission perm) {
+    return perm == Svc::MemoryPermission::None;
+}
+
 } // Anonymous namespace
 
 static ResultCode MapSharedMemory(Core::System& system, Handle shmem_handle, VAddr address,
@@ -1309,6 +1326,195 @@ static ResultCode SetProcessMemoryPermission(Core::System& system, Handle proces
 
     // Set the memory permission.
     return page_table.SetProcessMemoryPermission(address, size, ConvertToKMemoryPermission(perm));
+}
+
+static ResultCode MapProcessMemory(Core::System& system, VAddr dst_address, Handle process_handle,
+                                   VAddr src_address, u64 size) {
+    LOG_TRACE(Kernel_SVC,
+              "called, dst_address=0x{:X}, process_handle=0x{:X}, src_address=0x{:X}, size=0x{:X}",
+              dst_address, process_handle, src_address, size);
+
+    // Validate the address/size.
+    R_UNLESS(Common::IsAligned(dst_address, PageSize), ResultInvalidAddress);
+    R_UNLESS(Common::IsAligned(src_address, PageSize), ResultInvalidAddress);
+    R_UNLESS(Common::IsAligned(size, PageSize), ResultInvalidSize);
+    R_UNLESS(size > 0, ResultInvalidSize);
+    R_UNLESS((dst_address < dst_address + size), ResultInvalidCurrentMemory);
+    R_UNLESS((src_address < src_address + size), ResultInvalidCurrentMemory);
+
+    // Get the processes.
+    KProcess* dst_process = system.CurrentProcess();
+    KScopedAutoObject src_process =
+        dst_process->GetHandleTable().GetObjectWithoutPseudoHandle<KProcess>(process_handle);
+    R_UNLESS(src_process.IsNotNull(), ResultInvalidHandle);
+
+    // Get the page tables.
+    auto& dst_pt = dst_process->PageTable();
+    auto& src_pt = src_process->PageTable();
+
+    // Validate that the mapping is in range.
+    R_UNLESS(src_pt.Contains(src_address, size), ResultInvalidCurrentMemory);
+    R_UNLESS(dst_pt.CanContain(dst_address, size, KMemoryState::SharedCode),
+             ResultInvalidMemoryRegion);
+
+    // Create a new page group.
+    KMemoryInfo kBlockInfo = dst_pt.QueryInfo(dst_address);
+    KPageLinkedList pg(kBlockInfo.GetAddress(), kBlockInfo.GetNumPages());
+
+    // Map the group.
+    R_TRY(dst_pt.MapPages(dst_address, pg, KMemoryState::SharedCode,
+                          KMemoryPermission::UserReadWrite));
+
+    return ResultSuccess;
+}
+
+static ResultCode UnmapProcessMemory(Core::System& system, VAddr dst_address, Handle process_handle,
+                                     VAddr src_address, u64 size) {
+    LOG_TRACE(Kernel_SVC,
+              "called, dst_address=0x{:X}, process_handle=0x{:X}, src_address=0x{:X}, size=0x{:X}",
+              dst_address, process_handle, src_address, size);
+
+    // Validate the address/size.
+    R_UNLESS(Common::IsAligned(dst_address, PageSize), ResultInvalidAddress);
+    R_UNLESS(Common::IsAligned(src_address, PageSize), ResultInvalidAddress);
+    R_UNLESS(Common::IsAligned(size, PageSize), ResultInvalidSize);
+    R_UNLESS(size > 0, ResultInvalidSize);
+    R_UNLESS((dst_address < dst_address + size), ResultInvalidCurrentMemory);
+    R_UNLESS((src_address < src_address + size), ResultInvalidCurrentMemory);
+
+    // Get the processes.
+    KProcess* dst_process = system.CurrentProcess();
+    KScopedAutoObject src_process =
+        dst_process->GetHandleTable().GetObjectWithoutPseudoHandle<KProcess>(process_handle);
+    R_UNLESS(src_process.IsNotNull(), ResultInvalidHandle);
+
+    // Get the page tables.
+    auto& dst_pt = dst_process->PageTable();
+    auto& src_pt = src_process->PageTable();
+
+    // Validate that the mapping is in range.
+    R_UNLESS(src_pt.Contains(src_address, size), ResultInvalidCurrentMemory);
+    R_UNLESS(dst_pt.CanContain(dst_address, size, KMemoryState::SharedCode),
+             ResultInvalidMemoryRegion);
+
+    // Unmap the memory.
+    R_TRY(dst_pt.UnmapProcessMemory(dst_address, size, src_pt, src_address));
+
+    return ResultSuccess;
+}
+
+static ResultCode CreateCodeMemory(Core::System& system, Handle* out, VAddr address, size_t size) {
+    LOG_TRACE(Kernel_SVC, "called, handle_out=0x{:X}, address=0x{:X}, size=0x{:X}",
+              static_cast<void*>(out), address, size);
+    // Get kernel instance.
+    auto& kernel = system.Kernel();
+
+    // Validate address / size.
+    R_UNLESS(Common::IsAligned(address, PageSize), ResultInvalidAddress);
+    R_UNLESS(Common::IsAligned(size, PageSize), ResultInvalidSize);
+    R_UNLESS(size > 0, ResultInvalidSize);
+    R_UNLESS((address < address + size), ResultInvalidCurrentMemory);
+
+    // Create the code memory.
+
+    KCodeMemory* code_mem = KCodeMemory::Create(kernel);
+    R_UNLESS(code_mem != nullptr, ResultOutOfResource);
+
+    // Verify that the region is in range.
+    R_UNLESS(system.CurrentProcess()->PageTable().Contains(address, size),
+             ResultInvalidCurrentMemory);
+
+    // Initialize the code memory.
+    R_TRY(code_mem->Initialize(system.DeviceMemory(), address, size));
+
+    // Register the code memory.
+    KCodeMemory::Register(kernel, code_mem);
+
+    // Add the code memory to the handle table.
+    R_TRY(system.CurrentProcess()->GetHandleTable().Add(out, code_mem));
+
+    code_mem->Close();
+
+    return ResultSuccess;
+}
+
+static ResultCode ControlCodeMemory(Core::System& system, Handle code_memory_handle, u32 operation,
+                                    VAddr address, size_t size, Svc::MemoryPermission perm) {
+
+    LOG_TRACE(Kernel_SVC,
+              "called, code_memory_handle=0x{:X}, operation=0x{:X}, address=0x{:X}, size=0x{:X}, "
+              "permission=0x{:X}",
+              code_memory_handle, operation, address, size, perm);
+
+    // Validate the address / size.
+    R_UNLESS(Common::IsAligned(address, PageSize), ResultInvalidAddress);
+    R_UNLESS(Common::IsAligned(size, PageSize), ResultInvalidSize);
+    R_UNLESS(size > 0, ResultInvalidSize);
+    R_UNLESS((address < address + size), ResultInvalidCurrentMemory);
+
+    // Get the code memory from its handle.
+    KScopedAutoObject code_mem =
+        system.CurrentProcess()->GetHandleTable().GetObject<KCodeMemory>(code_memory_handle);
+    R_UNLESS(code_mem.IsNotNull(), ResultInvalidHandle);
+
+    // NOTE: Here, Atmosphere extends the SVC to allow code memory operations on one's own process.
+    // This enables homebrew usage of these SVCs for JIT.
+
+    // Perform the operation.
+    switch (static_cast<CodeMemoryOperation>(operation)) {
+    case CodeMemoryOperation::Map: {
+        // Check that the region is in range.
+        R_UNLESS(
+            system.CurrentProcess()->PageTable().CanContain(address, size, KMemoryState::CodeOut),
+            ResultInvalidMemoryRegion);
+
+        // Check the memory permission.
+        R_UNLESS(IsValidMapCodeMemoryPermission(perm), ResultInvalidNewMemoryPermission);
+
+        // Map the memory.
+        R_TRY(code_mem->Map(address, size));
+    } break;
+    case CodeMemoryOperation::Unmap: {
+        // Check that the region is in range.
+        R_UNLESS(
+            system.CurrentProcess()->PageTable().CanContain(address, size, KMemoryState::CodeOut),
+            ResultInvalidMemoryRegion);
+
+        // Check the memory permission.
+        R_UNLESS(IsValidUnmapCodeMemoryPermission(perm), ResultInvalidNewMemoryPermission);
+
+        // Unmap the memory.
+        R_TRY(code_mem->Unmap(address, size));
+    } break;
+    case CodeMemoryOperation::MapToOwner: {
+        // Check that the region is in range.
+        R_UNLESS(code_mem->GetOwner()->PageTable().CanContain(address, size,
+                                                              KMemoryState::GeneratedCode),
+                 ResultInvalidMemoryRegion);
+
+        // Check the memory permission.
+        R_UNLESS(IsValidMapToOwnerCodeMemoryPermission(perm), ResultInvalidNewMemoryPermission);
+
+        // Map the memory to its owner.
+        R_TRY(code_mem->MapToOwner(address, size, perm));
+    } break;
+    case CodeMemoryOperation::UnmapFromOwner: {
+        // Check that the region is in range.
+        R_UNLESS(code_mem->GetOwner()->PageTable().CanContain(address, size,
+                                                              KMemoryState::GeneratedCode),
+                 ResultInvalidMemoryRegion);
+
+        // Check the memory permission.
+        R_UNLESS(IsValidUnmapFromOwnerCodeMemoryPermission(perm), ResultInvalidNewMemoryPermission);
+
+        // Unmap the memory from its owner.
+        R_TRY(code_mem->UnmapFromOwner(address, size));
+    } break;
+    default:
+        return ResultInvalidEnumValue;
+    }
+
+    return ResultSuccess;
 }
 
 static ResultCode QueryProcessMemory(Core::System& system, VAddr memory_info_address,
@@ -2605,8 +2811,8 @@ static const FunctionDef SVC_Table_64[] = {
     {0x48, nullptr, "MapPhysicalMemoryUnsafe"},
     {0x49, nullptr, "UnmapPhysicalMemoryUnsafe"},
     {0x4A, nullptr, "SetUnsafeLimit"},
-    {0x4B, nullptr, "CreateCodeMemory"},
-    {0x4C, nullptr, "ControlCodeMemory"},
+    {0x4B, SvcWrap64<CreateCodeMemory>, "CreateCodeMemory"},
+    {0x4C, SvcWrap64<ControlCodeMemory>, "ControlCodeMemory"},
     {0x4D, nullptr, "SleepSystem"},
     {0x4E, nullptr, "ReadWriteRegister"},
     {0x4F, nullptr, "SetProcessActivity"},
@@ -2646,8 +2852,8 @@ static const FunctionDef SVC_Table_64[] = {
     {0x71, nullptr, "ManageNamedPort"},
     {0x72, nullptr, "ConnectToPort"},
     {0x73, SvcWrap64<SetProcessMemoryPermission>, "SetProcessMemoryPermission"},
-    {0x74, nullptr, "MapProcessMemory"},
-    {0x75, nullptr, "UnmapProcessMemory"},
+    {0x74, SvcWrap64<MapProcessMemory>, "MapProcessMemory"},
+    {0x75, SvcWrap64<UnmapProcessMemory>, "UnmapProcessMemory"},
     {0x76, SvcWrap64<QueryProcessMemory>, "QueryProcessMemory"},
     {0x77, SvcWrap64<MapProcessCodeMemory>, "MapProcessCodeMemory"},
     {0x78, SvcWrap64<UnmapProcessCodeMemory>, "UnmapProcessCodeMemory"},
