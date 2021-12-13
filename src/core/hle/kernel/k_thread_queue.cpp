@@ -2,8 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#pragma once
-
 #include "core/hle/kernel/k_thread_queue.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/time_manager.h"
