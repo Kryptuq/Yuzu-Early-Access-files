@@ -44,50 +44,46 @@ public:
                           const Region2D& src_region, Tegra::Engines::Fermi2D::Filter filter,
                           Tegra::Engines::Fermi2D::Operation operation);
 
-    void ConvertD32ToR32(const Framebuffer* dst_framebuffer, const ImageView& src_image_view,
-                         u32 up_scale, u32 down_shift);
+    void ConvertD32ToR32(const Framebuffer* dst_framebuffer, const ImageView& src_image_view);
 
-    void ConvertR32ToD32(const Framebuffer* dst_framebuffer, const ImageView& src_image_view,
-                         u32 up_scale, u32 down_shift);
+    void ConvertR32ToD32(const Framebuffer* dst_framebuffer, const ImageView& src_image_view);
 
-    void ConvertD16ToR16(const Framebuffer* dst_framebuffer, const ImageView& src_image_view,
-                         u32 up_scale, u32 down_shift);
+    void ConvertD16ToR16(const Framebuffer* dst_framebuffer, const ImageView& src_image_view);
 
-    void ConvertR16ToD16(const Framebuffer* dst_framebuffer, const ImageView& src_image_view,
-                         u32 up_scale, u32 down_shift);
+    void ConvertR16ToD16(const Framebuffer* dst_framebuffer, const ImageView& src_image_view);
 
-    void ConvertABGR8ToD24S8(const Framebuffer* dst_framebuffer, ImageView& src_image_view,
-                             u32 up_scale, u32 down_shift);
+    void ConvertABGR8ToD24S8(const Framebuffer* dst_framebuffer, const ImageView& src_image_view);
 
-    void ConvertD24S8ToABGR8(const Framebuffer* dst_framebuffer, ImageView& src_image_view,
-                             u32 up_scale, u32 down_shift);
+    void ConvertD24S8ToABGR8(const Framebuffer* dst_framebuffer, ImageView& src_image_view);
 
 private:
     void Convert(VkPipeline pipeline, const Framebuffer* dst_framebuffer,
-                 const ImageView& src_image_view, u32 up_scale, u32 down_shift);
+                 const ImageView& src_image_view);
 
     void ConvertColor(VkPipeline pipeline, const Framebuffer* dst_framebuffer,
                       ImageView& src_image_view, u32 up_scale, u32 down_shift);
 
     void ConvertDepthStencil(VkPipeline pipeline, const Framebuffer* dst_framebuffer,
-                             ImageView& src_image_view, u32 up_scale, u32 down_shift);
+                             ImageView& src_image_view);
 
     [[nodiscard]] VkPipeline FindOrEmplaceColorPipeline(const BlitImagePipelineKey& key);
 
     [[nodiscard]] VkPipeline FindOrEmplaceDepthStencilPipeline(const BlitImagePipelineKey& key);
+
+    void ConvertPipeline(vk::Pipeline& pipeline, VkRenderPass renderpass, bool is_target_depth);
 
     void ConvertDepthToColorPipeline(vk::Pipeline& pipeline, VkRenderPass renderpass);
 
     void ConvertColorToDepthPipeline(vk::Pipeline& pipeline, VkRenderPass renderpass);
 
     void ConvertPipelineEx(vk::Pipeline& pipeline, VkRenderPass renderpass,
-                           vk::ShaderModule& module, bool is_target_depth, bool single_texture);
+                           vk::ShaderModule& module, bool single_texture, bool is_target_depth);
 
     void ConvertPipelineColorTargetEx(vk::Pipeline& pipeline, VkRenderPass renderpass,
-                                      vk::ShaderModule& module, bool single_texture);
+                                      vk::ShaderModule& module);
 
     void ConvertPipelineDepthTargetEx(vk::Pipeline& pipeline, VkRenderPass renderpass,
-                                      vk::ShaderModule& module, bool single_texture);
+                                      vk::ShaderModule& module);
 
     const Device& device;
     VKScheduler& scheduler;

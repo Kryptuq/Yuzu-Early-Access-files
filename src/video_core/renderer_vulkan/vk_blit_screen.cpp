@@ -391,28 +391,23 @@ VkSemaphore VKBlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
                 .offset = {0, 0},
                 .extent = size,
             };
-            const auto filter = Settings::values.scaling_filter.GetValue();
             cmdbuf.BeginRenderPass(renderpass_bi, VK_SUBPASS_CONTENTS_INLINE);
-            switch (filter) {
-            case Settings::ScalingFilter::NearestNeighbor:
-                cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *bilinear_pipeline);
-                break;
-            case Settings::ScalingFilter::Bilinear:
-                cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *bilinear_pipeline);
-                break;
-            case Settings::ScalingFilter::Bicubic:
-                cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *bicubic_pipeline);
-                break;
-            case Settings::ScalingFilter::Gaussian:
-                cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *gaussian_pipeline);
-                break;
-            case Settings::ScalingFilter::ScaleForce:
-                cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *scaleforce_pipeline);
-                break;
-            default:
-                cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *bilinear_pipeline);
-                break;
-            }
+            auto graphics_pipeline = [this]() {
+                switch (Settings::values.scaling_filter.GetValue()) {
+                case Settings::ScalingFilter::NearestNeighbor:
+                case Settings::ScalingFilter::Bilinear:
+                    return *bilinear_pipeline;
+                case Settings::ScalingFilter::Bicubic:
+                    return *bicubic_pipeline;
+                case Settings::ScalingFilter::Gaussian:
+                    return *gaussian_pipeline;
+                case Settings::ScalingFilter::ScaleForce:
+                    return *scaleforce_pipeline;
+                default:
+                    return *bilinear_pipeline;
+                }
+            }();
+            cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
             cmdbuf.SetViewport(0, viewport);
             cmdbuf.SetScissor(0, scissor);
 

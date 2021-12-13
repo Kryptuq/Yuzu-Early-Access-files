@@ -65,7 +65,7 @@ public:
 
     void ReinterpretImage(Image& dst, Image& src, std::span<const VideoCommon::ImageCopy> copies);
 
-    void ConvertImage(Framebuffer* dst, ImageView& dst_view, ImageView& src_view, bool rescaled);
+    void ConvertImage(Framebuffer* dst, ImageView& dst_view, ImageView& src_view);
 
     bool CanAccelerateImageUpload(Image&) const noexcept {
         return false;
@@ -139,6 +139,8 @@ public:
         return std::exchange(initialized, true);
     }
 
+    bool IsRescaled() const noexcept;
+
     bool ScaleUp(bool ignore = false);
 
     bool ScaleDown(bool ignore = false);
@@ -189,6 +191,8 @@ public:
     [[nodiscard]] VkImageView StorageView(Shader::TextureType texture_type,
                                           Shader::ImageFormat image_format);
 
+    [[nodiscard]] bool IsRescaled() const noexcept;
+
     [[nodiscard]] VkImageView Handle(Shader::TextureType texture_type) const noexcept {
         return *image_views[static_cast<size_t>(texture_type)];
     }
@@ -222,6 +226,8 @@ private:
     [[nodiscard]] vk::ImageView MakeView(VkFormat vk_format, VkImageAspectFlags aspect_mask);
 
     const Device* device = nullptr;
+    const Image* src_image{};
+
     std::array<vk::ImageView, Shader::NUM_TEXTURE_TYPES> image_views;
     std::unique_ptr<StorageViews> storage_views;
     vk::ImageView depth_view;

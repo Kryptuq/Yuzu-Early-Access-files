@@ -437,39 +437,29 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
 
         glBindTextureUnit(0, fxaa_texture.handle);
     }
-
-    // Set projection matrix
     const std::array ortho_matrix =
         MakeOrthographicMatrix(static_cast<float>(layout.width), static_cast<float>(layout.height));
 
-    GLuint fragment_handle;
-    const auto filter = Settings::values.scaling_filter.GetValue();
-    switch (filter) {
-    case Settings::ScalingFilter::NearestNeighbor:
-        fragment_handle = present_bilinear_fragment.handle;
-        break;
-    case Settings::ScalingFilter::Bilinear:
-        fragment_handle = present_bilinear_fragment.handle;
-        break;
-    case Settings::ScalingFilter::Bicubic:
-        fragment_handle = present_bicubic_fragment.handle;
-        break;
-    case Settings::ScalingFilter::Gaussian:
-        fragment_handle = present_gaussian_fragment.handle;
-        break;
-    case Settings::ScalingFilter::ScaleForce:
-        fragment_handle = present_scaleforce_fragment.handle;
-        break;
-    case Settings::ScalingFilter::Fsr:
-        LOG_WARNING(
-            Render_OpenGL,
-            "FidelityFX FSR Super Sampling is not supported in OpenGL, changing to ScaleForce");
-        fragment_handle = present_scaleforce_fragment.handle;
-        break;
-    default:
-        fragment_handle = present_bilinear_fragment.handle;
-        break;
-    }
+    const auto fragment_handle = [this]() {
+        switch (Settings::values.scaling_filter.GetValue()) {
+        case Settings::ScalingFilter::NearestNeighbor:
+        case Settings::ScalingFilter::Bilinear:
+            return present_bilinear_fragment.handle;
+        case Settings::ScalingFilter::Bicubic:
+            return present_bicubic_fragment.handle;
+        case Settings::ScalingFilter::Gaussian:
+            return present_gaussian_fragment.handle;
+        case Settings::ScalingFilter::ScaleForce:
+            return present_scaleforce_fragment.handle;
+        case Settings::ScalingFilter::Fsr:
+            LOG_WARNING(
+                Render_OpenGL,
+                "FidelityFX Super Resolution is not supported in OpenGL, changing to ScaleForce");
+            return present_scaleforce_fragment.handle;
+        default:
+            return present_bilinear_fragment.handle;
+        }
+    }();
     program_manager.BindPresentPrograms(present_vertex.handle, fragment_handle);
     glProgramUniformMatrix3x2fv(present_vertex.handle, ModelViewMatrixLocation, 1, GL_FALSE,
                                 ortho_matrix.data());

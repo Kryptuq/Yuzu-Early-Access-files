@@ -44,10 +44,6 @@ target_include_directories(mbedtls PUBLIC ./mbedtls/include)
 add_library(microprofile INTERFACE)
 target_include_directories(microprofile INTERFACE ./microprofile)
 
-# Unicorn
-add_library(unicorn-headers INTERFACE)
-target_include_directories(unicorn-headers INTERFACE ./unicorn/include)
-
 # libusb
 if (NOT LIBUSB_FOUND OR YUZU_USE_BUNDLED_LIBUSB)
     add_subdirectory(libusb)

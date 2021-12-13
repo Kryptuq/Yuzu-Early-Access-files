@@ -1137,8 +1137,13 @@ typename TextureCache<P>::BlitImages TextureCache<P>::GetBlitImages(
     } while (has_deleted_images);
     const ImageBase& src_image = slot_images[src_id];
     const ImageBase& dst_image = slot_images[dst_id];
+    const bool native_bgr = runtime.HasNativeBgr();
     if (GetFormatType(dst_info.format) != GetFormatType(dst_image.info.format) ||
-        GetFormatType(src_info.format) != GetFormatType(src_image.info.format)) {
+        GetFormatType(src_info.format) != GetFormatType(src_image.info.format) ||
+        !VideoCore::Surface::IsViewCompatible(dst_info.format, dst_image.info.format, false,
+                                              native_bgr) ||
+        !VideoCore::Surface::IsViewCompatible(src_info.format, src_image.info.format, false,
+                                              native_bgr)) {
         // Make sure the images match the expected format.
         do {
             has_deleted_images = false;
@@ -1850,9 +1855,20 @@ void TextureCache<P>::CopyImage(ImageId dst_id, ImageId src_id, std::vector<Imag
             .height = std::min(dst_view.size.height, src_view.size.height),
             .depth = std::min(dst_view.size.depth, src_view.size.depth),
         };
-        UNIMPLEMENTED_IF(copy.extent != expected_size);
+        const Extent3D scaled_extent = [is_rescaled, expected_size]() {
+            if (!is_rescaled) {
+                return expected_size;
+            }
+            const auto& resolution = Settings::values.resolution_info;
+            return Extent3D{
+                .width = resolution.ScaleUp(expected_size.width),
+                .height = resolution.ScaleUp(expected_size.height),
+                .depth = expected_size.depth,
+            };
+        }();
+        UNIMPLEMENTED_IF(copy.extent != scaled_extent);
 
-        runtime.ConvertImage(dst_framebuffer, dst_view, src_view, is_rescaled);
+        runtime.ConvertImage(dst_framebuffer, dst_view, src_view);
     }
 }
 
