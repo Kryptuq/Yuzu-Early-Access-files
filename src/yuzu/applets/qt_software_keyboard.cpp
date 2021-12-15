@@ -475,11 +475,26 @@ void QtSoftwareKeyboardDialog::open() {
     row = 0;
     column = 0;
 
-    const auto* const curr_button =
-        keyboard_buttons[static_cast<int>(bottom_osk_index)][row][column];
+    switch (bottom_osk_index) {
+    case BottomOSKIndex::LowerCase:
+    case BottomOSKIndex::UpperCase: {
+        const auto* const curr_button =
+            keyboard_buttons[static_cast<std::size_t>(bottom_osk_index)][row][column];
 
-    // This is a workaround for setFocus() randomly not showing focus in the UI
-    QCursor::setPos(curr_button->mapToGlobal(curr_button->rect().center()));
+        // This is a workaround for setFocus() randomly not showing focus in the UI
+        QCursor::setPos(curr_button->mapToGlobal(curr_button->rect().center()));
+        break;
+    }
+    case BottomOSKIndex::NumberPad: {
+        const auto* const curr_button = numberpad_buttons[row][column];
+
+        // This is a workaround for setFocus() randomly not showing focus in the UI
+        QCursor::setPos(curr_button->mapToGlobal(curr_button->rect().center()));
+        break;
+    }
+    default:
+        break;
+    }
 
     StartInputThread();
 }

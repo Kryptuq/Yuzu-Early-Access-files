@@ -155,14 +155,14 @@ private:
      * Updates the motion status of the console
      * @param callback A CallbackStatus containing gyro and accelerometer data
      */
-    void SetMotion(Common::Input::CallbackStatus callback);
+    void SetMotion(const Common::Input::CallbackStatus& callback);
 
     /**
      * Updates the touch status of the console
      * @param callback A CallbackStatus containing the touch position
      * @param index Finger ID to be updated
      */
-    void SetTouch(Common::Input::CallbackStatus callback, std::size_t index);
+    void SetTouch(const Common::Input::CallbackStatus& callback, std::size_t index);
 
     /**
      * Triggers a callback that something has changed on the console status

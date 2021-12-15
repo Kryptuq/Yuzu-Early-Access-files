@@ -156,35 +156,34 @@ private:
      * @param callback A CallbackStatus containing the key status
      * @param index key ID to be updated
      */
-    void SetKeyboardButton(Common::Input::CallbackStatus callback, std::size_t index);
+    void SetKeyboardButton(const Common::Input::CallbackStatus& callback, std::size_t index);
 
     /**
      * Updates the keyboard status of the keyboard device
      * @param callback A CallbackStatus containing the modifier key status
      * @param index modifier key ID to be updated
      */
-    void SetKeyboardModifier(Common::Input::CallbackStatus callback, std::size_t index);
+    void SetKeyboardModifier(const Common::Input::CallbackStatus& callback, std::size_t index);
 
     /**
      * Updates the mouse button status of the mouse device
      * @param callback A CallbackStatus containing the button status
      * @param index Button ID to be updated
      */
-    void SetMouseButton(Common::Input::CallbackStatus callback, std::size_t index);
+    void SetMouseButton(const Common::Input::CallbackStatus& callback, std::size_t index);
 
     /**
      * Updates the mouse wheel status of the mouse device
      * @param callback A CallbackStatus containing the wheel status
      * @param index wheel ID to be updated
      */
-    void SetMouseAnalog(Common::Input::CallbackStatus callback, std::size_t index);
+    void SetMouseAnalog(const Common::Input::CallbackStatus& callback, std::size_t index);
 
     /**
      * Updates the mouse position status of the mouse device
      * @param callback A CallbackStatus containing the position status
-     * @param index stick ID to be updated
      */
-    void SetMouseStick(Common::Input::CallbackStatus callback);
+    void SetMouseStick(const Common::Input::CallbackStatus& callback);
 
     /**
      * Triggers a callback that something has changed on the device status

@@ -14,10 +14,13 @@ public:
     using Button = std::unique_ptr<Common::Input::InputDevice>;
     TouchFromButtonDevice(Button button_, int touch_id_, float x_, float y_)
         : button(std::move(button_)), touch_id(touch_id_), x(x_), y(y_) {
-        Common::Input::InputCallback button_up_callback{
-            [this](Common::Input::CallbackStatus callback_) { UpdateButtonStatus(callback_); }};
         last_button_value = false;
-        button->SetCallback(button_up_callback);
+        button->SetCallback({
+            .on_change =
+                [this](const Common::Input::CallbackStatus& callback_) {
+                    UpdateButtonStatus(callback_);
+                },
+        });
         button->ForceUpdate();
     }
 
@@ -47,7 +50,7 @@ public:
         return status;
     }
 
-    void UpdateButtonStatus(Common::Input::CallbackStatus button_callback) {
+    void UpdateButtonStatus(const Common::Input::CallbackStatus& button_callback) {
         const Common::Input::CallbackStatus status{
             .type = Common::Input::InputType::Touch,
             .touch_status = GetStatus(button_callback.button_status.value),

@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include <cstring>
-#include <regex>
 #include <fmt/format.h>
 
 #include "common/fs/file.h"
@@ -15,7 +14,7 @@
 
 namespace InputCommon::TasInput {
 
-enum TasAxes : u8 {
+enum class Tas::TasAxis : u8 {
     StickX,
     StickY,
     SubstickX,
@@ -47,7 +46,7 @@ constexpr std::array<std::pair<std::string_view, TasButton>, 20> text_to_tas_but
     {"KEY_ZR", TasButton::TRIGGER_ZR},
 };
 
-Tas::Tas(const std::string& input_engine_) : InputCommon::InputEngine(input_engine_) {
+Tas::Tas(std::string input_engine_) : InputEngine(std::move(input_engine_)) {
     for (size_t player_index = 0; player_index < PLAYER_NUMBER; player_index++) {
         PadIdentifier identifier{
             .guid = Common::UUID{},
@@ -66,7 +65,7 @@ Tas::Tas(const std::string& input_engine_) : InputCommon::InputEngine(input_engi
 
 Tas::~Tas() {
     Stop();
-};
+}
 
 void Tas::LoadTasFiles() {
     script_length = 0;
@@ -79,43 +78,43 @@ void Tas::LoadTasFiles() {
 }
 
 void Tas::LoadTasFile(size_t player_index, size_t file_index) {
-    if (!commands[player_index].empty()) {
-        commands[player_index].clear();
-    }
+    commands[player_index].clear();
+
     std::string file = Common::FS::ReadStringFromFile(
         Common::FS::GetYuzuPath(Common::FS::YuzuPath::TASDir) /
             fmt::format("script{}-{}.txt", file_index, player_index + 1),
         Common::FS::FileType::BinaryFile);
-    std::stringstream command_line(file);
+    std::istringstream command_line(file);
     std::string line;
     int frame_no = 0;
     while (std::getline(command_line, line, '\n')) {
         if (line.empty()) {
             continue;
         }
-        std::smatch m;
 
-        std::stringstream linestream(line);
-        std::string segment;
-        std::vector<std::string> seglist;
-
-        while (std::getline(linestream, segment, ' ')) {
-            seglist.push_back(segment);
+        std::vector<std::string> seg_list;
+        {
+            std::istringstream line_stream(line);
+            std::string segment;
+            while (std::getline(line_stream, segment, ' ')) {
+                seg_list.push_back(std::move(segment));
+            }
         }
 
-        if (seglist.size() < 4) {
+        if (seg_list.size() < 4) {
             continue;
         }
 
-        while (frame_no < std::stoi(seglist.at(0))) {
-            commands[player_index].push_back({});
+        const auto num_frames = std::stoi(seg_list[0]);
+        while (frame_no < num_frames) {
+            commands[player_index].emplace_back();
             frame_no++;
         }
 
         TASCommand command = {
-            .buttons = ReadCommandButtons(seglist.at(1)),
-            .l_axis = ReadCommandAxis(seglist.at(2)),
-            .r_axis = ReadCommandAxis(seglist.at(3)),
+            .buttons = ReadCommandButtons(seg_list[1]),
+            .l_axis = ReadCommandAxis(seg_list[2]),
+            .r_axis = ReadCommandAxis(seg_list[3]),
         };
         commands[player_index].push_back(command);
         frame_no++;
@@ -123,16 +122,17 @@ void Tas::LoadTasFile(size_t player_index, size_t file_index) {
     LOG_INFO(Input, "TAS file loaded! {} frames", frame_no);
 }
 
-void Tas::WriteTasFile(std::u8string file_name) {
+void Tas::WriteTasFile(std::u8string_view file_name) {
     std::string output_text;
     for (size_t frame = 0; frame < record_commands.size(); frame++) {
         const TASCommand& line = record_commands[frame];
         output_text += fmt::format("{} {} {} {}\n", frame, WriteCommandButtons(line.buttons),
                                    WriteCommandAxis(line.l_axis), WriteCommandAxis(line.r_axis));
     }
-    const auto bytes_written = Common::FS::WriteStringToFile(
-        Common::FS::GetYuzuPath(Common::FS::YuzuPath::TASDir) / file_name,
-        Common::FS::FileType::TextFile, output_text);
+
+    const auto tas_file_name = Common::FS::GetYuzuPath(Common::FS::YuzuPath::TASDir) / file_name;
+    const auto bytes_written =
+        Common::FS::WriteStringToFile(tas_file_name, Common::FS::FileType::TextFile, output_text);
     if (bytes_written == output_text.size()) {
         LOG_INFO(Input, "TAS file written to file!");
     } else {
@@ -205,10 +205,10 @@ void Tas::UpdateThread() {
                 const int button = static_cast<int>(i);
                 SetButton(identifier, button, button_status);
             }
-            SetAxis(identifier, TasAxes::StickX, command.l_axis.x);
-            SetAxis(identifier, TasAxes::StickY, command.l_axis.y);
-            SetAxis(identifier, TasAxes::SubstickX, command.r_axis.x);
-            SetAxis(identifier, TasAxes::SubstickY, command.r_axis.y);
+            SetTasAxis(identifier, TasAxis::StickX, command.l_axis.x);
+            SetTasAxis(identifier, TasAxis::StickY, command.l_axis.y);
+            SetTasAxis(identifier, TasAxis::SubstickX, command.r_axis.x);
+            SetTasAxis(identifier, TasAxis::SubstickY, command.r_axis.y);
         }
     } else {
         is_running = Settings::values.tas_loop.GetValue();
@@ -224,27 +224,28 @@ void Tas::ClearInput() {
 }
 
 TasAnalog Tas::ReadCommandAxis(const std::string& line) const {
-    std::stringstream linestream(line);
-    std::string segment;
-    std::vector<std::string> seglist;
-
-    while (std::getline(linestream, segment, ';')) {
-        seglist.push_back(segment);
+    std::vector<std::string> seg_list;
+    {
+        std::istringstream line_stream(line);
+        std::string segment;
+        while (std::getline(line_stream, segment, ';')) {
+            seg_list.push_back(std::move(segment));
+        }
     }
 
-    const float x = std::stof(seglist.at(0)) / 32767.0f;
-    const float y = std::stof(seglist.at(1)) / 32767.0f;
+    const float x = std::stof(seg_list.at(0)) / 32767.0f;
+    const float y = std::stof(seg_list.at(1)) / 32767.0f;
 
     return {x, y};
 }
 
-u64 Tas::ReadCommandButtons(const std::string& data) const {
-    std::stringstream button_text(data);
-    std::string line;
+u64 Tas::ReadCommandButtons(const std::string& line) const {
+    std::istringstream button_text(line);
+    std::string button_line;
     u64 buttons = 0;
-    while (std::getline(button_text, line, ';')) {
-        for (auto [text, tas_button] : text_to_tas_button) {
-            if (text == line) {
+    while (std::getline(button_text, button_line, ';')) {
+        for (const auto& [text, tas_button] : text_to_tas_button) {
+            if (text == button_line) {
                 buttons |= static_cast<u64>(tas_button);
                 break;
             }
@@ -254,8 +255,8 @@ u64 Tas::ReadCommandButtons(const std::string& data) const {
 }
 
 std::string Tas::WriteCommandButtons(u64 buttons) const {
-    std::string returns = "";
-    for (auto [text_button, tas_button] : text_to_tas_button) {
+    std::string returns;
+    for (const auto& [text_button, tas_button] : text_to_tas_button) {
         if ((buttons & static_cast<u64>(tas_button)) != 0) {
             returns += fmt::format("{};", text_button);
         }
@@ -265,6 +266,10 @@ std::string Tas::WriteCommandButtons(u64 buttons) const {
 
 std::string Tas::WriteCommandAxis(TasAnalog analog) const {
     return fmt::format("{};{}", analog.x * 32767, analog.y * 32767);
+}
+
+void Tas::SetTasAxis(const PadIdentifier& identifier, TasAxis axis, f32 value) {
+    SetAxis(identifier, static_cast<int>(axis), value);
 }
 
 void Tas::StartStop() {

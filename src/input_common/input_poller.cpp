@@ -12,8 +12,7 @@ namespace InputCommon {
 
 class DummyInput final : public Common::Input::InputDevice {
 public:
-    explicit DummyInput() {}
-    ~DummyInput() {}
+    explicit DummyInput() = default;
 };
 
 class InputFromButton final : public Common::Input::InputDevice {
@@ -33,7 +32,7 @@ public:
         callback_key = input_engine->SetCallback(input_identifier);
     }
 
-    ~InputFromButton() {
+    ~InputFromButton() override {
         input_engine->DeleteCallback(callback_key);
     }
 
@@ -45,7 +44,7 @@ public:
         };
     }
 
-    void ForceUpdate() {
+    void ForceUpdate() override {
         const Common::Input::CallbackStatus status{
             .type = Common::Input::InputType::Button,
             .button_status = GetStatus(),
@@ -94,7 +93,7 @@ public:
         callback_key = input_engine->SetCallback(input_identifier);
     }
 
-    ~InputFromHatButton() {
+    ~InputFromHatButton() override {
         input_engine->DeleteCallback(callback_key);
     }
 
@@ -106,7 +105,7 @@ public:
         };
     }
 
-    void ForceUpdate() {
+    void ForceUpdate() override {
         const Common::Input::CallbackStatus status{
             .type = Common::Input::InputType::Button,
             .button_status = GetStatus(),
@@ -167,7 +166,7 @@ public:
         callback_key_y = input_engine->SetCallback(y_input_identifier);
     }
 
-    ~InputFromStick() {
+    ~InputFromStick() override {
         input_engine->DeleteCallback(callback_key_x);
         input_engine->DeleteCallback(callback_key_y);
     }
@@ -190,7 +189,7 @@ public:
         return status;
     }
 
-    void ForceUpdate() {
+    void ForceUpdate() override {
         const Common::Input::CallbackStatus status{
             .type = Common::Input::InputType::Stick,
             .stick_status = GetStatus(),
@@ -266,7 +265,7 @@ public:
         callback_key_y = input_engine->SetCallback(y_input_identifier);
     }
 
-    ~InputFromTouch() {
+    ~InputFromTouch() override {
         input_engine->DeleteCallback(callback_key_button);
         input_engine->DeleteCallback(callback_key_x);
         input_engine->DeleteCallback(callback_key_y);
@@ -352,7 +351,7 @@ public:
         axis_callback_key = input_engine->SetCallback(axis_input_identifier);
     }
 
-    ~InputFromTrigger() {
+    ~InputFromTrigger() override {
         input_engine->DeleteCallback(callback_key_button);
         input_engine->DeleteCallback(axis_callback_key);
     }
@@ -419,7 +418,7 @@ public:
         callback_key = input_engine->SetCallback(input_identifier);
     }
 
-    ~InputFromAnalog() {
+    ~InputFromAnalog() override {
         input_engine->DeleteCallback(callback_key);
     }
 
@@ -466,7 +465,7 @@ public:
         callback_key = input_engine->SetCallback(input_identifier);
     }
 
-    ~InputFromBattery() {
+    ~InputFromBattery() override {
         input_engine->DeleteCallback(callback_key);
     }
 
@@ -474,7 +473,7 @@ public:
         return static_cast<Common::Input::BatteryLevel>(input_engine->GetBattery(identifier));
     }
 
-    void ForceUpdate() {
+    void ForceUpdate() override {
         const Common::Input::CallbackStatus status{
             .type = Common::Input::InputType::Battery,
             .battery_status = GetStatus(),
@@ -518,7 +517,7 @@ public:
         callback_key = input_engine->SetCallback(input_identifier);
     }
 
-    ~InputFromMotion() {
+    ~InputFromMotion() override {
         input_engine->DeleteCallback(callback_key);
     }
 
@@ -593,7 +592,7 @@ public:
         callback_key_z = input_engine->SetCallback(z_input_identifier);
     }
 
-    ~InputFromAxisMotion() {
+    ~InputFromAxisMotion() override {
         input_engine->DeleteCallback(callback_key_x);
         input_engine->DeleteCallback(callback_key_y);
         input_engine->DeleteCallback(callback_key_z);
@@ -618,7 +617,7 @@ public:
         return status;
     }
 
-    void ForceUpdate() {
+    void ForceUpdate() override {
         const Common::Input::CallbackStatus status{
             .type = Common::Input::InputType::Motion,
             .motion_status = GetStatus(),
@@ -668,16 +667,16 @@ public:
     explicit OutputFromIdentifier(PadIdentifier identifier_, InputEngine* input_engine_)
         : identifier(identifier_), input_engine(input_engine_) {}
 
-    virtual void SetLED(Common::Input::LedStatus led_status) {
+    void SetLED(const Common::Input::LedStatus& led_status) override {
         input_engine->SetLeds(identifier, led_status);
     }
 
-    virtual Common::Input::VibrationError SetVibration(
-        Common::Input::VibrationStatus vibration_status) {
+    Common::Input::VibrationError SetVibration(
+        const Common::Input::VibrationStatus& vibration_status) override {
         return input_engine->SetRumble(identifier, vibration_status);
     }
 
-    virtual Common::Input::PollingError SetPollingMode(Common::Input::PollingMode polling_mode) {
+    Common::Input::PollingError SetPollingMode(Common::Input::PollingMode polling_mode) override {
         return input_engine->SetPollingMode(identifier, polling_mode);
     }
 

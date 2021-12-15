@@ -88,7 +88,7 @@ public:
         return true;
     }
 
-    BasicMotion GetMotion() {
+    const BasicMotion& GetMotion() const {
         return motion;
     }
 
@@ -367,7 +367,7 @@ void SDLDriver::HandleGameControllerEvent(const SDL_Event& event) {
             if (joystick->UpdateMotion(event.csensor)) {
                 const PadIdentifier identifier = joystick->GetPadIdentifier();
                 SetMotion(identifier, 0, joystick->GetMotion());
-            };
+            }
         }
         break;
     }
@@ -387,7 +387,7 @@ void SDLDriver::CloseJoysticks() {
     joystick_map.clear();
 }
 
-SDLDriver::SDLDriver(const std::string& input_engine_) : InputEngine(input_engine_) {
+SDLDriver::SDLDriver(std::string input_engine_) : InputEngine(std::move(input_engine_)) {
     if (!Settings::values.enable_raw_input) {
         // Disable raw input. When enabled this setting causes SDL to die when a web applet opens
         SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT, "0");
@@ -403,10 +403,11 @@ SDLDriver::SDLDriver(const std::string& input_engine_) : InputEngine(input_engin
 
     // Use hidapi driver for joycons. This will allow joycons to be detected as a GameController and
     // not a generic one
-    SDL_SetHint("SDL_JOYSTICK_HIDAPI_JOY_CONS", "1");
+    SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_JOY_CONS, "1");
 
-    // Turn off Pro controller home led
-    SDL_SetHint("SDL_JOYSTICK_HIDAPI_SWITCH_HOME_LED", "0");
+    // Disable hidapi driver for xbox. Already default on Windows, this causes conflict with native
+    // driver on Linux.
+    SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_XBOX, "0");
 
     // If the frontend is going to manage the event loop, then we don't start one here
     start_thread = SDL_WasInit(SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) == 0;
@@ -491,8 +492,9 @@ std::vector<Common::ParamPackage> SDLDriver::GetInputDevices() const {
     }
     return devices;
 }
-Common::Input::VibrationError SDLDriver::SetRumble(const PadIdentifier& identifier,
-                                                   const Common::Input::VibrationStatus vibration) {
+
+Common::Input::VibrationError SDLDriver::SetRumble(
+    const PadIdentifier& identifier, const Common::Input::VibrationStatus& vibration) {
     const auto joystick =
         GetSDLJoystickByGUID(identifier.guid.Format(), static_cast<int>(identifier.port));
     const auto process_amplitude_exp = [](f32 amplitude, f32 factor) {
@@ -526,6 +528,7 @@ Common::Input::VibrationError SDLDriver::SetRumble(const PadIdentifier& identifi
 
     return Common::Input::VibrationError::None;
 }
+
 Common::ParamPackage SDLDriver::BuildAnalogParamPackageForButton(int port, std::string guid,
                                                                  s32 axis, float value) const {
     Common::ParamPackage params{};

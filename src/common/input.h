@@ -227,7 +227,7 @@ struct CallbackStatus {
 
 // Triggered once every input change
 struct InputCallback {
-    std::function<void(CallbackStatus)> on_change;
+    std::function<void(const CallbackStatus&)> on_change;
 };
 
 /// An abstract class template for an input device (a button, an analog input, etc.).
@@ -236,14 +236,10 @@ public:
     virtual ~InputDevice() = default;
 
     // Request input device to update if necessary
-    virtual void SoftUpdate() {
-        return;
-    }
+    virtual void SoftUpdate() {}
 
     // Force input device to update data regardless of the current state
-    virtual void ForceUpdate() {
-        return;
-    }
+    virtual void ForceUpdate() {}
 
     // Sets the function to be triggered when input changes
     void SetCallback(InputCallback callback_) {
@@ -251,7 +247,7 @@ public:
     }
 
     // Triggers the function set in the callback
-    void TriggerOnChange(CallbackStatus status) {
+    void TriggerOnChange(const CallbackStatus& status) {
         if (callback.on_change) {
             callback.on_change(status);
         }
@@ -266,11 +262,9 @@ class OutputDevice {
 public:
     virtual ~OutputDevice() = default;
 
-    virtual void SetLED([[maybe_unused]] LedStatus led_status) {
-        return;
-    }
+    virtual void SetLED([[maybe_unused]] const LedStatus& led_status) {}
 
-    virtual VibrationError SetVibration([[maybe_unused]] VibrationStatus vibration_status) {
+    virtual VibrationError SetVibration([[maybe_unused]] const VibrationStatus& vibration_status) {
         return VibrationError::NotSupported;
     }
 

@@ -23,15 +23,15 @@ struct PadIdentifier {
     friend constexpr bool operator==(const PadIdentifier&, const PadIdentifier&) = default;
 };
 
-// Basic motion data containing data from the sensors and a timestamp in microsecons
+// Basic motion data containing data from the sensors and a timestamp in microseconds
 struct BasicMotion {
-    float gyro_x;
-    float gyro_y;
-    float gyro_z;
-    float accel_x;
-    float accel_y;
-    float accel_z;
-    u64 delta_timestamp;
+    float gyro_x{};
+    float gyro_y{};
+    float gyro_z{};
+    float accel_x{};
+    float accel_y{};
+    float accel_z{};
+    u64 delta_timestamp{};
 };
 
 // Stages of a battery charge
@@ -102,9 +102,7 @@ struct InputIdentifier {
 
 class InputEngine {
 public:
-    explicit InputEngine(const std::string& input_engine_) : input_engine(input_engine_) {
-        callback_list.clear();
-    }
+    explicit InputEngine(std::string input_engine_) : input_engine{std::move(input_engine_)} {}
 
     virtual ~InputEngine() = default;
 
@@ -116,14 +114,12 @@ public:
 
     // Sets a led pattern for a controller
     virtual void SetLeds([[maybe_unused]] const PadIdentifier& identifier,
-                         [[maybe_unused]] const Common::Input::LedStatus led_status) {
-        return;
-    }
+                         [[maybe_unused]] const Common::Input::LedStatus& led_status) {}
 
     // Sets rumble to a controller
     virtual Common::Input::VibrationError SetRumble(
         [[maybe_unused]] const PadIdentifier& identifier,
-        [[maybe_unused]] const Common::Input::VibrationStatus vibration) {
+        [[maybe_unused]] const Common::Input::VibrationStatus& vibration) {
         return Common::Input::VibrationError::NotSupported;
     }
 
@@ -140,36 +136,36 @@ public:
     /// Used for automapping features
     virtual std::vector<Common::ParamPackage> GetInputDevices() const {
         return {};
-    };
+    }
 
     /// Retrieves the button mappings for the given device
-    virtual InputCommon::ButtonMapping GetButtonMappingForDevice(
+    virtual ButtonMapping GetButtonMappingForDevice(
         [[maybe_unused]] const Common::ParamPackage& params) {
         return {};
-    };
+    }
 
     /// Retrieves the analog mappings for the given device
-    virtual InputCommon::AnalogMapping GetAnalogMappingForDevice(
+    virtual AnalogMapping GetAnalogMappingForDevice(
         [[maybe_unused]] const Common::ParamPackage& params) {
         return {};
-    };
+    }
 
     /// Retrieves the motion mappings for the given device
-    virtual InputCommon::MotionMapping GetMotionMappingForDevice(
+    virtual MotionMapping GetMotionMappingForDevice(
         [[maybe_unused]] const Common::ParamPackage& params) {
         return {};
-    };
+    }
 
     /// Retrieves the name of the given input.
     virtual Common::Input::ButtonNames GetUIName(
         [[maybe_unused]] const Common::ParamPackage& params) const {
         return Common::Input::ButtonNames::Engine;
-    };
+    }
 
     /// Retrieves the index number of the given hat button direction
     virtual u8 GetHatButtonId([[maybe_unused]] const std::string& direction_name) const {
         return 0;
-    };
+    }
 
     void PreSetController(const PadIdentifier& identifier);
     void PreSetButton(const PadIdentifier& identifier, int button);
@@ -194,7 +190,7 @@ protected:
     void SetHatButton(const PadIdentifier& identifier, int button, u8 value);
     void SetAxis(const PadIdentifier& identifier, int axis, f32 value);
     void SetBattery(const PadIdentifier& identifier, BatteryLevel value);
-    void SetMotion(const PadIdentifier& identifier, int motion, BasicMotion value);
+    void SetMotion(const PadIdentifier& identifier, int motion, const BasicMotion& value);
 
     virtual std::string GetHatButtonName([[maybe_unused]] u8 direction_value) const {
         return "Unknown";
@@ -206,14 +202,15 @@ private:
         std::unordered_map<int, u8> hat_buttons;
         std::unordered_map<int, float> axes;
         std::unordered_map<int, BasicMotion> motions;
-        BatteryLevel battery;
+        BatteryLevel battery{};
     };
 
     void TriggerOnButtonChange(const PadIdentifier& identifier, int button, bool value);
     void TriggerOnHatButtonChange(const PadIdentifier& identifier, int button, u8 value);
-    void TriggerOnAxisChange(const PadIdentifier& identifier, int button, f32 value);
+    void TriggerOnAxisChange(const PadIdentifier& identifier, int axis, f32 value);
     void TriggerOnBatteryChange(const PadIdentifier& identifier, BatteryLevel value);
-    void TriggerOnMotionChange(const PadIdentifier& identifier, int motion, BasicMotion value);
+    void TriggerOnMotionChange(const PadIdentifier& identifier, int motion,
+                               const BasicMotion& value);
 
     bool IsInputIdentifierEqual(const InputIdentifier& input_identifier,
                                 const PadIdentifier& identifier, EngineInputType type,

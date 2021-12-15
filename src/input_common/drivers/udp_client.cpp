@@ -136,7 +136,7 @@ static void SocketLoop(Socket* socket) {
     socket->Loop();
 }
 
-UDPClient::UDPClient(const std::string& input_engine_) : InputEngine(input_engine_) {
+UDPClient::UDPClient(std::string input_engine_) : InputEngine(std::move(input_engine_)) {
     LOG_INFO(Input, "Udp Initialization started");
     ReloadSockets();
 }

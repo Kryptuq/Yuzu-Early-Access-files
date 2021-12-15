@@ -5,11 +5,11 @@
 #pragma once
 
 #include <array>
+#include <string>
+#include <vector>
 
 #include "common/common_types.h"
-#include "common/settings_input.h"
 #include "input_common/input_engine.h"
-#include "input_common/main.h"
 
 /*
 To play back TAS scripts on Yuzu, select the folder with scripts in the configuration menu below
@@ -81,46 +81,46 @@ enum class TasState {
     Stopped,
 };
 
-class Tas final : public InputCommon::InputEngine {
+class Tas final : public InputEngine {
 public:
-    explicit Tas(const std::string& input_engine_);
-    ~Tas();
+    explicit Tas(std::string input_engine_);
+    ~Tas() override;
 
     /**
      * Changes the input status that will be stored in each frame
-     * @param buttons: bitfield with the status of the buttons
-     * @param left_axis: value of the left axis
-     * @param right_axis: value of the right axis
+     * @param buttons    Bitfield with the status of the buttons
+     * @param left_axis  Value of the left axis
+     * @param right_axis Value of the right axis
      */
     void RecordInput(u64 buttons, TasAnalog left_axis, TasAnalog right_axis);
 
     // Main loop that records or executes input
     void UpdateThread();
 
-    //  Sets the flag to start or stop the TAS command excecution and swaps controllers profiles
+    // Sets the flag to start or stop the TAS command execution and swaps controllers profiles
     void StartStop();
 
-    //  Stop the TAS and reverts any controller profile
+    // Stop the TAS and reverts any controller profile
     void Stop();
 
-    // Sets the flag to reload the file and start from the begining in the next update
+    // Sets the flag to reload the file and start from the beginning in the next update
     void Reset();
 
     /**
      * Sets the flag to enable or disable recording of inputs
-     * @return Returns true if the current recording status is enabled
+     * @returns true if the current recording status is enabled
      */
     bool Record();
 
     /**
      * Saves contents of record_commands on a file
-     * @param overwrite_file: Indicates if player 1 should be overwritten
+     * @param overwrite_file Indicates if player 1 should be overwritten
      */
     void SaveRecording(bool overwrite_file);
 
     /**
      * Returns the current status values of TAS playback/recording
-     * @return Tuple of
+     * @returns A Tuple of
      * TasState indicating the current state out of Running ;
      * Current playback progress ;
      * Total length of script file currently loaded or being recorded
@@ -128,6 +128,8 @@ public:
     std::tuple<TasState, size_t, size_t> GetStatus() const;
 
 private:
+    enum class TasAxis : u8;
+
     struct TASCommand {
         u64 buttons{};
         TasAnalog l_axis{};
@@ -137,29 +139,31 @@ private:
     /// Loads TAS files from all players
     void LoadTasFiles();
 
-    /** Loads TAS file from the specified player
-     * @param player_index: player number to save the script
-     * @param file_index: script number of the file
+    /**
+     * Loads TAS file from the specified player
+     * @param player_index Player number to save the script
+     * @param file_index   Script number of the file
      */
     void LoadTasFile(size_t player_index, size_t file_index);
 
-    /** Writes a TAS file from the recorded commands
-     * @param file_name: name of the file to be written
+    /**
+     * Writes a TAS file from the recorded commands
+     * @param file_name Name of the file to be written
      */
-    void WriteTasFile(std::u8string file_name);
+    void WriteTasFile(std::u8string_view file_name);
 
     /**
      * Parses a string containing the axis values. X and Y have a range from -32767 to 32767
-     * @param line: string containing axis values with the following format "x;y"
-     * @return Returns a TAS analog object with axis values with range from -1.0 to 1.0
+     * @param line String containing axis values with the following format "x;y"
+     * @returns A TAS analog object with axis values with range from -1.0 to 1.0
      */
     TasAnalog ReadCommandAxis(const std::string& line) const;
 
     /**
      * Parses a string containing the button values. Each button is represented by it's text format
      * specified in text_to_tas_button array
-     * @param line: string containing button name with the following format "a;b;c;d..."
-     * @return Returns a u64 with each bit representing the status of a button
+     * @param line string containing button name with the following format "a;b;c;d..."
+     * @returns A u64 with each bit representing the status of a button
      */
     u64 ReadCommandButtons(const std::string& line) const;
 
@@ -170,17 +174,20 @@ private:
 
     /**
      * Converts an u64 containing the button status into the text equivalent
-     * @param buttons: bitfield with the status of the buttons
-     * @return Returns a string with the name of the buttons to be written to the file
+     * @param buttons Bitfield with the status of the buttons
+     * @returns A string with the name of the buttons to be written to the file
      */
     std::string WriteCommandButtons(u64 buttons) const;
 
     /**
      * Converts an TAS analog object containing the axis status into the text equivalent
-     * @param data: value of the axis
-     * @return A string with the value of the axis to be written to the file
+     * @param analog Value of the axis
+     * @returns A string with the value of the axis to be written to the file
      */
-    std::string WriteCommandAxis(TasAnalog data) const;
+    std::string WriteCommandAxis(TasAnalog analog) const;
+
+    /// Sets an axis for a particular pad to the given value.
+    void SetTasAxis(const PadIdentifier& identifier, TasAxis axis, f32 value);
 
     size_t script_length{0};
     bool is_recording{false};

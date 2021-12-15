@@ -22,13 +22,13 @@ namespace InputCommon {
 class LibUSBContext;
 class LibUSBDeviceHandle;
 
-class GCAdapter : public InputCommon::InputEngine {
+class GCAdapter : public InputEngine {
 public:
-    explicit GCAdapter(const std::string& input_engine_);
-    ~GCAdapter();
+    explicit GCAdapter(std::string input_engine_);
+    ~GCAdapter() override;
 
     Common::Input::VibrationError SetRumble(
-        const PadIdentifier& identifier, const Common::Input::VibrationStatus vibration) override;
+        const PadIdentifier& identifier, const Common::Input::VibrationStatus& vibration) override;
 
     /// Used for automapping features
     std::vector<Common::ParamPackage> GetInputDevices() const override;

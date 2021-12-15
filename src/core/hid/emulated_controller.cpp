@@ -205,11 +205,12 @@ void EmulatedController::ReloadInput() {
             continue;
         }
         const auto uuid = Common::UUID{button_params[index].Get("guid", "")};
-        Common::Input::InputCallback button_callback{
-            [this, index, uuid](Common::Input::CallbackStatus callback) {
-                SetButton(callback, index, uuid);
-            }};
-        button_devices[index]->SetCallback(button_callback);
+        button_devices[index]->SetCallback({
+            .on_change =
+                [this, index, uuid](const Common::Input::CallbackStatus& callback) {
+                    SetButton(callback, index, uuid);
+                },
+        });
         button_devices[index]->ForceUpdate();
     }
 
@@ -218,11 +219,12 @@ void EmulatedController::ReloadInput() {
             continue;
         }
         const auto uuid = Common::UUID{stick_params[index].Get("guid", "")};
-        Common::Input::InputCallback stick_callback{
-            [this, index, uuid](Common::Input::CallbackStatus callback) {
-                SetStick(callback, index, uuid);
-            }};
-        stick_devices[index]->SetCallback(stick_callback);
+        stick_devices[index]->SetCallback({
+            .on_change =
+                [this, index, uuid](const Common::Input::CallbackStatus& callback) {
+                    SetStick(callback, index, uuid);
+                },
+        });
         stick_devices[index]->ForceUpdate();
     }
 
@@ -231,11 +233,12 @@ void EmulatedController::ReloadInput() {
             continue;
         }
         const auto uuid = Common::UUID{trigger_params[index].Get("guid", "")};
-        Common::Input::InputCallback trigger_callback{
-            [this, index, uuid](Common::Input::CallbackStatus callback) {
-                SetTrigger(callback, index, uuid);
-            }};
-        trigger_devices[index]->SetCallback(trigger_callback);
+        trigger_devices[index]->SetCallback({
+            .on_change =
+                [this, index, uuid](const Common::Input::CallbackStatus& callback) {
+                    SetTrigger(callback, index, uuid);
+                },
+        });
         trigger_devices[index]->ForceUpdate();
     }
 
@@ -243,9 +246,12 @@ void EmulatedController::ReloadInput() {
         if (!battery_devices[index]) {
             continue;
         }
-        Common::Input::InputCallback battery_callback{
-            [this, index](Common::Input::CallbackStatus callback) { SetBattery(callback, index); }};
-        battery_devices[index]->SetCallback(battery_callback);
+        battery_devices[index]->SetCallback({
+            .on_change =
+                [this, index](const Common::Input::CallbackStatus& callback) {
+                    SetBattery(callback, index);
+                },
+        });
         battery_devices[index]->ForceUpdate();
     }
 
@@ -253,9 +259,12 @@ void EmulatedController::ReloadInput() {
         if (!motion_devices[index]) {
             continue;
         }
-        Common::Input::InputCallback motion_callback{
-            [this, index](Common::Input::CallbackStatus callback) { SetMotion(callback, index); }};
-        motion_devices[index]->SetCallback(motion_callback);
+        motion_devices[index]->SetCallback({
+            .on_change =
+                [this, index](const Common::Input::CallbackStatus& callback) {
+                    SetMotion(callback, index);
+                },
+        });
         motion_devices[index]->ForceUpdate();
     }
 
@@ -267,22 +276,24 @@ void EmulatedController::ReloadInput() {
         if (!tas_button_devices[index]) {
             continue;
         }
-        Common::Input::InputCallback button_callback{
-            [this, index, tas_uuid](Common::Input::CallbackStatus callback) {
-                SetButton(callback, index, tas_uuid);
-            }};
-        tas_button_devices[index]->SetCallback(button_callback);
+        tas_button_devices[index]->SetCallback({
+            .on_change =
+                [this, index, tas_uuid](const Common::Input::CallbackStatus& callback) {
+                    SetButton(callback, index, tas_uuid);
+                },
+        });
     }
 
     for (std::size_t index = 0; index < tas_stick_devices.size(); ++index) {
         if (!tas_stick_devices[index]) {
             continue;
         }
-        Common::Input::InputCallback stick_callback{
-            [this, index, tas_uuid](Common::Input::CallbackStatus callback) {
-                SetStick(callback, index, tas_uuid);
-            }};
-        tas_stick_devices[index]->SetCallback(stick_callback);
+        tas_stick_devices[index]->SetCallback({
+            .on_change =
+                [this, index, tas_uuid](const Common::Input::CallbackStatus& callback) {
+                    SetStick(callback, index, tas_uuid);
+                },
+        });
     }
 }
 
@@ -440,7 +451,7 @@ void EmulatedController::SetButtonParam(std::size_t index, Common::ParamPackage 
     if (index >= button_params.size()) {
         return;
     }
-    button_params[index] = param;
+    button_params[index] = std::move(param);
     ReloadInput();
 }
 
@@ -448,7 +459,7 @@ void EmulatedController::SetStickParam(std::size_t index, Common::ParamPackage p
     if (index >= stick_params.size()) {
         return;
     }
-    stick_params[index] = param;
+    stick_params[index] = std::move(param);
     ReloadInput();
 }
 
@@ -456,11 +467,11 @@ void EmulatedController::SetMotionParam(std::size_t index, Common::ParamPackage 
     if (index >= motion_params.size()) {
         return;
     }
-    motion_params[index] = param;
+    motion_params[index] = std::move(param);
     ReloadInput();
 }
 
-void EmulatedController::SetButton(Common::Input::CallbackStatus callback, std::size_t index,
+void EmulatedController::SetButton(const Common::Input::CallbackStatus& callback, std::size_t index,
                                    Common::UUID uuid) {
     if (index >= controller.button_values.size()) {
         return;
@@ -600,7 +611,7 @@ void EmulatedController::SetButton(Common::Input::CallbackStatus callback, std::
     TriggerOnChange(ControllerTriggerType::Button, true);
 }
 
-void EmulatedController::SetStick(Common::Input::CallbackStatus callback, std::size_t index,
+void EmulatedController::SetStick(const Common::Input::CallbackStatus& callback, std::size_t index,
                                   Common::UUID uuid) {
     if (index >= controller.stick_values.size()) {
         return;
@@ -650,8 +661,8 @@ void EmulatedController::SetStick(Common::Input::CallbackStatus callback, std::s
     TriggerOnChange(ControllerTriggerType::Stick, true);
 }
 
-void EmulatedController::SetTrigger(Common::Input::CallbackStatus callback, std::size_t index,
-                                    Common::UUID uuid) {
+void EmulatedController::SetTrigger(const Common::Input::CallbackStatus& callback,
+                                    std::size_t index, Common::UUID uuid) {
     if (index >= controller.trigger_values.size()) {
         return;
     }
@@ -659,7 +670,7 @@ void EmulatedController::SetTrigger(Common::Input::CallbackStatus callback, std:
     const auto trigger_value = TransformToTrigger(callback);
 
     // Only read trigger values that have the same uuid or are pressed once
-    if (controller.stick_values[index].uuid != uuid) {
+    if (controller.trigger_values[index].uuid != uuid) {
         if (!trigger_value.pressed.value) {
             return;
         }
@@ -675,7 +686,7 @@ void EmulatedController::SetTrigger(Common::Input::CallbackStatus callback, std:
         return;
     }
 
-    const auto trigger = controller.trigger_values[index];
+    const auto& trigger = controller.trigger_values[index];
 
     switch (index) {
     case Settings::NativeTrigger::LTrigger:
@@ -692,7 +703,8 @@ void EmulatedController::SetTrigger(Common::Input::CallbackStatus callback, std:
     TriggerOnChange(ControllerTriggerType::Trigger, true);
 }
 
-void EmulatedController::SetMotion(Common::Input::CallbackStatus callback, std::size_t index) {
+void EmulatedController::SetMotion(const Common::Input::CallbackStatus& callback,
+                                   std::size_t index) {
     if (index >= controller.motion_values.size()) {
         return;
     }
@@ -730,7 +742,8 @@ void EmulatedController::SetMotion(Common::Input::CallbackStatus callback, std::
     TriggerOnChange(ControllerTriggerType::Motion, true);
 }
 
-void EmulatedController::SetBattery(Common::Input::CallbackStatus callback, std::size_t index) {
+void EmulatedController::SetBattery(const Common::Input::CallbackStatus& callback,
+                                    std::size_t index) {
     if (index >= controller.battery_values.size()) {
         return;
     }
@@ -1110,7 +1123,7 @@ void EmulatedController::TriggerOnChange(ControllerTriggerType type, bool is_npa
 
 int EmulatedController::SetCallback(ControllerUpdateCallback update_callback) {
     std::lock_guard lock{mutex};
-    callback_list.insert_or_assign(last_callback_key, update_callback);
+    callback_list.insert_or_assign(last_callback_key, std::move(update_callback));
     return last_callback_key++;
 }
 

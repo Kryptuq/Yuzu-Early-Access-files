@@ -10,41 +10,31 @@ namespace InputCommon {
 
 void InputEngine::PreSetController(const PadIdentifier& identifier) {
     std::lock_guard lock{mutex};
-    if (!controller_list.contains(identifier)) {
-        controller_list.insert_or_assign(identifier, ControllerData{});
-    }
+    controller_list.try_emplace(identifier);
 }
 
 void InputEngine::PreSetButton(const PadIdentifier& identifier, int button) {
     std::lock_guard lock{mutex};
     ControllerData& controller = controller_list.at(identifier);
-    if (!controller.buttons.contains(button)) {
-        controller.buttons.insert_or_assign(button, false);
-    }
+    controller.buttons.try_emplace(button, false);
 }
 
 void InputEngine::PreSetHatButton(const PadIdentifier& identifier, int button) {
     std::lock_guard lock{mutex};
     ControllerData& controller = controller_list.at(identifier);
-    if (!controller.hat_buttons.contains(button)) {
-        controller.hat_buttons.insert_or_assign(button, u8{0});
-    }
+    controller.hat_buttons.try_emplace(button, u8{0});
 }
 
 void InputEngine::PreSetAxis(const PadIdentifier& identifier, int axis) {
     std::lock_guard lock{mutex};
     ControllerData& controller = controller_list.at(identifier);
-    if (!controller.axes.contains(axis)) {
-        controller.axes.insert_or_assign(axis, 0.0f);
-    }
+    controller.axes.try_emplace(axis, 0.0f);
 }
 
 void InputEngine::PreSetMotion(const PadIdentifier& identifier, int motion) {
     std::lock_guard lock{mutex};
     ControllerData& controller = controller_list.at(identifier);
-    if (!controller.motions.contains(motion)) {
-        controller.motions.insert_or_assign(motion, BasicMotion{});
-    }
+    controller.motions.try_emplace(motion);
 }
 
 void InputEngine::SetButton(const PadIdentifier& identifier, int button, bool value) {
@@ -91,7 +81,7 @@ void InputEngine::SetBattery(const PadIdentifier& identifier, BatteryLevel value
     TriggerOnBatteryChange(identifier, value);
 }
 
-void InputEngine::SetMotion(const PadIdentifier& identifier, int motion, BasicMotion value) {
+void InputEngine::SetMotion(const PadIdentifier& identifier, int motion, const BasicMotion& value) {
     {
         std::lock_guard lock{mutex};
         ControllerData& controller = controller_list.at(identifier);
@@ -104,85 +94,93 @@ void InputEngine::SetMotion(const PadIdentifier& identifier, int motion, BasicMo
 
 bool InputEngine::GetButton(const PadIdentifier& identifier, int button) const {
     std::lock_guard lock{mutex};
-    if (!controller_list.contains(identifier)) {
+    const auto controller_iter = controller_list.find(identifier);
+    if (controller_iter == controller_list.cend()) {
         LOG_ERROR(Input, "Invalid identifier guid={}, pad={}, port={}", identifier.guid.Format(),
                   identifier.pad, identifier.port);
         return false;
     }
-    ControllerData controller = controller_list.at(identifier);
-    if (!controller.buttons.contains(button)) {
+    const ControllerData& controller = controller_iter->second;
+    const auto button_iter = controller.buttons.find(button);
+    if (button_iter == controller.buttons.cend()) {
         LOG_ERROR(Input, "Invalid button {}", button);
         return false;
     }
-    return controller.buttons.at(button);
+    return button_iter->second;
 }
 
 bool InputEngine::GetHatButton(const PadIdentifier& identifier, int button, u8 direction) const {
     std::lock_guard lock{mutex};
-    if (!controller_list.contains(identifier)) {
+    const auto controller_iter = controller_list.find(identifier);
+    if (controller_iter == controller_list.cend()) {
         LOG_ERROR(Input, "Invalid identifier guid={}, pad={}, port={}", identifier.guid.Format(),
                   identifier.pad, identifier.port);
         return false;
     }
-    ControllerData controller = controller_list.at(identifier);
-    if (!controller.hat_buttons.contains(button)) {
+    const ControllerData& controller = controller_iter->second;
+    const auto hat_iter = controller.hat_buttons.find(button);
+    if (hat_iter == controller.hat_buttons.cend()) {
         LOG_ERROR(Input, "Invalid hat button {}", button);
         return false;
     }
-    return (controller.hat_buttons.at(button) & direction) != 0;
+    return (hat_iter->second & direction) != 0;
 }
 
 f32 InputEngine::GetAxis(const PadIdentifier& identifier, int axis) const {
     std::lock_guard lock{mutex};
-    if (!controller_list.contains(identifier)) {
+    const auto controller_iter = controller_list.find(identifier);
+    if (controller_iter == controller_list.cend()) {
         LOG_ERROR(Input, "Invalid identifier guid={}, pad={}, port={}", identifier.guid.Format(),
                   identifier.pad, identifier.port);
         return 0.0f;
     }
-    ControllerData controller = controller_list.at(identifier);
-    if (!controller.axes.contains(axis)) {
+    const ControllerData& controller = controller_iter->second;
+    const auto axis_iter = controller.axes.find(axis);
+    if (axis_iter == controller.axes.cend()) {
         LOG_ERROR(Input, "Invalid axis {}", axis);
         return 0.0f;
     }
-    return controller.axes.at(axis);
+    return axis_iter->second;
 }
 
 BatteryLevel InputEngine::GetBattery(const PadIdentifier& identifier) const {
     std::lock_guard lock{mutex};
-    if (!controller_list.contains(identifier)) {
+    const auto controller_iter = controller_list.find(identifier);
+    if (controller_iter == controller_list.cend()) {
         LOG_ERROR(Input, "Invalid identifier guid={}, pad={}, port={}", identifier.guid.Format(),
                   identifier.pad, identifier.port);
         return BatteryLevel::Charging;
     }
-    ControllerData controller = controller_list.at(identifier);
+    const ControllerData& controller = controller_iter->second;
     return controller.battery;
 }
 
 BasicMotion InputEngine::GetMotion(const PadIdentifier& identifier, int motion) const {
     std::lock_guard lock{mutex};
-    if (!controller_list.contains(identifier)) {
+    const auto controller_iter = controller_list.find(identifier);
+    if (controller_iter == controller_list.cend()) {
         LOG_ERROR(Input, "Invalid identifier guid={}, pad={}, port={}", identifier.guid.Format(),
                   identifier.pad, identifier.port);
         return {};
     }
-    ControllerData controller = controller_list.at(identifier);
+    const ControllerData& controller = controller_iter->second;
     return controller.motions.at(motion);
 }
 
 void InputEngine::ResetButtonState() {
-    for (std::pair<PadIdentifier, ControllerData> controller : controller_list) {
-        for (std::pair<int, bool> button : controller.second.buttons) {
+    for (const auto& controller : controller_list) {
+        for (const auto& button : controller.second.buttons) {
             SetButton(controller.first, button.first, false);
         }
-        for (std::pair<int, bool> button : controller.second.hat_buttons) {
+        for (const auto& button : controller.second.hat_buttons) {
             SetHatButton(controller.first, button.first, false);
         }
     }
 }
 
 void InputEngine::ResetAnalogState() {
-    for (std::pair<PadIdentifier, ControllerData> controller : controller_list) {
-        for (std::pair<int, float> axis : controller.second.axes) {
+    for (const auto& controller : controller_list) {
+        for (const auto& axis : controller.second.axes) {
             SetAxis(controller.first, axis.first, 0.0);
         }
     }
@@ -190,7 +188,7 @@ void InputEngine::ResetAnalogState() {
 
 void InputEngine::TriggerOnButtonChange(const PadIdentifier& identifier, int button, bool value) {
     std::lock_guard lock{mutex_callback};
-    for (const std::pair<int, InputIdentifier> poller_pair : callback_list) {
+    for (const auto& poller_pair : callback_list) {
         const InputIdentifier& poller = poller_pair.second;
         if (!IsInputIdentifierEqual(poller, identifier, EngineInputType::Button, button)) {
             continue;
@@ -218,7 +216,7 @@ void InputEngine::TriggerOnButtonChange(const PadIdentifier& identifier, int but
 
 void InputEngine::TriggerOnHatButtonChange(const PadIdentifier& identifier, int button, u8 value) {
     std::lock_guard lock{mutex_callback};
-    for (const std::pair<int, InputIdentifier> poller_pair : callback_list) {
+    for (const auto& poller_pair : callback_list) {
         const InputIdentifier& poller = poller_pair.second;
         if (!IsInputIdentifierEqual(poller, identifier, EngineInputType::HatButton, button)) {
             continue;
@@ -247,7 +245,7 @@ void InputEngine::TriggerOnHatButtonChange(const PadIdentifier& identifier, int 
 
 void InputEngine::TriggerOnAxisChange(const PadIdentifier& identifier, int axis, f32 value) {
     std::lock_guard lock{mutex_callback};
-    for (const std::pair<int, InputIdentifier> poller_pair : callback_list) {
+    for (const auto& poller_pair : callback_list) {
         const InputIdentifier& poller = poller_pair.second;
         if (!IsInputIdentifierEqual(poller, identifier, EngineInputType::Analog, axis)) {
             continue;
@@ -274,7 +272,7 @@ void InputEngine::TriggerOnAxisChange(const PadIdentifier& identifier, int axis,
 void InputEngine::TriggerOnBatteryChange(const PadIdentifier& identifier,
                                          [[maybe_unused]] BatteryLevel value) {
     std::lock_guard lock{mutex_callback};
-    for (const std::pair<int, InputIdentifier> poller_pair : callback_list) {
+    for (const auto& poller_pair : callback_list) {
         const InputIdentifier& poller = poller_pair.second;
         if (!IsInputIdentifierEqual(poller, identifier, EngineInputType::Battery, 0)) {
             continue;
@@ -286,9 +284,9 @@ void InputEngine::TriggerOnBatteryChange(const PadIdentifier& identifier,
 }
 
 void InputEngine::TriggerOnMotionChange(const PadIdentifier& identifier, int motion,
-                                        BasicMotion value) {
+                                        const BasicMotion& value) {
     std::lock_guard lock{mutex_callback};
-    for (const std::pair<int, InputIdentifier> poller_pair : callback_list) {
+    for (const auto& poller_pair : callback_list) {
         const InputIdentifier& poller = poller_pair.second;
         if (!IsInputIdentifierEqual(poller, identifier, EngineInputType::Motion, motion)) {
             continue;
@@ -342,7 +340,7 @@ const std::string& InputEngine::GetEngineName() const {
 
 int InputEngine::SetCallback(InputIdentifier input_identifier) {
     std::lock_guard lock{mutex_callback};
-    callback_list.insert_or_assign(last_callback_key, input_identifier);
+    callback_list.insert_or_assign(last_callback_key, std::move(input_identifier));
     return last_callback_key++;
 }
 

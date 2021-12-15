@@ -328,35 +328,38 @@ private:
      * @param callback A CallbackStatus containing the button status
      * @param index Button ID of the to be updated
      */
-    void SetButton(Common::Input::CallbackStatus callback, std::size_t index, Common::UUID uuid);
+    void SetButton(const Common::Input::CallbackStatus& callback, std::size_t index,
+                   Common::UUID uuid);
 
     /**
      * Updates the analog stick status of the controller
      * @param callback A CallbackStatus containing the analog stick status
      * @param index stick ID of the to be updated
      */
-    void SetStick(Common::Input::CallbackStatus callback, std::size_t index, Common::UUID uuid);
+    void SetStick(const Common::Input::CallbackStatus& callback, std::size_t index,
+                  Common::UUID uuid);
 
     /**
      * Updates the trigger status of the controller
      * @param callback A CallbackStatus containing the trigger status
      * @param index trigger ID of the to be updated
      */
-    void SetTrigger(Common::Input::CallbackStatus callback, std::size_t index, Common::UUID uuid);
+    void SetTrigger(const Common::Input::CallbackStatus& callback, std::size_t index,
+                    Common::UUID uuid);
 
     /**
      * Updates the motion status of the controller
      * @param callback A CallbackStatus containing gyro and accelerometer data
      * @param index motion ID of the to be updated
      */
-    void SetMotion(Common::Input::CallbackStatus callback, std::size_t index);
+    void SetMotion(const Common::Input::CallbackStatus& callback, std::size_t index);
 
     /**
      * Updates the battery status of the controller
      * @param callback A CallbackStatus containing the battery status
      * @param index Button ID of the to be updated
      */
-    void SetBattery(Common::Input::CallbackStatus callback, std::size_t index);
+    void SetBattery(const Common::Input::CallbackStatus& callback, std::size_t index);
 
     /**
      * Triggers a callback that something has changed on the controller status

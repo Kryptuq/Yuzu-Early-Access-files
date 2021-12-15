@@ -24,7 +24,7 @@ constexpr PadIdentifier keyboard_modifier_identifier = {
     .pad = 1,
 };
 
-Keyboard::Keyboard(const std::string& input_engine_) : InputEngine(input_engine_) {
+Keyboard::Keyboard(std::string input_engine_) : InputEngine(std::move(input_engine_)) {
     // Keyboard is broken into 3 diferent sets:
     // key: Unfiltered intended for controllers.
     // keyboard_key: Allows only Settings::NativeKeyboard::Keys intended for keyboard emulation.

@@ -66,9 +66,10 @@ void EmulatedConsole::ReloadInput() {
 
     motion_devices = Common::Input::CreateDevice<Common::Input::InputDevice>(motion_params);
     if (motion_devices) {
-        Common::Input::InputCallback motion_callback{
-            [this](Common::Input::CallbackStatus callback) { SetMotion(callback); }};
-        motion_devices->SetCallback(motion_callback);
+        motion_devices->SetCallback({
+            .on_change =
+                [this](const Common::Input::CallbackStatus& callback) { SetMotion(callback); },
+        });
     }
 
     // Unique index for identifying touch device source
@@ -78,9 +79,12 @@ void EmulatedConsole::ReloadInput() {
         if (!touch_device) {
             continue;
         }
-        Common::Input::InputCallback touch_callback{
-            [this, index](Common::Input::CallbackStatus callback) { SetTouch(callback, index); }};
-        touch_device->SetCallback(touch_callback);
+        touch_device->SetCallback({
+            .on_change =
+                [this, index](const Common::Input::CallbackStatus& callback) {
+                    SetTouch(callback, index);
+                },
+        });
         index++;
     }
 }
@@ -127,7 +131,7 @@ void EmulatedConsole::SetMotionParam(Common::ParamPackage param) {
     ReloadInput();
 }
 
-void EmulatedConsole::SetMotion(Common::Input::CallbackStatus callback) {
+void EmulatedConsole::SetMotion(const Common::Input::CallbackStatus& callback) {
     std::lock_guard lock{mutex};
     auto& raw_status = console.motion_values.raw_status;
     auto& emulated = console.motion_values.emulated;
@@ -162,8 +166,7 @@ void EmulatedConsole::SetMotion(Common::Input::CallbackStatus callback) {
     TriggerOnChange(ConsoleTriggerType::Motion);
 }
 
-void EmulatedConsole::SetTouch(Common::Input::CallbackStatus callback,
-                               [[maybe_unused]] std::size_t index) {
+void EmulatedConsole::SetTouch(const Common::Input::CallbackStatus& callback, std::size_t index) {
     if (index >= console.touch_values.size()) {
         return;
     }

@@ -19,23 +19,36 @@ public:
         : up(std::move(up_)), down(std::move(down_)), left(std::move(left_)),
           right(std::move(right_)), modifier(std::move(modifier_)), modifier_scale(modifier_scale_),
           modifier_angle(modifier_angle_) {
-        Common::Input::InputCallback button_up_callback{
-            [this](Common::Input::CallbackStatus callback_) { UpdateUpButtonStatus(callback_); }};
-        Common::Input::InputCallback button_down_callback{
-            [this](Common::Input::CallbackStatus callback_) { UpdateDownButtonStatus(callback_); }};
-        Common::Input::InputCallback button_left_callback{
-            [this](Common::Input::CallbackStatus callback_) { UpdateLeftButtonStatus(callback_); }};
-        Common::Input::InputCallback button_right_callback{
-            [this](Common::Input::CallbackStatus callback_) {
-                UpdateRightButtonStatus(callback_);
-            }};
-        Common::Input::InputCallback button_modifier_callback{
-            [this](Common::Input::CallbackStatus callback_) { UpdateModButtonStatus(callback_); }};
-        up->SetCallback(button_up_callback);
-        down->SetCallback(button_down_callback);
-        left->SetCallback(button_left_callback);
-        right->SetCallback(button_right_callback);
-        modifier->SetCallback(button_modifier_callback);
+        up->SetCallback({
+            .on_change =
+                [this](const Common::Input::CallbackStatus& callback_) {
+                    UpdateUpButtonStatus(callback_);
+                },
+        });
+        down->SetCallback({
+            .on_change =
+                [this](const Common::Input::CallbackStatus& callback_) {
+                    UpdateDownButtonStatus(callback_);
+                },
+        });
+        left->SetCallback({
+            .on_change =
+                [this](const Common::Input::CallbackStatus& callback_) {
+                    UpdateLeftButtonStatus(callback_);
+                },
+        });
+        right->SetCallback({
+            .on_change =
+                [this](const Common::Input::CallbackStatus& callback_) {
+                    UpdateRightButtonStatus(callback_);
+                },
+        });
+        modifier->SetCallback({
+            .on_change =
+                [this](const Common::Input::CallbackStatus& callback_) {
+                    UpdateModButtonStatus(callback_);
+                },
+        });
         last_x_axis_value = 0.0f;
         last_y_axis_value = 0.0f;
     }
@@ -133,27 +146,27 @@ public:
         }
     }
 
-    void UpdateUpButtonStatus(Common::Input::CallbackStatus button_callback) {
+    void UpdateUpButtonStatus(const Common::Input::CallbackStatus& button_callback) {
         up_status = button_callback.button_status.value;
         UpdateStatus();
     }
 
-    void UpdateDownButtonStatus(Common::Input::CallbackStatus button_callback) {
+    void UpdateDownButtonStatus(const Common::Input::CallbackStatus& button_callback) {
         down_status = button_callback.button_status.value;
         UpdateStatus();
     }
 
-    void UpdateLeftButtonStatus(Common::Input::CallbackStatus button_callback) {
+    void UpdateLeftButtonStatus(const Common::Input::CallbackStatus& button_callback) {
         left_status = button_callback.button_status.value;
         UpdateStatus();
     }
 
-    void UpdateRightButtonStatus(Common::Input::CallbackStatus button_callback) {
+    void UpdateRightButtonStatus(const Common::Input::CallbackStatus& button_callback) {
         right_status = button_callback.button_status.value;
         UpdateStatus();
     }
 
-    void UpdateModButtonStatus(Common::Input::CallbackStatus button_callback) {
+    void UpdateModButtonStatus(const Common::Input::CallbackStatus& button_callback) {
         modifier_status = button_callback.button_status.value;
         UpdateStatus();
     }
@@ -265,18 +278,18 @@ private:
     Button left;
     Button right;
     Button modifier;
-    float modifier_scale;
-    float modifier_angle;
+    float modifier_scale{};
+    float modifier_angle{};
     float angle{};
     float goal_angle{};
     float amplitude{};
-    bool up_status;
-    bool down_status;
-    bool left_status;
-    bool right_status;
-    bool modifier_status;
-    float last_x_axis_value;
-    float last_y_axis_value;
+    bool up_status{};
+    bool down_status{};
+    bool left_status{};
+    bool right_status{};
+    bool modifier_status{};
+    float last_x_axis_value{};
+    float last_y_axis_value{};
     const Common::Input::AnalogProperties properties{0.0f, 1.0f, 0.5f, 0.0f, false};
     std::chrono::time_point<std::chrono::steady_clock> last_update;
 };

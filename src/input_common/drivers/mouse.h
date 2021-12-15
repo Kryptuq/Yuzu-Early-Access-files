@@ -27,9 +27,9 @@ enum class MouseButton {
  * A button device factory representing a keyboard. It receives keyboard events and forward them
  * to all button devices it created.
  */
-class Mouse final : public InputCommon::InputEngine {
+class Mouse final : public InputEngine {
 public:
-    explicit Mouse(const std::string& input_engine_);
+    explicit Mouse(std::string input_engine_);
 
     /**
      * Signals that mouse has moved.

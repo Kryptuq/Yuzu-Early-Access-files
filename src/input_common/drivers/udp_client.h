@@ -49,10 +49,10 @@ struct DeviceStatus {
  * A button device factory representing a keyboard. It receives keyboard events and forward them
  * to all button devices it created.
  */
-class UDPClient final : public InputCommon::InputEngine {
+class UDPClient final : public InputEngine {
 public:
-    explicit UDPClient(const std::string& input_engine_);
-    ~UDPClient();
+    explicit UDPClient(std::string input_engine_);
+    ~UDPClient() override;
 
     void ReloadSockets();
 

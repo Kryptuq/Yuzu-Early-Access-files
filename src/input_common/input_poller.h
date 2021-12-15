@@ -13,9 +13,6 @@ class Factory;
 
 namespace InputCommon {
 class InputEngine;
-/**
- * An Input factory. It receives input events and forward them to all input devices it created.
- */
 
 class OutputFactory final : public Common::Input::Factory<Common::Input::OutputDevice> {
 public:
@@ -24,10 +21,10 @@ public:
     /**
      * Creates an output device from the parameters given.
      * @param params contains parameters for creating the device:
-     * @param    - "guid": text string for identifing controllers
-     * @param    - "port": port of the connected device
-     * @param    - "pad": slot of the connected controller
-     * @return an unique ouput device with the parameters specified
+     *               - "guid" text string for identifying controllers
+     *               - "port": port of the connected device
+     *               - "pad": slot of the connected controller
+     * @returns a unique output device with the parameters specified
      */
     std::unique_ptr<Common::Input::OutputDevice> Create(
         const Common::ParamPackage& params) override;
@@ -36,6 +33,9 @@ private:
     std::shared_ptr<InputEngine> input_engine;
 };
 
+/**
+ * An Input factory. It receives input events and forward them to all input devices it created.
+ */
 class InputFactory final : public Common::Input::Factory<Common::Input::InputDevice> {
 public:
     explicit InputFactory(std::shared_ptr<InputEngine> input_engine_);
@@ -54,16 +54,16 @@ public:
      * - battery: Contains "battery"
      * - output: Contains "output"
      * @param params contains parameters for creating the device:
-     * @param    - "code": the code of the keyboard key to bind with the input
-     * @param    - "button": same as "code" but for controller buttons
-     * @param    - "hat": similar as "button" but it's a group of hat buttons from SDL
-     * @param    - "axis": the axis number of the axis to bind with the input
-     * @param    - "motion": the motion number of the motion to bind with the input
-     * @param    - "axis_x": same as axis but specifing horizontal direction
-     * @param    - "axis_y": same as axis but specifing vertical direction
-     * @param    - "axis_z": same as axis but specifing forward direction
-     * @param    - "battery": Only used as a placeholder to set the input type
-     * @return an unique input device with the parameters specified
+     *               - "code": the code of the keyboard key to bind with the input
+     *               - "button": same as "code" but for controller buttons
+     *               - "hat": similar as "button" but it's a group of hat buttons from SDL
+     *               - "axis": the axis number of the axis to bind with the input
+     *               - "motion": the motion number of the motion to bind with the input
+     *               - "axis_x": same as axis but specifying horizontal direction
+     *               - "axis_y": same as axis but specifying vertical direction
+     *               - "axis_z": same as axis but specifying forward direction
+     *               - "battery": Only used as a placeholder to set the input type
+     * @returns a unique input device with the parameters specified
      */
     std::unique_ptr<Common::Input::InputDevice> Create(const Common::ParamPackage& params) override;
 
@@ -71,14 +71,14 @@ private:
     /**
      * Creates a button device from the parameters given.
      * @param params contains parameters for creating the device:
-     * @param    - "code": the code of the keyboard key to bind with the input
-     * @param    - "button": same as "code" but for controller buttons
-     * @param    - "toggle": press once to enable, press again to disable
-     * @param    - "inverted": inverts the output of the button
-     * @param    - "guid": text string for identifing controllers
-     * @param    - "port": port of the connected device
-     * @param    - "pad": slot of the connected controller
-     * @return an unique input device with the parameters specified
+     *               - "code": the code of the keyboard key to bind with the input
+     *               - "button": same as "code" but for controller buttons
+     *               - "toggle": press once to enable, press again to disable
+     *               - "inverted": inverts the output of the button
+     *               - "guid": text string for identifying controllers
+     *               - "port": port of the connected device
+     *               - "pad": slot of the connected controller
+     * @returns a unique input device with the parameters specified
      */
     std::unique_ptr<Common::Input::InputDevice> CreateButtonDevice(
         const Common::ParamPackage& params);
@@ -86,14 +86,14 @@ private:
     /**
      * Creates a hat button device from the parameters given.
      * @param params contains parameters for creating the device:
-     * @param    - "button": the controller hat id to bind with the input
-     * @param    - "direction": the direction id to be detected
-     * @param    - "toggle": press once to enable, press again to disable
-     * @param    - "inverted": inverts the output of the button
-     * @param    - "guid": text string for identifing controllers
-     * @param    - "port": port of the connected device
-     * @param    - "pad": slot of the connected controller
-     * @return an unique input device with the parameters specified
+     *               - "button": the controller hat id to bind with the input
+     *               - "direction": the direction id to be detected
+     *               - "toggle": press once to enable, press again to disable
+     *               - "inverted": inverts the output of the button
+     *               - "guid": text string for identifying controllers
+     *               - "port": port of the connected device
+     *               - "pad": slot of the connected controller
+     * @returns a unique input device with the parameters specified
      */
     std::unique_ptr<Common::Input::InputDevice> CreateHatButtonDevice(
         const Common::ParamPackage& params);
@@ -101,19 +101,19 @@ private:
     /**
      * Creates a stick device from the parameters given.
      * @param params contains parameters for creating the device:
-     * @param    - "axis_x": the controller horizontal axis id to bind with the input
-     * @param    - "axis_y": the controller vertical axis id to bind with the input
-     * @param    - "deadzone": the mimimum required value to be detected
-     * @param    - "range": the maximum value required to reach 100%
-     * @param    - "threshold": the mimimum required value to considered pressed
-     * @param    - "offset_x": the amount of offset in the x axis
-     * @param    - "offset_y": the amount of offset in the y axis
-     * @param    - "invert_x": inverts the sign of the horizontal axis
-     * @param    - "invert_y": inverts the sign of the vertical axis
-     * @param    - "guid": text string for identifing controllers
-     * @param    - "port": port of the connected device
-     * @param    - "pad": slot of the connected controller
-     * @return an unique input device with the parameters specified
+     *               - "axis_x": the controller horizontal axis id to bind with the input
+     *               - "axis_y": the controller vertical axis id to bind with the input
+     *               - "deadzone": the minimum required value to be detected
+     *               - "range": the maximum value required to reach 100%
+     *               - "threshold": the minimum required value to considered pressed
+     *               - "offset_x": the amount of offset in the x axis
+     *               - "offset_y": the amount of offset in the y axis
+     *               - "invert_x": inverts the sign of the horizontal axis
+     *               - "invert_y": inverts the sign of the vertical axis
+     *               - "guid": text string for identifying controllers
+     *               - "port": port of the connected device
+     *               - "pad": slot of the connected controller
+     * @returns a unique input device with the parameters specified
      */
     std::unique_ptr<Common::Input::InputDevice> CreateStickDevice(
         const Common::ParamPackage& params);
@@ -121,16 +121,16 @@ private:
     /**
      * Creates an analog device from the parameters given.
      * @param params contains parameters for creating the device:
-     * @param    - "axis": the controller axis id to bind with the input
-     * @param    - "deadzone": the mimimum required value to be detected
-     * @param    - "range": the maximum value required to reach 100%
-     * @param    - "threshold": the mimimum required value to considered pressed
-     * @param    - "offset": the amount of offset in the axis
-     * @param    - "invert": inverts the sign of the axis
-     * @param    - "guid": text string for identifing controllers
-     * @param    - "port": port of the connected device
-     * @param    - "pad": slot of the connected controller
-     * @return an unique input device with the parameters specified
+     *               - "axis": the controller axis id to bind with the input
+     *               - "deadzone": the minimum required value to be detected
+     *               - "range": the maximum value required to reach 100%
+     *               - "threshold": the minimum required value to considered pressed
+     *               - "offset": the amount of offset in the axis
+     *               - "invert": inverts the sign of the axis
+     *               - "guid": text string for identifying controllers
+     *               - "port": port of the connected device
+     *               - "pad": slot of the connected controller
+     * @returns a unique input device with the parameters specified
      */
     std::unique_ptr<Common::Input::InputDevice> CreateAnalogDevice(
         const Common::ParamPackage& params);
@@ -138,20 +138,20 @@ private:
     /**
      * Creates a trigger device from the parameters given.
      * @param params contains parameters for creating the device:
-     * @param    - "button": the controller hat id to bind with the input
-     * @param    - "direction": the direction id to be detected
-     * @param    - "toggle": press once to enable, press again to disable
-     * @param    - "inverted": inverts the output of the button
-     * @param    - "axis": the controller axis id to bind with the input
-     * @param    - "deadzone": the mimimum required value to be detected
-     * @param    - "range": the maximum value required to reach 100%
-     * @param    - "threshold": the mimimum required value to considered pressed
-     * @param    - "offset": the amount of offset in the axis
-     * @param    - "invert": inverts the sign of the axis
-     * @param    - "guid": text string for identifing controllers
-     * @param    - "port": port of the connected device
-     * @param    - "pad": slot of the connected controller
-     * @return an unique input device with the parameters specified
+     *               - "button": the controller hat id to bind with the input
+     *               - "direction": the direction id to be detected
+     *               - "toggle": press once to enable, press again to disable
+     *               - "inverted": inverts the output of the button
+     *               - "axis": the controller axis id to bind with the input
+     *               - "deadzone": the minimum required value to be detected
+     *               - "range": the maximum value required to reach 100%
+     *               - "threshold": the minimum required value to considered pressed
+     *               - "offset": the amount of offset in the axis
+     *               - "invert": inverts the sign of the axis
+     *               - "guid": text string for identifying controllers
+     *               - "port": port of the connected device
+     *               - "pad": slot of the connected controller
+     * @returns a unique input device with the parameters specified
      */
     std::unique_ptr<Common::Input::InputDevice> CreateTriggerDevice(
         const Common::ParamPackage& params);
@@ -159,23 +159,23 @@ private:
     /**
      * Creates a touch device from the parameters given.
      * @param params contains parameters for creating the device:
-     * @param    - "button": the controller hat id to bind with the input
-     * @param    - "direction": the direction id to be detected
-     * @param    - "toggle": press once to enable, press again to disable
-     * @param    - "inverted": inverts the output of the button
-     * @param    - "axis_x": the controller horizontal axis id to bind with the input
-     * @param    - "axis_y": the controller vertical axis id to bind with the input
-     * @param    - "deadzone": the mimimum required value to be detected
-     * @param    - "range": the maximum value required to reach 100%
-     * @param    - "threshold": the mimimum required value to considered pressed
-     * @param    - "offset_x": the amount of offset in the x axis
-     * @param    - "offset_y": the amount of offset in the y axis
-     * @param    - "invert_x": inverts the sign of the horizontal axis
-     * @param    - "invert_y": inverts the sign of the vertical axis
-     * @param    - "guid": text string for identifing controllers
-     * @param    - "port": port of the connected device
-     * @param    - "pad": slot of the connected controller
-     * @return an unique input device with the parameters specified
+     *               - "button": the controller hat id to bind with the input
+     *               - "direction": the direction id to be detected
+     *               - "toggle": press once to enable, press again to disable
+     *               - "inverted": inverts the output of the button
+     *               - "axis_x": the controller horizontal axis id to bind with the input
+     *               - "axis_y": the controller vertical axis id to bind with the input
+     *               - "deadzone": the minimum required value to be detected
+     *               - "range": the maximum value required to reach 100%
+     *               - "threshold": the minimum required value to considered pressed
+     *               - "offset_x": the amount of offset in the x axis
+     *               - "offset_y": the amount of offset in the y axis
+     *               - "invert_x": inverts the sign of the horizontal axis
+     *               - "invert_y": inverts the sign of the vertical axis
+     *               - "guid": text string for identifying controllers
+     *               - "port": port of the connected device
+     *               - "pad": slot of the connected controller
+     * @returns a unique input device with the parameters specified
      */
     std::unique_ptr<Common::Input::InputDevice> CreateTouchDevice(
         const Common::ParamPackage& params);
@@ -183,10 +183,10 @@ private:
     /**
      * Creates a battery device from the parameters given.
      * @param params contains parameters for creating the device:
-     * @param    - "guid": text string for identifing controllers
-     * @param    - "port": port of the connected device
-     * @param    - "pad": slot of the connected controller
-     * @return an unique input device with the parameters specified
+     *               - "guid": text string for identifying controllers
+     *               - "port": port of the connected device
+     *               - "pad": slot of the connected controller
+     * @returns a unique input device with the parameters specified
      */
     std::unique_ptr<Common::Input::InputDevice> CreateBatteryDevice(
         const Common::ParamPackage& params);
@@ -194,21 +194,21 @@ private:
     /**
      * Creates a motion device from the parameters given.
      * @param params contains parameters for creating the device:
-     * @param    - "axis_x": the controller horizontal axis id to bind with the input
-     * @param    - "axis_y": the controller vertical axis id to bind with the input
-     * @param    - "axis_z": the controller fordward axis id to bind with the input
-     * @param    - "deadzone": the mimimum required value to be detected
-     * @param    - "range": the maximum value required to reach 100%
-     * @param    - "offset_x": the amount of offset in the x axis
-     * @param    - "offset_y": the amount of offset in the y axis
-     * @param    - "offset_z": the amount of offset in the z axis
-     * @param    - "invert_x": inverts the sign of the horizontal axis
-     * @param    - "invert_y": inverts the sign of the vertical axis
-     * @param    - "invert_z": inverts the sign of the fordward axis
-     * @param    - "guid": text string for identifing controllers
-     * @param    - "port": port of the connected device
-     * @param    - "pad": slot of the connected controller
-     * @return an unique input device with the parameters specified
+     *               - "axis_x": the controller horizontal axis id to bind with the input
+     *               - "axis_y": the controller vertical axis id to bind with the input
+     *               - "axis_z": the controller forward axis id to bind with the input
+     *               - "deadzone": the minimum required value to be detected
+     *               - "range": the maximum value required to reach 100%
+     *               - "offset_x": the amount of offset in the x axis
+     *               - "offset_y": the amount of offset in the y axis
+     *               - "offset_z": the amount of offset in the z axis
+     *               - "invert_x": inverts the sign of the horizontal axis
+     *               - "invert_y": inverts the sign of the vertical axis
+     *               - "invert_z": inverts the sign of the forward axis
+     *               - "guid": text string for identifying controllers
+     *               - "port": port of the connected device
+     *               - "pad": slot of the connected controller
+     * @returns a unique input device with the parameters specified
      */
     std::unique_ptr<Common::Input::InputDevice> CreateMotionDevice(Common::ParamPackage params);
 

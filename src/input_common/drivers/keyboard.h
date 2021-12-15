@@ -12,9 +12,9 @@ namespace InputCommon {
  * A button device factory representing a keyboard. It receives keyboard events and forward them
  * to all button devices it created.
  */
-class Keyboard final : public InputCommon::InputEngine {
+class Keyboard final : public InputEngine {
 public:
-    explicit Keyboard(const std::string& input_engine_);
+    explicit Keyboard(std::string input_engine_);
 
     /**
      * Sets the status of all buttons bound with the key to pressed

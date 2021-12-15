@@ -69,7 +69,7 @@ private:
     libusb_device_handle* handle{};
 };
 
-GCAdapter::GCAdapter(const std::string& input_engine_) : InputEngine(input_engine_) {
+GCAdapter::GCAdapter(std::string input_engine_) : InputEngine(std::move(input_engine_)) {
     if (usb_adapter_handle) {
         return;
     }
@@ -325,8 +325,8 @@ bool GCAdapter::GetGCEndpoint(libusb_device* device) {
     return true;
 }
 
-Common::Input::VibrationError GCAdapter::SetRumble(const PadIdentifier& identifier,
-                                                   const Common::Input::VibrationStatus vibration) {
+Common::Input::VibrationError GCAdapter::SetRumble(
+    const PadIdentifier& identifier, const Common::Input::VibrationStatus& vibration) {
     const auto mean_amplitude = (vibration.low_amplitude + vibration.high_amplitude) * 0.5f;
     const auto processed_amplitude =
         static_cast<u8>((mean_amplitude + std::pow(mean_amplitude, 0.3f)) * 0.5f * 0x8);
