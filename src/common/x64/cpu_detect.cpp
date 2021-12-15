@@ -71,9 +71,6 @@ static CPUCaps Detect() {
     else
         caps.manufacturer = Manufacturer::Unknown;
 
-    u32 family = {};
-    u32 model = {};
-
     __cpuid(cpu_id, 0x80000000);
 
     u32 max_ex_fn = cpu_id[0];
@@ -84,15 +81,6 @@ static CPUCaps Detect() {
     // Detect family and other miscellaneous features
     if (max_std_fn >= 1) {
         __cpuid(cpu_id, 0x00000001);
-        family = (cpu_id[0] >> 8) & 0xf;
-        model = (cpu_id[0] >> 4) & 0xf;
-        if (family == 0xf) {
-            family += (cpu_id[0] >> 20) & 0xff;
-        }
-        if (family >= 6) {
-            model += ((cpu_id[0] >> 16) & 0xf) << 4;
-        }
-
         if ((cpu_id[3] >> 25) & 1)
             caps.sse = true;
         if ((cpu_id[3] >> 26) & 1)
