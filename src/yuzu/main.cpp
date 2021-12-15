@@ -77,6 +77,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "common/fs/fs.h"
 #include "common/fs/fs_paths.h"
 #include "common/fs/path_util.h"
+#include "common/literals.h"
 #include "common/logging/backend.h"
 #include "common/logging/filter.h"
 #include "common/logging/log.h"
@@ -133,6 +134,8 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "yuzu/loading_screen.h"
 #include "yuzu/main.h"
 #include "yuzu/uisettings.h"
+
+using namespace Common::Literals;
 
 #ifdef USE_DISCORD_PRESENCE
 #include "yuzu/discord_impl.h"
@@ -259,10 +262,9 @@ GMainWindow::GMainWindow()
     LOG_INFO(Frontend, "Host CPU: {}", cpu_string);
 #endif
     LOG_INFO(Frontend, "Host OS: {}", QSysInfo::prettyProductName().toStdString());
-    LOG_INFO(Frontend, "Host RAM: {:.2f} GB",
-             Common::GetMemInfo().TotalPhysicalMemory / 1024.0f / 1024 / 1024);
-    LOG_INFO(Frontend, "Host Swap: {:.2f} GB",
-             Common::GetMemInfo().TotalSwapMemory / 1024.0f / 1024 / 1024);
+    LOG_INFO(Frontend, "Host RAM: {:.2f} GiB",
+             Common::GetMemInfo().TotalPhysicalMemory / f64{1_GiB});
+    LOG_INFO(Frontend, "Host Swap: {:.2f} GiB", Common::GetMemInfo().TotalSwapMemory / f64{1_GiB});
     UpdateWindowTitle();
 
     show();
