@@ -66,9 +66,9 @@ Controller_NPad::Controller_NPad(Core::HID::HIDCore& hid_core_,
         auto& controller = controller_data[i];
         controller.device = hid_core.GetEmulatedControllerByIndex(i);
         controller.vibration[Core::HID::EmulatedDeviceIndex::LeftIndex].latest_vibration_value =
-            DEFAULT_VIBRATION_VALUE;
+            Core::HID::DEFAULT_VIBRATION_VALUE;
         controller.vibration[Core::HID::EmulatedDeviceIndex::RightIndex].latest_vibration_value =
-            DEFAULT_VIBRATION_VALUE;
+            Core::HID::DEFAULT_VIBRATION_VALUE;
         Core::HID::ControllerUpdateCallback engine_callback{
             .on_change = [this,
                           i](Core::HID::ControllerTriggerType type) { ControllerUpdate(type, i); },
@@ -781,7 +781,8 @@ bool Controller_NPad::VibrateControllerAtIndex(Core::HID::NpadIdType npad_id,
             Core::HID::VibrationValue vibration{0.0f, 160.0f, 0.0f, 320.0f};
             controller.device->SetVibration(device_index, vibration);
             // Then reset the vibration value to its default value.
-            controller.vibration[device_index].latest_vibration_value = DEFAULT_VIBRATION_VALUE;
+            controller.vibration[device_index].latest_vibration_value =
+                Core::HID::DEFAULT_VIBRATION_VALUE;
         }
 
         return false;

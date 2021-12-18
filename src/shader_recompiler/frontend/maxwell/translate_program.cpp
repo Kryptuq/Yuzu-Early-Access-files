@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <memory>
 #include <vector>
-#include <queue>
 
 #include "common/settings.h"
 #include "shader_recompiler/exception.h"
@@ -128,42 +127,6 @@ void AddNVNStorageBuffers(IR::Program& program) {
         });
     }
 }
-
-bool IsLegacyAttribute(IR::Attribute attribute) {
-    return (attribute >= IR::Attribute::ColorFrontDiffuseR &&
-            attribute <= IR::Attribute::ColorBackSpecularA) ||
-           attribute == IR::Attribute::FogCoordinate ||
-           (attribute >= IR::Attribute::FixedFncTexture0S &&
-            attribute <= IR::Attribute::FixedFncTexture9Q);
-}
-
-std::map<IR::Attribute, IR::Attribute> GenerateLegacyToGenericMappings(
-    const VaryingState& state, std::queue<IR::Attribute> ununsed_generics) {
-    std::map<IR::Attribute, IR::Attribute> mapping;
-    for (size_t index = 0; index < 4; ++index) {
-        auto attr = IR::Attribute::ColorFrontDiffuseR + index * 4;
-        if (state.AnyComponent(attr)) {
-            for (size_t i = 0; i < 4; ++i) {
-                mapping.insert({attr + i, ununsed_generics.front() + i});
-            }
-            ununsed_generics.pop();
-        }
-    }
-    if (state[IR::Attribute::FogCoordinate]) {
-        mapping.insert({IR::Attribute::FogCoordinate, ununsed_generics.front()});
-        ununsed_generics.pop();
-    }
-    for (size_t index = 0; index < IR::NUM_FIXEDFNCTEXTURE; ++index) {
-        auto attr = IR::Attribute::FixedFncTexture0S + index * 4;
-        if (state.AnyComponent(attr)) {
-            for (size_t i = 0; i < 4; ++i) {
-                mapping.insert({attr + i, ununsed_generics.front() + i});
-            }
-            ununsed_generics.pop();
-        }
-    }
-    return mapping;
-}
 } // Anonymous namespace
 
 IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Block>& block_pool,
@@ -261,64 +224,6 @@ IR::Program MergeDualVertexPrograms(IR::Program& vertex_a, IR::Program& vertex_b
     }
     Optimization::CollectShaderInfoPass(env_vertex_b, result);
     return result;
-}
-
-void ConvertLegacyToGeneric(IR::Program& program, const Shader::RuntimeInfo& runtime_info) {
-    auto& stores = program.info.stores;
-    if (stores.Legacy()) {
-        std::queue<IR::Attribute> ununsed_output_generics{};
-        for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
-            if (!stores.Generic(index)) {
-                ununsed_output_generics.push(IR::Attribute::Generic0X + index * 4);
-            }
-        }
-        auto mappings = GenerateLegacyToGenericMappings(stores, ununsed_output_generics);
-        for (IR::Block* const block : program.post_order_blocks) {
-            for (IR::Inst& inst : block->Instructions()) {
-                switch (inst.GetOpcode()) {
-                case IR::Opcode::SetAttribute: {
-                    const auto attr = inst.Arg(0).Attribute();
-                    if (IsLegacyAttribute(attr)) {
-                        stores.Set(mappings[attr], true);
-                        inst.SetArg(0, Shader::IR::Value(mappings[attr]));
-                    }
-                    break;
-                }
-                default:
-                    break;
-                }
-            }
-        }
-    }
-
-    auto& loads = program.info.loads;
-    if (loads.Legacy()) {
-        std::queue<IR::Attribute> ununsed_input_generics{};
-        for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
-            const AttributeType input_type{runtime_info.generic_input_types[index]};
-            if (!runtime_info.previous_stage_stores.Generic(index) || !loads.Generic(index) ||
-                input_type == AttributeType::Disabled) {
-                ununsed_input_generics.push(IR::Attribute::Generic0X + index * 4);
-            }
-        }
-        auto mappings = GenerateLegacyToGenericMappings(loads, ununsed_input_generics);
-        for (IR::Block* const block : program.post_order_blocks) {
-            for (IR::Inst& inst : block->Instructions()) {
-                switch (inst.GetOpcode()) {
-                case IR::Opcode::GetAttribute: {
-                    const auto attr = inst.Arg(0).Attribute();
-                    if (IsLegacyAttribute(attr)) {
-                        loads.Set(mappings[attr], true);
-                        inst.SetArg(0, Shader::IR::Value(mappings[attr]));
-                    }
-                    break;
-                }
-                default:
-                    break;
-                }
-            }
-        }
-    }
 }
 
 } // namespace Shader::Maxwell

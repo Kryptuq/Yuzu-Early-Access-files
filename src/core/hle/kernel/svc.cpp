@@ -41,7 +41,6 @@
 #include "core/hle/kernel/svc_results.h"
 #include "core/hle/kernel/svc_types.h"
 #include "core/hle/kernel/svc_wrap.h"
-#include "core/hle/lock.h"
 #include "core/hle/result.h"
 #include "core/memory.h"
 #include "core/reporter.h"
@@ -137,7 +136,6 @@ enum class ResourceLimitValueType {
 
 /// Set the process heap to a given Size. It can both extend and shrink the heap.
 static ResultCode SetHeapSize(Core::System& system, VAddr* heap_addr, u64 heap_size) {
-    std::lock_guard lock{HLE::g_hle_lock};
     LOG_TRACE(Kernel_SVC, "called, heap_size=0x{:X}", heap_size);
 
     // Size must be a multiple of 0x200000 (2MB) and be equal to or less than 8GB.
@@ -168,7 +166,6 @@ static ResultCode SetHeapSize32(Core::System& system, u32* heap_addr, u32 heap_s
 
 static ResultCode SetMemoryAttribute(Core::System& system, VAddr address, u64 size, u32 mask,
                                      u32 attribute) {
-    std::lock_guard lock{HLE::g_hle_lock};
     LOG_DEBUG(Kernel_SVC,
               "called, address=0x{:016X}, size=0x{:X}, mask=0x{:08X}, attribute=0x{:08X}", address,
               size, mask, attribute);
@@ -212,7 +209,6 @@ static ResultCode SetMemoryAttribute32(Core::System& system, u32 address, u32 si
 
 /// Maps a memory range into a different range.
 static ResultCode MapMemory(Core::System& system, VAddr dst_addr, VAddr src_addr, u64 size) {
-    std::lock_guard lock{HLE::g_hle_lock};
     LOG_TRACE(Kernel_SVC, "called, dst_addr=0x{:X}, src_addr=0x{:X}, size=0x{:X}", dst_addr,
               src_addr, size);
 
@@ -232,7 +228,6 @@ static ResultCode MapMemory32(Core::System& system, u32 dst_addr, u32 src_addr, 
 
 /// Unmaps a region that was previously mapped with svcMapMemory
 static ResultCode UnmapMemory(Core::System& system, VAddr dst_addr, VAddr src_addr, u64 size) {
-    std::lock_guard lock{HLE::g_hle_lock};
     LOG_TRACE(Kernel_SVC, "called, dst_addr=0x{:X}, src_addr=0x{:X}, size=0x{:X}", dst_addr,
               src_addr, size);
 
@@ -642,7 +637,6 @@ static void OutputDebugString(Core::System& system, VAddr address, u64 len) {
 /// Gets system/memory information for the current process
 static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, Handle handle,
                           u64 info_sub_id) {
-    std::lock_guard lock{HLE::g_hle_lock};
     LOG_TRACE(Kernel_SVC, "called info_id=0x{:X}, info_sub_id=0x{:X}, handle=0x{:08X}", info_id,
               info_sub_id, handle);
 
@@ -924,7 +918,6 @@ static ResultCode GetInfo32(Core::System& system, u32* result_low, u32* result_h
 
 /// Maps memory at a desired address
 static ResultCode MapPhysicalMemory(Core::System& system, VAddr addr, u64 size) {
-    std::lock_guard lock{HLE::g_hle_lock};
     LOG_DEBUG(Kernel_SVC, "called, addr=0x{:016X}, size=0x{:X}", addr, size);
 
     if (!Common::Is4KBAligned(addr)) {
@@ -978,7 +971,6 @@ static ResultCode MapPhysicalMemory32(Core::System& system, u32 addr, u32 size) 
 
 /// Unmaps memory previously mapped via MapPhysicalMemory
 static ResultCode UnmapPhysicalMemory(Core::System& system, VAddr addr, u64 size) {
-    std::lock_guard lock{HLE::g_hle_lock};
     LOG_DEBUG(Kernel_SVC, "called, addr=0x{:016X}, size=0x{:X}", addr, size);
 
     if (!Common::Is4KBAligned(addr)) {
@@ -1520,7 +1512,6 @@ static ResultCode ControlCodeMemory(Core::System& system, Handle code_memory_han
 static ResultCode QueryProcessMemory(Core::System& system, VAddr memory_info_address,
                                      VAddr page_info_address, Handle process_handle,
                                      VAddr address) {
-    std::lock_guard lock{HLE::g_hle_lock};
     LOG_TRACE(Kernel_SVC, "called process=0x{:08X} address={:X}", process_handle, address);
     const auto& handle_table = system.Kernel().CurrentProcess()->GetHandleTable();
     KScopedAutoObject process = handle_table.GetObject<KProcess>(process_handle);

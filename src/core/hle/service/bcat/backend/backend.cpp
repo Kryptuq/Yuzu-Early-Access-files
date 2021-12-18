@@ -6,7 +6,6 @@
 #include "common/logging/log.h"
 #include "core/core.h"
 #include "core/hle/kernel/k_event.h"
-#include "core/hle/lock.h"
 #include "core/hle/service/bcat/backend/backend.h"
 
 namespace Service::BCAT {
@@ -27,10 +26,6 @@ Kernel::KReadableEvent& ProgressServiceBackend::GetEvent() {
 
 DeliveryCacheProgressImpl& ProgressServiceBackend::GetImpl() {
     return impl;
-}
-
-void ProgressServiceBackend::SetNeedHLELock(bool need) {
-    need_hle_lock = need;
 }
 
 void ProgressServiceBackend::SetTotalSize(u64 size) {
@@ -88,12 +83,7 @@ void ProgressServiceBackend::FinishDownload(ResultCode result) {
 }
 
 void ProgressServiceBackend::SignalUpdate() {
-    if (need_hle_lock) {
-        std::lock_guard lock(HLE::g_hle_lock);
-        update_event->GetWritableEvent().Signal();
-    } else {
-        update_event->GetWritableEvent().Signal();
-    }
+    update_event->GetWritableEvent().Signal();
 }
 
 Backend::Backend(DirectoryGetter getter) : dir_getter(std::move(getter)) {}

@@ -23,11 +23,11 @@ void MotionInput::SetAcceleration(const Common::Vec3f& acceleration) {
 }
 
 void MotionInput::SetGyroscope(const Common::Vec3f& gyroscope) {
-    gyro = gyroscope - gyro_drift;
+    gyro = gyroscope - gyro_bias;
 
     // Auto adjust drift to minimize drift
     if (!IsMoving(0.1f)) {
-        gyro_drift = (gyro_drift * 0.9999f) + (gyroscope * 0.0001f);
+        gyro_bias = (gyro_bias * 0.9999f) + (gyroscope * 0.0001f);
     }
 
     if (gyro.Length2() < gyro_threshold) {
@@ -41,8 +41,8 @@ void MotionInput::SetQuaternion(const Common::Quaternion<f32>& quaternion) {
     quat = quaternion;
 }
 
-void MotionInput::SetGyroDrift(const Common::Vec3f& drift) {
-    gyro_drift = drift;
+void MotionInput::SetGyroBias(const Common::Vec3f& bias) {
+    gyro_bias = bias;
 }
 
 void MotionInput::SetGyroThreshold(f32 threshold) {
@@ -190,6 +190,10 @@ Common::Vec3f MotionInput::GetAcceleration() const {
 
 Common::Vec3f MotionInput::GetGyroscope() const {
     return gyro;
+}
+
+Common::Vec3f MotionInput::GetGyroBias() const {
+    return gyro_bias;
 }
 
 Common::Quaternion<f32> MotionInput::GetQuaternion() const {

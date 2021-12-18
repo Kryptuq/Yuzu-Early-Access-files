@@ -496,6 +496,13 @@ struct VibrationValue {
 };
 static_assert(sizeof(VibrationValue) == 0x10, "VibrationValue has incorrect size.");
 
+constexpr VibrationValue DEFAULT_VIBRATION_VALUE{
+    .low_amplitude = 0.0f,
+    .low_frequency = 160.0f,
+    .high_amplitude = 0.0f,
+    .high_frequency = 320.0f,
+};
+
 // This is nn::hid::VibrationDeviceInfo
 struct VibrationDeviceInfo {
     VibrationDeviceType type{};

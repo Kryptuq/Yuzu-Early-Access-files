@@ -130,6 +130,12 @@ bool Codec::CreateGpuAvDevice() {
             }
             if (config->methods & HW_CONFIG_METHOD && config->device_type == type) {
                 av_codec_ctx->pix_fmt = config->pix_fmt;
+                if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_FRAMES_CTX) {
+                    // skip zero-copy decoders, we don't currently support them
+                    LOG_DEBUG(Service_NVDRV, "Skipping decoder {} with unsupported capability {}.",
+                              av_hwdevice_get_type_name(type), config->methods);
+                    continue;
+                }
                 LOG_INFO(Service_NVDRV, "Using {} GPU decoder", av_hwdevice_get_type_name(type));
                 return true;
             }

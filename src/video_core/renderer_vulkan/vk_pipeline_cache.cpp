@@ -48,7 +48,6 @@ MICROPROFILE_DECLARE(Vulkan_PipelineCache);
 
 namespace {
 using Shader::Backend::SPIRV::EmitSPIRV;
-using Shader::Maxwell::ConvertLegacyToGeneric;
 using Shader::Maxwell::MergeDualVertexPrograms;
 using Shader::Maxwell::TranslateProgram;
 using VideoCommon::ComputeEnvironment;
@@ -547,7 +546,6 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
         infos[stage_index] = &program.info;
 
         const auto runtime_info{MakeRuntimeInfo(programs, key, program, previous_stage)};
-        ConvertLegacyToGeneric(program, runtime_info);
         const std::vector<u32> code{EmitSPIRV(profile, runtime_info, program, binding)};
         device.SaveShader(code);
         modules[stage_index] = BuildShader(device, code);

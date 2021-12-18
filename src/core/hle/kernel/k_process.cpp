@@ -28,7 +28,6 @@
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/svc_results.h"
-#include "core/hle/lock.h"
 #include "core/memory.h"
 
 namespace Kernel {
@@ -543,7 +542,6 @@ void KProcess::FreeTLSRegion(VAddr tls_address) {
 }
 
 void KProcess::LoadModule(CodeSet code_set, VAddr base_addr) {
-    std::lock_guard lock{HLE::g_hle_lock};
     const auto ReprotectSegment = [&](const CodeSet::Segment& segment,
                                       KMemoryPermission permission) {
         page_table->SetProcessMemoryPermission(segment.addr + base_addr, segment.size, permission);

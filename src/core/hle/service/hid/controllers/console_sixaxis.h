@@ -39,8 +39,9 @@ public:
 
 private:
     struct SevenSixAxisState {
-        INSERT_PADDING_WORDS(4); // unused
-        s64 sampling_number{};
+        INSERT_PADDING_WORDS(2); // unused
+        u64 timestamp{};
+        u64 sampling_number{};
         u64 unknown{};
         Common::Vec3f accel{};
         Common::Vec3f gyro{};
@@ -52,9 +53,10 @@ private:
     struct ConsoleSharedMemory {
         u64 sampling_number{};
         bool is_seven_six_axis_sensor_at_rest{};
-        INSERT_PADDING_BYTES(4); // padding
+        INSERT_PADDING_BYTES(3); // padding
         f32 verticalization_error{};
         Common::Vec3f gyro_bias{};
+        INSERT_PADDING_BYTES(4); // padding
     };
     static_assert(sizeof(ConsoleSharedMemory) == 0x20, "ConsoleSharedMemory is an invalid size");
 
@@ -64,6 +66,8 @@ private:
     Core::HID::EmulatedConsole* console;
     u8* transfer_memory = nullptr;
     bool is_transfer_memory_set = false;
+    u64 last_saved_timestamp{};
+    u64 last_global_timestamp{};
     ConsoleSharedMemory console_six_axis{};
     SevenSixAxisState next_seven_sixaxis_state{};
 };

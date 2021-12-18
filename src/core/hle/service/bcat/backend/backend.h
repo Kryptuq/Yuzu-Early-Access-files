@@ -71,10 +71,6 @@ class ProgressServiceBackend {
 public:
     ~ProgressServiceBackend();
 
-    // Clients should call this with true if any of the functions are going to be called from a
-    // non-HLE thread and this class need to lock the hle mutex. (default is false)
-    void SetNeedHLELock(bool need);
-
     // Sets the number of bytes total in the entire download.
     void SetTotalSize(u64 size);
 
@@ -109,7 +105,6 @@ private:
 
     DeliveryCacheProgressImpl impl{};
     Kernel::KEvent* update_event;
-    bool need_hle_lock = false;
 };
 
 // A class representing an abstract backend for BCAT functionality.

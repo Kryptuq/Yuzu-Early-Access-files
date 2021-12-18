@@ -173,13 +173,17 @@ void GameList::OnItemExpanded(const QModelIndex& item) {
     const bool is_dir = type == GameListItemType::CustomDir || type == GameListItemType::SdmcDir ||
                         type == GameListItemType::UserNandDir ||
                         type == GameListItemType::SysNandDir;
-
-    if (!is_dir) {
+    const bool is_fave = type == GameListItemType::Favorites;
+    if (!is_dir && !is_fave) {
         return;
     }
-
-    UISettings::values.game_dirs[item.data(GameListDir::GameDirRole).toInt()].expanded =
-        tree_view->isExpanded(item);
+    const bool is_expanded = tree_view->isExpanded(item);
+    if (is_fave) {
+        UISettings::values.favorites_expanded = is_expanded;
+        return;
+    }
+    const int item_dir_index = item.data(GameListDir::GameDirRole).toInt();
+    UISettings::values.game_dirs[item_dir_index].expanded = is_expanded;
 }
 
 // Event in order to filter the gamelist after editing the searchfield
@@ -458,10 +462,13 @@ void GameList::DonePopulating(const QStringList& watch_list) {
     emit ShowList(!IsEmpty());
 
     item_model->invisibleRootItem()->appendRow(new GameListAddDir());
+
+    // Add favorites row
     item_model->invisibleRootItem()->insertRow(0, new GameListFavorites());
     tree_view->setRowHidden(0, item_model->invisibleRootItem()->index(),
                             UISettings::values.favorited_ids.size() == 0);
-    tree_view->expand(item_model->invisibleRootItem()->child(0)->index());
+    tree_view->setExpanded(item_model->invisibleRootItem()->child(0)->index(),
+                           UISettings::values.favorites_expanded.GetValue());
     for (const auto id : UISettings::values.favorited_ids) {
         AddFavorite(id);
     }

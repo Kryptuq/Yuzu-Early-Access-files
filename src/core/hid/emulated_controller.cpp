@@ -843,23 +843,18 @@ bool EmulatedController::SetVibration(std::size_t device_index, VibrationValue v
 }
 
 bool EmulatedController::TestVibration(std::size_t device_index) {
-    if (device_index >= output_devices.size()) {
-        return false;
-    }
-    if (!output_devices[device_index]) {
-        return false;
-    }
-
-    // Send a slight vibration to test for rumble support
-    constexpr Common::Input::VibrationStatus status = {
+    static constexpr VibrationValue test_vibration = {
         .low_amplitude = 0.001f,
         .low_frequency = 160.0f,
         .high_amplitude = 0.001f,
         .high_frequency = 320.0f,
-        .type = Common::Input::VibrationAmplificationType::Linear,
     };
-    return output_devices[device_index]->SetVibration(status) ==
-           Common::Input::VibrationError::None;
+
+    // Send a slight vibration to test for rumble support
+    SetVibration(device_index, test_vibration);
+
+    // Stop any vibration and return the result
+    return SetVibration(device_index, DEFAULT_VIBRATION_VALUE);
 }
 
 void EmulatedController::SetLedPattern() {

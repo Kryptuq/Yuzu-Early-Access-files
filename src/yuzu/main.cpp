@@ -1304,16 +1304,13 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
         case Core::SystemResultStatus::ErrorVideoCore:
             QMessageBox::critical(
                 this, tr("An error occurred initializing the video core."),
-                tr("yuzu has encountered an error while running the video core, please see the "
-                   "log for more details."
+                tr("yuzu has encountered an error while running the video core. "
+                   "This is usually caused by outdated GPU drivers, including integrated ones. "
+                   "Please see the log for more details. "
                    "For more information on accessing the log, please see the following page: "
-                   "<a href='https://community.citra-emu.org/t/how-to-upload-the-log-file/296'>How "
-                   "to "
-                   "Upload the Log File</a>."
-                   "Ensure that you have the latest graphics drivers for your GPU."));
-
+                   "<a href='https://yuzu-emu.org/help/reference/log-files/'>"
+                   "How to Upload the Log File</a>. "));
             break;
-
         default:
             if (result > Core::SystemResultStatus::ErrorLoader) {
                 const u16 loader_id = static_cast<u16>(Core::SystemResultStatus::ErrorLoader);

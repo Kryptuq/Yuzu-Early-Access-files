@@ -211,6 +211,27 @@ std::string_view OutputPrimitive(OutputTopology topology) {
     throw InvalidArgument("Invalid output topology {}", topology);
 }
 
+void SetupLegacyOutPerVertex(EmitContext& ctx, std::string& header) {
+    if (!ctx.info.stores.Legacy()) {
+        return;
+    }
+    if (ctx.info.stores.FixedFunctionTexture()) {
+        header += "vec4 gl_TexCoord[8];";
+    }
+    if (ctx.info.stores.AnyComponent(IR::Attribute::ColorFrontDiffuseR)) {
+        header += "vec4 gl_FrontColor;";
+    }
+    if (ctx.info.stores.AnyComponent(IR::Attribute::ColorFrontSpecularR)) {
+        header += "vec4 gl_FrontSecondaryColor;";
+    }
+    if (ctx.info.stores.AnyComponent(IR::Attribute::ColorBackDiffuseR)) {
+        header += "vec4 gl_BackColor;";
+    }
+    if (ctx.info.stores.AnyComponent(IR::Attribute::ColorBackSpecularR)) {
+        header += "vec4 gl_BackSecondaryColor;";
+    }
+}
+
 void SetupOutPerVertex(EmitContext& ctx, std::string& header) {
     if (!StoresPerVertexAttributes(ctx.stage)) {
         return;
@@ -229,6 +250,7 @@ void SetupOutPerVertex(EmitContext& ctx, std::string& header) {
         ctx.profile.support_viewport_index_layer_non_geometry && ctx.stage != Stage::Geometry) {
         header += "int gl_ViewportIndex;";
     }
+    SetupLegacyOutPerVertex(ctx, header);
     header += "};";
     if (ctx.info.stores[IR::Attribute::ViewportIndex] && ctx.stage == Stage::Geometry) {
         header += "out int gl_ViewportIndex;";
@@ -259,6 +281,20 @@ void SetupInPerVertex(EmitContext& ctx, std::string& header) {
         header += "float gl_ClipDistance[];";
     }
     header += "}gl_in[gl_MaxPatchVertices];";
+}
+
+void SetupLegacyInPerFragment(EmitContext& ctx, std::string& header) {
+    if (!ctx.info.loads.Legacy()) {
+        return;
+    }
+    header += "in gl_PerFragment{";
+    if (ctx.info.loads.FixedFunctionTexture()) {
+        header += "vec4 gl_TexCoord[8];";
+    }
+    if (ctx.info.loads.AnyComponent(IR::Attribute::ColorFrontDiffuseR)) {
+        header += "vec4 gl_Color;";
+    }
+    header += "};";
 }
 
 } // Anonymous namespace
@@ -325,6 +361,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     }
     SetupOutPerVertex(*this, header);
     SetupInPerVertex(*this, header);
+    SetupLegacyInPerFragment(*this, header);
 
     for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
         if (!info.loads.Generic(index) || !runtime_info.previous_stage_stores.Generic(index)) {

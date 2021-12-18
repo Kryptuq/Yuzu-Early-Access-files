@@ -1404,7 +1404,7 @@ void Hid::SendVibrationGcErmCommand(Kernel::HLERequestContext& ctx) {
                 .high_frequency = 0.0f,
             };
         default:
-            return Controller_NPad::DEFAULT_VIBRATION_VALUE;
+            return Core::HID::DEFAULT_VIBRATION_VALUE;
         }
     }();
 

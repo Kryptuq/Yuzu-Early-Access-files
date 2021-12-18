@@ -14,7 +14,6 @@
 #include "common/fs/path_util.h"
 #include "common/string_util.h"
 #include "core/constants.h"
-#include "core/hle/lock.h"
 #include "yuzu/applets/qt_profile_select.h"
 #include "yuzu/main.h"
 #include "yuzu/util/controller_navigation.h"
@@ -170,7 +169,5 @@ void QtProfileSelector::SelectProfile(
 }
 
 void QtProfileSelector::MainWindowFinishedSelection(std::optional<Common::UUID> uuid) {
-    // Acquire the HLE mutex
-    std::lock_guard lock{HLE::g_hle_lock};
     callback(uuid);
 }

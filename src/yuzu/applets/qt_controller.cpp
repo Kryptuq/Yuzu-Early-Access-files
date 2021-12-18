@@ -12,7 +12,6 @@
 #include "core/hid/emulated_controller.h"
 #include "core/hid/hid_core.h"
 #include "core/hid/hid_types.h"
-#include "core/hle/lock.h"
 #include "core/hle/service/hid/controllers/npad.h"
 #include "core/hle/service/hid/hid.h"
 #include "core/hle/service/sm/sm.h"
@@ -664,7 +663,5 @@ void QtControllerSelector::ReconfigureControllers(
 }
 
 void QtControllerSelector::MainWindowReconfigureFinished() {
-    // Acquire the HLE mutex
-    std::lock_guard lock(HLE::g_hle_lock);
     callback();
 }

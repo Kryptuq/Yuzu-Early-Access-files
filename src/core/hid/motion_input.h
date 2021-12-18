@@ -24,7 +24,7 @@ public:
     void SetAcceleration(const Common::Vec3f& acceleration);
     void SetGyroscope(const Common::Vec3f& gyroscope);
     void SetQuaternion(const Common::Quaternion<f32>& quaternion);
-    void SetGyroDrift(const Common::Vec3f& drift);
+    void SetGyroBias(const Common::Vec3f& bias);
     void SetGyroThreshold(f32 threshold);
 
     void EnableReset(bool reset);
@@ -36,6 +36,7 @@ public:
     [[nodiscard]] std::array<Common::Vec3f, 3> GetOrientation() const;
     [[nodiscard]] Common::Vec3f GetAcceleration() const;
     [[nodiscard]] Common::Vec3f GetGyroscope() const;
+    [[nodiscard]] Common::Vec3f GetGyroBias() const;
     [[nodiscard]] Common::Vec3f GetRotations() const;
     [[nodiscard]] Common::Quaternion<f32> GetQuaternion() const;
 
@@ -69,7 +70,7 @@ private:
     Common::Vec3f gyro;
 
     // Vector to be substracted from gyro measurements
-    Common::Vec3f gyro_drift;
+    Common::Vec3f gyro_bias;
 
     // Minimum gyro amplitude to detect if the device is moving
     f32 gyro_threshold = 0.0f;

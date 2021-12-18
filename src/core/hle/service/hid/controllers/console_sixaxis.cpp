@@ -33,15 +33,14 @@ void Controller_ConsoleSixAxis::OnUpdate(const Core::Timing::CoreTiming& core_ti
     const auto& last_entry = seven_sixaxis_lifo.ReadCurrentEntry().state;
     next_seven_sixaxis_state.sampling_number = last_entry.sampling_number + 1;
 
-    // Try to read sixaxis sensor states
     const auto motion_status = console->GetMotion();
+    last_global_timestamp = core_timing.GetGlobalTimeNs().count();
 
-    console_six_axis.is_seven_six_axis_sensor_at_rest = motion_status.is_at_rest;
-
+    // This value increments every time the switch goes to sleep
+    next_seven_sixaxis_state.unknown = 1;
+    next_seven_sixaxis_state.timestamp = last_global_timestamp - last_saved_timestamp;
     next_seven_sixaxis_state.accel = motion_status.accel;
-    // Zero gyro values as they just mess up with the camera
-    // Note: Probably a correct sensivity setting must be set
-    next_seven_sixaxis_state.gyro = {};
+    next_seven_sixaxis_state.gyro = motion_status.gyro;
     next_seven_sixaxis_state.quaternion = {
         {
             motion_status.quaternion.xyz.y,
@@ -52,9 +51,9 @@ void Controller_ConsoleSixAxis::OnUpdate(const Core::Timing::CoreTiming& core_ti
     };
 
     console_six_axis.sampling_number++;
-    // TODO(German77): Find the purpose of those values
-    console_six_axis.verticalization_error = 0.0f;
-    console_six_axis.gyro_bias = {0.0f, 0.0f, 0.0f};
+    console_six_axis.is_seven_six_axis_sensor_at_rest = motion_status.is_at_rest;
+    console_six_axis.verticalization_error = motion_status.verticalization_error;
+    console_six_axis.gyro_bias = motion_status.gyro_bias;
 
     // Update console six axis shared memory
     std::memcpy(data + SHARED_MEMORY_OFFSET, &console_six_axis, sizeof(console_six_axis));
@@ -69,7 +68,6 @@ void Controller_ConsoleSixAxis::SetTransferMemoryPointer(u8* t_mem) {
 }
 
 void Controller_ConsoleSixAxis::ResetTimestamp() {
-    seven_sixaxis_lifo.buffer_count = 0;
-    seven_sixaxis_lifo.buffer_tail = 0;
+    last_saved_timestamp = last_global_timestamp;
 }
 } // namespace Service::HID

@@ -9,7 +9,6 @@
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
-#include "core/hle/lock.h"
 #include "core/hle/service/nfp/nfp.h"
 #include "core/hle/service/nfp/nfp_user.h"
 
@@ -337,7 +336,6 @@ void Module::Interface::CreateUserInterface(Kernel::HLERequestContext& ctx) {
 }
 
 bool Module::Interface::LoadAmiibo(const std::vector<u8>& buffer) {
-    std::lock_guard lock{HLE::g_hle_lock};
     if (buffer.size() < sizeof(AmiiboFile)) {
         return false;
     }

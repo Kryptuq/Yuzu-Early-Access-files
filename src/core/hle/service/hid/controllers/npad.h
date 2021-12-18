@@ -90,13 +90,6 @@ public:
         Default = 3,
     };
 
-    static constexpr Core::HID::VibrationValue DEFAULT_VIBRATION_VALUE{
-        .low_amplitude = 0.0f,
-        .low_frequency = 160.0f,
-        .high_amplitude = 0.0f,
-        .high_frequency = 320.0f,
-    };
-
     void SetSupportedStyleSet(Core::HID::NpadStyleTag style_set);
     Core::HID::NpadStyleTag GetSupportedStyleSet() const;
 

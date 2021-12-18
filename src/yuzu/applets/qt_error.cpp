@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include <QDateTime>
-#include "core/hle/lock.h"
 #include "yuzu/applets/qt_error.h"
 #include "yuzu/main.h"
 
@@ -57,7 +56,5 @@ void QtErrorDisplay::ShowCustomErrorText(ResultCode error, std::string dialog_te
 }
 
 void QtErrorDisplay::MainWindowFinishedError() {
-    // Acquire the HLE mutex
-    std::lock_guard lock{HLE::g_hle_lock};
     callback();
 }

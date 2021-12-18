@@ -265,8 +265,6 @@ add_library(core STATIC
     hle/kernel/svc_wrap.h
     hle/kernel/time_manager.cpp
     hle/kernel/time_manager.h
-    hle/lock.cpp
-    hle/lock.h
     hle/result.h
     hle/service/acc/acc.cpp
     hle/service/acc/acc.h
