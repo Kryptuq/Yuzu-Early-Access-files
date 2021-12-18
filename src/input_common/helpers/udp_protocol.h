@@ -54,6 +54,18 @@ struct Message {
 template <typename T>
 constexpr Type GetMessageType();
 
+template <typename T>
+Message<T> CreateMessage(const u32 magic, const T data, const u32 sender_id) {
+    boost::crc_32_type crc;
+    Header header{
+        magic, PROTOCOL_VERSION, sizeof(T) + sizeof(Type), 0, sender_id, GetMessageType<T>(),
+    };
+    Message<T> message{header, data};
+    crc.process_bytes(&message, sizeof(Message<T>));
+    message.header.crc = crc.checksum();
+    return message;
+}
+
 namespace Request {
 
 enum RegisterFlags : u8 {
@@ -101,14 +113,7 @@ static_assert(std::is_trivially_copyable_v<PadData>,
  */
 template <typename T>
 Message<T> Create(const T data, const u32 client_id = 0) {
-    boost::crc_32_type crc;
-    Header header{
-        CLIENT_MAGIC, PROTOCOL_VERSION, sizeof(T) + sizeof(Type), 0, client_id, GetMessageType<T>(),
-    };
-    Message<T> message{header, data};
-    crc.process_bytes(&message, sizeof(Message<T>));
-    message.header.crc = crc.checksum();
-    return message;
+    return CreateMessage(CLIENT_MAGIC, data, client_id);
 }
 } // namespace Request
 

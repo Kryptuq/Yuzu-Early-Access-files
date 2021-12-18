@@ -271,7 +271,7 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             .tessellationShader = true,
             .sampleRateShading = true,
             .dualSrcBlend = true,
-            .logicOp = false,
+            .logicOp = true,
             .multiDrawIndirect = false,
             .drawIndirectFirstInstance = false,
             .depthClamp = true,
@@ -431,6 +431,19 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
         SetNext(next, index_type_uint8);
     } else {
         LOG_INFO(Render_Vulkan, "Device doesn't support uint8 indexes");
+    }
+
+    VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT primitive_topology_list_restart;
+    if (is_topology_list_restart_supported || is_patch_list_restart_supported) {
+        primitive_topology_list_restart = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT,
+            .pNext = nullptr,
+            .primitiveTopologyListRestart = is_topology_list_restart_supported,
+            .primitiveTopologyPatchListRestart = is_patch_list_restart_supported,
+        };
+        SetNext(next, primitive_topology_list_restart);
+    } else {
+        LOG_INFO(Render_Vulkan, "Device doesn't support list topology primitive restart");
     }
 
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback;
@@ -891,6 +904,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
     bool has_ext_provoking_vertex{};
     bool has_ext_vertex_input_dynamic_state{};
     bool has_ext_line_rasterization{};
+    bool has_ext_primitive_topology_list_restart{};
     for (const std::string& extension : supported_extensions) {
         const auto test = [&](std::optional<std::reference_wrapper<bool>> status, const char* name,
                               bool push) {
@@ -915,6 +929,8 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         test(has_khr_shader_float16_int8, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME, false);
         test(ext_depth_range_unrestricted, VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME, true);
         test(ext_index_type_uint8, VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME, true);
+        test(has_ext_primitive_topology_list_restart,
+             VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME, true);
         test(ext_sampler_filter_minmax, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME, true);
         test(ext_shader_viewport_index_layer, VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
              true);
@@ -1112,6 +1128,19 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
             extensions.push_back(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
             khr_pipeline_executable_properties = true;
         }
+    }
+    if (has_ext_primitive_topology_list_restart) {
+        VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT primitive_topology_list_restart{};
+        primitive_topology_list_restart.sType =
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT;
+        primitive_topology_list_restart.pNext = nullptr;
+        features.pNext = &primitive_topology_list_restart;
+        physical.GetFeatures2KHR(features);
+
+        is_topology_list_restart_supported =
+            primitive_topology_list_restart.primitiveTopologyListRestart;
+        is_patch_list_restart_supported =
+            primitive_topology_list_restart.primitiveTopologyPatchListRestart;
     }
     if (has_khr_image_format_list && has_khr_swapchain_mutable_format) {
         extensions.push_back(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);

@@ -238,6 +238,16 @@ public:
         return khr_workgroup_memory_explicit_layout;
     }
 
+    /// Returns true if the device supports VK_EXT_primitive_topology_list_restart.
+    bool IsTopologyListPrimitiveRestartSupported() const {
+        return is_topology_list_restart_supported;
+    }
+
+    /// Returns true if the device supports VK_EXT_primitive_topology_list_restart.
+    bool IsPatchListPrimitiveRestartSupported() const {
+        return is_patch_list_restart_supported;
+    }
+
     /// Returns true if the device supports VK_EXT_index_type_uint8.
     bool IsExtIndexTypeUint8Supported() const {
         return ext_index_type_uint8;
@@ -401,6 +411,9 @@ private:
     bool is_shader_int16_supported{};           ///< Support for int16.
     bool is_shader_storage_image_multisample{}; ///< Support for image operations on MSAA images.
     bool is_blit_depth_stencil_supported{};     ///< Support for blitting from and to depth stencil.
+    bool is_topology_list_restart_supported{};  ///< Support for primitive restart with list
+                                                ///< topologies.
+    bool is_patch_list_restart_supported{};     ///< Support for primitive restart with list patch.
     bool nv_viewport_swizzle{};                 ///< Support for VK_NV_viewport_swizzle.
     bool nv_viewport_array2{};                  ///< Support for VK_NV_viewport_array2.
     bool nv_geometry_shader_passthrough{};      ///< Support for VK_NV_geometry_shader_passthrough.

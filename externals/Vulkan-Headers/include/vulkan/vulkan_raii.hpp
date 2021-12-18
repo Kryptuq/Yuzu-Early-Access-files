@@ -82,8 +82,7 @@ namespace VULKAN_HPP_NAMESPACE
           vkGetInstanceProcAddr( instance, "vkGetPhysicalDeviceQueueFamilyProperties" ) );
         vkGetPhysicalDeviceMemoryProperties = PFN_vkGetPhysicalDeviceMemoryProperties(
           vkGetInstanceProcAddr( instance, "vkGetPhysicalDeviceMemoryProperties" ) );
-        vkGetInstanceProcAddr = PFN_vkGetInstanceProcAddr( vkGetInstanceProcAddr( instance, "vkGetInstanceProcAddr" ) );
-        vkCreateDevice        = PFN_vkCreateDevice( vkGetInstanceProcAddr( instance, "vkCreateDevice" ) );
+        vkCreateDevice = PFN_vkCreateDevice( vkGetInstanceProcAddr( instance, "vkCreateDevice" ) );
         vkEnumerateDeviceExtensionProperties = PFN_vkEnumerateDeviceExtensionProperties(
           vkGetInstanceProcAddr( instance, "vkEnumerateDeviceExtensionProperties" ) );
         vkEnumerateDeviceLayerProperties =
@@ -5166,8 +5165,9 @@ namespace VULKAN_HPP_NAMESPACE
       void setEvent2KHR( VULKAN_HPP_NAMESPACE::Event                     event,
                          const VULKAN_HPP_NAMESPACE::DependencyInfoKHR & dependencyInfo ) const VULKAN_HPP_NOEXCEPT;
 
-      void resetEvent2KHR( VULKAN_HPP_NAMESPACE::Event                  event,
-                           VULKAN_HPP_NAMESPACE::PipelineStageFlags2KHR stageMask ) const VULKAN_HPP_NOEXCEPT;
+      void resetEvent2KHR( VULKAN_HPP_NAMESPACE::Event event,
+                           VULKAN_HPP_NAMESPACE::PipelineStageFlags2KHR stageMask
+                             VULKAN_HPP_DEFAULT_ARGUMENT_ASSIGNMENT ) const VULKAN_HPP_NOEXCEPT;
 
       void waitEvents2KHR( ArrayProxy<const VULKAN_HPP_NAMESPACE::Event> const &             events,
                            ArrayProxy<const VULKAN_HPP_NAMESPACE::DependencyInfoKHR> const & dependencyInfos ) const

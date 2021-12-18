@@ -605,7 +605,11 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
         .flags = 0,
         .topology = input_assembly_topology,
         .primitiveRestartEnable = key.state.primitive_restart_enable != 0 &&
-                                  SupportsPrimitiveRestart(input_assembly_topology),
+                                  ((input_assembly_topology != VK_PRIMITIVE_TOPOLOGY_PATCH_LIST &&
+                                    device.IsTopologyListPrimitiveRestartSupported()) ||
+                                   SupportsPrimitiveRestart(input_assembly_topology) ||
+                                   (input_assembly_topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST &&
+                                    device.IsPatchListPrimitiveRestartSupported())),
     };
     const VkPipelineTessellationStateCreateInfo tessellation_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO,
@@ -613,7 +617,6 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
         .flags = 0,
         .patchControlPoints = key.state.patch_control_points_minus_one.Value() + 1,
     };
-
     std::array<VkViewportSwizzleNV, Maxwell::NumViewports> swizzles;
     std::ranges::transform(key.state.viewport_swizzles, swizzles.begin(), UnpackViewportSwizzle);
     const VkPipelineViewportSwizzleStateCreateInfoNV swizzle_ci{
@@ -748,8 +751,8 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
-        .logicOpEnable = VK_FALSE,
-        .logicOp = VK_LOGIC_OP_COPY,
+        .logicOpEnable = key.state.logic_op_enable != 0,
+        .logicOp = static_cast<VkLogicOp>(key.state.logic_op.Value()),
         .attachmentCount = static_cast<u32>(cb_attachments.size()),
         .pAttachments = cb_attachments.data(),
         .blendConstants = {},

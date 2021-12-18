@@ -52,11 +52,12 @@ endif()
 # SDL2
 if (YUZU_USE_EXTERNAL_SDL2)
     if (NOT WIN32)
-        # Yuzu itself needs: Events Joystick Haptic Sensor Timers Audio
+        # Yuzu itself needs: Atomic Audio Events Joystick Haptic Sensor Threads Timers
+        # Since 2.0.18 Atomic+Threads required for HIDAPI/libusb (see https://github.com/libsdl-org/SDL/issues/5095)
         # Yuzu-cmd also needs: Video (depends on Loadso/Dlopen)
         set(SDL_UNUSED_SUBSYSTEMS
-            Atomic Render Power Threads
-            File CPUinfo Filesystem Locale)
+            CPUinfo File Filesystem
+            Locale Power Render)
         foreach(_SUB ${SDL_UNUSED_SUBSYSTEMS})
           string(TOUPPER ${_SUB} _OPT)
           option(SDL_${_OPT} "" OFF)

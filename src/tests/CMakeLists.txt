@@ -10,11 +10,12 @@ add_executable(tests
     core/network/network.cpp
     tests.cpp
     video_core/buffer_base.cpp
+    input_common/calibration_configuration_job.cpp
 )
 
 create_target_directory_groups(tests)
 
-target_link_libraries(tests PRIVATE common core)
+target_link_libraries(tests PRIVATE common core input_common)
 target_link_libraries(tests PRIVATE ${PLATFORM_LIBRARIES} catch-single-include Threads::Threads)
 
 add_test(NAME tests COMMAND tests)
