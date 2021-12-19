@@ -182,7 +182,10 @@ struct KernelCore::Impl {
         // Shutdown all processes.
         if (current_process) {
             current_process->Finalize();
-            current_process->Close();
+            // current_process->Close();
+            // TODO: The current process should be destroyed based on accurate ref counting after
+            // calling Close(). Adding a manual Destroy() call instead to avoid a memory leak.
+            current_process->Destroy();
             current_process = nullptr;
         }
 
