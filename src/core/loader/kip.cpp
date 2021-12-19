@@ -71,7 +71,6 @@ AppLoader::LoadResult AppLoader_KIP::Load(Kernel::KProcess& process,
                         kip->GetTitleID(), 0xFFFFFFFFFFFFFFFF, 0x1FE00000,
                         kip->GetKernelCapabilities());
 
-    const VAddr base_address = process.PageTable().GetCodeRegionStart();
     Kernel::CodeSet codeset;
     Kernel::PhysicalMemory program_image;
 
@@ -91,7 +90,14 @@ AppLoader::LoadResult AppLoader_KIP::Load(Kernel::KProcess& process,
     program_image.resize(PageAlignSize(kip->GetBSSOffset()) + kip->GetBSSSize());
     codeset.DataSegment().size += kip->GetBSSSize();
 
+    // Setup the process code layout
+    if (process.LoadFromMetadata(FileSys::ProgramMetadata::GetDefault(), program_image.size())
+            .IsError()) {
+        return {ResultStatus::ErrorNotInitialized, {}};
+    }
+
     codeset.memory = std::move(program_image);
+    const VAddr base_address = process.PageTable().GetCodeRegionStart();
     process.LoadModule(std::move(codeset), base_address);
 
     LOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", kip->GetName(), base_address);
