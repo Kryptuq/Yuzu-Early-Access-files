@@ -18,8 +18,6 @@
 
 namespace Shader::Backend::SPIRV {
 namespace {
-constexpr size_t NUM_FIXEDFNCTEXTURE = 10;
-
 enum class Operation {
     Increment,
     Decrement,
@@ -432,34 +430,6 @@ Id DescType(EmitContext& ctx, Id sampled_type, Id pointer_type, u32 count) {
         return pointer_type;
     }
 }
-
-size_t FindAndSetNextUnusedLocation(std::bitset<IR::NUM_GENERICS>& used_locations,
-                                    size_t& start_offset) {
-    for (size_t location = start_offset; location < used_locations.size(); ++location) {
-        if (!used_locations.test(location)) {
-            start_offset = location;
-            used_locations.set(location);
-            return location;
-        }
-    }
-    throw RuntimeError("Unable to get an unused location for legacy attribute");
-}
-
-Id DefineLegacyInput(EmitContext& ctx, std::bitset<IR::NUM_GENERICS>& used_locations,
-                     size_t& start_offset) {
-    const Id id{DefineInput(ctx, ctx.F32[4], true)};
-    const size_t location = FindAndSetNextUnusedLocation(used_locations, start_offset);
-    ctx.Decorate(id, spv::Decoration::Location, location);
-    return id;
-}
-
-Id DefineLegacyOutput(EmitContext& ctx, std::bitset<IR::NUM_GENERICS>& used_locations,
-                      size_t& start_offset, std::optional<u32> invocations) {
-    const Id id{DefineOutput(ctx, ctx.F32[4], invocations)};
-    const size_t location = FindAndSetNextUnusedLocation(used_locations, start_offset);
-    ctx.Decorate(id, spv::Decoration::Location, location);
-    return id;
-}
 } // Anonymous namespace
 
 void VectorTypes::Define(Sirit::Module& sirit_ctx, Id base_type, std::string_view name) {
@@ -541,64 +511,6 @@ Id EmitContext::BitOffset16(const IR::Value& offset) {
         return Const(((offset.U32() / 2) % 2) * 16);
     }
     return OpBitwiseAnd(U32[1], OpShiftLeftLogical(U32[1], Def(offset), Const(3u)), Const(16u));
-}
-
-Id EmitContext::InputLegacyAttribute(IR::Attribute attribute) {
-    if (attribute >= IR::Attribute::ColorFrontDiffuseR &&
-        attribute <= IR::Attribute::ColorFrontDiffuseA) {
-        return input_front_color;
-    }
-    if (attribute >= IR::Attribute::ColorFrontSpecularR &&
-        attribute <= IR::Attribute::ColorFrontSpecularA) {
-        return input_front_secondary_color;
-    }
-    if (attribute >= IR::Attribute::ColorBackDiffuseR &&
-        attribute <= IR::Attribute::ColorBackDiffuseA) {
-        return input_back_color;
-    }
-    if (attribute >= IR::Attribute::ColorBackSpecularR &&
-        attribute <= IR::Attribute::ColorBackSpecularA) {
-        return input_back_secondary_color;
-    }
-    if (attribute == IR::Attribute::FogCoordinate) {
-        return input_fog_frag_coord;
-    }
-    if (attribute >= IR::Attribute::FixedFncTexture0S &&
-        attribute <= IR::Attribute::FixedFncTexture9Q) {
-        u32 index =
-            (static_cast<u32>(attribute) - static_cast<u32>(IR::Attribute::FixedFncTexture0S)) / 4;
-        return input_fixed_fnc_textures[index];
-    }
-    throw InvalidArgument("Attribute is not legacy attribute {}", attribute);
-}
-
-Id EmitContext::OutputLegacyAttribute(IR::Attribute attribute) {
-    if (attribute >= IR::Attribute::ColorFrontDiffuseR &&
-        attribute <= IR::Attribute::ColorFrontDiffuseA) {
-        return output_front_color;
-    }
-    if (attribute >= IR::Attribute::ColorFrontSpecularR &&
-        attribute <= IR::Attribute::ColorFrontSpecularA) {
-        return output_front_secondary_color;
-    }
-    if (attribute >= IR::Attribute::ColorBackDiffuseR &&
-        attribute <= IR::Attribute::ColorBackDiffuseA) {
-        return output_back_color;
-    }
-    if (attribute >= IR::Attribute::ColorBackSpecularR &&
-        attribute <= IR::Attribute::ColorBackSpecularA) {
-        return output_back_secondary_color;
-    }
-    if (attribute == IR::Attribute::FogCoordinate) {
-        return output_fog_frag_coord;
-    }
-    if (attribute >= IR::Attribute::FixedFncTexture0S &&
-        attribute <= IR::Attribute::FixedFncTexture9Q) {
-        u32 index =
-            (static_cast<u32>(attribute) - static_cast<u32>(IR::Attribute::FixedFncTexture0S)) / 4;
-        return output_fixed_fnc_textures[index];
-    }
-    throw InvalidArgument("Attribute is not legacy attribute {}", attribute);
 }
 
 void EmitContext::DefineCommonTypes(const Info& info) {
@@ -1389,7 +1301,6 @@ void EmitContext::DefineInputs(const IR::Program& program) {
         loads[IR::Attribute::TessellationEvaluationPointV]) {
         tess_coord = DefineInput(*this, F32[3], false, spv::BuiltIn::TessCoord);
     }
-    std::bitset<IR::NUM_GENERICS> used_locations{};
     for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
         const AttributeType input_type{runtime_info.generic_input_types[index]};
         if (!runtime_info.previous_stage_stores.Generic(index)) {
@@ -1401,7 +1312,6 @@ void EmitContext::DefineInputs(const IR::Program& program) {
         if (input_type == AttributeType::Disabled) {
             continue;
         }
-        used_locations.set(index);
         const Id type{GetAttributeType(*this, input_type)};
         const Id id{DefineInput(*this, type, true)};
         Decorate(id, spv::Decoration::Location, static_cast<u32>(index));
@@ -1425,30 +1335,6 @@ void EmitContext::DefineInputs(const IR::Program& program) {
         case Interpolation::Flat:
             Decorate(id, spv::Decoration::Flat);
             break;
-        }
-    }
-    size_t previous_unused_location = 0;
-    if (loads.AnyComponent(IR::Attribute::ColorFrontDiffuseR)) {
-        input_front_color = DefineLegacyInput(*this, used_locations, previous_unused_location);
-    }
-    if (loads.AnyComponent(IR::Attribute::ColorFrontSpecularR)) {
-        input_front_secondary_color =
-            DefineLegacyInput(*this, used_locations, previous_unused_location);
-    }
-    if (loads.AnyComponent(IR::Attribute::ColorBackDiffuseR)) {
-        input_back_color = DefineLegacyInput(*this, used_locations, previous_unused_location);
-    }
-    if (loads.AnyComponent(IR::Attribute::ColorBackSpecularR)) {
-        input_back_secondary_color =
-            DefineLegacyInput(*this, used_locations, previous_unused_location);
-    }
-    if (loads.AnyComponent(IR::Attribute::FogCoordinate)) {
-        input_fog_frag_coord = DefineLegacyInput(*this, used_locations, previous_unused_location);
-    }
-    for (size_t index = 0; index < NUM_FIXEDFNCTEXTURE; ++index) {
-        if (loads.AnyComponent(IR::Attribute::FixedFncTexture0S + index * 4)) {
-            input_fixed_fnc_textures[index] =
-                DefineLegacyInput(*this, used_locations, previous_unused_location);
         }
     }
     if (stage == Stage::TessellationEval) {
@@ -1501,38 +1387,9 @@ void EmitContext::DefineOutputs(const IR::Program& program) {
         viewport_mask = DefineOutput(*this, TypeArray(U32[1], Const(1u)), std::nullopt,
                                      spv::BuiltIn::ViewportMaskNV);
     }
-    std::bitset<IR::NUM_GENERICS> used_locations{};
     for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
         if (info.stores.Generic(index)) {
             DefineGenericOutput(*this, index, invocations);
-            used_locations.set(index);
-        }
-    }
-    size_t previous_unused_location = 0;
-    if (info.stores.AnyComponent(IR::Attribute::ColorFrontDiffuseR)) {
-        output_front_color =
-            DefineLegacyOutput(*this, used_locations, previous_unused_location, invocations);
-    }
-    if (info.stores.AnyComponent(IR::Attribute::ColorFrontSpecularR)) {
-        output_front_secondary_color =
-            DefineLegacyOutput(*this, used_locations, previous_unused_location, invocations);
-    }
-    if (info.stores.AnyComponent(IR::Attribute::ColorBackDiffuseR)) {
-        output_back_color =
-            DefineLegacyOutput(*this, used_locations, previous_unused_location, invocations);
-    }
-    if (info.stores.AnyComponent(IR::Attribute::ColorBackSpecularR)) {
-        output_back_secondary_color =
-            DefineLegacyOutput(*this, used_locations, previous_unused_location, invocations);
-    }
-    if (info.stores.AnyComponent(IR::Attribute::FogCoordinate)) {
-        output_fog_frag_coord =
-            DefineLegacyOutput(*this, used_locations, previous_unused_location, invocations);
-    }
-    for (size_t index = 0; index < NUM_FIXEDFNCTEXTURE; ++index) {
-        if (info.stores.AnyComponent(IR::Attribute::FixedFncTexture0S + index * 4)) {
-            output_fixed_fnc_textures[index] =
-                DefineLegacyOutput(*this, used_locations, previous_unused_location, invocations);
         }
     }
     switch (stage) {

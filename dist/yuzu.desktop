@@ -8,5 +8,5 @@ Icon=yuzu
 TryExec=yuzu
 Exec=yuzu %f
 Categories=Game;Emulator;Qt;
-MimeType=application/x-nx-nro;application/x-nx-nso;
+MimeType=application/x-nx-nro;application/x-nx-nso;application/x-nx-nsp;application/x-nx-xci;
 Keywords=Switch;Nintendo;

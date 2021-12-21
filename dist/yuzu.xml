@@ -15,4 +15,19 @@
         <glob pattern="*.nso"/>
         <magic><match value="NSO" type="string" offset="0"/></magic>
     </mime-type>
+
+    <mime-type type="application/x-nx-nsp">
+        <comment>Nintendo Switch Package</comment>
+        <acronym>NSP</acronym>
+        <icon name="yuzu"/>
+        <glob pattern="*.nsp"/>
+        <magic><match value="PFS" type="string" offset="0"/></magic>
+    </mime-type>
+
+    <mime-type type="application/x-nx-xci">
+        <comment>Nintendo Switch Card Image</comment>
+        <acronym>XCI</acronym>
+        <icon name="yuzu"/>
+        <glob pattern="*.xci"/>
+    </mime-type>
 </mime-info>
