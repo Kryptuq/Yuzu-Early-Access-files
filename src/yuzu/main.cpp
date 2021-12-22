@@ -1250,8 +1250,10 @@ static std::optional<QDBusObjectPath> HoldWakeLockLinux(u32 window_id = 0) {
         return {};
     }
     QVariantMap options = {};
+    //: TRANSLATORS: This string is shown to the user to explain why yuzu needs to prevent the
+    //: computer from sleeping
     options.insert(QString::fromLatin1("reason"),
-                   QCoreApplication::translate("GMainWindow", "yuzu is emulating a game"));
+                   QCoreApplication::translate("GMainWindow", "yuzu is running a game"));
     // 0x4: Suspend lock; 0x8: Idle lock
     QDBusReply<QDBusObjectPath> reply =
         xdp.call(QString::fromLatin1("Inhibit"),
