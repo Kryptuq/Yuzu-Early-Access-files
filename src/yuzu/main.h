@@ -17,6 +17,12 @@
 #include "yuzu/compatibility_list.h"
 #include "yuzu/hotkeys.h"
 
+#ifdef __linux__
+#include <QVariant>
+#include <QtDBus/QDBusInterface>
+#include <QtDBus/QtDBus>
+#endif
+
 class Config;
 class EmuThread;
 class GameList;
@@ -394,6 +400,9 @@ private:
 
     // Applets
     QtSoftwareKeyboardDialog* software_keyboard = nullptr;
+#ifdef __linux__
+    QDBusObjectPath wake_lock{};
+#endif
 
 protected:
     void dropEvent(QDropEvent* event) override;

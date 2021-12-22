@@ -11,9 +11,15 @@ find_package(Git QUIET PATHS "${GIT_EXECUTABLE}")
 
 # generate git/build information
 include(GetGitRevisionDescription)
-get_git_head_revision(GIT_REF_SPEC GIT_REV)
-git_describe(GIT_DESC --always --long --dirty)
-git_branch_name(GIT_BRANCH)
+if(NOT GIT_REF_SPEC)
+    get_git_head_revision(GIT_REF_SPEC GIT_REV)
+endif()
+if(NOT GIT_DESC)
+    git_describe(GIT_DESC --always --long --dirty)
+endif()
+if (NOT GIT_BRANCH)
+  git_branch_name(GIT_BRANCH)
+endif()
 get_timestamp(BUILD_DATE)
 
 # Generate cpp with Git revision from template

@@ -249,7 +249,7 @@ if(ENABLE_QT)
     # Check for system Qt on Linux, fallback to bundled Qt
     if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
         if (NOT YUZU_USE_BUNDLED_QT)
-            find_package(Qt5 ${QT_VERSION} COMPONENTS Widgets)
+            find_package(Qt5 ${QT_VERSION} COMPONENTS Widgets DBus)
         endif()
         if (NOT Qt5_FOUND OR YUZU_USE_BUNDLED_QT)
             # Check for dependencies, then enable bundled Qt download
@@ -508,7 +508,7 @@ set(FFmpeg_COMPONENTS
     avutil
     swscale)
 
-if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+if (UNIX AND NOT APPLE)
     Include(FindPkgConfig REQUIRED)
     pkg_check_modules(LIBVA libva)
 endif()

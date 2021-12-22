@@ -251,6 +251,9 @@ target_include_directories(yuzu PRIVATE ../../externals/Vulkan-Headers/include)
 if (NOT WIN32)
     target_include_directories(yuzu PRIVATE ${Qt5Gui_PRIVATE_INCLUDE_DIRS})
 endif()
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    target_link_libraries(yuzu PRIVATE Qt5::DBus)
+endif()
 
 target_compile_definitions(yuzu PRIVATE
     # Use QStringBuilder for string concatenation to reduce

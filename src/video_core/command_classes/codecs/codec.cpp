@@ -32,7 +32,7 @@ constexpr std::array PREFERRED_GPU_DECODERS = {
 #ifdef _WIN32
     AV_HWDEVICE_TYPE_D3D11VA,
     AV_HWDEVICE_TYPE_DXVA2,
-#elif defined(__linux__)
+#elif defined(__unix__)
     AV_HWDEVICE_TYPE_VAAPI,
     AV_HWDEVICE_TYPE_VDPAU,
 #endif

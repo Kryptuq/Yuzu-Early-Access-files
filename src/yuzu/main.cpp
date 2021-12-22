@@ -1236,11 +1236,56 @@ void GMainWindow::OnDisplayTitleBars(bool show) {
     }
 }
 
+#ifdef __linux__
+static std::optional<QDBusObjectPath> HoldWakeLockLinux(u32 window_id = 0) {
+    if (!QDBusConnection::sessionBus().isConnected()) {
+        return {};
+    }
+    // reference: https://flatpak.github.io/xdg-desktop-portal/#gdbus-org.freedesktop.portal.Inhibit
+    QDBusInterface xdp(QString::fromLatin1("org.freedesktop.portal.Desktop"),
+                       QString::fromLatin1("/org/freedesktop/portal/desktop"),
+                       QString::fromLatin1("org.freedesktop.portal.Inhibit"));
+    if (!xdp.isValid()) {
+        LOG_WARNING(Frontend, "Couldn't connect to XDP D-Bus endpoint");
+        return {};
+    }
+    QVariantMap options = {};
+    options.insert(QString::fromLatin1("reason"),
+                   QCoreApplication::translate("GMainWindow", "yuzu is emulating a game"));
+    // 0x4: Suspend lock; 0x8: Idle lock
+    QDBusReply<QDBusObjectPath> reply =
+        xdp.call(QString::fromLatin1("Inhibit"),
+                 QString::fromLatin1("x11:") + QString::number(window_id, 16), 12U, options);
+
+    if (reply.isValid()) {
+        return reply.value();
+    }
+    LOG_WARNING(Frontend, "Couldn't read Inhibit reply from XDP: {}",
+                reply.error().message().toStdString());
+    return {};
+}
+
+static void ReleaseWakeLockLinux(QDBusObjectPath lock) {
+    if (!QDBusConnection::sessionBus().isConnected()) {
+        return;
+    }
+    QDBusInterface unlocker(QString::fromLatin1("org.freedesktop.portal.Desktop"), lock.path(),
+                            QString::fromLatin1("org.freedesktop.portal.Request"));
+    unlocker.call(QString::fromLatin1("Close"));
+}
+#endif // __linux__
+
 void GMainWindow::PreventOSSleep() {
 #ifdef _WIN32
     SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
 #elif defined(HAVE_SDL2)
     SDL_DisableScreenSaver();
+#ifdef __linux__
+    auto reply = HoldWakeLockLinux(winId());
+    if (reply) {
+        wake_lock = std::move(reply.value());
+    }
+#endif
 #endif
 }
 
@@ -1249,6 +1294,11 @@ void GMainWindow::AllowOSSleep() {
     SetThreadExecutionState(ES_CONTINUOUS);
 #elif defined(HAVE_SDL2)
     SDL_EnableScreenSaver();
+#ifdef __linux__
+    if (!wake_lock.path().isEmpty()) {
+        ReleaseWakeLockLinux(wake_lock);
+    }
+#endif
 #endif
 }
 
@@ -2546,39 +2596,30 @@ void GMainWindow::ToggleFullscreen() {
 }
 
 void GMainWindow::ShowFullscreen() {
+    const auto show_fullscreen = [](QWidget* window) {
+        if (Settings::values.fullscreen_mode.GetValue() == Settings::FullscreenMode::Exclusive) {
+            window->showFullScreen();
+            return;
+        }
+        window->hide();
+        window->setWindowFlags(window->windowFlags() | Qt::FramelessWindowHint);
+        const auto screen_geometry = QApplication::desktop()->screenGeometry(window);
+        window->setGeometry(screen_geometry.x(), screen_geometry.y(), screen_geometry.width(),
+                            screen_geometry.height() + 1);
+        window->raise();
+        window->showNormal();
+    };
+
     if (ui->action_Single_Window_Mode->isChecked()) {
         UISettings::values.geometry = saveGeometry();
 
         ui->menubar->hide();
         statusBar()->hide();
 
-        if (Settings::values.fullscreen_mode.GetValue() == Settings::FullscreenMode::Exclusive) {
-            showFullScreen();
-            return;
-        }
-
-        hide();
-        setWindowFlags(windowFlags() | Qt::FramelessWindowHint);
-        const auto screen_geometry = QApplication::desktop()->screenGeometry(this);
-        setGeometry(screen_geometry.x(), screen_geometry.y(), screen_geometry.width(),
-                    screen_geometry.height() + 1);
-        raise();
-        showNormal();
+        show_fullscreen(this);
     } else {
         UISettings::values.renderwindow_geometry = render_window->saveGeometry();
-
-        if (Settings::values.fullscreen_mode.GetValue() == Settings::FullscreenMode::Exclusive) {
-            render_window->showFullScreen();
-            return;
-        }
-
-        render_window->hide();
-        render_window->setWindowFlags(windowFlags() | Qt::FramelessWindowHint);
-        const auto screen_geometry = QApplication::desktop()->screenGeometry(this);
-        render_window->setGeometry(screen_geometry.x(), screen_geometry.y(),
-                                   screen_geometry.width(), screen_geometry.height() + 1);
-        render_window->raise();
-        render_window->showNormal();
+        show_fullscreen(render_window);
     }
 }
 
