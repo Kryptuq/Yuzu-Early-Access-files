@@ -23,6 +23,7 @@ using VideoCommon::ImageId;
 using VideoCommon::NUM_RT;
 using VideoCommon::Region2D;
 using VideoCommon::RenderTargets;
+using VideoCommon::SlotVector;
 using VideoCore::Surface::PixelFormat;
 
 class ASTCDecoderPass;
@@ -170,6 +171,8 @@ private:
 class ImageView : public VideoCommon::ImageViewBase {
 public:
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageViewInfo&, ImageId, Image&);
+    explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageViewInfo&, ImageId, Image&,
+                       const SlotVector<Image>&);
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageInfo&,
                        const VideoCommon::ImageViewInfo&, GPUVAddr);
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::NullImageViewParams&);
@@ -226,7 +229,7 @@ private:
     [[nodiscard]] vk::ImageView MakeView(VkFormat vk_format, VkImageAspectFlags aspect_mask);
 
     const Device* device = nullptr;
-    const Image* src_image{};
+    const SlotVector<Image>* slot_images = nullptr;
 
     std::array<vk::ImageView, Shader::NUM_TEXTURE_TYPES> image_views;
     std::unique_ptr<StorageViews> storage_views;

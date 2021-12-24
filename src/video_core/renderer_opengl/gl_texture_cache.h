@@ -36,6 +36,7 @@ using VideoCommon::ImageViewType;
 using VideoCommon::NUM_RT;
 using VideoCommon::Region2D;
 using VideoCommon::RenderTargets;
+using VideoCommon::SlotVector;
 
 struct ImageBufferMap {
     ~ImageBufferMap();
@@ -234,7 +235,8 @@ class ImageView : public VideoCommon::ImageViewBase {
     friend Image;
 
 public:
-    explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageViewInfo&, ImageId, Image&);
+    explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageViewInfo&, ImageId, Image&,
+                       const SlotVector<Image>&);
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageInfo&,
                        const VideoCommon::ImageViewInfo&, GPUVAddr);
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageInfo& info,

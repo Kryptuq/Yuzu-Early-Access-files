@@ -1473,8 +1473,7 @@ bool Image::BlitScaleHelper(bool scale_up) {
 ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewInfo& info,
                      ImageId image_id_, Image& image)
     : VideoCommon::ImageViewBase{info, image.info, image_id_}, device{&runtime.device},
-      src_image{&image}, image_handle{image.Handle()},
-      samples(ConvertSampleCount(image.info.num_samples)) {
+      image_handle{image.Handle()}, samples(ConvertSampleCount(image.info.num_samples)) {
     using Shader::TextureType;
 
     const VkImageAspectFlags aspect_mask = ImageViewAspectMask(info);
@@ -1557,6 +1556,12 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
     }
 }
 
+ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewInfo& info,
+                     ImageId image_id_, Image& image, const SlotVector<Image>& slot_imgs)
+    : ImageView{runtime, info, image_id_, image} {
+    slot_images = &slot_imgs;
+}
+
 ImageView::ImageView(TextureCacheRuntime&, const VideoCommon::ImageInfo& info,
                      const VideoCommon::ImageViewInfo& view_info, GPUVAddr gpu_addr_)
     : VideoCommon::ImageViewBase{info, view_info}, gpu_addr{gpu_addr_},
@@ -1613,10 +1618,12 @@ VkImageView ImageView::StorageView(Shader::TextureType texture_type,
 }
 
 bool ImageView::IsRescaled() const noexcept {
-    if (!src_image) {
+    if (!slot_images) {
         return false;
     }
-    return src_image->IsRescaled();
+    const auto& slots = *slot_images;
+    const auto& src_image = slots[image_id];
+    return src_image.IsRescaled();
 }
 
 vk::ImageView ImageView::MakeView(VkFormat vk_format, VkImageAspectFlags aspect_mask) {

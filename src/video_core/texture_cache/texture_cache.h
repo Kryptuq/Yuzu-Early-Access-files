@@ -1397,7 +1397,8 @@ ImageViewId TextureCache<P>::FindOrEmplaceImageView(ImageId image_id, const Imag
     if (const ImageViewId image_view_id = image.FindView(info); image_view_id) {
         return image_view_id;
     }
-    const ImageViewId image_view_id = slot_image_views.insert(runtime, info, image_id, image);
+    const ImageViewId image_view_id =
+        slot_image_views.insert(runtime, info, image_id, image, slot_images);
     image.InsertView(info, image_view_id);
     return image_view_id;
 }
