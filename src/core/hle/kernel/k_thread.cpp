@@ -26,6 +26,7 @@
 #include "core/hle/kernel/k_resource_limit.h"
 #include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/k_scoped_scheduler_lock_and_sleep.h"
+#include "core/hle/kernel/k_system_control.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/k_thread_queue.h"
 #include "core/hle/kernel/kernel.h"
@@ -50,6 +51,7 @@ static void ResetThreadContext64(Core::ARM_Interface::ThreadContext64& context, 
                                  VAddr entry_point, u64 arg) {
     context = {};
     context.cpu_registers[0] = arg;
+    context.cpu_registers[18] = Kernel::KSystemControl::GenerateRandomU64() | 1;
     context.pc = entry_point;
     context.sp = stack_top;
     // TODO(merry): Perform a hardware test to determine the below value.

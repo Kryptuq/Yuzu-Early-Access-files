@@ -806,6 +806,33 @@ ResultCode KPageTable::ResetTransferMemory(VAddr addr, std::size_t size) {
                          KMemoryAttribute::Locked, KMemoryAttribute::IpcAndDeviceMapped));
 
     block_manager->Update(addr, size / PageSize, state, KMemoryPermission::ReadAndWrite);
+    return ResultSuccess;
+}
+
+ResultCode KPageTable::SetMemoryPermission(VAddr addr, std::size_t size,
+                                           Svc::MemoryPermission svc_perm) {
+    const size_t num_pages = size / PageSize;
+
+    // Lock the table.
+    std::lock_guard lock{page_table_lock};
+
+    // Verify we can change the memory permission.
+    KMemoryState old_state;
+    KMemoryPermission old_perm;
+    R_TRY(this->CheckMemoryState(
+        std::addressof(old_state), std::addressof(old_perm), nullptr, addr, size,
+        KMemoryState::FlagCanReprotect, KMemoryState::FlagCanReprotect, KMemoryPermission::None,
+        KMemoryPermission::None, KMemoryAttribute::All, KMemoryAttribute::None));
+
+    // Determine new perm.
+    const KMemoryPermission new_perm = ConvertToKMemoryPermission(svc_perm);
+    R_SUCCEED_IF(old_perm == new_perm);
+
+    // Perform mapping operation.
+    R_TRY(Operate(addr, num_pages, new_perm, OperationType::ChangePermissions));
+
+    // Update the blocks.
+    block_manager->Update(addr, num_pages, old_state, new_perm, KMemoryAttribute::None);
 
     return ResultSuccess;
 }

@@ -47,6 +47,7 @@ public:
     KMemoryInfo QueryInfo(VAddr addr);
     ResultCode ReserveTransferMemory(VAddr addr, std::size_t size, KMemoryPermission perm);
     ResultCode ResetTransferMemory(VAddr addr, std::size_t size);
+    ResultCode SetMemoryPermission(VAddr addr, std::size_t size, Svc::MemoryPermission perm);
     ResultCode SetMemoryAttribute(VAddr addr, std::size_t size, KMemoryAttribute mask,
                                   KMemoryAttribute value);
     ResultCode SetHeapCapacity(std::size_t new_heap_capacity);

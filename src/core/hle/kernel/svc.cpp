@@ -164,6 +164,36 @@ static ResultCode SetHeapSize32(Core::System& system, u32* heap_addr, u32 heap_s
     return result;
 }
 
+constexpr bool IsValidSetMemoryPermission(MemoryPermission perm) {
+    switch (perm) {
+    case MemoryPermission::None:
+    case MemoryPermission::Read:
+    case MemoryPermission::ReadWrite:
+        return true;
+    default:
+        return false;
+    }
+}
+
+static ResultCode SetMemoryPermission(Core::System& system, VAddr address, u64 size,
+                                      MemoryPermission perm) {
+    // Validate address / size.
+    R_UNLESS(Common::IsAligned(address, PageSize), ResultInvalidAddress);
+    R_UNLESS(Common::IsAligned(size, PageSize), ResultInvalidSize);
+    R_UNLESS(size > 0, ResultInvalidSize);
+    R_UNLESS((address < address + size), ResultInvalidCurrentMemory);
+
+    // Validate the permission.
+    R_UNLESS(IsValidSetMemoryPermission(perm), ResultInvalidNewMemoryPermission);
+
+    // Validate that the region is in range for the current process.
+    auto& page_table = system.Kernel().CurrentProcess()->PageTable();
+    R_UNLESS(page_table.Contains(address, size), ResultInvalidCurrentMemory);
+
+    // Set the memory attribute.
+    return page_table.SetMemoryPermission(address, size, perm);
+}
+
 static ResultCode SetMemoryAttribute(Core::System& system, VAddr address, u64 size, u32 mask,
                                      u32 attribute) {
     LOG_DEBUG(Kernel_SVC,
@@ -2724,7 +2754,7 @@ static const FunctionDef SVC_Table_32[] = {
 static const FunctionDef SVC_Table_64[] = {
     {0x00, nullptr, "Unknown"},
     {0x01, SvcWrap64<SetHeapSize>, "SetHeapSize"},
-    {0x02, nullptr, "SetMemoryPermission"},
+    {0x02, SvcWrap64<SetMemoryPermission>, "SetMemoryPermission"},
     {0x03, SvcWrap64<SetMemoryAttribute>, "SetMemoryAttribute"},
     {0x04, SvcWrap64<MapMemory>, "MapMemory"},
     {0x05, SvcWrap64<UnmapMemory>, "UnmapMemory"},

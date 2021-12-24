@@ -249,6 +249,14 @@ void SvcWrap64(Core::System& system) {
         func(system, Param(system, 0), Param(system, 1), static_cast<u32>(Param(system, 2))).raw);
 }
 
+// Used by SetMemoryPermission
+template <ResultCode func(Core::System&, u64, u64, Svc::MemoryPermission)>
+void SvcWrap64(Core::System& system) {
+    FuncReturn(system, func(system, Param(system, 0), Param(system, 1),
+                            static_cast<Svc::MemoryPermission>(Param(system, 2)))
+                           .raw);
+}
+
 // Used by MapSharedMemory
 template <ResultCode func(Core::System&, Handle, u64, u64, Svc::MemoryPermission)>
 void SvcWrap64(Core::System& system) {
