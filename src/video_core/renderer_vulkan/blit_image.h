@@ -60,9 +60,6 @@ private:
     void Convert(VkPipeline pipeline, const Framebuffer* dst_framebuffer,
                  const ImageView& src_image_view);
 
-    void ConvertColor(VkPipeline pipeline, const Framebuffer* dst_framebuffer,
-                      ImageView& src_image_view, u32 up_scale, u32 down_shift);
-
     void ConvertDepthStencil(VkPipeline pipeline, const Framebuffer* dst_framebuffer,
                              ImageView& src_image_view);
 

@@ -518,53 +518,6 @@ void BlitImageHelper::Convert(VkPipeline pipeline, const Framebuffer* dst_frameb
     scheduler.InvalidateState();
 }
 
-void BlitImageHelper::ConvertColor(VkPipeline pipeline, const Framebuffer* dst_framebuffer,
-                                   ImageView& src_image_view, u32 up_scale, u32 down_shift) {
-    const VkPipelineLayout layout = *one_texture_pipeline_layout;
-    const VkImageView src_view = src_image_view.ColorView();
-    const VkSampler sampler = *nearest_sampler;
-    const VkExtent2D extent{
-        .width = std::max((src_image_view.size.width * up_scale) >> down_shift, 1U),
-        .height = std::max((src_image_view.size.height * up_scale) >> down_shift, 1U),
-    };
-    scheduler.RequestRenderpass(dst_framebuffer);
-    scheduler.Record([pipeline, layout, sampler, src_view, extent, up_scale, down_shift,
-                      this](vk::CommandBuffer cmdbuf) {
-        const VkOffset2D offset{
-            .x = 0,
-            .y = 0,
-        };
-        const VkViewport viewport{
-            .x = 0.0f,
-            .y = 0.0f,
-            .width = static_cast<float>(extent.width),
-            .height = static_cast<float>(extent.height),
-            .minDepth = 0.0f,
-            .maxDepth = 0.0f,
-        };
-        const VkRect2D scissor{
-            .offset = offset,
-            .extent = extent,
-        };
-        const PushConstants push_constants{
-            .tex_scale = {viewport.width, viewport.height},
-            .tex_offset = {0.0f, 0.0f},
-        };
-        const VkDescriptorSet descriptor_set = one_texture_descriptor_allocator.Commit();
-        UpdateOneTextureDescriptorSet(device, descriptor_set, sampler, src_view);
-
-        // TODO: Barriers
-        cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-        cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, descriptor_set,
-                                  nullptr);
-        cmdbuf.SetViewport(0, viewport);
-        cmdbuf.SetScissor(0, scissor);
-        cmdbuf.PushConstants(layout, VK_SHADER_STAGE_VERTEX_BIT, push_constants);
-        cmdbuf.Draw(3, 1, 0, 0);
-    });
-    scheduler.InvalidateState();
-}
-
 void BlitImageHelper::ConvertDepthStencil(VkPipeline pipeline, const Framebuffer* dst_framebuffer,
                                           ImageView& src_image_view) {
     const VkPipelineLayout layout = *two_textures_pipeline_layout;

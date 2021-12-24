@@ -350,6 +350,10 @@ public:
         return supports_d24_depth;
     }
 
+    bool CantBlitMSAA() const {
+        return cant_blit_msaa;
+    }
+
 private:
     /// Checks if the physical device is suitable.
     void CheckSuitability(bool requires_swapchain) const;
@@ -443,6 +447,7 @@ private:
     bool has_renderdoc{};                   ///< Has RenderDoc attached
     bool has_nsight_graphics{};             ///< Has Nsight Graphics attached
     bool supports_d24_depth{};              ///< Supports D24 depth buffers.
+    bool cant_blit_msaa{};                  ///< Does not support MSAA<->MSAA blitting.
 
     // Telemetry parameters
     std::string vendor_name;                       ///< Device's driver name.

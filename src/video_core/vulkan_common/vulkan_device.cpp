@@ -638,14 +638,19 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
         }
     }
 
-    if (ext_vertex_input_dynamic_state && driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS) {
+    const bool is_intel_windows = driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS;
+    if (ext_vertex_input_dynamic_state && is_intel_windows) {
         LOG_WARNING(Render_Vulkan, "Blacklisting Intel for VK_EXT_vertex_input_dynamic_state");
         ext_vertex_input_dynamic_state = false;
     }
-    if (is_float16_supported && driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS) {
+    if (is_float16_supported && is_intel_windows) {
         // Intel's compiler crashes when using fp16 on Astral Chain, disable it for the time being.
         LOG_WARNING(Render_Vulkan, "Blacklisting Intel proprietary from float16 math");
         is_float16_supported = false;
+    }
+    if (is_intel_windows) {
+        LOG_WARNING(Render_Vulkan, "Intel proprietary drivers do not support MSAA image blits");
+        cant_blit_msaa = true;
     }
 
     supports_d24_depth =

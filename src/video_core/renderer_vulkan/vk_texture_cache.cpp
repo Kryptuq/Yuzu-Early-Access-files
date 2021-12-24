@@ -1344,7 +1344,6 @@ bool Image::ScaleUp(bool ignore) {
         return false;
     }
     has_scaled = true;
-    const auto& device = runtime->device;
     if (!scaled_image) {
         const bool is_2d = info.type == ImageType::e2D;
         const u32 scaled_width = resolution.ScaleUp(info.size.width);
@@ -1352,7 +1351,7 @@ bool Image::ScaleUp(bool ignore) {
         auto scaled_info = info;
         scaled_info.size.width = scaled_width;
         scaled_info.size.height = scaled_height;
-        scaled_image = MakeImage(device, scaled_info);
+        scaled_image = MakeImage(runtime->device, scaled_info);
         auto& allocator = runtime->memory_allocator;
         scaled_commit = MemoryCommit(allocator.Commit(scaled_image, MemoryUsage::DeviceLocal));
         ignore = false;
@@ -1361,18 +1360,13 @@ bool Image::ScaleUp(bool ignore) {
     if (ignore) {
         return true;
     }
-
     if (aspect_mask == 0) {
         aspect_mask = ImageAspectMask(info.format);
     }
-    static constexpr auto OPTIMAL_FORMAT = FormatType::Optimal;
-    const PixelFormat format = StorageFormat(info.format);
-    const auto vk_format = MaxwellToVK::SurfaceFormat(device, OPTIMAL_FORMAT, false, format).format;
-    const auto blit_usage = VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT;
-    if (device.IsFormatSupported(vk_format, blit_usage, OPTIMAL_FORMAT)) {
-        BlitScale(*scheduler, *original_image, *scaled_image, info, aspect_mask, resolution);
-    } else {
+    if (NeedsScaleHelper()) {
         return BlitScaleHelper(true);
+    } else {
+        BlitScale(*scheduler, *original_image, *scaled_image, info, aspect_mask, resolution);
     }
     return true;
 }
@@ -1394,15 +1388,10 @@ bool Image::ScaleDown(bool ignore) {
     if (aspect_mask == 0) {
         aspect_mask = ImageAspectMask(info.format);
     }
-    static constexpr auto OPTIMAL_FORMAT = FormatType::Optimal;
-    const PixelFormat format = StorageFormat(info.format);
-    const auto& device = runtime->device;
-    const auto vk_format = MaxwellToVK::SurfaceFormat(device, OPTIMAL_FORMAT, false, format).format;
-    const auto blit_usage = VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT;
-    if (device.IsFormatSupported(vk_format, blit_usage, OPTIMAL_FORMAT)) {
-        BlitScale(*scheduler, *scaled_image, *original_image, info, aspect_mask, resolution, false);
-    } else {
+    if (NeedsScaleHelper()) {
         return BlitScaleHelper(false);
+    } else {
+        BlitScale(*scheduler, *scaled_image, *original_image, info, aspect_mask, resolution, false);
     }
     return true;
 }
@@ -1468,6 +1457,20 @@ bool Image::BlitScaleHelper(bool scale_up) {
         return false;
     }
     return true;
+}
+
+bool Image::NeedsScaleHelper() const {
+    const auto& device = runtime->device;
+    const bool needs_msaa_helper = info.num_samples > 1 && device.CantBlitMSAA();
+    if (needs_msaa_helper) {
+        return true;
+    }
+    static constexpr auto OPTIMAL_FORMAT = FormatType::Optimal;
+    const PixelFormat format = StorageFormat(info.format);
+    const auto vk_format = MaxwellToVK::SurfaceFormat(device, OPTIMAL_FORMAT, false, format).format;
+    const auto blit_usage = VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT;
+    const bool needs_blit_helper = !device.IsFormatSupported(vk_format, blit_usage, OPTIMAL_FORMAT);
+    return needs_blit_helper;
 }
 
 ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewInfo& info,
