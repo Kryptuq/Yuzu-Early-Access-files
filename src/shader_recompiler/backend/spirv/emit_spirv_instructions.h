@@ -53,6 +53,7 @@ Id EmitGetCbufU32(EmitContext& ctx, const IR::Value& binding, const IR::Value& o
 Id EmitGetCbufF32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
 Id EmitGetCbufU32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
 Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, Id vertex);
+Id EmitGetAttributeU32(EmitContext& ctx, IR::Attribute attr, Id vertex);
 void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, Id value, Id vertex);
 Id EmitGetAttributeIndexed(EmitContext& ctx, Id offset, Id vertex);
 void EmitSetAttributeIndexed(EmitContext& ctx, Id offset, Id value, Id vertex);

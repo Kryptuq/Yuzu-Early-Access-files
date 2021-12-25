@@ -50,6 +50,7 @@ void EmitGetCbufU32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, 
 void EmitGetCbufF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU32 offset);
 void EmitGetCbufU32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU32 offset);
 void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr, ScalarU32 vertex);
+void EmitGetAttributeU32(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr, ScalarU32 vertex);
 void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, ScalarF32 value, ScalarU32 vertex);
 void EmitGetAttributeIndexed(EmitContext& ctx, IR::Inst& inst, ScalarS32 offset, ScalarU32 vertex);
 void EmitSetAttributeIndexed(EmitContext& ctx, ScalarU32 offset, ScalarF32 value, ScalarU32 vertex);

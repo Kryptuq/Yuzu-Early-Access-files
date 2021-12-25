@@ -221,6 +221,22 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
     }
 }
 
+void EmitGetAttributeU32(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr, std::string_view) {
+    switch (attr) {
+    case IR::Attribute::PrimitiveId:
+        ctx.AddU32("{}=uint(gl_PrimitiveID);", inst);
+        break;
+    case IR::Attribute::InstanceId:
+        ctx.AddU32("{}=uint(gl_InstanceID);", inst);
+        break;
+    case IR::Attribute::VertexId:
+        ctx.AddU32("{}=uint(gl_VertexID);", inst);
+        break;
+    default:
+        throw NotImplementedException("Get attribute {}", attr);
+    }
+}
+
 void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view value,
                       [[maybe_unused]] std::string_view vertex) {
     if (IR::IsGeneric(attr)) {

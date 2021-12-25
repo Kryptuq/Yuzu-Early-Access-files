@@ -389,6 +389,7 @@ void VisitUsages(Info& info, IR::Inst& inst) {
         info.uses_demote_to_helper_invocation = true;
         break;
     case IR::Opcode::GetAttribute:
+    case IR::Opcode::GetAttributeU32:
         info.loads.mask[static_cast<size_t>(inst.Arg(0).Attribute())] = true;
         break;
     case IR::Opcode::SetAttribute:

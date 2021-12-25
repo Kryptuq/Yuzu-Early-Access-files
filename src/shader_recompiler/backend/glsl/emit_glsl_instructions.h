@@ -60,6 +60,8 @@ void EmitGetCbufU32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding
                       const IR::Value& offset);
 void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
                       std::string_view vertex);
+void EmitGetAttributeU32(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
+                         std::string_view vertex);
 void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view value,
                       std::string_view vertex);
 void EmitGetAttributeIndexed(EmitContext& ctx, IR::Inst& inst, std::string_view offset,

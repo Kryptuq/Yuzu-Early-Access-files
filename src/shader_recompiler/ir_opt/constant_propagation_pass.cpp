@@ -505,6 +505,29 @@ void FoldBitCast(IR::Inst& inst, IR::Opcode reverse) {
             return;
         }
     }
+    if constexpr (op == IR::Opcode::BitCastU32F32) {
+        // Workaround for new NVIDIA driver bug, where:
+        // uint attr = ftou(itof(gl_InstanceID));
+        // always returned 0.
+        // We can instead manually optimize this and work around the driver bug:
+        // uint attr = uint(gl_InstanceID);
+        if (arg_inst->GetOpcode() == IR::Opcode::GetAttribute) {
+            const IR::Attribute attr{arg_inst->Arg(0).Attribute()};
+            switch (attr) {
+            case IR::Attribute::PrimitiveId:
+            case IR::Attribute::InstanceId:
+            case IR::Attribute::VertexId:
+                break;
+            default:
+                return;
+            }
+            // Replace the bitcasts with an integer attribute get
+            inst.ReplaceOpcode(IR::Opcode::GetAttributeU32);
+            inst.SetArg(0, arg_inst->Arg(0));
+            inst.SetArg(1, arg_inst->Arg(1));
+            return;
+        }
+    }
 }
 
 void FoldInverseFunc(IR::Inst& inst, IR::Opcode reverse) {

@@ -355,6 +355,31 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, Id vertex) {
     }
 }
 
+Id EmitGetAttributeU32(EmitContext& ctx, IR::Attribute attr, Id) {
+    switch (attr) {
+    case IR::Attribute::PrimitiveId:
+        return ctx.OpLoad(ctx.U32[1], ctx.primitive_id);
+    case IR::Attribute::InstanceId:
+        if (ctx.profile.support_vertex_instance_id) {
+            return ctx.OpLoad(ctx.U32[1], ctx.instance_id);
+        } else {
+            const Id index{ctx.OpLoad(ctx.U32[1], ctx.instance_index)};
+            const Id base{ctx.OpLoad(ctx.U32[1], ctx.base_instance)};
+            return ctx.OpISub(ctx.U32[1], index, base);
+        }
+    case IR::Attribute::VertexId:
+        if (ctx.profile.support_vertex_instance_id) {
+            return ctx.OpLoad(ctx.U32[1], ctx.vertex_id);
+        } else {
+            const Id index{ctx.OpLoad(ctx.U32[1], ctx.vertex_index)};
+            const Id base{ctx.OpLoad(ctx.U32[1], ctx.base_vertex)};
+            return ctx.OpISub(ctx.U32[1], index, base);
+        }
+    default:
+        throw NotImplementedException("Read attribute {}", attr);
+    }
+}
+
 void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, Id value, [[maybe_unused]] Id vertex) {
     const std::optional<OutAttr> output{OutputAttrPointer(ctx, attr)};
     if (!output) {
