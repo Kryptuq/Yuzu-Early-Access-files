@@ -87,11 +87,11 @@ void EmitUDiv32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::strin
 }
 
 void EmitINeg32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
-    ctx.AddU32("{}=uint(-({}));", inst, value);
+    ctx.AddU32("{}=uint(int(0)-int({}));", inst, value);
 }
 
 void EmitINeg64(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
-    ctx.AddU64("{}=-({});", inst, value);
+    ctx.AddU64("{}=uint64_t(int64_t(0)-int64_t({}));", inst, value);
 }
 
 void EmitIAbs32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
