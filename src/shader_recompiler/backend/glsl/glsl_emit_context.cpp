@@ -428,9 +428,10 @@ void EmitContext::DefineConstantBuffers(Bindings& bindings) {
         return;
     }
     for (const auto& desc : info.constant_buffer_descriptors) {
-        header += fmt::format(
-            "layout(std140,binding={}) uniform {}_cbuf_{}{{vec4 {}_cbuf{}[{}];}};",
-            bindings.uniform_buffer, stage_name, desc.index, stage_name, desc.index, 4 * 1024);
+        const auto cbuf_type{profile.has_gl_cbuf_ftou_bug ? "uvec4" : "vec4"};
+        header += fmt::format("layout(std140,binding={}) uniform {}_cbuf_{}{{{} {}_cbuf{}[{}];}};",
+                              bindings.uniform_buffer, stage_name, desc.index, cbuf_type,
+                              stage_name, desc.index, 4 * 1024);
         bindings.uniform_buffer += desc.count;
     }
 }

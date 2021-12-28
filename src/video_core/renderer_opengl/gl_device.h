@@ -152,6 +152,10 @@ public:
         return need_fastmath_off;
     }
 
+    bool HasCbufFtouBug() const {
+        return has_cbuf_ftou_bug;
+    }
+
     Settings::ShaderBackend GetShaderBackend() const {
         return shader_backend;
     }
@@ -200,6 +204,7 @@ private:
     bool has_sparse_texture_2{};
     bool warp_size_potentially_larger_than_guest{};
     bool need_fastmath_off{};
+    bool has_cbuf_ftou_bug{};
 
     std::string vendor_name;
 };

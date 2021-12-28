@@ -65,6 +65,8 @@ struct Profile {
     bool has_gl_component_indexing_bug{};
     /// The precise type qualifier is broken in the fragment stage of some drivers
     bool has_gl_precise_bug{};
+    /// Some drivers do not properly support floatBitsToUint when used on cbufs
+    bool has_gl_cbuf_ftou_bug{};
     /// Ignores SPIR-V ordered vs unordered using GLSL semantics
     bool ignore_nan_fp_comparisons{};
 

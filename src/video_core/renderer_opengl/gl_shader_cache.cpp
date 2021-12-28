@@ -214,6 +214,7 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
           .has_broken_fp16_float_controls = false,
           .has_gl_component_indexing_bug = device.HasComponentIndexingBug(),
           .has_gl_precise_bug = device.HasPreciseBug(),
+          .has_gl_cbuf_ftou_bug = device.HasCbufFtouBug(),
           .ignore_nan_fp_comparisons = true,
           .gl_max_compute_smem_size = device.GetMaxComputeSharedMemorySize(),
       },

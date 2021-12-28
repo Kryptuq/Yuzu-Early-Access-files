@@ -102,39 +102,46 @@ void GetCbuf16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, const
 
 void EmitGetCbufU8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                    const IR::Value& offset) {
-    GetCbuf8(ctx, inst, binding, offset, "ftou");
+    const auto cast{ctx.profile.has_gl_cbuf_ftou_bug ? "" : "ftou"};
+    GetCbuf8(ctx, inst, binding, offset, cast);
 }
 
 void EmitGetCbufS8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                    const IR::Value& offset) {
-    GetCbuf8(ctx, inst, binding, offset, "ftoi");
+    const auto cast{ctx.profile.has_gl_cbuf_ftou_bug ? "int" : "ftoi"};
+    GetCbuf8(ctx, inst, binding, offset, cast);
 }
 
 void EmitGetCbufU16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                     const IR::Value& offset) {
-    GetCbuf16(ctx, inst, binding, offset, "ftou");
+    const auto cast{ctx.profile.has_gl_cbuf_ftou_bug ? "" : "ftou"};
+    GetCbuf16(ctx, inst, binding, offset, cast);
 }
 
 void EmitGetCbufS16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                     const IR::Value& offset) {
-    GetCbuf16(ctx, inst, binding, offset, "ftoi");
+    const auto cast{ctx.profile.has_gl_cbuf_ftou_bug ? "int" : "ftoi"};
+    GetCbuf16(ctx, inst, binding, offset, cast);
 }
 
 void EmitGetCbufU32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                     const IR::Value& offset) {
     const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32)};
-    GetCbuf(ctx, ret, binding, offset, 32, "ftou");
+    const auto cast{ctx.profile.has_gl_cbuf_ftou_bug ? "" : "ftou"};
+    GetCbuf(ctx, ret, binding, offset, 32, cast);
 }
 
 void EmitGetCbufF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                     const IR::Value& offset) {
     const auto ret{ctx.var_alloc.Define(inst, GlslVarType::F32)};
-    GetCbuf(ctx, ret, binding, offset, 32);
+    const auto cast{ctx.profile.has_gl_cbuf_ftou_bug ? "utof" : ""};
+    GetCbuf(ctx, ret, binding, offset, 32, cast);
 }
 
 void EmitGetCbufU32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                       const IR::Value& offset) {
     const auto cbuf{fmt::format("{}_cbuf{}", ctx.stage_name, binding.U32())};
+    const auto cast{ctx.profile.has_gl_cbuf_ftou_bug ? "" : "ftou"};
     if (offset.IsImmediate()) {
         static constexpr u32 cbuf_size{0x10000};
         const u32 u32_offset{offset.U32()};
@@ -145,26 +152,26 @@ void EmitGetCbufU32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding
             return;
         }
         if (u32_offset % 2 == 0) {
-            ctx.AddU32x2("{}=ftou({}[{}].{}{});", inst, cbuf, u32_offset / 16,
+            ctx.AddU32x2("{}={}({}[{}].{}{});", inst, cast, cbuf, u32_offset / 16,
                          OffsetSwizzle(u32_offset), OffsetSwizzle(u32_offset + 4));
         } else {
-            ctx.AddU32x2("{}=uvec2(ftou({}[{}].{}),ftou({}[{}].{}));", inst, cbuf, u32_offset / 16,
-                         OffsetSwizzle(u32_offset), cbuf, (u32_offset + 4) / 16,
-                         OffsetSwizzle(u32_offset + 4));
+            ctx.AddU32x2("{}=uvec2({}({}[{}].{}),{}({}[{}].{}));", inst, cast, cbuf,
+                         u32_offset / 16, OffsetSwizzle(u32_offset), cast, cbuf,
+                         (u32_offset + 4) / 16, OffsetSwizzle(u32_offset + 4));
         }
         return;
     }
     const auto offset_var{ctx.var_alloc.Consume(offset)};
     if (!ctx.profile.has_gl_component_indexing_bug) {
-        ctx.AddU32x2("{}=uvec2(ftou({}[{}>>4][({}>>2)%4]),ftou({}[({}+4)>>4][(({}+4)>>2)%4]));",
-                     inst, cbuf, offset_var, offset_var, cbuf, offset_var, offset_var);
+        ctx.AddU32x2("{}=uvec2({}({}[{}>>4][({}>>2)%4]),{}({}[({}+4)>>4][(({}+4)>>2)%4]));", inst,
+                     cast, cbuf, offset_var, offset_var, cast, cbuf, offset_var, offset_var);
         return;
     }
     const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32x2)};
     const auto cbuf_offset{fmt::format("{}>>2", offset_var)};
     for (u32 swizzle = 0; swizzle < 4; ++swizzle) {
-        ctx.Add("if(({}&3)=={}){}=uvec2(ftou({}[{}>>4].{}),ftou({}[({}+4)>>4].{}));", cbuf_offset,
-                swizzle, ret, cbuf, offset_var, "xyzw"[swizzle], cbuf, offset_var,
+        ctx.Add("if(({}&3)=={}){}=uvec2({}({}[{}>>4].{}),{}({}[({}+4)>>4].{}));", cbuf_offset,
+                swizzle, ret, cast, cbuf, offset_var, "xyzw"[swizzle], cast, cbuf, offset_var,
                 "xyzw"[(swizzle + 1) % 4]);
     }
 }
