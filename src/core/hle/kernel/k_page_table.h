@@ -50,8 +50,8 @@ public:
     ResultCode SetMemoryPermission(VAddr addr, std::size_t size, Svc::MemoryPermission perm);
     ResultCode SetMemoryAttribute(VAddr addr, std::size_t size, KMemoryAttribute mask,
                                   KMemoryAttribute value);
-    ResultCode SetHeapCapacity(std::size_t new_heap_capacity);
-    ResultVal<VAddr> SetHeapSize(std::size_t size);
+    ResultCode SetMaxHeapSize(std::size_t size);
+    ResultCode SetHeapSize(VAddr* out, std::size_t size);
     ResultVal<VAddr> AllocateAndMapMemory(std::size_t needed_num_pages, std::size_t align,
                                           bool is_map_only, VAddr region_start,
                                           std::size_t region_num_pages, KMemoryState state,
@@ -183,14 +183,15 @@ public:
     constexpr VAddr GetAliasCodeRegionSize() const {
         return alias_code_region_end - alias_code_region_start;
     }
+    size_t GetNormalMemorySize() {
+        std::lock_guard lk(page_table_lock);
+        return GetHeapSize() + mapped_physical_memory_size;
+    }
     constexpr std::size_t GetAddressSpaceWidth() const {
         return address_space_width;
     }
-    constexpr std::size_t GetHeapSize() {
-        return current_heap_addr - heap_region_start;
-    }
-    constexpr std::size_t GetTotalHeapSize() {
-        return GetHeapSize() + physical_memory_usage;
+    constexpr std::size_t GetHeapSize() const {
+        return current_heap_end - heap_region_start;
     }
     constexpr bool IsInsideAddressSpace(VAddr address, std::size_t size) const {
         return address_space_start <= address && address + size - 1 <= address_space_end - 1;
@@ -270,10 +271,8 @@ private:
     VAddr code_region_end{};
     VAddr alias_code_region_start{};
     VAddr alias_code_region_end{};
-    VAddr current_heap_addr{};
 
-    std::size_t heap_capacity{};
-    std::size_t physical_memory_usage{};
+    std::size_t mapped_physical_memory_size{};
     std::size_t max_heap_size{};
     std::size_t max_physical_memory_size{};
     std::size_t address_space_width{};

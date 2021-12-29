@@ -229,7 +229,7 @@ elseif (${CMAKE_SYSTEM_NAME} STREQUAL "Linux" OR YUZU_USE_BUNDLED_BOOST)
     include_directories(SYSTEM "${Boost_INCLUDE_DIRS}")
 else()
     message(STATUS "Boost 1.73.0 or newer not found, falling back to Conan")
-    list(APPEND CONAN_REQUIRED_LIBS "boost/1.73.0")
+    list(APPEND CONAN_REQUIRED_LIBS "boost/1.78.0")
 endif()
 
 # Attempt to locate any packages that are required and report the missing ones in CONAN_REQUIRED_LIBS

@@ -30,10 +30,19 @@ struct FuncTraits<ReturnType_ (*)(Args...)> {
     using ArgType = std::tuple_element_t<I, std::tuple<Args...>>;
 };
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4702) // Ignore unreachable code warning
+#endif
+
 template <auto func, typename... Args>
 void SetDefinition(EmitContext& ctx, IR::Inst* inst, Args... args) {
     inst->SetDefinition<Id>(func(ctx, std::forward<Args>(args)...));
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 template <typename ArgType>
 ArgType Arg(EmitContext& ctx, const IR::Value& arg) {

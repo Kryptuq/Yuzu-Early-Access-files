@@ -172,7 +172,7 @@ void KProcess::DecrementThreadCount() {
 
 u64 KProcess::GetTotalPhysicalMemoryAvailable() const {
     const u64 capacity{resource_limit->GetFreeValue(LimitableResource::PhysicalMemory) +
-                       page_table->GetTotalHeapSize() + GetSystemResourceSize() + image_size +
+                       page_table->GetNormalMemorySize() + GetSystemResourceSize() + image_size +
                        main_thread_stack_size};
     if (const auto pool_size = kernel.MemoryManager().GetSize(KMemoryManager::Pool::Application);
         capacity != pool_size) {
@@ -189,7 +189,7 @@ u64 KProcess::GetTotalPhysicalMemoryAvailableWithoutSystemResource() const {
 }
 
 u64 KProcess::GetTotalPhysicalMemoryUsed() const {
-    return image_size + main_thread_stack_size + page_table->GetTotalHeapSize() +
+    return image_size + main_thread_stack_size + page_table->GetNormalMemorySize() +
            GetSystemResourceSize();
 }
 
@@ -410,8 +410,8 @@ void KProcess::Run(s32 main_thread_priority, u64 stack_size) {
     resource_limit->Reserve(LimitableResource::Threads, 1);
     resource_limit->Reserve(LimitableResource::PhysicalMemory, main_thread_stack_size);
 
-    const std::size_t heap_capacity{memory_usage_capacity - main_thread_stack_size - image_size};
-    ASSERT(!page_table->SetHeapCapacity(heap_capacity).IsError());
+    const std::size_t heap_capacity{memory_usage_capacity - (main_thread_stack_size + image_size)};
+    ASSERT(!page_table->SetMaxHeapSize(heap_capacity).IsError());
 
     ChangeStatus(ProcessStatus::Running);
 

@@ -135,24 +135,15 @@ enum class ResourceLimitValueType {
 } // Anonymous namespace
 
 /// Set the process heap to a given Size. It can both extend and shrink the heap.
-static ResultCode SetHeapSize(Core::System& system, VAddr* heap_addr, u64 heap_size) {
-    LOG_TRACE(Kernel_SVC, "called, heap_size=0x{:X}", heap_size);
+static ResultCode SetHeapSize(Core::System& system, VAddr* out_address, u64 size) {
+    LOG_TRACE(Kernel_SVC, "called, heap_size=0x{:X}", size);
 
-    // Size must be a multiple of 0x200000 (2MB) and be equal to or less than 8GB.
-    if ((heap_size % 0x200000) != 0) {
-        LOG_ERROR(Kernel_SVC, "The heap size is not a multiple of 2MB, heap_size=0x{:016X}",
-                  heap_size);
-        return ResultInvalidSize;
-    }
+    // Validate size.
+    R_UNLESS(Common::IsAligned(size, HeapSizeAlignment), ResultInvalidSize);
+    R_UNLESS(size < MainMemorySizeMax, ResultInvalidSize);
 
-    if (heap_size >= 0x200000000) {
-        LOG_ERROR(Kernel_SVC, "The heap size is not less than 8GB, heap_size=0x{:016X}", heap_size);
-        return ResultInvalidSize;
-    }
-
-    auto& page_table{system.Kernel().CurrentProcess()->PageTable()};
-
-    CASCADE_RESULT(*heap_addr, page_table.SetHeapSize(heap_size));
+    // Set the heap size.
+    R_TRY(system.Kernel().CurrentProcess()->PageTable().SetHeapSize(out_address, size));
 
     return ResultSuccess;
 }

@@ -120,7 +120,7 @@ static_assert(static_cast<u32>(KMemoryState::CodeOut) == 0x00402015);
 
 enum class KMemoryPermission : u8 {
     None = 0,
-    Mask = static_cast<u8>(~None),
+    All = static_cast<u8>(~None),
 
     Read = 1 << 0,
     Write = 1 << 1,

@@ -264,9 +264,9 @@ ResultCode KPageTable::InitializeForProcess(FileSys::ProgramAddressSpaceType as_
     ASSERT(heap_last < stack_start || stack_last < heap_start);
     ASSERT(heap_last < kmap_start || kmap_last < heap_start);
 
-    current_heap_addr = heap_region_start;
-    heap_capacity = 0;
-    physical_memory_usage = 0;
+    current_heap_end = heap_region_start;
+    max_heap_size = 0;
+    mapped_physical_memory_size = 0;
     memory_pool = pool;
 
     page_table_impl.Resize(address_space_width, PageBits);
@@ -306,7 +306,7 @@ ResultCode KPageTable::MapProcessCodeMemory(VAddr dst_addr, VAddr src_addr, std:
     KMemoryState state{};
     KMemoryPermission perm{};
     CASCADE_CODE(CheckMemoryState(&state, &perm, nullptr, src_addr, size, KMemoryState::All,
-                                  KMemoryState::Normal, KMemoryPermission::Mask,
+                                  KMemoryState::Normal, KMemoryPermission::All,
                                   KMemoryPermission::ReadAndWrite, KMemoryAttribute::Mask,
                                   KMemoryAttribute::None, KMemoryAttribute::IpcAndDeviceMapped));
 
@@ -465,7 +465,7 @@ ResultCode KPageTable::MapPhysicalMemory(VAddr addr, std::size_t size) {
 
     MapPhysicalMemory(page_linked_list, addr, end_addr);
 
-    physical_memory_usage += remaining_size;
+    mapped_physical_memory_size += remaining_size;
 
     const std::size_t num_pages{size / PageSize};
     block_manager->Update(addr, num_pages, KMemoryState::Free, KMemoryPermission::None,
@@ -507,7 +507,7 @@ ResultCode KPageTable::UnmapPhysicalMemory(VAddr addr, std::size_t size) {
 
     auto process{system.Kernel().CurrentProcess()};
     process->GetResourceLimit()->Release(LimitableResource::PhysicalMemory, mapped_size);
-    physical_memory_usage -= mapped_size;
+    mapped_physical_memory_size -= mapped_size;
 
     return ResultSuccess;
 }
@@ -554,7 +554,7 @@ ResultCode KPageTable::Map(VAddr dst_addr, VAddr src_addr, std::size_t size) {
     KMemoryState src_state{};
     CASCADE_CODE(CheckMemoryState(
         &src_state, nullptr, nullptr, src_addr, size, KMemoryState::FlagCanAlias,
-        KMemoryState::FlagCanAlias, KMemoryPermission::Mask, KMemoryPermission::ReadAndWrite,
+        KMemoryState::FlagCanAlias, KMemoryPermission::All, KMemoryPermission::ReadAndWrite,
         KMemoryAttribute::Mask, KMemoryAttribute::None, KMemoryAttribute::IpcAndDeviceMapped));
 
     if (IsRegionMapped(dst_addr, size)) {
@@ -593,7 +593,7 @@ ResultCode KPageTable::Unmap(VAddr dst_addr, VAddr src_addr, std::size_t size) {
     KMemoryState src_state{};
     CASCADE_CODE(CheckMemoryState(
         &src_state, nullptr, nullptr, src_addr, size, KMemoryState::FlagCanAlias,
-        KMemoryState::FlagCanAlias, KMemoryPermission::Mask, KMemoryPermission::None,
+        KMemoryState::FlagCanAlias, KMemoryPermission::All, KMemoryPermission::None,
         KMemoryAttribute::Mask, KMemoryAttribute::Locked, KMemoryAttribute::IpcAndDeviceMapped));
 
     KMemoryPermission dst_perm{};
@@ -784,7 +784,7 @@ ResultCode KPageTable::ReserveTransferMemory(VAddr addr, std::size_t size, KMemo
     CASCADE_CODE(CheckMemoryState(
         &state, nullptr, &attribute, addr, size,
         KMemoryState::FlagCanTransfer | KMemoryState::FlagReferenceCounted,
-        KMemoryState::FlagCanTransfer | KMemoryState::FlagReferenceCounted, KMemoryPermission::Mask,
+        KMemoryState::FlagCanTransfer | KMemoryState::FlagReferenceCounted, KMemoryPermission::All,
         KMemoryPermission::ReadAndWrite, KMemoryAttribute::Mask, KMemoryAttribute::None,
         KMemoryAttribute::IpcAndDeviceMapped));
 
@@ -859,61 +859,125 @@ ResultCode KPageTable::SetMemoryAttribute(VAddr addr, std::size_t size, KMemoryA
     return ResultSuccess;
 }
 
-ResultCode KPageTable::SetHeapCapacity(std::size_t new_heap_capacity) {
+ResultCode KPageTable::SetMaxHeapSize(std::size_t size) {
+    // Lock the table.
     std::lock_guard lock{page_table_lock};
-    heap_capacity = new_heap_capacity;
+
+    // Only process page tables are allowed to set heap size.
+    ASSERT(!this->IsKernel());
+
+    max_heap_size = size;
+
     return ResultSuccess;
 }
 
-ResultVal<VAddr> KPageTable::SetHeapSize(std::size_t size) {
+ResultCode KPageTable::SetHeapSize(VAddr* out, std::size_t size) {
+    // Try to perform a reduction in heap, instead of an extension.
+    VAddr cur_address{};
+    std::size_t allocation_size{};
+    {
+        // Lock the table.
+        std::lock_guard lk(page_table_lock);
 
-    if (size > heap_region_end - heap_region_start) {
-        return ResultOutOfMemory;
+        // Validate that setting heap size is possible at all.
+        R_UNLESS(!is_kernel, ResultOutOfMemory);
+        R_UNLESS(size <= static_cast<std::size_t>(heap_region_end - heap_region_start),
+                 ResultOutOfMemory);
+        R_UNLESS(size <= max_heap_size, ResultOutOfMemory);
+
+        if (size < GetHeapSize()) {
+            // The size being requested is less than the current size, so we need to free the end of
+            // the heap.
+
+            // Validate memory state.
+            std::size_t num_allocator_blocks;
+            R_TRY(this->CheckMemoryState(std::addressof(num_allocator_blocks),
+                                         heap_region_start + size, GetHeapSize() - size,
+                                         KMemoryState::All, KMemoryState::Normal,
+                                         KMemoryPermission::All, KMemoryPermission::ReadAndWrite,
+                                         KMemoryAttribute::All, KMemoryAttribute::None));
+
+            // Unmap the end of the heap.
+            const auto num_pages = (GetHeapSize() - size) / PageSize;
+            R_TRY(Operate(heap_region_start + size, num_pages, KMemoryPermission::None,
+                          OperationType::Unmap));
+
+            // Release the memory from the resource limit.
+            system.Kernel().CurrentProcess()->GetResourceLimit()->Release(
+                LimitableResource::PhysicalMemory, num_pages * PageSize);
+
+            // Apply the memory block update.
+            block_manager->Update(heap_region_start + size, num_pages, KMemoryState::Free,
+                                  KMemoryPermission::None, KMemoryAttribute::None);
+
+            // Update the current heap end.
+            current_heap_end = heap_region_start + size;
+
+            // Set the output.
+            *out = heap_region_start;
+            return ResultSuccess;
+        } else if (size == GetHeapSize()) {
+            // The size requested is exactly the current size.
+            *out = heap_region_start;
+            return ResultSuccess;
+        } else {
+            // We have to allocate memory. Determine how much to allocate and where while the table
+            // is locked.
+            cur_address = current_heap_end;
+            allocation_size = size - GetHeapSize();
+        }
     }
 
-    const u64 previous_heap_size{GetHeapSize()};
+    // Reserve memory for the heap extension.
+    KScopedResourceReservation memory_reservation(
+        system.Kernel().CurrentProcess()->GetResourceLimit(), LimitableResource::PhysicalMemory,
+        allocation_size);
+    R_UNLESS(memory_reservation.Succeeded(), ResultLimitReached);
 
-    UNIMPLEMENTED_IF_MSG(previous_heap_size > size, "Heap shrink is unimplemented");
+    // Allocate pages for the heap extension.
+    KPageLinkedList page_linked_list;
+    R_TRY(system.Kernel().MemoryManager().Allocate(page_linked_list, allocation_size / PageSize,
+                                                   memory_pool));
 
-    // Increase the heap size
+    // Map the pages.
     {
-        std::lock_guard lock{page_table_lock};
+        // Lock the table.
+        std::lock_guard lk(page_table_lock);
 
-        const u64 delta{size - previous_heap_size};
+        // Ensure that the heap hasn't changed since we began executing.
+        ASSERT(cur_address == current_heap_end);
 
-        // Reserve memory for the heap extension.
-        KScopedResourceReservation memory_reservation(
-            system.Kernel().CurrentProcess()->GetResourceLimit(), LimitableResource::PhysicalMemory,
-            delta);
+        // Check the memory state.
+        std::size_t num_allocator_blocks{};
+        R_TRY(this->CheckMemoryState(std::addressof(num_allocator_blocks), current_heap_end,
+                                     allocation_size, KMemoryState::All, KMemoryState::Free,
+                                     KMemoryPermission::None, KMemoryPermission::None,
+                                     KMemoryAttribute::None, KMemoryAttribute::None));
 
-        if (!memory_reservation.Succeeded()) {
-            LOG_ERROR(Kernel, "Could not reserve heap extension of size {:X} bytes", delta);
-            return ResultLimitReached;
+        // Map the pages.
+        const auto num_pages = allocation_size / PageSize;
+        R_TRY(Operate(current_heap_end, num_pages, page_linked_list, OperationType::MapGroup));
+
+        // Clear all the newly allocated pages.
+        for (std::size_t cur_page = 0; cur_page < num_pages; ++cur_page) {
+            std::memset(system.Memory().GetPointer(current_heap_end + (cur_page * PageSize)), 0,
+                        PageSize);
         }
 
-        KPageLinkedList page_linked_list;
-        const std::size_t num_pages{delta / PageSize};
-
-        CASCADE_CODE(
-            system.Kernel().MemoryManager().Allocate(page_linked_list, num_pages, memory_pool));
-
-        if (IsRegionMapped(current_heap_addr, delta)) {
-            return ResultInvalidCurrentMemory;
-        }
-
-        CASCADE_CODE(
-            Operate(current_heap_addr, num_pages, page_linked_list, OperationType::MapGroup));
-
-        // Succeeded in allocation, commit the resource reservation
+        // We succeeded, so commit our memory reservation.
         memory_reservation.Commit();
 
-        block_manager->Update(current_heap_addr, num_pages, KMemoryState::Normal,
-                              KMemoryPermission::ReadAndWrite);
+        // Apply the memory block update.
+        block_manager->Update(current_heap_end, num_pages, KMemoryState::Normal,
+                              KMemoryPermission::ReadAndWrite, KMemoryAttribute::None);
 
-        current_heap_addr = heap_region_start + size;
+        // Update the current heap end.
+        current_heap_end = heap_region_start + size;
+
+        // Set the output.
+        *out = heap_region_start;
+        return ResultSuccess;
     }
-
-    return heap_region_start;
 }
 
 ResultVal<VAddr> KPageTable::AllocateAndMapMemory(std::size_t needed_num_pages, std::size_t align,
@@ -1005,7 +1069,7 @@ ResultCode KPageTable::LockForCodeMemory(VAddr addr, std::size_t size) {
 
     if (const ResultCode result{CheckMemoryState(
             nullptr, &old_perm, nullptr, addr, size, KMemoryState::FlagCanCodeMemory,
-            KMemoryState::FlagCanCodeMemory, KMemoryPermission::Mask,
+            KMemoryState::FlagCanCodeMemory, KMemoryPermission::All,
             KMemoryPermission::UserReadWrite, KMemoryAttribute::All, KMemoryAttribute::None)};
         result.IsError()) {
         return result;
@@ -1058,9 +1122,8 @@ ResultCode KPageTable::InitializeMemoryLayout(VAddr start, VAddr end) {
 
 bool KPageTable::IsRegionMapped(VAddr address, u64 size) {
     return CheckMemoryState(address, size, KMemoryState::All, KMemoryState::Free,
-                            KMemoryPermission::Mask, KMemoryPermission::None,
-                            KMemoryAttribute::Mask, KMemoryAttribute::None,
-                            KMemoryAttribute::IpcAndDeviceMapped)
+                            KMemoryPermission::All, KMemoryPermission::None, KMemoryAttribute::Mask,
+                            KMemoryAttribute::None, KMemoryAttribute::IpcAndDeviceMapped)
         .IsError();
 }
 
