@@ -66,27 +66,27 @@ const std::array<int, 2> Config::default_stick_mod = {
 // UISetting::values.shortcuts, which is alphabetically ordered.
 // clang-format off
 const std::array<UISettings::Shortcut, 21> Config::default_hotkeys{{
-    {QStringLiteral("Capture Screenshot"),       QStringLiteral("Main Window"), {QStringLiteral("Ctrl+P"), Qt::WidgetWithChildrenShortcut}},
-    {QStringLiteral("Change Docked Mode"),       QStringLiteral("Main Window"), {QStringLiteral("F10"), Qt::ApplicationShortcut}},
-    {QStringLiteral("Continue/Pause Emulation"), QStringLiteral("Main Window"), {QStringLiteral("F4"), Qt::WindowShortcut}},
-    {QStringLiteral("Decrease Speed Limit"),     QStringLiteral("Main Window"), {QStringLiteral("-"), Qt::ApplicationShortcut}},
-    {QStringLiteral("Exit Fullscreen"),          QStringLiteral("Main Window"), {QStringLiteral("Esc"), Qt::WindowShortcut}},
-    {QStringLiteral("Exit yuzu"),                QStringLiteral("Main Window"), {QStringLiteral("Ctrl+Q"), Qt::WindowShortcut}},
-    {QStringLiteral("Fullscreen"),               QStringLiteral("Main Window"), {QStringLiteral("F11"), Qt::WindowShortcut}},
-    {QStringLiteral("Increase Speed Limit"),     QStringLiteral("Main Window"), {QStringLiteral("+"), Qt::ApplicationShortcut}},
-    {QStringLiteral("Load Amiibo"),              QStringLiteral("Main Window"), {QStringLiteral("F2"), Qt::WidgetWithChildrenShortcut}},
-    {QStringLiteral("Load File"),                QStringLiteral("Main Window"), {QStringLiteral("Ctrl+O"), Qt::WidgetWithChildrenShortcut}},
-    {QStringLiteral("Mute Audio"),               QStringLiteral("Main Window"), {QStringLiteral("Ctrl+M"), Qt::WindowShortcut}},
-    {QStringLiteral("Restart Emulation"),        QStringLiteral("Main Window"), {QStringLiteral("F6"), Qt::WindowShortcut}},
-    {QStringLiteral("Stop Emulation"),           QStringLiteral("Main Window"), {QStringLiteral("F5"), Qt::WindowShortcut}},
-    {QStringLiteral("TAS Start/Stop"),           QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F5"), Qt::ApplicationShortcut}},
-    {QStringLiteral("TAS Reset"),                QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F6"), Qt::ApplicationShortcut}},
-    {QStringLiteral("TAS Record"),               QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F7"), Qt::ApplicationShortcut}},
-    {QStringLiteral("Toggle Filter Bar"),        QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F"), Qt::WindowShortcut}},
-    {QStringLiteral("Toggle Framerate Limit"),   QStringLiteral("Main Window"), {QStringLiteral("Ctrl+U"), Qt::ApplicationShortcut}},
-    {QStringLiteral("Toggle Mouse Panning"),     QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F9"), Qt::ApplicationShortcut}},
-    {QStringLiteral("Toggle Speed Limit"),       QStringLiteral("Main Window"), {QStringLiteral("Ctrl+Z"), Qt::ApplicationShortcut}},
-    {QStringLiteral("Toggle Status Bar"),        QStringLiteral("Main Window"), {QStringLiteral("Ctrl+S"), Qt::WindowShortcut}},
+    {QStringLiteral("Capture Screenshot"),       QStringLiteral("Main Window"), {QStringLiteral("Ctrl+P"),  QStringLiteral("Screenshot"), Qt::WidgetWithChildrenShortcut}},
+    {QStringLiteral("Change Docked Mode"),       QStringLiteral("Main Window"), {QStringLiteral("F10"),     QStringLiteral("Home+X"), Qt::ApplicationShortcut}},
+    {QStringLiteral("Continue/Pause Emulation"), QStringLiteral("Main Window"), {QStringLiteral("F4"),      QStringLiteral("Home+Plus"), Qt::WindowShortcut}},
+    {QStringLiteral("Decrease Speed Limit"),     QStringLiteral("Main Window"), {QStringLiteral("-"),       QStringLiteral(""), Qt::ApplicationShortcut}},
+    {QStringLiteral("Exit Fullscreen"),          QStringLiteral("Main Window"), {QStringLiteral("Esc"),     QStringLiteral(""), Qt::WindowShortcut}},
+    {QStringLiteral("Exit yuzu"),                QStringLiteral("Main Window"), {QStringLiteral("Ctrl+Q"),  QStringLiteral("Home+Minus"), Qt::WindowShortcut}},
+    {QStringLiteral("Fullscreen"),               QStringLiteral("Main Window"), {QStringLiteral("F11"),     QStringLiteral("Home+B"), Qt::WindowShortcut}},
+    {QStringLiteral("Increase Speed Limit"),     QStringLiteral("Main Window"), {QStringLiteral("+"),       QStringLiteral(""), Qt::ApplicationShortcut}},
+    {QStringLiteral("Load Amiibo"),              QStringLiteral("Main Window"), {QStringLiteral("F2"),      QStringLiteral("Home+A"), Qt::WidgetWithChildrenShortcut}},
+    {QStringLiteral("Load File"),                QStringLiteral("Main Window"), {QStringLiteral("Ctrl+O"),  QStringLiteral(""), Qt::WidgetWithChildrenShortcut}},
+    {QStringLiteral("Mute Audio"),               QStringLiteral("Main Window"), {QStringLiteral("Ctrl+M"),  QStringLiteral(""), Qt::WindowShortcut}},
+    {QStringLiteral("Restart Emulation"),        QStringLiteral("Main Window"), {QStringLiteral("F6"),      QStringLiteral(""), Qt::WindowShortcut}},
+    {QStringLiteral("Stop Emulation"),           QStringLiteral("Main Window"), {QStringLiteral("F5"),      QStringLiteral(""), Qt::WindowShortcut}},
+    {QStringLiteral("TAS Start/Stop"),           QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F5"), QStringLiteral(""), Qt::ApplicationShortcut}},
+    {QStringLiteral("TAS Reset"),                QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F6"), QStringLiteral(""), Qt::ApplicationShortcut}},
+    {QStringLiteral("TAS Record"),               QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F7"), QStringLiteral(""), Qt::ApplicationShortcut}},
+    {QStringLiteral("Toggle Filter Bar"),        QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F"),  QStringLiteral(""), Qt::WindowShortcut}},
+    {QStringLiteral("Toggle Framerate Limit"),   QStringLiteral("Main Window"), {QStringLiteral("Ctrl+U"),  QStringLiteral("Home+Y"), Qt::ApplicationShortcut}},
+    {QStringLiteral("Toggle Mouse Panning"),     QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F9"), QStringLiteral(""), Qt::ApplicationShortcut}},
+    {QStringLiteral("Toggle Speed Limit"),       QStringLiteral("Main Window"), {QStringLiteral("Ctrl+Z"),  QStringLiteral(""), Qt::ApplicationShortcut}},
+    {QStringLiteral("Toggle Status Bar"),        QStringLiteral("Main Window"), {QStringLiteral("Ctrl+S"),  QStringLiteral(""), Qt::WindowShortcut}},
 }};
 // clang-format on
 
@@ -679,7 +679,6 @@ void Config::ReadShortcutValues() {
     qt_config->beginGroup(QStringLiteral("Shortcuts"));
 
     for (const auto& [name, group, shortcut] : default_hotkeys) {
-        const auto& [keyseq, context] = shortcut;
         qt_config->beginGroup(group);
         qt_config->beginGroup(name);
         // No longer using ReadSetting for shortcut.second as it innacurately returns a value of 1
@@ -688,7 +687,10 @@ void Config::ReadShortcutValues() {
         UISettings::values.shortcuts.push_back(
             {name,
              group,
-             {ReadSetting(QStringLiteral("KeySeq"), keyseq).toString(), shortcut.second}});
+             {ReadSetting(QStringLiteral("KeySeq"), shortcut.keyseq).toString(),
+              ReadSetting(QStringLiteral("Controller_KeySeq"), shortcut.controller_keyseq)
+                  .toString(),
+              shortcut.context}});
         qt_config->endGroup();
         qt_config->endGroup();
     }
@@ -1227,8 +1229,10 @@ void Config::SaveShortcutValues() {
 
         qt_config->beginGroup(group);
         qt_config->beginGroup(name);
-        WriteSetting(QStringLiteral("KeySeq"), shortcut.first, default_hotkey.first);
-        WriteSetting(QStringLiteral("Context"), shortcut.second, default_hotkey.second);
+        WriteSetting(QStringLiteral("KeySeq"), shortcut.keyseq, default_hotkey.keyseq);
+        WriteSetting(QStringLiteral("Controller_KeySeq"), shortcut.controller_keyseq,
+                     default_hotkey.controller_keyseq);
+        WriteSetting(QStringLiteral("Context"), shortcut.context, default_hotkey.context);
         qt_config->endGroup();
         qt_config->endGroup();
     }

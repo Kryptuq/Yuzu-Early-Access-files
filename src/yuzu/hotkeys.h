@@ -5,11 +5,53 @@
 #pragma once
 
 #include <map>
+#include "core/hid/hid_types.h"
 
 class QDialog;
 class QKeySequence;
 class QSettings;
 class QShortcut;
+class ControllerShortcut;
+
+namespace Core::HID {
+enum class ControllerTriggerType;
+class EmulatedController;
+} // namespace Core::HID
+
+struct ControllerButtonSequence {
+    Core::HID::CaptureButtonState capture{};
+    Core::HID::HomeButtonState home{};
+    Core::HID::NpadButtonState npad{};
+};
+
+class ControllerShortcut : public QObject {
+    Q_OBJECT
+
+public:
+    explicit ControllerShortcut(Core::HID::EmulatedController* controller);
+    ~ControllerShortcut();
+
+    void SetKey(const ControllerButtonSequence& buttons);
+    void SetKey(const QString& buttons_shortcut);
+
+    ControllerButtonSequence ButtonSequence() const;
+
+    void SetEnabled(bool enable);
+    bool IsEnabled() const;
+
+Q_SIGNALS:
+    void Activated();
+
+private:
+    void ControllerUpdateEvent(Core::HID::ControllerTriggerType type);
+
+    bool is_enabled{};
+    bool active{};
+    int callback_key{};
+    ControllerButtonSequence button_sequence{};
+    std::string name{};
+    Core::HID::EmulatedController* emulated_controller = nullptr;
+};
 
 class HotkeyRegistry final {
 public:
@@ -46,6 +88,8 @@ public:
      *          QShortcut's parent.
      */
     QShortcut* GetHotkey(const QString& group, const QString& action, QWidget* widget);
+    ControllerShortcut* GetControllerHotkey(const QString& group, const QString& action,
+                                            Core::HID::EmulatedController* controller);
 
     /**
      * Returns a QKeySequence object whose signal can be connected to QAction::setShortcut.
@@ -68,7 +112,9 @@ public:
 private:
     struct Hotkey {
         QKeySequence keyseq;
+        QString controller_keyseq;
         QShortcut* shortcut = nullptr;
+        ControllerShortcut* controller_shortcut = nullptr;
         Qt::ShortcutContext context = Qt::WindowShortcut;
     };
 

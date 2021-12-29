@@ -378,6 +378,26 @@ struct LedPattern {
     };
 };
 
+struct HomeButtonState {
+    union {
+        u64 raw{};
+
+        // Buttons
+        BitField<0, 1, u64> home;
+    };
+};
+static_assert(sizeof(HomeButtonState) == 0x8, "HomeButtonState has incorrect size.");
+
+struct CaptureButtonState {
+    union {
+        u64 raw{};
+
+        // Buttons
+        BitField<0, 1, u64> capture;
+    };
+};
+static_assert(sizeof(CaptureButtonState) == 0x8, "CaptureButtonState has incorrect size.");
+
 struct NpadButtonState {
     union {
         NpadButton raw{};

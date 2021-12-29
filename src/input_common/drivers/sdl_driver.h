@@ -24,7 +24,7 @@ namespace InputCommon {
 class SDLJoystick;
 
 using ButtonBindings =
-    std::array<std::pair<Settings::NativeButton::Values, SDL_GameControllerButton>, 17>;
+    std::array<std::pair<Settings::NativeButton::Values, SDL_GameControllerButton>, 18>;
 using ZButtonBindings =
     std::array<std::pair<Settings::NativeButton::Values, SDL_GameControllerAxis>, 2>;
 

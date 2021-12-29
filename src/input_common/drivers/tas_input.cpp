@@ -23,7 +23,7 @@ enum class Tas::TasAxis : u8 {
 };
 
 // Supported keywords and buttons from a TAS file
-constexpr std::array<std::pair<std::string_view, TasButton>, 20> text_to_tas_button = {
+constexpr std::array<std::pair<std::string_view, TasButton>, 18> text_to_tas_button = {
     std::pair{"KEY_A", TasButton::BUTTON_A},
     {"KEY_B", TasButton::BUTTON_B},
     {"KEY_X", TasButton::BUTTON_X},
@@ -40,8 +40,9 @@ constexpr std::array<std::pair<std::string_view, TasButton>, 20> text_to_tas_but
     {"KEY_DDOWN", TasButton::BUTTON_DOWN},
     {"KEY_SL", TasButton::BUTTON_SL},
     {"KEY_SR", TasButton::BUTTON_SR},
-    {"KEY_CAPTURE", TasButton::BUTTON_CAPTURE},
-    {"KEY_HOME", TasButton::BUTTON_HOME},
+    // These buttons are disabled to avoid TAS input from activating hotkeys
+    // {"KEY_CAPTURE", TasButton::BUTTON_CAPTURE},
+    // {"KEY_HOME", TasButton::BUTTON_HOME},
     {"KEY_ZL", TasButton::TRIGGER_ZL},
     {"KEY_ZR", TasButton::TRIGGER_ZR},
 };

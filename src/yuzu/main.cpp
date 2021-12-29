@@ -32,6 +32,7 @@
 #include "core/hle/service/am/applet_ae.h"
 #include "core/hle/service/am/applet_oe.h"
 #include "core/hle/service/am/applets/applets.h"
+#include "yuzu/util/controller_navigation.h"
 
 // These are wrappers to avoid the calls to CreateDirectory and CreateFile because of the Windows
 // defines.
@@ -966,6 +967,12 @@ void GMainWindow::LinkActionShortcut(QAction* action, const QString& action_name
     action->setShortcutContext(hotkey_registry.GetShortcutContext(main_window, action_name));
 
     this->addAction(action);
+
+    auto* controller = system->HIDCore().GetEmulatedController(Core::HID::NpadIdType::Player1);
+    const auto* controller_hotkey =
+        hotkey_registry.GetControllerHotkey(main_window, action_name, controller);
+    connect(controller_hotkey, &ControllerShortcut::Activated, this,
+            [action] { action->trigger(); });
 }
 
 void GMainWindow::InitializeHotkeys() {
@@ -987,8 +994,12 @@ void GMainWindow::InitializeHotkeys() {
 
     static const QString main_window = QStringLiteral("Main Window");
     const auto connect_shortcut = [&]<typename Fn>(const QString& action_name, const Fn& function) {
-        const QShortcut* hotkey = hotkey_registry.GetHotkey(main_window, action_name, this);
+        const auto* hotkey = hotkey_registry.GetHotkey(main_window, action_name, this);
+        auto* controller = system->HIDCore().GetEmulatedController(Core::HID::NpadIdType::Player1);
+        const auto* controller_hotkey =
+            hotkey_registry.GetControllerHotkey(main_window, action_name, controller);
         connect(hotkey, &QShortcut::activated, this, function);
+        connect(controller_hotkey, &ControllerShortcut::Activated, this, function);
     };
 
     connect_shortcut(QStringLiteral("Exit Fullscreen"), [&] {
@@ -1165,8 +1176,7 @@ void GMainWindow::ConnectMenuEvents() {
     connect_menu(ui->action_Single_Window_Mode, &GMainWindow::ToggleWindowMode);
     connect_menu(ui->action_Display_Dock_Widget_Headers, &GMainWindow::OnDisplayTitleBars);
     connect_menu(ui->action_Show_Filter_Bar, &GMainWindow::OnToggleFilterBar);
-
-    connect(ui->action_Show_Status_Bar, &QAction::triggered, statusBar(), &QStatusBar::setVisible);
+    connect_menu(ui->action_Show_Status_Bar, &GMainWindow::OnToggleStatusBar);
 
     connect_menu(ui->action_Reset_Window_Size_720, &GMainWindow::ResetWindowSize720);
     connect_menu(ui->action_Reset_Window_Size_900, &GMainWindow::ResetWindowSize900);
@@ -2168,6 +2178,11 @@ void GMainWindow::OnGameListOpenPerGameProperties(const std::string& file) {
 }
 
 void GMainWindow::OnMenuLoadFile() {
+    if (is_load_file_select_active) {
+        return;
+    }
+
+    is_load_file_select_active = true;
     const QString extensions =
         QStringLiteral("*.")
             .append(GameList::supported_file_extensions.join(QStringLiteral(" *.")))
@@ -2177,6 +2192,7 @@ void GMainWindow::OnMenuLoadFile() {
                                     .arg(extensions);
     const QString filename = QFileDialog::getOpenFileName(
         this, tr("Load File"), UISettings::values.roms_path, file_filter);
+    is_load_file_select_active = false;
 
     if (filename.isEmpty()) {
         return;
@@ -2817,12 +2833,29 @@ void GMainWindow::OnTasRecord() {
     if (!emulation_running) {
         return;
     }
+    if (is_tas_recording_dialog_active) {
+        return;
+    }
     const bool is_recording = input_subsystem->GetTas()->Record();
     if (!is_recording) {
-        const auto res =
-            QMessageBox::question(this, tr("TAS Recording"), tr("Overwrite file of player 1?"),
-                                  QMessageBox::Yes | QMessageBox::No);
+        is_tas_recording_dialog_active = true;
+        ControllerNavigation* controller_navigation =
+            new ControllerNavigation(system->HIDCore(), this);
+        // Use QMessageBox instead of question so we can link controller navigation
+        QMessageBox* box_dialog = new QMessageBox();
+        box_dialog->setWindowTitle(tr("TAS Recording"));
+        box_dialog->setText(tr("Overwrite file of player 1?"));
+        box_dialog->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        box_dialog->setDefaultButton(QMessageBox::Yes);
+        connect(controller_navigation, &ControllerNavigation::TriggerKeyboardEvent,
+                [box_dialog](Qt::Key key) {
+                    QKeyEvent* event = new QKeyEvent(QEvent::KeyPress, key, Qt::NoModifier);
+                    QCoreApplication::postEvent(box_dialog, event);
+                });
+        int res = box_dialog->exec();
+        controller_navigation->UnloadController();
         input_subsystem->GetTas()->SaveRecording(res == QMessageBox::Yes);
+        is_tas_recording_dialog_active = false;
     }
     OnTasStateChanged();
 }
@@ -2871,10 +2904,15 @@ void GMainWindow::OnLoadAmiibo() {
     if (emu_thread == nullptr || !emu_thread->IsRunning()) {
         return;
     }
+    if (is_amiibo_file_select_active) {
+        return;
+    }
 
+    is_amiibo_file_select_active = true;
     const QString extensions{QStringLiteral("*.bin")};
     const QString file_filter = tr("Amiibo File (%1);; All Files (*.*)").arg(extensions);
     const QString filename = QFileDialog::getOpenFileName(this, tr("Load Amiibo"), {}, file_filter);
+    is_amiibo_file_select_active = false;
 
     if (filename.isEmpty()) {
         return;
@@ -2932,6 +2970,10 @@ void GMainWindow::OnToggleFilterBar() {
     } else {
         game_list->ClearFilter();
     }
+}
+
+void GMainWindow::OnToggleStatusBar() {
+    statusBar()->setVisible(ui->action_Show_Status_Bar->isChecked());
 }
 
 void GMainWindow::OnCaptureScreenshot() {

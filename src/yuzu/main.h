@@ -186,6 +186,9 @@ public slots:
     void OnTasStateChanged();
 
 private:
+    /// Updates an action's shortcut and text to reflect an updated hotkey from the hotkey registry.
+    void LinkActionShortcut(QAction* action, const QString& action_name);
+
     void RegisterMetaTypes();
 
     void InitializeWidgets();
@@ -286,6 +289,7 @@ private slots:
     void OnOpenYuzuFolder();
     void OnAbout();
     void OnToggleFilterBar();
+    void OnToggleStatusBar();
     void OnDisplayTitleBars(bool);
     void InitializeHotkeys();
     void ToggleFullscreen();
@@ -303,9 +307,6 @@ private slots:
     void OnMouseActivity();
 
 private:
-    /// Updates an action's shortcut and text to reflect an updated hotkey from the hotkey registry.
-    void LinkActionShortcut(QAction* action, const QString& action_name);
-
     void RemoveBaseContent(u64 program_id, const QString& entry_type);
     void RemoveUpdateContent(u64 program_id, const QString& entry_type);
     void RemoveAddOnContent(u64 program_id, const QString& entry_type);
@@ -400,6 +401,16 @@ private:
 
     // Applets
     QtSoftwareKeyboardDialog* software_keyboard = nullptr;
+
+    // True if amiibo file select is visible
+    bool is_amiibo_file_select_active{};
+
+    // True if load file select is visible
+    bool is_load_file_select_active{};
+
+    // True if TAS recording dialog is visible
+    bool is_tas_recording_dialog_active{};
+
 #ifdef __linux__
     QDBusObjectPath wake_lock{};
 #endif

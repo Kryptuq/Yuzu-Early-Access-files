@@ -101,6 +101,8 @@ struct ControllerStatus {
     VibrationValues vibration_values{};
 
     // Data for HID serices
+    HomeButtonState home_button_state{};
+    CaptureButtonState capture_button_state{};
     NpadButtonState npad_button_state{};
     DebugPadButton debug_pad_button_state{};
     AnalogSticks analog_stick_state{};
@@ -195,6 +197,15 @@ public:
     /// Returns the emulated controller into normal mode, allowing the modification of the HID state
     void DisableConfiguration();
 
+    /// Enables Home and Screenshot buttons
+    void EnableSystemButtons();
+
+    /// Disables Home and Screenshot buttons
+    void DisableSystemButtons();
+
+    /// Sets Home and Screenshot buttons to false
+    void ResetSystemButtons();
+
     /// Returns true if the emulated controller is in configuring mode
     bool IsConfiguring() const;
 
@@ -258,7 +269,13 @@ public:
     /// Returns the latest battery status from the controller with parameters
     BatteryValues GetBatteryValues() const;
 
-    /// Returns the latest status of button input for the npad service
+    /// Returns the latest status of button input for the hid::HomeButton service
+    HomeButtonState GetHomeButtons() const;
+
+    /// Returns the latest status of button input for the hid::CaptureButton service
+    CaptureButtonState GetCaptureButtons() const;
+
+    /// Returns the latest status of button input for the hid::Npad service
     NpadButtonState GetNpadButtons() const;
 
     /// Returns the latest status of button input for the debug pad service
@@ -373,6 +390,7 @@ private:
     NpadStyleTag supported_style_tag{NpadStyleSet::All};
     bool is_connected{false};
     bool is_configuring{false};
+    bool system_buttons_enabled{true};
     f32 motion_sensitivity{0.01f};
     bool force_update_motion{false};
 

@@ -663,6 +663,7 @@ ButtonBindings SDLDriver::GetDefaultButtonBinding() const {
         {Settings::NativeButton::SL, SDL_CONTROLLER_BUTTON_LEFTSHOULDER},
         {Settings::NativeButton::SR, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER},
         {Settings::NativeButton::Home, SDL_CONTROLLER_BUTTON_GUIDE},
+        {Settings::NativeButton::Screenshot, SDL_CONTROLLER_BUTTON_MISC1},
     };
 }
 
@@ -699,6 +700,7 @@ ButtonBindings SDLDriver::GetNintendoButtonBinding(
         {Settings::NativeButton::SL, sl_button},
         {Settings::NativeButton::SR, sr_button},
         {Settings::NativeButton::Home, SDL_CONTROLLER_BUTTON_GUIDE},
+        {Settings::NativeButton::Screenshot, SDL_CONTROLLER_BUTTON_MISC1},
     };
 }
 

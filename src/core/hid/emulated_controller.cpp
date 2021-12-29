@@ -351,6 +351,19 @@ void EmulatedController::DisableConfiguration() {
     }
 }
 
+void EmulatedController::EnableSystemButtons() {
+    system_buttons_enabled = true;
+}
+
+void EmulatedController::DisableSystemButtons() {
+    system_buttons_enabled = false;
+}
+
+void EmulatedController::ResetSystemButtons() {
+    controller.home_button_state.home.Assign(false);
+    controller.capture_button_state.capture.Assign(false);
+}
+
 bool EmulatedController::IsConfiguring() const {
     return is_configuring;
 }
@@ -596,7 +609,16 @@ void EmulatedController::SetButton(const Common::Input::CallbackStatus& callback
             controller.npad_button_state.right_sr.Assign(current_status.value);
             break;
         case Settings::NativeButton::Home:
+            if (!system_buttons_enabled) {
+                break;
+            }
+            controller.home_button_state.home.Assign(current_status.value);
+            break;
         case Settings::NativeButton::Screenshot:
+            if (!system_buttons_enabled) {
+                break;
+            }
+            controller.capture_button_state.capture.Assign(current_status.value);
             break;
         }
     }
@@ -1047,6 +1069,20 @@ ColorValues EmulatedController::GetColorsValues() const {
 
 BatteryValues EmulatedController::GetBatteryValues() const {
     return controller.battery_values;
+}
+
+HomeButtonState EmulatedController::GetHomeButtons() const {
+    if (is_configuring) {
+        return {};
+    }
+    return controller.home_button_state;
+}
+
+CaptureButtonState EmulatedController::GetCaptureButtons() const {
+    if (is_configuring) {
+        return {};
+    }
+    return controller.capture_button_state;
 }
 
 NpadButtonState EmulatedController::GetNpadButtons() const {
