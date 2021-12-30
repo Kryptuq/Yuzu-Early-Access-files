@@ -240,7 +240,7 @@ void EmitGetAttributeU32(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr, s
         ctx.AddU32("{}=uint(gl_VertexID);", inst);
         break;
     default:
-        throw NotImplementedException("Get attribute {}", attr);
+        throw NotImplementedException("Get U32 attribute {}", attr);
     }
 }
 

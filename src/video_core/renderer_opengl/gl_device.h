@@ -156,6 +156,10 @@ public:
         return has_cbuf_ftou_bug;
     }
 
+    bool HasBoolRefBug() const {
+        return has_bool_ref_bug;
+    }
+
     Settings::ShaderBackend GetShaderBackend() const {
         return shader_backend;
     }
@@ -205,6 +209,7 @@ private:
     bool warp_size_potentially_larger_than_guest{};
     bool need_fastmath_off{};
     bool has_cbuf_ftou_bug{};
+    bool has_bool_ref_bug{};
 
     std::string vendor_name;
 };

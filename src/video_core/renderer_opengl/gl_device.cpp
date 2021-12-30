@@ -188,6 +188,7 @@ Device::Device() {
             std::atoi(driver_version.substr(0, driver_version.find(".")).data());
         if (version_major >= 495) {
             has_cbuf_ftou_bug = true;
+            has_bool_ref_bug = true;
         }
     }
 

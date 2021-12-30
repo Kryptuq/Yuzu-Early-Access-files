@@ -138,7 +138,7 @@ void EmitGetAttributeU32(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr, S
         ctx.Add("MOV.S {}.x,{}.id;", inst, ctx.attrib_name);
         break;
     default:
-        throw NotImplementedException("Get attribute {}", attr);
+        throw NotImplementedException("Get U32 attribute {}", attr);
     }
 }
 

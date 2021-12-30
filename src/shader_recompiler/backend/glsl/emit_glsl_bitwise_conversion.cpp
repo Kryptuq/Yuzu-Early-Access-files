@@ -7,6 +7,7 @@
 #include "shader_recompiler/backend/glsl/emit_glsl_instructions.h"
 #include "shader_recompiler/backend/glsl/glsl_emit_context.h"
 #include "shader_recompiler/frontend/ir/value.h"
+#include "shader_recompiler/profile.h"
 
 namespace Shader::Backend::GLSL {
 namespace {
@@ -30,8 +31,9 @@ void EmitConditionRef(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) 
     inst.DestructiveAddUsage(1);
     const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U1)};
     const auto input{ctx.var_alloc.Consume(value)};
+    const auto suffix{ctx.profile.has_gl_bool_ref_bug ? "?true:false" : ""};
     if (ret != input) {
-        ctx.Add("{}={};", ret, input);
+        ctx.Add("{}={}{};", ret, input, suffix);
     }
 }
 

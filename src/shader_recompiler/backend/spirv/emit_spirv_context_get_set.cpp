@@ -376,7 +376,7 @@ Id EmitGetAttributeU32(EmitContext& ctx, IR::Attribute attr, Id) {
             return ctx.OpISub(ctx.U32[1], index, base);
         }
     default:
-        throw NotImplementedException("Read attribute {}", attr);
+        throw NotImplementedException("Read U32 attribute {}", attr);
     }
 }
 

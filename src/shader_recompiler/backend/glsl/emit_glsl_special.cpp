@@ -90,7 +90,9 @@ void EmitPhiMove(EmitContext& ctx, const IR::Value& phi_value, const IR::Value& 
     if (phi_reg == val_reg) {
         return;
     }
-    ctx.Add("{}={};", phi_reg, val_reg);
+    const bool needs_workaround{ctx.profile.has_gl_bool_ref_bug && phi_type == IR::Type::U1};
+    const auto suffix{needs_workaround ? "?true:false" : ""};
+    ctx.Add("{}={}{};", phi_reg, val_reg, suffix);
 }
 
 void EmitPrologue(EmitContext& ctx) {
