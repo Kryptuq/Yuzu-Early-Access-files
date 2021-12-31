@@ -20,7 +20,7 @@
 #include "dynarmic/common/common_types.h"
 #include "dynarmic/common/scope_exit.h"
 #include "dynarmic/common/x64_disassemble.h"
-#include "dynarmic/frontend/A32/translate/translate.h"
+#include "dynarmic/frontend/A32/translate/a32_translate.h"
 #include "dynarmic/interface/A32/a32.h"
 #include "dynarmic/interface/A32/context.h"
 #include "dynarmic/ir/basic_block.h"

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include "dynarmic/frontend/A32/translate/impl/translate.h"
+#include "dynarmic/frontend/A32/translate/impl/a32_translate_impl.h"
 #include "dynarmic/interface/A32/config.h"
 
 namespace Dynarmic::A32 {

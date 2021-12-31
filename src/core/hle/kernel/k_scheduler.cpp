@@ -15,6 +15,7 @@
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/cpu_manager.h"
+#include "core/hle/kernel/k_interrupt_manager.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/k_scoped_scheduler_lock_and_sleep.h"
@@ -53,6 +54,13 @@ void KScheduler::RescheduleCores(KernelCore& kernel, u64 cores_pending_reschedul
         }
         cores_pending_reschedule &= ~(1ULL << core);
     }
+
+    for (std::size_t core_id = 0; core_id < Core::Hardware::NUM_CPU_CORES; ++core_id) {
+        if (kernel.PhysicalCore(core_id).IsInterrupted()) {
+            KInterruptManager::HandleInterrupt(kernel, static_cast<s32>(core_id));
+        }
+    }
+
     if (must_context_switch) {
         auto core_scheduler = kernel.CurrentScheduler();
         kernel.ExitSVCProfile();

@@ -9,7 +9,7 @@
 
 #include "dynarmic/backend/x64/nzcv_util.h"
 #include "dynarmic/common/common_types.h"
-#include "dynarmic/frontend/A64/location_descriptor.h"
+#include "dynarmic/frontend/A64/a64_location_descriptor.h"
 
 namespace Dynarmic::Backend::X64 {
 

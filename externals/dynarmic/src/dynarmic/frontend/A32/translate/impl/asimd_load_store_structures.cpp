@@ -7,7 +7,7 @@
 #include <tuple>
 
 #include "dynarmic/common/bit_util.h"
-#include "dynarmic/frontend/A32/translate/impl/translate.h"
+#include "dynarmic/frontend/A32/translate/impl/a32_translate_impl.h"
 
 namespace Dynarmic::A32 {
 

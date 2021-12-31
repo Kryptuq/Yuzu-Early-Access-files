@@ -187,6 +187,8 @@ add_library(core STATIC
     hle/kernel/k_event.h
     hle/kernel/k_handle_table.cpp
     hle/kernel/k_handle_table.h
+    hle/kernel/k_interrupt_manager.cpp
+    hle/kernel/k_interrupt_manager.h
     hle/kernel/k_light_condition_variable.cpp
     hle/kernel/k_light_condition_variable.h
     hle/kernel/k_light_lock.cpp

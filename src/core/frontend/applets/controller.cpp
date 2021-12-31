@@ -45,26 +45,26 @@ void DefaultControllerApplet::ReconfigureControllers(std::function<void()> callb
         // Pro Controller -> Dual Joycons -> Left Joycon/Right Joycon -> Handheld
         if (parameters.allow_pro_controller) {
             controller->SetNpadStyleIndex(Core::HID::NpadStyleIndex::ProController);
-            controller->Connect();
+            controller->Connect(true);
         } else if (parameters.allow_dual_joycons) {
             controller->SetNpadStyleIndex(Core::HID::NpadStyleIndex::JoyconDual);
-            controller->Connect();
+            controller->Connect(true);
         } else if (parameters.allow_left_joycon && parameters.allow_right_joycon) {
             // Assign left joycons to even player indices and right joycons to odd player indices.
             // We do this since Captain Toad Treasure Tracker expects a left joycon for Player 1 and
             // a right Joycon for Player 2 in 2 Player Assist mode.
             if (index % 2 == 0) {
                 controller->SetNpadStyleIndex(Core::HID::NpadStyleIndex::JoyconLeft);
-                controller->Connect();
+                controller->Connect(true);
             } else {
                 controller->SetNpadStyleIndex(Core::HID::NpadStyleIndex::JoyconRight);
-                controller->Connect();
+                controller->Connect(true);
             }
         } else if (index == 0 && parameters.enable_single_mode && parameters.allow_handheld &&
                    !Settings::values.use_docked_mode.GetValue()) {
             // We should *never* reach here under any normal circumstances.
             controller->SetNpadStyleIndex(Core::HID::NpadStyleIndex::Handheld);
-            controller->Connect();
+            controller->Connect(true);
         } else {
             UNREACHABLE_MSG("Unable to add a new controller based on the given parameters!");
         }

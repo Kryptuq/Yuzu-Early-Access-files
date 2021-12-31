@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include "dynarmic/frontend/A64/ir_emitter.h"
+#include "dynarmic/frontend/A64/a64_ir_emitter.h"
 #include "dynarmic/interface/A64/config.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/microinstruction.h"

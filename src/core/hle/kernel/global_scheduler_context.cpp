@@ -9,6 +9,7 @@
 #include "core/hle/kernel/global_scheduler_context.h"
 #include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/kernel/physical_core.h"
 
 namespace Kernel {
 
@@ -42,6 +43,11 @@ void GlobalSchedulerContext::PreemptThreads() {
     for (u32 core_id = 0; core_id < Core::Hardware::NUM_CPU_CORES; core_id++) {
         const u32 priority = preemption_priorities[core_id];
         kernel.Scheduler(core_id).RotateScheduledQueue(core_id, priority);
+
+        // Signal an interrupt occurred. For core 3, this is a certainty, as preemption will result
+        // in the rotator thread being scheduled. For cores 0-2, this is to simulate or system
+        // interrupts that may have occurred.
+        kernel.PhysicalCore(core_id).Interrupt();
     }
 }
 

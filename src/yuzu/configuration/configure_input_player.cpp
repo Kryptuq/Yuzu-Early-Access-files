@@ -599,11 +599,11 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                     if (is_connected) {
                         if (type == Core::HID::NpadStyleIndex::Handheld) {
                             emulated_controller_p1->Disconnect();
-                            emulated_controller_handheld->Connect();
+                            emulated_controller_handheld->Connect(true);
                             emulated_controller = emulated_controller_handheld;
                         } else {
                             emulated_controller_handheld->Disconnect();
-                            emulated_controller_p1->Connect();
+                            emulated_controller_p1->Connect(true);
                             emulated_controller = emulated_controller_p1;
                         }
                     }
@@ -718,7 +718,7 @@ void ConfigureInputPlayer::LoadConfiguration() {
 void ConfigureInputPlayer::ConnectPlayer(bool connected) {
     ui->groupConnectedController->setChecked(connected);
     if (connected) {
-        emulated_controller->Connect();
+        emulated_controller->Connect(true);
     } else {
         emulated_controller->Disconnect();
     }

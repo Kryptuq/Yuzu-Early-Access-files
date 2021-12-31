@@ -64,10 +64,10 @@ add_library(dynarmic
     common/variant_util.h
     common/x64_disassemble.cpp
     common/x64_disassemble.h
-    frontend/A32/types.cpp
-    frontend/A32/types.h
-    frontend/A64/types.cpp
-    frontend/A64/types.h
+    frontend/A32/a32_types.cpp
+    frontend/A32/a32_types.h
+    frontend/A64/a64_types.cpp
+    frontend/A64/a64_types.h
     frontend/decoder/decoder_detail.h
     frontend/decoder/matcher.h
     frontend/imm.cpp
@@ -115,12 +115,19 @@ if ("A32" IN_LIST DYNARMIC_FRONTENDS)
         frontend/A32/disassembler/disassembler_arm.cpp
         frontend/A32/disassembler/disassembler_thumb.cpp
         frontend/A32/FPSCR.h
-        frontend/A32/ir_emitter.cpp
-        frontend/A32/ir_emitter.h
+        frontend/A32/a32_ir_emitter.cpp
+        frontend/A32/a32_ir_emitter.h
+        frontend/A32/a32_location_descriptor.cpp
+        frontend/A32/a32_location_descriptor.h
         frontend/A32/ITState.h
-        frontend/A32/location_descriptor.cpp
-        frontend/A32/location_descriptor.h
         frontend/A32/PSR.h
+        frontend/A32/translate/a32_translate.cpp
+        frontend/A32/translate/a32_translate.h
+        frontend/A32/translate/impl/a32_branch.cpp
+        frontend/A32/translate/impl/a32_crc32.cpp
+        frontend/A32/translate/impl/a32_exception_generating.cpp
+        frontend/A32/translate/impl/a32_translate_impl.cpp
+        frontend/A32/translate/impl/a32_translate_impl.h
         frontend/A32/translate/conditional_state.cpp
         frontend/A32/translate/conditional_state.h
         frontend/A32/translate/impl/asimd_load_store_structures.cpp
@@ -131,12 +138,9 @@ if ("A32" IN_LIST DYNARMIC_FRONTENDS)
         frontend/A32/translate/impl/asimd_two_regs_scalar.cpp
         frontend/A32/translate/impl/asimd_two_regs_shift.cpp
         frontend/A32/translate/impl/barrier.cpp
-        frontend/A32/translate/impl/branch.cpp
         frontend/A32/translate/impl/coprocessor.cpp
-        frontend/A32/translate/impl/crc32.cpp
         frontend/A32/translate/impl/data_processing.cpp
         frontend/A32/translate/impl/divide.cpp
-        frontend/A32/translate/impl/exception_generating.cpp
         frontend/A32/translate/impl/extension.cpp
         frontend/A32/translate/impl/hint.cpp
         frontend/A32/translate/impl/load_store.cpp
@@ -166,11 +170,7 @@ if ("A32" IN_LIST DYNARMIC_FRONTENDS)
         frontend/A32/translate/impl/thumb32_multiply.cpp
         frontend/A32/translate/impl/thumb32_parallel.cpp
         frontend/A32/translate/impl/thumb32_store_single_data_item.cpp
-        frontend/A32/translate/impl/translate.cpp
-        frontend/A32/translate/impl/translate.h
         frontend/A32/translate/impl/vfp.cpp
-        frontend/A32/translate/translate.cpp
-        frontend/A32/translate/translate.h
         frontend/A32/translate/translate_arm.cpp
         frontend/A32/translate/translate_thumb.cpp
         interface/A32/a32.h
@@ -186,13 +186,16 @@ endif()
 
 if ("A64" IN_LIST DYNARMIC_FRONTENDS)
     target_sources(dynarmic PRIVATE
+        frontend/A64/a64_ir_emitter.cpp
+        frontend/A64/a64_ir_emitter.h
+        frontend/A64/a64_location_descriptor.cpp
+        frontend/A64/a64_location_descriptor.h
         frontend/A64/decoder/a64.h
         frontend/A64/decoder/a64.inc
-        frontend/A64/ir_emitter.cpp
-        frontend/A64/ir_emitter.h
-        frontend/A64/location_descriptor.cpp
-        frontend/A64/location_descriptor.h
-        frontend/A64/translate/impl/branch.cpp
+        frontend/A64/translate/a64_translate.cpp
+        frontend/A64/translate/a64_translate.h
+        frontend/A64/translate/impl/a64_branch.cpp
+        frontend/A64/translate/impl/a64_exception_generating.cpp
         frontend/A64/translate/impl/data_processing_addsub.cpp
         frontend/A64/translate/impl/data_processing_bitfield.cpp
         frontend/A64/translate/impl/data_processing_conditional_compare.cpp
@@ -203,7 +206,6 @@ if ("A64" IN_LIST DYNARMIC_FRONTENDS)
         frontend/A64/translate/impl/data_processing_pcrel.cpp
         frontend/A64/translate/impl/data_processing_register.cpp
         frontend/A64/translate/impl/data_processing_shift.cpp
-        frontend/A64/translate/impl/exception_generating.cpp
         frontend/A64/translate/impl/floating_point_compare.cpp
         frontend/A64/translate/impl/floating_point_conditional_compare.cpp
         frontend/A64/translate/impl/floating_point_conditional_select.cpp
@@ -251,8 +253,6 @@ if ("A64" IN_LIST DYNARMIC_FRONTENDS)
         frontend/A64/translate/impl/system.cpp
         frontend/A64/translate/impl/system_flag_format.cpp
         frontend/A64/translate/impl/system_flag_manipulation.cpp
-        frontend/A64/translate/translate.cpp
-        frontend/A64/translate/translate.h
         interface/A64/a64.h
         interface/A64/config.h
         ir/opt/a64_callback_config_pass.cpp
@@ -350,7 +350,7 @@ if (ARCHITECTURE STREQUAL "x86_64")
         endif()
     elseif (UNIX)
         if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-            target_link_libraries(dynarmic PUBLIC rt)
+            target_link_libraries(dynarmic PRIVATE rt)
         endif()
         target_sources(dynarmic PRIVATE backend/x64/exception_handler_posix.cpp)
     else()
@@ -363,20 +363,24 @@ endif()
 include(CreateDirectoryGroups)
 create_target_directory_groups(dynarmic)
 
-target_include_directories(dynarmic PUBLIC ..)
+target_include_directories(dynarmic PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 set_target_properties(dynarmic PROPERTIES
     VERSION ${dynarmic_VERSION}
     SOVERSION ${dynarmic_VERSION_MAJOR}
 )
 target_compile_options(dynarmic PRIVATE ${DYNARMIC_CXX_FLAGS})
+# $<BUILD_INTERFACE:> required because of https://gitlab.kitware.com/cmake/cmake/-/issues/15415
 target_link_libraries(dynarmic
-    PUBLIC
-        boost
-        fmt::fmt
-        mp
+    PRIVATE
+        $<BUILD_INTERFACE:boost>
+        $<BUILD_INTERFACE:fmt::fmt>
+        $<BUILD_INTERFACE:mp>
         tsl::robin_map
-        xbyak
-        Zydis
+        $<BUILD_INTERFACE:xbyak>
+        $<BUILD_INTERFACE:Zydis>
         $<$<BOOL:DYNARMIC_USE_LLVM>:${llvm_libs}>
 )
 if (DYNARMIC_ENABLE_CPU_FEATURE_DETECTION)

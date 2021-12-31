@@ -171,3 +171,32 @@ add_subdirectory(src/dynarmic)
 if (DYNARMIC_TESTS)
     add_subdirectory(tests)
 endif()
+
+#
+# Install
+#
+if (MASTER_PROJECT)
+    include(GNUInstallDirs)
+    include(CMakePackageConfigHelpers)
+
+    install(TARGETS dynarmic EXPORT dynarmicTargets)
+    install(EXPORT dynarmicTargets
+        NAMESPACE dynarmic::
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/dynarmic"
+    )
+
+    configure_package_config_file(CMakeModules/dynarmicConfig.cmake.in
+        dynarmicConfig.cmake
+        INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/dynarmic"
+    )
+    write_basic_package_version_file(dynarmicConfigVersion.cmake
+        COMPATIBILITY SameMajorVersion
+    )
+    install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/dynarmicConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/dynarmicConfigVersion.cmake"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/dynarmic"
+    )
+
+    install(DIRECTORY src/dynarmic TYPE INCLUDE FILES_MATCHING PATTERN "*.h")
+endif()

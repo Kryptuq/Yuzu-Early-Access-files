@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
+#include <atomic>
 #include <cinttypes>
 #include <optional>
 #include <vector>
@@ -33,6 +34,7 @@
 #include "core/hle/kernel/svc_results.h"
 #include "core/hle/kernel/time_manager.h"
 #include "core/hle/result.h"
+#include "core/memory.h"
 
 #ifdef ARCHITECTURE_x86_64
 #include "core/arm/dynarmic/arm_dynarmic_32.h"
@@ -62,6 +64,13 @@ static void ResetThreadContext64(Core::ARM_Interface::ThreadContext64& context, 
 namespace Kernel {
 
 namespace {
+
+struct ThreadLocalRegion {
+    static constexpr std::size_t MessageBufferSize = 0x100;
+    std::array<u32, MessageBufferSize / sizeof(u32)> message_buffer;
+    std::atomic_uint16_t disable_count;
+    std::atomic_uint16_t interrupt_flag;
+};
 
 class ThreadQueueImplForKThreadSleep final : public KThreadQueueWithoutEndWait {
 public:
@@ -346,7 +355,7 @@ void KThread::StartTermination() {
     if (parent != nullptr) {
         parent->ReleaseUserException(this);
         if (parent->GetPinnedThread(GetCurrentCoreId(kernel)) == this) {
-            parent->UnpinCurrentThread();
+            parent->UnpinCurrentThread(core_id);
         }
     }
 
@@ -372,7 +381,7 @@ void KThread::StartTermination() {
     this->Close();
 }
 
-void KThread::Pin() {
+void KThread::Pin(s32 current_core) {
     ASSERT(kernel.GlobalSchedulerContext().IsLocked());
 
     // Set ourselves as pinned.
@@ -389,7 +398,6 @@ void KThread::Pin() {
 
         // Bind ourselves to this core.
         const s32 active_core = GetActiveCore();
-        const s32 current_core = GetCurrentCoreId(kernel);
 
         SetActiveCore(current_core);
         physical_ideal_core_id = current_core;
@@ -480,6 +488,36 @@ void KThread::Unpin() {
             it->SetState(ThreadState::Runnable);
         }
     }
+}
+
+u16 KThread::GetUserDisableCount() const {
+    if (!IsUserThread()) {
+        // We only emulate TLS for user threads
+        return {};
+    }
+
+    auto& memory = kernel.System().Memory();
+    return memory.Read16(tls_address + offsetof(ThreadLocalRegion, disable_count));
+}
+
+void KThread::SetInterruptFlag() {
+    if (!IsUserThread()) {
+        // We only emulate TLS for user threads
+        return;
+    }
+
+    auto& memory = kernel.System().Memory();
+    memory.Write16(tls_address + offsetof(ThreadLocalRegion, interrupt_flag), 1);
+}
+
+void KThread::ClearInterruptFlag() {
+    if (!IsUserThread()) {
+        // We only emulate TLS for user threads
+        return;
+    }
+
+    auto& memory = kernel.System().Memory();
+    memory.Write16(tls_address + offsetof(ThreadLocalRegion, interrupt_flag), 0);
 }
 
 ResultCode KThread::GetCoreMask(s32* out_ideal_core, u64* out_affinity_mask) {

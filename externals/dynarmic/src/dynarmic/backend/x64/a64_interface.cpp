@@ -17,7 +17,7 @@
 #include "dynarmic/common/assert.h"
 #include "dynarmic/common/scope_exit.h"
 #include "dynarmic/common/x64_disassemble.h"
-#include "dynarmic/frontend/A64/translate/translate.h"
+#include "dynarmic/frontend/A64/translate/a64_translate.h"
 #include "dynarmic/interface/A64/a64.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/opt/passes.h"

@@ -4,15 +4,15 @@
  */
 
 #include "dynarmic/common/assert.h"
+#include "dynarmic/frontend/A32/a32_location_descriptor.h"
+#include "dynarmic/frontend/A32/a32_types.h"
 #include "dynarmic/frontend/A32/decoder/arm.h"
 #include "dynarmic/frontend/A32/decoder/asimd.h"
 #include "dynarmic/frontend/A32/decoder/vfp.h"
-#include "dynarmic/frontend/A32/location_descriptor.h"
+#include "dynarmic/frontend/A32/translate/a32_translate.h"
 #include "dynarmic/frontend/A32/translate/conditional_state.h"
-#include "dynarmic/frontend/A32/translate/impl/translate.h"
-#include "dynarmic/frontend/A32/translate/translate.h"
+#include "dynarmic/frontend/A32/translate/impl/a32_translate_impl.h"
 #include "dynarmic/frontend/A32/translate/translate_callbacks.h"
-#include "dynarmic/frontend/A32/types.h"
 #include "dynarmic/interface/A32/config.h"
 #include "dynarmic/ir/basic_block.h"
 

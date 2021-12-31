@@ -12,7 +12,7 @@
 #include "dynarmic/backend/x64/a64_jitstate.h"
 #include "dynarmic/backend/x64/block_range_information.h"
 #include "dynarmic/backend/x64/emit_x64.h"
-#include "dynarmic/frontend/A64/location_descriptor.h"
+#include "dynarmic/frontend/A64/a64_location_descriptor.h"
 #include "dynarmic/interface/A64/a64.h"
 #include "dynarmic/interface/A64/config.h"
 #include "dynarmic/ir/terminal.h"

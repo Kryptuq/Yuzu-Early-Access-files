@@ -15,7 +15,7 @@
 #include "dynarmic/backend/x64/a32_jitstate.h"
 #include "dynarmic/backend/x64/block_range_information.h"
 #include "dynarmic/backend/x64/emit_x64.h"
-#include "dynarmic/frontend/A32/location_descriptor.h"
+#include "dynarmic/frontend/A32/a32_location_descriptor.h"
 #include "dynarmic/interface/A32/a32.h"
 #include "dynarmic/interface/A32/config.h"
 #include "dynarmic/ir/terminal.h"

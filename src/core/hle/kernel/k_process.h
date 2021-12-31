@@ -345,8 +345,8 @@ public:
 
     bool IsSignaled() const override;
 
-    void PinCurrentThread();
-    void UnpinCurrentThread();
+    void PinCurrentThread(s32 core_id);
+    void UnpinCurrentThread(s32 core_id);
     void UnpinThread(KThread* thread);
 
     KLightLock& GetStateLock() {

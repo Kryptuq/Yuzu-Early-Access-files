@@ -2027,6 +2027,25 @@ static ResultCode SignalToAddress(Core::System& system, VAddr address, Svc::Sign
                                                                   count);
 }
 
+static void SynchronizePreemptionState(Core::System& system) {
+    auto& kernel = system.Kernel();
+
+    // Lock the scheduler.
+    KScopedSchedulerLock sl{kernel};
+
+    // If the current thread is pinned, unpin it.
+    KProcess* cur_process = system.Kernel().CurrentProcess();
+    const auto core_id = GetCurrentCoreId(kernel);
+
+    if (cur_process->GetPinnedThread(core_id) == GetCurrentThreadPointer(kernel)) {
+        // Clear the current thread's interrupt flag.
+        GetCurrentThread(kernel).ClearInterruptFlag();
+
+        // Unpin the current thread.
+        cur_process->UnpinCurrentThread(core_id);
+    }
+}
+
 static ResultCode SignalToAddress32(Core::System& system, u32 address, Svc::SignalType signal_type,
                                     s32 value, s32 count) {
     return SignalToAddress(system, address, signal_type, value, count);
@@ -2797,7 +2816,7 @@ static const FunctionDef SVC_Table_64[] = {
     {0x33, SvcWrap64<GetThreadContext>, "GetThreadContext"},
     {0x34, SvcWrap64<WaitForAddress>, "WaitForAddress"},
     {0x35, SvcWrap64<SignalToAddress>, "SignalToAddress"},
-    {0x36, nullptr, "SynchronizePreemptionState"},
+    {0x36, SvcWrap64<SynchronizePreemptionState>, "SynchronizePreemptionState"},
     {0x37, nullptr, "Unknown"},
     {0x38, nullptr, "Unknown"},
     {0x39, nullptr, "Unknown"},

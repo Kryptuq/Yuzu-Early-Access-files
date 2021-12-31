@@ -908,8 +908,9 @@ void EmulatedController::SetSupportedNpadStyleTag(NpadStyleTag supported_styles)
     }
 }
 
-bool EmulatedController::IsControllerSupported() const {
-    switch (npad_type) {
+bool EmulatedController::IsControllerSupported(bool use_temporary_value) const {
+    const auto type = is_configuring && use_temporary_value ? tmp_npad_type : npad_type;
+    switch (type) {
     case NpadStyleIndex::ProController:
         return supported_style_tag.fullkey;
     case NpadStyleIndex::Handheld:
@@ -937,9 +938,10 @@ bool EmulatedController::IsControllerSupported() const {
     }
 }
 
-void EmulatedController::Connect() {
-    if (!IsControllerSupported()) {
-        LOG_ERROR(Service_HID, "Controller type {} is not supported", npad_type);
+void EmulatedController::Connect(bool use_temporary_value) {
+    if (!IsControllerSupported(use_temporary_value)) {
+        const auto type = is_configuring && use_temporary_value ? tmp_npad_type : npad_type;
+        LOG_ERROR(Service_HID, "Controller type {} is not supported", type);
         return;
     }
     {

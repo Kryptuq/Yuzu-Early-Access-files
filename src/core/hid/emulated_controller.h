@@ -169,8 +169,11 @@ public:
      */
     void SetSupportedNpadStyleTag(NpadStyleTag supported_styles);
 
-    /// Sets the connected status to true
-    void Connect();
+    /**
+     * Sets the connected status to true
+     * @param use_temporary_value If true tmp_npad_type will be used
+     */
+    void Connect(bool use_temporary_value = false);
 
     /// Sets the connected status to false
     void Disconnect();
@@ -336,9 +339,10 @@ private:
 
     /**
      * Checks the current controller type against the supported_style_tag
+     * @param use_temporary_value If true tmp_npad_type will be used
      * @return true if the controller is supported
      */
-    bool IsControllerSupported() const;
+    bool IsControllerSupported(bool use_temporary_value = false) const;
 
     /**
      * Updates the button status of the controller

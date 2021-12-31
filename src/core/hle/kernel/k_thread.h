@@ -307,6 +307,10 @@ public:
         return parent != nullptr;
     }
 
+    u16 GetUserDisableCount() const;
+    void SetInterruptFlag();
+    void ClearInterruptFlag();
+
     [[nodiscard]] KThread* GetLockOwner() const {
         return lock_owner;
     }
@@ -490,7 +494,7 @@ public:
         this->GetStackParameters().disable_count--;
     }
 
-    void Pin();
+    void Pin(s32 current_core);
 
     void Unpin();
 

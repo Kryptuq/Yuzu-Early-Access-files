@@ -7,10 +7,10 @@
 
 #include <optional>
 
-#include "dynarmic/frontend/A64/ir_emitter.h"
-#include "dynarmic/frontend/A64/location_descriptor.h"
-#include "dynarmic/frontend/A64/translate/translate.h"
-#include "dynarmic/frontend/A64/types.h"
+#include "dynarmic/frontend/A64/a64_ir_emitter.h"
+#include "dynarmic/frontend/A64/a64_location_descriptor.h"
+#include "dynarmic/frontend/A64/a64_types.h"
+#include "dynarmic/frontend/A64/translate/a64_translate.h"
 #include "dynarmic/frontend/imm.h"
 
 namespace Dynarmic::A64 {

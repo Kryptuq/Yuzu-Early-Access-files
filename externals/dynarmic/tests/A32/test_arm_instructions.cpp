@@ -6,7 +6,7 @@
 #include <catch2/catch.hpp>
 
 #include "./testenv.h"
-#include "dynarmic/frontend/A32/location_descriptor.h"
+#include "dynarmic/frontend/A32/a32_location_descriptor.h"
 #include "dynarmic/interface/A32/a32.h"
 
 using namespace Dynarmic;

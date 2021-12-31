@@ -33,7 +33,7 @@ void UpdateController(Core::HID::EmulatedController* controller,
     }
     controller->SetNpadStyleIndex(controller_type);
     if (connected) {
-        controller->Connect();
+        controller->Connect(true);
     }
 }
 

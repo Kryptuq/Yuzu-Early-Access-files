@@ -220,30 +220,28 @@ bool KProcess::ReleaseUserException(KThread* thread) {
     }
 }
 
-void KProcess::PinCurrentThread() {
+void KProcess::PinCurrentThread(s32 core_id) {
     ASSERT(kernel.GlobalSchedulerContext().IsLocked());
 
     // Get the current thread.
-    const s32 core_id = GetCurrentCoreId(kernel);
-    KThread* cur_thread = GetCurrentThreadPointer(kernel);
+    KThread* cur_thread = kernel.Scheduler(static_cast<std::size_t>(core_id)).GetCurrentThread();
 
     // If the thread isn't terminated, pin it.
     if (!cur_thread->IsTerminationRequested()) {
         // Pin it.
         PinThread(core_id, cur_thread);
-        cur_thread->Pin();
+        cur_thread->Pin(core_id);
 
         // An update is needed.
         KScheduler::SetSchedulerUpdateNeeded(kernel);
     }
 }
 
-void KProcess::UnpinCurrentThread() {
+void KProcess::UnpinCurrentThread(s32 core_id) {
     ASSERT(kernel.GlobalSchedulerContext().IsLocked());
 
     // Get the current thread.
-    const s32 core_id = GetCurrentCoreId(kernel);
-    KThread* cur_thread = GetCurrentThreadPointer(kernel);
+    KThread* cur_thread = kernel.Scheduler(static_cast<std::size_t>(core_id)).GetCurrentThread();
 
     // Unpin it.
     cur_thread->Unpin();

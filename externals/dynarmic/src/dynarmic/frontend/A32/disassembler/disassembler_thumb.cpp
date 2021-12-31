@@ -11,9 +11,9 @@
 
 #include "dynarmic/common/bit_util.h"
 #include "dynarmic/common/string_util.h"
+#include "dynarmic/frontend/A32/a32_types.h"
 #include "dynarmic/frontend/A32/decoder/thumb16.h"
 #include "dynarmic/frontend/A32/disassembler/disassembler.h"
-#include "dynarmic/frontend/A32/types.h"
 #include "dynarmic/frontend/imm.h"
 
 namespace Dynarmic::A32 {

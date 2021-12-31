@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include "dynarmic/frontend/A32/translate/impl/translate.h"
+#include "dynarmic/frontend/A32/translate/impl/a32_translate_impl.h"
 
 namespace Dynarmic::A32 {
 static IR::U32 Pack2x16To1x32(A32::IREmitter& ir, IR::U32 lo, IR::U32 hi) {

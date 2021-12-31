@@ -6,8 +6,8 @@
 #include <boost/variant/get.hpp>
 
 #include "dynarmic/common/common_types.h"
-#include "dynarmic/frontend/A64/location_descriptor.h"
-#include "dynarmic/frontend/A64/translate/translate.h"
+#include "dynarmic/frontend/A64/a64_location_descriptor.h"
+#include "dynarmic/frontend/A64/translate/a64_translate.h"
 #include "dynarmic/interface/A64/config.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/opt/passes.h"
