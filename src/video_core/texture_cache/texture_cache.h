@@ -1376,9 +1376,7 @@ void TextureCache<P>::ForEachSparseSegment(ImageBase& image, Func&& func) {
     using FuncReturn = typename std::invoke_result<Func, GPUVAddr, VAddr, size_t>::type;
     static constexpr bool RETURNS_BOOL = std::is_same_v<FuncReturn, bool>;
     const auto segments = gpu_memory.GetSubmappedRange(image.gpu_addr, image.guest_size_bytes);
-    for (auto& segment : segments) {
-        const auto gpu_addr = segment.first;
-        const auto size = segment.second;
+    for (const auto& [gpu_addr, size] : segments) {
         std::optional<VAddr> cpu_addr = gpu_memory.GpuToCpuAddress(gpu_addr);
         ASSERT(cpu_addr);
         if constexpr (RETURNS_BOOL) {

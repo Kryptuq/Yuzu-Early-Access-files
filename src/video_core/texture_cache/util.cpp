@@ -364,14 +364,14 @@ template <u32 GOB_EXTENT>
 
 [[nodiscard]] std::optional<SubresourceExtent> ResolveOverlapRightAddress2D(
     const ImageInfo& new_info, GPUVAddr gpu_addr, const ImageBase& overlap, bool strict_size) {
-    const u32 layer_stride = new_info.layer_stride;
-    const s32 new_size = layer_stride * new_info.resources.layers;
-    const s32 diff = static_cast<s32>(overlap.gpu_addr - gpu_addr);
+    const u64 layer_stride = new_info.layer_stride;
+    const u64 new_size = layer_stride * new_info.resources.layers;
+    const u64 diff = overlap.gpu_addr - gpu_addr;
     if (diff > new_size) {
         return std::nullopt;
     }
-    const s32 base_layer = diff / layer_stride;
-    const s32 mip_offset = diff % layer_stride;
+    const s32 base_layer = static_cast<s32>(diff / layer_stride);
+    const s32 mip_offset = static_cast<s32>(diff % layer_stride);
     const std::array offsets = CalculateMipLevelOffsets(new_info);
     const auto end = offsets.begin() + new_info.resources.levels;
     const auto it = std::find(offsets.begin(), end, static_cast<u32>(mip_offset));

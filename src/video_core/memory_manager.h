@@ -155,6 +155,11 @@ private:
 
     void FlushRegion(GPUVAddr gpu_addr, size_t size) const;
 
+    void ReadBlockImpl(GPUVAddr gpu_src_addr, void* dest_buffer, std::size_t size,
+                       bool is_safe) const;
+    void WriteBlockImpl(GPUVAddr gpu_dest_addr, const void* src_buffer, std::size_t size,
+                        bool is_safe);
+
     [[nodiscard]] static constexpr std::size_t PageEntryIndex(GPUVAddr gpu_addr) {
         return (gpu_addr >> page_bits) & page_table_mask;
     }

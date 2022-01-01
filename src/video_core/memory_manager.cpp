@@ -73,12 +73,12 @@ void MemoryManager::Unmap(GPUVAddr gpu_addr, std::size_t size) {
     }
     const auto submapped_ranges = GetSubmappedRange(gpu_addr, size);
 
-    for (const auto& map : submapped_ranges) {
+    for (const auto& [map_addr, map_size] : submapped_ranges) {
         // Flush and invalidate through the GPU interface, to be asynchronous if possible.
-        const std::optional<VAddr> cpu_addr = GpuToCpuAddress(map.first);
+        const std::optional<VAddr> cpu_addr = GpuToCpuAddress(map_addr);
         ASSERT(cpu_addr);
 
-        rasterizer->UnmapMemory(*cpu_addr, map.second);
+        rasterizer->UnmapMemory(*cpu_addr, map_size);
     }
 
     UpdateRange(gpu_addr, PageEntry::State::Unmapped, size);
@@ -265,7 +265,8 @@ size_t MemoryManager::BytesToMapEnd(GPUVAddr gpu_addr) const noexcept {
     return it->second - (gpu_addr - it->first);
 }
 
-void MemoryManager::ReadBlock(GPUVAddr gpu_src_addr, void* dest_buffer, std::size_t size) const {
+void MemoryManager::ReadBlockImpl(GPUVAddr gpu_src_addr, void* dest_buffer, std::size_t size,
+                                  bool is_safe) const {
     std::size_t remaining_size{size};
     std::size_t page_index{gpu_src_addr >> page_bits};
     std::size_t page_offset{gpu_src_addr & page_mask};
@@ -273,35 +274,15 @@ void MemoryManager::ReadBlock(GPUVAddr gpu_src_addr, void* dest_buffer, std::siz
     while (remaining_size > 0) {
         const std::size_t copy_amount{
             std::min(static_cast<std::size_t>(page_size) - page_offset, remaining_size)};
-
-        if (const auto page_addr{GpuToCpuAddress(page_index << page_bits)}; page_addr) {
+        const auto page_addr{GpuToCpuAddress(page_index << page_bits)};
+        if (page_addr && *page_addr != 0) {
             const auto src_addr{*page_addr + page_offset};
-
-            // Flush must happen on the rasterizer interface, such that memory is always synchronous
-            // when it is read (even when in asynchronous GPU mode). Fixes Dead Cells title menu.
-            rasterizer->FlushRegion(src_addr, copy_amount);
-            system.Memory().ReadBlockUnsafe(src_addr, dest_buffer, copy_amount);
-        }
-
-        page_index++;
-        page_offset = 0;
-        dest_buffer = static_cast<u8*>(dest_buffer) + copy_amount;
-        remaining_size -= copy_amount;
-    }
-}
-
-void MemoryManager::ReadBlockUnsafe(GPUVAddr gpu_src_addr, void* dest_buffer,
-                                    const std::size_t size) const {
-    std::size_t remaining_size{size};
-    std::size_t page_index{gpu_src_addr >> page_bits};
-    std::size_t page_offset{gpu_src_addr & page_mask};
-
-    while (remaining_size > 0) {
-        const std::size_t copy_amount{
-            std::min(static_cast<std::size_t>(page_size) - page_offset, remaining_size)};
-
-        if (const auto page_addr{GpuToCpuAddress(page_index << page_bits)}; page_addr) {
-            const auto src_addr{*page_addr + page_offset};
+            if (is_safe) {
+                // Flush must happen on the rasterizer interface, such that memory is always
+                // synchronous when it is read (even when in asynchronous GPU mode).
+                // Fixes Dead Cells title menu.
+                rasterizer->FlushRegion(src_addr, copy_amount);
+            }
             system.Memory().ReadBlockUnsafe(src_addr, dest_buffer, copy_amount);
         } else {
             std::memset(dest_buffer, 0, copy_amount);
@@ -314,7 +295,17 @@ void MemoryManager::ReadBlockUnsafe(GPUVAddr gpu_src_addr, void* dest_buffer,
     }
 }
 
-void MemoryManager::WriteBlock(GPUVAddr gpu_dest_addr, const void* src_buffer, std::size_t size) {
+void MemoryManager::ReadBlock(GPUVAddr gpu_src_addr, void* dest_buffer, std::size_t size) const {
+    ReadBlockImpl(gpu_src_addr, dest_buffer, size, true);
+}
+
+void MemoryManager::ReadBlockUnsafe(GPUVAddr gpu_src_addr, void* dest_buffer,
+                                    const std::size_t size) const {
+    ReadBlockImpl(gpu_src_addr, dest_buffer, size, false);
+}
+
+void MemoryManager::WriteBlockImpl(GPUVAddr gpu_dest_addr, const void* src_buffer, std::size_t size,
+                                   bool is_safe) {
     std::size_t remaining_size{size};
     std::size_t page_index{gpu_dest_addr >> page_bits};
     std::size_t page_offset{gpu_dest_addr & page_mask};
@@ -322,13 +313,15 @@ void MemoryManager::WriteBlock(GPUVAddr gpu_dest_addr, const void* src_buffer, s
     while (remaining_size > 0) {
         const std::size_t copy_amount{
             std::min(static_cast<std::size_t>(page_size) - page_offset, remaining_size)};
-
-        if (const auto page_addr{GpuToCpuAddress(page_index << page_bits)}; page_addr) {
+        const auto page_addr{GpuToCpuAddress(page_index << page_bits)};
+        if (page_addr && *page_addr != 0) {
             const auto dest_addr{*page_addr + page_offset};
 
-            // Invalidate must happen on the rasterizer interface, such that memory is always
-            // synchronous when it is written (even when in asynchronous GPU mode).
-            rasterizer->InvalidateRegion(dest_addr, copy_amount);
+            if (is_safe) {
+                // Invalidate must happen on the rasterizer interface, such that memory is always
+                // synchronous when it is written (even when in asynchronous GPU mode).
+                rasterizer->InvalidateRegion(dest_addr, copy_amount);
+            }
             system.Memory().WriteBlockUnsafe(dest_addr, src_buffer, copy_amount);
         }
 
@@ -339,26 +332,13 @@ void MemoryManager::WriteBlock(GPUVAddr gpu_dest_addr, const void* src_buffer, s
     }
 }
 
+void MemoryManager::WriteBlock(GPUVAddr gpu_dest_addr, const void* src_buffer, std::size_t size) {
+    WriteBlockImpl(gpu_dest_addr, src_buffer, size, true);
+}
+
 void MemoryManager::WriteBlockUnsafe(GPUVAddr gpu_dest_addr, const void* src_buffer,
                                      std::size_t size) {
-    std::size_t remaining_size{size};
-    std::size_t page_index{gpu_dest_addr >> page_bits};
-    std::size_t page_offset{gpu_dest_addr & page_mask};
-
-    while (remaining_size > 0) {
-        const std::size_t copy_amount{
-            std::min(static_cast<std::size_t>(page_size) - page_offset, remaining_size)};
-
-        if (const auto page_addr{GpuToCpuAddress(page_index << page_bits)}; page_addr) {
-            const auto dest_addr{*page_addr + page_offset};
-            system.Memory().WriteBlockUnsafe(dest_addr, src_buffer, copy_amount);
-        }
-
-        page_index++;
-        page_offset = 0;
-        src_buffer = static_cast<const u8*>(src_buffer) + copy_amount;
-        remaining_size -= copy_amount;
-    }
+    WriteBlockImpl(gpu_dest_addr, src_buffer, size, false);
 }
 
 void MemoryManager::FlushRegion(GPUVAddr gpu_addr, size_t size) const {
@@ -435,15 +415,15 @@ std::vector<std::pair<GPUVAddr, std::size_t>> MemoryManager::GetSubmappedRange(
     size_t page_offset{gpu_addr & page_mask};
     std::optional<std::pair<GPUVAddr, std::size_t>> last_segment{};
     std::optional<VAddr> old_page_addr{};
-    const auto extend_size = [this, &last_segment, &page_index](std::size_t bytes) {
+    const auto extend_size = [&last_segment, &page_index, &page_offset](std::size_t bytes) {
         if (!last_segment) {
-            GPUVAddr new_base_addr = page_index << page_bits;
+            const GPUVAddr new_base_addr = (page_index << page_bits) + page_offset;
             last_segment = {new_base_addr, bytes};
         } else {
             last_segment->second += bytes;
         }
     };
-    const auto split = [this, &last_segment, &result] {
+    const auto split = [&last_segment, &result] {
         if (last_segment) {
             result.push_back(*last_segment);
             last_segment = std::nullopt;
@@ -452,7 +432,7 @@ std::vector<std::pair<GPUVAddr, std::size_t>> MemoryManager::GetSubmappedRange(
     while (remaining_size > 0) {
         const size_t num_bytes{std::min(page_size - page_offset, remaining_size)};
         const auto page_addr{GpuToCpuAddress(page_index << page_bits)};
-        if (!page_addr) {
+        if (!page_addr || *page_addr == 0) {
             split();
         } else if (old_page_addr) {
             if (*old_page_addr + page_size != *page_addr) {
