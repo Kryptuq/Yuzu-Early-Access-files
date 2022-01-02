@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  
+
   pull_request:
     branches:
       - main
@@ -15,26 +15,27 @@ jobs:
     name: Static Website Deployment
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
-      
+      - name: actions/checkout
+        uses: actions/checkout@v2
+
       #Installs the Vulkan SDK
       - name: Install Vulkan SDK
         uses: humbletim/setup-vulkan-sdk@v1.0.3
-        
+
       #Installs CMake
       - name: Install CMake
         uses: lukka/get-cmake@latest
-        
+
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
         with:
-          vs-version: '[16.11)'
+          vs-version: "[16.11)"
           msbuild-architecture: x64
-      
+
       #Building with CMake and Ninja
       - name: Generating Project using CMake and Ninja
-      - uses: seanmiddleditch/gha-setup-ninja@master
-      
+        uses: seanmiddleditch/gha-setup-ninja@master
+
       - name: Before Build
       - run: |
           git clone https://github.com/Kryptuq/glslang.git
@@ -44,14 +45,14 @@ jobs:
           conan user
           cmake --version
           cmake .. -G %generator% -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.event.head_commit.message }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.event.head_commit.message }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DUSE_DISCORD_PRESENCE=ON -DYUZU_USE_QT_WEB_ENGINE=OFF
-      
+
       - name: Build app for release
         run: msbuild build\yuzu.sln
-  
+
       - name: After Build
         run: |
           mv build\bin\Release build\bin\yuzu-early-access
-      
+
       # Publishing to Release
       - name: Create Release
         id: create_release
@@ -65,7 +66,7 @@ jobs:
             Yuzu Early Access CI Builds with Appveyor [Current Build: yuzu Early Access ${{ github.event.head_commit.message }}]
           draft: false
           prerelease: false
-          
+
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
