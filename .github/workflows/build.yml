@@ -29,7 +29,6 @@ jobs:
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
         with:
-          vs-version: "[16.4,16.5)"
           msbuild-architecture: x64
 
       #Building with CMake and Ninja
