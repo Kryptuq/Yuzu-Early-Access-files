@@ -12,7 +12,6 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    name: Static Website Deployment
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: actions/checkout
