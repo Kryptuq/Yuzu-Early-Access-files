@@ -36,7 +36,7 @@ jobs:
         uses: seanmiddleditch/gha-setup-ninja@master
 
       - name: Before Build
-      - run: |
+        run: |
           git clone https://github.com/Kryptuq/glslang.git
           mkdir build
           cd build
