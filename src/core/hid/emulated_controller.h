@@ -338,6 +338,12 @@ private:
     void LoadTASParams();
 
     /**
+     * @param use_temporary_value If true tmp_npad_type will be used
+     * @return true if the controller style is fullkey
+     */
+    bool IsControllerFullkey(bool use_temporary_value = false) const;
+
+    /**
      * Checks the current controller type against the supported_style_tag
      * @param use_temporary_value If true tmp_npad_type will be used
      * @return true if the controller is supported

@@ -400,36 +400,66 @@ void QtControllerSelectorDialog::SetSupportedControllers() {
 }
 
 void QtControllerSelectorDialog::SetEmulatedControllers(std::size_t player_index) {
+    const auto npad_style_set = system.HIDCore().GetSupportedStyleTag();
     auto& pairs = index_controller_type_pairs[player_index];
 
     pairs.clear();
     emulated_controllers[player_index]->clear();
 
-    pairs.emplace_back(emulated_controllers[player_index]->count(),
-                       Core::HID::NpadStyleIndex::ProController);
-    emulated_controllers[player_index]->addItem(tr("Pro Controller"));
+    const auto add_item = [&](Core::HID::NpadStyleIndex controller_type,
+                              const QString& controller_name) {
+        pairs.emplace_back(emulated_controllers[player_index]->count(), controller_type);
+        emulated_controllers[player_index]->addItem(controller_name);
+    };
 
-    pairs.emplace_back(emulated_controllers[player_index]->count(),
-                       Core::HID::NpadStyleIndex::JoyconDual);
-    emulated_controllers[player_index]->addItem(tr("Dual Joycons"));
-
-    pairs.emplace_back(emulated_controllers[player_index]->count(),
-                       Core::HID::NpadStyleIndex::JoyconLeft);
-    emulated_controllers[player_index]->addItem(tr("Left Joycon"));
-
-    pairs.emplace_back(emulated_controllers[player_index]->count(),
-                       Core::HID::NpadStyleIndex::JoyconRight);
-    emulated_controllers[player_index]->addItem(tr("Right Joycon"));
-
-    if (player_index == 0) {
-        pairs.emplace_back(emulated_controllers[player_index]->count(),
-                           Core::HID::NpadStyleIndex::Handheld);
-        emulated_controllers[player_index]->addItem(tr("Handheld"));
+    if (npad_style_set.fullkey == 1) {
+        add_item(Core::HID::NpadStyleIndex::ProController, tr("Pro Controller"));
     }
 
-    pairs.emplace_back(emulated_controllers[player_index]->count(),
-                       Core::HID::NpadStyleIndex::GameCube);
-    emulated_controllers[player_index]->addItem(tr("GameCube Controller"));
+    if (npad_style_set.joycon_dual == 1) {
+        add_item(Core::HID::NpadStyleIndex::JoyconDual, tr("Dual Joycons"));
+    }
+
+    if (npad_style_set.joycon_left == 1) {
+        add_item(Core::HID::NpadStyleIndex::JoyconLeft, tr("Left Joycon"));
+    }
+
+    if (npad_style_set.joycon_right == 1) {
+        add_item(Core::HID::NpadStyleIndex::JoyconRight, tr("Right Joycon"));
+    }
+
+    if (player_index == 0 && npad_style_set.handheld == 1) {
+        add_item(Core::HID::NpadStyleIndex::Handheld, tr("Handheld"));
+    }
+
+    if (npad_style_set.gamecube == 1) {
+        add_item(Core::HID::NpadStyleIndex::GameCube, tr("GameCube Controller"));
+    }
+
+    // Disable all unsupported controllers
+    if (!Settings::values.enable_all_controllers) {
+        return;
+    }
+
+    if (npad_style_set.palma == 1) {
+        add_item(Core::HID::NpadStyleIndex::Pokeball, tr("Poke Ball Plus"));
+    }
+
+    if (npad_style_set.lark == 1) {
+        add_item(Core::HID::NpadStyleIndex::NES, tr("NES Controller"));
+    }
+
+    if (npad_style_set.lucia == 1) {
+        add_item(Core::HID::NpadStyleIndex::SNES, tr("SNES Controller"));
+    }
+
+    if (npad_style_set.lagoon == 1) {
+        add_item(Core::HID::NpadStyleIndex::N64, tr("N64 Controller"));
+    }
+
+    if (npad_style_set.lager == 1) {
+        add_item(Core::HID::NpadStyleIndex::SegaGenesis, tr("Sega Genesis"));
+    }
 }
 
 Core::HID::NpadStyleIndex QtControllerSelectorDialog::GetControllerTypeFromIndex(

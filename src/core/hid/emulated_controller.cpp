@@ -901,10 +901,36 @@ void EmulatedController::SetSupportedNpadStyleTag(NpadStyleTag supported_styles)
     if (!is_connected) {
         return;
     }
-    if (!IsControllerSupported()) {
-        LOG_ERROR(Service_HID, "Controller type {} is not supported. Disconnecting controller",
-                  npad_type);
-        Disconnect();
+    if (IsControllerSupported()) {
+        return;
+    }
+
+    Disconnect();
+
+    // Fallback fullkey controllers to Pro controllers
+    if (IsControllerFullkey() && supported_style_tag.fullkey) {
+        LOG_WARNING(Service_HID, "Reconnecting controller type {} as Pro controller", npad_type);
+        SetNpadStyleIndex(NpadStyleIndex::ProController);
+        Connect();
+        return;
+    }
+
+    LOG_ERROR(Service_HID, "Controller type {} is not supported. Disconnecting controller",
+              npad_type);
+}
+
+bool EmulatedController::IsControllerFullkey(bool use_temporary_value) const {
+    const auto type = is_configuring && use_temporary_value ? tmp_npad_type : npad_type;
+    switch (type) {
+    case NpadStyleIndex::ProController:
+    case NpadStyleIndex::GameCube:
+    case NpadStyleIndex::NES:
+    case NpadStyleIndex::SNES:
+    case NpadStyleIndex::N64:
+    case NpadStyleIndex::SegaGenesis:
+        return true;
+    default:
+        return false;
     }
 }
 

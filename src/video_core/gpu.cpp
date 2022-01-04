@@ -206,7 +206,7 @@ struct GPU::Impl {
     }
 
     /// Allows the CPU/NvFlinger to wait on the GPU before presenting a frame.
-    void WaitFence(u32 syncpoint_id, u32 value) {
+    void WaitFence(u32 syncpoint_id, u32 value, std::stop_token stop_token = {}) {
         // Synced GPU, is always in sync
         if (!is_async) {
             return;
@@ -218,13 +218,8 @@ struct GPU::Impl {
         }
         MICROPROFILE_SCOPE(GPU_wait);
         std::unique_lock lock{sync_mutex};
-        sync_cv.wait(lock, [=, this] {
-            if (shutting_down.load(std::memory_order_relaxed)) {
-                // We're shutting down, ensure no threads continue to wait for the next syncpoint
-                return true;
-            }
-            return syncpoints.at(syncpoint_id).load() >= value;
-        });
+        sync_cv.wait(lock, stop_token,
+                     [=, this] { return syncpoints.at(syncpoint_id).load() >= value; });
     }
 
     void IncrementSyncPoint(u32 syncpoint_id) {
@@ -670,8 +665,6 @@ struct GPU::Impl {
     std::unique_ptr<Engines::KeplerMemory> kepler_memory;
     /// Shader build notifier
     std::unique_ptr<VideoCore::ShaderNotify> shader_notify;
-    /// When true, we are about to shut down emulation session, so terminate outstanding tasks
-    std::atomic_bool shutting_down{};
 
     std::array<std::atomic<u32>, Service::Nvidia::MaxSyncPoints> syncpoints{};
 
@@ -680,7 +673,7 @@ struct GPU::Impl {
     std::mutex sync_mutex;
     std::mutex device_mutex;
 
-    std::condition_variable sync_cv;
+    std::condition_variable_any sync_cv;
 
     struct FlushRequest {
         explicit FlushRequest(u64 fence_, VAddr addr_, std::size_t size_)
@@ -819,8 +812,8 @@ const VideoCore::ShaderNotify& GPU::ShaderNotify() const {
     return impl->ShaderNotify();
 }
 
-void GPU::WaitFence(u32 syncpoint_id, u32 value) {
-    impl->WaitFence(syncpoint_id, value);
+void GPU::WaitFence(u32 syncpoint_id, u32 value, std::stop_token stop_token) {
+    impl->WaitFence(syncpoint_id, value, stop_token);
 }
 
 void GPU::IncrementSyncPoint(u32 syncpoint_id) {
