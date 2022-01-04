@@ -57,7 +57,7 @@ public:
 
     [[nodiscard]] u64 CalculateHash() const;
 
-    void Dump(u64 hash);
+    void Dump(u64 hash) override;
 
     void Serialize(std::ofstream& file) const;
 
