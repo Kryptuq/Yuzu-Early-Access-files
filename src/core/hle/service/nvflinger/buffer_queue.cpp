@@ -186,6 +186,10 @@ u32 BufferQueue::Query(QueryType type) {
     case QueryType::NativeWindowWidth:
     case QueryType::NativeWindowHeight:
         break;
+    case QueryType::NativeWindowMinUndequeuedBuffers:
+        return 0;
+    case QueryType::NativeWindowConsumerUsageBits:
+        return 0;
     }
     UNIMPLEMENTED_MSG("Unimplemented query type={}", type);
     return 0;
