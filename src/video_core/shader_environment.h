@@ -57,7 +57,7 @@ public:
 
     [[nodiscard]] u64 CalculateHash() const;
 
-    void Dump(u64 hash);
+    void Dump(u64 hash) override;
 
     void Serialize(std::ofstream& file) const;
 
@@ -152,7 +152,7 @@ public:
 
     [[nodiscard]] std::array<u32, 3> WorkgroupSize() const override;
 
-    void Dump(u64 hash);
+    void Dump(u64 hash) override;
 
 private:
     std::unique_ptr<u64[]> code;

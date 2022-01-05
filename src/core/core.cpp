@@ -317,6 +317,8 @@ struct System::Impl {
         is_powered_on = false;
         exit_lock = false;
 
+        gpu_core->NotifyShutdown();
+
         services.reset();
         service_manager.reset();
         cheat_engine.reset();

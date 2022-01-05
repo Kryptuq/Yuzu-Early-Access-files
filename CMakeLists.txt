@@ -33,6 +33,8 @@ option(ENABLE_CUBEB "Enables the cubeb audio backend" ON)
 
 option(USE_DISCORD_PRESENCE "Enables Discord Rich Presence" OFF)
 
+option(YUZU_USE_BUNDLED_OPUS "Compile bundled opus" ON)
+
 # Default to a Release build
 get_property(IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if (NOT IS_MULTI_CONFIG AND NOT CMAKE_BUILD_TYPE)

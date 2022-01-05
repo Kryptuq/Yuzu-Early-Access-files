@@ -57,6 +57,11 @@ public:
         NativeWindowWidth = 0,
         NativeWindowHeight = 1,
         NativeWindowFormat = 2,
+        /// The minimum number of buffers that must remain un-dequeued after a buffer has been
+        /// queued
+        NativeWindowMinUndequeuedBuffers = 3,
+        /// The consumer gralloc usage bits currently set by the consumer
+        NativeWindowConsumerUsageBits = 10,
     };
 
     explicit BufferQueue(Kernel::KernelCore& kernel, u32 id_, u64 layer_id_,

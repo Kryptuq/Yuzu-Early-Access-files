@@ -17,7 +17,6 @@
 #include "core/frontend/emu_window.h"
 #include "core/hardware_interrupt_manager.h"
 #include "core/hle/service/nvdrv/nvdata.h"
-#include "core/hle/service/nvflinger/buffer_queue.h"
 #include "core/perf_stats.h"
 #include "video_core/cdma_pusher.h"
 #include "video_core/dma_pusher.h"
@@ -310,6 +309,12 @@ struct GPU::Impl {
         gpu_thread.StartThread(*renderer, renderer->Context(), *dma_pusher);
         cpu_context = renderer->GetRenderWindow().CreateSharedContext();
         cpu_context->MakeCurrent();
+    }
+
+    void NotifyShutdown() {
+        std::unique_lock lk{sync_mutex};
+        shutting_down.store(true, std::memory_order::relaxed);
+        sync_cv.notify_all();
     }
 
     /// Obtain the CPU Context
@@ -857,6 +862,10 @@ void GPU::RendererFrameEndNotify() {
 
 void GPU::Start() {
     impl->Start();
+}
+
+void GPU::NotifyShutdown() {
+    impl->NotifyShutdown();
 }
 
 void GPU::ObtainContext() {

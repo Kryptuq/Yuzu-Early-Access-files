@@ -1557,6 +1557,8 @@ void GMainWindow::ShutdownGame() {
     emu_thread->wait();
     emu_thread = nullptr;
 
+    emulation_running = false;
+
     discord_rpc->Update();
 
     // The emulation is stopped, so closing the window or not does not matter anymore
@@ -1594,8 +1596,6 @@ void GMainWindow::ShutdownGame() {
     game_fps_label->setVisible(false);
     emu_frametime_label->setVisible(false);
     renderer_status_button->setEnabled(true);
-
-    emulation_running = false;
 
     game_path.clear();
 

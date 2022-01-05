@@ -232,6 +232,9 @@ public:
     /// core timing events.
     void Start();
 
+    /// Performs any additional necessary steps to shutdown GPU emulation.
+    void NotifyShutdown();
+
     /// Obtain the CPU Context
     void ObtainContext();
 

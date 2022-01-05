@@ -59,7 +59,7 @@ static Shader::TextureType ConvertType(const Tegra::Texture::TICEntry& entry) {
     }
 }
 
-static std::string_view StageToPreffix(Shader::Stage stage) {
+static std::string_view StageToPrefix(Shader::Stage stage) {
     switch (stage) {
     case Shader::Stage::VertexB:
         return "VB";
@@ -83,12 +83,12 @@ static std::string_view StageToPreffix(Shader::Stage stage) {
 static void DumpImpl(u64 hash, const u64* code, u32 read_highest, u32 read_lowest,
                      u32 initial_offset, Shader::Stage stage) {
     const auto shader_dir{Common::FS::GetYuzuPath(Common::FS::YuzuPath::DumpDir)};
-    const auto base_dir{shader_dir / fmt::format("shaders")};
+    const auto base_dir{shader_dir / "shaders"};
     if (!Common::FS::CreateDir(shader_dir) || !Common::FS::CreateDir(base_dir)) {
         LOG_ERROR(Common_Filesystem, "Failed to create shader dump directories");
         return;
     }
-    const auto prefix = StageToPreffix(stage);
+    const auto prefix = StageToPrefix(stage);
     const auto name{base_dir / fmt::format("{}{:016x}.ash", prefix, hash)};
     const size_t real_size = read_highest - read_lowest + initial_offset;
     const size_t padding_needed = ((32 - (real_size % 32)) % 32);

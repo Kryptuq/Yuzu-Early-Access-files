@@ -100,9 +100,6 @@ std::optional<u64> NVFlinger::OpenDisplay(std::string_view name) {
 
     LOG_DEBUG(Service, "Opening \"{}\" display", name);
 
-    // TODO(Subv): Currently we only support the Default display.
-    ASSERT(name == "Default");
-
     const auto itr =
         std::find_if(displays.begin(), displays.end(),
                      [&](const VI::Display& display) { return display.GetName() == name; });
