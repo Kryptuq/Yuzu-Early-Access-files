@@ -117,10 +117,10 @@ if (ENABLE_WEB_SERVICE)
 endif()
 
 # Opus
-find_package(opus 1.3)
-if (NOT opus_FOUND)
-    message(STATUS "opus 1.3 or newer not found, falling back to externals")
+if (YUZU_USE_BUNDLED_OPUS)
     add_subdirectory(opus EXCLUDE_FROM_ALL)
+else()
+    find_package(opus 1.3 REQUIRED)
 endif()
 
 # FFMpeg
