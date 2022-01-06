@@ -285,7 +285,7 @@ public:
             // Sanity note: Here imm8.Bit<0>() is guaranteed to be == 1. (imm8 can never be 0bxxxx0000)
             return std::make_tuple(imm8.Bit<3>() == firstcond0 ? "t" : "e", imm8.Bit<2>() == firstcond0 ? "t" : "e", imm8.Bit<1>() == firstcond0 ? "t" : "e");
         }();
-        return fmt::format("it{}{}{} {}", x, y, z, firstcond);
+        return fmt::format("it{}{}{} {}", x, y, z, CondToString(firstcond));
     }
 
     std::string thumb16_SXTH(Reg m, Reg d) {

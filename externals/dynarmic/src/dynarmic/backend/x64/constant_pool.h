@@ -5,9 +5,10 @@
 
 #pragma once
 
-#include <map>
-#include <tuple>
+#include <bit>
+#include <utility>
 
+#include <tsl/robin_map.h>
 #include <xbyak/xbyak.h>
 
 #include "dynarmic/common/common_types.h"
@@ -29,7 +30,13 @@ public:
 private:
     static constexpr size_t align_size = 16;  // bytes
 
-    std::map<std::tuple<u64, u64>, void*> constant_info;
+    struct ConstantHash {
+        std::size_t operator()(const std::pair<u64, u64>& constant) const noexcept {
+            return constant.first ^ std::rotl<u64>(constant.second, 1);
+        }
+    };
+
+    tsl::robin_map<std::pair<u64, u64>, void*, ConstantHash> constant_info;
 
     BlockOfCode& code;
     size_t pool_size;
