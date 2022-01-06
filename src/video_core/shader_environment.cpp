@@ -381,7 +381,7 @@ void FileEnvironment::Deserialize(std::ifstream& file) {
     }
 }
 
-void FileEnvironment::Dump(u64 [[maybe_unused]] hash) {
+void FileEnvironment::Dump(u64 hash) {
     DumpImpl(hash, code.get(), read_highest, read_lowest, initial_offset, stage);
 }
 

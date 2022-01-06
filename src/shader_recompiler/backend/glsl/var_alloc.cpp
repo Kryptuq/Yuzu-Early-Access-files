@@ -131,7 +131,6 @@ std::string VarAlloc::AddDefine(IR::Inst& inst, GlslVarType type) {
     } else {
         return "";
     }
-    return Representation(inst.Definition<Id>());
 }
 
 std::string VarAlloc::Consume(const IR::Value& value) {
