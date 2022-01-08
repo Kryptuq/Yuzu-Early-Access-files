@@ -37,7 +37,6 @@ jobs:
 
       - name: Before Build
         run: |
-          git clone https://github.com/Kryptuq/glslang.git
           mkdir build
           cd build
           pip install conan
