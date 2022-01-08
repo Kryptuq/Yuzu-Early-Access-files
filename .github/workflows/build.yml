@@ -16,29 +16,14 @@ jobs:
     steps:
       # Installs needed Dependencies
       - name: Dependencies
-        run: |
-        sudo apt-get install autoconf cmake g++-10 gcc-10 git glslang-tools libasound2 libboost-context-dev libglu1-mesa-dev libhidapi-dev libpulse-dev libtool libudev-dev libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-xkb1 libxext-dev libxkbcommon-x11-0 mesa-common-dev nasm ninja-build python3 python3-pip qtbase5-dev qtbase5-private-dev qtwebengine5-dev libmbedtls-dev
+        run: sudo apt-get install autoconf cmake g++-10 gcc-10 git glslang-tools libasound2 libboost-context-dev libglu1-mesa-dev libhidapi-dev libpulse-dev libtool libudev-dev libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-xkb1 libxext-dev libxkbcommon-x11-0 mesa-common-dev nasm ninja-build python3 python3-pip qtbase5-dev qtbase5-private-dev qtwebengine5-dev libmbedtls-dev
 
-      #Installs the Vulkan SDK
-      - name: Install Vulkan SDK
-        uses: humbletim/setup-vulkan-sdk@v1.0.3
-
-      #Installs CMake
-      - name: Install CMake
-        uses: lukka/get-cmake@latest
-
-      - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.1
-        with:
-          msbuild-architecture: x64
-
-      #Building with CMake and Ninja
-      - name: Generating Project using CMake and Ninja
-        uses: seanmiddleditch/gha-setup-ninja@master
+      #Install Conan
+      - name: Install Conan
+        run: pip3 install --user conan
 
       - name: Before Build
         run: |
-          git clone https://github.com/Kryptuq/glslang.git
           mkdir build
           cd build
           pip install conan
