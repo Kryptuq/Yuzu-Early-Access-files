@@ -8,6 +8,10 @@ on:
   pull_request:
     branches:
       - main
+      
+      steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
 
 jobs:
   build:
