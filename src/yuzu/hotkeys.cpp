@@ -206,7 +206,6 @@ void ControllerShortcut::ControllerUpdateEvent(Core::HID::ControllerTriggerType 
         player_capture_buttons == button_sequence.capture.raw &&
         player_home_buttons == button_sequence.home.raw && !active) {
         // Force user to press the home or capture button again
-        emulated_controller->ResetSystemButtons();
         active = true;
         emit Activated();
         return;

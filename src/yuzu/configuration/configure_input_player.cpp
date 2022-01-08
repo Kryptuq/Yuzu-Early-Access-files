@@ -747,15 +747,16 @@ void ConfigureInputPlayer::UpdateInputDeviceCombobox() {
     const auto first_engine = devices[0].Get("engine", "");
     const auto first_guid = devices[0].Get("guid", "");
     const auto first_port = devices[0].Get("port", 0);
+    const auto first_pad = devices[0].Get("pad", 0);
 
     if (devices.size() == 1) {
-        const auto devices_it =
-            std::find_if(input_devices.begin(), input_devices.end(),
-                         [first_engine, first_guid, first_port](const Common::ParamPackage param) {
-                             return param.Get("engine", "") == first_engine &&
-                                    param.Get("guid", "") == first_guid &&
-                                    param.Get("port", 0) == first_port;
-                         });
+        const auto devices_it = std::find_if(
+            input_devices.begin(), input_devices.end(),
+            [first_engine, first_guid, first_port, first_pad](const Common::ParamPackage param) {
+                return param.Get("engine", "") == first_engine &&
+                       param.Get("guid", "") == first_guid && param.Get("port", 0) == first_port &&
+                       param.Get("pad", 0) == first_pad;
+            });
         const int device_index =
             devices_it != input_devices.end()
                 ? static_cast<int>(std::distance(input_devices.begin(), devices_it))

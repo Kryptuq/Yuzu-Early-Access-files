@@ -2825,6 +2825,11 @@ void GMainWindow::OnTasStartStop() {
     if (!emulation_running) {
         return;
     }
+
+    // Disable system buttons to prevent TAS from executing a hotkey
+    auto* controller = system->HIDCore().GetEmulatedController(Core::HID::NpadIdType::Player1);
+    controller->ResetSystemButtons();
+
     input_subsystem->GetTas()->StartStop();
     OnTasStateChanged();
 }
@@ -2836,6 +2841,11 @@ void GMainWindow::OnTasRecord() {
     if (is_tas_recording_dialog_active) {
         return;
     }
+
+    // Disable system buttons to prevent TAS from recording a hotkey
+    auto* controller = system->HIDCore().GetEmulatedController(Core::HID::NpadIdType::Player1);
+    controller->ResetSystemButtons();
+
     const bool is_recording = input_subsystem->GetTas()->Record();
     if (!is_recording) {
         is_tas_recording_dialog_active = true;

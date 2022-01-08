@@ -10,6 +10,7 @@ namespace Core::HID {
 MotionInput::MotionInput() {
     // Initialize PID constants with default values
     SetPID(0.3f, 0.005f, 0.0f);
+    SetGyroThreshold(0.001f);
 }
 
 void MotionInput::SetPID(f32 new_kp, f32 new_ki, f32 new_kd) {
