@@ -44,7 +44,6 @@ if ("${GLSLANGVALIDATOR}" STREQUAL "GLSLANGVALIDATOR-NOTFOUND")
 endif()
 
 set(GLSL_FLAGS "")
-set(QUIET_FLAG "--quiet")
 
 set(SHADER_INCLUDE ${CMAKE_CURRENT_BINARY_DIR}/include)
 set(SHADER_DIR ${SHADER_INCLUDE}/video_core/host_shaders)
