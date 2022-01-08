@@ -9,15 +9,15 @@ on:
     branches:
       - main
       
-      steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
 jobs:
   build:
     name: Building Yuzu Binaries
     runs-on: ubuntu-latest
     steps:
+      # Check
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
       # Get Updates
       - name: Updates
         run: sudo apt update
