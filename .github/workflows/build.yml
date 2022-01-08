@@ -24,7 +24,7 @@ jobs:
       
       # Installs needed Dependencies
       - name: Dependencies
-        run: sudo apt-get install autoconf cmake g++-10 gcc-10 git glslang-tools libasound2 libboost-context-dev qttools5-dev libglu1-mesa-dev libhidapi-dev libpulse-dev libtool libudev-dev libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-xkb1 libxext-dev libxkbcommon-x11-0 mesa-common-dev nasm ninja-build python3 python3-pip qtbase5-dev qtbase5-private-dev qtwebengine5-dev libmbedtls-dev
+        run: sudo apt-get install autoconf cmake g++-10 gcc-10 git glslang-tools libasound2 libboost-context-dev qttools5-dev qttools5-dev-tools libglu1-mesa-dev libhidapi-dev libpulse-dev libtool libudev-dev libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-xkb1 libxext-dev libxkbcommon-x11-0 mesa-common-dev nasm ninja-build python3 python3-pip qtbase5-dev qtbase5-private-dev qtwebengine5-dev libmbedtls-dev
 
       #Install Conan
       - name: Install Conan
