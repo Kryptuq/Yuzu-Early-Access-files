@@ -39,7 +39,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=Release                                                                    \
           -DCMAKE_C_COMPILER=gcc-10                                                                     \
           -DCMAKE_CXX_COMPILER=g++-10                                                                   \
-          --DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.event.head_commit.message }}"          \
+          -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.event.head_commit.message }}"           \
           -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.event.head_commit.message }} | {3}"  \
           -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON                                                       \
           -DUSE_DISCORD_PRESENCE=ON                                                                     \
