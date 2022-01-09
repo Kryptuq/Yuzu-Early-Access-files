@@ -48,8 +48,7 @@ public:
     ResultCode ReserveTransferMemory(VAddr addr, std::size_t size, KMemoryPermission perm);
     ResultCode ResetTransferMemory(VAddr addr, std::size_t size);
     ResultCode SetMemoryPermission(VAddr addr, std::size_t size, Svc::MemoryPermission perm);
-    ResultCode SetMemoryAttribute(VAddr addr, std::size_t size, KMemoryAttribute mask,
-                                  KMemoryAttribute value);
+    ResultCode SetMemoryAttribute(VAddr addr, std::size_t size, u32 mask, u32 attr);
     ResultCode SetMaxHeapSize(std::size_t size);
     ResultCode SetHeapSize(VAddr* out, std::size_t size);
     ResultVal<VAddr> AllocateAndMapMemory(std::size_t needed_num_pages, std::size_t align,
@@ -102,28 +101,50 @@ private:
     constexpr VAddr GetRegionAddress(KMemoryState state) const;
     constexpr std::size_t GetRegionSize(KMemoryState state) const;
 
-    constexpr ResultCode CheckMemoryState(const KMemoryInfo& info, KMemoryState state_mask,
+    ResultCode CheckMemoryStateContiguous(std::size_t* out_blocks_needed, VAddr addr,
+                                          std::size_t size, KMemoryState state_mask,
                                           KMemoryState state, KMemoryPermission perm_mask,
                                           KMemoryPermission perm, KMemoryAttribute attr_mask,
                                           KMemoryAttribute attr) const;
+    ResultCode CheckMemoryStateContiguous(VAddr addr, std::size_t size, KMemoryState state_mask,
+                                          KMemoryState state, KMemoryPermission perm_mask,
+                                          KMemoryPermission perm, KMemoryAttribute attr_mask,
+                                          KMemoryAttribute attr) const {
+        return this->CheckMemoryStateContiguous(nullptr, addr, size, state_mask, state, perm_mask,
+                                                perm, attr_mask, attr);
+    }
+
+    ResultCode CheckMemoryState(const KMemoryInfo& info, KMemoryState state_mask,
+                                KMemoryState state, KMemoryPermission perm_mask,
+                                KMemoryPermission perm, KMemoryAttribute attr_mask,
+                                KMemoryAttribute attr) const;
     ResultCode CheckMemoryState(KMemoryState* out_state, KMemoryPermission* out_perm,
-                                KMemoryAttribute* out_attr, VAddr addr, std::size_t size,
-                                KMemoryState state_mask, KMemoryState state,
-                                KMemoryPermission perm_mask, KMemoryPermission perm,
-                                KMemoryAttribute attr_mask, KMemoryAttribute attr,
-                                KMemoryAttribute ignore_attr = DefaultMemoryIgnoreAttr);
-    ResultCode CheckMemoryState(VAddr addr, std::size_t size, KMemoryState state_mask,
+                                KMemoryAttribute* out_attr, std::size_t* out_blocks_needed,
+                                VAddr addr, std::size_t size, KMemoryState state_mask,
                                 KMemoryState state, KMemoryPermission perm_mask,
                                 KMemoryPermission perm, KMemoryAttribute attr_mask,
                                 KMemoryAttribute attr,
-                                KMemoryAttribute ignore_attr = DefaultMemoryIgnoreAttr) {
-        return CheckMemoryState(nullptr, nullptr, nullptr, addr, size, state_mask, state, perm_mask,
-                                perm, attr_mask, attr, ignore_attr);
-    }
-    ResultCode CheckMemoryState(size_t* out_blocks_needed, VAddr addr, size_t size,
+                                KMemoryAttribute ignore_attr = DefaultMemoryIgnoreAttr) const;
+    ResultCode CheckMemoryState(std::size_t* out_blocks_needed, VAddr addr, std::size_t size,
                                 KMemoryState state_mask, KMemoryState state,
                                 KMemoryPermission perm_mask, KMemoryPermission perm,
-                                KMemoryAttribute attr_mask, KMemoryAttribute attr) const;
+                                KMemoryAttribute attr_mask, KMemoryAttribute attr,
+                                KMemoryAttribute ignore_attr = DefaultMemoryIgnoreAttr) const {
+        return CheckMemoryState(nullptr, nullptr, nullptr, out_blocks_needed, addr, size,
+                                state_mask, state, perm_mask, perm, attr_mask, attr, ignore_attr);
+    }
+    ResultCode CheckMemoryState(VAddr addr, size_t size, KMemoryState state_mask,
+                                KMemoryState state, KMemoryPermission perm_mask,
+                                KMemoryPermission perm, KMemoryAttribute attr_mask,
+                                KMemoryAttribute attr,
+                                KMemoryAttribute ignore_attr = DefaultMemoryIgnoreAttr) const {
+        return this->CheckMemoryState(nullptr, addr, size, state_mask, state, perm_mask, perm,
+                                      attr_mask, attr, ignore_attr);
+    }
+
+    bool IsLockedByCurrentThread() const {
+        return true;
+    }
 
     std::recursive_mutex page_table_lock;
     std::unique_ptr<KMemoryBlockManager> block_manager;

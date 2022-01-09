@@ -32,6 +32,7 @@ enum class MemoryState : u32 {
     Kernel = 0x13,
     GeneratedCode = 0x14,
     CodeOut = 0x15,
+    Coverage = 0x16,
 };
 DECLARE_ENUM_FLAG_OPERATORS(MemoryState);
 

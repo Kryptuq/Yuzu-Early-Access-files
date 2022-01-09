@@ -442,14 +442,22 @@ MotionMapping UDPClient::GetMotionMappingForDevice(const Common::ParamPackage& p
     }
 
     MotionMapping mapping = {};
-    Common::ParamPackage motion_params;
-    motion_params.Set("engine", GetEngineName());
-    motion_params.Set("guid", params.Get("guid", ""));
-    motion_params.Set("port", params.Get("port", 0));
-    motion_params.Set("pad", params.Get("pad", 0));
-    motion_params.Set("motion", 0);
-    mapping.insert_or_assign(Settings::NativeMotion::MotionLeft, std::move(motion_params));
-    mapping.insert_or_assign(Settings::NativeMotion::MotionRight, std::move(motion_params));
+    Common::ParamPackage left_motion_params;
+    left_motion_params.Set("engine", GetEngineName());
+    left_motion_params.Set("guid", params.Get("guid", ""));
+    left_motion_params.Set("port", params.Get("port", 0));
+    left_motion_params.Set("pad", params.Get("pad", 0));
+    left_motion_params.Set("motion", 0);
+
+    Common::ParamPackage right_motion_params;
+    right_motion_params.Set("engine", GetEngineName());
+    right_motion_params.Set("guid", params.Get("guid", ""));
+    right_motion_params.Set("port", params.Get("port", 0));
+    right_motion_params.Set("pad", params.Get("pad", 0));
+    right_motion_params.Set("motion", 0);
+
+    mapping.insert_or_assign(Settings::NativeMotion::MotionLeft, std::move(left_motion_params));
+    mapping.insert_or_assign(Settings::NativeMotion::MotionRight, std::move(right_motion_params));
     return mapping;
 }
 

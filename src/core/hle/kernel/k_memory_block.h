@@ -70,12 +70,12 @@ enum class KMemoryState : u32 {
     ThreadLocal =
         static_cast<u32>(Svc::MemoryState::ThreadLocal) | FlagMapped | FlagReferenceCounted,
 
-    Transferred = static_cast<u32>(Svc::MemoryState::Transferred) | FlagsMisc |
-                  FlagCanAlignedDeviceMap | FlagCanChangeAttribute | FlagCanUseIpc |
-                  FlagCanUseNonSecureIpc | FlagCanUseNonDeviceIpc,
+    Transfered = static_cast<u32>(Svc::MemoryState::Transferred) | FlagsMisc |
+                 FlagCanAlignedDeviceMap | FlagCanChangeAttribute | FlagCanUseIpc |
+                 FlagCanUseNonSecureIpc | FlagCanUseNonDeviceIpc,
 
-    SharedTransferred = static_cast<u32>(Svc::MemoryState::SharedTransferred) | FlagsMisc |
-                        FlagCanAlignedDeviceMap | FlagCanUseNonSecureIpc | FlagCanUseNonDeviceIpc,
+    SharedTransfered = static_cast<u32>(Svc::MemoryState::SharedTransferred) | FlagsMisc |
+                       FlagCanAlignedDeviceMap | FlagCanUseNonSecureIpc | FlagCanUseNonDeviceIpc,
 
     SharedCode = static_cast<u32>(Svc::MemoryState::SharedCode) | FlagMapped |
                  FlagReferenceCounted | FlagCanUseNonSecureIpc | FlagCanUseNonDeviceIpc,
@@ -93,6 +93,8 @@ enum class KMemoryState : u32 {
     GeneratedCode = static_cast<u32>(Svc::MemoryState::GeneratedCode) | FlagMapped |
                     FlagReferenceCounted | FlagCanDebug,
     CodeOut = static_cast<u32>(Svc::MemoryState::CodeOut) | FlagMapped | FlagReferenceCounted,
+
+    Coverage = static_cast<u32>(Svc::MemoryState::Coverage) | FlagMapped,
 };
 DECLARE_ENUM_FLAG_OPERATORS(KMemoryState);
 
@@ -108,8 +110,8 @@ static_assert(static_cast<u32>(KMemoryState::AliasCodeData) == 0x03FFBD09);
 static_assert(static_cast<u32>(KMemoryState::Ipc) == 0x005C3C0A);
 static_assert(static_cast<u32>(KMemoryState::Stack) == 0x005C3C0B);
 static_assert(static_cast<u32>(KMemoryState::ThreadLocal) == 0x0040200C);
-static_assert(static_cast<u32>(KMemoryState::Transferred) == 0x015C3C0D);
-static_assert(static_cast<u32>(KMemoryState::SharedTransferred) == 0x005C380E);
+static_assert(static_cast<u32>(KMemoryState::Transfered) == 0x015C3C0D);
+static_assert(static_cast<u32>(KMemoryState::SharedTransfered) == 0x005C380E);
 static_assert(static_cast<u32>(KMemoryState::SharedCode) == 0x0040380F);
 static_assert(static_cast<u32>(KMemoryState::Inaccessible) == 0x00000010);
 static_assert(static_cast<u32>(KMemoryState::NonSecureIpc) == 0x005C3811);
@@ -117,6 +119,7 @@ static_assert(static_cast<u32>(KMemoryState::NonDeviceIpc) == 0x004C2812);
 static_assert(static_cast<u32>(KMemoryState::Kernel) == 0x00002013);
 static_assert(static_cast<u32>(KMemoryState::GeneratedCode) == 0x00402214);
 static_assert(static_cast<u32>(KMemoryState::CodeOut) == 0x00402015);
+static_assert(static_cast<u32>(KMemoryState::Coverage) == 0x00002016);
 
 enum class KMemoryPermission : u8 {
     None = 0,
@@ -155,7 +158,13 @@ enum class KMemoryPermission : u8 {
 DECLARE_ENUM_FLAG_OPERATORS(KMemoryPermission);
 
 constexpr KMemoryPermission ConvertToKMemoryPermission(Svc::MemoryPermission perm) {
-    return static_cast<KMemoryPermission>(perm);
+    return static_cast<KMemoryPermission>(
+        (static_cast<KMemoryPermission>(perm) & KMemoryPermission::UserMask) |
+        KMemoryPermission::KernelRead |
+        ((static_cast<KMemoryPermission>(perm) & KMemoryPermission::UserWrite)
+         << KMemoryPermission::KernelShift) |
+        (perm == Svc::MemoryPermission::None ? KMemoryPermission::NotMapped
+                                             : KMemoryPermission::None));
 }
 
 enum class KMemoryAttribute : u8 {
@@ -168,6 +177,8 @@ enum class KMemoryAttribute : u8 {
     IpcLocked = static_cast<u8>(Svc::MemoryAttribute::IpcLocked),
     DeviceShared = static_cast<u8>(Svc::MemoryAttribute::DeviceShared),
     Uncached = static_cast<u8>(Svc::MemoryAttribute::Uncached),
+
+    SetMask = Uncached,
 
     IpcAndDeviceMapped = IpcLocked | DeviceShared,
     LockedAndIpcLocked = Locked | IpcLocked,
@@ -214,6 +225,15 @@ struct KMemoryInfo {
     }
     constexpr VAddr GetLastAddress() const {
         return GetEndAddress() - 1;
+    }
+    constexpr KMemoryState GetState() const {
+        return state;
+    }
+    constexpr KMemoryAttribute GetAttribute() const {
+        return attribute;
+    }
+    constexpr KMemoryPermission GetPermission() const {
+        return perm;
     }
 };
 

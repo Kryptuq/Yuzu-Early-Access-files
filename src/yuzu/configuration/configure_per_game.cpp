@@ -45,19 +45,20 @@
 ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id, const std::string& file_name,
                                    Core::System& system_)
     : QDialog(parent), ui(std::make_unique<Ui::ConfigurePerGame>()),
-      title_id(title_id), system{system_}, addons_tab{std::make_unique<ConfigurePerGameAddons>(
-                                               system_, this)},
-      audio_tab{std::make_unique<ConfigureAudio>(system_, this)},
-      cpu_tab{std::make_unique<ConfigureCpu>(system_, this)},
-      general_tab{std::make_unique<ConfigureGeneral>(system_, this)},
-      graphics_tab{std::make_unique<ConfigureGraphics>(system_, this)},
-      graphics_advanced_tab{std::make_unique<ConfigureGraphicsAdvanced>(system_, this)},
-      system_tab{std::make_unique<ConfigureSystem>(system_, this)} {
+      title_id(title_id), system{system_} {
     const auto file_path = std::filesystem::path(Common::FS::ToU8String(file_name));
     const auto config_file_name = title_id == 0 ? Common::FS::PathToUTF8String(file_path.filename())
                                                 : fmt::format("{:016X}", title_id);
     game_config =
         std::make_unique<Config>(system, config_file_name, Config::ConfigType::PerGameConfig);
+
+    addons_tab = std::make_unique<ConfigurePerGameAddons>(system_, this);
+    audio_tab = std::make_unique<ConfigureAudio>(system_, this);
+    cpu_tab = std::make_unique<ConfigureCpu>(system_, this);
+    general_tab = std::make_unique<ConfigureGeneral>(system_, this);
+    graphics_tab = std::make_unique<ConfigureGraphics>(system_, this);
+    graphics_advanced_tab = std::make_unique<ConfigureGraphicsAdvanced>(system_, this);
+    system_tab = std::make_unique<ConfigureSystem>(system_, this);
 
     ui->setupUi(this);
 
@@ -187,11 +188,4 @@ void ConfigurePerGame::LoadConfiguration() {
 
     const auto valueText = ReadableByteSize(file->GetSize());
     ui->display_size->setText(valueText);
-
-    general_tab->SetConfiguration();
-    cpu_tab->SetConfiguration();
-    system_tab->SetConfiguration();
-    graphics_tab->SetConfiguration();
-    graphics_advanced_tab->SetConfiguration();
-    audio_tab->SetConfiguration();
 }

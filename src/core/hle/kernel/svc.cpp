@@ -168,6 +168,9 @@ constexpr bool IsValidSetMemoryPermission(MemoryPermission perm) {
 
 static ResultCode SetMemoryPermission(Core::System& system, VAddr address, u64 size,
                                       MemoryPermission perm) {
+    LOG_DEBUG(Kernel_SVC, "called, address=0x{:016X}, size=0x{:X}, perm=0x{:08X", address, size,
+              perm);
+
     // Validate address / size.
     R_UNLESS(Common::IsAligned(address, PageSize), ResultInvalidAddress);
     R_UNLESS(Common::IsAligned(size, PageSize), ResultInvalidSize);
@@ -186,46 +189,33 @@ static ResultCode SetMemoryPermission(Core::System& system, VAddr address, u64 s
 }
 
 static ResultCode SetMemoryAttribute(Core::System& system, VAddr address, u64 size, u32 mask,
-                                     u32 attribute) {
+                                     u32 attr) {
     LOG_DEBUG(Kernel_SVC,
               "called, address=0x{:016X}, size=0x{:X}, mask=0x{:08X}, attribute=0x{:08X}", address,
-              size, mask, attribute);
+              size, mask, attr);
 
-    if (!Common::Is4KBAligned(address)) {
-        LOG_ERROR(Kernel_SVC, "Address not page aligned (0x{:016X})", address);
-        return ResultInvalidAddress;
-    }
+    // Validate address / size.
+    R_UNLESS(Common::IsAligned(address, PageSize), ResultInvalidAddress);
+    R_UNLESS(Common::IsAligned(size, PageSize), ResultInvalidSize);
+    R_UNLESS(size > 0, ResultInvalidSize);
+    R_UNLESS((address < address + size), ResultInvalidCurrentMemory);
 
-    if (size == 0 || !Common::Is4KBAligned(size)) {
-        LOG_ERROR(Kernel_SVC, "Invalid size (0x{:X}). Size must be non-zero and page aligned.",
-                  size);
-        return ResultInvalidAddress;
-    }
+    // Validate the attribute and mask.
+    constexpr u32 SupportedMask = static_cast<u32>(MemoryAttribute::Uncached);
+    R_UNLESS((mask | attr) == mask, ResultInvalidCombination);
+    R_UNLESS((mask | attr | SupportedMask) == SupportedMask, ResultInvalidCombination);
 
-    if (!IsValidAddressRange(address, size)) {
-        LOG_ERROR(Kernel_SVC, "Address range overflowed (Address: 0x{:016X}, Size: 0x{:016X})",
-                  address, size);
-        return ResultInvalidCurrentMemory;
-    }
-
-    const auto attributes{static_cast<MemoryAttribute>(mask | attribute)};
-    if (attributes != static_cast<MemoryAttribute>(mask) ||
-        (attributes | MemoryAttribute::Uncached) != MemoryAttribute::Uncached) {
-        LOG_ERROR(Kernel_SVC,
-                  "Memory attribute doesn't match the given mask (Attribute: 0x{:X}, Mask: {:X}",
-                  attribute, mask);
-        return ResultInvalidCombination;
-    }
-
+    // Validate that the region is in range for the current process.
     auto& page_table{system.Kernel().CurrentProcess()->PageTable()};
+    R_UNLESS(page_table.Contains(address, size), ResultInvalidCurrentMemory);
 
-    return page_table.SetMemoryAttribute(address, size, static_cast<KMemoryAttribute>(mask),
-                                         static_cast<KMemoryAttribute>(attribute));
+    // Set the memory attribute.
+    return page_table.SetMemoryAttribute(address, size, mask, attr);
 }
 
 static ResultCode SetMemoryAttribute32(Core::System& system, u32 address, u32 size, u32 mask,
-                                       u32 attribute) {
-    return SetMemoryAttribute(system, address, size, mask, attribute);
+                                       u32 attr) {
+    return SetMemoryAttribute(system, address, size, mask, attr);
 }
 
 /// Maps a memory range into a different range.

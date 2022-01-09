@@ -21,7 +21,7 @@ ConstantPool::ConstantPool(BlockOfCode& code, size_t size)
 }
 
 Xbyak::Address ConstantPool::GetConstant(const Xbyak::AddressFrame& frame, u64 lower, u64 upper) {
-    const auto constant = std::make_tuple(lower, upper);
+    const auto constant = std::make_pair(lower, upper);
     auto iter = constant_info.find(constant);
     if (iter == constant_info.end()) {
         ASSERT(static_cast<size_t>(current_pool_ptr - pool_begin) < pool_size);
