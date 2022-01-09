@@ -32,7 +32,7 @@ jobs:
 
       - name: Before Build
         run: |
-          git clone https://github.com/Kryptuq/glslang.git
+          git clone https://github.com/Kryptuq/glslang-linux.git
           mkdir build
           cd build
           cmake --version
