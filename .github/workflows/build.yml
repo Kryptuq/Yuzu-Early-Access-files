@@ -1,4 +1,4 @@
-name: Create Yuzu Early Access Build
+name: Kryptuq Build Script
 
 on:
   push:
