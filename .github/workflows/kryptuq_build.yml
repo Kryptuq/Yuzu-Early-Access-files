@@ -45,7 +45,6 @@ jobs:
           -DUSE_DISCORD_PRESENCE=ON                                                                     \
           -DENABLE_QT_TRANSLATION=ON                                                                    \
           -DYUZU_USE_QT_WEB_ENGINE=OFF                                                                  \
-          -DYUZU_USE_EXTERNAL_SDL2=OFF 		                                                              \
           -DENABLE_QT=OFF                                                                               \
           -G Ninja 
 
