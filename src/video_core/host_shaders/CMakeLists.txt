@@ -53,23 +53,6 @@ set(HOST_SHADERS_INCLUDE ${SHADER_INCLUDE} PARENT_SCOPE)
 set(INPUT_FILE ${CMAKE_CURRENT_SOURCE_DIR}/source_shader.h.in)
 set(HEADER_GENERATOR ${CMAKE_CURRENT_SOURCE_DIR}/StringShaderHeader.cmake)
 
-# Check if `--quiet` is available on host's glslangValidator version
-# glslangValidator prints to STDERR iff an unrecognized flag is passed to it
-execute_process(
-    COMMAND
-        ${GLSLANGVALIDATOR} ${QUIET_FLAG}
-    ERROR_VARIABLE
-        GLSLANG_ERROR
-    # STDOUT variable defined to silence unnecessary output during CMake configuration
-    OUTPUT_VARIABLE
-        GLSLANG_OUTPUT
-)
-
-if (NOT GLSLANG_ERROR STREQUAL "")
-    message(WARNING "Refusing to use unavailable flag `${QUIET_FLAG}` on `${GLSLANGVALIDATOR}`")
-    set(QUIET_FLAG "")
-endif()
-
 foreach(FILENAME IN ITEMS ${SHADER_FILES})
     string(REPLACE "." "_" SHADER_NAME ${FILENAME})
     set(SOURCE_FILE ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME})
