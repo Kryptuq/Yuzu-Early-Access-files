@@ -46,6 +46,7 @@ jobs:
           -DENABLE_QT_TRANSLATION=ON                                                                    \
           -DYUZU_USE_QT_WEB_ENGINE=OFF                                                                  \
           -DENABLE_QT=OFF                                                                               \
+          -Werror                                                                                       \
           -G Ninja 
 
           ninja
