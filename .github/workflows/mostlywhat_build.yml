@@ -80,3 +80,9 @@ jobs:
         with:
           name: Built yuzu Emulator
           path: build\bin\yuzu-early-access
+          
+      - name: Upload Logs if Failure
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          path: D:/a/Yuzu-Early-Access-files/Yuzu-Early-Access-files/build/CMakeFiles     
