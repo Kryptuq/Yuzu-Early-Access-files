@@ -84,9 +84,10 @@ jobs:
           overwrite: true
 
       - name: Upload Logs
+        if: always()
         uses: actions/upload-artifact@v2
         with:
-          path: /home/runner/work/Yuzu-Early-Access-files/Yuzu-Early-Access-files/build/CMakeFiles/CMakeOutput.log
+          path: /home/runner/work/Yuzu-Early-Access-files/Yuzu-Early-Access-files/build/CMakeFiles
       
       
       
