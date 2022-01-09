@@ -28,15 +28,28 @@ jobs:
 
       #Install Conan
       - name: Install Conan
-        run: pip3 install --user conan
+        run: pip3 install conan --upgrade
 
       - name: Before Build
         run: |
           git clone https://github.com/Kryptuq/glslang-linux.git
-          mkdir build
-          cd build
-          cmake --version
-          cmake .. -GNinja -DCMAKE_C_COMPILER=gcc-10 -DCMAKE_CXX_COMPILER=g++-10 -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.event.head_commit.message }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.event.head_commit.message }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DUSE_DISCORD_PRESENCE=ON -DYUZU_USE_QT_WEB_ENGINE=OFF -DENABLE_QT=OFF
+          mkdir build && cd build
+          
+          cmake ..                                                                                      \
+          -DCMAKE_BUILD_TYPE=Release                                                                    \
+          -DCMAKE_C_COMPILER=gcc-10                                                                     \
+          -DCMAKE_CXX_COMPILER=g++-10                                                                   \
+          --DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.event.head_commit.message }}"          \
+          -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.event.head_commit.message }} | {3}"  \
+          -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON                                                       \
+          -DUSE_DISCORD_PRESENCE=ON                                                                     \
+          -DENABLE_QT_TRANSLATION=ON                                                                    \
+          -DYUZU_USE_QT_WEB_ENGINE=OFF                                                                  \
+          -DYUZU_USE_EXTERNAL_SDL2=OFF 		                                                              \
+          -G Ninja 
+
+          ninja
+          
 
       #Build the .sln
       - name: Build app for release
