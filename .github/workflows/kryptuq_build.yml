@@ -86,7 +86,7 @@ jobs:
       - name: Upload Logs
         uses: actions/upload-artifact@v2
         with:
-          path: home/runner/work/Yuzu-Early-Access-files/Yuzu-Early-Access-files/build/CMakeFiles/CMakeOutput.log
+          path: /home/runner/work/Yuzu-Early-Access-files/Yuzu-Early-Access-files/build/CMakeFiles/CMakeOutput.log
       
       
       
