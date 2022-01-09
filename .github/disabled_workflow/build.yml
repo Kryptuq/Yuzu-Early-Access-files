@@ -47,7 +47,7 @@ jobs:
 
       #Build the .sln
       - name: Build app for release
-        run: msbuild build\yuzu.sln
+        run: msbuild build\yuzu.sln /p:WarningLevel=0 /p:Configuration=Release
 
       - name: After Build
         run: |
