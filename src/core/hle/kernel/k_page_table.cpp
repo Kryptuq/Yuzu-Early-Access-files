@@ -305,8 +305,8 @@ ResultCode KPageTable::MapProcessCodeMemory(VAddr dst_addr, VAddr src_addr, std:
 
     KMemoryState state{};
     KMemoryPermission perm{};
-    CASCADE_CODE(CheckMemoryState(&state, &perm, nullptr, src_addr, size, KMemoryState::All,
-                                  KMemoryState::Normal, KMemoryPermission::All,
+    CASCADE_CODE(CheckMemoryState(&state, &perm, nullptr, nullptr, src_addr, size,
+                                  KMemoryState::All, KMemoryState::Normal, KMemoryPermission::All,
                                   KMemoryPermission::ReadAndWrite, KMemoryAttribute::Mask,
                                   KMemoryAttribute::None, KMemoryAttribute::IpcAndDeviceMapped));
 
@@ -344,14 +344,14 @@ ResultCode KPageTable::UnmapProcessCodeMemory(VAddr dst_addr, VAddr src_addr, st
 
     const std::size_t num_pages{size / PageSize};
 
-    CASCADE_CODE(CheckMemoryState(nullptr, nullptr, nullptr, src_addr, size, KMemoryState::All,
-                                  KMemoryState::Normal, KMemoryPermission::None,
+    CASCADE_CODE(CheckMemoryState(nullptr, nullptr, nullptr, nullptr, src_addr, size,
+                                  KMemoryState::All, KMemoryState::Normal, KMemoryPermission::None,
                                   KMemoryPermission::None, KMemoryAttribute::Mask,
                                   KMemoryAttribute::Locked, KMemoryAttribute::IpcAndDeviceMapped));
 
     KMemoryState state{};
     CASCADE_CODE(CheckMemoryState(
-        &state, nullptr, nullptr, dst_addr, PageSize, KMemoryState::FlagCanCodeAlias,
+        &state, nullptr, nullptr, nullptr, dst_addr, PageSize, KMemoryState::FlagCanCodeAlias,
         KMemoryState::FlagCanCodeAlias, KMemoryPermission::None, KMemoryPermission::None,
         KMemoryAttribute::Mask, KMemoryAttribute::None, KMemoryAttribute::IpcAndDeviceMapped));
     CASCADE_CODE(CheckMemoryState(dst_addr, size, KMemoryState::All, state, KMemoryPermission::None,
@@ -553,7 +553,7 @@ ResultCode KPageTable::Map(VAddr dst_addr, VAddr src_addr, std::size_t size) {
 
     KMemoryState src_state{};
     CASCADE_CODE(CheckMemoryState(
-        &src_state, nullptr, nullptr, src_addr, size, KMemoryState::FlagCanAlias,
+        &src_state, nullptr, nullptr, nullptr, src_addr, size, KMemoryState::FlagCanAlias,
         KMemoryState::FlagCanAlias, KMemoryPermission::All, KMemoryPermission::ReadAndWrite,
         KMemoryAttribute::Mask, KMemoryAttribute::None, KMemoryAttribute::IpcAndDeviceMapped));
 
@@ -592,13 +592,13 @@ ResultCode KPageTable::Unmap(VAddr dst_addr, VAddr src_addr, std::size_t size) {
 
     KMemoryState src_state{};
     CASCADE_CODE(CheckMemoryState(
-        &src_state, nullptr, nullptr, src_addr, size, KMemoryState::FlagCanAlias,
+        &src_state, nullptr, nullptr, nullptr, src_addr, size, KMemoryState::FlagCanAlias,
         KMemoryState::FlagCanAlias, KMemoryPermission::All, KMemoryPermission::None,
         KMemoryAttribute::Mask, KMemoryAttribute::Locked, KMemoryAttribute::IpcAndDeviceMapped));
 
     KMemoryPermission dst_perm{};
-    CASCADE_CODE(CheckMemoryState(nullptr, &dst_perm, nullptr, dst_addr, size, KMemoryState::All,
-                                  KMemoryState::Stack, KMemoryPermission::None,
+    CASCADE_CODE(CheckMemoryState(nullptr, &dst_perm, nullptr, nullptr, dst_addr, size,
+                                  KMemoryState::All, KMemoryState::Stack, KMemoryPermission::None,
                                   KMemoryPermission::None, KMemoryAttribute::Mask,
                                   KMemoryAttribute::None, KMemoryAttribute::IpcAndDeviceMapped));
 
@@ -721,7 +721,7 @@ ResultCode KPageTable::SetProcessMemoryPermission(VAddr addr, std::size_t size,
     KMemoryPermission prev_perm{};
 
     CASCADE_CODE(CheckMemoryState(
-        &prev_state, &prev_perm, nullptr, addr, size, KMemoryState::FlagCode,
+        &prev_state, &prev_perm, nullptr, nullptr, addr, size, KMemoryState::FlagCode,
         KMemoryState::FlagCode, KMemoryPermission::None, KMemoryPermission::None,
         KMemoryAttribute::Mask, KMemoryAttribute::None, KMemoryAttribute::IpcAndDeviceMapped));
 
@@ -782,7 +782,7 @@ ResultCode KPageTable::ReserveTransferMemory(VAddr addr, std::size_t size, KMemo
     KMemoryAttribute attribute{};
 
     CASCADE_CODE(CheckMemoryState(
-        &state, nullptr, &attribute, addr, size,
+        &state, nullptr, &attribute, nullptr, addr, size,
         KMemoryState::FlagCanTransfer | KMemoryState::FlagReferenceCounted,
         KMemoryState::FlagCanTransfer | KMemoryState::FlagReferenceCounted, KMemoryPermission::All,
         KMemoryPermission::ReadAndWrite, KMemoryAttribute::Mask, KMemoryAttribute::None,
@@ -799,7 +799,7 @@ ResultCode KPageTable::ResetTransferMemory(VAddr addr, std::size_t size) {
     KMemoryState state{};
 
     CASCADE_CODE(
-        CheckMemoryState(&state, nullptr, nullptr, addr, size,
+        CheckMemoryState(&state, nullptr, nullptr, nullptr, addr, size,
                          KMemoryState::FlagCanTransfer | KMemoryState::FlagReferenceCounted,
                          KMemoryState::FlagCanTransfer | KMemoryState::FlagReferenceCounted,
                          KMemoryPermission::None, KMemoryPermission::None, KMemoryAttribute::Mask,
@@ -820,7 +820,7 @@ ResultCode KPageTable::SetMemoryPermission(VAddr addr, std::size_t size,
     KMemoryState old_state;
     KMemoryPermission old_perm;
     R_TRY(this->CheckMemoryState(
-        std::addressof(old_state), std::addressof(old_perm), nullptr, addr, size,
+        std::addressof(old_state), std::addressof(old_perm), nullptr, nullptr, addr, size,
         KMemoryState::FlagCanReprotect, KMemoryState::FlagCanReprotect, KMemoryPermission::None,
         KMemoryPermission::None, KMemoryAttribute::All, KMemoryAttribute::None));
 
@@ -837,24 +837,36 @@ ResultCode KPageTable::SetMemoryPermission(VAddr addr, std::size_t size,
     return ResultSuccess;
 }
 
-ResultCode KPageTable::SetMemoryAttribute(VAddr addr, std::size_t size, KMemoryAttribute mask,
-                                          KMemoryAttribute value) {
+ResultCode KPageTable::SetMemoryAttribute(VAddr addr, std::size_t size, u32 mask, u32 attr) {
+    const size_t num_pages = size / PageSize;
+    ASSERT((static_cast<KMemoryAttribute>(mask) | KMemoryAttribute::SetMask) ==
+           KMemoryAttribute::SetMask);
+
+    // Lock the table.
     std::lock_guard lock{page_table_lock};
 
-    KMemoryState state{};
-    KMemoryPermission perm{};
-    KMemoryAttribute attribute{};
-
-    CASCADE_CODE(CheckMemoryState(
-        &state, &perm, &attribute, addr, size, KMemoryState::FlagCanChangeAttribute,
+    // Verify we can change the memory attribute.
+    KMemoryState old_state;
+    KMemoryPermission old_perm;
+    KMemoryAttribute old_attr;
+    size_t num_allocator_blocks;
+    constexpr auto AttributeTestMask =
+        ~(KMemoryAttribute::SetMask | KMemoryAttribute::DeviceShared);
+    R_TRY(this->CheckMemoryState(
+        std::addressof(old_state), std::addressof(old_perm), std::addressof(old_attr),
+        std::addressof(num_allocator_blocks), addr, size, KMemoryState::FlagCanChangeAttribute,
         KMemoryState::FlagCanChangeAttribute, KMemoryPermission::None, KMemoryPermission::None,
-        KMemoryAttribute::LockedAndIpcLocked, KMemoryAttribute::None,
-        KMemoryAttribute::DeviceSharedAndUncached));
+        AttributeTestMask, KMemoryAttribute::None, ~AttributeTestMask));
 
-    attribute = attribute & ~mask;
-    attribute = attribute | (mask & value);
+    // Determine the new attribute.
+    const auto new_attr = ((old_attr & static_cast<KMemoryAttribute>(~mask)) |
+                           static_cast<KMemoryAttribute>(attr & mask));
 
-    block_manager->Update(addr, size / PageSize, state, perm, attribute);
+    // Perform operation.
+    this->Operate(addr, num_pages, old_perm, OperationType::ChangePermissionsAndRefresh);
+
+    // Update the blocks.
+    block_manager->Update(addr, num_pages, old_state, old_perm, new_attr);
 
     return ResultSuccess;
 }
@@ -1019,7 +1031,7 @@ ResultCode KPageTable::LockForDeviceAddressSpace(VAddr addr, std::size_t size) {
 
     KMemoryPermission perm{};
     if (const ResultCode result{CheckMemoryState(
-            nullptr, &perm, nullptr, addr, size, KMemoryState::FlagCanChangeAttribute,
+            nullptr, &perm, nullptr, nullptr, addr, size, KMemoryState::FlagCanChangeAttribute,
             KMemoryState::FlagCanChangeAttribute, KMemoryPermission::None, KMemoryPermission::None,
             KMemoryAttribute::LockedAndIpcLocked, KMemoryAttribute::None,
             KMemoryAttribute::DeviceSharedAndUncached)};
@@ -1042,7 +1054,7 @@ ResultCode KPageTable::UnlockForDeviceAddressSpace(VAddr addr, std::size_t size)
 
     KMemoryPermission perm{};
     if (const ResultCode result{CheckMemoryState(
-            nullptr, &perm, nullptr, addr, size, KMemoryState::FlagCanChangeAttribute,
+            nullptr, &perm, nullptr, nullptr, addr, size, KMemoryState::FlagCanChangeAttribute,
             KMemoryState::FlagCanChangeAttribute, KMemoryPermission::None, KMemoryPermission::None,
             KMemoryAttribute::LockedAndIpcLocked, KMemoryAttribute::None,
             KMemoryAttribute::DeviceSharedAndUncached)};
@@ -1068,7 +1080,7 @@ ResultCode KPageTable::LockForCodeMemory(VAddr addr, std::size_t size) {
     KMemoryPermission old_perm{};
 
     if (const ResultCode result{CheckMemoryState(
-            nullptr, &old_perm, nullptr, addr, size, KMemoryState::FlagCanCodeMemory,
+            nullptr, &old_perm, nullptr, nullptr, addr, size, KMemoryState::FlagCanCodeMemory,
             KMemoryState::FlagCanCodeMemory, KMemoryPermission::All,
             KMemoryPermission::UserReadWrite, KMemoryAttribute::All, KMemoryAttribute::None)};
         result.IsError()) {
@@ -1095,7 +1107,7 @@ ResultCode KPageTable::UnlockForCodeMemory(VAddr addr, std::size_t size) {
     KMemoryPermission old_perm{};
 
     if (const ResultCode result{CheckMemoryState(
-            nullptr, &old_perm, nullptr, addr, size, KMemoryState::FlagCanCodeMemory,
+            nullptr, &old_perm, nullptr, nullptr, addr, size, KMemoryState::FlagCanCodeMemory,
             KMemoryState::FlagCanCodeMemory, KMemoryPermission::None, KMemoryPermission::None,
             KMemoryAttribute::All, KMemoryAttribute::Locked)};
         result.IsError()) {
@@ -1225,18 +1237,19 @@ constexpr VAddr KPageTable::GetRegionAddress(KMemoryState state) const {
         return alias_region_start;
     case KMemoryState::Stack:
         return stack_region_start;
-    case KMemoryState::Io:
     case KMemoryState::Static:
     case KMemoryState::ThreadLocal:
         return kernel_map_region_start;
+    case KMemoryState::Io:
     case KMemoryState::Shared:
     case KMemoryState::AliasCode:
     case KMemoryState::AliasCodeData:
-    case KMemoryState::Transferred:
-    case KMemoryState::SharedTransferred:
+    case KMemoryState::Transfered:
+    case KMemoryState::SharedTransfered:
     case KMemoryState::SharedCode:
     case KMemoryState::GeneratedCode:
     case KMemoryState::CodeOut:
+    case KMemoryState::Coverage:
         return alias_code_region_start;
     case KMemoryState::Code:
     case KMemoryState::CodeData:
@@ -1260,18 +1273,19 @@ constexpr std::size_t KPageTable::GetRegionSize(KMemoryState state) const {
         return alias_region_end - alias_region_start;
     case KMemoryState::Stack:
         return stack_region_end - stack_region_start;
-    case KMemoryState::Io:
     case KMemoryState::Static:
     case KMemoryState::ThreadLocal:
         return kernel_map_region_end - kernel_map_region_start;
+    case KMemoryState::Io:
     case KMemoryState::Shared:
     case KMemoryState::AliasCode:
     case KMemoryState::AliasCodeData:
-    case KMemoryState::Transferred:
-    case KMemoryState::SharedTransferred:
+    case KMemoryState::Transfered:
+    case KMemoryState::SharedTransfered:
     case KMemoryState::SharedCode:
     case KMemoryState::GeneratedCode:
     case KMemoryState::CodeOut:
+    case KMemoryState::Coverage:
         return alias_code_region_end - alias_code_region_start;
     case KMemoryState::Code:
     case KMemoryState::CodeData:
@@ -1283,15 +1297,18 @@ constexpr std::size_t KPageTable::GetRegionSize(KMemoryState state) const {
 }
 
 bool KPageTable::CanContain(VAddr addr, std::size_t size, KMemoryState state) const {
-    const VAddr end{addr + size};
-    const VAddr last{end - 1};
-    const VAddr region_start{GetRegionAddress(state)};
-    const std::size_t region_size{GetRegionSize(state)};
-    const bool is_in_region{region_start <= addr && addr < end &&
-                            last <= region_start + region_size - 1};
-    const bool is_in_heap{!(end <= heap_region_start || heap_region_end <= addr)};
-    const bool is_in_alias{!(end <= alias_region_start || alias_region_end <= addr)};
+    const VAddr end = addr + size;
+    const VAddr last = end - 1;
 
+    const VAddr region_start = this->GetRegionAddress(state);
+    const size_t region_size = this->GetRegionSize(state);
+
+    const bool is_in_region =
+        region_start <= addr && addr < end && last <= region_start + region_size - 1;
+    const bool is_in_heap = !(end <= heap_region_start || heap_region_end <= addr ||
+                              heap_region_start == heap_region_end);
+    const bool is_in_alias = !(end <= alias_region_start || alias_region_end <= addr ||
+                               alias_region_start == alias_region_end);
     switch (state) {
     case KMemoryState::Free:
     case KMemoryState::Kernel:
@@ -1305,11 +1322,12 @@ bool KPageTable::CanContain(VAddr addr, std::size_t size, KMemoryState state) co
     case KMemoryState::AliasCodeData:
     case KMemoryState::Stack:
     case KMemoryState::ThreadLocal:
-    case KMemoryState::Transferred:
-    case KMemoryState::SharedTransferred:
+    case KMemoryState::Transfered:
+    case KMemoryState::SharedTransfered:
     case KMemoryState::SharedCode:
     case KMemoryState::GeneratedCode:
     case KMemoryState::CodeOut:
+    case KMemoryState::Coverage:
         return is_in_region && !is_in_heap && !is_in_alias;
     case KMemoryState::Normal:
         ASSERT(is_in_heap);
@@ -1324,91 +1342,29 @@ bool KPageTable::CanContain(VAddr addr, std::size_t size, KMemoryState state) co
     }
 }
 
-constexpr ResultCode KPageTable::CheckMemoryState(const KMemoryInfo& info, KMemoryState state_mask,
+ResultCode KPageTable::CheckMemoryState(const KMemoryInfo& info, KMemoryState state_mask,
+                                        KMemoryState state, KMemoryPermission perm_mask,
+                                        KMemoryPermission perm, KMemoryAttribute attr_mask,
+                                        KMemoryAttribute attr) const {
+    // Validate the states match expectation.
+    R_UNLESS((info.state & state_mask) == state, ResultInvalidCurrentMemory);
+    R_UNLESS((info.perm & perm_mask) == perm, ResultInvalidCurrentMemory);
+    R_UNLESS((info.attribute & attr_mask) == attr, ResultInvalidCurrentMemory);
+
+    return ResultSuccess;
+}
+
+ResultCode KPageTable::CheckMemoryStateContiguous(std::size_t* out_blocks_needed, VAddr addr,
+                                                  std::size_t size, KMemoryState state_mask,
                                                   KMemoryState state, KMemoryPermission perm_mask,
                                                   KMemoryPermission perm,
                                                   KMemoryAttribute attr_mask,
                                                   KMemoryAttribute attr) const {
-    // Validate the states match expectation
-    if ((info.state & state_mask) != state) {
-        return ResultInvalidCurrentMemory;
-    }
-    if ((info.perm & perm_mask) != perm) {
-        return ResultInvalidCurrentMemory;
-    }
-    if ((info.attribute & attr_mask) != attr) {
-        return ResultInvalidCurrentMemory;
-    }
+    ASSERT(this->IsLockedByCurrentThread());
 
-    return ResultSuccess;
-}
-
-ResultCode KPageTable::CheckMemoryState(KMemoryState* out_state, KMemoryPermission* out_perm,
-                                        KMemoryAttribute* out_attr, VAddr addr, std::size_t size,
-                                        KMemoryState state_mask, KMemoryState state,
-                                        KMemoryPermission perm_mask, KMemoryPermission perm,
-                                        KMemoryAttribute attr_mask, KMemoryAttribute attr,
-                                        KMemoryAttribute ignore_attr) {
-    std::lock_guard lock{page_table_lock};
-
-    // Get information about the first block
-    const VAddr last_addr{addr + size - 1};
-    KMemoryBlockManager::const_iterator it{block_manager->FindIterator(addr)};
-    KMemoryInfo info{it->GetMemoryInfo()};
-
-    // Validate all blocks in the range have correct state
-    const KMemoryState first_state{info.state};
-    const KMemoryPermission first_perm{info.perm};
-    const KMemoryAttribute first_attr{info.attribute};
-
-    while (true) {
-        // Validate the current block
-        if (!(info.state == first_state)) {
-            return ResultInvalidCurrentMemory;
-        }
-        if (!(info.perm == first_perm)) {
-            return ResultInvalidCurrentMemory;
-        }
-        if (!((info.attribute | static_cast<KMemoryAttribute>(ignore_attr)) ==
-              (first_attr | static_cast<KMemoryAttribute>(ignore_attr)))) {
-            return ResultInvalidCurrentMemory;
-        }
-
-        // Validate against the provided masks
-        CASCADE_CODE(CheckMemoryState(info, state_mask, state, perm_mask, perm, attr_mask, attr));
-
-        // Break once we're done
-        if (last_addr <= info.GetLastAddress()) {
-            break;
-        }
-
-        // Advance our iterator
-        it++;
-        ASSERT(it != block_manager->cend());
-        info = it->GetMemoryInfo();
-    }
-
-    // Write output state
-    if (out_state) {
-        *out_state = first_state;
-    }
-    if (out_perm) {
-        *out_perm = first_perm;
-    }
-    if (out_attr) {
-        *out_attr = first_attr & static_cast<KMemoryAttribute>(~ignore_attr);
-    }
-
-    return ResultSuccess;
-}
-
-ResultCode KPageTable::CheckMemoryState(size_t* out_blocks_needed, VAddr addr, size_t size,
-                                        KMemoryState state_mask, KMemoryState state,
-                                        KMemoryPermission perm_mask, KMemoryPermission perm,
-                                        KMemoryAttribute attr_mask, KMemoryAttribute attr) const {
     // Get information about the first block.
     const VAddr last_addr = addr + size - 1;
-    KMemoryBlockManager::const_iterator it{block_manager->FindIterator(addr)};
+    KMemoryBlockManager::const_iterator it = block_manager->FindIterator(addr);
     KMemoryInfo info = it->GetMemoryInfo();
 
     // If the start address isn't aligned, we need a block.
@@ -1417,7 +1373,7 @@ ResultCode KPageTable::CheckMemoryState(size_t* out_blocks_needed, VAddr addr, s
 
     while (true) {
         // Validate against the provided masks.
-        R_TRY(CheckMemoryState(info, state_mask, state, perm_mask, perm, attr_mask, attr));
+        R_TRY(this->CheckMemoryState(info, state_mask, state, perm_mask, perm, attr_mask, attr));
 
         // Break once we're done.
         if (last_addr <= info.GetLastAddress()) {
@@ -1426,6 +1382,7 @@ ResultCode KPageTable::CheckMemoryState(size_t* out_blocks_needed, VAddr addr, s
 
         // Advance our iterator.
         it++;
+        ASSERT(it != block_manager->cend());
         info = it->GetMemoryInfo();
     }
 
@@ -1437,6 +1394,68 @@ ResultCode KPageTable::CheckMemoryState(size_t* out_blocks_needed, VAddr addr, s
         *out_blocks_needed = blocks_for_start_align + blocks_for_end_align;
     }
 
+    return ResultSuccess;
+}
+
+ResultCode KPageTable::CheckMemoryState(KMemoryState* out_state, KMemoryPermission* out_perm,
+                                        KMemoryAttribute* out_attr, std::size_t* out_blocks_needed,
+                                        VAddr addr, std::size_t size, KMemoryState state_mask,
+                                        KMemoryState state, KMemoryPermission perm_mask,
+                                        KMemoryPermission perm, KMemoryAttribute attr_mask,
+                                        KMemoryAttribute attr, KMemoryAttribute ignore_attr) const {
+    ASSERT(this->IsLockedByCurrentThread());
+
+    // Get information about the first block.
+    const VAddr last_addr = addr + size - 1;
+    KMemoryBlockManager::const_iterator it = block_manager->FindIterator(addr);
+    KMemoryInfo info = it->GetMemoryInfo();
+
+    // If the start address isn't aligned, we need a block.
+    const size_t blocks_for_start_align =
+        (Common::AlignDown(addr, PageSize) != info.GetAddress()) ? 1 : 0;
+
+    // Validate all blocks in the range have correct state.
+    const KMemoryState first_state = info.state;
+    const KMemoryPermission first_perm = info.perm;
+    const KMemoryAttribute first_attr = info.attribute;
+    while (true) {
+        // Validate the current block.
+        R_UNLESS(info.state == first_state, ResultInvalidCurrentMemory);
+        R_UNLESS(info.perm == first_perm, ResultInvalidCurrentMemory);
+        R_UNLESS((info.attribute | ignore_attr) == (first_attr | ignore_attr),
+                 ResultInvalidCurrentMemory);
+
+        // Validate against the provided masks.
+        R_TRY(this->CheckMemoryState(info, state_mask, state, perm_mask, perm, attr_mask, attr));
+
+        // Break once we're done.
+        if (last_addr <= info.GetLastAddress()) {
+            break;
+        }
+
+        // Advance our iterator.
+        it++;
+        ASSERT(it != block_manager->cend());
+        info = it->GetMemoryInfo();
+    }
+
+    // If the end address isn't aligned, we need a block.
+    const size_t blocks_for_end_align =
+        (Common::AlignUp(addr + size, PageSize) != info.GetEndAddress()) ? 1 : 0;
+
+    // Write output state.
+    if (out_state != nullptr) {
+        *out_state = first_state;
+    }
+    if (out_perm != nullptr) {
+        *out_perm = first_perm;
+    }
+    if (out_attr != nullptr) {
+        *out_attr = static_cast<KMemoryAttribute>(first_attr & ~ignore_attr);
+    }
+    if (out_blocks_needed != nullptr) {
+        *out_blocks_needed = blocks_for_start_align + blocks_for_end_align;
+    }
     return ResultSuccess;
 }
 
