@@ -1,4 +1,4 @@
-name: Create Yuzu Early Access Build
+name: MostlyWhat Build Script
 
 on:
   push:
