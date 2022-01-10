@@ -9,7 +9,7 @@
 #include <string_view>
 #include <utility>
 
-#include <fmt/format.h>
+#include "common/logging/formatter.h"
 
 namespace Shader {
 

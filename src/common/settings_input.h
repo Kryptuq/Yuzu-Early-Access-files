@@ -357,6 +357,7 @@ constexpr int NUM_KEYBOARD_MODS_HID = NumKeyboardMods;
 using AnalogsRaw = std::array<std::string, NativeAnalog::NumAnalogs>;
 using ButtonsRaw = std::array<std::string, NativeButton::NumButtons>;
 using MotionsRaw = std::array<std::string, NativeMotion::NumMotions>;
+using RingconRaw = std::string;
 
 constexpr u32 JOYCON_BODY_NEON_RED = 0xFF3C28;
 constexpr u32 JOYCON_BUTTONS_NEON_RED = 0x1E0A0A;
