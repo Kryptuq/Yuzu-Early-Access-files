@@ -27,24 +27,6 @@ jobs:
       - name: actions/checkout
         uses: actions/checkout@v2
 
-      #Installs the Vulkan SDK
-      - name: Install Vulkan SDK
-        uses: humbletim/setup-vulkan-sdk@v1.0.3
-
-      #Installs CMake
-      - name: Install CMake
-        uses: lukka/get-cmake@latest
-
-      #Adding MSBuild
-      - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.1
-        with:
-          msbuild-architecture: x64
-
-      #Building with CMake and Ninja
-      - name: Generating Project using CMake and Ninja
-        uses: seanmiddleditch/gha-setup-ninja@master
-        
       #Download ccache and prepare
       - name: Download ccache
         id: ccache
@@ -67,11 +49,31 @@ jobs:
           path: ~/.ccache
           key: build-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
           restore-keys: |
-            build-ccache-
+            build-ccache-      
+      
+      #Installs the Vulkan SDK
+      - name: Install Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.0.3
+
+      #Installs CMake
+      - name: Install CMake
+        uses: lukka/get-cmake@latest
+
+      #Adding MSBuild
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+        with:
+          msbuild-architecture: x64
+
+      #Building with CMake and Ninja
+      - name: Generating Project using CMake and Ninja
+        uses: seanmiddleditch/gha-setup-ninja@master
+        
             
       #Preparing Build
       - name: Before Build
         run: |
+          mkdir .ccache
           git clone https://github.com/Kryptuq/glslang.git
           mkdir build
           cd build
