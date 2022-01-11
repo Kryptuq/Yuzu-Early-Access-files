@@ -88,15 +88,6 @@ jobs:
         run: |
           mv build\bin\Release build\bin\yuzu-early-access
           
-      #ccache stats
-      - name: ccache statistics
-        shell: cmake -P {0}
-        run: |
-          file(TO_CMAKE_PATH "$ENV{GITHUB_WORKSPACE}" ccache_basedir)
-          set(ENV{CCACHE_BASEDIR} "${ccache_basedir}")
-          set(ENV{CCACHE_DIR} "${ccache_basedir}/.ccache")
-          execute_process(COMMAND ccache -s)
-
       # Publishing to Release
 #       - name: Create Release
 #         id: create_release
