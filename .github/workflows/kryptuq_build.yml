@@ -38,7 +38,7 @@ jobs:
       - name: ccache cache files
         uses: actions/cache@v2
         with:
-          path: ~/build
+          path: D:\a\Yuzu-Early-Access-files\Yuzu-Early-Access-files\build
           key: build-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
           restore-keys: |
             build-ccache-      
