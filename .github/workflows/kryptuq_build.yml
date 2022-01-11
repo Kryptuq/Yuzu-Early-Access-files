@@ -93,9 +93,6 @@ jobs:
           set(ENV{CCACHE_COMPRESS} "true")
           set(ENV{CCACHE_COMPRESSLEVEL} "6")
           set(ENV{CCACHE_MAXSIZE} "400M")
-          if ("${ { matrix.config.cxx } }" STREQUAL "cl")
-            set(ENV{CCACHE_MAXSIZE} "600M")
-          endif()
           
       #Build the .sln
       - name: Build app for release
