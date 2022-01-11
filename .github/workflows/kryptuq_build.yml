@@ -67,7 +67,44 @@ jobs:
           path: .ccache
           key: ${{ matrix.config.name }}-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
           restore-keys: |
-            ${{ matrix.config.name }}-ccache-    
+            ${{ matrix.config.name }}-ccache-
+            
+      - name: Configure
+      shell: cmake -P {0}
+      run: |
+        set(ENV{CC} ${{ matrix.config.cc }})
+        set(ENV{CXX} ${{ matrix.config.cxx }})
+        if ("${{ runner.os }}" STREQUAL "Windows" AND NOT "x${{ matrix.config.environment_script }}" STREQUAL "x")
+          execute_process(
+            COMMAND "${{ matrix.config.environment_script }}" && set
+            OUTPUT_FILE environment_script_output.txt
+          )
+          file(STRINGS environment_script_output.txt output_lines)
+          foreach(line IN LISTS output_lines)
+            if (line MATCHES "^([a-zA-Z0-9_-]+)=(.*)$")
+              set(ENV{${CMAKE_MATCH_1}} "${CMAKE_MATCH_2}")
+            endif()
+          endforeach()
+        endif()
+        set(path_separator ":")
+        if ("${{ runner.os }}" STREQUAL "Windows")
+          set(path_separator ";")
+        endif()
+        set(ENV{PATH} "$ENV{GITHUB_WORKSPACE}${path_separator}$ENV{PATH}")
+        execute_process(
+          COMMAND cmake
+            -S .
+            -B build
+            -D CMAKE_BUILD_TYPE=$ENV{BUILD_TYPE}
+            -G Ninja
+            -D CMAKE_MAKE_PROGRAM=ninja
+            -D CMAKE_C_COMPILER_LAUNCHER=ccache
+            -D CMAKE_CXX_COMPILER_LAUNCHER=ccache
+          RESULT_VARIABLE result
+        )
+        if (NOT result EQUAL 0)
+          message(FATAL_ERROR "Bad exit status")
+        endif()      
         
       #Preparing Build
       - name: Before Build
@@ -79,13 +116,6 @@ jobs:
           conan user
           
           cmake .. -G "Visual Studio 16 2019" -A x64 -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.event.head_commit.message }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.event.head_commit.message }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DUSE_DISCORD_PRESENCE=ON -DYUZU_USE_QT_WEB_ENGINE=OFF -D CMAKE_C_COMPILER_LAUNCHER=ccache -D CMAKE_CXX_COMPILER_LAUNCHER=ccache
-          
-          file(TO_CMAKE_PATH "$ENV{GITHUB_WORKSPACE}" ccache_basedir)
-          set(ENV{CCACHE_BASEDIR} "${ccache_basedir}")
-          set(ENV{CCACHE_DIR} "${ccache_basedir}/.ccache")
-          set(ENV{CCACHE_COMPRESS} "true")
-          set(ENV{CCACHE_COMPRESSLEVEL} "6")
-          set(ENV{CCACHE_MAXSIZE} "400M")
           
       #Build the .sln
       - name: Build app for release
