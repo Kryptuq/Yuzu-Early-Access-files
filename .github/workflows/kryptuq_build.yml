@@ -65,10 +65,9 @@ jobs:
       #Preparing Build
       - name: Before Build
         run: |
-          mkdir .ccache
           git clone https://github.com/Kryptuq/glslang.git
-          mkdir build
-          cd build
+          mkdir .ccache
+          cd .ccache
           pip install conan
           conan user
           
