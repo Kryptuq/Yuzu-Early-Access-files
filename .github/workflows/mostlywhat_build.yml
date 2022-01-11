@@ -36,14 +36,6 @@ jobs:
       - name: Generating Project using CMake and Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
         
-      #Download ccache
-      - name: Download ccache
-        id: ccache
-        run: |
-          set(ccache_url "https://github.com/cristianadam/ccache/releases/download/v4.5/Windows.tar.xz")
-          file(DOWNLOAD "${ccache_url}" ./ccache.tar.xz SHOW_PROGRESS)
-          execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvf ./ccache.tar.xz)
-
       #Preparing Build
       - name: Before Build
         run: |
