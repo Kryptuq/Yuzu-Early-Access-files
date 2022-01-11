@@ -38,7 +38,7 @@ jobs:
       - name: ccache cache files
         uses: actions/cache@v2
         with:
-          path: ~/.ccache
+          path: ~/build
           key: build-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
           restore-keys: |
             build-ccache-      
@@ -66,8 +66,8 @@ jobs:
       - name: Before Build
         run: |
           git clone https://github.com/Kryptuq/glslang.git
-          mkdir .ccache
-          cd .ccache
+          mkdir build
+          cd build
           pip install conan
           conan user
           
