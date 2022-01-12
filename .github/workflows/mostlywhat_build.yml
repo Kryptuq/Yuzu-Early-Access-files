@@ -18,19 +18,6 @@ jobs:
       - name: actions/checkout
         uses: actions/checkout@v2
 
-      #Installs the Vulkan SDK
-        env:
-          VULKAN_SDK: C:\VulkanSDK\
-      
-      - name: Setup Vulkan
-        run: |
-          $ver = (Invoke-WebRequest -Uri "https://vulkan.lunarg.com/sdk/latest.json" | ConvertFrom-Json).windows
-          echo Version $ver
-          $ProgressPreference = 'SilentlyContinue'
-          Invoke-WebRequest -Uri "https://sdk.lunarg.com/sdk/download/$ver/windows/VulkanSDK-$ver-Installer.exe" -OutFile VulkanSDK.exe
-          echo Downloaded
-          .\VulkanSDK.exe --root C:\VulkanSDK  --accept-licenses --default-answer --confirm-command install
-
       #Installs CMake
       - name: Install CMake
         uses: lukka/get-cmake@latest
