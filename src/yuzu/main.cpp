@@ -3678,8 +3678,8 @@ int main(int argc, char* argv[]) {
     QCoreApplication::setApplicationName(QStringLiteral("yuzu"));
 
 #ifdef _WIN32
-    // Increases the maximum open file limit to 4096
-    _setmaxstdio(4096);
+    // Increases the maximum open file limit to 8192
+    _setmaxstdio(8192);
 #endif
 
 #ifdef __APPLE__

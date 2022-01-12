@@ -106,10 +106,16 @@ void Tas::LoadTasFile(size_t player_index, size_t file_index) {
             continue;
         }
 
-        const auto num_frames = std::stoi(seg_list[0]);
-        while (frame_no < num_frames) {
-            commands[player_index].emplace_back();
-            frame_no++;
+        try {
+            const auto num_frames = std::stoi(seg_list[0]);
+            while (frame_no < num_frames) {
+                commands[player_index].emplace_back();
+                frame_no++;
+            }
+        } catch (const std::invalid_argument&) {
+            LOG_ERROR(Input, "Invalid argument: '{}' at command {}", seg_list[0], frame_no);
+        } catch (const std::out_of_range&) {
+            LOG_ERROR(Input, "Out of range: '{}' at command {}", seg_list[0], frame_no);
         }
 
         TASCommand command = {
@@ -234,10 +240,21 @@ TasAnalog Tas::ReadCommandAxis(const std::string& line) const {
         }
     }
 
-    const float x = std::stof(seg_list.at(0)) / 32767.0f;
-    const float y = std::stof(seg_list.at(1)) / 32767.0f;
+    if (seg_list.size() < 2) {
+        LOG_ERROR(Input, "Invalid axis data: '{}'", line);
+        return {};
+    }
 
-    return {x, y};
+    try {
+        const float x = std::stof(seg_list.at(0)) / 32767.0f;
+        const float y = std::stof(seg_list.at(1)) / 32767.0f;
+        return {x, y};
+    } catch (const std::invalid_argument&) {
+        LOG_ERROR(Input, "Invalid argument: '{}'", line);
+    } catch (const std::out_of_range&) {
+        LOG_ERROR(Input, "Out of range: '{}'", line);
+    }
+    return {};
 }
 
 u64 Tas::ReadCommandButtons(const std::string& line) const {

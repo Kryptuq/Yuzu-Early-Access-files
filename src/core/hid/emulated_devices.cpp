@@ -15,6 +15,7 @@ EmulatedDevices::EmulatedDevices() = default;
 EmulatedDevices::~EmulatedDevices() = default;
 
 void EmulatedDevices::ReloadFromSettings() {
+    ring_params = Common::ParamPackage(Settings::values.ringcon_analogs);
     ReloadInput();
 }
 
@@ -65,6 +66,8 @@ void EmulatedDevices::ReloadInput() {
         keyboard_device = Common::Input::CreateDevice<Common::Input::InputDevice>(keyboard_params);
         key_index++;
     }
+
+    ring_analog_device = Common::Input::CreateDevice<Common::Input::InputDevice>(ring_params);
 
     for (std::size_t index = 0; index < mouse_button_devices.size(); ++index) {
         if (!mouse_button_devices[index]) {
@@ -120,6 +123,13 @@ void EmulatedDevices::ReloadInput() {
                 },
         });
     }
+
+    if (ring_analog_device) {
+        ring_analog_device->SetCallback({
+            .on_change =
+                [this](const Common::Input::CallbackStatus& callback) { SetRingAnalog(callback); },
+        });
+    }
 }
 
 void EmulatedDevices::UnloadInput() {
@@ -155,6 +165,7 @@ void EmulatedDevices::SaveCurrentConfig() {
     if (!is_configuring) {
         return;
     }
+    Settings::values.ringcon_analogs = ring_params.Serialize();
 }
 
 void EmulatedDevices::RestoreConfig() {
@@ -162,6 +173,15 @@ void EmulatedDevices::RestoreConfig() {
         return;
     }
     ReloadFromSettings();
+}
+
+Common::ParamPackage EmulatedDevices::GetRingParam() const {
+    return ring_params;
+}
+
+void EmulatedDevices::SetRingParam(Common::ParamPackage param) {
+    ring_params = std::move(param);
+    ReloadInput();
 }
 
 void EmulatedDevices::SetKeyboardButton(const Common::Input::CallbackStatus& callback,
@@ -400,6 +420,23 @@ void EmulatedDevices::SetMouseStick(const Common::Input::CallbackStatus& callbac
     TriggerOnChange(DeviceTriggerType::Mouse);
 }
 
+void EmulatedDevices::SetRingAnalog(const Common::Input::CallbackStatus& callback) {
+    std::lock_guard lock{mutex};
+    const auto force_value = TransformToStick(callback);
+
+    device_status.ring_analog_value = force_value.x;
+
+    if (is_configuring) {
+        device_status.ring_analog_value = {};
+        TriggerOnChange(DeviceTriggerType::RingController);
+        return;
+    }
+
+    device_status.ring_analog_state.force = force_value.x.value;
+
+    TriggerOnChange(DeviceTriggerType::RingController);
+}
+
 KeyboardValues EmulatedDevices::GetKeyboardValues() const {
     return device_status.keyboard_values;
 }
@@ -410,6 +447,10 @@ KeyboardModifierValues EmulatedDevices::GetKeyboardModdifierValues() const {
 
 MouseButtonValues EmulatedDevices::GetMouseButtonsValues() const {
     return device_status.mouse_button_values;
+}
+
+RingAnalogValue EmulatedDevices::GetRingSensorValues() const {
+    return device_status.ring_analog_value;
 }
 
 KeyboardKey EmulatedDevices::GetKeyboard() const {
@@ -430,6 +471,10 @@ MousePosition EmulatedDevices::GetMousePosition() const {
 
 AnalogStickState EmulatedDevices::GetMouseWheel() const {
     return device_status.mouse_wheel_state;
+}
+
+RingSensorForce EmulatedDevices::GetRingSensorForce() const {
+    return device_status.ring_analog_state;
 }
 
 void EmulatedDevices::TriggerOnChange(DeviceTriggerType type) {

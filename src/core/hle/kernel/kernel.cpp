@@ -153,6 +153,7 @@ struct KernelCore::Impl {
         CleanupObject(font_shared_mem);
         CleanupObject(irs_shared_mem);
         CleanupObject(time_shared_mem);
+        CleanupObject(hidbus_shared_mem);
         CleanupObject(system_resource_limit);
 
         for (u32 core_id = 0; core_id < Core::Hardware::NUM_CPU_CORES; core_id++) {
@@ -644,16 +645,20 @@ struct KernelCore::Impl {
         constexpr std::size_t font_size{0x1100000};
         constexpr std::size_t irs_size{0x8000};
         constexpr std::size_t time_size{0x1000};
+        constexpr std::size_t hidbus_size{0x1000};
 
         const PAddr hid_phys_addr{system_pool.GetAddress()};
         const PAddr font_phys_addr{system_pool.GetAddress() + hid_size};
         const PAddr irs_phys_addr{system_pool.GetAddress() + hid_size + font_size};
         const PAddr time_phys_addr{system_pool.GetAddress() + hid_size + font_size + irs_size};
+        const PAddr hidbus_phys_addr{system_pool.GetAddress() + hid_size + font_size + irs_size +
+                                     time_size};
 
         hid_shared_mem = KSharedMemory::Create(system.Kernel());
         font_shared_mem = KSharedMemory::Create(system.Kernel());
         irs_shared_mem = KSharedMemory::Create(system.Kernel());
         time_shared_mem = KSharedMemory::Create(system.Kernel());
+        hidbus_shared_mem = KSharedMemory::Create(system.Kernel());
 
         hid_shared_mem->Initialize(system.DeviceMemory(), nullptr,
                                    {hid_phys_addr, hid_size / PageSize},
@@ -671,6 +676,10 @@ struct KernelCore::Impl {
                                     {time_phys_addr, time_size / PageSize},
                                     Svc::MemoryPermission::None, Svc::MemoryPermission::Read,
                                     time_phys_addr, time_size, "Time:SharedMemory");
+        hidbus_shared_mem->Initialize(system.DeviceMemory(), nullptr,
+                                      {hidbus_phys_addr, hidbus_size / PageSize},
+                                      Svc::MemoryPermission::None, Svc::MemoryPermission::Read,
+                                      hidbus_phys_addr, hidbus_size, "HidBus:SharedMemory");
     }
 
     void InitializePageSlab() {
@@ -756,6 +765,7 @@ struct KernelCore::Impl {
     Kernel::KSharedMemory* font_shared_mem{};
     Kernel::KSharedMemory* irs_shared_mem{};
     Kernel::KSharedMemory* time_shared_mem{};
+    Kernel::KSharedMemory* hidbus_shared_mem{};
 
     // Threads used for services
     std::unordered_set<std::shared_ptr<Kernel::ServiceThread>> service_threads;
@@ -1059,6 +1069,14 @@ Kernel::KSharedMemory& KernelCore::GetTimeSharedMem() {
 
 const Kernel::KSharedMemory& KernelCore::GetTimeSharedMem() const {
     return *impl->time_shared_mem;
+}
+
+Kernel::KSharedMemory& KernelCore::GetHidBusSharedMem() {
+    return *impl->hidbus_shared_mem;
+}
+
+const Kernel::KSharedMemory& KernelCore::GetHidBusSharedMem() const {
+    return *impl->hidbus_shared_mem;
 }
 
 void KernelCore::Suspend(bool in_suspention) {

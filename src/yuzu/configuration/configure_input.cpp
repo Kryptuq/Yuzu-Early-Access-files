@@ -24,6 +24,7 @@
 #include "yuzu/configuration/configure_input_advanced.h"
 #include "yuzu/configuration/configure_input_player.h"
 #include "yuzu/configuration/configure_motion_touch.h"
+#include "yuzu/configuration/configure_ringcon.h"
 #include "yuzu/configuration/configure_touchscreen_advanced.h"
 #include "yuzu/configuration/configure_vibration.h"
 #include "yuzu/configuration/input_profiles.h"
@@ -161,6 +162,10 @@ void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem,
     connect(advanced, &ConfigureInputAdvanced::CallMotionTouchConfigDialog,
             [this, input_subsystem] {
                 CallConfigureDialog<ConfigureMotionTouch>(*this, input_subsystem);
+            });
+    connect(advanced, &ConfigureInputAdvanced::CallRingControllerDialog,
+            [this, input_subsystem, &hid_core] {
+                CallConfigureDialog<ConfigureRingController>(*this, input_subsystem, hid_core);
             });
 
     connect(ui->vibrationButton, &QPushButton::clicked,
