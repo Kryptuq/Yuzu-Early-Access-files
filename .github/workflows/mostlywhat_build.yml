@@ -49,7 +49,14 @@ jobs:
 
       - name: After Build
         run: |
-          mv C:\actions-runner\_work\Yuzu-Early-Access-files\Yuzu-Early-Access-files\build\bin\Release C:\actions-runner\_work\Yuzu-Early-Access-files\Yuzu-Early-Access-files\build\bin\yuzu-early-access
+          mv ${{ github.workspace }}\build\bin\Release ${{ github.workspace }}\build\bin\yuzu-early-access
+
+      - name: Zip the Build Folder
+        uses: papeloto/action-zip@v1
+        with:
+          files: build/bin
+          dest: yuzu-early-access-EA${{ github.event.head_commit.message }}.zip
+          recursive: false
 
       #Publishing to Release
       - name: Release to GitHub Releases
@@ -58,15 +65,15 @@ jobs:
           name: EA${{ github.event.head_commit.message }}
           tag_name: EA${{ github.event.head_commit.message }}
           body: "Yuzu Early Access CI Builds with Appveyor [Current Build: yuzu Early Access ${{ github.event.head_commit.message }}]"
-          files: build\bin\yuzu-early-access
+          files: ${{ github.workspace }}\build\bin\yuzu-early-access-EA${{ github.event.head_commit.message }}.zip
 
       - uses: actions/upload-artifact@v2
         with:
           name: Built yuzu Emulator
-          path: build\bin\yuzu-early-access
+          path: ${{ github.workspace }}\build\bin\yuzu-early-access
 
       - name: Upload Logs if Failure
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          path: C:\actions-runner\_work\Yuzu-Early-Access-files\Yuzu-Early-Access-files\build\CMakeFiles
+          path: ${{ github.workspace }}\build\CMakeFiles
