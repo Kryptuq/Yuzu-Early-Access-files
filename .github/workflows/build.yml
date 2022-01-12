@@ -1,4 +1,4 @@
-name: MostlyWhat Build Script
+name: Yuzu Build Script
 
 on:
   push:
