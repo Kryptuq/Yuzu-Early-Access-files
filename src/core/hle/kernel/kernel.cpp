@@ -121,7 +121,7 @@ struct KernelCore::Impl {
         object_list_container.Finalize();
 
         // Ensures all service threads gracefully shutdown.
-        service_threads.clear();
+        ClearServiceThreads();
 
         next_object_id = 0;
         next_kernel_process_id = KProcess::InitialKIPIDMin;
@@ -713,11 +713,32 @@ struct KernelCore::Impl {
         return port;
     }
 
+    std::weak_ptr<Kernel::ServiceThread> CreateServiceThread(KernelCore& kernel,
+                                                             const std::string& name) {
+        std::lock_guard lk(service_threads_lock);
+        auto service_thread = std::make_shared<Kernel::ServiceThread>(kernel, 1, name);
+        service_threads.emplace(service_thread);
+        return service_thread;
+    }
+
+    void ReleaseServiceThread(std::weak_ptr<Kernel::ServiceThread> service_thread) {
+        std::lock_guard lk(service_threads_lock);
+        if (auto strong_ptr = service_thread.lock()) {
+            service_threads.erase(strong_ptr);
+        }
+    }
+
+    void ClearServiceThreads() {
+        std::lock_guard lk(service_threads_lock);
+        service_threads.clear();
+    }
+
     std::mutex server_ports_lock;
     std::mutex server_sessions_lock;
     std::mutex registered_objects_lock;
     std::mutex registered_in_use_objects_lock;
     std::mutex dummy_thread_lock;
+    std::mutex service_threads_lock;
 
     std::atomic<u32> next_object_id{0};
     std::atomic<u64> next_kernel_process_id{KProcess::InitialKIPIDMin};
@@ -1117,15 +1138,11 @@ void KernelCore::ExitSVCProfile() {
 }
 
 std::weak_ptr<Kernel::ServiceThread> KernelCore::CreateServiceThread(const std::string& name) {
-    auto service_thread = std::make_shared<Kernel::ServiceThread>(*this, 1, name);
-    impl->service_threads.emplace(service_thread);
-    return service_thread;
+    return impl->CreateServiceThread(*this, name);
 }
 
 void KernelCore::ReleaseServiceThread(std::weak_ptr<Kernel::ServiceThread> service_thread) {
-    if (auto strong_ptr = service_thread.lock()) {
-        impl->service_threads.erase(strong_ptr);
-    }
+    impl->ReleaseServiceThread(service_thread);
 }
 
 Init::KSlabResourceCounts& KernelCore::SlabResourceCounts() {

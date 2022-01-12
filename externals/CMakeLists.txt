@@ -13,10 +13,6 @@ if (ARCHITECTURE_x86 OR ARCHITECTURE_x86_64)
     target_compile_definitions(xbyak INTERFACE XBYAK_NO_OP_NAMES)
 endif()
 
-# Catch
-add_library(catch-single-include INTERFACE)
-target_include_directories(catch-single-include INTERFACE catch/single_include)
-
 # Dynarmic
 if (ARCHITECTURE_x86_64)
     set(DYNARMIC_TESTS OFF)

@@ -1,4 +1,3 @@
-# Minimum Version
 cmake_minimum_required(VERSION 3.15)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
@@ -35,6 +34,8 @@ option(ENABLE_CUBEB "Enables the cubeb audio backend" ON)
 option(USE_DISCORD_PRESENCE "Enables Discord Rich Presence" OFF)
 
 option(YUZU_USE_BUNDLED_OPUS "Compile bundled opus" ON)
+
+option(YUZU_TESTS "Compile tests" ON)
 
 # Default to a Release build
 get_property(IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
@@ -169,7 +170,6 @@ macro(yuzu_find_packages)
     # Capitalization matters here. We need the naming to match the generated paths from Conan
     set(REQUIRED_LIBS
     #    Cmake Pkg Prefix  Version     Conan Pkg
-        "Catch2            2.13.7      catch2/2.13.7"
         "fmt               8.0.1       fmt/8.1.1"
         "lz4               1.8         lz4/1.9.2"
         "nlohmann_json     3.8         nlohmann_json/3.8.0"
@@ -178,6 +178,11 @@ macro(yuzu_find_packages)
     # can't use opus until AVX check is fixed: https://github.com/yuzu-emu/yuzu/pull/4068
         #"opus              1.3         opus/1.3.1"
     )
+    if (YUZU_TESTS)
+        list(APPEND REQUIRED_LIBS
+        "Catch2            2.13.7      catch2/2.13.7"
+        )
+    endif()
 
     foreach(PACKAGE ${REQUIRED_LIBS})
         string(REGEX REPLACE "[ \t\r\n]+" ";" PACKAGE_SPLIT ${PACKAGE})

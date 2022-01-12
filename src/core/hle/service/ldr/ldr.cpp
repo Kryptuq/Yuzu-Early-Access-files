@@ -14,6 +14,7 @@
 #include "core/hle/kernel/k_page_table.h"
 #include "core/hle/kernel/k_system_control.h"
 #include "core/hle/kernel/svc_results.h"
+#include "core/hle/kernel/svc_types.h"
 #include "core/hle/service/ldr/ldr.h"
 #include "core/hle/service/service.h"
 #include "core/loader/nro.h"
@@ -325,7 +326,7 @@ public:
         for (std::size_t retry = 0; retry < MAXIMUM_MAP_RETRIES; retry++) {
             auto& page_table{process->PageTable()};
             const VAddr addr{GetRandomMapRegion(page_table, size)};
-            const ResultCode result{page_table.MapProcessCodeMemory(addr, baseAddress, size)};
+            const ResultCode result{page_table.MapCodeMemory(addr, baseAddress, size)};
 
             if (result == Kernel::ResultInvalidCurrentMemory) {
                 continue;
@@ -351,12 +352,12 @@ public:
 
             if (bss_size) {
                 auto block_guard = detail::ScopeExit([&] {
-                    page_table.UnmapProcessCodeMemory(addr + nro_size, bss_addr, bss_size);
-                    page_table.UnmapProcessCodeMemory(addr, nro_addr, nro_size);
+                    page_table.UnmapCodeMemory(addr + nro_size, bss_addr, bss_size);
+                    page_table.UnmapCodeMemory(addr, nro_addr, nro_size);
                 });
 
                 const ResultCode result{
-                    page_table.MapProcessCodeMemory(addr + nro_size, bss_addr, bss_size)};
+                    page_table.MapCodeMemory(addr + nro_size, bss_addr, bss_size)};
 
                 if (result == Kernel::ResultInvalidCurrentMemory) {
                     continue;
@@ -397,12 +398,12 @@ public:
                  nro_header.segment_headers[DATA_INDEX].memory_size);
 
         CASCADE_CODE(process->PageTable().SetProcessMemoryPermission(
-            text_start, ro_start - text_start, Kernel::KMemoryPermission::ReadAndExecute));
+            text_start, ro_start - text_start, Kernel::Svc::MemoryPermission::ReadExecute));
         CASCADE_CODE(process->PageTable().SetProcessMemoryPermission(
-            ro_start, data_start - ro_start, Kernel::KMemoryPermission::Read));
+            ro_start, data_start - ro_start, Kernel::Svc::MemoryPermission::Read));
 
         return process->PageTable().SetProcessMemoryPermission(
-            data_start, bss_end_addr - data_start, Kernel::KMemoryPermission::ReadAndWrite);
+            data_start, bss_end_addr - data_start, Kernel::Svc::MemoryPermission::ReadWrite);
     }
 
     void LoadModule(Kernel::HLERequestContext& ctx) {
@@ -530,16 +531,19 @@ public:
     ResultCode UnmapNro(const NROInfo& info) {
         // Each region must be unmapped separately to validate memory state
         auto& page_table{system.CurrentProcess()->PageTable()};
-        CASCADE_CODE(page_table.UnmapProcessCodeMemory(info.nro_address + info.text_size +
-                                                           info.ro_size + info.data_size,
-                                                       info.bss_address, info.bss_size));
-        CASCADE_CODE(page_table.UnmapProcessCodeMemory(
-            info.nro_address + info.text_size + info.ro_size,
-            info.src_addr + info.text_size + info.ro_size, info.data_size));
-        CASCADE_CODE(page_table.UnmapProcessCodeMemory(
-            info.nro_address + info.text_size, info.src_addr + info.text_size, info.ro_size));
-        CASCADE_CODE(
-            page_table.UnmapProcessCodeMemory(info.nro_address, info.src_addr, info.text_size));
+
+        if (info.bss_size != 0) {
+            CASCADE_CODE(page_table.UnmapCodeMemory(info.nro_address + info.text_size +
+                                                        info.ro_size + info.data_size,
+                                                    info.bss_address, info.bss_size));
+        }
+
+        CASCADE_CODE(page_table.UnmapCodeMemory(info.nro_address + info.text_size + info.ro_size,
+                                                info.src_addr + info.text_size + info.ro_size,
+                                                info.data_size));
+        CASCADE_CODE(page_table.UnmapCodeMemory(info.nro_address + info.text_size,
+                                                info.src_addr + info.text_size, info.ro_size));
+        CASCADE_CODE(page_table.UnmapCodeMemory(info.nro_address, info.src_addr, info.text_size));
         return ResultSuccess;
     }
 

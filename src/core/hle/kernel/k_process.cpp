@@ -509,7 +509,7 @@ VAddr KProcess::CreateTLSRegion() {
     const VAddr tls_page_addr{page_table
                                   ->AllocateAndMapMemory(1, PageSize, true, start, size / PageSize,
                                                          KMemoryState::ThreadLocal,
-                                                         KMemoryPermission::ReadAndWrite,
+                                                         KMemoryPermission::UserReadWrite,
                                                          tls_map_addr)
                                   .ValueOr(0)};
 
@@ -541,16 +541,16 @@ void KProcess::FreeTLSRegion(VAddr tls_address) {
 
 void KProcess::LoadModule(CodeSet code_set, VAddr base_addr) {
     const auto ReprotectSegment = [&](const CodeSet::Segment& segment,
-                                      KMemoryPermission permission) {
+                                      Svc::MemoryPermission permission) {
         page_table->SetProcessMemoryPermission(segment.addr + base_addr, segment.size, permission);
     };
 
     kernel.System().Memory().WriteBlock(*this, base_addr, code_set.memory.data(),
                                         code_set.memory.size());
 
-    ReprotectSegment(code_set.CodeSegment(), KMemoryPermission::ReadAndExecute);
-    ReprotectSegment(code_set.RODataSegment(), KMemoryPermission::Read);
-    ReprotectSegment(code_set.DataSegment(), KMemoryPermission::ReadAndWrite);
+    ReprotectSegment(code_set.CodeSegment(), Svc::MemoryPermission::ReadExecute);
+    ReprotectSegment(code_set.RODataSegment(), Svc::MemoryPermission::Read);
+    ReprotectSegment(code_set.DataSegment(), Svc::MemoryPermission::ReadWrite);
 }
 
 bool KProcess::IsSignaled() const {
@@ -587,7 +587,7 @@ ResultCode KProcess::AllocateMainThreadStack(std::size_t stack_size) {
     CASCADE_RESULT(main_thread_stack_top,
                    page_table->AllocateAndMapMemory(
                        main_thread_stack_size / PageSize, PageSize, false, start, size / PageSize,
-                       KMemoryState::Stack, KMemoryPermission::ReadAndWrite));
+                       KMemoryState::Stack, KMemoryPermission::UserReadWrite));
 
     main_thread_stack_top += main_thread_stack_size;
 

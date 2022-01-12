@@ -153,7 +153,10 @@ add_subdirectory(audio_core)
 add_subdirectory(video_core)
 add_subdirectory(input_common)
 add_subdirectory(shader_recompiler)
-add_subdirectory(tests)
+
+if (YUZU_TESTS)
+    add_subdirectory(tests)
+endif()
 
 if (ENABLE_SDL2)
     add_subdirectory(yuzu_cmd)

@@ -31,8 +31,8 @@ public:
                                     KMemoryManager::Pool pool);
     ResultCode MapProcessCode(VAddr addr, std::size_t pages_count, KMemoryState state,
                               KMemoryPermission perm);
-    ResultCode MapProcessCodeMemory(VAddr dst_addr, VAddr src_addr, std::size_t size);
-    ResultCode UnmapProcessCodeMemory(VAddr dst_addr, VAddr src_addr, std::size_t size);
+    ResultCode MapCodeMemory(VAddr dst_addr, VAddr src_addr, std::size_t size);
+    ResultCode UnmapCodeMemory(VAddr dst_addr, VAddr src_addr, std::size_t size);
     ResultCode UnmapProcessMemory(VAddr dst_addr, std::size_t size, KPageTable& src_page_table,
                                   VAddr src_addr);
     ResultCode MapPhysicalMemory(VAddr addr, std::size_t size);
@@ -43,7 +43,8 @@ public:
     ResultCode MapPages(VAddr addr, KPageLinkedList& page_linked_list, KMemoryState state,
                         KMemoryPermission perm);
     ResultCode UnmapPages(VAddr addr, KPageLinkedList& page_linked_list, KMemoryState state);
-    ResultCode SetProcessMemoryPermission(VAddr addr, std::size_t size, KMemoryPermission perm);
+    ResultCode SetProcessMemoryPermission(VAddr addr, std::size_t size,
+                                          Svc::MemoryPermission svc_perm);
     KMemoryInfo QueryInfo(VAddr addr);
     ResultCode ReserveTransferMemory(VAddr addr, std::size_t size, KMemoryPermission perm);
     ResultCode ResetTransferMemory(VAddr addr, std::size_t size);
