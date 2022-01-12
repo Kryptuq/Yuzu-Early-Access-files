@@ -49,7 +49,7 @@ jobs:
 
       - name: After Build
         run: |
-          mv D:\a\Yuzu-Early-Access-files\Yuzu-Early-Access-files\build\bin\Release D:\a\Yuzu-Early-Access-files\Yuzu-Early-Access-files\build\bin\yuzu-early-access
+          mv C:\actions-runner\_work\Yuzu-Early-Access-files\Yuzu-Early-Access-files\build\bin\Release C:\actions-runner\_work\Yuzu-Early-Access-files\Yuzu-Early-Access-files\build\bin\yuzu-early-access
 
       #Publishing to Release
       #- name: Create Release
