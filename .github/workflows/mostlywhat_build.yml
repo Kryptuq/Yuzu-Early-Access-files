@@ -65,7 +65,7 @@ jobs:
           name: EA${{ github.event.head_commit.message }}
           tag_name: EA${{ github.event.head_commit.message }}
           body: "Yuzu Early Access CI Builds with Appveyor [Current Build: yuzu Early Access ${{ github.event.head_commit.message }}]"
-          files: ${{ github.workspace }}\build\bin\yuzu-early-access-EA${{ github.event.head_commit.message }}.zip
+          files: ${{ github.workspace }}\yuzu-early-access-EA${{ github.event.head_commit.message }}.zip
 
       - uses: actions/upload-artifact@v2
         with:
