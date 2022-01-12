@@ -47,11 +47,13 @@ jobs:
       #Installs the Vulkan SDK
       - name: Install Vulkan SDK
         uses: humbletim/setup-vulkan-sdk@v1.0.3
+        with:
           path: D:\a\Yuzu-Early-Access-files\Yuzu-Early-Access-files\.ccache
 
       #Installs CMake
       - name: Install CMake
         uses: lukka/get-cmake@latest
+        with:
           path: D:\a\Yuzu-Early-Access-files\Yuzu-Early-Access-files\.ccache
 
       #Adding MSBuild
@@ -64,6 +66,7 @@ jobs:
       #Building with CMake and Ninja
       - name: Generating Project using CMake and Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
+        with:
           path: D:\a\Yuzu-Early-Access-files\Yuzu-Early-Access-files\.ccache
         
             
