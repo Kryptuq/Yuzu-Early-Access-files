@@ -17,7 +17,7 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: actions/checkout
         uses: actions/checkout@v2
-        
+
       #Installs CMake
       - name: Install CMake
         uses: lukka/get-cmake@latest
@@ -31,7 +31,7 @@ jobs:
       #Building with CMake and Ninja
       - name: Generating Project using CMake and Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
-        
+
       #Preparing Build
       - name: Before Build
         run: |
@@ -52,35 +52,21 @@ jobs:
           mv C:\actions-runner\_work\Yuzu-Early-Access-files\Yuzu-Early-Access-files\build\bin\Release C:\actions-runner\_work\Yuzu-Early-Access-files\Yuzu-Early-Access-files\build\bin\yuzu-early-access
 
       #Publishing to Release
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+      - name: Release to GitHub Releases
+        uses: softprops/action-gh-release@v1
         with:
+          name: EA${{ github.event.head_commit.message }}
           tag_name: EA${{ github.event.head_commit.message }}
-          release_name: EA${{ github.event.head_commit.message }}
-          body: |
-            Yuzu Early Access CI Builds with GitHub Actions [Current Build: yuzu Early Access ${{ github.event.head_commit.message }}]
-          draft: false
-          prerelease: false
-
-      - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: C:\actions-runner\_work\Yuzu-Early-Access-files\Yuzu-Early-Access-files\build\bin
-          asset_name: EA${{ github.event.head_commit.message }}
-          tag: EA${{ github.event.head_commit.message }}
-          overwrite: true
+          body: "Yuzu Early Access CI Builds with Appveyor [Current Build: yuzu Early Access ${{ github.event.head_commit.message }}]"
+          files: build\bin\yuzu-early-access
 
       - uses: actions/upload-artifact@v2
         with:
           name: Built yuzu Emulator
           path: build\bin\yuzu-early-access
-          
+
       - name: Upload Logs if Failure
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          path: C:\actions-runner\_work\Yuzu-Early-Access-files\Yuzu-Early-Access-files\build\CMakeFiles     
+          path: C:\actions-runner\_work\Yuzu-Early-Access-files\Yuzu-Early-Access-files\build\CMakeFiles
