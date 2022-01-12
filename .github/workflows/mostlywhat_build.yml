@@ -38,7 +38,7 @@ jobs:
           git clone https://github.com/Kryptuq/glslang.git
           mkdir build
           cd build
-          py pip install conan
+          pip install conan
           cmake --version
           cmake .. -G "Visual Studio 16 2019" -A x64 -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.event.head_commit.message }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.event.head_commit.message }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DUSE_DISCORD_PRESENCE=ON -DYUZU_USE_QT_WEB_ENGINE=OFF
 
