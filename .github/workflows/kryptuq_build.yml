@@ -1,0 +1,114 @@
+name: Kryptuq Build Script
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Windows Latest MinGW", artifact: "Windows-MinGW.7z",
+            os: windows-latest,
+            cc: "gcc", cxx: "g++"
+          }
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: actions/checkout
+        uses: actions/checkout@v2
+
+      #Download ccache and prepare
+      - name: Prepare ccache timestamp
+        id: ccache_cache_timestamp
+        shell: cmake -P {0}
+        run: |
+          string(TIMESTAMP current_date "%Y-%m-%d-%H;%M;%S" UTC)
+          message("::set-output name=timestamp::${current_date}")
+    
+      - name: ccache cache files
+        id: cachevulkan
+        uses: actions/cache@v2
+        with:
+          path: D:/a/Yuzu-Early-Access-files/Yuzu-Early-Access-files/VULKAN_SDK
+          key: build-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
+          restore-keys: |
+            build-ccache-      
+      
+      #Installs the Vulkan SDK
+      - name: Install Vulkan SDK
+        if: steps.cachevulkan.outputs.cache-hit != 'true'
+        uses: humbletim/setup-vulkan-sdk@v1.0.3
+        
+      #Installs CMake
+      - name: Install CMake
+        uses: lukka/get-cmake@latest
+        
+      #Adding MSBuild
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+        with:
+          msbuild-architecture: x64
+
+      #Building with CMake and Ninja
+      - name: Generating Project using CMake and Ninja
+        uses: seanmiddleditch/gha-setup-ninja@master
+        
+      #Preparing Build
+      - name: Before Build
+        run: |
+          git clone https://github.com/Kryptuq/glslang.git
+          pip install conan
+          mkdir build && cd build
+          cmake .. -G "Visual Studio 16 2019" -A x64 -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.event.head_commit.message }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.event.head_commit.message }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DUSE_DISCORD_PRESENCE=ON -DYUZU_USE_QT_WEB_ENGINE=OFF -D CMAKE_C_COMPILER_LAUNCHER=ccache -D CMAKE_CXX_COMPILER_LAUNCHER=ccache
+          
+      #Build the .sln
+      - name: Build app for release
+        run: msbuild build\yuzu.sln /p:WarningLevel=0 /p:Configuration=Release
+
+      - name: After Build
+        run: |
+          mv build\bin\Release build\bin\yuzu-early-access
+          
+      # Publishing to Release
+#       - name: Create Release
+#         id: create_release
+#         uses: actions/create-release@v1
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+#         with:
+#           tag_name: EA${{ github.event.head_commit.message }}
+#           release_name: EA${{ github.event.head_commit.message }}
+#           body: |
+#             Yuzu Early Access CI Builds with Appveyor [Current Build: yuzu Early Access ${{ github.event.head_commit.message }}]
+#           draft: false
+#           prerelease: false
+
+#       - name: Upload binaries to release
+#         uses: svenstaro/upload-release-action@v2
+#         with:
+#           repo_token: ${{ secrets.GITHUB_TOKEN }}
+#           file: build/bin
+#           asset_name: EA${{ github.event.head_commit.message }}
+#           tag: EA${{ github.event.head_commit.message }}
+#           overwrite: true
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Built yuzu Emulator
+          path: build\bin\yuzu-early-access
+          
+      - name: Upload Logs if Failure
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          path: D:/a/Yuzu-Early-Access-files/Yuzu-Early-Access-files/build/CMakeFiles     
