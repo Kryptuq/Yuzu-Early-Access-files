@@ -58,14 +58,14 @@ jobs:
           dest: yuzu-early-access-EA${{ github.event.head_commit.message }}.zip
           recursive: true
 
-      #Publishing to Release
-      - name: Release to GitHub Releases
-        uses: softprops/action-gh-release@v1
-        with:
-          name: EA${{ github.event.head_commit.message }}
-          tag_name: EA${{ github.event.head_commit.message }}
-          body: "Yuzu Early Access CI Builds with Github Actions [Current Build: yuzu Early Access ${{ github.event.head_commit.message }}]"
-          files: ${{ github.workspace }}\yuzu-early-access-EA${{ github.event.head_commit.message }}.zip
+#      #Publishing to Release
+ #     - name: Release to GitHub Releases
+  #      uses: softprops/action-gh-release@v1
+   #     with:
+    #      name: EA${{ github.event.head_commit.message }}
+     #     tag_name: EA${{ github.event.head_commit.message }}
+      #    body: "Yuzu Early Access CI Builds with Github Actions [Current Build: yuzu Early Access ${{ github.event.head_commit.message }}]"
+       #   files: ${{ github.workspace }}\yuzu-early-access-EA${{ github.event.head_commit.message }}.zip
 
       #Upload Artifacts Just in Case
       - uses: actions/upload-artifact@v2
