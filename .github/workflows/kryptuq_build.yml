@@ -36,7 +36,6 @@ jobs:
           message("::set-output name=timestamp::${current_date}")
     
       - name: ccache cache files
-        id: buildcache
         uses: actions/cache@v2
         with:
           path: D:\a\Yuzu-Early-Access-files\Yuzu-Early-Access-files\.ccache
@@ -44,37 +43,33 @@ jobs:
           restore-keys: |
             build-ccache-      
       
+      - name: ccache folder
+        run: |
+          mkdir .ccache
+          cd .ccache
+      
       #Installs the Vulkan SDK
       - name: Install Vulkan SDK
         uses: humbletim/setup-vulkan-sdk@v1.0.3
-        with:
-          path: D:\a\Yuzu-Early-Access-files\Yuzu-Early-Access-files\.ccache
-
+        
       #Installs CMake
       - name: Install CMake
         uses: lukka/get-cmake@latest
-        with:
-          path: D:\a\Yuzu-Early-Access-files\Yuzu-Early-Access-files\.ccache
-
+        
       #Adding MSBuild
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
-        with:
-          path: D:\a\Yuzu-Early-Access-files\Yuzu-Early-Access-files\.ccache
           msbuild-architecture: x64
 
       #Building with CMake and Ninja
       - name: Generating Project using CMake and Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
-        with:
-          path: D:\a\Yuzu-Early-Access-files\Yuzu-Early-Access-files\.ccache
         
-            
       #Preparing Build
       - name: Before Build
         run: |
           git clone https://github.com/Kryptuq/glslang.git
-          mkdir .ccache
+          
           
       #Build with CMake
       - name: Build with CMake
