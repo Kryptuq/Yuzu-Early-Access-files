@@ -19,6 +19,9 @@ jobs:
         uses: actions/checkout@v2
 
       #Installs the Vulkan SDK
+        env:
+          VULKAN_SDK: C:\VulkanSDK\
+      
       - name: Setup Vulkan
         run: |
           $ver = (Invoke-WebRequest -Uri "https://vulkan.lunarg.com/sdk/latest.json" | ConvertFrom-Json).windows
