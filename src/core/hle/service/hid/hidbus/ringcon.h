@@ -181,9 +181,6 @@ private:
     };
     static_assert(sizeof(RingConData) == 0x8, "RingConData is an invalid size");
 
-    // Executes the command requested
-    bool ExcecuteCommand(RingConCommands cmd, const std::vector<u8>& data);
-
     // Returns RingConData struct with pressure sensor values
     RingConData GetSensorValue() const;
 

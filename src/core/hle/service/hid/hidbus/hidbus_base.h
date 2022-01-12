@@ -173,7 +173,7 @@ protected:
     u8* transfer_memory{nullptr};
     bool is_transfer_memory_set{};
 
-    Kernel::KEvent* send_command_asyc_event;
+    Kernel::KEvent* send_command_async_event;
     KernelHelpers::ServiceContext& service_context;
 };
 } // namespace Service::HID

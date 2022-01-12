@@ -120,37 +120,9 @@ bool RingController::SetCommand(const std::vector<u8>& data) {
         return false;
     }
 
-    // There must be a better way to do this
-    const u32 command_id =
-        u32{data[0]} + (u32{data[1]} << 8) + (u32{data[2]} << 16) + (u32{data[3]} << 24);
-    static constexpr std::array supported_commands = {
-        RingConCommands::GetFirmwareVersion,
-        RingConCommands::ReadId,
-        RingConCommands::c20105,
-        RingConCommands::ReadUnkCal,
-        RingConCommands::ReadFactoryCal,
-        RingConCommands::ReadUserCal,
-        RingConCommands::ReadRepCount,
-        RingConCommands::ReadTotalPushCount,
-        RingConCommands::ResetRepCount,
-        RingConCommands::SaveCalData,
-    };
+    std::memcpy(&command, data.data(), sizeof(RingConCommands));
 
-    for (RingConCommands cmd : supported_commands) {
-        if (command_id == static_cast<u32>(cmd)) {
-            return ExcecuteCommand(cmd, data);
-        }
-    }
-
-    LOG_ERROR(Service_HID, "Command not supported {}", command_id);
-    command = RingConCommands::Error;
-    // Signal a reply to avoid softlocking the game
-    send_command_asyc_event->GetWritableEvent().Signal();
-    return false;
-}
-
-bool RingController::ExcecuteCommand(RingConCommands cmd, const std::vector<u8>& data) {
-    switch (cmd) {
+    switch (command) {
     case RingConCommands::GetFirmwareVersion:
     case RingConCommands::ReadId:
     case RingConCommands::c20105:
@@ -160,28 +132,27 @@ bool RingController::ExcecuteCommand(RingConCommands cmd, const std::vector<u8>&
     case RingConCommands::ReadRepCount:
     case RingConCommands::ReadTotalPushCount:
         ASSERT_MSG(data.size() == 0x4, "data.size is not 0x4 bytes");
-        command = cmd;
-        send_command_asyc_event->GetWritableEvent().Signal();
+        send_command_async_event->GetWritableEvent().Signal();
         return true;
     case RingConCommands::ResetRepCount:
+        ASSERT_MSG(data.size() == 0x4, "data.size is not 0x4 bytes");
         total_rep_count = 0;
-        command = cmd;
-        send_command_asyc_event->GetWritableEvent().Signal();
+        send_command_async_event->GetWritableEvent().Signal();
         return true;
     case RingConCommands::SaveCalData: {
         ASSERT_MSG(data.size() == 0x14, "data.size is not 0x14 bytes");
 
         SaveCalData save_info{};
-        std::memcpy(&save_info, &data, sizeof(SaveCalData));
+        std::memcpy(&save_info, data.data(), sizeof(SaveCalData));
         user_calibration = save_info.calibration;
-
-        command = cmd;
-        send_command_asyc_event->GetWritableEvent().Signal();
+        send_command_async_event->GetWritableEvent().Signal();
         return true;
     }
     default:
-        LOG_ERROR(Service_HID, "Command not implemented {}", cmd);
+        LOG_ERROR(Service_HID, "Command not implemented {}", command);
         command = RingConCommands::Error;
+        // Signal a reply to avoid softlocking the game
+        send_command_async_event->GetWritableEvent().Signal();
         return false;
     }
 }

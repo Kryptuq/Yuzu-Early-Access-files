@@ -12,7 +12,7 @@ namespace Service::HID {
 
 HidbusBase::HidbusBase(KernelHelpers::ServiceContext& service_context_)
     : service_context(service_context_) {
-    send_command_asyc_event = service_context.CreateEvent("hidbus:SendCommandAsycEvent");
+    send_command_async_event = service_context.CreateEvent("hidbus:SendCommandAsyncEvent");
 }
 HidbusBase::~HidbusBase() = default;
 
@@ -66,7 +66,7 @@ void HidbusBase::SetTransferMemoryPointer(u8* t_mem) {
 }
 
 Kernel::KReadableEvent& HidbusBase::GetSendCommandAsycEvent() const {
-    return send_command_asyc_event->GetReadableEvent();
+    return send_command_async_event->GetReadableEvent();
 }
 
 } // namespace Service::HID

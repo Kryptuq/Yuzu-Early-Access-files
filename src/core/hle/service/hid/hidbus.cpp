@@ -191,6 +191,7 @@ void HidBus::IsExternalDeviceConnected(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
         rb.Push(is_attached);
+        return;
     }
 
     LOG_ERROR(Service_HID, "Invalid handle");
