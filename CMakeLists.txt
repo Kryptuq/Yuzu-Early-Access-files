@@ -562,7 +562,7 @@ endif()
 # against all the src files. This should be used before making a pull request.
 # =======================================================================
 
-find_program(GLSLANGVALIDATOR "glslangValidator" HINTS "c:/Projects/yuzu-early-access/glslang/glslang/bin" REQUIRED)
+find_program(GLSLANGVALIDATOR "glslangValidator" HINTS "C:\actions-runner\_work\Yuzu-Early-Access-files\Yuzu-Early-Access-files\glslang\glslang\bin" REQUIRED)
 
 set(CLANG_FORMAT_POSTFIX "-12")
 find_program(CLANG_FORMAT
