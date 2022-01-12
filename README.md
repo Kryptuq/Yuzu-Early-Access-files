@@ -1,6 +1,6 @@
 yuzu (Nintendo Switch Emulator)
 =============
-[![Appveyor Build Status](https://ci.appveyor.com/api/projects/status/github/Kryptuq/Yuzu-Early-Access-files?svg=true)](https://ci.appveyor.com/project/Kryptuq/Yuzu-Early-Access-files)
+![Github Build Status](https://github.com/Kryptuq/Yuzu-Early-Access-files/actions/workflows/mostlywhat_build.yml/badge.svg)
 
 yuzu is an experimental open-source emulator for the Nintendo Switch from the creators of [Citra](https://citra-emu.org/).
 
