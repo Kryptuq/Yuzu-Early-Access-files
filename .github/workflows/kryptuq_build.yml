@@ -59,7 +59,8 @@ jobs:
       #Adding MSBuild
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
-            msbuild-architecture: x64
+        with:
+          msbuild-architecture: x64
 
       #Building with CMake and Ninja
       - name: Generating Project using CMake and Ninja
