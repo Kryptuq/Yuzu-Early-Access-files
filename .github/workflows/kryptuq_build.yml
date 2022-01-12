@@ -39,7 +39,7 @@ jobs:
         id: buildcache
         uses: actions/cache@v2
         with:
-          path: D:\a\Yuzu-Early-Access-files\Yuzu-Early-Access-files\build
+          path: D:\a\Yuzu-Early-Access-files\Yuzu-Early-Access-files\.ccache
           key: build-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
           restore-keys: |
             build-ccache-      
@@ -47,32 +47,37 @@ jobs:
       #Installs the Vulkan SDK
       - name: Install Vulkan SDK
         uses: humbletim/setup-vulkan-sdk@v1.0.3
+        path: D:\a\Yuzu-Early-Access-files\Yuzu-Early-Access-files\.ccache
 
       #Installs CMake
       - name: Install CMake
         uses: lukka/get-cmake@latest
+        path: D:\a\Yuzu-Early-Access-files\Yuzu-Early-Access-files\.ccache
 
       #Adding MSBuild
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
         with:
+          path: D:\a\Yuzu-Early-Access-files\Yuzu-Early-Access-files\.ccache
           msbuild-architecture: x64
 
       #Building with CMake and Ninja
       - name: Generating Project using CMake and Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
+        path: D:\a\Yuzu-Early-Access-files\Yuzu-Early-Access-files\.ccache
         
             
       #Preparing Build
       - name: Before Build
-        if: steps.buildcache.outputs.cache-hit != 'true'
         run: |
           git clone https://github.com/Kryptuq/glslang.git
-          mkdir build
-          cd build
-          pip install conan
-          conan user
+          mkdir .ccache
           
+      #Build with CMake
+      - name: Build with CMake
+        run: |
+          pip install conan
+          mkdir build && cd build
           cmake .. -G "Visual Studio 16 2019" -A x64 -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.event.head_commit.message }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.event.head_commit.message }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DUSE_DISCORD_PRESENCE=ON -DYUZU_USE_QT_WEB_ENGINE=OFF -D CMAKE_C_COMPILER_LAUNCHER=ccache -D CMAKE_CXX_COMPILER_LAUNCHER=ccache
           
       #Build the .sln
