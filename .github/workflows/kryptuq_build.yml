@@ -36,20 +36,17 @@ jobs:
           message("::set-output name=timestamp::${current_date}")
     
       - name: ccache cache files
+        id: cachevulkan
         uses: actions/cache@v2
         with:
-          path: D:\a\Yuzu-Early-Access-files\Yuzu-Early-Access-files\.ccache
+          path: D:/a/Yuzu-Early-Access-files/Yuzu-Early-Access-files/VULKAN_SDK
           key: build-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
           restore-keys: |
             build-ccache-      
       
-      - name: ccache folder
-        run: |
-          mkdir .ccache
-          cd .ccache
-      
       #Installs the Vulkan SDK
       - name: Install Vulkan SDK
+        if: steps.cachevulkan.outputs.cache-hit != 'true'
         uses: humbletim/setup-vulkan-sdk@v1.0.3
         
       #Installs CMake
@@ -70,11 +67,6 @@ jobs:
       - name: Before Build
         run: |
           git clone https://github.com/Kryptuq/glslang.git
-          
-          
-      #Build with CMake
-      - name: Build with CMake
-        run: |
           pip install conan
           mkdir build && cd build
           cmake .. -G "Visual Studio 16 2019" -A x64 -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.event.head_commit.message }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.event.head_commit.message }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DUSE_DISCORD_PRESENCE=ON -DYUZU_USE_QT_WEB_ENGINE=OFF -D CMAKE_C_COMPILER_LAUNCHER=ccache -D CMAKE_CXX_COMPILER_LAUNCHER=ccache
