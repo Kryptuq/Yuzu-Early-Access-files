@@ -36,6 +36,7 @@ jobs:
           message("::set-output name=timestamp::${current_date}")
     
       - name: ccache cache files
+        id: buildcache
         uses: actions/cache@v2
         with:
           path: D:\a\Yuzu-Early-Access-files\Yuzu-Early-Access-files\build
@@ -64,8 +65,10 @@ jobs:
             
       #Preparing Build
       - name: Before Build
+        if: steps.X.outputs.cache-hit != 'true'
         run: |
           git clone https://github.com/Kryptuq/glslang.git
+          mkdir build
           cd build
           pip install conan
           conan user
