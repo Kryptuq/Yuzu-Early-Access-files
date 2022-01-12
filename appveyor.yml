@@ -1,0 +1,82 @@
+version: 'EA{build}'
+cache:
+  - C:\ProgramData\chocolatey\bin -> appveyor.yml
+  - C:\ProgramData\chocolatey\lib -> appveyor.yml
+clone_folder: c:\Projects\yuzu-early-access
+skip_tags: true
+skip_non_tags: false
+branches:
+  only:
+  - main
+image:
+- Visual Studio 2019
+configuration:
+- Release
+platform:
+- x64
+environment:
+  global:
+    PYTHONUNBUFFERED: 'True'
+    PYTHONWARNINGS: 'ignore:::wheel.pep425tags:'
+    CODECOV_ENV: PYTHON_VERSION, PLATFORM
+    
+  matrix:
+  - PYTHON_VERSION: 3.9
+  
+# skip unsupported combinations
+init:
+- set arch= Win64
+- echo %APPVEYOR_BUILD_WORKER_IMAGE%
+- set generator="Visual Studio 16 2019"
+- echo %generator%
+
+#Updating the Build Version to Commit Name
+- ps: Update-AppveyorBuild -Version "$env:APPVEYOR_REPO_COMMIT_MESSAGE"
+
+# Update Environment Variables based on matrix/platform
+- set PY_VER=%PYTHON_VERSION:.=%
+- set PYTHON=C:\PYTHON%PY_VER%
+- if %PLATFORM%==x64 (set PYTHON=%PYTHON%-x64)
+- set PYTHONNET_PYDLL=%PYTHON%\python%PY_VER%.dll
+
+# Put desired Python version first in PATH
+- set PATH=%PYTHON%;%PYTHON%\Scripts;%PATH%
+
+- python -m pip install --upgrade pip
+
+before_build:
+- cmd: |-
+    git clone https://github.com/Kryptuq/glslang.git
+    mkdir build
+    cd build
+    pip install conan
+    conan user
+    cmake --version
+    cmake .. -G %generator% -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access %APPVEYOR_BUILD_VERSION%" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access %APPVEYOR_BUILD_VERSION% | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DUSE_DISCORD_PRESENCE=ON -DYUZU_USE_QT_WEB_ENGINE=OFF
+    
+build:
+  project: c:\Projects\yuzu-early-access\build\yuzu.sln
+  verbosity: minimal
+  parallel: true
+
+after_build:
+    mv c:\Projects\yuzu-early-access\build\bin\Release c:\Projects\yuzu-early-access\build\bin\yuzu-early-access
+  
+artifacts:
+    - path: build\bin
+      name: yuzu-early-access-EA%APPVEYOR_BUILD_VERSION%
+  
+deploy:
+  tag: EA%APPVEYOR_BUILD_VERSION%
+  release: EA%APPVEYOR_BUILD_VERSION%
+  description: 'Yuzu Early Access CI Builds with Appveyor [Current Build: yuzu Early Access %APPVEYOR_BUILD_VERSION%]'
+  provider: GitHub
+  auth_token:
+    secure: aCv+cazXM4cEq+Jn6ZMOhXAfr0wmdeE9VD0IQcGEEYDIgU6+j4SzuzIYpcq5LMb/
+  on:
+    branch: main
+    APPVEYOR_REPO_TAG: false        # deploy on tag push only
+
+skip_commits:
+  files:
+    - appveyor.yml
