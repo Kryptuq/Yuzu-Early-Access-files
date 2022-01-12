@@ -65,7 +65,7 @@ jobs:
             
       #Preparing Build
       - name: Before Build
-        if: steps.X.outputs.cache-hit != 'true'
+        if: steps.buildcache.outputs.cache-hit != 'true'
         run: |
           git clone https://github.com/Kryptuq/glslang.git
           mkdir build
