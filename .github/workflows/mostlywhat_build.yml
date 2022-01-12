@@ -19,8 +19,8 @@ jobs:
         uses: actions/checkout@v2
 
       #Installs the Vulkan SDK
-#      - name: Install Vulkan SDK
- #       uses: humbletim/setup-vulkan-sdk@v1.0.3
+      - name: Install Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.0.3
 
       #Installs CMake
       - name: Install CMake
