@@ -38,7 +38,8 @@ namespace Service::HID {
 // Period time is obtained by measuring the number of samples in a second on HW using a homebrew
 constexpr auto pad_update_ns = std::chrono::nanoseconds{4 * 1000 * 1000};            // (4ms, 250Hz)
 constexpr auto mouse_keyboard_update_ns = std::chrono::nanoseconds{8 * 1000 * 1000}; // (8ms, 125Hz)
-constexpr auto motion_update_ns = std::chrono::nanoseconds{5 * 1000 * 1000};         // (5ms, 200Hz)
+// TODO: Correct update rate for motion is 5ms. Check why some games don't behave at that speed
+constexpr auto motion_update_ns = std::chrono::nanoseconds{10 * 1000 * 1000}; // (10ms, 100Hz)
 constexpr std::size_t SHARED_MEMORY_SIZE = 0x40000;
 
 IAppletResource::IAppletResource(Core::System& system_,

@@ -715,15 +715,18 @@ struct KernelCore::Impl {
 
     std::weak_ptr<Kernel::ServiceThread> CreateServiceThread(KernelCore& kernel,
                                                              const std::string& name) {
-        std::lock_guard lk(service_threads_lock);
         auto service_thread = std::make_shared<Kernel::ServiceThread>(kernel, 1, name);
-        service_threads.emplace(service_thread);
+        {
+            std::lock_guard lk(service_threads_lock);
+            service_threads.emplace(service_thread);
+        }
         return service_thread;
     }
 
     void ReleaseServiceThread(std::weak_ptr<Kernel::ServiceThread> service_thread) {
-        std::lock_guard lk(service_threads_lock);
-        if (auto strong_ptr = service_thread.lock()) {
+        auto strong_ptr = service_thread.lock();
+        {
+            std::lock_guard lk(service_threads_lock);
             service_threads.erase(strong_ptr);
         }
     }
