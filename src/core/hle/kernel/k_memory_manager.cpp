@@ -8,11 +8,15 @@
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "common/scope_exit.h"
+#include "core/core.h"
+#include "core/device_memory.h"
 #include "core/hle/kernel/k_memory_manager.h"
 #include "core/hle/kernel/k_page_linked_list.h"
 #include "core/hle/kernel/svc_results.h"
 
 namespace Kernel {
+
+KMemoryManager::KMemoryManager(Core::System& system_) : system{system_} {}
 
 std::size_t KMemoryManager::Impl::Initialize(Pool new_pool, u64 start_address, u64 end_address) {
     const auto size{end_address - start_address};
@@ -81,7 +85,7 @@ VAddr KMemoryManager::AllocateAndOpenContinuous(std::size_t num_pages, std::size
 }
 
 ResultCode KMemoryManager::Allocate(KPageLinkedList& page_list, std::size_t num_pages, Pool pool,
-                                    Direction dir) {
+                                    Direction dir, u32 heap_fill_value) {
     ASSERT(page_list.GetNumPages() == 0);
 
     // Early return if we're allocating no pages
@@ -139,6 +143,12 @@ ResultCode KMemoryManager::Allocate(KPageLinkedList& page_list, std::size_t num_
         }
     }
 
+    // Clear allocated memory.
+    for (const auto& it : page_list.Nodes()) {
+        std::memset(system.DeviceMemory().GetPointer(it.GetAddress()), heap_fill_value,
+                    it.GetSize());
+    }
+
     // Only succeed if we allocated as many pages as we wanted
     if (num_pages) {
         return ResultOutOfMemory;
@@ -146,11 +156,12 @@ ResultCode KMemoryManager::Allocate(KPageLinkedList& page_list, std::size_t num_
 
     // We succeeded!
     group_guard.Cancel();
+
     return ResultSuccess;
 }
 
 ResultCode KMemoryManager::Free(KPageLinkedList& page_list, std::size_t num_pages, Pool pool,
-                                Direction dir) {
+                                Direction dir, u32 heap_fill_value) {
     // Early return if we're freeing no pages
     if (!num_pages) {
         return ResultSuccess;

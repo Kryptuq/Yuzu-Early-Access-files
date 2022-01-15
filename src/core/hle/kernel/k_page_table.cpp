@@ -289,8 +289,8 @@ ResultCode KPageTable::MapProcessCode(VAddr addr, std::size_t num_pages, KMemory
     }
 
     KPageLinkedList page_linked_list;
-    CASCADE_CODE(
-        system.Kernel().MemoryManager().Allocate(page_linked_list, num_pages, memory_pool));
+    CASCADE_CODE(system.Kernel().MemoryManager().Allocate(page_linked_list, num_pages, memory_pool,
+                                                          allocation_option));
     CASCADE_CODE(Operate(addr, num_pages, page_linked_list, OperationType::MapGroup));
 
     block_manager->Update(addr, num_pages, state, perm);
@@ -457,8 +457,8 @@ ResultCode KPageTable::MapPhysicalMemory(VAddr addr, std::size_t size) {
 
     KPageLinkedList page_linked_list;
 
-    CASCADE_CODE(
-        system.Kernel().MemoryManager().Allocate(page_linked_list, remaining_pages, memory_pool));
+    CASCADE_CODE(system.Kernel().MemoryManager().Allocate(page_linked_list, remaining_pages,
+                                                          memory_pool, allocation_option));
 
     // We succeeded, so commit the memory reservation.
     memory_reservation.Commit();
@@ -541,7 +541,8 @@ ResultCode KPageTable::UnmapMemory(VAddr addr, std::size_t size) {
     }
 
     const std::size_t num_pages{size / PageSize};
-    system.Kernel().MemoryManager().Free(page_linked_list, num_pages, memory_pool);
+    system.Kernel().MemoryManager().Free(page_linked_list, num_pages, memory_pool,
+                                         allocation_option);
 
     block_manager->Update(addr, num_pages, KMemoryState::Free);
 
@@ -960,7 +961,7 @@ ResultCode KPageTable::SetHeapSize(VAddr* out, std::size_t size) {
     // Allocate pages for the heap extension.
     KPageLinkedList page_linked_list;
     R_TRY(system.Kernel().MemoryManager().Allocate(page_linked_list, allocation_size / PageSize,
-                                                   memory_pool));
+                                                   memory_pool, allocation_option));
 
     // Map the pages.
     {
@@ -1027,8 +1028,8 @@ ResultVal<VAddr> KPageTable::AllocateAndMapMemory(std::size_t needed_num_pages, 
         CASCADE_CODE(Operate(addr, needed_num_pages, perm, OperationType::Map, map_addr));
     } else {
         KPageLinkedList page_group;
-        CASCADE_CODE(
-            system.Kernel().MemoryManager().Allocate(page_group, needed_num_pages, memory_pool));
+        CASCADE_CODE(system.Kernel().MemoryManager().Allocate(page_group, needed_num_pages,
+                                                              memory_pool, allocation_option));
         CASCADE_CODE(Operate(addr, needed_num_pages, page_group, OperationType::MapGroup));
     }
 

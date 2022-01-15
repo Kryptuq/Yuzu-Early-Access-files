@@ -12,6 +12,10 @@
 #include "core/hle/kernel/k_page_heap.h"
 #include "core/hle/result.h"
 
+namespace Core {
+class System;
+}
+
 namespace Kernel {
 
 class KPageLinkedList;
@@ -42,7 +46,7 @@ public:
         Mask = (0xF << Shift),
     };
 
-    KMemoryManager() = default;
+    explicit KMemoryManager(Core::System& system_);
 
     constexpr std::size_t GetSize(Pool pool) const {
         return managers[static_cast<std::size_t>(pool)].GetSize();
@@ -51,10 +55,10 @@ public:
     void InitializeManager(Pool pool, u64 start_address, u64 end_address);
 
     VAddr AllocateAndOpenContinuous(size_t num_pages, size_t align_pages, u32 option);
-    ResultCode Allocate(KPageLinkedList& page_list, std::size_t num_pages, Pool pool,
-                        Direction dir = Direction::FromFront);
-    ResultCode Free(KPageLinkedList& page_list, std::size_t num_pages, Pool pool,
-                    Direction dir = Direction::FromFront);
+    ResultCode Allocate(KPageLinkedList& page_list, std::size_t num_pages, Pool pool, Direction dir,
+                        u32 heap_fill_value = 0);
+    ResultCode Free(KPageLinkedList& page_list, std::size_t num_pages, Pool pool, Direction dir,
+                    u32 heap_fill_value = 0);
 
     static constexpr std::size_t MaxManagerCount = 10;
 
@@ -129,6 +133,7 @@ private:
     };
 
 private:
+    Core::System& system;
     std::array<std::mutex, static_cast<std::size_t>(Pool::Count)> pool_locks;
     std::array<Impl, MaxManagerCount> managers;
 };

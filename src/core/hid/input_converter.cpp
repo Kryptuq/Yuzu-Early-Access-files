@@ -114,7 +114,7 @@ Common::Input::MotionStatus TransformToMotion(const Common::Input::CallbackStatu
         if (TransformToButton(callback).value) {
             std::random_device device;
             std::mt19937 gen(device());
-            std::uniform_int_distribution<s16> distribution(-1000, 1000);
+            std::uniform_int_distribution<s16> distribution(-5000, 5000);
             status.accel.x.raw_value = static_cast<f32>(distribution(gen)) * 0.001f;
             status.accel.y.raw_value = static_cast<f32>(distribution(gen)) * 0.001f;
             status.accel.z.raw_value = static_cast<f32>(distribution(gen)) * 0.001f;

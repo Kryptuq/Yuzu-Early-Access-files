@@ -303,6 +303,7 @@ private:
     bool is_aslr_enabled{};
 
     KMemoryManager::Pool memory_pool{KMemoryManager::Pool::Application};
+    KMemoryManager::Direction allocation_option{KMemoryManager::Direction::FromFront};
 
     Common::PageTable page_table_impl;
 

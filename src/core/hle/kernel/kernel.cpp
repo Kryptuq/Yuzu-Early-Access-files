@@ -632,7 +632,7 @@ struct KernelCore::Impl {
         const auto application_pool = memory_layout.GetKernelApplicationPoolRegionPhysicalExtents();
 
         // Initialize memory managers
-        memory_manager = std::make_unique<KMemoryManager>();
+        memory_manager = std::make_unique<KMemoryManager>(system);
         memory_manager->InitializeManager(KMemoryManager::Pool::Application,
                                           application_pool.GetAddress(),
                                           application_pool.GetEndAddress());
