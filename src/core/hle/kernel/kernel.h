@@ -52,6 +52,7 @@ class KSharedMemory;
 class KSharedMemoryInfo;
 class KThread;
 class KTransferMemory;
+class KWorkerTaskManager;
 class KWritableEvent;
 class KCodeMemory;
 class PhysicalCore;
@@ -348,6 +349,12 @@ public:
 
     /// Gets the current slab resource counts.
     const Init::KSlabResourceCounts& SlabResourceCounts() const;
+
+    /// Gets the current worker task manager, used for dispatching KThread/KProcess tasks.
+    KWorkerTaskManager& WorkerTaskManager();
+
+    /// Gets the current worker task manager, used for dispatching KThread/KProcess tasks.
+    const KWorkerTaskManager& WorkerTaskManager() const;
 
 private:
     friend class KProcess;

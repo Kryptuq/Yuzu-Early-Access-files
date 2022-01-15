@@ -37,6 +37,7 @@
 #include "core/hle/kernel/k_shared_memory.h"
 #include "core/hle/kernel/k_slab_heap.h"
 #include "core/hle/kernel/k_thread.h"
+#include "core/hle/kernel/k_worker_task_manager.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/physical_core.h"
 #include "core/hle/kernel/service_thread.h"
@@ -51,7 +52,8 @@ namespace Kernel {
 
 struct KernelCore::Impl {
     explicit Impl(Core::System& system_, KernelCore& kernel_)
-        : time_manager{system_}, object_list_container{kernel_}, system{system_} {}
+        : time_manager{system_}, object_list_container{kernel_},
+          service_threads_manager{1, "yuzu:ServiceThreadsManager"}, system{system_} {}
 
     void SetMulticore(bool is_multi) {
         is_multicore = is_multi;
@@ -716,24 +718,22 @@ struct KernelCore::Impl {
     std::weak_ptr<Kernel::ServiceThread> CreateServiceThread(KernelCore& kernel,
                                                              const std::string& name) {
         auto service_thread = std::make_shared<Kernel::ServiceThread>(kernel, 1, name);
-        {
-            std::lock_guard lk(service_threads_lock);
-            service_threads.emplace(service_thread);
-        }
+
+        service_threads_manager.QueueWork(
+            [this, service_thread]() { service_threads.emplace(service_thread); });
+
         return service_thread;
     }
 
     void ReleaseServiceThread(std::weak_ptr<Kernel::ServiceThread> service_thread) {
-        auto strong_ptr = service_thread.lock();
-        {
-            std::lock_guard lk(service_threads_lock);
-            service_threads.erase(strong_ptr);
+        if (auto strong_ptr = service_thread.lock()) {
+            service_threads_manager.QueueWork(
+                [this, strong_ptr{std::move(strong_ptr)}]() { service_threads.erase(strong_ptr); });
         }
     }
 
     void ClearServiceThreads() {
-        std::lock_guard lk(service_threads_lock);
-        service_threads.clear();
+        service_threads_manager.QueueWork([this]() { service_threads.clear(); });
     }
 
     std::mutex server_ports_lock;
@@ -741,7 +741,6 @@ struct KernelCore::Impl {
     std::mutex registered_objects_lock;
     std::mutex registered_in_use_objects_lock;
     std::mutex dummy_thread_lock;
-    std::mutex service_threads_lock;
 
     std::atomic<u32> next_object_id{0};
     std::atomic<u64> next_kernel_process_id{KProcess::InitialKIPIDMin};
@@ -793,6 +792,7 @@ struct KernelCore::Impl {
 
     // Threads used for services
     std::unordered_set<std::shared_ptr<Kernel::ServiceThread>> service_threads;
+    Common::ThreadWorker service_threads_manager;
 
     std::array<KThread*, Core::Hardware::NUM_CPU_CORES> suspend_threads;
     std::array<Core::CPUInterruptHandler, Core::Hardware::NUM_CPU_CORES> interrupts{};
@@ -807,6 +807,8 @@ struct KernelCore::Impl {
     u32 single_core_thread_id{};
 
     std::array<u64, Core::Hardware::NUM_CPU_CORES> svc_ticks{};
+
+    KWorkerTaskManager worker_task_manager;
 
     // System context
     Core::System& system;
@@ -1154,6 +1156,14 @@ Init::KSlabResourceCounts& KernelCore::SlabResourceCounts() {
 
 const Init::KSlabResourceCounts& KernelCore::SlabResourceCounts() const {
     return impl->slab_resource_counts;
+}
+
+KWorkerTaskManager& KernelCore::WorkerTaskManager() {
+    return impl->worker_task_manager;
+}
+
+const KWorkerTaskManager& KernelCore::WorkerTaskManager() const {
+    return impl->worker_task_manager;
 }
 
 bool KernelCore::IsPhantomModeForSingleCore() const {

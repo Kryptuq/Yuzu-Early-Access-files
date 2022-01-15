@@ -149,6 +149,10 @@ ResultCode KProcess::Initialize(KProcess* process, Core::System& system, std::st
     return ResultSuccess;
 }
 
+void KProcess::DoWorkerTaskImpl() {
+    UNIMPLEMENTED();
+}
+
 KResourceLimit* KProcess::GetResourceLimit() const {
     return resource_limit;
 }
@@ -477,7 +481,7 @@ void KProcess::Finalize() {
     }
 
     // Perform inherited finalization.
-    KAutoObjectWithSlabHeapAndContainer<KProcess, KSynchronizationObject>::Finalize();
+    KAutoObjectWithSlabHeapAndContainer<KProcess, KWorkerTask>::Finalize();
 }
 
 /**

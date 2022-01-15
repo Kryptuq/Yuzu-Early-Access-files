@@ -15,6 +15,7 @@
 #include "core/hle/kernel/k_condition_variable.h"
 #include "core/hle/kernel/k_handle_table.h"
 #include "core/hle/kernel/k_synchronization_object.h"
+#include "core/hle/kernel/k_worker_task.h"
 #include "core/hle/kernel/process_capability.h"
 #include "core/hle/kernel/slab_helpers.h"
 #include "core/hle/result.h"
@@ -62,8 +63,7 @@ enum class ProcessStatus {
     DebugBreak,
 };
 
-class KProcess final
-    : public KAutoObjectWithSlabHeapAndContainer<KProcess, KSynchronizationObject> {
+class KProcess final : public KAutoObjectWithSlabHeapAndContainer<KProcess, KWorkerTask> {
     KERNEL_AUTOOBJECT_TRAITS(KProcess, KSynchronizationObject);
 
 public:
@@ -344,6 +344,8 @@ public:
     }
 
     bool IsSignaled() const override;
+
+    void DoWorkerTaskImpl();
 
     void PinCurrentThread(s32 core_id);
     void UnpinCurrentThread(s32 core_id);

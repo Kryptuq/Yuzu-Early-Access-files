@@ -30,6 +30,7 @@
 #include "core/hle/kernel/k_system_control.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/k_thread_queue.h"
+#include "core/hle/kernel/k_worker_task_manager.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/svc_results.h"
 #include "core/hle/kernel/time_manager.h"
@@ -332,7 +333,7 @@ void KThread::Finalize() {
     }
 
     // Perform inherited finalization.
-    KAutoObjectWithSlabHeapAndContainer<KThread, KSynchronizationObject>::Finalize();
+    KSynchronizationObject::Finalize();
 }
 
 bool KThread::IsSignaled() const {
@@ -376,9 +377,26 @@ void KThread::StartTermination() {
 
     // Register terminated dpc flag.
     RegisterDpc(DpcFlag::Terminated);
+}
+
+void KThread::FinishTermination() {
+    // Ensure that the thread is not executing on any core.
+    if (parent != nullptr) {
+        for (std::size_t i = 0; i < static_cast<std::size_t>(Core::Hardware::NUM_CPU_CORES); ++i) {
+            KThread* core_thread{};
+            do {
+                core_thread = kernel.Scheduler(i).GetCurrentThread();
+            } while (core_thread == this);
+        }
+    }
 
     // Close the thread.
     this->Close();
+}
+
+void KThread::DoWorkerTaskImpl() {
+    // Finish the termination that was begun by Exit().
+    this->FinishTermination();
 }
 
 void KThread::Pin(s32 current_core) {
@@ -417,12 +435,7 @@ void KThread::Pin(s32 current_core) {
                                          static_cast<u32>(ThreadState::SuspendShift)));
 
         // Update our state.
-        const ThreadState old_state = thread_state;
-        thread_state = static_cast<ThreadState>(GetSuspendFlags() |
-                                                static_cast<u32>(old_state & ThreadState::Mask));
-        if (thread_state != old_state) {
-            KScheduler::OnThreadStateChanged(kernel, this, old_state);
-        }
+        UpdateState();
     }
 
     // TODO(bunnei): Update our SVC access permissions.
@@ -463,20 +476,13 @@ void KThread::Unpin() {
     }
 
     // Allow performing thread suspension (if termination hasn't been requested).
-    {
+    if (!IsTerminationRequested()) {
         // Update our allow flags.
-        if (!IsTerminationRequested()) {
-            suspend_allowed_flags |= (1 << (static_cast<u32>(SuspendType::Thread) +
-                                            static_cast<u32>(ThreadState::SuspendShift)));
-        }
+        suspend_allowed_flags |= (1 << (static_cast<u32>(SuspendType::Thread) +
+                                        static_cast<u32>(ThreadState::SuspendShift)));
 
         // Update our state.
-        const ThreadState old_state = thread_state;
-        thread_state = static_cast<ThreadState>(GetSuspendFlags() |
-                                                static_cast<u32>(old_state & ThreadState::Mask));
-        if (thread_state != old_state) {
-            KScheduler::OnThreadStateChanged(kernel, this, old_state);
-        }
+        UpdateState();
     }
 
     // TODO(bunnei): Update our SVC access permissions.
@@ -689,12 +695,7 @@ void KThread::Resume(SuspendType type) {
         ~(1u << (static_cast<u32>(ThreadState::SuspendShift) + static_cast<u32>(type)));
 
     // Update our state.
-    const ThreadState old_state = thread_state;
-    thread_state = static_cast<ThreadState>(GetSuspendFlags() |
-                                            static_cast<u32>(old_state & ThreadState::Mask));
-    if (thread_state != old_state) {
-        KScheduler::OnThreadStateChanged(kernel, this, old_state);
-    }
+    this->UpdateState();
 }
 
 void KThread::WaitCancel() {
@@ -721,19 +722,22 @@ void KThread::TrySuspend() {
     ASSERT(GetNumKernelWaiters() == 0);
 
     // Perform the suspend.
-    Suspend();
+    this->UpdateState();
 }
 
-void KThread::Suspend() {
+void KThread::UpdateState() {
     ASSERT(kernel.GlobalSchedulerContext().IsLocked());
-    ASSERT(IsSuspendRequested());
 
     // Set our suspend flags in state.
     const auto old_state = thread_state;
-    thread_state = static_cast<ThreadState>(GetSuspendFlags()) | (old_state & ThreadState::Mask);
+    const auto new_state =
+        static_cast<ThreadState>(this->GetSuspendFlags()) | (old_state & ThreadState::Mask);
+    thread_state = new_state;
 
     // Note the state change in scheduler.
-    KScheduler::OnThreadStateChanged(kernel, this, old_state);
+    if (new_state != old_state) {
+        KScheduler::OnThreadStateChanged(kernel, this, old_state);
+    }
 }
 
 void KThread::Continue() {
@@ -998,13 +1002,16 @@ ResultCode KThread::Run() {
 
         // If the current thread has been asked to suspend, suspend it and retry.
         if (GetCurrentThread(kernel).IsSuspended()) {
-            GetCurrentThread(kernel).Suspend();
+            GetCurrentThread(kernel).UpdateState();
             continue;
         }
 
         // If we're not a kernel thread and we've been asked to suspend, suspend ourselves.
-        if (IsUserThread() && IsSuspended()) {
-            Suspend();
+        if (KProcess* owner = this->GetOwnerProcess(); owner != nullptr) {
+            if (IsUserThread() && IsSuspended()) {
+                this->UpdateState();
+            }
+            owner->IncrementThreadCount();
         }
 
         // Set our state and finish.
@@ -1031,9 +1038,16 @@ void KThread::Exit() {
 
         // Disallow all suspension.
         suspend_allowed_flags = 0;
+        this->UpdateState();
+
+        // Disallow all suspension.
+        suspend_allowed_flags = 0;
 
         // Start termination.
         StartTermination();
+
+        // Register the thread as a work task.
+        KWorkerTaskManager::AddTask(kernel, KWorkerTaskManager::WorkerType::Exit, this);
     }
 }
 

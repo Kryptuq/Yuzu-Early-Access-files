@@ -124,7 +124,10 @@ void Fiber::YieldTo(std::weak_ptr<Fiber> weak_from, Fiber& to) {
 
     // "from" might no longer be valid if the thread was killed
     if (auto from = weak_from.lock()) {
-        ASSERT(from->impl->previous_fiber != nullptr);
+        if (from->impl->previous_fiber == nullptr) {
+            ASSERT_MSG(false, "previous_fiber is nullptr!");
+            return;
+        }
         from->impl->previous_fiber->impl->context = transfer.fctx;
         from->impl->previous_fiber->impl->guard.unlock();
         from->impl->previous_fiber.reset();

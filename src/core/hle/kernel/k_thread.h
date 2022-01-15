@@ -19,6 +19,7 @@
 #include "core/hle/kernel/k_light_lock.h"
 #include "core/hle/kernel/k_spin_lock.h"
 #include "core/hle/kernel/k_synchronization_object.h"
+#include "core/hle/kernel/k_worker_task.h"
 #include "core/hle/kernel/slab_helpers.h"
 #include "core/hle/kernel/svc_common.h"
 #include "core/hle/kernel/svc_types.h"
@@ -100,7 +101,7 @@ enum class ThreadWaitReasonForDebugging : u32 {
 [[nodiscard]] KThread& GetCurrentThread(KernelCore& kernel);
 [[nodiscard]] s32 GetCurrentCoreId(KernelCore& kernel);
 
-class KThread final : public KAutoObjectWithSlabHeapAndContainer<KThread, KSynchronizationObject>,
+class KThread final : public KAutoObjectWithSlabHeapAndContainer<KThread, KWorkerTask>,
                       public boost::intrusive::list_base_hook<> {
     KERNEL_AUTOOBJECT_TRAITS(KThread, KSynchronizationObject);
 
@@ -192,9 +193,9 @@ public:
 
     void TrySuspend();
 
-    void Continue();
+    void UpdateState();
 
-    void Suspend();
+    void Continue();
 
     constexpr void SetSyncedIndex(s32 index) {
         synced_index = index;
@@ -384,6 +385,8 @@ public:
     [[nodiscard]] bool IsSignaled() const override;
 
     void OnTimer();
+
+    void DoWorkerTaskImpl();
 
     static void PostDestroy(uintptr_t arg);
 
@@ -678,6 +681,8 @@ private:
     void RemoveWaiterImpl(KThread* thread);
 
     void StartTermination();
+
+    void FinishTermination();
 
     [[nodiscard]] ResultCode Initialize(KThreadFunction func, uintptr_t arg, VAddr user_stack_top,
                                         s32 prio, s32 virt_core, KProcess* owner, ThreadType type);
