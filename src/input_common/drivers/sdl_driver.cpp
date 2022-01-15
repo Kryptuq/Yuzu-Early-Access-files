@@ -201,6 +201,12 @@ public:
                 return "XBox 360 Controller";
             case SDL_CONTROLLER_TYPE_XBOXONE:
                 return "XBox One Controller";
+            case SDL_CONTROLLER_TYPE_PS3:
+                return "DualShock 3 Controller";
+            case SDL_CONTROLLER_TYPE_PS4:
+                return "DualShock 4 Controller";
+            case SDL_CONTROLLER_TYPE_PS5:
+                return "DualSense Controller";
             default:
                 break;
             }
