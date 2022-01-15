@@ -67,10 +67,10 @@ jobs:
           files: ${{ github.workspace }}\yuzu-early-access-EA${{ github.event.head_commit.message }}.zip
 
       #Upload Artifacts Just in Case
-      - uses: actions/upload-artifact@v2
-        with:
-          name: Built yuzu Emulator
-          path: ${{ github.workspace }}\build\bin\yuzu-early-access
+ #     - uses: actions/upload-artifact@v2
+  #      with:
+   #       name: Built yuzu Emulator
+    #      path: ${{ github.workspace }}\build\bin\yuzu-early-access
 
       #Upload Log if build Fails
       - name: Upload Logs if Failure
