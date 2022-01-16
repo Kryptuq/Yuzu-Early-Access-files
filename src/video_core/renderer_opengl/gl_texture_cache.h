@@ -83,7 +83,15 @@ public:
 
     ImageBufferMap DownloadStagingBuffer(size_t size);
 
-    u64 GetDeviceLocalMemory() const;
+    u64 GetDeviceLocalMemory() const {
+        return device_access_memory;
+    }
+
+    u64 GetDeviceMemoryUsage() const;
+
+    bool CanReportMemoryUsage() const {
+        return GLAD_GL_NVX_gpu_memory_info;
+    }
 
     bool ShouldReinterpret([[maybe_unused]] Image& dst, [[maybe_unused]] Image& src) {
         return true;
@@ -172,6 +180,7 @@ private:
     std::array<OGLFramebuffer, 4> rescale_draw_fbos;
     std::array<OGLFramebuffer, 4> rescale_read_fbos;
     const Settings::ResolutionScalingInfo& resolution;
+    u64 device_access_memory;
 };
 
 class Image : public VideoCommon::ImageBase {

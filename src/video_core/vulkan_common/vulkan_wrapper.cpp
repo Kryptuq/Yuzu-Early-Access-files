@@ -239,8 +239,8 @@ bool Load(VkInstance instance, InstanceDispatch& dld) noexcept {
     return X(vkCreateDevice) && X(vkDestroyDevice) && X(vkDestroyDevice) &&
            X(vkEnumerateDeviceExtensionProperties) && X(vkEnumeratePhysicalDevices) &&
            X(vkGetDeviceProcAddr) && X(vkGetPhysicalDeviceFormatProperties) &&
-           X(vkGetPhysicalDeviceMemoryProperties) && X(vkGetPhysicalDeviceProperties) &&
-           X(vkGetPhysicalDeviceQueueFamilyProperties);
+           X(vkGetPhysicalDeviceMemoryProperties) && X(vkGetPhysicalDeviceMemoryProperties2) &&
+           X(vkGetPhysicalDeviceProperties) && X(vkGetPhysicalDeviceQueueFamilyProperties);
 #undef X
 }
 
@@ -928,9 +928,12 @@ std::vector<VkPresentModeKHR> PhysicalDevice::GetSurfacePresentModesKHR(
     return modes;
 }
 
-VkPhysicalDeviceMemoryProperties PhysicalDevice::GetMemoryProperties() const noexcept {
-    VkPhysicalDeviceMemoryProperties properties;
-    dld->vkGetPhysicalDeviceMemoryProperties(physical_device, &properties);
+VkPhysicalDeviceMemoryProperties2 PhysicalDevice::GetMemoryProperties(
+    void* next_structures) const noexcept {
+    VkPhysicalDeviceMemoryProperties2 properties{};
+    properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
+    properties.pNext = next_structures;
+    dld->vkGetPhysicalDeviceMemoryProperties2(physical_device, &properties);
     return properties;
 }
 

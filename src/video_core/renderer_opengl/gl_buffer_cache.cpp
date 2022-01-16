@@ -135,6 +135,24 @@ BufferCacheRuntime::BufferCacheRuntime(const Device& device_)
         buffer.Create();
         glNamedBufferData(buffer.handle, 0x10'000, nullptr, GL_STREAM_COPY);
     }
+
+    device_access_memory = []() -> u64 {
+        if (GLAD_GL_NVX_gpu_memory_info) {
+            GLint cur_avail_mem_kb = 0;
+            glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &cur_avail_mem_kb);
+            return static_cast<u64>(cur_avail_mem_kb) * 1_KiB;
+        }
+        return 2_GiB; // Return minimum requirements
+    }();
+}
+
+u64 BufferCacheRuntime::GetDeviceMemoryUsage() const {
+    if (GLAD_GL_NVX_gpu_memory_info) {
+        GLint cur_avail_mem_kb = 0;
+        glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &cur_avail_mem_kb);
+        return device_access_memory - static_cast<u64>(cur_avail_mem_kb) * 1_KiB;
+    }
+    return 2_GiB;
 }
 
 void BufferCacheRuntime::CopyBuffer(Buffer& dst_buffer, Buffer& src_buffer,

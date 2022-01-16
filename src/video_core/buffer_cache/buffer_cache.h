@@ -78,8 +78,9 @@ class BufferCache {
 
     static constexpr BufferId NULL_BUFFER_ID{0};
 
-    static constexpr u64 EXPECTED_MEMORY = 512_MiB;
-    static constexpr u64 CRITICAL_MEMORY = 1_GiB;
+    static constexpr s64 DEFAULT_EXPECTED_MEMORY = 512_MiB;
+    static constexpr s64 DEFAULT_CRITICAL_MEMORY = 1_GiB;
+    static constexpr s64 TARGET_THRESHOLD = 4_GiB;
 
     using Maxwell = Tegra::Engines::Maxwell3D::Regs;
 
@@ -436,6 +437,8 @@ private:
     Common::LeastRecentlyUsedCache<LRUItemParams> lru_cache;
     u64 frame_tick = 0;
     u64 total_used_memory = 0;
+    u64 minimum_memory = 0;
+    u64 critical_memory = 0;
 
     std::array<BufferId, ((1ULL << 39) >> PAGE_BITS)> page_table;
 };
@@ -451,11 +454,30 @@ BufferCache<P>::BufferCache(VideoCore::RasterizerInterface& rasterizer_,
     // Ensure the first slot is used for the null buffer
     void(slot_buffers.insert(runtime, NullBufferParams{}));
     common_ranges.clear();
+
+    if (!runtime.CanReportMemoryUsage()) {
+        minimum_memory = DEFAULT_EXPECTED_MEMORY;
+        critical_memory = DEFAULT_CRITICAL_MEMORY;
+        return;
+    }
+
+    const s64 device_memory = static_cast<s64>(runtime.GetDeviceLocalMemory());
+    const s64 min_spacing_expected = device_memory - 1_GiB - 512_MiB;
+    const s64 min_spacing_critical = device_memory - 1_GiB;
+    const s64 mem_threshold = std::min(device_memory, TARGET_THRESHOLD);
+    const s64 min_vacancy_expected = (6 * mem_threshold) / 10;
+    const s64 min_vacancy_critical = (3 * mem_threshold) / 10;
+    minimum_memory = static_cast<u64>(
+        std::max(std::min(device_memory - min_vacancy_expected, min_spacing_expected),
+                 DEFAULT_EXPECTED_MEMORY));
+    critical_memory = static_cast<u64>(
+        std::max(std::min(device_memory - min_vacancy_critical, min_spacing_critical),
+                 DEFAULT_CRITICAL_MEMORY));
 }
 
 template <class P>
 void BufferCache<P>::RunGarbageCollector() {
-    const bool aggressive_gc = total_used_memory >= CRITICAL_MEMORY;
+    const bool aggressive_gc = total_used_memory >= critical_memory;
     const u64 ticks_to_destroy = aggressive_gc ? 60 : 120;
     int num_iterations = aggressive_gc ? 64 : 32;
     const auto clean_up = [this, &num_iterations](BufferId buffer_id) {
@@ -486,7 +508,11 @@ void BufferCache<P>::TickFrame() {
     const bool skip_preferred = hits * 256 < shots * 251;
     uniform_buffer_skip_cache_size = skip_preferred ? DEFAULT_SKIP_CACHE_SIZE : 0;
 
-    if (total_used_memory >= EXPECTED_MEMORY) {
+    // If we can obtain the memory info, use it instead of the estimate.
+    if (runtime.CanReportMemoryUsage()) {
+        total_used_memory = runtime.GetDeviceMemoryUsage();
+    }
+    if (total_used_memory >= minimum_memory) {
         RunGarbageCollector();
     }
     ++frame_tick;

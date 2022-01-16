@@ -60,8 +60,10 @@ class TextureCache {
     /// True when the API can provide info about the memory of the device.
     static constexpr bool HAS_DEVICE_MEMORY_INFO = P::HAS_DEVICE_MEMORY_INFO;
 
-    static constexpr u64 DEFAULT_EXPECTED_MEMORY = 1_GiB;
-    static constexpr u64 DEFAULT_CRITICAL_MEMORY = 2_GiB;
+    static constexpr s64 TARGET_THRESHOLD = 4_GiB;
+    static constexpr s64 DEFAULT_EXPECTED_MEMORY = 1_GiB + 125_MiB;
+    static constexpr s64 DEFAULT_CRITICAL_MEMORY = 1_GiB + 625_MiB;
+    static constexpr size_t GC_EMERGENCY_COUNTS = 2;
 
     using Runtime = typename P::Runtime;
     using Image = typename P::Image;
@@ -373,6 +375,7 @@ private:
     u64 minimum_memory;
     u64 expected_memory;
     u64 critical_memory;
+    size_t critical_gc;
 
     SlotVector<Image> slot_images;
     SlotVector<ImageMapView> slot_map_views;

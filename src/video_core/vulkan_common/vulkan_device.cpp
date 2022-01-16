@@ -13,12 +13,14 @@
 #include <vector>
 
 #include "common/assert.h"
+#include "common/literals.h"
 #include "common/settings.h"
 #include "video_core/vulkan_common/nsight_aftermath_tracker.h"
 #include "video_core/vulkan_common/vulkan_device.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace Vulkan {
+using namespace Common::Literals;
 namespace {
 namespace Alternatives {
 constexpr std::array STENCIL8_UINT{
@@ -585,6 +587,11 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     }
     logical = vk::Device::Create(physical, queue_cis, extensions, first_next, dld);
 
+    is_integrated = (properties.deviceType & VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) != 0;
+    is_virtual = (properties.deviceType & VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU) != 0;
+    is_non_gpu = (properties.deviceType & VK_PHYSICAL_DEVICE_TYPE_OTHER) != 0 ||
+                 (properties.deviceType & VK_PHYSICAL_DEVICE_TYPE_CPU) != 0;
+
     CollectPhysicalMemoryInfo();
     CollectTelemetryParameters();
     CollectToolingInfo();
@@ -957,6 +964,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         test(has_khr_swapchain_mutable_format, VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME,
              false);
         test(has_ext_line_rasterization, VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME, false);
+        test(ext_memory_budget, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME, true);
         if (Settings::values.enable_nsight_aftermath) {
             test(nv_device_diagnostics_config, VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME,
                  true);
@@ -969,7 +977,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
     VkPhysicalDeviceFeatures2KHR features{};
     features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR;
 
-    VkPhysicalDeviceProperties2KHR physical_properties;
+    VkPhysicalDeviceProperties2KHR physical_properties{};
     physical_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
 
     if (has_khr_shader_float16_int8) {
@@ -1239,15 +1247,51 @@ void Device::CollectTelemetryParameters() {
     vendor_name = driver.driverName;
 }
 
+u64 Device::GetDeviceMemoryUsage() const {
+    VkPhysicalDeviceMemoryBudgetPropertiesEXT budget;
+    budget.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
+    budget.pNext = nullptr;
+    physical.GetMemoryProperties(&budget);
+    u64 result{};
+    for (const size_t heap : valid_heap_memory) {
+        result += budget.heapUsage[heap];
+    }
+    return result;
+}
+
 void Device::CollectPhysicalMemoryInfo() {
-    const auto mem_properties = physical.GetMemoryProperties();
+    VkPhysicalDeviceMemoryBudgetPropertiesEXT budget{};
+    budget.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
+    const auto mem_info = physical.GetMemoryProperties(ext_memory_budget ? &budget : nullptr);
+    const auto& mem_properties = mem_info.memoryProperties;
     const size_t num_properties = mem_properties.memoryHeapCount;
     device_access_memory = 0;
+    u64 device_initial_usage = 0;
+    u64 local_memory = 0;
     for (size_t element = 0; element < num_properties; ++element) {
-        if ((mem_properties.memoryHeaps[element].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) != 0) {
-            device_access_memory += mem_properties.memoryHeaps[element].size;
+        const bool is_heap_local =
+            mem_properties.memoryHeaps[element].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT != 0;
+        if (!is_integrated && !is_heap_local) {
+            continue;
         }
+        valid_heap_memory.push_back(element);
+        if (is_heap_local) {
+            local_memory += mem_properties.memoryHeaps[element].size;
+        }
+        if (ext_memory_budget) {
+            device_initial_usage += budget.heapUsage[element];
+            device_access_memory += budget.heapBudget[element];
+            continue;
+        }
+        device_access_memory += mem_properties.memoryHeaps[element].size;
     }
+    if (!is_integrated) {
+        return;
+    }
+    const s64 available_memory = static_cast<s64>(device_access_memory - device_initial_usage);
+    device_access_memory = static_cast<u64>(std::max<s64>(
+        std::min<s64>(available_memory - 8_GiB, 4_GiB), static_cast<s64>(local_memory)));
+    device_initial_usage = 0;
 }
 
 void Device::CollectToolingInfo() {

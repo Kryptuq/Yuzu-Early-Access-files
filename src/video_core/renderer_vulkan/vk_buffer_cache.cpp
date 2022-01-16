@@ -141,6 +141,18 @@ StagingBufferRef BufferCacheRuntime::DownloadStagingBuffer(size_t size) {
     return staging_pool.Request(size, MemoryUsage::Download);
 }
 
+u64 BufferCacheRuntime::GetDeviceLocalMemory() const {
+    return device.GetDeviceLocalMemory();
+}
+
+u64 BufferCacheRuntime::GetDeviceMemoryUsage() const {
+    return device.GetDeviceMemoryUsage();
+}
+
+bool BufferCacheRuntime::CanReportMemoryUsage() const {
+    return device.CanReportMemoryUsage();
+}
+
 void BufferCacheRuntime::Finish() {
     scheduler.Finish();
 }

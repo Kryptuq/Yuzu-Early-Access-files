@@ -118,7 +118,7 @@ StagingBufferPool::StagingBufferPool(const Device& device_, MemoryAllocator& mem
         .image = nullptr,
         .buffer = *stream_buffer,
     };
-    const auto memory_properties = device.GetPhysical().GetMemoryProperties();
+    const auto memory_properties = device.GetPhysical().GetMemoryProperties().memoryProperties;
     VkMemoryAllocateInfo stream_memory_info{
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
         .pNext = make_dedicated ? &dedicated_info : nullptr,

@@ -1189,6 +1189,14 @@ u64 TextureCacheRuntime::GetDeviceLocalMemory() const {
     return device.GetDeviceLocalMemory();
 }
 
+u64 TextureCacheRuntime::GetDeviceMemoryUsage() const {
+    return device.GetDeviceMemoryUsage();
+}
+
+bool TextureCacheRuntime::CanReportMemoryUsage() const {
+    return device.CanReportMemoryUsage();
+}
+
 void TextureCacheRuntime::TickFrame() {}
 
 Image::Image(TextureCacheRuntime& runtime_, const ImageInfo& info_, GPUVAddr gpu_addr_,
@@ -1203,6 +1211,7 @@ Image::Image(TextureCacheRuntime& runtime_, const ImageInfo& info_, GPUVAddr gpu
         } else {
             flags |= VideoCommon::ImageFlagBits::Converted;
         }
+        flags |= VideoCommon::ImageFlagBits::CostlyLoad;
     }
     if (runtime->device.HasDebuggingToolAttached()) {
         original_image.SetObjectNameEXT(VideoCommon::Name(*this).c_str());

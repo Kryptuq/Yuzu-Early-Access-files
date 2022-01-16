@@ -153,6 +153,16 @@ public:
         use_storage_buffers = use_storage_buffers_;
     }
 
+    u64 GetDeviceLocalMemory() const {
+        return device_access_memory;
+    }
+
+    u64 GetDeviceMemoryUsage() const;
+
+    bool CanReportMemoryUsage() const {
+        return GLAD_GL_NVX_gpu_memory_info;
+    }
+
 private:
     static constexpr std::array PABO_LUT{
         GL_VERTEX_PROGRAM_PARAMETER_BUFFER_NV,          GL_TESS_CONTROL_PROGRAM_PARAMETER_BUFFER_NV,
@@ -186,6 +196,8 @@ private:
     std::array<OGLBuffer, VideoCommon::NUM_COMPUTE_UNIFORM_BUFFERS> copy_compute_uniforms;
 
     u32 index_buffer_offset = 0;
+
+    u64 device_access_memory;
 };
 
 struct BufferCacheParams {

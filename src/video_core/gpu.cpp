@@ -513,7 +513,7 @@ struct GPU::Impl {
             ProcessFenceActionMethod();
             break;
         case BufferMethods::WaitForInterrupt:
-            ProcessWaitForInterruptMethod();
+            rasterizer->WaitForIdle();
             break;
         case BufferMethods::SemaphoreTrigger: {
             ProcessSemaphoreTriggerMethod();
