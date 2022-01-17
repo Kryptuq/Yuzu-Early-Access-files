@@ -145,7 +145,7 @@ void EmulatedController::LoadDevices() {
                    motion_devices.begin(), Common::Input::CreateDevice<Common::Input::InputDevice>);
     std::transform(trigger_params.begin(), trigger_params.end(), trigger_devices.begin(),
                    Common::Input::CreateDevice<Common::Input::InputDevice>);
-    std::transform(battery_params.begin(), battery_params.begin(), battery_devices.end(),
+    std::transform(battery_params.begin(), battery_params.end(), battery_devices.begin(),
                    Common::Input::CreateDevice<Common::Input::InputDevice>);
     std::transform(output_params.begin(), output_params.end(), output_devices.begin(),
                    Common::Input::CreateDevice<Common::Input::OutputDevice>);

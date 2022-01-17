@@ -173,7 +173,7 @@ void InputEngine::ResetButtonState() {
             SetButton(controller.first, button.first, false);
         }
         for (const auto& button : controller.second.hat_buttons) {
-            SetHatButton(controller.first, button.first, false);
+            SetHatButton(controller.first, button.first, 0);
         }
     }
 }

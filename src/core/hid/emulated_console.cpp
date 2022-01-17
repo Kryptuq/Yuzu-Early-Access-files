@@ -158,7 +158,7 @@ void EmulatedConsole::SetMotion(const Common::Input::CallbackStatus& callback) {
     auto& motion = console.motion_state;
     motion.accel = emulated.GetAcceleration();
     motion.gyro = emulated.GetGyroscope();
-    motion.rotation = emulated.GetGyroscope();
+    motion.rotation = emulated.GetRotations();
     motion.orientation = emulated.GetOrientation();
     motion.quaternion = emulated.GetQuaternion();
     motion.gyro_bias = emulated.GetGyroBias();

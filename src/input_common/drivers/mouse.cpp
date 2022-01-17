@@ -31,7 +31,7 @@ Mouse::Mouse(std::string input_engine_) : InputEngine(std::move(input_engine_)) 
     PreSetAxis(identifier, wheel_axis_x);
     PreSetAxis(identifier, wheel_axis_y);
     PreSetAxis(identifier, touch_axis_x);
-    PreSetAxis(identifier, touch_axis_x);
+    PreSetAxis(identifier, touch_axis_y);
     update_thread = std::jthread([this](std::stop_token stop_token) { UpdateThread(stop_token); });
 }
 
