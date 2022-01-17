@@ -29,6 +29,15 @@ struct Shortcut {
     ContextualShortcut shortcut;
 };
 
+enum class Theme {
+    Default,
+    DefaultColorful,
+    Dark,
+    DarkColorful,
+    MidnightBlue,
+    MidnightBlueColorful,
+};
+
 using Themes = std::array<std::pair<const char*, const char*>, 6>;
 extern const Themes themes;
 
