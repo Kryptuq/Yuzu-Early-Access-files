@@ -23,7 +23,6 @@ if (MSVC)
 
     # /W3                 - Level 3 warnings
     # /MP                 - Multi-threaded compilation
-    # /Zf                 - Improves PDB generation time in parallel builds
     # /Zi                 - Output debugging information
     # /Zm                 - Specifies the precompiled header memory allocation limit
     # /Zo                 - Enhanced debug info for optimized builds
@@ -37,9 +36,9 @@ if (MSVC)
     # /GT                 - Supports fiber safety for data allocated using static thread-local storage
     add_compile_options(
         /MP
-        /Zf
         /Zi
-        /Zm400
+        /Zm300
+        /Zf
         /Zo
         /permissive-
         /EHsc
