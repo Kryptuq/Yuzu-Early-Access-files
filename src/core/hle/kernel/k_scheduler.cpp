@@ -49,8 +49,6 @@ void KScheduler::RescheduleCores(KernelCore& kernel, u64 cores_pending_reschedul
         if (!must_context_switch || core != current_core) {
             auto& phys_core = kernel.PhysicalCore(core);
             phys_core.Interrupt();
-        } else {
-            must_context_switch = true;
         }
         cores_pending_reschedule &= ~(1ULL << core);
     }
