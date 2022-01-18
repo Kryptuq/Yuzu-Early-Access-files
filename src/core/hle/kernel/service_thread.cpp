@@ -12,6 +12,7 @@
 #include "common/scope_exit.h"
 #include "common/thread.h"
 #include "core/hle/kernel/k_session.h"
+#include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/service_thread.h"
 
@@ -49,6 +50,10 @@ ServiceThread::Impl::Impl(KernelCore& kernel, std::size_t num_threads, const std
             }
 
             kernel.RegisterHostThread();
+
+            // Ensure the dummy thread allocated for this host thread is closed on exit.
+            auto* dummy_thread = kernel.GetCurrentEmuThread();
+            SCOPE_EXIT({ dummy_thread->Close(); });
 
             while (true) {
                 std::function<void()> task;

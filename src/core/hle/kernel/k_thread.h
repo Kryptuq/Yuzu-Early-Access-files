@@ -112,6 +112,7 @@ private:
 public:
     static constexpr s32 DefaultThreadPriority = 44;
     static constexpr s32 IdleThreadPriority = Svc::LowestThreadPriority + 1;
+    static constexpr s32 DummyThreadPriority = Svc::LowestThreadPriority + 2;
 
     explicit KThread(KernelCore& kernel_);
     ~KThread() override;
@@ -553,8 +554,8 @@ public:
         return wait_reason_for_debugging;
     }
 
-    [[nodiscard]] ThreadType GetThreadTypeForDebugging() const {
-        return thread_type_for_debugging;
+    [[nodiscard]] ThreadType GetThreadType() const {
+        return thread_type;
     }
 
     void SetWaitObjectsForDebugging(const std::span<KSynchronizationObject*>& objects) {
@@ -753,12 +754,12 @@ private:
     // For emulation
     std::shared_ptr<Common::Fiber> host_context{};
     bool is_single_core{};
+    ThreadType thread_type{};
 
     // For debugging
     std::vector<KSynchronizationObject*> wait_objects_for_debugging;
     VAddr mutex_wait_address_for_debugging{};
     ThreadWaitReasonForDebugging wait_reason_for_debugging{};
-    ThreadType thread_type_for_debugging{};
 
 public:
     using ConditionVariableThreadTreeType = ConditionVariableThreadTree;

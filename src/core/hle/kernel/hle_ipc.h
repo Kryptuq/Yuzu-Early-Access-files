@@ -341,10 +341,6 @@ public:
         return *thread;
     }
 
-    bool IsThreadWaiting() const {
-        return is_thread_waiting;
-    }
-
 private:
     friend class IPC::ResponseBuilder;
 
@@ -379,7 +375,6 @@ private:
     u32 domain_offset{};
 
     std::shared_ptr<SessionRequestManager> manager;
-    bool is_thread_waiting{};
 
     KernelCore& kernel;
     Core::Memory::Memory& memory;

@@ -95,7 +95,7 @@ std::vector<std::unique_ptr<WaitTreeThread>> WaitTreeItem::MakeThreadItemList(
     std::size_t row = 0;
     auto add_threads = [&](const std::vector<Kernel::KThread*>& threads) {
         for (std::size_t i = 0; i < threads.size(); ++i) {
-            if (threads[i]->GetThreadTypeForDebugging() == Kernel::ThreadType::User) {
+            if (threads[i]->GetThreadType() == Kernel::ThreadType::User) {
                 item_list.push_back(std::make_unique<WaitTreeThread>(*threads[i], system));
                 item_list.back()->row = row;
             }
@@ -153,7 +153,7 @@ QString WaitTreeCallstack::GetText() const {
 std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeCallstack::GetChildren() const {
     std::vector<std::unique_ptr<WaitTreeItem>> list;
 
-    if (thread.GetThreadTypeForDebugging() != Kernel::ThreadType::User) {
+    if (thread.GetThreadType() != Kernel::ThreadType::User) {
         return list;
     }
 
