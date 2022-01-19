@@ -302,12 +302,10 @@ struct KernelCore::Impl {
     // Gets the dummy KThread for the caller, allocating a new one if this is the first time
     KThread* GetHostDummyThread() {
         auto make_thread = [this]() {
-            std::lock_guard lk(dummy_thread_lock);
-            auto& thread = dummy_threads.emplace_back(std::make_unique<KThread>(system.Kernel()));
-            KAutoObject::Create(thread.get());
-            ASSERT(KThread::InitializeDummyThread(thread.get()).IsSuccess());
+            KThread* thread = KThread::Create(system.Kernel());
+            ASSERT(KThread::InitializeDummyThread(thread).IsSuccess());
             thread->SetName(fmt::format("DummyThread:{}", GetHostThreadId()));
-            return thread.get();
+            return thread;
         };
 
         thread_local KThread* saved_thread = make_thread();
@@ -740,7 +738,6 @@ struct KernelCore::Impl {
     std::mutex server_sessions_lock;
     std::mutex registered_objects_lock;
     std::mutex registered_in_use_objects_lock;
-    std::mutex dummy_thread_lock;
 
     std::atomic<u32> next_object_id{0};
     std::atomic<u64> next_kernel_process_id{KProcess::InitialKIPIDMin};
@@ -797,9 +794,6 @@ struct KernelCore::Impl {
     std::array<KThread*, Core::Hardware::NUM_CPU_CORES> suspend_threads;
     std::array<Core::CPUInterruptHandler, Core::Hardware::NUM_CPU_CORES> interrupts{};
     std::array<std::unique_ptr<Kernel::KScheduler>, Core::Hardware::NUM_CPU_CORES> schedulers{};
-
-    // Specifically tracked to be automatically destroyed with kernel
-    std::vector<std::unique_ptr<KThread>> dummy_threads;
 
     bool is_multicore{};
     std::atomic_bool is_shutting_down{};

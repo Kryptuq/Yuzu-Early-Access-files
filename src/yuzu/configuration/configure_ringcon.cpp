@@ -305,10 +305,10 @@ void ConfigureRingController::mousePressEvent(QMouseEvent* event) {
 }
 
 void ConfigureRingController::keyPressEvent(QKeyEvent* event) {
-    event->ignore();
     if (!input_setter || !event) {
         return;
     }
+    event->ignore();
     if (event->key() != Qt::Key_Escape) {
         input_subsystem->GetKeyboard()->PressKey(event->key());
     }

@@ -102,6 +102,16 @@ QString GetButtonName(Common::Input::ButtonNames button_name) {
         return QObject::tr("Share");
     case Common::Input::ButtonNames::Options:
         return QObject::tr("Options");
+    case Common::Input::ButtonNames::ButtonMouseWheel:
+        return QObject::tr("Wheel", "Indicates the mouse wheel");
+    case Common::Input::ButtonNames::ButtonBackward:
+        return QObject::tr("Backward");
+    case Common::Input::ButtonNames::ButtonForward:
+        return QObject::tr("Forward");
+    case Common::Input::ButtonNames::ButtonTask:
+        return QObject::tr("Task");
+    case Common::Input::ButtonNames::ButtonExtra:
+        return QObject::tr("Extra");
     default:
         return QObject::tr("[undefined]");
     }
@@ -1344,10 +1354,10 @@ void ConfigureInputPlayer::mousePressEvent(QMouseEvent* event) {
 }
 
 void ConfigureInputPlayer::keyPressEvent(QKeyEvent* event) {
-    event->ignore();
     if (!input_setter || !event) {
         return;
     }
+    event->ignore();
     if (event->key() != Qt::Key_Escape) {
         input_subsystem->GetKeyboard()->PressKey(event->key());
     }

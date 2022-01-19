@@ -198,9 +198,9 @@ public:
         if (sdl_controller) {
             switch (SDL_GameControllerGetType(sdl_controller.get())) {
             case SDL_CONTROLLER_TYPE_XBOX360:
-                return "XBox 360 Controller";
+                return "Xbox 360 Controller";
             case SDL_CONTROLLER_TYPE_XBOXONE:
-                return "XBox One Controller";
+                return "Xbox One Controller";
             case SDL_CONTROLLER_TYPE_PS3:
                 return "DualShock 3 Controller";
             case SDL_CONTROLLER_TYPE_PS4:

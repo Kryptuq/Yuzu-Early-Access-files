@@ -16,6 +16,7 @@ constexpr int mouse_axis_x = 0;
 constexpr int mouse_axis_y = 1;
 constexpr int wheel_axis_x = 2;
 constexpr int wheel_axis_y = 3;
+constexpr int motion_wheel_y = 4;
 constexpr int touch_axis_x = 10;
 constexpr int touch_axis_y = 11;
 constexpr PadIdentifier identifier = {
@@ -30,6 +31,7 @@ Mouse::Mouse(std::string input_engine_) : InputEngine(std::move(input_engine_)) 
     PreSetAxis(identifier, mouse_axis_y);
     PreSetAxis(identifier, wheel_axis_x);
     PreSetAxis(identifier, wheel_axis_y);
+    PreSetAxis(identifier, motion_wheel_y);
     PreSetAxis(identifier, touch_axis_x);
     PreSetAxis(identifier, touch_axis_y);
     update_thread = std::jthread([this](std::stop_token stop_token) { UpdateThread(stop_token); });
@@ -47,6 +49,8 @@ void Mouse::UpdateThread(std::stop_token stop_token) {
             SetAxis(identifier, mouse_axis_x, last_mouse_change.x * sensitivity);
             SetAxis(identifier, mouse_axis_y, -last_mouse_change.y * sensitivity);
         }
+
+        SetAxis(identifier, motion_wheel_y, 0.0f);
 
         if (mouse_panning_timout++ > 20) {
             StopPanning();
@@ -136,6 +140,7 @@ void Mouse::MouseWheelChange(int x, int y) {
     wheel_position.y += y;
     SetAxis(identifier, wheel_axis_x, static_cast<f32>(wheel_position.x));
     SetAxis(identifier, wheel_axis_y, static_cast<f32>(wheel_position.y));
+    SetAxis(identifier, motion_wheel_y, static_cast<f32>(y) / 100.0f);
 }
 
 void Mouse::ReleaseAllButtons() {
@@ -171,12 +176,38 @@ AnalogMapping Mouse::GetAnalogMappingForDevice(
     return mapping;
 }
 
+Common::Input::ButtonNames Mouse::GetUIButtonName(const Common::ParamPackage& params) const {
+    const auto button = static_cast<MouseButton>(params.Get("button", 0));
+    switch (button) {
+    case MouseButton::Left:
+        return Common::Input::ButtonNames::ButtonLeft;
+    case MouseButton::Right:
+        return Common::Input::ButtonNames::ButtonRight;
+    case MouseButton::Wheel:
+        return Common::Input::ButtonNames::ButtonMouseWheel;
+    case MouseButton::Backward:
+        return Common::Input::ButtonNames::ButtonBackward;
+    case MouseButton::Forward:
+        return Common::Input::ButtonNames::ButtonForward;
+    case MouseButton::Task:
+        return Common::Input::ButtonNames::ButtonTask;
+    case MouseButton::Extra:
+        return Common::Input::ButtonNames::ButtonExtra;
+    case MouseButton::Undefined:
+    default:
+        return Common::Input::ButtonNames::Undefined;
+    }
+}
+
 Common::Input::ButtonNames Mouse::GetUIName(const Common::ParamPackage& params) const {
     if (params.Has("button")) {
-        return Common::Input::ButtonNames::Value;
+        return GetUIButtonName(params);
     }
     if (params.Has("axis")) {
         return Common::Input::ButtonNames::Value;
+    }
+    if (params.Has("axis_x") && params.Has("axis_y") && params.Has("axis_z")) {
+        return Common::Input::ButtonNames::Engine;
     }
 
     return Common::Input::ButtonNames::Invalid;

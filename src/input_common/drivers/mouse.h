@@ -69,6 +69,8 @@ private:
     void UpdateThread(std::stop_token stop_token);
     void StopPanning();
 
+    Common::Input::ButtonNames GetUIButtonName(const Common::ParamPackage& params) const;
+
     Common::Vec2<int> mouse_origin;
     Common::Vec2<int> last_mouse_position;
     Common::Vec2<float> last_mouse_change;

@@ -209,6 +209,13 @@ enum class ButtonNames {
     Triangle,
     Share,
     Options,
+
+    // Mouse buttons
+    ButtonMouseWheel,
+    ButtonBackward,
+    ButtonForward,
+    ButtonTask,
+    ButtonExtra,
 };
 
 // Callback data consisting of an input type and the equivalent data status

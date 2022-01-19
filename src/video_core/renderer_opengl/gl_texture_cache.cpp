@@ -488,8 +488,8 @@ TextureCacheRuntime::TextureCacheRuntime(const Device& device_, ProgramManager& 
     device_access_memory = []() -> u64 {
         if (GLAD_GL_NVX_gpu_memory_info) {
             GLint cur_avail_mem_kb = 0;
-            glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &cur_avail_mem_kb);
-            return static_cast<u64>(cur_avail_mem_kb) * 1_KiB;
+            glGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &cur_avail_mem_kb);
+            return static_cast<u64>(cur_avail_mem_kb) * 1_KiB + 512_MiB;
         }
         return 2_GiB; // Return minimum requirements
     }();

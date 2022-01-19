@@ -143,6 +143,19 @@ void MappingFactory::RegisterMotion(const MappingData& data) {
     }
     new_input.Set("port", static_cast<int>(data.pad.port));
     new_input.Set("pad", static_cast<int>(data.pad.pad));
+
+    // If engine is mouse map the mouse position as 3 axis motion
+    if (data.engine == "mouse") {
+        new_input.Set("axis_x", 1);
+        new_input.Set("invert_x", "-");
+        new_input.Set("axis_y", 0);
+        new_input.Set("axis_z", 4);
+        new_input.Set("range", 1.0f);
+        new_input.Set("deadzone", 0.0f);
+        input_queue.Push(new_input);
+        return;
+    }
+
     switch (data.type) {
     case EngineInputType::Button:
     case EngineInputType::HatButton:
