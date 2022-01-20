@@ -1046,7 +1046,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
     }
     if (has_ext_shader_atomic_int64) {
         VkPhysicalDeviceShaderAtomicInt64Features atomic_int64;
-        atomic_int64.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+        atomic_int64.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES;
         atomic_int64.pNext = nullptr;
         features.pNext = &atomic_int64;
         physical.GetFeatures2KHR(features);

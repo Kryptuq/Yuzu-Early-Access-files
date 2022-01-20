@@ -1177,7 +1177,8 @@ void Hid::SetNpadAnalogStickUseCenterClamp(Kernel::HLERequestContext& ctx) {
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
-    applet_resource->GetController<Controller_NPad>(HidController::NPad)
+    GetAppletResource()
+        ->GetController<Controller_NPad>(HidController::NPad)
         .SetAnalogStickUseCenterClamp(parameters.analog_stick_use_center_clamp);
 
     LOG_WARNING(Service_HID,
