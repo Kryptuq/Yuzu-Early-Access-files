@@ -66,7 +66,7 @@ private:
     bool initialized{};
     NvdecCommon::VideoCodec current_codec{NvdecCommon::VideoCodec::None};
 
-    AVCodec* av_codec{nullptr};
+    const AVCodec* av_codec{nullptr};
     AVCodecContext* av_codec_ctx{nullptr};
     AVBufferRef* av_gpu_decoder{nullptr};
 
