@@ -15,6 +15,7 @@ namespace InputCommon::CemuhookUDP {
 class Socket;
 
 namespace Response {
+enum class Battery : u8;
 struct PadData;
 struct PortInfo;
 struct TouchPad;
@@ -136,6 +137,9 @@ private:
 
     // Translates configuration to client number
     std::size_t GetClientNumber(std::string_view host, u16 port) const;
+
+    // Translates UDP battery level to input engine battery level
+    BatteryLevel GetBatteryLevel(Response::Battery battery) const;
 
     void OnVersion(Response::Version);
     void OnPortInfo(Response::PortInfo);

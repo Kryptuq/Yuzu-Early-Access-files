@@ -192,6 +192,25 @@ std::size_t UDPClient::GetClientNumber(std::string_view host, u16 port) const {
     return MAX_UDP_CLIENTS;
 }
 
+BatteryLevel UDPClient::GetBatteryLevel(Response::Battery battery) const {
+    switch (battery) {
+    case Response::Battery::Dying:
+        return BatteryLevel::Empty;
+    case Response::Battery::Low:
+        return BatteryLevel::Critical;
+    case Response::Battery::Medium:
+        return BatteryLevel::Low;
+    case Response::Battery::High:
+        return BatteryLevel::Medium;
+    case Response::Battery::Full:
+    case Response::Battery::Charged:
+        return BatteryLevel::Full;
+    case Response::Battery::Charging:
+    default:
+        return BatteryLevel::Charging;
+    }
+}
+
 void UDPClient::OnVersion([[maybe_unused]] Response::Version data) {
     LOG_TRACE(Input, "Version packet received: {}", data.version);
 }
@@ -299,6 +318,8 @@ void UDPClient::OnPadData(Response::PadData data, std::size_t client) {
         const int button = static_cast<int>(buttons[i]);
         SetButton(identifier, button, button_status);
     }
+
+    SetBattery(identifier, GetBatteryLevel(data.info.battery));
 }
 
 void UDPClient::StartCommunication(std::size_t client, const std::string& host, u16 port) {
