@@ -458,9 +458,10 @@ void EmitContext::DefineGenericOutput(size_t index, u32 invocations) {
         std::string definition{fmt::format("layout(location={}", index)};
         const u32 remainder{4 - element};
         const TransformFeedbackVarying* xfb_varying{};
-        if (!runtime_info.xfb_varyings.empty()) {
-            xfb_varying = &runtime_info.xfb_varyings[base_index + element];
-            xfb_varying = xfb_varying && xfb_varying->components > 0 ? xfb_varying : nullptr;
+        const size_t xfb_varying_index{base_index + element};
+        if (xfb_varying_index < runtime_info.xfb_varyings.size()) {
+            xfb_varying = &runtime_info.xfb_varyings[xfb_varying_index];
+            xfb_varying = xfb_varying->components > 0 ? xfb_varying : nullptr;
         }
         const u32 num_components{xfb_varying ? xfb_varying->components : remainder};
         if (element > 0) {

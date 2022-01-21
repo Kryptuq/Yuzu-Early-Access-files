@@ -79,8 +79,8 @@ static void VolumeAdjustSamples(std::vector<s16>& samples, float game_volume) {
         return;
     }
 
-    // Implementation of a volume slider with a dynamic range of 60 dB
-    const float volume_scale_factor = volume == 0 ? 0 : std::exp(6.90775f * volume) * 0.001f;
+    // Perceived volume is not the same as the volume level
+    const float volume_scale_factor = (0.85f * ((volume * volume) - volume)) + volume;
     for (auto& sample : samples) {
         sample = static_cast<s16>(sample * volume_scale_factor);
     }

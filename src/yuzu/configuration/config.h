@@ -47,7 +47,15 @@ public:
         default_mouse_buttons;
     static const std::array<int, Settings::NativeKeyboard::NumKeyboardKeys> default_keyboard_keys;
     static const std::array<int, Settings::NativeKeyboard::NumKeyboardMods> default_keyboard_mods;
-    static const std::array<UISettings::Shortcut, 21> default_hotkeys;
+    static const std::array<UISettings::Shortcut, 20> default_hotkeys;
+
+    static constexpr UISettings::Theme default_theme{
+#ifdef _WIN32
+        UISettings::Theme::DarkColorful
+#else
+        UISettings::Theme::DefaultColorful
+#endif
+    };
 
 private:
     void Initialize(const std::string& config_name);

@@ -70,18 +70,18 @@ const std::array<int, 2> Config::default_ringcon_analogs{{
 // This must be in alphabetical order according to action name as it must have the same order as
 // UISetting::values.shortcuts, which is alphabetically ordered.
 // clang-format off
-const std::array<UISettings::Shortcut, 21> Config::default_hotkeys{{
+const std::array<UISettings::Shortcut, 20> Config::default_hotkeys{{
+    {QStringLiteral("Audio Mute/Unmute"),        QStringLiteral("Main Window"), {QStringLiteral("Ctrl+M"),  QStringLiteral("Home+Dpad_Right"), Qt::WindowShortcut}},
+    {QStringLiteral("Audio Volume Down"),        QStringLiteral("Main Window"), {QStringLiteral("-"),       QStringLiteral("Home+Dpad_Down"), Qt::ApplicationShortcut}},
+    {QStringLiteral("Audio Volume Up"),          QStringLiteral("Main Window"), {QStringLiteral("+"),       QStringLiteral("Home+Dpad_Up"), Qt::ApplicationShortcut}},
     {QStringLiteral("Capture Screenshot"),       QStringLiteral("Main Window"), {QStringLiteral("Ctrl+P"),  QStringLiteral("Screenshot"), Qt::WidgetWithChildrenShortcut}},
     {QStringLiteral("Change Docked Mode"),       QStringLiteral("Main Window"), {QStringLiteral("F10"),     QStringLiteral("Home+X"), Qt::ApplicationShortcut}},
     {QStringLiteral("Continue/Pause Emulation"), QStringLiteral("Main Window"), {QStringLiteral("F4"),      QStringLiteral("Home+Plus"), Qt::WindowShortcut}},
-    {QStringLiteral("Decrease Speed Limit"),     QStringLiteral("Main Window"), {QStringLiteral("-"),       QStringLiteral(""), Qt::ApplicationShortcut}},
     {QStringLiteral("Exit Fullscreen"),          QStringLiteral("Main Window"), {QStringLiteral("Esc"),     QStringLiteral(""), Qt::WindowShortcut}},
     {QStringLiteral("Exit yuzu"),                QStringLiteral("Main Window"), {QStringLiteral("Ctrl+Q"),  QStringLiteral("Home+Minus"), Qt::WindowShortcut}},
     {QStringLiteral("Fullscreen"),               QStringLiteral("Main Window"), {QStringLiteral("F11"),     QStringLiteral("Home+B"), Qt::WindowShortcut}},
-    {QStringLiteral("Increase Speed Limit"),     QStringLiteral("Main Window"), {QStringLiteral("+"),       QStringLiteral(""), Qt::ApplicationShortcut}},
     {QStringLiteral("Load Amiibo"),              QStringLiteral("Main Window"), {QStringLiteral("F2"),      QStringLiteral("Home+A"), Qt::WidgetWithChildrenShortcut}},
     {QStringLiteral("Load File"),                QStringLiteral("Main Window"), {QStringLiteral("Ctrl+O"),  QStringLiteral(""), Qt::WidgetWithChildrenShortcut}},
-    {QStringLiteral("Mute Audio"),               QStringLiteral("Main Window"), {QStringLiteral("Ctrl+M"),  QStringLiteral(""), Qt::WindowShortcut}},
     {QStringLiteral("Restart Emulation"),        QStringLiteral("Main Window"), {QStringLiteral("F6"),      QStringLiteral(""), Qt::WindowShortcut}},
     {QStringLiteral("Stop Emulation"),           QStringLiteral("Main Window"), {QStringLiteral("F5"),      QStringLiteral(""), Qt::WindowShortcut}},
     {QStringLiteral("TAS Start/Stop"),           QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F5"), QStringLiteral(""), Qt::ApplicationShortcut}},
@@ -90,7 +90,6 @@ const std::array<UISettings::Shortcut, 21> Config::default_hotkeys{{
     {QStringLiteral("Toggle Filter Bar"),        QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F"),  QStringLiteral(""), Qt::WindowShortcut}},
     {QStringLiteral("Toggle Framerate Limit"),   QStringLiteral("Main Window"), {QStringLiteral("Ctrl+U"),  QStringLiteral("Home+Y"), Qt::ApplicationShortcut}},
     {QStringLiteral("Toggle Mouse Panning"),     QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F9"), QStringLiteral(""), Qt::ApplicationShortcut}},
-    {QStringLiteral("Toggle Speed Limit"),       QStringLiteral("Main Window"), {QStringLiteral("Ctrl+Z"),  QStringLiteral(""), Qt::ApplicationShortcut}},
     {QStringLiteral("Toggle Status Bar"),        QStringLiteral("Main Window"), {QStringLiteral("Ctrl+S"),  QStringLiteral(""), Qt::WindowShortcut}},
 }};
 // clang-format on
@@ -768,8 +767,7 @@ void Config::ReadUIValues() {
     UISettings::values.theme =
         ReadSetting(
             QStringLiteral("theme"),
-            QString::fromUtf8(
-                UISettings::themes[static_cast<size_t>(UISettings::Theme::DarkColorful)].second))
+            QString::fromUtf8(UISettings::themes[static_cast<size_t>(default_theme)].second))
             .toString();
     ReadBasicSetting(UISettings::values.enable_discord_presence);
     ReadBasicSetting(UISettings::values.select_user_on_boot);
@@ -1307,10 +1305,8 @@ void Config::SaveSystemValues() {
 void Config::SaveUIValues() {
     qt_config->beginGroup(QStringLiteral("UI"));
 
-    WriteSetting(
-        QStringLiteral("theme"), UISettings::values.theme,
-        QString::fromUtf8(
-            UISettings::themes[static_cast<size_t>(UISettings::Theme::DarkColorful)].second));
+    WriteSetting(QStringLiteral("theme"), UISettings::values.theme,
+                 QString::fromUtf8(UISettings::themes[static_cast<size_t>(default_theme)].second));
     WriteBasicSetting(UISettings::values.enable_discord_presence);
     WriteBasicSetting(UISettings::values.select_user_on_boot);
 

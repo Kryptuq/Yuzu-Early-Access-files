@@ -1008,33 +1008,24 @@ void GMainWindow::InitializeHotkeys() {
             ToggleFullscreen();
         }
     });
-    connect_shortcut(QStringLiteral("Toggle Speed Limit"), [&] {
-        Settings::values.use_speed_limit.SetValue(!Settings::values.use_speed_limit.GetValue());
-        UpdateStatusBar();
-    });
-    constexpr u16 SPEED_LIMIT_STEP = 5;
-    connect_shortcut(QStringLiteral("Increase Speed Limit"), [&] {
-        if (Settings::values.speed_limit.GetValue() < 9999 - SPEED_LIMIT_STEP) {
-            Settings::values.speed_limit.SetValue(SPEED_LIMIT_STEP +
-                                                  Settings::values.speed_limit.GetValue());
-            UpdateStatusBar();
-        }
-    });
-    connect_shortcut(QStringLiteral("Decrease Speed Limit"), [&] {
-        if (Settings::values.speed_limit.GetValue() > SPEED_LIMIT_STEP) {
-            Settings::values.speed_limit.SetValue(Settings::values.speed_limit.GetValue() -
-                                                  SPEED_LIMIT_STEP);
-            UpdateStatusBar();
-        }
-    });
     connect_shortcut(QStringLiteral("Change Docked Mode"), [&] {
         Settings::values.use_docked_mode.SetValue(!Settings::values.use_docked_mode.GetValue());
         OnDockedModeChanged(!Settings::values.use_docked_mode.GetValue(),
                             Settings::values.use_docked_mode.GetValue(), *system);
         dock_status_button->setChecked(Settings::values.use_docked_mode.GetValue());
     });
-    connect_shortcut(QStringLiteral("Mute Audio"),
+    connect_shortcut(QStringLiteral("Audio Mute/Unmute"),
                      [] { Settings::values.audio_muted = !Settings::values.audio_muted; });
+    connect_shortcut(QStringLiteral("Audio Volume Down"), [] {
+        const auto current_volume = static_cast<int>(Settings::values.volume.GetValue());
+        const auto new_volume = std::max(current_volume - 5, 0);
+        Settings::values.volume.SetValue(static_cast<u8>(new_volume));
+    });
+    connect_shortcut(QStringLiteral("Audio Volume Up"), [] {
+        const auto current_volume = static_cast<int>(Settings::values.volume.GetValue());
+        const auto new_volume = std::min(current_volume + 5, 100);
+        Settings::values.volume.SetValue(static_cast<u8>(new_volume));
+    });
     connect_shortcut(QStringLiteral("Toggle Framerate Limit"), [] {
         Settings::values.disable_fps_limit.SetValue(!Settings::values.disable_fps_limit.GetValue());
     });
