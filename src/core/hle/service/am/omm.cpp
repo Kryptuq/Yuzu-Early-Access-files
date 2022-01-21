@@ -37,6 +37,7 @@ OMM::OMM(Core::System& system_) : ServiceFramework{system_, "omm"} {
         {25, nullptr, "SetApplicationCecSettingsAndNotifyChanged"},
         {26, nullptr, "GetOperationModeSystemInfo"},
         {27, nullptr, "GetAppletFullAwakingSystemEvent"},
+        {28, nullptr, "CreateCradleFirmwareUpdater"},
     };
     // clang-format on
 

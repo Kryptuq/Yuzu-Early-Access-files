@@ -307,6 +307,8 @@ SET_SYS::SET_SYS(Core::System& system_) : ServiceFramework{system_, "set:sys"} {
         {202, nullptr, "SetFieldTestingFlag"},
         {203, nullptr, "GetPanelCrcMode"},
         {204, nullptr, "SetPanelCrcMode"},
+        {205, nullptr, "GetNxControllerSettingsEx"},
+        {206, nullptr, "SetNxControllerSettingsEx"},
     };
     // clang-format on
 
