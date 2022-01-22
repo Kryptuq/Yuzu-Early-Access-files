@@ -45,6 +45,7 @@ concept KPriorityQueueMember = !std::is_reference_v<T> && requires(T & t) {
 
     { t.GetActiveCore() } -> Common::ConvertibleTo<s32>;
     { t.GetPriority() } -> Common::ConvertibleTo<s32>;
+    { t.IsDummyThread() } -> Common::ConvertibleTo<bool>;
 };
 
 template <typename Member, size_t NumCores_, int LowestPriority, int HighestPriority>
@@ -349,24 +350,49 @@ public:
 
     // Mutators.
     constexpr void PushBack(Member* member) {
+        // This is for host (dummy) threads that we do not want to enter the priority queue.
+        if (member->IsDummyThread()) {
+            return;
+        }
+
         this->PushBack(member->GetPriority(), member);
     }
 
     constexpr void Remove(Member* member) {
+        // This is for host (dummy) threads that we do not want to enter the priority queue.
+        if (member->IsDummyThread()) {
+            return;
+        }
+
         this->Remove(member->GetPriority(), member);
     }
 
     constexpr void MoveToScheduledFront(Member* member) {
+        // This is for host (dummy) threads that we do not want to enter the priority queue.
+        if (member->IsDummyThread()) {
+            return;
+        }
+
         this->scheduled_queue.MoveToFront(member->GetPriority(), member->GetActiveCore(), member);
     }
 
     constexpr KThread* MoveToScheduledBack(Member* member) {
+        // This is for host (dummy) threads that we do not want to enter the priority queue.
+        if (member->IsDummyThread()) {
+            return {};
+        }
+
         return this->scheduled_queue.MoveToBack(member->GetPriority(), member->GetActiveCore(),
                                                 member);
     }
 
     // First class fancy operations.
     constexpr void ChangePriority(s32 prev_priority, bool is_running, Member* member) {
+        // This is for host (dummy) threads that we do not want to enter the priority queue.
+        if (member->IsDummyThread()) {
+            return;
+        }
+
         ASSERT(IsValidPriority(prev_priority));
 
         // Remove the member from the queues.
@@ -383,6 +409,11 @@ public:
 
     constexpr void ChangeAffinityMask(s32 prev_core, const AffinityMaskType& prev_affinity,
                                       Member* member) {
+        // This is for host (dummy) threads that we do not want to enter the priority queue.
+        if (member->IsDummyThread()) {
+            return;
+        }
+
         // Get the new information.
         const s32 priority = member->GetPriority();
         const AffinityMaskType& new_affinity = member->GetAffinityMask();
@@ -412,6 +443,11 @@ public:
     }
 
     constexpr void ChangeCore(s32 prev_core, Member* member, bool to_front = false) {
+        // This is for host (dummy) threads that we do not want to enter the priority queue.
+        if (member->IsDummyThread()) {
+            return;
+        }
+
         // Get the new information.
         const s32 new_core = member->GetActiveCore();
         const s32 priority = member->GetPriority();

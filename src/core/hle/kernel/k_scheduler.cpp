@@ -406,6 +406,9 @@ void KScheduler::EnableScheduling(KernelCore& kernel, u64 cores_needing_scheduli
     } else {
         RescheduleCores(kernel, cores_needing_scheduling);
     }
+
+    // Special case to ensure dummy threads that are waiting block.
+    current_thread->IfDummyThreadTryWait();
 }
 
 u64 KScheduler::UpdateHighestPriorityThreads(KernelCore& kernel) {

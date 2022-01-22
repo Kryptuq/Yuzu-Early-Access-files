@@ -558,6 +558,10 @@ public:
         return thread_type;
     }
 
+    [[nodiscard]] bool IsDummyThread() const {
+        return GetThreadType() == ThreadType::Dummy;
+    }
+
     void SetWaitObjectsForDebugging(const std::span<KSynchronizationObject*>& objects) {
         wait_objects_for_debugging.clear();
         wait_objects_for_debugging.reserve(objects.size());
@@ -631,6 +635,14 @@ public:
     [[nodiscard]] u64 GetAddressArbiterKey() const {
         return condvar_key;
     }
+
+    // Dummy threads (used for HLE host threads) cannot wait based on the guest scheduler, and
+    // therefore will not block on guest kernel synchronization primitives. These methods handle
+    // blocking as needed.
+
+    void IfDummyThreadTryWait();
+    void IfDummyThreadBeginWait();
+    void IfDummyThreadEndWait();
 
 private:
     static constexpr size_t PriorityInheritanceCountMax = 10;
@@ -750,6 +762,7 @@ private:
     bool resource_limit_release_hint{};
     StackParameters stack_parameters{};
     KSpinLock context_guard{};
+    KSpinLock dummy_wait_lock{};
 
     // For emulation
     std::shared_ptr<Common::Fiber> host_context{};

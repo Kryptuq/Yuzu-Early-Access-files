@@ -1075,12 +1075,46 @@ ResultCode KThread::Sleep(s64 timeout) {
     return ResultSuccess;
 }
 
+void KThread::IfDummyThreadTryWait() {
+    if (!IsDummyThread()) {
+        return;
+    }
+
+    if (GetState() != ThreadState::Waiting) {
+        return;
+    }
+
+    // Block until we can grab the lock.
+    KScopedSpinLock lk{dummy_wait_lock};
+}
+
+void KThread::IfDummyThreadBeginWait() {
+    if (!IsDummyThread()) {
+        return;
+    }
+
+    // Ensure the thread will block when IfDummyThreadTryWait is called.
+    dummy_wait_lock.Lock();
+}
+
+void KThread::IfDummyThreadEndWait() {
+    if (!IsDummyThread()) {
+        return;
+    }
+
+    // Ensure the thread will no longer block.
+    dummy_wait_lock.Unlock();
+}
+
 void KThread::BeginWait(KThreadQueue* queue) {
     // Set our state as waiting.
     SetState(ThreadState::Waiting);
 
     // Set our wait queue.
     wait_queue = queue;
+
+    // Special case for dummy threads to ensure they block.
+    IfDummyThreadBeginWait();
 }
 
 void KThread::NotifyAvailable(KSynchronizationObject* signaled_object, ResultCode wait_result_) {
@@ -1106,6 +1140,9 @@ void KThread::EndWait(ResultCode wait_result_) {
         }
 
         wait_queue->EndWait(this, wait_result_);
+
+        // Special case for dummy threads to wakeup if necessary.
+        IfDummyThreadEndWait();
     }
 }
 
