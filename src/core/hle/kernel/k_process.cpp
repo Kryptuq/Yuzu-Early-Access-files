@@ -146,6 +146,13 @@ ResultCode KProcess::Initialize(KProcess* process, Core::System& system, std::st
     // Open a reference to the resource limit.
     process->resource_limit->Open();
 
+    // Clear remaining fields.
+    process->num_running_threads = 0;
+    process->is_signaled = false;
+    process->exception_thread = nullptr;
+    process->is_suspended = false;
+    process->schedule_count = 0;
+
     return ResultSuccess;
 }
 
@@ -157,20 +164,17 @@ KResourceLimit* KProcess::GetResourceLimit() const {
     return resource_limit;
 }
 
-void KProcess::IncrementThreadCount() {
-    ASSERT(num_threads >= 0);
-    num_created_threads++;
-
-    if (const auto count = ++num_threads; count > peak_num_threads) {
-        peak_num_threads = count;
-    }
+void KProcess::IncrementRunningThreadCount() {
+    ASSERT(num_running_threads.load() >= 0);
+    ++num_running_threads;
 }
 
-void KProcess::DecrementThreadCount() {
-    ASSERT(num_threads > 0);
+void KProcess::DecrementRunningThreadCount() {
+    ASSERT(num_running_threads.load() > 0);
 
-    if (const auto count = --num_threads; count == 0) {
-        LOG_WARNING(Kernel, "Process termination is not fully implemented.");
+    if (const auto prev = num_running_threads--; prev == 1) {
+        // TODO(bunnei): Process termination to be implemented when multiprocess is supported.
+        UNIMPLEMENTED_MSG("KProcess termination is not implemennted!");
     }
 }
 

@@ -235,8 +235,8 @@ public:
         ++schedule_count;
     }
 
-    void IncrementThreadCount();
-    void DecrementThreadCount();
+    void IncrementRunningThreadCount();
+    void DecrementRunningThreadCount();
 
     void SetRunningThread(s32 core, KThread* thread, u64 idle_count) {
         running_threads[core] = thread;
@@ -473,9 +473,7 @@ private:
     bool is_suspended{};
     bool is_initialized{};
 
-    std::atomic<s32> num_created_threads{};
-    std::atomic<u16> num_threads{};
-    u16 peak_num_threads{};
+    std::atomic<u16> num_running_threads{};
 
     std::array<KThread*, Core::Hardware::NUM_CPU_CORES> running_threads{};
     std::array<u64, Core::Hardware::NUM_CPU_CORES> running_thread_idle_counts{};

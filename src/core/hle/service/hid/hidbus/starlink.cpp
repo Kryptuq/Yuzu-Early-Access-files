@@ -7,7 +7,7 @@
 #include "core/hle/service/hid/hidbus/starlink.h"
 
 namespace Service::HID {
-constexpr u8 DEVICE_ID = 0x19;
+constexpr u8 DEVICE_ID = 0x28;
 
 Starlink::Starlink(Core::HID::HIDCore& hid_core_, KernelHelpers::ServiceContext& service_context_)
     : HidbusBase(service_context_) {}

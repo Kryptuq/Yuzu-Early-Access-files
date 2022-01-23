@@ -29,10 +29,9 @@ private:
     static const std::size_t max_number_of_handles = 0x13;
 
     enum class HidBusDeviceId : std::size_t {
-        // Verify starlink external device id
-        Starlink = 0x19,
         RingController = 0x20,
         FamicomRight = 0x21,
+        Starlink = 0x28,
     };
 
     // This is nn::hidbus::detail::StatusManagerType

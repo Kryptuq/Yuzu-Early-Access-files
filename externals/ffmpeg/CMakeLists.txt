@@ -95,7 +95,8 @@ if (NOT WIN32)
         # ffnvenc could load CUDA libraries at the runtime using dlopen/dlsym or LoadLibrary/GetProcAddress
         # here we handle the hard-linking senario where CUDA is linked during compilation
         if (CUDA_FOUND)
-            list(APPEND FFmpeg_HWACCEL_FLAGS --extra-cflags=-I${CUDA_INCLUDE_DIRS})
+            # This line causes build error if CUDA_INCLUDE_DIRS is anything but a single non-empty value
+            #list(APPEND FFmpeg_HWACCEL_FLAGS --extra-cflags=-I${CUDA_INCLUDE_DIRS})
             list(APPEND FFmpeg_HWACCEL_LIBRARIES ${CUDA_LIBRARIES})
             list(APPEND FFmpeg_HWACCEL_INCLUDE_DIRS ${CUDA_INCLUDE_DIRS})
             list(APPEND FFmpeg_HWACCEL_LDFLAGS ${CUDA_LDFLAGS})
@@ -119,6 +120,8 @@ if (NOT WIN32)
 
     # `configure` parameters builds only exactly what yuzu needs from FFmpeg
     # `--disable-vdpau` is needed to avoid linking issues
+    set(FFmpeg_CC ${CMAKE_C_COMPILER_LAUNCHER}  ${CMAKE_C_COMPILER})
+    set(FFmpeg_CXX ${CMAKE_CXX_COMPILER_LAUNCHER}  ${CMAKE_CXX_COMPILER})
     add_custom_command(
         OUTPUT
             ${FFmpeg_MAKEFILE}
@@ -137,12 +140,14 @@ if (NOT WIN32)
                 --enable-decoder=h264
                 --enable-decoder=vp8
                 --enable-decoder=vp9
-                --cc="${CMAKE_C_COMPILER}"
-                --cxx="${CMAKE_CXX_COMPILER}"
+                --cc="${FFmpeg_CC}"
+                --cxx="${FFmpeg_CXX}"
                 ${FFmpeg_HWACCEL_FLAGS}
         WORKING_DIRECTORY
             ${FFmpeg_BUILD_DIR}
     )
+    unset(FFmpeg_CC)
+    unset(FFmpeg_CXX)
     unset(FFmpeg_HWACCEL_FLAGS)
 
     # Workaround for Ubuntu 18.04's older version of make not being able to call make as a child

@@ -215,7 +215,6 @@ ResultCode KThread::Initialize(KThreadFunction func, uintptr_t arg, VAddr user_s
 
         parent = owner;
         parent->Open();
-        parent->IncrementThreadCount();
     }
 
     // Initialize thread context.
@@ -325,11 +324,6 @@ void KThread::Finalize() {
             // Cancel the thread's wait.
             it->CancelWait(ResultInvalidState, true);
         }
-    }
-
-    // Decrement the parent process's thread count.
-    if (parent != nullptr) {
-        parent->DecrementThreadCount();
     }
 
     // Perform inherited finalization.
@@ -1011,7 +1005,7 @@ ResultCode KThread::Run() {
             if (IsUserThread() && IsSuspended()) {
                 this->UpdateState();
             }
-            owner->IncrementThreadCount();
+            owner->IncrementRunningThreadCount();
         }
 
         // Set our state and finish.
@@ -1026,10 +1020,11 @@ ResultCode KThread::Run() {
 void KThread::Exit() {
     ASSERT(this == GetCurrentThreadPointer(kernel));
 
-    // Release the thread resource hint from parent.
+    // Release the thread resource hint, running thread count from parent.
     if (parent != nullptr) {
         parent->GetResourceLimit()->Release(Kernel::LimitableResource::Threads, 0, 1);
         resource_limit_release_hint = true;
+        parent->DecrementRunningThreadCount();
     }
 
     // Perform termination.
