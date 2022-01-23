@@ -37,9 +37,8 @@ public:
                                   VAddr src_addr);
     ResultCode MapPhysicalMemory(VAddr addr, std::size_t size);
     ResultCode UnmapPhysicalMemory(VAddr addr, std::size_t size);
-    ResultCode UnmapMemory(VAddr addr, std::size_t size);
-    ResultCode Map(VAddr dst_addr, VAddr src_addr, std::size_t size);
-    ResultCode Unmap(VAddr dst_addr, VAddr src_addr, std::size_t size);
+    ResultCode MapMemory(VAddr dst_addr, VAddr src_addr, std::size_t size);
+    ResultCode UnmapMemory(VAddr dst_addr, VAddr src_addr, std::size_t size);
     ResultCode MapPages(VAddr addr, KPageLinkedList& page_linked_list, KMemoryState state,
                         KMemoryPermission perm);
     ResultCode UnmapPages(VAddr addr, KPageLinkedList& page_linked_list, KMemoryState state);
@@ -88,7 +87,6 @@ private:
     ResultCode MapPages(VAddr addr, const KPageLinkedList& page_linked_list,
                         KMemoryPermission perm);
     ResultCode UnmapPages(VAddr addr, const KPageLinkedList& page_linked_list);
-    void MapPhysicalMemory(KPageLinkedList& page_linked_list, VAddr start, VAddr end);
     bool IsRegionMapped(VAddr address, u64 size);
     bool IsRegionContiguous(VAddr addr, u64 size) const;
     void AddRegionToPages(VAddr start, std::size_t num_pages, KPageLinkedList& page_linked_list);
@@ -148,6 +146,7 @@ private:
     }
 
     std::recursive_mutex page_table_lock;
+    std::mutex map_physical_memory_lock;
     std::unique_ptr<KMemoryBlockManager> block_manager;
 
 public:
@@ -249,7 +248,9 @@ public:
         return !IsOutsideASLRRegion(address, size);
     }
     constexpr PAddr GetPhysicalAddr(VAddr addr) {
-        return page_table_impl.backing_addr[addr >> PageBits] + addr;
+        const auto backing_addr = page_table_impl.backing_addr[addr >> PageBits];
+        ASSERT(backing_addr);
+        return backing_addr + addr;
     }
     constexpr bool Contains(VAddr addr) const {
         return address_space_start <= addr && addr <= address_space_end - 1;

@@ -230,7 +230,7 @@ static ResultCode MapMemory(Core::System& system, VAddr dst_addr, VAddr src_addr
         return result;
     }
 
-    return page_table.Map(dst_addr, src_addr, size);
+    return page_table.MapMemory(dst_addr, src_addr, size);
 }
 
 static ResultCode MapMemory32(Core::System& system, u32 dst_addr, u32 src_addr, u32 size) {
@@ -249,7 +249,7 @@ static ResultCode UnmapMemory(Core::System& system, VAddr dst_addr, VAddr src_ad
         return result;
     }
 
-    return page_table.Unmap(dst_addr, src_addr, size);
+    return page_table.UnmapMemory(dst_addr, src_addr, size);
 }
 
 static ResultCode UnmapMemory32(Core::System& system, u32 dst_addr, u32 src_addr, u32 size) {
