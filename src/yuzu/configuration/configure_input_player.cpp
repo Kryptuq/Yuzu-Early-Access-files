@@ -147,7 +147,7 @@ QString ConfigureInputPlayer::ButtonToText(const Common::ParamPackage& param) {
     // Retrieve the names from Qt
     if (param.Get("engine", "") == "keyboard") {
         const QString button_str = GetKeyName(param.Get("code", 0));
-        return QObject::tr("%1%2").arg(toggle, button_str);
+        return QObject::tr("%1%2%3").arg(toggle, inverted, button_str);
     }
 
     if (common_button_name == Common::Input::ButtonNames::Invalid) {
@@ -341,7 +341,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                         emulated_controller->SetButtonParam(button_id, {});
                         button_map[button_id]->setText(tr("[not set]"));
                     });
-                    if (param.Has("button") || param.Has("hat")) {
+                    if (param.Has("code") || param.Has("button") || param.Has("hat")) {
                         context_menu.addAction(tr("Toggle button"), [&] {
                             const bool toggle_value = !param.Get("toggle", false);
                             param.Set("toggle", toggle_value);
@@ -349,8 +349,8 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                             emulated_controller->SetButtonParam(button_id, param);
                         });
                         context_menu.addAction(tr("Invert button"), [&] {
-                            const bool toggle_value = !param.Get("inverted", false);
-                            param.Set("inverted", toggle_value);
+                            const bool invert_value = !param.Get("inverted", false);
+                            param.Set("inverted", invert_value);
                             button_map[button_id]->setText(ButtonToText(param));
                             emulated_controller->SetButtonParam(button_id, param);
                         });
@@ -510,28 +510,37 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
 
         analog_map_modifier_button[analog_id]->setContextMenuPolicy(Qt::CustomContextMenu);
 
-        connect(analog_map_modifier_button[analog_id], &QPushButton::customContextMenuRequested,
-                [=, this](const QPoint& menu_location) {
-                    QMenu context_menu;
-                    Common::ParamPackage param = emulated_controller->GetStickParam(analog_id);
-                    context_menu.addAction(tr("Clear"), [&] {
-                        param.Set("modifier", "");
-                        analog_map_modifier_button[analog_id]->setText(tr("[not set]"));
-                        emulated_controller->SetStickParam(analog_id, param);
-                    });
-                    context_menu.addAction(tr("Toggle button"), [&] {
-                        Common::ParamPackage modifier_param =
-                            Common::ParamPackage{param.Get("modifier", "")};
-                        const bool toggle_value = !modifier_param.Get("toggle", false);
-                        modifier_param.Set("toggle", toggle_value);
-                        param.Set("modifier", modifier_param.Serialize());
-                        analog_map_modifier_button[analog_id]->setText(
-                            ButtonToText(modifier_param));
-                        emulated_controller->SetStickParam(analog_id, param);
-                    });
-                    context_menu.exec(
-                        analog_map_modifier_button[analog_id]->mapToGlobal(menu_location));
+        connect(
+            analog_map_modifier_button[analog_id], &QPushButton::customContextMenuRequested,
+            [=, this](const QPoint& menu_location) {
+                QMenu context_menu;
+                Common::ParamPackage param = emulated_controller->GetStickParam(analog_id);
+                context_menu.addAction(tr("Clear"), [&] {
+                    param.Set("modifier", "");
+                    analog_map_modifier_button[analog_id]->setText(tr("[not set]"));
+                    emulated_controller->SetStickParam(analog_id, param);
                 });
+                context_menu.addAction(tr("Toggle button"), [&] {
+                    Common::ParamPackage modifier_param =
+                        Common::ParamPackage{param.Get("modifier", "")};
+                    const bool toggle_value = !modifier_param.Get("toggle", false);
+                    modifier_param.Set("toggle", toggle_value);
+                    param.Set("modifier", modifier_param.Serialize());
+                    analog_map_modifier_button[analog_id]->setText(ButtonToText(modifier_param));
+                    emulated_controller->SetStickParam(analog_id, param);
+                });
+                context_menu.addAction(tr("Invert button"), [&] {
+                    Common::ParamPackage modifier_param =
+                        Common::ParamPackage{param.Get("modifier", "")};
+                    const bool invert_value = !modifier_param.Get("inverted", false);
+                    modifier_param.Set("inverted", invert_value);
+                    param.Set("modifier", modifier_param.Serialize());
+                    analog_map_modifier_button[analog_id]->setText(ButtonToText(modifier_param));
+                    emulated_controller->SetStickParam(analog_id, param);
+                });
+                context_menu.exec(
+                    analog_map_modifier_button[analog_id]->mapToGlobal(menu_location));
+            });
 
         connect(analog_map_range_spinbox[analog_id], qOverload<int>(&QSpinBox::valueChanged),
                 [=, this] {
