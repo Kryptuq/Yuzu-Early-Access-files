@@ -3,7 +3,13 @@
 // Refer to the license.txt file included
 
 #pragma once
+
+#include "common/param_package.h"
 #include "common/threadsafe_queue.h"
+
+namespace InputCommon::Polling {
+enum class InputType;
+}
 
 namespace InputCommon {
 class InputEngine;
@@ -20,7 +26,7 @@ public:
     void BeginMapping(Polling::InputType type);
 
     /// Returns an input event with mapping information from the input_queue
-    [[nodiscard]] const Common::ParamPackage GetNextInput();
+    [[nodiscard]] Common::ParamPackage GetNextInput();
 
     /**
      * Registers mapping input data from the driver

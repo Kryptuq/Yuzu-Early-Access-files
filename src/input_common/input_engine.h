@@ -16,7 +16,7 @@
 
 // Pad Identifier of data source
 struct PadIdentifier {
-    Common::UUID guid{};
+    Common::UUID guid{Common::INVALID_UUID};
     std::size_t port{};
     std::size_t pad{};
 
@@ -89,7 +89,7 @@ struct UpdateCallback {
 
 // Triggered if data changed on the controller and the engine is on configuring mode
 struct MappingCallback {
-    std::function<void(MappingData)> on_data;
+    std::function<void(const MappingData&)> on_data;
 };
 
 // Input Identifier of data source

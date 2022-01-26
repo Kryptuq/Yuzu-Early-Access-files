@@ -31,8 +31,6 @@ public:
     }
 
     constexpr void SetAffinity(s32 core, bool set) {
-        ASSERT(0 <= core && core < static_cast<s32>(Core::Hardware::NUM_CPU_CORES));
-
         if (set) {
             this->mask |= GetCoreBit(core);
         } else {

@@ -126,7 +126,7 @@ public:
     void BeginMapping(Polling::InputType type);
 
     /// Returns an input event with mapping information.
-    [[nodiscard]] const Common::ParamPackage GetNextInput() const;
+    [[nodiscard]] Common::ParamPackage GetNextInput() const;
 
     /// Stop polling from all backends.
     void StopMapping() const;

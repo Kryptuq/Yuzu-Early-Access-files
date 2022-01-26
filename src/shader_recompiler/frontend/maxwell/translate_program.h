@@ -21,7 +21,6 @@ namespace Shader::Maxwell {
 [[nodiscard]] IR::Program MergeDualVertexPrograms(IR::Program& vertex_a, IR::Program& vertex_b,
                                                   Environment& env_vertex_b);
 
-[[nodiscard]] void ConvertLegacyToGeneric(IR::Program& program,
-                                          const Shader::RuntimeInfo& runtime_info);
+void ConvertLegacyToGeneric(IR::Program& program, const RuntimeInfo& runtime_info);
 
 } // namespace Shader::Maxwell

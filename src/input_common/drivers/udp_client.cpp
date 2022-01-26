@@ -339,7 +339,7 @@ void UDPClient::StartCommunication(std::size_t client, const std::string& host, 
     }
 }
 
-const PadIdentifier UDPClient::GetPadIdentifier(std::size_t pad_index) const {
+PadIdentifier UDPClient::GetPadIdentifier(std::size_t pad_index) const {
     const std::size_t client = pad_index / PADS_PER_CLIENT;
     return {
         .guid = clients[client].uuid,
@@ -348,9 +348,9 @@ const PadIdentifier UDPClient::GetPadIdentifier(std::size_t pad_index) const {
     };
 }
 
-const Common::UUID UDPClient::GetHostUUID(const std::string host) const {
-    const auto ip = boost::asio::ip::address_v4::from_string(host);
-    const auto hex_host = fmt::format("{:06x}", ip.to_ulong());
+Common::UUID UDPClient::GetHostUUID(const std::string& host) const {
+    const auto ip = boost::asio::ip::make_address_v4(host);
+    const auto hex_host = fmt::format("{:06x}", ip.to_uint());
     return Common::UUID{hex_host};
 }
 

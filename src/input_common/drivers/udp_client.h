@@ -145,8 +145,8 @@ private:
     void OnPortInfo(Response::PortInfo);
     void OnPadData(Response::PadData, std::size_t client);
     void StartCommunication(std::size_t client, const std::string& host, u16 port);
-    const PadIdentifier GetPadIdentifier(std::size_t pad_index) const;
-    const Common::UUID GetHostUUID(const std::string host) const;
+    PadIdentifier GetPadIdentifier(std::size_t pad_index) const;
+    Common::UUID GetHostUUID(const std::string& host) const;
 
     Common::Input::ButtonNames GetUIButtonName(const Common::ParamPackage& params) const;
 

@@ -214,7 +214,7 @@ VkImageView FSR::Draw(VKScheduler& scheduler, size_t image_index, VkImageView im
 
         {
             VkImageMemoryBarrier fsr_write_barrier = base_barrier;
-            fsr_write_barrier.image = *images[image_index],
+            fsr_write_barrier.image = *images[image_index];
             fsr_write_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
             cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,

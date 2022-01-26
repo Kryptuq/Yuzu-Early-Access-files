@@ -2,14 +2,13 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included
 
-#include "common/common_types.h"
 #include "common/settings.h"
 #include "input_common/input_engine.h"
 #include "input_common/input_mapping.h"
 
 namespace InputCommon {
 
-MappingFactory::MappingFactory() {}
+MappingFactory::MappingFactory() = default;
 
 void MappingFactory::BeginMapping(Polling::InputType type) {
     is_enabled = true;
@@ -19,7 +18,7 @@ void MappingFactory::BeginMapping(Polling::InputType type) {
     second_axis = -1;
 }
 
-[[nodiscard]] const Common::ParamPackage MappingFactory::GetNextInput() {
+Common::ParamPackage MappingFactory::GetNextInput() {
     Common::ParamPackage input;
     input_queue.Pop(input);
     return input;
@@ -57,7 +56,7 @@ void MappingFactory::StopMapping() {
 void MappingFactory::RegisterButton(const MappingData& data) {
     Common::ParamPackage new_input;
     new_input.Set("engine", data.engine);
-    if (data.pad.guid != Common::UUID{}) {
+    if (data.pad.guid.IsValid()) {
         new_input.Set("guid", data.pad.guid.Format());
     }
     new_input.Set("port", static_cast<int>(data.pad.port));
@@ -93,7 +92,7 @@ void MappingFactory::RegisterButton(const MappingData& data) {
 void MappingFactory::RegisterStick(const MappingData& data) {
     Common::ParamPackage new_input;
     new_input.Set("engine", data.engine);
-    if (data.pad.guid != Common::UUID{}) {
+    if (data.pad.guid.IsValid()) {
         new_input.Set("guid", data.pad.guid.Format());
     }
     new_input.Set("port", static_cast<int>(data.pad.port));
@@ -138,7 +137,7 @@ void MappingFactory::RegisterStick(const MappingData& data) {
 void MappingFactory::RegisterMotion(const MappingData& data) {
     Common::ParamPackage new_input;
     new_input.Set("engine", data.engine);
-    if (data.pad.guid != Common::UUID{}) {
+    if (data.pad.guid.IsValid()) {
         new_input.Set("guid", data.pad.guid.Format());
     }
     new_input.Set("port", static_cast<int>(data.pad.port));
