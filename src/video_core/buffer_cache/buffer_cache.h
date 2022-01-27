@@ -1500,6 +1500,8 @@ typename BufferCache<P>::OverlapResult BufferCache<P>::ResolveOverlaps(VAddr cpu
             // When this memory region has been joined a bunch of times, we assume it's being used
             // as a stream buffer. Increase the size to skip constantly recreating buffers.
             has_stream_leap = true;
+            begin -= PAGE_SIZE * 256;
+            cpu_addr = begin;
             end += PAGE_SIZE * 256;
         }
     }

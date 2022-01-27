@@ -57,16 +57,6 @@ void TranslatorVisitor::VMNMX(u64 insn) {
     if (vmnmx.sat != 0) {
         throw NotImplementedException("VMNMX SAT");
     }
-    // Selectors were shown to default to 2 in unit tests
-    if (vmnmx.src_a_selector != 2) {
-        throw NotImplementedException("VMNMX Selector {}", vmnmx.src_a_selector.Value());
-    }
-    if (vmnmx.src_b_selector != 2) {
-        throw NotImplementedException("VMNMX Selector {}", vmnmx.src_b_selector.Value());
-    }
-    if (vmnmx.src_a_width != VideoWidth::Word) {
-        throw NotImplementedException("VMNMX Source Width {}", vmnmx.src_a_width.Value());
-    }
 
     const bool is_b_imm{vmnmx.is_src_b_reg == 0};
     const IR::U32 src_a{GetReg8(insn)};
@@ -76,10 +66,14 @@ void TranslatorVisitor::VMNMX(u64 insn) {
     const VideoWidth a_width{vmnmx.src_a_width};
     const VideoWidth b_width{GetVideoSourceWidth(vmnmx.src_b_width, is_b_imm)};
 
+    const u32 a_selector{static_cast<u32>(vmnmx.src_a_selector)};
+    // Immediate values can't have a selector
+    const u32 b_selector{is_b_imm ? 0U : static_cast<u32>(vmnmx.src_b_selector)};
+
     const bool src_a_signed{vmnmx.src_a_sign != 0};
     const bool src_b_signed{vmnmx.src_b_sign != 0};
-    const IR::U32 op_a{ExtractVideoOperandValue(ir, src_a, a_width, 0, src_a_signed)};
-    const IR::U32 op_b{ExtractVideoOperandValue(ir, src_b, b_width, 0, src_b_signed)};
+    const IR::U32 op_a{ExtractVideoOperandValue(ir, src_a, a_width, a_selector, src_a_signed)};
+    const IR::U32 op_b{ExtractVideoOperandValue(ir, src_b, b_width, b_selector, src_b_signed)};
 
     // First operation's sign is only dependent on operand b's sign
     const bool op_1_signed{src_b_signed};

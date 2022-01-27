@@ -258,7 +258,7 @@ private:
 
 private:
     constexpr void ClearAffinityBit(u64& affinity, s32 core) {
-        affinity &= ~(u64(1) << core);
+        affinity &= ~(UINT64_C(1) << core);
     }
 
     constexpr s32 GetNextCore(u64& affinity) {

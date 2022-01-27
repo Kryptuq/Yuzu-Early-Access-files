@@ -710,23 +710,19 @@ void KScheduler::Unload(KThread* thread) {
 }
 
 void KScheduler::Reload(KThread* thread) {
-    LOG_TRACE(Kernel, "core {}, reload thread {}", core_id, thread ? thread->GetName() : "nullptr");
+    LOG_TRACE(Kernel, "core {}, reload thread {}", core_id, thread->GetName());
 
-    if (thread) {
-        ASSERT_MSG(thread->GetState() == ThreadState::Runnable, "Thread must be runnable.");
-
-        Core::ARM_Interface& cpu_core = system.ArmInterface(core_id);
-        cpu_core.LoadContext(thread->GetContext32());
-        cpu_core.LoadContext(thread->GetContext64());
-        cpu_core.SetTlsAddress(thread->GetTLSAddress());
-        cpu_core.SetTPIDR_EL0(thread->GetTPIDR_EL0());
-        cpu_core.ClearExclusiveState();
-    }
+    Core::ARM_Interface& cpu_core = system.ArmInterface(core_id);
+    cpu_core.LoadContext(thread->GetContext32());
+    cpu_core.LoadContext(thread->GetContext64());
+    cpu_core.SetTlsAddress(thread->GetTLSAddress());
+    cpu_core.SetTPIDR_EL0(thread->GetTPIDR_EL0());
+    cpu_core.ClearExclusiveState();
 }
 
 void KScheduler::SwitchContextStep2() {
     // Load context of new thread
-    Reload(current_thread.load());
+    Reload(GetCurrentThread());
 
     RescheduleCurrentCore();
 }
@@ -735,11 +731,15 @@ void KScheduler::ScheduleImpl() {
     KThread* previous_thread = GetCurrentThread();
     KThread* next_thread = state.highest_priority_thread;
 
-    state.needs_scheduling = false;
+    state.needs_scheduling.store(false);
 
     // We never want to schedule a null thread, so use the idle thread if we don't have a next.
     if (next_thread == nullptr) {
         next_thread = idle_thread;
+    }
+
+    if (next_thread->GetCurrentCore() != core_id) {
+        next_thread->SetCurrentCore(core_id);
     }
 
     // We never want to schedule a dummy thread, as these are only used by host threads for locking.
@@ -755,14 +755,8 @@ void KScheduler::ScheduleImpl() {
         return;
     }
 
-    if (next_thread->GetCurrentCore() != core_id) {
-        next_thread->SetCurrentCore(core_id);
-    }
-
-    current_thread.store(next_thread);
-
+    // Update the CPU time tracking variables.
     KProcess* const previous_process = system.Kernel().CurrentProcess();
-
     UpdateLastContextSwitchTime(previous_thread, previous_process);
 
     // Save context for previous thread
@@ -770,6 +764,10 @@ void KScheduler::ScheduleImpl() {
 
     std::shared_ptr<Common::Fiber>* old_context;
     old_context = &previous_thread->GetHostContext();
+
+    // Set the new thread.
+    current_thread.store(next_thread);
+
     guard.Unlock();
 
     Common::Fiber::YieldTo(*old_context, *switch_fiber);
@@ -797,14 +795,17 @@ void KScheduler::SwitchToCurrent() {
         do {
             auto next_thread = current_thread.load();
             if (next_thread != nullptr) {
-                next_thread->context_guard.Lock();
-                if (next_thread->GetRawState() != ThreadState::Runnable) {
+                const auto locked = next_thread->context_guard.TryLock();
+                if (state.needs_scheduling.load()) {
                     next_thread->context_guard.Unlock();
                     break;
                 }
                 if (next_thread->GetActiveCore() != core_id) {
                     next_thread->context_guard.Unlock();
                     break;
+                }
+                if (!locked) {
+                    continue;
                 }
             }
             auto thread = next_thread ? next_thread : idle_thread;
