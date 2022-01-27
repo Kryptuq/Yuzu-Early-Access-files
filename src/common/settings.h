@@ -554,6 +554,7 @@ struct Values {
     Setting<bool> use_docked_mode{true, "use_docked_mode"};
 
     BasicSetting<bool> enable_raw_input{false, "enable_raw_input"};
+    BasicSetting<bool> controller_navigation{true, "controller_navigation"};
 
     Setting<bool> vibration_enabled{true, "vibration_enabled"};
     Setting<bool> enable_accurate_vibrations{false, "enable_accurate_vibrations"};

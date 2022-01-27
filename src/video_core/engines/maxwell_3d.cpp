@@ -240,7 +240,7 @@ void Maxwell3D::CallMacroMethod(u32 method, const std::vector<u32>& parameters) 
         ((method - MacroRegistersStart) >> 1) % static_cast<u32>(macro_positions.size());
 
     // Execute the current macro.
-    macro_engine->Execute(*this, macro_positions[entry], parameters);
+    macro_engine->Execute(macro_positions[entry], parameters);
     if (mme_draw.current_mode != MMEDrawMode::Undefined) {
         FlushMMEInlineDraw();
     }

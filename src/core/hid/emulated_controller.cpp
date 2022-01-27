@@ -749,6 +749,7 @@ void EmulatedController::SetMotion(const Common::Input::CallbackStatus& callback
         raw_status.gyro.y.value,
         raw_status.gyro.z.value,
     });
+    emulated.SetGyroThreshold(raw_status.gyro.x.properties.threshold);
     emulated.UpdateRotation(raw_status.delta_timestamp);
     emulated.UpdateOrientation(raw_status.delta_timestamp);
     force_update_motion = raw_status.force_update;

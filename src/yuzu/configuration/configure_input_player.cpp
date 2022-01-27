@@ -403,10 +403,22 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         connect(button, &QPushButton::customContextMenuRequested,
                 [=, this](const QPoint& menu_location) {
                     QMenu context_menu;
+                    Common::ParamPackage param = emulated_controller->GetMotionParam(motion_id);
                     context_menu.addAction(tr("Clear"), [&] {
                         emulated_controller->SetMotionParam(motion_id, {});
                         motion_map[motion_id]->setText(tr("[not set]"));
                     });
+                    if (param.Has("motion")) {
+                        context_menu.addAction(tr("Set gyro threshold"), [&] {
+                            const int gyro_threshold =
+                                static_cast<int>(param.Get("threshold", 0.007f) * 1000.0f);
+                            const int new_threshold = QInputDialog::getInt(
+                                this, tr("Set threshold"), tr("Choose a value between 0% and 100%"),
+                                gyro_threshold, 0, 100);
+                            param.Set("threshold", new_threshold / 1000.0f);
+                            emulated_controller->SetMotionParam(motion_id, param);
+                        });
+                    }
                     context_menu.exec(motion_map[motion_id]->mapToGlobal(menu_location));
                 });
     }

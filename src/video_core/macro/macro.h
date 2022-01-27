@@ -119,7 +119,7 @@ public:
     void AddCode(u32 method, u32 data);
 
     // Compiles the macro if its not in the cache, and executes the compiled macro
-    void Execute(Engines::Maxwell3D& maxwell3d, u32 method, const std::vector<u32>& parameters);
+    void Execute(u32 method, const std::vector<u32>& parameters);
 
 protected:
     virtual std::unique_ptr<CachedMacro> Compile(const std::vector<u32>& code) = 0;

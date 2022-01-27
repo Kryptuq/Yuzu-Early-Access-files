@@ -2,12 +2,13 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <cstring>
 #include <optional>
+
 #include <boost/container_hash/hash.hpp>
+
 #include "common/assert.h"
-#include "common/logging/log.h"
 #include "common/settings.h"
-#include "video_core/engines/maxwell_3d.h"
 #include "video_core/macro/macro.h"
 #include "video_core/macro/macro_hle.h"
 #include "video_core/macro/macro_interpreter.h"
@@ -24,8 +25,7 @@ void MacroEngine::AddCode(u32 method, u32 data) {
     uploaded_macro_code[method].push_back(data);
 }
 
-void MacroEngine::Execute(Engines::Maxwell3D& maxwell3d, u32 method,
-                          const std::vector<u32>& parameters) {
+void MacroEngine::Execute(u32 method, const std::vector<u32>& parameters) {
     auto compiled_macro = macro_cache.find(method);
     if (compiled_macro != macro_cache.end()) {
         const auto& cache_info = compiled_macro->second;
@@ -66,10 +66,9 @@ void MacroEngine::Execute(Engines::Maxwell3D& maxwell3d, u32 method,
             cache_info.lle_program = Compile(code);
         }
 
-        auto hle_program = hle_macros->GetHLEProgram(cache_info.hash);
-        if (hle_program.has_value()) {
+        if (auto hle_program = hle_macros->GetHLEProgram(cache_info.hash)) {
             cache_info.has_hle_program = true;
-            cache_info.hle_program = std::move(hle_program.value());
+            cache_info.hle_program = std::move(hle_program);
             cache_info.hle_program->Execute(parameters, method);
         } else {
             cache_info.lle_program->Execute(parameters, method);

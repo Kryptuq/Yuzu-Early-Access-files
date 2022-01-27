@@ -40,6 +40,9 @@ void ControllerNavigation::TriggerButton(Settings::NativeButton::Values native_b
 
 void ControllerNavigation::ControllerUpdateEvent(Core::HID::ControllerTriggerType type) {
     std::lock_guard lock{mutex};
+    if (!Settings::values.controller_navigation) {
+        return;
+    }
     if (type == Core::HID::ControllerTriggerType::Button) {
         ControllerUpdateButton();
         return;

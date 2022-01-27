@@ -190,6 +190,9 @@ void ControllerShortcut::ControllerUpdateEvent(Core::HID::ControllerTriggerType 
     if (type != Core::HID::ControllerTriggerType::Button) {
         return;
     }
+    if (!Settings::values.controller_navigation) {
+        return;
+    }
     if (button_sequence.npad.raw == Core::HID::NpadButton::None &&
         button_sequence.capture.raw == 0 && button_sequence.home.raw == 0) {
         return;

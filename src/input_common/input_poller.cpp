@@ -504,9 +504,10 @@ private:
 
 class InputFromMotion final : public Common::Input::InputDevice {
 public:
-    explicit InputFromMotion(PadIdentifier identifier_, int motion_sensor_,
+    explicit InputFromMotion(PadIdentifier identifier_, int motion_sensor_, float gyro_threshold_,
                              InputEngine* input_engine_)
-        : identifier(identifier_), motion_sensor(motion_sensor_), input_engine(input_engine_) {
+        : identifier(identifier_), motion_sensor(motion_sensor_), gyro_threshold(gyro_threshold_),
+          input_engine(input_engine_) {
         UpdateCallback engine_callback{[this]() { OnChange(); }};
         const InputIdentifier input_identifier{
             .identifier = identifier,
@@ -525,8 +526,9 @@ public:
         const auto basic_motion = input_engine->GetMotion(identifier, motion_sensor);
         Common::Input::MotionStatus status{};
         const Common::Input::AnalogProperties properties = {
-            .deadzone = 0.001f,
+            .deadzone = 0.0f,
             .range = 1.0f,
+            .threshold = gyro_threshold,
             .offset = 0.0f,
         };
         status.accel.x = {.raw_value = basic_motion.accel_x, .properties = properties};
@@ -551,6 +553,7 @@ public:
 private:
     const PadIdentifier identifier;
     const int motion_sensor;
+    const float gyro_threshold;
     int callback_key;
     InputEngine* input_engine;
 };
@@ -873,9 +876,11 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateMotionDevice(
 
     if (params.Has("motion")) {
         const auto motion_sensor = params.Get("motion", 0);
+        const auto gyro_threshold = params.Get("threshold", 0.007f);
         input_engine->PreSetController(identifier);
         input_engine->PreSetMotion(identifier, motion_sensor);
-        return std::make_unique<InputFromMotion>(identifier, motion_sensor, input_engine.get());
+        return std::make_unique<InputFromMotion>(identifier, motion_sensor, gyro_threshold,
+                                                 input_engine.get());
     }
 
     const auto deadzone = std::clamp(params.Get("deadzone", 0.15f), 0.0f, 1.0f);

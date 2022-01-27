@@ -416,6 +416,8 @@ void Config::ReadControlValues() {
     ReadGlobalSetting(Settings::values.enable_accurate_vibrations);
     ReadGlobalSetting(Settings::values.motion_enabled);
 
+    ReadBasicSetting(Settings::values.controller_navigation);
+
     qt_config->endGroup();
 }
 
@@ -1035,6 +1037,7 @@ void Config::SaveControlValues() {
     WriteBasicSetting(Settings::values.keyboard_enabled);
     WriteBasicSetting(Settings::values.emulate_analog_keyboard);
     WriteBasicSetting(Settings::values.mouse_panning_sensitivity);
+    WriteBasicSetting(Settings::values.controller_navigation);
 
     WriteBasicSetting(Settings::values.tas_enable);
     WriteBasicSetting(Settings::values.tas_loop);
