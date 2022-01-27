@@ -29,7 +29,7 @@ constexpr Xbyak::Reg64 PARAMETERS = Xbyak::util::r12;
 constexpr Xbyak::Reg32 METHOD_ADDRESS = Xbyak::util::r14d;
 constexpr Xbyak::Reg64 BRANCH_HOLDER = Xbyak::util::r15;
 
-const std::bitset<32> PERSISTENT_REGISTERS = Common::X64::BuildRegSet({
+constexpr std::bitset<32> PERSISTENT_REGISTERS = Common::X64::BuildRegSet({
     STATE,
     RESULT,
     PARAMETERS,

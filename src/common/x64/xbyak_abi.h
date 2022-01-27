@@ -37,12 +37,12 @@ constexpr Xbyak::Reg IndexToReg(size_t reg_index) {
     }
 }
 
-inline std::bitset<32> BuildRegSet(std::initializer_list<Xbyak::Reg> regs) {
-    std::bitset<32> bits;
+constexpr std::bitset<32> BuildRegSet(std::initializer_list<Xbyak::Reg> regs) {
+    size_t bits = 0;
     for (const Xbyak::Reg& reg : regs) {
-        bits[RegToIndex(reg)] = true;
+        bits |= size_t{1} << RegToIndex(reg);
     }
-    return bits;
+    return {bits};
 }
 
 constexpr inline std::bitset<32> ABI_ALL_GPRS(0x0000FFFF);
@@ -57,7 +57,7 @@ constexpr inline Xbyak::Reg ABI_PARAM2 = Xbyak::util::rdx;
 constexpr inline Xbyak::Reg ABI_PARAM3 = Xbyak::util::r8;
 constexpr inline Xbyak::Reg ABI_PARAM4 = Xbyak::util::r9;
 
-const std::bitset<32> ABI_ALL_CALLER_SAVED = BuildRegSet({
+constexpr inline std::bitset<32> ABI_ALL_CALLER_SAVED = BuildRegSet({
     // GPRs
     Xbyak::util::rcx,
     Xbyak::util::rdx,
@@ -74,7 +74,7 @@ const std::bitset<32> ABI_ALL_CALLER_SAVED = BuildRegSet({
     Xbyak::util::xmm5,
 });
 
-const std::bitset<32> ABI_ALL_CALLEE_SAVED = BuildRegSet({
+constexpr inline std::bitset<32> ABI_ALL_CALLEE_SAVED = BuildRegSet({
     // GPRs
     Xbyak::util::rbx,
     Xbyak::util::rsi,
@@ -108,7 +108,7 @@ constexpr inline Xbyak::Reg ABI_PARAM2 = Xbyak::util::rsi;
 constexpr inline Xbyak::Reg ABI_PARAM3 = Xbyak::util::rdx;
 constexpr inline Xbyak::Reg ABI_PARAM4 = Xbyak::util::rcx;
 
-const std::bitset<32> ABI_ALL_CALLER_SAVED = BuildRegSet({
+constexpr inline std::bitset<32> ABI_ALL_CALLER_SAVED = BuildRegSet({
     // GPRs
     Xbyak::util::rcx,
     Xbyak::util::rdx,
@@ -137,7 +137,7 @@ const std::bitset<32> ABI_ALL_CALLER_SAVED = BuildRegSet({
     Xbyak::util::xmm15,
 });
 
-const std::bitset<32> ABI_ALL_CALLEE_SAVED = BuildRegSet({
+constexpr inline std::bitset<32> ABI_ALL_CALLEE_SAVED = BuildRegSet({
     // GPRs
     Xbyak::util::rbx,
     Xbyak::util::rbp,
