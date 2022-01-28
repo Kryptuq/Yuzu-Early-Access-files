@@ -109,8 +109,9 @@ public:
 
     bool HasHDRumble() const {
         if (sdl_controller) {
-            return (SDL_GameControllerGetType(sdl_controller.get()) ==
-                    SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO);
+            const auto type = SDL_GameControllerGetType(sdl_controller.get());
+            return (type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO) ||
+                   (type == SDL_CONTROLLER_TYPE_PS5);
         }
         return false;
     }
