@@ -143,6 +143,8 @@ public:
     [[nodiscard]] GPUVAddr Allocate(std::size_t size, std::size_t align);
     void Unmap(GPUVAddr gpu_addr, std::size_t size);
 
+    void FlushRegion(GPUVAddr gpu_addr, size_t size) const;
+
 private:
     [[nodiscard]] PageEntry GetPageEntry(GPUVAddr gpu_addr) const;
     void SetPageEntry(GPUVAddr gpu_addr, PageEntry page_entry, std::size_t size = page_size);
@@ -152,8 +154,6 @@ private:
 
     void TryLockPage(PageEntry page_entry, std::size_t size);
     void TryUnlockPage(PageEntry page_entry, std::size_t size);
-
-    void FlushRegion(GPUVAddr gpu_addr, size_t size) const;
 
     void ReadBlockImpl(GPUVAddr gpu_src_addr, void* dest_buffer, std::size_t size,
                        bool is_safe) const;
