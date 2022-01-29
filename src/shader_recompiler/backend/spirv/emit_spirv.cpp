@@ -387,6 +387,14 @@ void SetupSignedNanCapabilities(const Profile& profile, const IR::Program& progr
     }
 }
 
+void SetupTransformFeedbackCapabilities(EmitContext& ctx, Id main_func) {
+    if (ctx.runtime_info.xfb_varyings.empty()) {
+        return;
+    }
+    ctx.AddCapability(spv::Capability::TransformFeedback);
+    ctx.AddExecutionMode(main_func, spv::ExecutionMode::Xfb);
+}
+
 void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ctx) {
     if (info.uses_sampled_1d) {
         ctx.AddCapability(spv::Capability::Sampled1D);
@@ -442,9 +450,6 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
     if (info.uses_sample_id) {
         ctx.AddCapability(spv::Capability::SampleRateShading);
     }
-    if (!ctx.runtime_info.xfb_varyings.empty()) {
-        ctx.AddCapability(spv::Capability::TransformFeedback);
-    }
     if (info.uses_derivatives) {
         ctx.AddCapability(spv::Capability::DerivativeControl);
     }
@@ -484,6 +489,7 @@ std::vector<u32> EmitSPIRV(const Profile& profile, const RuntimeInfo& runtime_in
         SetupSignedNanCapabilities(profile, program, ctx, main);
     }
     SetupCapabilities(profile, program.info, ctx);
+    SetupTransformFeedbackCapabilities(ctx, main);
     PatchPhiNodes(program, ctx);
     return ctx.Assemble();
 }

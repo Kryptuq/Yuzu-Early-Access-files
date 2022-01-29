@@ -74,7 +74,7 @@ Id StorageAtomicU64(EmitContext& ctx, const IR::Value& binding, const IR::Value&
         const auto [scope, semantics]{AtomicArgs(ctx)};
         return (ctx.*atomic_func)(ctx.U64, pointer, scope, semantics, value);
     }
-    LOG_ERROR(Shader_SPIRV, "Int64 atomics not supported, fallback to non-atomic");
+    LOG_WARNING(Shader_SPIRV, "Int64 atomics not supported, fallback to non-atomic");
     const Id pointer{StoragePointer(ctx, ctx.storage_types.U32x2, &StorageDefinitions::U32x2,
                                     binding, offset, sizeof(u32[2]))};
     const Id original_value{ctx.OpBitcast(ctx.U64, ctx.OpLoad(ctx.U32[2], pointer))};
@@ -267,7 +267,7 @@ Id EmitStorageAtomicExchange64(EmitContext& ctx, const IR::Value& binding, const
         const auto [scope, semantics]{AtomicArgs(ctx)};
         return ctx.OpAtomicExchange(ctx.U64, pointer, scope, semantics, value);
     }
-    LOG_ERROR(Shader_SPIRV, "Int64 atomics not supported, fallback to non-atomic");
+    LOG_WARNING(Shader_SPIRV, "Int64 atomics not supported, fallback to non-atomic");
     const Id pointer{StoragePointer(ctx, ctx.storage_types.U32x2, &StorageDefinitions::U32x2,
                                     binding, offset, sizeof(u32[2]))};
     const Id original{ctx.OpBitcast(ctx.U64, ctx.OpLoad(ctx.U32[2], pointer))};
