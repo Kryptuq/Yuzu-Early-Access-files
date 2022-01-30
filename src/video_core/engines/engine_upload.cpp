@@ -7,6 +7,7 @@
 #include "common/assert.h"
 #include "video_core/engines/engine_upload.h"
 #include "video_core/memory_manager.h"
+#include "video_core/rasterizer_interface.h"
 #include "video_core/textures/decoders.h"
 
 namespace Tegra::Engines::Upload {
@@ -15,6 +16,10 @@ State::State(MemoryManager& memory_manager_, Registers& regs_)
     : regs{regs_}, memory_manager{memory_manager_} {}
 
 State::~State() = default;
+
+void State::BindRasterizer(VideoCore::RasterizerInterface* rasterizer_) {
+    rasterizer = rasterizer_;
+}
 
 void State::ProcessExec(const bool is_linear_) {
     write_offset = 0;
@@ -32,8 +37,7 @@ void State::ProcessData(const u32 data, const bool is_last_call) {
     }
     const GPUVAddr address{regs.dest.Address()};
     if (is_linear) {
-        memory_manager.FlushRegion(address, copy_size);
-        memory_manager.WriteBlock(address, inner_buffer.data(), copy_size);
+        rasterizer->AccelerateInline2Memory(address, copy_size, inner_buffer);
     } else {
         UNIMPLEMENTED_IF(regs.dest.z != 0);
         UNIMPLEMENTED_IF(regs.dest.depth != 1);

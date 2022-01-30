@@ -442,6 +442,8 @@ void EmitSharedAtomicExchange32(EmitContext& ctx, IR::Inst& inst, std::string_vi
                                 std::string_view value);
 void EmitSharedAtomicExchange64(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                                 std::string_view value);
+void EmitSharedAtomicExchange32x2(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
+                                  std::string_view value);
 void EmitStorageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value);
 void EmitStorageAtomicSMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -482,6 +484,24 @@ void EmitStorageAtomicXor64(EmitContext& ctx, IR::Inst& inst, const IR::Value& b
                             const IR::Value& offset, std::string_view value);
 void EmitStorageAtomicExchange64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                                  const IR::Value& offset, std::string_view value);
+void EmitStorageAtomicIAdd32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                               const IR::Value& offset, std::string_view value);
+void EmitStorageAtomicSMin32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                               const IR::Value& offset, std::string_view value);
+void EmitStorageAtomicUMin32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                               const IR::Value& offset, std::string_view value);
+void EmitStorageAtomicSMax32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                               const IR::Value& offset, std::string_view value);
+void EmitStorageAtomicUMax32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                               const IR::Value& offset, std::string_view value);
+void EmitStorageAtomicAnd32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                              const IR::Value& offset, std::string_view value);
+void EmitStorageAtomicOr32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                             const IR::Value& offset, std::string_view value);
+void EmitStorageAtomicXor32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                              const IR::Value& offset, std::string_view value);
+void EmitStorageAtomicExchange32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                                   const IR::Value& offset, std::string_view value);
 void EmitStorageAtomicAddF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value);
 void EmitStorageAtomicAddF16x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -518,6 +538,17 @@ void EmitGlobalAtomicAnd64(EmitContext& ctx);
 void EmitGlobalAtomicOr64(EmitContext& ctx);
 void EmitGlobalAtomicXor64(EmitContext& ctx);
 void EmitGlobalAtomicExchange64(EmitContext& ctx);
+void EmitGlobalAtomicIAdd32x2(EmitContext& ctx);
+void EmitGlobalAtomicSMin32x2(EmitContext& ctx);
+void EmitGlobalAtomicUMin32x2(EmitContext& ctx);
+void EmitGlobalAtomicSMax32x2(EmitContext& ctx);
+void EmitGlobalAtomicUMax32x2(EmitContext& ctx);
+void EmitGlobalAtomicInc32x2(EmitContext& ctx);
+void EmitGlobalAtomicDec32x2(EmitContext& ctx);
+void EmitGlobalAtomicAnd32x2(EmitContext& ctx);
+void EmitGlobalAtomicOr32x2(EmitContext& ctx);
+void EmitGlobalAtomicXor32x2(EmitContext& ctx);
+void EmitGlobalAtomicExchange32x2(EmitContext& ctx);
 void EmitGlobalAtomicAddF32(EmitContext& ctx);
 void EmitGlobalAtomicAddF16x2(EmitContext& ctx);
 void EmitGlobalAtomicAddF32x2(EmitContext& ctx);

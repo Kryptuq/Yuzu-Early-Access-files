@@ -22,6 +22,10 @@ namespace Tegra {
 class MemoryManager;
 }
 
+namespace VideoCore {
+class RasterizerInterface;
+}
+
 namespace Tegra::Engines {
 
 /**
@@ -37,6 +41,9 @@ class KeplerMemory final : public EngineInterface {
 public:
     explicit KeplerMemory(Core::System& system_, MemoryManager& memory_manager);
     ~KeplerMemory() override;
+
+    /// Binds a rasterizer to this engine.
+    void BindRasterizer(VideoCore::RasterizerInterface* rasterizer);
 
     /// Write the value to the register identified by method.
     void CallMethod(u32 method, u32 method_argument, bool is_last_call) override;

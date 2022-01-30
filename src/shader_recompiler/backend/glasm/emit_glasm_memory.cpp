@@ -311,6 +311,13 @@ void EmitSharedAtomicExchange64(EmitContext& ctx, IR::Inst& inst, ScalarU32 poin
     ctx.LongAdd("ATOMS.EXCH.U64 {}.x,{},shared_mem[{}];", inst, value, pointer_offset);
 }
 
+void EmitSharedAtomicExchange32x2([[maybe_unused]] EmitContext& ctx,
+                                  [[maybe_unused]] IR::Inst& inst,
+                                  [[maybe_unused]] ScalarU32 pointer_offset,
+                                  [[maybe_unused]] Register value) {
+    throw NotImplementedException("GLASM instruction");
+}
+
 void EmitStorageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              ScalarU32 offset, ScalarU32 value) {
     Atom(ctx, inst, binding, offset, value, "ADD", "U32");
@@ -409,6 +416,62 @@ void EmitStorageAtomicXor64(EmitContext& ctx, IR::Inst& inst, const IR::Value& b
 void EmitStorageAtomicExchange64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                                  ScalarU32 offset, Register value) {
     Atom(ctx, inst, binding, offset, value, "EXCH", "U64");
+}
+
+void EmitStorageAtomicIAdd32x2([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                               [[maybe_unused]] const IR::Value& binding,
+                               [[maybe_unused]] ScalarU32 offset, [[maybe_unused]] Register value) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitStorageAtomicSMin32x2([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                               [[maybe_unused]] const IR::Value& binding,
+                               [[maybe_unused]] ScalarU32 offset, [[maybe_unused]] Register value) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitStorageAtomicUMin32x2([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                               [[maybe_unused]] const IR::Value& binding,
+                               [[maybe_unused]] ScalarU32 offset, [[maybe_unused]] Register value) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitStorageAtomicSMax32x2([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                               [[maybe_unused]] const IR::Value& binding,
+                               [[maybe_unused]] ScalarU32 offset, [[maybe_unused]] Register value) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitStorageAtomicUMax32x2([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                               [[maybe_unused]] const IR::Value& binding,
+                               [[maybe_unused]] ScalarU32 offset, [[maybe_unused]] Register value) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitStorageAtomicAnd32x2([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                              [[maybe_unused]] const IR::Value& binding,
+                              [[maybe_unused]] ScalarU32 offset, [[maybe_unused]] Register value) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitStorageAtomicOr32x2([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                             [[maybe_unused]] const IR::Value& binding,
+                             [[maybe_unused]] ScalarU32 offset, [[maybe_unused]] Register value) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitStorageAtomicXor32x2([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                              [[maybe_unused]] const IR::Value& binding,
+                              [[maybe_unused]] ScalarU32 offset, [[maybe_unused]] Register value) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitStorageAtomicExchange32x2([[maybe_unused]] EmitContext& ctx,
+                                   [[maybe_unused]] IR::Inst& inst,
+                                   [[maybe_unused]] const IR::Value& binding,
+                                   [[maybe_unused]] ScalarU32 offset,
+                                   [[maybe_unused]] Register value) {
+    throw NotImplementedException("GLASM instruction");
 }
 
 void EmitStorageAtomicAddF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -534,6 +597,50 @@ void EmitGlobalAtomicXor64(EmitContext&) {
 }
 
 void EmitGlobalAtomicExchange64(EmitContext&) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitGlobalAtomicIAdd32x2(EmitContext&) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitGlobalAtomicSMin32x2(EmitContext&) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitGlobalAtomicUMin32x2(EmitContext&) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitGlobalAtomicSMax32x2(EmitContext&) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitGlobalAtomicUMax32x2(EmitContext&) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitGlobalAtomicInc32x2(EmitContext&) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitGlobalAtomicDec32x2(EmitContext&) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitGlobalAtomicAnd32x2(EmitContext&) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitGlobalAtomicOr32x2(EmitContext&) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitGlobalAtomicXor32x2(EmitContext&) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitGlobalAtomicExchange32x2(EmitContext&) {
     throw NotImplementedException("GLASM instruction");
 }
 

@@ -31,6 +31,7 @@ Maxwell3D::~Maxwell3D() = default;
 
 void Maxwell3D::BindRasterizer(VideoCore::RasterizerInterface* rasterizer_) {
     rasterizer = rasterizer_;
+    upload_state.BindRasterizer(rasterizer_);
 }
 
 void Maxwell3D::InitializeRegisterDefaults() {

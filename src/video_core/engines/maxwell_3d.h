@@ -1557,7 +1557,8 @@ private:
 
     static constexpr u32 null_cb_data = 0xFFFFFFFF;
     struct CBDataState {
-        std::array<std::array<u32, 0x4000>, 16> buffer;
+        static constexpr size_t inline_size = 0x8000;
+        std::array<std::array<u32, inline_size>, 16> buffer;
         u32 current{null_cb_data};
         u32 id{null_cb_data};
         u32 start_pos{};

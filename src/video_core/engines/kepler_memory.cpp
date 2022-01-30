@@ -19,6 +19,10 @@ KeplerMemory::KeplerMemory(Core::System& system_, MemoryManager& memory_manager)
 
 KeplerMemory::~KeplerMemory() = default;
 
+void KeplerMemory::BindRasterizer(VideoCore::RasterizerInterface* rasterizer_) {
+    upload_state.BindRasterizer(rasterizer_);
+}
+
 void KeplerMemory::CallMethod(u32 method, u32 method_argument, bool is_last_call) {
     ASSERT_MSG(method < Regs::NUM_REGS,
                "Invalid KeplerMemory register, increase the size of the Regs structure");

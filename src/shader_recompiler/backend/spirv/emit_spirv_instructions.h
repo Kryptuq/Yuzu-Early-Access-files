@@ -335,6 +335,7 @@ Id EmitSharedAtomicOr32(EmitContext& ctx, Id pointer_offset, Id value);
 Id EmitSharedAtomicXor32(EmitContext& ctx, Id pointer_offset, Id value);
 Id EmitSharedAtomicExchange32(EmitContext& ctx, Id pointer_offset, Id value);
 Id EmitSharedAtomicExchange64(EmitContext& ctx, Id pointer_offset, Id value);
+Id EmitSharedAtomicExchange32x2(EmitContext& ctx, Id pointer_offset, Id value);
 Id EmitStorageAtomicIAdd32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
                            Id value);
 Id EmitStorageAtomicSMin32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
@@ -375,6 +376,24 @@ Id EmitStorageAtomicXor64(EmitContext& ctx, const IR::Value& binding, const IR::
                           Id value);
 Id EmitStorageAtomicExchange64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
                                Id value);
+Id EmitStorageAtomicIAdd32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                             Id value);
+Id EmitStorageAtomicSMin32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                             Id value);
+Id EmitStorageAtomicUMin32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                             Id value);
+Id EmitStorageAtomicSMax32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                             Id value);
+Id EmitStorageAtomicUMax32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                             Id value);
+Id EmitStorageAtomicAnd32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                            Id value);
+Id EmitStorageAtomicOr32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                           Id value);
+Id EmitStorageAtomicXor32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                            Id value);
+Id EmitStorageAtomicExchange32x2(EmitContext& ctx, const IR::Value& binding,
+                                 const IR::Value& offset, Id value);
 Id EmitStorageAtomicAddF32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
                            Id value);
 Id EmitStorageAtomicAddF16x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
@@ -411,6 +430,17 @@ Id EmitGlobalAtomicAnd64(EmitContext& ctx);
 Id EmitGlobalAtomicOr64(EmitContext& ctx);
 Id EmitGlobalAtomicXor64(EmitContext& ctx);
 Id EmitGlobalAtomicExchange64(EmitContext& ctx);
+Id EmitGlobalAtomicIAdd32x2(EmitContext& ctx);
+Id EmitGlobalAtomicSMin32x2(EmitContext& ctx);
+Id EmitGlobalAtomicUMin32x2(EmitContext& ctx);
+Id EmitGlobalAtomicSMax32x2(EmitContext& ctx);
+Id EmitGlobalAtomicUMax32x2(EmitContext& ctx);
+Id EmitGlobalAtomicInc32x2(EmitContext& ctx);
+Id EmitGlobalAtomicDec32x2(EmitContext& ctx);
+Id EmitGlobalAtomicAnd32x2(EmitContext& ctx);
+Id EmitGlobalAtomicOr32x2(EmitContext& ctx);
+Id EmitGlobalAtomicXor32x2(EmitContext& ctx);
+Id EmitGlobalAtomicExchange32x2(EmitContext& ctx);
 Id EmitGlobalAtomicAddF32(EmitContext& ctx);
 Id EmitGlobalAtomicAddF16x2(EmitContext& ctx);
 Id EmitGlobalAtomicAddF32x2(EmitContext& ctx);

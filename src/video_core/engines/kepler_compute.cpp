@@ -22,6 +22,7 @@ KeplerCompute::~KeplerCompute() = default;
 
 void KeplerCompute::BindRasterizer(VideoCore::RasterizerInterface* rasterizer_) {
     rasterizer = rasterizer_;
+    upload_state.BindRasterizer(rasterizer);
 }
 
 void KeplerCompute::CallMethod(u32 method, u32 method_argument, bool is_last_call) {

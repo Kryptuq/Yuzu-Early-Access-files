@@ -132,6 +132,8 @@ public:
 
     void DownloadMemory(VAddr cpu_addr, u64 size);
 
+    bool InlineMemory(VAddr dest_address, size_t copy_size, std::span<u8> inlined_buffer);
+
     void BindGraphicsUniformBuffer(size_t stage, u32 index, GPUVAddr gpu_addr, u32 size);
 
     void DisableGraphicsUniformBuffer(size_t stage, u32 index);
@@ -834,6 +836,8 @@ void BufferCache<P>::CommitAsyncFlushesHigh() {
         return;
     }
     MICROPROFILE_SCOPE(GPU_DownloadMemory);
+    const bool is_accuracy_normal =
+        Settings::values.gpu_accuracy.GetValue() == Settings::GPUAccuracy::Normal;
 
     boost::container::small_vector<std::pair<BufferCopy, BufferId>, 1> downloads;
     u64 total_size_bytes = 0;
@@ -845,6 +849,9 @@ void BufferCache<P>::CommitAsyncFlushesHigh() {
             ForEachBufferInRange(cpu_addr, size, [&](BufferId buffer_id, Buffer& buffer) {
                 buffer.ForEachDownloadRangeAndClear(
                     cpu_addr, size, [&](u64 range_offset, u64 range_size) {
+                        if (is_accuracy_normal) {
+                            return;
+                        }
                         const VAddr buffer_addr = buffer.CpuAddr();
                         const auto add_download = [&](VAddr start, VAddr end) {
                             const u64 new_offset = start - buffer_addr;
@@ -1443,10 +1450,8 @@ void BufferCache<P>::MarkWrittenBuffer(BufferId buffer_id, VAddr cpu_addr, u32 s
     const IntervalType base_interval{cpu_addr, cpu_addr + size};
     common_ranges.add(base_interval);
 
-    const bool is_accuracy_high =
-        Settings::values.gpu_accuracy.GetValue() == Settings::GPUAccuracy::High;
     const bool is_async = Settings::values.use_asynchronous_gpu_emulation.GetValue();
-    if (!is_async && !is_accuracy_high) {
+    if (!is_async) {
         return;
     }
     uncommitted_ranges.add(base_interval);
@@ -1667,6 +1672,41 @@ void BufferCache<P>::MappedUploadMemory(Buffer& buffer, u64 total_size_bytes,
         copy.src_offset += upload_staging.offset;
     }
     runtime.CopyBuffer(buffer, upload_staging.buffer, copies);
+}
+
+template <class P>
+bool BufferCache<P>::InlineMemory(VAddr dest_address, size_t copy_size,
+                                  std::span<u8> inlined_buffer) {
+    const bool is_dirty = IsRegionRegistered(dest_address, copy_size);
+    if (!is_dirty) {
+        return false;
+    }
+    if (!IsRegionGpuModified(dest_address, copy_size)) {
+        return false;
+    }
+
+    const IntervalType subtract_interval{dest_address, dest_address + copy_size};
+    ClearDownload(subtract_interval);
+
+    BufferId buffer_id = FindBuffer(dest_address, static_cast<u32>(copy_size));
+    auto& buffer = slot_buffers[buffer_id];
+    SynchronizeBuffer(buffer, dest_address, static_cast<u32>(copy_size));
+
+    if constexpr (USE_MEMORY_MAPS) {
+        std::array copies{BufferCopy{
+            .src_offset = 0,
+            .dst_offset = buffer.Offset(dest_address),
+            .size = copy_size,
+        }};
+        auto upload_staging = runtime.UploadStagingBuffer(copy_size);
+        u8* const src_pointer = upload_staging.mapped_span.data();
+        std::memcpy(src_pointer, inlined_buffer.data(), copy_size);
+        runtime.CopyBuffer(buffer, upload_staging.buffer, copies);
+    } else {
+        buffer.ImmediateUpload(buffer.Offset(dest_address), inlined_buffer);
+    }
+
+    return true;
 }
 
 template <class P>

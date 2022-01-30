@@ -484,6 +484,28 @@ Tegra::Engines::AccelerateDMAInterface& RasterizerOpenGL::AccessAccelerateDMA() 
     return accelerate_dma;
 }
 
+void RasterizerOpenGL::AccelerateInline2Memory(GPUVAddr address, size_t copy_size,
+                                               std::span<u8> memory) {
+    auto cpu_addr = gpu_memory.GpuToCpuAddress(address);
+    if (!cpu_addr) [[unlikely]] {
+        gpu_memory.WriteBlock(address, memory.data(), copy_size);
+        return;
+    }
+    gpu_memory.WriteBlockUnsafe(address, memory.data(), copy_size);
+    {
+        std::unique_lock<std::mutex> lock{buffer_cache.mutex};
+        if (!buffer_cache.InlineMemory(*cpu_addr, copy_size, memory)) {
+            buffer_cache.WriteMemory(*cpu_addr, copy_size);
+        }
+    }
+    {
+        std::scoped_lock lock_texture{texture_cache.mutex};
+        texture_cache.WriteMemory(*cpu_addr, copy_size);
+    }
+    shader_cache.InvalidateRegion(*cpu_addr, copy_size);
+    query_cache.InvalidateRegion(*cpu_addr, copy_size);
+}
+
 bool RasterizerOpenGL::AccelerateDisplay(const Tegra::FramebufferConfig& config,
                                          VAddr framebuffer_addr, u32 pixel_stride) {
     if (framebuffer_addr == 0) {

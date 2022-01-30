@@ -12,6 +12,10 @@ namespace Tegra {
 class MemoryManager;
 }
 
+namespace VideoCore {
+class RasterizerInterface;
+}
+
 namespace Tegra::Engines::Upload {
 
 struct Registers {
@@ -60,6 +64,9 @@ public:
     void ProcessExec(bool is_linear_);
     void ProcessData(u32 data, bool is_last_call);
 
+    /// Binds a rasterizer to this engine.
+    void BindRasterizer(VideoCore::RasterizerInterface* rasterizer);
+
 private:
     u32 write_offset = 0;
     u32 copy_size = 0;
@@ -68,6 +75,7 @@ private:
     bool is_linear = false;
     Registers& regs;
     MemoryManager& memory_manager;
+    VideoCore::RasterizerInterface* rasterizer = nullptr;
 };
 
 } // namespace Tegra::Engines::Upload
