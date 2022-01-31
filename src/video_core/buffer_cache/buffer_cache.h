@@ -1495,19 +1495,29 @@ typename BufferCache<P>::OverlapResult BufferCache<P>::ResolveOverlaps(VAddr cpu
         overlap_ids.push_back(overlap_id);
         overlap.Pick();
         const VAddr overlap_cpu_addr = overlap.CpuAddr();
+        bool goes_left = false;
         if (overlap_cpu_addr < begin) {
+            goes_left = true;
             cpu_addr = begin = overlap_cpu_addr;
         }
-        end = std::max(end, overlap_cpu_addr + overlap.SizeBytes());
-
+        const VAddr overlap_end = overlap_cpu_addr + overlap.SizeBytes();
+        bool goes_right = false;
+        if (overlap_end > end) {
+            goes_right = true;
+            end = overlap_end;
+        }
         stream_score += overlap.StreamScore();
         if (stream_score > STREAM_LEAP_THRESHOLD && !has_stream_leap) {
             // When this memory region has been joined a bunch of times, we assume it's being used
             // as a stream buffer. Increase the size to skip constantly recreating buffers.
             has_stream_leap = true;
-            begin -= PAGE_SIZE * 256;
-            cpu_addr = begin;
-            end += PAGE_SIZE * 256;
+            if (goes_right) {
+                begin -= PAGE_SIZE * 256;
+                cpu_addr = begin;
+            }
+            if (goes_left) {
+                end += PAGE_SIZE * 256;
+            }
         }
     }
     return OverlapResult{
