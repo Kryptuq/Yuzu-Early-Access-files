@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <algorithm>
 #include <array>
 #include <memory>
 #include <mutex>
@@ -138,7 +137,7 @@ private:
     /// @param removed_shaders Shaders to be removed from the storage
     /// @pre invalidation_mutex is locked
     /// @pre lookup_mutex is locked
-    void RemoveShadersFromStorage(std::vector<ShaderInfo*> removed_shaders);
+    void RemoveShadersFromStorage(std::span<ShaderInfo*> removed_shaders);
 
     /// @brief Creates a new entry in the lookup cache and returns its pointer
     /// @pre lookup_mutex is locked
