@@ -146,6 +146,7 @@ private:
             using FuncType = TypedCommand<T>;
             static_assert(sizeof(FuncType) < sizeof(data), "Lambda is too large");
 
+            recorded_counts++;
             command_offset = Common::AlignUp(command_offset, alignof(FuncType));
             if (command_offset > sizeof(data) - sizeof(FuncType)) {
                 return false;
@@ -167,7 +168,7 @@ private:
         }
 
         bool Empty() const {
-            return command_offset == 0;
+            return recorded_counts == 0;
         }
 
         bool HasSubmit() const {
@@ -178,6 +179,7 @@ private:
         Command* first = nullptr;
         Command* last = nullptr;
 
+        size_t recorded_counts = 0;
         size_t command_offset = 0;
         bool submit = false;
         alignas(std::max_align_t) std::array<u8, 0x8000> data{};

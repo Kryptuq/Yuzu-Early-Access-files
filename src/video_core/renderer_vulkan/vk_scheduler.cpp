@@ -140,12 +140,12 @@ bool VKScheduler::UpdateRescaling(bool is_rescaling) {
 void VKScheduler::WorkerThread(std::stop_token stop_token) {
     Common::SetCurrentThreadName("yuzu:VulkanWorker");
     do {
-        if (work_queue.empty()) {
-            wait_cv.notify_all();
-        }
         std::unique_ptr<CommandChunk> work;
         {
             std::unique_lock lock{work_mutex};
+            if (work_queue.empty()) {
+                wait_cv.notify_all();
+            }
             work_cv.wait(lock, stop_token, [this] { return !work_queue.empty(); });
             if (stop_token.stop_requested()) {
                 continue;
