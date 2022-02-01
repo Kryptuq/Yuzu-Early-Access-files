@@ -326,7 +326,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         connect(button, &QPushButton::clicked, [=, this] {
             HandleClick(
                 button, button_id,
-                [=, this](Common::ParamPackage params) {
+                [=, this](const Common::ParamPackage& params) {
                     emulated_controller->SetButtonParam(button_id, params);
                 },
                 InputCommon::Polling::InputType::Button);
@@ -392,7 +392,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         connect(button, &QPushButton::clicked, [=, this] {
             HandleClick(
                 button, motion_id,
-                [=, this](Common::ParamPackage params) {
+                [=, this](const Common::ParamPackage& params) {
                     emulated_controller->SetMotionParam(motion_id, params);
                 },
                 InputCommon::Polling::InputType::Motion);
@@ -497,10 +497,11 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                                 param.Set("invert_y", invert_str);
                                 emulated_controller->SetStickParam(analog_id, param);
                             }
-                            for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM;
-                                 ++sub_button_id) {
-                                analog_map_buttons[analog_id][sub_button_id]->setText(
-                                    AnalogToText(param, analog_sub_buttons[sub_button_id]));
+                            for (int analog_sub_button_id = 0;
+                                 analog_sub_button_id < ANALOG_SUB_BUTTONS_NUM;
+                                 ++analog_sub_button_id) {
+                                analog_map_buttons[analog_id][analog_sub_button_id]->setText(
+                                    AnalogToText(param, analog_sub_buttons[analog_sub_button_id]));
                             }
                         });
                         context_menu.exec(analog_map_buttons[analog_id][sub_button_id]->mapToGlobal(
@@ -783,7 +784,7 @@ void ConfigureInputPlayer::UpdateInputDeviceCombobox() {
     if (devices.size() == 1) {
         const auto devices_it = std::find_if(
             input_devices.begin(), input_devices.end(),
-            [first_engine, first_guid, first_port, first_pad](const Common::ParamPackage param) {
+            [first_engine, first_guid, first_port, first_pad](const Common::ParamPackage& param) {
                 return param.Get("engine", "") == first_engine &&
                        param.Get("guid", "") == first_guid && param.Get("port", 0) == first_port &&
                        param.Get("pad", 0) == first_pad;
@@ -814,7 +815,7 @@ void ConfigureInputPlayer::UpdateInputDeviceCombobox() {
     if (is_engine_equal && is_port_equal) {
         const auto devices_it = std::find_if(
             input_devices.begin(), input_devices.end(),
-            [first_engine, first_guid, second_guid, first_port](const Common::ParamPackage param) {
+            [first_engine, first_guid, second_guid, first_port](const Common::ParamPackage& param) {
                 const bool is_guid_valid =
                     (param.Get("guid", "") == first_guid &&
                      param.Get("guid2", "") == second_guid) ||
@@ -1026,7 +1027,7 @@ int ConfigureInputPlayer::GetIndexFromControllerType(Core::HID::NpadStyleIndex t
 void ConfigureInputPlayer::UpdateInputDevices() {
     input_devices = input_subsystem->GetInputDevices();
     ui->comboDevices->clear();
-    for (auto device : input_devices) {
+    for (const auto& device : input_devices) {
         ui->comboDevices->addItem(QString::fromStdString(device.Get("display", "Unknown")), {});
     }
 }
@@ -1308,7 +1309,7 @@ void ConfigureInputPlayer::HandleClick(
     }
     button->setFocus();
 
-    input_setter = new_input_setter;
+    input_setter = std::move(new_input_setter);
 
     input_subsystem->BeginMapping(type);
 
@@ -1358,7 +1359,7 @@ bool ConfigureInputPlayer::IsInputAcceptable(const Common::ParamPackage& params)
         return params.Get("engine", "") == "keyboard" || params.Get("engine", "") == "mouse";
     }
 
-    const auto current_input_device = input_devices[ui->comboDevices->currentIndex()];
+    const auto& current_input_device = input_devices[ui->comboDevices->currentIndex()];
     return params.Get("engine", "") == current_input_device.Get("engine", "") &&
            (params.Get("guid", "") == current_input_device.Get("guid", "") ||
             params.Get("guid", "") == current_input_device.Get("guid2", "")) &&

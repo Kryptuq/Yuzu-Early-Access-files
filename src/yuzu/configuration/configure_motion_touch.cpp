@@ -42,23 +42,25 @@ CalibrationConfigurationDialog::CalibrationConfigurationDialog(QWidget* parent,
     job = std::make_unique<CalibrationConfigurationJob>(
         host, port,
         [this](CalibrationConfigurationJob::Status status) {
-            QString text;
-            switch (status) {
-            case CalibrationConfigurationJob::Status::Ready:
-                text = tr("Touch the top left corner <br>of your touchpad.");
-                break;
-            case CalibrationConfigurationJob::Status::Stage1Completed:
-                text = tr("Now touch the bottom right corner <br>of your touchpad.");
-                break;
-            case CalibrationConfigurationJob::Status::Completed:
-                text = tr("Configuration completed!");
-                break;
-            default:
-                break;
-            }
-            QMetaObject::invokeMethod(this, "UpdateLabelText", Q_ARG(QString, text));
+            QMetaObject::invokeMethod(this, [status, this] {
+                QString text;
+                switch (status) {
+                case CalibrationConfigurationJob::Status::Ready:
+                    text = tr("Touch the top left corner <br>of your touchpad.");
+                    break;
+                case CalibrationConfigurationJob::Status::Stage1Completed:
+                    text = tr("Now touch the bottom right corner <br>of your touchpad.");
+                    break;
+                case CalibrationConfigurationJob::Status::Completed:
+                    text = tr("Configuration completed!");
+                    break;
+                default:
+                    break;
+                }
+                UpdateLabelText(text);
+            });
             if (status == CalibrationConfigurationJob::Status::Completed) {
-                QMetaObject::invokeMethod(this, "UpdateButtonText", Q_ARG(QString, tr("OK")));
+                QMetaObject::invokeMethod(this, [this] { UpdateButtonText(tr("OK")); });
             }
         },
         [this](u16 min_x_, u16 min_y_, u16 max_x_, u16 max_y_) {
@@ -215,11 +217,11 @@ void ConfigureMotionTouch::OnCemuhookUDPTest() {
         ui->udp_server->text().toStdString(), static_cast<u16>(ui->udp_port->text().toInt()),
         [this] {
             LOG_INFO(Frontend, "UDP input test success");
-            QMetaObject::invokeMethod(this, "ShowUDPTestResult", Q_ARG(bool, true));
+            QMetaObject::invokeMethod(this, [this] { ShowUDPTestResult(true); });
         },
         [this] {
             LOG_ERROR(Frontend, "UDP input test failed");
-            QMetaObject::invokeMethod(this, "ShowUDPTestResult", Q_ARG(bool, false));
+            QMetaObject::invokeMethod(this, [this] { ShowUDPTestResult(false); });
         });
 }
 
