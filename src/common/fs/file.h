@@ -188,9 +188,8 @@ public:
 
 #ifdef _WIN32
     template <typename Path>
-    [[nodiscard]] void Open(const Path& path, FileAccessMode mode,
-                            FileType type = FileType::BinaryFile,
-                            FileShareFlag flag = FileShareFlag::ShareReadOnly) {
+    void Open(const Path& path, FileAccessMode mode, FileType type = FileType::BinaryFile,
+              FileShareFlag flag = FileShareFlag::ShareReadOnly) {
         using ValueType = typename Path::value_type;
         if constexpr (IsChar<ValueType>) {
             Open(ToU8String(path), mode, type, flag);
