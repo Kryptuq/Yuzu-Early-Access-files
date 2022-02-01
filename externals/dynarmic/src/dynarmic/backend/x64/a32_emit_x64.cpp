@@ -715,10 +715,11 @@ void A32EmitX64::EmitA32SetGEFlagsCompressed(A32EmitContext& ctx, IR::Inst* inst
 
 void A32EmitX64::EmitA32DataSynchronizationBarrier(A32EmitContext&, IR::Inst*) {
     code.mfence();
+    code.lfence();
 }
 
 void A32EmitX64::EmitA32DataMemoryBarrier(A32EmitContext&, IR::Inst*) {
-    code.lfence();
+    code.mfence();
 }
 
 void A32EmitX64::EmitA32InstructionSynchronizationBarrier(A32EmitContext& ctx, IR::Inst*) {
