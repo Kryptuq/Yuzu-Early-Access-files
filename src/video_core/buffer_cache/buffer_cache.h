@@ -1697,6 +1697,7 @@ bool BufferCache<P>::InlineMemory(VAddr dest_address, size_t copy_size,
 
     const IntervalType subtract_interval{dest_address, dest_address + copy_size};
     ClearDownload(subtract_interval);
+    common_ranges.subtract(subtract_interval);
 
     BufferId buffer_id = FindBuffer(dest_address, static_cast<u32>(copy_size));
     auto& buffer = slot_buffers[buffer_id];
@@ -1713,7 +1714,7 @@ bool BufferCache<P>::InlineMemory(VAddr dest_address, size_t copy_size,
         std::memcpy(src_pointer, inlined_buffer.data(), copy_size);
         runtime.CopyBuffer(buffer, upload_staging.buffer, copies);
     } else {
-        buffer.ImmediateUpload(buffer.Offset(dest_address), inlined_buffer);
+        buffer.ImmediateUpload(buffer.Offset(dest_address), inlined_buffer.first(copy_size));
     }
 
     return true;

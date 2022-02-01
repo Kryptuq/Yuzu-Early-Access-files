@@ -2613,7 +2613,7 @@ static const FunctionDef SVC_Table_32[] = {
     {0x33, SvcWrap32<GetThreadContext32>, "GetThreadContext32"},
     {0x34, SvcWrap32<WaitForAddress32>, "WaitForAddress32"},
     {0x35, SvcWrap32<SignalToAddress32>, "SignalToAddress32"},
-    {0x36, nullptr, "Unknown"},
+    {0x36, SvcWrap32<SynchronizePreemptionState>, "SynchronizePreemptionState32"},
     {0x37, nullptr, "Unknown"},
     {0x38, nullptr, "Unknown"},
     {0x39, nullptr, "Unknown"},

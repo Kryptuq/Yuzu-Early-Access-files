@@ -504,14 +504,12 @@ struct GPU::Impl {
         case BufferMethods::SemaphoreAddressLow:
         case BufferMethods::SemaphoreSequence:
             break;
-        case BufferMethods::UnkCacheFlush: {
+        case BufferMethods::UnkCacheFlush:
             rasterizer->SyncGuestHost();
             break;
-        }
-        case BufferMethods::WrcacheFlush: {
+        case BufferMethods::WrcacheFlush:
             rasterizer->SignalReference();
             break;
-        }
         case BufferMethods::FenceValue:
             break;
         case BufferMethods::RefCnt:

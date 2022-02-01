@@ -484,8 +484,8 @@ Tegra::Engines::AccelerateDMAInterface& RasterizerOpenGL::AccessAccelerateDMA() 
     return accelerate_dma;
 }
 
-void RasterizerOpenGL::AccelerateInline2Memory(GPUVAddr address, size_t copy_size,
-                                               std::span<u8> memory) {
+void RasterizerOpenGL::AccelerateInlineToMemory(GPUVAddr address, size_t copy_size,
+                                                std::span<u8> memory) {
     auto cpu_addr = gpu_memory.GpuToCpuAddress(address);
     if (!cpu_addr) [[unlikely]] {
         gpu_memory.WriteBlock(address, memory.data(), copy_size);

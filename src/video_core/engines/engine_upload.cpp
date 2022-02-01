@@ -37,7 +37,7 @@ void State::ProcessData(const u32 data, const bool is_last_call) {
     }
     const GPUVAddr address{regs.dest.Address()};
     if (is_linear) {
-        rasterizer->AccelerateInline2Memory(address, copy_size, inner_buffer);
+        rasterizer->AccelerateInlineToMemory(address, copy_size, inner_buffer);
     } else {
         UNIMPLEMENTED_IF(regs.dest.z != 0);
         UNIMPLEMENTED_IF(regs.dest.depth != 1);
