@@ -109,7 +109,7 @@ void ConfigureDialog::ApplyConfiguration() {
     ui_tab->ApplyConfiguration();
     system_tab->ApplyConfiguration();
     profile_tab->ApplyConfiguration();
-    filesystem_tab->applyConfiguration();
+    filesystem_tab->ApplyConfiguration();
     input_tab->ApplyConfiguration();
     hotkeys_tab->ApplyConfiguration(registry);
     cpu_tab->ApplyConfiguration();

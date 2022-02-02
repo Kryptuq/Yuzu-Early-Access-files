@@ -178,52 +178,52 @@ void ConfigureHotkeys::SetPollingResult(Core::HID::NpadButton button, const bool
 QString ConfigureHotkeys::GetButtonName(Core::HID::NpadButton button) const {
     Core::HID::NpadButtonState state{button};
     if (state.a) {
-        return tr("A");
+        return QStringLiteral("A");
     }
     if (state.b) {
-        return tr("B");
+        return QStringLiteral("B");
     }
     if (state.x) {
-        return tr("X");
+        return QStringLiteral("X");
     }
     if (state.y) {
-        return tr("Y");
+        return QStringLiteral("Y");
     }
     if (state.l || state.right_sl || state.left_sl) {
-        return tr("L");
+        return QStringLiteral("L");
     }
     if (state.r || state.right_sr || state.left_sr) {
-        return tr("R");
+        return QStringLiteral("R");
     }
     if (state.zl) {
-        return tr("ZL");
+        return QStringLiteral("ZL");
     }
     if (state.zr) {
-        return tr("ZR");
+        return QStringLiteral("ZR");
     }
     if (state.left) {
-        return tr("Dpad_Left");
+        return QStringLiteral("Dpad_Left");
     }
     if (state.right) {
-        return tr("Dpad_Right");
+        return QStringLiteral("Dpad_Right");
     }
     if (state.up) {
-        return tr("Dpad_Up");
+        return QStringLiteral("Dpad_Up");
     }
     if (state.down) {
-        return tr("Dpad_Down");
+        return QStringLiteral("Dpad_Down");
     }
     if (state.stick_l) {
-        return tr("Left_Stick");
+        return QStringLiteral("Left_Stick");
     }
     if (state.stick_r) {
-        return tr("Right_Stick");
+        return QStringLiteral("Right_Stick");
     }
     if (state.minus) {
-        return tr("Minus");
+        return QStringLiteral("Minus");
     }
     if (state.plus) {
-        return tr("Plus");
+        return QStringLiteral("Plus");
     }
     return tr("Invalid");
 }

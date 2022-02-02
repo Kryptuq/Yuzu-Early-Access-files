@@ -217,7 +217,7 @@ private:
                                 int index) const;
 
     mutable std::mutex mutex;
-    mutable std::mutex mutex_callback;
+    mutable std::recursive_mutex mutex_callback;
     bool configuring{false};
     const std::string input_engine;
     int last_callback_key = 0;

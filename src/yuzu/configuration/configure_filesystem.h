@@ -20,11 +20,13 @@ public:
     explicit ConfigureFilesystem(QWidget* parent = nullptr);
     ~ConfigureFilesystem() override;
 
-    void applyConfiguration();
-    void retranslateUi();
+    void ApplyConfiguration();
 
 private:
-    void setConfiguration();
+    void changeEvent(QEvent* event) override;
+
+    void RetranslateUI();
+    void SetConfiguration();
 
     enum class DirectoryTarget {
         NAND,

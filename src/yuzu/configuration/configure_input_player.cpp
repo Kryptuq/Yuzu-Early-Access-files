@@ -102,6 +102,10 @@ QString GetButtonName(Common::Input::ButtonNames button_name) {
         return QObject::tr("Share");
     case Common::Input::ButtonNames::Options:
         return QObject::tr("Options");
+    case Common::Input::ButtonNames::Home:
+        return QObject::tr("Home");
+    case Common::Input::ButtonNames::Touch:
+        return QObject::tr("Touch");
     case Common::Input::ButtonNames::ButtonMouseWheel:
         return QObject::tr("Wheel", "Indicates the mouse wheel");
     case Common::Input::ButtonNames::ButtonBackward:

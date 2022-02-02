@@ -47,9 +47,9 @@ NativeClock::NativeClock(u64 emulated_cpu_frequency_, u64 emulated_clock_frequen
     _mm_mfence();
     time_point.inner.last_measure = __rdtsc();
     time_point.inner.accumulated_ticks = 0U;
-    ns_rtsc_factor = GetFixedPoint64Factor(1000000000, rtsc_frequency);
-    us_rtsc_factor = GetFixedPoint64Factor(1000000, rtsc_frequency);
-    ms_rtsc_factor = GetFixedPoint64Factor(1000, rtsc_frequency);
+    ns_rtsc_factor = GetFixedPoint64Factor(NS_RATIO, rtsc_frequency);
+    us_rtsc_factor = GetFixedPoint64Factor(US_RATIO, rtsc_frequency);
+    ms_rtsc_factor = GetFixedPoint64Factor(MS_RATIO, rtsc_frequency);
     clock_rtsc_factor = GetFixedPoint64Factor(emulated_clock_frequency, rtsc_frequency);
     cpu_rtsc_factor = GetFixedPoint64Factor(emulated_cpu_frequency, rtsc_frequency);
 }

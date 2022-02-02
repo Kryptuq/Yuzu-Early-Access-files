@@ -271,7 +271,7 @@ void UDPClient::OnPadData(Response::PadData data, std::size_t client) {
         const auto touch_axis_y_id =
             static_cast<int>(id == 0 ? PadAxes::Touch1Y : PadAxes::Touch2Y);
         const auto touch_button_id =
-            static_cast<int>(id == 0 ? PadButton::Touch1 : PadButton::touch2);
+            static_cast<int>(id == 0 ? PadButton::Touch1 : PadButton::Touch2);
 
         // TODO: Use custom calibration per device
         const Common::ParamPackage touch_param(Settings::values.touch_device.GetValue());
@@ -318,6 +318,9 @@ void UDPClient::OnPadData(Response::PadData data, std::size_t client) {
         const int button = static_cast<int>(buttons[i]);
         SetButton(identifier, button, button_status);
     }
+
+    SetButton(identifier, static_cast<int>(PadButton::Home), data.home != 0);
+    SetButton(identifier, static_cast<int>(PadButton::TouchHardPress), data.touch_hard_press != 0);
 
     SetBattery(identifier, GetBatteryLevel(data.info.battery));
 }
@@ -393,7 +396,7 @@ std::vector<Common::ParamPackage> UDPClient::GetInputDevices() const {
 
 ButtonMapping UDPClient::GetButtonMappingForDevice(const Common::ParamPackage& params) {
     // This list excludes any button that can't be really mapped
-    static constexpr std::array<std::pair<Settings::NativeButton::Values, PadButton>, 18>
+    static constexpr std::array<std::pair<Settings::NativeButton::Values, PadButton>, 20>
         switch_to_dsu_button = {
             std::pair{Settings::NativeButton::A, PadButton::Circle},
             {Settings::NativeButton::B, PadButton::Cross},
@@ -413,6 +416,8 @@ ButtonMapping UDPClient::GetButtonMappingForDevice(const Common::ParamPackage& p
             {Settings::NativeButton::SR, PadButton::R2},
             {Settings::NativeButton::LStick, PadButton::L3},
             {Settings::NativeButton::RStick, PadButton::R3},
+            {Settings::NativeButton::Home, PadButton::Home},
+            {Settings::NativeButton::Screenshot, PadButton::TouchHardPress},
         };
     if (!params.Has("guid") || !params.Has("port") || !params.Has("pad")) {
         return {};
@@ -517,6 +522,12 @@ Common::Input::ButtonNames UDPClient::GetUIButtonName(const Common::ParamPackage
         return Common::Input::ButtonNames::Share;
     case PadButton::Options:
         return Common::Input::ButtonNames::Options;
+    case PadButton::Home:
+        return Common::Input::ButtonNames::Home;
+    case PadButton::Touch1:
+    case PadButton::Touch2:
+    case PadButton::TouchHardPress:
+        return Common::Input::ButtonNames::Touch;
     default:
         return Common::Input::ButtonNames::Undefined;
     }

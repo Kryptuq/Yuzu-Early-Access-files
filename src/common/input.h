@@ -209,6 +209,8 @@ enum class ButtonNames {
     Triangle,
     Share,
     Options,
+    Home,
+    Touch,
 
     // Mouse buttons
     ButtonMouseWheel,

@@ -84,7 +84,9 @@ private:
         Cross = 0x4000,
         Square = 0x8000,
         Touch1 = 0x10000,
-        touch2 = 0x20000,
+        Touch2 = 0x20000,
+        Home = 0x40000,
+        TouchHardPress = 0x80000,
     };
 
     enum class PadAxes : u8 {
