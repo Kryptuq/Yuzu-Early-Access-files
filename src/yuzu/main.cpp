@@ -965,6 +965,7 @@ void GMainWindow::LinkActionShortcut(QAction* action, const QString& action_name
     static const QString main_window = QStringLiteral("Main Window");
     action->setShortcut(hotkey_registry.GetKeySequence(main_window, action_name));
     action->setShortcutContext(hotkey_registry.GetShortcutContext(main_window, action_name));
+    action->setAutoRepeat(false);
 
     this->addAction(action);
 
