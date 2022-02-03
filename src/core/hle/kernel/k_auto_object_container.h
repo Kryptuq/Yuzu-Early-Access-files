@@ -16,13 +16,12 @@ class KernelCore;
 class KProcess;
 
 class KAutoObjectWithListContainer {
+public:
     YUZU_NON_COPYABLE(KAutoObjectWithListContainer);
     YUZU_NON_MOVEABLE(KAutoObjectWithListContainer);
 
-public:
     using ListType = boost::intrusive::rbtree<KAutoObjectWithList>;
 
-public:
     class ListAccessor : public KScopedLightLock {
     public:
         explicit ListAccessor(KAutoObjectWithListContainer* container)
@@ -48,7 +47,6 @@ public:
 
     friend class ListAccessor;
 
-public:
     KAutoObjectWithListContainer(KernelCore& kernel) : m_lock(kernel), m_object_list() {}
 
     void Initialize() {}

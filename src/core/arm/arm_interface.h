@@ -6,6 +6,7 @@
 
 #include <array>
 #include <vector>
+#include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "core/hardware_properties.h"
 
@@ -24,8 +25,11 @@ class CPUInterruptHandler;
 using CPUInterrupts = std::array<CPUInterruptHandler, Core::Hardware::NUM_CPU_CORES>;
 
 /// Generic ARMv8 CPU interface
-class ARM_Interface : NonCopyable {
+class ARM_Interface {
 public:
+    YUZU_NON_COPYABLE(ARM_Interface);
+    YUZU_NON_MOVEABLE(ARM_Interface);
+
     explicit ARM_Interface(System& system_, CPUInterrupts& interrupt_handlers_,
                            bool uses_wall_clock_)
         : system{system_}, interrupt_handlers{interrupt_handlers_}, uses_wall_clock{

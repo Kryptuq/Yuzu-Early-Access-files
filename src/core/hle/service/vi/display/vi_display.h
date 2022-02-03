@@ -28,10 +28,10 @@ class Layer;
 
 /// Represents a single display type
 class Display {
+public:
     YUZU_NON_COPYABLE(Display);
     YUZU_NON_MOVEABLE(Display);
 
-public:
     /// Constructs a display with a given unique ID and name.
     ///
     /// @param id The unique ID for this display.

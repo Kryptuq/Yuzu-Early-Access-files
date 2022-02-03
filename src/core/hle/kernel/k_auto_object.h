@@ -20,8 +20,6 @@ class KernelCore;
 class KProcess;
 
 #define KERNEL_AUTOOBJECT_TRAITS(CLASS, BASE_CLASS)                                                \
-    YUZU_NON_COPYABLE(CLASS);                                                                      \
-    YUZU_NON_MOVEABLE(CLASS);                                                                      \
                                                                                                    \
 private:                                                                                           \
     friend class ::Kernel::KClassTokenGenerator;                                                   \
@@ -32,6 +30,9 @@ private:                                                                        
     }                                                                                              \
                                                                                                    \
 public:                                                                                            \
+    YUZU_NON_COPYABLE(CLASS);                                                                      \
+    YUZU_NON_MOVEABLE(CLASS);                                                                      \
+                                                                                                   \
     using BaseClass = BASE_CLASS;                                                                  \
     static constexpr TypeObj GetStaticTypeObj() {                                                  \
         constexpr ClassTokenType Token = ClassToken();                                             \
@@ -224,9 +225,9 @@ private:
 
 template <typename T>
 class KScopedAutoObject {
+public:
     YUZU_NON_COPYABLE(KScopedAutoObject);
 
-public:
     constexpr KScopedAutoObject() = default;
 
     constexpr KScopedAutoObject(T* o) : m_obj(o) {

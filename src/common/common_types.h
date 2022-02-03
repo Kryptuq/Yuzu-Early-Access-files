@@ -46,13 +46,3 @@ using GPUVAddr = u64; ///< Represents a pointer in the GPU virtual address space
 
 using u128 = std::array<std::uint64_t, 2>;
 static_assert(sizeof(u128) == 16, "u128 must be 128 bits wide");
-
-// An inheritable class to disallow the copy constructor and operator= functions
-class NonCopyable {
-protected:
-    constexpr NonCopyable() = default;
-    ~NonCopyable() = default;
-
-    NonCopyable(const NonCopyable&) = delete;
-    NonCopyable& operator=(const NonCopyable&) = delete;
-};

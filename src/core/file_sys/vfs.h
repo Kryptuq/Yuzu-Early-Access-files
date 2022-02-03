@@ -12,6 +12,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "core/file_sys/vfs_types.h"
 
@@ -29,8 +30,11 @@ enum class VfsEntryType {
 // A class representing an abstract filesystem. A default implementation given the root VirtualDir
 // is provided for convenience, but if the Vfs implementation has any additional state or
 // functionality, they will need to override.
-class VfsFilesystem : NonCopyable {
+class VfsFilesystem {
 public:
+    YUZU_NON_COPYABLE(VfsFilesystem);
+    YUZU_NON_MOVEABLE(VfsFilesystem);
+
     explicit VfsFilesystem(VirtualDir root);
     virtual ~VfsFilesystem();
 
@@ -77,8 +81,12 @@ protected:
 };
 
 // A class representing a file in an abstract filesystem.
-class VfsFile : NonCopyable {
+class VfsFile {
 public:
+    YUZU_NON_COPYABLE(VfsFile);
+    YUZU_NON_MOVEABLE(VfsFile);
+
+    VfsFile() = default;
     virtual ~VfsFile();
 
     // Retrieves the file name.
@@ -176,8 +184,12 @@ public:
 };
 
 // A class representing a directory in an abstract filesystem.
-class VfsDirectory : NonCopyable {
+class VfsDirectory {
 public:
+    YUZU_NON_COPYABLE(VfsDirectory);
+    YUZU_NON_MOVEABLE(VfsDirectory);
+
+    VfsDirectory() = default;
     virtual ~VfsDirectory();
 
     // Retrives the file located at path as if the current directory was root. Returns nullptr if

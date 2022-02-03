@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/page_table.h"
 #include "core/file_sys/program_metadata.h"
@@ -22,9 +23,13 @@ namespace Kernel {
 
 class KMemoryBlockManager;
 
-class KPageTable final : NonCopyable {
+class KPageTable final {
 public:
+    YUZU_NON_COPYABLE(KPageTable);
+    YUZU_NON_MOVEABLE(KPageTable);
+
     explicit KPageTable(Core::System& system_);
+    ~KPageTable();
 
     ResultCode InitializeForProcess(FileSys::ProgramAddressSpaceType as_type, bool enable_aslr,
                                     VAddr code_addr, std::size_t code_size,

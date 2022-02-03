@@ -10,6 +10,7 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/input.h"
 #include "common/param_package.h"

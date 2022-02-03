@@ -64,6 +64,8 @@ constexpr std::size_t GetSizeInRange(const KMemoryInfo& info, VAddr start, VAddr
 KPageTable::KPageTable(Core::System& system_)
     : general_lock{system_.Kernel()}, map_physical_memory_lock{system_.Kernel()}, system{system_} {}
 
+KPageTable::~KPageTable() = default;
+
 ResultCode KPageTable::InitializeForProcess(FileSys::ProgramAddressSpaceType as_type,
                                             bool enable_aslr, VAddr code_addr,
                                             std::size_t code_size, KMemoryManager::Pool pool) {

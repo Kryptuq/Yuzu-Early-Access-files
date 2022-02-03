@@ -13,8 +13,6 @@
 #include "common/common_types.h"
 #include "common/input.h"
 #include "common/param_package.h"
-#include "common/point.h"
-#include "common/quaternion.h"
 #include "common/settings.h"
 #include "common/vector_math.h"
 #include "core/hid/hid_types.h"

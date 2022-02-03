@@ -7,6 +7,7 @@
 #include <atomic>
 
 #include "common/assert.h"
+#include "common/common_funcs.h"
 #include "common/common_types.h"
 
 namespace Kernel {
@@ -15,13 +16,17 @@ class KernelCore;
 
 namespace impl {
 
-class KSlabHeapImpl final : NonCopyable {
+class KSlabHeapImpl final {
 public:
+    YUZU_NON_COPYABLE(KSlabHeapImpl);
+    YUZU_NON_MOVEABLE(KSlabHeapImpl);
+
     struct Node {
         Node* next{};
     };
 
     constexpr KSlabHeapImpl() = default;
+    constexpr ~KSlabHeapImpl() = default;
 
     void Initialize(std::size_t size) {
         ASSERT(head == nullptr);
@@ -64,9 +69,13 @@ private:
 
 } // namespace impl
 
-class KSlabHeapBase : NonCopyable {
+class KSlabHeapBase {
 public:
+    YUZU_NON_COPYABLE(KSlabHeapBase);
+    YUZU_NON_MOVEABLE(KSlabHeapBase);
+
     constexpr KSlabHeapBase() = default;
+    constexpr ~KSlabHeapBase() = default;
 
     constexpr bool Contains(uintptr_t addr) const {
         return start <= addr && addr < end;

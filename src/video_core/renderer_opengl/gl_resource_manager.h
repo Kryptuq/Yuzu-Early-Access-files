@@ -7,12 +7,14 @@
 #include <string_view>
 #include <utility>
 #include <glad/glad.h>
-#include "common/common_types.h"
+#include "common/common_funcs.h"
 
 namespace OpenGL {
 
-class OGLRenderbuffer : private NonCopyable {
+class OGLRenderbuffer final {
 public:
+    YUZU_NON_COPYABLE(OGLRenderbuffer);
+
     OGLRenderbuffer() = default;
 
     OGLRenderbuffer(OGLRenderbuffer&& o) noexcept : handle(std::exchange(o.handle, 0)) {}
@@ -36,8 +38,10 @@ public:
     GLuint handle = 0;
 };
 
-class OGLTexture : private NonCopyable {
+class OGLTexture final {
 public:
+    YUZU_NON_COPYABLE(OGLTexture);
+
     OGLTexture() = default;
 
     OGLTexture(OGLTexture&& o) noexcept : handle(std::exchange(o.handle, 0)) {}
@@ -61,8 +65,10 @@ public:
     GLuint handle = 0;
 };
 
-class OGLTextureView : private NonCopyable {
+class OGLTextureView final {
 public:
+    YUZU_NON_COPYABLE(OGLTextureView);
+
     OGLTextureView() = default;
 
     OGLTextureView(OGLTextureView&& o) noexcept : handle(std::exchange(o.handle, 0)) {}
@@ -86,8 +92,10 @@ public:
     GLuint handle = 0;
 };
 
-class OGLSampler : private NonCopyable {
+class OGLSampler final {
 public:
+    YUZU_NON_COPYABLE(OGLSampler);
+
     OGLSampler() = default;
 
     OGLSampler(OGLSampler&& o) noexcept : handle(std::exchange(o.handle, 0)) {}
@@ -111,8 +119,10 @@ public:
     GLuint handle = 0;
 };
 
-class OGLShader : private NonCopyable {
+class OGLShader final {
 public:
+    YUZU_NON_COPYABLE(OGLShader);
+
     OGLShader() = default;
 
     OGLShader(OGLShader&& o) noexcept : handle(std::exchange(o.handle, 0)) {}
@@ -132,8 +142,10 @@ public:
     GLuint handle = 0;
 };
 
-class OGLProgram : private NonCopyable {
+class OGLProgram final {
 public:
+    YUZU_NON_COPYABLE(OGLProgram);
+
     OGLProgram() = default;
 
     OGLProgram(OGLProgram&& o) noexcept : handle(std::exchange(o.handle, 0)) {}
@@ -154,8 +166,10 @@ public:
     GLuint handle = 0;
 };
 
-class OGLAssemblyProgram : private NonCopyable {
+class OGLAssemblyProgram final {
 public:
+    YUZU_NON_COPYABLE(OGLAssemblyProgram);
+
     OGLAssemblyProgram() = default;
 
     OGLAssemblyProgram(OGLAssemblyProgram&& o) noexcept : handle(std::exchange(o.handle, 0)) {}
@@ -176,8 +190,10 @@ public:
     GLuint handle = 0;
 };
 
-class OGLPipeline : private NonCopyable {
+class OGLPipeline final {
 public:
+    YUZU_NON_COPYABLE(OGLPipeline);
+
     OGLPipeline() = default;
     OGLPipeline(OGLPipeline&& o) noexcept : handle{std::exchange<GLuint>(o.handle, 0)} {}
 
@@ -198,8 +214,10 @@ public:
     GLuint handle = 0;
 };
 
-class OGLBuffer : private NonCopyable {
+class OGLBuffer final {
 public:
+    YUZU_NON_COPYABLE(OGLBuffer);
+
     OGLBuffer() = default;
 
     OGLBuffer(OGLBuffer&& o) noexcept : handle(std::exchange(o.handle, 0)) {}
@@ -223,8 +241,10 @@ public:
     GLuint handle = 0;
 };
 
-class OGLSync : private NonCopyable {
+class OGLSync final {
 public:
+    YUZU_NON_COPYABLE(OGLSync);
+
     OGLSync() = default;
 
     OGLSync(OGLSync&& o) noexcept : handle(std::exchange(o.handle, nullptr)) {}
@@ -247,8 +267,10 @@ public:
     GLsync handle = 0;
 };
 
-class OGLFramebuffer : private NonCopyable {
+class OGLFramebuffer final {
 public:
+    YUZU_NON_COPYABLE(OGLFramebuffer);
+
     OGLFramebuffer() = default;
 
     OGLFramebuffer(OGLFramebuffer&& o) noexcept : handle(std::exchange(o.handle, 0)) {}
@@ -272,8 +294,10 @@ public:
     GLuint handle = 0;
 };
 
-class OGLQuery : private NonCopyable {
+class OGLQuery final {
 public:
+    YUZU_NON_COPYABLE(OGLQuery);
+
     OGLQuery() = default;
 
     OGLQuery(OGLQuery&& o) noexcept : handle(std::exchange(o.handle, 0)) {}

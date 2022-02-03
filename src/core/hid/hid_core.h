@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "common/common_funcs.h"
 #include "core/hid/hid_types.h"
 
 namespace Core::HID {

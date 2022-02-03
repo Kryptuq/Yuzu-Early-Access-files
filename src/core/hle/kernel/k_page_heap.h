@@ -8,14 +8,44 @@
 #include <vector>
 
 #include "common/alignment.h"
+#include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "core/hle/kernel/k_page_bitmap.h"
 #include "core/hle/kernel/memory_types.h"
 
 namespace Kernel {
 
-class KPageHeap final : NonCopyable {
+class KPageHeap final {
 public:
+    YUZU_NON_COPYABLE(KPageHeap);
+    YUZU_NON_MOVEABLE(KPageHeap);
+
+    KPageHeap() = default;
+    ~KPageHeap() = default;
+
+    constexpr VAddr GetAddress() const {
+        return heap_address;
+    }
+    constexpr std::size_t GetSize() const {
+        return heap_size;
+    }
+    constexpr VAddr GetEndAddress() const {
+        return GetAddress() + GetSize();
+    }
+    constexpr std::size_t GetPageOffset(VAddr block) const {
+        return (block - GetAddress()) / PageSize;
+    }
+
+    void Initialize(VAddr heap_address, std::size_t heap_size, std::size_t metadata_size);
+    VAddr AllocateBlock(s32 index, bool random);
+    void Free(VAddr addr, std::size_t num_pages);
+
+    void UpdateUsedSize() {
+        used_size = heap_size - (GetNumFreePages() * PageSize);
+    }
+
+    static std::size_t CalculateManagementOverheadSize(std::size_t region_size);
+
     static constexpr s32 GetAlignedBlockIndex(std::size_t num_pages, std::size_t align_pages) {
         const auto target_pages{std::max(num_pages, align_pages)};
         for (std::size_t i = 0; i < NumMemoryBlockPageShifts; i++) {
@@ -45,21 +75,13 @@ public:
     }
 
 private:
-    static constexpr std::size_t NumMemoryBlockPageShifts{7};
-    static constexpr std::array<std::size_t, NumMemoryBlockPageShifts> MemoryBlockPageShifts{
-        0xC, 0x10, 0x15, 0x16, 0x19, 0x1D, 0x1E,
-    };
-
-    class Block final : NonCopyable {
-    private:
-        KPageBitmap bitmap;
-        VAddr heap_address{};
-        uintptr_t end_offset{};
-        std::size_t block_shift{};
-        std::size_t next_block_shift{};
-
+    class Block final {
     public:
+        YUZU_NON_COPYABLE(Block);
+        YUZU_NON_MOVEABLE(Block);
+
         Block() = default;
+        ~Block() = default;
 
         constexpr std::size_t GetShift() const {
             return block_shift;
@@ -129,7 +151,6 @@ private:
             return heap_address + (offset << GetShift());
         }
 
-    public:
         static constexpr std::size_t CalculateManagementOverheadSize(std::size_t region_size,
                                                                      std::size_t cur_block_shift,
                                                                      std::size_t next_block_shift) {
@@ -139,35 +160,15 @@ private:
             return KPageBitmap::CalculateManagementOverheadSize(
                 (align * 2 + Common::AlignUp(region_size, align)) / cur_block_size);
         }
+
+    private:
+        KPageBitmap bitmap;
+        VAddr heap_address{};
+        uintptr_t end_offset{};
+        std::size_t block_shift{};
+        std::size_t next_block_shift{};
     };
 
-public:
-    KPageHeap() = default;
-
-    constexpr VAddr GetAddress() const {
-        return heap_address;
-    }
-    constexpr std::size_t GetSize() const {
-        return heap_size;
-    }
-    constexpr VAddr GetEndAddress() const {
-        return GetAddress() + GetSize();
-    }
-    constexpr std::size_t GetPageOffset(VAddr block) const {
-        return (block - GetAddress()) / PageSize;
-    }
-
-    void Initialize(VAddr heap_address, std::size_t heap_size, std::size_t metadata_size);
-    VAddr AllocateBlock(s32 index, bool random);
-    void Free(VAddr addr, std::size_t num_pages);
-
-    void UpdateUsedSize() {
-        used_size = heap_size - (GetNumFreePages() * PageSize);
-    }
-
-    static std::size_t CalculateManagementOverheadSize(std::size_t region_size);
-
-private:
     constexpr std::size_t GetNumFreePages() const {
         std::size_t num_free{};
 
@@ -179,6 +180,11 @@ private:
     }
 
     void FreeBlock(VAddr block, s32 index);
+
+    static constexpr std::size_t NumMemoryBlockPageShifts{7};
+    static constexpr std::array<std::size_t, NumMemoryBlockPageShifts> MemoryBlockPageShifts{
+        0xC, 0x10, 0x15, 0x16, 0x19, 0x1D, 0x1E,
+    };
 
     VAddr heap_address{};
     std::size_t heap_size{};

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "common/assert.h"
+#include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/intrusive_red_black_tree.h"
 #include "core/hle/kernel/k_memory_region_type.h"
@@ -13,11 +14,13 @@ namespace Kernel {
 
 class KMemoryRegionAllocator;
 
-class KMemoryRegion final : public Common::IntrusiveRedBlackTreeBaseNode<KMemoryRegion>,
-                            NonCopyable {
+class KMemoryRegion final : public Common::IntrusiveRedBlackTreeBaseNode<KMemoryRegion> {
     friend class KMemoryRegionTree;
 
 public:
+    YUZU_NON_COPYABLE(KMemoryRegion);
+    YUZU_NON_MOVEABLE(KMemoryRegion);
+
     constexpr KMemoryRegion() = default;
     constexpr KMemoryRegion(u64 address_, u64 last_address_)
         : address{address_}, last_address{last_address_} {}
@@ -29,6 +32,8 @@ public:
         : KMemoryRegion(address_, last_address_, std::numeric_limits<u64>::max(), attributes_,
                         type_id_) {}
 
+    ~KMemoryRegion() = default;
+
     static constexpr int Compare(const KMemoryRegion& lhs, const KMemoryRegion& rhs) {
         if (lhs.GetAddress() < rhs.GetAddress()) {
             return -1;
@@ -39,16 +44,6 @@ public:
         }
     }
 
-private:
-    constexpr void Reset(u64 a, u64 la, u64 p, u32 r, u32 t) {
-        address = a;
-        pair_address = p;
-        last_address = la;
-        attributes = r;
-        type_id = t;
-    }
-
-public:
     constexpr u64 GetAddress() const {
         return address;
     }
@@ -108,6 +103,14 @@ public:
     }
 
 private:
+    constexpr void Reset(u64 a, u64 la, u64 p, u32 r, u32 t) {
+        address = a;
+        pair_address = p;
+        last_address = la;
+        attributes = r;
+        type_id = t;
+    }
+
     u64 address{};
     u64 last_address{};
     u64 pair_address{};
@@ -115,8 +118,25 @@ private:
     u32 type_id{};
 };
 
-class KMemoryRegionTree final : NonCopyable {
+class KMemoryRegionTree final {
+private:
+    using TreeType =
+        Common::IntrusiveRedBlackTreeBaseTraits<KMemoryRegion>::TreeType<KMemoryRegion>;
+
 public:
+    YUZU_NON_COPYABLE(KMemoryRegionTree);
+    YUZU_NON_MOVEABLE(KMemoryRegionTree);
+
+    using value_type = TreeType::value_type;
+    using size_type = TreeType::size_type;
+    using difference_type = TreeType::difference_type;
+    using pointer = TreeType::pointer;
+    using const_pointer = TreeType::const_pointer;
+    using reference = TreeType::reference;
+    using const_reference = TreeType::const_reference;
+    using iterator = TreeType::iterator;
+    using const_iterator = TreeType::const_iterator;
+
     struct DerivedRegionExtents {
         const KMemoryRegion* first_region{};
         const KMemoryRegion* last_region{};
@@ -140,29 +160,9 @@ public:
         }
     };
 
-private:
-    using TreeType =
-        Common::IntrusiveRedBlackTreeBaseTraits<KMemoryRegion>::TreeType<KMemoryRegion>;
-
-public:
-    using value_type = TreeType::value_type;
-    using size_type = TreeType::size_type;
-    using difference_type = TreeType::difference_type;
-    using pointer = TreeType::pointer;
-    using const_pointer = TreeType::const_pointer;
-    using reference = TreeType::reference;
-    using const_reference = TreeType::const_reference;
-    using iterator = TreeType::iterator;
-    using const_iterator = TreeType::const_iterator;
-
-private:
-    TreeType m_tree{};
-    KMemoryRegionAllocator& memory_region_allocator;
-
-public:
     explicit KMemoryRegionTree(KMemoryRegionAllocator& memory_region_allocator_);
+    ~KMemoryRegionTree() = default;
 
-public:
     KMemoryRegion* FindModifiable(u64 address) {
         if (auto it = this->find(KMemoryRegion(address, address, 0, 0)); it != this->end()) {
             return std::addressof(*it);
@@ -241,7 +241,6 @@ public:
         return GetDerivedRegionExtents(static_cast<KMemoryRegionType>(type_id));
     }
 
-public:
     void InsertDirectly(u64 address, u64 last_address, u32 attr = 0, u32 type_id = 0);
     bool Insert(u64 address, size_t size, u32 type_id, u32 new_attr = 0, u32 old_attr = 0);
 
@@ -252,7 +251,6 @@ public:
         return this->GetRandomAlignedRegion(size + 2 * guard_size, alignment, type_id) + guard_size;
     }
 
-public:
     // Iterator accessors.
     iterator begin() {
         return m_tree.begin();
@@ -322,13 +320,21 @@ public:
     iterator nfind(const_reference ref) const {
         return m_tree.nfind(ref);
     }
+
+private:
+    TreeType m_tree{};
+    KMemoryRegionAllocator& memory_region_allocator;
 };
 
-class KMemoryRegionAllocator final : NonCopyable {
+class KMemoryRegionAllocator final {
 public:
+    YUZU_NON_COPYABLE(KMemoryRegionAllocator);
+    YUZU_NON_MOVEABLE(KMemoryRegionAllocator);
+
     static constexpr size_t MaxMemoryRegions = 200;
 
     constexpr KMemoryRegionAllocator() = default;
+    constexpr ~KMemoryRegionAllocator() = default;
 
     template <typename... Args>
     KMemoryRegion* Allocate(Args&&... args) {

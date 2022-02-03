@@ -8,6 +8,7 @@
 #include <mutex>
 #include <tuple>
 
+#include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "core/hle/kernel/k_page_heap.h"
 #include "core/hle/result.h"
@@ -20,8 +21,11 @@ namespace Kernel {
 
 class KPageLinkedList;
 
-class KMemoryManager final : NonCopyable {
+class KMemoryManager final {
 public:
+    YUZU_NON_COPYABLE(KMemoryManager);
+    YUZU_NON_MOVEABLE(KMemoryManager);
+
     enum class Pool : u32 {
         Application = 0,
         Applet = 1,
@@ -88,26 +92,13 @@ public:
     }
 
 private:
-    class Impl final : NonCopyable {
-    private:
-        using RefCount = u16;
-
-    private:
-        KPageHeap heap;
-        Pool pool{};
-
+    class Impl final {
     public:
-        static std::size_t CalculateManagementOverheadSize(std::size_t region_size);
+        YUZU_NON_COPYABLE(Impl);
+        YUZU_NON_MOVEABLE(Impl);
 
-        static constexpr std::size_t CalculateOptimizedProcessOverheadSize(
-            std::size_t region_size) {
-            return (Common::AlignUp((region_size / PageSize), Common::BitSize<u64>()) /
-                    Common::BitSize<u64>()) *
-                   sizeof(u64);
-        }
-
-    public:
         Impl() = default;
+        ~Impl() = default;
 
         std::size_t Initialize(Pool new_pool, u64 start_address, u64 end_address);
 
@@ -130,6 +121,21 @@ private:
         constexpr VAddr GetEndAddress() const {
             return heap.GetEndAddress();
         }
+
+        static std::size_t CalculateManagementOverheadSize(std::size_t region_size);
+
+        static constexpr std::size_t CalculateOptimizedProcessOverheadSize(
+            std::size_t region_size) {
+            return (Common::AlignUp((region_size / PageSize), Common::BitSize<u64>()) /
+                    Common::BitSize<u64>()) *
+                   sizeof(u64);
+        }
+
+    private:
+        using RefCount = u16;
+
+        KPageHeap heap;
+        Pool pool{};
     };
 
 private:
