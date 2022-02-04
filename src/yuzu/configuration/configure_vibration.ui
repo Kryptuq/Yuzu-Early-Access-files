@@ -17,6 +17,13 @@
    <string notr="true"/>
   </property>
   <layout class="QVBoxLayout">
+   <item row="0" column="0" colspan="4">
+    <widget class="QLabel" name="label_1">
+     <property name="text">
+      <string>Press any controller button to vibrate the controller.</string>
+     </property>
+    </widget>
+   </item>
    <item>
     <widget class="QGroupBox" name="vibrationStrengthGroup">
      <property name="title">

@@ -181,11 +181,10 @@ public:
         case SDL_JOYSTICK_POWER_EMPTY:
             return BatteryLevel::Empty;
         case SDL_JOYSTICK_POWER_LOW:
-            return BatteryLevel::Critical;
-        case SDL_JOYSTICK_POWER_MEDIUM:
             return BatteryLevel::Low;
-        case SDL_JOYSTICK_POWER_FULL:
+        case SDL_JOYSTICK_POWER_MEDIUM:
             return BatteryLevel::Medium;
+        case SDL_JOYSTICK_POWER_FULL:
         case SDL_JOYSTICK_POWER_MAX:
             return BatteryLevel::Full;
         case SDL_JOYSTICK_POWER_UNKNOWN:

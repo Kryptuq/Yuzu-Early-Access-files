@@ -1052,8 +1052,10 @@ void GMainWindow::SetDefaultUIGeometry() {
 }
 
 void GMainWindow::RestoreUIState() {
+    setWindowFlags(windowFlags() & ~Qt::FramelessWindowHint);
     restoreGeometry(UISettings::values.geometry);
     restoreState(UISettings::values.state);
+    render_window->setWindowFlags(render_window->windowFlags() & ~Qt::FramelessWindowHint);
     render_window->restoreGeometry(UISettings::values.renderwindow_geometry);
 #if MICROPROFILE_ENABLED
     microProfileDialog->restoreGeometry(UISettings::values.microprofile_geometry);

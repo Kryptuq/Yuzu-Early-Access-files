@@ -72,6 +72,7 @@ private:
         ZL,
         ZR,
         SR,
+        Charging,
     };
 
     struct ColorMapping {
@@ -94,6 +95,7 @@ private:
         QColor slider_button{};
         QColor slider_arrow{};
         QColor deadzone{};
+        QColor charging{};
     };
 
     void UpdateColors();

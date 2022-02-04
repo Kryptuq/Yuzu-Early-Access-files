@@ -169,7 +169,7 @@ void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem,
             });
 
     connect(ui->vibrationButton, &QPushButton::clicked,
-            [this] { CallConfigureDialog<ConfigureVibration>(*this); });
+            [this, &hid_core] { CallConfigureDialog<ConfigureVibration>(*this, hid_core); });
 
     connect(ui->motionButton, &QPushButton::clicked, [this, input_subsystem] {
         CallConfigureDialog<ConfigureMotionTouch>(*this, input_subsystem);

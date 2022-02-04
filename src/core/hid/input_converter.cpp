@@ -28,7 +28,7 @@ Common::Input::BatteryStatus TransformToBattery(const Common::Input::CallbackSta
         if (value > 0.8f) {
             battery = Common::Input::BatteryLevel::Full;
         }
-        if (value >= 1.0f) {
+        if (value >= 0.95f) {
             battery = Common::Input::BatteryLevel::Charging;
         }
         break;

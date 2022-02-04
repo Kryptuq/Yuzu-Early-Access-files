@@ -257,7 +257,7 @@ void QtControllerSelectorDialog::LoadConfiguration() {
 }
 
 void QtControllerSelectorDialog::CallConfigureVibrationDialog() {
-    ConfigureVibration dialog(this);
+    ConfigureVibration dialog(this, system.HIDCore());
 
     dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
                           Qt::WindowSystemMenuHint);

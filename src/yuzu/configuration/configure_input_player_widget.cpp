@@ -70,7 +70,6 @@ void PlayerControlPreview::UpdateColors() {
         colors.slider_arrow = QColor(14, 15, 18);
         colors.font2 = QColor(255, 255, 255);
         colors.indicator = QColor(170, 238, 255);
-        colors.indicator2 = QColor(100, 255, 100);
         colors.deadzone = QColor(204, 136, 136);
         colors.slider_button = colors.button;
     }
@@ -88,7 +87,6 @@ void PlayerControlPreview::UpdateColors() {
         colors.slider_arrow = QColor(65, 68, 73);
         colors.font2 = QColor(0, 0, 0);
         colors.indicator = QColor(0, 0, 200);
-        colors.indicator2 = QColor(0, 150, 0);
         colors.deadzone = QColor(170, 0, 0);
         colors.slider_button = QColor(153, 149, 149);
     }
@@ -101,6 +99,8 @@ void PlayerControlPreview::UpdateColors() {
     colors.font = QColor(255, 255, 255);
     colors.led_on = QColor(255, 255, 0);
     colors.led_off = QColor(170, 238, 255);
+    colors.indicator2 = QColor(59, 165, 93);
+    colors.charging = QColor(250, 168, 26);
 
     colors.left = colors.primary;
     colors.right = colors.primary;
@@ -357,7 +357,7 @@ void PlayerControlPreview::DrawLeftController(QPainter& p, const QPointF center)
     DrawCircle(p, center + QPoint(26, 71), 5);
 
     // Draw battery
-    DrawBattery(p, center + QPoint(-170, -140),
+    DrawBattery(p, center + QPoint(-160, -140),
                 battery_values[Core::HID::EmulatedDeviceIndex::LeftIndex]);
 }
 
@@ -484,7 +484,7 @@ void PlayerControlPreview::DrawRightController(QPainter& p, const QPointF center
     DrawSymbol(p, center + QPoint(-26, 66), Symbol::House, 5);
 
     // Draw battery
-    DrawBattery(p, center + QPoint(110, -140),
+    DrawBattery(p, center + QPoint(120, -140),
                 battery_values[Core::HID::EmulatedDeviceIndex::RightIndex]);
 }
 
@@ -621,9 +621,9 @@ void PlayerControlPreview::DrawDualController(QPainter& p, const QPointF center)
     DrawSymbol(p, center + QPoint(50, 60), Symbol::House, 4.2f);
 
     // Draw battery
-    DrawBattery(p, center + QPoint(-100, -160),
+    DrawBattery(p, center + QPoint(-200, -10),
                 battery_values[Core::HID::EmulatedDeviceIndex::LeftIndex]);
-    DrawBattery(p, center + QPoint(40, -160),
+    DrawBattery(p, center + QPoint(160, -10),
                 battery_values[Core::HID::EmulatedDeviceIndex::RightIndex]);
 }
 
@@ -694,12 +694,12 @@ void PlayerControlPreview::DrawHandheldController(QPainter& p, const QPointF cen
 
     // ZL and ZR buttons
     p.setPen(colors.outline);
-    DrawTriggerButton(p, center + QPoint(-210, -130), Direction::Left, button_values[ZL]);
-    DrawTriggerButton(p, center + QPoint(210, -130), Direction::Right, button_values[ZR]);
+    DrawTriggerButton(p, center + QPoint(-210, -120), Direction::Left, button_values[ZL]);
+    DrawTriggerButton(p, center + QPoint(210, -120), Direction::Right, button_values[ZR]);
     p.setPen(colors.transparent);
     p.setBrush(colors.font);
-    DrawSymbol(p, center + QPoint(-210, -130), Symbol::ZL, 1.5f);
-    DrawSymbol(p, center + QPoint(210, -130), Symbol::ZR, 1.5f);
+    DrawSymbol(p, center + QPoint(-210, -120), Symbol::ZL, 1.5f);
+    DrawSymbol(p, center + QPoint(210, -120), Symbol::ZR, 1.5f);
 
     // Minus and Plus button
     p.setPen(colors.outline);
@@ -725,9 +725,9 @@ void PlayerControlPreview::DrawHandheldController(QPainter& p, const QPointF cen
     DrawSymbol(p, center + QPoint(161, 37), Symbol::House, 2.75f);
 
     // Draw battery
-    DrawBattery(p, center + QPoint(-200, 110),
+    DrawBattery(p, center + QPoint(-188, 95),
                 battery_values[Core::HID::EmulatedDeviceIndex::LeftIndex]);
-    DrawBattery(p, center + QPoint(130, 110),
+    DrawBattery(p, center + QPoint(150, 95),
                 battery_values[Core::HID::EmulatedDeviceIndex::RightIndex]);
 }
 
@@ -781,12 +781,12 @@ void PlayerControlPreview::DrawProController(QPainter& p, const QPointF center) 
 
     // ZL and ZR buttons
     p.setPen(colors.outline);
-    DrawTriggerButton(p, center + QPoint(-210, -130), Direction::Left, button_values[ZL]);
-    DrawTriggerButton(p, center + QPoint(210, -130), Direction::Right, button_values[ZR]);
+    DrawTriggerButton(p, center + QPoint(-210, -120), Direction::Left, button_values[ZL]);
+    DrawTriggerButton(p, center + QPoint(210, -120), Direction::Right, button_values[ZR]);
     p.setPen(colors.transparent);
     p.setBrush(colors.font);
-    DrawSymbol(p, center + QPoint(-210, -130), Symbol::ZL, 1.5f);
-    DrawSymbol(p, center + QPoint(210, -130), Symbol::ZR, 1.5f);
+    DrawSymbol(p, center + QPoint(-210, -120), Symbol::ZL, 1.5f);
+    DrawSymbol(p, center + QPoint(210, -120), Symbol::ZR, 1.5f);
 
     // Minus and Plus buttons
     p.setPen(colors.outline);
@@ -818,7 +818,7 @@ void PlayerControlPreview::DrawProController(QPainter& p, const QPointF center) 
     DrawSymbol(p, center + QPoint(29, -56), Symbol::House, 3.9f);
 
     // Draw battery
-    DrawBattery(p, center + QPoint(-30, -160),
+    DrawBattery(p, center + QPoint(-20, -160),
                 battery_values[Core::HID::EmulatedDeviceIndex::LeftIndex]);
 }
 
@@ -875,7 +875,7 @@ void PlayerControlPreview::DrawGCController(QPainter& p, const QPointF center) {
     DrawCircleButton(p, center + QPoint(0, -44), button_values[Plus], 8);
 
     // Draw battery
-    DrawBattery(p, center + QPoint(-30, -165),
+    DrawBattery(p, center + QPoint(-20, 110),
                 battery_values[Core::HID::EmulatedDeviceIndex::LeftIndex]);
 }
 
@@ -1028,6 +1028,10 @@ constexpr std::array<float, 30 * 2> symbol_c = {
     0.66f,  -4.94f, 2.54f,  -4.67f, 4.33f,  -4.0f,  4.63f,  -2.27f, 3.37f,  -2.7f,  1.6f,   -3.4f,
     -0.3f,  -3.5f,  -2.09f, -2.87f, -3.34f, -1.45f, -3.91f, 0.37f,  -3.95f, 2.27f,  -3.49f, 4.12f,
     -2.37f, 5.64f,  -0.65f, 6.44f,  1.25f,  6.47f,  3.06f,  5.89f,  4.63f,  4.92f,  4.63f,  6.83f,
+};
+
+constexpr std::array<float, 6 * 2> symbol_charging = {
+    6.5f, -1.0f, 1.0f, -1.0f, 1.0f, -3.0f, -6.5f, 1.0f, -1.0f, 1.0f, -1.0f, 3.0f,
 };
 
 constexpr std::array<float, 12 * 2> house = {
@@ -2674,36 +2678,43 @@ void PlayerControlPreview::DrawBattery(QPainter& p, QPointF center,
     if (battery == Common::Input::BatteryLevel::None) {
         return;
     }
-    p.setPen(colors.outline);
+    // Draw outline
+    p.setPen(QPen(colors.button, 5));
     p.setBrush(colors.transparent);
-    p.drawRect(center.x(), center.y(), 56, 20);
-    p.drawRect(center.x() + 56, center.y() + 6, 3, 8);
-    p.setBrush(colors.deadzone);
+    p.drawRoundedRect(center.x(), center.y(), 34, 16, 2, 2);
+
+    p.setPen(QPen(colors.button, 3));
+    p.drawRect(center.x() + 35, center.y() + 4.5f, 4, 7);
+
+    // Draw Battery shape
+    p.setPen(QPen(colors.indicator2, 3));
+    p.setBrush(colors.transparent);
+    p.drawRoundedRect(center.x(), center.y(), 34, 16, 2, 2);
+
+    p.setPen(QPen(colors.indicator2, 1));
+    p.setBrush(colors.indicator2);
+    p.drawRect(center.x() + 35, center.y() + 4.5f, 4, 7);
     switch (battery) {
     case Common::Input::BatteryLevel::Charging:
-        p.setBrush(colors.indicator2);
-        p.drawText(center + QPoint(2, 14), tr("Charging"));
+        p.drawRect(center.x(), center.y(), 34, 16);
+        p.setPen(colors.slider);
+        p.setBrush(colors.charging);
+        DrawSymbol(p, center + QPointF(17.0f, 8.0f), Symbol::Charging, 2.1f);
         break;
     case Common::Input::BatteryLevel::Full:
-        p.drawRect(center.x() + 42, center.y(), 14, 20);
-        p.drawRect(center.x() + 28, center.y(), 14, 20);
-        p.drawRect(center.x() + 14, center.y(), 14, 20);
-        p.drawRect(center.x(), center.y(), 14, 20);
+        p.drawRect(center.x(), center.y(), 34, 16);
         break;
     case Common::Input::BatteryLevel::Medium:
-        p.drawRect(center.x() + 28, center.y(), 14, 20);
-        p.drawRect(center.x() + 14, center.y(), 14, 20);
-        p.drawRect(center.x(), center.y(), 14, 20);
+        p.drawRect(center.x(), center.y(), 25, 16);
         break;
     case Common::Input::BatteryLevel::Low:
-        p.drawRect(center.x() + 14, center.y(), 14, 20);
-        p.drawRect(center.x(), center.y(), 14, 20);
+        p.drawRect(center.x(), center.y(), 17, 16);
         break;
     case Common::Input::BatteryLevel::Critical:
-        p.drawRect(center.x(), center.y(), 14, 20);
+        p.drawRect(center.x(), center.y(), 6, 16);
         break;
     case Common::Input::BatteryLevel::Empty:
-        p.drawRect(center.x(), center.y(), 5, 20);
+        p.drawRect(center.x(), center.y(), 3, 16);
         break;
     default:
         break;
@@ -2724,6 +2735,7 @@ void PlayerControlPreview::DrawSymbol(QPainter& p, const QPointF center, Symbol 
     std::array<QPointF, symbol_sl.size() / 2> sl_icon;
     std::array<QPointF, symbol_zr.size() / 2> zr_icon;
     std::array<QPointF, symbol_sr.size() / 2> sr_icon;
+    std::array<QPointF, symbol_charging.size() / 2> charging_icon;
     switch (symbol) {
     case Symbol::House:
         for (std::size_t point = 0; point < house.size() / 2; ++point) {
@@ -2808,6 +2820,13 @@ void PlayerControlPreview::DrawSymbol(QPainter& p, const QPointF center, Symbol 
                                               symbol_sr[point * 2 + 1] * icon_size);
         }
         p.drawPolygon(sr_icon.data(), static_cast<int>(sr_icon.size()));
+        break;
+    case Symbol::Charging:
+        for (std::size_t point = 0; point < symbol_charging.size() / 2; ++point) {
+            charging_icon[point] = center + QPointF(symbol_charging[point * 2] * icon_size,
+                                                    symbol_charging[point * 2 + 1] * icon_size);
+        }
+        p.drawPolygon(charging_icon.data(), static_cast<int>(charging_icon.size()));
         break;
     }
 }
