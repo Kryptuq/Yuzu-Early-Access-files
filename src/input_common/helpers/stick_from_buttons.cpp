@@ -167,12 +167,34 @@ public:
     }
 
     void UpdateModButtonStatus(const Common::Input::CallbackStatus& button_callback) {
-        modifier_status = button_callback.button_status.value;
+        const auto& new_status = button_callback.button_status;
+        const bool new_button_value = new_status.inverted ? !new_status.value : new_status.value;
+        modifier_status.toggle = new_status.toggle;
+
+        // Update button status with current
+        if (!modifier_status.toggle) {
+            modifier_status.locked = false;
+            if (modifier_status.value != new_button_value) {
+                modifier_status.value = new_button_value;
+            }
+        } else {
+            // Toggle button and lock status
+            if (new_button_value && !modifier_status.locked) {
+                modifier_status.locked = true;
+                modifier_status.value = !modifier_status.value;
+            }
+
+            // Unlock button ready for next press
+            if (!new_button_value && modifier_status.locked) {
+                modifier_status.locked = false;
+            }
+        }
+
         UpdateStatus();
     }
 
     void UpdateStatus() {
-        const float coef = modifier_status ? modifier_scale : 1.0f;
+        const float coef = modifier_status.value ? modifier_scale : 1.0f;
 
         bool r = right_status;
         bool l = left_status;
@@ -266,7 +288,7 @@ public:
         if (down_status) {
             --y;
         }
-        const float coef = modifier_status ? modifier_scale : 1.0f;
+        const float coef = modifier_status.value ? modifier_scale : 1.0f;
         status.x.raw_value = static_cast<float>(x) * coef * (y == 0 ? 1.0f : SQRT_HALF);
         status.y.raw_value = static_cast<float>(y) * coef * (x == 0 ? 1.0f : SQRT_HALF);
         return status;
@@ -287,9 +309,9 @@ private:
     bool down_status{};
     bool left_status{};
     bool right_status{};
-    bool modifier_status{};
     float last_x_axis_value{};
     float last_y_axis_value{};
+    Common::Input::ButtonStatus modifier_status{};
     const Common::Input::AnalogProperties properties{0.0f, 1.0f, 0.5f, 0.0f, false};
     std::chrono::time_point<std::chrono::steady_clock> last_update;
 };
