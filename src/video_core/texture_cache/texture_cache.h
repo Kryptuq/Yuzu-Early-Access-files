@@ -369,7 +369,7 @@ template <bool has_blacklists>
 void TextureCache<P>::FillImageViews(DescriptorTable<TICEntry>& table,
                                      std::span<ImageViewId> cached_image_view_ids,
                                      std::span<ImageViewInOut> views) {
-    bool has_blacklisted;
+    bool has_blacklisted = false;
     do {
         has_deleted_images = false;
         if constexpr (has_blacklists) {
@@ -1763,7 +1763,7 @@ void TextureCache<P>::SynchronizeAliases(ImageId image_id) {
     });
     const auto& resolution = Settings::values.resolution_info;
     for (const AliasedImage* const aliased : aliased_images) {
-        if (!resolution.active | !any_rescaled) {
+        if (!resolution.active || !any_rescaled) {
             CopyImage(image_id, aliased->id, aliased->copies);
             continue;
         }
@@ -1774,19 +1774,7 @@ void TextureCache<P>::SynchronizeAliases(ImageId image_id) {
             continue;
         }
         ScaleUp(aliased_image);
-
-        const bool both_2d{image.info.type == ImageType::e2D &&
-                           aliased_image.info.type == ImageType::e2D};
-        auto copies = aliased->copies;
-        for (auto copy : copies) {
-            copy.extent.width = std::max<u32>(
-                (copy.extent.width * resolution.up_scale) >> resolution.down_shift, 1);
-            if (both_2d) {
-                copy.extent.height = std::max<u32>(
-                    (copy.extent.height * resolution.up_scale) >> resolution.down_shift, 1);
-            }
-        }
-        CopyImage(image_id, aliased->id, copies);
+        CopyImage(image_id, aliased->id, aliased->copies);
     }
 }
 
