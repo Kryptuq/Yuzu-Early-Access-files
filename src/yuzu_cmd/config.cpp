@@ -66,6 +66,11 @@ static const std::array<int, Settings::NativeButton::NumButtons> default_buttons
     SDL_SCANCODE_M, SDL_SCANCODE_N, SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_B,
 };
 
+static const std::array<int, Settings::NativeMotion::NumMotions> default_motions = {
+    SDL_SCANCODE_7,
+    SDL_SCANCODE_8,
+};
+
 static const std::array<std::array<int, 5>, Settings::NativeAnalog::NumAnalogs> default_analogs{{
     {
         SDL_SCANCODE_UP,
@@ -102,27 +107,42 @@ void Config::ReadSetting(const std::string& group, Settings::BasicSetting<Type>&
 void Config::ReadValues() {
     // Controls
     for (std::size_t p = 0; p < Settings::values.players.GetValue().size(); ++p) {
+        auto& player = Settings::values.players.GetValue()[p];
+
         const auto group = fmt::format("ControlsP{}", p);
         for (int i = 0; i < Settings::NativeButton::NumButtons; ++i) {
             std::string default_param = InputCommon::GenerateKeyboardParam(default_buttons[i]);
-            Settings::values.players.GetValue()[p].buttons[i] =
+            player.buttons[i] =
                 sdl2_config->Get(group, Settings::NativeButton::mapping[i], default_param);
-            if (Settings::values.players.GetValue()[p].buttons[i].empty())
-                Settings::values.players.GetValue()[p].buttons[i] = default_param;
+            if (player.buttons[i].empty()) {
+                player.buttons[i] = default_param;
+            }
         }
 
         for (int i = 0; i < Settings::NativeAnalog::NumAnalogs; ++i) {
             std::string default_param = InputCommon::GenerateAnalogParamFromKeys(
                 default_analogs[i][0], default_analogs[i][1], default_analogs[i][2],
                 default_analogs[i][3], default_analogs[i][4], 0.5f);
-            Settings::values.players.GetValue()[p].analogs[i] =
+            player.analogs[i] =
                 sdl2_config->Get(group, Settings::NativeAnalog::mapping[i], default_param);
-            if (Settings::values.players.GetValue()[p].analogs[i].empty())
-                Settings::values.players.GetValue()[p].analogs[i] = default_param;
+            if (player.analogs[i].empty()) {
+                player.analogs[i] = default_param;
+            }
         }
 
-        Settings::values.players.GetValue()[p].connected =
-            sdl2_config->GetBoolean(group, "connected", false);
+        for (int i = 0; i < Settings::NativeMotion::NumMotions; ++i) {
+            const std::string default_param =
+                InputCommon::GenerateKeyboardParam(default_motions[i]);
+            auto& player_motions = player.motions[i];
+
+            player_motions =
+                sdl2_config->Get(group, Settings::NativeMotion::mapping[i], default_param);
+            if (player_motions.empty()) {
+                player_motions = default_param;
+            }
+        }
+
+        player.connected = sdl2_config->GetBoolean(group, "connected", false);
     }
 
     ReadSetting("ControlsGeneral", Settings::values.mouse_enabled);
