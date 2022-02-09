@@ -118,16 +118,6 @@ u16 GenerateCrc16(const void* data, std::size_t size) {
     return Common::swap16(static_cast<u16>(crc));
 }
 
-Common::UUID GenerateValidUUID() {
-    auto uuid{Common::UUID::Generate()};
-
-    // Bit 7 must be set, and bit 6 unset for the UUID to be valid
-    uuid.uuid[1] &= 0xFFFFFFFFFFFFFF3FULL;
-    uuid.uuid[1] |= 0x0000000000000080ULL;
-
-    return uuid;
-}
-
 template <typename T>
 T GetRandomValue(T min, T max) {
     std::random_device device;
@@ -383,7 +373,7 @@ MiiStoreData::MiiStoreData() = default;
 MiiStoreData::MiiStoreData(const MiiStoreData::Name& name, const MiiStoreBitFields& bit_fields,
                            const Common::UUID& user_id) {
     data.name = name;
-    data.uuid = GenerateValidUUID();
+    data.uuid = Common::UUID::MakeRandomRFC4122V4();
 
     std::memcpy(data.data.data(), &bit_fields, sizeof(MiiStoreBitFields));
     data_crc = GenerateCrc16(data.data.data(), sizeof(data));

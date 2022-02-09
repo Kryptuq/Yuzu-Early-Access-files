@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include "common/alignment.h"
 #include "common/common_types.h"
 #include "core/device_memory.h"
 #include "core/hle/kernel/k_auto_object.h"
@@ -28,8 +29,7 @@ ResultCode KCodeMemory::Initialize(Core::DeviceMemory& device_memory, VAddr addr
     auto& page_table = m_owner->PageTable();
 
     // Construct the page group.
-    KMemoryInfo kBlockInfo = page_table.QueryInfo(addr);
-    m_page_group = KPageLinkedList(kBlockInfo.GetAddress(), kBlockInfo.GetNumPages());
+    m_page_group = KPageLinkedList(addr, Common::DivideUp(size, PageSize));
 
     // Lock the memory.
     R_TRY(page_table.LockForCodeMemory(addr, size))

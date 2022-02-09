@@ -16,7 +16,7 @@
 
 // Pad Identifier of data source
 struct PadIdentifier {
-    Common::UUID guid{Common::INVALID_UUID};
+    Common::UUID guid{};
     std::size_t port{};
     std::size_t pad{};
 
@@ -59,7 +59,7 @@ namespace std {
 template <>
 struct hash<PadIdentifier> {
     size_t operator()(const PadIdentifier& pad_id) const noexcept {
-        u64 hash_value = pad_id.guid.uuid[1] ^ pad_id.guid.uuid[0];
+        u64 hash_value = pad_id.guid.Hash();
         hash_value ^= (static_cast<u64>(pad_id.port) << 32);
         hash_value ^= static_cast<u64>(pad_id.pad);
         return static_cast<size_t>(hash_value);

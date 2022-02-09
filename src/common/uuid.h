@@ -1,9 +1,11 @@
-// Copyright 2018 yuzu Emulator Project
+// Copyright 2022 yuzu Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
 #pragma once
 
+#include <array>
+#include <functional>
 #include <string>
 #include <string_view>
 
@@ -11,69 +13,119 @@
 
 namespace Common {
 
-constexpr u128 INVALID_UUID{{0, 0}};
-
-/**
- * Converts a hex string to a 128-bit unsigned integer.
- *
- * The hex string can be formatted in lowercase or uppercase, with or without the "0x" prefix.
- *
- * This function will assert and return INVALID_UUID under the following conditions:
- * - If the hex string is more than 32 characters long
- * - If the hex string contains non-hexadecimal characters
- *
- * @param hex_string Hexadecimal string
- *
- * @returns A 128-bit unsigned integer if successfully converted, INVALID_UUID otherwise.
- */
-[[nodiscard]] u128 HexStringToU128(std::string_view hex_string);
-
 struct UUID {
-    // UUIDs which are 0 are considered invalid!
-    u128 uuid;
-    UUID() = default;
-    constexpr explicit UUID(const u128& id) : uuid{id} {}
-    constexpr explicit UUID(const u64 lo, const u64 hi) : uuid{{lo, hi}} {}
-    explicit UUID(std::string_view hex_string) {
-        uuid = HexStringToU128(hex_string);
+    std::array<u8, 0x10> uuid{};
+
+    /// Constructs an invalid UUID.
+    constexpr UUID() = default;
+
+    /// Constructs a UUID from a reference to a 128 bit array.
+    constexpr explicit UUID(const std::array<u8, 16>& uuid_) : uuid{uuid_} {}
+
+    /**
+     * Constructs a UUID from either:
+     * 1. A 32 hexadecimal character string representing the bytes of the UUID
+     * 2. A RFC 4122 formatted UUID string, in the format xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+     *
+     * The input string may contain uppercase or lowercase characters, but they must:
+     * 1. Contain valid hexadecimal characters (0-9, a-f, A-F)
+     * 2. Not contain the "0x" hexadecimal prefix
+     *
+     * Should the input string not meet the above requirements,
+     * an assert will be triggered and an invalid UUID is set instead.
+     */
+    explicit UUID(std::string_view uuid_string);
+
+    ~UUID() = default;
+
+    constexpr UUID(const UUID&) noexcept = default;
+    constexpr UUID(UUID&&) noexcept = default;
+
+    constexpr UUID& operator=(const UUID&) noexcept = default;
+    constexpr UUID& operator=(UUID&&) noexcept = default;
+
+    /**
+     * Returns whether the stored UUID is valid or not.
+     *
+     * @returns True if the stored UUID is valid, false otherwise.
+     */
+    constexpr bool IsValid() const {
+        return uuid != std::array<u8, 0x10>{};
     }
 
-    [[nodiscard]] constexpr explicit operator bool() const {
-        return uuid != INVALID_UUID;
+    /**
+     * Returns whether the stored UUID is invalid or not.
+     *
+     * @returns True if the stored UUID is invalid, false otherwise.
+     */
+    constexpr bool IsInvalid() const {
+        return !IsValid();
     }
 
-    [[nodiscard]] constexpr bool operator==(const UUID& rhs) const {
-        return uuid == rhs.uuid;
+    /**
+     * Returns a 32 hexadecimal character string representing the bytes of the UUID.
+     *
+     * @returns A 32 hexadecimal character string of the UUID.
+     */
+    std::string RawString() const;
+
+    /**
+     * Returns a RFC 4122 formatted UUID string in the format xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.
+     *
+     * @returns A RFC 4122 formatted UUID string.
+     */
+    std::string FormattedString() const;
+
+    /**
+     * Returns a 64-bit hash of the UUID for use in hash table data structures.
+     *
+     * @returns A 64-bit hash of the UUID.
+     */
+    size_t Hash() const noexcept;
+
+    /// DO NOT USE. Copies the contents of the UUID into a u128.
+    u128 AsU128() const;
+
+    /**
+     * Creates a default UUID "yuzu Default UID".
+     *
+     * @returns A UUID with its bytes set to the ASCII values of "yuzu Default UID".
+     */
+    static constexpr UUID MakeDefault() {
+        return UUID{
+            {'y', 'u', 'z', 'u', ' ', 'D', 'e', 'f', 'a', 'u', 'l', 't', ' ', 'U', 'I', 'D'},
+        };
     }
 
-    [[nodiscard]] constexpr bool operator!=(const UUID& rhs) const {
-        return !operator==(rhs);
-    }
+    /**
+     * Creates a random UUID.
+     *
+     * @returns A random UUID.
+     */
+    static UUID MakeRandom();
 
-    // TODO(ogniK): Properly generate uuids based on RFC-4122
-    [[nodiscard]] static UUID Generate();
+    /**
+     * Creates a random UUID with a seed.
+     *
+     * @param seed A seed to initialize the Mersenne-Twister RNG
+     *
+     * @returns A random UUID.
+     */
+    static UUID MakeRandomWithSeed(u32 seed);
 
-    // Set the UUID to {0,0} to be considered an invalid user
-    constexpr void Invalidate() {
-        uuid = INVALID_UUID;
-    }
+    /**
+     * Creates a random UUID. The generated UUID is RFC 4122 Version 4 compliant.
+     *
+     * @returns A random UUID that is RFC 4122 Version 4 compliant.
+     */
+    static UUID MakeRandomRFC4122V4();
 
-    [[nodiscard]] constexpr bool IsInvalid() const {
-        return uuid == INVALID_UUID;
-    }
-    [[nodiscard]] constexpr bool IsValid() const {
-        return !IsInvalid();
-    }
-
-    // TODO(ogniK): Properly generate a Nintendo ID
-    [[nodiscard]] constexpr u64 GetNintendoID() const {
-        return uuid[0];
-    }
-
-    [[nodiscard]] std::string Format() const;
-    [[nodiscard]] std::string FormatSwitch() const;
+    friend constexpr bool operator==(const UUID& lhs, const UUID& rhs) = default;
 };
-static_assert(sizeof(UUID) == 16, "UUID is an invalid size!");
+static_assert(sizeof(UUID) == 0x10, "UUID has incorrect size.");
+
+/// An invalid UUID. This UUID has all its bytes set to 0.
+constexpr UUID InvalidUUID = {};
 
 } // namespace Common
 
@@ -82,7 +134,7 @@ namespace std {
 template <>
 struct hash<Common::UUID> {
     size_t operator()(const Common::UUID& uuid) const noexcept {
-        return uuid.uuid[1] ^ uuid.uuid[0];
+        return uuid.Hash();
     }
 };
 

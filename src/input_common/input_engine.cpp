@@ -96,7 +96,7 @@ bool InputEngine::GetButton(const PadIdentifier& identifier, int button) const {
     std::lock_guard lock{mutex};
     const auto controller_iter = controller_list.find(identifier);
     if (controller_iter == controller_list.cend()) {
-        LOG_ERROR(Input, "Invalid identifier guid={}, pad={}, port={}", identifier.guid.Format(),
+        LOG_ERROR(Input, "Invalid identifier guid={}, pad={}, port={}", identifier.guid.RawString(),
                   identifier.pad, identifier.port);
         return false;
     }
@@ -113,7 +113,7 @@ bool InputEngine::GetHatButton(const PadIdentifier& identifier, int button, u8 d
     std::lock_guard lock{mutex};
     const auto controller_iter = controller_list.find(identifier);
     if (controller_iter == controller_list.cend()) {
-        LOG_ERROR(Input, "Invalid identifier guid={}, pad={}, port={}", identifier.guid.Format(),
+        LOG_ERROR(Input, "Invalid identifier guid={}, pad={}, port={}", identifier.guid.RawString(),
                   identifier.pad, identifier.port);
         return false;
     }
@@ -130,7 +130,7 @@ f32 InputEngine::GetAxis(const PadIdentifier& identifier, int axis) const {
     std::lock_guard lock{mutex};
     const auto controller_iter = controller_list.find(identifier);
     if (controller_iter == controller_list.cend()) {
-        LOG_ERROR(Input, "Invalid identifier guid={}, pad={}, port={}", identifier.guid.Format(),
+        LOG_ERROR(Input, "Invalid identifier guid={}, pad={}, port={}", identifier.guid.RawString(),
                   identifier.pad, identifier.port);
         return 0.0f;
     }
@@ -147,7 +147,7 @@ BatteryLevel InputEngine::GetBattery(const PadIdentifier& identifier) const {
     std::lock_guard lock{mutex};
     const auto controller_iter = controller_list.find(identifier);
     if (controller_iter == controller_list.cend()) {
-        LOG_ERROR(Input, "Invalid identifier guid={}, pad={}, port={}", identifier.guid.Format(),
+        LOG_ERROR(Input, "Invalid identifier guid={}, pad={}, port={}", identifier.guid.RawString(),
                   identifier.pad, identifier.port);
         return BatteryLevel::Charging;
     }
@@ -159,7 +159,7 @@ BasicMotion InputEngine::GetMotion(const PadIdentifier& identifier, int motion) 
     std::lock_guard lock{mutex};
     const auto controller_iter = controller_list.find(identifier);
     if (controller_iter == controller_list.cend()) {
-        LOG_ERROR(Input, "Invalid identifier guid={}, pad={}, port={}", identifier.guid.Format(),
+        LOG_ERROR(Input, "Invalid identifier guid={}, pad={}, port={}", identifier.guid.RawString(),
                   identifier.pad, identifier.port);
         return {};
     }

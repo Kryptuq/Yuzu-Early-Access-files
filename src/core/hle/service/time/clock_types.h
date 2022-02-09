@@ -36,7 +36,7 @@ struct SteadyClockTimePoint {
     }
 
     static SteadyClockTimePoint GetRandom() {
-        return {0, Common::UUID::Generate()};
+        return {0, Common::UUID::MakeRandom()};
     }
 };
 static_assert(sizeof(SteadyClockTimePoint) == 0x18, "SteadyClockTimePoint is incorrect size");

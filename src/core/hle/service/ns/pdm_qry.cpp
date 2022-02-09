@@ -59,7 +59,7 @@ void PDM_QRY::QueryPlayStatisticsByApplicationIdAndUserAccountId(Kernel::HLERequ
 
     LOG_WARNING(Service_NS,
                 "(STUBBED) called. unknown={}. application_id=0x{:016X}, user_account_uid=0x{}",
-                unknown, application_id, user_account_uid.Format());
+                unknown, application_id, user_account_uid.RawString());
 
     IPC::ResponseBuilder rb{ctx, 12};
     rb.Push(ResultSuccess);

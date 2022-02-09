@@ -396,7 +396,7 @@ static ResultCode GetProcessId(Core::System& system, u64* out_process_id, Handle
     // Get the process id.
     *out_process_id = process->GetId();
 
-    return ResultInvalidHandle;
+    return ResultSuccess;
 }
 
 static ResultCode GetProcessId32(Core::System& system, u32* out_process_id_low,

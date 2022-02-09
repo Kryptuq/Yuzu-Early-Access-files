@@ -27,7 +27,7 @@ static_assert(sizeof(UserSelectionConfig) == 0xA0, "UserSelectionConfig has inco
 
 struct UserSelectionOutput {
     u64 result;
-    u128 uuid_selected;
+    Common::UUID uuid_selected;
 };
 static_assert(sizeof(UserSelectionOutput) == 0x18, "UserSelectionOutput has incorrect size.");
 

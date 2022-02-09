@@ -248,7 +248,7 @@ bool GCAdapter::Setup() {
         std::size_t port = 0;
         for (GCController& pad : pads) {
             pad.identifier = {
-                .guid = Common::UUID{Common::INVALID_UUID},
+                .guid = Common::UUID{},
                 .port = port++,
                 .pad = 0,
             };

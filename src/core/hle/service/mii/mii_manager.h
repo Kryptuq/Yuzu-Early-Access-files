@@ -202,7 +202,7 @@ struct MiiStoreData {
         static_assert(sizeof(MiiStoreBitFields) == sizeof(data), "data field has incorrect size.");
 
         Name name{};
-        Common::UUID uuid{Common::INVALID_UUID};
+        Common::UUID uuid{};
     } data;
 
     u16 data_crc{};
@@ -326,7 +326,7 @@ public:
     ResultCode GetIndex(const MiiInfo& info, u32& index);
 
 private:
-    const Common::UUID user_id{Common::INVALID_UUID};
+    const Common::UUID user_id{};
     u64 update_counter{};
 };
 

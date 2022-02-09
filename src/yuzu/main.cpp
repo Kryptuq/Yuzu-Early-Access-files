@@ -1690,7 +1690,7 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
 
             const auto user_save_data_path = FileSys::SaveDataFactory::GetFullPath(
                 *system, FileSys::SaveDataSpaceId::NandUser, FileSys::SaveDataType::SaveData,
-                program_id, user_id->uuid, 0);
+                program_id, user_id->AsU128(), 0);
 
             path = Common::FS::ConcatPathSafe(nand_dir, user_save_data_path);
         } else {

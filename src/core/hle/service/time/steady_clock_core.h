@@ -49,7 +49,7 @@ public:
     }
 
 private:
-    Common::UUID clock_source_id{Common::UUID::Generate()};
+    Common::UUID clock_source_id{Common::UUID::MakeRandom()};
     bool is_initialized{};
 };
 

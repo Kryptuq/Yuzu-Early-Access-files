@@ -9,17 +9,17 @@
 namespace InputCommon {
 
 constexpr PadIdentifier key_identifier = {
-    .guid = Common::UUID{Common::INVALID_UUID},
+    .guid = Common::UUID{},
     .port = 0,
     .pad = 0,
 };
 constexpr PadIdentifier keyboard_key_identifier = {
-    .guid = Common::UUID{Common::INVALID_UUID},
+    .guid = Common::UUID{},
     .port = 1,
     .pad = 0,
 };
 constexpr PadIdentifier keyboard_modifier_identifier = {
-    .guid = Common::UUID{Common::INVALID_UUID},
+    .guid = Common::UUID{},
     .port = 1,
     .pad = 1,
 };

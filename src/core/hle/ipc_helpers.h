@@ -404,6 +404,11 @@ inline s32 RequestParser::Pop() {
     return static_cast<s32>(Pop<u32>());
 }
 
+// Ignore the -Wclass-memaccess warning on memcpy for non-trivially default constructible objects.
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
+#endif
 template <typename T>
 void RequestParser::PopRaw(T& value) {
     static_assert(std::is_trivially_copyable_v<T>,
@@ -411,6 +416,9 @@ void RequestParser::PopRaw(T& value) {
     std::memcpy(&value, cmdbuf + index, sizeof(T));
     index += (sizeof(T) + 3) / 4; // round up to word length
 }
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 template <typename T>
 T RequestParser::PopRaw() {

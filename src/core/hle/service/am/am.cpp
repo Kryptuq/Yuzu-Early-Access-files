@@ -55,7 +55,7 @@ constexpr u32 LAUNCH_PARAMETER_ACCOUNT_PRESELECTED_USER_MAGIC = 0xC79497CA;
 struct LaunchParameterAccountPreselectedUser {
     u32_le magic;
     u32_le is_account_selected;
-    u128 current_user;
+    Common::UUID current_user;
     INSERT_PADDING_BYTES(0x70);
 };
 static_assert(sizeof(LaunchParameterAccountPreselectedUser) == 0x88);
@@ -1453,8 +1453,8 @@ void IApplicationFunctions::PopLaunchParameter(Kernel::HLERequestContext& ctx) {
 
         Account::ProfileManager profile_manager{};
         const auto uuid = profile_manager.GetUser(static_cast<s32>(Settings::values.current_user));
-        ASSERT(uuid);
-        params.current_user = uuid->uuid;
+        ASSERT(uuid.has_value() && uuid->IsValid());
+        params.current_user = *uuid;
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
 

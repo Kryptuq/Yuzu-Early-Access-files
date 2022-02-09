@@ -353,7 +353,7 @@ PadIdentifier UDPClient::GetPadIdentifier(std::size_t pad_index) const {
 
 Common::UUID UDPClient::GetHostUUID(const std::string& host) const {
     const auto ip = boost::asio::ip::make_address_v4(host);
-    const auto hex_host = fmt::format("{:06x}", ip.to_uint());
+    const auto hex_host = fmt::format("00000000-0000-0000-0000-0000{:06x}", ip.to_uint());
     return Common::UUID{hex_host};
 }
 
@@ -385,7 +385,7 @@ std::vector<Common::ParamPackage> UDPClient::GetInputDevices() const {
             Common::ParamPackage identifier{};
             identifier.Set("engine", GetEngineName());
             identifier.Set("display", fmt::format("UDP Controller {}", pad_identifier.pad));
-            identifier.Set("guid", pad_identifier.guid.Format());
+            identifier.Set("guid", pad_identifier.guid.RawString());
             identifier.Set("port", static_cast<int>(pad_identifier.port));
             identifier.Set("pad", static_cast<int>(pad_identifier.pad));
             devices.emplace_back(identifier);

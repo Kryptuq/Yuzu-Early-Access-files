@@ -8,7 +8,7 @@
 namespace InputCommon {
 
 constexpr PadIdentifier identifier = {
-    .guid = Common::UUID{Common::INVALID_UUID},
+    .guid = Common::UUID{},
     .port = 0,
     .pad = 0,
 };

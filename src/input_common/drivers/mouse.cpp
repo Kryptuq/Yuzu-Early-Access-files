@@ -20,7 +20,7 @@ constexpr int motion_wheel_y = 4;
 constexpr int touch_axis_x = 10;
 constexpr int touch_axis_y = 11;
 constexpr PadIdentifier identifier = {
-    .guid = Common::UUID{Common::INVALID_UUID},
+    .guid = Common::UUID{},
     .port = 0,
     .pad = 0,
 };

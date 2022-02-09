@@ -19,8 +19,8 @@ namespace FS = Common::FS;
 using Common::UUID;
 
 struct UserRaw {
-    UUID uuid{Common::INVALID_UUID};
-    UUID uuid2{Common::INVALID_UUID};
+    UUID uuid{};
+    UUID uuid2{};
     u64 timestamp{};
     ProfileUsername username{};
     ProfileData extra_data{};
@@ -45,7 +45,7 @@ ProfileManager::ProfileManager() {
 
     // Create an user if none are present
     if (user_count == 0) {
-        CreateNewUser(UUID::Generate(), "yuzu");
+        CreateNewUser(UUID::MakeRandom(), "yuzu");
     }
 
     auto current =
@@ -101,7 +101,7 @@ ResultCode ProfileManager::CreateNewUser(UUID uuid, const ProfileUsername& usern
     if (user_count == MAX_USERS) {
         return ERROR_TOO_MANY_USERS;
     }
-    if (!uuid) {
+    if (uuid.IsInvalid()) {
         return ERROR_ARGUMENT_IS_NULL;
     }
     if (username[0] == 0x0) {
@@ -145,7 +145,7 @@ std::optional<UUID> ProfileManager::GetUser(std::size_t index) const {
 
 /// Returns a users profile index based on their user id.
 std::optional<std::size_t> ProfileManager::GetUserIndex(const UUID& uuid) const {
-    if (!uuid) {
+    if (uuid.IsInvalid()) {
         return std::nullopt;
     }
 
@@ -250,9 +250,10 @@ UserIDArray ProfileManager::GetOpenUsers() const {
     std::ranges::transform(profiles, output.begin(), [](const ProfileInfo& p) {
         if (p.is_open)
             return p.user_uuid;
-        return UUID{Common::INVALID_UUID};
+        return Common::InvalidUUID;
     });
-    std::stable_partition(output.begin(), output.end(), [](const UUID& uuid) { return uuid; });
+    std::stable_partition(output.begin(), output.end(),
+                          [](const UUID& uuid) { return uuid.IsValid(); });
     return output;
 }
 
@@ -299,7 +300,7 @@ bool ProfileManager::RemoveUser(UUID uuid) {
 
     profiles[*index] = ProfileInfo{};
     std::stable_partition(profiles.begin(), profiles.end(),
-                          [](const ProfileInfo& profile) { return profile.user_uuid; });
+                          [](const ProfileInfo& profile) { return profile.user_uuid.IsValid(); });
     return true;
 }
 
@@ -361,7 +362,7 @@ void ProfileManager::ParseUserSaveFile() {
     }
 
     std::stable_partition(profiles.begin(), profiles.end(),
-                          [](const ProfileInfo& profile) { return profile.user_uuid; });
+                          [](const ProfileInfo& profile) { return profile.user_uuid.IsValid(); });
 }
 
 void ProfileManager::WriteUserSaveFile() {

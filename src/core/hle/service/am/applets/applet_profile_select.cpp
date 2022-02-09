@@ -62,11 +62,11 @@ void ProfileSelect::SelectionComplete(std::optional<Common::UUID> uuid) {
 
     if (uuid.has_value() && uuid->IsValid()) {
         output.result = 0;
-        output.uuid_selected = uuid->uuid;
+        output.uuid_selected = *uuid;
     } else {
         status = ERR_USER_CANCELLED_SELECTION;
         output.result = ERR_USER_CANCELLED_SELECTION.raw;
-        output.uuid_selected = Common::INVALID_UUID;
+        output.uuid_selected = Common::InvalidUUID;
     }
 
     final_data = std::vector<u8>(sizeof(UserSelectionOutput));

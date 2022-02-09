@@ -39,9 +39,9 @@ constexpr ResultCode ERR_FAILED_SAVE_DATA{ErrorModule::Account, 100};
 // Thumbnails are hard coded to be at least this size
 constexpr std::size_t THUMBNAIL_SIZE = 0x24000;
 
-static std::filesystem::path GetImagePath(Common::UUID uuid) {
+static std::filesystem::path GetImagePath(const Common::UUID& uuid) {
     return Common::FS::GetYuzuPath(Common::FS::YuzuPath::NANDDir) /
-           fmt::format("system/save/8000000000000010/su/avators/{}.jpg", uuid.FormatSwitch());
+           fmt::format("system/save/8000000000000010/su/avators/{}.jpg", uuid.FormattedString());
 }
 
 static constexpr u32 SanitizeJPEGSize(std::size_t size) {
@@ -290,7 +290,7 @@ public:
 
 protected:
     void Get(Kernel::HLERequestContext& ctx) {
-        LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.Format());
+        LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.RawString());
         ProfileBase profile_base{};
         ProfileData data{};
         if (profile_manager.GetProfileBaseAndData(user_id, profile_base, data)) {
@@ -300,21 +300,21 @@ protected:
             rb.PushRaw(profile_base);
         } else {
             LOG_ERROR(Service_ACC, "Failed to get profile base and data for user=0x{}",
-                      user_id.Format());
+                      user_id.RawString());
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ResultUnknown); // TODO(ogniK): Get actual error code
         }
     }
 
     void GetBase(Kernel::HLERequestContext& ctx) {
-        LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.Format());
+        LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.RawString());
         ProfileBase profile_base{};
         if (profile_manager.GetProfileBase(user_id, profile_base)) {
             IPC::ResponseBuilder rb{ctx, 16};
             rb.Push(ResultSuccess);
             rb.PushRaw(profile_base);
         } else {
-            LOG_ERROR(Service_ACC, "Failed to get profile base for user=0x{}", user_id.Format());
+            LOG_ERROR(Service_ACC, "Failed to get profile base for user=0x{}", user_id.RawString());
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ResultUnknown); // TODO(ogniK): Get actual error code
         }
@@ -373,7 +373,7 @@ protected:
         LOG_DEBUG(Service_ACC, "called, username='{}', timestamp={:016X}, uuid=0x{}",
                   Common::StringFromFixedZeroTerminatedBuffer(
                       reinterpret_cast<const char*>(base.username.data()), base.username.size()),
-                  base.timestamp, base.user_uuid.Format());
+                  base.timestamp, base.user_uuid.RawString());
 
         if (user_data.size() < sizeof(ProfileData)) {
             LOG_ERROR(Service_ACC, "ProfileData buffer too small!");
@@ -406,7 +406,7 @@ protected:
         LOG_DEBUG(Service_ACC, "called, username='{}', timestamp={:016X}, uuid=0x{}",
                   Common::StringFromFixedZeroTerminatedBuffer(
                       reinterpret_cast<const char*>(base.username.data()), base.username.size()),
-                  base.timestamp, base.user_uuid.Format());
+                  base.timestamp, base.user_uuid.RawString());
 
         if (user_data.size() < sizeof(ProfileData)) {
             LOG_ERROR(Service_ACC, "ProfileData buffer too small!");
@@ -435,7 +435,7 @@ protected:
     }
 
     ProfileManager& profile_manager;
-    Common::UUID user_id{Common::INVALID_UUID}; ///< The user id this profile refers to.
+    Common::UUID user_id{}; ///< The user id this profile refers to.
 };
 
 class IProfile final : public IProfileCommon {
@@ -547,7 +547,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(ResultSuccess);
-        rb.PushRaw<u64>(user_id.GetNintendoID());
+        rb.PushRaw<u64>(user_id.Hash());
     }
 
     void EnsureIdTokenCacheAsync(Kernel::HLERequestContext& ctx) {
@@ -577,7 +577,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(ResultSuccess);
-        rb.PushRaw<u64>(user_id.GetNintendoID());
+        rb.PushRaw<u64>(user_id.Hash());
     }
 
     void StoreOpenContext(Kernel::HLERequestContext& ctx) {
@@ -587,7 +587,7 @@ private:
     }
 
     std::shared_ptr<EnsureTokenIdCacheAsyncInterface> ensure_token_id{};
-    Common::UUID user_id{Common::INVALID_UUID};
+    Common::UUID user_id{};
 };
 
 // 6.0.0+
@@ -687,7 +687,7 @@ void Module::Interface::GetUserCount(Kernel::HLERequestContext& ctx) {
 void Module::Interface::GetUserExistence(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     Common::UUID user_id = rp.PopRaw<Common::UUID>();
-    LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.Format());
+    LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.RawString());
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);
@@ -718,7 +718,7 @@ void Module::Interface::GetLastOpenedUser(Kernel::HLERequestContext& ctx) {
 void Module::Interface::GetProfile(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     Common::UUID user_id = rp.PopRaw<Common::UUID>();
-    LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.Format());
+    LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.RawString());
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);
@@ -833,7 +833,7 @@ void Module::Interface::GetProfileEditor(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     Common::UUID user_id = rp.PopRaw<Common::UUID>();
 
-    LOG_DEBUG(Service_ACC, "called, user_id=0x{}", user_id.Format());
+    LOG_DEBUG(Service_ACC, "called, user_id=0x{}", user_id.RawString());
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);
@@ -875,7 +875,7 @@ void Module::Interface::StoreSaveDataThumbnailApplication(Kernel::HLERequestCont
     IPC::RequestParser rp{ctx};
     const auto uuid = rp.PopRaw<Common::UUID>();
 
-    LOG_WARNING(Service_ACC, "(STUBBED) called, uuid=0x{}", uuid.Format());
+    LOG_WARNING(Service_ACC, "(STUBBED) called, uuid=0x{}", uuid.RawString());
 
     // TODO(ogniK): Check if application ID is zero on acc initialize. As we don't have a reliable
     // way of confirming things like the TID, we're going to assume a non zero value for the time
@@ -889,7 +889,7 @@ void Module::Interface::StoreSaveDataThumbnailSystem(Kernel::HLERequestContext& 
     const auto uuid = rp.PopRaw<Common::UUID>();
     const auto tid = rp.Pop<u64_le>();
 
-    LOG_WARNING(Service_ACC, "(STUBBED) called, uuid=0x{}, tid={:016X}", uuid.Format(), tid);
+    LOG_WARNING(Service_ACC, "(STUBBED) called, uuid=0x{}, tid={:016X}", uuid.RawString(), tid);
     StoreSaveDataThumbnail(ctx, uuid, tid);
 }
 
@@ -903,7 +903,7 @@ void Module::Interface::StoreSaveDataThumbnail(Kernel::HLERequestContext& ctx,
         return;
     }
 
-    if (!uuid) {
+    if (uuid.IsInvalid()) {
         LOG_ERROR(Service_ACC, "User ID is not valid!");
         rb.Push(ERR_INVALID_USER_ID);
         return;
@@ -927,20 +927,20 @@ void Module::Interface::TrySelectUserWithoutInteraction(Kernel::HLERequestContex
     IPC::ResponseBuilder rb{ctx, 6};
     if (profile_manager->GetUserCount() != 1) {
         rb.Push(ResultSuccess);
-        rb.PushRaw<u128>(Common::INVALID_UUID);
+        rb.PushRaw(Common::InvalidUUID);
         return;
     }
 
     const auto user_list = profile_manager->GetAllUsers();
     if (std::ranges::all_of(user_list, [](const auto& user) { return user.IsInvalid(); })) {
         rb.Push(ResultUnknown); // TODO(ogniK): Find the correct error code
-        rb.PushRaw<u128>(Common::INVALID_UUID);
+        rb.PushRaw(Common::InvalidUUID);
         return;
     }
 
     // Select the first user we have
     rb.Push(ResultSuccess);
-    rb.PushRaw<u128>(profile_manager->GetUser(0)->uuid);
+    rb.PushRaw(profile_manager->GetUser(0)->uuid);
 }
 
 Module::Interface::Interface(std::shared_ptr<Module> module_,

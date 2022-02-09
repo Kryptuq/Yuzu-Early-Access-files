@@ -91,6 +91,8 @@ public:
             {4, &DebugMonitor::GetApplicationProcessId, "GetApplicationProcessId"},
             {5, nullptr, "HookToCreateApplicationProgress"},
             {6, nullptr, "ClearHook"},
+            {65000, &DebugMonitor::AtmosphereGetProcessInfo, "AtmosphereGetProcessInfo"},
+            {65001, nullptr, "AtmosphereGetCurrentLimitInfo"},
         };
         // clang-format on
 
@@ -123,6 +125,49 @@ private:
     void GetApplicationProcessId(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_PM, "called");
         GetApplicationPidGeneric(ctx, kernel.GetProcessList());
+    }
+
+    void AtmosphereGetProcessInfo(Kernel::HLERequestContext& ctx) {
+        // https://github.com/Atmosphere-NX/Atmosphere/blob/master/stratosphere/pm/source/impl/pm_process_manager.cpp#L614
+        // This implementation is incomplete; only a handle to the process is returned.
+        IPC::RequestParser rp{ctx};
+        const auto pid = rp.PopRaw<u64>();
+
+        LOG_WARNING(Service_PM, "(Partial Implementation) called, pid={:016X}", pid);
+
+        const auto process = SearchProcessList(kernel.GetProcessList(), [pid](const auto& proc) {
+            return proc->GetProcessID() == pid;
+        });
+
+        if (!process.has_value()) {
+            IPC::ResponseBuilder rb{ctx, 2};
+            rb.Push(ResultProcessNotFound);
+            return;
+        }
+
+        struct ProgramLocation {
+            u64 program_id;
+            u8 storage_id;
+        };
+        static_assert(sizeof(ProgramLocation) == 0x10, "ProgramLocation has an invalid size");
+
+        struct OverrideStatus {
+            u64 keys_held;
+            u64 flags;
+        };
+        static_assert(sizeof(OverrideStatus) == 0x10, "OverrideStatus has an invalid size");
+
+        OverrideStatus override_status{};
+        ProgramLocation program_location{
+            .program_id = (*process)->GetProgramID(),
+            .storage_id = 0,
+        };
+
+        IPC::ResponseBuilder rb{ctx, 10, 1};
+        rb.Push(ResultSuccess);
+        rb.PushCopyObjects(*process);
+        rb.PushRaw(program_location);
+        rb.PushRaw(override_status);
     }
 
     const Kernel::KernelCore& kernel;

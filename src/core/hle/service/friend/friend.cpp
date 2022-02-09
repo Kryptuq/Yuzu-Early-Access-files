@@ -173,7 +173,7 @@ private:
         const auto uuid = rp.PopRaw<Common::UUID>();
 
         LOG_WARNING(Service_Friend, "(STUBBED) called, local_play={}, uuid=0x{}", local_play,
-                    uuid.Format());
+                    uuid.RawString());
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
@@ -186,7 +186,7 @@ private:
         [[maybe_unused]] const auto filter = rp.PopRaw<SizedFriendFilter>();
         const auto pid = rp.Pop<u64>();
         LOG_WARNING(Service_Friend, "(STUBBED) called, offset={}, uuid=0x{}, pid={}", friend_offset,
-                    uuid.Format(), pid);
+                    uuid.RawString(), pid);
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
@@ -312,7 +312,7 @@ void Module::Interface::CreateNotificationService(Kernel::HLERequestContext& ctx
     IPC::RequestParser rp{ctx};
     auto uuid = rp.PopRaw<Common::UUID>();
 
-    LOG_DEBUG(Service_Friend, "called, uuid=0x{}", uuid.Format());
+    LOG_DEBUG(Service_Friend, "called, uuid=0x{}", uuid.RawString());
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);

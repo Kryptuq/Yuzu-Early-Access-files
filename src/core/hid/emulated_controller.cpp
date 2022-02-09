@@ -269,7 +269,8 @@ void EmulatedController::ReloadInput() {
     }
 
     // Use a common UUID for TAS
-    const auto tas_uuid = Common::UUID{0x0, 0x7A5};
+    static constexpr Common::UUID TAS_UUID = Common::UUID{
+        {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x7, 0xA5, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}};
 
     // Register TAS devices. No need to force update
     for (std::size_t index = 0; index < tas_button_devices.size(); ++index) {
@@ -278,8 +279,8 @@ void EmulatedController::ReloadInput() {
         }
         tas_button_devices[index]->SetCallback({
             .on_change =
-                [this, index, tas_uuid](const Common::Input::CallbackStatus& callback) {
-                    SetButton(callback, index, tas_uuid);
+                [this, index](const Common::Input::CallbackStatus& callback) {
+                    SetButton(callback, index, TAS_UUID);
                 },
         });
     }
@@ -290,8 +291,8 @@ void EmulatedController::ReloadInput() {
         }
         tas_stick_devices[index]->SetCallback({
             .on_change =
-                [this, index, tas_uuid](const Common::Input::CallbackStatus& callback) {
-                    SetStick(callback, index, tas_uuid);
+                [this, index](const Common::Input::CallbackStatus& callback) {
+                    SetStick(callback, index, TAS_UUID);
                 },
         });
     }

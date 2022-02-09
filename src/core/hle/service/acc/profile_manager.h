@@ -35,7 +35,7 @@ static_assert(sizeof(ProfileData) == 0x80, "ProfileData structure has incorrect 
 /// This holds general information about a users profile. This is where we store all the information
 /// based on a specific user
 struct ProfileInfo {
-    Common::UUID user_uuid{Common::INVALID_UUID};
+    Common::UUID user_uuid{};
     ProfileUsername username{};
     u64 creation_time{};
     ProfileData data{}; // TODO(ognik): Work out what this is
@@ -49,7 +49,7 @@ struct ProfileBase {
 
     // Zero out all the fields to make the profile slot considered "Empty"
     void Invalidate() {
-        user_uuid.Invalidate();
+        user_uuid = {};
         timestamp = 0;
         username.fill(0);
     }
@@ -103,7 +103,7 @@ private:
 
     std::array<ProfileInfo, MAX_USERS> profiles{};
     std::size_t user_count{};
-    Common::UUID last_opened_user{Common::INVALID_UUID};
+    Common::UUID last_opened_user{};
 };
 
 }; // namespace Service::Account

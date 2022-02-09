@@ -45,7 +45,7 @@ struct TimeManager::Impl final {
           time_zone_content_manager{system} {
 
         const auto system_time{Clock::TimeSpanType::FromSeconds(GetExternalRtcValue())};
-        SetupStandardSteadyClock(system, Common::UUID::Generate(), system_time, {}, {});
+        SetupStandardSteadyClock(system, Common::UUID::MakeRandom(), system_time, {}, {});
         SetupStandardLocalSystemClock(system, {}, system_time.ToSeconds());
 
         Clock::SystemClockContext clock_context{};

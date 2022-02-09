@@ -126,7 +126,7 @@ private:
     struct ClientConnection {
         ClientConnection();
         ~ClientConnection();
-        Common::UUID uuid{"7F000001"};
+        Common::UUID uuid{"00000000-0000-0000-0000-00007F000001"};
         std::string host{"127.0.0.1"};
         u16 port{26760};
         s8 active{-1};
