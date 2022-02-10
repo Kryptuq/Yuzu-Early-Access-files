@@ -266,7 +266,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Load &amp;Amiibo...</string>
+    <string>Load/Remove &amp;Amiibo...</string>
    </property>
   </action>
   <action name="action_Report_Compatibility">

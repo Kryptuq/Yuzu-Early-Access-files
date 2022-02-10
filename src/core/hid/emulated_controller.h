@@ -299,15 +299,22 @@ public:
 
     /**
      * Sends a specific vibration to the output device
-     * @return returns true if vibration had no errors
+     * @return true if vibration had no errors
      */
     bool SetVibration(std::size_t device_index, VibrationValue vibration);
 
     /**
      * Sends a small vibration to the output device
-     * @return returns true if SetVibration was successfull
+     * @return true if SetVibration was successfull
      */
     bool TestVibration(std::size_t device_index);
+
+    /**
+     * Sets the desired data to be polled from a controller
+     * @param polling_mode type of input desired buttons, gyro, nfc, ir, etc.
+     * @return true if SetPollingMode was successfull
+     */
+    bool SetPollingMode(Common::Input::PollingMode polling_mode);
 
     /// Returns the led pattern corresponding to this emulated controller
     LedPattern GetLedPattern() const;

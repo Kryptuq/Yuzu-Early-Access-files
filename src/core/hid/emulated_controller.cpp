@@ -885,6 +885,12 @@ bool EmulatedController::TestVibration(std::size_t device_index) {
     return SetVibration(device_index, DEFAULT_VIBRATION_VALUE);
 }
 
+bool EmulatedController::SetPollingMode(Common::Input::PollingMode polling_mode) {
+    LOG_INFO(Service_HID, "Set polling mode {}", polling_mode);
+    auto& output_device = output_devices[static_cast<std::size_t>(DeviceIndex::Right)];
+    return output_device->SetPollingMode(polling_mode) == Common::Input::PollingError::None;
+}
+
 void EmulatedController::SetLedPattern() {
     for (auto& device : output_devices) {
         if (!device) {

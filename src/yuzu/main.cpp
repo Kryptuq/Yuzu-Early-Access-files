@@ -806,21 +806,8 @@ void GMainWindow::InitializeWidgets() {
     filter_status_button = new QPushButton();
     filter_status_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
     filter_status_button->setFocusPolicy(Qt::NoFocus);
-    connect(filter_status_button, &QPushButton::clicked, [&] {
-        auto filter = Settings::values.scaling_filter.GetValue();
-        if (filter == Settings::ScalingFilter::LastFilter) {
-            filter = Settings::ScalingFilter::NearestNeighbor;
-        } else {
-            filter = static_cast<Settings::ScalingFilter>(static_cast<u32>(filter) + 1);
-        }
-        if (Settings::values.renderer_backend.GetValue() == Settings::RendererBackend::OpenGL &&
-            filter == Settings::ScalingFilter::Fsr) {
-            filter = Settings::ScalingFilter::NearestNeighbor;
-        }
-        Settings::values.scaling_filter.SetValue(filter);
-        filter_status_button->setChecked(true);
-        UpdateFilterText();
-    });
+    connect(filter_status_button, &QPushButton::clicked, this,
+            &GMainWindow::OnToggleAdaptingFilter);
     auto filter = Settings::values.scaling_filter.GetValue();
     if (Settings::values.renderer_backend.GetValue() == Settings::RendererBackend::OpenGL &&
         filter == Settings::ScalingFilter::Fsr) {
@@ -835,25 +822,7 @@ void GMainWindow::InitializeWidgets() {
     dock_status_button = new QPushButton();
     dock_status_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
     dock_status_button->setFocusPolicy(Qt::NoFocus);
-    connect(dock_status_button, &QPushButton::clicked, [&] {
-        const bool is_docked = Settings::values.use_docked_mode.GetValue();
-        auto* player_1 = system->HIDCore().GetEmulatedController(Core::HID::NpadIdType::Player1);
-        auto* handheld = system->HIDCore().GetEmulatedController(Core::HID::NpadIdType::Handheld);
-
-        if (!is_docked && handheld->IsConnected()) {
-            QMessageBox::warning(this, tr("Invalid config detected"),
-                                 tr("Handheld controller can't be used on docked mode. Pro "
-                                    "controller will be selected."));
-            handheld->Disconnect();
-            player_1->SetNpadStyleIndex(Core::HID::NpadStyleIndex::ProController);
-            player_1->Connect();
-            controller_dialog->refreshConfiguration();
-        }
-
-        Settings::values.use_docked_mode.SetValue(!is_docked);
-        dock_status_button->setChecked(!is_docked);
-        OnDockedModeChanged(is_docked, !is_docked, *system);
-    });
+    connect(dock_status_button, &QPushButton::clicked, this, &GMainWindow::OnToggleDockedMode);
     dock_status_button->setText(tr("DOCK"));
     dock_status_button->setCheckable(true);
     dock_status_button->setChecked(Settings::values.use_docked_mode.GetValue());
@@ -863,22 +832,7 @@ void GMainWindow::InitializeWidgets() {
     gpu_accuracy_button->setObjectName(QStringLiteral("GPUStatusBarButton"));
     gpu_accuracy_button->setCheckable(true);
     gpu_accuracy_button->setFocusPolicy(Qt::NoFocus);
-    connect(gpu_accuracy_button, &QPushButton::clicked, [this] {
-        switch (Settings::values.gpu_accuracy.GetValue()) {
-        case Settings::GPUAccuracy::High: {
-            Settings::values.gpu_accuracy.SetValue(Settings::GPUAccuracy::Normal);
-            break;
-        }
-        case Settings::GPUAccuracy::Normal:
-        case Settings::GPUAccuracy::Extreme:
-        default: {
-            Settings::values.gpu_accuracy.SetValue(Settings::GPUAccuracy::High);
-        }
-        }
-
-        system->ApplySettings();
-        UpdateGPUAccuracyButton();
-    });
+    connect(gpu_accuracy_button, &QPushButton::clicked, this, &GMainWindow::OnToggleGpuAccuracy);
     UpdateGPUAccuracyButton();
     statusBar()->insertPermanentWidget(0, gpu_accuracy_button);
 
@@ -980,7 +934,7 @@ void GMainWindow::InitializeHotkeys() {
     hotkey_registry.LoadHotkeys();
 
     LinkActionShortcut(ui->action_Load_File, QStringLiteral("Load File"));
-    LinkActionShortcut(ui->action_Load_Amiibo, QStringLiteral("Load Amiibo"));
+    LinkActionShortcut(ui->action_Load_Amiibo, QStringLiteral("Load/Remove Amiibo"));
     LinkActionShortcut(ui->action_Exit, QStringLiteral("Exit yuzu"));
     LinkActionShortcut(ui->action_Restart, QStringLiteral("Restart Emulation"));
     LinkActionShortcut(ui->action_Pause, QStringLiteral("Continue/Pause Emulation"));
@@ -1009,12 +963,10 @@ void GMainWindow::InitializeHotkeys() {
             ToggleFullscreen();
         }
     });
-    connect_shortcut(QStringLiteral("Change Docked Mode"), [&] {
-        Settings::values.use_docked_mode.SetValue(!Settings::values.use_docked_mode.GetValue());
-        OnDockedModeChanged(!Settings::values.use_docked_mode.GetValue(),
-                            Settings::values.use_docked_mode.GetValue(), *system);
-        dock_status_button->setChecked(Settings::values.use_docked_mode.GetValue());
-    });
+    connect_shortcut(QStringLiteral("Change Adapting Filter"),
+                     &GMainWindow::OnToggleAdaptingFilter);
+    connect_shortcut(QStringLiteral("Change Docked Mode"), &GMainWindow::OnToggleDockedMode);
+    connect_shortcut(QStringLiteral("Change GPU Accuracy"), &GMainWindow::OnToggleGpuAccuracy);
     connect_shortcut(QStringLiteral("Audio Mute/Unmute"),
                      [] { Settings::values.audio_muted = !Settings::values.audio_muted; });
     connect_shortcut(QStringLiteral("Audio Volume Down"), [] {
@@ -1082,14 +1034,14 @@ void GMainWindow::RestoreUIState() {
 }
 
 void GMainWindow::OnAppFocusStateChanged(Qt::ApplicationState state) {
-    if (!UISettings::values.pause_when_in_background) {
-        return;
-    }
     if (state != Qt::ApplicationHidden && state != Qt::ApplicationInactive &&
         state != Qt::ApplicationActive) {
         LOG_DEBUG(Frontend, "ApplicationState unusual flag: {} ", state);
     }
-    if (emulation_running) {
+    if (!emulation_running) {
+        return;
+    }
+    if (UISettings::values.pause_when_in_background) {
         if (emu_thread->IsRunning() &&
             (state & (Qt::ApplicationHidden | Qt::ApplicationInactive))) {
             auto_paused = true;
@@ -1097,6 +1049,16 @@ void GMainWindow::OnAppFocusStateChanged(Qt::ApplicationState state) {
         } else if (!emu_thread->IsRunning() && auto_paused && state == Qt::ApplicationActive) {
             auto_paused = false;
             OnStartGame();
+        }
+    }
+    if (UISettings::values.mute_when_in_background) {
+        if (!Settings::values.audio_muted &&
+            (state & (Qt::ApplicationHidden | Qt::ApplicationInactive))) {
+            Settings::values.audio_muted = true;
+            auto_muted = true;
+        } else if (auto_muted && state == Qt::ApplicationActive) {
+            Settings::values.audio_muted = false;
+            auto_muted = false;
         }
     }
 }
@@ -2868,6 +2830,59 @@ void GMainWindow::OnTasReset() {
     input_subsystem->GetTas()->Reset();
 }
 
+void GMainWindow::OnToggleDockedMode() {
+    const bool is_docked = Settings::values.use_docked_mode.GetValue();
+    auto* player_1 = system->HIDCore().GetEmulatedController(Core::HID::NpadIdType::Player1);
+    auto* handheld = system->HIDCore().GetEmulatedController(Core::HID::NpadIdType::Handheld);
+
+    if (!is_docked && handheld->IsConnected()) {
+        QMessageBox::warning(this, tr("Invalid config detected"),
+                             tr("Handheld controller can't be used on docked mode. Pro "
+                                "controller will be selected."));
+        handheld->Disconnect();
+        player_1->SetNpadStyleIndex(Core::HID::NpadStyleIndex::ProController);
+        player_1->Connect();
+        controller_dialog->refreshConfiguration();
+    }
+
+    Settings::values.use_docked_mode.SetValue(!is_docked);
+    dock_status_button->setChecked(!is_docked);
+    OnDockedModeChanged(is_docked, !is_docked, *system);
+}
+
+void GMainWindow::OnToggleGpuAccuracy() {
+    switch (Settings::values.gpu_accuracy.GetValue()) {
+    case Settings::GPUAccuracy::High: {
+        Settings::values.gpu_accuracy.SetValue(Settings::GPUAccuracy::Normal);
+        break;
+    }
+    case Settings::GPUAccuracy::Normal:
+    case Settings::GPUAccuracy::Extreme:
+    default: {
+        Settings::values.gpu_accuracy.SetValue(Settings::GPUAccuracy::High);
+    }
+    }
+
+    system->ApplySettings();
+    UpdateGPUAccuracyButton();
+}
+
+void GMainWindow::OnToggleAdaptingFilter() {
+    auto filter = Settings::values.scaling_filter.GetValue();
+    if (filter == Settings::ScalingFilter::LastFilter) {
+        filter = Settings::ScalingFilter::NearestNeighbor;
+    } else {
+        filter = static_cast<Settings::ScalingFilter>(static_cast<u32>(filter) + 1);
+    }
+    if (Settings::values.renderer_backend.GetValue() == Settings::RendererBackend::OpenGL &&
+        filter == Settings::ScalingFilter::Fsr) {
+        filter = Settings::ScalingFilter::NearestNeighbor;
+    }
+    Settings::values.scaling_filter.SetValue(filter);
+    filter_status_button->setChecked(true);
+    UpdateFilterText();
+}
+
 void GMainWindow::OnConfigurePerGame() {
     const u64 title_id = system->GetCurrentProcessProgramID();
     OpenPerGameConfiguration(title_id, game_path.toStdString());
@@ -2909,6 +2924,24 @@ void GMainWindow::OnLoadAmiibo() {
         return;
     }
     if (is_amiibo_file_select_active) {
+        return;
+    }
+
+    Service::SM::ServiceManager& sm = system->ServiceManager();
+    auto nfc = sm.GetService<Service::NFP::Module::Interface>("nfp:user");
+    if (nfc == nullptr) {
+        QMessageBox::warning(this, tr("Error"), tr("The current game is not looking for amiibos"));
+        return;
+    }
+    const auto nfc_state = nfc->GetCurrentState();
+    if (nfc_state == Service::NFP::DeviceState::TagFound ||
+        nfc_state == Service::NFP::DeviceState::TagMounted) {
+        nfc->CloseAmiibo();
+        return;
+    }
+
+    if (nfc_state != Service::NFP::DeviceState::SearchingForTag) {
+        QMessageBox::warning(this, tr("Error"), tr("The current game is not looking for amiibos"));
         return;
     }
 
