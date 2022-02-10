@@ -488,6 +488,32 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                             emulated_controller->SetStickParam(analog_id, {});
                             analog_map_buttons[analog_id][sub_button_id]->setText(tr("[not set]"));
                         });
+                        context_menu.addAction(tr("Center axis"), [&] {
+                            const auto stick_value =
+                                emulated_controller->GetSticksValues()[analog_id];
+                            const float offset_x = stick_value.x.properties.offset;
+                            const float offset_y = stick_value.y.properties.offset;
+                            float raw_value_x = stick_value.x.raw_value;
+                            float raw_value_y = stick_value.y.raw_value;
+                            // See Core::HID::SanitizeStick() to obtain the original raw axis value
+                            if (std::abs(offset_x) < 0.5f) {
+                                if (raw_value_x > 0) {
+                                    raw_value_x *= 1 + offset_x;
+                                } else {
+                                    raw_value_x *= 1 - offset_x;
+                                }
+                            }
+                            if (std::abs(offset_x) < 0.5f) {
+                                if (raw_value_y > 0) {
+                                    raw_value_y *= 1 + offset_y;
+                                } else {
+                                    raw_value_y *= 1 - offset_y;
+                                }
+                            }
+                            param.Set("offset_x", -raw_value_x + offset_x);
+                            param.Set("offset_y", -raw_value_y + offset_y);
+                            emulated_controller->SetStickParam(analog_id, param);
+                        });
                         context_menu.addAction(tr("Invert axis"), [&] {
                             if (sub_button_id == 2 || sub_button_id == 3) {
                                 const bool invert_value = param.Get("invert_x", "+") == "-";

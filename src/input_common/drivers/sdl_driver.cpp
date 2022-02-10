@@ -811,7 +811,7 @@ AnalogMapping SDLDriver::GetAnalogMappingForDevice(const Common::ParamPackage& p
         PreSetAxis(identifier, binding_left_x.value.axis);
         PreSetAxis(identifier, binding_left_y.value.axis);
         const auto left_offset_x = -GetAxis(identifier, binding_left_x.value.axis);
-        const auto left_offset_y = -GetAxis(identifier, binding_left_y.value.axis);
+        const auto left_offset_y = GetAxis(identifier, binding_left_y.value.axis);
         mapping.insert_or_assign(Settings::NativeAnalog::LStick,
                                  BuildParamPackageForAnalog(identifier, binding_left_x.value.axis,
                                                             binding_left_y.value.axis,
@@ -822,7 +822,7 @@ AnalogMapping SDLDriver::GetAnalogMappingForDevice(const Common::ParamPackage& p
         PreSetAxis(identifier, binding_left_x.value.axis);
         PreSetAxis(identifier, binding_left_y.value.axis);
         const auto left_offset_x = -GetAxis(identifier, binding_left_x.value.axis);
-        const auto left_offset_y = -GetAxis(identifier, binding_left_y.value.axis);
+        const auto left_offset_y = GetAxis(identifier, binding_left_y.value.axis);
         mapping.insert_or_assign(Settings::NativeAnalog::LStick,
                                  BuildParamPackageForAnalog(identifier, binding_left_x.value.axis,
                                                             binding_left_y.value.axis,
@@ -837,7 +837,7 @@ AnalogMapping SDLDriver::GetAnalogMappingForDevice(const Common::ParamPackage& p
     PreSetAxis(identifier, binding_right_x.value.axis);
     PreSetAxis(identifier, binding_right_y.value.axis);
     const auto right_offset_x = -GetAxis(identifier, binding_right_x.value.axis);
-    const auto right_offset_y = -GetAxis(identifier, binding_right_y.value.axis);
+    const auto right_offset_y = GetAxis(identifier, binding_right_y.value.axis);
     mapping.insert_or_assign(Settings::NativeAnalog::RStick,
                              BuildParamPackageForAnalog(identifier, binding_right_x.value.axis,
                                                         binding_right_y.value.axis, right_offset_x,
