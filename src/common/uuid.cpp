@@ -160,13 +160,13 @@ std::string UUID::FormattedString() const {
 }
 
 size_t UUID::Hash() const noexcept {
-    u64 hash;
-    u64 temp;
+    u64 upper_hash;
+    u64 lower_hash;
 
-    std::memcpy(&hash, uuid.data(), sizeof(u64));
-    std::memcpy(&temp, uuid.data() + 8, sizeof(u64));
+    std::memcpy(&upper_hash, uuid.data(), sizeof(u64));
+    std::memcpy(&lower_hash, uuid.data() + sizeof(u64), sizeof(u64));
 
-    return hash ^ std::rotl(temp, 1);
+    return upper_hash ^ std::rotl(lower_hash, 1);
 }
 
 u128 UUID::AsU128() const {
