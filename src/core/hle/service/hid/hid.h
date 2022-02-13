@@ -159,6 +159,7 @@ private:
     void InitializeSevenSixAxisSensor(Kernel::HLERequestContext& ctx);
     void FinalizeSevenSixAxisSensor(Kernel::HLERequestContext& ctx);
     void ResetSevenSixAxisSensorTimestamp(Kernel::HLERequestContext& ctx);
+    void IsUsbFullKeyControllerEnabled(Kernel::HLERequestContext& ctx);
     void SetIsPalmaAllConnectable(Kernel::HLERequestContext& ctx);
     void SetPalmaBoostMode(Kernel::HLERequestContext& ctx);
     void SetNpadCommunicationMode(Kernel::HLERequestContext& ctx);

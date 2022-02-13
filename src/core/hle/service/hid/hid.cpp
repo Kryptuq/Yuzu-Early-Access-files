@@ -321,7 +321,7 @@ Hid::Hid(Core::System& system_)
         {308, nullptr, "SetSevenSixAxisSensorFusionStrength"},
         {309, nullptr, "GetSevenSixAxisSensorFusionStrength"},
         {310, &Hid::ResetSevenSixAxisSensorTimestamp, "ResetSevenSixAxisSensorTimestamp"},
-        {400, nullptr, "IsUsbFullKeyControllerEnabled"},
+        {400, &Hid::IsUsbFullKeyControllerEnabled, "IsUsbFullKeyControllerEnabled"},
         {401, nullptr, "EnableUsbFullKeyController"},
         {402, nullptr, "IsUsbFullKeyControllerConnected"},
         {403, nullptr, "HasBattery"},
@@ -1672,6 +1672,16 @@ void Hid::ResetSevenSixAxisSensorTimestamp(Kernel::HLERequestContext& ctx) {
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
+}
+
+void Hid::IsUsbFullKeyControllerEnabled(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+
+    LOG_WARNING(Service_HID, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(ResultSuccess);
+    rb.Push(false);
 }
 
 void Hid::SetIsPalmaAllConnectable(Kernel::HLERequestContext& ctx) {
