@@ -153,6 +153,13 @@ public:
         };
         static_assert(sizeof(EncryptedAmiiboFile) == 0x1F8, "AmiiboFile is an invalid size");
 
+        struct NTAG215Password {
+            u32 PWD;  // Password to allow write access
+            u16 PACK; // Password acknowledge reply
+            u16 RFUI; // Reserved for future use
+        };
+        static_assert(sizeof(NTAG215Password) == 0x8, "NTAG215Password is an invalid size");
+
         struct NTAG215File {
             TagUuid uuid;                    // Unique serial number
             u16 lock_bytes;                  // Set defined pages as read only
@@ -161,9 +168,7 @@ public:
             u32 dynamic_lock;                // Dynamic lock
             u32 CFG0;                        // Defines memory protected by password
             u32 CFG1;                        // Defines number of verification attempts
-            u32 PWD;                         // Password to allow write access
-            u16 PACK;                        // Password acknowledge reply
-            u16 RFUI;                        // Reserved for future use
+            NTAG215Password password;        // Password data
         };
         static_assert(sizeof(NTAG215File) == 0x21C, "NTAG215File is an invalid size");
 

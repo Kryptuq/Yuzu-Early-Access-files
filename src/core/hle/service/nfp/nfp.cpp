@@ -479,25 +479,35 @@ void Module::Interface::CreateUserInterface(Kernel::HLERequestContext& ctx) {
 }
 
 bool Module::Interface::LoadAmiibo(const std::vector<u8>& buffer) {
-    if (buffer.size() < sizeof(NTAG215File)) {
-        LOG_ERROR(Service_NFP, "Wrong file size");
-        return false;
-    }
-
     if (device_state != DeviceState::SearchingForTag) {
         LOG_ERROR(Service_NFP, "Game is not looking for amiibos, current state {}", device_state);
         return false;
     }
 
+    constexpr auto tag_size = sizeof(NTAG215File);
+    constexpr auto tag_size_without_password = sizeof(NTAG215File) - sizeof(NTAG215Password);
+
+    std::vector<u8> amiibo_buffer = buffer;
+
+    if (amiibo_buffer.size() < tag_size_without_password) {
+        LOG_ERROR(Service_NFP, "Wrong file size {}", buffer.size());
+        return false;
+    }
+
+    // Ensure it has the correct size
+    if (amiibo_buffer.size() != tag_size) {
+        amiibo_buffer.resize(tag_size, 0);
+    }
+
     LOG_INFO(Service_NFP, "Amiibo detected");
-    std::memcpy(&tag_data, buffer.data(), sizeof(tag_data));
+    std::memcpy(&tag_data, buffer.data(), tag_size);
 
     if (!IsAmiiboValid()) {
         return false;
     }
 
     // This value can't be dumped from a tag. Generate it
-    tag_data.PWD = GetTagPassword(tag_data.uuid);
+    tag_data.password.PWD = GetTagPassword(tag_data.uuid);
 
     device_state = DeviceState::TagFound;
     activate_event->GetWritableEvent().Signal();

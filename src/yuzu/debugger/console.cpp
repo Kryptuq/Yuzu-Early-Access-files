@@ -30,6 +30,7 @@ void ToggleConsole() {
             freopen_s(&temp, "CONIN$", "r", stdin);
             freopen_s(&temp, "CONOUT$", "w", stdout);
             freopen_s(&temp, "CONOUT$", "w", stderr);
+            SetConsoleOutputCP(65001);
             SetColorConsoleBackendEnabled(true);
         }
     } else {

@@ -183,6 +183,8 @@ void RasterizerVulkan::Draw(bool is_indexed, bool is_instanced) {
     SCOPE_EXIT({ gpu.TickWork(); });
     FlushWork();
 
+    query_cache.UpdateCounters();
+
     GraphicsPipeline* const pipeline{pipeline_cache.CurrentGraphicsPipeline()};
     if (!pipeline) {
         return;
@@ -193,8 +195,6 @@ void RasterizerVulkan::Draw(bool is_indexed, bool is_instanced) {
     BeginTransformFeedback();
 
     UpdateDynamicStates();
-
-    query_cache.UpdateCounters();
 
     const auto& regs{maxwell3d.regs};
     const u32 num_instances{maxwell3d.mme_draw.instance_count};
