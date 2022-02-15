@@ -669,26 +669,4 @@ void SvcWrap32(Core::System& system) {
     FuncReturn(system, retval);
 }
 
-// Used by CreateCodeMemory32
-template <ResultCode func(Core::System&, Handle*, u32, u32)>
-void SvcWrap32(Core::System& system) {
-    Handle handle = 0;
-
-    const u32 retval = func(system, &handle, Param32(system, 1), Param32(system, 2)).raw;
-
-    system.CurrentArmInterface().SetReg(1, handle);
-    FuncReturn(system, retval);
-}
-
-// Used by ControlCodeMemory32
-template <ResultCode func(Core::System&, Handle, u32, u64, u64, Svc::MemoryPermission)>
-void SvcWrap32(Core::System& system) {
-    const u32 retval =
-        func(system, Param32(system, 0), Param32(system, 1), Param(system, 2), Param(system, 4),
-             static_cast<Svc::MemoryPermission>(Param32(system, 6)))
-            .raw;
-
-    FuncReturn(system, retval);
-}
-
 } // namespace Kernel
