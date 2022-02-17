@@ -645,6 +645,10 @@ static void OutputDebugString(Core::System& system, VAddr address, u64 len) {
     LOG_DEBUG(Debug_Emulated, "{}", str);
 }
 
+static void OutputDebugString32(Core::System& system, u32 address, u32 len) {
+    OutputDebugString(system, address, len);
+}
+
 /// Gets system/memory information for the current process
 static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, Handle handle,
                           u64 info_sub_id) {
@@ -1404,7 +1408,7 @@ static ResultCode UnmapProcessMemory(Core::System& system, VAddr dst_address, Ha
 }
 
 static ResultCode CreateCodeMemory(Core::System& system, Handle* out, VAddr address, size_t size) {
-    LOG_TRACE(Kernel_SVC, "called, handle_out=0x{:X}, address=0x{:X}, size=0x{:X}",
+    LOG_TRACE(Kernel_SVC, "called, handle_out={}, address=0x{:X}, size=0x{:X}",
               static_cast<void*>(out), address, size);
     // Get kernel instance.
     auto& kernel = system.Kernel();
@@ -1436,6 +1440,10 @@ static ResultCode CreateCodeMemory(Core::System& system, Handle* out, VAddr addr
     code_mem->Close();
 
     return ResultSuccess;
+}
+
+static ResultCode CreateCodeMemory32(Core::System& system, Handle* out, u32 address, u32 size) {
+    return CreateCodeMemory(system, out, address, size);
 }
 
 static ResultCode ControlCodeMemory(Core::System& system, Handle code_memory_handle, u32 operation,
@@ -1515,6 +1523,12 @@ static ResultCode ControlCodeMemory(Core::System& system, Handle code_memory_han
     }
 
     return ResultSuccess;
+}
+
+static ResultCode ControlCodeMemory32(Core::System& system, Handle code_memory_handle,
+                                      u32 operation, u64 address, u64 size,
+                                      Svc::MemoryPermission perm) {
+    return ControlCodeMemory(system, code_memory_handle, operation, address, size, perm);
 }
 
 static ResultCode QueryProcessMemory(Core::System& system, VAddr memory_info_address,
@@ -2598,7 +2612,7 @@ static const FunctionDef SVC_Table_32[] = {
     {0x24, SvcWrap32<GetProcessId32>, "GetProcessId32"},
     {0x25, SvcWrap32<GetThreadId32>, "GetThreadId32"},
     {0x26, SvcWrap32<Break32>, "Break32"},
-    {0x27, nullptr, "OutputDebugString32"},
+    {0x27, SvcWrap32<OutputDebugString32>, "OutputDebugString32"},
     {0x28, nullptr, "ReturnFromException32"},
     {0x29, SvcWrap32<GetInfo32>, "GetInfo32"},
     {0x2a, nullptr, "FlushEntireDataCache32"},
@@ -2634,8 +2648,8 @@ static const FunctionDef SVC_Table_32[] = {
     {0x48, nullptr, "MapPhysicalMemoryUnsafe32"},
     {0x49, nullptr, "UnmapPhysicalMemoryUnsafe32"},
     {0x4a, nullptr, "SetUnsafeLimit32"},
-    {0x4b, nullptr, "CreateCodeMemory32"},
-    {0x4c, nullptr, "ControlCodeMemory32"},
+    {0x4b, SvcWrap32<CreateCodeMemory32>, "CreateCodeMemory32"},
+    {0x4c, SvcWrap32<ControlCodeMemory32>, "ControlCodeMemory32"},
     {0x4d, nullptr, "SleepSystem32"},
     {0x4e, nullptr, "ReadWriteRegister32"},
     {0x4f, nullptr, "SetProcessActivity32"},

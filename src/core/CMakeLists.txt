@@ -477,6 +477,8 @@ add_library(core STATIC
     hle/service/mii/types.h
     hle/service/mm/mm_u.cpp
     hle/service/mm/mm_u.h
+    hle/service/mnpp/mnpp_app.cpp
+    hle/service/mnpp/mnpp_app.h
     hle/service/ncm/ncm.cpp
     hle/service/ncm/ncm.h
     hle/service/nfc/nfc.cpp

@@ -76,6 +76,7 @@ enum class Class : u8 {
     Service_Migration, ///< The migration service
     Service_Mii,       ///< The Mii service
     Service_MM,        ///< The MM (Multimedia) service
+    Service_MNPP,      ///< The MNPP service
     Service_NCM,       ///< The NCM service
     Service_NFC,       ///< The NFC (Near-field communication) service
     Service_NFP,       ///< The NFP service
