@@ -400,148 +400,473 @@ ResultCode KPageTable::UnmapProcessMemory(VAddr dst_addr, std::size_t size,
     return ResultSuccess;
 }
 
-ResultCode KPageTable::MapPhysicalMemory(VAddr addr, std::size_t size) {
+ResultCode KPageTable::MapPhysicalMemory(VAddr address, std::size_t size) {
     // Lock the physical memory lock.
     KScopedLightLock map_phys_mem_lk(map_physical_memory_lock);
 
-    // Lock the table.
-    KScopedLightLock lk(general_lock);
+    // Calculate the last address for convenience.
+    const VAddr last_address = address + size - 1;
 
-    std::size_t mapped_size{};
-    const VAddr end_addr{addr + size};
+    // Define iteration variables.
+    VAddr cur_address;
+    std::size_t mapped_size;
 
-    block_manager->IterateForRange(addr, end_addr, [&](const KMemoryInfo& info) {
-        if (info.state != KMemoryState::Free) {
-            mapped_size += GetSizeInRange(info, addr, end_addr);
-        }
-    });
+    // The entire mapping process can be retried.
+    while (true) {
+        // Check if the memory is already mapped.
+        {
+            // Lock the table.
+            KScopedLightLock lk(general_lock);
 
-    if (mapped_size == size) {
-        return ResultSuccess;
-    }
+            // Iterate over the memory.
+            cur_address = address;
+            mapped_size = 0;
 
-    const std::size_t remaining_size{size - mapped_size};
-    const std::size_t remaining_pages{remaining_size / PageSize};
+            auto it = block_manager->FindIterator(cur_address);
+            while (true) {
+                // Check that the iterator is valid.
+                ASSERT(it != block_manager->end());
 
-    // Reserve the memory from the process resource limit.
-    KScopedResourceReservation memory_reservation(
-        system.Kernel().CurrentProcess()->GetResourceLimit(), LimitableResource::PhysicalMemory,
-        remaining_size);
-    if (!memory_reservation.Succeeded()) {
-        LOG_ERROR(Kernel, "Could not reserve remaining {:X} bytes", remaining_size);
-        return ResultLimitReached;
-    }
+                // Get the memory info.
+                const KMemoryInfo info = it->GetMemoryInfo();
 
-    KPageLinkedList page_linked_list;
+                // Check if we're done.
+                if (last_address <= info.GetLastAddress()) {
+                    if (info.GetState() != KMemoryState::Free) {
+                        mapped_size += (last_address + 1 - cur_address);
+                    }
+                    break;
+                }
 
-    CASCADE_CODE(system.Kernel().MemoryManager().Allocate(page_linked_list, remaining_pages,
-                                                          memory_pool, allocation_option));
+                // Track the memory if it's mapped.
+                if (info.GetState() != KMemoryState::Free) {
+                    mapped_size += VAddr(info.GetEndAddress()) - cur_address;
+                }
 
-    // We succeeded, so commit the memory reservation.
-    memory_reservation.Commit();
-
-    // Map the memory.
-    auto node{page_linked_list.Nodes().begin()};
-    PAddr map_addr{node->GetAddress()};
-    std::size_t src_num_pages{node->GetNumPages()};
-    block_manager->IterateForRange(addr, end_addr, [&](const KMemoryInfo& info) {
-        if (info.state != KMemoryState::Free) {
-            return;
-        }
-
-        std::size_t dst_num_pages{GetSizeInRange(info, addr, end_addr) / PageSize};
-        VAddr dst_addr{GetAddressInRange(info, addr)};
-
-        while (dst_num_pages) {
-            if (!src_num_pages) {
-                node = std::next(node);
-                map_addr = node->GetAddress();
-                src_num_pages = node->GetNumPages();
+                // Advance.
+                cur_address = info.GetEndAddress();
+                ++it;
             }
 
-            const std::size_t num_pages{std::min(src_num_pages, dst_num_pages)};
-            Operate(dst_addr, num_pages, KMemoryPermission::UserReadWrite, OperationType::Map,
-                    map_addr);
-
-            dst_addr += num_pages * PageSize;
-            map_addr += num_pages * PageSize;
-            src_num_pages -= num_pages;
-            dst_num_pages -= num_pages;
+            // If the size mapped is the size requested, we've nothing to do.
+            R_SUCCEED_IF(size == mapped_size);
         }
-    });
 
-    mapped_physical_memory_size += remaining_size;
+        // Allocate and map the memory.
+        {
+            // Reserve the memory from the process resource limit.
+            KScopedResourceReservation memory_reservation(
+                system.Kernel().CurrentProcess()->GetResourceLimit(),
+                LimitableResource::PhysicalMemory, size - mapped_size);
+            R_UNLESS(memory_reservation.Succeeded(), ResultLimitReached);
 
-    const std::size_t num_pages{size / PageSize};
-    block_manager->Update(addr, num_pages, KMemoryState::Free, KMemoryPermission::None,
-                          KMemoryAttribute::None, KMemoryState::Normal,
-                          KMemoryPermission::UserReadWrite, KMemoryAttribute::None);
+            // Allocate pages for the new memory.
+            KPageLinkedList page_linked_list;
+            R_TRY(system.Kernel().MemoryManager().Allocate(
+                page_linked_list, (size - mapped_size) / PageSize, memory_pool, allocation_option));
 
-    return ResultSuccess;
+            // Map the memory.
+            {
+                // Lock the table.
+                KScopedLightLock lk(general_lock);
+
+                size_t num_allocator_blocks = 0;
+
+                // Verify that nobody has mapped memory since we first checked.
+                {
+                    // Iterate over the memory.
+                    size_t checked_mapped_size = 0;
+                    cur_address = address;
+
+                    auto it = block_manager->FindIterator(cur_address);
+                    while (true) {
+                        // Check that the iterator is valid.
+                        ASSERT(it != block_manager->end());
+
+                        // Get the memory info.
+                        const KMemoryInfo info = it->GetMemoryInfo();
+
+                        const bool is_free = info.GetState() == KMemoryState::Free;
+                        if (is_free) {
+                            if (info.GetAddress() < address) {
+                                ++num_allocator_blocks;
+                            }
+                            if (last_address < info.GetLastAddress()) {
+                                ++num_allocator_blocks;
+                            }
+                        }
+
+                        // Check if we're done.
+                        if (last_address <= info.GetLastAddress()) {
+                            if (!is_free) {
+                                checked_mapped_size += (last_address + 1 - cur_address);
+                            }
+                            break;
+                        }
+
+                        // Track the memory if it's mapped.
+                        if (!is_free) {
+                            checked_mapped_size += VAddr(info.GetEndAddress()) - cur_address;
+                        }
+
+                        // Advance.
+                        cur_address = info.GetEndAddress();
+                        ++it;
+                    }
+
+                    // If the size now isn't what it was before, somebody mapped or unmapped
+                    // concurrently. If this happened, retry.
+                    if (mapped_size != checked_mapped_size) {
+                        continue;
+                    }
+                }
+
+                // Reset the current tracking address, and make sure we clean up on failure.
+                cur_address = address;
+                auto unmap_guard = detail::ScopeExit([&] {
+                    if (cur_address > address) {
+                        const VAddr last_unmap_address = cur_address - 1;
+
+                        // Iterate, unmapping the pages.
+                        cur_address = address;
+
+                        auto it = block_manager->FindIterator(cur_address);
+                        while (true) {
+                            // Check that the iterator is valid.
+                            ASSERT(it != block_manager->end());
+
+                            // Get the memory info.
+                            const KMemoryInfo info = it->GetMemoryInfo();
+
+                            // If the memory state is free, we mapped it and need to unmap it.
+                            if (info.GetState() == KMemoryState::Free) {
+                                // Determine the range to unmap.
+                                const size_t cur_pages =
+                                    std::min(VAddr(info.GetEndAddress()) - cur_address,
+                                             last_unmap_address + 1 - cur_address) /
+                                    PageSize;
+
+                                // Unmap.
+                                ASSERT(Operate(cur_address, cur_pages, KMemoryPermission::None,
+                                               OperationType::Unmap)
+                                           .IsSuccess());
+                            }
+
+                            // Check if we're done.
+                            if (last_unmap_address <= info.GetLastAddress()) {
+                                break;
+                            }
+
+                            // Advance.
+                            cur_address = info.GetEndAddress();
+                            ++it;
+                        }
+                    }
+                });
+
+                // Iterate over the memory.
+                auto pg_it = page_linked_list.Nodes().begin();
+                PAddr pg_phys_addr = pg_it->GetAddress();
+                size_t pg_pages = pg_it->GetNumPages();
+
+                auto it = block_manager->FindIterator(cur_address);
+                while (true) {
+                    // Check that the iterator is valid.
+                    ASSERT(it != block_manager->end());
+
+                    // Get the memory info.
+                    const KMemoryInfo info = it->GetMemoryInfo();
+
+                    // If it's unmapped, we need to map it.
+                    if (info.GetState() == KMemoryState::Free) {
+                        // Determine the range to map.
+                        size_t map_pages = std::min(VAddr(info.GetEndAddress()) - cur_address,
+                                                    last_address + 1 - cur_address) /
+                                           PageSize;
+
+                        // While we have pages to map, map them.
+                        while (map_pages > 0) {
+                            // Check if we're at the end of the physical block.
+                            if (pg_pages == 0) {
+                                // Ensure there are more pages to map.
+                                ASSERT(pg_it != page_linked_list.Nodes().end());
+
+                                // Advance our physical block.
+                                ++pg_it;
+                                pg_phys_addr = pg_it->GetAddress();
+                                pg_pages = pg_it->GetNumPages();
+                            }
+
+                            // Map whatever we can.
+                            const size_t cur_pages = std::min(pg_pages, map_pages);
+                            R_TRY(Operate(cur_address, cur_pages, KMemoryPermission::UserReadWrite,
+                                          OperationType::Map, pg_phys_addr));
+
+                            // Advance.
+                            cur_address += cur_pages * PageSize;
+                            map_pages -= cur_pages;
+
+                            pg_phys_addr += cur_pages * PageSize;
+                            pg_pages -= cur_pages;
+                        }
+                    }
+
+                    // Check if we're done.
+                    if (last_address <= info.GetLastAddress()) {
+                        break;
+                    }
+
+                    // Advance.
+                    cur_address = info.GetEndAddress();
+                    ++it;
+                }
+
+                // We succeeded, so commit the memory reservation.
+                memory_reservation.Commit();
+
+                // Increase our tracked mapped size.
+                mapped_physical_memory_size += (size - mapped_size);
+
+                // Update the relevant memory blocks.
+                block_manager->Update(address, size / PageSize, KMemoryState::Free,
+                                      KMemoryPermission::None, KMemoryAttribute::None,
+                                      KMemoryState::Normal, KMemoryPermission::UserReadWrite,
+                                      KMemoryAttribute::None);
+
+                // Cancel our guard.
+                unmap_guard.Cancel();
+
+                return ResultSuccess;
+            }
+        }
+    }
 }
 
-ResultCode KPageTable::UnmapPhysicalMemory(VAddr addr, std::size_t size) {
+ResultCode KPageTable::UnmapPhysicalMemory(VAddr address, std::size_t size) {
     // Lock the physical memory lock.
     KScopedLightLock map_phys_mem_lk(map_physical_memory_lock);
 
     // Lock the table.
     KScopedLightLock lk(general_lock);
 
-    const VAddr end_addr{addr + size};
-    ResultCode result{ResultSuccess};
-    std::size_t mapped_size{};
+    // Calculate the last address for convenience.
+    const VAddr last_address = address + size - 1;
 
-    // Verify that the region can be unmapped
-    block_manager->IterateForRange(addr, end_addr, [&](const KMemoryInfo& info) {
-        if (info.state == KMemoryState::Normal) {
-            if (info.attribute != KMemoryAttribute::None) {
-                result = ResultInvalidCurrentMemory;
-                return;
+    // Define iteration variables.
+    VAddr cur_address = 0;
+    std::size_t mapped_size = 0;
+    std::size_t num_allocator_blocks = 0;
+
+    // Check if the memory is mapped.
+    {
+        // Iterate over the memory.
+        cur_address = address;
+        mapped_size = 0;
+
+        auto it = block_manager->FindIterator(cur_address);
+        while (true) {
+            // Check that the iterator is valid.
+            ASSERT(it != block_manager->end());
+
+            // Get the memory info.
+            const KMemoryInfo info = it->GetMemoryInfo();
+
+            // Verify the memory's state.
+            const bool is_normal = info.GetState() == KMemoryState::Normal &&
+                                   info.GetAttribute() == KMemoryAttribute::None;
+            const bool is_free = info.GetState() == KMemoryState::Free;
+            R_UNLESS(is_normal || is_free, ResultInvalidCurrentMemory);
+
+            if (is_normal) {
+                R_UNLESS(info.GetAttribute() == KMemoryAttribute::None, ResultInvalidCurrentMemory);
+
+                if (info.GetAddress() < address) {
+                    ++num_allocator_blocks;
+                }
+                if (last_address < info.GetLastAddress()) {
+                    ++num_allocator_blocks;
+                }
             }
-            mapped_size += GetSizeInRange(info, addr, end_addr);
-        } else if (info.state != KMemoryState::Free) {
-            result = ResultInvalidCurrentMemory;
+
+            // Check if we're done.
+            if (last_address <= info.GetLastAddress()) {
+                if (is_normal) {
+                    mapped_size += (last_address + 1 - cur_address);
+                }
+                break;
+            }
+
+            // Track the memory if it's mapped.
+            if (is_normal) {
+                mapped_size += VAddr(info.GetEndAddress()) - cur_address;
+            }
+
+            // Advance.
+            cur_address = info.GetEndAddress();
+            ++it;
+        }
+
+        // If there's nothing mapped, we've nothing to do.
+        R_SUCCEED_IF(mapped_size == 0);
+    }
+
+    // Make a page group for the unmap region.
+    KPageLinkedList pg;
+    {
+        auto& impl = this->PageTableImpl();
+
+        // Begin traversal.
+        Common::PageTable::TraversalContext context;
+        Common::PageTable::TraversalEntry cur_entry = {.phys_addr = 0, .block_size = 0};
+        bool cur_valid = false;
+        Common::PageTable::TraversalEntry next_entry;
+        bool next_valid = false;
+        size_t tot_size = 0;
+
+        cur_address = address;
+        next_valid =
+            impl.BeginTraversal(std::addressof(next_entry), std::addressof(context), cur_address);
+        next_entry.block_size =
+            (next_entry.block_size - (next_entry.phys_addr & (next_entry.block_size - 1)));
+
+        // Iterate, building the group.
+        while (true) {
+            if ((!next_valid && !cur_valid) ||
+                (next_valid && cur_valid &&
+                 next_entry.phys_addr == cur_entry.phys_addr + cur_entry.block_size)) {
+                cur_entry.block_size += next_entry.block_size;
+            } else {
+                if (cur_valid) {
+                    // ASSERT(IsHeapPhysicalAddress(cur_entry.phys_addr));
+                    R_TRY(pg.AddBlock(cur_entry.phys_addr, cur_entry.block_size / PageSize));
+                }
+
+                // Update tracking variables.
+                tot_size += cur_entry.block_size;
+                cur_entry = next_entry;
+                cur_valid = next_valid;
+            }
+
+            if (cur_entry.block_size + tot_size >= size) {
+                break;
+            }
+
+            next_valid =
+                impl.ContinueTraversal(std::addressof(next_entry), std::addressof(context));
+        }
+
+        // Add the last block.
+        if (cur_valid) {
+            // ASSERT(IsHeapPhysicalAddress(cur_entry.phys_addr));
+            R_TRY(pg.AddBlock(cur_entry.phys_addr, (size - tot_size) / PageSize));
+        }
+    }
+    ASSERT(pg.GetNumPages() == mapped_size / PageSize);
+
+    // Reset the current tracking address, and make sure we clean up on failure.
+    cur_address = address;
+    auto remap_guard = detail::ScopeExit([&] {
+        if (cur_address > address) {
+            const VAddr last_map_address = cur_address - 1;
+            cur_address = address;
+
+            // Iterate over the memory we unmapped.
+            auto it = block_manager->FindIterator(cur_address);
+            auto pg_it = pg.Nodes().begin();
+            PAddr pg_phys_addr = pg_it->GetAddress();
+            size_t pg_pages = pg_it->GetNumPages();
+
+            while (true) {
+                // Get the memory info for the pages we unmapped, convert to property.
+                const KMemoryInfo info = it->GetMemoryInfo();
+
+                // If the memory is normal, we unmapped it and need to re-map it.
+                if (info.GetState() == KMemoryState::Normal) {
+                    // Determine the range to map.
+                    size_t map_pages = std::min(VAddr(info.GetEndAddress()) - cur_address,
+                                                last_map_address + 1 - cur_address) /
+                                       PageSize;
+
+                    // While we have pages to map, map them.
+                    while (map_pages > 0) {
+                        // Check if we're at the end of the physical block.
+                        if (pg_pages == 0) {
+                            // Ensure there are more pages to map.
+                            ASSERT(pg_it != pg.Nodes().end());
+
+                            // Advance our physical block.
+                            ++pg_it;
+                            pg_phys_addr = pg_it->GetAddress();
+                            pg_pages = pg_it->GetNumPages();
+                        }
+
+                        // Map whatever we can.
+                        const size_t cur_pages = std::min(pg_pages, map_pages);
+                        ASSERT(this->Operate(cur_address, cur_pages, info.GetPermission(),
+                                             OperationType::Map, pg_phys_addr) == ResultSuccess);
+
+                        // Advance.
+                        cur_address += cur_pages * PageSize;
+                        map_pages -= cur_pages;
+
+                        pg_phys_addr += cur_pages * PageSize;
+                        pg_pages -= cur_pages;
+                    }
+                }
+
+                // Check if we're done.
+                if (last_map_address <= info.GetLastAddress()) {
+                    break;
+                }
+
+                // Advance.
+                ++it;
+            }
         }
     });
 
-    if (result.IsError()) {
-        return result;
-    }
+    // Iterate over the memory, unmapping as we go.
+    auto it = block_manager->FindIterator(cur_address);
+    while (true) {
+        // Check that the iterator is valid.
+        ASSERT(it != block_manager->end());
 
-    if (!mapped_size) {
-        return ResultSuccess;
-    }
+        // Get the memory info.
+        const KMemoryInfo info = it->GetMemoryInfo();
 
-    // Unmap each region within the range
-    KPageLinkedList page_linked_list;
-    block_manager->IterateForRange(addr, end_addr, [&](const KMemoryInfo& info) {
-        if (info.state == KMemoryState::Normal) {
-            const std::size_t block_size{GetSizeInRange(info, addr, end_addr)};
-            const std::size_t block_num_pages{block_size / PageSize};
-            const VAddr block_addr{GetAddressInRange(info, addr)};
+        // If the memory state is normal, we need to unmap it.
+        if (info.GetState() == KMemoryState::Normal) {
+            // Determine the range to unmap.
+            const size_t cur_pages = std::min(VAddr(info.GetEndAddress()) - cur_address,
+                                              last_address + 1 - cur_address) /
+                                     PageSize;
 
-            AddRegionToPages(block_addr, block_size / PageSize, page_linked_list);
-
-            if (result = Operate(block_addr, block_num_pages, KMemoryPermission::None,
-                                 OperationType::Unmap);
-                result.IsError()) {
-                return;
-            }
+            // Unmap.
+            R_TRY(Operate(cur_address, cur_pages, KMemoryPermission::None, OperationType::Unmap));
         }
-    });
-    if (result.IsError()) {
-        return result;
+
+        // Check if we're done.
+        if (last_address <= info.GetLastAddress()) {
+            break;
+        }
+
+        // Advance.
+        cur_address = info.GetEndAddress();
+        ++it;
     }
 
-    const std::size_t num_pages{size / PageSize};
-    system.Kernel().MemoryManager().Free(page_linked_list, num_pages, memory_pool,
-                                         allocation_option);
-
-    block_manager->Update(addr, num_pages, KMemoryState::Free);
-
+    // Release the memory resource.
+    mapped_physical_memory_size -= mapped_size;
     auto process{system.Kernel().CurrentProcess()};
     process->GetResourceLimit()->Release(LimitableResource::PhysicalMemory, mapped_size);
-    mapped_physical_memory_size -= mapped_size;
+
+    // Update memory blocks.
+    system.Kernel().MemoryManager().Free(pg, size / PageSize, memory_pool, allocation_option);
+    block_manager->Update(address, size / PageSize, KMemoryState::Free, KMemoryPermission::None,
+                          KMemoryAttribute::None);
+
+    // We succeeded.
+    remap_guard.Cancel();
 
     return ResultSuccess;
 }
@@ -681,9 +1006,8 @@ ResultCode KPageTable::UnmapPages(VAddr addr, const KPageLinkedList& page_linked
     VAddr cur_addr{addr};
 
     for (const auto& node : page_linked_list.Nodes()) {
-        const std::size_t num_pages{(addr - cur_addr) / PageSize};
-        if (const auto result{
-                Operate(addr, num_pages, KMemoryPermission::None, OperationType::Unmap)};
+        if (const auto result{Operate(cur_addr, node.GetNumPages(), KMemoryPermission::None,
+                                      OperationType::Unmap)};
             result.IsError()) {
             return result;
         }
