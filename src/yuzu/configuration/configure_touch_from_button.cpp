@@ -227,6 +227,9 @@ void ConfigureTouchFromButton::RenameMapping() {
 }
 
 void ConfigureTouchFromButton::GetButtonInput(const int row_index, const bool is_new) {
+    if (timeout_timer->isActive()) {
+        return;
+    }
     binding_list_model->item(row_index, 0)->setText(tr("[press key]"));
 
     input_setter = [this, row_index, is_new](const Common::ParamPackage& params,

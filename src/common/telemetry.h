@@ -171,6 +171,9 @@ struct VisitorInterface {
 struct NullVisitor final : public VisitorInterface {
     YUZU_NON_COPYABLE(NullVisitor);
 
+    NullVisitor() = default;
+    ~NullVisitor() override = default;
+
     void Visit(const Field<bool>& /*field*/) override {}
     void Visit(const Field<double>& /*field*/) override {}
     void Visit(const Field<float>& /*field*/) override {}

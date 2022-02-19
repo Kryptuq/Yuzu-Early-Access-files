@@ -1332,6 +1332,9 @@ void ConfigureInputPlayer::HandleClick(
     QPushButton* button, std::size_t button_id,
     std::function<void(const Common::ParamPackage&)> new_input_setter,
     InputCommon::Polling::InputType type) {
+    if (timeout_timer->isActive()) {
+        return;
+    }
     if (button == ui->buttonMotionLeft || button == ui->buttonMotionRight) {
         button->setText(tr("Shake!"));
     } else {

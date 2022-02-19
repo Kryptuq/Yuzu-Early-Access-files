@@ -41,6 +41,14 @@ constexpr std::array DEPTH16_UNORM_STENCIL8_UINT{
     VK_FORMAT_D32_SFLOAT_S8_UINT,
     VK_FORMAT_UNDEFINED,
 };
+
+constexpr std::array B5G6R5_UNORM_PACK16{
+    VK_FORMAT_R5G6B5_UNORM_PACK16,
+    VK_FORMAT_R5G5B5A1_UNORM_PACK16,
+    VK_FORMAT_A1R5G5B5_UNORM_PACK16,
+    VK_FORMAT_R4G4B4A4_UNORM_PACK16,
+    VK_FORMAT_UNDEFINED,
+};
 } // namespace Alternatives
 
 enum class NvidiaArchitecture {
@@ -89,6 +97,8 @@ constexpr const VkFormat* GetFormatAlternatives(VkFormat format) {
         return Alternatives::DEPTH24_UNORM_STENCIL8_UINT.data();
     case VK_FORMAT_D16_UNORM_S8_UINT:
         return Alternatives::DEPTH16_UNORM_STENCIL8_UINT.data();
+    case VK_FORMAT_B5G6R5_UNORM_PACK16:
+        return Alternatives::B5G6R5_UNORM_PACK16.data();
     default:
         return nullptr;
     }
