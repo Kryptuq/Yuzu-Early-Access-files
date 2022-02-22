@@ -14,7 +14,7 @@ KEvent::KEvent(KernelCore& kernel_)
 
 KEvent::~KEvent() = default;
 
-void KEvent::Initialize(std::string&& name_) {
+void KEvent::Initialize(std::string&& name_, KProcess* owner_) {
     // Increment reference count.
     // Because reference count is one on creation, this will result
     // in a reference count of two. Thus, when both readable and
@@ -30,10 +30,8 @@ void KEvent::Initialize(std::string&& name_) {
     writable_event.Initialize(this, name_ + ":Writable");
 
     // Set our owner process.
-    owner = kernel.CurrentProcess();
-    if (owner) {
-        owner->Open();
-    }
+    owner = owner_;
+    owner->Open();
 
     // Mark initialized.
     name = std::move(name_);
@@ -47,10 +45,8 @@ void KEvent::Finalize() {
 void KEvent::PostDestroy(uintptr_t arg) {
     // Release the event count resource the owner process holds.
     KProcess* owner = reinterpret_cast<KProcess*>(arg);
-    if (owner) {
-        owner->GetResourceLimit()->Release(LimitableResource::Events, 1);
-        owner->Close();
-    }
+    owner->GetResourceLimit()->Release(LimitableResource::Events, 1);
+    owner->Close();
 }
 
 } // namespace Kernel

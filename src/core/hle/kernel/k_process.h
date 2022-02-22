@@ -91,7 +91,7 @@ public:
     static constexpr std::size_t RANDOM_ENTROPY_SIZE = 4;
 
     static ResultCode Initialize(KProcess* process, Core::System& system, std::string process_name,
-                                 ProcessType type);
+                                 ProcessType type, KResourceLimit* res_limit);
 
     /// Gets a reference to the process' page table.
     KPageTable& PageTable() {

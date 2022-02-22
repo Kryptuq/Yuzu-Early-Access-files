@@ -10,12 +10,12 @@ PageTable::PageTable() = default;
 
 PageTable::~PageTable() noexcept = default;
 
-bool PageTable::BeginTraversal(TraversalEntry* out_entry, TraversalContext* out_context,
+bool PageTable::BeginTraversal(TraversalEntry& out_entry, TraversalContext& out_context,
                                u64 address) const {
     // Setup invalid defaults.
-    out_entry->phys_addr = 0;
-    out_entry->block_size = page_size;
-    out_context->next_page = 0;
+    out_entry.phys_addr = 0;
+    out_entry.block_size = page_size;
+    out_context.next_page = 0;
 
     // Validate that we can read the actual entry.
     const auto page = address / page_size;
@@ -30,20 +30,20 @@ bool PageTable::BeginTraversal(TraversalEntry* out_entry, TraversalContext* out_
     }
 
     // Populate the results.
-    out_entry->phys_addr = phys_addr + address;
-    out_context->next_page = page + 1;
-    out_context->next_offset = address + page_size;
+    out_entry.phys_addr = phys_addr + address;
+    out_context.next_page = page + 1;
+    out_context.next_offset = address + page_size;
 
     return true;
 }
 
-bool PageTable::ContinueTraversal(TraversalEntry* out_entry, TraversalContext* context) const {
+bool PageTable::ContinueTraversal(TraversalEntry& out_entry, TraversalContext& context) const {
     // Setup invalid defaults.
-    out_entry->phys_addr = 0;
-    out_entry->block_size = page_size;
+    out_entry.phys_addr = 0;
+    out_entry.block_size = page_size;
 
     // Validate that we can read the actual entry.
-    const auto page = context->next_page;
+    const auto page = context.next_page;
     if (page >= backing_addr.size()) {
         return false;
     }
@@ -55,9 +55,9 @@ bool PageTable::ContinueTraversal(TraversalEntry* out_entry, TraversalContext* c
     }
 
     // Populate the results.
-    out_entry->phys_addr = phys_addr + context->next_offset;
-    context->next_page = page + 1;
-    context->next_offset += page_size;
+    out_entry.phys_addr = phys_addr + context.next_offset;
+    context.next_page = page + 1;
+    context.next_offset += page_size;
 
     return true;
 }

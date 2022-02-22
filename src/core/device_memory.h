@@ -12,12 +12,8 @@ namespace Core {
 namespace DramMemoryMap {
 enum : u64 {
     Base = 0x80000000ULL,
-    Size = 0x100000000ULL,
-    End = Base + Size,
     KernelReserveBase = Base + 0x60000,
     SlabHeapBase = KernelReserveBase + 0x85000,
-    SlapHeapSize = 0xa21000,
-    SlabHeapEnd = SlabHeapBase + SlapHeapSize,
 };
 }; // namespace DramMemoryMap
 

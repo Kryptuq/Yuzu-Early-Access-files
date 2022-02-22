@@ -167,6 +167,7 @@ void RestoreGlobalState(bool is_powered_on) {
 
     // Core
     values.use_multi_core.SetGlobal(true);
+    values.use_extended_memory_layout.SetGlobal(true);
 
     // CPU
     values.cpu_accuracy.SetGlobal(true);

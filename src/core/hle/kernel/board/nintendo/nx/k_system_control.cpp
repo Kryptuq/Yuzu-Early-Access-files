@@ -5,6 +5,7 @@
 #include <random>
 
 #include "common/literals.h"
+#include "common/settings.h"
 
 #include "core/hle/kernel/board/nintendo/nx/k_system_control.h"
 #include "core/hle/kernel/board/nintendo/nx/secure_monitor.h"
@@ -28,30 +29,13 @@ namespace {
 
 using namespace Common::Literals;
 
-u32 GetMemoryModeForInit() {
-    return 0x01;
-}
-
 u32 GetMemorySizeForInit() {
-    return 0;
+    return Settings::values.use_extended_memory_layout ? Smc::MemorySize_6GB : Smc::MemorySize_4GB;
 }
 
 Smc::MemoryArrangement GetMemoryArrangeForInit() {
-    switch (GetMemoryModeForInit() & 0x3F) {
-    case 0x01:
-    default:
-        return Smc::MemoryArrangement_4GB;
-    case 0x02:
-        return Smc::MemoryArrangement_4GBForAppletDev;
-    case 0x03:
-        return Smc::MemoryArrangement_4GBForSystemDev;
-    case 0x11:
-        return Smc::MemoryArrangement_6GB;
-    case 0x12:
-        return Smc::MemoryArrangement_6GBForAppletDev;
-    case 0x21:
-        return Smc::MemoryArrangement_8GB;
-    }
+    return Settings::values.use_extended_memory_layout ? Smc::MemoryArrangement_6GB
+                                                       : Smc::MemoryArrangement_4GB;
 }
 } // namespace
 

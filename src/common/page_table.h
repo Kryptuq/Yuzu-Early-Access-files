@@ -99,9 +99,9 @@ struct PageTable {
     PageTable(PageTable&&) noexcept = default;
     PageTable& operator=(PageTable&&) noexcept = default;
 
-    bool BeginTraversal(TraversalEntry* out_entry, TraversalContext* out_context,
+    bool BeginTraversal(TraversalEntry& out_entry, TraversalContext& out_context,
                         u64 address) const;
-    bool ContinueTraversal(TraversalEntry* out_entry, TraversalContext* context) const;
+    bool ContinueTraversal(TraversalEntry& out_entry, TraversalContext& context) const;
 
     /**
      * Resizes the page table to be able to accommodate enough pages within

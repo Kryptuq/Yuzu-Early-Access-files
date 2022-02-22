@@ -22,7 +22,7 @@ public:
     explicit KEvent(KernelCore& kernel_);
     ~KEvent() override;
 
-    void Initialize(std::string&& name);
+    void Initialize(std::string&& name, KProcess* owner_);
 
     void Finalize() override;
 

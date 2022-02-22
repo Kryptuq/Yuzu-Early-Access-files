@@ -266,6 +266,7 @@ void Config::ReadValues() {
 
     // Core
     ReadSetting("Core", Settings::values.use_multi_core);
+    ReadSetting("Core", Settings::values.use_extended_memory_layout);
 
     // Cpu
     ReadSetting("Cpu", Settings::values.cpu_accuracy);

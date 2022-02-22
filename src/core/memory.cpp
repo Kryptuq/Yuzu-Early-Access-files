@@ -39,8 +39,7 @@ struct Memory::Impl {
     void MapMemoryRegion(Common::PageTable& page_table, VAddr base, u64 size, PAddr target) {
         ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: {:016X}", size);
         ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: {:016X}", base);
-        ASSERT_MSG(target >= DramMemoryMap::Base && target < DramMemoryMap::End,
-                   "Out of bounds target: {:016X}", target);
+        ASSERT_MSG(target >= DramMemoryMap::Base, "Out of bounds target: {:016X}", target);
         MapPages(page_table, base / PAGE_SIZE, size / PAGE_SIZE, target, Common::PageType::Memory);
 
         if (Settings::IsFastmemEnabled()) {

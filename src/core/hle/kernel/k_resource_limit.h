@@ -67,4 +67,7 @@ private:
     KLightConditionVariable cond_var;
     const Core::Timing::CoreTiming* core_timing{};
 };
+
+KResourceLimit* CreateResourceLimitForProcess(Core::System& system, s64 physical_memory_size);
+
 } // namespace Kernel

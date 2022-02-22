@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include "common/assert.h"
+#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/hle/kernel/k_resource_limit.h"
 #include "core/hle/kernel/svc_results.h"
@@ -149,6 +150,24 @@ void KResourceLimit::Release(LimitableResource which, s64 value, s64 hint) {
     if (waiter_count != 0) {
         cond_var.Broadcast();
     }
+}
+
+KResourceLimit* CreateResourceLimitForProcess(Core::System& system, s64 physical_memory_size) {
+    auto* resource_limit = KResourceLimit::Create(system.Kernel());
+    resource_limit->Initialize(&system.CoreTiming());
+
+    // Initialize default resource limit values.
+    // TODO(bunnei): These values are the system defaults, the limits for service processes are
+    // lower. These should use the correct limit values.
+
+    ASSERT(resource_limit->SetLimitValue(LimitableResource::PhysicalMemory, physical_memory_size)
+               .IsSuccess());
+    ASSERT(resource_limit->SetLimitValue(LimitableResource::Threads, 800).IsSuccess());
+    ASSERT(resource_limit->SetLimitValue(LimitableResource::Events, 900).IsSuccess());
+    ASSERT(resource_limit->SetLimitValue(LimitableResource::TransferMemory, 200).IsSuccess());
+    ASSERT(resource_limit->SetLimitValue(LimitableResource::Sessions, 1133).IsSuccess());
+
+    return resource_limit;
 }
 
 } // namespace Kernel

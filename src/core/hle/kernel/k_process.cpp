@@ -123,12 +123,11 @@ private:
 };
 
 ResultCode KProcess::Initialize(KProcess* process, Core::System& system, std::string process_name,
-                                ProcessType type) {
+                                ProcessType type, KResourceLimit* res_limit) {
     auto& kernel = system.Kernel();
 
     process->name = std::move(process_name);
-
-    process->resource_limit = kernel.GetSystemResourceLimit();
+    process->resource_limit = res_limit;
     process->status = ProcessStatus::Created;
     process->program_id = 0;
     process->process_id = type == ProcessType::KernelInternal ? kernel.CreateNewKernelProcessID()
@@ -143,15 +142,15 @@ ResultCode KProcess::Initialize(KProcess* process, Core::System& system, std::st
 
     kernel.AppendNewProcess(process);
 
-    // Open a reference to the resource limit.
-    process->resource_limit->Open();
-
     // Clear remaining fields.
     process->num_running_threads = 0;
     process->is_signaled = false;
     process->exception_thread = nullptr;
     process->is_suspended = false;
     process->schedule_count = 0;
+
+    // Open a reference to the resource limit.
+    process->resource_limit->Open();
 
     return ResultSuccess;
 }

@@ -2332,7 +2332,7 @@ static ResultCode CreateEvent(Core::System& system, Handle* out_write, Handle* o
     R_UNLESS(event != nullptr, ResultOutOfResource);
 
     // Initialize the event.
-    event->Initialize("CreateEvent");
+    event->Initialize("CreateEvent", kernel.CurrentProcess());
 
     // Commit the thread reservation.
     event_reservation.Commit();

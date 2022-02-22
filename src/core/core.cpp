@@ -28,7 +28,9 @@
 #include "core/file_sys/vfs_real.h"
 #include "core/hardware_interrupt_manager.h"
 #include "core/hid/hid_core.h"
+#include "core/hle/kernel/k_memory_manager.h"
 #include "core/hle/kernel/k_process.h"
+#include "core/hle/kernel/k_resource_limit.h"
 #include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/physical_core.h"
@@ -252,9 +254,16 @@ struct System::Impl {
         }
 
         telemetry_session->AddInitialInfo(*app_loader, fs_controller, *content_provider);
+
+        // Create a resource limit for the process.
+        const auto physical_memory_size =
+            kernel.MemoryManager().GetSize(Kernel::KMemoryManager::Pool::Application);
+        auto* resource_limit = Kernel::CreateResourceLimitForProcess(system, physical_memory_size);
+
+        // Create the process.
         auto main_process = Kernel::KProcess::Create(system.Kernel());
         ASSERT(Kernel::KProcess::Initialize(main_process, system, "main",
-                                            Kernel::KProcess::ProcessType::Userland)
+                                            Kernel::KProcess::ProcessType::Userland, resource_limit)
                    .IsSuccess());
         const auto [load_result, load_parameters] = app_loader->Load(*main_process, system);
         if (load_result != Loader::ResultStatus::Success) {

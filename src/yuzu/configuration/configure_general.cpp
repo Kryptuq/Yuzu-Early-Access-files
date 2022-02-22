@@ -42,6 +42,9 @@ void ConfigureGeneral::SetConfiguration() {
 
     ui->use_multi_core->setEnabled(runtime_lock);
     ui->use_multi_core->setChecked(Settings::values.use_multi_core.GetValue());
+    ui->use_extended_memory_layout->setEnabled(runtime_lock);
+    ui->use_extended_memory_layout->setChecked(
+        Settings::values.use_extended_memory_layout.GetValue());
 
     ui->toggle_check_exit->setChecked(UISettings::values.confirm_before_closing.GetValue());
     ui->toggle_user_on_boot->setChecked(UISettings::values.select_user_on_boot.GetValue());
@@ -91,6 +94,9 @@ void ConfigureGeneral::ResetDefaults() {
 void ConfigureGeneral::ApplyConfiguration() {
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_multi_core, ui->use_multi_core,
                                              use_multi_core);
+    ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_extended_memory_layout,
+                                             ui->use_extended_memory_layout,
+                                             use_extended_memory_layout);
 
     if (Settings::IsConfiguringGlobal()) {
         UISettings::values.confirm_before_closing = ui->toggle_check_exit->isChecked();
@@ -160,6 +166,9 @@ void ConfigureGeneral::SetupPerGameUI() {
                                             Settings::values.use_speed_limit, use_speed_limit);
     ConfigurationShared::SetColoredTristate(ui->use_multi_core, Settings::values.use_multi_core,
                                             use_multi_core);
+    ConfigurationShared::SetColoredTristate(ui->use_extended_memory_layout,
+                                            Settings::values.use_extended_memory_layout,
+                                            use_extended_memory_layout);
 
     connect(ui->toggle_speed_limit, &QCheckBox::clicked, ui->speed_limit, [this]() {
         ui->speed_limit->setEnabled(ui->toggle_speed_limit->isChecked() &&

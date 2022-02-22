@@ -41,24 +41,6 @@ constexpr std::size_t GetAddressSpaceWidthFromType(FileSys::ProgramAddressSpaceT
     }
 }
 
-constexpr u64 GetAddressInRange(const KMemoryInfo& info, VAddr addr) {
-    if (info.GetAddress() < addr) {
-        return addr;
-    }
-    return info.GetAddress();
-}
-
-constexpr std::size_t GetSizeInRange(const KMemoryInfo& info, VAddr start, VAddr end) {
-    std::size_t size{info.GetSize()};
-    if (info.GetAddress() < start) {
-        size -= start - info.GetAddress();
-    }
-    if (info.GetEndAddress() > end) {
-        size -= info.GetEndAddress() - end;
-    }
-    return size;
-}
-
 } // namespace
 
 KPageTable::KPageTable(Core::System& system_)
@@ -724,8 +706,7 @@ ResultCode KPageTable::UnmapPhysicalMemory(VAddr address, std::size_t size) {
         size_t tot_size = 0;
 
         cur_address = address;
-        next_valid =
-            impl.BeginTraversal(std::addressof(next_entry), std::addressof(context), cur_address);
+        next_valid = impl.BeginTraversal(next_entry, context, cur_address);
         next_entry.block_size =
             (next_entry.block_size - (next_entry.phys_addr & (next_entry.block_size - 1)));
 
@@ -751,8 +732,7 @@ ResultCode KPageTable::UnmapPhysicalMemory(VAddr address, std::size_t size) {
                 break;
             }
 
-            next_valid =
-                impl.ContinueTraversal(std::addressof(next_entry), std::addressof(context));
+            next_valid = impl.ContinueTraversal(next_entry, context);
         }
 
         // Add the last block.

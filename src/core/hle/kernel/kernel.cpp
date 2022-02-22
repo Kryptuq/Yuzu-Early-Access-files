@@ -241,13 +241,6 @@ struct KernelCore::Impl {
         constexpr u64 secure_applet_memory_size{4_MiB};
         ASSERT(system_resource_limit->Reserve(LimitableResource::PhysicalMemory,
                                               secure_applet_memory_size));
-
-        // This memory seems to be reserved on hardware, but is not reserved/used by yuzu.
-        // Likely Horizon OS reserved memory
-        // TODO(ameerj): Derive the memory rather than hardcode it.
-        constexpr u64 unknown_reserved_memory{0x2f896000};
-        ASSERT(system_resource_limit->Reserve(LimitableResource::PhysicalMemory,
-                                              unknown_reserved_memory));
     }
 
     void InitializePreemption(KernelCore& kernel) {
