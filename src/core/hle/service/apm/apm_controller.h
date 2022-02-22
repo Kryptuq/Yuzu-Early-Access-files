@@ -32,15 +32,18 @@ enum class PerformanceConfiguration : u32 {
     Config16 = 0x9222000C,
 };
 
+// This is nn::oe::CpuBoostMode
 enum class CpuBoostMode : u32 {
-    Disabled = 0,
-    Full = 1,    // CPU + GPU -> Config 13, 14, 15, or 16
-    Partial = 2, // GPU Only -> Config 15 or 16
+    Normal = 0,   // Boost mode disabled
+    FastLoad = 1, // CPU + GPU -> Config 13, 14, 15, or 16
+    Partial = 2,  // GPU Only -> Config 15 or 16
 };
 
-enum class PerformanceMode : u8 {
-    Handheld = 0,
-    Docked = 1,
+// This is nn::oe::PerformanceMode
+enum class PerformanceMode : s32 {
+    Invalid = -1,
+    Normal = 0,
+    Boost = 1,
 };
 
 // Class to manage the state and change of the emulated system performance.

@@ -618,7 +618,7 @@ void AppletMessageQueue::PushMessage(AppletMessage msg) {
 AppletMessageQueue::AppletMessage AppletMessageQueue::PopMessage() {
     if (messages.empty()) {
         on_new_message->GetWritableEvent().Clear();
-        return AppletMessage::NoMessage;
+        return AppletMessage::None;
     }
     auto msg = messages.front();
     messages.pop();
@@ -633,7 +633,7 @@ std::size_t AppletMessageQueue::GetMessageCount() const {
 }
 
 void AppletMessageQueue::RequestExit() {
-    PushMessage(AppletMessage::ExitRequested);
+    PushMessage(AppletMessage::Exit);
 }
 
 void AppletMessageQueue::FocusStateChanged() {
@@ -732,7 +732,7 @@ void ICommonStateGetter::ReceiveMessage(Kernel::HLERequestContext& ctx) {
     const auto message = msg_queue->PopMessage();
     IPC::ResponseBuilder rb{ctx, 3};
 
-    if (message == AppletMessageQueue::AppletMessage::NoMessage) {
+    if (message == AppletMessageQueue::AppletMessage::None) {
         LOG_ERROR(Service_AM, "Message queue is empty");
         rb.Push(ERR_NO_MESSAGES);
         rb.PushEnum<AppletMessageQueue::AppletMessage>(message);

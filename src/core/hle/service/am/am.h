@@ -22,6 +22,7 @@ class NVFlinger;
 
 namespace Service::AM {
 
+// This is nn::settings::Language
 enum SystemLanguage {
     Japanese = 0,
     English = 1, // en-US
@@ -41,16 +42,44 @@ enum SystemLanguage {
     // 4.0.0+
     SimplifiedChinese = 15,
     TraditionalChinese = 16,
+    // 10.1.0+
+    BrazilianPortuguese = 17,
 };
 
 class AppletMessageQueue {
 public:
+    // This is nn::am::AppletMessage
     enum class AppletMessage : u32 {
-        NoMessage = 0,
-        ExitRequested = 4,
+        None = 0,
+        ChangeIntoForeground = 1,
+        ChangeIntoBackground = 2,
+        Exit = 4,
+        ApplicationExited = 6,
         FocusStateChanged = 15,
+        Resume = 16,
+        DetectShortPressingHomeButton = 20,
+        DetectLongPressingHomeButton = 21,
+        DetectShortPressingPowerButton = 22,
+        DetectMiddlePressingPowerButton = 23,
+        DetectLongPressingPowerButton = 24,
+        RequestToPrepareSleep = 25,
+        FinishedSleepSequence = 26,
+        SleepRequiredByHighTemperature = 27,
+        SleepRequiredByLowBattery = 28,
+        AutoPowerDown = 29,
         OperationModeChanged = 30,
         PerformanceModeChanged = 31,
+        DetectReceivingCecSystemStandby = 32,
+        SdCardRemoved = 33,
+        LaunchApplicationRequested = 50,
+        RequestToDisplay = 51,
+        ShowApplicationLogo = 55,
+        HideApplicationLogo = 56,
+        ForceHideApplicationLogo = 57,
+        FloatingApplicationDetected = 60,
+        DetectShortPressingCaptureButton = 90,
+        AlbumScreenShotTaken = 92,
+        AlbumRecordingSaved = 93,
     };
 
     explicit AppletMessageQueue(Core::System& system);
@@ -179,11 +208,14 @@ public:
     ~ICommonStateGetter() override;
 
 private:
+    // This is nn::oe::FocusState
     enum class FocusState : u8 {
         InFocus = 1,
         NotInFocus = 2,
+        Background = 3,
     };
 
+    // This is nn::oe::OperationMode
     enum class OperationMode : u8 {
         Handheld = 0,
         Docked = 1,

@@ -17,8 +17,8 @@ constexpr auto DEFAULT_PERFORMANCE_CONFIGURATION = PerformanceConfiguration::Con
 
 Controller::Controller(Core::Timing::CoreTiming& core_timing_)
     : core_timing{core_timing_}, configs{
-                                     {PerformanceMode::Handheld, DEFAULT_PERFORMANCE_CONFIGURATION},
-                                     {PerformanceMode::Docked, DEFAULT_PERFORMANCE_CONFIGURATION},
+                                     {PerformanceMode::Normal, DEFAULT_PERFORMANCE_CONFIGURATION},
+                                     {PerformanceMode::Boost, DEFAULT_PERFORMANCE_CONFIGURATION},
                                  } {}
 
 Controller::~Controller() = default;
@@ -63,13 +63,13 @@ void Controller::SetFromCpuBoostMode(CpuBoostMode mode) {
         PerformanceConfiguration::Config15,
     }};
 
-    SetPerformanceConfiguration(PerformanceMode::Docked,
+    SetPerformanceConfiguration(PerformanceMode::Boost,
                                 BOOST_MODE_TO_CONFIG_MAP.at(static_cast<u32>(mode)));
 }
 
 PerformanceMode Controller::GetCurrentPerformanceMode() const {
-    return Settings::values.use_docked_mode.GetValue() ? PerformanceMode::Docked
-                                                       : PerformanceMode::Handheld;
+    return Settings::values.use_docked_mode.GetValue() ? PerformanceMode::Boost
+                                                       : PerformanceMode::Normal;
 }
 
 PerformanceConfiguration Controller::GetCurrentPerformanceConfiguration(PerformanceMode mode) {
