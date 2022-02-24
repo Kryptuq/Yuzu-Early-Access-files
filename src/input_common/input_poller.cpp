@@ -470,7 +470,7 @@ public:
     }
 
     Common::Input::BatteryStatus GetStatus() const {
-        return static_cast<Common::Input::BatteryLevel>(input_engine->GetBattery(identifier));
+        return input_engine->GetBattery(identifier);
     }
 
     void ForceUpdate() override {

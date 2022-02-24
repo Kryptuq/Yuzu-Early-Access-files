@@ -34,16 +34,6 @@ struct BasicMotion {
     u64 delta_timestamp{};
 };
 
-// Stages of a battery charge
-enum class BatteryLevel {
-    Empty,
-    Critical,
-    Low,
-    Medium,
-    Full,
-    Charging,
-};
-
 // Types of input that are stored in the engine
 enum class EngineInputType {
     None,
@@ -178,7 +168,7 @@ public:
     bool GetButton(const PadIdentifier& identifier, int button) const;
     bool GetHatButton(const PadIdentifier& identifier, int button, u8 direction) const;
     f32 GetAxis(const PadIdentifier& identifier, int axis) const;
-    BatteryLevel GetBattery(const PadIdentifier& identifier) const;
+    Common::Input::BatteryLevel GetBattery(const PadIdentifier& identifier) const;
     BasicMotion GetMotion(const PadIdentifier& identifier, int motion) const;
 
     int SetCallback(InputIdentifier input_identifier);
@@ -189,7 +179,7 @@ protected:
     void SetButton(const PadIdentifier& identifier, int button, bool value);
     void SetHatButton(const PadIdentifier& identifier, int button, u8 value);
     void SetAxis(const PadIdentifier& identifier, int axis, f32 value);
-    void SetBattery(const PadIdentifier& identifier, BatteryLevel value);
+    void SetBattery(const PadIdentifier& identifier, Common::Input::BatteryLevel value);
     void SetMotion(const PadIdentifier& identifier, int motion, const BasicMotion& value);
 
     virtual std::string GetHatButtonName([[maybe_unused]] u8 direction_value) const {
@@ -202,13 +192,13 @@ private:
         std::unordered_map<int, u8> hat_buttons;
         std::unordered_map<int, float> axes;
         std::unordered_map<int, BasicMotion> motions;
-        BatteryLevel battery{};
+        Common::Input::BatteryLevel battery{};
     };
 
     void TriggerOnButtonChange(const PadIdentifier& identifier, int button, bool value);
     void TriggerOnHatButtonChange(const PadIdentifier& identifier, int button, u8 value);
     void TriggerOnAxisChange(const PadIdentifier& identifier, int axis, f32 value);
-    void TriggerOnBatteryChange(const PadIdentifier& identifier, BatteryLevel value);
+    void TriggerOnBatteryChange(const PadIdentifier& identifier, Common::Input::BatteryLevel value);
     void TriggerOnMotionChange(const PadIdentifier& identifier, int motion,
                                const BasicMotion& value);
 

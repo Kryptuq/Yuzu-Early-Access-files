@@ -70,7 +70,7 @@ void InputEngine::SetAxis(const PadIdentifier& identifier, int axis, f32 value) 
     TriggerOnAxisChange(identifier, axis, value);
 }
 
-void InputEngine::SetBattery(const PadIdentifier& identifier, BatteryLevel value) {
+void InputEngine::SetBattery(const PadIdentifier& identifier, Common::Input::BatteryLevel value) {
     {
         std::lock_guard lock{mutex};
         ControllerData& controller = controller_list.at(identifier);
@@ -143,13 +143,13 @@ f32 InputEngine::GetAxis(const PadIdentifier& identifier, int axis) const {
     return axis_iter->second;
 }
 
-BatteryLevel InputEngine::GetBattery(const PadIdentifier& identifier) const {
+Common::Input::BatteryLevel InputEngine::GetBattery(const PadIdentifier& identifier) const {
     std::lock_guard lock{mutex};
     const auto controller_iter = controller_list.find(identifier);
     if (controller_iter == controller_list.cend()) {
         LOG_ERROR(Input, "Invalid identifier guid={}, pad={}, port={}", identifier.guid.RawString(),
                   identifier.pad, identifier.port);
-        return BatteryLevel::Charging;
+        return Common::Input::BatteryLevel::Charging;
     }
     const ControllerData& controller = controller_iter->second;
     return controller.battery;
@@ -270,7 +270,7 @@ void InputEngine::TriggerOnAxisChange(const PadIdentifier& identifier, int axis,
 }
 
 void InputEngine::TriggerOnBatteryChange(const PadIdentifier& identifier,
-                                         [[maybe_unused]] BatteryLevel value) {
+                                         [[maybe_unused]] Common::Input::BatteryLevel value) {
     std::lock_guard lock{mutex_callback};
     for (const auto& poller_pair : callback_list) {
         const InputIdentifier& poller = poller_pair.second;

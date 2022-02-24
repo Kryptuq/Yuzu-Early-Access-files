@@ -141,7 +141,7 @@ private:
     std::size_t GetClientNumber(std::string_view host, u16 port) const;
 
     // Translates UDP battery level to input engine battery level
-    BatteryLevel GetBatteryLevel(Response::Battery battery) const;
+    Common::Input::BatteryLevel GetBatteryLevel(Response::Battery battery) const;
 
     void OnVersion(Response::Version);
     void OnPortInfo(Response::PortInfo);

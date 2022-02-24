@@ -192,22 +192,22 @@ std::size_t UDPClient::GetClientNumber(std::string_view host, u16 port) const {
     return MAX_UDP_CLIENTS;
 }
 
-BatteryLevel UDPClient::GetBatteryLevel(Response::Battery battery) const {
+Common::Input::BatteryLevel UDPClient::GetBatteryLevel(Response::Battery battery) const {
     switch (battery) {
     case Response::Battery::Dying:
-        return BatteryLevel::Empty;
+        return Common::Input::BatteryLevel::Empty;
     case Response::Battery::Low:
-        return BatteryLevel::Critical;
+        return Common::Input::BatteryLevel::Critical;
     case Response::Battery::Medium:
-        return BatteryLevel::Low;
+        return Common::Input::BatteryLevel::Low;
     case Response::Battery::High:
-        return BatteryLevel::Medium;
+        return Common::Input::BatteryLevel::Medium;
     case Response::Battery::Full:
     case Response::Battery::Charged:
-        return BatteryLevel::Full;
+        return Common::Input::BatteryLevel::Full;
     case Response::Battery::Charging:
     default:
-        return BatteryLevel::Charging;
+        return Common::Input::BatteryLevel::Charging;
     }
 }
 

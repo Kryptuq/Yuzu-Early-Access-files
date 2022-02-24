@@ -224,6 +224,8 @@ private:
 
     void FastCopyBlockLinearToPitch();
 
+    void ReleaseSemaphore();
+
     Core::System& system;
 
     MemoryManager& memory_manager;

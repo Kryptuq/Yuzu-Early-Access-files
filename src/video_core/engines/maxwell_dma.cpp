@@ -53,7 +53,6 @@ void MaxwellDMA::Launch() {
 
     // TODO(Subv): Perform more research and implement all features of this engine.
     const LaunchDMA& launch = regs.launch_dma;
-    ASSERT(launch.semaphore_type == LaunchDMA::SemaphoreType::NONE);
     ASSERT(launch.interrupt_type == LaunchDMA::InterruptType::NONE);
     ASSERT(launch.data_transfer_type == LaunchDMA::DataTransferType::NON_PIPELINED);
     ASSERT(regs.dst_params.origin.x == 0);
@@ -79,6 +78,7 @@ void MaxwellDMA::Launch() {
             CopyPitchToBlockLinear();
         }
     }
+    ReleaseSemaphore();
 }
 
 void MaxwellDMA::CopyPitchToPitch() {
@@ -242,6 +242,25 @@ void MaxwellDMA::FastCopyBlockLinearToPitch() {
                      write_buffer.data(), read_buffer.data());
 
     memory_manager.WriteBlock(regs.offset_out, write_buffer.data(), dst_size);
+}
+
+void MaxwellDMA::ReleaseSemaphore() {
+    const auto type = regs.launch_dma.semaphore_type;
+    if (type == LaunchDMA::SemaphoreType::NONE) {
+        return;
+    }
+    const GPUVAddr address = regs.semaphore.address;
+    switch (type) {
+    case LaunchDMA::SemaphoreType::RELEASE_ONE_WORD_SEMAPHORE:
+        memory_manager.Write<u32>(address, regs.semaphore.payload);
+        break;
+    case LaunchDMA::SemaphoreType::RELEASE_FOUR_WORD_SEMAPHORE:
+        memory_manager.Write<u64>(address, static_cast<u64>(regs.semaphore.payload));
+        memory_manager.Write<u64>(address + 8, system.GPU().GetTicks());
+        break;
+    default:
+        UNREACHABLE_MSG("Unknown semaphore type: {}", static_cast<u32>(type.Value()));
+    }
 }
 
 } // namespace Tegra::Engines

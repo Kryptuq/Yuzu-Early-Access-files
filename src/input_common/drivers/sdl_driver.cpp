@@ -175,22 +175,23 @@ public:
         return false;
     }
 
-    BatteryLevel GetBatteryLevel() {
+    Common::Input::BatteryLevel GetBatteryLevel() {
         const auto level = SDL_JoystickCurrentPowerLevel(sdl_joystick.get());
         switch (level) {
         case SDL_JOYSTICK_POWER_EMPTY:
-            return BatteryLevel::Empty;
+            return Common::Input::BatteryLevel::Empty;
         case SDL_JOYSTICK_POWER_LOW:
-            return BatteryLevel::Low;
+            return Common::Input::BatteryLevel::Low;
         case SDL_JOYSTICK_POWER_MEDIUM:
-            return BatteryLevel::Medium;
+            return Common::Input::BatteryLevel::Medium;
         case SDL_JOYSTICK_POWER_FULL:
         case SDL_JOYSTICK_POWER_MAX:
-            return BatteryLevel::Full;
-        case SDL_JOYSTICK_POWER_UNKNOWN:
+            return Common::Input::BatteryLevel::Full;
         case SDL_JOYSTICK_POWER_WIRED:
+            return Common::Input::BatteryLevel::Charging;
+        case SDL_JOYSTICK_POWER_UNKNOWN:
         default:
-            return BatteryLevel::Charging;
+            return Common::Input::BatteryLevel::None;
         }
     }
 
@@ -351,6 +352,8 @@ void SDLDriver::HandleGameControllerEvent(const SDL_Event& event) {
         if (const auto joystick = GetSDLJoystickBySDLID(event.jbutton.which)) {
             const PadIdentifier identifier = joystick->GetPadIdentifier();
             SetButton(identifier, event.jbutton.button, true);
+            // Battery doesn't trigger an event so just update every button press
+            SetBattery(identifier, joystick->GetBatteryLevel());
         }
         break;
     }
