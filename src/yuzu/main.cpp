@@ -2937,6 +2937,7 @@ void GMainWindow::OnLoadAmiibo() {
     if (nfc_state == Service::NFP::DeviceState::TagFound ||
         nfc_state == Service::NFP::DeviceState::TagMounted) {
         nfc->CloseAmiibo();
+        QMessageBox::warning(this, tr("Amiibo"), tr("The current amiibo has been removed"));
         return;
     }
 
@@ -2962,6 +2963,15 @@ void GMainWindow::LoadAmiibo(const QString& filename) {
     Service::SM::ServiceManager& sm = system->ServiceManager();
     auto nfc = sm.GetService<Service::NFP::Module::Interface>("nfp:user");
     if (nfc == nullptr) {
+        return;
+    }
+
+    // Remove amiibo if one is connected
+    const auto nfc_state = nfc->GetCurrentState();
+    if (nfc_state == Service::NFP::DeviceState::TagFound ||
+        nfc_state == Service::NFP::DeviceState::TagMounted) {
+        nfc->CloseAmiibo();
+        QMessageBox::warning(this, tr("Amiibo"), tr("The current amiibo has been removed"));
         return;
     }
 
