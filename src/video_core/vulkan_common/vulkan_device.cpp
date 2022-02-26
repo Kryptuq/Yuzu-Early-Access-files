@@ -233,9 +233,14 @@ std::vector<std::string> GetSupportedExtensions(vk::PhysicalDevice physical) {
     return supported_extensions;
 }
 
+bool IsExtensionSupported(std::span<const std::string> supported_extensions,
+                          std::string_view extension) {
+    return std::ranges::find(supported_extensions, extension) != supported_extensions.end();
+}
+
 NvidiaArchitecture GetNvidiaArchitecture(vk::PhysicalDevice physical,
                                          std::span<const std::string> exts) {
-    if (std::ranges::find(exts, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME) != exts.end()) {
+    if (IsExtensionSupported(exts, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME)) {
         VkPhysicalDeviceFragmentShadingRatePropertiesKHR shading_rate_props{};
         shading_rate_props.sType =
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_PROPERTIES_KHR;
@@ -248,7 +253,7 @@ NvidiaArchitecture GetNvidiaArchitecture(vk::PhysicalDevice physical,
             return NvidiaArchitecture::AmpereOrNewer;
         }
     }
-    if (std::ranges::find(exts, VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME) != exts.end()) {
+    if (IsExtensionSupported(exts, VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME)) {
         return NvidiaArchitecture::Turing;
     }
     return NvidiaArchitecture::VoltaOrOlder;
@@ -618,13 +623,25 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             break;
         }
     }
-    if (ext_extended_dynamic_state && driver_id == VK_DRIVER_ID_MESA_RADV) {
+    const bool is_radv = driver_id == VK_DRIVER_ID_MESA_RADV;
+    if (ext_extended_dynamic_state && is_radv) {
         // Mask driver version variant
         const u32 version = (properties.driverVersion << 3) >> 3;
         if (version < VK_MAKE_API_VERSION(0, 21, 2, 0)) {
             LOG_WARNING(Render_Vulkan,
                         "RADV versions older than 21.2 have broken VK_EXT_extended_dynamic_state");
             ext_extended_dynamic_state = false;
+        }
+    }
+    if (ext_vertex_input_dynamic_state && is_radv) {
+        // TODO(ameerj): Blacklist only offending driver versions
+        // TODO(ameerj): Confirm if RDNA1 is affected
+        const bool is_rdna2 =
+            IsExtensionSupported(supported_extensions, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+        if (is_rdna2) {
+            LOG_WARNING(Render_Vulkan,
+                        "RADV has broken VK_EXT_vertex_input_dynamic_state on RDNA2 hardware");
+            ext_vertex_input_dynamic_state = false;
         }
     }
     sets_per_pool = 64;
@@ -642,7 +659,7 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             has_broken_cube_compatibility = true;
         }
     }
-    const bool is_amd_or_radv = is_amd || driver_id == VK_DRIVER_ID_MESA_RADV;
+    const bool is_amd_or_radv = is_amd || is_radv;
     if (ext_sampler_filter_minmax && is_amd_or_radv) {
         // Disable ext_sampler_filter_minmax on AMD GCN4 and lower as it is broken.
         if (!is_float16_supported) {
