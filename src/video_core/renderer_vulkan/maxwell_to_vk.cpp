@@ -495,6 +495,8 @@ VkFormat VertexFormat(Maxwell::VertexAttribute::Type type, Maxwell::VertexAttrib
             return VK_FORMAT_R32G32B32_SFLOAT;
         case Maxwell::VertexAttribute::Size::Size_32_32_32_32:
             return VK_FORMAT_R32G32B32A32_SFLOAT;
+        case Maxwell::VertexAttribute::Size::Size_11_11_10:
+            return VK_FORMAT_B10G11R11_UFLOAT_PACK32;
         default:
             break;
         }

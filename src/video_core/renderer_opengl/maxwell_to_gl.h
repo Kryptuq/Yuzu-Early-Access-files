@@ -184,6 +184,8 @@ inline GLenum VertexFormat(Maxwell::VertexAttribute attrib) {
         case Maxwell::VertexAttribute::Size::Size_32_32_32:
         case Maxwell::VertexAttribute::Size::Size_32_32_32_32:
             return GL_FLOAT;
+        case Maxwell::VertexAttribute::Size::Size_11_11_10:
+            return GL_UNSIGNED_INT_10F_11F_11F_REV;
         default:
             break;
         }
