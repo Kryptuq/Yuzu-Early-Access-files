@@ -39,6 +39,10 @@ Smc::MemoryArrangement GetMemoryArrangeForInit() {
 }
 } // namespace
 
+size_t KSystemControl::Init::GetRealMemorySize() {
+    return GetIntendedMemorySize();
+}
+
 // Initialization.
 size_t KSystemControl::Init::GetIntendedMemorySize() {
     switch (GetMemorySizeForInit()) {
@@ -53,7 +57,13 @@ size_t KSystemControl::Init::GetIntendedMemorySize() {
 }
 
 PAddr KSystemControl::Init::GetKernelPhysicalBaseAddress(u64 base_address) {
-    return base_address;
+    const size_t real_dram_size = KSystemControl::Init::GetRealMemorySize();
+    const size_t intended_dram_size = KSystemControl::Init::GetIntendedMemorySize();
+    if (intended_dram_size * 2 < real_dram_size) {
+        return base_address;
+    } else {
+        return base_address + ((real_dram_size - intended_dram_size) / 2);
+    }
 }
 
 bool KSystemControl::Init::ShouldIncreaseThreadResourceLimit() {

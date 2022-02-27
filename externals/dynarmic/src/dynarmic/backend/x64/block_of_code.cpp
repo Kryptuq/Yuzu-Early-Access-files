@@ -190,8 +190,8 @@ void BlockOfCode::ClearCache() {
 
 size_t BlockOfCode::SpaceRemaining() const {
     ASSERT(prelude_complete);
-    const u8* current_near_ptr = in_far_code ? reinterpret_cast<const u8*>(near_code_ptr) : getCode<const u8*>();
-    const u8* current_far_ptr = in_far_code ? getCode<const u8*>() : reinterpret_cast<const u8*>(far_code_ptr);
+    const u8* current_near_ptr = in_far_code ? reinterpret_cast<const u8*>(near_code_ptr) : getCurr<const u8*>();
+    const u8* current_far_ptr = in_far_code ? getCurr<const u8*>() : reinterpret_cast<const u8*>(far_code_ptr);
     if (current_near_ptr >= far_code_begin)
         return 0;
     if (current_far_ptr >= &top_[maxSize_])

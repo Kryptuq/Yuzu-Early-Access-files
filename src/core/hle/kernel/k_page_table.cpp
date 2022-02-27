@@ -273,11 +273,12 @@ ResultCode KPageTable::MapProcessCode(VAddr addr, std::size_t num_pages, KMemory
     R_TRY(this->CheckMemoryState(addr, size, KMemoryState::All, KMemoryState::Free,
                                  KMemoryPermission::None, KMemoryPermission::None,
                                  KMemoryAttribute::None, KMemoryAttribute::None));
+    KPageLinkedList pg;
+    R_TRY(system.Kernel().MemoryManager().AllocateAndOpen(
+        &pg, num_pages,
+        KMemoryManager::EncodeOption(KMemoryManager::Pool::Application, allocation_option)));
 
-    KPageLinkedList page_linked_list;
-    R_TRY(system.Kernel().MemoryManager().Allocate(page_linked_list, num_pages, memory_pool,
-                                                   allocation_option));
-    R_TRY(Operate(addr, num_pages, page_linked_list, OperationType::MapGroup));
+    R_TRY(Operate(addr, num_pages, pg, OperationType::MapGroup));
 
     block_manager->Update(addr, num_pages, state, perm);
 
@@ -443,9 +444,10 @@ ResultCode KPageTable::MapPhysicalMemory(VAddr address, std::size_t size) {
             R_UNLESS(memory_reservation.Succeeded(), ResultLimitReached);
 
             // Allocate pages for the new memory.
-            KPageLinkedList page_linked_list;
-            R_TRY(system.Kernel().MemoryManager().Allocate(
-                page_linked_list, (size - mapped_size) / PageSize, memory_pool, allocation_option));
+            KPageLinkedList pg;
+            R_TRY(system.Kernel().MemoryManager().AllocateAndOpenForProcess(
+                &pg, (size - mapped_size) / PageSize,
+                KMemoryManager::EncodeOption(memory_pool, allocation_option), 0, 0));
 
             // Map the memory.
             {
@@ -547,7 +549,7 @@ ResultCode KPageTable::MapPhysicalMemory(VAddr address, std::size_t size) {
                 });
 
                 // Iterate over the memory.
-                auto pg_it = page_linked_list.Nodes().begin();
+                auto pg_it = pg.Nodes().begin();
                 PAddr pg_phys_addr = pg_it->GetAddress();
                 size_t pg_pages = pg_it->GetNumPages();
 
@@ -571,7 +573,7 @@ ResultCode KPageTable::MapPhysicalMemory(VAddr address, std::size_t size) {
                             // Check if we're at the end of the physical block.
                             if (pg_pages == 0) {
                                 // Ensure there are more pages to map.
-                                ASSERT(pg_it != page_linked_list.Nodes().end());
+                                ASSERT(pg_it != pg.Nodes().end());
 
                                 // Advance our physical block.
                                 ++pg_it;
@@ -841,9 +843,13 @@ ResultCode KPageTable::UnmapPhysicalMemory(VAddr address, std::size_t size) {
     process->GetResourceLimit()->Release(LimitableResource::PhysicalMemory, mapped_size);
 
     // Update memory blocks.
-    system.Kernel().MemoryManager().Free(pg, size / PageSize, memory_pool, allocation_option);
     block_manager->Update(address, size / PageSize, KMemoryState::Free, KMemoryPermission::None,
                           KMemoryAttribute::None);
+
+    // TODO(bunnei): This is a workaround until the next set of changes, where we add reference
+    // counting for mapped pages. Until then, we must manually close the reference to the page
+    // group.
+    system.Kernel().MemoryManager().Close(pg);
 
     // We succeeded.
     remap_guard.Cancel();
@@ -1270,9 +1276,16 @@ ResultCode KPageTable::SetHeapSize(VAddr* out, std::size_t size) {
     R_UNLESS(memory_reservation.Succeeded(), ResultLimitReached);
 
     // Allocate pages for the heap extension.
-    KPageLinkedList page_linked_list;
-    R_TRY(system.Kernel().MemoryManager().Allocate(page_linked_list, allocation_size / PageSize,
-                                                   memory_pool, allocation_option));
+    KPageLinkedList pg;
+    R_TRY(system.Kernel().MemoryManager().AllocateAndOpen(
+        &pg, allocation_size / PageSize,
+        KMemoryManager::EncodeOption(memory_pool, allocation_option)));
+
+    // Clear all the newly allocated pages.
+    for (const auto& it : pg.Nodes()) {
+        std::memset(system.DeviceMemory().GetPointer(it.GetAddress()), heap_fill_value,
+                    it.GetSize());
+    }
 
     // Map the pages.
     {
@@ -1291,7 +1304,7 @@ ResultCode KPageTable::SetHeapSize(VAddr* out, std::size_t size) {
 
         // Map the pages.
         const auto num_pages = allocation_size / PageSize;
-        R_TRY(Operate(current_heap_end, num_pages, page_linked_list, OperationType::MapGroup));
+        R_TRY(Operate(current_heap_end, num_pages, pg, OperationType::MapGroup));
 
         // Clear all the newly allocated pages.
         for (std::size_t cur_page = 0; cur_page < num_pages; ++cur_page) {
@@ -1339,8 +1352,9 @@ ResultVal<VAddr> KPageTable::AllocateAndMapMemory(std::size_t needed_num_pages, 
         R_TRY(Operate(addr, needed_num_pages, perm, OperationType::Map, map_addr));
     } else {
         KPageLinkedList page_group;
-        R_TRY(system.Kernel().MemoryManager().Allocate(page_group, needed_num_pages, memory_pool,
-                                                       allocation_option));
+        R_TRY(system.Kernel().MemoryManager().AllocateAndOpenForProcess(
+            &page_group, needed_num_pages,
+            KMemoryManager::EncodeOption(memory_pool, allocation_option), 0, 0));
         R_TRY(Operate(addr, needed_num_pages, page_group, OperationType::MapGroup));
     }
 
@@ -1547,7 +1561,7 @@ ResultCode KPageTable::Operate(VAddr addr, std::size_t num_pages, KMemoryPermiss
     return ResultSuccess;
 }
 
-constexpr VAddr KPageTable::GetRegionAddress(KMemoryState state) const {
+VAddr KPageTable::GetRegionAddress(KMemoryState state) const {
     switch (state) {
     case KMemoryState::Free:
     case KMemoryState::Kernel:
@@ -1583,7 +1597,7 @@ constexpr VAddr KPageTable::GetRegionAddress(KMemoryState state) const {
     }
 }
 
-constexpr std::size_t KPageTable::GetRegionSize(KMemoryState state) const {
+std::size_t KPageTable::GetRegionSize(KMemoryState state) const {
     switch (state) {
     case KMemoryState::Free:
     case KMemoryState::Kernel:

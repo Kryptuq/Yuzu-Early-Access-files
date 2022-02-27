@@ -70,13 +70,12 @@ struct KernelCore::Impl {
 
         // Derive the initial memory layout from the emulated board
         Init::InitializeSlabResourceCounts(kernel);
-        KMemoryLayout memory_layout;
-        DeriveInitialMemoryLayout(memory_layout);
+        DeriveInitialMemoryLayout();
         Init::InitializeSlabHeaps(system, memory_layout);
 
         // Initialize kernel memory and resources.
-        InitializeSystemResourceLimit(kernel, system.CoreTiming(), memory_layout);
-        InitializeMemoryLayout(memory_layout);
+        InitializeSystemResourceLimit(kernel, system.CoreTiming());
+        InitializeMemoryLayout();
         InitializePageSlab();
         InitializeSchedulers();
         InitializeSuspendThreads();
@@ -220,8 +219,7 @@ struct KernelCore::Impl {
 
     // Creates the default system resource limit
     void InitializeSystemResourceLimit(KernelCore& kernel,
-                                       const Core::Timing::CoreTiming& core_timing,
-                                       const KMemoryLayout& memory_layout) {
+                                       const Core::Timing::CoreTiming& core_timing) {
         system_resource_limit = KResourceLimit::Create(system.Kernel());
         system_resource_limit->Initialize(&core_timing);
 
@@ -354,7 +352,7 @@ struct KernelCore::Impl {
         return schedulers[thread_id]->GetCurrentThread();
     }
 
-    void DeriveInitialMemoryLayout(KMemoryLayout& memory_layout) {
+    void DeriveInitialMemoryLayout() {
         // Insert the root region for the virtual memory tree, from which all other regions will
         // derive.
         memory_layout.GetVirtualMemoryRegionTree().InsertDirectly(
@@ -617,20 +615,14 @@ struct KernelCore::Impl {
                                                         linear_region_start);
     }
 
-    void InitializeMemoryLayout(const KMemoryLayout& memory_layout) {
+    void InitializeMemoryLayout() {
         const auto system_pool = memory_layout.GetKernelSystemPoolRegionPhysicalExtents();
-        const auto applet_pool = memory_layout.GetKernelAppletPoolRegionPhysicalExtents();
-        const auto application_pool = memory_layout.GetKernelApplicationPoolRegionPhysicalExtents();
 
-        // Initialize memory managers
+        // Initialize the memory manager.
         memory_manager = std::make_unique<KMemoryManager>(system);
-        memory_manager->InitializeManager(KMemoryManager::Pool::Application,
-                                          application_pool.GetAddress(),
-                                          application_pool.GetEndAddress());
-        memory_manager->InitializeManager(KMemoryManager::Pool::Applet, applet_pool.GetAddress(),
-                                          applet_pool.GetEndAddress());
-        memory_manager->InitializeManager(KMemoryManager::Pool::System, system_pool.GetAddress(),
-                                          system_pool.GetEndAddress());
+        const auto& management_region = memory_layout.GetPoolManagementRegion();
+        ASSERT(management_region.GetEndAddress() != 0);
+        memory_manager->Initialize(management_region.GetAddress(), management_region.GetSize());
 
         // Setup memory regions for emulated processes
         // TODO(bunnei): These should not be hardcoded regions initialized within the kernel
@@ -779,6 +771,9 @@ struct KernelCore::Impl {
     Kernel::KSharedMemory* irs_shared_mem{};
     Kernel::KSharedMemory* time_shared_mem{};
     Kernel::KSharedMemory* hidbus_shared_mem{};
+
+    // Memory layout
+    KMemoryLayout memory_layout;
 
     // Threads used for services
     std::unordered_set<std::shared_ptr<Kernel::ServiceThread>> service_threads;
@@ -1151,6 +1146,10 @@ KWorkerTaskManager& KernelCore::WorkerTaskManager() {
 
 const KWorkerTaskManager& KernelCore::WorkerTaskManager() const {
     return impl->worker_task_manager;
+}
+
+const KMemoryLayout& KernelCore::MemoryLayout() const {
+    return impl->memory_layout;
 }
 
 bool KernelCore::IsPhantomModeForSingleCore() const {

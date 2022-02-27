@@ -32,7 +32,7 @@ endif()
 
 # vixl
 
-if (ARCHITECTURE STREQUAL "arm64")
+if (ARCHITECTURE STREQUAL "arm64" AND NOT TARGET vixl)
     add_subdirectory(vixl EXCLUDE_FROM_ALL)
 endif()
 

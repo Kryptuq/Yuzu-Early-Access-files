@@ -151,7 +151,9 @@ TEST(buffer_test, indestructible) {
 template <typename T> struct mock_buffer final : buffer<T> {
   MOCK_METHOD1(do_grow, size_t(size_t capacity));
 
-  void grow(size_t capacity) { this->set(this->data(), do_grow(capacity)); }
+  void grow(size_t capacity) override {
+    this->set(this->data(), do_grow(capacity));
+  }
 
   mock_buffer(T* data = nullptr, size_t buf_capacity = 0) {
     this->set(data, buf_capacity);
@@ -406,15 +408,7 @@ TYPED_TEST(numeric_arg_test, make_and_visit) {
   CHECK_ARG_SIMPLE(std::numeric_limits<TypeParam>::max());
 }
 
-namespace fmt {
-template <> struct is_char<wchar_t> : std::true_type {};
-}  // namespace fmt
-
-TEST(arg_test, char_arg) {
-  CHECK_ARG(char, 'a', 'a');
-  CHECK_ARG(wchar_t, L'a', 'a');
-  CHECK_ARG(wchar_t, L'a', L'a');
-}
+TEST(arg_test, char_arg) { CHECK_ARG(char, 'a', 'a'); }
 
 TEST(arg_test, string_arg) {
   char str_data[] = "test";
@@ -452,7 +446,7 @@ struct check_custom {
     struct test_buffer final : fmt::detail::buffer<char> {
       char data[10];
       test_buffer() : fmt::detail::buffer<char>(data, 0, 10) {}
-      void grow(size_t) {}
+      void grow(size_t) override {}
     } buffer;
     auto parse_ctx = fmt::format_parse_context("");
     auto ctx = fmt::format_context(fmt::detail::buffer_appender<char>(buffer),
@@ -530,7 +524,7 @@ struct test_format_specs_handler {
   fmt::detail::arg_ref<char> width_ref;
   int precision = 0;
   fmt::detail::arg_ref<char> precision_ref;
-  char type = 0;
+  fmt::presentation_type type = fmt::presentation_type::none;
 
   // Workaround for MSVC2017 bug that results in "expression did not evaluate
   // to a constant" with compiler-generated copy ctor.
@@ -556,14 +550,14 @@ struct test_format_specs_handler {
   constexpr void on_dynamic_precision(string_view) {}
 
   constexpr void end_precision() {}
-  constexpr void on_type(char t) { type = t; }
+  constexpr void on_type(fmt::presentation_type t) { type = t; }
   constexpr void on_error(const char*) { res = error; }
 };
 
 template <size_t N>
 constexpr test_format_specs_handler parse_test_specs(const char (&s)[N]) {
   auto h = test_format_specs_handler();
-  fmt::detail::parse_format_specs(s, s + N, h);
+  fmt::detail::parse_format_specs(s, s + N - 1, h);
   return h;
 }
 
@@ -581,7 +575,7 @@ TEST(core_test, constexpr_parse_format_specs) {
   static_assert(parse_test_specs("{42}").width_ref.val.index == 42, "");
   static_assert(parse_test_specs(".42").precision == 42, "");
   static_assert(parse_test_specs(".{42}").precision_ref.val.index == 42, "");
-  static_assert(parse_test_specs("d").type == 'd', "");
+  static_assert(parse_test_specs("d").type == fmt::presentation_type::dec, "");
   static_assert(parse_test_specs("{<").res == handler::error, "");
 }
 
@@ -603,7 +597,7 @@ constexpr fmt::detail::dynamic_format_specs<char> parse_dynamic_specs(
   auto specs = fmt::detail::dynamic_format_specs<char>();
   auto ctx = test_parse_context();
   auto h = fmt::detail::dynamic_specs_handler<test_parse_context>(specs, ctx);
-  parse_format_specs(s, s + N, h);
+  parse_format_specs(s, s + N - 1, h);
   return specs;
 }
 
@@ -621,14 +615,15 @@ TEST(format_test, constexpr_dynamic_specs_handler) {
   static_assert(parse_dynamic_specs(".42").precision == 42, "");
   static_assert(parse_dynamic_specs(".{}").precision_ref.val.index == 11, "");
   static_assert(parse_dynamic_specs(".{42}").precision_ref.val.index == 42, "");
-  static_assert(parse_dynamic_specs("d").type == 'd', "");
+  static_assert(parse_dynamic_specs("d").type == fmt::presentation_type::dec,
+                "");
 }
 
 template <size_t N>
 constexpr test_format_specs_handler check_specs(const char (&s)[N]) {
   fmt::detail::specs_checker<test_format_specs_handler> checker(
       test_format_specs_handler(), fmt::detail::type::double_type);
-  parse_format_specs(s, s + N, checker);
+  parse_format_specs(s, s + N - 1, checker);
   return checker;
 }
 
@@ -645,7 +640,7 @@ TEST(format_test, constexpr_specs_checker) {
   static_assert(check_specs("{42}").width_ref.val.index == 42, "");
   static_assert(check_specs(".42").precision == 42, "");
   static_assert(check_specs(".{42}").precision_ref.val.index == 42, "");
-  static_assert(check_specs("d").type == 'd', "");
+  static_assert(check_specs("d").type == fmt::presentation_type::dec, "");
   static_assert(check_specs("{<").res == handler::error, "");
 }
 
@@ -709,10 +704,80 @@ TEST(core_test, has_formatter) {
                 "");
 }
 
+struct const_formattable {};
+struct nonconst_formattable {};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<const_formattable> {
+  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+
+  auto format(const const_formattable&, format_context& ctx)
+      -> decltype(ctx.out()) {
+    auto test = string_view("test");
+    return std::copy_n(test.data(), test.size(), ctx.out());
+  }
+};
+
+template <> struct formatter<nonconst_formattable> {
+  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+
+  auto format(nonconst_formattable&, format_context& ctx)
+      -> decltype(ctx.out()) {
+    auto test = string_view("test");
+    return std::copy_n(test.data(), test.size(), ctx.out());
+  }
+};
+FMT_END_NAMESPACE
+
+struct convertible_to_pointer {
+  operator const int*() const { return nullptr; }
+};
+
+enum class test_scoped_enum {};
+
 TEST(core_test, is_formattable) {
+#if 0
+  // This should be enabled once corresponding map overloads are gone.
+  static_assert(fmt::is_formattable<signed char*>::value, "");
+  static_assert(fmt::is_formattable<unsigned char*>::value, "");
+  static_assert(fmt::is_formattable<const signed char*>::value, "");
+  static_assert(fmt::is_formattable<const unsigned char*>::value, "");
+#endif
+  static_assert(!fmt::is_formattable<wchar_t>::value, "");
+#ifdef __cpp_char8_t
+  static_assert(!fmt::is_formattable<char8_t>::value, "");
+#endif
+  static_assert(!fmt::is_formattable<char16_t>::value, "");
+  static_assert(!fmt::is_formattable<char32_t>::value, "");
+  static_assert(!fmt::is_formattable<const wchar_t*>::value, "");
+  static_assert(!fmt::is_formattable<const wchar_t[3]>::value, "");
+  static_assert(!fmt::is_formattable<fmt::basic_string_view<wchar_t>>::value,
+                "");
   static_assert(fmt::is_formattable<enabled_formatter>::value, "");
   static_assert(!fmt::is_formattable<disabled_formatter>::value, "");
   static_assert(fmt::is_formattable<disabled_formatter_convertible>::value, "");
+
+  static_assert(fmt::is_formattable<const_formattable&>::value, "");
+  static_assert(fmt::is_formattable<const const_formattable&>::value, "");
+
+  static_assert(fmt::is_formattable<nonconst_formattable&>::value, "");
+#if !FMT_MSC_VER || FMT_MSC_VER >= 1910
+  static_assert(!fmt::is_formattable<const nonconst_formattable&>::value, "");
+#endif
+
+  static_assert(!fmt::is_formattable<convertible_to_pointer>::value, "");
+
+  static_assert(!fmt::is_formattable<void (*)()>::value, "");
+
+  struct s;
+
+  static_assert(!fmt::is_formattable<int(s::*)>::value, "");
+  static_assert(!fmt::is_formattable<int (s::*)()>::value, "");
+  static_assert(!fmt::is_formattable<test_scoped_enum>::value, "");
 }
 
 TEST(core_test, format) { EXPECT_EQ(fmt::format("{}", 42), "42"); }
@@ -838,10 +903,21 @@ TEST(core_test, adl) {
   if (fmt::detail::const_check(true)) return;
   auto s = adl_test::string();
   char buf[10];
-  fmt::format("{}", s);
+  (void)fmt::format("{}", s);
   fmt::format_to(buf, "{}", s);
   fmt::format_to_n(buf, 10, "{}", s);
-  fmt::formatted_size("{}", s);
+  (void)fmt::formatted_size("{}", s);
   fmt::print("{}", s);
   fmt::print(stdout, "{}", s);
+}
+
+TEST(core_test, has_const_formatter) {
+  EXPECT_TRUE((fmt::detail::has_const_formatter<const_formattable,
+                                                fmt::format_context>()));
+  EXPECT_FALSE((fmt::detail::has_const_formatter<nonconst_formattable,
+                                                 fmt::format_context>()));
+}
+
+TEST(core_test, format_nonconst) {
+  EXPECT_EQ(fmt::format("{}", nonconst_formattable()), "test");
 }

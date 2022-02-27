@@ -173,6 +173,10 @@ public:
         return Dereference(FindVirtualLinear(address));
     }
 
+    const KMemoryRegion& GetPhysicalLinearRegion(PAddr address) const {
+        return Dereference(FindPhysicalLinear(address));
+    }
+
     const KMemoryRegion* GetPhysicalKernelTraceBufferRegion() const {
         return GetPhysicalMemoryRegionTree().FindFirstDerived(KMemoryRegionType_KernelTraceBuffer);
     }

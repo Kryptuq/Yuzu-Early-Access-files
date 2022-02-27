@@ -9,7 +9,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [windows-latest, ubuntu-latest, macos-latest]
         cpu_detection: [0, 1]
       fail-fast: false
 
@@ -37,16 +37,19 @@ jobs:
         path: externals/ext-boost
 
     - name: Checkout unicorn repo
+      if: ${{matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'}}
       uses: actions/checkout@v2
       with:
         repository: MerryMage/unicorn
         path: externals/unicorn
 
     - name: Build unicorn
+      if: ${{matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'}}
       working-directory: externals/unicorn
       run: UNICORN_ARCHS=aarch64,arm ./make.sh
 
     - name: Configure CMake
+      if: ${{matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'}}
       run: >
         cmake 
         -B ${{github.workspace}}/build
@@ -59,9 +62,20 @@ jobs:
         -DLIBUNICORN_LIBRARY=${{github.workspace}}/externals/unicorn/libunicorn.a
         -G Ninja
 
+    - name: Configure CMake
+      if: ${{matrix.os == 'windows-latest'}}
+      run: >
+        cmake
+        -B ${{github.workspace}}/build
+        -DBoost_INCLUDE_DIRS=${{github.workspace}}/externals/ext-boost
+        -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        -DDYNARMIC_ENABLE_CPU_FEATURE_DETECTION=${{matrix.cpu_detection}}
+        -G "Visual Studio 17 2022"
+        -A x64
+
     - name: Build
       working-directory: ${{github.workspace}}/build
-      run: ninja
+      run: cmake --build . --config Release
 
     - name: Test
       env:

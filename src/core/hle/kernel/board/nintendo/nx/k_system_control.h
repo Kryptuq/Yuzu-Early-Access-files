@@ -13,6 +13,7 @@ public:
     class Init {
     public:
         // Initialization.
+        static std::size_t GetRealMemorySize();
         static std::size_t GetIntendedMemorySize();
         static PAddr GetKernelPhysicalBaseAddress(u64 base_address);
         static bool ShouldIncreaseThreadResourceLimit();

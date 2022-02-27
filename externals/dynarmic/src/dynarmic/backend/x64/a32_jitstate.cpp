@@ -172,6 +172,7 @@ u32 A32JitState::Fpscr() const {
     FPSCR |= (mxcsr & 0b0000000000001);       // IOC = IE
     FPSCR |= (mxcsr & 0b0000000111100) >> 1;  // IXC, UFC, OFC, DZC = PE, UE, OE, ZE
     FPSCR |= fpsr_exc;
+    FPSCR |= fpsr_qc != 0 ? 1 << 27 : 0;
 
     return FPSCR;
 }
@@ -184,6 +185,7 @@ void A32JitState::SetFpscr(u32 FPSCR) {
     upper_location_descriptor |= FPSCR & FPSCR_MODE_MASK;
 
     fpsr_nzcv = FPSCR & FPSCR_NZCV_MASK;
+    fpsr_qc = (FPSCR >> 27) & 1;
 
     guest_MXCSR = 0x00001f80;
     asimd_MXCSR = 0x00009fc0;

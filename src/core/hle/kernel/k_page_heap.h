@@ -23,54 +23,73 @@ public:
     KPageHeap() = default;
     ~KPageHeap() = default;
 
-    constexpr VAddr GetAddress() const {
-        return heap_address;
+    constexpr PAddr GetAddress() const {
+        return m_heap_address;
     }
-    constexpr std::size_t GetSize() const {
-        return heap_size;
+    constexpr size_t GetSize() const {
+        return m_heap_size;
     }
-    constexpr VAddr GetEndAddress() const {
-        return GetAddress() + GetSize();
+    constexpr PAddr GetEndAddress() const {
+        return this->GetAddress() + this->GetSize();
     }
-    constexpr std::size_t GetPageOffset(VAddr block) const {
-        return (block - GetAddress()) / PageSize;
+    constexpr size_t GetPageOffset(PAddr block) const {
+        return (block - this->GetAddress()) / PageSize;
     }
-
-    void Initialize(VAddr heap_address, std::size_t heap_size, std::size_t metadata_size);
-    VAddr AllocateBlock(s32 index, bool random);
-    void Free(VAddr addr, std::size_t num_pages);
-
-    void UpdateUsedSize() {
-        used_size = heap_size - (GetNumFreePages() * PageSize);
+    constexpr size_t GetPageOffsetToEnd(PAddr block) const {
+        return (this->GetEndAddress() - block) / PageSize;
     }
 
-    static std::size_t CalculateManagementOverheadSize(std::size_t region_size);
+    void Initialize(PAddr heap_address, size_t heap_size, VAddr management_address,
+                    size_t management_size) {
+        return this->Initialize(heap_address, heap_size, management_address, management_size,
+                                MemoryBlockPageShifts.data(), NumMemoryBlockPageShifts);
+    }
 
-    static constexpr s32 GetAlignedBlockIndex(std::size_t num_pages, std::size_t align_pages) {
-        const auto target_pages{std::max(num_pages, align_pages)};
-        for (std::size_t i = 0; i < NumMemoryBlockPageShifts; i++) {
-            if (target_pages <=
-                (static_cast<std::size_t>(1) << MemoryBlockPageShifts[i]) / PageSize) {
+    size_t GetFreeSize() const {
+        return this->GetNumFreePages() * PageSize;
+    }
+
+    void SetInitialUsedSize(size_t reserved_size) {
+        // Check that the reserved size is valid.
+        const size_t free_size = this->GetNumFreePages() * PageSize;
+        ASSERT(m_heap_size >= free_size + reserved_size);
+
+        // Set the initial used size.
+        m_initial_used_size = m_heap_size - free_size - reserved_size;
+    }
+
+    PAddr AllocateBlock(s32 index, bool random);
+    void Free(PAddr addr, size_t num_pages);
+
+    static size_t CalculateManagementOverheadSize(size_t region_size) {
+        return CalculateManagementOverheadSize(region_size, MemoryBlockPageShifts.data(),
+                                               NumMemoryBlockPageShifts);
+    }
+
+    static constexpr s32 GetAlignedBlockIndex(size_t num_pages, size_t align_pages) {
+        const size_t target_pages = std::max(num_pages, align_pages);
+        for (size_t i = 0; i < NumMemoryBlockPageShifts; i++) {
+            if (target_pages <= (size_t(1) << MemoryBlockPageShifts[i]) / PageSize) {
                 return static_cast<s32>(i);
             }
         }
         return -1;
     }
 
-    static constexpr s32 GetBlockIndex(std::size_t num_pages) {
-        for (s32 i{static_cast<s32>(NumMemoryBlockPageShifts) - 1}; i >= 0; i--) {
-            if (num_pages >= (static_cast<std::size_t>(1) << MemoryBlockPageShifts[i]) / PageSize) {
+    static constexpr s32 GetBlockIndex(size_t num_pages) {
+        for (s32 i = static_cast<s32>(NumMemoryBlockPageShifts) - 1; i >= 0; i--) {
+            if (num_pages >= (size_t(1) << MemoryBlockPageShifts[i]) / PageSize) {
                 return i;
             }
         }
         return -1;
     }
 
-    static constexpr std::size_t GetBlockSize(std::size_t index) {
-        return static_cast<std::size_t>(1) << MemoryBlockPageShifts[index];
+    static constexpr size_t GetBlockSize(size_t index) {
+        return size_t(1) << MemoryBlockPageShifts[index];
     }
 
-    static constexpr std::size_t GetBlockNumPages(std::size_t index) {
+    static constexpr size_t GetBlockNumPages(size_t index) {
         return GetBlockSize(index) / PageSize;
     }
 
@@ -83,114 +102,116 @@ private:
         Block() = default;
         ~Block() = default;
 
-        constexpr std::size_t GetShift() const {
-            return block_shift;
+        constexpr size_t GetShift() const {
+            return m_block_shift;
         }
-        constexpr std::size_t GetNextShift() const {
-            return next_block_shift;
+        constexpr size_t GetNextShift() const {
+            return m_next_block_shift;
         }
-        constexpr std::size_t GetSize() const {
-            return static_cast<std::size_t>(1) << GetShift();
+        constexpr size_t GetSize() const {
+            return u64(1) << this->GetShift();
         }
-        constexpr std::size_t GetNumPages() const {
-            return GetSize() / PageSize;
+        constexpr size_t GetNumPages() const {
+            return this->GetSize() / PageSize;
         }
-        constexpr std::size_t GetNumFreeBlocks() const {
-            return bitmap.GetNumBits();
+        constexpr size_t GetNumFreeBlocks() const {
+            return m_bitmap.GetNumBits();
         }
-        constexpr std::size_t GetNumFreePages() const {
-            return GetNumFreeBlocks() * GetNumPages();
-        }
-
-        u64* Initialize(VAddr addr, std::size_t size, std::size_t bs, std::size_t nbs,
-                        u64* bit_storage) {
-            // Set shifts
-            block_shift = bs;
-            next_block_shift = nbs;
-
-            // Align up the address
-            VAddr end{addr + size};
-            const auto align{(next_block_shift != 0) ? (1ULL << next_block_shift)
-                                                     : (1ULL << block_shift)};
-            addr = Common::AlignDown((addr), align);
-            end = Common::AlignUp((end), align);
-
-            heap_address = addr;
-            end_offset = (end - addr) / (1ULL << block_shift);
-            return bitmap.Initialize(bit_storage, end_offset);
+        constexpr size_t GetNumFreePages() const {
+            return this->GetNumFreeBlocks() * this->GetNumPages();
         }
 
-        VAddr PushBlock(VAddr address) {
-            // Set the bit for the free block
-            std::size_t offset{(address - heap_address) >> GetShift()};
-            bitmap.SetBit(offset);
+        u64* Initialize(PAddr addr, size_t size, size_t bs, size_t nbs, u64* bit_storage) {
+            // Set shifts.
+            m_block_shift = bs;
+            m_next_block_shift = nbs;
 
-            // If we have a next shift, try to clear the blocks below and return the address
-            if (GetNextShift()) {
-                const auto diff{1ULL << (GetNextShift() - GetShift())};
+            // Align up the address.
+            PAddr end = addr + size;
+            const size_t align = (m_next_block_shift != 0) ? (u64(1) << m_next_block_shift)
+                                                           : (u64(1) << m_block_shift);
+            addr = Common::AlignDown(addr, align);
+            end = Common::AlignUp(end, align);
+
+            m_heap_address = addr;
+            m_end_offset = (end - addr) / (u64(1) << m_block_shift);
+            return m_bitmap.Initialize(bit_storage, m_end_offset);
+        }
+
+        PAddr PushBlock(PAddr address) {
+            // Set the bit for the free block.
+            size_t offset = (address - m_heap_address) >> this->GetShift();
+            m_bitmap.SetBit(offset);
+
+            // If we have a next shift, try to clear the blocks below this one and return the new
+            // address.
+            if (this->GetNextShift()) {
+                const size_t diff = u64(1) << (this->GetNextShift() - this->GetShift());
                 offset = Common::AlignDown(offset, diff);
-                if (bitmap.ClearRange(offset, diff)) {
-                    return heap_address + (offset << GetShift());
+                if (m_bitmap.ClearRange(offset, diff)) {
+                    return m_heap_address + (offset << this->GetShift());
                 }
             }
 
-            // We couldn't coalesce, or we're already as big as possible
-            return 0;
+            // We couldn't coalesce, or we're already as big as possible.
+            return {};
         }
 
-        VAddr PopBlock(bool random) {
-            // Find a free block
-            const s64 soffset{bitmap.FindFreeBlock(random)};
+        PAddr PopBlock(bool random) {
+            // Find a free block.
+            s64 soffset = m_bitmap.FindFreeBlock(random);
             if (soffset < 0) {
-                return 0;
+                return {};
             }
-            const auto offset{static_cast<std::size_t>(soffset)};
+            const size_t offset = static_cast<size_t>(soffset);
 
-            // Update our tracking and return it
-            bitmap.ClearBit(offset);
-            return heap_address + (offset << GetShift());
+            // Update our tracking and return it.
+            m_bitmap.ClearBit(offset);
+            return m_heap_address + (offset << this->GetShift());
         }
 
-        static constexpr std::size_t CalculateManagementOverheadSize(std::size_t region_size,
-                                                                     std::size_t cur_block_shift,
-                                                                     std::size_t next_block_shift) {
-            const auto cur_block_size{(1ULL << cur_block_shift)};
-            const auto next_block_size{(1ULL << next_block_shift)};
-            const auto align{(next_block_shift != 0) ? next_block_size : cur_block_size};
+    public:
+        static constexpr size_t CalculateManagementOverheadSize(size_t region_size,
+                                                                size_t cur_block_shift,
+                                                                size_t next_block_shift) {
+            const size_t cur_block_size = (u64(1) << cur_block_shift);
+            const size_t next_block_size = (u64(1) << next_block_shift);
+            const size_t align = (next_block_shift != 0) ? next_block_size : cur_block_size;
             return KPageBitmap::CalculateManagementOverheadSize(
                 (align * 2 + Common::AlignUp(region_size, align)) / cur_block_size);
         }
 
     private:
-        KPageBitmap bitmap;
-        VAddr heap_address{};
-        uintptr_t end_offset{};
-        std::size_t block_shift{};
-        std::size_t next_block_shift{};
+        KPageBitmap m_bitmap;
+        PAddr m_heap_address{};
+        uintptr_t m_end_offset{};
+        size_t m_block_shift{};
+        size_t m_next_block_shift{};
     };
 
-    constexpr std::size_t GetNumFreePages() const {
-        std::size_t num_free{};
+private:
+    void Initialize(PAddr heap_address, size_t heap_size, VAddr management_address,
+                    size_t management_size, const size_t* block_shifts, size_t num_block_shifts);
+    size_t GetNumFreePages() const;
 
-        for (const auto& block : blocks) {
-            num_free += block.GetNumFreePages();
-        }
+    void FreeBlock(PAddr block, s32 index);
 
-        return num_free;
-    }
-
-    void FreeBlock(VAddr block, s32 index);
-
-    static constexpr std::size_t NumMemoryBlockPageShifts{7};
-    static constexpr std::array<std::size_t, NumMemoryBlockPageShifts> MemoryBlockPageShifts{
+    static constexpr size_t NumMemoryBlockPageShifts{7};
+    static constexpr std::array<size_t, NumMemoryBlockPageShifts> MemoryBlockPageShifts{
         0xC, 0x10, 0x15, 0x16, 0x19, 0x1D, 0x1E,
     };
 
-    VAddr heap_address{};
-    std::size_t heap_size{};
-    std::size_t used_size{};
-    std::array<Block, NumMemoryBlockPageShifts> blocks{};
-    std::vector<u64> metadata;
+private:
+    static size_t CalculateManagementOverheadSize(size_t region_size, const size_t* block_shifts,
+                                                  size_t num_block_shifts);
+
+private:
+    PAddr m_heap_address{};
+    size_t m_heap_size{};
+    size_t m_initial_used_size{};
+    size_t m_num_blocks{};
+    std::array<Block, NumMemoryBlockPageShifts> m_blocks{};
+    std::vector<u64> m_management_data;
 };
 
 } // namespace Kernel

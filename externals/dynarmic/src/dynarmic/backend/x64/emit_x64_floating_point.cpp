@@ -54,11 +54,8 @@ constexpr u64 f64_max_s16 = 0x40dfffc000000000u;      // 32767 as a double
 constexpr u64 f64_min_u16 = 0x0000000000000000u;      // 0 as a double
 constexpr u64 f64_max_u16 = 0x40efffe000000000u;      // 65535 as a double
 constexpr u64 f64_max_s32 = 0x41dfffffffc00000u;      // 2147483647 as a double
-constexpr u64 f64_min_u32 = 0x0000000000000000u;      // 0 as a double
 constexpr u64 f64_max_u32 = 0x41efffffffe00000u;      // 4294967295 as a double
 constexpr u64 f64_max_s64_lim = 0x43e0000000000000u;  // 2^63 as a double (actual maximum unrepresentable)
-constexpr u64 f64_min_u64 = 0x0000000000000000u;      // 0 as a double
-constexpr u64 f64_max_u64_lim = 0x43f0000000000000u;  // 2^64 as a double (actual maximum unrepresentable)
 
 #define FCODE(NAME)                  \
     [&code](auto... args) {          \
@@ -1136,14 +1133,13 @@ static void EmitFPRSqrtEstimate(BlockOfCode& code, EmitContext& ctx, IR::Inst* i
         code.SwitchToNearCode();
 
         ctx.reg_alloc.DefineValue(inst, result);
-        return;
+    } else {
+        auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+        ctx.reg_alloc.HostCall(inst, args[0]);
+        code.mov(code.ABI_PARAM2.cvt32(), ctx.FPCR().Value());
+        code.lea(code.ABI_PARAM3, code.ptr[code.r15 + code.GetJitStateInfo().offsetof_fpsr_exc]);
+        code.CallFunction(&FP::FPRSqrtEstimate<FPT>);
     }
-
-    auto args = ctx.reg_alloc.GetArgumentInfo(inst);
-    ctx.reg_alloc.HostCall(inst, args[0]);
-    code.mov(code.ABI_PARAM2.cvt32(), ctx.FPCR().Value());
-    code.lea(code.ABI_PARAM3, code.ptr[code.r15 + code.GetJitStateInfo().offsetof_fpsr_exc]);
-    code.CallFunction(&FP::FPRSqrtEstimate<FPT>);
 }
 
 void EmitX64::EmitFPRSqrtEstimate16(EmitContext& ctx, IR::Inst* inst) {
@@ -1474,9 +1470,11 @@ static void EmitFPToFixed(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
     if constexpr (fsize != 16) {
         const auto round_imm = ConvertRoundingModeToX64Immediate(rounding_mode);
 
-        if (code.HasHostFeature(HostFeature::SSE41) && round_imm) {
+        // cvttsd2si truncates during operation so rounding (and thus SSE4.1) not required
+        const bool truncating = rounding_mode == FP::RoundingMode::TowardsZero;
+
+        if (round_imm && (truncating || code.HasHostFeature(HostFeature::SSE41))) {
             const Xbyak::Xmm src = ctx.reg_alloc.UseScratchXmm(args[0]);
-            const Xbyak::Xmm scratch = ctx.reg_alloc.ScratchXmm();
             const Xbyak::Reg64 result = ctx.reg_alloc.ScratchGpr().cvt64();
 
             if constexpr (fsize == 64) {
@@ -1485,59 +1483,86 @@ static void EmitFPToFixed(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
                     code.mulsd(src, code.MConst(xword, scale_factor));
                 }
 
-                code.roundsd(src, src, *round_imm);
+                if (!truncating) {
+                    code.roundsd(src, src, *round_imm);
+                }
             } else {
                 if (fbits != 0) {
                     const u32 scale_factor = static_cast<u32>((fbits + 127) << 23);
                     code.mulss(src, code.MConst(xword, scale_factor));
                 }
 
-                code.roundss(src, src, *round_imm);
+                if (!truncating) {
+                    code.roundss(src, src, *round_imm);
+                }
+
                 code.cvtss2sd(src, src);
             }
 
-            ZeroIfNaN<64>(code, src, scratch);
-
             if constexpr (isize == 64) {
+                const Xbyak::Xmm scratch = ctx.reg_alloc.ScratchXmm();
+
                 Xbyak::Label saturate_max, end;
 
-                if (unsigned_) {
-                    code.maxsd(src, code.MConst(xword, f64_min_u64));
-                }
-                code.movsd(scratch, code.MConst(xword, unsigned_ ? f64_max_u64_lim : f64_max_s64_lim));
-                code.comisd(scratch, src);
-                code.jna(saturate_max, code.T_NEAR);
-                if (unsigned_) {
-                    Xbyak::Label below_max;
+                if (!unsigned_) {
+                    ZeroIfNaN<64>(code, src, scratch);
 
                     code.movsd(scratch, code.MConst(xword, f64_max_s64_lim));
-                    code.comisd(src, scratch);
-                    code.jb(below_max);
-                    code.subsd(src, scratch);
-                    code.cvttsd2si(result, src);
-                    code.btc(result, 63);
-                    code.jmp(end);
-                    code.L(below_max);
-                }
-                code.cvttsd2si(result, src);  // 64 bit gpr
-                code.L(end);
-
-                code.SwitchToFarCode();
-                code.L(saturate_max);
-                code.mov(result, unsigned_ ? 0xFFFF'FFFF'FFFF'FFFF : 0x7FFF'FFFF'FFFF'FFFF);
-                code.jmp(end, code.T_NEAR);
-                code.SwitchToNearCode();
-            } else if constexpr (isize == 32) {
-                code.minsd(src, code.MConst(xword, unsigned_ ? f64_max_u32 : f64_max_s32));
-                if (unsigned_) {
-                    code.maxsd(src, code.MConst(xword, f64_min_u32));
+                    code.comisd(scratch, src);
+                    code.jna(saturate_max, code.T_NEAR);
                     code.cvttsd2si(result, src);  // 64 bit gpr
+                    code.L(end);
+
+                    code.SwitchToFarCode();
+                    code.L(saturate_max);
+                    code.mov(result, 0x7FFF'FFFF'FFFF'FFFF);
+                    code.jmp(end, code.T_NEAR);
+                    code.SwitchToNearCode();
                 } else {
-                    code.cvttsd2si(result.cvt32(), src);
+                    Xbyak::Label below_max;
+
+                    const Xbyak::Reg64 result2 = ctx.reg_alloc.ScratchGpr().cvt64();
+
+                    code.pxor(xmm0, xmm0);
+
+                    code.movaps(scratch, src);
+                    code.subsd(scratch, code.MConst(xword, f64_max_s64_lim));
+
+                    // these both result in zero if src/scratch are NaN
+                    code.maxsd(src, xmm0);
+                    code.maxsd(scratch, xmm0);
+
+                    code.cvttsd2si(result, src);
+                    code.cvttsd2si(result2, scratch);
+                    code.or_(result, result2);
+
+                    // when src < 2^63, result2 == 0, and result contains the final result
+                    // when src >= 2^63, result contains 0x800.... and result2 contains the non-MSB bits
+                    // MSB if result2 is 1 when src >= 2^64
+
+                    code.sar(result2, 63);
+                    code.or_(result, result2);
+                }
+            } else if constexpr (isize == 32) {
+                if (!unsigned_) {
+                    const Xbyak::Xmm scratch = ctx.reg_alloc.ScratchXmm();
+
+                    ZeroIfNaN<64>(code, src, scratch);
+                    code.minsd(src, code.MConst(xword, f64_max_s32));
+                    // maxsd not required as cvttsd2si results in 0x8000'0000 when out of range
+                    code.cvttsd2si(result.cvt32(), src);  // 32 bit gpr
+                } else {
+                    code.pxor(xmm0, xmm0);
+                    code.maxsd(src, xmm0);  // results in a zero if src is NaN
+                    code.minsd(src, code.MConst(xword, f64_max_u32));
+                    code.cvttsd2si(result, src);  // 64 bit gpr
                 }
             } else {
-                code.minsd(src, code.MConst(xword, unsigned_ ? f64_max_u16 : f64_max_s16));
+                const Xbyak::Xmm scratch = ctx.reg_alloc.ScratchXmm();
+
+                ZeroIfNaN<64>(code, src, scratch);
                 code.maxsd(src, code.MConst(xword, unsigned_ ? f64_min_u16 : f64_min_s16));
+                code.minsd(src, code.MConst(xword, unsigned_ ? f64_max_u16 : f64_max_s16));
                 code.cvttsd2si(result, src);  // 64 bit gpr
             }
 

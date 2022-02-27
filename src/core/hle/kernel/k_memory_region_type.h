@@ -14,7 +14,8 @@
 namespace Kernel {
 
 enum KMemoryRegionType : u32 {
-    KMemoryRegionAttr_CarveoutProtected = 0x04000000,
+    KMemoryRegionAttr_CarveoutProtected = 0x02000000,
+    KMemoryRegionAttr_Uncached = 0x04000000,
     KMemoryRegionAttr_DidKernelMap = 0x08000000,
     KMemoryRegionAttr_ShouldKernelMap = 0x10000000,
     KMemoryRegionAttr_UserReadOnly = 0x20000000,
@@ -239,6 +240,11 @@ static_assert(KMemoryRegionType_VirtualDramHeapBase.GetValue() == 0x1A);
 static_assert(KMemoryRegionType_VirtualDramKernelPtHeap.GetValue() == 0x2A);
 static_assert(KMemoryRegionType_VirtualDramKernelTraceBuffer.GetValue() == 0x4A);
 
+// UNUSED: .DeriveSparse(2, 2, 0);
+constexpr inline const auto KMemoryRegionType_VirtualDramUnknownDebug =
+    KMemoryRegionType_Dram.DeriveSparse(2, 2, 1);
+static_assert(KMemoryRegionType_VirtualDramUnknownDebug.GetValue() == (0x52));
+
 constexpr auto KMemoryRegionType_VirtualDramKernelInitPt =
     KMemoryRegionType_VirtualDramHeapBase.Derive(3, 0);
 constexpr auto KMemoryRegionType_VirtualDramPoolManagement =
@@ -330,6 +336,8 @@ constexpr KMemoryRegionType GetTypeForVirtualLinearMapping(u32 type_id) {
         return KMemoryRegionType_VirtualDramKernelTraceBuffer;
     } else if (KMemoryRegionType_DramKernelPtHeap.IsAncestorOf(type_id)) {
         return KMemoryRegionType_VirtualDramKernelPtHeap;
+    } else if ((type_id | KMemoryRegionAttr_ShouldKernelMap) == type_id) {
+        return KMemoryRegionType_VirtualDramUnknownDebug;
     } else {
         return KMemoryRegionType_Dram;
     }

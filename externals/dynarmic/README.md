@@ -1,7 +1,7 @@
 Dynarmic
 ========
 
-[![Github Actions Build Status](https://github.com/MerryMage/dynarmic/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/MerryMage/dynarmic/actions/workflows/build-and-test.yml) [![Appveyor CI Build status](https://ci.appveyor.com/api/projects/status/maeiqr41rgm1innm/branch/master?svg=true)](https://ci.appveyor.com/project/MerryMage/dynarmic/branch/master)
+[![Github Actions Build Status](https://github.com/MerryMage/dynarmic/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/MerryMage/dynarmic/actions/workflows/build-and-test.yml)
 
 A dynamic recompiler for ARM.
 

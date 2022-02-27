@@ -131,6 +131,13 @@ if (DYNARMIC_NO_BUNDLED_ROBIN_MAP AND NOT TARGET tsl::robin_map)
     find_package(tsl-robin-map REQUIRED)
 endif()
 
+if (DYNARMIC_NO_BUNDLED_VIXL AND ARCHITECTURE STREQUAL "arm64")
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(vixl REQUIRED IMPORTED_TARGET vixl)
+    target_include_directories(PkgConfig::vixl INTERFACE "${vixl_INCLUDE_DIRS}/vixl")
+    add_library(vixl ALIAS PkgConfig::vixl)
+endif()
+
 if (DYNARMIC_NO_BUNDLED_XBYAK AND NOT TARGET xbyak)
     if (ARCHITECTURE STREQUAL "x86" OR ARCHITECTURE STREQUAL "x86_64")
         find_package(xbyak REQUIRED)
