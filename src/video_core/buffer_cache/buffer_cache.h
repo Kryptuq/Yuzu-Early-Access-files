@@ -1119,10 +1119,10 @@ void BufferCache<P>::BindHostGraphicsStorageBuffers(size_t stage) {
         const Binding& binding = storage_buffers[stage][index];
         Buffer& buffer = slot_buffers[binding.buffer_id];
         TouchBuffer(buffer, binding.buffer_id);
-        const u32 offset = buffer.Offset(binding.cpu_addr);
-        const u32 size = static_cast<u32>(buffer.SizeBytes()) - offset;
+        const u32 size = binding.size;
         SynchronizeBuffer(buffer, binding.cpu_addr, size);
 
+        const u32 offset = buffer.Offset(binding.cpu_addr);
         const bool is_written = ((written_storage_buffers[stage] >> index) & 1) != 0;
         if constexpr (NEEDS_BIND_STORAGE_INDEX) {
             runtime.BindStorageBuffer(stage, binding_index, buffer, offset, size, is_written);
@@ -1204,10 +1204,10 @@ void BufferCache<P>::BindHostComputeStorageBuffers() {
         const Binding& binding = compute_storage_buffers[index];
         Buffer& buffer = slot_buffers[binding.buffer_id];
         TouchBuffer(buffer, binding.buffer_id);
-        const u32 offset = buffer.Offset(binding.cpu_addr);
-        const u32 size = static_cast<u32>(buffer.SizeBytes()) - offset;
+        const u32 size = binding.size;
         SynchronizeBuffer(buffer, binding.cpu_addr, size);
 
+        const u32 offset = buffer.Offset(binding.cpu_addr);
         const bool is_written = ((written_compute_storage_buffers >> index) & 1) != 0;
         if constexpr (NEEDS_BIND_STORAGE_INDEX) {
             runtime.BindComputeStorageBuffer(binding_index, buffer, offset, size, is_written);
