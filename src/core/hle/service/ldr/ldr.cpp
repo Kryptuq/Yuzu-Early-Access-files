@@ -288,7 +288,7 @@ public:
     }
 
     bool ValidateRegionForMap(Kernel::KPageTable& page_table, VAddr start, std::size_t size) const {
-        constexpr std::size_t padding_size{4 * Kernel::PageSize};
+        const std::size_t padding_size{page_table.GetNumGuardPages() * Kernel::PageSize};
         const auto start_info{page_table.QueryInfo(start - 1)};
 
         if (start_info.state != Kernel::KMemoryState::Free) {
@@ -308,31 +308,56 @@ public:
         return (start + size + padding_size) <= (end_info.GetAddress() + end_info.GetSize());
     }
 
-    VAddr GetRandomMapRegion(const Kernel::KPageTable& page_table, std::size_t size) const {
-        VAddr addr{};
-        const std::size_t end_pages{(page_table.GetAliasCodeRegionSize() - size) >>
-                                    Kernel::PageBits};
-        do {
-            addr = page_table.GetAliasCodeRegionStart() +
-                   (Kernel::KSystemControl::GenerateRandomRange(0, end_pages) << Kernel::PageBits);
-        } while (!page_table.IsInsideAddressSpace(addr, size) ||
-                 page_table.IsInsideHeapRegion(addr, size) ||
-                 page_table.IsInsideAliasRegion(addr, size));
-        return addr;
+    ResultCode GetAvailableMapRegion(Kernel::KPageTable& page_table, u64 size, VAddr& out_addr) {
+        size = Common::AlignUp(size, Kernel::PageSize);
+        size += page_table.GetNumGuardPages() * Kernel::PageSize * 2;
+
+        auto is_region_available = [&](VAddr addr) {
+            const auto end_addr = addr + size;
+            while (addr < end_addr) {
+                if (system.Memory().IsValidVirtualAddress(addr)) {
+                    return false;
+                }
+                addr += Kernel::PageSize;
+            }
+            return true;
+        };
+
+        bool succeeded = false;
+        const auto map_region_end =
+            page_table.GetAliasCodeRegionStart() + page_table.GetAliasCodeRegionSize();
+        while (current_map_addr < map_region_end) {
+            if (is_region_available(current_map_addr)) {
+                succeeded = true;
+                break;
+            }
+            current_map_addr += 0x100000;
+        }
+
+        if (!succeeded) {
+            UNREACHABLE_MSG("Out of address space!");
+            return Kernel::ResultOutOfMemory;
+        }
+
+        out_addr = current_map_addr;
+        current_map_addr += size;
+
+        return ResultSuccess;
     }
 
-    ResultVal<VAddr> MapProcessCodeMemory(Kernel::KProcess* process, VAddr baseAddress,
-                                          u64 size) const {
-        for (std::size_t retry = 0; retry < MAXIMUM_MAP_RETRIES; retry++) {
-            auto& page_table{process->PageTable()};
-            const VAddr addr{GetRandomMapRegion(page_table, size)};
-            const ResultCode result{page_table.MapCodeMemory(addr, baseAddress, size)};
+    ResultVal<VAddr> MapProcessCodeMemory(Kernel::KProcess* process, VAddr base_addr, u64 size) {
+        auto& page_table{process->PageTable()};
+        VAddr addr{};
 
+        for (std::size_t retry = 0; retry < MAXIMUM_MAP_RETRIES; retry++) {
+            R_TRY(GetAvailableMapRegion(page_table, size, addr));
+
+            const ResultCode result{page_table.MapCodeMemory(addr, base_addr, size)};
             if (result == Kernel::ResultInvalidCurrentMemory) {
                 continue;
             }
 
-            CASCADE_CODE(result);
+            R_TRY(result);
 
             if (ValidateRegionForMap(page_table, addr, size)) {
                 return addr;
@@ -343,7 +368,7 @@ public:
     }
 
     ResultVal<VAddr> MapNro(Kernel::KProcess* process, VAddr nro_addr, std::size_t nro_size,
-                            VAddr bss_addr, std::size_t bss_size, std::size_t size) const {
+                            VAddr bss_addr, std::size_t bss_size, std::size_t size) {
         for (std::size_t retry = 0; retry < MAXIMUM_MAP_RETRIES; retry++) {
             auto& page_table{process->PageTable()};
             VAddr addr{};
@@ -597,6 +622,7 @@ public:
         LOG_WARNING(Service_LDR, "(STUBBED) called");
 
         initialized = true;
+        current_map_addr = system.CurrentProcess()->PageTable().GetAliasCodeRegionStart();
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
@@ -607,6 +633,7 @@ private:
 
     std::map<VAddr, NROInfo> nro;
     std::map<VAddr, std::vector<SHA256Hash>> nrr;
+    VAddr current_map_addr{};
 
     bool IsValidNROHash(const SHA256Hash& hash) const {
         return std::any_of(nrr.begin(), nrr.end(), [&hash](const auto& p) {

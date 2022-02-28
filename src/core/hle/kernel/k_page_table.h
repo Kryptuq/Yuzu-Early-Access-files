@@ -253,7 +253,9 @@ public:
     constexpr bool IsInsideASLRRegion(VAddr address, std::size_t size) const {
         return !IsOutsideASLRRegion(address, size);
     }
-
+    constexpr std::size_t GetNumGuardPages() const {
+        return IsKernel() ? 1 : 4;
+    }
     PAddr GetPhysicalAddr(VAddr addr) const {
         const auto backing_addr = page_table_impl.backing_addr[addr >> PageBits];
         ASSERT(backing_addr);
@@ -273,10 +275,6 @@ private:
     }
     constexpr bool IsAslrEnabled() const {
         return is_aslr_enabled;
-    }
-
-    constexpr std::size_t GetNumGuardPages() const {
-        return IsKernel() ? 1 : 4;
     }
 
     constexpr bool ContainsPages(VAddr addr, std::size_t num_pages) const {

@@ -322,7 +322,12 @@ ResultCode KPageTable::MapCodeMemory(VAddr dst_addr, VAddr src_addr, std::size_t
     return ResultSuccess;
 }
 
-ResultCode KPageTable::UnmapCodeMemory(VAddr dst_addr, VAddr src_addr, std::size_t size) {
+ResultCode KPageTable::UnmapCodeMemory(VAddr dst_address, VAddr src_address, std::size_t size) {
+    // Validate the mapping request.
+    R_UNLESS(this->CanContain(dst_address, size, KMemoryState::AliasCode),
+             ResultInvalidMemoryRegion);
+
+    // Lock the table.
     KScopedLightLock lk(general_lock);
 
     if (!size) {
@@ -331,26 +336,66 @@ ResultCode KPageTable::UnmapCodeMemory(VAddr dst_addr, VAddr src_addr, std::size
 
     const std::size_t num_pages{size / PageSize};
 
-    CASCADE_CODE(CheckMemoryState(nullptr, nullptr, nullptr, nullptr, src_addr, size,
-                                  KMemoryState::All, KMemoryState::Normal, KMemoryPermission::None,
-                                  KMemoryPermission::None, KMemoryAttribute::Mask,
-                                  KMemoryAttribute::Locked, KMemoryAttribute::IpcAndDeviceMapped));
+    // Verify that the source memory is locked normal heap.
+    std::size_t num_src_allocator_blocks{};
+    R_TRY(this->CheckMemoryState(std::addressof(num_src_allocator_blocks), src_address, size,
+                                 KMemoryState::All, KMemoryState::Normal, KMemoryPermission::None,
+                                 KMemoryPermission::None, KMemoryAttribute::All,
+                                 KMemoryAttribute::Locked));
 
-    KMemoryState state{};
-    CASCADE_CODE(CheckMemoryState(
-        &state, nullptr, nullptr, nullptr, dst_addr, PageSize, KMemoryState::FlagCanCodeAlias,
+    // Verify that the destination memory is aliasable code.
+    std::size_t num_dst_allocator_blocks{};
+    R_TRY(this->CheckMemoryStateContiguous(
+        std::addressof(num_dst_allocator_blocks), dst_address, size, KMemoryState::FlagCanCodeAlias,
         KMemoryState::FlagCanCodeAlias, KMemoryPermission::None, KMemoryPermission::None,
-        KMemoryAttribute::Mask, KMemoryAttribute::None, KMemoryAttribute::IpcAndDeviceMapped));
-    CASCADE_CODE(CheckMemoryState(dst_addr, size, KMemoryState::All, state, KMemoryPermission::None,
-                                  KMemoryPermission::None, KMemoryAttribute::Mask,
-                                  KMemoryAttribute::None));
-    CASCADE_CODE(Operate(dst_addr, num_pages, KMemoryPermission::None, OperationType::Unmap));
+        KMemoryAttribute::All, KMemoryAttribute::None));
 
-    block_manager->Update(dst_addr, num_pages, KMemoryState::Free);
-    block_manager->Update(src_addr, num_pages, KMemoryState::Normal,
-                          KMemoryPermission::UserReadWrite);
+    // Determine whether any pages being unmapped are code.
+    bool any_code_pages = false;
+    {
+        KMemoryBlockManager::const_iterator it = block_manager->FindIterator(dst_address);
+        while (true) {
+            // Get the memory info.
+            const KMemoryInfo info = it->GetMemoryInfo();
 
-    system.InvalidateCpuInstructionCacheRange(dst_addr, size);
+            // Check if the memory has code flag.
+            if ((info.GetState() & KMemoryState::FlagCode) != KMemoryState::None) {
+                any_code_pages = true;
+                break;
+            }
+
+            // Check if we're done.
+            if (dst_address + size - 1 <= info.GetLastAddress()) {
+                break;
+            }
+
+            // Advance.
+            ++it;
+        }
+    }
+
+    // Ensure that we maintain the instruction cache.
+    bool reprotected_pages = false;
+    SCOPE_EXIT({
+        if (reprotected_pages && any_code_pages) {
+            system.InvalidateCpuInstructionCacheRange(dst_address, size);
+        }
+    });
+
+    // Unmap.
+    {
+        // TODO(bunnei): We free the virtual address space, but do not nullptr the pointers in the
+        // backing page table. This is a workaround because of an issue where CPU emulation may have
+        // not quite finished running code when NROs are unloaded.
+
+        // Apply the memory block updates.
+        block_manager->Update(dst_address, num_pages, KMemoryState::None);
+        block_manager->Update(src_address, num_pages, KMemoryState::Normal,
+                              KMemoryPermission::UserReadWrite);
+
+        // Note that we reprotected pages.
+        reprotected_pages = true;
+    }
 
     return ResultSuccess;
 }
