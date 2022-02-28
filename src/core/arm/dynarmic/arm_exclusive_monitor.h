@@ -29,7 +29,7 @@ public:
     u32 ExclusiveRead32(std::size_t core_index, VAddr addr) override;
     u64 ExclusiveRead64(std::size_t core_index, VAddr addr) override;
     u128 ExclusiveRead128(std::size_t core_index, VAddr addr) override;
-    void ClearExclusive() override;
+    void ClearExclusive(std::size_t core_index) override;
 
     bool ExclusiveWrite8(std::size_t core_index, VAddr vaddr, u8 value) override;
     bool ExclusiveWrite16(std::size_t core_index, VAddr vaddr, u16 value) override;

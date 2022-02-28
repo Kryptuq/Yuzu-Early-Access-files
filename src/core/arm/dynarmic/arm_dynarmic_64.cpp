@@ -185,6 +185,9 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable* 
         config.fastmem_pointer = page_table->fastmem_arena;
         config.fastmem_address_space_bits = address_space_bits;
         config.silently_mirror_fastmem = false;
+
+        config.fastmem_exclusive_access = true;
+        config.recompile_on_exclusive_fastmem_failure = true;
     }
 
     // Multi-process state
@@ -237,6 +240,12 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable* 
         if (!Settings::values.cpuopt_fastmem) {
             config.fastmem_pointer = nullptr;
         }
+        if (!Settings::values.cpuopt_fastmem_exclusives) {
+            config.fastmem_exclusive_access = false;
+        }
+        if (!Settings::values.cpuopt_recompile_exclusives) {
+            config.recompile_on_exclusive_fastmem_failure = false;
+        }
     }
 
     // Unsafe optimizations
@@ -254,6 +263,9 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable* 
         if (Settings::values.cpuopt_unsafe_fastmem_check) {
             config.fastmem_address_space_bits = 64;
         }
+        if (Settings::values.cpuopt_unsafe_ignore_global_monitor) {
+            config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_IgnoreGlobalMonitor;
+        }
     }
 
     // Curated optimizations
@@ -262,6 +274,7 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable* 
         config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_UnfuseFMA;
         config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_InaccurateNaN;
         config.fastmem_address_space_bits = 64;
+        config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_IgnoreGlobalMonitor;
     }
 
     return std::make_shared<Dynarmic::A64::Jit>(config);

@@ -137,6 +137,8 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
     config.page_table_pointer_mask_bits = Common::PageTable::ATTRIBUTE_BITS;
     config.detect_misaligned_access_via_page_table = 16 | 32 | 64 | 128;
     config.only_detect_misalignment_via_page_table_on_page_boundary = true;
+    config.fastmem_exclusive_access = true;
+    config.recompile_on_exclusive_fastmem_failure = true;
 
     // Multi-process state
     config.processor_id = core_index;
@@ -178,6 +180,12 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
         if (!Settings::values.cpuopt_fastmem) {
             config.fastmem_pointer = nullptr;
         }
+        if (!Settings::values.cpuopt_fastmem_exclusives) {
+            config.fastmem_exclusive_access = false;
+        }
+        if (!Settings::values.cpuopt_recompile_exclusives) {
+            config.recompile_on_exclusive_fastmem_failure = false;
+        }
     }
 
     // Unsafe optimizations
@@ -195,6 +203,9 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
         if (Settings::values.cpuopt_unsafe_inaccurate_nan) {
             config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_InaccurateNaN;
         }
+        if (Settings::values.cpuopt_unsafe_ignore_global_monitor) {
+            config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_IgnoreGlobalMonitor;
+        }
     }
 
     // Curated optimizations
@@ -203,6 +214,7 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
         config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_UnfuseFMA;
         config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_IgnoreStandardFPCRValue;
         config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_InaccurateNaN;
+        config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_IgnoreGlobalMonitor;
     }
 
     return std::make_unique<Dynarmic::A32::Jit>(config);

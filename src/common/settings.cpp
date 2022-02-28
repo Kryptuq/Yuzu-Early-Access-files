@@ -176,6 +176,7 @@ void RestoreGlobalState(bool is_powered_on) {
     values.cpuopt_unsafe_ignore_standard_fpcr.SetGlobal(true);
     values.cpuopt_unsafe_inaccurate_nan.SetGlobal(true);
     values.cpuopt_unsafe_fastmem_check.SetGlobal(true);
+    values.cpuopt_unsafe_ignore_global_monitor.SetGlobal(true);
 
     // Renderer
     values.renderer_backend.SetGlobal(true);

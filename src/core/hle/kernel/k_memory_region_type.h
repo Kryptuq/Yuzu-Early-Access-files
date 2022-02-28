@@ -241,7 +241,7 @@ static_assert(KMemoryRegionType_VirtualDramKernelPtHeap.GetValue() == 0x2A);
 static_assert(KMemoryRegionType_VirtualDramKernelTraceBuffer.GetValue() == 0x4A);
 
 // UNUSED: .DeriveSparse(2, 2, 0);
-constexpr inline const auto KMemoryRegionType_VirtualDramUnknownDebug =
+constexpr auto KMemoryRegionType_VirtualDramUnknownDebug =
     KMemoryRegionType_Dram.DeriveSparse(2, 2, 1);
 static_assert(KMemoryRegionType_VirtualDramUnknownDebug.GetValue() == (0x52));
 

@@ -484,12 +484,15 @@ struct Values {
     BasicSetting<bool> cpuopt_misc_ir{true, "cpuopt_misc_ir"};
     BasicSetting<bool> cpuopt_reduce_misalign_checks{true, "cpuopt_reduce_misalign_checks"};
     BasicSetting<bool> cpuopt_fastmem{true, "cpuopt_fastmem"};
+    BasicSetting<bool> cpuopt_fastmem_exclusives{true, "cpuopt_fastmem_exclusives"};
+    BasicSetting<bool> cpuopt_recompile_exclusives{true, "cpuopt_recompile_exclusives"};
 
     Setting<bool> cpuopt_unsafe_unfuse_fma{true, "cpuopt_unsafe_unfuse_fma"};
     Setting<bool> cpuopt_unsafe_reduce_fp_error{true, "cpuopt_unsafe_reduce_fp_error"};
     Setting<bool> cpuopt_unsafe_ignore_standard_fpcr{true, "cpuopt_unsafe_ignore_standard_fpcr"};
     Setting<bool> cpuopt_unsafe_inaccurate_nan{true, "cpuopt_unsafe_inaccurate_nan"};
     Setting<bool> cpuopt_unsafe_fastmem_check{true, "cpuopt_unsafe_fastmem_check"};
+    Setting<bool> cpuopt_unsafe_ignore_global_monitor{true, "cpuopt_unsafe_ignore_global_monitor"};
 
     // Renderer
     RangedSetting<RendererBackend> renderer_backend{

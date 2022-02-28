@@ -174,6 +174,14 @@ cpuopt_reduce_misalign_checks =
 # 0: Disabled, 1 (default): Enabled
 cpuopt_fastmem =
 
+# Enable Host MMU Emulation for exclusive memory instructions (faster guest memory access)
+# 0: Disabled, 1 (default): Enabled
+cpuopt_fastmem_exclusives =
+
+# Enable fallback on failure of fastmem of exclusive memory instructions (faster guest memory access)
+# 0: Disabled, 1 (default): Enabled
+cpuopt_recompile_exclusives =
+
 # Enable unfuse FMA (improve performance on CPUs without FMA)
 # Only enabled if cpu_accuracy is set to Unsafe. Automatically chosen with cpu_accuracy = Auto-select.
 # 0: Disabled, 1 (default): Enabled
@@ -198,6 +206,11 @@ cpuopt_unsafe_inaccurate_nan =
 # Only enabled if cpu_accuracy is set to Unsafe. Automatically chosen with cpu_accuracy = Auto-select.
 # 0: Disabled, 1 (default): Enabled
 cpuopt_unsafe_fastmem_check =
+
+# Enable faster exclusive instructions
+# Only enabled if cpu_accuracy is set to Unsafe. Automatically chosen with cpu_accuracy = Auto-select.
+# 0: Disabled, 1 (default): Enabled
+cpuopt_unsafe_ignore_global_monitor =
 
 [Renderer]
 # Which backend API to use.

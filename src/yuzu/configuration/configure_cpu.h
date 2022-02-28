@@ -45,6 +45,7 @@ private:
     ConfigurationShared::CheckState cpuopt_unsafe_ignore_standard_fpcr;
     ConfigurationShared::CheckState cpuopt_unsafe_inaccurate_nan;
     ConfigurationShared::CheckState cpuopt_unsafe_fastmem_check;
+    ConfigurationShared::CheckState cpuopt_unsafe_ignore_global_monitor;
 
     const Core::System& system;
 };

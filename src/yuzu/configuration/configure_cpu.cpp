@@ -36,6 +36,7 @@ void ConfigureCpu::SetConfiguration() {
     ui->cpuopt_unsafe_ignore_standard_fpcr->setEnabled(runtime_lock);
     ui->cpuopt_unsafe_inaccurate_nan->setEnabled(runtime_lock);
     ui->cpuopt_unsafe_fastmem_check->setEnabled(runtime_lock);
+    ui->cpuopt_unsafe_ignore_global_monitor->setEnabled(runtime_lock);
 
     ui->cpuopt_unsafe_unfuse_fma->setChecked(Settings::values.cpuopt_unsafe_unfuse_fma.GetValue());
     ui->cpuopt_unsafe_reduce_fp_error->setChecked(
@@ -46,6 +47,8 @@ void ConfigureCpu::SetConfiguration() {
         Settings::values.cpuopt_unsafe_inaccurate_nan.GetValue());
     ui->cpuopt_unsafe_fastmem_check->setChecked(
         Settings::values.cpuopt_unsafe_fastmem_check.GetValue());
+    ui->cpuopt_unsafe_ignore_global_monitor->setChecked(
+        Settings::values.cpuopt_unsafe_ignore_global_monitor.GetValue());
 
     if (Settings::IsConfiguringGlobal()) {
         ui->accuracy->setCurrentIndex(static_cast<int>(Settings::values.cpu_accuracy.GetValue()));
@@ -82,6 +85,9 @@ void ConfigureCpu::ApplyConfiguration() {
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.cpuopt_unsafe_fastmem_check,
                                              ui->cpuopt_unsafe_fastmem_check,
                                              cpuopt_unsafe_fastmem_check);
+    ConfigurationShared::ApplyPerGameSetting(&Settings::values.cpuopt_unsafe_ignore_global_monitor,
+                                             ui->cpuopt_unsafe_ignore_global_monitor,
+                                             cpuopt_unsafe_ignore_global_monitor);
 }
 
 void ConfigureCpu::changeEvent(QEvent* event) {
@@ -120,4 +126,7 @@ void ConfigureCpu::SetupPerGameUI() {
     ConfigurationShared::SetColoredTristate(ui->cpuopt_unsafe_fastmem_check,
                                             Settings::values.cpuopt_unsafe_fastmem_check,
                                             cpuopt_unsafe_fastmem_check);
+    ConfigurationShared::SetColoredTristate(ui->cpuopt_unsafe_ignore_global_monitor,
+                                            Settings::values.cpuopt_unsafe_ignore_global_monitor,
+                                            cpuopt_unsafe_ignore_global_monitor);
 }

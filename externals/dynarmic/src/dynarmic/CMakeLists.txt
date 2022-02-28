@@ -58,6 +58,7 @@ add_library(dynarmic
     common/memory_pool.h
     common/safe_ops.h
     common/scope_exit.h
+    common/spin_lock.h
     common/string_util.h
     common/u128.cpp
     common/u128.h
@@ -281,6 +282,7 @@ if (ARCHITECTURE STREQUAL "x86_64")
         backend/x64/emit_x64_crc32.cpp
         backend/x64/emit_x64_data_processing.cpp
         backend/x64/emit_x64_floating_point.cpp
+        backend/x64/emit_x64_memory.h
         backend/x64/emit_x64_packed.cpp
         backend/x64/emit_x64_saturation.cpp
         backend/x64/emit_x64_sm4.cpp
@@ -289,6 +291,7 @@ if (ARCHITECTURE STREQUAL "x86_64")
         backend/x64/emit_x64_vector_saturation.cpp
         backend/x64/exception_handler.h
         backend/x64/exclusive_monitor.cpp
+        backend/x64/exclusive_monitor_friend.h
         backend/x64/host_feature.h
         backend/x64/hostloc.cpp
         backend/x64/hostloc.h
@@ -299,12 +302,15 @@ if (ARCHITECTURE STREQUAL "x86_64")
         backend/x64/reg_alloc.cpp
         backend/x64/reg_alloc.h
         backend/x64/stack_layout.h
+        common/spin_lock_x64.cpp
+        common/spin_lock_x64.h
     )
 
     if ("A32" IN_LIST DYNARMIC_FRONTENDS)
         target_sources(dynarmic PRIVATE
             backend/x64/a32_emit_x64.cpp
             backend/x64/a32_emit_x64.h
+            backend/x64/a32_emit_x64_memory.cpp
             backend/x64/a32_interface.cpp
             backend/x64/a32_jitstate.cpp
             backend/x64/a32_jitstate.h
@@ -315,6 +321,7 @@ if (ARCHITECTURE STREQUAL "x86_64")
         target_sources(dynarmic PRIVATE
             backend/x64/a64_emit_x64.cpp
             backend/x64/a64_emit_x64.h
+            backend/x64/a64_emit_x64_memory.cpp
             backend/x64/a64_interface.cpp
             backend/x64/a64_jitstate.cpp
             backend/x64/a64_jitstate.h

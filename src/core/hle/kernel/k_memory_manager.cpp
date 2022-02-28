@@ -31,7 +31,7 @@ constexpr KMemoryManager::Pool GetPoolFromMemoryRegionType(u32 type) {
     } else if ((type | KMemoryRegionType_DramSystemNonSecurePool) == type) {
         return KMemoryManager::Pool::SystemNonSecure;
     } else {
-        ASSERT("InvalidMemoryRegionType for conversion to Pool");
+        ASSERT_MSG("InvalidMemoryRegionType for conversion to Pool");
         return {};
     }
 }
@@ -102,9 +102,8 @@ void KMemoryManager::Initialize(VAddr management_region, size_t management_regio
         Impl* manager = std::addressof(managers[num_managers++]);
         ASSERT(num_managers <= managers.size());
 
-        const size_t cur_size =
-            manager->Initialize(system, region_address, region_size, management_region,
-                                management_region_end, region_pool);
+        const size_t cur_size = manager->Initialize(region_address, region_size, management_region,
+                                                    management_region_end, region_pool);
         management_region += cur_size;
         ASSERT(management_region <= management_region_end);
 
@@ -384,9 +383,8 @@ void KMemoryManager::Open(const KPageLinkedList& pg) {
     }
 }
 
-size_t KMemoryManager::Impl::Initialize([[maybe_unused]] Core::System& system, PAddr address,
-                                        size_t size, VAddr management, VAddr management_end,
-                                        Pool p) {
+size_t KMemoryManager::Impl::Initialize(PAddr address, size_t size, VAddr management,
+                                        VAddr management_end, Pool p) {
     // Calculate management sizes.
     const size_t ref_count_size = (size / PageSize) * sizeof(u16);
     const size_t optimize_map_size = CalculateOptimizedProcessOverheadSize(size);

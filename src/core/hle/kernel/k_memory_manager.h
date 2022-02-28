@@ -112,8 +112,8 @@ private:
         Impl() = default;
         ~Impl() = default;
 
-        size_t Initialize(Core::System& system, PAddr address, size_t size, VAddr management,
-                          VAddr management_end, Pool p);
+        size_t Initialize(PAddr address, size_t size, VAddr management, VAddr management_end,
+                          Pool p);
 
         VAddr AllocateBlock(s32 index, bool random) {
             return heap.AllocateBlock(index, random);

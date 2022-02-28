@@ -37,8 +37,8 @@ u128 DynarmicExclusiveMonitor::ExclusiveRead128(std::size_t core_index, VAddr ad
     });
 }
 
-void DynarmicExclusiveMonitor::ClearExclusive() {
-    monitor.Clear();
+void DynarmicExclusiveMonitor::ClearExclusive(std::size_t core_index) {
+    monitor.ClearProcessor(core_index);
 }
 
 bool DynarmicExclusiveMonitor::ExclusiveWrite8(std::size_t core_index, VAddr vaddr, u8 value) {

@@ -49,7 +49,7 @@ bool DecrementIfLessThan(Core::System& system, s32* out, VAddr address, s32 valu
         }
     } else {
         // Otherwise, clear our exclusive hold and finish
-        monitor.ClearExclusive();
+        monitor.ClearExclusive(current_core);
     }
 
     // We're done.
@@ -78,7 +78,7 @@ bool UpdateIfEqual(Core::System& system, s32* out, VAddr address, s32 value, s32
         }
     } else {
         // Otherwise, clear our exclusive hold and finish.
-        monitor.ClearExclusive();
+        monitor.ClearExclusive(current_core);
     }
 
     // We're done.

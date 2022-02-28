@@ -177,6 +177,15 @@ struct UserConfig {
     /// accesses will hit the memory callbacks.
     bool recompile_on_fastmem_failure = true;
 
+    /// Determines if we should use the above fastmem_pointer for exclusive reads and
+    /// writes. On x64, dynarmic currently relies on x64 cmpxchg semantics which may not
+    /// provide fully accurate emulation.
+    bool fastmem_exclusive_access = false;
+    /// Determines if exclusive access instructions that pagefault should cause
+    /// recompilation of that block with fastmem disabled. Recompiled code will use memory
+    /// callbacks.
+    bool recompile_on_exclusive_fastmem_failure = true;
+
     // Coprocessors
     std::array<std::shared_ptr<Coprocessor>, 16> coprocessors{};
 

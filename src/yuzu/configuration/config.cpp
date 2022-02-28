@@ -632,6 +632,7 @@ void Config::ReadCpuValues() {
     ReadGlobalSetting(Settings::values.cpuopt_unsafe_ignore_standard_fpcr);
     ReadGlobalSetting(Settings::values.cpuopt_unsafe_inaccurate_nan);
     ReadGlobalSetting(Settings::values.cpuopt_unsafe_fastmem_check);
+    ReadGlobalSetting(Settings::values.cpuopt_unsafe_ignore_global_monitor);
 
     if (global) {
         ReadBasicSetting(Settings::values.cpu_debug_mode);
@@ -644,6 +645,8 @@ void Config::ReadCpuValues() {
         ReadBasicSetting(Settings::values.cpuopt_misc_ir);
         ReadBasicSetting(Settings::values.cpuopt_reduce_misalign_checks);
         ReadBasicSetting(Settings::values.cpuopt_fastmem);
+        ReadBasicSetting(Settings::values.cpuopt_fastmem_exclusives);
+        ReadBasicSetting(Settings::values.cpuopt_recompile_exclusives);
     }
 
     qt_config->endGroup();
@@ -1173,6 +1176,7 @@ void Config::SaveCpuValues() {
     WriteGlobalSetting(Settings::values.cpuopt_unsafe_ignore_standard_fpcr);
     WriteGlobalSetting(Settings::values.cpuopt_unsafe_inaccurate_nan);
     WriteGlobalSetting(Settings::values.cpuopt_unsafe_fastmem_check);
+    WriteGlobalSetting(Settings::values.cpuopt_unsafe_ignore_global_monitor);
 
     if (global) {
         WriteBasicSetting(Settings::values.cpu_debug_mode);

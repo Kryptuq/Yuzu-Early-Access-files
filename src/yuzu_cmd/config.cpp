@@ -280,11 +280,14 @@ void Config::ReadValues() {
     ReadSetting("Cpu", Settings::values.cpuopt_misc_ir);
     ReadSetting("Cpu", Settings::values.cpuopt_reduce_misalign_checks);
     ReadSetting("Cpu", Settings::values.cpuopt_fastmem);
+    ReadSetting("Cpu", Settings::values.cpuopt_fastmem_exclusives);
+    ReadSetting("Cpu", Settings::values.cpuopt_recompile_exclusives);
     ReadSetting("Cpu", Settings::values.cpuopt_unsafe_unfuse_fma);
     ReadSetting("Cpu", Settings::values.cpuopt_unsafe_reduce_fp_error);
     ReadSetting("Cpu", Settings::values.cpuopt_unsafe_ignore_standard_fpcr);
     ReadSetting("Cpu", Settings::values.cpuopt_unsafe_inaccurate_nan);
     ReadSetting("Cpu", Settings::values.cpuopt_unsafe_fastmem_check);
+    ReadSetting("Cpu", Settings::values.cpuopt_unsafe_ignore_global_monitor);
 
     // Renderer
     ReadSetting("Renderer", Settings::values.renderer_backend);

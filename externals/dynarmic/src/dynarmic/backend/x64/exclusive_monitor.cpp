@@ -21,11 +21,11 @@ size_t ExclusiveMonitor::GetProcessorCount() const {
 }
 
 void ExclusiveMonitor::Lock() {
-    while (is_locked.test_and_set(std::memory_order_acquire)) {}
+    lock.Lock();
 }
 
 void ExclusiveMonitor::Unlock() {
-    is_locked.clear(std::memory_order_release);
+    lock.Unlock();
 }
 
 bool ExclusiveMonitor::CheckAndClear(size_t processor_id, VAddr address) {

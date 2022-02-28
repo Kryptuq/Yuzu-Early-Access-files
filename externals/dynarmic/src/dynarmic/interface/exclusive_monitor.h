@@ -12,6 +12,8 @@
 #include <cstring>
 #include <vector>
 
+#include <dynarmic/common/spin_lock.h>
+
 namespace Dynarmic {
 
 using VAddr = std::uint64_t;
@@ -71,9 +73,14 @@ private:
     void Lock();
     void Unlock();
 
+    friend volatile int* GetExclusiveMonitorLockPointer(ExclusiveMonitor*);
+    friend size_t GetExclusiveMonitorProcessorCount(ExclusiveMonitor*);
+    friend VAddr* GetExclusiveMonitorAddressPointer(ExclusiveMonitor*, size_t index);
+    friend Vector* GetExclusiveMonitorValuePointer(ExclusiveMonitor*, size_t index);
+
     static constexpr VAddr RESERVATION_GRANULE_MASK = 0xFFFF'FFFF'FFFF'FFFFull;
     static constexpr VAddr INVALID_EXCLUSIVE_ADDRESS = 0xDEAD'DEAD'DEAD'DEADull;
-    std::atomic_flag is_locked;
+    SpinLock lock;
     std::vector<VAddr> exclusive_addresses;
     std::vector<Vector> exclusive_values;
 };

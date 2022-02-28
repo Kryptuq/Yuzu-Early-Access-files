@@ -150,6 +150,18 @@
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_unsafe_ignore_global_monitor">
+          <property name="toolTip">
+           <string>
+            &lt;div&gt;This option improves speed by relying only on the semantics of cmpxchg to ensure safety of exclusive access instructions. Please note this may result in deadlocks and other race conditions.&lt;/div&gt;
+           </string>
+          </property>
+          <property name="text">
+           <string>Ignore global monitor</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
      </item>
