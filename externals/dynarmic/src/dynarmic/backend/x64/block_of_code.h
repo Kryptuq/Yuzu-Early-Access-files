@@ -96,6 +96,24 @@ public:
         CallFunction(Common::FptrCast(l));
     }
 
+    void ZeroExtendFrom(size_t bitsize, Xbyak::Reg64 reg) {
+        switch (bitsize) {
+        case 8:
+            movzx(reg.cvt32(), reg.cvt8());
+            return;
+        case 16:
+            movzx(reg.cvt32(), reg.cvt16());
+            return;
+        case 32:
+            mov(reg.cvt32(), reg.cvt32());
+            return;
+        case 64:
+            return;
+        default:
+            UNREACHABLE();
+        }
+    }
+
     Xbyak::Address MConst(const Xbyak::AddressFrame& frame, u64 lower, u64 upper = 0);
 
     /// Far code sits far away from the near code. Execution remains primarily in near code.

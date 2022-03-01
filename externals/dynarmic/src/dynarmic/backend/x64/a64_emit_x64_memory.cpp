@@ -167,7 +167,7 @@ void A64EmitX64::GenFastmemFallbacks() {
 
             code.align();
             exclusive_write_fallbacks[std::make_tuple(128, vaddr_idx, value_idx)] = code.getCurr<void (*)()>();
-            ABI_PushCallerSaveRegistersAndAdjustStack(code);
+            ABI_PushCallerSaveRegistersAndAdjustStackExcept(code, HostLoc::RAX);
             if (value_idx != 1) {
                 code.movaps(xmm1, Xbyak::Xmm{value_idx});
             }
@@ -183,7 +183,7 @@ void A64EmitX64::GenFastmemFallbacks() {
                 code.mov(code.ABI_PARAM2, Xbyak::Reg64{vaddr_idx});
             }
             code.call(memory_exclusive_write_128);
-            ABI_PopCallerSaveRegistersAndAdjustStack(code);
+            ABI_PopCallerSaveRegistersAndAdjustStackExcept(code, HostLoc::RAX);
             code.ret();
             PerfMapRegister(exclusive_write_fallbacks[std::make_tuple(128, vaddr_idx, value_idx)], code.getCurr(), "a64_write_fallback_128");
 
@@ -203,6 +203,7 @@ void A64EmitX64::GenFastmemFallbacks() {
                     code.mov(Xbyak::Reg64{value_idx}, code.ABI_RETURN);
                 }
                 ABI_PopCallerSaveRegistersAndAdjustStackExcept(code, HostLocRegIdx(value_idx));
+                code.ZeroExtendFrom(bitsize, Xbyak::Reg64{value_idx});
                 code.ret();
                 PerfMapRegister(read_fallbacks[std::make_tuple(bitsize, vaddr_idx, value_idx)], code.getCurr(), fmt::format("a64_read_fallback_{}", bitsize));
             }
@@ -498,6 +499,7 @@ void A64EmitX64::EmitMemoryRead(A64EmitContext& ctx, IR::Inst* inst) {
         } else {
             ctx.reg_alloc.HostCall(inst, {}, args[0]);
             Devirtualize<callback>(conf.callbacks).EmitCall(code);
+            code.ZeroExtendFrom(bitsize, code.ABI_RETURN);
         }
         return;
     }
@@ -668,6 +670,7 @@ void A64EmitX64::EmitExclusiveReadMemory(A64EmitContext& ctx, IR::Inst* inst) {
                     return (conf.callbacks->*callback)(vaddr);
                 });
             });
+        code.ZeroExtendFrom(bitsize, code.ABI_RETURN);
     } else {
         const Xbyak::Xmm result = ctx.reg_alloc.ScratchXmm();
         ctx.reg_alloc.Use(args[0], ABI_PARAM2);

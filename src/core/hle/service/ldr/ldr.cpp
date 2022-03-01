@@ -310,7 +310,7 @@ public:
 
     ResultCode GetAvailableMapRegion(Kernel::KPageTable& page_table, u64 size, VAddr& out_addr) {
         size = Common::AlignUp(size, Kernel::PageSize);
-        size += page_table.GetNumGuardPages() * Kernel::PageSize * 2;
+        size += page_table.GetNumGuardPages() * Kernel::PageSize * 4;
 
         auto is_region_available = [&](VAddr addr) {
             const auto end_addr = addr + size;
@@ -318,6 +318,19 @@ public:
                 if (system.Memory().IsValidVirtualAddress(addr)) {
                     return false;
                 }
+
+                if (!page_table.IsInsideAddressSpace(out_addr, size)) {
+                    return false;
+                }
+
+                if (page_table.IsInsideHeapRegion(out_addr, size)) {
+                    return false;
+                }
+
+                if (page_table.IsInsideAliasRegion(out_addr, size)) {
+                    return false;
+                }
+
                 addr += Kernel::PageSize;
             }
             return true;

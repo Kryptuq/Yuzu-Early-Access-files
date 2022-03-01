@@ -15,6 +15,7 @@ void EmitX64::EmitSM4AccessSubstitutionBox(EmitContext& ctx, IR::Inst* inst) {
 
     ctx.reg_alloc.HostCall(inst, args[0]);
     code.CallFunction(&Common::Crypto::SM4::AccessSubstitutionBox);
+    code.movzx(code.ABI_RETURN.cvt32(), code.ABI_RETURN.cvt8());
 }
 
 }  // namespace Dynarmic::Backend::X64

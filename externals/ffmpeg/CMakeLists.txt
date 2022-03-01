@@ -214,6 +214,6 @@ else(WIN32)
     set(FFmpeg_LDFLAGS "${FFmpeg_LDFLAGS}" PARENT_SCOPE)
     set(FFmpeg_LIBRARIES "${FFmpeg_LIBRARIES}" PARENT_SCOPE)
     set(FFmpeg_INCLUDE_DIR "${FFmpeg_INCLUDE_DIR}" PARENT_SCOPE)
-endif(WIN32)
+endif()
 
 unset(FFmpeg_COMPONENTS)

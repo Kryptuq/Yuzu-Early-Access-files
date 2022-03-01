@@ -31,9 +31,8 @@ bool GLInnerFence::IsSignaled() const {
         return true;
     }
     ASSERT(sync_object.handle != 0);
-    GLsizei length;
     GLint sync_status;
-    glGetSynciv(sync_object.handle, GL_SYNC_STATUS, sizeof(GLint), &length, &sync_status);
+    glGetSynciv(sync_object.handle, GL_SYNC_STATUS, 1, nullptr, &sync_status);
     return sync_status == GL_SIGNALED;
 }
 
