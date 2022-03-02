@@ -100,9 +100,7 @@ public:
         return writes_global_memory;
     }
 
-    [[nodiscard]] bool IsBuilt() const noexcept {
-        return is_built.load(std::memory_order::relaxed);
-    }
+    [[nodiscard]] bool IsBuilt() noexcept;
 
     template <typename Spec>
     static auto MakeConfigureSpecFunc() {
@@ -154,7 +152,8 @@ private:
 
     std::mutex built_mutex;
     std::condition_variable built_condvar;
-    std::atomic_bool is_built{false};
+    OGLSync built_fence{};
+    bool is_built{false};
 };
 
 } // namespace OpenGL

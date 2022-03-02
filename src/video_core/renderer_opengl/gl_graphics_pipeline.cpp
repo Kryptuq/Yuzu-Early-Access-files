@@ -243,10 +243,6 @@ GraphicsPipeline::GraphicsPipeline(
             case Settings::ShaderBackend::GLASM:
                 if (!sources[stage].empty()) {
                     assembly_programs[stage] = CompileProgram(sources[stage], AssemblyStage(stage));
-                    if (in_parallel) {
-                        // Make sure program is built before continuing when building in parallel
-                        glGetString(GL_PROGRAM_ERROR_STRING_NV);
-                    }
                 }
                 break;
             case Settings::ShaderBackend::SPIRV:
@@ -256,20 +252,18 @@ GraphicsPipeline::GraphicsPipeline(
                 break;
             }
         }
-        if (in_parallel && backend != Settings::ShaderBackend::GLASM) {
-            // Make sure programs have built if we are building shaders in parallel
-            for (OGLProgram& program : source_programs) {
-                if (program.handle != 0) {
-                    GLint status{};
-                    glGetProgramiv(program.handle, GL_LINK_STATUS, &status);
-                }
-            }
+        if (in_parallel) {
+            std::lock_guard lock{built_mutex};
+            built_fence.Create();
+            // Flush this context to ensure compilation commands and fence are in the GPU pipe.
+            glFlush();
+            built_condvar.notify_one();
+        } else {
+            is_built = true;
         }
         if (shader_notify) {
             shader_notify->MarkShaderComplete();
         }
-        is_built = true;
-        built_condvar.notify_one();
     }};
     if (thread_worker) {
         thread_worker->QueueWork(std::move(func));
@@ -440,7 +434,7 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
     buffer_cache.UpdateGraphicsBuffers(is_indexed);
     buffer_cache.BindHostGeometryBuffers(is_indexed);
 
-    if (!is_built.load(std::memory_order::relaxed)) {
+    if (!IsBuilt()) {
         WaitForBuild();
     }
     const bool use_assembly{assembly_programs[0].handle != 0};
@@ -585,8 +579,26 @@ void GraphicsPipeline::GenerateTransformFeedbackState() {
 }
 
 void GraphicsPipeline::WaitForBuild() {
-    std::unique_lock lock{built_mutex};
-    built_condvar.wait(lock, [this] { return is_built.load(std::memory_order::relaxed); });
+    if (built_fence.handle == 0) {
+        std::unique_lock lock{built_mutex};
+        built_condvar.wait(lock, [this] { return built_fence.handle != 0; });
+    }
+    ASSERT(glClientWaitSync(built_fence.handle, 0, GL_TIMEOUT_IGNORED) != GL_WAIT_FAILED);
+    is_built = true;
+}
+
+bool GraphicsPipeline::IsBuilt() noexcept {
+    if (is_built) {
+        return true;
+    }
+    if (built_fence.handle == 0) {
+        return false;
+    }
+    // Timeout of zero means this is non-blocking
+    const auto sync_status = glClientWaitSync(built_fence.handle, 0, 0);
+    ASSERT(sync_status != GL_WAIT_FAILED);
+    is_built = sync_status != GL_TIMEOUT_EXPIRED;
+    return is_built;
 }
 
 } // namespace OpenGL
