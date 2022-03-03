@@ -327,8 +327,8 @@ private:
     bool IsNiechePlaceholder(size_t virtual_offset, size_t length) const {
         const auto it = placeholders.upper_bound({virtual_offset, virtual_offset + length});
         if (it != placeholders.end() && it->lower() == virtual_offset + length) {
-            const bool is_root = it == placeholders.begin() && virtual_offset == 0;
-            return is_root || std::prev(it)->upper() == virtual_offset;
+            return it == placeholders.begin() ? virtual_offset == 0
+                                              : std::prev(it)->upper() == virtual_offset;
         }
         return false;
     }

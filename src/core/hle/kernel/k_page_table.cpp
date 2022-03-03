@@ -285,39 +285,64 @@ ResultCode KPageTable::MapProcessCode(VAddr addr, std::size_t num_pages, KMemory
     return ResultSuccess;
 }
 
-ResultCode KPageTable::MapCodeMemory(VAddr dst_addr, VAddr src_addr, std::size_t size) {
+ResultCode KPageTable::MapCodeMemory(VAddr dst_address, VAddr src_address, std::size_t size) {
+    // Validate the mapping request.
+    R_UNLESS(this->CanContain(dst_address, size, KMemoryState::AliasCode),
+             ResultInvalidMemoryRegion);
+
+    // Lock the table.
     KScopedLightLock lk(general_lock);
 
-    const std::size_t num_pages{size / PageSize};
+    // Verify that the source memory is normal heap.
+    KMemoryState src_state{};
+    KMemoryPermission src_perm{};
+    std::size_t num_src_allocator_blocks{};
+    R_TRY(this->CheckMemoryState(std::addressof(src_state), std::addressof(src_perm), nullptr,
+                                 std::addressof(num_src_allocator_blocks), src_address, size,
+                                 KMemoryState::All, KMemoryState::Normal, KMemoryPermission::All,
+                                 KMemoryPermission::UserReadWrite, KMemoryAttribute::All,
+                                 KMemoryAttribute::None));
 
-    KMemoryState state{};
-    KMemoryPermission perm{};
-    CASCADE_CODE(CheckMemoryState(&state, &perm, nullptr, nullptr, src_addr, size,
-                                  KMemoryState::All, KMemoryState::Normal, KMemoryPermission::All,
-                                  KMemoryPermission::UserReadWrite, KMemoryAttribute::Mask,
-                                  KMemoryAttribute::None, KMemoryAttribute::IpcAndDeviceMapped));
+    // Verify that the destination memory is unmapped.
+    std::size_t num_dst_allocator_blocks{};
+    R_TRY(this->CheckMemoryState(std::addressof(num_dst_allocator_blocks), dst_address, size,
+                                 KMemoryState::All, KMemoryState::Free, KMemoryPermission::None,
+                                 KMemoryPermission::None, KMemoryAttribute::None,
+                                 KMemoryAttribute::None));
 
-    if (IsRegionMapped(dst_addr, size)) {
-        return ResultInvalidCurrentMemory;
-    }
-
-    KPageLinkedList page_linked_list;
-    AddRegionToPages(src_addr, num_pages, page_linked_list);
-
+    // Map the code memory.
     {
-        auto block_guard = detail::ScopeExit(
-            [&] { Operate(src_addr, num_pages, perm, OperationType::ChangePermissions); });
+        // Determine the number of pages being operated on.
+        const std::size_t num_pages = size / PageSize;
 
-        CASCADE_CODE(Operate(src_addr, num_pages, KMemoryPermission::None,
-                             OperationType::ChangePermissions));
-        CASCADE_CODE(MapPages(dst_addr, page_linked_list, KMemoryPermission::None));
+        // Create page groups for the memory being mapped.
+        KPageLinkedList pg;
+        AddRegionToPages(src_address, num_pages, pg);
 
-        block_guard.Cancel();
+        // Reprotect the source as kernel-read/not mapped.
+        const KMemoryPermission new_perm = static_cast<KMemoryPermission>(
+            KMemoryPermission::KernelRead | KMemoryPermission::NotMapped);
+        R_TRY(Operate(src_address, num_pages, new_perm, OperationType::ChangePermissions));
+
+        // Ensure that we unprotect the source pages on failure.
+        auto unprot_guard = SCOPE_GUARD({
+            ASSERT(this->Operate(src_address, num_pages, src_perm, OperationType::ChangePermissions)
+                       .IsSuccess());
+        });
+
+        // Map the alias pages.
+        R_TRY(MapPages(dst_address, pg, new_perm));
+
+        // We successfully mapped the alias pages, so we don't need to unprotect the src pages on
+        // failure.
+        unprot_guard.Cancel();
+
+        // Apply the memory block updates.
+        block_manager->Update(src_address, num_pages, src_state, new_perm,
+                              KMemoryAttribute::Locked);
+        block_manager->Update(dst_address, num_pages, KMemoryState::AliasCode, new_perm,
+                              KMemoryAttribute::None);
     }
-
-    block_manager->Update(src_addr, num_pages, state, KMemoryPermission::None,
-                          KMemoryAttribute::Locked);
-    block_manager->Update(dst_addr, num_pages, KMemoryState::AliasCode);
 
     return ResultSuccess;
 }
@@ -329,12 +354,6 @@ ResultCode KPageTable::UnmapCodeMemory(VAddr dst_address, VAddr src_address, std
 
     // Lock the table.
     KScopedLightLock lk(general_lock);
-
-    if (!size) {
-        return ResultSuccess;
-    }
-
-    const std::size_t num_pages{size / PageSize};
 
     // Verify that the source memory is locked normal heap.
     std::size_t num_src_allocator_blocks{};
@@ -384,9 +403,15 @@ ResultCode KPageTable::UnmapCodeMemory(VAddr dst_address, VAddr src_address, std
 
     // Unmap.
     {
-        // TODO(bunnei): We free the virtual address space, but do not nullptr the pointers in the
-        // backing page table. This is a workaround because of an issue where CPU emulation may have
-        // not quite finished running code when NROs are unloaded.
+        // Determine the number of pages being operated on.
+        const std::size_t num_pages = size / PageSize;
+
+        // Unmap the aliased copy of the pages.
+        R_TRY(Operate(dst_address, num_pages, KMemoryPermission::None, OperationType::Unmap));
+
+        // Try to set the permissions for the source pages back to what they should be.
+        R_TRY(Operate(src_address, num_pages, KMemoryPermission::UserReadWrite,
+                      OperationType::ChangePermissions));
 
         // Apply the memory block updates.
         block_manager->Update(dst_address, num_pages, KMemoryState::None);

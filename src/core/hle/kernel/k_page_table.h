@@ -36,8 +36,8 @@ public:
                                     KMemoryManager::Pool pool);
     ResultCode MapProcessCode(VAddr addr, std::size_t pages_count, KMemoryState state,
                               KMemoryPermission perm);
-    ResultCode MapCodeMemory(VAddr dst_addr, VAddr src_addr, std::size_t size);
-    ResultCode UnmapCodeMemory(VAddr dst_addr, VAddr src_addr, std::size_t size);
+    ResultCode MapCodeMemory(VAddr dst_address, VAddr src_address, std::size_t size);
+    ResultCode UnmapCodeMemory(VAddr dst_address, VAddr src_address, std::size_t size);
     ResultCode UnmapProcessMemory(VAddr dst_addr, std::size_t size, KPageTable& src_page_table,
                                   VAddr src_addr);
     ResultCode MapPhysicalMemory(VAddr addr, std::size_t size);

@@ -218,19 +218,17 @@ private:
     Impl(const std::filesystem::path& file_backend_filename, const Filter& filter_)
         : filter{filter_}, file_backend{file_backend_filename} {}
 
-    ~Impl() {
-        StopBackendThread();
-    }
+    ~Impl() = default;
 
     void StartBackendThread() {
-        backend_thread = std::thread([this] {
+        backend_thread = std::jthread([this](std::stop_token stop_token) {
             Common::SetCurrentThreadName("yuzu:Log");
             Entry entry;
             const auto write_logs = [this, &entry]() {
                 ForEachBackend([&entry](Backend& backend) { backend.Write(entry); });
             };
-            while (!stop.stop_requested()) {
-                entry = message_queue.PopWait(stop.get_token());
+            while (!stop_token.stop_requested()) {
+                entry = message_queue.PopWait(stop_token);
                 if (entry.filename != nullptr) {
                     write_logs();
                 }
@@ -242,11 +240,6 @@ private:
                 write_logs();
             }
         });
-    }
-
-    void StopBackendThread() {
-        stop.request_stop();
-        backend_thread.join();
     }
 
     Entry CreateEntry(Class log_class, Level log_level, const char* filename, unsigned int line_nr,
@@ -283,8 +276,7 @@ private:
     ColorConsoleBackend color_console_backend{};
     FileBackend file_backend;
 
-    std::stop_source stop;
-    std::thread backend_thread;
+    std::jthread backend_thread;
     MPSCQueue<Entry, true> message_queue{};
     std::chrono::steady_clock::time_point time_origin{std::chrono::steady_clock::now()};
 };
