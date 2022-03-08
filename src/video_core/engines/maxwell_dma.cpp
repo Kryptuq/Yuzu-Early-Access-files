@@ -246,11 +246,10 @@ void MaxwellDMA::FastCopyBlockLinearToPitch() {
 
 void MaxwellDMA::ReleaseSemaphore() {
     const auto type = regs.launch_dma.semaphore_type;
-    if (type == LaunchDMA::SemaphoreType::NONE) {
-        return;
-    }
     const GPUVAddr address = regs.semaphore.address;
     switch (type) {
+    case LaunchDMA::SemaphoreType::NONE:
+        break;
     case LaunchDMA::SemaphoreType::RELEASE_ONE_WORD_SEMAPHORE:
         memory_manager.Write<u32>(address, regs.semaphore.payload);
         break;

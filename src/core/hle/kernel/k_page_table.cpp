@@ -297,16 +297,15 @@ ResultCode KPageTable::MapCodeMemory(VAddr dst_address, VAddr src_address, std::
     KMemoryState src_state{};
     KMemoryPermission src_perm{};
     std::size_t num_src_allocator_blocks{};
-    R_TRY(this->CheckMemoryState(std::addressof(src_state), std::addressof(src_perm), nullptr,
-                                 std::addressof(num_src_allocator_blocks), src_address, size,
-                                 KMemoryState::All, KMemoryState::Normal, KMemoryPermission::All,
-                                 KMemoryPermission::UserReadWrite, KMemoryAttribute::All,
-                                 KMemoryAttribute::None));
+    R_TRY(this->CheckMemoryState(&src_state, &src_perm, nullptr, &num_src_allocator_blocks,
+                                 src_address, size, KMemoryState::All, KMemoryState::Normal,
+                                 KMemoryPermission::All, KMemoryPermission::UserReadWrite,
+                                 KMemoryAttribute::All, KMemoryAttribute::None));
 
     // Verify that the destination memory is unmapped.
     std::size_t num_dst_allocator_blocks{};
-    R_TRY(this->CheckMemoryState(std::addressof(num_dst_allocator_blocks), dst_address, size,
-                                 KMemoryState::All, KMemoryState::Free, KMemoryPermission::None,
+    R_TRY(this->CheckMemoryState(&num_dst_allocator_blocks, dst_address, size, KMemoryState::All,
+                                 KMemoryState::Free, KMemoryPermission::None,
                                  KMemoryPermission::None, KMemoryAttribute::None,
                                  KMemoryAttribute::None));
 
@@ -320,8 +319,8 @@ ResultCode KPageTable::MapCodeMemory(VAddr dst_address, VAddr src_address, std::
         AddRegionToPages(src_address, num_pages, pg);
 
         // Reprotect the source as kernel-read/not mapped.
-        const KMemoryPermission new_perm = static_cast<KMemoryPermission>(
-            KMemoryPermission::KernelRead | KMemoryPermission::NotMapped);
+        const auto new_perm = static_cast<KMemoryPermission>(KMemoryPermission::KernelRead |
+                                                             KMemoryPermission::NotMapped);
         R_TRY(Operate(src_address, num_pages, new_perm, OperationType::ChangePermissions));
 
         // Ensure that we unprotect the source pages on failure.
