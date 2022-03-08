@@ -44,7 +44,7 @@ IR::U32 ApplyLUT(IR::IREmitter& ir, const IR::U32& a, const IR::U32& b, const IR
     case 13:
         return ir.BitwiseAnd(ir.BitwiseNot(a), ir.BitwiseOr(b, ir.BitwiseNot(c)));
     case 14:
-        return ir.BitwiseAnd(ir.BitwiseOr(b, c), ir.BitwiseNot(a));
+        return ir.BitwiseAnd(ir.BitwiseNot(a), ir.BitwiseOr(b, c));
     case 15:
         return ir.BitwiseNot(a);
     case 16:
@@ -62,20 +62,20 @@ IR::U32 ApplyLUT(IR::IREmitter& ir, const IR::U32& a, const IR::U32& b, const IR
     case 22:
         return ir.BitwiseXor(ir.BitwiseOr(a, b), ir.BitwiseOr(c, ir.BitwiseAnd(a, b)));
     case 23:
-        return ir.BitwiseXor(ir.BitwiseNot(a),
-                             ir.BitwiseAnd(ir.BitwiseXor(a, b), ir.BitwiseXor(a, c)));
+        return ir.BitwiseXor(ir.BitwiseAnd(ir.BitwiseXor(a, b), ir.BitwiseXor(a, c)),
+                             ir.BitwiseNot(a));
     case 24:
         return ir.BitwiseAnd(ir.BitwiseXor(a, b), ir.BitwiseXor(a, c));
     case 25:
         return ir.BitwiseNot(ir.BitwiseOr(ir.BitwiseAnd(a, b), ir.BitwiseXor(b, c)));
     case 26:
-        return ir.BitwiseAnd(ir.BitwiseXor(a, c), ir.BitwiseOr(c, ir.BitwiseNot(b)));
+        return ir.BitwiseAnd(ir.BitwiseOr(c, ir.BitwiseNot(b)), ir.BitwiseXor(a, c));
     case 27:
-        return ir.BitwiseXor(ir.BitwiseOr(b, c), ir.BitwiseOr(a, ir.BitwiseNot(c)));
+        return ir.BitwiseXor(ir.BitwiseOr(a, ir.BitwiseNot(c)), ir.BitwiseOr(b, c));
     case 28:
-        return ir.BitwiseAnd(ir.BitwiseXor(a, b), ir.BitwiseOr(b, ir.BitwiseNot(c)));
+        return ir.BitwiseAnd(ir.BitwiseOr(b, ir.BitwiseNot(c)), ir.BitwiseXor(a, b));
     case 29:
-        return ir.BitwiseXor(ir.BitwiseOr(b, c), ir.BitwiseOr(a, ir.BitwiseNot(b)));
+        return ir.BitwiseXor(ir.BitwiseOr(a, ir.BitwiseNot(b)), ir.BitwiseOr(b, c));
     case 30:
         return ir.BitwiseXor(a, ir.BitwiseOr(b, c));
     case 31:
@@ -93,7 +93,7 @@ IR::U32 ApplyLUT(IR::IREmitter& ir, const IR::U32& a, const IR::U32& b, const IR
     case 37:
         return ir.BitwiseNot(ir.BitwiseOr(ir.BitwiseAnd(a, b), ir.BitwiseXor(a, c)));
     case 38:
-        return ir.BitwiseAnd(ir.BitwiseXor(b, c), ir.BitwiseOr(c, ir.BitwiseNot(a)));
+        return ir.BitwiseAnd(ir.BitwiseOr(c, ir.BitwiseNot(a)), ir.BitwiseXor(b, c));
     case 39:
         return ir.BitwiseXor(ir.BitwiseOr(a, c), ir.BitwiseOr(b, ir.BitwiseNot(c)));
     case 40:
@@ -104,8 +104,8 @@ IR::U32 ApplyLUT(IR::IREmitter& ir, const IR::U32& a, const IR::U32& b, const IR
     case 42:
         return ir.BitwiseAnd(c, ir.BitwiseNot(ir.BitwiseAnd(a, b)));
     case 43:
-        return ir.BitwiseOr(ir.BitwiseAnd(c, ir.BitwiseXor(a, b)),
-                            ir.BitwiseNot(ir.BitwiseOr(a, b)));
+        return ir.BitwiseXor(ir.BitwiseOr(a, ir.BitwiseNot(c)),
+                             ir.BitwiseOr(b, ir.BitwiseXor(a, c)));
     case 44:
         return ir.BitwiseAnd(ir.BitwiseOr(b, c), ir.BitwiseXor(a, b));
     case 45:
@@ -113,17 +113,17 @@ IR::U32 ApplyLUT(IR::IREmitter& ir, const IR::U32& a, const IR::U32& b, const IR
     case 46:
         return ir.BitwiseXor(ir.BitwiseAnd(a, b), ir.BitwiseOr(b, c));
     case 47:
-        return ir.BitwiseOr(ir.BitwiseNot(a), ir.BitwiseAnd(c, ir.BitwiseNot(b)));
+        return ir.BitwiseOr(ir.BitwiseAnd(c, ir.BitwiseNot(b)), ir.BitwiseNot(a));
     case 48:
         return ir.BitwiseAnd(a, ir.BitwiseNot(b));
     case 49:
         return ir.BitwiseAnd(ir.BitwiseNot(b), ir.BitwiseOr(a, ir.BitwiseNot(c)));
     case 50:
-        return ir.BitwiseAnd(ir.BitwiseOr(a, c), ir.BitwiseNot(b));
+        return ir.BitwiseAnd(ir.BitwiseNot(b), ir.BitwiseOr(a, c));
     case 51:
         return ir.BitwiseNot(b);
     case 52:
-        return ir.BitwiseAnd(ir.BitwiseXor(a, b), ir.BitwiseOr(a, ir.BitwiseNot(c)));
+        return ir.BitwiseAnd(ir.BitwiseOr(a, ir.BitwiseNot(c)), ir.BitwiseXor(a, b));
     case 53:
         return ir.BitwiseXor(ir.BitwiseOr(a, c), ir.BitwiseOr(b, ir.BitwiseNot(a)));
     case 54:
@@ -137,13 +137,13 @@ IR::U32 ApplyLUT(IR::IREmitter& ir, const IR::U32& a, const IR::U32& b, const IR
     case 58:
         return ir.BitwiseXor(ir.BitwiseAnd(a, b), ir.BitwiseOr(a, c));
     case 59:
-        return ir.BitwiseOr(ir.BitwiseNot(b), ir.BitwiseAnd(c, ir.BitwiseNot(a)));
+        return ir.BitwiseOr(ir.BitwiseAnd(c, ir.BitwiseNot(a)), ir.BitwiseNot(b));
     case 60:
         return ir.BitwiseXor(a, b);
     case 61:
-        return ir.BitwiseOr(ir.BitwiseXor(a, b), ir.BitwiseNot(ir.BitwiseOr(a, c)));
+        return ir.BitwiseOr(ir.BitwiseNot(ir.BitwiseOr(a, c)), ir.BitwiseXor(a, b));
     case 62:
-        return ir.BitwiseOr(ir.BitwiseXor(a, b), ir.BitwiseAnd(c, ir.BitwiseNot(a)));
+        return ir.BitwiseOr(ir.BitwiseAnd(c, ir.BitwiseNot(a)), ir.BitwiseXor(a, b));
     case 63:
         return ir.BitwiseNot(ir.BitwiseAnd(a, b));
     case 64:
@@ -159,7 +159,7 @@ IR::U32 ApplyLUT(IR::IREmitter& ir, const IR::U32& a, const IR::U32& b, const IR
     case 69:
         return ir.BitwiseAnd(ir.BitwiseNot(c), ir.BitwiseOr(b, ir.BitwiseNot(a)));
     case 70:
-        return ir.BitwiseAnd(ir.BitwiseXor(b, c), ir.BitwiseOr(b, ir.BitwiseNot(a)));
+        return ir.BitwiseAnd(ir.BitwiseOr(b, ir.BitwiseNot(a)), ir.BitwiseXor(b, c));
     case 71:
         return ir.BitwiseXor(ir.BitwiseOr(a, b), ir.BitwiseOr(c, ir.BitwiseNot(b)));
     case 72:
@@ -174,22 +174,22 @@ IR::U32 ApplyLUT(IR::IREmitter& ir, const IR::U32& a, const IR::U32& b, const IR
     case 76:
         return ir.BitwiseAnd(b, ir.BitwiseNot(ir.BitwiseAnd(a, c)));
     case 77:
-        return ir.BitwiseOr(ir.BitwiseAnd(b, ir.BitwiseXor(a, c)),
-                            ir.BitwiseNot(ir.BitwiseOr(a, c)));
+        return ir.BitwiseXor(ir.BitwiseOr(a, ir.BitwiseNot(b)),
+                             ir.BitwiseOr(c, ir.BitwiseXor(a, b)));
     case 78:
         return ir.BitwiseXor(ir.BitwiseAnd(a, c), ir.BitwiseOr(b, c));
     case 79:
-        return ir.BitwiseOr(ir.BitwiseNot(a), ir.BitwiseAnd(b, ir.BitwiseNot(c)));
+        return ir.BitwiseOr(ir.BitwiseAnd(b, ir.BitwiseNot(c)), ir.BitwiseNot(a));
     case 80:
         return ir.BitwiseAnd(a, ir.BitwiseNot(c));
     case 81:
         return ir.BitwiseAnd(ir.BitwiseNot(c), ir.BitwiseOr(a, ir.BitwiseNot(b)));
     case 82:
-        return ir.BitwiseAnd(ir.BitwiseXor(a, c), ir.BitwiseOr(a, ir.BitwiseNot(b)));
+        return ir.BitwiseAnd(ir.BitwiseOr(a, ir.BitwiseNot(b)), ir.BitwiseXor(a, c));
     case 83:
         return ir.BitwiseXor(ir.BitwiseOr(a, b), ir.BitwiseOr(c, ir.BitwiseNot(a)));
     case 84:
-        return ir.BitwiseAnd(ir.BitwiseOr(a, b), ir.BitwiseNot(c));
+        return ir.BitwiseAnd(ir.BitwiseNot(c), ir.BitwiseOr(a, b));
     case 85:
         return ir.BitwiseNot(c);
     case 86:
@@ -203,13 +203,13 @@ IR::U32 ApplyLUT(IR::IREmitter& ir, const IR::U32& a, const IR::U32& b, const IR
     case 90:
         return ir.BitwiseXor(a, c);
     case 91:
-        return ir.BitwiseOr(ir.BitwiseXor(a, c), ir.BitwiseNot(ir.BitwiseOr(a, b)));
+        return ir.BitwiseOr(ir.BitwiseNot(ir.BitwiseOr(a, b)), ir.BitwiseXor(a, c));
     case 92:
         return ir.BitwiseXor(ir.BitwiseAnd(a, c), ir.BitwiseOr(a, b));
     case 93:
-        return ir.BitwiseOr(ir.BitwiseNot(c), ir.BitwiseAnd(b, ir.BitwiseNot(a)));
+        return ir.BitwiseOr(ir.BitwiseAnd(b, ir.BitwiseNot(a)), ir.BitwiseNot(c));
     case 94:
-        return ir.BitwiseOr(ir.BitwiseXor(a, c), ir.BitwiseAnd(b, ir.BitwiseNot(a)));
+        return ir.BitwiseOr(ir.BitwiseAnd(b, ir.BitwiseNot(a)), ir.BitwiseXor(a, c));
     case 95:
         return ir.BitwiseNot(ir.BitwiseAnd(a, c));
     case 96:
@@ -228,7 +228,7 @@ IR::U32 ApplyLUT(IR::IREmitter& ir, const IR::U32& a, const IR::U32& b, const IR
     case 102:
         return ir.BitwiseXor(b, c);
     case 103:
-        return ir.BitwiseOr(ir.BitwiseXor(b, c), ir.BitwiseNot(ir.BitwiseOr(a, b)));
+        return ir.BitwiseOr(ir.BitwiseNot(ir.BitwiseOr(a, b)), ir.BitwiseXor(b, c));
     case 104:
         return ir.BitwiseAnd(ir.BitwiseOr(a, b), ir.BitwiseXor(c, ir.BitwiseAnd(a, b)));
     case 105:
@@ -236,45 +236,45 @@ IR::U32 ApplyLUT(IR::IREmitter& ir, const IR::U32& a, const IR::U32& b, const IR
     case 106:
         return ir.BitwiseXor(c, ir.BitwiseAnd(a, b));
     case 107:
-        return ir.BitwiseOr(ir.BitwiseNot(ir.BitwiseOr(a, b)),
-                            ir.BitwiseXor(c, ir.BitwiseAnd(a, b)));
+        return ir.BitwiseXor(ir.BitwiseAnd(c, ir.BitwiseOr(a, b)),
+                             ir.BitwiseXor(a, ir.BitwiseNot(b)));
     case 108:
         return ir.BitwiseXor(b, ir.BitwiseAnd(a, c));
     case 109:
-        return ir.BitwiseOr(ir.BitwiseNot(ir.BitwiseOr(a, c)),
-                            ir.BitwiseXor(b, ir.BitwiseAnd(a, c)));
+        return ir.BitwiseXor(ir.BitwiseAnd(b, ir.BitwiseOr(a, c)),
+                             ir.BitwiseXor(a, ir.BitwiseNot(c)));
     case 110:
-        return ir.BitwiseOr(ir.BitwiseXor(b, c), ir.BitwiseAnd(b, ir.BitwiseNot(a)));
+        return ir.BitwiseOr(ir.BitwiseAnd(b, ir.BitwiseNot(a)), ir.BitwiseXor(b, c));
     case 111:
         return ir.BitwiseOr(ir.BitwiseNot(a), ir.BitwiseXor(b, c));
     case 112:
         return ir.BitwiseAnd(a, ir.BitwiseNot(ir.BitwiseAnd(b, c)));
     case 113:
-        return ir.BitwiseOr(ir.BitwiseAnd(a, ir.BitwiseXor(b, c)),
-                            ir.BitwiseNot(ir.BitwiseOr(b, c)));
+        return ir.BitwiseXor(ir.BitwiseOr(b, ir.BitwiseNot(a)),
+                             ir.BitwiseOr(c, ir.BitwiseXor(a, b)));
     case 114:
         return ir.BitwiseXor(ir.BitwiseAnd(b, c), ir.BitwiseOr(a, c));
     case 115:
-        return ir.BitwiseOr(ir.BitwiseNot(b), ir.BitwiseAnd(a, ir.BitwiseNot(c)));
+        return ir.BitwiseOr(ir.BitwiseAnd(a, ir.BitwiseNot(c)), ir.BitwiseNot(b));
     case 116:
         return ir.BitwiseXor(ir.BitwiseAnd(b, c), ir.BitwiseOr(a, b));
     case 117:
-        return ir.BitwiseOr(ir.BitwiseNot(c), ir.BitwiseAnd(a, ir.BitwiseNot(b)));
+        return ir.BitwiseOr(ir.BitwiseAnd(a, ir.BitwiseNot(b)), ir.BitwiseNot(c));
     case 118:
-        return ir.BitwiseOr(ir.BitwiseXor(b, c), ir.BitwiseAnd(a, ir.BitwiseNot(b)));
+        return ir.BitwiseOr(ir.BitwiseAnd(a, ir.BitwiseNot(b)), ir.BitwiseXor(b, c));
     case 119:
         return ir.BitwiseNot(ir.BitwiseAnd(b, c));
     case 120:
         return ir.BitwiseXor(a, ir.BitwiseAnd(b, c));
     case 121:
-        return ir.BitwiseOr(ir.BitwiseNot(ir.BitwiseOr(b, c)),
-                            ir.BitwiseXor(a, ir.BitwiseAnd(b, c)));
+        return ir.BitwiseXor(ir.BitwiseAnd(a, ir.BitwiseOr(b, c)),
+                             ir.BitwiseXor(b, ir.BitwiseNot(c)));
     case 122:
-        return ir.BitwiseOr(ir.BitwiseXor(a, c), ir.BitwiseAnd(a, ir.BitwiseNot(b)));
+        return ir.BitwiseOr(ir.BitwiseAnd(a, ir.BitwiseNot(b)), ir.BitwiseXor(a, c));
     case 123:
         return ir.BitwiseOr(ir.BitwiseNot(b), ir.BitwiseXor(a, c));
     case 124:
-        return ir.BitwiseOr(ir.BitwiseXor(a, b), ir.BitwiseAnd(a, ir.BitwiseNot(c)));
+        return ir.BitwiseOr(ir.BitwiseAnd(a, ir.BitwiseNot(c)), ir.BitwiseXor(a, b));
     case 125:
         return ir.BitwiseOr(ir.BitwiseNot(c), ir.BitwiseXor(a, b));
     case 126:
@@ -365,7 +365,7 @@ IR::U32 ApplyLUT(IR::IREmitter& ir, const IR::U32& a, const IR::U32& b, const IR
     case 168:
         return ir.BitwiseAnd(c, ir.BitwiseOr(a, b));
     case 169:
-        return ir.BitwiseXor(ir.BitwiseOr(a, b), ir.BitwiseNot(c));
+        return ir.BitwiseXor(ir.BitwiseNot(c), ir.BitwiseOr(a, b));
     case 170:
         return c;
     case 171:
@@ -429,7 +429,7 @@ IR::U32 ApplyLUT(IR::IREmitter& ir, const IR::U32& a, const IR::U32& b, const IR
     case 200:
         return ir.BitwiseAnd(b, ir.BitwiseOr(a, c));
     case 201:
-        return ir.BitwiseXor(ir.BitwiseOr(a, c), ir.BitwiseNot(b));
+        return ir.BitwiseXor(ir.BitwiseNot(b), ir.BitwiseOr(a, c));
     case 202:
         return ir.BitwiseAnd(ir.BitwiseOr(a, c), ir.BitwiseOr(b, ir.BitwiseNot(a)));
     case 203:
@@ -477,24 +477,24 @@ IR::U32 ApplyLUT(IR::IREmitter& ir, const IR::U32& a, const IR::U32& b, const IR
     case 224:
         return ir.BitwiseAnd(a, ir.BitwiseOr(b, c));
     case 225:
-        return ir.BitwiseXor(ir.BitwiseOr(b, c), ir.BitwiseNot(a));
+        return ir.BitwiseXor(ir.BitwiseNot(a), ir.BitwiseOr(b, c));
     case 226:
-        return ir.BitwiseAnd(ir.BitwiseOr(b, c), ir.BitwiseOr(a, ir.BitwiseNot(b)));
+        return ir.BitwiseAnd(ir.BitwiseOr(a, ir.BitwiseNot(b)), ir.BitwiseOr(b, c));
     case 227:
         return ir.BitwiseOr(ir.BitwiseAnd(a, c), ir.BitwiseXor(a, ir.BitwiseNot(b)));
     case 228:
-        return ir.BitwiseAnd(ir.BitwiseOr(b, c), ir.BitwiseOr(a, ir.BitwiseNot(c)));
+        return ir.BitwiseAnd(ir.BitwiseOr(a, ir.BitwiseNot(c)), ir.BitwiseOr(b, c));
     case 229:
         return ir.BitwiseOr(ir.BitwiseAnd(a, b), ir.BitwiseXor(a, ir.BitwiseNot(c)));
     case 230:
         return ir.BitwiseOr(ir.BitwiseAnd(a, b), ir.BitwiseXor(b, c));
     case 231:
-        return ir.BitwiseOr(ir.BitwiseXor(b, c), ir.BitwiseXor(a, ir.BitwiseNot(b)));
+        return ir.BitwiseOr(ir.BitwiseXor(a, ir.BitwiseNot(b)), ir.BitwiseXor(b, c));
     case 232:
         return ir.BitwiseAnd(ir.BitwiseOr(a, b), ir.BitwiseOr(c, ir.BitwiseAnd(a, b)));
     case 233:
         return ir.BitwiseOr(ir.BitwiseAnd(a, b),
-                            ir.BitwiseXor(ir.BitwiseOr(a, b), ir.BitwiseNot(c)));
+                            ir.BitwiseXor(ir.BitwiseNot(c), ir.BitwiseOr(a, b)));
     case 234:
         return ir.BitwiseOr(c, ir.BitwiseAnd(a, b));
     case 235:
@@ -506,7 +506,7 @@ IR::U32 ApplyLUT(IR::IREmitter& ir, const IR::U32& a, const IR::U32& b, const IR
     case 238:
         return ir.BitwiseOr(b, c);
     case 239:
-        return ir.BitwiseOr(ir.BitwiseOr(b, c), ir.BitwiseNot(a));
+        return ir.BitwiseOr(ir.BitwiseNot(a), ir.BitwiseOr(b, c));
     case 240:
         return a;
     case 241:
@@ -530,11 +530,11 @@ IR::U32 ApplyLUT(IR::IREmitter& ir, const IR::U32& a, const IR::U32& b, const IR
     case 250:
         return ir.BitwiseOr(a, c);
     case 251:
-        return ir.BitwiseOr(ir.BitwiseOr(a, c), ir.BitwiseNot(b));
+        return ir.BitwiseOr(ir.BitwiseNot(b), ir.BitwiseOr(a, c));
     case 252:
         return ir.BitwiseOr(a, b);
     case 253:
-        return ir.BitwiseOr(ir.BitwiseOr(a, b), ir.BitwiseNot(c));
+        return ir.BitwiseOr(ir.BitwiseNot(c), ir.BitwiseOr(a, b));
     case 254:
         return ir.BitwiseOr(a, ir.BitwiseOr(b, c));
     case 255:

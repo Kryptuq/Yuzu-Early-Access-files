@@ -15,13 +15,33 @@ OPS = {
 
 # Our database of combination of instructions
 optimized_calls = {}
+def cmp(lhs, rhs):
+    if lhs is None: # new entry
+        return True
+    if lhs[3] > rhs[3]: # costs
+        return True
+    if lhs[3] < rhs[3]: # costs
+        return False
+    if len(lhs[0]) > len(rhs[0]): # string len
+        return True
+    if len(lhs[0]) < len(rhs[0]): # string len
+        return False
+    if lhs[0] > rhs[0]: # string sorting
+        return True
+    if lhs[0] < rhs[0]: # string sorting
+        return False
+    assert lhs == rhs, "redundant instruction, bug in brute force"
+    return False
 def register(imm, instruction, count, latency):
     # Use the sum of instruction count and latency as costs to evaluate which combination is best
-    costs = count + latency + len(instruction) * 0.0001
+    costs = count + latency
+
+    old = optimized_calls.get(imm, None)
+    new = (instruction, count, latency, costs)
 
     # Update if new or better
-    if imm not in optimized_calls or optimized_calls[imm][3] > costs:
-        optimized_calls[imm] = (instruction, count, latency, costs)
+    if cmp(old, new):
+        optimized_calls[imm] = new
         return True
 
     return False
@@ -41,6 +61,7 @@ inputs = {
 }
 for imm, instruction in inputs.items():
     register(imm, instruction, 0, 0)
+    register((~imm) & 255, 'ir.BitwiseNot({})'.format(instruction), 0.099, 0.099) # slightly cheaper NEG on inputs
 
 # Try to combine two values from the db with an instruction.
 # If it is better than the old method, update it.
