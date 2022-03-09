@@ -312,7 +312,7 @@ public:
         size = Common::AlignUp(size, Kernel::PageSize);
         size += page_table.GetNumGuardPages() * Kernel::PageSize * 4;
 
-        auto is_region_available = [&](VAddr addr) {
+        const auto is_region_available = [&](VAddr addr) {
             const auto end_addr = addr + size;
             while (addr < end_addr) {
                 if (system.Memory().IsValidVirtualAddress(addr)) {

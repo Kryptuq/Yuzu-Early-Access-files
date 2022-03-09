@@ -326,7 +326,9 @@ struct System::Impl {
         is_powered_on = false;
         exit_lock = false;
 
-        gpu_core->NotifyShutdown();
+        if (gpu_core != nullptr) {
+            gpu_core->NotifyShutdown();
+        }
 
         services.reset();
         service_manager.reset();

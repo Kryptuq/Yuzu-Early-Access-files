@@ -42,11 +42,20 @@ public:
             context.MakeCurrent();
         }
         ~Scoped() {
-            context.DoneCurrent();
+            if (active) {
+                context.DoneCurrent();
+            }
+        }
+
+        /// In the event that context was destroyed before the Scoped is destroyed, this provides a
+        /// mechanism to prevent calling a destroyed object's method during the deconstructor
+        void Cancel() {
+            active = false;
         }
 
     private:
         GraphicsContext& context;
+        bool active{true};
     };
 
     /// Calls MakeCurrent on the context and calls DoneCurrent when the scope for the returned value
