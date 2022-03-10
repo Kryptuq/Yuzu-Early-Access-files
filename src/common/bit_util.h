@@ -57,4 +57,11 @@ requires std::is_integral_v<T>
     return static_cast<T>(1ULL << ((8U * sizeof(T)) - std::countl_zero(value - 1U)));
 }
 
+template <size_t bit_index, typename T>
+requires std::is_integral_v<T>
+[[nodiscard]] constexpr bool Bit(const T value) {
+    static_assert(bit_index < BitSize<T>(), "bit_index must be smaller than size of T");
+    return ((value >> bit_index) & T(1)) == T(1);
+}
+
 } // namespace Common
