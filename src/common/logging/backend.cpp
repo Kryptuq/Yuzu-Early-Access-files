@@ -276,9 +276,9 @@ private:
     ColorConsoleBackend color_console_backend{};
     FileBackend file_backend;
 
-    std::jthread backend_thread;
     MPSCQueue<Entry, true> message_queue{};
     std::chrono::steady_clock::time_point time_origin{std::chrono::steady_clock::now()};
+    std::jthread backend_thread;
 };
 } // namespace
 
