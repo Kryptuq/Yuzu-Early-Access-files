@@ -249,9 +249,9 @@ GMainWindow::GMainWindow()
 #ifdef ARCHITECTURE_x86_64
     const auto& caps = Common::GetCPUCaps();
     std::string cpu_string = caps.cpu_string;
-    if (caps.avx || caps.avx2 || caps.avx512) {
+    if (caps.avx || caps.avx2 || caps.avx512f) {
         cpu_string += " | AVX";
-        if (caps.avx512) {
+        if (caps.avx512f) {
             cpu_string += "512";
         } else if (caps.avx2) {
             cpu_string += '2';

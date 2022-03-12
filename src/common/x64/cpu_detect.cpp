@@ -93,10 +93,14 @@ static CPUCaps Detect() {
         caps.sse = Common::Bit<25>(cpu_id[3]);
         caps.sse2 = Common::Bit<26>(cpu_id[3]);
         caps.sse3 = Common::Bit<0>(cpu_id[2]);
+        caps.pclmulqdq = Common::Bit<1>(cpu_id[2]);
         caps.ssse3 = Common::Bit<9>(cpu_id[2]);
         caps.sse4_1 = Common::Bit<19>(cpu_id[2]);
         caps.sse4_2 = Common::Bit<20>(cpu_id[2]);
+        caps.movbe = Common::Bit<22>(cpu_id[2]);
+        caps.popcnt = Common::Bit<23>(cpu_id[2]);
         caps.aes = Common::Bit<25>(cpu_id[2]);
+        caps.f16c = Common::Bit<29>(cpu_id[2]);
 
         // AVX support requires 3 separate checks:
         //  - Is the AVX bit set in CPUID?
@@ -112,16 +116,26 @@ static CPUCaps Detect() {
 
         if (max_std_fn >= 7) {
             __cpuidex(cpu_id, 0x00000007, 0x00000000);
-            // Can't enable AVX2 unless the XSAVE/XGETBV checks above passed
-            caps.avx2 = caps.avx && Common::Bit<5>(cpu_id[1]);
+            // Can't enable AVX{2,512} unless the XSAVE/XGETBV checks above passed
+            if (caps.avx) {
+                caps.avx2 = Common::Bit<5>(cpu_id[1]);
+                caps.avx512f = Common::Bit<16>(cpu_id[1]);
+                caps.avx512dq = Common::Bit<17>(cpu_id[1]);
+                caps.avx512cd = Common::Bit<28>(cpu_id[1]);
+                caps.avx512bw = Common::Bit<30>(cpu_id[1]);
+                caps.avx512vl = Common::Bit<31>(cpu_id[1]);
+                caps.avx512vbmi = Common::Bit<1>(cpu_id[2]);
+                caps.avx512bitalg = Common::Bit<12>(cpu_id[2]);
+            }
+
             caps.bmi1 = Common::Bit<3>(cpu_id[1]);
             caps.bmi2 = Common::Bit<8>(cpu_id[1]);
-            // Checks for AVX512F, AVX512CD, AVX512VL, AVX512DQ, AVX512BW (Intel Skylake-X/SP)
-            if (Common::Bit<16>(cpu_id[1]) && Common::Bit<28>(cpu_id[1]) &&
-                Common::Bit<31>(cpu_id[1]) && Common::Bit<17>(cpu_id[1]) &&
-                Common::Bit<30>(cpu_id[1])) {
-                caps.avx512 = caps.avx2;
-            }
+            caps.sha = Common::Bit<29>(cpu_id[1]);
+
+            caps.gfni = Common::Bit<8>(cpu_id[2]);
+
+            __cpuidex(cpu_id, 0x00000007, 0x00000001);
+            caps.avx_vnni = caps.avx && Common::Bit<4>(cpu_id[0]);
         }
     }
 

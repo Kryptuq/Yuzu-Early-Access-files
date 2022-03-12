@@ -8,6 +8,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <string_view>
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 
@@ -55,8 +56,8 @@ class Field : public FieldInterface {
 public:
     YUZU_NON_COPYABLE(Field);
 
-    Field(FieldType type_, std::string name_, T value_)
-        : name(std::move(name_)), type(type_), value(std::move(value_)) {}
+    Field(FieldType type_, std::string_view name_, T value_)
+        : name(name_), type(type_), value(std::move(value_)) {}
 
     ~Field() override = default;
 
@@ -123,7 +124,7 @@ public:
      * @param value Value for the field to add.
      */
     template <typename T>
-    void AddField(FieldType type, const char* name, T value) {
+    void AddField(FieldType type, std::string_view name, T value) {
         return AddField(std::make_unique<Field<T>>(type, name, std::move(value)));
     }
 

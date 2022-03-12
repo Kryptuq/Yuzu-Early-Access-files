@@ -55,22 +55,50 @@ void AppendBuildInfo(FieldCollection& fc) {
 
 void AppendCPUInfo(FieldCollection& fc) {
 #ifdef ARCHITECTURE_x86_64
-    fc.AddField(FieldType::UserSystem, "CPU_Model", Common::GetCPUCaps().cpu_string);
-    fc.AddField(FieldType::UserSystem, "CPU_BrandString", Common::GetCPUCaps().brand_string);
-    fc.AddField(FieldType::UserSystem, "CPU_Extension_x64_AES", Common::GetCPUCaps().aes);
-    fc.AddField(FieldType::UserSystem, "CPU_Extension_x64_AVX", Common::GetCPUCaps().avx);
-    fc.AddField(FieldType::UserSystem, "CPU_Extension_x64_AVX2", Common::GetCPUCaps().avx2);
-    fc.AddField(FieldType::UserSystem, "CPU_Extension_x64_AVX512", Common::GetCPUCaps().avx512);
-    fc.AddField(FieldType::UserSystem, "CPU_Extension_x64_BMI1", Common::GetCPUCaps().bmi1);
-    fc.AddField(FieldType::UserSystem, "CPU_Extension_x64_BMI2", Common::GetCPUCaps().bmi2);
-    fc.AddField(FieldType::UserSystem, "CPU_Extension_x64_FMA", Common::GetCPUCaps().fma);
-    fc.AddField(FieldType::UserSystem, "CPU_Extension_x64_FMA4", Common::GetCPUCaps().fma4);
-    fc.AddField(FieldType::UserSystem, "CPU_Extension_x64_SSE", Common::GetCPUCaps().sse);
-    fc.AddField(FieldType::UserSystem, "CPU_Extension_x64_SSE2", Common::GetCPUCaps().sse2);
-    fc.AddField(FieldType::UserSystem, "CPU_Extension_x64_SSE3", Common::GetCPUCaps().sse3);
-    fc.AddField(FieldType::UserSystem, "CPU_Extension_x64_SSSE3", Common::GetCPUCaps().ssse3);
-    fc.AddField(FieldType::UserSystem, "CPU_Extension_x64_SSE41", Common::GetCPUCaps().sse4_1);
-    fc.AddField(FieldType::UserSystem, "CPU_Extension_x64_SSE42", Common::GetCPUCaps().sse4_2);
+
+    const auto& caps = Common::GetCPUCaps();
+    const auto add_field = [&fc](std::string_view field_name, const auto& field_value) {
+        fc.AddField(FieldType::UserSystem, field_name, field_value);
+    };
+    add_field("CPU_Model", caps.cpu_string);
+    add_field("CPU_BrandString", caps.brand_string);
+
+    add_field("CPU_Extension_x64_SSE", caps.sse);
+    add_field("CPU_Extension_x64_SSE2", caps.sse2);
+    add_field("CPU_Extension_x64_SSE3", caps.sse3);
+    add_field("CPU_Extension_x64_SSSE3", caps.ssse3);
+    add_field("CPU_Extension_x64_SSE41", caps.sse4_1);
+    add_field("CPU_Extension_x64_SSE42", caps.sse4_2);
+
+    add_field("CPU_Extension_x64_AVX", caps.avx);
+    add_field("CPU_Extension_x64_AVX_VNNI", caps.avx_vnni);
+    add_field("CPU_Extension_x64_AVX2", caps.avx2);
+
+    // Skylake-X/SP level AVX512, for compatibility with the previous telemetry field
+    add_field("CPU_Extension_x64_AVX512",
+              caps.avx512f && caps.avx512cd && caps.avx512vl && caps.avx512dq && caps.avx512bw);
+
+    add_field("CPU_Extension_x64_AVX512F", caps.avx512f);
+    add_field("CPU_Extension_x64_AVX512CD", caps.avx512cd);
+    add_field("CPU_Extension_x64_AVX512VL", caps.avx512vl);
+    add_field("CPU_Extension_x64_AVX512DQ", caps.avx512dq);
+    add_field("CPU_Extension_x64_AVX512BW", caps.avx512bw);
+    add_field("CPU_Extension_x64_AVX512BITALG", caps.avx512bitalg);
+    add_field("CPU_Extension_x64_AVX512VBMI", caps.avx512vbmi);
+
+    add_field("CPU_Extension_x64_AES", caps.aes);
+    add_field("CPU_Extension_x64_BMI1", caps.bmi1);
+    add_field("CPU_Extension_x64_BMI2", caps.bmi2);
+    add_field("CPU_Extension_x64_F16C", caps.f16c);
+    add_field("CPU_Extension_x64_FMA", caps.fma);
+    add_field("CPU_Extension_x64_FMA4", caps.fma4);
+    add_field("CPU_Extension_x64_GFNI", caps.gfni);
+    add_field("CPU_Extension_x64_INVARIANT_TSC", caps.invariant_tsc);
+    add_field("CPU_Extension_x64_LZCNT", caps.lzcnt);
+    add_field("CPU_Extension_x64_MOVBE", caps.movbe);
+    add_field("CPU_Extension_x64_PCLMULQDQ", caps.pclmulqdq);
+    add_field("CPU_Extension_x64_POPCNT", caps.popcnt);
+    add_field("CPU_Extension_x64_SHA", caps.sha);
 #else
     fc.AddField(FieldType::UserSystem, "CPU_Model", "Other");
 #endif

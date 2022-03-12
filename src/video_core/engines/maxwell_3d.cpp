@@ -7,6 +7,7 @@
 #include "common/assert.h"
 #include "core/core.h"
 #include "core/core_timing.h"
+#include "video_core/dirty_flags.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/gpu.h"
 #include "video_core/memory_manager.h"
@@ -208,6 +209,14 @@ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argume
         return ProcessCBBind(4);
     case MAXWELL3D_REG_INDEX(draw.vertex_end_gl):
         return DrawArrays();
+    case MAXWELL3D_REG_INDEX(small_index):
+        regs.index_array.count = regs.small_index.count;
+        regs.index_array.first = regs.small_index.first;
+        dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
+        return DrawArrays();
+    case MAXWELL3D_REG_INDEX(topology_override):
+        use_topology_override = true;
+        return;
     case MAXWELL3D_REG_INDEX(clear_buffers):
         return ProcessClearBuffers();
     case MAXWELL3D_REG_INDEX(query.query_get):
@@ -360,6 +369,12 @@ void Maxwell3D::CallMethodFromMME(u32 method, u32 method_argument) {
     }
 }
 
+void Maxwell3D::ProcessTopologyOverride() {
+    if (use_topology_override) {
+        regs.draw.topology.Assign(regs.topology_override);
+    }
+}
+
 void Maxwell3D::FlushMMEInlineDraw() {
     LOG_TRACE(HW_GPU, "called, topology={}, count={}", regs.draw.topology.Value(),
               regs.vertex_buffer.count);
@@ -369,6 +384,8 @@ void Maxwell3D::FlushMMEInlineDraw() {
     // Both instance configuration registers can not be set at the same time.
     ASSERT_MSG(!regs.draw.instance_next || !regs.draw.instance_cont,
                "Illegal combination of instancing parameters");
+
+    ProcessTopologyOverride();
 
     const bool is_indexed = mme_draw.current_mode == MMEDrawMode::Indexed;
     if (ShouldExecute()) {
@@ -528,6 +545,8 @@ void Maxwell3D::DrawArrays() {
     // Both instance configuration registers can not be set at the same time.
     ASSERT_MSG(!regs.draw.instance_next || !regs.draw.instance_cont,
                "Illegal combination of instancing parameters");
+
+    ProcessTopologyOverride();
 
     if (regs.draw.instance_next) {
         // Increment the current instance *before* drawing.

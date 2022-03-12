@@ -35,16 +35,31 @@ struct CPUCaps {
     bool ssse3 : 1;
     bool sse4_1 : 1;
     bool sse4_2 : 1;
-    bool lzcnt : 1;
+
     bool avx : 1;
+    bool avx_vnni : 1;
     bool avx2 : 1;
-    bool avx512 : 1;
+    bool avx512f : 1;
+    bool avx512dq : 1;
+    bool avx512cd : 1;
+    bool avx512bw : 1;
+    bool avx512vl : 1;
+    bool avx512vbmi : 1;
+    bool avx512bitalg : 1;
+
+    bool aes : 1;
     bool bmi1 : 1;
     bool bmi2 : 1;
+    bool f16c : 1;
     bool fma : 1;
     bool fma4 : 1;
-    bool aes : 1;
+    bool gfni : 1;
     bool invariant_tsc : 1;
+    bool lzcnt : 1;
+    bool movbe : 1;
+    bool pclmulqdq : 1;
+    bool popcnt : 1;
+    bool sha : 1;
 };
 
 /**

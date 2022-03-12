@@ -1200,7 +1200,12 @@ public:
                     }
                 } index_array;
 
-                INSERT_PADDING_WORDS_NOINIT(0x7);
+                union {
+                    BitField<0, 16, u32> first;
+                    BitField<16, 16, u32> count;
+                } small_index;
+
+                INSERT_PADDING_WORDS_NOINIT(0x6);
 
                 INSERT_PADDING_WORDS_NOINIT(0x1F);
 
@@ -1244,7 +1249,11 @@ public:
                     BitField<11, 1, u32> depth_clamp_disabled;
                 } view_volume_clip_control;
 
-                INSERT_PADDING_WORDS_NOINIT(0x1F);
+                INSERT_PADDING_WORDS_NOINIT(0xC);
+
+                PrimitiveTopology topology_override;
+
+                INSERT_PADDING_WORDS_NOINIT(0x12);
 
                 u32 depth_bounds_enable;
 
@@ -1531,6 +1540,9 @@ private:
     /// Handles a write to the VERTEX_END_GL register, triggering a draw.
     void DrawArrays();
 
+    /// Handles use of topology overrides (e.g., to avoid using a topology assigned from a macro)
+    void ProcessTopologyOverride();
+
     // Handles a instance drawcall from MME
     void StepInstance(MMEDrawMode expected_mode, u32 count);
 
@@ -1569,6 +1581,7 @@ private:
     Upload::State upload_state;
 
     bool execute_on{true};
+    bool use_topology_override{false};
 };
 
 #define ASSERT_REG_POSITION(field_name, position)                                                  \
@@ -1685,6 +1698,7 @@ ASSERT_REG_POSITION(draw, 0x585);
 ASSERT_REG_POSITION(primitive_restart, 0x591);
 ASSERT_REG_POSITION(provoking_vertex_last, 0x5A1);
 ASSERT_REG_POSITION(index_array, 0x5F2);
+ASSERT_REG_POSITION(small_index, 0x5F9);
 ASSERT_REG_POSITION(polygon_offset_clamp, 0x61F);
 ASSERT_REG_POSITION(instanced_arrays, 0x620);
 ASSERT_REG_POSITION(vp_point_size, 0x644);
@@ -1694,6 +1708,7 @@ ASSERT_REG_POSITION(cull_face, 0x648);
 ASSERT_REG_POSITION(pixel_center_integer, 0x649);
 ASSERT_REG_POSITION(viewport_transform_enabled, 0x64B);
 ASSERT_REG_POSITION(view_volume_clip_control, 0x64F);
+ASSERT_REG_POSITION(topology_override, 0x65C);
 ASSERT_REG_POSITION(depth_bounds_enable, 0x66F);
 ASSERT_REG_POSITION(logic_op, 0x671);
 ASSERT_REG_POSITION(clear_buffers, 0x674);
