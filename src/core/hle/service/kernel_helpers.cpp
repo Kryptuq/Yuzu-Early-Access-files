@@ -17,21 +17,12 @@ namespace Service::KernelHelpers {
 
 ServiceContext::ServiceContext(Core::System& system_, std::string name_)
     : kernel(system_.Kernel()) {
-
-    // Create a resource limit for the process.
-    const auto physical_memory_size =
-        kernel.MemoryManager().GetSize(Kernel::KMemoryManager::Pool::System);
-    auto* resource_limit = Kernel::CreateResourceLimitForProcess(system_, physical_memory_size);
-
     // Create the process.
     process = Kernel::KProcess::Create(kernel);
     ASSERT(Kernel::KProcess::Initialize(process, system_, std::move(name_),
                                         Kernel::KProcess::ProcessType::KernelInternal,
-                                        resource_limit)
+                                        kernel.GetSystemResourceLimit())
                .IsSuccess());
-
-    // Close reference to our resource limit, as the process opens one.
-    resource_limit->Close();
 }
 
 ServiceContext::~ServiceContext() {

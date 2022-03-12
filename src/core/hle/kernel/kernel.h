@@ -43,6 +43,7 @@ class KHandleTable;
 class KLinkedListNode;
 class KMemoryLayout;
 class KMemoryManager;
+class KPageBuffer;
 class KPort;
 class KProcess;
 class KResourceLimit;
@@ -52,6 +53,7 @@ class KSession;
 class KSharedMemory;
 class KSharedMemoryInfo;
 class KThread;
+class KThreadLocalPage;
 class KTransferMemory;
 class KWorkerTaskManager;
 class KWritableEvent;
@@ -194,14 +196,6 @@ public:
     /// Opens a port to a service previously registered with RegisterNamedService.
     KClientPort* CreateNamedServicePort(std::string name);
 
-    /// Registers a server session with the gobal emulation state, to be freed on shutdown. This is
-    /// necessary because we do not emulate processes for HLE sessions.
-    void RegisterServerSession(KServerSession* server_session);
-
-    /// Unregisters a server session previously registered with RegisterServerSession when it was
-    /// destroyed during the current emulation session.
-    void UnregisterServerSession(KServerSession* server_session);
-
     /// Registers all kernel objects with the global emulation state, this is purely for tracking
     /// leaks after emulation has been shutdown.
     void RegisterKernelObject(KAutoObject* object);
@@ -238,12 +232,6 @@ public:
 
     /// Gets the virtual memory manager for the kernel.
     const KMemoryManager& MemoryManager() const;
-
-    /// Gets the slab heap allocated for user space pages.
-    KSlabHeap<Page>& GetUserSlabHeapPages();
-
-    /// Gets the slab heap allocated for user space pages.
-    const KSlabHeap<Page>& GetUserSlabHeapPages() const;
 
     /// Gets the shared memory object for HID services.
     Kernel::KSharedMemory& GetHidSharedMem();
@@ -342,6 +330,10 @@ public:
             return slab_heap_container->writeable_event;
         } else if constexpr (std::is_same_v<T, KCodeMemory>) {
             return slab_heap_container->code_memory;
+        } else if constexpr (std::is_same_v<T, KPageBuffer>) {
+            return slab_heap_container->page_buffer;
+        } else if constexpr (std::is_same_v<T, KThreadLocalPage>) {
+            return slab_heap_container->thread_local_page;
         }
     }
 
@@ -403,6 +395,8 @@ private:
         KSlabHeap<KTransferMemory> transfer_memory;
         KSlabHeap<KWritableEvent> writeable_event;
         KSlabHeap<KCodeMemory> code_memory;
+        KSlabHeap<KPageBuffer> page_buffer;
+        KSlabHeap<KThreadLocalPage> thread_local_page;
     };
 
     std::unique_ptr<SlabHeapContainer> slab_heap_container;

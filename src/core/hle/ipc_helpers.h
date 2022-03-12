@@ -385,7 +385,7 @@ public:
     T PopRaw();
 
     template <class T>
-    std::shared_ptr<T> PopIpcInterface() {
+    std::weak_ptr<T> PopIpcInterface() {
         ASSERT(context->Session()->IsDomain());
         ASSERT(context->GetDomainMessageHeader().input_object_count > 0);
         return context->GetDomainHandler<T>(Pop<u32>() - 1);

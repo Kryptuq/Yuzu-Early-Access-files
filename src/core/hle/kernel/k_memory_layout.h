@@ -57,11 +57,11 @@ constexpr std::size_t KernelPageTableHeapSize = GetMaximumOverheadSize(MainMemor
 constexpr std::size_t KernelInitialPageHeapSize = 128_KiB;
 
 constexpr std::size_t KernelSlabHeapDataSize = 5_MiB;
-constexpr std::size_t KernelSlabHeapGapsSize = 2_MiB - 64_KiB;
-constexpr std::size_t KernelSlabHeapSize = KernelSlabHeapDataSize + KernelSlabHeapGapsSize;
+constexpr std::size_t KernelSlabHeapGapsSizeMax = 2_MiB - 64_KiB;
+constexpr std::size_t KernelSlabHeapSize = KernelSlabHeapDataSize + KernelSlabHeapGapsSizeMax;
 
 // NOTE: This is calculated from KThread slab counts, assuming KThread size <= 0x860.
-constexpr std::size_t KernelSlabHeapAdditionalSize = 416_KiB;
+constexpr std::size_t KernelSlabHeapAdditionalSize = 0x68000;
 
 constexpr std::size_t KernelResourceSize =
     KernelPageTableHeapSize + KernelInitialPageHeapSize + KernelSlabHeapSize;

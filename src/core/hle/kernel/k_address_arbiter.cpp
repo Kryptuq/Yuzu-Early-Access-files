@@ -115,7 +115,7 @@ ResultCode KAddressArbiter::Signal(VAddr addr, s32 count) {
     {
         KScopedSchedulerLock sl(kernel);
 
-        auto it = thread_tree.nfind_light({addr, -1});
+        auto it = thread_tree.nfind_key({addr, -1});
         while ((it != thread_tree.end()) && (count <= 0 || num_waiters < count) &&
                (it->GetAddressArbiterKey() == addr)) {
             // End the thread's wait.
@@ -148,7 +148,7 @@ ResultCode KAddressArbiter::SignalAndIncrementIfEqual(VAddr addr, s32 value, s32
             return ResultInvalidState;
         }
 
-        auto it = thread_tree.nfind_light({addr, -1});
+        auto it = thread_tree.nfind_key({addr, -1});
         while ((it != thread_tree.end()) && (count <= 0 || num_waiters < count) &&
                (it->GetAddressArbiterKey() == addr)) {
             // End the thread's wait.
@@ -171,7 +171,7 @@ ResultCode KAddressArbiter::SignalAndModifyByWaitingCountIfEqual(VAddr addr, s32
     {
         [[maybe_unused]] const KScopedSchedulerLock sl(kernel);
 
-        auto it = thread_tree.nfind_light({addr, -1});
+        auto it = thread_tree.nfind_key({addr, -1});
         // Determine the updated value.
         s32 new_value{};
         if (count <= 0) {

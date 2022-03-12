@@ -52,7 +52,7 @@ namespace Kernel {
 
 struct KernelCore::Impl {
     explicit Impl(Core::System& system_, KernelCore& kernel_)
-        : time_manager{system_}, object_list_container{kernel_},
+        : time_manager{system_},
           service_threads_manager{1, "yuzu:ServiceThreadsManager"}, system{system_} {}
 
     void SetMulticore(bool is_multi) {
@@ -60,6 +60,7 @@ struct KernelCore::Impl {
     }
 
     void Initialize(KernelCore& kernel) {
+        global_object_list_container = std::make_unique<KAutoObjectWithListContainer>(kernel);
         global_scheduler_context = std::make_unique<Kernel::GlobalSchedulerContext>(kernel);
         global_handle_table = std::make_unique<Kernel::KHandleTable>(kernel);
         global_handle_table->Initialize(KHandleTable::MaxTableSize);
@@ -76,7 +77,7 @@ struct KernelCore::Impl {
         // Initialize kernel memory and resources.
         InitializeSystemResourceLimit(kernel, system.CoreTiming());
         InitializeMemoryLayout();
-        InitializePageSlab();
+        Init::InitializeKPageBufferSlabHeap(system);
         InitializeSchedulers();
         InitializeSuspendThreads();
         InitializePreemption(kernel);
@@ -107,19 +108,6 @@ struct KernelCore::Impl {
         for (auto* server_port : server_ports_) {
             server_port->Close();
         }
-        // Close all open server sessions.
-        std::unordered_set<KServerSession*> server_sessions_;
-        {
-            std::lock_guard lk(server_sessions_lock);
-            server_sessions_ = server_sessions;
-            server_sessions.clear();
-        }
-        for (auto* server_session : server_sessions_) {
-            server_session->Close();
-        }
-
-        // Ensure that the object list container is finalized and properly shutdown.
-        object_list_container.Finalize();
 
         // Ensures all service threads gracefully shutdown.
         ClearServiceThreads();
@@ -195,11 +183,15 @@ struct KernelCore::Impl {
         {
             std::lock_guard lk(registered_objects_lock);
             if (registered_objects.size()) {
-                LOG_WARNING(Kernel, "{} kernel objects were dangling on shutdown!",
-                            registered_objects.size());
+                LOG_DEBUG(Kernel, "{} kernel objects were dangling on shutdown!",
+                          registered_objects.size());
                 registered_objects.clear();
             }
         }
+
+        // Ensure that the object list container is finalized and properly shutdown.
+        global_object_list_container->Finalize();
+        global_object_list_container.reset();
     }
 
     void InitializePhysicalCores() {
@@ -292,15 +284,16 @@ struct KernelCore::Impl {
 
     // Gets the dummy KThread for the caller, allocating a new one if this is the first time
     KThread* GetHostDummyThread() {
-        auto make_thread = [this]() {
-            KThread* thread = KThread::Create(system.Kernel());
+        auto init_thread_ = [this](KThread* thread) {
             ASSERT(KThread::InitializeDummyThread(thread).IsSuccess());
             thread->SetName(fmt::format("DummyThread:{}", GetHostThreadId()));
             return thread;
         };
 
-        thread_local KThread* saved_thread = make_thread();
-        return saved_thread;
+        thread_local auto thread = KThread(system.Kernel());
+        thread_local auto init_thread = init_thread_(&thread);
+
+        return &thread;
     }
 
     /// Registers a CPU core thread by allocating a host thread ID for it
@@ -669,22 +662,6 @@ struct KernelCore::Impl {
                                       hidbus_phys_addr, hidbus_size, "HidBus:SharedMemory");
     }
 
-    void InitializePageSlab() {
-        // Allocate slab heaps
-        user_slab_heap_pages =
-            std::make_unique<KSlabHeap<Page>>(KSlabHeap<Page>::AllocationType::Guest);
-
-        // TODO(ameerj): This should be derived, not hardcoded within the kernel
-        constexpr u64 user_slab_heap_size{0x3de000};
-        // Reserve slab heaps
-        ASSERT(
-            system_resource_limit->Reserve(LimitableResource::PhysicalMemory, user_slab_heap_size));
-        // Initialize slab heap
-        user_slab_heap_pages->Initialize(
-            system.DeviceMemory().GetPointer(Core::DramMemoryMap::SlabHeapBase),
-            user_slab_heap_size);
-    }
-
     KClientPort* CreateNamedServicePort(std::string name) {
         auto search = service_interface_factory.find(name);
         if (search == service_interface_factory.end()) {
@@ -722,7 +699,6 @@ struct KernelCore::Impl {
     }
 
     std::mutex server_ports_lock;
-    std::mutex server_sessions_lock;
     std::mutex registered_objects_lock;
     std::mutex registered_in_use_objects_lock;
 
@@ -746,14 +722,13 @@ struct KernelCore::Impl {
     // stores all the objects in place.
     std::unique_ptr<KHandleTable> global_handle_table;
 
-    KAutoObjectWithListContainer object_list_container;
+    std::unique_ptr<KAutoObjectWithListContainer> global_object_list_container;
 
     /// Map of named ports managed by the kernel, which can be retrieved using
     /// the ConnectToPort SVC.
     std::unordered_map<std::string, ServiceInterfaceFactory> service_interface_factory;
     NamedPortTable named_ports;
     std::unordered_set<KServerPort*> server_ports;
-    std::unordered_set<KServerSession*> server_sessions;
     std::unordered_set<KAutoObject*> registered_objects;
     std::unordered_set<KAutoObject*> registered_in_use_objects;
 
@@ -765,7 +740,6 @@ struct KernelCore::Impl {
 
     // Kernel memory management
     std::unique_ptr<KMemoryManager> memory_manager;
-    std::unique_ptr<KSlabHeap<Page>> user_slab_heap_pages;
 
     // Shared memory for services
     Kernel::KSharedMemory* hid_shared_mem{};
@@ -925,11 +899,11 @@ const Core::ExclusiveMonitor& KernelCore::GetExclusiveMonitor() const {
 }
 
 KAutoObjectWithListContainer& KernelCore::ObjectListContainer() {
-    return impl->object_list_container;
+    return *impl->global_object_list_container;
 }
 
 const KAutoObjectWithListContainer& KernelCore::ObjectListContainer() const {
-    return impl->object_list_container;
+    return *impl->global_object_list_container;
 }
 
 void KernelCore::InvalidateAllInstructionCaches() {
@@ -957,16 +931,6 @@ void KernelCore::RegisterNamedService(std::string name, ServiceInterfaceFactory&
 
 KClientPort* KernelCore::CreateNamedServicePort(std::string name) {
     return impl->CreateNamedServicePort(std::move(name));
-}
-
-void KernelCore::RegisterServerSession(KServerSession* server_session) {
-    std::lock_guard lk(impl->server_sessions_lock);
-    impl->server_sessions.insert(server_session);
-}
-
-void KernelCore::UnregisterServerSession(KServerSession* server_session) {
-    std::lock_guard lk(impl->server_sessions_lock);
-    impl->server_sessions.erase(server_session);
 }
 
 void KernelCore::RegisterKernelObject(KAutoObject* object) {
@@ -1039,14 +1003,6 @@ KMemoryManager& KernelCore::MemoryManager() {
 
 const KMemoryManager& KernelCore::MemoryManager() const {
     return *impl->memory_manager;
-}
-
-KSlabHeap<Page>& KernelCore::GetUserSlabHeapPages() {
-    return *impl->user_slab_heap_pages;
-}
-
-const KSlabHeap<Page>& KernelCore::GetUserSlabHeapPages() const {
-    return *impl->user_slab_heap_pages;
 }
 
 Kernel::KSharedMemory& KernelCore::GetHidSharedMem() {

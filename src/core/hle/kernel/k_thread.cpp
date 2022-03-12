@@ -210,7 +210,7 @@ ResultCode KThread::Initialize(KThreadFunction func, uintptr_t arg, VAddr user_s
     if (owner != nullptr) {
         // Setup the TLS, if needed.
         if (type == ThreadType::User) {
-            tls_address = owner->CreateTLSRegion();
+            R_TRY(owner->CreateThreadLocalRegion(std::addressof(tls_address)));
         }
 
         parent = owner;
@@ -305,7 +305,7 @@ void KThread::Finalize() {
 
     // If the thread has a local region, delete it.
     if (tls_address != 0) {
-        parent->FreeTLSRegion(tls_address);
+        ASSERT(parent->DeleteThreadLocalRegion(tls_address).IsSuccess());
     }
 
     // Release any waiters.
@@ -325,6 +325,9 @@ void KThread::Finalize() {
             it->CancelWait(ResultInvalidState, true);
         }
     }
+
+    // Release host emulation members.
+    host_context.reset();
 
     // Perform inherited finalization.
     KSynchronizationObject::Finalize();

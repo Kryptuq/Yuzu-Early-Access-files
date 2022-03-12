@@ -656,7 +656,7 @@ private:
     static_assert(sizeof(SyncObjectBuffer::sync_objects) == sizeof(SyncObjectBuffer::handles));
 
     struct ConditionVariableComparator {
-        struct LightCompareType {
+        struct RedBlackKeyType {
             u64 cv_key{};
             s32 priority{};
 
@@ -672,8 +672,8 @@ private:
         template <typename T>
         requires(
             std::same_as<T, KThread> ||
-            std::same_as<T, LightCompareType>) static constexpr int Compare(const T& lhs,
-                                                                            const KThread& rhs) {
+            std::same_as<T, RedBlackKeyType>) static constexpr int Compare(const T& lhs,
+                                                                           const KThread& rhs) {
             const u64 l_key = lhs.GetConditionVariableKey();
             const u64 r_key = rhs.GetConditionVariableKey();
 

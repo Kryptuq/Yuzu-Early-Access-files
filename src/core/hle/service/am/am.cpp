@@ -980,7 +980,7 @@ private:
         LOG_DEBUG(Service_AM, "called");
 
         IPC::RequestParser rp{ctx};
-        applet->GetBroker().PushNormalDataFromGame(rp.PopIpcInterface<IStorage>());
+        applet->GetBroker().PushNormalDataFromGame(rp.PopIpcInterface<IStorage>().lock());
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
@@ -1007,7 +1007,7 @@ private:
         LOG_DEBUG(Service_AM, "called");
 
         IPC::RequestParser rp{ctx};
-        applet->GetBroker().PushInteractiveDataFromGame(rp.PopIpcInterface<IStorage>());
+        applet->GetBroker().PushInteractiveDataFromGame(rp.PopIpcInterface<IStorage>().lock());
 
         ASSERT(applet->IsInitialized());
         applet->ExecuteInteractive();

@@ -94,6 +94,7 @@ protected:
     std::weak_ptr<ServiceThread> service_thread;
 };
 
+using SessionRequestHandlerWeakPtr = std::weak_ptr<SessionRequestHandler>;
 using SessionRequestHandlerPtr = std::shared_ptr<SessionRequestHandler>;
 
 /**
@@ -139,7 +140,7 @@ public:
         }
     }
 
-    SessionRequestHandlerPtr DomainHandler(std::size_t index) const {
+    SessionRequestHandlerWeakPtr DomainHandler(std::size_t index) const {
         ASSERT_MSG(index < DomainHandlerCount(), "Unexpected handler index {}", index);
         return domain_handlers.at(index);
     }
@@ -328,10 +329,10 @@ public:
 
     template <typename T>
     std::shared_ptr<T> GetDomainHandler(std::size_t index) const {
-        return std::static_pointer_cast<T>(manager->DomainHandler(index));
+        return std::static_pointer_cast<T>(manager.lock()->DomainHandler(index).lock());
     }
 
-    void SetSessionRequestManager(std::shared_ptr<SessionRequestManager> manager_) {
+    void SetSessionRequestManager(std::weak_ptr<SessionRequestManager> manager_) {
         manager = std::move(manager_);
     }
 
@@ -374,7 +375,7 @@ private:
     u32 handles_offset{};
     u32 domain_offset{};
 
-    std::shared_ptr<SessionRequestManager> manager;
+    std::weak_ptr<SessionRequestManager> manager;
 
     KernelCore& kernel;
     Core::Memory::Memory& memory;

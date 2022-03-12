@@ -244,7 +244,7 @@ void KConditionVariable::Signal(u64 cv_key, s32 count) {
     {
         KScopedSchedulerLock sl(kernel);
 
-        auto it = thread_tree.nfind_light({cv_key, -1});
+        auto it = thread_tree.nfind_key({cv_key, -1});
         while ((it != thread_tree.end()) && (count <= 0 || num_waiters < count) &&
                (it->GetConditionVariableKey() == cv_key)) {
             KThread* target_thread = std::addressof(*it);

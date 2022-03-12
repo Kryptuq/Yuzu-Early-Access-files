@@ -424,6 +424,68 @@ ResultCode KPageTable::UnmapCodeMemory(VAddr dst_address, VAddr src_address, std
     return ResultSuccess;
 }
 
+VAddr KPageTable::FindFreeArea(VAddr region_start, std::size_t region_num_pages,
+                               std::size_t num_pages, std::size_t alignment, std::size_t offset,
+                               std::size_t guard_pages) {
+    VAddr address = 0;
+
+    if (num_pages <= region_num_pages) {
+        if (this->IsAslrEnabled()) {
+            // Try to directly find a free area up to 8 times.
+            for (std::size_t i = 0; i < 8; i++) {
+                const std::size_t random_offset =
+                    KSystemControl::GenerateRandomRange(
+                        0, (region_num_pages - num_pages - guard_pages) * PageSize / alignment) *
+                    alignment;
+                const VAddr candidate =
+                    Common::AlignDown((region_start + random_offset), alignment) + offset;
+
+                KMemoryInfo info = this->QueryInfoImpl(candidate);
+
+                if (info.state != KMemoryState::Free) {
+                    continue;
+                }
+                if (!(region_start <= candidate)) {
+                    continue;
+                }
+                if (!(info.GetAddress() + guard_pages * PageSize <= candidate)) {
+                    continue;
+                }
+                if (!(candidate + (num_pages + guard_pages) * PageSize - 1 <=
+                      info.GetLastAddress())) {
+                    continue;
+                }
+                if (!(candidate + (num_pages + guard_pages) * PageSize - 1 <=
+                      region_start + region_num_pages * PageSize - 1)) {
+                    continue;
+                }
+
+                address = candidate;
+                break;
+            }
+            // Fall back to finding the first free area with a random offset.
+            if (address == 0) {
+                // NOTE: Nintendo does not account for guard pages here.
+                // This may theoretically cause an offset to be chosen that cannot be mapped. We
+                // will account for guard pages.
+                const std::size_t offset_pages = KSystemControl::GenerateRandomRange(
+                    0, region_num_pages - num_pages - guard_pages);
+                address = block_manager->FindFreeArea(region_start + offset_pages * PageSize,
+                                                      region_num_pages - offset_pages, num_pages,
+                                                      alignment, offset, guard_pages);
+            }
+        }
+
+        // Find the first free area.
+        if (address == 0) {
+            address = block_manager->FindFreeArea(region_start, region_num_pages, num_pages,
+                                                  alignment, offset, guard_pages);
+        }
+    }
+
+    return address;
+}
+
 ResultCode KPageTable::UnmapProcessMemory(VAddr dst_addr, std::size_t size,
                                           KPageTable& src_page_table, VAddr src_addr) {
     KScopedLightLock lk(general_lock);
@@ -1055,6 +1117,46 @@ ResultCode KPageTable::MapPages(VAddr address, KPageLinkedList& page_linked_list
     return ResultSuccess;
 }
 
+ResultCode KPageTable::MapPages(VAddr* out_addr, std::size_t num_pages, std::size_t alignment,
+                                PAddr phys_addr, bool is_pa_valid, VAddr region_start,
+                                std::size_t region_num_pages, KMemoryState state,
+                                KMemoryPermission perm) {
+    ASSERT(Common::IsAligned(alignment, PageSize) && alignment >= PageSize);
+
+    // Ensure this is a valid map request.
+    R_UNLESS(this->CanContain(region_start, region_num_pages * PageSize, state),
+             ResultInvalidCurrentMemory);
+    R_UNLESS(num_pages < region_num_pages, ResultOutOfMemory);
+
+    // Lock the table.
+    KScopedLightLock lk(general_lock);
+
+    // Find a random address to map at.
+    VAddr addr = this->FindFreeArea(region_start, region_num_pages, num_pages, alignment, 0,
+                                    this->GetNumGuardPages());
+    R_UNLESS(addr != 0, ResultOutOfMemory);
+    ASSERT(Common::IsAligned(addr, alignment));
+    ASSERT(this->CanContain(addr, num_pages * PageSize, state));
+    ASSERT(this->CheckMemoryState(addr, num_pages * PageSize, KMemoryState::All, KMemoryState::Free,
+                                  KMemoryPermission::None, KMemoryPermission::None,
+                                  KMemoryAttribute::None, KMemoryAttribute::None)
+               .IsSuccess());
+
+    // Perform mapping operation.
+    if (is_pa_valid) {
+        R_TRY(this->Operate(addr, num_pages, perm, OperationType::Map, phys_addr));
+    } else {
+        UNIMPLEMENTED();
+    }
+
+    // Update the blocks.
+    block_manager->Update(addr, num_pages, state, perm);
+
+    // We successfully mapped the pages.
+    *out_addr = addr;
+    return ResultSuccess;
+}
+
 ResultCode KPageTable::UnmapPages(VAddr addr, const KPageLinkedList& page_linked_list) {
     ASSERT(this->IsLockedByCurrentThread());
 
@@ -1093,6 +1195,30 @@ ResultCode KPageTable::UnmapPages(VAddr addr, KPageLinkedList& page_linked_list,
 
     // Update the blocks.
     block_manager->Update(addr, num_pages, state, KMemoryPermission::None);
+
+    return ResultSuccess;
+}
+
+ResultCode KPageTable::UnmapPages(VAddr address, std::size_t num_pages, KMemoryState state) {
+    // Check that the unmap is in range.
+    const std::size_t size = num_pages * PageSize;
+    R_UNLESS(this->Contains(address, size), ResultInvalidCurrentMemory);
+
+    // Lock the table.
+    KScopedLightLock lk(general_lock);
+
+    // Check the memory state.
+    std::size_t num_allocator_blocks{};
+    R_TRY(this->CheckMemoryState(std::addressof(num_allocator_blocks), address, size,
+                                 KMemoryState::All, state, KMemoryPermission::None,
+                                 KMemoryPermission::None, KMemoryAttribute::All,
+                                 KMemoryAttribute::None));
+
+    // Perform the unmap.
+    R_TRY(Operate(address, num_pages, KMemoryPermission::None, OperationType::Unmap));
+
+    // Update the blocks.
+    block_manager->Update(address, num_pages, KMemoryState::Free, KMemoryPermission::None);
 
     return ResultSuccess;
 }

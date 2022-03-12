@@ -49,11 +49,8 @@ ServiceThread::Impl::Impl(KernelCore& kernel, std::size_t num_threads, const std
                 return;
             }
 
+            // Allocate a dummy guest thread for this host thread.
             kernel.RegisterHostThread();
-
-            // Ensure the dummy thread allocated for this host thread is closed on exit.
-            auto* dummy_thread = kernel.GetCurrentEmuThread();
-            SCOPE_EXIT({ dummy_thread->Close(); });
 
             while (true) {
                 std::function<void()> task;

@@ -46,7 +46,14 @@ public:
     ResultCode UnmapMemory(VAddr dst_addr, VAddr src_addr, std::size_t size);
     ResultCode MapPages(VAddr addr, KPageLinkedList& page_linked_list, KMemoryState state,
                         KMemoryPermission perm);
+    ResultCode MapPages(VAddr* out_addr, std::size_t num_pages, std::size_t alignment,
+                        PAddr phys_addr, KMemoryState state, KMemoryPermission perm) {
+        return this->MapPages(out_addr, num_pages, alignment, phys_addr, true,
+                              this->GetRegionAddress(state), this->GetRegionSize(state) / PageSize,
+                              state, perm);
+    }
     ResultCode UnmapPages(VAddr addr, KPageLinkedList& page_linked_list, KMemoryState state);
+    ResultCode UnmapPages(VAddr address, std::size_t num_pages, KMemoryState state);
     ResultCode SetProcessMemoryPermission(VAddr addr, std::size_t size,
                                           Svc::MemoryPermission svc_perm);
     KMemoryInfo QueryInfo(VAddr addr);
@@ -91,6 +98,9 @@ private:
     ResultCode InitializeMemoryLayout(VAddr start, VAddr end);
     ResultCode MapPages(VAddr addr, const KPageLinkedList& page_linked_list,
                         KMemoryPermission perm);
+    ResultCode MapPages(VAddr* out_addr, std::size_t num_pages, std::size_t alignment,
+                        PAddr phys_addr, bool is_pa_valid, VAddr region_start,
+                        std::size_t region_num_pages, KMemoryState state, KMemoryPermission perm);
     ResultCode UnmapPages(VAddr addr, const KPageLinkedList& page_linked_list);
     bool IsRegionMapped(VAddr address, u64 size);
     bool IsRegionContiguous(VAddr addr, u64 size) const;
@@ -104,6 +114,9 @@ private:
                        OperationType operation, PAddr map_addr = 0);
     VAddr GetRegionAddress(KMemoryState state) const;
     std::size_t GetRegionSize(KMemoryState state) const;
+
+    VAddr FindFreeArea(VAddr region_start, std::size_t region_num_pages, std::size_t num_pages,
+                       std::size_t alignment, std::size_t offset, std::size_t guard_pages);
 
     ResultCode CheckMemoryStateContiguous(std::size_t* out_blocks_needed, VAddr addr,
                                           std::size_t size, KMemoryState state_mask,
@@ -137,7 +150,7 @@ private:
         return CheckMemoryState(nullptr, nullptr, nullptr, out_blocks_needed, addr, size,
                                 state_mask, state, perm_mask, perm, attr_mask, attr, ignore_attr);
     }
-    ResultCode CheckMemoryState(VAddr addr, size_t size, KMemoryState state_mask,
+    ResultCode CheckMemoryState(VAddr addr, std::size_t size, KMemoryState state_mask,
                                 KMemoryState state, KMemoryPermission perm_mask,
                                 KMemoryPermission perm, KMemoryAttribute attr_mask,
                                 KMemoryAttribute attr,
@@ -210,7 +223,7 @@ public:
     constexpr VAddr GetAliasCodeRegionSize() const {
         return alias_code_region_end - alias_code_region_start;
     }
-    size_t GetNormalMemorySize() {
+    std::size_t GetNormalMemorySize() {
         KScopedLightLock lk(general_lock);
         return GetHeapSize() + mapped_physical_memory_size;
     }

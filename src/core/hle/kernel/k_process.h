@@ -15,6 +15,7 @@
 #include "core/hle/kernel/k_condition_variable.h"
 #include "core/hle/kernel/k_handle_table.h"
 #include "core/hle/kernel/k_synchronization_object.h"
+#include "core/hle/kernel/k_thread_local_page.h"
 #include "core/hle/kernel/k_worker_task.h"
 #include "core/hle/kernel/process_capability.h"
 #include "core/hle/kernel/slab_helpers.h"
@@ -362,10 +363,10 @@ public:
     // Thread-local storage management
 
     // Marks the next available region as used and returns the address of the slot.
-    [[nodiscard]] VAddr CreateTLSRegion();
+    [[nodiscard]] ResultCode CreateThreadLocalRegion(VAddr* out);
 
     // Frees a used TLS slot identified by the given address
-    void FreeTLSRegion(VAddr tls_address);
+    ResultCode DeleteThreadLocalRegion(VAddr addr);
 
 private:
     void PinThread(s32 core_id, KThread* thread) {
@@ -412,13 +413,6 @@ private:
 
     /// The ideal CPU core for this process, threads are scheduled on this core by default.
     u8 ideal_core = 0;
-
-    /// The Thread Local Storage area is allocated as processes create threads,
-    /// each TLS area is 0x200 bytes, so one page (0x1000) is split up in 8 parts, and each part
-    /// holds the TLS for a specific thread. This vector contains which parts are in use for each
-    /// page as a bitmask.
-    /// This vector will grow as more pages are allocated for new threads.
-    std::vector<TLSPage> tls_pages;
 
     /// Contains the parsed process capability descriptors.
     ProcessCapabilities capabilities;
@@ -482,6 +476,12 @@ private:
     KThread* exception_thread{};
 
     KLightLock state_lock;
+
+    using TLPTree =
+        Common::IntrusiveRedBlackTreeBaseTraits<KThreadLocalPage>::TreeType<KThreadLocalPage>;
+    using TLPIterator = TLPTree::iterator;
+    TLPTree fully_used_tlp_tree;
+    TLPTree partially_used_tlp_tree;
 };
 
 } // namespace Kernel

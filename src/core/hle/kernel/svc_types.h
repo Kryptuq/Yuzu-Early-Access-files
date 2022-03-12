@@ -96,4 +96,6 @@ constexpr inline s32 IdealCoreNoUpdate = -3;
 constexpr inline s32 LowestThreadPriority = 63;
 constexpr inline s32 HighestThreadPriority = 0;
 
+constexpr inline size_t ThreadLocalRegionSize = 0x200;
+
 } // namespace Kernel::Svc
