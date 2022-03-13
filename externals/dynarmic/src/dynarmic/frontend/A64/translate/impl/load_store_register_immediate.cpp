@@ -43,11 +43,11 @@ static bool LoadStoreRegisterImmediate(TranslatorVisitor& v, bool wback, bool po
     switch (memop) {
     case IR::MemOp::STORE: {
         const auto data = v.X(datasize, Rt);
-        v.Mem(address, datasize / 8, IR::AccType::NORMAL, data);
+        v.Mem(address, datasize / 8, IR::AccessType::NORMAL, data);
         break;
     }
     case IR::MemOp::LOAD: {
-        const auto data = v.Mem(address, datasize / 8, IR::AccType::NORMAL);
+        const auto data = v.Mem(address, datasize / 8, IR::AccessType::NORMAL);
         if (signed_) {
             v.X(regsize, Rt, v.SignExtend(data, regsize));
         } else {
@@ -115,7 +115,7 @@ bool TranslatorVisitor::PRFM_unscaled_imm([[maybe_unused]] Imm<9> imm9, [[maybe_
 }
 
 static bool LoadStoreSIMD(TranslatorVisitor& v, bool wback, bool postindex, size_t scale, u64 offset, IR::MemOp memop, Reg Rn, Vec Vt) {
-    const auto acctype = IR::AccType::VEC;
+    const auto acctype = IR::AccessType::VEC;
     const size_t datasize = 8 << scale;
 
     IR::U64 address;

@@ -107,6 +107,12 @@ VAddr InitializeSlabHeap(Core::System& system, KMemoryLayout& memory_layout, VAd
     return start + size;
 }
 
+size_t CalculateSlabHeapGapSize() {
+    constexpr size_t KernelSlabHeapGapSize = 2_MiB - 296_KiB;
+    static_assert(KernelSlabHeapGapSize <= KernelSlabHeapGapsSizeMax);
+    return KernelSlabHeapGapSize;
+}
+
 } // namespace
 
 KSlabResourceCounts KSlabResourceCounts::CreateDefault() {
@@ -135,12 +141,6 @@ void InitializeSlabResourceCounts(KernelCore& kernel) {
     if (KSystemControl::Init::ShouldIncreaseThreadResourceLimit()) {
         kernel.SlabResourceCounts().num_KThread += SlabCountExtraKThread;
     }
-}
-
-size_t CalculateSlabHeapGapSize() {
-    constexpr size_t KernelSlabHeapGapSize = 2_MiB - 296_KiB;
-    static_assert(KernelSlabHeapGapSize <= KernelSlabHeapGapsSizeMax);
-    return KernelSlabHeapGapSize;
 }
 
 size_t CalculateTotalSlabHeapSize(const KernelCore& kernel) {

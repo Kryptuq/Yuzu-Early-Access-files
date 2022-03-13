@@ -16,13 +16,8 @@
 namespace Kernel {
 
 class KPageBuffer final : public KSlabAllocated<KPageBuffer> {
-private:
-    alignas(PageSize) std::array<u8, PageSize> m_buffer;
-
 public:
-    KPageBuffer() {
-        std::memset(&m_buffer, 0, m_buffer.size());
-    }
+    KPageBuffer() = default;
 
     PAddr GetPhysicalAddress(Core::System& system) const {
         return system.DeviceMemory().GetPhysicalAddr(this);
@@ -32,6 +27,9 @@ public:
         ASSERT(Common::IsAligned(phys_addr, PageSize));
         return reinterpret_cast<KPageBuffer*>(system.DeviceMemory().GetPointer(phys_addr));
     }
+
+private:
+    alignas(PageSize) std::array<u8, PageSize> m_buffer{};
 };
 
 static_assert(sizeof(KPageBuffer) == PageSize);

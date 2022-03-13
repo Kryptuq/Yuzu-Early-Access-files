@@ -55,12 +55,6 @@ enum class RBColor {
 #pragma pack(push, 4)
 template <typename T>
 class RBEntry {
-private:
-    T* m_rbe_left{};
-    T* m_rbe_right{};
-    T* m_rbe_parent{};
-    RBColor m_rbe_color{RBColor::RB_BLACK};
-
 public:
     constexpr RBEntry() = default;
 
@@ -110,6 +104,12 @@ public:
     constexpr void SetColor(RBColor c) {
         m_rbe_color = c;
     }
+
+private:
+    T* m_rbe_left{};
+    T* m_rbe_right{};
+    T* m_rbe_parent{};
+    RBColor m_rbe_color{RBColor::RB_BLACK};
 };
 #pragma pack(pop)
 

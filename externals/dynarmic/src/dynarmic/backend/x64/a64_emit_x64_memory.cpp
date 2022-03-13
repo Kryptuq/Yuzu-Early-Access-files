@@ -22,6 +22,7 @@
 #include "dynarmic/common/spin_lock_x64.h"
 #include "dynarmic/common/x64_disassemble.h"
 #include "dynarmic/interface/exclusive_monitor.h"
+#include "dynarmic/ir/access_type.h"
 
 namespace Dynarmic::Backend::X64 {
 
@@ -227,6 +228,7 @@ void A64EmitX64::GenFastmemFallbacks() {
                         code.mov(code.ABI_PARAM2, Xbyak::Reg64{vaddr_idx});
                     }
                 }
+                code.ZeroExtendFrom(bitsize, code.ABI_PARAM3);
                 callback.EmitCall(code);
                 ABI_PopCallerSaveRegistersAndAdjustStack(code);
                 code.ret();
@@ -252,7 +254,9 @@ void A64EmitX64::GenFastmemFallbacks() {
                         code.mov(code.ABI_PARAM2, Xbyak::Reg64{vaddr_idx});
                     }
                 }
+                code.ZeroExtendFrom(bitsize, code.ABI_PARAM3);
                 code.mov(code.ABI_PARAM4, rax);
+                code.ZeroExtendFrom(bitsize, code.ABI_PARAM4);
                 callback.EmitCall(code);
                 ABI_PopCallerSaveRegistersAndAdjustStackExcept(code, HostLoc::RAX);
                 code.ret();
@@ -438,45 +442,102 @@ Xbyak::RegExp EmitFastmemVAddr(BlockOfCode& code, A64EmitContext& ctx, Xbyak::La
 }
 
 template<std::size_t bitsize>
-void EmitReadMemoryMov(BlockOfCode& code, int value_idx, const Xbyak::RegExp& addr) {
+const void* EmitReadMemoryMov(BlockOfCode& code, int value_idx, const Xbyak::RegExp& addr, bool ordered) {
+    if (ordered) {
+        if constexpr (bitsize == 128) {
+            code.mfence();
+        } else {
+            code.xor_(Xbyak::Reg32{value_idx}, Xbyak::Reg32{value_idx});
+        }
+
+        const void* fastmem_location = code.getCurr();
+
+        switch (bitsize) {
+        case 8:
+            code.lock();
+            code.xadd(code.byte[addr], Xbyak::Reg32{value_idx}.cvt8());
+            return fastmem_location;
+        case 16:
+            code.lock();
+            code.xadd(word[addr], Xbyak::Reg32{value_idx});
+            return fastmem_location;
+        case 32:
+            code.lock();
+            code.xadd(dword[addr], Xbyak::Reg32{value_idx});
+            return fastmem_location;
+        case 64:
+            code.lock();
+            code.xadd(qword[addr], Xbyak::Reg64{value_idx});
+            return fastmem_location;
+        case 128:
+            code.movaps(Xbyak::Xmm{value_idx}, xword[addr]);
+            return fastmem_location;
+        default:
+            ASSERT_FALSE("Invalid bitsize");
+        }
+    }
+
+    const void* fastmem_location = code.getCurr();
+
     switch (bitsize) {
     case 8:
         code.movzx(Xbyak::Reg32{value_idx}, code.byte[addr]);
-        return;
+        return fastmem_location;
     case 16:
         code.movzx(Xbyak::Reg32{value_idx}, word[addr]);
-        return;
+        return fastmem_location;
     case 32:
         code.mov(Xbyak::Reg32{value_idx}, dword[addr]);
-        return;
+        return fastmem_location;
     case 64:
         code.mov(Xbyak::Reg64{value_idx}, qword[addr]);
-        return;
+        return fastmem_location;
     case 128:
         code.movups(Xbyak::Xmm{value_idx}, xword[addr]);
-        return;
+        return fastmem_location;
     default:
         ASSERT_FALSE("Invalid bitsize");
     }
 }
 
 template<std::size_t bitsize>
-void EmitWriteMemoryMov(BlockOfCode& code, const Xbyak::RegExp& addr, int value_idx) {
+void EmitWriteMemoryMov(BlockOfCode& code, const Xbyak::RegExp& addr, int value_idx, bool ordered) {
     switch (bitsize) {
     case 8:
-        code.mov(code.byte[addr], Xbyak::Reg64{value_idx}.cvt8());
+        if (ordered) {
+            code.xchg(code.byte[addr], Xbyak::Reg64{value_idx}.cvt8());
+        } else {
+            code.mov(code.byte[addr], Xbyak::Reg64{value_idx}.cvt8());
+        }
         return;
     case 16:
-        code.mov(word[addr], Xbyak::Reg16{value_idx});
+        if (ordered) {
+            code.xchg(word[addr], Xbyak::Reg16{value_idx});
+        } else {
+            code.mov(word[addr], Xbyak::Reg16{value_idx});
+        }
         return;
     case 32:
-        code.mov(dword[addr], Xbyak::Reg32{value_idx});
+        if (ordered) {
+            code.xchg(dword[addr], Xbyak::Reg32{value_idx});
+        } else {
+            code.mov(dword[addr], Xbyak::Reg32{value_idx});
+        }
         return;
     case 64:
-        code.mov(qword[addr], Xbyak::Reg64{value_idx});
+        if (ordered) {
+            code.xchg(qword[addr], Xbyak::Reg64{value_idx});
+        } else {
+            code.mov(qword[addr], Xbyak::Reg64{value_idx});
+        }
         return;
     case 128:
-        code.movups(xword[addr], Xbyak::Xmm{value_idx});
+        if (ordered) {
+            code.movaps(xword[addr], Xbyak::Xmm{value_idx});
+            code.mfence();
+        } else {
+            code.movups(xword[addr], Xbyak::Xmm{value_idx});
+        }
         return;
     default:
         ASSERT_FALSE("Invalid bitsize");
@@ -488,16 +549,24 @@ void EmitWriteMemoryMov(BlockOfCode& code, const Xbyak::RegExp& addr, int value_
 template<std::size_t bitsize, auto callback>
 void A64EmitX64::EmitMemoryRead(A64EmitContext& ctx, IR::Inst* inst) {
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+    const IR::AccessType acctype = args[2].GetImmediateAccType();
+    const bool ordered = acctype == IR::AccessType::ORDERED || acctype == IR::AccessType::ORDEREDRW || acctype == IR::AccessType::LIMITEDORDERED;
     const auto fastmem_marker = ShouldFastmem(ctx, inst);
 
     if (!conf.page_table && !fastmem_marker) {
         // Neither fastmem nor page table: Use callbacks
         if constexpr (bitsize == 128) {
             ctx.reg_alloc.HostCall(nullptr, {}, args[0]);
+            if (ordered) {
+                code.mfence();
+            }
             code.CallFunction(memory_read_128);
             ctx.reg_alloc.DefineValue(inst, xmm1);
         } else {
             ctx.reg_alloc.HostCall(inst, {}, args[0]);
+            if (ordered) {
+                code.mfence();
+            }
             Devirtualize<callback>(conf.callbacks).EmitCall(code);
             code.ZeroExtendFrom(bitsize, code.ABI_RETURN);
         }
@@ -516,8 +585,7 @@ void A64EmitX64::EmitMemoryRead(A64EmitContext& ctx, IR::Inst* inst) {
         // Use fastmem
         const auto src_ptr = EmitFastmemVAddr(code, ctx, abort, vaddr, require_abort_handling);
 
-        const auto location = code.getCurr();
-        EmitReadMemoryMov<bitsize>(code, value_idx, src_ptr);
+        const auto location = EmitReadMemoryMov<bitsize>(code, value_idx, src_ptr, ordered);
 
         fastmem_patch_info.emplace(
             Common::BitCast<u64>(location),
@@ -532,13 +600,16 @@ void A64EmitX64::EmitMemoryRead(A64EmitContext& ctx, IR::Inst* inst) {
         ASSERT(conf.page_table);
         const auto src_ptr = EmitVAddrLookup(code, ctx, bitsize, abort, vaddr);
         require_abort_handling = true;
-        EmitReadMemoryMov<bitsize>(code, value_idx, src_ptr);
+        EmitReadMemoryMov<bitsize>(code, value_idx, src_ptr, ordered);
     }
     code.L(end);
 
     if (require_abort_handling) {
         code.SwitchToFarCode();
         code.L(abort);
+        if (ordered) {
+            code.mfence();
+        }
         code.call(wrapped_fn);
         code.jmp(end, code.T_NEAR);
         code.SwitchToNearCode();
@@ -554,6 +625,8 @@ void A64EmitX64::EmitMemoryRead(A64EmitContext& ctx, IR::Inst* inst) {
 template<std::size_t bitsize, auto callback>
 void A64EmitX64::EmitMemoryWrite(A64EmitContext& ctx, IR::Inst* inst) {
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+    const IR::AccessType acctype = args[2].GetImmediateAccType();
+    const bool ordered = acctype == IR::AccessType::ORDERED || acctype == IR::AccessType::ORDEREDRW || acctype == IR::AccessType::LIMITEDORDERED;
     const auto fastmem_marker = ShouldFastmem(ctx, inst);
 
     if (!conf.page_table && !fastmem_marker) {
@@ -568,11 +641,16 @@ void A64EmitX64::EmitMemoryWrite(A64EmitContext& ctx, IR::Inst* inst) {
             ctx.reg_alloc.HostCall(nullptr, {}, args[0], args[1]);
             Devirtualize<callback>(conf.callbacks).EmitCall(code);
         }
+        if (ordered) {
+            code.mfence();
+        }
         return;
     }
 
     const Xbyak::Reg64 vaddr = ctx.reg_alloc.UseGpr(args[0]);
-    const int value_idx = bitsize == 128 ? ctx.reg_alloc.UseXmm(args[1]).getIdx() : ctx.reg_alloc.UseGpr(args[1]).getIdx();
+    const int value_idx = bitsize == 128
+                            ? ctx.reg_alloc.UseXmm(args[1]).getIdx()
+                            : (ordered ? ctx.reg_alloc.UseScratchGpr(args[1]).getIdx() : ctx.reg_alloc.UseGpr(args[1]).getIdx());
 
     const auto wrapped_fn = write_fallbacks[std::make_tuple(bitsize, vaddr.getIdx(), value_idx)];
 
@@ -584,7 +662,7 @@ void A64EmitX64::EmitMemoryWrite(A64EmitContext& ctx, IR::Inst* inst) {
         const auto dest_ptr = EmitFastmemVAddr(code, ctx, abort, vaddr, require_abort_handling);
 
         const auto location = code.getCurr();
-        EmitWriteMemoryMov<bitsize>(code, dest_ptr, value_idx);
+        EmitWriteMemoryMov<bitsize>(code, dest_ptr, value_idx, ordered);
 
         fastmem_patch_info.emplace(
             Common::BitCast<u64>(location),
@@ -599,7 +677,7 @@ void A64EmitX64::EmitMemoryWrite(A64EmitContext& ctx, IR::Inst* inst) {
         ASSERT(conf.page_table);
         const auto dest_ptr = EmitVAddrLookup(code, ctx, bitsize, abort, vaddr);
         require_abort_handling = true;
-        EmitWriteMemoryMov<bitsize>(code, dest_ptr, value_idx);
+        EmitWriteMemoryMov<bitsize>(code, dest_ptr, value_idx, ordered);
     }
     code.L(end);
 
@@ -607,6 +685,9 @@ void A64EmitX64::EmitMemoryWrite(A64EmitContext& ctx, IR::Inst* inst) {
         code.SwitchToFarCode();
         code.L(abort);
         code.call(wrapped_fn);
+        if (ordered) {
+            code.mfence();
+        }
         code.jmp(end, code.T_NEAR);
         code.SwitchToNearCode();
     }
@@ -656,6 +737,8 @@ template<std::size_t bitsize, auto callback>
 void A64EmitX64::EmitExclusiveReadMemory(A64EmitContext& ctx, IR::Inst* inst) {
     ASSERT(conf.global_monitor != nullptr);
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+    const IR::AccessType acctype = args[2].GetImmediateAccType();
+    const bool ordered = acctype == IR::AccessType::ORDERED || acctype == IR::AccessType::ORDEREDRW || acctype == IR::AccessType::LIMITEDORDERED;
 
     if constexpr (bitsize != 128) {
         using T = mp::unsigned_integer_of_size<bitsize>;
@@ -664,6 +747,9 @@ void A64EmitX64::EmitExclusiveReadMemory(A64EmitContext& ctx, IR::Inst* inst) {
 
         code.mov(code.byte[r15 + offsetof(A64JitState, exclusive_state)], u8(1));
         code.mov(code.ABI_PARAM1, reinterpret_cast<u64>(&conf));
+        if (ordered) {
+            code.mfence();
+        }
         code.CallLambda(
             [](A64::UserConfig& conf, u64 vaddr) -> T {
                 return conf.global_monitor->ReadAndMark<T>(conf.processor_id, vaddr, [&]() -> T {
@@ -681,6 +767,9 @@ void A64EmitX64::EmitExclusiveReadMemory(A64EmitContext& ctx, IR::Inst* inst) {
         code.mov(code.ABI_PARAM1, reinterpret_cast<u64>(&conf));
         ctx.reg_alloc.AllocStackSpace(16 + ABI_SHADOW_SPACE);
         code.lea(code.ABI_PARAM3, ptr[rsp + ABI_SHADOW_SPACE]);
+        if (ordered) {
+            code.mfence();
+        }
         code.CallLambda(
             [](A64::UserConfig& conf, u64 vaddr, A64::Vector& ret) {
                 ret = conf.global_monitor->ReadAndMark<A64::Vector>(conf.processor_id, vaddr, [&]() -> A64::Vector {
@@ -698,6 +787,8 @@ template<std::size_t bitsize, auto callback>
 void A64EmitX64::EmitExclusiveWriteMemory(A64EmitContext& ctx, IR::Inst* inst) {
     ASSERT(conf.global_monitor != nullptr);
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+    const IR::AccessType acctype = args[3].GetImmediateAccType();
+    const bool ordered = acctype == IR::AccessType::ORDERED || acctype == IR::AccessType::ORDEREDRW || acctype == IR::AccessType::LIMITEDORDERED;
 
     if constexpr (bitsize != 128) {
         ctx.reg_alloc.HostCall(inst, {}, args[0], args[1]);
@@ -727,6 +818,9 @@ void A64EmitX64::EmitExclusiveWriteMemory(A64EmitContext& ctx, IR::Inst* inst) {
                          ? 0
                          : 1;
             });
+        if (ordered) {
+            code.mfence();
+        }
     } else {
         ctx.reg_alloc.AllocStackSpace(16 + ABI_SHADOW_SPACE);
         code.lea(code.ABI_PARAM3, ptr[rsp + ABI_SHADOW_SPACE]);
@@ -740,6 +834,9 @@ void A64EmitX64::EmitExclusiveWriteMemory(A64EmitContext& ctx, IR::Inst* inst) {
                          ? 0
                          : 1;
             });
+        if (ordered) {
+            code.mfence();
+        }
         ctx.reg_alloc.ReleaseStackSpace(16 + ABI_SHADOW_SPACE);
     }
     code.L(end);
@@ -754,6 +851,8 @@ void A64EmitX64::EmitExclusiveReadMemoryInline(A64EmitContext& ctx, IR::Inst* in
     }
 
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+    const IR::AccessType acctype = args[2].GetImmediateAccType();
+    const bool ordered = acctype == IR::AccessType::ORDERED || acctype == IR::AccessType::ORDEREDRW || acctype == IR::AccessType::LIMITEDORDERED;
 
     const Xbyak::Reg64 vaddr = ctx.reg_alloc.UseGpr(args[0]);
     const int value_idx = bitsize == 128 ? ctx.reg_alloc.ScratchXmm().getIdx() : ctx.reg_alloc.ScratchGpr().getIdx();
@@ -776,7 +875,7 @@ void A64EmitX64::EmitExclusiveReadMemoryInline(A64EmitContext& ctx, IR::Inst* in
         const auto src_ptr = EmitFastmemVAddr(code, ctx, abort, vaddr, require_abort_handling);
 
         const auto location = code.getCurr();
-        EmitReadMemoryMov<bitsize>(code, value_idx, src_ptr);
+        EmitReadMemoryMov<bitsize>(code, value_idx, src_ptr, ordered);
 
         fastmem_patch_info.emplace(
             Common::BitCast<u64>(location),
@@ -801,7 +900,7 @@ void A64EmitX64::EmitExclusiveReadMemoryInline(A64EmitContext& ctx, IR::Inst* in
     }
 
     code.mov(tmp, Common::BitCast<u64>(GetExclusiveMonitorValuePointer(conf.global_monitor, conf.processor_id)));
-    EmitWriteMemoryMov<bitsize>(code, tmp, value_idx);
+    EmitWriteMemoryMov<bitsize>(code, tmp, value_idx, false);
 
     EmitExclusiveUnlock(code, conf, tmp, tmp2.cvt32());
 
@@ -821,6 +920,8 @@ void A64EmitX64::EmitExclusiveWriteMemoryInline(A64EmitContext& ctx, IR::Inst* i
     }
 
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
+    const IR::AccessType acctype = args[3].GetImmediateAccType();
+    const bool ordered = acctype == IR::AccessType::ORDERED || acctype == IR::AccessType::ORDEREDRW || acctype == IR::AccessType::LIMITEDORDERED;
 
     const auto value = [&] {
         if constexpr (bitsize == 128) {
@@ -869,7 +970,7 @@ void A64EmitX64::EmitExclusiveWriteMemoryInline(A64EmitContext& ctx, IR::Inst* i
             code.movq(rcx, xmm0);
         }
     } else {
-        EmitReadMemoryMov<bitsize>(code, rax.getIdx(), tmp);
+        EmitReadMemoryMov<bitsize>(code, rax.getIdx(), tmp, false);
     }
 
     const auto fastmem_marker = ShouldFastmem(ctx, inst);
@@ -907,6 +1008,10 @@ void A64EmitX64::EmitExclusiveWriteMemoryInline(A64EmitContext& ctx, IR::Inst* i
             }
         }
 
+        if (ordered) {
+            code.mfence();
+        }
+
         code.setnz(status.cvt8());
 
         code.SwitchToFarCode();
@@ -922,6 +1027,10 @@ void A64EmitX64::EmitExclusiveWriteMemoryInline(A64EmitContext& ctx, IR::Inst* i
                 conf.recompile_on_exclusive_fastmem_failure,
             });
 
+        if (ordered) {
+            code.mfence();
+        }
+
         code.cmp(al, 0);
         code.setz(status.cvt8());
         code.movzx(status.cvt32(), status.cvt8());
@@ -929,6 +1038,9 @@ void A64EmitX64::EmitExclusiveWriteMemoryInline(A64EmitContext& ctx, IR::Inst* i
         code.SwitchToNearCode();
     } else {
         code.call(fallback_fn);
+        if (ordered) {
+            code.mfence();
+        }
         code.cmp(al, 0);
         code.setz(status.cvt8());
         code.movzx(status.cvt32(), status.cvt8());

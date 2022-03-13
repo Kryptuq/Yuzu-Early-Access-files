@@ -83,8 +83,8 @@ public:
         using iterator_category = std::bidirectional_iterator_tag;
         using value_type = typename IntrusiveRedBlackTreeImpl::value_type;
         using difference_type = typename IntrusiveRedBlackTreeImpl::difference_type;
-        using pointer = typename std::conditional<Const, IntrusiveRedBlackTreeImpl::const_pointer,
-                                                  IntrusiveRedBlackTreeImpl::pointer>::type;
+        using pointer = std::conditional_t<Const, IntrusiveRedBlackTreeImpl::const_pointer,
+                                           IntrusiveRedBlackTreeImpl::pointer>;
         using reference =
             typename std::conditional<Const, IntrusiveRedBlackTreeImpl::const_reference,
                                       IntrusiveRedBlackTreeImpl::reference>::type;
@@ -263,7 +263,7 @@ namespace impl {
 
 template <typename T, typename Default>
 using RedBlackKeyType =
-    typename std::remove_pointer<decltype(impl::GetRedBlackKeyType<T, Default>())>::type;
+    typename std::remove_pointer_t<decltype(impl::GetRedBlackKeyType<T, Default>())>;
 
 template <class T, class Traits, class Comparator>
 class IntrusiveRedBlackTree {
@@ -299,7 +299,7 @@ public:
         friend class IntrusiveRedBlackTree<T, Traits, Comparator>;
 
         using ImplIterator =
-            typename std::conditional<Const, ImplType::const_iterator, ImplType::iterator>::type;
+            std::conditional_t<Const, ImplType::const_iterator, ImplType::iterator>;
 
         using iterator_category = std::bidirectional_iterator_tag;
         using value_type = typename IntrusiveRedBlackTree::value_type;
@@ -315,7 +315,7 @@ public:
     private:
         constexpr explicit Iterator(ImplIterator it) : m_impl(it) {}
 
-        constexpr explicit Iterator(typename ImplIterator::pointer p) : m_impl(p) {}
+        constexpr explicit Iterator(ImplIterator::pointer p) : m_impl(p) {}
 
         constexpr ImplIterator GetImplIterator() const {
             return m_impl;

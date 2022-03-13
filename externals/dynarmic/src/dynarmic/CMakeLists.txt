@@ -98,7 +98,7 @@ add_library(dynarmic
     ir/type.h
     ir/value.cpp
     ir/value.h
-)
+        ir/access_type.h)
 
 if ("A32" IN_LIST DYNARMIC_FRONTENDS)
     target_sources(dynarmic PRIVATE

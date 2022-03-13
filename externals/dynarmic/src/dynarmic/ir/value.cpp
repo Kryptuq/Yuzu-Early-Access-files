@@ -73,6 +73,11 @@ Value::Value(Cond value)
     inner.imm_cond = value;
 }
 
+Value::Value(AccessType value)
+        : type(Type::AccessType) {
+    inner.imm_acctype = value;
+}
+
 bool Value::IsIdentity() const {
     if (type == Type::Opaque)
         return inner.inst->GetOpcode() == Opcode::Identity;
@@ -176,6 +181,13 @@ Cond Value::GetCond() const {
         return inner.inst->GetArg(0).GetCond();
     ASSERT(type == Type::Cond);
     return inner.imm_cond;
+}
+
+AccessType Value::GetAccType() const {
+    if (IsIdentity())
+        return inner.inst->GetArg(0).GetAccType();
+    ASSERT(type == Type::AccessType);
+    return inner.imm_acctype;
 }
 
 s64 Value::GetImmediateAsS64() const {

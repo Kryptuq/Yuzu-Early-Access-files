@@ -62,7 +62,7 @@ static bool SharedDecodeAndOperation(TranslatorVisitor& v, bool wback, IR::MemOp
     if (replicate) {
         for (size_t s = 0; s < selem; s++) {
             const Vec tt = static_cast<Vec>((VecNumber(Vt) + s) % 32);
-            const IR::UAnyU128 element = v.Mem(v.ir.Add(address, offs), ebytes, IR::AccType::VEC);
+            const IR::UAnyU128 element = v.Mem(v.ir.Add(address, offs), ebytes, IR::AccessType::VEC);
             const IR::U128 broadcasted_element = v.ir.VectorBroadcast(esize, element);
 
             v.V(datasize, tt, broadcasted_element);
@@ -75,12 +75,12 @@ static bool SharedDecodeAndOperation(TranslatorVisitor& v, bool wback, IR::MemOp
             const IR::U128 rval = v.V(128, tt);
 
             if (memop == IR::MemOp::LOAD) {
-                const IR::UAny elem = v.Mem(v.ir.Add(address, offs), ebytes, IR::AccType::VEC);
+                const IR::UAny elem = v.Mem(v.ir.Add(address, offs), ebytes, IR::AccessType::VEC);
                 const IR::U128 vec = v.ir.VectorSetElement(esize, rval, index, elem);
                 v.V(128, tt, vec);
             } else {
                 const IR::UAny elem = v.ir.VectorGetElement(esize, rval, index);
-                v.Mem(v.ir.Add(address, offs), ebytes, IR::AccType::VEC, elem);
+                v.Mem(v.ir.Add(address, offs), ebytes, IR::AccessType::VEC, elem);
             }
             offs = v.ir.Add(offs, v.ir.Imm64(ebytes));
         }

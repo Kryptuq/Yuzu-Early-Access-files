@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 
 #include "common/alignment.h"
@@ -28,9 +29,7 @@ public:
 
 public:
     explicit KThreadLocalPage(VAddr addr = {}) : m_virt_addr(addr) {
-        for (size_t i = 0; i < m_is_region_free.size(); i++) {
-            m_is_region_free[i] = true;
-        }
+        m_is_region_free.fill(true);
     }
 
     constexpr VAddr GetAddress() const {
@@ -44,21 +43,13 @@ public:
     void Release(VAddr addr);
 
     bool IsAllUsed() const {
-        for (size_t i = 0; i < RegionsPerPage; i++) {
-            if (m_is_region_free[i]) {
-                return false;
-            }
-        }
-        return true;
+        return std::ranges::all_of(m_is_region_free.begin(), m_is_region_free.end(),
+                                   [](bool is_free) { return !is_free; });
     }
 
     bool IsAllFree() const {
-        for (size_t i = 0; i < RegionsPerPage; i++) {
-            if (!m_is_region_free[i]) {
-                return false;
-            }
-        }
-        return true;
+        return std::ranges::all_of(m_is_region_free.begin(), m_is_region_free.end(),
+                                   [](bool is_free) { return is_free; });
     }
 
     bool IsAnyUsed() const {

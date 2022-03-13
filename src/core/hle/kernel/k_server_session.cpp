@@ -98,7 +98,7 @@ ResultCode KServerSession::HandleDomainSyncRequest(Kernel::HLERequestContext& co
             UNREACHABLE();
             return ResultSuccess; // Ignore error if asserts are off
         }
-        if (auto strong_ptr = manager->DomainHandler(object_id - 1).lock(); strong_ptr) {
+        if (auto strong_ptr = manager->DomainHandler(object_id - 1).lock()) {
             return strong_ptr->HandleSyncRequest(*this, context);
         } else {
             UNREACHABLE();

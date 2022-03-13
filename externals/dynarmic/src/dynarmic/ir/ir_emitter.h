@@ -6,6 +6,7 @@
 #pragma once
 
 #include "dynarmic/common/common_types.h"
+#include "dynarmic/ir/access_type.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/location_descriptor.h"
 #include "dynarmic/ir/terminal.h"
@@ -54,24 +55,6 @@ struct ResultAndGE {
 struct UpperAndLower {
     U128 upper;
     U128 lower;
-};
-
-enum class AccType {
-    NORMAL,
-    VEC,
-    STREAM,
-    VECSTREAM,
-    ATOMIC,
-    ORDERED,
-    ORDEREDRW,
-    LIMITEDORDERED,
-    UNPRIV,
-    IFETCH,
-    PTW,
-    DC,
-    IC,
-    DCZVA,
-    AT,
 };
 
 enum class MemOp {
