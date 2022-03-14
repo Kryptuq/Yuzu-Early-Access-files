@@ -370,8 +370,31 @@ void Maxwell3D::CallMethodFromMME(u32 method, u32 method_argument) {
 }
 
 void Maxwell3D::ProcessTopologyOverride() {
+    using PrimitiveTopology = Maxwell3D::Regs::PrimitiveTopology;
+    using PrimitiveTopologyOverride = Maxwell3D::Regs::PrimitiveTopologyOverride;
+
+    PrimitiveTopology topology{};
+
+    switch (regs.topology_override) {
+    case PrimitiveTopologyOverride::None:
+        topology = regs.draw.topology;
+        break;
+    case PrimitiveTopologyOverride::Points:
+        topology = PrimitiveTopology::Points;
+        break;
+    case PrimitiveTopologyOverride::Lines:
+        topology = PrimitiveTopology::Lines;
+        break;
+    case PrimitiveTopologyOverride::LineStrip:
+        topology = PrimitiveTopology::LineStrip;
+        break;
+    default:
+        topology = static_cast<PrimitiveTopology>(regs.topology_override);
+        break;
+    }
+
     if (use_topology_override) {
-        regs.draw.topology.Assign(regs.topology_override);
+        regs.draw.topology.Assign(topology);
     }
 }
 

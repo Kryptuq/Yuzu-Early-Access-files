@@ -334,7 +334,8 @@ std::optional<LowAddrInfo> TrackLowAddress(IR::Inst* inst) {
 /// Tries to track the storage buffer address used by a global memory instruction
 std::optional<StorageBufferAddr> Track(const IR::Value& value, const Bias* bias) {
     const auto pred{[bias](const IR::Inst* inst) -> std::optional<StorageBufferAddr> {
-        if (inst->GetOpcode() != IR::Opcode::GetCbufU32) {
+        if (inst->GetOpcode() != IR::Opcode::GetCbufU32 &&
+            inst->GetOpcode() != IR::Opcode::GetCbufU32x2) {
             return std::nullopt;
         }
         const IR::Value index{inst->Arg(0)};

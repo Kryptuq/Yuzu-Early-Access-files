@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <array>
 #include <cstring>
 #include <memory>
 #include <optional>
@@ -292,7 +293,7 @@ std::pair<VkBuffer, VkDeviceSize> QuadIndexedPass::Assemble(
             .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
             .dstAccessMask = VK_ACCESS_INDEX_READ_BIT,
         };
-        const std::array push_constants{base_vertex, index_shift};
+        const std::array<u32, 2> push_constants{base_vertex, index_shift};
         const VkDescriptorSet set = descriptor_allocator.Commit();
         device.GetLogical().UpdateDescriptorSet(set, *descriptor_template, descriptor_data);
         cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline);

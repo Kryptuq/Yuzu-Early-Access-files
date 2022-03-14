@@ -212,10 +212,10 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
     }
     Optimization::SsaRewritePass(program);
 
+    Optimization::ConstantPropagationPass(program);
+
     Optimization::GlobalMemoryToStorageBufferPass(program);
     Optimization::TexturePass(env, program);
-
-    Optimization::ConstantPropagationPass(program);
 
     if (Settings::values.resolution_info.active) {
         Optimization::RescalingPass(program);

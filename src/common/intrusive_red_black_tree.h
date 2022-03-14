@@ -315,7 +315,7 @@ public:
     private:
         constexpr explicit Iterator(ImplIterator it) : m_impl(it) {}
 
-        constexpr explicit Iterator(ImplIterator::pointer p) : m_impl(p) {}
+        constexpr explicit Iterator(typename ImplIterator::pointer p) : m_impl(p) {}
 
         constexpr ImplIterator GetImplIterator() const {
             return m_impl;

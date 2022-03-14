@@ -19,17 +19,13 @@ class KPageBuffer final : public KSlabAllocated<KPageBuffer> {
 public:
     KPageBuffer() = default;
 
-    PAddr GetPhysicalAddress(Core::System& system) const {
-        return system.DeviceMemory().GetPhysicalAddr(this);
-    }
-
     static KPageBuffer* FromPhysicalAddress(Core::System& system, PAddr phys_addr) {
         ASSERT(Common::IsAligned(phys_addr, PageSize));
         return reinterpret_cast<KPageBuffer*>(system.DeviceMemory().GetPointer(phys_addr));
     }
 
 private:
-    alignas(PageSize) std::array<u8, PageSize> m_buffer{};
+    [[maybe_unused]] alignas(PageSize) std::array<u8, PageSize> m_buffer{};
 };
 
 static_assert(sizeof(KPageBuffer) == PageSize);

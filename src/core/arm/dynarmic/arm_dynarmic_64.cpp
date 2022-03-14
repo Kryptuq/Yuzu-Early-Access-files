@@ -208,8 +208,8 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable* 
     config.wall_clock_cntpct = uses_wall_clock;
 
     // Code cache size
-    config.code_cache_size = 512_MiB;
-    config.far_code_offset = 400_MiB;
+    config.code_cache_size = 128_MiB;
+    config.far_code_offset = 100_MiB;
 
     // Safe optimizations
     if (Settings::values.cpu_debug_mode) {
