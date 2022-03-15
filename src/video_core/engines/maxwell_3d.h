@@ -1545,10 +1545,8 @@ private:
     void ProcessSyncPoint();
 
     /// Handles a write to the CB_DATA[i] register.
-    void StartCBData(u32 method);
     void ProcessCBData(u32 value);
-    void ProcessCBMultiData(u32 method, const u32* start_base, u32 amount);
-    void FinishCBData();
+    void ProcessCBMultiData(const u32* start_base, u32 amount);
 
     /// Handles a write to the CB_BIND register.
     void ProcessCBBind(size_t stage_index);
@@ -1582,17 +1580,6 @@ private:
 
     /// Interpreter for the macro codes uploaded to the GPU.
     std::unique_ptr<MacroEngine> macro_engine;
-
-    static constexpr u32 null_cb_data = 0xFFFFFFFF;
-    struct CBDataState {
-        static constexpr size_t inline_size = 0x4000;
-        std::array<std::array<u32, inline_size>, 16> buffer;
-        u32 current{null_cb_data};
-        u32 id{null_cb_data};
-        u32 start_pos{};
-        u32 counter{};
-    };
-    CBDataState cb_data_state;
 
     Upload::State upload_state;
 

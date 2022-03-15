@@ -28,7 +28,7 @@ public:
     static_assert(RegionsPerPage > 0);
 
 public:
-    explicit KThreadLocalPage(VAddr addr = {}) : m_virt_addr(addr) {
+    constexpr explicit KThreadLocalPage(VAddr addr = {}) : m_virt_addr(addr) {
         m_is_region_free.fill(true);
     }
 
@@ -88,15 +88,15 @@ public:
     }
 
 private:
-    constexpr VAddr GetRegionAddress(size_t i) {
+    constexpr VAddr GetRegionAddress(size_t i) const {
         return this->GetAddress() + i * Svc::ThreadLocalRegionSize;
     }
 
-    constexpr bool Contains(VAddr addr) {
+    constexpr bool Contains(VAddr addr) const {
         return this->GetAddress() <= addr && addr < this->GetAddress() + PageSize;
     }
 
-    constexpr size_t GetRegionIndex(VAddr addr) {
+    constexpr size_t GetRegionIndex(VAddr addr) const {
         ASSERT(Common::IsAligned(addr, Svc::ThreadLocalRegionSize));
         ASSERT(this->Contains(addr));
         return (addr - this->GetAddress()) / Svc::ThreadLocalRegionSize;

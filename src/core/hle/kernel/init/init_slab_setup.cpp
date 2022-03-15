@@ -206,17 +206,17 @@ void InitializeSlabHeaps(Core::System& system, KMemoryLayout& memory_layout) {
 
     // Create an array to represent the gaps between the slabs.
     const size_t total_gap_size = CalculateSlabHeapGapSize();
-    size_t slab_gaps[slab_types.size()];
-    for (size_t i = 0; i < slab_types.size(); i++) {
+    std::array<size_t, slab_types.size()> slab_gaps;
+    for (auto& slab_gap : slab_gaps) {
         // Note: This is an off-by-one error from Nintendo's intention, because GenerateRandomRange
         // is inclusive. However, Nintendo also has the off-by-one error, and it's "harmless", so we
         // will include it ourselves.
-        slab_gaps[i] = KSystemControl::GenerateRandomRange(0, total_gap_size);
+        slab_gap = KSystemControl::GenerateRandomRange(0, total_gap_size);
     }
 
     // Sort the array, so that we can treat differences between values as offsets to the starts of
     // slabs.
-    for (size_t i = 1; i < slab_types.size(); i++) {
+    for (size_t i = 1; i < slab_gaps.size(); i++) {
         for (size_t j = i; j > 0 && slab_gaps[j - 1] > slab_gaps[j]; j--) {
             std::swap(slab_gaps[j], slab_gaps[j - 1]);
         }
@@ -226,7 +226,7 @@ void InitializeSlabHeaps(Core::System& system, KMemoryLayout& memory_layout) {
     VAddr gap_start = address;
     size_t gap_size = 0;
 
-    for (size_t i = 0; i < slab_types.size(); i++) {
+    for (size_t i = 0; i < slab_gaps.size(); i++) {
         // Add the random gap to the address.
         const auto cur_gap = (i == 0) ? slab_gaps[0] : slab_gaps[i] - slab_gaps[i - 1];
         address += cur_gap;

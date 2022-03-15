@@ -29,8 +29,6 @@
 
 #pragma once
 
-#include "common/assert.h"
-
 /*
  * This file defines data structures for red-black trees.
  *

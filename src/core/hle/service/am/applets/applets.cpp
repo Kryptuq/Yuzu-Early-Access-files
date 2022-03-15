@@ -9,6 +9,7 @@
 #include "core/frontend/applets/controller.h"
 #include "core/frontend/applets/error.h"
 #include "core/frontend/applets/general_frontend.h"
+#include "core/frontend/applets/mii.h"
 #include "core/frontend/applets/profile_select.h"
 #include "core/frontend/applets/software_keyboard.h"
 #include "core/frontend/applets/web_browser.h"
@@ -19,6 +20,7 @@
 #include "core/hle/service/am/applets/applet_controller.h"
 #include "core/hle/service/am/applets/applet_error.h"
 #include "core/hle/service/am/applets/applet_general_backend.h"
+#include "core/hle/service/am/applets/applet_mii.h"
 #include "core/hle/service/am/applets/applet_profile_select.h"
 #include "core/hle/service/am/applets/applet_software_keyboard.h"
 #include "core/hle/service/am/applets/applet_web_browser.h"
@@ -172,10 +174,11 @@ AppletFrontendSet::AppletFrontendSet() = default;
 
 AppletFrontendSet::AppletFrontendSet(ControllerApplet controller_applet, ErrorApplet error_applet,
                                      ParentalControlsApplet parental_controls_applet,
-                                     PhotoViewer photo_viewer_, ProfileSelect profile_select_,
+                                     MiiApplet mii_applet, PhotoViewer photo_viewer_,
+                                     ProfileSelect profile_select_,
                                      SoftwareKeyboard software_keyboard_, WebBrowser web_browser_)
     : controller{std::move(controller_applet)}, error{std::move(error_applet)},
-      parental_controls{std::move(parental_controls_applet)},
+      parental_controls{std::move(parental_controls_applet)}, mii{std::move(mii_applet)},
       photo_viewer{std::move(photo_viewer_)}, profile_select{std::move(profile_select_)},
       software_keyboard{std::move(software_keyboard_)}, web_browser{std::move(web_browser_)} {}
 
@@ -204,6 +207,10 @@ void AppletManager::SetAppletFrontendSet(AppletFrontendSet set) {
 
     if (set.parental_controls != nullptr) {
         frontend.parental_controls = std::move(set.parental_controls);
+    }
+
+    if (set.mii != nullptr) {
+        frontend.mii = std::move(set.mii);
     }
 
     if (set.photo_viewer != nullptr) {
@@ -243,6 +250,10 @@ void AppletManager::SetDefaultAppletsIfMissing() {
             std::make_unique<Core::Frontend::DefaultParentalControlsApplet>();
     }
 
+    if (frontend.mii == nullptr) {
+        frontend.mii = std::make_unique<Core::Frontend::DefaultMiiApplet>();
+    }
+
     if (frontend.photo_viewer == nullptr) {
         frontend.photo_viewer = std::make_unique<Core::Frontend::DefaultPhotoViewerApplet>();
     }
@@ -277,6 +288,8 @@ std::shared_ptr<Applet> AppletManager::GetApplet(AppletId id, LibraryAppletMode 
         return std::make_shared<ProfileSelect>(system, mode, *frontend.profile_select);
     case AppletId::SoftwareKeyboard:
         return std::make_shared<SoftwareKeyboard>(system, mode, *frontend.software_keyboard);
+    case AppletId::MiiEdit:
+        return std::make_shared<Mii>(system, mode, *frontend.mii);
     case AppletId::Web:
     case AppletId::Shop:
     case AppletId::OfflineWeb:

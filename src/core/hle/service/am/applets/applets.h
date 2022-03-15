@@ -21,6 +21,7 @@ class ControllerApplet;
 class ECommerceApplet;
 class ErrorApplet;
 class ParentalControlsApplet;
+class MiiApplet;
 class PhotoViewerApplet;
 class ProfileSelectApplet;
 class SoftwareKeyboardApplet;
@@ -179,6 +180,7 @@ struct AppletFrontendSet {
     using ControllerApplet = std::unique_ptr<Core::Frontend::ControllerApplet>;
     using ErrorApplet = std::unique_ptr<Core::Frontend::ErrorApplet>;
     using ParentalControlsApplet = std::unique_ptr<Core::Frontend::ParentalControlsApplet>;
+    using MiiApplet = std::unique_ptr<Core::Frontend::MiiApplet>;
     using PhotoViewer = std::unique_ptr<Core::Frontend::PhotoViewerApplet>;
     using ProfileSelect = std::unique_ptr<Core::Frontend::ProfileSelectApplet>;
     using SoftwareKeyboard = std::unique_ptr<Core::Frontend::SoftwareKeyboardApplet>;
@@ -186,9 +188,9 @@ struct AppletFrontendSet {
 
     AppletFrontendSet();
     AppletFrontendSet(ControllerApplet controller_applet, ErrorApplet error_applet,
-                      ParentalControlsApplet parental_controls_applet, PhotoViewer photo_viewer_,
-                      ProfileSelect profile_select_, SoftwareKeyboard software_keyboard_,
-                      WebBrowser web_browser_);
+                      ParentalControlsApplet parental_controls_applet, MiiApplet mii_applet,
+                      PhotoViewer photo_viewer_, ProfileSelect profile_select_,
+                      SoftwareKeyboard software_keyboard_, WebBrowser web_browser_);
     ~AppletFrontendSet();
 
     AppletFrontendSet(const AppletFrontendSet&) = delete;
@@ -200,6 +202,7 @@ struct AppletFrontendSet {
     ControllerApplet controller;
     ErrorApplet error;
     ParentalControlsApplet parental_controls;
+    MiiApplet mii;
     PhotoViewer photo_viewer;
     ProfileSelect profile_select;
     SoftwareKeyboard software_keyboard;

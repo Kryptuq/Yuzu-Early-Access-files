@@ -25,6 +25,7 @@
 #include "core/file_sys/vfs_real.h"
 #include "core/frontend/applets/controller.h"
 #include "core/frontend/applets/general_frontend.h"
+#include "core/frontend/applets/mii.h"
 #include "core/frontend/applets/software_keyboard.h"
 #include "core/hid/emulated_controller.h"
 #include "core/hid/hid_core.h"
@@ -1285,6 +1286,7 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
         std::make_unique<QtControllerSelector>(*this), // Controller Selector
         std::make_unique<QtErrorDisplay>(*this),       // Error Display
         nullptr,                                       // Parental Controls
+        nullptr,                                       // Mii editor
         nullptr,                                       // Photo Viewer
         std::make_unique<QtProfileSelector>(*this),    // Profile Selector
         std::make_unique<QtSoftwareKeyboard>(*this),   // Software Keyboard

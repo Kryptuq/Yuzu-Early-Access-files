@@ -445,18 +445,18 @@ VAddr KPageTable::FindFreeArea(VAddr region_start, std::size_t region_num_pages,
                 if (info.state != KMemoryState::Free) {
                     continue;
                 }
-                if (!(region_start <= candidate)) {
+                if (region_start > candidate) {
                     continue;
                 }
-                if (!(info.GetAddress() + guard_pages * PageSize <= candidate)) {
+                if (info.GetAddress() + guard_pages * PageSize > candidate) {
                     continue;
                 }
-                if (!(candidate + (num_pages + guard_pages) * PageSize - 1 <=
-                      info.GetLastAddress())) {
+
+                const VAddr candidate_end = candidate + (num_pages + guard_pages) * PageSize - 1;
+                if (candidate_end > info.GetLastAddress()) {
                     continue;
                 }
-                if (!(candidate + (num_pages + guard_pages) * PageSize - 1 <=
-                      region_start + region_num_pages * PageSize - 1)) {
+                if (candidate_end > region_start + region_num_pages * PageSize - 1) {
                     continue;
                 }
 

@@ -30,7 +30,7 @@ public:
 
     /// Whether or not this server port has an HLE handler available.
     bool HasSessionRequestHandler() const {
-        return session_handler.lock() != nullptr;
+        return !session_handler.expired();
     }
 
     /// Gets the HLE handler for this port.

@@ -196,7 +196,7 @@ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argume
     case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 13:
     case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 14:
     case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 15:
-        return StartCBData(method);
+        return ProcessCBData(argument);
     case MAXWELL3D_REG_INDEX(cb_bind[0]):
         return ProcessCBBind(0);
     case MAXWELL3D_REG_INDEX(cb_bind[1]):
@@ -257,14 +257,6 @@ void Maxwell3D::CallMacroMethod(u32 method, const std::vector<u32>& parameters) 
 }
 
 void Maxwell3D::CallMethod(u32 method, u32 method_argument, bool is_last_call) {
-    if (method == cb_data_state.current) {
-        regs.reg_array[method] = method_argument;
-        ProcessCBData(method_argument);
-        return;
-    } else if (cb_data_state.current != null_cb_data) {
-        FinishCBData();
-    }
-
     // It is an error to write to a register other than the current macro's ARG register before it
     // has finished execution.
     if (executing_macro != 0) {
@@ -311,7 +303,7 @@ void Maxwell3D::CallMultiMethod(u32 method, const u32* base_start, u32 amount,
     case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 13:
     case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 14:
     case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 15:
-        ProcessCBMultiData(method, base_start, amount);
+        ProcessCBMultiData(base_start, amount);
         break;
     default:
         for (std::size_t i = 0; i < amount; i++) {
@@ -629,46 +621,7 @@ void Maxwell3D::ProcessCBBind(size_t stage_index) {
     rasterizer->BindGraphicsUniformBuffer(stage_index, bind_data.index, gpu_addr, size);
 }
 
-void Maxwell3D::ProcessCBData(u32 value) {
-    const u32 id = cb_data_state.id;
-    cb_data_state.buffer[id][cb_data_state.counter] = value;
-    // Increment the current buffer position.
-    regs.const_buffer.cb_pos = regs.const_buffer.cb_pos + 4;
-    cb_data_state.counter++;
-}
-
-void Maxwell3D::StartCBData(u32 method) {
-    constexpr u32 first_cb_data = MAXWELL3D_REG_INDEX(const_buffer.cb_data);
-    cb_data_state.start_pos = regs.const_buffer.cb_pos;
-    cb_data_state.id = method - first_cb_data;
-    cb_data_state.current = method;
-    cb_data_state.counter = 0;
-    ProcessCBData(regs.const_buffer.cb_data[cb_data_state.id]);
-}
-
-void Maxwell3D::ProcessCBMultiData(u32 method, const u32* start_base, u32 amount) {
-    if (cb_data_state.current != method) {
-        if (cb_data_state.current != null_cb_data) {
-            FinishCBData();
-        }
-        constexpr u32 first_cb_data = MAXWELL3D_REG_INDEX(const_buffer.cb_data);
-        cb_data_state.start_pos = regs.const_buffer.cb_pos;
-        cb_data_state.id = method - first_cb_data;
-        cb_data_state.current = method;
-        cb_data_state.counter = 0;
-    }
-    const std::size_t id = cb_data_state.id;
-    const std::size_t size = amount;
-    std::size_t i = 0;
-    for (; i < size; i++) {
-        cb_data_state.buffer[id][cb_data_state.counter] = start_base[i];
-        cb_data_state.counter++;
-    }
-    // Increment the current buffer position.
-    regs.const_buffer.cb_pos = regs.const_buffer.cb_pos + 4 * amount;
-}
-
-void Maxwell3D::FinishCBData() {
+void Maxwell3D::ProcessCBMultiData(const u32* start_base, u32 amount) {
     // Write the input value to the current const buffer at the current position.
     const GPUVAddr buffer_address = regs.const_buffer.BufferAddress();
     ASSERT(buffer_address != 0);
@@ -676,14 +629,16 @@ void Maxwell3D::FinishCBData() {
     // Don't allow writing past the end of the buffer.
     ASSERT(regs.const_buffer.cb_pos <= regs.const_buffer.cb_size);
 
-    const GPUVAddr address{buffer_address + cb_data_state.start_pos};
-    const std::size_t size = regs.const_buffer.cb_pos - cb_data_state.start_pos;
+    const GPUVAddr address{buffer_address + regs.const_buffer.cb_pos};
+    const size_t copy_size = amount * sizeof(u32);
+    memory_manager.WriteBlock(address, start_base, copy_size);
 
-    const u32 id = cb_data_state.id;
-    memory_manager.WriteBlock(address, cb_data_state.buffer[id].data(), size);
+    // Increment the current buffer position.
+    regs.const_buffer.cb_pos += static_cast<u32>(copy_size);
+}
 
-    cb_data_state.id = null_cb_data;
-    cb_data_state.current = null_cb_data;
+void Maxwell3D::ProcessCBData(u32 value) {
+    ProcessCBMultiData(&value, 1);
 }
 
 Texture::TICEntry Maxwell3D::GetTICEntry(u32 tic_index) const {

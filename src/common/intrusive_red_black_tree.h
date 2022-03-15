@@ -85,9 +85,8 @@ public:
         using difference_type = typename IntrusiveRedBlackTreeImpl::difference_type;
         using pointer = std::conditional_t<Const, IntrusiveRedBlackTreeImpl::const_pointer,
                                            IntrusiveRedBlackTreeImpl::pointer>;
-        using reference =
-            typename std::conditional<Const, IntrusiveRedBlackTreeImpl::const_reference,
-                                      IntrusiveRedBlackTreeImpl::reference>::type;
+        using reference = std::conditional_t<Const, IntrusiveRedBlackTreeImpl::const_reference,
+                                             IntrusiveRedBlackTreeImpl::reference>;
 
     private:
         pointer m_node;
@@ -262,8 +261,7 @@ namespace impl {
 } // namespace impl
 
 template <typename T, typename Default>
-using RedBlackKeyType =
-    typename std::remove_pointer_t<decltype(impl::GetRedBlackKeyType<T, Default>())>;
+using RedBlackKeyType = std::remove_pointer_t<decltype(impl::GetRedBlackKeyType<T, Default>())>;
 
 template <class T, class Traits, class Comparator>
 class IntrusiveRedBlackTree {
