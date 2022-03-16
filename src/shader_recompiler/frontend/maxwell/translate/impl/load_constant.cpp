@@ -11,10 +11,20 @@ namespace Shader::Maxwell {
 using namespace LDC;
 namespace {
 std::pair<IR::U32, IR::U32> Slot(IR::IREmitter& ir, Mode mode, const IR::U32& imm_index,
-                                 const IR::U32& reg, const IR::U32& imm) {
+                                 const IR::U32& reg, const IR::U32& imm_offset) {
     switch (mode) {
     case Mode::Default:
-        return {imm_index, ir.IAdd(reg, imm)};
+        return {imm_index, ir.IAdd(reg, imm_offset)};
+    case Mode::IS: {
+        // Segmented addressing mode
+        // Ra+imm_offset points into a flat mapping of const buffer
+        // address space
+        const IR::U32 address{ir.IAdd(reg, imm_offset)};
+        const IR::U32 index{ir.BitFieldExtract(address, ir.Imm32(16), ir.Imm32(16))};
+        const IR::U32 offset{ir.BitFieldExtract(address, ir.Imm32(0), ir.Imm32(16))};
+
+        return {ir.IAdd(index, imm_index), offset};
+    }
     default:
         break;
     }
