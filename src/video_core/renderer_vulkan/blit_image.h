@@ -56,6 +56,8 @@ public:
 
     void ConvertD24S8ToABGR8(const Framebuffer* dst_framebuffer, ImageView& src_image_view);
 
+    void ConvertS8D24ToABGR8(const Framebuffer* dst_framebuffer, ImageView& src_image_view);
+
 private:
     void Convert(VkPipeline pipeline, const Framebuffer* dst_framebuffer,
                  const ImageView& src_image_view);
@@ -99,6 +101,7 @@ private:
     vk::ShaderModule convert_float_to_depth_frag;
     vk::ShaderModule convert_abgr8_to_d24s8_frag;
     vk::ShaderModule convert_d24s8_to_abgr8_frag;
+    vk::ShaderModule convert_s8d24_to_abgr8_frag;
     vk::Sampler linear_sampler;
     vk::Sampler nearest_sampler;
 
@@ -112,6 +115,7 @@ private:
     vk::Pipeline convert_r16_to_d16_pipeline;
     vk::Pipeline convert_abgr8_to_d24s8_pipeline;
     vk::Pipeline convert_d24s8_to_abgr8_pipeline;
+    vk::Pipeline convert_s8d24_to_abgr8_pipeline;
 };
 
 } // namespace Vulkan

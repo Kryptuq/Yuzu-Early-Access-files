@@ -29,6 +29,20 @@ void AddConstantBufferDescriptor(Info& info, u32 index, u32 count) {
                  });
 }
 
+void AddRegisterIndexedLdc(Info& info) {
+    // The shader can use any possible constant buffer
+    info.constant_buffer_mask = (1 << Info::MAX_CBUFS) - 1;
+
+    auto& cbufs{info.constant_buffer_descriptors};
+    cbufs.clear();
+    for (u32 i = 0; i < Info::MAX_CBUFS; i++) {
+        cbufs.push_back(ConstantBufferDescriptor{.index = i, .count = 1});
+
+        // The shader can use any possible access size
+        info.constant_buffer_used_sizes[i] = 0x10'000;
+    }
+}
+
 void GetPatch(Info& info, IR::Patch patch) {
     if (!IR::IsGeneric(patch)) {
         throw NotImplementedException("Reading non-generic patch {}", patch);
@@ -463,10 +477,12 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::GetCbufU32x2: {
         const IR::Value index{inst.Arg(0)};
         const IR::Value offset{inst.Arg(1)};
-        if (!index.IsImmediate()) {
-            throw NotImplementedException("Constant buffer with non-immediate index");
+        if (index.IsImmediate()) {
+            AddConstantBufferDescriptor(info, index.U32(), 1);
+        } else {
+            AddRegisterIndexedLdc(info);
         }
-        AddConstantBufferDescriptor(info, index.U32(), 1);
+
         u32 element_size{};
         switch (inst.GetOpcode()) {
         case IR::Opcode::GetCbufU8:
@@ -494,11 +510,14 @@ void VisitUsages(Info& info, IR::Inst& inst) {
         default:
             break;
         }
-        u32& size{info.constant_buffer_used_sizes[index.U32()]};
-        if (offset.IsImmediate()) {
-            size = Common::AlignUp(std::max(size, offset.U32() + element_size), 16u);
-        } else {
-            size = 0x10'000;
+
+        if (index.IsImmediate()) {
+            u32& size{info.constant_buffer_used_sizes[index.U32()]};
+            if (offset.IsImmediate()) {
+                size = Common::AlignUp(std::max(size, offset.U32() + element_size), 16u);
+            } else {
+                size = 0x10'000;
+            }
         }
         break;
     }

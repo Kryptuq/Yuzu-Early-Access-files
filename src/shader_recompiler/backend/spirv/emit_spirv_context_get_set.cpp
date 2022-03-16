@@ -124,25 +124,56 @@ std::optional<OutAttr> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
 
 Id GetCbuf(EmitContext& ctx, Id result_type, Id UniformDefinitions::*member_ptr, u32 element_size,
            const IR::Value& binding, const IR::Value& offset) {
-    if (!binding.IsImmediate()) {
-        throw NotImplementedException("Constant buffer indexing");
-    }
-    const Id cbuf{ctx.cbufs[binding.U32()].*member_ptr};
+    std::array<Id, 2> indexes;
+
     const Id uniform_type{ctx.uniform_types.*member_ptr};
-    if (!offset.IsImmediate()) {
+    if (offset.IsImmediate()) {
+        // Hardware been proved to read the aligned offset (e.g. LDC.U32 at 6 will read offset 4)
+        const Id imm_offset{ctx.Const(offset.U32() / element_size)};
+        indexes = {ctx.u32_zero_value, imm_offset};
+    } else {
         Id index{ctx.Def(offset)};
         if (element_size > 1) {
             const u32 log2_element_size{static_cast<u32>(std::countr_zero(element_size))};
             const Id shift{ctx.Const(log2_element_size)};
             index = ctx.OpShiftRightArithmetic(ctx.U32[1], ctx.Def(offset), shift);
         }
-        const Id access_chain{ctx.OpAccessChain(uniform_type, cbuf, ctx.u32_zero_value, index)};
-        return ctx.OpLoad(result_type, access_chain);
+        indexes = {ctx.u32_zero_value, index};
     }
-    // Hardware been proved to read the aligned offset (e.g. LDC.U32 at 6 will read offset 4)
-    const Id imm_offset{ctx.Const(offset.U32() / element_size)};
-    const Id access_chain{ctx.OpAccessChain(uniform_type, cbuf, ctx.u32_zero_value, imm_offset)};
-    return ctx.OpLoad(result_type, access_chain);
+
+    if (binding.IsImmediate()) {
+        const Id cbuf{ctx.cbufs[binding.U32()].*member_ptr};
+        const Id access_chain{ctx.OpAccessChain(uniform_type, cbuf, indexes)};
+        return ctx.OpLoad(result_type, access_chain);
+    } else {
+        const Id index{ctx.Def(binding)};
+        const Id ptr{ctx.TypePointer(spv::StorageClass::Function, result_type)};
+        const Id value{ctx.AddLocalVariable(ptr, spv::StorageClass::Function)};
+        const Id merge_label = ctx.OpLabel();
+
+        std::array<Id, Info::MAX_CBUFS> buf_labels;
+        std::array<Sirit::Literal, Info::MAX_CBUFS> buf_literals;
+        for (u32 i = 0; i < Info::MAX_CBUFS; i++) {
+            buf_labels[i] = ctx.OpLabel();
+            buf_literals[i] = Sirit::Literal{i};
+        }
+
+        ctx.OpSelectionMerge(merge_label, spv::SelectionControlMask::MaskNone);
+        ctx.OpSwitch(index, buf_labels[0], buf_literals, buf_labels);
+
+        for (u32 i = 0; i < Info::MAX_CBUFS; i++) {
+            ctx.AddLabel(buf_labels[i]);
+            const Id cbuf{ctx.cbufs[i].*member_ptr};
+            const Id access_chain{ctx.OpAccessChain(uniform_type, cbuf, indexes)};
+            const Id result = ctx.OpLoad(result_type, access_chain);
+            ctx.OpStore(value, result);
+            ctx.OpBranch(merge_label);
+        }
+
+        ctx.AddLabel(merge_label);
+
+        return ctx.OpLoad(result_type, value);
+    }
 }
 
 Id GetCbufU32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {

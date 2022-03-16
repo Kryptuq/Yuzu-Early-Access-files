@@ -569,9 +569,9 @@ std::pair<s32, Errno> BSD::AcceptImpl(s32 fd, std::vector<u8>& write_buffer) {
     new_descriptor.socket = std::move(result.socket);
     new_descriptor.is_connection_based = descriptor.is_connection_based;
 
-    ASSERT(write_buffer.size() == sizeof(SockAddrIn));
     const SockAddrIn guest_addr_in = Translate(result.sockaddr_in);
-    std::memcpy(write_buffer.data(), &guest_addr_in, sizeof(guest_addr_in));
+    const size_t length = std::min(sizeof(guest_addr_in), write_buffer.size());
+    std::memcpy(write_buffer.data(), &guest_addr_in, length);
 
     return {new_fd, Errno::SUCCESS};
 }
