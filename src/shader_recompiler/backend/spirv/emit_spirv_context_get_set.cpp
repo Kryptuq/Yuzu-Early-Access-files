@@ -124,31 +124,28 @@ std::optional<OutAttr> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
 
 Id GetCbuf(EmitContext& ctx, Id result_type, Id UniformDefinitions::*member_ptr, u32 element_size,
            const IR::Value& binding, const IR::Value& offset) {
-    std::array<Id, 2> indexes;
+    Id buffer_offset;
 
     const Id uniform_type{ctx.uniform_types.*member_ptr};
     if (offset.IsImmediate()) {
         // Hardware been proved to read the aligned offset (e.g. LDC.U32 at 6 will read offset 4)
         const Id imm_offset{ctx.Const(offset.U32() / element_size)};
-        indexes = {ctx.u32_zero_value, imm_offset};
+        buffer_offset = imm_offset;
+    } else if (element_size > 1) {
+        const u32 log2_element_size{static_cast<u32>(std::countr_zero(element_size))};
+        const Id shift{ctx.Const(log2_element_size)};
+        buffer_offset = ctx.OpShiftRightArithmetic(ctx.U32[1], ctx.Def(offset), shift);
     } else {
-        Id index{ctx.Def(offset)};
-        if (element_size > 1) {
-            const u32 log2_element_size{static_cast<u32>(std::countr_zero(element_size))};
-            const Id shift{ctx.Const(log2_element_size)};
-            index = ctx.OpShiftRightArithmetic(ctx.U32[1], ctx.Def(offset), shift);
-        }
-        indexes = {ctx.u32_zero_value, index};
+        buffer_offset = ctx.Def(offset);
     }
 
     if (binding.IsImmediate()) {
         const Id cbuf{ctx.cbufs[binding.U32()].*member_ptr};
-        const Id access_chain{ctx.OpAccessChain(uniform_type, cbuf, indexes)};
+        const Id access_chain{
+            ctx.OpAccessChain(uniform_type, cbuf, ctx.u32_zero_value, buffer_offset)};
         return ctx.OpLoad(result_type, access_chain);
     } else {
         const Id index{ctx.Def(binding)};
-        const Id ptr{ctx.TypePointer(spv::StorageClass::Function, result_type)};
-        const Id value{ctx.AddLocalVariable(ptr, spv::StorageClass::Function)};
         const Id merge_label = ctx.OpLabel();
 
         std::array<Id, Info::MAX_CBUFS> buf_labels;
@@ -161,18 +158,20 @@ Id GetCbuf(EmitContext& ctx, Id result_type, Id UniformDefinitions::*member_ptr,
         ctx.OpSelectionMerge(merge_label, spv::SelectionControlMask::MaskNone);
         ctx.OpSwitch(index, buf_labels[0], buf_literals, buf_labels);
 
+        std::array<Id, Info::MAX_CBUFS * 2> phi_targets;
         for (u32 i = 0; i < Info::MAX_CBUFS; i++) {
             ctx.AddLabel(buf_labels[i]);
             const Id cbuf{ctx.cbufs[i].*member_ptr};
-            const Id access_chain{ctx.OpAccessChain(uniform_type, cbuf, indexes)};
-            const Id result = ctx.OpLoad(result_type, access_chain);
-            ctx.OpStore(value, result);
+            const Id access_chain{
+                ctx.OpAccessChain(uniform_type, cbuf, ctx.u32_zero_value, buffer_offset)};
+            phi_targets[2 * i + 0] = ctx.OpLoad(result_type, access_chain);
+            phi_targets[2 * i + 1] = buf_labels[i];
             ctx.OpBranch(merge_label);
         }
 
         ctx.AddLabel(merge_label);
 
-        return ctx.OpLoad(result_type, value);
+        return ctx.OpPhi(result_type, phi_targets);
     }
 }
 

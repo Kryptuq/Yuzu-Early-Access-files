@@ -12,6 +12,7 @@
 #include "core/hid/hid_types.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
+#include "core/hle/service/mii/mii_manager.h"
 #include "core/hle/service/nfp/nfp.h"
 #include "core/hle/service/nfp/nfp_user.h"
 

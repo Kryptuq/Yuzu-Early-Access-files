@@ -9,7 +9,7 @@
 #include "core/frontend/applets/controller.h"
 #include "core/frontend/applets/error.h"
 #include "core/frontend/applets/general_frontend.h"
-#include "core/frontend/applets/mii.h"
+#include "core/frontend/applets/mii_edit.h"
 #include "core/frontend/applets/profile_select.h"
 #include "core/frontend/applets/software_keyboard.h"
 #include "core/frontend/applets/web_browser.h"
@@ -20,7 +20,7 @@
 #include "core/hle/service/am/applets/applet_controller.h"
 #include "core/hle/service/am/applets/applet_error.h"
 #include "core/hle/service/am/applets/applet_general_backend.h"
-#include "core/hle/service/am/applets/applet_mii.h"
+#include "core/hle/service/am/applets/applet_mii_edit.h"
 #include "core/hle/service/am/applets/applet_profile_select.h"
 #include "core/hle/service/am/applets/applet_software_keyboard.h"
 #include "core/hle/service/am/applets/applet_web_browser.h"
@@ -173,12 +173,12 @@ void Applet::Initialize() {
 AppletFrontendSet::AppletFrontendSet() = default;
 
 AppletFrontendSet::AppletFrontendSet(ControllerApplet controller_applet, ErrorApplet error_applet,
+                                     MiiEdit mii_edit_,
                                      ParentalControlsApplet parental_controls_applet,
-                                     MiiApplet mii_applet, PhotoViewer photo_viewer_,
-                                     ProfileSelect profile_select_,
+                                     PhotoViewer photo_viewer_, ProfileSelect profile_select_,
                                      SoftwareKeyboard software_keyboard_, WebBrowser web_browser_)
     : controller{std::move(controller_applet)}, error{std::move(error_applet)},
-      parental_controls{std::move(parental_controls_applet)}, mii{std::move(mii_applet)},
+      mii_edit{std::move(mii_edit_)}, parental_controls{std::move(parental_controls_applet)},
       photo_viewer{std::move(photo_viewer_)}, profile_select{std::move(profile_select_)},
       software_keyboard{std::move(software_keyboard_)}, web_browser{std::move(web_browser_)} {}
 
@@ -205,12 +205,12 @@ void AppletManager::SetAppletFrontendSet(AppletFrontendSet set) {
         frontend.error = std::move(set.error);
     }
 
-    if (set.parental_controls != nullptr) {
-        frontend.parental_controls = std::move(set.parental_controls);
+    if (set.mii_edit != nullptr) {
+        frontend.mii_edit = std::move(set.mii_edit);
     }
 
-    if (set.mii != nullptr) {
-        frontend.mii = std::move(set.mii);
+    if (set.parental_controls != nullptr) {
+        frontend.parental_controls = std::move(set.parental_controls);
     }
 
     if (set.photo_viewer != nullptr) {
@@ -245,13 +245,13 @@ void AppletManager::SetDefaultAppletsIfMissing() {
         frontend.error = std::make_unique<Core::Frontend::DefaultErrorApplet>();
     }
 
+    if (frontend.mii_edit == nullptr) {
+        frontend.mii_edit = std::make_unique<Core::Frontend::DefaultMiiEditApplet>();
+    }
+
     if (frontend.parental_controls == nullptr) {
         frontend.parental_controls =
             std::make_unique<Core::Frontend::DefaultParentalControlsApplet>();
-    }
-
-    if (frontend.mii == nullptr) {
-        frontend.mii = std::make_unique<Core::Frontend::DefaultMiiApplet>();
     }
 
     if (frontend.photo_viewer == nullptr) {
@@ -289,7 +289,7 @@ std::shared_ptr<Applet> AppletManager::GetApplet(AppletId id, LibraryAppletMode 
     case AppletId::SoftwareKeyboard:
         return std::make_shared<SoftwareKeyboard>(system, mode, *frontend.software_keyboard);
     case AppletId::MiiEdit:
-        return std::make_shared<Mii>(system, mode, *frontend.mii);
+        return std::make_shared<MiiEdit>(system, mode, *frontend.mii_edit);
     case AppletId::Web:
     case AppletId::Shop:
     case AppletId::OfflineWeb:

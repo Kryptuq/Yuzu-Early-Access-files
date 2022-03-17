@@ -5,6 +5,7 @@
 #include <cstring>
 #include <optional>
 #include "common/assert.h"
+#include "common/settings.h"
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "video_core/dirty_flags.h"
@@ -209,11 +210,28 @@ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argume
         return ProcessCBBind(4);
     case MAXWELL3D_REG_INDEX(draw.vertex_end_gl):
         return DrawArrays();
-    case MAXWELL3D_REG_INDEX(small_index):
+    case MAXWELL3D_REG_INDEX(small_index): {
         regs.index_array.count = regs.small_index.count;
         regs.index_array.first = regs.small_index.first;
         dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
-        return DrawArrays();
+        bool is_extreme = Settings::IsGPULevelExtreme();
+
+        if (!is_extreme) {
+            for (size_t i = 0; i < Regs::NumVertexArrays; i++) {
+                if (!dirty.flags[VideoCommon::Dirty::VertexBuffer0 + i]) {
+                    continue;
+                }
+                const u32 stride = regs.vertex_array[i].stride;
+                const u32 num_vertices = regs.index_array.first + regs.index_array.count;
+                const GPUVAddr gpu_addr_begin =
+                    regs.vertex_array[i].StartAddress() + regs.index_array.first * stride;
+                const GPUVAddr gpu_addr_end = gpu_addr_begin + num_vertices * stride + 1;
+                regs.vertex_array_limit[i].SetAddress(gpu_addr_end);
+            }
+        }
+        DrawArrays();
+        return;
+    }
     case MAXWELL3D_REG_INDEX(topology_override):
         use_topology_override = true;
         return;

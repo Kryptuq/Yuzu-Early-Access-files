@@ -9,7 +9,7 @@
 
 #include "common/common_funcs.h"
 #include "core/hle/service/kernel_helpers.h"
-#include "core/hle/service/mii/mii_manager.h"
+#include "core/hle/service/mii/types.h"
 #include "core/hle/service/service.h"
 
 namespace Kernel {

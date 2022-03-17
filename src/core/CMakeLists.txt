@@ -122,8 +122,8 @@ add_library(core STATIC
     frontend/applets/error.h
     frontend/applets/general_frontend.cpp
     frontend/applets/general_frontend.h
-    frontend/applets/mii.cpp
-    frontend/applets/mii.h
+    frontend/applets/mii_edit.cpp
+    frontend/applets/mii_edit.h
     frontend/applets/profile_select.cpp
     frontend/applets/profile_select.h
     frontend/applets/software_keyboard.cpp
@@ -305,8 +305,9 @@ add_library(core STATIC
     hle/service/am/applets/applet_error.h
     hle/service/am/applets/applet_general_backend.cpp
     hle/service/am/applets/applet_general_backend.h
-    hle/service/am/applets/applet_mii.cpp
-    hle/service/am/applets/applet_mii.h
+    hle/service/am/applets/applet_mii_edit.cpp
+    hle/service/am/applets/applet_mii_edit.h
+    hle/service/am/applets/applet_mii_edit_types.h
     hle/service/am/applets/applet_profile_select.cpp
     hle/service/am/applets/applet_profile_select.h
     hle/service/am/applets/applet_software_keyboard.cpp

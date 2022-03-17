@@ -1349,6 +1349,12 @@ public:
                         return static_cast<GPUVAddr>((static_cast<GPUVAddr>(limit_high) << 32) |
                                                      limit_low);
                     }
+
+                    void SetAddress(GPUVAddr address) {
+                        limit_low = static_cast<u32>(address);
+                        limit_high = static_cast<u32>(address >> 32);
+                    }
+
                 } vertex_array_limit[NumVertexArrays];
 
                 struct {

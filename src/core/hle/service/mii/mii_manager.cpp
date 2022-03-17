@@ -1,4 +1,4 @@
-// Copyright 2020 yuzu emulator team
+// Copyright 2020 yuzu Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
@@ -12,7 +12,6 @@
 #include "core/hle/service/acc/profile_manager.h"
 #include "core/hle/service/mii/mii_manager.h"
 #include "core/hle/service/mii/raw_data.h"
-#include "core/hle/service/mii/types.h"
 
 namespace Service::Mii {
 
