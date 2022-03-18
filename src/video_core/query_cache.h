@@ -18,7 +18,6 @@
 
 #include "common/assert.h"
 #include "common/settings.h"
-#include "core/core.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/gpu.h"
 #include "video_core/memory_manager.h"

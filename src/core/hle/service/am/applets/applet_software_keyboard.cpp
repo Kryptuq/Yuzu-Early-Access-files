@@ -226,7 +226,7 @@ void SoftwareKeyboard::InitializeForeground() {
     ASSERT(work_buffer_storage != nullptr);
 
     if (swkbd_config_common.initial_string_length == 0) {
-        InitializeFrontendKeyboard();
+        InitializeFrontendNormalKeyboard();
         return;
     }
 
@@ -243,7 +243,7 @@ void SoftwareKeyboard::InitializeForeground() {
 
     LOG_DEBUG(Service_AM, "\nInitial Text: {}", Common::UTF16ToUTF8(initial_text));
 
-    InitializeFrontendKeyboard();
+    InitializeFrontendNormalKeyboard();
 }
 
 void SoftwareKeyboard::InitializeBackground(LibraryAppletMode library_applet_mode) {
@@ -480,129 +480,173 @@ void SoftwareKeyboard::ChangeState(SwkbdState state) {
     ReplyDefault();
 }
 
-void SoftwareKeyboard::InitializeFrontendKeyboard() {
-    if (is_background) {
-        const auto& appear_arg = swkbd_calc_arg.appear_arg;
+void SoftwareKeyboard::InitializeFrontendNormalKeyboard() {
+    std::u16string ok_text = Common::UTF16StringFromFixedZeroTerminatedBuffer(
+        swkbd_config_common.ok_text.data(), swkbd_config_common.ok_text.size());
 
-        std::u16string ok_text = Common::UTF16StringFromFixedZeroTerminatedBuffer(
-            appear_arg.ok_text.data(), appear_arg.ok_text.size());
+    std::u16string header_text = Common::UTF16StringFromFixedZeroTerminatedBuffer(
+        swkbd_config_common.header_text.data(), swkbd_config_common.header_text.size());
 
-        const u32 max_text_length =
-            appear_arg.max_text_length > 0 && appear_arg.max_text_length <= DEFAULT_MAX_TEXT_LENGTH
-                ? appear_arg.max_text_length
-                : DEFAULT_MAX_TEXT_LENGTH;
+    std::u16string sub_text = Common::UTF16StringFromFixedZeroTerminatedBuffer(
+        swkbd_config_common.sub_text.data(), swkbd_config_common.sub_text.size());
 
-        const u32 min_text_length =
-            appear_arg.min_text_length <= max_text_length ? appear_arg.min_text_length : 0;
+    std::u16string guide_text = Common::UTF16StringFromFixedZeroTerminatedBuffer(
+        swkbd_config_common.guide_text.data(), swkbd_config_common.guide_text.size());
 
-        const s32 initial_cursor_position =
-            current_cursor_position > 0 ? current_cursor_position : 0;
+    const u32 max_text_length =
+        swkbd_config_common.max_text_length > 0 &&
+                swkbd_config_common.max_text_length <= DEFAULT_MAX_TEXT_LENGTH
+            ? swkbd_config_common.max_text_length
+            : DEFAULT_MAX_TEXT_LENGTH;
 
-        const auto text_draw_type =
-            max_text_length <= 32 ? SwkbdTextDrawType::Line : SwkbdTextDrawType::Box;
+    const u32 min_text_length = swkbd_config_common.min_text_length <= max_text_length
+                                    ? swkbd_config_common.min_text_length
+                                    : 0;
 
-        Core::Frontend::KeyboardInitializeParameters initialize_parameters{
-            .ok_text{std::move(ok_text)},
-            .header_text{},
-            .sub_text{},
-            .guide_text{},
-            .initial_text{current_text},
-            .max_text_length{max_text_length},
-            .min_text_length{min_text_length},
-            .initial_cursor_position{initial_cursor_position},
-            .type{appear_arg.type},
-            .password_mode{SwkbdPasswordMode::Disabled},
-            .text_draw_type{text_draw_type},
-            .key_disable_flags{appear_arg.key_disable_flags},
-            .use_blur_background{false},
-            .enable_backspace_button{swkbd_calc_arg.enable_backspace_button},
-            .enable_return_button{appear_arg.enable_return_button},
-            .disable_cancel_button{appear_arg.disable_cancel_button},
-        };
+    const s32 initial_cursor_position = [this] {
+        switch (swkbd_config_common.initial_cursor_position) {
+        case SwkbdInitialCursorPosition::Start:
+        default:
+            return 0;
+        case SwkbdInitialCursorPosition::End:
+            return static_cast<s32>(initial_text.size());
+        }
+    }();
 
-        frontend.InitializeKeyboard(
-            true, std::move(initialize_parameters), {},
-            [this](SwkbdReplyType reply_type, std::u16string submitted_text, s32 cursor_position) {
-                SubmitTextInline(reply_type, submitted_text, cursor_position);
-            });
-    } else {
-        std::u16string ok_text = Common::UTF16StringFromFixedZeroTerminatedBuffer(
-            swkbd_config_common.ok_text.data(), swkbd_config_common.ok_text.size());
+    const auto text_draw_type = [this, max_text_length] {
+        switch (swkbd_config_common.text_draw_type) {
+        case SwkbdTextDrawType::Line:
+        default:
+            return max_text_length <= 32 ? SwkbdTextDrawType::Line : SwkbdTextDrawType::Box;
+        case SwkbdTextDrawType::Box:
+        case SwkbdTextDrawType::DownloadCode:
+            return swkbd_config_common.text_draw_type;
+        }
+    }();
 
-        std::u16string header_text = Common::UTF16StringFromFixedZeroTerminatedBuffer(
-            swkbd_config_common.header_text.data(), swkbd_config_common.header_text.size());
+    const auto enable_return_button =
+        text_draw_type == SwkbdTextDrawType::Box ? swkbd_config_common.enable_return_button : false;
 
-        std::u16string sub_text = Common::UTF16StringFromFixedZeroTerminatedBuffer(
-            swkbd_config_common.sub_text.data(), swkbd_config_common.sub_text.size());
+    const auto disable_cancel_button = swkbd_applet_version >= SwkbdAppletVersion::Version393227
+                                           ? swkbd_config_new.disable_cancel_button
+                                           : false;
 
-        std::u16string guide_text = Common::UTF16StringFromFixedZeroTerminatedBuffer(
-            swkbd_config_common.guide_text.data(), swkbd_config_common.guide_text.size());
+    Core::Frontend::KeyboardInitializeParameters initialize_parameters{
+        .ok_text{std::move(ok_text)},
+        .header_text{std::move(header_text)},
+        .sub_text{std::move(sub_text)},
+        .guide_text{std::move(guide_text)},
+        .initial_text{initial_text},
+        .max_text_length{max_text_length},
+        .min_text_length{min_text_length},
+        .initial_cursor_position{initial_cursor_position},
+        .type{swkbd_config_common.type},
+        .password_mode{swkbd_config_common.password_mode},
+        .text_draw_type{text_draw_type},
+        .key_disable_flags{swkbd_config_common.key_disable_flags},
+        .use_blur_background{swkbd_config_common.use_blur_background},
+        .enable_backspace_button{true},
+        .enable_return_button{enable_return_button},
+        .disable_cancel_button{disable_cancel_button},
+    };
 
-        const u32 max_text_length =
-            swkbd_config_common.max_text_length > 0 &&
-                    swkbd_config_common.max_text_length <= DEFAULT_MAX_TEXT_LENGTH
-                ? swkbd_config_common.max_text_length
-                : DEFAULT_MAX_TEXT_LENGTH;
+    frontend.InitializeKeyboard(
+        false, std::move(initialize_parameters),
+        [this](SwkbdResult result, std::u16string submitted_text, bool confirmed) {
+            SubmitTextNormal(result, submitted_text, confirmed);
+        },
+        {});
+}
 
-        const u32 min_text_length = swkbd_config_common.min_text_length <= max_text_length
-                                        ? swkbd_config_common.min_text_length
-                                        : 0;
+void SoftwareKeyboard::InitializeFrontendInlineKeyboard(
+    Core::Frontend::KeyboardInitializeParameters initialize_parameters) {
+    frontend.InitializeKeyboard(
+        true, std::move(initialize_parameters), {},
+        [this](SwkbdReplyType reply_type, std::u16string submitted_text, s32 cursor_position) {
+            SubmitTextInline(reply_type, submitted_text, cursor_position);
+        });
+}
 
-        const s32 initial_cursor_position = [this] {
-            switch (swkbd_config_common.initial_cursor_position) {
-            case SwkbdInitialCursorPosition::Start:
-            default:
-                return 0;
-            case SwkbdInitialCursorPosition::End:
-                return static_cast<s32>(initial_text.size());
-            }
-        }();
+void SoftwareKeyboard::InitializeFrontendInlineKeyboardOld() {
+    const auto& appear_arg = swkbd_calc_arg_old.appear_arg;
 
-        const auto text_draw_type = [this, max_text_length] {
-            switch (swkbd_config_common.text_draw_type) {
-            case SwkbdTextDrawType::Line:
-            default:
-                return max_text_length <= 32 ? SwkbdTextDrawType::Line : SwkbdTextDrawType::Box;
-            case SwkbdTextDrawType::Box:
-            case SwkbdTextDrawType::DownloadCode:
-                return swkbd_config_common.text_draw_type;
-            }
-        }();
+    std::u16string ok_text = Common::UTF16StringFromFixedZeroTerminatedBuffer(
+        appear_arg.ok_text.data(), appear_arg.ok_text.size());
 
-        const auto enable_return_button = text_draw_type == SwkbdTextDrawType::Box
-                                              ? swkbd_config_common.enable_return_button
-                                              : false;
+    const u32 max_text_length =
+        appear_arg.max_text_length > 0 && appear_arg.max_text_length <= DEFAULT_MAX_TEXT_LENGTH
+            ? appear_arg.max_text_length
+            : DEFAULT_MAX_TEXT_LENGTH;
 
-        const auto disable_cancel_button = swkbd_applet_version >= SwkbdAppletVersion::Version393227
-                                               ? swkbd_config_new.disable_cancel_button
-                                               : false;
+    const u32 min_text_length =
+        appear_arg.min_text_length <= max_text_length ? appear_arg.min_text_length : 0;
 
-        Core::Frontend::KeyboardInitializeParameters initialize_parameters{
-            .ok_text{std::move(ok_text)},
-            .header_text{std::move(header_text)},
-            .sub_text{std::move(sub_text)},
-            .guide_text{std::move(guide_text)},
-            .initial_text{initial_text},
-            .max_text_length{max_text_length},
-            .min_text_length{min_text_length},
-            .initial_cursor_position{initial_cursor_position},
-            .type{swkbd_config_common.type},
-            .password_mode{swkbd_config_common.password_mode},
-            .text_draw_type{text_draw_type},
-            .key_disable_flags{swkbd_config_common.key_disable_flags},
-            .use_blur_background{swkbd_config_common.use_blur_background},
-            .enable_backspace_button{true},
-            .enable_return_button{enable_return_button},
-            .disable_cancel_button{disable_cancel_button},
-        };
+    const s32 initial_cursor_position = current_cursor_position > 0 ? current_cursor_position : 0;
 
-        frontend.InitializeKeyboard(
-            false, std::move(initialize_parameters),
-            [this](SwkbdResult result, std::u16string submitted_text, bool confirmed) {
-                SubmitTextNormal(result, submitted_text, confirmed);
-            },
-            {});
-    }
+    const auto text_draw_type =
+        max_text_length <= 32 ? SwkbdTextDrawType::Line : SwkbdTextDrawType::Box;
+
+    Core::Frontend::KeyboardInitializeParameters initialize_parameters{
+        .ok_text{std::move(ok_text)},
+        .header_text{},
+        .sub_text{},
+        .guide_text{},
+        .initial_text{current_text},
+        .max_text_length{max_text_length},
+        .min_text_length{min_text_length},
+        .initial_cursor_position{initial_cursor_position},
+        .type{appear_arg.type},
+        .password_mode{SwkbdPasswordMode::Disabled},
+        .text_draw_type{text_draw_type},
+        .key_disable_flags{appear_arg.key_disable_flags},
+        .use_blur_background{false},
+        .enable_backspace_button{swkbd_calc_arg_old.enable_backspace_button},
+        .enable_return_button{appear_arg.enable_return_button},
+        .disable_cancel_button{appear_arg.disable_cancel_button},
+    };
+
+    InitializeFrontendInlineKeyboard(std::move(initialize_parameters));
+}
+
+void SoftwareKeyboard::InitializeFrontendInlineKeyboardNew() {
+    const auto& appear_arg = swkbd_calc_arg_new.appear_arg;
+
+    std::u16string ok_text = Common::UTF16StringFromFixedZeroTerminatedBuffer(
+        appear_arg.ok_text.data(), appear_arg.ok_text.size());
+
+    const u32 max_text_length =
+        appear_arg.max_text_length > 0 && appear_arg.max_text_length <= DEFAULT_MAX_TEXT_LENGTH
+            ? appear_arg.max_text_length
+            : DEFAULT_MAX_TEXT_LENGTH;
+
+    const u32 min_text_length =
+        appear_arg.min_text_length <= max_text_length ? appear_arg.min_text_length : 0;
+
+    const s32 initial_cursor_position = current_cursor_position > 0 ? current_cursor_position : 0;
+
+    const auto text_draw_type =
+        max_text_length <= 32 ? SwkbdTextDrawType::Line : SwkbdTextDrawType::Box;
+
+    Core::Frontend::KeyboardInitializeParameters initialize_parameters{
+        .ok_text{std::move(ok_text)},
+        .header_text{},
+        .sub_text{},
+        .guide_text{},
+        .initial_text{current_text},
+        .max_text_length{max_text_length},
+        .min_text_length{min_text_length},
+        .initial_cursor_position{initial_cursor_position},
+        .type{appear_arg.type},
+        .password_mode{SwkbdPasswordMode::Disabled},
+        .text_draw_type{text_draw_type},
+        .key_disable_flags{appear_arg.key_disable_flags},
+        .use_blur_background{false},
+        .enable_backspace_button{swkbd_calc_arg_new.enable_backspace_button},
+        .enable_return_button{appear_arg.enable_return_button},
+        .disable_cancel_button{appear_arg.disable_cancel_button},
+    };
+
+    InitializeFrontendInlineKeyboard(std::move(initialize_parameters));
 }
 
 void SoftwareKeyboard::ShowNormalKeyboard() {
@@ -614,14 +658,21 @@ void SoftwareKeyboard::ShowTextCheckDialog(SwkbdTextCheckResult text_check_resul
     frontend.ShowTextCheckDialog(text_check_result, std::move(text_check_message));
 }
 
-void SoftwareKeyboard::ShowInlineKeyboard() {
+void SoftwareKeyboard::ShowInlineKeyboard(
+    Core::Frontend::InlineAppearParameters appear_parameters) {
+    frontend.ShowInlineKeyboard(std::move(appear_parameters));
+
+    ChangeState(SwkbdState::InitializedIsShown);
+}
+
+void SoftwareKeyboard::ShowInlineKeyboardOld() {
     if (swkbd_state != SwkbdState::InitializedIsHidden) {
         return;
     }
 
     ChangeState(SwkbdState::InitializedIsAppearing);
 
-    const auto& appear_arg = swkbd_calc_arg.appear_arg;
+    const auto& appear_arg = swkbd_calc_arg_old.appear_arg;
 
     const u32 max_text_length =
         appear_arg.max_text_length > 0 && appear_arg.max_text_length <= DEFAULT_MAX_TEXT_LENGTH
@@ -634,21 +685,54 @@ void SoftwareKeyboard::ShowInlineKeyboard() {
     Core::Frontend::InlineAppearParameters appear_parameters{
         .max_text_length{max_text_length},
         .min_text_length{min_text_length},
-        .key_top_scale_x{swkbd_calc_arg.key_top_scale_x},
-        .key_top_scale_y{swkbd_calc_arg.key_top_scale_y},
-        .key_top_translate_x{swkbd_calc_arg.key_top_translate_x},
-        .key_top_translate_y{swkbd_calc_arg.key_top_translate_y},
+        .key_top_scale_x{swkbd_calc_arg_old.key_top_scale_x},
+        .key_top_scale_y{swkbd_calc_arg_old.key_top_scale_y},
+        .key_top_translate_x{swkbd_calc_arg_old.key_top_translate_x},
+        .key_top_translate_y{swkbd_calc_arg_old.key_top_translate_y},
         .type{appear_arg.type},
         .key_disable_flags{appear_arg.key_disable_flags},
-        .key_top_as_floating{swkbd_calc_arg.key_top_as_floating},
-        .enable_backspace_button{swkbd_calc_arg.enable_backspace_button},
+        .key_top_as_floating{swkbd_calc_arg_old.key_top_as_floating},
+        .enable_backspace_button{swkbd_calc_arg_old.enable_backspace_button},
         .enable_return_button{appear_arg.enable_return_button},
         .disable_cancel_button{appear_arg.disable_cancel_button},
     };
 
-    frontend.ShowInlineKeyboard(std::move(appear_parameters));
+    ShowInlineKeyboard(std::move(appear_parameters));
+}
 
-    ChangeState(SwkbdState::InitializedIsShown);
+void SoftwareKeyboard::ShowInlineKeyboardNew() {
+    if (swkbd_state != SwkbdState::InitializedIsHidden) {
+        return;
+    }
+
+    ChangeState(SwkbdState::InitializedIsAppearing);
+
+    const auto& appear_arg = swkbd_calc_arg_new.appear_arg;
+
+    const u32 max_text_length =
+        appear_arg.max_text_length > 0 && appear_arg.max_text_length <= DEFAULT_MAX_TEXT_LENGTH
+            ? appear_arg.max_text_length
+            : DEFAULT_MAX_TEXT_LENGTH;
+
+    const u32 min_text_length =
+        appear_arg.min_text_length <= max_text_length ? appear_arg.min_text_length : 0;
+
+    Core::Frontend::InlineAppearParameters appear_parameters{
+        .max_text_length{max_text_length},
+        .min_text_length{min_text_length},
+        .key_top_scale_x{swkbd_calc_arg_new.key_top_scale_x},
+        .key_top_scale_y{swkbd_calc_arg_new.key_top_scale_y},
+        .key_top_translate_x{swkbd_calc_arg_new.key_top_translate_x},
+        .key_top_translate_y{swkbd_calc_arg_new.key_top_translate_y},
+        .type{appear_arg.type},
+        .key_disable_flags{appear_arg.key_disable_flags},
+        .key_top_as_floating{swkbd_calc_arg_new.key_top_as_floating},
+        .enable_backspace_button{swkbd_calc_arg_new.enable_backspace_button},
+        .enable_return_button{appear_arg.enable_return_button},
+        .disable_cancel_button{appear_arg.disable_cancel_button},
+    };
+
+    ShowInlineKeyboard(std::move(appear_parameters));
 }
 
 void SoftwareKeyboard::HideInlineKeyboard() {
@@ -693,6 +777,8 @@ void SoftwareKeyboard::RequestFinalize(const std::vector<u8>& request_data) {
 
 void SoftwareKeyboard::RequestSetUserWordInfo(const std::vector<u8>& request_data) {
     LOG_WARNING(Service_AM, "SetUserWordInfo is not implemented.");
+
+    ReplyReleasedUserWordInfo();
 }
 
 void SoftwareKeyboard::RequestSetCustomizeDic(const std::vector<u8>& request_data) {
@@ -702,53 +788,135 @@ void SoftwareKeyboard::RequestSetCustomizeDic(const std::vector<u8>& request_dat
 void SoftwareKeyboard::RequestCalc(const std::vector<u8>& request_data) {
     LOG_DEBUG(Service_AM, "Processing Request: Calc");
 
-    ASSERT(request_data.size() == sizeof(SwkbdRequestCommand) + sizeof(SwkbdCalcArg));
+    ASSERT(request_data.size() >= sizeof(SwkbdRequestCommand) + sizeof(SwkbdCalcArgCommon));
 
-    std::memcpy(&swkbd_calc_arg, request_data.data() + sizeof(SwkbdRequestCommand),
-                sizeof(SwkbdCalcArg));
+    std::memcpy(&swkbd_calc_arg_common, request_data.data() + sizeof(SwkbdRequestCommand),
+                sizeof(SwkbdCalcArgCommon));
 
-    if (swkbd_calc_arg.flags.set_input_text) {
+    switch (swkbd_calc_arg_common.calc_arg_size) {
+    case sizeof(SwkbdCalcArgCommon) + sizeof(SwkbdCalcArgOld):
+        ASSERT(request_data.size() ==
+               sizeof(SwkbdRequestCommand) + sizeof(SwkbdCalcArgCommon) + sizeof(SwkbdCalcArgOld));
+        std::memcpy(&swkbd_calc_arg_old,
+                    request_data.data() + sizeof(SwkbdRequestCommand) + sizeof(SwkbdCalcArgCommon),
+                    sizeof(SwkbdCalcArgOld));
+        RequestCalcOld();
+        break;
+    case sizeof(SwkbdCalcArgCommon) + sizeof(SwkbdCalcArgNew):
+        ASSERT(request_data.size() ==
+               sizeof(SwkbdRequestCommand) + sizeof(SwkbdCalcArgCommon) + sizeof(SwkbdCalcArgNew));
+        std::memcpy(&swkbd_calc_arg_new,
+                    request_data.data() + sizeof(SwkbdRequestCommand) + sizeof(SwkbdCalcArgCommon),
+                    sizeof(SwkbdCalcArgNew));
+        RequestCalcNew();
+        break;
+    default:
+        UNIMPLEMENTED_MSG("Unknown SwkbdCalcArg size={}", swkbd_calc_arg_common.calc_arg_size);
+        ASSERT(request_data.size() >=
+               sizeof(SwkbdRequestCommand) + sizeof(SwkbdCalcArgCommon) + sizeof(SwkbdCalcArgNew));
+        std::memcpy(&swkbd_calc_arg_new,
+                    request_data.data() + sizeof(SwkbdRequestCommand) + sizeof(SwkbdCalcArgCommon),
+                    sizeof(SwkbdCalcArgNew));
+        RequestCalcNew();
+        break;
+    }
+}
+
+void SoftwareKeyboard::RequestCalcOld() {
+    if (swkbd_calc_arg_common.flags.set_input_text) {
         current_text = Common::UTF16StringFromFixedZeroTerminatedBuffer(
-            swkbd_calc_arg.input_text.data(), swkbd_calc_arg.input_text.size());
+            swkbd_calc_arg_old.input_text.data(), swkbd_calc_arg_old.input_text.size());
     }
 
-    if (swkbd_calc_arg.flags.set_cursor_position) {
-        current_cursor_position = swkbd_calc_arg.cursor_position;
+    if (swkbd_calc_arg_common.flags.set_cursor_position) {
+        current_cursor_position = swkbd_calc_arg_old.cursor_position;
     }
 
-    if (swkbd_calc_arg.flags.set_utf8_mode) {
-        inline_use_utf8 = swkbd_calc_arg.utf8_mode;
+    if (swkbd_calc_arg_common.flags.set_utf8_mode) {
+        inline_use_utf8 = swkbd_calc_arg_old.utf8_mode;
     }
 
     if (swkbd_state <= SwkbdState::InitializedIsHidden &&
-        swkbd_calc_arg.flags.unset_customize_dic) {
+        swkbd_calc_arg_common.flags.unset_customize_dic) {
         ReplyUnsetCustomizeDic();
     }
 
     if (swkbd_state <= SwkbdState::InitializedIsHidden &&
-        swkbd_calc_arg.flags.unset_user_word_info) {
+        swkbd_calc_arg_common.flags.unset_user_word_info) {
         ReplyReleasedUserWordInfo();
     }
 
-    if (swkbd_state == SwkbdState::NotInitialized && swkbd_calc_arg.flags.set_initialize_arg) {
-        InitializeFrontendKeyboard();
+    if (swkbd_state == SwkbdState::NotInitialized &&
+        swkbd_calc_arg_common.flags.set_initialize_arg) {
+        InitializeFrontendInlineKeyboardOld();
 
         ChangeState(SwkbdState::InitializedIsHidden);
 
         ReplyFinishedInitialize();
     }
 
-    if (!swkbd_calc_arg.flags.set_initialize_arg &&
-        (swkbd_calc_arg.flags.set_input_text || swkbd_calc_arg.flags.set_cursor_position)) {
+    if (!swkbd_calc_arg_common.flags.set_initialize_arg &&
+        (swkbd_calc_arg_common.flags.set_input_text ||
+         swkbd_calc_arg_common.flags.set_cursor_position)) {
         InlineTextChanged();
     }
 
-    if (swkbd_state == SwkbdState::InitializedIsHidden && swkbd_calc_arg.flags.appear) {
-        ShowInlineKeyboard();
+    if (swkbd_state == SwkbdState::InitializedIsHidden && swkbd_calc_arg_common.flags.appear) {
+        ShowInlineKeyboardOld();
         return;
     }
 
-    if (swkbd_state == SwkbdState::InitializedIsShown && swkbd_calc_arg.flags.disappear) {
+    if (swkbd_state == SwkbdState::InitializedIsShown && swkbd_calc_arg_common.flags.disappear) {
+        HideInlineKeyboard();
+        return;
+    }
+}
+
+void SoftwareKeyboard::RequestCalcNew() {
+    if (swkbd_calc_arg_common.flags.set_input_text) {
+        current_text = Common::UTF16StringFromFixedZeroTerminatedBuffer(
+            swkbd_calc_arg_new.input_text.data(), swkbd_calc_arg_new.input_text.size());
+    }
+
+    if (swkbd_calc_arg_common.flags.set_cursor_position) {
+        current_cursor_position = swkbd_calc_arg_new.cursor_position;
+    }
+
+    if (swkbd_calc_arg_common.flags.set_utf8_mode) {
+        inline_use_utf8 = swkbd_calc_arg_new.utf8_mode;
+    }
+
+    if (swkbd_state <= SwkbdState::InitializedIsHidden &&
+        swkbd_calc_arg_common.flags.unset_customize_dic) {
+        ReplyUnsetCustomizeDic();
+    }
+
+    if (swkbd_state <= SwkbdState::InitializedIsHidden &&
+        swkbd_calc_arg_common.flags.unset_user_word_info) {
+        ReplyReleasedUserWordInfo();
+    }
+
+    if (swkbd_state == SwkbdState::NotInitialized &&
+        swkbd_calc_arg_common.flags.set_initialize_arg) {
+        InitializeFrontendInlineKeyboardNew();
+
+        ChangeState(SwkbdState::InitializedIsHidden);
+
+        ReplyFinishedInitialize();
+    }
+
+    if (!swkbd_calc_arg_common.flags.set_initialize_arg &&
+        (swkbd_calc_arg_common.flags.set_input_text ||
+         swkbd_calc_arg_common.flags.set_cursor_position)) {
+        InlineTextChanged();
+    }
+
+    if (swkbd_state == SwkbdState::InitializedIsHidden && swkbd_calc_arg_common.flags.appear) {
+        ShowInlineKeyboardNew();
+        return;
+    }
+
+    if (swkbd_state == SwkbdState::InitializedIsShown && swkbd_calc_arg_common.flags.disappear) {
         HideInlineKeyboard();
         return;
     }

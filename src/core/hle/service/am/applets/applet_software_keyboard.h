@@ -13,6 +13,11 @@ namespace Core {
 class System;
 }
 
+namespace Core::Frontend {
+struct KeyboardInitializeParameters;
+struct InlineAppearParameters;
+} // namespace Core::Frontend
+
 namespace Service::AM::Applets {
 
 class SoftwareKeyboard final : public Applet {
@@ -78,13 +83,22 @@ private:
     void ChangeState(SwkbdState state);
 
     /**
-     * Signals the frontend to initialize the software keyboard with common parameters.
-     * This initializes either the normal software keyboard or the inline software keyboard
-     * depending on the state of is_background.
+     * Signals the frontend to initialize the normal software keyboard with common parameters.
      * Note that this does not cause the keyboard to appear.
-     * Use the respective Show*Keyboard() functions to cause the respective keyboards to appear.
+     * Use the ShowNormalKeyboard() functions to cause the keyboard to appear.
      */
-    void InitializeFrontendKeyboard();
+    void InitializeFrontendNormalKeyboard();
+
+    /**
+     * Signals the frontend to initialize the inline software keyboard with common parameters.
+     * Note that this does not cause the keyboard to appear.
+     * Use the ShowInlineKeyboard() to cause the keyboard to appear.
+     */
+    void InitializeFrontendInlineKeyboard(
+        Core::Frontend::KeyboardInitializeParameters initialize_parameters);
+
+    void InitializeFrontendInlineKeyboardOld();
+    void InitializeFrontendInlineKeyboardNew();
 
     /// Signals the frontend to show the normal software keyboard.
     void ShowNormalKeyboard();
@@ -94,7 +108,10 @@ private:
                              std::u16string text_check_message);
 
     /// Signals the frontend to show the inline software keyboard.
-    void ShowInlineKeyboard();
+    void ShowInlineKeyboard(Core::Frontend::InlineAppearParameters appear_parameters);
+
+    void ShowInlineKeyboardOld();
+    void ShowInlineKeyboardNew();
 
     /// Signals the frontend to hide the inline software keyboard.
     void HideInlineKeyboard();
@@ -111,6 +128,8 @@ private:
     void RequestSetUserWordInfo(const std::vector<u8>& request_data);
     void RequestSetCustomizeDic(const std::vector<u8>& request_data);
     void RequestCalc(const std::vector<u8>& request_data);
+    void RequestCalcOld();
+    void RequestCalcNew();
     void RequestSetCustomizedDictionaries(const std::vector<u8>& request_data);
     void RequestUnsetCustomizedDictionaries(const std::vector<u8>& request_data);
     void RequestSetChangedStringV2Flag(const std::vector<u8>& request_data);
@@ -149,7 +168,9 @@ private:
 
     SwkbdState swkbd_state{SwkbdState::NotInitialized};
     SwkbdInitializeArg swkbd_initialize_arg;
-    SwkbdCalcArg swkbd_calc_arg;
+    SwkbdCalcArgCommon swkbd_calc_arg_common;
+    SwkbdCalcArgOld swkbd_calc_arg_old;
+    SwkbdCalcArgNew swkbd_calc_arg_new;
     bool use_changed_string_v2{false};
     bool use_moved_cursor_v2{false};
     bool inline_use_utf8{false};

@@ -123,9 +123,8 @@ std::optional<OutAttr> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
 }
 
 Id GetCbuf(EmitContext& ctx, Id result_type, Id UniformDefinitions::*member_ptr, u32 element_size,
-           const IR::Value& binding, const IR::Value& offset) {
+           const IR::Value& binding, const IR::Value& offset, const Id indirect_func) {
     Id buffer_offset;
-
     const Id uniform_type{ctx.uniform_types.*member_ptr};
     if (offset.IsImmediate()) {
         // Hardware been proved to read the aligned offset (e.g. LDC.U32 at 6 will read offset 4)
@@ -138,49 +137,22 @@ Id GetCbuf(EmitContext& ctx, Id result_type, Id UniformDefinitions::*member_ptr,
     } else {
         buffer_offset = ctx.Def(offset);
     }
-
-    if (binding.IsImmediate()) {
-        const Id cbuf{ctx.cbufs[binding.U32()].*member_ptr};
-        const Id access_chain{
-            ctx.OpAccessChain(uniform_type, cbuf, ctx.u32_zero_value, buffer_offset)};
-        return ctx.OpLoad(result_type, access_chain);
-    } else {
-        const Id index{ctx.Def(binding)};
-        const Id merge_label = ctx.OpLabel();
-
-        std::array<Id, Info::MAX_CBUFS> buf_labels;
-        std::array<Sirit::Literal, Info::MAX_CBUFS> buf_literals;
-        for (u32 i = 0; i < Info::MAX_CBUFS; i++) {
-            buf_labels[i] = ctx.OpLabel();
-            buf_literals[i] = Sirit::Literal{i};
-        }
-
-        ctx.OpSelectionMerge(merge_label, spv::SelectionControlMask::MaskNone);
-        ctx.OpSwitch(index, buf_labels[0], buf_literals, buf_labels);
-
-        std::array<Id, Info::MAX_CBUFS * 2> phi_targets;
-        for (u32 i = 0; i < Info::MAX_CBUFS; i++) {
-            ctx.AddLabel(buf_labels[i]);
-            const Id cbuf{ctx.cbufs[i].*member_ptr};
-            const Id access_chain{
-                ctx.OpAccessChain(uniform_type, cbuf, ctx.u32_zero_value, buffer_offset)};
-            phi_targets[2 * i + 0] = ctx.OpLoad(result_type, access_chain);
-            phi_targets[2 * i + 1] = buf_labels[i];
-            ctx.OpBranch(merge_label);
-        }
-
-        ctx.AddLabel(merge_label);
-
-        return ctx.OpPhi(result_type, phi_targets);
+    if (!binding.IsImmediate()) {
+        return ctx.OpFunctionCall(result_type, indirect_func, ctx.Def(binding), buffer_offset);
     }
+    const Id cbuf{ctx.cbufs[binding.U32()].*member_ptr};
+    const Id access_chain{ctx.OpAccessChain(uniform_type, cbuf, ctx.u32_zero_value, buffer_offset)};
+    return ctx.OpLoad(result_type, access_chain);
 }
 
 Id GetCbufU32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
-    return GetCbuf(ctx, ctx.U32[1], &UniformDefinitions::U32, sizeof(u32), binding, offset);
+    return GetCbuf(ctx, ctx.U32[1], &UniformDefinitions::U32, sizeof(u32), binding, offset,
+                   ctx.load_const_func_u32);
 }
 
 Id GetCbufU32x4(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
-    return GetCbuf(ctx, ctx.U32[4], &UniformDefinitions::U32x4, sizeof(u32[4]), binding, offset);
+    return GetCbuf(ctx, ctx.U32[4], &UniformDefinitions::U32x4, sizeof(u32[4]), binding, offset,
+                   ctx.load_const_func_u32x4);
 }
 
 Id GetCbufElement(EmitContext& ctx, Id vector, const IR::Value& offset, u32 index_offset) {
@@ -231,7 +203,8 @@ void EmitGetIndirectBranchVariable(EmitContext&) {
 
 Id EmitGetCbufU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
     if (ctx.profile.support_descriptor_aliasing && ctx.profile.support_int8) {
-        const Id load{GetCbuf(ctx, ctx.U8, &UniformDefinitions::U8, sizeof(u8), binding, offset)};
+        const Id load{GetCbuf(ctx, ctx.U8, &UniformDefinitions::U8, sizeof(u8), binding, offset,
+                              ctx.load_const_func_u8)};
         return ctx.OpUConvert(ctx.U32[1], load);
     }
     Id element{};
@@ -247,7 +220,8 @@ Id EmitGetCbufU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& of
 
 Id EmitGetCbufS8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
     if (ctx.profile.support_descriptor_aliasing && ctx.profile.support_int8) {
-        const Id load{GetCbuf(ctx, ctx.S8, &UniformDefinitions::S8, sizeof(s8), binding, offset)};
+        const Id load{GetCbuf(ctx, ctx.S8, &UniformDefinitions::S8, sizeof(s8), binding, offset,
+                              ctx.load_const_func_u8)};
         return ctx.OpSConvert(ctx.U32[1], load);
     }
     Id element{};
@@ -263,8 +237,8 @@ Id EmitGetCbufS8(EmitContext& ctx, const IR::Value& binding, const IR::Value& of
 
 Id EmitGetCbufU16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
     if (ctx.profile.support_descriptor_aliasing && ctx.profile.support_int16) {
-        const Id load{
-            GetCbuf(ctx, ctx.U16, &UniformDefinitions::U16, sizeof(u16), binding, offset)};
+        const Id load{GetCbuf(ctx, ctx.U16, &UniformDefinitions::U16, sizeof(u16), binding, offset,
+                              ctx.load_const_func_u16)};
         return ctx.OpUConvert(ctx.U32[1], load);
     }
     Id element{};
@@ -280,8 +254,8 @@ Id EmitGetCbufU16(EmitContext& ctx, const IR::Value& binding, const IR::Value& o
 
 Id EmitGetCbufS16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
     if (ctx.profile.support_descriptor_aliasing && ctx.profile.support_int16) {
-        const Id load{
-            GetCbuf(ctx, ctx.S16, &UniformDefinitions::S16, sizeof(s16), binding, offset)};
+        const Id load{GetCbuf(ctx, ctx.S16, &UniformDefinitions::S16, sizeof(s16), binding, offset,
+                              ctx.load_const_func_u16)};
         return ctx.OpSConvert(ctx.U32[1], load);
     }
     Id element{};
@@ -306,7 +280,8 @@ Id EmitGetCbufU32(EmitContext& ctx, const IR::Value& binding, const IR::Value& o
 
 Id EmitGetCbufF32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
     if (ctx.profile.support_descriptor_aliasing) {
-        return GetCbuf(ctx, ctx.F32[1], &UniformDefinitions::F32, sizeof(f32), binding, offset);
+        return GetCbuf(ctx, ctx.F32[1], &UniformDefinitions::F32, sizeof(f32), binding, offset,
+                       ctx.load_const_func_f32);
     } else {
         const Id vector{GetCbufU32x4(ctx, binding, offset)};
         return ctx.OpBitcast(ctx.F32[1], GetCbufElement(ctx, vector, offset, 0u));
@@ -315,8 +290,8 @@ Id EmitGetCbufF32(EmitContext& ctx, const IR::Value& binding, const IR::Value& o
 
 Id EmitGetCbufU32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
     if (ctx.profile.support_descriptor_aliasing) {
-        return GetCbuf(ctx, ctx.U32[2], &UniformDefinitions::U32x2, sizeof(u32[2]), binding,
-                       offset);
+        return GetCbuf(ctx, ctx.U32[2], &UniformDefinitions::U32x2, sizeof(u32[2]), binding, offset,
+                       ctx.load_const_func_u32x2);
     } else {
         const Id vector{GetCbufU32x4(ctx, binding, offset)};
         return ctx.OpCompositeConstruct(ctx.U32[2], GetCbufElement(ctx, vector, offset, 0u),

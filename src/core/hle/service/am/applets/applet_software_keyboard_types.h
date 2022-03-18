@@ -10,6 +10,7 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/swap.h"
+#include "common/uuid.h"
 
 namespace Service::AM::Applets {
 
@@ -216,7 +217,7 @@ struct SwkbdInitializeArg {
 };
 static_assert(sizeof(SwkbdInitializeArg) == 0x8, "SwkbdInitializeArg has incorrect size.");
 
-struct SwkbdAppearArg {
+struct SwkbdAppearArgOld {
     SwkbdType type{};
     std::array<char16_t, MAX_OK_TEXT_LENGTH + 1> ok_text{};
     char16_t left_optional_symbol_key{};
@@ -229,19 +230,46 @@ struct SwkbdAppearArg {
     bool enable_return_button{};
     INSERT_PADDING_BYTES(3);
     u32 flags{};
-    INSERT_PADDING_WORDS(6);
+    bool is_use_save_data{};
+    INSERT_PADDING_BYTES(7);
+    Common::UUID user_id{};
 };
-static_assert(sizeof(SwkbdAppearArg) == 0x48, "SwkbdAppearArg has incorrect size.");
+static_assert(sizeof(SwkbdAppearArgOld) == 0x48, "SwkbdAppearArg has incorrect size.");
 
-struct SwkbdCalcArg {
+struct SwkbdAppearArgNew {
+    SwkbdType type{};
+    std::array<char16_t, MAX_OK_TEXT_LENGTH + 1> ok_text{};
+    char16_t left_optional_symbol_key{};
+    char16_t right_optional_symbol_key{};
+    bool use_prediction{};
+    bool disable_cancel_button{};
+    SwkbdKeyDisableFlags key_disable_flags{};
+    u32 max_text_length{};
+    u32 min_text_length{};
+    bool enable_return_button{};
+    INSERT_PADDING_BYTES(3);
+    u32 flags{};
+    bool is_use_save_data{};
+    INSERT_PADDING_BYTES(7);
+    Common::UUID user_id{};
+    u64 start_sampling_number{};
+    INSERT_PADDING_WORDS(8);
+};
+static_assert(sizeof(SwkbdAppearArgNew) == 0x70, "SwkbdAppearArg has incorrect size.");
+
+struct SwkbdCalcArgCommon {
     u32 unknown{};
     u16 calc_arg_size{};
     INSERT_PADDING_BYTES(2);
     SwkbdCalcArgFlags flags{};
     SwkbdInitializeArg initialize_arg{};
+};
+static_assert(sizeof(SwkbdCalcArgCommon) == 0x18, "SwkbdCalcArgCommon has incorrect size.");
+
+struct SwkbdCalcArgOld {
     f32 volume{};
     s32 cursor_position{};
-    SwkbdAppearArg appear_arg{};
+    SwkbdAppearArgOld appear_arg{};
     std::array<char16_t, 0x1FA> input_text{};
     bool utf8_mode{};
     INSERT_PADDING_BYTES(1);
@@ -265,7 +293,39 @@ struct SwkbdCalcArg {
     u8 se_group{};
     INSERT_PADDING_BYTES(3);
 };
-static_assert(sizeof(SwkbdCalcArg) == 0x4A0, "SwkbdCalcArg has incorrect size.");
+static_assert(sizeof(SwkbdCalcArgOld) == 0x4A0 - sizeof(SwkbdCalcArgCommon),
+              "SwkbdCalcArgOld has incorrect size.");
+
+struct SwkbdCalcArgNew {
+    SwkbdAppearArgNew appear_arg{};
+    f32 volume{};
+    s32 cursor_position{};
+    std::array<char16_t, 0x1FA> input_text{};
+    bool utf8_mode{};
+    INSERT_PADDING_BYTES(1);
+    bool enable_backspace_button{};
+    INSERT_PADDING_BYTES(3);
+    bool key_top_as_floating{};
+    bool footer_scalable{};
+    bool alpha_enabled_in_input_mode{};
+    u8 input_mode_fade_type{};
+    bool disable_touch{};
+    bool disable_hardware_keyboard{};
+    INSERT_PADDING_BYTES(8);
+    f32 key_top_scale_x{};
+    f32 key_top_scale_y{};
+    f32 key_top_translate_x{};
+    f32 key_top_translate_y{};
+    f32 key_top_bg_alpha{};
+    f32 footer_bg_alpha{};
+    f32 balloon_scale{};
+    INSERT_PADDING_WORDS(4);
+    u8 se_group{};
+    INSERT_PADDING_BYTES(3);
+    INSERT_PADDING_WORDS(8);
+};
+static_assert(sizeof(SwkbdCalcArgNew) == 0x4E8 - sizeof(SwkbdCalcArgCommon),
+              "SwkbdCalcArgNew has incorrect size.");
 
 struct SwkbdChangedStringArg {
     u32 text_length{};

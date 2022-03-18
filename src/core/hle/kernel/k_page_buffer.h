@@ -6,12 +6,10 @@
 
 #include <array>
 
-#include "common/alignment.h"
-#include "common/assert.h"
 #include "common/common_types.h"
-#include "core/core.h"
 #include "core/device_memory.h"
 #include "core/hle/kernel/memory_types.h"
+#include "core/hle/kernel/slab_helpers.h"
 
 namespace Kernel {
 
@@ -19,10 +17,7 @@ class KPageBuffer final : public KSlabAllocated<KPageBuffer> {
 public:
     KPageBuffer() = default;
 
-    static KPageBuffer* FromPhysicalAddress(Core::System& system, PAddr phys_addr) {
-        ASSERT(Common::IsAligned(phys_addr, PageSize));
-        return reinterpret_cast<KPageBuffer*>(system.DeviceMemory().GetPointer(phys_addr));
-    }
+    static KPageBuffer* FromPhysicalAddress(Core::System& system, PAddr phys_addr);
 
 private:
     [[maybe_unused]] alignas(PageSize) std::array<u8, PageSize> m_buffer{};

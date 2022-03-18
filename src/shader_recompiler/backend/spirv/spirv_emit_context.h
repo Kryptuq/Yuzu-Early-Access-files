@@ -294,6 +294,13 @@ public:
 
     std::vector<Id> interfaces;
 
+    Id load_const_func_u8{};
+    Id load_const_func_u16{};
+    Id load_const_func_u32{};
+    Id load_const_func_f32{};
+    Id load_const_func_u32x2{};
+    Id load_const_func_u32x4{};
+
 private:
     void DefineCommonTypes(const Info& info);
     void DefineCommonConstants();
@@ -302,6 +309,7 @@ private:
     void DefineSharedMemory(const IR::Program& program);
     void DefineSharedMemoryFunctions(const IR::Program& program);
     void DefineConstantBuffers(const Info& info, u32& binding);
+    void DefineConstantBufferIndirectFunctions(const Info& info);
     void DefineStorageBuffers(const Info& info, u32& binding);
     void DefineTextureBuffers(const Info& info, u32& binding);
     void DefineImageBuffers(const Info& info, u32& binding);

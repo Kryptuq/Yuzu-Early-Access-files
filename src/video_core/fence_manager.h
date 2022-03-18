@@ -8,8 +8,6 @@
 #include <queue>
 
 #include "common/common_types.h"
-#include "common/settings.h"
-#include "core/core.h"
 #include "video_core/delayed_destruction_ring.h"
 #include "video_core/gpu.h"
 #include "video_core/memory_manager.h"
