@@ -196,6 +196,11 @@ struct ProgramHeader {
                 return {(bits & 1) != 0, (bits & 2) != 0, (bits & 4) != 0, (bits & 8) != 0};
             }
 
+            [[nodiscard]] bool HasOutputComponents(u32 rt) const noexcept {
+                const u32 bits{omap.target >> (rt * 4)};
+                return (bits & 0xf) != 0;
+            }
+
             [[nodiscard]] std::array<PixelImap, 4> GenericInputMap(u32 attribute) const {
                 const auto& vector{imap_generic_vector[attribute]};
                 return {vector.x, vector.y, vector.z, vector.w};

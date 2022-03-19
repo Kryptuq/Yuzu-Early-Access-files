@@ -12,9 +12,13 @@ void ExitFragment(TranslatorVisitor& v) {
     const ProgramHeader sph{v.env.SPH()};
     IR::Reg src_reg{IR::Reg::R0};
     for (u32 render_target = 0; render_target < 8; ++render_target) {
+        if (!sph.ps.HasOutputComponents(render_target)) {
+            continue;
+        }
         const std::array<bool, 4> mask{sph.ps.EnabledOutputComponents(render_target)};
         for (u32 component = 0; component < 4; ++component) {
             if (!mask[component]) {
+                ++src_reg;
                 continue;
             }
             v.ir.SetFragColor(render_target, component, v.F(src_reg));
