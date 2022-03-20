@@ -26,7 +26,7 @@ public:
     void Connect(bool controlled_by_app);
 
 protected:
-    ConsumerBase(std::unique_ptr<BufferQueueConsumer> consumer_);
+    explicit ConsumerBase(std::unique_ptr<BufferQueueConsumer> consumer_);
     virtual ~ConsumerBase();
 
     virtual void OnFrameAvailable(const BufferItem& item) override;

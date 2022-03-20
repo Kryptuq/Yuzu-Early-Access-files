@@ -68,11 +68,11 @@ private:
     const u32 magic = 2;
     const u32 process_id = 1;
     const u32 id;
-    const INSERT_PADDING_WORDS(3);
-    const std::array<u8, 8> dispdrv = {'d', 'i', 's', 'p', 'd', 'r', 'v', '\0'};
-    const INSERT_PADDING_WORDS(2);
+    INSERT_PADDING_WORDS(3);
+    std::array<u8, 8> dispdrv = {'d', 'i', 's', 'p', 'd', 'r', 'v', '\0'};
+    INSERT_PADDING_WORDS(2);
 };
-static_assert(sizeof(NativeWindow) == 0x28, "ParcelData has wrong size");
+static_assert(sizeof(NativeWindow) == 0x28, "NativeWindow has wrong size");
 
 class IHOSBinderDriver final : public ServiceFramework<IHOSBinderDriver> {
 public:
