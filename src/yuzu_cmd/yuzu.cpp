@@ -66,7 +66,8 @@ static void PrintHelp(const char* argv0) {
                  "-f, --fullscreen      Start in fullscreen mode\n"
                  "-h, --help            Display this help and exit\n"
                  "-v, --version         Output version information and exit\n"
-                 "-p, --program         Pass following string as arguments to executable\n";
+                 "-p, --program         Pass following string as arguments to executable\n"
+                 "-c, --config          Load the specified configuration file\n";
 }
 
 static void PrintVersion() {
@@ -78,7 +79,6 @@ int main(int argc, char** argv) {
     Common::Log::Initialize();
     Common::Log::SetColorConsoleBackendEnabled(true);
     Common::DetachedTasks detached_tasks;
-    Config config;
 
     int option_index = 0;
 #ifdef _WIN32
@@ -91,19 +91,24 @@ int main(int argc, char** argv) {
     }
 #endif
     std::string filepath;
+    std::optional<std::string> config_path;
+    std::string program_args;
 
     bool fullscreen = false;
 
     static struct option long_options[] = {
+        // clang-format off
         {"fullscreen", no_argument, 0, 'f'},
         {"help", no_argument, 0, 'h'},
         {"version", no_argument, 0, 'v'},
         {"program", optional_argument, 0, 'p'},
+        {"config", required_argument, 0, 'c'},
         {0, 0, 0, 0},
+        // clang-format on
     };
 
     while (optind < argc) {
-        int arg = getopt_long(argc, argv, "g:fhvp::", long_options, &option_index);
+        int arg = getopt_long(argc, argv, "g:fhvp::c:", long_options, &option_index);
         if (arg != -1) {
             switch (static_cast<char>(arg)) {
             case 'f':
@@ -117,8 +122,11 @@ int main(int argc, char** argv) {
                 PrintVersion();
                 return 0;
             case 'p':
-                Settings::values.program_args = argv[optind];
+                program_args = argv[optind];
                 ++optind;
+                break;
+            case 'c':
+                config_path = optarg;
                 break;
             }
         } else {
@@ -129,6 +137,12 @@ int main(int argc, char** argv) {
 #endif
             optind++;
         }
+    }
+
+    Config config{config_path};
+
+    if (!program_args.empty()) {
+        Settings::values.program_args = program_args;
     }
 
 #ifdef _WIN32

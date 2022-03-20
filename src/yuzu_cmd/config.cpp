@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <memory>
+#include <optional>
 #include <sstream>
 
 // Ignore -Wimplicit-fallthrough due to https://github.com/libsdl-org/SDL/issues/4307
@@ -29,11 +30,12 @@
 
 namespace FS = Common::FS;
 
-Config::Config() {
-    // TODO: Don't hardcode the path; let the frontend decide where to put the config files.
-    sdl2_config_loc = FS::GetYuzuPath(FS::YuzuPath::ConfigDir) / "sdl2-config.ini";
-    sdl2_config = std::make_unique<INIReader>(FS::PathToUTF8String(sdl2_config_loc));
+const std::filesystem::path default_config_path =
+    FS::GetYuzuPath(FS::YuzuPath::ConfigDir) / "sdl2-config.ini";
 
+Config::Config(std::optional<std::filesystem::path> config_path)
+    : sdl2_config_loc{config_path.value_or(default_config_path)},
+      sdl2_config{std::make_unique<INIReader>(FS::PathToUTF8String(sdl2_config_loc))} {
     Reload();
 }
 

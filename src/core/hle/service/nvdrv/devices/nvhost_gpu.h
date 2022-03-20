@@ -108,7 +108,7 @@ private:
     static_assert(sizeof(IoctlGetErrorNotification) == 16,
                   "IoctlGetErrorNotification is incorrect size");
 
-    static_assert(sizeof(Fence) == 8, "Fence is incorrect size");
+    static_assert(sizeof(NvFence) == 8, "Fence is incorrect size");
 
     struct IoctlAllocGpfifoEx {
         u32_le num_entries{};
@@ -126,7 +126,7 @@ private:
         u32_le num_entries{}; // in
         u32_le flags{};       // in
         u32_le unk0{};        // in (1 works)
-        Fence fence_out{};    // out
+        NvFence fence_out{};  // out
         u32_le unk1{};        // in
         u32_le unk2{};        // in
         u32_le unk3{};        // in
@@ -152,13 +152,13 @@ private:
             BitField<4, 1, u32_le> suppress_wfi;  // suppress wait for interrupt
             BitField<8, 1, u32_le> increment;     // increment the returned fence
         } flags;
-        Fence fence_out{}; // returned new fence object for others to wait on
+        NvFence fence_out{}; // returned new fence object for others to wait on
 
         u32 AddIncrementValue() const {
             return flags.add_increment.Value() << 1;
         }
     };
-    static_assert(sizeof(IoctlSubmitGpfifo) == 16 + sizeof(Fence),
+    static_assert(sizeof(IoctlSubmitGpfifo) == 16 + sizeof(NvFence),
                   "IoctlSubmitGpfifo is incorrect size");
 
     struct IoctlGetWaitbase {
@@ -193,7 +193,7 @@ private:
 
     std::shared_ptr<nvmap> nvmap_dev;
     SyncpointManager& syncpoint_manager;
-    Fence channel_fence;
+    NvFence channel_fence;
 };
 
 } // namespace Service::Nvidia::Devices

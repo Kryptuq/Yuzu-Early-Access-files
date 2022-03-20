@@ -87,6 +87,7 @@ enum class Class : u8 {
     Service_NPNS,      ///< The NPNS service
     Service_NS,        ///< The NS services
     Service_NVDRV,     ///< The NVDRV (Nvidia driver) service
+    Service_NVFlinger, ///< The NVFlinger service
     Service_OLSC,      ///< The OLSC service
     Service_PCIE,      ///< The PCIe service
     Service_PCTL,      ///< The PCTL (Parental control) service

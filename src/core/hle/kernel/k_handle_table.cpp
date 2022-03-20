@@ -63,7 +63,7 @@ bool KHandleTable::Remove(Handle handle) {
     return true;
 }
 
-ResultCode KHandleTable::Add(Handle* out_handle, KAutoObject* obj, u16 type) {
+ResultCode KHandleTable::Add(Handle* out_handle, KAutoObject* obj) {
     KScopedDisableDispatch dd(kernel);
     KScopedSpinLock lk(m_lock);
 
@@ -75,7 +75,7 @@ ResultCode KHandleTable::Add(Handle* out_handle, KAutoObject* obj, u16 type) {
         const auto linear_id = this->AllocateLinearId();
         const auto index = this->AllocateEntry();
 
-        m_entry_infos[index].info = {.linear_id = linear_id, .type = type};
+        m_entry_infos[index].linear_id = linear_id;
         m_objects[index] = obj;
 
         obj->Open();
@@ -116,7 +116,7 @@ void KHandleTable::Unreserve(Handle handle) {
     }
 }
 
-void KHandleTable::Register(Handle handle, KAutoObject* obj, u16 type) {
+void KHandleTable::Register(Handle handle, KAutoObject* obj) {
     KScopedDisableDispatch dd(kernel);
     KScopedSpinLock lk(m_lock);
 
@@ -132,7 +132,7 @@ void KHandleTable::Register(Handle handle, KAutoObject* obj, u16 type) {
         // Set the entry.
         ASSERT(m_objects[index] == nullptr);
 
-        m_entry_infos[index].info = {.linear_id = static_cast<u16>(linear_id), .type = type};
+        m_entry_infos[index].linear_id = static_cast<u16>(linear_id);
         m_objects[index] = obj;
 
         obj->Open();

@@ -42,7 +42,7 @@ public:
         m_free_head_index = -1;
 
         // Free all entries.
-        for (s32 i = 0; i < static_cast<s32>(m_table_size); ++i) {
+        for (s16 i = 0; i < static_cast<s16>(m_table_size); ++i) {
             m_objects[i] = nullptr;
             m_entry_infos[i].next_free_index = i - 1;
             m_free_head_index = i;
@@ -104,17 +104,8 @@ public:
     ResultCode Reserve(Handle* out_handle);
     void Unreserve(Handle handle);
 
-    template <typename T>
-    ResultCode Add(Handle* out_handle, T* obj) {
-        static_assert(std::is_base_of_v<KAutoObject, T>);
-        return this->Add(out_handle, obj, obj->GetTypeObj().GetClassToken());
-    }
-
-    template <typename T>
-    void Register(Handle handle, T* obj) {
-        static_assert(std::is_base_of_v<KAutoObject, T>);
-        return this->Register(handle, obj, obj->GetTypeObj().GetClassToken());
-    }
+    ResultCode Add(Handle* out_handle, KAutoObject* obj);
+    void Register(Handle handle, KAutoObject* obj);
 
     template <typename T>
     bool GetMultipleObjects(T** out, const Handle* handles, size_t num_handles) const {
@@ -160,9 +151,6 @@ public:
     }
 
 private:
-    ResultCode Add(Handle* out_handle, KAutoObject* obj, u16 type);
-    void Register(Handle handle, KAutoObject* obj, u16 type);
-
     s32 AllocateEntry() {
         ASSERT(m_count < m_table_size);
 
@@ -179,7 +167,7 @@ private:
         ASSERT(m_count > 0);
 
         m_objects[index] = nullptr;
-        m_entry_infos[index].next_free_index = m_free_head_index;
+        m_entry_infos[index].next_free_index = static_cast<s16>(m_free_head_index);
 
         m_free_head_index = index;
 
@@ -278,19 +266,13 @@ private:
     }
 
     union EntryInfo {
-        struct {
-            u16 linear_id;
-            u16 type;
-        } info;
-        s32 next_free_index;
+        u16 linear_id;
+        s16 next_free_index;
 
         constexpr u16 GetLinearId() const {
-            return info.linear_id;
+            return linear_id;
         }
-        constexpr u16 GetType() const {
-            return info.type;
-        }
-        constexpr s32 GetNextFreeIndex() const {
+        constexpr s16 GetNextFreeIndex() const {
             return next_free_index;
         }
     };

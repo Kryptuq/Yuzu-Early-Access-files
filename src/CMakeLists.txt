@@ -36,9 +36,9 @@ if (MSVC)
     # /GT                 - Supports fiber safety for data allocated using static thread-local storage
     add_compile_options(
         /MP
-        /Zi
-        /Zm300
         /Zf
+        /Zi
+        /Zm200
         /Zo
         /permissive-
         /EHsc
