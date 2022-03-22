@@ -4,7 +4,6 @@
 
 #include <algorithm>
 #include <cstring>
-#include "common/assert.h"
 #include "common/scm_rev.h"
 #include "common/telemetry.h"
 

@@ -45,12 +45,19 @@ static std::function<void(BlockOfCode&)> GenRCP(const A64::UserConfig& conf) {
     };
 }
 
+static Optimization::PolyfillOptions GenPolyfillOptions(const BlockOfCode& code) {
+    return Optimization::PolyfillOptions{
+        .sha256 = !code.HasHostFeature(HostFeature::SHA),
+    };
+}
+
 struct Jit::Impl final {
 public:
     Impl(Jit* jit, UserConfig conf)
             : conf(conf)
             , block_of_code(GenRunCodeCallbacks(conf.callbacks, &GetCurrentBlockThunk, this), JitStateInfo{jit_state}, conf.code_cache_size, conf.far_code_offset, GenRCP(conf))
-            , emitter(block_of_code, conf, jit) {
+            , emitter(block_of_code, conf, jit)
+            , polyfill_options(GenPolyfillOptions(block_of_code)) {
         ASSERT(conf.page_table_address_space_bits >= 12 && conf.page_table_address_space_bits <= 64);
     }
 
@@ -253,6 +260,7 @@ private:
         const auto get_code = [this](u64 vaddr) { return conf.callbacks->MemoryReadCode(vaddr); };
         IR::Block ir_block = A64::Translate(A64::LocationDescriptor{current_location}, get_code,
                                             {conf.define_unpredictable_behaviour, conf.wall_clock_cntpct});
+        Optimization::PolyfillPass(ir_block, polyfill_options);
         Optimization::A64CallbackConfigPass(ir_block, conf);
         if (conf.HasOptimization(OptimizationFlag::GetSetElimination)) {
             Optimization::A64GetSetElimination(ir_block);
@@ -301,6 +309,7 @@ private:
     A64JitState jit_state;
     BlockOfCode block_of_code;
     A64EmitX64 emitter;
+    Optimization::PolyfillOptions polyfill_options;
 
     bool invalidate_entire_cache = false;
     boost::icl::interval_set<u64> invalid_cache_ranges;

@@ -5,10 +5,8 @@
 #include <atomic>
 #include <chrono>
 #include <climits>
-#include <exception>
 #include <stop_token>
 #include <thread>
-#include <vector>
 
 #include <fmt/format.h>
 

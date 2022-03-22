@@ -9,10 +9,8 @@
 
 #include "common/common_types.h"
 
-#include "video_core/engines/maxwell_3d.h"
 #include "video_core/surface.h"
 #include "video_core/texture_cache/image_base.h"
-#include "video_core/texture_cache/image_view_base.h"
 #include "video_core/texture_cache/types.h"
 #include "video_core/textures/texture.h"
 

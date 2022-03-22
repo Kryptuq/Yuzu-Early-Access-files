@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "common/common_types.h"
 #include "shader_recompiler/stage.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/surface.h"

@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
-#include <bit>
 #include <filesystem>
 #include <fstream>
 #include <memory>

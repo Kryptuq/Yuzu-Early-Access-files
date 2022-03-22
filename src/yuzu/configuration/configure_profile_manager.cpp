@@ -5,12 +5,10 @@
 #include <algorithm>
 #include <QFileDialog>
 #include <QGraphicsItem>
-#include <QGraphicsScene>
 #include <QHeaderView>
 #include <QMessageBox>
 #include <QStandardItemModel>
 #include <QTreeView>
-#include <QVBoxLayout>
 #include "common/assert.h"
 #include "common/fs/path_util.h"
 #include "common/settings.h"

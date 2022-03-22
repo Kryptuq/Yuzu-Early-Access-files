@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include <unordered_map>
-
 #include <dynarmic/interface/exclusive_monitor.h>
 
 #include "common/common_types.h"

@@ -110,6 +110,16 @@ static bool StoreDual(TranslatorVisitor& v, bool P, bool U, bool W, Reg n, Reg t
     return true;
 }
 
+bool TranslatorVisitor::thumb32_LDA(Reg n, Reg t) {
+    if (t == Reg::PC || n == Reg::PC) {
+        return UnpredictableInstruction();
+    }
+
+    const auto address = ir.GetRegister(n);
+    ir.SetRegister(t, ir.ReadMemory32(address));  // AccType::Ordered
+    return true;
+}
+
 bool TranslatorVisitor::thumb32_LDRD_imm_1(bool U, Reg n, Reg t, Reg t2, Imm<8> imm8) {
     return LoadDualImmediate(*this, false, U, true, n, t, t2, imm8);
 }
@@ -181,6 +191,16 @@ bool TranslatorVisitor::thumb32_LDREXH(Reg n, Reg t) {
     const auto value = ir.ZeroExtendToWord(ir.ExclusiveReadMemory16(address));
 
     ir.SetRegister(t, value);
+    return true;
+}
+
+bool TranslatorVisitor::thumb32_STL(Reg n, Reg t) {
+    if (t == Reg::PC || n == Reg::PC) {
+        return UnpredictableInstruction();
+    }
+
+    const auto address = ir.GetRegister(n);
+    ir.WriteMemory32(address, ir.GetRegister(t));  // AccType::Ordered
     return true;
 }
 

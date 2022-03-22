@@ -13,7 +13,6 @@
 #include <QThread>
 #include <QTouchEvent>
 #include <QWidget>
-#include <QWindow>
 
 #include "common/thread.h"
 #include "core/frontend/emu_window.h"

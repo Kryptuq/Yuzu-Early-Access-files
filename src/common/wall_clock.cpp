@@ -2,8 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <cstdint>
-
 #include "common/uint128.h"
 #include "common/wall_clock.h"
 

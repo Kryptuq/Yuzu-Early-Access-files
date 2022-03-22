@@ -2,11 +2,9 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <algorithm>
 #include <future>
 #include <optional>
 #include <span>
-#include <utility>
 #include <vector>
 
 #include "common/common_types.h"

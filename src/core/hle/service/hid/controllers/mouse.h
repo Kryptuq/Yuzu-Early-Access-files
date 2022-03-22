@@ -4,10 +4,7 @@
 
 #pragma once
 
-#include <array>
-#include "common/bit_field.h"
 #include "common/common_types.h"
-#include "common/swap.h"
 #include "core/hle/service/hid/controllers/controller_base.h"
 #include "core/hle/service/hid/ring_lifo.h"
 

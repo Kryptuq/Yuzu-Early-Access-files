@@ -20,7 +20,6 @@
 #include "configuration/configure_input.h"
 #include "configuration/configure_per_game.h"
 #include "configuration/configure_tas.h"
-#include "configuration/configure_vibration.h"
 #include "core/file_sys/vfs.h"
 #include "core/file_sys/vfs_real.h"
 #include "core/frontend/applets/controller.h"
@@ -54,8 +53,6 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include <QClipboard>
 #include <QDesktopServices>
 #include <QDesktopWidget>
-#include <QDialogButtonBox>
-#include <QDir>
 #include <QFile>
 #include <QFileDialog>
 #include <QInputDialog>
@@ -77,11 +74,9 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include <fmt/format.h>
 #include "common/detached_tasks.h"
 #include "common/fs/fs.h"
-#include "common/fs/fs_paths.h"
 #include "common/fs/path_util.h"
 #include "common/literals.h"
 #include "common/logging/backend.h"
-#include "common/logging/filter.h"
 #include "common/logging/log.h"
 #include "common/memory_detect.h"
 #include "common/microprofile.h"

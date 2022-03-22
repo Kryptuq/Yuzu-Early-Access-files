@@ -3,13 +3,6 @@
 // Refer to the license.txt file included.
 
 #include <memory>
-#include <QAbstractButton>
-#include <QDialogButtonBox>
-#include <QHash>
-#include <QListWidgetItem>
-#include <QPushButton>
-#include <QSignalBlocker>
-#include <QTabWidget>
 #include "common/logging/log.h"
 #include "common/settings.h"
 #include "core/core.h"

@@ -6,7 +6,6 @@
 #include <cmath>
 #include <cstring>
 #include <span>
-#include <utility>
 
 #include "common/alignment.h"
 #include "common/assert.h"
@@ -14,7 +13,6 @@
 #include "common/div_ceil.h"
 #include "video_core/gpu.h"
 #include "video_core/textures/decoders.h"
-#include "video_core/textures/texture.h"
 
 namespace Tegra::Texture {
 namespace {

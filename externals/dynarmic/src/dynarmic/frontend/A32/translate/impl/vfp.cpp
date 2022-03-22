@@ -1407,7 +1407,7 @@ bool TranslatorVisitor::vfp_VLDM_a1(Cond cond, bool p, bool u, bool D, bool w, R
         return arm_UDF();
     }
 
-    if (n == Reg::PC && w) {
+    if (n == Reg::PC && (w || ir.current_location.TFlag())) {
         return UnpredictableInstruction();
     }
 
@@ -1457,7 +1457,7 @@ bool TranslatorVisitor::vfp_VLDM_a2(Cond cond, bool p, bool u, bool D, bool w, R
         return arm_UDF();
     }
 
-    if (n == Reg::PC && w) {
+    if (n == Reg::PC && (w || ir.current_location.TFlag())) {
         return UnpredictableInstruction();
     }
 

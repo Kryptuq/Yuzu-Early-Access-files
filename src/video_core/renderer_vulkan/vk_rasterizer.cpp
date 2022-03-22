@@ -6,15 +6,12 @@
 #include <array>
 #include <memory>
 #include <mutex>
-#include <vector>
 
-#include "common/alignment.h"
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "common/microprofile.h"
 #include "common/scope_exit.h"
 #include "common/settings.h"
-#include "core/core.h"
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/renderer_vulkan/blit_image.h"

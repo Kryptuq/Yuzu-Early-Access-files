@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <memory>
 #include <utility>
 #include "core/frontend/emu_window.h"
 

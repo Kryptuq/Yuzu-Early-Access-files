@@ -6,7 +6,6 @@
 
 #include <QApplication>
 #include <QHBoxLayout>
-#include <QKeyEvent>
 #include <QMessageBox>
 #include <QPainter>
 #include <QScreen>
@@ -28,7 +27,6 @@
 #include "common/assert.h"
 #include "common/microprofile.h"
 #include "common/scm_rev.h"
-#include "common/scope_exit.h"
 #include "common/settings.h"
 #include "core/core.h"
 #include "core/frontend/framebuffer_layout.h"
@@ -38,7 +36,6 @@
 #include "input_common/drivers/touch_screen.h"
 #include "input_common/main.h"
 #include "video_core/renderer_base.h"
-#include "video_core/video_core.h"
 #include "yuzu/bootmanager.h"
 #include "yuzu/main.h"
 

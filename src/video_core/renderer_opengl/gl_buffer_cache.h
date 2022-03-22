@@ -7,9 +7,7 @@
 #include <array>
 #include <span>
 
-#include "common/alignment.h"
 #include "common/common_types.h"
-#include "common/dynamic_library.h"
 #include "video_core/buffer_cache/buffer_cache.h"
 #include "video_core/rasterizer_interface.h"
 #include "video_core/renderer_opengl/gl_device.h"

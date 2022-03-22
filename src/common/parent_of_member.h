@@ -7,7 +7,6 @@
 #include <type_traits>
 
 #include "common/assert.h"
-#include "common/common_types.h"
 
 namespace Common {
 namespace detail {

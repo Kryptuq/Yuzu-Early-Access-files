@@ -6,7 +6,6 @@
 #include "common/microprofile.h"
 #include "common/settings.h"
 #include "core/core.h"
-#include "core/memory.h"
 #include "video_core/dma_pusher.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/gpu.h"

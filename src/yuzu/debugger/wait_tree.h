@@ -8,7 +8,6 @@
 #include <memory>
 #include <vector>
 
-#include <QAbstractItemModel>
 #include <QDockWidget>
 #include <QTreeView>
 

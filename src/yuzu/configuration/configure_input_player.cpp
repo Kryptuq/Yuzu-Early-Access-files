@@ -7,7 +7,6 @@
 #include <utility>
 #include <QGridLayout>
 #include <QInputDialog>
-#include <QKeyEvent>
 #include <QMenu>
 #include <QMessageBox>
 #include <QTimer>
@@ -23,7 +22,6 @@
 #include "yuzu/configuration/config.h"
 #include "yuzu/configuration/configure_input_player.h"
 #include "yuzu/configuration/configure_input_player_widget.h"
-#include "yuzu/configuration/configure_vibration.h"
 #include "yuzu/configuration/input_profiles.h"
 #include "yuzu/util/limitable_input_dialog.h"
 

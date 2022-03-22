@@ -9,7 +9,6 @@
 #include "video_core/fence_manager.h"
 #include "video_core/renderer_vulkan/vk_buffer_cache.h"
 #include "video_core/renderer_vulkan/vk_texture_cache.h"
-#include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace Core {
 class System;

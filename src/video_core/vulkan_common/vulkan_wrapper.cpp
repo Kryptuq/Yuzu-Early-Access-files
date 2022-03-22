@@ -3,10 +3,8 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
-#include <exception>
 #include <memory>
 #include <optional>
-#include <string_view>
 #include <utility>
 #include <vector>
 

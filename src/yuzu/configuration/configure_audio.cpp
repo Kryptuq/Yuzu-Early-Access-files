@@ -4,8 +4,6 @@
 
 #include <memory>
 
-#include <QSignalBlocker>
-
 #include "audio_core/sink.h"
 #include "audio_core/sink_details.h"
 #include "common/settings.h"

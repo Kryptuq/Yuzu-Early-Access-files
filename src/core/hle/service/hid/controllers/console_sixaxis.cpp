@@ -2,7 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include "common/settings.h"
 #include "core/core_timing.h"
 #include "core/hid/emulated_console.h"
 #include "core/hid/hid_core.h"

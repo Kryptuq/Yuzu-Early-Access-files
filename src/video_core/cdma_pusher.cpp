@@ -23,11 +23,9 @@
 #include "command_classes/nvdec.h"
 #include "command_classes/vic.h"
 #include "video_core/cdma_pusher.h"
-#include "video_core/command_classes/nvdec_common.h"
 #include "video_core/command_classes/sync_manager.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/gpu.h"
-#include "video_core/memory_manager.h"
 
 namespace Tegra {
 CDmaPusher::CDmaPusher(GPU& gpu_)

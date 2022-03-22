@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <compare>
 #include <optional>
 #include <span>
 #include <string>
@@ -15,6 +14,7 @@
 
 #include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/condition.h"
+#include "shader_recompiler/frontend/ir/reg.h"
 #include "shader_recompiler/frontend/maxwell/instruction.h"
 #include "shader_recompiler/frontend/maxwell/location.h"
 #include "shader_recompiler/frontend/maxwell/opcodes.h"

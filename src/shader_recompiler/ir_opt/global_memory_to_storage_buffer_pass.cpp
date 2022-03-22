@@ -2,10 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <algorithm>
-#include <compare>
 #include <optional>
-#include <queue>
 
 #include <boost/container/flat_set.hpp>
 #include <boost/container/small_vector.hpp>

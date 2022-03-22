@@ -5,7 +5,6 @@
 #include "common/alignment.h"
 #include "common/common_types.h"
 #include "core/device_memory.h"
-#include "core/hle/kernel/k_auto_object.h"
 #include "core/hle/kernel/k_code_memory.h"
 #include "core/hle/kernel/k_light_lock.h"
 #include "core/hle/kernel/k_memory_block.h"

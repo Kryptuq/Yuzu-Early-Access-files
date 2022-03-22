@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include <atomic>
-
 #include "common/bit_util.h"
 #include "common/common_types.h"
 

@@ -9,7 +9,6 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/ns/pdm_qry.h"
 #include "core/hle/service/service.h"
-#include "core/hle/service/sm/sm.h"
 
 namespace Service::NS {
 

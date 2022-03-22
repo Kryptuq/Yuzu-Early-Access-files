@@ -6,6 +6,8 @@
 
 #include <QDialog>
 
+class QLineEdit;
+
 namespace Ui {
 class ConfigureTas;
 }

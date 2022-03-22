@@ -6,7 +6,6 @@
 
 #include <memory>
 #include <QDialog>
-#include "common/param_package.h"
 
 class QLabel;
 class QPushButton;

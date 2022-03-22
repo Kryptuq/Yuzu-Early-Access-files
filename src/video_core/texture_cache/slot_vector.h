@@ -5,9 +5,7 @@
 #pragma once
 
 #include <algorithm>
-#include <array>
 #include <bit>
-#include <concepts>
 #include <numeric>
 #include <type_traits>
 #include <utility>

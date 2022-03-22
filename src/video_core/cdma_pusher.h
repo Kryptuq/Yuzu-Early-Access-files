@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "common/bit_field.h"
+#include "common/common_funcs.h"
 #include "common/common_types.h"
 
 namespace Tegra {

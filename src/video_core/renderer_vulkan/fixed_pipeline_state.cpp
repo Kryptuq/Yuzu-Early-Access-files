@@ -4,9 +4,6 @@
 
 #include <algorithm>
 #include <cstring>
-#include <tuple>
-
-#include <boost/functional/hash.hpp>
 
 #include "common/bit_cast.h"
 #include "common/cityhash.h"

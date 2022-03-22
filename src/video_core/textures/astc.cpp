@@ -16,6 +16,7 @@
 // <http://gamma.cs.unc.edu/FasTC/>
 
 #include <algorithm>
+#include <bit>
 #include <cassert>
 #include <cstring>
 #include <span>

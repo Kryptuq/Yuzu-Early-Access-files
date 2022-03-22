@@ -7,7 +7,6 @@
 #include <array>
 #include <cstddef>
 #include <string>
-#include <type_traits>
 #include <vector>
 #include <fmt/format.h>
 #include "common/common_types.h"

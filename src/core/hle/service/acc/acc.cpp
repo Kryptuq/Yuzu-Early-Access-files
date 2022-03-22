@@ -16,7 +16,6 @@
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/patch_manager.h"
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/kernel/kernel.h"
 #include "core/hle/service/acc/acc.h"
 #include "core/hle/service/acc/acc_aa.h"
 #include "core/hle/service/acc/acc_su.h"

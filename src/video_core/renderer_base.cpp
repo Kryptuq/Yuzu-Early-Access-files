@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include "common/logging/log.h"
-#include "common/settings.h"
 #include "core/frontend/emu_window.h"
 #include "video_core/renderer_base.h"
 

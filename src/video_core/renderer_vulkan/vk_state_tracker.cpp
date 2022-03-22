@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
-#include <iterator>
 
 #include "common/common_types.h"
 #include "core/core.h"

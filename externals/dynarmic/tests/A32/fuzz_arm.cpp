@@ -535,6 +535,37 @@ TEST_CASE("A32: Single random thumb instruction", "[thumb]") {
     }
 }
 
+TEST_CASE("A32: Single random thumb instruction (offset)", "[thumb]") {
+    ThumbTestEnv jit_env{};
+    ThumbTestEnv uni_env{};
+
+    Dynarmic::A32::Jit jit{GetUserConfig(jit_env)};
+    A32Unicorn<ThumbTestEnv> uni{uni_env};
+
+    A32Unicorn<ThumbTestEnv>::RegisterArray regs;
+    A32Unicorn<ThumbTestEnv>::ExtRegArray ext_reg;
+    std::vector<u16> instructions;
+
+    for (size_t iteration = 0; iteration < 100000; ++iteration) {
+        std::generate(regs.begin(), regs.end(), [] { return RandInt<u32>(0, ~u32(0)); });
+        std::generate(ext_reg.begin(), ext_reg.end(), [] { return RandInt<u32>(0, ~u32(0)); });
+
+        instructions.clear();
+        instructions.push_back(0xbf00);  // NOP
+        const std::vector<u16> inst = GenRandomThumbInst(0, true);
+        instructions.insert(instructions.end(), inst.begin(), inst.end());
+
+        const u32 start_address = 100;
+        const u32 cpsr = (RandInt<u32>(0, 0xF) << 28) | 0x1F0;
+        const u32 fpcr = RandomFpcr();
+
+        INFO("Instruction: 0x" << std::hex << inst[0]);
+
+        regs[15] = start_address;
+        RunTestInstance(jit, uni, jit_env, uni_env, regs, ext_reg, instructions, cpsr, fpcr, 2);
+    }
+}
+
 TEST_CASE("A32: Small random thumb block", "[thumb]") {
     ThumbTestEnv jit_env{};
     ThumbTestEnv uni_env{};

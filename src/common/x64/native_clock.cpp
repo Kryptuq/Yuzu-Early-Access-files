@@ -4,8 +4,6 @@
 
 #include <array>
 #include <chrono>
-#include <limits>
-#include <mutex>
 #include <thread>
 
 #include "common/atomic_ops.h"

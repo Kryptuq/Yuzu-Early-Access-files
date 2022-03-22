@@ -8,7 +8,6 @@
 #include <utility>
 
 #if defined(_WIN32)
-#include <winsock.h>
 #elif !YUZU_UNIX
 #error "Platform not implemented"
 #endif

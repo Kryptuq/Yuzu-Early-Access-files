@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include <optional>
-
 #include "common/wall_clock.h"
 
 namespace Common {

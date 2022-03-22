@@ -5,7 +5,6 @@
 #pragma once
 
 #include <array>
-#include <memory>
 #include <span>
 #include <utility>
 

@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include <sstream>
-#include <QKeySequence>
 #include <QShortcut>
 #include <QTreeWidgetItem>
 #include <QtGlobal>

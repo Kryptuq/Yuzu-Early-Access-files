@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "common/common_types.h"
 #include "shader_recompiler/frontend/maxwell/translate/impl/impl.h"
 
 namespace Shader::Maxwell {

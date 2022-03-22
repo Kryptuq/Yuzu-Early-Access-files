@@ -7,11 +7,9 @@
 #include <array>
 #include <cstddef>
 #include <filesystem>
-#include <iosfwd>
 #include <memory>
 #include <type_traits>
 #include <unordered_map>
-#include <utility>
 #include <vector>
 
 #include "common/common_types.h"
@@ -29,7 +27,6 @@
 #include "video_core/renderer_vulkan/vk_graphics_pipeline.h"
 #include "video_core/renderer_vulkan/vk_texture_cache.h"
 #include "video_core/shader_cache.h"
-#include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace Core {
 class System;

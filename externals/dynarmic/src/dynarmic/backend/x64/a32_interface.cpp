@@ -50,16 +50,24 @@ static std::function<void(BlockOfCode&)> GenRCP(const A32::UserConfig& conf) {
     };
 }
 
+static Optimization::PolyfillOptions GenPolyfillOptions(const BlockOfCode& code) {
+    return Optimization::PolyfillOptions{
+        .sha256 = !code.HasHostFeature(HostFeature::SHA),
+    };
+}
+
 struct Jit::Impl {
     Impl(Jit* jit, A32::UserConfig conf)
             : block_of_code(GenRunCodeCallbacks(conf.callbacks, &GetCurrentBlockThunk, this), JitStateInfo{jit_state}, conf.code_cache_size, conf.far_code_offset, GenRCP(conf))
             , emitter(block_of_code, conf, jit)
+            , polyfill_options(GenPolyfillOptions(block_of_code))
             , conf(std::move(conf))
             , jit_interface(jit) {}
 
     A32JitState jit_state;
     BlockOfCode block_of_code;
     A32EmitX64 emitter;
+    Optimization::PolyfillOptions polyfill_options;
 
     const A32::UserConfig conf;
 
@@ -154,6 +162,7 @@ private:
         }
 
         IR::Block ir_block = A32::Translate(A32::LocationDescriptor{descriptor}, conf.callbacks, {conf.arch_version, conf.define_unpredictable_behaviour, conf.hook_hint_instructions});
+        Optimization::PolyfillPass(ir_block, polyfill_options);
         if (conf.HasOptimization(OptimizationFlag::GetSetElimination)) {
             Optimization::A32GetSetElimination(ir_block);
             Optimization::DeadCodeElimination(ir_block);

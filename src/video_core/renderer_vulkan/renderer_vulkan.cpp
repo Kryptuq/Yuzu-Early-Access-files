@@ -13,16 +13,15 @@
 #include <fmt/format.h>
 
 #include "common/logging/log.h"
+#include "common/scope_exit.h"
 #include "common/settings.h"
 #include "common/telemetry.h"
-#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/frontend/emu_window.h"
 #include "core/telemetry_session.h"
 #include "video_core/gpu.h"
 #include "video_core/renderer_vulkan/renderer_vulkan.h"
 #include "video_core/renderer_vulkan/vk_blit_screen.h"
-#include "video_core/renderer_vulkan/vk_master_semaphore.h"
 #include "video_core/renderer_vulkan/vk_rasterizer.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_state_tracker.h"

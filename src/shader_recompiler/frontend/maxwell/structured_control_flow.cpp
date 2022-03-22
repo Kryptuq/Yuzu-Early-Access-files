@@ -8,7 +8,6 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include <version>
 
 #include <fmt/format.h>
 
@@ -17,7 +16,6 @@
 #include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/ir_emitter.h"
-#include "shader_recompiler/frontend/maxwell/decode.h"
 #include "shader_recompiler/frontend/maxwell/structured_control_flow.h"
 #include "shader_recompiler/frontend/maxwell/translate/translate.h"
 #include "shader_recompiler/host_translate_info.h"

@@ -10,6 +10,7 @@
 #include <QLineEdit>
 #include <QScrollArea>
 #include <QStandardItemModel>
+#include <QTreeView>
 #include <QVBoxLayout>
 #include "common/fs/path_util.h"
 #include "common/string_util.h"

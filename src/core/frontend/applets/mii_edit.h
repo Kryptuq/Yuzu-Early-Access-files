@@ -6,8 +6,6 @@
 
 #include <functional>
 
-#include "core/hle/service/mii/types.h"
-
 namespace Core::Frontend {
 
 class MiiEditApplet {

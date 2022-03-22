@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include <memory>
-#include <thread>
 #include "common/input.h"
 #include "common/param_package.h"
 #include "input_common/drivers/gc_adapter.h"

@@ -11,17 +11,15 @@
 #include <QWebEngineScriptCollection>
 #include <QWebEngineSettings>
 #include <QWebEngineUrlScheme>
+
+#include "core/hid/input_interpreter.h"
+#include "yuzu/applets/qt_web_browser_scripts.h"
 #endif
 
 #include "common/fs/path_util.h"
-#include "common/param_package.h"
 #include "core/core.h"
-#include "core/hid/hid_types.h"
-#include "core/hid/input_interpreter.h"
 #include "input_common/drivers/keyboard.h"
-#include "input_common/main.h"
 #include "yuzu/applets/qt_web_browser.h"
-#include "yuzu/applets/qt_web_browser_scripts.h"
 #include "yuzu/main.h"
 #include "yuzu/util/url_request_interceptor.h"
 

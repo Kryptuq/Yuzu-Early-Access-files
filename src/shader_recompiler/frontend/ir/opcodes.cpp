@@ -2,8 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <string_view>
-
 #include "shader_recompiler/frontend/ir/opcodes.h"
 
 namespace Shader::IR {

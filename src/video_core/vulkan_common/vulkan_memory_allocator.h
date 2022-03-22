@@ -6,7 +6,6 @@
 
 #include <memory>
 #include <span>
-#include <utility>
 #include <vector>
 #include "common/common_types.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"

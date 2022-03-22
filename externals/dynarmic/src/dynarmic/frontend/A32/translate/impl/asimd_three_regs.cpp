@@ -831,6 +831,60 @@ bool TranslatorVisitor::asimd_VRSQRTS(bool D, bool sz, size_t Vn, size_t Vd, boo
     });
 }
 
+bool TranslatorVisitor::v8_SHA256H(bool D, size_t Vn, size_t Vd, bool N, bool Q, bool M, size_t Vm) {
+    if (!Q || Common::Bit<0>(Vd) || Common::Bit<0>(Vn) || Common::Bit<0>(Vm)) {
+        return UndefinedInstruction();
+    }
+
+    const auto d = ToVector(Q, Vd, D);
+    const auto n = ToVector(Q, Vn, N);
+    const auto m = ToVector(Q, Vm, M);
+
+    const auto x = ir.GetVector(d);
+    const auto y = ir.GetVector(n);
+    const auto w = ir.GetVector(m);
+    const auto result = ir.SHA256Hash(x, y, w, true);
+
+    ir.SetVector(d, result);
+    return true;
+}
+
+bool TranslatorVisitor::v8_SHA256H2(bool D, size_t Vn, size_t Vd, bool N, bool Q, bool M, size_t Vm) {
+    if (!Q || Common::Bit<0>(Vd) || Common::Bit<0>(Vn) || Common::Bit<0>(Vm)) {
+        return UndefinedInstruction();
+    }
+
+    const auto n = ToVector(Q, Vn, N);
+    const auto d = ToVector(Q, Vd, D);
+    const auto m = ToVector(Q, Vm, M);
+
+    const auto x = ir.GetVector(n);
+    const auto y = ir.GetVector(d);
+    const auto w = ir.GetVector(m);
+    const auto result = ir.SHA256Hash(x, y, w, false);
+
+    ir.SetVector(d, result);
+    return true;
+}
+
+bool TranslatorVisitor::v8_SHA256SU1(bool D, size_t Vn, size_t Vd, bool N, bool Q, bool M, size_t Vm) {
+    if (!Q || Common::Bit<0>(Vd) || Common::Bit<0>(Vn) || Common::Bit<0>(Vm)) {
+        return UndefinedInstruction();
+    }
+
+    const auto d = ToVector(Q, Vd, D);
+    const auto n = ToVector(Q, Vn, N);
+    const auto m = ToVector(Q, Vm, M);
+
+    const auto x = ir.GetVector(d);
+    const auto y = ir.GetVector(n);
+    const auto z = ir.GetVector(m);
+    const auto result = ir.SHA256MessageSchedule1(x, y, z);
+
+    ir.SetVector(d, result);
+    return true;
+}
+
 // ASIMD Three registers of different length
 
 bool TranslatorVisitor::asimd_VADDL(bool U, bool D, size_t sz, size_t Vn, size_t Vd, bool op, bool N, bool M, size_t Vm) {

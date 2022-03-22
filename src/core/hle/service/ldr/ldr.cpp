@@ -12,7 +12,6 @@
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_page_table.h"
-#include "core/hle/kernel/k_system_control.h"
 #include "core/hle/kernel/svc_results.h"
 #include "core/hle/kernel/svc_types.h"
 #include "core/hle/service/ldr/ldr.h"

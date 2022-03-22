@@ -4,7 +4,6 @@
 #include <array>
 #include <cstring>
 #include <iterator>
-#include <span>
 #include <string_view>
 #include "common/bit_util.h"
 #include "common/common_types.h"

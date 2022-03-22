@@ -219,6 +219,10 @@ public:
 
     U8 SM4AccessSubstitutionBox(const U8& a);
 
+    U128 SHA256Hash(const U128& x, const U128& y, const U128& w, bool part1);
+    U128 SHA256MessageSchedule0(const U128& x, const U128& y);
+    U128 SHA256MessageSchedule1(const U128& x, const U128& y, const U128& z);
+
     UAny VectorGetElement(size_t esize, const U128& a, size_t index);
     U128 VectorSetElement(size_t esize, const U128& a, size_t index, const UAny& elem);
     U128 VectorAbs(size_t esize, const U128& a);

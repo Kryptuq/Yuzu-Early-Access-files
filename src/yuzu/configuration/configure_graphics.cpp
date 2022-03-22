@@ -6,7 +6,6 @@
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
 #include <QColorDialog>
-#include <QComboBox>
 #include <QVulkanInstance>
 
 #include "common/common_types.h"

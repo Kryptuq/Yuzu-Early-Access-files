@@ -5,20 +5,14 @@
 #pragma once
 
 #include <array>
-#include <atomic>
 #include <cstddef>
-#include <memory>
 #include <optional>
-#include <tuple>
-#include <utility>
 
 #include <boost/container/static_vector.hpp>
 
 #include <glad/glad.h>
 
 #include "common/common_types.h"
-#include "video_core/engines/const_buffer_info.h"
-#include "video_core/engines/maxwell_3d.h"
 #include "video_core/engines/maxwell_dma.h"
 #include "video_core/rasterizer_accelerated.h"
 #include "video_core/rasterizer_interface.h"
@@ -26,12 +20,8 @@
 #include "video_core/renderer_opengl/gl_device.h"
 #include "video_core/renderer_opengl/gl_fence_manager.h"
 #include "video_core/renderer_opengl/gl_query_cache.h"
-#include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/renderer_opengl/gl_shader_cache.h"
-#include "video_core/renderer_opengl/gl_shader_manager.h"
-#include "video_core/renderer_opengl/gl_state_tracker.h"
 #include "video_core/renderer_opengl/gl_texture_cache.h"
-#include "video_core/textures/texture.h"
 
 namespace Core::Memory {
 class Memory;

@@ -2,12 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <algorithm>
 #include <memory>
 #include <thread>
-
-#include <QSignalBlocker>
-#include <QTimer>
 
 #include "core/core.h"
 #include "core/hid/emulated_controller.h"

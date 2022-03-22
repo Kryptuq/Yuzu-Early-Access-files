@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <cstring>
 #include <utility>
 
 #ifdef _MSC_VER
@@ -13,6 +12,7 @@
 #pragma intrinsic(_umul128)
 #pragma intrinsic(_udiv128)
 #else
+#include <cstring>
 #include <x86intrin.h>
 #endif
 

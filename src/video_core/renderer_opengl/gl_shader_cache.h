@@ -4,18 +4,13 @@
 
 #pragma once
 
-#include <array>
 #include <filesystem>
 #include <stop_token>
 #include <unordered_map>
 
-#include <glad/glad.h>
-
 #include "common/common_types.h"
 #include "common/thread_worker.h"
-#include "shader_recompiler/frontend/ir/value.h"
 #include "shader_recompiler/host_translate_info.h"
-#include "shader_recompiler/object_pool.h"
 #include "shader_recompiler/profile.h"
 #include "video_core/renderer_opengl/gl_compute_pipeline.h"
 #include "video_core/renderer_opengl/gl_graphics_pipeline.h"

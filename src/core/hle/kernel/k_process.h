@@ -8,7 +8,6 @@
 #include <cstddef>
 #include <list>
 #include <string>
-#include <vector>
 #include "common/common_types.h"
 #include "core/hle/kernel/k_address_arbiter.h"
 #include "core/hle/kernel/k_auto_object.h"

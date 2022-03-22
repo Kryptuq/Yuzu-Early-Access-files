@@ -6,7 +6,6 @@
 
 #include <array>
 #include <memory>
-#include <mutex>
 #include <stop_token>
 #include <string>
 #include <thread>

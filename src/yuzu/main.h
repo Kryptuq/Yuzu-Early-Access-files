@@ -6,14 +6,12 @@
 
 #include <memory>
 #include <optional>
-#include <unordered_map>
 
 #include <QMainWindow>
 #include <QTimer>
 #include <QTranslator>
 
 #include "common/common_types.h"
-#include "core/hle/service/acc/profile_manager.h"
 #include "yuzu/compatibility_list.h"
 #include "yuzu/hotkeys.h"
 

@@ -493,6 +493,7 @@ struct TranslatorVisitor final {
     bool thumb32_STMDB(bool W, Reg n, Imm<15> reg_list);
 
     // thumb32 load/store dual, load/store exclusive, table branch instructions
+    bool thumb32_LDA(Reg n, Reg t);
     bool thumb32_LDRD_imm_1(bool U, Reg n, Reg t, Reg t2, Imm<8> imm8);
     bool thumb32_LDRD_imm_2(bool U, bool W, Reg n, Reg t, Reg t2, Imm<8> imm8);
     bool thumb32_LDRD_lit_1(bool U, Reg t, Reg t2, Imm<8> imm8);
@@ -503,6 +504,7 @@ struct TranslatorVisitor final {
     bool thumb32_LDREXD(Reg n, Reg t, Reg t2);
     bool thumb32_LDREXB(Reg n, Reg t);
     bool thumb32_LDREXH(Reg n, Reg t);
+    bool thumb32_STL(Reg n, Reg t);
     bool thumb32_STREX(Reg n, Reg t, Reg d, Imm<8> imm8);
     bool thumb32_STREXB(Reg n, Reg t, Reg d);
     bool thumb32_STREXD(Reg n, Reg t, Reg t2, Reg d);
@@ -875,6 +877,9 @@ struct TranslatorVisitor final {
     bool asimd_VPMIN_float(bool D, bool sz, size_t Vn, size_t Vd, bool N, bool Q, bool M, size_t Vm);
     bool asimd_VRECPS(bool D, bool sz, size_t Vn, size_t Vd, bool N, bool Q, bool M, size_t Vm);
     bool asimd_VRSQRTS(bool D, bool sz, size_t Vn, size_t Vd, bool N, bool Q, bool M, size_t Vm);
+    bool v8_SHA256H(bool D, size_t Vn, size_t Vd, bool N, bool Q, bool M, size_t Vm);
+    bool v8_SHA256H2(bool D, size_t Vn, size_t Vd, bool N, bool Q, bool M, size_t Vm);
+    bool v8_SHA256SU1(bool D, size_t Vn, size_t Vd, bool N, bool Q, bool M, size_t Vm);
 
     // Advanced SIMD three registers with different lengths
     bool asimd_VADDL(bool U, bool D, size_t sz, size_t Vn, size_t Vd, bool op, bool N, bool M, size_t Vm);
@@ -918,6 +923,7 @@ struct TranslatorVisitor final {
     bool v8_AESE(bool D, size_t sz, size_t Vd, bool M, size_t Vm);
     bool v8_AESIMC(bool D, size_t sz, size_t Vd, bool M, size_t Vm);
     bool v8_AESMC(bool D, size_t sz, size_t Vd, bool M, size_t Vm);
+    bool v8_SHA256SU0(bool D, size_t sz, size_t Vd, bool M, size_t Vm);
     bool asimd_VCLS(bool D, size_t sz, size_t Vd, bool Q, bool M, size_t Vm);
     bool asimd_VCLZ(bool D, size_t sz, size_t Vd, bool Q, bool M, size_t Vm);
     bool asimd_VCNT(bool D, size_t sz, size_t Vd, bool Q, bool M, size_t Vm);

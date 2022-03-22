@@ -5,18 +5,14 @@
 #pragma once
 
 #include <atomic>
-#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 
 #include <QList>
 #include <QObject>
 #include <QRunnable>
 #include <QString>
-#include <QVector>
 
-#include "common/common_types.h"
 #include "yuzu/compatibility_list.h"
 
 namespace Core {

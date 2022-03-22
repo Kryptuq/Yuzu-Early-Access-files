@@ -5,11 +5,9 @@
 #include <algorithm>
 #include <cctype>
 #include <codecvt>
-#include <cstdlib>
 #include <locale>
 #include <sstream>
 
-#include "common/logging/log.h"
 #include "common/string_util.h"
 
 #ifdef _WIN32

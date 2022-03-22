@@ -9,7 +9,6 @@
 
 #include "common/common_types.h"
 #include "common/div_ceil.h"
-#include "common/logging/log.h"
 #include "video_core/memory_manager.h"
 #include "video_core/rasterizer_interface.h"
 

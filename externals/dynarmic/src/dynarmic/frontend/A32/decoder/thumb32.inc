@@ -19,6 +19,8 @@ INST(thumb32_LDRD_lit_1,     "LDRD (lit)",               "11101000U1111111ttttss
 INST(thumb32_LDRD_lit_2,     "LDRD (lit)",               "11101001U1W11111ttttssssiiiiiiii")
 INST(thumb32_LDRD_imm_1,     "LDRD (imm)",               "11101000U111nnnnttttssssiiiiiiii")
 INST(thumb32_LDRD_imm_2,     "LDRD (imm)",               "11101001U1W1nnnnttttssssiiiiiiii")
+INST(thumb32_STL,            "STL",                      "111010001100nnnntttt111110101111") // v8
+INST(thumb32_LDA,            "LDA",                      "111010001101nnnntttt111110101111") // v8
 INST(thumb32_STREXB,         "STREXB",                   "111010001100nnnntttt11110100dddd")
 INST(thumb32_STREXH,         "STREXH",                   "111010001100nnnntttt11110101dddd")
 INST(thumb32_STREXD,         "STREXD",                   "111010001100nnnnttttuuuu0111dddd")

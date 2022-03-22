@@ -6,7 +6,6 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "common/dynamic_library.h"
 #include "video_core/renderer_base.h"

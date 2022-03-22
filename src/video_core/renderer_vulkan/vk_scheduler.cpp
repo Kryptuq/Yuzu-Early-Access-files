@@ -4,7 +4,6 @@
 
 #include <memory>
 #include <mutex>
-#include <optional>
 #include <thread>
 #include <utility>
 

@@ -21,7 +21,6 @@
 #include "common/fs/fs.h"
 #include "common/fs/path_util.h"
 #include "common/logging/log.h"
-#include "common/param_package.h"
 #include "common/settings.h"
 #include "core/hle/service/acc/profile_manager.h"
 #include "input_common/main.h"

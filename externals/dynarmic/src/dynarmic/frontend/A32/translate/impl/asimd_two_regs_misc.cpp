@@ -225,6 +225,21 @@ bool TranslatorVisitor::v8_AESMC(bool D, size_t sz, size_t Vd, bool M, size_t Vm
     return true;
 }
 
+bool TranslatorVisitor::v8_SHA256SU0(bool D, size_t sz, size_t Vd, bool M, size_t Vm) {
+    if (sz != 0b10 || Common::Bit<0>(Vd) || Common::Bit<0>(Vm)) {
+        return UndefinedInstruction();
+    }
+
+    const auto d = ToVector(true, Vd, D);
+    const auto m = ToVector(true, Vm, M);
+    const auto x = ir.GetVector(d);
+    const auto y = ir.GetVector(m);
+    const auto result = ir.SHA256MessageSchedule0(x, y);
+
+    ir.SetVector(d, result);
+    return true;
+}
+
 bool TranslatorVisitor::asimd_VCLS(bool D, size_t sz, size_t Vd, bool Q, bool M, size_t Vm) {
     if (sz == 0b11) {
         return UndefinedInstruction();

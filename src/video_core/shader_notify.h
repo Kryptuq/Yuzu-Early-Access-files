@@ -6,7 +6,6 @@
 
 #include <atomic>
 #include <chrono>
-#include <optional>
 
 namespace VideoCore {
 class ShaderNotify {

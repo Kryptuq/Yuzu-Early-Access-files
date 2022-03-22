@@ -6,7 +6,6 @@
 #include <array>
 #include <cstring>
 #include <memory>
-#include <tuple>
 #include <vector>
 
 #include "common/assert.h"
@@ -28,7 +27,6 @@
 #include "video_core/renderer_vulkan/renderer_vulkan.h"
 #include "video_core/renderer_vulkan/vk_blit_screen.h"
 #include "video_core/renderer_vulkan/vk_fsr.h"
-#include "video_core/renderer_vulkan/vk_master_semaphore.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_shader_util.h"
 #include "video_core/renderer_vulkan/vk_swapchain.h"

@@ -5,7 +5,6 @@
 #pragma once
 
 #include <atomic>
-#include <tuple>
 
 #include "common/common_types.h"
 #include "common/virtual_buffer.h"

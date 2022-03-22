@@ -2,7 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <QGraphicsItem>
 #include <QtConcurrent/QtConcurrent>
 #include "common/settings.h"
 #include "core/core.h"

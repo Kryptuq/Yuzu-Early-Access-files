@@ -4,7 +4,6 @@
 
 #include <atomic>
 #include <chrono>
-#include <optional>
 
 #include "video_core/shader_notify.h"
 

@@ -15,7 +15,6 @@
 #include "core/hle/kernel/k_page_linked_list.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/svc_results.h"
-#include "core/memory.h"
 
 namespace Kernel {
 

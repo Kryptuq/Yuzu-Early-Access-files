@@ -2,14 +2,12 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <array>
 #include <chrono>
 #include <optional>
 
 #include <QFileDialog>
 #include <QGraphicsItem>
 #include <QMessageBox>
-#include "common/assert.h"
 #include "common/settings.h"
 #include "core/core.h"
 #include "core/hle/service/time/time_manager.h"

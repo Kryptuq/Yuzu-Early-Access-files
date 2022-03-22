@@ -8,10 +8,12 @@
 #include <glad/glad.h>
 #include "common/common_types.h"
 #include "common/math_util.h"
+
 #include "video_core/renderer_base.h"
 #include "video_core/renderer_opengl/gl_device.h"
 #include "video_core/renderer_opengl/gl_rasterizer.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
+#include "video_core/renderer_opengl/gl_shader_manager.h"
 #include "video_core/renderer_opengl/gl_state_tracker.h"
 
 namespace Core {

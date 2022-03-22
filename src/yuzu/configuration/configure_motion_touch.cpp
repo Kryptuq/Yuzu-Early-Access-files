@@ -2,16 +2,11 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <array>
 #include <sstream>
 
 #include <QCloseEvent>
-#include <QLabel>
 #include <QMessageBox>
-#include <QPushButton>
-#include <QRegularExpression>
 #include <QStringListModel>
-#include <QVBoxLayout>
 
 #include "common/logging/log.h"
 #include "common/settings.h"

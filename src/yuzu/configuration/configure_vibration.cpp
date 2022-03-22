@@ -2,12 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <algorithm>
-#include <unordered_map>
-
-#include <fmt/format.h>
-
-#include "common/param_package.h"
 #include "common/settings.h"
 #include "core/hid/emulated_controller.h"
 #include "core/hid/hid_core.h"

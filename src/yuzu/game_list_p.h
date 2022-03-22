@@ -11,7 +11,6 @@
 
 #include <QCoreApplication>
 #include <QFileInfo>
-#include <QImage>
 #include <QObject>
 #include <QStandardItem>
 #include <QString>

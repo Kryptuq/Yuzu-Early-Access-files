@@ -6,7 +6,6 @@
 #include <QKeyEvent>
 #include <QMessageBox>
 #include <QMouseEvent>
-#include <QResizeEvent>
 #include <QStandardItemModel>
 #include <QTimer>
 #include "common/param_package.h"

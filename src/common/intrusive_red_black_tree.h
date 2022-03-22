@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "common/alignment.h"
 #include "common/common_funcs.h"
 #include "common/parent_of_member.h"
 #include "common/tree.h"

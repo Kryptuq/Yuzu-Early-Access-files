@@ -5,7 +5,6 @@
 #include <variant>
 #include <boost/container/static_vector.hpp>
 
-#include "common/assert.h"
 #include "common/logging/log.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_update_descriptor.h"

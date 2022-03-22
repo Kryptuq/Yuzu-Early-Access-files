@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <compare>
 #include <string>
 
 #include <fmt/format.h>

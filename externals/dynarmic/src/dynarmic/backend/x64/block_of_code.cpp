@@ -114,6 +114,8 @@ HostFeature GetHostFeatures() {
         features |= HostFeature::FMA;
     if (cpu_info.has(Cpu::tAESNI))
         features |= HostFeature::AES;
+    if (cpu_info.has(Cpu::tSHA))
+        features |= HostFeature::SHA;
     if (cpu_info.has(Cpu::tPOPCNT))
         features |= HostFeature::POPCNT;
     if (cpu_info.has(Cpu::tBMI1))

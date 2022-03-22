@@ -10,7 +10,6 @@
 
 #include <boost/crc.hpp>
 
-#include "common/bit_field.h"
 #include "common/swap.h"
 
 namespace InputCommon::CemuhookUDP {

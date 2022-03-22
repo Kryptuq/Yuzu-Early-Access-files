@@ -14,7 +14,6 @@
 #include "core/hardware_properties.h"
 #include "core/hle/kernel/k_auto_object.h"
 #include "core/hle/kernel/k_slab_heap.h"
-#include "core/hle/kernel/memory_types.h"
 #include "core/hle/kernel/svc_common.h"
 
 namespace Core {

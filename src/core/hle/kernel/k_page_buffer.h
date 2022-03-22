@@ -7,7 +7,6 @@
 #include <array>
 
 #include "common/common_types.h"
-#include "core/device_memory.h"
 #include "core/hle/kernel/memory_types.h"
 #include "core/hle/kernel/slab_helpers.h"
 

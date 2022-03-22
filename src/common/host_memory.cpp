@@ -18,6 +18,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include "common/scope_exit.h"
 
 #endif // ^^^ Linux ^^^
 
@@ -27,7 +28,6 @@
 #include "common/assert.h"
 #include "common/host_memory.h"
 #include "common/logging/log.h"
-#include "common/scope_exit.h"
 
 namespace Common {
 

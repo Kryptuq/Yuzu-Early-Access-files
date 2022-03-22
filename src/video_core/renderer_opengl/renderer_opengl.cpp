@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdlib>
-#include <cstring>
 #include <memory>
 
 #include <glad/glad.h>
@@ -15,11 +14,9 @@
 #include "common/microprofile.h"
 #include "common/settings.h"
 #include "common/telemetry.h"
-#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/frontend/emu_window.h"
 #include "core/memory.h"
-#include "core/perf_stats.h"
 #include "core/telemetry_session.h"
 #include "video_core/host_shaders/fxaa_frag.h"
 #include "video_core/host_shaders/fxaa_vert.h"

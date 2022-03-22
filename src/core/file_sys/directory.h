@@ -5,7 +5,6 @@
 #pragma once
 
 #include <cstddef>
-#include <iterator>
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 

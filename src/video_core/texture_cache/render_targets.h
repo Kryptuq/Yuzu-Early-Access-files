@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <span>
-#include <utility>
 
 #include "common/bit_cast.h"
 #include "video_core/texture_cache/types.h"

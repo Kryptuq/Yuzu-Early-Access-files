@@ -6,8 +6,6 @@
 #include <array>
 #include <cstddef>
 #include <cstdlib>
-#include <cstring>
-#include <limits>
 #include <optional>
 #include <span>
 #include <stdexcept>
@@ -16,7 +14,6 @@
 #include <glad/glad.h>
 
 #include "common/logging/log.h"
-#include "common/scope_exit.h"
 #include "common/settings.h"
 #include "shader_recompiler/stage.h"
 #include "video_core/renderer_opengl/gl_device.h"

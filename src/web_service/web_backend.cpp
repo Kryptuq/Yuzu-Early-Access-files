@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include <array>
-#include <cstdlib>
 #include <mutex>
 #include <string>
 

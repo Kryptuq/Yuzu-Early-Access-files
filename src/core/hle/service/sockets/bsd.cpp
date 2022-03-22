@@ -10,7 +10,6 @@
 #include <fmt/format.h>
 
 #include "common/microprofile.h"
-#include "common/thread.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/service/sockets/bsd.h"

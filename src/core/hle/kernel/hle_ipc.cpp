@@ -17,7 +17,6 @@
 #include "core/hle/kernel/k_auto_object.h"
 #include "core/hle/kernel/k_handle_table.h"
 #include "core/hle/kernel/k_process.h"
-#include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/k_server_session.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"

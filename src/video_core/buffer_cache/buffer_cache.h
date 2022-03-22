@@ -11,7 +11,6 @@
 #include <mutex>
 #include <numeric>
 #include <span>
-#include <unordered_map>
 #include <vector>
 
 #include <boost/container/small_vector.hpp>
@@ -22,7 +21,6 @@
 #include "common/literals.h"
 #include "common/lru_cache.h"
 #include "common/microprofile.h"
-#include "common/scope_exit.h"
 #include "common/settings.h"
 #include "core/memory.h"
 #include "video_core/buffer_cache/buffer_base.h"
@@ -1495,15 +1493,13 @@ typename BufferCache<P>::OverlapResult BufferCache<P>::ResolveOverlaps(VAddr cpu
         overlap_ids.push_back(overlap_id);
         overlap.Pick();
         const VAddr overlap_cpu_addr = overlap.CpuAddr();
-        bool goes_left = false;
-        if (overlap_cpu_addr < begin) {
-            goes_left = true;
+        const bool expands_left = overlap_cpu_addr < begin;
+        if (expands_left) {
             cpu_addr = begin = overlap_cpu_addr;
         }
         const VAddr overlap_end = overlap_cpu_addr + overlap.SizeBytes();
-        bool goes_right = false;
+        const bool expands_right = overlap_end > end;
         if (overlap_end > end) {
-            goes_right = true;
             end = overlap_end;
         }
         stream_score += overlap.StreamScore();
@@ -1511,11 +1507,11 @@ typename BufferCache<P>::OverlapResult BufferCache<P>::ResolveOverlaps(VAddr cpu
             // When this memory region has been joined a bunch of times, we assume it's being used
             // as a stream buffer. Increase the size to skip constantly recreating buffers.
             has_stream_leap = true;
-            if (goes_right) {
+            if (expands_right) {
                 begin -= PAGE_SIZE * 256;
                 cpu_addr = begin;
             }
-            if (goes_left) {
+            if (expands_left) {
                 end += PAGE_SIZE * 256;
             }
         }

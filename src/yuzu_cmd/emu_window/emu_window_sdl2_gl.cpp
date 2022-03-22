@@ -11,7 +11,6 @@
 
 #include <fmt/format.h>
 #include <glad/glad.h>
-#include "common/assert.h"
 #include "common/logging/log.h"
 #include "common/scm_rev.h"
 #include "common/settings.h"

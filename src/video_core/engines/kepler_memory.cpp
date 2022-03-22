@@ -9,8 +9,6 @@
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/memory_manager.h"
 #include "video_core/rasterizer_interface.h"
-#include "video_core/renderer_base.h"
-#include "video_core/textures/decoders.h"
 
 namespace Tegra::Engines {
 

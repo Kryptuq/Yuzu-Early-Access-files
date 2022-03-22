@@ -8,7 +8,6 @@
 #include <filesystem>
 #include <span>
 #include <string>
-#include <string_view>
 
 #include "common/common_types.h"
 

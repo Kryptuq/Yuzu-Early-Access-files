@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <array>
 #include <atomic>
 #include <memory>
 #include <thread>

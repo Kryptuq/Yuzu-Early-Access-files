@@ -3,12 +3,10 @@
 // Refer to the license.txt file included.
 
 #include <array>
-#include <cstring>
 #include <memory>
 #include <optional>
 #include <utility>
 
-#include "common/alignment.h"
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "common/div_ceil.h"
@@ -23,7 +21,6 @@
 #include "video_core/renderer_vulkan/vk_update_descriptor.h"
 #include "video_core/texture_cache/accelerated_swizzle.h"
 #include "video_core/texture_cache/types.h"
-#include "video_core/textures/astc.h"
 #include "video_core/textures/decoders.h"
 #include "video_core/vulkan_common/vulkan_device.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"

@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include "shader_recompiler/frontend/maxwell/translate/impl/common_funcs.h"
 #include "shader_recompiler/frontend/maxwell/translate/impl/half_floating_point_helper.h"
 
 namespace Shader::Maxwell {

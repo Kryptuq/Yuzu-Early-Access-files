@@ -2,7 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <array>
 #include <vector>
 
 #include "video_core/command_classes/codecs/vp8.h"

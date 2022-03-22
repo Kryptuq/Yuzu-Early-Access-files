@@ -5,7 +5,6 @@
 #pragma once
 
 #include <array>
-#include <string_view>
 
 #include <sirit/sirit.h>
 

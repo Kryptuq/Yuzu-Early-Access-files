@@ -22,7 +22,6 @@
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/physical_core.h"
-#include "core/hle/kernel/time_manager.h"
 
 namespace Kernel {
 

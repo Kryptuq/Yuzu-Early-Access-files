@@ -8,7 +8,6 @@
 
 #include <boost/container/small_vector.hpp>
 
-#include "common/assert.h"
 #include "common/common_types.h"
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
 #include "shader_recompiler/shader_info.h"
@@ -16,7 +15,6 @@
 #include "video_core/renderer_vulkan/vk_update_descriptor.h"
 #include "video_core/texture_cache/texture_cache.h"
 #include "video_core/texture_cache/types.h"
-#include "video_core/textures/texture.h"
 #include "video_core/vulkan_common/vulkan_device.h"
 
 namespace Vulkan {

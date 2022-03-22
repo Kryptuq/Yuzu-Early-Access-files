@@ -7,7 +7,7 @@
 #include <memory>
 #include <string_view>
 #include <queue>
-#include "common/common_types.h"
+
 #include "video_core/command_classes/nvdec_common.h"
 
 extern "C" {

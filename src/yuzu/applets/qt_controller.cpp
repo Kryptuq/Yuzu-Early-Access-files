@@ -6,7 +6,6 @@
 #include <thread>
 
 #include "common/assert.h"
-#include "common/param_package.h"
 #include "common/string_util.h"
 #include "core/core.h"
 #include "core/hid/emulated_controller.h"

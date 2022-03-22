@@ -26,14 +26,15 @@ enum class HostFeature : u64 {
     F16C = 1ULL << 13,
     FMA = 1ULL << 14,
     AES = 1ULL << 15,
-    POPCNT = 1ULL << 16,
-    BMI1 = 1ULL << 17,
-    BMI2 = 1ULL << 18,
-    LZCNT = 1ULL << 19,
-    GFNI = 1ULL << 20,
+    SHA = 1ULL << 16,
+    POPCNT = 1ULL << 17,
+    BMI1 = 1ULL << 18,
+    BMI2 = 1ULL << 19,
+    LZCNT = 1ULL << 20,
+    GFNI = 1ULL << 21,
 
     // Zen-based BMI2
-    FastBMI2 = 1ULL << 21,
+    FastBMI2 = 1ULL << 22,
 
     // Orthographic AVX512 features on 128 and 256 vectors
     AVX512_Ortho = AVX512F | AVX512VL,

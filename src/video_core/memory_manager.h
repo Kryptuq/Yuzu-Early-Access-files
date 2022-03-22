@@ -76,6 +76,8 @@ public:
 
     [[nodiscard]] std::optional<VAddr> GpuToCpuAddress(GPUVAddr addr) const;
 
+    [[nodiscard]] std::optional<u8*> GpuToHostPointer(GPUVAddr addr) const;
+
     [[nodiscard]] std::optional<VAddr> GpuToCpuAddress(GPUVAddr addr, std::size_t size) const;
 
     template <typename T>

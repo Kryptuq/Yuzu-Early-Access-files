@@ -7,7 +7,6 @@
 #include <vector>
 #include <QDialog>
 #include <QList>
-#include <QTreeView>
 #include "core/frontend/applets/profile_select.h"
 #include "core/hle/service/acc/profile_manager.h"
 
@@ -19,6 +18,7 @@ class QLabel;
 class QScrollArea;
 class QStandardItem;
 class QStandardItemModel;
+class QTreeView;
 class QVBoxLayout;
 
 namespace Core::HID {

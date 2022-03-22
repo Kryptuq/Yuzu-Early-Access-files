@@ -6,7 +6,6 @@
 #include <array>
 #include <bit>
 #include <memory>
-#include <string_view>
 
 #include "common/common_types.h"
 #include "shader_recompiler/exception.h"

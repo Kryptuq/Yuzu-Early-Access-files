@@ -7,9 +7,7 @@
 
 #include "yuzu/debugger/wait_tree.h"
 #include "yuzu/uisettings.h"
-#include "yuzu/util/util.h"
 
-#include "common/assert.h"
 #include "core/arm/arm_interface.h"
 #include "core/core.h"
 #include "core/hle/kernel/k_class_token.h"

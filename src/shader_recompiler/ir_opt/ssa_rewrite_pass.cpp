@@ -20,7 +20,6 @@
 #include <vector>
 
 #include <boost/container/flat_map.hpp>
-#include <boost/container/flat_set.hpp>
 
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/opcodes.h"

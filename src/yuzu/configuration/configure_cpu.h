@@ -6,7 +6,6 @@
 
 #include <memory>
 #include <QWidget>
-#include "common/settings.h"
 
 namespace Core {
 class System;

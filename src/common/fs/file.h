@@ -6,10 +6,8 @@
 
 #include <cstdio>
 #include <filesystem>
-#include <fstream>
 #include <span>
 #include <type_traits>
-#include <vector>
 
 #include "common/concepts.h"
 #include "common/fs/fs_types.h"

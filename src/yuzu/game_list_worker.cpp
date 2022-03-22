@@ -23,7 +23,6 @@
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/registered_cache.h"
 #include "core/file_sys/submission_package.h"
-#include "core/hle/service/filesystem/filesystem.h"
 #include "core/loader/loader.h"
 #include "yuzu/compatibility_list.h"
 #include "yuzu/game_list.h"

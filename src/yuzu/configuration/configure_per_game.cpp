@@ -12,17 +12,11 @@
 
 #include <QAbstractButton>
 #include <QCheckBox>
-#include <QDialogButtonBox>
-#include <QHeaderView>
-#include <QMenu>
 #include <QPushButton>
-#include <QStandardItemModel>
 #include <QString>
 #include <QTimer>
-#include <QTreeView>
 
 #include "common/fs/fs_util.h"
-#include "common/fs/path_util.h"
 #include "core/core.h"
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/patch_manager.h"

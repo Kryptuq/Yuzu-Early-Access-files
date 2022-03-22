@@ -2,9 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <array>
-#include <bit>
-
 #include "common/bit_field.h"
 #include "common/common_types.h"
 #include "shader_recompiler/frontend/ir/modifiers.h"

@@ -3,15 +3,12 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
-#include <cstring>
 #include <memory>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include <glad/glad.h>
 
-#include "common/assert.h"
 #include "core/core.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/memory_manager.h"

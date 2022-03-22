@@ -4,13 +4,10 @@
 
 #include <functional>
 #include <utility>
-#include <QCheckBox>
 #include <QMessageBox>
-#include <QSpinBox>
 #include "common/settings.h"
 #include "core/core.h"
 #include "ui_configure_general.h"
-#include "yuzu/configuration/config.h"
 #include "yuzu/configuration/configuration_shared.h"
 #include "yuzu/configuration/configure_general.h"
 #include "yuzu/uisettings.h"

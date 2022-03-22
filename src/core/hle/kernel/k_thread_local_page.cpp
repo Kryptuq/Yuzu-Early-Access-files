@@ -4,7 +4,9 @@
 
 #include "common/scope_exit.h"
 #include "core/core.h"
+
 #include "core/hle/kernel/k_memory_block.h"
+#include "core/hle/kernel/k_page_buffer.h"
 #include "core/hle/kernel/k_page_table.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_thread_local_page.h"

@@ -14,9 +14,7 @@
 #include "common/common_types.h"
 #include "common/fiber.h"
 #include "common/logging/log.h"
-#include "common/scope_exit.h"
 #include "common/settings.h"
-#include "common/thread_queue_list.h"
 #include "core/core.h"
 #include "core/cpu_manager.h"
 #include "core/hardware_properties.h"
@@ -33,7 +31,6 @@
 #include "core/hle/kernel/k_worker_task_manager.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/svc_results.h"
-#include "core/hle/kernel/time_manager.h"
 #include "core/hle/result.h"
 #include "core/memory.h"
 

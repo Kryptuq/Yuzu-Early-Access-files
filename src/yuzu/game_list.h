@@ -5,16 +5,11 @@
 #pragma once
 
 #include <QFileSystemWatcher>
-#include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QList>
-#include <QModelIndex>
-#include <QSettings>
-#include <QStandardItem>
 #include <QStandardItemModel>
 #include <QString>
-#include <QToolButton>
 #include <QTreeView>
 #include <QVBoxLayout>
 #include <QVector>

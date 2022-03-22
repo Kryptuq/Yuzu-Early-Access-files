@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include <QCheckBox>
-#include <QComboBox>
 #include <QObject>
 #include <QString>
 #include "common/settings.h"

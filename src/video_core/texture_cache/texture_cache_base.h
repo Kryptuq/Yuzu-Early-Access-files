@@ -22,7 +22,6 @@
 #include "video_core/texture_cache/image_base.h"
 #include "video_core/texture_cache/image_info.h"
 #include "video_core/texture_cache/image_view_base.h"
-#include "video_core/texture_cache/image_view_info.h"
 #include "video_core/texture_cache/render_targets.h"
 #include "video_core/texture_cache/slot_vector.h"
 #include "video_core/texture_cache/types.h"

@@ -8,7 +8,6 @@
 #include <type_traits>
 
 #include "common/bit_cast.h"
-#include "common/bit_util.h"
 #include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/ir/ir_emitter.h"
 #include "shader_recompiler/frontend/ir/value.h"

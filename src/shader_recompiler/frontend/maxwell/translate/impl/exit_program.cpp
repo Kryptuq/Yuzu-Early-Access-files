@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include "common/common_types.h"
-#include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/maxwell/translate/impl/impl.h"
 
 namespace Shader::Maxwell {

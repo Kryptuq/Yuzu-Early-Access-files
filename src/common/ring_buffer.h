@@ -12,7 +12,6 @@
 #include <new>
 #include <type_traits>
 #include <vector>
-#include "common/common_types.h"
 
 namespace Common {
 
