@@ -25,7 +25,27 @@ void DeadInstElimination(IR::Block* const block) {
     }
 }
 
+void DeletedPhiArgElimination(IR::Program& program, const std::vector<IR::Block*>& dead_blocks) {
+    for (IR::Block* const block : program.blocks) {
+        for (IR::Inst& phi : *block) {
+            if (!IR::IsPhi(phi)) {
+                continue;
+            }
+            for (size_t i = 0; i < phi.NumArgs(); ++i) {
+                const auto it{std::find(dead_blocks.begin(), dead_blocks.end(), phi.PhiBlock(i))};
+                if (it == dead_blocks.end()) {
+                    continue;
+                }
+                // Phi operand at this index is an unreachable block
+                phi.ErasePhiOperand(i);
+                --i;
+            }
+        }
+    }
+}
+
 void DeadBranchElimination(IR::Program& program) {
+    std::vector<IR::Block*> dead_blocks;
     const auto begin_it{program.syntax_list.begin()};
     for (auto node_it = begin_it; node_it != program.syntax_list.end(); ++node_it) {
         if (node_it->type != IR::AbstractSyntaxNode::Type::If) {
@@ -55,6 +75,7 @@ void DeadBranchElimination(IR::Program& program) {
             case IR::AbstractSyntaxNode::Type::Block: {
                 IR::Block* const block{node_it->data.block};
                 DeadInstElimination<false>(block);
+                dead_blocks.push_back(block);
                 break;
             }
             default:
@@ -63,6 +84,11 @@ void DeadBranchElimination(IR::Program& program) {
         }
         // Erase EndIf node of the if(false) branch
         node_it = program.syntax_list.erase(node_it);
+        // Account for loop increment
+        --node_it;
+    }
+    if (!dead_blocks.empty()) {
+        DeletedPhiArgElimination(program, dead_blocks);
     }
 }
 } // namespace
