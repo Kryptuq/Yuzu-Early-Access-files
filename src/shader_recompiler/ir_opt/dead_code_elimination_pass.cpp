@@ -2,6 +2,10 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <algorithm>
+
+#include <boost/container/small_vector.hpp>
+
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/value.h"
 #include "shader_recompiler/ir_opt/passes.h"
@@ -25,15 +29,14 @@ void DeadInstElimination(IR::Block* const block) {
     }
 }
 
-void DeletedPhiArgElimination(IR::Program& program, const std::vector<IR::Block*>& dead_blocks) {
+void DeletedPhiArgElimination(IR::Program& program, std::span<const IR::Block*> dead_blocks) {
     for (IR::Block* const block : program.blocks) {
         for (IR::Inst& phi : *block) {
             if (!IR::IsPhi(phi)) {
                 continue;
             }
             for (size_t i = 0; i < phi.NumArgs(); ++i) {
-                const auto it{std::find(dead_blocks.begin(), dead_blocks.end(), phi.PhiBlock(i))};
-                if (it == dead_blocks.end()) {
+                if (std::ranges::find(dead_blocks, phi.PhiBlock(i)) == dead_blocks.end()) {
                     continue;
                 }
                 // Phi operand at this index is an unreachable block
@@ -45,7 +48,7 @@ void DeletedPhiArgElimination(IR::Program& program, const std::vector<IR::Block*
 }
 
 void DeadBranchElimination(IR::Program& program) {
-    std::vector<IR::Block*> dead_blocks;
+    boost::container::small_vector<const IR::Block*, 3> dead_blocks;
     const auto begin_it{program.syntax_list.begin()};
     for (auto node_it = begin_it; node_it != program.syntax_list.end(); ++node_it) {
         if (node_it->type != IR::AbstractSyntaxNode::Type::If) {
@@ -88,7 +91,7 @@ void DeadBranchElimination(IR::Program& program) {
         --node_it;
     }
     if (!dead_blocks.empty()) {
-        DeletedPhiArgElimination(program, dead_blocks);
+        DeletedPhiArgElimination(program, std::span(dead_blocks.data(), dead_blocks.size()));
     }
 }
 } // namespace

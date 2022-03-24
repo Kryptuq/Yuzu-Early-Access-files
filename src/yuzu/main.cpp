@@ -582,7 +582,7 @@ void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,
 #ifdef YUZU_USE_QT_WEB_ENGINE
 
     // Raw input breaks with the web applet, Disable web applets if enabled
-    if (disable_web_applet || Settings::values.enable_raw_input) {
+    if (UISettings::values.disable_web_applet || Settings::values.enable_raw_input) {
         emit WebBrowserClosed(Service::AM::Applets::WebExitReason::WindowClosed,
                               "http://localhost/");
         return;
@@ -647,12 +647,12 @@ void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,
     connect(exit_action, &QAction::triggered, this, [this, &web_browser_view] {
         const auto result = QMessageBox::warning(
             this, tr("Disable Web Applet"),
-            tr("Disabling the web applet will cause it to not be shown again for the rest of the "
-               "emulated session. This can lead to undefined behavior and should only be used with "
-               "Super Mario 3D All-Stars. Are you sure you want to disable the web applet?"),
+            tr("Disabling the web applet can lead to undefined behavior and should only be used "
+               "with Super Mario 3D All-Stars. Are you sure you want to disable the web "
+               "applet?\n(This can be re-enabled in the Debug settings.)"),
             QMessageBox::Yes | QMessageBox::No);
         if (result == QMessageBox::Yes) {
-            disable_web_applet = true;
+            UISettings::values.disable_web_applet = true;
             web_browser_view.SetFinished(true);
         }
     });

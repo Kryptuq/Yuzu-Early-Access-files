@@ -8,49 +8,49 @@
      <property name="title">
       <string>Logging</string>
      </property>
-        <layout class="QGridLayout" name="gridLayout_1">
-         <item row="0" column="0" colspan="2">
-          <layout class="QHBoxLayout" name="horizontalLayout_1">
-          <item>
-           <widget class="QLabel" name="label_1">
-           <property name="text">
-            <string>Global Log Filter</string>
-           </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="log_filter_edit"/>
-         </item>
-        </layout>
-         </item>
-         <item row="1" column="0">
-          <widget class="QCheckBox" name="toggle_console">
-           <property name="text">
-            <string>Show Log in Console</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-           <widget class="QPushButton" name="open_log_button">
-            <property name="text">
-             <string>Open Log Location</string>
-            </property>
-           </widget>
-          </item>
-         <item row="2" column="0">
-          <widget class="QCheckBox" name="extended_logging">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
-          <property name="toolTip">
-           <string>When checked, the max size of the log increases from 100 MB to 1 GB</string>
-          </property>
+     <layout class="QGridLayout" name="gridLayout_1">
+      <item row="0" column="0" colspan="2">
+       <layout class="QHBoxLayout" name="horizontalLayout_1">
+        <item>
+         <widget class="QLabel" name="label_1">
           <property name="text">
-           <string>Enable Extended Logging**</string>
+           <string>Global Log Filter</string>
           </property>
-          </widget>
-         </item>
-        </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="log_filter_edit"/>
+        </item>
+       </layout>
+      </item>
+      <item row="1" column="0">
+       <widget class="QCheckBox" name="toggle_console">
+        <property name="text">
+         <string>Show Log in Console</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QPushButton" name="open_log_button">
+        <property name="text">
+         <string>Open Log Location</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QCheckBox" name="extended_logging">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>When checked, the max size of the log increases from 100 MB to 1 GB</string>
+        </property>
+        <property name="text">
+         <string>Enable Extended Logging**</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
    <item>
@@ -183,7 +183,7 @@
       <string>Advanced</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
-      <item> row="0" column="0">
+      <item row="0" column="0">
        <widget class="QCheckBox" name="quest_flag">
         <property name="text">
          <string>Kiosk (Quest) Mode</string>
@@ -215,6 +215,13 @@
        <widget class="QCheckBox" name="enable_all_controllers">
         <property name="text">
          <string>Enable all Controller Types</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QCheckBox" name="disable_web_applet">
+        <property name="text">
+         <string>Disable Web Applet**</string>
         </property>
        </widget>
       </item>

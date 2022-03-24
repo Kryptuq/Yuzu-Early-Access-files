@@ -1348,12 +1348,6 @@ public:
                         return static_cast<GPUVAddr>((static_cast<GPUVAddr>(limit_high) << 32) |
                                                      limit_low);
                     }
-
-                    void SetAddress(GPUVAddr address) {
-                        limit_low = static_cast<u32>(address);
-                        limit_high = static_cast<u32>(address >> 32);
-                    }
-
                 } vertex_array_limit[NumVertexArrays];
 
                 struct {
@@ -1497,16 +1491,6 @@ public:
         Tables tables{};
     } dirty;
 
-    struct VertexNumApproxState {
-        GPUVAddr last_index_array_start;
-        u32 current_max_index;
-        u32 current_min_index;
-        u32 current_num_vertices;
-        std::vector<u32> index_buffer_cache;
-    } vertex_num_approx_state;
-
-    bool accelerated_reads{};
-
 private:
     void InitializeRegisterDefaults();
 
@@ -1574,8 +1558,6 @@ private:
 
     // Handles a instance drawcall from MME
     void StepInstance(MMEDrawMode expected_mode, u32 count);
-
-    void RecalculateVertexArrayLimit();
 
     /// Returns a query's value or an empty object if the value will be deferred through a cache.
     std::optional<u64> GetQueryResult();

@@ -2,13 +2,9 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <algorithm>
 #include <cstring>
 #include <optional>
-
-#include "common/alignment.h"
 #include "common/assert.h"
-#include "common/settings.h"
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "video_core/dirty_flags.h"
@@ -30,7 +26,6 @@ Maxwell3D::Maxwell3D(Core::System& system_, MemoryManager& memory_manager_)
       upload_state{memory_manager, regs.upload} {
     dirty.flags.flip();
     InitializeRegisterDefaults();
-    accelerated_reads = Settings::IsFastmemEnabled();
 }
 
 Maxwell3D::~Maxwell3D() = default;
@@ -218,9 +213,6 @@ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argume
         regs.index_array.count = regs.small_index.count;
         regs.index_array.first = regs.small_index.first;
         dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
-        if (!Settings::IsGPULevelExtreme()) {
-            RecalculateVertexArrayLimit();
-        }
         return DrawArrays();
     case MAXWELL3D_REG_INDEX(topology_override):
         use_topology_override = true;
@@ -673,73 +665,6 @@ u32 Maxwell3D::GetRegisterValue(u32 method) const {
 
 void Maxwell3D::ProcessClearBuffers() {
     rasterizer->Clear();
-}
-
-void Maxwell3D::RecalculateVertexArrayLimit() {
-    GPUVAddr start_address = regs.index_array.StartAddress();
-    auto& vn_state = vertex_num_approx_state;
-    if (start_address != vn_state.last_index_array_start ||
-        vn_state.current_min_index != regs.index_array.first) {
-        vn_state.last_index_array_start = start_address;
-        vn_state.current_max_index = regs.index_array.first;
-        vn_state.current_min_index = regs.index_array.first;
-        vn_state.current_num_vertices = 0;
-    }
-    const u32 index_count = regs.index_array.first + regs.index_array.count;
-    if (index_count <= vn_state.current_max_index) {
-        return;
-    }
-    const u32 max_base = std::max(regs.index_array.first, vn_state.current_max_index);
-    const u32 num_indices = index_count - max_base;
-    const size_t size_index = regs.index_array.FormatSizeInBytes();
-    const size_t expected_size = num_indices * size_index;
-    const size_t offset = max_base * size_index;
-
-    auto maybe_ptr = memory_manager.GpuToHostPointer(start_address + offset);
-    u8* ptr;
-    if (accelerated_reads && maybe_ptr) {
-        ptr = *maybe_ptr;
-    } else {
-        vn_state.index_buffer_cache.resize(Common::DivideUp(expected_size, sizeof(u32)));
-        ptr = reinterpret_cast<u8*>(vn_state.index_buffer_cache.data());
-        memory_manager.ReadBlockUnsafe(start_address + offset, ptr, expected_size);
-    }
-    vn_state.current_max_index = index_count;
-
-    u32 new_num_vertices{};
-    switch (regs.index_array.format) {
-    case Regs::IndexFormat::UnsignedByte: {
-        std::span<const u8> span{ptr, num_indices};
-        const auto max = std::max_element(span.begin(), span.end());
-        new_num_vertices = *max + 1;
-        break;
-    }
-    case Regs::IndexFormat::UnsignedShort: {
-        std::span<const u16> span{reinterpret_cast<const u16*>(ptr), num_indices};
-        const auto max = std::max_element(span.begin(), span.end());
-        new_num_vertices = *max + 1;
-        break;
-    }
-    case Regs::IndexFormat::UnsignedInt: {
-        std::span<const u32> span{reinterpret_cast<const u32*>(ptr), num_indices};
-        const auto max = std::max_element(span.begin(), span.end());
-        new_num_vertices = *max + 1;
-        break;
-    }
-    }
-    if (new_num_vertices > vn_state.current_num_vertices) {
-        vn_state.current_num_vertices = new_num_vertices;
-        for (size_t i = 0; i < Regs::NumVertexArrays; i++) {
-            if (!regs.vertex_array[i].enable) {
-                continue;
-            }
-            const u32 stride = regs.vertex_array[i].stride;
-            const GPUVAddr gpu_addr_begin = regs.vertex_array[i].StartAddress();
-            const GPUVAddr gpu_addr_end = gpu_addr_begin + new_num_vertices * stride - 1;
-            regs.vertex_array_limit[i].SetAddress(gpu_addr_end);
-            dirty.flags[VideoCommon::Dirty::VertexBuffer0 + i] = true;
-        }
-    }
 }
 
 } // namespace Tegra::Engines

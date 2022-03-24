@@ -327,7 +327,7 @@ void Inst::AddPhiOperand(Block* predecessor, const Value& value) {
 }
 
 void Inst::ErasePhiOperand(size_t index) {
-    const auto operand_it{phi_args.begin() + static_cast<u32>(index)};
+    const auto operand_it{phi_args.begin() + static_cast<ptrdiff_t>(index)};
     phi_args.erase(operand_it);
 }
 
