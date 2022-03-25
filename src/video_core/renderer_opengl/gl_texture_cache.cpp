@@ -485,11 +485,9 @@ TextureCacheRuntime::TextureCacheRuntime(const Device& device_, ProgramManager& 
         }
     }
 
-    device_access_memory = []() -> u64 {
-        if (GLAD_GL_NVX_gpu_memory_info) {
-            GLint cur_avail_mem_kb = 0;
-            glGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &cur_avail_mem_kb);
-            return static_cast<u64>(cur_avail_mem_kb) * 1_KiB + 512_MiB;
+    device_access_memory = [this]() -> u64 {
+        if (device.CanReportMemoryUsage()) {
+            return device.GetCurrentDedicatedVideoMemory() + 512_MiB;
         }
         return 2_GiB; // Return minimum requirements
     }();
@@ -510,10 +508,8 @@ ImageBufferMap TextureCacheRuntime::DownloadStagingBuffer(size_t size) {
 }
 
 u64 TextureCacheRuntime::GetDeviceMemoryUsage() const {
-    if (GLAD_GL_NVX_gpu_memory_info) {
-        GLint cur_avail_mem_kb = 0;
-        glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &cur_avail_mem_kb);
-        return device_access_memory - static_cast<u64>(cur_avail_mem_kb) * 1_KiB;
+    if (device.CanReportMemoryUsage()) {
+        return device_access_memory - device.GetCurrentDedicatedVideoMemory();
     }
     return 2_GiB;
 }

@@ -13,11 +13,14 @@
 
 #include <glad/glad.h>
 
+#include "common/literals.h"
 #include "common/logging/log.h"
 #include "common/settings.h"
 #include "shader_recompiler/stage.h"
 #include "video_core/renderer_opengl/gl_device.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
+
+using namespace Common::Literals;
 
 namespace OpenGL {
 namespace {
@@ -165,6 +168,7 @@ Device::Device() {
     has_sparse_texture_2 = GLAD_GL_ARB_sparse_texture2;
     warp_size_potentially_larger_than_guest = !is_nvidia && !is_intel;
     need_fastmath_off = is_nvidia;
+    can_report_memory = GLAD_GL_NVX_gpu_memory_info;
 
     // At the moment of writing this, only Nvidia's driver optimizes BufferSubData on exclusive
     // uniform buffers as "push constants"
@@ -274,6 +278,12 @@ void main() {
     precise float tmp_value = vec4(texture(tex, coords)).x;
     out_value = tmp_value;
 })");
+}
+
+u64 Device::GetCurrentDedicatedVideoMemory() const {
+    GLint cur_avail_mem_kb = 0;
+    glGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &cur_avail_mem_kb);
+    return static_cast<u64>(cur_avail_mem_kb) * 1_KiB;
 }
 
 } // namespace OpenGL

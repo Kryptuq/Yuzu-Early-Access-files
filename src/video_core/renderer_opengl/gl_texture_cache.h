@@ -10,6 +10,7 @@
 #include <glad/glad.h>
 
 #include "shader_recompiler/shader_info.h"
+#include "video_core/renderer_opengl/gl_device.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/renderer_opengl/util_shaders.h"
 #include "video_core/texture_cache/image_view_base.h"
@@ -21,7 +22,6 @@ struct ResolutionScalingInfo;
 
 namespace OpenGL {
 
-class Device;
 class ProgramManager;
 class StateTracker;
 
@@ -90,7 +90,7 @@ public:
     u64 GetDeviceMemoryUsage() const;
 
     bool CanReportMemoryUsage() const {
-        return GLAD_GL_NVX_gpu_memory_info;
+        return device.CanReportMemoryUsage();
     }
 
     bool ShouldReinterpret([[maybe_unused]] Image& dst, [[maybe_unused]] Image& src) {

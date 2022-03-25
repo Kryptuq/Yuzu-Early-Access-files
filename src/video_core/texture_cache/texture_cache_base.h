@@ -8,6 +8,7 @@
 #include <span>
 #include <type_traits>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <queue>
 
@@ -49,6 +50,9 @@ template <class P>
 class TextureCache {
     /// Address shift for caching images into a hash table
     static constexpr u64 PAGE_BITS = 20;
+
+    static constexpr u64 CPU_PAGE_BITS = 12;
+    static constexpr u64 CPU_PAGE_SIZE = 1ULL << CPU_PAGE_BITS;
 
     /// Enables debugging features to the texture cache
     static constexpr bool ENABLE_VALIDATION = P::ENABLE_VALIDATION;
@@ -136,6 +140,9 @@ public:
     /// Mark images in a range as modified from the CPU
     void WriteMemory(VAddr cpu_addr, size_t size);
 
+    /// Mark images in a range as modified from the CPU
+    void CachedWriteMemory(VAddr cpu_addr, size_t size);
+
     /// Download contents of host images to guest memory in a region
     void DownloadMemory(VAddr cpu_addr, size_t size);
 
@@ -144,6 +151,8 @@ public:
 
     /// Remove images in a region
     void UnmapGPUMemory(GPUVAddr gpu_addr, size_t size);
+
+    void FlushCachedWrites();
 
     /// Blit an image with the given parameters
     void BlitImage(const Tegra::Engines::Fermi2D::Surface& dst,
@@ -365,6 +374,8 @@ private:
     std::unordered_map<u64, std::vector<ImageId>, IdentityHash<u64>> sparse_page_table;
 
     std::unordered_map<ImageId, std::vector<ImageViewId>> sparse_views;
+
+    std::unordered_set<ImageId> cached_cpu_invalidate;
 
     VAddr virtual_invalid_space{};
 

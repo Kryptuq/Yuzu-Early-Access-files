@@ -89,6 +89,8 @@ public:
     void BindImageBuffer(Buffer& buffer, u32 offset, u32 size,
                          VideoCore::Surface::PixelFormat format);
 
+    u64 GetDeviceMemoryUsage() const;
+
     void BindFastUniformBuffer(size_t stage, u32 binding_index, u32 size) {
         const GLuint handle = fast_uniforms[stage][binding_index].handle;
         const GLsizeiptr gl_size = static_cast<GLsizeiptr>(size);
@@ -155,10 +157,8 @@ public:
         return device_access_memory;
     }
 
-    u64 GetDeviceMemoryUsage() const;
-
     bool CanReportMemoryUsage() const {
-        return GLAD_GL_NVX_gpu_memory_info;
+        return device.CanReportMemoryUsage();
     }
 
 private:

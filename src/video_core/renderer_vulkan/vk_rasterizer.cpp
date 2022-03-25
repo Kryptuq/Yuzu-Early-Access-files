@@ -408,7 +408,7 @@ void RasterizerVulkan::OnCPUWrite(VAddr addr, u64 size) {
     pipeline_cache.OnCPUWrite(addr, size);
     {
         std::scoped_lock lock{texture_cache.mutex};
-        texture_cache.WriteMemory(addr, size);
+        texture_cache.CachedWriteMemory(addr, size);
     }
     {
         std::scoped_lock lock{buffer_cache.mutex};
@@ -418,6 +418,10 @@ void RasterizerVulkan::OnCPUWrite(VAddr addr, u64 size) {
 
 void RasterizerVulkan::SyncGuestHost() {
     pipeline_cache.SyncGuestHost();
+    {
+        std::scoped_lock lock{texture_cache.mutex};
+        texture_cache.FlushCachedWrites();
+    }
     {
         std::scoped_lock lock{buffer_cache.mutex};
         buffer_cache.FlushCachedWrites();
