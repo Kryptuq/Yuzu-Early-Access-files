@@ -77,7 +77,7 @@ private:
     std::mutex callback_mutex;
     s32 next_callback_ticket{};
     s32 current_callback_ticket{};
-    std::condition_variable callback_condition;
+    std::condition_variable_any callback_condition;
 };
 
 } // namespace Service::android

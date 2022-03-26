@@ -21,7 +21,7 @@ Status BufferItemConsumer::AcquireBuffer(BufferItem* item, std::chrono::nanoseco
         return Status::BadValue;
     }
 
-    std::unique_lock lock(mutex);
+    std::scoped_lock lock(mutex);
 
     if (const auto status = AcquireBufferLocked(item, present_when); status != Status::NoError) {
         if (status != Status::NoBufferAvailable) {
@@ -40,7 +40,7 @@ Status BufferItemConsumer::AcquireBuffer(BufferItem* item, std::chrono::nanoseco
 }
 
 Status BufferItemConsumer::ReleaseBuffer(const BufferItem& item, Fence& release_fence) {
-    std::unique_lock lock(mutex);
+    std::scoped_lock lock(mutex);
 
     if (const auto status = AddReleaseFenceLocked(item.buf, item.graphic_buffer, release_fence);
         status != Status::NoError) {

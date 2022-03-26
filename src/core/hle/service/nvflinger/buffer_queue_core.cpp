@@ -10,16 +10,12 @@
 
 namespace Service::android {
 
-BufferQueueCore::BufferQueueCore() : lock{mutex, std::defer_lock} {
-    for (s32 slot = 0; slot < BufferQueueDefs::NUM_BUFFER_SLOTS; ++slot) {
-        free_slots.insert(slot);
-    }
-}
+BufferQueueCore::BufferQueueCore() = default;
 
 BufferQueueCore::~BufferQueueCore() = default;
 
 void BufferQueueCore::NotifyShutdown() {
-    std::unique_lock lk(mutex);
+    std::scoped_lock lock(mutex);
 
     is_shutting_down = true;
 
@@ -35,7 +31,7 @@ bool BufferQueueCore::WaitForDequeueCondition() {
         return false;
     }
 
-    dequeue_condition.wait(lock);
+    dequeue_condition.wait(mutex);
 
     return true;
 }
@@ -86,26 +82,15 @@ s32 BufferQueueCore::GetPreallocatedBufferCountLocked() const {
 void BufferQueueCore::FreeBufferLocked(s32 slot) {
     LOG_DEBUG(Service_NVFlinger, "slot {}", slot);
 
-    const auto had_buffer = slots[slot].graphic_buffer != nullptr;
-
     slots[slot].graphic_buffer.reset();
 
     if (slots[slot].buffer_state == BufferState::Acquired) {
         slots[slot].needs_cleanup_on_release = true;
     }
 
-    if (slots[slot].buffer_state != BufferState::Free) {
-        free_slots.insert(slot);
-    } else if (had_buffer) {
-        // If the slot was FREE, but we had a buffer, we need to move this slot from the free
-        // buffers list to the the free slots list.
-        free_buffers.remove(slot);
-        free_slots.insert(slot);
-    }
-
     slots[slot].buffer_state = BufferState::Free;
+    slots[slot].frame_number = UINT32_MAX;
     slots[slot].acquire_called = false;
-    slots[slot].frame_number = 0;
     slots[slot].fence = Fence::NoFence();
 }
 
@@ -126,8 +111,7 @@ bool BufferQueueCore::StillTracking(const BufferItem& item) const {
 
 void BufferQueueCore::WaitWhileAllocatingLocked() const {
     while (is_allocating) {
-        std::unique_lock lk(mutex);
-        is_allocating_condition.wait(lk);
+        is_allocating_condition.wait(mutex);
     }
 }
 

@@ -50,23 +50,7 @@ private:
     void WaitWhileAllocatingLocked() const;
 
 private:
-    class AutoLock final {
-    public:
-        AutoLock(std::shared_ptr<BufferQueueCore>& core_) : core{core_} {
-            core->lock.lock();
-        }
-
-        ~AutoLock() {
-            core->lock.unlock();
-        }
-
-    private:
-        std::shared_ptr<BufferQueueCore>& core;
-    };
-
-private:
     mutable std::mutex mutex;
-    mutable std::unique_lock<std::mutex> lock;
     bool is_abandoned{};
     bool consumer_controlled_by_app{};
     std::shared_ptr<IConsumerListener> consumer_listener;
@@ -75,10 +59,8 @@ private:
     std::shared_ptr<IProducerListener> connected_producer_listener;
     BufferQueueDefs::SlotsType slots{};
     std::vector<BufferItem> queue;
-    std::set<s32> free_slots;
-    std::list<s32> free_buffers;
     s32 override_max_buffer_count{};
-    mutable std::condition_variable dequeue_condition;
+    mutable std::condition_variable_any dequeue_condition;
     const bool use_async_buffer{}; // This is always disabled on HOS
     bool dequeue_buffer_cannot_block{};
     PixelFormat default_buffer_format{PixelFormat::Rgba8888};
@@ -90,7 +72,7 @@ private:
     u64 frame_counter{};
     u32 transform_hint{};
     bool is_allocating{};
-    mutable std::condition_variable is_allocating_condition;
+    mutable std::condition_variable_any is_allocating_condition;
     bool allow_allocation{true};
     u64 buffer_age{};
     bool is_shutting_down{};

@@ -38,7 +38,7 @@ BufferQueueProducer::~BufferQueueProducer() {
 Status BufferQueueProducer::RequestBuffer(s32 slot, std::shared_ptr<GraphicBuffer>* buf) {
     LOG_DEBUG(Service_NVFlinger, "slot {}", slot);
 
-    BufferQueueCore::AutoLock lock(core);
+    std::scoped_lock lock(core->mutex);
 
     if (core->is_abandoned) {
         LOG_ERROR(Service_NVFlinger, "BufferQueue has been abandoned");
@@ -65,7 +65,7 @@ Status BufferQueueProducer::SetBufferCount(s32 buffer_count) {
     std::shared_ptr<IConsumerListener> listener;
 
     {
-        BufferQueueCore::AutoLock lock(core);
+        std::scoped_lock lock(core->mutex);
         core->WaitWhileAllocatingLocked();
         if (core->is_abandoned) {
             LOG_ERROR(Service_NVFlinger, "BufferQueue has been abandoned");
@@ -156,6 +156,14 @@ Status BufferQueueProducer::WaitForFreeSlotThenRelock(bool async, s32* found,
             case BufferState::Acquired:
                 ++acquired_count;
                 break;
+            case BufferState::Free:
+                // We return the oldest of the free buffers to avoid stalling the producer if
+                // possible, since the consumer may still have pending reads of in-flight buffers
+                if (*found == BufferQueueCore::INVALID_BUFFER_SLOT ||
+                    slots[s].frame_number < slots[*found].frame_number) {
+                    *found = s;
+                }
+                break;
             default:
                 break;
             }
@@ -183,27 +191,12 @@ Status BufferQueueProducer::WaitForFreeSlotThenRelock(bool async, s32* found,
             }
         }
 
-        *found = BufferQueueCore::INVALID_BUFFER_SLOT;
-
         // If we disconnect and reconnect quickly, we can be in a state where our slots are empty
         // but we have many buffers in the queue. This can cause us to run out of memory if we
         // outrun the consumer. Wait here if it looks like we have too many buffers queued up.
         const bool too_many_buffers = core->queue.size() > static_cast<size_t>(max_buffer_count);
         if (too_many_buffers) {
             LOG_ERROR(Service_NVFlinger, "queue size is {}, waiting", core->queue.size());
-        } else {
-            if (!core->free_buffers.empty()) {
-                auto slot = core->free_buffers.begin();
-                *found = *slot;
-                core->free_buffers.erase(slot);
-            } else if (core->allow_allocation && !core->free_slots.empty()) {
-                auto slot = core->free_slots.begin();
-                // Only return free slots up to the max buffer count
-                if (*slot < max_buffer_count) {
-                    *found = *slot;
-                    core->free_slots.erase(slot);
-                }
-            }
         }
 
         // If no buffer is found, or if the queue has too many buffers outstanding, wait for a
@@ -240,7 +233,7 @@ Status BufferQueueProducer::DequeueBuffer(s32* out_slot, Fence* out_fence, bool 
     Status return_flags = Status::NoError;
     bool attached_by_consumer = false;
     {
-        BufferQueueCore::AutoLock lock(core);
+        std::scoped_lock lock(core->mutex);
         core->WaitWhileAllocatingLocked();
         if (format == PixelFormat::NoFormat) {
             format = core->default_buffer_format;
@@ -317,12 +310,13 @@ Status BufferQueueProducer::DequeueBuffer(s32* out_slot, Fence* out_fence, bool 
         }
 
         {
-            BufferQueueCore::AutoLock lock(core);
+            std::scoped_lock lock(core->mutex);
             if (core->is_abandoned) {
                 LOG_ERROR(Service_NVFlinger, "BufferQueue has been abandoned");
                 return Status::NoInit;
             }
 
+            slots[*out_slot].frame_number = UINT32_MAX;
             slots[*out_slot].graphic_buffer = graphic_buffer;
         }
     }
@@ -339,7 +333,7 @@ Status BufferQueueProducer::DequeueBuffer(s32* out_slot, Fence* out_fence, bool 
 Status BufferQueueProducer::DetachBuffer(s32 slot) {
     LOG_DEBUG(Service_NVFlinger, "slot {}", slot);
 
-    BufferQueueCore::AutoLock lock(core);
+    std::scoped_lock lock(core->mutex);
     if (core->is_abandoned) {
         LOG_ERROR(Service_NVFlinger, "BufferQueue has been abandoned");
         return Status::NoInit;
@@ -374,7 +368,7 @@ Status BufferQueueProducer::DetachNextBuffer(std::shared_ptr<GraphicBuffer>* out
         return Status::BadValue;
     }
 
-    BufferQueueCore::AutoLock lock(core);
+    std::scoped_lock lock(core->mutex);
 
     core->WaitWhileAllocatingLocked();
 
@@ -382,12 +376,21 @@ Status BufferQueueProducer::DetachNextBuffer(std::shared_ptr<GraphicBuffer>* out
         LOG_ERROR(Service_NVFlinger, "BufferQueue has been abandoned");
         return Status::NoInit;
     }
-    if (core->free_buffers.empty()) {
-        return Status::NoMemory;
+
+    // Find the oldest valid slot
+    int found = BufferQueueCore::INVALID_BUFFER_SLOT;
+    for (int s = 0; s < BufferQueueDefs::NUM_BUFFER_SLOTS; ++s) {
+        if (slots[s].buffer_state == BufferState::Free && slots[s].graphic_buffer != nullptr) {
+            if (found == BufferQueueCore::INVALID_BUFFER_SLOT ||
+                slots[s].frame_number < slots[found].frame_number) {
+                found = s;
+            }
+        }
     }
 
-    const s32 found = core->free_buffers.front();
-    core->free_buffers.remove(found);
+    if (found == BufferQueueCore::INVALID_BUFFER_SLOT) {
+        return Status::NoMemory;
+    }
 
     LOG_DEBUG(Service_NVFlinger, "Detached slot {}", found);
 
@@ -409,7 +412,7 @@ Status BufferQueueProducer::AttachBuffer(s32* out_slot,
         return Status::BadValue;
     }
 
-    BufferQueueCore::AutoLock lock(core);
+    std::scoped_lock lock(core->mutex);
     core->WaitWhileAllocatingLocked();
 
     Status return_flags = Status::NoError;
@@ -469,7 +472,7 @@ Status BufferQueueProducer::QueueBuffer(s32 slot, const QueueBufferInput& input,
     BufferItem item;
 
     {
-        BufferQueueCore::AutoLock lock(core);
+        std::scoped_lock lock(core->mutex);
 
         if (core->is_abandoned) {
             LOG_ERROR(Service_NVFlinger, "BufferQueue has been abandoned");
@@ -554,7 +557,9 @@ Status BufferQueueProducer::QueueBuffer(s32 slot, const QueueBufferInput& input,
                 // mark it as freed
                 if (core->StillTracking(*front)) {
                     slots[front->slot].buffer_state = BufferState::Free;
-                    core->free_buffers.push_front(front->slot);
+                    // Reset the frame number of the freed buffer so that it is the first in line to
+                    // be dequeued again
+                    slots[front->slot].frame_number = 0;
                 }
                 // Overwrite the droppable buffer with the incoming one
                 *front = item;
@@ -582,10 +587,9 @@ Status BufferQueueProducer::QueueBuffer(s32 slot, const QueueBufferInput& input,
     // Call back without the main BufferQueue lock held, but with the callback lock held so we can
     // ensure that callbacks occur in order
     {
-        std::unique_lock lock(callback_mutex);
+        std::scoped_lock lock(callback_mutex);
         while (callback_ticket != current_callback_ticket) {
-            std::unique_lock<std::mutex> lk(callback_mutex);
-            callback_condition.wait(lk);
+            callback_condition.wait(callback_mutex);
         }
 
         if (frameAvailableListener != nullptr) {
@@ -604,7 +608,7 @@ Status BufferQueueProducer::QueueBuffer(s32 slot, const QueueBufferInput& input,
 void BufferQueueProducer::CancelBuffer(s32 slot, const Fence& fence) {
     LOG_DEBUG(Service_NVFlinger, "slot {}", slot);
 
-    BufferQueueCore::AutoLock lock(core);
+    std::scoped_lock lock(core->mutex);
 
     if (core->is_abandoned) {
         LOG_ERROR(Service_NVFlinger, "BufferQueue has been abandoned");
@@ -621,8 +625,8 @@ void BufferQueueProducer::CancelBuffer(s32 slot, const Fence& fence) {
         return;
     }
 
-    core->free_buffers.push_front(slot);
     slots[slot].buffer_state = BufferState::Free;
+    slots[slot].frame_number = 0;
     slots[slot].fence = fence;
 
     core->SignalDequeueCondition();
@@ -630,7 +634,7 @@ void BufferQueueProducer::CancelBuffer(s32 slot, const Fence& fence) {
 }
 
 Status BufferQueueProducer::Query(NativeWindow what, s32* out_value) {
-    BufferQueueCore::AutoLock lock(core);
+    std::scoped_lock lock(core->mutex);
 
     if (out_value == nullptr) {
         LOG_ERROR(Service_NVFlinger, "outValue was nullptr");
@@ -687,7 +691,7 @@ Status BufferQueueProducer::Query(NativeWindow what, s32* out_value) {
 Status BufferQueueProducer::Connect(const std::shared_ptr<IProducerListener>& listener,
                                     NativeWindowApi api, bool producer_controlled_by_app,
                                     QueueBufferOutput* output) {
-    BufferQueueCore::AutoLock lock(core);
+    std::scoped_lock lock(core->mutex);
 
     LOG_DEBUG(Service_NVFlinger, "api = {} producer_controlled_by_app = {}", api,
               producer_controlled_by_app);
@@ -745,7 +749,7 @@ Status BufferQueueProducer::Disconnect(NativeWindowApi api) {
     std::shared_ptr<IConsumerListener> listener;
 
     {
-        BufferQueueCore::AutoLock lock(core);
+        std::scoped_lock lock(core->mutex);
 
         core->WaitWhileAllocatingLocked();
 
@@ -795,10 +799,11 @@ Status BufferQueueProducer::SetPreallocatedBuffer(s32 slot,
         return Status::BadValue;
     }
 
-    BufferQueueCore::AutoLock lock(core);
+    std::scoped_lock lock(core->mutex);
 
     slots[slot] = {};
     slots[slot].graphic_buffer = buffer;
+    slots[slot].frame_number = 0;
 
     // Most games preallocate a buffer and pass a valid buffer here. However, it is possible for
     // this to be called with an empty buffer, Naruto Ultimate Ninja Storm is a game that does this.
