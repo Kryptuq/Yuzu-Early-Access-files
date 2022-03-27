@@ -563,6 +563,9 @@ ResultCode KPageTable::UnmapProcessMemory(VAddr dst_addr, std::size_t size,
     block_manager->Update(dst_addr, num_pages, KMemoryState::Free, KMemoryPermission::None,
                           KMemoryAttribute::None);
 
+    // Invalidate CPU cache, as code may have been patched by the guest app.
+    system.InvalidateCpuInstructionCaches();
+
     return ResultSuccess;
 }
 

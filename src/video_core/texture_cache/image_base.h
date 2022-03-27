@@ -39,9 +39,6 @@ enum class ImageFlagBits : u32 {
     Rescaled = 1 << 13,
     CheckingRescalable = 1 << 14,
     IsRescalable = 1 << 15,
-
-    // Cached CPU
-    CachedCpuModified = 1 << 16, ///< Contents have been modified from the CPU
 };
 DECLARE_ENUM_FLAG_OPERATORS(ImageFlagBits)
 

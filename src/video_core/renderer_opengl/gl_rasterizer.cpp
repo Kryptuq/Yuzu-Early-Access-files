@@ -352,7 +352,7 @@ void RasterizerOpenGL::OnCPUWrite(VAddr addr, u64 size) {
     shader_cache.OnCPUWrite(addr, size);
     {
         std::scoped_lock lock{texture_cache.mutex};
-        texture_cache.CachedWriteMemory(addr, size);
+        texture_cache.WriteMemory(addr, size);
     }
     {
         std::scoped_lock lock{buffer_cache.mutex};
@@ -363,10 +363,6 @@ void RasterizerOpenGL::OnCPUWrite(VAddr addr, u64 size) {
 void RasterizerOpenGL::SyncGuestHost() {
     MICROPROFILE_SCOPE(OpenGL_CacheManagement);
     shader_cache.SyncGuestHost();
-    {
-        std::scoped_lock lock{texture_cache.mutex};
-        texture_cache.FlushCachedWrites();
-    }
     {
         std::scoped_lock lock{buffer_cache.mutex};
         buffer_cache.FlushCachedWrites();

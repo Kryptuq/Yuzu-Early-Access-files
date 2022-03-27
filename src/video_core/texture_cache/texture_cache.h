@@ -438,23 +438,6 @@ void TextureCache<P>::WriteMemory(VAddr cpu_addr, size_t size) {
 }
 
 template <class P>
-void TextureCache<P>::CachedWriteMemory(VAddr cpu_addr, size_t size) {
-    const VAddr new_cpu_addr = Common::AlignDown(cpu_addr, CPU_PAGE_SIZE);
-    const size_t new_size = Common::AlignUp(size + cpu_addr - new_cpu_addr, CPU_PAGE_SIZE);
-    ForEachImageInRegion(new_cpu_addr, new_size, [this](ImageId image_id, Image& image) {
-        if (True(image.flags & ImageFlagBits::CachedCpuModified)) {
-            return;
-        }
-        image.flags |= ImageFlagBits::CachedCpuModified;
-        cached_cpu_invalidate.insert(image_id);
-
-        if (True(image.flags & ImageFlagBits::Tracked)) {
-            UntrackImage(image, image_id);
-        }
-    });
-}
-
-template <class P>
 void TextureCache<P>::DownloadMemory(VAddr cpu_addr, size_t size) {
     std::vector<ImageId> images;
     ForEachImageInRegion(cpu_addr, size, [this, &images](ImageId image_id, ImageBase& image) {
@@ -509,18 +492,6 @@ void TextureCache<P>::UnmapGPUMemory(GPUVAddr gpu_addr, size_t size) {
             UntrackImage(image, id);
         }
     }
-}
-
-template <class P>
-void TextureCache<P>::FlushCachedWrites() {
-    for (ImageId image_id : cached_cpu_invalidate) {
-        Image& image = slot_images[image_id];
-        if (True(image.flags & ImageFlagBits::CachedCpuModified)) {
-            image.flags &= ~ImageFlagBits::CachedCpuModified;
-            image.flags |= ImageFlagBits::CpuModified;
-        }
-    }
-    cached_cpu_invalidate.clear();
 }
 
 template <class P>
@@ -1589,9 +1560,6 @@ void TextureCache<P>::UnregisterImage(ImageId image_id) {
 template <class P>
 void TextureCache<P>::TrackImage(ImageBase& image, ImageId image_id) {
     ASSERT(False(image.flags & ImageFlagBits::Tracked));
-    if (True(image.flags & ImageFlagBits::CachedCpuModified)) {
-        return;
-    }
     image.flags |= ImageFlagBits::Tracked;
     if (False(image.flags & ImageFlagBits::Sparse)) {
         rasterizer.UpdatePagesCachedCount(image.cpu_addr, image.guest_size_bytes, 1);
@@ -1648,9 +1616,6 @@ void TextureCache<P>::DeleteImage(ImageId image_id, bool immediate_delete) {
         tentative_size = EstimatedDecompressedSize(tentative_size, image.info.format);
     }
     total_used_memory -= Common::AlignUp(tentative_size, 1024);
-    if (True(image.flags & ImageFlagBits::CachedCpuModified)) {
-        cached_cpu_invalidate.erase(image_id);
-    }
     const GPUVAddr gpu_addr = image.gpu_addr;
     const auto alloc_it = image_allocs_table.find(gpu_addr);
     if (alloc_it == image_allocs_table.end()) {
@@ -1817,11 +1782,7 @@ template <class P>
 void TextureCache<P>::PrepareImage(ImageId image_id, bool is_modification, bool invalidate) {
     Image& image = slot_images[image_id];
     if (invalidate) {
-        if (True(image.flags & ImageFlagBits::CachedCpuModified)) {
-            cached_cpu_invalidate.erase(image_id);
-        }
-        image.flags &= ~(ImageFlagBits::CpuModified | ImageFlagBits::GpuModified |
-                         ImageFlagBits::CachedCpuModified);
+        image.flags &= ~(ImageFlagBits::CpuModified | ImageFlagBits::GpuModified);
         if (False(image.flags & ImageFlagBits::Tracked)) {
             TrackImage(image, image_id);
         }

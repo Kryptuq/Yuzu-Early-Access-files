@@ -149,6 +149,7 @@ private:
     [[nodiscard]] PageEntry GetPageEntry(GPUVAddr gpu_addr) const;
     void SetPageEntry(GPUVAddr gpu_addr, PageEntry page_entry, std::size_t size = page_size);
     GPUVAddr UpdateRange(GPUVAddr gpu_addr, PageEntry page_entry, std::size_t size);
+    void UnmapSubmappedRanges(GPUVAddr gpu_addr, std::size_t size);
     [[nodiscard]] std::optional<GPUVAddr> FindFreeRange(std::size_t size, std::size_t align,
                                                         bool start_32bit_address = false) const;
 
