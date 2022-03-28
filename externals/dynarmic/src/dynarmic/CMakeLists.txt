@@ -75,6 +75,7 @@ add_library(dynarmic
     frontend/imm.h
     interface/exclusive_monitor.h
     interface/optimization_flags.h
+    ir/acc_type.h
     ir/basic_block.cpp
     ir/basic_block.h
     ir/cond.h
@@ -99,7 +100,7 @@ add_library(dynarmic
     ir/type.h
     ir/value.cpp
     ir/value.h
-        ir/access_type.h)
+)
 
 if ("A32" IN_LIST DYNARMIC_FRONTENDS)
     target_sources(dynarmic PRIVATE
@@ -390,7 +391,7 @@ target_link_libraries(dynarmic
         tsl::robin_map
         $<BUILD_INTERFACE:xbyak>
         $<BUILD_INTERFACE:Zydis>
-        $<$<BOOL:DYNARMIC_USE_LLVM>:${llvm_libs}>
+        "$<$<BOOL:DYNARMIC_USE_LLVM>:${llvm_libs}>"
 )
 if (DYNARMIC_ENABLE_CPU_FEATURE_DETECTION)
     target_compile_definitions(dynarmic PRIVATE DYNARMIC_ENABLE_CPU_FEATURE_DETECTION=1)

@@ -67,11 +67,11 @@ static bool SharedDecodeAndOperation(TranslatorVisitor& v, bool wback, IR::MemOp
         for (size_t r = 0; r < rpt; r++) {
             const Vec tt = static_cast<Vec>((VecNumber(Vt) + r) % 32);
             if (memop == IR::MemOp::LOAD) {
-                const IR::UAnyU128 vec = v.Mem(v.ir.Add(address, offs), ebytes * elements, IR::AccessType::VEC);
+                const IR::UAnyU128 vec = v.Mem(v.ir.Add(address, offs), ebytes * elements, IR::AccType::VEC);
                 v.V_scalar(datasize, tt, vec);
             } else {
                 const IR::UAnyU128 vec = v.V_scalar(datasize, tt);
-                v.Mem(v.ir.Add(address, offs), ebytes * elements, IR::AccessType::VEC, vec);
+                v.Mem(v.ir.Add(address, offs), ebytes * elements, IR::AccType::VEC, vec);
             }
             offs = v.ir.Add(offs, v.ir.Imm64(ebytes * elements));
         }
@@ -80,12 +80,12 @@ static bool SharedDecodeAndOperation(TranslatorVisitor& v, bool wback, IR::MemOp
             for (size_t s = 0; s < selem; s++) {
                 const Vec tt = static_cast<Vec>((VecNumber(Vt) + s) % 32);
                 if (memop == IR::MemOp::LOAD) {
-                    const IR::UAny elem = v.Mem(v.ir.Add(address, offs), ebytes, IR::AccessType::VEC);
+                    const IR::UAny elem = v.Mem(v.ir.Add(address, offs), ebytes, IR::AccType::VEC);
                     const IR::U128 vec = v.ir.VectorSetElement(esize, v.V(datasize, tt), e, elem);
                     v.V(datasize, tt, vec);
                 } else {
                     const IR::UAny elem = v.ir.VectorGetElement(esize, v.V(datasize, tt), e);
-                    v.Mem(v.ir.Add(address, offs), ebytes, IR::AccessType::VEC, elem);
+                    v.Mem(v.ir.Add(address, offs), ebytes, IR::AccType::VEC, elem);
                 }
                 offs = v.ir.Add(offs, v.ir.Imm64(ebytes));
             }

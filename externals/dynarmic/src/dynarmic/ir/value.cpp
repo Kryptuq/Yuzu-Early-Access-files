@@ -73,8 +73,8 @@ Value::Value(Cond value)
     inner.imm_cond = value;
 }
 
-Value::Value(AccessType value)
-        : type(Type::AccessType) {
+Value::Value(AccType value)
+        : type(Type::AccType) {
     inner.imm_acctype = value;
 }
 
@@ -183,10 +183,10 @@ Cond Value::GetCond() const {
     return inner.imm_cond;
 }
 
-AccessType Value::GetAccType() const {
+AccType Value::GetAccType() const {
     if (IsIdentity())
         return inner.inst->GetArg(0).GetAccType();
-    ASSERT(type == Type::AccessType);
+    ASSERT(type == Type::AccType);
     return inner.imm_acctype;
 }
 

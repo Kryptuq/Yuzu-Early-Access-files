@@ -43,7 +43,7 @@ constexpr Type CoprocInfo = Type::CoprocInfo;
 constexpr Type NZCV = Type::NZCVFlags;
 constexpr Type Cond = Type::Cond;
 constexpr Type Table = Type::Table;
-constexpr Type AccessType = Type::AccessType;
+constexpr Type AccType = Type::AccType;
 
 static const std::array opcode_info{
 #define OPCODE(name, type, ...) Meta{#name, type, {__VA_ARGS__}},

@@ -103,7 +103,7 @@ bool TranslatorVisitor::v8_VST_multiple(bool D, Reg n, size_t Vd, Imm<4> type, s
                 const ExtReg ext_reg = d + i * inc + r;
                 const IR::U64 shifted_element = ir.LogicalShiftRight(ir.GetExtendedRegister(ext_reg), ir.Imm8(static_cast<u8>(e * ebytes * 8)));
                 const IR::UAny element = ir.LeastSignificant(8 * ebytes, shifted_element);
-                ir.WriteMemory(8 * ebytes, address, element);
+                ir.WriteMemory(8 * ebytes, address, element, IR::AccType::NORMAL);
 
                 address = ir.Add(address, ir.Imm32(static_cast<u32>(ebytes)));
             }
@@ -156,7 +156,7 @@ bool TranslatorVisitor::v8_VLD_multiple(bool D, Reg n, size_t Vd, Imm<4> type, s
     for (size_t r = 0; r < regs; r++) {
         for (size_t e = 0; e < elements; e++) {
             for (size_t i = 0; i < nelem; i++) {
-                const IR::U64 element = ir.ZeroExtendToLong(ir.ReadMemory(ebytes * 8, address));
+                const IR::U64 element = ir.ZeroExtendToLong(ir.ReadMemory(ebytes * 8, address, IR::AccType::NORMAL));
                 const IR::U64 shifted_element = ir.LogicalShiftLeft(element, ir.Imm8(static_cast<u8>(e * ebytes * 8)));
 
                 const ExtReg ext_reg = d + i * inc + r;
@@ -221,7 +221,7 @@ bool TranslatorVisitor::v8_VLD_all_lanes(bool D, Reg n, size_t Vd, size_t nn, si
 
     auto address = ir.GetRegister(n);
     for (size_t i = 0; i < nelem; i++) {
-        const auto element = ir.ReadMemory(ebytes * 8, address);
+        const auto element = ir.ReadMemory(ebytes * 8, address, IR::AccType::NORMAL);
         const auto replicated_element = ir.VectorBroadcast(ebytes * 8, element);
 
         for (size_t r = 0; r < regs; r++) {
@@ -291,7 +291,7 @@ bool TranslatorVisitor::v8_VST_single(bool D, Reg n, size_t Vd, size_t sz, size_
         const ExtReg ext_reg = d + i * inc;
         const auto element = ir.VectorGetElement(ebytes * 8, ir.GetVector(ext_reg), index);
 
-        ir.WriteMemory(ebytes * 8, address, element);
+        ir.WriteMemory(ebytes * 8, address, element, IR::AccType::NORMAL);
 
         address = ir.Add(address, ir.Imm32(static_cast<u32>(ebytes)));
     }
@@ -352,7 +352,7 @@ bool TranslatorVisitor::v8_VLD_single(bool D, Reg n, size_t Vd, size_t sz, size_
 
     auto address = ir.GetRegister(n);
     for (size_t i = 0; i < nelem; i++) {
-        const auto element = ir.ReadMemory(ebytes * 8, address);
+        const auto element = ir.ReadMemory(ebytes * 8, address, IR::AccType::NORMAL);
 
         const ExtReg ext_reg = d + i * inc;
         const auto new_reg = ir.VectorSetElement(ebytes * 8, ir.GetVector(ext_reg), index, element);

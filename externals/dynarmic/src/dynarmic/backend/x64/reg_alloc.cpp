@@ -42,6 +42,7 @@ static size_t GetBitWidth(IR::Type type) {
     case IR::Type::Cond:
     case IR::Type::Void:
     case IR::Type::Table:
+    case IR::Type::AccType:
         ASSERT_FALSE("Type {} cannot be represented at runtime", type);
     case IR::Type::Opaque:
         ASSERT_FALSE("Not a concrete type");
@@ -205,11 +206,6 @@ u64 Argument::GetImmediateU64() const {
 IR::Cond Argument::GetImmediateCond() const {
     ASSERT(IsImmediate() && GetType() == IR::Type::Cond);
     return value.GetCond();
-}
-
-IR::AccessType Argument::GetImmediateAccType() const {
-    ASSERT(IsImmediate() && GetType() == IR::Type::AccessType);
-    return value.GetAccType();
 }
 
 bool Argument::IsInGpr() const {

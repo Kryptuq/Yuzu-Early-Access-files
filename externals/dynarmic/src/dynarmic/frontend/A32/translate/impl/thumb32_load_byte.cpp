@@ -31,7 +31,7 @@ static bool LoadByteLiteral(TranslatorVisitor& v, bool U, Reg t, Imm<12> imm12, 
     const u32 imm32 = imm12.ZeroExtend();
     const u32 base = v.ir.AlignPC(4);
     const u32 address = U ? (base + imm32) : (base - imm32);
-    const auto data = (v.ir.*ext_fn)(v.ir.ReadMemory8(v.ir.Imm32(address)));
+    const auto data = (v.ir.*ext_fn)(v.ir.ReadMemory8(v.ir.Imm32(address), IR::AccType::NORMAL));
 
     v.ir.SetRegister(t, data);
     return true;
@@ -46,7 +46,7 @@ static bool LoadByteRegister(TranslatorVisitor& v, Reg n, Reg t, Imm<2> imm2, Re
     const auto reg_m = v.ir.GetRegister(m);
     const auto offset = v.ir.LogicalShiftLeft(reg_m, v.ir.Imm8(imm2.ZeroExtend<u8>()));
     const auto address = v.ir.Add(reg_n, offset);
-    const auto data = (v.ir.*ext_fn)(v.ir.ReadMemory8(address));
+    const auto data = (v.ir.*ext_fn)(v.ir.ReadMemory8(address, IR::AccType::NORMAL));
 
     v.ir.SetRegister(t, data);
     return true;
@@ -58,7 +58,7 @@ static bool LoadByteImmediate(TranslatorVisitor& v, Reg n, Reg t, bool P, bool U
     const IR::U32 offset_address = U ? v.ir.Add(reg_n, v.ir.Imm32(imm32))
                                      : v.ir.Sub(reg_n, v.ir.Imm32(imm32));
     const IR::U32 address = P ? offset_address : reg_n;
-    const IR::U32 data = (v.ir.*ext_fn)(v.ir.ReadMemory8(address));
+    const IR::U32 data = (v.ir.*ext_fn)(v.ir.ReadMemory8(address, IR::AccType::NORMAL));
 
     v.ir.SetRegister(t, data);
     if (W) {

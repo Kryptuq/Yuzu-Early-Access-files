@@ -32,19 +32,19 @@ void A64CallbackConfigPass(IR::Block& block, const A64::UserConfig& conf) {
 
             const IR::U128 zero_u128 = ir.ZeroExtendToQuad(ir.Imm64(0));
             while (bytes >= 16) {
-                ir.WriteMemory128(addr, zero_u128, IR::AccessType::DCZVA);
+                ir.WriteMemory128(addr, zero_u128, IR::AccType::DCZVA);
                 addr = ir.Add(addr, ir.Imm64(16));
                 bytes -= 16;
             }
 
             while (bytes >= 8) {
-                ir.WriteMemory64(addr, ir.Imm64(0), IR::AccessType::DCZVA);
+                ir.WriteMemory64(addr, ir.Imm64(0), IR::AccType::DCZVA);
                 addr = ir.Add(addr, ir.Imm64(8));
                 bytes -= 8;
             }
 
             while (bytes >= 4) {
-                ir.WriteMemory32(addr, ir.Imm32(0), IR::AccessType::DCZVA);
+                ir.WriteMemory32(addr, ir.Imm32(0), IR::AccType::DCZVA);
                 addr = ir.Add(addr, ir.Imm64(4));
                 bytes -= 4;
             }

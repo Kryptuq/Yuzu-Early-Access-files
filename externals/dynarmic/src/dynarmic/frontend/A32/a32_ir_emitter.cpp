@@ -229,55 +229,55 @@ void IREmitter::ClearExclusive() {
     Inst(Opcode::A32ClearExclusive);
 }
 
-IR::UAny IREmitter::ReadMemory(size_t bitsize, const IR::U32& vaddr) {
+IR::UAny IREmitter::ReadMemory(size_t bitsize, const IR::U32& vaddr, IR::AccType acc_type) {
     switch (bitsize) {
     case 8:
-        return ReadMemory8(vaddr);
+        return ReadMemory8(vaddr, acc_type);
     case 16:
-        return ReadMemory16(vaddr);
+        return ReadMemory16(vaddr, acc_type);
     case 32:
-        return ReadMemory32(vaddr);
+        return ReadMemory32(vaddr, acc_type);
     case 64:
-        return ReadMemory64(vaddr);
+        return ReadMemory64(vaddr, acc_type);
     }
     ASSERT_FALSE("Invalid bitsize");
 }
 
-IR::U8 IREmitter::ReadMemory8(const IR::U32& vaddr) {
-    return Inst<IR::U8>(Opcode::A32ReadMemory8, vaddr);
+IR::U8 IREmitter::ReadMemory8(const IR::U32& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U8>(Opcode::A32ReadMemory8, vaddr, IR::Value{acc_type});
 }
 
-IR::U16 IREmitter::ReadMemory16(const IR::U32& vaddr) {
-    const auto value = Inst<IR::U16>(Opcode::A32ReadMemory16, vaddr);
+IR::U16 IREmitter::ReadMemory16(const IR::U32& vaddr, IR::AccType acc_type) {
+    const auto value = Inst<IR::U16>(Opcode::A32ReadMemory16, vaddr, IR::Value{acc_type});
     return current_location.EFlag() ? ByteReverseHalf(value) : value;
 }
 
-IR::U32 IREmitter::ReadMemory32(const IR::U32& vaddr) {
-    const auto value = Inst<IR::U32>(Opcode::A32ReadMemory32, vaddr);
+IR::U32 IREmitter::ReadMemory32(const IR::U32& vaddr, IR::AccType acc_type) {
+    const auto value = Inst<IR::U32>(Opcode::A32ReadMemory32, vaddr, IR::Value{acc_type});
     return current_location.EFlag() ? ByteReverseWord(value) : value;
 }
 
-IR::U64 IREmitter::ReadMemory64(const IR::U32& vaddr) {
-    const auto value = Inst<IR::U64>(Opcode::A32ReadMemory64, vaddr);
+IR::U64 IREmitter::ReadMemory64(const IR::U32& vaddr, IR::AccType acc_type) {
+    const auto value = Inst<IR::U64>(Opcode::A32ReadMemory64, vaddr, IR::Value{acc_type});
     return current_location.EFlag() ? ByteReverseDual(value) : value;
 }
 
-IR::U8 IREmitter::ExclusiveReadMemory8(const IR::U32& vaddr) {
-    return Inst<IR::U8>(Opcode::A32ExclusiveReadMemory8, vaddr);
+IR::U8 IREmitter::ExclusiveReadMemory8(const IR::U32& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U8>(Opcode::A32ExclusiveReadMemory8, vaddr, IR::Value{acc_type});
 }
 
-IR::U16 IREmitter::ExclusiveReadMemory16(const IR::U32& vaddr) {
-    const auto value = Inst<IR::U16>(Opcode::A32ExclusiveReadMemory16, vaddr);
+IR::U16 IREmitter::ExclusiveReadMemory16(const IR::U32& vaddr, IR::AccType acc_type) {
+    const auto value = Inst<IR::U16>(Opcode::A32ExclusiveReadMemory16, vaddr, IR::Value{acc_type});
     return current_location.EFlag() ? ByteReverseHalf(value) : value;
 }
 
-IR::U32 IREmitter::ExclusiveReadMemory32(const IR::U32& vaddr) {
-    const auto value = Inst<IR::U32>(Opcode::A32ExclusiveReadMemory32, vaddr);
+IR::U32 IREmitter::ExclusiveReadMemory32(const IR::U32& vaddr, IR::AccType acc_type) {
+    const auto value = Inst<IR::U32>(Opcode::A32ExclusiveReadMemory32, vaddr, IR::Value{acc_type});
     return current_location.EFlag() ? ByteReverseWord(value) : value;
 }
 
-std::pair<IR::U32, IR::U32> IREmitter::ExclusiveReadMemory64(const IR::U32& vaddr) {
-    const auto value = Inst<IR::U64>(Opcode::A32ExclusiveReadMemory64, vaddr);
+std::pair<IR::U32, IR::U32> IREmitter::ExclusiveReadMemory64(const IR::U32& vaddr, IR::AccType acc_type) {
+    const auto value = Inst<IR::U64>(Opcode::A32ExclusiveReadMemory64, vaddr, IR::Value{acc_type});
     const auto lo = LeastSignificantWord(value);
     const auto hi = MostSignificantWord(value).result;
     if (current_location.EFlag()) {
@@ -287,80 +287,80 @@ std::pair<IR::U32, IR::U32> IREmitter::ExclusiveReadMemory64(const IR::U32& vadd
     return std::make_pair(lo, hi);
 }
 
-void IREmitter::WriteMemory(size_t bitsize, const IR::U32& vaddr, const IR::UAny& value) {
+void IREmitter::WriteMemory(size_t bitsize, const IR::U32& vaddr, const IR::UAny& value, IR::AccType acc_type) {
     switch (bitsize) {
     case 8:
-        return WriteMemory8(vaddr, value);
+        return WriteMemory8(vaddr, value, acc_type);
     case 16:
-        return WriteMemory16(vaddr, value);
+        return WriteMemory16(vaddr, value, acc_type);
     case 32:
-        return WriteMemory32(vaddr, value);
+        return WriteMemory32(vaddr, value, acc_type);
     case 64:
-        return WriteMemory64(vaddr, value);
+        return WriteMemory64(vaddr, value, acc_type);
     }
     ASSERT_FALSE("Invalid bitsize");
 }
 
-void IREmitter::WriteMemory8(const IR::U32& vaddr, const IR::U8& value) {
-    Inst(Opcode::A32WriteMemory8, vaddr, value);
+void IREmitter::WriteMemory8(const IR::U32& vaddr, const IR::U8& value, IR::AccType acc_type) {
+    Inst(Opcode::A32WriteMemory8, vaddr, value, IR::Value{acc_type});
 }
 
-void IREmitter::WriteMemory16(const IR::U32& vaddr, const IR::U16& value) {
+void IREmitter::WriteMemory16(const IR::U32& vaddr, const IR::U16& value, IR::AccType acc_type) {
     if (current_location.EFlag()) {
         const auto v = ByteReverseHalf(value);
-        Inst(Opcode::A32WriteMemory16, vaddr, v);
+        Inst(Opcode::A32WriteMemory16, vaddr, v, IR::Value{acc_type});
     } else {
-        Inst(Opcode::A32WriteMemory16, vaddr, value);
+        Inst(Opcode::A32WriteMemory16, vaddr, value, IR::Value{acc_type});
     }
 }
 
-void IREmitter::WriteMemory32(const IR::U32& vaddr, const IR::U32& value) {
+void IREmitter::WriteMemory32(const IR::U32& vaddr, const IR::U32& value, IR::AccType acc_type) {
     if (current_location.EFlag()) {
         const auto v = ByteReverseWord(value);
-        Inst(Opcode::A32WriteMemory32, vaddr, v);
+        Inst(Opcode::A32WriteMemory32, vaddr, v, IR::Value{acc_type});
     } else {
-        Inst(Opcode::A32WriteMemory32, vaddr, value);
+        Inst(Opcode::A32WriteMemory32, vaddr, value, IR::Value{acc_type});
     }
 }
 
-void IREmitter::WriteMemory64(const IR::U32& vaddr, const IR::U64& value) {
+void IREmitter::WriteMemory64(const IR::U32& vaddr, const IR::U64& value, IR::AccType acc_type) {
     if (current_location.EFlag()) {
         const auto v = ByteReverseDual(value);
-        Inst(Opcode::A32WriteMemory64, vaddr, v);
+        Inst(Opcode::A32WriteMemory64, vaddr, v, IR::Value{acc_type});
     } else {
-        Inst(Opcode::A32WriteMemory64, vaddr, value);
+        Inst(Opcode::A32WriteMemory64, vaddr, value, IR::Value{acc_type});
     }
 }
 
-IR::U32 IREmitter::ExclusiveWriteMemory8(const IR::U32& vaddr, const IR::U8& value) {
-    return Inst<IR::U32>(Opcode::A32ExclusiveWriteMemory8, vaddr, value);
+IR::U32 IREmitter::ExclusiveWriteMemory8(const IR::U32& vaddr, const IR::U8& value, IR::AccType acc_type) {
+    return Inst<IR::U32>(Opcode::A32ExclusiveWriteMemory8, vaddr, value, IR::Value{acc_type});
 }
 
-IR::U32 IREmitter::ExclusiveWriteMemory16(const IR::U32& vaddr, const IR::U16& value) {
+IR::U32 IREmitter::ExclusiveWriteMemory16(const IR::U32& vaddr, const IR::U16& value, IR::AccType acc_type) {
     if (current_location.EFlag()) {
         const auto v = ByteReverseHalf(value);
-        return Inst<IR::U32>(Opcode::A32ExclusiveWriteMemory16, vaddr, v);
+        return Inst<IR::U32>(Opcode::A32ExclusiveWriteMemory16, vaddr, v, IR::Value{acc_type});
     } else {
-        return Inst<IR::U32>(Opcode::A32ExclusiveWriteMemory16, vaddr, value);
+        return Inst<IR::U32>(Opcode::A32ExclusiveWriteMemory16, vaddr, value, IR::Value{acc_type});
     }
 }
 
-IR::U32 IREmitter::ExclusiveWriteMemory32(const IR::U32& vaddr, const IR::U32& value) {
+IR::U32 IREmitter::ExclusiveWriteMemory32(const IR::U32& vaddr, const IR::U32& value, IR::AccType acc_type) {
     if (current_location.EFlag()) {
         const auto v = ByteReverseWord(value);
-        return Inst<IR::U32>(Opcode::A32ExclusiveWriteMemory32, vaddr, v);
+        return Inst<IR::U32>(Opcode::A32ExclusiveWriteMemory32, vaddr, v, IR::Value{acc_type});
     } else {
-        return Inst<IR::U32>(Opcode::A32ExclusiveWriteMemory32, vaddr, value);
+        return Inst<IR::U32>(Opcode::A32ExclusiveWriteMemory32, vaddr, value, IR::Value{acc_type});
     }
 }
 
-IR::U32 IREmitter::ExclusiveWriteMemory64(const IR::U32& vaddr, const IR::U32& value_lo, const IR::U32& value_hi) {
+IR::U32 IREmitter::ExclusiveWriteMemory64(const IR::U32& vaddr, const IR::U32& value_lo, const IR::U32& value_hi, IR::AccType acc_type) {
     if (current_location.EFlag()) {
         const auto vlo = ByteReverseWord(value_lo);
         const auto vhi = ByteReverseWord(value_hi);
-        return Inst<IR::U32>(Opcode::A32ExclusiveWriteMemory64, vaddr, Pack2x32To1x64(vlo, vhi));
+        return Inst<IR::U32>(Opcode::A32ExclusiveWriteMemory64, vaddr, Pack2x32To1x64(vlo, vhi), IR::Value{acc_type});
     } else {
-        return Inst<IR::U32>(Opcode::A32ExclusiveWriteMemory64, vaddr, Pack2x32To1x64(value_lo, value_hi));
+        return Inst<IR::U32>(Opcode::A32ExclusiveWriteMemory64, vaddr, Pack2x32To1x64(value_lo, value_hi), IR::Value{acc_type});
     }
 }
 

@@ -6,7 +6,7 @@
 #pragma once
 
 #include "dynarmic/common/common_types.h"
-#include "dynarmic/ir/access_type.h"
+#include "dynarmic/ir/acc_type.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/location_descriptor.h"
 #include "dynarmic/ir/terminal.h"

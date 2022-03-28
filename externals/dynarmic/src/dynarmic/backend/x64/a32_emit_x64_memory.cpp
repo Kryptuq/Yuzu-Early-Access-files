@@ -158,120 +158,6 @@ FakeCall A32EmitX64::FastmemCallback(u64 rip_) {
     };
 }
 
-namespace {
-
-constexpr size_t page_bits = 12;
-constexpr size_t page_size = 1 << page_bits;
-constexpr size_t page_mask = (1 << page_bits) - 1;
-
-void EmitDetectMisaignedVAddr(BlockOfCode& code, A32EmitContext& ctx, size_t bitsize, Xbyak::Label& abort, Xbyak::Reg32 vaddr, Xbyak::Reg32 tmp) {
-    if (bitsize == 8 || (ctx.conf.detect_misaligned_access_via_page_table & bitsize) == 0) {
-        return;
-    }
-
-    const u32 align_mask = [bitsize]() -> u32 {
-        switch (bitsize) {
-        case 16:
-            return 0b1;
-        case 32:
-            return 0b11;
-        case 64:
-            return 0b111;
-        }
-        UNREACHABLE();
-    }();
-
-    code.test(vaddr, align_mask);
-
-    if (!ctx.conf.only_detect_misalignment_via_page_table_on_page_boundary) {
-        code.jnz(abort, code.T_NEAR);
-        return;
-    }
-
-    const u32 page_align_mask = static_cast<u32>(page_size - 1) & ~align_mask;
-
-    Xbyak::Label detect_boundary, resume;
-
-    code.jnz(detect_boundary, code.T_NEAR);
-    code.L(resume);
-
-    code.SwitchToFarCode();
-    code.L(detect_boundary);
-    code.mov(tmp, vaddr);
-    code.and_(tmp, page_align_mask);
-    code.cmp(tmp, page_align_mask);
-    code.jne(resume, code.T_NEAR);
-    // NOTE: We expect to fallthrough into abort code here.
-    code.SwitchToNearCode();
-}
-
-Xbyak::RegExp EmitVAddrLookup(BlockOfCode& code, A32EmitContext& ctx, size_t bitsize, Xbyak::Label& abort, Xbyak::Reg64 vaddr) {
-    const Xbyak::Reg64 page = ctx.reg_alloc.ScratchGpr();
-    const Xbyak::Reg32 tmp = ctx.conf.absolute_offset_page_table ? page.cvt32() : ctx.reg_alloc.ScratchGpr().cvt32();
-
-    EmitDetectMisaignedVAddr(code, ctx, bitsize, abort, vaddr.cvt32(), tmp);
-
-    // TODO: This code assumes vaddr has been zext from 32-bits to 64-bits.
-
-    code.mov(tmp, vaddr.cvt32());
-    code.shr(tmp, static_cast<int>(page_bits));
-    code.mov(page, qword[r14 + tmp.cvt64() * sizeof(void*)]);
-    if (ctx.conf.page_table_pointer_mask_bits == 0) {
-        code.test(page, page);
-    } else {
-        code.and_(page, ~u32(0) << ctx.conf.page_table_pointer_mask_bits);
-    }
-    code.jz(abort, code.T_NEAR);
-    if (ctx.conf.absolute_offset_page_table) {
-        return page + vaddr;
-    }
-    code.mov(tmp, vaddr.cvt32());
-    code.and_(tmp, static_cast<u32>(page_mask));
-    return page + tmp.cvt64();
-}
-
-template<std::size_t bitsize>
-void EmitReadMemoryMov(BlockOfCode& code, const Xbyak::Reg64& value, const Xbyak::RegExp& addr) {
-    switch (bitsize) {
-    case 8:
-        code.movzx(value.cvt32(), code.byte[addr]);
-        return;
-    case 16:
-        code.movzx(value.cvt32(), word[addr]);
-        return;
-    case 32:
-        code.mov(value.cvt32(), dword[addr]);
-        return;
-    case 64:
-        code.mov(value, qword[addr]);
-        return;
-    default:
-        ASSERT_FALSE("Invalid bitsize");
-    }
-}
-
-template<std::size_t bitsize>
-void EmitWriteMemoryMov(BlockOfCode& code, const Xbyak::RegExp& addr, const Xbyak::Reg64& value) {
-    switch (bitsize) {
-    case 8:
-        code.mov(code.byte[addr], value.cvt8());
-        return;
-    case 16:
-        code.mov(word[addr], value.cvt16());
-        return;
-    case 32:
-        code.mov(dword[addr], value.cvt32());
-        return;
-    case 64:
-        code.mov(qword[addr], value);
-        return;
-    default:
-        ASSERT_FALSE("Invalid bitsize");
-    }
-}
-
-}  // anonymous namespace
-
 template<std::size_t bitsize, auto callback>
 void A32EmitX64::EmitMemoryRead(A32EmitContext& ctx, IR::Inst* inst) {
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
@@ -295,7 +181,7 @@ void A32EmitX64::EmitMemoryRead(A32EmitContext& ctx, IR::Inst* inst) {
         const auto src_ptr = r13 + vaddr;
 
         const auto location = code.getCurr();
-        EmitReadMemoryMov<bitsize>(code, value, src_ptr);
+        EmitReadMemoryMov<bitsize>(code, value.getIdx(), src_ptr);
 
         fastmem_patch_info.emplace(
             Common::BitCast<u64>(location),
@@ -315,7 +201,7 @@ void A32EmitX64::EmitMemoryRead(A32EmitContext& ctx, IR::Inst* inst) {
     Xbyak::Label abort, end;
 
     const auto src_ptr = EmitVAddrLookup(code, ctx, bitsize, abort, vaddr);
-    EmitReadMemoryMov<bitsize>(code, value, src_ptr);
+    EmitReadMemoryMov<bitsize>(code, value.getIdx(), src_ptr);
     code.L(end);
 
     code.SwitchToFarCode();
@@ -349,7 +235,7 @@ void A32EmitX64::EmitMemoryWrite(A32EmitContext& ctx, IR::Inst* inst) {
         const auto dest_ptr = r13 + vaddr;
 
         const auto location = code.getCurr();
-        EmitWriteMemoryMov<bitsize>(code, dest_ptr, value);
+        EmitWriteMemoryMov<bitsize>(code, dest_ptr, value.getIdx());
 
         fastmem_patch_info.emplace(
             Common::BitCast<u64>(location),
@@ -368,7 +254,7 @@ void A32EmitX64::EmitMemoryWrite(A32EmitContext& ctx, IR::Inst* inst) {
     Xbyak::Label abort, end;
 
     const auto dest_ptr = EmitVAddrLookup(code, ctx, bitsize, abort, vaddr);
-    EmitWriteMemoryMov<bitsize>(code, dest_ptr, value);
+    EmitWriteMemoryMov<bitsize>(code, dest_ptr, value.getIdx());
     code.L(end);
 
     code.SwitchToFarCode();
@@ -488,7 +374,7 @@ void A32EmitX64::ExclusiveReadMemoryInline(A32EmitContext& ctx, IR::Inst* inst) 
         const auto src_ptr = r13 + vaddr;
 
         const auto location = code.getCurr();
-        EmitReadMemoryMov<bitsize>(code, value, src_ptr);
+        EmitReadMemoryMov<bitsize>(code, value.getIdx(), src_ptr);
 
         fastmem_patch_info.emplace(
             Common::BitCast<u64>(location),
@@ -505,7 +391,7 @@ void A32EmitX64::ExclusiveReadMemoryInline(A32EmitContext& ctx, IR::Inst* inst) 
     }
 
     code.mov(tmp, Common::BitCast<u64>(GetExclusiveMonitorValuePointer(conf.global_monitor, conf.processor_id)));
-    EmitWriteMemoryMov<bitsize>(code, tmp, value);
+    EmitWriteMemoryMov<bitsize>(code, tmp, value.getIdx());
 
     EmitExclusiveUnlock(code, conf, tmp, tmp2.cvt32());
 
@@ -546,7 +432,7 @@ void A32EmitX64::ExclusiveWriteMemoryInline(A32EmitContext& ctx, IR::Inst* inst)
     code.mov(code.byte[r15 + offsetof(A32JitState, exclusive_state)], u8(0));
     code.mov(tmp, Common::BitCast<u64>(GetExclusiveMonitorValuePointer(conf.global_monitor, conf.processor_id)));
 
-    EmitReadMemoryMov<bitsize>(code, rax, tmp);
+    EmitReadMemoryMov<bitsize>(code, rax.getIdx(), tmp);
 
     const auto fastmem_marker = ShouldFastmem(ctx, inst);
     if (fastmem_marker) {

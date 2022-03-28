@@ -15,7 +15,7 @@ static bool LDMHelper(A32::IREmitter& ir, bool W, Reg n, u32 list, const IR::U32
     auto address = start_address;
     for (size_t i = 0; i <= 14; i++) {
         if (Common::Bit(i, list)) {
-            ir.SetRegister(static_cast<Reg>(i), ir.ReadMemory32(address));
+            ir.SetRegister(static_cast<Reg>(i), ir.ReadMemory32(address, IR::AccType::ATOMIC));
             address = ir.Add(address, ir.Imm32(4));
         }
     }
@@ -24,7 +24,7 @@ static bool LDMHelper(A32::IREmitter& ir, bool W, Reg n, u32 list, const IR::U32
     }
     if (Common::Bit<15>(list)) {
         ir.UpdateUpperLocationDescriptor();
-        ir.LoadWritePC(ir.ReadMemory32(address));
+        ir.LoadWritePC(ir.ReadMemory32(address, IR::AccType::ATOMIC));
         if (n == Reg::R13) {
             ir.SetTerm(IR::Term::PopRSBHint{});
         } else {
@@ -39,7 +39,7 @@ static bool STMHelper(A32::IREmitter& ir, bool W, Reg n, u32 list, const IR::U32
     auto address = start_address;
     for (size_t i = 0; i <= 14; i++) {
         if (Common::Bit(i, list)) {
-            ir.WriteMemory32(address, ir.GetRegister(static_cast<Reg>(i)));
+            ir.WriteMemory32(address, ir.GetRegister(static_cast<Reg>(i)), IR::AccType::ATOMIC);
             address = ir.Add(address, ir.Imm32(4));
         }
     }

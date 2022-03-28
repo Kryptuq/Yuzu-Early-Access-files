@@ -12,7 +12,7 @@ namespace Dynarmic::A64 {
 static bool ExclusiveSharedDecodeAndOperation(TranslatorVisitor& v, bool pair, size_t size, bool L, bool o0, std::optional<Reg> Rs, std::optional<Reg> Rt2, Reg Rn, Reg Rt) {
     // Shared Decode
 
-    const auto acctype = o0 ? IR::AccessType::ORDERED : IR::AccessType::ATOMIC;
+    const auto acctype = o0 ? IR::AccType::ORDERED : IR::AccType::ATOMIC;
     const auto memop = L ? IR::MemOp::LOAD : IR::MemOp::STORE;
     const size_t elsize = 8 << size;
     const size_t regsize = elsize == 64 ? 64 : 32;
@@ -142,7 +142,7 @@ bool TranslatorVisitor::LDAXP(Imm<1> sz, Reg Rt2, Reg Rn, Reg Rt) {
 static bool OrderedSharedDecodeAndOperation(TranslatorVisitor& v, size_t size, bool L, bool o0, Reg Rn, Reg Rt) {
     // Shared Decode
 
-    const auto acctype = !o0 ? IR::AccessType::LIMITEDORDERED : IR::AccessType::ORDERED;
+    const auto acctype = !o0 ? IR::AccType::LIMITEDORDERED : IR::AccType::ORDERED;
     const auto memop = L ? IR::MemOp::LOAD : IR::MemOp::STORE;
     const size_t elsize = 8 << size;
     const size_t regsize = elsize == 64 ? 64 : 32;

@@ -10,7 +10,7 @@ namespace Dynarmic::A64 {
 static bool RegSharedDecodeAndOperation(TranslatorVisitor& v, size_t scale, u8 shift, Imm<2> size, Imm<1> opc_1, Imm<1> opc_0, Reg Rm, Imm<3> option, Reg Rn, Reg Rt) {
     // Shared Decode
 
-    const auto acctype = IR::AccessType::NORMAL;
+    const auto acctype = IR::AccType::NORMAL;
     IR::MemOp memop;
     size_t regsize = 64;
     bool signed_ = false;
@@ -96,7 +96,7 @@ bool TranslatorVisitor::LDRx_reg(Imm<2> size, Imm<1> opc_1, Reg Rm, Imm<3> optio
 static bool VecSharedDecodeAndOperation(TranslatorVisitor& v, size_t scale, u8 shift, Imm<1> opc_0, Reg Rm, Imm<3> option, Reg Rn, Vec Vt) {
     // Shared Decode
 
-    const auto acctype = IR::AccessType::VEC;
+    const auto acctype = IR::AccType::VEC;
     const auto memop = opc_0 == 1 ? IR::MemOp::LOAD : IR::MemOp::STORE;
     const size_t datasize = 8 << scale;
 

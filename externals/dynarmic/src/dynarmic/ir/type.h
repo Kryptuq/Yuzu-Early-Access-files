@@ -32,7 +32,7 @@ enum class Type {
     NZCVFlags = 1 << 12,
     Cond = 1 << 13,
     Table = 1 << 14,
-    AccessType = 1 << 15,
+    AccType = 1 << 15,
 };
 
 constexpr Type operator|(Type a, Type b) {

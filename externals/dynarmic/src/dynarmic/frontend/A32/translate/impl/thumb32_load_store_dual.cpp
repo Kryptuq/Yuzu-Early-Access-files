@@ -24,10 +24,10 @@ static bool TableBranch(TranslatorVisitor& v, Reg n, Reg m, bool half) {
 
     IR::U32 halfwords;
     if (half) {
-        const auto data = v.ir.ReadMemory16(v.ir.Add(reg_n, v.ir.LogicalShiftLeft(reg_m, v.ir.Imm8(1))));
+        const auto data = v.ir.ReadMemory16(v.ir.Add(reg_n, v.ir.LogicalShiftLeft(reg_m, v.ir.Imm8(1))), IR::AccType::NORMAL);
         halfwords = v.ir.ZeroExtendToWord(data);
     } else {
-        halfwords = v.ir.ZeroExtendToWord(v.ir.ReadMemory8(v.ir.Add(reg_n, reg_m)));
+        halfwords = v.ir.ZeroExtendToWord(v.ir.ReadMemory8(v.ir.Add(reg_n, reg_m), IR::AccType::NORMAL));
     }
 
     const auto current_pc = v.ir.Imm32(v.ir.PC());
@@ -51,12 +51,18 @@ static bool LoadDualImmediate(TranslatorVisitor& v, bool P, bool U, bool W, Reg 
     const IR::U32 reg_n = v.ir.GetRegister(n);
     const IR::U32 offset_address = U ? v.ir.Add(reg_n, v.ir.Imm32(imm))
                                      : v.ir.Sub(reg_n, v.ir.Imm32(imm));
-    const IR::U32 address_1 = P ? offset_address
-                                : reg_n;
-    const IR::U32 address_2 = v.ir.Add(address_1, v.ir.Imm32(4));
+    const IR::U32 address = P ? offset_address : reg_n;
 
-    v.ir.SetRegister(t, v.ir.ReadMemory32(address_1));
-    v.ir.SetRegister(t2, v.ir.ReadMemory32(address_2));
+    // NOTE: If alignment is exactly off by 4, each word is an atomic access.
+    const IR::U64 data = v.ir.ReadMemory64(address, IR::AccType::ATOMIC);
+
+    if (v.ir.current_location.EFlag()) {
+        v.ir.SetRegister(t, v.ir.MostSignificantWord(data).result);
+        v.ir.SetRegister(t2, v.ir.LeastSignificantWord(data));
+    } else {
+        v.ir.SetRegister(t, v.ir.LeastSignificantWord(data));
+        v.ir.SetRegister(t2, v.ir.MostSignificantWord(data).result);
+    }
 
     if (W) {
         v.ir.SetRegister(n, offset_address);
@@ -73,12 +79,20 @@ static bool LoadDualLiteral(TranslatorVisitor& v, bool U, bool W, Reg t, Reg t2,
     }
 
     const auto imm = imm8.ZeroExtend() << 2;
-    const auto address_1 = U ? v.ir.Add(v.ir.Imm32(v.ir.AlignPC(4)), v.ir.Imm32(imm))
-                             : v.ir.Sub(v.ir.Imm32(v.ir.AlignPC(4)), v.ir.Imm32(imm));
-    const auto address_2 = v.ir.Add(address_1, v.ir.Imm32(4));
+    const auto address = U ? v.ir.Add(v.ir.Imm32(v.ir.AlignPC(4)), v.ir.Imm32(imm))
+                           : v.ir.Sub(v.ir.Imm32(v.ir.AlignPC(4)), v.ir.Imm32(imm));
 
-    v.ir.SetRegister(t, v.ir.ReadMemory32(address_1));
-    v.ir.SetRegister(t2, v.ir.ReadMemory32(address_2));
+    // NOTE: If alignment is exactly off by 4, each word is an atomic access.
+    const IR::U64 data = v.ir.ReadMemory64(address, IR::AccType::ATOMIC);
+
+    if (v.ir.current_location.EFlag()) {
+        v.ir.SetRegister(t, v.ir.MostSignificantWord(data).result);
+        v.ir.SetRegister(t2, v.ir.LeastSignificantWord(data));
+    } else {
+        v.ir.SetRegister(t, v.ir.LeastSignificantWord(data));
+        v.ir.SetRegister(t2, v.ir.MostSignificantWord(data).result);
+    }
+
     return true;
 }
 
@@ -97,12 +111,13 @@ static bool StoreDual(TranslatorVisitor& v, bool P, bool U, bool W, Reg n, Reg t
 
     const IR::U32 offset_address = U ? v.ir.Add(reg_n, v.ir.Imm32(imm))
                                      : v.ir.Sub(reg_n, v.ir.Imm32(imm));
-    const IR::U32 address_1 = P ? offset_address
-                                : reg_n;
-    const IR::U32 address_2 = v.ir.Add(address_1, v.ir.Imm32(4));
+    const IR::U32 address = P ? offset_address : reg_n;
 
-    v.ir.WriteMemory32(address_1, reg_t);
-    v.ir.WriteMemory32(address_2, reg_t2);
+    const IR::U64 data = v.ir.current_location.EFlag() ? v.ir.Pack2x32To1x64(reg_t2, reg_t)
+                                                       : v.ir.Pack2x32To1x64(reg_t, reg_t2);
+
+    // NOTE: If alignment is exactly off by 4, each word is an atomic access.
+    v.ir.WriteMemory64(address, data, IR::AccType::ATOMIC);
 
     if (W) {
         v.ir.SetRegister(n, offset_address);
@@ -116,7 +131,7 @@ bool TranslatorVisitor::thumb32_LDA(Reg n, Reg t) {
     }
 
     const auto address = ir.GetRegister(n);
-    ir.SetRegister(t, ir.ReadMemory32(address));  // AccType::Ordered
+    ir.SetRegister(t, ir.ReadMemory32(address, IR::AccType::ORDERED));
     return true;
 }
 
@@ -150,7 +165,7 @@ bool TranslatorVisitor::thumb32_LDREX(Reg n, Reg t, Imm<8> imm8) {
     }
 
     const auto address = ir.Add(ir.GetRegister(n), ir.Imm32(imm8.ZeroExtend() << 2));
-    const auto value = ir.ExclusiveReadMemory32(address);
+    const auto value = ir.ExclusiveReadMemory32(address, IR::AccType::ATOMIC);
 
     ir.SetRegister(t, value);
     return true;
@@ -162,7 +177,7 @@ bool TranslatorVisitor::thumb32_LDREXB(Reg n, Reg t) {
     }
 
     const auto address = ir.GetRegister(n);
-    const auto value = ir.ZeroExtendToWord(ir.ExclusiveReadMemory8(address));
+    const auto value = ir.ZeroExtendToWord(ir.ExclusiveReadMemory8(address, IR::AccType::ATOMIC));
 
     ir.SetRegister(t, value);
     return true;
@@ -174,7 +189,7 @@ bool TranslatorVisitor::thumb32_LDREXD(Reg n, Reg t, Reg t2) {
     }
 
     const auto address = ir.GetRegister(n);
-    const auto [lo, hi] = ir.ExclusiveReadMemory64(address);
+    const auto [lo, hi] = ir.ExclusiveReadMemory64(address, IR::AccType::ATOMIC);
 
     // DO NOT SWAP hi AND lo IN BIG ENDIAN MODE, THIS IS CORRECT BEHAVIOUR
     ir.SetRegister(t, lo);
@@ -188,7 +203,7 @@ bool TranslatorVisitor::thumb32_LDREXH(Reg n, Reg t) {
     }
 
     const auto address = ir.GetRegister(n);
-    const auto value = ir.ZeroExtendToWord(ir.ExclusiveReadMemory16(address));
+    const auto value = ir.ZeroExtendToWord(ir.ExclusiveReadMemory16(address, IR::AccType::ATOMIC));
 
     ir.SetRegister(t, value);
     return true;
@@ -200,7 +215,7 @@ bool TranslatorVisitor::thumb32_STL(Reg n, Reg t) {
     }
 
     const auto address = ir.GetRegister(n);
-    ir.WriteMemory32(address, ir.GetRegister(t));  // AccType::Ordered
+    ir.WriteMemory32(address, ir.GetRegister(t), IR::AccType::ORDERED);
     return true;
 }
 
@@ -214,7 +229,7 @@ bool TranslatorVisitor::thumb32_STREX(Reg n, Reg t, Reg d, Imm<8> imm8) {
 
     const auto address = ir.Add(ir.GetRegister(n), ir.Imm32(imm8.ZeroExtend() << 2));
     const auto value = ir.GetRegister(t);
-    const auto passed = ir.ExclusiveWriteMemory32(address, value);
+    const auto passed = ir.ExclusiveWriteMemory32(address, value, IR::AccType::ATOMIC);
     ir.SetRegister(d, passed);
     return true;
 }
@@ -229,7 +244,7 @@ bool TranslatorVisitor::thumb32_STREXB(Reg n, Reg t, Reg d) {
 
     const auto address = ir.GetRegister(n);
     const auto value = ir.LeastSignificantByte(ir.GetRegister(t));
-    const auto passed = ir.ExclusiveWriteMemory8(address, value);
+    const auto passed = ir.ExclusiveWriteMemory8(address, value, IR::AccType::ATOMIC);
     ir.SetRegister(d, passed);
     return true;
 }
@@ -245,7 +260,7 @@ bool TranslatorVisitor::thumb32_STREXD(Reg n, Reg t, Reg t2, Reg d) {
     const auto address = ir.GetRegister(n);
     const auto value_lo = ir.GetRegister(t);
     const auto value_hi = ir.GetRegister(t2);
-    const auto passed = ir.ExclusiveWriteMemory64(address, value_lo, value_hi);
+    const auto passed = ir.ExclusiveWriteMemory64(address, value_lo, value_hi, IR::AccType::ATOMIC);
     ir.SetRegister(d, passed);
     return true;
 }
@@ -260,7 +275,7 @@ bool TranslatorVisitor::thumb32_STREXH(Reg n, Reg t, Reg d) {
 
     const auto address = ir.GetRegister(n);
     const auto value = ir.LeastSignificantHalf(ir.GetRegister(t));
-    const auto passed = ir.ExclusiveWriteMemory16(address, value);
+    const auto passed = ir.ExclusiveWriteMemory16(address, value, IR::AccType::ATOMIC);
     ir.SetRegister(d, passed);
     return true;
 }

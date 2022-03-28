@@ -105,84 +105,84 @@ void IREmitter::ClearExclusive() {
     Inst(Opcode::A64ClearExclusive);
 }
 
-IR::U8 IREmitter::ReadMemory8(const IR::U64& vaddr, IR::AccessType acctype) {
-    return Inst<IR::U8>(Opcode::A64ReadMemory8, vaddr, IR::Value(acctype));
+IR::U8 IREmitter::ReadMemory8(const IR::U64& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U8>(Opcode::A64ReadMemory8, vaddr, IR::Value{acc_type});
 }
 
-IR::U16 IREmitter::ReadMemory16(const IR::U64& vaddr, IR::AccessType acctype) {
-    return Inst<IR::U16>(Opcode::A64ReadMemory16, vaddr, IR::Value(acctype));
+IR::U16 IREmitter::ReadMemory16(const IR::U64& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U16>(Opcode::A64ReadMemory16, vaddr, IR::Value{acc_type});
 }
 
-IR::U32 IREmitter::ReadMemory32(const IR::U64& vaddr, IR::AccessType acctype) {
-    return Inst<IR::U32>(Opcode::A64ReadMemory32, vaddr, IR::Value(acctype));
+IR::U32 IREmitter::ReadMemory32(const IR::U64& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U32>(Opcode::A64ReadMemory32, vaddr, IR::Value{acc_type});
 }
 
-IR::U64 IREmitter::ReadMemory64(const IR::U64& vaddr, IR::AccessType acctype) {
-    return Inst<IR::U64>(Opcode::A64ReadMemory64, vaddr, IR::Value(acctype));
+IR::U64 IREmitter::ReadMemory64(const IR::U64& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U64>(Opcode::A64ReadMemory64, vaddr, IR::Value{acc_type});
 }
 
-IR::U128 IREmitter::ReadMemory128(const IR::U64& vaddr, IR::AccessType acctype) {
-    return Inst<IR::U128>(Opcode::A64ReadMemory128, vaddr, IR::Value(acctype));
+IR::U128 IREmitter::ReadMemory128(const IR::U64& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U128>(Opcode::A64ReadMemory128, vaddr, IR::Value{acc_type});
 }
 
-IR::U8 IREmitter::ExclusiveReadMemory8(const IR::U64& vaddr, IR::AccessType acctype) {
-    return Inst<IR::U8>(Opcode::A64ExclusiveReadMemory8, vaddr, IR::Value(acctype));
+IR::U8 IREmitter::ExclusiveReadMemory8(const IR::U64& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U8>(Opcode::A64ExclusiveReadMemory8, vaddr, IR::Value{acc_type});
 }
 
-IR::U16 IREmitter::ExclusiveReadMemory16(const IR::U64& vaddr, IR::AccessType acctype) {
-    return Inst<IR::U16>(Opcode::A64ExclusiveReadMemory16, vaddr, IR::Value(acctype));
+IR::U16 IREmitter::ExclusiveReadMemory16(const IR::U64& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U16>(Opcode::A64ExclusiveReadMemory16, vaddr, IR::Value{acc_type});
 }
 
-IR::U32 IREmitter::ExclusiveReadMemory32(const IR::U64& vaddr, IR::AccessType acctype) {
-    return Inst<IR::U32>(Opcode::A64ExclusiveReadMemory32, vaddr, IR::Value(acctype));
+IR::U32 IREmitter::ExclusiveReadMemory32(const IR::U64& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U32>(Opcode::A64ExclusiveReadMemory32, vaddr, IR::Value{acc_type});
 }
 
-IR::U64 IREmitter::ExclusiveReadMemory64(const IR::U64& vaddr, IR::AccessType acctype) {
-    return Inst<IR::U64>(Opcode::A64ExclusiveReadMemory64, vaddr, IR::Value(acctype));
+IR::U64 IREmitter::ExclusiveReadMemory64(const IR::U64& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U64>(Opcode::A64ExclusiveReadMemory64, vaddr, IR::Value{acc_type});
 }
 
-IR::U128 IREmitter::ExclusiveReadMemory128(const IR::U64& vaddr, IR::AccessType acctype) {
-    return Inst<IR::U128>(Opcode::A64ExclusiveReadMemory128, vaddr, IR::Value(acctype));
+IR::U128 IREmitter::ExclusiveReadMemory128(const IR::U64& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U128>(Opcode::A64ExclusiveReadMemory128, vaddr, IR::Value{acc_type});
 }
 
-void IREmitter::WriteMemory8(const IR::U64& vaddr, const IR::U8& value, IR::AccessType acctype) {
-    Inst(Opcode::A64WriteMemory8, vaddr, value, IR::Value(acctype));
+void IREmitter::WriteMemory8(const IR::U64& vaddr, const IR::U8& value, IR::AccType acc_type) {
+    Inst(Opcode::A64WriteMemory8, vaddr, value, IR::Value{acc_type});
 }
 
-void IREmitter::WriteMemory16(const IR::U64& vaddr, const IR::U16& value, IR::AccessType acctype) {
-    Inst(Opcode::A64WriteMemory16, vaddr, value, IR::Value(acctype));
+void IREmitter::WriteMemory16(const IR::U64& vaddr, const IR::U16& value, IR::AccType acc_type) {
+    Inst(Opcode::A64WriteMemory16, vaddr, value, IR::Value{acc_type});
 }
 
-void IREmitter::WriteMemory32(const IR::U64& vaddr, const IR::U32& value, IR::AccessType acctype) {
-    Inst(Opcode::A64WriteMemory32, vaddr, value, IR::Value(acctype));
+void IREmitter::WriteMemory32(const IR::U64& vaddr, const IR::U32& value, IR::AccType acc_type) {
+    Inst(Opcode::A64WriteMemory32, vaddr, value, IR::Value{acc_type});
 }
 
-void IREmitter::WriteMemory64(const IR::U64& vaddr, const IR::U64& value, IR::AccessType acctype) {
-    Inst(Opcode::A64WriteMemory64, vaddr, value, IR::Value(acctype));
+void IREmitter::WriteMemory64(const IR::U64& vaddr, const IR::U64& value, IR::AccType acc_type) {
+    Inst(Opcode::A64WriteMemory64, vaddr, value, IR::Value{acc_type});
 }
 
-void IREmitter::WriteMemory128(const IR::U64& vaddr, const IR::U128& value, IR::AccessType acctype) {
-    Inst(Opcode::A64WriteMemory128, vaddr, value, IR::Value(acctype));
+void IREmitter::WriteMemory128(const IR::U64& vaddr, const IR::U128& value, IR::AccType acc_type) {
+    Inst(Opcode::A64WriteMemory128, vaddr, value, IR::Value{acc_type});
 }
 
-IR::U32 IREmitter::ExclusiveWriteMemory8(const IR::U64& vaddr, const IR::U8& value, IR::AccessType acctype) {
-    return Inst<IR::U32>(Opcode::A64ExclusiveWriteMemory8, vaddr, value, IR::Value(acctype));
+IR::U32 IREmitter::ExclusiveWriteMemory8(const IR::U64& vaddr, const IR::U8& value, IR::AccType acc_type) {
+    return Inst<IR::U32>(Opcode::A64ExclusiveWriteMemory8, vaddr, value, IR::Value{acc_type});
 }
 
-IR::U32 IREmitter::ExclusiveWriteMemory16(const IR::U64& vaddr, const IR::U16& value, IR::AccessType acctype) {
-    return Inst<IR::U32>(Opcode::A64ExclusiveWriteMemory16, vaddr, value, IR::Value(acctype));
+IR::U32 IREmitter::ExclusiveWriteMemory16(const IR::U64& vaddr, const IR::U16& value, IR::AccType acc_type) {
+    return Inst<IR::U32>(Opcode::A64ExclusiveWriteMemory16, vaddr, value, IR::Value{acc_type});
 }
 
-IR::U32 IREmitter::ExclusiveWriteMemory32(const IR::U64& vaddr, const IR::U32& value, IR::AccessType acctype) {
-    return Inst<IR::U32>(Opcode::A64ExclusiveWriteMemory32, vaddr, value, IR::Value(acctype));
+IR::U32 IREmitter::ExclusiveWriteMemory32(const IR::U64& vaddr, const IR::U32& value, IR::AccType acc_type) {
+    return Inst<IR::U32>(Opcode::A64ExclusiveWriteMemory32, vaddr, value, IR::Value{acc_type});
 }
 
-IR::U32 IREmitter::ExclusiveWriteMemory64(const IR::U64& vaddr, const IR::U64& value, IR::AccessType acctype) {
-    return Inst<IR::U32>(Opcode::A64ExclusiveWriteMemory64, vaddr, value, IR::Value(acctype));
+IR::U32 IREmitter::ExclusiveWriteMemory64(const IR::U64& vaddr, const IR::U64& value, IR::AccType acc_type) {
+    return Inst<IR::U32>(Opcode::A64ExclusiveWriteMemory64, vaddr, value, IR::Value{acc_type});
 }
 
-IR::U32 IREmitter::ExclusiveWriteMemory128(const IR::U64& vaddr, const IR::U128& value, IR::AccessType acctype) {
-    return Inst<IR::U32>(Opcode::A64ExclusiveWriteMemory128, vaddr, value, IR::Value(acctype));
+IR::U32 IREmitter::ExclusiveWriteMemory128(const IR::U64& vaddr, const IR::U128& value, IR::AccType acc_type) {
+    return Inst<IR::U32>(Opcode::A64ExclusiveWriteMemory128, vaddr, value, IR::Value{acc_type});
 }
 
 IR::U32 IREmitter::GetW(Reg reg) {

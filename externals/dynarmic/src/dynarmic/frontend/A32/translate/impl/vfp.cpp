@@ -1186,16 +1186,16 @@ bool TranslatorVisitor::vfp_VPOP(Cond cond, bool D, size_t Vd, bool sz, Imm<8> i
 
     for (size_t i = 0; i < regs; ++i) {
         if (sz) {
-            auto lo = ir.ReadMemory32(address);
+            auto lo = ir.ReadMemory32(address, IR::AccType::ATOMIC);
             address = ir.Add(address, ir.Imm32(4));
-            auto hi = ir.ReadMemory32(address);
+            auto hi = ir.ReadMemory32(address, IR::AccType::ATOMIC);
             address = ir.Add(address, ir.Imm32(4));
             if (ir.current_location.EFlag()) {
                 std::swap(lo, hi);
             }
             ir.SetExtendedRegister(d + i, ir.Pack2x32To1x64(lo, hi));
         } else {
-            const auto res = ir.ReadMemory32(address);
+            const auto res = ir.ReadMemory32(address, IR::AccType::ATOMIC);
             ir.SetExtendedRegister(d + i, res);
             address = ir.Add(address, ir.Imm32(4));
         }
@@ -1232,12 +1232,12 @@ bool TranslatorVisitor::vfp_VPUSH(Cond cond, bool D, size_t Vd, bool sz, Imm<8> 
             auto hi = ir.MostSignificantWord(reg_d).result;
             if (ir.current_location.EFlag())
                 std::swap(lo, hi);
-            ir.WriteMemory32(address, lo);
+            ir.WriteMemory32(address, lo, IR::AccType::ATOMIC);
             address = ir.Add(address, ir.Imm32(4));
-            ir.WriteMemory32(address, hi);
+            ir.WriteMemory32(address, hi, IR::AccType::ATOMIC);
             address = ir.Add(address, ir.Imm32(4));
         } else {
-            ir.WriteMemory32(address, ir.GetExtendedRegister(d + i));
+            ir.WriteMemory32(address, ir.GetExtendedRegister(d + i), IR::AccType::ATOMIC);
             address = ir.Add(address, ir.Imm32(4));
         }
     }
@@ -1258,14 +1258,14 @@ bool TranslatorVisitor::vfp_VLDR(Cond cond, bool U, bool D, Reg n, size_t Vd, bo
     const auto address = U ? ir.Add(base, ir.Imm32(imm32)) : ir.Sub(base, ir.Imm32(imm32));
 
     if (sz) {
-        auto lo = ir.ReadMemory32(address);
-        auto hi = ir.ReadMemory32(ir.Add(address, ir.Imm32(4)));
+        auto lo = ir.ReadMemory32(address, IR::AccType::ATOMIC);
+        auto hi = ir.ReadMemory32(ir.Add(address, ir.Imm32(4)), IR::AccType::ATOMIC);
         if (ir.current_location.EFlag()) {
             std::swap(lo, hi);
         }
         ir.SetExtendedRegister(d, ir.Pack2x32To1x64(lo, hi));
     } else {
-        ir.SetExtendedRegister(d, ir.ReadMemory32(address));
+        ir.SetExtendedRegister(d, ir.ReadMemory32(address, IR::AccType::ATOMIC));
     }
 
     return true;
@@ -1289,10 +1289,10 @@ bool TranslatorVisitor::vfp_VSTR(Cond cond, bool U, bool D, Reg n, size_t Vd, bo
         if (ir.current_location.EFlag()) {
             std::swap(lo, hi);
         }
-        ir.WriteMemory32(address, lo);
-        ir.WriteMemory32(ir.Add(address, ir.Imm32(4)), hi);
+        ir.WriteMemory32(address, lo, IR::AccType::ATOMIC);
+        ir.WriteMemory32(ir.Add(address, ir.Imm32(4)), hi, IR::AccType::ATOMIC);
     } else {
-        ir.WriteMemory32(address, ir.GetExtendedRegister(d));
+        ir.WriteMemory32(address, ir.GetExtendedRegister(d), IR::AccType::ATOMIC);
     }
 
     return true;
@@ -1341,9 +1341,9 @@ bool TranslatorVisitor::vfp_VSTM_a1(Cond cond, bool p, bool u, bool D, bool w, R
             std::swap(word1, word2);
         }
 
-        ir.WriteMemory32(address, word1);
+        ir.WriteMemory32(address, word1, IR::AccType::ATOMIC);
         address = ir.Add(address, ir.Imm32(4));
-        ir.WriteMemory32(address, word2);
+        ir.WriteMemory32(address, word2, IR::AccType::ATOMIC);
         address = ir.Add(address, ir.Imm32(4));
     }
 
@@ -1386,7 +1386,7 @@ bool TranslatorVisitor::vfp_VSTM_a2(Cond cond, bool p, bool u, bool D, bool w, R
     }
     for (size_t i = 0; i < regs; i++) {
         const auto word = ir.GetExtendedRegister(d + i);
-        ir.WriteMemory32(address, word);
+        ir.WriteMemory32(address, word, IR::AccType::ATOMIC);
         address = ir.Add(address, ir.Imm32(4));
     }
 
@@ -1428,9 +1428,9 @@ bool TranslatorVisitor::vfp_VLDM_a1(Cond cond, bool p, bool u, bool D, bool w, R
         ir.SetRegister(n, u ? IR::U32(ir.Add(address, ir.Imm32(imm32))) : address);
     }
     for (size_t i = 0; i < regs; i++) {
-        auto word1 = ir.ReadMemory32(address);
+        auto word1 = ir.ReadMemory32(address, IR::AccType::ATOMIC);
         address = ir.Add(address, ir.Imm32(4));
-        auto word2 = ir.ReadMemory32(address);
+        auto word2 = ir.ReadMemory32(address, IR::AccType::ATOMIC);
         address = ir.Add(address, ir.Imm32(4));
 
         if (ir.current_location.EFlag()) {
@@ -1478,7 +1478,7 @@ bool TranslatorVisitor::vfp_VLDM_a2(Cond cond, bool p, bool u, bool D, bool w, R
         ir.SetRegister(n, u ? IR::U32(ir.Add(address, ir.Imm32(imm32))) : address);
     }
     for (size_t i = 0; i < regs; i++) {
-        const auto word = ir.ReadMemory32(address);
+        const auto word = ir.ReadMemory32(address, IR::AccType::ATOMIC);
         address = ir.Add(address, ir.Imm32(4));
         ir.SetExtendedRegister(d + i, word);
     }

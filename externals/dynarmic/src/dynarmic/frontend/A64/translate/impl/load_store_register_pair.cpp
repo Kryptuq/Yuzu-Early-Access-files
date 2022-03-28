@@ -46,13 +46,13 @@ bool TranslatorVisitor::STP_LDP_gen(Imm<2> opc, bool not_postindex, bool wback, 
     case IR::MemOp::STORE: {
         const IR::U32U64 data1 = X(datasize, Rt);
         const IR::U32U64 data2 = X(datasize, Rt2);
-        Mem(address, dbytes, IR::AccessType::NORMAL, data1);
-        Mem(ir.Add(address, ir.Imm64(dbytes)), dbytes, IR::AccessType::NORMAL, data2);
+        Mem(address, dbytes, IR::AccType::NORMAL, data1);
+        Mem(ir.Add(address, ir.Imm64(dbytes)), dbytes, IR::AccType::NORMAL, data2);
         break;
     }
     case IR::MemOp::LOAD: {
-        const IR::U32U64 data1 = Mem(address, dbytes, IR::AccessType::NORMAL);
-        const IR::U32U64 data2 = Mem(ir.Add(address, ir.Imm64(dbytes)), dbytes, IR::AccessType::NORMAL);
+        const IR::U32U64 data1 = Mem(address, dbytes, IR::AccType::NORMAL);
+        const IR::U32U64 data2 = Mem(ir.Add(address, ir.Imm64(dbytes)), dbytes, IR::AccType::NORMAL);
         if (signed_) {
             X(64, Rt, SignExtend(data1, 64));
             X(64, Rt2, SignExtend(data2, 64));
@@ -117,13 +117,13 @@ bool TranslatorVisitor::STP_LDP_fpsimd(Imm<2> opc, bool not_postindex, bool wbac
             data1 = ir.VectorGetElement(datasize, data1, 0);
             data2 = ir.VectorGetElement(datasize, data2, 0);
         }
-        Mem(address, dbytes, IR::AccessType::VEC, data1);
-        Mem(ir.Add(address, ir.Imm64(dbytes)), dbytes, IR::AccessType::VEC, data2);
+        Mem(address, dbytes, IR::AccType::VEC, data1);
+        Mem(ir.Add(address, ir.Imm64(dbytes)), dbytes, IR::AccType::VEC, data2);
         break;
     }
     case IR::MemOp::LOAD: {
-        IR::UAnyU128 data1 = Mem(address, dbytes, IR::AccessType::VEC);
-        IR::UAnyU128 data2 = Mem(ir.Add(address, ir.Imm64(dbytes)), dbytes, IR::AccessType::VEC);
+        IR::UAnyU128 data1 = Mem(address, dbytes, IR::AccType::VEC);
+        IR::UAnyU128 data2 = Mem(ir.Add(address, ir.Imm64(dbytes)), dbytes, IR::AccType::VEC);
         if (datasize != 128) {
             data1 = ir.ZeroExtendToQuad(data1);
             data2 = ir.ZeroExtendToQuad(data2);

@@ -160,7 +160,7 @@ if (DYNARMIC_USE_LLVM)
     llvm_map_components_to_libnames(llvm_libs armdesc armdisassembler aarch64desc aarch64disassembler x86desc x86disassembler)
 endif()
 
-if (DYNARMIC_TESTS_USE_UNICORN)
+if (DYNARMIC_TESTS_USE_UNICORN AND DYNARMIC_TESTS)
     find_package(Unicorn REQUIRED)
 endif()
 
