@@ -486,58 +486,6 @@ VAddr KPageTable::FindFreeArea(VAddr region_start, std::size_t region_num_pages,
     return address;
 }
 
-ResultCode KPageTable::MakePageGroup(KPageLinkedList& pg, VAddr addr, size_t num_pages) {
-    ASSERT(this->IsLockedByCurrentThread());
-
-    const size_t size = num_pages * PageSize;
-
-    // We're making a new group, not adding to an existing one.
-    R_UNLESS(pg.Empty(), ResultInvalidCurrentMemory);
-
-    // Begin traversal.
-    Common::PageTable::TraversalContext context;
-    Common::PageTable::TraversalEntry next_entry;
-    R_UNLESS(page_table_impl.BeginTraversal(next_entry, context, addr), ResultInvalidCurrentMemory);
-
-    // Prepare tracking variables.
-    PAddr cur_addr = next_entry.phys_addr;
-    size_t cur_size = next_entry.block_size - (cur_addr & (next_entry.block_size - 1));
-    size_t tot_size = cur_size;
-
-    // Iterate, adding to group as we go.
-    const auto& memory_layout = system.Kernel().MemoryLayout();
-    while (tot_size < size) {
-        R_UNLESS(page_table_impl.ContinueTraversal(next_entry, context),
-                 ResultInvalidCurrentMemory);
-
-        if (next_entry.phys_addr != (cur_addr + cur_size)) {
-            const size_t cur_pages = cur_size / PageSize;
-
-            R_UNLESS(IsHeapPhysicalAddress(memory_layout, cur_addr), ResultInvalidCurrentMemory);
-            R_TRY(pg.AddBlock(cur_addr, cur_pages));
-
-            cur_addr = next_entry.phys_addr;
-            cur_size = next_entry.block_size;
-        } else {
-            cur_size += next_entry.block_size;
-        }
-
-        tot_size += next_entry.block_size;
-    }
-
-    // Ensure we add the right amount for the last block.
-    if (tot_size > size) {
-        cur_size -= (tot_size - size);
-    }
-
-    // Add the last block.
-    const size_t cur_pages = cur_size / PageSize;
-    R_UNLESS(IsHeapPhysicalAddress(memory_layout, cur_addr), ResultInvalidCurrentMemory);
-    R_TRY(pg.AddBlock(cur_addr, cur_pages));
-
-    return ResultSuccess;
-}
-
 ResultCode KPageTable::UnmapProcessMemory(VAddr dst_addr, std::size_t size,
                                           KPageTable& src_page_table, VAddr src_addr) {
     KScopedLightLock lk(general_lock);
@@ -562,9 +510,6 @@ ResultCode KPageTable::UnmapProcessMemory(VAddr dst_addr, std::size_t size,
     // Apply the memory block update.
     block_manager->Update(dst_addr, num_pages, KMemoryState::Free, KMemoryPermission::None,
                           KMemoryAttribute::None);
-
-    // Invalidate CPU cache, as code may have been patched by the guest app.
-    system.InvalidateCpuInstructionCaches();
 
     return ResultSuccess;
 }
@@ -1278,31 +1223,6 @@ ResultCode KPageTable::UnmapPages(VAddr address, std::size_t num_pages, KMemoryS
     return ResultSuccess;
 }
 
-ResultCode KPageTable::MakeAndOpenPageGroup(KPageLinkedList* out, VAddr address, size_t num_pages,
-                                            KMemoryState state_mask, KMemoryState state,
-                                            KMemoryPermission perm_mask, KMemoryPermission perm,
-                                            KMemoryAttribute attr_mask, KMemoryAttribute attr) {
-    // Ensure that the page group isn't null.
-    ASSERT(out != nullptr);
-
-    // Make sure that the region we're mapping is valid for the table.
-    const size_t size = num_pages * PageSize;
-    R_UNLESS(this->Contains(address, size), ResultInvalidCurrentMemory);
-
-    // Lock the table.
-    KScopedLightLock lk(general_lock);
-
-    // Check if state allows us to create the group.
-    R_TRY(this->CheckMemoryState(address, size, state_mask | KMemoryState::FlagReferenceCounted,
-                                 state | KMemoryState::FlagReferenceCounted, perm_mask, perm,
-                                 attr_mask, attr));
-
-    // Create a new page group for the region.
-    R_TRY(this->MakePageGroup(*out, address, num_pages));
-
-    return ResultSuccess;
-}
-
 ResultCode KPageTable::SetProcessMemoryPermission(VAddr addr, std::size_t size,
                                                   Svc::MemoryPermission svc_perm) {
     const size_t num_pages = size / PageSize;
@@ -1685,21 +1605,57 @@ ResultCode KPageTable::UnlockForDeviceAddressSpace(VAddr addr, std::size_t size)
 }
 
 ResultCode KPageTable::LockForCodeMemory(VAddr addr, std::size_t size) {
-    return this->LockMemoryAndOpen(
-        nullptr, nullptr, addr, size, KMemoryState::FlagCanCodeMemory,
-        KMemoryState::FlagCanCodeMemory, KMemoryPermission::All, KMemoryPermission::UserReadWrite,
-        KMemoryAttribute::All, KMemoryAttribute::None,
-        static_cast<KMemoryPermission>(KMemoryPermission::NotMapped |
-                                       KMemoryPermission::KernelReadWrite),
-        KMemoryAttribute::Locked);
+    KScopedLightLock lk(general_lock);
+
+    KMemoryPermission new_perm = KMemoryPermission::NotMapped | KMemoryPermission::KernelReadWrite;
+
+    KMemoryPermission old_perm{};
+
+    if (const ResultCode result{CheckMemoryState(
+            nullptr, &old_perm, nullptr, nullptr, addr, size, KMemoryState::FlagCanCodeMemory,
+            KMemoryState::FlagCanCodeMemory, KMemoryPermission::All,
+            KMemoryPermission::UserReadWrite, KMemoryAttribute::All, KMemoryAttribute::None)};
+        result.IsError()) {
+        return result;
+    }
+
+    new_perm = (new_perm != KMemoryPermission::None) ? new_perm : old_perm;
+
+    block_manager->UpdateLock(
+        addr, size / PageSize,
+        [](KMemoryBlockManager::iterator block, KMemoryPermission permission) {
+            block->ShareToDevice(permission);
+        },
+        new_perm);
+
+    return ResultSuccess;
 }
 
 ResultCode KPageTable::UnlockForCodeMemory(VAddr addr, std::size_t size) {
-    return this->UnlockMemory(addr, size, KMemoryState::FlagCanCodeMemory,
-                              KMemoryState::FlagCanCodeMemory, KMemoryPermission::None,
-                              KMemoryPermission::None, KMemoryAttribute::All,
-                              KMemoryAttribute::Locked, KMemoryPermission::UserReadWrite,
-                              KMemoryAttribute::Locked, nullptr);
+    KScopedLightLock lk(general_lock);
+
+    KMemoryPermission new_perm = KMemoryPermission::UserReadWrite;
+
+    KMemoryPermission old_perm{};
+
+    if (const ResultCode result{CheckMemoryState(
+            nullptr, &old_perm, nullptr, nullptr, addr, size, KMemoryState::FlagCanCodeMemory,
+            KMemoryState::FlagCanCodeMemory, KMemoryPermission::None, KMemoryPermission::None,
+            KMemoryAttribute::All, KMemoryAttribute::Locked)};
+        result.IsError()) {
+        return result;
+    }
+
+    new_perm = (new_perm != KMemoryPermission::None) ? new_perm : old_perm;
+
+    block_manager->UpdateLock(
+        addr, size / PageSize,
+        [](KMemoryBlockManager::iterator block, KMemoryPermission permission) {
+            block->UnshareToDevice(permission);
+        },
+        new_perm);
+
+    return ResultSuccess;
 }
 
 ResultCode KPageTable::InitializeMemoryLayout(VAddr start, VAddr end) {
@@ -2032,111 +1988,6 @@ ResultCode KPageTable::CheckMemoryState(KMemoryState* out_state, KMemoryPermissi
     if (out_blocks_needed != nullptr) {
         *out_blocks_needed = blocks_for_start_align + blocks_for_end_align;
     }
-    return ResultSuccess;
-}
-
-ResultCode KPageTable::LockMemoryAndOpen(KPageLinkedList* out_pg, PAddr* out_paddr, VAddr addr,
-                                         size_t size, KMemoryState state_mask, KMemoryState state,
-                                         KMemoryPermission perm_mask, KMemoryPermission perm,
-                                         KMemoryAttribute attr_mask, KMemoryAttribute attr,
-                                         KMemoryPermission new_perm, KMemoryAttribute lock_attr) {
-    // Validate basic preconditions.
-    ASSERT((lock_attr & attr) == KMemoryAttribute::None);
-    ASSERT((lock_attr & (KMemoryAttribute::IpcLocked | KMemoryAttribute::DeviceShared)) ==
-           KMemoryAttribute::None);
-
-    // Validate the lock request.
-    const size_t num_pages = size / PageSize;
-    R_UNLESS(this->Contains(addr, size), ResultInvalidCurrentMemory);
-
-    // Lock the table.
-    KScopedLightLock lk(general_lock);
-
-    // Check that the output page group is empty, if it exists.
-    if (out_pg) {
-        ASSERT(out_pg->GetNumPages() == 0);
-    }
-
-    // Check the state.
-    KMemoryState old_state{};
-    KMemoryPermission old_perm{};
-    KMemoryAttribute old_attr{};
-    size_t num_allocator_blocks{};
-    R_TRY(this->CheckMemoryState(std::addressof(old_state), std::addressof(old_perm),
-                                 std::addressof(old_attr), std::addressof(num_allocator_blocks),
-                                 addr, size, state_mask | KMemoryState::FlagReferenceCounted,
-                                 state | KMemoryState::FlagReferenceCounted, perm_mask, perm,
-                                 attr_mask, attr));
-
-    // Get the physical address, if we're supposed to.
-    if (out_paddr != nullptr) {
-        ASSERT(this->GetPhysicalAddressLocked(out_paddr, addr));
-    }
-
-    // Make the page group, if we're supposed to.
-    if (out_pg != nullptr) {
-        R_TRY(this->MakePageGroup(*out_pg, addr, num_pages));
-    }
-
-    // Decide on new perm and attr.
-    new_perm = (new_perm != KMemoryPermission::None) ? new_perm : old_perm;
-    KMemoryAttribute new_attr = static_cast<KMemoryAttribute>(old_attr | lock_attr);
-
-    // Update permission, if we need to.
-    if (new_perm != old_perm) {
-        R_TRY(Operate(addr, num_pages, new_perm, OperationType::ChangePermissions));
-    }
-
-    // Apply the memory block updates.
-    block_manager->Update(addr, num_pages, old_state, new_perm, new_attr);
-
-    return ResultSuccess;
-}
-
-ResultCode KPageTable::UnlockMemory(VAddr addr, size_t size, KMemoryState state_mask,
-                                    KMemoryState state, KMemoryPermission perm_mask,
-                                    KMemoryPermission perm, KMemoryAttribute attr_mask,
-                                    KMemoryAttribute attr, KMemoryPermission new_perm,
-                                    KMemoryAttribute lock_attr, const KPageLinkedList* pg) {
-    // Validate basic preconditions.
-    ASSERT((attr_mask & lock_attr) == lock_attr);
-    ASSERT((attr & lock_attr) == lock_attr);
-
-    // Validate the unlock request.
-    const size_t num_pages = size / PageSize;
-    R_UNLESS(this->Contains(addr, size), ResultInvalidCurrentMemory);
-
-    // Lock the table.
-    KScopedLightLock lk(general_lock);
-
-    // Check the state.
-    KMemoryState old_state{};
-    KMemoryPermission old_perm{};
-    KMemoryAttribute old_attr{};
-    size_t num_allocator_blocks{};
-    R_TRY(this->CheckMemoryState(std::addressof(old_state), std::addressof(old_perm),
-                                 std::addressof(old_attr), std::addressof(num_allocator_blocks),
-                                 addr, size, state_mask | KMemoryState::FlagReferenceCounted,
-                                 state | KMemoryState::FlagReferenceCounted, perm_mask, perm,
-                                 attr_mask, attr));
-
-    // Check the page group.
-    if (pg != nullptr) {
-        UNIMPLEMENTED_MSG("PageGroup support is unimplemented!");
-    }
-
-    // Decide on new perm and attr.
-    new_perm = (new_perm != KMemoryPermission::None) ? new_perm : old_perm;
-    KMemoryAttribute new_attr = static_cast<KMemoryAttribute>(old_attr & ~lock_attr);
-
-    // Update permission, if we need to.
-    if (new_perm != old_perm) {
-        R_TRY(Operate(addr, num_pages, new_perm, OperationType::ChangePermissions));
-    }
-
-    // Apply the memory block updates.
-    block_manager->Update(addr, num_pages, old_state, new_perm, new_attr);
-
     return ResultSuccess;
 }
 

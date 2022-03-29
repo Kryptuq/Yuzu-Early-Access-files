@@ -367,14 +367,17 @@ BlitImageHelper::BlitImageHelper(const Device& device_, VKScheduler& scheduler_,
           PipelineLayoutCreateInfo(two_textures_set_layout.address()))),
       full_screen_vert(BuildShader(device, FULL_SCREEN_TRIANGLE_VERT_SPV)),
       blit_color_to_color_frag(BuildShader(device, VULKAN_BLIT_COLOR_FLOAT_FRAG_SPV)),
-      blit_depth_stencil_frag(BuildShader(device, VULKAN_BLIT_DEPTH_STENCIL_FRAG_SPV)),
       convert_depth_to_float_frag(BuildShader(device, CONVERT_DEPTH_TO_FLOAT_FRAG_SPV)),
       convert_float_to_depth_frag(BuildShader(device, CONVERT_FLOAT_TO_DEPTH_FRAG_SPV)),
       convert_abgr8_to_d24s8_frag(BuildShader(device, CONVERT_ABGR8_TO_D24S8_FRAG_SPV)),
       convert_d24s8_to_abgr8_frag(BuildShader(device, CONVERT_D24S8_TO_ABGR8_FRAG_SPV)),
       convert_s8d24_to_abgr8_frag(BuildShader(device, CONVERT_S8D24_TO_ABGR8_FRAG_SPV)),
       linear_sampler(device.GetLogical().CreateSampler(SAMPLER_CREATE_INFO<VK_FILTER_LINEAR>)),
-      nearest_sampler(device.GetLogical().CreateSampler(SAMPLER_CREATE_INFO<VK_FILTER_NEAREST>)) {}
+      nearest_sampler(device.GetLogical().CreateSampler(SAMPLER_CREATE_INFO<VK_FILTER_NEAREST>)) {
+    if (device.IsExtShaderStencilExportSupported()) {
+        blit_depth_stencil_frag = BuildShader(device, VULKAN_BLIT_DEPTH_STENCIL_FRAG_SPV);
+    }
+}
 
 BlitImageHelper::~BlitImageHelper() = default;
 

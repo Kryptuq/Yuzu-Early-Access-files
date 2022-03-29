@@ -15,8 +15,9 @@
 #include "common/logging/log.h"
 #include "common/math_util.h"
 #include "common/microprofile.h"
+#include "common/scope_exit.h"
 #include "common/settings.h"
-#include "core/memory.h"
+
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/memory_manager.h"
@@ -210,6 +211,7 @@ void RasterizerOpenGL::Clear() {
 void RasterizerOpenGL::Draw(bool is_indexed, bool is_instanced) {
     MICROPROFILE_SCOPE(OpenGL_Drawing);
 
+    SCOPE_EXIT({ gpu.TickWork(); });
     query_cache.UpdateCounters();
 
     GraphicsPipeline* const pipeline{shader_cache.CurrentGraphicsPipeline()};
@@ -265,8 +267,6 @@ void RasterizerOpenGL::Draw(bool is_indexed, bool is_instanced) {
 
     ++num_queued_commands;
     has_written_global_memory |= pipeline->WritesGlobalMemory();
-
-    gpu.TickWork();
 }
 
 void RasterizerOpenGL::DispatchCompute() {

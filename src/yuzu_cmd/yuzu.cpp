@@ -74,6 +74,7 @@ static void PrintVersion() {
 int main(int argc, char** argv) {
     Common::Log::Initialize();
     Common::Log::SetColorConsoleBackendEnabled(true);
+    Common::Log::Start();
     Common::DetachedTasks detached_tasks;
 
     int option_index = 0;

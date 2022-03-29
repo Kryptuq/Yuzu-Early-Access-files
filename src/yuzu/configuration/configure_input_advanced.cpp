@@ -79,17 +79,13 @@ ConfigureInputAdvanced::ConfigureInputAdvanced(QWidget* parent)
             &ConfigureInputAdvanced::UpdateUIEnabled);
     connect(ui->touchscreen_enabled, &QCheckBox::stateChanged, this,
             &ConfigureInputAdvanced::UpdateUIEnabled);
-    connect(ui->enable_ring_controller, &QCheckBox::stateChanged, this,
-            &ConfigureInputAdvanced::UpdateUIEnabled);
 
     connect(ui->debug_configure, &QPushButton::clicked, this,
             [this] { CallDebugControllerDialog(); });
     connect(ui->touchscreen_advanced, &QPushButton::clicked, this,
             [this] { CallTouchscreenConfigDialog(); });
     connect(ui->buttonMotionTouch, &QPushButton::clicked, this,
-            [this] { CallMotionTouchConfigDialog(); });
-    connect(ui->ring_controller_configure, &QPushButton::clicked, this,
-            [this] { CallRingControllerDialog(); });
+            &ConfigureInputAdvanced::CallMotionTouchConfigDialog);
 
 #ifndef _WIN32
     ui->enable_raw_input->setVisible(false);
@@ -136,7 +132,6 @@ void ConfigureInputAdvanced::ApplyConfiguration() {
     Settings::values.enable_raw_input = ui->enable_raw_input->isChecked();
     Settings::values.enable_udp_controller = ui->enable_udp_controller->isChecked();
     Settings::values.controller_navigation = ui->controller_navigation->isChecked();
-    Settings::values.enable_ring_controller = ui->enable_ring_controller->isChecked();
 }
 
 void ConfigureInputAdvanced::LoadConfiguration() {
@@ -169,7 +164,6 @@ void ConfigureInputAdvanced::LoadConfiguration() {
     ui->enable_raw_input->setChecked(Settings::values.enable_raw_input.GetValue());
     ui->enable_udp_controller->setChecked(Settings::values.enable_udp_controller.GetValue());
     ui->controller_navigation->setChecked(Settings::values.controller_navigation.GetValue());
-    ui->enable_ring_controller->setChecked(Settings::values.enable_ring_controller.GetValue());
 
     UpdateUIEnabled();
 }
@@ -191,5 +185,4 @@ void ConfigureInputAdvanced::UpdateUIEnabled() {
     ui->touchscreen_advanced->setEnabled(ui->touchscreen_enabled->isChecked());
     ui->mouse_panning->setEnabled(!ui->mouse_enabled->isChecked());
     ui->mouse_panning_sensitivity->setEnabled(!ui->mouse_enabled->isChecked());
-    ui->ring_controller_configure->setEnabled(ui->enable_ring_controller->isChecked());
 }
