@@ -10,6 +10,7 @@
 #include "dynarmic/backend/x64/exclusive_monitor_friend.h"
 #include "dynarmic/common/spin_lock_x64.h"
 #include "dynarmic/interface/exclusive_monitor.h"
+#include "dynarmic/ir/acc_type.h"
 
 namespace Dynarmic::Backend::X64 {
 
@@ -198,49 +199,113 @@ template<>
 }
 
 template<std::size_t bitsize>
-void EmitReadMemoryMov(BlockOfCode& code, int value_idx, const Xbyak::RegExp& addr) {
+const void* EmitReadMemoryMov(BlockOfCode& code, int value_idx, const Xbyak::RegExp& addr, bool ordered) {
+    if (ordered) {
+        if constexpr (bitsize == 128) {
+            code.mfence();
+        } else {
+            code.xor_(Xbyak::Reg32{value_idx}, Xbyak::Reg32{value_idx});
+        }
+
+        const void* fastmem_location = code.getCurr();
+        switch (bitsize) {
+        case 8:
+            code.lock();
+            code.xadd(code.byte[addr], Xbyak::Reg32{value_idx}.cvt8());
+            break;
+        case 16:
+            code.lock();
+            code.xadd(word[addr], Xbyak::Reg32{value_idx});
+            break;
+        case 32:
+            code.lock();
+            code.xadd(dword[addr], Xbyak::Reg32{value_idx});
+            break;
+        case 64:
+            code.lock();
+            code.xadd(qword[addr], Xbyak::Reg64{value_idx});
+            break;
+        case 128:
+            // TODO (HACK): Detect CPUs where this load is not atomic
+            code.movaps(Xbyak::Xmm{value_idx}, xword[addr]);
+            break;
+        default:
+            ASSERT_FALSE("Invalid bitsize");
+        }
+        return fastmem_location;
+    }
+
+    const void* fastmem_location = code.getCurr();
     switch (bitsize) {
     case 8:
         code.movzx(Xbyak::Reg32{value_idx}, code.byte[addr]);
-        return;
+        break;
     case 16:
         code.movzx(Xbyak::Reg32{value_idx}, word[addr]);
-        return;
+        break;
     case 32:
         code.mov(Xbyak::Reg32{value_idx}, dword[addr]);
-        return;
+        break;
     case 64:
         code.mov(Xbyak::Reg64{value_idx}, qword[addr]);
-        return;
+        break;
     case 128:
         code.movups(Xbyak::Xmm{value_idx}, xword[addr]);
-        return;
+        break;
     default:
         ASSERT_FALSE("Invalid bitsize");
     }
+    return fastmem_location;
 }
 
 template<std::size_t bitsize>
-void EmitWriteMemoryMov(BlockOfCode& code, const Xbyak::RegExp& addr, int value_idx) {
+const void* EmitWriteMemoryMov(BlockOfCode& code, const Xbyak::RegExp& addr, int value_idx, bool ordered) {
+    if (ordered) {
+        const void* fastmem_location = code.getCurr();
+        switch (bitsize) {
+        case 8:
+            code.xchg(code.byte[addr], Xbyak::Reg64{value_idx}.cvt8());
+            break;
+        case 16:
+            code.xchg(word[addr], Xbyak::Reg16{value_idx});
+            break;
+        case 32:
+            code.xchg(dword[addr], Xbyak::Reg32{value_idx});
+            break;
+        case 64:
+            code.xchg(qword[addr], Xbyak::Reg64{value_idx});
+            break;
+        case 128:
+            code.movaps(xword[addr], Xbyak::Xmm{value_idx});
+            code.mfence();
+            break;
+        default:
+            ASSERT_FALSE("Invalid bitsize");
+        }
+        return fastmem_location;
+    }
+
+    const void* fastmem_location = code.getCurr();
     switch (bitsize) {
     case 8:
         code.mov(code.byte[addr], Xbyak::Reg64{value_idx}.cvt8());
-        return;
+        break;
     case 16:
         code.mov(word[addr], Xbyak::Reg16{value_idx});
-        return;
+        break;
     case 32:
         code.mov(dword[addr], Xbyak::Reg32{value_idx});
-        return;
+        break;
     case 64:
         code.mov(qword[addr], Xbyak::Reg64{value_idx});
-        return;
+        break;
     case 128:
         code.movups(xword[addr], Xbyak::Xmm{value_idx});
-        return;
+        break;
     default:
         ASSERT_FALSE("Invalid bitsize");
     }
+    return fastmem_location;
 }
 
 template<typename UserConfig>
@@ -282,6 +347,10 @@ void EmitExclusiveTestAndClear(BlockOfCode& code, const UserConfig& conf, Xbyak:
         code.mov(qword[pointer], tmp);
         code.L(ok);
     }
+}
+
+inline bool IsOrdered(IR::AccType acctype) {
+    return acctype == IR::AccType::ORDERED || acctype == IR::AccType::ORDEREDRW || acctype == IR::AccType::LIMITEDORDERED;
 }
 
 }  // namespace

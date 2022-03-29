@@ -285,6 +285,7 @@ if (ARCHITECTURE STREQUAL "x86_64")
         backend/x64/emit_x64_data_processing.cpp
         backend/x64/emit_x64_floating_point.cpp
         backend/x64/emit_x64_memory.h
+        backend/x64/emit_x64_memory.cpp.inc
         backend/x64/emit_x64_packed.cpp
         backend/x64/emit_x64_saturation.cpp
         backend/x64/emit_x64_sm4.cpp

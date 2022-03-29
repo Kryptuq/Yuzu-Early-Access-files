@@ -208,6 +208,11 @@ IR::Cond Argument::GetImmediateCond() const {
     return value.GetCond();
 }
 
+IR::AccType Argument::GetImmediateAccType() const {
+    ASSERT(IsImmediate() && GetType() == IR::Type::AccType);
+    return value.GetAccType();
+}
+
 bool Argument::IsInGpr() const {
     if (IsImmediate())
         return false;

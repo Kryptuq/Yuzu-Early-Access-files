@@ -71,9 +71,12 @@ protected:
     std::array<FastDispatchEntry, fast_dispatch_table_size> fast_dispatch_table;
     void ClearFastDispatchTable();
 
-    std::map<std::tuple<size_t, int, int>, void (*)()> read_fallbacks;
-    std::map<std::tuple<size_t, int, int>, void (*)()> write_fallbacks;
-    std::map<std::tuple<size_t, int, int>, void (*)()> exclusive_write_fallbacks;
+    void (*memory_read_128)() = nullptr;   // Dummy
+    void (*memory_write_128)() = nullptr;  // Dummy
+
+    std::map<std::tuple<bool, size_t, int, int>, void (*)()> read_fallbacks;
+    std::map<std::tuple<bool, size_t, int, int>, void (*)()> write_fallbacks;
+    std::map<std::tuple<bool, size_t, int, int>, void (*)()> exclusive_write_fallbacks;
     void GenFastmemFallbacks();
 
     const void* terminal_handler_pop_rsb_hint;
@@ -99,7 +102,7 @@ protected:
         u64 resume_rip;
         u64 callback;
         DoNotFastmemMarker marker;
-        bool compile;
+        bool recompile;
     };
     tsl::robin_map<u64, FastmemPatchInfo> fastmem_patch_info;
     std::set<DoNotFastmemMarker> do_not_fastmem;
@@ -112,13 +115,13 @@ protected:
     template<std::size_t bitsize, auto callback>
     void EmitMemoryWrite(A32EmitContext& ctx, IR::Inst* inst);
     template<std::size_t bitsize, auto callback>
-    void ExclusiveReadMemory(A32EmitContext& ctx, IR::Inst* inst);
+    void EmitExclusiveReadMemory(A32EmitContext& ctx, IR::Inst* inst);
     template<std::size_t bitsize, auto callback>
-    void ExclusiveWriteMemory(A32EmitContext& ctx, IR::Inst* inst);
+    void EmitExclusiveWriteMemory(A32EmitContext& ctx, IR::Inst* inst);
     template<std::size_t bitsize, auto callback>
-    void ExclusiveReadMemoryInline(A32EmitContext& ctx, IR::Inst* inst);
+    void EmitExclusiveReadMemoryInline(A32EmitContext& ctx, IR::Inst* inst);
     template<std::size_t bitsize, auto callback>
-    void ExclusiveWriteMemoryInline(A32EmitContext& ctx, IR::Inst* inst);
+    void EmitExclusiveWriteMemoryInline(A32EmitContext& ctx, IR::Inst* inst);
 
     // Terminal instruction emitters
     void EmitSetUpperLocationDescriptor(IR::LocationDescriptor new_location, IR::LocationDescriptor old_location);
