@@ -89,6 +89,10 @@ public:
         return ResultSuccess;
     }
 
+    bool Empty() const {
+        return nodes.empty();
+    }
+
 private:
     std::list<Node> nodes;
 };

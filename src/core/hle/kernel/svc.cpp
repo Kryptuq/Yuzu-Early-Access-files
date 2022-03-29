@@ -1362,8 +1362,11 @@ static ResultCode MapProcessMemory(Core::System& system, VAddr dst_address, Hand
              ResultInvalidMemoryRegion);
 
     // Create a new page group.
-    KMemoryInfo kBlockInfo = dst_pt.QueryInfo(dst_address);
-    KPageLinkedList pg(kBlockInfo.GetAddress(), kBlockInfo.GetNumPages());
+    KPageLinkedList pg;
+    R_TRY(src_pt.MakeAndOpenPageGroup(
+        std::addressof(pg), src_address, size / PageSize, KMemoryState::FlagCanMapProcess,
+        KMemoryState::FlagCanMapProcess, KMemoryPermission::None, KMemoryPermission::None,
+        KMemoryAttribute::All, KMemoryAttribute::None));
 
     // Map the group.
     R_TRY(dst_pt.MapPages(dst_address, pg, KMemoryState::SharedCode,
@@ -1408,8 +1411,8 @@ static ResultCode UnmapProcessMemory(Core::System& system, VAddr dst_address, Ha
 }
 
 static ResultCode CreateCodeMemory(Core::System& system, Handle* out, VAddr address, size_t size) {
-    LOG_TRACE(Kernel_SVC, "called, handle_out={}, address=0x{:X}, size=0x{:X}",
-              static_cast<void*>(out), address, size);
+    LOG_TRACE(Kernel_SVC, "called, address=0x{:X}, size=0x{:X}", address, size);
+
     // Get kernel instance.
     auto& kernel = system.Kernel();
 
@@ -1664,7 +1667,7 @@ static ResultCode UnmapProcessCodeMemory(Core::System& system, Handle process_ha
         return ResultInvalidAddress;
     }
 
-    if (size == 0 || Common::Is4KBAligned(size)) {
+    if (size == 0 || !Common::Is4KBAligned(size)) {
         LOG_ERROR(Kernel_SVC, "Size is zero or not page-aligned (size=0x{:016X}).", size);
         return ResultInvalidSize;
     }

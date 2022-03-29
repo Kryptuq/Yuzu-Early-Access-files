@@ -56,7 +56,7 @@ u64 NativeClock::GetRTSC() {
     TimePoint new_time_point{};
     TimePoint current_time_point{};
     do {
-        current_time_point.pack = time_point.pack;
+        current_time_point.pack = Common::AtomicLoad128(time_point.pack.data());
         _mm_mfence();
         const u64 current_measure = __rdtsc();
         u64 diff = current_measure - current_time_point.inner.last_measure;
@@ -76,7 +76,7 @@ void NativeClock::Pause(bool is_paused) {
         TimePoint current_time_point{};
         TimePoint new_time_point{};
         do {
-            current_time_point.pack = time_point.pack;
+            current_time_point.pack = Common::AtomicLoad128(time_point.pack.data());
             new_time_point.pack = current_time_point.pack;
             _mm_mfence();
             new_time_point.inner.last_measure = __rdtsc();

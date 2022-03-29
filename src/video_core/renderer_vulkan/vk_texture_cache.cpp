@@ -1451,8 +1451,7 @@ bool Image::BlitScaleHelper(bool scale_up) {
 
         runtime->blit_image_helper.BlitColor(blit_framebuffer.get(), color_view, dst_region,
                                              src_region, operation, BLIT_OPERATION);
-    } else if (!runtime->device.IsBlitDepthStencilSupported() &&
-               aspect_mask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
+    } else if (aspect_mask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
         if (!blit_framebuffer) {
             blit_framebuffer = std::make_unique<Framebuffer>(*runtime, nullptr, view_ptr, extent);
         }

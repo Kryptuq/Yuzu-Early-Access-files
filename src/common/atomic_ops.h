@@ -46,6 +46,13 @@ namespace Common {
                                           reinterpret_cast<__int64*>(expected.data())) != 0;
 }
 
+[[nodiscard]] inline u128 AtomicLoad128(volatile u64* pointer) {
+    u128 result{};
+    _InterlockedCompareExchange128(reinterpret_cast<volatile __int64*>(pointer), result[1],
+                                   result[0], reinterpret_cast<__int64*>(result.data()));
+    return result;
+}
+
 #else
 
 [[nodiscard]] inline bool AtomicCompareAndSwap(volatile u8* pointer, u8 value, u8 expected) {
@@ -70,6 +77,16 @@ namespace Common {
     std::memcpy(&value_a, value.data(), sizeof(u128));
     std::memcpy(&expected_a, expected.data(), sizeof(u128));
     return __sync_bool_compare_and_swap((unsigned __int128*)pointer, expected_a, value_a);
+}
+
+[[nodiscard]] inline u128 AtomicLoad128(volatile u64* pointer) {
+    unsigned __int128 zeros_a = 0;
+    unsigned __int128 result_a =
+        __sync_val_compare_and_swap((unsigned __int128*)pointer, zeros_a, zeros_a);
+
+    u128 result;
+    std::memcpy(result.data(), &result_a, sizeof(u128));
+    return result;
 }
 
 #endif

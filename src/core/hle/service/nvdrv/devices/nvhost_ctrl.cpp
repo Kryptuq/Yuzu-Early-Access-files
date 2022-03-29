@@ -134,7 +134,7 @@ NvResult nvhost_ctrl::IocCtrlEventWait(const std::vector<u8>& input, std::vector
     }
 
     EventState status = events_interface.status[event_id];
-    const bool bad_parameter = status != EventState::Free && status != EventState::Registered;
+    const bool bad_parameter = status == EventState::Busy;
     if (bad_parameter) {
         std::memcpy(output.data(), &params, sizeof(params));
         return NvResult::BadParameter;

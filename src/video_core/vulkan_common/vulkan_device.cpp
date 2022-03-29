@@ -621,6 +621,11 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             khr_push_descriptor = false;
             break;
         }
+        const u32 nv_major_version = (properties.driverVersion >> 22) & 0x3ff;
+        if (nv_major_version >= 510) {
+            LOG_WARNING(Render_Vulkan, "NVIDIA Drivers >= 510 do not support MSAA image blits");
+            cant_blit_msaa = true;
+        }
     }
     const bool is_radv = driver_id == VK_DRIVER_ID_MESA_RADV;
     if (ext_extended_dynamic_state && is_radv) {
