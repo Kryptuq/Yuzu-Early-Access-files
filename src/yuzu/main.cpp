@@ -293,8 +293,6 @@ GMainWindow::GMainWindow()
 
     MigrateConfigFiles();
 
-    ui->action_Fullscreen->setChecked(false);
-
 #if defined(HAVE_SDL2) && !defined(_WIN32)
     SDL_InitSubSystem(SDL_INIT_VIDEO);
     // SDL disables the screen saver by default, and setting the hint
@@ -312,17 +310,20 @@ GMainWindow::GMainWindow()
     }
 
     QString game_path;
+    bool has_gamepath = false;
+    bool is_fullscreen = false;
 
     for (int i = 1; i < args.size(); ++i) {
         // Preserves drag/drop functionality
         if (args.size() == 2 && !args[1].startsWith(QChar::fromLatin1('-'))) {
             game_path = args[1];
+            has_gamepath = true;
             break;
         }
 
         // Launch game in fullscreen mode
         if (args[i] == QStringLiteral("-f")) {
-            ui->action_Fullscreen->setChecked(true);
+            is_fullscreen = true;
             continue;
         }
 
@@ -365,7 +366,13 @@ GMainWindow::GMainWindow()
             }
 
             game_path = args[++i];
+            has_gamepath = true;
         }
+    }
+
+    // Override fullscreen setting if gamepath or argument is provided
+    if (has_gamepath || is_fullscreen) {
+        ui->action_Fullscreen->setChecked(is_fullscreen);
     }
 
     if (!game_path.isEmpty()) {
