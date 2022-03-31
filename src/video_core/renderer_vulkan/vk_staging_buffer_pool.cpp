@@ -29,7 +29,10 @@ constexpr VkDeviceSize MAX_ALIGNMENT = 256;
 constexpr VkDeviceSize MAX_STREAM_BUFFER_REQUEST_SIZE = 8_MiB;
 // Stream buffer size in bytes
 constexpr VkDeviceSize STREAM_BUFFER_SIZE = 128_MiB;
-constexpr VkDeviceSize REGION_SIZE = STREAM_BUFFER_SIZE / StagingBufferPool::NUM_SYNCS;
+
+constexpr VkDeviceSize REGION_SIZE = STREAM_BUFFER_SIZE / StagingBufferPool::NUM_STREAM_REGIONS;
+static_assert(Common::IsAligned(REGION_SIZE, MAX_ALIGNMENT),
+              "Stream buffer region size must be VK buffer aligned");
 
 constexpr VkMemoryPropertyFlags HOST_FLAGS =
     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -83,6 +86,17 @@ u32 FindMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& props, u32 type_
 size_t Region(size_t iterator) noexcept {
     return iterator / REGION_SIZE;
 }
+
+constexpr std::array<VkDeviceSize, StagingBufferPool::NUM_STREAM_REGIONS> MakeStreamBufferOffset() {
+    std::array<VkDeviceSize, StagingBufferPool::NUM_STREAM_REGIONS> offsets{};
+    for (size_t i = 0; i < StagingBufferPool::NUM_STREAM_REGIONS; ++i) {
+        offsets[i] = static_cast<VkDeviceSize>(i * REGION_SIZE);
+    }
+    return offsets;
+}
+
+constexpr auto STREAM_BUFFER_OFFSETS_LUT = MakeStreamBufferOffset();
+
 } // Anonymous namespace
 
 StagingBufferPool::StagingBufferPool(const Device& device_, MemoryAllocator& memory_allocator_,
@@ -159,31 +173,19 @@ void StagingBufferPool::TickFrame() {
 }
 
 StagingBufferRef StagingBufferPool::GetStreamBuffer(size_t size) {
-    if (AreRegionsActive(Region(free_iterator) + 1,
-                         std::min(Region(iterator + size) + 1, NUM_SYNCS))) {
+    const auto num_requested_regions = Region(size) + 1;
+    const auto available_index = NextAvailableStreamIndex(num_requested_regions);
+    if (!available_index) {
         // Avoid waiting for the previous usages to be free
         return GetStagingBuffer(size, MemoryUsage::Upload);
     }
     const u64 current_tick = scheduler.CurrentTick();
-    std::fill(sync_ticks.begin() + Region(used_iterator), sync_ticks.begin() + Region(iterator),
-              current_tick);
-    used_iterator = iterator;
-    free_iterator = std::max(free_iterator, iterator + size);
+    const auto begin_itr = sync_ticks.begin() + *available_index;
+    std::fill(begin_itr, begin_itr + num_requested_regions, current_tick);
 
-    if (iterator + size >= STREAM_BUFFER_SIZE) {
-        std::fill(sync_ticks.begin() + Region(used_iterator), sync_ticks.begin() + NUM_SYNCS,
-                  current_tick);
-        used_iterator = 0;
-        iterator = 0;
-        free_iterator = size;
-
-        if (AreRegionsActive(0, Region(size) + 1)) {
-            // Avoid waiting for the previous usages to be free
-            return GetStagingBuffer(size, MemoryUsage::Upload);
-        }
-    }
-    const size_t offset = iterator;
-    iterator = Common::AlignUp(iterator + size, MAX_ALIGNMENT);
+    const VkDeviceSize offset = STREAM_BUFFER_OFFSETS_LUT[*available_index];
+    ASSERT(offset + size <= STREAM_BUFFER_SIZE);
+    next_index = (*available_index + num_requested_regions) % NUM_STREAM_REGIONS;
     return StagingBufferRef{
         .buffer = *stream_buffer,
         .offset = static_cast<VkDeviceSize>(offset),
@@ -191,10 +193,22 @@ StagingBufferRef StagingBufferPool::GetStreamBuffer(size_t size) {
     };
 }
 
-bool StagingBufferPool::AreRegionsActive(size_t region_begin, size_t region_end) const {
-    const u64 gpu_tick = scheduler.GetMasterSemaphore().KnownGpuTick();
-    return std::any_of(sync_ticks.begin() + region_begin, sync_ticks.begin() + region_end,
-                       [gpu_tick](u64 sync_tick) { return gpu_tick < sync_tick; });
+std::optional<size_t> StagingBufferPool::NextAvailableStreamIndex(size_t num_regions) const {
+    const auto is_index_available = [this, num_regions](size_t begin_offset) {
+        const u64 gpu_tick = scheduler.GetMasterSemaphore().KnownGpuTick();
+        const auto tick_check = [gpu_tick](u64 sync_tick) { return gpu_tick >= sync_tick; };
+
+        const auto begin_itr = sync_ticks.begin() + begin_offset;
+        const bool is_available = std::all_of(begin_itr, begin_itr + num_regions, tick_check);
+        return is_available ? std::optional(begin_offset) : std::nullopt;
+    };
+    // Avoid overflow
+    if (next_index + num_regions <= NUM_STREAM_REGIONS) {
+        return is_index_available(next_index);
+    }
+    // Not enough contiguous regions at the next_index,
+    // Check if the contiguous range in the front is available
+    return is_index_available(0);
 };
 
 StagingBufferRef StagingBufferPool::GetStagingBuffer(size_t size, MemoryUsage usage) {
