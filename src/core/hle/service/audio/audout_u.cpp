@@ -41,9 +41,10 @@ public:
     explicit IAudioOut(Core::System& system_, AudoutParams audio_params_,
                        AudioCore::AudioOut& audio_core_, std::string&& device_name_,
                        std::string&& unique_name)
-        : ServiceFramework{system_, "IAudioOut"}, audio_core{audio_core_},
-          device_name{std::move(device_name_)}, audio_params{audio_params_},
-          main_memory{system.Memory()}, service_context{system_, "IAudioOut"} {
+        : ServiceFramework{system_, "IAudioOut", true /*create_service_thread*/},
+          audio_core{audio_core_}, device_name{std::move(device_name_)},
+          audio_params{audio_params_}, main_memory{system.Memory()}, service_context{system_,
+                                                                                     "IAudioOut"} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &IAudioOut::GetAudioOutState, "GetAudioOutState"},

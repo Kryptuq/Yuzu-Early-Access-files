@@ -879,6 +879,10 @@ void Hid::AcquireNpadStyleSetUpdateEventHandle(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_HID, "called, npad_id={}, applet_resource_user_id={}, unknown={}",
               parameters.npad_id, parameters.applet_resource_user_id, parameters.unknown);
 
+    // Games expect this event to be signaled after calling this function
+    applet_resource->GetController<Controller_NPad>(HidController::NPad)
+        .SignalStyleSetChangedEvent(parameters.npad_id);
+
     IPC::ResponseBuilder rb{ctx, 2, 1};
     rb.Push(ResultSuccess);
     rb.PushCopyObjects(applet_resource->GetController<Controller_NPad>(HidController::NPad)

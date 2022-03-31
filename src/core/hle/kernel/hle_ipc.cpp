@@ -24,8 +24,15 @@
 
 namespace Kernel {
 
-SessionRequestHandler::SessionRequestHandler(KernelCore& kernel_, const char* service_name_)
-    : kernel{kernel_}, service_thread{kernel.CreateServiceThread(service_name_)} {}
+SessionRequestHandler::SessionRequestHandler(KernelCore& kernel_, const char* service_name_,
+                                             bool create_service_thread_)
+    : kernel{kernel_} {
+    if (create_service_thread_) {
+        service_thread = kernel.CreateServiceThread(service_name_);
+    } else {
+        service_thread = kernel.GetDefaultServiceThread();
+    }
+}
 
 SessionRequestHandler::~SessionRequestHandler() {
     kernel.ReleaseServiceThread(service_thread);

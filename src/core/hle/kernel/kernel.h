@@ -277,14 +277,24 @@ public:
     void ExitSVCProfile();
 
     /**
-     * Creates an HLE service thread, which are used to execute service routines asynchronously.
-     * While these are allocated per ServerSession, these need to be owned and managed outside
-     * of ServerSession to avoid a circular dependency.
+     * Creates a host thread to execute HLE service requests, which are used to execute service
+     * routines asynchronously. While these are allocated per ServerSession, these need to be owned
+     * and managed outside of ServerSession to avoid a circular dependency. In general, most
+     * services can just use the default service thread, and not need their own host service thread.
+     * See GetDefaultServiceThread.
      * @param name String name for the ServerSession creating this thread, used for debug
      * purposes.
      * @returns The a weak pointer newly created service thread.
      */
     std::weak_ptr<Kernel::ServiceThread> CreateServiceThread(const std::string& name);
+
+    /**
+     * Gets the default host service thread, which executes HLE service requests. Unless service
+     * requests need to block on the host, the default service thread should be used in favor of
+     * creating a new service thread.
+     * @returns The a weak pointer for the default service thread.
+     */
+    std::weak_ptr<Kernel::ServiceThread> GetDefaultServiceThread();
 
     /**
      * Releases a HLE service thread, instructing KernelCore to free it. This should be called when

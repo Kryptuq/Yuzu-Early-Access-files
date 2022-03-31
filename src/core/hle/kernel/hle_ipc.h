@@ -57,7 +57,8 @@ enum class ThreadWakeupReason;
  */
 class SessionRequestHandler : public std::enable_shared_from_this<SessionRequestHandler> {
 public:
-    SessionRequestHandler(KernelCore& kernel, const char* service_name_);
+    SessionRequestHandler(KernelCore& kernel_, const char* service_name_,
+                          bool create_service_thread_);
     virtual ~SessionRequestHandler();
 
     /**

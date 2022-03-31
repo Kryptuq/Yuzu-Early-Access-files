@@ -837,7 +837,8 @@ void BSD::BuildErrnoResponse(Kernel::HLERequestContext& ctx, Errno bsd_errno) co
     rb.PushEnum(bsd_errno);
 }
 
-BSD::BSD(Core::System& system_, const char* name) : ServiceFramework{system_, name} {
+BSD::BSD(Core::System& system_, const char* name)
+    : ServiceFramework{system_, name, true /*create_service_thread*/} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, &BSD::RegisterClient, "RegisterClient"},
