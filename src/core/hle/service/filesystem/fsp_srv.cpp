@@ -58,7 +58,7 @@ enum class FileSystemType : u8 {
 class IStorage final : public ServiceFramework<IStorage> {
 public:
     explicit IStorage(Core::System& system_, FileSys::VirtualFile backend_)
-        : ServiceFramework{system_, "IStorage", true /*create_service_thread*/},
+        : ServiceFramework{system_, "IStorage", ServiceThreadType::CreateNew},
           backend(std::move(backend_)) {
         static const FunctionInfo functions[] = {
             {0, &IStorage::Read, "Read"},
@@ -117,7 +117,7 @@ private:
 class IFile final : public ServiceFramework<IFile> {
 public:
     explicit IFile(Core::System& system_, FileSys::VirtualFile backend_)
-        : ServiceFramework{system_, "IFile", true /*create_service_thread*/},
+        : ServiceFramework{system_, "IFile", ServiceThreadType::CreateNew},
           backend(std::move(backend_)) {
         static const FunctionInfo functions[] = {
             {0, &IFile::Read, "Read"},
@@ -254,7 +254,7 @@ static void BuildEntryIndex(std::vector<FileSys::Entry>& entries, const std::vec
 class IDirectory final : public ServiceFramework<IDirectory> {
 public:
     explicit IDirectory(Core::System& system_, FileSys::VirtualDir backend_)
-        : ServiceFramework{system_, "IDirectory", true /*create_service_thread*/},
+        : ServiceFramework{system_, "IDirectory", ServiceThreadType::CreateNew},
           backend(std::move(backend_)) {
         static const FunctionInfo functions[] = {
             {0, &IDirectory::Read, "Read"},
@@ -311,7 +311,7 @@ private:
 class IFileSystem final : public ServiceFramework<IFileSystem> {
 public:
     explicit IFileSystem(Core::System& system_, FileSys::VirtualDir backend_, SizeGetter size_)
-        : ServiceFramework{system_, "IFileSystem", true /*create_service_thread*/},
+        : ServiceFramework{system_, "IFileSystem", ServiceThreadType::CreateNew},
           backend{std::move(backend_)}, size{std::move(size_)} {
         static const FunctionInfo functions[] = {
             {0, &IFileSystem::CreateFile, "CreateFile"},

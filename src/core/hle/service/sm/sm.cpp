@@ -206,7 +206,7 @@ void SM::UnregisterService(Kernel::HLERequestContext& ctx) {
 }
 
 SM::SM(ServiceManager& service_manager_, Core::System& system_)
-    : ServiceFramework{system_, "sm:", false /*create_service_thread*/, 4},
+    : ServiceFramework{system_, "sm:", ServiceThreadType::Default, 4},
       service_manager{service_manager_}, kernel{system_.Kernel()} {
     RegisterHandlers({
         {0, &SM::Initialize, "Initialize"},

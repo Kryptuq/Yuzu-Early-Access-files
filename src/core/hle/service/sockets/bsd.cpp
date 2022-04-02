@@ -838,7 +838,7 @@ void BSD::BuildErrnoResponse(Kernel::HLERequestContext& ctx, Errno bsd_errno) co
 }
 
 BSD::BSD(Core::System& system_, const char* name)
-    : ServiceFramework{system_, name, true /*create_service_thread*/} {
+    : ServiceFramework{system_, name, ServiceThreadType::CreateNew} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, &BSD::RegisterClient, "RegisterClient"},

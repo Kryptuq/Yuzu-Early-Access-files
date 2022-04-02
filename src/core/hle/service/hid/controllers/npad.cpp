@@ -262,11 +262,6 @@ void Controller_NPad::OnInit() {
             service_context.CreateEvent(fmt::format("npad:NpadStyleSetChanged_{}", i));
     }
 
-    if (hid_core.GetSupportedStyleTag().raw == Core::HID::NpadStyleSet::None) {
-        // We want to support all controllers
-        hid_core.SetSupportedStyleTag({Core::HID::NpadStyleSet::All});
-    }
-
     supported_npad_id_types.resize(npad_id_list.size());
     std::memcpy(supported_npad_id_types.data(), npad_id_list.data(),
                 npad_id_list.size() * sizeof(Core::HID::NpadIdType));
@@ -286,14 +281,6 @@ void Controller_NPad::OnInit() {
         // HW seems to initialize the first 19 entries
         for (std::size_t i = 0; i < 19; ++i) {
             WriteEmptyEntry(npad);
-        }
-    }
-
-    // Connect controllers
-    for (auto& controller : controller_data) {
-        const auto& device = controller.device;
-        if (device->IsConnected()) {
-            AddNewControllerAt(device->GetNpadStyleIndex(), device->GetNpadIdType());
         }
     }
 }
@@ -320,6 +307,7 @@ void Controller_NPad::WriteEmptyEntry(NpadInternalState& npad) {
 }
 
 void Controller_NPad::OnRelease() {
+    is_controller_initialized = false;
     for (std::size_t i = 0; i < controller_data.size(); ++i) {
         auto& controller = controller_data[i];
         service_context.CloseEvent(controller.styleset_changed_event);
@@ -651,9 +639,27 @@ void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing
 
 void Controller_NPad::SetSupportedStyleSet(Core::HID::NpadStyleTag style_set) {
     hid_core.SetSupportedStyleTag(style_set);
+
+    if (is_controller_initialized) {
+        return;
+    }
+
+    // Once SetSupportedStyleSet is called controllers are fully initialized
+    is_controller_initialized = true;
+
+    // Connect all active controllers
+    for (auto& controller : controller_data) {
+        const auto& device = controller.device;
+        if (device->IsConnected()) {
+            AddNewControllerAt(device->GetNpadStyleIndex(), device->GetNpadIdType());
+        }
+    }
 }
 
 Core::HID::NpadStyleTag Controller_NPad::GetSupportedStyleSet() const {
+    if (!is_controller_initialized) {
+        return {Core::HID::NpadStyleSet::None};
+    }
     return hid_core.GetSupportedStyleTag();
 }
 

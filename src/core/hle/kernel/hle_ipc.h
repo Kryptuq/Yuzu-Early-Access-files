@@ -33,6 +33,11 @@ namespace Service {
 class ServiceFrameworkBase;
 }
 
+enum class ServiceThreadType {
+    Default,
+    CreateNew,
+};
+
 namespace Kernel {
 
 class Domain;
@@ -58,7 +63,7 @@ enum class ThreadWakeupReason;
 class SessionRequestHandler : public std::enable_shared_from_this<SessionRequestHandler> {
 public:
     SessionRequestHandler(KernelCore& kernel_, const char* service_name_,
-                          bool create_service_thread_);
+                          ServiceThreadType thread_type);
     virtual ~SessionRequestHandler();
 
     /**

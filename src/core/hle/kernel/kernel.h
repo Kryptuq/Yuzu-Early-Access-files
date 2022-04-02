@@ -294,7 +294,7 @@ public:
      * creating a new service thread.
      * @returns The a weak pointer for the default service thread.
      */
-    std::weak_ptr<Kernel::ServiceThread> GetDefaultServiceThread();
+    std::weak_ptr<Kernel::ServiceThread> GetDefaultServiceThread() const;
 
     /**
      * Releases a HLE service thread, instructing KernelCore to free it. This should be called when

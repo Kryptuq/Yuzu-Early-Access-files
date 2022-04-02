@@ -511,7 +511,8 @@ private:
     NpadHandheldActivationMode handheld_activation_mode{NpadHandheldActivationMode::Dual};
     NpadCommunicationMode communication_mode{NpadCommunicationMode::Default};
     bool permit_vibration_session_enabled{false};
-    bool analog_stick_use_center_clamp{};
+    bool analog_stick_use_center_clamp{false};
     bool is_in_lr_assignment_mode{false};
+    bool is_controller_initialized{false};
 };
 } // namespace Service::HID

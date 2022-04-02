@@ -77,7 +77,7 @@ static_assert(sizeof(NativeWindow) == 0x28, "NativeWindow has wrong size");
 class IHOSBinderDriver final : public ServiceFramework<IHOSBinderDriver> {
 public:
     explicit IHOSBinderDriver(Core::System& system_, NVFlinger::HosBinderDriverServer& server_)
-        : ServiceFramework{system_, "IHOSBinderDriver", true /*create_service_thread*/},
+        : ServiceFramework{system_, "IHOSBinderDriver", ServiceThreadType::CreateNew},
           server(server_) {
         static const FunctionInfo functions[] = {
             {0, &IHOSBinderDriver::TransactParcel, "TransactParcel"},

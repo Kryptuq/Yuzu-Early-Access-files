@@ -1091,7 +1091,7 @@ std::weak_ptr<Kernel::ServiceThread> KernelCore::CreateServiceThread(const std::
     return impl->CreateServiceThread(*this, name);
 }
 
-std::weak_ptr<Kernel::ServiceThread> KernelCore::GetDefaultServiceThread() {
+std::weak_ptr<Kernel::ServiceThread> KernelCore::GetDefaultServiceThread() const {
     return impl->default_service_thread;
 }
 

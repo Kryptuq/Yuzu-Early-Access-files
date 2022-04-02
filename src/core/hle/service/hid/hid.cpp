@@ -64,10 +64,6 @@ IAppletResource::IAppletResource(Core::System& system_,
     MakeController<Controller_Gesture>(HidController::Gesture);
     MakeController<Controller_ConsoleSixAxis>(HidController::ConsoleSixAxisSensor);
 
-    // Homebrew doesn't try to activate some controllers, so we activate them by default
-    GetController<Controller_NPad>(HidController::NPad).ActivateController();
-    GetController<Controller_Touchscreen>(HidController::Touchscreen).ActivateController();
-
     GetController<Controller_Stubbed>(HidController::HomeButton).SetCommonHeaderOffset(0x4C00);
     GetController<Controller_Stubbed>(HidController::SleepButton).SetCommonHeaderOffset(0x4E00);
     GetController<Controller_Stubbed>(HidController::CaptureButton).SetCommonHeaderOffset(0x5000);

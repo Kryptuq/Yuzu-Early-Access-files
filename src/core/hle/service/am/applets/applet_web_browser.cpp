@@ -446,6 +446,14 @@ void WebBrowser::ExecuteLogin() {
 }
 
 void WebBrowser::ExecuteOffline() {
+    // TODO (Morph): This is a hack for WebSession foreground web applets such as those used by
+    //               Super Mario 3D All-Stars.
+    // TODO (Morph): Implement WebSession.
+    if (applet_mode == LibraryAppletMode::AllForegroundInitiallyHidden) {
+        LOG_WARNING(Service_AM, "WebSession is not implemented");
+        return;
+    }
+
     const auto main_url = GetMainURL(Common::FS::PathToUTF8String(offline_document));
 
     if (!Common::FS::Exists(main_url)) {

@@ -230,7 +230,7 @@ void NVDRV::DumpGraphicsMemoryInfo(Kernel::HLERequestContext& ctx) {
 }
 
 NVDRV::NVDRV(Core::System& system_, std::shared_ptr<Module> nvdrv_, const char* name)
-    : ServiceFramework{system_, name}, nvdrv{std::move(nvdrv_)} {
+    : ServiceFramework{system_, name, ServiceThreadType::CreateNew}, nvdrv{std::move(nvdrv_)} {
     static const FunctionInfo functions[] = {
         {0, &NVDRV::Open, "Open"},
         {1, &NVDRV::Ioctl1, "Ioctl"},

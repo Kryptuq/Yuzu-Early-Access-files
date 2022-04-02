@@ -24,7 +24,7 @@ public:
     explicit IAudioRenderer(Core::System& system_,
                             const AudioCommon::AudioRendererParameter& audren_params,
                             const std::size_t instance_number)
-        : ServiceFramework{system_, "IAudioRenderer", true /*create_service_thread*/},
+        : ServiceFramework{system_, "IAudioRenderer", ServiceThreadType::CreateNew},
           service_context{system_, "IAudioRenderer"} {
         // clang-format off
         static const FunctionInfo functions[] = {
