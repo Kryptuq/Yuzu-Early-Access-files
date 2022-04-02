@@ -296,7 +296,7 @@ if (YUZU_USE_QT_WEB_ENGINE)
 endif ()
 
 if(UNIX AND NOT APPLE)
-    install(TARGETS yuzu RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+    install(TARGETS yuzu)
 endif()
 
 if (YUZU_USE_BUNDLED_QT)

@@ -1080,8 +1080,6 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
         Image& overlap = slot_images[overlap_id];
         if (True(overlap.flags & ImageFlagBits::GpuModified)) {
             new_image.flags |= ImageFlagBits::GpuModified;
-            new_image.modification_tick =
-                std::max(overlap.modification_tick, new_image.modification_tick);
         }
         if (overlap.info.num_samples != new_image.info.num_samples) {
             LOG_WARNING(HW_GPU, "Copying between images with different samples is not implemented");

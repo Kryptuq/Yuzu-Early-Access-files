@@ -282,7 +282,7 @@ void main() {
 
 u64 Device::GetCurrentDedicatedVideoMemory() const {
     GLint cur_avail_mem_kb = 0;
-    glGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &cur_avail_mem_kb);
+    glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &cur_avail_mem_kb);
     return static_cast<u64>(cur_avail_mem_kb) * 1_KiB;
 }
 
