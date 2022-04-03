@@ -35,8 +35,9 @@ ConfigureHotkeys::ConfigureHotkeys(Core::HID::HIDCore& hid_core, QWidget* parent
     ui->hotkey_list->setContextMenuPolicy(Qt::CustomContextMenu);
     ui->hotkey_list->setModel(model);
 
-    ui->hotkey_list->setColumnWidth(name_column, 200);
-    ui->hotkey_list->resizeColumnToContents(hotkey_column);
+    ui->hotkey_list->header()->setStretchLastSection(false);
+    ui->hotkey_list->header()->setSectionResizeMode(name_column, QHeaderView::ResizeMode::Stretch);
+    ui->hotkey_list->header()->setMinimumSectionSize(150);
 
     connect(ui->button_restore_defaults, &QPushButton::clicked, this,
             &ConfigureHotkeys::RestoreDefaults);
@@ -76,8 +77,8 @@ void ConfigureHotkeys::Populate(const HotkeyRegistry& registry) {
     }
 
     ui->hotkey_list->expandAll();
-    ui->hotkey_list->resizeColumnToContents(name_column);
     ui->hotkey_list->resizeColumnToContents(hotkey_column);
+    ui->hotkey_list->resizeColumnToContents(controller_column);
 }
 
 void ConfigureHotkeys::changeEvent(QEvent* event) {

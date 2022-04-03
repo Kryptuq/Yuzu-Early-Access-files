@@ -174,7 +174,7 @@ ResultCode VfsDirectoryServiceWrapper::RenameFile(const std::string& src_path_,
     ASSERT_MSG(dest != nullptr, "Newly created file with success cannot be found.");
 
     ASSERT_MSG(dest->WriteBytes(src->ReadAllBytes()) == src->GetSize(),
-               "Could not write all of the bytes but everything else has succeded.");
+               "Could not write all of the bytes but everything else has succeeded.");
 
     if (!src->GetContainingDirectory()->DeleteFile(Common::FS::GetFilename(src_path))) {
         // TODO(DarkLordZach): Find a better error code for this

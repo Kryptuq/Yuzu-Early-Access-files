@@ -75,6 +75,14 @@ void AxxEmitX64::EmitMemoryRead(AxxEmitContext& ctx, IR::Inst* inst) {
         return;
     }
 
+    if (ordered && bitsize == 128) {
+        // Required for atomic 128-bit loads/stores
+        ctx.reg_alloc.ScratchGpr(HostLoc::RAX);
+        ctx.reg_alloc.ScratchGpr(HostLoc::RBX);
+        ctx.reg_alloc.ScratchGpr(HostLoc::RCX);
+        ctx.reg_alloc.ScratchGpr(HostLoc::RDX);
+    }
+
     const Xbyak::Reg64 vaddr = ctx.reg_alloc.UseGpr(args[0]);
     const int value_idx = bitsize == 128 ? ctx.reg_alloc.ScratchXmm().getIdx() : ctx.reg_alloc.ScratchGpr().getIdx();
 
@@ -143,6 +151,14 @@ void AxxEmitX64::EmitMemoryWrite(AxxEmitContext& ctx, IR::Inst* inst) {
             code.mfence();
         }
         return;
+    }
+
+    if (ordered && bitsize == 128) {
+        // Required for atomic 128-bit loads/stores
+        ctx.reg_alloc.ScratchGpr(HostLoc::RAX);
+        ctx.reg_alloc.ScratchGpr(HostLoc::RBX);
+        ctx.reg_alloc.ScratchGpr(HostLoc::RCX);
+        ctx.reg_alloc.ScratchGpr(HostLoc::RDX);
     }
 
     const Xbyak::Reg64 vaddr = ctx.reg_alloc.UseGpr(args[0]);
@@ -303,7 +319,15 @@ void AxxEmitX64::EmitExclusiveReadMemoryInline(AxxEmitContext& ctx, IR::Inst* in
     }
 
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
-    const bool ordered = IsOrdered(args[1].GetImmediateAccType());
+    const bool ordered = true;
+
+    if (ordered && bitsize == 128) {
+        // Required for atomic 128-bit loads/stores
+        ctx.reg_alloc.ScratchGpr(HostLoc::RAX);
+        ctx.reg_alloc.ScratchGpr(HostLoc::RBX);
+        ctx.reg_alloc.ScratchGpr(HostLoc::RCX);
+        ctx.reg_alloc.ScratchGpr(HostLoc::RDX);
+    }
 
     const Xbyak::Reg64 vaddr = ctx.reg_alloc.UseGpr(args[0]);
     const int value_idx = bitsize == 128 ? ctx.reg_alloc.ScratchXmm().getIdx() : ctx.reg_alloc.ScratchGpr().getIdx();
@@ -370,7 +394,7 @@ void AxxEmitX64::EmitExclusiveWriteMemoryInline(AxxEmitContext& ctx, IR::Inst* i
     }
 
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
-    const bool ordered = IsOrdered(args[2].GetImmediateAccType());
+    const bool ordered = true;
 
     const auto value = [&] {
         if constexpr (bitsize == 128) {

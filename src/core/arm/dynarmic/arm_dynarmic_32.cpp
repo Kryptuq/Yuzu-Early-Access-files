@@ -186,35 +186,41 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
         if (!Settings::values.cpuopt_recompile_exclusives) {
             config.recompile_on_exclusive_fastmem_failure = false;
         }
-    }
+    } else {
+        // Unsafe optimizations
+        if (Settings::values.cpu_accuracy.GetValue() == Settings::CPUAccuracy::Unsafe) {
+            config.unsafe_optimizations = true;
+            if (Settings::values.cpuopt_unsafe_unfuse_fma) {
+                config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_UnfuseFMA;
+            }
+            if (Settings::values.cpuopt_unsafe_reduce_fp_error) {
+                config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_ReducedErrorFP;
+            }
+            if (Settings::values.cpuopt_unsafe_ignore_standard_fpcr) {
+                config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_IgnoreStandardFPCRValue;
+            }
+            if (Settings::values.cpuopt_unsafe_inaccurate_nan) {
+                config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_InaccurateNaN;
+            }
+            if (Settings::values.cpuopt_unsafe_ignore_global_monitor) {
+                config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_IgnoreGlobalMonitor;
+            }
+        }
 
-    // Unsafe optimizations
-    if (Settings::values.cpu_accuracy.GetValue() == Settings::CPUAccuracy::Unsafe) {
-        config.unsafe_optimizations = true;
-        if (Settings::values.cpuopt_unsafe_unfuse_fma) {
+        // Curated optimizations
+        if (Settings::values.cpu_accuracy.GetValue() == Settings::CPUAccuracy::Auto) {
+            config.unsafe_optimizations = true;
             config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_UnfuseFMA;
-        }
-        if (Settings::values.cpuopt_unsafe_reduce_fp_error) {
-            config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_ReducedErrorFP;
-        }
-        if (Settings::values.cpuopt_unsafe_ignore_standard_fpcr) {
             config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_IgnoreStandardFPCRValue;
-        }
-        if (Settings::values.cpuopt_unsafe_inaccurate_nan) {
             config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_InaccurateNaN;
-        }
-        if (Settings::values.cpuopt_unsafe_ignore_global_monitor) {
             config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_IgnoreGlobalMonitor;
         }
-    }
 
-    // Curated optimizations
-    if (Settings::values.cpu_accuracy.GetValue() == Settings::CPUAccuracy::Auto) {
-        config.unsafe_optimizations = true;
-        config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_UnfuseFMA;
-        config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_IgnoreStandardFPCRValue;
-        config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_InaccurateNaN;
-        config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_IgnoreGlobalMonitor;
+        // Paranoia mode for debugging optimizations
+        if (Settings::values.cpu_accuracy.GetValue() == Settings::CPUAccuracy::Paranoid) {
+            config.unsafe_optimizations = false;
+            config.optimizations = Dynarmic::no_optimizations;
+        }
     }
 
     return std::make_unique<Dynarmic::A32::Jit>(config);

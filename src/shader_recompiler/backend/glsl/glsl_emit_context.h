@@ -162,6 +162,7 @@ public:
 private:
     void SetupExtensions();
     void DefineConstantBuffers(Bindings& bindings);
+    void DefineConstantBufferIndirect();
     void DefineStorageBuffers(Bindings& bindings);
     void DefineGenericOutput(size_t index, u32 invocations);
     void DefineHelperFunctions();

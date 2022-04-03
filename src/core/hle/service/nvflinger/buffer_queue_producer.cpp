@@ -62,11 +62,12 @@ Status BufferQueueProducer::RequestBuffer(s32 slot, std::shared_ptr<GraphicBuffe
 
 Status BufferQueueProducer::SetBufferCount(s32 buffer_count) {
     LOG_DEBUG(Service_NVFlinger, "count = {}", buffer_count);
-    std::shared_ptr<IConsumerListener> listener;
 
+    std::shared_ptr<IConsumerListener> listener;
     {
         std::scoped_lock lock(core->mutex);
         core->WaitWhileAllocatingLocked();
+
         if (core->is_abandoned) {
             LOG_ERROR(Service_NVFlinger, "BufferQueue has been abandoned");
             return Status::NoInit;
@@ -120,7 +121,7 @@ Status BufferQueueProducer::SetBufferCount(s32 buffer_count) {
 }
 
 Status BufferQueueProducer::WaitForFreeSlotThenRelock(bool async, s32* found,
-                                                      Status* returnFlags) const {
+                                                      Status* return_flags) const {
     bool try_again = true;
 
     while (try_again) {
@@ -142,10 +143,12 @@ Status BufferQueueProducer::WaitForFreeSlotThenRelock(bool async, s32* found,
             ASSERT(slots[s].buffer_state == BufferState::Free);
             if (slots[s].graphic_buffer != nullptr) {
                 core->FreeBufferLocked(s);
-                *returnFlags |= Status::ReleaseAllBuffers;
+                *return_flags |= Status::ReleaseAllBuffers;
             }
         }
 
+        // Look for a free buffer to give to the client
+        *found = BufferQueueCore::INVALID_BUFFER_SLOT;
         s32 dequeued_count{};
         s32 acquired_count{};
         for (s32 s{}; s < max_buffer_count; ++s) {
@@ -235,68 +238,50 @@ Status BufferQueueProducer::DequeueBuffer(s32* out_slot, Fence* out_fence, bool 
     {
         std::scoped_lock lock(core->mutex);
         core->WaitWhileAllocatingLocked();
+
         if (format == PixelFormat::NoFormat) {
             format = core->default_buffer_format;
         }
 
         // Enable the usage bits the consumer requested
         usage |= core->consumer_usage_bit;
+
+        s32 found{};
+        Status status = WaitForFreeSlotThenRelock(async, &found, &return_flags);
+        if (status != Status::NoError) {
+            return status;
+        }
+
+        // This should not happen
+        if (found == BufferQueueCore::INVALID_BUFFER_SLOT) {
+            LOG_ERROR(Service_NVFlinger, "no available buffer slots");
+            return Status::Busy;
+        }
+
+        *out_slot = found;
+
+        attached_by_consumer = slots[found].attached_by_consumer;
+
         const bool use_default_size = !width && !height;
         if (use_default_size) {
             width = core->default_width;
             height = core->default_height;
         }
 
-        s32 found = BufferItem::INVALID_BUFFER_SLOT;
-        while (found == BufferItem::INVALID_BUFFER_SLOT) {
-            Status status = WaitForFreeSlotThenRelock(async, &found, &return_flags);
-            if (status != Status::NoError) {
-                return status;
-            }
-
-            // This should not happen
-            if (found == BufferQueueCore::INVALID_BUFFER_SLOT) {
-                LOG_DEBUG(Service_NVFlinger, "no available buffer slots");
-                return Status::Busy;
-            }
-
-            const std::shared_ptr<GraphicBuffer>& buffer(slots[found].graphic_buffer);
-
-            // If we are not allowed to allocate new buffers, WaitForFreeSlotThenRelock must have
-            // returned a slot containing a buffer. If this buffer would require reallocation to
-            // meet the requested attributes, we free it and attempt to get another one.
-            if (!core->allow_allocation) {
-                if (buffer->NeedsReallocation(width, height, format, usage)) {
-                    core->FreeBufferLocked(found);
-                    found = BufferItem::INVALID_BUFFER_SLOT;
-                    continue;
-                }
-            }
-        }
-
-        *out_slot = found;
-        attached_by_consumer = slots[found].attached_by_consumer;
         slots[found].buffer_state = BufferState::Dequeued;
 
         const std::shared_ptr<GraphicBuffer>& buffer(slots[found].graphic_buffer);
-
-        if ((buffer == nullptr) || buffer->NeedsReallocation(width, height, format, usage)) {
+        if ((buffer == nullptr) || (buffer->Width() != width) || (buffer->Height() != height) ||
+            (buffer->Format() != format) || ((buffer->Usage() & usage) != usage)) {
             slots[found].acquire_called = false;
             slots[found].graphic_buffer = nullptr;
             slots[found].request_buffer_called = false;
             slots[found].fence = Fence::NoFence();
-            core->buffer_age = 0;
+
             return_flags |= Status::BufferNeedsReallocation;
-        } else {
-            // We add 1 because that will be the frame number when this buffer
-            // is queued
-            core->buffer_age = core->frame_counter + 1 - slots[found].frame_number;
         }
 
-        LOG_DEBUG(Service_NVFlinger, "setting buffer age to {}", core->buffer_age);
-
         *out_fence = slots[found].fence;
-
         slots[found].fence = Fence::NoFence();
     }
 
@@ -311,6 +296,7 @@ Status BufferQueueProducer::DequeueBuffer(s32* out_slot, Fence* out_fence, bool 
 
         {
             std::scoped_lock lock(core->mutex);
+
             if (core->is_abandoned) {
                 LOG_ERROR(Service_NVFlinger, "BufferQueue has been abandoned");
                 return Status::NoInit;
@@ -327,6 +313,7 @@ Status BufferQueueProducer::DequeueBuffer(s32* out_slot, Fence* out_fence, bool 
 
     LOG_DEBUG(Service_NVFlinger, "returning slot={} frame={}, flags={}", *out_slot,
               slots[*out_slot].frame_number, return_flags);
+
     return return_flags;
 }
 
@@ -334,6 +321,7 @@ Status BufferQueueProducer::DetachBuffer(s32 slot) {
     LOG_DEBUG(Service_NVFlinger, "slot {}", slot);
 
     std::scoped_lock lock(core->mutex);
+
     if (core->is_abandoned) {
         LOG_ERROR(Service_NVFlinger, "BufferQueue has been abandoned");
         return Status::NoInit;
@@ -369,7 +357,6 @@ Status BufferQueueProducer::DetachNextBuffer(std::shared_ptr<GraphicBuffer>* out
     }
 
     std::scoped_lock lock(core->mutex);
-
     core->WaitWhileAllocatingLocked();
 
     if (core->is_abandoned) {
@@ -423,6 +410,7 @@ Status BufferQueueProducer::AttachBuffer(s32* out_slot,
         return status;
     }
 
+    // This should not happen
     if (found == BufferQueueCore::INVALID_BUFFER_SLOT) {
         LOG_ERROR(Service_NVFlinger, "No available buffer slots");
         return Status::Busy;
@@ -466,8 +454,8 @@ Status BufferQueueProducer::QueueBuffer(s32 slot, const QueueBufferInput& input,
         return Status::BadValue;
     }
 
-    std::shared_ptr<IConsumerListener> frameAvailableListener;
-    std::shared_ptr<IConsumerListener> frameReplacedListener;
+    std::shared_ptr<IConsumerListener> frame_available_listener;
+    std::shared_ptr<IConsumerListener> frame_replaced_listener;
     s32 callback_ticket{};
     BufferItem item;
 
@@ -541,12 +529,13 @@ Status BufferQueueProducer::QueueBuffer(s32 slot, const QueueBufferInput& input,
         item.fence = fence;
         item.is_droppable = core->dequeue_buffer_cannot_block || async;
         item.swap_interval = swap_interval;
+
         sticky_transform = sticky_transform_;
 
         if (core->queue.empty()) {
             // When the queue is empty, we can simply queue this buffer
             core->queue.push_back(item);
-            frameAvailableListener = core->consumer_listener;
+            frame_available_listener = core->consumer_listener;
         } else {
             // When the queue is not empty, we need to look at the front buffer
             // state to see if we need to replace it
@@ -563,10 +552,10 @@ Status BufferQueueProducer::QueueBuffer(s32 slot, const QueueBufferInput& input,
                 }
                 // Overwrite the droppable buffer with the incoming one
                 *front = item;
-                frameReplacedListener = core->consumer_listener;
+                frame_replaced_listener = core->consumer_listener;
             } else {
                 core->queue.push_back(item);
-                frameAvailableListener = core->consumer_listener;
+                frame_available_listener = core->consumer_listener;
             }
         }
 
@@ -592,10 +581,10 @@ Status BufferQueueProducer::QueueBuffer(s32 slot, const QueueBufferInput& input,
             callback_condition.wait(callback_mutex);
         }
 
-        if (frameAvailableListener != nullptr) {
-            frameAvailableListener->OnFrameAvailable(item);
-        } else if (frameReplacedListener != nullptr) {
-            frameReplacedListener->OnFrameReplaced(item);
+        if (frame_available_listener != nullptr) {
+            frame_available_listener->OnFrameAvailable(item);
+        } else if (frame_replaced_listener != nullptr) {
+            frame_replaced_listener->OnFrameReplaced(item);
         }
 
         ++current_callback_ticket;
@@ -669,13 +658,6 @@ Status BufferQueueProducer::Query(NativeWindow what, s32* out_value) {
     case NativeWindow::ConsumerUsageBits:
         value = core->consumer_usage_bit;
         break;
-    case NativeWindow::BufferAge:
-        if (core->buffer_age > INT32_MAX) {
-            value = 0;
-        } else {
-            value = static_cast<u32>(core->buffer_age);
-        }
-        break;
     default:
         UNREACHABLE();
         return Status::BadValue;
@@ -737,7 +719,6 @@ Status BufferQueueProducer::Connect(const std::shared_ptr<IProducerListener>& li
     core->buffer_has_been_queued = false;
     core->dequeue_buffer_cannot_block =
         core->consumer_controlled_by_app && producer_controlled_by_app;
-    core->allow_allocation = true;
 
     return status;
 }
@@ -770,7 +751,7 @@ Status BufferQueueProducer::Disconnect(NativeWindowApi api) {
                 core->SignalDequeueCondition();
                 buffer_wait_event->GetWritableEvent().Signal();
                 listener = core->consumer_listener;
-            } else if (core->connected_api != NativeWindowApi::NoConnectedApi) {
+            } else {
                 LOG_ERROR(Service_NVFlinger, "still connected to another api (cur = {} req = {})",
                           core->connected_api, api);
                 status = Status::BadValue;

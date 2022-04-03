@@ -7,7 +7,6 @@
 #include <cstring>
 #include "audio_core/sdl2_sink.h"
 #include "audio_core/stream.h"
-#include "audio_core/time_stretch.h"
 #include "common/assert.h"
 #include "common/logging/log.h"
 //#include "common/settings.h"
@@ -27,7 +26,7 @@ namespace AudioCore {
 class SDLSinkStream final : public SinkStream {
 public:
     SDLSinkStream(u32 sample_rate, u32 num_channels_, const std::string& output_device)
-        : num_channels{std::min(num_channels_, 6u)}, time_stretch{sample_rate, num_channels} {
+        : num_channels{std::min(num_channels_, 6u)} {
 
         SDL_AudioSpec spec;
         spec.freq = sample_rate;
@@ -116,7 +115,6 @@ private:
     SDL_AudioDeviceID dev = 0;
     u32 num_channels{};
     std::atomic<bool> should_flush{};
-    TimeStretcher time_stretch;
 };
 
 SDLSink::SDLSink(std::string_view target_device_name) {

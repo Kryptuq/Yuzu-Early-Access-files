@@ -24,10 +24,10 @@ public:
     explicit BufferQueueConsumer(std::shared_ptr<BufferQueueCore> core_);
     ~BufferQueueConsumer();
 
-    Status AcquireBuffer(BufferItem* out_buffer, std::chrono::nanoseconds expected_present,
-                         u64 max_frame_number = 0);
+    Status AcquireBuffer(BufferItem* out_buffer, std::chrono::nanoseconds expected_present);
     Status ReleaseBuffer(s32 slot, u64 frame_number, const Fence& release_fence);
     Status Connect(std::shared_ptr<IConsumerListener> consumer_listener, bool controlled_by_app);
+    Status GetReleasedBuffers(u64* out_slot_mask);
 
 private:
     std::shared_ptr<BufferQueueCore> core;

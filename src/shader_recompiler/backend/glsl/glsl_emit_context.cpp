@@ -359,6 +359,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         header += "layout(location=0) uniform vec4 scaling;";
     }
     DefineConstantBuffers(bindings);
+    DefineConstantBufferIndirect();
     DefineStorageBuffers(bindings);
     SetupImages(bindings);
     SetupTextures(bindings);
@@ -434,6 +435,24 @@ void EmitContext::DefineConstantBuffers(Bindings& bindings) {
                               stage_name, desc.index, 4 * 1024);
         bindings.uniform_buffer += desc.count;
     }
+}
+
+void EmitContext::DefineConstantBufferIndirect() {
+    if (!info.uses_cbuf_indirect) {
+        return;
+    }
+
+    header += profile.has_gl_cbuf_ftou_bug ? "uvec4 " : "vec4 ";
+    header += "GetCbufIndirect(uint binding, uint offset){"
+              "switch(binding){"
+              "default:";
+
+    for (const auto& desc : info.constant_buffer_descriptors) {
+        header +=
+            fmt::format("case {}:return {}_cbuf{}[offset];", desc.index, stage_name, desc.index);
+    }
+
+    header += "}}";
 }
 
 void EmitContext::DefineStorageBuffers(Bindings& bindings) {

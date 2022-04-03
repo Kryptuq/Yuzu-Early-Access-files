@@ -66,7 +66,7 @@ public:
 private:
     BufferQueueProducer(const BufferQueueProducer&) = delete;
 
-    Status WaitForFreeSlotThenRelock(bool async, s32* found, Status* returnFlags) const;
+    Status WaitForFreeSlotThenRelock(bool async, s32* found, Status* return_flags) const;
 
     Kernel::KEvent* buffer_wait_event{};
     Service::KernelHelpers::ServiceContext& service_context;

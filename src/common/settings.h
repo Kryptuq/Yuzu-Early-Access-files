@@ -38,6 +38,7 @@ enum class CPUAccuracy : u32 {
     Auto = 0,
     Accurate = 1,
     Unsafe = 2,
+    Paranoid = 3,
 };
 
 enum class FullscreenMode : u32 {
@@ -470,7 +471,7 @@ struct Values {
 
     // Cpu
     RangedSetting<CPUAccuracy> cpu_accuracy{CPUAccuracy::Auto, CPUAccuracy::Auto,
-                                            CPUAccuracy::Unsafe, "cpu_accuracy"};
+                                            CPUAccuracy::Paranoid, "cpu_accuracy"};
     // TODO: remove cpu_accuracy_first_time, migration setting added 8 July 2021
     BasicSetting<bool> cpu_accuracy_first_time{true, "cpu_accuracy_first_time"};
     BasicSetting<bool> cpu_debug_mode{false, "cpu_debug_mode"};

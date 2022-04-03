@@ -104,7 +104,7 @@ void NVFlinger::SetNVDrvInstance(std::shared_ptr<Nvidia::Module> instance) {
 std::optional<u64> NVFlinger::OpenDisplay(std::string_view name) {
     const auto lock_guard = Lock();
 
-    LOG_DEBUG(Service, "Opening \"{}\" display", name);
+    LOG_DEBUG(Service_NVFlinger, "Opening \"{}\" display", name);
 
     const auto itr =
         std::find_if(displays.begin(), displays.end(),
@@ -219,7 +219,7 @@ VI::Layer* NVFlinger::FindOrCreateLayer(u64 display_id, u64 layer_id) {
     auto* layer = display->FindLayer(layer_id);
 
     if (layer == nullptr) {
-        LOG_DEBUG(Service, "Layer at id {} not found. Trying to create it.", layer_id);
+        LOG_DEBUG(Service_NVFlinger, "Layer at id {} not found. Trying to create it.", layer_id);
         CreateLayerAtId(*display, layer_id);
         return display->FindLayer(layer_id);
     }

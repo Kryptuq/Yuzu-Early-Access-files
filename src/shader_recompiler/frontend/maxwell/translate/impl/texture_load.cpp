@@ -132,7 +132,7 @@ void Impl(TranslatorVisitor& v, u64 insn, bool is_bindless) {
         multisample = v.X(meta_reg++);
     }
     if (tld.clamp != 0) {
-        throw NotImplementedException("TLD.CL - CLAMP is not implmented");
+        throw NotImplementedException("TLD.CL - CLAMP is not implemented");
     }
     IR::TextureInstInfo info{};
     info.type.Assign(GetType(tld.type));

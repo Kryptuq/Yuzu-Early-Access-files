@@ -18,8 +18,7 @@ BufferQueueConsumer::BufferQueueConsumer(std::shared_ptr<BufferQueueCore> core_)
 BufferQueueConsumer::~BufferQueueConsumer() = default;
 
 Status BufferQueueConsumer::AcquireBuffer(BufferItem* out_buffer,
-                                          std::chrono::nanoseconds expected_present,
-                                          u64 max_frame_number) {
+                                          std::chrono::nanoseconds expected_present) {
     std::scoped_lock lock(core->mutex);
 
     // Check that the consumer doesn't currently have the maximum number of buffers acquired.
@@ -49,12 +48,6 @@ Status BufferQueueConsumer::AcquireBuffer(BufferItem* out_buffer,
         // on-screen.
         while (core->queue.size() > 1 && !core->queue[0].is_auto_timestamp) {
             const auto& buffer_item{core->queue[1]};
-
-            // If dropping entry[0] would leave us with a buffer that the consumer is not yet ready
-            // for, don't drop it.
-            if (max_frame_number && buffer_item.frame_number > max_frame_number) {
-                break;
-            }
 
             // If entry[1] is timely, drop entry[0] (and repeat).
             const auto desired_present = buffer_item.timestamp;
@@ -197,6 +190,41 @@ Status BufferQueueConsumer::Connect(std::shared_ptr<IConsumerListener> consumer_
     core->consumer_listener = consumer_listener;
     core->consumer_controlled_by_app = controlled_by_app;
 
+    return Status::NoError;
+}
+
+Status BufferQueueConsumer::GetReleasedBuffers(u64* out_slot_mask) {
+    if (out_slot_mask == nullptr) {
+        LOG_ERROR(Service_NVFlinger, "out_slot_mask may not be nullptr");
+        return Status::BadValue;
+    }
+
+    std::scoped_lock lock(core->mutex);
+
+    if (core->is_abandoned) {
+        LOG_ERROR(Service_NVFlinger, "BufferQueue has been abandoned");
+        return Status::NoInit;
+    }
+
+    u64 mask = 0;
+    for (int s = 0; s < BufferQueueDefs::NUM_BUFFER_SLOTS; ++s) {
+        if (!slots[s].acquire_called) {
+            mask |= (1ULL << s);
+        }
+    }
+
+    // Remove from the mask queued buffers for which acquire has been called, since the consumer
+    // will not receive their buffer addresses and so must retain their cached information
+    auto current(core->queue.begin());
+    while (current != core->queue.end()) {
+        if (current->acquire_called) {
+            mask &= ~(1ULL << current->slot);
+        }
+        ++current;
+    }
+
+    LOG_DEBUG(Service_NVFlinger, "returning mask {}", mask);
+    *out_slot_mask = mask;
     return Status::NoError;
 }
 

@@ -39,21 +39,9 @@ GPUVAddr MemoryManager::UpdateRange(GPUVAddr gpu_addr, PageEntry page_entry, std
     return gpu_addr;
 }
 
-void MemoryManager::UnmapSubmappedRanges(GPUVAddr gpu_addr, std::size_t size) {
-    const auto submapped_ranges = GetSubmappedRange(gpu_addr, size);
-    for (const auto& [map_addr, map_size] : submapped_ranges) {
-        // Flush and invalidate through the GPU interface, to be asynchronous if possible.
-        const std::optional<VAddr> cpu_vaddr = GpuToCpuAddress(map_addr);
-        if (!cpu_vaddr) {
-            continue;
-        }
-        rasterizer->UnmapMemory(*cpu_vaddr, map_size);
-    }
-}
-
 GPUVAddr MemoryManager::Map(VAddr cpu_addr, GPUVAddr gpu_addr, std::size_t size) {
-    // Unmap any pre-existing rasterizer memory in this range
-    UnmapSubmappedRanges(gpu_addr, size);
+    // Mark any pre-existing rasterizer memory in this range as remapped
+    rasterizer->ModifyGPUMemory(gpu_addr, size);
 
     const auto it = std::ranges::lower_bound(map_ranges, gpu_addr, {}, &MapRange::first);
     if (it != map_ranges.end() && it->first == gpu_addr) {
@@ -85,8 +73,16 @@ void MemoryManager::Unmap(GPUVAddr gpu_addr, std::size_t size) {
     } else {
         UNREACHABLE_MSG("Unmapping non-existent GPU address=0x{:x}", gpu_addr);
     }
+    const auto submapped_ranges = GetSubmappedRange(gpu_addr, size);
 
-    UnmapSubmappedRanges(gpu_addr, size);
+    for (const auto& [map_addr, map_size] : submapped_ranges) {
+        // Flush and invalidate through the GPU interface, to be asynchronous if possible.
+        const std::optional<VAddr> cpu_addr = GpuToCpuAddress(map_addr);
+        ASSERT(cpu_addr);
+
+        rasterizer->UnmapMemory(*cpu_addr, map_size);
+    }
+
     UpdateRange(gpu_addr, PageEntry::State::Unmapped, size);
 }
 

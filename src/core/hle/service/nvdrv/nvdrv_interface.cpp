@@ -26,7 +26,7 @@ void NVDRV::Open(Kernel::HLERequestContext& ctx) {
         rb.Push<DeviceFD>(0);
         rb.PushEnum(NvResult::NotInitialized);
 
-        LOG_ERROR(Service_NVDRV, "NvServices is not initalized!");
+        LOG_ERROR(Service_NVDRV, "NvServices is not initialized!");
         return;
     }
 
@@ -61,7 +61,7 @@ void NVDRV::Ioctl1(Kernel::HLERequestContext& ctx) {
 
     if (!is_initialized) {
         ServiceError(ctx, NvResult::NotInitialized);
-        LOG_ERROR(Service_NVDRV, "NvServices is not initalized!");
+        LOG_ERROR(Service_NVDRV, "NvServices is not initialized!");
         return;
     }
 
@@ -87,7 +87,7 @@ void NVDRV::Ioctl2(Kernel::HLERequestContext& ctx) {
 
     if (!is_initialized) {
         ServiceError(ctx, NvResult::NotInitialized);
-        LOG_ERROR(Service_NVDRV, "NvServices is not initalized!");
+        LOG_ERROR(Service_NVDRV, "NvServices is not initialized!");
         return;
     }
 
@@ -114,7 +114,7 @@ void NVDRV::Ioctl3(Kernel::HLERequestContext& ctx) {
 
     if (!is_initialized) {
         ServiceError(ctx, NvResult::NotInitialized);
-        LOG_ERROR(Service_NVDRV, "NvServices is not initalized!");
+        LOG_ERROR(Service_NVDRV, "NvServices is not initialized!");
         return;
     }
 
@@ -139,7 +139,7 @@ void NVDRV::Close(Kernel::HLERequestContext& ctx) {
 
     if (!is_initialized) {
         ServiceError(ctx, NvResult::NotInitialized);
-        LOG_ERROR(Service_NVDRV, "NvServices is not initalized!");
+        LOG_ERROR(Service_NVDRV, "NvServices is not initialized!");
         return;
     }
 
@@ -170,7 +170,7 @@ void NVDRV::QueryEvent(Kernel::HLERequestContext& ctx) {
 
     if (!is_initialized) {
         ServiceError(ctx, NvResult::NotInitialized);
-        LOG_ERROR(Service_NVDRV, "NvServices is not initalized!");
+        LOG_ERROR(Service_NVDRV, "NvServices is not initialized!");
         return;
     }
 

@@ -81,7 +81,7 @@ void Impl(TranslatorVisitor& v, u64 insn, bool is_bindless) {
     } const tmml{insn};
 
     if ((tmml.mask & 0b1100) != 0) {
-        throw NotImplementedException("TMML BA results are not implmented");
+        throw NotImplementedException("TMML BA results are not implemented");
     }
     const IR::Value coords{MakeCoords(v, tmml.coord_reg, tmml.type)};
 

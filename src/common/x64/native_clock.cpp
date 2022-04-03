@@ -55,8 +55,9 @@ NativeClock::NativeClock(u64 emulated_cpu_frequency_, u64 emulated_clock_frequen
 u64 NativeClock::GetRTSC() {
     TimePoint new_time_point{};
     TimePoint current_time_point{};
+
+    current_time_point.pack = Common::AtomicLoad128(time_point.pack.data());
     do {
-        current_time_point.pack = Common::AtomicLoad128(time_point.pack.data());
         _mm_mfence();
         const u64 current_measure = __rdtsc();
         u64 diff = current_measure - current_time_point.inner.last_measure;
@@ -66,7 +67,7 @@ u64 NativeClock::GetRTSC() {
                                                 : current_time_point.inner.last_measure;
         new_time_point.inner.accumulated_ticks = current_time_point.inner.accumulated_ticks + diff;
     } while (!Common::AtomicCompareAndSwap(time_point.pack.data(), new_time_point.pack,
-                                           current_time_point.pack));
+                                           current_time_point.pack, current_time_point.pack));
     /// The clock cannot be more precise than the guest timer, remove the lower bits
     return new_time_point.inner.accumulated_ticks & inaccuracy_mask;
 }
@@ -75,13 +76,14 @@ void NativeClock::Pause(bool is_paused) {
     if (!is_paused) {
         TimePoint current_time_point{};
         TimePoint new_time_point{};
+
+        current_time_point.pack = Common::AtomicLoad128(time_point.pack.data());
         do {
-            current_time_point.pack = Common::AtomicLoad128(time_point.pack.data());
             new_time_point.pack = current_time_point.pack;
             _mm_mfence();
             new_time_point.inner.last_measure = __rdtsc();
         } while (!Common::AtomicCompareAndSwap(time_point.pack.data(), new_time_point.pack,
-                                               current_time_point.pack));
+                                               current_time_point.pack, current_time_point.pack));
     }
 }
 

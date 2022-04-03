@@ -201,10 +201,13 @@ template<>
 template<std::size_t bitsize>
 const void* EmitReadMemoryMov(BlockOfCode& code, int value_idx, const Xbyak::RegExp& addr, bool ordered) {
     if (ordered) {
-        if constexpr (bitsize == 128) {
-            code.mfence();
-        } else {
+        if constexpr (bitsize != 128) {
             code.xor_(Xbyak::Reg32{value_idx}, Xbyak::Reg32{value_idx});
+        } else {
+            code.xor_(eax, eax);
+            code.xor_(ebx, ebx);
+            code.xor_(ecx, ecx);
+            code.xor_(edx, edx);
         }
 
         const void* fastmem_location = code.getCurr();
@@ -215,7 +218,7 @@ const void* EmitReadMemoryMov(BlockOfCode& code, int value_idx, const Xbyak::Reg
             break;
         case 16:
             code.lock();
-            code.xadd(word[addr], Xbyak::Reg32{value_idx});
+            code.xadd(word[addr], Xbyak::Reg16{value_idx});
             break;
         case 32:
             code.lock();
@@ -226,8 +229,16 @@ const void* EmitReadMemoryMov(BlockOfCode& code, int value_idx, const Xbyak::Reg
             code.xadd(qword[addr], Xbyak::Reg64{value_idx});
             break;
         case 128:
-            // TODO (HACK): Detect CPUs where this load is not atomic
-            code.movaps(Xbyak::Xmm{value_idx}, xword[addr]);
+            code.lock();
+            code.cmpxchg16b(xword[addr]);
+            if (code.HasHostFeature(HostFeature::SSE41)) {
+                code.movq(Xbyak::Xmm{value_idx}, rax);
+                code.pinsrq(Xbyak::Xmm{value_idx}, rdx, 1);
+            } else {
+                code.movq(Xbyak::Xmm{value_idx}, rax);
+                code.movq(xmm0, rdx);
+                code.punpcklqdq(Xbyak::Xmm{value_idx}, xmm0);
+            }
             break;
         default:
             ASSERT_FALSE("Invalid bitsize");
@@ -261,6 +272,20 @@ const void* EmitReadMemoryMov(BlockOfCode& code, int value_idx, const Xbyak::Reg
 template<std::size_t bitsize>
 const void* EmitWriteMemoryMov(BlockOfCode& code, const Xbyak::RegExp& addr, int value_idx, bool ordered) {
     if (ordered) {
+        if constexpr (bitsize == 128) {
+            code.xor_(eax, eax);
+            code.xor_(edx, edx);
+            if (code.HasHostFeature(HostFeature::SSE41)) {
+                code.movq(rbx, Xbyak::Xmm{value_idx});
+                code.pextrq(rcx, Xbyak::Xmm{value_idx}, 1);
+            } else {
+                code.movaps(xmm0, Xbyak::Xmm{value_idx});
+                code.movq(rbx, xmm0);
+                code.punpckhqdq(xmm0, xmm0);
+                code.movq(rcx, xmm0);
+            }
+        }
+
         const void* fastmem_location = code.getCurr();
         switch (bitsize) {
         case 8:
@@ -275,10 +300,14 @@ const void* EmitWriteMemoryMov(BlockOfCode& code, const Xbyak::RegExp& addr, int
         case 64:
             code.xchg(qword[addr], Xbyak::Reg64{value_idx});
             break;
-        case 128:
-            code.movaps(xword[addr], Xbyak::Xmm{value_idx});
-            code.mfence();
+        case 128: {
+            Xbyak::Label loop;
+            code.L(loop);
+            code.lock();
+            code.cmpxchg16b(xword[addr]);
+            code.jnz(loop);
             break;
+        }
         default:
             ASSERT_FALSE("Invalid bitsize");
         }

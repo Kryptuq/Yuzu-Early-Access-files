@@ -47,6 +47,10 @@ ConfigurePerGameAddons::ConfigurePerGameAddons(Core::System& system_, QWidget* p
     item_model->setHeaderData(0, Qt::Horizontal, tr("Patch Name"));
     item_model->setHeaderData(1, Qt::Horizontal, tr("Version"));
 
+    tree_view->header()->setStretchLastSection(false);
+    tree_view->header()->setSectionResizeMode(0, QHeaderView::ResizeMode::Stretch);
+    tree_view->header()->setMinimumSectionSize(150);
+
     // We must register all custom types with the Qt Automoc system so that we are able to use it
     // with signals/slots. In this case, QList falls under the umbrella of custom types.
     qRegisterMetaType<QList<QStandardItem*>>("QList<QStandardItem*>");
@@ -138,5 +142,5 @@ void ConfigurePerGameAddons::LoadConfiguration() {
         item_model->appendRow(list_items.back());
     }
 
-    tree_view->setColumnWidth(0, 5 * tree_view->width() / 16);
+    tree_view->resizeColumnToContents(1);
 }

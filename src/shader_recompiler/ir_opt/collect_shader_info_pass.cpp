@@ -32,13 +32,8 @@ void AddConstantBufferDescriptor(Info& info, u32 index, u32 count) {
 void AddRegisterIndexedLdc(Info& info) {
     info.uses_cbuf_indirect = true;
 
-    // The shader can use any possible constant buffer
-    info.constant_buffer_mask = (1 << Info::MAX_CBUFS) - 1;
-
-    auto& cbufs{info.constant_buffer_descriptors};
-    cbufs.clear();
-    for (u32 i = 0; i < Info::MAX_CBUFS; i++) {
-        cbufs.push_back(ConstantBufferDescriptor{.index = i, .count = 1});
+    for (u32 i = 0; i < Info::MAX_INDIRECT_CBUFS; i++) {
+        AddConstantBufferDescriptor(info, i, 1);
 
         // The shader can use any possible access size
         info.constant_buffer_used_sizes[i] = 0x10'000;

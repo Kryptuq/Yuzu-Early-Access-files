@@ -36,38 +36,41 @@ void ConsumerBase::FreeBufferLocked(s32 slot_index) {
 }
 
 void ConsumerBase::OnFrameAvailable(const BufferItem& item) {
-    std::scoped_lock lock(mutex);
     LOG_DEBUG(Service_NVFlinger, "called");
 }
 
 void ConsumerBase::OnFrameReplaced(const BufferItem& item) {
-    std::scoped_lock lock(mutex);
     LOG_DEBUG(Service_NVFlinger, "called");
 }
 
 void ConsumerBase::OnBuffersReleased() {
     std::scoped_lock lock(mutex);
+
     LOG_DEBUG(Service_NVFlinger, "called");
+
+    if (is_abandoned) {
+        // Nothing to do if we're already abandoned.
+        return;
+    }
+
+    u64 mask = 0;
+    consumer->GetReleasedBuffers(&mask);
+    for (int i = 0; i < BufferQueueDefs::NUM_BUFFER_SLOTS; i++) {
+        if (mask & (1ULL << i)) {
+            FreeBufferLocked(i);
+        }
+    }
 }
 
 void ConsumerBase::OnSidebandStreamChanged() {}
 
-Status ConsumerBase::AcquireBufferLocked(BufferItem* item, std::chrono::nanoseconds present_when,
-                                         u64 max_frame_number) {
-    if (is_abandoned) {
-        LOG_ERROR(Service_NVFlinger, "consumer is abandoned!");
-        return Status::NoInit;
-    }
-
-    Status err = consumer->AcquireBuffer(item, present_when, max_frame_number);
+Status ConsumerBase::AcquireBufferLocked(BufferItem* item, std::chrono::nanoseconds present_when) {
+    Status err = consumer->AcquireBuffer(item, present_when);
     if (err != Status::NoError) {
         return err;
     }
 
     if (item->graphic_buffer != nullptr) {
-        if (slots[item->slot].graphic_buffer != nullptr) {
-            FreeBufferLocked(item->slot);
-        }
         slots[item->slot].graphic_buffer = item->graphic_buffer;
     }
 

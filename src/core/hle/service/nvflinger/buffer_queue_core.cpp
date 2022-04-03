@@ -95,7 +95,6 @@ void BufferQueueCore::FreeBufferLocked(s32 slot) {
 }
 
 void BufferQueueCore::FreeAllBuffersLocked() {
-    queue.clear();
     buffer_has_been_queued = false;
 
     for (s32 slot = 0; slot < BufferQueueDefs::NUM_BUFFER_SLOTS; ++slot) {

@@ -454,13 +454,18 @@ void TextureCache<P>::DownloadMemory(VAddr cpu_addr, size_t size) {
         return slot_images[lhs].modification_tick < slot_images[rhs].modification_tick;
     });
     for (const ImageId image_id : images) {
-        Image& image = slot_images[image_id];
-        auto map = runtime.DownloadStagingBuffer(image.unswizzled_size_bytes);
-        const auto copies = FullDownloadCopies(image.info);
-        image.DownloadMemory(map, copies);
-        runtime.Finish();
-        SwizzleImage(gpu_memory, image.gpu_addr, image.info, copies, map.mapped_span);
+        DownloadImage(image_id);
     }
+}
+
+template <class P>
+void TextureCache<P>::DownloadImage(ImageId image_id) {
+    Image& image = slot_images[image_id];
+    auto map = runtime.DownloadStagingBuffer(image.unswizzled_size_bytes);
+    const auto copies = FullDownloadCopies(image.info);
+    image.DownloadMemory(map, copies);
+    runtime.Finish();
+    SwizzleImage(gpu_memory, image.gpu_addr, image.info, copies, map.mapped_span);
 }
 
 template <class P>
@@ -1058,7 +1063,7 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
     for (const ImageId overlap_id : ignore_textures) {
         Image& overlap = slot_images[overlap_id];
         if (True(overlap.flags & ImageFlagBits::GpuModified)) {
-            UNIMPLEMENTED();
+            DownloadImage(overlap_id);
         }
         if (True(overlap.flags & ImageFlagBits::Tracked)) {
             UntrackImage(overlap, overlap_id);

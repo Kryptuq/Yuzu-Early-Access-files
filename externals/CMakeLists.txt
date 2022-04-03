@@ -68,9 +68,6 @@ if (YUZU_USE_EXTERNAL_SDL2)
     add_library(SDL2 ALIAS SDL2-static)
 endif()
 
-# SoundTouch
-add_subdirectory(soundtouch)
-
 # Cubeb
 if(ENABLE_CUBEB)
     set(BUILD_TESTS OFF CACHE BOOL "")

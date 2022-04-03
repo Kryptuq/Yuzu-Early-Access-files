@@ -36,8 +36,6 @@ add_library(audio_core STATIC
     splitter_context.h
     stream.cpp
     stream.h
-    time_stretch.cpp
-    time_stretch.h
     voice_context.cpp
     voice_context.h
 
@@ -63,7 +61,6 @@ if (NOT MSVC)
 endif()
 
 target_link_libraries(audio_core PUBLIC common core)
-target_link_libraries(audio_core PRIVATE SoundTouch)
 
 if(ENABLE_CUBEB)
     target_link_libraries(audio_core PRIVATE cubeb)

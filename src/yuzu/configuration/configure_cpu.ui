@@ -52,6 +52,11 @@
                <string>Unsafe</string>
               </property>
              </item>
+             <item>
+              <property name="text">
+               <string>Paranoid (disables most optimizations)</string>
+              </property>
+             </item>
             </widget>
            </item>
           </layout>

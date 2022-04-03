@@ -191,16 +191,16 @@ private:
 
     // This is nn::hid::detail::NpadFullKeyColorState
     struct NpadFullKeyColorState {
-        ColorAttribute attribute;
-        Core::HID::NpadControllerColor fullkey;
+        ColorAttribute attribute{ColorAttribute::NoController};
+        Core::HID::NpadControllerColor fullkey{};
     };
     static_assert(sizeof(NpadFullKeyColorState) == 0xC, "NpadFullKeyColorState is an invalid size");
 
     // This is nn::hid::detail::NpadJoyColorState
     struct NpadJoyColorState {
-        ColorAttribute attribute;
-        Core::HID::NpadControllerColor left;
-        Core::HID::NpadControllerColor right;
+        ColorAttribute attribute{ColorAttribute::NoController};
+        Core::HID::NpadControllerColor left{};
+        Core::HID::NpadControllerColor right{};
     };
     static_assert(sizeof(NpadJoyColorState) == 0x14, "NpadJoyColorState is an invalid size");
 
@@ -226,11 +226,11 @@ private:
     // This is nn::hid::NpadPalmaState
     // This is nn::hid::NpadSystemExtState
     struct NPadGenericState {
-        s64_le sampling_number;
-        Core::HID::NpadButtonState npad_buttons;
-        Core::HID::AnalogStickState l_stick;
-        Core::HID::AnalogStickState r_stick;
-        NpadAttribute connection_status;
+        s64_le sampling_number{};
+        Core::HID::NpadButtonState npad_buttons{};
+        Core::HID::AnalogStickState l_stick{};
+        Core::HID::AnalogStickState r_stick{};
+        NpadAttribute connection_status{};
         INSERT_PADDING_BYTES(4); // Reserved
     };
     static_assert(sizeof(NPadGenericState) == 0x28, "NPadGenericState is an invalid size");
@@ -253,7 +253,7 @@ private:
         Common::Vec3f gyro{};
         Common::Vec3f rotation{};
         std::array<Common::Vec3f, 3> orientation{};
-        SixAxisSensorAttribute attribute;
+        SixAxisSensorAttribute attribute{};
         INSERT_PADDING_BYTES(4); // Reserved
     };
     static_assert(sizeof(SixAxisSensorState) == 0x60, "SixAxisSensorState is an invalid size");
@@ -325,11 +325,11 @@ private:
 
     // This is nn::hid::detail::NfcXcdDeviceHandleStateImpl
     struct NfcXcdDeviceHandleStateImpl {
-        u64 handle;
-        bool is_available;
-        bool is_activated;
+        u64 handle{};
+        bool is_available{};
+        bool is_activated{};
         INSERT_PADDING_BYTES(0x6); // Reserved
-        u64 sampling_number;
+        u64 sampling_number{};
     };
     static_assert(sizeof(NfcXcdDeviceHandleStateImpl) == 0x18,
                   "NfcXcdDeviceHandleStateImpl is an invalid size");
@@ -366,8 +366,8 @@ private:
     };
 
     struct AppletFooterUi {
-        AppletFooterUiAttributes attributes;
-        AppletFooterUiType type;
+        AppletFooterUiAttributes attributes{};
+        AppletFooterUiType type{AppletFooterUiType::None};
         INSERT_PADDING_BYTES(0x5B); // Reserved
     };
     static_assert(sizeof(AppletFooterUi) == 0x60, "AppletFooterUi is an invalid size");
@@ -404,41 +404,41 @@ private:
 
     // This is nn::hid::detail::NpadInternalState
     struct NpadInternalState {
-        Core::HID::NpadStyleTag style_tag;
-        NpadJoyAssignmentMode assignment_mode;
-        NpadFullKeyColorState fullkey_color;
-        NpadJoyColorState joycon_color;
-        Lifo<NPadGenericState, hid_entry_count> fullkey_lifo;
-        Lifo<NPadGenericState, hid_entry_count> handheld_lifo;
-        Lifo<NPadGenericState, hid_entry_count> joy_dual_lifo;
-        Lifo<NPadGenericState, hid_entry_count> joy_left_lifo;
-        Lifo<NPadGenericState, hid_entry_count> joy_right_lifo;
-        Lifo<NPadGenericState, hid_entry_count> palma_lifo;
-        Lifo<NPadGenericState, hid_entry_count> system_ext_lifo;
-        Lifo<SixAxisSensorState, hid_entry_count> sixaxis_fullkey_lifo;
-        Lifo<SixAxisSensorState, hid_entry_count> sixaxis_handheld_lifo;
-        Lifo<SixAxisSensorState, hid_entry_count> sixaxis_dual_left_lifo;
-        Lifo<SixAxisSensorState, hid_entry_count> sixaxis_dual_right_lifo;
-        Lifo<SixAxisSensorState, hid_entry_count> sixaxis_left_lifo;
-        Lifo<SixAxisSensorState, hid_entry_count> sixaxis_right_lifo;
-        DeviceType device_type;
+        Core::HID::NpadStyleTag style_tag{Core::HID::NpadStyleSet::None};
+        NpadJoyAssignmentMode assignment_mode{NpadJoyAssignmentMode::Dual};
+        NpadFullKeyColorState fullkey_color{};
+        NpadJoyColorState joycon_color{};
+        Lifo<NPadGenericState, hid_entry_count> fullkey_lifo{};
+        Lifo<NPadGenericState, hid_entry_count> handheld_lifo{};
+        Lifo<NPadGenericState, hid_entry_count> joy_dual_lifo{};
+        Lifo<NPadGenericState, hid_entry_count> joy_left_lifo{};
+        Lifo<NPadGenericState, hid_entry_count> joy_right_lifo{};
+        Lifo<NPadGenericState, hid_entry_count> palma_lifo{};
+        Lifo<NPadGenericState, hid_entry_count> system_ext_lifo{};
+        Lifo<SixAxisSensorState, hid_entry_count> sixaxis_fullkey_lifo{};
+        Lifo<SixAxisSensorState, hid_entry_count> sixaxis_handheld_lifo{};
+        Lifo<SixAxisSensorState, hid_entry_count> sixaxis_dual_left_lifo{};
+        Lifo<SixAxisSensorState, hid_entry_count> sixaxis_dual_right_lifo{};
+        Lifo<SixAxisSensorState, hid_entry_count> sixaxis_left_lifo{};
+        Lifo<SixAxisSensorState, hid_entry_count> sixaxis_right_lifo{};
+        DeviceType device_type{};
         INSERT_PADDING_BYTES(0x4); // Reserved
-        NPadSystemProperties system_properties;
-        NpadSystemButtonProperties button_properties;
-        Core::HID::NpadBatteryLevel battery_level_dual;
-        Core::HID::NpadBatteryLevel battery_level_left;
-        Core::HID::NpadBatteryLevel battery_level_right;
+        NPadSystemProperties system_properties{};
+        NpadSystemButtonProperties button_properties{};
+        Core::HID::NpadBatteryLevel battery_level_dual{};
+        Core::HID::NpadBatteryLevel battery_level_left{};
+        Core::HID::NpadBatteryLevel battery_level_right{};
         union {
-            Lifo<NfcXcdDeviceHandleStateImpl, 0x2> nfc_xcd_device_lifo{};
-            AppletFooterUi applet_footer;
+            AppletFooterUi applet_footer{};
+            Lifo<NfcXcdDeviceHandleStateImpl, 0x2> nfc_xcd_device_lifo;
         };
         INSERT_PADDING_BYTES(0x20); // Unknown
-        Lifo<NpadGcTriggerState, hid_entry_count> gc_trigger_lifo;
-        NpadLarkType lark_type_l_and_main;
-        NpadLarkType lark_type_r;
-        NpadLuciaType lucia_type;
-        NpadLagonType lagon_type;
-        NpadLagerType lager_type;
+        Lifo<NpadGcTriggerState, hid_entry_count> gc_trigger_lifo{};
+        NpadLarkType lark_type_l_and_main{};
+        NpadLarkType lark_type_r{};
+        NpadLuciaType lucia_type{};
+        NpadLagonType lagon_type{};
+        NpadLagerType lager_type{};
         // FW 13.x Investigate there is some sort of bitflag related to joycons
         INSERT_PADDING_BYTES(0x4);
         INSERT_PADDING_BYTES(0xc08); // Unknown

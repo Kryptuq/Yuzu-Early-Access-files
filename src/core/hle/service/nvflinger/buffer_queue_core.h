@@ -73,8 +73,6 @@ private:
     u32 transform_hint{};
     bool is_allocating{};
     mutable std::condition_variable_any is_allocating_condition;
-    bool allow_allocation{true};
-    u64 buffer_age{};
     bool is_shutting_down{};
 };
 

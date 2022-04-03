@@ -1043,15 +1043,15 @@ void EmitContext::DefineConstantBufferIndirectFunctions(const Info& info) {
         const Id merge_label{OpLabel()};
         const Id uniform_type{uniform_types.*member_ptr};
 
-        std::array<Id, Info::MAX_CBUFS> buf_labels;
-        std::array<Sirit::Literal, Info::MAX_CBUFS> buf_literals;
-        for (u32 i = 0; i < Info::MAX_CBUFS; i++) {
+        std::array<Id, Info::MAX_INDIRECT_CBUFS> buf_labels;
+        std::array<Sirit::Literal, Info::MAX_INDIRECT_CBUFS> buf_literals;
+        for (u32 i = 0; i < Info::MAX_INDIRECT_CBUFS; i++) {
             buf_labels[i] = OpLabel();
             buf_literals[i] = Sirit::Literal{i};
         }
         OpSelectionMerge(merge_label, spv::SelectionControlMask::MaskNone);
         OpSwitch(binding, buf_labels[0], buf_literals, buf_labels);
-        for (u32 i = 0; i < Info::MAX_CBUFS; i++) {
+        for (u32 i = 0; i < Info::MAX_INDIRECT_CBUFS; i++) {
             AddLabel(buf_labels[i]);
             const Id cbuf{cbufs[i].*member_ptr};
             const Id access_chain{OpAccessChain(uniform_type, cbuf, u32_zero_value, offset)};
@@ -1064,22 +1064,23 @@ void EmitContext::DefineConstantBufferIndirectFunctions(const Info& info) {
         return func;
     }};
     IR::Type types{info.used_indirect_cbuf_types};
-    if (True(types & IR::Type::U8)) {
+    bool supports_aliasing = profile.support_descriptor_aliasing;
+    if (supports_aliasing && True(types & IR::Type::U8)) {
         load_const_func_u8 = make_accessor(U8, &UniformDefinitions::U8);
     }
-    if (True(types & IR::Type::U16)) {
+    if (supports_aliasing && True(types & IR::Type::U16)) {
         load_const_func_u16 = make_accessor(U16, &UniformDefinitions::U16);
     }
-    if (True(types & IR::Type::F32)) {
+    if (supports_aliasing && True(types & IR::Type::F32)) {
         load_const_func_f32 = make_accessor(F32[1], &UniformDefinitions::F32);
     }
-    if (True(types & IR::Type::U32)) {
+    if (supports_aliasing && True(types & IR::Type::U32)) {
         load_const_func_u32 = make_accessor(U32[1], &UniformDefinitions::U32);
     }
-    if (True(types & IR::Type::U32x2)) {
+    if (supports_aliasing && True(types & IR::Type::U32x2)) {
         load_const_func_u32x2 = make_accessor(U32[2], &UniformDefinitions::U32x2);
     }
-    if (True(types & IR::Type::U32x4)) {
+    if (!supports_aliasing || True(types & IR::Type::U32x4)) {
         load_const_func_u32x4 = make_accessor(U32[4], &UniformDefinitions::U32x4);
     }
 }
