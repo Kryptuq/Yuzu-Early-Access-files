@@ -200,7 +200,7 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
         });
     }
     const void* const descriptor_data{update_descriptor_queue.UpdateData()};
-    const bool is_rescaling = !info.texture_descriptors.empty() || !info.image_descriptors.empty();
+    const bool is_rescaling = info.uses_rescaling_uniform;
     scheduler.Record([this, descriptor_data, is_rescaling,
                       rescaling_data = rescaling.Data()](vk::CommandBuffer cmdbuf) {
         cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline);

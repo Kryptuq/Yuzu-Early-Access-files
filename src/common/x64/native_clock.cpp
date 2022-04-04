@@ -10,25 +10,49 @@
 #include "common/uint128.h"
 #include "common/x64/native_clock.h"
 
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
+
 namespace Common {
+
+#ifdef _MSC_VER
+__forceinline static u64 FencedRDTSC() {
+    _mm_lfence();
+    _ReadWriteBarrier();
+    const u64 result = __rdtsc();
+    _mm_lfence();
+    _ReadWriteBarrier();
+    return result;
+}
+#else
+static u64 FencedRDTSC() {
+    u64 result;
+    asm volatile("lfence\n\t"
+                 "rdtsc\n\t"
+                 "shl $32, %%rdx\n\t"
+                 "or %%rdx, %0\n\t"
+                 "lfence"
+                 : "=a"(result)
+                 :
+                 : "rdx", "memory", "cc");
+    return result;
+}
+#endif
 
 u64 EstimateRDTSCFrequency() {
     // Discard the first result measuring the rdtsc.
-    _mm_mfence();
-    __rdtsc();
+    FencedRDTSC();
     std::this_thread::sleep_for(std::chrono::milliseconds{1});
-    _mm_mfence();
-    __rdtsc();
+    FencedRDTSC();
 
     // Get the current time.
     const auto start_time = std::chrono::steady_clock::now();
-    _mm_mfence();
-    const u64 tsc_start = __rdtsc();
+    const u64 tsc_start = FencedRDTSC();
     // Wait for 200 milliseconds.
     std::this_thread::sleep_for(std::chrono::milliseconds{200});
     const auto end_time = std::chrono::steady_clock::now();
-    _mm_mfence();
-    const u64 tsc_end = __rdtsc();
+    const u64 tsc_end = FencedRDTSC();
     // Calculate differences.
     const u64 timer_diff = static_cast<u64>(
         std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
@@ -42,8 +66,7 @@ NativeClock::NativeClock(u64 emulated_cpu_frequency_, u64 emulated_clock_frequen
                          u64 rtsc_frequency_)
     : WallClock(emulated_cpu_frequency_, emulated_clock_frequency_, true), rtsc_frequency{
                                                                                rtsc_frequency_} {
-    _mm_mfence();
-    time_point.inner.last_measure = __rdtsc();
+    time_point.inner.last_measure = FencedRDTSC();
     time_point.inner.accumulated_ticks = 0U;
     ns_rtsc_factor = GetFixedPoint64Factor(NS_RATIO, rtsc_frequency);
     us_rtsc_factor = GetFixedPoint64Factor(US_RATIO, rtsc_frequency);
@@ -58,8 +81,7 @@ u64 NativeClock::GetRTSC() {
 
     current_time_point.pack = Common::AtomicLoad128(time_point.pack.data());
     do {
-        _mm_mfence();
-        const u64 current_measure = __rdtsc();
+        const u64 current_measure = FencedRDTSC();
         u64 diff = current_measure - current_time_point.inner.last_measure;
         diff = diff & ~static_cast<u64>(static_cast<s64>(diff) >> 63); // max(diff, 0)
         new_time_point.inner.last_measure = current_measure > current_time_point.inner.last_measure
@@ -80,8 +102,7 @@ void NativeClock::Pause(bool is_paused) {
         current_time_point.pack = Common::AtomicLoad128(time_point.pack.data());
         do {
             new_time_point.pack = current_time_point.pack;
-            _mm_mfence();
-            new_time_point.inner.last_measure = __rdtsc();
+            new_time_point.inner.last_measure = FencedRDTSC();
         } while (!Common::AtomicCompareAndSwap(time_point.pack.data(), new_time_point.pack,
                                                current_time_point.pack, current_time_point.pack));
     }

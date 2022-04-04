@@ -40,9 +40,6 @@ GPUVAddr MemoryManager::UpdateRange(GPUVAddr gpu_addr, PageEntry page_entry, std
 }
 
 GPUVAddr MemoryManager::Map(VAddr cpu_addr, GPUVAddr gpu_addr, std::size_t size) {
-    // Mark any pre-existing rasterizer memory in this range as remapped
-    rasterizer->ModifyGPUMemory(gpu_addr, size);
-
     const auto it = std::ranges::lower_bound(map_ranges, gpu_addr, {}, &MapRange::first);
     if (it != map_ranges.end() && it->first == gpu_addr) {
         it->second = size;

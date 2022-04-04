@@ -328,7 +328,8 @@ void TextureCache<P>::UpdateRenderTargets(bool is_clear) {
     }
 
     const bool rescaled = RescaleRenderTargets(is_clear);
-    if (is_rescaling != rescaled) {
+    const auto& resolution_info = Settings::values.resolution_info;
+    if (resolution_info.active && is_rescaling != rescaled) {
         flags[Dirty::RescaleViewports] = true;
         flags[Dirty::RescaleScissors] = true;
         is_rescaling = rescaled;
@@ -345,12 +346,8 @@ void TextureCache<P>::UpdateRenderTargets(bool is_clear) {
     for (size_t index = 0; index < NUM_RT; ++index) {
         render_targets.draw_buffers[index] = static_cast<u8>(maxwell3d.regs.rt_control.Map(index));
     }
-    u32 up_scale = 1;
-    u32 down_shift = 0;
-    if (is_rescaling) {
-        up_scale = Settings::values.resolution_info.up_scale;
-        down_shift = Settings::values.resolution_info.down_shift;
-    }
+    const u32 up_scale = is_rescaling ? resolution_info.up_scale : 1U;
+    const u32 down_shift = is_rescaling ? resolution_info.down_shift : 0U;
     render_targets.size = Extent2D{
         (maxwell3d.regs.render_area.width * up_scale) >> down_shift,
         (maxwell3d.regs.render_area.height * up_scale) >> down_shift,
@@ -454,18 +451,13 @@ void TextureCache<P>::DownloadMemory(VAddr cpu_addr, size_t size) {
         return slot_images[lhs].modification_tick < slot_images[rhs].modification_tick;
     });
     for (const ImageId image_id : images) {
-        DownloadImage(image_id);
+        Image& image = slot_images[image_id];
+        auto map = runtime.DownloadStagingBuffer(image.unswizzled_size_bytes);
+        const auto copies = FullDownloadCopies(image.info);
+        image.DownloadMemory(map, copies);
+        runtime.Finish();
+        SwizzleImage(gpu_memory, image.gpu_addr, image.info, copies, map.mapped_span);
     }
-}
-
-template <class P>
-void TextureCache<P>::DownloadImage(ImageId image_id) {
-    Image& image = slot_images[image_id];
-    auto map = runtime.DownloadStagingBuffer(image.unswizzled_size_bytes);
-    const auto copies = FullDownloadCopies(image.info);
-    image.DownloadMemory(map, copies);
-    runtime.Finish();
-    SwizzleImage(gpu_memory, image.gpu_addr, image.info, copies, map.mapped_span);
 }
 
 template <class P>
@@ -1063,7 +1055,7 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
     for (const ImageId overlap_id : ignore_textures) {
         Image& overlap = slot_images[overlap_id];
         if (True(overlap.flags & ImageFlagBits::GpuModified)) {
-            DownloadImage(overlap_id);
+            UNIMPLEMENTED();
         }
         if (True(overlap.flags & ImageFlagBits::Tracked)) {
             UntrackImage(overlap, overlap_id);

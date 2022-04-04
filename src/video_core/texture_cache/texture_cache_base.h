@@ -139,9 +139,6 @@ public:
     /// Download contents of host images to guest memory in a region
     void DownloadMemory(VAddr cpu_addr, size_t size);
 
-    /// Download contents of host images to guest memory
-    void DownloadImage(ImageId image_id);
-
     /// Remove images in a region
     void UnmapMemory(VAddr cpu_addr, size_t size);
 
