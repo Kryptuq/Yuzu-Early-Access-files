@@ -319,9 +319,9 @@ void AxxEmitX64::EmitExclusiveReadMemoryInline(AxxEmitContext& ctx, IR::Inst* in
     }
 
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
-    const bool ordered = true;
+    constexpr bool ordered = true;
 
-    if (ordered && bitsize == 128) {
+    if constexpr (ordered && bitsize == 128) {
         // Required for atomic 128-bit loads/stores
         ctx.reg_alloc.ScratchGpr(HostLoc::RAX);
         ctx.reg_alloc.ScratchGpr(HostLoc::RBX);
@@ -394,7 +394,7 @@ void AxxEmitX64::EmitExclusiveWriteMemoryInline(AxxEmitContext& ctx, IR::Inst* i
     }
 
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
-    const bool ordered = true;
+    constexpr bool ordered = true;
 
     const auto value = [&] {
         if constexpr (bitsize == 128) {

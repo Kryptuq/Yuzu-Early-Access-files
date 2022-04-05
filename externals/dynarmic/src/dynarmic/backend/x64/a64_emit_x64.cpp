@@ -121,7 +121,9 @@ A64EmitX64::BlockDescriptor A64EmitX64::Emit(IR::Block& block) {
 
     reg_alloc.AssertNoMoreUses();
 
-    EmitAddCycles(block.CycleCount());
+    if (conf.enable_cycle_counting) {
+        EmitAddCycles(block.CycleCount());
+    }
     EmitX64::EmitTerminal(block.GetTerminal(), ctx.Location().SetSingleStepping(false), ctx.IsSingleStep());
     code.int3();
 
@@ -619,14 +621,26 @@ void A64EmitX64::EmitTerminalImpl(IR::Term::LinkBlock terminal, IR::LocationDesc
         return;
     }
 
-    code.cmp(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], 0);
+    if (conf.enable_cycle_counting) {
+        code.cmp(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], 0);
 
-    patch_information[terminal.next].jg.emplace_back(code.getCurr());
-    if (auto next_bb = GetBasicBlock(terminal.next)) {
-        EmitPatchJg(terminal.next, next_bb->entrypoint);
+        patch_information[terminal.next].jg.emplace_back(code.getCurr());
+        if (const auto next_bb = GetBasicBlock(terminal.next)) {
+            EmitPatchJg(terminal.next, next_bb->entrypoint);
+        } else {
+            EmitPatchJg(terminal.next);
+        }
     } else {
-        EmitPatchJg(terminal.next);
+        code.cmp(dword[r15 + offsetof(A64JitState, halt_reason)], 0);
+
+        patch_information[terminal.next].jz.emplace_back(code.getCurr());
+        if (const auto next_bb = GetBasicBlock(terminal.next)) {
+            EmitPatchJz(terminal.next, next_bb->entrypoint);
+        } else {
+            EmitPatchJz(terminal.next);
+        }
     }
+
     code.mov(rax, A64::LocationDescriptor{terminal.next}.PC());
     code.mov(qword[r15 + offsetof(A64JitState, pc)], rax);
     code.ForceReturnFromRunCode();
@@ -691,7 +705,7 @@ void A64EmitX64::EmitTerminalImpl(IR::Term::CheckBit terminal, IR::LocationDescr
 }
 
 void A64EmitX64::EmitTerminalImpl(IR::Term::CheckHalt terminal, IR::LocationDescriptor initial_location, bool is_single_step) {
-    code.cmp(code.byte[r15 + offsetof(A64JitState, halt_requested)], u8(0));
+    code.cmp(dword[r15 + offsetof(A64JitState, halt_reason)], 0);
     code.jne(code.GetForceReturnFromRunCodeAddress());
     EmitTerminal(terminal.else_, initial_location, is_single_step);
 }
@@ -704,6 +718,18 @@ void A64EmitX64::EmitPatchJg(const IR::LocationDescriptor& target_desc, CodePtr 
         code.mov(rax, A64::LocationDescriptor{target_desc}.PC());
         code.mov(qword[r15 + offsetof(A64JitState, pc)], rax);
         code.jg(code.GetReturnFromRunCodeAddress());
+    }
+    code.EnsurePatchLocationSize(patch_location, 23);
+}
+
+void A64EmitX64::EmitPatchJz(const IR::LocationDescriptor& target_desc, CodePtr target_code_ptr) {
+    const CodePtr patch_location = code.getCurr();
+    if (target_code_ptr) {
+        code.jz(target_code_ptr);
+    } else {
+        code.mov(rax, A64::LocationDescriptor{target_desc}.PC());
+        code.mov(qword[r15 + offsetof(A64JitState, pc)], rax);
+        code.jz(code.GetReturnFromRunCodeAddress());
     }
     code.EnsurePatchLocationSize(patch_location, 23);
 }

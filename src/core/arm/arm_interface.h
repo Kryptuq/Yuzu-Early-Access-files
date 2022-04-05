@@ -171,6 +171,9 @@ public:
     /// Prepare core for thread reschedule (if needed to correctly handle state)
     virtual void PrepareReschedule() = 0;
 
+    /// Signal an interrupt and ask the core to halt as soon as possible.
+    virtual void SignalInterrupt() = 0;
+
     struct BacktraceEntry {
         std::string module;
         u64 address;

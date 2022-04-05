@@ -208,6 +208,8 @@ void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuf
     // Framebuffer orientation handling
     framebuffer_transform_flags = framebuffer.transform_flags;
     framebuffer_crop_rect = framebuffer.crop_rect;
+    framebuffer_width = framebuffer.width;
+    framebuffer_height = framebuffer.height;
 
     const VAddr framebuffer_addr{framebuffer.address + framebuffer.offset};
     screen_info.was_accelerated =
@@ -480,9 +482,12 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
     ASSERT_MSG(framebuffer_crop_rect.top == 0, "Unimplemented");
     ASSERT_MSG(framebuffer_crop_rect.left == 0, "Unimplemented");
 
+    f32 scale_u = static_cast<f32>(framebuffer_width) / static_cast<f32>(screen_info.texture.width);
+    f32 scale_v =
+        static_cast<f32>(framebuffer_height) / static_cast<f32>(screen_info.texture.height);
+
     // Scale the output by the crop width/height. This is commonly used with 1280x720 rendering
     // (e.g. handheld mode) on a 1920x1080 framebuffer.
-    f32 scale_u = 1.f, scale_v = 1.f;
     if (framebuffer_crop_rect.GetWidth() > 0) {
         scale_u = static_cast<f32>(framebuffer_crop_rect.GetWidth()) /
                   static_cast<f32>(screen_info.texture.width);

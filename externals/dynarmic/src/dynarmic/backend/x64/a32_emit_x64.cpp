@@ -149,7 +149,9 @@ A32EmitX64::BlockDescriptor A32EmitX64::Emit(IR::Block& block) {
 
     reg_alloc.AssertNoMoreUses();
 
-    EmitAddCycles(block.CycleCount());
+    if (conf.enable_cycle_counting) {
+        EmitAddCycles(block.CycleCount());
+    }
     EmitX64::EmitTerminal(block.GetTerminal(), ctx.Location().SetSingleStepping(false), ctx.IsSingleStep());
     code.int3();
 
@@ -184,7 +186,9 @@ void A32EmitX64::EmitCondPrelude(const A32EmitContext& ctx) {
     ASSERT(ctx.block.HasConditionFailedLocation());
 
     Xbyak::Label pass = EmitCond(ctx.block.GetCondition());
-    EmitAddCycles(ctx.block.ConditionFailedCycleCount());
+    if (conf.enable_cycle_counting) {
+        EmitAddCycles(ctx.block.ConditionFailedCycleCount());
+    }
     EmitTerminal(IR::Term::LinkBlock{ctx.block.ConditionFailedLocation()}, ctx.Location().SetSingleStepping(false), ctx.IsSingleStep());
     code.L(pass);
 }
@@ -715,31 +719,37 @@ void A32EmitX64::EmitA32UpdateUpperLocationDescriptor(A32EmitContext& ctx, IR::I
 }
 
 void A32EmitX64::EmitA32CallSupervisor(A32EmitContext& ctx, IR::Inst* inst) {
-    ctx.reg_alloc.HostCall(nullptr);
-
     code.SwitchMxcsrOnExit();
-    code.mov(code.ABI_PARAM2, qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)]);
-    code.sub(code.ABI_PARAM2, qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)]);
-    Devirtualize<&A32::UserCallbacks::AddTicks>(conf.callbacks).EmitCall(code);
-    ctx.reg_alloc.EndOfAllocScope();
+
+    if (conf.enable_cycle_counting) {
+        ctx.reg_alloc.HostCall(nullptr);
+        code.mov(code.ABI_PARAM2, qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)]);
+        code.sub(code.ABI_PARAM2, qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)]);
+        Devirtualize<&A32::UserCallbacks::AddTicks>(conf.callbacks).EmitCall(code);
+        ctx.reg_alloc.EndOfAllocScope();
+    }
 
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
     ctx.reg_alloc.HostCall(nullptr, {}, args[0]);
     Devirtualize<&A32::UserCallbacks::CallSVC>(conf.callbacks).EmitCall(code);
 
-    Devirtualize<&A32::UserCallbacks::GetTicksRemaining>(conf.callbacks).EmitCall(code);
-    code.mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)], code.ABI_RETURN);
-    code.mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], code.ABI_RETURN);
-    code.SwitchMxcsrOnEntry();
+    if (conf.enable_cycle_counting) {
+        Devirtualize<&A32::UserCallbacks::GetTicksRemaining>(conf.callbacks).EmitCall(code);
+        code.mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)], code.ABI_RETURN);
+        code.mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], code.ABI_RETURN);
+        code.SwitchMxcsrOnEntry();
+    }
 }
 
 void A32EmitX64::EmitA32ExceptionRaised(A32EmitContext& ctx, IR::Inst* inst) {
-    ctx.reg_alloc.HostCall(nullptr);
-
     code.SwitchMxcsrOnExit();
-    code.mov(code.ABI_PARAM2, qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)]);
-    code.sub(code.ABI_PARAM2, qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)]);
-    Devirtualize<&A32::UserCallbacks::AddTicks>(conf.callbacks).EmitCall(code);
+
+    ctx.reg_alloc.HostCall(nullptr);
+    if (conf.enable_cycle_counting) {
+        code.mov(code.ABI_PARAM2, qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)]);
+        code.sub(code.ABI_PARAM2, qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)]);
+        Devirtualize<&A32::UserCallbacks::AddTicks>(conf.callbacks).EmitCall(code);
+    }
     ctx.reg_alloc.EndOfAllocScope();
 
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
@@ -751,10 +761,12 @@ void A32EmitX64::EmitA32ExceptionRaised(A32EmitContext& ctx, IR::Inst* inst) {
         code.mov(param[1], exception);
     });
 
-    Devirtualize<&A32::UserCallbacks::GetTicksRemaining>(conf.callbacks).EmitCall(code);
-    code.mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)], code.ABI_RETURN);
-    code.mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], code.ABI_RETURN);
-    code.SwitchMxcsrOnEntry();
+    if (conf.enable_cycle_counting) {
+        Devirtualize<&A32::UserCallbacks::GetTicksRemaining>(conf.callbacks).EmitCall(code);
+        code.mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)], code.ABI_RETURN);
+        code.mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], code.ABI_RETURN);
+        code.SwitchMxcsrOnEntry();
+    }
 }
 
 static u32 GetFpscrImpl(A32JitState* jit_state) {
@@ -1134,14 +1146,26 @@ void A32EmitX64::EmitTerminalImpl(IR::Term::LinkBlock terminal, IR::LocationDesc
         return;
     }
 
-    code.cmp(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], 0);
+    if (conf.enable_cycle_counting) {
+        code.cmp(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], 0);
 
-    patch_information[terminal.next].jg.emplace_back(code.getCurr());
-    if (const auto next_bb = GetBasicBlock(terminal.next)) {
-        EmitPatchJg(terminal.next, next_bb->entrypoint);
+        patch_information[terminal.next].jg.emplace_back(code.getCurr());
+        if (const auto next_bb = GetBasicBlock(terminal.next)) {
+            EmitPatchJg(terminal.next, next_bb->entrypoint);
+        } else {
+            EmitPatchJg(terminal.next);
+        }
     } else {
-        EmitPatchJg(terminal.next);
+        code.cmp(dword[r15 + offsetof(A32JitState, halt_reason)], 0);
+
+        patch_information[terminal.next].jz.emplace_back(code.getCurr());
+        if (const auto next_bb = GetBasicBlock(terminal.next)) {
+            EmitPatchJz(terminal.next, next_bb->entrypoint);
+        } else {
+            EmitPatchJz(terminal.next);
+        }
     }
+
     Xbyak::Label dest;
     code.jmp(dest, Xbyak::CodeGenerator::T_NEAR);
 
@@ -1206,7 +1230,7 @@ void A32EmitX64::EmitTerminalImpl(IR::Term::CheckBit terminal, IR::LocationDescr
 }
 
 void A32EmitX64::EmitTerminalImpl(IR::Term::CheckHalt terminal, IR::LocationDescriptor initial_location, bool is_single_step) {
-    code.cmp(code.byte[r15 + offsetof(A32JitState, halt_requested)], u8(0));
+    code.cmp(dword[r15 + offsetof(A32JitState, halt_reason)], 0);
     code.jne(code.GetForceReturnFromRunCodeAddress());
     EmitTerminal(terminal.else_, initial_location, is_single_step);
 }
@@ -1218,6 +1242,17 @@ void A32EmitX64::EmitPatchJg(const IR::LocationDescriptor& target_desc, CodePtr 
     } else {
         code.mov(MJitStateReg(A32::Reg::PC), A32::LocationDescriptor{target_desc}.PC());
         code.jg(code.GetReturnFromRunCodeAddress());
+    }
+    code.EnsurePatchLocationSize(patch_location, 14);
+}
+
+void A32EmitX64::EmitPatchJz(const IR::LocationDescriptor& target_desc, CodePtr target_code_ptr) {
+    const CodePtr patch_location = code.getCurr();
+    if (target_code_ptr) {
+        code.jz(target_code_ptr);
+    } else {
+        code.mov(MJitStateReg(A32::Reg::PC), A32::LocationDescriptor{target_desc}.PC());
+        code.jz(code.GetReturnFromRunCodeAddress());
     }
     code.EnsurePatchLocationSize(patch_location, 14);
 }

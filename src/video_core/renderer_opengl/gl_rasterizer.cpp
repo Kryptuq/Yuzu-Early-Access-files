@@ -520,6 +520,8 @@ bool RasterizerOpenGL::AccelerateDisplay(const Tegra::FramebufferConfig& config,
     // ASSERT_MSG(image_view->size.width == config.width, "Framebuffer width is different");
     // ASSERT_MSG(image_view->size.height == config.height, "Framebuffer height is different");
 
+    screen_info.texture.width = image_view->size.width;
+    screen_info.texture.height = image_view->size.height;
     screen_info.display_texture = image_view->Handle(Shader::TextureType::Color2D);
     screen_info.display_srgb = VideoCore::Surface::IsPixelFormatSRGB(image_view->format);
     return true;
@@ -557,12 +559,19 @@ void RasterizerOpenGL::SyncViewport() {
     const bool dirty_viewport = flags[Dirty::Viewports] || rescale_viewports;
     const bool dirty_clip_control = flags[Dirty::ClipControl];
 
-    if (dirty_clip_control || flags[Dirty::FrontFace]) {
+    if (dirty_viewport || dirty_clip_control || flags[Dirty::FrontFace]) {
         flags[Dirty::FrontFace] = false;
 
         GLenum mode = MaxwellToGL::FrontFace(regs.front_face);
+        bool flip_faces = false;
         if (regs.screen_y_control.triangle_rast_flip != 0 &&
             regs.viewport_transform[0].scale_y < 0.0f) {
+            flip_faces = !flip_faces;
+        }
+        if (regs.viewport_transform[0].scale_z < 0.0f) {
+            flip_faces = !flip_faces;
+        }
+        if (flip_faces) {
             switch (mode) {
             case GL_CW:
                 mode = GL_CCW;

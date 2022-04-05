@@ -51,6 +51,7 @@ public:
     void LoadContext(const ThreadContext64& ctx) override;
 
     void PrepareReschedule() override;
+    void SignalInterrupt() override;
     void ClearExclusiveState() override;
 
     void ClearInstructionCache() override;
@@ -77,9 +78,6 @@ private:
 
     // SVC callback
     u32 svc_swi{};
-    bool svc_called{};
-
-    bool shutdown{};
 };
 
 } // namespace Core

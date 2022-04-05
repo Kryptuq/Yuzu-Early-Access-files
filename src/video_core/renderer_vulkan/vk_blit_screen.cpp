@@ -1406,8 +1406,9 @@ void VKBlitScreen::SetVertexData(BufferData& data, const Tegra::FramebufferConfi
     UNIMPLEMENTED_IF(framebuffer_crop_rect.top != 0);
     UNIMPLEMENTED_IF(framebuffer_crop_rect.left != 0);
 
-    f32 scale_u = 1.0f;
-    f32 scale_v = 1.0f;
+    f32 scale_u = static_cast<f32>(framebuffer.width) / static_cast<f32>(screen_info.width);
+    f32 scale_v = static_cast<f32>(framebuffer.height) / static_cast<f32>(screen_info.height);
+
     // Scale the output by the crop width/height. This is commonly used with 1280x720 rendering
     // (e.g. handheld mode) on a 1920x1080 framebuffer.
     if (!fsr) {

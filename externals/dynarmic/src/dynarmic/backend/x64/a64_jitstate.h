@@ -43,7 +43,7 @@ struct A64JitState {
     // For internal use (See: BlockOfCode::RunCode)
     u32 guest_MXCSR = 0x00001f80;
     u32 asimd_MXCSR = 0x00009fc0;
-    bool halt_requested = false;
+    volatile u32 halt_reason = 0;
 
     // Exclusive state
     static constexpr u64 RESERVATION_GRANULE_MASK = 0xFFFF'FFFF'FFFF'FFF0ull;

@@ -40,7 +40,7 @@ struct A32JitState {
     // For internal use (See: BlockOfCode::RunCode)
     u32 guest_MXCSR = 0x00001f80;
     u32 asimd_MXCSR = 0x00009fc0;
-    bool halt_requested = false;
+    volatile u32 halt_reason = 0;
 
     // Exclusive state
     u32 exclusive_state = 0;

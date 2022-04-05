@@ -306,6 +306,11 @@ void EmitX64::Patch(const IR::LocationDescriptor& target_desc, CodePtr target_co
         EmitPatchJg(target_desc, target_code_ptr);
     }
 
+    for (CodePtr location : patch_info.jz) {
+        code.SetCodePtr(location);
+        EmitPatchJz(target_desc, target_code_ptr);
+    }
+
     for (CodePtr location : patch_info.jmp) {
         code.SetCodePtr(location);
         EmitPatchJmp(target_desc, target_code_ptr);

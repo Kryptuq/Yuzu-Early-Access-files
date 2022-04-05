@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "dynarmic/interface/A32/config.h"
+#include "dynarmic/interface/halt_reason.h"
 
 namespace Dynarmic {
 namespace A32 {
@@ -27,13 +28,13 @@ public:
      * Runs the emulated CPU.
      * Cannot be recursively called.
      */
-    void Run();
+    HaltReason Run();
 
     /**
      * Steps the emulated CPU.
      * Cannot be recursively called.
      */
-    void Step();
+    HaltReason Step();
 
     /**
      * Clears the code cache of all compiled code.
@@ -58,7 +59,7 @@ public:
      * Stops execution in Jit::Run.
      * Can only be called from a callback.
      */
-    void HaltExecution();
+    void HaltExecution(HaltReason hr = HaltReason::UserDefined1);
 
     /// View and modify registers.
     std::array<std::uint32_t, 16>& Regs();

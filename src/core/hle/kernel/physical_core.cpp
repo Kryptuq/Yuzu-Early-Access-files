@@ -58,6 +58,7 @@ bool PhysicalCore::IsInterrupted() const {
 void PhysicalCore::Interrupt() {
     guard->lock();
     interrupts[core_index].SetInterrupt(true);
+    arm_interface->SignalInterrupt();
     guard->unlock();
 }
 

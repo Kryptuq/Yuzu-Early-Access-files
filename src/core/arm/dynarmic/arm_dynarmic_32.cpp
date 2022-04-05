@@ -25,6 +25,9 @@ namespace Core {
 
 using namespace Common::Literals;
 
+constexpr Dynarmic::HaltReason break_loop = Dynarmic::HaltReason::UserDefined2;
+constexpr Dynarmic::HaltReason svc_call = Dynarmic::HaltReason::UserDefined3;
+
 class DynarmicCallbacks32 : public Dynarmic::A32::UserCallbacks {
 public:
     explicit DynarmicCallbacks32(ARM_Dynarmic_32& parent_)
@@ -82,15 +85,13 @@ public:
     }
 
     void CallSVC(u32 swi) override {
-        parent.svc_called = true;
         parent.svc_swi = swi;
-        parent.jit->HaltExecution();
+        parent.jit->HaltExecution(svc_call);
     }
 
     void AddTicks(u64 ticks) override {
-        if (parent.uses_wall_clock) {
-            return;
-        }
+        ASSERT_MSG(!parent.uses_wall_clock, "This should never happen - dynarmic ticking disabled");
+
         // Divide the number of ticks by the amount of CPU cores. TODO(Subv): This yields only a
         // rough approximation of the amount of executed ticks in the system, it may be thrown off
         // if not all cores are doing a similar amount of work. Instead of doing this, we should
@@ -106,12 +107,8 @@ public:
     }
 
     u64 GetTicksRemaining() override {
-        if (parent.uses_wall_clock) {
-            if (!parent.interrupt_handlers[parent.core_index].IsInterrupted()) {
-                return minimum_run_cycles;
-            }
-            return 0U;
-        }
+        ASSERT_MSG(!parent.uses_wall_clock, "This should never happen - dynarmic ticking disabled");
+
         return std::max<s64>(parent.system.CoreTiming().GetDowncount(), 0);
     }
 
@@ -146,6 +143,7 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
 
     // Timing
     config.wall_clock_cntpct = uses_wall_clock;
+    config.enable_cycle_counting = !uses_wall_clock;
 
     // Code cache size
     config.code_cache_size = 512_MiB;
@@ -228,13 +226,11 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
 
 void ARM_Dynarmic_32::Run() {
     while (true) {
-        jit->Run();
-        if (!svc_called) {
-            break;
+        const auto hr = jit->Run();
+        if (Has(hr, svc_call)) {
+            Kernel::Svc::Call(system, svc_swi);
         }
-        svc_called = false;
-        Kernel::Svc::Call(system, svc_swi);
-        if (shutdown) {
+        if (Has(hr, break_loop)) {
             break;
         }
     }
@@ -320,8 +316,11 @@ void ARM_Dynarmic_32::LoadContext(const ThreadContext32& ctx) {
 }
 
 void ARM_Dynarmic_32::PrepareReschedule() {
-    jit->HaltExecution();
-    shutdown = true;
+    jit->HaltExecution(break_loop);
+}
+
+void ARM_Dynarmic_32::SignalInterrupt() {
+    jit->HaltExecution(break_loop);
 }
 
 void ARM_Dynarmic_32::ClearInstructionCache() {

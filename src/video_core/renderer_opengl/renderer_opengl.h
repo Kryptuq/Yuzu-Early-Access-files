@@ -137,6 +137,8 @@ private:
     /// Used for transforming the framebuffer orientation
     Service::android::BufferTransformFlags framebuffer_transform_flags{};
     Common::Rectangle<int> framebuffer_crop_rect;
+    u32 framebuffer_width;
+    u32 framebuffer_height;
 };
 
 } // namespace OpenGL

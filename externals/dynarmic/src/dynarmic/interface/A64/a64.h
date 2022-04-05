@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "dynarmic/interface/A64/config.h"
+#include "dynarmic/interface/halt_reason.h"
 
 namespace Dynarmic {
 namespace A64 {
@@ -28,13 +29,13 @@ public:
      * Runs the emulated CPU.
      * Cannot be recursively called.
      */
-    void Run();
+    HaltReason Run();
 
     /**
      * Step the emulated CPU for one instruction.
      * Cannot be recursively called.
      */
-    void Step();
+    HaltReason Step();
 
     /**
      * Clears the code cache of all compiled code.
@@ -59,7 +60,7 @@ public:
      * Stops execution in Jit::Run.
      * Can only be called from a callback.
      */
-    void HaltExecution();
+    void HaltExecution(HaltReason hr = HaltReason::UserDefined1);
 
     /// Read Stack Pointer
     std::uint64_t GetSP() const;
@@ -118,7 +119,7 @@ public:
     /// Debugging: Dump a disassembly all of compiled code to the console.
     void DumpDisassembly() const;
 
-    /* 
+    /*
      * Disassemble the instructions following the current pc and return
      * the resulting instructions as a vector of their string representations.
      */

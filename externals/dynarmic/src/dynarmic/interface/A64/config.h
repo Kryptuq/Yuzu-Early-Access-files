@@ -273,9 +273,9 @@ struct UserConfig {
     /// to avoid writting certain unnecessary code only needed for cycle timers.
     bool wall_clock_cntpct = false;
 
-    // Determines whether AddTicks and GetTicksRemaining are called.
-    // If false, execution will continue until soon after Jit::HaltExecution is called.
-    // bool enable_ticks = true; // TODO
+    /// This option allows you to disable cycle counting. If this is set to false,
+    /// AddTicks and GetTicksRemaining are never called, and no cycle counting is done.
+    bool enable_cycle_counting = true;
 
     // Minimum size is about 8MiB. Maximum size is about 2GiB. Maximum size is limited by
     // the maximum length of a x64 jump.

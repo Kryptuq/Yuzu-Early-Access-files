@@ -201,12 +201,12 @@ size_t BlockOfCode::SpaceRemaining() const {
     return std::min(reinterpret_cast<const u8*>(far_code_begin) - current_near_ptr, &top_[maxSize_] - current_far_ptr);
 }
 
-void BlockOfCode::RunCode(void* jit_state, CodePtr code_ptr) const {
-    run_code(jit_state, code_ptr);
+HaltReason BlockOfCode::RunCode(void* jit_state, CodePtr code_ptr) const {
+    return run_code(jit_state, code_ptr);
 }
 
-void BlockOfCode::StepCode(void* jit_state, CodePtr code_ptr) const {
-    step_code(jit_state, code_ptr);
+HaltReason BlockOfCode::StepCode(void* jit_state, CodePtr code_ptr) const {
+    return step_code(jit_state, code_ptr);
 }
 
 void BlockOfCode::ReturnFromRunCode(bool mxcsr_already_exited) {
@@ -224,6 +224,8 @@ void BlockOfCode::ForceReturnFromRunCode(bool mxcsr_already_exited) {
 }
 
 void BlockOfCode::GenRunCode(std::function<void(BlockOfCode&)> rcp) {
+    Xbyak::Label return_to_caller, return_to_caller_mxcsr_already_exited;
+
     align();
     run_code = getCurr<RunCodeFuncType>();
 
@@ -236,11 +238,16 @@ void BlockOfCode::GenRunCode(std::function<void(BlockOfCode&)> rcp) {
     mov(r15, ABI_PARAM1);
     mov(rbx, ABI_PARAM2);  // save temporarily in non-volatile register
 
-    cb.GetTicksRemaining->EmitCall(*this);
-    mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)], ABI_RETURN);
-    mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], ABI_RETURN);
+    if (cb.enable_cycle_counting) {
+        cb.GetTicksRemaining->EmitCall(*this);
+        mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)], ABI_RETURN);
+        mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], ABI_RETURN);
+    }
 
     rcp(*this);
+
+    cmp(dword[r15 + jsi.offsetof_halt_reason], 0);
+    jne(return_to_caller_mxcsr_already_exited, T_NEAR);
 
     SwitchMxcsrOnEntry();
     jmp(rbx);
@@ -252,31 +259,44 @@ void BlockOfCode::GenRunCode(std::function<void(BlockOfCode&)> rcp) {
 
     mov(r15, ABI_PARAM1);
 
-    mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)], 1);
-    mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], 1);
+    if (cb.enable_cycle_counting) {
+        mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)], 1);
+        mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], 1);
+    }
 
     rcp(*this);
+
+    cmp(dword[r15 + jsi.offsetof_halt_reason], 0);
+    jne(return_to_caller_mxcsr_already_exited, T_NEAR);
+    lock();
+    or_(dword[r15 + jsi.offsetof_halt_reason], static_cast<u32>(HaltReason::Step));
 
     SwitchMxcsrOnEntry();
     jmp(ABI_PARAM2);
 
     // Dispatcher loop
 
-    Xbyak::Label return_to_caller, return_to_caller_mxcsr_already_exited;
-
     align();
     return_from_run_code[0] = getCurr<const void*>();
 
-    cmp(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], 0);
-    jng(return_to_caller);
+    cmp(dword[r15 + jsi.offsetof_halt_reason], 0);
+    jne(return_to_caller);
+    if (cb.enable_cycle_counting) {
+        cmp(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], 0);
+        jng(return_to_caller);
+    }
     cb.LookupBlock->EmitCall(*this);
     jmp(ABI_RETURN);
 
     align();
     return_from_run_code[MXCSR_ALREADY_EXITED] = getCurr<const void*>();
 
-    cmp(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], 0);
-    jng(return_to_caller_mxcsr_already_exited);
+    cmp(dword[r15 + jsi.offsetof_halt_reason], 0);
+    jne(return_to_caller_mxcsr_already_exited);
+    if (cb.enable_cycle_counting) {
+        cmp(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], 0);
+        jng(return_to_caller_mxcsr_already_exited);
+    }
     SwitchMxcsrOnEntry();
     cb.LookupBlock->EmitCall(*this);
     jmp(ABI_RETURN);
@@ -291,10 +311,16 @@ void BlockOfCode::GenRunCode(std::function<void(BlockOfCode&)> rcp) {
     return_from_run_code[MXCSR_ALREADY_EXITED | FORCE_RETURN] = getCurr<const void*>();
     L(return_to_caller_mxcsr_already_exited);
 
-    cb.AddTicks->EmitCall(*this, [this](RegList param) {
-        mov(param[0], qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)]);
-        sub(param[0], qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)]);
-    });
+    if (cb.enable_cycle_counting) {
+        cb.AddTicks->EmitCall(*this, [this](RegList param) {
+            mov(param[0], qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)]);
+            sub(param[0], qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)]);
+        });
+    }
+
+    xor_(eax, eax);
+    lock();
+    xchg(dword[r15 + jsi.offsetof_halt_reason], eax);
 
     ABI_PopCalleeSaveRegistersAndAdjustStack(*this, sizeof(StackLayout));
     ret();
@@ -323,6 +349,10 @@ void BlockOfCode::LeaveStandardASIMD() {
 }
 
 void BlockOfCode::UpdateTicks() {
+    if (!cb.enable_cycle_counting) {
+        return;
+    }
+
     cb.AddTicks->EmitCall(*this, [this](RegList param) {
         mov(param[0], qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)]);
         sub(param[0], qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)]);

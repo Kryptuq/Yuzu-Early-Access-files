@@ -208,6 +208,10 @@ struct UserConfig {
     /// to avoid writting certain unnecessary code only needed for cycle timers.
     bool wall_clock_cntpct = false;
 
+    /// This option allows you to disable cycle counting. If this is set to false,
+    /// AddTicks and GetTicksRemaining are never called, and no cycle counting is done.
+    bool enable_cycle_counting = true;
+
     /// This option relates to the CPSR.E flag. Enabling this option disables modification
     /// of CPSR.E by the emulated program, forcing it to 0.
     /// NOTE: Calling Jit::SetCpsr with CPSR.E=1 while this option is enabled may result

@@ -15,6 +15,7 @@
 #include "dynarmic/backend/x64/devirtualize.h"
 #include "dynarmic/backend/x64/jitstate_info.h"
 #include "dynarmic/common/assert.h"
+#include "dynarmic/common/atomic.h"
 #include "dynarmic/common/scope_exit.h"
 #include "dynarmic/common/x64_disassemble.h"
 #include "dynarmic/frontend/A64/translate/a64_translate.h"
@@ -26,11 +27,12 @@ namespace Dynarmic::A64 {
 
 using namespace Backend::X64;
 
-static RunCodeCallbacks GenRunCodeCallbacks(A64::UserCallbacks* cb, CodePtr (*LookupBlock)(void* lookup_block_arg), void* arg) {
+static RunCodeCallbacks GenRunCodeCallbacks(A64::UserCallbacks* cb, CodePtr (*LookupBlock)(void* lookup_block_arg), void* arg, const A64::UserConfig& conf) {
     return RunCodeCallbacks{
         std::make_unique<ArgCallback>(LookupBlock, reinterpret_cast<u64>(arg)),
         std::make_unique<ArgCallback>(Devirtualize<&A64::UserCallbacks::AddTicks>(cb)),
         std::make_unique<ArgCallback>(Devirtualize<&A64::UserCallbacks::GetTicksRemaining>(cb)),
+        conf.enable_cycle_counting,
     };
 }
 
@@ -55,7 +57,7 @@ struct Jit::Impl final {
 public:
     Impl(Jit* jit, UserConfig conf)
             : conf(conf)
-            , block_of_code(GenRunCodeCallbacks(conf.callbacks, &GetCurrentBlockThunk, this), JitStateInfo{jit_state}, conf.code_cache_size, conf.far_code_offset, GenRCP(conf))
+            , block_of_code(GenRunCodeCallbacks(conf.callbacks, &GetCurrentBlockThunk, this, conf), JitStateInfo{jit_state}, conf.code_cache_size, conf.far_code_offset, GenRCP(conf))
             , emitter(block_of_code, conf, jit)
             , polyfill_options(GenPolyfillOptions(block_of_code)) {
         ASSERT(conf.page_table_address_space_bits >= 12 && conf.page_table_address_space_bits <= 64);
@@ -63,13 +65,12 @@ public:
 
     ~Impl() = default;
 
-    void Run() {
+    HaltReason Run() {
         ASSERT(!is_executing);
         PerformRequestedCacheInvalidation();
 
         is_executing = true;
         SCOPE_EXIT { this->is_executing = false; };
-        jit_state.halt_requested = false;
 
         // TODO: Check code alignment
 
@@ -83,29 +84,33 @@ public:
 
             return GetCurrentBlock();
         }();
-        block_of_code.RunCode(&jit_state, current_code_ptr);
+
+        const HaltReason hr = block_of_code.RunCode(&jit_state, current_code_ptr);
 
         PerformRequestedCacheInvalidation();
+
+        return hr;
     }
 
-    void Step() {
+    HaltReason Step() {
         ASSERT(!is_executing);
         PerformRequestedCacheInvalidation();
 
         is_executing = true;
         SCOPE_EXIT { this->is_executing = false; };
-        jit_state.halt_requested = true;
 
-        block_of_code.StepCode(&jit_state, GetCurrentSingleStep());
+        const HaltReason hr = block_of_code.StepCode(&jit_state, GetCurrentSingleStep());
 
         PerformRequestedCacheInvalidation();
+
+        return hr;
     }
 
     void ClearCache() {
         std::unique_lock lock{invalidation_mutex};
         invalidate_entire_cache = true;
         if (is_executing) {
-            jit_state.halt_requested = true;
+            HaltExecution(HaltReason::CacheInvalidation);
         }
     }
 
@@ -115,7 +120,7 @@ public:
         const auto range = boost::icl::discrete_interval<u64>::closed(start_address, end_address);
         invalid_cache_ranges.add(range);
         if (is_executing) {
-            jit_state.halt_requested = true;
+            HaltExecution(HaltReason::CacheInvalidation);
         }
     }
 
@@ -124,8 +129,8 @@ public:
         jit_state = {};
     }
 
-    void HaltExecution() {
-        jit_state.halt_requested = true;
+    void HaltExecution(HaltReason hr) {
+        Atomic::Or(&jit_state.halt_reason, static_cast<u32>(hr));
     }
 
     u64 GetSP() const {
@@ -279,7 +284,7 @@ private:
 
     void RequestCacheInvalidation() {
         if (is_executing) {
-            jit_state.halt_requested = true;
+            HaltExecution(HaltReason::CacheInvalidation);
             return;
         }
 
@@ -321,12 +326,12 @@ Jit::Jit(UserConfig conf)
 
 Jit::~Jit() = default;
 
-void Jit::Run() {
-    impl->Run();
+HaltReason Jit::Run() {
+    return impl->Run();
 }
 
-void Jit::Step() {
-    impl->Step();
+HaltReason Jit::Step() {
+    return impl->Step();
 }
 
 void Jit::ClearCache() {
@@ -341,8 +346,8 @@ void Jit::Reset() {
     impl->Reset();
 }
 
-void Jit::HaltExecution() {
-    impl->HaltExecution();
+void Jit::HaltExecution(HaltReason hr) {
+    impl->HaltExecution(hr);
 }
 
 u64 Jit::GetSP() const {
