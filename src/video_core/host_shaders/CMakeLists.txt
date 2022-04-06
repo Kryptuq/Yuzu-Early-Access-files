@@ -18,6 +18,7 @@ set(SHADER_FILES
     full_screen_triangle.vert
     fxaa.frag
     fxaa.vert
+    opengl_convert_s8d24.comp
     opengl_copy_bc4.comp
     opengl_present.frag
     opengl_present.vert

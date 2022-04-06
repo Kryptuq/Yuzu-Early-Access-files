@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <atomic>
 #include "common/assert.h"
 #include "core/hle/kernel/k_spin_lock.h"
 #include "core/hle/kernel/k_thread.h"
@@ -75,7 +76,7 @@ private:
     KernelCore& kernel;
     KAlignedSpinLock spin_lock{};
     s32 lock_count{};
-    KThread* owner_thread{};
+    std::atomic<KThread*> owner_thread{};
 };
 
 } // namespace Kernel

@@ -234,9 +234,12 @@ void RasterizerVulkan::Clear() {
     const VkExtent2D render_area = framebuffer->RenderArea();
     scheduler.RequestRenderpass(framebuffer);
 
-    const bool is_rescaling = texture_cache.IsRescaling();
-    const u32 up_scale = is_rescaling ? Settings::values.resolution_info.up_scale : 1U;
-    const u32 down_shift = is_rescaling ? Settings::values.resolution_info.down_shift : 0U;
+    u32 up_scale = 1;
+    u32 down_shift = 0;
+    if (texture_cache.IsRescaling()) {
+        up_scale = Settings::values.resolution_info.up_scale;
+        down_shift = Settings::values.resolution_info.down_shift;
+    }
     UpdateViewportsState(regs);
 
     VkClearRect clear_rect{
@@ -692,9 +695,12 @@ void RasterizerVulkan::UpdateScissorsState(Tegra::Engines::Maxwell3D::Regs& regs
     if (!state_tracker.TouchScissors()) {
         return;
     }
-    const bool is_rescaling = texture_cache.IsRescaling();
-    const u32 up_scale = is_rescaling ? Settings::values.resolution_info.up_scale : 1U;
-    const u32 down_shift = is_rescaling ? Settings::values.resolution_info.down_shift : 0U;
+    u32 up_scale = 1;
+    u32 down_shift = 0;
+    if (texture_cache.IsRescaling()) {
+        up_scale = Settings::values.resolution_info.up_scale;
+        down_shift = Settings::values.resolution_info.down_shift;
+    }
     const std::array scissors{
         GetScissorState(regs, 0, up_scale, down_shift),
         GetScissorState(regs, 1, up_scale, down_shift),

@@ -148,9 +148,9 @@ u64 GenerateUniformRange(u64 min, u64 max, F f) {
 } // Anonymous namespace
 
 u64 KSystemControl::GenerateRandomU64() {
-    static std::random_device device;
-    static std::mt19937 gen(device());
-    static std::uniform_int_distribution<u64> distribution(1, std::numeric_limits<u64>::max());
+    std::random_device device;
+    std::mt19937 gen(device());
+    std::uniform_int_distribution<u64> distribution(1, std::numeric_limits<u64>::max());
     return distribution(gen);
 }
 

@@ -85,7 +85,7 @@ struct KernelCore::Impl {
 
     void InitializeCores() {
         for (u32 core_id = 0; core_id < Core::Hardware::NUM_CPU_CORES; core_id++) {
-            cores[core_id].Initialize(current_process->Is64BitProcess());
+            cores[core_id].Initialize((*current_process).Is64BitProcess());
             system.Memory().SetCurrentPageTable(*current_process, core_id);
         }
     }
@@ -169,11 +169,11 @@ struct KernelCore::Impl {
 
         // Shutdown all processes.
         if (current_process) {
-            current_process->Finalize();
+            (*current_process).Finalize();
             // current_process->Close();
             // TODO: The current process should be destroyed based on accurate ref counting after
             // calling Close(). Adding a manual Destroy() call instead to avoid a memory leak.
-            current_process->Destroy();
+            (*current_process).Destroy();
             current_process = nullptr;
         }
 
@@ -713,7 +713,7 @@ struct KernelCore::Impl {
 
     // Lists all processes that exist in the current session.
     std::vector<KProcess*> process_list;
-    KProcess* current_process{};
+    std::atomic<KProcess*> current_process{};
     std::unique_ptr<Kernel::GlobalSchedulerContext> global_scheduler_context;
     Kernel::TimeManager time_manager;
 

@@ -13,6 +13,7 @@
 #include "video_core/host_shaders/astc_decoder_comp.h"
 #include "video_core/host_shaders/block_linear_unswizzle_2d_comp.h"
 #include "video_core/host_shaders/block_linear_unswizzle_3d_comp.h"
+#include "video_core/host_shaders/opengl_convert_s8d24_comp.h"
 #include "video_core/host_shaders/opengl_copy_bc4_comp.h"
 #include "video_core/host_shaders/pitch_unswizzle_comp.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
@@ -50,7 +51,8 @@ UtilShaders::UtilShaders(ProgramManager& program_manager_)
       block_linear_unswizzle_2d_program(MakeProgram(BLOCK_LINEAR_UNSWIZZLE_2D_COMP)),
       block_linear_unswizzle_3d_program(MakeProgram(BLOCK_LINEAR_UNSWIZZLE_3D_COMP)),
       pitch_unswizzle_program(MakeProgram(PITCH_UNSWIZZLE_COMP)),
-      copy_bc4_program(MakeProgram(OPENGL_COPY_BC4_COMP)) {
+      copy_bc4_program(MakeProgram(OPENGL_COPY_BC4_COMP)),
+      convert_s8d24_program(MakeProgram(OPENGL_CONVERT_S8D24_COMP)) {
     const auto swizzle_table = Tegra::Texture::MakeSwizzleTable();
     swizzle_table_buffer.Create();
     glNamedBufferStorage(swizzle_table_buffer.handle, sizeof(swizzle_table), &swizzle_table, 0);
@@ -244,6 +246,26 @@ void UtilShaders::CopyBC4(Image& dst_image, Image& src_image, std::span<const Im
         glBindImageTexture(BINDING_OUTPUT_IMAGE, dst_image.StorageHandle(),
                            copy.dst_subresource.base_level, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8UI);
         glDispatchCompute(copy.extent.width, copy.extent.height, copy.extent.depth);
+    }
+    program_manager.RestoreGuestCompute();
+}
+
+void UtilShaders::ConvertS8D24(Image& dst_image, std::span<const ImageCopy> copies) {
+    static constexpr GLuint BINDING_DESTINATION = 0;
+    static constexpr GLuint LOC_SIZE = 0;
+
+    program_manager.BindComputeProgram(convert_s8d24_program.handle);
+    for (const ImageCopy& copy : copies) {
+        ASSERT(copy.src_subresource.base_layer == 0);
+        ASSERT(copy.src_subresource.num_layers == 1);
+        ASSERT(copy.dst_subresource.base_layer == 0);
+        ASSERT(copy.dst_subresource.num_layers == 1);
+
+        glUniform3ui(LOC_SIZE, copy.extent.width, copy.extent.height, copy.extent.depth);
+        glBindImageTexture(BINDING_DESTINATION, dst_image.StorageHandle(),
+                           copy.dst_subresource.base_level, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8UI);
+        glDispatchCompute(Common::DivCeil(copy.extent.width, 16u),
+                          Common::DivCeil(copy.extent.height, 8u), copy.extent.depth);
     }
     program_manager.RestoreGuestCompute();
 }

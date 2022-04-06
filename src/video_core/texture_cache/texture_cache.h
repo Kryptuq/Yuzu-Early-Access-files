@@ -328,8 +328,7 @@ void TextureCache<P>::UpdateRenderTargets(bool is_clear) {
     }
 
     const bool rescaled = RescaleRenderTargets(is_clear);
-    const auto& resolution_info = Settings::values.resolution_info;
-    if (resolution_info.active && is_rescaling != rescaled) {
+    if (is_rescaling != rescaled) {
         flags[Dirty::RescaleViewports] = true;
         flags[Dirty::RescaleScissors] = true;
         is_rescaling = rescaled;
@@ -346,8 +345,12 @@ void TextureCache<P>::UpdateRenderTargets(bool is_clear) {
     for (size_t index = 0; index < NUM_RT; ++index) {
         render_targets.draw_buffers[index] = static_cast<u8>(maxwell3d.regs.rt_control.Map(index));
     }
-    const u32 up_scale = is_rescaling ? resolution_info.up_scale : 1U;
-    const u32 down_shift = is_rescaling ? resolution_info.down_shift : 0U;
+    u32 up_scale = 1;
+    u32 down_shift = 0;
+    if (is_rescaling) {
+        up_scale = Settings::values.resolution_info.up_scale;
+        down_shift = Settings::values.resolution_info.down_shift;
+    }
     render_targets.size = Extent2D{
         (maxwell3d.regs.render_area.width * up_scale) >> down_shift,
         (maxwell3d.regs.render_area.height * up_scale) >> down_shift,

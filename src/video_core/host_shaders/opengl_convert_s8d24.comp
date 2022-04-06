@@ -1,0 +1,18 @@
+// Copyright 2022 yuzu Emulator Project
+// Licensed under GPLv2 or any later version
+// Refer to the license.txt file included.
+
+#version 430 core
+
+layout(local_size_x = 16, local_size_y = 8) in;
+
+layout(binding = 0, rgba8ui) restrict uniform uimage2D destination;
+layout(location = 0) uniform uvec3 size;
+
+void main() {
+    if (any(greaterThanEqual(gl_GlobalInvocationID, size))) {
+        return;
+    }
+    uvec4 components = imageLoad(destination, ivec2(gl_GlobalInvocationID.xy));
+    imageStore(destination, ivec2(gl_GlobalInvocationID.xy), components.wxyz);
+}

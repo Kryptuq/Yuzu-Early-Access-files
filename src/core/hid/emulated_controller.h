@@ -335,6 +335,9 @@ public:
      */
     void DeleteCallback(int key);
 
+    /// Removes all callbacks created from npad services
+    void RemoveServiceCallbacks();
+
 private:
     /// creates input devices from params
     void LoadDevices();

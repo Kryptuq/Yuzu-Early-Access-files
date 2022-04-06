@@ -422,7 +422,7 @@ private:
     bool is_64bit_process = true;
 
     /// Total running time for the process in ticks.
-    u64 total_process_running_time_ticks = 0;
+    std::atomic<u64> total_process_running_time_ticks = 0;
 
     /// Per-process handle table for storing created object handles in.
     KHandleTable handle_table;

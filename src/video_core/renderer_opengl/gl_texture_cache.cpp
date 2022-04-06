@@ -409,8 +409,8 @@ ImageBufferMap::~ImageBufferMap() {
 
 TextureCacheRuntime::TextureCacheRuntime(const Device& device_, ProgramManager& program_manager,
                                          StateTracker& state_tracker_)
-    : device{device_}, state_tracker{state_tracker_},
-      util_shaders(program_manager), resolution{Settings::values.resolution_info} {
+    : device{device_}, state_tracker{state_tracker_}, util_shaders(program_manager),
+      format_conversion_pass{util_shaders}, resolution{Settings::values.resolution_info} {
     static constexpr std::array TARGETS{GL_TEXTURE_1D_ARRAY, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D};
     for (size_t i = 0; i < TARGETS.size(); ++i) {
         const GLenum target = TARGETS[i];
@@ -1325,6 +1325,9 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM
 
 Framebuffer::~Framebuffer() = default;
 
+FormatConversionPass::FormatConversionPass(UtilShaders& util_shaders_)
+    : util_shaders{util_shaders_} {}
+
 void FormatConversionPass::ConvertImage(Image& dst_image, Image& src_image,
                                         std::span<const VideoCommon::ImageCopy> copies) {
     const GLenum dst_target = ImageTarget(dst_image.info);
@@ -1356,6 +1359,12 @@ void FormatConversionPass::ConvertImage(Image& dst_image, Image& src_image,
         glTextureSubImage3D(dst_image.Handle(), dst_origin.level, dst_origin.x, dst_origin.y,
                             dst_origin.z, region.width, region.height, region.depth,
                             dst_image.GlFormat(), dst_image.GlType(), nullptr);
+    }
+
+    // Swap component order of S8D24 to ABGR8 reinterprets
+    if (src_image.info.format == PixelFormat::D24_UNORM_S8_UINT &&
+        dst_image.info.format == PixelFormat::A8B8G8R8_UNORM) {
+        util_shaders.ConvertS8D24(dst_image, copies);
     }
 }
 

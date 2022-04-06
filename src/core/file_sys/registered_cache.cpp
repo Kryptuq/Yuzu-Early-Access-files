@@ -387,15 +387,17 @@ std::vector<NcaID> RegisteredCache::AccumulateFiles() const {
             continue;
 
         for (const auto& nca_dir : d2_dir->GetSubdirectories()) {
-            if (!FollowsNcaIdFormat(nca_dir->GetName()))
+            if (nca_dir == nullptr || !FollowsNcaIdFormat(nca_dir->GetName())) {
                 continue;
+            }
 
             ids.push_back(Common::HexStringToArray<0x10, true>(nca_dir->GetName().substr(0, 0x20)));
         }
 
         for (const auto& nca_file : d2_dir->GetFiles()) {
-            if (!FollowsNcaIdFormat(nca_file->GetName()))
+            if (nca_file == nullptr || !FollowsNcaIdFormat(nca_file->GetName())) {
                 continue;
+            }
 
             ids.push_back(
                 Common::HexStringToArray<0x10, true>(nca_file->GetName().substr(0, 0x20)));

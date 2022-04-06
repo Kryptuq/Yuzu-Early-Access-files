@@ -163,7 +163,7 @@ public:
         do {
             ASSERT(cur_ref_count > 0);
         } while (!m_ref_count.compare_exchange_weak(cur_ref_count, cur_ref_count - 1,
-                                                    std::memory_order_relaxed));
+                                                    std::memory_order_acq_rel));
 
         // If ref count hits zero, destroy the object.
         if (cur_ref_count - 1 == 0) {

@@ -73,11 +73,13 @@ public:
     }
 
     void InterpreterFallback(u32 pc, std::size_t num_instructions) override {
+        parent.LogBacktrace();
         UNIMPLEMENTED_MSG("This should never happen, pc = {:08X}, code = {:08X}", pc,
                           MemoryReadCode(pc));
     }
 
     void ExceptionRaised(u32 pc, Dynarmic::A32::Exception exception) override {
+        parent.LogBacktrace();
         LOG_CRITICAL(Core_ARM,
                      "ExceptionRaised(exception = {}, pc = {:08X}, code = {:08X}, thumb = {})",
                      exception, pc, MemoryReadCode(pc), parent.IsInThumbMode());

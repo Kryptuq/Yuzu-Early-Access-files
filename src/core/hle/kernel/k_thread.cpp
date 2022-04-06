@@ -723,7 +723,7 @@ void KThread::UpdateState() {
     ASSERT(kernel.GlobalSchedulerContext().IsLocked());
 
     // Set our suspend flags in state.
-    const auto old_state = thread_state;
+    const ThreadState old_state = thread_state;
     const auto new_state =
         static_cast<ThreadState>(this->GetSuspendFlags()) | (old_state & ThreadState::Mask);
     thread_state = new_state;
@@ -738,7 +738,7 @@ void KThread::Continue() {
     ASSERT(kernel.GlobalSchedulerContext().IsLocked());
 
     // Clear our suspend flags in state.
-    const auto old_state = thread_state;
+    const ThreadState old_state = thread_state;
     thread_state = old_state & ThreadState::Mask;
 
     // Note the state change in scheduler.

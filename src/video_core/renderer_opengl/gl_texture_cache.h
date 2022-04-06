@@ -55,13 +55,14 @@ struct FormatProperties {
 
 class FormatConversionPass {
 public:
-    FormatConversionPass() = default;
+    explicit FormatConversionPass(UtilShaders& util_shaders);
     ~FormatConversionPass() = default;
 
     void ConvertImage(Image& dst_image, Image& src_image,
                       std::span<const VideoCommon::ImageCopy> copies);
 
 private:
+    UtilShaders& util_shaders;
     OGLBuffer intermediate_pbo;
     size_t pbo_size{};
 };

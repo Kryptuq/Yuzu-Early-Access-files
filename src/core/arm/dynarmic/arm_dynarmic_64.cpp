@@ -84,6 +84,7 @@ public:
     }
 
     void InterpreterFallback(u64 pc, std::size_t num_instructions) override {
+        parent.LogBacktrace();
         LOG_ERROR(Core_ARM,
                   "Unimplemented instruction @ 0x{:X} for {} instructions (instr = {:08X})", pc,
                   num_instructions, MemoryReadCode(pc));
@@ -121,6 +122,7 @@ public:
             return;
         case Dynarmic::A64::Exception::Breakpoint:
         default:
+            parent.LogBacktrace();
             ASSERT_MSG(false, "ExceptionRaised(exception = {}, pc = {:08X}, code = {:08X})",
                        static_cast<std::size_t>(exception), pc, MemoryReadCode(pc));
         }

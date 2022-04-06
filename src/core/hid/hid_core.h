@@ -61,6 +61,9 @@ public:
     /// Removes all callbacks from input common
     void UnloadInputDevices();
 
+    /// Removes all callbacks from npad services
+    void RemoveServiceCallbacks();
+
     /// Number of emulated controllers
     static constexpr std::size_t available_controllers{10};
 

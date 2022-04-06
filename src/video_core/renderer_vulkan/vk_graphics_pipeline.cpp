@@ -238,7 +238,6 @@ GraphicsPipeline::GraphicsPipeline(
         enabled_uniform_buffer_masks[stage] = info->constant_buffer_mask;
         std::ranges::copy(info->constant_buffer_used_sizes, uniform_buffer_sizes[stage].begin());
         num_textures += Shader::NumDescriptors(info->texture_descriptors);
-        uses_rescale_unfiorm |= info->uses_rescaling_uniform;
     }
     auto func{[this, shader_notify, &render_pass_cache, &descriptor_pool, pipeline_statistics] {
         DescriptorLayoutBuilder builder{MakeBuilder(device, stage_infos)};
@@ -472,8 +471,7 @@ void GraphicsPipeline::ConfigureDraw(const RescalingPushConstant& rescaling) {
         });
     }
     const bool is_rescaling{texture_cache.IsRescaling()};
-    const bool update_rescaling{uses_rescale_unfiorm ? scheduler.UpdateRescaling(is_rescaling)
-                                                     : false};
+    const bool update_rescaling{scheduler.UpdateRescaling(is_rescaling)};
     const bool bind_pipeline{scheduler.UpdateGraphicsPipeline(this)};
     const void* const descriptor_data{update_descriptor_queue.UpdateData()};
     scheduler.Record([this, descriptor_data, bind_pipeline, rescaling_data = rescaling.Data(),
@@ -481,12 +479,10 @@ void GraphicsPipeline::ConfigureDraw(const RescalingPushConstant& rescaling) {
         if (bind_pipeline) {
             cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline);
         }
-        if (uses_rescale_unfiorm) {
-            cmdbuf.PushConstants(*pipeline_layout, VK_SHADER_STAGE_ALL_GRAPHICS,
-                                 RESCALING_LAYOUT_WORDS_OFFSET, sizeof(rescaling_data),
-                                 rescaling_data.data());
-        }
-        if (uses_rescale_unfiorm && update_rescaling) {
+        cmdbuf.PushConstants(*pipeline_layout, VK_SHADER_STAGE_ALL_GRAPHICS,
+                             RESCALING_LAYOUT_WORDS_OFFSET, sizeof(rescaling_data),
+                             rescaling_data.data());
+        if (update_rescaling) {
             const f32 config_down_factor{Settings::values.resolution_info.down_factor};
             const f32 scale_down_factor{is_rescaling ? config_down_factor : 1.0f};
             cmdbuf.PushConstants(*pipeline_layout, VK_SHADER_STAGE_ALL_GRAPHICS,

@@ -39,6 +39,8 @@ public:
     void CopyBC4(Image& dst_image, Image& src_image,
                  std::span<const VideoCommon::ImageCopy> copies);
 
+    void ConvertS8D24(Image& dst_image, std::span<const VideoCommon::ImageCopy> copies);
+
 private:
     ProgramManager& program_manager;
 
@@ -49,6 +51,7 @@ private:
     OGLProgram block_linear_unswizzle_3d_program;
     OGLProgram pitch_unswizzle_program;
     OGLProgram copy_bc4_program;
+    OGLProgram convert_s8d24_program;
 };
 
 GLenum StoreFormat(u32 bytes_per_block);

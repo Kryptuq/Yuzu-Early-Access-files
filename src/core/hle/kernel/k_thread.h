@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <span>
 #include <string>
 #include <utility>
@@ -751,7 +752,7 @@ private:
     KAffinityMask original_physical_affinity_mask{};
     s32 original_physical_ideal_core_id{};
     s32 num_core_migration_disables{};
-    ThreadState thread_state{};
+    std::atomic<ThreadState> thread_state{};
     std::atomic<bool> termination_requested{};
     bool wait_cancelled{};
     bool cancellable{};

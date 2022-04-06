@@ -103,12 +103,6 @@ else()
         -Wno-unused-parameter
     )
 
-    # TODO: Remove when we update to a GCC compiler that enables this
-    #       by default (i.e. GCC 10 or newer).
-    if (CMAKE_CXX_COMPILER_ID STREQUAL GNU)
-        add_compile_options(-fconcepts)
-    endif()
-
     if (ARCHITECTURE_x86_64)
         add_compile_options("-mcx16")
     endif()
