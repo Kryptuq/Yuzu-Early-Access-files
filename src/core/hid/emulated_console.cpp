@@ -132,7 +132,7 @@ void EmulatedConsole::SetMotionParam(Common::ParamPackage param) {
 }
 
 void EmulatedConsole::SetMotion(const Common::Input::CallbackStatus& callback) {
-    std::lock_guard lock{mutex};
+    std::unique_lock lock{mutex};
     auto& raw_status = console.motion_values.raw_status;
     auto& emulated = console.motion_values.emulated;
 
@@ -151,6 +151,7 @@ void EmulatedConsole::SetMotion(const Common::Input::CallbackStatus& callback) {
     emulated.UpdateOrientation(raw_status.delta_timestamp);
 
     if (is_configuring) {
+        lock.unlock();
         TriggerOnChange(ConsoleTriggerType::Motion);
         return;
     }
@@ -166,6 +167,7 @@ void EmulatedConsole::SetMotion(const Common::Input::CallbackStatus& callback) {
     // Find what is this value
     motion.verticalization_error = 0.0f;
 
+    lock.unlock();
     TriggerOnChange(ConsoleTriggerType::Motion);
 }
 
@@ -173,11 +175,12 @@ void EmulatedConsole::SetTouch(const Common::Input::CallbackStatus& callback, st
     if (index >= console.touch_values.size()) {
         return;
     }
-    std::lock_guard lock{mutex};
+    std::unique_lock lock{mutex};
 
     console.touch_values[index] = TransformToTouch(callback);
 
     if (is_configuring) {
+        lock.unlock();
         TriggerOnChange(ConsoleTriggerType::Touch);
         return;
     }
@@ -189,26 +192,32 @@ void EmulatedConsole::SetTouch(const Common::Input::CallbackStatus& callback, st
         .pressed = console.touch_values[index].pressed.value,
     };
 
+    lock.unlock();
     TriggerOnChange(ConsoleTriggerType::Touch);
 }
 
 ConsoleMotionValues EmulatedConsole::GetMotionValues() const {
+    std::lock_guard lock{mutex};
     return console.motion_values;
 }
 
 TouchValues EmulatedConsole::GetTouchValues() const {
+    std::lock_guard lock{mutex};
     return console.touch_values;
 }
 
 ConsoleMotion EmulatedConsole::GetMotion() const {
+    std::lock_guard lock{mutex};
     return console.motion_state;
 }
 
 TouchFingerState EmulatedConsole::GetTouch() const {
+    std::lock_guard lock{mutex};
     return console.touch_state;
 }
 
 void EmulatedConsole::TriggerOnChange(ConsoleTriggerType type) {
+    std::lock_guard lock{callback_mutex};
     for (const auto& poller_pair : callback_list) {
         const ConsoleUpdateCallback& poller = poller_pair.second;
         if (poller.on_change) {
@@ -218,13 +227,13 @@ void EmulatedConsole::TriggerOnChange(ConsoleTriggerType type) {
 }
 
 int EmulatedConsole::SetCallback(ConsoleUpdateCallback update_callback) {
-    std::lock_guard lock{mutex};
+    std::lock_guard lock{callback_mutex};
     callback_list.insert_or_assign(last_callback_key, update_callback);
     return last_callback_key++;
 }
 
 void EmulatedConsole::DeleteCallback(int key) {
-    std::lock_guard lock{mutex};
+    std::lock_guard lock{callback_mutex};
     const auto& iterator = callback_list.find(key);
     if (iterator == callback_list.end()) {
         LOG_ERROR(Input, "Tried to delete non-existent callback {}", key);

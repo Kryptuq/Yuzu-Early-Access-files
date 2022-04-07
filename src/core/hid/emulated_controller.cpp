@@ -353,14 +353,17 @@ void EmulatedController::DisableConfiguration() {
 }
 
 void EmulatedController::EnableSystemButtons() {
+    std::lock_guard lock{mutex};
     system_buttons_enabled = true;
 }
 
 void EmulatedController::DisableSystemButtons() {
+    std::lock_guard lock{mutex};
     system_buttons_enabled = false;
 }
 
 void EmulatedController::ResetSystemButtons() {
+    std::lock_guard lock{mutex};
     controller.home_button_state.home.Assign(false);
     controller.capture_button_state.capture.Assign(false);
 }
@@ -494,139 +497,141 @@ void EmulatedController::SetButton(const Common::Input::CallbackStatus& callback
     if (index >= controller.button_values.size()) {
         return;
     }
-    {
-        std::lock_guard lock{mutex};
-        bool value_changed = false;
-        const auto new_status = TransformToButton(callback);
-        auto& current_status = controller.button_values[index];
+    std::unique_lock lock{mutex};
+    bool value_changed = false;
+    const auto new_status = TransformToButton(callback);
+    auto& current_status = controller.button_values[index];
 
-        // Only read button values that have the same uuid or are pressed once
-        if (current_status.uuid != uuid) {
-            if (!new_status.value) {
-                return;
-            }
-        }
-
-        current_status.toggle = new_status.toggle;
-        current_status.uuid = uuid;
-
-        // Update button status with current
-        if (!current_status.toggle) {
-            current_status.locked = false;
-            if (current_status.value != new_status.value) {
-                current_status.value = new_status.value;
-                value_changed = true;
-            }
-        } else {
-            // Toggle button and lock status
-            if (new_status.value && !current_status.locked) {
-                current_status.locked = true;
-                current_status.value = !current_status.value;
-                value_changed = true;
-            }
-
-            // Unlock button ready for next press
-            if (!new_status.value && current_status.locked) {
-                current_status.locked = false;
-            }
-        }
-
-        if (!value_changed) {
+    // Only read button values that have the same uuid or are pressed once
+    if (current_status.uuid != uuid) {
+        if (!new_status.value) {
             return;
-        }
-
-        if (is_configuring) {
-            controller.npad_button_state.raw = NpadButton::None;
-            controller.debug_pad_button_state.raw = 0;
-            TriggerOnChange(ControllerTriggerType::Button, false);
-            return;
-        }
-
-        switch (index) {
-        case Settings::NativeButton::A:
-            controller.npad_button_state.a.Assign(current_status.value);
-            controller.debug_pad_button_state.a.Assign(current_status.value);
-            break;
-        case Settings::NativeButton::B:
-            controller.npad_button_state.b.Assign(current_status.value);
-            controller.debug_pad_button_state.b.Assign(current_status.value);
-            break;
-        case Settings::NativeButton::X:
-            controller.npad_button_state.x.Assign(current_status.value);
-            controller.debug_pad_button_state.x.Assign(current_status.value);
-            break;
-        case Settings::NativeButton::Y:
-            controller.npad_button_state.y.Assign(current_status.value);
-            controller.debug_pad_button_state.y.Assign(current_status.value);
-            break;
-        case Settings::NativeButton::LStick:
-            controller.npad_button_state.stick_l.Assign(current_status.value);
-            break;
-        case Settings::NativeButton::RStick:
-            controller.npad_button_state.stick_r.Assign(current_status.value);
-            break;
-        case Settings::NativeButton::L:
-            controller.npad_button_state.l.Assign(current_status.value);
-            controller.debug_pad_button_state.l.Assign(current_status.value);
-            break;
-        case Settings::NativeButton::R:
-            controller.npad_button_state.r.Assign(current_status.value);
-            controller.debug_pad_button_state.r.Assign(current_status.value);
-            break;
-        case Settings::NativeButton::ZL:
-            controller.npad_button_state.zl.Assign(current_status.value);
-            controller.debug_pad_button_state.zl.Assign(current_status.value);
-            break;
-        case Settings::NativeButton::ZR:
-            controller.npad_button_state.zr.Assign(current_status.value);
-            controller.debug_pad_button_state.zr.Assign(current_status.value);
-            break;
-        case Settings::NativeButton::Plus:
-            controller.npad_button_state.plus.Assign(current_status.value);
-            controller.debug_pad_button_state.plus.Assign(current_status.value);
-            break;
-        case Settings::NativeButton::Minus:
-            controller.npad_button_state.minus.Assign(current_status.value);
-            controller.debug_pad_button_state.minus.Assign(current_status.value);
-            break;
-        case Settings::NativeButton::DLeft:
-            controller.npad_button_state.left.Assign(current_status.value);
-            controller.debug_pad_button_state.d_left.Assign(current_status.value);
-            break;
-        case Settings::NativeButton::DUp:
-            controller.npad_button_state.up.Assign(current_status.value);
-            controller.debug_pad_button_state.d_up.Assign(current_status.value);
-            break;
-        case Settings::NativeButton::DRight:
-            controller.npad_button_state.right.Assign(current_status.value);
-            controller.debug_pad_button_state.d_right.Assign(current_status.value);
-            break;
-        case Settings::NativeButton::DDown:
-            controller.npad_button_state.down.Assign(current_status.value);
-            controller.debug_pad_button_state.d_down.Assign(current_status.value);
-            break;
-        case Settings::NativeButton::SL:
-            controller.npad_button_state.left_sl.Assign(current_status.value);
-            controller.npad_button_state.right_sl.Assign(current_status.value);
-            break;
-        case Settings::NativeButton::SR:
-            controller.npad_button_state.left_sr.Assign(current_status.value);
-            controller.npad_button_state.right_sr.Assign(current_status.value);
-            break;
-        case Settings::NativeButton::Home:
-            if (!system_buttons_enabled) {
-                break;
-            }
-            controller.home_button_state.home.Assign(current_status.value);
-            break;
-        case Settings::NativeButton::Screenshot:
-            if (!system_buttons_enabled) {
-                break;
-            }
-            controller.capture_button_state.capture.Assign(current_status.value);
-            break;
         }
     }
+
+    current_status.toggle = new_status.toggle;
+    current_status.uuid = uuid;
+
+    // Update button status with current
+    if (!current_status.toggle) {
+        current_status.locked = false;
+        if (current_status.value != new_status.value) {
+            current_status.value = new_status.value;
+            value_changed = true;
+        }
+    } else {
+        // Toggle button and lock status
+        if (new_status.value && !current_status.locked) {
+            current_status.locked = true;
+            current_status.value = !current_status.value;
+            value_changed = true;
+        }
+
+        // Unlock button ready for next press
+        if (!new_status.value && current_status.locked) {
+            current_status.locked = false;
+        }
+    }
+
+    if (!value_changed) {
+        return;
+    }
+
+    if (is_configuring) {
+        controller.npad_button_state.raw = NpadButton::None;
+        controller.debug_pad_button_state.raw = 0;
+        lock.unlock();
+        TriggerOnChange(ControllerTriggerType::Button, false);
+        return;
+    }
+
+    switch (index) {
+    case Settings::NativeButton::A:
+        controller.npad_button_state.a.Assign(current_status.value);
+        controller.debug_pad_button_state.a.Assign(current_status.value);
+        break;
+    case Settings::NativeButton::B:
+        controller.npad_button_state.b.Assign(current_status.value);
+        controller.debug_pad_button_state.b.Assign(current_status.value);
+        break;
+    case Settings::NativeButton::X:
+        controller.npad_button_state.x.Assign(current_status.value);
+        controller.debug_pad_button_state.x.Assign(current_status.value);
+        break;
+    case Settings::NativeButton::Y:
+        controller.npad_button_state.y.Assign(current_status.value);
+        controller.debug_pad_button_state.y.Assign(current_status.value);
+        break;
+    case Settings::NativeButton::LStick:
+        controller.npad_button_state.stick_l.Assign(current_status.value);
+        break;
+    case Settings::NativeButton::RStick:
+        controller.npad_button_state.stick_r.Assign(current_status.value);
+        break;
+    case Settings::NativeButton::L:
+        controller.npad_button_state.l.Assign(current_status.value);
+        controller.debug_pad_button_state.l.Assign(current_status.value);
+        break;
+    case Settings::NativeButton::R:
+        controller.npad_button_state.r.Assign(current_status.value);
+        controller.debug_pad_button_state.r.Assign(current_status.value);
+        break;
+    case Settings::NativeButton::ZL:
+        controller.npad_button_state.zl.Assign(current_status.value);
+        controller.debug_pad_button_state.zl.Assign(current_status.value);
+        break;
+    case Settings::NativeButton::ZR:
+        controller.npad_button_state.zr.Assign(current_status.value);
+        controller.debug_pad_button_state.zr.Assign(current_status.value);
+        break;
+    case Settings::NativeButton::Plus:
+        controller.npad_button_state.plus.Assign(current_status.value);
+        controller.debug_pad_button_state.plus.Assign(current_status.value);
+        break;
+    case Settings::NativeButton::Minus:
+        controller.npad_button_state.minus.Assign(current_status.value);
+        controller.debug_pad_button_state.minus.Assign(current_status.value);
+        break;
+    case Settings::NativeButton::DLeft:
+        controller.npad_button_state.left.Assign(current_status.value);
+        controller.debug_pad_button_state.d_left.Assign(current_status.value);
+        break;
+    case Settings::NativeButton::DUp:
+        controller.npad_button_state.up.Assign(current_status.value);
+        controller.debug_pad_button_state.d_up.Assign(current_status.value);
+        break;
+    case Settings::NativeButton::DRight:
+        controller.npad_button_state.right.Assign(current_status.value);
+        controller.debug_pad_button_state.d_right.Assign(current_status.value);
+        break;
+    case Settings::NativeButton::DDown:
+        controller.npad_button_state.down.Assign(current_status.value);
+        controller.debug_pad_button_state.d_down.Assign(current_status.value);
+        break;
+    case Settings::NativeButton::SL:
+        controller.npad_button_state.left_sl.Assign(current_status.value);
+        controller.npad_button_state.right_sl.Assign(current_status.value);
+        break;
+    case Settings::NativeButton::SR:
+        controller.npad_button_state.left_sr.Assign(current_status.value);
+        controller.npad_button_state.right_sr.Assign(current_status.value);
+        break;
+    case Settings::NativeButton::Home:
+        if (!system_buttons_enabled) {
+            break;
+        }
+        controller.home_button_state.home.Assign(current_status.value);
+        break;
+    case Settings::NativeButton::Screenshot:
+        if (!system_buttons_enabled) {
+            break;
+        }
+        controller.capture_button_state.capture.Assign(current_status.value);
+        break;
+    }
+
+    lock.unlock();
+
     if (!is_connected) {
         if (npad_id_type == NpadIdType::Player1 && npad_type != NpadStyleIndex::Handheld) {
             Connect();
@@ -643,7 +648,7 @@ void EmulatedController::SetStick(const Common::Input::CallbackStatus& callback,
     if (index >= controller.stick_values.size()) {
         return;
     }
-    std::lock_guard lock{mutex};
+    std::unique_lock lock{mutex};
     const auto stick_value = TransformToStick(callback);
 
     // Only read stick values that have the same uuid or are over the threshold to avoid flapping
@@ -659,6 +664,7 @@ void EmulatedController::SetStick(const Common::Input::CallbackStatus& callback,
     if (is_configuring) {
         controller.analog_stick_state.left = {};
         controller.analog_stick_state.right = {};
+        lock.unlock();
         TriggerOnChange(ControllerTriggerType::Stick, false);
         return;
     }
@@ -685,6 +691,7 @@ void EmulatedController::SetStick(const Common::Input::CallbackStatus& callback,
         break;
     }
 
+    lock.unlock();
     TriggerOnChange(ControllerTriggerType::Stick, true);
 }
 
@@ -693,7 +700,7 @@ void EmulatedController::SetTrigger(const Common::Input::CallbackStatus& callbac
     if (index >= controller.trigger_values.size()) {
         return;
     }
-    std::lock_guard lock{mutex};
+    std::unique_lock lock{mutex};
     const auto trigger_value = TransformToTrigger(callback);
 
     // Only read trigger values that have the same uuid or are pressed once
@@ -709,6 +716,7 @@ void EmulatedController::SetTrigger(const Common::Input::CallbackStatus& callbac
     if (is_configuring) {
         controller.gc_trigger_state.left = 0;
         controller.gc_trigger_state.right = 0;
+        lock.unlock();
         TriggerOnChange(ControllerTriggerType::Trigger, false);
         return;
     }
@@ -727,6 +735,7 @@ void EmulatedController::SetTrigger(const Common::Input::CallbackStatus& callbac
         break;
     }
 
+    lock.unlock();
     TriggerOnChange(ControllerTriggerType::Trigger, true);
 }
 
@@ -735,7 +744,7 @@ void EmulatedController::SetMotion(const Common::Input::CallbackStatus& callback
     if (index >= controller.motion_values.size()) {
         return;
     }
-    std::lock_guard lock{mutex};
+    std::unique_lock lock{mutex};
     auto& raw_status = controller.motion_values[index].raw_status;
     auto& emulated = controller.motion_values[index].emulated;
 
@@ -756,6 +765,7 @@ void EmulatedController::SetMotion(const Common::Input::CallbackStatus& callback
     force_update_motion = raw_status.force_update;
 
     if (is_configuring) {
+        lock.unlock();
         TriggerOnChange(ControllerTriggerType::Motion, false);
         return;
     }
@@ -767,6 +777,7 @@ void EmulatedController::SetMotion(const Common::Input::CallbackStatus& callback
     motion.orientation = emulated.GetOrientation();
     motion.is_at_rest = !emulated.IsMoving(motion_sensitivity);
 
+    lock.unlock();
     TriggerOnChange(ControllerTriggerType::Motion, true);
 }
 
@@ -775,10 +786,11 @@ void EmulatedController::SetBattery(const Common::Input::CallbackStatus& callbac
     if (index >= controller.battery_values.size()) {
         return;
     }
-    std::lock_guard lock{mutex};
+    std::unique_lock lock{mutex};
     controller.battery_values[index] = TransformToBattery(callback);
 
     if (is_configuring) {
+        lock.unlock();
         TriggerOnChange(ControllerTriggerType::Battery, false);
         return;
     }
@@ -835,6 +847,8 @@ void EmulatedController::SetBattery(const Common::Input::CallbackStatus& callbac
         };
         break;
     }
+
+    lock.unlock();
     TriggerOnChange(ControllerTriggerType::Battery, true);
 }
 
@@ -932,6 +946,7 @@ void EmulatedController::SetSupportedNpadStyleTag(NpadStyleTag supported_styles)
 }
 
 bool EmulatedController::IsControllerFullkey(bool use_temporary_value) const {
+    std::lock_guard lock{mutex};
     const auto type = is_configuring && use_temporary_value ? tmp_npad_type : npad_type;
     switch (type) {
     case NpadStyleIndex::ProController:
@@ -947,6 +962,7 @@ bool EmulatedController::IsControllerFullkey(bool use_temporary_value) const {
 }
 
 bool EmulatedController::IsControllerSupported(bool use_temporary_value) const {
+    std::lock_guard lock{mutex};
     const auto type = is_configuring && use_temporary_value ? tmp_npad_type : npad_type;
     switch (type) {
     case NpadStyleIndex::ProController:
@@ -982,40 +998,43 @@ void EmulatedController::Connect(bool use_temporary_value) {
         LOG_ERROR(Service_HID, "Controller type {} is not supported", type);
         return;
     }
-    {
-        std::lock_guard lock{mutex};
-        if (is_configuring) {
-            tmp_is_connected = true;
-            TriggerOnChange(ControllerTriggerType::Connected, false);
-            return;
-        }
 
-        if (is_connected) {
-            return;
-        }
-        is_connected = true;
+    std::unique_lock lock{mutex};
+    if (is_configuring) {
+        tmp_is_connected = true;
+        TriggerOnChange(ControllerTriggerType::Connected, false);
+        return;
     }
+
+    if (is_connected) {
+        return;
+    }
+    is_connected = true;
+
+    lock.unlock();
     TriggerOnChange(ControllerTriggerType::Connected, true);
 }
 
 void EmulatedController::Disconnect() {
-    {
-        std::lock_guard lock{mutex};
-        if (is_configuring) {
-            tmp_is_connected = false;
-            TriggerOnChange(ControllerTriggerType::Disconnected, false);
-            return;
-        }
-
-        if (!is_connected) {
-            return;
-        }
-        is_connected = false;
+    std::unique_lock lock{mutex};
+    if (is_configuring) {
+        tmp_is_connected = false;
+        lock.unlock();
+        TriggerOnChange(ControllerTriggerType::Disconnected, false);
+        return;
     }
+
+    if (!is_connected) {
+        return;
+    }
+    is_connected = false;
+
+    lock.unlock();
     TriggerOnChange(ControllerTriggerType::Disconnected, true);
 }
 
 bool EmulatedController::IsConnected(bool get_temporary_value) const {
+    std::lock_guard lock{mutex};
     if (get_temporary_value && is_configuring) {
         return tmp_is_connected;
     }
@@ -1029,10 +1048,12 @@ bool EmulatedController::IsVibrationEnabled() const {
 }
 
 NpadIdType EmulatedController::GetNpadIdType() const {
+    std::lock_guard lock{mutex};
     return npad_id_type;
 }
 
 NpadStyleIndex EmulatedController::GetNpadStyleIndex(bool get_temporary_value) const {
+    std::lock_guard lock{mutex};
     if (get_temporary_value && is_configuring) {
         return tmp_npad_type;
     }
@@ -1040,27 +1061,28 @@ NpadStyleIndex EmulatedController::GetNpadStyleIndex(bool get_temporary_value) c
 }
 
 void EmulatedController::SetNpadStyleIndex(NpadStyleIndex npad_type_) {
-    {
-        std::lock_guard lock{mutex};
+    std::unique_lock lock{mutex};
 
-        if (is_configuring) {
-            if (tmp_npad_type == npad_type_) {
-                return;
-            }
-            tmp_npad_type = npad_type_;
-            TriggerOnChange(ControllerTriggerType::Type, false);
+    if (is_configuring) {
+        if (tmp_npad_type == npad_type_) {
             return;
         }
-
-        if (npad_type == npad_type_) {
-            return;
-        }
-        if (is_connected) {
-            LOG_WARNING(Service_HID, "Controller {} type changed while it's connected",
-                        NpadIdTypeToIndex(npad_id_type));
-        }
-        npad_type = npad_type_;
+        tmp_npad_type = npad_type_;
+        lock.unlock();
+        TriggerOnChange(ControllerTriggerType::Type, false);
+        return;
     }
+
+    if (npad_type == npad_type_) {
+        return;
+    }
+    if (is_connected) {
+        LOG_WARNING(Service_HID, "Controller {} type changed while it's connected",
+                    NpadIdTypeToIndex(npad_id_type));
+    }
+    npad_type = npad_type_;
+
+    lock.unlock();
     TriggerOnChange(ControllerTriggerType::Type, true);
 }
 
@@ -1088,30 +1110,37 @@ LedPattern EmulatedController::GetLedPattern() const {
 }
 
 ButtonValues EmulatedController::GetButtonsValues() const {
+    std::lock_guard lock{mutex};
     return controller.button_values;
 }
 
 SticksValues EmulatedController::GetSticksValues() const {
+    std::lock_guard lock{mutex};
     return controller.stick_values;
 }
 
 TriggerValues EmulatedController::GetTriggersValues() const {
+    std::lock_guard lock{mutex};
     return controller.trigger_values;
 }
 
 ControllerMotionValues EmulatedController::GetMotionValues() const {
+    std::lock_guard lock{mutex};
     return controller.motion_values;
 }
 
 ColorValues EmulatedController::GetColorsValues() const {
+    std::lock_guard lock{mutex};
     return controller.color_values;
 }
 
 BatteryValues EmulatedController::GetBatteryValues() const {
+    std::lock_guard lock{mutex};
     return controller.battery_values;
 }
 
 HomeButtonState EmulatedController::GetHomeButtons() const {
+    std::lock_guard lock{mutex};
     if (is_configuring) {
         return {};
     }
@@ -1119,6 +1148,7 @@ HomeButtonState EmulatedController::GetHomeButtons() const {
 }
 
 CaptureButtonState EmulatedController::GetCaptureButtons() const {
+    std::lock_guard lock{mutex};
     if (is_configuring) {
         return {};
     }
@@ -1126,6 +1156,7 @@ CaptureButtonState EmulatedController::GetCaptureButtons() const {
 }
 
 NpadButtonState EmulatedController::GetNpadButtons() const {
+    std::lock_guard lock{mutex};
     if (is_configuring) {
         return {};
     }
@@ -1133,6 +1164,7 @@ NpadButtonState EmulatedController::GetNpadButtons() const {
 }
 
 DebugPadButton EmulatedController::GetDebugPadButtons() const {
+    std::lock_guard lock{mutex};
     if (is_configuring) {
         return {};
     }
@@ -1140,6 +1172,7 @@ DebugPadButton EmulatedController::GetDebugPadButtons() const {
 }
 
 AnalogSticks EmulatedController::GetSticks() const {
+    std::lock_guard lock{mutex};
     if (is_configuring) {
         return {};
     }
@@ -1154,6 +1187,7 @@ AnalogSticks EmulatedController::GetSticks() const {
 }
 
 NpadGcTriggerState EmulatedController::GetTriggers() const {
+    std::lock_guard lock{mutex};
     if (is_configuring) {
         return {};
     }
@@ -1161,6 +1195,7 @@ NpadGcTriggerState EmulatedController::GetTriggers() const {
 }
 
 MotionState EmulatedController::GetMotions() const {
+    std::lock_guard lock{mutex};
     if (force_update_motion) {
         for (auto& device : motion_devices) {
             if (!device) {
@@ -1173,14 +1208,17 @@ MotionState EmulatedController::GetMotions() const {
 }
 
 ControllerColors EmulatedController::GetColors() const {
+    std::lock_guard lock{mutex};
     return controller.colors_state;
 }
 
 BatteryLevelState EmulatedController::GetBattery() const {
+    std::lock_guard lock{mutex};
     return controller.battery_state;
 }
 
 void EmulatedController::TriggerOnChange(ControllerTriggerType type, bool is_npad_service_update) {
+    std::lock_guard lock{callback_mutex};
     for (const auto& poller_pair : callback_list) {
         const ControllerUpdateCallback& poller = poller_pair.second;
         if (!is_npad_service_update && poller.is_npad_service) {
@@ -1193,13 +1231,13 @@ void EmulatedController::TriggerOnChange(ControllerTriggerType type, bool is_npa
 }
 
 int EmulatedController::SetCallback(ControllerUpdateCallback update_callback) {
-    std::lock_guard lock{mutex};
+    std::lock_guard lock{callback_mutex};
     callback_list.insert_or_assign(last_callback_key, std::move(update_callback));
     return last_callback_key++;
 }
 
 void EmulatedController::DeleteCallback(int key) {
-    std::lock_guard lock{mutex};
+    std::lock_guard lock{callback_mutex};
     const auto& iterator = callback_list.find(key);
     if (iterator == callback_list.end()) {
         LOG_ERROR(Input, "Tried to delete non-existent callback {}", key);

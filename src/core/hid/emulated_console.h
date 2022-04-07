@@ -183,6 +183,7 @@ private:
     TouchDevices touch_devices;
 
     mutable std::mutex mutex;
+    mutable std::mutex callback_mutex;
     std::unordered_map<int, ConsoleUpdateCallback> callback_list;
     int last_callback_key = 0;
 

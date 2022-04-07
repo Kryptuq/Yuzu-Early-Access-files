@@ -400,7 +400,7 @@ private:
      */
     void TriggerOnChange(ControllerTriggerType type, bool is_service_update);
 
-    NpadIdType npad_id_type;
+    const NpadIdType npad_id_type;
     NpadStyleIndex npad_type{NpadStyleIndex::None};
     NpadStyleTag supported_style_tag{NpadStyleSet::All};
     bool is_connected{false};
@@ -434,6 +434,7 @@ private:
     StickDevices tas_stick_devices;
 
     mutable std::mutex mutex;
+    mutable std::mutex callback_mutex;
     std::unordered_map<int, ControllerUpdateCallback> callback_list;
     int last_callback_key = 0;
 
