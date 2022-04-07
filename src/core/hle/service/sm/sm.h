@@ -22,7 +22,6 @@ class KClientPort;
 class KClientSession;
 class KernelCore;
 class KPort;
-class KServerPort;
 class SessionRequestHandler;
 } // namespace Kernel
 
@@ -48,7 +47,6 @@ private:
     ServiceManager& service_manager;
     bool is_initialized{};
     Kernel::KernelCore& kernel;
-    std::vector<Kernel::KServerPort*> server_ports;
 };
 
 class ServiceManager {

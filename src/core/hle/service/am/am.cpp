@@ -1337,7 +1337,7 @@ IApplicationFunctions::IApplicationFunctions(Core::System& system_)
         {200, nullptr, "GetLastApplicationExitReason"},
         {500, nullptr, "StartContinuousRecordingFlushForDebug"},
         {1000, nullptr, "CreateMovieMaker"},
-        {1001, nullptr, "PrepareForJit"},
+        {1001, &IApplicationFunctions::PrepareForJit, "PrepareForJit"},
     };
     // clang-format on
 
@@ -1785,6 +1785,13 @@ void IApplicationFunctions::GetHealthWarningDisappearedSystemEvent(Kernel::HLERe
     IPC::ResponseBuilder rb{ctx, 2, 1};
     rb.Push(ResultSuccess);
     rb.PushCopyObjects(health_warning_disappeared_system_event->GetReadableEvent());
+}
+
+void IApplicationFunctions::PrepareForJit(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_AM, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager, NVFlinger::NVFlinger& nvflinger,

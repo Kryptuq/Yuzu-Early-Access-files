@@ -336,6 +336,7 @@ private:
     void TryPopFromFriendInvitationStorageChannel(Kernel::HLERequestContext& ctx);
     void GetNotificationStorageChannelEvent(Kernel::HLERequestContext& ctx);
     void GetHealthWarningDisappearedSystemEvent(Kernel::HLERequestContext& ctx);
+    void PrepareForJit(Kernel::HLERequestContext& ctx);
 
     KernelHelpers::ServiceContext service_context;
 

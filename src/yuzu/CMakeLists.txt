@@ -99,9 +99,6 @@ add_executable(yuzu
     configuration/configure_profile_manager.cpp
     configuration/configure_profile_manager.h
     configuration/configure_profile_manager.ui
-    configuration/configure_ringcon.cpp
-    configuration/configure_ringcon.h
-    configuration/configure_ringcon.ui
     configuration/configure_network.cpp
     configuration/configure_network.h
     configuration/configure_network.ui

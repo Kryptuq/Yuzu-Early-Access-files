@@ -96,15 +96,15 @@ struct KernelCore::Impl {
 
         process_list.clear();
 
-        // Close all open server ports.
-        std::unordered_set<KServerPort*> server_ports_;
+        // Close all open server sessions and ports.
+        std::unordered_set<KAutoObject*> server_objects_;
         {
-            std::lock_guard lk(server_ports_lock);
-            server_ports_ = server_ports;
-            server_ports.clear();
+            std::lock_guard lk(server_objects_lock);
+            server_objects_ = server_objects;
+            server_objects.clear();
         }
-        for (auto* server_port : server_ports_) {
-            server_port->Close();
+        for (auto* server_object : server_objects_) {
+            server_object->Close();
         }
 
         // Ensures all service threads gracefully shutdown.
@@ -140,7 +140,6 @@ struct KernelCore::Impl {
         CleanupObject(font_shared_mem);
         CleanupObject(irs_shared_mem);
         CleanupObject(time_shared_mem);
-        CleanupObject(hidbus_shared_mem);
         CleanupObject(system_resource_limit);
 
         for (u32 core_id = 0; core_id < Core::Hardware::NUM_CPU_CORES; core_id++) {
@@ -181,8 +180,8 @@ struct KernelCore::Impl {
         {
             std::lock_guard lk(registered_objects_lock);
             if (registered_objects.size()) {
-                LOG_DEBUG(Kernel, "{} kernel objects were dangling on shutdown!",
-                          registered_objects.size());
+                LOG_CRITICAL(Kernel, "{} kernel objects were dangling on shutdown!",
+                             registered_objects.size());
                 registered_objects.clear();
             }
         }
@@ -623,20 +622,16 @@ struct KernelCore::Impl {
         constexpr std::size_t font_size{0x1100000};
         constexpr std::size_t irs_size{0x8000};
         constexpr std::size_t time_size{0x1000};
-        constexpr std::size_t hidbus_size{0x1000};
 
         const PAddr hid_phys_addr{system_pool.GetAddress()};
         const PAddr font_phys_addr{system_pool.GetAddress() + hid_size};
         const PAddr irs_phys_addr{system_pool.GetAddress() + hid_size + font_size};
         const PAddr time_phys_addr{system_pool.GetAddress() + hid_size + font_size + irs_size};
-        const PAddr hidbus_phys_addr{system_pool.GetAddress() + hid_size + font_size + irs_size +
-                                     time_size};
 
         hid_shared_mem = KSharedMemory::Create(system.Kernel());
         font_shared_mem = KSharedMemory::Create(system.Kernel());
         irs_shared_mem = KSharedMemory::Create(system.Kernel());
         time_shared_mem = KSharedMemory::Create(system.Kernel());
-        hidbus_shared_mem = KSharedMemory::Create(system.Kernel());
 
         hid_shared_mem->Initialize(system.DeviceMemory(), nullptr,
                                    {hid_phys_addr, hid_size / PageSize},
@@ -654,10 +649,6 @@ struct KernelCore::Impl {
                                     {time_phys_addr, time_size / PageSize},
                                     Svc::MemoryPermission::None, Svc::MemoryPermission::Read,
                                     time_phys_addr, time_size, "Time:SharedMemory");
-        hidbus_shared_mem->Initialize(system.DeviceMemory(), nullptr,
-                                      {hidbus_phys_addr, hidbus_size / PageSize},
-                                      Svc::MemoryPermission::None, Svc::MemoryPermission::Read,
-                                      hidbus_phys_addr, hidbus_size, "HidBus:SharedMemory");
     }
 
     KClientPort* CreateNamedServicePort(std::string name) {
@@ -668,11 +659,18 @@ struct KernelCore::Impl {
         }
 
         KClientPort* port = &search->second(system.ServiceManager(), system);
-        {
-            std::lock_guard lk(server_ports_lock);
-            server_ports.insert(&port->GetParent()->GetServerPort());
-        }
+        RegisterServerObject(&port->GetParent()->GetServerPort());
         return port;
+    }
+
+    void RegisterServerObject(KAutoObject* server_object) {
+        std::lock_guard lk(server_objects_lock);
+        server_objects.insert(server_object);
+    }
+
+    void UnregisterServerObject(KAutoObject* server_object) {
+        std::lock_guard lk(server_objects_lock);
+        server_objects.erase(server_object);
     }
 
     std::weak_ptr<Kernel::ServiceThread> CreateServiceThread(KernelCore& kernel,
@@ -702,7 +700,7 @@ struct KernelCore::Impl {
         service_threads_manager.QueueWork([this]() { service_threads.clear(); });
     }
 
-    std::mutex server_ports_lock;
+    std::mutex server_objects_lock;
     std::mutex registered_objects_lock;
     std::mutex registered_in_use_objects_lock;
 
@@ -732,7 +730,7 @@ struct KernelCore::Impl {
     /// the ConnectToPort SVC.
     std::unordered_map<std::string, ServiceInterfaceFactory> service_interface_factory;
     NamedPortTable named_ports;
-    std::unordered_set<KServerPort*> server_ports;
+    std::unordered_set<KAutoObject*> server_objects;
     std::unordered_set<KAutoObject*> registered_objects;
     std::unordered_set<KAutoObject*> registered_in_use_objects;
 
@@ -750,7 +748,6 @@ struct KernelCore::Impl {
     Kernel::KSharedMemory* font_shared_mem{};
     Kernel::KSharedMemory* irs_shared_mem{};
     Kernel::KSharedMemory* time_shared_mem{};
-    Kernel::KSharedMemory* hidbus_shared_mem{};
 
     // Memory layout
     std::unique_ptr<KMemoryLayout> memory_layout;
@@ -938,6 +935,14 @@ KClientPort* KernelCore::CreateNamedServicePort(std::string name) {
     return impl->CreateNamedServicePort(std::move(name));
 }
 
+void KernelCore::RegisterServerObject(KAutoObject* server_object) {
+    impl->RegisterServerObject(server_object);
+}
+
+void KernelCore::UnregisterServerObject(KAutoObject* server_object) {
+    impl->UnregisterServerObject(server_object);
+}
+
 void KernelCore::RegisterKernelObject(KAutoObject* object) {
     std::lock_guard lk(impl->registered_objects_lock);
     impl->registered_objects.insert(object);
@@ -1040,14 +1045,6 @@ Kernel::KSharedMemory& KernelCore::GetTimeSharedMem() {
 
 const Kernel::KSharedMemory& KernelCore::GetTimeSharedMem() const {
     return *impl->time_shared_mem;
-}
-
-Kernel::KSharedMemory& KernelCore::GetHidBusSharedMem() {
-    return *impl->hidbus_shared_mem;
-}
-
-const Kernel::KSharedMemory& KernelCore::GetHidBusSharedMem() const {
-    return *impl->hidbus_shared_mem;
 }
 
 void KernelCore::Suspend(bool in_suspention) {

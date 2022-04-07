@@ -1207,12 +1207,4 @@ void EmulatedController::DeleteCallback(int key) {
     }
     callback_list.erase(iterator);
 }
-
-void EmulatedController::RemoveServiceCallbacks() {
-    std::lock_guard lock{mutex};
-    const auto count = std::erase_if(
-        callback_list, [](const auto& callback) { return callback.second.is_npad_service; });
-    LOG_DEBUG(Input, "Elements deleted {}", count);
-}
-
 } // namespace Core::HID

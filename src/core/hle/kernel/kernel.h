@@ -195,6 +195,14 @@ public:
     /// Opens a port to a service previously registered with RegisterNamedService.
     KClientPort* CreateNamedServicePort(std::string name);
 
+    /// Registers a server session or port with the gobal emulation state, to be freed on shutdown.
+    /// This is necessary because we do not emulate processes for HLE sessions and ports.
+    void RegisterServerObject(KAutoObject* server_object);
+
+    /// Unregisters a server session or port previously registered with RegisterServerSession when
+    /// it was destroyed during the current emulation session.
+    void UnregisterServerObject(KAutoObject* server_object);
+
     /// Registers all kernel objects with the global emulation state, this is purely for tracking
     /// leaks after emulation has been shutdown.
     void RegisterKernelObject(KAutoObject* object);
@@ -255,12 +263,6 @@ public:
 
     /// Gets the shared memory object for Time services.
     const Kernel::KSharedMemory& GetTimeSharedMem() const;
-
-    /// Gets the shared memory object for HIDBus services.
-    Kernel::KSharedMemory& GetHidBusSharedMem();
-
-    /// Gets the shared memory object for HIDBus services.
-    const Kernel::KSharedMemory& GetHidBusSharedMem() const;
 
     /// Suspend/unsuspend the OS.
     void Suspend(bool in_suspention);

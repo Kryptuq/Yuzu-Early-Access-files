@@ -32,6 +32,7 @@
 #include "core/hle/service/glue/glue.h"
 #include "core/hle/service/grc/grc.h"
 #include "core/hle/service/hid/hid.h"
+#include "core/hle/service/jit/jit.h"
 #include "core/hle/service/lbl/lbl.h"
 #include "core/hle/service/ldn/ldn.h"
 #include "core/hle/service/ldr/ldr.h"
@@ -262,6 +263,7 @@ Services::Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system
     Glue::InstallInterfaces(system);
     GRC::InstallInterfaces(*sm, system);
     HID::InstallInterfaces(*sm, system);
+    JIT::InstallInterfaces(*sm, system);
     LBL::InstallInterfaces(*sm, system);
     LDN::InstallInterfaces(*sm, system);
     LDR::InstallInterfaces(*sm, system);

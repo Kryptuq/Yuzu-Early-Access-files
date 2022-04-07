@@ -49,6 +49,9 @@ void KServerSession::Destroy() {
 
     // Release host emulation members.
     manager.reset();
+
+    // Ensure that the global list tracking server objects does not hold on to a reference.
+    kernel.UnregisterServerObject(this);
 }
 
 void KServerSession::OnClientClosed() {

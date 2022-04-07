@@ -89,9 +89,7 @@ public:
     explicit KAutoObject(KernelCore& kernel_) : kernel(kernel_) {
         RegisterWithKernel();
     }
-    virtual ~KAutoObject() {
-        UnregisterWithKernel();
-    }
+    virtual ~KAutoObject() = default;
 
     static KAutoObject* Create(KAutoObject* ptr);
 
@@ -168,6 +166,7 @@ public:
         // If ref count hits zero, destroy the object.
         if (cur_ref_count - 1 == 0) {
             this->Destroy();
+            this->UnregisterWithKernel();
         }
     }
 

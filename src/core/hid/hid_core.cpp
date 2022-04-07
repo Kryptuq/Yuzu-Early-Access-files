@@ -211,17 +211,4 @@ void HIDCore::UnloadInputDevices() {
     devices->UnloadInput();
 }
 
-void HIDCore::RemoveServiceCallbacks() {
-    player_1->RemoveServiceCallbacks();
-    player_2->RemoveServiceCallbacks();
-    player_3->RemoveServiceCallbacks();
-    player_4->RemoveServiceCallbacks();
-    player_5->RemoveServiceCallbacks();
-    player_6->RemoveServiceCallbacks();
-    player_7->RemoveServiceCallbacks();
-    player_8->RemoveServiceCallbacks();
-    other->RemoveServiceCallbacks();
-    handheld->RemoveServiceCallbacks();
-}
-
 } // namespace Core::HID
