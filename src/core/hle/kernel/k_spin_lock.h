@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <mutex>
+#include <atomic>
 
 #include "core/hle/kernel/k_scoped_lock.h"
 
@@ -25,7 +25,7 @@ public:
     [[nodiscard]] bool TryLock();
 
 private:
-    std::mutex lck;
+    std::atomic_flag lck = ATOMIC_FLAG_INIT;
 };
 
 // TODO(bunnei): Alias for now, in case we want to implement these accurately in the future.

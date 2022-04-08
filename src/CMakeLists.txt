@@ -65,12 +65,14 @@ if (MSVC)
         /we4305 # 'context': truncation from 'type1' to 'type2'
         /we4388 # 'expression': signed/unsigned mismatch
         /we4389 # 'operator': signed/unsigned mismatch
+        /we4505 # 'function': unreferenced local function has been removed
         /we4547 # 'operator': operator before comma has no effect; expected operator with side-effect
         /we4549 # 'operator1': operator before comma has no effect; did you intend 'operator2'?
         /we4555 # Expression has no effect; expected expression with side-effect
         /we4715 # 'function': not all control paths return a value
         /we4834 # Discarding return value of function with 'nodiscard' attribute
         /we5038 # data member 'member1' will be initialized after data member 'member2'
+        /we5245 # 'function': unreferenced function with internal linkage has been removed
     )
 
     if (ARCHITECTURE_x86_64)

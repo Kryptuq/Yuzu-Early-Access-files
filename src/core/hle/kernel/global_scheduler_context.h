@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "common/common_types.h"
+#include "common/spin_lock.h"
 #include "core/hardware_properties.h"
 #include "core/hle/kernel/k_priority_queue.h"
 #include "core/hle/kernel/k_scheduler_lock.h"
@@ -79,7 +80,7 @@ private:
 
     /// Lists all thread ids that aren't deleted/etc.
     std::vector<KThread*> thread_list;
-    std::mutex global_list_guard;
+    Common::SpinLock global_list_guard{};
 };
 
 } // namespace Kernel

@@ -2,10 +2,9 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <mutex>
-
 #include "common/assert.h"
 #include "common/fiber.h"
+#include "common/spin_lock.h"
 #include "common/virtual_buffer.h"
 
 #include <boost/context/detail/fcontext.hpp>
@@ -20,7 +19,7 @@ struct Fiber::FiberImpl {
     VirtualBuffer<u8> stack;
     VirtualBuffer<u8> rewind_stack;
 
-    std::mutex guard;
+    SpinLock guard{};
     std::function<void(void*)> entry_point;
     std::function<void(void*)> rewind_point;
     void* rewind_parameter{};

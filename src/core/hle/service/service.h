@@ -9,6 +9,7 @@
 #include <string>
 #include <boost/container/flat_map.hpp>
 #include "common/common_types.h"
+#include "common/spin_lock.h"
 #include "core/hle/kernel/hle_ipc.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -89,7 +90,7 @@ protected:
     using HandlerFnP = void (Self::*)(Kernel::HLERequestContext&);
 
     /// Used to gain exclusive access to the service members, e.g. from CoreTiming thread.
-    [[nodiscard]] std::scoped_lock<std::mutex> LockService() {
+    [[nodiscard]] std::scoped_lock<Common::SpinLock> LockService() {
         return std::scoped_lock{lock_service};
     }
 
@@ -134,7 +135,7 @@ private:
     boost::container::flat_map<u32, FunctionInfoBase> handlers_tipc;
 
     /// Used to gain exclusive access to the service members, e.g. from CoreTiming thread.
-    std::mutex lock_service;
+    Common::SpinLock lock_service;
 };
 
 /**
