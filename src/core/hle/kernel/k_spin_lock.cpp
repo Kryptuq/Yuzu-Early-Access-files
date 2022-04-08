@@ -35,20 +35,15 @@ void ThreadPause() {
 namespace Kernel {
 
 void KSpinLock::Lock() {
-    while (lck.test_and_set(std::memory_order_acquire)) {
-        ThreadPause();
-    }
+    lck.lock();
 }
 
 void KSpinLock::Unlock() {
-    lck.clear(std::memory_order_release);
+    lck.unlock();
 }
 
 bool KSpinLock::TryLock() {
-    if (lck.test_and_set(std::memory_order_acquire)) {
-        return false;
-    }
-    return true;
+    return lck.try_lock();
 }
 
 } // namespace Kernel

@@ -6,12 +6,9 @@
 
 #include <cstddef>
 #include <memory>
+#include <mutex>
 
 #include "core/arm/arm_interface.h"
-
-namespace Common {
-class SpinLock;
-}
 
 namespace Kernel {
 class KScheduler;
@@ -91,7 +88,7 @@ private:
     Core::System& system;
     Kernel::KScheduler& scheduler;
     Core::CPUInterrupts& interrupts;
-    std::unique_ptr<Common::SpinLock> guard;
+    std::unique_ptr<std::mutex> guard;
     std::unique_ptr<Core::ARM_Interface> arm_interface;
 };
 

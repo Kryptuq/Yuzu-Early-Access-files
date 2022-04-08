@@ -197,27 +197,27 @@ void EmulatedConsole::SetTouch(const Common::Input::CallbackStatus& callback, st
 }
 
 ConsoleMotionValues EmulatedConsole::GetMotionValues() const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     return console.motion_values;
 }
 
 TouchValues EmulatedConsole::GetTouchValues() const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     return console.touch_values;
 }
 
 ConsoleMotion EmulatedConsole::GetMotion() const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     return console.motion_state;
 }
 
 TouchFingerState EmulatedConsole::GetTouch() const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     return console.touch_state;
 }
 
 void EmulatedConsole::TriggerOnChange(ConsoleTriggerType type) {
-    std::lock_guard lock{callback_mutex};
+    std::scoped_lock lock{callback_mutex};
     for (const auto& poller_pair : callback_list) {
         const ConsoleUpdateCallback& poller = poller_pair.second;
         if (poller.on_change) {
@@ -227,13 +227,13 @@ void EmulatedConsole::TriggerOnChange(ConsoleTriggerType type) {
 }
 
 int EmulatedConsole::SetCallback(ConsoleUpdateCallback update_callback) {
-    std::lock_guard lock{callback_mutex};
+    std::scoped_lock lock{callback_mutex};
     callback_list.insert_or_assign(last_callback_key, update_callback);
     return last_callback_key++;
 }
 
 void EmulatedConsole::DeleteCallback(int key) {
-    std::lock_guard lock{callback_mutex};
+    std::scoped_lock lock{callback_mutex};
     const auto& iterator = callback_list.find(key);
     if (iterator == callback_list.end()) {
         LOG_ERROR(Input, "Tried to delete non-existent callback {}", key);

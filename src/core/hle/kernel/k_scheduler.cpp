@@ -705,7 +705,7 @@ void KScheduler::Unload(KThread* thread) {
         prev_thread = nullptr;
     }
 
-    thread->context_guard.Unlock();
+    thread->context_guard.unlock();
 }
 
 void KScheduler::Reload(KThread* thread) {
@@ -794,13 +794,13 @@ void KScheduler::SwitchToCurrent() {
         do {
             auto next_thread = current_thread.load();
             if (next_thread != nullptr) {
-                const auto locked = next_thread->context_guard.TryLock();
+                const auto locked = next_thread->context_guard.try_lock();
                 if (state.needs_scheduling.load()) {
-                    next_thread->context_guard.Unlock();
+                    next_thread->context_guard.unlock();
                     break;
                 }
                 if (next_thread->GetActiveCore() != core_id) {
-                    next_thread->context_guard.Unlock();
+                    next_thread->context_guard.unlock();
                     break;
                 }
                 if (!locked) {

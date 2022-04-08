@@ -353,17 +353,17 @@ void EmulatedController::DisableConfiguration() {
 }
 
 void EmulatedController::EnableSystemButtons() {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     system_buttons_enabled = true;
 }
 
 void EmulatedController::DisableSystemButtons() {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     system_buttons_enabled = false;
 }
 
 void EmulatedController::ResetSystemButtons() {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     controller.home_button_state.home.Assign(false);
     controller.capture_button_state.capture.Assign(false);
 }
@@ -946,7 +946,7 @@ void EmulatedController::SetSupportedNpadStyleTag(NpadStyleTag supported_styles)
 }
 
 bool EmulatedController::IsControllerFullkey(bool use_temporary_value) const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     const auto type = is_configuring && use_temporary_value ? tmp_npad_type : npad_type;
     switch (type) {
     case NpadStyleIndex::ProController:
@@ -962,7 +962,7 @@ bool EmulatedController::IsControllerFullkey(bool use_temporary_value) const {
 }
 
 bool EmulatedController::IsControllerSupported(bool use_temporary_value) const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     const auto type = is_configuring && use_temporary_value ? tmp_npad_type : npad_type;
     switch (type) {
     case NpadStyleIndex::ProController:
@@ -1002,6 +1002,7 @@ void EmulatedController::Connect(bool use_temporary_value) {
     std::unique_lock lock{mutex};
     if (is_configuring) {
         tmp_is_connected = true;
+        lock.unlock();
         TriggerOnChange(ControllerTriggerType::Connected, false);
         return;
     }
@@ -1034,7 +1035,7 @@ void EmulatedController::Disconnect() {
 }
 
 bool EmulatedController::IsConnected(bool get_temporary_value) const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     if (get_temporary_value && is_configuring) {
         return tmp_is_connected;
     }
@@ -1048,12 +1049,12 @@ bool EmulatedController::IsVibrationEnabled() const {
 }
 
 NpadIdType EmulatedController::GetNpadIdType() const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     return npad_id_type;
 }
 
 NpadStyleIndex EmulatedController::GetNpadStyleIndex(bool get_temporary_value) const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     if (get_temporary_value && is_configuring) {
         return tmp_npad_type;
     }
@@ -1110,37 +1111,37 @@ LedPattern EmulatedController::GetLedPattern() const {
 }
 
 ButtonValues EmulatedController::GetButtonsValues() const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     return controller.button_values;
 }
 
 SticksValues EmulatedController::GetSticksValues() const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     return controller.stick_values;
 }
 
 TriggerValues EmulatedController::GetTriggersValues() const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     return controller.trigger_values;
 }
 
 ControllerMotionValues EmulatedController::GetMotionValues() const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     return controller.motion_values;
 }
 
 ColorValues EmulatedController::GetColorsValues() const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     return controller.color_values;
 }
 
 BatteryValues EmulatedController::GetBatteryValues() const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     return controller.battery_values;
 }
 
 HomeButtonState EmulatedController::GetHomeButtons() const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     if (is_configuring) {
         return {};
     }
@@ -1148,7 +1149,7 @@ HomeButtonState EmulatedController::GetHomeButtons() const {
 }
 
 CaptureButtonState EmulatedController::GetCaptureButtons() const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     if (is_configuring) {
         return {};
     }
@@ -1156,7 +1157,7 @@ CaptureButtonState EmulatedController::GetCaptureButtons() const {
 }
 
 NpadButtonState EmulatedController::GetNpadButtons() const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     if (is_configuring) {
         return {};
     }
@@ -1164,7 +1165,7 @@ NpadButtonState EmulatedController::GetNpadButtons() const {
 }
 
 DebugPadButton EmulatedController::GetDebugPadButtons() const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     if (is_configuring) {
         return {};
     }
@@ -1172,22 +1173,27 @@ DebugPadButton EmulatedController::GetDebugPadButtons() const {
 }
 
 AnalogSticks EmulatedController::GetSticks() const {
-    std::lock_guard lock{mutex};
+    std::unique_lock lock{mutex};
+
     if (is_configuring) {
         return {};
     }
+
     // Some drivers like stick from buttons need constant refreshing
     for (auto& device : stick_devices) {
         if (!device) {
             continue;
         }
+        lock.unlock();
         device->SoftUpdate();
+        lock.lock();
     }
+
     return controller.analog_stick_state;
 }
 
 NpadGcTriggerState EmulatedController::GetTriggers() const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     if (is_configuring) {
         return {};
     }
@@ -1195,30 +1201,35 @@ NpadGcTriggerState EmulatedController::GetTriggers() const {
 }
 
 MotionState EmulatedController::GetMotions() const {
-    std::lock_guard lock{mutex};
+    std::unique_lock lock{mutex};
+
+    // Some drivers like mouse motion need constant refreshing
     if (force_update_motion) {
         for (auto& device : motion_devices) {
             if (!device) {
                 continue;
             }
+            lock.unlock();
             device->ForceUpdate();
+            lock.lock();
         }
     }
+
     return controller.motion_state;
 }
 
 ControllerColors EmulatedController::GetColors() const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     return controller.colors_state;
 }
 
 BatteryLevelState EmulatedController::GetBattery() const {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     return controller.battery_state;
 }
 
 void EmulatedController::TriggerOnChange(ControllerTriggerType type, bool is_npad_service_update) {
-    std::lock_guard lock{callback_mutex};
+    std::scoped_lock lock{callback_mutex};
     for (const auto& poller_pair : callback_list) {
         const ControllerUpdateCallback& poller = poller_pair.second;
         if (!is_npad_service_update && poller.is_npad_service) {
@@ -1231,13 +1242,13 @@ void EmulatedController::TriggerOnChange(ControllerTriggerType type, bool is_npa
 }
 
 int EmulatedController::SetCallback(ControllerUpdateCallback update_callback) {
-    std::lock_guard lock{callback_mutex};
+    std::scoped_lock lock{callback_mutex};
     callback_list.insert_or_assign(last_callback_key, std::move(update_callback));
     return last_callback_key++;
 }
 
 void EmulatedController::DeleteCallback(int key) {
-    std::lock_guard lock{callback_mutex};
+    std::scoped_lock lock{callback_mutex};
     const auto& iterator = callback_list.find(key);
     if (iterator == callback_list.end()) {
         LOG_ERROR(Input, "Tried to delete non-existent callback {}", key);
