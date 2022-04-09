@@ -46,6 +46,7 @@ enum class Protocol : u32 {
 
 enum class OptName : u32 {
     REUSEADDR = 0x4,
+    KEEPALIVE = 0x8,
     BROADCAST = 0x20,
     LINGER = 0x80,
     SNDBUF = 0x1001,

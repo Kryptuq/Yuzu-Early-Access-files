@@ -689,6 +689,9 @@ Errno BSD::SetSockOptImpl(s32 fd, u32 level, OptName optname, size_t optlen, con
     case OptName::REUSEADDR:
         ASSERT(value == 0 || value == 1);
         return Translate(socket->SetReuseAddr(value != 0));
+    case OptName::KEEPALIVE:
+        ASSERT(value == 0 || value == 1);
+        return Translate(socket->SetKeepAlive(value != 0));
     case OptName::BROADCAST:
         ASSERT(value == 0 || value == 1);
         return Translate(socket->SetBroadcast(value != 0));

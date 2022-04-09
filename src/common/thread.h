@@ -17,7 +17,7 @@ namespace Common {
 class Event {
 public:
     void Set() {
-        std::lock_guard lk{mutex};
+        std::scoped_lock lk{mutex};
         if (!is_set) {
             is_set = true;
             condvar.notify_one();

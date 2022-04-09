@@ -258,7 +258,7 @@ void ShaderCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
             [this, key, env = std::move(env), &state, &callback](Context* ctx) mutable {
                 ctx->pools.ReleaseContents();
                 auto pipeline{CreateComputePipeline(ctx->pools, key, env)};
-                std::lock_guard lock{state.mutex};
+                std::scoped_lock lock{state.mutex};
                 if (pipeline) {
                     compute_cache.emplace(key, std::move(pipeline));
                 }
@@ -280,7 +280,7 @@ void ShaderCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
                 }
                 ctx->pools.ReleaseContents();
                 auto pipeline{CreateGraphicsPipeline(ctx->pools, key, MakeSpan(env_ptrs), false)};
-                std::lock_guard lock{state.mutex};
+                std::scoped_lock lock{state.mutex};
                 if (pipeline) {
                     graphics_cache.emplace(key, std::move(pipeline));
                 }

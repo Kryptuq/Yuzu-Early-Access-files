@@ -14,7 +14,7 @@ HosBinderDriverServer::HosBinderDriverServer(Core::System& system_)
 HosBinderDriverServer::~HosBinderDriverServer() {}
 
 u64 HosBinderDriverServer::RegisterProducer(std::unique_ptr<android::IBinder>&& binder) {
-    std::lock_guard lk{lock};
+    std::scoped_lock lk{lock};
 
     last_id++;
 
@@ -24,7 +24,7 @@ u64 HosBinderDriverServer::RegisterProducer(std::unique_ptr<android::IBinder>&& 
 }
 
 android::IBinder* HosBinderDriverServer::TryGetProducer(u64 id) {
-    std::lock_guard lk{lock};
+    std::scoped_lock lk{lock};
 
     if (auto search = producers.find(id); search != producers.end()) {
         return search->second.get();

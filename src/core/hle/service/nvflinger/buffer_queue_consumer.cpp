@@ -19,7 +19,7 @@ BufferQueueConsumer::~BufferQueueConsumer() = default;
 
 Status BufferQueueConsumer::AcquireBuffer(BufferItem* out_buffer,
                                           std::chrono::nanoseconds expected_present) {
-    std::scoped_lock lock(core->mutex);
+    std::scoped_lock lock{core->mutex};
 
     // Check that the consumer doesn't currently have the maximum number of buffers acquired.
     const s32 num_acquired_buffers{
@@ -120,7 +120,7 @@ Status BufferQueueConsumer::ReleaseBuffer(s32 slot, u64 frame_number, const Fenc
 
     std::shared_ptr<IProducerListener> listener;
     {
-        std::scoped_lock lock(core->mutex);
+        std::scoped_lock lock{core->mutex};
 
         // If the frame number has changed because the buffer has been reallocated, we can ignore
         // this ReleaseBuffer for the old buffer.
@@ -180,7 +180,7 @@ Status BufferQueueConsumer::Connect(std::shared_ptr<IConsumerListener> consumer_
 
     LOG_DEBUG(Service_NVFlinger, "controlled_by_app={}", controlled_by_app);
 
-    std::scoped_lock lock(core->mutex);
+    std::scoped_lock lock{core->mutex};
 
     if (core->is_abandoned) {
         LOG_ERROR(Service_NVFlinger, "BufferQueue has been abandoned");
@@ -199,7 +199,7 @@ Status BufferQueueConsumer::GetReleasedBuffers(u64* out_slot_mask) {
         return Status::BadValue;
     }
 
-    std::scoped_lock lock(core->mutex);
+    std::scoped_lock lock{core->mutex};
 
     if (core->is_abandoned) {
         LOG_ERROR(Service_NVFlinger, "BufferQueue has been abandoned");

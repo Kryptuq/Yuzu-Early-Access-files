@@ -19,6 +19,7 @@ public:
 
 private:
     void GetAddrInfoRequest(Kernel::HLERequestContext& ctx);
+    void GetAddrInfoRequestWithOptions(Kernel::HLERequestContext& ctx);
 };
 
 } // namespace Service::Sockets

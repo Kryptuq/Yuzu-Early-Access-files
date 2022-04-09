@@ -404,7 +404,7 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
         workers.QueueWork([this, key, env = std::move(env), &state, &callback]() mutable {
             ShaderPools pools;
             auto pipeline{CreateComputePipeline(pools, key, env, state.statistics.get(), false)};
-            std::lock_guard lock{state.mutex};
+            std::scoped_lock lock{state.mutex};
             if (pipeline) {
                 compute_cache.emplace(key, std::move(pipeline));
             }
@@ -434,7 +434,7 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
             auto pipeline{CreateGraphicsPipeline(pools, key, MakeSpan(env_ptrs),
                                                  state.statistics.get(), false)};
 
-            std::lock_guard lock{state.mutex};
+            std::scoped_lock lock{state.mutex};
             graphics_cache.emplace(key, std::move(pipeline));
             ++state.built;
             if (state.has_loaded) {

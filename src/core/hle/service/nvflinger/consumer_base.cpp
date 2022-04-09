@@ -18,7 +18,7 @@ ConsumerBase::ConsumerBase(std::unique_ptr<BufferQueueConsumer> consumer_)
     : consumer{std::move(consumer_)} {}
 
 ConsumerBase::~ConsumerBase() {
-    std::scoped_lock lock(mutex);
+    std::scoped_lock lock{mutex};
 
     ASSERT_MSG(is_abandoned, "consumer is not abandoned!");
 }
@@ -44,7 +44,7 @@ void ConsumerBase::OnFrameReplaced(const BufferItem& item) {
 }
 
 void ConsumerBase::OnBuffersReleased() {
-    std::scoped_lock lock(mutex);
+    std::scoped_lock lock{mutex};
 
     LOG_DEBUG(Service_NVFlinger, "called");
 

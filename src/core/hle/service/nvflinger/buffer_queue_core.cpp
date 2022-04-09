@@ -15,7 +15,7 @@ BufferQueueCore::BufferQueueCore() = default;
 BufferQueueCore::~BufferQueueCore() = default;
 
 void BufferQueueCore::NotifyShutdown() {
-    std::scoped_lock lock(mutex);
+    std::scoped_lock lock{mutex};
 
     is_shutting_down = true;
 

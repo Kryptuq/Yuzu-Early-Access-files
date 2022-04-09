@@ -77,7 +77,7 @@ ComputePipeline::ComputePipeline(const Device& device_, DescriptorPool& descript
         if (pipeline_statistics) {
             pipeline_statistics->Collect(*pipeline);
         }
-        std::lock_guard lock{build_mutex};
+        std::scoped_lock lock{build_mutex};
         is_built = true;
         build_condvar.notify_one();
         if (shader_notify) {

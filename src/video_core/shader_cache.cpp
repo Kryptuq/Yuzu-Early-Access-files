@@ -25,7 +25,7 @@ void ShaderCache::InvalidateRegion(VAddr addr, size_t size) {
 }
 
 void ShaderCache::OnCPUWrite(VAddr addr, size_t size) {
-    std::lock_guard lock{invalidation_mutex};
+    std::scoped_lock lock{invalidation_mutex};
     InvalidatePagesInRegion(addr, size);
 }
 

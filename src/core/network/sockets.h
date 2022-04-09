@@ -67,6 +67,8 @@ public:
 
     Errno SetReuseAddr(bool enable);
 
+    Errno SetKeepAlive(bool enable);
+
     Errno SetBroadcast(bool enable);
 
     Errno SetSndBuf(u32 value);

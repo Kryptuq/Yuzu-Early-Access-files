@@ -318,7 +318,7 @@ void Controller_NPad::OnRelease() {
 }
 
 void Controller_NPad::RequestPadStateUpdate(Core::HID::NpadIdType npad_id) {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     auto& controller = GetControllerFromNpadIdType(npad_id);
     const auto controller_type = controller.device->GetNpadStyleIndex();
     if (!controller.device->IsConnected()) {

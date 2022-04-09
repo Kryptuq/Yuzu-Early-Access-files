@@ -24,7 +24,7 @@ TimeManager::TimeManager(Core::System& system_) : system{system_} {
 }
 
 void TimeManager::ScheduleTimeEvent(KThread* thread, s64 nanoseconds) {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     if (nanoseconds > 0) {
         ASSERT(thread);
         ASSERT(thread->GetState() != ThreadState::Runnable);
@@ -35,7 +35,7 @@ void TimeManager::ScheduleTimeEvent(KThread* thread, s64 nanoseconds) {
 }
 
 void TimeManager::UnscheduleTimeEvent(KThread* thread) {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     system.CoreTiming().UnscheduleEvent(time_manager_event_type,
                                         reinterpret_cast<uintptr_t>(thread));
 }

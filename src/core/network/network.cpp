@@ -600,6 +600,10 @@ Errno Socket::SetReuseAddr(bool enable) {
     return SetSockOpt<u32>(fd, SO_REUSEADDR, enable ? 1 : 0);
 }
 
+Errno Socket::SetKeepAlive(bool enable) {
+    return SetSockOpt<u32>(fd, SO_KEEPALIVE, enable ? 1 : 0);
+}
+
 Errno Socket::SetBroadcast(bool enable) {
     return SetSockOpt<u32>(fd, SO_BROADCAST, enable ? 1 : 0);
 }

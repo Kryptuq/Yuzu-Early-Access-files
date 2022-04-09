@@ -80,7 +80,7 @@ bool Freezer::IsActive() const {
 }
 
 void Freezer::Clear() {
-    std::lock_guard lock{entries_mutex};
+    std::scoped_lock lock{entries_mutex};
 
     LOG_DEBUG(Common_Memory, "Clearing all frozen memory values.");
 
@@ -88,7 +88,7 @@ void Freezer::Clear() {
 }
 
 u64 Freezer::Freeze(VAddr address, u32 width) {
-    std::lock_guard lock{entries_mutex};
+    std::scoped_lock lock{entries_mutex};
 
     const auto current_value = MemoryReadWidth(memory, width, address);
     entries.push_back({address, width, current_value});
@@ -101,7 +101,7 @@ u64 Freezer::Freeze(VAddr address, u32 width) {
 }
 
 void Freezer::Unfreeze(VAddr address) {
-    std::lock_guard lock{entries_mutex};
+    std::scoped_lock lock{entries_mutex};
 
     LOG_DEBUG(Common_Memory, "Unfreezing memory for address={:016X}", address);
 
@@ -109,13 +109,13 @@ void Freezer::Unfreeze(VAddr address) {
 }
 
 bool Freezer::IsFrozen(VAddr address) const {
-    std::lock_guard lock{entries_mutex};
+    std::scoped_lock lock{entries_mutex};
 
     return FindEntry(address) != entries.cend();
 }
 
 void Freezer::SetFrozenValue(VAddr address, u64 value) {
-    std::lock_guard lock{entries_mutex};
+    std::scoped_lock lock{entries_mutex};
 
     const auto iter = FindEntry(address);
 
@@ -132,7 +132,7 @@ void Freezer::SetFrozenValue(VAddr address, u64 value) {
 }
 
 std::optional<Freezer::Entry> Freezer::GetEntry(VAddr address) const {
-    std::lock_guard lock{entries_mutex};
+    std::scoped_lock lock{entries_mutex};
 
     const auto iter = FindEntry(address);
 
@@ -144,7 +144,7 @@ std::optional<Freezer::Entry> Freezer::GetEntry(VAddr address) const {
 }
 
 std::vector<Freezer::Entry> Freezer::GetEntries() const {
-    std::lock_guard lock{entries_mutex};
+    std::scoped_lock lock{entries_mutex};
 
     return entries;
 }
@@ -165,7 +165,7 @@ void Freezer::FrameCallback(std::uintptr_t, std::chrono::nanoseconds ns_late) {
         return;
     }
 
-    std::lock_guard lock{entries_mutex};
+    std::scoped_lock lock{entries_mutex};
 
     for (const auto& entry : entries) {
         LOG_DEBUG(Common_Memory,
@@ -178,7 +178,7 @@ void Freezer::FrameCallback(std::uintptr_t, std::chrono::nanoseconds ns_late) {
 }
 
 void Freezer::FillEntryReads() {
-    std::lock_guard lock{entries_mutex};
+    std::scoped_lock lock{entries_mutex};
 
     LOG_DEBUG(Common_Memory, "Updating memory freeze entries to current values.");
 

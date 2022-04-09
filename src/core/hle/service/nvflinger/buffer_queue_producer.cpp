@@ -38,7 +38,7 @@ BufferQueueProducer::~BufferQueueProducer() {
 Status BufferQueueProducer::RequestBuffer(s32 slot, std::shared_ptr<GraphicBuffer>* buf) {
     LOG_DEBUG(Service_NVFlinger, "slot {}", slot);
 
-    std::scoped_lock lock(core->mutex);
+    std::scoped_lock lock{core->mutex};
 
     if (core->is_abandoned) {
         LOG_ERROR(Service_NVFlinger, "BufferQueue has been abandoned");
@@ -65,7 +65,7 @@ Status BufferQueueProducer::SetBufferCount(s32 buffer_count) {
 
     std::shared_ptr<IConsumerListener> listener;
     {
-        std::scoped_lock lock(core->mutex);
+        std::scoped_lock lock{core->mutex};
         core->WaitWhileAllocatingLocked();
 
         if (core->is_abandoned) {
@@ -236,7 +236,7 @@ Status BufferQueueProducer::DequeueBuffer(s32* out_slot, Fence* out_fence, bool 
     Status return_flags = Status::NoError;
     bool attached_by_consumer = false;
     {
-        std::scoped_lock lock(core->mutex);
+        std::scoped_lock lock{core->mutex};
         core->WaitWhileAllocatingLocked();
 
         if (format == PixelFormat::NoFormat) {
@@ -295,7 +295,7 @@ Status BufferQueueProducer::DequeueBuffer(s32* out_slot, Fence* out_fence, bool 
         }
 
         {
-            std::scoped_lock lock(core->mutex);
+            std::scoped_lock lock{core->mutex};
 
             if (core->is_abandoned) {
                 LOG_ERROR(Service_NVFlinger, "BufferQueue has been abandoned");
@@ -320,7 +320,7 @@ Status BufferQueueProducer::DequeueBuffer(s32* out_slot, Fence* out_fence, bool 
 Status BufferQueueProducer::DetachBuffer(s32 slot) {
     LOG_DEBUG(Service_NVFlinger, "slot {}", slot);
 
-    std::scoped_lock lock(core->mutex);
+    std::scoped_lock lock{core->mutex};
 
     if (core->is_abandoned) {
         LOG_ERROR(Service_NVFlinger, "BufferQueue has been abandoned");
@@ -356,7 +356,7 @@ Status BufferQueueProducer::DetachNextBuffer(std::shared_ptr<GraphicBuffer>* out
         return Status::BadValue;
     }
 
-    std::scoped_lock lock(core->mutex);
+    std::scoped_lock lock{core->mutex};
     core->WaitWhileAllocatingLocked();
 
     if (core->is_abandoned) {
@@ -399,7 +399,7 @@ Status BufferQueueProducer::AttachBuffer(s32* out_slot,
         return Status::BadValue;
     }
 
-    std::scoped_lock lock(core->mutex);
+    std::scoped_lock lock{core->mutex};
     core->WaitWhileAllocatingLocked();
 
     Status return_flags = Status::NoError;
@@ -460,7 +460,7 @@ Status BufferQueueProducer::QueueBuffer(s32 slot, const QueueBufferInput& input,
     BufferItem item;
 
     {
-        std::scoped_lock lock(core->mutex);
+        std::scoped_lock lock{core->mutex};
 
         if (core->is_abandoned) {
             LOG_ERROR(Service_NVFlinger, "BufferQueue has been abandoned");
@@ -576,7 +576,7 @@ Status BufferQueueProducer::QueueBuffer(s32 slot, const QueueBufferInput& input,
     // Call back without the main BufferQueue lock held, but with the callback lock held so we can
     // ensure that callbacks occur in order
     {
-        std::scoped_lock lock(callback_mutex);
+        std::scoped_lock lock{callback_mutex};
         while (callback_ticket != current_callback_ticket) {
             callback_condition.wait(callback_mutex);
         }
@@ -597,7 +597,7 @@ Status BufferQueueProducer::QueueBuffer(s32 slot, const QueueBufferInput& input,
 void BufferQueueProducer::CancelBuffer(s32 slot, const Fence& fence) {
     LOG_DEBUG(Service_NVFlinger, "slot {}", slot);
 
-    std::scoped_lock lock(core->mutex);
+    std::scoped_lock lock{core->mutex};
 
     if (core->is_abandoned) {
         LOG_ERROR(Service_NVFlinger, "BufferQueue has been abandoned");
@@ -623,7 +623,7 @@ void BufferQueueProducer::CancelBuffer(s32 slot, const Fence& fence) {
 }
 
 Status BufferQueueProducer::Query(NativeWindow what, s32* out_value) {
-    std::scoped_lock lock(core->mutex);
+    std::scoped_lock lock{core->mutex};
 
     if (out_value == nullptr) {
         LOG_ERROR(Service_NVFlinger, "outValue was nullptr");
@@ -673,7 +673,7 @@ Status BufferQueueProducer::Query(NativeWindow what, s32* out_value) {
 Status BufferQueueProducer::Connect(const std::shared_ptr<IProducerListener>& listener,
                                     NativeWindowApi api, bool producer_controlled_by_app,
                                     QueueBufferOutput* output) {
-    std::scoped_lock lock(core->mutex);
+    std::scoped_lock lock{core->mutex};
 
     LOG_DEBUG(Service_NVFlinger, "api = {} producer_controlled_by_app = {}", api,
               producer_controlled_by_app);
@@ -730,7 +730,7 @@ Status BufferQueueProducer::Disconnect(NativeWindowApi api) {
     std::shared_ptr<IConsumerListener> listener;
 
     {
-        std::scoped_lock lock(core->mutex);
+        std::scoped_lock lock{core->mutex};
 
         core->WaitWhileAllocatingLocked();
 
@@ -780,7 +780,7 @@ Status BufferQueueProducer::SetPreallocatedBuffer(s32 slot,
         return Status::BadValue;
     }
 
-    std::scoped_lock lock(core->mutex);
+    std::scoped_lock lock{core->mutex};
 
     slots[slot] = {};
     slots[slot].graphic_buffer = buffer;

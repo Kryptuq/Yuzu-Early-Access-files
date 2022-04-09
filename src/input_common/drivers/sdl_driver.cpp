@@ -62,7 +62,7 @@ public:
 
     bool UpdateMotion(SDL_ControllerSensorEvent event) {
         constexpr float gravity_constant = 9.80665f;
-        std::lock_guard lock{mutex};
+        std::scoped_lock lock{mutex};
         const u64 time_difference = event.timestamp - last_motion_update;
         last_motion_update = event.timestamp;
         switch (event.sensor) {
@@ -241,7 +241,7 @@ private:
 };
 
 std::shared_ptr<SDLJoystick> SDLDriver::GetSDLJoystickByGUID(const std::string& guid, int port) {
-    std::lock_guard lock{joystick_map_mutex};
+    std::scoped_lock lock{joystick_map_mutex};
     const auto it = joystick_map.find(guid);
 
     if (it != joystick_map.end()) {
@@ -263,7 +263,7 @@ std::shared_ptr<SDLJoystick> SDLDriver::GetSDLJoystickBySDLID(SDL_JoystickID sdl
     auto sdl_joystick = SDL_JoystickFromInstanceID(sdl_id);
     const std::string guid = GetGUID(sdl_joystick);
 
-    std::lock_guard lock{joystick_map_mutex};
+    std::scoped_lock lock{joystick_map_mutex};
     const auto map_it = joystick_map.find(guid);
 
     if (map_it == joystick_map.end()) {
@@ -297,7 +297,7 @@ void SDLDriver::InitJoystick(int joystick_index) {
 
     const std::string guid = GetGUID(sdl_joystick);
 
-    std::lock_guard lock{joystick_map_mutex};
+    std::scoped_lock lock{joystick_map_mutex};
     if (joystick_map.find(guid) == joystick_map.end()) {
         auto joystick = std::make_shared<SDLJoystick>(guid, 0, sdl_joystick, sdl_gamecontroller);
         PreSetController(joystick->GetPadIdentifier());
@@ -326,7 +326,7 @@ void SDLDriver::InitJoystick(int joystick_index) {
 void SDLDriver::CloseJoystick(SDL_Joystick* sdl_joystick) {
     const std::string guid = GetGUID(sdl_joystick);
 
-    std::lock_guard lock{joystick_map_mutex};
+    std::scoped_lock lock{joystick_map_mutex};
     // This call to guid is safe since the joystick is guaranteed to be in the map
     const auto& joystick_guid_list = joystick_map[guid];
     const auto joystick_it = std::find_if(joystick_guid_list.begin(), joystick_guid_list.end(),
@@ -392,7 +392,7 @@ void SDLDriver::HandleGameControllerEvent(const SDL_Event& event) {
 }
 
 void SDLDriver::CloseJoysticks() {
-    std::lock_guard lock{joystick_map_mutex};
+    std::scoped_lock lock{joystick_map_mutex};
     joystick_map.clear();
 }
 

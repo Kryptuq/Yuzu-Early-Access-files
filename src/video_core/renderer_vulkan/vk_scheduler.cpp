@@ -73,7 +73,7 @@ void VKScheduler::DispatchWork() {
         return;
     }
     {
-        std::lock_guard lock{work_mutex};
+        std::scoped_lock lock{work_mutex};
         work_queue.push(std::move(chunk));
     }
     work_cv.notify_one();
@@ -157,7 +157,7 @@ void VKScheduler::WorkerThread(std::stop_token stop_token) {
         if (has_submit) {
             AllocateWorkerCommandBuffer();
         }
-        std::lock_guard reserve_lock{reserve_mutex};
+        std::scoped_lock reserve_lock{reserve_mutex};
         chunk_reserve.push_back(std::move(work));
     } while (!stop_token.stop_requested());
 }
@@ -282,7 +282,7 @@ void VKScheduler::EndRenderPass() {
 }
 
 void VKScheduler::AcquireNewChunk() {
-    std::lock_guard lock{reserve_mutex};
+    std::scoped_lock lock{reserve_mutex};
     if (chunk_reserve.empty()) {
         chunk = std::make_unique<CommandChunk>();
         return;

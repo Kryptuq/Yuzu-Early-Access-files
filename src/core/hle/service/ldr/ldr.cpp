@@ -389,8 +389,8 @@ public:
 
             if (bss_size) {
                 auto block_guard = detail::ScopeExit([&] {
-                    page_table.UnmapCodeMemory(addr + nro_size, bss_addr, bss_size);
-                    page_table.UnmapCodeMemory(addr, nro_addr, nro_size);
+                    page_table.UnmapCodeMemory(addr + nro_size, bss_addr, bss_size, false);
+                    page_table.UnmapCodeMemory(addr, nro_addr, nro_size, false);
                 });
 
                 const ResultCode result{
@@ -572,15 +572,17 @@ public:
         if (info.bss_size != 0) {
             CASCADE_CODE(page_table.UnmapCodeMemory(info.nro_address + info.text_size +
                                                         info.ro_size + info.data_size,
-                                                    info.bss_address, info.bss_size));
+                                                    info.bss_address, info.bss_size, false));
         }
 
         CASCADE_CODE(page_table.UnmapCodeMemory(info.nro_address + info.text_size + info.ro_size,
                                                 info.src_addr + info.text_size + info.ro_size,
-                                                info.data_size));
+                                                info.data_size, false));
         CASCADE_CODE(page_table.UnmapCodeMemory(info.nro_address + info.text_size,
-                                                info.src_addr + info.text_size, info.ro_size));
-        CASCADE_CODE(page_table.UnmapCodeMemory(info.nro_address, info.src_addr, info.text_size));
+                                                info.src_addr + info.text_size, info.ro_size,
+                                                false));
+        CASCADE_CODE(
+            page_table.UnmapCodeMemory(info.nro_address, info.src_addr, info.text_size, false));
         return ResultSuccess;
     }
 

@@ -56,7 +56,7 @@ static void RunThread(std::stop_token stop_token, Core::System& system,
         if (next.block) {
             // We have to lock the write_lock to ensure that the condition_variable wait not get a
             // race between the check and the lock itself.
-            std::lock_guard lk(state.write_lock);
+            std::scoped_lock lk{state.write_lock};
             state.cv.notify_all();
         }
     }

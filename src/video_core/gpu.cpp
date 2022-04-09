@@ -230,7 +230,7 @@ struct GPU::Impl {
     void IncrementSyncPoint(u32 syncpoint_id) {
         auto& syncpoint = syncpoints.at(syncpoint_id);
         syncpoint++;
-        std::lock_guard lock{sync_mutex};
+        std::scoped_lock lock{sync_mutex};
         sync_cv.notify_all();
         auto& interrupt = syncpt_interrupts.at(syncpoint_id);
         if (!interrupt.empty()) {
@@ -252,7 +252,7 @@ struct GPU::Impl {
     }
 
     void RegisterSyncptInterrupt(u32 syncpoint_id, u32 value) {
-        std::lock_guard lock{sync_mutex};
+        std::scoped_lock lock{sync_mutex};
         auto& interrupt = syncpt_interrupts.at(syncpoint_id);
         bool contains = std::any_of(interrupt.begin(), interrupt.end(),
                                     [value](u32 in_value) { return in_value == value; });
@@ -263,7 +263,7 @@ struct GPU::Impl {
     }
 
     [[nodiscard]] bool CancelSyncptInterrupt(u32 syncpoint_id, u32 value) {
-        std::lock_guard lock{sync_mutex};
+        std::scoped_lock lock{sync_mutex};
         auto& interrupt = syncpt_interrupts.at(syncpoint_id);
         const auto iter =
             std::find_if(interrupt.begin(), interrupt.end(),

@@ -99,7 +99,7 @@ struct KernelCore::Impl {
         // Close all open server sessions and ports.
         std::unordered_set<KAutoObject*> server_objects_;
         {
-            std::lock_guard lk(server_objects_lock);
+            std::scoped_lock lk(server_objects_lock);
             server_objects_ = server_objects;
             server_objects.clear();
         }
@@ -158,7 +158,7 @@ struct KernelCore::Impl {
 
         // Close kernel objects that were not freed on shutdown
         {
-            std::lock_guard lk(registered_in_use_objects_lock);
+            std::scoped_lock lk{registered_in_use_objects_lock};
             if (registered_in_use_objects.size()) {
                 for (auto& object : registered_in_use_objects) {
                     object->Close();
@@ -179,10 +179,10 @@ struct KernelCore::Impl {
 
         // Track kernel objects that were not freed on shutdown
         {
-            std::lock_guard lk(registered_objects_lock);
+            std::scoped_lock lk{registered_objects_lock};
             if (registered_objects.size()) {
-                LOG_CRITICAL(Kernel, "{} kernel objects were dangling on shutdown!",
-                             registered_objects.size());
+                LOG_DEBUG(Kernel, "{} kernel objects were dangling on shutdown!",
+                          registered_objects.size());
                 registered_objects.clear();
             }
         }
@@ -673,12 +673,12 @@ struct KernelCore::Impl {
     }
 
     void RegisterServerObject(KAutoObject* server_object) {
-        std::lock_guard lk(server_objects_lock);
+        std::scoped_lock lk(server_objects_lock);
         server_objects.insert(server_object);
     }
 
     void UnregisterServerObject(KAutoObject* server_object) {
-        std::lock_guard lk(server_objects_lock);
+        std::scoped_lock lk(server_objects_lock);
         server_objects.erase(server_object);
     }
 
@@ -954,22 +954,22 @@ void KernelCore::UnregisterServerObject(KAutoObject* server_object) {
 }
 
 void KernelCore::RegisterKernelObject(KAutoObject* object) {
-    std::lock_guard lk(impl->registered_objects_lock);
+    std::scoped_lock lk{impl->registered_objects_lock};
     impl->registered_objects.insert(object);
 }
 
 void KernelCore::UnregisterKernelObject(KAutoObject* object) {
-    std::lock_guard lk(impl->registered_objects_lock);
+    std::scoped_lock lk{impl->registered_objects_lock};
     impl->registered_objects.erase(object);
 }
 
 void KernelCore::RegisterInUseObject(KAutoObject* object) {
-    std::lock_guard lk(impl->registered_in_use_objects_lock);
+    std::scoped_lock lk{impl->registered_in_use_objects_lock};
     impl->registered_in_use_objects.insert(object);
 }
 
 void KernelCore::UnregisterInUseObject(KAutoObject* object) {
-    std::lock_guard lk(impl->registered_in_use_objects_lock);
+    std::scoped_lock lk{impl->registered_in_use_objects_lock};
     impl->registered_in_use_objects.erase(object);
 }
 

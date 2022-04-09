@@ -149,7 +149,7 @@ public:
     }
 
     void Unmap(size_t virtual_offset, size_t length) {
-        std::lock_guard lock{placeholder_mutex};
+        std::scoped_lock lock{placeholder_mutex};
 
         // Unmap until there are no more placeholders
         while (UnmapOnePlaceholder(virtual_offset, length)) {
@@ -169,7 +169,7 @@ public:
         }
         const size_t virtual_end = virtual_offset + length;
 
-        std::lock_guard lock{placeholder_mutex};
+        std::scoped_lock lock{placeholder_mutex};
         auto [it, end] = placeholders.equal_range({virtual_offset, virtual_end});
         while (it != end) {
             const size_t offset = std::max(it->lower(), virtual_offset);

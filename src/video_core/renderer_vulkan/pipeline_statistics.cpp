@@ -57,7 +57,7 @@ void PipelineStatistics::Collect(VkPipeline pipeline) {
                 stage_stats.basic_block_count = GetUint64(statistic);
             }
         }
-        std::lock_guard lock{mutex};
+        std::scoped_lock lock{mutex};
         collected_stats.push_back(stage_stats);
     }
 }
@@ -66,7 +66,7 @@ void PipelineStatistics::Report() const {
     double num{};
     Stats total;
     {
-        std::lock_guard lock{mutex};
+        std::scoped_lock lock{mutex};
         for (const Stats& stats : collected_stats) {
             total.code_size += stats.code_size;
             total.register_count += stats.register_count;

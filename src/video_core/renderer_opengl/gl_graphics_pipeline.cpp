@@ -253,7 +253,7 @@ GraphicsPipeline::GraphicsPipeline(
             }
         }
         if (in_parallel) {
-            std::lock_guard lock{built_mutex};
+            std::scoped_lock lock{built_mutex};
             built_fence.Create();
             // Flush this context to ensure compilation commands and fence are in the GPU pipe.
             glFlush();

@@ -148,29 +148,33 @@ VirtualDir PatchManager::PatchExeFS(VirtualDir exefs) const {
 
     // LayeredExeFS
     const auto load_dir = fs_controller.GetModificationLoadRoot(title_id);
+    const auto sdmc_load_dir = fs_controller.GetSDMCModificationLoadRoot(title_id);
+
+    std::vector<VirtualDir> patch_dirs = {sdmc_load_dir};
     if (load_dir != nullptr && load_dir->GetSize() > 0) {
-        auto patch_dirs = load_dir->GetSubdirectories();
-        std::sort(
-            patch_dirs.begin(), patch_dirs.end(),
-            [](const VirtualDir& l, const VirtualDir& r) { return l->GetName() < r->GetName(); });
+        const auto load_patch_dirs = load_dir->GetSubdirectories();
+        patch_dirs.insert(patch_dirs.end(), load_patch_dirs.begin(), load_patch_dirs.end());
+    }
 
-        std::vector<VirtualDir> layers;
-        layers.reserve(patch_dirs.size() + 1);
-        for (const auto& subdir : patch_dirs) {
-            if (std::find(disabled.begin(), disabled.end(), subdir->GetName()) != disabled.end())
-                continue;
+    std::sort(patch_dirs.begin(), patch_dirs.end(),
+              [](const VirtualDir& l, const VirtualDir& r) { return l->GetName() < r->GetName(); });
 
-            auto exefs_dir = FindSubdirectoryCaseless(subdir, "exefs");
-            if (exefs_dir != nullptr)
-                layers.push_back(std::move(exefs_dir));
-        }
-        layers.push_back(exefs);
+    std::vector<VirtualDir> layers;
+    layers.reserve(patch_dirs.size() + 1);
+    for (const auto& subdir : patch_dirs) {
+        if (std::find(disabled.begin(), disabled.end(), subdir->GetName()) != disabled.end())
+            continue;
 
-        auto layered = LayeredVfsDirectory::MakeLayeredDirectory(std::move(layers));
-        if (layered != nullptr) {
-            LOG_INFO(Loader, "    ExeFS: LayeredExeFS patches applied successfully");
-            exefs = std::move(layered);
-        }
+        auto exefs_dir = FindSubdirectoryCaseless(subdir, "exefs");
+        if (exefs_dir != nullptr)
+            layers.push_back(std::move(exefs_dir));
+    }
+    layers.push_back(exefs);
+
+    auto layered = LayeredVfsDirectory::MakeLayeredDirectory(std::move(layers));
+    if (layered != nullptr) {
+        LOG_INFO(Loader, "    ExeFS: LayeredExeFS patches applied successfully");
+        exefs = std::move(layered);
     }
 
     if (Settings::values.dump_exefs) {
@@ -536,11 +540,20 @@ PatchManager::PatchVersionNames PatchManager::GetPatchVersionNames(VirtualFile u
 
     // SDMC mod directory (RomFS LayeredFS)
     const auto sdmc_mod_dir = fs_controller.GetSDMCModificationLoadRoot(title_id);
-    if (sdmc_mod_dir != nullptr && sdmc_mod_dir->GetSize() > 0 &&
-        IsDirValidAndNonEmpty(FindSubdirectoryCaseless(sdmc_mod_dir, "romfs"))) {
-        const auto mod_disabled =
-            std::find(disabled.begin(), disabled.end(), "SDMC") != disabled.end();
-        out.insert_or_assign(mod_disabled ? "[D] SDMC" : "SDMC", "LayeredFS");
+    if (sdmc_mod_dir != nullptr && sdmc_mod_dir->GetSize() > 0) {
+        std::string types;
+        if (IsDirValidAndNonEmpty(FindSubdirectoryCaseless(sdmc_mod_dir, "exefs"))) {
+            AppendCommaIfNotEmpty(types, "LayeredExeFS");
+        }
+        if (IsDirValidAndNonEmpty(FindSubdirectoryCaseless(sdmc_mod_dir, "romfs"))) {
+            AppendCommaIfNotEmpty(types, "LayeredFS");
+        }
+
+        if (!types.empty()) {
+            const auto mod_disabled =
+                std::find(disabled.begin(), disabled.end(), "SDMC") != disabled.end();
+            out.insert_or_assign(mod_disabled ? "[D] SDMC" : "SDMC", types);
+        }
     }
 
     // DLC
