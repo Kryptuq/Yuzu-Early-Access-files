@@ -13,6 +13,8 @@ add_library(core STATIC
     arm/dynarmic/arm_exclusive_monitor.h
     arm/exclusive_monitor.cpp
     arm/exclusive_monitor.h
+    arm/symbols.cpp
+    arm/symbols.h
     constants.cpp
     constants.h
     core.cpp
