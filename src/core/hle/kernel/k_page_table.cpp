@@ -347,7 +347,7 @@ ResultCode KPageTable::MapCodeMemory(VAddr dst_address, VAddr src_address, std::
 }
 
 ResultCode KPageTable::UnmapCodeMemory(VAddr dst_address, VAddr src_address, std::size_t size,
-                                       bool invalidate_entire_icache) {
+                                       ICacheInvalidationStrategy icache_invalidation_strategy) {
     // Validate the mapping request.
     R_UNLESS(this->CanContain(dst_address, size, KMemoryState::AliasCode),
              ResultInvalidMemoryRegion);
@@ -397,10 +397,10 @@ ResultCode KPageTable::UnmapCodeMemory(VAddr dst_address, VAddr src_address, std
     bool reprotected_pages = false;
     SCOPE_EXIT({
         if (reprotected_pages && any_code_pages) {
-            if (invalidate_entire_icache) {
-                system.InvalidateCpuInstructionCaches();
-            } else {
+            if (icache_invalidation_strategy == ICacheInvalidationStrategy::InvalidateRange) {
                 system.InvalidateCpuInstructionCacheRange(dst_address, size);
+            } else {
+                system.InvalidateCpuInstructionCaches();
             }
         }
     });

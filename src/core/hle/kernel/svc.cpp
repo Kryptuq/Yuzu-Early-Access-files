@@ -1713,7 +1713,8 @@ static ResultCode UnmapProcessCodeMemory(Core::System& system, Handle process_ha
         return ResultInvalidMemoryRegion;
     }
 
-    return page_table.UnmapCodeMemory(dst_address, src_address, size, true);
+    return page_table.UnmapCodeMemory(dst_address, src_address, size,
+                                      KPageTable::ICacheInvalidationStrategy::InvalidateAll);
 }
 
 /// Exits the current process
