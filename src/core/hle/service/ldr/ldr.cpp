@@ -160,7 +160,8 @@ public:
 
 class RelocatableObject final : public ServiceFramework<RelocatableObject> {
 public:
-    explicit RelocatableObject(Core::System& system_) : ServiceFramework{system_, "ldr:ro"} {
+    explicit RelocatableObject(Core::System& system_)
+        : ServiceFramework{system_, "ldr:ro", ServiceThreadType::CreateNew} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &RelocatableObject::LoadModule, "LoadModule"},

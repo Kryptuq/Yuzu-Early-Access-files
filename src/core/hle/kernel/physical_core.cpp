@@ -2,7 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include "common/spin_lock.h"
 #include "core/arm/cpu_interrupt_handler.h"
 #include "core/arm/dynarmic/arm_dynarmic_32.h"
 #include "core/arm/dynarmic/arm_dynarmic_64.h"
@@ -16,7 +15,7 @@ namespace Kernel {
 PhysicalCore::PhysicalCore(std::size_t core_index_, Core::System& system_, KScheduler& scheduler_,
                            Core::CPUInterrupts& interrupts_)
     : core_index{core_index_}, system{system_}, scheduler{scheduler_},
-      interrupts{interrupts_}, guard{std::make_unique<Common::SpinLock>()} {
+      interrupts{interrupts_}, guard{std::make_unique<std::mutex>()} {
 #ifdef ARCHITECTURE_x86_64
     // TODO(bunnei): Initialization relies on a core being available. We may later replace this with
     // a 32-bit instance of Dynarmic. This should be abstracted out to a CPU manager.

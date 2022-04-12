@@ -18,7 +18,11 @@
 #elif YUZU_UNIX
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <netinet/in.h>
 #include <sys/socket.h>
+#ifndef EAI_NODATA
+#define EAI_NODATA EAI_NONAME
+#endif
 #endif
 
 namespace Service::Sockets {

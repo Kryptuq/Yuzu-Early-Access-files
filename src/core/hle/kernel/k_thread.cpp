@@ -723,10 +723,10 @@ void KThread::UpdateState() {
     ASSERT(kernel.GlobalSchedulerContext().IsLocked());
 
     // Set our suspend flags in state.
-    const ThreadState old_state = thread_state;
+    const ThreadState old_state = thread_state.load(std::memory_order_relaxed);
     const auto new_state =
         static_cast<ThreadState>(this->GetSuspendFlags()) | (old_state & ThreadState::Mask);
-    thread_state = new_state;
+    thread_state.store(new_state, std::memory_order_relaxed);
 
     // Note the state change in scheduler.
     if (new_state != old_state) {
@@ -738,8 +738,8 @@ void KThread::Continue() {
     ASSERT(kernel.GlobalSchedulerContext().IsLocked());
 
     // Clear our suspend flags in state.
-    const ThreadState old_state = thread_state;
-    thread_state = old_state & ThreadState::Mask;
+    const ThreadState old_state = thread_state.load(std::memory_order_relaxed);
+    thread_state.store(old_state & ThreadState::Mask, std::memory_order_relaxed);
 
     // Note the state change in scheduler.
     KScheduler::OnThreadStateChanged(kernel, this, old_state);
@@ -1079,17 +1079,10 @@ void KThread::IfDummyThreadTryWait() {
         return;
     }
 
-    // Block until we can grab the lock.
-    KScopedSpinLock lk{dummy_wait_lock};
-}
-
-void KThread::IfDummyThreadBeginWait() {
-    if (!IsDummyThread()) {
-        return;
-    }
-
-    // Ensure the thread will block when IfDummyThreadTryWait is called.
-    dummy_wait_lock.Lock();
+    // Block until we are no longer waiting.
+    std::unique_lock lk(dummy_wait_lock);
+    dummy_wait_cv.wait(
+        lk, [&] { return GetState() != ThreadState::Waiting || kernel.IsShuttingDown(); });
 }
 
 void KThread::IfDummyThreadEndWait() {
@@ -1097,8 +1090,8 @@ void KThread::IfDummyThreadEndWait() {
         return;
     }
 
-    // Ensure the thread will no longer block.
-    dummy_wait_lock.Unlock();
+    // Wake up the waiting thread.
+    dummy_wait_cv.notify_one();
 }
 
 void KThread::BeginWait(KThreadQueue* queue) {
@@ -1107,9 +1100,6 @@ void KThread::BeginWait(KThreadQueue* queue) {
 
     // Set our wait queue.
     wait_queue = queue;
-
-    // Special case for dummy threads to ensure they block.
-    IfDummyThreadBeginWait();
 }
 
 void KThread::NotifyAvailable(KSynchronizationObject* signaled_object, ResultCode wait_result_) {
@@ -1158,10 +1148,11 @@ void KThread::SetState(ThreadState state) {
     SetMutexWaitAddressForDebugging({});
     SetWaitReasonForDebugging({});
 
-    const ThreadState old_state = thread_state;
-    thread_state =
-        static_cast<ThreadState>((old_state & ~ThreadState::Mask) | (state & ThreadState::Mask));
-    if (thread_state != old_state) {
+    const ThreadState old_state = thread_state.load(std::memory_order_relaxed);
+    thread_state.store(
+        static_cast<ThreadState>((old_state & ~ThreadState::Mask) | (state & ThreadState::Mask)),
+        std::memory_order_relaxed);
+    if (thread_state.load(std::memory_order_relaxed) != old_state) {
         KScheduler::OnThreadStateChanged(kernel, this, old_state);
     }
 }
