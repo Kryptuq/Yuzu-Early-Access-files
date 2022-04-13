@@ -933,6 +933,11 @@ void GRenderWindow::CaptureScreenshot(const QString& screenshot_path) {
     auto& renderer = system.Renderer();
     const f32 res_scale = Settings::values.resolution_info.up_factor;
 
+    if (renderer.IsScreenshotPending()) {
+        LOG_ERROR(Render, "A screenshot is already requested or in progress, ignoring the request");
+        return;
+    }
+
     const Layout::FramebufferLayout layout{Layout::FrameLayoutFromResolutionScale(res_scale)};
     screenshot_image = QImage(QSize(layout.width, layout.height), QImage::Format_RGB32);
     renderer.RequestScreenshot(

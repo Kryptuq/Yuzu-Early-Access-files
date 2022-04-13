@@ -26,6 +26,10 @@ void RendererBase::UpdateCurrentFramebufferLayout() {
     render_window.UpdateCurrentFramebufferLayout(layout.width, layout.height);
 }
 
+bool RendererBase::IsScreenshotPending() const {
+    return renderer_settings.screenshot_requested;
+}
+
 void RendererBase::RequestScreenshot(void* data, std::function<void(bool)> callback,
                                      const Layout::FramebufferLayout& layout) {
     if (renderer_settings.screenshot_requested) {

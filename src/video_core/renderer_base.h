@@ -83,6 +83,9 @@ public:
     /// Refreshes the settings common to all renderers
     void RefreshBaseSettings();
 
+    /// Returns true if a screenshot is being processed
+    bool IsScreenshotPending() const;
+
     /// Request a screenshot of the next frame
     void RequestScreenshot(void* data, std::function<void(bool)> callback,
                            const Layout::FramebufferLayout& layout);
