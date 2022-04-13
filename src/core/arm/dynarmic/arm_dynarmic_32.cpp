@@ -88,7 +88,7 @@ public:
 
     void CallSVC(u32 swi) override {
         parent.svc_swi = swi;
-        parent.jit->HaltExecution(svc_call);
+        parent.jit.load()->HaltExecution(svc_call);
     }
 
     void AddTicks(u64 ticks) override {
@@ -150,6 +150,13 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
     // Code cache size
     config.code_cache_size = 512_MiB;
     config.far_code_offset = 400_MiB;
+
+    // null_jit
+    if (!page_table) {
+        // Don't waste too much memory on null_jit
+        config.code_cache_size = 8_MiB;
+        config.far_code_offset = 4_MiB;
+    }
 
     // Safe optimizations
     if (Settings::values.cpu_debug_mode) {
@@ -228,18 +235,18 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
 
 void ARM_Dynarmic_32::Run() {
     while (true) {
-        const auto hr = jit->Run();
+        const auto hr = jit.load()->Run();
         if (Has(hr, svc_call)) {
             Kernel::Svc::Call(system, svc_swi);
         }
-        if (Has(hr, break_loop)) {
+        if (Has(hr, break_loop) || !uses_wall_clock) {
             break;
         }
     }
 }
 
 void ARM_Dynarmic_32::Step() {
-    jit->Step();
+    jit.load()->Step();
 }
 
 ARM_Dynarmic_32::ARM_Dynarmic_32(System& system_, CPUInterrupts& interrupt_handlers_,
@@ -249,24 +256,24 @@ ARM_Dynarmic_32::ARM_Dynarmic_32(System& system_, CPUInterrupts& interrupt_handl
       cb(std::make_unique<DynarmicCallbacks32>(*this)),
       cp15(std::make_shared<DynarmicCP15>(*this)), core_index{core_index_},
       exclusive_monitor{dynamic_cast<DynarmicExclusiveMonitor&>(exclusive_monitor_)},
-      jit(MakeJit(nullptr)) {}
+      null_jit{MakeJit(nullptr)}, jit{null_jit.get()} {}
 
 ARM_Dynarmic_32::~ARM_Dynarmic_32() = default;
 
 void ARM_Dynarmic_32::SetPC(u64 pc) {
-    jit->Regs()[15] = static_cast<u32>(pc);
+    jit.load()->Regs()[15] = static_cast<u32>(pc);
 }
 
 u64 ARM_Dynarmic_32::GetPC() const {
-    return jit->Regs()[15];
+    return jit.load()->Regs()[15];
 }
 
 u64 ARM_Dynarmic_32::GetReg(int index) const {
-    return jit->Regs()[index];
+    return jit.load()->Regs()[index];
 }
 
 void ARM_Dynarmic_32::SetReg(int index, u64 value) {
-    jit->Regs()[index] = static_cast<u32>(value);
+    jit.load()->Regs()[index] = static_cast<u32>(value);
 }
 
 u128 ARM_Dynarmic_32::GetVectorReg(int index) const {
@@ -276,11 +283,11 @@ u128 ARM_Dynarmic_32::GetVectorReg(int index) const {
 void ARM_Dynarmic_32::SetVectorReg(int index, u128 value) {}
 
 u32 ARM_Dynarmic_32::GetPSTATE() const {
-    return jit->Cpsr();
+    return jit.load()->Cpsr();
 }
 
 void ARM_Dynarmic_32::SetPSTATE(u32 cpsr) {
-    jit->SetCpsr(cpsr);
+    jit.load()->SetCpsr(cpsr);
 }
 
 u64 ARM_Dynarmic_32::GetTlsAddress() const {
@@ -301,7 +308,7 @@ void ARM_Dynarmic_32::SetTPIDR_EL0(u64 value) {
 
 void ARM_Dynarmic_32::SaveContext(ThreadContext32& ctx) {
     Dynarmic::A32::Context context;
-    jit->SaveContext(context);
+    jit.load()->SaveContext(context);
     ctx.cpu_registers = context.Regs();
     ctx.extension_registers = context.ExtRegs();
     ctx.cpsr = context.Cpsr();
@@ -314,27 +321,27 @@ void ARM_Dynarmic_32::LoadContext(const ThreadContext32& ctx) {
     context.ExtRegs() = ctx.extension_registers;
     context.SetCpsr(ctx.cpsr);
     context.SetFpscr(ctx.fpscr);
-    jit->LoadContext(context);
+    jit.load()->LoadContext(context);
 }
 
 void ARM_Dynarmic_32::PrepareReschedule() {
-    jit->HaltExecution(break_loop);
+    jit.load()->HaltExecution(break_loop);
 }
 
 void ARM_Dynarmic_32::SignalInterrupt() {
-    jit->HaltExecution(break_loop);
+    jit.load()->HaltExecution(break_loop);
 }
 
 void ARM_Dynarmic_32::ClearInstructionCache() {
-    jit->ClearCache();
+    jit.load()->ClearCache();
 }
 
 void ARM_Dynarmic_32::InvalidateCacheRange(VAddr addr, std::size_t size) {
-    jit->InvalidateCacheRange(static_cast<u32>(addr), size);
+    jit.load()->InvalidateCacheRange(static_cast<u32>(addr), size);
 }
 
 void ARM_Dynarmic_32::ClearExclusiveState() {
-    jit->ClearExclusiveState();
+    jit.load()->ClearExclusiveState();
 }
 
 void ARM_Dynarmic_32::PageTableChanged(Common::PageTable& page_table,
@@ -345,13 +352,14 @@ void ARM_Dynarmic_32::PageTableChanged(Common::PageTable& page_table,
     auto key = std::make_pair(&page_table, new_address_space_size_in_bits);
     auto iter = jit_cache.find(key);
     if (iter != jit_cache.end()) {
-        jit = iter->second;
+        jit.store(iter->second.get());
         LoadContext(ctx);
         return;
     }
-    jit = MakeJit(&page_table);
+    std::shared_ptr new_jit = MakeJit(&page_table);
+    jit.store(new_jit.get());
     LoadContext(ctx);
-    jit_cache.emplace(key, jit);
+    jit_cache.emplace(key, std::move(new_jit));
 }
 
 } // namespace Core

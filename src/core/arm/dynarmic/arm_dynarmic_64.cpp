@@ -109,7 +109,7 @@ public:
             break;
         }
 
-        parent.jit->HaltExecution(Dynarmic::HaltReason::CacheInvalidation);
+        parent.jit.load()->HaltExecution(Dynarmic::HaltReason::CacheInvalidation);
     }
 
     void ExceptionRaised(u64 pc, Dynarmic::A64::Exception exception) override {
@@ -130,7 +130,7 @@ public:
 
     void CallSVC(u32 swi) override {
         parent.svc_swi = swi;
-        parent.jit->HaltExecution(svc_call);
+        parent.jit.load()->HaltExecution(svc_call);
     }
 
     void AddTicks(u64 ticks) override {
@@ -212,6 +212,13 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable* 
     config.code_cache_size = 512_MiB;
     config.far_code_offset = 400_MiB;
 
+    // null_jit
+    if (!page_table) {
+        // Don't waste too much memory on null_jit
+        config.code_cache_size = 8_MiB;
+        config.far_code_offset = 4_MiB;
+    }
+
     // Safe optimizations
     if (Settings::values.cpu_debug_mode) {
         if (!Settings::values.cpuopt_page_tables) {
@@ -289,18 +296,18 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable* 
 
 void ARM_Dynarmic_64::Run() {
     while (true) {
-        const auto hr = jit->Run();
+        const auto hr = jit.load()->Run();
         if (Has(hr, svc_call)) {
             Kernel::Svc::Call(system, svc_swi);
         }
-        if (Has(hr, break_loop)) {
+        if (Has(hr, break_loop) || !uses_wall_clock) {
             break;
         }
     }
 }
 
 void ARM_Dynarmic_64::Step() {
-    jit->Step();
+    jit.load()->Step();
 }
 
 ARM_Dynarmic_64::ARM_Dynarmic_64(System& system_, CPUInterrupts& interrupt_handlers_,
@@ -309,40 +316,40 @@ ARM_Dynarmic_64::ARM_Dynarmic_64(System& system_, CPUInterrupts& interrupt_handl
     : ARM_Interface{system_, interrupt_handlers_, uses_wall_clock_},
       cb(std::make_unique<DynarmicCallbacks64>(*this)), core_index{core_index_},
       exclusive_monitor{dynamic_cast<DynarmicExclusiveMonitor&>(exclusive_monitor_)},
-      jit(MakeJit(nullptr, 48)) {}
+      null_jit{MakeJit(nullptr, 48)}, jit{null_jit.get()} {}
 
 ARM_Dynarmic_64::~ARM_Dynarmic_64() = default;
 
 void ARM_Dynarmic_64::SetPC(u64 pc) {
-    jit->SetPC(pc);
+    jit.load()->SetPC(pc);
 }
 
 u64 ARM_Dynarmic_64::GetPC() const {
-    return jit->GetPC();
+    return jit.load()->GetPC();
 }
 
 u64 ARM_Dynarmic_64::GetReg(int index) const {
-    return jit->GetRegister(index);
+    return jit.load()->GetRegister(index);
 }
 
 void ARM_Dynarmic_64::SetReg(int index, u64 value) {
-    jit->SetRegister(index, value);
+    jit.load()->SetRegister(index, value);
 }
 
 u128 ARM_Dynarmic_64::GetVectorReg(int index) const {
-    return jit->GetVector(index);
+    return jit.load()->GetVector(index);
 }
 
 void ARM_Dynarmic_64::SetVectorReg(int index, u128 value) {
-    jit->SetVector(index, value);
+    jit.load()->SetVector(index, value);
 }
 
 u32 ARM_Dynarmic_64::GetPSTATE() const {
-    return jit->GetPstate();
+    return jit.load()->GetPstate();
 }
 
 void ARM_Dynarmic_64::SetPSTATE(u32 pstate) {
-    jit->SetPstate(pstate);
+    jit.load()->SetPstate(pstate);
 }
 
 u64 ARM_Dynarmic_64::GetTlsAddress() const {
@@ -362,45 +369,47 @@ void ARM_Dynarmic_64::SetTPIDR_EL0(u64 value) {
 }
 
 void ARM_Dynarmic_64::SaveContext(ThreadContext64& ctx) {
-    ctx.cpu_registers = jit->GetRegisters();
-    ctx.sp = jit->GetSP();
-    ctx.pc = jit->GetPC();
-    ctx.pstate = jit->GetPstate();
-    ctx.vector_registers = jit->GetVectors();
-    ctx.fpcr = jit->GetFpcr();
-    ctx.fpsr = jit->GetFpsr();
+    Dynarmic::A64::Jit* j = jit.load();
+    ctx.cpu_registers = j->GetRegisters();
+    ctx.sp = j->GetSP();
+    ctx.pc = j->GetPC();
+    ctx.pstate = j->GetPstate();
+    ctx.vector_registers = j->GetVectors();
+    ctx.fpcr = j->GetFpcr();
+    ctx.fpsr = j->GetFpsr();
     ctx.tpidr = cb->tpidr_el0;
 }
 
 void ARM_Dynarmic_64::LoadContext(const ThreadContext64& ctx) {
-    jit->SetRegisters(ctx.cpu_registers);
-    jit->SetSP(ctx.sp);
-    jit->SetPC(ctx.pc);
-    jit->SetPstate(ctx.pstate);
-    jit->SetVectors(ctx.vector_registers);
-    jit->SetFpcr(ctx.fpcr);
-    jit->SetFpsr(ctx.fpsr);
+    Dynarmic::A64::Jit* j = jit.load();
+    j->SetRegisters(ctx.cpu_registers);
+    j->SetSP(ctx.sp);
+    j->SetPC(ctx.pc);
+    j->SetPstate(ctx.pstate);
+    j->SetVectors(ctx.vector_registers);
+    j->SetFpcr(ctx.fpcr);
+    j->SetFpsr(ctx.fpsr);
     SetTPIDR_EL0(ctx.tpidr);
 }
 
 void ARM_Dynarmic_64::PrepareReschedule() {
-    jit->HaltExecution(break_loop);
+    jit.load()->HaltExecution(break_loop);
 }
 
 void ARM_Dynarmic_64::SignalInterrupt() {
-    jit->HaltExecution(break_loop);
+    jit.load()->HaltExecution(break_loop);
 }
 
 void ARM_Dynarmic_64::ClearInstructionCache() {
-    jit->ClearCache();
+    jit.load()->ClearCache();
 }
 
 void ARM_Dynarmic_64::InvalidateCacheRange(VAddr addr, std::size_t size) {
-    jit->InvalidateCacheRange(addr, size);
+    jit.load()->InvalidateCacheRange(addr, size);
 }
 
 void ARM_Dynarmic_64::ClearExclusiveState() {
-    jit->ClearExclusiveState();
+    jit.load()->ClearExclusiveState();
 }
 
 void ARM_Dynarmic_64::PageTableChanged(Common::PageTable& page_table,
@@ -411,13 +420,14 @@ void ARM_Dynarmic_64::PageTableChanged(Common::PageTable& page_table,
     auto key = std::make_pair(&page_table, new_address_space_size_in_bits);
     auto iter = jit_cache.find(key);
     if (iter != jit_cache.end()) {
-        jit = iter->second;
+        jit.store(iter->second.get());
         LoadContext(ctx);
         return;
     }
-    jit = MakeJit(&page_table, new_address_space_size_in_bits);
+    std::shared_ptr new_jit = MakeJit(&page_table, new_address_space_size_in_bits);
+    jit.store(new_jit.get());
     LoadContext(ctx);
-    jit_cache.emplace(key, jit);
+    jit_cache.emplace(key, std::move(new_jit));
 }
 
 } // namespace Core

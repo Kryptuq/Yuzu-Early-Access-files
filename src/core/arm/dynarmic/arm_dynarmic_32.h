@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <unordered_map>
 
@@ -80,7 +81,11 @@ private:
     std::shared_ptr<DynarmicCP15> cp15;
     std::size_t core_index;
     DynarmicExclusiveMonitor& exclusive_monitor;
-    std::shared_ptr<Dynarmic::A32::Jit> jit;
+
+    std::shared_ptr<Dynarmic::A32::Jit> null_jit;
+
+    // A raw pointer here is fine; we never delete Jit instances.
+    std::atomic<Dynarmic::A32::Jit*> jit;
 
     // SVC callback
     u32 svc_swi{};
