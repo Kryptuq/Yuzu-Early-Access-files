@@ -590,9 +590,6 @@ struct Values {
     BasicSetting<int> touch_from_button_map_index{0, "touch_from_button_map"};
     std::vector<TouchFromButtonMap> touch_from_button_maps;
 
-    BasicSetting<bool> enable_ring_controller{true, "enable_ring_controller"};
-    RingconRaw ringcon_analogs;
-
     // Data Storage
     BasicSetting<bool> use_virtual_sd{true, "use_virtual_sd"};
     BasicSetting<bool> gamecard_inserted{false, "gamecard_inserted"};

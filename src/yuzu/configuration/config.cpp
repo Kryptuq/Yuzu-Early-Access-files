@@ -60,11 +60,6 @@ const std::array<int, 2> Config::default_stick_mod = {
     0,
 };
 
-const std::array<int, 2> Config::default_ringcon_analogs{{
-    Qt::Key_A,
-    Qt::Key_D,
-}};
-
 // This shouldn't have anything except static initializers (no functions). So
 // QKeySequence(...).toString() is NOT ALLOWED HERE.
 // This must be in alphabetical order according to action name as it must have the same order as
@@ -351,23 +346,6 @@ void Config::ReadTouchscreenValues() {
         ReadSetting(QStringLiteral("touchscreen_diameter_y"), 15).toUInt();
 }
 
-void Config::ReadHidbusValues() {
-    Settings::values.enable_ring_controller =
-        ReadSetting(QStringLiteral("enable_ring_controller"), true).toBool();
-
-    const std::string default_param = InputCommon::GenerateAnalogParamFromKeys(
-        0, 0, default_ringcon_analogs[0], default_ringcon_analogs[1], 0, 0.05f);
-    auto& ringcon_analogs = Settings::values.ringcon_analogs;
-
-    ringcon_analogs =
-        qt_config->value(QStringLiteral("ring_controller"), QString::fromStdString(default_param))
-            .toString()
-            .toStdString();
-    if (ringcon_analogs.empty()) {
-        ringcon_analogs = default_param;
-    }
-}
-
 void Config::ReadAudioValues() {
     qt_config->beginGroup(QStringLiteral("Audio"));
 
@@ -391,7 +369,6 @@ void Config::ReadControlValues() {
     ReadMouseValues();
     ReadTouchscreenValues();
     ReadMotionTouchValues();
-    ReadHidbusValues();
 
 #ifdef _WIN32
     ReadBasicSetting(Settings::values.enable_raw_input);
@@ -985,16 +962,6 @@ void Config::SaveMotionTouchValues() {
     qt_config->endArray();
 }
 
-void Config::SaveHidbusValues() {
-    WriteBasicSetting(Settings::values.enable_ring_controller);
-
-    const std::string default_param = InputCommon::GenerateAnalogParamFromKeys(
-        0, 0, default_ringcon_analogs[0], default_ringcon_analogs[1], 0, 0.05f);
-    WriteSetting(QStringLiteral("ring_controller"),
-                 QString::fromStdString(Settings::values.ringcon_analogs),
-                 QString::fromStdString(default_param));
-}
-
 void Config::SaveValues() {
     if (global) {
         SaveControlValues();
@@ -1035,7 +1002,6 @@ void Config::SaveControlValues() {
     SaveMouseValues();
     SaveTouchscreenValues();
     SaveMotionTouchValues();
-    SaveHidbusValues();
 
     WriteGlobalSetting(Settings::values.use_docked_mode);
     WriteGlobalSetting(Settings::values.vibration_enabled);

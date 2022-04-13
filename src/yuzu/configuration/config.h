@@ -42,7 +42,6 @@ public:
     static const std::array<int, Settings::NativeMotion::NumMotions> default_motions;
     static const std::array<std::array<int, 4>, Settings::NativeAnalog::NumAnalogs> default_analogs;
     static const std::array<int, 2> default_stick_mod;
-    static const std::array<int, 2> default_ringcon_analogs;
     static const std::array<int, Settings::NativeMouseButton::NumMouseButtons>
         default_mouse_buttons;
     static const std::array<int, Settings::NativeKeyboard::NumKeyboardKeys> default_keyboard_keys;
@@ -67,7 +66,6 @@ private:
     void ReadMouseValues();
     void ReadTouchscreenValues();
     void ReadMotionTouchValues();
-    void ReadHidbusValues();
 
     // Read functions bases off the respective config section names.
     void ReadAudioValues();
@@ -95,7 +93,6 @@ private:
     void SaveMouseValues();
     void SaveTouchscreenValues();
     void SaveMotionTouchValues();
-    void SaveHidbusValues();
 
     // Save functions based off the respective config section names.
     void SaveAudioValues();

@@ -35,9 +35,14 @@ ResultCode KCodeMemory::Initialize(Core::DeviceMemory& device_memory, VAddr addr
     R_TRY(page_table.LockForCodeMemory(addr, size))
 
     // Clear the memory.
-    for (const auto& block : m_page_group.Nodes()) {
-        std::memset(device_memory.GetPointer(block.GetAddress()), 0xFF, block.GetSize());
-    }
+    //
+    // FIXME: this ends up clobbering address ranges outside the scope of the mapping within
+    // guest memory, and is not specifically required if the guest program is correctly
+    // written, so disable until this is further investigated.
+    //
+    // for (const auto& block : m_page_group.Nodes()) {
+    //     std::memset(device_memory.GetPointer(block.GetAddress()), 0xFF, block.GetSize());
+    // }
 
     // Set remaining tracking members.
     m_address = addr;
