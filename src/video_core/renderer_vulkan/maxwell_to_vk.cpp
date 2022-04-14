@@ -127,6 +127,7 @@ struct FormatTuple {
     {VK_FORMAT_A2B10G10R10_UNORM_PACK32, Attachable | Storage}, // A2B10G10R10_UNORM
     {VK_FORMAT_A2B10G10R10_UINT_PACK32, Attachable | Storage},  // A2B10G10R10_UINT
     {VK_FORMAT_A1R5G5B5_UNORM_PACK16, Attachable},         // A1B5G5R5_UNORM (flipped with swizzle)
+    {VK_FORMAT_R5G5B5A1_UNORM_PACK16},                     // A5B5G5R1_UNORM (specially swizzled)
     {VK_FORMAT_R8_UNORM, Attachable | Storage},            // R8_UNORM
     {VK_FORMAT_R8_SNORM, Attachable | Storage},            // R8_SNORM
     {VK_FORMAT_R8_SINT, Attachable | Storage},             // R8_SINT
@@ -184,6 +185,7 @@ struct FormatTuple {
     {VK_FORMAT_BC3_SRGB_BLOCK},                                // BC3_SRGB
     {VK_FORMAT_BC7_SRGB_BLOCK},                                // BC7_SRGB
     {VK_FORMAT_R4G4B4A4_UNORM_PACK16, Attachable},             // A4B4G4R4_UNORM
+    {VK_FORMAT_R4G4_UNORM_PACK8},                              // R4G4_UNORM
     {VK_FORMAT_ASTC_4x4_SRGB_BLOCK},                           // ASTC_2D_4X4_SRGB
     {VK_FORMAT_ASTC_8x8_SRGB_BLOCK},                           // ASTC_2D_8X8_SRGB
     {VK_FORMAT_ASTC_8x5_SRGB_BLOCK},                           // ASTC_2D_8X5_SRGB

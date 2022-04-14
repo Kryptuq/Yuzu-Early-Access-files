@@ -438,6 +438,32 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     }
 }
 
+[[nodiscard]] SwizzleSource SwapGreenRed(SwizzleSource value) {
+    switch (value) {
+    case SwizzleSource::R:
+        return SwizzleSource::G;
+    case SwizzleSource::G:
+        return SwizzleSource::R;
+    default:
+        return value;
+    }
+}
+
+[[nodiscard]] SwizzleSource SwapSpecial(SwizzleSource value) {
+    switch (value) {
+    case SwizzleSource::A:
+        return SwizzleSource::R;
+    case SwizzleSource::R:
+        return SwizzleSource::A;
+    case SwizzleSource::G:
+        return SwizzleSource::B;
+    case SwizzleSource::B:
+        return SwizzleSource::G;
+    default:
+        return value;
+    }
+}
+
 void CopyBufferToImage(vk::CommandBuffer cmdbuf, VkBuffer src_buffer, VkImage image,
                        VkImageAspectFlags aspect_mask, bool is_initialized,
                        std::span<const VkBufferImageCopy> copies) {
@@ -554,14 +580,25 @@ void CopyBufferToImage(vk::CommandBuffer cmdbuf, VkBuffer src_buffer, VkImage im
     };
 }
 
-[[nodiscard]] bool IsFormatFlipped(PixelFormat format, bool emulate_bgr565) {
+void TryTransformSwizzleIfNeeded(PixelFormat format, std::array<SwizzleSource, 4>& swizzle,
+                                 bool emulate_bgr565) {
     switch (format) {
     case PixelFormat::A1B5G5R5_UNORM:
-        return true;
+        std::ranges::transform(swizzle, swizzle.begin(), SwapBlueRed);
+        break;
     case PixelFormat::B5G6R5_UNORM:
-        return emulate_bgr565;
+        if (emulate_bgr565) {
+            std::ranges::transform(swizzle, swizzle.begin(), SwapBlueRed);
+        }
+        break;
+    case PixelFormat::A5B5G5R1_UNORM:
+        std::ranges::transform(swizzle, swizzle.begin(), SwapSpecial);
+        break;
+    case PixelFormat::R4G4_UNORM:
+        std::ranges::transform(swizzle, swizzle.begin(), SwapGreenRed);
+        break;
     default:
-        return false;
+        break;
     }
 }
 
@@ -1496,9 +1533,7 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
     };
     if (!info.IsRenderTarget()) {
         swizzle = info.Swizzle();
-        if (IsFormatFlipped(format, device->MustEmulateBGR565())) {
-            std::ranges::transform(swizzle, swizzle.begin(), SwapBlueRed);
-        }
+        TryTransformSwizzleIfNeeded(format, swizzle, device->MustEmulateBGR565());
         if ((aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
             std::ranges::transform(swizzle, swizzle.begin(), ConvertGreenRed);
         }

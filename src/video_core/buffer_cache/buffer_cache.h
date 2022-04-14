@@ -1311,7 +1311,20 @@ void BufferCache<P>::UpdateVertexBuffer(u32 index) {
     const GPUVAddr gpu_addr_begin = array.StartAddress();
     const GPUVAddr gpu_addr_end = limit.LimitAddress() + 1;
     const std::optional<VAddr> cpu_addr = gpu_memory.GpuToCpuAddress(gpu_addr_begin);
-    const u32 address_size = static_cast<u32>(gpu_addr_end - gpu_addr_begin);
+    u32 address_size = static_cast<u32>(gpu_addr_end - gpu_addr_begin);
+    if (address_size >= 64_MiB) {
+        // Reported vertex buffer size is very large, cap to mapped buffer size
+        GPUVAddr submapped_addr_end = gpu_addr_begin;
+
+        const auto ranges{gpu_memory.GetSubmappedRange(gpu_addr_begin, address_size)};
+        if (ranges.size() > 0) {
+            const auto& [addr, size] = *ranges.begin();
+            submapped_addr_end = addr + size;
+        }
+
+        address_size =
+            std::min(address_size, static_cast<u32>(submapped_addr_end - gpu_addr_begin));
+    }
     const u32 size = address_size; // TODO: Analyze stride and number of vertices
     if (array.enable == 0 || size == 0 || !cpu_addr) {
         vertex_buffers[index] = NULL_BINDING;

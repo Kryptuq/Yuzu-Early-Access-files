@@ -30,6 +30,7 @@ constexpr std::array<FormatTuple, VideoCore::Surface::MaxPixelFormat> FORMAT_TAB
     {GL_RGB10_A2, GL_RGBA, GL_UNSIGNED_INT_2_10_10_10_REV},           // A2B10G10R10_UNORM
     {GL_RGB10_A2UI, GL_RGBA_INTEGER, GL_UNSIGNED_INT_2_10_10_10_REV}, // A2B10G10R10_UINT
     {GL_RGB5_A1, GL_RGBA, GL_UNSIGNED_SHORT_1_5_5_5_REV},             // A1B5G5R5_UNORM
+    {GL_RGB5_A1, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1},                 // A5B5G5R1_UNORM
     {GL_R8, GL_RED, GL_UNSIGNED_BYTE},                                // R8_UNORM
     {GL_R8_SNORM, GL_RED, GL_BYTE},                                   // R8_SNORM
     {GL_R8I, GL_RED_INTEGER, GL_BYTE},                                // R8_SINT
@@ -87,6 +88,7 @@ constexpr std::array<FormatTuple, VideoCore::Surface::MaxPixelFormat> FORMAT_TAB
     {GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT},                         // BC3_SRGB
     {GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM},                            // BC7_SRGB
     {GL_RGBA4, GL_RGBA, GL_UNSIGNED_SHORT_4_4_4_4_REV},               // A4B4G4R4_UNORM
+    {GL_R8, GL_RED, GL_UNSIGNED_BYTE},                                // R4G4_UNORM
     {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR},                        // ASTC_2D_4X4_SRGB
     {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x8_KHR},                        // ASTC_2D_8X8_SRGB
     {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x5_KHR},                        // ASTC_2D_8X5_SRGB

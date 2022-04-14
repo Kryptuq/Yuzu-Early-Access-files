@@ -45,6 +45,12 @@ constexpr std::array B5G6R5_UNORM_PACK16{
     VK_FORMAT_R5G6B5_UNORM_PACK16,
     VK_FORMAT_UNDEFINED,
 };
+
+constexpr std::array R4G4_UNORM_PACK8{
+    VK_FORMAT_R8_UNORM,
+    VK_FORMAT_UNDEFINED,
+};
+
 } // namespace Alternatives
 
 enum class NvidiaArchitecture {
@@ -95,6 +101,8 @@ constexpr const VkFormat* GetFormatAlternatives(VkFormat format) {
         return Alternatives::DEPTH16_UNORM_STENCIL8_UINT.data();
     case VK_FORMAT_B5G6R5_UNORM_PACK16:
         return Alternatives::B5G6R5_UNORM_PACK16.data();
+    case VK_FORMAT_R4G4_UNORM_PACK8:
+        return Alternatives::R4G4_UNORM_PACK8.data();
     default:
         return nullptr;
     }
@@ -122,6 +130,8 @@ std::unordered_map<VkFormat, VkFormatProperties> GetFormatProperties(vk::Physica
         VK_FORMAT_A8B8G8R8_SRGB_PACK32,
         VK_FORMAT_R5G6B5_UNORM_PACK16,
         VK_FORMAT_B5G6R5_UNORM_PACK16,
+        VK_FORMAT_R5G5B5A1_UNORM_PACK16,
+        VK_FORMAT_B5G5R5A1_UNORM_PACK16,
         VK_FORMAT_A2B10G10R10_UNORM_PACK32,
         VK_FORMAT_A2B10G10R10_UINT_PACK32,
         VK_FORMAT_A1R5G5B5_UNORM_PACK16,
@@ -160,7 +170,9 @@ std::unordered_map<VkFormat, VkFormatProperties> GetFormatProperties(vk::Physica
         VK_FORMAT_R16G16B16A16_SFLOAT,
         VK_FORMAT_B8G8R8A8_UNORM,
         VK_FORMAT_B8G8R8A8_SRGB,
+        VK_FORMAT_R4G4_UNORM_PACK8,
         VK_FORMAT_R4G4B4A4_UNORM_PACK16,
+        VK_FORMAT_B4G4R4A4_UNORM_PACK16,
         VK_FORMAT_D32_SFLOAT,
         VK_FORMAT_D16_UNORM,
         VK_FORMAT_S8_UINT,

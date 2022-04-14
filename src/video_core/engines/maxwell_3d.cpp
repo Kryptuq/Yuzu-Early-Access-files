@@ -214,6 +214,11 @@ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argume
         regs.index_array.first = regs.small_index.first;
         dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
         return DrawArrays();
+    case MAXWELL3D_REG_INDEX(small_index_2):
+        regs.index_array.count = regs.small_index_2.count;
+        regs.index_array.first = regs.small_index_2.first;
+        dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
+        return DrawArrays();
     case MAXWELL3D_REG_INDEX(topology_override):
         use_topology_override = true;
         return;

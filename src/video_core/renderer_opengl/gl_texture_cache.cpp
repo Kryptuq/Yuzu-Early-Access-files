@@ -182,6 +182,26 @@ GLenum AttachmentType(PixelFormat format) {
     }
 }
 
+GLint ConvertA5B5G5R1_UNORM(SwizzleSource source) {
+    switch (source) {
+    case SwizzleSource::Zero:
+        return GL_ZERO;
+    case SwizzleSource::R:
+        return GL_ALPHA;
+    case SwizzleSource::G:
+        return GL_BLUE;
+    case SwizzleSource::B:
+        return GL_GREEN;
+    case SwizzleSource::A:
+        return GL_RED;
+    case SwizzleSource::OneInt:
+    case SwizzleSource::OneFloat:
+        return GL_ONE;
+    }
+    UNREACHABLE_MSG("Invalid swizzle source={}", source);
+    return GL_NONE;
+}
+
 void ApplySwizzle(GLuint handle, PixelFormat format, std::array<SwizzleSource, 4> swizzle) {
     switch (format) {
     case PixelFormat::D24_UNORM_S8_UINT:
@@ -192,6 +212,12 @@ void ApplySwizzle(GLuint handle, PixelFormat format, std::array<SwizzleSource, 4
                             TextureMode(format, swizzle[0] == SwizzleSource::R));
         std::ranges::transform(swizzle, swizzle.begin(), ConvertGreenRed);
         break;
+    case PixelFormat::A5B5G5R1_UNORM: {
+        std::array<GLint, 4> gl_swizzle;
+        std::ranges::transform(swizzle, gl_swizzle.begin(), ConvertA5B5G5R1_UNORM);
+        glTextureParameteriv(handle, GL_TEXTURE_SWIZZLE_RGBA, gl_swizzle.data());
+        return;
+    }
     default:
         break;
     }

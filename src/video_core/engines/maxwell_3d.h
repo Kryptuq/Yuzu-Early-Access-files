@@ -1220,7 +1220,12 @@ public:
                     BitField<16, 16, u32> count;
                 } small_index;
 
-                INSERT_PADDING_WORDS_NOINIT(0x6);
+                union {
+                    BitField<0, 16, u32> first;
+                    BitField<16, 16, u32> count;
+                } small_index_2;
+
+                INSERT_PADDING_WORDS_NOINIT(0x5);
 
                 INSERT_PADDING_WORDS_NOINIT(0x1F);
 
