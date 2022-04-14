@@ -3652,6 +3652,14 @@ void GMainWindow::UpdateUITheme() {
         setStyleSheet({});
     }
 
+    QPalette new_pal(qApp->palette());
+    if (UISettings::IsDarkTheme()) {
+        new_pal.setColor(QPalette::Link, QColor(0, 190, 255, 255));
+    } else {
+        new_pal.setColor(QPalette::Link, QColor(0, 140, 200, 255));
+    }
+    qApp->setPalette(new_pal);
+
     QIcon::setThemeName(current_theme);
     QIcon::setThemeSearchPaths(theme_paths);
 }

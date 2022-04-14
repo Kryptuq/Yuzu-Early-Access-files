@@ -123,14 +123,15 @@ void EmuWindow_SDL2::ShowCursor(bool show_cursor) {
 }
 
 void EmuWindow_SDL2::Fullscreen() {
+    SDL_DisplayMode display_mode;
     switch (Settings::values.fullscreen_mode.GetValue()) {
     case Settings::FullscreenMode::Exclusive:
-        // Set window size to render size before entering fullscreen -- SDL does not resize to
-        // display dimensions in this mode.
-        // TODO: Multiply the window size by resolution_factor (for both docked modes)
-        if (Settings::values.use_docked_mode) {
-            SDL_SetWindowSize(render_window, Layout::ScreenDocked::Width,
-                              Layout::ScreenDocked::Height);
+        // Set window size to render size before entering fullscreen -- SDL2 does not resize window
+        // to display dimensions automatically in this mode.
+        if (SDL_GetDesktopDisplayMode(0, &display_mode) == 0) {
+            SDL_SetWindowSize(render_window, display_mode.w, display_mode.h);
+        } else {
+            LOG_ERROR(Frontend, "SDL_GetDesktopDisplayMode failed: {}", SDL_GetError());
         }
 
         if (SDL_SetWindowFullscreen(render_window, SDL_WINDOW_FULLSCREEN) == 0) {

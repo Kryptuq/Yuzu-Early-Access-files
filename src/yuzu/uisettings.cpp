@@ -15,6 +15,14 @@ const Themes themes{{
     {"Midnight Blue Colorful", "colorful_midnight_blue"},
 }};
 
+bool IsDarkTheme() {
+    const auto& theme = UISettings::values.theme;
+    return theme == QStringLiteral("qdarkstyle") ||
+           theme == QStringLiteral("qdarkstyle_midnight_blue") ||
+           theme == QStringLiteral("colorful_dark") ||
+           theme == QStringLiteral("colorful_midnight_blue");
+}
+
 Values values = {};
 
 } // namespace UISettings

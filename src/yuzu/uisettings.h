@@ -17,6 +17,8 @@
 
 namespace UISettings {
 
+bool IsDarkTheme();
+
 struct ContextualShortcut {
     QString keyseq;
     QString controller_keyseq;
