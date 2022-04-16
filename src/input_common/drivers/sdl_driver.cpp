@@ -934,4 +934,37 @@ u8 SDLDriver::GetHatButtonId(const std::string& direction_name) const {
     return direction;
 }
 
+bool SDLDriver::IsStickInverted(const Common::ParamPackage& params) {
+    if (!params.Has("guid") || !params.Has("port")) {
+        return false;
+    }
+    const auto joystick = GetSDLJoystickByGUID(params.Get("guid", ""), params.Get("port", 0));
+    if (joystick == nullptr) {
+        return false;
+    }
+    auto* controller = joystick->GetSDLGameController();
+    if (controller == nullptr) {
+        return false;
+    }
+
+    const auto& axis_x = params.Get("axis_x", 0);
+    const auto& axis_y = params.Get("axis_y", 0);
+    const auto& binding_left_x =
+        SDL_GameControllerGetBindForAxis(controller, SDL_CONTROLLER_AXIS_LEFTX);
+    const auto& binding_right_x =
+        SDL_GameControllerGetBindForAxis(controller, SDL_CONTROLLER_AXIS_RIGHTX);
+    const auto& binding_left_y =
+        SDL_GameControllerGetBindForAxis(controller, SDL_CONTROLLER_AXIS_LEFTY);
+    const auto& binding_right_y =
+        SDL_GameControllerGetBindForAxis(controller, SDL_CONTROLLER_AXIS_RIGHTY);
+
+    if (axis_x != binding_left_y.value.axis && axis_x != binding_right_y.value.axis) {
+        return false;
+    }
+    if (axis_y != binding_left_x.value.axis && axis_y != binding_right_x.value.axis) {
+        return false;
+    }
+    return true;
+}
+
 } // namespace InputCommon

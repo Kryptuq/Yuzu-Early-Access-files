@@ -547,6 +547,22 @@ Common::Input::ButtonNames UDPClient::GetUIName(const Common::ParamPackage& para
     return Common::Input::ButtonNames::Invalid;
 }
 
+bool UDPClient::IsStickInverted(const Common::ParamPackage& params) {
+    if (!params.Has("guid") || !params.Has("port") || !params.Has("pad")) {
+        return false;
+    }
+
+    const auto x_axis = static_cast<PadAxes>(params.Get("axis_x", 0));
+    const auto y_axis = static_cast<PadAxes>(params.Get("axis_y", 0));
+    if (x_axis != PadAxes::LeftStickY && x_axis != PadAxes::RightStickY) {
+        return false;
+    }
+    if (y_axis != PadAxes::LeftStickX && y_axis != PadAxes::RightStickX) {
+        return false;
+    }
+    return true;
+}
+
 void TestCommunication(const std::string& host, u16 port,
                        const std::function<void()>& success_callback,
                        const std::function<void()>& failure_callback) {

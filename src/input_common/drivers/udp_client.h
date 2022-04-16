@@ -64,6 +64,8 @@ public:
     MotionMapping GetMotionMappingForDevice(const Common::ParamPackage& params) override;
     Common::Input::ButtonNames GetUIName(const Common::ParamPackage& params) const override;
 
+    bool IsStickInverted(const Common::ParamPackage& params) override;
+
 private:
     enum class PadButton {
         Undefined = 0x0000,

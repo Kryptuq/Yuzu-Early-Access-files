@@ -241,6 +241,28 @@ struct InputSubsystem::Impl {
         return Common::Input::ButtonNames::Invalid;
     }
 
+    bool IsStickInverted(const Common::ParamPackage& params) {
+        const std::string engine = params.Get("engine", "");
+        if (engine == mouse->GetEngineName()) {
+            return mouse->IsStickInverted(params);
+        }
+        if (engine == gcadapter->GetEngineName()) {
+            return gcadapter->IsStickInverted(params);
+        }
+        if (engine == udp_client->GetEngineName()) {
+            return udp_client->IsStickInverted(params);
+        }
+        if (engine == tas_input->GetEngineName()) {
+            return tas_input->IsStickInverted(params);
+        }
+#ifdef HAVE_SDL2
+        if (engine == sdl->GetEngineName()) {
+            return sdl->IsStickInverted(params);
+        }
+#endif
+        return false;
+    }
+
     bool IsController(const Common::ParamPackage& params) {
         const std::string engine = params.Get("engine", "");
         if (engine == mouse->GetEngineName()) {
@@ -382,6 +404,13 @@ Common::Input::ButtonNames InputSubsystem::GetButtonName(const Common::ParamPack
 
 bool InputSubsystem::IsController(const Common::ParamPackage& params) const {
     return impl->IsController(params);
+}
+
+bool InputSubsystem::IsStickInverted(const Common::ParamPackage& params) const {
+    if (params.Has("axis_x") && params.Has("axis_y")) {
+        return impl->IsStickInverted(params);
+    }
+    return false;
 }
 
 void InputSubsystem::ReloadInputDevices() {

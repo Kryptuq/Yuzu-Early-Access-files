@@ -157,6 +157,11 @@ public:
         return 0;
     }
 
+    /// Returns true if axis of a stick aren't mapped in the correct direction
+    virtual bool IsStickInverted([[maybe_unused]] const Common::ParamPackage& params) {
+        return false;
+    }
+
     void PreSetController(const PadIdentifier& identifier);
     void PreSetButton(const PadIdentifier& identifier, int button);
     void PreSetHatButton(const PadIdentifier& identifier, int button);

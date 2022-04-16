@@ -471,6 +471,25 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                     [=, this](const Common::ParamPackage& params) {
                         Common::ParamPackage param = emulated_controller->GetStickParam(analog_id);
                         SetAnalogParam(params, param, analog_sub_buttons[sub_button_id]);
+                        // Correct axis direction for inverted sticks
+                        if (input_subsystem->IsStickInverted(param)) {
+                            switch (analog_id) {
+                            case Settings::NativeAnalog::LStick: {
+                                const bool invert_value = param.Get("invert_x", "+") == "-";
+                                const std::string invert_str = invert_value ? "+" : "-";
+                                param.Set("invert_x", invert_str);
+                                break;
+                            }
+                            case Settings::NativeAnalog::RStick: {
+                                const bool invert_value = param.Get("invert_y", "+") == "-";
+                                const std::string invert_str = invert_value ? "+" : "-";
+                                param.Set("invert_y", invert_str);
+                                break;
+                            }
+                            default:
+                                break;
+                            }
+                        }
                         emulated_controller->SetStickParam(analog_id, param);
                     },
                     InputCommon::Polling::InputType::Stick);
@@ -1407,10 +1426,10 @@ void ConfigureInputPlayer::mousePressEvent(QMouseEvent* event) {
 }
 
 void ConfigureInputPlayer::keyPressEvent(QKeyEvent* event) {
-    event->ignore();
     if (!input_setter || !event) {
         return;
     }
+    event->ignore();
     if (event->key() != Qt::Key_Escape) {
         input_subsystem->GetKeyboard()->PressKey(event->key());
     }

@@ -119,6 +119,9 @@ public:
     /// Returns true if device is a controller.
     [[nodiscard]] bool IsController(const Common::ParamPackage& params) const;
 
+    /// Returns true if axis of a stick aren't mapped in the correct direction
+    [[nodiscard]] bool IsStickInverted(const Common::ParamPackage& device) const;
+
     /// Reloads the input devices.
     void ReloadInputDevices();
 

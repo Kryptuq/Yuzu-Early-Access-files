@@ -2603,6 +2603,20 @@
                  </property>
                 </widget>
                </item>
+               <item row="4" column="0">
+                <widget class="QCheckBox" name="enable_ring_controller">
+                 <property name="text">
+                  <string>Ring Controller</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="2">
+                <widget class="QPushButton" name="ring_controller_configure">
+                 <property name="text">
+                  <string>Configure</string>
+                 </property>
+                </widget>
+               </item>
               </layout>
              </widget>
             </item>
