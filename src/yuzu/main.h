@@ -328,6 +328,7 @@ private:
     void UpdateUISettings();
     void HideMouseCursor();
     void ShowMouseCursor();
+    void CenterMouseCursor();
     void OpenURL(const QUrl& url);
     void LoadTranslation();
     void OpenPerGameConfiguration(u64 title_id, const std::string& file_name);
@@ -372,6 +373,7 @@ private:
     bool auto_paused = false;
     bool auto_muted = false;
     QTimer mouse_hide_timer;
+    QTimer mouse_center_timer;
 
     // FS
     std::shared_ptr<FileSys::VfsFilesystem> vfs;
@@ -418,4 +420,5 @@ protected:
     void dropEvent(QDropEvent* event) override;
     void dragEnterEvent(QDragEnterEvent* event) override;
     void dragMoveEvent(QDragMoveEvent* event) override;
+    void leaveEvent(QEvent* event) override;
 };

@@ -152,7 +152,8 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 #endif
 
-constexpr int default_mouse_timeout = 2500;
+constexpr int default_mouse_hide_timeout = 2500;
+constexpr int default_mouse_center_timeout = 10;
 
 /**
  * "Callouts" are one-time instructional messages shown to the user. In the config settings, there
@@ -287,9 +288,12 @@ GMainWindow::GMainWindow()
     ui->menubar->setCursor(QCursor());
     statusBar()->setCursor(QCursor());
 
-    mouse_hide_timer.setInterval(default_mouse_timeout);
+    mouse_hide_timer.setInterval(default_mouse_hide_timeout);
     connect(&mouse_hide_timer, &QTimer::timeout, this, &GMainWindow::HideMouseCursor);
     connect(ui->menubar, &QMenuBar::hovered, this, &GMainWindow::ShowMouseCursor);
+
+    mouse_center_timer.setInterval(default_mouse_center_timeout);
+    connect(&mouse_center_timer, &QTimer::timeout, this, &GMainWindow::CenterMouseCursor);
 
     MigrateConfigFiles();
 
@@ -3301,10 +3305,26 @@ void GMainWindow::ShowMouseCursor() {
     }
 }
 
+void GMainWindow::CenterMouseCursor() {
+    if (emu_thread == nullptr || !Settings::values.mouse_panning) {
+        mouse_center_timer.stop();
+        return;
+    }
+    if (!this->isActiveWindow()) {
+        mouse_center_timer.stop();
+        return;
+    }
+    const int center_x = render_window->width() / 2;
+    const int center_y = render_window->height() / 2;
+
+    QCursor::setPos(mapToGlobal({center_x, center_y}));
+}
+
 void GMainWindow::OnMouseActivity() {
     if (!Settings::values.mouse_panning) {
         ShowMouseCursor();
     }
+    mouse_center_timer.stop();
 }
 
 void GMainWindow::OnCoreError(Core::SystemResultStatus result, std::string details) {
@@ -3575,6 +3595,22 @@ void GMainWindow::dragEnterEvent(QDragEnterEvent* event) {
 
 void GMainWindow::dragMoveEvent(QDragMoveEvent* event) {
     AcceptDropEvent(event);
+}
+
+void GMainWindow::leaveEvent(QEvent* event) {
+    if (Settings::values.mouse_panning) {
+        const QRect& rect = geometry();
+        QPoint position = QCursor::pos();
+
+        qint32 x = qBound(rect.left(), position.x(), rect.right());
+        qint32 y = qBound(rect.top(), position.y(), rect.bottom());
+        // Only start the timer if the mouse has left the window bound.
+        // The leave event is also triggered when the window looses focus.
+        if (x != position.x() || y != position.y()) {
+            mouse_center_timer.start();
+        }
+        event->accept();
+    }
 }
 
 bool GMainWindow::ConfirmChangeGame() {

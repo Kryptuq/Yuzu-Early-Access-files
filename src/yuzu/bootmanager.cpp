@@ -934,7 +934,8 @@ void GRenderWindow::CaptureScreenshot(const QString& screenshot_path) {
     const f32 res_scale = Settings::values.resolution_info.up_factor;
 
     if (renderer.IsScreenshotPending()) {
-        LOG_ERROR(Render, "A screenshot is already requested or in progress, ignoring the request");
+        LOG_WARNING(Render,
+                    "A screenshot is already requested or in progress, ignoring the request");
         return;
     }
 
