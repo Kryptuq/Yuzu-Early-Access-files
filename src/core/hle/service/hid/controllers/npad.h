@@ -28,7 +28,9 @@ class KReadableEvent;
 
 namespace Service::KernelHelpers {
 class ServiceContext;
-}
+} // namespace Service::KernelHelpers
+
+union ResultCode;
 
 namespace Service::HID {
 
@@ -143,20 +145,26 @@ public:
 
     void DisconnectNpad(Core::HID::NpadIdType npad_id);
 
-    void SetGyroscopeZeroDriftMode(Core::HID::SixAxisSensorHandle sixaxis_handle,
-                                   GyroscopeZeroDriftMode drift_mode);
-    GyroscopeZeroDriftMode GetGyroscopeZeroDriftMode(
-        Core::HID::SixAxisSensorHandle sixaxis_handle) const;
-    bool IsSixAxisSensorAtRest(Core::HID::SixAxisSensorHandle sixaxis_handle) const;
-    void SetSixAxisEnabled(Core::HID::SixAxisSensorHandle sixaxis_handle, bool sixaxis_status);
-    void SetSixAxisFusionEnabled(Core::HID::SixAxisSensorHandle sixaxis_handle,
-                                 bool sixaxis_fusion_status);
-    void SetSixAxisFusionParameters(
+    ResultCode SetGyroscopeZeroDriftMode(Core::HID::SixAxisSensorHandle sixaxis_handle,
+                                         GyroscopeZeroDriftMode drift_mode);
+    ResultCode GetGyroscopeZeroDriftMode(Core::HID::SixAxisSensorHandle sixaxis_handle,
+                                         GyroscopeZeroDriftMode& drift_mode) const;
+    ResultCode IsSixAxisSensorAtRest(Core::HID::SixAxisSensorHandle sixaxis_handle,
+                                     bool& is_at_rest) const;
+    ResultCode IsFirmwareUpdateAvailableForSixAxisSensor(
+        Core::HID::SixAxisSensorHandle sixaxis_handle, bool& is_firmware_available) const;
+    ResultCode SetSixAxisEnabled(Core::HID::SixAxisSensorHandle sixaxis_handle,
+                                 bool sixaxis_status);
+    ResultCode IsSixAxisSensorFusionEnabled(Core::HID::SixAxisSensorHandle sixaxis_handle,
+                                            bool& is_fusion_enabled) const;
+    ResultCode SetSixAxisFusionEnabled(Core::HID::SixAxisSensorHandle sixaxis_handle,
+                                       bool is_fusion_enabled);
+    ResultCode SetSixAxisFusionParameters(
         Core::HID::SixAxisSensorHandle sixaxis_handle,
         Core::HID::SixAxisSensorFusionParameters sixaxis_fusion_parameters);
-    Core::HID::SixAxisSensorFusionParameters GetSixAxisFusionParameters(
-        Core::HID::SixAxisSensorHandle sixaxis_handle);
-    void ResetSixAxisFusionParameters(Core::HID::SixAxisSensorHandle sixaxis_handle);
+    ResultCode GetSixAxisFusionParameters(
+        Core::HID::SixAxisSensorHandle sixaxis_handle,
+        Core::HID::SixAxisSensorFusionParameters& parameters) const;
     Core::HID::LedPattern GetLedPattern(Core::HID::NpadIdType npad_id);
     bool IsUnintendedHomeButtonInputProtectionEnabled(Core::HID::NpadIdType npad_id) const;
     void SetUnintendedHomeButtonInputProtectionEnabled(bool is_protection_enabled,
@@ -451,6 +459,12 @@ private:
         std::chrono::steady_clock::time_point last_vibration_timepoint{};
     };
 
+    struct SixaxisParameters {
+        bool is_fusion_enabled{true};
+        Core::HID::SixAxisSensorFusionParameters fusion{};
+        GyroscopeZeroDriftMode gyroscope_zero_drift_mode{GyroscopeZeroDriftMode::Standard};
+    };
+
     struct NpadControllerData {
         Core::HID::EmulatedController* device;
         Kernel::KEvent* styleset_changed_event{};
@@ -467,9 +481,12 @@ private:
         // Motion parameters
         bool sixaxis_at_rest{true};
         bool sixaxis_sensor_enabled{true};
-        bool sixaxis_fusion_enabled{false};
-        Core::HID::SixAxisSensorFusionParameters sixaxis_fusion{};
-        GyroscopeZeroDriftMode gyroscope_zero_drift_mode{GyroscopeZeroDriftMode::Standard};
+        SixaxisParameters sixaxis_fullkey{};
+        SixaxisParameters sixaxis_handheld{};
+        SixaxisParameters sixaxis_dual_left{};
+        SixaxisParameters sixaxis_dual_right{};
+        SixaxisParameters sixaxis_left{};
+        SixaxisParameters sixaxis_right{};
 
         // Current pad state
         NPadGenericState npad_pad_state{};
@@ -481,6 +498,7 @@ private:
         SixAxisSensorState sixaxis_dual_right_state{};
         SixAxisSensorState sixaxis_left_lifo_state{};
         SixAxisSensorState sixaxis_right_lifo_state{};
+
         int callback_key;
     };
 

@@ -248,7 +248,7 @@ Hid::Hid(Core::System& system_)
         {65, nullptr, "GetJoySixAxisSensorLifoHandle"},
         {66, &Hid::StartSixAxisSensor, "StartSixAxisSensor"},
         {67, &Hid::StopSixAxisSensor, "StopSixAxisSensor"},
-        {68, nullptr, "IsSixAxisSensorFusionEnabled"},
+        {68, &Hid::IsSixAxisSensorFusionEnabled, "IsSixAxisSensorFusionEnabled"},
         {69, &Hid::EnableSixAxisSensorFusion, "EnableSixAxisSensorFusion"},
         {70, &Hid::SetSixAxisSensorFusionParameters, "SetSixAxisSensorFusionParameters"},
         {71, &Hid::GetSixAxisSensorFusionParameters, "GetSixAxisSensorFusionParameters"},
@@ -528,8 +528,8 @@ void Hid::StartSixAxisSensor(Kernel::HLERequestContext& ctx) {
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
-    applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .SetSixAxisEnabled(parameters.sixaxis_handle, true);
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result = controller.SetSixAxisEnabled(parameters.sixaxis_handle, true);
 
     LOG_DEBUG(Service_HID,
               "called, npad_type={}, npad_id={}, device_index={}, applet_resource_user_id={}",
@@ -537,7 +537,7 @@ void Hid::StartSixAxisSensor(Kernel::HLERequestContext& ctx) {
               parameters.sixaxis_handle.device_index, parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(ResultSuccess);
+    rb.Push(result);
 }
 
 void Hid::StopSixAxisSensor(Kernel::HLERequestContext& ctx) {
@@ -551,8 +551,8 @@ void Hid::StopSixAxisSensor(Kernel::HLERequestContext& ctx) {
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
-    applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .SetSixAxisEnabled(parameters.sixaxis_handle, false);
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result = controller.SetSixAxisEnabled(parameters.sixaxis_handle, false);
 
     LOG_DEBUG(Service_HID,
               "called, npad_type={}, npad_id={}, device_index={}, applet_resource_user_id={}",
@@ -560,7 +560,33 @@ void Hid::StopSixAxisSensor(Kernel::HLERequestContext& ctx) {
               parameters.sixaxis_handle.device_index, parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(ResultSuccess);
+    rb.Push(result);
+}
+
+void Hid::IsSixAxisSensorFusionEnabled(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    struct Parameters {
+        Core::HID::SixAxisSensorHandle sixaxis_handle;
+        INSERT_PADDING_WORDS_NOINIT(1);
+        u64 applet_resource_user_id;
+    };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
+
+    const auto parameters{rp.PopRaw<Parameters>()};
+
+    bool is_enabled{};
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result =
+        controller.IsSixAxisSensorFusionEnabled(parameters.sixaxis_handle, is_enabled);
+
+    LOG_DEBUG(Service_HID,
+              "called, npad_type={}, npad_id={}, device_index={}, applet_resource_user_id={}",
+              parameters.sixaxis_handle.npad_type, parameters.sixaxis_handle.npad_id,
+              parameters.sixaxis_handle.device_index, parameters.applet_resource_user_id);
+
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(result);
+    rb.Push(is_enabled);
 }
 
 void Hid::EnableSixAxisSensorFusion(Kernel::HLERequestContext& ctx) {
@@ -575,9 +601,9 @@ void Hid::EnableSixAxisSensorFusion(Kernel::HLERequestContext& ctx) {
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
-    applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .SetSixAxisFusionEnabled(parameters.sixaxis_handle,
-                                 parameters.enable_sixaxis_sensor_fusion);
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result = controller.SetSixAxisFusionEnabled(parameters.sixaxis_handle,
+                                                           parameters.enable_sixaxis_sensor_fusion);
 
     LOG_DEBUG(Service_HID,
               "called, enable_sixaxis_sensor_fusion={}, npad_type={}, npad_id={}, "
@@ -587,7 +613,7 @@ void Hid::EnableSixAxisSensorFusion(Kernel::HLERequestContext& ctx) {
               parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(ResultSuccess);
+    rb.Push(result);
 }
 
 void Hid::SetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
@@ -602,8 +628,9 @@ void Hid::SetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
-    applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .SetSixAxisFusionParameters(parameters.sixaxis_handle, parameters.sixaxis_fusion);
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result =
+        controller.SetSixAxisFusionParameters(parameters.sixaxis_handle, parameters.sixaxis_fusion);
 
     LOG_DEBUG(Service_HID,
               "called, npad_type={}, npad_id={}, device_index={}, parameter1={}, "
@@ -613,7 +640,7 @@ void Hid::SetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
               parameters.sixaxis_fusion.parameter2, parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(ResultSuccess);
+    rb.Push(result);
 }
 
 void Hid::GetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
@@ -627,9 +654,11 @@ void Hid::GetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
-    const auto sixaxis_fusion_parameters =
-        applet_resource->GetController<Controller_NPad>(HidController::NPad)
-            .GetSixAxisFusionParameters(parameters.sixaxis_handle);
+    Core::HID::SixAxisSensorFusionParameters fusion_parameters{};
+    const auto& controller =
+        GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result =
+        controller.GetSixAxisFusionParameters(parameters.sixaxis_handle, fusion_parameters);
 
     LOG_DEBUG(Service_HID,
               "called, npad_type={}, npad_id={}, device_index={}, applet_resource_user_id={}",
@@ -637,8 +666,8 @@ void Hid::GetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
               parameters.sixaxis_handle.device_index, parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 4};
-    rb.Push(ResultSuccess);
-    rb.PushRaw(sixaxis_fusion_parameters);
+    rb.Push(result);
+    rb.PushRaw(fusion_parameters);
 }
 
 void Hid::ResetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
@@ -652,8 +681,14 @@ void Hid::ResetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
-    applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .ResetSixAxisFusionParameters(parameters.sixaxis_handle);
+    // Since these parameters are unknow just use what HW outputs
+    const Core::HID::SixAxisSensorFusionParameters fusion_parameters{
+        .parameter1 = 0.03f,
+        .parameter2 = 0.4f,
+    };
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result =
+        controller.SetSixAxisFusionParameters(parameters.sixaxis_handle, fusion_parameters);
 
     LOG_DEBUG(Service_HID,
               "called, npad_type={}, npad_id={}, device_index={}, applet_resource_user_id={}",
@@ -661,7 +696,7 @@ void Hid::ResetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
               parameters.sixaxis_handle.device_index, parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(ResultSuccess);
+    rb.Push(result);
 }
 
 void Hid::SetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
@@ -670,8 +705,8 @@ void Hid::SetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
     const auto drift_mode{rp.PopEnum<Controller_NPad::GyroscopeZeroDriftMode>()};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
-    applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .SetGyroscopeZeroDriftMode(sixaxis_handle, drift_mode);
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result = controller.SetGyroscopeZeroDriftMode(sixaxis_handle, drift_mode);
 
     LOG_DEBUG(Service_HID,
               "called, npad_type={}, npad_id={}, device_index={}, drift_mode={}, "
@@ -680,7 +715,7 @@ void Hid::SetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
               drift_mode, applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(ResultSuccess);
+    rb.Push(result);
 }
 
 void Hid::GetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
@@ -694,15 +729,18 @@ void Hid::GetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
+    auto drift_mode{Controller_NPad::GyroscopeZeroDriftMode::Standard};
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result = controller.GetGyroscopeZeroDriftMode(parameters.sixaxis_handle, drift_mode);
+
     LOG_DEBUG(Service_HID,
               "called, npad_type={}, npad_id={}, device_index={}, applet_resource_user_id={}",
               parameters.sixaxis_handle.npad_type, parameters.sixaxis_handle.npad_id,
               parameters.sixaxis_handle.device_index, parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 3};
-    rb.Push(ResultSuccess);
-    rb.PushEnum(applet_resource->GetController<Controller_NPad>(HidController::NPad)
-                    .GetGyroscopeZeroDriftMode(parameters.sixaxis_handle));
+    rb.Push(result);
+    rb.PushEnum(drift_mode);
 }
 
 void Hid::ResetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
@@ -715,10 +753,10 @@ void Hid::ResetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
     static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
 
     const auto parameters{rp.PopRaw<Parameters>()};
-    const auto drift_mode{Controller_NPad::GyroscopeZeroDriftMode::Standard};
 
-    applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .SetGyroscopeZeroDriftMode(parameters.sixaxis_handle, drift_mode);
+    const auto drift_mode{Controller_NPad::GyroscopeZeroDriftMode::Standard};
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result = controller.SetGyroscopeZeroDriftMode(parameters.sixaxis_handle, drift_mode);
 
     LOG_DEBUG(Service_HID,
               "called, npad_type={}, npad_id={}, device_index={}, applet_resource_user_id={}",
@@ -726,7 +764,7 @@ void Hid::ResetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
               parameters.sixaxis_handle.device_index, parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(ResultSuccess);
+    rb.Push(result);
 }
 
 void Hid::IsSixAxisSensorAtRest(Kernel::HLERequestContext& ctx) {
@@ -740,15 +778,18 @@ void Hid::IsSixAxisSensorAtRest(Kernel::HLERequestContext& ctx) {
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
+    bool is_at_rest{};
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result = controller.IsSixAxisSensorAtRest(parameters.sixaxis_handle, is_at_rest);
+
     LOG_DEBUG(Service_HID,
               "called, npad_type={}, npad_id={}, device_index={}, applet_resource_user_id={}",
               parameters.sixaxis_handle.npad_type, parameters.sixaxis_handle.npad_id,
               parameters.sixaxis_handle.device_index, parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 3};
-    rb.Push(ResultSuccess);
-    rb.Push(applet_resource->GetController<Controller_NPad>(HidController::NPad)
-                .IsSixAxisSensorAtRest(parameters.sixaxis_handle));
+    rb.Push(result);
+    rb.Push(is_at_rest);
 }
 
 void Hid::IsFirmwareUpdateAvailableForSixAxisSensor(Kernel::HLERequestContext& ctx) {
@@ -762,6 +803,11 @@ void Hid::IsFirmwareUpdateAvailableForSixAxisSensor(Kernel::HLERequestContext& c
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
+    bool is_firmware_available{};
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result = controller.IsFirmwareUpdateAvailableForSixAxisSensor(
+        parameters.sixaxis_handle, is_firmware_available);
+
     LOG_WARNING(
         Service_HID,
         "(STUBBED) called, npad_type={}, npad_id={}, device_index={}, applet_resource_user_id={}",
@@ -769,8 +815,8 @@ void Hid::IsFirmwareUpdateAvailableForSixAxisSensor(Kernel::HLERequestContext& c
         parameters.sixaxis_handle.device_index, parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 3};
-    rb.Push(ResultSuccess);
-    rb.Push(false);
+    rb.Push(result);
+    rb.Push(is_firmware_available);
 }
 
 void Hid::ActivateGesture(Kernel::HLERequestContext& ctx) {
@@ -1120,7 +1166,7 @@ void Hid::SwapNpadAssignment(Kernel::HLERequestContext& ctx) {
         rb.Push(ResultSuccess);
     } else {
         LOG_ERROR(Service_HID, "Npads are not connected!");
-        rb.Push(ERR_NPAD_NOT_CONNECTED);
+        rb.Push(NpadNotConnected);
     }
 }
 

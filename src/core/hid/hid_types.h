@@ -491,9 +491,10 @@ struct SixAxisSensorHandle {
 };
 static_assert(sizeof(SixAxisSensorHandle) == 4, "SixAxisSensorHandle is an invalid size");
 
+// These parameters seem related to how much gyro/accelerometer is used
 struct SixAxisSensorFusionParameters {
-    f32 parameter1;
-    f32 parameter2;
+    f32 parameter1{0.03f}; // Range 0.0 to 1.0, default 0.03
+    f32 parameter2{0.4f};  // Default 0.4
 };
 static_assert(sizeof(SixAxisSensorFusionParameters) == 8,
               "SixAxisSensorFusionParameters is an invalid size");

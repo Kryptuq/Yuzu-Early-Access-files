@@ -103,6 +103,7 @@ private:
     void DeactivateSixAxisSensor(Kernel::HLERequestContext& ctx);
     void StartSixAxisSensor(Kernel::HLERequestContext& ctx);
     void StopSixAxisSensor(Kernel::HLERequestContext& ctx);
+    void IsSixAxisSensorFusionEnabled(Kernel::HLERequestContext& ctx);
     void EnableSixAxisSensorFusion(Kernel::HLERequestContext& ctx);
     void SetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx);
     void GetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx);
