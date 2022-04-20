@@ -8,15 +8,18 @@
 #include <cstdlib>
 #include <type_traits>
 
-#include <mp/traits/function_info.h>
+#include <mcl/assert.hpp>
+#include <mcl/bit/bit_count.hpp>
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/bitsizeof.hpp>
+#include <mcl/stdint.hpp>
+#include <mcl/type_traits/function_info.hpp>
+#include <xbyak/xbyak.h>
 
 #include "dynarmic/backend/x64/abi.h"
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/constants.h"
 #include "dynarmic/backend/x64/emit_x64.h"
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
 #include "dynarmic/common/math_util.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/microinstruction.h"
@@ -52,7 +55,7 @@ static void EmitAVXVectorOperation(BlockOfCode& code, EmitContext& ctx, IR::Inst
 
 template<typename Lambda>
 static void EmitOneArgumentFallback(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst, Lambda lambda) {
-    const auto fn = static_cast<mp::equivalent_function_type<Lambda>*>(lambda);
+    const auto fn = static_cast<mcl::equivalent_function_type<Lambda>*>(lambda);
     constexpr u32 stack_space = 2 * 16;
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
     const Xbyak::Xmm arg1 = ctx.reg_alloc.UseXmm(args[0]);
@@ -75,7 +78,7 @@ static void EmitOneArgumentFallback(BlockOfCode& code, EmitContext& ctx, IR::Ins
 
 template<typename Lambda>
 static void EmitOneArgumentFallbackWithSaturation(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst, Lambda lambda) {
-    const auto fn = static_cast<mp::equivalent_function_type<Lambda>*>(lambda);
+    const auto fn = static_cast<mcl::equivalent_function_type<Lambda>*>(lambda);
     constexpr u32 stack_space = 2 * 16;
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
     const Xbyak::Xmm arg1 = ctx.reg_alloc.UseXmm(args[0]);
@@ -100,7 +103,7 @@ static void EmitOneArgumentFallbackWithSaturation(BlockOfCode& code, EmitContext
 
 template<typename Lambda>
 static void EmitTwoArgumentFallbackWithSaturation(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst, Lambda lambda) {
-    const auto fn = static_cast<mp::equivalent_function_type<Lambda>*>(lambda);
+    const auto fn = static_cast<mcl::equivalent_function_type<Lambda>*>(lambda);
     constexpr u32 stack_space = 3 * 16;
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
     const Xbyak::Xmm arg1 = ctx.reg_alloc.UseXmm(args[0]);
@@ -128,7 +131,7 @@ static void EmitTwoArgumentFallbackWithSaturation(BlockOfCode& code, EmitContext
 
 template<typename Lambda>
 static void EmitTwoArgumentFallback(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst, Lambda lambda) {
-    const auto fn = static_cast<mp::equivalent_function_type<Lambda>*>(lambda);
+    const auto fn = static_cast<mcl::equivalent_function_type<Lambda>*>(lambda);
     constexpr u32 stack_space = 3 * 16;
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
     const Xbyak::Xmm arg1 = ctx.reg_alloc.UseXmm(args[0]);
@@ -528,7 +531,7 @@ void EmitX64::EmitVectorArithmeticShiftRight64(EmitContext& ctx, IR::Inst* inst)
 template<typename T>
 static constexpr T VShift(T x, T y) {
     const s8 shift_amount = static_cast<s8>(static_cast<u8>(y));
-    const s64 bit_size = static_cast<s64>(Common::BitSize<T>());
+    const s64 bit_size = static_cast<s64>(mcl::bitsizeof<T>);
 
     if constexpr (std::is_signed_v<T>) {
         if (shift_amount >= bit_size) {
@@ -565,22 +568,25 @@ void EmitX64::EmitVectorArithmeticVShift16(EmitContext& ctx, IR::Inst* inst) {
 
         const Xbyak::Xmm result = ctx.reg_alloc.UseScratchXmm(args[0]);
         const Xbyak::Xmm left_shift = ctx.reg_alloc.UseScratchXmm(args[1]);
-        const Xbyak::Xmm right_shift = ctx.reg_alloc.ScratchXmm();
-        const Xbyak::Xmm tmp = ctx.reg_alloc.ScratchXmm();
+        const Xbyak::Xmm right_shift = xmm16;
+        const Xbyak::Xmm tmp = xmm17;
 
-        code.vmovdqa(tmp, code.MConst(xword, 0x00FF00FF00FF00FF, 0x00FF00FF00FF00FF));
-        code.vpxor(right_shift, right_shift, right_shift);
+        code.vmovdqa32(tmp, code.MConst(xword, 0x00FF00FF00FF00FF, 0x00FF00FF00FF00FF));
+        code.vpxord(right_shift, right_shift, right_shift);
         code.vpsubw(right_shift, right_shift, left_shift);
 
         code.vpsllw(xmm0, left_shift, 8);
         code.vpsraw(xmm0, xmm0, 15);
 
-        code.vpand(right_shift, right_shift, tmp);
-        code.vpand(left_shift, left_shift, tmp);
+        const Xbyak::Opmask mask = k1;
+        code.vpmovb2m(mask, xmm0);
+
+        code.vpandd(right_shift, right_shift, tmp);
+        code.vpandd(left_shift, left_shift, tmp);
 
         code.vpsravw(tmp, result, right_shift);
         code.vpsllvw(result, result, left_shift);
-        code.pblendvb(result, tmp);
+        code.vpblendmb(result | mask, result, tmp);
 
         ctx.reg_alloc.DefineValue(inst, result);
         return;
@@ -628,21 +634,23 @@ void EmitX64::EmitVectorArithmeticVShift64(EmitContext& ctx, IR::Inst* inst) {
 
         const Xbyak::Xmm result = ctx.reg_alloc.UseScratchXmm(args[0]);
         const Xbyak::Xmm left_shift = ctx.reg_alloc.UseScratchXmm(args[1]);
-        const Xbyak::Xmm right_shift = ctx.reg_alloc.ScratchXmm();
-        const Xbyak::Xmm tmp = ctx.reg_alloc.ScratchXmm();
+        const Xbyak::Xmm right_shift = xmm16;
+        const Xbyak::Xmm tmp = xmm17;
 
-        code.vmovdqa(tmp, code.MConst(xword, 0x00000000000000FF, 0x00000000000000FF));
-        code.vpxor(right_shift, right_shift, right_shift);
+        code.vmovdqa32(tmp, code.MConst(xword, 0x00000000000000FF, 0x00000000000000FF));
+        code.vpxorq(right_shift, right_shift, right_shift);
         code.vpsubq(right_shift, right_shift, left_shift);
 
         code.vpsllq(xmm0, left_shift, 56);
+        const Xbyak::Opmask mask = k1;
+        code.vpmovq2m(mask, xmm0);
 
-        code.vpand(right_shift, right_shift, tmp);
-        code.vpand(left_shift, left_shift, tmp);
+        code.vpandq(right_shift, right_shift, tmp);
+        code.vpandq(left_shift, left_shift, tmp);
 
         code.vpsravq(tmp, result, right_shift);
         code.vpsllvq(result, result, left_shift);
-        code.blendvpd(result, tmp);
+        code.vpblendmq(result | mask, result, tmp);
 
         ctx.reg_alloc.DefineValue(inst, result);
         return;
@@ -853,10 +861,10 @@ void EmitX64::EmitVectorBroadcastElement16(EmitContext& ctx, IR::Inst* inst) {
     }
 
     if (index < 4) {
-        code.pshuflw(a, a, Common::Replicate<u8>(index, 2));
+        code.pshuflw(a, a, mcl::bit::replicate_element<2, u8>(index));
         code.punpcklqdq(a, a);
     } else {
-        code.pshufhw(a, a, Common::Replicate<u8>(u8(index - 4), 2));
+        code.pshufhw(a, a, mcl::bit::replicate_element<2, u8>(u8(index - 4)));
         code.punpckhqdq(a, a);
     }
 
@@ -870,7 +878,7 @@ void EmitX64::EmitVectorBroadcastElement32(EmitContext& ctx, IR::Inst* inst) {
     const u8 index = args[1].GetImmediateU8();
     ASSERT(index < 4);
 
-    code.pshufd(a, a, Common::Replicate<u8>(index, 2));
+    code.pshufd(a, a, mcl::bit::replicate_element<2, u8>(index));
 
     ctx.reg_alloc.DefineValue(inst, a);
 }
@@ -883,7 +891,7 @@ void EmitX64::EmitVectorBroadcastElement64(EmitContext& ctx, IR::Inst* inst) {
     ASSERT(index < 2);
 
     if (code.HasHostFeature(HostFeature::AVX)) {
-        code.vpermilpd(a, a, Common::Replicate<u8>(index, 1));
+        code.vpermilpd(a, a, mcl::bit::replicate_element<1, u8>(index));
     } else {
         if (index == 0) {
             code.punpcklqdq(a, a);
@@ -899,7 +907,7 @@ static void EmitVectorCountLeadingZeros(VectorArray<T>& result, const VectorArra
     for (size_t i = 0; i < result.size(); i++) {
         T element = data[i];
 
-        size_t count = Common::BitSize<T>();
+        size_t count = mcl::bitsizeof<T>;
         while (element != 0) {
             element >>= 1;
             --count;
@@ -1630,7 +1638,7 @@ void EmitX64::EmitVectorLogicalShiftLeft8(EmitContext& ctx, IR::Inst* inst) {
         code.gf2p8affineqb(result, code.MConst(xword, shift_matrix, shift_matrix), 0);
     } else {
         const u64 replicand = (0xFFULL << shift_amount) & 0xFF;
-        const u64 mask = Common::Replicate(replicand, Common::BitSize<u8>());
+        const u64 mask = mcl::bit::replicate_element<u8, u64>(replicand);
 
         code.psllw(result, shift_amount);
         code.pand(result, code.MConst(xword, mask, mask));
@@ -1687,7 +1695,7 @@ void EmitX64::EmitVectorLogicalShiftRight8(EmitContext& ctx, IR::Inst* inst) {
         code.gf2p8affineqb(result, code.MConst(xword, shift_matrix, shift_matrix), 0);
     } else {
         const u64 replicand = 0xFEULL >> shift_amount;
-        const u64 mask = Common::Replicate(replicand, Common::BitSize<u8>());
+        const u64 mask = mcl::bit::replicate_element<u8, u64>(replicand);
 
         code.psrlw(result, shift_amount);
         code.pand(result, code.MConst(xword, mask, mask));
@@ -1741,18 +1749,18 @@ void EmitX64::EmitVectorLogicalVShift16(EmitContext& ctx, IR::Inst* inst) {
 
         const Xbyak::Xmm result = ctx.reg_alloc.UseScratchXmm(args[0]);
         const Xbyak::Xmm left_shift = ctx.reg_alloc.UseScratchXmm(args[1]);
-        const Xbyak::Xmm right_shift = ctx.reg_alloc.ScratchXmm();
-        const Xbyak::Xmm tmp = ctx.reg_alloc.ScratchXmm();
+        const Xbyak::Xmm right_shift = xmm16;
+        const Xbyak::Xmm tmp = xmm17;
 
-        code.vmovdqa(tmp, code.MConst(xword, 0x00FF00FF00FF00FF, 0x00FF00FF00FF00FF));
-        code.vpxor(right_shift, right_shift, right_shift);
+        code.vmovdqa32(tmp, code.MConst(xword, 0x00FF00FF00FF00FF, 0x00FF00FF00FF00FF));
+        code.vpxord(right_shift, right_shift, right_shift);
         code.vpsubw(right_shift, right_shift, left_shift);
-        code.vpand(left_shift, left_shift, tmp);
-        code.vpand(right_shift, right_shift, tmp);
+        code.vpandd(left_shift, left_shift, tmp);
+        code.vpandd(right_shift, right_shift, tmp);
 
         code.vpsllvw(tmp, result, left_shift);
         code.vpsrlvw(result, result, right_shift);
-        code.vpor(result, result, tmp);
+        code.vpord(result, result, tmp);
 
         ctx.reg_alloc.DefineValue(inst, result);
         return;
@@ -2500,9 +2508,9 @@ void EmitX64::EmitVectorPairedAddSignedWiden32(EmitContext& ctx, IR::Inst* inst)
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
 
     const Xbyak::Xmm a = ctx.reg_alloc.UseScratchXmm(args[0]);
-    const Xbyak::Xmm c = ctx.reg_alloc.ScratchXmm();
 
     if (code.HasHostFeature(HostFeature::AVX512_Ortho)) {
+        const Xbyak::Xmm c = xmm16;
         code.vpsraq(c, a, 32);
         code.vpsllq(a, a, 32);
         code.vpsraq(a, a, 32);
@@ -2510,6 +2518,7 @@ void EmitX64::EmitVectorPairedAddSignedWiden32(EmitContext& ctx, IR::Inst* inst)
     } else {
         const Xbyak::Xmm tmp1 = ctx.reg_alloc.ScratchXmm();
         const Xbyak::Xmm tmp2 = ctx.reg_alloc.ScratchXmm();
+        const Xbyak::Xmm c = ctx.reg_alloc.ScratchXmm();
 
         code.movdqa(c, a);
         code.psllq(a, 32);
@@ -2768,7 +2777,7 @@ void EmitX64::EmitVectorPairedMinU32(EmitContext& ctx, IR::Inst* inst) {
 
 template<typename D, typename T>
 static D PolynomialMultiply(T lhs, T rhs) {
-    constexpr size_t bit_size = Common::BitSize<T>();
+    constexpr size_t bit_size = mcl::bitsizeof<T>;
     const std::bitset<bit_size> operand(lhs);
 
     D res = 0;
@@ -2883,11 +2892,11 @@ void EmitX64::EmitVectorPolynomialMultiplyLong64(EmitContext& ctx, IR::Inst* ins
 
     EmitTwoArgumentFallback(code, ctx, inst, [](VectorArray<u64>& result, const VectorArray<u64>& a, const VectorArray<u64>& b) {
         const auto handle_high_bits = [](u64 lhs, u64 rhs) {
-            constexpr size_t bit_size = Common::BitSize<u64>();
+            constexpr size_t bit_size = mcl::bitsizeof<u64>;
             u64 result = 0;
 
             for (size_t i = 1; i < bit_size; i++) {
-                if (Common::Bit(i, lhs)) {
+                if (mcl::bit::get_bit(i, lhs)) {
                     result ^= rhs >> (bit_size - i);
                 }
             }
@@ -2938,7 +2947,7 @@ void EmitX64::EmitVectorPopulationCount(EmitContext& ctx, IR::Inst* inst) {
 
     EmitOneArgumentFallback(code, ctx, inst, [](VectorArray<u8>& result, const VectorArray<u8>& a) {
         std::transform(a.begin(), a.end(), result.begin(), [](u8 val) {
-            return static_cast<u8>(Common::BitCount(val));
+            return static_cast<u8>(mcl::bit::count_ones(val));
         });
     });
 }
@@ -3187,10 +3196,10 @@ static void RoundingShiftLeft(VectorArray<T>& out, const VectorArray<T>& lhs, co
     using signed_type = std::make_signed_t<T>;
     using unsigned_type = std::make_unsigned_t<T>;
 
-    constexpr auto bit_size = static_cast<s64>(Common::BitSize<T>());
+    constexpr auto bit_size = static_cast<s64>(mcl::bitsizeof<T>);
 
     for (size_t i = 0; i < out.size(); i++) {
-        const s64 extended_shift = Common::SignExtend<8>(rhs[i] & 0xFF);
+        const s64 extended_shift = static_cast<s64>(mcl::bit::sign_extend<8, u64>(rhs[i] & 0xFF));
 
         if (extended_shift >= 0) {
             if (extended_shift >= bit_size) {
@@ -4283,7 +4292,7 @@ static bool VectorSignedSaturatedShiftLeft(VectorArray<T>& dst, const VectorArra
 
     bool qc_flag = false;
 
-    constexpr size_t bit_size_minus_one = Common::BitSize<T>() - 1;
+    constexpr size_t bit_size_minus_one = mcl::bitsizeof<T> - 1;
 
     const auto saturate = [bit_size_minus_one](T value) {
         return static_cast<T>((static_cast<U>(value) >> bit_size_minus_one) + (U{1} << bit_size_minus_one) - 1);
@@ -4291,7 +4300,7 @@ static bool VectorSignedSaturatedShiftLeft(VectorArray<T>& dst, const VectorArra
 
     for (size_t i = 0; i < dst.size(); i++) {
         const T element = data[i];
-        const T shift = std::clamp<T>(static_cast<T>(Common::SignExtend<8>(shift_values[i] & 0xFF)),
+        const T shift = std::clamp<T>(static_cast<T>(mcl::bit::sign_extend<8>(static_cast<U>(shift_values[i] & 0xFF))),
                                       -static_cast<T>(bit_size_minus_one), std::numeric_limits<T>::max());
 
         if (element == 0) {
@@ -4339,12 +4348,12 @@ template<typename T, typename U = std::make_unsigned_t<T>>
 static bool VectorSignedSaturatedShiftLeftUnsigned(VectorArray<T>& dst, const VectorArray<T>& data, const VectorArray<T>& shift_values) {
     static_assert(std::is_signed_v<T>, "T must be signed.");
 
-    constexpr size_t bit_size_minus_one = Common::BitSize<T>() - 1;
+    constexpr size_t bit_size_minus_one = mcl::bitsizeof<T> - 1;
 
     bool qc_flag = false;
     for (size_t i = 0; i < dst.size(); i++) {
         const T element = data[i];
-        const T shift = std::clamp<T>(static_cast<T>(Common::SignExtend<8>(shift_values[i] & 0xFF)),
+        const T shift = std::clamp<T>(static_cast<T>(mcl::bit::sign_extend<8>(static_cast<U>(shift_values[i] & 0xFF))),
                                       -static_cast<T>(bit_size_minus_one), std::numeric_limits<T>::max());
 
         if (element == 0) {
@@ -4695,14 +4704,14 @@ void EmitX64::EmitVectorTableLookup128(EmitContext& ctx, IR::Inst* inst) {
     if (code.HasHostFeature(HostFeature::AVX512_Ortho | HostFeature::AVX512BW)) {
         const Xbyak::Xmm indicies = ctx.reg_alloc.UseXmm(args[2]);
         const Xbyak::Xmm result = ctx.reg_alloc.UseScratchXmm(args[0]);
-        const Xbyak::Xmm masked = ctx.reg_alloc.ScratchXmm();
+        const Xbyak::Xmm masked = xmm16;
 
         code.vpandd(masked, indicies, code.MConst(xword_b, 0xF0F0F0F0F0F0F0F0, 0xF0F0F0F0F0F0F0F0));
 
         for (size_t i = 0; i < table_size; ++i) {
             const Xbyak::Xmm xmm_table = ctx.reg_alloc.UseScratchXmm(table[i]);
             const Xbyak::Opmask table_mask = k1;
-            const u64 table_index = Common::Replicate<u64>(i * 16, 8);
+            const u64 table_index = mcl::bit::replicate_element<u8, u64>(i * 16);
 
             code.vpcmpeqb(table_mask, masked, code.MConst(xword, table_index, table_index));
 
@@ -4730,7 +4739,7 @@ void EmitX64::EmitVectorTableLookup128(EmitContext& ctx, IR::Inst* inst) {
         for (size_t i = 0; i < table_size; ++i) {
             const Xbyak::Xmm xmm_table = ctx.reg_alloc.UseScratchXmm(table[i]);
 
-            const u64 table_index = Common::Replicate<u64>(i * 16, 8);
+            const u64 table_index = mcl::bit::replicate_element<u8, u64>(i * 16);
 
             if (table_index == 0) {
                 code.pxor(xmm0, xmm0);
@@ -5037,7 +5046,7 @@ void EmitX64::EmitVectorUnsignedRecipEstimate(EmitContext& ctx, IR::Inst* inst) 
                 continue;
             }
 
-            const u32 input = Common::Bits<23, 31>(a[i]);
+            const u32 input = mcl::bit::get_bits<23, 31>(a[i]);
             const u32 estimate = Common::RecipEstimate(input);
 
             result[i] = (0b100000000 | estimate) << 23;
@@ -5053,7 +5062,7 @@ void EmitX64::EmitVectorUnsignedRecipSqrtEstimate(EmitContext& ctx, IR::Inst* in
                 continue;
             }
 
-            const u32 input = Common::Bits<23, 31>(a[i]);
+            const u32 input = mcl::bit::get_bits<23, 31>(a[i]);
             const u32 estimate = Common::RecipSqrtEstimate(input);
 
             result[i] = (0b100000000 | estimate) << 23;
@@ -5066,7 +5075,7 @@ void EmitX64::EmitVectorUnsignedRecipSqrtEstimate(EmitContext& ctx, IR::Inst* in
 template<typename T, typename U = std::make_unsigned_t<T>>
 static bool EmitVectorUnsignedSaturatedAccumulateSigned(VectorArray<U>& result, const VectorArray<T>& lhs, const VectorArray<T>& rhs) {
     static_assert(std::is_signed_v<T>, "T must be signed.");
-    static_assert(Common::BitSize<T>() < 64, "T must be less than 64 bits in size.");
+    static_assert(mcl::bitsizeof<T> < 64, "T must be less than 64 bits in size.");
 
     bool qc_flag = false;
 
@@ -5170,12 +5179,12 @@ static bool VectorUnsignedSaturatedShiftLeft(VectorArray<T>& dst, const VectorAr
 
     bool qc_flag = false;
 
-    constexpr size_t bit_size = Common::BitSize<T>();
+    constexpr size_t bit_size = mcl::bitsizeof<T>;
     constexpr S negative_bit_size = -static_cast<S>(bit_size);
 
     for (size_t i = 0; i < dst.size(); i++) {
         const T element = data[i];
-        const S shift = std::clamp(static_cast<S>(Common::SignExtend<8>(shift_values[i] & 0xFF)),
+        const S shift = std::clamp(static_cast<S>(mcl::bit::sign_extend<8>(static_cast<T>(shift_values[i] & 0xFF))),
                                    negative_bit_size, std::numeric_limits<S>::max());
 
         if (element == 0 || shift <= negative_bit_size) {

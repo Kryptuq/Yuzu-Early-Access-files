@@ -12,8 +12,9 @@
 #include <optional>
 #include <vector>
 
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/bit/bit_count.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/frontend/decoder/decoder_detail.h"
 #include "dynarmic/frontend/decoder/matcher.h"
 
@@ -34,7 +35,7 @@ std::vector<ArmMatcher<V>> GetArmDecodeTable() {
 
     // If a matcher has more bits in its mask it is more specific, so it should come first.
     std::stable_sort(table.begin(), table.end(), [](const auto& matcher1, const auto& matcher2) {
-        return Common::BitCount(matcher1.GetMask()) > Common::BitCount(matcher2.GetMask());
+        return mcl::bit::count_ones(matcher1.GetMask()) > mcl::bit::count_ones(matcher2.GetMask());
     });
 
     return table;

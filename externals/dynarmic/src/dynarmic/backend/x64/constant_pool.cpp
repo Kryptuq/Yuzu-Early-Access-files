@@ -7,8 +7,9 @@
 
 #include <cstring>
 
+#include <mcl/assert.hpp>
+
 #include "dynarmic/backend/x64/block_of_code.h"
-#include "dynarmic/common/assert.h"
 
 namespace Dynarmic::Backend::X64 {
 

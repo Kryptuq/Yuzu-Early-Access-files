@@ -9,7 +9,8 @@
 #include <iosfwd>
 #include <tuple>
 
-#include "dynarmic/common/common_types.h"
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/frontend/A32/FPSCR.h"
 #include "dynarmic/frontend/A32/ITState.h"
 #include "dynarmic/frontend/A32/PSR.h"

@@ -16,8 +16,9 @@
 #    include <unicorn/unicorn.h>
 #endif
 
+#include <mcl/stdint.hpp>
+
 #include "../A64/testenv.h"
-#include "dynarmic/common/common_types.h"
 
 class A64Unicorn final {
 public:

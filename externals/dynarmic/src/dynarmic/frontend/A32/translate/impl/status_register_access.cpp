@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include "dynarmic/common/bit_util.h"
+#include <mcl/bit/bit_field.hpp>
+
 #include "dynarmic/frontend/A32/translate/impl/a32_translate_impl.h"
 
 namespace Dynarmic::A32 {
@@ -29,16 +30,16 @@ bool TranslatorVisitor::arm_MRS(Cond cond, Reg d) {
 }
 
 // MSR<c> <spec_reg>, #<const>
-bool TranslatorVisitor::arm_MSR_imm(Cond cond, int mask, int rotate, Imm<8> imm8) {
+bool TranslatorVisitor::arm_MSR_imm(Cond cond, unsigned mask, int rotate, Imm<8> imm8) {
     ASSERT_MSG(mask != 0, "Decode error");
 
     if (!ArmConditionPassed(cond)) {
         return true;
     }
 
-    const bool write_nzcvq = Common::Bit<3>(mask);
-    const bool write_g = Common::Bit<2>(mask);
-    const bool write_e = Common::Bit<1>(mask);
+    const bool write_nzcvq = mcl::bit::get_bit<3>(mask);
+    const bool write_g = mcl::bit::get_bit<2>(mask);
+    const bool write_e = mcl::bit::get_bit<1>(mask);
     const u32 imm32 = ArmExpandImm(rotate, imm8);
 
     if (write_nzcvq) {
@@ -61,7 +62,7 @@ bool TranslatorVisitor::arm_MSR_imm(Cond cond, int mask, int rotate, Imm<8> imm8
 }
 
 // MSR<c> <spec_reg>, <Rn>
-bool TranslatorVisitor::arm_MSR_reg(Cond cond, int mask, Reg n) {
+bool TranslatorVisitor::arm_MSR_reg(Cond cond, unsigned mask, Reg n) {
     if (mask == 0) {
         return UnpredictableInstruction();
     }
@@ -74,9 +75,9 @@ bool TranslatorVisitor::arm_MSR_reg(Cond cond, int mask, Reg n) {
         return true;
     }
 
-    const bool write_nzcvq = Common::Bit<3>(mask);
-    const bool write_g = Common::Bit<2>(mask);
-    const bool write_e = Common::Bit<1>(mask);
+    const bool write_nzcvq = mcl::bit::get_bit<3>(mask);
+    const bool write_g = mcl::bit::get_bit<2>(mask);
+    const bool write_e = mcl::bit::get_bit<1>(mask);
     const auto value = ir.GetRegister(n);
 
     if (!write_e) {

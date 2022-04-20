@@ -7,7 +7,8 @@
 
 #include <optional>
 
-#include "dynarmic/common/common_types.h"
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/frontend/A64/a64_location_descriptor.h"
 #include "dynarmic/frontend/A64/a64_types.h"
 #include "dynarmic/interface/A64/config.h"

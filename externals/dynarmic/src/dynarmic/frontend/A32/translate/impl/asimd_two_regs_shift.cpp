@@ -3,8 +3,10 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/bit_util.h"
+#include <mcl/assert.hpp>
+#include <mcl/bit/bit_count.hpp>
+#include <mcl/bit/bit_field.hpp>
+
 #include "dynarmic/frontend/A32/translate/impl/a32_translate_impl.h"
 
 namespace Dynarmic::A32 {
@@ -42,7 +44,7 @@ std::pair<size_t, size_t> ElementSizeAndShiftAmount(bool right_shift, bool L, si
             return {64, 64 - imm6};
         }
 
-        const size_t esize = 8U << Common::HighestSetBit(imm6 >> 3);
+        const size_t esize = 8U << mcl::bit::highest_set_bit(imm6 >> 3);
         const size_t shift_amount = (esize * 2) - imm6;
         return {esize, shift_amount};
     } else {
@@ -50,18 +52,18 @@ std::pair<size_t, size_t> ElementSizeAndShiftAmount(bool right_shift, bool L, si
             return {64, imm6};
         }
 
-        const size_t esize = 8U << Common::HighestSetBit(imm6 >> 3);
+        const size_t esize = 8U << mcl::bit::highest_set_bit(imm6 >> 3);
         const size_t shift_amount = imm6 - esize;
         return {esize, shift_amount};
     }
 }
 
 bool ShiftRight(TranslatorVisitor& v, bool U, bool D, size_t imm6, size_t Vd, bool L, bool Q, bool M, size_t Vm, Accumulating accumulate, Rounding rounding) {
-    if (!L && Common::Bits<3, 5>(imm6) == 0) {
+    if (!L && mcl::bit::get_bits<3, 5>(imm6) == 0) {
         return v.DecodeError();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return v.UndefinedInstruction();
     }
 
@@ -88,11 +90,11 @@ bool ShiftRight(TranslatorVisitor& v, bool U, bool D, size_t imm6, size_t Vd, bo
 }
 
 bool ShiftRightNarrowing(TranslatorVisitor& v, bool D, size_t imm6, size_t Vd, bool M, size_t Vm, Rounding rounding, Narrowing narrowing, Signedness signedness) {
-    if (Common::Bits<3, 5>(imm6) == 0) {
+    if (mcl::bit::get_bits<3, 5>(imm6) == 0) {
         return v.DecodeError();
     }
 
-    if (Common::Bit<0>(Vm)) {
+    if (mcl::bit::get_bit<0>(Vm)) {
         return v.UndefinedInstruction();
     }
 
@@ -158,16 +160,16 @@ bool TranslatorVisitor::asimd_VRSRA(bool U, bool D, size_t imm6, size_t Vd, bool
 }
 
 bool TranslatorVisitor::asimd_VSRI(bool D, size_t imm6, size_t Vd, bool L, bool Q, bool M, size_t Vm) {
-    if (!L && Common::Bits<3, 5>(imm6) == 0) {
+    if (!L && mcl::bit::get_bits<3, 5>(imm6) == 0) {
         return DecodeError();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
     const auto [esize, shift_amount] = ElementSizeAndShiftAmount(true, L, imm6);
-    const u64 mask = shift_amount == esize ? 0 : Common::Ones<u64>(esize) >> shift_amount;
+    const u64 mask = shift_amount == esize ? 0 : mcl::bit::ones<u64>(esize) >> shift_amount;
 
     const auto d = ToVector(Q, Vd, D);
     const auto m = ToVector(Q, Vm, M);
@@ -184,16 +186,16 @@ bool TranslatorVisitor::asimd_VSRI(bool D, size_t imm6, size_t Vd, bool L, bool 
 }
 
 bool TranslatorVisitor::asimd_VSLI(bool D, size_t imm6, size_t Vd, bool L, bool Q, bool M, size_t Vm) {
-    if (!L && Common::Bits<3, 5>(imm6) == 0) {
+    if (!L && mcl::bit::get_bits<3, 5>(imm6) == 0) {
         return DecodeError();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
     const auto [esize, shift_amount] = ElementSizeAndShiftAmount(false, L, imm6);
-    const u64 mask = Common::Ones<u64>(esize) << shift_amount;
+    const u64 mask = mcl::bit::ones<u64>(esize) << shift_amount;
 
     const auto d = ToVector(Q, Vd, D);
     const auto m = ToVector(Q, Vm, M);
@@ -210,11 +212,11 @@ bool TranslatorVisitor::asimd_VSLI(bool D, size_t imm6, size_t Vd, bool L, bool 
 }
 
 bool TranslatorVisitor::asimd_VQSHL(bool U, bool D, size_t imm6, size_t Vd, bool op, bool L, bool Q, bool M, size_t Vm) {
-    if (!L && Common::Bits<3, 5>(imm6) == 0) {
+    if (!L && mcl::bit::get_bits<3, 5>(imm6) == 0) {
         return DecodeError();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
@@ -248,11 +250,11 @@ bool TranslatorVisitor::asimd_VQSHL(bool U, bool D, size_t imm6, size_t Vd, bool
 }
 
 bool TranslatorVisitor::asimd_VSHL(bool D, size_t imm6, size_t Vd, bool L, bool Q, bool M, size_t Vm) {
-    if (!L && Common::Bits<3, 5>(imm6) == 0) {
+    if (!L && mcl::bit::get_bits<3, 5>(imm6) == 0) {
         return DecodeError();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
@@ -298,11 +300,11 @@ bool TranslatorVisitor::asimd_VQRSHRN(bool U, bool D, size_t imm6, size_t Vd, bo
 }
 
 bool TranslatorVisitor::asimd_VSHLL(bool U, bool D, size_t imm6, size_t Vd, bool M, size_t Vm) {
-    if (Common::Bits<3, 5>(imm6) == 0) {
+    if (mcl::bit::get_bits<3, 5>(imm6) == 0) {
         return DecodeError();
     }
 
-    if (Common::Bit<0>(Vd)) {
+    if (mcl::bit::get_bit<0>(Vd)) {
         return UndefinedInstruction();
     }
 
@@ -320,15 +322,15 @@ bool TranslatorVisitor::asimd_VSHLL(bool U, bool D, size_t imm6, size_t Vd, bool
 }
 
 bool TranslatorVisitor::asimd_VCVT_fixed(bool U, bool D, size_t imm6, size_t Vd, bool to_fixed, bool Q, bool M, size_t Vm) {
-    if (Common::Bits<3, 5>(imm6) == 0) {
+    if (mcl::bit::get_bits<3, 5>(imm6) == 0) {
         return DecodeError();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
-    if (!Common::Bit<5>(imm6)) {
+    if (!mcl::bit::get_bit<5>(imm6)) {
         return UndefinedInstruction();
     }
 

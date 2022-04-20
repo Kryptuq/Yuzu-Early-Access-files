@@ -5,7 +5,8 @@
 
 #include <array>
 
-#include "dynarmic/common/bit_util.h"
+#include <mcl/bit/bit_field.hpp>
+
 #include "dynarmic/frontend/A32/translate/impl/a32_translate_impl.h"
 
 namespace Dynarmic::A32 {
@@ -23,7 +24,7 @@ bool CompareWithZero(TranslatorVisitor& v, bool D, size_t sz, size_t Vd, bool F,
         return v.UndefinedInstruction();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return v.UndefinedInstruction();
     }
 
@@ -76,7 +77,7 @@ bool PairedAddOperation(TranslatorVisitor& v, bool D, size_t sz, size_t Vd, bool
         return v.UndefinedInstruction();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return v.UndefinedInstruction();
     }
 
@@ -108,7 +109,7 @@ bool TranslatorVisitor::asimd_VREV(bool D, size_t sz, size_t Vd, size_t op, bool
         return UndefinedInstruction();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
@@ -168,7 +169,7 @@ bool TranslatorVisitor::asimd_VPADDL(bool D, size_t sz, size_t Vd, bool op, bool
 }
 
 bool TranslatorVisitor::v8_AESD(bool D, size_t sz, size_t Vd, bool M, size_t Vm) {
-    if (sz != 0b00 || Common::Bit<0>(Vd) || Common::Bit<0>(Vm)) {
+    if (sz != 0b00 || mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm)) {
         return UndefinedInstruction();
     }
 
@@ -183,7 +184,7 @@ bool TranslatorVisitor::v8_AESD(bool D, size_t sz, size_t Vd, bool M, size_t Vm)
 }
 
 bool TranslatorVisitor::v8_AESE(bool D, size_t sz, size_t Vd, bool M, size_t Vm) {
-    if (sz != 0b00 || Common::Bit<0>(Vd) || Common::Bit<0>(Vm)) {
+    if (sz != 0b00 || mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm)) {
         return UndefinedInstruction();
     }
 
@@ -198,7 +199,7 @@ bool TranslatorVisitor::v8_AESE(bool D, size_t sz, size_t Vd, bool M, size_t Vm)
 }
 
 bool TranslatorVisitor::v8_AESIMC(bool D, size_t sz, size_t Vd, bool M, size_t Vm) {
-    if (sz != 0b00 || Common::Bit<0>(Vd) || Common::Bit<0>(Vm)) {
+    if (sz != 0b00 || mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm)) {
         return UndefinedInstruction();
     }
 
@@ -212,7 +213,7 @@ bool TranslatorVisitor::v8_AESIMC(bool D, size_t sz, size_t Vd, bool M, size_t V
 }
 
 bool TranslatorVisitor::v8_AESMC(bool D, size_t sz, size_t Vd, bool M, size_t Vm) {
-    if (sz != 0b00 || Common::Bit<0>(Vd) || Common::Bit<0>(Vm)) {
+    if (sz != 0b00 || mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm)) {
         return UndefinedInstruction();
     }
 
@@ -226,7 +227,7 @@ bool TranslatorVisitor::v8_AESMC(bool D, size_t sz, size_t Vd, bool M, size_t Vm
 }
 
 bool TranslatorVisitor::v8_SHA256SU0(bool D, size_t sz, size_t Vd, bool M, size_t Vm) {
-    if (sz != 0b10 || Common::Bit<0>(Vd) || Common::Bit<0>(Vm)) {
+    if (sz != 0b10 || mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm)) {
         return UndefinedInstruction();
     }
 
@@ -245,7 +246,7 @@ bool TranslatorVisitor::asimd_VCLS(bool D, size_t sz, size_t Vd, bool Q, bool M,
         return UndefinedInstruction();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
@@ -269,7 +270,7 @@ bool TranslatorVisitor::asimd_VCLZ(bool D, size_t sz, size_t Vd, bool Q, bool M,
         return UndefinedInstruction();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
@@ -291,7 +292,7 @@ bool TranslatorVisitor::asimd_VCNT(bool D, size_t sz, size_t Vd, bool Q, bool M,
         return UndefinedInstruction();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
@@ -309,7 +310,7 @@ bool TranslatorVisitor::asimd_VMVN_reg(bool D, size_t sz, size_t Vd, bool Q, boo
         return UndefinedInstruction();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
@@ -332,7 +333,7 @@ bool TranslatorVisitor::asimd_VQABS(bool D, size_t sz, size_t Vd, bool Q, bool M
         return UndefinedInstruction();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
@@ -352,7 +353,7 @@ bool TranslatorVisitor::asimd_VQNEG(bool D, size_t sz, size_t Vd, bool Q, bool M
         return UndefinedInstruction();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
@@ -392,7 +393,7 @@ bool TranslatorVisitor::asimd_VABS(bool D, size_t sz, size_t Vd, bool F, bool Q,
         return UndefinedInstruction();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
@@ -418,7 +419,7 @@ bool TranslatorVisitor::asimd_VNEG(bool D, size_t sz, size_t Vd, bool F, bool Q,
         return UndefinedInstruction();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
@@ -440,7 +441,7 @@ bool TranslatorVisitor::asimd_VNEG(bool D, size_t sz, size_t Vd, bool F, bool Q,
 }
 
 bool TranslatorVisitor::asimd_VSWP(bool D, size_t Vd, bool Q, bool M, size_t Vm) {
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
@@ -473,7 +474,7 @@ bool TranslatorVisitor::asimd_VTRN(bool D, size_t sz, size_t Vd, bool Q, bool M,
         return UndefinedInstruction();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
@@ -500,7 +501,7 @@ bool TranslatorVisitor::asimd_VUZP(bool D, size_t sz, size_t Vd, bool Q, bool M,
         return UndefinedInstruction();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
@@ -532,7 +533,7 @@ bool TranslatorVisitor::asimd_VZIP(bool D, size_t sz, size_t Vd, bool Q, bool M,
         return UndefinedInstruction();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
@@ -563,7 +564,7 @@ bool TranslatorVisitor::asimd_VZIP(bool D, size_t sz, size_t Vd, bool Q, bool M,
 }
 
 bool TranslatorVisitor::asimd_VMOVN(bool D, size_t sz, size_t Vd, bool M, size_t Vm) {
-    if (sz == 0b11 || Common::Bit<0>(Vm)) {
+    if (sz == 0b11 || mcl::bit::get_bit<0>(Vm)) {
         return UndefinedInstruction();
     }
     const size_t esize = 8U << sz;
@@ -578,7 +579,7 @@ bool TranslatorVisitor::asimd_VMOVN(bool D, size_t sz, size_t Vd, bool M, size_t
 }
 
 bool TranslatorVisitor::asimd_VQMOVUN(bool D, size_t sz, size_t Vd, bool M, size_t Vm) {
-    if (sz == 0b11 || Common::Bit<0>(Vm)) {
+    if (sz == 0b11 || mcl::bit::get_bit<0>(Vm)) {
         return UndefinedInstruction();
     }
     const size_t esize = 8U << sz;
@@ -593,7 +594,7 @@ bool TranslatorVisitor::asimd_VQMOVUN(bool D, size_t sz, size_t Vd, bool M, size
 }
 
 bool TranslatorVisitor::asimd_VQMOVN(bool D, size_t sz, size_t Vd, bool op, bool M, size_t Vm) {
-    if (sz == 0b11 || Common::Bit<0>(Vm)) {
+    if (sz == 0b11 || mcl::bit::get_bit<0>(Vm)) {
         return UndefinedInstruction();
     }
     const size_t esize = 8U << sz;
@@ -609,7 +610,7 @@ bool TranslatorVisitor::asimd_VQMOVN(bool D, size_t sz, size_t Vd, bool op, bool
 }
 
 bool TranslatorVisitor::asimd_VSHLL_max(bool D, size_t sz, size_t Vd, bool M, size_t Vm) {
-    if (sz == 0b11 || Common::Bit<0>(Vd)) {
+    if (sz == 0b11 || mcl::bit::get_bit<0>(Vd)) {
         return UndefinedInstruction();
     }
     const size_t esize = 8U << sz;
@@ -627,10 +628,10 @@ bool TranslatorVisitor::asimd_VCVT_half(bool D, size_t sz, size_t Vd, bool half_
     if (sz != 0b01) {
         return UndefinedInstruction();
     }
-    if (half_to_single && Common::Bit<0>(Vd)) {
+    if (half_to_single && mcl::bit::get_bit<0>(Vd)) {
         return UndefinedInstruction();
     }
-    if (!half_to_single && Common::Bit<0>(Vm)) {
+    if (!half_to_single && mcl::bit::get_bit<0>(Vm)) {
         return UndefinedInstruction();
     }
 
@@ -647,7 +648,7 @@ bool TranslatorVisitor::asimd_VCVT_half(bool D, size_t sz, size_t Vd, bool half_
 }
 
 bool TranslatorVisitor::asimd_VRECPE(bool D, size_t sz, size_t Vd, bool F, bool Q, bool M, size_t Vm) {
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
@@ -673,7 +674,7 @@ bool TranslatorVisitor::asimd_VRECPE(bool D, size_t sz, size_t Vd, bool F, bool 
 }
 
 bool TranslatorVisitor::asimd_VRSQRTE(bool D, size_t sz, size_t Vd, bool F, bool Q, bool M, size_t Vm) {
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
@@ -699,7 +700,7 @@ bool TranslatorVisitor::asimd_VRSQRTE(bool D, size_t sz, size_t Vd, bool F, bool
 }
 
 bool TranslatorVisitor::asimd_VCVT_integer(bool D, size_t sz, size_t Vd, bool op, bool U, bool Q, bool M, size_t Vm) {
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 

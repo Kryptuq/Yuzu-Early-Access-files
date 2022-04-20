@@ -5,7 +5,8 @@
 
 #include <utility>
 
-#include "dynarmic/common/assert.h"
+#include <mcl/assert.hpp>
+
 #include "dynarmic/frontend/A64/translate/impl/impl.h"
 
 namespace Dynarmic::A64 {

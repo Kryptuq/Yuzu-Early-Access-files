@@ -8,10 +8,9 @@
 #include <bit>
 #include <utility>
 
+#include <mcl/stdint.hpp>
 #include <tsl/robin_map.h>
 #include <xbyak/xbyak.h>
-
-#include "dynarmic/common/common_types.h"
 
 namespace Dynarmic::Backend::X64 {
 

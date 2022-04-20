@@ -4,10 +4,9 @@
  */
 #pragma once
 
+#include <mcl/assert.hpp>
+#include <mcl/stdint.hpp>
 #include <xbyak/xbyak.h>
-
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/common_types.h"
 
 namespace Dynarmic::Backend::X64 {
 

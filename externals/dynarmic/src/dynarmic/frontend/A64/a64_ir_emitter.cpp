@@ -5,7 +5,8 @@
 
 #include "dynarmic/frontend/A64/a64_ir_emitter.h"
 
-#include "dynarmic/common/assert.h"
+#include <mcl/assert.hpp>
+
 #include "dynarmic/ir/opcodes.h"
 
 namespace Dynarmic::A64 {

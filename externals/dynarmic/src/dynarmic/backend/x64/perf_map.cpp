@@ -15,10 +15,9 @@
 #    include <mutex>
 
 #    include <fmt/format.h>
+#    include <mcl/stdint.hpp>
 #    include <sys/types.h>
 #    include <unistd.h>
-
-#    include "dynarmic/common/common_types.h"
 
 namespace Dynarmic::Backend::X64 {
 

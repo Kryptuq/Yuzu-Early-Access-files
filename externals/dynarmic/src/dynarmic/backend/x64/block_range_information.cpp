@@ -7,9 +7,8 @@
 
 #include <boost/icl/interval_map.hpp>
 #include <boost/icl/interval_set.hpp>
+#include <mcl/stdint.hpp>
 #include <tsl/robin_set.h>
-
-#include "dynarmic/common/common_types.h"
 
 namespace Dynarmic::Backend::X64 {
 

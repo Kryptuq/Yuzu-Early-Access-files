@@ -5,8 +5,9 @@
 
 #include "dynarmic/common/fp/op/FPRecipExponent.h"
 
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/fp/info.h"
@@ -18,11 +19,11 @@ namespace {
 template<typename FPT>
 FPT DetermineExponentValue(size_t value) {
     if constexpr (sizeof(FPT) == sizeof(u32)) {
-        return static_cast<FPT>(Common::Bits<23, 30>(value));
+        return static_cast<FPT>(mcl::bit::get_bits<23, 30>(value));
     } else if constexpr (sizeof(FPT) == sizeof(u64)) {
-        return static_cast<FPT>(Common::Bits<52, 62>(value));
+        return static_cast<FPT>(mcl::bit::get_bits<52, 62>(value));
     } else {
-        return static_cast<FPT>(Common::Bits<10, 14>(value));
+        return static_cast<FPT>(mcl::bit::get_bits<10, 14>(value));
     }
 }
 }  // Anonymous namespace
@@ -41,7 +42,7 @@ FPT FPRecipExponent(FPT op, FPCR fpcr, FPSR& fpsr) {
 
     // Zero and denormals
     if (exponent == 0) {
-        const FPT max_exponent = Common::Ones<FPT>(FPInfo<FPT>::exponent_width) - 1;
+        const FPT max_exponent = mcl::bit::ones<FPT>(FPInfo<FPT>::exponent_width) - 1;
         return FPT(sign_bits | (max_exponent << FPInfo<FPT>::explicit_mantissa_width));
     }
 

@@ -7,6 +7,9 @@
 
 #include <algorithm>
 
+#include <mcl/bit/bit_count.hpp>
+#include <mcl/bit/bit_field.hpp>
+
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/fp/info.h"
 #include "dynarmic/common/fp/mantissa_util.h"
@@ -26,9 +29,9 @@ std::tuple<FPType, bool, FPUnpacked> FPUnpackBase(FPT op, FPCR fpcr, [[maybe_unu
     constexpr int denormal_exponent = FPInfo<FPT>::exponent_min - int(FPInfo<FPT>::explicit_mantissa_width);
 
     constexpr bool is_half_precision = std::is_same_v<FPT, u16>;
-    const bool sign = Common::Bit<sign_bit>(op);
-    const FPT exp_raw = Common::Bits<exponent_low_bit, exponent_high_bit>(op);
-    const FPT frac_raw = Common::Bits<mantissa_low_bit, mantissa_high_bit>(op);
+    const bool sign = mcl::bit::get_bit<sign_bit>(op);
+    const FPT exp_raw = mcl::bit::get_bits<exponent_low_bit, exponent_high_bit>(op);
+    const FPT frac_raw = mcl::bit::get_bits<mantissa_low_bit, mantissa_high_bit>(op);
 
     if (exp_raw == 0) {
         if constexpr (is_half_precision) {
@@ -48,14 +51,14 @@ std::tuple<FPType, bool, FPUnpacked> FPUnpackBase(FPT op, FPCR fpcr, [[maybe_unu
         }
     }
 
-    const bool exp_all_ones = exp_raw == Common::Ones<FPT>(FPInfo<FPT>::exponent_width);
+    const bool exp_all_ones = exp_raw == mcl::bit::ones<FPT>(FPInfo<FPT>::exponent_width);
     const bool ahp_disabled = is_half_precision && !fpcr.AHP();
     if ((exp_all_ones && !is_half_precision) || (exp_all_ones && ahp_disabled)) {
         if (frac_raw == 0) {
             return {FPType::Infinity, sign, ToNormalized(sign, 1000000, 1)};
         }
 
-        const bool is_quiet = Common::Bit<mantissa_high_bit>(frac_raw);
+        const bool is_quiet = mcl::bit::get_bit<mantissa_high_bit>(frac_raw);
         return {is_quiet ? FPType::QNaN : FPType::SNaN, sign, {sign, 0, 0}};
     }
 
@@ -70,7 +73,7 @@ template std::tuple<FPType, bool, FPUnpacked> FPUnpackBase<u64>(u64 op, FPCR fpc
 
 template<size_t F>
 std::tuple<bool, int, u64, ResidualError> Normalize(FPUnpacked op, int extra_right_shift = 0) {
-    const int highest_set_bit = Common::HighestSetBit(op.mantissa);
+    const int highest_set_bit = mcl::bit::highest_set_bit(op.mantissa);
     const int shift_amount = highest_set_bit - static_cast<int>(F) + extra_right_shift;
     const u64 mantissa = Safe::LogicalShiftRight(op.mantissa, shift_amount);
     const ResidualError error = ResidualErrorOnRightShift(op.mantissa, shift_amount);
@@ -107,7 +110,7 @@ FPT FPRoundBase(FPUnpacked op, FPCR fpcr, RoundingMode rounding, FPSR& fpsr) {
     bool round_up = false, overflow_to_inf = false;
     switch (rounding) {
     case RoundingMode::ToNearest_TieEven: {
-        round_up = (error > ResidualError::Half) || (error == ResidualError::Half && Common::Bit<0>(mantissa));
+        round_up = (error > ResidualError::Half) || (error == ResidualError::Half && mcl::bit::get_bit<0>(mantissa));
         overflow_to_inf = true;
         break;
     }
@@ -141,7 +144,7 @@ FPT FPRoundBase(FPUnpacked op, FPCR fpcr, RoundingMode rounding, FPSR& fpsr) {
     }
 
     if (error != ResidualError::Zero && rounding == RoundingMode::ToOdd) {
-        mantissa = Common::ModifyBit<0>(mantissa, true);
+        mantissa = mcl::bit::set_bit<0>(mantissa, true);
     }
 
     FPT result = 0;

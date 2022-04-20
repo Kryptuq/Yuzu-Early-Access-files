@@ -1,9 +1,5 @@
 add_library(dynarmic
-    common/assert.cpp
-    common/assert.h
-    common/bit_util.h
     common/cast_util.h
-    common/common_types.h
     common/crypto/aes.cpp
     common/crypto/aes.h
     common/crypto/crc32.cpp
@@ -46,18 +42,14 @@ add_library(dynarmic
     common/fp/unpacked.cpp
     common/fp/unpacked.h
     common/fp/util.h
-    common/intrusive_list.h
-    common/iterator_util.h
     common/llvm_disassemble.cpp
     common/llvm_disassemble.h
     common/lut_from_list.h
-    common/macro_util.h
     common/math_util.cpp
     common/math_util.h
     common/memory_pool.cpp
     common/memory_pool.h
     common/safe_ops.h
-    common/scope_exit.h
     common/spin_lock.h
     common/string_util.h
     common/u128.cpp
@@ -385,10 +377,11 @@ set_target_properties(dynarmic PROPERTIES
 target_compile_options(dynarmic PRIVATE ${DYNARMIC_CXX_FLAGS})
 # $<BUILD_INTERFACE:> required because of https://gitlab.kitware.com/cmake/cmake/-/issues/15415
 target_link_libraries(dynarmic
+    PUBLIC
+        $<BUILD_INTERFACE:merry::mcl>
     PRIVATE
         $<BUILD_INTERFACE:boost>
         $<BUILD_INTERFACE:fmt::fmt>
-        $<BUILD_INTERFACE:mp>
         tsl::robin_map
         $<BUILD_INTERFACE:xbyak>
         $<BUILD_INTERFACE:Zydis>
@@ -401,7 +394,7 @@ if (DYNARMIC_ENABLE_NO_EXECUTE_SUPPORT)
     target_compile_definitions(dynarmic PRIVATE DYNARMIC_ENABLE_NO_EXECUTE_SUPPORT=1)
 endif()
 if (DYNARMIC_IGNORE_ASSERTS)
-    target_compile_definitions(dynarmic PRIVATE DYNARMIC_IGNORE_ASSERTS=1)
+    target_compile_definitions(dynarmic PRIVATE MCL_IGNORE_ASSERTS=1)
 endif()
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_compile_definitions(dynarmic PRIVATE FMT_USE_WINDOWS_H=0)

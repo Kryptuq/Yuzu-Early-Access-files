@@ -6,8 +6,9 @@
 #include <cstdio>
 #include <map>
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/assert.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/opcodes.h"

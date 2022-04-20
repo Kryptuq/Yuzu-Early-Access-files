@@ -5,8 +5,7 @@
 
 #pragma once
 
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/stdint.hpp>
 
 namespace Dynarmic::Backend::X64::NZCV {
 
@@ -29,10 +28,10 @@ constexpr u32 from_x64_multiplier = 0x1021'0000;
 inline u32 ToX64(u32 nzcv) {
     /* Naive implementation:
     u32 x64_flags = 0;
-    x64_flags |= Common::Bit<31>(cpsr) ? 1 << 15 : 0;
-    x64_flags |= Common::Bit<30>(cpsr) ? 1 << 14 : 0;
-    x64_flags |= Common::Bit<29>(cpsr) ? 1 << 8 : 0;
-    x64_flags |= Common::Bit<28>(cpsr) ? 1 : 0;
+    x64_flags |= mcl::bit::get_bit<31>(cpsr) ? 1 << 15 : 0;
+    x64_flags |= mcl::bit::get_bit<30>(cpsr) ? 1 << 14 : 0;
+    x64_flags |= mcl::bit::get_bit<29>(cpsr) ? 1 << 8 : 0;
+    x64_flags |= mcl::bit::get_bit<28>(cpsr) ? 1 : 0;
     return x64_flags;
     */
     return ((nzcv >> 28) * to_x64_multiplier) & x64_mask;
@@ -41,10 +40,10 @@ inline u32 ToX64(u32 nzcv) {
 inline u32 FromX64(u32 x64_flags) {
     /* Naive implementation:
     u32 nzcv = 0;
-    nzcv |= Common::Bit<15>(x64_flags) ? 1 << 31 : 0;
-    nzcv |= Common::Bit<14>(x64_flags) ? 1 << 30 : 0;
-    nzcv |= Common::Bit<8>(x64_flags) ? 1 << 29 : 0;
-    nzcv |= Common::Bit<0>(x64_flags) ? 1 << 28 : 0;
+    nzcv |= mcl::bit::get_bit<15>(x64_flags) ? 1 << 31 : 0;
+    nzcv |= mcl::bit::get_bit<14>(x64_flags) ? 1 << 30 : 0;
+    nzcv |= mcl::bit::get_bit<8>(x64_flags) ? 1 << 29 : 0;
+    nzcv |= mcl::bit::get_bit<0>(x64_flags) ? 1 << 28 : 0;
     return nzcv;
     */
     return ((x64_flags & x64_mask) * from_x64_multiplier) & arm_mask;

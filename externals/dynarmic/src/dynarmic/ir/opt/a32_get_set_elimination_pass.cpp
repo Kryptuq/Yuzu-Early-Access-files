@@ -5,8 +5,9 @@
 
 #include <array>
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/assert.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/frontend/A32/a32_types.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/opcodes.h"

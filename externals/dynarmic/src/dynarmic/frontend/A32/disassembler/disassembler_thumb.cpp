@@ -8,8 +8,8 @@
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <mcl/bit/bit_field.hpp>
 
-#include "dynarmic/common/bit_util.h"
 #include "dynarmic/common/string_util.h"
 #include "dynarmic/frontend/A32/a32_types.h"
 #include "dynarmic/frontend/A32/decoder/thumb16.h"
@@ -345,7 +345,7 @@ public:
     }
 
     std::string thumb16_LDMIA(Reg n, RegList reg_list) {
-        const bool write_back = !Common::Bit(static_cast<size_t>(n), reg_list);
+        const bool write_back = !mcl::bit::get_bit(static_cast<size_t>(n), reg_list);
         return fmt::format("ldm {}{}, {{{}}}", n, write_back ? "!" : "", RegListToString(reg_list));
     }
 

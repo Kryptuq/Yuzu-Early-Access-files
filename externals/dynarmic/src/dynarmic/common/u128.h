@@ -8,8 +8,9 @@
 #include <tuple>
 #include <type_traits>
 
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/bitsizeof.hpp>
+#include <mcl/stdint.hpp>
 
 namespace Dynarmic {
 
@@ -27,7 +28,7 @@ struct u128 {
     /* implicit */ u128(T value)
             : lower(value), upper(0) {
         static_assert(std::is_integral_v<T>);
-        static_assert(Common::BitSize<T>() <= Common::BitSize<u64>());
+        static_assert(mcl::bitsizeof<T> <= mcl::bitsizeof<u64>);
     }
 
     u64 lower = 0;
@@ -37,14 +38,14 @@ struct u128 {
     bool Bit() const {
         static_assert(bit_position < 128);
         if constexpr (bit_position < 64) {
-            return Common::Bit<bit_position>(lower);
+            return mcl::bit::get_bit<bit_position>(lower);
         } else {
-            return Common::Bit<bit_position - 64>(upper);
+            return mcl::bit::get_bit<bit_position - 64>(upper);
         }
     }
 };
 
-static_assert(Common::BitSize<u128>() == 128);
+static_assert(mcl::bitsizeof<u128> == 128);
 static_assert(std::is_standard_layout_v<u128>);
 static_assert(std::is_trivially_copyable_v<u128>);
 

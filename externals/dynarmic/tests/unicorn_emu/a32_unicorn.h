@@ -16,8 +16,9 @@
 #    include <unicorn/unicorn.h>
 #endif
 
+#include <mcl/stdint.hpp>
+
 #include "../A32/testenv.h"
-#include "dynarmic/common/common_types.h"
 
 namespace Unicorn::A32 {
 static constexpr size_t num_gprs = 16;

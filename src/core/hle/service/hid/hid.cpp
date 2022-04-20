@@ -687,8 +687,9 @@ void Hid::ResetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
         .parameter2 = 0.4f,
     };
     auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
-    const auto result =
+    const auto result1 =
         controller.SetSixAxisFusionParameters(parameters.sixaxis_handle, fusion_parameters);
+    const auto result2 = controller.SetSixAxisFusionEnabled(parameters.sixaxis_handle, true);
 
     LOG_DEBUG(Service_HID,
               "called, npad_type={}, npad_id={}, device_index={}, applet_resource_user_id={}",
@@ -696,7 +697,15 @@ void Hid::ResetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
               parameters.sixaxis_handle.device_index, parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(result);
+    if (result1.IsError()) {
+        rb.Push(result1);
+        return;
+    }
+    if (result2.IsError()) {
+        rb.Push(result2);
+        return;
+    }
+    rb.Push(ResultSuccess);
 }
 
 void Hid::SetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {

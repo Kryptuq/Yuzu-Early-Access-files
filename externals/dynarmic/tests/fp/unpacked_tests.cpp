@@ -7,9 +7,9 @@
 #include <vector>
 
 #include <catch2/catch.hpp>
+#include <mcl/stdint.hpp>
 
 #include "../rand_int.h"
-#include "dynarmic/common/common_types.h"
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/fp/unpacked.h"

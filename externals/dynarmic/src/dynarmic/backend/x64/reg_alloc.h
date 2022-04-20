@@ -11,12 +11,12 @@
 #include <utility>
 #include <vector>
 
+#include <mcl/stdint.hpp>
 #include <xbyak/xbyak.h>
 
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/hostloc.h"
 #include "dynarmic/backend/x64/oparg.h"
-#include "dynarmic/common/common_types.h"
 #include "dynarmic/ir/cond.h"
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/value.h"

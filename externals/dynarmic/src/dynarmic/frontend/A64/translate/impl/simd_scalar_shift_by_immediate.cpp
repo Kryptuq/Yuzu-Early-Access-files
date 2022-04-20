@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: 0BSD
  */
 
+#include <mcl/bit/bit_count.hpp>
+
 #include "dynarmic/common/fp/rounding_mode.h"
 #include "dynarmic/frontend/A64/translate/impl/impl.h"
 
@@ -40,7 +42,7 @@ bool SaturatingShiftLeft(TranslatorVisitor& v, Imm<4> immh, Imm<3> immb, Vec Vn,
         return v.ReservedValue();
     }
 
-    const size_t esize = 8U << Common::HighestSetBit(immh.ZeroExtend());
+    const size_t esize = 8U << mcl::bit::highest_set_bit(immh.ZeroExtend());
     const size_t shift_amount = concatenate(immh, immb).ZeroExtend() - esize;
 
     const IR::U128 operand = v.ir.ZeroExtendToQuad(v.V_scalar(esize, Vn));
@@ -139,10 +141,10 @@ bool ShiftAndInsert(TranslatorVisitor& v, Imm<4> immh, Imm<3> immb, Vec Vn, Vec 
 
     const u64 mask = [&] {
         if (direction == ShiftDirection::Right) {
-            return shift_amount == esize ? 0 : Common::Ones<u64>(esize) >> shift_amount;
+            return shift_amount == esize ? 0 : mcl::bit::ones<u64>(esize) >> shift_amount;
         }
 
-        return Common::Ones<u64>(esize) << shift_amount;
+        return mcl::bit::ones<u64>(esize) << shift_amount;
     }();
 
     const IR::U64 operand1 = v.V_scalar(esize, Vn);
@@ -170,7 +172,7 @@ bool ShiftRightNarrowing(TranslatorVisitor& v, Imm<4> immh, Imm<3> immb, Vec Vn,
         return v.ReservedValue();
     }
 
-    const size_t esize = 8 << Common::HighestSetBit(immh.ZeroExtend());
+    const size_t esize = 8 << mcl::bit::highest_set_bit(immh.ZeroExtend());
     const size_t source_esize = 2 * esize;
     const u8 shift_amount = static_cast<u8>(source_esize - concatenate(immh, immb).ZeroExtend());
 

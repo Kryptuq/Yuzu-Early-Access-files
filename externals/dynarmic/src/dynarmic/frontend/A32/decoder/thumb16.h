@@ -10,7 +10,8 @@
 #include <optional>
 #include <vector>
 
-#include "dynarmic/common/common_types.h"
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/frontend/decoder/decoder_detail.h"
 #include "dynarmic/frontend/decoder/matcher.h"
 

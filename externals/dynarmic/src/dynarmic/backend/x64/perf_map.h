@@ -7,7 +7,7 @@
 
 #include <string_view>
 
-#include "dynarmic/common/cast_util.h"
+#include <mcl/bit_cast.hpp>
 
 namespace Dynarmic::Backend::X64 {
 
@@ -17,7 +17,7 @@ void PerfMapRegister(const void* start, const void* end, std::string_view friend
 
 template<typename T>
 void PerfMapRegister(T start, const void* end, std::string_view friendly_name) {
-    detail::PerfMapRegister(Common::BitCast<const void*>(start), end, friendly_name);
+    detail::PerfMapRegister(mcl::bit_cast<const void*>(start), end, friendly_name);
 }
 
 void PerfMapClear();

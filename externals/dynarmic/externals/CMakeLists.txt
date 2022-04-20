@@ -19,10 +19,11 @@ if (NOT TARGET fmt AND NOT TARGET fmt::fmt)
     add_subdirectory(fmt)
 endif()
 
-# mp
+# mcl
 
-add_library(mp INTERFACE)
-target_include_directories(mp INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mp/include>)
+if (NOT TARGET merry::mcl)
+    add_subdirectory(mcl)
+endif()
 
 # robin-map
 

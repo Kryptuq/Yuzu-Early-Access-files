@@ -5,8 +5,10 @@
 
 #include <tuple>
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/bit_util.h"
+#include <mcl/assert.hpp>
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/bit/swap.hpp>
+
 #include "dynarmic/frontend/A32/a32_ir_emitter.h"
 #include "dynarmic/frontend/A32/a32_location_descriptor.h"
 #include "dynarmic/frontend/A32/decoder/asimd.h"
@@ -69,7 +71,7 @@ std::tuple<u32, ThumbInstSize> ReadThumbInstruction(u32 arm_pc, TranslateCallbac
 // Convert from thumb ASIMD format to ARM ASIMD format.
 u32 ConvertASIMDInstruction(u32 thumb_instruction) {
     if ((thumb_instruction & 0xEF000000) == 0xEF000000) {
-        const bool U = Common::Bit<28>(thumb_instruction);
+        const bool U = mcl::bit::get_bit<28>(thumb_instruction);
         return 0xF2000000 | (U << 24) | (thumb_instruction & 0x00FFFFFF);
     }
 
@@ -167,7 +169,7 @@ bool TranslateSingleThumbInstruction(IR::Block& block, LocationDescriptor descri
             should_continue = visitor.thumb16_UDF();
         }
     } else {
-        thumb_instruction = Common::SwapHalves32(thumb_instruction);
+        thumb_instruction = mcl::bit::swap_halves_32(thumb_instruction);
         if (MaybeVFPOrASIMDInstruction(thumb_instruction)) {
             if (const auto vfp_decoder = DecodeVFP<TranslatorVisitor>(thumb_instruction)) {
                 should_continue = vfp_decoder->get().call(visitor, thumb_instruction);

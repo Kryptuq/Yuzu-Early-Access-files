@@ -5,6 +5,8 @@
 
 #include "dynarmic/common/fp/fused.h"
 
+#include <mcl/bit/bit_count.hpp>
+
 #include "dynarmic/common/fp/mantissa_util.h"
 #include "dynarmic/common/fp/unpacked.h"
 #include "dynarmic/common/u128.h"
@@ -81,7 +83,7 @@ FPUnpacked FusedMulAdd(FPUnpacked addend, FPUnpacked op1, FPUnpacked op2) {
         return FPUnpacked{result_sign, result_exponent, result.lower};
     }
 
-    const int required_shift = normalized_point_position - Common::HighestSetBit(result.upper);
+    const int required_shift = normalized_point_position - mcl::bit::highest_set_bit(result.upper);
     result = result << required_shift;
     result_exponent -= required_shift;
     return ReduceMantissa(result_sign, result_exponent, result);

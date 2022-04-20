@@ -4,7 +4,7 @@
  */
 #pragma once
 
-#include "dynarmic/common/common_types.h"
+#include <mcl/stdint.hpp>
 
 namespace Dynarmic::A32 {
 

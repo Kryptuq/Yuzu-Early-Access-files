@@ -10,6 +10,7 @@
 #include <memory>
 #include <type_traits>
 
+#include <mcl/stdint.hpp>
 #include <xbyak/xbyak.h>
 #include <xbyak/xbyak_util.h>
 
@@ -19,7 +20,6 @@
 #include "dynarmic/backend/x64/host_feature.h"
 #include "dynarmic/backend/x64/jitstate_info.h"
 #include "dynarmic/common/cast_util.h"
-#include "dynarmic/common/common_types.h"
 #include "dynarmic/interface/halt_reason.h"
 
 namespace Dynarmic::Backend::X64 {

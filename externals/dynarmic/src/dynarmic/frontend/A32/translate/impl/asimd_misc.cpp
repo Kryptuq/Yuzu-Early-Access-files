@@ -3,8 +3,10 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/bit_util.h"
+#include <mcl/assert.hpp>
+#include <mcl/bit/bit_count.hpp>
+#include <mcl/bit/bit_field.hpp>
+
 #include "dynarmic/frontend/A32/translate/impl/a32_translate_impl.h"
 
 namespace Dynarmic::A32 {
@@ -35,7 +37,7 @@ static bool TableLookup(TranslatorVisitor& v, bool is_vtbl, bool D, size_t Vn, s
 }
 
 bool TranslatorVisitor::asimd_VEXT(bool D, size_t Vn, size_t Vd, Imm<4> imm4, bool N, bool Q, bool M, size_t Vm) {
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vn) || Common::Bit<0>(Vm))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vn) || mcl::bit::get_bit<0>(Vm))) {
         return UndefinedInstruction();
     }
 
@@ -65,7 +67,7 @@ bool TranslatorVisitor::asimd_VTBX(bool D, size_t Vn, size_t Vd, size_t len, boo
 }
 
 bool TranslatorVisitor::asimd_VDUP_scalar(bool D, Imm<4> imm4, size_t Vd, bool Q, bool M, size_t Vm) {
-    if (Q && Common::Bit<0>(Vd)) {
+    if (Q && mcl::bit::get_bit<0>(Vd)) {
         return UndefinedInstruction();
     }
 
@@ -73,7 +75,7 @@ bool TranslatorVisitor::asimd_VDUP_scalar(bool D, Imm<4> imm4, size_t Vd, bool Q
         return UndefinedInstruction();
     }
 
-    const size_t imm4_lsb = Common::LowestSetBit(imm4.ZeroExtend());
+    const size_t imm4_lsb = mcl::bit::lowest_set_bit(imm4.ZeroExtend());
     const size_t esize = 8u << imm4_lsb;
     const size_t index = imm4.ZeroExtend() >> (imm4_lsb + 1);
     const auto d = ToVector(Q, Vd, D);

@@ -5,7 +5,8 @@
 
 #include <optional>
 
-#include "dynarmic/common/bit_util.h"
+#include <mcl/bit/bit_field.hpp>
+
 #include "dynarmic/frontend/A64/translate/impl/impl.h"
 
 namespace Dynarmic::A64 {

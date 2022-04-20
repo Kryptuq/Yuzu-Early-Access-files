@@ -11,16 +11,18 @@
 #include <vector>
 
 #include <catch2/catch.hpp>
+#include <mcl/bit/bit_count.hpp>
+#include <mcl/bit/swap.hpp>
+#include <mcl/scope_exit.hpp>
+#include <mcl/stdint.hpp>
 
 #include "../fuzz_util.h"
 #include "../rand_int.h"
 #include "../unicorn_emu/a32_unicorn.h"
 #include "./testenv.h"
-#include "dynarmic/common/common_types.h"
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/llvm_disassemble.h"
-#include "dynarmic/common/scope_exit.h"
 #include "dynarmic/frontend/A32/ITState.h"
 #include "dynarmic/frontend/A32/a32_location_descriptor.h"
 #include "dynarmic/frontend/A32/a32_types.h"
@@ -255,7 +257,7 @@ std::vector<u16> GenRandomThumbInst(u32 pc, bool is_last_inst, A32::ITState it_s
         const u32 inst = instructions.generators[index].Generate();
         const bool is_four_bytes = (inst >> 16) != 0;
 
-        if (ShouldTestInst(is_four_bytes ? Common::SwapHalves32(inst) : inst, pc, true, is_last_inst, it_state)) {
+        if (ShouldTestInst(is_four_bytes ? mcl::bit::swap_halves_32(inst) : inst, pc, true, is_last_inst, it_state)) {
             if (is_four_bytes)
                 return {static_cast<u16>(inst >> 16), static_cast<u16>(inst)};
             return {static_cast<u16>(inst)};
@@ -625,7 +627,7 @@ TEST_CASE("A32: Test thumb IT instruction", "[thumb]") {
         A32::ITState it_state = [&] {
             while (true) {
                 const u16 imm8 = RandInt<u16>(0, 0xFF);
-                if (Common::Bits<0, 3>(imm8) == 0b0000 || Common::Bits<4, 7>(imm8) == 0b1111 || (Common::Bits<4, 7>(imm8) == 0b1110 && Common::BitCount(Common::Bits<0, 3>(imm8)) != 1)) {
+                if (mcl::bit::get_bits<0, 3>(imm8) == 0b0000 || mcl::bit::get_bits<4, 7>(imm8) == 0b1111 || (mcl::bit::get_bits<4, 7>(imm8) == 0b1110 && mcl::bit::count_ones(mcl::bit::get_bits<0, 3>(imm8)) != 1)) {
                     continue;
                 }
                 instructions.push_back(0b1011111100000000 | imm8);

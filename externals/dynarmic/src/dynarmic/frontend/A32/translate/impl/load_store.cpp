@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: 0BSD
  */
 
+#include <mcl/bit/bit_count.hpp>
+#include <mcl/bit/bit_field.hpp>
+
 #include "dynarmic/frontend/A32/translate/impl/a32_translate_impl.h"
 
 namespace Dynarmic::A32 {
@@ -771,15 +774,15 @@ bool TranslatorVisitor::arm_STRH_reg(Cond cond, bool P, bool U, bool W, Reg n, R
 static bool LDMHelper(A32::IREmitter& ir, bool W, Reg n, RegList list, IR::U32 start_address, IR::U32 writeback_address) {
     auto address = start_address;
     for (size_t i = 0; i <= 14; i++) {
-        if (Common::Bit(i, list)) {
+        if (mcl::bit::get_bit(i, list)) {
             ir.SetRegister(static_cast<Reg>(i), ir.ReadMemory32(address, IR::AccType::ATOMIC));
             address = ir.Add(address, ir.Imm32(4));
         }
     }
-    if (W && !Common::Bit(RegNumber(n), list)) {
+    if (W && !mcl::bit::get_bit(RegNumber(n), list)) {
         ir.SetRegister(n, writeback_address);
     }
-    if (Common::Bit<15>(list)) {
+    if (mcl::bit::get_bit<15>(list)) {
         ir.LoadWritePC(ir.ReadMemory32(address, IR::AccType::ATOMIC));
         if (n == Reg::R13)
             ir.SetTerm(IR::Term::PopRSBHint{});
@@ -792,10 +795,10 @@ static bool LDMHelper(A32::IREmitter& ir, bool W, Reg n, RegList list, IR::U32 s
 
 // LDM <Rn>{!}, <reg_list>
 bool TranslatorVisitor::arm_LDM(Cond cond, bool W, Reg n, RegList list) {
-    if (n == Reg::PC || Common::BitCount(list) < 1) {
+    if (n == Reg::PC || mcl::bit::count_ones(list) < 1) {
         return UnpredictableInstruction();
     }
-    if (W && Common::Bit(static_cast<size_t>(n), list)) {
+    if (W && mcl::bit::get_bit(static_cast<size_t>(n), list)) {
         return UnpredictableInstruction();
     }
 
@@ -804,16 +807,16 @@ bool TranslatorVisitor::arm_LDM(Cond cond, bool W, Reg n, RegList list) {
     }
 
     const auto start_address = ir.GetRegister(n);
-    const auto writeback_address = ir.Add(start_address, ir.Imm32(u32(Common::BitCount(list) * 4)));
+    const auto writeback_address = ir.Add(start_address, ir.Imm32(u32(mcl::bit::count_ones(list) * 4)));
     return LDMHelper(ir, W, n, list, start_address, writeback_address);
 }
 
 // LDMDA <Rn>{!}, <reg_list>
 bool TranslatorVisitor::arm_LDMDA(Cond cond, bool W, Reg n, RegList list) {
-    if (n == Reg::PC || Common::BitCount(list) < 1) {
+    if (n == Reg::PC || mcl::bit::count_ones(list) < 1) {
         return UnpredictableInstruction();
     }
-    if (W && Common::Bit(static_cast<size_t>(n), list)) {
+    if (W && mcl::bit::get_bit(static_cast<size_t>(n), list)) {
         return UnpredictableInstruction();
     }
 
@@ -821,17 +824,17 @@ bool TranslatorVisitor::arm_LDMDA(Cond cond, bool W, Reg n, RegList list) {
         return true;
     }
 
-    const auto start_address = ir.Sub(ir.GetRegister(n), ir.Imm32(u32(4 * Common::BitCount(list) - 4)));
+    const auto start_address = ir.Sub(ir.GetRegister(n), ir.Imm32(u32(4 * mcl::bit::count_ones(list) - 4)));
     const auto writeback_address = ir.Sub(start_address, ir.Imm32(4));
     return LDMHelper(ir, W, n, list, start_address, writeback_address);
 }
 
 // LDMDB <Rn>{!}, <reg_list>
 bool TranslatorVisitor::arm_LDMDB(Cond cond, bool W, Reg n, RegList list) {
-    if (n == Reg::PC || Common::BitCount(list) < 1) {
+    if (n == Reg::PC || mcl::bit::count_ones(list) < 1) {
         return UnpredictableInstruction();
     }
-    if (W && Common::Bit(static_cast<size_t>(n), list)) {
+    if (W && mcl::bit::get_bit(static_cast<size_t>(n), list)) {
         return UnpredictableInstruction();
     }
 
@@ -839,17 +842,17 @@ bool TranslatorVisitor::arm_LDMDB(Cond cond, bool W, Reg n, RegList list) {
         return true;
     }
 
-    const auto start_address = ir.Sub(ir.GetRegister(n), ir.Imm32(u32(4 * Common::BitCount(list))));
+    const auto start_address = ir.Sub(ir.GetRegister(n), ir.Imm32(u32(4 * mcl::bit::count_ones(list))));
     const auto writeback_address = start_address;
     return LDMHelper(ir, W, n, list, start_address, writeback_address);
 }
 
 // LDMIB <Rn>{!}, <reg_list>
 bool TranslatorVisitor::arm_LDMIB(Cond cond, bool W, Reg n, RegList list) {
-    if (n == Reg::PC || Common::BitCount(list) < 1) {
+    if (n == Reg::PC || mcl::bit::count_ones(list) < 1) {
         return UnpredictableInstruction();
     }
-    if (W && Common::Bit(static_cast<size_t>(n), list)) {
+    if (W && mcl::bit::get_bit(static_cast<size_t>(n), list)) {
         return UnpredictableInstruction();
     }
 
@@ -858,7 +861,7 @@ bool TranslatorVisitor::arm_LDMIB(Cond cond, bool W, Reg n, RegList list) {
     }
 
     const auto start_address = ir.Add(ir.GetRegister(n), ir.Imm32(4));
-    const auto writeback_address = ir.Add(ir.GetRegister(n), ir.Imm32(u32(4 * Common::BitCount(list))));
+    const auto writeback_address = ir.Add(ir.GetRegister(n), ir.Imm32(u32(4 * mcl::bit::count_ones(list))));
     return LDMHelper(ir, W, n, list, start_address, writeback_address);
 }
 
@@ -873,7 +876,7 @@ bool TranslatorVisitor::arm_LDM_eret() {
 static bool STMHelper(A32::IREmitter& ir, bool W, Reg n, RegList list, IR::U32 start_address, IR::U32 writeback_address) {
     auto address = start_address;
     for (size_t i = 0; i <= 14; i++) {
-        if (Common::Bit(i, list)) {
+        if (mcl::bit::get_bit(i, list)) {
             ir.WriteMemory32(address, ir.GetRegister(static_cast<Reg>(i)), IR::AccType::ATOMIC);
             address = ir.Add(address, ir.Imm32(4));
         }
@@ -881,7 +884,7 @@ static bool STMHelper(A32::IREmitter& ir, bool W, Reg n, RegList list, IR::U32 s
     if (W) {
         ir.SetRegister(n, writeback_address);
     }
-    if (Common::Bit<15>(list)) {
+    if (mcl::bit::get_bit<15>(list)) {
         ir.WriteMemory32(address, ir.Imm32(ir.PC()), IR::AccType::ATOMIC);
     }
     return true;
@@ -889,7 +892,7 @@ static bool STMHelper(A32::IREmitter& ir, bool W, Reg n, RegList list, IR::U32 s
 
 // STM <Rn>{!}, <reg_list>
 bool TranslatorVisitor::arm_STM(Cond cond, bool W, Reg n, RegList list) {
-    if (n == Reg::PC || Common::BitCount(list) < 1) {
+    if (n == Reg::PC || mcl::bit::count_ones(list) < 1) {
         return UnpredictableInstruction();
     }
 
@@ -898,13 +901,13 @@ bool TranslatorVisitor::arm_STM(Cond cond, bool W, Reg n, RegList list) {
     }
 
     const auto start_address = ir.GetRegister(n);
-    const auto writeback_address = ir.Add(start_address, ir.Imm32(u32(Common::BitCount(list) * 4)));
+    const auto writeback_address = ir.Add(start_address, ir.Imm32(u32(mcl::bit::count_ones(list) * 4)));
     return STMHelper(ir, W, n, list, start_address, writeback_address);
 }
 
 // STMDA <Rn>{!}, <reg_list>
 bool TranslatorVisitor::arm_STMDA(Cond cond, bool W, Reg n, RegList list) {
-    if (n == Reg::PC || Common::BitCount(list) < 1) {
+    if (n == Reg::PC || mcl::bit::count_ones(list) < 1) {
         return UnpredictableInstruction();
     }
 
@@ -912,14 +915,14 @@ bool TranslatorVisitor::arm_STMDA(Cond cond, bool W, Reg n, RegList list) {
         return true;
     }
 
-    const auto start_address = ir.Sub(ir.GetRegister(n), ir.Imm32(u32(4 * Common::BitCount(list) - 4)));
+    const auto start_address = ir.Sub(ir.GetRegister(n), ir.Imm32(u32(4 * mcl::bit::count_ones(list) - 4)));
     const auto writeback_address = ir.Sub(start_address, ir.Imm32(4));
     return STMHelper(ir, W, n, list, start_address, writeback_address);
 }
 
 // STMDB <Rn>{!}, <reg_list>
 bool TranslatorVisitor::arm_STMDB(Cond cond, bool W, Reg n, RegList list) {
-    if (n == Reg::PC || Common::BitCount(list) < 1) {
+    if (n == Reg::PC || mcl::bit::count_ones(list) < 1) {
         return UnpredictableInstruction();
     }
 
@@ -927,14 +930,14 @@ bool TranslatorVisitor::arm_STMDB(Cond cond, bool W, Reg n, RegList list) {
         return true;
     }
 
-    const auto start_address = ir.Sub(ir.GetRegister(n), ir.Imm32(u32(4 * Common::BitCount(list))));
+    const auto start_address = ir.Sub(ir.GetRegister(n), ir.Imm32(u32(4 * mcl::bit::count_ones(list))));
     const auto writeback_address = start_address;
     return STMHelper(ir, W, n, list, start_address, writeback_address);
 }
 
 // STMIB <Rn>{!}, <reg_list>
 bool TranslatorVisitor::arm_STMIB(Cond cond, bool W, Reg n, RegList list) {
-    if (n == Reg::PC || Common::BitCount(list) < 1) {
+    if (n == Reg::PC || mcl::bit::count_ones(list) < 1) {
         return UnpredictableInstruction();
     }
 
@@ -943,7 +946,7 @@ bool TranslatorVisitor::arm_STMIB(Cond cond, bool W, Reg n, RegList list) {
     }
 
     const auto start_address = ir.Add(ir.GetRegister(n), ir.Imm32(4));
-    const auto writeback_address = ir.Add(ir.GetRegister(n), ir.Imm32(u32(4 * Common::BitCount(list))));
+    const auto writeback_address = ir.Add(ir.GetRegister(n), ir.Imm32(u32(4 * mcl::bit::count_ones(list))));
     return STMHelper(ir, W, n, list, start_address, writeback_address);
 }
 

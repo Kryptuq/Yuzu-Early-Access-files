@@ -5,7 +5,8 @@
 
 #include <array>
 
-#include "dynarmic/common/common_types.h"
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/frontend/A64/a64_types.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/opcodes.h"

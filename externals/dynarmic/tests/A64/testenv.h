@@ -8,8 +8,9 @@
 #include <array>
 #include <map>
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/assert.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/interface/A64/a64.h"
 
 using Vector = Dynarmic::A64::Vector;

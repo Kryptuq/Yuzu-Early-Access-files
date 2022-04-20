@@ -9,16 +9,16 @@
 #include <vector>
 
 #include <catch2/catch.hpp>
+#include <mcl/scope_exit.hpp>
+#include <mcl/stdint.hpp>
 
 #include "../fuzz_util.h"
 #include "../rand_int.h"
 #include "../unicorn_emu/a64_unicorn.h"
 #include "./testenv.h"
-#include "dynarmic/common/common_types.h"
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/llvm_disassemble.h"
-#include "dynarmic/common/scope_exit.h"
 #include "dynarmic/frontend/A64/a64_location_descriptor.h"
 #include "dynarmic/frontend/A64/a64_types.h"
 #include "dynarmic/frontend/A64/decoder/a64.h"

@@ -12,8 +12,8 @@
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <mcl/assert.hpp>
 
-#include "dynarmic/common/assert.h"
 #include "dynarmic/common/memory_pool.h"
 #include "dynarmic/frontend/A32/a32_types.h"
 #include "dynarmic/frontend/A64/a64_types.h"

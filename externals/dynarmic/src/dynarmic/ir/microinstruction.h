@@ -7,8 +7,9 @@
 
 #include <array>
 
-#include "dynarmic/common/common_types.h"
-#include "dynarmic/common/intrusive_list.h"
+#include <mcl/container/intrusive_list.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/ir/value.h"
 
 namespace Dynarmic::IR {
@@ -22,7 +23,7 @@ constexpr size_t max_arg_count = 4;
  * A representation of a microinstruction. A single ARM/Thumb instruction may be
  * converted into zero or more microinstructions.
  */
-class Inst final : public Common::IntrusiveListNode<Inst> {
+class Inst final : public mcl::intrusive_list_node<Inst> {
 public:
     explicit Inst(Opcode op)
             : op(op) {}

@@ -7,7 +7,8 @@
 
 #include <utility>
 
-#include "dynarmic/common/common_types.h"
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/frontend/A32/a32_location_descriptor.h"
 #include "dynarmic/ir/ir_emitter.h"
 #include "dynarmic/ir/value.h"

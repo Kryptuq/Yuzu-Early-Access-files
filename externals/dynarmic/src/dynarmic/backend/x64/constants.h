@@ -7,8 +7,9 @@
 
 #include <optional>
 
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/common/fp/rounding_mode.h"
 
 namespace Dynarmic::Backend::X64 {
@@ -124,14 +125,14 @@ constexpr u32 FixupLUT(FpFixup src_qnan = FpFixup::A,
                        FpFixup src_pos = FpFixup::A,
                        FpFixup src_neg = FpFixup::A) {
     u32 fixup_lut = 0;
-    fixup_lut = Common::ModifyBits<0, 3, u32>(fixup_lut, static_cast<u32>(src_qnan));
-    fixup_lut = Common::ModifyBits<4, 7, u32>(fixup_lut, static_cast<u32>(src_snan));
-    fixup_lut = Common::ModifyBits<8, 11, u32>(fixup_lut, static_cast<u32>(src_zero));
-    fixup_lut = Common::ModifyBits<12, 15, u32>(fixup_lut, static_cast<u32>(src_posone));
-    fixup_lut = Common::ModifyBits<16, 19, u32>(fixup_lut, static_cast<u32>(src_neginf));
-    fixup_lut = Common::ModifyBits<20, 23, u32>(fixup_lut, static_cast<u32>(src_posinf));
-    fixup_lut = Common::ModifyBits<24, 27, u32>(fixup_lut, static_cast<u32>(src_pos));
-    fixup_lut = Common::ModifyBits<28, 31, u32>(fixup_lut, static_cast<u32>(src_neg));
+    fixup_lut = mcl::bit::set_bits<0, 3, u32>(fixup_lut, static_cast<u32>(src_qnan));
+    fixup_lut = mcl::bit::set_bits<4, 7, u32>(fixup_lut, static_cast<u32>(src_snan));
+    fixup_lut = mcl::bit::set_bits<8, 11, u32>(fixup_lut, static_cast<u32>(src_zero));
+    fixup_lut = mcl::bit::set_bits<12, 15, u32>(fixup_lut, static_cast<u32>(src_posone));
+    fixup_lut = mcl::bit::set_bits<16, 19, u32>(fixup_lut, static_cast<u32>(src_neginf));
+    fixup_lut = mcl::bit::set_bits<20, 23, u32>(fixup_lut, static_cast<u32>(src_posinf));
+    fixup_lut = mcl::bit::set_bits<24, 27, u32>(fixup_lut, static_cast<u32>(src_pos));
+    fixup_lut = mcl::bit::set_bits<28, 31, u32>(fixup_lut, static_cast<u32>(src_neg));
     return fixup_lut;
 }
 
@@ -153,8 +154,8 @@ enum class FpRangeSign : u8 {
 // Generates 8-bit immediate LUT for vrange instruction
 constexpr u8 FpRangeLUT(FpRangeSelect range_select, FpRangeSign range_sign) {
     u8 range_lut = 0;
-    range_lut = Common::ModifyBits<0, 1, u8>(range_lut, static_cast<u8>(range_select));
-    range_lut = Common::ModifyBits<2, 3, u8>(range_lut, static_cast<u8>(range_sign));
+    range_lut = mcl::bit::set_bits<0, 1, u8>(range_lut, static_cast<u8>(range_select));
+    range_lut = mcl::bit::set_bits<2, 3, u8>(range_lut, static_cast<u8>(range_sign));
     return range_lut;
 }
 

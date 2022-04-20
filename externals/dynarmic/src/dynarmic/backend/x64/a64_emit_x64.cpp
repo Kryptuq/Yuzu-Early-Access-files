@@ -7,7 +7,10 @@
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
-#include <mp/traits/integer_of_size.h>
+#include <mcl/assert.hpp>
+#include <mcl/scope_exit.hpp>
+#include <mcl/stdint.hpp>
+#include <mcl/type_traits/integer_of_size.hpp>
 
 #include "dynarmic/backend/x64/a64_jitstate.h"
 #include "dynarmic/backend/x64/abi.h"
@@ -17,10 +20,6 @@
 #include "dynarmic/backend/x64/nzcv_util.h"
 #include "dynarmic/backend/x64/perf_map.h"
 #include "dynarmic/backend/x64/stack_layout.h"
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
-#include "dynarmic/common/scope_exit.h"
 #include "dynarmic/frontend/A64/a64_location_descriptor.h"
 #include "dynarmic/frontend/A64/a64_types.h"
 #include "dynarmic/ir/basic_block.h"

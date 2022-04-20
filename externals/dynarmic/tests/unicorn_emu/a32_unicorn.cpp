@@ -7,9 +7,10 @@
 
 #include <type_traits>
 
+#include <mcl/assert.hpp>
+#include <mcl/bit/bit_field.hpp>
+
 #include "../A32/testenv.h"
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/bit_util.h"
 
 #define CHECKED(expr)                                                               \
     do {                                                                            \
@@ -60,7 +61,7 @@ void A32Unicorn<TestEnvironment>::Run() {
         }
     }
 
-    const bool T = Dynarmic::Common::Bit<5>(GetCpsr());
+    const bool T = mcl::bit::get_bit<5>(GetCpsr());
     const u32 new_pc = GetPC() | (T ? 1 : 0);
     SetPC(new_pc);
 }
@@ -262,7 +263,7 @@ void A32Unicorn<TestEnvironment>::InterruptHook(uc_engine* /*uc*/, u32 int_numbe
     auto* this_ = static_cast<A32Unicorn*>(user_data);
 
     u32 esr = 0;
-    //CHECKED(uc_reg_read(uc, UC_ARM_REG_ESR, &esr));
+    // CHECKED(uc_reg_read(uc, UC_ARM_REG_ESR, &esr));
 
     auto ec = esr >> 26;
     auto iss = esr & 0xFFFFFF;

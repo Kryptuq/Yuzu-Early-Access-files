@@ -8,6 +8,10 @@
 
 #include <boost/icl/interval_set.hpp>
 #include <fmt/format.h>
+#include <mcl/assert.hpp>
+#include <mcl/bit_cast.hpp>
+#include <mcl/scope_exit.hpp>
+#include <mcl/stdint.hpp>
 
 #include "dynarmic/backend/x64/a32_emit_x64.h"
 #include "dynarmic/backend/x64/a32_jitstate.h"
@@ -15,11 +19,7 @@
 #include "dynarmic/backend/x64/callback.h"
 #include "dynarmic/backend/x64/devirtualize.h"
 #include "dynarmic/backend/x64/jitstate_info.h"
-#include "dynarmic/common/assert.h"
 #include "dynarmic/common/atomic.h"
-#include "dynarmic/common/cast_util.h"
-#include "dynarmic/common/common_types.h"
-#include "dynarmic/common/scope_exit.h"
 #include "dynarmic/common/x64_disassemble.h"
 #include "dynarmic/frontend/A32/translate/a32_translate.h"
 #include "dynarmic/interface/A32/a32.h"
@@ -44,10 +44,10 @@ static RunCodeCallbacks GenRunCodeCallbacks(A32::UserCallbacks* cb, CodePtr (*Lo
 static std::function<void(BlockOfCode&)> GenRCP(const A32::UserConfig& conf) {
     return [conf](BlockOfCode& code) {
         if (conf.page_table) {
-            code.mov(code.r14, Common::BitCast<u64>(conf.page_table));
+            code.mov(code.r14, mcl::bit_cast<u64>(conf.page_table));
         }
         if (conf.fastmem_pointer) {
-            code.mov(code.r13, Common::BitCast<u64>(conf.fastmem_pointer));
+            code.mov(code.r13, mcl::bit_cast<u64>(conf.fastmem_pointer));
         }
     };
 }

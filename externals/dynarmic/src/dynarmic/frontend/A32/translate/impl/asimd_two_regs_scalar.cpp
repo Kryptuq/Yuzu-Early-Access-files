@@ -5,15 +5,16 @@
 
 #include <utility>
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/bit_util.h"
+#include <mcl/assert.hpp>
+#include <mcl/bit/bit_field.hpp>
+
 #include "dynarmic/frontend/A32/translate/impl/a32_translate_impl.h"
 
 namespace Dynarmic::A32 {
 namespace {
 std::pair<ExtReg, size_t> GetScalarLocation(size_t esize, bool M, size_t Vm) {
     const ExtReg m = ExtReg::Q0 + ((Vm >> 1) & (esize == 16 ? 0b11 : 0b111));
-    const size_t index = concatenate(Imm<1>{Common::Bit<0>(Vm)}, Imm<1>{M}, Imm<1>{Common::Bit<3>(Vm)}).ZeroExtend() >> (esize == 16 ? 0 : 1);
+    const size_t index = concatenate(Imm<1>{mcl::bit::get_bit<0>(Vm)}, Imm<1>{M}, Imm<1>{mcl::bit::get_bit<3>(Vm)}).ZeroExtend() >> (esize == 16 ? 0 : 1);
     return std::make_pair(m, index);
 }
 
@@ -37,7 +38,7 @@ bool ScalarMultiply(TranslatorVisitor& v, bool Q, bool D, size_t sz, size_t Vn, 
         return v.UndefinedInstruction();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vn))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vn))) {
         return v.UndefinedInstruction();
     }
 
@@ -74,7 +75,7 @@ bool ScalarMultiplyLong(TranslatorVisitor& v, bool U, bool D, size_t sz, size_t 
         return v.DecodeError();
     }
 
-    if (sz == 0b00 || Common::Bit<0>(Vd)) {
+    if (sz == 0b00 || mcl::bit::get_bit<0>(Vd)) {
         return v.UndefinedInstruction();
     }
 
@@ -115,7 +116,7 @@ bool ScalarMultiplyReturnHigh(TranslatorVisitor& v, bool Q, bool D, size_t sz, s
         return v.UndefinedInstruction();
     }
 
-    if (Q && (Common::Bit<0>(Vd) || Common::Bit<0>(Vn))) {
+    if (Q && (mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vn))) {
         return v.UndefinedInstruction();
     }
 
@@ -166,7 +167,7 @@ bool TranslatorVisitor::asimd_VQDMULL_scalar(bool D, size_t sz, size_t Vn, size_
         return DecodeError();
     }
 
-    if (sz == 0b00 || Common::Bit<0>(Vd)) {
+    if (sz == 0b00 || mcl::bit::get_bit<0>(Vd)) {
         return UndefinedInstruction();
     }
 

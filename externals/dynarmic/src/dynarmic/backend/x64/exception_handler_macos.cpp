@@ -14,12 +14,12 @@
 #include <vector>
 
 #include <fmt/format.h>
+#include <mcl/assert.hpp>
+#include <mcl/bit_cast.hpp>
+#include <mcl/stdint.hpp>
 
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/exception_handler.h"
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/cast_util.h"
-#include "dynarmic/common/common_types.h"
 
 #define mig_external extern "C"
 #include "dynarmic/backend/x64/mig/mach_exc_server.h"
@@ -120,7 +120,7 @@ kern_return_t MachHandler::HandleRequest(x86_thread_state64_t* ts) {
     FakeCall fc = iter->cb(ts->__rip);
 
     ts->__rsp -= sizeof(u64);
-    *Common::BitCast<u64*>(ts->__rsp) = fc.ret_rip;
+    *mcl::bit_cast<u64*>(ts->__rsp) = fc.ret_rip;
     ts->__rip = fc.call_rip;
 
     return KERN_SUCCESS;
@@ -189,7 +189,7 @@ mig_external kern_return_t catch_mach_exception_raise_state(
 
 struct ExceptionHandler::Impl final {
     Impl(BlockOfCode& code)
-            : code_begin(Common::BitCast<u64>(code.getCode()))
+            : code_begin(mcl::bit_cast<u64>(code.getCode()))
             , code_end(code_begin + code.GetTotalCodeSize()) {}
 
     void SetCallback(std::function<FakeCall(u64)> cb) {

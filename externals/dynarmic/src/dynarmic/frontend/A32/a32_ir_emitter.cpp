@@ -5,7 +5,8 @@
 
 #include "dynarmic/frontend/A32/a32_ir_emitter.h"
 
-#include "dynarmic/common/assert.h"
+#include <mcl/assert.hpp>
+
 #include "dynarmic/frontend/A32/a32_types.h"
 #include "dynarmic/interface/A32/arch_version.h"
 #include "dynarmic/ir/opcodes.h"

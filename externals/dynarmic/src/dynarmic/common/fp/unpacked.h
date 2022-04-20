@@ -7,7 +7,9 @@
 
 #include <tuple>
 
-#include "dynarmic/common/common_types.h"
+#include <mcl/bit/bit_count.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/common/fp/fpcr.h"
 
 namespace Dynarmic::FP {
@@ -43,7 +45,7 @@ constexpr FPUnpacked ToNormalized(bool sign, int exponent, u64 value) {
         return {sign, 0, 0};
     }
 
-    const int highest_bit = Common::HighestSetBit(value);
+    const int highest_bit = mcl::bit::highest_set_bit(value);
     const int offset = static_cast<int>(normalized_point_position) - highest_bit;
     value <<= offset;
     exponent -= offset - static_cast<int>(normalized_point_position);

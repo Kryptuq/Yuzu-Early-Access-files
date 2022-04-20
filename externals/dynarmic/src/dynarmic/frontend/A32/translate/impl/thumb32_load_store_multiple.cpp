@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include "dynarmic/common/bit_util.h"
+#include <mcl/bit/bit_count.hpp>
+
 #include "dynarmic/frontend/A32/translate/impl/a32_translate_impl.h"
 
 namespace Dynarmic::A32 {
@@ -14,15 +15,15 @@ static bool ITBlockCheck(const A32::IREmitter& ir) {
 static bool LDMHelper(A32::IREmitter& ir, bool W, Reg n, u32 list, const IR::U32& start_address, const IR::U32& writeback_address) {
     auto address = start_address;
     for (size_t i = 0; i <= 14; i++) {
-        if (Common::Bit(i, list)) {
+        if (mcl::bit::get_bit(i, list)) {
             ir.SetRegister(static_cast<Reg>(i), ir.ReadMemory32(address, IR::AccType::ATOMIC));
             address = ir.Add(address, ir.Imm32(4));
         }
     }
-    if (W && !Common::Bit(RegNumber(n), list)) {
+    if (W && !mcl::bit::get_bit(RegNumber(n), list)) {
         ir.SetRegister(n, writeback_address);
     }
-    if (Common::Bit<15>(list)) {
+    if (mcl::bit::get_bit<15>(list)) {
         ir.UpdateUpperLocationDescriptor();
         ir.LoadWritePC(ir.ReadMemory32(address, IR::AccType::ATOMIC));
         if (n == Reg::R13) {
@@ -38,7 +39,7 @@ static bool LDMHelper(A32::IREmitter& ir, bool W, Reg n, u32 list, const IR::U32
 static bool STMHelper(A32::IREmitter& ir, bool W, Reg n, u32 list, const IR::U32& start_address, const IR::U32& writeback_address) {
     auto address = start_address;
     for (size_t i = 0; i <= 14; i++) {
-        if (Common::Bit(i, list)) {
+        if (mcl::bit::get_bit(i, list)) {
             ir.WriteMemory32(address, ir.GetRegister(static_cast<Reg>(i)), IR::AccType::ATOMIC);
             address = ir.Add(address, ir.Imm32(4));
         }
@@ -51,7 +52,7 @@ static bool STMHelper(A32::IREmitter& ir, bool W, Reg n, u32 list, const IR::U32
 
 bool TranslatorVisitor::thumb32_LDMDB(bool W, Reg n, Imm<16> reg_list) {
     const auto regs_imm = reg_list.ZeroExtend();
-    const auto num_regs = static_cast<u32>(Common::BitCount(regs_imm));
+    const auto num_regs = static_cast<u32>(mcl::bit::count_ones(regs_imm));
 
     if (n == Reg::PC || num_regs < 2) {
         return UnpredictableInstruction();
@@ -59,7 +60,7 @@ bool TranslatorVisitor::thumb32_LDMDB(bool W, Reg n, Imm<16> reg_list) {
     if (reg_list.Bit<15>() && reg_list.Bit<14>()) {
         return UnpredictableInstruction();
     }
-    if (W && Common::Bit(static_cast<size_t>(n), regs_imm)) {
+    if (W && mcl::bit::get_bit(static_cast<size_t>(n), regs_imm)) {
         return UnpredictableInstruction();
     }
     if (reg_list.Bit<13>()) {
@@ -76,7 +77,7 @@ bool TranslatorVisitor::thumb32_LDMDB(bool W, Reg n, Imm<16> reg_list) {
 
 bool TranslatorVisitor::thumb32_LDMIA(bool W, Reg n, Imm<16> reg_list) {
     const auto regs_imm = reg_list.ZeroExtend();
-    const auto num_regs = static_cast<u32>(Common::BitCount(regs_imm));
+    const auto num_regs = static_cast<u32>(mcl::bit::count_ones(regs_imm));
 
     if (n == Reg::PC || num_regs < 2) {
         return UnpredictableInstruction();
@@ -84,7 +85,7 @@ bool TranslatorVisitor::thumb32_LDMIA(bool W, Reg n, Imm<16> reg_list) {
     if (reg_list.Bit<15>() && reg_list.Bit<14>()) {
         return UnpredictableInstruction();
     }
-    if (W && Common::Bit(static_cast<size_t>(n), regs_imm)) {
+    if (W && mcl::bit::get_bit(static_cast<size_t>(n), regs_imm)) {
         return UnpredictableInstruction();
     }
     if (reg_list.Bit<13>()) {
@@ -109,12 +110,12 @@ bool TranslatorVisitor::thumb32_PUSH(Imm<15> reg_list) {
 
 bool TranslatorVisitor::thumb32_STMIA(bool W, Reg n, Imm<15> reg_list) {
     const auto regs_imm = reg_list.ZeroExtend();
-    const auto num_regs = static_cast<u32>(Common::BitCount(regs_imm));
+    const auto num_regs = static_cast<u32>(mcl::bit::count_ones(regs_imm));
 
     if (n == Reg::PC || num_regs < 2) {
         return UnpredictableInstruction();
     }
-    if (W && Common::Bit(static_cast<size_t>(n), regs_imm)) {
+    if (W && mcl::bit::get_bit(static_cast<size_t>(n), regs_imm)) {
         return UnpredictableInstruction();
     }
     if (reg_list.Bit<13>()) {
@@ -128,12 +129,12 @@ bool TranslatorVisitor::thumb32_STMIA(bool W, Reg n, Imm<15> reg_list) {
 
 bool TranslatorVisitor::thumb32_STMDB(bool W, Reg n, Imm<15> reg_list) {
     const auto regs_imm = reg_list.ZeroExtend();
-    const auto num_regs = static_cast<u32>(Common::BitCount(regs_imm));
+    const auto num_regs = static_cast<u32>(mcl::bit::count_ones(regs_imm));
 
     if (n == Reg::PC || num_regs < 2) {
         return UnpredictableInstruction();
     }
-    if (W && Common::Bit(static_cast<size_t>(n), regs_imm)) {
+    if (W && mcl::bit::get_bit(static_cast<size_t>(n), regs_imm)) {
         return UnpredictableInstruction();
     }
     if (reg_list.Bit<13>()) {

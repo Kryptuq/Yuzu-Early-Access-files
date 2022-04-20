@@ -8,7 +8,7 @@
 #include <functional>
 #include <iosfwd>
 
-#include "dynarmic/common/common_types.h"
+#include <mcl/stdint.hpp>
 
 namespace Dynarmic::IR {
 

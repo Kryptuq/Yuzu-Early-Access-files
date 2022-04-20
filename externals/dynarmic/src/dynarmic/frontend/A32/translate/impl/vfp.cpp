@@ -661,7 +661,7 @@ bool TranslatorVisitor::vfp_VDUP(Cond cond, Imm<1> B, bool Q, size_t Vd, Reg t, 
         return true;
     }
 
-    if (Q && Common::Bit<0>(Vd)) {
+    if (Q && mcl::bit::get_bit<0>(Vd)) {
         return UndefinedInstruction();
     }
     if (t == Reg::R15) {

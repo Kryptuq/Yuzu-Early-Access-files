@@ -7,8 +7,9 @@
 
 #include <optional>
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/bit_util.h"
+#include <mcl/assert.hpp>
+#include <mcl/bit/bit_field.hpp>
+
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/fp/info.h"
@@ -26,7 +27,7 @@ FPT FPProcessNaN(FPType type, FPT op, FPCR fpcr, FPSR& fpsr) {
     FPT result = op;
 
     if (type == FPType::SNaN) {
-        result = Common::ModifyBit<topfrac>(op, true);
+        result = mcl::bit::set_bit<topfrac>(op, true);
         FPProcessException(FPExc::InvalidOp, fpcr, fpsr);
     }
 

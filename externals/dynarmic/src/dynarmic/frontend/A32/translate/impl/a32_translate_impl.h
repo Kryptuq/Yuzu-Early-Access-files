@@ -5,8 +5,10 @@
 
 #pragma once
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/bit_util.h"
+#include <mcl/assert.hpp>
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/bit/rotate.hpp>
+
 #include "dynarmic/frontend/A32/a32_ir_emitter.h"
 #include "dynarmic/frontend/A32/a32_location_descriptor.h"
 #include "dynarmic/frontend/A32/a32_types.h"
@@ -49,8 +51,8 @@ struct TranslatorVisitor final {
         u32 imm32 = imm8.ZeroExtend();
         auto carry_out = carry_in;
         if (rotate) {
-            imm32 = Common::RotateRight<u32>(imm8.ZeroExtend(), rotate * 2);
-            carry_out = ir.Imm1(Common::Bit<31>(imm32));
+            imm32 = mcl::bit::rotate_right<u32>(imm8.ZeroExtend(), rotate * 2);
+            carry_out = ir.Imm1(mcl::bit::get_bit<31>(imm32));
         }
         return {imm32, carry_out};
     }
@@ -68,18 +70,18 @@ struct TranslatorVisitor final {
                 case 0b00:
                     return imm8;
                 case 0b01:
-                    return Common::Replicate(imm8, 16);
+                    return mcl::bit::replicate_element<u16, u32>(imm8);
                 case 0b10:
-                    return Common::Replicate(imm8 << 8, 16);
+                    return mcl::bit::replicate_element<u16, u32>(imm8 << 8);
                 case 0b11:
-                    return Common::Replicate(imm8, 8);
+                    return mcl::bit::replicate_element<u8, u32>(imm8);
                 }
                 UNREACHABLE();
             }();
             return {imm32, carry_in};
         }
-        const u32 imm32 = Common::RotateRight<u32>((1 << 7) | imm12.Bits<0, 6>(), imm12.Bits<7, 11>());
-        return {imm32, ir.Imm1(Common::Bit<31>(imm32))};
+        const u32 imm32 = mcl::bit::rotate_right<u32>((1 << 7) | imm12.Bits<0, 6>(), imm12.Bits<7, 11>());
+        return {imm32, ir.Imm1(mcl::bit::get_bit<31>(imm32))};
     }
 
     u32 ThumbExpandImm(Imm<1> i, Imm<3> imm3, Imm<8> imm8) {
@@ -397,8 +399,8 @@ struct TranslatorVisitor final {
     // Status register access instructions
     bool arm_CPS();
     bool arm_MRS(Cond cond, Reg d);
-    bool arm_MSR_imm(Cond cond, int mask, int rotate, Imm<8> imm8);
-    bool arm_MSR_reg(Cond cond, int mask, Reg n);
+    bool arm_MSR_imm(Cond cond, unsigned mask, int rotate, Imm<8> imm8);
+    bool arm_MSR_reg(Cond cond, unsigned mask, Reg n);
     bool arm_RFE();
     bool arm_SETEND(bool E);
     bool arm_SRS();

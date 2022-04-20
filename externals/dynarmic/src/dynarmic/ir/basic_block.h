@@ -10,8 +10,9 @@
 #include <optional>
 #include <string>
 
-#include "dynarmic/common/common_types.h"
-#include "dynarmic/common/intrusive_list.h"
+#include <mcl/container/intrusive_list.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/ir/location_descriptor.h"
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/terminal.h"
@@ -34,7 +35,7 @@ enum class Opcode;
  */
 class Block final {
 public:
-    using InstructionList = Common::IntrusiveList<Inst>;
+    using InstructionList = mcl::intrusive_list<Inst>;
     using size_type = InstructionList::size_type;
     using iterator = InstructionList::iterator;
     using const_iterator = InstructionList::const_iterator;

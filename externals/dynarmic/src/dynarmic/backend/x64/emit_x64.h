@@ -11,13 +11,13 @@
 #include <type_traits>
 #include <vector>
 
+#include <mcl/bitsizeof.hpp>
 #include <tsl/robin_map.h>
 #include <tsl/robin_set.h>
 #include <xbyak/xbyak_util.h>
 
 #include "dynarmic/backend/x64/exception_handler.h"
 #include "dynarmic/backend/x64/reg_alloc.h"
-#include "dynarmic/common/bit_util.h"
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/ir/location_descriptor.h"
 #include "dynarmic/ir/terminal.h"
@@ -41,10 +41,10 @@ using A64FullVectorWidth = std::integral_constant<size_t, 128>;
 // relative to the size of a vector register. e.g. T = u32 would result
 // in a std::array<u32, 4>.
 template<typename T>
-using VectorArray = std::array<T, A64FullVectorWidth::value / Common::BitSize<T>()>;
+using VectorArray = std::array<T, A64FullVectorWidth::value / mcl::bitsizeof<T>>;
 
 template<typename T>
-using HalfVectorArray = std::array<T, A64FullVectorWidth::value / Common::BitSize<T>() / 2>;
+using HalfVectorArray = std::array<T, A64FullVectorWidth::value / mcl::bitsizeof<T> / 2>;
 
 struct EmitContext {
     EmitContext(RegAlloc& reg_alloc, IR::Block& block);

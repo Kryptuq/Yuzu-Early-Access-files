@@ -11,6 +11,10 @@
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <mcl/assert.hpp>
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/scope_exit.hpp>
+#include <mcl/stdint.hpp>
 
 #include "dynarmic/backend/x64/a32_jitstate.h"
 #include "dynarmic/backend/x64/abi.h"
@@ -20,10 +24,6 @@
 #include "dynarmic/backend/x64/nzcv_util.h"
 #include "dynarmic/backend/x64/perf_map.h"
 #include "dynarmic/backend/x64/stack_layout.h"
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
-#include "dynarmic/common/scope_exit.h"
 #include "dynarmic/common/variant_util.h"
 #include "dynarmic/frontend/A32/a32_location_descriptor.h"
 #include "dynarmic/frontend/A32/a32_types.h"
@@ -626,10 +626,10 @@ void A32EmitX64::EmitA32SetGEFlagsCompressed(A32EmitContext& ctx, IR::Inst* inst
     if (args[0].IsImmediate()) {
         const u32 imm = args[0].GetImmediateU32();
         u32 ge = 0;
-        ge |= Common::Bit<19>(imm) ? 0xFF000000 : 0;
-        ge |= Common::Bit<18>(imm) ? 0x00FF0000 : 0;
-        ge |= Common::Bit<17>(imm) ? 0x0000FF00 : 0;
-        ge |= Common::Bit<16>(imm) ? 0x000000FF : 0;
+        ge |= mcl::bit::get_bit<19>(imm) ? 0xFF000000 : 0;
+        ge |= mcl::bit::get_bit<18>(imm) ? 0x00FF0000 : 0;
+        ge |= mcl::bit::get_bit<17>(imm) ? 0x0000FF00 : 0;
+        ge |= mcl::bit::get_bit<16>(imm) ? 0x000000FF : 0;
 
         code.mov(dword[r15 + offsetof(A32JitState, cpsr_ge)], ge);
     } else if (code.HasHostFeature(HostFeature::FastBMI2)) {
@@ -689,8 +689,8 @@ void A32EmitX64::EmitA32BXWritePC(A32EmitContext& ctx, IR::Inst* inst) {
 
     if (arg.IsImmediate()) {
         const u32 new_pc = arg.GetImmediateU32();
-        const u32 mask = Common::Bit<0>(new_pc) ? 0xFFFFFFFE : 0xFFFFFFFC;
-        const u32 new_upper = upper_without_t | (Common::Bit<0>(new_pc) ? 1 : 0);
+        const u32 mask = mcl::bit::get_bit<0>(new_pc) ? 0xFFFFFFFE : 0xFFFFFFFC;
+        const u32 new_upper = upper_without_t | (mcl::bit::get_bit<0>(new_pc) ? 1 : 0);
 
         code.mov(MJitStateReg(A32::Reg::PC), new_pc & mask);
         code.mov(dword[r15 + offsetof(A32JitState, upper_location_descriptor)], new_upper);

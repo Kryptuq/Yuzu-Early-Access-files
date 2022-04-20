@@ -4,7 +4,8 @@
  */
 #pragma once
 
-#include "dynarmic/common/common_types.h"
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/interface/A32/arch_version.h"
 
 namespace Dynarmic::IR {

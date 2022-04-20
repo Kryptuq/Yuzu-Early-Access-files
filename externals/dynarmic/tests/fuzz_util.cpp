@@ -9,9 +9,9 @@
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <mcl/assert.hpp>
 
 #include "./rand_int.h"
-#include "dynarmic/common/assert.h"
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/rounding_mode.h"
 

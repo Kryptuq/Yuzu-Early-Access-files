@@ -7,20 +7,20 @@
 #include <type_traits>
 #include <utility>
 
-#include <mp/metavalue/lift_value.h>
-#include <mp/traits/integer_of_size.h>
-#include <mp/typelist/cartesian_product.h>
-#include <mp/typelist/lift_sequence.h>
-#include <mp/typelist/list.h>
-#include <mp/typelist/lower_to_tuple.h>
+#include <mcl/assert.hpp>
+#include <mcl/mp/metavalue/lift_value.hpp>
+#include <mcl/mp/typelist/cartesian_product.hpp>
+#include <mcl/mp/typelist/lift_sequence.hpp>
+#include <mcl/mp/typelist/list.hpp>
+#include <mcl/mp/typelist/lower_to_tuple.hpp>
+#include <mcl/stdint.hpp>
+#include <mcl/type_traits/integer_of_size.hpp>
 
 #include "dynarmic/backend/x64/abi.h"
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/constants.h"
 #include "dynarmic/backend/x64/emit_x64.h"
-#include "dynarmic/common/assert.h"
 #include "dynarmic/common/cast_util.h"
-#include "dynarmic/common/common_types.h"
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/fp/info.h"
@@ -34,6 +34,7 @@
 namespace Dynarmic::Backend::X64 {
 
 using namespace Xbyak::util;
+namespace mp = mcl::mp;
 
 namespace {
 
@@ -173,7 +174,7 @@ void PostProcessNaN(BlockOfCode& code, Xbyak::Xmm result, Xbyak::Xmm tmp) {
 // We allow for the case where op1 and result are the same register. We do not read from op1 once result is written to.
 template<size_t fsize>
 void EmitPostProcessNaNs(BlockOfCode& code, Xbyak::Xmm result, Xbyak::Xmm op1, Xbyak::Xmm op2, Xbyak::Reg64 tmp, Xbyak::Label end) {
-    using FPT = mp::unsigned_integer_of_size<fsize>;
+    using FPT = mcl::unsigned_integer_of_size<fsize>;
     constexpr FPT exponent_mask = FP::FPInfo<FPT>::exponent_mask;
     constexpr FPT mantissa_msb = FP::FPInfo<FPT>::mantissa_msb;
     constexpr u8 mantissa_msb_bit = static_cast<u8>(FP::FPInfo<FPT>::explicit_mantissa_width - 1);
@@ -267,7 +268,7 @@ void FPTwoOp(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst, Function fn) {
 
 template<size_t fsize, typename Function>
 void FPThreeOp(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst, Function fn) {
-    using FPT = mp::unsigned_integer_of_size<fsize>;
+    using FPT = mcl::unsigned_integer_of_size<fsize>;
 
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
 
@@ -324,7 +325,7 @@ void FPThreeOp(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst, Function fn)
 
 template<size_t fsize>
 void FPAbs(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
-    using FPT = mp::unsigned_integer_of_size<fsize>;
+    using FPT = mcl::unsigned_integer_of_size<fsize>;
     constexpr FPT non_sign_mask = FP::FPInfo<FPT>::sign_mask - FPT(1u);
 
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
@@ -350,7 +351,7 @@ void EmitX64::EmitFPAbs64(EmitContext& ctx, IR::Inst* inst) {
 
 template<size_t fsize>
 void FPNeg(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
-    using FPT = mp::unsigned_integer_of_size<fsize>;
+    using FPT = mcl::unsigned_integer_of_size<fsize>;
     constexpr FPT sign_mask = FP::FPInfo<FPT>::sign_mask;
 
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
@@ -440,7 +441,7 @@ static void EmitFPMinMax(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
 
 template<size_t fsize, bool is_max>
 static void EmitFPMinMaxNumeric(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
-    using FPT = mp::unsigned_integer_of_size<fsize>;
+    using FPT = mcl::unsigned_integer_of_size<fsize>;
     constexpr FPT default_nan = FP::FPInfo<FPT>::DefaultNaN();
     constexpr u8 mantissa_msb_bit = static_cast<u8>(FP::FPInfo<FPT>::explicit_mantissa_width - 1);
 
@@ -592,7 +593,7 @@ void EmitX64::EmitFPMul64(EmitContext& ctx, IR::Inst* inst) {
 
 template<size_t fsize>
 static void EmitFPMulAdd(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
-    using FPT = mp::unsigned_integer_of_size<fsize>;
+    using FPT = mcl::unsigned_integer_of_size<fsize>;
 
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
 
@@ -697,7 +698,7 @@ void EmitX64::EmitFPMulAdd64(EmitContext& ctx, IR::Inst* inst) {
 
 template<size_t fsize>
 static void EmitFPMulX(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
-    using FPT = mp::unsigned_integer_of_size<fsize>;
+    using FPT = mcl::unsigned_integer_of_size<fsize>;
 
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
 
@@ -755,7 +756,7 @@ void EmitX64::EmitFPMulX64(EmitContext& ctx, IR::Inst* inst) {
 
 template<size_t fsize>
 static void EmitFPRecipEstimate(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
-    using FPT = mp::unsigned_integer_of_size<fsize>;
+    using FPT = mcl::unsigned_integer_of_size<fsize>;
 
     if constexpr (fsize != 16) {
         if (ctx.HasOptimization(OptimizationFlag::Unsafe_ReducedErrorFP)) {
@@ -801,7 +802,7 @@ void EmitX64::EmitFPRecipEstimate64(EmitContext& ctx, IR::Inst* inst) {
 
 template<size_t fsize>
 static void EmitFPRecipExponent(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
-    using FPT = mp::unsigned_integer_of_size<fsize>;
+    using FPT = mcl::unsigned_integer_of_size<fsize>;
 
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
     ctx.reg_alloc.HostCall(inst, args[0]);
@@ -824,7 +825,7 @@ void EmitX64::EmitFPRecipExponent64(EmitContext& ctx, IR::Inst* inst) {
 
 template<size_t fsize>
 static void EmitFPRecipStepFused(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
-    using FPT = mp::unsigned_integer_of_size<fsize>;
+    using FPT = mcl::unsigned_integer_of_size<fsize>;
 
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
 
@@ -949,7 +950,7 @@ static void EmitFPRound(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst, siz
                         constexpr size_t fsize = std::get<0>(t);
                         constexpr FP::RoundingMode rounding_mode = std::get<1>(t);
                         constexpr bool exact = std::get<2>(t);
-                        using InputSize = mp::unsigned_integer_of_size<fsize>;
+                        using InputSize = mcl::unsigned_integer_of_size<fsize>;
 
                         return FP::FPRoundInt<InputSize>(static_cast<InputSize>(input), fpcr, rounding_mode, exact, fpsr);
                     })};
@@ -977,7 +978,7 @@ void EmitX64::EmitFPRoundInt64(EmitContext& ctx, IR::Inst* inst) {
 
 template<size_t fsize>
 static void EmitFPRSqrtEstimate(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
-    using FPT = mp::unsigned_integer_of_size<fsize>;
+    using FPT = mcl::unsigned_integer_of_size<fsize>;
 
     if constexpr (fsize != 16) {
         if (ctx.HasOptimization(OptimizationFlag::Unsafe_ReducedErrorFP)) {
@@ -1156,7 +1157,7 @@ void EmitX64::EmitFPRSqrtEstimate64(EmitContext& ctx, IR::Inst* inst) {
 
 template<size_t fsize>
 static void EmitFPRSqrtStepFused(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
-    using FPT = mp::unsigned_integer_of_size<fsize>;
+    using FPT = mcl::unsigned_integer_of_size<fsize>;
 
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
 
@@ -1589,7 +1590,7 @@ static void EmitFPToFixed(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
                         constexpr auto t = mp::lower_to_tuple_v<decltype(args)>;
                         constexpr size_t fbits = std::get<0>(t);
                         constexpr FP::RoundingMode rounding_mode = std::get<1>(t);
-                        using FPT = mp::unsigned_integer_of_size<fsize>;
+                        using FPT = mcl::unsigned_integer_of_size<fsize>;
 
                         return FP::FPToFixed<FPT>(isize, static_cast<FPT>(input), fbits, unsigned_, fpcr, rounding_mode, fpsr);
                     })};

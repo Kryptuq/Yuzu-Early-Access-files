@@ -10,7 +10,7 @@
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
-#include <mp/traits/integer_of_size.h>
+#include <mcl/type_traits/integer_of_size.hpp>
 #include <xbyak/xbyak.h>
 
 #include "dynarmic/backend/x64/a32_emit_x64.h"

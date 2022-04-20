@@ -7,16 +7,16 @@
 
 #include <iterator>
 
+#include <mcl/assert.hpp>
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/scope_exit.hpp>
+#include <mcl/stdint.hpp>
 #include <tsl/robin_set.h>
 
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/nzcv_util.h"
 #include "dynarmic/backend/x64/perf_map.h"
 #include "dynarmic/backend/x64/stack_layout.h"
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
-#include "dynarmic/common/scope_exit.h"
 #include "dynarmic/common/variant_util.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/microinstruction.h"
@@ -164,10 +164,10 @@ void EmitX64::EmitNZCVFromPackedFlags(EmitContext& ctx, IR::Inst* inst) {
     if (args[0].IsImmediate()) {
         const Xbyak::Reg32 nzcv = ctx.reg_alloc.ScratchGpr().cvt32();
         u32 value = 0;
-        value |= Common::Bit<31>(args[0].GetImmediateU32()) ? (1 << 15) : 0;
-        value |= Common::Bit<30>(args[0].GetImmediateU32()) ? (1 << 14) : 0;
-        value |= Common::Bit<29>(args[0].GetImmediateU32()) ? (1 << 8) : 0;
-        value |= Common::Bit<28>(args[0].GetImmediateU32()) ? (1 << 0) : 0;
+        value |= mcl::bit::get_bit<31>(args[0].GetImmediateU32()) ? (1 << 15) : 0;
+        value |= mcl::bit::get_bit<30>(args[0].GetImmediateU32()) ? (1 << 14) : 0;
+        value |= mcl::bit::get_bit<29>(args[0].GetImmediateU32()) ? (1 << 8) : 0;
+        value |= mcl::bit::get_bit<28>(args[0].GetImmediateU32()) ? (1 << 0) : 0;
         code.mov(nzcv, value);
         ctx.reg_alloc.DefineValue(inst, nzcv);
     } else if (code.HasHostFeature(HostFeature::FastBMI2)) {
@@ -204,44 +204,44 @@ Xbyak::Label EmitX64::EmitCond(IR::Cond cond) {
     // add al, 0x7F restores OF
 
     switch (cond) {
-    case IR::Cond::EQ:  //z
+    case IR::Cond::EQ:  // z
         code.sahf();
         code.jz(pass);
         break;
-    case IR::Cond::NE:  //!z
+    case IR::Cond::NE:  //! z
         code.sahf();
         code.jnz(pass);
         break;
-    case IR::Cond::CS:  //c
+    case IR::Cond::CS:  // c
         code.sahf();
         code.jc(pass);
         break;
-    case IR::Cond::CC:  //!c
+    case IR::Cond::CC:  //! c
         code.sahf();
         code.jnc(pass);
         break;
-    case IR::Cond::MI:  //n
+    case IR::Cond::MI:  // n
         code.sahf();
         code.js(pass);
         break;
-    case IR::Cond::PL:  //!n
+    case IR::Cond::PL:  //! n
         code.sahf();
         code.jns(pass);
         break;
-    case IR::Cond::VS:  //v
+    case IR::Cond::VS:  // v
         code.cmp(al, 0x81);
         code.jo(pass);
         break;
-    case IR::Cond::VC:  //!v
+    case IR::Cond::VC:  //! v
         code.cmp(al, 0x81);
         code.jno(pass);
         break;
-    case IR::Cond::HI:  //c & !z
+    case IR::Cond::HI:  // c & !z
         code.sahf();
         code.cmc();
         code.ja(pass);
         break;
-    case IR::Cond::LS:  //!c | z
+    case IR::Cond::LS:  //! c | z
         code.sahf();
         code.cmc();
         code.jna(pass);

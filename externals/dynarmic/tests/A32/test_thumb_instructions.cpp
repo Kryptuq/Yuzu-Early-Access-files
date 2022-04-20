@@ -4,9 +4,9 @@
  */
 
 #include <catch2/catch.hpp>
+#include <mcl/stdint.hpp>
 
 #include "./testenv.h"
-#include "dynarmic/common/common_types.h"
 #include "dynarmic/interface/A32/a32.h"
 
 static Dynarmic::A32::UserConfig GetUserConfig(ThumbTestEnv* testenv) {

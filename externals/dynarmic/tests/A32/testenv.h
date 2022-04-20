@@ -11,8 +11,9 @@
 #include <string>
 #include <vector>
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/assert.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/interface/A32/a32.h"
 
 template<typename InstructionType_, u32 infinite_loop_u32>

@@ -9,26 +9,26 @@
 #include <map>
 #include <type_traits>
 
-#include <mp/metafunction/apply.h>
-#include <mp/traits/is_instance_of_template.h>
-#include <mp/typelist/list.h>
+#include <mcl/mp/metafunction/apply.hpp>
+#include <mcl/mp/typelist/list.hpp>
+#include <mcl/type_traits/is_instance_of_template.hpp>
 
 #ifdef _MSC_VER
-#    include <mp/typelist/head.h>
+#    include <mcl/mp/typelist/head.hpp>
 #endif
 
 namespace Dynarmic::Common {
 
 template<typename Function, typename... Values>
-inline auto GenerateLookupTableFromList(Function f, mp::list<Values...>) {
+inline auto GenerateLookupTableFromList(Function f, mcl::mp::list<Values...>) {
 #ifdef _MSC_VER
-    using PairT = std::invoke_result_t<Function, mp::head<mp::list<Values...>>>;
+    using PairT = std::invoke_result_t<Function, mcl::mp::head<mcl::mp::list<Values...>>>;
 #else
     using PairT = std::common_type_t<std::invoke_result_t<Function, Values>...>;
 #endif
-    using MapT = mp::apply<std::map, PairT>;
+    using MapT = mcl::mp::apply<std::map, PairT>;
 
-    static_assert(mp::is_instance_of_template_v<std::pair, PairT>);
+    static_assert(mcl::is_instance_of_template_v<std::pair, PairT>);
 
     const std::initializer_list<PairT> pair_array{f(Values{})...};
     return MapT(pair_array.begin(), pair_array.end());

@@ -19,10 +19,11 @@
 #include <mutex>
 #include <vector>
 
+#include <mcl/assert.hpp>
+#include <mcl/bit_cast.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/backend/x64/block_of_code.h"
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/cast_util.h"
-#include "dynarmic/common/common_types.h"
 
 namespace Dynarmic::Backend::X64 {
 
@@ -142,7 +143,7 @@ void SigHandler::SigAction(int sig, siginfo_t* info, void* raw_context) {
             FakeCall fc = iter->cb(CTX_RIP);
 
             CTX_RSP -= sizeof(u64);
-            *Common::BitCast<u64*>(CTX_RSP) = fc.ret_rip;
+            *mcl::bit_cast<u64*>(CTX_RSP) = fc.ret_rip;
             CTX_RIP = fc.call_rip;
 
             return;
@@ -170,7 +171,7 @@ void SigHandler::SigAction(int sig, siginfo_t* info, void* raw_context) {
 
 struct ExceptionHandler::Impl final {
     Impl(BlockOfCode& code)
-            : code_begin(Common::BitCast<u64>(code.getCode()))
+            : code_begin(mcl::bit_cast<u64>(code.getCode()))
             , code_end(code_begin + code.GetTotalCodeSize()) {}
 
     void SetCallback(std::function<FakeCall(u64)> cb) {

@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include "dynarmic/common/bit_util.h"
+#include <mcl/bitsizeof.hpp>
+
 #include "dynarmic/frontend/A32/translate/impl/a32_translate_impl.h"
 
 namespace Dynarmic::A32 {
@@ -23,7 +24,7 @@ bool TranslatorVisitor::arm_BFC(Cond cond, Imm<5> msb, Reg d, Imm<5> lsb) {
 
     const u32 lsb_value = lsb.ZeroExtend();
     const u32 msb_value = msb.ZeroExtend();
-    const u32 mask = ~(Common::Ones<u32>(msb_value - lsb_value + 1) << lsb_value);
+    const u32 mask = ~(mcl::bit::ones<u32>(msb_value - lsb_value + 1) << lsb_value);
     const IR::U32 operand = ir.GetRegister(d);
     const IR::U32 result = ir.And(operand, ir.Imm32(mask));
 
@@ -46,7 +47,7 @@ bool TranslatorVisitor::arm_BFI(Cond cond, Imm<5> msb, Reg d, Imm<5> lsb, Reg n)
 
     const u32 lsb_value = lsb.ZeroExtend();
     const u32 msb_value = msb.ZeroExtend();
-    const u32 inclusion_mask = Common::Ones<u32>(msb_value - lsb_value + 1) << lsb_value;
+    const u32 inclusion_mask = mcl::bit::ones<u32>(msb_value - lsb_value + 1) << lsb_value;
     const u32 exclusion_mask = ~inclusion_mask;
     const IR::U32 operand1 = ir.And(ir.GetRegister(d), ir.Imm32(exclusion_mask));
     const IR::U32 operand2 = ir.And(ir.LogicalShiftLeft(ir.GetRegister(n), ir.Imm8(u8(lsb_value))), ir.Imm32(inclusion_mask));
@@ -112,7 +113,7 @@ bool TranslatorVisitor::arm_SBFX(Cond cond, Imm<5> widthm1, Reg d, Imm<5> lsb, R
     const u32 lsb_value = lsb.ZeroExtend();
     const u32 widthm1_value = widthm1.ZeroExtend();
     const u32 msb = lsb_value + widthm1_value;
-    if (msb >= Common::BitSize<u32>()) {
+    if (msb >= mcl::bitsizeof<u32>) {
         return UnpredictableInstruction();
     }
 
@@ -120,7 +121,7 @@ bool TranslatorVisitor::arm_SBFX(Cond cond, Imm<5> widthm1, Reg d, Imm<5> lsb, R
         return true;
     }
 
-    constexpr size_t max_width = Common::BitSize<u32>();
+    constexpr size_t max_width = mcl::bitsizeof<u32>;
     const u32 width = widthm1_value + 1;
     const u8 left_shift_amount = static_cast<u8>(max_width - width - lsb_value);
     const u8 right_shift_amount = static_cast<u8>(max_width - width);
@@ -159,7 +160,7 @@ bool TranslatorVisitor::arm_UBFX(Cond cond, Imm<5> widthm1, Reg d, Imm<5> lsb, R
     const u32 lsb_value = lsb.ZeroExtend();
     const u32 widthm1_value = widthm1.ZeroExtend();
     const u32 msb = lsb_value + widthm1_value;
-    if (msb >= Common::BitSize<u32>()) {
+    if (msb >= mcl::bitsizeof<u32>) {
         return UnpredictableInstruction();
     }
 
@@ -168,7 +169,7 @@ bool TranslatorVisitor::arm_UBFX(Cond cond, Imm<5> widthm1, Reg d, Imm<5> lsb, R
     }
 
     const IR::U32 operand = ir.GetRegister(n);
-    const IR::U32 mask = ir.Imm32(Common::Ones<u32>(widthm1_value + 1));
+    const IR::U32 mask = ir.Imm32(mcl::bit::ones<u32>(widthm1_value + 1));
     const IR::U32 result = ir.And(ir.LogicalShiftRight(operand, ir.Imm8(u8(lsb_value))), mask);
 
     ir.SetRegister(d, result);
