@@ -328,6 +328,10 @@ u64 ARM_Dynarmic_64::GetPC() const {
     return jit.load()->GetPC();
 }
 
+u64 ARM_Dynarmic_64::GetSP() const {
+    return jit.load()->GetSP();
+}
+
 u64 ARM_Dynarmic_64::GetReg(int index) const {
     return jit.load()->GetRegister(index);
 }
@@ -428,6 +432,40 @@ void ARM_Dynarmic_64::PageTableChanged(Common::PageTable& page_table,
     jit.store(new_jit.get());
     LoadContext(ctx);
     jit_cache.emplace(key, std::move(new_jit));
+}
+
+std::vector<ARM_Interface::BacktraceEntry> ARM_Dynarmic_64::GetBacktrace(Core::System& system,
+                                                                         u64 fp, u64 lr) {
+    std::vector<BacktraceEntry> out;
+    auto& memory = system.Memory();
+
+    // fp (= r29) points to the last frame record.
+    // Note that this is the frame record for the *previous* frame, not the current one.
+    // Note we need to subtract 4 from our last read to get the proper address
+    // Frame records are two words long:
+    // fp+0 : pointer to previous frame record
+    // fp+8 : value of lr for frame
+    while (true) {
+        out.push_back({"", 0, lr, 0, ""});
+        if (!fp) {
+            break;
+        }
+        lr = memory.Read64(fp + 8) - 4;
+        fp = memory.Read64(fp);
+    }
+
+    SymbolicateBacktrace(system, out);
+
+    return out;
+}
+
+std::vector<ARM_Interface::BacktraceEntry> ARM_Dynarmic_64::GetBacktraceFromContext(
+    System& system, const ThreadContext64& ctx) {
+    return GetBacktrace(system, ctx.cpu_registers[29], ctx.cpu_registers[30]);
+}
+
+std::vector<ARM_Interface::BacktraceEntry> ARM_Dynarmic_64::GetBacktrace() const {
+    return GetBacktrace(system, GetReg(29), GetReg(30));
 }
 
 } // namespace Core

@@ -101,6 +101,12 @@ public:
     virtual u64 GetPC() const = 0;
 
     /**
+     * Get the current Stack Pointer
+     * @return Returns current SP
+     */
+    virtual u64 GetSP() const = 0;
+
+    /**
      * Get an ARM register
      * @param index Register index
      * @return Returns the value in the register
@@ -183,16 +189,12 @@ public:
     };
 
     static std::vector<BacktraceEntry> GetBacktraceFromContext(System& system,
+                                                               const ThreadContext32& ctx);
+    static std::vector<BacktraceEntry> GetBacktraceFromContext(System& system,
                                                                const ThreadContext64& ctx);
 
-    std::vector<BacktraceEntry> GetBacktrace() const;
+    virtual std::vector<BacktraceEntry> GetBacktrace() const = 0;
 
-    /// fp (= r29) points to the last frame record.
-    /// Note that this is the frame record for the *previous* frame, not the current one.
-    /// Note we need to subtract 4 from our last read to get the proper address
-    /// Frame records are two words long:
-    /// fp+0 : pointer to previous frame record
-    /// fp+8 : value of lr for frame
     void LogBacktrace() const;
 
 protected:
@@ -200,6 +202,8 @@ protected:
     System& system;
     CPUInterrupts& interrupt_handlers;
     bool uses_wall_clock;
+
+    static void SymbolicateBacktrace(Core::System& system, std::vector<BacktraceEntry>& out);
 };
 
 } // namespace Core

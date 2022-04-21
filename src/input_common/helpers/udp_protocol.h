@@ -8,7 +8,16 @@
 #include <optional>
 #include <type_traits>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4701) // Potentially uninitialized local variable 'result' used
+#endif
+
 #include <boost/crc.hpp>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #include "common/swap.h"
 

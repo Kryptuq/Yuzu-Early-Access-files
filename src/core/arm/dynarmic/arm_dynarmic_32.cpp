@@ -268,6 +268,10 @@ u64 ARM_Dynarmic_32::GetPC() const {
     return jit.load()->Regs()[15];
 }
 
+u64 ARM_Dynarmic_32::GetSP() const {
+    return jit.load()->Regs()[13];
+}
+
 u64 ARM_Dynarmic_32::GetReg(int index) const {
     return jit.load()->Regs()[index];
 }
@@ -360,6 +364,21 @@ void ARM_Dynarmic_32::PageTableChanged(Common::PageTable& page_table,
     jit.store(new_jit.get());
     LoadContext(ctx);
     jit_cache.emplace(key, std::move(new_jit));
+}
+
+std::vector<ARM_Interface::BacktraceEntry> ARM_Dynarmic_32::GetBacktrace(Core::System& system,
+                                                                         u64 sp, u64 lr) {
+    // No way to get accurate stack traces in A32 yet
+    return {};
+}
+
+std::vector<ARM_Interface::BacktraceEntry> ARM_Dynarmic_32::GetBacktraceFromContext(
+    System& system, const ThreadContext32& ctx) {
+    return GetBacktrace(system, ctx.cpu_registers[13], ctx.cpu_registers[14]);
+}
+
+std::vector<ARM_Interface::BacktraceEntry> ARM_Dynarmic_32::GetBacktrace() const {
+    return GetBacktrace(system, GetReg(13), GetReg(14));
 }
 
 } // namespace Core

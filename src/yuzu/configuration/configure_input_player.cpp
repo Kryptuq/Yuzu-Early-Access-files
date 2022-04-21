@@ -10,6 +10,7 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QTimer>
+#include "common/assert.h"
 #include "common/param_package.h"
 #include "core/hid/emulated_controller.h"
 #include "core/hid/hid_core.h"
@@ -119,6 +120,23 @@ QString GetButtonName(Common::Input::ButtonNames button_name) {
     }
 }
 
+QString GetDirectionName(const std::string& direction) {
+    if (direction == "left") {
+        return QObject::tr("Left");
+    }
+    if (direction == "right") {
+        return QObject::tr("Right");
+    }
+    if (direction == "up") {
+        return QObject::tr("Up");
+    }
+    if (direction == "down") {
+        return QObject::tr("Down");
+    }
+    UNIMPLEMENTED_MSG("Unimplemented direction name={}", direction);
+    return QString::fromStdString(direction);
+}
+
 void SetAnalogParam(const Common::ParamPackage& input_param, Common::ParamPackage& analog_param,
                     const std::string& button_name) {
     // The poller returned a complete axis, so set all the buttons
@@ -162,7 +180,7 @@ QString ConfigureInputPlayer::ButtonToText(const Common::ParamPackage& param) {
 
     if (common_button_name == Common::Input::ButtonNames::Value) {
         if (param.Has("hat")) {
-            const QString hat = QString::fromStdString(param.Get("direction", ""));
+            const QString hat = GetDirectionName(param.Get("direction", ""));
             return QObject::tr("%1%2Hat %3").arg(toggle, inverted, hat);
         }
         if (param.Has("axis")) {

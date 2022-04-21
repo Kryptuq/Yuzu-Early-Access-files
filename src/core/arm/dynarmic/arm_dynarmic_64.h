@@ -33,6 +33,7 @@ public:
 
     void SetPC(u64 pc) override;
     u64 GetPC() const override;
+    u64 GetSP() const override;
     u64 GetReg(int index) const override;
     void SetReg(int index, u64 value) override;
     u128 GetVectorReg(int index) const override;
@@ -60,9 +61,16 @@ public:
     void PageTableChanged(Common::PageTable& new_page_table,
                           std::size_t new_address_space_size_in_bits) override;
 
+    static std::vector<BacktraceEntry> GetBacktraceFromContext(System& system,
+                                                               const ThreadContext64& ctx);
+
+    std::vector<BacktraceEntry> GetBacktrace() const override;
+
 private:
     std::shared_ptr<Dynarmic::A64::Jit> MakeJit(Common::PageTable* page_table,
                                                 std::size_t address_space_bits) const;
+
+    static std::vector<BacktraceEntry> GetBacktrace(Core::System& system, u64 fp, u64 lr);
 
     using JitCacheKey = std::pair<Common::PageTable*, std::size_t>;
     using JitCacheType =
