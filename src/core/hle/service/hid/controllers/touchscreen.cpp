@@ -16,8 +16,13 @@
 namespace Service::HID {
 constexpr std::size_t SHARED_MEMORY_OFFSET = 0x400;
 
-Controller_Touchscreen::Controller_Touchscreen(Core::HID::HIDCore& hid_core_)
+Controller_Touchscreen::Controller_Touchscreen(Core::HID::HIDCore& hid_core_,
+                                               u8* raw_shared_memory_)
     : ControllerBase{hid_core_} {
+    static_assert(SHARED_MEMORY_OFFSET + sizeof(TouchSharedMemory) < shared_memory_size,
+                  "TouchSharedMemory is bigger than the shared memory");
+    shared_memory = std::construct_at(
+        reinterpret_cast<TouchSharedMemory*>(raw_shared_memory_ + SHARED_MEMORY_OFFSET));
     console = hid_core.GetEmulatedConsole();
 }
 
@@ -27,14 +32,12 @@ void Controller_Touchscreen::OnInit() {}
 
 void Controller_Touchscreen::OnRelease() {}
 
-void Controller_Touchscreen::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* data,
-                                      std::size_t size) {
-    touch_screen_lifo.timestamp = core_timing.GetCPUTicks();
+void Controller_Touchscreen::OnUpdate(const Core::Timing::CoreTiming& core_timing) {
+    shared_memory->touch_screen_lifo.timestamp = core_timing.GetCPUTicks();
 
     if (!IsControllerActivated()) {
-        touch_screen_lifo.buffer_count = 0;
-        touch_screen_lifo.buffer_tail = 0;
-        std::memcpy(data, &touch_screen_lifo, sizeof(touch_screen_lifo));
+        shared_memory->touch_screen_lifo.buffer_count = 0;
+        shared_memory->touch_screen_lifo.buffer_tail = 0;
         return;
     }
 
@@ -75,7 +78,7 @@ void Controller_Touchscreen::OnUpdate(const Core::Timing::CoreTiming& core_timin
         static_cast<std::size_t>(std::distance(active_fingers.begin(), end_iter));
 
     const u64 tick = core_timing.GetCPUTicks();
-    const auto& last_entry = touch_screen_lifo.ReadCurrentEntry().state;
+    const auto& last_entry = shared_memory->touch_screen_lifo.ReadCurrentEntry().state;
 
     next_state.sampling_number = last_entry.sampling_number + 1;
     next_state.entry_count = static_cast<s32>(active_fingers_count);
@@ -107,8 +110,7 @@ void Controller_Touchscreen::OnUpdate(const Core::Timing::CoreTiming& core_timin
         }
     }
 
-    touch_screen_lifo.WriteNextEntry(next_state);
-    std::memcpy(data + SHARED_MEMORY_OFFSET, &touch_screen_lifo, sizeof(touch_screen_lifo));
+    shared_memory->touch_screen_lifo.WriteNextEntry(next_state);
 }
 
 } // namespace Service::HID

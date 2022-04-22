@@ -317,27 +317,27 @@ static_assert(sizeof(TouchAttribute) == 0x4, "TouchAttribute is an invalid size"
 
 // This is nn::hid::TouchState
 struct TouchState {
-    u64 delta_time;
-    TouchAttribute attribute;
-    u32 finger;
-    Common::Point<u32> position;
-    u32 diameter_x;
-    u32 diameter_y;
-    u32 rotation_angle;
+    u64 delta_time{};
+    TouchAttribute attribute{};
+    u32 finger{};
+    Common::Point<u32> position{};
+    u32 diameter_x{};
+    u32 diameter_y{};
+    u32 rotation_angle{};
 };
 static_assert(sizeof(TouchState) == 0x28, "Touchstate is an invalid size");
 
 // This is nn::hid::NpadControllerColor
 struct NpadControllerColor {
-    u32 body;
-    u32 button;
+    u32 body{};
+    u32 button{};
 };
 static_assert(sizeof(NpadControllerColor) == 8, "NpadControllerColor is an invalid size");
 
 // This is nn::hid::AnalogStickState
 struct AnalogStickState {
-    s32 x;
-    s32 y;
+    s32 x{};
+    s32 y{};
 };
 static_assert(sizeof(AnalogStickState) == 8, "AnalogStickState is an invalid size");
 
@@ -355,10 +355,10 @@ static_assert(sizeof(NpadBatteryLevel) == 0x4, "NpadBatteryLevel is an invalid s
 
 // This is nn::hid::system::NpadPowerInfo
 struct NpadPowerInfo {
-    bool is_powered;
-    bool is_charging;
+    bool is_powered{};
+    bool is_charging{};
     INSERT_PADDING_BYTES(0x6);
-    NpadBatteryLevel battery_level;
+    NpadBatteryLevel battery_level{8};
 };
 static_assert(sizeof(NpadPowerInfo) == 0xC, "NpadPowerInfo is an invalid size");
 
@@ -475,8 +475,8 @@ static_assert(sizeof(DebugPadButton) == 0x4, "DebugPadButton is an invalid size"
 
 // This is nn::hid::ConsoleSixAxisSensorHandle
 struct ConsoleSixAxisSensorHandle {
-    u8 unknown_1;
-    u8 unknown_2;
+    u8 unknown_1{};
+    u8 unknown_2{};
     INSERT_PADDING_BYTES_NOINIT(2);
 };
 static_assert(sizeof(ConsoleSixAxisSensorHandle) == 4,
@@ -484,9 +484,9 @@ static_assert(sizeof(ConsoleSixAxisSensorHandle) == 4,
 
 // This is nn::hid::SixAxisSensorHandle
 struct SixAxisSensorHandle {
-    NpadStyleIndex npad_type;
-    u8 npad_id;
-    DeviceIndex device_index;
+    NpadStyleIndex npad_type{NpadStyleIndex::None};
+    u8 npad_id{};
+    DeviceIndex device_index{DeviceIndex::None};
     INSERT_PADDING_BYTES_NOINIT(1);
 };
 static_assert(sizeof(SixAxisSensorHandle) == 4, "SixAxisSensorHandle is an invalid size");
@@ -501,19 +501,19 @@ static_assert(sizeof(SixAxisSensorFusionParameters) == 8,
 
 // This is nn::hid::VibrationDeviceHandle
 struct VibrationDeviceHandle {
-    NpadStyleIndex npad_type;
-    u8 npad_id;
-    DeviceIndex device_index;
+    NpadStyleIndex npad_type{NpadStyleIndex::None};
+    u8 npad_id{};
+    DeviceIndex device_index{DeviceIndex::None};
     INSERT_PADDING_BYTES_NOINIT(1);
 };
 static_assert(sizeof(VibrationDeviceHandle) == 4, "SixAxisSensorHandle is an invalid size");
 
 // This is nn::hid::VibrationValue
 struct VibrationValue {
-    f32 low_amplitude;
-    f32 low_frequency;
-    f32 high_amplitude;
-    f32 high_frequency;
+    f32 low_amplitude{};
+    f32 low_frequency{};
+    f32 high_amplitude{};
+    f32 high_frequency{};
 };
 static_assert(sizeof(VibrationValue) == 0x10, "VibrationValue has incorrect size.");
 
@@ -562,7 +562,7 @@ static_assert(sizeof(KeyboardAttribute) == 0x4, "KeyboardAttribute is an invalid
 // This is nn::hid::KeyboardKey
 struct KeyboardKey {
     // This should be a 256 bit flag
-    std::array<u8, 32> key;
+    std::array<u8, 32> key{};
 };
 static_assert(sizeof(KeyboardKey) == 0x20, "KeyboardKey is an invalid size");
 
@@ -591,16 +591,16 @@ static_assert(sizeof(MouseAttribute) == 0x4, "MouseAttribute is an invalid size"
 
 // This is nn::hid::detail::MouseState
 struct MouseState {
-    s64 sampling_number;
-    s32 x;
-    s32 y;
-    s32 delta_x;
-    s32 delta_y;
+    s64 sampling_number{};
+    s32 x{};
+    s32 y{};
+    s32 delta_x{};
+    s32 delta_y{};
     // Axis Order in HW is switched for the wheel
-    s32 delta_wheel_y;
-    s32 delta_wheel_x;
-    MouseButton button;
-    MouseAttribute attribute;
+    s32 delta_wheel_y{};
+    s32 delta_wheel_x{};
+    MouseButton button{};
+    MouseAttribute attribute{};
 };
 static_assert(sizeof(MouseState) == 0x28, "MouseState is an invalid size");
 

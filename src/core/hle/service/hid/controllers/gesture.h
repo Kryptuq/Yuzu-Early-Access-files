@@ -15,7 +15,7 @@
 namespace Service::HID {
 class Controller_Gesture final : public ControllerBase {
 public:
-    explicit Controller_Gesture(Core::HID::HIDCore& hid_core_);
+    explicit Controller_Gesture(Core::HID::HIDCore& hid_core_, u8* raw_shared_memory_);
     ~Controller_Gesture() override;
 
     // Called when the controller is initialized
@@ -25,7 +25,7 @@ public:
     void OnRelease() override;
 
     // When the controller is requesting an update for the shared memory
-    void OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* data, size_t size) override;
+    void OnUpdate(const Core::Timing::CoreTiming& core_timing) override;
 
 private:
     static constexpr size_t MAX_FINGERS = 16;
@@ -67,19 +67,19 @@ private:
 
     // This is nn::hid::GestureState
     struct GestureState {
-        s64 sampling_number;
-        s64 detection_count;
-        GestureType type;
-        GestureDirection direction;
-        Common::Point<s32> pos;
-        Common::Point<s32> delta;
-        f32 vel_x;
-        f32 vel_y;
-        GestureAttribute attributes;
-        f32 scale;
-        f32 rotation_angle;
-        s32 point_count;
-        std::array<Common::Point<s32>, 4> points;
+        s64 sampling_number{};
+        s64 detection_count{};
+        GestureType type{GestureType::Idle};
+        GestureDirection direction{GestureDirection::None};
+        Common::Point<s32> pos{};
+        Common::Point<s32> delta{};
+        f32 vel_x{};
+        f32 vel_y{};
+        GestureAttribute attributes{};
+        f32 scale{};
+        f32 rotation_angle{};
+        s32 point_count{};
+        std::array<Common::Point<s32>, 4> points{};
     };
     static_assert(sizeof(GestureState) == 0x60, "GestureState is an invalid size");
 
@@ -92,6 +92,14 @@ private:
         f32 average_distance{};
         f32 angle{};
     };
+
+    struct GestureSharedMemory {
+        // This is nn::hid::detail::GestureLifo
+        Lifo<GestureState, hid_entry_count> gesture_lifo{};
+        static_assert(sizeof(gesture_lifo) == 0x708, "gesture_lifo is an invalid size");
+        INSERT_PADDING_WORDS(0x3E);
+    };
+    static_assert(sizeof(GestureSharedMemory) == 0x800, "GestureSharedMemory is an invalid size");
 
     // Reads input from all available input engines
     void ReadTouchInput();
@@ -135,12 +143,9 @@ private:
     // Returns the average distance, angle and middle point of the active fingers
     GestureProperties GetGestureProperties();
 
-    // This is nn::hid::detail::GestureLifo
-    Lifo<GestureState, hid_entry_count> gesture_lifo{};
-    static_assert(sizeof(gesture_lifo) == 0x708, "gesture_lifo is an invalid size");
     GestureState next_state{};
-
-    Core::HID::EmulatedConsole* console;
+    GestureSharedMemory* shared_memory = nullptr;
+    Core::HID::EmulatedConsole* console = nullptr;
 
     std::array<Core::HID::TouchFinger, MAX_POINTS> fingers{};
     GestureProperties last_gesture{};

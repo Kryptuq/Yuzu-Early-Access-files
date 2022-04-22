@@ -62,11 +62,14 @@ bool Controller_NPad::IsDeviceHandleValid(const Core::HID::SixAxisSensorHandle& 
     return npad_id && npad_type && device_index;
 }
 
-Controller_NPad::Controller_NPad(Core::HID::HIDCore& hid_core_,
+Controller_NPad::Controller_NPad(Core::HID::HIDCore& hid_core_, u8* raw_shared_memory_,
                                  KernelHelpers::ServiceContext& service_context_)
     : ControllerBase{hid_core_}, service_context{service_context_} {
     for (std::size_t i = 0; i < controller_data.size(); ++i) {
+        assert(NPAD_OFFSET + ((i + 1) * sizeof(NpadInternalState)) < shared_memory_size);
         auto& controller = controller_data[i];
+        controller.shared_memory = std::construct_at(reinterpret_cast<NpadInternalState*>(
+            raw_shared_memory_ + NPAD_OFFSET + (i * sizeof(NpadInternalState))));
         controller.device = hid_core.GetEmulatedControllerByIndex(i);
         controller.vibration[Core::HID::EmulatedDeviceIndex::LeftIndex].latest_vibration_value =
             Core::HID::DEFAULT_VIBRATION_VALUE;
@@ -116,11 +119,11 @@ void Controller_NPad::ControllerUpdate(Core::HID::ControllerTriggerType type,
         if (!controller.device->IsConnected()) {
             return;
         }
-        auto& shared_memory = controller.shared_memory_entry;
+        auto* shared_memory = controller.shared_memory;
         const auto& battery_level = controller.device->GetBattery();
-        shared_memory.battery_level_dual = battery_level.dual.battery_level;
-        shared_memory.battery_level_left = battery_level.left.battery_level;
-        shared_memory.battery_level_right = battery_level.right.battery_level;
+        shared_memory->battery_level_dual = battery_level.dual.battery_level;
+        shared_memory->battery_level_left = battery_level.left.battery_level;
+        shared_memory->battery_level_right = battery_level.right.battery_level;
         break;
     }
     default:
@@ -135,99 +138,100 @@ void Controller_NPad::InitNewlyAddedController(Core::HID::NpadIdType npad_id) {
     }
     LOG_DEBUG(Service_HID, "Npad connected {}", npad_id);
     const auto controller_type = controller.device->GetNpadStyleIndex();
-    auto& shared_memory = controller.shared_memory_entry;
+    auto* shared_memory = controller.shared_memory;
     if (controller_type == Core::HID::NpadStyleIndex::None) {
         controller.styleset_changed_event->GetWritableEvent().Signal();
         return;
     }
-    shared_memory.style_tag.raw = Core::HID::NpadStyleSet::None;
-    shared_memory.device_type.raw = 0;
-    shared_memory.system_properties.raw = 0;
+    shared_memory->style_tag.raw = Core::HID::NpadStyleSet::None;
+    shared_memory->device_type.raw = 0;
+    shared_memory->system_properties.raw = 0;
     switch (controller_type) {
     case Core::HID::NpadStyleIndex::None:
         UNREACHABLE();
         break;
     case Core::HID::NpadStyleIndex::ProController:
-        shared_memory.style_tag.fullkey.Assign(1);
-        shared_memory.device_type.fullkey.Assign(1);
-        shared_memory.system_properties.is_vertical.Assign(1);
-        shared_memory.system_properties.use_plus.Assign(1);
-        shared_memory.system_properties.use_minus.Assign(1);
-        shared_memory.applet_footer.type = AppletFooterUiType::SwitchProController;
+        shared_memory->style_tag.fullkey.Assign(1);
+        shared_memory->device_type.fullkey.Assign(1);
+        shared_memory->system_properties.is_vertical.Assign(1);
+        shared_memory->system_properties.use_plus.Assign(1);
+        shared_memory->system_properties.use_minus.Assign(1);
+        shared_memory->applet_nfc_xcd.applet_footer.type = AppletFooterUiType::SwitchProController;
         break;
     case Core::HID::NpadStyleIndex::Handheld:
-        shared_memory.style_tag.handheld.Assign(1);
-        shared_memory.device_type.handheld_left.Assign(1);
-        shared_memory.device_type.handheld_right.Assign(1);
-        shared_memory.system_properties.is_vertical.Assign(1);
-        shared_memory.system_properties.use_plus.Assign(1);
-        shared_memory.system_properties.use_minus.Assign(1);
-        shared_memory.system_properties.use_directional_buttons.Assign(1);
-        shared_memory.assignment_mode = NpadJoyAssignmentMode::Dual;
-        shared_memory.applet_footer.type = AppletFooterUiType::HandheldJoyConLeftJoyConRight;
+        shared_memory->style_tag.handheld.Assign(1);
+        shared_memory->device_type.handheld_left.Assign(1);
+        shared_memory->device_type.handheld_right.Assign(1);
+        shared_memory->system_properties.is_vertical.Assign(1);
+        shared_memory->system_properties.use_plus.Assign(1);
+        shared_memory->system_properties.use_minus.Assign(1);
+        shared_memory->system_properties.use_directional_buttons.Assign(1);
+        shared_memory->assignment_mode = NpadJoyAssignmentMode::Dual;
+        shared_memory->applet_nfc_xcd.applet_footer.type =
+            AppletFooterUiType::HandheldJoyConLeftJoyConRight;
         break;
     case Core::HID::NpadStyleIndex::JoyconDual:
-        shared_memory.style_tag.joycon_dual.Assign(1);
+        shared_memory->style_tag.joycon_dual.Assign(1);
         if (controller.is_dual_left_connected) {
-            shared_memory.device_type.joycon_left.Assign(1);
-            shared_memory.system_properties.use_minus.Assign(1);
+            shared_memory->device_type.joycon_left.Assign(1);
+            shared_memory->system_properties.use_minus.Assign(1);
         }
         if (controller.is_dual_right_connected) {
-            shared_memory.device_type.joycon_right.Assign(1);
-            shared_memory.system_properties.use_plus.Assign(1);
+            shared_memory->device_type.joycon_right.Assign(1);
+            shared_memory->system_properties.use_plus.Assign(1);
         }
-        shared_memory.system_properties.use_directional_buttons.Assign(1);
-        shared_memory.system_properties.is_vertical.Assign(1);
-        shared_memory.assignment_mode = NpadJoyAssignmentMode::Dual;
+        shared_memory->system_properties.use_directional_buttons.Assign(1);
+        shared_memory->system_properties.is_vertical.Assign(1);
+        shared_memory->assignment_mode = NpadJoyAssignmentMode::Dual;
         if (controller.is_dual_left_connected && controller.is_dual_right_connected) {
-            shared_memory.applet_footer.type = AppletFooterUiType::JoyDual;
+            shared_memory->applet_nfc_xcd.applet_footer.type = AppletFooterUiType::JoyDual;
         } else if (controller.is_dual_left_connected) {
-            shared_memory.applet_footer.type = AppletFooterUiType::JoyDualLeftOnly;
+            shared_memory->applet_nfc_xcd.applet_footer.type = AppletFooterUiType::JoyDualLeftOnly;
         } else {
-            shared_memory.applet_footer.type = AppletFooterUiType::JoyDualRightOnly;
+            shared_memory->applet_nfc_xcd.applet_footer.type = AppletFooterUiType::JoyDualRightOnly;
         }
         break;
     case Core::HID::NpadStyleIndex::JoyconLeft:
-        shared_memory.style_tag.joycon_left.Assign(1);
-        shared_memory.device_type.joycon_left.Assign(1);
-        shared_memory.system_properties.is_horizontal.Assign(1);
-        shared_memory.system_properties.use_minus.Assign(1);
-        shared_memory.applet_footer.type = AppletFooterUiType::JoyLeftHorizontal;
+        shared_memory->style_tag.joycon_left.Assign(1);
+        shared_memory->device_type.joycon_left.Assign(1);
+        shared_memory->system_properties.is_horizontal.Assign(1);
+        shared_memory->system_properties.use_minus.Assign(1);
+        shared_memory->applet_nfc_xcd.applet_footer.type = AppletFooterUiType::JoyLeftHorizontal;
         break;
     case Core::HID::NpadStyleIndex::JoyconRight:
-        shared_memory.style_tag.joycon_right.Assign(1);
-        shared_memory.device_type.joycon_right.Assign(1);
-        shared_memory.system_properties.is_horizontal.Assign(1);
-        shared_memory.system_properties.use_plus.Assign(1);
-        shared_memory.applet_footer.type = AppletFooterUiType::JoyRightHorizontal;
+        shared_memory->style_tag.joycon_right.Assign(1);
+        shared_memory->device_type.joycon_right.Assign(1);
+        shared_memory->system_properties.is_horizontal.Assign(1);
+        shared_memory->system_properties.use_plus.Assign(1);
+        shared_memory->applet_nfc_xcd.applet_footer.type = AppletFooterUiType::JoyRightHorizontal;
         break;
     case Core::HID::NpadStyleIndex::GameCube:
-        shared_memory.style_tag.gamecube.Assign(1);
-        shared_memory.device_type.fullkey.Assign(1);
-        shared_memory.system_properties.is_vertical.Assign(1);
-        shared_memory.system_properties.use_plus.Assign(1);
+        shared_memory->style_tag.gamecube.Assign(1);
+        shared_memory->device_type.fullkey.Assign(1);
+        shared_memory->system_properties.is_vertical.Assign(1);
+        shared_memory->system_properties.use_plus.Assign(1);
         break;
     case Core::HID::NpadStyleIndex::Pokeball:
-        shared_memory.style_tag.palma.Assign(1);
-        shared_memory.device_type.palma.Assign(1);
+        shared_memory->style_tag.palma.Assign(1);
+        shared_memory->device_type.palma.Assign(1);
         break;
     case Core::HID::NpadStyleIndex::NES:
-        shared_memory.style_tag.lark.Assign(1);
-        shared_memory.device_type.fullkey.Assign(1);
+        shared_memory->style_tag.lark.Assign(1);
+        shared_memory->device_type.fullkey.Assign(1);
         break;
     case Core::HID::NpadStyleIndex::SNES:
-        shared_memory.style_tag.lucia.Assign(1);
-        shared_memory.device_type.fullkey.Assign(1);
-        shared_memory.applet_footer.type = AppletFooterUiType::Lucia;
+        shared_memory->style_tag.lucia.Assign(1);
+        shared_memory->device_type.fullkey.Assign(1);
+        shared_memory->applet_nfc_xcd.applet_footer.type = AppletFooterUiType::Lucia;
         break;
     case Core::HID::NpadStyleIndex::N64:
-        shared_memory.style_tag.lagoon.Assign(1);
-        shared_memory.device_type.fullkey.Assign(1);
-        shared_memory.applet_footer.type = AppletFooterUiType::Lagon;
+        shared_memory->style_tag.lagoon.Assign(1);
+        shared_memory->device_type.fullkey.Assign(1);
+        shared_memory->applet_nfc_xcd.applet_footer.type = AppletFooterUiType::Lagon;
         break;
     case Core::HID::NpadStyleIndex::SegaGenesis:
-        shared_memory.style_tag.lager.Assign(1);
-        shared_memory.device_type.fullkey.Assign(1);
+        shared_memory->style_tag.lager.Assign(1);
+        shared_memory->device_type.fullkey.Assign(1);
         break;
     default:
         break;
@@ -235,23 +239,23 @@ void Controller_NPad::InitNewlyAddedController(Core::HID::NpadIdType npad_id) {
 
     const auto& body_colors = controller.device->GetColors();
 
-    shared_memory.fullkey_color.attribute = ColorAttribute::Ok;
-    shared_memory.fullkey_color.fullkey = body_colors.fullkey;
+    shared_memory->fullkey_color.attribute = ColorAttribute::Ok;
+    shared_memory->fullkey_color.fullkey = body_colors.fullkey;
 
-    shared_memory.joycon_color.attribute = ColorAttribute::Ok;
-    shared_memory.joycon_color.left = body_colors.left;
-    shared_memory.joycon_color.right = body_colors.right;
+    shared_memory->joycon_color.attribute = ColorAttribute::Ok;
+    shared_memory->joycon_color.left = body_colors.left;
+    shared_memory->joycon_color.right = body_colors.right;
 
     // TODO: Investigate when we should report all batery types
     const auto& battery_level = controller.device->GetBattery();
-    shared_memory.battery_level_dual = battery_level.dual.battery_level;
-    shared_memory.battery_level_left = battery_level.left.battery_level;
-    shared_memory.battery_level_right = battery_level.right.battery_level;
+    shared_memory->battery_level_dual = battery_level.dual.battery_level;
+    shared_memory->battery_level_left = battery_level.left.battery_level;
+    shared_memory->battery_level_right = battery_level.right.battery_level;
 
     controller.is_connected = true;
     controller.device->Connect();
     SignalStyleSetChangedEvent(npad_id);
-    WriteEmptyEntry(controller.shared_memory_entry);
+    WriteEmptyEntry(controller.shared_memory);
 }
 
 void Controller_NPad::OnInit() {
@@ -271,12 +275,12 @@ void Controller_NPad::OnInit() {
 
     // Prefill controller buffers
     for (auto& controller : controller_data) {
-        auto& npad = controller.shared_memory_entry;
-        npad.fullkey_color = {
+        auto* npad = controller.shared_memory;
+        npad->fullkey_color = {
             .attribute = ColorAttribute::NoController,
             .fullkey = {},
         };
-        npad.joycon_color = {
+        npad->joycon_color = {
             .attribute = ColorAttribute::NoController,
             .left = {},
             .right = {},
@@ -288,25 +292,25 @@ void Controller_NPad::OnInit() {
     }
 }
 
-void Controller_NPad::WriteEmptyEntry(NpadInternalState& npad) {
+void Controller_NPad::WriteEmptyEntry(NpadInternalState* npad) {
     NPadGenericState dummy_pad_state{};
     NpadGcTriggerState dummy_gc_state{};
-    dummy_pad_state.sampling_number = npad.fullkey_lifo.ReadCurrentEntry().sampling_number + 1;
-    npad.fullkey_lifo.WriteNextEntry(dummy_pad_state);
-    dummy_pad_state.sampling_number = npad.handheld_lifo.ReadCurrentEntry().sampling_number + 1;
-    npad.handheld_lifo.WriteNextEntry(dummy_pad_state);
-    dummy_pad_state.sampling_number = npad.joy_dual_lifo.ReadCurrentEntry().sampling_number + 1;
-    npad.joy_dual_lifo.WriteNextEntry(dummy_pad_state);
-    dummy_pad_state.sampling_number = npad.joy_left_lifo.ReadCurrentEntry().sampling_number + 1;
-    npad.joy_left_lifo.WriteNextEntry(dummy_pad_state);
-    dummy_pad_state.sampling_number = npad.joy_right_lifo.ReadCurrentEntry().sampling_number + 1;
-    npad.joy_right_lifo.WriteNextEntry(dummy_pad_state);
-    dummy_pad_state.sampling_number = npad.palma_lifo.ReadCurrentEntry().sampling_number + 1;
-    npad.palma_lifo.WriteNextEntry(dummy_pad_state);
-    dummy_pad_state.sampling_number = npad.system_ext_lifo.ReadCurrentEntry().sampling_number + 1;
-    npad.system_ext_lifo.WriteNextEntry(dummy_pad_state);
-    dummy_gc_state.sampling_number = npad.gc_trigger_lifo.ReadCurrentEntry().sampling_number + 1;
-    npad.gc_trigger_lifo.WriteNextEntry(dummy_gc_state);
+    dummy_pad_state.sampling_number = npad->fullkey_lifo.ReadCurrentEntry().sampling_number + 1;
+    npad->fullkey_lifo.WriteNextEntry(dummy_pad_state);
+    dummy_pad_state.sampling_number = npad->handheld_lifo.ReadCurrentEntry().sampling_number + 1;
+    npad->handheld_lifo.WriteNextEntry(dummy_pad_state);
+    dummy_pad_state.sampling_number = npad->joy_dual_lifo.ReadCurrentEntry().sampling_number + 1;
+    npad->joy_dual_lifo.WriteNextEntry(dummy_pad_state);
+    dummy_pad_state.sampling_number = npad->joy_left_lifo.ReadCurrentEntry().sampling_number + 1;
+    npad->joy_left_lifo.WriteNextEntry(dummy_pad_state);
+    dummy_pad_state.sampling_number = npad->joy_right_lifo.ReadCurrentEntry().sampling_number + 1;
+    npad->joy_right_lifo.WriteNextEntry(dummy_pad_state);
+    dummy_pad_state.sampling_number = npad->palma_lifo.ReadCurrentEntry().sampling_number + 1;
+    npad->palma_lifo.WriteNextEntry(dummy_pad_state);
+    dummy_pad_state.sampling_number = npad->system_ext_lifo.ReadCurrentEntry().sampling_number + 1;
+    npad->system_ext_lifo.WriteNextEntry(dummy_pad_state);
+    dummy_gc_state.sampling_number = npad->gc_trigger_lifo.ReadCurrentEntry().sampling_number + 1;
+    npad->gc_trigger_lifo.WriteNextEntry(dummy_gc_state);
 }
 
 void Controller_NPad::OnRelease() {
@@ -372,23 +376,19 @@ void Controller_NPad::RequestPadStateUpdate(Core::HID::NpadIdType npad_id) {
     }
 }
 
-void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* data,
-                               std::size_t data_len) {
+void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing) {
     if (!IsControllerActivated()) {
         return;
     }
 
     for (std::size_t i = 0; i < controller_data.size(); ++i) {
         auto& controller = controller_data[i];
-        auto& npad = controller.shared_memory_entry;
+        auto* npad = controller.shared_memory;
 
         const auto& controller_type = controller.device->GetNpadStyleIndex();
 
         if (controller_type == Core::HID::NpadStyleIndex::None ||
             !controller.device->IsConnected()) {
-            // Refresh shared memory
-            std::memcpy(data + NPAD_OFFSET + (i * sizeof(NpadInternalState)),
-                        &controller.shared_memory_entry, sizeof(NpadInternalState));
             continue;
         }
 
@@ -416,8 +416,8 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
 
             libnx_state.connection_status.is_wired.Assign(1);
             pad_state.sampling_number =
-                npad.fullkey_lifo.ReadCurrentEntry().state.sampling_number + 1;
-            npad.fullkey_lifo.WriteNextEntry(pad_state);
+                npad->fullkey_lifo.ReadCurrentEntry().state.sampling_number + 1;
+            npad->fullkey_lifo.WriteNextEntry(pad_state);
             break;
         case Core::HID::NpadStyleIndex::Handheld:
             pad_state.connection_status.raw = 0;
@@ -434,8 +434,8 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
             libnx_state.connection_status.is_left_wired.Assign(1);
             libnx_state.connection_status.is_right_wired.Assign(1);
             pad_state.sampling_number =
-                npad.handheld_lifo.ReadCurrentEntry().state.sampling_number + 1;
-            npad.handheld_lifo.WriteNextEntry(pad_state);
+                npad->handheld_lifo.ReadCurrentEntry().state.sampling_number + 1;
+            npad->handheld_lifo.WriteNextEntry(pad_state);
             break;
         case Core::HID::NpadStyleIndex::JoyconDual:
             pad_state.connection_status.raw = 0;
@@ -450,8 +450,8 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
             }
 
             pad_state.sampling_number =
-                npad.joy_dual_lifo.ReadCurrentEntry().state.sampling_number + 1;
-            npad.joy_dual_lifo.WriteNextEntry(pad_state);
+                npad->joy_dual_lifo.ReadCurrentEntry().state.sampling_number + 1;
+            npad->joy_dual_lifo.WriteNextEntry(pad_state);
             break;
         case Core::HID::NpadStyleIndex::JoyconLeft:
             pad_state.connection_status.raw = 0;
@@ -460,8 +460,8 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
 
             libnx_state.connection_status.is_left_connected.Assign(1);
             pad_state.sampling_number =
-                npad.joy_left_lifo.ReadCurrentEntry().state.sampling_number + 1;
-            npad.joy_left_lifo.WriteNextEntry(pad_state);
+                npad->joy_left_lifo.ReadCurrentEntry().state.sampling_number + 1;
+            npad->joy_left_lifo.WriteNextEntry(pad_state);
             break;
         case Core::HID::NpadStyleIndex::JoyconRight:
             pad_state.connection_status.raw = 0;
@@ -470,8 +470,8 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
 
             libnx_state.connection_status.is_right_connected.Assign(1);
             pad_state.sampling_number =
-                npad.joy_right_lifo.ReadCurrentEntry().state.sampling_number + 1;
-            npad.joy_right_lifo.WriteNextEntry(pad_state);
+                npad->joy_right_lifo.ReadCurrentEntry().state.sampling_number + 1;
+            npad->joy_right_lifo.WriteNextEntry(pad_state);
             break;
         case Core::HID::NpadStyleIndex::GameCube:
             pad_state.connection_status.raw = 0;
@@ -480,18 +480,18 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
 
             libnx_state.connection_status.is_wired.Assign(1);
             pad_state.sampling_number =
-                npad.fullkey_lifo.ReadCurrentEntry().state.sampling_number + 1;
+                npad->fullkey_lifo.ReadCurrentEntry().state.sampling_number + 1;
             trigger_state.sampling_number =
-                npad.gc_trigger_lifo.ReadCurrentEntry().state.sampling_number + 1;
-            npad.fullkey_lifo.WriteNextEntry(pad_state);
-            npad.gc_trigger_lifo.WriteNextEntry(trigger_state);
+                npad->gc_trigger_lifo.ReadCurrentEntry().state.sampling_number + 1;
+            npad->fullkey_lifo.WriteNextEntry(pad_state);
+            npad->gc_trigger_lifo.WriteNextEntry(trigger_state);
             break;
         case Core::HID::NpadStyleIndex::Pokeball:
             pad_state.connection_status.raw = 0;
             pad_state.connection_status.is_connected.Assign(1);
             pad_state.sampling_number =
-                npad.palma_lifo.ReadCurrentEntry().state.sampling_number + 1;
-            npad.palma_lifo.WriteNextEntry(pad_state);
+                npad->palma_lifo.ReadCurrentEntry().state.sampling_number + 1;
+            npad->palma_lifo.WriteNextEntry(pad_state);
             break;
         default:
             break;
@@ -500,17 +500,13 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
         libnx_state.npad_buttons.raw = pad_state.npad_buttons.raw;
         libnx_state.l_stick = pad_state.l_stick;
         libnx_state.r_stick = pad_state.r_stick;
-        npad.system_ext_lifo.WriteNextEntry(pad_state);
+        npad->system_ext_lifo.WriteNextEntry(pad_state);
 
         press_state |= static_cast<u64>(pad_state.npad_buttons.raw);
-
-        std::memcpy(data + NPAD_OFFSET + (i * sizeof(NpadInternalState)),
-                    &controller.shared_memory_entry, sizeof(NpadInternalState));
     }
 }
 
-void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing, u8* data,
-                                     std::size_t data_len) {
+void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing) {
     if (!IsControllerActivated()) {
         return;
     }
@@ -525,7 +521,7 @@ void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing
             continue;
         }
 
-        auto& npad = controller.shared_memory_entry;
+        auto* npad = controller.shared_memory;
         const auto& motion_state = controller.device->GetMotions();
         auto& sixaxis_fullkey_state = controller.sixaxis_fullkey_state;
         auto& sixaxis_handheld_state = controller.sixaxis_handheld_state;
@@ -611,32 +607,30 @@ void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing
         }
 
         sixaxis_fullkey_state.sampling_number =
-            npad.sixaxis_fullkey_lifo.ReadCurrentEntry().state.sampling_number + 1;
+            npad->sixaxis_fullkey_lifo.ReadCurrentEntry().state.sampling_number + 1;
         sixaxis_handheld_state.sampling_number =
-            npad.sixaxis_handheld_lifo.ReadCurrentEntry().state.sampling_number + 1;
+            npad->sixaxis_handheld_lifo.ReadCurrentEntry().state.sampling_number + 1;
         sixaxis_dual_left_state.sampling_number =
-            npad.sixaxis_dual_left_lifo.ReadCurrentEntry().state.sampling_number + 1;
+            npad->sixaxis_dual_left_lifo.ReadCurrentEntry().state.sampling_number + 1;
         sixaxis_dual_right_state.sampling_number =
-            npad.sixaxis_dual_right_lifo.ReadCurrentEntry().state.sampling_number + 1;
+            npad->sixaxis_dual_right_lifo.ReadCurrentEntry().state.sampling_number + 1;
         sixaxis_left_lifo_state.sampling_number =
-            npad.sixaxis_left_lifo.ReadCurrentEntry().state.sampling_number + 1;
+            npad->sixaxis_left_lifo.ReadCurrentEntry().state.sampling_number + 1;
         sixaxis_right_lifo_state.sampling_number =
-            npad.sixaxis_right_lifo.ReadCurrentEntry().state.sampling_number + 1;
+            npad->sixaxis_right_lifo.ReadCurrentEntry().state.sampling_number + 1;
 
         if (Core::HID::IndexToNpadIdType(i) == Core::HID::NpadIdType::Handheld) {
             // This buffer only is updated on handheld on HW
-            npad.sixaxis_handheld_lifo.WriteNextEntry(sixaxis_handheld_state);
+            npad->sixaxis_handheld_lifo.WriteNextEntry(sixaxis_handheld_state);
         } else {
             // Handheld doesn't update this buffer on HW
-            npad.sixaxis_fullkey_lifo.WriteNextEntry(sixaxis_fullkey_state);
+            npad->sixaxis_fullkey_lifo.WriteNextEntry(sixaxis_fullkey_state);
         }
 
-        npad.sixaxis_dual_left_lifo.WriteNextEntry(sixaxis_dual_left_state);
-        npad.sixaxis_dual_right_lifo.WriteNextEntry(sixaxis_dual_right_state);
-        npad.sixaxis_left_lifo.WriteNextEntry(sixaxis_left_lifo_state);
-        npad.sixaxis_right_lifo.WriteNextEntry(sixaxis_right_lifo_state);
-        std::memcpy(data + NPAD_OFFSET + (i * sizeof(NpadInternalState)),
-                    &controller.shared_memory_entry, sizeof(NpadInternalState));
+        npad->sixaxis_dual_left_lifo.WriteNextEntry(sixaxis_dual_left_state);
+        npad->sixaxis_dual_right_lifo.WriteNextEntry(sixaxis_dual_right_state);
+        npad->sixaxis_left_lifo.WriteNextEntry(sixaxis_left_lifo_state);
+        npad->sixaxis_right_lifo.WriteNextEntry(sixaxis_right_lifo_state);
     }
 }
 
@@ -714,8 +708,8 @@ void Controller_NPad::SetNpadMode(Core::HID::NpadIdType npad_id, NpadJoyDeviceTy
     }
 
     auto& controller = GetControllerFromNpadIdType(npad_id);
-    if (controller.shared_memory_entry.assignment_mode != assignment_mode) {
-        controller.shared_memory_entry.assignment_mode = assignment_mode;
+    if (controller.shared_memory->assignment_mode != assignment_mode) {
+        controller.shared_memory->assignment_mode = assignment_mode;
     }
 
     if (!controller.device->IsConnected()) {
@@ -982,32 +976,32 @@ void Controller_NPad::DisconnectNpad(Core::HID::NpadIdType npad_id) {
         controller.vibration[device_idx].device_mounted = false;
     }
 
-    auto& shared_memory_entry = controller.shared_memory_entry;
-    // Don't reset shared_memory_entry.assignment_mode this value is persistent
-    shared_memory_entry.style_tag.raw = Core::HID::NpadStyleSet::None; // Zero out
-    shared_memory_entry.device_type.raw = 0;
-    shared_memory_entry.system_properties.raw = 0;
-    shared_memory_entry.button_properties.raw = 0;
-    shared_memory_entry.battery_level_dual = 0;
-    shared_memory_entry.battery_level_left = 0;
-    shared_memory_entry.battery_level_right = 0;
-    shared_memory_entry.fullkey_color = {
+    auto* shared_memory = controller.shared_memory;
+    // Don't reset shared_memory->assignment_mode this value is persistent
+    shared_memory->style_tag.raw = Core::HID::NpadStyleSet::None; // Zero out
+    shared_memory->device_type.raw = 0;
+    shared_memory->system_properties.raw = 0;
+    shared_memory->button_properties.raw = 0;
+    shared_memory->battery_level_dual = 0;
+    shared_memory->battery_level_left = 0;
+    shared_memory->battery_level_right = 0;
+    shared_memory->fullkey_color = {
         .attribute = ColorAttribute::NoController,
         .fullkey = {},
     };
-    shared_memory_entry.joycon_color = {
+    shared_memory->joycon_color = {
         .attribute = ColorAttribute::NoController,
         .left = {},
         .right = {},
     };
-    shared_memory_entry.applet_footer.type = AppletFooterUiType::None;
+    shared_memory->applet_nfc_xcd.applet_footer.type = AppletFooterUiType::None;
 
     controller.is_dual_left_connected = true;
     controller.is_dual_right_connected = true;
     controller.is_connected = false;
     controller.device->Disconnect();
     SignalStyleSetChangedEvent(npad_id);
-    WriteEmptyEntry(controller.shared_memory_entry);
+    WriteEmptyEntry(shared_memory);
 }
 
 ResultCode Controller_NPad::SetGyroscopeZeroDriftMode(Core::HID::SixAxisSensorHandle sixaxis_handle,

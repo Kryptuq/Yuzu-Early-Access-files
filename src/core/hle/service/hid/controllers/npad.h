@@ -36,7 +36,7 @@ namespace Service::HID {
 
 class Controller_NPad final : public ControllerBase {
 public:
-    explicit Controller_NPad(Core::HID::HIDCore& hid_core_,
+    explicit Controller_NPad(Core::HID::HIDCore& hid_core_, u8* raw_shared_memory_,
                              KernelHelpers::ServiceContext& service_context_);
     ~Controller_NPad() override;
 
@@ -47,11 +47,10 @@ public:
     void OnRelease() override;
 
     // When the controller is requesting an update for the shared memory
-    void OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* data, std::size_t size) override;
+    void OnUpdate(const Core::Timing::CoreTiming& core_timing) override;
 
     // When the controller is requesting a motion update for the shared memory
-    void OnMotionUpdate(const Core::Timing::CoreTiming& core_timing, u8* data,
-                        std::size_t size) override;
+    void OnMotionUpdate(const Core::Timing::CoreTiming& core_timing) override;
 
     // This is nn::hid::GyroscopeZeroDriftMode
     enum class GyroscopeZeroDriftMode : u32 {
@@ -410,6 +409,13 @@ private:
         U,
     };
 
+    struct AppletNfcXcd {
+        union {
+            AppletFooterUi applet_footer{};
+            Lifo<NfcXcdDeviceHandleStateImpl, 0x2> nfc_xcd_device_lifo;
+        };
+    };
+
     // This is nn::hid::detail::NpadInternalState
     struct NpadInternalState {
         Core::HID::NpadStyleTag style_tag{Core::HID::NpadStyleSet::None};
@@ -436,10 +442,7 @@ private:
         Core::HID::NpadBatteryLevel battery_level_dual{};
         Core::HID::NpadBatteryLevel battery_level_left{};
         Core::HID::NpadBatteryLevel battery_level_right{};
-        union {
-            AppletFooterUi applet_footer{};
-            Lifo<NfcXcdDeviceHandleStateImpl, 0x2> nfc_xcd_device_lifo;
-        };
+        AppletNfcXcd applet_nfc_xcd{};
         INSERT_PADDING_BYTES(0x20); // Unknown
         Lifo<NpadGcTriggerState, hid_entry_count> gc_trigger_lifo{};
         NpadLarkType lark_type_l_and_main{};
@@ -466,9 +469,9 @@ private:
     };
 
     struct NpadControllerData {
-        Core::HID::EmulatedController* device;
         Kernel::KEvent* styleset_changed_event{};
-        NpadInternalState shared_memory_entry{};
+        NpadInternalState* shared_memory = nullptr;
+        Core::HID::EmulatedController* device = nullptr;
 
         std::array<VibrationData, 2> vibration{};
         bool unintended_home_button_input_protection{};
@@ -498,15 +501,14 @@ private:
         SixAxisSensorState sixaxis_dual_right_state{};
         SixAxisSensorState sixaxis_left_lifo_state{};
         SixAxisSensorState sixaxis_right_lifo_state{};
-
-        int callback_key;
+        int callback_key{};
     };
 
     void ControllerUpdate(Core::HID::ControllerTriggerType type, std::size_t controller_idx);
     void InitNewlyAddedController(Core::HID::NpadIdType npad_id);
     bool IsControllerSupported(Core::HID::NpadStyleIndex controller) const;
     void RequestPadStateUpdate(Core::HID::NpadIdType npad_id);
-    void WriteEmptyEntry(NpadInternalState& npad);
+    void WriteEmptyEntry(NpadInternalState* npad);
 
     NpadControllerData& GetControllerFromHandle(
         const Core::HID::SixAxisSensorHandle& device_handle);

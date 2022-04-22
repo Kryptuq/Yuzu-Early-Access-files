@@ -40,7 +40,6 @@ constexpr auto pad_update_ns = std::chrono::nanoseconds{4 * 1000 * 1000};       
 constexpr auto mouse_keyboard_update_ns = std::chrono::nanoseconds{8 * 1000 * 1000}; // (8ms, 125Hz)
 // TODO: Correct update rate for motion is 5ms. Check why some games don't behave at that speed
 constexpr auto motion_update_ns = std::chrono::nanoseconds{10 * 1000 * 1000}; // (10ms, 100Hz)
-constexpr std::size_t SHARED_MEMORY_SIZE = 0x40000;
 
 IAppletResource::IAppletResource(Core::System& system_,
                                  KernelHelpers::ServiceContext& service_context_)
@@ -49,20 +48,20 @@ IAppletResource::IAppletResource(Core::System& system_,
         {0, &IAppletResource::GetSharedMemoryHandle, "GetSharedMemoryHandle"},
     };
     RegisterHandlers(functions);
-
-    MakeController<Controller_DebugPad>(HidController::DebugPad);
-    MakeController<Controller_Touchscreen>(HidController::Touchscreen);
-    MakeController<Controller_Mouse>(HidController::Mouse);
-    MakeController<Controller_Keyboard>(HidController::Keyboard);
-    MakeController<Controller_XPad>(HidController::XPad);
-    MakeController<Controller_Stubbed>(HidController::HomeButton);
-    MakeController<Controller_Stubbed>(HidController::SleepButton);
-    MakeController<Controller_Stubbed>(HidController::CaptureButton);
-    MakeController<Controller_Stubbed>(HidController::InputDetector);
-    MakeController<Controller_Stubbed>(HidController::UniquePad);
-    MakeControllerWithServiceContext<Controller_NPad>(HidController::NPad);
-    MakeController<Controller_Gesture>(HidController::Gesture);
-    MakeController<Controller_ConsoleSixAxis>(HidController::ConsoleSixAxisSensor);
+    u8* shared_memory = system.Kernel().GetHidSharedMem().GetPointer();
+    MakeController<Controller_DebugPad>(HidController::DebugPad, shared_memory);
+    MakeController<Controller_Touchscreen>(HidController::Touchscreen, shared_memory);
+    MakeController<Controller_Mouse>(HidController::Mouse, shared_memory);
+    MakeController<Controller_Keyboard>(HidController::Keyboard, shared_memory);
+    MakeController<Controller_XPad>(HidController::XPad, shared_memory);
+    MakeController<Controller_Stubbed>(HidController::HomeButton, shared_memory);
+    MakeController<Controller_Stubbed>(HidController::SleepButton, shared_memory);
+    MakeController<Controller_Stubbed>(HidController::CaptureButton, shared_memory);
+    MakeController<Controller_Stubbed>(HidController::InputDetector, shared_memory);
+    MakeController<Controller_Stubbed>(HidController::UniquePad, shared_memory);
+    MakeControllerWithServiceContext<Controller_NPad>(HidController::NPad, shared_memory);
+    MakeController<Controller_Gesture>(HidController::Gesture, shared_memory);
+    MakeController<Controller_ConsoleSixAxis>(HidController::ConsoleSixAxisSensor, shared_memory);
 
     // Homebrew doesn't try to activate some controllers, so we activate them by default
     GetController<Controller_NPad>(HidController::NPad).ActivateController();
@@ -136,8 +135,7 @@ void IAppletResource::UpdateControllers(std::uintptr_t user_data,
         if (controller == controllers[static_cast<size_t>(HidController::Mouse)]) {
             continue;
         }
-        controller->OnUpdate(core_timing, system.Kernel().GetHidSharedMem().GetPointer(),
-                             SHARED_MEMORY_SIZE);
+        controller->OnUpdate(core_timing);
     }
 
     // If ns_late is higher than the update rate ignore the delay
@@ -152,10 +150,8 @@ void IAppletResource::UpdateMouseKeyboard(std::uintptr_t user_data,
                                           std::chrono::nanoseconds ns_late) {
     auto& core_timing = system.CoreTiming();
 
-    controllers[static_cast<size_t>(HidController::Mouse)]->OnUpdate(
-        core_timing, system.Kernel().GetHidSharedMem().GetPointer(), SHARED_MEMORY_SIZE);
-    controllers[static_cast<size_t>(HidController::Keyboard)]->OnUpdate(
-        core_timing, system.Kernel().GetHidSharedMem().GetPointer(), SHARED_MEMORY_SIZE);
+    controllers[static_cast<size_t>(HidController::Mouse)]->OnUpdate(core_timing);
+    controllers[static_cast<size_t>(HidController::Keyboard)]->OnUpdate(core_timing);
 
     // If ns_late is higher than the update rate ignore the delay
     if (ns_late > mouse_keyboard_update_ns) {
@@ -168,8 +164,7 @@ void IAppletResource::UpdateMouseKeyboard(std::uintptr_t user_data,
 void IAppletResource::UpdateMotion(std::uintptr_t user_data, std::chrono::nanoseconds ns_late) {
     auto& core_timing = system.CoreTiming();
 
-    controllers[static_cast<size_t>(HidController::NPad)]->OnMotionUpdate(
-        core_timing, system.Kernel().GetHidSharedMem().GetPointer(), SHARED_MEMORY_SIZE);
+    controllers[static_cast<size_t>(HidController::NPad)]->OnMotionUpdate(core_timing);
 
     // If ns_late is higher than the update rate ignore the delay
     if (ns_late > motion_update_ns) {

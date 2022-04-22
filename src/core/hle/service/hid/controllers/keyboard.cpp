@@ -13,8 +13,12 @@
 namespace Service::HID {
 constexpr std::size_t SHARED_MEMORY_OFFSET = 0x3800;
 
-Controller_Keyboard::Controller_Keyboard(Core::HID::HIDCore& hid_core_)
+Controller_Keyboard::Controller_Keyboard(Core::HID::HIDCore& hid_core_, u8* raw_shared_memory_)
     : ControllerBase{hid_core_} {
+    static_assert(SHARED_MEMORY_OFFSET + sizeof(KeyboardSharedMemory) < shared_memory_size,
+                  "KeyboardSharedMemory is bigger than the shared memory");
+    shared_memory = std::construct_at(
+        reinterpret_cast<KeyboardSharedMemory*>(raw_shared_memory_ + SHARED_MEMORY_OFFSET));
     emulated_devices = hid_core.GetEmulatedDevices();
 }
 
@@ -24,16 +28,14 @@ void Controller_Keyboard::OnInit() {}
 
 void Controller_Keyboard::OnRelease() {}
 
-void Controller_Keyboard::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* data,
-                                   std::size_t size) {
+void Controller_Keyboard::OnUpdate(const Core::Timing::CoreTiming& core_timing) {
     if (!IsControllerActivated()) {
-        keyboard_lifo.buffer_count = 0;
-        keyboard_lifo.buffer_tail = 0;
-        std::memcpy(data + SHARED_MEMORY_OFFSET, &keyboard_lifo, sizeof(keyboard_lifo));
+        shared_memory->keyboard_lifo.buffer_count = 0;
+        shared_memory->keyboard_lifo.buffer_tail = 0;
         return;
     }
 
-    const auto& last_entry = keyboard_lifo.ReadCurrentEntry().state;
+    const auto& last_entry = shared_memory->keyboard_lifo.ReadCurrentEntry().state;
     next_state.sampling_number = last_entry.sampling_number + 1;
 
     if (Settings::values.keyboard_enabled) {
@@ -45,8 +47,7 @@ void Controller_Keyboard::OnUpdate(const Core::Timing::CoreTiming& core_timing, 
         next_state.attribute.is_connected.Assign(1);
     }
 
-    keyboard_lifo.WriteNextEntry(next_state);
-    std::memcpy(data + SHARED_MEMORY_OFFSET, &keyboard_lifo, sizeof(keyboard_lifo));
+    shared_memory->keyboard_lifo.WriteNextEntry(next_state);
 }
 
 } // namespace Service::HID

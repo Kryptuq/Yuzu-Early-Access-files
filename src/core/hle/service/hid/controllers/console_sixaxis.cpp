@@ -10,9 +10,14 @@
 namespace Service::HID {
 constexpr std::size_t SHARED_MEMORY_OFFSET = 0x3C200;
 
-Controller_ConsoleSixAxis::Controller_ConsoleSixAxis(Core::HID::HIDCore& hid_core_)
+Controller_ConsoleSixAxis::Controller_ConsoleSixAxis(Core::HID::HIDCore& hid_core_,
+                                                     u8* raw_shared_memory_)
     : ControllerBase{hid_core_} {
     console = hid_core.GetEmulatedConsole();
+    static_assert(SHARED_MEMORY_OFFSET + sizeof(ConsoleSharedMemory) < shared_memory_size,
+                  "ConsoleSharedMemory is bigger than the shared memory");
+    shared_memory = std::construct_at(
+        reinterpret_cast<ConsoleSharedMemory*>(raw_shared_memory_ + SHARED_MEMORY_OFFSET));
 }
 
 Controller_ConsoleSixAxis::~Controller_ConsoleSixAxis() = default;
@@ -21,8 +26,7 @@ void Controller_ConsoleSixAxis::OnInit() {}
 
 void Controller_ConsoleSixAxis::OnRelease() {}
 
-void Controller_ConsoleSixAxis::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* data,
-                                         std::size_t size) {
+void Controller_ConsoleSixAxis::OnUpdate(const Core::Timing::CoreTiming& core_timing) {
     if (!IsControllerActivated() || !is_transfer_memory_set) {
         seven_sixaxis_lifo.buffer_count = 0;
         seven_sixaxis_lifo.buffer_tail = 0;
@@ -49,13 +53,11 @@ void Controller_ConsoleSixAxis::OnUpdate(const Core::Timing::CoreTiming& core_ti
         -motion_status.quaternion.xyz.z,
     };
 
-    console_six_axis.sampling_number++;
-    console_six_axis.is_seven_six_axis_sensor_at_rest = motion_status.is_at_rest;
-    console_six_axis.verticalization_error = motion_status.verticalization_error;
-    console_six_axis.gyro_bias = motion_status.gyro_bias;
+    shared_memory->sampling_number++;
+    shared_memory->is_seven_six_axis_sensor_at_rest = motion_status.is_at_rest;
+    shared_memory->verticalization_error = motion_status.verticalization_error;
+    shared_memory->gyro_bias = motion_status.gyro_bias;
 
-    // Update console six axis shared memory
-    std::memcpy(data + SHARED_MEMORY_OFFSET, &console_six_axis, sizeof(console_six_axis));
     // Update seven six axis transfer memory
     seven_sixaxis_lifo.WriteNextEntry(next_seven_sixaxis_state);
     std::memcpy(transfer_memory, &seven_sixaxis_lifo, sizeof(seven_sixaxis_lifo));

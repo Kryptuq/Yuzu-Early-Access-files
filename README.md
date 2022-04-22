@@ -22,4 +22,4 @@ __Building System__: Built with Github CI
 
 __Credits__: Kryptuq for Source Codes and MostlyWhat for Build Script
 
-__Current Latest Early Access__: yuzu Early Access 2690
+__Current Latest Early Access__: yuzu Early Access 2692

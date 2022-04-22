@@ -10,15 +10,18 @@
 
 namespace Service::HID {
 
-Controller_Stubbed::Controller_Stubbed(Core::HID::HIDCore& hid_core_) : ControllerBase{hid_core_} {}
+Controller_Stubbed::Controller_Stubbed(Core::HID::HIDCore& hid_core_, u8* raw_shared_memory_)
+    : ControllerBase{hid_core_} {
+    raw_shared_memory = raw_shared_memory_;
+}
+
 Controller_Stubbed::~Controller_Stubbed() = default;
 
 void Controller_Stubbed::OnInit() {}
 
 void Controller_Stubbed::OnRelease() {}
 
-void Controller_Stubbed::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* data,
-                                  std::size_t size) {
+void Controller_Stubbed::OnUpdate(const Core::Timing::CoreTiming& core_timing) {
     if (!smart_update) {
         return;
     }
@@ -29,7 +32,7 @@ void Controller_Stubbed::OnUpdate(const Core::Timing::CoreTiming& core_timing, u
     header.entry_count = 0;
     header.last_entry_index = 0;
 
-    std::memcpy(data + common_offset, &header, sizeof(CommonHeader));
+    std::memcpy(raw_shared_memory + common_offset, &header, sizeof(CommonHeader));
 }
 
 void Controller_Stubbed::SetCommonHeaderOffset(std::size_t off) {
