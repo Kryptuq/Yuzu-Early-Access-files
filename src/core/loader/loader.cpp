@@ -261,7 +261,8 @@ std::unique_ptr<AppLoader> GetLoader(Core::System& system, FileSys::VirtualFile 
 
     // Special case: 00 is either a NCA or NAX.
     if (type != filename_type && !(file->GetName() == "00" && type == FileType::NAX)) {
-        LOG_WARNING(Loader, "File {} has a different type than its extension.", file->GetName());
+        LOG_WARNING(Loader, "File {} has a different type ({}) than its extension.",
+                    file->GetName(), GetFileTypeString(type));
         if (FileType::Unknown == type) {
             type = filename_type;
         }

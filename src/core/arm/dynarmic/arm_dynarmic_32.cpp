@@ -92,7 +92,9 @@ public:
     }
 
     void AddTicks(u64 ticks) override {
-        ASSERT_MSG(!parent.uses_wall_clock, "This should never happen - dynarmic ticking disabled");
+        if (parent.uses_wall_clock) {
+            return;
+        }
 
         // Divide the number of ticks by the amount of CPU cores. TODO(Subv): This yields only a
         // rough approximation of the amount of executed ticks in the system, it may be thrown off
@@ -109,7 +111,12 @@ public:
     }
 
     u64 GetTicksRemaining() override {
-        ASSERT_MSG(!parent.uses_wall_clock, "This should never happen - dynarmic ticking disabled");
+        if (parent.uses_wall_clock) {
+            if (!parent.interrupt_handlers[parent.core_index].IsInterrupted()) {
+                return minimum_run_cycles;
+            }
+            return 0U;
+        }
 
         return std::max<s64>(parent.system.CoreTiming().GetDowncount(), 0);
     }
@@ -145,7 +152,7 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
 
     // Timing
     config.wall_clock_cntpct = uses_wall_clock;
-    config.enable_cycle_counting = !uses_wall_clock;
+    config.enable_cycle_counting = true;
 
     // Code cache size
     config.code_cache_size = 512_MiB;
