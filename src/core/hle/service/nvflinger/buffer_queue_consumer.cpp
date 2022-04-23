@@ -1,7 +1,7 @@
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-FileCopyrightText: Copyright 2014 The Android Open Source Project
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright 2021 yuzu Emulator Project
-// Copyright 2014 The Android Open Source Project
-// Parts of this implementation were base on:
+// Parts of this implementation were based on:
 // https://cs.android.com/android/platform/superproject/+/android-5.1.1_r38:frameworks/native/libs/gui/BufferQueueConsumer.cpp
 
 #include "common/logging/log.h"
