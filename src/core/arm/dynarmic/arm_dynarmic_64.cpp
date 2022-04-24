@@ -168,7 +168,7 @@ public:
     Core::Memory::Memory& memory;
     u64 tpidrro_el0 = 0;
     u64 tpidr_el0 = 0;
-    static constexpr u64 minimum_run_cycles = 1000U;
+    static constexpr u64 minimum_run_cycles = 10000U;
 };
 
 std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable* page_table,

@@ -123,7 +123,7 @@ public:
     ARM_Dynarmic_32& parent;
     Core::Memory::Memory& memory;
     std::size_t num_interpreted_instructions{};
-    static constexpr u64 minimum_run_cycles = 1000U;
+    static constexpr u64 minimum_run_cycles = 10000U;
 };
 
 std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* page_table) const {

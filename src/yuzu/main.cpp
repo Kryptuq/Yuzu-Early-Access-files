@@ -933,8 +933,9 @@ void GMainWindow::LinkActionShortcut(QAction* action, const QString& action_name
     auto* controller = system->HIDCore().GetEmulatedController(Core::HID::NpadIdType::Player1);
     const auto* controller_hotkey =
         hotkey_registry.GetControllerHotkey(main_window, action_name, controller);
-    connect(controller_hotkey, &ControllerShortcut::Activated, this,
-            [action] { action->trigger(); });
+    connect(
+        controller_hotkey, &ControllerShortcut::Activated, this, [action] { action->trigger(); },
+        Qt::QueuedConnection);
 }
 
 void GMainWindow::InitializeHotkeys() {
@@ -961,7 +962,8 @@ void GMainWindow::InitializeHotkeys() {
         const auto* controller_hotkey =
             hotkey_registry.GetControllerHotkey(main_window, action_name, controller);
         connect(hotkey, &QShortcut::activated, this, function);
-        connect(controller_hotkey, &ControllerShortcut::Activated, this, function);
+        connect(controller_hotkey, &ControllerShortcut::Activated, this, function,
+                Qt::QueuedConnection);
     };
 
     connect_shortcut(QStringLiteral("Exit Fullscreen"), [&] {

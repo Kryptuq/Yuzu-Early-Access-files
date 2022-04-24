@@ -21,8 +21,6 @@ CMAKE_DEPENDENT_OPTION(YUZU_USE_BUNDLED_QT "Download bundled Qt binaries" "${MSV
 
 option(ENABLE_WEB_SERVICE "Enable web services (telemetry, etc.)" ON)
 
-option(YUZU_USE_BUNDLED_BOOST "Download bundled Boost" OFF)
-
 option(YUZU_USE_BUNDLED_LIBUSB "Compile bundled libusb" OFF)
 
 option(YUZU_USE_BUNDLED_FFMPEG "Download/Build bundled FFmpeg" "${WIN32}")
@@ -208,9 +206,7 @@ macro(yuzu_find_packages)
     unset(FN_FORCE_REQUIRED)
 endmacro()
 
-if (NOT YUZU_USE_BUNDLED_BOOST)
-    find_package(Boost 1.73.0 CONFIG COMPONENTS context headers QUIET)
-endif()
+find_package(Boost 1.73.0 COMPONENTS context headers)
 if (Boost_FOUND)
     set(Boost_LIBRARIES Boost::boost)
     # Conditionally add Boost::context only if the active version of the Conan or system Boost package provides it
@@ -221,20 +217,6 @@ if (Boost_FOUND)
     if (TARGET Boost::context)
         list(APPEND Boost_LIBRARIES Boost::context)
     endif()
-elseif (${CMAKE_SYSTEM_NAME} STREQUAL "Linux" OR YUZU_USE_BUNDLED_BOOST)
-    message(STATUS "Boost 1.73.0 or newer not found, falling back to externals")
-    set(YUZU_USE_BUNDLED_BOOST ON CACHE BOOL "Download bundled Boost" FORCE)
-
-    # Use yuzu Boost binaries
-    set(Boost_EXT_NAME "boost_1_75_0")
-    set(Boost_PATH "${CMAKE_BINARY_DIR}/externals/${Boost_EXT_NAME}")
-    download_bundled_external("boost/" ${Boost_EXT_NAME} "")
-    set(Boost_USE_DEBUG_RUNTIME FALSE)
-    set(Boost_USE_STATIC_LIBS ON)
-    find_package(Boost 1.75.0 CONFIG REQUIRED COMPONENTS context headers PATHS ${Boost_PATH} NO_DEFAULT_PATH)
-    # Manually set the include dirs since the find_package sets it incorrectly
-    set(Boost_INCLUDE_DIRS ${Boost_PATH}/include CACHE PATH "Path to Boost headers" FORCE)
-    include_directories(SYSTEM "${Boost_INCLUDE_DIRS}")
 else()
     message(STATUS "Boost 1.73.0 or newer not found, falling back to Conan")
     list(APPEND CONAN_REQUIRED_LIBS "boost/1.78.0")
