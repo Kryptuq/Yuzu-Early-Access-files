@@ -1,4 +1,4 @@
-/* $OpenBSD: p12_mutl.c,v 1.23 2017/01/29 17:49:23 beck Exp $ */
+/* $OpenBSD: p12_mutl.c,v 1.27 2021/12/12 21:30:14 tb Exp $ */
 /* Written by Dr Stephen N Henson (steve@openssl.org) for the OpenSSL
  * project 1999.
  */
@@ -67,6 +67,10 @@
 #include <openssl/err.h>
 #include <openssl/hmac.h>
 #include <openssl/pkcs12.h>
+
+#include "evp_locl.h"
+#include "hmac_local.h"
+#include "x509_lcl.h"
 
 /* Generate a MAC */
 int
@@ -192,7 +196,7 @@ PKCS12_setup_mac(PKCS12 *p12, int iter, unsigned char *salt, int saltlen,
 	if (!salt)
 		arc4random_buf(p12->mac->salt->data, saltlen);
 	else
-		memcpy (p12->mac->salt->data, salt, saltlen);
+		memcpy(p12->mac->salt->data, salt, saltlen);
 	p12->mac->dinfo->algor->algorithm = OBJ_nid2obj(EVP_MD_type(md_type));
 	if (!(p12->mac->dinfo->algor->parameter = ASN1_TYPE_new())) {
 		PKCS12error(ERR_R_MALLOC_FAILURE);

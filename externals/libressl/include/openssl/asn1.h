@@ -1,4 +1,4 @@
-/* $OpenBSD: asn1.h,v 1.53 2018/11/30 04:51:19 jeremy Exp $ */
+/* $OpenBSD: asn1.h,v 1.62 2022/01/14 08:53:53 tb Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -161,52 +161,6 @@ DECLARE_STACK_OF(X509_ALGOR)
 
 #define DECLARE_ASN1_SET_OF(type) /* filled in by mkstack.pl */
 #define IMPLEMENT_ASN1_SET_OF(type) /* nothing, no longer needed */
-
-/* We MUST make sure that, except for constness, asn1_ctx_st and
-   asn1_const_ctx are exactly the same.  Fortunately, as soon as
-   the old ASN1 parsing macros are gone, we can throw this away
-   as well... */
-typedef struct asn1_ctx_st {
-	unsigned char *p;/* work char pointer */
-	int eos;	/* end of sequence read for indefinite encoding */
-	int error;	/* error code to use when returning an error */
-	int inf;	/* constructed if 0x20, indefinite is 0x21 */
-	int tag;	/* tag from last 'get object' */
-	int xclass;	/* class from last 'get object' */
-	long slen;	/* length of last 'get object' */
-	unsigned char *max; /* largest value of p allowed */
-	unsigned char *q;/* temporary variable */
-	unsigned char **pp;/* variable */
-	int line;	/* used in error processing */
-} ASN1_CTX;
-
-typedef struct asn1_const_ctx_st {
-	const unsigned char *p;/* work char pointer */
-	int eos;	/* end of sequence read for indefinite encoding */
-	int error;	/* error code to use when returning an error */
-	int inf;	/* constructed if 0x20, indefinite is 0x21 */
-	int tag;	/* tag from last 'get object' */
-	int xclass;	/* class from last 'get object' */
-	long slen;	/* length of last 'get object' */
-	const unsigned char *max; /* largest value of p allowed */
-	const unsigned char *q;/* temporary variable */
-	const unsigned char **pp;/* variable */
-	int line;	/* used in error processing */
-} ASN1_const_CTX;
-
-/* These are used internally in the ASN1_OBJECT to keep track of
- * whether the names and data need to be free()ed */
-#define ASN1_OBJECT_FLAG_DYNAMIC	 0x01	/* internal use */
-#define ASN1_OBJECT_FLAG_CRITICAL	 0x02	/* critical x509v3 object id */
-#define ASN1_OBJECT_FLAG_DYNAMIC_STRINGS 0x04	/* internal use */
-#define ASN1_OBJECT_FLAG_DYNAMIC_DATA 	 0x08	/* internal use */
-typedef struct asn1_object_st {
-	const char *sn, *ln;
-	int nid;
-	int length;
-	const unsigned char *data;	/* data remains const after init */
-	int flags;	/* Should we free this one */
-} ASN1_OBJECT;
 
 #define ASN1_STRING_FLAG_BITS_LEFT 0x08 /* Set if 0x07 has bits left value */
 /* This indicates that the ASN1_STRING is not a real value but just a place
@@ -530,11 +484,6 @@ ASN1_SEQUENCE_ANY *d2i_ASN1_SET_ANY(ASN1_SEQUENCE_ANY **a, const unsigned char *
 int i2d_ASN1_SET_ANY(const ASN1_SEQUENCE_ANY *a, unsigned char **out);
 extern const ASN1_ITEM ASN1_SET_ANY_it;
 
-typedef struct NETSCAPE_X509_st {
-	ASN1_OCTET_STRING *header;
-	X509 *cert;
-} NETSCAPE_X509;
-
 /* This is used to contain a list of bit names */
 typedef struct BIT_STRING_BITNAME_st {
 	int bitnum;
@@ -644,9 +593,6 @@ int ASN1_BIT_STRING_name_print(BIO *out, ASN1_BIT_STRING *bs,
 int ASN1_BIT_STRING_num_asc(const char *name, BIT_STRING_BITNAME *tbl);
 int ASN1_BIT_STRING_set_asc(ASN1_BIT_STRING *bs, const char *name, int value,
     BIT_STRING_BITNAME *tbl);
-
-int i2d_ASN1_BOOLEAN(int a, unsigned char **pp);
-int d2i_ASN1_BOOLEAN(int *a, const unsigned char **pp, long length);
 
 ASN1_INTEGER *ASN1_INTEGER_new(void);
 void ASN1_INTEGER_free(ASN1_INTEGER *a);
@@ -773,6 +719,9 @@ ASN1_TIME *d2i_ASN1_TIME(ASN1_TIME **a, const unsigned char **in, long len);
 int i2d_ASN1_TIME(ASN1_TIME *a, unsigned char **out);
 extern const ASN1_ITEM ASN1_TIME_it;
 
+int ASN1_TIME_diff(int *pday, int *psec, const ASN1_TIME *from,
+    const ASN1_TIME *to);
+
 extern const ASN1_ITEM ASN1_OCTET_STRING_NDEF_it;
 
 ASN1_TIME *ASN1_TIME_set(ASN1_TIME *s, time_t t);
@@ -816,8 +765,6 @@ int ASN1_PRINTABLE_type(const unsigned char *s, int max);
 /* SPECIALS */
 int ASN1_get_object(const unsigned char **pp, long *plength, int *ptag,
     int *pclass, long omax);
-int ASN1_check_infinite_end(unsigned char **p, long len);
-int ASN1_const_check_infinite_end(const unsigned char **p, long len);
 void ASN1_put_object(unsigned char **pp, int constructed, int length, int tag,
     int xclass);
 int ASN1_put_eoc(unsigned char **pp);
@@ -894,14 +841,6 @@ int ASN1_parse_dump(BIO *bp, const unsigned char *pp, long len, int indent, int 
 
 unsigned long ASN1_tag2bit(int tag);
 const char *ASN1_tag2str(int tag);
-
-/* Used to load and write netscape format cert */
-
-NETSCAPE_X509 *NETSCAPE_X509_new(void);
-void NETSCAPE_X509_free(NETSCAPE_X509 *a);
-NETSCAPE_X509 *d2i_NETSCAPE_X509(NETSCAPE_X509 **a, const unsigned char **in, long len);
-int i2d_NETSCAPE_X509(NETSCAPE_X509 *a, unsigned char **out);
-extern const ASN1_ITEM NETSCAPE_X509_it;
 
 int ASN1_UNIVERSALSTRING_to_string(ASN1_UNIVERSALSTRING *s);
 
@@ -1137,6 +1076,7 @@ void ERR_load_ASN1_strings(void);
 #define ASN1_R_BAD_OBJECT_HEADER			 102
 #define ASN1_R_BAD_PASSWORD_READ			 103
 #define ASN1_R_BAD_TAG					 104
+#define ASN1_R_BAD_TEMPLATE				 230
 #define ASN1_R_BMPSTRING_IS_WRONG_LENGTH		 214
 #define ASN1_R_BN_LIB					 105
 #define ASN1_R_BOOLEAN_IS_WRONG_LENGTH			 106

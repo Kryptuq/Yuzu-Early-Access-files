@@ -1,4 +1,4 @@
-/* $OpenBSD: rsa_eay.c,v 1.51 2019/11/02 13:52:31 jsing Exp $ */
+/* $OpenBSD: rsa_eay.c,v 1.54 2022/01/20 11:10:11 inoguchi Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -119,6 +119,7 @@
 #include <openssl/rsa.h>
 
 #include "bn_lcl.h"
+#include "rsa_locl.h"
 
 static int RSA_eay_public_encrypt(int flen, const unsigned char *from,
     unsigned char *to, RSA *rsa, int padding);
@@ -446,7 +447,8 @@ RSA_eay_private_encrypt(int flen, const unsigned char *from, unsigned char *to,
 			goto err;
 
 	if (padding == RSA_X931_PADDING) {
-		BN_sub(f, rsa->n, ret);
+		if (!BN_sub(f, rsa->n, ret))
+			goto err;
 		if (BN_cmp(ret, f) > 0)
 			res = f;
 		else
@@ -753,6 +755,7 @@ RSA_eay_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa, BN_CTX *ctx)
 		goto err;
 
 	/* compute I mod p */
+	BN_init(&c);
 	BN_with_flags(&c, I, BN_FLG_CONSTTIME);
 
 	if (!BN_mod_ct(r1, &c, rsa->p, ctx))

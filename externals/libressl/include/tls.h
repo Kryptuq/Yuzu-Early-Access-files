@@ -1,4 +1,4 @@
-/* $OpenBSD: tls.h,v 1.58 2020/01/22 06:44:02 beck Exp $ */
+/* $OpenBSD: tls.h,v 1.62 2022/03/24 15:56:34 tb Exp $ */
 /*
  * Copyright (c) 2014 Joel Sing <jsing@openbsd.org>
  *

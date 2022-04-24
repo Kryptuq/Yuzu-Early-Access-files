@@ -1,4 +1,4 @@
-/* $OpenBSD: pmeth_gn.c,v 1.6 2017/01/29 17:49:23 beck Exp $ */
+/* $OpenBSD: pmeth_gn.c,v 1.10 2022/01/10 12:10:26 tb Exp $ */
 /* Written by Dr Stephen N Henson (steve@openssl.org) for the OpenSSL
  * project 2006.
  */
@@ -64,6 +64,8 @@
 #include <openssl/evp.h>
 #include <openssl/objects.h>
 
+#include "asn1_locl.h"
+#include "bn_lcl.h"
 #include "evp_locl.h"
 
 int
@@ -187,7 +189,7 @@ trans_cb(int a, int b, BN_GENCB *gcb)
 void
 evp_pkey_set_cb_translate(BN_GENCB *cb, EVP_PKEY_CTX *ctx)
 {
-	BN_GENCB_set(cb, trans_cb, ctx)
+	BN_GENCB_set(cb, trans_cb, ctx);
 }
 
 int
@@ -220,4 +222,67 @@ EVP_PKEY_new_mac_key(int type, ENGINE *e, const unsigned char *key, int keylen)
 merr:
 	EVP_PKEY_CTX_free(mac_ctx);
 	return mac_key;
+}
+
+int
+EVP_PKEY_check(EVP_PKEY_CTX *ctx)
+{
+	EVP_PKEY *pkey;
+
+	if ((pkey = ctx->pkey) == NULL) {
+		EVPerror(EVP_R_NO_KEY_SET);
+		return 0;
+	}
+
+	if (ctx->pmeth->check != NULL)
+		return ctx->pmeth->check(pkey);
+
+	if (pkey->ameth == NULL || pkey->ameth->pkey_check == NULL) {
+		EVPerror(EVP_R_OPERATION_NOT_SUPPORTED_FOR_THIS_KEYTYPE);
+		return -2;
+	}
+
+	return pkey->ameth->pkey_check(pkey);
+}
+
+int
+EVP_PKEY_public_check(EVP_PKEY_CTX *ctx)
+{
+	EVP_PKEY *pkey;
+
+	if ((pkey = ctx->pkey) == NULL) {
+		EVPerror(EVP_R_NO_KEY_SET);
+		return 0;
+	}
+
+	if (ctx->pmeth->public_check != NULL)
+		return ctx->pmeth->public_check(pkey);
+
+	if (pkey->ameth == NULL || pkey->ameth->pkey_public_check == NULL) {
+		EVPerror(EVP_R_OPERATION_NOT_SUPPORTED_FOR_THIS_KEYTYPE);
+		return -2;
+	}
+
+	return pkey->ameth->pkey_public_check(pkey);
+}
+
+int
+EVP_PKEY_param_check(EVP_PKEY_CTX *ctx)
+{
+	EVP_PKEY *pkey;
+
+	if ((pkey = ctx->pkey) == NULL) {
+		EVPerror(EVP_R_NO_KEY_SET);
+		return 0;
+	}
+
+	if (ctx->pmeth->param_check != NULL)
+		return ctx->pmeth->param_check(pkey);
+
+	if (pkey->ameth == NULL || pkey->ameth->pkey_param_check == NULL) {
+		EVPerror(EVP_R_OPERATION_NOT_SUPPORTED_FOR_THIS_KEYTYPE);
+		return -2;
+	}
+
+	return pkey->ameth->pkey_param_check(pkey);
 }

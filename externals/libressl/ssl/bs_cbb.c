@@ -1,4 +1,4 @@
-/*	$OpenBSD: bs_cbb.c,v 1.23 2020/09/16 05:52:04 jsing Exp $	*/
+/*	$OpenBSD: bs_cbb.c,v 1.27 2022/01/06 14:30:30 jsing Exp $	*/
 /*
  * Copyright (c) 2014, Google Inc.
  *
@@ -12,12 +12,11 @@
  * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
- * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. */
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
 
 #include <stdlib.h>
 #include <string.h>
-
-#include <openssl/opensslconf.h>
 
 #include "bytestring.h"
 
@@ -277,7 +276,7 @@ CBB_discard_child(CBB *cbb)
 		return;
 
 	cbb->base->len = cbb->offset;
-	
+
 	cbb->child->base = NULL;
 	cbb->child = NULL;
 	cbb->pending_len_len = 0;
@@ -412,6 +411,19 @@ CBB_add_u32(CBB *cbb, size_t value)
 		return 0;
 
 	return cbb_add_u(cbb, (uint32_t)value, 4);
+}
+
+int
+CBB_add_u64(CBB *cbb, uint64_t value)
+{
+	uint32_t a, b;
+
+	a = value >> 32;
+	b = value & 0xffffffff;
+
+	if (!CBB_add_u32(cbb, a))
+		return 0;
+	return CBB_add_u32(cbb, b);
 }
 
 int

@@ -1,25 +1,25 @@
-/* $OpenBSD: x509_vfy.h,v 1.31 2020/09/13 15:06:17 beck Exp $ */
+/* $OpenBSD: x509_vfy.h,v 1.50 2022/01/14 07:53:45 tb Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
  * This package is an SSL implementation written
  * by Eric Young (eay@cryptsoft.com).
  * The implementation was written so as to conform with Netscapes SSL.
- * 
+ *
  * This library is free for commercial and non-commercial use as long as
  * the following conditions are aheared to.  The following conditions
  * apply to all code found in this distribution, be it the RC4, RSA,
  * lhash, DES, etc., code; not just the SSL code.  The SSL documentation
  * included with this distribution is covered by the same copyright terms
  * except that the holder is Tim Hudson (tjh@cryptsoft.com).
- * 
+ *
  * Copyright remains Eric Young's, and as such any Copyright notices in
  * the code are not to be removed.
  * If this package is used in a product, Eric Young should be given attribution
  * as the author of the parts of the library used.
  * This can be in the form of a textual message at program startup or
  * in documentation (online or textual) provided with the package.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -34,10 +34,10 @@
  *     Eric Young (eay@cryptsoft.com)"
  *    The word 'cryptographic' can be left out if the rouines from the library
  *    being used are not cryptographic related :-).
- * 4. If you include any Windows specific code (or a derivative thereof) from 
+ * 4. If you include any Windows specific code (or a derivative thereof) from
  *    the apps directory (application code) you must include an acknowledgement:
  *    "This product includes software written by Tim Hudson (tjh@cryptsoft.com)"
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -49,7 +49,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- * 
+ *
  * The licence and distribution terms for any publically available version or
  * derivative of this code cannot be changed.  i.e. this code cannot simply be
  * copied and put under another distribution licence
@@ -77,196 +77,39 @@
 extern "C" {
 #endif
 
-typedef struct x509_file_st
-	{
-	int num_paths;	/* number of paths to files or directories */
-	int num_alloced;
-	char **paths;	/* the list of paths or directories */
-	int *path_type;
-	} X509_CERT_FILE_CTX;
-
-/*******************************/
 /*
-SSL_CTX -> X509_STORE    
-		-> X509_LOOKUP
-			->X509_LOOKUP_METHOD
-		-> X509_LOOKUP
-			->X509_LOOKUP_METHOD
- 
-SSL	-> X509_STORE_CTX
-		->X509_STORE    
+ * SSL_CTX -> X509_STORE
+ *		-> X509_LOOKUP
+ *			->X509_LOOKUP_METHOD
+ *		-> X509_LOOKUP
+ *			->X509_LOOKUP_METHOD
+ *
+ * SSL	-> X509_STORE_CTX
+ *		->X509_STORE
+ *
+ * The X509_STORE holds the tables etc for verification stuff.
+ * A X509_STORE_CTX is used while validating a single certificate.
+ * The X509_STORE has X509_LOOKUPs for looking up certs.
+ * The X509_STORE then calls a function to actually verify the
+ * certificate chain.
+ */
 
-The X509_STORE holds the tables etc for verification stuff.
-A X509_STORE_CTX is used while validating a single certificate.
-The X509_STORE has X509_LOOKUPs for looking up certs.
-The X509_STORE then calls a function to actually verify the
-certificate chain.
-*/
+typedef enum {
+	X509_LU_NONE,
+	X509_LU_X509,
+	X509_LU_CRL,
+} X509_LOOKUP_TYPE;
 
-#define X509_LU_RETRY		-1
-#define X509_LU_FAIL		0
-#define X509_LU_X509		1
-#define X509_LU_CRL		2
-#define X509_LU_PKEY		3
-
-typedef struct x509_object_st
-	{
-	/* one of the above types */
-	int type;
-	union	{
-		char *ptr;
-		X509 *x509;
-		X509_CRL *crl;
-		EVP_PKEY *pkey;
-		} data;
-	} X509_OBJECT;
-
-typedef struct x509_lookup_st X509_LOOKUP;
 
 DECLARE_STACK_OF(X509_LOOKUP)
 DECLARE_STACK_OF(X509_OBJECT)
-
-/* This is a static that defines the function interface */
-typedef struct x509_lookup_method_st
-	{
-	const char *name;
-	int (*new_item)(X509_LOOKUP *ctx);
-	void (*free)(X509_LOOKUP *ctx);
-	int (*init)(X509_LOOKUP *ctx);
-	int (*shutdown)(X509_LOOKUP *ctx);
-	int (*ctrl)(X509_LOOKUP *ctx, int cmd, const char *argc, long argl,
-	    char **ret);
-	int (*get_by_subject)(X509_LOOKUP *ctx, int type, X509_NAME *name,
-	    X509_OBJECT *ret);
-	int (*get_by_issuer_serial)(X509_LOOKUP *ctx, int type, X509_NAME *name,
-	    ASN1_INTEGER *serial,X509_OBJECT *ret);
-	int (*get_by_fingerprint)(X509_LOOKUP *ctx, int type,
-	    const unsigned char *bytes, int len, X509_OBJECT *ret);
-	int (*get_by_alias)(X509_LOOKUP *ctx, int type, const char *str,
-	    int len, X509_OBJECT *ret);
-	} X509_LOOKUP_METHOD;
-
-typedef struct X509_VERIFY_PARAM_ID_st X509_VERIFY_PARAM_ID;
-
-/* This structure hold all parameters associated with a verify operation
- * by including an X509_VERIFY_PARAM structure in related structures the
- * parameters used can be customized
- */
-
-typedef struct X509_VERIFY_PARAM_st
-	{
-	char *name;
-	time_t check_time;	/* Time to use */
-	unsigned long inh_flags; /* Inheritance flags */
-	unsigned long flags;	/* Various verify flags */
-	int purpose;		/* purpose to check untrusted certificates */
-	int trust;		/* trust setting to check */
-	int depth;		/* Verify depth */
-	STACK_OF(ASN1_OBJECT) *policies;	/* Permissible policies */
-	X509_VERIFY_PARAM_ID *id;	/* opaque ID data */
-} X509_VERIFY_PARAM;
-
 DECLARE_STACK_OF(X509_VERIFY_PARAM)
 
-/* This is used to hold everything.  It is used for all certificate
- * validation.  Once we have a certificate chain, the 'verify'
- * function is then called to actually check the cert chain. */
-struct x509_store_st
-	{
-	/* The following is a cache of trusted certs */
-	int cache; 	/* if true, stash any hits */
-	STACK_OF(X509_OBJECT) *objs;	/* Cache of all objects */
+/* unused in OpenSSL */
+typedef struct X509_VERIFY_PARAM_ID_st X509_VERIFY_PARAM_ID;
 
-	/* These are external lookup methods */
-	STACK_OF(X509_LOOKUP) *get_cert_methods;
-
-	X509_VERIFY_PARAM *param;
-
-	/* Callbacks for various operations */
-	int (*verify)(X509_STORE_CTX *ctx);	/* called to verify a certificate */
-	int (*verify_cb)(int ok,X509_STORE_CTX *ctx);	/* error callback */
-	int (*get_issuer)(X509 **issuer, X509_STORE_CTX *ctx, X509 *x);	/* get issuers cert from ctx */
-	int (*check_issued)(X509_STORE_CTX *ctx, X509 *x, X509 *issuer); /* check issued */
-	int (*check_revocation)(X509_STORE_CTX *ctx); /* Check revocation status of chain */
-	int (*get_crl)(X509_STORE_CTX *ctx, X509_CRL **crl, X509 *x); /* retrieve CRL */
-	int (*check_crl)(X509_STORE_CTX *ctx, X509_CRL *crl); /* Check CRL validity */
-	int (*cert_crl)(X509_STORE_CTX *ctx, X509_CRL *crl, X509 *x); /* Check certificate against CRL */
-	STACK_OF(X509) * (*lookup_certs)(X509_STORE_CTX *ctx, X509_NAME *nm);
-	STACK_OF(X509_CRL) * (*lookup_crls)(X509_STORE_CTX *ctx, X509_NAME *nm);
-	int (*cleanup)(X509_STORE_CTX *ctx);
-
-	CRYPTO_EX_DATA ex_data;
-	int references;
-	} /* X509_STORE */;
 
 int X509_STORE_set_depth(X509_STORE *store, int depth);
-
-#define X509_STORE_set_verify_cb_func(ctx,func) ((ctx)->verify_cb=(func))
-#define X509_STORE_set_verify_func(ctx,func)	((ctx)->verify=(func))
-
-/* This is the functions plus an instance of the local variables. */
-struct x509_lookup_st
-	{
-	int init;			/* have we been started */
-	int skip;			/* don't use us. */
-	X509_LOOKUP_METHOD *method;	/* the functions */
-	char *method_data;		/* method data */
-
-	X509_STORE *store_ctx;	/* who owns us */
-	} /* X509_LOOKUP */;
-
-/* This is a used when verifying cert chains.  Since the
- * gathering of the cert chain can take some time (and have to be
- * 'retried', this needs to be kept and passed around. */
-struct x509_store_ctx_st      /* X509_STORE_CTX */
-	{
-	X509_STORE *ctx;
-	int current_method;	/* used when looking up certs */
-
-	/* The following are set by the caller */
-	X509 *cert;		/* The cert to check */
-	STACK_OF(X509) *untrusted;	/* chain of X509s - untrusted - passed in */
-	STACK_OF(X509_CRL) *crls;	/* set of CRLs passed in */
-
-	X509_VERIFY_PARAM *param;
-	void *other_ctx;	/* Other info for use with get_issuer() */
-
-	/* Callbacks for various operations */
-	int (*verify)(X509_STORE_CTX *ctx);	/* called to verify a certificate */
-	int (*verify_cb)(int ok,X509_STORE_CTX *ctx);		/* error callback */
-	int (*get_issuer)(X509 **issuer, X509_STORE_CTX *ctx, X509 *x);	/* get issuers cert from ctx */
-	int (*check_issued)(X509_STORE_CTX *ctx, X509 *x, X509 *issuer); /* check issued */
-	int (*check_revocation)(X509_STORE_CTX *ctx); /* Check revocation status of chain */
-	int (*get_crl)(X509_STORE_CTX *ctx, X509_CRL **crl, X509 *x); /* retrieve CRL */
-	int (*check_crl)(X509_STORE_CTX *ctx, X509_CRL *crl); /* Check CRL validity */
-	int (*cert_crl)(X509_STORE_CTX *ctx, X509_CRL *crl, X509 *x); /* Check certificate against CRL */
-	int (*check_policy)(X509_STORE_CTX *ctx);
-	STACK_OF(X509) * (*lookup_certs)(X509_STORE_CTX *ctx, X509_NAME *nm);
-	STACK_OF(X509_CRL) * (*lookup_crls)(X509_STORE_CTX *ctx, X509_NAME *nm);
-	int (*cleanup)(X509_STORE_CTX *ctx);
-
-	/* The following is built up */
-	int valid;		/* if 0, rebuild chain */
-	int last_untrusted;	/* index of last untrusted cert */
-	STACK_OF(X509) *chain; 		/* chain of X509s - built up and trusted */
-	X509_POLICY_TREE *tree;	/* Valid policy tree */
-
-	int explicit_policy;	/* Require explicit policy value */
-
-	/* When something goes wrong, this is why */
-	int error_depth;
-	int error;
-	X509 *current_cert;
-	X509 *current_issuer;	/* cert currently being tested as valid issuer */
-	X509_CRL *current_crl;	/* current CRL */
-
-	int current_crl_score;  /* score of current CRL */
-	unsigned int current_reasons;  /* Reason mask */
-
-	X509_STORE_CTX *parent; /* For CRL path validation: parent context */
-
-	CRYPTO_EX_DATA ex_data;
-	} /* X509_STORE_CTX */;
 
 void X509_STORE_CTX_set_depth(X509_STORE_CTX *ctx, int depth);
 
@@ -422,21 +265,23 @@ void X509_STORE_CTX_set_depth(X509_STORE_CTX *ctx, int depth);
 				| X509_V_FLAG_INHIBIT_ANY \
 				| X509_V_FLAG_INHIBIT_MAP)
 
-int X509_OBJECT_idx_by_subject(STACK_OF(X509_OBJECT) *h, int type,
+X509_OBJECT *X509_OBJECT_new(void);
+void X509_OBJECT_free(X509_OBJECT *a);
+int X509_OBJECT_idx_by_subject(STACK_OF(X509_OBJECT) *h, X509_LOOKUP_TYPE type,
 	     X509_NAME *name);
-X509_OBJECT *X509_OBJECT_retrieve_by_subject(STACK_OF(X509_OBJECT) *h,int type,X509_NAME *name);
+X509_OBJECT *X509_OBJECT_retrieve_by_subject(STACK_OF(X509_OBJECT) *h,
+    X509_LOOKUP_TYPE type, X509_NAME *name);
 X509_OBJECT *X509_OBJECT_retrieve_match(STACK_OF(X509_OBJECT) *h, X509_OBJECT *x);
 int X509_OBJECT_up_ref_count(X509_OBJECT *a);
-int X509_OBJECT_get_type(const X509_OBJECT *a);
-void X509_OBJECT_free_contents(X509_OBJECT *a);
+X509_LOOKUP_TYPE X509_OBJECT_get_type(const X509_OBJECT *a);
 X509 *X509_OBJECT_get0_X509(const X509_OBJECT *xo);
 X509_CRL *X509_OBJECT_get0_X509_CRL(X509_OBJECT *xo);
 
 X509_STORE *X509_STORE_new(void);
 void X509_STORE_free(X509_STORE *v);
 int X509_STORE_up_ref(X509_STORE *x);
-STACK_OF(X509)* X509_STORE_get1_certs(X509_STORE_CTX *st, X509_NAME *nm);
-STACK_OF(X509_CRL)* X509_STORE_get1_crls(X509_STORE_CTX *st, X509_NAME *nm);
+STACK_OF(X509) *X509_STORE_get1_certs(X509_STORE_CTX *st, X509_NAME *nm);
+STACK_OF(X509_CRL) *X509_STORE_get1_crls(X509_STORE_CTX *st, X509_NAME *nm);
 STACK_OF(X509_OBJECT) *X509_STORE_get0_objects(X509_STORE *xs);
 void *X509_STORE_get_ex_data(X509_STORE *xs, int idx);
 int X509_STORE_set_ex_data(X509_STORE *xs, int idx, void *data);
@@ -451,8 +296,14 @@ int X509_STORE_set_trust(X509_STORE *ctx, int trust);
 int X509_STORE_set1_param(X509_STORE *ctx, X509_VERIFY_PARAM *pm);
 X509_VERIFY_PARAM *X509_STORE_get0_param(X509_STORE *ctx);
 
+typedef int (*X509_STORE_CTX_verify_cb)(int, X509_STORE_CTX *);
+
+X509_STORE_CTX_verify_cb X509_STORE_get_verify_cb(X509_STORE *);
+
 void X509_STORE_set_verify_cb(X509_STORE *ctx,
-				  int (*verify_cb)(int, X509_STORE_CTX *));
+    int (*verify_cb)(int, X509_STORE_CTX *));
+#define X509_STORE_set_verify_cb_func(ctx, func) \
+    X509_STORE_set_verify_cb((ctx), (func))
 
 X509_STORE_CTX *X509_STORE_CTX_new(void);
 
@@ -479,8 +330,11 @@ X509_LOOKUP_METHOD *X509_LOOKUP_mem(void);
 int X509_STORE_add_cert(X509_STORE *ctx, X509 *x);
 int X509_STORE_add_crl(X509_STORE *ctx, X509_CRL *x);
 
-int X509_STORE_get_by_subject(X509_STORE_CTX *vs,int type,X509_NAME *name,
-	X509_OBJECT *ret);
+int X509_STORE_CTX_get_by_subject(X509_STORE_CTX *vs, X509_LOOKUP_TYPE type,
+    X509_NAME *name, X509_OBJECT *ret);
+#define X509_STORE_get_by_subject X509_STORE_CTX_get_by_subject
+X509_OBJECT *X509_STORE_CTX_get_obj_by_subject(X509_STORE_CTX *vs,
+    X509_LOOKUP_TYPE type, X509_NAME *name);
 
 int X509_LOOKUP_ctrl(X509_LOOKUP *ctx, int cmd, const char *argc,
 	long argl, char **ret);
@@ -493,17 +347,17 @@ int X509_load_cert_crl_file(X509_LOOKUP *ctx, const char *file, int type);
 X509_LOOKUP *X509_LOOKUP_new(X509_LOOKUP_METHOD *method);
 void X509_LOOKUP_free(X509_LOOKUP *ctx);
 int X509_LOOKUP_init(X509_LOOKUP *ctx);
-int X509_LOOKUP_by_subject(X509_LOOKUP *ctx, int type, X509_NAME *name,
-	X509_OBJECT *ret);
-int X509_LOOKUP_by_issuer_serial(X509_LOOKUP *ctx, int type, X509_NAME *name,
-	ASN1_INTEGER *serial, X509_OBJECT *ret);
-int X509_LOOKUP_by_fingerprint(X509_LOOKUP *ctx, int type,
-	const unsigned char *bytes, int len, X509_OBJECT *ret);
-int X509_LOOKUP_by_alias(X509_LOOKUP *ctx, int type, const char *str,
-	int len, X509_OBJECT *ret);
+int X509_LOOKUP_by_subject(X509_LOOKUP *ctx, X509_LOOKUP_TYPE type,
+    X509_NAME *name, X509_OBJECT *ret);
+int X509_LOOKUP_by_issuer_serial(X509_LOOKUP *ctx, X509_LOOKUP_TYPE type,
+    X509_NAME *name, ASN1_INTEGER *serial, X509_OBJECT *ret);
+int X509_LOOKUP_by_fingerprint(X509_LOOKUP *ctx, X509_LOOKUP_TYPE type,
+    const unsigned char *bytes, int len, X509_OBJECT *ret);
+int X509_LOOKUP_by_alias(X509_LOOKUP *ctx, X509_LOOKUP_TYPE type,
+    const char *str, int len, X509_OBJECT *ret);
 int X509_LOOKUP_shutdown(X509_LOOKUP *ctx);
 
-int	X509_STORE_load_locations (X509_STORE *ctx,
+int	X509_STORE_load_locations(X509_STORE *ctx,
 		const char *file, const char *dir);
 int	X509_STORE_load_mem(X509_STORE *ctx, void *buf, int len);
 int	X509_STORE_set_default_paths(X509_STORE *ctx);
@@ -515,7 +369,9 @@ void *	X509_STORE_CTX_get_ex_data(X509_STORE_CTX *ctx,int idx);
 int	X509_STORE_CTX_get_error(X509_STORE_CTX *ctx);
 void	X509_STORE_CTX_set_error(X509_STORE_CTX *ctx,int s);
 int	X509_STORE_CTX_get_error_depth(X509_STORE_CTX *ctx);
+void	X509_STORE_CTX_set_error_depth(X509_STORE_CTX *ctx, int depth);
 X509 *	X509_STORE_CTX_get_current_cert(X509_STORE_CTX *ctx);
+void	X509_STORE_CTX_set_current_cert(X509_STORE_CTX *ctx, X509 *x);
 X509 *X509_STORE_CTX_get0_current_issuer(X509_STORE_CTX *ctx);
 X509_CRL *X509_STORE_CTX_get0_current_crl(X509_STORE_CTX *ctx);
 X509_STORE_CTX *X509_STORE_CTX_get0_parent_ctx(X509_STORE_CTX *ctx);
@@ -531,11 +387,24 @@ int X509_STORE_CTX_purpose_inherit(X509_STORE_CTX *ctx, int def_purpose,
 void X509_STORE_CTX_set_flags(X509_STORE_CTX *ctx, unsigned long flags);
 void X509_STORE_CTX_set_time(X509_STORE_CTX *ctx, unsigned long flags,
 								time_t t);
+void X509_STORE_CTX_set0_verified_chain(X509_STORE_CTX *ctx, STACK_OF(X509) *sk);
+int (*X509_STORE_CTX_get_verify(X509_STORE_CTX *ctx))(X509_STORE_CTX *);
+void X509_STORE_CTX_set_verify(X509_STORE_CTX *ctx,
+    int (*verify)(X509_STORE_CTX *));
+int (*X509_STORE_CTX_get_verify_cb(X509_STORE_CTX *ctx))(int, X509_STORE_CTX *);
 void X509_STORE_CTX_set_verify_cb(X509_STORE_CTX *ctx,
 				  int (*verify_cb)(int, X509_STORE_CTX *));
- 
+
+typedef int (*X509_STORE_CTX_verify_fn)(X509_STORE_CTX *);
+
+void X509_STORE_set_verify(X509_STORE *ctx, X509_STORE_CTX_verify_fn verify);
+X509_STORE_CTX_verify_fn X509_STORE_get_verify(X509_STORE *ctx);
+#define X509_STORE_set_verify_func(ctx, func) \
+    X509_STORE_set_verify((ctx), (func))
+
 X509_POLICY_TREE *X509_STORE_CTX_get0_policy_tree(X509_STORE_CTX *ctx);
 int X509_STORE_CTX_get_explicit_policy(X509_STORE_CTX *ctx);
+int X509_STORE_CTX_get_num_untrusted(X509_STORE_CTX *ctx);
 
 X509_VERIFY_PARAM *X509_STORE_CTX_get0_param(X509_STORE_CTX *ctx);
 void X509_STORE_CTX_set0_param(X509_STORE_CTX *ctx, X509_VERIFY_PARAM *param);
@@ -547,7 +416,7 @@ X509_VERIFY_PARAM *X509_VERIFY_PARAM_new(void);
 void X509_VERIFY_PARAM_free(X509_VERIFY_PARAM *param);
 int X509_VERIFY_PARAM_inherit(X509_VERIFY_PARAM *to,
 						const X509_VERIFY_PARAM *from);
-int X509_VERIFY_PARAM_set1(X509_VERIFY_PARAM *to, 
+int X509_VERIFY_PARAM_set1(X509_VERIFY_PARAM *to,
 						const X509_VERIFY_PARAM *from);
 int X509_VERIFY_PARAM_set1_name(X509_VERIFY_PARAM *param, const char *name);
 int X509_VERIFY_PARAM_set_flags(X509_VERIFY_PARAM *param, unsigned long flags);
@@ -560,7 +429,7 @@ void X509_VERIFY_PARAM_set_depth(X509_VERIFY_PARAM *param, int depth);
 void X509_VERIFY_PARAM_set_time(X509_VERIFY_PARAM *param, time_t t);
 int X509_VERIFY_PARAM_add0_policy(X509_VERIFY_PARAM *param,
 						ASN1_OBJECT *policy);
-int X509_VERIFY_PARAM_set1_policies(X509_VERIFY_PARAM *param, 
+int X509_VERIFY_PARAM_set1_policies(X509_VERIFY_PARAM *param,
 					STACK_OF(ASN1_OBJECT) *policies);
 int X509_VERIFY_PARAM_get_depth(const X509_VERIFY_PARAM *param);
 int X509_VERIFY_PARAM_set1_host(X509_VERIFY_PARAM *param, const char *name,

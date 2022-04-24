@@ -402,10 +402,6 @@ void ARM_Dynarmic_64::LoadContext(const ThreadContext64& ctx) {
     SetTPIDR_EL0(ctx.tpidr);
 }
 
-void ARM_Dynarmic_64::PrepareReschedule() {
-    jit.load()->HaltExecution(break_loop);
-}
-
 void ARM_Dynarmic_64::SignalInterrupt() {
     jit.load()->HaltExecution(break_loop);
 }

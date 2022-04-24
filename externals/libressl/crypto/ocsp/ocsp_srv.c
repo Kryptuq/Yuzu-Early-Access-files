@@ -1,4 +1,4 @@
-/* $OpenBSD: ocsp_srv.c,v 1.10 2017/01/29 17:49:23 beck Exp $ */
+/* $OpenBSD: ocsp_srv.c,v 1.12 2022/01/07 09:45:52 tb Exp $ */
 /* Written by Dr Stephen N Henson (steve@openssl.org) for the OpenSSL
  * project 2001.
  */
@@ -64,6 +64,8 @@
 #include <openssl/pem.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
+
+#include "ocsp_local.h"
 
 /* Utility functions related to sending OCSP responses and extracting
  * relevant information from the request.
@@ -213,7 +215,7 @@ OCSP_basic_add1_cert(OCSP_BASICRESP *resp, X509 *cert)
 
 	if (!sk_X509_push(resp->certs, cert))
 		return 0;
-	CRYPTO_add(&cert->references, 1, CRYPTO_LOCK_X509);
+	X509_up_ref(cert);
 	return 1;
 }
 

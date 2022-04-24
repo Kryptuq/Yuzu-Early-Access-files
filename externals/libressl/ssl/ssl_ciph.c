@@ -1,4 +1,4 @@
-/* $OpenBSD: ssl_ciph.c,v 1.119 2020/09/13 16:49:05 jsing Exp $ */
+/* $OpenBSD: ssl_ciph.c,v 1.127 2022/03/05 07:13:48 bket Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -143,6 +143,7 @@
 #include <stdio.h>
 
 #include <openssl/objects.h>
+#include <openssl/opensslconf.h>
 
 #ifndef OPENSSL_NO_ENGINE
 #include <openssl/engine.h>
@@ -447,7 +448,7 @@ ssl_cipher_get_evp(const SSL_SESSION *ss, const EVP_CIPHER **enc,
 
 	/*
 	 * This function does not handle EVP_AEAD.
-	 * See ssl_cipher_get_aead_evp instead.
+	 * See ssl_cipher_get_evp_aead instead.
 	 */
 	if (ss->cipher->algorithm_mac & SSL_AEAD)
 		return 0;
@@ -559,9 +560,21 @@ ssl_cipher_get_evp_aead(const SSL_SESSION *ss, const EVP_AEAD **aead)
 int
 ssl_get_handshake_evp_md(SSL *s, const EVP_MD **md)
 {
+	unsigned long handshake_mac;
+
 	*md = NULL;
 
-	switch (ssl_get_algorithm2(s) & SSL_HANDSHAKE_MAC_MASK) {
+	if (s->s3->hs.cipher == NULL)
+		return 0;
+
+	handshake_mac = s->s3->hs.cipher->algorithm2 &
+	    SSL_HANDSHAKE_MAC_MASK;
+
+	/* For TLSv1.2 we upgrade the default MD5+SHA1 MAC to SHA256. */
+	if (SSL_USE_SHA256_PRF(s) && handshake_mac == SSL_HANDSHAKE_MAC_DEFAULT)
+		handshake_mac = SSL_HANDSHAKE_MAC_SHA256;
+
+	switch (handshake_mac) {
 	case SSL_HANDSHAKE_MAC_DEFAULT:
 		*md = EVP_md5_sha1();
 		return 1;
@@ -668,7 +681,10 @@ ssl_cipher_collect_ciphers(const SSL_METHOD *ssl_method, int num_of_ciphers,
 	co_list_num = 0;	/* actual count of ciphers */
 	for (i = 0; i < num_of_ciphers; i++) {
 		c = ssl_method->get_cipher(i);
-		/* drop those that use any of that is not available */
+		/*
+		 * Drop any invalid ciphers and any which use unavailable
+		 * algorithms.
+		 */
 		if ((c != NULL) && c->valid &&
 		    !(c->algorithm_mkey & disabled_mkey) &&
 		    !(c->algorithm_auth & disabled_auth) &&
@@ -1215,7 +1231,7 @@ ssl_create_cipher_list(const SSL_METHOD *ssl_method,
 	 * in ciphers. We cannot get more than the number compiled in, so
 	 * it is used for allocation.
 	 */
-	num_of_ciphers = ssl_method->num_ciphers();
+	num_of_ciphers = ssl3_num_ciphers();
 	co_list = reallocarray(NULL, num_of_ciphers, sizeof(CIPHER_ORDER));
 	if (co_list == NULL) {
 		SSLerrorx(ERR_R_MALLOC_FAILURE);
@@ -1585,6 +1601,20 @@ uint16_t
 SSL_CIPHER_get_value(const SSL_CIPHER *c)
 {
 	return ssl3_cipher_get_value(c);
+}
+
+const SSL_CIPHER *
+SSL_CIPHER_find(SSL *ssl, const unsigned char *ptr)
+{
+	uint16_t cipher_value;
+	CBS cbs;
+
+	/* This API is documented with ptr being an array of length two. */
+	CBS_init(&cbs, ptr, 2);
+	if (!CBS_get_u16(&cbs, &cipher_value))
+		return NULL;
+
+	return ssl3_get_cipher_by_value(cipher_value);
 }
 
 int

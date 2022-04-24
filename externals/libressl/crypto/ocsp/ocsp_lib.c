@@ -1,4 +1,4 @@
-/* $OpenBSD: ocsp_lib.c,v 1.23 2018/08/24 20:03:21 tb Exp $ */
+/* $OpenBSD: ocsp_lib.c,v 1.25 2022/01/22 00:31:23 inoguchi Exp $ */
 /* Written by Tom Titchener <Tom_Titchener@groove.net> for the OpenSSL
  * project. */
 
@@ -74,6 +74,8 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
+#include "ocsp_local.h"
+
 /* Convert a certificate and its issuer to an OCSP_CERTID */
 
 OCSP_CERTID *
@@ -94,7 +96,9 @@ OCSP_cert_to_id(const EVP_MD *dgst, const X509 *subject, const X509 *issuer)
 		iname = X509_get_subject_name(issuer);
 		serial = NULL;
 	}
-	ikey = X509_get0_pubkey_bitstr(issuer);
+	if ((ikey = X509_get0_pubkey_bitstr(issuer)) == NULL)
+		return NULL;
+
 	return OCSP_cert_id_new(dgst, iname, ikey, serial);
 }
 

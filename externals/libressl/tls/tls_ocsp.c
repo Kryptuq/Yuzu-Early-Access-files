@@ -1,4 +1,4 @@
-/*	$OpenBSD: tls_ocsp.c,v 1.19 2019/12/03 14:56:42 tb Exp $ */
+/*	$OpenBSD: tls_ocsp.c,v 1.22 2021/10/31 16:39:32 tb Exp $ */
 /*
  * Copyright (c) 2015 Marko Kreen <markokr@gmail.com>
  * Copyright (c) 2016 Bob Beck <beck@openbsd.org>
@@ -128,30 +128,38 @@ tls_ocsp_get_certid(X509 *main_cert, STACK_OF(X509) *extra_certs,
 {
 	X509_NAME *issuer_name;
 	X509 *issuer;
-	X509_STORE_CTX storectx;
-	X509_OBJECT tmpobj;
+	X509_STORE_CTX *storectx = NULL;
+	X509_OBJECT *obj = NULL;
 	OCSP_CERTID *cid = NULL;
 	X509_STORE *store;
 
 	if ((issuer_name = X509_get_issuer_name(main_cert)) == NULL)
-		return NULL;
+		goto out;
 
 	if (extra_certs != NULL) {
 		issuer = X509_find_by_subject(extra_certs, issuer_name);
-		if (issuer != NULL)
-			return OCSP_cert_to_id(NULL, main_cert, issuer);
+		if (issuer != NULL) {
+			cid = OCSP_cert_to_id(NULL, main_cert, issuer);
+			goto out;
+		}
 	}
 
 	if ((store = SSL_CTX_get_cert_store(ssl_ctx)) == NULL)
-		return NULL;
-	if (X509_STORE_CTX_init(&storectx, store, main_cert, extra_certs) != 1)
-		return NULL;
-	if (X509_STORE_get_by_subject(&storectx, X509_LU_X509, issuer_name,
-		&tmpobj) == 1) {
-		cid = OCSP_cert_to_id(NULL, main_cert, tmpobj.data.x509);
-		X509_OBJECT_free_contents(&tmpobj);
-	}
-	X509_STORE_CTX_cleanup(&storectx);
+		goto out;
+	if ((storectx = X509_STORE_CTX_new()) == NULL)
+		goto out;
+	if (X509_STORE_CTX_init(storectx, store, main_cert, extra_certs) != 1)
+		goto out;
+	if ((obj = X509_STORE_CTX_get_obj_by_subject(storectx, X509_LU_X509,
+	    issuer_name)) == NULL)
+		goto out;
+
+	cid = OCSP_cert_to_id(NULL, main_cert, X509_OBJECT_get0_X509(obj));
+
+ out:
+	X509_STORE_CTX_free(storectx);
+	X509_OBJECT_free(obj);
+
 	return cid;
 }
 
@@ -218,7 +226,7 @@ tls_ocsp_verify_response(struct tls *ctx, OCSP_RESPONSE *resp)
 	/* now verify */
 	if (OCSP_basic_verify(br, ctx->ocsp->extra_certs,
 		SSL_CTX_get_cert_store(ctx->ssl_ctx), flags) != 1) {
-		tls_set_error(ctx, "ocsp verify failed");
+		tls_set_errorx(ctx, "ocsp verify failed");
 		goto err;
 	}
 

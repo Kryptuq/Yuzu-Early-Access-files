@@ -505,10 +505,6 @@ bool System::IsPoweredOn() const {
     return impl->is_powered_on.load(std::memory_order::relaxed);
 }
 
-void System::PrepareReschedule() {
-    // Deprecated, does nothing, kept for backward compatibility.
-}
-
 void System::PrepareReschedule(const u32 core_index) {
     impl->kernel.PrepareReschedule(core_index);
 }

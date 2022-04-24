@@ -1,4 +1,4 @@
-/* $OpenBSD: x509_alt.c,v 1.1 2020/06/04 15:19:31 jsing Exp $ */
+/* $OpenBSD: x509_alt.c,v 1.12 2022/03/26 16:34:21 tb Exp $ */
 /* Written by Dr Stephen N Henson (steve@openssl.org) for the OpenSSL
  * project.
  */
@@ -62,6 +62,8 @@
 #include <openssl/conf.h>
 #include <openssl/err.h>
 #include <openssl/x509v3.h>
+
+#include "x509_internal.h"
 
 static GENERAL_NAMES *v2i_subject_alt(X509V3_EXT_METHOD *method,
     X509V3_CTX *ctx, STACK_OF(CONF_VALUE) *nval);
@@ -264,15 +266,18 @@ GENERAL_NAME_print(BIO *out, GENERAL_NAME *gen)
 		break;
 
 	case GEN_EMAIL:
-		BIO_printf(out, "email:%s", gen->d.ia5->data);
+		BIO_printf(out, "email:%.*s", gen->d.ia5->length,
+		    gen->d.ia5->data);
 		break;
 
 	case GEN_DNS:
-		BIO_printf(out, "DNS:%s", gen->d.ia5->data);
+		BIO_printf(out, "DNS:%.*s", gen->d.ia5->length,
+		    gen->d.ia5->data);
 		break;
 
 	case GEN_URI:
-		BIO_printf(out, "URI:%s", gen->d.ia5->data);
+		BIO_printf(out, "URI:%.*s", gen->d.ia5->length,
+		    gen->d.ia5->data);
 		break;
 
 	case GEN_DIRNAME:
@@ -609,8 +614,11 @@ GENERAL_NAME *
 v2i_GENERAL_NAME_ex(GENERAL_NAME *out, const X509V3_EXT_METHOD *method,
     X509V3_CTX *ctx, CONF_VALUE *cnf, int is_nc)
 {
-	int type;
+	uint8_t *bytes = NULL;
 	char *name, *value;
+	GENERAL_NAME *ret;
+	size_t len = 0;
+	int type;
 
 	name = cnf->name;
 	value = cnf->value;
@@ -640,7 +648,67 @@ v2i_GENERAL_NAME_ex(GENERAL_NAME *out, const X509V3_EXT_METHOD *method,
 		return NULL;
 	}
 
-	return a2i_GENERAL_NAME(out, method, ctx, type, value, is_nc);
+	ret = a2i_GENERAL_NAME(out, method, ctx, type, value, is_nc);
+	if (ret == NULL)
+		return NULL;
+
+	/*
+	 * Validate what we have for sanity.
+	 */
+
+	if (is_nc) {
+		struct x509_constraints_name *constraints_name = NULL;
+
+		if (!x509_constraints_validate(ret, &constraints_name, NULL)) {
+			X509V3error(X509V3_R_BAD_OBJECT);
+			ERR_asprintf_error_data("name=%s", name);
+			goto err;
+		}
+		x509_constraints_name_free(constraints_name);
+		return ret;
+	}
+
+	type = x509_constraints_general_to_bytes(ret, &bytes, &len);
+	switch (type) {
+	case GEN_DNS:
+		if (!x509_constraints_valid_sandns(bytes, len)) {
+			X509V3error(X509V3_R_BAD_OBJECT);
+			ERR_asprintf_error_data("name=%s value='%.*s'", name,
+			    (int)len, bytes);
+			goto err;
+		}
+		break;
+	case GEN_URI:
+		if (!x509_constraints_uri_host(bytes, len, NULL)) {
+			X509V3error(X509V3_R_BAD_OBJECT);
+			ERR_asprintf_error_data("name=%s value='%.*s'", name,
+			    (int)len, bytes);
+			goto err;
+		}
+		break;
+	case GEN_EMAIL:
+		if (!x509_constraints_parse_mailbox(bytes, len, NULL)) {
+			X509V3error(X509V3_R_BAD_OBJECT);
+			ERR_asprintf_error_data("name=%s value='%.*s'", name,
+			    (int)len, bytes);
+			goto err;
+		}
+		break;
+	case GEN_IPADD:
+		if (len != 4 && len != 16) {
+			X509V3error(X509V3_R_BAD_IP_ADDRESS);
+			ERR_asprintf_error_data("name=%s len=%zu", name, len);
+			goto err;
+		}
+		break;
+	default:
+		break;
+	}
+	return ret;
+ err:
+	if (out == NULL)
+		GENERAL_NAME_free(ret);
+	return NULL;
 }
 
 static int

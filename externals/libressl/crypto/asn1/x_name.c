@@ -1,4 +1,4 @@
-/* $OpenBSD: x_name.c,v 1.34 2018/02/20 17:09:20 jsing Exp $ */
+/* $OpenBSD: x_name.c,v 1.37 2021/12/25 13:17:48 jsing Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -65,6 +65,7 @@
 #include <openssl/x509.h>
 
 #include "asn1_locl.h"
+#include "x509_lcl.h"
 
 typedef STACK_OF(X509_NAME_ENTRY) STACK_OF_X509_NAME_ENTRY;
 DECLARE_STACK_OF(STACK_OF_X509_NAME_ENTRY)
@@ -256,7 +257,7 @@ x509_name_ex_new(ASN1_VALUE **val, const ASN1_ITEM *it)
 	*val = (ASN1_VALUE *)ret;
 	return 1;
 
-memerr:
+ memerr:
 	ASN1error(ERR_R_MALLOC_FAILURE);
 	if (ret) {
 		if (ret->entries)
@@ -336,7 +337,7 @@ x509_name_ex_d2i(ASN1_VALUE **val, const unsigned char **in, long len,
 	*in = p;
 	return ret;
 
-err:
+ err:
 	if (nm.x != NULL)
 		X509_NAME_free(nm.x);
 	ASN1error(ERR_R_NESTED_ASN1_ERROR);
@@ -421,7 +422,7 @@ x509_name_encode(X509_NAME *a)
 	a->modified = 0;
 	return len;
 
-memerr:
+ memerr:
 	sk_STACK_OF_X509_NAME_ENTRY_pop_free(intname.s,
 	    local_sk_X509_NAME_ENTRY_free);
 	ASN1error(ERR_R_MALLOC_FAILURE);
@@ -511,7 +512,7 @@ x509_name_canon(X509_NAME *a)
 	i2d_name_canon(intname, &p);
 	ret = 1;
 
-err:
+ err:
 	if (tmpentry)
 		X509_NAME_ENTRY_free(tmpentry);
 	if (intname)
@@ -626,19 +627,13 @@ i2d_name_canon(STACK_OF(STACK_OF_X509_NAME_ENTRY) *_intname, unsigned char **in)
 int
 X509_NAME_set(X509_NAME **xn, X509_NAME *name)
 {
-	X509_NAME *in;
-
-	if (!xn || !name)
-		return (0);
-
-	if (*xn != name) {
-		in = X509_NAME_dup(name);
-		if (in != NULL) {
-			X509_NAME_free(*xn);
-			*xn = in;
-		}
-	}
-	return (*xn != NULL);
+	if (*xn == name)
+		return *xn != NULL;
+	if ((name = X509_NAME_dup(name)) == NULL)
+		return 0;
+	X509_NAME_free(*xn);
+	*xn = name;
+	return 1;
 }
 
 int

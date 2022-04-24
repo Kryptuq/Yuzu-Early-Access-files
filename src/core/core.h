@@ -194,9 +194,6 @@ public:
     [[nodiscard]] const Core::TelemetrySession& TelemetrySession() const;
 
     /// Prepare the core emulation for a reschedule
-    void PrepareReschedule();
-
-    /// Prepare the core emulation for a reschedule
     void PrepareReschedule(u32 core_index);
 
     /// Gets and resets core performance statistics

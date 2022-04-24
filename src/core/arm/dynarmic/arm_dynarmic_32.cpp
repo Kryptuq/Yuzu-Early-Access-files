@@ -334,10 +334,6 @@ void ARM_Dynarmic_32::LoadContext(const ThreadContext32& ctx) {
     jit.load()->LoadContext(context);
 }
 
-void ARM_Dynarmic_32::PrepareReschedule() {
-    jit.load()->HaltExecution(break_loop);
-}
-
 void ARM_Dynarmic_32::SignalInterrupt() {
     jit.load()->HaltExecution(break_loop);
 }

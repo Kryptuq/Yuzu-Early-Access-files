@@ -64,8 +64,8 @@ bool Controller_NPad::IsDeviceHandleValid(const Core::HID::SixAxisSensorHandle& 
 Controller_NPad::Controller_NPad(Core::HID::HIDCore& hid_core_, u8* raw_shared_memory_,
                                  KernelHelpers::ServiceContext& service_context_)
     : ControllerBase{hid_core_}, service_context{service_context_} {
+    static_assert(NPAD_OFFSET + (NPAD_COUNT * sizeof(NpadInternalState)) < shared_memory_size);
     for (std::size_t i = 0; i < controller_data.size(); ++i) {
-        assert(NPAD_OFFSET + ((i + 1) * sizeof(NpadInternalState)) < shared_memory_size);
         auto& controller = controller_data[i];
         controller.shared_memory = std::construct_at(reinterpret_cast<NpadInternalState*>(
             raw_shared_memory_ + NPAD_OFFSET + (i * sizeof(NpadInternalState))));

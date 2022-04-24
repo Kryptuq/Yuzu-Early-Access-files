@@ -1,4 +1,4 @@
-/* $OpenBSD: bio_ssl.c,v 1.29 2018/08/24 20:30:21 tb Exp $ */
+/* $OpenBSD: bio_ssl.c,v 1.33 2022/01/14 09:12:53 tb Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -66,6 +66,7 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 
+#include "bio_local.h"
 #include "ssl_locl.h"
 
 static int ssl_write(BIO *h, const char *buf, int num);
@@ -74,7 +75,7 @@ static int ssl_puts(BIO *h, const char *str);
 static long ssl_ctrl(BIO *h, int cmd, long arg1, void *arg2);
 static int ssl_new(BIO *h);
 static int ssl_free(BIO *data);
-static long ssl_callback_ctrl(BIO *h, int cmd, bio_info_cb *fp);
+static long ssl_callback_ctrl(BIO *h, int cmd, BIO_info_cb *fp);
 typedef struct bio_ssl_st {
 	SSL *ssl; /* The ssl handle :-) */
 	/* re-negotiate every time the total number of bytes is this size */
@@ -294,10 +295,10 @@ ssl_ctrl(BIO *b, int cmd, long num, void *ptr)
 		SSL_shutdown(ssl);
 
 		if (ssl->internal->handshake_func ==
-		    ssl->method->internal->ssl_connect)
+		    ssl->method->ssl_connect)
 			SSL_set_connect_state(ssl);
 		else if (ssl->internal->handshake_func ==
-		    ssl->method->internal->ssl_accept)
+		    ssl->method->ssl_accept)
 			SSL_set_accept_state(ssl);
 
 		SSL_clear(ssl);
@@ -462,7 +463,7 @@ ssl_ctrl(BIO *b, int cmd, long num, void *ptr)
 }
 
 static long
-ssl_callback_ctrl(BIO *b, int cmd, bio_info_cb *fp)
+ssl_callback_ctrl(BIO *b, int cmd, BIO_info_cb *fp)
 {
 	SSL *ssl;
 	BIO_SSL *bs;
@@ -509,7 +510,7 @@ BIO_new_buffer_ssl_connect(SSL_CTX *ctx)
 		goto err;
 	return (ret);
 
-err:
+ err:
 	BIO_free(buf);
 	BIO_free(ssl);
 	return (NULL);
@@ -528,7 +529,7 @@ BIO_new_ssl_connect(SSL_CTX *ctx)
 		goto err;
 	return (ret);
 
-err:
+ err:
 	BIO_free(con);
 	BIO_free(ssl);
 	return (NULL);
@@ -553,7 +554,7 @@ BIO_new_ssl(SSL_CTX *ctx, int client)
 	BIO_set_ssl(ret, ssl, BIO_CLOSE);
 	return (ret);
 
-err:
+ err:
 	BIO_free(ret);
 	return (NULL);
 }

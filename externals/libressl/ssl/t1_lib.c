@@ -1,4 +1,4 @@
-/* $OpenBSD: t1_lib.c,v 1.176 2020/09/12 17:25:11 tb Exp $ */
+/* $OpenBSD: t1_lib.c,v 1.186 2022/01/24 13:47:53 tb Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -116,34 +116,20 @@
 #include <openssl/objects.h>
 #include <openssl/ocsp.h>
 
-#include "ssl_locl.h"
-
 #include "bytestring.h"
+#include "ssl_locl.h"
 #include "ssl_sigalgs.h"
 #include "ssl_tlsext.h"
 
 static int tls_decrypt_ticket(SSL *s, CBS *ticket, int *alert,
     SSL_SESSION **psess);
 
-SSL3_ENC_METHOD TLSv1_enc_data = {
-	.enc_flags = 0,
-};
-
-SSL3_ENC_METHOD TLSv1_1_enc_data = {
-	.enc_flags = SSL_ENC_FLAG_EXPLICIT_IV,
-};
-
-SSL3_ENC_METHOD TLSv1_2_enc_data = {
-	.enc_flags = SSL_ENC_FLAG_EXPLICIT_IV|SSL_ENC_FLAG_SIGALGS|
-	    SSL_ENC_FLAG_SHA256_PRF|SSL_ENC_FLAG_TLS1_2_CIPHERS,
-};
-
 int
 tls1_new(SSL *s)
 {
 	if (!ssl3_new(s))
 		return (0);
-	s->method->internal->ssl_clear(s);
+	s->method->ssl_clear(s);
 	return (1);
 }
 
@@ -161,10 +147,10 @@ void
 tls1_clear(SSL *s)
 {
 	ssl3_clear(s);
-	s->version = s->method->internal->version;
+	s->version = s->method->version;
 }
 
-static int nid_list[] = {
+static const int nid_list[] = {
 	NID_sect163k1,		/* sect163k1 (1) */
 	NID_sect163r1,		/* sect163r1 (2) */
 	NID_sect163r2,		/* sect163r2 (3) */
@@ -343,8 +329,8 @@ tls1_get_formatlist(SSL *s, int client_formats, const uint8_t **pformats,
     size_t *pformatslen)
 {
 	if (client_formats != 0) {
-		*pformats = SSI(s)->tlsext_ecpointformatlist;
-		*pformatslen = SSI(s)->tlsext_ecpointformatlist_length;
+		*pformats = s->session->tlsext_ecpointformatlist;
+		*pformatslen = s->session->tlsext_ecpointformatlist_length;
 		return;
 	}
 
@@ -366,8 +352,8 @@ tls1_get_group_list(SSL *s, int client_groups, const uint16_t **pgroups,
     size_t *pgroupslen)
 {
 	if (client_groups != 0) {
-		*pgroups = SSI(s)->tlsext_supportedgroups;
-		*pgroupslen = SSI(s)->tlsext_supportedgroups_length;
+		*pgroups = s->session->tlsext_supportedgroups;
+		*pgroupslen = s->session->tlsext_supportedgroups_length;
 		return;
 	}
 
@@ -583,19 +569,19 @@ tls1_check_ec_key(SSL *s, const uint16_t *curve_id, const uint8_t *comp_id)
 int
 tls1_check_ec_server_key(SSL *s)
 {
-	CERT_PKEY *cpk = s->cert->pkeys + SSL_PKEY_ECC;
+	SSL_CERT_PKEY *cpk = s->cert->pkeys + SSL_PKEY_ECC;
 	uint16_t curve_id;
 	uint8_t comp_id;
+	EC_KEY *eckey;
 	EVP_PKEY *pkey;
-	int rv;
 
 	if (cpk->x509 == NULL || cpk->privatekey == NULL)
 		return (0);
-	if ((pkey = X509_get_pubkey(cpk->x509)) == NULL)
+	if ((pkey = X509_get0_pubkey(cpk->x509)) == NULL)
 		return (0);
-	rv = tls1_set_ec_id(&curve_id, &comp_id, pkey->pkey.ec);
-	EVP_PKEY_free(pkey);
-	if (rv != 1)
+	if ((eckey = EVP_PKEY_get0_EC_KEY(pkey)) == NULL)
+		return (0);
+	if (!tls1_set_ec_id(&curve_id, &comp_id, eckey))
 		return (0);
 
 	return tls1_check_ec_key(s, &curve_id, &comp_id);
@@ -648,7 +634,7 @@ ssl_check_clienthello_tlsext_late(SSL *s)
 	if ((s->tlsext_status_type != -1) &&
 	    s->ctx && s->ctx->internal->tlsext_status_cb) {
 		int r;
-		CERT_PKEY *certpkey;
+		SSL_CERT_PKEY *certpkey;
 		certpkey = ssl_get_server_send_pkey(s);
 		/* If no certificate can't return certificate status */
 		if (certpkey == NULL) {
@@ -682,7 +668,7 @@ ssl_check_clienthello_tlsext_late(SSL *s)
 	} else
 		s->internal->tlsext_status_expected = 0;
 
-err:
+ err:
 	switch (ret) {
 	case SSL_TLSEXT_ERR_ALERT_FATAL:
 		ssl3_send_alert(s, SSL3_AL_FATAL, al);

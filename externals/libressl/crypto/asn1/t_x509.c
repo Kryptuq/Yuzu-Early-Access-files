@@ -1,4 +1,4 @@
-/* $OpenBSD: t_x509.c,v 1.32 2020/04/10 07:05:24 tb Exp $ */
+/* $OpenBSD: t_x509.c,v 1.37 2021/12/25 13:17:48 jsing Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -78,6 +78,7 @@
 #endif
 
 #include "asn1_locl.h"
+#include "x509_lcl.h"
 
 int
 X509_print_fp(FILE *fp, X509 *x)
@@ -180,7 +181,7 @@ X509_print_ex(BIO *bp, X509 *x, unsigned long nmflags, unsigned long cflag)
 		if (BIO_printf(bp, "        Issuer:%c", mlch) <= 0)
 			goto err;
 		if (X509_NAME_print_ex(bp, X509_get_issuer_name(x),
-		    nmindent, nmflags) < 0)
+		    nmindent, nmflags) < (nmflags == X509_FLAG_COMPAT ? 1 : 0))
 			goto err;
 		if (BIO_write(bp, "\n", 1) <= 0)
 			goto err;
@@ -203,7 +204,7 @@ X509_print_ex(BIO *bp, X509 *x, unsigned long nmflags, unsigned long cflag)
 		if (BIO_printf(bp, "        Subject:%c", mlch) <= 0)
 			goto err;
 		if (X509_NAME_print_ex(bp, X509_get_subject_name(x),
-		    nmindent, nmflags) < 0)
+		    nmindent, nmflags) < (nmflags == X509_FLAG_COMPAT ? 1 : 0))
 			goto err;
 		if (BIO_write(bp, "\n", 1) <= 0)
 			goto err;
@@ -243,7 +244,7 @@ X509_print_ex(BIO *bp, X509 *x, unsigned long nmflags, unsigned long cflag)
 	}
 	ret = 1;
 
-err:
+ err:
 	free(m);
 	return (ret);
 }
@@ -261,10 +262,12 @@ X509_ocspid_print(BIO *bp, X509 *x)
 	   in OCSP requests */
 	if (BIO_printf(bp, "        Subject OCSP hash: ") <= 0)
 		goto err;
-	derlen = i2d_X509_NAME(x->cert_info->subject, NULL);
+	if ((derlen = i2d_X509_NAME(x->cert_info->subject, NULL)) <= 0)
+		goto err;
 	if ((der = dertmp = malloc(derlen)) == NULL)
 		goto err;
-	i2d_X509_NAME(x->cert_info->subject, &dertmp);
+	if (i2d_X509_NAME(x->cert_info->subject, &dertmp) <= 0)
+		goto err;
 
 	if (!EVP_Digest(der, derlen, SHA1md, NULL, EVP_sha1(), NULL))
 		goto err;
@@ -292,7 +295,7 @@ X509_ocspid_print(BIO *bp, X509 *x)
 
 	return (1);
 
-err:
+ err:
 	free(der);
 	return (0);
 }
@@ -346,36 +349,6 @@ X509_signature_print(BIO *bp, const X509_ALGOR *sigalg, const ASN1_STRING *sig)
 	else if (BIO_puts(bp, "\n") <= 0)
 		return 0;
 	return 1;
-}
-
-int
-ASN1_STRING_print(BIO *bp, const ASN1_STRING *v)
-{
-	int i, n;
-	char buf[80];
-	const char *p;
-
-	if (v == NULL)
-		return (0);
-	n = 0;
-	p = (const char *)v->data;
-	for (i = 0; i < v->length; i++) {
-		if ((p[i] > '~') || ((p[i] < ' ') &&
-		    (p[i] != '\n') && (p[i] != '\r')))
-			buf[n] = '.';
-		else
-			buf[n] = p[i];
-		n++;
-		if (n >= 80) {
-			if (BIO_write(bp, buf, n) <= 0)
-				return (0);
-			n = 0;
-		}
-	}
-	if (n > 0)
-		if (BIO_write(bp, buf, n) <= 0)
-			return (0);
-	return (1);
 }
 
 int
@@ -443,7 +416,7 @@ ASN1_GENERALIZEDTIME_print(BIO *bp, const ASN1_GENERALIZEDTIME *tm)
 	else
 		return (1);
 
-err:
+ err:
 	BIO_write(bp, "Bad time value", 14);
 	return (0);
 }
@@ -486,7 +459,7 @@ ASN1_UTCTIME_print(BIO *bp, const ASN1_UTCTIME *tm)
 	else
 		return (1);
 
-err:
+ err:
 	BIO_write(bp, "Bad time value", 14);
 	return (0);
 }
@@ -532,7 +505,7 @@ X509_NAME_print(BIO *bp, const X509_NAME *name, int obase)
 
 	ret = 1;
 	if (0) {
-err:
+ err:
 		X509error(ERR_R_BUF_LIB);
 	}
 	free(b);

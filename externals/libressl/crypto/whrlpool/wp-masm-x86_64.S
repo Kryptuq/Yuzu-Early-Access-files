@@ -1,7 +1,7 @@
 ; 1 "crypto/whrlpool/wp-masm-x86_64.S.tmp"
 ; 1 "<built-in>" 1
 ; 1 "<built-in>" 3
-; 340 "<built-in>" 3
+; 343 "<built-in>" 3
 ; 1 "<command line>" 1
 ; 1 "<built-in>" 2
 ; 1 "crypto/whrlpool/wp-masm-x86_64.S.tmp" 2

@@ -187,6 +187,8 @@ public:
     static bool IsDeviceHandleValid(const Core::HID::VibrationDeviceHandle& device_handle);
 
 private:
+    static constexpr std::size_t NPAD_COUNT = 10;
+
     // This is nn::hid::detail::ColorAttribute
     enum class ColorAttribute : u32 {
         Ok = 0,
@@ -522,7 +524,7 @@ private:
 
     std::atomic<u64> press_state{};
 
-    std::array<NpadControllerData, 10> controller_data{};
+    std::array<NpadControllerData, NPAD_COUNT> controller_data{};
     KernelHelpers::ServiceContext& service_context;
     std::mutex mutex;
     std::vector<Core::HID::NpadIdType> supported_npad_id_types{};

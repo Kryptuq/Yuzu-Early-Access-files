@@ -1,4 +1,4 @@
-/* $OpenBSD: ssl_versions.c,v 1.6 2020/05/31 18:03:32 jsing Exp $ */
+/* $OpenBSD: ssl_versions.c,v 1.22 2022/02/05 14:54:10 jsing Exp $ */
 /*
  * Copyright (c) 2016, 2017 Joel Sing <jsing@openbsd.org>
  *
@@ -17,8 +17,28 @@
 
 #include "ssl_locl.h"
 
+static uint16_t
+ssl_dtls_to_tls_version(uint16_t dtls_ver)
+{
+	if (dtls_ver == DTLS1_VERSION)
+		return TLS1_1_VERSION;
+	if (dtls_ver == DTLS1_2_VERSION)
+		return TLS1_2_VERSION;
+	return 0;
+}
+
+static uint16_t
+ssl_tls_to_dtls_version(uint16_t tls_ver)
+{
+	if (tls_ver == TLS1_1_VERSION)
+		return DTLS1_VERSION;
+	if (tls_ver == TLS1_2_VERSION)
+		return DTLS1_2_VERSION;
+	return 0;
+}
+
 static int
-ssl_clamp_version_range(uint16_t *min_ver, uint16_t *max_ver,
+ssl_clamp_tls_version_range(uint16_t *min_ver, uint16_t *max_ver,
     uint16_t clamp_min, uint16_t clamp_max)
 {
 	if (clamp_min > clamp_max || *min_ver > *max_ver)
@@ -35,55 +55,80 @@ ssl_clamp_version_range(uint16_t *min_ver, uint16_t *max_ver,
 }
 
 int
-ssl_version_set_min(const SSL_METHOD *meth, uint16_t ver, uint16_t max_ver,
-    uint16_t *out_ver)
+ssl_version_set_min(const SSL_METHOD *meth, uint16_t proto_ver,
+    uint16_t max_tls_ver, uint16_t *out_tls_ver, uint16_t *out_proto_ver)
 {
-	uint16_t min_version, max_version;
+	uint16_t min_proto, min_version, max_version;
 
-	if (ver == 0) {
-		*out_ver = meth->internal->min_version;
+	if (proto_ver == 0) {
+		*out_tls_ver = meth->min_tls_version;
+		*out_proto_ver = 0;
 		return 1;
 	}
 
-	min_version = ver;
-	max_version = max_ver;
+	min_version = proto_ver;
+	max_version = max_tls_ver;
 
-	if (!ssl_clamp_version_range(&min_version, &max_version,
-	    meth->internal->min_version, meth->internal->max_version))
+	if (meth->dtls) {
+		if ((min_version = ssl_dtls_to_tls_version(proto_ver)) == 0)
+			return 0;
+	}
+
+	if (!ssl_clamp_tls_version_range(&min_version, &max_version,
+	    meth->min_tls_version, meth->max_tls_version))
 		return 0;
 
-	*out_ver = min_version;
-	
+	min_proto = min_version;
+	if (meth->dtls) {
+		if ((min_proto = ssl_tls_to_dtls_version(min_version)) == 0)
+			return 0;
+	}
+	*out_tls_ver = min_version;
+	*out_proto_ver = min_proto;
+
 	return 1;
 }
 
 int
-ssl_version_set_max(const SSL_METHOD *meth, uint16_t ver, uint16_t min_ver,
-    uint16_t *out_ver)
+ssl_version_set_max(const SSL_METHOD *meth, uint16_t proto_ver,
+    uint16_t min_tls_ver, uint16_t *out_tls_ver, uint16_t *out_proto_ver)
 {
-	uint16_t min_version, max_version;
+	uint16_t max_proto, min_version, max_version;
 
-	if (ver == 0) {
-		*out_ver = meth->internal->max_version;
+	if (proto_ver == 0) {
+		*out_tls_ver = meth->max_tls_version;
+		*out_proto_ver = 0;
 		return 1;
 	}
 
-	min_version = min_ver;
-	max_version = ver;
+	min_version = min_tls_ver;
+	max_version = proto_ver;
 
-	if (!ssl_clamp_version_range(&min_version, &max_version,
-	    meth->internal->min_version, meth->internal->max_version))
+	if (meth->dtls) {
+		if ((max_version = ssl_dtls_to_tls_version(proto_ver)) == 0)
+			return 0;
+	}
+
+	if (!ssl_clamp_tls_version_range(&min_version, &max_version,
+	    meth->min_tls_version, meth->max_tls_version))
 		return 0;
 
-	*out_ver = max_version;
-	
+	max_proto = max_version;
+	if (meth->dtls) {
+		if ((max_proto = ssl_tls_to_dtls_version(max_version)) == 0)
+			return 0;
+	}
+	*out_tls_ver = max_version;
+	*out_proto_ver = max_proto;
+
 	return 1;
 }
 
 int
-ssl_enabled_version_range(SSL *s, uint16_t *min_ver, uint16_t *max_ver)
+ssl_enabled_tls_version_range(SSL *s, uint16_t *min_ver, uint16_t *max_ver)
 {
 	uint16_t min_version, max_version;
+	unsigned long options;
 
 	/*
 	 * The enabled versions have to be a contiguous range, which means we
@@ -95,23 +140,32 @@ ssl_enabled_version_range(SSL *s, uint16_t *min_ver, uint16_t *max_ver)
 
 	min_version = 0;
 	max_version = TLS1_3_VERSION;
+	options = s->internal->options;
 
-	if ((s->internal->options & SSL_OP_NO_TLSv1) == 0)
+	if (SSL_is_dtls(s)) {
+		options = 0;
+		if (s->internal->options & SSL_OP_NO_DTLSv1)
+			options |= SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1;
+		if (s->internal->options & SSL_OP_NO_DTLSv1_2)
+			options |= SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_2;
+	}
+
+	if ((options & SSL_OP_NO_TLSv1) == 0)
 		min_version = TLS1_VERSION;
-	else if ((s->internal->options & SSL_OP_NO_TLSv1_1) == 0)
+	else if ((options & SSL_OP_NO_TLSv1_1) == 0)
 		min_version = TLS1_1_VERSION;
-	else if ((s->internal->options & SSL_OP_NO_TLSv1_2) == 0)
+	else if ((options & SSL_OP_NO_TLSv1_2) == 0)
 		min_version = TLS1_2_VERSION;
-	else if ((s->internal->options & SSL_OP_NO_TLSv1_3) == 0)
+	else if ((options & SSL_OP_NO_TLSv1_3) == 0)
 		min_version = TLS1_3_VERSION;
 
-	if ((s->internal->options & SSL_OP_NO_TLSv1_3) && min_version < TLS1_3_VERSION)
+	if ((options & SSL_OP_NO_TLSv1_3) && min_version < TLS1_3_VERSION)
 		max_version = TLS1_2_VERSION;
-	if ((s->internal->options & SSL_OP_NO_TLSv1_2) && min_version < TLS1_2_VERSION)
+	if ((options & SSL_OP_NO_TLSv1_2) && min_version < TLS1_2_VERSION)
 		max_version = TLS1_1_VERSION;
-	if ((s->internal->options & SSL_OP_NO_TLSv1_1) && min_version < TLS1_1_VERSION)
+	if ((options & SSL_OP_NO_TLSv1_1) && min_version < TLS1_1_VERSION)
 		max_version = TLS1_VERSION;
-	if ((s->internal->options & SSL_OP_NO_TLSv1) && min_version < TLS1_VERSION)
+	if ((options & SSL_OP_NO_TLSv1) && min_version < TLS1_VERSION)
 		max_version = 0;
 
 	/* Everything has been disabled... */
@@ -119,8 +173,8 @@ ssl_enabled_version_range(SSL *s, uint16_t *min_ver, uint16_t *max_ver)
 		return 0;
 
 	/* Limit to configured version range. */
-	if (!ssl_clamp_version_range(&min_version, &max_version,
-	    s->internal->min_version, s->internal->max_version))
+	if (!ssl_clamp_tls_version_range(&min_version, &max_version,
+	    s->internal->min_tls_version, s->internal->max_tls_version))
 		return 0;
 
 	if (min_ver != NULL)
@@ -132,30 +186,84 @@ ssl_enabled_version_range(SSL *s, uint16_t *min_ver, uint16_t *max_ver)
 }
 
 int
-ssl_supported_version_range(SSL *s, uint16_t *min_ver, uint16_t *max_ver)
+ssl_supported_tls_version_range(SSL *s, uint16_t *min_ver, uint16_t *max_ver)
 {
 	uint16_t min_version, max_version;
 
-	/* DTLS cannot currently be disabled... */
-	if (SSL_IS_DTLS(s)) {
-		min_version = max_version = DTLS1_VERSION;
-		goto done;
-	}
-
-	if (!ssl_enabled_version_range(s, &min_version, &max_version))
+	if (!ssl_enabled_tls_version_range(s, &min_version, &max_version))
 		return 0;
 
 	/* Limit to the versions supported by this method. */
-	if (!ssl_clamp_version_range(&min_version, &max_version,
-	    s->method->internal->min_version,
-	    s->method->internal->max_version))
+	if (!ssl_clamp_tls_version_range(&min_version, &max_version,
+	    s->method->min_tls_version, s->method->max_tls_version))
 		return 0;
 
- done:
 	if (min_ver != NULL)
 		*min_ver = min_version;
 	if (max_ver != NULL)
 		*max_ver = max_version;
+
+	return 1;
+}
+
+uint16_t
+ssl_tls_version(uint16_t version)
+{
+	if (version == TLS1_VERSION || version == TLS1_1_VERSION ||
+	    version == TLS1_2_VERSION || version == TLS1_3_VERSION)
+		return version;
+
+	if (version == DTLS1_VERSION)
+		return TLS1_1_VERSION;
+	if (version == DTLS1_2_VERSION)
+		return TLS1_2_VERSION;
+
+	return 0;
+}
+
+uint16_t
+ssl_effective_tls_version(SSL *s)
+{
+	if (s->s3->hs.negotiated_tls_version > 0)
+		return s->s3->hs.negotiated_tls_version;
+
+	return s->s3->hs.our_max_tls_version;
+}
+
+int
+ssl_max_supported_version(SSL *s, uint16_t *max_ver)
+{
+	uint16_t max_version;
+
+	*max_ver = 0;
+
+	if (!ssl_supported_tls_version_range(s, NULL, &max_version))
+		return 0;
+
+	if (SSL_is_dtls(s)) {
+		if ((max_version = ssl_tls_to_dtls_version(max_version)) == 0)
+			return 0;
+	}
+
+	*max_ver = max_version;
+
+	return 1;
+}
+
+int
+ssl_max_legacy_version(SSL *s, uint16_t *max_ver)
+{
+	uint16_t max_version;
+
+	if ((max_version = s->s3->hs.our_max_tls_version) > TLS1_2_VERSION)
+		max_version = TLS1_2_VERSION;
+
+	if (SSL_is_dtls(s)) {
+		if ((max_version = ssl_tls_to_dtls_version(max_version)) == 0)
+			return 0;
+	}
+
+	*max_ver = max_version;
 
 	return 1;
 }
@@ -163,30 +271,46 @@ ssl_supported_version_range(SSL *s, uint16_t *min_ver, uint16_t *max_ver)
 int
 ssl_max_shared_version(SSL *s, uint16_t peer_ver, uint16_t *max_ver)
 {
-	uint16_t min_version, max_version, shared_version;
+	uint16_t min_version, max_version, peer_tls_version, shared_version;
 
 	*max_ver = 0;
+	peer_tls_version = peer_ver;
 
-	if (SSL_IS_DTLS(s)) {
-		if (peer_ver >= DTLS1_VERSION) {
-			*max_ver = DTLS1_VERSION;
-			return 1;
+	if (SSL_is_dtls(s)) {
+		if ((peer_ver >> 8) != DTLS1_VERSION_MAJOR)
+			return 0;
+
+		/*
+		 * Convert the peer version to a TLS version - DTLS versions are
+		 * the 1's complement of TLS version numbers (but not the actual
+		 * protocol version numbers, that would be too sensible). Not to
+		 * mention that DTLSv1.0 is really equivalent to DTLSv1.1.
+		 */
+		peer_tls_version = ssl_dtls_to_tls_version(peer_ver);
+
+		/*
+		 * This may be a version that we do not know about, if it is
+		 * newer than DTLS1_2_VERSION (yes, less than is correct due
+		 * to the "clever" versioning scheme), use TLS1_2_VERSION.
+		 */
+		if (peer_tls_version == 0) {
+			if (peer_ver < DTLS1_2_VERSION)
+				peer_tls_version = TLS1_2_VERSION;
 		}
-		return 0;
 	}
 
-	if (peer_ver >= TLS1_3_VERSION)
+	if (peer_tls_version >= TLS1_3_VERSION)
 		shared_version = TLS1_3_VERSION;
-	else if (peer_ver >= TLS1_2_VERSION)
+	else if (peer_tls_version >= TLS1_2_VERSION)
 		shared_version = TLS1_2_VERSION;
-	else if (peer_ver >= TLS1_1_VERSION)
+	else if (peer_tls_version >= TLS1_1_VERSION)
 		shared_version = TLS1_1_VERSION;
-	else if (peer_ver >= TLS1_VERSION)
+	else if (peer_tls_version >= TLS1_VERSION)
 		shared_version = TLS1_VERSION;
 	else
 		return 0;
 
-	if (!ssl_supported_version_range(s, &min_version, &max_version))
+	if (!ssl_supported_tls_version_range(s, &min_version, &max_version))
 		return 0;
 
 	if (shared_version < min_version)
@@ -195,39 +319,49 @@ ssl_max_shared_version(SSL *s, uint16_t peer_ver, uint16_t *max_ver)
 	if (shared_version > max_version)
 		shared_version = max_version;
 
+	if (SSL_is_dtls(s)) {
+		/*
+		 * The resulting shared version will by definition be something
+		 * that we know about. Switch back from TLS to DTLS.
+		 */
+		shared_version = ssl_tls_to_dtls_version(shared_version);
+		if (shared_version == 0)
+			return 0;
+	}
+
 	*max_ver = shared_version;
 
 	return 1;
 }
 
 int
-ssl_downgrade_max_version(SSL *s, uint16_t *max_ver)
+ssl_check_version_from_server(SSL *s, uint16_t server_version)
 {
-	uint16_t min_version, max_version;
+	uint16_t min_tls_version, max_tls_version, server_tls_version;
 
-	/*
-	 * The downgrade maximum version is based on the versions that are
-	 * enabled, however we also have to then limit to the versions
-	 * supported by the method. The SSL method will be changed during
-	 * version negotiation and when switching from the new stack to
-	 * the legacy context, as such we want to use the method from the
-	 * context.
-	 */
+	/* Ensure that the version selected by the server is valid. */
 
-	if (SSL_IS_DTLS(s)) {
-		*max_ver = DTLS1_VERSION;
-		return 1;
+	server_tls_version = server_version;
+	if (SSL_is_dtls(s)) {
+		server_tls_version = ssl_dtls_to_tls_version(server_version);
+		if (server_tls_version == 0)
+			return 0;
 	}
 
-	if (!ssl_enabled_version_range(s, &min_version, &max_version))
+	if (!ssl_supported_tls_version_range(s, &min_tls_version,
+	    &max_tls_version))
 		return 0;
 
-	if (!ssl_clamp_version_range(&min_version, &max_version,
-	    s->ctx->method->internal->min_version,
-	    s->ctx->method->internal->max_version))
-		return 0;
+	return (server_tls_version >= min_tls_version &&
+	    server_tls_version <= max_tls_version);
+}
 
-	*max_ver = max_version;
+int
+ssl_legacy_stack_version(SSL *s, uint16_t version)
+{
+	if (SSL_is_dtls(s))
+		return version == DTLS1_VERSION || version == DTLS1_2_VERSION;
 
-	return 1;
+	return version == TLS1_VERSION || version == TLS1_1_VERSION ||
+	    version == TLS1_2_VERSION;
 }

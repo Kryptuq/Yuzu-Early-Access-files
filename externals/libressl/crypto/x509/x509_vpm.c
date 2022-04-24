@@ -1,4 +1,4 @@
-/* $OpenBSD: x509_vpm.c,v 1.22 2020/09/14 08:10:04 beck Exp $ */
+/* $OpenBSD: x509_vpm.c,v 1.28 2021/11/01 20:53:08 tb Exp $ */
 /* Written by Dr Stephen N Henson (steve@openssl.org) for the OpenSSL
  * project 2004.
  */
@@ -67,6 +67,7 @@
 #include <openssl/x509v3.h>
 
 #include "vpm_int.h"
+#include "x509_lcl.h"
 
 /* X509_VERIFY_PARAM functions */
 
@@ -172,6 +173,7 @@ x509_verify_param_zero(X509_VERIFY_PARAM *param)
 	X509_VERIFY_PARAM_ID *paramid;
 	if (!param)
 		return;
+	free(param->name);
 	param->name = NULL;
 	param->purpose = 0;
 	param->trust = 0;
@@ -207,7 +209,7 @@ X509_VERIFY_PARAM_new(void)
 	param = calloc(1, sizeof(X509_VERIFY_PARAM));
 	if (param == NULL)
 		return NULL;
-	paramid = calloc (1, sizeof(X509_VERIFY_PARAM_ID));
+	paramid = calloc(1, sizeof(X509_VERIFY_PARAM_ID));
 	if (paramid == NULL) {
 		free(param);
 		return NULL;
@@ -227,7 +229,8 @@ X509_VERIFY_PARAM_free(X509_VERIFY_PARAM *param)
 	free(param);
 }
 
-/* This function determines how parameters are "inherited" from one structure
+/*
+ * This function determines how parameters are "inherited" from one structure
  * to another. There are several different ways this can happen.
  *
  * 1. If a child structure needs to have its values initialized from a parent
@@ -596,6 +599,7 @@ static const X509_VERIFY_PARAM_ID _empty_id = { NULL };
 static const X509_VERIFY_PARAM default_table[] = {
 	{
 		.name = "default",
+		.flags = X509_V_FLAG_TRUSTED_FIRST,
 		.depth = 100,
 		.trust = 0,  /* XXX This is not the default trust value */
 		.id = vpm_empty_id
@@ -673,8 +677,8 @@ X509_VERIFY_PARAM_get_count(void)
 	return num;
 }
 
-const
-X509_VERIFY_PARAM *X509_VERIFY_PARAM_get0(int id)
+const X509_VERIFY_PARAM *
+X509_VERIFY_PARAM_get0(int id)
 {
 	int num = sizeof(default_table) / sizeof(X509_VERIFY_PARAM);
 	if (id < num)
@@ -682,8 +686,8 @@ X509_VERIFY_PARAM *X509_VERIFY_PARAM_get0(int id)
 	return sk_X509_VERIFY_PARAM_value(param_table, id - num);
 }
 
-const
-X509_VERIFY_PARAM *X509_VERIFY_PARAM_lookup(const char *name)
+const X509_VERIFY_PARAM *
+X509_VERIFY_PARAM_lookup(const char *name)
 {
 	X509_VERIFY_PARAM pm;
 	unsigned int i, limit;

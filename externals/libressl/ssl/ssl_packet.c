@@ -1,4 +1,4 @@
-/* $OpenBSD: ssl_packet.c,v 1.8 2018/11/08 22:28:52 jsing Exp $ */
+/* $OpenBSD: ssl_packet.c,v 1.13 2022/02/05 14:54:10 jsing Exp $ */
 /*
  * Copyright (c) 2016, 2017 Joel Sing <jsing@openbsd.org>
  *
@@ -15,9 +15,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "ssl_locl.h"
-
 #include "bytestring.h"
+#include "ssl_locl.h"
 
 static int
 ssl_is_sslv2_client_hello(CBS *header)
@@ -210,10 +209,10 @@ ssl_convert_sslv2_client_hello(SSL *s)
 	if (!CBB_finish(&cbb, &data, &data_len))
 		goto err;
 
-	if (data_len > S3I(s)->rbuf.len)
+	if (data_len > s->s3->rbuf.len)
 		goto err;
 
-	s->internal->packet = S3I(s)->rbuf.buf;
+	s->internal->packet = s->s3->rbuf.buf;
 	s->internal->packet_length = data_len;
 	memcpy(s->internal->packet, data, data_len);
 	ret = 1;
@@ -238,7 +237,7 @@ ssl_server_legacy_first_packet(SSL *s)
 	const char *data;
 	CBS header;
 
-	if (SSL_IS_DTLS(s))
+	if (SSL_is_dtls(s))
 		return 1;
 
 	CBS_init(&header, s->internal->packet, SSL3_RT_HEADER_LENGTH);
@@ -247,12 +246,12 @@ ssl_server_legacy_first_packet(SSL *s)
 		return 1;
 
 	/* Only continue if this is not a version locked method. */
-	if (s->method->internal->min_version == s->method->internal->max_version)
+	if (s->method->min_tls_version == s->method->max_tls_version)
 		return 1;
 
 	if (ssl_is_sslv2_client_hello(&header) == 1) {
 		/* Only permit SSLv2 client hellos if TLSv1.0 is enabled. */
-		if (ssl_enabled_version_range(s, &min_version, NULL) != 1) {
+		if (ssl_enabled_tls_version_range(s, &min_version, NULL) != 1) {
 			SSLerror(s, SSL_R_NO_PROTOCOLS_AVAILABLE);
 			return -1;
 		}

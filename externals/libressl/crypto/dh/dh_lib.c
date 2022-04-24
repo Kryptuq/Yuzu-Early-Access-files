@@ -1,4 +1,4 @@
-/* $OpenBSD: dh_lib.c,v 1.32 2018/05/02 15:48:38 tb Exp $ */
+/* $OpenBSD: dh_lib.c,v 1.36 2022/01/07 09:27:13 tb Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -68,6 +68,8 @@
 #ifndef OPENSSL_NO_ENGINE
 #include <openssl/engine.h>
 #endif
+
+#include "dh_local.h"
 
 static const DH_METHOD *default_DH_method = NULL;
 
@@ -273,6 +275,7 @@ DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)
 	if (q != NULL) {
 		BN_free(dh->q);
 		dh->q = q;
+		dh->length = BN_num_bits(dh->q);
 	}
 	if (g != NULL) {
 		BN_free(dh->g);
@@ -306,6 +309,36 @@ DH_set0_key(DH *dh, BIGNUM *pub_key, BIGNUM *priv_key)
 	return 1;
 }
 
+const BIGNUM *
+DH_get0_p(const DH *dh)
+{
+	return dh->p;
+}
+
+const BIGNUM *
+DH_get0_q(const DH *dh)
+{
+	return dh->q;
+}
+
+const BIGNUM *
+DH_get0_g(const DH *dh)
+{
+	return dh->g;
+}
+
+const BIGNUM *
+DH_get0_priv_key(const DH *dh)
+{
+	return dh->priv_key;
+}
+
+const BIGNUM *
+DH_get0_pub_key(const DH *dh)
+{
+	return dh->pub_key;
+}
+
 void
 DH_clear_flags(DH *dh, int flags)
 {
@@ -322,6 +355,12 @@ void
 DH_set_flags(DH *dh, int flags)
 {
 	dh->flags |= flags;
+}
+
+long
+DH_get_length(const DH *dh)
+{
+	return dh->length;
 }
 
 int

@@ -1,4 +1,4 @@
-/* $OpenBSD: ec_oct.c,v 1.5 2017/01/29 17:49:23 beck Exp $ */
+/* $OpenBSD: ec_oct.c,v 1.8 2021/04/20 17:34:33 tb Exp $ */
 /*
  * Originally written by Bodo Moeller for the OpenSSL project.
  */
@@ -70,12 +70,12 @@
 
 #include "ec_lcl.h"
 
-int 
-EC_POINT_set_compressed_coordinates_GFp(const EC_GROUP * group, EC_POINT * point,
-    const BIGNUM * x, int y_bit, BN_CTX * ctx)
+int
+EC_POINT_set_compressed_coordinates(const EC_GROUP *group, EC_POINT *point,
+    const BIGNUM *x, int y_bit, BN_CTX *ctx)
 {
-	if (group->meth->point_set_compressed_coordinates == 0
-	    && !(group->meth->flags & EC_FLAGS_DEFAULT_OCT)) {
+	if (group->meth->point_set_compressed_coordinates == NULL &&
+	    !(group->meth->flags & EC_FLAGS_DEFAULT_OCT)) {
 		ECerror(ERR_R_SHOULD_NOT_HAVE_BEEN_CALLED);
 		return 0;
 	}
@@ -98,36 +98,33 @@ EC_POINT_set_compressed_coordinates_GFp(const EC_GROUP * group, EC_POINT * point
 			    group, point, x, y_bit, ctx);
 #endif
 	}
-	return group->meth->point_set_compressed_coordinates(group, point, x, y_bit, ctx);
+	if (!group->meth->point_set_compressed_coordinates(group, point, x,
+	    y_bit, ctx))
+		return 0;
+	if (EC_POINT_is_on_curve(group, point, ctx) <= 0) {
+		ECerror(EC_R_POINT_IS_NOT_ON_CURVE);
+		return 0;
+	}
+	return 1;
+}
+
+int
+EC_POINT_set_compressed_coordinates_GFp(const EC_GROUP *group, EC_POINT *point,
+    const BIGNUM *x, int y_bit, BN_CTX *ctx)
+{
+	return EC_POINT_set_compressed_coordinates(group, point, x, y_bit, ctx);
 }
 
 #ifndef OPENSSL_NO_EC2M
-int 
-EC_POINT_set_compressed_coordinates_GF2m(const EC_GROUP * group, EC_POINT * point,
-    const BIGNUM * x, int y_bit, BN_CTX * ctx)
+int
+EC_POINT_set_compressed_coordinates_GF2m(const EC_GROUP *group, EC_POINT *point,
+    const BIGNUM *x, int y_bit, BN_CTX *ctx)
 {
-	if (group->meth->point_set_compressed_coordinates == 0
-	    && !(group->meth->flags & EC_FLAGS_DEFAULT_OCT)) {
-		ECerror(ERR_R_SHOULD_NOT_HAVE_BEEN_CALLED);
-		return 0;
-	}
-	if (group->meth != point->meth) {
-		ECerror(EC_R_INCOMPATIBLE_OBJECTS);
-		return 0;
-	}
-	if (group->meth->flags & EC_FLAGS_DEFAULT_OCT) {
-		if (group->meth->field_type == NID_X9_62_prime_field)
-			return ec_GFp_simple_set_compressed_coordinates(
-			    group, point, x, y_bit, ctx);
-		else
-			return ec_GF2m_simple_set_compressed_coordinates(
-			    group, point, x, y_bit, ctx);
-	}
-	return group->meth->point_set_compressed_coordinates(group, point, x, y_bit, ctx);
+	return EC_POINT_set_compressed_coordinates(group, point, x, y_bit, ctx);
 }
 #endif
 
-size_t 
+size_t
 EC_POINT_point2oct(const EC_GROUP *group, const EC_POINT *point,
     point_conversion_form_t form,
     unsigned char *buf, size_t len, BN_CTX *ctx)
@@ -159,8 +156,7 @@ EC_POINT_point2oct(const EC_GROUP *group, const EC_POINT *point,
 	return group->meth->point2oct(group, point, form, buf, len, ctx);
 }
 
-
-int 
+int
 EC_POINT_oct2point(const EC_GROUP *group, EC_POINT *point,
     const unsigned char *buf, size_t len, BN_CTX *ctx)
 {

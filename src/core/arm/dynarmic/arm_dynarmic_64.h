@@ -51,7 +51,6 @@ public:
     void LoadContext(const ThreadContext32& ctx) override {}
     void LoadContext(const ThreadContext64& ctx) override;
 
-    void PrepareReschedule() override;
     void SignalInterrupt() override;
     void ClearExclusiveState() override;
 

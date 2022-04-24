@@ -1,4 +1,4 @@
-/* $OpenBSD: ossl_typ.h,v 1.13 2015/09/30 04:10:07 doug Exp $ */
+/* $OpenBSD: ossl_typ.h,v 1.21 2022/01/14 08:59:30 tb Exp $ */
 /* ====================================================================
  * Copyright (c) 1998-2001 The OpenSSL Project.  All rights reserved.
  *
@@ -77,6 +77,8 @@ typedef struct asn1_string_st ASN1_STRING;
 typedef int ASN1_BOOLEAN;
 typedef int ASN1_NULL;
 
+typedef struct asn1_object_st ASN1_OBJECT;
+
 typedef struct ASN1_ITEM_st ASN1_ITEM;
 typedef struct asn1_pctx_st ASN1_PCTX;
 
@@ -106,7 +108,11 @@ typedef struct bn_mont_ctx_st BN_MONT_CTX;
 typedef struct bn_recp_ctx_st BN_RECP_CTX;
 typedef struct bn_gencb_st BN_GENCB;
 
+typedef struct bio_st BIO;
 typedef struct buf_mem_st BUF_MEM;
+
+typedef struct comp_ctx_st COMP_CTX;
+typedef struct comp_method_st COMP_METHOD;
 
 typedef struct evp_cipher_st EVP_CIPHER;
 typedef struct evp_cipher_ctx_st EVP_CIPHER_CTX;
@@ -119,6 +125,10 @@ typedef struct evp_pkey_asn1_method_st EVP_PKEY_ASN1_METHOD;
 typedef struct evp_pkey_method_st EVP_PKEY_METHOD;
 typedef struct evp_pkey_ctx_st EVP_PKEY_CTX;
 
+typedef struct evp_Encode_Ctx_st EVP_ENCODE_CTX;
+
+typedef struct hmac_ctx_st HMAC_CTX;
+
 typedef struct dh_st DH;
 typedef struct dh_method DH_METHOD;
 
@@ -127,6 +137,7 @@ typedef struct dsa_method DSA_METHOD;
 
 typedef struct rsa_st RSA;
 typedef struct rsa_meth_st RSA_METHOD;
+typedef struct rsa_pss_params_st RSA_PSS_PARAMS;
 
 typedef struct rand_meth_st RAND_METHOD;
 
@@ -142,6 +153,11 @@ typedef struct X509_name_st X509_NAME;
 typedef struct X509_pubkey_st X509_PUBKEY;
 typedef struct x509_store_st X509_STORE;
 typedef struct x509_store_ctx_st X509_STORE_CTX;
+
+typedef struct x509_object_st X509_OBJECT;
+typedef struct x509_lookup_st X509_LOOKUP;
+typedef struct x509_lookup_method_st X509_LOOKUP_METHOD;
+typedef struct X509_VERIFY_PARAM_st X509_VERIFY_PARAM;
 
 typedef struct pkcs8_priv_key_info_st PKCS8_PRIV_KEY_INFO;
 
@@ -186,5 +202,11 @@ typedef int CRYPTO_EX_dup(CRYPTO_EX_DATA *to, CRYPTO_EX_DATA *from,
 typedef struct ocsp_req_ctx_st OCSP_REQ_CTX;
 typedef struct ocsp_response_st OCSP_RESPONSE;
 typedef struct ocsp_responder_id_st OCSP_RESPID;
+
+typedef struct sct_st SCT;
+typedef struct sct_ctx_st SCT_CTX;
+typedef struct ctlog_st CTLOG;
+typedef struct ctlog_store_st CTLOG_STORE;
+typedef struct ct_policy_eval_ctx_st CT_POLICY_EVAL_CTX;
 
 #endif /* def HEADER_OPENSSL_TYPES_H */

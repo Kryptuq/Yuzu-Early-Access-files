@@ -1,4 +1,4 @@
-Built from https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.2.2.tar.gz
+Built from https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.5.2.tar.gz
 
 Modifications:
 - Removed tests/mandocs/pkgconfig/scripts/apps/cmake_uninstall from both filesystem and CMakeLists.txt
@@ -9,7 +9,12 @@ Modifications:
 ![LibreSSL image](https://www.libressl.org/images/libressl.jpg)
 ## Official portable version of [LibreSSL](https://www.libressl.org) ##
 
-[![Build Status](https://travis-ci.org/libressl-portable/portable.svg?branch=master)](https://travis-ci.org/libressl-portable/portable) [![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/libressl.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:libressl)
+[![Linux Build Status](https://github.com/libressl-portable/portable/actions/workflows/linux_test.yml/badge.svg)](https://github.com/libressl-portable/portable/actions/workflows/linux_test.yml)
+[![macOS Build Status](https://github.com/libressl-portable/portable/actions/workflows/macos_test.yml/badge.svg)](https://github.com/libressl-portable/portable/actions/workflows/macos_test.yml)
+[![Android_Build Status](https://github.com/libressl-portable/portable/actions/workflows/android_test.yml/badge.svg)](https://github.com/libressl-portable/portable/actions/workflows/android_test.yml)
+[![Cross_Build Status](https://github.com/libressl-portable/portable/actions/workflows/cross_test.yml/badge.svg)](https://github.com/libressl-portable/portable/actions/workflows/cross_test.yml)
+[![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/libressl.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:libressl)
+[![ASan Status](https://github.com/libressl-portable/portable/actions/workflows/linux_test_asan.yml/badge.svg)](https://github.com/libressl-portable/portable/actions/workflows/linux_test_asan.yml)
 
 LibreSSL is a fork of [OpenSSL](https://www.openssl.org) 1.0.1g developed by the
 [OpenBSD](https://www.openbsd.org) project.  Our goal is to modernize the codebase,
@@ -45,9 +50,9 @@ At the time of this writing, LibreSSL is known to build and work on:
 * AIX (5.3 and later)
 
 LibreSSL also supports the following Windows environments:
-* Microsoft Windows (Vista or higher, x86 and x64)
+* Microsoft Windows (Windows 7 / Windows Server 2008r2 or later, x86 and x64)
 * Wine (32-bit and 64-bit)
-* Builds with Mingw-w64, Cygwin, and Visual Studio
+* Mingw-w64, Cygwin, and Visual Studio
 
 Official release tarballs are available at your friendly neighborhood
 OpenBSD mirror in directory

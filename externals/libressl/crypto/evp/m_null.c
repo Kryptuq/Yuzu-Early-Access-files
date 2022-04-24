@@ -1,4 +1,4 @@
-/* $OpenBSD: m_null.c,v 1.9 2014/07/11 08:44:48 jsing Exp $ */
+/* $OpenBSD: m_null.c,v 1.11 2022/01/14 08:38:06 tb Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -62,6 +62,8 @@
 #include <openssl/objects.h>
 #include <openssl/x509.h>
 
+#include "evp_locl.h"
+
 static int
 init(EVP_MD_CTX *ctx)
 {
@@ -90,11 +92,6 @@ static const EVP_MD null_md = {
 	.final = final,
 	.copy = NULL,
 	.cleanup = NULL,
-	.sign = NULL,
-	.verify = NULL,
-	.required_pkey_type = {
-		0, 0, 0, 0,
-	},
 	.block_size = 0,
 	.ctx_size = sizeof(EVP_MD *),
 };

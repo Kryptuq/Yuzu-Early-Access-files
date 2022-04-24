@@ -1,4 +1,4 @@
-/* $OpenBSD: x509_internal.h,v 1.3 2020/09/15 11:55:14 beck Exp $ */
+/* $OpenBSD: x509_internal.h,v 1.18 2022/03/14 21:15:49 tb Exp $ */
 /*
  * Copyright (c) 2020 Bob Beck <beck@openbsd.org>
  *
@@ -21,6 +21,8 @@
 #include <netinet/in.h>
 
 #include <openssl/x509_verify.h>
+
+#include "x509_lcl.h"
 
 /* Hard limits on structure size and number of signature checks. */
 #define X509_VERIFY_MAX_CHAINS		8	/* Max validated chains */
@@ -51,18 +53,23 @@ struct x509_constraints_name {
 
 struct x509_constraints_names {
 	struct x509_constraints_name **names;
-	size_t names_len;
 	size_t names_count;
+	size_t names_len;
+	size_t names_max;
 };
 
 struct x509_verify_chain {
 	STACK_OF(X509) *certs;		/* Kept in chain order, includes leaf */
+	int *cert_errors;		/* Verify error for each cert in chain. */
 	struct x509_constraints_names *names;	/* All names from all certs */
 };
 
 struct x509_verify_ctx {
 	X509_STORE_CTX *xsc;
 	struct x509_verify_chain **chains;	/* Validated chains */
+	STACK_OF(X509) *saved_error_chain;
+	int saved_error;
+	int saved_error_depth;
 	size_t chains_count;
 	STACK_OF(X509) *roots;		/* Trusted roots for this validation */
 	STACK_OF(X509) *intermediates;	/* Intermediates provided by peer */
@@ -72,8 +79,8 @@ struct x509_verify_ctx {
 	size_t max_depth;		/* Max chain depth for validation */
 	size_t max_sigs;		/* Max number of signature checks */
 	size_t sig_checks;		/* Number of signature checks done */
-	size_t error_depth; 		/* Depth of last error seen */
-	int error; 			/* Last error seen */
+	size_t error_depth;		/* Depth of last error seen */
+	int error;			/* Last error seen */
 };
 
 int ASN1_time_tm_clamp_notafter(struct tm *tm);
@@ -85,21 +92,24 @@ int x509_vfy_check_revocation(X509_STORE_CTX *ctx);
 int x509_vfy_check_policy(X509_STORE_CTX *ctx);
 int x509_vfy_check_trust(X509_STORE_CTX *ctx);
 int x509_vfy_check_chain_extensions(X509_STORE_CTX *ctx);
+int x509_vfy_callback_indicate_completion(X509_STORE_CTX *ctx);
 void x509v3_cache_extensions(X509 *x);
+X509 *x509_vfy_lookup_cert_match(X509_STORE_CTX *ctx, X509 *x);
 
-int x509_verify_asn1_time_to_tm(const ASN1_TIME *atime, struct tm *tm,
-    int notafter);
+time_t x509_verify_asn1_time_to_time_t(const ASN1_TIME *atime, int notafter);
 
-struct x509_verify_ctx *x509_verify_ctx_new_from_xsc(X509_STORE_CTX *xsc,
-    STACK_OF(X509) *roots);
+struct x509_verify_ctx *x509_verify_ctx_new_from_xsc(X509_STORE_CTX *xsc);
 
 void x509_constraints_name_clear(struct x509_constraints_name *name);
+void x509_constraints_name_free(struct x509_constraints_name *name);
 int x509_constraints_names_add(struct x509_constraints_names *names,
     struct x509_constraints_name *name);
 struct x509_constraints_names *x509_constraints_names_dup(
     struct x509_constraints_names *names);
 void x509_constraints_names_clear(struct x509_constraints_names *names);
-struct x509_constraints_names *x509_constraints_names_new(void);
+struct x509_constraints_names *x509_constraints_names_new(size_t names_max);
+int x509_constraints_general_to_bytes(GENERAL_NAME *name, uint8_t **bytes,
+    size_t *len);
 void x509_constraints_names_free(struct x509_constraints_names *names);
 int x509_constraints_valid_host(uint8_t *name, size_t len);
 int x509_constraints_valid_sandns(uint8_t *name, size_t len);
@@ -117,11 +127,14 @@ int x509_constraints_extract_names(struct x509_constraints_names *names,
 int x509_constraints_extract_constraints(X509 *cert,
     struct x509_constraints_names *permitted,
     struct x509_constraints_names *excluded, int *error);
+int x509_constraints_validate(GENERAL_NAME *constraint,
+    struct x509_constraints_name **out_name, int *error);
 int x509_constraints_check(struct x509_constraints_names *names,
     struct x509_constraints_names *permitted,
     struct x509_constraints_names *excluded, int *error);
 int x509_constraints_chain(STACK_OF(X509) *chain, int *error,
     int *depth);
+void x509_verify_cert_info_populate(X509 *cert);
 
 __END_HIDDEN_DECLS
 
