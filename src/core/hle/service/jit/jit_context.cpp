@@ -17,60 +17,14 @@
 
 namespace Service::JIT {
 
-constexpr std::array<u8, 4> STOP_ARM64 = {
+constexpr std::array<u8, 8> SVC0_ARM64 = {
     0x01, 0x00, 0x00, 0xd4, // svc  #0
-};
-
-constexpr std::array<u8, 8> RESOLVE_ARM64 = {
-    0x21, 0x00, 0x00, 0xd4, // svc  #1
     0xc0, 0x03, 0x5f, 0xd6, // ret
 };
 
-constexpr std::array<u8, 4> PANIC_ARM64 = {
-    0x41, 0x00, 0x00, 0xd4, // svc  #2
+constexpr std::array HELPER_FUNCTIONS{
+    "_stop", "_resolve", "_panic", "memcpy", "memmove", "memset",
 };
-
-constexpr std::array<u8, 60> MEMMOVE_ARM64 = {
-    0x1f, 0x00, 0x01, 0xeb, // cmp  x0, x1
-    0x83, 0x01, 0x00, 0x54, // b.lo #+34
-    0x42, 0x04, 0x00, 0xd1, // sub  x2, x2, 1
-    0x22, 0x01, 0xf8, 0xb7, // tbnz x2, #63, #+36
-    0x23, 0x68, 0x62, 0x38, // ldrb w3, [x1, x2]
-    0x03, 0x68, 0x22, 0x38, // strb w3, [x0, x2]
-    0xfc, 0xff, 0xff, 0x17, // b    #-16
-    0x24, 0x68, 0x63, 0x38, // ldrb w4, [x1, x3]
-    0x04, 0x68, 0x23, 0x38, // strb w4, [x0, x3]
-    0x63, 0x04, 0x00, 0x91, // add  x3, x3, 1
-    0x7f, 0x00, 0x02, 0xeb, // cmp  x3, x2
-    0x8b, 0xff, 0xff, 0x54, // b.lt #-16
-    0xc0, 0x03, 0x5f, 0xd6, // ret
-    0x03, 0x00, 0x80, 0xd2, // mov  x3, 0
-    0xfc, 0xff, 0xff, 0x17, // b    #-16
-};
-
-constexpr std::array<u8, 28> MEMSET_ARM64 = {
-    0x03, 0x00, 0x80, 0xd2, // mov  x3, 0
-    0x7f, 0x00, 0x02, 0xeb, // cmp  x3, x2
-    0x4b, 0x00, 0x00, 0x54, // b.lt #+8
-    0xc0, 0x03, 0x5f, 0xd6, // ret
-    0x01, 0x68, 0x23, 0x38, // strb w1, [x0, x3]
-    0x63, 0x04, 0x00, 0x91, // add  x3, x3, 1
-    0xfb, 0xff, 0xff, 0x17, // b    #-20
-};
-
-struct HelperFunction {
-    const char* name;
-    const std::span<const u8> data;
-};
-
-constexpr std::array<HelperFunction, 6> HELPER_FUNCTIONS{{
-    {"_stop", STOP_ARM64},
-    {"_resolve", RESOLVE_ARM64},
-    {"_panic", PANIC_ARM64},
-    {"memcpy", MEMMOVE_ARM64},
-    {"memmove", MEMMOVE_ARM64},
-    {"memset", MEMSET_ARM64},
-}};
 
 struct Elf64_Dyn {
     u64 d_tag;
@@ -224,17 +178,24 @@ public:
             InsertHelperFunctions();
             InsertStack();
             return true;
-        } else {
-            return false;
         }
+
+        return false;
     }
 
     bool FixupRelocations() {
+        // The loaded NRO file has ELF relocations that must be processed before it can run.
+        // Normally this would be processed by RTLD, but in HLE context, we don't have
+        // the linker available, so we have to do it ourselves.
+
         const VAddr mod_offset{callbacks->MemoryRead32(4)};
         if (callbacks->MemoryRead32(mod_offset) != Common::MakeMagic('M', 'O', 'D', '0')) {
             return false;
         }
 
+        // For more info about dynamic entries, see the ELF ABI specification:
+        // https://refspecs.linuxbase.org/elf/gabi4+/ch5.dynamic.html
+        // https://refspecs.linuxbase.org/elf/gabi4+/ch4.reloc.html
         VAddr dynamic_offset{mod_offset + callbacks->MemoryRead32(mod_offset + 4)};
         VAddr rela_dyn = 0;
         size_t num_rela = 0;
@@ -266,13 +227,15 @@ public:
     }
 
     void InsertHelperFunctions() {
-        for (const auto& [name, contents] : HELPER_FUNCTIONS) {
+        for (const auto& name : HELPER_FUNCTIONS) {
             helpers[name] = local_memory.size();
-            local_memory.insert(local_memory.end(), contents.begin(), contents.end());
+            local_memory.insert(local_memory.end(), SVC0_ARM64.begin(), SVC0_ARM64.end());
         }
     }
 
     void InsertStack() {
+        // Allocate enough space to avoid any reasonable risk of
+        // overflowing the stack during plugin execution
         const u64 pad_amount{Common::AlignUp(local_memory.size(), STACK_ALIGN) -
                              local_memory.size()};
         local_memory.insert(local_memory.end(), 0x10000 + pad_amount, 0);
@@ -292,9 +255,21 @@ public:
     }
 
     void SetupArguments() {
+        // The first 8 integer registers are used for the first 8 integer
+        // arguments. Floating-point arguments are not handled at this time.
+        //
+        // If a function takes more than 8 arguments, then stack space is reserved
+        // for the remaining arguments, and the remaining arguments are inserted in
+        // ascending memory order, each argument aligned to an 8-byte boundary. The
+        // stack pointer must remain aligned to 16 bytes.
+        //
+        // For more info, see the AArch64 ABI PCS:
+        // https://github.com/ARM-software/abi-aa/blob/main/aapcs64/aapcs64.rst
+
         for (size_t i = 0; i < 8 && i < argument_stack.size(); i++) {
             jit->SetRegister(i, argument_stack[i]);
         }
+
         if (argument_stack.size() > 8) {
             const VAddr new_sp = Common::AlignDown(
                 top_of_stack - (argument_stack.size() - 8) * sizeof(u64), STACK_ALIGN);
@@ -303,6 +278,8 @@ public:
             }
             jit->SetSP(new_sp);
         }
+
+        // Reset the call state for the next invocation
         argument_stack.clear();
         heap_pointer = top_of_stack;
     }
@@ -322,11 +299,16 @@ public:
     }
 
     VAddr AddHeap(const void* data, size_t size) {
+        // Require all heap data types to have the same alignment as the
+        // stack pointer, for compatibility
         const size_t num_bytes{Common::AlignUp(size, STACK_ALIGN)};
+
+        // Make additional memory space if required
         if (heap_pointer + num_bytes > local_memory.size()) {
             local_memory.insert(local_memory.end(),
                                 (heap_pointer + num_bytes) - local_memory.size(), 0);
         }
+
         const VAddr location{heap_pointer};
         std::memcpy(local_memory.data() + location, data, size);
         heap_pointer += num_bytes;
@@ -350,30 +332,67 @@ public:
 };
 
 void DynarmicCallbacks64::CallSVC(u32 swi) {
-    switch (swi) {
-    case 0:
-        parent.jit->HaltExecution();
-        break;
+    // Service calls are used to implement helper functionality.
+    //
+    // The most important of these is the _stop helper, which transfers control
+    // from the plugin back to HLE context to return a value. However, a few more
+    // are also implemented to reduce the need for direct ARM implementations of
+    // basic functionality, like memory operations.
+    //
+    // When we receive a helper request, the swi number will be zero, and the call
+    // will have originated from an address we know is a helper function. Otherwise,
+    // the plugin may be trying to issue a service call, which we shouldn't handle.
 
-    case 1: {
+    if (swi != 0) {
+        LOG_CRITICAL(Service_JIT, "plugin issued unknown service call {}", swi);
+        parent.jit->HaltExecution();
+        return;
+    }
+
+    u64 pc{parent.jit->GetPC() - 4};
+    auto& helpers{parent.helpers};
+
+    if (pc == helpers["memcpy"] || pc == helpers["memmove"]) {
+        const VAddr dest{parent.jit->GetRegister(0)};
+        const VAddr src{parent.jit->GetRegister(1)};
+        const size_t n{parent.jit->GetRegister(2)};
+
+        if (dest < src) {
+            for (size_t i = 0; i < n; i++) {
+                MemoryWrite8(dest + i, MemoryRead8(src + i));
+            }
+        } else {
+            for (size_t i = n; i > 0; i--) {
+                MemoryWrite8(dest + i - 1, MemoryRead8(src + i - 1));
+            }
+        }
+    } else if (pc == helpers["memset"]) {
+        const VAddr dest{parent.jit->GetRegister(0)};
+        const u64 c{parent.jit->GetRegister(1)};
+        const size_t n{parent.jit->GetRegister(2)};
+
+        for (size_t i = 0; i < n; i++) {
+            MemoryWrite8(dest + i, static_cast<u8>(c));
+        }
+    } else if (pc == helpers["_resolve"]) {
         // X0 contains a char* for a symbol to resolve
-        std::string name{MemoryReadCString(parent.jit->GetRegister(0))};
-        const auto helper{parent.helpers[name]};
+        const auto name{MemoryReadCString(parent.jit->GetRegister(0))};
+        const auto helper{helpers[name]};
 
         if (helper != 0) {
             parent.jit->SetRegister(0, helper);
         } else {
             LOG_WARNING(Service_JIT, "plugin requested unknown function {}", name);
-            parent.jit->SetRegister(0, parent.helpers["_panic"]);
+            parent.jit->SetRegister(0, helpers["_panic"]);
         }
-        break;
-    }
-
-    case 2:
-    default:
+    } else if (pc == helpers["_stop"]) {
+        parent.jit->HaltExecution();
+    } else if (pc == helpers["_panic"]) {
         LOG_CRITICAL(Service_JIT, "plugin panicked!");
         parent.jit->HaltExecution();
-        break;
+    } else {
+        LOG_CRITICAL(Service_JIT, "plugin issued syscall at unknown address 0x{:x}", pc);
+        parent.jit->HaltExecution();
     }
 }
 

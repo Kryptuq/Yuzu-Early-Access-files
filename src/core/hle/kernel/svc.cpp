@@ -899,7 +899,7 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, Handle
 
         // Verify the requested core is valid.
         const bool core_valid =
-            (info_sub_id == static_cast<u64>(-1ULL)) ||
+            (info_sub_id == 0xFFFFFFFFFFFFFFFF) ||
             (info_sub_id == static_cast<u64>(system.Kernel().CurrentPhysicalCoreIndex()));
         R_UNLESS(core_valid, ResultInvalidCombination);
 

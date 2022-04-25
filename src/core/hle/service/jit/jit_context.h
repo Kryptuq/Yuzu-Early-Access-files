@@ -28,6 +28,7 @@ public:
     template <typename T, typename... Ts>
     u64 CallFunction(VAddr func, T argument, Ts... rest) {
         static_assert(std::is_trivially_copyable_v<T>);
+        static_assert(!std::is_floating_point_v<T>);
         PushArgument(&argument, sizeof(argument));
 
         if constexpr (sizeof...(rest) > 0) {
