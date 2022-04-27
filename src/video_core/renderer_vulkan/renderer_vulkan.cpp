@@ -127,6 +127,11 @@ void RendererVulkan::SwapBuffers(const Tegra::FramebufferConfig* framebuffer) {
     if (!render_window.IsShown()) {
         return;
     }
+    // Update screen info if the framebuffer size has changed.
+    if (screen_info.width != framebuffer->width || screen_info.height != framebuffer->height) {
+        screen_info.width = framebuffer->width;
+        screen_info.height = framebuffer->height;
+    }
     const VAddr framebuffer_addr = framebuffer->address + framebuffer->offset;
     const bool use_accelerated =
         rasterizer.AccelerateDisplay(*framebuffer, framebuffer_addr, framebuffer->stride);
