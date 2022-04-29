@@ -43,7 +43,7 @@ static void ValidateUses(const IR::Program& program) {
             }
         }
     }
-    for (const auto [inst, uses] : actual_uses) {
+    for (const auto& [inst, uses] : actual_uses) {
         if (inst->UseCount() != uses) {
             throw LogicError("Invalid uses in block: {}", IR::DumpProgram(program));
         }

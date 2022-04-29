@@ -188,11 +188,11 @@ void GenericEnvironment::Serialize(std::ofstream& file) const {
         .write(reinterpret_cast<const char*>(&cached_highest), sizeof(cached_highest))
         .write(reinterpret_cast<const char*>(&stage), sizeof(stage))
         .write(reinterpret_cast<const char*>(code.data()), code_size);
-    for (const auto [key, type] : texture_types) {
+    for (const auto& [key, type] : texture_types) {
         file.write(reinterpret_cast<const char*>(&key), sizeof(key))
             .write(reinterpret_cast<const char*>(&type), sizeof(type));
     }
-    for (const auto [key, type] : cbuf_values) {
+    for (const auto& [key, type] : cbuf_values) {
         file.write(reinterpret_cast<const char*>(&key), sizeof(key))
             .write(reinterpret_cast<const char*>(&type), sizeof(type));
     }

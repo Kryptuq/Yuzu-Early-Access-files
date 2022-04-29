@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2012 Gekko Emulator
+// SPDX-FileContributor: ShizZy <shizzy247@gmail.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 /**
  * Copyright (C) 2005-2012 Gekko Emulator
  *

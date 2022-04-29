@@ -10,7 +10,7 @@
 
 namespace Settings {
 
-Values values = {};
+Values values;
 static bool configuring_global = true;
 
 std::string GetTimeZoneString() {
