@@ -520,7 +520,28 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                         QMenu context_menu;
                         Common::ParamPackage param = emulated_controller->GetStickParam(analog_id);
                         context_menu.addAction(tr("Clear"), [&] {
-                            emulated_controller->SetStickParam(analog_id, {});
+                            if (param.Get("engine", "") != "analog_from_button") {
+                                emulated_controller->SetStickParam(analog_id, {});
+                                for (auto button : analog_map_buttons[analog_id]) {
+                                    button->setText(tr("[not set]"));
+                                }
+                                return;
+                            }
+                            switch (sub_button_id) {
+                            case 0:
+                                param.Erase("up");
+                                break;
+                            case 1:
+                                param.Erase("down");
+                                break;
+                            case 2:
+                                param.Erase("left");
+                                break;
+                            case 3:
+                                param.Erase("right");
+                                break;
+                            }
+                            emulated_controller->SetStickParam(analog_id, param);
                             analog_map_buttons[analog_id][sub_button_id]->setText(tr("[not set]"));
                         });
                         context_menu.addAction(tr("Center axis"), [&] {
@@ -988,7 +1009,7 @@ void ConfigureInputPlayer::UpdateUI() {
             slider_value = static_cast<int>(param.Get("deadzone", 0.15f) * 100);
             deadzone_label->setText(tr("Deadzone: %1%").arg(slider_value));
             deadzone_slider->setValue(slider_value);
-            range_spinbox->setValue(static_cast<int>(param.Get("range", 1.0f) * 100));
+            range_spinbox->setValue(static_cast<int>(param.Get("range", 0.95f) * 100));
         } else {
             slider_value = static_cast<int>(param.Get("modifier_scale", 0.5f) * 100);
             modifier_label->setText(tr("Modifier Range: %1%").arg(slider_value));

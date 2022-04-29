@@ -166,6 +166,7 @@ private:
     void SetNpadCommunicationMode(Kernel::HLERequestContext& ctx);
     void GetNpadCommunicationMode(Kernel::HLERequestContext& ctx);
     void SetTouchScreenConfiguration(Kernel::HLERequestContext& ctx);
+    void IsFirmwareUpdateNeededForNotification(Kernel::HLERequestContext& ctx);
 
     std::shared_ptr<IAppletResource> applet_resource;
 

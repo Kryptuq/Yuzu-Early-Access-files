@@ -327,7 +327,7 @@ void SanitizeStick(Common::Input::AnalogStatus& analog_x, Common::Input::AnalogS
     raw_y += properties_y.offset;
 
     // Apply X scale correction from offset
-    if (std::abs(properties_x.offset) < 0.5f) {
+    if (std::abs(properties_x.offset) < 0.75f) {
         if (raw_x > 0) {
             raw_x /= 1 + properties_x.offset;
         } else {
@@ -336,7 +336,7 @@ void SanitizeStick(Common::Input::AnalogStatus& analog_x, Common::Input::AnalogS
     }
 
     // Apply Y scale correction from offset
-    if (std::abs(properties_y.offset) < 0.5f) {
+    if (std::abs(properties_y.offset) < 0.75f) {
         if (raw_y > 0) {
             raw_y /= 1 + properties_y.offset;
         } else {

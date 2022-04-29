@@ -732,7 +732,7 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateHatButtonDevice(
 std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateStickDevice(
     const Common::ParamPackage& params) {
     const auto deadzone = std::clamp(params.Get("deadzone", 0.15f), 0.0f, 1.0f);
-    const auto range = std::clamp(params.Get("range", 1.0f), 0.25f, 1.50f);
+    const auto range = std::clamp(params.Get("range", 0.95f), 0.25f, 1.50f);
     const auto threshold = std::clamp(params.Get("threshold", 0.5f), 0.0f, 1.0f);
     const PadIdentifier identifier = {
         .guid = Common::UUID{params.Get("guid", "")},

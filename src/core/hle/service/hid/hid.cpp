@@ -357,7 +357,7 @@ Hid::Hid(Core::System& system_)
         {1000, &Hid::SetNpadCommunicationMode, "SetNpadCommunicationMode"},
         {1001, &Hid::GetNpadCommunicationMode, "GetNpadCommunicationMode"},
         {1002, &Hid::SetTouchScreenConfiguration, "SetTouchScreenConfiguration"},
-        {1003, nullptr, "IsFirmwareUpdateNeededForNotification"},
+        {1003, &Hid::IsFirmwareUpdateNeededForNotification, "IsFirmwareUpdateNeededForNotification"},
         {2000, nullptr, "ActivateDigitizer"},
     };
     // clang-format on
@@ -1796,6 +1796,25 @@ void Hid::SetTouchScreenConfiguration(Kernel::HLERequestContext& ctx) {
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
+}
+
+void Hid::IsFirmwareUpdateNeededForNotification(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    struct Parameters {
+        s32 unknown;
+        INSERT_PADDING_WORDS_NOINIT(1);
+        u64 applet_resource_user_id;
+    };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
+
+    const auto parameters{rp.PopRaw<Parameters>()};
+
+    LOG_WARNING(Service_HID, "(STUBBED) called, unknown={}, applet_resource_user_id={}",
+                parameters.unknown, parameters.applet_resource_user_id);
+
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(ResultSuccess);
+    rb.Push(false);
 }
 
 class HidDbg final : public ServiceFramework<HidDbg> {
