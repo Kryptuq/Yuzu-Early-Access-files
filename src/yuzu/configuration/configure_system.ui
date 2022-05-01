@@ -474,9 +474,6 @@
               <day>1</day>
              </date>
             </property>
-            <property name="displayFormat">
-             <string>d MMM yyyy h:mm:ss AP</string>
-            </property>
            </widget>
           </item>
           <item row="6" column="1">
