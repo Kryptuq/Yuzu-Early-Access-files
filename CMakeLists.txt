@@ -639,14 +639,18 @@ endif()
 # =========================
 
 # Install freedesktop.org metadata files, following those specifications:
-# http://standards.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html
-# http://standards.freedesktop.org/icon-theme-spec/icon-theme-spec-latest.html
-# http://standards.freedesktop.org/shared-mime-info-spec/shared-mime-info-spec-latest.html
+# https://specifications.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html
+# https://specifications.freedesktop.org/icon-theme-spec/icon-theme-spec-latest.html
+# https://specifications.freedesktop.org/shared-mime-info-spec/shared-mime-info-spec-latest.html
+# https://www.freedesktop.org/software/appstream/docs/
 if(ENABLE_QT AND UNIX AND NOT APPLE)
-    install(FILES "${PROJECT_SOURCE_DIR}/dist/yuzu.desktop"
-            DESTINATION "${CMAKE_INSTALL_PREFIX}/share/applications")
-    install(FILES "${PROJECT_SOURCE_DIR}/dist/yuzu.svg"
-            DESTINATION "${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/scalable/apps")
-    install(FILES "${PROJECT_SOURCE_DIR}/dist/yuzu.xml"
-            DESTINATION "${CMAKE_INSTALL_PREFIX}/share/mime/packages")
+    install(FILES "dist/org.yuzu_emu.yuzu.desktop"
+            DESTINATION "share/applications")
+    install(FILES "dist/yuzu.svg"
+            DESTINATION "share/icons/hicolor/scalable/apps"
+            RENAME "org.yuzu_emu.yuzu.svg")
+    install(FILES "dist/org.yuzu_emu.yuzu.xml"
+            DESTINATION "share/mime/packages")
+    install(FILES "dist/org.yuzu_emu.yuzu.metainfo.xml"
+            DESTINATION "share/metainfo")
 endif()
