@@ -116,14 +116,16 @@ private:
     ReleaseCallback release_callback; ///< Buffer release callback for the stream
     State state{State::Stopped};      ///< Playback state of the stream
     std::shared_ptr<Core::Timing::EventType>
-        release_event;                              ///< Core timing release event for the stream
-    BufferPtr active_buffer;                        ///< Actively playing buffer in the stream
-    std::queue<BufferPtr> queued_buffers;           ///< Buffers queued to be played in the stream
-    std::queue<BufferPtr> released_buffers;         ///< Buffers recently released from the stream
-    SinkStream& sink_stream;                        ///< Output sink for the stream
-    Core::Timing::CoreTiming& core_timing;          ///< Core timing instance.
-    std::string name;                               ///< Name of the stream, must be unique
+        release_event;                      ///< Core timing release event for the stream
+    BufferPtr active_buffer;                ///< Actively playing buffer in the stream
+    std::queue<BufferPtr> queued_buffers;   ///< Buffers queued to be played in the stream
+    std::queue<BufferPtr> released_buffers; ///< Buffers recently released from the stream
+    SinkStream& sink_stream;                ///< Output sink for the stream
+    Core::Timing::CoreTiming& core_timing;  ///< Core timing instance.
+    std::string name;                       ///< Name of the stream, must be unique
+#ifndef _WIN32
     std::chrono::nanoseconds expected_cb_time = {}; ///< Estimated time of next callback
+#endif
 };
 
 using StreamPtr = std::shared_ptr<Stream>;

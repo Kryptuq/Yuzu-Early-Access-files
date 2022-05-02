@@ -26,7 +26,15 @@ void ConfigureNetwork::ApplyConfiguration() {
     Settings::values.network_interface = ui->network_interface->currentText().toStdString();
 }
 
-void ConfigureNetwork::RetranslateUi() {
+void ConfigureNetwork::changeEvent(QEvent* event) {
+    if (event->type() == QEvent::LanguageChange) {
+        RetranslateUI();
+    }
+
+    QWidget::changeEvent(event);
+}
+
+void ConfigureNetwork::RetranslateUI() {
     ui->retranslateUi(this);
 }
 

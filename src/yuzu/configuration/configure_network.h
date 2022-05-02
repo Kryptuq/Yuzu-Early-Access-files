@@ -18,9 +18,10 @@ public:
     ~ConfigureNetwork() override;
 
     void ApplyConfiguration();
-    void RetranslateUi();
 
 private:
+    void changeEvent(QEvent*) override;
+    void RetranslateUI();
     void SetConfiguration();
 
     std::unique_ptr<Ui::ConfigureNetwork> ui;
