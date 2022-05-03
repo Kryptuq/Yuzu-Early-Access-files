@@ -154,6 +154,48 @@ constexpr ResultCode ResultSuccess(0);
 constexpr ResultCode ResultUnknown(UINT32_MAX);
 
 /**
+ * A ResultRange defines an inclusive range of error descriptions within an error module.
+ * This can be used to check whether the description of a given ResultCode falls within the range.
+ * The conversion function returns a ResultCode with its description set to description_start.
+ *
+ * An example of how it could be used:
+ * \code
+ * constexpr ResultRange ResultCommonError{ErrorModule::Common, 0, 9999};
+ *
+ * ResultCode Example(int value) {
+ *     const ResultCode result = OtherExample(value);
+ *
+ *     // This will only evaluate to true if result.module is ErrorModule::Common and
+ *     // result.description is in between 0 and 9999 inclusive.
+ *     if (ResultCommonError.Includes(result)) {
+ *         // This returns ResultCode{ErrorModule::Common, 0};
+ *         return ResultCommonError;
+ *     }
+ *
+ *     return ResultSuccess;
+ * }
+ * \endcode
+ */
+class ResultRange {
+public:
+    consteval ResultRange(ErrorModule module, u32 description_start, u32 description_end_)
+        : code{module, description_start}, description_end{description_end_} {}
+
+    [[nodiscard]] consteval operator ResultCode() const {
+        return code;
+    }
+
+    [[nodiscard]] constexpr bool Includes(ResultCode other) const {
+        return code.module == other.module && code.description <= other.description &&
+               other.description <= description_end;
+    }
+
+private:
+    ResultCode code;
+    u32 description_end;
+};
+
+/**
  * This is an optional value type. It holds a `ResultCode` and, if that code is ResultSuccess, it
  * also holds a result of type `T`. If the code is an error code (not ResultSuccess), then trying
  * to access the inner value with operator* is undefined behavior and will assert with Unwrap().
