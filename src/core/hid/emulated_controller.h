@@ -167,6 +167,12 @@ public:
     void SetSupportedNpadStyleTag(NpadStyleTag supported_styles);
 
     /**
+     * Tries to turn on the controller if a button is pressed
+     * @param button_index index to verify if controller should be connected
+     */
+    void TryReconnectController(std::size_t button_index);
+
+    /**
      * Sets the connected status to true
      * @param use_temporary_value If true tmp_npad_type will be used
      */

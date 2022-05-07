@@ -3,7 +3,9 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cstring>
+
 #include "common/assert.h"
 #include "common/bit_field.h"
 #include "common/common_types.h"
@@ -529,6 +531,14 @@ void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing
         auto& sixaxis_left_lifo_state = controller.sixaxis_left_lifo_state;
         auto& sixaxis_right_lifo_state = controller.sixaxis_right_lifo_state;
 
+        // Clear previous state
+        sixaxis_fullkey_state = {};
+        sixaxis_handheld_state = {};
+        sixaxis_dual_left_state = {};
+        sixaxis_dual_right_state = {};
+        sixaxis_left_lifo_state = {};
+        sixaxis_right_lifo_state = {};
+
         if (controller.sixaxis_sensor_enabled && Settings::values.motion_enabled.GetValue()) {
             controller.sixaxis_at_rest = true;
             for (std::size_t e = 0; e < motion_state.size(); ++e) {
@@ -537,69 +547,55 @@ void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing
             }
         }
 
+        const auto set_motion_state = [&](SixAxisSensorState& state,
+                                          const Core::HID::ControllerMotion& hid_state) {
+            using namespace std::literals::chrono_literals;
+            static constexpr SixAxisSensorState default_motion_state = {
+                .delta_time = std::chrono::nanoseconds(5ms).count(),
+                .accel = {0, 0, -1.0f},
+                .orientation =
+                    {
+                        Common::Vec3f{1.0f, 0, 0},
+                        Common::Vec3f{0, 1.0f, 0},
+                        Common::Vec3f{0, 0, 1.0f},
+                    },
+                .attribute = {1},
+            };
+            if (!controller.sixaxis_sensor_enabled) {
+                state = default_motion_state;
+                return;
+            }
+            if (!Settings::values.motion_enabled.GetValue()) {
+                state = default_motion_state;
+                return;
+            }
+            state.attribute.is_connected.Assign(1);
+            state.delta_time = std::chrono::nanoseconds(5ms).count();
+            state.accel = hid_state.accel;
+            state.gyro = hid_state.gyro;
+            state.rotation = hid_state.rotation;
+            state.orientation = hid_state.orientation;
+        };
+
         switch (controller_type) {
         case Core::HID::NpadStyleIndex::None:
             UNREACHABLE();
             break;
         case Core::HID::NpadStyleIndex::ProController:
-            sixaxis_fullkey_state.attribute.raw = 0;
-            if (controller.sixaxis_sensor_enabled) {
-                sixaxis_fullkey_state.attribute.is_connected.Assign(1);
-                sixaxis_fullkey_state.accel = motion_state[0].accel;
-                sixaxis_fullkey_state.gyro = motion_state[0].gyro;
-                sixaxis_fullkey_state.rotation = motion_state[0].rotation;
-                sixaxis_fullkey_state.orientation = motion_state[0].orientation;
-            }
+            set_motion_state(sixaxis_fullkey_state, motion_state[0]);
             break;
         case Core::HID::NpadStyleIndex::Handheld:
-            sixaxis_handheld_state.attribute.raw = 0;
-            if (controller.sixaxis_sensor_enabled) {
-                sixaxis_handheld_state.attribute.is_connected.Assign(1);
-                sixaxis_handheld_state.accel = motion_state[0].accel;
-                sixaxis_handheld_state.gyro = motion_state[0].gyro;
-                sixaxis_handheld_state.rotation = motion_state[0].rotation;
-                sixaxis_handheld_state.orientation = motion_state[0].orientation;
-            }
+            set_motion_state(sixaxis_handheld_state, motion_state[0]);
             break;
         case Core::HID::NpadStyleIndex::JoyconDual:
-            sixaxis_dual_left_state.attribute.raw = 0;
-            sixaxis_dual_right_state.attribute.raw = 0;
-            if (controller.sixaxis_sensor_enabled) {
-                // Set motion for the left joycon
-                sixaxis_dual_left_state.attribute.is_connected.Assign(1);
-                sixaxis_dual_left_state.accel = motion_state[0].accel;
-                sixaxis_dual_left_state.gyro = motion_state[0].gyro;
-                sixaxis_dual_left_state.rotation = motion_state[0].rotation;
-                sixaxis_dual_left_state.orientation = motion_state[0].orientation;
-            }
-            if (controller.sixaxis_sensor_enabled) {
-                // Set motion for the right joycon
-                sixaxis_dual_right_state.attribute.is_connected.Assign(1);
-                sixaxis_dual_right_state.accel = motion_state[1].accel;
-                sixaxis_dual_right_state.gyro = motion_state[1].gyro;
-                sixaxis_dual_right_state.rotation = motion_state[1].rotation;
-                sixaxis_dual_right_state.orientation = motion_state[1].orientation;
-            }
+            set_motion_state(sixaxis_dual_left_state, motion_state[0]);
+            set_motion_state(sixaxis_dual_right_state, motion_state[1]);
             break;
         case Core::HID::NpadStyleIndex::JoyconLeft:
-            sixaxis_left_lifo_state.attribute.raw = 0;
-            if (controller.sixaxis_sensor_enabled) {
-                sixaxis_left_lifo_state.attribute.is_connected.Assign(1);
-                sixaxis_left_lifo_state.accel = motion_state[0].accel;
-                sixaxis_left_lifo_state.gyro = motion_state[0].gyro;
-                sixaxis_left_lifo_state.rotation = motion_state[0].rotation;
-                sixaxis_left_lifo_state.orientation = motion_state[0].orientation;
-            }
+            set_motion_state(sixaxis_left_lifo_state, motion_state[0]);
             break;
         case Core::HID::NpadStyleIndex::JoyconRight:
-            sixaxis_right_lifo_state.attribute.raw = 0;
-            if (controller.sixaxis_sensor_enabled) {
-                sixaxis_right_lifo_state.attribute.is_connected.Assign(1);
-                sixaxis_right_lifo_state.accel = motion_state[1].accel;
-                sixaxis_right_lifo_state.gyro = motion_state[1].gyro;
-                sixaxis_right_lifo_state.rotation = motion_state[1].rotation;
-                sixaxis_right_lifo_state.orientation = motion_state[1].orientation;
-            }
+            set_motion_state(sixaxis_right_lifo_state, motion_state[1]);
             break;
         default:
             break;

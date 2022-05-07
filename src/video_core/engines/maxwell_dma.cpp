@@ -134,7 +134,7 @@ void MaxwellDMA::CopyBlockLinearToPitch() {
 
     // Deswizzle the input and copy it over.
     UNIMPLEMENTED_IF(regs.launch_dma.remap_enable != 0);
-    const u32 bytes_per_pixel = regs.pitch_out / regs.line_length_in;
+    const u32 bytes_per_pixel = 1;
     const Parameters& src_params = regs.src_params;
     const u32 width = src_params.width;
     const u32 height = src_params.height;
@@ -166,7 +166,7 @@ void MaxwellDMA::CopyPitchToBlockLinear() {
     UNIMPLEMENTED_IF(regs.launch_dma.remap_enable != 0);
 
     const auto& dst_params = regs.dst_params;
-    const u32 bytes_per_pixel = regs.pitch_in / regs.line_length_in;
+    const u32 bytes_per_pixel = 1;
     const u32 width = dst_params.width;
     const u32 height = dst_params.height;
     const u32 depth = dst_params.depth;
@@ -210,7 +210,7 @@ void MaxwellDMA::CopyPitchToBlockLinear() {
 }
 
 void MaxwellDMA::FastCopyBlockLinearToPitch() {
-    const u32 bytes_per_pixel = regs.pitch_out / regs.line_length_in;
+    const u32 bytes_per_pixel = 1;
     const size_t src_size = GOB_SIZE;
     const size_t dst_size = static_cast<size_t>(regs.pitch_out) * regs.line_count;
     u32 pos_x = regs.src_params.origin.x;
