@@ -563,12 +563,11 @@ void RasterizerOpenGL::SyncViewport() {
         flags[Dirty::FrontFace] = false;
 
         GLenum mode = MaxwellToGL::FrontFace(regs.front_face);
-        bool flip_faces = false;
-        if (regs.screen_y_control.triangle_rast_flip != 0 &&
-            regs.viewport_transform[0].scale_y < 0.0f) {
+        bool flip_faces = true;
+        if (regs.screen_y_control.triangle_rast_flip != 0) {
             flip_faces = !flip_faces;
         }
-        if (regs.viewport_transform[0].scale_z < 0.0f) {
+        if (regs.viewport_transform[0].scale_y < 0.0f) {
             flip_faces = !flip_faces;
         }
         if (flip_faces) {

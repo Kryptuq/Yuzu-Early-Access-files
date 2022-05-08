@@ -23,7 +23,8 @@ MICROPROFILE_DEFINE(MacroJitExecute, "GPU", "Execute macro JIT", MP_RGB(255, 255
 namespace Tegra {
 namespace {
 constexpr Xbyak::Reg64 STATE = Xbyak::util::rbx;
-constexpr Xbyak::Reg32 RESULT = Xbyak::util::ebp;
+constexpr Xbyak::Reg32 RESULT = Xbyak::util::r10d;
+constexpr Xbyak::Reg64 MAX_PARAMETER = Xbyak::util::r11;
 constexpr Xbyak::Reg64 PARAMETERS = Xbyak::util::r12;
 constexpr Xbyak::Reg32 METHOD_ADDRESS = Xbyak::util::r14d;
 constexpr Xbyak::Reg64 BRANCH_HOLDER = Xbyak::util::r15;
@@ -31,6 +32,7 @@ constexpr Xbyak::Reg64 BRANCH_HOLDER = Xbyak::util::r15;
 constexpr std::bitset<32> PERSISTENT_REGISTERS = Common::X64::BuildRegSet({
     STATE,
     RESULT,
+    MAX_PARAMETER,
     PARAMETERS,
     METHOD_ADDRESS,
     BRANCH_HOLDER,
@@ -80,7 +82,7 @@ private:
         u32 carry_flag{};
     };
     static_assert(offsetof(JITState, maxwell3d) == 0, "Maxwell3D is not at 0x0");
-    using ProgramType = void (*)(JITState*, const u32*);
+    using ProgramType = void (*)(JITState*, const u32*, const u32*);
 
     struct OptimizerState {
         bool can_skip_carry{};
@@ -112,7 +114,7 @@ void MacroJITx64Impl::Execute(const std::vector<u32>& parameters, u32 method) {
     JITState state{};
     state.maxwell3d = &maxwell3d;
     state.registers = {};
-    program(&state, parameters.data());
+    program(&state, parameters.data(), parameters.data() + parameters.size());
 }
 
 void MacroJITx64Impl::Compile_ALU(Macro::Opcode opcode) {
@@ -488,6 +490,7 @@ void MacroJITx64Impl::Compile() {
     // JIT state
     mov(STATE, Common::X64::ABI_PARAM1);
     mov(PARAMETERS, Common::X64::ABI_PARAM2);
+    mov(MAX_PARAMETER, Common::X64::ABI_PARAM3);
     xor_(RESULT, RESULT);
     xor_(METHOD_ADDRESS, METHOD_ADDRESS);
     xor_(BRANCH_HOLDER, BRANCH_HOLDER);
@@ -598,7 +601,22 @@ bool MacroJITx64Impl::Compile_NextInstruction() {
     return true;
 }
 
+static void WarnInvalidParameter(uintptr_t parameter, uintptr_t max_parameter) {
+    LOG_CRITICAL(HW_GPU,
+                 "Macro JIT: invalid parameter access 0x{:x} (0x{:x} is the last parameter)",
+                 parameter, max_parameter - sizeof(u32));
+}
+
 Xbyak::Reg32 MacroJITx64Impl::Compile_FetchParameter() {
+    Xbyak::Label parameter_ok{};
+    cmp(PARAMETERS, MAX_PARAMETER);
+    jb(parameter_ok, T_NEAR);
+    Common::X64::ABI_PushRegistersAndAdjustStack(*this, PersistentCallerSavedRegs(), 0);
+    mov(Common::X64::ABI_PARAM1, PARAMETERS);
+    mov(Common::X64::ABI_PARAM2, MAX_PARAMETER);
+    Common::X64::CallFarFunction(*this, &WarnInvalidParameter);
+    Common::X64::ABI_PopRegistersAndAdjustStack(*this, PersistentCallerSavedRegs(), 0);
+    L(parameter_ok);
     mov(eax, dword[PARAMETERS]);
     add(PARAMETERS, sizeof(u32));
     return eax;
