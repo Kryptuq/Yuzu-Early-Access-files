@@ -53,6 +53,8 @@ void ConfigureDebug::SetConfiguration() {
     ui->enable_nsight_aftermath->setChecked(Settings::values.enable_nsight_aftermath.GetValue());
     ui->dump_shaders->setEnabled(runtime_lock);
     ui->dump_shaders->setChecked(Settings::values.dump_shaders.GetValue());
+    ui->dump_macros->setEnabled(runtime_lock);
+    ui->dump_macros->setChecked(Settings::values.dump_macros.GetValue());
     ui->disable_macro_jit->setEnabled(runtime_lock);
     ui->disable_macro_jit->setChecked(Settings::values.disable_macro_jit.GetValue());
     ui->disable_loop_safety_checks->setEnabled(runtime_lock);
@@ -83,6 +85,7 @@ void ConfigureDebug::ApplyConfiguration() {
     Settings::values.cpu_debug_mode = ui->enable_cpu_debugging->isChecked();
     Settings::values.enable_nsight_aftermath = ui->enable_nsight_aftermath->isChecked();
     Settings::values.dump_shaders = ui->dump_shaders->isChecked();
+    Settings::values.dump_macros = ui->dump_macros->isChecked();
     Settings::values.disable_shader_loop_safety_checks =
         ui->disable_loop_safety_checks->isChecked();
     Settings::values.disable_macro_jit = ui->disable_macro_jit->isChecked();
