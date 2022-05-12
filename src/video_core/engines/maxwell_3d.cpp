@@ -173,6 +173,8 @@ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argume
     case MAXWELL3D_REG_INDEX(shadow_ram_control):
         shadow_state.shadow_ram_control = static_cast<Regs::ShadowRamControl>(nonshadow_argument);
         return;
+    case MAXWELL3D_REG_INDEX(macros.upload_address):
+        return macro_engine->ClearCode(regs.macros.upload_address);
     case MAXWELL3D_REG_INDEX(macros.data):
         return macro_engine->AddCode(regs.macros.upload_address, argument);
     case MAXWELL3D_REG_INDEX(macros.bind):

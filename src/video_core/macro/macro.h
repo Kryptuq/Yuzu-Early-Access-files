@@ -117,6 +117,9 @@ public:
     // Store the uploaded macro code to compile them when they're called.
     void AddCode(u32 method, u32 data);
 
+    // Clear the code associated with a method.
+    void ClearCode(u32 method);
+
     // Compiles the macro if its not in the cache, and executes the compiled macro
     void Execute(u32 method, const std::vector<u32>& parameters);
 
