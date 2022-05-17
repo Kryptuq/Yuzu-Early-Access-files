@@ -325,6 +325,8 @@ const char* ToString(VkResult result) noexcept {
         return "VK_PIPELINE_COMPILE_REQUIRED_EXT";
     case VkResult::VK_RESULT_MAX_ENUM:
         return "VK_RESULT_MAX_ENUM";
+    case VkResult::VK_ERROR_COMPRESSION_EXHAUSTED_EXT:
+        return "VK_ERROR_COMPRESSION_EXHAUSTED_EXT";
     }
     return "Unknown";
 }
