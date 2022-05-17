@@ -103,6 +103,6 @@ struct fmt::formatter<Shader::IR::Opcode> {
     }
     template <typename FormatContext>
     auto format(const Shader::IR::Opcode& op, FormatContext& ctx) {
-        return format_to(ctx.out(), "{}", Shader::IR::NameOf(op));
+        return fmt::format_to(ctx.out(), "{}", Shader::IR::NameOf(op));
     }
 };

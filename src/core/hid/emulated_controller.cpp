@@ -631,11 +631,14 @@ void EmulatedController::SetButton(const Common::Input::CallbackStatus& callback
 
     lock.unlock();
 
-    // Reconnect controller if input is detected
     if (!is_connected) {
-        TryReconnectController(index);
+        if (npad_id_type == NpadIdType::Player1 && npad_type != NpadStyleIndex::Handheld) {
+            Connect();
+        }
+        if (npad_id_type == NpadIdType::Handheld && npad_type == NpadStyleIndex::Handheld) {
+            Connect();
+        }
     }
-
     TriggerOnChange(ControllerTriggerType::Button, true);
 }
 
@@ -985,33 +988,6 @@ bool EmulatedController::IsControllerSupported(bool use_temporary_value) const {
         return supported_style_tag.lager;
     default:
         return false;
-    }
-}
-void EmulatedController::TryReconnectController(std::size_t button_index) {
-    if (button_index >= button_params.size()) {
-        return;
-    }
-
-    const auto engine = button_params[button_index].Get("engine", "");
-    bool reconnect_controller = false;
-
-    // TAS is not allowed to turn on controllers
-    if (engine == "tas") {
-        return;
-    }
-    // Only connect the controller if button config is custom
-    if (engine != "keyboard") {
-        reconnect_controller = true;
-    }
-    if (npad_id_type == NpadIdType::Player1 && npad_type != NpadStyleIndex::Handheld) {
-        reconnect_controller = true;
-    }
-    if (npad_id_type == NpadIdType::Handheld && npad_type == NpadStyleIndex::Handheld) {
-        reconnect_controller = true;
-    }
-
-    if (reconnect_controller) {
-        Connect();
     }
 }
 

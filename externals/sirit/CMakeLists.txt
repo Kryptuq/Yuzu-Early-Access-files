@@ -10,6 +10,10 @@ if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   set(MASTER_PROJECT ON)
 endif()
 
+# Sirit project options
+option(SIRIT_TESTS "Build tests" OFF)
+option(SIRIT_USE_SYSTEM_SPIRV_HEADERS "Use system SPIR-V headers" OFF)
+
 # Default to a Release build
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
@@ -81,7 +85,12 @@ endif()
 enable_testing(true)
 
 # SPIR-V headers
-add_subdirectory(externals/SPIRV-Headers EXCLUDE_FROM_ALL)
+if (SIRIT_USE_SYSTEM_SPIRV_HEADERS)
+    find_package(SPIRV-Headers REQUIRED)
+else()
+    add_subdirectory(externals/SPIRV-Headers EXCLUDE_FROM_ALL)
+    add_library(SPIRV-Headers::SPIRV-Headers ALIAS SPIRV-Headers)
+endif()
 
 # Sirit project files
 add_subdirectory(src)

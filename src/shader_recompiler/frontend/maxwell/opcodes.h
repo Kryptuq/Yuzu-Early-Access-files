@@ -24,6 +24,6 @@ struct fmt::formatter<Shader::Maxwell::Opcode> {
     }
     template <typename FormatContext>
     auto format(const Shader::Maxwell::Opcode& opcode, FormatContext& ctx) {
-        return format_to(ctx.out(), "{}", NameOf(opcode));
+        return fmt::format_to(ctx.out(), "{}", NameOf(opcode));
     }
 };
