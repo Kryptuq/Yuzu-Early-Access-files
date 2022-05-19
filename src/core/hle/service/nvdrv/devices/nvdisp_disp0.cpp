@@ -37,16 +37,18 @@ NvResult nvdisp_disp0::Ioctl3(DeviceFD fd, Ioctl command, const std::vector<u8>&
 void nvdisp_disp0::OnOpen(DeviceFD fd) {}
 void nvdisp_disp0::OnClose(DeviceFD fd) {}
 
-void nvdisp_disp0::flip(u32 buffer_handle, u32 offset, android::PixelFormat format, u32 width,
-                        u32 height, u32 stride, android::BufferTransformFlags transform,
+void nvdisp_disp0::flip(u32 buffer_handle, u32 offset, u32 format, u32 width, u32 height,
+                        u32 stride, NVFlinger::BufferQueue::BufferTransformFlags transform,
                         const Common::Rectangle<int>& crop_rect) {
     const VAddr addr = nvmap_dev->GetObjectAddress(buffer_handle);
     LOG_TRACE(Service,
               "Drawing from address {:X} offset {:08X} Width {} Height {} Stride {} Format {}",
               addr, offset, width, height, stride, format);
 
-    const Tegra::FramebufferConfig framebuffer{addr,   offset, width,     height,
-                                               stride, format, transform, crop_rect};
+    const auto pixel_format = static_cast<Tegra::FramebufferConfig::PixelFormat>(format);
+    const auto transform_flags = static_cast<Tegra::FramebufferConfig::TransformFlags>(transform);
+    const Tegra::FramebufferConfig framebuffer{addr,   offset,       width,           height,
+                                               stride, pixel_format, transform_flags, crop_rect};
 
     system.GetPerfStats().EndSystemFrame();
     system.GPU().SwapBuffers(&framebuffer);

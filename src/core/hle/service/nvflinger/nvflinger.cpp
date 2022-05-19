@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <optional>
@@ -15,11 +15,8 @@
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/service/nvdrv/devices/nvdisp_disp0.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
-#include "core/hle/service/nvflinger/buffer_item_consumer.h"
-#include "core/hle/service/nvflinger/buffer_queue_core.h"
-#include "core/hle/service/nvflinger/hos_binder_driver_server.h"
+#include "core/hle/service/nvflinger/buffer_queue.h"
 #include "core/hle/service/nvflinger/nvflinger.h"
-#include "core/hle/service/nvflinger/ui/graphic_buffer.h"
 #include "core/hle/service/vi/display/vi_display.h"
 #include "core/hle/service/vi/layer/vi_layer.h"
 #include "video_core/gpu.h"
@@ -55,14 +52,13 @@ void NVFlinger::SplitVSync(std::stop_token stop_token) {
     }
 }
 
-NVFlinger::NVFlinger(Core::System& system_, HosBinderDriverServer& hos_binder_driver_server_)
-    : system(system_), service_context(system_, "nvflinger"),
-      hos_binder_driver_server(hos_binder_driver_server_) {
-    displays.emplace_back(0, "Default", hos_binder_driver_server, service_context, system);
-    displays.emplace_back(1, "External", hos_binder_driver_server, service_context, system);
-    displays.emplace_back(2, "Edid", hos_binder_driver_server, service_context, system);
-    displays.emplace_back(3, "Internal", hos_binder_driver_server, service_context, system);
-    displays.emplace_back(4, "Null", hos_binder_driver_server, service_context, system);
+NVFlinger::NVFlinger(Core::System& system_)
+    : system(system_), service_context(system_, "nvflinger") {
+    displays.emplace_back(0, "Default", service_context, system);
+    displays.emplace_back(1, "External", service_context, system);
+    displays.emplace_back(2, "Edid", service_context, system);
+    displays.emplace_back(3, "Internal", service_context, system);
+    displays.emplace_back(4, "Null", service_context, system);
     guard = std::make_shared<std::mutex>();
 
     // Schedule the screen composition events
@@ -86,14 +82,11 @@ NVFlinger::NVFlinger(Core::System& system_, HosBinderDriverServer& hos_binder_dr
 }
 
 NVFlinger::~NVFlinger() {
+    for (auto& buffer_queue : buffer_queues) {
+        buffer_queue->Disconnect();
+    }
     if (!system.IsMulticore()) {
         system.CoreTiming().UnscheduleEvent(composition_event, 0);
-    }
-
-    for (auto& display : displays) {
-        for (size_t layer = 0; layer < display.GetNumLayers(); ++layer) {
-            display.GetLayer(layer).Core().NotifyShutdown();
-        }
     }
 }
 
@@ -131,8 +124,10 @@ std::optional<u64> NVFlinger::CreateLayer(u64 display_id) {
 }
 
 void NVFlinger::CreateLayerAtId(VI::Display& display, u64 layer_id) {
-    const auto buffer_id = next_buffer_queue_id++;
-    display.CreateLayer(layer_id, buffer_id);
+    const u32 buffer_queue_id = next_buffer_queue_id++;
+    buffer_queues.emplace_back(
+        std::make_unique<BufferQueue>(system.Kernel(), buffer_queue_id, layer_id, service_context));
+    display.CreateLayer(layer_id, *buffer_queues.back());
 }
 
 void NVFlinger::CloseLayer(u64 layer_id) {
@@ -151,7 +146,7 @@ std::optional<u32> NVFlinger::FindBufferQueueId(u64 display_id, u64 layer_id) {
         return std::nullopt;
     }
 
-    return layer->GetBinderId();
+    return layer->GetBufferQueue().GetId();
 }
 
 Kernel::KReadableEvent* NVFlinger::FindVsyncEvent(u64 display_id) {
@@ -163,6 +158,18 @@ Kernel::KReadableEvent* NVFlinger::FindVsyncEvent(u64 display_id) {
     }
 
     return &display->GetVSyncEvent();
+}
+
+BufferQueue* NVFlinger::FindBufferQueue(u32 id) {
+    const auto lock_guard = Lock();
+    const auto itr = std::find_if(buffer_queues.begin(), buffer_queues.end(),
+                                  [id](const auto& queue) { return queue->GetId() == id; });
+
+    if (itr == buffer_queues.end()) {
+        return nullptr;
+    }
+
+    return itr->get();
 }
 
 VI::Display* NVFlinger::FindDisplay(u64 display_id) {
@@ -238,22 +245,23 @@ void NVFlinger::Compose() {
 
         // TODO(Subv): Support more than 1 layer.
         VI::Layer& layer = display.GetLayer(0);
+        auto& buffer_queue = layer.GetBufferQueue();
 
-        android::BufferItem buffer{};
-        const auto status = layer.GetConsumer().AcquireBuffer(&buffer, {}, false);
+        // Search for a queued buffer and acquire it
+        auto buffer = buffer_queue.AcquireBuffer();
 
-        if (status != android::Status::NoError) {
+        if (!buffer) {
             continue;
         }
 
-        const auto& igbp_buffer = *buffer.graphic_buffer;
+        const auto& igbp_buffer = buffer->get().igbp_buffer;
 
         if (!system.IsPoweredOn()) {
             return; // We are likely shutting down
         }
 
         auto& gpu = system.GPU();
-        const auto& multi_fence = buffer.fence;
+        const auto& multi_fence = buffer->get().multi_fence;
         guard->unlock();
         for (u32 fence_id = 0; fence_id < multi_fence.num_fences; fence_id++) {
             const auto& fence = multi_fence.fences[fence_id];
@@ -269,18 +277,12 @@ void NVFlinger::Compose() {
         auto nvdisp = nvdrv->GetDevice<Nvidia::Devices::nvdisp_disp0>("/dev/nvdisp_disp0");
         ASSERT(nvdisp);
 
-        Common::Rectangle<int> crop_rect{
-            static_cast<int>(buffer.crop.Left()), static_cast<int>(buffer.crop.Top()),
-            static_cast<int>(buffer.crop.Right()), static_cast<int>(buffer.crop.Bottom())};
+        nvdisp->flip(igbp_buffer.gpu_buffer_id, igbp_buffer.offset, igbp_buffer.external_format,
+                     igbp_buffer.width, igbp_buffer.height, igbp_buffer.stride,
+                     buffer->get().transform, buffer->get().crop_rect);
 
-        nvdisp->flip(igbp_buffer.BufferId(), igbp_buffer.Offset(), igbp_buffer.ExternalFormat(),
-                     igbp_buffer.Width(), igbp_buffer.Height(), igbp_buffer.Stride(),
-                     static_cast<android::BufferTransformFlags>(buffer.transform), crop_rect);
-
-        swap_interval = buffer.swap_interval;
-
-        auto fence = android::Fence::NoFence();
-        layer.GetConsumer().ReleaseBuffer(buffer, fence);
+        swap_interval = buffer->get().swap_interval;
+        buffer_queue.ReleaseBuffer(buffer->get().slot);
     }
 }
 

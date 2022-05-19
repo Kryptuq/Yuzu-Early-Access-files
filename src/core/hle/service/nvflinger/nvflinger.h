@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -36,16 +36,13 @@ class Display;
 class Layer;
 } // namespace Service::VI
 
-namespace Service::android {
-class BufferQueueCore;
-class BufferQueueProducer;
-} // namespace Service::android
-
 namespace Service::NVFlinger {
+
+class BufferQueue;
 
 class NVFlinger final {
 public:
-    explicit NVFlinger(Core::System& system_, HosBinderDriverServer& hos_binder_driver_server_);
+    explicit NVFlinger(Core::System& system_);
     ~NVFlinger();
 
     /// Sets the NVDrv module instance to use to send buffers to the GPU.
@@ -74,17 +71,14 @@ public:
     /// If an invalid display ID is provided, then nullptr is returned.
     [[nodiscard]] Kernel::KReadableEvent* FindVsyncEvent(u64 display_id);
 
+    /// Obtains a buffer queue identified by the ID.
+    [[nodiscard]] BufferQueue* FindBufferQueue(u32 id);
+
     /// Performs a composition request to the emulated nvidia GPU and triggers the vsync events when
     /// finished.
     void Compose();
 
     [[nodiscard]] s64 GetNextTicks() const;
-
-private:
-    struct Layer {
-        std::unique_ptr<android::BufferQueueCore> core;
-        std::unique_ptr<android::BufferQueueProducer> producer;
-    };
 
 private:
     [[nodiscard]] std::unique_lock<std::mutex> Lock() const {
@@ -116,6 +110,7 @@ private:
     std::shared_ptr<Nvidia::Module> nvdrv;
 
     std::list<VI::Display> displays;
+    std::vector<std::unique_ptr<BufferQueue>> buffer_queues;
 
     /// Id to use for the next layer that is created, this counter is shared among all displays.
     u64 next_layer_id = 1;
@@ -135,8 +130,6 @@ private:
     std::jthread vsync_thread;
 
     KernelHelpers::ServiceContext service_context;
-
-    HosBinderDriverServer& hos_binder_driver_server;
 };
 
 } // namespace Service::NVFlinger

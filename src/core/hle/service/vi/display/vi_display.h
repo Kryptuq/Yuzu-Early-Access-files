@@ -14,17 +14,12 @@ namespace Kernel {
 class KEvent;
 }
 
-namespace Service::android {
-class BufferQueueProducer;
+namespace Service::NVFlinger {
+class BufferQueue;
 }
-
 namespace Service::KernelHelpers {
 class ServiceContext;
-}
-
-namespace Service::NVFlinger {
-class HosBinderDriverServer;
-}
+} // namespace Service::KernelHelpers
 
 namespace Service::VI {
 
@@ -39,13 +34,12 @@ public:
     /// Constructs a display with a given unique ID and name.
     ///
     /// @param id The unique ID for this display.
-    /// @param hos_binder_driver_server_ NVFlinger HOSBinderDriver server instance.
     /// @param service_context_ The ServiceContext for the owning service.
     /// @param name_ The name for this display.
     /// @param system_ The global system instance.
     ///
-    Display(u64 id, std::string name_, NVFlinger::HosBinderDriverServer& hos_binder_driver_server_,
-            KernelHelpers::ServiceContext& service_context_, Core::System& system_);
+    Display(u64 id, std::string name_, KernelHelpers::ServiceContext& service_context_,
+            Core::System& system_);
     ~Display();
 
     /// Gets the unique ID assigned to this display.
@@ -69,10 +63,6 @@ public:
     /// Gets a layer for this display based off an index.
     const Layer& GetLayer(std::size_t index) const;
 
-    std::size_t GetNumLayers() const {
-        return layers.size();
-    }
-
     /// Gets the readable vsync event.
     Kernel::KReadableEvent& GetVSyncEvent();
 
@@ -81,10 +71,10 @@ public:
 
     /// Creates and adds a layer to this display with the given ID.
     ///
-    /// @param layer_id The ID to assign to the created layer.
-    /// @param binder_id The ID assigned to the buffer queue.
+    /// @param layer_id     The ID to assign to the created layer.
+    /// @param buffer_queue The buffer queue for the layer instance to use.
     ///
-    void CreateLayer(u64 layer_id, u32 binder_id);
+    void CreateLayer(u64 layer_id, NVFlinger::BufferQueue& buffer_queue);
 
     /// Closes and removes a layer from this display with the given ID.
     ///
@@ -113,10 +103,9 @@ public:
 private:
     u64 display_id;
     std::string name;
-    NVFlinger::HosBinderDriverServer& hos_binder_driver_server;
     KernelHelpers::ServiceContext& service_context;
 
-    std::vector<std::unique_ptr<Layer>> layers;
+    std::vector<std::shared_ptr<Layer>> layers;
     Kernel::KEvent* vsync_event{};
 };
 

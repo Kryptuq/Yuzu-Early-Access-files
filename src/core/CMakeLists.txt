@@ -551,35 +551,10 @@ add_library(core STATIC
     hle/service/nvdrv/nvmemp.h
     hle/service/nvdrv/syncpoint_manager.cpp
     hle/service/nvdrv/syncpoint_manager.h
-    hle/service/nvflinger/binder.h
-    hle/service/nvflinger/buffer_item.h
-    hle/service/nvflinger/buffer_item_consumer.cpp
-    hle/service/nvflinger/buffer_item_consumer.h
-    hle/service/nvflinger/buffer_queue_consumer.cpp
-    hle/service/nvflinger/buffer_queue_consumer.h
-    hle/service/nvflinger/buffer_queue_core.cpp
-    hle/service/nvflinger/buffer_queue_core.h
-    hle/service/nvflinger/buffer_queue_defs.h
-    hle/service/nvflinger/buffer_queue_producer.cpp
-    hle/service/nvflinger/buffer_queue_producer.h
-    hle/service/nvflinger/buffer_slot.h
-    hle/service/nvflinger/buffer_transform_flags.h
-    hle/service/nvflinger/consumer_base.cpp
-    hle/service/nvflinger/consumer_base.h
-    hle/service/nvflinger/consumer_listener.h
-    hle/service/nvflinger/graphic_buffer_producer.cpp
-    hle/service/nvflinger/graphic_buffer_producer.h
-    hle/service/nvflinger/hos_binder_driver_server.cpp
-    hle/service/nvflinger/hos_binder_driver_server.h
+    hle/service/nvflinger/buffer_queue.cpp
+    hle/service/nvflinger/buffer_queue.h
     hle/service/nvflinger/nvflinger.cpp
     hle/service/nvflinger/nvflinger.h
-    hle/service/nvflinger/parcel.h
-    hle/service/nvflinger/pixel_format.h
-    hle/service/nvflinger/producer_listener.h
-    hle/service/nvflinger/status.h
-    hle/service/nvflinger/ui/fence.h
-    hle/service/nvflinger/ui/graphic_buffer.h
-    hle/service/nvflinger/window.h
     hle/service/olsc/olsc.cpp
     hle/service/olsc/olsc.h
     hle/service/pcie/pcie.cpp

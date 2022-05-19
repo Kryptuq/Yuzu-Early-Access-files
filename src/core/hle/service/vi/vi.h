@@ -14,9 +14,8 @@ class HLERequestContext;
 }
 
 namespace Service::NVFlinger {
-class HosBinderDriverServer;
 class NVFlinger;
-} // namespace Service::NVFlinger
+}
 
 namespace Service::SM {
 class ServiceManager;
@@ -47,14 +46,11 @@ enum class Policy {
 
 namespace detail {
 void GetDisplayServiceImpl(Kernel::HLERequestContext& ctx, Core::System& system,
-                           NVFlinger::NVFlinger& nv_flinger,
-                           NVFlinger::HosBinderDriverServer& hos_binder_driver_server,
-                           Permission permission);
+                           NVFlinger::NVFlinger& nv_flinger, Permission permission);
 } // namespace detail
 
 /// Registers all VI services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system,
-                       NVFlinger::NVFlinger& nv_flinger,
-                       NVFlinger::HosBinderDriverServer& hos_binder_driver_server);
+                       NVFlinger::NVFlinger& nv_flinger);
 
 } // namespace Service::VI

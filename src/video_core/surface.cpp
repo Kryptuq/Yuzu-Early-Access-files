@@ -190,13 +190,13 @@ PixelFormat PixelFormatFromRenderTargetFormat(Tegra::RenderTargetFormat format) 
     }
 }
 
-PixelFormat PixelFormatFromGPUPixelFormat(Service::android::PixelFormat format) {
+PixelFormat PixelFormatFromGPUPixelFormat(Tegra::FramebufferConfig::PixelFormat format) {
     switch (format) {
-    case Service::android::PixelFormat::Rgba8888:
+    case Tegra::FramebufferConfig::PixelFormat::A8B8G8R8_UNORM:
         return PixelFormat::A8B8G8R8_UNORM;
-    case Service::android::PixelFormat::Rgb565:
+    case Tegra::FramebufferConfig::PixelFormat::RGB565_UNORM:
         return PixelFormat::R5G6B5_UNORM;
-    case Service::android::PixelFormat::Bgra8888:
+    case Tegra::FramebufferConfig::PixelFormat::B8G8R8A8_UNORM:
         return PixelFormat::B8G8R8A8_UNORM;
     default:
         UNIMPLEMENTED_MSG("Unimplemented format={}", format);

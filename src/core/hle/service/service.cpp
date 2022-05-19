@@ -49,7 +49,6 @@
 #include "core/hle/service/npns/npns.h"
 #include "core/hle/service/ns/ns.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
-#include "core/hle/service/nvflinger/hos_binder_driver_server.h"
 #include "core/hle/service/nvflinger/nvflinger.h"
 #include "core/hle/service/olsc/olsc.h"
 #include "core/hle/service/pcie/pcie.h"
@@ -232,8 +231,7 @@ ResultCode ServiceFrameworkBase::HandleSyncRequest(Kernel::KServerSession& sessi
 
 /// Initialize Services
 Services::Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system)
-    : hos_binder_driver_server{std::make_unique<NVFlinger::HosBinderDriverServer>(system)},
-      nv_flinger{std::make_unique<NVFlinger::NVFlinger>(system, *hos_binder_driver_server)} {
+    : nv_flinger{std::make_unique<NVFlinger::NVFlinger>(system)} {
 
     // NVFlinger needs to be accessed by several services like Vi and AppletOE so we instantiate it
     // here and pass it into the respective InstallInterfaces functions.
@@ -294,7 +292,7 @@ Services::Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system
     SSL::InstallInterfaces(*sm, system);
     Time::InstallInterfaces(system);
     USB::InstallInterfaces(*sm, system);
-    VI::InstallInterfaces(*sm, system, *nv_flinger, *hos_binder_driver_server);
+    VI::InstallInterfaces(*sm, system, *nv_flinger);
     WLAN::InstallInterfaces(*sm, system);
 }
 

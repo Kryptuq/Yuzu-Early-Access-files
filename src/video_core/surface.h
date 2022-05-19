@@ -468,7 +468,7 @@ PixelFormat PixelFormatFromDepthFormat(Tegra::DepthFormat format);
 
 PixelFormat PixelFormatFromRenderTargetFormat(Tegra::RenderTargetFormat format);
 
-PixelFormat PixelFormatFromGPUPixelFormat(Service::android::PixelFormat format);
+PixelFormat PixelFormatFromGPUPixelFormat(Tegra::FramebufferConfig::PixelFormat format);
 
 SurfaceType GetFormatType(PixelFormat pixel_format);
 
