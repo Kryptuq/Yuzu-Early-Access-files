@@ -44,6 +44,8 @@ bool SplitPath(const std::string& full_path, std::string* _pPath, std::string* _
 
 #endif
 
+[[nodiscard]] std::u16string U16StringFromBuffer(const u16* input, std::size_t length);
+
 /**
  * Compares the string defined by the range [`begin`, `end`) to the null-terminated C-string
  * `other` for equality.

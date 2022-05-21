@@ -1401,7 +1401,8 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
     if (loader != nullptr && loader->ReadProgramId(title_id) == Loader::ResultStatus::Success &&
         type == StartGameType::Normal) {
         // Load per game settings
-        const auto file_path = std::filesystem::path{filename.toStdU16String()};
+        const auto file_path =
+            std::filesystem::path{Common::U16StringFromBuffer(filename.utf16(), filename.size())};
         const auto config_file_name = title_id == 0
                                           ? Common::FS::PathToUTF8String(file_path.filename())
                                           : fmt::format("{:016X}", title_id);
@@ -1482,7 +1483,8 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
     }
     if (res != Loader::ResultStatus::Success || title_name.empty()) {
         title_name = Common::FS::PathToUTF8String(
-            std::filesystem::path{filename.toStdU16String()}.filename());
+            std::filesystem::path{Common::U16StringFromBuffer(filename.utf16(), filename.size())}
+                .filename());
     }
     const bool is_64bit = system->Kernel().CurrentProcess()->Is64BitProcess();
     const auto instruction_set_suffix = is_64bit ? tr("(64-bit)") : tr("(32-bit)");

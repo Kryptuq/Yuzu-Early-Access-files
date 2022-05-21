@@ -178,6 +178,10 @@ std::wstring UTF8ToUTF16W(const std::string& input) {
 
 #endif
 
+std::u16string U16StringFromBuffer(const u16* input, std::size_t length) {
+    return std::u16string(reinterpret_cast<const char16_t*>(input), length);
+}
+
 std::string StringFromFixedZeroTerminatedBuffer(std::string_view buffer, std::size_t max_len) {
     std::size_t len = 0;
     while (len < buffer.length() && len < max_len && buffer[len] != '\0') {
