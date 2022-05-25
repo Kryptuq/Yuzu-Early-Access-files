@@ -1777,7 +1777,7 @@ void Framebuffer::CreateFramebuffer(TextureCacheRuntime& runtime,
         }
         attachments.push_back(color_buffer->RenderTarget());
         renderpass_key.color_formats[index] = color_buffer->format;
-        num_layers = std::max(num_layers, color_buffer->range.extent.layers);
+        num_layers = std::min(num_layers, color_buffer->range.extent.layers);
         images[num_images] = color_buffer->ImageHandle();
         image_ranges[num_images] = MakeSubresourceRange(color_buffer);
         samples = color_buffer->Samples();
@@ -1787,7 +1787,7 @@ void Framebuffer::CreateFramebuffer(TextureCacheRuntime& runtime,
     if (depth_buffer) {
         attachments.push_back(depth_buffer->RenderTarget());
         renderpass_key.depth_format = depth_buffer->format;
-        num_layers = std::max(num_layers, depth_buffer->range.extent.layers);
+        num_layers = std::min(num_layers, depth_buffer->range.extent.layers);
         images[num_images] = depth_buffer->ImageHandle();
         const VkImageSubresourceRange subresource_range = MakeSubresourceRange(depth_buffer);
         image_ranges[num_images] = subresource_range;

@@ -683,6 +683,12 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             ext_sampler_filter_minmax = false;
         }
     }
+    if (khr_workgroup_memory_explicit_layout && !is_shader_int16_supported) {
+        // TODO(lat9nq): Find a proper fix for this
+        LOG_WARNING(Render_Vulkan, "Disabling VK_KHR_workgroup_memory_explicit_layout due to a "
+                                   "yuzu bug when host driver does not support 16-bit integers");
+        khr_workgroup_memory_explicit_layout = false;
+    }
 
     const bool is_intel_windows = driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS;
     const bool is_intel_anv = driver_id == VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA;

@@ -217,10 +217,6 @@ private:
     void TouchUpdateEvent(const QTouchEvent* event);
     void TouchEndEvent();
 
-    void TouchStart(const QTouchEvent::TouchPoint& touch_point);
-    bool TouchUpdate(const QTouchEvent::TouchPoint& touch_point);
-    bool TouchExist(std::size_t id, const QList<QTouchEvent::TouchPoint>& touch_points) const;
-
     void OnMinimalClientAreaChangeRequest(std::pair<u32, u32> minimal_size) override;
 
     bool InitializeOpenGL();
@@ -245,8 +241,6 @@ private:
 
     bool first_frame = false;
     InputCommon::TasInput::TasState last_tas_state;
-
-    std::array<std::size_t, 16> touch_ids{};
 
     Core::System& system;
 

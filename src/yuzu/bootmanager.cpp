@@ -772,65 +772,25 @@ void GRenderWindow::wheelEvent(QWheelEvent* event) {
 void GRenderWindow::TouchBeginEvent(const QTouchEvent* event) {
     QList<QTouchEvent::TouchPoint> touch_points = event->touchPoints();
     for (const auto& touch_point : touch_points) {
-        if (!TouchUpdate(touch_point)) {
-            TouchStart(touch_point);
-        }
+        const auto [x, y] = ScaleTouch(touch_point.pos());
+        const auto [touch_x, touch_y] = MapToTouchScreen(x, y);
+        input_subsystem->GetTouchScreen()->TouchPressed(touch_x, touch_y, touch_point.id());
     }
 }
 
 void GRenderWindow::TouchUpdateEvent(const QTouchEvent* event) {
     QList<QTouchEvent::TouchPoint> touch_points = event->touchPoints();
+    input_subsystem->GetTouchScreen()->ClearActiveFlag();
     for (const auto& touch_point : touch_points) {
-        if (!TouchUpdate(touch_point)) {
-            TouchStart(touch_point);
-        }
+        const auto [x, y] = ScaleTouch(touch_point.pos());
+        const auto [touch_x, touch_y] = MapToTouchScreen(x, y);
+        input_subsystem->GetTouchScreen()->TouchMoved(touch_x, touch_y, touch_point.id());
     }
-    // Release all inactive points
-    for (std::size_t id = 0; id < touch_ids.size(); ++id) {
-        if (!TouchExist(touch_ids[id], touch_points)) {
-            touch_ids[id] = 0;
-            input_subsystem->GetTouchScreen()->TouchReleased(id);
-        }
-    }
+    input_subsystem->GetTouchScreen()->ReleaseInactiveTouch();
 }
 
 void GRenderWindow::TouchEndEvent() {
-    for (std::size_t id = 0; id < touch_ids.size(); ++id) {
-        if (touch_ids[id] != 0) {
-            touch_ids[id] = 0;
-            input_subsystem->GetTouchScreen()->TouchReleased(id);
-        }
-    }
-}
-
-void GRenderWindow::TouchStart(const QTouchEvent::TouchPoint& touch_point) {
-    for (std::size_t id = 0; id < touch_ids.size(); ++id) {
-        if (touch_ids[id] == 0) {
-            touch_ids[id] = touch_point.id() + 1;
-            const auto [x, y] = ScaleTouch(touch_point.pos());
-            const auto [touch_x, touch_y] = MapToTouchScreen(x, y);
-            input_subsystem->GetTouchScreen()->TouchPressed(touch_x, touch_y, id);
-        }
-    }
-}
-
-bool GRenderWindow::TouchUpdate(const QTouchEvent::TouchPoint& touch_point) {
-    for (std::size_t id = 0; id < touch_ids.size(); ++id) {
-        if (touch_ids[id] == static_cast<std::size_t>(touch_point.id() + 1)) {
-            const auto [x, y] = ScaleTouch(touch_point.pos());
-            const auto [touch_x, touch_y] = MapToTouchScreen(x, y);
-            input_subsystem->GetTouchScreen()->TouchMoved(touch_x, touch_y, id);
-            return true;
-        }
-    }
-    return false;
-}
-
-bool GRenderWindow::TouchExist(std::size_t id,
-                               const QList<QTouchEvent::TouchPoint>& touch_points) const {
-    return std::any_of(touch_points.begin(), touch_points.end(), [id](const auto& point) {
-        return id == static_cast<std::size_t>(point.id() + 1);
-    });
+    input_subsystem->GetTouchScreen()->ReleaseAllTouch();
 }
 
 bool GRenderWindow::event(QEvent* event) {

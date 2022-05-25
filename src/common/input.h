@@ -72,6 +72,7 @@ enum class PollingError {
 enum class VibrationAmplificationType {
     Linear,
     Exponential,
+    Test,
 };
 
 // Analog properties for calibration

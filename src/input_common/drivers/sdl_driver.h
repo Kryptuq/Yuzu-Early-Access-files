@@ -12,6 +12,7 @@
 #include <SDL.h>
 
 #include "common/common_types.h"
+#include "common/threadsafe_queue.h"
 #include "input_common/input_engine.h"
 
 union SDL_Event;
@@ -64,11 +65,19 @@ public:
         const PadIdentifier& identifier, const Common::Input::VibrationStatus& vibration) override;
 
 private:
+    struct VibrationRequest {
+        PadIdentifier identifier;
+        Common::Input::VibrationStatus vibration;
+    };
+
     void InitJoystick(int joystick_index);
     void CloseJoystick(SDL_Joystick* sdl_joystick);
 
     /// Needs to be called before SDL_QuitSubSystem.
     void CloseJoysticks();
+
+    /// Takes all vibrations from the queue and sends the command to the controller
+    void SendVibrations();
 
     Common::ParamPackage BuildAnalogParamPackageForButton(int port, std::string guid, s32 axis,
                                                           float value = 0.1f) const;
@@ -106,6 +115,9 @@ private:
 
     /// Returns true if the button is on the left joycon
     bool IsButtonOnLeftSide(Settings::NativeButton::Values button) const;
+
+    /// Queue of vibration request to controllers
+    Common::SPSCQueue<VibrationRequest> vibration_queue;
 
     /// Map of GUID of a list of corresponding virtual Joysticks
     std::unordered_map<std::string, std::vector<std::shared_ptr<SDLJoystick>>> joystick_map;

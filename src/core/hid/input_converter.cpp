@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
 #include <random>
 
 #include "common/input.h"
@@ -195,6 +196,9 @@ Common::Input::TouchStatus TransformToTouch(const Common::Input::CallbackStatus&
     // clamp value
     x = std::clamp(x, 0.0f, 1.0f);
     y = std::clamp(y, 0.0f, 1.0f);
+
+    // Limit id to maximum number of fingers
+    status.id = std::clamp(status.id, 0, 16);
 
     if (status.pressed.inverted) {
         status.pressed.value = !status.pressed.value;

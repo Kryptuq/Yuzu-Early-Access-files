@@ -884,18 +884,42 @@ bool EmulatedController::SetVibration(std::size_t device_index, VibrationValue v
 }
 
 bool EmulatedController::TestVibration(std::size_t device_index) {
-    static constexpr VibrationValue test_vibration = {
+    if (device_index >= output_devices.size()) {
+        return false;
+    }
+    if (!output_devices[device_index]) {
+        return false;
+    }
+
+    const auto player_index = NpadIdTypeToIndex(npad_id_type);
+    const auto& player = Settings::values.players.GetValue()[player_index];
+
+    if (!player.vibration_enabled) {
+        return false;
+    }
+
+    const Common::Input::VibrationStatus test_vibration = {
         .low_amplitude = 0.001f,
-        .low_frequency = 160.0f,
+        .low_frequency = DEFAULT_VIBRATION_VALUE.low_frequency,
         .high_amplitude = 0.001f,
-        .high_frequency = 320.0f,
+        .high_frequency = DEFAULT_VIBRATION_VALUE.high_frequency,
+        .type = Common::Input::VibrationAmplificationType::Test,
+    };
+
+    const Common::Input::VibrationStatus zero_vibration = {
+        .low_amplitude = DEFAULT_VIBRATION_VALUE.low_amplitude,
+        .low_frequency = DEFAULT_VIBRATION_VALUE.low_frequency,
+        .high_amplitude = DEFAULT_VIBRATION_VALUE.high_amplitude,
+        .high_frequency = DEFAULT_VIBRATION_VALUE.high_frequency,
+        .type = Common::Input::VibrationAmplificationType::Test,
     };
 
     // Send a slight vibration to test for rumble support
-    SetVibration(device_index, test_vibration);
+    output_devices[device_index]->SetVibration(test_vibration);
 
     // Stop any vibration and return the result
-    return SetVibration(device_index, DEFAULT_VIBRATION_VALUE);
+    return output_devices[device_index]->SetVibration(zero_vibration) ==
+           Common::Input::VibrationError::None;
 }
 
 bool EmulatedController::SetPollingMode(Common::Input::PollingMode polling_mode) {

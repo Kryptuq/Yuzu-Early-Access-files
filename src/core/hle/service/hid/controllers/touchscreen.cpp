@@ -44,7 +44,6 @@ void Controller_Touchscreen::OnUpdate(const Core::Timing::CoreTiming& core_timin
     for (std::size_t id = 0; id < MAX_FINGERS; id++) {
         const auto& current_touch = touch_status[id];
         auto& finger = fingers[id];
-        finger.position = current_touch.position;
         finger.id = current_touch.id;
 
         if (finger.attribute.start_touch) {
@@ -61,13 +60,18 @@ void Controller_Touchscreen::OnUpdate(const Core::Timing::CoreTiming& core_timin
         if (!finger.pressed && current_touch.pressed) {
             finger.attribute.start_touch.Assign(1);
             finger.pressed = true;
+            finger.position = current_touch.position;
             continue;
         }
 
         if (finger.pressed && !current_touch.pressed) {
             finger.attribute.raw = 0;
             finger.attribute.end_touch.Assign(1);
+            continue;
         }
+
+        // Only update position if touch is not on a special frame
+        finger.position = current_touch.position;
     }
 
     std::array<Core::HID::TouchFinger, MAX_FINGERS> active_fingers;

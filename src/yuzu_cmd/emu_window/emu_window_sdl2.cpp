@@ -93,7 +93,7 @@ void EmuWindow_SDL2::OnFingerMotion(float x, float y, std::size_t id) {
 }
 
 void EmuWindow_SDL2::OnFingerUp() {
-    input_subsystem->GetTouchScreen()->TouchReleased(0);
+    input_subsystem->GetTouchScreen()->ReleaseAllTouch();
 }
 
 void EmuWindow_SDL2::OnKeyEvent(int key, u8 state) {

@@ -434,6 +434,7 @@ SDLDriver::SDLDriver(std::string input_engine_) : InputEngine(std::move(input_en
             using namespace std::chrono_literals;
             while (initialized) {
                 SDL_PumpEvents();
+                SendVibrations();
                 std::this_thread::sleep_for(1ms);
             }
         });
@@ -531,11 +532,29 @@ Common::Input::VibrationError SDLDriver::SetRumble(
         .type = Common::Input::VibrationAmplificationType::Exponential,
     };
 
-    if (!joystick->RumblePlay(new_vibration)) {
-        return Common::Input::VibrationError::Unknown;
+    if (vibration.type == Common::Input::VibrationAmplificationType::Test) {
+        if (!joystick->RumblePlay(new_vibration)) {
+            return Common::Input::VibrationError::Unknown;
+        }
+        return Common::Input::VibrationError::None;
     }
 
+    vibration_queue.Push(VibrationRequest{
+        .identifier = identifier,
+        .vibration = new_vibration,
+    });
+
     return Common::Input::VibrationError::None;
+}
+
+void SDLDriver::SendVibrations() {
+    while (!vibration_queue.Empty()) {
+        VibrationRequest request;
+        vibration_queue.Pop(request);
+        const auto joystick = GetSDLJoystickByGUID(request.identifier.guid.RawString(),
+                                                   static_cast<int>(request.identifier.port));
+        joystick->RumblePlay(request.vibration);
+    }
 }
 
 Common::ParamPackage SDLDriver::BuildAnalogParamPackageForButton(int port, std::string guid,
