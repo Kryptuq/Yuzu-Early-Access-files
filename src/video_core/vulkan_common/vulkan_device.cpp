@@ -566,7 +566,7 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     }
 
     VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR workgroup_layout;
-    if (khr_workgroup_memory_explicit_layout) {
+    if (khr_workgroup_memory_explicit_layout && is_shader_int16_supported) {
         workgroup_layout = {
             .sType =
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR,
@@ -577,6 +577,11 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             .workgroupMemoryExplicitLayout16BitAccess = VK_TRUE,
         };
         SetNext(next, workgroup_layout);
+    } else if (khr_workgroup_memory_explicit_layout) {
+        // TODO(lat9nq): Find a proper fix for this
+        LOG_WARNING(Render_Vulkan, "Disabling VK_KHR_workgroup_memory_explicit_layout due to a "
+                                   "yuzu bug when host driver does not support 16-bit integers");
+        khr_workgroup_memory_explicit_layout = false;
     }
 
     VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR executable_properties;
@@ -664,6 +669,17 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     const bool is_amd =
         driver_id == VK_DRIVER_ID_AMD_PROPRIETARY || driver_id == VK_DRIVER_ID_AMD_OPEN_SOURCE;
     if (is_amd) {
+        // TODO(lat9nq): Add an upper bound when AMD fixes their VK_KHR_push_descriptor
+        const bool has_broken_push_descriptor = VK_VERSION_MAJOR(properties.driverVersion) == 2 &&
+                                                VK_VERSION_MINOR(properties.driverVersion) == 0 &&
+                                                VK_VERSION_PATCH(properties.driverVersion) >= 226;
+        if (khr_push_descriptor && has_broken_push_descriptor) {
+            LOG_WARNING(
+                Render_Vulkan,
+                "Disabling AMD driver 2.0.226 and later from broken VK_KHR_push_descriptor");
+            khr_push_descriptor = false;
+        }
+
         // AMD drivers need a higher amount of Sets per Pool in certain circunstances like in XC2.
         sets_per_pool = 96;
         // Disable VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT on AMD GCN4 and lower as it is broken.
@@ -682,12 +698,6 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
                         "Blacklisting AMD GCN4 and earlier for VK_EXT_sampler_filter_minmax");
             ext_sampler_filter_minmax = false;
         }
-    }
-    if (khr_workgroup_memory_explicit_layout && !is_shader_int16_supported) {
-        // TODO(lat9nq): Find a proper fix for this
-        LOG_WARNING(Render_Vulkan, "Disabling VK_KHR_workgroup_memory_explicit_layout due to a "
-                                   "yuzu bug when host driver does not support 16-bit integers");
-        khr_workgroup_memory_explicit_layout = false;
     }
 
     const bool is_intel_windows = driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS;
