@@ -232,9 +232,7 @@ void SetYuzuPath(YuzuPath yuzu_path, const fs::path& new_path) {
 fs::path GetExeDirectory() {
     wchar_t exe_path[MAX_PATH];
 
-    GetModuleFileNameW(nullptr, exe_path, MAX_PATH);
-
-    if (!exe_path) {
+    if (GetModuleFileNameW(nullptr, exe_path, MAX_PATH) == 0) {
         LOG_ERROR(Common_Filesystem,
                   "Failed to get the path to the executable of the current process");
     }
