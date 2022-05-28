@@ -240,7 +240,7 @@ elseif(WIN32)
     if(MSVC)
         set_target_properties(yuzu PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS")
     elseif(MINGW)
-        set_target_properties(yuzu PROPERTIES LINK_FLAGS_RELEASE "-mwindows")
+        set_target_properties(yuzu PROPERTIES LINK_FLAGS_RELEASE "-Wl,--subsystem,windows")
     endif()
 endif()
 
