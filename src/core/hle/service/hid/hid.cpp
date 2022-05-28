@@ -257,12 +257,12 @@ Hid::Hid(Core::System& system_)
         {81, &Hid::ResetGyroscopeZeroDriftMode, "ResetGyroscopeZeroDriftMode"},
         {82, &Hid::IsSixAxisSensorAtRest, "IsSixAxisSensorAtRest"},
         {83, &Hid::IsFirmwareUpdateAvailableForSixAxisSensor, "IsFirmwareUpdateAvailableForSixAxisSensor"},
-        {84, nullptr, "EnableSixAxisSensorUnalteredPassthrough"},
-        {85, nullptr, "IsSixAxisSensorUnalteredPassthroughEnabled"},
+        {84, &Hid::EnableSixAxisSensorUnalteredPassthrough, "EnableSixAxisSensorUnalteredPassthrough"},
+        {85, &Hid::IsSixAxisSensorUnalteredPassthroughEnabled, "IsSixAxisSensorUnalteredPassthroughEnabled"},
         {86, nullptr, "StoreSixAxisSensorCalibrationParameter"},
-        {87, nullptr, "LoadSixAxisSensorCalibrationParameter"},
-        {88, nullptr, "GetSixAxisSensorIcInformation"},
-        {89, nullptr, "ResetIsSixAxisSensorDeviceNewlyAssigned"},
+        {87, &Hid::LoadSixAxisSensorCalibrationParameter, "LoadSixAxisSensorCalibrationParameter"},
+        {88, &Hid::GetSixAxisSensorIcInformation, "GetSixAxisSensorIcInformation"},
+        {89, &Hid::ResetIsSixAxisSensorDeviceNewlyAssigned, "ResetIsSixAxisSensorDeviceNewlyAssigned"},
         {91, &Hid::ActivateGesture, "ActivateGesture"},
         {100, &Hid::SetSupportedNpadStyleSet, "SetSupportedNpadStyleSet"},
         {101, &Hid::GetSupportedNpadStyleSet, "GetSupportedNpadStyleSet"},
@@ -694,11 +694,7 @@ void Hid::ResetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
         rb.Push(result1);
         return;
     }
-    if (result2.IsError()) {
-        rb.Push(result2);
-        return;
-    }
-    rb.Push(ResultSuccess);
+    rb.Push(result2);
 }
 
 void Hid::SetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
@@ -819,6 +815,144 @@ void Hid::IsFirmwareUpdateAvailableForSixAxisSensor(Kernel::HLERequestContext& c
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(result);
     rb.Push(is_firmware_available);
+}
+
+void Hid::EnableSixAxisSensorUnalteredPassthrough(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    struct Parameters {
+        bool enabled;
+        Core::HID::SixAxisSensorHandle sixaxis_handle;
+        u64 applet_resource_user_id;
+    };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
+
+    const auto parameters{rp.PopRaw<Parameters>()};
+
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result = controller.EnableSixAxisSensorUnalteredPassthrough(
+        parameters.sixaxis_handle, parameters.enabled);
+
+    LOG_WARNING(Service_HID,
+                "(STUBBED) called, enabled={}, npad_type={}, npad_id={}, device_index={}, "
+                "applet_resource_user_id={}",
+                parameters.enabled, parameters.sixaxis_handle.npad_type,
+                parameters.sixaxis_handle.npad_id, parameters.sixaxis_handle.device_index,
+                parameters.applet_resource_user_id);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(result);
+}
+
+void Hid::IsSixAxisSensorUnalteredPassthroughEnabled(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    struct Parameters {
+        Core::HID::SixAxisSensorHandle sixaxis_handle;
+        INSERT_PADDING_WORDS_NOINIT(1);
+        u64 applet_resource_user_id;
+    };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
+
+    const auto parameters{rp.PopRaw<Parameters>()};
+
+    bool is_unaltered_sisxaxis_enabled{};
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result = controller.IsSixAxisSensorUnalteredPassthroughEnabled(
+        parameters.sixaxis_handle, is_unaltered_sisxaxis_enabled);
+
+    LOG_WARNING(
+        Service_HID,
+        "(STUBBED) called, npad_type={}, npad_id={}, device_index={}, applet_resource_user_id={}",
+        parameters.sixaxis_handle.npad_type, parameters.sixaxis_handle.npad_id,
+        parameters.sixaxis_handle.device_index, parameters.applet_resource_user_id);
+
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(result);
+    rb.Push(is_unaltered_sisxaxis_enabled);
+}
+
+void Hid::LoadSixAxisSensorCalibrationParameter(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    struct Parameters {
+        Core::HID::SixAxisSensorHandle sixaxis_handle;
+        INSERT_PADDING_WORDS_NOINIT(1);
+        u64 applet_resource_user_id;
+    };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
+
+    const auto parameters{rp.PopRaw<Parameters>()};
+
+    Core::HID::SixAxisSensorCalibrationParameter calibration{};
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result =
+        controller.LoadSixAxisSensorCalibrationParameter(parameters.sixaxis_handle, calibration);
+
+    LOG_WARNING(
+        Service_HID,
+        "(STUBBED) called, npad_type={}, npad_id={}, device_index={}, applet_resource_user_id={}",
+        parameters.sixaxis_handle.npad_type, parameters.sixaxis_handle.npad_id,
+        parameters.sixaxis_handle.device_index, parameters.applet_resource_user_id);
+
+    if (result.IsSuccess()) {
+        ctx.WriteBuffer(calibration);
+    }
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(result);
+}
+
+void Hid::GetSixAxisSensorIcInformation(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    struct Parameters {
+        Core::HID::SixAxisSensorHandle sixaxis_handle;
+        INSERT_PADDING_WORDS_NOINIT(1);
+        u64 applet_resource_user_id;
+    };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
+
+    const auto parameters{rp.PopRaw<Parameters>()};
+
+    Core::HID::SixAxisSensorIcInformation ic_information{};
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result =
+        controller.GetSixAxisSensorIcInformation(parameters.sixaxis_handle, ic_information);
+
+    LOG_WARNING(
+        Service_HID,
+        "(STUBBED) called, npad_type={}, npad_id={}, device_index={}, applet_resource_user_id={}",
+        parameters.sixaxis_handle.npad_type, parameters.sixaxis_handle.npad_id,
+        parameters.sixaxis_handle.device_index, parameters.applet_resource_user_id);
+
+    if (result.IsSuccess()) {
+        ctx.WriteBuffer(ic_information);
+    }
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(result);
+}
+
+void Hid::ResetIsSixAxisSensorDeviceNewlyAssigned(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    struct Parameters {
+        Core::HID::SixAxisSensorHandle sixaxis_handle;
+        INSERT_PADDING_WORDS_NOINIT(1);
+        u64 applet_resource_user_id;
+    };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
+
+    const auto parameters{rp.PopRaw<Parameters>()};
+
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result =
+        controller.ResetIsSixAxisSensorDeviceNewlyAssigned(parameters.sixaxis_handle);
+
+    LOG_WARNING(
+        Service_HID,
+        "(STUBBED) called, npad_type={}, npad_id={}, device_index={}, applet_resource_user_id={}",
+        parameters.sixaxis_handle.npad_type, parameters.sixaxis_handle.npad_id,
+        parameters.sixaxis_handle.device_index, parameters.applet_resource_user_id);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(result);
 }
 
 void Hid::ActivateGesture(Kernel::HLERequestContext& ctx) {
@@ -948,27 +1082,29 @@ void Hid::DisconnectNpad(Kernel::HLERequestContext& ctx) {
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
-    applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .DisconnectNpad(parameters.npad_id);
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result = controller.DisconnectNpad(parameters.npad_id);
 
     LOG_DEBUG(Service_HID, "called, npad_id={}, applet_resource_user_id={}", parameters.npad_id,
               parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(ResultSuccess);
+    rb.Push(result);
 }
 
 void Hid::GetPlayerLedPattern(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto npad_id{rp.PopEnum<Core::HID::NpadIdType>()};
 
+    Core::HID::LedPattern pattern{0, 0, 0, 0};
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result = controller.GetLedPattern(npad_id, pattern);
+
     LOG_DEBUG(Service_HID, "called, npad_id={}", npad_id);
 
     IPC::ResponseBuilder rb{ctx, 4};
-    rb.Push(ResultSuccess);
-    rb.Push(applet_resource->GetController<Controller_NPad>(HidController::NPad)
-                .GetLedPattern(npad_id)
-                .raw);
+    rb.Push(result);
+    rb.Push(pattern.raw);
 }
 
 void Hid::ActivateNpadWithRevision(Kernel::HLERequestContext& ctx) {
@@ -1028,15 +1164,16 @@ void Hid::SetNpadJoyAssignmentModeSingleByDefault(Kernel::HLERequestContext& ctx
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
-    applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .SetNpadMode(parameters.npad_id, Controller_NPad::NpadJoyDeviceType::Left,
-                     Controller_NPad::NpadJoyAssignmentMode::Single);
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result =
+        controller.SetNpadMode(parameters.npad_id, Controller_NPad::NpadJoyDeviceType::Left,
+                               Controller_NPad::NpadJoyAssignmentMode::Single);
 
     LOG_INFO(Service_HID, "called, npad_id={}, applet_resource_user_id={}", parameters.npad_id,
              parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(ResultSuccess);
+    rb.Push(result);
 }
 
 void Hid::SetNpadJoyAssignmentModeSingle(Kernel::HLERequestContext& ctx) {
@@ -1051,16 +1188,16 @@ void Hid::SetNpadJoyAssignmentModeSingle(Kernel::HLERequestContext& ctx) {
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
-    applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .SetNpadMode(parameters.npad_id, parameters.npad_joy_device_type,
-                     Controller_NPad::NpadJoyAssignmentMode::Single);
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result = controller.SetNpadMode(parameters.npad_id, parameters.npad_joy_device_type,
+                                               Controller_NPad::NpadJoyAssignmentMode::Single);
 
     LOG_INFO(Service_HID, "called, npad_id={}, applet_resource_user_id={}, npad_joy_device_type={}",
              parameters.npad_id, parameters.applet_resource_user_id,
              parameters.npad_joy_device_type);
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(ResultSuccess);
+    rb.Push(result);
 }
 
 void Hid::SetNpadJoyAssignmentModeDual(Kernel::HLERequestContext& ctx) {
@@ -1074,14 +1211,15 @@ void Hid::SetNpadJoyAssignmentModeDual(Kernel::HLERequestContext& ctx) {
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
-    applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .SetNpadMode(parameters.npad_id, {}, Controller_NPad::NpadJoyAssignmentMode::Dual);
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result = controller.SetNpadMode(parameters.npad_id, {},
+                                               Controller_NPad::NpadJoyAssignmentMode::Dual);
 
     LOG_INFO(Service_HID, "called, npad_id={}, applet_resource_user_id={}", parameters.npad_id,
              parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(ResultSuccess);
+    rb.Push(result);
 }
 
 void Hid::MergeSingleJoyAsDualJoy(Kernel::HLERequestContext& ctx) {
@@ -1090,14 +1228,14 @@ void Hid::MergeSingleJoyAsDualJoy(Kernel::HLERequestContext& ctx) {
     const auto npad_id_2{rp.PopEnum<Core::HID::NpadIdType>()};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
-    applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .MergeSingleJoyAsDualJoy(npad_id_1, npad_id_2);
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result = controller.MergeSingleJoyAsDualJoy(npad_id_1, npad_id_2);
 
     LOG_DEBUG(Service_HID, "called, npad_id_1={}, npad_id_2={}, applet_resource_user_id={}",
               npad_id_1, npad_id_2, applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(ResultSuccess);
+    rb.Push(result);
 }
 
 void Hid::StartLrAssignmentMode(Kernel::HLERequestContext& ctx) {
@@ -1157,19 +1295,14 @@ void Hid::SwapNpadAssignment(Kernel::HLERequestContext& ctx) {
     const auto npad_id_2{rp.PopEnum<Core::HID::NpadIdType>()};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
-    const bool res = applet_resource->GetController<Controller_NPad>(HidController::NPad)
-                         .SwapNpadAssignment(npad_id_1, npad_id_2);
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result = controller.SwapNpadAssignment(npad_id_1, npad_id_2);
 
     LOG_DEBUG(Service_HID, "called, npad_id_1={}, npad_id_2={}, applet_resource_user_id={}",
               npad_id_1, npad_id_2, applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
-    if (res) {
-        rb.Push(ResultSuccess);
-    } else {
-        LOG_ERROR(Service_HID, "Npads are not connected!");
-        rb.Push(NpadNotConnected);
-    }
+    rb.Push(result);
 }
 
 void Hid::IsUnintendedHomeButtonInputProtectionEnabled(Kernel::HLERequestContext& ctx) {
@@ -1183,13 +1316,17 @@ void Hid::IsUnintendedHomeButtonInputProtectionEnabled(Kernel::HLERequestContext
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
+    bool is_enabled = false;
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result =
+        controller.IsUnintendedHomeButtonInputProtectionEnabled(parameters.npad_id, is_enabled);
+
     LOG_WARNING(Service_HID, "(STUBBED) called, npad_id={}, applet_resource_user_id={}",
                 parameters.npad_id, parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 3};
-    rb.Push(ResultSuccess);
-    rb.Push(applet_resource->GetController<Controller_NPad>(HidController::NPad)
-                .IsUnintendedHomeButtonInputProtectionEnabled(parameters.npad_id));
+    rb.Push(result);
+    rb.Push(is_enabled);
 }
 
 void Hid::EnableUnintendedHomeButtonInputProtection(Kernel::HLERequestContext& ctx) {
@@ -1204,9 +1341,9 @@ void Hid::EnableUnintendedHomeButtonInputProtection(Kernel::HLERequestContext& c
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
-    applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .SetUnintendedHomeButtonInputProtectionEnabled(
-            parameters.unintended_home_button_input_protection, parameters.npad_id);
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto result = controller.SetUnintendedHomeButtonInputProtectionEnabled(
+        parameters.unintended_home_button_input_protection, parameters.npad_id);
 
     LOG_WARNING(Service_HID,
                 "(STUBBED) called, unintended_home_button_input_protection={}, npad_id={},"
@@ -1215,7 +1352,7 @@ void Hid::EnableUnintendedHomeButtonInputProtection(Kernel::HLERequestContext& c
                 parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(ResultSuccess);
+    rb.Push(result);
 }
 
 void Hid::SetNpadAnalogStickUseCenterClamp(Kernel::HLERequestContext& ctx) {
@@ -1377,6 +1514,8 @@ void Hid::PermitVibration(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto can_vibrate{rp.Pop<bool>()};
 
+    // nnSDK saves this value as a float. Since it can only be 1.0f or 0.0f we simplify this value
+    // by converting it to a bool
     Settings::values.vibration_enabled.SetValue(can_vibrate);
 
     LOG_DEBUG(Service_HID, "called, can_vibrate={}", can_vibrate);
@@ -1388,9 +1527,12 @@ void Hid::PermitVibration(Kernel::HLERequestContext& ctx) {
 void Hid::IsVibrationPermitted(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_HID, "called");
 
+    // nnSDK checks if a float is greater than zero. We return the bool we stored earlier
+    const auto is_enabled = Settings::values.vibration_enabled.GetValue();
+
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);
-    rb.Push(Settings::values.vibration_enabled.GetValue());
+    rb.Push(is_enabled);
 }
 
 void Hid::SendVibrationValues(Kernel::HLERequestContext& ctx) {

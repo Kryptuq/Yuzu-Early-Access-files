@@ -107,8 +107,8 @@ public:
     void SetNpadCommunicationMode(NpadCommunicationMode communication_mode_);
     NpadCommunicationMode GetNpadCommunicationMode() const;
 
-    void SetNpadMode(Core::HID::NpadIdType npad_id, NpadJoyDeviceType npad_device_type,
-                     NpadJoyAssignmentMode assignment_mode);
+    ResultCode SetNpadMode(Core::HID::NpadIdType npad_id, NpadJoyDeviceType npad_device_type,
+                           NpadJoyAssignmentMode assignment_mode);
 
     bool VibrateControllerAtIndex(Core::HID::NpadIdType npad_id, std::size_t device_index,
                                   const Core::HID::VibrationValue& vibration_value);
@@ -141,50 +141,65 @@ public:
     void UpdateControllerAt(Core::HID::NpadStyleIndex controller, Core::HID::NpadIdType npad_id,
                             bool connected);
 
-    void DisconnectNpad(Core::HID::NpadIdType npad_id);
+    ResultCode DisconnectNpad(Core::HID::NpadIdType npad_id);
 
-    ResultCode SetGyroscopeZeroDriftMode(Core::HID::SixAxisSensorHandle sixaxis_handle,
+    ResultCode SetGyroscopeZeroDriftMode(const Core::HID::SixAxisSensorHandle& sixaxis_handle,
                                          GyroscopeZeroDriftMode drift_mode);
-    ResultCode GetGyroscopeZeroDriftMode(Core::HID::SixAxisSensorHandle sixaxis_handle,
+    ResultCode GetGyroscopeZeroDriftMode(const Core::HID::SixAxisSensorHandle& sixaxis_handle,
                                          GyroscopeZeroDriftMode& drift_mode) const;
-    ResultCode IsSixAxisSensorAtRest(Core::HID::SixAxisSensorHandle sixaxis_handle,
+    ResultCode IsSixAxisSensorAtRest(const Core::HID::SixAxisSensorHandle& sixaxis_handle,
                                      bool& is_at_rest) const;
     ResultCode IsFirmwareUpdateAvailableForSixAxisSensor(
-        Core::HID::SixAxisSensorHandle sixaxis_handle, bool& is_firmware_available) const;
-    ResultCode SetSixAxisEnabled(Core::HID::SixAxisSensorHandle sixaxis_handle,
+        const Core::HID::SixAxisSensorHandle& sixaxis_handle, bool& is_firmware_available) const;
+    ResultCode EnableSixAxisSensorUnalteredPassthrough(
+        const Core::HID::SixAxisSensorHandle& sixaxis_handle, bool is_enabled);
+    ResultCode IsSixAxisSensorUnalteredPassthroughEnabled(
+        const Core::HID::SixAxisSensorHandle& sixaxis_handle, bool& is_enabled) const;
+    ResultCode LoadSixAxisSensorCalibrationParameter(
+        const Core::HID::SixAxisSensorHandle& sixaxis_handle,
+        Core::HID::SixAxisSensorCalibrationParameter& calibration) const;
+    ResultCode GetSixAxisSensorIcInformation(
+        const Core::HID::SixAxisSensorHandle& sixaxis_handle,
+        Core::HID::SixAxisSensorIcInformation& ic_information) const;
+    ResultCode ResetIsSixAxisSensorDeviceNewlyAssigned(
+        const Core::HID::SixAxisSensorHandle& sixaxis_handle);
+    ResultCode SetSixAxisEnabled(const Core::HID::SixAxisSensorHandle& sixaxis_handle,
                                  bool sixaxis_status);
-    ResultCode IsSixAxisSensorFusionEnabled(Core::HID::SixAxisSensorHandle sixaxis_handle,
+    ResultCode IsSixAxisSensorFusionEnabled(const Core::HID::SixAxisSensorHandle& sixaxis_handle,
                                             bool& is_fusion_enabled) const;
-    ResultCode SetSixAxisFusionEnabled(Core::HID::SixAxisSensorHandle sixaxis_handle,
+    ResultCode SetSixAxisFusionEnabled(const Core::HID::SixAxisSensorHandle& sixaxis_handle,
                                        bool is_fusion_enabled);
     ResultCode SetSixAxisFusionParameters(
-        Core::HID::SixAxisSensorHandle sixaxis_handle,
+        const Core::HID::SixAxisSensorHandle& sixaxis_handle,
         Core::HID::SixAxisSensorFusionParameters sixaxis_fusion_parameters);
     ResultCode GetSixAxisFusionParameters(
-        Core::HID::SixAxisSensorHandle sixaxis_handle,
+        const Core::HID::SixAxisSensorHandle& sixaxis_handle,
         Core::HID::SixAxisSensorFusionParameters& parameters) const;
-    Core::HID::LedPattern GetLedPattern(Core::HID::NpadIdType npad_id);
-    bool IsUnintendedHomeButtonInputProtectionEnabled(Core::HID::NpadIdType npad_id) const;
-    void SetUnintendedHomeButtonInputProtectionEnabled(bool is_protection_enabled,
-                                                       Core::HID::NpadIdType npad_id);
+    ResultCode GetLedPattern(Core::HID::NpadIdType npad_id, Core::HID::LedPattern& pattern) const;
+    ResultCode IsUnintendedHomeButtonInputProtectionEnabled(Core::HID::NpadIdType npad_id,
+                                                            bool& is_enabled) const;
+    ResultCode SetUnintendedHomeButtonInputProtectionEnabled(bool is_protection_enabled,
+                                                             Core::HID::NpadIdType npad_id);
     void SetAnalogStickUseCenterClamp(bool use_center_clamp);
     void ClearAllConnectedControllers();
     void DisconnectAllConnectedControllers();
     void ConnectAllDisconnectedControllers();
     void ClearAllControllers();
 
-    void MergeSingleJoyAsDualJoy(Core::HID::NpadIdType npad_id_1, Core::HID::NpadIdType npad_id_2);
+    ResultCode MergeSingleJoyAsDualJoy(Core::HID::NpadIdType npad_id_1,
+                                       Core::HID::NpadIdType npad_id_2);
     void StartLRAssignmentMode();
     void StopLRAssignmentMode();
-    bool SwapNpadAssignment(Core::HID::NpadIdType npad_id_1, Core::HID::NpadIdType npad_id_2);
+    ResultCode SwapNpadAssignment(Core::HID::NpadIdType npad_id_1, Core::HID::NpadIdType npad_id_2);
 
     // Logical OR for all buttons presses on all controllers
     // Specifically for cheat engine and other features.
     Core::HID::NpadButton GetAndResetPressState();
 
     static bool IsNpadIdValid(Core::HID::NpadIdType npad_id);
-    static bool IsDeviceHandleValid(const Core::HID::SixAxisSensorHandle& device_handle);
     static bool IsDeviceHandleValid(const Core::HID::VibrationDeviceHandle& device_handle);
+    static ResultCode VerifyValidSixAxisSensorHandle(
+        const Core::HID::SixAxisSensorHandle& device_handle);
 
 private:
     static constexpr std::size_t NPAD_COUNT = 10;
@@ -451,9 +466,13 @@ private:
         NpadLuciaType lucia_type{};
         NpadLagonType lagon_type{};
         NpadLagerType lager_type{};
-        // FW 13.x Investigate there is some sort of bitflag related to joycons
-        INSERT_PADDING_BYTES(0x4);
-        INSERT_PADDING_BYTES(0xc08); // Unknown
+        Core::HID::SixAxisSensorProperties sixaxis_fullkey_properties;
+        Core::HID::SixAxisSensorProperties sixaxis_handheld_properties;
+        Core::HID::SixAxisSensorProperties sixaxis_dual_left_properties;
+        Core::HID::SixAxisSensorProperties sixaxis_dual_right_properties;
+        Core::HID::SixAxisSensorProperties sixaxis_left_properties;
+        Core::HID::SixAxisSensorProperties sixaxis_right_properties;
+        INSERT_PADDING_BYTES(0xc06); // Unknown
     };
     static_assert(sizeof(NpadInternalState) == 0x5000, "NpadInternalState is an invalid size");
 
@@ -465,7 +484,10 @@ private:
 
     struct SixaxisParameters {
         bool is_fusion_enabled{true};
+        bool unaltered_passtrough{false};
         Core::HID::SixAxisSensorFusionParameters fusion{};
+        Core::HID::SixAxisSensorCalibrationParameter calibration{};
+        Core::HID::SixAxisSensorIcInformation ic_information{};
         GyroscopeZeroDriftMode gyroscope_zero_drift_mode{GyroscopeZeroDriftMode::Standard};
     };
 
@@ -491,6 +513,7 @@ private:
         SixaxisParameters sixaxis_dual_right{};
         SixaxisParameters sixaxis_left{};
         SixaxisParameters sixaxis_right{};
+        SixaxisParameters sixaxis_unknown{};
 
         // Current pad state
         NPadGenericState npad_pad_state{};
@@ -521,6 +544,14 @@ private:
         const Core::HID::VibrationDeviceHandle& device_handle) const;
     NpadControllerData& GetControllerFromNpadIdType(Core::HID::NpadIdType npad_id);
     const NpadControllerData& GetControllerFromNpadIdType(Core::HID::NpadIdType npad_id) const;
+
+    Core::HID::SixAxisSensorProperties& GetSixaxisProperties(
+        const Core::HID::SixAxisSensorHandle& device_handle);
+    const Core::HID::SixAxisSensorProperties& GetSixaxisProperties(
+        const Core::HID::SixAxisSensorHandle& device_handle) const;
+    SixaxisParameters& GetSixaxisState(const Core::HID::SixAxisSensorHandle& device_handle);
+    const SixaxisParameters& GetSixaxisState(
+        const Core::HID::SixAxisSensorHandle& device_handle) const;
 
     std::atomic<u64> press_state{};
 
