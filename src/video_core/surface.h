@@ -147,7 +147,7 @@ enum class SurfaceTarget {
     TextureCubeArray,
 };
 
-constexpr std::array<u32, MaxPixelFormat> BLOCK_WIDTH_TABLE = {{
+constexpr std::array<u8, MaxPixelFormat> BLOCK_WIDTH_TABLE = {{
     1,  // A8B8G8R8_UNORM
     1,  // A8B8G8R8_SNORM
     1,  // A8B8G8R8_SINT
@@ -249,7 +249,7 @@ constexpr u32 DefaultBlockWidth(PixelFormat format) {
     return BLOCK_WIDTH_TABLE[static_cast<std::size_t>(format)];
 }
 
-constexpr std::array<u32, MaxPixelFormat> BLOCK_HEIGHT_TABLE = {{
+constexpr std::array<u8, MaxPixelFormat> BLOCK_HEIGHT_TABLE = {{
     1,  // A8B8G8R8_UNORM
     1,  // A8B8G8R8_SNORM
     1,  // A8B8G8R8_SINT
@@ -351,7 +351,7 @@ constexpr u32 DefaultBlockHeight(PixelFormat format) {
     return BLOCK_HEIGHT_TABLE[static_cast<std::size_t>(format)];
 }
 
-constexpr std::array<u32, MaxPixelFormat> BITS_PER_BLOCK_TABLE = {{
+constexpr std::array<u8, MaxPixelFormat> BITS_PER_BLOCK_TABLE = {{
     32,  // A8B8G8R8_UNORM
     32,  // A8B8G8R8_SNORM
     32,  // A8B8G8R8_SINT

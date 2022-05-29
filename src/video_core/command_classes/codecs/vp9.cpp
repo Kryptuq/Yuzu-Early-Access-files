@@ -153,7 +153,7 @@ constexpr Vp9EntropyProbs default_probs{
     .high_precision{128, 128},
 };
 
-constexpr std::array<s32, 256> norm_lut{
+constexpr std::array<u8, 256> norm_lut{
     0, 7, 6, 6, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -164,7 +164,7 @@ constexpr std::array<s32, 256> norm_lut{
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
 
-constexpr std::array<s32, 254> map_lut{
+constexpr std::array<u8, 254> map_lut{
     20,  21,  22,  23,  24,  25,  0,   26,  27,  28,  29,  30,  31,  32,  33,  34,  35,  36,  37,
     1,   38,  39,  40,  41,  42,  43,  44,  45,  46,  47,  48,  49,  2,   50,  51,  52,  53,  54,
     55,  56,  57,  58,  59,  60,  61,  3,   62,  63,  64,  65,  66,  67,  68,  69,  70,  71,  72,
@@ -232,7 +232,7 @@ constexpr std::array<s32, 254> map_lut{
             std::max(0, RecenterNonNeg(0xff - 1 - new_prob, 0xff - 1 - old_prob) - 1));
     }
 
-    return map_lut[index];
+    return static_cast<s32>(map_lut[index]);
 }
 } // Anonymous namespace
 
@@ -819,7 +819,7 @@ void VpxRangeEncoder::Write(bool bit, s32 probability) {
         local_range = range - split;
     }
 
-    s32 shift = norm_lut[local_range];
+    s32 shift = static_cast<s32>(norm_lut[local_range]);
     local_range <<= shift;
     count += shift;
 

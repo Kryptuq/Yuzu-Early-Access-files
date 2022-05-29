@@ -129,17 +129,17 @@ s32 ToS32(float sample) {
     return static_cast<s32>(rescaled_sample);
 }
 
-constexpr std::array<std::size_t, 20> REVERB_TAP_INDEX_1CH{0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+constexpr std::array<u8, 20> REVERB_TAP_INDEX_1CH{0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-constexpr std::array<std::size_t, 20> REVERB_TAP_INDEX_2CH{0, 0, 0, 1, 1, 1, 1, 0, 0, 0,
-                                                           1, 1, 1, 0, 0, 0, 0, 1, 1, 1};
+constexpr std::array<u8, 20> REVERB_TAP_INDEX_2CH{0, 0, 0, 1, 1, 1, 1, 0, 0, 0,
+                                                  1, 1, 1, 0, 0, 0, 0, 1, 1, 1};
 
-constexpr std::array<std::size_t, 20> REVERB_TAP_INDEX_4CH{0, 0, 0, 1, 1, 1, 1, 2, 2, 2,
-                                                           1, 1, 1, 0, 0, 0, 0, 3, 3, 3};
+constexpr std::array<u8, 20> REVERB_TAP_INDEX_4CH{0, 0, 0, 1, 1, 1, 1, 2, 2, 2,
+                                                  1, 1, 1, 0, 0, 0, 0, 3, 3, 3};
 
-constexpr std::array<std::size_t, 20> REVERB_TAP_INDEX_6CH{4, 0, 0, 1, 1, 1, 1, 2, 2, 2,
-                                                           1, 1, 1, 0, 0, 0, 0, 3, 3, 3};
+constexpr std::array<u8, 20> REVERB_TAP_INDEX_6CH{4, 0, 0, 1, 1, 1, 1, 2, 2, 2,
+                                                  1, 1, 1, 0, 0, 0, 0, 3, 3, 3};
 
 template <std::size_t CHANNEL_COUNT>
 void ApplyReverbGeneric(

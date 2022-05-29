@@ -110,10 +110,9 @@ static constexpr s64 GetLeapDaysFromYear(s64 year) {
     }
 }
 
-static constexpr int GetMonthLength(bool is_leap_year, int month) {
-    constexpr std::array<int, 12> month_lengths{31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-    constexpr std::array<int, 12> month_lengths_leap{31, 29, 31, 30, 31, 30,
-                                                     31, 31, 30, 31, 30, 31};
+static constexpr s8 GetMonthLength(bool is_leap_year, int month) {
+    constexpr std::array<s8, 12> month_lengths{31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    constexpr std::array<s8, 12> month_lengths_leap{31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
     return is_leap_year ? month_lengths_leap[month] : month_lengths[month];
 }
 
