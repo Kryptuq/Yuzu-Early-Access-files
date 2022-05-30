@@ -32,6 +32,11 @@
     <binary>yuzu</binary>
     <binary>yuzu-cmd</binary>
   </provides>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+    <control>gamepad</control>
+  </supports>
   <requires>
     <memory>8192</memory>
   </requires>

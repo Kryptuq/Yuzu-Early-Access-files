@@ -218,8 +218,8 @@ if (Boost_FOUND)
         list(APPEND Boost_LIBRARIES Boost::context)
     endif()
 else()
-    message(STATUS "Boost 1.73.0 or newer not found, falling back to Conan")
-    list(APPEND CONAN_REQUIRED_LIBS "boost/1.78.0")
+    message(STATUS "Boost 1.79.0 or newer not found, falling back to Conan")
+    list(APPEND CONAN_REQUIRED_LIBS "boost/1.79.0")
 endif()
 
 # Attempt to locate any packages that are required and report the missing ones in CONAN_REQUIRED_LIBS
