@@ -218,7 +218,7 @@ cpuopt_unsafe_ignore_global_monitor =
 
 [Renderer]
 # Which backend API to use.
-# 0 (default): OpenGL, 1: Vulkan
+# 0: OpenGL, 1 (default): Vulkan
 backend =
 
 # Enable graphics API debugging mode.

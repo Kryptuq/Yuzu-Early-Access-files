@@ -30,6 +30,8 @@ add_executable(yuzu
     applets/qt_web_browser_scripts.h
     bootmanager.cpp
     bootmanager.h
+    check_vulkan.cpp
+    check_vulkan.h
     compatdb.ui
     compatibility_list.cpp
     compatibility_list.h

@@ -41,7 +41,7 @@ private:
     void UpdateDeviceSelection(int device);
     void UpdateShaderBackendSelection(int backend);
 
-    void RetrieveVulkanDevices();
+    bool RetrieveVulkanDevices();
 
     void SetupPerGameUI();
 

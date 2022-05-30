@@ -5,6 +5,7 @@
 // Include this early to include Vulkan headers how we want to
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
+#include <exception>
 #include <QColorDialog>
 #include <QVulkanInstance>
 
@@ -17,6 +18,7 @@
 #include "video_core/vulkan_common/vulkan_library.h"
 #include "yuzu/configuration/configuration_shared.h"
 #include "yuzu/configuration/configure_graphics.h"
+#include "yuzu/uisettings.h"
 
 ConfigureGraphics::ConfigureGraphics(const Core::System& system_, QWidget* parent)
     : QWidget(parent), ui{std::make_unique<Ui::ConfigureGraphics>()}, system{system_} {
@@ -56,6 +58,24 @@ ConfigureGraphics::ConfigureGraphics(const Core::System& system_, QWidget* paren
         }
         UpdateBackgroundColorButton(new_bg_color);
     });
+
+    connect(ui->button_check_vulkan, &QAbstractButton::clicked, this, [this] {
+        UISettings::values.has_broken_vulkan = false;
+
+        if (RetrieveVulkanDevices()) {
+            ui->api->setEnabled(true);
+            ui->button_check_vulkan->hide();
+
+            for (const auto& device : vulkan_devices) {
+                ui->device->addItem(device);
+            }
+        } else {
+            UISettings::values.has_broken_vulkan = true;
+        }
+    });
+
+    ui->api->setEnabled(!UISettings::values.has_broken_vulkan.GetValue());
+    ui->button_check_vulkan->setVisible(UISettings::values.has_broken_vulkan.GetValue());
 
     ui->bg_label->setVisible(Settings::IsConfiguringGlobal());
     ui->bg_combobox->setVisible(!Settings::IsConfiguringGlobal());
@@ -296,7 +316,7 @@ void ConfigureGraphics::UpdateAPILayout() {
         vulkan_device = Settings::values.vulkan_device.GetValue(true);
         shader_backend = Settings::values.shader_backend.GetValue(true);
         ui->device_widget->setEnabled(false);
-        ui->backend_widget->setEnabled(false);
+        ui->backend_widget->setEnabled(UISettings::values.has_broken_vulkan.GetValue());
     } else {
         vulkan_device = Settings::values.vulkan_device.GetValue();
         shader_backend = Settings::values.shader_backend.GetValue();
@@ -318,7 +338,11 @@ void ConfigureGraphics::UpdateAPILayout() {
     }
 }
 
-void ConfigureGraphics::RetrieveVulkanDevices() try {
+bool ConfigureGraphics::RetrieveVulkanDevices() try {
+    if (UISettings::values.has_broken_vulkan) {
+        return false;
+    }
+
     using namespace Vulkan;
 
     vk::InstanceDispatch dld;
@@ -333,8 +357,10 @@ void ConfigureGraphics::RetrieveVulkanDevices() try {
         vulkan_devices.push_back(QString::fromStdString(name));
     }
 
+    return true;
 } catch (const Vulkan::vk::Exception& exception) {
     LOG_ERROR(Frontend, "Failed to enumerate devices with error: {}", exception.what());
+    return false;
 }
 
 Settings::RendererBackend ConfigureGraphics::GetCurrentGraphicsBackend() const {
@@ -415,4 +441,11 @@ void ConfigureGraphics::SetupPerGameUI() {
         ui->api, static_cast<int>(Settings::values.renderer_backend.GetValue(true)));
     ConfigurationShared::InsertGlobalItem(
         ui->nvdec_emulation, static_cast<int>(Settings::values.nvdec_emulation.GetValue(true)));
+
+    if (UISettings::values.has_broken_vulkan) {
+        ui->backend_widget->setEnabled(true);
+        ConfigurationShared::SetColoredComboBox(
+            ui->backend, ui->backend_widget,
+            static_cast<int>(Settings::values.shader_backend.GetValue(true)));
+    }
 }

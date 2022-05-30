@@ -5,11 +5,13 @@
 
 #include "common/dynamic_library.h"
 #include "common/fs/path_util.h"
+#include "common/logging/log.h"
 #include "video_core/vulkan_common/vulkan_library.h"
 
 namespace Vulkan {
 
 Common::DynamicLibrary OpenLibrary() {
+    LOG_DEBUG(Render_Vulkan, "Looking for a Vulkan library");
     Common::DynamicLibrary library;
 #ifdef __APPLE__
     // Check if a path to a specific Vulkan library has been specified.
@@ -22,9 +24,11 @@ Common::DynamicLibrary OpenLibrary() {
     }
 #else
     std::string filename = Common::DynamicLibrary::GetVersionedFilename("vulkan", 1);
+    LOG_DEBUG(Render_Vulkan, "Trying Vulkan library: {}", filename);
     if (!library.Open(filename.c_str())) {
         // Android devices may not have libvulkan.so.1, only libvulkan.so.
         filename = Common::DynamicLibrary::GetVersionedFilename("vulkan");
+        LOG_DEBUG(Render_Vulkan, "Trying Vulkan library (second attempt): {}", filename);
         void(library.Open(filename.c_str()));
     }
 #endif

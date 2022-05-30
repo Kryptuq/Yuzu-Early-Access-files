@@ -77,6 +77,8 @@ struct Values {
     Settings::BasicSetting<bool> pause_when_in_background{false, "pauseWhenInBackground"};
     Settings::BasicSetting<bool> mute_when_in_background{false, "muteWhenInBackground"};
     Settings::BasicSetting<bool> hide_mouse{true, "hideInactiveMouse"};
+    // Set when Vulkan is known to crash the application
+    Settings::BasicSetting<bool> has_broken_vulkan{false, "has_broken_vulkan"};
 
     Settings::BasicSetting<bool> select_user_on_boot{false, "select_user_on_boot"};
 

@@ -496,7 +496,7 @@ struct Values {
 
     // Renderer
     RangedSetting<RendererBackend> renderer_backend{
-        RendererBackend::OpenGL, RendererBackend::OpenGL, RendererBackend::Vulkan, "backend"};
+        RendererBackend::Vulkan, RendererBackend::OpenGL, RendererBackend::Vulkan, "backend"};
     BasicSetting<bool> renderer_debug{false, "debug"};
     BasicSetting<bool> renderer_shader_feedback{false, "shader_feedback"};
     BasicSetting<bool> enable_nsight_aftermath{false, "nsight_aftermath"};

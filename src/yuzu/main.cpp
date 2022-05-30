@@ -115,6 +115,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "video_core/shader_notify.h"
 #include "yuzu/about_dialog.h"
 #include "yuzu/bootmanager.h"
+#include "yuzu/check_vulkan.h"
 #include "yuzu/compatdb.h"
 #include "yuzu/compatibility_list.h"
 #include "yuzu/configuration/config.h"
@@ -296,6 +297,23 @@ GMainWindow::GMainWindow()
     connect(&mouse_center_timer, &QTimer::timeout, this, &GMainWindow::CenterMouseCursor);
 
     MigrateConfigFiles();
+
+    if (!CheckVulkan()) {
+        config->Save();
+
+        QMessageBox::warning(
+            this, tr("Broken Vulkan Installation Detected"),
+            tr("Vulkan initialization failed on the previous boot.<br><br>Click <a "
+               "href='https://yuzu-emu.org/wiki/faq/"
+               "#yuzu-starts-with-the-error-broken-vulkan-installation-detected'>here for "
+               "instructions to fix the issue</a>."));
+    }
+    if (UISettings::values.has_broken_vulkan) {
+        Settings::values.renderer_backend = Settings::RendererBackend::OpenGL;
+
+        renderer_status_button->setDisabled(true);
+        renderer_status_button->setChecked(false);
+    }
 
 #if defined(HAVE_SDL2) && !defined(_WIN32)
     SDL_InitSubSystem(SDL_INIT_VIDEO);
@@ -1563,7 +1581,7 @@ void GMainWindow::ShutdownGame() {
     emu_speed_label->setVisible(false);
     game_fps_label->setVisible(false);
     emu_frametime_label->setVisible(false);
-    renderer_status_button->setEnabled(true);
+    renderer_status_button->setEnabled(!UISettings::values.has_broken_vulkan);
 
     game_path.clear();
 
@@ -2771,6 +2789,10 @@ void GMainWindow::OnConfigure() {
 
     if (UISettings::values.hide_mouse) {
         mouse_hide_timer.start();
+    }
+
+    if (!UISettings::values.has_broken_vulkan) {
+        renderer_status_button->setEnabled(!emulation_running);
     }
 
     UpdateStatusButtons();
