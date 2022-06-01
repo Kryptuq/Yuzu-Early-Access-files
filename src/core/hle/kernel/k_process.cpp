@@ -64,6 +64,10 @@ void SetupMainThread(Core::System& system, KProcess& owner_process, u32 priority
     {
         KScopedSchedulerLock lock{kernel};
         thread->SetState(ThreadState::Runnable);
+
+        if (system.DebuggerEnabled()) {
+            thread->RequestSuspend(SuspendType::Debug);
+        }
     }
 }
 } // Anonymous namespace

@@ -277,3 +277,7 @@ else()
         $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-variable>
     )
 endif()
+
+if (ARCHITECTURE_x86_64)
+    target_link_libraries(video_core PRIVATE dynarmic)
+endif()

@@ -222,6 +222,11 @@ else()
     list(APPEND CONAN_REQUIRED_LIBS "boost/1.79.0")
 endif()
 
+# boost:asio has functions that require AcceptEx et al
+if (MINGW)
+    find_library(MSWSOCK_LIBRARY mswsock REQUIRED)
+endif()
+
 # Attempt to locate any packages that are required and report the missing ones in CONAN_REQUIRED_LIBS
 yuzu_find_packages()
 

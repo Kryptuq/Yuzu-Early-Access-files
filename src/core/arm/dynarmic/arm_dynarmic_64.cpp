@@ -15,6 +15,7 @@
 #include "core/arm/dynarmic/arm_exclusive_monitor.h"
 #include "core/core.h"
 #include "core/core_timing.h"
+#include "core/debugger/debugger.h"
 #include "core/hardware_properties.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/svc.h"
@@ -24,9 +25,6 @@ namespace Core {
 
 using Vector = Dynarmic::A64::Vector;
 using namespace Common::Literals;
-
-constexpr Dynarmic::HaltReason break_loop = Dynarmic::HaltReason::UserDefined2;
-constexpr Dynarmic::HaltReason svc_call = Dynarmic::HaltReason::UserDefined3;
 
 class DynarmicCallbacks64 : public Dynarmic::A64::UserCallbacks {
 public:
@@ -119,8 +117,13 @@ public:
         case Dynarmic::A64::Exception::SendEventLocal:
         case Dynarmic::A64::Exception::Yield:
             return;
-        case Dynarmic::A64::Exception::Breakpoint:
         default:
+            if (parent.system.DebuggerEnabled()) {
+                parent.jit.load()->SetPC(pc);
+                parent.jit.load()->HaltExecution(ARM_Interface::breakpoint);
+                return;
+            }
+
             parent.LogBacktrace();
             ASSERT_MSG(false, "ExceptionRaised(exception = {}, pc = {:08X}, code = {:08X})",
                        static_cast<std::size_t>(exception), pc, MemoryReadCode(pc));
@@ -129,7 +132,7 @@ public:
 
     void CallSVC(u32 swi) override {
         parent.svc_swi = swi;
-        parent.jit.load()->HaltExecution(svc_call);
+        parent.jit.load()->HaltExecution(ARM_Interface::svc_call);
     }
 
     void AddTicks(u64 ticks) override {
@@ -300,20 +303,16 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable* 
     return std::make_shared<Dynarmic::A64::Jit>(config);
 }
 
-void ARM_Dynarmic_64::Run() {
-    while (true) {
-        const auto hr = jit.load()->Run();
-        if (Has(hr, svc_call)) {
-            Kernel::Svc::Call(system, svc_swi);
-        }
-        if (Has(hr, break_loop) || !uses_wall_clock) {
-            break;
-        }
-    }
+Dynarmic::HaltReason ARM_Dynarmic_64::RunJit() {
+    return jit.load()->Run();
 }
 
-void ARM_Dynarmic_64::Step() {
-    jit.load()->Step();
+Dynarmic::HaltReason ARM_Dynarmic_64::StepJit() {
+    return jit.load()->Step();
+}
+
+u32 ARM_Dynarmic_64::GetSvcNumber() const {
+    return svc_swi;
 }
 
 ARM_Dynarmic_64::ARM_Dynarmic_64(System& system_, CPUInterrupts& interrupt_handlers_,

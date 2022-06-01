@@ -9,7 +9,9 @@
 #include "core/arm/arm_interface.h"
 #include "core/arm/symbols.h"
 #include "core/core.h"
+#include "core/debugger/debugger.h"
 #include "core/hle/kernel/k_process.h"
+#include "core/hle/kernel/svc.h"
 #include "core/loader/loader.h"
 #include "core/memory.h"
 
@@ -85,6 +87,50 @@ void ARM_Interface::LogBacktrace() const {
     for (const auto& entry : backtrace) {
         LOG_ERROR(Core_ARM, "{:20}{:016X}    {:016X}    {:016X}    {}", entry.module, entry.address,
                   entry.original_address, entry.offset, entry.name);
+    }
+}
+
+void ARM_Interface::Run() {
+    using Kernel::StepState;
+    using Kernel::SuspendType;
+
+    while (true) {
+        Kernel::KThread* current_thread{system.Kernel().CurrentScheduler()->GetCurrentThread()};
+        Dynarmic::HaltReason hr{};
+
+        // Notify the debugger and go to sleep if a step was performed
+        // and this thread has been scheduled again.
+        if (current_thread->GetStepState() == StepState::StepPerformed) {
+            system.GetDebugger().NotifyThreadStopped(current_thread);
+            current_thread->RequestSuspend(SuspendType::Debug);
+            break;
+        }
+
+        // Otherwise, run the thread.
+        if (current_thread->GetStepState() == StepState::StepPending) {
+            hr = StepJit();
+
+            if (Has(hr, step_thread)) {
+                current_thread->SetStepState(StepState::StepPerformed);
+            }
+        } else {
+            hr = RunJit();
+        }
+
+        // Notify the debugger and go to sleep if a breakpoint was hit.
+        if (Has(hr, breakpoint)) {
+            system.GetDebugger().NotifyThreadStopped(current_thread);
+            current_thread->RequestSuspend(Kernel::SuspendType::Debug);
+            break;
+        }
+
+        // Handle syscalls and scheduling (this may change the current thread)
+        if (Has(hr, svc_call)) {
+            Kernel::Svc::Call(system, GetSvcNumber());
+        }
+        if (Has(hr, break_loop) || !uses_wall_clock) {
+            break;
+        }
     }
 }
 

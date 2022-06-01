@@ -96,6 +96,17 @@ public:
     [[nodiscard]] bool IsValidVirtualAddress(VAddr vaddr) const;
 
     /**
+     * Checks whether or not the supplied range of addresses are all valid
+     * virtual addresses for the current process.
+     *
+     * @param base The address to begin checking.
+     * @param size The amount of bytes to check.
+     *
+     * @returns True if all bytes in the given range are valid, false otherwise.
+     */
+    [[nodiscard]] bool IsValidVirtualAddressRange(VAddr base, u64 size) const;
+
+    /**
      * Gets a pointer to the given address.
      *
      * @param vaddr Virtual address to retrieve a pointer to.

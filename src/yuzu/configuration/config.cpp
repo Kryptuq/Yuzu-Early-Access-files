@@ -525,6 +525,9 @@ void Config::ReadDebuggingValues() {
     // Intentionally not using the QT default setting as this is intended to be changed in the ini
     Settings::values.record_frame_times =
         qt_config->value(QStringLiteral("record_frame_times"), false).toBool();
+
+    ReadBasicSetting(Settings::values.use_gdbstub);
+    ReadBasicSetting(Settings::values.gdbstub_port);
     ReadBasicSetting(Settings::values.program_args);
     ReadBasicSetting(Settings::values.dump_exefs);
     ReadBasicSetting(Settings::values.dump_nso);
@@ -1102,6 +1105,8 @@ void Config::SaveDebuggingValues() {
 
     // Intentionally not using the QT default setting as this is intended to be changed in the ini
     qt_config->setValue(QStringLiteral("record_frame_times"), Settings::values.record_frame_times);
+    WriteBasicSetting(Settings::values.use_gdbstub);
+    WriteBasicSetting(Settings::values.gdbstub_port);
     WriteBasicSetting(Settings::values.program_args);
     WriteBasicSetting(Settings::values.dump_exefs);
     WriteBasicSetting(Settings::values.dump_nso);

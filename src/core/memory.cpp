@@ -594,6 +594,19 @@ bool Memory::IsValidVirtualAddress(const VAddr vaddr) const {
     return pointer != nullptr || type == Common::PageType::RasterizerCachedMemory;
 }
 
+bool Memory::IsValidVirtualAddressRange(VAddr base, u64 size) const {
+    VAddr end = base + size;
+    VAddr page = Common::AlignDown(base, PAGE_SIZE);
+
+    for (; page < end; page += PAGE_SIZE) {
+        if (!IsValidVirtualAddress(page)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 u8* Memory::GetPointer(VAddr vaddr) {
     return impl->GetPointer(vaddr);
 }

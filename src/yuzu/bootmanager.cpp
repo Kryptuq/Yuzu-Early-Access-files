@@ -50,6 +50,7 @@ void EmuThread::run() {
 
     auto& gpu = system.GPU();
     auto stop_token = stop_source.get_token();
+    bool debugger_should_start = system.DebuggerEnabled();
 
     system.RegisterHostThread();
 
@@ -89,6 +90,12 @@ void EmuThread::run() {
                 this->SetRunning(false);
                 emit ErrorThrown(result, system.GetStatusDetails());
             }
+
+            if (debugger_should_start) {
+                system.InitializeDebugger();
+                debugger_should_start = false;
+            }
+
             running_wait.Wait();
             result = system.Pause();
             if (result != Core::SystemResultStatus::Success) {
@@ -102,11 +109,9 @@ void EmuThread::run() {
                 was_active = true;
                 emit DebugModeEntered();
             }
-        } else if (exec_step) {
-            UNIMPLEMENTED();
         } else {
             std::unique_lock lock{running_mutex};
-            running_cv.wait(lock, stop_token, [this] { return IsRunning() || exec_step; });
+            running_cv.wait(lock, stop_token, [this] { return IsRunning(); });
         }
     }
 

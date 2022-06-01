@@ -100,6 +100,12 @@ enum class ThreadWaitReasonForDebugging : u32 {
     Suspended,       ///< Thread is waiting due to process suspension
 };
 
+enum class StepState : u32 {
+    NotStepping,   ///< Thread is not currently stepping
+    StepPending,   ///< Thread will step when next scheduled
+    StepPerformed, ///< Thread has stepped, waiting to be scheduled again
+};
+
 [[nodiscard]] KThread* GetCurrentThreadPointer(KernelCore& kernel);
 [[nodiscard]] KThread& GetCurrentThread(KernelCore& kernel);
 [[nodiscard]] s32 GetCurrentCoreId(KernelCore& kernel);
@@ -266,6 +272,14 @@ public:
     }
 
     void SetState(ThreadState state);
+
+    [[nodiscard]] StepState GetStepState() const {
+        return step_state;
+    }
+
+    void SetStepState(StepState state) {
+        step_state = state;
+    }
 
     [[nodiscard]] s64 GetLastScheduledTick() const {
         return last_scheduled_tick;
@@ -769,6 +783,7 @@ private:
     std::shared_ptr<Common::Fiber> host_context{};
     bool is_single_core{};
     ThreadType thread_type{};
+    StepState step_state{};
     std::mutex dummy_wait_lock;
     std::condition_variable dummy_wait_cv;
 

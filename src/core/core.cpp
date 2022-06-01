@@ -17,6 +17,7 @@
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/cpu_manager.h"
+#include "core/debugger/debugger.h"
 #include "core/device_memory.h"
 #include "core/file_sys/bis_factory.h"
 #include "core/file_sys/mode.h"
@@ -169,6 +170,10 @@ struct System::Impl {
             kernel.Suspend(false);
             cpu_manager.Pause(false);
         }
+    }
+
+    void InitializeDebugger(System& system, u16 port) {
+        debugger = std::make_unique<Debugger>(system, port);
     }
 
     SystemResultStatus Init(System& system, Frontend::EmuWindow& emu_window) {
@@ -329,6 +334,7 @@ struct System::Impl {
             gpu_core->NotifyShutdown();
         }
 
+        debugger.reset();
         services.reset();
         service_manager.reset();
         cheat_engine.reset();
@@ -436,6 +442,9 @@ struct System::Impl {
     /// Network instance
     Network::NetworkInstance network_instance;
 
+    /// Debugger
+    std::unique_ptr<Core::Debugger> debugger;
+
     SystemResultStatus status = SystemResultStatus::Success;
     std::string status_details = "";
 
@@ -472,10 +481,6 @@ SystemResultStatus System::Pause() {
     return impl->Pause();
 }
 
-SystemResultStatus System::SingleStep() {
-    return SystemResultStatus::Success;
-}
-
 void System::InvalidateCpuInstructionCaches() {
     impl->kernel.InvalidateAllInstructionCaches();
 }
@@ -494,6 +499,10 @@ std::unique_lock<std::mutex> System::StallCPU() {
 
 void System::UnstallCPU() {
     impl->UnstallCPU();
+}
+
+void System::InitializeDebugger() {
+    impl->InitializeDebugger(*this, Settings::values.gdbstub_port.GetValue());
 }
 
 SystemResultStatus System::Load(Frontend::EmuWindow& emu_window, const std::string& filepath,
@@ -807,6 +816,18 @@ void System::ExitDynarmicProfile() {
 
 bool System::IsMulticore() const {
     return impl->is_multicore;
+}
+
+bool System::DebuggerEnabled() const {
+    return Settings::values.use_gdbstub.GetValue();
+}
+
+Core::Debugger& System::GetDebugger() {
+    return *impl->debugger;
+}
+
+const Core::Debugger& System::GetDebugger() const {
+    return *impl->debugger;
 }
 
 void System::RegisterExecuteProgramCallback(ExecuteProgramCallback&& callback) {

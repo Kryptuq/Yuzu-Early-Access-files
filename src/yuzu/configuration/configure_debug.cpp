@@ -24,13 +24,18 @@ ConfigureDebug::ConfigureDebug(const Core::System& system_, QWidget* parent)
             QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::LogDir));
         QDesktopServices::openUrl(QUrl::fromLocalFile(path));
     });
+
+    connect(ui->toggle_gdbstub, &QCheckBox::toggled,
+            [&]() { ui->gdbport_spinbox->setEnabled(ui->toggle_gdbstub->isChecked()); });
 }
 
 ConfigureDebug::~ConfigureDebug() = default;
 
 void ConfigureDebug::SetConfiguration() {
     const bool runtime_lock = !system.IsPoweredOn();
-
+    ui->toggle_gdbstub->setChecked(Settings::values.use_gdbstub.GetValue());
+    ui->gdbport_spinbox->setEnabled(Settings::values.use_gdbstub.GetValue());
+    ui->gdbport_spinbox->setValue(Settings::values.gdbstub_port.GetValue());
     ui->toggle_console->setEnabled(runtime_lock);
     ui->toggle_console->setChecked(UISettings::values.show_console.GetValue());
     ui->log_filter_edit->setText(QString::fromStdString(Settings::values.log_filter.GetValue()));
@@ -71,6 +76,8 @@ void ConfigureDebug::SetConfiguration() {
 }
 
 void ConfigureDebug::ApplyConfiguration() {
+    Settings::values.use_gdbstub = ui->toggle_gdbstub->isChecked();
+    Settings::values.gdbstub_port = ui->gdbport_spinbox->value();
     UISettings::values.show_console = ui->toggle_console->isChecked();
     Settings::values.log_filter = ui->log_filter_edit->text().toStdString();
     Settings::values.program_args = ui->homebrew_args_edit->text().toStdString();

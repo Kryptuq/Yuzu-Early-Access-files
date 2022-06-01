@@ -601,7 +601,7 @@ struct Values {
     // Debugging
     bool record_frame_times;
     BasicSetting<bool> use_gdbstub{false, "use_gdbstub"};
-    BasicSetting<u16> gdbstub_port{0, "gdbstub_port"};
+    BasicSetting<u16> gdbstub_port{6543, "gdbstub_port"};
     BasicSetting<std::string> program_args{std::string(), "program_args"};
     BasicSetting<bool> dump_exefs{false, "dump_exefs"};
     BasicSetting<bool> dump_nso{false, "dump_nso"};

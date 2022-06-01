@@ -6,6 +6,9 @@
 
 #include <array>
 #include <vector>
+
+#include <dynarmic/interface/halt_reason.h>
+
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "core/hardware_properties.h"
@@ -64,10 +67,7 @@ public:
     static_assert(sizeof(ThreadContext64) == 0x320);
 
     /// Runs the CPU until an event happens
-    virtual void Run() = 0;
-
-    /// Step CPU by one instruction
-    virtual void Step() = 0;
+    void Run();
 
     /// Clear all instruction cache
     virtual void ClearInstructionCache() = 0;
@@ -194,6 +194,11 @@ public:
 
     void LogBacktrace() const;
 
+    static constexpr Dynarmic::HaltReason step_thread = Dynarmic::HaltReason::Step;
+    static constexpr Dynarmic::HaltReason break_loop = Dynarmic::HaltReason::UserDefined2;
+    static constexpr Dynarmic::HaltReason svc_call = Dynarmic::HaltReason::UserDefined3;
+    static constexpr Dynarmic::HaltReason breakpoint = Dynarmic::HaltReason::UserDefined4;
+
 protected:
     /// System context that this ARM interface is running under.
     System& system;
@@ -201,6 +206,10 @@ protected:
     bool uses_wall_clock;
 
     static void SymbolicateBacktrace(Core::System& system, std::vector<BacktraceEntry>& out);
+
+    virtual Dynarmic::HaltReason RunJit() = 0;
+    virtual Dynarmic::HaltReason StepJit() = 0;
+    virtual u32 GetSvcNumber() const = 0;
 };
 
 } // namespace Core

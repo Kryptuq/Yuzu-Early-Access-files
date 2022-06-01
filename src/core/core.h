@@ -97,6 +97,7 @@ namespace Core {
 
 class ARM_Interface;
 class CpuManager;
+class Debugger;
 class DeviceMemory;
 class ExclusiveMonitor;
 class SpeedLimiter;
@@ -148,12 +149,6 @@ public:
     [[nodiscard]] SystemResultStatus Pause();
 
     /**
-     * Step the CPU one instruction
-     * @return Result status, indicating whether or not the operation succeeded.
-     */
-    [[nodiscard]] SystemResultStatus SingleStep();
-
-    /**
      * Invalidate the CPU instruction caches
      * This function should only be used by GDB Stub to support breakpoints, memory updates and
      * step/continue commands.
@@ -167,6 +162,11 @@ public:
 
     std::unique_lock<std::mutex> StallCPU();
     void UnstallCPU();
+
+    /**
+     * Initialize the debugger.
+     */
+    void InitializeDebugger();
 
     /**
      * Load an executable application.
@@ -354,6 +354,9 @@ public:
     [[nodiscard]] Service::Time::TimeManager& GetTimeManager();
     [[nodiscard]] const Service::Time::TimeManager& GetTimeManager() const;
 
+    [[nodiscard]] Core::Debugger& GetDebugger();
+    [[nodiscard]] const Core::Debugger& GetDebugger() const;
+
     void SetExitLock(bool locked);
     [[nodiscard]] bool GetExitLock() const;
 
@@ -374,6 +377,9 @@ public:
 
     /// Tells if system is running on multicore.
     [[nodiscard]] bool IsMulticore() const;
+
+    /// Tells if the system debugger is enabled.
+    [[nodiscard]] bool DebuggerEnabled() const;
 
     /// Type used for the frontend to designate a callback for System to re-launch the application
     /// using a specified program index.

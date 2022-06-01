@@ -36,6 +36,13 @@ add_library(core STATIC
     crypto/ctr_encryption_layer.h
     crypto/xts_encryption_layer.cpp
     crypto/xts_encryption_layer.h
+    debugger/debugger_interface.h
+    debugger/debugger.cpp
+    debugger/debugger.h
+    debugger/gdbstub_arch.cpp
+    debugger/gdbstub_arch.h
+    debugger/gdbstub.cpp
+    debugger/gdbstub.h
     device_memory.cpp
     device_memory.h
     file_sys/bis_factory.cpp
@@ -736,6 +743,9 @@ create_target_directory_groups(core)
 
 target_link_libraries(core PUBLIC common PRIVATE audio_core video_core)
 target_link_libraries(core PUBLIC Boost::boost PRIVATE fmt::fmt nlohmann_json::nlohmann_json mbedtls Opus::Opus)
+if (MINGW)
+    target_link_libraries(core PRIVATE ${MSWSOCK_LIBRARY})
+endif()
 
 if (ENABLE_WEB_SERVICE)
     target_compile_definitions(core PRIVATE -DENABLE_WEB_SERVICE)
