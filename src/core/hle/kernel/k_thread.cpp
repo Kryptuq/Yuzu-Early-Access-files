@@ -198,6 +198,10 @@ ResultCode KThread::Initialize(KThreadFunction func, uintptr_t arg, VAddr user_s
     resource_limit_release_hint = false;
     cpu_time = 0;
 
+    // Set debug context.
+    stack_top = user_stack_top;
+    argument = arg;
+
     // Clear our stack parameters.
     std::memset(static_cast<void*>(std::addressof(GetStackParameters())), 0,
                 sizeof(StackParameters));

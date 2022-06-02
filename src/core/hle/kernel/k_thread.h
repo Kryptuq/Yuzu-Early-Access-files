@@ -660,6 +660,14 @@ public:
     void IfDummyThreadTryWait();
     void IfDummyThreadEndWait();
 
+    [[nodiscard]] uintptr_t GetArgument() const {
+        return argument;
+    }
+
+    [[nodiscard]] VAddr GetUserStackTop() const {
+        return stack_top;
+    }
+
 private:
     static constexpr size_t PriorityInheritanceCountMax = 10;
     union SyncObjectBuffer {
@@ -791,6 +799,8 @@ private:
     std::vector<KSynchronizationObject*> wait_objects_for_debugging;
     VAddr mutex_wait_address_for_debugging{};
     ThreadWaitReasonForDebugging wait_reason_for_debugging{};
+    uintptr_t argument;
+    VAddr stack_top;
 
 public:
     using ConditionVariableThreadTreeType = ConditionVariableThreadTree;

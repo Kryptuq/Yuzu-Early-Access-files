@@ -34,6 +34,65 @@ constexpr char GDB_STUB_REPLY_ERR[] = "E01";
 constexpr char GDB_STUB_REPLY_OK[] = "OK";
 constexpr char GDB_STUB_REPLY_EMPTY[] = "";
 
+static u8 CalculateChecksum(std::string_view data) {
+    return std::accumulate(data.begin(), data.end(), u8{0},
+                           [](u8 lhs, u8 rhs) { return static_cast<u8>(lhs + rhs); });
+}
+
+static std::string EscapeGDB(std::string_view data) {
+    std::string escaped;
+    escaped.reserve(data.size());
+
+    for (char c : data) {
+        switch (c) {
+        case '#':
+            escaped += "}\x03";
+            break;
+        case '$':
+            escaped += "}\x04";
+            break;
+        case '*':
+            escaped += "}\x0a";
+            break;
+        case '}':
+            escaped += "}\x5d";
+            break;
+        default:
+            escaped += c;
+            break;
+        }
+    }
+
+    return escaped;
+}
+
+static std::string EscapeXML(std::string_view data) {
+    std::string escaped;
+    escaped.reserve(data.size());
+
+    for (char c : data) {
+        switch (c) {
+        case '&':
+            escaped += "&amp;";
+            break;
+        case '"':
+            escaped += "&quot;";
+            break;
+        case '<':
+            escaped += "&lt;";
+            break;
+        case '>':
+            escaped += "&gt;";
+            break;
+        default:
+            escaped += c;
+            break;
+        }
+    }
+
+    return escaped;
+}
+
 GDBStub::GDBStub(DebuggerBackend& backend_, Core::System& system_)
     : DebuggerFrontend(backend_), system{system_} {
     if (system.CurrentProcess()->Is64BitProcess()) {
@@ -255,6 +314,80 @@ void GDBStub::ExecuteCommand(std::string_view packet, std::vector<DebuggerAction
     }
 }
 
+// Structure offsets are from Atmosphere
+// See osdbg_thread_local_region.os.horizon.hpp and osdbg_thread_type.os.horizon.hpp
+
+static std::optional<std::string> GetNameFromThreadType32(Core::Memory::Memory& memory,
+                                                          const Kernel::KThread* thread) {
+    // Read thread type from TLS
+    const VAddr tls_thread_type{memory.Read32(thread->GetTLSAddress() + 0x1fc)};
+    const VAddr argument_thread_type{thread->GetArgument()};
+
+    if (argument_thread_type && tls_thread_type != argument_thread_type) {
+        // Probably not created by nnsdk, no name available.
+        return std::nullopt;
+    }
+
+    if (!tls_thread_type) {
+        return std::nullopt;
+    }
+
+    const u16 version{memory.Read16(tls_thread_type + 0x26)};
+    VAddr name_pointer{};
+    if (version == 1) {
+        name_pointer = memory.Read32(tls_thread_type + 0xe4);
+    } else {
+        name_pointer = memory.Read32(tls_thread_type + 0xe8);
+    }
+
+    if (!name_pointer) {
+        // No name provided.
+        return std::nullopt;
+    }
+
+    return memory.ReadCString(name_pointer, 256);
+}
+
+static std::optional<std::string> GetNameFromThreadType64(Core::Memory::Memory& memory,
+                                                          const Kernel::KThread* thread) {
+    // Read thread type from TLS
+    const VAddr tls_thread_type{memory.Read64(thread->GetTLSAddress() + 0x1f8)};
+    const VAddr argument_thread_type{thread->GetArgument()};
+
+    if (argument_thread_type && tls_thread_type != argument_thread_type) {
+        // Probably not created by nnsdk, no name available.
+        return std::nullopt;
+    }
+
+    if (!tls_thread_type) {
+        return std::nullopt;
+    }
+
+    const u16 version{memory.Read16(tls_thread_type + 0x46)};
+    VAddr name_pointer{};
+    if (version == 1) {
+        name_pointer = memory.Read64(tls_thread_type + 0x1a0);
+    } else {
+        name_pointer = memory.Read64(tls_thread_type + 0x1a8);
+    }
+
+    if (!name_pointer) {
+        // No name provided.
+        return std::nullopt;
+    }
+
+    return memory.ReadCString(name_pointer, 256);
+}
+
+static std::optional<std::string> GetThreadName(Core::System& system,
+                                                const Kernel::KThread* thread) {
+    if (system.CurrentProcess()->Is64BitProcess()) {
+        return GetNameFromThreadType64(system.Memory(), thread);
+    } else {
+        return GetNameFromThreadType32(system.Memory(), thread);
+    }
+}
+
 static std::string_view GetThreadWaitReason(const Kernel::KThread* thread) {
     switch (thread->GetWaitReasonForDebugging()) {
     case Kernel::ThreadWaitReasonForDebugging::Sleep:
@@ -332,20 +465,36 @@ void GDBStub::HandleQuery(std::string_view command) {
     } else if (command.starts_with("sThreadInfo")) {
         // end of list
         SendReply("l");
-    } else if (command.starts_with("Xfer:threads:read")) {
+    } else if (command.starts_with("Xfer:threads:read::")) {
         std::string buffer;
-        buffer += R"(l<?xml version="1.0"?>)";
+        buffer += R"(<?xml version="1.0"?>)";
         buffer += "<threads>";
 
         const auto& threads = system.GlobalSchedulerContext().GetThreadList();
-        for (const auto& thread : threads) {
-            buffer += fmt::format(R"(<thread id="{:x}" core="{:d}" name="Thread {:d}">{}</thread>)",
+        for (const auto* thread : threads) {
+            auto thread_name{GetThreadName(system, thread)};
+            if (!thread_name) {
+                thread_name = fmt::format("Thread {:d}", thread->GetThreadID());
+            }
+
+            buffer += fmt::format(R"(<thread id="{:x}" core="{:d}" name="{}">{}</thread>)",
                                   thread->GetThreadID(), thread->GetActiveCore(),
-                                  thread->GetThreadID(), GetThreadState(thread));
+                                  EscapeXML(*thread_name), GetThreadState(thread));
         }
 
         buffer += "</threads>";
-        SendReply(buffer);
+
+        const auto offset{command.substr(19)};
+        const auto amount{command.substr(command.find(',') + 1)};
+
+        const auto offset_val{static_cast<u64>(strtoll(offset.data(), nullptr, 16))};
+        const auto amount_val{static_cast<u64>(strtoll(amount.data(), nullptr, 16))};
+
+        if (offset_val + amount_val > buffer.size()) {
+            SendReply("l" + buffer.substr(offset_val));
+        } else {
+            SendReply("m" + buffer.substr(offset_val, amount_val));
+        }
     } else if (command.starts_with("Attached")) {
         SendReply("0");
     } else if (command.starts_with("StartNoAckMode")) {
@@ -438,14 +587,10 @@ std::optional<std::string> GDBStub::DetachCommand() {
     return data.substr(1, data.size() - 4);
 }
 
-u8 GDBStub::CalculateChecksum(std::string_view data) {
-    return std::accumulate(data.begin(), data.end(), u8{0},
-                           [](u8 lhs, u8 rhs) { return static_cast<u8>(lhs + rhs); });
-}
-
 void GDBStub::SendReply(std::string_view data) {
-    const auto output{
-        fmt::format("{}{}{}{:02x}", GDB_STUB_START, data, GDB_STUB_END, CalculateChecksum(data))};
+    const auto escaped{EscapeGDB(data)};
+    const auto output{fmt::format("{}{}{}{:02x}", GDB_STUB_START, escaped, GDB_STUB_END,
+                                  CalculateChecksum(escaped))};
     LOG_TRACE(Debug_GDBStub, "Writing reply: {}", output);
 
     // C++ string support is complete rubbish

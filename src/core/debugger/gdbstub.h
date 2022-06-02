@@ -34,7 +34,6 @@ private:
     std::optional<std::string> DetachCommand();
     Kernel::KThread* GetThreadByID(u64 thread_id);
 
-    static u8 CalculateChecksum(std::string_view data);
     void SendReply(std::string_view data);
     void SendStatus(char status);
 
