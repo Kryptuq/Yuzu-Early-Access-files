@@ -46,6 +46,7 @@ std::string GDBStubA64::GetTargetXML() const {
         R"(<?xml version="1.0"?>
 <!DOCTYPE target SYSTEM "gdb-target.dtd">
 <target version="1.0">
+  <architecture>aarch64</architecture>
   <feature name="org.gnu.gdb.aarch64.core">
     <reg name="x0" bitsize="64"/>
     <reg name="x1" bitsize="64"/>
@@ -80,7 +81,7 @@ std::string GDBStubA64::GetTargetXML() const {
     <reg name="x30" bitsize="64"/>
     <reg name="sp" bitsize="64" type="data_ptr"/>
     <reg name="pc" bitsize="64" type="code_ptr"/>
-    <flags id="pstate_flags" size="4">
+    <flags id="cpsr_flags" size="4">
       <field name="SP" start="0" end="0"/>
       <field name="" start="1" end="1"/>
       <field name="EL" start="2" end="3"/>
@@ -97,9 +98,84 @@ std::string GDBStubA64::GetTargetXML() const {
       <field name="Z" start="30" end="30"/>
       <field name="N" start="31" end="31"/>
     </flags>
-    <reg name="pstate" bitsize="32" type="pstate_flags"/>
+    <reg name="cpsr" bitsize="32" type="cpsr_flags"/>
   </feature>
   <feature name="org.gnu.gdb.aarch64.fpu">
+    <vector id="v2d" type="ieee_double" count="2"/>
+    <vector id="v2u" type="uint64" count="2"/>
+    <vector id="v2i" type="int64" count="2"/>
+    <vector id="v4f" type="ieee_single" count="4"/>
+    <vector id="v4u" type="uint32" count="4"/>
+    <vector id="v4i" type="int32" count="4"/>
+    <vector id="v8u" type="uint16" count="8"/>
+    <vector id="v8i" type="int16" count="8"/>
+    <vector id="v16u" type="uint8" count="16"/>
+    <vector id="v16i" type="int8" count="16"/>
+    <vector id="v1u" type="uint128" count="1"/>
+    <vector id="v1i" type="int128" count="1"/>
+    <union id="vnd">
+      <field name="f" type="v2d"/>
+      <field name="u" type="v2u"/>
+      <field name="s" type="v2i"/>
+    </union>
+    <union id="vns">
+      <field name="f" type="v4f"/>
+      <field name="u" type="v4u"/>
+      <field name="s" type="v4i"/>
+    </union>
+    <union id="vnh">
+      <field name="u" type="v8u"/>
+      <field name="s" type="v8i"/>
+    </union>
+    <union id="vnb">
+      <field name="u" type="v16u"/>
+      <field name="s" type="v16i"/>
+    </union>
+    <union id="vnq">
+      <field name="u" type="v1u"/>
+      <field name="s" type="v1i"/>
+    </union>
+    <union id="aarch64v">
+      <field name="d" type="vnd"/>
+      <field name="s" type="vns"/>
+      <field name="h" type="vnh"/>
+      <field name="b" type="vnb"/>
+      <field name="q" type="vnq"/>
+    </union>
+    <reg name="v0" bitsize="128" type="aarch64v" regnum="34"/>
+    <reg name="v1" bitsize="128" type="aarch64v" />
+    <reg name="v2" bitsize="128" type="aarch64v" />
+    <reg name="v3" bitsize="128" type="aarch64v" />
+    <reg name="v4" bitsize="128" type="aarch64v" />
+    <reg name="v5" bitsize="128" type="aarch64v" />
+    <reg name="v6" bitsize="128" type="aarch64v" />
+    <reg name="v7" bitsize="128" type="aarch64v" />
+    <reg name="v8" bitsize="128" type="aarch64v" />
+    <reg name="v9" bitsize="128" type="aarch64v" />
+    <reg name="v10" bitsize="128" type="aarch64v"/>
+    <reg name="v11" bitsize="128" type="aarch64v"/>
+    <reg name="v12" bitsize="128" type="aarch64v"/>
+    <reg name="v13" bitsize="128" type="aarch64v"/>
+    <reg name="v14" bitsize="128" type="aarch64v"/>
+    <reg name="v15" bitsize="128" type="aarch64v"/>
+    <reg name="v16" bitsize="128" type="aarch64v"/>
+    <reg name="v17" bitsize="128" type="aarch64v"/>
+    <reg name="v18" bitsize="128" type="aarch64v"/>
+    <reg name="v19" bitsize="128" type="aarch64v"/>
+    <reg name="v20" bitsize="128" type="aarch64v"/>
+    <reg name="v21" bitsize="128" type="aarch64v"/>
+    <reg name="v22" bitsize="128" type="aarch64v"/>
+    <reg name="v23" bitsize="128" type="aarch64v"/>
+    <reg name="v24" bitsize="128" type="aarch64v"/>
+    <reg name="v25" bitsize="128" type="aarch64v"/>
+    <reg name="v26" bitsize="128" type="aarch64v"/>
+    <reg name="v27" bitsize="128" type="aarch64v"/>
+    <reg name="v28" bitsize="128" type="aarch64v"/>
+    <reg name="v29" bitsize="128" type="aarch64v"/>
+    <reg name="v30" bitsize="128" type="aarch64v"/>
+    <reg name="v31" bitsize="128" type="aarch64v"/>
+    <reg name="fpsr" bitsize="32"/>
+    <reg name="fpcr" bitsize="32"/>
   </feature>
 </target>)";
 
@@ -121,12 +197,12 @@ std::string GDBStubA64::RegRead(const Kernel::KThread* thread, size_t id) const 
         return ValueToHex(context.pc);
     } else if (id == PSTATE_REGISTER) {
         return ValueToHex(context.pstate);
-    } else if (id >= Q0_REGISTER && id < FPCR_REGISTER) {
+    } else if (id >= Q0_REGISTER && id < FPSR_REGISTER) {
         return ValueToHex(fprs[id - Q0_REGISTER]);
-    } else if (id == FPCR_REGISTER) {
-        return ValueToHex(context.fpcr);
     } else if (id == FPSR_REGISTER) {
         return ValueToHex(context.fpsr);
+    } else if (id == FPCR_REGISTER) {
+        return ValueToHex(context.fpcr);
     } else {
         return "";
     }
@@ -145,12 +221,12 @@ void GDBStubA64::RegWrite(Kernel::KThread* thread, size_t id, std::string_view v
         context.pc = HexToValue<u64>(value);
     } else if (id == PSTATE_REGISTER) {
         context.pstate = HexToValue<u32>(value);
-    } else if (id >= Q0_REGISTER && id < FPCR_REGISTER) {
+    } else if (id >= Q0_REGISTER && id < FPSR_REGISTER) {
         context.vector_registers[id - Q0_REGISTER] = HexToValue<u128>(value);
-    } else if (id == FPCR_REGISTER) {
-        context.fpcr = HexToValue<u32>(value);
     } else if (id == FPSR_REGISTER) {
         context.fpsr = HexToValue<u32>(value);
+    } else if (id == FPCR_REGISTER) {
+        context.fpcr = HexToValue<u32>(value);
     }
 }
 
@@ -195,6 +271,7 @@ std::string GDBStubA32::GetTargetXML() const {
         R"(<?xml version="1.0"?>
 <!DOCTYPE target SYSTEM "gdb-target.dtd">
 <target version="1.0">
+  <architecture>arm</architecture>
   <feature name="org.gnu.gdb.arm.core">
     <reg name="r0" bitsize="32" type="uint32"/>
     <reg name="r1" bitsize="32" type="uint32"/>

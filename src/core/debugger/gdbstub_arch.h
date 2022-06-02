@@ -40,8 +40,8 @@ private:
     static constexpr u32 PC_REGISTER = 32;
     static constexpr u32 PSTATE_REGISTER = 33;
     static constexpr u32 Q0_REGISTER = 34;
-    static constexpr u32 FPCR_REGISTER = 66;
-    static constexpr u32 FPSR_REGISTER = 67;
+    static constexpr u32 FPSR_REGISTER = 66;
+    static constexpr u32 FPCR_REGISTER = 67;
 };
 
 class GDBStubA32 final : public GDBStubArch {
