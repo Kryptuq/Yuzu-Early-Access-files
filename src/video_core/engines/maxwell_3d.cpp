@@ -595,8 +595,8 @@ void Maxwell3D::DrawArrays() {
 
 std::optional<u64> Maxwell3D::GetQueryResult() {
     switch (regs.query.query_get.select) {
-    case Regs::QuerySelect::Zero:
-        return 0;
+    case Regs::QuerySelect::Payload:
+        return regs.query.query_sequence;
     case Regs::QuerySelect::SamplesPassed:
         // Deferred.
         rasterizer->Query(regs.query.QueryAddress(), QueryType::SamplesPassed,

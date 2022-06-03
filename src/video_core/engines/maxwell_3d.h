@@ -93,7 +93,7 @@ public:
         };
 
         enum class QuerySelect : u32 {
-            Zero = 0,
+            Payload = 0,
             TimeElapsed = 2,
             TransformFeedbackPrimitivesGenerated = 11,
             PrimitivesGenerated = 18,
