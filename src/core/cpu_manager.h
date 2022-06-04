@@ -69,11 +69,13 @@ private:
     void MultiCoreRunGuestLoop();
     void MultiCoreRunIdleThread();
     void MultiCoreRunSuspendThread();
+    void MultiCorePause(bool paused);
 
     void SingleCoreRunGuestThread();
     void SingleCoreRunGuestLoop();
     void SingleCoreRunIdleThread();
     void SingleCoreRunSuspendThread();
+    void SingleCorePause(bool paused);
 
     static void ThreadStart(std::stop_token stop_token, CpuManager& cpu_manager, std::size_t core);
 
@@ -81,12 +83,16 @@ private:
 
     struct CoreData {
         std::shared_ptr<Common::Fiber> host_context;
+        std::unique_ptr<Common::Event> enter_barrier;
+        std::unique_ptr<Common::Event> exit_barrier;
+        std::atomic<bool> is_running;
+        std::atomic<bool> is_paused;
+        std::atomic<bool> initialized;
         std::jthread host_thread;
     };
 
     std::atomic<bool> running_mode{};
-    std::atomic<bool> pause_state{};
-    std::unique_ptr<Common::Barrier> pause_barrier;
+    std::atomic<bool> paused_state{};
 
     std::array<CoreData, Core::Hardware::NUM_CPU_CORES> core_data{};
 

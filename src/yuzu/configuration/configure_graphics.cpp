@@ -5,7 +5,6 @@
 // Include this early to include Vulkan headers how we want to
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
-#include <exception>
 #include <QColorDialog>
 #include <QVulkanInstance>
 
