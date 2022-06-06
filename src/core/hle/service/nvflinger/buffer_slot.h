@@ -31,7 +31,6 @@ struct BufferSlot final {
     u64 frame_number{};
     Fence fence;
     bool acquire_called{};
-    bool needs_cleanup_on_release{};
     bool attached_by_consumer{};
     bool is_preallocated{};
 };

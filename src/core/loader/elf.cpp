@@ -6,6 +6,7 @@
 #include <memory>
 #include "common/common_funcs.h"
 #include "common/common_types.h"
+#include "common/elf.h"
 #include "common/logging/log.h"
 #include "core/hle/kernel/code_set.h"
 #include "core/hle/kernel/k_page_table.h"
@@ -13,159 +14,7 @@
 #include "core/loader/elf.h"
 #include "core/memory.h"
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// ELF Header Constants
-
-// File type
-enum ElfType {
-    ET_NONE = 0,
-    ET_REL = 1,
-    ET_EXEC = 2,
-    ET_DYN = 3,
-    ET_CORE = 4,
-    ET_LOPROC = 0xFF00,
-    ET_HIPROC = 0xFFFF,
-};
-
-// Machine/Architecture
-enum ElfMachine {
-    EM_NONE = 0,
-    EM_M32 = 1,
-    EM_SPARC = 2,
-    EM_386 = 3,
-    EM_68K = 4,
-    EM_88K = 5,
-    EM_860 = 7,
-    EM_MIPS = 8
-};
-
-// File version
-#define EV_NONE 0
-#define EV_CURRENT 1
-
-// Identification index
-#define EI_MAG0 0
-#define EI_MAG1 1
-#define EI_MAG2 2
-#define EI_MAG3 3
-#define EI_CLASS 4
-#define EI_DATA 5
-#define EI_VERSION 6
-#define EI_PAD 7
-#define EI_NIDENT 16
-
-// Sections constants
-
-// Section types
-#define SHT_NULL 0
-#define SHT_PROGBITS 1
-#define SHT_SYMTAB 2
-#define SHT_STRTAB 3
-#define SHT_RELA 4
-#define SHT_HASH 5
-#define SHT_DYNAMIC 6
-#define SHT_NOTE 7
-#define SHT_NOBITS 8
-#define SHT_REL 9
-#define SHT_SHLIB 10
-#define SHT_DYNSYM 11
-#define SHT_LOPROC 0x70000000
-#define SHT_HIPROC 0x7FFFFFFF
-#define SHT_LOUSER 0x80000000
-#define SHT_HIUSER 0xFFFFFFFF
-
-// Section flags
-enum ElfSectionFlags {
-    SHF_WRITE = 0x1,
-    SHF_ALLOC = 0x2,
-    SHF_EXECINSTR = 0x4,
-    SHF_MASKPROC = 0xF0000000,
-};
-
-// Segment types
-#define PT_NULL 0
-#define PT_LOAD 1
-#define PT_DYNAMIC 2
-#define PT_INTERP 3
-#define PT_NOTE 4
-#define PT_SHLIB 5
-#define PT_PHDR 6
-#define PT_LOPROC 0x70000000
-#define PT_HIPROC 0x7FFFFFFF
-
-// Segment flags
-#define PF_X 0x1
-#define PF_W 0x2
-#define PF_R 0x4
-#define PF_MASKPROC 0xF0000000
-
-typedef unsigned int Elf32_Addr;
-typedef unsigned short Elf32_Half;
-typedef unsigned int Elf32_Off;
-typedef signed int Elf32_Sword;
-typedef unsigned int Elf32_Word;
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// ELF file header
-
-struct Elf32_Ehdr {
-    unsigned char e_ident[EI_NIDENT];
-    Elf32_Half e_type;
-    Elf32_Half e_machine;
-    Elf32_Word e_version;
-    Elf32_Addr e_entry;
-    Elf32_Off e_phoff;
-    Elf32_Off e_shoff;
-    Elf32_Word e_flags;
-    Elf32_Half e_ehsize;
-    Elf32_Half e_phentsize;
-    Elf32_Half e_phnum;
-    Elf32_Half e_shentsize;
-    Elf32_Half e_shnum;
-    Elf32_Half e_shstrndx;
-};
-
-// Section header
-struct Elf32_Shdr {
-    Elf32_Word sh_name;
-    Elf32_Word sh_type;
-    Elf32_Word sh_flags;
-    Elf32_Addr sh_addr;
-    Elf32_Off sh_offset;
-    Elf32_Word sh_size;
-    Elf32_Word sh_link;
-    Elf32_Word sh_info;
-    Elf32_Word sh_addralign;
-    Elf32_Word sh_entsize;
-};
-
-// Segment header
-struct Elf32_Phdr {
-    Elf32_Word p_type;
-    Elf32_Off p_offset;
-    Elf32_Addr p_vaddr;
-    Elf32_Addr p_paddr;
-    Elf32_Word p_filesz;
-    Elf32_Word p_memsz;
-    Elf32_Word p_flags;
-    Elf32_Word p_align;
-};
-
-// Symbol table entry
-struct Elf32_Sym {
-    Elf32_Word st_name;
-    Elf32_Addr st_value;
-    Elf32_Word st_size;
-    unsigned char st_info;
-    unsigned char st_other;
-    Elf32_Half st_shndx;
-};
-
-// Relocation entries
-struct Elf32_Rel {
-    Elf32_Addr r_offset;
-    Elf32_Word r_info;
-};
+using namespace Common::ELF;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ElfReader class
@@ -193,11 +42,11 @@ public:
     }
 
     // Quick accessors
-    ElfType GetType() const {
-        return (ElfType)(header->e_type);
+    u16 GetType() const {
+        return header->e_type;
     }
-    ElfMachine GetMachine() const {
-        return (ElfMachine)(header->e_machine);
+    u16 GetMachine() const {
+        return header->e_machine;
     }
     VAddr GetEntryPoint() const {
         return entryPoint;
@@ -220,13 +69,13 @@ public:
     const u8* GetSectionDataPtr(int section) const {
         if (section < 0 || section >= header->e_shnum)
             return nullptr;
-        if (sections[section].sh_type != SHT_NOBITS)
+        if (sections[section].sh_type != ElfShtNobits)
             return GetPtr(sections[section].sh_offset);
         else
             return nullptr;
     }
     bool IsCodeSection(int section) const {
-        return sections[section].sh_type == SHT_PROGBITS;
+        return sections[section].sh_type == ElfShtProgBits;
     }
     const u8* GetSegmentPtr(int segment) {
         return GetPtr(segments[segment].p_offset);
@@ -256,7 +105,7 @@ ElfReader::ElfReader(void* ptr) {
 }
 
 const char* ElfReader::GetSectionName(int section) const {
-    if (sections[section].sh_type == SHT_NULL)
+    if (sections[section].sh_type == ElfShtNull)
         return nullptr;
 
     int name_offset = sections[section].sh_name;
@@ -272,7 +121,7 @@ Kernel::CodeSet ElfReader::LoadInto(VAddr vaddr) {
     LOG_DEBUG(Loader, "String section: {}", header->e_shstrndx);
 
     // Should we relocate?
-    relocate = (header->e_type != ET_EXEC);
+    relocate = (header->e_type != ElfTypeExec);
 
     if (relocate) {
         LOG_DEBUG(Loader, "Relocatable module");
@@ -288,7 +137,7 @@ Kernel::CodeSet ElfReader::LoadInto(VAddr vaddr) {
     u64 total_image_size = 0;
     for (unsigned int i = 0; i < header->e_phnum; ++i) {
         const Elf32_Phdr* p = &segments[i];
-        if (p->p_type == PT_LOAD) {
+        if (p->p_type == ElfPtLoad) {
             total_image_size += (p->p_memsz + 0xFFF) & ~0xFFF;
         }
     }
@@ -303,14 +152,14 @@ Kernel::CodeSet ElfReader::LoadInto(VAddr vaddr) {
         LOG_DEBUG(Loader, "Type: {} Vaddr: {:08X} Filesz: {:08X} Memsz: {:08X} ", p->p_type,
                   p->p_vaddr, p->p_filesz, p->p_memsz);
 
-        if (p->p_type == PT_LOAD) {
+        if (p->p_type == ElfPtLoad) {
             Kernel::CodeSet::Segment* codeset_segment;
-            u32 permission_flags = p->p_flags & (PF_R | PF_W | PF_X);
-            if (permission_flags == (PF_R | PF_X)) {
+            u32 permission_flags = p->p_flags & (ElfPfRead | ElfPfWrite | ElfPfExec);
+            if (permission_flags == (ElfPfRead | ElfPfExec)) {
                 codeset_segment = &codeset.CodeSegment();
-            } else if (permission_flags == (PF_R)) {
+            } else if (permission_flags == (ElfPfRead)) {
                 codeset_segment = &codeset.RODataSegment();
-            } else if (permission_flags == (PF_R | PF_W)) {
+            } else if (permission_flags == (ElfPfRead | ElfPfWrite)) {
                 codeset_segment = &codeset.DataSegment();
             } else {
                 LOG_ERROR(Loader, "Unexpected ELF PT_LOAD segment id {} with flags {:X}", i,

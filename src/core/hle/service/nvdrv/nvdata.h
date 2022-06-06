@@ -15,17 +15,11 @@ using DeviceFD = s32;
 
 constexpr DeviceFD INVALID_NVDRV_FD = -1;
 
-struct Fence {
+struct NvFence {
     s32 id;
     u32 value;
 };
-
-static_assert(sizeof(Fence) == 8, "Fence has wrong size");
-
-struct MultiFence {
-    u32 num_fences;
-    std::array<Fence, 4> fences;
-};
+static_assert(sizeof(NvFence) == 8, "NvFence has wrong size");
 
 enum class NvResult : u32 {
     Success = 0x0,

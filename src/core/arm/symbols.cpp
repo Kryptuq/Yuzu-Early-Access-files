@@ -3,73 +3,14 @@
 
 #include "common/bit_field.h"
 #include "common/common_funcs.h"
+#include "common/elf.h"
 #include "core/arm/symbols.h"
 #include "core/core.h"
 #include "core/memory.h"
 
+using namespace Common::ELF;
+
 namespace Core {
-namespace {
-
-constexpr u64 ELF_DYNAMIC_TAG_NULL = 0;
-constexpr u64 ELF_DYNAMIC_TAG_STRTAB = 5;
-constexpr u64 ELF_DYNAMIC_TAG_SYMTAB = 6;
-constexpr u64 ELF_DYNAMIC_TAG_SYMENT = 11;
-
-enum class ELFSymbolType : u8 {
-    None = 0,
-    Object = 1,
-    Function = 2,
-    Section = 3,
-    File = 4,
-    Common = 5,
-    TLS = 6,
-};
-
-enum class ELFSymbolBinding : u8 {
-    Local = 0,
-    Global = 1,
-    Weak = 2,
-};
-
-enum class ELFSymbolVisibility : u8 {
-    Default = 0,
-    Internal = 1,
-    Hidden = 2,
-    Protected = 3,
-};
-
-struct ELF64Symbol {
-    u32 name_index;
-    union {
-        u8 info;
-
-        BitField<0, 4, ELFSymbolType> type;
-        BitField<4, 4, ELFSymbolBinding> binding;
-    };
-    ELFSymbolVisibility visibility;
-    u16 sh_index;
-    u64 value;
-    u64 size;
-};
-static_assert(sizeof(ELF64Symbol) == 0x18, "ELF64Symbol has incorrect size.");
-
-struct ELF32Symbol {
-    u32 name_index;
-    u32 value;
-    u32 size;
-    union {
-        u8 info;
-
-        BitField<0, 4, ELFSymbolType> type;
-        BitField<4, 4, ELFSymbolBinding> binding;
-    };
-    ELFSymbolVisibility visibility;
-    u16 sh_index;
-};
-static_assert(sizeof(ELF32Symbol) == 0x10, "ELF32Symbol has incorrect size.");
-
-} // Anonymous namespace
-
 namespace Symbols {
 
 template <typename Word, typename ELFSymbol, typename ByteReader>
@@ -110,15 +51,15 @@ static Symbols GetSymbols(ByteReader ReadBytes) {
         const Word value = ReadWord(dynamic_index + sizeof(Word));
         dynamic_index += 2 * sizeof(Word);
 
-        if (tag == ELF_DYNAMIC_TAG_NULL) {
+        if (tag == ElfDtNull) {
             break;
         }
 
-        if (tag == ELF_DYNAMIC_TAG_STRTAB) {
+        if (tag == ElfDtStrtab) {
             string_table_offset = value;
-        } else if (tag == ELF_DYNAMIC_TAG_SYMTAB) {
+        } else if (tag == ElfDtSymtab) {
             symbol_table_offset = value;
-        } else if (tag == ELF_DYNAMIC_TAG_SYMENT) {
+        } else if (tag == ElfDtSyment) {
             symbol_entry_size = value;
         }
     }
@@ -134,14 +75,14 @@ static Symbols GetSymbols(ByteReader ReadBytes) {
         ELFSymbol symbol{};
         ReadBytes(&symbol, symbol_index, sizeof(ELFSymbol));
 
-        VAddr string_offset = string_table_offset + symbol.name_index;
+        VAddr string_offset = string_table_offset + symbol.st_name;
         std::string name;
         for (u8 c = Read8(string_offset); c != 0; c = Read8(++string_offset)) {
             name += static_cast<char>(c);
         }
 
         symbol_index += symbol_entry_size;
-        out[name] = std::make_pair(symbol.value, symbol.size);
+        out[name] = std::make_pair(symbol.st_value, symbol.st_size);
     }
 
     return out;
@@ -152,9 +93,9 @@ Symbols GetSymbols(VAddr base, Core::Memory::Memory& memory, bool is_64) {
         [&](void* ptr, size_t offset, size_t size) { memory.ReadBlock(base + offset, ptr, size); }};
 
     if (is_64) {
-        return GetSymbols<u64, ELF64Symbol>(ReadBytes);
+        return GetSymbols<u64, Elf64_Sym>(ReadBytes);
     } else {
-        return GetSymbols<u32, ELF32Symbol>(ReadBytes);
+        return GetSymbols<u32, Elf32_Sym>(ReadBytes);
     }
 }
 
@@ -164,9 +105,9 @@ Symbols GetSymbols(std::span<const u8> data, bool is_64) {
     }};
 
     if (is_64) {
-        return GetSymbols<u64, ELF64Symbol>(ReadBytes);
+        return GetSymbols<u64, Elf64_Sym>(ReadBytes);
     } else {
-        return GetSymbols<u32, ELF32Symbol>(ReadBytes);
+        return GetSymbols<u32, Elf32_Sym>(ReadBytes);
     }
 }
 

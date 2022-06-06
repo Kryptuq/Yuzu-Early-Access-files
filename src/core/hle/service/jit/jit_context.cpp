@@ -11,9 +11,12 @@
 #include "common/alignment.h"
 #include "common/common_funcs.h"
 #include "common/div_ceil.h"
+#include "common/elf.h"
 #include "common/logging/log.h"
 #include "core/hle/service/jit/jit_context.h"
 #include "core/memory.h"
+
+using namespace Common::ELF;
 
 namespace Service::JIT {
 
@@ -25,25 +28,6 @@ constexpr std::array<u8, 8> SVC0_ARM64 = {
 constexpr std::array HELPER_FUNCTIONS{
     "_stop", "_resolve", "_panic", "memcpy", "memmove", "memset",
 };
-
-struct Elf64_Dyn {
-    u64 d_tag;
-    u64 d_un;
-};
-
-struct Elf64_Rela {
-    u64 r_offset;
-    u64 r_info;
-    s64 r_addend;
-};
-
-static constexpr u32 Elf64_RelaType(const Elf64_Rela* rela) {
-    return static_cast<u32>(rela->r_info);
-}
-
-constexpr int DT_RELA = 7;               /* Address of Rela relocs */
-constexpr int DT_RELASZ = 8;             /* Total size of Rela relocs */
-constexpr int R_AARCH64_RELATIVE = 1027; /* Adjust by program base.  */
 
 constexpr size_t STACK_ALIGN = 16;
 
@@ -206,17 +190,17 @@ public:
             if (!dyn.d_tag) {
                 break;
             }
-            if (dyn.d_tag == DT_RELA) {
-                rela_dyn = dyn.d_un;
+            if (dyn.d_tag == ElfDtRela) {
+                rela_dyn = dyn.d_un.d_ptr;
             }
-            if (dyn.d_tag == DT_RELASZ) {
-                num_rela = dyn.d_un / sizeof(Elf64_Rela);
+            if (dyn.d_tag == ElfDtRelasz) {
+                num_rela = dyn.d_un.d_val / sizeof(Elf64_Rela);
             }
         }
 
         for (size_t i = 0; i < num_rela; i++) {
             const auto rela{callbacks->ReadMemory<Elf64_Rela>(rela_dyn + i * sizeof(Elf64_Rela))};
-            if (Elf64_RelaType(&rela) != R_AARCH64_RELATIVE) {
+            if (Elf64RelType(rela.r_info) != ElfAArch64Relative) {
                 continue;
             }
             const VAddr contents{callbacks->MemoryRead64(rela.r_offset)};

@@ -93,11 +93,11 @@ std::size_t GetSizeInBytes(const Tegra::FramebufferConfig& framebuffer) {
 
 VkFormat GetFormat(const Tegra::FramebufferConfig& framebuffer) {
     switch (framebuffer.pixel_format) {
-    case Tegra::FramebufferConfig::PixelFormat::A8B8G8R8_UNORM:
+    case Service::android::PixelFormat::Rgba8888:
         return VK_FORMAT_A8B8G8R8_UNORM_PACK32;
-    case Tegra::FramebufferConfig::PixelFormat::RGB565_UNORM:
+    case Service::android::PixelFormat::Rgb565:
         return VK_FORMAT_R5G6B5_UNORM_PACK16;
-    case Tegra::FramebufferConfig::PixelFormat::B8G8R8A8_UNORM:
+    case Service::android::PixelFormat::Bgra8888:
         return VK_FORMAT_B8G8R8A8_UNORM;
     default:
         UNIMPLEMENTED_MSG("Unknown framebuffer pixel format: {}",
@@ -1389,9 +1389,9 @@ void VKBlitScreen::SetVertexData(BufferData& data, const Tegra::FramebufferConfi
     auto right = texcoords.right;
 
     switch (framebuffer_transform_flags) {
-    case Tegra::FramebufferConfig::TransformFlags::Unset:
+    case Service::android::BufferTransformFlags::Unset:
         break;
-    case Tegra::FramebufferConfig::TransformFlags::FlipV:
+    case Service::android::BufferTransformFlags::FlipV:
         // Flip the framebuffer vertically
         left = texcoords.right;
         right = texcoords.left;

@@ -186,7 +186,7 @@ NvResult nvhost_gpu::AllocateObjectContext(const std::vector<u8>& input, std::ve
     return NvResult::Success;
 }
 
-static std::vector<Tegra::CommandHeader> BuildWaitCommandList(Fence fence) {
+static std::vector<Tegra::CommandHeader> BuildWaitCommandList(NvFence fence) {
     return {
         Tegra::BuildCommandHeader(Tegra::BufferMethods::FenceValue, 1,
                                   Tegra::SubmissionMode::Increasing),
@@ -197,7 +197,8 @@ static std::vector<Tegra::CommandHeader> BuildWaitCommandList(Fence fence) {
     };
 }
 
-static std::vector<Tegra::CommandHeader> BuildIncrementCommandList(Fence fence, u32 add_increment) {
+static std::vector<Tegra::CommandHeader> BuildIncrementCommandList(NvFence fence,
+                                                                   u32 add_increment) {
     std::vector<Tegra::CommandHeader> result{
         Tegra::BuildCommandHeader(Tegra::BufferMethods::FenceValue, 1,
                                   Tegra::SubmissionMode::Increasing),
@@ -212,7 +213,7 @@ static std::vector<Tegra::CommandHeader> BuildIncrementCommandList(Fence fence, 
     return result;
 }
 
-static std::vector<Tegra::CommandHeader> BuildIncrementWithWfiCommandList(Fence fence,
+static std::vector<Tegra::CommandHeader> BuildIncrementWithWfiCommandList(NvFence fence,
                                                                           u32 add_increment) {
     std::vector<Tegra::CommandHeader> result{
         Tegra::BuildCommandHeader(Tegra::BufferMethods::WaitForInterrupt, 1,

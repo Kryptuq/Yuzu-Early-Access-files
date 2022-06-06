@@ -58,6 +58,7 @@ add_library(common STATIC
     div_ceil.h
     dynamic_library.cpp
     dynamic_library.h
+    elf.h
     error.cpp
     error.h
     expected.h

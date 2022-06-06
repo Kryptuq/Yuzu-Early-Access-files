@@ -84,10 +84,6 @@ void BufferQueueCore::FreeBufferLocked(s32 slot) {
 
     slots[slot].graphic_buffer.reset();
 
-    if (slots[slot].buffer_state == BufferState::Acquired) {
-        slots[slot].needs_cleanup_on_release = true;
-    }
-
     slots[slot].buffer_state = BufferState::Free;
     slots[slot].frame_number = UINT32_MAX;
     slots[slot].acquire_called = false;

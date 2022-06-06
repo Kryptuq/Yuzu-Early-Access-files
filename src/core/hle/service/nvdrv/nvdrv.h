@@ -11,6 +11,7 @@
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/nvdrv/nvdata.h"
 #include "core/hle/service/nvdrv/syncpoint_manager.h"
+#include "core/hle/service/nvflinger/ui/fence.h"
 #include "core/hle/service/service.h"
 
 namespace Core {
@@ -36,7 +37,7 @@ class nvdevice;
 /// Represents an Nvidia event
 struct NvEvent {
     Kernel::KEvent* event{};
-    Fence fence{};
+    NvFence fence{};
 };
 
 struct EventInterface {

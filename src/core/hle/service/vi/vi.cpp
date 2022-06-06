@@ -21,8 +21,11 @@
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/service/nvdrv/nvdata.h"
-#include "core/hle/service/nvflinger/buffer_queue.h"
+#include "core/hle/service/nvflinger/binder.h"
+#include "core/hle/service/nvflinger/buffer_queue_producer.h"
+#include "core/hle/service/nvflinger/hos_binder_driver_server.h"
 #include "core/hle/service/nvflinger/nvflinger.h"
+#include "core/hle/service/nvflinger/parcel.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/vi/vi.h"
 #include "core/hle/service/vi/vi_m.h"
@@ -56,448 +59,25 @@ struct DisplayInfo {
 };
 static_assert(sizeof(DisplayInfo) == 0x60, "DisplayInfo has wrong size");
 
-class Parcel {
+class NativeWindow final {
 public:
-    // This default size was chosen arbitrarily.
-    static constexpr std::size_t DefaultBufferSize = 0x40;
-    Parcel() : buffer(DefaultBufferSize) {}
-    explicit Parcel(std::vector<u8> data) : buffer(std::move(data)) {}
-    virtual ~Parcel() = default;
-
-    template <typename T>
-    T Read() {
-        static_assert(std::is_trivially_copyable_v<T>, "T must be trivially copyable.");
-        ASSERT(read_index + sizeof(T) <= buffer.size());
-
-        T val;
-        std::memcpy(&val, buffer.data() + read_index, sizeof(T));
-        read_index += sizeof(T);
-        read_index = Common::AlignUp(read_index, 4);
-        return val;
-    }
-
-    template <typename T>
-    T ReadUnaligned() {
-        static_assert(std::is_trivially_copyable_v<T>, "T must be trivially copyable.");
-        ASSERT(read_index + sizeof(T) <= buffer.size());
-
-        T val;
-        std::memcpy(&val, buffer.data() + read_index, sizeof(T));
-        read_index += sizeof(T);
-        return val;
-    }
-
-    std::vector<u8> ReadBlock(std::size_t length) {
-        ASSERT(read_index + length <= buffer.size());
-        const u8* const begin = buffer.data() + read_index;
-        const u8* const end = begin + length;
-        std::vector<u8> data(begin, end);
-        read_index += length;
-        read_index = Common::AlignUp(read_index, 4);
-        return data;
-    }
-
-    std::u16string ReadInterfaceToken() {
-        [[maybe_unused]] const u32 unknown = Read<u32_le>();
-        const u32 length = Read<u32_le>();
-
-        std::u16string token{};
-
-        for (u32 ch = 0; ch < length + 1; ++ch) {
-            token.push_back(ReadUnaligned<u16_le>());
-        }
-
-        read_index = Common::AlignUp(read_index, 4);
-
-        return token;
-    }
-
-    template <typename T>
-    void Write(const T& val) {
-        static_assert(std::is_trivially_copyable_v<T>, "T must be trivially copyable.");
-
-        if (buffer.size() < write_index + sizeof(T)) {
-            buffer.resize(buffer.size() + sizeof(T) + DefaultBufferSize);
-        }
-
-        std::memcpy(buffer.data() + write_index, &val, sizeof(T));
-        write_index += sizeof(T);
-        write_index = Common::AlignUp(write_index, 4);
-    }
-
-    template <typename T>
-    void WriteObject(const T& val) {
-        static_assert(std::is_trivially_copyable_v<T>, "T must be trivially copyable.");
-
-        const u32_le size = static_cast<u32>(sizeof(val));
-        Write(size);
-        // TODO(Subv): Support file descriptors.
-        Write<u32_le>(0); // Fd count.
-        Write(val);
-    }
-
-    void Deserialize() {
-        ASSERT(buffer.size() > sizeof(Header));
-
-        Header header{};
-        std::memcpy(&header, buffer.data(), sizeof(Header));
-
-        read_index = header.data_offset;
-        DeserializeData();
-    }
-
-    std::vector<u8> Serialize() {
-        ASSERT(read_index == 0);
-        write_index = sizeof(Header);
-
-        SerializeData();
-
-        Header header{};
-        header.data_size = static_cast<u32_le>(write_index - sizeof(Header));
-        header.data_offset = sizeof(Header);
-        header.objects_size = 4;
-        header.objects_offset = static_cast<u32>(sizeof(Header) + header.data_size);
-        std::memcpy(buffer.data(), &header, sizeof(Header));
-
-        return buffer;
-    }
-
-protected:
-    virtual void SerializeData() {}
-
-    virtual void DeserializeData() {}
+    constexpr explicit NativeWindow(u32 id_) : id{id_} {}
 
 private:
-    struct Header {
-        u32_le data_size;
-        u32_le data_offset;
-        u32_le objects_size;
-        u32_le objects_offset;
-    };
-    static_assert(sizeof(Header) == 16, "ParcelHeader has wrong size");
-
-    std::vector<u8> buffer;
-    std::size_t read_index = 0;
-    std::size_t write_index = 0;
+    const u32 magic = 2;
+    const u32 process_id = 1;
+    const u32 id;
+    INSERT_PADDING_WORDS(3);
+    std::array<u8, 8> dispdrv = {'d', 'i', 's', 'p', 'd', 'r', 'v', '\0'};
+    INSERT_PADDING_WORDS(2);
 };
-
-class NativeWindow : public Parcel {
-public:
-    explicit NativeWindow(u32 id) {
-        data.id = id;
-    }
-    ~NativeWindow() override = default;
-
-protected:
-    void SerializeData() override {
-        Write(data);
-    }
-
-private:
-    struct Data {
-        u32_le magic = 2;
-        u32_le process_id = 1;
-        u32_le id;
-        INSERT_PADDING_WORDS(3);
-        std::array<u8, 8> dispdrv = {'d', 'i', 's', 'p', 'd', 'r', 'v', '\0'};
-        INSERT_PADDING_WORDS(2);
-    };
-    static_assert(sizeof(Data) == 0x28, "ParcelData has wrong size");
-
-    Data data{};
-};
-
-class IGBPConnectRequestParcel : public Parcel {
-public:
-    explicit IGBPConnectRequestParcel(std::vector<u8> buffer_) : Parcel(std::move(buffer_)) {
-        Deserialize();
-    }
-
-    void DeserializeData() override {
-        [[maybe_unused]] const std::u16string token = ReadInterfaceToken();
-        data = Read<Data>();
-    }
-
-    struct Data {
-        u32_le unk;
-        u32_le api;
-        u32_le producer_controlled_by_app;
-    };
-
-    Data data;
-};
-
-class IGBPConnectResponseParcel : public Parcel {
-public:
-    explicit IGBPConnectResponseParcel(u32 width, u32 height) {
-        data.width = width;
-        data.height = height;
-    }
-    ~IGBPConnectResponseParcel() override = default;
-
-protected:
-    void SerializeData() override {
-        Write(data);
-    }
-
-private:
-    struct Data {
-        u32_le width;
-        u32_le height;
-        u32_le transform_hint;
-        u32_le num_pending_buffers;
-        u32_le status;
-    };
-    static_assert(sizeof(Data) == 20, "ParcelData has wrong size");
-
-    Data data{};
-};
-
-/// Represents a parcel containing one int '0' as its data
-/// Used by DetachBuffer and Disconnect
-class IGBPEmptyResponseParcel : public Parcel {
-protected:
-    void SerializeData() override {
-        Write(data);
-    }
-
-private:
-    struct Data {
-        u32_le unk_0{};
-    };
-
-    Data data{};
-};
-
-class IGBPSetPreallocatedBufferRequestParcel : public Parcel {
-public:
-    explicit IGBPSetPreallocatedBufferRequestParcel(std::vector<u8> buffer_)
-        : Parcel(std::move(buffer_)) {
-        Deserialize();
-    }
-
-    void DeserializeData() override {
-        [[maybe_unused]] const std::u16string token = ReadInterfaceToken();
-        data = Read<Data>();
-        if (data.contains_object != 0) {
-            buffer_container = Read<BufferContainer>();
-        }
-    }
-
-    struct Data {
-        u32_le slot;
-        u32_le contains_object;
-    };
-
-    struct BufferContainer {
-        u32_le graphic_buffer_length;
-        INSERT_PADDING_WORDS(1);
-        NVFlinger::IGBPBuffer buffer{};
-    };
-
-    Data data{};
-    BufferContainer buffer_container{};
-};
-
-class IGBPSetPreallocatedBufferResponseParcel : public Parcel {
-protected:
-    void SerializeData() override {
-        // TODO(Subv): Find out what this means
-        Write<u32>(0);
-    }
-};
-
-class IGBPCancelBufferRequestParcel : public Parcel {
-public:
-    explicit IGBPCancelBufferRequestParcel(std::vector<u8> buffer_) : Parcel(std::move(buffer_)) {
-        Deserialize();
-    }
-
-    void DeserializeData() override {
-        [[maybe_unused]] const std::u16string token = ReadInterfaceToken();
-        data = Read<Data>();
-    }
-
-    struct Data {
-        u32_le slot;
-        Service::Nvidia::MultiFence multi_fence;
-    };
-
-    Data data;
-};
-
-class IGBPCancelBufferResponseParcel : public Parcel {
-protected:
-    void SerializeData() override {
-        Write<u32>(0); // Success
-    }
-};
-
-class IGBPDequeueBufferRequestParcel : public Parcel {
-public:
-    explicit IGBPDequeueBufferRequestParcel(std::vector<u8> buffer_) : Parcel(std::move(buffer_)) {
-        Deserialize();
-    }
-
-    void DeserializeData() override {
-        [[maybe_unused]] const std::u16string token = ReadInterfaceToken();
-        data = Read<Data>();
-    }
-
-    struct Data {
-        u32_le pixel_format;
-        u32_le width;
-        u32_le height;
-        u32_le get_frame_timestamps;
-        u32_le usage;
-    };
-
-    Data data;
-};
-
-class IGBPDequeueBufferResponseParcel : public Parcel {
-public:
-    explicit IGBPDequeueBufferResponseParcel(u32 slot_, Nvidia::MultiFence& multi_fence_)
-        : slot(slot_), multi_fence(multi_fence_) {}
-
-protected:
-    void SerializeData() override {
-        Write(slot);
-        Write<u32_le>(1);
-        WriteObject(multi_fence);
-        Write<u32_le>(0);
-    }
-
-    u32_le slot;
-    Service::Nvidia::MultiFence multi_fence;
-};
-
-class IGBPRequestBufferRequestParcel : public Parcel {
-public:
-    explicit IGBPRequestBufferRequestParcel(std::vector<u8> buffer_) : Parcel(std::move(buffer_)) {
-        Deserialize();
-    }
-
-    void DeserializeData() override {
-        [[maybe_unused]] const std::u16string token = ReadInterfaceToken();
-        slot = Read<u32_le>();
-    }
-
-    u32_le slot;
-};
-
-class IGBPRequestBufferResponseParcel : public Parcel {
-public:
-    explicit IGBPRequestBufferResponseParcel(NVFlinger::IGBPBuffer buffer_) : buffer(buffer_) {}
-    ~IGBPRequestBufferResponseParcel() override = default;
-
-protected:
-    void SerializeData() override {
-        // TODO(Subv): Figure out what this value means, writing non-zero here will make libnx
-        // try to read an IGBPBuffer object from the parcel.
-        Write<u32_le>(1);
-        WriteObject(buffer);
-        Write<u32_le>(0);
-    }
-
-    NVFlinger::IGBPBuffer buffer;
-};
-
-class IGBPQueueBufferRequestParcel : public Parcel {
-public:
-    explicit IGBPQueueBufferRequestParcel(std::vector<u8> buffer_) : Parcel(std::move(buffer_)) {
-        Deserialize();
-    }
-
-    void DeserializeData() override {
-        [[maybe_unused]] const std::u16string token = ReadInterfaceToken();
-        data = Read<Data>();
-    }
-
-    struct Data {
-        u32_le slot;
-        INSERT_PADDING_WORDS(3);
-        u32_le timestamp;
-        s32_le is_auto_timestamp;
-        s32_le crop_top;
-        s32_le crop_left;
-        s32_le crop_right;
-        s32_le crop_bottom;
-        s32_le scaling_mode;
-        NVFlinger::BufferQueue::BufferTransformFlags transform;
-        u32_le sticky_transform;
-        INSERT_PADDING_WORDS(1);
-        u32_le swap_interval;
-        Service::Nvidia::MultiFence multi_fence;
-
-        Common::Rectangle<int> GetCropRect() const {
-            return {crop_left, crop_top, crop_right, crop_bottom};
-        }
-    };
-    static_assert(sizeof(Data) == 96, "ParcelData has wrong size");
-
-    Data data;
-};
-
-class IGBPQueueBufferResponseParcel : public Parcel {
-public:
-    explicit IGBPQueueBufferResponseParcel(u32 width, u32 height) {
-        data.width = width;
-        data.height = height;
-    }
-    ~IGBPQueueBufferResponseParcel() override = default;
-
-protected:
-    void SerializeData() override {
-        Write(data);
-    }
-
-private:
-    struct Data {
-        u32_le width;
-        u32_le height;
-        u32_le transform_hint;
-        u32_le num_pending_buffers;
-        u32_le status;
-    };
-    static_assert(sizeof(Data) == 20, "ParcelData has wrong size");
-
-    Data data{};
-};
-
-class IGBPQueryRequestParcel : public Parcel {
-public:
-    explicit IGBPQueryRequestParcel(std::vector<u8> buffer_) : Parcel(std::move(buffer_)) {
-        Deserialize();
-    }
-
-    void DeserializeData() override {
-        [[maybe_unused]] const std::u16string token = ReadInterfaceToken();
-        type = Read<u32_le>();
-    }
-
-    u32 type;
-};
-
-class IGBPQueryResponseParcel : public Parcel {
-public:
-    explicit IGBPQueryResponseParcel(u32 value_) : value{value_} {}
-    ~IGBPQueryResponseParcel() override = default;
-
-protected:
-    void SerializeData() override {
-        Write(value);
-    }
-
-private:
-    u32_le value;
-};
+static_assert(sizeof(NativeWindow) == 0x28, "NativeWindow has wrong size");
 
 class IHOSBinderDriver final : public ServiceFramework<IHOSBinderDriver> {
 public:
-    explicit IHOSBinderDriver(Core::System& system_, NVFlinger::NVFlinger& nv_flinger_)
+    explicit IHOSBinderDriver(Core::System& system_, NVFlinger::HosBinderDriverServer& server_)
         : ServiceFramework{system_, "IHOSBinderDriver", ServiceThreadType::CreateNew},
-          nv_flinger(nv_flinger_) {
+          server(server_) {
         static const FunctionInfo functions[] = {
             {0, &IHOSBinderDriver::TransactParcel, "TransactParcel"},
             {1, &IHOSBinderDriver::AdjustRefcount, "AdjustRefcount"},
@@ -508,147 +88,16 @@ public:
     }
 
 private:
-    enum class TransactionId {
-        RequestBuffer = 1,
-        SetBufferCount = 2,
-        DequeueBuffer = 3,
-        DetachBuffer = 4,
-        DetachNextBuffer = 5,
-        AttachBuffer = 6,
-        QueueBuffer = 7,
-        CancelBuffer = 8,
-        Query = 9,
-        Connect = 10,
-        Disconnect = 11,
-
-        AllocateBuffers = 13,
-        SetPreallocatedBuffer = 14,
-
-        GetBufferHistory = 17
-    };
-
     void TransactParcel(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u32 id = rp.Pop<u32>();
-        const auto transaction = static_cast<TransactionId>(rp.Pop<u32>());
+        const auto transaction = static_cast<android::TransactionId>(rp.Pop<u32>());
         const u32 flags = rp.Pop<u32>();
 
         LOG_DEBUG(Service_VI, "called. id=0x{:08X} transaction={:X}, flags=0x{:08X}", id,
                   transaction, flags);
 
-        auto& buffer_queue = *nv_flinger.FindBufferQueue(id);
-
-        switch (transaction) {
-        case TransactionId::Connect: {
-            IGBPConnectRequestParcel request{ctx.ReadBuffer()};
-            IGBPConnectResponseParcel response{static_cast<u32>(DisplayResolution::UndockedWidth),
-                                               static_cast<u32>(DisplayResolution::UndockedHeight)};
-
-            buffer_queue.Connect();
-
-            ctx.WriteBuffer(response.Serialize());
-            break;
-        }
-        case TransactionId::SetPreallocatedBuffer: {
-            IGBPSetPreallocatedBufferRequestParcel request{ctx.ReadBuffer()};
-
-            buffer_queue.SetPreallocatedBuffer(request.data.slot, request.buffer_container.buffer);
-
-            IGBPSetPreallocatedBufferResponseParcel response{};
-            ctx.WriteBuffer(response.Serialize());
-            break;
-        }
-        case TransactionId::DequeueBuffer: {
-            IGBPDequeueBufferRequestParcel request{ctx.ReadBuffer()};
-            const u32 width{request.data.width};
-            const u32 height{request.data.height};
-
-            do {
-                if (auto result = buffer_queue.DequeueBuffer(width, height); result) {
-                    // Buffer is available
-                    IGBPDequeueBufferResponseParcel response{result->first, *result->second};
-                    ctx.WriteBuffer(response.Serialize());
-                    break;
-                }
-            } while (buffer_queue.IsConnected());
-
-            break;
-        }
-        case TransactionId::RequestBuffer: {
-            IGBPRequestBufferRequestParcel request{ctx.ReadBuffer()};
-
-            auto& buffer = buffer_queue.RequestBuffer(request.slot);
-            IGBPRequestBufferResponseParcel response{buffer};
-            ctx.WriteBuffer(response.Serialize());
-
-            break;
-        }
-        case TransactionId::QueueBuffer: {
-            IGBPQueueBufferRequestParcel request{ctx.ReadBuffer()};
-
-            buffer_queue.QueueBuffer(request.data.slot, request.data.transform,
-                                     request.data.GetCropRect(), request.data.swap_interval,
-                                     request.data.multi_fence);
-
-            IGBPQueueBufferResponseParcel response{1280, 720};
-            ctx.WriteBuffer(response.Serialize());
-            break;
-        }
-        case TransactionId::Query: {
-            IGBPQueryRequestParcel request{ctx.ReadBuffer()};
-
-            const u32 value =
-                buffer_queue.Query(static_cast<NVFlinger::BufferQueue::QueryType>(request.type));
-
-            IGBPQueryResponseParcel response{value};
-            ctx.WriteBuffer(response.Serialize());
-            break;
-        }
-        case TransactionId::CancelBuffer: {
-            IGBPCancelBufferRequestParcel request{ctx.ReadBuffer()};
-
-            buffer_queue.CancelBuffer(request.data.slot, request.data.multi_fence);
-
-            IGBPCancelBufferResponseParcel response{};
-            ctx.WriteBuffer(response.Serialize());
-            break;
-        }
-        case TransactionId::Disconnect: {
-            LOG_WARNING(Service_VI, "(STUBBED) called, transaction=Disconnect");
-            const auto buffer = ctx.ReadBuffer();
-
-            buffer_queue.Disconnect();
-
-            IGBPEmptyResponseParcel response{};
-            ctx.WriteBuffer(response.Serialize());
-            break;
-        }
-        case TransactionId::DetachBuffer: {
-            const auto buffer = ctx.ReadBuffer();
-
-            IGBPEmptyResponseParcel response{};
-            ctx.WriteBuffer(response.Serialize());
-            break;
-        }
-        case TransactionId::SetBufferCount: {
-            LOG_WARNING(Service_VI, "(STUBBED) called, transaction=SetBufferCount");
-            [[maybe_unused]] const auto buffer = ctx.ReadBuffer();
-
-            IGBPEmptyResponseParcel response{};
-            ctx.WriteBuffer(response.Serialize());
-            break;
-        }
-        case TransactionId::GetBufferHistory: {
-            LOG_WARNING(Service_VI, "(STUBBED) called, transaction=GetBufferHistory");
-            [[maybe_unused]] const auto buffer = ctx.ReadBuffer();
-
-            IGBPEmptyResponseParcel response{};
-            ctx.WriteBuffer(response.Serialize());
-            break;
-        }
-        default:
-            ASSERT_MSG(false, "Unimplemented");
-        }
+        server.TryGetProducer(id)->Transact(ctx, transaction, flags);
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
@@ -674,13 +123,13 @@ private:
 
         LOG_WARNING(Service_VI, "(STUBBED) called id={}, unknown={:08X}", id, unknown);
 
-        // TODO(Subv): Find out what this actually is.
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(ResultSuccess);
-        rb.PushCopyObjects(nv_flinger.FindBufferQueue(id)->GetBufferWaitEvent());
+        rb.PushCopyObjects(server.TryGetProducer(id)->GetNativeHandle());
     }
 
-    NVFlinger::NVFlinger& nv_flinger;
+private:
+    NVFlinger::HosBinderDriverServer& server;
 };
 
 class ISystemDisplayService final : public ServiceFramework<ISystemDisplayService> {
@@ -937,7 +386,40 @@ private:
 
 class IApplicationDisplayService final : public ServiceFramework<IApplicationDisplayService> {
 public:
-    explicit IApplicationDisplayService(Core::System& system_, NVFlinger::NVFlinger& nv_flinger_);
+    IApplicationDisplayService(Core::System& system_, NVFlinger::NVFlinger& nv_flinger_,
+                               NVFlinger::HosBinderDriverServer& hos_binder_driver_server_)
+        : ServiceFramework{system_, "IApplicationDisplayService"}, nv_flinger{nv_flinger_},
+          hos_binder_driver_server{hos_binder_driver_server_} {
+
+        static const FunctionInfo functions[] = {
+            {100, &IApplicationDisplayService::GetRelayService, "GetRelayService"},
+            {101, &IApplicationDisplayService::GetSystemDisplayService, "GetSystemDisplayService"},
+            {102, &IApplicationDisplayService::GetManagerDisplayService,
+             "GetManagerDisplayService"},
+            {103, &IApplicationDisplayService::GetIndirectDisplayTransactionService,
+             "GetIndirectDisplayTransactionService"},
+            {1000, &IApplicationDisplayService::ListDisplays, "ListDisplays"},
+            {1010, &IApplicationDisplayService::OpenDisplay, "OpenDisplay"},
+            {1011, &IApplicationDisplayService::OpenDefaultDisplay, "OpenDefaultDisplay"},
+            {1020, &IApplicationDisplayService::CloseDisplay, "CloseDisplay"},
+            {1101, &IApplicationDisplayService::SetDisplayEnabled, "SetDisplayEnabled"},
+            {1102, &IApplicationDisplayService::GetDisplayResolution, "GetDisplayResolution"},
+            {2020, &IApplicationDisplayService::OpenLayer, "OpenLayer"},
+            {2021, &IApplicationDisplayService::CloseLayer, "CloseLayer"},
+            {2030, &IApplicationDisplayService::CreateStrayLayer, "CreateStrayLayer"},
+            {2031, &IApplicationDisplayService::DestroyStrayLayer, "DestroyStrayLayer"},
+            {2101, &IApplicationDisplayService::SetLayerScalingMode, "SetLayerScalingMode"},
+            {2102, &IApplicationDisplayService::ConvertScalingMode, "ConvertScalingMode"},
+            {2450, &IApplicationDisplayService::GetIndirectLayerImageMap,
+             "GetIndirectLayerImageMap"},
+            {2451, nullptr, "GetIndirectLayerImageCropMap"},
+            {2460, &IApplicationDisplayService::GetIndirectLayerImageRequiredMemoryInfo,
+             "GetIndirectLayerImageRequiredMemoryInfo"},
+            {5202, &IApplicationDisplayService::GetDisplayVsyncEvent, "GetDisplayVsyncEvent"},
+            {5203, nullptr, "GetDisplayVsyncEventForDebug"},
+        };
+        RegisterHandlers(functions);
+    }
 
 private:
     enum class ConvertedScaleMode : u64 {
@@ -961,7 +443,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(ResultSuccess);
-        rb.PushIpcInterface<IHOSBinderDriver>(system, nv_flinger);
+        rb.PushIpcInterface<IHOSBinderDriver>(system, hos_binder_driver_server);
     }
 
     void GetSystemDisplayService(Kernel::HLERequestContext& ctx) {
@@ -985,7 +467,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(ResultSuccess);
-        rb.PushIpcInterface<IHOSBinderDriver>(system, nv_flinger);
+        rb.PushIpcInterface<IHOSBinderDriver>(system, hos_binder_driver_server);
     }
 
     void OpenDisplay(Kernel::HLERequestContext& ctx) {
@@ -1089,7 +571,7 @@ private:
     void ListDisplays(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_VI, "(STUBBED) called");
 
-        DisplayInfo display_info;
+        const DisplayInfo display_info;
         ctx.WriteBuffer(&display_info, sizeof(DisplayInfo));
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(ResultSuccess);
@@ -1124,8 +606,8 @@ private:
             return;
         }
 
-        NativeWindow native_window{*buffer_queue_id};
-        const auto buffer_size = ctx.WriteBuffer(native_window.Serialize());
+        const auto parcel = android::Parcel{NativeWindow{*buffer_queue_id}};
+        const auto buffer_size = ctx.WriteBuffer(parcel.Serialize());
 
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(ResultSuccess);
@@ -1170,8 +652,8 @@ private:
             return;
         }
 
-        NativeWindow native_window{*buffer_queue_id};
-        const auto buffer_size = ctx.WriteBuffer(native_window.Serialize());
+        const auto parcel = android::Parcel{NativeWindow{*buffer_queue_id}};
+        const auto buffer_size = ctx.WriteBuffer(parcel.Serialize());
 
         IPC::ResponseBuilder rb{ctx, 6};
         rb.Push(ResultSuccess);
@@ -1287,38 +769,8 @@ private:
     }
 
     NVFlinger::NVFlinger& nv_flinger;
+    NVFlinger::HosBinderDriverServer& hos_binder_driver_server;
 };
-
-IApplicationDisplayService::IApplicationDisplayService(Core::System& system_,
-                                                       NVFlinger::NVFlinger& nv_flinger_)
-    : ServiceFramework{system_, "IApplicationDisplayService"}, nv_flinger{nv_flinger_} {
-    static const FunctionInfo functions[] = {
-        {100, &IApplicationDisplayService::GetRelayService, "GetRelayService"},
-        {101, &IApplicationDisplayService::GetSystemDisplayService, "GetSystemDisplayService"},
-        {102, &IApplicationDisplayService::GetManagerDisplayService, "GetManagerDisplayService"},
-        {103, &IApplicationDisplayService::GetIndirectDisplayTransactionService,
-         "GetIndirectDisplayTransactionService"},
-        {1000, &IApplicationDisplayService::ListDisplays, "ListDisplays"},
-        {1010, &IApplicationDisplayService::OpenDisplay, "OpenDisplay"},
-        {1011, &IApplicationDisplayService::OpenDefaultDisplay, "OpenDefaultDisplay"},
-        {1020, &IApplicationDisplayService::CloseDisplay, "CloseDisplay"},
-        {1101, &IApplicationDisplayService::SetDisplayEnabled, "SetDisplayEnabled"},
-        {1102, &IApplicationDisplayService::GetDisplayResolution, "GetDisplayResolution"},
-        {2020, &IApplicationDisplayService::OpenLayer, "OpenLayer"},
-        {2021, &IApplicationDisplayService::CloseLayer, "CloseLayer"},
-        {2030, &IApplicationDisplayService::CreateStrayLayer, "CreateStrayLayer"},
-        {2031, &IApplicationDisplayService::DestroyStrayLayer, "DestroyStrayLayer"},
-        {2101, &IApplicationDisplayService::SetLayerScalingMode, "SetLayerScalingMode"},
-        {2102, &IApplicationDisplayService::ConvertScalingMode, "ConvertScalingMode"},
-        {2450, &IApplicationDisplayService::GetIndirectLayerImageMap, "GetIndirectLayerImageMap"},
-        {2451, nullptr, "GetIndirectLayerImageCropMap"},
-        {2460, &IApplicationDisplayService::GetIndirectLayerImageRequiredMemoryInfo,
-         "GetIndirectLayerImageRequiredMemoryInfo"},
-        {5202, &IApplicationDisplayService::GetDisplayVsyncEvent, "GetDisplayVsyncEvent"},
-        {5203, nullptr, "GetDisplayVsyncEventForDebug"},
-    };
-    RegisterHandlers(functions);
-}
 
 static bool IsValidServiceAccess(Permission permission, Policy policy) {
     if (permission == Permission::User) {
@@ -1333,7 +785,9 @@ static bool IsValidServiceAccess(Permission permission, Policy policy) {
 }
 
 void detail::GetDisplayServiceImpl(Kernel::HLERequestContext& ctx, Core::System& system,
-                                   NVFlinger::NVFlinger& nv_flinger, Permission permission) {
+                                   NVFlinger::NVFlinger& nv_flinger,
+                                   NVFlinger::HosBinderDriverServer& hos_binder_driver_server,
+                                   Permission permission) {
     IPC::RequestParser rp{ctx};
     const auto policy = rp.PopEnum<Policy>();
 
@@ -1346,14 +800,18 @@ void detail::GetDisplayServiceImpl(Kernel::HLERequestContext& ctx, Core::System&
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);
-    rb.PushIpcInterface<IApplicationDisplayService>(system, nv_flinger);
+    rb.PushIpcInterface<IApplicationDisplayService>(system, nv_flinger, hos_binder_driver_server);
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system,
-                       NVFlinger::NVFlinger& nv_flinger) {
-    std::make_shared<VI_M>(system, nv_flinger)->InstallAsService(service_manager);
-    std::make_shared<VI_S>(system, nv_flinger)->InstallAsService(service_manager);
-    std::make_shared<VI_U>(system, nv_flinger)->InstallAsService(service_manager);
+                       NVFlinger::NVFlinger& nv_flinger,
+                       NVFlinger::HosBinderDriverServer& hos_binder_driver_server) {
+    std::make_shared<VI_M>(system, nv_flinger, hos_binder_driver_server)
+        ->InstallAsService(service_manager);
+    std::make_shared<VI_S>(system, nv_flinger, hos_binder_driver_server)
+        ->InstallAsService(service_manager);
+    std::make_shared<VI_U>(system, nv_flinger, hos_binder_driver_server)
+        ->InstallAsService(service_manager);
 }
 
 } // namespace Service::VI

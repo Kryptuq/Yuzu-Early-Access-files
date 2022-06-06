@@ -422,6 +422,18 @@ static std::string GetThreadState(const Kernel::KThread* thread) {
     }
 }
 
+static std::string PaginateBuffer(std::string_view buffer, std::string_view request) {
+    const auto amount{request.substr(request.find(',') + 1)};
+    const auto offset_val{static_cast<u64>(strtoll(request.data(), nullptr, 16))};
+    const auto amount_val{static_cast<u64>(strtoll(amount.data(), nullptr, 16))};
+
+    if (offset_val + amount_val > buffer.size()) {
+        return fmt::format("l{}", buffer.substr(offset_val));
+    } else {
+        return fmt::format("m{}", buffer.substr(offset_val, amount_val));
+    }
+}
+
 void GDBStub::HandleQuery(std::string_view command) {
     if (command.starts_with("TStatus")) {
         // no tracepoint support
@@ -430,18 +442,8 @@ void GDBStub::HandleQuery(std::string_view command) {
         SendReply("PacketSize=4000;qXfer:features:read+;qXfer:threads:read+;qXfer:libraries:read+;"
                   "vContSupported+;QStartNoAckMode+");
     } else if (command.starts_with("Xfer:features:read:target.xml:")) {
-        const auto offset{command.substr(30)};
-        const auto amount{command.substr(command.find(',') + 1)};
-
-        const auto offset_val{static_cast<u64>(strtoll(offset.data(), nullptr, 16))};
-        const auto amount_val{static_cast<u64>(strtoll(amount.data(), nullptr, 16))};
         const auto target_xml{arch->GetTargetXML()};
-
-        if (offset_val + amount_val > target_xml.size()) {
-            SendReply("l" + target_xml.substr(offset_val));
-        } else {
-            SendReply("m" + target_xml.substr(offset_val, amount_val));
-        }
+        SendReply(PaginateBuffer(target_xml, command.substr(30)));
     } else if (command.starts_with("Offsets")) {
         Loader::AppLoader::Modules modules;
         system.GetAppLoader().ReadNSOModules(modules);
@@ -454,6 +456,20 @@ void GDBStub::HandleQuery(std::string_view command) {
             SendReply(fmt::format("TextSeg={:x}",
                                   system.CurrentProcess()->PageTable().GetCodeRegionStart()));
         }
+    } else if (command.starts_with("Xfer:libraries:read::")) {
+        Loader::AppLoader::Modules modules;
+        system.GetAppLoader().ReadNSOModules(modules);
+
+        std::string buffer;
+        buffer += R"(<?xml version="1.0"?>)";
+        buffer += "<library-list>";
+        for (const auto& [base, name] : modules) {
+            buffer += fmt::format(R"(<library name="{}"><segment address="{:#x}"/></library>)",
+                                  EscapeXML(name), base);
+        }
+        buffer += "</library-list>";
+
+        SendReply(PaginateBuffer(buffer, command.substr(21)));
     } else if (command.starts_with("fThreadInfo")) {
         // beginning of list
         const auto& threads = system.GlobalSchedulerContext().GetThreadList();
@@ -484,17 +500,7 @@ void GDBStub::HandleQuery(std::string_view command) {
 
         buffer += "</threads>";
 
-        const auto offset{command.substr(19)};
-        const auto amount{command.substr(command.find(',') + 1)};
-
-        const auto offset_val{static_cast<u64>(strtoll(offset.data(), nullptr, 16))};
-        const auto amount_val{static_cast<u64>(strtoll(amount.data(), nullptr, 16))};
-
-        if (offset_val + amount_val > buffer.size()) {
-            SendReply("l" + buffer.substr(offset_val));
-        } else {
-            SendReply("m" + buffer.substr(offset_val, amount_val));
-        }
+        SendReply(PaginateBuffer(buffer, command.substr(19)));
     } else if (command.starts_with("Attached")) {
         SendReply("0");
     } else if (command.starts_with("StartNoAckMode")) {
