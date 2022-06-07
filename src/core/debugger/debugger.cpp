@@ -20,15 +20,16 @@ template <typename Readable, typename Buffer, typename Callback>
 static void AsyncReceiveInto(Readable& r, Buffer& buffer, Callback&& c) {
     static_assert(std::is_trivial_v<Buffer>);
     auto boost_buffer{boost::asio::buffer(&buffer, sizeof(Buffer))};
-    r.async_read_some(boost_buffer, [&](const boost::system::error_code& error, size_t bytes_read) {
-        if (!error.failed()) {
-            const u8* buffer_start = reinterpret_cast<const u8*>(&buffer);
-            std::span<const u8> received_data{buffer_start, buffer_start + bytes_read};
-            c(received_data);
-        }
+    r.async_read_some(
+        boost_buffer, [&, c](const boost::system::error_code& error, size_t bytes_read) {
+            if (!error.failed()) {
+                const u8* buffer_start = reinterpret_cast<const u8*>(&buffer);
+                std::span<const u8> received_data{buffer_start, buffer_start + bytes_read};
+                c(received_data);
+            }
 
-        AsyncReceiveInto(r, buffer, c);
-    });
+            AsyncReceiveInto(r, buffer, c);
+        });
 }
 
 template <typename Readable, typename Buffer>
