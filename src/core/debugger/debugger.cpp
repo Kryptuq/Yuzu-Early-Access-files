@@ -66,7 +66,7 @@ public:
         }
         stopped = true;
 
-        signal_pipe.write_some(boost::asio::buffer(&thread, sizeof(thread)));
+        boost::asio::write(signal_pipe, boost::asio::buffer(&thread, sizeof(thread)));
         return true;
     }
 
@@ -75,7 +75,7 @@ public:
     }
 
     void WriteToClient(std::span<const u8> data) override {
-        client_socket.write_some(boost::asio::buffer(data.data(), data.size_bytes()));
+        boost::asio::write(client_socket, boost::asio::buffer(data.data(), data.size_bytes()));
     }
 
     void SetActiveThread(Kernel::KThread* thread) override {
