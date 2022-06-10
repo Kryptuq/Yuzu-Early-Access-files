@@ -71,7 +71,7 @@ ImageViewInfo::ImageViewInfo(const TICEntry& config, s32 base_layer) noexcept
         range.extent.layers = config.Depth() * 6;
         break;
     default:
-        UNREACHABLE_MSG("Invalid texture_type={}", static_cast<int>(config.texture_type.Value()));
+        ASSERT_MSG(false, "Invalid texture_type={}", static_cast<int>(config.texture_type.Value()));
         break;
     }
 }

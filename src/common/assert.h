@@ -4,49 +4,59 @@
 
 #pragma once
 
+#include <functional>
+
 #include "common/logging/log.h"
 
 // Sometimes we want to try to continue even after hitting an assert.
 // However touching this file yields a global recompilation as this header is included almost
 // everywhere. So let's just move the handling of the failed assert to a single cpp file.
-void assert_handle_failure();
 
 // For asserts we'd like to keep all the junk executed when an assert happens away from the
 // important code in the function. One way of doing this is to put all the relevant code inside a
-// lambda and force the compiler to not inline it. Unfortunately, MSVC seems to have no syntax to
-// specify __declspec on lambda functions, so what we do instead is define a noinline wrapper
-// template that calls the lambda. This seems to generate an extra instruction at the call-site
-// compared to the ideal implementation (which wouldn't support ASSERT_MSG parameters), but is good
-// enough for our purposes.
-template <typename Fn>
-#if defined(_MSC_VER)
-[[msvc::noinline]]
-#elif defined(__GNUC__)
-[[gnu::cold, gnu::noinline]]
-#endif
-static void
-assert_noinline_call(const Fn& fn) {
-    fn();
-    assert_handle_failure();
-}
+// lambda and force the compiler to not inline it.
+void assert_check_condition(bool cond, std::function<void()>&& on_failure);
+
+[[noreturn]] void unreachable_impl();
 
 #define ASSERT(_a_)                                                                                \
-    do                                                                                             \
-        if (!(_a_)) {                                                                              \
-            assert_noinline_call([] { LOG_CRITICAL(Debug, "Assertion Failed!"); });                \
+    do {                                                                                           \
+        if (std::is_constant_evaluated()) {                                                        \
+            if (!(_a_)) {                                                                          \
+                /* Will trigger compile error here */                                              \
+                assert_check_condition(bool(_a_),                                                  \
+                                       [] { LOG_CRITICAL(Debug, "Assertion Failed!"); });          \
+            }                                                                                      \
+        } else {                                                                                   \
+            assert_check_condition(bool(_a_), [] { LOG_CRITICAL(Debug, "Assertion Failed!"); });   \
         }                                                                                          \
-    while (0)
+    } while (0)
 
 #define ASSERT_MSG(_a_, ...)                                                                       \
-    do                                                                                             \
-        if (!(_a_)) {                                                                              \
-            assert_noinline_call([&] { LOG_CRITICAL(Debug, "Assertion Failed!\n" __VA_ARGS__); }); \
+    do {                                                                                           \
+        if (std::is_constant_evaluated()) {                                                        \
+            if (!(_a_)) {                                                                          \
+                /* Will trigger compile error here */                                              \
+                assert_check_condition(bool(_a_),                                                  \
+                                       [] { LOG_CRITICAL(Debug, "Assertion Failed!"); });          \
+            }                                                                                      \
+        } else {                                                                                   \
+            assert_check_condition(                                                                \
+                bool(_a_), [&] { LOG_CRITICAL(Debug, "Assertion Failed!\n" __VA_ARGS__); });       \
         }                                                                                          \
-    while (0)
+    } while (0)
 
-#define UNREACHABLE() assert_noinline_call([] { LOG_CRITICAL(Debug, "Unreachable code!"); })
+#define UNREACHABLE()                                                                              \
+    do {                                                                                           \
+        LOG_CRITICAL(Debug, "Unreachable code!");                                                  \
+        unreachable_impl();                                                                        \
+    } while (0)
+
 #define UNREACHABLE_MSG(...)                                                                       \
-    assert_noinline_call([&] { LOG_CRITICAL(Debug, "Unreachable code!\n" __VA_ARGS__); })
+    do {                                                                                           \
+        LOG_CRITICAL(Debug, "Unreachable code!\n" __VA_ARGS__);                                    \
+        unreachable_impl();                                                                        \
+    } while (0)
 
 #ifdef _DEBUG
 #define DEBUG_ASSERT(_a_) ASSERT(_a_)

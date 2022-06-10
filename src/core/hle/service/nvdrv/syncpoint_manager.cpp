@@ -23,7 +23,7 @@ u32 SyncpointManager::AllocateSyncpoint() {
             return syncpoint_id;
         }
     }
-    UNREACHABLE_MSG("No more available syncpoints!");
+    ASSERT_MSG(false, "No more available syncpoints!");
     return {};
 }
 

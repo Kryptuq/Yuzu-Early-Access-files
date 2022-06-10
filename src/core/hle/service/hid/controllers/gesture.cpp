@@ -61,6 +61,7 @@ void Controller_Gesture::OnUpdate(const Core::Timing::CoreTiming& core_timing) {
     }
 
     last_update_timestamp = shared_memory->gesture_lifo.timestamp;
+    UpdateGestureSharedMemory(gesture, time_difference);
 }
 
 void Controller_Gesture::ReadTouchInput() {
@@ -94,8 +95,7 @@ bool Controller_Gesture::ShouldUpdateGesture(const GestureProperties& gesture,
     return false;
 }
 
-void Controller_Gesture::UpdateGestureSharedMemory(u8* data, std::size_t size,
-                                                   GestureProperties& gesture,
+void Controller_Gesture::UpdateGestureSharedMemory(GestureProperties& gesture,
                                                    f32 time_difference) {
     GestureType type = GestureType::Idle;
     GestureAttribute attributes{};

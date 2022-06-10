@@ -25,7 +25,6 @@ u64 MemoryReadWidth(Core::Memory::Memory& memory, u32 width, VAddr addr) {
         return memory.Read64(addr);
     default:
         UNREACHABLE();
-        return 0;
     }
 }
 

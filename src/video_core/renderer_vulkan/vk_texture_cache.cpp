@@ -70,7 +70,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     case ImageType::Buffer:
         break;
     }
-    UNREACHABLE_MSG("Invalid image type={}", type);
+    ASSERT_MSG(false, "Invalid image type={}", type);
     return {};
 }
 
@@ -87,7 +87,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     case 16:
         return VK_SAMPLE_COUNT_16_BIT;
     default:
-        UNREACHABLE_MSG("Invalid number of samples={}", num_samples);
+        ASSERT_MSG(false, "Invalid number of samples={}", num_samples);
         return VK_SAMPLE_COUNT_1_BIT;
     }
 }
@@ -107,7 +107,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
             usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
             break;
         default:
-            UNREACHABLE_MSG("Invalid surface type");
+            ASSERT_MSG(false, "Invalid surface type");
         }
     }
     if (info.storage) {
@@ -179,7 +179,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     case VideoCore::Surface::SurfaceType::DepthStencil:
         return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     default:
-        UNREACHABLE_MSG("Invalid surface type");
+        ASSERT_MSG(false, "Invalid surface type");
         return VkImageAspectFlags{};
     }
 }
@@ -221,7 +221,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     case SwizzleSource::OneInt:
         return VK_COMPONENT_SWIZZLE_ONE;
     }
-    UNREACHABLE_MSG("Invalid swizzle={}", swizzle);
+    ASSERT_MSG(false, "Invalid swizzle={}", swizzle);
     return VK_COMPONENT_SWIZZLE_ZERO;
 }
 
@@ -242,10 +242,10 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     case Shader::TextureType::ColorArrayCube:
         return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
     case Shader::TextureType::Buffer:
-        UNREACHABLE_MSG("Texture buffers can't be image views");
+        ASSERT_MSG(false, "Texture buffers can't be image views");
         return VK_IMAGE_VIEW_TYPE_1D;
     }
-    UNREACHABLE_MSG("Invalid image view type={}", type);
+    ASSERT_MSG(false, "Invalid image view type={}", type);
     return VK_IMAGE_VIEW_TYPE_2D;
 }
 
@@ -269,10 +269,10 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
         UNIMPLEMENTED_MSG("Rect image view");
         return VK_IMAGE_VIEW_TYPE_2D;
     case VideoCommon::ImageViewType::Buffer:
-        UNREACHABLE_MSG("Texture buffers can't be image views");
+        ASSERT_MSG(false, "Texture buffers can't be image views");
         return VK_IMAGE_VIEW_TYPE_1D;
     }
-    UNREACHABLE_MSG("Invalid image view type={}", type);
+    ASSERT_MSG(false, "Invalid image view type={}", type);
     return VK_IMAGE_VIEW_TYPE_2D;
 }
 
@@ -644,7 +644,7 @@ struct RangedBarrierRange {
     case Shader::ImageFormat::R32G32B32A32_UINT:
         return VK_FORMAT_R32G32B32A32_UINT;
     }
-    UNREACHABLE_MSG("Invalid image format={}", format);
+    ASSERT_MSG(false, "Invalid image format={}", format);
     return VK_FORMAT_R32_UINT;
 }
 
@@ -1596,7 +1596,7 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
         UNIMPLEMENTED();
         break;
     case VideoCommon::ImageViewType::Buffer:
-        UNREACHABLE();
+        ASSERT(false);
         break;
     }
 }
@@ -1822,7 +1822,7 @@ void TextureCacheRuntime::AccelerateImageUpload(
     if (IsPixelFormatASTC(image.info.format)) {
         return astc_decoder_pass.Assemble(image, map, swizzles);
     }
-    UNREACHABLE();
+    ASSERT(false);
 }
 
 } // namespace Vulkan

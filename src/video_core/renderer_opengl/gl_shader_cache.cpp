@@ -85,7 +85,7 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
             case Maxwell::TessellationPrimitive::Quads:
                 return Shader::TessPrimitive::Quads;
             }
-            UNREACHABLE();
+            ASSERT(false);
             return Shader::TessPrimitive::Triangles;
         }();
         info.tess_spacing = [&] {
@@ -97,7 +97,7 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
             case Maxwell::TessellationSpacing::FractionalEven:
                 return Shader::TessSpacing::FractionalEven;
             }
-            UNREACHABLE();
+            ASSERT(false);
             return Shader::TessSpacing::Equal;
         }();
         break;

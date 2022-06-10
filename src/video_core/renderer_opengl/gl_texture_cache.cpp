@@ -83,7 +83,7 @@ GLenum ImageTarget(const VideoCommon::ImageInfo& info) {
     case ImageType::Buffer:
         return GL_TEXTURE_BUFFER;
     }
-    UNREACHABLE_MSG("Invalid image type={}", info.type);
+    ASSERT_MSG(false, "Invalid image type={}", info.type);
     return GL_NONE;
 }
 
@@ -107,7 +107,7 @@ GLenum ImageTarget(Shader::TextureType type, int num_samples = 1) {
     case Shader::TextureType::Buffer:
         return GL_TEXTURE_BUFFER;
     }
-    UNREACHABLE_MSG("Invalid image view type={}", type);
+    ASSERT_MSG(false, "Invalid image view type={}", type);
     return GL_NONE;
 }
 
@@ -119,7 +119,7 @@ GLenum TextureMode(PixelFormat format, bool is_first) {
     case PixelFormat::S8_UINT_D24_UNORM:
         return is_first ? GL_STENCIL_INDEX : GL_DEPTH_COMPONENT;
     default:
-        UNREACHABLE();
+        ASSERT(false);
         return GL_DEPTH_COMPONENT;
     }
 }
@@ -140,7 +140,7 @@ GLint Swizzle(SwizzleSource source) {
     case SwizzleSource::OneFloat:
         return GL_ONE;
     }
-    UNREACHABLE_MSG("Invalid swizzle source={}", source);
+    ASSERT_MSG(false, "Invalid swizzle source={}", source);
     return GL_NONE;
 }
 
@@ -197,7 +197,7 @@ GLint ConvertA5B5G5R1_UNORM(SwizzleSource source) {
     case SwizzleSource::OneFloat:
         return GL_ONE;
     }
-    UNREACHABLE_MSG("Invalid swizzle source={}", source);
+    ASSERT_MSG(false, "Invalid swizzle source={}", source);
     return GL_NONE;
 }
 
@@ -381,10 +381,10 @@ OGLTexture MakeImage(const VideoCommon::ImageInfo& info, GLenum gl_internal_form
         glTextureStorage3D(handle, gl_num_levels, gl_internal_format, width, height, depth);
         break;
     case GL_TEXTURE_BUFFER:
-        UNREACHABLE();
+        ASSERT(false);
         break;
     default:
-        UNREACHABLE_MSG("Invalid target=0x{:x}", target);
+        ASSERT_MSG(false, "Invalid target=0x{:x}", target);
         break;
     }
     return texture;
@@ -420,7 +420,7 @@ OGLTexture MakeImage(const VideoCommon::ImageInfo& info, GLenum gl_internal_form
     case Shader::ImageFormat::R32G32B32A32_UINT:
         return GL_RGBA32UI;
     }
-    UNREACHABLE_MSG("Invalid image format={}", format);
+    ASSERT_MSG(false, "Invalid image format={}", format);
     return GL_R32UI;
 }
 
@@ -579,7 +579,7 @@ void TextureCacheRuntime::EmulateCopyImage(Image& dst, Image& src,
     } else if (IsPixelFormatBGR(dst.info.format) || IsPixelFormatBGR(src.info.format)) {
         format_conversion_pass.ConvertImage(dst, src, copies);
     } else {
-        UNREACHABLE();
+        ASSERT(false);
     }
 }
 
@@ -620,7 +620,7 @@ void TextureCacheRuntime::AccelerateImageUpload(Image& image, const ImageBufferM
     case ImageType::Linear:
         return util_shaders.PitchUpload(image, map, swizzles);
     default:
-        UNREACHABLE();
+        ASSERT(false);
         break;
     }
 }
@@ -639,7 +639,7 @@ FormatProperties TextureCacheRuntime::FormatInfo(ImageType type, GLenum internal
     case ImageType::e3D:
         return format_properties[2].at(internal_format);
     default:
-        UNREACHABLE();
+        ASSERT(false);
         return FormatProperties{};
     }
 }
@@ -888,7 +888,7 @@ void Image::CopyBufferToImage(const VideoCommon::BufferImageCopy& copy, size_t b
         }
         break;
     default:
-        UNREACHABLE();
+        ASSERT(false);
     }
 }
 
@@ -924,7 +924,7 @@ void Image::CopyImageToBuffer(const VideoCommon::BufferImageCopy& copy, size_t b
         depth = copy.image_extent.depth;
         break;
     default:
-        UNREACHABLE();
+        ASSERT(false);
     }
     // Compressed formats don't have a pixel format or type
     const bool is_compressed = gl_format == GL_NONE;
@@ -950,7 +950,7 @@ void Image::Scale(bool up_scale) {
         case SurfaceType::DepthStencil:
             return GL_DEPTH_STENCIL_ATTACHMENT;
         default:
-            UNREACHABLE();
+            ASSERT(false);
             return GL_COLOR_ATTACHMENT0;
         }
     }();
@@ -965,7 +965,7 @@ void Image::Scale(bool up_scale) {
         case SurfaceType::DepthStencil:
             return GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
         default:
-            UNREACHABLE();
+            ASSERT(false);
             return GL_COLOR_BUFFER_BIT;
         }
     }();
@@ -980,7 +980,7 @@ void Image::Scale(bool up_scale) {
         case SurfaceType::DepthStencil:
             return 3;
         default:
-            UNREACHABLE();
+            ASSERT(false);
             return 0;
         }
     }();
@@ -1045,7 +1045,7 @@ bool Image::ScaleUp(bool ignore) {
         return false;
     }
     if (info.type == ImageType::Linear) {
-        UNREACHABLE();
+        ASSERT(false);
         return false;
     }
     flags |= ImageFlagBits::Rescaled;
@@ -1139,7 +1139,7 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
         UNIMPLEMENTED();
         break;
     case ImageViewType::Buffer:
-        UNREACHABLE();
+        ASSERT(false);
         break;
     }
     switch (info.type) {
@@ -1319,7 +1319,7 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM
             buffer_bits |= GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
             break;
         default:
-            UNREACHABLE();
+            ASSERT(false);
             buffer_bits |= GL_DEPTH_BUFFER_BIT;
             break;
         }

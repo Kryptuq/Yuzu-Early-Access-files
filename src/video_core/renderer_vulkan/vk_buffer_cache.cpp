@@ -46,7 +46,7 @@ size_t BytesPerIndex(VkIndexType index_type) {
     case VK_INDEX_TYPE_UINT32:
         return 4;
     default:
-        UNREACHABLE_MSG("Invalid index type={}", index_type);
+        ASSERT_MSG(false, "Invalid index type={}", index_type);
         return 1;
     }
 }
@@ -366,7 +366,7 @@ void BufferCacheRuntime::ReserveQuadArrayLUT(u32 num_indices, bool wait_for_idle
                 std::memcpy(staging_data, MakeQuadIndices<u32>(quad, first).data(), quad_size);
                 break;
             default:
-                UNREACHABLE();
+                ASSERT(false);
                 break;
             }
             staging_data += quad_size;

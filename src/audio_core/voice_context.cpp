@@ -114,7 +114,7 @@ void ServerVoiceInfo::UpdateParameters(const VoiceInfo::InParams& voice_in,
         in_params.current_playstate = ServerPlayState::Play;
         break;
     default:
-        UNREACHABLE_MSG("Unknown playstate {}", voice_in.play_state);
+        ASSERT_MSG(false, "Unknown playstate {}", voice_in.play_state);
         break;
     }
 
@@ -410,7 +410,7 @@ bool ServerVoiceInfo::UpdateParametersForCommandGeneration(
         return in_params.should_depop;
     }
     default:
-        UNREACHABLE_MSG("Invalid playstate {}", in_params.current_playstate);
+        ASSERT_MSG(false, "Invalid playstate {}", in_params.current_playstate);
     }
 
     return false;

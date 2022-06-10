@@ -174,7 +174,7 @@ Shader::RuntimeInfo MakeRuntimeInfo(std::span<const Shader::IR::Program> program
             case Maxwell::TessellationPrimitive::Quads:
                 return Shader::TessPrimitive::Quads;
             }
-            UNREACHABLE();
+            ASSERT(false);
             return Shader::TessPrimitive::Triangles;
         }();
         info.tess_spacing = [&] {
@@ -187,7 +187,7 @@ Shader::RuntimeInfo MakeRuntimeInfo(std::span<const Shader::IR::Program> program
             case Maxwell::TessellationSpacing::FractionalEven:
                 return Shader::TessSpacing::FractionalEven;
             }
-            UNREACHABLE();
+            ASSERT(false);
             return Shader::TessSpacing::Equal;
         }();
         break;

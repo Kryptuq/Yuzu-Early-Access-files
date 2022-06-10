@@ -350,7 +350,7 @@ ResultCode KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata,
         break;
 
     default:
-        UNREACHABLE();
+        ASSERT(false);
     }
 
     // Create TLS region

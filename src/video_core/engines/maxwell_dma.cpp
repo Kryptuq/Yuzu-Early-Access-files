@@ -62,7 +62,7 @@ void MaxwellDMA::Launch() {
 
     if (!is_src_pitch && !is_dst_pitch) {
         // If both the source and the destination are in block layout, assert.
-        UNREACHABLE_MSG("Tiled->Tiled DMA transfers are not yet implemented");
+        UNIMPLEMENTED_MSG("Tiled->Tiled DMA transfers are not yet implemented");
         return;
     }
 
@@ -260,7 +260,7 @@ void MaxwellDMA::ReleaseSemaphore() {
         memory_manager.Write<u64>(address + 8, system.GPU().GetTicks());
         break;
     default:
-        UNREACHABLE_MSG("Unknown semaphore type: {}", static_cast<u32>(type.Value()));
+        ASSERT_MSG(false, "Unknown semaphore type: {}", static_cast<u32>(type.Value()));
     }
 }
 

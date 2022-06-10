@@ -202,7 +202,7 @@ public:
                 case Size::Size_11_11_10:
                     return 3;
                 default:
-                    UNREACHABLE();
+                    ASSERT(false);
                     return 1;
                 }
             }
@@ -238,7 +238,7 @@ public:
                 case Size::Size_11_11_10:
                     return 4;
                 default:
-                    UNREACHABLE();
+                    ASSERT(false);
                     return 1;
                 }
             }
@@ -274,7 +274,7 @@ public:
                 case Size::Size_11_11_10:
                     return "11_11_10";
                 default:
-                    UNREACHABLE();
+                    ASSERT(false);
                     return {};
                 }
             }
@@ -296,7 +296,7 @@ public:
                 case Type::Float:
                     return "FLOAT";
                 }
-                UNREACHABLE();
+                ASSERT(false);
                 return {};
             }
 
@@ -336,7 +336,7 @@ public:
                 case 3:
                     return {x3, y3};
                 default:
-                    UNREACHABLE();
+                    ASSERT(false);
                     return {0, 0};
                 }
             }
@@ -1193,7 +1193,7 @@ public:
                         case IndexFormat::UnsignedInt:
                             return 4;
                         }
-                        UNREACHABLE();
+                        ASSERT(false);
                         return 1;
                     }
 

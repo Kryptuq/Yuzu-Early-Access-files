@@ -429,7 +429,7 @@ void CommandGenerator::GenerateDataSourceCommand(ServerVoiceInfo& voice_info, Vo
                                   in_params.node_id);
             break;
         default:
-            UNREACHABLE_MSG("Unimplemented sample format={}", in_params.sample_format);
+            ASSERT_MSG(false, "Unimplemented sample format={}", in_params.sample_format);
         }
     }
 }
@@ -1312,7 +1312,7 @@ void CommandGenerator::DecodeFromWaveBuffers(ServerVoiceInfo& voice_info, std::s
                                 samples_to_read - samples_read, channel, temp_mix_offset);
                 break;
             default:
-                UNREACHABLE_MSG("Unimplemented sample format={}", in_params.sample_format);
+                ASSERT_MSG(false, "Unimplemented sample format={}", in_params.sample_format);
             }
 
             temp_mix_offset += samples_decoded;

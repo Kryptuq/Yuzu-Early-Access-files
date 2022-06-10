@@ -49,6 +49,7 @@ private:
                 }
             }
         }
+        UNREACHABLE();
     }();
 
     template <typename T>

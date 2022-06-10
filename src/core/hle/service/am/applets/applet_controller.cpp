@@ -178,7 +178,7 @@ ResultCode Controller::GetStatus() const {
 }
 
 void Controller::ExecuteInteractive() {
-    UNREACHABLE_MSG("Attempted to call interactive execution on non-interactive applet.");
+    ASSERT_MSG(false, "Attempted to call interactive execution on non-interactive applet.");
 }
 
 void Controller::Execute() {

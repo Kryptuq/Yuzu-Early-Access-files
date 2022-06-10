@@ -84,7 +84,7 @@ u64 KAddressSpaceInfo::GetAddressSpaceStart(std::size_t width, Type type) {
         ASSERT(IsAllowedIndexForAddress(AddressSpaceIndices39Bit[index]));
         return AddressSpaceInfos[AddressSpaceIndices39Bit[index]].address;
     }
-    UNREACHABLE();
+    ASSERT(false);
     return 0;
 }
 
@@ -101,7 +101,7 @@ std::size_t KAddressSpaceInfo::GetAddressSpaceSize(std::size_t width, Type type)
         ASSERT(IsAllowed39BitType(type));
         return AddressSpaceInfos[AddressSpaceIndices39Bit[index]].size;
     }
-    UNREACHABLE();
+    ASSERT(false);
     return 0;
 }
 

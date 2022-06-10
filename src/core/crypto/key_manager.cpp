@@ -140,7 +140,6 @@ u64 GetSignatureTypeDataSize(SignatureType type) {
         return 0x3C;
     }
     UNREACHABLE();
-    return 0;
 }
 
 u64 GetSignatureTypePaddingSize(SignatureType type) {
@@ -155,7 +154,6 @@ u64 GetSignatureTypePaddingSize(SignatureType type) {
         return 0x40;
     }
     UNREACHABLE();
-    return 0;
 }
 
 SignatureType Ticket::GetSignatureType() const {

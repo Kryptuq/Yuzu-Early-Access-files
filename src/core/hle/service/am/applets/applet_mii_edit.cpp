@@ -67,7 +67,7 @@ ResultCode MiiEdit::GetStatus() const {
 }
 
 void MiiEdit::ExecuteInteractive() {
-    UNREACHABLE_MSG("Attempted to call interactive execution on non-interactive applet.");
+    ASSERT_MSG(false, "Attempted to call interactive execution on non-interactive applet.");
 }
 
 void MiiEdit::Execute() {

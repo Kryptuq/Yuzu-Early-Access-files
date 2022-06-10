@@ -29,7 +29,7 @@ constexpr KMemoryManager::Pool GetPoolFromMemoryRegionType(u32 type) {
     } else if ((type | KMemoryRegionType_DramSystemNonSecurePool) == type) {
         return KMemoryManager::Pool::SystemNonSecure;
     } else {
-        UNREACHABLE_MSG("InvalidMemoryRegionType for conversion to Pool");
+        ASSERT_MSG(false, "InvalidMemoryRegionType for conversion to Pool");
         return {};
     }
 }

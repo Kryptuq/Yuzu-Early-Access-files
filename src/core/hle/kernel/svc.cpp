@@ -1876,7 +1876,7 @@ static void SleepThread(Core::System& system, s64 nanoseconds) {
         KScheduler::YieldToAnyThread(kernel);
     } else {
         // Nintendo does nothing at all if an otherwise invalid value is passed.
-        UNREACHABLE_MSG("Unimplemented sleep yield type '{:016X}'!", nanoseconds);
+        ASSERT_MSG(false, "Unimplemented sleep yield type '{:016X}'!", nanoseconds);
     }
 }
 

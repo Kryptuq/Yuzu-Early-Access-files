@@ -144,7 +144,7 @@ VirtualFile RealVfsFilesystem::MoveFile(std::string_view old_path_, std::string_
             LOG_ERROR(Service_FS, "Failed to open path {} in order to re-cache it", new_path);
         }
     } else {
-        UNREACHABLE();
+        ASSERT(false);
         return nullptr;
     }
 

@@ -79,7 +79,7 @@ const char* GetSource(GLenum source) {
     case GL_DEBUG_SOURCE_OTHER:
         return "OTHER";
     default:
-        UNREACHABLE();
+        ASSERT(false);
         return "Unknown source";
     }
 }
@@ -101,7 +101,7 @@ const char* GetType(GLenum type) {
     case GL_DEBUG_TYPE_MARKER:
         return "MARKER";
     default:
-        UNREACHABLE();
+        ASSERT(false);
         return "Unknown type";
     }
 }

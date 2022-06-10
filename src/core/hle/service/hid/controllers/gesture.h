@@ -107,8 +107,7 @@ private:
     bool ShouldUpdateGesture(const GestureProperties& gesture, f32 time_difference);
 
     // Updates the shared memory to the next state
-    void UpdateGestureSharedMemory(u8* data, std::size_t size, GestureProperties& gesture,
-                                   f32 time_difference);
+    void UpdateGestureSharedMemory(GestureProperties& gesture, f32 time_difference);
 
     // Initializes new gesture
     void NewGesture(GestureProperties& gesture, GestureType& type, GestureAttribute& attributes);

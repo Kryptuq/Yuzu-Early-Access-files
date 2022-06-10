@@ -483,7 +483,7 @@ bool NodeStates::DepthFirstSearch(EdgeMatrix& edge_matrix) {
                     // Add more work
                     index_stack.push(j);
                 } else if (node_state == NodeStates::State::InFound) {
-                    UNREACHABLE_MSG("Node start marked as found");
+                    ASSERT_MSG(false, "Node start marked as found");
                     ResetState();
                     return false;
                 }

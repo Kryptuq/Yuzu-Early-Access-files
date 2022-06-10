@@ -71,7 +71,7 @@ void SoftwareKeyboard::Initialize() {
         InitializeBackground(applet_mode);
         break;
     default:
-        UNREACHABLE_MSG("Invalid LibraryAppletMode={}", applet_mode);
+        ASSERT_MSG(false, "Invalid LibraryAppletMode={}", applet_mode);
         break;
     }
 }

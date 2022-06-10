@@ -16,7 +16,8 @@
 
 namespace Core {
 
-CpuManager::CpuManager(System& system_) : system{system_} {}
+CpuManager::CpuManager(System& system_)
+    : pause_barrier{std::make_unique<Common::Barrier>(1)}, system{system_} {}
 CpuManager::~CpuManager() = default;
 
 void CpuManager::ThreadStart(std::stop_token stop_token, CpuManager& cpu_manager,
@@ -30,8 +31,10 @@ void CpuManager::Initialize() {
         for (std::size_t core = 0; core < Core::Hardware::NUM_CPU_CORES; core++) {
             core_data[core].host_thread = std::jthread(ThreadStart, std::ref(*this), core);
         }
+        pause_barrier = std::make_unique<Common::Barrier>(Core::Hardware::NUM_CPU_CORES + 1);
     } else {
         core_data[0].host_thread = std::jthread(ThreadStart, std::ref(*this), 0);
+        pause_barrier = std::make_unique<Common::Barrier>(2);
     }
 }
 
@@ -138,49 +141,12 @@ void CpuManager::MultiCoreRunSuspendThread() {
         auto core = kernel.CurrentPhysicalCoreIndex();
         auto& scheduler = *kernel.CurrentScheduler();
         Kernel::KThread* current_thread = scheduler.GetCurrentThread();
+        current_thread->DisableDispatch();
+
         Common::Fiber::YieldTo(current_thread->GetHostContext(), *core_data[core].host_context);
-        ASSERT(scheduler.ContextSwitchPending());
         ASSERT(core == kernel.CurrentPhysicalCoreIndex());
         scheduler.RescheduleCurrentCore();
     }
-}
-
-void CpuManager::MultiCorePause(bool paused) {
-    if (!paused) {
-        bool all_not_barrier = false;
-        while (!all_not_barrier) {
-            all_not_barrier = true;
-            for (const auto& data : core_data) {
-                all_not_barrier &= !data.is_running.load() && data.initialized.load();
-            }
-        }
-        for (auto& data : core_data) {
-            data.enter_barrier->Set();
-        }
-        if (paused_state.load()) {
-            bool all_barrier = false;
-            while (!all_barrier) {
-                all_barrier = true;
-                for (const auto& data : core_data) {
-                    all_barrier &= data.is_paused.load() && data.initialized.load();
-                }
-            }
-            for (auto& data : core_data) {
-                data.exit_barrier->Set();
-            }
-        }
-    } else {
-        /// Wait until all cores are paused.
-        bool all_barrier = false;
-        while (!all_barrier) {
-            all_barrier = true;
-            for (const auto& data : core_data) {
-                all_barrier &= data.is_paused.load() && data.initialized.load();
-            }
-        }
-        /// Don't release the barrier
-    }
-    paused_state = paused;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -235,8 +201,9 @@ void CpuManager::SingleCoreRunSuspendThread() {
         auto core = kernel.GetCurrentHostThreadID();
         auto& scheduler = *kernel.CurrentScheduler();
         Kernel::KThread* current_thread = scheduler.GetCurrentThread();
+        current_thread->DisableDispatch();
+
         Common::Fiber::YieldTo(current_thread->GetHostContext(), *core_data[0].host_context);
-        ASSERT(scheduler.ContextSwitchPending());
         ASSERT(core == kernel.GetCurrentHostThreadID());
         scheduler.RescheduleCurrentCore();
     }
@@ -274,37 +241,21 @@ void CpuManager::PreemptSingleCore(bool from_running_enviroment) {
     }
 }
 
-void CpuManager::SingleCorePause(bool paused) {
-    if (!paused) {
-        bool all_not_barrier = false;
-        while (!all_not_barrier) {
-            all_not_barrier = !core_data[0].is_running.load() && core_data[0].initialized.load();
-        }
-        core_data[0].enter_barrier->Set();
-        if (paused_state.load()) {
-            bool all_barrier = false;
-            while (!all_barrier) {
-                all_barrier = core_data[0].is_paused.load() && core_data[0].initialized.load();
-            }
-            core_data[0].exit_barrier->Set();
-        }
-    } else {
-        /// Wait until all cores are paused.
-        bool all_barrier = false;
-        while (!all_barrier) {
-            all_barrier = core_data[0].is_paused.load() && core_data[0].initialized.load();
-        }
-        /// Don't release the barrier
-    }
-    paused_state = paused;
-}
-
 void CpuManager::Pause(bool paused) {
-    if (is_multicore) {
-        MultiCorePause(paused);
-    } else {
-        SingleCorePause(paused);
+    std::scoped_lock lk{pause_lock};
+
+    if (pause_state == paused) {
+        return;
     }
+
+    // Set the new state
+    pause_state.store(paused);
+
+    // Wake up any waiting threads
+    pause_state.notify_all();
+
+    // Wait for all threads to successfully change state before returning
+    pause_barrier->Sync();
 }
 
 void CpuManager::RunThread(std::stop_token stop_token, std::size_t core) {
@@ -320,27 +271,29 @@ void CpuManager::RunThread(std::stop_token stop_token, std::size_t core) {
     Common::SetCurrentThreadName(name.c_str());
     Common::SetCurrentThreadPriority(Common::ThreadPriority::High);
     auto& data = core_data[core];
-    data.enter_barrier = std::make_unique<Common::Event>();
-    data.exit_barrier = std::make_unique<Common::Event>();
     data.host_context = Common::Fiber::ThreadToFiber();
-    data.is_running = false;
-    data.initialized = true;
     const bool sc_sync = !is_async_gpu && !is_multicore;
     bool sc_sync_first_use = sc_sync;
 
     // Cleanup
     SCOPE_EXIT({
         data.host_context->Exit();
-        data.enter_barrier.reset();
-        data.exit_barrier.reset();
-        data.initialized = false;
         MicroProfileOnThreadExit();
     });
 
     /// Running
     while (running_mode) {
-        data.is_running = false;
-        data.enter_barrier->Wait();
+        if (pause_state.load(std::memory_order_relaxed)) {
+            // Wait for caller to acknowledge pausing
+            pause_barrier->Sync();
+
+            // Wait until unpaused
+            pause_state.wait(true, std::memory_order_relaxed);
+
+            // Wait for caller to acknowledge unpausing
+            pause_barrier->Sync();
+        }
+
         if (sc_sync_first_use) {
             system.GPU().ObtainContext();
             sc_sync_first_use = false;
@@ -352,12 +305,7 @@ void CpuManager::RunThread(std::stop_token stop_token, std::size_t core) {
         }
 
         auto current_thread = system.Kernel().CurrentScheduler()->GetCurrentThread();
-        data.is_running = true;
         Common::Fiber::YieldTo(data.host_context, *current_thread->GetHostContext());
-        data.is_running = false;
-        data.is_paused = true;
-        data.exit_barrier->Wait();
-        data.is_paused = false;
     }
 }
 

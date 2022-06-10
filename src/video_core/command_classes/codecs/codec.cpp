@@ -224,7 +224,7 @@ void Codec::Decode() {
             vp9_hidden_frame = vp9_decoder->WasFrameHidden();
             return vp9_decoder->GetFrameBytes();
         default:
-            UNREACHABLE();
+            ASSERT(false);
             return std::vector<u8>{};
         }
     }();

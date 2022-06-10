@@ -156,7 +156,7 @@ ResultCode Error::GetStatus() const {
 }
 
 void Error::ExecuteInteractive() {
-    UNREACHABLE_MSG("Unexpected interactive applet data!");
+    ASSERT_MSG(false, "Unexpected interactive applet data!");
 }
 
 void Error::Execute() {

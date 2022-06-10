@@ -308,7 +308,6 @@ bool MacroInterpreterImpl::EvaluateBranchCondition(Macro::BranchCondition cond, 
         return value != 0;
     }
     UNREACHABLE();
-    return true;
 }
 
 Macro::Opcode MacroInterpreterImpl::GetOpcode() const {

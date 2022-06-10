@@ -141,7 +141,7 @@ public:
         if (index < DomainHandlerCount()) {
             domain_handlers[index] = nullptr;
         } else {
-            UNREACHABLE_MSG("Unexpected handler index {}", index);
+            ASSERT_MSG(false, "Unexpected handler index {}", index);
         }
     }
 

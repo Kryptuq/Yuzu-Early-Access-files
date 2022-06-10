@@ -35,7 +35,7 @@ public:
         case Svc::SignalType::SignalAndModifyByWaitingCountIfEqual:
             return SignalAndModifyByWaitingCountIfEqual(addr, value, count);
         }
-        UNREACHABLE();
+        ASSERT(false);
         return ResultUnknown;
     }
 
@@ -49,7 +49,7 @@ public:
         case Svc::ArbitrationType::WaitIfEqual:
             return WaitIfEqual(addr, value, timeout);
         }
-        UNREACHABLE();
+        ASSERT(false);
         return ResultUnknown;
     }
 

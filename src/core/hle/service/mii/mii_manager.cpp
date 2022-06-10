@@ -290,7 +290,7 @@ MiiStoreData BuildRandomStoreData(Age age, Gender gender, Race race, const Commo
     u8 glasses_type{};
     while (glasses_type_start < glasses_type_info.values[glasses_type]) {
         if (++glasses_type >= glasses_type_info.values_count) {
-            UNREACHABLE();
+            ASSERT(false);
             break;
         }
     }

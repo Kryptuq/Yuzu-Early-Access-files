@@ -228,7 +228,7 @@ void Vic::WriteYUVFrame(const AVFrame* frame, const VicConfig& config) {
         break;
     }
     default:
-        UNREACHABLE();
+        ASSERT(false);
         break;
     }
     gpu.MemoryManager().WriteBlock(output_surface_chroma_address, chroma_buffer.data(),

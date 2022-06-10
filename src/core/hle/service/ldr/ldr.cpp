@@ -347,7 +347,7 @@ public:
         }
 
         if (!succeeded) {
-            UNREACHABLE_MSG("Out of address space!");
+            ASSERT_MSG(false, "Out of address space!");
             return Kernel::ResultOutOfMemory;
         }
 

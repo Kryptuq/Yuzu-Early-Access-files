@@ -265,7 +265,7 @@ std::pair<VkBuffer, VkDeviceSize> QuadIndexedPass::Assemble(
         case Tegra::Engines::Maxwell3D::Regs::IndexFormat::UnsignedInt:
             return 2;
         }
-        UNREACHABLE();
+        ASSERT(false);
         return 2;
     }();
     const u32 input_size = num_vertices << index_shift;

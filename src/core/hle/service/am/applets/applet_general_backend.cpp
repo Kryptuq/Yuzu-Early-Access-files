@@ -76,7 +76,7 @@ ResultCode Auth::GetStatus() const {
 }
 
 void Auth::ExecuteInteractive() {
-    UNREACHABLE_MSG("Unexpected interactive applet data.");
+    ASSERT_MSG(false, "Unexpected interactive applet data.");
 }
 
 void Auth::Execute() {
@@ -175,7 +175,7 @@ ResultCode PhotoViewer::GetStatus() const {
 }
 
 void PhotoViewer::ExecuteInteractive() {
-    UNREACHABLE_MSG("Unexpected interactive applet data.");
+    ASSERT_MSG(false, "Unexpected interactive applet data.");
 }
 
 void PhotoViewer::Execute() {

@@ -659,7 +659,7 @@ Status BufferQueueProducer::Query(NativeWindow what, s32* out_value) {
         value = core->consumer_usage_bit;
         break;
     default:
-        UNREACHABLE();
+        ASSERT(false);
         return Status::BadValue;
     }
 

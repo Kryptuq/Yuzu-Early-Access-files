@@ -58,7 +58,7 @@ public:
     [[nodiscard]] Stack Remove(Token token) const;
 
 private:
-    boost::container::small_vector<StackEntry, 3> entries;
+    std::vector<StackEntry> entries;
 };
 
 struct IndirectBranch {

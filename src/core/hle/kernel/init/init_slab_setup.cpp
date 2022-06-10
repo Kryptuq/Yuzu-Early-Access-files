@@ -244,7 +244,7 @@ void InitializeSlabHeaps(Core::System& system, KMemoryLayout& memory_layout) {
             FOREACH_SLAB_TYPE(INITIALIZE_SLAB_HEAP)
             // If we somehow get an invalid type, abort.
         default:
-            UNREACHABLE_MSG("Unknown slab type: {}", slab_types[i]);
+            ASSERT_MSG(false, "Unknown slab type: {}", slab_types[i]);
         }
 
         // If we've hit the end of a gap, free it.

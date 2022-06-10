@@ -35,7 +35,7 @@ constexpr std::size_t GetAddressSpaceWidthFromType(FileSys::ProgramAddressSpaceT
     case FileSys::ProgramAddressSpaceType::Is39Bit:
         return 39;
     default:
-        UNREACHABLE();
+        ASSERT(false);
         return {};
     }
 }
@@ -128,7 +128,7 @@ ResultCode KPageTable::InitializeForProcess(FileSys::ProgramAddressSpaceType as_
     const std::size_t needed_size{
         (alias_region_size + heap_region_size + stack_region_size + kernel_map_region_size)};
     if (alloc_size < needed_size) {
-        UNREACHABLE();
+        ASSERT(false);
         return ResultOutOfMemory;
     }
 
@@ -1341,7 +1341,7 @@ ResultCode KPageTable::SetProcessMemoryPermission(VAddr addr, std::size_t size,
             new_state = KMemoryState::AliasCodeData;
             break;
         default:
-            UNREACHABLE();
+            ASSERT(false);
         }
     }
 
@@ -1734,9 +1734,7 @@ void KPageTable::AddRegionToPages(VAddr start, std::size_t num_pages,
     VAddr addr{start};
     while (addr < start + (num_pages * PageSize)) {
         const PAddr paddr{GetPhysicalAddr(addr)};
-        if (!paddr) {
-            UNREACHABLE();
-        }
+        ASSERT(paddr != 0);
         page_linked_list.AddBlock(paddr, 1);
         addr += PageSize;
     }
@@ -1767,7 +1765,7 @@ ResultCode KPageTable::Operate(VAddr addr, std::size_t num_pages, const KPageLin
             system.Memory().MapMemoryRegion(page_table_impl, addr, size, node.GetAddress());
             break;
         default:
-            UNREACHABLE();
+            ASSERT(false);
         }
 
         addr += size;
@@ -1798,7 +1796,7 @@ ResultCode KPageTable::Operate(VAddr addr, std::size_t num_pages, KMemoryPermiss
     case OperationType::ChangePermissionsAndRefresh:
         break;
     default:
-        UNREACHABLE();
+        ASSERT(false);
     }
     return ResultSuccess;
 }
@@ -1835,7 +1833,6 @@ VAddr KPageTable::GetRegionAddress(KMemoryState state) const {
         return code_region_start;
     default:
         UNREACHABLE();
-        return {};
     }
 }
 
@@ -1871,7 +1868,6 @@ std::size_t KPageTable::GetRegionSize(KMemoryState state) const {
         return code_region_end - code_region_start;
     default:
         UNREACHABLE();
-        return {};
     }
 }
 

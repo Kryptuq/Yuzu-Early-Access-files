@@ -279,7 +279,7 @@ void WebBrowser::Initialize() {
         InitializeLobby();
         break;
     default:
-        UNREACHABLE_MSG("Invalid ShimKind={}", web_arg_header.shim_kind);
+        ASSERT_MSG(false, "Invalid ShimKind={}", web_arg_header.shim_kind);
         break;
     }
 }
@@ -320,7 +320,7 @@ void WebBrowser::Execute() {
         ExecuteLobby();
         break;
     default:
-        UNREACHABLE_MSG("Invalid ShimKind={}", web_arg_header.shim_kind);
+        ASSERT_MSG(false, "Invalid ShimKind={}", web_arg_header.shim_kind);
         WebBrowserExit(WebExitReason::EndButtonPressed);
         break;
     }

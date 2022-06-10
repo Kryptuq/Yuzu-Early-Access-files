@@ -899,7 +899,7 @@ void FSP_SRV::OpenSaveDataFileSystem(Kernel::HLERequestContext& ctx) {
     case FileSys::SaveDataSpaceId::TemporaryStorage:
     case FileSys::SaveDataSpaceId::ProperSystem:
     case FileSys::SaveDataSpaceId::SafeMode:
-        UNREACHABLE();
+        ASSERT(false);
     }
 
     auto filesystem = std::make_shared<IFileSystem>(system, std::move(dir.Unwrap()),

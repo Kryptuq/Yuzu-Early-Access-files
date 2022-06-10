@@ -25,7 +25,7 @@ VkFilter Filter(Tegra::Texture::TextureFilter filter) {
     case Tegra::Texture::TextureFilter::Linear:
         return VK_FILTER_LINEAR;
     }
-    UNREACHABLE_MSG("Invalid sampler filter={}", filter);
+    ASSERT_MSG(false, "Invalid sampler filter={}", filter);
     return {};
 }
 
@@ -42,7 +42,7 @@ VkSamplerMipmapMode MipmapMode(Tegra::Texture::TextureMipmapFilter mipmap_filter
     case Tegra::Texture::TextureMipmapFilter::Linear:
         return VK_SAMPLER_MIPMAP_MODE_LINEAR;
     }
-    UNREACHABLE_MSG("Invalid sampler mipmap mode={}", mipmap_filter);
+    ASSERT_MSG(false, "Invalid sampler mipmap mode={}", mipmap_filter);
     return {};
 }
 
@@ -70,7 +70,7 @@ VkSamplerAddressMode WrapMode(const Device& device, Tegra::Texture::WrapMode wra
         case Tegra::Texture::TextureFilter::Linear:
             return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
         }
-        UNREACHABLE();
+        ASSERT(false);
         return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     case Tegra::Texture::WrapMode::MirrorOnceClampToEdge:
         return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
@@ -744,7 +744,7 @@ VkViewportCoordinateSwizzleNV ViewportSwizzle(Maxwell::ViewportSwizzle swizzle) 
     case Maxwell::ViewportSwizzle::NegativeW:
         return VK_VIEWPORT_COORDINATE_SWIZZLE_NEGATIVE_W_NV;
     }
-    UNREACHABLE_MSG("Invalid swizzle={}", swizzle);
+    ASSERT_MSG(false, "Invalid swizzle={}", swizzle);
     return {};
 }
 
@@ -757,7 +757,7 @@ VkSamplerReductionMode SamplerReduction(Tegra::Texture::SamplerReduction reducti
     case Tegra::Texture::SamplerReduction::Max:
         return VK_SAMPLER_REDUCTION_MODE_MAX_EXT;
     }
-    UNREACHABLE_MSG("Invalid sampler mode={}", static_cast<int>(reduction));
+    ASSERT_MSG(false, "Invalid sampler mode={}", static_cast<int>(reduction));
     return VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE_EXT;
 }
 
@@ -780,7 +780,7 @@ VkSampleCountFlagBits MsaaMode(Tegra::Texture::MsaaMode msaa_mode) {
     case Tegra::Texture::MsaaMode::Msaa4x4:
         return VK_SAMPLE_COUNT_16_BIT;
     default:
-        UNREACHABLE_MSG("Invalid msaa_mode={}", static_cast<int>(msaa_mode));
+        ASSERT_MSG(false, "Invalid msaa_mode={}", static_cast<int>(msaa_mode));
         return VK_SAMPLE_COUNT_1_BIT;
     }
 }

@@ -279,7 +279,7 @@ static constexpr int TransitionTime(int year, Rule rule, int offset) {
         break;
     }
     default:
-        UNREACHABLE();
+        ASSERT(false);
     }
     return value + rule.transition_time + offset;
 }

@@ -87,7 +87,7 @@ void Swizzle(std::span<u8> output, std::span<const u8> input, u32 bytes_per_pixe
         BPP_CASE(16)
 #undef BPP_CASE
     default:
-        UNREACHABLE_MSG("Invalid bytes_per_pixel={}", bytes_per_pixel);
+        ASSERT_MSG(false, "Invalid bytes_per_pixel={}", bytes_per_pixel);
     }
 }
 
@@ -209,7 +209,7 @@ void SwizzleSubrect(u32 subrect_width, u32 subrect_height, u32 source_pitch, u32
         BPP_CASE(16)
 #undef BPP_CASE
     default:
-        UNREACHABLE_MSG("Invalid bytes_per_pixel={}", bytes_per_pixel);
+        ASSERT_MSG(false, "Invalid bytes_per_pixel={}", bytes_per_pixel);
     }
 }
 
@@ -230,7 +230,7 @@ void UnswizzleSubrect(u32 line_length_in, u32 line_count, u32 pitch, u32 width, 
         BPP_CASE(16)
 #undef BPP_CASE
     default:
-        UNREACHABLE_MSG("Invalid bytes_per_pixel={}", bytes_per_pixel);
+        ASSERT_MSG(false, "Invalid bytes_per_pixel={}", bytes_per_pixel);
     }
 }
 
@@ -253,7 +253,7 @@ void SwizzleSliceToVoxel(u32 line_length_in, u32 line_count, u32 pitch, u32 widt
         BPP_CASE(16)
 #undef BPP_CASE
     default:
-        UNREACHABLE_MSG("Invalid bytes_per_pixel={}", bytes_per_pixel);
+        ASSERT_MSG(false, "Invalid bytes_per_pixel={}", bytes_per_pixel);
     }
 }
 

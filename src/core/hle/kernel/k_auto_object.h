@@ -18,7 +18,7 @@ namespace Kernel {
 class KernelCore;
 class KProcess;
 
-#define KERNEL_AUTOOBJECT_TRAITS(CLASS, BASE_CLASS)                                                \
+#define KERNEL_AUTOOBJECT_TRAITS_IMPL(CLASS, BASE_CLASS, ATTRIBUTE)                                \
                                                                                                    \
 private:                                                                                           \
     friend class ::Kernel::KClassTokenGenerator;                                                   \
@@ -40,15 +40,18 @@ public:                                                                         
     static constexpr const char* GetStaticTypeName() {                                             \
         return TypeName;                                                                           \
     }                                                                                              \
-    virtual TypeObj GetTypeObj() const {                                                           \
+    virtual TypeObj GetTypeObj() ATTRIBUTE {                                                       \
         return GetStaticTypeObj();                                                                 \
     }                                                                                              \
-    virtual const char* GetTypeName() const {                                                      \
+    virtual const char* GetTypeName() ATTRIBUTE {                                                  \
         return GetStaticTypeName();                                                                \
     }                                                                                              \
                                                                                                    \
 private:                                                                                           \
     constexpr bool operator!=(const TypeObj& rhs)
+
+#define KERNEL_AUTOOBJECT_TRAITS(CLASS, BASE_CLASS)                                                \
+    KERNEL_AUTOOBJECT_TRAITS_IMPL(CLASS, BASE_CLASS, const override)
 
 class KAutoObject {
 protected:
@@ -82,7 +85,7 @@ protected:
     };
 
 private:
-    KERNEL_AUTOOBJECT_TRAITS(KAutoObject, KAutoObject);
+    KERNEL_AUTOOBJECT_TRAITS_IMPL(KAutoObject, KAutoObject, const);
 
 public:
     explicit KAutoObject(KernelCore& kernel_) : kernel(kernel_) {

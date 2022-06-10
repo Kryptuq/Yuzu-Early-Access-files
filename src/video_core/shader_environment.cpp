@@ -280,7 +280,7 @@ GraphicsEnvironment::GraphicsEnvironment(Tegra::Engines::Maxwell3D& maxwell3d_,
         stage_index = 4;
         break;
     default:
-        UNREACHABLE_MSG("Invalid program={}", program);
+        ASSERT_MSG(false, "Invalid program={}", program);
         break;
     }
     const u64 local_size{sph.LocalMemorySize()};

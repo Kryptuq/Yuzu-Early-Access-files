@@ -97,13 +97,13 @@ ResultCode KServerSession::HandleDomainSyncRequest(Kernel::HLERequestContext& co
                          "object_id {} is too big! This probably means a recent service call "
                          "to {} needed to return a new interface!",
                          object_id, name);
-            UNREACHABLE();
+            ASSERT(false);
             return ResultSuccess; // Ignore error if asserts are off
         }
         if (auto strong_ptr = manager->DomainHandler(object_id - 1).lock()) {
             return strong_ptr->HandleSyncRequest(*this, context);
         } else {
-            UNREACHABLE();
+            ASSERT(false);
             return ResultSuccess;
         }
 

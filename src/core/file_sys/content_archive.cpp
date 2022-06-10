@@ -419,7 +419,7 @@ std::optional<Core::Crypto::Key128> NCA::GetKeyAreaKey(NCASectionCryptoType type
         Core::Crypto::Mode::ECB);
     cipher.Transcode(key_area.data(), key_area.size(), key_area.data(), Core::Crypto::Op::Decrypt);
 
-    Core::Crypto::Key128 out;
+    Core::Crypto::Key128 out{};
     if (type == NCASectionCryptoType::XTS) {
         std::copy(key_area.begin(), key_area.begin() + 0x10, out.begin());
     } else if (type == NCASectionCryptoType::CTR || type == NCASectionCryptoType::BKTR) {

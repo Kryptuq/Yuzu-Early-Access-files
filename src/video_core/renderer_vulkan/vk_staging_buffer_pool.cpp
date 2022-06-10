@@ -263,7 +263,7 @@ StagingBufferPool::StagingBuffersCache& StagingBufferPool::GetCache(MemoryUsage 
     case MemoryUsage::Download:
         return download_cache;
     default:
-        UNREACHABLE_MSG("Invalid memory usage={}", usage);
+        ASSERT_MSG(false, "Invalid memory usage={}", usage);
         return upload_cache;
     }
 }

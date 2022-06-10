@@ -49,7 +49,7 @@ struct Range {
         return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
                VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
     }
-    UNREACHABLE_MSG("Invalid memory usage={}", usage);
+    ASSERT_MSG(false, "Invalid memory usage={}", usage);
     return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 }
 
@@ -325,7 +325,7 @@ VkMemoryPropertyFlags MemoryAllocator::MemoryPropertyFlags(u32 type_mask,
         // Remove device local, if it's not supported by the requested resource
         return MemoryPropertyFlags(type_mask, flags & ~VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     }
-    UNREACHABLE_MSG("No compatible memory types found");
+    ASSERT_MSG(false, "No compatible memory types found");
     return 0;
 }
 
@@ -349,7 +349,7 @@ bool IsHostVisible(MemoryUsage usage) noexcept {
     case MemoryUsage::Download:
         return true;
     }
-    UNREACHABLE_MSG("Invalid memory usage={}", usage);
+    ASSERT_MSG(false, "Invalid memory usage={}", usage);
     return false;
 }
 

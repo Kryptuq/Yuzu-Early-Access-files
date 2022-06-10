@@ -133,7 +133,7 @@ ResultCode KThread::Initialize(KThreadFunction func, uintptr_t arg, VAddr user_s
         UNIMPLEMENTED();
         break;
     default:
-        UNREACHABLE_MSG("KThread::Initialize: Unknown ThreadType {}", static_cast<u32>(type));
+        ASSERT_MSG(false, "KThread::Initialize: Unknown ThreadType {}", static_cast<u32>(type));
         break;
     }
     thread_type = type;

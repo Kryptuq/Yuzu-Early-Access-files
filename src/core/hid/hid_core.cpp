@@ -48,7 +48,7 @@ EmulatedController* HIDCore::GetEmulatedController(NpadIdType npad_id_type) {
         return handheld.get();
     case NpadIdType::Invalid:
     default:
-        UNREACHABLE_MSG("Invalid NpadIdType={}", npad_id_type);
+        ASSERT_MSG(false, "Invalid NpadIdType={}", npad_id_type);
         return nullptr;
     }
 }
@@ -77,7 +77,7 @@ const EmulatedController* HIDCore::GetEmulatedController(NpadIdType npad_id_type
         return handheld.get();
     case NpadIdType::Invalid:
     default:
-        UNREACHABLE_MSG("Invalid NpadIdType={}", npad_id_type);
+        ASSERT_MSG(false, "Invalid NpadIdType={}", npad_id_type);
         return nullptr;
     }
 }

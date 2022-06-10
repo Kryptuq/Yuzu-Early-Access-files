@@ -60,7 +60,7 @@ ResultCode KPort::EnqueueSession(KServerSession* session) {
     if (auto session_ptr = server.GetSessionRequestHandler().lock()) {
         session_ptr->ClientConnected(server.AcceptSession());
     } else {
-        UNREACHABLE();
+        ASSERT(false);
     }
 
     return ResultSuccess;

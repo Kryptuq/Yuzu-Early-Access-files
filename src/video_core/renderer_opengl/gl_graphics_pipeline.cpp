@@ -48,7 +48,7 @@ GLenum Stage(size_t stage_index) {
     case 4:
         return GL_FRAGMENT_SHADER;
     }
-    UNREACHABLE_MSG("{}", stage_index);
+    ASSERT_MSG(false, "{}", stage_index);
     return GL_NONE;
 }
 
@@ -65,7 +65,7 @@ GLenum AssemblyStage(size_t stage_index) {
     case 4:
         return GL_FRAGMENT_PROGRAM_NV;
     }
-    UNREACHABLE_MSG("{}", stage_index);
+    ASSERT_MSG(false, "{}", stage_index);
     return GL_NONE;
 }
 

@@ -67,7 +67,7 @@ void MemoryManager::Unmap(GPUVAddr gpu_addr, std::size_t size) {
         ASSERT(it->first == gpu_addr);
         map_ranges.erase(it);
     } else {
-        UNREACHABLE_MSG("Unmapping non-existent GPU address=0x{:x}", gpu_addr);
+        ASSERT_MSG(false, "Unmapping non-existent GPU address=0x{:x}", gpu_addr);
     }
     const auto submapped_ranges = GetSubmappedRange(gpu_addr, size);
 
@@ -206,7 +206,7 @@ T MemoryManager::Read(GPUVAddr addr) const {
         return value;
     }
 
-    UNREACHABLE();
+    ASSERT(false);
 
     return {};
 }
@@ -219,7 +219,7 @@ void MemoryManager::Write(GPUVAddr addr, T data) {
         return;
     }
 
-    UNREACHABLE();
+    ASSERT(false);
 }
 
 template u8 MemoryManager::Read<u8>(GPUVAddr addr) const;

@@ -252,6 +252,7 @@ struct KernelCore::Impl {
                                                          core_id)
                        .IsSuccess());
             suspend_threads[core_id]->SetName(fmt::format("SuspendThread:{}", core_id));
+            suspend_threads[core_id]->DisableDispatch();
         }
     }
 
@@ -1073,9 +1074,6 @@ void KernelCore::Suspend(bool in_suspention) {
             impl->suspend_threads[core_id]->SetState(state);
             impl->suspend_threads[core_id]->SetWaitReasonForDebugging(
                 ThreadWaitReasonForDebugging::Suspended);
-            if (!should_suspend) {
-                impl->suspend_threads[core_id]->DisableDispatch();
-            }
         }
     }
 }

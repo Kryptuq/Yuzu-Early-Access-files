@@ -206,7 +206,7 @@ inline GLenum IndexFormat(Maxwell::IndexFormat index_format) {
     case Maxwell::IndexFormat::UnsignedInt:
         return GL_UNSIGNED_INT;
     }
-    UNREACHABLE_MSG("Invalid index_format={}", index_format);
+    ASSERT_MSG(false, "Invalid index_format={}", index_format);
     return {};
 }
 
@@ -243,7 +243,7 @@ inline GLenum PrimitiveTopology(Maxwell::PrimitiveTopology topology) {
     case Maxwell::PrimitiveTopology::Patches:
         return GL_PATCHES;
     }
-    UNREACHABLE_MSG("Invalid topology={}", topology);
+    ASSERT_MSG(false, "Invalid topology={}", topology);
     return GL_POINTS;
 }
 
@@ -271,8 +271,8 @@ inline GLenum TextureFilterMode(Tegra::Texture::TextureFilter filter_mode,
         }
         break;
     }
-    UNREACHABLE_MSG("Invalid texture filter mode={} and mipmap filter mode={}", filter_mode,
-                    mipmap_filter_mode);
+    ASSERT_MSG(false, "Invalid texture filter mode={} and mipmap filter mode={}", filter_mode,
+               mipmap_filter_mode);
     return GL_NEAREST;
 }
 
@@ -550,7 +550,7 @@ inline GLenum PolygonMode(Maxwell::PolygonMode polygon_mode) {
     case Maxwell::PolygonMode::Fill:
         return GL_FILL;
     }
-    UNREACHABLE_MSG("Invalid polygon mode={}", polygon_mode);
+    ASSERT_MSG(false, "Invalid polygon mode={}", polygon_mode);
     return GL_FILL;
 }
 
@@ -563,7 +563,7 @@ inline GLenum ReductionFilter(Tegra::Texture::SamplerReduction filter) {
     case Tegra::Texture::SamplerReduction::Max:
         return GL_MAX;
     }
-    UNREACHABLE_MSG("Invalid reduction filter={}", static_cast<int>(filter));
+    ASSERT_MSG(false, "Invalid reduction filter={}", static_cast<int>(filter));
     return GL_WEIGHTED_AVERAGE_ARB;
 }
 

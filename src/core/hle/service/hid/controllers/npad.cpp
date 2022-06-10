@@ -160,7 +160,7 @@ void Controller_NPad::InitNewlyAddedController(Core::HID::NpadIdType npad_id) {
     shared_memory->system_properties.raw = 0;
     switch (controller_type) {
     case Core::HID::NpadStyleIndex::None:
-        UNREACHABLE();
+        ASSERT(false);
         break;
     case Core::HID::NpadStyleIndex::ProController:
         shared_memory->style_tag.fullkey.Assign(1);
@@ -422,7 +422,7 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing) {
         libnx_state.connection_status.is_connected.Assign(1);
         switch (controller_type) {
         case Core::HID::NpadStyleIndex::None:
-            UNREACHABLE();
+            ASSERT(false);
             break;
         case Core::HID::NpadStyleIndex::ProController:
         case Core::HID::NpadStyleIndex::NES:
@@ -597,7 +597,7 @@ void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing
 
         switch (controller_type) {
         case Core::HID::NpadStyleIndex::None:
-            UNREACHABLE();
+            ASSERT(false);
             break;
         case Core::HID::NpadStyleIndex::ProController:
         case Core::HID::NpadStyleIndex::Pokeball:
@@ -856,7 +856,7 @@ void Controller_NPad::VibrateController(
     }
 
     if (vibration_device_handle.device_index == Core::HID::DeviceIndex::None) {
-        UNREACHABLE_MSG("DeviceIndex should never be None!");
+        ASSERT_MSG(false, "DeviceIndex should never be None!");
         return;
     }
 

@@ -108,7 +108,7 @@ ContentRecordType GetCRTypeFromNCAType(NCAContentType type) {
         // TODO(DarkLordZach): Peek at NCA contents to differentiate Manual and Legal.
         return ContentRecordType::HtmlDocument;
     default:
-        UNREACHABLE_MSG("Invalid NCAContentType={:02X}", type);
+        ASSERT_MSG(false, "Invalid NCAContentType={:02X}", type);
         return ContentRecordType{};
     }
 }

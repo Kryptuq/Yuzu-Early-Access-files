@@ -976,12 +976,7 @@ private:
     IR::AbstractSyntaxList& syntax_list;
     bool uses_demote_to_helper{};
 
-// TODO: C++20 Remove this when all compilers support constexpr std::vector
-#if __cpp_lib_constexpr_vector >= 201907
-    static constexpr Flow::Block dummy_flow_block;
-#else
     const Flow::Block dummy_flow_block;
-#endif
 };
 } // Anonymous namespace
 

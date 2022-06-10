@@ -48,12 +48,12 @@ ResultCode StandardUserSystemClockCore::GetClockContext(Core::System& system,
 }
 
 ResultCode StandardUserSystemClockCore::Flush(const SystemClockContext&) {
-    UNREACHABLE();
+    UNIMPLEMENTED();
     return ERROR_NOT_IMPLEMENTED;
 }
 
 ResultCode StandardUserSystemClockCore::SetClockContext(const SystemClockContext&) {
-    UNREACHABLE();
+    UNIMPLEMENTED();
     return ERROR_NOT_IMPLEMENTED;
 }
 

@@ -71,7 +71,7 @@ void MacroEngine::Execute(u32 method, const std::vector<u32>& parameters) {
                 }
             }
             if (!mid_method.has_value()) {
-                UNREACHABLE_MSG("Macro 0x{0:x} was not uploaded", method);
+                ASSERT_MSG(false, "Macro 0x{0:x} was not uploaded", method);
                 return;
             }
         }

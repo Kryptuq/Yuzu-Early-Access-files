@@ -1485,14 +1485,14 @@ void TextureCache<P>::UnregisterImage(ImageId image_id) {
             std::unordered_map<u64, std::vector<ImageId>, IdentityHash<u64>>& selected_page_table) {
             const auto page_it = selected_page_table.find(page);
             if (page_it == selected_page_table.end()) {
-                UNREACHABLE_MSG("Unregistering unregistered page=0x{:x}", page << PAGE_BITS);
+                ASSERT_MSG(false, "Unregistering unregistered page=0x{:x}", page << PAGE_BITS);
                 return;
             }
             std::vector<ImageId>& image_ids = page_it->second;
             const auto vector_it = std::ranges::find(image_ids, image_id);
             if (vector_it == image_ids.end()) {
-                UNREACHABLE_MSG("Unregistering unregistered image in page=0x{:x}",
-                                page << PAGE_BITS);
+                ASSERT_MSG(false, "Unregistering unregistered image in page=0x{:x}",
+                           page << PAGE_BITS);
                 return;
             }
             image_ids.erase(vector_it);
@@ -1504,14 +1504,14 @@ void TextureCache<P>::UnregisterImage(ImageId image_id) {
         ForEachCPUPage(image.cpu_addr, image.guest_size_bytes, [this, map_id](u64 page) {
             const auto page_it = page_table.find(page);
             if (page_it == page_table.end()) {
-                UNREACHABLE_MSG("Unregistering unregistered page=0x{:x}", page << PAGE_BITS);
+                ASSERT_MSG(false, "Unregistering unregistered page=0x{:x}", page << PAGE_BITS);
                 return;
             }
             std::vector<ImageMapId>& image_map_ids = page_it->second;
             const auto vector_it = std::ranges::find(image_map_ids, map_id);
             if (vector_it == image_map_ids.end()) {
-                UNREACHABLE_MSG("Unregistering unregistered image in page=0x{:x}",
-                                page << PAGE_BITS);
+                ASSERT_MSG(false, "Unregistering unregistered image in page=0x{:x}",
+                           page << PAGE_BITS);
                 return;
             }
             image_map_ids.erase(vector_it);
@@ -1532,7 +1532,7 @@ void TextureCache<P>::UnregisterImage(ImageId image_id) {
         ForEachCPUPage(cpu_addr, size, [this, image_id](u64 page) {
             const auto page_it = page_table.find(page);
             if (page_it == page_table.end()) {
-                UNREACHABLE_MSG("Unregistering unregistered page=0x{:x}", page << PAGE_BITS);
+                ASSERT_MSG(false, "Unregistering unregistered page=0x{:x}", page << PAGE_BITS);
                 return;
             }
             std::vector<ImageMapId>& image_map_ids = page_it->second;
@@ -1616,15 +1616,15 @@ void TextureCache<P>::DeleteImage(ImageId image_id, bool immediate_delete) {
     const GPUVAddr gpu_addr = image.gpu_addr;
     const auto alloc_it = image_allocs_table.find(gpu_addr);
     if (alloc_it == image_allocs_table.end()) {
-        UNREACHABLE_MSG("Trying to delete an image alloc that does not exist in address 0x{:x}",
-                        gpu_addr);
+        ASSERT_MSG(false, "Trying to delete an image alloc that does not exist in address 0x{:x}",
+                   gpu_addr);
         return;
     }
     const ImageAllocId alloc_id = alloc_it->second;
     std::vector<ImageId>& alloc_images = slot_image_allocs[alloc_id].images;
     const auto alloc_image_it = std::ranges::find(alloc_images, image_id);
     if (alloc_image_it == alloc_images.end()) {
-        UNREACHABLE_MSG("Trying to delete an image that does not exist");
+        ASSERT_MSG(false, "Trying to delete an image that does not exist");
         return;
     }
     ASSERT_MSG(False(image.flags & ImageFlagBits::Tracked), "Image was not untracked");

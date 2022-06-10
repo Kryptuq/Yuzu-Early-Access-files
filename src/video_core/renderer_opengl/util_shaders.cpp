@@ -282,7 +282,7 @@ GLenum StoreFormat(u32 bytes_per_block) {
     case 16:
         return GL_RGBA32UI;
     }
-    UNREACHABLE();
+    ASSERT(false);
     return GL_R8UI;
 }
 

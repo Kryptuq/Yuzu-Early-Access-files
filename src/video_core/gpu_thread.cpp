@@ -50,7 +50,7 @@ static void RunThread(std::stop_token stop_token, Core::System& system,
         } else if (const auto* invalidate = std::get_if<InvalidateRegionCommand>(&next.data)) {
             rasterizer->OnCPUWrite(invalidate->addr, invalidate->size);
         } else {
-            UNREACHABLE();
+            ASSERT(false);
         }
         state.signaled_fence.store(next.fence);
         if (next.block) {

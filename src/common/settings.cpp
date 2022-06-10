@@ -147,7 +147,7 @@ void UpdateRescalingInfo() {
         info.down_shift = 0;
         break;
     default:
-        UNREACHABLE();
+        ASSERT(false);
         info.up_scale = 1;
         info.down_shift = 0;
     }

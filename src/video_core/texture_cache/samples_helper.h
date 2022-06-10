@@ -23,7 +23,7 @@ namespace VideoCommon {
     case 16:
         return {2, 2};
     }
-    UNREACHABLE_MSG("Invalid number of samples={}", num_samples);
+    ASSERT_MSG(false, "Invalid number of samples={}", num_samples);
     return {1, 1};
 }
 
@@ -47,7 +47,7 @@ namespace VideoCommon {
     case MsaaMode::Msaa4x4:
         return 16;
     }
-    UNREACHABLE_MSG("Invalid MSAA mode={}", static_cast<int>(msaa_mode));
+    ASSERT_MSG(false, "Invalid MSAA mode={}", static_cast<int>(msaa_mode));
     return 1;
 }
 
