@@ -320,6 +320,7 @@ private:
     void MigrateConfigFiles();
     void UpdateWindowTitle(std::string_view title_name = {}, std::string_view title_version = {},
                            std::string_view gpu_vendor = {});
+    void UpdateDockedButton();
     void UpdateFilterText();
     void UpdateAAText();
     void UpdateStatusBar();

@@ -130,8 +130,7 @@ void ConfigureSystem::ApplyConfiguration() {
         // Guard if during game and set to game-specific value
         if (Settings::values.rng_seed.UsingGlobal()) {
             if (ui->rng_seed_checkbox->isChecked()) {
-                Settings::values.rng_seed.SetValue(
-                    ui->rng_seed_edit->text().toULongLong(nullptr, 16));
+                Settings::values.rng_seed.SetValue(ui->rng_seed_edit->text().toUInt(nullptr, 16));
             } else {
                 Settings::values.rng_seed.SetValue(std::nullopt);
             }
@@ -142,8 +141,7 @@ void ConfigureSystem::ApplyConfiguration() {
         case ConfigurationShared::CheckState::Off:
             Settings::values.rng_seed.SetGlobal(false);
             if (ui->rng_seed_checkbox->isChecked()) {
-                Settings::values.rng_seed.SetValue(
-                    ui->rng_seed_edit->text().toULongLong(nullptr, 16));
+                Settings::values.rng_seed.SetValue(ui->rng_seed_edit->text().toUInt(nullptr, 16));
             } else {
                 Settings::values.rng_seed.SetValue(std::nullopt);
             }

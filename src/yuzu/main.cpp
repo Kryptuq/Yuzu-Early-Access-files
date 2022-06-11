@@ -870,12 +870,11 @@ void GMainWindow::InitializeWidgets() {
 
     // Setup Dock button
     dock_status_button = new QPushButton();
-    dock_status_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
+    dock_status_button->setObjectName(QStringLiteral("DockingStatusBarButton"));
     dock_status_button->setFocusPolicy(Qt::NoFocus);
     connect(dock_status_button, &QPushButton::clicked, this, &GMainWindow::OnToggleDockedMode);
-    dock_status_button->setText(tr("DOCK"));
     dock_status_button->setCheckable(true);
-    dock_status_button->setChecked(Settings::values.use_docked_mode.GetValue());
+    UpdateDockedButton();
     statusBar()->insertPermanentWidget(0, dock_status_button);
 
     gpu_accuracy_button = new QPushButton();
@@ -1630,7 +1629,7 @@ void GMainWindow::StoreRecentFile(const QString& filename) {
 
 void GMainWindow::UpdateRecentFiles() {
     const int num_recent_files =
-        std::min(UISettings::values.recent_files.size(), max_recent_files_item);
+        std::min(static_cast<int>(UISettings::values.recent_files.size()), max_recent_files_item);
 
     for (int i = 0; i < num_recent_files; i++) {
         const QString text = QStringLiteral("&%1. %2").arg(i + 1).arg(
@@ -2909,7 +2908,7 @@ void GMainWindow::OnToggleDockedMode() {
     }
 
     Settings::values.use_docked_mode.SetValue(!is_docked);
-    dock_status_button->setChecked(!is_docked);
+    UpdateDockedButton();
     OnDockedModeChanged(is_docked, !is_docked, *system);
 }
 
@@ -3275,6 +3274,12 @@ void GMainWindow::UpdateGPUAccuracyButton() {
     }
 }
 
+void GMainWindow::UpdateDockedButton() {
+    const bool is_docked = Settings::values.use_docked_mode.GetValue();
+    dock_status_button->setChecked(is_docked);
+    dock_status_button->setText(is_docked ? tr("DOCKED") : tr("HANDHELD"));
+}
+
 void GMainWindow::UpdateFilterText() {
     const auto filter = Settings::values.scaling_filter.GetValue();
     switch (filter) {
@@ -3318,10 +3323,10 @@ void GMainWindow::UpdateAAText() {
 }
 
 void GMainWindow::UpdateStatusButtons() {
-    dock_status_button->setChecked(Settings::values.use_docked_mode.GetValue());
     renderer_status_button->setChecked(Settings::values.renderer_backend.GetValue() ==
                                        Settings::RendererBackend::Vulkan);
     UpdateGPUAccuracyButton();
+    UpdateDockedButton();
     UpdateFilterText();
     UpdateAAText();
 }
@@ -3372,7 +3377,7 @@ void GMainWindow::CenterMouseCursor() {
     const int center_x = render_window->width() / 2;
     const int center_y = render_window->height() / 2;
 
-    QCursor::setPos(mapToGlobal({center_x, center_y}));
+    QCursor::setPos(mapToGlobal(QPoint{center_x, center_y}));
 }
 
 void GMainWindow::OnMouseActivity() {

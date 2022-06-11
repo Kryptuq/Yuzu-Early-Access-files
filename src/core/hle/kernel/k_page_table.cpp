@@ -542,6 +542,95 @@ ResultCode KPageTable::MakePageGroup(KPageLinkedList& pg, VAddr addr, size_t num
     return ResultSuccess;
 }
 
+bool KPageTable::IsValidPageGroup(const KPageLinkedList& pg_ll, VAddr addr, size_t num_pages) {
+    ASSERT(this->IsLockedByCurrentThread());
+
+    const size_t size = num_pages * PageSize;
+    const auto& pg = pg_ll.Nodes();
+    const auto& memory_layout = system.Kernel().MemoryLayout();
+
+    // Empty groups are necessarily invalid.
+    if (pg.empty()) {
+        return false;
+    }
+
+    // We're going to validate that the group we'd expect is the group we see.
+    auto cur_it = pg.begin();
+    PAddr cur_block_address = cur_it->GetAddress();
+    size_t cur_block_pages = cur_it->GetNumPages();
+
+    auto UpdateCurrentIterator = [&]() {
+        if (cur_block_pages == 0) {
+            if ((++cur_it) == pg.end()) {
+                return false;
+            }
+
+            cur_block_address = cur_it->GetAddress();
+            cur_block_pages = cur_it->GetNumPages();
+        }
+        return true;
+    };
+
+    // Begin traversal.
+    Common::PageTable::TraversalContext context;
+    Common::PageTable::TraversalEntry next_entry;
+    if (!page_table_impl.BeginTraversal(next_entry, context, addr)) {
+        return false;
+    }
+
+    // Prepare tracking variables.
+    PAddr cur_addr = next_entry.phys_addr;
+    size_t cur_size = next_entry.block_size - (cur_addr & (next_entry.block_size - 1));
+    size_t tot_size = cur_size;
+
+    // Iterate, comparing expected to actual.
+    while (tot_size < size) {
+        if (!page_table_impl.ContinueTraversal(next_entry, context)) {
+            return false;
+        }
+
+        if (next_entry.phys_addr != (cur_addr + cur_size)) {
+            const size_t cur_pages = cur_size / PageSize;
+
+            if (!IsHeapPhysicalAddress(memory_layout, cur_addr)) {
+                return false;
+            }
+
+            if (!UpdateCurrentIterator()) {
+                return false;
+            }
+
+            if (cur_block_address != cur_addr || cur_block_pages < cur_pages) {
+                return false;
+            }
+
+            cur_block_address += cur_size;
+            cur_block_pages -= cur_pages;
+            cur_addr = next_entry.phys_addr;
+            cur_size = next_entry.block_size;
+        } else {
+            cur_size += next_entry.block_size;
+        }
+
+        tot_size += next_entry.block_size;
+    }
+
+    // Ensure we compare the right amount for the last block.
+    if (tot_size > size) {
+        cur_size -= (tot_size - size);
+    }
+
+    if (!IsHeapPhysicalAddress(memory_layout, cur_addr)) {
+        return false;
+    }
+
+    if (!UpdateCurrentIterator()) {
+        return false;
+    }
+
+    return cur_block_address == cur_addr && cur_block_pages == (cur_size / PageSize);
+}
+
 ResultCode KPageTable::UnmapProcessMemory(VAddr dst_addr, std::size_t size,
                                           KPageTable& src_page_table, VAddr src_addr) {
     KScopedLightLock lk(general_lock);
@@ -1687,22 +1776,22 @@ ResultCode KPageTable::UnlockForDeviceAddressSpace(VAddr addr, std::size_t size)
     return ResultSuccess;
 }
 
-ResultCode KPageTable::LockForCodeMemory(VAddr addr, std::size_t size) {
+ResultCode KPageTable::LockForCodeMemory(KPageLinkedList* out, VAddr addr, std::size_t size) {
     return this->LockMemoryAndOpen(
-        nullptr, nullptr, addr, size, KMemoryState::FlagCanCodeMemory,
-        KMemoryState::FlagCanCodeMemory, KMemoryPermission::All, KMemoryPermission::UserReadWrite,
-        KMemoryAttribute::All, KMemoryAttribute::None,
+        out, nullptr, addr, size, KMemoryState::FlagCanCodeMemory, KMemoryState::FlagCanCodeMemory,
+        KMemoryPermission::All, KMemoryPermission::UserReadWrite, KMemoryAttribute::All,
+        KMemoryAttribute::None,
         static_cast<KMemoryPermission>(KMemoryPermission::NotMapped |
                                        KMemoryPermission::KernelReadWrite),
         KMemoryAttribute::Locked);
 }
 
-ResultCode KPageTable::UnlockForCodeMemory(VAddr addr, std::size_t size) {
-    return this->UnlockMemory(addr, size, KMemoryState::FlagCanCodeMemory,
-                              KMemoryState::FlagCanCodeMemory, KMemoryPermission::None,
-                              KMemoryPermission::None, KMemoryAttribute::All,
-                              KMemoryAttribute::Locked, KMemoryPermission::UserReadWrite,
-                              KMemoryAttribute::Locked, nullptr);
+ResultCode KPageTable::UnlockForCodeMemory(VAddr addr, std::size_t size,
+                                           const KPageLinkedList& pg) {
+    return this->UnlockMemory(
+        addr, size, KMemoryState::FlagCanCodeMemory, KMemoryState::FlagCanCodeMemory,
+        KMemoryPermission::None, KMemoryPermission::None, KMemoryAttribute::All,
+        KMemoryAttribute::Locked, KMemoryPermission::UserReadWrite, KMemoryAttribute::Locked, &pg);
 }
 
 ResultCode KPageTable::InitializeMemoryLayout(VAddr start, VAddr end) {
@@ -2121,7 +2210,7 @@ ResultCode KPageTable::UnlockMemory(VAddr addr, size_t size, KMemoryState state_
 
     // Check the page group.
     if (pg != nullptr) {
-        UNIMPLEMENTED_MSG("PageGroup support is unimplemented!");
+        R_UNLESS(this->IsValidPageGroup(*pg, addr, num_pages), ResultInvalidMemoryRegion);
     }
 
     // Decide on new perm and attr.

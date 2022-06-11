@@ -27,23 +27,18 @@ ResultCode KCodeMemory::Initialize(Core::DeviceMemory& device_memory, VAddr addr
     auto& page_table = m_owner->PageTable();
 
     // Construct the page group.
-    m_page_group =
-        KPageLinkedList(page_table.GetPhysicalAddr(addr), Common::DivideUp(size, PageSize));
+    m_page_group = {};
 
     // Lock the memory.
-    R_TRY(page_table.LockForCodeMemory(addr, size))
+    R_TRY(page_table.LockForCodeMemory(&m_page_group, addr, size))
 
     // Clear the memory.
-    //
-    // FIXME: this ends up clobbering address ranges outside the scope of the mapping within
-    // guest memory, and is not specifically required if the guest program is correctly
-    // written, so disable until this is further investigated.
-    //
-    // for (const auto& block : m_page_group.Nodes()) {
-    //     std::memset(device_memory.GetPointer(block.GetAddress()), 0xFF, block.GetSize());
-    // }
+    for (const auto& block : m_page_group.Nodes()) {
+        std::memset(device_memory.GetPointer(block.GetAddress()), 0xFF, block.GetSize());
+    }
 
     // Set remaining tracking members.
+    m_owner->Open();
     m_address = addr;
     m_is_initialized = true;
     m_is_owner_mapped = false;
@@ -57,8 +52,14 @@ void KCodeMemory::Finalize() {
     // Unlock.
     if (!m_is_mapped && !m_is_owner_mapped) {
         const size_t size = m_page_group.GetNumPages() * PageSize;
-        m_owner->PageTable().UnlockForCodeMemory(m_address, size);
+        m_owner->PageTable().UnlockForCodeMemory(m_address, size, m_page_group);
     }
+
+    // Close the page group.
+    m_page_group = {};
+
+    // Close our reference to our owner.
+    m_owner->Close();
 }
 
 ResultCode KCodeMemory::Map(VAddr address, size_t size) {
@@ -118,7 +119,8 @@ ResultCode KCodeMemory::MapToOwner(VAddr address, size_t size, Svc::MemoryPermis
         k_perm = KMemoryPermission::UserReadExecute;
         break;
     default:
-        break;
+        // Already validated by ControlCodeMemory svc
+        UNREACHABLE();
     }
 
     // Map the memory.

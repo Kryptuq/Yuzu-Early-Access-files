@@ -752,7 +752,7 @@ void GRenderWindow::mouseMoveEvent(QMouseEvent* event) {
     input_subsystem->GetMouse()->MouseMove(x, y, touch_x, touch_y, center_x, center_y);
 
     if (Settings::values.mouse_panning && !Settings::values.mouse_enabled) {
-        QCursor::setPos(mapToGlobal({center_x, center_y}));
+        QCursor::setPos(mapToGlobal(QPoint{center_x, center_y}));
     }
 
     emit MouseActivity();

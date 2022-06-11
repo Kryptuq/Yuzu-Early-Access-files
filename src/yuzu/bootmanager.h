@@ -10,6 +10,7 @@
 #include <mutex>
 
 #include <QImage>
+#include <QStringList>
 #include <QThread>
 #include <QTouchEvent>
 #include <QWidget>
@@ -20,7 +21,6 @@
 class GRenderWindow;
 class GMainWindow;
 class QKeyEvent;
-class QStringList;
 
 namespace Core {
 enum class SystemResultStatus : u32;
