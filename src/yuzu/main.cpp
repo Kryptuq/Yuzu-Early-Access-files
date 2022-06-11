@@ -52,7 +52,6 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #define QT_NO_OPENGL
 #include <QClipboard>
 #include <QDesktopServices>
-#include <QDesktopWidget>
 #include <QFile>
 #include <QFileDialog>
 #include <QInputDialog>
@@ -60,6 +59,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include <QProgressBar>
 #include <QProgressDialog>
 #include <QPushButton>
+#include <QScreen>
 #include <QShortcut>
 #include <QStatusBar>
 #include <QString>
@@ -199,6 +199,34 @@ static void RemoveCachedContents() {
     Common::FS::RemoveDirRecursively(offline_system_data);
 }
 
+static void LogRuntimes() {
+#ifdef _MSC_VER
+    // It is possible that the name of the dll will change.
+    // vcruntime140.dll is for 2015 and onwards
+    constexpr char runtime_dll_name[] = "vcruntime140.dll";
+    UINT sz = GetFileVersionInfoSizeA(runtime_dll_name, nullptr);
+    bool runtime_version_inspection_worked = false;
+    if (sz > 0) {
+        std::vector<u8> buf(sz);
+        if (GetFileVersionInfoA(runtime_dll_name, 0, sz, buf.data())) {
+            VS_FIXEDFILEINFO* pvi;
+            sz = sizeof(VS_FIXEDFILEINFO);
+            if (VerQueryValueA(buf.data(), "\\", reinterpret_cast<LPVOID*>(&pvi), &sz)) {
+                if (pvi->dwSignature == VS_FFI_SIGNATURE) {
+                    runtime_version_inspection_worked = true;
+                    LOG_INFO(Frontend, "MSVC Compiler: {} Runtime: {}.{}.{}.{}", _MSC_VER,
+                             pvi->dwProductVersionMS >> 16, pvi->dwProductVersionMS & 0xFFFF,
+                             pvi->dwProductVersionLS >> 16, pvi->dwProductVersionLS & 0xFFFF);
+                }
+            }
+        }
+    }
+    if (!runtime_version_inspection_worked) {
+        LOG_INFO(Frontend, "Unable to inspect {}", runtime_dll_name);
+    }
+#endif
+}
+
 static QString PrettyProductName() {
 #ifdef _WIN32
     // After Windows 10 Version 2004, Microsoft decided to switch to a different notation: 20H2
@@ -269,6 +297,7 @@ GMainWindow::GMainWindow()
     const auto yuzu_build_version = override_build.empty() ? yuzu_build : override_build;
 
     LOG_INFO(Frontend, "yuzu Version: {}", yuzu_build_version);
+    LogRuntimes();
 #ifdef ARCHITECTURE_x86_64
     const auto& caps = Common::GetCPUCaps();
     std::string cpu_string = caps.cpu_string;
@@ -1044,7 +1073,7 @@ void GMainWindow::InitializeHotkeys() {
 
 void GMainWindow::SetDefaultUIGeometry() {
     // geometry: 53% of the window contents are in the upper screen half, 47% in the lower half
-    const QRect screenRect = QApplication::desktop()->screenGeometry(this);
+    const QRect screenRect = QGuiApplication::primaryScreen()->geometry();
 
     const int w = screenRect.width() * 2 / 3;
     const int h = screenRect.height() * 2 / 3;
@@ -2627,6 +2656,18 @@ void GMainWindow::ToggleFullscreen() {
     }
 }
 
+// We're going to return the screen that the given window has the most pixels on
+static QScreen* GuessCurrentScreen(QWidget* window) {
+    const QList<QScreen*> screens = QGuiApplication::screens();
+    return *std::max_element(
+        screens.cbegin(), screens.cend(), [window](const QScreen* left, const QScreen* right) {
+            const QSize left_size = left->geometry().intersected(window->geometry()).size();
+            const QSize right_size = right->geometry().intersected(window->geometry()).size();
+            return (left_size.height() * left_size.width()) <
+                   (right_size.height() * right_size.width());
+        });
+}
+
 void GMainWindow::ShowFullscreen() {
     const auto show_fullscreen = [](QWidget* window) {
         if (Settings::values.fullscreen_mode.GetValue() == Settings::FullscreenMode::Exclusive) {
@@ -2635,7 +2676,7 @@ void GMainWindow::ShowFullscreen() {
         }
         window->hide();
         window->setWindowFlags(window->windowFlags() | Qt::FramelessWindowHint);
-        const auto screen_geometry = QApplication::desktop()->screenGeometry(window);
+        const auto screen_geometry = GuessCurrentScreen(window)->geometry();
         window->setGeometry(screen_geometry.x(), screen_geometry.y(), screen_geometry.width(),
                             screen_geometry.height() + 1);
         window->raise();

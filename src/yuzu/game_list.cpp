@@ -870,7 +870,7 @@ GameListPlaceholder::GameListPlaceholder(GMainWindow* parent) : QWidget{parent} 
     layout->setAlignment(Qt::AlignCenter);
     image->setPixmap(QIcon::fromTheme(QStringLiteral("plus_folder")).pixmap(200));
 
-    text->setText(tr("Double-click to add a new folder to the game list"));
+    RetranslateUI();
     QFont font = text->font();
     font.setPointSize(20);
     text->setFont(font);
@@ -890,4 +890,16 @@ void GameListPlaceholder::onUpdateThemedIcons() {
 
 void GameListPlaceholder::mouseDoubleClickEvent(QMouseEvent* event) {
     emit GameListPlaceholder::AddDirectory();
+}
+
+void GameListPlaceholder::changeEvent(QEvent* event) {
+    if (event->type() == QEvent::LanguageChange) {
+        RetranslateUI();
+    }
+
+    QWidget::changeEvent(event);
+}
+
+void GameListPlaceholder::RetranslateUI() {
+    text->setText(tr("Double-click to add a new folder to the game list"));
 }
