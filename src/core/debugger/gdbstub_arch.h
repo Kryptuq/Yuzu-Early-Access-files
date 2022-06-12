@@ -15,6 +15,7 @@ namespace Core {
 
 class GDBStubArch {
 public:
+    virtual ~GDBStubArch() = default;
     virtual std::string GetTargetXML() const = 0;
     virtual std::string RegRead(const Kernel::KThread* thread, size_t id) const = 0;
     virtual void RegWrite(Kernel::KThread* thread, size_t id, std::string_view value) const = 0;
