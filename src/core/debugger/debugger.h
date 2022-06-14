@@ -35,6 +35,11 @@ public:
      */
     bool NotifyThreadStopped(Kernel::KThread* thread);
 
+    /**
+     * Notify the debugger that a shutdown is being performed now and disconnect.
+     */
+    void NotifyShutdown();
+
 private:
     std::unique_ptr<DebuggerImpl> impl;
 };

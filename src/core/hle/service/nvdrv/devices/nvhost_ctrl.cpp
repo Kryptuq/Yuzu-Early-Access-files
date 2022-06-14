@@ -150,9 +150,9 @@ NvResult nvhost_ctrl::IocCtrlEventWait(const std::vector<u8>& input, std::vector
     event.event->GetWritableEvent().Clear();
     if (events_interface.failed[event_id]) {
         {
-            auto lk = system.StallCPU();
+            auto lk = system.StallProcesses();
             gpu.WaitFence(params.syncpt_id, target_value);
-            system.UnstallCPU();
+            system.UnstallProcesses();
         }
         std::memcpy(output.data(), &params, sizeof(params));
         events_interface.failed[event_id] = false;

@@ -275,11 +275,15 @@ void KProcess::RemoveSharedMemory(KSharedMemory* shmem, [[maybe_unused]] VAddr a
     shmem->Close();
 }
 
-void KProcess::RegisterThread(const KThread* thread) {
+void KProcess::RegisterThread(KThread* thread) {
+    KScopedLightLock lk{list_lock};
+
     thread_list.push_back(thread);
 }
 
-void KProcess::UnregisterThread(const KThread* thread) {
+void KProcess::UnregisterThread(KThread* thread) {
+    KScopedLightLock lk{list_lock};
+
     thread_list.remove(thread);
 }
 
@@ -294,6 +298,50 @@ ResultCode KProcess::Reset() {
 
     // Clear signaled.
     is_signaled = false;
+    return ResultSuccess;
+}
+
+ResultCode KProcess::SetActivity(ProcessActivity activity) {
+    // Lock ourselves and the scheduler.
+    KScopedLightLock lk{state_lock};
+    KScopedLightLock list_lk{list_lock};
+    KScopedSchedulerLock sl{kernel};
+
+    // Validate our state.
+    R_UNLESS(status != ProcessStatus::Exiting, ResultInvalidState);
+    R_UNLESS(status != ProcessStatus::Exited, ResultInvalidState);
+
+    // Either pause or resume.
+    if (activity == ProcessActivity::Paused) {
+        // Verify that we're not suspended.
+        if (is_suspended) {
+            return ResultInvalidState;
+        }
+
+        // Suspend all threads.
+        for (auto* thread : GetThreadList()) {
+            thread->RequestSuspend(SuspendType::Process);
+        }
+
+        // Set ourselves as suspended.
+        SetSuspended(true);
+    } else {
+        ASSERT(activity == ProcessActivity::Runnable);
+
+        // Verify that we're suspended.
+        if (!is_suspended) {
+            return ResultInvalidState;
+        }
+
+        // Resume all threads.
+        for (auto* thread : GetThreadList()) {
+            thread->Resume(SuspendType::Process);
+        }
+
+        // Set ourselves as resumed.
+        SetSuspended(false);
+    }
+
     return ResultSuccess;
 }
 
@@ -556,9 +604,10 @@ bool KProcess::IsSignaled() const {
 }
 
 KProcess::KProcess(KernelCore& kernel_)
-    : KAutoObjectWithSlabHeapAndContainer{kernel_},
-      page_table{std::make_unique<KPageTable>(kernel_.System())}, handle_table{kernel_},
-      address_arbiter{kernel_.System()}, condition_var{kernel_.System()}, state_lock{kernel_} {}
+    : KAutoObjectWithSlabHeapAndContainer{kernel_}, page_table{std::make_unique<KPageTable>(
+                                                        kernel_.System())},
+      handle_table{kernel_}, address_arbiter{kernel_.System()}, condition_var{kernel_.System()},
+      state_lock{kernel_}, list_lock{kernel_} {}
 
 KProcess::~KProcess() = default;
 

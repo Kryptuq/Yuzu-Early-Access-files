@@ -267,15 +267,15 @@ ResultCode KThread::InitializeDummyThread(KThread* thread) {
 ResultCode KThread::InitializeIdleThread(Core::System& system, KThread* thread, s32 virt_core) {
     return InitializeThread(thread, {}, {}, {}, IdleThreadPriority, virt_core, {}, ThreadType::Main,
                             Core::CpuManager::GetIdleThreadStartFunc(),
-                            system.GetCpuManager().GetStartFuncParamater());
+                            system.GetCpuManager().GetStartFuncParameter());
 }
 
 ResultCode KThread::InitializeHighPriorityThread(Core::System& system, KThread* thread,
                                                  KThreadFunction func, uintptr_t arg,
                                                  s32 virt_core) {
     return InitializeThread(thread, func, arg, {}, {}, virt_core, nullptr, ThreadType::HighPriority,
-                            Core::CpuManager::GetSuspendThreadStartFunc(),
-                            system.GetCpuManager().GetStartFuncParamater());
+                            Core::CpuManager::GetShutdownThreadStartFunc(),
+                            system.GetCpuManager().GetStartFuncParameter());
 }
 
 ResultCode KThread::InitializeUserThread(Core::System& system, KThread* thread,
@@ -284,7 +284,7 @@ ResultCode KThread::InitializeUserThread(Core::System& system, KThread* thread,
     system.Kernel().GlobalSchedulerContext().AddThread(thread);
     return InitializeThread(thread, func, arg, user_stack_top, prio, virt_core, owner,
                             ThreadType::User, Core::CpuManager::GetGuestThreadStartFunc(),
-                            system.GetCpuManager().GetStartFuncParamater());
+                            system.GetCpuManager().GetStartFuncParameter());
 }
 
 void KThread::PostDestroy(uintptr_t arg) {

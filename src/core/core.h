@@ -160,8 +160,11 @@ public:
     /// Shutdown the emulated system.
     void Shutdown();
 
-    std::unique_lock<std::mutex> StallCPU();
-    void UnstallCPU();
+    /// Forcibly detach the debugger if it is running.
+    void DetachDebugger();
+
+    std::unique_lock<std::mutex> StallProcesses();
+    void UnstallProcesses();
 
     /**
      * Initialize the debugger.

@@ -411,7 +411,7 @@ void MacroJITx64Impl::Compile_Branch(Macro::Opcode opcode) {
 
     Xbyak::Label end;
     auto value = Compile_GetRegister(opcode.src_a, eax);
-    test(value, value);
+    cmp(value, 0); // test(value, value);
     if (optimizer.has_delayed_pc) {
         switch (opcode.branch_condition) {
         case Macro::BranchCondition::Zero:

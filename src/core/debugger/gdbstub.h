@@ -23,6 +23,7 @@ public:
 
     void Connected() override;
     void Stopped(Kernel::KThread* thread) override;
+    void ShuttingDown() override;
     std::vector<DebuggerAction> ClientData(std::span<const u8> data) override;
 
 private:

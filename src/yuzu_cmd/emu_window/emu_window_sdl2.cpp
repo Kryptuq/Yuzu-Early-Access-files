@@ -162,7 +162,15 @@ void EmuWindow_SDL2::WaitEvent() {
     SDL_Event event;
 
     if (!SDL_WaitEvent(&event)) {
-        LOG_CRITICAL(Frontend, "SDL_WaitEvent failed: {}", SDL_GetError());
+        const char* error = SDL_GetError();
+        if (!error || strcmp(error, "") == 0) {
+            // https://github.com/libsdl-org/SDL/issues/5780
+            // Sometimes SDL will return without actually having hit an error condition;
+            // just ignore it in this case.
+            return;
+        }
+
+        LOG_CRITICAL(Frontend, "SDL_WaitEvent failed: {}", error);
         exit(1);
     }
 

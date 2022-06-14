@@ -106,6 +106,8 @@ GDBStub::~GDBStub() = default;
 
 void GDBStub::Connected() {}
 
+void GDBStub::ShuttingDown() {}
+
 void GDBStub::Stopped(Kernel::KThread* thread) {
     SendReply(arch->ThreadStatus(thread, GDB_STUB_SIGTRAP));
 }

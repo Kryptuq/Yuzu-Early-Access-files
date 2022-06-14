@@ -2530,7 +2530,7 @@ static ResultCode GetThreadList(Core::System& system, u32* out_num_threads, VAdd
         return ResultOutOfRange;
     }
 
-    const auto* const current_process = system.Kernel().CurrentProcess();
+    auto* const current_process = system.Kernel().CurrentProcess();
     const auto total_copy_size = out_thread_ids_size * sizeof(u64);
 
     if (out_thread_ids_size > 0 &&

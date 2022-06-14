@@ -437,6 +437,11 @@ disable_macro_jit=false
 # Presents guest frames as they become available. Experimental.
 # false: Disabled (default), true: Enabled
 disable_fps_limit=false
+# Determines whether to enable the GDB stub and wait for the debugger to attach before running.
+# false: Disabled (default), true: Enabled
+use_gdbstub=false
+# The port to use for the GDB server, if it is enabled.
+gdbstub_port=6543
 
 [WebService]
 # Whether or not to enable telemetry

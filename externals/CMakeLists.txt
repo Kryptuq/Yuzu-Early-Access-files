@@ -40,6 +40,11 @@ target_include_directories(mbedtls PUBLIC ./mbedtls/include)
 add_library(microprofile INTERFACE)
 target_include_directories(microprofile INTERFACE ./microprofile)
 
+# GCC bugs
+if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "12" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND MINGW)
+    target_compile_options(microprofile INTERFACE "-Wno-array-bounds")
+endif()
+
 # libusb
 if (NOT LIBUSB_FOUND OR YUZU_USE_BUNDLED_LIBUSB)
     add_subdirectory(libusb)

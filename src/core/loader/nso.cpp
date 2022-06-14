@@ -128,11 +128,10 @@ std::optional<VAddr> AppLoader_NSO::LoadModule(Kernel::KProcess& process, Core::
 
     // Apply patches if necessary
     if (pm && (pm->HasNSOPatch(nso_header.build_id) || Settings::values.dump_nso)) {
-        std::vector<u8> pi_header;
-        pi_header.insert(pi_header.begin(), reinterpret_cast<u8*>(&nso_header),
-                         reinterpret_cast<u8*>(&nso_header) + sizeof(NSOHeader));
-        pi_header.insert(pi_header.begin() + sizeof(NSOHeader), program_image.data(),
-                         program_image.data() + program_image.size());
+        std::vector<u8> pi_header(sizeof(NSOHeader) + program_image.size());
+        std::memcpy(pi_header.data(), &nso_header, sizeof(NSOHeader));
+        std::memcpy(pi_header.data() + sizeof(NSOHeader), program_image.data(),
+                    program_image.size());
 
         pi_header = pm->PatchNSO(pi_header, nso_file.GetName());
 

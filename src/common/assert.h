@@ -4,47 +4,36 @@
 
 #pragma once
 
-#include <functional>
-
 #include "common/logging/log.h"
 
 // Sometimes we want to try to continue even after hitting an assert.
 // However touching this file yields a global recompilation as this header is included almost
 // everywhere. So let's just move the handling of the failed assert to a single cpp file.
 
-// For asserts we'd like to keep all the junk executed when an assert happens away from the
-// important code in the function. One way of doing this is to put all the relevant code inside a
-// lambda and force the compiler to not inline it.
-void assert_check_condition(bool cond, std::function<void()>&& on_failure);
-
+void assert_fail_impl();
 [[noreturn]] void unreachable_impl();
 
+#ifdef _MSC_VER
+#define YUZU_NO_INLINE __declspec(noinline)
+#else
+#define YUZU_NO_INLINE __attribute__((noinline))
+#endif
+
 #define ASSERT(_a_)                                                                                \
-    do {                                                                                           \
-        if (std::is_constant_evaluated()) {                                                        \
-            if (!(_a_)) {                                                                          \
-                /* Will trigger compile error here */                                              \
-                assert_check_condition(bool(_a_),                                                  \
-                                       [] { LOG_CRITICAL(Debug, "Assertion Failed!"); });          \
-            }                                                                                      \
-        } else {                                                                                   \
-            assert_check_condition(bool(_a_), [] { LOG_CRITICAL(Debug, "Assertion Failed!"); });   \
+    ([&]() YUZU_NO_INLINE {                                                                        \
+        if (!(_a_)) [[unlikely]] {                                                                 \
+            LOG_CRITICAL(Debug, "Assertion Failed!");                                              \
+            assert_fail_impl();                                                                    \
         }                                                                                          \
-    } while (0)
+    }())
 
 #define ASSERT_MSG(_a_, ...)                                                                       \
-    do {                                                                                           \
-        if (std::is_constant_evaluated()) {                                                        \
-            if (!(_a_)) {                                                                          \
-                /* Will trigger compile error here */                                              \
-                assert_check_condition(bool(_a_),                                                  \
-                                       [] { LOG_CRITICAL(Debug, "Assertion Failed!"); });          \
-            }                                                                                      \
-        } else {                                                                                   \
-            assert_check_condition(                                                                \
-                bool(_a_), [&] { LOG_CRITICAL(Debug, "Assertion Failed!\n" __VA_ARGS__); });       \
+    ([&]() YUZU_NO_INLINE {                                                                        \
+        if (!(_a_)) [[unlikely]] {                                                                 \
+            LOG_CRITICAL(Debug, "Assertion Failed!\n" __VA_ARGS__);                                \
+            assert_fail_impl();                                                                    \
         }                                                                                          \
-    } while (0)
+    }())
 
 #define UNREACHABLE()                                                                              \
     do {                                                                                           \

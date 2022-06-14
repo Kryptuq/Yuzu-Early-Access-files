@@ -184,6 +184,8 @@ public:
 
     const std::array<Core::CPUInterruptHandler, Core::Hardware::NUM_CPU_CORES>& Interrupts() const;
 
+    void InterruptAllPhysicalCores();
+
     void InvalidateAllInstructionCaches();
 
     void InvalidateCpuInstructionCacheRange(VAddr addr, std::size_t size);
@@ -269,11 +271,14 @@ public:
     /// Gets the shared memory object for HIDBus services.
     const Kernel::KSharedMemory& GetHidBusSharedMem() const;
 
-    /// Suspend/unsuspend the OS.
-    void Suspend(bool in_suspention);
+    /// Suspend/unsuspend all processes.
+    void Suspend(bool suspend);
 
-    /// Exceptional exit the OS.
+    /// Exceptional exit all processes.
     void ExceptionalExit();
+
+    /// Notify emulated CPU cores to shut down.
+    void ShutdownCores();
 
     bool IsMulticore() const;
 

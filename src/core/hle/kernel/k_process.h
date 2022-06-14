@@ -63,6 +63,11 @@ enum class ProcessStatus {
     DebugBreak,
 };
 
+enum class ProcessActivity : u32 {
+    Runnable,
+    Paused,
+};
+
 class KProcess final : public KAutoObjectWithSlabHeapAndContainer<KProcess, KWorkerTask> {
     KERNEL_AUTOOBJECT_TRAITS(KProcess, KSynchronizationObject);
 
@@ -282,17 +287,17 @@ public:
     u64 GetTotalPhysicalMemoryUsedWithoutSystemResource() const;
 
     /// Gets the list of all threads created with this process as their owner.
-    const std::list<const KThread*>& GetThreadList() const {
+    std::list<KThread*>& GetThreadList() {
         return thread_list;
     }
 
     /// Registers a thread as being created under this process,
     /// adding it to this process' thread list.
-    void RegisterThread(const KThread* thread);
+    void RegisterThread(KThread* thread);
 
     /// Unregisters a thread from this process, removing it
     /// from this process' thread list.
-    void UnregisterThread(const KThread* thread);
+    void UnregisterThread(KThread* thread);
 
     /// Clears the signaled state of the process if and only if it's signaled.
     ///
@@ -346,6 +351,8 @@ public:
     bool IsSignaled() const override;
 
     void DoWorkerTaskImpl();
+
+    ResultCode SetActivity(ProcessActivity activity);
 
     void PinCurrentThread(s32 core_id);
     void UnpinCurrentThread(s32 core_id);
@@ -442,7 +449,7 @@ private:
     std::array<u64, RANDOM_ENTROPY_SIZE> random_entropy{};
 
     /// List of threads that are running with this process as their owner.
-    std::list<const KThread*> thread_list;
+    std::list<KThread*> thread_list;
 
     /// List of shared memory that are running with this process as their owner.
     std::list<KSharedMemoryInfo*> shared_memory_list;
@@ -475,6 +482,7 @@ private:
     KThread* exception_thread{};
 
     KLightLock state_lock;
+    KLightLock list_lock;
 
     using TLPTree =
         Common::IntrusiveRedBlackTreeBaseTraits<KThreadLocalPage>::TreeType<KThreadLocalPage>;

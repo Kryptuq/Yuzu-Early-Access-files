@@ -6,13 +6,9 @@
 
 #include "common/settings.h"
 
-void assert_check_condition(bool cond, std::function<void()>&& on_failure) {
-    if (!cond) [[unlikely]] {
-        on_failure();
-
-        if (Settings::values.use_debug_asserts) {
-            Crash();
-        }
+void assert_fail_impl() {
+    if (Settings::values.use_debug_asserts) {
+        Crash();
     }
 }
 

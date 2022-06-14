@@ -46,12 +46,10 @@ public:
     void Initialize();
     void Shutdown();
 
-    void Pause(bool paused);
-
     static std::function<void(void*)> GetGuestThreadStartFunc();
     static std::function<void(void*)> GetIdleThreadStartFunc();
-    static std::function<void(void*)> GetSuspendThreadStartFunc();
-    void* GetStartFuncParamater();
+    static std::function<void(void*)> GetShutdownThreadStartFunc();
+    void* GetStartFuncParameter();
 
     void PreemptSingleCore(bool from_running_enviroment = true);
 
@@ -63,31 +61,25 @@ private:
     static void GuestThreadFunction(void* cpu_manager);
     static void GuestRewindFunction(void* cpu_manager);
     static void IdleThreadFunction(void* cpu_manager);
-    static void SuspendThreadFunction(void* cpu_manager);
+    static void ShutdownThreadFunction(void* cpu_manager);
 
     void MultiCoreRunGuestThread();
     void MultiCoreRunGuestLoop();
     void MultiCoreRunIdleThread();
-    void MultiCoreRunSuspendThread();
 
     void SingleCoreRunGuestThread();
     void SingleCoreRunGuestLoop();
     void SingleCoreRunIdleThread();
-    void SingleCoreRunSuspendThread();
 
     static void ThreadStart(std::stop_token stop_token, CpuManager& cpu_manager, std::size_t core);
 
-    void RunThread(std::stop_token stop_token, std::size_t core);
+    void ShutdownThread();
+    void RunThread(std::size_t core);
 
     struct CoreData {
         std::shared_ptr<Common::Fiber> host_context;
         std::jthread host_thread;
     };
-
-    std::atomic<bool> running_mode{};
-    std::atomic<bool> pause_state{};
-    std::unique_ptr<Common::Barrier> pause_barrier{};
-    std::mutex pause_lock{};
 
     std::array<CoreData, Core::Hardware::NUM_CPU_CORES> core_data{};
 
@@ -95,6 +87,7 @@ private:
     bool is_multicore{};
     std::atomic<std::size_t> current_core{};
     std::size_t idle_count{};
+    std::size_t num_cores{};
     static constexpr std::size_t max_cycle_runs = 5;
 
     System& system;

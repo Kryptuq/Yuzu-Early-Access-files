@@ -67,6 +67,11 @@ public:
     virtual void Stopped(Kernel::KThread* thread) = 0;
 
     /**
+     * Called when emulation is shutting down.
+     */
+    virtual void ShuttingDown() = 0;
+
+    /**
      * Called when new data is asynchronously received on the client socket.
      * A list of actions to perform is returned.
      */
