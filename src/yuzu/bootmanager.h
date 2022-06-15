@@ -56,12 +56,12 @@ public:
 
     /**
      * Sets whether the emulation thread is running or not
-     * @param running Boolean value, set the emulation thread to running if true
+     * @param running_ Boolean value, set the emulation thread to running if true
      * @note This function is thread-safe
      */
-    void SetRunning(bool running) {
+    void SetRunning(bool running_) {
         std::unique_lock lock{running_mutex};
-        this->running = running;
+        running = running_;
         lock.unlock();
         running_cv.notify_all();
         if (!running) {
@@ -138,8 +138,8 @@ public:
 
     void BackupGeometry();
     void RestoreGeometry();
-    void restoreGeometry(const QByteArray& geometry); // overridden
-    QByteArray saveGeometry();                        // overridden
+    void restoreGeometry(const QByteArray& geometry_); // overridden
+    QByteArray saveGeometry();                         // overridden
 
     qreal windowPixelRatio() const;
 
@@ -189,7 +189,7 @@ public:
     void Exit();
 
 public slots:
-    void OnEmulationStarting(EmuThread* emu_thread);
+    void OnEmulationStarting(EmuThread* emu_thread_);
     void OnEmulationStopping();
     void OnFramebufferSizeChanged();
 

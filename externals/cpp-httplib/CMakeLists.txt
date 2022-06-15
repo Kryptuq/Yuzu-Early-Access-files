@@ -60,27 +60,11 @@
 ]]
 cmake_minimum_required(VERSION 3.14.0 FATAL_ERROR)
 
-# On systems without Git installed, there were errors since execute_process seemed to not throw an error without it?
-find_package(Git QUIET)
-if(Git_FOUND)
-	# Gets the latest tag as a string like "v0.6.6"
-	# Can silently fail if git isn't on the system
-	execute_process(COMMAND ${GIT_EXECUTABLE} describe --tags --abbrev=0
-		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-		OUTPUT_VARIABLE _raw_version_string
-		ERROR_VARIABLE _git_tag_error
-	)
-endif()
+# Get the CPPHTTPLIB_VERSION value and use it as a version
+# This gets the string with the CPPHTTPLIB_VERSION value from the header.
+# This is so the maintainer doesn't actually need to update this manually.
+file(STRINGS httplib.h _raw_version_string REGEX "CPPHTTPLIB_VERSION \"([0-9]+\\.[0-9]+\\.[0-9]+)\"")
 
-# execute_process can fail silenty, so check for an error
-# if there was an error, just use the user agent as a version
-if(_git_tag_error OR NOT Git_FOUND)
-	message(WARNING "cpp-httplib failed to find the latest Git tag, falling back to using user agent as the version.")
-	# Get the user agent and use it as a version
-	# This gets the string with the user agent from the header.
-	# This is so the maintainer doesn't actually need to update this manually.
-	file(STRINGS httplib.h _raw_version_string REGEX "User\-Agent.*cpp\-httplib/([0-9]+\.?)+")
-endif()
 # Needed since git tags have "v" prefixing them.
 # Also used if the fallback to user agent string is being used.
 string(REGEX MATCH "([0-9]+\\.?)+" _httplib_version "${_raw_version_string}")
@@ -116,6 +100,7 @@ if (BUILD_SHARED_LIBS AND WIN32 AND HTTPLIB_COMPILE)
 endif()
 
 # Threads needed for <thread> on some systems, and for <pthread.h> on Linux
+set(THREADS_PREFER_PTHREAD_FLAG true)
 find_package(Threads REQUIRED)
 # Since Cmake v3.11, Crypto & SSL became optional when not specified as COMPONENTS.
 if(HTTPLIB_REQUIRE_OPENSSL)
@@ -176,7 +161,7 @@ if(HTTPLIB_COMPILE)
 		ERROR_VARIABLE _httplib_split_error
 	)
 	if(_httplib_split_error)
-		message(FATAL_ERROR "Failed when trying to split Cpp-httplib with the Python script.\n${_httplib_split_error}")
+		message(FATAL_ERROR "Failed when trying to split cpp-httplib with the Python script.\n${_httplib_split_error}")
 	endif()
 
 	# split.py puts output in "out"
@@ -188,6 +173,11 @@ if(HTTPLIB_COMPILE)
 			$<BUILD_INTERFACE:${_httplib_build_includedir}/httplib.h>
 			$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/httplib.h>
 	)
+	set_target_properties(${PROJECT_NAME}
+		PROPERTIES
+			VERSION ${${PROJECT_NAME}_VERSION}
+			SOVERSION ${${PROJECT_NAME}_VERSION_MAJOR}
+	)
 else()
 	# This is for header-only.
 	set(_INTERFACE_OR_PUBLIC INTERFACE)
@@ -198,19 +188,9 @@ endif()
 # Only useful if building in-tree, versus using it from an installation.
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
-# Might be missing some, but this list is somewhat comprehensive
+# Require C++11
 target_compile_features(${PROJECT_NAME} ${_INTERFACE_OR_PUBLIC}
 	cxx_std_11
-	cxx_nullptr
-	cxx_lambdas
-	cxx_override
-	cxx_defaulted_functions
-	cxx_attribute_deprecated
-	cxx_auto_type
-	cxx_decltype
-	cxx_deleted_functions
-	cxx_range_for
-	cxx_sizeof_member
 )
 
 target_include_directories(${PROJECT_NAME} ${_INTERFACE_OR_PUBLIC}
@@ -285,11 +265,9 @@ endif()
 # and linkage information (doesn't find deps though).
 install(TARGETS ${PROJECT_NAME}
 	EXPORT httplibTargets
-	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
-install(FILES "${_httplib_build_includedir}/httplib.h" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES "${_httplib_build_includedir}/httplib.h" TYPE INCLUDE)
 
 install(FILES
 		"${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"

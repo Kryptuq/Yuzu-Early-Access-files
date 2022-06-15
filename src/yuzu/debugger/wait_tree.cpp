@@ -113,9 +113,9 @@ QString WaitTreeText::GetText() const {
     return text;
 }
 
-WaitTreeMutexInfo::WaitTreeMutexInfo(VAddr mutex_address, const Kernel::KHandleTable& handle_table,
+WaitTreeMutexInfo::WaitTreeMutexInfo(VAddr mutex_address_, const Kernel::KHandleTable& handle_table,
                                      Core::System& system_)
-    : mutex_address(mutex_address), system{system_} {
+    : mutex_address{mutex_address_}, system{system_} {
     mutex_value = system.Memory().Read32(mutex_address);
     owner_handle = static_cast<Kernel::Handle>(mutex_value & Kernel::Svc::HandleWaitMask);
     owner = handle_table.GetObject<Kernel::KThread>(owner_handle).GetPointerUnsafe();
@@ -140,8 +140,8 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeMutexInfo::GetChildren() cons
     return list;
 }
 
-WaitTreeCallstack::WaitTreeCallstack(const Kernel::KThread& thread, Core::System& system_)
-    : thread(thread), system{system_} {}
+WaitTreeCallstack::WaitTreeCallstack(const Kernel::KThread& thread_, Core::System& system_)
+    : thread{thread_}, system{system_} {}
 WaitTreeCallstack::~WaitTreeCallstack() = default;
 
 QString WaitTreeCallstack::GetText() const {
@@ -171,8 +171,8 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeCallstack::GetChildren() cons
 }
 
 WaitTreeSynchronizationObject::WaitTreeSynchronizationObject(
-    const Kernel::KSynchronizationObject& o, Core::System& system_)
-    : object(o), system{system_} {}
+    const Kernel::KSynchronizationObject& object_, Core::System& system_)
+    : object{object_}, system{system_} {}
 WaitTreeSynchronizationObject::~WaitTreeSynchronizationObject() = default;
 
 WaitTreeExpandableItem::WaitTreeExpandableItem() = default;
@@ -380,8 +380,8 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeThread::GetChildren() const {
     return list;
 }
 
-WaitTreeEvent::WaitTreeEvent(const Kernel::KReadableEvent& object, Core::System& system_)
-    : WaitTreeSynchronizationObject(object, system_) {}
+WaitTreeEvent::WaitTreeEvent(const Kernel::KReadableEvent& object_, Core::System& system_)
+    : WaitTreeSynchronizationObject(object_, system_) {}
 WaitTreeEvent::~WaitTreeEvent() = default;
 
 WaitTreeThreadList::WaitTreeThreadList(std::vector<Kernel::KThread*>&& list, Core::System& system_)

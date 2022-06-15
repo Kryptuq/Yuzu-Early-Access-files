@@ -18,7 +18,7 @@ class InputSubsystem;
 
 class EmuWindow_SDL2_VK final : public EmuWindow_SDL2 {
 public:
-    explicit EmuWindow_SDL2_VK(InputCommon::InputSubsystem* input_subsystem, Core::System& system,
+    explicit EmuWindow_SDL2_VK(InputCommon::InputSubsystem* input_subsystem_, Core::System& system,
                                bool fullscreen);
     ~EmuWindow_SDL2_VK() override;
 

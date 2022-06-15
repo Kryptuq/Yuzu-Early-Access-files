@@ -28,8 +28,8 @@
 #include "yuzu/uisettings.h"
 #include "yuzu/util/controller_navigation.h"
 
-GameListSearchField::KeyReleaseEater::KeyReleaseEater(GameList* gamelist, QObject* parent)
-    : QObject(parent), gamelist{gamelist} {}
+GameListSearchField::KeyReleaseEater::KeyReleaseEater(GameList* gamelist_, QObject* parent)
+    : QObject(parent), gamelist{gamelist_} {}
 
 // EventFilter in order to process systemkeys while editing the searchfield
 bool GameListSearchField::KeyReleaseEater::eventFilter(QObject* obj, QEvent* event) {
@@ -80,9 +80,9 @@ bool GameListSearchField::KeyReleaseEater::eventFilter(QObject* obj, QEvent* eve
     return QObject::eventFilter(obj, event);
 }
 
-void GameListSearchField::setFilterResult(int visible, int total) {
-    this->visible = visible;
-    this->total = total;
+void GameListSearchField::setFilterResult(int visible_, int total_) {
+    visible = visible_;
+    total = total_;
 
     label_filter_result->setText(tr("%1 of %n result(s)", "", total).arg(visible));
 }
@@ -309,9 +309,9 @@ void GameList::OnFilterCloseClicked() {
     main_window->filterBarSetChecked(false);
 }
 
-GameList::GameList(FileSys::VirtualFilesystem vfs, FileSys::ManualContentProvider* provider,
+GameList::GameList(FileSys::VirtualFilesystem vfs_, FileSys::ManualContentProvider* provider_,
                    Core::System& system_, GMainWindow* parent)
-    : QWidget{parent}, vfs(std::move(vfs)), provider(provider), system{system_} {
+    : QWidget{parent}, vfs{std::move(vfs_)}, provider{provider_}, system{system_} {
     watcher = new QFileSystemWatcher(this);
     connect(watcher, &QFileSystemWatcher::directoryChanged, this, &GameList::RefreshGameDirectory);
 

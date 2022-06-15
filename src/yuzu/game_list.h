@@ -67,8 +67,8 @@ public:
         COLUMN_COUNT, // Number of columns
     };
 
-    explicit GameList(std::shared_ptr<FileSys::VfsFilesystem> vfs,
-                      FileSys::ManualContentProvider* provider, Core::System& system_,
+    explicit GameList(std::shared_ptr<FileSys::VfsFilesystem> vfs_,
+                      FileSys::ManualContentProvider* provider_, Core::System& system_,
                       GMainWindow* parent = nullptr);
     ~GameList() override;
 

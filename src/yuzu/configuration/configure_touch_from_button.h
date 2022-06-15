@@ -37,7 +37,7 @@ class ConfigureTouchFromButton : public QDialog {
 
 public:
     explicit ConfigureTouchFromButton(QWidget* parent,
-                                      const std::vector<Settings::TouchFromButtonMap>& touch_maps,
+                                      const std::vector<Settings::TouchFromButtonMap>& touch_maps_,
                                       InputCommon::InputSubsystem* input_subsystem_,
                                       int default_index = 0);
     ~ConfigureTouchFromButton() override;

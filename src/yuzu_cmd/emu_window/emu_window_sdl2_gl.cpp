@@ -73,9 +73,9 @@ bool EmuWindow_SDL2_GL::SupportsRequiredGLExtensions() {
     return unsupported_ext.empty();
 }
 
-EmuWindow_SDL2_GL::EmuWindow_SDL2_GL(InputCommon::InputSubsystem* input_subsystem,
+EmuWindow_SDL2_GL::EmuWindow_SDL2_GL(InputCommon::InputSubsystem* input_subsystem_,
                                      Core::System& system_, bool fullscreen)
-    : EmuWindow_SDL2{input_subsystem, system_} {
+    : EmuWindow_SDL2{input_subsystem_, system_} {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);

@@ -67,17 +67,19 @@ public:
     }
 
     bool SignalDebugger(SignalInfo signal_info) {
-        std::scoped_lock lk{connection_lock};
+        {
+            std::scoped_lock lk{connection_lock};
 
-        if (stopped) {
-            // Do not notify the debugger about another event.
-            // It should be ignored.
-            return false;
+            if (stopped) {
+                // Do not notify the debugger about another event.
+                // It should be ignored.
+                return false;
+            }
+
+            // Set up the state.
+            stopped = true;
+            info = signal_info;
         }
-
-        // Set up the state.
-        stopped = true;
-        info = signal_info;
 
         // Write a single byte into the pipe to wake up the debug interface.
         boost::asio::write(signal_pipe, boost::asio::buffer(&stopped, sizeof(stopped)));
@@ -191,17 +193,22 @@ private:
                 break;
             }
             case DebuggerAction::Continue:
-                ResumeEmulation();
+                MarkResumed([&] { ResumeEmulation(); });
                 break;
             case DebuggerAction::StepThreadUnlocked:
-                active_thread->SetStepState(Kernel::StepState::StepPending);
-                active_thread->Resume(Kernel::SuspendType::Debug);
-                ResumeEmulation(active_thread);
+                MarkResumed([&] {
+                    active_thread->SetStepState(Kernel::StepState::StepPending);
+                    active_thread->Resume(Kernel::SuspendType::Debug);
+                    ResumeEmulation(active_thread);
+                });
                 break;
-            case DebuggerAction::StepThreadLocked:
-                active_thread->SetStepState(Kernel::StepState::StepPending);
-                active_thread->Resume(Kernel::SuspendType::Debug);
+            case DebuggerAction::StepThreadLocked: {
+                MarkResumed([&] {
+                    active_thread->SetStepState(Kernel::StepState::StepPending);
+                    active_thread->Resume(Kernel::SuspendType::Debug);
+                });
                 break;
+            }
             case DebuggerAction::ShutdownEmulation: {
                 // Spawn another thread that will exit after shutdown,
                 // to avoid a deadlock
@@ -231,9 +238,16 @@ private:
                 continue;
             }
 
-            thread->Resume(Kernel::SuspendType::Debug);
             thread->SetStepState(Kernel::StepState::NotStepping);
+            thread->Resume(Kernel::SuspendType::Debug);
         }
+    }
+
+    template <typename Callback>
+    void MarkResumed(Callback&& cb) {
+        std::scoped_lock lk{connection_lock};
+        stopped = false;
+        cb();
     }
 
     void UpdateActiveThread() {

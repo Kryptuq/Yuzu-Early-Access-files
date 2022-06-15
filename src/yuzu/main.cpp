@@ -934,8 +934,7 @@ void GMainWindow::InitializeWidgets() {
             Settings::values.renderer_backend.SetValue(Settings::RendererBackend::Vulkan);
         } else {
             Settings::values.renderer_backend.SetValue(Settings::RendererBackend::OpenGL);
-            const auto filter = Settings::values.scaling_filter.GetValue();
-            if (filter == Settings::ScalingFilter::Fsr) {
+            if (Settings::values.scaling_filter.GetValue() == Settings::ScalingFilter::Fsr) {
                 Settings::values.scaling_filter.SetValue(Settings::ScalingFilter::NearestNeighbor);
                 UpdateFilterText();
             }
@@ -1442,7 +1441,7 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
         }
         return false;
     }
-    game_path = filename;
+    current_game_path = filename;
 
     system->TelemetrySession().AddField(Common::Telemetry::FieldType::App, "Frontend", "Qt");
     return true;
@@ -1508,7 +1507,7 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
 
     // Register an ExecuteProgram callback such that Core can execute a sub-program
     system->RegisterExecuteProgramCallback(
-        [this](std::size_t program_index) { render_window->ExecuteProgram(program_index); });
+        [this](std::size_t program_index_) { render_window->ExecuteProgram(program_index_); });
 
     // Register an Exit callback such that Core can exit the currently running application.
     system->RegisterExitCallback([this]() { render_window->Exit(); });
@@ -1641,7 +1640,7 @@ void GMainWindow::ShutdownGame() {
     emu_frametime_label->setVisible(false);
     renderer_status_button->setEnabled(!UISettings::values.has_broken_vulkan);
 
-    game_path.clear();
+    current_game_path.clear();
 
     // When closing the game, destroy the GLWindow to clear the context after the game is closed
     render_window->ReleaseRenderTarget();
@@ -2560,7 +2559,7 @@ void GMainWindow::OnRestartGame() {
         return;
     }
     // Make a copy since BootGame edits game_path
-    BootGame(QString(game_path));
+    BootGame(QString(current_game_path));
 }
 
 void GMainWindow::OnPauseGame() {
@@ -2989,7 +2988,7 @@ void GMainWindow::OnToggleAdaptingFilter() {
 
 void GMainWindow::OnConfigurePerGame() {
     const u64 title_id = system->GetCurrentProcessProgramID();
-    OpenPerGameConfiguration(title_id, game_path.toStdString());
+    OpenPerGameConfiguration(title_id, current_game_path.toStdString());
 }
 
 void GMainWindow::OpenPerGameConfiguration(u64 title_id, const std::string& file_name) {

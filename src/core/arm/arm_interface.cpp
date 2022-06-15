@@ -107,6 +107,7 @@ void ARM_Interface::Run() {
         }
 
         // Otherwise, run the thread.
+        system.EnterDynarmicProfile();
         if (current_thread->GetStepState() == StepState::StepPending) {
             hr = StepJit();
 
@@ -116,6 +117,7 @@ void ARM_Interface::Run() {
         } else {
             hr = RunJit();
         }
+        system.ExitDynarmicProfile();
 
         // Notify the debugger and go to sleep if a breakpoint was hit.
         if (Has(hr, breakpoint)) {

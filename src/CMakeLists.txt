@@ -65,6 +65,10 @@ if (MSVC)
         /we4305 # 'context': truncation from 'type1' to 'type2'
         /we4388 # 'expression': signed/unsigned mismatch
         /we4389 # 'operator': signed/unsigned mismatch
+        /we4456 # Declaration of 'identifier' hides previous local declaration
+        /we4457 # Declaration of 'identifier' hides function parameter
+        /we4458 # Declaration of 'identifier' hides class member
+        /we4459 # Declaration of 'identifier' hides global declaration
         /we4505 # 'function': unreferenced local function has been removed
         /we4547 # 'operator': operator before comma has no effect; expected operator with side-effect
         /we4549 # 'operator1': operator before comma has no effect; did you intend 'operator2'?
@@ -92,6 +96,7 @@ else()
         -Werror=missing-declarations
         -Werror=missing-field-initializers
         -Werror=reorder
+        -Werror=shadow
         -Werror=sign-compare
         -Werror=switch
         -Werror=uninitialized

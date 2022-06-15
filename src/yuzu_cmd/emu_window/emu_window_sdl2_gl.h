@@ -17,7 +17,7 @@ class InputSubsystem;
 
 class EmuWindow_SDL2_GL final : public EmuWindow_SDL2 {
 public:
-    explicit EmuWindow_SDL2_GL(InputCommon::InputSubsystem* input_subsystem, Core::System& system_,
+    explicit EmuWindow_SDL2_GL(InputCommon::InputSubsystem* input_subsystem_, Core::System& system_,
                                bool fullscreen);
     ~EmuWindow_SDL2_GL();
 

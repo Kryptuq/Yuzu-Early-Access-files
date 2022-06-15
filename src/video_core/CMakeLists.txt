@@ -258,10 +258,6 @@ if (MSVC)
     target_compile_options(video_core PRIVATE
         /we4242 # 'identifier': conversion from 'type1' to 'type2', possible loss of data
         /we4244 # 'conversion': conversion from 'type1' to 'type2', possible loss of data
-        /we4456 # Declaration of 'identifier' hides previous local declaration
-        /we4457 # Declaration of 'identifier' hides function parameter
-        /we4458 # Declaration of 'identifier' hides class member
-        /we4459 # Declaration of 'identifier' hides global declaration
     )
 else()
     target_compile_options(video_core PRIVATE
@@ -269,7 +265,6 @@ else()
         -Wno-error=sign-conversion
         -Werror=pessimizing-move
         -Werror=redundant-move
-        -Werror=shadow
         -Werror=type-limits
 
         $<$<CXX_COMPILER_ID:GNU>:-Werror=class-memaccess>

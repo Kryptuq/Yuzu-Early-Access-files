@@ -15,6 +15,7 @@
 #include "common/scope_exit.h"
 #include "core/core.h"
 #include "core/core_timing.h"
+#include "core/debugger/debugger.h"
 #include "core/hle/kernel/k_client_port.h"
 #include "core/hle/kernel/k_client_session.h"
 #include "core/hle/kernel/k_code_memory.h"
@@ -626,6 +627,12 @@ static void Break(Core::System& system, u32 reason, u64 info1, u64 info2) {
         auto* const current_thread = system.Kernel().CurrentScheduler()->GetCurrentThread();
         const auto thread_processor_id = current_thread->GetActiveCore();
         system.ArmInterface(static_cast<std::size_t>(thread_processor_id)).LogBacktrace();
+    }
+
+    if (system.DebuggerEnabled()) {
+        auto* thread = system.Kernel().GetCurrentEmuThread();
+        system.GetDebugger().NotifyThreadStopped(thread);
+        thread->RequestSuspend(Kernel::SuspendType::Debug);
     }
 }
 
@@ -2982,7 +2989,6 @@ static const FunctionDef* GetSVCInfo64(u32 func_num) {
 }
 
 void Call(Core::System& system, u32 immediate) {
-    system.ExitDynarmicProfile();
     auto& kernel = system.Kernel();
     kernel.EnterSVCProfile();
 
@@ -3007,8 +3013,6 @@ void Call(Core::System& system, u32 immediate) {
         auto* host_context = thread->GetHostContext().get();
         host_context->Rewind();
     }
-
-    system.EnterDynarmicProfile();
 }
 
 } // namespace Kernel::Svc

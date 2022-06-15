@@ -369,7 +369,7 @@ private:
     bool emulation_running = false;
     std::unique_ptr<EmuThread> emu_thread;
     // The path to the game currently running
-    QString game_path;
+    QString current_game_path;
 
     bool auto_paused = false;
     bool auto_muted = false;

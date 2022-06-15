@@ -89,8 +89,8 @@ void ConfigurePerGameAddons::ApplyConfiguration() {
     Settings::values.disabled_addons[title_id] = disabled_addons;
 }
 
-void ConfigurePerGameAddons::LoadFromFile(FileSys::VirtualFile file) {
-    this->file = std::move(file);
+void ConfigurePerGameAddons::LoadFromFile(FileSys::VirtualFile file_) {
+    file = std::move(file_);
     LoadConfiguration();
 }
 

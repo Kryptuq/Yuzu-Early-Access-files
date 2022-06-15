@@ -165,10 +165,10 @@ ConfigureRingController::ConfigureRingController(QWidget* parent,
                         const std::string invert_str = invert_value ? "+" : "-";
                         param.Set("invert_x", invert_str);
                         emulated_device->SetRingParam(param);
-                        for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM;
-                             ++sub_button_id) {
-                            analog_map_buttons[sub_button_id]->setText(
-                                AnalogToText(param, analog_sub_buttons[sub_button_id]));
+                        for (int sub_button_id2 = 0; sub_button_id2 < ANALOG_SUB_BUTTONS_NUM;
+                             ++sub_button_id2) {
+                            analog_map_buttons[sub_button_id2]->setText(
+                                AnalogToText(param, analog_sub_buttons[sub_button_id2]));
                         }
                     });
                     context_menu.exec(

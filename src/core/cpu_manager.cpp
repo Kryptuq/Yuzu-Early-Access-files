@@ -105,12 +105,10 @@ void CpuManager::MultiCoreRunGuestLoop() {
 
     while (true) {
         auto* physical_core = &kernel.CurrentPhysicalCore();
-        system.EnterDynarmicProfile();
         while (!physical_core->IsInterrupted()) {
             physical_core->Run();
             physical_core = &kernel.CurrentPhysicalCore();
         }
-        system.ExitDynarmicProfile();
         {
             Kernel::KScopedDisableDispatch dd(kernel);
             physical_core->ArmInterface().ClearExclusiveState();
@@ -143,12 +141,10 @@ void CpuManager::SingleCoreRunGuestLoop() {
     auto& kernel = system.Kernel();
     while (true) {
         auto* physical_core = &kernel.CurrentPhysicalCore();
-        system.EnterDynarmicProfile();
         if (!physical_core->IsInterrupted()) {
             physical_core->Run();
             physical_core = &kernel.CurrentPhysicalCore();
         }
-        system.ExitDynarmicProfile();
         kernel.SetIsPhantomModeForSingleCore(true);
         system.CoreTiming().Advance();
         kernel.SetIsPhantomModeForSingleCore(false);

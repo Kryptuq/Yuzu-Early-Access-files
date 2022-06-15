@@ -127,7 +127,7 @@ void EmuThread::run() {
 class OpenGLSharedContext : public Core::Frontend::GraphicsContext {
 public:
     /// Create the original context that should be shared from
-    explicit OpenGLSharedContext(QSurface* surface) : surface(surface) {
+    explicit OpenGLSharedContext(QSurface* surface_) : surface{surface_} {
         QSurfaceFormat format;
         format.setVersion(4, 6);
         format.setProfile(QSurfaceFormat::CompatibilityProfile);
@@ -364,9 +364,9 @@ void GRenderWindow::RestoreGeometry() {
     QWidget::restoreGeometry(geometry);
 }
 
-void GRenderWindow::restoreGeometry(const QByteArray& geometry) {
+void GRenderWindow::restoreGeometry(const QByteArray& geometry_) {
     // Make sure users of this class don't need to deal with backing up the geometry themselves
-    QWidget::restoreGeometry(geometry);
+    QWidget::restoreGeometry(geometry_);
     BackupGeometry();
 }
 
@@ -1014,8 +1014,8 @@ QStringList GRenderWindow::GetUnsupportedGLExtensions() const {
     return unsupported_ext;
 }
 
-void GRenderWindow::OnEmulationStarting(EmuThread* emu_thread) {
-    this->emu_thread = emu_thread;
+void GRenderWindow::OnEmulationStarting(EmuThread* emu_thread_) {
+    emu_thread = emu_thread_;
 }
 
 void GRenderWindow::OnEmulationStopping() {

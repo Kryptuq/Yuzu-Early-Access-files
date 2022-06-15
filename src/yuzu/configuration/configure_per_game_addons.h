@@ -35,7 +35,7 @@ public:
     /// Save all button configurations to settings file
     void ApplyConfiguration();
 
-    void LoadFromFile(FileSys::VirtualFile file);
+    void LoadFromFile(FileSys::VirtualFile file_);
 
     void SetTitleId(u64 id);
 

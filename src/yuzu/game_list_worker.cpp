@@ -223,12 +223,12 @@ QList<QStandardItem*> MakeGameListEntry(const std::string& path, const std::stri
 }
 } // Anonymous namespace
 
-GameListWorker::GameListWorker(FileSys::VirtualFilesystem vfs,
-                               FileSys::ManualContentProvider* provider,
-                               QVector<UISettings::GameDir>& game_dirs,
-                               const CompatibilityList& compatibility_list, Core::System& system_)
-    : vfs(std::move(vfs)), provider(provider), game_dirs(game_dirs),
-      compatibility_list(compatibility_list), system{system_} {}
+GameListWorker::GameListWorker(FileSys::VirtualFilesystem vfs_,
+                               FileSys::ManualContentProvider* provider_,
+                               QVector<UISettings::GameDir>& game_dirs_,
+                               const CompatibilityList& compatibility_list_, Core::System& system_)
+    : vfs{std::move(vfs_)}, provider{provider_}, game_dirs{game_dirs_},
+      compatibility_list{compatibility_list_}, system{system_} {}
 
 GameListWorker::~GameListWorker() = default;
 

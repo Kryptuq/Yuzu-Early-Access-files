@@ -33,10 +33,10 @@ class GameListWorker : public QObject, public QRunnable {
     Q_OBJECT
 
 public:
-    explicit GameListWorker(std::shared_ptr<FileSys::VfsFilesystem> vfs,
-                            FileSys::ManualContentProvider* provider,
-                            QVector<UISettings::GameDir>& game_dirs,
-                            const CompatibilityList& compatibility_list, Core::System& system_);
+    explicit GameListWorker(std::shared_ptr<FileSys::VfsFilesystem> vfs_,
+                            FileSys::ManualContentProvider* provider_,
+                            QVector<UISettings::GameDir>& game_dirs_,
+                            const CompatibilityList& compatibility_list_, Core::System& system_);
     ~GameListWorker() override;
 
     /// Starts the processing of directory tree information.
