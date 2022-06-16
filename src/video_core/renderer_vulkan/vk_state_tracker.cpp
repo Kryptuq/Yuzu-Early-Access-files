@@ -7,9 +7,9 @@
 
 #include "common/common_types.h"
 #include "core/core.h"
+#include "video_core/control/channel_state.h"
 #include "video_core/dirty_flags.h"
 #include "video_core/engines/maxwell_3d.h"
-#include "video_core/gpu.h"
 #include "video_core/renderer_vulkan/vk_state_tracker.h"
 
 #define OFF(field_name) MAXWELL3D_REG_INDEX(field_name)
@@ -174,9 +174,8 @@ void SetupDirtyVertexBindings(Tables& tables) {
 }
 } // Anonymous namespace
 
-StateTracker::StateTracker(Tegra::GPU& gpu)
-    : flags{gpu.Maxwell3D().dirty.flags}, invalidation_flags{MakeInvalidationFlags()} {
-    auto& tables{gpu.Maxwell3D().dirty.tables};
+void StateTracker::SetupTables(Tegra::Control::ChannelState& channel_state) {
+    auto& tables{channel_state.maxwell_3d->dirty.tables};
     SetupDirtyFlags(tables);
     SetupDirtyViewports(tables);
     SetupDirtyScissors(tables);
@@ -198,5 +197,15 @@ StateTracker::StateTracker(Tegra::GPU& gpu)
     SetupDirtyVertexAttributes(tables);
     SetupDirtyVertexBindings(tables);
 }
+
+void StateTracker::ChangeChannel(Tegra::Control::ChannelState& channel_state) {
+    flags = &channel_state.maxwell_3d->dirty.flags;
+}
+
+void StateTracker::InvalidateState() {
+    flags->set();
+}
+
+StateTracker::StateTracker() : flags{}, invalidation_flags{MakeInvalidationFlags()} {}
 
 } // namespace Vulkan

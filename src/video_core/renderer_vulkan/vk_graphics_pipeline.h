@@ -69,15 +69,16 @@ class GraphicsPipeline {
     static constexpr size_t NUM_STAGES = Tegra::Engines::Maxwell3D::Regs::MaxShaderStage;
 
 public:
-    explicit GraphicsPipeline(
-        Tegra::Engines::Maxwell3D& maxwell3d, Tegra::MemoryManager& gpu_memory,
-        VKScheduler& scheduler, BufferCache& buffer_cache, TextureCache& texture_cache,
-        VideoCore::ShaderNotify* shader_notify, const Device& device,
-        DescriptorPool& descriptor_pool, VKUpdateDescriptorQueue& update_descriptor_queue,
-        Common::ThreadWorker* worker_thread, PipelineStatistics* pipeline_statistics,
-        RenderPassCache& render_pass_cache, const GraphicsPipelineCacheKey& key,
-        std::array<vk::ShaderModule, NUM_STAGES> stages,
-        const std::array<const Shader::Info*, NUM_STAGES>& infos);
+    explicit GraphicsPipeline(VKScheduler& scheduler, BufferCache& buffer_cache,
+                              TextureCache& texture_cache, VideoCore::ShaderNotify* shader_notify,
+                              const Device& device, DescriptorPool& descriptor_pool,
+                              VKUpdateDescriptorQueue& update_descriptor_queue,
+                              Common::ThreadWorker* worker_thread,
+                              PipelineStatistics* pipeline_statistics,
+                              RenderPassCache& render_pass_cache,
+                              const GraphicsPipelineCacheKey& key,
+                              std::array<vk::ShaderModule, NUM_STAGES> stages,
+                              const std::array<const Shader::Info*, NUM_STAGES>& infos);
 
     GraphicsPipeline& operator=(GraphicsPipeline&&) noexcept = delete;
     GraphicsPipeline(GraphicsPipeline&&) noexcept = delete;
@@ -109,6 +110,11 @@ public:
         return [](GraphicsPipeline* pl, bool is_indexed) { pl->ConfigureImpl<Spec>(is_indexed); };
     }
 
+    void SetEngine(Tegra::Engines::Maxwell3D* maxwell3d_, Tegra::MemoryManager* gpu_memory_) {
+        maxwell3d = maxwell3d_;
+        gpu_memory = gpu_memory_;
+    }
+
 private:
     template <typename Spec>
     void ConfigureImpl(bool is_indexed);
@@ -120,8 +126,8 @@ private:
     void Validate();
 
     const GraphicsPipelineCacheKey key;
-    Tegra::Engines::Maxwell3D& maxwell3d;
-    Tegra::MemoryManager& gpu_memory;
+    Tegra::Engines::Maxwell3D* maxwell3d;
+    Tegra::MemoryManager* gpu_memory;
     const Device& device;
     TextureCache& texture_cache;
     BufferCache& buffer_cache;

@@ -1,8 +1,12 @@
-// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
-// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2021 yuzu emulator team
+// (https://github.com/skyline-emu/)
+// SPDX-License-Identifier: GPL-3.0-or-later Licensed under GPLv3
+// or any later version Refer to the license.txt file included.
 
 #pragma once
 
+#include <deque>
+#include <limits>
 #include <mutex>
 #include <span>
 #include <type_traits>
@@ -11,9 +15,11 @@
 #include <queue>
 
 #include "common/common_types.h"
+#include "common/hash.h"
 #include "common/literals.h"
 #include "common/lru_cache.h"
 #include "video_core/compatible_formats.h"
+#include "video_core/control/channel_state_cache.h"
 #include "video_core/delayed_destruction_ring.h"
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/surface.h"
@@ -25,6 +31,10 @@
 #include "video_core/texture_cache/slot_vector.h"
 #include "video_core/texture_cache/types.h"
 #include "video_core/textures/texture.h"
+
+namespace Tegra::Control {
+struct ChannelState;
+}
 
 namespace VideoCommon {
 
@@ -44,8 +54,35 @@ struct ImageViewInOut {
     ImageViewId id{};
 };
 
+using TextureCacheGPUMap = std::unordered_map<u64, std::vector<ImageId>, Common::IdentityHash<u64>>;
+
+class TextureCacheChannelInfo : public ChannelInfo {
+public:
+    TextureCacheChannelInfo() = delete;
+    TextureCacheChannelInfo(Tegra::Control::ChannelState& state) noexcept;
+    TextureCacheChannelInfo(const TextureCacheChannelInfo& state) = delete;
+    TextureCacheChannelInfo& operator=(const TextureCacheChannelInfo&) = delete;
+    TextureCacheChannelInfo(TextureCacheChannelInfo&& other) noexcept = default;
+    TextureCacheChannelInfo& operator=(TextureCacheChannelInfo&& other) noexcept = default;
+
+    DescriptorTable<TICEntry> graphics_image_table{gpu_memory};
+    DescriptorTable<TSCEntry> graphics_sampler_table{gpu_memory};
+    std::vector<SamplerId> graphics_sampler_ids;
+    std::vector<ImageViewId> graphics_image_view_ids;
+
+    DescriptorTable<TICEntry> compute_image_table{gpu_memory};
+    DescriptorTable<TSCEntry> compute_sampler_table{gpu_memory};
+    std::vector<SamplerId> compute_sampler_ids;
+    std::vector<ImageViewId> compute_image_view_ids;
+
+    std::unordered_map<TICEntry, ImageViewId> image_views;
+    std::unordered_map<TSCEntry, SamplerId> samplers;
+
+    TextureCacheGPUMap* gpu_page_table;
+};
+
 template <class P>
-class TextureCache {
+class TextureCache : public VideoCommon::ChannelSetupCaches<TextureCacheChannelInfo> {
     /// Address shift for caching images into a hash table
     static constexpr u64 PAGE_BITS = 20;
 
@@ -57,6 +94,8 @@ class TextureCache {
     static constexpr bool HAS_EMULATED_COPIES = P::HAS_EMULATED_COPIES;
     /// True when the API can provide info about the memory of the device.
     static constexpr bool HAS_DEVICE_MEMORY_INFO = P::HAS_DEVICE_MEMORY_INFO;
+
+    static constexpr size_t UNSET_CHANNEL{std::numeric_limits<size_t>::max()};
 
     static constexpr s64 TARGET_THRESHOLD = 4_GiB;
     static constexpr s64 DEFAULT_EXPECTED_MEMORY = 1_GiB + 125_MiB;
@@ -77,16 +116,8 @@ class TextureCache {
         PixelFormat src_format;
     };
 
-    template <typename T>
-    struct IdentityHash {
-        [[nodiscard]] size_t operator()(T value) const noexcept {
-            return static_cast<size_t>(value);
-        }
-    };
-
 public:
-    explicit TextureCache(Runtime&, VideoCore::RasterizerInterface&, Tegra::Engines::Maxwell3D&,
-                          Tegra::Engines::KeplerCompute&, Tegra::MemoryManager&);
+    explicit TextureCache(Runtime&, VideoCore::RasterizerInterface&);
 
     /// Notify the cache that a new frame has been queued
     void TickFrame();
@@ -142,7 +173,7 @@ public:
     void UnmapMemory(VAddr cpu_addr, size_t size);
 
     /// Remove images in a region
-    void UnmapGPUMemory(GPUVAddr gpu_addr, size_t size);
+    void UnmapGPUMemory(size_t as_id, GPUVAddr gpu_addr, size_t size);
 
     /// Blit an image with the given parameters
     void BlitImage(const Tegra::Engines::Fermi2D::Surface& dst,
@@ -170,6 +201,9 @@ public:
     [[nodiscard]] bool IsRescaling() const noexcept;
 
     [[nodiscard]] bool IsRescaling(const ImageViewBase& image_view) const noexcept;
+
+    /// Create channel state.
+    void CreateChannel(Tegra::Control::ChannelState& channel) final override;
 
     std::mutex mutex;
 
@@ -204,6 +238,8 @@ private:
             }
         }
     }
+
+    void OnGPUASRegister(size_t map_id) final override;
 
     /// Runs the Garbage Collector.
     void RunGarbageCollector();
@@ -273,7 +309,7 @@ private:
     void ForEachImageInRegion(VAddr cpu_addr, size_t size, Func&& func);
 
     template <typename Func>
-    void ForEachImageInRegionGPU(GPUVAddr gpu_addr, size_t size, Func&& func);
+    void ForEachImageInRegionGPU(size_t as_id, GPUVAddr gpu_addr, size_t size, Func&& func);
 
     template <typename Func>
     void ForEachSparseImageInRegion(GPUVAddr gpu_addr, size_t size, Func&& func);
@@ -338,31 +374,16 @@ private:
     u64 GetScaledImageSizeBytes(ImageBase& image);
 
     Runtime& runtime;
+
     VideoCore::RasterizerInterface& rasterizer;
-    Tegra::Engines::Maxwell3D& maxwell3d;
-    Tegra::Engines::KeplerCompute& kepler_compute;
-    Tegra::MemoryManager& gpu_memory;
-
-    DescriptorTable<TICEntry> graphics_image_table{gpu_memory};
-    DescriptorTable<TSCEntry> graphics_sampler_table{gpu_memory};
-    std::vector<SamplerId> graphics_sampler_ids;
-    std::vector<ImageViewId> graphics_image_view_ids;
-
-    DescriptorTable<TICEntry> compute_image_table{gpu_memory};
-    DescriptorTable<TSCEntry> compute_sampler_table{gpu_memory};
-    std::vector<SamplerId> compute_sampler_ids;
-    std::vector<ImageViewId> compute_image_view_ids;
+    std::deque<TextureCacheGPUMap> gpu_page_table_storage;
 
     RenderTargets render_targets;
 
-    std::unordered_map<TICEntry, ImageViewId> image_views;
-    std::unordered_map<TSCEntry, SamplerId> samplers;
     std::unordered_map<RenderTargets, FramebufferId> framebuffers;
 
-    std::unordered_map<u64, std::vector<ImageMapId>, IdentityHash<u64>> page_table;
-    std::unordered_map<u64, std::vector<ImageId>, IdentityHash<u64>> gpu_page_table;
-    std::unordered_map<u64, std::vector<ImageId>, IdentityHash<u64>> sparse_page_table;
-
+    std::unordered_map<u64, std::vector<ImageMapId>, Common::IdentityHash<u64>> page_table;
+    std::unordered_map<u64, std::vector<ImageId>, Common::IdentityHash<u64>> sparse_page_table;
     std::unordered_map<ImageId, std::vector<ImageViewId>> sparse_views;
 
     VAddr virtual_invalid_space{};

@@ -33,8 +33,6 @@ void KeplerMemory::CallMethod(u32 method, u32 method_argument, bool is_last_call
     }
     case KEPLERMEMORY_REG_INDEX(data): {
         upload_state.ProcessData(method_argument, is_last_call);
-        if (is_last_call) {
-        }
         break;
     }
     }
@@ -42,8 +40,15 @@ void KeplerMemory::CallMethod(u32 method, u32 method_argument, bool is_last_call
 
 void KeplerMemory::CallMultiMethod(u32 method, const u32* base_start, u32 amount,
                                    u32 methods_pending) {
-    for (std::size_t i = 0; i < amount; i++) {
-        CallMethod(method, base_start[i], methods_pending - static_cast<u32>(i) <= 1);
+    switch (method) {
+    case KEPLERMEMORY_REG_INDEX(data):
+        upload_state.ProcessData(base_start, static_cast<size_t>(amount));
+        return;
+    default:
+        for (std::size_t i = 0; i < amount; i++) {
+            CallMethod(method, base_start[i], methods_pending - static_cast<u32>(i) <= 1);
+        }
+        break;
     }
 }
 

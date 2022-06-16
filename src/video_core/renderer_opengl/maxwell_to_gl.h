@@ -87,7 +87,7 @@ constexpr std::array<FormatTuple, VideoCore::Surface::MaxPixelFormat> FORMAT_TAB
     {GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT},                         // BC3_SRGB
     {GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM},                            // BC7_SRGB
     {GL_RGBA4, GL_RGBA, GL_UNSIGNED_SHORT_4_4_4_4_REV},               // A4B4G4R4_UNORM
-    {GL_R8, GL_RED, GL_UNSIGNED_BYTE},                                // R4G4_UNORM
+    {GL_R8, GL_RED, GL_UNSIGNED_BYTE},                                // G4R4_UNORM
     {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR},                        // ASTC_2D_4X4_SRGB
     {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x8_KHR},                        // ASTC_2D_8X8_SRGB
     {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x5_KHR},                        // ASTC_2D_8X5_SRGB

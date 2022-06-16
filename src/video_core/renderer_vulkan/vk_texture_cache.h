@@ -268,7 +268,7 @@ public:
                          ImageView* depth_buffer, const VideoCommon::RenderTargets& key);
 
     explicit Framebuffer(TextureCacheRuntime& runtime, ImageView* color_buffer,
-                         ImageView* depth_buffer, VkExtent2D extent);
+                         ImageView* depth_buffer, VkExtent2D extent, bool is_rescaled);
 
     ~Framebuffer();
 
@@ -279,7 +279,8 @@ public:
     Framebuffer& operator=(Framebuffer&&) = default;
 
     void CreateFramebuffer(TextureCacheRuntime& runtime,
-                           std::span<ImageView*, NUM_RT> color_buffers, ImageView* depth_buffer);
+                           std::span<ImageView*, NUM_RT> color_buffers, ImageView* depth_buffer,
+                           bool is_rescaled = false);
 
     [[nodiscard]] VkFramebuffer Handle() const noexcept {
         return *framebuffer;

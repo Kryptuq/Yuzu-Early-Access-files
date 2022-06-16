@@ -100,9 +100,7 @@ struct ShaderPools {
 
 class PipelineCache : public VideoCommon::ShaderCache {
 public:
-    explicit PipelineCache(RasterizerVulkan& rasterizer, Tegra::Engines::Maxwell3D& maxwell3d,
-                           Tegra::Engines::KeplerCompute& kepler_compute,
-                           Tegra::MemoryManager& gpu_memory, const Device& device,
+    explicit PipelineCache(RasterizerVulkan& rasterizer, const Device& device,
                            VKScheduler& scheduler, DescriptorPool& descriptor_pool,
                            VKUpdateDescriptorQueue& update_descriptor_queue,
                            RenderPassCache& render_pass_cache, BufferCache& buffer_cache,

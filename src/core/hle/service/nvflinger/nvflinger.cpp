@@ -23,6 +23,8 @@
 #include "core/hle/service/vi/display/vi_display.h"
 #include "core/hle/service/vi/layer/vi_layer.h"
 #include "video_core/gpu.h"
+#include "video_core/host1x/host1x.h"
+#include "video_core/host1x/syncpoint_manager.h"
 
 namespace Service::NVFlinger {
 
@@ -95,10 +97,15 @@ NVFlinger::~NVFlinger() {
             display.GetLayer(layer).Core().NotifyShutdown();
         }
     }
+
+    if (nvdrv) {
+        nvdrv->Close(disp_fd);
+    }
 }
 
 void NVFlinger::SetNVDrvInstance(std::shared_ptr<Nvidia::Module> instance) {
     nvdrv = std::move(instance);
+    disp_fd = nvdrv->Open("/dev/nvdisp_disp0");
 }
 
 std::optional<u64> NVFlinger::OpenDisplay(std::string_view name) {
@@ -252,30 +259,24 @@ void NVFlinger::Compose() {
             return; // We are likely shutting down
         }
 
-        auto& gpu = system.GPU();
-        const auto& multi_fence = buffer.fence;
-        guard->unlock();
-        for (u32 fence_id = 0; fence_id < multi_fence.num_fences; fence_id++) {
-            const auto& fence = multi_fence.fences[fence_id];
-            gpu.WaitFence(fence.id, fence.value);
-        }
-        guard->lock();
-
-        MicroProfileFlip();
-
         // Now send the buffer to the GPU for drawing.
         // TODO(Subv): Support more than just disp0. The display device selection is probably based
         // on which display we're drawing (Default, Internal, External, etc)
-        auto nvdisp = nvdrv->GetDevice<Nvidia::Devices::nvdisp_disp0>("/dev/nvdisp_disp0");
+        auto nvdisp = nvdrv->GetDevice<Nvidia::Devices::nvdisp_disp0>(disp_fd);
         ASSERT(nvdisp);
 
+        guard->unlock();
         Common::Rectangle<int> crop_rect{
             static_cast<int>(buffer.crop.Left()), static_cast<int>(buffer.crop.Top()),
             static_cast<int>(buffer.crop.Right()), static_cast<int>(buffer.crop.Bottom())};
 
         nvdisp->flip(igbp_buffer.BufferId(), igbp_buffer.Offset(), igbp_buffer.ExternalFormat(),
                      igbp_buffer.Width(), igbp_buffer.Height(), igbp_buffer.Stride(),
-                     static_cast<android::BufferTransformFlags>(buffer.transform), crop_rect);
+                     static_cast<android::BufferTransformFlags>(buffer.transform), crop_rect,
+                     buffer.fence.fences, buffer.fence.num_fences);
+
+        MicroProfileFlip();
+        guard->lock();
 
         swap_interval = buffer.swap_interval;
 

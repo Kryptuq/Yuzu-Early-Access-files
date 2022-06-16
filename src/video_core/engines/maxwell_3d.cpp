@@ -219,6 +219,8 @@ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argume
         regs.index_array.count = regs.small_index_2.count;
         regs.index_array.first = regs.small_index_2.first;
         dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
+        // a macro calls this one over and over, should it increase instancing?
+        // Used by Hades and likely other Vulkan games.
         return DrawArrays();
     case MAXWELL3D_REG_INDEX(topology_override):
         use_topology_override = true;
@@ -237,11 +239,12 @@ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argume
         return upload_state.ProcessExec(regs.exec_upload.linear != 0);
     case MAXWELL3D_REG_INDEX(data_upload):
         upload_state.ProcessData(argument, is_last_call);
-        if (is_last_call) {
-        }
         return;
     case MAXWELL3D_REG_INDEX(fragment_barrier):
         return rasterizer->FragmentBarrier();
+    case MAXWELL3D_REG_INDEX(invalidate_texture_data_cache):
+        rasterizer->InvalidateGPUCache();
+        return rasterizer->WaitForIdle();
     case MAXWELL3D_REG_INDEX(tiled_cache_barrier):
         return rasterizer->TiledCacheBarrier();
     }
@@ -311,6 +314,9 @@ void Maxwell3D::CallMultiMethod(u32 method, const u32* base_start, u32 amount,
     case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 15:
         ProcessCBMultiData(base_start, amount);
         break;
+    case MAXWELL3D_REG_INDEX(data_upload):
+        upload_state.ProcessData(base_start, static_cast<size_t>(amount));
+        return;
     default:
         for (std::size_t i = 0; i < amount; i++) {
             CallMethod(method, base_start[i], methods_pending - static_cast<u32>(i) <= 1);
@@ -447,18 +453,10 @@ void Maxwell3D::ProcessFirmwareCall4() {
 }
 
 void Maxwell3D::StampQueryResult(u64 payload, bool long_query) {
-    struct LongQueryResult {
-        u64_le value;
-        u64_le timestamp;
-    };
-    static_assert(sizeof(LongQueryResult) == 16, "LongQueryResult has wrong size");
     const GPUVAddr sequence_address{regs.query.QueryAddress()};
     if (long_query) {
-        // Write the 128-bit result structure in long mode. Note: We emulate an infinitely fast
-        // GPU, this command may actually take a while to complete in real hardware due to GPU
-        // wait queues.
-        LongQueryResult query_result{payload, system.GPU().GetTicks()};
-        memory_manager.WriteBlock(sequence_address, &query_result, sizeof(query_result));
+        memory_manager.Write<u64>(sequence_address + sizeof(u64), system.GPU().GetTicks());
+        memory_manager.Write<u64>(sequence_address, payload);
     } else {
         memory_manager.Write<u32>(sequence_address, static_cast<u32>(payload));
     }
@@ -472,10 +470,25 @@ void Maxwell3D::ProcessQueryGet() {
 
     switch (regs.query.query_get.operation) {
     case Regs::QueryOperation::Release:
-        if (regs.query.query_get.fence == 1) {
-            rasterizer->SignalSemaphore(regs.query.QueryAddress(), regs.query.query_sequence);
+        if (regs.query.query_get.fence == 1 || regs.query.query_get.short_query != 0) {
+            const GPUVAddr sequence_address{regs.query.QueryAddress()};
+            const u32 payload = regs.query.query_sequence;
+            std::function<void()> operation([this, sequence_address, payload] {
+                memory_manager.Write<u32>(sequence_address, payload);
+            });
+            rasterizer->SignalFence(std::move(operation));
         } else {
-            StampQueryResult(regs.query.query_sequence, regs.query.query_get.short_query == 0);
+            struct LongQueryResult {
+                u64_le value;
+                u64_le timestamp;
+            };
+            const GPUVAddr sequence_address{regs.query.QueryAddress()};
+            const u32 payload = regs.query.query_sequence;
+            std::function<void()> operation([this, sequence_address, payload] {
+                memory_manager.Write<u64>(sequence_address + sizeof(u64), system.GPU().GetTicks());
+                memory_manager.Write<u64>(sequence_address, payload);
+            });
+            rasterizer->SyncOperation(std::move(operation));
         }
         break;
     case Regs::QueryOperation::Acquire:

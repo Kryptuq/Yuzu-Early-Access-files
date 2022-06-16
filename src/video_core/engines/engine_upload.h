@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <span>
 #include <vector>
 #include "common/bit_field.h"
 #include "common/common_types.h"
@@ -33,7 +34,7 @@ struct Registers {
         u32 width;
         u32 height;
         u32 depth;
-        u32 z;
+        u32 layer;
         u32 x;
         u32 y;
 
@@ -62,11 +63,14 @@ public:
 
     void ProcessExec(bool is_linear_);
     void ProcessData(u32 data, bool is_last_call);
+    void ProcessData(const u32* data, size_t num_data);
 
     /// Binds a rasterizer to this engine.
     void BindRasterizer(VideoCore::RasterizerInterface* rasterizer);
 
 private:
+    void ProcessData(std::span<const u8> read_buffer);
+
     u32 write_offset = 0;
     u32 copy_size = 0;
     std::vector<u8> inner_buffer;

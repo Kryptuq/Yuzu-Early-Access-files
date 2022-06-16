@@ -28,12 +28,11 @@ bool ComputePipelineKey::operator==(const ComputePipelineKey& rhs) const noexcep
 }
 
 ComputePipeline::ComputePipeline(const Device& device, TextureCache& texture_cache_,
-                                 BufferCache& buffer_cache_, Tegra::MemoryManager& gpu_memory_,
-                                 Tegra::Engines::KeplerCompute& kepler_compute_,
-                                 ProgramManager& program_manager_, const Shader::Info& info_,
-                                 std::string code, std::vector<u32> code_v)
-    : texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, gpu_memory{gpu_memory_},
-      kepler_compute{kepler_compute_}, program_manager{program_manager_}, info{info_} {
+                                 BufferCache& buffer_cache_, ProgramManager& program_manager_,
+                                 const Shader::Info& info_, std::string code,
+                                 std::vector<u32> code_v)
+    : texture_cache{texture_cache_}, buffer_cache{buffer_cache_},
+      program_manager{program_manager_}, info{info_} {
     switch (device.GetShaderBackend()) {
     case Settings::ShaderBackend::GLSL:
         source_program = CreateProgram(code, GL_COMPUTE_SHADER);
@@ -86,7 +85,7 @@ void ComputePipeline::Configure() {
     GLsizei texture_binding{};
     GLsizei image_binding{};
 
-    const auto& qmd{kepler_compute.launch_description};
+    const auto& qmd{kepler_compute->launch_description};
     const auto& cbufs{qmd.const_buffer_config};
     const bool via_header_index{qmd.linked_tsc != 0};
     const auto read_handle{[&](const auto& desc, u32 index) {
@@ -101,12 +100,13 @@ void ComputePipeline::Configure() {
                 const u32 secondary_offset{desc.secondary_cbuf_offset + index_offset};
                 const GPUVAddr separate_addr{cbufs[desc.secondary_cbuf_index].Address() +
                                              secondary_offset};
-                const u32 lhs_raw{gpu_memory.Read<u32>(addr)};
-                const u32 rhs_raw{gpu_memory.Read<u32>(separate_addr)};
+                const u32 lhs_raw{gpu_memory->Read<u32>(addr) << desc.shift_left};
+                const u32 rhs_raw{gpu_memory->Read<u32>(separate_addr)
+                                  << desc.secondary_shift_left};
                 return TexturePair(lhs_raw | rhs_raw, via_header_index);
             }
         }
-        return TexturePair(gpu_memory.Read<u32>(addr), via_header_index);
+        return TexturePair(gpu_memory->Read<u32>(addr), via_header_index);
     }};
     const auto add_image{[&](const auto& desc, bool blacklist) {
         for (u32 index = 0; index < desc.count; ++index) {

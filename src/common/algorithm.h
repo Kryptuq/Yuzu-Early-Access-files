@@ -24,4 +24,12 @@ template <class ForwardIt, class T, class Compare = std::less<>>
     return first != last && !comp(value, *first) ? first : last;
 }
 
+template <typename T, typename Func, typename... Args>
+T FoldRight(T initial_value, Func&& func, Args&&... args) {
+    T value{initial_value};
+    const auto high_func = [&value, &func]<typename U>(U x) { value = func(value, x); };
+    (std::invoke(high_func, std::forward<Args>(args)), ...);
+    return value;
+}
+
 } // namespace Common

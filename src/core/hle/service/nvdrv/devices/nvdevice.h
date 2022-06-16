@@ -11,6 +11,10 @@ namespace Core {
 class System;
 }
 
+namespace Kernel {
+class KEvent;
+}
+
 namespace Service::Nvidia::Devices {
 
 /// Represents an abstract nvidia device node. It is to be subclassed by concrete device nodes to
@@ -63,6 +67,10 @@ public:
      * @param fd The device fd
      */
     virtual void OnClose(DeviceFD fd) = 0;
+
+    virtual Kernel::KEvent* QueryEvent(u32 event_id) {
+        return nullptr;
+    }
 
 protected:
     Core::System& system;

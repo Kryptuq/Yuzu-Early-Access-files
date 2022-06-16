@@ -26,6 +26,7 @@ struct RenderTargets {
     ImageViewId depth_buffer_id{};
     std::array<u8, NUM_RT> draw_buffers{};
     Extent2D size{};
+    bool is_rescaled{};
 };
 
 } // namespace VideoCommon

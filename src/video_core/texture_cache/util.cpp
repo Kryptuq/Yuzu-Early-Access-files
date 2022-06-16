@@ -510,21 +510,17 @@ void SwizzleBlockLinearImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr
     const LevelInfo level_info = MakeLevelInfo(info);
     const Extent2D tile_size = DefaultBlockSize(info.format);
     const u32 bytes_per_block = BytesPerBlock(info.format);
+    const u32 bpp_log2 = BytesPerBlockLog2(info.format);
 
     const s32 level = copy.image_subresource.base_level;
     const Extent3D level_size = AdjustMipSize(size, level);
     const u32 num_blocks_per_layer = NumBlocks(level_size, tile_size);
     const u32 host_bytes_per_layer = num_blocks_per_layer * bytes_per_block;
 
-    UNIMPLEMENTED_IF(info.tile_width_spacing > 0);
-
     UNIMPLEMENTED_IF(copy.image_offset.x != 0);
     UNIMPLEMENTED_IF(copy.image_offset.y != 0);
     UNIMPLEMENTED_IF(copy.image_offset.z != 0);
     UNIMPLEMENTED_IF(copy.image_extent != level_size);
-
-    const Extent3D num_tiles = AdjustTileSize(level_size, tile_size);
-    const Extent3D block = AdjustMipBlockSize(num_tiles, level_info.block, level);
 
     size_t host_offset = copy.buffer_offset;
 
@@ -536,6 +532,12 @@ void SwizzleBlockLinearImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr
                        tile_size.height, info.tile_width_spacing);
     const size_t subresource_size = sizes[level];
 
+    const Extent2D gob = GobSize(bpp_log2, level_info.block.height, info.tile_width_spacing);
+
+    const Extent3D num_tiles = AdjustTileSize(level_size, tile_size);
+    const Extent3D block = AdjustMipBlockSize(num_tiles, level_info.block, level);
+    const u32 stride_alignment = StrideAlignment(num_tiles, level_info.block, gob, bpp_log2);
+
     const auto dst_data = std::make_unique<u8[]>(subresource_size);
     const std::span<u8> dst(dst_data.get(), subresource_size);
 
@@ -544,7 +546,7 @@ void SwizzleBlockLinearImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr
         gpu_memory.ReadBlockUnsafe(gpu_addr + guest_offset, dst.data(), dst.size_bytes());
 
         SwizzleTexture(dst, src, bytes_per_block, num_tiles.width, num_tiles.height,
-                       num_tiles.depth, block.height, block.depth);
+                       num_tiles.depth, block.height, block.depth, stride_alignment);
 
         gpu_memory.WriteBlockUnsafe(gpu_addr + guest_offset, dst.data(), dst.size_bytes());
 
@@ -755,7 +757,7 @@ bool IsValidEntry(const Tegra::MemoryManager& gpu_memory, const TICEntry& config
     if (address == 0) {
         return false;
     }
-    if (address > (1ULL << 48)) {
+    if (address >= (1ULL << 40)) {
         return false;
     }
     if (gpu_memory.GpuToCpuAddress(address).has_value()) {

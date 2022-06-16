@@ -13,17 +13,31 @@
 #include "core/hle/service/nvdrv/nvdata.h"
 #include "video_core/dma_pusher.h"
 
-namespace Service::Nvidia {
-class SyncpointManager;
+namespace Tegra {
+namespace Control {
+struct ChannelState;
 }
+} // namespace Tegra
+
+namespace Service::Nvidia {
+
+namespace NvCore {
+class Container;
+class NvMap;
+class SyncpointManager;
+} // namespace NvCore
+
+class EventInterface;
+} // namespace Service::Nvidia
 
 namespace Service::Nvidia::Devices {
 
+class nvhost_as_gpu;
 class nvmap;
 class nvhost_gpu final : public nvdevice {
 public:
-    explicit nvhost_gpu(Core::System& system_, std::shared_ptr<nvmap> nvmap_dev_,
-                        SyncpointManager& syncpoint_manager_);
+    explicit nvhost_gpu(Core::System& system_, EventInterface& events_interface_,
+                        NvCore::Container& core);
     ~nvhost_gpu() override;
 
     NvResult Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
@@ -36,7 +50,10 @@ public:
     void OnOpen(DeviceFD fd) override;
     void OnClose(DeviceFD fd) override;
 
+    Kernel::KEvent* QueryEvent(u32 event_id) override;
+
 private:
+    friend class nvhost_as_gpu;
     enum class CtxObjects : u32_le {
         Ctx2D = 0x902D,
         Ctx3D = 0xB197,
@@ -146,17 +163,13 @@ private:
         u32_le num_entries{}; // number of fence objects being submitted
         union {
             u32_le raw;
-            BitField<0, 1, u32_le> add_wait;      // append a wait sync_point to the list
-            BitField<1, 1, u32_le> add_increment; // append an increment to the list
-            BitField<2, 1, u32_le> new_hw_format; // mostly ignored
-            BitField<4, 1, u32_le> suppress_wfi;  // suppress wait for interrupt
-            BitField<8, 1, u32_le> increment;     // increment the returned fence
+            BitField<0, 1, u32_le> fence_wait;      // append a wait sync_point to the list
+            BitField<1, 1, u32_le> fence_increment; // append an increment to the list
+            BitField<2, 1, u32_le> new_hw_format;   // mostly ignored
+            BitField<4, 1, u32_le> suppress_wfi;    // suppress wait for interrupt
+            BitField<8, 1, u32_le> increment_value; // increment the returned fence
         } flags;
-        NvFence fence_out{}; // returned new fence object for others to wait on
-
-        u32 AddIncrementValue() const {
-            return flags.add_increment.Value() << 1;
-        }
+        NvFence fence{}; // returned new fence object for others to wait on
     };
     static_assert(sizeof(IoctlSubmitGpfifo) == 16 + sizeof(NvFence),
                   "IoctlSubmitGpfifo is incorrect size");
@@ -191,9 +204,18 @@ private:
     NvResult ChannelSetTimeout(const std::vector<u8>& input, std::vector<u8>& output);
     NvResult ChannelSetTimeslice(const std::vector<u8>& input, std::vector<u8>& output);
 
-    std::shared_ptr<nvmap> nvmap_dev;
-    SyncpointManager& syncpoint_manager;
-    NvFence channel_fence;
+    EventInterface& events_interface;
+    NvCore::Container& core;
+    NvCore::SyncpointManager& syncpoint_manager;
+    NvCore::NvMap& nvmap;
+    std::shared_ptr<Tegra::Control::ChannelState> channel_state;
+    u32 channel_syncpoint;
+    std::mutex channel_mutex;
+
+    // Events
+    Kernel::KEvent* sm_exception_breakpoint_int_report_event;
+    Kernel::KEvent* sm_exception_breakpoint_pause_report_event;
+    Kernel::KEvent* error_notifier_event;
 };
 
 } // namespace Service::Nvidia::Devices

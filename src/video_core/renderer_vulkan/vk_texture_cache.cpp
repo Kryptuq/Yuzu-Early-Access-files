@@ -593,7 +593,7 @@ void TryTransformSwizzleIfNeeded(PixelFormat format, std::array<SwizzleSource, 4
     case PixelFormat::A5B5G5R1_UNORM:
         std::ranges::transform(swizzle, swizzle.begin(), SwapSpecial);
         break;
-    case PixelFormat::R4G4_UNORM:
+    case PixelFormat::G4R4_UNORM:
         std::ranges::transform(swizzle, swizzle.begin(), SwapGreenRed);
         break;
     default:
@@ -1481,7 +1481,8 @@ bool Image::BlitScaleHelper(bool scale_up) {
     auto* view_ptr = blit_view.get();
     if (aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT) {
         if (!blit_framebuffer) {
-            blit_framebuffer = std::make_unique<Framebuffer>(*runtime, view_ptr, nullptr, extent);
+            blit_framebuffer =
+                std::make_unique<Framebuffer>(*runtime, view_ptr, nullptr, extent, scale_up);
         }
         const auto color_view = blit_view->Handle(Shader::TextureType::Color2D);
 
@@ -1489,7 +1490,8 @@ bool Image::BlitScaleHelper(bool scale_up) {
                                              src_region, operation, BLIT_OPERATION);
     } else if (aspect_mask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
         if (!blit_framebuffer) {
-            blit_framebuffer = std::make_unique<Framebuffer>(*runtime, nullptr, view_ptr, extent);
+            blit_framebuffer =
+                std::make_unique<Framebuffer>(*runtime, nullptr, view_ptr, extent, scale_up);
         }
         runtime->blit_image_helper.BlitDepthStencil(blit_framebuffer.get(), blit_view->DepthView(),
                                                     blit_view->StencilView(), dst_region,
@@ -1747,34 +1749,43 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM
           .width = key.size.width,
           .height = key.size.height,
       }} {
-    CreateFramebuffer(runtime, color_buffers, depth_buffer);
+    CreateFramebuffer(runtime, color_buffers, depth_buffer, key.is_rescaled);
     if (runtime.device.HasDebuggingToolAttached()) {
         framebuffer.SetObjectNameEXT(VideoCommon::Name(key).c_str());
     }
 }
 
 Framebuffer::Framebuffer(TextureCacheRuntime& runtime, ImageView* color_buffer,
-                         ImageView* depth_buffer, VkExtent2D extent)
+                         ImageView* depth_buffer, VkExtent2D extent, bool is_rescaled)
     : render_area{extent} {
     std::array<ImageView*, NUM_RT> color_buffers{color_buffer};
-    CreateFramebuffer(runtime, color_buffers, depth_buffer);
+    CreateFramebuffer(runtime, color_buffers, depth_buffer, is_rescaled);
 }
 
 Framebuffer::~Framebuffer() = default;
 
 void Framebuffer::CreateFramebuffer(TextureCacheRuntime& runtime,
                                     std::span<ImageView*, NUM_RT> color_buffers,
-                                    ImageView* depth_buffer) {
+                                    ImageView* depth_buffer, bool is_rescaled) {
     std::vector<VkImageView> attachments;
     RenderPassKey renderpass_key{};
     s32 num_layers = 1;
 
+    const auto& resolution = runtime.resolution;
+    is_rescaled |= resolution.active;
+
+    u32 width = 0;
+    u32 height = 0;
     for (size_t index = 0; index < NUM_RT; ++index) {
         const ImageView* const color_buffer = color_buffers[index];
         if (!color_buffer) {
             renderpass_key.color_formats[index] = PixelFormat::Invalid;
             continue;
         }
+        width = std::max(width, is_rescaled ? resolution.ScaleUp(color_buffer->size.width)
+                                            : color_buffer->size.width);
+        height = std::max(height, is_rescaled ? resolution.ScaleUp(color_buffer->size.height)
+                                              : color_buffer->size.height);
         attachments.push_back(color_buffer->RenderTarget());
         renderpass_key.color_formats[index] = color_buffer->format;
         num_layers = std::max(num_layers, color_buffer->range.extent.layers);
@@ -1785,6 +1796,10 @@ void Framebuffer::CreateFramebuffer(TextureCacheRuntime& runtime,
     }
     const size_t num_colors = attachments.size();
     if (depth_buffer) {
+        width = std::max(width, is_rescaled ? resolution.ScaleUp(depth_buffer->size.width)
+                                            : depth_buffer->size.width);
+        height = std::max(height, is_rescaled ? resolution.ScaleUp(depth_buffer->size.height)
+                                              : depth_buffer->size.height);
         attachments.push_back(depth_buffer->RenderTarget());
         renderpass_key.depth_format = depth_buffer->format;
         num_layers = std::max(num_layers, depth_buffer->range.extent.layers);
@@ -1801,6 +1816,8 @@ void Framebuffer::CreateFramebuffer(TextureCacheRuntime& runtime,
     renderpass_key.samples = samples;
 
     renderpass = runtime.render_pass_cache.Get(renderpass_key);
+    render_area.width = std::min(render_area.width, width);
+    render_area.height = std::min(render_area.height, height);
 
     num_color_buffers = static_cast<u32>(num_colors);
     framebuffer = runtime.device.GetLogical().CreateFramebuffer({

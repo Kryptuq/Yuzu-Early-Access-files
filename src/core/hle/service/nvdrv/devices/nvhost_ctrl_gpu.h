@@ -10,11 +10,15 @@
 #include "common/swap.h"
 #include "core/hle/service/nvdrv/devices/nvdevice.h"
 
+namespace Service::Nvidia {
+class EventInterface;
+}
+
 namespace Service::Nvidia::Devices {
 
 class nvhost_ctrl_gpu final : public nvdevice {
 public:
-    explicit nvhost_ctrl_gpu(Core::System& system_);
+    explicit nvhost_ctrl_gpu(Core::System& system_, EventInterface& events_interface_);
     ~nvhost_ctrl_gpu() override;
 
     NvResult Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
@@ -26,6 +30,8 @@ public:
 
     void OnOpen(DeviceFD fd) override;
     void OnClose(DeviceFD fd) override;
+
+    Kernel::KEvent* QueryEvent(u32 event_id) override;
 
 private:
     struct IoctlGpuCharacteristics {
@@ -160,6 +166,12 @@ private:
     NvResult ZBCQueryTable(const std::vector<u8>& input, std::vector<u8>& output);
     NvResult FlushL2(const std::vector<u8>& input, std::vector<u8>& output);
     NvResult GetGpuTime(const std::vector<u8>& input, std::vector<u8>& output);
+
+    EventInterface& events_interface;
+
+    // Events
+    Kernel::KEvent* error_notifier_event;
+    Kernel::KEvent* unknown_event;
 };
 
 } // namespace Service::Nvidia::Devices

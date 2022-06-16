@@ -189,10 +189,16 @@ public:
             BitField<4, 3, Swizzle> dst_y;
             BitField<8, 3, Swizzle> dst_z;
             BitField<12, 3, Swizzle> dst_w;
+            BitField<0, 12, u32> dst_components_raw;
             BitField<16, 2, u32> component_size_minus_one;
             BitField<20, 2, u32> num_src_components_minus_one;
             BitField<24, 2, u32> num_dst_components_minus_one;
         };
+
+        Swizzle GetComponent(size_t i) {
+            const u32 raw = dst_components_raw;
+            return static_cast<Swizzle>((raw >> (i * 3)) & 0x7);
+        }
     };
     static_assert(sizeof(RemapConst) == 12);
 

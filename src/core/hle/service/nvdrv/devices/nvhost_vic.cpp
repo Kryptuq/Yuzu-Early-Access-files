@@ -8,9 +8,11 @@
 #include "video_core/renderer_base.h"
 
 namespace Service::Nvidia::Devices {
-nvhost_vic::nvhost_vic(Core::System& system_, std::shared_ptr<nvmap> nvmap_dev_,
-                       SyncpointManager& syncpoint_manager_)
-    : nvhost_nvdec_common{system_, std::move(nvmap_dev_), syncpoint_manager_} {}
+
+u32 nvhost_vic::next_id{};
+
+nvhost_vic::nvhost_vic(Core::System& system_, NvCore::Container& core_)
+    : nvhost_nvdec_common{system_, core_, NvCore::ChannelType::VIC} {}
 
 nvhost_vic::~nvhost_vic() = default;
 

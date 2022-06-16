@@ -4,6 +4,7 @@
 
 #include <cinttypes>
 #include <clocale>
+#include <cmath>
 #include <memory>
 #include <thread>
 #ifdef __APPLE__
@@ -3279,9 +3280,10 @@ void GMainWindow::UpdateStatusBar() {
     }
     if (Settings::values.disable_fps_limit) {
         game_fps_label->setText(
-            tr("Game: %1 FPS (Unlocked)").arg(results.average_game_fps, 0, 'f', 0));
+            tr("Game: %1 FPS (Unlocked)").arg(std::round(results.average_game_fps), 0, 'f', 0));
     } else {
-        game_fps_label->setText(tr("Game: %1 FPS").arg(results.average_game_fps, 0, 'f', 0));
+        game_fps_label->setText(
+            tr("Game: %1 FPS").arg(std::round(results.average_game_fps), 0, 'f', 0));
     }
     emu_frametime_label->setText(tr("Frame: %1 ms").arg(results.frametime * 1000.0, 0, 'f', 2));
 

@@ -10,10 +10,7 @@
 
 namespace OpenGL {
 
-GLInnerFence::GLInnerFence(u32 payload_, bool is_stubbed_) : FenceBase{payload_, is_stubbed_} {}
-
-GLInnerFence::GLInnerFence(GPUVAddr address_, u32 payload_, bool is_stubbed_)
-    : FenceBase{address_, payload_, is_stubbed_} {}
+GLInnerFence::GLInnerFence(bool is_stubbed_) : FenceBase{is_stubbed_} {}
 
 GLInnerFence::~GLInnerFence() = default;
 
@@ -48,12 +45,8 @@ FenceManagerOpenGL::FenceManagerOpenGL(VideoCore::RasterizerInterface& rasterize
                                        BufferCache& buffer_cache_, QueryCache& query_cache_)
     : GenericFenceManager{rasterizer_, gpu_, texture_cache_, buffer_cache_, query_cache_} {}
 
-Fence FenceManagerOpenGL::CreateFence(u32 value, bool is_stubbed) {
-    return std::make_shared<GLInnerFence>(value, is_stubbed);
-}
-
-Fence FenceManagerOpenGL::CreateFence(GPUVAddr addr, u32 value, bool is_stubbed) {
-    return std::make_shared<GLInnerFence>(addr, value, is_stubbed);
+Fence FenceManagerOpenGL::CreateFence(bool is_stubbed) {
+    return std::make_shared<GLInnerFence>(is_stubbed);
 }
 
 void FenceManagerOpenGL::QueueFence(Fence& fence) {

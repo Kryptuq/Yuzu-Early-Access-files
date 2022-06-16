@@ -63,7 +63,7 @@ PixelFormat PixelFormatFromTextureInfo(TextureFormat format, ComponentType red, 
     case Hash(TextureFormat::A4B4G4R4, UNORM):
         return PixelFormat::A4B4G4R4_UNORM;
     case Hash(TextureFormat::G4R4, UNORM):
-        return PixelFormat::R4G4_UNORM;
+        return PixelFormat::G4R4_UNORM;
     case Hash(TextureFormat::A5B5G5R1, UNORM):
         return PixelFormat::A5B5G5R1_UNORM;
     case Hash(TextureFormat::R8, UNORM):

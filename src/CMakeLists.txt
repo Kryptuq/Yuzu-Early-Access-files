@@ -112,6 +112,7 @@ else()
 
     if (ARCHITECTURE_x86_64)
         add_compile_options("-mcx16")
+        add_compile_options("-fwrapv")
     endif()
 
     if (APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL Clang)

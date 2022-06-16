@@ -964,9 +964,9 @@ private:
         demote_endif_node.type = Type::EndIf;
         demote_endif_node.data.end_if.merge = return_block_it->data.block;
 
-        asl.insert(return_block_it, demote_endif_node);
-        asl.insert(return_block_it, demote_node);
-        asl.insert(return_block_it, demote_if_node);
+        const auto next_it_1 = asl.insert(return_block_it, demote_endif_node);
+        const auto next_it_2 = asl.insert(next_it_1, demote_node);
+        asl.insert(next_it_2, demote_if_node);
     }
 
     ObjectPool<Statement>& stmt_pool;

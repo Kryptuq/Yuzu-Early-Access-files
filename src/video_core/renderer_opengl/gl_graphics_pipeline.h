@@ -71,10 +71,9 @@ static_assert(std::is_trivially_constructible_v<GraphicsPipelineKey>);
 class GraphicsPipeline {
 public:
     explicit GraphicsPipeline(const Device& device, TextureCache& texture_cache_,
-                              BufferCache& buffer_cache_, Tegra::MemoryManager& gpu_memory_,
-                              Tegra::Engines::Maxwell3D& maxwell3d_,
-                              ProgramManager& program_manager_, StateTracker& state_tracker_,
-                              ShaderWorker* thread_worker, VideoCore::ShaderNotify* shader_notify,
+                              BufferCache& buffer_cache_, ProgramManager& program_manager_,
+                              StateTracker& state_tracker_, ShaderWorker* thread_worker,
+                              VideoCore::ShaderNotify* shader_notify,
                               std::array<std::string, 5> sources,
                               std::array<std::vector<u32>, 5> sources_spirv,
                               const std::array<const Shader::Info*, 5>& infos,
@@ -107,6 +106,11 @@ public:
         };
     }
 
+    void SetEngine(Tegra::Engines::Maxwell3D* maxwell3d_, Tegra::MemoryManager* gpu_memory_) {
+        maxwell3d = maxwell3d_;
+        gpu_memory = gpu_memory_;
+    }
+
 private:
     template <typename Spec>
     void ConfigureImpl(bool is_indexed);
@@ -119,8 +123,8 @@ private:
 
     TextureCache& texture_cache;
     BufferCache& buffer_cache;
-    Tegra::MemoryManager& gpu_memory;
-    Tegra::Engines::Maxwell3D& maxwell3d;
+    Tegra::MemoryManager* gpu_memory;
+    Tegra::Engines::Maxwell3D* maxwell3d;
     ProgramManager& program_manager;
     StateTracker& state_tracker;
     const GraphicsPipelineKey key;

@@ -8,6 +8,7 @@
 
 #include <boost/container_hash/hash.hpp>
 
+#include <fstream>
 #include "common/assert.h"
 #include "common/fs/fs.h"
 #include "common/fs/path_util.h"

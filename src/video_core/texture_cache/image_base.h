@@ -88,6 +88,9 @@ struct ImageBase {
     u32 scale_rating = 0;
     u64 scale_tick = 0;
     bool has_scaled = false;
+
+    size_t channel = 0;
+
     ImageFlagBits flags = ImageFlagBits::CpuModified;
 
     GPUVAddr gpu_addr = 0;

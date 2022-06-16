@@ -9,14 +9,22 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/swap.h"
+#include "core/hle/service/nvdrv/core/nvmap.h"
 #include "core/hle/service/nvdrv/devices/nvdevice.h"
+
+namespace Service::Nvidia::NvCore {
+class Container;
+} // namespace Service::Nvidia::NvCore
 
 namespace Service::Nvidia::Devices {
 
 class nvmap final : public nvdevice {
 public:
-    explicit nvmap(Core::System& system_);
+    explicit nvmap(Core::System& system_, NvCore::Container& container);
     ~nvmap() override;
+
+    nvmap(nvmap const&) = delete;
+    nvmap& operator=(nvmap const&) = delete;
 
     NvResult Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
                     std::vector<u8>& output) override;
@@ -31,27 +39,16 @@ public:
     /// Returns the allocated address of an nvmap object given its handle.
     VAddr GetObjectAddress(u32 handle) const;
 
-    /// Represents an nvmap object.
-    struct Object {
-        enum class Status { Created, Allocated };
-        u32 id;
-        u32 size;
-        u32 flags;
-        u32 align;
-        u8 kind;
-        VAddr addr;
-        Status status;
-        u32 refcount;
-        u32 dma_map_addr;
-    };
+    std::shared_ptr<NvCore::NvMap::Handle> GetObject(u32 handle) const;
 
-    std::shared_ptr<Object> GetObject(u32 handle) const {
-        auto itr = handles.find(handle);
-        if (itr != handles.end()) {
-            return itr->second;
-        }
-        return {};
-    }
+    enum class HandleParameterType : u32_le {
+        Size = 1,
+        Alignment = 2,
+        Base = 3,
+        Heap = 4,
+        Kind = 5,
+        IsSharedMemMapped = 6
+    };
 
 private:
     /// Id to use for the next handle that is created.
@@ -59,9 +56,6 @@ private:
 
     /// Id to use for the next object that is created.
     u32 next_id = 0;
-
-    /// Mapping of currently allocated handles to the objects they represent.
-    std::unordered_map<u32, std::shared_ptr<Object>> handles;
 
     struct IocCreateParams {
         // Input
@@ -83,11 +77,11 @@ private:
         // Input
         u32_le handle{};
         u32_le heap_mask{};
-        u32_le flags{};
+        NvCore::NvMap::Handle::Flags flags{};
         u32_le align{};
         u8 kind{};
         INSERT_PADDING_BYTES(7);
-        u64_le addr{};
+        u64_le address{};
     };
     static_assert(sizeof(IocAllocParams) == 32, "IocAllocParams has wrong size");
 
@@ -96,14 +90,14 @@ private:
         INSERT_PADDING_BYTES(4);
         u64_le address{};
         u32_le size{};
-        u32_le flags{};
+        NvCore::NvMap::Handle::Flags flags{};
     };
     static_assert(sizeof(IocFreeParams) == 24, "IocFreeParams has wrong size");
 
     struct IocParamParams {
         // Input
         u32_le handle{};
-        u32_le param{};
+        HandleParameterType param{};
         // Output
         u32_le result{};
     };
@@ -117,14 +111,15 @@ private:
     };
     static_assert(sizeof(IocGetIdParams) == 8, "IocGetIdParams has wrong size");
 
-    u32 CreateObject(u32 size);
-
     NvResult IocCreate(const std::vector<u8>& input, std::vector<u8>& output);
     NvResult IocAlloc(const std::vector<u8>& input, std::vector<u8>& output);
     NvResult IocGetId(const std::vector<u8>& input, std::vector<u8>& output);
     NvResult IocFromId(const std::vector<u8>& input, std::vector<u8>& output);
     NvResult IocParam(const std::vector<u8>& input, std::vector<u8>& output);
     NvResult IocFree(const std::vector<u8>& input, std::vector<u8>& output);
+
+    NvCore::Container& container;
+    NvCore::NvMap& file;
 };
 
 } // namespace Service::Nvidia::Devices

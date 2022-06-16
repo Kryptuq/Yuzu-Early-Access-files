@@ -75,6 +75,9 @@ class TimeManager;
 namespace Tegra {
 class DebugContext;
 class GPU;
+namespace Host1x {
+class Host1x;
+} // namespace Host1x
 } // namespace Tegra
 
 namespace VideoCore {
@@ -83,10 +86,6 @@ class RendererBase;
 
 namespace Core::Timing {
 class CoreTiming;
-}
-
-namespace Core::Hardware {
-class InterruptManager;
 }
 
 namespace Core::HID {
@@ -244,6 +243,12 @@ public:
     /// Gets an immutable reference to the GPU interface.
     [[nodiscard]] const Tegra::GPU& GPU() const;
 
+    /// Gets a mutable reference to the Host1x interface
+    [[nodiscard]] Tegra::Host1x::Host1x& Host1x();
+
+    /// Gets an immutable reference to the Host1x interface.
+    [[nodiscard]] const Tegra::Host1x::Host1x& Host1x() const;
+
     /// Gets a mutable reference to the renderer.
     [[nodiscard]] VideoCore::RendererBase& Renderer();
 
@@ -273,12 +278,6 @@ public:
 
     /// Provides a constant reference to the core timing instance.
     [[nodiscard]] const Timing::CoreTiming& CoreTiming() const;
-
-    /// Provides a reference to the interrupt manager instance.
-    [[nodiscard]] Core::Hardware::InterruptManager& InterruptManager();
-
-    /// Provides a constant reference to the interrupt manager instance.
-    [[nodiscard]] const Core::Hardware::InterruptManager& InterruptManager() const;
 
     /// Provides a reference to the kernel instance.
     [[nodiscard]] Kernel::KernelCore& Kernel();

@@ -115,6 +115,7 @@ public:
      *          If the address is not valid, nullptr will be returned.
      */
     u8* GetPointer(VAddr vaddr);
+    u8* GetPointerSilent(VAddr vaddr);
 
     template <typename T>
     T* GetPointer(VAddr vaddr) {

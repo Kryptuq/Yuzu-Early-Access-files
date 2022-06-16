@@ -39,6 +39,8 @@ add_custom_command(OUTPUT scm_rev.cpp
 )
 
 add_library(common STATIC
+    address_space.h
+    address_space.cpp
     algorithm.h
     alignment.h
     assert.cpp
@@ -100,6 +102,8 @@ add_library(common STATIC
     microprofile.cpp
     microprofile.h
     microprofileui.h
+    multi_level_page_table.cpp
+    multi_level_page_table.h
     nvidia_flags.cpp
     nvidia_flags.h
     page_table.cpp

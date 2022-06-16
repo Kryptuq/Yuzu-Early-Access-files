@@ -114,6 +114,7 @@ private:
     void SplitVSync(std::stop_token stop_token);
 
     std::shared_ptr<Nvidia::Module> nvdrv;
+    s32 disp_fd;
 
     std::list<VI::Display> displays;
 

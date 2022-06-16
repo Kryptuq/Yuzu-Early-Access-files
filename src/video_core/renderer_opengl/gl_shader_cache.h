@@ -30,12 +30,9 @@ using ShaderWorker = Common::StatefulThreadWorker<ShaderContext::Context>;
 class ShaderCache : public VideoCommon::ShaderCache {
 public:
     explicit ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindow& emu_window_,
-                         Tegra::Engines::Maxwell3D& maxwell3d_,
-                         Tegra::Engines::KeplerCompute& kepler_compute_,
-                         Tegra::MemoryManager& gpu_memory_, const Device& device_,
-                         TextureCache& texture_cache_, BufferCache& buffer_cache_,
-                         ProgramManager& program_manager_, StateTracker& state_tracker_,
-                         VideoCore::ShaderNotify& shader_notify_);
+                         const Device& device_, TextureCache& texture_cache_,
+                         BufferCache& buffer_cache_, ProgramManager& program_manager_,
+                         StateTracker& state_tracker_, VideoCore::ShaderNotify& shader_notify_);
     ~ShaderCache();
 
     void LoadDiskResources(u64 title_id, std::stop_token stop_loading,

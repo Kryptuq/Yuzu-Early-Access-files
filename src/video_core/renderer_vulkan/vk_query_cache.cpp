@@ -65,10 +65,9 @@ void QueryPool::Reserve(std::pair<VkQueryPool, u32> query) {
     usage[pool_index * GROW_STEP + static_cast<std::ptrdiff_t>(query.second)] = false;
 }
 
-VKQueryCache::VKQueryCache(VideoCore::RasterizerInterface& rasterizer_,
-                           Tegra::Engines::Maxwell3D& maxwell3d_, Tegra::MemoryManager& gpu_memory_,
-                           const Device& device_, VKScheduler& scheduler_)
-    : QueryCacheBase{rasterizer_, maxwell3d_, gpu_memory_}, device{device_}, scheduler{scheduler_},
+VKQueryCache::VKQueryCache(VideoCore::RasterizerInterface& rasterizer_, const Device& device_,
+                           VKScheduler& scheduler_)
+    : QueryCacheBase{rasterizer_}, device{device_}, scheduler{scheduler_},
       query_pools{
           QueryPool{device_, scheduler_, QueryType::SamplesPassed},
       } {}

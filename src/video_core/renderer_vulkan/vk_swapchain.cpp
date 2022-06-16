@@ -35,7 +35,8 @@ VkSurfaceFormatKHR ChooseSwapSurfaceFormat(vk::Span<VkSurfaceFormatKHR> formats)
 VkPresentModeKHR ChooseSwapPresentMode(vk::Span<VkPresentModeKHR> modes) {
     // Mailbox doesn't lock the application like fifo (vsync), prefer it
     const auto found_mailbox = std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_MAILBOX_KHR);
-    if (found_mailbox != modes.end()) {
+    if (Settings::values.fullscreen_mode.GetValue() == Settings::FullscreenMode::Borderless &&
+        found_mailbox != modes.end()) {
         return VK_PRESENT_MODE_MAILBOX_KHR;
     }
     if (Settings::values.disable_fps_limit.GetValue()) {
@@ -155,8 +156,16 @@ void VKSwapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, 
     present_mode = ChooseSwapPresentMode(present_modes);
 
     u32 requested_image_count{capabilities.minImageCount + 1};
-    if (capabilities.maxImageCount > 0 && requested_image_count > capabilities.maxImageCount) {
-        requested_image_count = capabilities.maxImageCount;
+    // Ensure Tripple buffering if possible.
+    if (capabilities.maxImageCount > 0) {
+        if (requested_image_count > capabilities.maxImageCount) {
+            requested_image_count = capabilities.maxImageCount;
+        } else {
+            requested_image_count =
+                std::max(requested_image_count, std::min(3U, capabilities.maxImageCount));
+        }
+    } else {
+        requested_image_count = std::max(requested_image_count, 3U);
     }
     VkSwapchainCreateInfoKHR swapchain_ci{
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,

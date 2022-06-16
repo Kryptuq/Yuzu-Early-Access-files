@@ -12,11 +12,16 @@
 #include <vector>
 
 #include "common/common_types.h"
+#include "video_core/control/channel_state_cache.h"
 #include "video_core/rasterizer_interface.h"
 #include "video_core/shader_environment.h"
 
 namespace Tegra {
 class MemoryManager;
+}
+
+namespace Tegra::Control {
+struct ChannelState;
 }
 
 namespace VideoCommon {
@@ -28,7 +33,7 @@ struct ShaderInfo {
     size_t size_bytes{};
 };
 
-class ShaderCache {
+class ShaderCache : public VideoCommon::ChannelSetupCaches<VideoCommon::ChannelInfo> {
     static constexpr u64 PAGE_BITS = 14;
     static constexpr u64 PAGE_SIZE = u64(1) << PAGE_BITS;
 
@@ -71,9 +76,7 @@ protected:
         }
     };
 
-    explicit ShaderCache(VideoCore::RasterizerInterface& rasterizer_,
-                         Tegra::MemoryManager& gpu_memory_, Tegra::Engines::Maxwell3D& maxwell3d_,
-                         Tegra::Engines::KeplerCompute& kepler_compute_);
+    explicit ShaderCache(VideoCore::RasterizerInterface& rasterizer_);
 
     /// @brief Update the hashes and information of shader stages
     /// @param unique_hashes Shader hashes to store into when a stage is enabled
@@ -87,10 +90,6 @@ protected:
     /// @brief Collect the current graphics environments
     void GetGraphicsEnvironments(GraphicsEnvironments& result,
                                  const std::array<u64, NUM_PROGRAMS>& unique_hashes);
-
-    Tegra::MemoryManager& gpu_memory;
-    Tegra::Engines::Maxwell3D& maxwell3d;
-    Tegra::Engines::KeplerCompute& kepler_compute;
 
     std::array<const ShaderInfo*, NUM_PROGRAMS> shader_infos{};
     bool last_shaders_valid = false;

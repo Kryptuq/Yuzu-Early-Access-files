@@ -102,13 +102,13 @@ RendererVulkan::RendererVulkan(Core::TelemetrySession& telemetry_session_,
       debug_callback(Settings::values.renderer_debug ? CreateDebugCallback(instance) : nullptr),
       surface(CreateSurface(instance, render_window)),
       device(CreateDevice(instance, dld, *surface)), memory_allocator(device, false),
-      state_tracker(gpu), scheduler(device, state_tracker),
+      state_tracker(), scheduler(device, state_tracker),
       swapchain(*surface, device, scheduler, render_window.GetFramebufferLayout().width,
                 render_window.GetFramebufferLayout().height, false),
       blit_screen(cpu_memory, render_window, device, memory_allocator, swapchain, scheduler,
                   screen_info),
-      rasterizer(render_window, gpu, gpu.MemoryManager(), cpu_memory, screen_info, device,
-                 memory_allocator, state_tracker, scheduler) {
+      rasterizer(render_window, gpu, cpu_memory, screen_info, device, memory_allocator,
+                 state_tracker, scheduler) {
     Report();
 } catch (const vk::Exception& exception) {
     LOG_ERROR(Render_Vulkan, "Vulkan initialization failed with error: {}", exception.what());
@@ -142,7 +142,7 @@ void RendererVulkan::SwapBuffers(const Tegra::FramebufferConfig* framebuffer) {
     const auto recreate_swapchain = [&] {
         if (!has_been_recreated) {
             has_been_recreated = true;
-            scheduler.WaitWorker();
+            scheduler.Finish();
         }
         const Layout::FramebufferLayout layout = render_window.GetFramebufferLayout();
         swapchain.Create(layout.width, layout.height, is_srgb);

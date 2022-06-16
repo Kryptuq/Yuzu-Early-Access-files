@@ -12,11 +12,13 @@
 
 namespace Tegra {
 
-class GPU;
+namespace Host1x {
+class Control;
 class Host1x;
 class Nvdec;
 class SyncptIncrManager;
 class Vic;
+} // namespace Host1x
 
 enum class ChSubmissionMode : u32 {
     SetClass = 0,
@@ -30,7 +32,7 @@ enum class ChSubmissionMode : u32 {
 
 enum class ChClassId : u32 {
     NoClass = 0x0,
-    Host1x = 0x1,
+    Control = 0x1,
     VideoEncodeMpeg = 0x20,
     VideoEncodeNvEnc = 0x21,
     VideoStreamingVi = 0x30,
@@ -88,7 +90,7 @@ enum class ThiMethod : u32 {
 
 class CDmaPusher {
 public:
-    explicit CDmaPusher(GPU& gpu_);
+    explicit CDmaPusher(Host1x::Host1x& host1x);
     ~CDmaPusher();
 
     /// Process the command entry
@@ -101,11 +103,11 @@ private:
     /// Write arguments value to the ThiRegisters member at the specified offset
     void ThiStateWrite(ThiRegisters& state, u32 offset, u32 argument);
 
-    GPU& gpu;
-    std::shared_ptr<Tegra::Nvdec> nvdec_processor;
-    std::unique_ptr<Tegra::Vic> vic_processor;
-    std::unique_ptr<Tegra::Host1x> host1x_processor;
-    std::unique_ptr<SyncptIncrManager> sync_manager;
+    Host1x::Host1x& host1x;
+    std::shared_ptr<Tegra::Host1x::Nvdec> nvdec_processor;
+    std::unique_ptr<Tegra::Host1x::Vic> vic_processor;
+    std::unique_ptr<Tegra::Host1x::Control> host1x_processor;
+    std::unique_ptr<Host1x::SyncptIncrManager> sync_manager;
     ChClassId current_class{};
     ThiRegisters vic_thi_state{};
     ThiRegisters nvdec_thi_state{};
