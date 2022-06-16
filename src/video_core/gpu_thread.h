@@ -98,7 +98,7 @@ struct CommandDataContainer {
 struct SynchState final {
     using CommandQueue = Common::MPSCQueue<CommandDataContainer>;
     std::mutex write_lock;
-    CommandQueue queue{512}; // size must be 2^n
+    CommandQueue queue;
     u64 last_fence{};
     std::atomic<u64> signaled_fence{};
     std::condition_variable_any cv;
