@@ -138,6 +138,12 @@ int main(int argc, char** argv) {
 
     Config config{config_path};
 
+    // apply the log_filter setting
+    // the logger was initialized before and doesn't pick up the filter on its own
+    Common::Log::Filter filter;
+    filter.ParseFilterString(Settings::values.log_filter.GetValue());
+    Common::Log::SetGlobalFilter(filter);
+
     if (!program_args.empty()) {
         Settings::values.program_args = program_args;
     }

@@ -829,6 +829,7 @@ void KScheduler::Initialize() {
     idle_thread = KThread::Create(system.Kernel());
     ASSERT(KThread::InitializeIdleThread(system, idle_thread, core_id).IsSuccess());
     idle_thread->SetName(fmt::format("IdleThread:{}", core_id));
+    idle_thread->EnableDispatch();
 }
 
 KScopedSchedulerLock::KScopedSchedulerLock(KernelCore& kernel)

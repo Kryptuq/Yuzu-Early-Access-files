@@ -225,7 +225,7 @@ ResultCode KThread::Initialize(KThreadFunction func, uintptr_t arg, VAddr user_s
     // Setup the stack parameters.
     StackParameters& sp = GetStackParameters();
     sp.cur_thread = this;
-    sp.disable_count = 0;
+    sp.disable_count = 1;
     SetInExceptionHandler();
 
     // Set thread ID.
@@ -1013,8 +1013,6 @@ ResultCode KThread::Run() {
 
         // Set our state and finish.
         SetState(ThreadState::Runnable);
-
-        DisableDispatch();
 
         return ResultSuccess;
     }

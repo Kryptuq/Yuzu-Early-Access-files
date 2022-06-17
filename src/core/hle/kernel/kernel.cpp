@@ -254,7 +254,6 @@ struct KernelCore::Impl {
                                                          core_id)
                        .IsSuccess());
             shutdown_threads[core_id]->SetName(fmt::format("SuspendThread:{}", core_id));
-            shutdown_threads[core_id]->DisableDispatch();
         }
     }
 

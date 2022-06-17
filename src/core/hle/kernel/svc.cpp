@@ -1726,11 +1726,12 @@ static ResultCode UnmapProcessCodeMemory(Core::System& system, Handle process_ha
 /// Exits the current process
 static void ExitProcess(Core::System& system) {
     auto* current_process = system.Kernel().CurrentProcess();
-    UNIMPLEMENTED();
 
     LOG_INFO(Kernel_SVC, "Process {} exiting", current_process->GetProcessID());
     ASSERT_MSG(current_process->GetStatus() == ProcessStatus::Running,
                "Process has already exited");
+
+    system.Exit();
 }
 
 static void ExitProcess32(Core::System& system) {
