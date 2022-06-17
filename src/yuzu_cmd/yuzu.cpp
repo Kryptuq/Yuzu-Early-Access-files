@@ -21,6 +21,7 @@
 #include "common/string_util.h"
 #include "common/telemetry.h"
 #include "core/core.h"
+#include "core/cpu_manager.h"
 #include "core/crypto/key_manager.h"
 #include "core/file_sys/registered_cache.h"
 #include "core/file_sys/vfs_real.h"
@@ -216,6 +217,7 @@ int main(int argc, char** argv) {
 
     // Core is loaded, start the GPU (makes the GPU contexts current to this thread)
     system.GPU().Start();
+    system.GetCpuManager().OnGpuReady();
 
     if (Settings::values.use_disk_shader_cache.GetValue()) {
         system.Renderer().ReadRasterizer()->LoadDiskResources(

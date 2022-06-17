@@ -26,6 +26,7 @@ void CpuManager::ThreadStart(std::stop_token stop_token, CpuManager& cpu_manager
 
 void CpuManager::Initialize() {
     num_cores = is_multicore ? Core::Hardware::NUM_CPU_CORES : 1;
+    gpu_barrier = std::make_unique<Common::Barrier>(num_cores + 1);
 
     for (std::size_t core = 0; core < num_cores; core++) {
         core_data[core].host_thread = std::jthread(ThreadStart, std::ref(*this), core);
@@ -230,6 +231,8 @@ void CpuManager::RunThread(std::size_t core) {
     });
 
     // Running
+    gpu_barrier->Sync();
+
     if (!is_async_gpu && !is_multicore) {
         system.GPU().ObtainContext();
     }

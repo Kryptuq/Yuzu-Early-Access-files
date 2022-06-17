@@ -43,6 +43,10 @@ public:
         is_async_gpu = is_async;
     }
 
+    void OnGpuReady() {
+        gpu_barrier->Sync();
+    }
+
     void Initialize();
     void Shutdown();
 
@@ -81,6 +85,7 @@ private:
         std::jthread host_thread;
     };
 
+    std::unique_ptr<Common::Barrier> gpu_barrier{};
     std::array<CoreData, Core::Hardware::NUM_CPU_CORES> core_data{};
 
     bool is_async_gpu{};

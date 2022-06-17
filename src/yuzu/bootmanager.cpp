@@ -29,6 +29,7 @@
 #include "common/scm_rev.h"
 #include "common/settings.h"
 #include "core/core.h"
+#include "core/cpu_manager.h"
 #include "core/frontend/framebuffer_layout.h"
 #include "input_common/drivers/keyboard.h"
 #include "input_common/drivers/mouse.h"
@@ -72,6 +73,8 @@ void EmuThread::run() {
     emit LoadProgress(VideoCore::LoadCallbackStage::Complete, 0, 0);
 
     gpu.ReleaseContext();
+
+    system.GetCpuManager().OnGpuReady();
 
     // Holds whether the cpu was running during the last iteration,
     // so that the DebugModeLeft signal can be emitted before the
