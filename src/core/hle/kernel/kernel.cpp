@@ -1078,6 +1078,13 @@ void KernelCore::Suspend(bool suspended) {
 
     for (auto* process : GetProcessList()) {
         process->SetActivity(activity);
+
+        if (should_suspend) {
+            // Wait for execution to stop
+            for (auto* thread : process->GetThreadList()) {
+                thread->WaitUntilSuspended();
+            }
+        }
     }
 }
 

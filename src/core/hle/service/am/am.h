@@ -220,6 +220,18 @@ private:
         Docked = 1,
     };
 
+    // This is nn::am::service::SystemButtonType
+    enum class SystemButtonType {
+        None,
+        HomeButtonShortPressing,
+        HomeButtonLongPressing,
+        PowerButtonShortPressing,
+        PowerButtonLongPressing,
+        ShutdownSystem,
+        CaptureButtonShortPressing,
+        CaptureButtonLongPressing,
+    };
+
     void GetEventHandle(Kernel::HLERequestContext& ctx);
     void ReceiveMessage(Kernel::HLERequestContext& ctx);
     void GetCurrentFocusState(Kernel::HLERequestContext& ctx);
@@ -234,6 +246,7 @@ private:
     void EndVrModeEx(Kernel::HLERequestContext& ctx);
     void GetDefaultDisplayResolution(Kernel::HLERequestContext& ctx);
     void SetCpuBoostMode(Kernel::HLERequestContext& ctx);
+    void PerformSystemButtonPressingIfInFocus(Kernel::HLERequestContext& ctx);
     void SetRequestExitToLibraryAppletAtExecuteNextProgramEnabled(Kernel::HLERequestContext& ctx);
 
     std::shared_ptr<AppletMessageQueue> msg_queue;

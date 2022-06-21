@@ -748,6 +748,19 @@ void KThread::Continue() {
     KScheduler::OnThreadStateChanged(kernel, this, old_state);
 }
 
+void KThread::WaitUntilSuspended() {
+    // Make sure we have a suspend requested.
+    ASSERT(IsSuspendRequested());
+
+    // Loop until the thread is not executing on any core.
+    for (std::size_t i = 0; i < static_cast<std::size_t>(Core::Hardware::NUM_CPU_CORES); ++i) {
+        KThread* core_thread{};
+        do {
+            core_thread = kernel.Scheduler(i).GetCurrentThread();
+        } while (core_thread == this);
+    }
+}
+
 ResultCode KThread::SetActivity(Svc::ThreadActivity activity) {
     // Lock ourselves.
     KScopedLightLock lk(activity_pause_lock);

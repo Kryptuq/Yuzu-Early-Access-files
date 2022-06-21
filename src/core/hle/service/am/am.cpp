@@ -686,7 +686,7 @@ ICommonStateGetter::ICommonStateGetter(Core::System& system_,
         {66, &ICommonStateGetter::SetCpuBoostMode, "SetCpuBoostMode"},
         {67, nullptr, "CancelCpuBoostMode"},
         {68, nullptr, "GetBuiltInDisplayType"},
-        {80, nullptr, "PerformSystemButtonPressingIfInFocus"},
+        {80, &ICommonStateGetter::PerformSystemButtonPressingIfInFocus, "PerformSystemButtonPressingIfInFocus"},
         {90, nullptr, "SetPerformanceConfigurationChangedNotification"},
         {91, nullptr, "GetCurrentPerformanceConfiguration"},
         {100, nullptr, "SetHandlingHomeButtonShortPressedEnabled"},
@@ -824,6 +824,16 @@ void ICommonStateGetter::SetCpuBoostMode(Kernel::HLERequestContext& ctx) {
     ASSERT(apm_sys != nullptr);
 
     apm_sys->SetCpuBoostMode(ctx);
+}
+
+void ICommonStateGetter::PerformSystemButtonPressingIfInFocus(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto system_button{rp.PopEnum<SystemButtonType>()};
+
+    LOG_WARNING(Service_AM, "(STUBBED) called, system_button={}", system_button);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
 }
 
 void ICommonStateGetter::SetRequestExitToLibraryAppletAtExecuteNextProgramEnabled(
