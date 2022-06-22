@@ -447,6 +447,17 @@ public:
      */
     void RasterizerMarkRegionCached(VAddr vaddr, u64 size, bool cached);
 
+    /**
+     * Marks each page within the specified address range as debug or non-debug.
+     * Debug addresses are not accessible from fastmem pointers.
+     *
+     * @param vaddr The virtual address indicating the start of the address range.
+     * @param size  The size of the address range in bytes.
+     * @param debug Whether or not any pages within the address range should be
+     *              marked as debug or non-debug.
+     */
+    void MarkRegionDebug(VAddr vaddr, u64 size, bool debug);
+
 private:
     Core::System& system;
 

@@ -72,7 +72,7 @@ static bool ExclusiveSharedDecodeAndOperation(TranslatorVisitor& v, bool pair, s
         UNREACHABLE();
     }
 
-    return true;
+    return v.MemoryInstructionContinues();
 }
 
 bool TranslatorVisitor::STXR(Imm<2> sz, Reg Rs, Reg Rn, Reg Rt) {
@@ -175,7 +175,7 @@ static bool OrderedSharedDecodeAndOperation(TranslatorVisitor& v, size_t size, b
         UNREACHABLE();
     }
 
-    return true;
+    return v.MemoryInstructionContinues();
 }
 
 bool TranslatorVisitor::STLLR(Imm<2> sz, Reg Rn, Reg Rt) {

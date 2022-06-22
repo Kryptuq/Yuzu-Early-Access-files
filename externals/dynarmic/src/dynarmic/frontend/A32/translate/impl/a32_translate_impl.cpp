@@ -53,6 +53,15 @@ bool TranslatorVisitor::RaiseException(Exception exception) {
     return false;
 }
 
+bool TranslatorVisitor::MemoryInstructionContinues() {
+    if (options.check_halt_on_memory_access) {
+        ir.SetTerm(IR::Term::LinkBlock{ir.current_location.AdvancePC(static_cast<s32>(current_instruction_size))});
+        return false;
+    }
+
+    return true;
+}
+
 IR::UAny TranslatorVisitor::I(size_t bitsize, u64 value) {
     switch (bitsize) {
     case 8:

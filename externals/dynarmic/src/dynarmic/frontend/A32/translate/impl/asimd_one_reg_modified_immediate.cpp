@@ -30,7 +30,8 @@ bool TranslatorVisitor::asimd_VMOV_imm(Imm<1> a, bool D, Imm<1> b, Imm<1> c, Imm
     };
 
     // VMVN
-    const auto mvn = [&] {
+    // mvn is a predefined macro in arm64 MSVC
+    const auto mvn_ = [&] {
         const auto imm64 = ir.Imm64(~imm);
         if (Q) {
             ir.SetVector(d_reg, ir.VectorBroadcast(64, imm64));
@@ -89,7 +90,7 @@ bool TranslatorVisitor::asimd_VMOV_imm(Imm<1> a, bool D, Imm<1> b, Imm<1> c, Imm
     case 0b10101:
     case 0b11001:
     case 0b11011:
-        return mvn();
+        return mvn_();
     case 0b00010:
     case 0b00110:
     case 0b01010:

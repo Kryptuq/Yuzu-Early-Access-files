@@ -15,6 +15,9 @@ enum class PageType : u8 {
     Unmapped,
     /// Page is mapped to regular memory. This is the only type you can get pointers to.
     Memory,
+    /// Page is mapped to regular memory, but inaccessible from CPU fastmem and must use
+    /// the callbacks.
+    DebugMemory,
     /// Page is mapped to regular memory, but also needs to check for rasterizer cache flushing and
     /// invalidation
     RasterizerCachedMemory,

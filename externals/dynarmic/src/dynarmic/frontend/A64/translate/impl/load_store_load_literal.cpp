@@ -15,7 +15,7 @@ bool TranslatorVisitor::LDR_lit_gen(bool opc_0, Imm<19> imm19, Reg Rt) {
     const auto data = Mem(ir.Imm64(address), size, IR::AccType::NORMAL);
 
     X(8 * size, Rt, data);
-    return true;
+    return MemoryInstructionContinues();
 }
 
 bool TranslatorVisitor::LDR_lit_fpsimd(Imm<2> opc, Imm<19> imm19, Vec Vt) {
@@ -33,7 +33,7 @@ bool TranslatorVisitor::LDR_lit_fpsimd(Imm<2> opc, Imm<19> imm19, Vec Vt) {
     } else {
         V(128, Vt, ir.ZeroExtendToQuad(data));
     }
-    return true;
+    return MemoryInstructionContinues();
 }
 
 bool TranslatorVisitor::LDRSW_lit(Imm<19> imm19, Reg Rt) {
@@ -42,7 +42,7 @@ bool TranslatorVisitor::LDRSW_lit(Imm<19> imm19, Reg Rt) {
     const auto data = Mem(ir.Imm64(address), 4, IR::AccType::NORMAL);
 
     X(64, Rt, ir.SignExtendWordToLong(data));
-    return true;
+    return MemoryInstructionContinues();
 }
 
 bool TranslatorVisitor::PRFM_lit(Imm<19> /*imm19*/, Imm<5> /*prfop*/) {

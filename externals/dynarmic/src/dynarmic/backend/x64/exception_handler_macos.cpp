@@ -76,11 +76,11 @@ MachHandler::MachHandler() {
 #undef KCHECK
 
     thread = std::thread(&MachHandler::MessagePump, this);
+    thread.detach();
 }
 
 MachHandler::~MachHandler() {
-    mach_port_destroy(mach_task_self(), server_port);
-    thread.join();
+    mach_port_deallocate(mach_task_self(), server_port);
 }
 
 void MachHandler::MessagePump() {

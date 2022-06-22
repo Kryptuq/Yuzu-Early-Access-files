@@ -66,6 +66,8 @@ protected:
     Dynarmic::HaltReason RunJit() override;
     Dynarmic::HaltReason StepJit() override;
     u32 GetSvcNumber() const override;
+    const Kernel::DebugWatchpoint* HaltedWatchpoint() const override;
+    void RewindBreakpointInstruction() override;
 
 private:
     std::shared_ptr<Dynarmic::A64::Jit> MakeJit(Common::PageTable* page_table,
@@ -91,6 +93,10 @@ private:
 
     // SVC callback
     u32 svc_swi{};
+
+    // Breakpoint info
+    const Kernel::DebugWatchpoint* halted_watchpoint;
+    ThreadContext64 breakpoint_context;
 };
 
 } // namespace Core

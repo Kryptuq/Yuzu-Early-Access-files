@@ -41,6 +41,7 @@ struct TranslatorVisitor final {
     bool UndefinedInstruction();
     bool DecodeError();
     bool RaiseException(Exception exception);
+    bool MemoryInstructionContinues();
 
     struct ImmAndCarry {
         u32 imm32;

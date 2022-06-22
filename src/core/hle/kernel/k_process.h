@@ -7,6 +7,7 @@
 #include <array>
 #include <cstddef>
 #include <list>
+#include <map>
 #include <string>
 #include "common/common_types.h"
 #include "core/hle/kernel/k_address_arbiter.h"
@@ -66,6 +67,20 @@ enum class ProcessStatus {
 enum class ProcessActivity : u32 {
     Runnable,
     Paused,
+};
+
+enum class DebugWatchpointType : u8 {
+    None = 0,
+    Read = 1 << 0,
+    Write = 1 << 1,
+    ReadOrWrite = Read | Write,
+};
+DECLARE_ENUM_FLAG_OPERATORS(DebugWatchpointType);
+
+struct DebugWatchpoint {
+    VAddr start_address;
+    VAddr end_address;
+    DebugWatchpointType type;
 };
 
 class KProcess final : public KAutoObjectWithSlabHeapAndContainer<KProcess, KWorkerTask> {
@@ -374,6 +389,19 @@ public:
     // Frees a used TLS slot identified by the given address
     ResultCode DeleteThreadLocalRegion(VAddr addr);
 
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Debug watchpoint management
+
+    // Attempts to insert a watchpoint into a free slot. Returns false if none are available.
+    bool InsertWatchpoint(Core::System& system, VAddr addr, u64 size, DebugWatchpointType type);
+
+    // Attempts to remove the watchpoint specified by the given parameters.
+    bool RemoveWatchpoint(Core::System& system, VAddr addr, u64 size, DebugWatchpointType type);
+
+    const std::array<DebugWatchpoint, Core::Hardware::NUM_WATCHPOINTS>& GetWatchpoints() const {
+        return watchpoints;
+    }
+
 private:
     void PinThread(s32 core_id, KThread* thread) {
         ASSERT(0 <= core_id && core_id < static_cast<s32>(Core::Hardware::NUM_CPU_CORES));
@@ -478,6 +506,8 @@ private:
     std::array<KThread*, Core::Hardware::NUM_CPU_CORES> running_threads{};
     std::array<u64, Core::Hardware::NUM_CPU_CORES> running_thread_idle_counts{};
     std::array<KThread*, Core::Hardware::NUM_CPU_CORES> pinned_threads{};
+    std::array<DebugWatchpoint, Core::Hardware::NUM_WATCHPOINTS> watchpoints{};
+    std::map<VAddr, u64> debug_page_refcounts;
 
     KThread* exception_thread{};
 

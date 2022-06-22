@@ -119,7 +119,7 @@ bool TranslatorVisitor::v8_VST_multiple(bool D, Reg n, size_t Vd, Imm<4> type, s
         }
     }
 
-    return true;
+    return MemoryInstructionContinues();
 }
 
 bool TranslatorVisitor::v8_VLD_multiple(bool D, Reg n, size_t Vd, Imm<4> type, size_t size, size_t align, Reg m) {
@@ -176,7 +176,7 @@ bool TranslatorVisitor::v8_VLD_multiple(bool D, Reg n, size_t Vd, Imm<4> type, s
         }
     }
 
-    return true;
+    return MemoryInstructionContinues();
 }
 
 bool TranslatorVisitor::v8_VLD_all_lanes(bool D, Reg n, size_t Vd, size_t nn, size_t sz, bool T, bool a, Reg m) {
@@ -241,7 +241,7 @@ bool TranslatorVisitor::v8_VLD_all_lanes(bool D, Reg n, size_t Vd, size_t nn, si
         }
     }
 
-    return true;
+    return MemoryInstructionContinues();
 }
 
 bool TranslatorVisitor::v8_VST_single(bool D, Reg n, size_t Vd, size_t sz, size_t nn, size_t index_align, Reg m) {
@@ -305,7 +305,7 @@ bool TranslatorVisitor::v8_VST_single(bool D, Reg n, size_t Vd, size_t sz, size_
         }
     }
 
-    return true;
+    return MemoryInstructionContinues();
 }
 
 bool TranslatorVisitor::v8_VLD_single(bool D, Reg n, size_t Vd, size_t sz, size_t nn, size_t index_align, Reg m) {
@@ -370,6 +370,6 @@ bool TranslatorVisitor::v8_VLD_single(bool D, Reg n, size_t Vd, size_t sz, size_
         }
     }
 
-    return true;
+    return MemoryInstructionContinues();
 }
 }  // namespace Dynarmic::A32

@@ -22,7 +22,7 @@ static bool StoreRegister(TranslatorVisitor& v, const size_t datasize, const Imm
 
     const IR::UAny data = v.X(datasize, Rt);
     v.Mem(address, datasize / 8, acctype, data);
-    return true;
+    return v.MemoryInstructionContinues();
 }
 
 static bool LoadRegister(TranslatorVisitor& v, const size_t datasize, const Imm<9> imm9, const Reg Rn, const Reg Rt) {
@@ -42,7 +42,7 @@ static bool LoadRegister(TranslatorVisitor& v, const size_t datasize, const Imm<
     // max is used to zeroextend < 32 to 32, and > 32 to 64
     const size_t extended_size = std::max<size_t>(32, datasize);
     v.X(extended_size, Rt, v.ZeroExtend(data, extended_size));
-    return true;
+    return v.MemoryInstructionContinues();
 }
 
 static bool LoadRegisterSigned(TranslatorVisitor& v, const size_t datasize, const Imm<2> opc, const Imm<9> imm9, const Reg Rn, const Reg Rt) {
@@ -90,7 +90,7 @@ static bool LoadRegisterSigned(TranslatorVisitor& v, const size_t datasize, cons
         // Prefetch(address, Rt);
         break;
     }
-    return true;
+    return v.MemoryInstructionContinues();
 }
 
 bool TranslatorVisitor::STTRB(Imm<9> imm9, Reg Rn, Reg Rt) {
@@ -144,6 +144,6 @@ bool TranslatorVisitor::LDTRSW(Imm<9> imm9, Reg Rn, Reg Rt) {
 
     const IR::UAny data = Mem(address, 4, acctype);
     X(64, Rt, SignExtend(data, 64));
-    return true;
+    return MemoryInstructionContinues();
 }
 }  // namespace Dynarmic::A64

@@ -25,6 +25,9 @@ constexpr std::array<s32, Common::BitSize<u64>()> VirtualToPhysicalCoreMap{
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3,
 };
 
+// Cortex-A57 supports 4 memory watchpoints
+constexpr u64 NUM_WATCHPOINTS = 4;
+
 } // namespace Hardware
 
 } // namespace Core

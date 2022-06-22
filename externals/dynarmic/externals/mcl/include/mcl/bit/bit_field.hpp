@@ -143,11 +143,9 @@ template<size_t bit_count, BitIntegral T>
 constexpr T sign_extend(T value) {
     static_assert(bit_count != 0, "cannot sign-extend zero-sized value");
 
-    constexpr T m = ones<bit_count, T>();
-    if (get_bit<bit_count - 1, T>(value)) {
-        return value | ~m;
-    }
-    return value;
+    using S = std::make_signed_t<T>;
+    constexpr size_t shift_amount = bitsizeof<T> - bit_count;
+    return static_cast<T>(static_cast<S>(value << shift_amount) >> shift_amount);
 }
 
 /// Sign-extends a value that has bit_count bits to the full bitwidth of type T.
@@ -155,11 +153,9 @@ template<BitIntegral T>
 constexpr T sign_extend(size_t bit_count, T value) {
     ASSERT_MSG(bit_count != 0, "cannot sign-extend zero-sized value");
 
-    const T m = ones<T>(bit_count);
-    if (get_bit<T>(bit_count - 1, value)) {
-        return value | ~m;
-    }
-    return value;
+    using S = std::make_signed_t<T>;
+    const size_t shift_amount = bitsizeof<T> - bit_count;
+    return static_cast<T>(static_cast<S>(value << shift_amount) >> shift_amount);
 }
 
 /// Replicate an element across a value of type T.

@@ -12,42 +12,44 @@ static bool ITBlockCheck(const A32::IREmitter& ir) {
     return ir.current_location.IT().IsInITBlock() && !ir.current_location.IT().IsLastInITBlock();
 }
 
-static bool LDMHelper(A32::IREmitter& ir, bool W, Reg n, u32 list, const IR::U32& start_address, const IR::U32& writeback_address) {
+static bool LDMHelper(TranslatorVisitor& v, bool W, Reg n, u32 list, const IR::U32& start_address, const IR::U32& writeback_address) {
     auto address = start_address;
     for (size_t i = 0; i <= 14; i++) {
         if (mcl::bit::get_bit(i, list)) {
-            ir.SetRegister(static_cast<Reg>(i), ir.ReadMemory32(address, IR::AccType::ATOMIC));
-            address = ir.Add(address, ir.Imm32(4));
+            v.ir.SetRegister(static_cast<Reg>(i), v.ir.ReadMemory32(address, IR::AccType::ATOMIC));
+            address = v.ir.Add(address, v.ir.Imm32(4));
         }
     }
     if (W && !mcl::bit::get_bit(RegNumber(n), list)) {
-        ir.SetRegister(n, writeback_address);
+        v.ir.SetRegister(n, writeback_address);
     }
     if (mcl::bit::get_bit<15>(list)) {
-        ir.UpdateUpperLocationDescriptor();
-        ir.LoadWritePC(ir.ReadMemory32(address, IR::AccType::ATOMIC));
-        if (n == Reg::R13) {
-            ir.SetTerm(IR::Term::PopRSBHint{});
+        v.ir.UpdateUpperLocationDescriptor();
+        v.ir.LoadWritePC(v.ir.ReadMemory32(address, IR::AccType::ATOMIC));
+        if (v.options.check_halt_on_memory_access) {
+            v.ir.SetTerm(IR::Term::CheckHalt{IR::Term::ReturnToDispatch{}});
+        } else if (n == Reg::R13) {
+            v.ir.SetTerm(IR::Term::PopRSBHint{});
         } else {
-            ir.SetTerm(IR::Term::FastDispatchHint{});
+            v.ir.SetTerm(IR::Term::FastDispatchHint{});
         }
         return false;
     }
-    return true;
+    return v.MemoryInstructionContinues();
 }
 
-static bool STMHelper(A32::IREmitter& ir, bool W, Reg n, u32 list, const IR::U32& start_address, const IR::U32& writeback_address) {
+static bool STMHelper(TranslatorVisitor& v, bool W, Reg n, u32 list, const IR::U32& start_address, const IR::U32& writeback_address) {
     auto address = start_address;
     for (size_t i = 0; i <= 14; i++) {
         if (mcl::bit::get_bit(i, list)) {
-            ir.WriteMemory32(address, ir.GetRegister(static_cast<Reg>(i)), IR::AccType::ATOMIC);
-            address = ir.Add(address, ir.Imm32(4));
+            v.ir.WriteMemory32(address, v.ir.GetRegister(static_cast<Reg>(i)), IR::AccType::ATOMIC);
+            address = v.ir.Add(address, v.ir.Imm32(4));
         }
     }
     if (W) {
-        ir.SetRegister(n, writeback_address);
+        v.ir.SetRegister(n, writeback_address);
     }
-    return true;
+    return v.MemoryInstructionContinues();
 }
 
 bool TranslatorVisitor::thumb32_LDMDB(bool W, Reg n, Imm<16> reg_list) {
@@ -72,7 +74,7 @@ bool TranslatorVisitor::thumb32_LDMDB(bool W, Reg n, Imm<16> reg_list) {
 
     // Start address is the same as the writeback address.
     const IR::U32 start_address = ir.Sub(ir.GetRegister(n), ir.Imm32(4 * num_regs));
-    return LDMHelper(ir, W, n, regs_imm, start_address, start_address);
+    return LDMHelper(*this, W, n, regs_imm, start_address, start_address);
 }
 
 bool TranslatorVisitor::thumb32_LDMIA(bool W, Reg n, Imm<16> reg_list) {
@@ -97,7 +99,7 @@ bool TranslatorVisitor::thumb32_LDMIA(bool W, Reg n, Imm<16> reg_list) {
 
     const auto start_address = ir.GetRegister(n);
     const auto writeback_address = ir.Add(start_address, ir.Imm32(num_regs * 4));
-    return LDMHelper(ir, W, n, regs_imm, start_address, writeback_address);
+    return LDMHelper(*this, W, n, regs_imm, start_address, writeback_address);
 }
 
 bool TranslatorVisitor::thumb32_POP(Imm<16> reg_list) {
@@ -124,7 +126,7 @@ bool TranslatorVisitor::thumb32_STMIA(bool W, Reg n, Imm<15> reg_list) {
 
     const auto start_address = ir.GetRegister(n);
     const auto writeback_address = ir.Add(start_address, ir.Imm32(num_regs * 4));
-    return STMHelper(ir, W, n, regs_imm, start_address, writeback_address);
+    return STMHelper(*this, W, n, regs_imm, start_address, writeback_address);
 }
 
 bool TranslatorVisitor::thumb32_STMDB(bool W, Reg n, Imm<15> reg_list) {
@@ -143,7 +145,7 @@ bool TranslatorVisitor::thumb32_STMDB(bool W, Reg n, Imm<15> reg_list) {
 
     // Start address is the same as the writeback address.
     const IR::U32 start_address = ir.Sub(ir.GetRegister(n), ir.Imm32(4 * num_regs));
-    return STMHelper(ir, W, n, regs_imm, start_address, start_address);
+    return STMHelper(*this, W, n, regs_imm, start_address, start_address);
 }
 
 }  // namespace Dynarmic::A32

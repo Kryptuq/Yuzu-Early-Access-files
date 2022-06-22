@@ -29,55 +29,76 @@ using namespace Common::Literals;
 class DynarmicCallbacks64 : public Dynarmic::A64::UserCallbacks {
 public:
     explicit DynarmicCallbacks64(ARM_Dynarmic_64& parent_)
-        : parent{parent_}, memory(parent.system.Memory()) {}
+        : parent{parent_},
+          memory(parent.system.Memory()), debugger_enabled{parent.system.DebuggerEnabled()} {}
 
     u8 MemoryRead8(u64 vaddr) override {
+        CheckMemoryAccess(vaddr, 1, Kernel::DebugWatchpointType::Read);
         return memory.Read8(vaddr);
     }
     u16 MemoryRead16(u64 vaddr) override {
+        CheckMemoryAccess(vaddr, 2, Kernel::DebugWatchpointType::Read);
         return memory.Read16(vaddr);
     }
     u32 MemoryRead32(u64 vaddr) override {
+        CheckMemoryAccess(vaddr, 4, Kernel::DebugWatchpointType::Read);
         return memory.Read32(vaddr);
     }
     u64 MemoryRead64(u64 vaddr) override {
+        CheckMemoryAccess(vaddr, 8, Kernel::DebugWatchpointType::Read);
         return memory.Read64(vaddr);
     }
     Vector MemoryRead128(u64 vaddr) override {
+        CheckMemoryAccess(vaddr, 16, Kernel::DebugWatchpointType::Read);
         return {memory.Read64(vaddr), memory.Read64(vaddr + 8)};
     }
 
     void MemoryWrite8(u64 vaddr, u8 value) override {
-        memory.Write8(vaddr, value);
+        if (CheckMemoryAccess(vaddr, 1, Kernel::DebugWatchpointType::Write)) {
+            memory.Write8(vaddr, value);
+        }
     }
     void MemoryWrite16(u64 vaddr, u16 value) override {
-        memory.Write16(vaddr, value);
+        if (CheckMemoryAccess(vaddr, 2, Kernel::DebugWatchpointType::Write)) {
+            memory.Write16(vaddr, value);
+        }
     }
     void MemoryWrite32(u64 vaddr, u32 value) override {
-        memory.Write32(vaddr, value);
+        if (CheckMemoryAccess(vaddr, 4, Kernel::DebugWatchpointType::Write)) {
+            memory.Write32(vaddr, value);
+        }
     }
     void MemoryWrite64(u64 vaddr, u64 value) override {
-        memory.Write64(vaddr, value);
+        if (CheckMemoryAccess(vaddr, 8, Kernel::DebugWatchpointType::Write)) {
+            memory.Write64(vaddr, value);
+        }
     }
     void MemoryWrite128(u64 vaddr, Vector value) override {
-        memory.Write64(vaddr, value[0]);
-        memory.Write64(vaddr + 8, value[1]);
+        if (CheckMemoryAccess(vaddr, 16, Kernel::DebugWatchpointType::Write)) {
+            memory.Write64(vaddr, value[0]);
+            memory.Write64(vaddr + 8, value[1]);
+        }
     }
 
     bool MemoryWriteExclusive8(u64 vaddr, std::uint8_t value, std::uint8_t expected) override {
-        return memory.WriteExclusive8(vaddr, value, expected);
+        return CheckMemoryAccess(vaddr, 1, Kernel::DebugWatchpointType::Write) &&
+               memory.WriteExclusive8(vaddr, value, expected);
     }
     bool MemoryWriteExclusive16(u64 vaddr, std::uint16_t value, std::uint16_t expected) override {
-        return memory.WriteExclusive16(vaddr, value, expected);
+        return CheckMemoryAccess(vaddr, 2, Kernel::DebugWatchpointType::Write) &&
+               memory.WriteExclusive16(vaddr, value, expected);
     }
     bool MemoryWriteExclusive32(u64 vaddr, std::uint32_t value, std::uint32_t expected) override {
-        return memory.WriteExclusive32(vaddr, value, expected);
+        return CheckMemoryAccess(vaddr, 4, Kernel::DebugWatchpointType::Write) &&
+               memory.WriteExclusive32(vaddr, value, expected);
     }
     bool MemoryWriteExclusive64(u64 vaddr, std::uint64_t value, std::uint64_t expected) override {
-        return memory.WriteExclusive64(vaddr, value, expected);
+        return CheckMemoryAccess(vaddr, 8, Kernel::DebugWatchpointType::Write) &&
+               memory.WriteExclusive64(vaddr, value, expected);
     }
     bool MemoryWriteExclusive128(u64 vaddr, Vector value, Vector expected) override {
-        return memory.WriteExclusive128(vaddr, value, expected);
+        return CheckMemoryAccess(vaddr, 16, Kernel::DebugWatchpointType::Write) &&
+               memory.WriteExclusive128(vaddr, value, expected);
     }
 
     void InterpreterFallback(u64 pc, std::size_t num_instructions) override {
@@ -118,8 +139,8 @@ public:
         case Dynarmic::A64::Exception::Yield:
             return;
         default:
-            if (parent.system.DebuggerEnabled()) {
-                parent.jit.load()->SetPC(pc);
+            if (debugger_enabled) {
+                parent.SaveContext(parent.breakpoint_context);
                 parent.jit.load()->HaltExecution(ARM_Interface::breakpoint);
                 return;
             }
@@ -167,10 +188,27 @@ public:
         return parent.system.CoreTiming().GetClockTicks();
     }
 
+    bool CheckMemoryAccess(VAddr addr, u64 size, Kernel::DebugWatchpointType type) {
+        if (!debugger_enabled) {
+            return true;
+        }
+
+        const auto match{parent.MatchingWatchpoint(addr, size, type)};
+        if (match) {
+            parent.SaveContext(parent.breakpoint_context);
+            parent.jit.load()->HaltExecution(ARM_Interface::watchpoint);
+            parent.halted_watchpoint = match;
+            return false;
+        }
+
+        return true;
+    }
+
     ARM_Dynarmic_64& parent;
     Core::Memory::Memory& memory;
     u64 tpidrro_el0 = 0;
     u64 tpidr_el0 = 0;
+    bool debugger_enabled{};
     static constexpr u64 minimum_run_cycles = 10000U;
 };
 
@@ -220,6 +258,11 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable* 
     // Code cache size
     config.code_cache_size = 512_MiB;
     config.far_code_offset = 400_MiB;
+
+    // Allow memory fault handling to work
+    if (system.DebuggerEnabled()) {
+        config.check_halt_on_memory_access = true;
+    }
 
     // null_jit
     if (!page_table) {
@@ -313,6 +356,14 @@ Dynarmic::HaltReason ARM_Dynarmic_64::StepJit() {
 
 u32 ARM_Dynarmic_64::GetSvcNumber() const {
     return svc_swi;
+}
+
+const Kernel::DebugWatchpoint* ARM_Dynarmic_64::HaltedWatchpoint() const {
+    return halted_watchpoint;
+}
+
+void ARM_Dynarmic_64::RewindBreakpointInstruction() {
+    LoadContext(breakpoint_context);
 }
 
 ARM_Dynarmic_64::ARM_Dynarmic_64(System& system_, CPUInterrupts& interrupt_handlers_,

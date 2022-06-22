@@ -12,9 +12,10 @@
 		//
 		T_N_VL = 1 << 3, // N * (1, 2, 4) for VL
 		T_DUP = 1 << 4, // N = (8, 32, 64)
-		T_66 = 1 << 5,
-		T_F3 = 1 << 6,
-		T_F2 = 1 << 7,
+		T_66 = 1 << 5, // pp = 1
+		T_F3 = 1 << 6, // pp = 2
+		T_F2 = T_66 | T_F3, // pp = 3
+		T_ER_R = 1 << 7, // reg{er}
 		T_0F = 1 << 8,
 		T_0F38 = 1 << 9,
 		T_0F3A = 1 << 10,
@@ -35,11 +36,18 @@
 		T_MUST_EVEX = 1 << 25, // contains T_EVEX
 		T_B32 = 1 << 26, // m32bcst
 		T_B64 = 1 << 27, // m64bcst
+		T_B16 = T_B32 | T_B64, // m16bcst
 		T_M_K = 1 << 28, // mem{k}
 		T_VSIB = 1 << 29,
 		T_MEM_EVEX = 1 << 30, // use evex if mem
+		T_FP16 = 1 << 31,
+		T_MAP5 = T_FP16 | T_0F,
+		T_MAP6 = T_FP16 | T_0F38,
 		T_XXX
 	};
+	// T_66 = 1, T_F3 = 2, T_F2 = 3
+	uint32_t getPP(int type) { return (type >> 5) & 3; }
+
 
 const int NONE = 256; // same as Xbyak::CodeGenerator::NONE
 
@@ -62,25 +70,30 @@ std::string type2String(int type)
 		if (!str.empty()) str += " | ";
 		str += "T_DUP";
 	}
-	if (type & T_66) {
-		if (!str.empty()) str += " | ";
-		str += "T_66";
-	}
-	if (type & T_F3) {
-		if (!str.empty()) str += " | ";
-		str += "T_F3";
-	}
 	if (type & T_F2) {
 		if (!str.empty()) str += " | ";
-		str += "T_F2";
+		switch (type & T_F2) {
+		case T_66: str += "T_66"; break;
+		case T_F3: str += "T_F3"; break;
+		case T_F2: str += "T_F2"; break;
+		default: break;
+		}
 	}
 	if (type & T_0F) {
 		if (!str.empty()) str += " | ";
-		str += "T_0F";
+		if (type & T_FP16) {
+			str += "T_MAP5";
+		} else {
+			str += "T_0F";
+		}
 	}
 	if (type & T_0F38) {
 		if (!str.empty()) str += " | ";
-		str += "T_0F38";
+		if (type & T_FP16) {
+			str += "T_MAP6";
+		} else {
+			str += "T_0F38";
+		}
 	}
 	if (type & T_0F3A) {
 		if (!str.empty()) str += " | ";
@@ -130,6 +143,10 @@ std::string type2String(int type)
 		if (!str.empty()) str += " | ";
 		str += "T_ER_Z";
 	}
+	if (type & T_ER_R) {
+		if (!str.empty()) str += " | ";
+		str += "T_ER_R";
+	}
 	if (type & T_SAE_X) {
 		if (!str.empty()) str += " | ";
 		str += "T_SAE_X";
@@ -148,9 +165,12 @@ std::string type2String(int type)
 	}
 	if (type & T_B32) {
 		if (!str.empty()) str += " | ";
-		str += "T_B32";
-	}
-	if (type & T_B64) {
+		if (type & T_B64) {
+			str += "T_B16"; // T_B16 = T_B32 | T_B64
+		} else {
+			str += "T_B32";
+		}
+	} else if (type & T_B64) {
 		if (!str.empty()) str += " | ";
 		str += "T_B64";
 	}

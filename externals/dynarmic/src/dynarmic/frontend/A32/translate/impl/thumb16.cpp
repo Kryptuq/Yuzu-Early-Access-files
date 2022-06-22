@@ -449,7 +449,7 @@ bool TranslatorVisitor::thumb16_LDR_literal(Reg t, Imm<8> imm8) {
     const auto data = ir.ReadMemory32(ir.Imm32(address), IR::AccType::NORMAL);
 
     ir.SetRegister(t, data);
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // STR <Rt>, [<Rn>, <Rm>]
@@ -459,7 +459,7 @@ bool TranslatorVisitor::thumb16_STR_reg(Reg m, Reg n, Reg t) {
     const auto data = ir.GetRegister(t);
 
     ir.WriteMemory32(address, data, IR::AccType::NORMAL);
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // STRH <Rt>, [<Rn>, <Rm>]
@@ -469,7 +469,7 @@ bool TranslatorVisitor::thumb16_STRH_reg(Reg m, Reg n, Reg t) {
     const auto data = ir.LeastSignificantHalf(ir.GetRegister(t));
 
     ir.WriteMemory16(address, data, IR::AccType::NORMAL);
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // STRB <Rt>, [<Rn>, <Rm>]
@@ -479,7 +479,7 @@ bool TranslatorVisitor::thumb16_STRB_reg(Reg m, Reg n, Reg t) {
     const auto data = ir.LeastSignificantByte(ir.GetRegister(t));
 
     ir.WriteMemory8(address, data, IR::AccType::NORMAL);
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // LDRSB <Rt>, [<Rn>, <Rm>]
@@ -489,7 +489,7 @@ bool TranslatorVisitor::thumb16_LDRSB_reg(Reg m, Reg n, Reg t) {
     const auto data = ir.SignExtendByteToWord(ir.ReadMemory8(address, IR::AccType::NORMAL));
 
     ir.SetRegister(t, data);
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // LDR <Rt>, [<Rn>, <Rm>]
@@ -499,7 +499,7 @@ bool TranslatorVisitor::thumb16_LDR_reg(Reg m, Reg n, Reg t) {
     const auto data = ir.ReadMemory32(address, IR::AccType::NORMAL);
 
     ir.SetRegister(t, data);
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // LDRH <Rt>, [<Rn>, <Rm>]
@@ -509,7 +509,7 @@ bool TranslatorVisitor::thumb16_LDRH_reg(Reg m, Reg n, Reg t) {
     const auto data = ir.ZeroExtendHalfToWord(ir.ReadMemory16(address, IR::AccType::NORMAL));
 
     ir.SetRegister(t, data);
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // LDRB <Rt>, [<Rn>, <Rm>]
@@ -519,7 +519,7 @@ bool TranslatorVisitor::thumb16_LDRB_reg(Reg m, Reg n, Reg t) {
     const auto data = ir.ZeroExtendByteToWord(ir.ReadMemory8(address, IR::AccType::NORMAL));
 
     ir.SetRegister(t, data);
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // LDRH <Rt>, [<Rn>, <Rm>]
@@ -529,7 +529,7 @@ bool TranslatorVisitor::thumb16_LDRSH_reg(Reg m, Reg n, Reg t) {
     const auto data = ir.SignExtendHalfToWord(ir.ReadMemory16(address, IR::AccType::NORMAL));
 
     ir.SetRegister(t, data);
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // STR <Rt>, [<Rn>, #<imm>]
@@ -540,7 +540,7 @@ bool TranslatorVisitor::thumb16_STR_imm_t1(Imm<5> imm5, Reg n, Reg t) {
     const auto data = ir.GetRegister(t);
 
     ir.WriteMemory32(address, data, IR::AccType::NORMAL);
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // LDR <Rt>, [<Rn>, #<imm>]
@@ -551,7 +551,7 @@ bool TranslatorVisitor::thumb16_LDR_imm_t1(Imm<5> imm5, Reg n, Reg t) {
     const auto data = ir.ReadMemory32(address, IR::AccType::NORMAL);
 
     ir.SetRegister(t, data);
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // STRB <Rt>, [<Rn>, #<imm>]
@@ -573,7 +573,7 @@ bool TranslatorVisitor::thumb16_LDRB_imm(Imm<5> imm5, Reg n, Reg t) {
     const auto data = ir.ZeroExtendByteToWord(ir.ReadMemory8(address, IR::AccType::NORMAL));
 
     ir.SetRegister(t, data);
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // STRH <Rt>, [<Rn>, #<imm5>]
@@ -583,7 +583,7 @@ bool TranslatorVisitor::thumb16_STRH_imm(Imm<5> imm5, Reg n, Reg t) {
     const auto data = ir.LeastSignificantHalf(ir.GetRegister(t));
 
     ir.WriteMemory16(address, data, IR::AccType::NORMAL);
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // LDRH <Rt>, [<Rn>, #<imm5>]
@@ -593,7 +593,7 @@ bool TranslatorVisitor::thumb16_LDRH_imm(Imm<5> imm5, Reg n, Reg t) {
     const auto data = ir.ZeroExtendHalfToWord(ir.ReadMemory16(address, IR::AccType::NORMAL));
 
     ir.SetRegister(t, data);
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // STR <Rt>, [<Rn>, #<imm>]
@@ -605,7 +605,7 @@ bool TranslatorVisitor::thumb16_STR_imm_t2(Reg t, Imm<8> imm8) {
     const auto data = ir.GetRegister(t);
 
     ir.WriteMemory32(address, data, IR::AccType::NORMAL);
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // LDR <Rt>, [<Rn>, #<imm>]
@@ -617,7 +617,7 @@ bool TranslatorVisitor::thumb16_LDR_imm_t2(Reg t, Imm<8> imm8) {
     const auto data = ir.ReadMemory32(address, IR::AccType::NORMAL);
 
     ir.SetRegister(t, data);
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // ADR <Rd>, <label>
@@ -775,7 +775,7 @@ bool TranslatorVisitor::thumb16_PUSH(bool M, RegList reg_list) {
 
     ir.SetRegister(Reg::SP, final_address);
     // TODO(optimization): Possible location for an RSB push.
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // POP <reg_list>
@@ -804,11 +804,15 @@ bool TranslatorVisitor::thumb16_POP(bool P, RegList reg_list) {
         ir.LoadWritePC(data);
         address = ir.Add(address, ir.Imm32(4));
         ir.SetRegister(Reg::SP, address);
-        ir.SetTerm(IR::Term::PopRSBHint{});
+        if (options.check_halt_on_memory_access) {
+            ir.SetTerm(IR::Term::CheckHalt{IR::Term::PopRSBHint{}});
+        } else {
+            ir.SetTerm(IR::Term::PopRSBHint{});
+        }
         return false;
     } else {
         ir.SetRegister(Reg::SP, address);
-        return true;
+        return MemoryInstructionContinues();
     }
 }
 
@@ -887,7 +891,7 @@ bool TranslatorVisitor::thumb16_STMIA(Reg n, RegList reg_list) {
     }
 
     ir.SetRegister(n, address);
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // LDM <Rn>!, <reg_list>
@@ -910,7 +914,7 @@ bool TranslatorVisitor::thumb16_LDMIA(Reg n, RegList reg_list) {
     if (write_back) {
         ir.SetRegister(n, address);
     }
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // CB{N}Z <Rn>, <label>

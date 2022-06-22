@@ -167,7 +167,8 @@ private:
             PerformCacheInvalidation();
         }
 
-        IR::Block ir_block = A32::Translate(A32::LocationDescriptor{descriptor}, conf.callbacks, {conf.arch_version, conf.define_unpredictable_behaviour, conf.hook_hint_instructions});
+        IR::Block ir_block = A32::Translate(A32::LocationDescriptor{descriptor}, conf.callbacks,
+                                            {conf.arch_version, conf.define_unpredictable_behaviour, conf.hook_hint_instructions, conf.check_halt_on_memory_access});
         Optimization::PolyfillPass(ir_block, polyfill_options);
         if (conf.HasOptimization(OptimizationFlag::GetSetElimination)) {
             Optimization::A32GetSetElimination(ir_block);

@@ -78,7 +78,7 @@ bool TranslatorVisitor::STP_LDP_gen(Imm<2> opc, bool not_postindex, bool wback, 
         }
     }
 
-    return true;
+    return MemoryInstructionContinues();
 }
 
 bool TranslatorVisitor::STP_LDP_fpsimd(Imm<2> opc, bool not_postindex, bool wback, Imm<1> L, Imm<7> imm7, Vec Vt2, Reg Rn, Vec Vt) {
@@ -148,7 +148,7 @@ bool TranslatorVisitor::STP_LDP_fpsimd(Imm<2> opc, bool not_postindex, bool wbac
         }
     }
 
-    return true;
+    return MemoryInstructionContinues();
 }
 
 }  // namespace Dynarmic::A64

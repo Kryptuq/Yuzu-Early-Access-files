@@ -265,7 +265,7 @@ private:
         // JIT Compile
         const auto get_code = [this](u64 vaddr) { return conf.callbacks->MemoryReadCode(vaddr); };
         IR::Block ir_block = A64::Translate(A64::LocationDescriptor{current_location}, get_code,
-                                            {conf.define_unpredictable_behaviour, conf.wall_clock_cntpct});
+                                            {conf.define_unpredictable_behaviour, conf.wall_clock_cntpct, conf.hook_hint_instructions, conf.check_halt_on_memory_access});
         Optimization::PolyfillPass(ir_block, polyfill_options);
         Optimization::A64CallbackConfigPass(ir_block, conf);
         if (conf.HasOptimization(OptimizationFlag::GetSetElimination)) {

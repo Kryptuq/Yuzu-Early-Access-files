@@ -72,7 +72,7 @@ static bool LoadStoreRegisterImmediate(TranslatorVisitor& v, bool wback, bool po
         }
     }
 
-    return true;
+    return v.MemoryInstructionContinues();
 }
 
 bool TranslatorVisitor::STRx_LDRx_imm_1(Imm<2> size, Imm<2> opc, Imm<9> imm9, bool not_postindex, Reg Rn, Reg Rt) {
@@ -165,7 +165,7 @@ static bool LoadStoreSIMD(TranslatorVisitor& v, bool wback, bool postindex, size
         }
     }
 
-    return true;
+    return v.MemoryInstructionContinues();
 }
 
 bool TranslatorVisitor::STR_imm_fpsimd_1(Imm<2> size, Imm<1> opc_1, Imm<9> imm9, bool not_postindex, Reg Rn, Vec Vt) {

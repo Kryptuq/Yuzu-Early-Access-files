@@ -1201,7 +1201,7 @@ bool TranslatorVisitor::vfp_VPOP(Cond cond, bool D, size_t Vd, bool sz, Imm<8> i
         }
     }
 
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // VPUSH.{F32,F64} <list>
@@ -1242,7 +1242,7 @@ bool TranslatorVisitor::vfp_VPUSH(Cond cond, bool D, size_t Vd, bool sz, Imm<8> 
         }
     }
 
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // VLDR<c> <Dd>, [<Rn>{, #+/-<imm>}]
@@ -1268,7 +1268,7 @@ bool TranslatorVisitor::vfp_VLDR(Cond cond, bool U, bool D, Reg n, size_t Vd, bo
         ir.SetExtendedRegister(d, ir.ReadMemory32(address, IR::AccType::ATOMIC));
     }
 
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // VSTR<c> <Dd>, [<Rn>{, #+/-<imm>}]
@@ -1295,7 +1295,7 @@ bool TranslatorVisitor::vfp_VSTR(Cond cond, bool U, bool D, Reg n, size_t Vd, bo
         ir.WriteMemory32(address, ir.GetExtendedRegister(d), IR::AccType::ATOMIC);
     }
 
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // VSTM{mode}<c> <Rn>{!}, <list of double registers>
@@ -1347,7 +1347,7 @@ bool TranslatorVisitor::vfp_VSTM_a1(Cond cond, bool p, bool u, bool D, bool w, R
         address = ir.Add(address, ir.Imm32(4));
     }
 
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // VSTM{mode}<c> <Rn>{!}, <list of single registers>
@@ -1390,7 +1390,7 @@ bool TranslatorVisitor::vfp_VSTM_a2(Cond cond, bool p, bool u, bool D, bool w, R
         address = ir.Add(address, ir.Imm32(4));
     }
 
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // VLDM{mode}<c> <Rn>{!}, <list of double registers>
@@ -1440,7 +1440,7 @@ bool TranslatorVisitor::vfp_VLDM_a1(Cond cond, bool p, bool u, bool D, bool w, R
         ir.SetExtendedRegister(d + i, ir.Pack2x32To1x64(word1, word2));
     }
 
-    return true;
+    return MemoryInstructionContinues();
 }
 
 // VLDM{mode}<c> <Rn>{!}, <list of single registers>
@@ -1483,7 +1483,7 @@ bool TranslatorVisitor::vfp_VLDM_a2(Cond cond, bool p, bool u, bool D, bool w, R
         ir.SetExtendedRegister(d + i, word);
     }
 
-    return true;
+    return MemoryInstructionContinues();
 }
 
 }  // namespace Dynarmic::A32

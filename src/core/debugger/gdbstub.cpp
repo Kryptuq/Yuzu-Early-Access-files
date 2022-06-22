@@ -112,6 +112,23 @@ void GDBStub::Stopped(Kernel::KThread* thread) {
     SendReply(arch->ThreadStatus(thread, GDB_STUB_SIGTRAP));
 }
 
+void GDBStub::Watchpoint(Kernel::KThread* thread, const Kernel::DebugWatchpoint& watch) {
+    const auto status{arch->ThreadStatus(thread, GDB_STUB_SIGTRAP)};
+
+    switch (watch.type) {
+    case Kernel::DebugWatchpointType::Read:
+        SendReply(fmt::format("{}rwatch:{:x};", status, watch.start_address));
+        break;
+    case Kernel::DebugWatchpointType::Write:
+        SendReply(fmt::format("{}watch:{:x};", status, watch.start_address));
+        break;
+    case Kernel::DebugWatchpointType::ReadOrWrite:
+    default:
+        SendReply(fmt::format("{}awatch:{:x};", status, watch.start_address));
+        break;
+    }
+}
+
 std::vector<DebuggerAction> GDBStub::ClientData(std::span<const u8> data) {
     std::vector<DebuggerAction> actions;
     current_command.insert(current_command.end(), data.begin(), data.end());
@@ -278,41 +295,121 @@ void GDBStub::ExecuteCommand(std::string_view packet, std::vector<DebuggerAction
     case 'c':
         actions.push_back(DebuggerAction::Continue);
         break;
-    case 'Z': {
-        const auto addr_sep{std::find(command.begin(), command.end(), ',') - command.begin() + 1};
-        const size_t addr{static_cast<size_t>(strtoll(command.data() + addr_sep, nullptr, 16))};
-
-        if (system.Memory().IsValidVirtualAddress(addr)) {
-            replaced_instructions[addr] = system.Memory().Read32(addr);
-            system.Memory().Write32(addr, arch->BreakpointInstruction());
-            system.InvalidateCpuInstructionCacheRange(addr, sizeof(u32));
-
-            SendReply(GDB_STUB_REPLY_OK);
-        } else {
-            SendReply(GDB_STUB_REPLY_ERR);
-        }
+    case 'Z':
+        HandleBreakpointInsert(command);
         break;
-    }
-    case 'z': {
-        const auto addr_sep{std::find(command.begin(), command.end(), ',') - command.begin() + 1};
-        const size_t addr{static_cast<size_t>(strtoll(command.data() + addr_sep, nullptr, 16))};
-
-        const auto orig_insn{replaced_instructions.find(addr)};
-        if (system.Memory().IsValidVirtualAddress(addr) &&
-            orig_insn != replaced_instructions.end()) {
-            system.Memory().Write32(addr, orig_insn->second);
-            system.InvalidateCpuInstructionCacheRange(addr, sizeof(u32));
-            replaced_instructions.erase(addr);
-
-            SendReply(GDB_STUB_REPLY_OK);
-        } else {
-            SendReply(GDB_STUB_REPLY_ERR);
-        }
+    case 'z':
+        HandleBreakpointRemove(command);
         break;
-    }
     default:
         SendReply(GDB_STUB_REPLY_EMPTY);
         break;
+    }
+}
+
+enum class BreakpointType {
+    Software = 0,
+    Hardware = 1,
+    WriteWatch = 2,
+    ReadWatch = 3,
+    AccessWatch = 4,
+};
+
+void GDBStub::HandleBreakpointInsert(std::string_view command) {
+    const auto type{static_cast<BreakpointType>(strtoll(command.data(), nullptr, 16))};
+    const auto addr_sep{std::find(command.begin(), command.end(), ',') - command.begin() + 1};
+    const auto size_sep{std::find(command.begin() + addr_sep, command.end(), ',') -
+                        command.begin() + 1};
+    const size_t addr{static_cast<size_t>(strtoll(command.data() + addr_sep, nullptr, 16))};
+    const size_t size{static_cast<size_t>(strtoll(command.data() + size_sep, nullptr, 16))};
+
+    if (!system.Memory().IsValidVirtualAddressRange(addr, size)) {
+        SendReply(GDB_STUB_REPLY_ERR);
+        return;
+    }
+
+    bool success{};
+
+    switch (type) {
+    case BreakpointType::Software:
+        replaced_instructions[addr] = system.Memory().Read32(addr);
+        system.Memory().Write32(addr, arch->BreakpointInstruction());
+        system.InvalidateCpuInstructionCacheRange(addr, sizeof(u32));
+        success = true;
+        break;
+    case BreakpointType::WriteWatch:
+        success = system.CurrentProcess()->InsertWatchpoint(system, addr, size,
+                                                            Kernel::DebugWatchpointType::Write);
+        break;
+    case BreakpointType::ReadWatch:
+        success = system.CurrentProcess()->InsertWatchpoint(system, addr, size,
+                                                            Kernel::DebugWatchpointType::Read);
+        break;
+    case BreakpointType::AccessWatch:
+        success = system.CurrentProcess()->InsertWatchpoint(
+            system, addr, size, Kernel::DebugWatchpointType::ReadOrWrite);
+        break;
+    case BreakpointType::Hardware:
+    default:
+        SendReply(GDB_STUB_REPLY_EMPTY);
+        return;
+    }
+
+    if (success) {
+        SendReply(GDB_STUB_REPLY_OK);
+    } else {
+        SendReply(GDB_STUB_REPLY_ERR);
+    }
+}
+
+void GDBStub::HandleBreakpointRemove(std::string_view command) {
+    const auto type{static_cast<BreakpointType>(strtoll(command.data(), nullptr, 16))};
+    const auto addr_sep{std::find(command.begin(), command.end(), ',') - command.begin() + 1};
+    const auto size_sep{std::find(command.begin() + addr_sep, command.end(), ',') -
+                        command.begin() + 1};
+    const size_t addr{static_cast<size_t>(strtoll(command.data() + addr_sep, nullptr, 16))};
+    const size_t size{static_cast<size_t>(strtoll(command.data() + size_sep, nullptr, 16))};
+
+    if (!system.Memory().IsValidVirtualAddressRange(addr, size)) {
+        SendReply(GDB_STUB_REPLY_ERR);
+        return;
+    }
+
+    bool success{};
+
+    switch (type) {
+    case BreakpointType::Software: {
+        const auto orig_insn{replaced_instructions.find(addr)};
+        if (orig_insn != replaced_instructions.end()) {
+            system.Memory().Write32(addr, orig_insn->second);
+            system.InvalidateCpuInstructionCacheRange(addr, sizeof(u32));
+            replaced_instructions.erase(addr);
+            success = true;
+        }
+        break;
+    }
+    case BreakpointType::WriteWatch:
+        success = system.CurrentProcess()->RemoveWatchpoint(system, addr, size,
+                                                            Kernel::DebugWatchpointType::Write);
+        break;
+    case BreakpointType::ReadWatch:
+        success = system.CurrentProcess()->RemoveWatchpoint(system, addr, size,
+                                                            Kernel::DebugWatchpointType::Read);
+        break;
+    case BreakpointType::AccessWatch:
+        success = system.CurrentProcess()->RemoveWatchpoint(
+            system, addr, size, Kernel::DebugWatchpointType::ReadOrWrite);
+        break;
+    case BreakpointType::Hardware:
+    default:
+        SendReply(GDB_STUB_REPLY_EMPTY);
+        return;
+    }
+
+    if (success) {
+        SendReply(GDB_STUB_REPLY_OK);
+    } else {
+        SendReply(GDB_STUB_REPLY_ERR);
     }
 }
 

@@ -44,12 +44,14 @@ static std::span<const u8> ReceiveInto(Readable& r, Buffer& buffer) {
 
 enum class SignalType {
     Stopped,
+    Watchpoint,
     ShuttingDown,
 };
 
 struct SignalInfo {
     SignalType type;
     Kernel::KThread* thread;
+    const Kernel::DebugWatchpoint* watchpoint;
 };
 
 namespace Core {
@@ -157,13 +159,19 @@ private:
     void PipeData(std::span<const u8> data) {
         switch (info.type) {
         case SignalType::Stopped:
+        case SignalType::Watchpoint:
             // Stop emulation.
             PauseEmulation();
 
             // Notify the client.
             active_thread = info.thread;
             UpdateActiveThread();
-            frontend->Stopped(active_thread);
+
+            if (info.type == SignalType::Watchpoint) {
+                frontend->Watchpoint(active_thread, *info.watchpoint);
+            } else {
+                frontend->Stopped(active_thread);
+            }
 
             break;
         case SignalType::ShuttingDown:
@@ -290,12 +298,17 @@ Debugger::Debugger(Core::System& system, u16 port) {
 Debugger::~Debugger() = default;
 
 bool Debugger::NotifyThreadStopped(Kernel::KThread* thread) {
-    return impl && impl->SignalDebugger(SignalInfo{SignalType::Stopped, thread});
+    return impl && impl->SignalDebugger(SignalInfo{SignalType::Stopped, thread, nullptr});
+}
+
+bool Debugger::NotifyThreadWatchpoint(Kernel::KThread* thread,
+                                      const Kernel::DebugWatchpoint& watch) {
+    return impl && impl->SignalDebugger(SignalInfo{SignalType::Watchpoint, thread, &watch});
 }
 
 void Debugger::NotifyShutdown() {
     if (impl) {
-        impl->SignalDebugger(SignalInfo{SignalType::ShuttingDown, nullptr});
+        impl->SignalDebugger(SignalInfo{SignalType::ShuttingDown, nullptr, nullptr});
     }
 }
 

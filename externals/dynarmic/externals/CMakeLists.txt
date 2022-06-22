@@ -1,5 +1,8 @@
 # Always build externals as static libraries, even when dynarmic is built as shared
-set(BUILD_SHARED_LIBS OFF)
+if (BUILD_SHARED_LIBS)
+    set(BUILD_SHARED_LIBS OFF)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
 
 # For libraries that already come with a CMakeLists file,
 # simply add the directory to that file as a subdirectory

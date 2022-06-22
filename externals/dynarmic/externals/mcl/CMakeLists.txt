@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 include(GNUInstallDirs)
 
-project(mcl LANGUAGES CXX VERSION 0.1.5)
+project(mcl LANGUAGES CXX VERSION 0.1.8)
 
 # Project options
 option(MCL_WARNINGS_AS_ERRORS "Warnings as errors" ON)

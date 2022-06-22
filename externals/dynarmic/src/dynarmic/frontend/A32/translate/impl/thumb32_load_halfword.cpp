@@ -16,7 +16,7 @@ static bool LoadHalfLiteral(TranslatorVisitor& v, bool U, Reg t, Imm<12> imm12, 
     const auto data = (v.ir.*ext_fn)(v.ir.ReadMemory16(v.ir.Imm32(address), IR::AccType::NORMAL));
 
     v.ir.SetRegister(t, data);
-    return true;
+    return v.MemoryInstructionContinues();
 }
 
 static bool LoadHalfRegister(TranslatorVisitor& v, Reg n, Reg t, Imm<2> imm2, Reg m, ExtensionFunction ext_fn) {
@@ -31,7 +31,7 @@ static bool LoadHalfRegister(TranslatorVisitor& v, Reg n, Reg t, Imm<2> imm2, Re
     const IR::U32 data = (v.ir.*ext_fn)(v.ir.ReadMemory16(address, IR::AccType::NORMAL));
 
     v.ir.SetRegister(t, data);
-    return true;
+    return v.MemoryInstructionContinues();
 }
 
 static bool LoadHalfImmediate(TranslatorVisitor& v, Reg n, Reg t, bool P, bool U, bool W, Imm<12> imm12, ExtensionFunction ext_fn) {
@@ -48,7 +48,7 @@ static bool LoadHalfImmediate(TranslatorVisitor& v, Reg n, Reg t, bool P, bool U
     }
 
     v.ir.SetRegister(t, data);
-    return true;
+    return v.MemoryInstructionContinues();
 }
 
 bool TranslatorVisitor::thumb32_LDRH_lit(bool U, Reg t, Imm<12> imm12) {

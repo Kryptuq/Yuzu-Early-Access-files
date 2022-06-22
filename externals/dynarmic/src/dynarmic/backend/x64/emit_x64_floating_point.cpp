@@ -10,6 +10,7 @@
 #include <mcl/assert.hpp>
 #include <mcl/mp/metavalue/lift_value.hpp>
 #include <mcl/mp/typelist/cartesian_product.hpp>
+#include <mcl/mp/typelist/get.hpp>
 #include <mcl/mp/typelist/lift_sequence.hpp>
 #include <mcl/mp/typelist/list.hpp>
 #include <mcl/mp/typelist/lower_to_tuple.hpp>
@@ -941,15 +942,14 @@ static void EmitFPRound(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst, siz
     using exact_list = mp::list<std::true_type, std::false_type>;
 
     static const auto lut = Common::GenerateLookupTableFromList(
-        [](auto args) {
+        []<typename I>(I) {
             return std::pair{
-                mp::lower_to_tuple_v<decltype(args)>,
+                mp::lower_to_tuple_v<I>,
                 Common::FptrCast(
                     [](u64 input, FP::FPSR& fpsr, FP::FPCR fpcr) {
-                        constexpr auto t = mp::lower_to_tuple_v<decltype(args)>;
-                        constexpr size_t fsize = std::get<0>(t);
-                        constexpr FP::RoundingMode rounding_mode = std::get<1>(t);
-                        constexpr bool exact = std::get<2>(t);
+                        constexpr size_t fsize = mp::get<0, I>::value;
+                        constexpr FP::RoundingMode rounding_mode = mp::get<1, I>::value;
+                        constexpr bool exact = mp::get<2, I>::value;
                         using InputSize = mcl::unsigned_integer_of_size<fsize>;
 
                         return FP::FPRoundInt<InputSize>(static_cast<InputSize>(input), fpcr, rounding_mode, exact, fpsr);
@@ -1582,14 +1582,13 @@ static void EmitFPToFixed(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
         mp::lift_value<FP::RoundingMode::ToNearest_TieAwayFromZero>>;
 
     static const auto lut = Common::GenerateLookupTableFromList(
-        [](auto args) {
+        []<typename I>(I) {
             return std::pair{
-                mp::lower_to_tuple_v<decltype(args)>,
+                mp::lower_to_tuple_v<I>,
                 Common::FptrCast(
                     [](u64 input, FP::FPSR& fpsr, FP::FPCR fpcr) {
-                        constexpr auto t = mp::lower_to_tuple_v<decltype(args)>;
-                        constexpr size_t fbits = std::get<0>(t);
-                        constexpr FP::RoundingMode rounding_mode = std::get<1>(t);
+                        constexpr size_t fbits = mp::get<0, I>::value;
+                        constexpr FP::RoundingMode rounding_mode = mp::get<1, I>::value;
                         using FPT = mcl::unsigned_integer_of_size<fsize>;
 
                         return FP::FPToFixed<FPT>(isize, static_cast<FPT>(input), fbits, unsigned_, fpcr, rounding_mode, fpsr);

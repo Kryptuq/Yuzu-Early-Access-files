@@ -208,6 +208,10 @@ struct UserConfig {
     /// to avoid writting certain unnecessary code only needed for cycle timers.
     bool wall_clock_cntpct = false;
 
+    /// This allows accurately emulating protection fault handlers. If true, we check
+    /// for exit after every data memory access by the emulated program.
+    bool check_halt_on_memory_access = false;
+
     /// This option allows you to disable cycle counting. If this is set to false,
     /// AddTicks and GetTicksRemaining are never called, and no cycle counting is done.
     bool enable_cycle_counting = true;

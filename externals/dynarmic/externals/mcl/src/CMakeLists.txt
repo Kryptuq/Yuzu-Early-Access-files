@@ -63,6 +63,7 @@ target_include_directories(mcl
 )
 target_compile_options(mcl PRIVATE ${MCL_CXX_FLAGS})
 target_link_libraries(mcl PUBLIC $<BUILD_INTERFACE:fmt::fmt>)
+set_property(TARGET mcl PROPERTY POSITION_INDEPENDENT_CODE ON)
 add_library(merry::mcl ALIAS mcl)
 
 include(CreateTargetDirectoryGroups)

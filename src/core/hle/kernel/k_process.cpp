@@ -579,6 +579,52 @@ ResultCode KProcess::DeleteThreadLocalRegion(VAddr addr) {
     return ResultSuccess;
 }
 
+bool KProcess::InsertWatchpoint(Core::System& system, VAddr addr, u64 size,
+                                DebugWatchpointType type) {
+    const auto watch{std::find_if(watchpoints.begin(), watchpoints.end(), [&](const auto& wp) {
+        return wp.type == DebugWatchpointType::None;
+    })};
+
+    if (watch == watchpoints.end()) {
+        return false;
+    }
+
+    watch->start_address = addr;
+    watch->end_address = addr + size;
+    watch->type = type;
+
+    for (VAddr page = Common::AlignDown(addr, PageSize); page < addr + size; page += PageSize) {
+        debug_page_refcounts[page]++;
+        system.Memory().MarkRegionDebug(page, PageSize, true);
+    }
+
+    return true;
+}
+
+bool KProcess::RemoveWatchpoint(Core::System& system, VAddr addr, u64 size,
+                                DebugWatchpointType type) {
+    const auto watch{std::find_if(watchpoints.begin(), watchpoints.end(), [&](const auto& wp) {
+        return wp.start_address == addr && wp.end_address == addr + size && wp.type == type;
+    })};
+
+    if (watch == watchpoints.end()) {
+        return false;
+    }
+
+    watch->start_address = 0;
+    watch->end_address = 0;
+    watch->type = DebugWatchpointType::None;
+
+    for (VAddr page = Common::AlignDown(addr, PageSize); page < addr + size; page += PageSize) {
+        debug_page_refcounts[page]--;
+        if (!debug_page_refcounts[page]) {
+            system.Memory().MarkRegionDebug(page, PageSize, false);
+        }
+    }
+
+    return true;
+}
+
 void KProcess::LoadModule(CodeSet code_set, VAddr base_addr) {
     const auto ReprotectSegment = [&](const CodeSet::Segment& segment,
                                       Svc::MemoryPermission permission) {

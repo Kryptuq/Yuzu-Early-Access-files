@@ -121,8 +121,15 @@ void ARM_Interface::Run() {
 
         // Notify the debugger and go to sleep if a breakpoint was hit.
         if (Has(hr, breakpoint)) {
+            RewindBreakpointInstruction();
             system.GetDebugger().NotifyThreadStopped(current_thread);
-            current_thread->RequestSuspend(Kernel::SuspendType::Debug);
+            current_thread->RequestSuspend(SuspendType::Debug);
+            break;
+        }
+        if (Has(hr, watchpoint)) {
+            RewindBreakpointInstruction();
+            system.GetDebugger().NotifyThreadWatchpoint(current_thread, *HaltedWatchpoint());
+            current_thread->RequestSuspend(SuspendType::Debug);
             break;
         }
 
@@ -134,6 +141,38 @@ void ARM_Interface::Run() {
             break;
         }
     }
+}
+
+void ARM_Interface::LoadWatchpointArray(const WatchpointArray& wp) {
+    watchpoints = &wp;
+}
+
+const Kernel::DebugWatchpoint* ARM_Interface::MatchingWatchpoint(
+    VAddr addr, u64 size, Kernel::DebugWatchpointType access_type) const {
+    if (!watchpoints) {
+        return nullptr;
+    }
+
+    const VAddr start_address{addr};
+    const VAddr end_address{addr + size};
+
+    for (size_t i = 0; i < Core::Hardware::NUM_WATCHPOINTS; i++) {
+        const auto& watch{(*watchpoints)[i]};
+
+        if (end_address <= watch.start_address) {
+            continue;
+        }
+        if (start_address >= watch.end_address) {
+            continue;
+        }
+        if ((access_type & watch.type) == Kernel::DebugWatchpointType::None) {
+            continue;
+        }
+
+        return &watch;
+    }
+
+    return nullptr;
 }
 
 } // namespace Core

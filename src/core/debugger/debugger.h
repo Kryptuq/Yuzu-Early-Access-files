@@ -9,7 +9,8 @@
 
 namespace Kernel {
 class KThread;
-}
+struct DebugWatchpoint;
+} // namespace Kernel
 
 namespace Core {
 class System;
@@ -39,6 +40,11 @@ public:
      * Notify the debugger that a shutdown is being performed now and disconnect.
      */
     void NotifyShutdown();
+
+    /*
+     * Notify the debugger that the given thread has stopped due to hitting a watchpoint.
+     */
+    bool NotifyThreadWatchpoint(Kernel::KThread* thread, const Kernel::DebugWatchpoint& watch);
 
 private:
     std::unique_ptr<DebuggerImpl> impl;

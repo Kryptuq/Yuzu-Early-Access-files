@@ -26,6 +26,7 @@ struct GenericTbl {
 	uint8_t code1;
 	uint8_t code2;
 	uint8_t code3;
+	uint8_t code4;
 };
 
 void putGeneric(const GenericTbl *p, size_t n)
@@ -34,6 +35,7 @@ void putGeneric(const GenericTbl *p, size_t n)
 		printf("void %s() { db(0x%02X); ", p->name, p->code1);
 		if (p->code2) printf("db(0x%02X); ", p->code2);
 		if (p->code3) printf("db(0x%02X); ", p->code3);
+		if (p->code4) printf("db(0x%02X); ", p->code4);
 		printf("}\n");
 		p++;
 	}
@@ -250,7 +252,7 @@ void put()
 		char buf[16];
 		unsigned int v = VERSION;
 		if (v & 0xF) {
-			snprintf(buf, sizeof(buf), "%d.%02X%x", v >> 12, (v >> 4) & 0xFF, v & 0xF);
+			snprintf(buf, sizeof(buf), "%d.%02X.%x", v >> 12, (v >> 4) & 0xFF, v & 0xF);
 		} else {
 			snprintf(buf, sizeof(buf), "%d.%02X", v >> 12, (v >> 4) & 0xFF);
 		}
@@ -661,6 +663,9 @@ void put()
 			{ "cmpsb", 0xA6 },
 			{ "cmpsw", 0x66, 0xA7 },
 			{ "cmpsd", 0xA7 },
+			{ "endbr32", 0xF3, 0x0F, 0x1E, 0xFB },
+			{ "endbr64", 0xF3, 0x0F, 0x1E, 0xFA },
+			{ "hlt", 0xF4 },
 			{ "int3", 0xCC },
 			{ "scasb", 0xAE },
 			{ "scasw", 0x66, 0xAF },
@@ -1040,11 +1045,14 @@ void put()
 		puts("void lea(const Reg& reg, const Address& addr) { if (!reg.isBit(16 | i32e)) XBYAK_THROW(ERR_BAD_SIZE_OF_REGISTER) opModM(addr, reg, 0x8D); }");
 		puts("void bswap(const Reg32e& reg) { opModR(Reg32(1), reg, 0x0F); }");
 		puts("void ret(int imm = 0) { if (imm) { db(0xC2); dw(imm); } else { db(0xC3); } }");
+		puts("void retf(int imm = 0) { if (imm) { db(0xCA); dw(imm); } else { db(0xCB); } }");
 
 		puts("void xadd(const Operand& op, const Reg& reg) { opModRM(reg, op, (op.isREG() && reg.isREG() && op.getBit() == reg.getBit()), op.isMEM(), 0x0F, 0xC0 | (reg.isBit(8) ? 0 : 1)); }");
 		puts("void cmpxchg(const Operand& op, const Reg& reg) { opModRM(reg, op, (op.isREG() && reg.isREG() && op.getBit() == reg.getBit()), op.isMEM(), 0x0F, 0xB0 | (reg.isBit(8) ? 0 : 1)); }");
 		puts("void movbe(const Reg& reg, const Address& addr) { opModM(addr, reg, 0x0F, 0x38, 0xF0); }");
 		puts("void movbe(const Address& addr, const Reg& reg) { opModM(addr, reg, 0x0F, 0x38, 0xF1); }");
+		puts("void movdiri(const Address& addr, const Reg32e& reg) { opModM(addr, reg, 0x0F, 0x38, 0xF9); }");
+		puts("void movdir64b(const Reg& reg, const Address& addr) { db(0x66); opModM(addr, reg.cvt32(), 0x0F, 0x38, 0xF8); }");
 		puts("void adcx(const Reg32e& reg, const Operand& op) { opGen(reg, op, 0xF6, 0x66, isREG32_REG32orMEM, NONE, 0x38); }");
 		puts("void adox(const Reg32e& reg, const Operand& op) { opGen(reg, op, 0xF6, 0xF3, isREG32_REG32orMEM, NONE, 0x38); }");
 		puts("void cmpxchg8b(const Address& addr) { opModM(addr, Reg32(1), 0x0F, 0xC7); }");
@@ -1079,6 +1087,11 @@ void put()
 		puts("void rdrand(const Reg& r) { if (r.isBit(8)) XBYAK_THROW(ERR_BAD_SIZE_OF_REGISTER) opModR(Reg(6, Operand::REG, r.getBit()), r, 0x0F, 0xC7); }");
 		puts("void rdseed(const Reg& r) { if (r.isBit(8)) XBYAK_THROW(ERR_BAD_SIZE_OF_REGISTER) opModR(Reg(7, Operand::REG, r.getBit()), r, 0x0F, 0xC7); }");
 		puts("void crc32(const Reg32e& reg, const Operand& op) { if (reg.isBit(32) && op.isBit(16)) db(0x66); db(0xF2); opModRM(reg, op, op.isREG(), op.isMEM(), 0x0F, 0x38, 0xF0 | (op.isBit(8) ? 0 : 1)); }");
+		puts("void tpause(const Reg32& r) { int idx = r.getIdx(); if (idx > 7) XBYAK_THROW(ERR_BAD_PARAMETER) db(0x66); db(0x0F); db(0xAE); setModRM(3, 6, idx); }");
+		puts("void umonitor(const Reg& r) { int idx = r.getIdx(); if (idx > 7) XBYAK_THROW(ERR_BAD_PARAMETER) int bit = r.getBit(); if (BIT != bit) { if ((BIT == 32 && bit == 16) || (BIT == 64 && bit == 32)) { db(0x67); } else { XBYAK_THROW(ERR_BAD_SIZE_OF_REGISTER) } } db(0xF3); db(0x0F); db(0xAE); setModRM(3, 6, idx); }");
+		puts("void umwait(const Reg32& r) { int idx = r.getIdx(); if (idx > 7) XBYAK_THROW(ERR_BAD_PARAMETER) db(0xF2); db(0x0F); db(0xAE); setModRM(3, 6, idx); }");
+		puts("void clwb(const Address& addr) { db(0x66); opMIB(addr, esi, 0x0F, 0xAE); }");
+		puts("void cldemote(const Address& addr) { opMIB(addr, eax, 0x0F, 0x1C); }");
 	}
 	{
 		const struct Tbl {
@@ -1207,8 +1220,8 @@ void put()
 			printf("void v%spd(const Xmm& xmm, const Operand& op1, const Operand& op2 = Operand()) { opAVX_X_X_XM(xmm, op1, op2, T_0F | T_66 | T_EW1 | T_YMM | T_EVEX | T_ER_Z | T_B64, 0x%02X); }\n", p->name, p->code);
 			printf("void v%sps(const Xmm& xmm, const Operand& op1, const Operand& op2 = Operand()) { opAVX_X_X_XM(xmm, op1, op2, T_0F | T_EW0 | T_YMM | T_EVEX | T_ER_Z | T_B32, 0x%02X); }\n", p->name, p->code);
 			if (p->only_pd_ps) continue;
-			printf("void v%ssd(const Xmm& xmm, const Operand& op1, const Operand& op2 = Operand()) { opAVX_X_X_XM(xmm, op1, op2, T_0F | T_F2 | T_EW1 | T_EVEX | T_ER_Z | T_N8, 0x%02X); }\n", p->name, p->code);
-			printf("void v%sss(const Xmm& xmm, const Operand& op1, const Operand& op2 = Operand()) { opAVX_X_X_XM(xmm, op1, op2, T_0F | T_F3 | T_EW0 | T_EVEX | T_ER_Z | T_N4, 0x%02X); }\n", p->name, p->code);
+			printf("void v%ssd(const Xmm& xmm, const Operand& op1, const Operand& op2 = Operand()) { opAVX_X_X_XM(xmm, op1, op2, T_0F | T_F2 | T_EW1 | T_EVEX | T_ER_X | T_N8, 0x%02X); }\n", p->name, p->code);
+			printf("void v%sss(const Xmm& xmm, const Operand& op1, const Operand& op2 = Operand()) { opAVX_X_X_XM(xmm, op1, op2, T_0F | T_F3 | T_EW0 | T_EVEX | T_ER_X | T_N4, 0x%02X); }\n", p->name, p->code);
 		}
 	}
 	putX_X_XM(false);
@@ -1299,7 +1312,8 @@ void put()
 			if (p->mode & 1) {
 				const char *immS1 = p->hasIMM ? ", uint8_t imm" : "";
 				const char *immS2 = p->hasIMM ? ", imm" : ", NONE";
-				const char *pref = p->type & T_66 ? "0x66" : p->type & T_F2 ? "0xF2" : p->type & T_F3 ? "0xF3" : "NONE";
+				const char *prefTbl[5] = { "NONE", "0x66", "0xF3", "0xF2" };
+				const char *pref = prefTbl[getPP(p->type)];
 				const char *suf = p->type & T_0F38 ? "0x38" : p->type & T_0F3A ? "0x3A" : "NONE";
 				printf("void %s(const Xmm& xmm, const Operand& op%s) { opGen(xmm, op, 0x%02X, %s, isXMM_XMMorMEM%s, %s); }\n", p->name, immS1, p->code, pref, immS2, suf);
 			}
@@ -1350,11 +1364,12 @@ void put()
 			{ 0xDE, "aesdec", T_0F38 | T_66 | T_YMM | T_EVEX, 3 },
 			{ 0xDF, "aesdeclast", T_0F38 | T_66 | T_YMM | T_EVEX, 3 },
 		};
+		const uint8_t ppTbl[] = { 0, 0x66, 0xf3, 0xf2 };
 		for (size_t i = 0; i < NUM_OF_ARRAY(tbl); i++) {
 			const Tbl *p = &tbl[i];
 			std::string type = type2String(p->type);
 			if (p->mode & 1) {
-				uint8_t pref = p->type & T_66 ? 0x66 : p->type & T_F2 ? 0xF2 : p->type & T_F3 ? 0xF3 : 0;
+				uint8_t pref = ppTbl[getPP(p->type)];
 				printf("void %s(const Xmm& xmm, const Operand& op) { opGen(xmm, op, 0x%02X, 0x%02X, isXMM_XMMorMEM%s); }\n", p->name, p->code, pref, p->type & T_0F38 ? ", NONE, 0x38" : "");
 			}
 			if (p->mode & 2) {
@@ -1648,7 +1663,7 @@ void put()
 		puts("void vcvttpd2dq(const Xmm& x, const Operand& op) { opCvt2(x, op, T_66 | T_0F | T_YMM | T_EVEX |T_EW1 | T_B64 | T_ER_Z, 0xE6); }");
 
 		puts("void vcvtph2ps(const Xmm& x, const Operand& op) { checkCvt1(x, op); opVex(x, 0, op, T_0F38 | T_66 | T_W0 | T_EVEX | T_EW0 | T_N8 | T_N_VL | T_SAE_Y, 0x13); }");
-		puts("void vcvtps2ph(const Operand& op, const Xmm& x, uint8_t imm) { checkCvt1(x, op); opVex(x, 0, op, T_0F3A | T_66 | T_W0 | T_EVEX | T_EW0 | T_N8 | T_N_VL | T_SAE_Y, 0x1D, imm); }");
+		puts("void vcvtps2ph(const Operand& op, const Xmm& x, uint8_t imm) { checkCvt1(x, op); opVex(x, 0, op, T_0F3A | T_66 | T_W0 | T_EVEX | T_EW0 | T_N8 | T_N_VL | T_SAE_Y | T_M_K, 0x1D, imm); }");
 
 	}
 	// haswell gpr(reg, reg, r/m)

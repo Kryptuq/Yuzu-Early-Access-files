@@ -11,7 +11,8 @@
 
 namespace Kernel {
 class KThread;
-}
+struct DebugWatchpoint;
+} // namespace Kernel
 
 namespace Core {
 
@@ -70,6 +71,11 @@ public:
      * Called when emulation is shutting down.
      */
     virtual void ShuttingDown() = 0;
+
+    /*
+     * Called when emulation has stopped on a watchpoint.
+     */
+    virtual void Watchpoint(Kernel::KThread* thread, const Kernel::DebugWatchpoint& watch) = 0;
 
     /**
      * Called when new data is asynchronously received on the client socket.
