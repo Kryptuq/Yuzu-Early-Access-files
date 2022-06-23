@@ -65,7 +65,6 @@ ResultCode KPageTable::InitializeForProcess(FileSys::ProgramAddressSpaceType as_
     std::size_t alias_region_size{GetSpaceSize(KAddressSpaceInfo::Type::Alias)};
     std::size_t heap_region_size{GetSpaceSize(KAddressSpaceInfo::Type::Heap)};
 
-    ASSERT(start <= code_addr);
     ASSERT(code_addr < code_addr + code_size);
     ASSERT(code_addr + code_size - 1 <= end - 1);
 
