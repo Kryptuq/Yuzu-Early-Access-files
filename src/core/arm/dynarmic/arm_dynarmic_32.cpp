@@ -48,6 +48,12 @@ public:
         CheckMemoryAccess(vaddr, 8, Kernel::DebugWatchpointType::Read);
         return memory.Read64(vaddr);
     }
+    std::optional<u32> MemoryReadCode(u32 vaddr) override {
+        if (!memory.IsValidVirtualAddressRange(vaddr, sizeof(u32))) {
+            return std::nullopt;
+        }
+        return MemoryRead32(vaddr);
+    }
 
     void MemoryWrite8(u32 vaddr, u8 value) override {
         if (CheckMemoryAccess(vaddr, 1, Kernel::DebugWatchpointType::Write)) {
@@ -89,21 +95,28 @@ public:
 
     void InterpreterFallback(u32 pc, std::size_t num_instructions) override {
         parent.LogBacktrace();
-        UNIMPLEMENTED_MSG("This should never happen, pc = {:08X}, code = {:08X}", pc,
-                          MemoryReadCode(pc));
+        LOG_ERROR(Core_ARM,
+                  "Unimplemented instruction @ 0x{:X} for {} instructions (instr = {:08X})", pc,
+                  num_instructions, MemoryRead32(pc));
     }
 
     void ExceptionRaised(u32 pc, Dynarmic::A32::Exception exception) override {
-        if (debugger_enabled) {
-            parent.SaveContext(parent.breakpoint_context);
-            parent.jit.load()->HaltExecution(ARM_Interface::breakpoint);
+        switch (exception) {
+        case Dynarmic::A32::Exception::NoExecuteFault:
+            LOG_CRITICAL(Core_ARM, "Cannot execute instruction at unmapped address {:#08x}", pc);
+            ReturnException(pc, ARM_Interface::no_execute);
             return;
-        }
+        default:
+            if (debugger_enabled) {
+                ReturnException(pc, ARM_Interface::breakpoint);
+                return;
+            }
 
-        parent.LogBacktrace();
-        LOG_CRITICAL(Core_ARM,
-                     "ExceptionRaised(exception = {}, pc = {:08X}, code = {:08X}, thumb = {})",
-                     exception, pc, MemoryReadCode(pc), parent.IsInThumbMode());
+            parent.LogBacktrace();
+            LOG_CRITICAL(Core_ARM,
+                         "ExceptionRaised(exception = {}, pc = {:08X}, code = {:08X}, thumb = {})",
+                         exception, pc, MemoryRead32(pc), parent.IsInThumbMode());
+        }
     }
 
     void CallSVC(u32 swi) override {
@@ -148,13 +161,18 @@ public:
 
         const auto match{parent.MatchingWatchpoint(addr, size, type)};
         if (match) {
-            parent.SaveContext(parent.breakpoint_context);
-            parent.jit.load()->HaltExecution(ARM_Interface::watchpoint);
             parent.halted_watchpoint = match;
+            ReturnException(parent.jit.load()->Regs()[15], ARM_Interface::watchpoint);
             return false;
         }
 
         return true;
+    }
+
+    void ReturnException(u32 pc, Dynarmic::HaltReason hr) {
+        parent.SaveContext(parent.breakpoint_context);
+        parent.breakpoint_context.cpu_registers[15] = pc;
+        parent.jit.load()->HaltExecution(hr);
     }
 
     ARM_Dynarmic_32& parent;

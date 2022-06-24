@@ -30,7 +30,7 @@ public:
         return vaddr >= code_mem_start_address && vaddr < code_mem_start_address + code_mem.size() * 4;
     }
 
-    std::uint32_t MemoryReadCode(u64 vaddr) override {
+    std::optional<std::uint32_t> MemoryReadCode(u64 vaddr) override {
         if (!IsInCodeMem(vaddr)) {
             return 0x14000000;  // B .
         }
@@ -145,7 +145,7 @@ public:
         memcpy(backing_memory + vaddr, &value, sizeof(T));
     }
 
-    std::uint32_t MemoryReadCode(u64 vaddr) override {
+    std::optional<std::uint32_t> MemoryReadCode(u64 vaddr) override {
         return read<std::uint32_t>(vaddr);
     }
 

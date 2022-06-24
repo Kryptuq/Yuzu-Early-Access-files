@@ -97,13 +97,13 @@ constexpr u8 SNaN = 0b10000000;
 
 // Opcodes for use with vfixupimm
 enum class FpFixup : u8 {
-    A = 0b0000,         // A
-    B = 0b0001,         // B
-    QNaN_B = 0b0010,    // QNaN with sign of B
+    Dest = 0b0000,      // Preserve destination
+    Norm_Src = 0b0001,  // Source operand (Denormal as positive-zero)
+    QNaN_Src = 0b0010,  // QNaN with sign of source (Denormal as positive-zero)
     IndefNaN = 0b0011,  // Indefinite QNaN (Negative QNaN with no payload on x86)
     NegInf = 0b0100,    // -Infinity
     PosInf = 0b0101,    // +Infinity
-    Inf_B = 0b0110,     // Infinity with sign of B
+    Inf_Src = 0b0110,   // Infinity with sign of source (Denormal as positive-zero)
     NegZero = 0b0111,   // -0.0
     PosZero = 0b1000,   // +0.0
     NegOne = 0b1001,    // -1.0
@@ -116,14 +116,14 @@ enum class FpFixup : u8 {
 };
 
 // Generates 32-bit LUT for vfixupimm instruction
-constexpr u32 FixupLUT(FpFixup src_qnan = FpFixup::A,
-                       FpFixup src_snan = FpFixup::A,
-                       FpFixup src_zero = FpFixup::A,
-                       FpFixup src_posone = FpFixup::A,
-                       FpFixup src_neginf = FpFixup::A,
-                       FpFixup src_posinf = FpFixup::A,
-                       FpFixup src_pos = FpFixup::A,
-                       FpFixup src_neg = FpFixup::A) {
+constexpr u32 FixupLUT(FpFixup src_qnan = FpFixup::Dest,
+                       FpFixup src_snan = FpFixup::Dest,
+                       FpFixup src_zero = FpFixup::Dest,
+                       FpFixup src_posone = FpFixup::Dest,
+                       FpFixup src_neginf = FpFixup::Dest,
+                       FpFixup src_posinf = FpFixup::Dest,
+                       FpFixup src_pos = FpFixup::Dest,
+                       FpFixup src_neg = FpFixup::Dest) {
     u32 fixup_lut = 0;
     fixup_lut = mcl::bit::set_bits<0, 3, u32>(fixup_lut, static_cast<u32>(src_qnan));
     fixup_lut = mcl::bit::set_bits<4, 7, u32>(fixup_lut, static_cast<u32>(src_snan));

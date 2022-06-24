@@ -778,7 +778,7 @@ void Hid::IsSixAxisSensorAtRest(Kernel::HLERequestContext& ctx) {
 
     bool is_at_rest{};
     auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
-    const auto result = controller.IsSixAxisSensorAtRest(parameters.sixaxis_handle, is_at_rest);
+    controller.IsSixAxisSensorAtRest(parameters.sixaxis_handle, is_at_rest);
 
     LOG_DEBUG(Service_HID,
               "called, npad_type={}, npad_id={}, device_index={}, applet_resource_user_id={}",
@@ -786,7 +786,7 @@ void Hid::IsSixAxisSensorAtRest(Kernel::HLERequestContext& ctx) {
               parameters.sixaxis_handle.device_index, parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 3};
-    rb.Push(result);
+    rb.Push(ResultSuccess);
     rb.Push(is_at_rest);
 }
 
@@ -803,8 +803,8 @@ void Hid::IsFirmwareUpdateAvailableForSixAxisSensor(Kernel::HLERequestContext& c
 
     bool is_firmware_available{};
     auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
-    const auto result = controller.IsFirmwareUpdateAvailableForSixAxisSensor(
-        parameters.sixaxis_handle, is_firmware_available);
+    controller.IsFirmwareUpdateAvailableForSixAxisSensor(parameters.sixaxis_handle,
+                                                         is_firmware_available);
 
     LOG_WARNING(
         Service_HID,
@@ -813,7 +813,7 @@ void Hid::IsFirmwareUpdateAvailableForSixAxisSensor(Kernel::HLERequestContext& c
         parameters.sixaxis_handle.device_index, parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 3};
-    rb.Push(result);
+    rb.Push(ResultSuccess);
     rb.Push(is_firmware_available);
 }
 
@@ -1083,13 +1083,13 @@ void Hid::DisconnectNpad(Kernel::HLERequestContext& ctx) {
     const auto parameters{rp.PopRaw<Parameters>()};
 
     auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
-    const auto result = controller.DisconnectNpad(parameters.npad_id);
+    controller.DisconnectNpad(parameters.npad_id);
 
     LOG_DEBUG(Service_HID, "called, npad_id={}, applet_resource_user_id={}", parameters.npad_id,
               parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(result);
+    rb.Push(ResultSuccess);
 }
 
 void Hid::GetPlayerLedPattern(Kernel::HLERequestContext& ctx) {
@@ -1165,15 +1165,14 @@ void Hid::SetNpadJoyAssignmentModeSingleByDefault(Kernel::HLERequestContext& ctx
     const auto parameters{rp.PopRaw<Parameters>()};
 
     auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
-    const auto result =
-        controller.SetNpadMode(parameters.npad_id, Controller_NPad::NpadJoyDeviceType::Left,
-                               Controller_NPad::NpadJoyAssignmentMode::Single);
+    controller.SetNpadMode(parameters.npad_id, Controller_NPad::NpadJoyDeviceType::Left,
+                           Controller_NPad::NpadJoyAssignmentMode::Single);
 
     LOG_INFO(Service_HID, "called, npad_id={}, applet_resource_user_id={}", parameters.npad_id,
              parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(result);
+    rb.Push(ResultSuccess);
 }
 
 void Hid::SetNpadJoyAssignmentModeSingle(Kernel::HLERequestContext& ctx) {
@@ -1189,15 +1188,15 @@ void Hid::SetNpadJoyAssignmentModeSingle(Kernel::HLERequestContext& ctx) {
     const auto parameters{rp.PopRaw<Parameters>()};
 
     auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
-    const auto result = controller.SetNpadMode(parameters.npad_id, parameters.npad_joy_device_type,
-                                               Controller_NPad::NpadJoyAssignmentMode::Single);
+    controller.SetNpadMode(parameters.npad_id, parameters.npad_joy_device_type,
+                           Controller_NPad::NpadJoyAssignmentMode::Single);
 
     LOG_INFO(Service_HID, "called, npad_id={}, applet_resource_user_id={}, npad_joy_device_type={}",
              parameters.npad_id, parameters.applet_resource_user_id,
              parameters.npad_joy_device_type);
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(result);
+    rb.Push(ResultSuccess);
 }
 
 void Hid::SetNpadJoyAssignmentModeDual(Kernel::HLERequestContext& ctx) {
@@ -1212,14 +1211,13 @@ void Hid::SetNpadJoyAssignmentModeDual(Kernel::HLERequestContext& ctx) {
     const auto parameters{rp.PopRaw<Parameters>()};
 
     auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
-    const auto result = controller.SetNpadMode(parameters.npad_id, {},
-                                               Controller_NPad::NpadJoyAssignmentMode::Dual);
+    controller.SetNpadMode(parameters.npad_id, {}, Controller_NPad::NpadJoyAssignmentMode::Dual);
 
     LOG_INFO(Service_HID, "called, npad_id={}, applet_resource_user_id={}", parameters.npad_id,
              parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(result);
+    rb.Push(ResultSuccess);
 }
 
 void Hid::MergeSingleJoyAsDualJoy(Kernel::HLERequestContext& ctx) {
@@ -1412,8 +1410,11 @@ void Hid::ClearNpadCaptureButtonAssignment(Kernel::HLERequestContext& ctx) {
 void Hid::GetVibrationDeviceInfo(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto vibration_device_handle{rp.PopRaw<Core::HID::VibrationDeviceHandle>()};
+    const auto& controller =
+        GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
 
     Core::HID::VibrationDeviceInfo vibration_device_info;
+    bool check_device_index = false;
 
     switch (vibration_device_handle.npad_type) {
     case Core::HID::NpadStyleIndex::ProController:
@@ -1421,33 +1422,45 @@ void Hid::GetVibrationDeviceInfo(Kernel::HLERequestContext& ctx) {
     case Core::HID::NpadStyleIndex::JoyconDual:
     case Core::HID::NpadStyleIndex::JoyconLeft:
     case Core::HID::NpadStyleIndex::JoyconRight:
-    default:
         vibration_device_info.type = Core::HID::VibrationDeviceType::LinearResonantActuator;
+        check_device_index = true;
         break;
     case Core::HID::NpadStyleIndex::GameCube:
         vibration_device_info.type = Core::HID::VibrationDeviceType::GcErm;
         break;
-    case Core::HID::NpadStyleIndex::Pokeball:
+    case Core::HID::NpadStyleIndex::N64:
+        vibration_device_info.type = Core::HID::VibrationDeviceType::N64;
+        break;
+    default:
         vibration_device_info.type = Core::HID::VibrationDeviceType::Unknown;
         break;
     }
 
-    switch (vibration_device_handle.device_index) {
-    case Core::HID::DeviceIndex::Left:
-        vibration_device_info.position = Core::HID::VibrationDevicePosition::Left;
-        break;
-    case Core::HID::DeviceIndex::Right:
-        vibration_device_info.position = Core::HID::VibrationDevicePosition::Right;
-        break;
-    case Core::HID::DeviceIndex::None:
-    default:
-        ASSERT_MSG(false, "DeviceIndex should never be None!");
-        vibration_device_info.position = Core::HID::VibrationDevicePosition::None;
-        break;
+    vibration_device_info.position = Core::HID::VibrationDevicePosition::None;
+    if (check_device_index) {
+        switch (vibration_device_handle.device_index) {
+        case Core::HID::DeviceIndex::Left:
+            vibration_device_info.position = Core::HID::VibrationDevicePosition::Left;
+            break;
+        case Core::HID::DeviceIndex::Right:
+            vibration_device_info.position = Core::HID::VibrationDevicePosition::Right;
+            break;
+        case Core::HID::DeviceIndex::None:
+        default:
+            ASSERT_MSG(false, "DeviceIndex should never be None!");
+            break;
+        }
     }
 
     LOG_DEBUG(Service_HID, "called, vibration_device_type={}, vibration_device_position={}",
               vibration_device_info.type, vibration_device_info.position);
+
+    const auto result = controller.IsDeviceHandleValid(vibration_device_handle);
+    if (result.IsError()) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(result);
+        return;
+    }
 
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(ResultSuccess);

@@ -28,19 +28,22 @@ IR::Block TranslateArm(LocationDescriptor descriptor, TranslateCallbacks* tcb, c
     bool should_continue = true;
     do {
         const u32 arm_pc = visitor.ir.current_location.PC();
-        const u32 arm_instruction = tcb->MemoryReadCode(arm_pc);
         visitor.current_instruction_size = 4;
 
-        tcb->PreCodeTranslationHook(false, arm_pc, visitor.ir);
+        if (const auto arm_instruction = tcb->MemoryReadCode(arm_pc)) {
+            tcb->PreCodeTranslationHook(false, arm_pc, visitor.ir);
 
-        if (const auto vfp_decoder = DecodeVFP<TranslatorVisitor>(arm_instruction)) {
-            should_continue = vfp_decoder->get().call(visitor, arm_instruction);
-        } else if (const auto asimd_decoder = DecodeASIMD<TranslatorVisitor>(arm_instruction)) {
-            should_continue = asimd_decoder->get().call(visitor, arm_instruction);
-        } else if (const auto decoder = DecodeArm<TranslatorVisitor>(arm_instruction)) {
-            should_continue = decoder->get().call(visitor, arm_instruction);
+            if (const auto vfp_decoder = DecodeVFP<TranslatorVisitor>(*arm_instruction)) {
+                should_continue = vfp_decoder->get().call(visitor, *arm_instruction);
+            } else if (const auto asimd_decoder = DecodeASIMD<TranslatorVisitor>(*arm_instruction)) {
+                should_continue = asimd_decoder->get().call(visitor, *arm_instruction);
+            } else if (const auto decoder = DecodeArm<TranslatorVisitor>(*arm_instruction)) {
+                should_continue = decoder->get().call(visitor, *arm_instruction);
+            } else {
+                should_continue = visitor.arm_UDF();
+            }
         } else {
-            should_continue = visitor.arm_UDF();
+            should_continue = visitor.RaiseException(Exception::NoExecuteFault);
         }
 
         if (visitor.cond_state == ConditionalState::Break) {

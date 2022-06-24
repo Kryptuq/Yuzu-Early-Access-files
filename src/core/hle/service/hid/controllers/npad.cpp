@@ -49,28 +49,42 @@ bool Controller_NPad::IsNpadIdValid(Core::HID::NpadIdType npad_id) {
     }
 }
 
-bool Controller_NPad::IsDeviceHandleValid(const Core::HID::VibrationDeviceHandle& device_handle) {
+ResultCode Controller_NPad::IsDeviceHandleValid(
+    const Core::HID::VibrationDeviceHandle& device_handle) {
     const auto npad_id = IsNpadIdValid(static_cast<Core::HID::NpadIdType>(device_handle.npad_id));
     const bool npad_type = device_handle.npad_type < Core::HID::NpadStyleIndex::MaxNpadType;
     const bool device_index = device_handle.device_index < Core::HID::DeviceIndex::MaxDeviceIndex;
-    return npad_id && npad_type && device_index;
+
+    if (!npad_type) {
+        return VibrationInvalidStyleIndex;
+    }
+    if (!npad_id) {
+        return VibrationInvalidNpadId;
+    }
+    if (!device_index) {
+        return VibrationDeviceIndexOutOfRange;
+    }
+
+    return ResultSuccess;
 }
 
 ResultCode Controller_NPad::VerifyValidSixAxisSensorHandle(
     const Core::HID::SixAxisSensorHandle& device_handle) {
     const auto npad_id = IsNpadIdValid(static_cast<Core::HID::NpadIdType>(device_handle.npad_id));
+    const bool device_index = device_handle.device_index < Core::HID::DeviceIndex::MaxDeviceIndex;
+    const bool npad_type = device_handle.npad_type < Core::HID::NpadStyleIndex::MaxNpadType;
+
     if (!npad_id) {
         return InvalidNpadId;
     }
-    const bool device_index = device_handle.device_index < Core::HID::DeviceIndex::MaxDeviceIndex;
     if (!device_index) {
         return NpadDeviceIndexOutOfRange;
     }
     // This doesn't get validated on nnsdk
-    const bool npad_type = device_handle.npad_type < Core::HID::NpadStyleIndex::MaxNpadType;
     if (!npad_type) {
         return NpadInvalidHandle;
     }
+
     return ResultSuccess;
 }
 
@@ -705,6 +719,12 @@ Controller_NPad::NpadJoyHoldType Controller_NPad::GetHoldType() const {
 }
 
 void Controller_NPad::SetNpadHandheldActivationMode(NpadHandheldActivationMode activation_mode) {
+    if (activation_mode != NpadHandheldActivationMode::None &&
+        activation_mode != NpadHandheldActivationMode::Single) {
+        ASSERT_MSG(false, "Activation mode should be always None or Single");
+        return;
+    }
+
     handheld_activation_mode = activation_mode;
 }
 
@@ -840,7 +860,7 @@ bool Controller_NPad::VibrateControllerAtIndex(Core::HID::NpadIdType npad_id,
 void Controller_NPad::VibrateController(
     const Core::HID::VibrationDeviceHandle& vibration_device_handle,
     const Core::HID::VibrationValue& vibration_value) {
-    if (!IsDeviceHandleValid(vibration_device_handle)) {
+    if (IsDeviceHandleValid(vibration_device_handle).IsError()) {
         return;
     }
 
@@ -903,7 +923,7 @@ void Controller_NPad::VibrateControllers(
 
 Core::HID::VibrationValue Controller_NPad::GetLastVibration(
     const Core::HID::VibrationDeviceHandle& vibration_device_handle) const {
-    if (!IsDeviceHandleValid(vibration_device_handle)) {
+    if (IsDeviceHandleValid(vibration_device_handle).IsError()) {
         return {};
     }
 
@@ -914,7 +934,7 @@ Core::HID::VibrationValue Controller_NPad::GetLastVibration(
 
 void Controller_NPad::InitializeVibrationDevice(
     const Core::HID::VibrationDeviceHandle& vibration_device_handle) {
-    if (!IsDeviceHandleValid(vibration_device_handle)) {
+    if (IsDeviceHandleValid(vibration_device_handle).IsError()) {
         return;
     }
 
@@ -941,7 +961,7 @@ void Controller_NPad::SetPermitVibrationSession(bool permit_vibration_session) {
 
 bool Controller_NPad::IsVibrationDeviceMounted(
     const Core::HID::VibrationDeviceHandle& vibration_device_handle) const {
-    if (!IsDeviceHandleValid(vibration_device_handle)) {
+    if (IsDeviceHandleValid(vibration_device_handle).IsError()) {
         return false;
     }
 

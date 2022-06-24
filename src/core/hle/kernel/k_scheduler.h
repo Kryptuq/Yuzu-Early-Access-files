@@ -48,16 +48,11 @@ public:
     void Reload(KThread* thread);
 
     /// Gets the current running thread
-    [[nodiscard]] KThread* GetCurrentThread() const;
+    [[nodiscard]] KThread* GetSchedulerCurrentThread() const;
 
     /// Gets the idle thread
     [[nodiscard]] KThread* GetIdleThread() const {
         return idle_thread;
-    }
-
-    /// Returns true if the scheduler is idle
-    [[nodiscard]] bool IsIdle() const {
-        return GetCurrentThread() == idle_thread;
     }
 
     /// Gets the timestamp for the last context switch in ticks.
@@ -149,10 +144,7 @@ private:
 
     void RotateScheduledQueue(s32 cpu_core_id, s32 priority);
 
-    void Schedule() {
-        ASSERT(GetCurrentThread()->GetDisableDispatchCount() == 1);
-        this->ScheduleImpl();
-    }
+    void Schedule();
 
     /// Switches the CPU's active thread context to that of the specified thread
     void ScheduleImpl();

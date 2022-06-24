@@ -197,7 +197,7 @@ public:
     Core::HID::NpadButton GetAndResetPressState();
 
     static bool IsNpadIdValid(Core::HID::NpadIdType npad_id);
-    static bool IsDeviceHandleValid(const Core::HID::VibrationDeviceHandle& device_handle);
+    static ResultCode IsDeviceHandleValid(const Core::HID::VibrationDeviceHandle& device_handle);
     static ResultCode VerifyValidSixAxisSensorHandle(
         const Core::HID::SixAxisSensorHandle& device_handle);
 

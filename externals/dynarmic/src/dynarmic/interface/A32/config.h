@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 
 #include "dynarmic/frontend/A32/translate/translate_callbacks.h"
 #include "dynarmic/interface/A32/arch_version.h"
@@ -51,6 +52,9 @@ enum class Exception {
     PreloadDataWithIntentToWrite,
     /// A PLI instruction was executed. (Hint instruction.)
     PreloadInstruction,
+    /// Attempted to execute a code block at an address for which MemoryReadCode returned std::nullopt.
+    /// (Intended to be used to emulate memory protection faults.)
+    NoExecuteFault,
 };
 
 /// These function pointers may be inserted into compiled code.
@@ -59,7 +63,7 @@ struct UserCallbacks : public TranslateCallbacks {
 
     // All reads through this callback are 4-byte aligned.
     // Memory must be interpreted as little endian.
-    std::uint32_t MemoryReadCode(VAddr vaddr) override { return MemoryRead32(vaddr); }
+    std::optional<std::uint32_t> MemoryReadCode(VAddr vaddr) override { return MemoryRead32(vaddr); }
 
     // Thus function is called before the instruction at pc is interpreted.
     // IR code can be emitted by the callee prior to translation of the instruction.

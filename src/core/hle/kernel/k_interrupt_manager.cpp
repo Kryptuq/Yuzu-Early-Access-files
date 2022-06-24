@@ -15,8 +15,7 @@ void HandleInterrupt(KernelCore& kernel, s32 core_id) {
         return;
     }
 
-    auto& scheduler = kernel.Scheduler(core_id);
-    auto& current_thread = *scheduler.GetCurrentThread();
+    auto& current_thread = GetCurrentThread(kernel);
 
     // If the user disable count is set, we may need to pin the current thread.
     if (current_thread.GetUserDisableCount() && !process->GetPinnedThread(core_id)) {
@@ -26,7 +25,7 @@ void HandleInterrupt(KernelCore& kernel, s32 core_id) {
         process->PinCurrentThread(core_id);
 
         // Set the interrupt flag for the thread.
-        scheduler.GetCurrentThread()->SetInterruptFlag();
+        GetCurrentThread(kernel).SetInterruptFlag();
     }
 }
 

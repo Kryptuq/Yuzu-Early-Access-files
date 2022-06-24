@@ -331,6 +331,8 @@ struct KernelCore::Impl {
         return is_shutting_down.load(std::memory_order_relaxed);
     }
 
+    static inline thread_local KThread* current_thread{nullptr};
+
     KThread* GetCurrentEmuThread() {
         // If we are shutting down the kernel, none of this is relevant anymore.
         if (IsShuttingDown()) {
@@ -341,7 +343,12 @@ struct KernelCore::Impl {
         if (thread_id >= Core::Hardware::NUM_CPU_CORES) {
             return GetHostDummyThread();
         }
-        return schedulers[thread_id]->GetCurrentThread();
+
+        return current_thread;
+    }
+
+    void SetCurrentEmuThread(KThread* thread) {
+        current_thread = thread;
     }
 
     void DeriveInitialMemoryLayout() {
@@ -1022,6 +1029,10 @@ u32 KernelCore::GetCurrentHostThreadID() const {
 
 KThread* KernelCore::GetCurrentEmuThread() const {
     return impl->GetCurrentEmuThread();
+}
+
+void KernelCore::SetCurrentEmuThread(KThread* thread) {
+    impl->SetCurrentEmuThread(thread);
 }
 
 KMemoryManager& KernelCore::MemoryManager() {

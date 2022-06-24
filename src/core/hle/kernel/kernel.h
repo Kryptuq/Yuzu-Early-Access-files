@@ -226,6 +226,9 @@ public:
     /// Gets the current host_thread/guest_thread pointer.
     KThread* GetCurrentEmuThread() const;
 
+    /// Sets the current guest_thread pointer.
+    void SetCurrentEmuThread(KThread* thread);
+
     /// Gets the current host_thread handle.
     u32 GetCurrentHostThreadID() const;
 

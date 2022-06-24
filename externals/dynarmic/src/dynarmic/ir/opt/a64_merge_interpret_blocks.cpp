@@ -16,10 +16,12 @@ namespace Dynarmic::Optimization {
 
 void A64MergeInterpretBlocksPass(IR::Block& block, A64::UserCallbacks* cb) {
     const auto is_interpret_instruction = [cb](A64::LocationDescriptor location) {
-        const u32 instruction = cb->MemoryReadCode(location.PC());
+        const auto instruction = cb->MemoryReadCode(location.PC());
+        if (!instruction)
+            return false;
 
         IR::Block new_block{location};
-        A64::TranslateSingleInstruction(new_block, location, instruction);
+        A64::TranslateSingleInstruction(new_block, location, *instruction);
 
         if (!new_block.Instructions().empty())
             return false;

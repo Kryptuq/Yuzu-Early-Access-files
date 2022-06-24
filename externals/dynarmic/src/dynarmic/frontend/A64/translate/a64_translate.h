@@ -5,6 +5,7 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 
 #include <mcl/stdint.hpp>
 
@@ -18,7 +19,7 @@ namespace A64 {
 
 class LocationDescriptor;
 
-using MemoryReadCodeFuncType = std::function<u32(u64 vaddr)>;
+using MemoryReadCodeFuncType = std::function<std::optional<u32>(u64 vaddr)>;
 
 struct TranslationOptions {
     /// This changes what IR we emit when we translate an unpredictable instruction.

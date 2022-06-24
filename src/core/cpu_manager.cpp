@@ -95,7 +95,7 @@ void* CpuManager::GetStartFuncParameter() {
 void CpuManager::MultiCoreRunGuestThread() {
     auto& kernel = system.Kernel();
     kernel.CurrentScheduler()->OnThreadStart();
-    auto* thread = kernel.CurrentScheduler()->GetCurrentThread();
+    auto* thread = kernel.CurrentScheduler()->GetSchedulerCurrentThread();
     auto& host_context = thread->GetHostContext();
     host_context->SetRewindPoint(GuestRewindFunction, this);
     MultiCoreRunGuestLoop();
@@ -132,7 +132,7 @@ void CpuManager::MultiCoreRunIdleThread() {
 void CpuManager::SingleCoreRunGuestThread() {
     auto& kernel = system.Kernel();
     kernel.CurrentScheduler()->OnThreadStart();
-    auto* thread = kernel.CurrentScheduler()->GetCurrentThread();
+    auto* thread = kernel.CurrentScheduler()->GetSchedulerCurrentThread();
     auto& host_context = thread->GetHostContext();
     host_context->SetRewindPoint(GuestRewindFunction, this);
     SingleCoreRunGuestLoop();
@@ -172,7 +172,7 @@ void CpuManager::PreemptSingleCore(bool from_running_enviroment) {
     {
         auto& kernel = system.Kernel();
         auto& scheduler = kernel.Scheduler(current_core);
-        Kernel::KThread* current_thread = scheduler.GetCurrentThread();
+        Kernel::KThread* current_thread = scheduler.GetSchedulerCurrentThread();
         if (idle_count >= 4 || from_running_enviroment) {
             if (!from_running_enviroment) {
                 system.CoreTiming().Idle();
@@ -184,7 +184,7 @@ void CpuManager::PreemptSingleCore(bool from_running_enviroment) {
         }
         current_core.store((current_core + 1) % Core::Hardware::NUM_CPU_CORES);
         system.CoreTiming().ResetTicks();
-        scheduler.Unload(scheduler.GetCurrentThread());
+        scheduler.Unload(scheduler.GetSchedulerCurrentThread());
 
         auto& next_scheduler = kernel.Scheduler(current_core);
         Common::Fiber::YieldTo(current_thread->GetHostContext(), *next_scheduler.ControlContext());
@@ -193,10 +193,8 @@ void CpuManager::PreemptSingleCore(bool from_running_enviroment) {
     // May have changed scheduler
     {
         auto& scheduler = system.Kernel().Scheduler(current_core);
-        scheduler.Reload(scheduler.GetCurrentThread());
-        if (!scheduler.IsIdle()) {
-            idle_count = 0;
-        }
+        scheduler.Reload(scheduler.GetSchedulerCurrentThread());
+        idle_count = 0;
     }
 }
 
@@ -237,7 +235,8 @@ void CpuManager::RunThread(std::size_t core) {
         system.GPU().ObtainContext();
     }
 
-    auto current_thread = system.Kernel().CurrentScheduler()->GetCurrentThread();
+    auto* current_thread = system.Kernel().CurrentScheduler()->GetIdleThread();
+    Kernel::SetCurrentThread(system.Kernel(), current_thread);
     Common::Fiber::YieldTo(data.host_context, *current_thread->GetHostContext());
 }
 

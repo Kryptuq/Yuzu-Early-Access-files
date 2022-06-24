@@ -52,7 +52,7 @@ void A32Unicorn<TestEnvironment>::Run() {
             return;
         }
         if (auto cerr_ = uc_emu_start(uc, pc, END_ADDRESS, 0, 1)) {
-            fmt::print("uc_emu_start failed @ {:08x} (code = {:08x}) with error {} ({})", pc, testenv.MemoryReadCode(pc), cerr_, uc_strerror(cerr_));
+            fmt::print("uc_emu_start failed @ {:08x} (code = {:08x}) with error {} ({})", pc, *testenv.MemoryReadCode(pc), cerr_, uc_strerror(cerr_));
             throw "A32Unicorn::Run() failure";
         }
         testenv.ticks_left--;

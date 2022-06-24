@@ -44,28 +44,40 @@ bool IsUnconditionalInstruction(bool is_thumb_16, u32 instruction) {
     return false;
 }
 
-std::tuple<u32, ThumbInstSize> ReadThumbInstruction(u32 arm_pc, TranslateCallbacks* tcb) {
-    u32 first_part = tcb->MemoryReadCode(arm_pc & 0xFFFFFFFC);
-    if ((arm_pc & 0x2) != 0) {
-        first_part >>= 16;
-    }
-    first_part &= 0xFFFF;
+std::optional<std::tuple<u32, ThumbInstSize>> ReadThumbInstruction(u32 arm_pc, TranslateCallbacks* tcb) {
+    u32 instruction;
 
-    if (IsThumb16(static_cast<u16>(first_part))) {
+    const std::optional<u32> first_part = tcb->MemoryReadCode(arm_pc & 0xFFFFFFFC);
+    if (!first_part)
+        return std::nullopt;
+
+    if ((arm_pc & 0x2) != 0) {
+        instruction = *first_part >> 16;
+    } else {
+        instruction = *first_part & 0xFFFF;
+    }
+
+    if (IsThumb16(static_cast<u16>(instruction))) {
         // 16-bit thumb instruction
-        return std::make_tuple(first_part, ThumbInstSize::Thumb16);
+        return std::make_tuple(instruction, ThumbInstSize::Thumb16);
     }
 
     // 32-bit thumb instruction
     // These always start with 0b11101, 0b11110 or 0b11111.
 
-    u32 second_part = tcb->MemoryReadCode((arm_pc + 2) & 0xFFFFFFFC);
-    if (((arm_pc + 2) & 0x2) != 0) {
-        second_part >>= 16;
-    }
-    second_part &= 0xFFFF;
+    instruction <<= 16;
 
-    return std::make_tuple(static_cast<u32>((first_part << 16) | second_part), ThumbInstSize::Thumb32);
+    const std::optional<u32> second_part = tcb->MemoryReadCode((arm_pc + 2) & 0xFFFFFFFC);
+    if (!second_part)
+        return std::nullopt;
+
+    if (((arm_pc + 2) & 0x2) != 0) {
+        instruction |= *second_part >> 16;
+    } else {
+        instruction |= *second_part & 0xFFFF;
+    }
+
+    return std::make_tuple(instruction, ThumbInstSize::Thumb32);
 }
 
 // Convert from thumb ASIMD format to ARM ASIMD format.
@@ -97,43 +109,48 @@ IR::Block TranslateThumb(LocationDescriptor descriptor, TranslateCallbacks* tcb,
     bool should_continue = true;
     do {
         const u32 arm_pc = visitor.ir.current_location.PC();
-        const auto [thumb_instruction, inst_size] = ReadThumbInstruction(arm_pc, tcb);
-        const bool is_thumb_16 = inst_size == ThumbInstSize::Thumb16;
-        visitor.current_instruction_size = is_thumb_16 ? 2 : 4;
+        if (const auto maybe_instruction = ReadThumbInstruction(arm_pc, tcb)) {
+            const auto [thumb_instruction, inst_size] = *maybe_instruction;
+            const bool is_thumb_16 = inst_size == ThumbInstSize::Thumb16;
+            visitor.current_instruction_size = is_thumb_16 ? 2 : 4;
 
-        tcb->PreCodeTranslationHook(false, arm_pc, visitor.ir);
+            tcb->PreCodeTranslationHook(false, arm_pc, visitor.ir);
 
-        if (IsUnconditionalInstruction(is_thumb_16, thumb_instruction) || visitor.ThumbConditionPassed()) {
-            if (is_thumb_16) {
-                if (const auto decoder = DecodeThumb16<TranslatorVisitor>(static_cast<u16>(thumb_instruction))) {
-                    should_continue = decoder->get().call(visitor, static_cast<u16>(thumb_instruction));
+            if (IsUnconditionalInstruction(is_thumb_16, thumb_instruction) || visitor.ThumbConditionPassed()) {
+                if (is_thumb_16) {
+                    if (const auto decoder = DecodeThumb16<TranslatorVisitor>(static_cast<u16>(thumb_instruction))) {
+                        should_continue = decoder->get().call(visitor, static_cast<u16>(thumb_instruction));
+                    } else {
+                        should_continue = visitor.thumb16_UDF();
+                    }
                 } else {
-                    should_continue = visitor.thumb16_UDF();
-                }
-            } else {
-                if (MaybeVFPOrASIMDInstruction(thumb_instruction)) {
-                    if (const auto vfp_decoder = DecodeVFP<TranslatorVisitor>(thumb_instruction)) {
-                        should_continue = vfp_decoder->get().call(visitor, thumb_instruction);
-                    } else if (const auto asimd_decoder = DecodeASIMD<TranslatorVisitor>(ConvertASIMDInstruction(thumb_instruction))) {
-                        should_continue = asimd_decoder->get().call(visitor, ConvertASIMDInstruction(thumb_instruction));
+                    if (MaybeVFPOrASIMDInstruction(thumb_instruction)) {
+                        if (const auto vfp_decoder = DecodeVFP<TranslatorVisitor>(thumb_instruction)) {
+                            should_continue = vfp_decoder->get().call(visitor, thumb_instruction);
+                        } else if (const auto asimd_decoder = DecodeASIMD<TranslatorVisitor>(ConvertASIMDInstruction(thumb_instruction))) {
+                            should_continue = asimd_decoder->get().call(visitor, ConvertASIMDInstruction(thumb_instruction));
+                        } else if (const auto decoder = DecodeThumb32<TranslatorVisitor>(thumb_instruction)) {
+                            should_continue = decoder->get().call(visitor, thumb_instruction);
+                        } else {
+                            should_continue = visitor.thumb32_UDF();
+                        }
                     } else if (const auto decoder = DecodeThumb32<TranslatorVisitor>(thumb_instruction)) {
                         should_continue = decoder->get().call(visitor, thumb_instruction);
                     } else {
                         should_continue = visitor.thumb32_UDF();
                     }
-                } else if (const auto decoder = DecodeThumb32<TranslatorVisitor>(thumb_instruction)) {
-                    should_continue = decoder->get().call(visitor, thumb_instruction);
-                } else {
-                    should_continue = visitor.thumb32_UDF();
                 }
             }
+        } else {
+            visitor.current_instruction_size = 2;
+            should_continue = visitor.RaiseException(Exception::NoExecuteFault);
         }
 
         if (visitor.cond_state == ConditionalState::Break) {
             break;
         }
 
-        visitor.ir.current_location = visitor.ir.current_location.AdvancePC(is_thumb_16 ? 2 : 4).AdvanceIT();
+        visitor.ir.current_location = visitor.ir.current_location.AdvancePC(static_cast<int>(visitor.current_instruction_size)).AdvanceIT();
         block.CycleCount()++;
     } while (should_continue && CondCanContinue(visitor.cond_state, visitor.ir) && !single_step);
 

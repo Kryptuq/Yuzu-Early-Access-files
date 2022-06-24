@@ -382,7 +382,7 @@ void KThread::FinishTermination() {
         for (std::size_t i = 0; i < static_cast<std::size_t>(Core::Hardware::NUM_CPU_CORES); ++i) {
             KThread* core_thread{};
             do {
-                core_thread = kernel.Scheduler(i).GetCurrentThread();
+                core_thread = kernel.Scheduler(i).GetSchedulerCurrentThread();
             } while (core_thread == this);
         }
     }
@@ -631,7 +631,7 @@ ResultCode KThread::SetCoreMask(s32 core_id_, u64 v_affinity_mask) {
             s32 thread_core;
             for (thread_core = 0; thread_core < static_cast<s32>(Core::Hardware::NUM_CPU_CORES);
                  ++thread_core) {
-                if (kernel.Scheduler(thread_core).GetCurrentThread() == this) {
+                if (kernel.Scheduler(thread_core).GetSchedulerCurrentThread() == this) {
                     thread_is_current = true;
                     break;
                 }
@@ -756,7 +756,7 @@ void KThread::WaitUntilSuspended() {
     for (std::size_t i = 0; i < static_cast<std::size_t>(Core::Hardware::NUM_CPU_CORES); ++i) {
         KThread* core_thread{};
         do {
-            core_thread = kernel.Scheduler(i).GetCurrentThread();
+            core_thread = kernel.Scheduler(i).GetSchedulerCurrentThread();
         } while (core_thread == this);
     }
 }
@@ -822,7 +822,7 @@ ResultCode KThread::SetActivity(Svc::ThreadActivity activity) {
                 // Check if the thread is currently running.
                 // If it is, we'll need to retry.
                 for (auto i = 0; i < static_cast<s32>(Core::Hardware::NUM_CPU_CORES); ++i) {
-                    if (kernel.Scheduler(i).GetCurrentThread() == this) {
+                    if (kernel.Scheduler(i).GetSchedulerCurrentThread() == this) {
                         thread_is_current = true;
                         break;
                     }
@@ -1173,6 +1173,10 @@ void KThread::SetState(ThreadState state) {
 
 std::shared_ptr<Common::Fiber>& KThread::GetHostContext() {
     return host_context;
+}
+
+void SetCurrentThread(KernelCore& kernel, KThread* thread) {
+    kernel.SetCurrentEmuThread(thread);
 }
 
 KThread* GetCurrentThreadPointer(KernelCore& kernel) {

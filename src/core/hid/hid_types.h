@@ -272,6 +272,7 @@ enum class VibrationDeviceType : u32 {
     Unknown = 0,
     LinearResonantActuator = 1,
     GcErm = 2,
+    N64 = 3,
 };
 
 // This is nn::hid::VibrationGcErmCommand

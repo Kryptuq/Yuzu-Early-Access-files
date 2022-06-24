@@ -204,6 +204,7 @@ public:
     static constexpr Dynarmic::HaltReason svc_call = Dynarmic::HaltReason::UserDefined3;
     static constexpr Dynarmic::HaltReason breakpoint = Dynarmic::HaltReason::UserDefined4;
     static constexpr Dynarmic::HaltReason watchpoint = Dynarmic::HaltReason::UserDefined5;
+    static constexpr Dynarmic::HaltReason no_execute = Dynarmic::HaltReason::UserDefined6;
 
 protected:
     /// System context that this ARM interface is running under.

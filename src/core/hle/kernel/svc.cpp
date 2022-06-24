@@ -327,7 +327,6 @@ static ResultCode SendSyncRequest(Core::System& system, Handle handle) {
 
     LOG_TRACE(Kernel_SVC, "called handle=0x{:08X}({})", handle, session->GetName());
 
-    auto thread = kernel.CurrentScheduler()->GetCurrentThread();
     {
         KScopedSchedulerLock lock(kernel);
 
@@ -337,7 +336,7 @@ static ResultCode SendSyncRequest(Core::System& system, Handle handle) {
         session->SendSyncRequest(&GetCurrentThread(kernel), system.Memory(), system.CoreTiming());
     }
 
-    return thread->GetWaitResult();
+    return GetCurrentThread(kernel).GetWaitResult();
 }
 
 static ResultCode SendSyncRequest32(Core::System& system, Handle handle) {
@@ -624,7 +623,7 @@ static void Break(Core::System& system, u32 reason, u64 info1, u64 info2) {
 
         handle_debug_buffer(info1, info2);
 
-        auto* const current_thread = system.Kernel().CurrentScheduler()->GetCurrentThread();
+        auto* const current_thread = GetCurrentThreadPointer(system.Kernel());
         const auto thread_processor_id = current_thread->GetActiveCore();
         system.ArmInterface(static_cast<std::size_t>(thread_processor_id)).LogBacktrace();
     }
@@ -884,7 +883,7 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, Handle
 
         const auto& core_timing = system.CoreTiming();
         const auto& scheduler = *system.Kernel().CurrentScheduler();
-        const auto* const current_thread = scheduler.GetCurrentThread();
+        const auto* const current_thread = GetCurrentThreadPointer(system.Kernel());
         const bool same_thread = current_thread == thread.GetPointerUnsafe();
 
         const u64 prev_ctx_ticks = scheduler.GetLastContextSwitchTicks();
@@ -1103,7 +1102,7 @@ static ResultCode GetThreadContext(Core::System& system, VAddr out_context, Hand
         if (thread->GetRawState() != ThreadState::Runnable) {
             bool current = false;
             for (auto i = 0; i < static_cast<s32>(Core::Hardware::NUM_CPU_CORES); ++i) {
-                if (thread.GetPointerUnsafe() == kernel.Scheduler(i).GetCurrentThread()) {
+                if (thread.GetPointerUnsafe() == kernel.Scheduler(i).GetSchedulerCurrentThread()) {
                     current = true;
                     break;
                 }
@@ -1851,7 +1850,7 @@ static ResultCode StartThread32(Core::System& system, Handle thread_handle) {
 static void ExitThread(Core::System& system) {
     LOG_DEBUG(Kernel_SVC, "called, pc=0x{:08X}", system.CurrentArmInterface().GetPC());
 
-    auto* const current_thread = system.Kernel().CurrentScheduler()->GetCurrentThread();
+    auto* const current_thread = GetCurrentThreadPointer(system.Kernel());
     system.GlobalSchedulerContext().RemoveThread(current_thread);
     current_thread->Exit();
     system.Kernel().UnregisterInUseObject(current_thread);
@@ -2993,7 +2992,7 @@ void Call(Core::System& system, u32 immediate) {
     auto& kernel = system.Kernel();
     kernel.EnterSVCProfile();
 
-    auto* thread = kernel.CurrentScheduler()->GetCurrentThread();
+    auto* thread = GetCurrentThreadPointer(kernel);
     thread->SetIsCallingSvc();
 
     const FunctionDef* info = system.CurrentProcess()->Is64BitProcess() ? GetSVCInfo64(immediate)

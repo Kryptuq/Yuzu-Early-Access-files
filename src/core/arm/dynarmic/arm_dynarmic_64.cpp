@@ -52,6 +52,12 @@ public:
         CheckMemoryAccess(vaddr, 16, Kernel::DebugWatchpointType::Read);
         return {memory.Read64(vaddr), memory.Read64(vaddr + 8)};
     }
+    std::optional<u32> MemoryReadCode(u64 vaddr) override {
+        if (!memory.IsValidVirtualAddressRange(vaddr, sizeof(u32))) {
+            return std::nullopt;
+        }
+        return MemoryRead32(vaddr);
+    }
 
     void MemoryWrite8(u64 vaddr, u8 value) override {
         if (CheckMemoryAccess(vaddr, 1, Kernel::DebugWatchpointType::Write)) {
@@ -105,7 +111,7 @@ public:
         parent.LogBacktrace();
         LOG_ERROR(Core_ARM,
                   "Unimplemented instruction @ 0x{:X} for {} instructions (instr = {:08X})", pc,
-                  num_instructions, MemoryReadCode(pc));
+                  num_instructions, MemoryRead32(pc));
     }
 
     void InstructionCacheOperationRaised(Dynarmic::A64::InstructionCacheOperation op,
@@ -138,16 +144,19 @@ public:
         case Dynarmic::A64::Exception::SendEventLocal:
         case Dynarmic::A64::Exception::Yield:
             return;
+        case Dynarmic::A64::Exception::NoExecuteFault:
+            LOG_CRITICAL(Core_ARM, "Cannot execute instruction at unmapped address {:#016x}", pc);
+            ReturnException(pc, ARM_Interface::no_execute);
+            return;
         default:
             if (debugger_enabled) {
-                parent.SaveContext(parent.breakpoint_context);
-                parent.jit.load()->HaltExecution(ARM_Interface::breakpoint);
+                ReturnException(pc, ARM_Interface::breakpoint);
                 return;
             }
 
             parent.LogBacktrace();
-            ASSERT_MSG(false, "ExceptionRaised(exception = {}, pc = {:08X}, code = {:08X})",
-                       static_cast<std::size_t>(exception), pc, MemoryReadCode(pc));
+            LOG_CRITICAL(Core_ARM, "ExceptionRaised(exception = {}, pc = {:08X}, code = {:08X})",
+                         static_cast<std::size_t>(exception), pc, MemoryRead32(pc));
         }
     }
 
@@ -195,13 +204,18 @@ public:
 
         const auto match{parent.MatchingWatchpoint(addr, size, type)};
         if (match) {
-            parent.SaveContext(parent.breakpoint_context);
-            parent.jit.load()->HaltExecution(ARM_Interface::watchpoint);
             parent.halted_watchpoint = match;
+            ReturnException(parent.jit.load()->GetPC(), ARM_Interface::watchpoint);
             return false;
         }
 
         return true;
+    }
+
+    void ReturnException(u64 pc, Dynarmic::HaltReason hr) {
+        parent.SaveContext(parent.breakpoint_context);
+        parent.breakpoint_context.pc = pc;
+        parent.jit.load()->HaltExecution(hr);
     }
 
     ARM_Dynarmic_64& parent;

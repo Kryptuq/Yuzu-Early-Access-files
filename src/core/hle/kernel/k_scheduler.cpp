@@ -317,7 +317,7 @@ void KScheduler::RotateScheduledQueue(s32 cpu_core_id, s32 priority) {
 
     {
         KThread* best_thread = priority_queue.GetScheduledFront(cpu_core_id);
-        if (best_thread == GetCurrentThread()) {
+        if (best_thread == GetCurrentThreadPointer(kernel)) {
             best_thread = priority_queue.GetScheduledNext(cpu_core_id, best_thread);
         }
 
@@ -424,7 +424,7 @@ void KScheduler::YieldWithoutCoreMigration(KernelCore& kernel) {
     ASSERT(kernel.CurrentProcess() != nullptr);
 
     // Get the current thread and process.
-    KThread& cur_thread = Kernel::GetCurrentThread(kernel);
+    KThread& cur_thread = GetCurrentThread(kernel);
     KProcess& cur_process = *kernel.CurrentProcess();
 
     // If the thread's yield count matches, there's nothing for us to do.
@@ -463,7 +463,7 @@ void KScheduler::YieldWithCoreMigration(KernelCore& kernel) {
     ASSERT(kernel.CurrentProcess() != nullptr);
 
     // Get the current thread and process.
-    KThread& cur_thread = Kernel::GetCurrentThread(kernel);
+    KThread& cur_thread = GetCurrentThread(kernel);
     KProcess& cur_process = *kernel.CurrentProcess();
 
     // If the thread's yield count matches, there's nothing for us to do.
@@ -551,7 +551,7 @@ void KScheduler::YieldToAnyThread(KernelCore& kernel) {
     ASSERT(kernel.CurrentProcess() != nullptr);
 
     // Get the current thread and process.
-    KThread& cur_thread = Kernel::GetCurrentThread(kernel);
+    KThread& cur_thread = GetCurrentThread(kernel);
     KProcess& cur_process = *kernel.CurrentProcess();
 
     // If the thread's yield count matches, there's nothing for us to do.
@@ -642,7 +642,7 @@ KScheduler::~KScheduler() {
     ASSERT(!idle_thread);
 }
 
-KThread* KScheduler::GetCurrentThread() const {
+KThread* KScheduler::GetSchedulerCurrentThread() const {
     if (auto result = current_thread.load(); result) {
         return result;
     }
@@ -654,7 +654,7 @@ u64 KScheduler::GetLastContextSwitchTicks() const {
 }
 
 void KScheduler::RescheduleCurrentCore() {
-    ASSERT(GetCurrentThread()->GetDisableDispatchCount() == 1);
+    ASSERT(GetCurrentThread(system.Kernel()).GetDisableDispatchCount() == 1);
 
     auto& phys_core = system.Kernel().PhysicalCore(core_id);
     if (phys_core.IsInterrupted()) {
@@ -665,7 +665,7 @@ void KScheduler::RescheduleCurrentCore() {
     if (state.needs_scheduling.load()) {
         Schedule();
     } else {
-        GetCurrentThread()->EnableDispatch();
+        GetCurrentThread(system.Kernel()).EnableDispatch();
         guard.Unlock();
     }
 }
@@ -718,13 +718,18 @@ void KScheduler::Reload(KThread* thread) {
 
 void KScheduler::SwitchContextStep2() {
     // Load context of new thread
-    Reload(GetCurrentThread());
+    Reload(GetCurrentThreadPointer(system.Kernel()));
 
     RescheduleCurrentCore();
 }
 
+void KScheduler::Schedule() {
+    ASSERT(GetCurrentThread(system.Kernel()).GetDisableDispatchCount() == 1);
+    this->ScheduleImpl();
+}
+
 void KScheduler::ScheduleImpl() {
-    KThread* previous_thread = GetCurrentThread();
+    KThread* previous_thread = GetCurrentThreadPointer(system.Kernel());
     KThread* next_thread = state.highest_priority_thread;
 
     state.needs_scheduling.store(false);
@@ -762,6 +767,7 @@ void KScheduler::ScheduleImpl() {
     old_context = &previous_thread->GetHostContext();
 
     // Set the new thread.
+    SetCurrentThread(system.Kernel(), next_thread);
     current_thread.store(next_thread);
 
     guard.Unlock();
@@ -805,6 +811,7 @@ void KScheduler::SwitchToCurrent() {
                 }
             }
             auto thread = next_thread ? next_thread : idle_thread;
+            SetCurrentThread(system.Kernel(), thread);
             Common::Fiber::YieldTo(switch_fiber, *thread->GetHostContext());
         } while (!is_switch_pending());
     }

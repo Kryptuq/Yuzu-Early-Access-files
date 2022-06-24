@@ -52,8 +52,8 @@ QtNXWebEngineView::QtNXWebEngineView(QWidget* parent, Core::System& system,
     : QWebEngineView(parent), input_subsystem{input_subsystem_},
       url_interceptor(std::make_unique<UrlRequestInterceptor>()),
       input_interpreter(std::make_unique<InputInterpreter>(system)),
-      default_profile{QWebEngineProfile::defaultProfile()},
-      global_settings{QWebEngineSettings::globalSettings()} {
+      default_profile{QWebEngineProfile::defaultProfile()}, global_settings{
+                                                                default_profile->settings()} {
     default_profile->setPersistentStoragePath(QString::fromStdString(Common::FS::PathToUTF8String(
         Common::FS::GetYuzuPath(Common::FS::YuzuPath::YuzuDir) / "qtwebengine")));
 
@@ -78,7 +78,7 @@ QtNXWebEngineView::QtNXWebEngineView(QWidget* parent, Core::System& system,
     default_profile->scripts()->insert(gamepad);
     default_profile->scripts()->insert(window_nx);
 
-    default_profile->setRequestInterceptor(url_interceptor.get());
+    default_profile->setUrlRequestInterceptor(url_interceptor.get());
 
     global_settings->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
     global_settings->setAttribute(QWebEngineSettings::FullScreenSupportEnabled, true);

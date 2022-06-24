@@ -176,7 +176,8 @@ void KProcess::PinCurrentThread(s32 core_id) {
     ASSERT(kernel.GlobalSchedulerContext().IsLocked());
 
     // Get the current thread.
-    KThread* cur_thread = kernel.Scheduler(static_cast<std::size_t>(core_id)).GetCurrentThread();
+    KThread* cur_thread =
+        kernel.Scheduler(static_cast<std::size_t>(core_id)).GetSchedulerCurrentThread();
 
     // If the thread isn't terminated, pin it.
     if (!cur_thread->IsTerminationRequested()) {
@@ -193,7 +194,8 @@ void KProcess::UnpinCurrentThread(s32 core_id) {
     ASSERT(kernel.GlobalSchedulerContext().IsLocked());
 
     // Get the current thread.
-    KThread* cur_thread = kernel.Scheduler(static_cast<std::size_t>(core_id)).GetCurrentThread();
+    KThread* cur_thread =
+        kernel.Scheduler(static_cast<std::size_t>(core_id)).GetSchedulerCurrentThread();
 
     // Unpin it.
     cur_thread->Unpin();
@@ -420,11 +422,11 @@ void KProcess::PrepareForTermination() {
     ChangeStatus(ProcessStatus::Exiting);
 
     const auto stop_threads = [this](const std::vector<KThread*>& in_thread_list) {
-        for (auto& thread : in_thread_list) {
+        for (auto* thread : in_thread_list) {
             if (thread->GetOwnerProcess() != this)
                 continue;
 
-            if (thread == kernel.CurrentScheduler()->GetCurrentThread())
+            if (thread == GetCurrentThreadPointer(kernel))
                 continue;
 
             // TODO(Subv): When are the other running/ready threads terminated?

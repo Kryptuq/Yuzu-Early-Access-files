@@ -16,6 +16,7 @@
 #include <mcl/mp/typelist/lower_to_tuple.hpp>
 #include <mcl/stdint.hpp>
 #include <mcl/type_traits/integer_of_size.hpp>
+#include <xbyak/xbyak.h>
 
 #include "dynarmic/backend/x64/abi.h"
 #include "dynarmic/backend/x64/block_of_code.h"
@@ -79,6 +80,27 @@ constexpr u64 f64_max_s64_lim = 0x43e0000000000000u;  // 2^63 as a double (actua
 template<size_t fsize>
 void DenormalsAreZero(BlockOfCode& code, EmitContext& ctx, std::initializer_list<Xbyak::Xmm> to_daz) {
     if (ctx.FPCR().FZ()) {
+        if (code.HasHostFeature(HostFeature::AVX512_OrthoFloat)) {
+            constexpr u32 denormal_to_zero = FixupLUT(
+                FpFixup::Norm_Src,
+                FpFixup::Norm_Src,
+                FpFixup::Norm_Src,
+                FpFixup::Norm_Src,
+                FpFixup::Norm_Src,
+                FpFixup::Norm_Src,
+                FpFixup::Norm_Src,
+                FpFixup::Norm_Src);
+            constexpr u64 denormal_to_zero64 = mcl::bit::replicate_element<fsize, u64>(denormal_to_zero);
+
+            const Xbyak::Xmm tmp = xmm16;
+            FCODE(vmovap)(tmp, code.MConst(xword, u64(denormal_to_zero64), u64(denormal_to_zero64)));
+
+            for (const Xbyak::Xmm& xmm : to_daz) {
+                FCODE(vfixupimms)(xmm, xmm, tmp, u8(0));
+            }
+            return;
+        }
+
         for (const Xbyak::Xmm& xmm : to_daz) {
             code.movaps(xmm0, code.MConst(xword, fsize == 32 ? f32_non_sign_mask : f64_non_sign_mask));
             code.andps(xmm0, xmm);
@@ -114,7 +136,11 @@ void ZeroIfNaN(BlockOfCode& code, Xbyak::Xmm xmm_value, Xbyak::Xmm xmm_scratch) 
 
 template<size_t fsize>
 void ForceToDefaultNaN(BlockOfCode& code, Xbyak::Xmm result) {
-    if (code.HasHostFeature(HostFeature::AVX)) {
+    if (code.HasHostFeature(HostFeature::AVX512_OrthoFloat)) {
+        const Xbyak::Opmask nan_mask = k1;
+        FCODE(vfpclasss)(nan_mask, result, u8(FpClass::QNaN | FpClass::SNaN));
+        FCODE(vblendmp)(result | nan_mask, result, code.MConst(ptr_b, fsize == 32 ? f32_nan : f64_nan));
+    } else if (code.HasHostFeature(HostFeature::AVX)) {
         FCODE(vcmpunords)(xmm0, result, result);
         FCODE(blendvp)(result, code.MConst(xword, fsize == 32 ? f32_nan : f64_nan));
     } else {

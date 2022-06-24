@@ -234,7 +234,7 @@ ResultCode KAddressArbiter::SignalAndModifyByWaitingCountIfEqual(VAddr addr, s32
 
 ResultCode KAddressArbiter::WaitIfLessThan(VAddr addr, s32 value, bool decrement, s64 timeout) {
     // Prepare to wait.
-    KThread* cur_thread = kernel.CurrentScheduler()->GetCurrentThread();
+    KThread* cur_thread = GetCurrentThreadPointer(kernel);
     ThreadQueueImplForKAddressArbiter wait_queue(kernel, std::addressof(thread_tree));
 
     {
@@ -287,7 +287,7 @@ ResultCode KAddressArbiter::WaitIfLessThan(VAddr addr, s32 value, bool decrement
 
 ResultCode KAddressArbiter::WaitIfEqual(VAddr addr, s32 value, s64 timeout) {
     // Prepare to wait.
-    KThread* cur_thread = kernel.CurrentScheduler()->GetCurrentThread();
+    KThread* cur_thread = GetCurrentThreadPointer(kernel);
     ThreadQueueImplForKAddressArbiter wait_queue(kernel, std::addressof(thread_tree));
 
     {

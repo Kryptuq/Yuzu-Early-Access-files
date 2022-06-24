@@ -106,6 +106,7 @@ enum class StepState : u32 {
     StepPerformed, ///< Thread has stepped, waiting to be scheduled again
 };
 
+void SetCurrentThread(KernelCore& kernel, KThread* thread);
 [[nodiscard]] KThread* GetCurrentThreadPointer(KernelCore& kernel);
 [[nodiscard]] KThread& GetCurrentThread(KernelCore& kernel);
 [[nodiscard]] s32 GetCurrentCoreId(KernelCore& kernel);

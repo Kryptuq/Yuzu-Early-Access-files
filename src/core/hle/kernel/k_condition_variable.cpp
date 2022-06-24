@@ -106,7 +106,7 @@ KConditionVariable::KConditionVariable(Core::System& system_)
 KConditionVariable::~KConditionVariable() = default;
 
 ResultCode KConditionVariable::SignalToAddress(VAddr addr) {
-    KThread* owner_thread = kernel.CurrentScheduler()->GetCurrentThread();
+    KThread* owner_thread = GetCurrentThreadPointer(kernel);
 
     // Signal the address.
     {
@@ -147,7 +147,7 @@ ResultCode KConditionVariable::SignalToAddress(VAddr addr) {
 }
 
 ResultCode KConditionVariable::WaitForAddress(Handle handle, VAddr addr, u32 value) {
-    KThread* cur_thread = kernel.CurrentScheduler()->GetCurrentThread();
+    KThread* cur_thread = GetCurrentThreadPointer(kernel);
     ThreadQueueImplForKConditionVariableWaitForAddress wait_queue(kernel);
 
     // Wait for the address.
