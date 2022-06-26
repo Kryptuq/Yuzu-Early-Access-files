@@ -252,6 +252,7 @@ void GDBStub::ExecuteCommand(std::string_view packet, std::vector<DebuggerAction
         const auto sep{std::find(command.begin(), command.end(), '=') - command.begin() + 1};
         const size_t reg{static_cast<size_t>(strtoll(command.data(), nullptr, 16))};
         arch->RegWrite(backend.GetActiveThread(), reg, std::string_view(command).substr(sep));
+        SendReply(GDB_STUB_REPLY_OK);
         break;
     }
     case 'm': {
