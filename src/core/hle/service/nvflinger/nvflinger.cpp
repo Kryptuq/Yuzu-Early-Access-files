@@ -291,7 +291,14 @@ s64 NVFlinger::GetNextTicks() const {
     const auto& settings = Settings::values;
     const bool unlocked_fps = settings.disable_fps_limit.GetValue();
     const s64 fps_cap = unlocked_fps ? static_cast<s64>(settings.fps_cap.GetValue()) : 1;
-    return (1000000000 * (1LL << swap_interval)) / (max_hertz * fps_cap);
+    auto speed_scale = 1.f;
+    if (settings.use_speed_limit.GetValue() && settings.use_multi_core.GetValue()) {
+        // Scales the speed based on speed_limit setting on MC. SC is handled by
+        // SpeedLimiter::DoSpeedLimiting.
+        speed_scale = 100.f / settings.speed_limit.GetValue();
+    }
+    return static_cast<s64>(((1000000000 * (1LL << swap_interval)) / (max_hertz * fps_cap)) *
+                            speed_scale);
 }
 
 } // namespace Service::NVFlinger
