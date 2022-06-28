@@ -719,9 +719,8 @@ Controller_NPad::NpadJoyHoldType Controller_NPad::GetHoldType() const {
 }
 
 void Controller_NPad::SetNpadHandheldActivationMode(NpadHandheldActivationMode activation_mode) {
-    if (activation_mode != NpadHandheldActivationMode::None &&
-        activation_mode != NpadHandheldActivationMode::Single) {
-        ASSERT_MSG(false, "Activation mode should be always None or Single");
+    if (activation_mode >= NpadHandheldActivationMode::MaxActivationMode) {
+        ASSERT_MSG(false, "Activation mode should be always None, Single or Dual");
         return;
     }
 

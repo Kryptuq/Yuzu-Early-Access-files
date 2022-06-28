@@ -163,6 +163,11 @@ public:
     void UnpinHandle(Handle::Id handle);
 
     /**
+     * @brief Tries to duplicate a handle
+     */
+    void DuplicateHandle(Handle::Id handle, bool internal_session = false);
+
+    /**
      * @brief Tries to free a handle and remove a single dupe
      * @note If a handle has no dupes left and has no other users a FreeInfo struct will be returned
      * describing the prior state of the handle

@@ -41,21 +41,17 @@ NvResult NvMap::Handle::Alloc(Flags pFlags, u32 pAlign, u8 pKind, u64 pAddress) 
     size = Common::AlignUp(size, PAGE_SIZE);
     aligned_size = Common::AlignUp(size, align);
     address = pAddress;
-
-    // TODO: pin init
-
     allocated = true;
 
     return NvResult::Success;
 }
 
 NvResult NvMap::Handle::Duplicate(bool internal_session) {
+    std::scoped_lock lock(mutex);
     // Unallocated handles cannot be duplicated as duplication requires memory accounting (in HOS)
     if (!allocated) [[unlikely]] {
         return NvResult::BadValue;
     }
-
-    std::scoped_lock lock(mutex);
 
     // If we internally use FromId the duplication tracking of handles won't work accurately due to
     // us not implementing per-process handle refs.
@@ -207,6 +203,19 @@ void NvMap::UnpinHandle(Handle::Id handle) {
     }
 }
 
+void NvMap::DuplicateHandle(Handle::Id handle, bool internal_session) {
+    auto handle_description{GetHandle(handle)};
+    if (!handle_description) {
+        LOG_CRITICAL(Service_NVDRV, "Unregistered handle!");
+        return;
+    }
+
+    auto result = handle_description->Duplicate(internal_session);
+    if (result != NvResult::Success) {
+        LOG_CRITICAL(Service_NVDRV, "Could not duplicate handle!");
+    }
+}
+
 std::optional<NvMap::FreeInfo> NvMap::FreeHandle(Handle::Id handle, bool internal_session) {
     std::weak_ptr<Handle> hWeak{GetHandle(handle)};
     FreeInfo freeInfo;
@@ -254,7 +263,7 @@ std::optional<NvMap::FreeInfo> NvMap::FreeHandle(Handle::Id handle, bool interna
 
     // Handle hasn't been freed from memory, set address to 0 to mark that the handle wasn't freed
     if (!hWeak.expired()) {
-        LOG_ERROR(Service_NVDRV, "nvmap handle: {} wasn't freed as it is still in use", handle);
+        LOG_DEBUG(Service_NVDRV, "nvmap handle: {} wasn't freed as it is still in use", handle);
         freeInfo.address = 0;
     }
 

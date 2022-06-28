@@ -14,7 +14,7 @@
 #include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/kernel_helpers.h"
-#include "core/hle/service/nvdrv/nvdrv.h"
+#include "core/hle/service/nvdrv/core/nvmap.h"
 #include "core/hle/service/nvflinger/buffer_queue_core.h"
 #include "core/hle/service/nvflinger/buffer_queue_producer.h"
 #include "core/hle/service/nvflinger/consumer_listener.h"
@@ -26,8 +26,10 @@
 namespace Service::android {
 
 BufferQueueProducer::BufferQueueProducer(Service::KernelHelpers::ServiceContext& service_context_,
-                                         std::shared_ptr<BufferQueueCore> buffer_queue_core_)
-    : service_context{service_context_}, core{std::move(buffer_queue_core_)}, slots(core->slots) {
+                                         std::shared_ptr<BufferQueueCore> buffer_queue_core_,
+                                         Service::Nvidia::NvCore::NvMap& nvmap_)
+    : service_context{service_context_}, core{std::move(buffer_queue_core_)}, slots(core->slots),
+      nvmap(nvmap_) {
     buffer_wait_event = service_context.CreateEvent("BufferQueue:WaitEvent");
 }
 
@@ -529,6 +531,8 @@ Status BufferQueueProducer::QueueBuffer(s32 slot, const QueueBufferInput& input,
         item.fence = fence;
         item.is_droppable = core->dequeue_buffer_cannot_block || async;
         item.swap_interval = swap_interval;
+
+        nvmap.DuplicateHandle(item.graphic_buffer->BufferId(), true);
 
         sticky_transform = sticky_transform_;
 

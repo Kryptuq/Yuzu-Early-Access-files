@@ -12,6 +12,7 @@
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/service/kernel_helpers.h"
+#include "core/hle/service/nvdrv/core/container.h"
 #include "core/hle/service/nvflinger/buffer_item_consumer.h"
 #include "core/hle/service/nvflinger/buffer_queue_consumer.h"
 #include "core/hle/service/nvflinger/buffer_queue_core.h"
@@ -28,11 +29,13 @@ struct BufferQueue {
     std::unique_ptr<android::BufferQueueConsumer> consumer;
 };
 
-static BufferQueue CreateBufferQueue(KernelHelpers::ServiceContext& service_context) {
+static BufferQueue CreateBufferQueue(KernelHelpers::ServiceContext& service_context,
+                                     Service::Nvidia::NvCore::NvMap& nvmap) {
     auto buffer_queue_core = std::make_shared<android::BufferQueueCore>();
-    return {buffer_queue_core,
-            std::make_unique<android::BufferQueueProducer>(service_context, buffer_queue_core),
-            std::make_unique<android::BufferQueueConsumer>(buffer_queue_core)};
+    return {
+        buffer_queue_core,
+        std::make_unique<android::BufferQueueProducer>(service_context, buffer_queue_core, nvmap),
+        std::make_unique<android::BufferQueueConsumer>(buffer_queue_core, nvmap)};
 }
 
 Display::Display(u64 id, std::string name_,
@@ -63,10 +66,11 @@ void Display::SignalVSyncEvent() {
     vsync_event->GetWritableEvent().Signal();
 }
 
-void Display::CreateLayer(u64 layer_id, u32 binder_id) {
+void Display::CreateLayer(u64 layer_id, u32 binder_id,
+                          Service::Nvidia::NvCore::Container& nv_core) {
     ASSERT_MSG(layers.empty(), "Only one layer is supported per display at the moment");
 
-    auto [core, producer, consumer] = CreateBufferQueue(service_context);
+    auto [core, producer, consumer] = CreateBufferQueue(service_context, nv_core.GetNvMapFile());
 
     auto buffer_item_consumer = std::make_shared<android::BufferItemConsumer>(std::move(consumer));
     buffer_item_consumer->Connect(false);

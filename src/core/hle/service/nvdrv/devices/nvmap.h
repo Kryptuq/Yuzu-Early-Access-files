@@ -36,11 +36,6 @@ public:
     void OnOpen(DeviceFD fd) override;
     void OnClose(DeviceFD fd) override;
 
-    /// Returns the allocated address of an nvmap object given its handle.
-    VAddr GetObjectAddress(u32 handle) const;
-
-    std::shared_ptr<NvCore::NvMap::Handle> GetObject(u32 handle) const;
-
     enum class HandleParameterType : u32_le {
         Size = 1,
         Alignment = 2,

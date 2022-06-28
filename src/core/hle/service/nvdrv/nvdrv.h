@@ -96,6 +96,7 @@ public:
 
 private:
     friend class EventInterface;
+    friend class Service::NVFlinger::NVFlinger;
 
     /// Id to use for the next open file descriptor.
     DeviceFD next_fd = 1;
@@ -111,8 +112,6 @@ private:
     /// Manages syncpoints on the host
     NvCore::Container container;
 
-    void CreateEvent(u32 event_id);
-    void FreeEvent(u32 event_id);
     std::unordered_map<std::string, std::function<FilesContainerType::iterator(DeviceFD)>> builders;
 };
 

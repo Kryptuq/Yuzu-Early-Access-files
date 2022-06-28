@@ -31,6 +31,10 @@ namespace Service::KernelHelpers {
 class ServiceContext;
 } // namespace Service::KernelHelpers
 
+namespace Service::Nvidia::NvCore {
+class NvMap;
+} // namespace Service::Nvidia::NvCore
+
 namespace Service::android {
 
 class BufferQueueCore;
@@ -39,7 +43,8 @@ class IProducerListener;
 class BufferQueueProducer final : public IBinder {
 public:
     explicit BufferQueueProducer(Service::KernelHelpers::ServiceContext& service_context_,
-                                 std::shared_ptr<BufferQueueCore> buffer_queue_core_);
+                                 std::shared_ptr<BufferQueueCore> buffer_queue_core_,
+                                 Service::Nvidia::NvCore::NvMap& nvmap_);
     ~BufferQueueProducer();
 
     void Transact(Kernel::HLERequestContext& ctx, android::TransactionId code, u32 flags) override;
@@ -78,6 +83,8 @@ private:
     s32 next_callback_ticket{};
     s32 current_callback_ticket{};
     std::condition_variable_any callback_condition;
+
+    Service::Nvidia::NvCore::NvMap& nvmap;
 };
 
 } // namespace Service::android

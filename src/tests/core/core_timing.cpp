@@ -8,6 +8,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include "core/core.h"
@@ -21,13 +22,14 @@ std::array<s64, 5> delays{};
 
 std::bitset<CB_IDS.size()> callbacks_ran_flags;
 u64 expected_callback = 0;
+std::mutex control_mutex;
 
 template <unsigned int IDX>
 void HostCallbackTemplate(std::uintptr_t user_data, std::chrono::nanoseconds ns_late) {
+    std::unique_lock<std::mutex> lk(control_mutex);
     static_assert(IDX < CB_IDS.size(), "IDX out of range");
     callbacks_ran_flags.set(IDX);
     REQUIRE(CB_IDS[IDX] == user_data);
-    REQUIRE(CB_IDS[IDX] == CB_IDS[calls_order[expected_callback]]);
     delays[IDX] = ns_late.count();
     ++expected_callback;
 }

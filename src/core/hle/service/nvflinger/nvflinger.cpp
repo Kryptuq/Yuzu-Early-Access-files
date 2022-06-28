@@ -139,7 +139,7 @@ std::optional<u64> NVFlinger::CreateLayer(u64 display_id) {
 
 void NVFlinger::CreateLayerAtId(VI::Display& display, u64 layer_id) {
     const auto buffer_id = next_buffer_queue_id++;
-    display.CreateLayer(layer_id, buffer_id);
+    display.CreateLayer(layer_id, buffer_id, nvdrv->container);
 }
 
 void NVFlinger::CloseLayer(u64 layer_id) {

@@ -69,18 +69,6 @@ NvResult nvmap::Ioctl3(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
 void nvmap::OnOpen(DeviceFD fd) {}
 void nvmap::OnClose(DeviceFD fd) {}
 
-VAddr nvmap::GetObjectAddress(u32 handle) const {
-    auto obj = file.GetHandle(handle);
-    if (obj) {
-        return obj->address;
-    }
-    return 0;
-}
-
-std::shared_ptr<NvCore::NvMap::Handle> nvmap::GetObject(u32 handle) const {
-    return file.GetHandle(handle);
-}
-
 NvResult nvmap::IocCreate(const std::vector<u8>& input, std::vector<u8>& output) {
     IocCreateParams params;
     std::memcpy(&params, input.data(), sizeof(params));

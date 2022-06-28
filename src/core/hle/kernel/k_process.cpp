@@ -161,7 +161,7 @@ bool KProcess::ReleaseUserException(KThread* thread) {
                 std::addressof(num_waiters),
                 reinterpret_cast<uintptr_t>(std::addressof(exception_thread)));
             next != nullptr) {
-            next->SetState(ThreadState::Runnable);
+            next->EndWait(ResultSuccess);
         }
 
         KScheduler::SetSchedulerUpdateNeeded(kernel);

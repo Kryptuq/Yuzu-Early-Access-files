@@ -270,12 +270,12 @@ NvResult nvhost_gpu::SubmitGPFIFOImpl(IoctlSubmitGpfifo& params, std::vector<u8>
         }
     }
 
-    gpu.PushGPUEntries(bind_id, std::move(entries));
     params.fence.id = channel_syncpoint;
 
     u32 increment{(flags.fence_increment.Value() != 0 ? 2 : 0) +
                   (flags.increment_value.Value() != 0 ? params.fence.value : 0)};
     params.fence.value = syncpoint_manager.IncrementSyncpointMaxExt(channel_syncpoint, increment);
+    gpu.PushGPUEntries(bind_id, std::move(entries));
 
     if (flags.fence_increment.Value()) {
         if (flags.suppress_wfi.Value()) {

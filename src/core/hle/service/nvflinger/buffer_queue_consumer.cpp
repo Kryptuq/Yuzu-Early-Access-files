@@ -5,15 +5,18 @@
 // https://cs.android.com/android/platform/superproject/+/android-5.1.1_r38:frameworks/native/libs/gui/BufferQueueConsumer.cpp
 
 #include "common/logging/log.h"
+#include "core/hle/service/nvdrv/core/nvmap.h"
 #include "core/hle/service/nvflinger/buffer_item.h"
 #include "core/hle/service/nvflinger/buffer_queue_consumer.h"
 #include "core/hle/service/nvflinger/buffer_queue_core.h"
 #include "core/hle/service/nvflinger/producer_listener.h"
+#include "core/hle/service/nvflinger/ui/graphic_buffer.h"
 
 namespace Service::android {
 
-BufferQueueConsumer::BufferQueueConsumer(std::shared_ptr<BufferQueueCore> core_)
-    : core{std::move(core_)}, slots{core->slots} {}
+BufferQueueConsumer::BufferQueueConsumer(std::shared_ptr<BufferQueueCore> core_,
+                                         Service::Nvidia::NvCore::NvMap& nvmap_)
+    : core{std::move(core_)}, slots{core->slots}, nvmap(nvmap_) {}
 
 BufferQueueConsumer::~BufferQueueConsumer() = default;
 
@@ -132,6 +135,8 @@ Status BufferQueueConsumer::ReleaseBuffer(s32 slot, u64 frame_number, const Fenc
         }
 
         slots[slot].buffer_state = BufferState::Free;
+
+        nvmap.FreeHandle(slots[slot].graphic_buffer->BufferId(), true);
 
         listener = core->connected_producer_listener;
 

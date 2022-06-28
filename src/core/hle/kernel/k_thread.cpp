@@ -487,9 +487,7 @@ void KThread::Unpin() {
 
     // Resume any threads that began waiting on us while we were pinned.
     for (auto it = pinned_waiter_list.begin(); it != pinned_waiter_list.end(); ++it) {
-        if (it->GetState() == ThreadState::Waiting) {
-            it->SetState(ThreadState::Runnable);
-        }
+        it->EndWait(ResultSuccess);
     }
 }
 
@@ -884,6 +882,7 @@ void KThread::AddWaiterImpl(KThread* thread) {
     // Keep track of how many kernel waiters we have.
     if (IsKernelAddressKey(thread->GetAddressKey())) {
         ASSERT((num_kernel_waiters++) >= 0);
+        KScheduler::SetSchedulerUpdateNeeded(kernel);
     }
 
     // Insert the waiter.
@@ -897,6 +896,7 @@ void KThread::RemoveWaiterImpl(KThread* thread) {
     // Keep track of how many kernel waiters we have.
     if (IsKernelAddressKey(thread->GetAddressKey())) {
         ASSERT((num_kernel_waiters--) > 0);
+        KScheduler::SetSchedulerUpdateNeeded(kernel);
     }
 
     // Remove the waiter.
@@ -972,6 +972,7 @@ KThread* KThread::RemoveWaiterByKey(s32* out_num_waiters, VAddr key) {
             // Keep track of how many kernel waiters we have.
             if (IsKernelAddressKey(thread->GetAddressKey())) {
                 ASSERT((num_kernel_waiters--) > 0);
+                KScheduler::SetSchedulerUpdateNeeded(kernel);
             }
             it = waiter_list.erase(it);
 

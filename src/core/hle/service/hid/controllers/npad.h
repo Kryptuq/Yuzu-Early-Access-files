@@ -81,6 +81,7 @@ public:
         Dual = 0,
         Single = 1,
         None = 2,
+        MaxActivationMode = 3,
     };
 
     // This is nn::hid::NpadCommunicationMode
