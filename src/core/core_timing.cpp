@@ -6,6 +6,7 @@
 #include <string>
 #include <tuple>
 
+#include "common/logging/log.h"
 #include "common/microprofile.h"
 #include "common/thread.h"
 #include "core/core_timing.h"
@@ -128,7 +129,7 @@ bool CoreTiming::IsRunning() const {
 
 bool CoreTiming::HasPendingEvents() const {
     std::unique_lock main_lock(event_mutex);
-    return !event_queue.empty();
+    return !event_queue.empty() || pending_events.load(std::memory_order_relaxed) != 0;
 }
 
 void CoreTiming::ScheduleEvent(std::chrono::nanoseconds ns_into_future,
@@ -139,6 +140,7 @@ void CoreTiming::ScheduleEvent(std::chrono::nanoseconds ns_into_future,
     const u64 timeout = static_cast<u64>((GetGlobalTimeNs() + ns_into_future).count());
 
     event_queue.emplace_back(Event{timeout, event_fifo_id++, user_data, event_type});
+    pending_events.fetch_add(1, std::memory_order_relaxed);
 
     std::push_heap(event_queue.begin(), event_queue.end(), std::greater<>());
 
@@ -158,6 +160,7 @@ void CoreTiming::UnscheduleEvent(const std::shared_ptr<EventType>& event_type,
     if (itr != event_queue.end()) {
         event_queue.erase(itr, event_queue.end());
         std::make_heap(event_queue.begin(), event_queue.end(), std::greater<>());
+        pending_events.fetch_sub(1, std::memory_order_relaxed);
     }
 }
 
@@ -223,15 +226,21 @@ std::optional<s64> CoreTiming::Advance() {
         Event evt = std::move(event_queue.front());
         std::pop_heap(event_queue.begin(), event_queue.end(), std::greater<>());
         event_queue.pop_back();
-        event_mutex.unlock();
 
         if (const auto event_type{evt.type.lock()}) {
-            std::unique_lock lk(event_type->guard);
-            event_type->callback(evt.user_data, std::chrono::nanoseconds{static_cast<s64>(
-                                                    GetGlobalTimeNs().count() - evt.time)});
+            sequence_mutex.lock();
+            event_mutex.unlock();
+
+            event_type->guard.lock();
+            sequence_mutex.unlock();
+            const s64 delay = static_cast<s64>(GetGlobalTimeNs().count() - evt.time);
+            event_type->callback(evt.user_data, std::chrono::nanoseconds{delay});
+            event_type->guard.unlock();
+
+            event_mutex.lock();
+            pending_events.fetch_sub(1, std::memory_order_relaxed);
         }
 
-        event_mutex.lock();
         global_timer = GetGlobalTimeNs().count();
     }
 

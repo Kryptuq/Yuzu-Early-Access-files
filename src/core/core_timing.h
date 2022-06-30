@@ -145,6 +145,7 @@ private:
     // accomodated by the standard adaptor class.
     std::vector<Event> event_queue;
     u64 event_fifo_id = 0;
+    std::atomic<size_t> pending_events{};
 
     std::shared_ptr<EventType> ev_lost;
     std::atomic<bool> has_started{};
@@ -156,6 +157,7 @@ private:
     std::condition_variable wait_pause_cv;
     std::condition_variable wait_signal_cv;
     mutable std::mutex event_mutex;
+    mutable std::mutex sequence_mutex;
 
     std::atomic<bool> paused_state{};
     bool is_paused{};
