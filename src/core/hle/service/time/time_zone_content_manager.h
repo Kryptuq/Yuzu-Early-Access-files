@@ -32,12 +32,12 @@ public:
         return time_zone_manager;
     }
 
-    ResultCode LoadTimeZoneRule(TimeZoneRule& rules, const std::string& location_name) const;
+    Result LoadTimeZoneRule(TimeZoneRule& rules, const std::string& location_name) const;
 
 private:
     bool IsLocationNameValid(const std::string& location_name) const;
-    ResultCode GetTimeZoneInfoFile(const std::string& location_name,
-                                   FileSys::VirtualFile& vfs_file) const;
+    Result GetTimeZoneInfoFile(const std::string& location_name,
+                               FileSys::VirtualFile& vfs_file) const;
 
     Core::System& system;
     TimeZoneManager time_zone_manager;

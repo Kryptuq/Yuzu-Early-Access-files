@@ -34,8 +34,8 @@ public:
         return m_virt_addr;
     }
 
-    ResultCode Initialize(KernelCore& kernel, KProcess* process);
-    ResultCode Finalize();
+    Result Initialize(KernelCore& kernel, KProcess* process);
+    Result Finalize();
 
     VAddr Reserve();
     void Release(VAddr addr);

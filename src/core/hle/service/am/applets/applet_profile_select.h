@@ -39,7 +39,7 @@ public:
     void Initialize() override;
 
     bool TransactionComplete() const override;
-    ResultCode GetStatus() const override;
+    Result GetStatus() const override;
     void ExecuteInteractive() override;
     void Execute() override;
 
@@ -50,7 +50,7 @@ private:
 
     UserSelectionConfig config;
     bool complete = false;
-    ResultCode status = ResultSuccess;
+    Result status = ResultSuccess;
     std::vector<u8> final_data;
     Core::System& system;
 };

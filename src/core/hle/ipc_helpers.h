@@ -19,7 +19,7 @@
 
 namespace IPC {
 
-constexpr ResultCode ERR_REMOTE_PROCESS_DEAD{ErrorModule::HIPC, 301};
+constexpr Result ERR_REMOTE_PROCESS_DEAD{ErrorModule::HIPC, 301};
 
 class RequestHelperBase {
 protected:
@@ -176,7 +176,7 @@ public:
     void PushImpl(float value);
     void PushImpl(double value);
     void PushImpl(bool value);
-    void PushImpl(ResultCode value);
+    void PushImpl(Result value);
 
     template <typename T>
     void Push(T value) {
@@ -251,7 +251,7 @@ void ResponseBuilder::PushRaw(const T& value) {
     index += (sizeof(T) + 3) / 4; // round up to word length
 }
 
-inline void ResponseBuilder::PushImpl(ResultCode value) {
+inline void ResponseBuilder::PushImpl(Result value) {
     // Result codes are actually 64-bit in the IPC buffer, but only the high part is discarded.
     Push(value.raw);
     Push<u32>(0);
@@ -481,8 +481,8 @@ inline bool RequestParser::Pop() {
 }
 
 template <>
-inline ResultCode RequestParser::Pop() {
-    return ResultCode{Pop<u32>()};
+inline Result RequestParser::Pop() {
+    return Result{Pop<u32>()};
 }
 
 template <typename T>

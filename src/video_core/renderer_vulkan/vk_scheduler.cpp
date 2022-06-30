@@ -21,7 +21,7 @@ namespace Vulkan {
 
 MICROPROFILE_DECLARE(Vulkan_WaitForWorker);
 
-void VKScheduler::CommandChunk::ExecuteAll(vk::CommandBuffer cmdbuf) {
+void Scheduler::CommandChunk::ExecuteAll(vk::CommandBuffer cmdbuf) {
     auto command = first;
     while (command != nullptr) {
         auto next = command->GetNext();
@@ -35,7 +35,7 @@ void VKScheduler::CommandChunk::ExecuteAll(vk::CommandBuffer cmdbuf) {
     last = nullptr;
 }
 
-VKScheduler::VKScheduler(const Device& device_, StateTracker& state_tracker_)
+Scheduler::Scheduler(const Device& device_, StateTracker& state_tracker_)
     : device{device_}, state_tracker{state_tracker_},
       master_semaphore{std::make_unique<MasterSemaphore>(device)},
       command_pool{std::make_unique<CommandPool>(*master_semaphore, device)} {
@@ -44,14 +44,14 @@ VKScheduler::VKScheduler(const Device& device_, StateTracker& state_tracker_)
     worker_thread = std::jthread([this](std::stop_token token) { WorkerThread(token); });
 }
 
-VKScheduler::~VKScheduler() = default;
+Scheduler::~Scheduler() = default;
 
-void VKScheduler::Flush(VkSemaphore signal_semaphore, VkSemaphore wait_semaphore) {
+void Scheduler::Flush(VkSemaphore signal_semaphore, VkSemaphore wait_semaphore) {
     SubmitExecution(signal_semaphore, wait_semaphore);
     AllocateNewContext();
 }
 
-void VKScheduler::Finish(VkSemaphore signal_semaphore, VkSemaphore wait_semaphore) {
+void Scheduler::Finish(VkSemaphore signal_semaphore, VkSemaphore wait_semaphore) {
     const u64 presubmit_tick = CurrentTick();
     SubmitExecution(signal_semaphore, wait_semaphore);
     WaitWorker();
@@ -59,7 +59,7 @@ void VKScheduler::Finish(VkSemaphore signal_semaphore, VkSemaphore wait_semaphor
     AllocateNewContext();
 }
 
-void VKScheduler::WaitWorker() {
+void Scheduler::WaitWorker() {
     MICROPROFILE_SCOPE(Vulkan_WaitForWorker);
     DispatchWork();
 
@@ -67,7 +67,7 @@ void VKScheduler::WaitWorker() {
     wait_cv.wait(lock, [this] { return work_queue.empty(); });
 }
 
-void VKScheduler::DispatchWork() {
+void Scheduler::DispatchWork() {
     if (chunk->Empty()) {
         return;
     }
@@ -79,7 +79,7 @@ void VKScheduler::DispatchWork() {
     AcquireNewChunk();
 }
 
-void VKScheduler::RequestRenderpass(const Framebuffer* framebuffer) {
+void Scheduler::RequestRenderpass(const Framebuffer* framebuffer) {
     const VkRenderPass renderpass = framebuffer->RenderPass();
     const VkFramebuffer framebuffer_handle = framebuffer->Handle();
     const VkExtent2D render_area = framebuffer->RenderArea();
@@ -114,11 +114,11 @@ void VKScheduler::RequestRenderpass(const Framebuffer* framebuffer) {
     renderpass_image_ranges = framebuffer->ImageRanges();
 }
 
-void VKScheduler::RequestOutsideRenderPassOperationContext() {
+void Scheduler::RequestOutsideRenderPassOperationContext() {
     EndRenderPass();
 }
 
-bool VKScheduler::UpdateGraphicsPipeline(GraphicsPipeline* pipeline) {
+bool Scheduler::UpdateGraphicsPipeline(GraphicsPipeline* pipeline) {
     if (state.graphics_pipeline == pipeline) {
         return false;
     }
@@ -126,7 +126,7 @@ bool VKScheduler::UpdateGraphicsPipeline(GraphicsPipeline* pipeline) {
     return true;
 }
 
-bool VKScheduler::UpdateRescaling(bool is_rescaling) {
+bool Scheduler::UpdateRescaling(bool is_rescaling) {
     if (state.rescaling_defined && is_rescaling == state.is_rescaling) {
         return false;
     }
@@ -135,7 +135,7 @@ bool VKScheduler::UpdateRescaling(bool is_rescaling) {
     return true;
 }
 
-void VKScheduler::WorkerThread(std::stop_token stop_token) {
+void Scheduler::WorkerThread(std::stop_token stop_token) {
     Common::SetCurrentThreadName("yuzu:VulkanWorker");
     do {
         std::unique_ptr<CommandChunk> work;
@@ -161,7 +161,7 @@ void VKScheduler::WorkerThread(std::stop_token stop_token) {
     } while (!stop_token.stop_requested());
 }
 
-void VKScheduler::AllocateWorkerCommandBuffer() {
+void Scheduler::AllocateWorkerCommandBuffer() {
     current_cmdbuf = vk::CommandBuffer(command_pool->Commit(), device.GetDispatchLoader());
     current_cmdbuf.Begin({
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -171,7 +171,7 @@ void VKScheduler::AllocateWorkerCommandBuffer() {
     });
 }
 
-void VKScheduler::SubmitExecution(VkSemaphore signal_semaphore, VkSemaphore wait_semaphore) {
+void Scheduler::SubmitExecution(VkSemaphore signal_semaphore, VkSemaphore wait_semaphore) {
     EndPendingOperations();
     InvalidateState();
 
@@ -225,25 +225,25 @@ void VKScheduler::SubmitExecution(VkSemaphore signal_semaphore, VkSemaphore wait
     DispatchWork();
 }
 
-void VKScheduler::AllocateNewContext() {
+void Scheduler::AllocateNewContext() {
     // Enable counters once again. These are disabled when a command buffer is finished.
     if (query_cache) {
         query_cache->UpdateCounters();
     }
 }
 
-void VKScheduler::InvalidateState() {
+void Scheduler::InvalidateState() {
     state.graphics_pipeline = nullptr;
     state.rescaling_defined = false;
     state_tracker.InvalidateCommandBufferState();
 }
 
-void VKScheduler::EndPendingOperations() {
+void Scheduler::EndPendingOperations() {
     query_cache->DisableStreams();
     EndRenderPass();
 }
 
-void VKScheduler::EndRenderPass() {
+void Scheduler::EndRenderPass() {
     if (!state.renderpass) {
         return;
     }
@@ -280,7 +280,7 @@ void VKScheduler::EndRenderPass() {
     num_renderpass_images = 0;
 }
 
-void VKScheduler::AcquireNewChunk() {
+void Scheduler::AcquireNewChunk() {
     std::scoped_lock lock{reserve_mutex};
     if (chunk_reserve.empty()) {
         chunk = std::make_unique<CommandChunk>();

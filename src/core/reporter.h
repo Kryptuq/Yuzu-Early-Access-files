@@ -9,7 +9,7 @@
 #include <vector>
 #include "common/common_types.h"
 
-union ResultCode;
+union Result;
 
 namespace Kernel {
 class HLERequestContext;
@@ -29,7 +29,7 @@ public:
     ~Reporter();
 
     // Used by fatal services
-    void SaveCrashReport(u64 title_id, ResultCode result, u64 set_flags, u64 entry_point, u64 sp,
+    void SaveCrashReport(u64 title_id, Result result, u64 set_flags, u64 entry_point, u64 sp,
                          u64 pc, u64 pstate, u64 afsr0, u64 afsr1, u64 esr, u64 far,
                          const std::array<u64, 31>& registers, const std::array<u64, 32>& backtrace,
                          u32 backtrace_size, const std::string& arch, u32 unk10) const;
@@ -60,7 +60,7 @@ public:
                         std::optional<u64> process_id = {}, std::optional<u128> user_id = {}) const;
 
     // Used by error applet
-    void SaveErrorReport(u64 title_id, ResultCode result,
+    void SaveErrorReport(u64 title_id, Result result,
                          std::optional<std::string> custom_text_main = {},
                          std::optional<std::string> custom_text_detail = {}) const;
 

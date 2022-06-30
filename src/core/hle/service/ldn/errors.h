@@ -7,6 +7,6 @@
 
 namespace Service::LDN {
 
-constexpr ResultCode ERROR_DISABLED{ErrorModule::LDN, 22};
+constexpr Result ERROR_DISABLED{ErrorModule::LDN, 22};
 
 } // namespace Service::LDN

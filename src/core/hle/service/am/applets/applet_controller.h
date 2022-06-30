@@ -126,7 +126,7 @@ public:
     void Initialize() override;
 
     bool TransactionComplete() const override;
-    ResultCode GetStatus() const override;
+    Result GetStatus() const override;
     void ExecuteInteractive() override;
     void Execute() override;
 
@@ -143,7 +143,7 @@ private:
     ControllerUpdateFirmwareArg controller_update_arg;
     ControllerKeyRemappingArg controller_key_remapping_arg;
     bool complete{false};
-    ResultCode status{ResultSuccess};
+    Result status{ResultSuccess};
     bool is_single_mode{false};
     std::vector<u8> out_data;
 };

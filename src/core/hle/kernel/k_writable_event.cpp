@@ -18,11 +18,11 @@ void KWritableEvent::Initialize(KEvent* parent_event_, std::string&& name_) {
     parent->GetReadableEvent().Open();
 }
 
-ResultCode KWritableEvent::Signal() {
+Result KWritableEvent::Signal() {
     return parent->GetReadableEvent().Signal();
 }
 
-ResultCode KWritableEvent::Clear() {
+Result KWritableEvent::Clear() {
     return parent->GetReadableEvent().Clear();
 }
 

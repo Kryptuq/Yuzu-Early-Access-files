@@ -59,8 +59,8 @@ bool KClientPort::IsSignaled() const {
     return num_sessions < max_sessions;
 }
 
-ResultCode KClientPort::CreateSession(KClientSession** out,
-                                      std::shared_ptr<SessionRequestManager> session_manager) {
+Result KClientPort::CreateSession(KClientSession** out,
+                                  std::shared_ptr<SessionRequestManager> session_manager) {
     // Reserve a new session from the resource limit.
     KScopedResourceReservation session_reservation(kernel.CurrentProcess()->GetResourceLimit(),
                                                    LimitableResource::Sessions);

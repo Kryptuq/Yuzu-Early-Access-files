@@ -19,7 +19,7 @@ class System;
 
 namespace Kernel {
 
-class KPageLinkedList;
+class KPageGroup;
 
 class KMemoryManager final {
 public:
@@ -65,17 +65,17 @@ public:
     }
 
     PAddr AllocateAndOpenContinuous(size_t num_pages, size_t align_pages, u32 option);
-    ResultCode AllocateAndOpen(KPageLinkedList* out, size_t num_pages, u32 option);
-    ResultCode AllocateAndOpenForProcess(KPageLinkedList* out, size_t num_pages, u32 option,
-                                         u64 process_id, u8 fill_pattern);
+    Result AllocateAndOpen(KPageGroup* out, size_t num_pages, u32 option);
+    Result AllocateAndOpenForProcess(KPageGroup* out, size_t num_pages, u32 option, u64 process_id,
+                                     u8 fill_pattern);
 
     static constexpr size_t MaxManagerCount = 10;
 
     void Close(PAddr address, size_t num_pages);
-    void Close(const KPageLinkedList& pg);
+    void Close(const KPageGroup& pg);
 
     void Open(PAddr address, size_t num_pages);
-    void Open(const KPageLinkedList& pg);
+    void Open(const KPageGroup& pg);
 
 public:
     static size_t CalculateManagementOverheadSize(size_t region_size) {
@@ -262,8 +262,8 @@ private:
         }
     }
 
-    ResultCode AllocatePageGroupImpl(KPageLinkedList* out, size_t num_pages, Pool pool,
-                                     Direction dir, bool random);
+    Result AllocatePageGroupImpl(KPageGroup* out, size_t num_pages, Pool pool, Direction dir,
+                                 bool random);
 
 private:
     Core::System& system;

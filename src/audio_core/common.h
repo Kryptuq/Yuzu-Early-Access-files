@@ -10,8 +10,8 @@
 
 namespace AudioCommon {
 namespace Audren {
-constexpr ResultCode ERR_INVALID_PARAMETERS{ErrorModule::Audio, 41};
-constexpr ResultCode ERR_SPLITTER_SORT_FAILED{ErrorModule::Audio, 43};
+constexpr Result ERR_INVALID_PARAMETERS{ErrorModule::Audio, 41};
+constexpr Result ERR_SPLITTER_SORT_FAILED{ErrorModule::Audio, 43};
 } // namespace Audren
 
 constexpr u8 BASE_REVISION = '0';

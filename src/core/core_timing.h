@@ -132,7 +132,7 @@ private:
     /// Clear all pending events. This should ONLY be done on exit.
     void ClearPendingEvents();
 
-    static void ThreadEntry(CoreTiming& instance);
+    static void ThreadEntry(CoreTiming& instance, size_t id);
     void ThreadLoop();
 
     std::unique_ptr<Common::WallClock> clock;

@@ -73,10 +73,10 @@ public:
      * @param memory      Memory context to handle the sync request under.
      * @param core_timing Core timing context to schedule the request event under.
      *
-     * @returns ResultCode from the operation.
+     * @returns Result from the operation.
      */
-    ResultCode HandleSyncRequest(KThread* thread, Core::Memory::Memory& memory,
-                                 Core::Timing::CoreTiming& core_timing);
+    Result HandleSyncRequest(KThread* thread, Core::Memory::Memory& memory,
+                             Core::Timing::CoreTiming& core_timing);
 
     /// Adds a new domain request handler to the collection of request handlers within
     /// this ServerSession instance.
@@ -103,14 +103,14 @@ public:
 
 private:
     /// Queues a sync request from the emulated application.
-    ResultCode QueueSyncRequest(KThread* thread, Core::Memory::Memory& memory);
+    Result QueueSyncRequest(KThread* thread, Core::Memory::Memory& memory);
 
     /// Completes a sync request from the emulated application.
-    ResultCode CompleteSyncRequest(HLERequestContext& context);
+    Result CompleteSyncRequest(HLERequestContext& context);
 
     /// Handles a SyncRequest to a domain, forwarding the request to the proper object or closing an
     /// object handle.
-    ResultCode HandleDomainSyncRequest(Kernel::HLERequestContext& context);
+    Result HandleDomainSyncRequest(Kernel::HLERequestContext& context);
 
     /// This session's HLE request handlers
     std::shared_ptr<SessionRequestManager> manager;

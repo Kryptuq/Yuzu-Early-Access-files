@@ -35,23 +35,22 @@ struct ScreenInfo;
 class Device;
 class FSR;
 class RasterizerVulkan;
-class VKScheduler;
-class VKSwapchain;
+class Scheduler;
+class Swapchain;
 
-struct VKScreenInfo {
+struct ScreenInfo {
     VkImageView image_view{};
     u32 width{};
     u32 height{};
     bool is_srgb{};
 };
 
-class VKBlitScreen {
+class BlitScreen {
 public:
-    explicit VKBlitScreen(Core::Memory::Memory& cpu_memory,
-                          Core::Frontend::EmuWindow& render_window, const Device& device,
-                          MemoryAllocator& memory_manager, VKSwapchain& swapchain,
-                          VKScheduler& scheduler, const VKScreenInfo& screen_info);
-    ~VKBlitScreen();
+    explicit BlitScreen(Core::Memory::Memory& cpu_memory, Core::Frontend::EmuWindow& render_window,
+                        const Device& device, MemoryAllocator& memory_manager, Swapchain& swapchain,
+                        Scheduler& scheduler, const ScreenInfo& screen_info);
+    ~BlitScreen();
 
     void Recreate();
 
@@ -108,10 +107,10 @@ private:
     Core::Frontend::EmuWindow& render_window;
     const Device& device;
     MemoryAllocator& memory_allocator;
-    VKSwapchain& swapchain;
-    VKScheduler& scheduler;
+    Swapchain& swapchain;
+    Scheduler& scheduler;
     const std::size_t image_count;
-    const VKScreenInfo& screen_info;
+    const ScreenInfo& screen_info;
 
     vk::ShaderModule vertex_shader;
     vk::ShaderModule fxaa_vertex_shader;

@@ -28,11 +28,11 @@
 
 namespace Service::Account {
 
-constexpr ResultCode ERR_INVALID_USER_ID{ErrorModule::Account, 20};
-constexpr ResultCode ERR_INVALID_APPLICATION_ID{ErrorModule::Account, 22};
-constexpr ResultCode ERR_INVALID_BUFFER{ErrorModule::Account, 30};
-constexpr ResultCode ERR_INVALID_BUFFER_SIZE{ErrorModule::Account, 31};
-constexpr ResultCode ERR_FAILED_SAVE_DATA{ErrorModule::Account, 100};
+constexpr Result ERR_INVALID_USER_ID{ErrorModule::Account, 20};
+constexpr Result ERR_INVALID_APPLICATION_ID{ErrorModule::Account, 22};
+constexpr Result ERR_INVALID_BUFFER{ErrorModule::Account, 30};
+constexpr Result ERR_INVALID_BUFFER_SIZE{ErrorModule::Account, 31};
+constexpr Result ERR_FAILED_SAVE_DATA{ErrorModule::Account, 100};
 
 // Thumbnails are hard coded to be at least this size
 constexpr std::size_t THUMBNAIL_SIZE = 0x24000;
@@ -505,7 +505,7 @@ protected:
 
     void Cancel() override {}
 
-    ResultCode GetResult() const override {
+    Result GetResult() const override {
         return ResultSuccess;
     }
 };
@@ -747,7 +747,7 @@ void Module::Interface::InitializeApplicationInfoRestricted(Kernel::HLERequestCo
     rb.Push(InitializeApplicationInfoBase());
 }
 
-ResultCode Module::Interface::InitializeApplicationInfoBase() {
+Result Module::Interface::InitializeApplicationInfoBase() {
     if (application_info) {
         LOG_ERROR(Service_ACC, "Application already initialized");
         return ERR_ACCOUNTINFO_ALREADY_INITIALIZED;

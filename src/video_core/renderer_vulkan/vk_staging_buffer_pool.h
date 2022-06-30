@@ -14,7 +14,7 @@
 namespace Vulkan {
 
 class Device;
-class VKScheduler;
+class Scheduler;
 
 struct StagingBufferRef {
     VkBuffer buffer;
@@ -27,7 +27,7 @@ public:
     static constexpr size_t NUM_SYNCS = 16;
 
     explicit StagingBufferPool(const Device& device, MemoryAllocator& memory_allocator,
-                               VKScheduler& scheduler);
+                               Scheduler& scheduler);
     ~StagingBufferPool();
 
     StagingBufferRef Request(size_t size, MemoryUsage usage);
@@ -82,7 +82,7 @@ private:
 
     const Device& device;
     MemoryAllocator& memory_allocator;
-    VKScheduler& scheduler;
+    Scheduler& scheduler;
 
     vk::Buffer stream_buffer;
     vk::DeviceMemory stream_memory;

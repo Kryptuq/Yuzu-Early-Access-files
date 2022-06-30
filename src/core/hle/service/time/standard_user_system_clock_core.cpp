@@ -27,9 +27,9 @@ StandardUserSystemClockCore::~StandardUserSystemClockCore() {
     service_context.CloseEvent(auto_correction_event);
 }
 
-ResultCode StandardUserSystemClockCore::SetAutomaticCorrectionEnabled(Core::System& system,
-                                                                      bool value) {
-    if (const ResultCode result{ApplyAutomaticCorrection(system, value)}; result != ResultSuccess) {
+Result StandardUserSystemClockCore::SetAutomaticCorrectionEnabled(Core::System& system,
+                                                                  bool value) {
+    if (const Result result{ApplyAutomaticCorrection(system, value)}; result != ResultSuccess) {
         return result;
     }
 
@@ -38,27 +38,27 @@ ResultCode StandardUserSystemClockCore::SetAutomaticCorrectionEnabled(Core::Syst
     return ResultSuccess;
 }
 
-ResultCode StandardUserSystemClockCore::GetClockContext(Core::System& system,
-                                                        SystemClockContext& ctx) const {
-    if (const ResultCode result{ApplyAutomaticCorrection(system, false)}; result != ResultSuccess) {
+Result StandardUserSystemClockCore::GetClockContext(Core::System& system,
+                                                    SystemClockContext& ctx) const {
+    if (const Result result{ApplyAutomaticCorrection(system, false)}; result != ResultSuccess) {
         return result;
     }
 
     return local_system_clock_core.GetClockContext(system, ctx);
 }
 
-ResultCode StandardUserSystemClockCore::Flush(const SystemClockContext&) {
+Result StandardUserSystemClockCore::Flush(const SystemClockContext&) {
     UNIMPLEMENTED();
     return ERROR_NOT_IMPLEMENTED;
 }
 
-ResultCode StandardUserSystemClockCore::SetClockContext(const SystemClockContext&) {
+Result StandardUserSystemClockCore::SetClockContext(const SystemClockContext&) {
     UNIMPLEMENTED();
     return ERROR_NOT_IMPLEMENTED;
 }
 
-ResultCode StandardUserSystemClockCore::ApplyAutomaticCorrection(Core::System& system,
-                                                                 bool value) const {
+Result StandardUserSystemClockCore::ApplyAutomaticCorrection(Core::System& system,
+                                                             bool value) const {
     if (auto_correction_enabled == value) {
         return ResultSuccess;
     }
@@ -68,7 +68,7 @@ ResultCode StandardUserSystemClockCore::ApplyAutomaticCorrection(Core::System& s
     }
 
     SystemClockContext ctx{};
-    if (const ResultCode result{network_system_clock_core.GetClockContext(system, ctx)};
+    if (const Result result{network_system_clock_core.GetClockContext(system, ctx)};
         result != ResultSuccess) {
         return result;
     }

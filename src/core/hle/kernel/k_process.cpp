@@ -67,8 +67,8 @@ void SetupMainThread(Core::System& system, KProcess& owner_process, u32 priority
 }
 } // Anonymous namespace
 
-ResultCode KProcess::Initialize(KProcess* process, Core::System& system, std::string process_name,
-                                ProcessType type, KResourceLimit* res_limit) {
+Result KProcess::Initialize(KProcess* process, Core::System& system, std::string process_name,
+                            ProcessType type, KResourceLimit* res_limit) {
     auto& kernel = system.Kernel();
 
     process->name = std::move(process_name);
@@ -219,8 +219,8 @@ void KProcess::UnpinThread(KThread* thread) {
     KScheduler::SetSchedulerUpdateNeeded(kernel);
 }
 
-ResultCode KProcess::AddSharedMemory(KSharedMemory* shmem, [[maybe_unused]] VAddr address,
-                                     [[maybe_unused]] size_t size) {
+Result KProcess::AddSharedMemory(KSharedMemory* shmem, [[maybe_unused]] VAddr address,
+                                 [[maybe_unused]] size_t size) {
     // Lock ourselves, to prevent concurrent access.
     KScopedLightLock lk(state_lock);
 
@@ -284,7 +284,7 @@ void KProcess::UnregisterThread(KThread* thread) {
     thread_list.remove(thread);
 }
 
-ResultCode KProcess::Reset() {
+Result KProcess::Reset() {
     // Lock the process and the scheduler.
     KScopedLightLock lk(state_lock);
     KScopedSchedulerLock sl{kernel};
@@ -298,7 +298,7 @@ ResultCode KProcess::Reset() {
     return ResultSuccess;
 }
 
-ResultCode KProcess::SetActivity(ProcessActivity activity) {
+Result KProcess::SetActivity(ProcessActivity activity) {
     // Lock ourselves and the scheduler.
     KScopedLightLock lk{state_lock};
     KScopedLightLock list_lk{list_lock};
@@ -342,8 +342,7 @@ ResultCode KProcess::SetActivity(ProcessActivity activity) {
     return ResultSuccess;
 }
 
-ResultCode KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata,
-                                      std::size_t code_size) {
+Result KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata, std::size_t code_size) {
     program_id = metadata.GetTitleID();
     ideal_core = metadata.GetMainThreadCore();
     is_64bit_process = metadata.Is64BitProgram();
@@ -358,24 +357,24 @@ ResultCode KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata,
         return ResultLimitReached;
     }
     // Initialize proces address space
-    if (const ResultCode result{
-            page_table->InitializeForProcess(metadata.GetAddressSpaceType(), false, 0x8000000,
-                                             code_size, KMemoryManager::Pool::Application)};
+    if (const Result result{page_table->InitializeForProcess(metadata.GetAddressSpaceType(), false,
+                                                             0x8000000, code_size,
+                                                             KMemoryManager::Pool::Application)};
         result.IsError()) {
         return result;
     }
 
     // Map process code region
-    if (const ResultCode result{page_table->MapProcessCode(page_table->GetCodeRegionStart(),
-                                                           code_size / PageSize, KMemoryState::Code,
-                                                           KMemoryPermission::None)};
+    if (const Result result{page_table->MapProcessCode(page_table->GetCodeRegionStart(),
+                                                       code_size / PageSize, KMemoryState::Code,
+                                                       KMemoryPermission::None)};
         result.IsError()) {
         return result;
     }
 
     // Initialize process capabilities
     const auto& caps{metadata.GetKernelCapabilities()};
-    if (const ResultCode result{
+    if (const Result result{
             capabilities.InitializeForUserProcess(caps.data(), caps.size(), *page_table)};
         result.IsError()) {
         return result;
@@ -482,7 +481,7 @@ void KProcess::Finalize() {
     KAutoObjectWithSlabHeapAndContainer<KProcess, KWorkerTask>::Finalize();
 }
 
-ResultCode KProcess::CreateThreadLocalRegion(VAddr* out) {
+Result KProcess::CreateThreadLocalRegion(VAddr* out) {
     KThreadLocalPage* tlp = nullptr;
     VAddr tlr = 0;
 
@@ -533,7 +532,7 @@ ResultCode KProcess::CreateThreadLocalRegion(VAddr* out) {
     return ResultSuccess;
 }
 
-ResultCode KProcess::DeleteThreadLocalRegion(VAddr addr) {
+Result KProcess::DeleteThreadLocalRegion(VAddr addr) {
     KThreadLocalPage* page_to_free = nullptr;
 
     // Release the region.
@@ -664,7 +663,7 @@ void KProcess::ChangeStatus(ProcessStatus new_status) {
     NotifyAvailable();
 }
 
-ResultCode KProcess::AllocateMainThreadStack(std::size_t stack_size) {
+Result KProcess::AllocateMainThreadStack(std::size_t stack_size) {
     ASSERT(stack_size);
 
     // The kernel always ensures that the given stack size is page aligned.

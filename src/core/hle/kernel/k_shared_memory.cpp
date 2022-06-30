@@ -18,12 +18,10 @@ KSharedMemory::~KSharedMemory() {
     kernel.GetSystemResourceLimit()->Release(LimitableResource::PhysicalMemory, size);
 }
 
-ResultCode KSharedMemory::Initialize(Core::DeviceMemory& device_memory_, KProcess* owner_process_,
-                                     KPageLinkedList&& page_list_,
-                                     Svc::MemoryPermission owner_permission_,
-                                     Svc::MemoryPermission user_permission_,
-                                     PAddr physical_address_, std::size_t size_,
-                                     std::string name_) {
+Result KSharedMemory::Initialize(Core::DeviceMemory& device_memory_, KProcess* owner_process_,
+                                 KPageGroup&& page_list_, Svc::MemoryPermission owner_permission_,
+                                 Svc::MemoryPermission user_permission_, PAddr physical_address_,
+                                 std::size_t size_, std::string name_) {
     // Set members.
     owner_process = owner_process_;
     device_memory = &device_memory_;
@@ -67,8 +65,8 @@ void KSharedMemory::Finalize() {
     KAutoObjectWithSlabHeapAndContainer<KSharedMemory, KAutoObjectWithList>::Finalize();
 }
 
-ResultCode KSharedMemory::Map(KProcess& target_process, VAddr address, std::size_t map_size,
-                              Svc::MemoryPermission permissions) {
+Result KSharedMemory::Map(KProcess& target_process, VAddr address, std::size_t map_size,
+                          Svc::MemoryPermission permissions) {
     const u64 page_count{(map_size + PageSize - 1) / PageSize};
 
     if (page_list.GetNumPages() != page_count) {
@@ -86,7 +84,7 @@ ResultCode KSharedMemory::Map(KProcess& target_process, VAddr address, std::size
                                                ConvertToKMemoryPermission(permissions));
 }
 
-ResultCode KSharedMemory::Unmap(KProcess& target_process, VAddr address, std::size_t unmap_size) {
+Result KSharedMemory::Unmap(KProcess& target_process, VAddr address, std::size_t unmap_size) {
     const u64 page_count{(unmap_size + PageSize - 1) / PageSize};
 
     if (page_list.GetNumPages() != page_count) {

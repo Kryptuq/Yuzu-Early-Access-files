@@ -27,7 +27,7 @@ void KReadableEvent::Destroy() {
     }
 }
 
-ResultCode KReadableEvent::Signal() {
+Result KReadableEvent::Signal() {
     KScopedSchedulerLock lk{kernel};
 
     if (!is_signaled) {
@@ -38,13 +38,13 @@ ResultCode KReadableEvent::Signal() {
     return ResultSuccess;
 }
 
-ResultCode KReadableEvent::Clear() {
+Result KReadableEvent::Clear() {
     Reset();
 
     return ResultSuccess;
 }
 
-ResultCode KReadableEvent::Reset() {
+Result KReadableEvent::Reset() {
     KScopedSchedulerLock lk{kernel};
 
     if (!is_signaled) {

@@ -30,7 +30,7 @@ public:
     explicit KHandleTable(KernelCore& kernel_);
     ~KHandleTable();
 
-    ResultCode Initialize(s32 size) {
+    Result Initialize(s32 size) {
         R_UNLESS(size <= static_cast<s32>(MaxTableSize), ResultOutOfMemory);
 
         // Initialize all fields.
@@ -60,7 +60,7 @@ public:
         return m_max_count;
     }
 
-    ResultCode Finalize();
+    Result Finalize();
     bool Remove(Handle handle);
 
     template <typename T = KAutoObject>
@@ -100,10 +100,10 @@ public:
         return this->template GetObjectWithoutPseudoHandle<T>(handle);
     }
 
-    ResultCode Reserve(Handle* out_handle);
+    Result Reserve(Handle* out_handle);
     void Unreserve(Handle handle);
 
-    ResultCode Add(Handle* out_handle, KAutoObject* obj);
+    Result Add(Handle* out_handle, KAutoObject* obj);
     void Register(Handle handle, KAutoObject* obj);
 
     template <typename T>

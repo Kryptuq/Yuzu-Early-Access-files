@@ -62,7 +62,7 @@ bool MiiEdit::TransactionComplete() const {
     return is_complete;
 }
 
-ResultCode MiiEdit::GetStatus() const {
+Result MiiEdit::GetStatus() const {
     return ResultSuccess;
 }
 

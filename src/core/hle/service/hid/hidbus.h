@@ -71,7 +71,7 @@ private:
     struct HidbusStatusManagerEntry {
         u8 is_connected{};
         INSERT_PADDING_BYTES(0x3);
-        ResultCode is_connected_result{0};
+        Result is_connected_result{0};
         u8 is_enabled{};
         u8 is_in_focus{};
         u8 is_polling_mode{};

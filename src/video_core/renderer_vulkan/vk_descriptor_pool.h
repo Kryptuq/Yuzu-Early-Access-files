@@ -14,7 +14,7 @@
 namespace Vulkan {
 
 class Device;
-class VKScheduler;
+class Scheduler;
 
 struct DescriptorBank;
 
@@ -62,7 +62,7 @@ private:
 
 class DescriptorPool {
 public:
-    explicit DescriptorPool(const Device& device, VKScheduler& scheduler);
+    explicit DescriptorPool(const Device& device, Scheduler& scheduler);
     ~DescriptorPool();
 
     DescriptorPool& operator=(const DescriptorPool&) = delete;

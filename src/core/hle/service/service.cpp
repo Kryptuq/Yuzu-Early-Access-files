@@ -190,8 +190,8 @@ void ServiceFrameworkBase::InvokeRequestTipc(Kernel::HLERequestContext& ctx) {
     handler_invoker(this, info->handler_callback, ctx);
 }
 
-ResultCode ServiceFrameworkBase::HandleSyncRequest(Kernel::KServerSession& session,
-                                                   Kernel::HLERequestContext& ctx) {
+Result ServiceFrameworkBase::HandleSyncRequest(Kernel::KServerSession& session,
+                                               Kernel::HLERequestContext& ctx) {
     const auto guard = LockService();
 
     switch (ctx.GetCommandType()) {

@@ -8,8 +8,8 @@
 
 namespace Service::ES {
 
-constexpr ResultCode ERROR_INVALID_ARGUMENT{ErrorModule::ETicket, 2};
-constexpr ResultCode ERROR_INVALID_RIGHTS_ID{ErrorModule::ETicket, 3};
+constexpr Result ERROR_INVALID_ARGUMENT{ErrorModule::ETicket, 2};
+constexpr Result ERROR_INVALID_RIGHTS_ID{ErrorModule::ETicket, 3};
 
 class ETicket final : public ServiceFramework<ETicket> {
 public:

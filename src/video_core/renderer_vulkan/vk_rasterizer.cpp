@@ -142,9 +142,9 @@ DrawParams MakeDrawParams(const Maxwell& regs, u32 num_instances, bool is_instan
 } // Anonymous namespace
 
 RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra::GPU& gpu_,
-                                   Core::Memory::Memory& cpu_memory_, VKScreenInfo& screen_info_,
+                                   Core::Memory::Memory& cpu_memory_, ScreenInfo& screen_info_,
                                    const Device& device_, MemoryAllocator& memory_allocator_,
-                                   StateTracker& state_tracker_, VKScheduler& scheduler_)
+                                   StateTracker& state_tracker_, Scheduler& scheduler_)
     : RasterizerAccelerated{cpu_memory_}, gpu{gpu_}, screen_info{screen_info_}, device{device_},
       memory_allocator{memory_allocator_}, state_tracker{state_tracker_}, scheduler{scheduler_},
       staging_pool(device, memory_allocator, scheduler), descriptor_pool(device, scheduler),

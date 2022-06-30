@@ -79,7 +79,7 @@ std::size_t KServerSession::NumDomainRequestHandlers() const {
     return manager->DomainHandlerCount();
 }
 
-ResultCode KServerSession::HandleDomainSyncRequest(Kernel::HLERequestContext& context) {
+Result KServerSession::HandleDomainSyncRequest(Kernel::HLERequestContext& context) {
     if (!context.HasDomainMessageHeader()) {
         return ResultSuccess;
     }
@@ -123,7 +123,7 @@ ResultCode KServerSession::HandleDomainSyncRequest(Kernel::HLERequestContext& co
     return ResultSuccess;
 }
 
-ResultCode KServerSession::QueueSyncRequest(KThread* thread, Core::Memory::Memory& memory) {
+Result KServerSession::QueueSyncRequest(KThread* thread, Core::Memory::Memory& memory) {
     u32* cmd_buf{reinterpret_cast<u32*>(memory.GetPointer(thread->GetTLSAddress()))};
     auto context = std::make_shared<HLERequestContext>(kernel, memory, this, thread);
 
@@ -143,8 +143,8 @@ ResultCode KServerSession::QueueSyncRequest(KThread* thread, Core::Memory::Memor
     return ResultSuccess;
 }
 
-ResultCode KServerSession::CompleteSyncRequest(HLERequestContext& context) {
-    ResultCode result = ResultSuccess;
+Result KServerSession::CompleteSyncRequest(HLERequestContext& context) {
+    Result result = ResultSuccess;
 
     // If the session has been converted to a domain, handle the domain request
     if (manager->HasSessionRequestHandler(context)) {
@@ -173,8 +173,8 @@ ResultCode KServerSession::CompleteSyncRequest(HLERequestContext& context) {
     return result;
 }
 
-ResultCode KServerSession::HandleSyncRequest(KThread* thread, Core::Memory::Memory& memory,
-                                             Core::Timing::CoreTiming& core_timing) {
+Result KServerSession::HandleSyncRequest(KThread* thread, Core::Memory::Memory& memory,
+                                         Core::Timing::CoreTiming& core_timing) {
     return QueueSyncRequest(thread, memory);
 }
 

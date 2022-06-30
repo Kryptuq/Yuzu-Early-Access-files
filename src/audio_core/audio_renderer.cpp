@@ -98,13 +98,13 @@ AudioRenderer::AudioRenderer(Core::Timing::CoreTiming& core_timing_, Core::Memor
 
 AudioRenderer::~AudioRenderer() = default;
 
-ResultCode AudioRenderer::Start() {
+Result AudioRenderer::Start() {
     audio_out->StartStream(stream);
     ReleaseAndQueueBuffers();
     return ResultSuccess;
 }
 
-ResultCode AudioRenderer::Stop() {
+Result AudioRenderer::Stop() {
     audio_out->StopStream(stream);
     return ResultSuccess;
 }
@@ -125,8 +125,8 @@ Stream::State AudioRenderer::GetStreamState() const {
     return stream->GetState();
 }
 
-ResultCode AudioRenderer::UpdateAudioRenderer(const std::vector<u8>& input_params,
-                                              std::vector<u8>& output_params) {
+Result AudioRenderer::UpdateAudioRenderer(const std::vector<u8>& input_params,
+                                          std::vector<u8>& output_params) {
     std::scoped_lock lock{mutex};
     InfoUpdater info_updater{input_params, output_params, behavior_info};
 

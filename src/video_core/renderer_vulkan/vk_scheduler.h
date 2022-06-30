@@ -22,14 +22,14 @@ class Device;
 class Framebuffer;
 class GraphicsPipeline;
 class StateTracker;
-class VKQueryCache;
+class QueryCache;
 
 /// The scheduler abstracts command buffer and fence management with an interface that's able to do
 /// OpenGL-like operations on Vulkan command buffers.
-class VKScheduler {
+class Scheduler {
 public:
-    explicit VKScheduler(const Device& device, StateTracker& state_tracker);
-    ~VKScheduler();
+    explicit Scheduler(const Device& device, StateTracker& state_tracker);
+    ~Scheduler();
 
     /// Sends the current execution context to the GPU.
     void Flush(VkSemaphore signal_semaphore = nullptr, VkSemaphore wait_semaphore = nullptr);
@@ -61,7 +61,7 @@ public:
     void InvalidateState();
 
     /// Assigns the query cache.
-    void SetQueryCache(VKQueryCache& query_cache_) {
+    void SetQueryCache(QueryCache& query_cache_) {
         query_cache = &query_cache_;
     }
 
@@ -212,7 +212,7 @@ private:
     std::unique_ptr<MasterSemaphore> master_semaphore;
     std::unique_ptr<CommandPool> command_pool;
 
-    VKQueryCache* query_cache = nullptr;
+    QueryCache* query_cache = nullptr;
 
     vk::CommandBuffer current_cmdbuf;
 

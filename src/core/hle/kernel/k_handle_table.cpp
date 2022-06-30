@@ -8,7 +8,7 @@ namespace Kernel {
 KHandleTable::KHandleTable(KernelCore& kernel_) : kernel{kernel_} {}
 KHandleTable::~KHandleTable() = default;
 
-ResultCode KHandleTable::Finalize() {
+Result KHandleTable::Finalize() {
     // Get the table and clear our record of it.
     u16 saved_table_size = 0;
     {
@@ -62,7 +62,7 @@ bool KHandleTable::Remove(Handle handle) {
     return true;
 }
 
-ResultCode KHandleTable::Add(Handle* out_handle, KAutoObject* obj) {
+Result KHandleTable::Add(Handle* out_handle, KAutoObject* obj) {
     KScopedDisableDispatch dd(kernel);
     KScopedSpinLock lk(m_lock);
 
@@ -85,7 +85,7 @@ ResultCode KHandleTable::Add(Handle* out_handle, KAutoObject* obj) {
     return ResultSuccess;
 }
 
-ResultCode KHandleTable::Reserve(Handle* out_handle) {
+Result KHandleTable::Reserve(Handle* out_handle) {
     KScopedDisableDispatch dd(kernel);
     KScopedSpinLock lk(m_lock);
 

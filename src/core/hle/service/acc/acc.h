@@ -41,7 +41,7 @@ public:
         void StoreSaveDataThumbnailSystem(Kernel::HLERequestContext& ctx);
 
     private:
-        ResultCode InitializeApplicationInfoBase();
+        Result InitializeApplicationInfoBase();
         void StoreSaveDataThumbnail(Kernel::HLERequestContext& ctx, const Common::UUID& uuid,
                                     const u64 tid);
 

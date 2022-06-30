@@ -17,10 +17,10 @@
 
 namespace Service::SM {
 
-constexpr ResultCode ERR_NOT_INITIALIZED(ErrorModule::SM, 2);
-constexpr ResultCode ERR_ALREADY_REGISTERED(ErrorModule::SM, 4);
-constexpr ResultCode ERR_INVALID_NAME(ErrorModule::SM, 6);
-constexpr ResultCode ERR_SERVICE_NOT_REGISTERED(ErrorModule::SM, 7);
+constexpr Result ERR_NOT_INITIALIZED(ErrorModule::SM, 2);
+constexpr Result ERR_ALREADY_REGISTERED(ErrorModule::SM, 4);
+constexpr Result ERR_INVALID_NAME(ErrorModule::SM, 6);
+constexpr Result ERR_SERVICE_NOT_REGISTERED(ErrorModule::SM, 7);
 
 ServiceManager::ServiceManager(Kernel::KernelCore& kernel_) : kernel{kernel_} {}
 ServiceManager::~ServiceManager() = default;
@@ -29,7 +29,7 @@ void ServiceManager::InvokeControlRequest(Kernel::HLERequestContext& context) {
     controller_interface->InvokeRequest(context);
 }
 
-static ResultCode ValidateServiceName(const std::string& name) {
+static Result ValidateServiceName(const std::string& name) {
     if (name.empty() || name.size() > 8) {
         LOG_ERROR(Service_SM, "Invalid service name! service={}", name);
         return ERR_INVALID_NAME;
@@ -43,8 +43,8 @@ Kernel::KClientPort& ServiceManager::InterfaceFactory(ServiceManager& self, Core
     return self.sm_interface->CreatePort();
 }
 
-ResultCode ServiceManager::RegisterService(std::string name, u32 max_sessions,
-                                           Kernel::SessionRequestHandlerPtr handler) {
+Result ServiceManager::RegisterService(std::string name, u32 max_sessions,
+                                       Kernel::SessionRequestHandlerPtr handler) {
 
     CASCADE_CODE(ValidateServiceName(name));
 
@@ -58,7 +58,7 @@ ResultCode ServiceManager::RegisterService(std::string name, u32 max_sessions,
     return ResultSuccess;
 }
 
-ResultCode ServiceManager::UnregisterService(const std::string& name) {
+Result ServiceManager::UnregisterService(const std::string& name) {
     CASCADE_CODE(ValidateServiceName(name));
 
     const auto iter = registered_services.find(name);
@@ -94,7 +94,7 @@ ResultVal<Kernel::KPort*> ServiceManager::GetServicePort(const std::string& name
  *  Inputs:
  *      0: 0x00000000
  *  Outputs:
- *      0: ResultCode
+ *      0: Result
  */
 void SM::Initialize(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_SM, "called");

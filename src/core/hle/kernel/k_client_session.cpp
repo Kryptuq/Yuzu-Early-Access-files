@@ -21,8 +21,8 @@ void KClientSession::Destroy() {
 
 void KClientSession::OnServerClosed() {}
 
-ResultCode KClientSession::SendSyncRequest(KThread* thread, Core::Memory::Memory& memory,
-                                           Core::Timing::CoreTiming& core_timing) {
+Result KClientSession::SendSyncRequest(KThread* thread, Core::Memory::Memory& memory,
+                                       Core::Timing::CoreTiming& core_timing) {
     // Signal the server session that new data is available
     return parent->GetServerSession().HandleSyncRequest(thread, memory, core_timing);
 }

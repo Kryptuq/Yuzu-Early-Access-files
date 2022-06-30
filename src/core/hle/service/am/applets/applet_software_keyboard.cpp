@@ -80,7 +80,7 @@ bool SoftwareKeyboard::TransactionComplete() const {
     return complete;
 }
 
-ResultCode SoftwareKeyboard::GetStatus() const {
+Result SoftwareKeyboard::GetStatus() const {
     return status;
 }
 

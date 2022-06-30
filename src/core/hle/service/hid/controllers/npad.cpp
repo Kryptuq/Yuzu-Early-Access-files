@@ -49,8 +49,7 @@ bool Controller_NPad::IsNpadIdValid(Core::HID::NpadIdType npad_id) {
     }
 }
 
-ResultCode Controller_NPad::IsDeviceHandleValid(
-    const Core::HID::VibrationDeviceHandle& device_handle) {
+Result Controller_NPad::IsDeviceHandleValid(const Core::HID::VibrationDeviceHandle& device_handle) {
     const auto npad_id = IsNpadIdValid(static_cast<Core::HID::NpadIdType>(device_handle.npad_id));
     const bool npad_type = device_handle.npad_type < Core::HID::NpadStyleIndex::MaxNpadType;
     const bool device_index = device_handle.device_index < Core::HID::DeviceIndex::MaxDeviceIndex;
@@ -68,7 +67,7 @@ ResultCode Controller_NPad::IsDeviceHandleValid(
     return ResultSuccess;
 }
 
-ResultCode Controller_NPad::VerifyValidSixAxisSensorHandle(
+Result Controller_NPad::VerifyValidSixAxisSensorHandle(
     const Core::HID::SixAxisSensorHandle& device_handle) {
     const auto npad_id = IsNpadIdValid(static_cast<Core::HID::NpadIdType>(device_handle.npad_id));
     const bool device_index = device_handle.device_index < Core::HID::DeviceIndex::MaxDeviceIndex;
@@ -739,9 +738,9 @@ Controller_NPad::NpadCommunicationMode Controller_NPad::GetNpadCommunicationMode
     return communication_mode;
 }
 
-ResultCode Controller_NPad::SetNpadMode(Core::HID::NpadIdType npad_id,
-                                        NpadJoyDeviceType npad_device_type,
-                                        NpadJoyAssignmentMode assignment_mode) {
+Result Controller_NPad::SetNpadMode(Core::HID::NpadIdType npad_id,
+                                    NpadJoyDeviceType npad_device_type,
+                                    NpadJoyAssignmentMode assignment_mode) {
     if (!IsNpadIdValid(npad_id)) {
         LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id:{}", npad_id);
         return InvalidNpadId;
@@ -1003,7 +1002,7 @@ void Controller_NPad::UpdateControllerAt(Core::HID::NpadStyleIndex type,
     InitNewlyAddedController(npad_id);
 }
 
-ResultCode Controller_NPad::DisconnectNpad(Core::HID::NpadIdType npad_id) {
+Result Controller_NPad::DisconnectNpad(Core::HID::NpadIdType npad_id) {
     if (!IsNpadIdValid(npad_id)) {
         LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id:{}", npad_id);
         return InvalidNpadId;
@@ -1051,7 +1050,7 @@ ResultCode Controller_NPad::DisconnectNpad(Core::HID::NpadIdType npad_id) {
     WriteEmptyEntry(shared_memory);
     return ResultSuccess;
 }
-ResultCode Controller_NPad::SetGyroscopeZeroDriftMode(
+Result Controller_NPad::SetGyroscopeZeroDriftMode(
     const Core::HID::SixAxisSensorHandle& sixaxis_handle, GyroscopeZeroDriftMode drift_mode) {
     const auto is_valid = VerifyValidSixAxisSensorHandle(sixaxis_handle);
     if (is_valid.IsError()) {
@@ -1065,7 +1064,7 @@ ResultCode Controller_NPad::SetGyroscopeZeroDriftMode(
     return ResultSuccess;
 }
 
-ResultCode Controller_NPad::GetGyroscopeZeroDriftMode(
+Result Controller_NPad::GetGyroscopeZeroDriftMode(
     const Core::HID::SixAxisSensorHandle& sixaxis_handle,
     GyroscopeZeroDriftMode& drift_mode) const {
     const auto is_valid = VerifyValidSixAxisSensorHandle(sixaxis_handle);
@@ -1080,8 +1079,8 @@ ResultCode Controller_NPad::GetGyroscopeZeroDriftMode(
     return ResultSuccess;
 }
 
-ResultCode Controller_NPad::IsSixAxisSensorAtRest(
-    const Core::HID::SixAxisSensorHandle& sixaxis_handle, bool& is_at_rest) const {
+Result Controller_NPad::IsSixAxisSensorAtRest(const Core::HID::SixAxisSensorHandle& sixaxis_handle,
+                                              bool& is_at_rest) const {
     const auto is_valid = VerifyValidSixAxisSensorHandle(sixaxis_handle);
     if (is_valid.IsError()) {
         LOG_ERROR(Service_HID, "Invalid handle, error_code={}", is_valid.raw);
@@ -1093,7 +1092,7 @@ ResultCode Controller_NPad::IsSixAxisSensorAtRest(
     return ResultSuccess;
 }
 
-ResultCode Controller_NPad::IsFirmwareUpdateAvailableForSixAxisSensor(
+Result Controller_NPad::IsFirmwareUpdateAvailableForSixAxisSensor(
     const Core::HID::SixAxisSensorHandle& sixaxis_handle, bool& is_firmware_available) const {
     const auto is_valid = VerifyValidSixAxisSensorHandle(sixaxis_handle);
     if (is_valid.IsError()) {
@@ -1106,7 +1105,7 @@ ResultCode Controller_NPad::IsFirmwareUpdateAvailableForSixAxisSensor(
     return ResultSuccess;
 }
 
-ResultCode Controller_NPad::EnableSixAxisSensorUnalteredPassthrough(
+Result Controller_NPad::EnableSixAxisSensorUnalteredPassthrough(
     const Core::HID::SixAxisSensorHandle& sixaxis_handle, bool is_enabled) {
     const auto is_valid = VerifyValidSixAxisSensorHandle(sixaxis_handle);
     if (is_valid.IsError()) {
@@ -1119,7 +1118,7 @@ ResultCode Controller_NPad::EnableSixAxisSensorUnalteredPassthrough(
     return ResultSuccess;
 }
 
-ResultCode Controller_NPad::IsSixAxisSensorUnalteredPassthroughEnabled(
+Result Controller_NPad::IsSixAxisSensorUnalteredPassthroughEnabled(
     const Core::HID::SixAxisSensorHandle& sixaxis_handle, bool& is_enabled) const {
     const auto is_valid = VerifyValidSixAxisSensorHandle(sixaxis_handle);
     if (is_valid.IsError()) {
@@ -1132,7 +1131,7 @@ ResultCode Controller_NPad::IsSixAxisSensorUnalteredPassthroughEnabled(
     return ResultSuccess;
 }
 
-ResultCode Controller_NPad::LoadSixAxisSensorCalibrationParameter(
+Result Controller_NPad::LoadSixAxisSensorCalibrationParameter(
     const Core::HID::SixAxisSensorHandle& sixaxis_handle,
     Core::HID::SixAxisSensorCalibrationParameter& calibration) const {
     const auto is_valid = VerifyValidSixAxisSensorHandle(sixaxis_handle);
@@ -1147,7 +1146,7 @@ ResultCode Controller_NPad::LoadSixAxisSensorCalibrationParameter(
     return ResultSuccess;
 }
 
-ResultCode Controller_NPad::GetSixAxisSensorIcInformation(
+Result Controller_NPad::GetSixAxisSensorIcInformation(
     const Core::HID::SixAxisSensorHandle& sixaxis_handle,
     Core::HID::SixAxisSensorIcInformation& ic_information) const {
     const auto is_valid = VerifyValidSixAxisSensorHandle(sixaxis_handle);
@@ -1162,7 +1161,7 @@ ResultCode Controller_NPad::GetSixAxisSensorIcInformation(
     return ResultSuccess;
 }
 
-ResultCode Controller_NPad::ResetIsSixAxisSensorDeviceNewlyAssigned(
+Result Controller_NPad::ResetIsSixAxisSensorDeviceNewlyAssigned(
     const Core::HID::SixAxisSensorHandle& sixaxis_handle) {
     const auto is_valid = VerifyValidSixAxisSensorHandle(sixaxis_handle);
     if (is_valid.IsError()) {
@@ -1176,8 +1175,8 @@ ResultCode Controller_NPad::ResetIsSixAxisSensorDeviceNewlyAssigned(
     return ResultSuccess;
 }
 
-ResultCode Controller_NPad::SetSixAxisEnabled(const Core::HID::SixAxisSensorHandle& sixaxis_handle,
-                                              bool sixaxis_status) {
+Result Controller_NPad::SetSixAxisEnabled(const Core::HID::SixAxisSensorHandle& sixaxis_handle,
+                                          bool sixaxis_status) {
     const auto is_valid = VerifyValidSixAxisSensorHandle(sixaxis_handle);
     if (is_valid.IsError()) {
         LOG_ERROR(Service_HID, "Invalid handle, error_code={}", is_valid.raw);
@@ -1189,7 +1188,7 @@ ResultCode Controller_NPad::SetSixAxisEnabled(const Core::HID::SixAxisSensorHand
     return ResultSuccess;
 }
 
-ResultCode Controller_NPad::IsSixAxisSensorFusionEnabled(
+Result Controller_NPad::IsSixAxisSensorFusionEnabled(
     const Core::HID::SixAxisSensorHandle& sixaxis_handle, bool& is_fusion_enabled) const {
     const auto is_valid = VerifyValidSixAxisSensorHandle(sixaxis_handle);
     if (is_valid.IsError()) {
@@ -1202,7 +1201,7 @@ ResultCode Controller_NPad::IsSixAxisSensorFusionEnabled(
 
     return ResultSuccess;
 }
-ResultCode Controller_NPad::SetSixAxisFusionEnabled(
+Result Controller_NPad::SetSixAxisFusionEnabled(
     const Core::HID::SixAxisSensorHandle& sixaxis_handle, bool is_fusion_enabled) {
     const auto is_valid = VerifyValidSixAxisSensorHandle(sixaxis_handle);
     if (is_valid.IsError()) {
@@ -1216,7 +1215,7 @@ ResultCode Controller_NPad::SetSixAxisFusionEnabled(
     return ResultSuccess;
 }
 
-ResultCode Controller_NPad::SetSixAxisFusionParameters(
+Result Controller_NPad::SetSixAxisFusionParameters(
     const Core::HID::SixAxisSensorHandle& sixaxis_handle,
     Core::HID::SixAxisSensorFusionParameters sixaxis_fusion_parameters) {
     const auto is_valid = VerifyValidSixAxisSensorHandle(sixaxis_handle);
@@ -1236,7 +1235,7 @@ ResultCode Controller_NPad::SetSixAxisFusionParameters(
     return ResultSuccess;
 }
 
-ResultCode Controller_NPad::GetSixAxisFusionParameters(
+Result Controller_NPad::GetSixAxisFusionParameters(
     const Core::HID::SixAxisSensorHandle& sixaxis_handle,
     Core::HID::SixAxisSensorFusionParameters& parameters) const {
     const auto is_valid = VerifyValidSixAxisSensorHandle(sixaxis_handle);
@@ -1251,8 +1250,8 @@ ResultCode Controller_NPad::GetSixAxisFusionParameters(
     return ResultSuccess;
 }
 
-ResultCode Controller_NPad::MergeSingleJoyAsDualJoy(Core::HID::NpadIdType npad_id_1,
-                                                    Core::HID::NpadIdType npad_id_2) {
+Result Controller_NPad::MergeSingleJoyAsDualJoy(Core::HID::NpadIdType npad_id_1,
+                                                Core::HID::NpadIdType npad_id_2) {
     if (!IsNpadIdValid(npad_id_1) || !IsNpadIdValid(npad_id_2)) {
         LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id_1:{}, npad_id_2:{}", npad_id_1,
                   npad_id_2);
@@ -1323,8 +1322,8 @@ void Controller_NPad::StopLRAssignmentMode() {
     is_in_lr_assignment_mode = false;
 }
 
-ResultCode Controller_NPad::SwapNpadAssignment(Core::HID::NpadIdType npad_id_1,
-                                               Core::HID::NpadIdType npad_id_2) {
+Result Controller_NPad::SwapNpadAssignment(Core::HID::NpadIdType npad_id_1,
+                                           Core::HID::NpadIdType npad_id_2) {
     if (!IsNpadIdValid(npad_id_1) || !IsNpadIdValid(npad_id_2)) {
         LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id_1:{}, npad_id_2:{}", npad_id_1,
                   npad_id_2);
@@ -1355,8 +1354,8 @@ ResultCode Controller_NPad::SwapNpadAssignment(Core::HID::NpadIdType npad_id_1,
     return ResultSuccess;
 }
 
-ResultCode Controller_NPad::GetLedPattern(Core::HID::NpadIdType npad_id,
-                                          Core::HID::LedPattern& pattern) const {
+Result Controller_NPad::GetLedPattern(Core::HID::NpadIdType npad_id,
+                                      Core::HID::LedPattern& pattern) const {
     if (!IsNpadIdValid(npad_id)) {
         LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id:{}", npad_id);
         return InvalidNpadId;
@@ -1366,8 +1365,8 @@ ResultCode Controller_NPad::GetLedPattern(Core::HID::NpadIdType npad_id,
     return ResultSuccess;
 }
 
-ResultCode Controller_NPad::IsUnintendedHomeButtonInputProtectionEnabled(
-    Core::HID::NpadIdType npad_id, bool& is_valid) const {
+Result Controller_NPad::IsUnintendedHomeButtonInputProtectionEnabled(Core::HID::NpadIdType npad_id,
+                                                                     bool& is_valid) const {
     if (!IsNpadIdValid(npad_id)) {
         LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id:{}", npad_id);
         return InvalidNpadId;
@@ -1377,7 +1376,7 @@ ResultCode Controller_NPad::IsUnintendedHomeButtonInputProtectionEnabled(
     return ResultSuccess;
 }
 
-ResultCode Controller_NPad::SetUnintendedHomeButtonInputProtectionEnabled(
+Result Controller_NPad::SetUnintendedHomeButtonInputProtectionEnabled(
     bool is_protection_enabled, Core::HID::NpadIdType npad_id) {
     if (!IsNpadIdValid(npad_id)) {
         LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id:{}", npad_id);

@@ -172,7 +172,7 @@ FSR::FSR(const Device& device_, MemoryAllocator& memory_allocator_, size_t image
     CreatePipeline();
 }
 
-VkImageView FSR::Draw(VKScheduler& scheduler, size_t image_index, VkImageView image_view,
+VkImageView FSR::Draw(Scheduler& scheduler, size_t image_index, VkImageView image_view,
                       VkExtent2D input_image_extent, const Common::Rectangle<int>& crop_rect) {
 
     UpdateDescriptorSet(image_index, image_view);

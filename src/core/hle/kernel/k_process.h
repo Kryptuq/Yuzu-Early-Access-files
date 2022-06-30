@@ -110,8 +110,8 @@ public:
 
     static constexpr std::size_t RANDOM_ENTROPY_SIZE = 4;
 
-    static ResultCode Initialize(KProcess* process, Core::System& system, std::string process_name,
-                                 ProcessType type, KResourceLimit* res_limit);
+    static Result Initialize(KProcess* process, Core::System& system, std::string process_name,
+                             ProcessType type, KResourceLimit* res_limit);
 
     /// Gets a reference to the process' page table.
     KPageTable& PageTable() {
@@ -133,11 +133,11 @@ public:
         return handle_table;
     }
 
-    ResultCode SignalToAddress(VAddr address) {
+    Result SignalToAddress(VAddr address) {
         return condition_var.SignalToAddress(address);
     }
 
-    ResultCode WaitForAddress(Handle handle, VAddr address, u32 tag) {
+    Result WaitForAddress(Handle handle, VAddr address, u32 tag) {
         return condition_var.WaitForAddress(handle, address, tag);
     }
 
@@ -145,17 +145,16 @@ public:
         return condition_var.Signal(cv_key, count);
     }
 
-    ResultCode WaitConditionVariable(VAddr address, u64 cv_key, u32 tag, s64 ns) {
+    Result WaitConditionVariable(VAddr address, u64 cv_key, u32 tag, s64 ns) {
         return condition_var.Wait(address, cv_key, tag, ns);
     }
 
-    ResultCode SignalAddressArbiter(VAddr address, Svc::SignalType signal_type, s32 value,
-                                    s32 count) {
+    Result SignalAddressArbiter(VAddr address, Svc::SignalType signal_type, s32 value, s32 count) {
         return address_arbiter.SignalToAddress(address, signal_type, value, count);
     }
 
-    ResultCode WaitAddressArbiter(VAddr address, Svc::ArbitrationType arb_type, s32 value,
-                                  s64 timeout) {
+    Result WaitAddressArbiter(VAddr address, Svc::ArbitrationType arb_type, s32 value,
+                              s64 timeout) {
         return address_arbiter.WaitForAddress(address, arb_type, value, timeout);
     }
 
@@ -322,7 +321,7 @@ public:
     /// @pre The process must be in a signaled state. If this is called on a
     ///      process instance that is not signaled, ERR_INVALID_STATE will be
     ///      returned.
-    ResultCode Reset();
+    Result Reset();
 
     /**
      * Loads process-specifics configuration info with metadata provided
@@ -333,7 +332,7 @@ public:
      * @returns ResultSuccess if all relevant metadata was able to be
      *          loaded and parsed. Otherwise, an error code is returned.
      */
-    ResultCode LoadFromMetadata(const FileSys::ProgramMetadata& metadata, std::size_t code_size);
+    Result LoadFromMetadata(const FileSys::ProgramMetadata& metadata, std::size_t code_size);
 
     /**
      * Starts the main application thread for this process.
@@ -367,7 +366,7 @@ public:
 
     void DoWorkerTaskImpl();
 
-    ResultCode SetActivity(ProcessActivity activity);
+    Result SetActivity(ProcessActivity activity);
 
     void PinCurrentThread(s32 core_id);
     void UnpinCurrentThread(s32 core_id);
@@ -377,17 +376,17 @@ public:
         return state_lock;
     }
 
-    ResultCode AddSharedMemory(KSharedMemory* shmem, VAddr address, size_t size);
+    Result AddSharedMemory(KSharedMemory* shmem, VAddr address, size_t size);
     void RemoveSharedMemory(KSharedMemory* shmem, VAddr address, size_t size);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Thread-local storage management
 
     // Marks the next available region as used and returns the address of the slot.
-    [[nodiscard]] ResultCode CreateThreadLocalRegion(VAddr* out);
+    [[nodiscard]] Result CreateThreadLocalRegion(VAddr* out);
 
     // Frees a used TLS slot identified by the given address
-    ResultCode DeleteThreadLocalRegion(VAddr addr);
+    Result DeleteThreadLocalRegion(VAddr addr);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Debug watchpoint management
@@ -423,7 +422,7 @@ private:
     void ChangeStatus(ProcessStatus new_status);
 
     /// Allocates the main thread stack for the process, given the stack size in bytes.
-    ResultCode AllocateMainThreadStack(std::size_t stack_size);
+    Result AllocateMainThreadStack(std::size_t stack_size);
 
     /// Memory manager for this process
     std::unique_ptr<KPageTable> page_table;

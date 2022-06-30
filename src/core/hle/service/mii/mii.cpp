@@ -12,7 +12,7 @@
 
 namespace Service::Mii {
 
-constexpr ResultCode ERROR_INVALID_ARGUMENT{ErrorModule::Mii, 1};
+constexpr Result ERROR_INVALID_ARGUMENT{ErrorModule::Mii, 1};
 
 class IDatabaseService final : public ServiceFramework<IDatabaseService> {
 public:

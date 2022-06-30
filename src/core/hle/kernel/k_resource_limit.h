@@ -8,7 +8,7 @@
 #include "core/hle/kernel/k_light_condition_variable.h"
 #include "core/hle/kernel/k_light_lock.h"
 
-union ResultCode;
+union Result;
 
 namespace Core::Timing {
 class CoreTiming;
@@ -46,7 +46,7 @@ public:
     s64 GetPeakValue(LimitableResource which) const;
     s64 GetFreeValue(LimitableResource which) const;
 
-    ResultCode SetLimitValue(LimitableResource which, s64 value);
+    Result SetLimitValue(LimitableResource which, s64 value);
 
     bool Reserve(LimitableResource which, s64 value);
     bool Reserve(LimitableResource which, s64 value, s64 timeout);

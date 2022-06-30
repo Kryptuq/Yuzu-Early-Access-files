@@ -188,8 +188,8 @@ void HLERequestContext::ParseCommandBuffer(const KHandleTable& handle_table, u32
     rp.Skip(1, false); // The command is actually an u64, but we don't use the high part.
 }
 
-ResultCode HLERequestContext::PopulateFromIncomingCommandBuffer(const KHandleTable& handle_table,
-                                                                u32_le* src_cmdbuf) {
+Result HLERequestContext::PopulateFromIncomingCommandBuffer(const KHandleTable& handle_table,
+                                                            u32_le* src_cmdbuf) {
     ParseCommandBuffer(handle_table, src_cmdbuf, true);
 
     if (command_header->IsCloseCommand()) {
@@ -202,7 +202,7 @@ ResultCode HLERequestContext::PopulateFromIncomingCommandBuffer(const KHandleTab
     return ResultSuccess;
 }
 
-ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(KThread& requesting_thread) {
+Result HLERequestContext::WriteToOutgoingCommandBuffer(KThread& requesting_thread) {
     auto current_offset = handles_offset;
     auto& owner_process = *requesting_thread.GetOwnerProcess();
     auto& handle_table = owner_process.GetHandleTable();

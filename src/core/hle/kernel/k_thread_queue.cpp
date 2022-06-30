@@ -9,9 +9,9 @@ namespace Kernel {
 
 void KThreadQueue::NotifyAvailable([[maybe_unused]] KThread* waiting_thread,
                                    [[maybe_unused]] KSynchronizationObject* signaled_object,
-                                   [[maybe_unused]] ResultCode wait_result) {}
+                                   [[maybe_unused]] Result wait_result) {}
 
-void KThreadQueue::EndWait(KThread* waiting_thread, ResultCode wait_result) {
+void KThreadQueue::EndWait(KThread* waiting_thread, Result wait_result) {
     // Set the thread's wait result.
     waiting_thread->SetWaitResult(wait_result);
 
@@ -25,8 +25,7 @@ void KThreadQueue::EndWait(KThread* waiting_thread, ResultCode wait_result) {
     kernel.TimeManager().UnscheduleTimeEvent(waiting_thread);
 }
 
-void KThreadQueue::CancelWait(KThread* waiting_thread, ResultCode wait_result,
-                              bool cancel_timer_task) {
+void KThreadQueue::CancelWait(KThread* waiting_thread, Result wait_result, bool cancel_timer_task) {
     // Set the thread's wait result.
     waiting_thread->SetWaitResult(wait_result);
 
@@ -43,6 +42,6 @@ void KThreadQueue::CancelWait(KThread* waiting_thread, ResultCode wait_result,
 }
 
 void KThreadQueueWithoutEndWait::EndWait([[maybe_unused]] KThread* waiting_thread,
-                                         [[maybe_unused]] ResultCode wait_result) {}
+                                         [[maybe_unused]] Result wait_result) {}
 
 } // namespace Kernel

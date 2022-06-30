@@ -61,8 +61,7 @@ public:
     explicit ThreadQueueImplForKConditionVariableWaitForAddress(KernelCore& kernel_)
         : KThreadQueue(kernel_) {}
 
-    void CancelWait(KThread* waiting_thread, ResultCode wait_result,
-                    bool cancel_timer_task) override {
+    void CancelWait(KThread* waiting_thread, Result wait_result, bool cancel_timer_task) override {
         // Remove the thread as a waiter from its owner.
         waiting_thread->GetLockOwner()->RemoveWaiter(waiting_thread);
 
@@ -80,8 +79,7 @@ public:
         KernelCore& kernel_, KConditionVariable::ThreadTree* t)
         : KThreadQueue(kernel_), m_tree(t) {}
 
-    void CancelWait(KThread* waiting_thread, ResultCode wait_result,
-                    bool cancel_timer_task) override {
+    void CancelWait(KThread* waiting_thread, Result wait_result, bool cancel_timer_task) override {
         // Remove the thread as a waiter from its owner.
         if (KThread* owner = waiting_thread->GetLockOwner(); owner != nullptr) {
             owner->RemoveWaiter(waiting_thread);
@@ -105,7 +103,7 @@ KConditionVariable::KConditionVariable(Core::System& system_)
 
 KConditionVariable::~KConditionVariable() = default;
 
-ResultCode KConditionVariable::SignalToAddress(VAddr addr) {
+Result KConditionVariable::SignalToAddress(VAddr addr) {
     KThread* owner_thread = GetCurrentThreadPointer(kernel);
 
     // Signal the address.
@@ -126,7 +124,7 @@ ResultCode KConditionVariable::SignalToAddress(VAddr addr) {
             }
 
             // Write the value to userspace.
-            ResultCode result{ResultSuccess};
+            Result result{ResultSuccess};
             if (WriteToUser(system, addr, std::addressof(next_value))) [[likely]] {
                 result = ResultSuccess;
             } else {
@@ -146,7 +144,7 @@ ResultCode KConditionVariable::SignalToAddress(VAddr addr) {
     }
 }
 
-ResultCode KConditionVariable::WaitForAddress(Handle handle, VAddr addr, u32 value) {
+Result KConditionVariable::WaitForAddress(Handle handle, VAddr addr, u32 value) {
     KThread* cur_thread = GetCurrentThreadPointer(kernel);
     ThreadQueueImplForKConditionVariableWaitForAddress wait_queue(kernel);
 
@@ -261,7 +259,7 @@ void KConditionVariable::Signal(u64 cv_key, s32 count) {
     }
 }
 
-ResultCode KConditionVariable::Wait(VAddr addr, u64 key, u32 value, s64 timeout) {
+Result KConditionVariable::Wait(VAddr addr, u64 key, u32 value, s64 timeout) {
     // Prepare to wait.
     KThread* cur_thread = GetCurrentThreadPointer(kernel);
     ThreadQueueImplForKConditionVariableWaitConditionVariable wait_queue(

@@ -349,7 +349,7 @@ VkExtent2D GetConversionExtent(const ImageView& src_image_view) {
 }
 } // Anonymous namespace
 
-BlitImageHelper::BlitImageHelper(const Device& device_, VKScheduler& scheduler_,
+BlitImageHelper::BlitImageHelper(const Device& device_, Scheduler& scheduler_,
                                  StateTracker& state_tracker_, DescriptorPool& descriptor_pool)
     : device{device_}, scheduler{scheduler_}, state_tracker{state_tracker_},
       one_texture_set_layout(device.GetLogical().CreateDescriptorSetLayout(

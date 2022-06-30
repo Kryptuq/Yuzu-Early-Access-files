@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <atomic>
 #include "common/wall_clock.h"
 
 namespace Common {
@@ -29,12 +28,17 @@ public:
 private:
     u64 GetRTSC();
 
-    struct alignas(16) TimePoint {
-        u64 last_measure{};
-        u64 accumulated_ticks{};
+    union alignas(16) TimePoint {
+        TimePoint() : pack{} {}
+        u128 pack{};
+        struct Inner {
+            u64 last_measure{};
+            u64 accumulated_ticks{};
+        } inner;
     };
 
-    std::atomic<TimePoint> time_point;
+    TimePoint time_point;
+
     // factors
     u64 clock_rtsc_factor{};
     u64 cpu_rtsc_factor{};

@@ -65,15 +65,15 @@ VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, u32 wi
 
 } // Anonymous namespace
 
-VKSwapchain::VKSwapchain(VkSurfaceKHR surface_, const Device& device_, VKScheduler& scheduler_,
-                         u32 width, u32 height, bool srgb)
+Swapchain::Swapchain(VkSurfaceKHR surface_, const Device& device_, Scheduler& scheduler_, u32 width,
+                     u32 height, bool srgb)
     : surface{surface_}, device{device_}, scheduler{scheduler_} {
     Create(width, height, srgb);
 }
 
-VKSwapchain::~VKSwapchain() = default;
+Swapchain::~Swapchain() = default;
 
-void VKSwapchain::Create(u32 width, u32 height, bool srgb) {
+void Swapchain::Create(u32 width, u32 height, bool srgb) {
     is_outdated = false;
     is_suboptimal = false;
 
@@ -94,7 +94,7 @@ void VKSwapchain::Create(u32 width, u32 height, bool srgb) {
     resource_ticks.resize(image_count);
 }
 
-void VKSwapchain::AcquireNextImage() {
+void Swapchain::AcquireNextImage() {
     const VkResult result = device.GetLogical().AcquireNextImageKHR(
         *swapchain, std::numeric_limits<u64>::max(), *present_semaphores[frame_index],
         VK_NULL_HANDLE, &image_index);
@@ -115,7 +115,7 @@ void VKSwapchain::AcquireNextImage() {
     resource_ticks[image_index] = scheduler.CurrentTick();
 }
 
-void VKSwapchain::Present(VkSemaphore render_semaphore) {
+void Swapchain::Present(VkSemaphore render_semaphore) {
     const auto present_queue{device.GetPresentQueue()};
     const VkPresentInfoKHR present_info{
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -146,8 +146,8 @@ void VKSwapchain::Present(VkSemaphore render_semaphore) {
     }
 }
 
-void VKSwapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, u32 width,
-                                  u32 height, bool srgb) {
+void Swapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, u32 width, u32 height,
+                                bool srgb) {
     const auto physical_device{device.GetPhysical()};
     const auto formats{physical_device.GetSurfaceFormatsKHR(surface)};
     const auto present_modes{physical_device.GetSurfacePresentModesKHR(surface)};
@@ -221,13 +221,13 @@ void VKSwapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, 
     image_view_format = srgb ? VK_FORMAT_B8G8R8A8_SRGB : VK_FORMAT_B8G8R8A8_UNORM;
 }
 
-void VKSwapchain::CreateSemaphores() {
+void Swapchain::CreateSemaphores() {
     present_semaphores.resize(image_count);
     std::ranges::generate(present_semaphores,
                           [this] { return device.GetLogical().CreateSemaphore(); });
 }
 
-void VKSwapchain::CreateImageViews() {
+void Swapchain::CreateImageViews() {
     VkImageViewCreateInfo ci{
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .pNext = nullptr,
@@ -259,7 +259,7 @@ void VKSwapchain::CreateImageViews() {
     }
 }
 
-void VKSwapchain::Destroy() {
+void Swapchain::Destroy() {
     frame_index = 0;
     present_semaphores.clear();
     framebuffers.clear();
@@ -267,11 +267,11 @@ void VKSwapchain::Destroy() {
     swapchain.reset();
 }
 
-bool VKSwapchain::HasFpsUnlockChanged() const {
+bool Swapchain::HasFpsUnlockChanged() const {
     return current_fps_unlocked != Settings::values.disable_fps_limit.GetValue();
 }
 
-bool VKSwapchain::NeedsPresentModeUpdate() const {
+bool Swapchain::NeedsPresentModeUpdate() const {
     // Mailbox present mode is the ideal for all scenarios. If it is not available,
     // A different present mode is needed to support unlocked FPS above the monitor's refresh rate.
     return present_mode != VK_PRESENT_MODE_MAILBOX_KHR && HasFpsUnlockChanged();

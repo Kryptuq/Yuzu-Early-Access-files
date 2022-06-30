@@ -79,8 +79,8 @@ public:
     Kernel::KClientPort& CreatePort();
 
     /// Handles a synchronization request for the service.
-    ResultCode HandleSyncRequest(Kernel::KServerSession& session,
-                                 Kernel::HLERequestContext& context) override;
+    Result HandleSyncRequest(Kernel::KServerSession& session,
+                             Kernel::HLERequestContext& context) override;
 
 protected:
     /// Member-function pointer type of SyncRequest handlers.

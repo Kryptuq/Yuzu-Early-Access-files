@@ -28,10 +28,10 @@ public:
 
     void BroadcastOperationEvent();
 
-    ResultCode Update(const SystemClockContext& value);
+    Result Update(const SystemClockContext& value);
 
 protected:
-    virtual ResultCode Update();
+    virtual Result Update();
 
     SystemClockContext context{};
 

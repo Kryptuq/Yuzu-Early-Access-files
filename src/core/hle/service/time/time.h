@@ -36,7 +36,7 @@ public:
         void GetSharedMemoryNativeHandle(Kernel::HLERequestContext& ctx);
 
     private:
-        ResultCode GetClockSnapshotFromSystemClockContextInternal(
+        Result GetClockSnapshotFromSystemClockContextInternal(
             Kernel::KThread* thread, Clock::SystemClockContext user_context,
             Clock::SystemClockContext network_context, Clock::TimeType type,
             Clock::ClockSnapshot& cloc_snapshot);

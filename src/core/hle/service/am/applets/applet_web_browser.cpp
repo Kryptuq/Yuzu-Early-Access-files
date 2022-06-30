@@ -288,7 +288,7 @@ bool WebBrowser::TransactionComplete() const {
     return complete;
 }
 
-ResultCode WebBrowser::GetStatus() const {
+Result WebBrowser::GetStatus() const {
     return status;
 }
 

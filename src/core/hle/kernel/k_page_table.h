@@ -33,51 +33,49 @@ public:
     explicit KPageTable(Core::System& system_);
     ~KPageTable();
 
-    ResultCode InitializeForProcess(FileSys::ProgramAddressSpaceType as_type, bool enable_aslr,
-                                    VAddr code_addr, std::size_t code_size,
-                                    KMemoryManager::Pool pool);
-    ResultCode MapProcessCode(VAddr addr, std::size_t pages_count, KMemoryState state,
-                              KMemoryPermission perm);
-    ResultCode MapCodeMemory(VAddr dst_address, VAddr src_address, std::size_t size);
-    ResultCode UnmapCodeMemory(VAddr dst_address, VAddr src_address, std::size_t size,
-                               ICacheInvalidationStrategy icache_invalidation_strategy);
-    ResultCode UnmapProcessMemory(VAddr dst_addr, std::size_t size, KPageTable& src_page_table,
-                                  VAddr src_addr);
-    ResultCode MapPhysicalMemory(VAddr addr, std::size_t size);
-    ResultCode UnmapPhysicalMemory(VAddr addr, std::size_t size);
-    ResultCode MapMemory(VAddr dst_addr, VAddr src_addr, std::size_t size);
-    ResultCode UnmapMemory(VAddr dst_addr, VAddr src_addr, std::size_t size);
-    ResultCode MapPages(VAddr addr, KPageLinkedList& page_linked_list, KMemoryState state,
-                        KMemoryPermission perm);
-    ResultCode MapPages(VAddr* out_addr, std::size_t num_pages, std::size_t alignment,
-                        PAddr phys_addr, KMemoryState state, KMemoryPermission perm) {
+    Result InitializeForProcess(FileSys::ProgramAddressSpaceType as_type, bool enable_aslr,
+                                VAddr code_addr, std::size_t code_size, KMemoryManager::Pool pool);
+    Result MapProcessCode(VAddr addr, std::size_t pages_count, KMemoryState state,
+                          KMemoryPermission perm);
+    Result MapCodeMemory(VAddr dst_address, VAddr src_address, std::size_t size);
+    Result UnmapCodeMemory(VAddr dst_address, VAddr src_address, std::size_t size,
+                           ICacheInvalidationStrategy icache_invalidation_strategy);
+    Result UnmapProcessMemory(VAddr dst_addr, std::size_t size, KPageTable& src_page_table,
+                              VAddr src_addr);
+    Result MapPhysicalMemory(VAddr addr, std::size_t size);
+    Result UnmapPhysicalMemory(VAddr addr, std::size_t size);
+    Result MapMemory(VAddr dst_addr, VAddr src_addr, std::size_t size);
+    Result UnmapMemory(VAddr dst_addr, VAddr src_addr, std::size_t size);
+    Result MapPages(VAddr addr, KPageGroup& page_linked_list, KMemoryState state,
+                    KMemoryPermission perm);
+    Result MapPages(VAddr* out_addr, std::size_t num_pages, std::size_t alignment, PAddr phys_addr,
+                    KMemoryState state, KMemoryPermission perm) {
         return this->MapPages(out_addr, num_pages, alignment, phys_addr, true,
                               this->GetRegionAddress(state), this->GetRegionSize(state) / PageSize,
                               state, perm);
     }
-    ResultCode UnmapPages(VAddr addr, KPageLinkedList& page_linked_list, KMemoryState state);
-    ResultCode UnmapPages(VAddr address, std::size_t num_pages, KMemoryState state);
-    ResultCode SetProcessMemoryPermission(VAddr addr, std::size_t size,
-                                          Svc::MemoryPermission svc_perm);
+    Result UnmapPages(VAddr addr, KPageGroup& page_linked_list, KMemoryState state);
+    Result UnmapPages(VAddr address, std::size_t num_pages, KMemoryState state);
+    Result SetProcessMemoryPermission(VAddr addr, std::size_t size, Svc::MemoryPermission svc_perm);
     KMemoryInfo QueryInfo(VAddr addr);
-    ResultCode ReserveTransferMemory(VAddr addr, std::size_t size, KMemoryPermission perm);
-    ResultCode ResetTransferMemory(VAddr addr, std::size_t size);
-    ResultCode SetMemoryPermission(VAddr addr, std::size_t size, Svc::MemoryPermission perm);
-    ResultCode SetMemoryAttribute(VAddr addr, std::size_t size, u32 mask, u32 attr);
-    ResultCode SetMaxHeapSize(std::size_t size);
-    ResultCode SetHeapSize(VAddr* out, std::size_t size);
+    Result ReserveTransferMemory(VAddr addr, std::size_t size, KMemoryPermission perm);
+    Result ResetTransferMemory(VAddr addr, std::size_t size);
+    Result SetMemoryPermission(VAddr addr, std::size_t size, Svc::MemoryPermission perm);
+    Result SetMemoryAttribute(VAddr addr, std::size_t size, u32 mask, u32 attr);
+    Result SetMaxHeapSize(std::size_t size);
+    Result SetHeapSize(VAddr* out, std::size_t size);
     ResultVal<VAddr> AllocateAndMapMemory(std::size_t needed_num_pages, std::size_t align,
                                           bool is_map_only, VAddr region_start,
                                           std::size_t region_num_pages, KMemoryState state,
                                           KMemoryPermission perm, PAddr map_addr = 0);
-    ResultCode LockForDeviceAddressSpace(VAddr addr, std::size_t size);
-    ResultCode UnlockForDeviceAddressSpace(VAddr addr, std::size_t size);
-    ResultCode LockForCodeMemory(KPageLinkedList* out, VAddr addr, std::size_t size);
-    ResultCode UnlockForCodeMemory(VAddr addr, std::size_t size, const KPageLinkedList& pg);
-    ResultCode MakeAndOpenPageGroup(KPageLinkedList* out, VAddr address, size_t num_pages,
-                                    KMemoryState state_mask, KMemoryState state,
-                                    KMemoryPermission perm_mask, KMemoryPermission perm,
-                                    KMemoryAttribute attr_mask, KMemoryAttribute attr);
+    Result LockForDeviceAddressSpace(VAddr addr, std::size_t size);
+    Result UnlockForDeviceAddressSpace(VAddr addr, std::size_t size);
+    Result LockForCodeMemory(KPageGroup* out, VAddr addr, std::size_t size);
+    Result UnlockForCodeMemory(VAddr addr, std::size_t size, const KPageGroup& pg);
+    Result MakeAndOpenPageGroup(KPageGroup* out, VAddr address, size_t num_pages,
+                                KMemoryState state_mask, KMemoryState state,
+                                KMemoryPermission perm_mask, KMemoryPermission perm,
+                                KMemoryAttribute attr_mask, KMemoryAttribute attr);
 
     Common::PageTable& PageTableImpl() {
         return page_table_impl;
@@ -102,83 +100,78 @@ private:
                                                                 KMemoryAttribute::IpcLocked |
                                                                 KMemoryAttribute::DeviceShared;
 
-    ResultCode InitializeMemoryLayout(VAddr start, VAddr end);
-    ResultCode MapPages(VAddr addr, const KPageLinkedList& page_linked_list,
-                        KMemoryPermission perm);
-    ResultCode MapPages(VAddr* out_addr, std::size_t num_pages, std::size_t alignment,
-                        PAddr phys_addr, bool is_pa_valid, VAddr region_start,
-                        std::size_t region_num_pages, KMemoryState state, KMemoryPermission perm);
-    ResultCode UnmapPages(VAddr addr, const KPageLinkedList& page_linked_list);
+    Result InitializeMemoryLayout(VAddr start, VAddr end);
+    Result MapPages(VAddr addr, const KPageGroup& page_linked_list, KMemoryPermission perm);
+    Result MapPages(VAddr* out_addr, std::size_t num_pages, std::size_t alignment, PAddr phys_addr,
+                    bool is_pa_valid, VAddr region_start, std::size_t region_num_pages,
+                    KMemoryState state, KMemoryPermission perm);
+    Result UnmapPages(VAddr addr, const KPageGroup& page_linked_list);
     bool IsRegionMapped(VAddr address, u64 size);
     bool IsRegionContiguous(VAddr addr, u64 size) const;
-    void AddRegionToPages(VAddr start, std::size_t num_pages, KPageLinkedList& page_linked_list);
+    void AddRegionToPages(VAddr start, std::size_t num_pages, KPageGroup& page_linked_list);
     KMemoryInfo QueryInfoImpl(VAddr addr);
     VAddr AllocateVirtualMemory(VAddr start, std::size_t region_num_pages, u64 needed_num_pages,
                                 std::size_t align);
-    ResultCode Operate(VAddr addr, std::size_t num_pages, const KPageLinkedList& page_group,
-                       OperationType operation);
-    ResultCode Operate(VAddr addr, std::size_t num_pages, KMemoryPermission perm,
-                       OperationType operation, PAddr map_addr = 0);
+    Result Operate(VAddr addr, std::size_t num_pages, const KPageGroup& page_group,
+                   OperationType operation);
+    Result Operate(VAddr addr, std::size_t num_pages, KMemoryPermission perm,
+                   OperationType operation, PAddr map_addr = 0);
     VAddr GetRegionAddress(KMemoryState state) const;
     std::size_t GetRegionSize(KMemoryState state) const;
 
     VAddr FindFreeArea(VAddr region_start, std::size_t region_num_pages, std::size_t num_pages,
                        std::size_t alignment, std::size_t offset, std::size_t guard_pages);
 
-    ResultCode CheckMemoryStateContiguous(std::size_t* out_blocks_needed, VAddr addr,
-                                          std::size_t size, KMemoryState state_mask,
-                                          KMemoryState state, KMemoryPermission perm_mask,
-                                          KMemoryPermission perm, KMemoryAttribute attr_mask,
-                                          KMemoryAttribute attr) const;
-    ResultCode CheckMemoryStateContiguous(VAddr addr, std::size_t size, KMemoryState state_mask,
-                                          KMemoryState state, KMemoryPermission perm_mask,
-                                          KMemoryPermission perm, KMemoryAttribute attr_mask,
-                                          KMemoryAttribute attr) const {
+    Result CheckMemoryStateContiguous(std::size_t* out_blocks_needed, VAddr addr, std::size_t size,
+                                      KMemoryState state_mask, KMemoryState state,
+                                      KMemoryPermission perm_mask, KMemoryPermission perm,
+                                      KMemoryAttribute attr_mask, KMemoryAttribute attr) const;
+    Result CheckMemoryStateContiguous(VAddr addr, std::size_t size, KMemoryState state_mask,
+                                      KMemoryState state, KMemoryPermission perm_mask,
+                                      KMemoryPermission perm, KMemoryAttribute attr_mask,
+                                      KMemoryAttribute attr) const {
         return this->CheckMemoryStateContiguous(nullptr, addr, size, state_mask, state, perm_mask,
                                                 perm, attr_mask, attr);
     }
 
-    ResultCode CheckMemoryState(const KMemoryInfo& info, KMemoryState state_mask,
-                                KMemoryState state, KMemoryPermission perm_mask,
-                                KMemoryPermission perm, KMemoryAttribute attr_mask,
-                                KMemoryAttribute attr) const;
-    ResultCode CheckMemoryState(KMemoryState* out_state, KMemoryPermission* out_perm,
-                                KMemoryAttribute* out_attr, std::size_t* out_blocks_needed,
-                                VAddr addr, std::size_t size, KMemoryState state_mask,
-                                KMemoryState state, KMemoryPermission perm_mask,
-                                KMemoryPermission perm, KMemoryAttribute attr_mask,
-                                KMemoryAttribute attr,
-                                KMemoryAttribute ignore_attr = DefaultMemoryIgnoreAttr) const;
-    ResultCode CheckMemoryState(std::size_t* out_blocks_needed, VAddr addr, std::size_t size,
-                                KMemoryState state_mask, KMemoryState state,
-                                KMemoryPermission perm_mask, KMemoryPermission perm,
-                                KMemoryAttribute attr_mask, KMemoryAttribute attr,
-                                KMemoryAttribute ignore_attr = DefaultMemoryIgnoreAttr) const {
+    Result CheckMemoryState(const KMemoryInfo& info, KMemoryState state_mask, KMemoryState state,
+                            KMemoryPermission perm_mask, KMemoryPermission perm,
+                            KMemoryAttribute attr_mask, KMemoryAttribute attr) const;
+    Result CheckMemoryState(KMemoryState* out_state, KMemoryPermission* out_perm,
+                            KMemoryAttribute* out_attr, std::size_t* out_blocks_needed, VAddr addr,
+                            std::size_t size, KMemoryState state_mask, KMemoryState state,
+                            KMemoryPermission perm_mask, KMemoryPermission perm,
+                            KMemoryAttribute attr_mask, KMemoryAttribute attr,
+                            KMemoryAttribute ignore_attr = DefaultMemoryIgnoreAttr) const;
+    Result CheckMemoryState(std::size_t* out_blocks_needed, VAddr addr, std::size_t size,
+                            KMemoryState state_mask, KMemoryState state,
+                            KMemoryPermission perm_mask, KMemoryPermission perm,
+                            KMemoryAttribute attr_mask, KMemoryAttribute attr,
+                            KMemoryAttribute ignore_attr = DefaultMemoryIgnoreAttr) const {
         return CheckMemoryState(nullptr, nullptr, nullptr, out_blocks_needed, addr, size,
                                 state_mask, state, perm_mask, perm, attr_mask, attr, ignore_attr);
     }
-    ResultCode CheckMemoryState(VAddr addr, std::size_t size, KMemoryState state_mask,
-                                KMemoryState state, KMemoryPermission perm_mask,
-                                KMemoryPermission perm, KMemoryAttribute attr_mask,
-                                KMemoryAttribute attr,
-                                KMemoryAttribute ignore_attr = DefaultMemoryIgnoreAttr) const {
+    Result CheckMemoryState(VAddr addr, std::size_t size, KMemoryState state_mask,
+                            KMemoryState state, KMemoryPermission perm_mask, KMemoryPermission perm,
+                            KMemoryAttribute attr_mask, KMemoryAttribute attr,
+                            KMemoryAttribute ignore_attr = DefaultMemoryIgnoreAttr) const {
         return this->CheckMemoryState(nullptr, addr, size, state_mask, state, perm_mask, perm,
                                       attr_mask, attr, ignore_attr);
     }
 
-    ResultCode LockMemoryAndOpen(KPageLinkedList* out_pg, PAddr* out_paddr, VAddr addr, size_t size,
-                                 KMemoryState state_mask, KMemoryState state,
-                                 KMemoryPermission perm_mask, KMemoryPermission perm,
-                                 KMemoryAttribute attr_mask, KMemoryAttribute attr,
-                                 KMemoryPermission new_perm, KMemoryAttribute lock_attr);
-    ResultCode UnlockMemory(VAddr addr, size_t size, KMemoryState state_mask, KMemoryState state,
-                            KMemoryPermission perm_mask, KMemoryPermission perm,
-                            KMemoryAttribute attr_mask, KMemoryAttribute attr,
-                            KMemoryPermission new_perm, KMemoryAttribute lock_attr,
-                            const KPageLinkedList* pg);
+    Result LockMemoryAndOpen(KPageGroup* out_pg, PAddr* out_paddr, VAddr addr, size_t size,
+                             KMemoryState state_mask, KMemoryState state,
+                             KMemoryPermission perm_mask, KMemoryPermission perm,
+                             KMemoryAttribute attr_mask, KMemoryAttribute attr,
+                             KMemoryPermission new_perm, KMemoryAttribute lock_attr);
+    Result UnlockMemory(VAddr addr, size_t size, KMemoryState state_mask, KMemoryState state,
+                        KMemoryPermission perm_mask, KMemoryPermission perm,
+                        KMemoryAttribute attr_mask, KMemoryAttribute attr,
+                        KMemoryPermission new_perm, KMemoryAttribute lock_attr,
+                        const KPageGroup* pg);
 
-    ResultCode MakePageGroup(KPageLinkedList& pg, VAddr addr, size_t num_pages);
-    bool IsValidPageGroup(const KPageLinkedList& pg, VAddr addr, size_t num_pages);
+    Result MakePageGroup(KPageGroup& pg, VAddr addr, size_t num_pages);
+    bool IsValidPageGroup(const KPageGroup& pg, VAddr addr, size_t num_pages);
 
     bool IsLockedByCurrentThread() const {
         return general_lock.IsLockedByCurrentThread();

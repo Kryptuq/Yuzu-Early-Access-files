@@ -13,8 +13,8 @@ KTransferMemory::KTransferMemory(KernelCore& kernel_)
 
 KTransferMemory::~KTransferMemory() = default;
 
-ResultCode KTransferMemory::Initialize(VAddr address_, std::size_t size_,
-                                       Svc::MemoryPermission owner_perm_) {
+Result KTransferMemory::Initialize(VAddr address_, std::size_t size_,
+                                   Svc::MemoryPermission owner_perm_) {
     // Set members.
     owner = kernel.CurrentProcess();
 

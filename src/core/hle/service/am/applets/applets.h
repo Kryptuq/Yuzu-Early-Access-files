@@ -9,7 +9,7 @@
 #include "common/swap.h"
 #include "core/hle/service/kernel_helpers.h"
 
-union ResultCode;
+union Result;
 
 namespace Core {
 class System;
@@ -138,7 +138,7 @@ public:
     virtual void Initialize();
 
     virtual bool TransactionComplete() const = 0;
-    virtual ResultCode GetStatus() const = 0;
+    virtual Result GetStatus() const = 0;
     virtual void ExecuteInteractive() = 0;
     virtual void Execute() = 0;
 

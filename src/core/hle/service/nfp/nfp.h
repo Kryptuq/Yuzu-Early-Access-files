@@ -178,20 +178,20 @@ public:
         void Initialize();
         void Finalize();
 
-        ResultCode StartDetection(s32 protocol_);
-        ResultCode StopDetection();
-        ResultCode Mount();
-        ResultCode Unmount();
+        Result StartDetection(s32 protocol_);
+        Result StopDetection();
+        Result Mount();
+        Result Unmount();
 
-        ResultCode GetTagInfo(TagInfo& tag_info) const;
-        ResultCode GetCommonInfo(CommonInfo& common_info) const;
-        ResultCode GetModelInfo(ModelInfo& model_info) const;
-        ResultCode GetRegisterInfo(RegisterInfo& register_info) const;
+        Result GetTagInfo(TagInfo& tag_info) const;
+        Result GetCommonInfo(CommonInfo& common_info) const;
+        Result GetModelInfo(ModelInfo& model_info) const;
+        Result GetRegisterInfo(RegisterInfo& register_info) const;
 
-        ResultCode OpenApplicationArea(u32 access_id);
-        ResultCode GetApplicationArea(std::vector<u8>& data) const;
-        ResultCode SetApplicationArea(const std::vector<u8>& data);
-        ResultCode CreateApplicationArea(u32 access_id, const std::vector<u8>& data);
+        Result OpenApplicationArea(u32 access_id);
+        Result GetApplicationArea(std::vector<u8>& data) const;
+        Result SetApplicationArea(const std::vector<u8>& data);
+        Result CreateApplicationArea(u32 access_id, const std::vector<u8>& data);
 
         u64 GetHandle() const;
         DeviceState GetCurrentState() const;

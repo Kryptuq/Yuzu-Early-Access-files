@@ -85,7 +85,7 @@ size_t Region(size_t iterator) noexcept {
 } // Anonymous namespace
 
 StagingBufferPool::StagingBufferPool(const Device& device_, MemoryAllocator& memory_allocator_,
-                                     VKScheduler& scheduler_)
+                                     Scheduler& scheduler_)
     : device{device_}, memory_allocator{memory_allocator_}, scheduler{scheduler_} {
     const vk::Device& dev = device.GetLogical();
     stream_buffer = dev.CreateBuffer(VkBufferCreateInfo{

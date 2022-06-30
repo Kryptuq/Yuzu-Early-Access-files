@@ -112,15 +112,15 @@ enum class ErrorModule : u32 {
 };
 
 /// Encapsulates a Horizon OS error code, allowing it to be separated into its constituent fields.
-union ResultCode {
+union Result {
     u32 raw;
 
     BitField<0, 9, ErrorModule> module;
     BitField<9, 13, u32> description;
 
-    constexpr explicit ResultCode(u32 raw_) : raw(raw_) {}
+    constexpr explicit Result(u32 raw_) : raw(raw_) {}
 
-    constexpr ResultCode(ErrorModule module_, u32 description_)
+    constexpr Result(ErrorModule module_, u32 description_)
         : raw(module.FormatValue(module_) | description.FormatValue(description_)) {}
 
     [[nodiscard]] constexpr bool IsSuccess() const {
@@ -132,18 +132,18 @@ union ResultCode {
     }
 };
 
-[[nodiscard]] constexpr bool operator==(const ResultCode& a, const ResultCode& b) {
+[[nodiscard]] constexpr bool operator==(const Result& a, const Result& b) {
     return a.raw == b.raw;
 }
 
-[[nodiscard]] constexpr bool operator!=(const ResultCode& a, const ResultCode& b) {
+[[nodiscard]] constexpr bool operator!=(const Result& a, const Result& b) {
     return !operator==(a, b);
 }
 
 // Convenience functions for creating some common kinds of errors:
 
-/// The default success `ResultCode`.
-constexpr ResultCode ResultSuccess(0);
+/// The default success `Result`.
+constexpr Result ResultSuccess(0);
 
 /**
  * Placeholder result code used for unknown error codes.
@@ -151,24 +151,24 @@ constexpr ResultCode ResultSuccess(0);
  * @note This should only be used when a particular error code
  *       is not known yet.
  */
-constexpr ResultCode ResultUnknown(UINT32_MAX);
+constexpr Result ResultUnknown(UINT32_MAX);
 
 /**
  * A ResultRange defines an inclusive range of error descriptions within an error module.
- * This can be used to check whether the description of a given ResultCode falls within the range.
- * The conversion function returns a ResultCode with its description set to description_start.
+ * This can be used to check whether the description of a given Result falls within the range.
+ * The conversion function returns a Result with its description set to description_start.
  *
  * An example of how it could be used:
  * \code
  * constexpr ResultRange ResultCommonError{ErrorModule::Common, 0, 9999};
  *
- * ResultCode Example(int value) {
- *     const ResultCode result = OtherExample(value);
+ * Result Example(int value) {
+ *     const Result result = OtherExample(value);
  *
  *     // This will only evaluate to true if result.module is ErrorModule::Common and
  *     // result.description is in between 0 and 9999 inclusive.
  *     if (ResultCommonError.Includes(result)) {
- *         // This returns ResultCode{ErrorModule::Common, 0};
+ *         // This returns Result{ErrorModule::Common, 0};
  *         return ResultCommonError;
  *     }
  *
@@ -181,22 +181,22 @@ public:
     consteval ResultRange(ErrorModule module, u32 description_start, u32 description_end_)
         : code{module, description_start}, description_end{description_end_} {}
 
-    [[nodiscard]] constexpr operator ResultCode() const {
+    [[nodiscard]] constexpr operator Result() const {
         return code;
     }
 
-    [[nodiscard]] constexpr bool Includes(ResultCode other) const {
+    [[nodiscard]] constexpr bool Includes(Result other) const {
         return code.module == other.module && code.description <= other.description &&
                other.description <= description_end;
     }
 
 private:
-    ResultCode code;
+    Result code;
     u32 description_end;
 };
 
 /**
- * This is an optional value type. It holds a `ResultCode` and, if that code is ResultSuccess, it
+ * This is an optional value type. It holds a `Result` and, if that code is ResultSuccess, it
  * also holds a result of type `T`. If the code is an error code (not ResultSuccess), then trying
  * to access the inner value with operator* is undefined behavior and will assert with Unwrap().
  * Users of this class must be cognizant to check the status of the ResultVal with operator bool(),
@@ -207,7 +207,7 @@ private:
  * ResultVal<int> Frobnicate(float strength) {
  *     if (strength < 0.f || strength > 1.0f) {
  *         // Can't frobnicate too weakly or too strongly
- *         return ResultCode{ErrorModule::Common, 1};
+ *         return Result{ErrorModule::Common, 1};
  *     } else {
  *         // Frobnicated! Give caller a cookie
  *         return 42;
@@ -230,7 +230,7 @@ class ResultVal {
 public:
     constexpr ResultVal() : expected{} {}
 
-    constexpr ResultVal(ResultCode code) : expected{Common::Unexpected(code)} {}
+    constexpr ResultVal(Result code) : expected{Common::Unexpected(code)} {}
 
     constexpr ResultVal(ResultRange range) : expected{Common::Unexpected(range)} {}
 
@@ -252,7 +252,7 @@ public:
         return expected.has_value();
     }
 
-    [[nodiscard]] constexpr ResultCode Code() const {
+    [[nodiscard]] constexpr Result Code() const {
         return expected.has_value() ? ResultSuccess : expected.error();
     }
 
@@ -320,7 +320,7 @@ public:
 
 private:
     // TODO (Morph): Replace this with C++23 std::expected.
-    Common::Expected<T, ResultCode> expected;
+    Common::Expected<T, Result> expected;
 };
 
 /**
@@ -337,7 +337,7 @@ private:
     target = std::move(*CONCAT2(check_result_L, __LINE__))
 
 /**
- * Analogous to CASCADE_RESULT, but for a bare ResultCode. The code will be propagated if
+ * Analogous to CASCADE_RESULT, but for a bare Result. The code will be propagated if
  * non-success, or discarded otherwise.
  */
 #define CASCADE_CODE(source)                                                                       \

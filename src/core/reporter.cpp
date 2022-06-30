@@ -63,7 +63,7 @@ json GetYuzuVersionData() {
     };
 }
 
-json GetReportCommonData(u64 title_id, ResultCode result, const std::string& timestamp,
+json GetReportCommonData(u64 title_id, Result result, const std::string& timestamp,
                          std::optional<u128> user_id = {}) {
     auto out = json{
         {"title_id", fmt::format("{:016X}", title_id)},
@@ -198,8 +198,8 @@ Reporter::Reporter(System& system_) : system(system_) {
 
 Reporter::~Reporter() = default;
 
-void Reporter::SaveCrashReport(u64 title_id, ResultCode result, u64 set_flags, u64 entry_point,
-                               u64 sp, u64 pc, u64 pstate, u64 afsr0, u64 afsr1, u64 esr, u64 far,
+void Reporter::SaveCrashReport(u64 title_id, Result result, u64 set_flags, u64 entry_point, u64 sp,
+                               u64 pc, u64 pstate, u64 afsr0, u64 afsr1, u64 esr, u64 far,
                                const std::array<u64, 31>& registers,
                                const std::array<u64, 32>& backtrace, u32 backtrace_size,
                                const std::string& arch, u32 unk10) const {
@@ -338,7 +338,7 @@ void Reporter::SavePlayReport(PlayReportType type, u64 title_id, std::vector<std
     SaveToFile(std::move(out), GetPath("play_report", title_id, timestamp));
 }
 
-void Reporter::SaveErrorReport(u64 title_id, ResultCode result,
+void Reporter::SaveErrorReport(u64 title_id, Result result,
                                std::optional<std::string> custom_text_main,
                                std::optional<std::string> custom_text_detail) const {
     if (!IsReportingEnabled()) {

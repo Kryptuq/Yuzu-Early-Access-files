@@ -28,7 +28,7 @@ public:
     void Initialize() override;
 
     bool TransactionComplete() const override;
-    ResultCode GetStatus() const override;
+    Result GetStatus() const override;
     void ExecuteInteractive() override;
     void Execute() override;
 
@@ -180,7 +180,7 @@ private:
     bool is_background{false};
 
     bool complete{false};
-    ResultCode status{ResultSuccess};
+    Result status{ResultSuccess};
 };
 
 } // namespace Service::AM::Applets

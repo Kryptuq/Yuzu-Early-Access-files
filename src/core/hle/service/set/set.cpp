@@ -74,7 +74,7 @@ constexpr std::array<std::pair<LanguageCode, KeyboardLayout>, 18> language_to_la
 constexpr std::size_t PRE_4_0_0_MAX_ENTRIES = 0xF;
 constexpr std::size_t POST_4_0_0_MAX_ENTRIES = 0x40;
 
-constexpr ResultCode ERR_INVALID_LANGUAGE{ErrorModule::Settings, 625};
+constexpr Result ERR_INVALID_LANGUAGE{ErrorModule::Settings, 625};
 
 void PushResponseLanguageCode(Kernel::HLERequestContext& ctx, std::size_t num_language_codes) {
     IPC::ResponseBuilder rb{ctx, 3};

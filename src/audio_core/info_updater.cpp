@@ -285,9 +285,8 @@ bool InfoUpdater::UpdateSplitterInfo(SplitterContext& splitter_context) {
     return true;
 }
 
-ResultCode InfoUpdater::UpdateMixes(MixContext& mix_context, std::size_t mix_buffer_count,
-                                    SplitterContext& splitter_context,
-                                    EffectContext& effect_context) {
+Result InfoUpdater::UpdateMixes(MixContext& mix_context, std::size_t mix_buffer_count,
+                                SplitterContext& splitter_context, EffectContext& effect_context) {
     std::vector<MixInfo::InParams> mix_in_params;
 
     if (!behavior_info.IsMixInParameterDirtyOnlyUpdateSupported()) {

@@ -34,7 +34,7 @@ public:
 
     bool IsServerClosed() const;
 
-    ResultCode EnqueueSession(KServerSession* session);
+    Result EnqueueSession(KServerSession* session);
 
     KClientPort& GetClientPort() {
         return client;

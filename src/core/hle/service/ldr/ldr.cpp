@@ -20,20 +20,20 @@
 
 namespace Service::LDR {
 
-constexpr ResultCode ERROR_INSUFFICIENT_ADDRESS_SPACE{ErrorModule::RO, 2};
+constexpr Result ERROR_INSUFFICIENT_ADDRESS_SPACE{ErrorModule::RO, 2};
 
-[[maybe_unused]] constexpr ResultCode ERROR_INVALID_MEMORY_STATE{ErrorModule::Loader, 51};
-constexpr ResultCode ERROR_INVALID_NRO{ErrorModule::Loader, 52};
-constexpr ResultCode ERROR_INVALID_NRR{ErrorModule::Loader, 53};
-constexpr ResultCode ERROR_MISSING_NRR_HASH{ErrorModule::Loader, 54};
-constexpr ResultCode ERROR_MAXIMUM_NRO{ErrorModule::Loader, 55};
-constexpr ResultCode ERROR_MAXIMUM_NRR{ErrorModule::Loader, 56};
-constexpr ResultCode ERROR_ALREADY_LOADED{ErrorModule::Loader, 57};
-constexpr ResultCode ERROR_INVALID_ALIGNMENT{ErrorModule::Loader, 81};
-constexpr ResultCode ERROR_INVALID_SIZE{ErrorModule::Loader, 82};
-constexpr ResultCode ERROR_INVALID_NRO_ADDRESS{ErrorModule::Loader, 84};
-[[maybe_unused]] constexpr ResultCode ERROR_INVALID_NRR_ADDRESS{ErrorModule::Loader, 85};
-constexpr ResultCode ERROR_NOT_INITIALIZED{ErrorModule::Loader, 87};
+[[maybe_unused]] constexpr Result ERROR_INVALID_MEMORY_STATE{ErrorModule::Loader, 51};
+constexpr Result ERROR_INVALID_NRO{ErrorModule::Loader, 52};
+constexpr Result ERROR_INVALID_NRR{ErrorModule::Loader, 53};
+constexpr Result ERROR_MISSING_NRR_HASH{ErrorModule::Loader, 54};
+constexpr Result ERROR_MAXIMUM_NRO{ErrorModule::Loader, 55};
+constexpr Result ERROR_MAXIMUM_NRR{ErrorModule::Loader, 56};
+constexpr Result ERROR_ALREADY_LOADED{ErrorModule::Loader, 57};
+constexpr Result ERROR_INVALID_ALIGNMENT{ErrorModule::Loader, 81};
+constexpr Result ERROR_INVALID_SIZE{ErrorModule::Loader, 82};
+constexpr Result ERROR_INVALID_NRO_ADDRESS{ErrorModule::Loader, 84};
+[[maybe_unused]] constexpr Result ERROR_INVALID_NRR_ADDRESS{ErrorModule::Loader, 85};
+constexpr Result ERROR_NOT_INITIALIZED{ErrorModule::Loader, 87};
 
 constexpr std::size_t MAXIMUM_LOADED_RO{0x40};
 constexpr std::size_t MAXIMUM_MAP_RETRIES{0x200};
@@ -307,7 +307,7 @@ public:
         return (start + size + padding_size) <= (end_info.GetAddress() + end_info.GetSize());
     }
 
-    ResultCode GetAvailableMapRegion(Kernel::KPageTable& page_table, u64 size, VAddr& out_addr) {
+    Result GetAvailableMapRegion(Kernel::KPageTable& page_table, u64 size, VAddr& out_addr) {
         size = Common::AlignUp(size, Kernel::PageSize);
         size += page_table.GetNumGuardPages() * Kernel::PageSize * 4;
 
@@ -364,7 +364,7 @@ public:
         for (std::size_t retry = 0; retry < MAXIMUM_MAP_RETRIES; retry++) {
             R_TRY(GetAvailableMapRegion(page_table, size, addr));
 
-            const ResultCode result{page_table.MapCodeMemory(addr, base_addr, size)};
+            const Result result{page_table.MapCodeMemory(addr, base_addr, size)};
             if (result == Kernel::ResultInvalidCurrentMemory) {
                 continue;
             }
@@ -397,8 +397,7 @@ public:
                         Kernel::KPageTable::ICacheInvalidationStrategy::InvalidateRange);
                 });
 
-                const ResultCode result{
-                    page_table.MapCodeMemory(addr + nro_size, bss_addr, bss_size)};
+                const Result result{page_table.MapCodeMemory(addr + nro_size, bss_addr, bss_size)};
 
                 if (result == Kernel::ResultInvalidCurrentMemory) {
                     continue;
@@ -419,8 +418,8 @@ public:
         return ERROR_INSUFFICIENT_ADDRESS_SPACE;
     }
 
-    ResultCode LoadNro(Kernel::KProcess* process, const NROHeader& nro_header, VAddr nro_addr,
-                       VAddr start) const {
+    Result LoadNro(Kernel::KProcess* process, const NROHeader& nro_header, VAddr nro_addr,
+                   VAddr start) const {
         const VAddr text_start{start + nro_header.segment_headers[TEXT_INDEX].memory_offset};
         const VAddr ro_start{start + nro_header.segment_headers[RO_INDEX].memory_offset};
         const VAddr data_start{start + nro_header.segment_headers[DATA_INDEX].memory_offset};
@@ -569,7 +568,7 @@ public:
         rb.Push(*map_result);
     }
 
-    ResultCode UnmapNro(const NROInfo& info) {
+    Result UnmapNro(const NROInfo& info) {
         // Each region must be unmapped separately to validate memory state
         auto& page_table{system.CurrentProcess()->PageTable()};
 

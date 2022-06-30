@@ -12,7 +12,7 @@
 
 namespace Service::AM::Applets {
 
-constexpr ResultCode ERR_USER_CANCELLED_SELECTION{ErrorModule::Account, 1};
+constexpr Result ERR_USER_CANCELLED_SELECTION{ErrorModule::Account, 1};
 
 ProfileSelect::ProfileSelect(Core::System& system_, LibraryAppletMode applet_mode_,
                              const Core::Frontend::ProfileSelectApplet& frontend_)
@@ -39,7 +39,7 @@ bool ProfileSelect::TransactionComplete() const {
     return complete;
 }
 
-ResultCode ProfileSelect::GetStatus() const {
+Result ProfileSelect::GetStatus() const {
     return status;
 }
 

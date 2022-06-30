@@ -20,9 +20,9 @@
 namespace Service::AM::Applets {
 
 // This error code (0x183ACA) is thrown when the applet fails to initialize.
-[[maybe_unused]] constexpr ResultCode ERR_CONTROLLER_APPLET_3101{ErrorModule::HID, 3101};
+[[maybe_unused]] constexpr Result ERR_CONTROLLER_APPLET_3101{ErrorModule::HID, 3101};
 // This error code (0x183CCA) is thrown when the u32 result in ControllerSupportResultInfo is 2.
-[[maybe_unused]] constexpr ResultCode ERR_CONTROLLER_APPLET_3102{ErrorModule::HID, 3102};
+[[maybe_unused]] constexpr Result ERR_CONTROLLER_APPLET_3102{ErrorModule::HID, 3102};
 
 static Core::Frontend::ControllerParameters ConvertToFrontendParameters(
     ControllerSupportArgPrivate private_arg, ControllerSupportArgHeader header, bool enable_text,
@@ -173,7 +173,7 @@ bool Controller::TransactionComplete() const {
     return complete;
 }
 
-ResultCode Controller::GetStatus() const {
+Result Controller::GetStatus() const {
     return status;
 }
 

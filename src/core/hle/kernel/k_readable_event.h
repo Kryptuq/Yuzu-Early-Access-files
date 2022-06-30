@@ -33,9 +33,9 @@ public:
     bool IsSignaled() const override;
     void Destroy() override;
 
-    ResultCode Signal();
-    ResultCode Clear();
-    ResultCode Reset();
+    Result Signal();
+    Result Clear();
+    Result Reset();
 
 private:
     bool is_signaled{};

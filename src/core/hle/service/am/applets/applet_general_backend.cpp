@@ -13,7 +13,7 @@
 
 namespace Service::AM::Applets {
 
-constexpr ResultCode ERROR_INVALID_PIN{ErrorModule::PCTL, 221};
+constexpr Result ERROR_INVALID_PIN{ErrorModule::PCTL, 221};
 
 static void LogCurrentStorage(AppletDataBroker& broker, std::string_view prefix) {
     std::shared_ptr<IStorage> storage = broker.PopNormalDataToApplet();
@@ -71,7 +71,7 @@ bool Auth::TransactionComplete() const {
     return complete;
 }
 
-ResultCode Auth::GetStatus() const {
+Result Auth::GetStatus() const {
     return successful ? ResultSuccess : ERROR_INVALID_PIN;
 }
 
@@ -136,7 +136,7 @@ void Auth::AuthFinished(bool is_successful) {
     successful = is_successful;
 
     struct Return {
-        ResultCode result_code;
+        Result result_code;
     };
     static_assert(sizeof(Return) == 0x4, "Return (AuthApplet) has incorrect size.");
 
@@ -170,7 +170,7 @@ bool PhotoViewer::TransactionComplete() const {
     return complete;
 }
 
-ResultCode PhotoViewer::GetStatus() const {
+Result PhotoViewer::GetStatus() const {
     return ResultSuccess;
 }
 
@@ -223,7 +223,7 @@ bool StubApplet::TransactionComplete() const {
     return true;
 }
 
-ResultCode StubApplet::GetStatus() const {
+Result StubApplet::GetStatus() const {
     LOG_WARNING(Service_AM, "called (STUBBED)");
     return ResultSuccess;
 }

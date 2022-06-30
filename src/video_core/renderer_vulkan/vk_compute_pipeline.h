@@ -24,12 +24,12 @@ namespace Vulkan {
 
 class Device;
 class PipelineStatistics;
-class VKScheduler;
+class Scheduler;
 
 class ComputePipeline {
 public:
     explicit ComputePipeline(const Device& device, DescriptorPool& descriptor_pool,
-                             VKUpdateDescriptorQueue& update_descriptor_queue,
+                             UpdateDescriptorQueue& update_descriptor_queue,
                              Common::ThreadWorker* thread_worker,
                              PipelineStatistics* pipeline_statistics,
                              VideoCore::ShaderNotify* shader_notify, const Shader::Info& info,
@@ -42,11 +42,11 @@ public:
     ComputePipeline(const ComputePipeline&) = delete;
 
     void Configure(Tegra::Engines::KeplerCompute& kepler_compute, Tegra::MemoryManager& gpu_memory,
-                   VKScheduler& scheduler, BufferCache& buffer_cache, TextureCache& texture_cache);
+                   Scheduler& scheduler, BufferCache& buffer_cache, TextureCache& texture_cache);
 
 private:
     const Device& device;
-    VKUpdateDescriptorQueue& update_descriptor_queue;
+    UpdateDescriptorQueue& update_descriptor_queue;
     Shader::Info info;
 
     VideoCommon::ComputeUniformBufferSizes uniform_buffer_sizes{};

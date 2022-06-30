@@ -16,7 +16,7 @@ class Device;
 class Framebuffer;
 class ImageView;
 class StateTracker;
-class VKScheduler;
+class Scheduler;
 
 struct BlitImagePipelineKey {
     constexpr auto operator<=>(const BlitImagePipelineKey&) const noexcept = default;
@@ -27,7 +27,7 @@ struct BlitImagePipelineKey {
 
 class BlitImageHelper {
 public:
-    explicit BlitImageHelper(const Device& device, VKScheduler& scheduler,
+    explicit BlitImageHelper(const Device& device, Scheduler& scheduler,
                              StateTracker& state_tracker, DescriptorPool& descriptor_pool);
     ~BlitImageHelper();
 
@@ -82,7 +82,7 @@ private:
                                       vk::ShaderModule& module);
 
     const Device& device;
-    VKScheduler& scheduler;
+    Scheduler& scheduler;
     StateTracker& state_tracker;
 
     vk::DescriptorSetLayout one_texture_set_layout;

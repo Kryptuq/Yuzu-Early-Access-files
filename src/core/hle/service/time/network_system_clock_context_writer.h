@@ -15,7 +15,7 @@ public:
         : SystemClockContextUpdateCallback{}, shared_memory{shared_memory_} {}
 
 protected:
-    ResultCode Update() override {
+    Result Update() override {
         shared_memory.UpdateNetworkSystemClockContext(context);
         return ResultSuccess;
     }

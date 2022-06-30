@@ -26,7 +26,7 @@ constexpr VkQueryType GetTarget(QueryType type) {
 
 } // Anonymous namespace
 
-QueryPool::QueryPool(const Device& device_, VKScheduler& scheduler, QueryType type_)
+QueryPool::QueryPool(const Device& device_, Scheduler& scheduler, QueryType type_)
     : ResourcePool{scheduler.GetMasterSemaphore(), GROW_STEP}, device{device_}, type{type_} {}
 
 QueryPool::~QueryPool() = default;
@@ -65,14 +65,14 @@ void QueryPool::Reserve(std::pair<VkQueryPool, u32> query) {
     usage[pool_index * GROW_STEP + static_cast<std::ptrdiff_t>(query.second)] = false;
 }
 
-VKQueryCache::VKQueryCache(VideoCore::RasterizerInterface& rasterizer_, const Device& device_,
-                           VKScheduler& scheduler_)
+QueryCache::QueryCache(VideoCore::RasterizerInterface& rasterizer_, const Device& device_,
+                       Scheduler& scheduler_)
     : QueryCacheBase{rasterizer_}, device{device_}, scheduler{scheduler_},
       query_pools{
           QueryPool{device_, scheduler_, QueryType::SamplesPassed},
       } {}
 
-VKQueryCache::~VKQueryCache() {
+QueryCache::~QueryCache() {
     // TODO(Rodrigo): This is a hack to destroy all HostCounter instances before the base class
     // destructor is called. The query cache should be redesigned to have a proper ownership model
     // instead of using shared pointers.
@@ -83,15 +83,15 @@ VKQueryCache::~VKQueryCache() {
     }
 }
 
-std::pair<VkQueryPool, u32> VKQueryCache::AllocateQuery(QueryType type) {
+std::pair<VkQueryPool, u32> QueryCache::AllocateQuery(QueryType type) {
     return query_pools[static_cast<std::size_t>(type)].Commit();
 }
 
-void VKQueryCache::Reserve(QueryType type, std::pair<VkQueryPool, u32> query) {
+void QueryCache::Reserve(QueryType type, std::pair<VkQueryPool, u32> query) {
     query_pools[static_cast<std::size_t>(type)].Reserve(query);
 }
 
-HostCounter::HostCounter(VKQueryCache& cache_, std::shared_ptr<HostCounter> dependency_,
+HostCounter::HostCounter(QueryCache& cache_, std::shared_ptr<HostCounter> dependency_,
                          QueryType type_)
     : HostCounterBase{std::move(dependency_)}, cache{cache_}, type{type_},
       query{cache_.AllocateQuery(type_)}, tick{cache_.GetScheduler().CurrentTick()} {

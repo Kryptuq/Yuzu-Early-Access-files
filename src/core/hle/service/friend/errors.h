@@ -7,5 +7,5 @@
 
 namespace Service::Friend {
 
-constexpr ResultCode ERR_NO_NOTIFICATIONS{ErrorModule::Account, 15};
+constexpr Result ERR_NO_NOTIFICATIONS{ErrorModule::Account, 15};
 }

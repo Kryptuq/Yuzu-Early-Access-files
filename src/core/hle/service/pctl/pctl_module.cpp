@@ -13,10 +13,10 @@ namespace Service::PCTL {
 
 namespace Error {
 
-constexpr ResultCode ResultNoFreeCommunication{ErrorModule::PCTL, 101};
-constexpr ResultCode ResultStereoVisionRestricted{ErrorModule::PCTL, 104};
-constexpr ResultCode ResultNoCapability{ErrorModule::PCTL, 131};
-constexpr ResultCode ResultNoRestrictionEnabled{ErrorModule::PCTL, 181};
+constexpr Result ResultNoFreeCommunication{ErrorModule::PCTL, 101};
+constexpr Result ResultStereoVisionRestricted{ErrorModule::PCTL, 104};
+constexpr Result ResultNoCapability{ErrorModule::PCTL, 131};
+constexpr Result ResultNoRestrictionEnabled{ErrorModule::PCTL, 181};
 
 } // namespace Error
 

@@ -26,7 +26,7 @@ enum class JoyPollingMode : u32 {
 };
 
 struct DataAccessorHeader {
-    ResultCode result{ResultUnknown};
+    Result result{ResultUnknown};
     INSERT_PADDING_WORDS(0x1);
     std::array<u8, 0x18> unused{};
     u64 latest_entry{};

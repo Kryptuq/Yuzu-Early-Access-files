@@ -50,7 +50,7 @@ bool KPort::IsServerClosed() const {
     return state == State::ServerClosed;
 }
 
-ResultCode KPort::EnqueueSession(KServerSession* session) {
+Result KPort::EnqueueSession(KServerSession* session) {
     KScopedSchedulerLock sl{kernel};
 
     R_UNLESS(state == State::Normal, ResultPortClosed);

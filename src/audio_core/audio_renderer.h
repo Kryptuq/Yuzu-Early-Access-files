@@ -43,10 +43,10 @@ public:
                   Stream::ReleaseCallback&& release_callback, std::size_t instance_number);
     ~AudioRenderer();
 
-    [[nodiscard]] ResultCode UpdateAudioRenderer(const std::vector<u8>& input_params,
-                                                 std::vector<u8>& output_params);
-    [[nodiscard]] ResultCode Start();
-    [[nodiscard]] ResultCode Stop();
+    [[nodiscard]] Result UpdateAudioRenderer(const std::vector<u8>& input_params,
+                                             std::vector<u8>& output_params);
+    [[nodiscard]] Result Start();
+    [[nodiscard]] Result Stop();
     void QueueMixedBuffer(Buffer::Tag tag);
     void ReleaseAndQueueBuffers();
     [[nodiscard]] u32 GetSampleRate() const;

@@ -62,8 +62,7 @@ enum class FatalType : u32 {
     ErrorScreen = 2,
 };
 
-static void GenerateErrorReport(Core::System& system, ResultCode error_code,
-                                const FatalInfo& info) {
+static void GenerateErrorReport(Core::System& system, Result error_code, const FatalInfo& info) {
     const auto title_id = system.GetCurrentProcessProgramID();
     std::string crash_report = fmt::format(
         "Yuzu {}-{} crash report\n"
@@ -106,7 +105,7 @@ static void GenerateErrorReport(Core::System& system, ResultCode error_code,
         info.backtrace_size, info.ArchAsString(), info.unk10);
 }
 
-static void ThrowFatalError(Core::System& system, ResultCode error_code, FatalType fatal_type,
+static void ThrowFatalError(Core::System& system, Result error_code, FatalType fatal_type,
                             const FatalInfo& info) {
     LOG_ERROR(Service_Fatal, "Threw fatal error type {} with error code 0x{:X}", fatal_type,
               error_code.raw);
@@ -129,7 +128,7 @@ static void ThrowFatalError(Core::System& system, ResultCode error_code, FatalTy
 void Module::Interface::ThrowFatal(Kernel::HLERequestContext& ctx) {
     LOG_ERROR(Service_Fatal, "called");
     IPC::RequestParser rp{ctx};
-    const auto error_code = rp.Pop<ResultCode>();
+    const auto error_code = rp.Pop<Result>();
 
     ThrowFatalError(system, error_code, FatalType::ErrorScreen, {});
     IPC::ResponseBuilder rb{ctx, 2};
@@ -139,7 +138,7 @@ void Module::Interface::ThrowFatal(Kernel::HLERequestContext& ctx) {
 void Module::Interface::ThrowFatalWithPolicy(Kernel::HLERequestContext& ctx) {
     LOG_ERROR(Service_Fatal, "called");
     IPC::RequestParser rp(ctx);
-    const auto error_code = rp.Pop<ResultCode>();
+    const auto error_code = rp.Pop<Result>();
     const auto fatal_type = rp.PopEnum<FatalType>();
 
     ThrowFatalError(system, error_code, fatal_type,
@@ -151,7 +150,7 @@ void Module::Interface::ThrowFatalWithPolicy(Kernel::HLERequestContext& ctx) {
 void Module::Interface::ThrowFatalWithCpuContext(Kernel::HLERequestContext& ctx) {
     LOG_ERROR(Service_Fatal, "called");
     IPC::RequestParser rp(ctx);
-    const auto error_code = rp.Pop<ResultCode>();
+    const auto error_code = rp.Pop<Result>();
     const auto fatal_type = rp.PopEnum<FatalType>();
     const auto fatal_info = ctx.ReadBuffer();
     FatalInfo info{};

@@ -12,12 +12,12 @@ namespace Service::PM {
 
 namespace {
 
-constexpr ResultCode ResultProcessNotFound{ErrorModule::PM, 1};
-[[maybe_unused]] constexpr ResultCode ResultAlreadyStarted{ErrorModule::PM, 2};
-[[maybe_unused]] constexpr ResultCode ResultNotTerminated{ErrorModule::PM, 3};
-[[maybe_unused]] constexpr ResultCode ResultDebugHookInUse{ErrorModule::PM, 4};
-[[maybe_unused]] constexpr ResultCode ResultApplicationRunning{ErrorModule::PM, 5};
-[[maybe_unused]] constexpr ResultCode ResultInvalidSize{ErrorModule::PM, 6};
+constexpr Result ResultProcessNotFound{ErrorModule::PM, 1};
+[[maybe_unused]] constexpr Result ResultAlreadyStarted{ErrorModule::PM, 2};
+[[maybe_unused]] constexpr Result ResultNotTerminated{ErrorModule::PM, 3};
+[[maybe_unused]] constexpr Result ResultDebugHookInUse{ErrorModule::PM, 4};
+[[maybe_unused]] constexpr Result ResultApplicationRunning{ErrorModule::PM, 5};
+[[maybe_unused]] constexpr Result ResultInvalidSize{ErrorModule::PM, 6};
 
 constexpr u64 NO_PROCESS_FOUND_PID{0};
 

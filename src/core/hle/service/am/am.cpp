@@ -40,9 +40,9 @@
 
 namespace Service::AM {
 
-constexpr ResultCode ERR_NO_DATA_IN_CHANNEL{ErrorModule::AM, 2};
-constexpr ResultCode ERR_NO_MESSAGES{ErrorModule::AM, 3};
-constexpr ResultCode ERR_SIZE_OUT_OF_BOUNDS{ErrorModule::AM, 503};
+constexpr Result ERR_NO_DATA_IN_CHANNEL{ErrorModule::AM, 2};
+constexpr Result ERR_NO_MESSAGES{ErrorModule::AM, 3};
+constexpr Result ERR_SIZE_OUT_OF_BOUNDS{ErrorModule::AM, 503};
 
 enum class LaunchParameterKind : u32 {
     ApplicationSpecific = 1,
@@ -365,7 +365,7 @@ void ISelfController::LeaveFatalSection(Kernel::HLERequestContext& ctx) {
     // Entry and exit of fatal sections must be balanced.
     if (num_fatal_sections_entered == 0) {
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultCode{ErrorModule::AM, 512});
+        rb.Push(Result{ErrorModule::AM, 512});
         return;
     }
 

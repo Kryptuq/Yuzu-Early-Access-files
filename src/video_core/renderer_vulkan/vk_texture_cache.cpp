@@ -648,7 +648,7 @@ struct RangedBarrierRange {
     return VK_FORMAT_R32_UINT;
 }
 
-void BlitScale(VKScheduler& scheduler, VkImage src_image, VkImage dst_image, const ImageInfo& info,
+void BlitScale(Scheduler& scheduler, VkImage src_image, VkImage dst_image, const ImageInfo& info,
                VkImageAspectFlags aspect_mask, const Settings::ResolutionScalingInfo& resolution,
                bool up_scaling = true) {
     const bool is_2d = info.type == ImageType::e2D;
@@ -788,7 +788,7 @@ void BlitScale(VKScheduler& scheduler, VkImage src_image, VkImage dst_image, con
 }
 } // Anonymous namespace
 
-TextureCacheRuntime::TextureCacheRuntime(const Device& device_, VKScheduler& scheduler_,
+TextureCacheRuntime::TextureCacheRuntime(const Device& device_, Scheduler& scheduler_,
                                          MemoryAllocator& memory_allocator_,
                                          StagingBufferPool& staging_buffer_pool_,
                                          BlitImageHelper& blit_image_helper_,

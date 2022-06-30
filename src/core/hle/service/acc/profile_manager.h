@@ -64,9 +64,9 @@ public:
     ProfileManager();
     ~ProfileManager();
 
-    ResultCode AddUser(const ProfileInfo& user);
-    ResultCode CreateNewUser(Common::UUID uuid, const ProfileUsername& username);
-    ResultCode CreateNewUser(Common::UUID uuid, const std::string& username);
+    Result AddUser(const ProfileInfo& user);
+    Result CreateNewUser(Common::UUID uuid, const ProfileUsername& username);
+    Result CreateNewUser(Common::UUID uuid, const std::string& username);
     std::optional<Common::UUID> GetUser(std::size_t index) const;
     std::optional<std::size_t> GetUserIndex(const Common::UUID& uuid) const;
     std::optional<std::size_t> GetUserIndex(const ProfileInfo& user) const;

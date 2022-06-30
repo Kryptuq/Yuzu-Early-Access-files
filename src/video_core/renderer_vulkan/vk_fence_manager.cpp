@@ -11,7 +11,7 @@
 
 namespace Vulkan {
 
-InnerFence::InnerFence(VKScheduler& scheduler_, bool is_stubbed_)
+InnerFence::InnerFence(Scheduler& scheduler_, bool is_stubbed_)
     : FenceBase{is_stubbed_}, scheduler{scheduler_} {}
 
 InnerFence::~InnerFence() = default;
@@ -39,26 +39,25 @@ void InnerFence::Wait() {
     scheduler.Wait(wait_tick);
 }
 
-VKFenceManager::VKFenceManager(VideoCore::RasterizerInterface& rasterizer_, Tegra::GPU& gpu_,
-                               TextureCache& texture_cache_, BufferCache& buffer_cache_,
-                               VKQueryCache& query_cache_, const Device& device_,
-                               VKScheduler& scheduler_)
+FenceManager::FenceManager(VideoCore::RasterizerInterface& rasterizer_, Tegra::GPU& gpu_,
+                           TextureCache& texture_cache_, BufferCache& buffer_cache_,
+                           QueryCache& query_cache_, const Device& device_, Scheduler& scheduler_)
     : GenericFenceManager{rasterizer_, gpu_, texture_cache_, buffer_cache_, query_cache_},
       scheduler{scheduler_} {}
 
-Fence VKFenceManager::CreateFence(bool is_stubbed) {
+Fence FenceManager::CreateFence(bool is_stubbed) {
     return std::make_shared<InnerFence>(scheduler, is_stubbed);
 }
 
-void VKFenceManager::QueueFence(Fence& fence) {
+void FenceManager::QueueFence(Fence& fence) {
     fence->Queue();
 }
 
-bool VKFenceManager::IsFenceSignaled(Fence& fence) const {
+bool FenceManager::IsFenceSignaled(Fence& fence) const {
     return fence->IsSignaled();
 }
 
-void VKFenceManager::WaitFence(Fence& fence) {
+void FenceManager::WaitFence(Fence& fence) {
     fence->Wait();
 }
 

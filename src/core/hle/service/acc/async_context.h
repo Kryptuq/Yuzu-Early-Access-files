@@ -26,7 +26,7 @@ public:
 protected:
     virtual bool IsComplete() const = 0;
     virtual void Cancel() = 0;
-    virtual ResultCode GetResult() const = 0;
+    virtual Result GetResult() const = 0;
 
     void MarkComplete();
 

@@ -24,9 +24,9 @@ public:
         KThread* thread{};
     };
 
-    [[nodiscard]] static ResultCode Wait(KernelCore& kernel, s32* out_index,
-                                         KSynchronizationObject** objects, const s32 num_objects,
-                                         s64 timeout);
+    [[nodiscard]] static Result Wait(KernelCore& kernel, s32* out_index,
+                                     KSynchronizationObject** objects, const s32 num_objects,
+                                     s64 timeout);
 
     void Finalize() override;
 
@@ -72,7 +72,7 @@ protected:
 
     virtual void OnFinalizeSynchronizationObject() {}
 
-    void NotifyAvailable(ResultCode result);
+    void NotifyAvailable(Result result);
     void NotifyAvailable() {
         return this->NotifyAvailable(ResultSuccess);
     }

@@ -16,7 +16,7 @@ namespace Service::Mii {
 
 namespace {
 
-constexpr ResultCode ERROR_CANNOT_FIND_ENTRY{ErrorModule::Mii, 4};
+constexpr Result ERROR_CANNOT_FIND_ENTRY{ErrorModule::Mii, 4};
 
 constexpr std::size_t BaseMiiCount{2};
 constexpr std::size_t DefaultMiiCount{RawData::DefaultMii.size()};
@@ -441,7 +441,7 @@ ResultVal<std::vector<MiiInfoElement>> MiiManager::GetDefault(SourceFlag source_
     return result;
 }
 
-ResultCode MiiManager::GetIndex([[maybe_unused]] const MiiInfo& info, u32& index) {
+Result MiiManager::GetIndex([[maybe_unused]] const MiiInfo& info, u32& index) {
     constexpr u32 INVALID_INDEX{0xFFFFFFFF};
 
     index = INVALID_INDEX;

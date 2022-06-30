@@ -7,7 +7,7 @@
 #include "core/hle/kernel/k_code_memory.h"
 #include "core/hle/kernel/k_light_lock.h"
 #include "core/hle/kernel/k_memory_block.h"
-#include "core/hle/kernel/k_page_linked_list.h"
+#include "core/hle/kernel/k_page_group.h"
 #include "core/hle/kernel/k_page_table.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/slab_helpers.h"
@@ -19,7 +19,7 @@ namespace Kernel {
 KCodeMemory::KCodeMemory(KernelCore& kernel_)
     : KAutoObjectWithSlabHeapAndContainer{kernel_}, m_lock(kernel_) {}
 
-ResultCode KCodeMemory::Initialize(Core::DeviceMemory& device_memory, VAddr addr, size_t size) {
+Result KCodeMemory::Initialize(Core::DeviceMemory& device_memory, VAddr addr, size_t size) {
     // Set members.
     m_owner = kernel.CurrentProcess();
 
@@ -62,7 +62,7 @@ void KCodeMemory::Finalize() {
     m_owner->Close();
 }
 
-ResultCode KCodeMemory::Map(VAddr address, size_t size) {
+Result KCodeMemory::Map(VAddr address, size_t size) {
     // Validate the size.
     R_UNLESS(m_page_group.GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
 
@@ -82,7 +82,7 @@ ResultCode KCodeMemory::Map(VAddr address, size_t size) {
     return ResultSuccess;
 }
 
-ResultCode KCodeMemory::Unmap(VAddr address, size_t size) {
+Result KCodeMemory::Unmap(VAddr address, size_t size) {
     // Validate the size.
     R_UNLESS(m_page_group.GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
 
@@ -99,7 +99,7 @@ ResultCode KCodeMemory::Unmap(VAddr address, size_t size) {
     return ResultSuccess;
 }
 
-ResultCode KCodeMemory::MapToOwner(VAddr address, size_t size, Svc::MemoryPermission perm) {
+Result KCodeMemory::MapToOwner(VAddr address, size_t size, Svc::MemoryPermission perm) {
     // Validate the size.
     R_UNLESS(m_page_group.GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
 
@@ -133,7 +133,7 @@ ResultCode KCodeMemory::MapToOwner(VAddr address, size_t size, Svc::MemoryPermis
     return ResultSuccess;
 }
 
-ResultCode KCodeMemory::UnmapFromOwner(VAddr address, size_t size) {
+Result KCodeMemory::UnmapFromOwner(VAddr address, size_t size) {
     // Validate the size.
     R_UNLESS(m_page_group.GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
 

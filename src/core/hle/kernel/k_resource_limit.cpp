@@ -73,7 +73,7 @@ s64 KResourceLimit::GetFreeValue(LimitableResource which) const {
     return value;
 }
 
-ResultCode KResourceLimit::SetLimitValue(LimitableResource which, s64 value) {
+Result KResourceLimit::SetLimitValue(LimitableResource which, s64 value) {
     const auto index = static_cast<std::size_t>(which);
     KScopedLightLock lk(lock);
     R_UNLESS(current_values[index] <= value, ResultInvalidState);

@@ -33,11 +33,11 @@ class ImageView;
 class Framebuffer;
 class RenderPassCache;
 class StagingBufferPool;
-class VKScheduler;
+class Scheduler;
 
 class TextureCacheRuntime {
 public:
-    explicit TextureCacheRuntime(const Device& device_, VKScheduler& scheduler_,
+    explicit TextureCacheRuntime(const Device& device_, Scheduler& scheduler_,
                                  MemoryAllocator& memory_allocator_,
                                  StagingBufferPool& staging_buffer_pool_,
                                  BlitImageHelper& blit_image_helper_,
@@ -93,7 +93,7 @@ public:
     [[nodiscard]] VkBuffer GetTemporaryBuffer(size_t needed_size);
 
     const Device& device;
-    VKScheduler& scheduler;
+    Scheduler& scheduler;
     MemoryAllocator& memory_allocator;
     StagingBufferPool& staging_buffer_pool;
     BlitImageHelper& blit_image_helper;
@@ -154,7 +154,7 @@ private:
 
     bool NeedsScaleHelper() const;
 
-    VKScheduler* scheduler{};
+    Scheduler* scheduler{};
     TextureCacheRuntime* runtime{};
 
     vk::Image original_image;

@@ -34,10 +34,10 @@
 
 namespace Service::VI {
 
-constexpr ResultCode ERR_OPERATION_FAILED{ErrorModule::VI, 1};
-constexpr ResultCode ERR_PERMISSION_DENIED{ErrorModule::VI, 5};
-constexpr ResultCode ERR_UNSUPPORTED{ErrorModule::VI, 6};
-constexpr ResultCode ERR_NOT_FOUND{ErrorModule::VI, 7};
+constexpr Result ERR_OPERATION_FAILED{ErrorModule::VI, 1};
+constexpr Result ERR_PERMISSION_DENIED{ErrorModule::VI, 5};
+constexpr Result ERR_UNSUPPORTED{ErrorModule::VI, 6};
+constexpr Result ERR_NOT_FOUND{ErrorModule::VI, 7};
 
 struct DisplayInfo {
     /// The name of this particular display.

@@ -168,7 +168,7 @@ private:
 };
 
 inline void PushImageDescriptors(TextureCache& texture_cache,
-                                 VKUpdateDescriptorQueue& update_descriptor_queue,
+                                 UpdateDescriptorQueue& update_descriptor_queue,
                                  const Shader::Info& info, RescalingPushConstant& rescaling,
                                  const VkSampler*& samplers,
                                  const VideoCommon::ImageViewInOut*& views) {

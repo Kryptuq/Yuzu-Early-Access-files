@@ -13,7 +13,7 @@
 
 namespace Kernel {
 
-ResultCode KThreadLocalPage::Initialize(KernelCore& kernel, KProcess* process) {
+Result KThreadLocalPage::Initialize(KernelCore& kernel, KProcess* process) {
     // Set that this process owns us.
     m_owner = process;
     m_kernel = &kernel;
@@ -35,7 +35,7 @@ ResultCode KThreadLocalPage::Initialize(KernelCore& kernel, KProcess* process) {
     return ResultSuccess;
 }
 
-ResultCode KThreadLocalPage::Finalize() {
+Result KThreadLocalPage::Finalize() {
     // Get the physical address of the page.
     const PAddr phys_addr = m_owner->PageTable().GetPhysicalAddr(m_virt_addr);
     ASSERT(phys_addr);

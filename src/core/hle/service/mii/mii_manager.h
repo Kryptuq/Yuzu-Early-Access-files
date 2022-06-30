@@ -23,7 +23,7 @@ public:
     MiiInfo BuildRandom(Age age, Gender gender, Race race);
     MiiInfo BuildDefault(std::size_t index);
     ResultVal<std::vector<MiiInfoElement>> GetDefault(SourceFlag source_flag);
-    ResultCode GetIndex(const MiiInfo& info, u32& index);
+    Result GetIndex(const MiiInfo& info, u32& index);
 
 private:
     const Common::UUID user_id{};

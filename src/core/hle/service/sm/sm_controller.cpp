@@ -33,7 +33,7 @@ void Controller::CloneCurrentObject(Kernel::HLERequestContext& ctx) {
 
     // Create a session.
     Kernel::KClientSession* session{};
-    const ResultCode result = parent_port.CreateSession(std::addressof(session), session_manager);
+    const Result result = parent_port.CreateSession(std::addressof(session), session_manager);
     if (result.IsError()) {
         LOG_CRITICAL(Service, "CreateSession failed with error 0x{:08X}", result.raw);
         IPC::ResponseBuilder rb{ctx, 2};

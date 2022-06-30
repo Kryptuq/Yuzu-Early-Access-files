@@ -8,7 +8,7 @@
 #include "core/hle/kernel/k_condition_variable.h"
 #include "core/hle/kernel/svc_types.h"
 
-union ResultCode;
+union Result;
 
 namespace Core {
 class System;
@@ -25,8 +25,7 @@ public:
     explicit KAddressArbiter(Core::System& system_);
     ~KAddressArbiter();
 
-    [[nodiscard]] ResultCode SignalToAddress(VAddr addr, Svc::SignalType type, s32 value,
-                                             s32 count) {
+    [[nodiscard]] Result SignalToAddress(VAddr addr, Svc::SignalType type, s32 value, s32 count) {
         switch (type) {
         case Svc::SignalType::Signal:
             return Signal(addr, count);
@@ -39,8 +38,8 @@ public:
         return ResultUnknown;
     }
 
-    [[nodiscard]] ResultCode WaitForAddress(VAddr addr, Svc::ArbitrationType type, s32 value,
-                                            s64 timeout) {
+    [[nodiscard]] Result WaitForAddress(VAddr addr, Svc::ArbitrationType type, s32 value,
+                                        s64 timeout) {
         switch (type) {
         case Svc::ArbitrationType::WaitIfLessThan:
             return WaitIfLessThan(addr, value, false, timeout);
@@ -54,11 +53,11 @@ public:
     }
 
 private:
-    [[nodiscard]] ResultCode Signal(VAddr addr, s32 count);
-    [[nodiscard]] ResultCode SignalAndIncrementIfEqual(VAddr addr, s32 value, s32 count);
-    [[nodiscard]] ResultCode SignalAndModifyByWaitingCountIfEqual(VAddr addr, s32 value, s32 count);
-    [[nodiscard]] ResultCode WaitIfLessThan(VAddr addr, s32 value, bool decrement, s64 timeout);
-    [[nodiscard]] ResultCode WaitIfEqual(VAddr addr, s32 value, s64 timeout);
+    [[nodiscard]] Result Signal(VAddr addr, s32 count);
+    [[nodiscard]] Result SignalAndIncrementIfEqual(VAddr addr, s32 value, s32 count);
+    [[nodiscard]] Result SignalAndModifyByWaitingCountIfEqual(VAddr addr, s32 value, s32 count);
+    [[nodiscard]] Result WaitIfLessThan(VAddr addr, s32 value, bool decrement, s64 timeout);
+    [[nodiscard]] Result WaitIfEqual(VAddr addr, s32 value, s64 timeout);
 
     ThreadTree thread_tree;
 

@@ -41,8 +41,8 @@ ResultVal<std::vector<u8>> ARPManager::GetControlProperty(u64 title_id) const {
     return iter->second.control;
 }
 
-ResultCode ARPManager::Register(u64 title_id, ApplicationLaunchProperty launch,
-                                std::vector<u8> control) {
+Result ARPManager::Register(u64 title_id, ApplicationLaunchProperty launch,
+                            std::vector<u8> control) {
     if (title_id == 0) {
         return ERR_INVALID_PROCESS_ID;
     }
@@ -56,7 +56,7 @@ ResultCode ARPManager::Register(u64 title_id, ApplicationLaunchProperty launch,
     return ResultSuccess;
 }
 
-ResultCode ARPManager::Unregister(u64 title_id) {
+Result ARPManager::Unregister(u64 title_id) {
     if (title_id == 0) {
         return ERR_INVALID_PROCESS_ID;
     }

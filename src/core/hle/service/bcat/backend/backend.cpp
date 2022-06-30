@@ -74,7 +74,7 @@ void ProgressServiceBackend::CommitDirectory(std::string_view dir_name) {
     SignalUpdate();
 }
 
-void ProgressServiceBackend::FinishDownload(ResultCode result) {
+void ProgressServiceBackend::FinishDownload(Result result) {
     impl.total_downloaded_bytes = impl.total_bytes;
     impl.status = DeliveryCacheProgressImpl::Status::Done;
     impl.result = result;

@@ -17,10 +17,10 @@
 
 namespace Service::NFP {
 namespace ErrCodes {
-constexpr ResultCode DeviceNotFound(ErrorModule::NFP, 64);
-constexpr ResultCode WrongDeviceState(ErrorModule::NFP, 73);
-constexpr ResultCode ApplicationAreaIsNotInitialized(ErrorModule::NFP, 128);
-constexpr ResultCode ApplicationAreaExist(ErrorModule::NFP, 168);
+constexpr Result DeviceNotFound(ErrorModule::NFP, 64);
+constexpr Result WrongDeviceState(ErrorModule::NFP, 73);
+constexpr Result ApplicationAreaIsNotInitialized(ErrorModule::NFP, 128);
+constexpr Result ApplicationAreaExist(ErrorModule::NFP, 168);
 } // namespace ErrCodes
 
 constexpr u32 ApplicationAreaSize = 0xD8;
@@ -585,7 +585,7 @@ void Module::Interface::Finalize() {
     application_area_data.clear();
 }
 
-ResultCode Module::Interface::StartDetection(s32 protocol_) {
+Result Module::Interface::StartDetection(s32 protocol_) {
     auto npad_device = system.HIDCore().GetEmulatedController(npad_id);
 
     // TODO(german77): Add callback for when nfc data is available
@@ -601,7 +601,7 @@ ResultCode Module::Interface::StartDetection(s32 protocol_) {
     return ErrCodes::WrongDeviceState;
 }
 
-ResultCode Module::Interface::StopDetection() {
+Result Module::Interface::StopDetection() {
     auto npad_device = system.HIDCore().GetEmulatedController(npad_id);
     npad_device->SetPollingMode(Common::Input::PollingMode::Active);
 
@@ -618,7 +618,7 @@ ResultCode Module::Interface::StopDetection() {
     return ErrCodes::WrongDeviceState;
 }
 
-ResultCode Module::Interface::Mount() {
+Result Module::Interface::Mount() {
     if (device_state == DeviceState::TagFound) {
         device_state = DeviceState::TagMounted;
         return ResultSuccess;
@@ -628,7 +628,7 @@ ResultCode Module::Interface::Mount() {
     return ErrCodes::WrongDeviceState;
 }
 
-ResultCode Module::Interface::Unmount() {
+Result Module::Interface::Unmount() {
     if (device_state == DeviceState::TagMounted) {
         is_application_area_initialized = false;
         application_area_id = 0;
@@ -641,7 +641,7 @@ ResultCode Module::Interface::Unmount() {
     return ErrCodes::WrongDeviceState;
 }
 
-ResultCode Module::Interface::GetTagInfo(TagInfo& tag_info) const {
+Result Module::Interface::GetTagInfo(TagInfo& tag_info) const {
     if (device_state == DeviceState::TagFound || device_state == DeviceState::TagMounted) {
         tag_info = {
             .uuid = tag_data.uuid,
@@ -656,7 +656,7 @@ ResultCode Module::Interface::GetTagInfo(TagInfo& tag_info) const {
     return ErrCodes::WrongDeviceState;
 }
 
-ResultCode Module::Interface::GetCommonInfo(CommonInfo& common_info) const {
+Result Module::Interface::GetCommonInfo(CommonInfo& common_info) const {
     if (device_state != DeviceState::TagMounted) {
         LOG_ERROR(Service_NFP, "Wrong device state {}", device_state);
         return ErrCodes::WrongDeviceState;
@@ -674,7 +674,7 @@ ResultCode Module::Interface::GetCommonInfo(CommonInfo& common_info) const {
     return ResultSuccess;
 }
 
-ResultCode Module::Interface::GetModelInfo(ModelInfo& model_info) const {
+Result Module::Interface::GetModelInfo(ModelInfo& model_info) const {
     if (device_state != DeviceState::TagMounted) {
         LOG_ERROR(Service_NFP, "Wrong device state {}", device_state);
         return ErrCodes::WrongDeviceState;
@@ -684,7 +684,7 @@ ResultCode Module::Interface::GetModelInfo(ModelInfo& model_info) const {
     return ResultSuccess;
 }
 
-ResultCode Module::Interface::GetRegisterInfo(RegisterInfo& register_info) const {
+Result Module::Interface::GetRegisterInfo(RegisterInfo& register_info) const {
     if (device_state != DeviceState::TagMounted) {
         LOG_ERROR(Service_NFP, "Wrong device state {}", device_state);
         return ErrCodes::WrongDeviceState;
@@ -704,7 +704,7 @@ ResultCode Module::Interface::GetRegisterInfo(RegisterInfo& register_info) const
     return ResultSuccess;
 }
 
-ResultCode Module::Interface::OpenApplicationArea(u32 access_id) {
+Result Module::Interface::OpenApplicationArea(u32 access_id) {
     if (device_state != DeviceState::TagMounted) {
         LOG_ERROR(Service_NFP, "Wrong device state {}", device_state);
         return ErrCodes::WrongDeviceState;
@@ -721,7 +721,7 @@ ResultCode Module::Interface::OpenApplicationArea(u32 access_id) {
     return ResultSuccess;
 }
 
-ResultCode Module::Interface::GetApplicationArea(std::vector<u8>& data) const {
+Result Module::Interface::GetApplicationArea(std::vector<u8>& data) const {
     if (device_state != DeviceState::TagMounted) {
         LOG_ERROR(Service_NFP, "Wrong device state {}", device_state);
         return ErrCodes::WrongDeviceState;
@@ -736,7 +736,7 @@ ResultCode Module::Interface::GetApplicationArea(std::vector<u8>& data) const {
     return ResultSuccess;
 }
 
-ResultCode Module::Interface::SetApplicationArea(const std::vector<u8>& data) {
+Result Module::Interface::SetApplicationArea(const std::vector<u8>& data) {
     if (device_state != DeviceState::TagMounted) {
         LOG_ERROR(Service_NFP, "Wrong device state {}", device_state);
         return ErrCodes::WrongDeviceState;
@@ -750,7 +750,7 @@ ResultCode Module::Interface::SetApplicationArea(const std::vector<u8>& data) {
     return ResultSuccess;
 }
 
-ResultCode Module::Interface::CreateApplicationArea(u32 access_id, const std::vector<u8>& data) {
+Result Module::Interface::CreateApplicationArea(u32 access_id, const std::vector<u8>& data) {
     if (device_state != DeviceState::TagMounted) {
         LOG_ERROR(Service_NFP, "Wrong device state {}", device_state);
         return ErrCodes::WrongDeviceState;

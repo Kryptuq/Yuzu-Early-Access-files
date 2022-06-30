@@ -25,7 +25,7 @@ using Shader::Backend::SPIRV::RESCALING_LAYOUT_WORDS_OFFSET;
 using Tegra::Texture::TexturePair;
 
 ComputePipeline::ComputePipeline(const Device& device_, DescriptorPool& descriptor_pool,
-                                 VKUpdateDescriptorQueue& update_descriptor_queue_,
+                                 UpdateDescriptorQueue& update_descriptor_queue_,
                                  Common::ThreadWorker* thread_worker,
                                  PipelineStatistics* pipeline_statistics,
                                  VideoCore::ShaderNotify* shader_notify, const Shader::Info& info_,
@@ -91,7 +91,7 @@ ComputePipeline::ComputePipeline(const Device& device_, DescriptorPool& descript
 }
 
 void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
-                                Tegra::MemoryManager& gpu_memory, VKScheduler& scheduler,
+                                Tegra::MemoryManager& gpu_memory, Scheduler& scheduler,
                                 BufferCache& buffer_cache, TextureCache& texture_cache) {
     update_descriptor_queue.Acquire();
 

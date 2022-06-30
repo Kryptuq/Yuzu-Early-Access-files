@@ -39,7 +39,7 @@ class Maxwell3D;
 
 namespace Vulkan {
 
-struct VKScreenInfo;
+struct ScreenInfo;
 
 class StateTracker;
 
@@ -59,9 +59,9 @@ class RasterizerVulkan final : public VideoCore::RasterizerAccelerated,
                                protected VideoCommon::ChannelSetupCaches<VideoCommon::ChannelInfo> {
 public:
     explicit RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra::GPU& gpu_,
-                              Core::Memory::Memory& cpu_memory_, VKScreenInfo& screen_info_,
+                              Core::Memory::Memory& cpu_memory_, ScreenInfo& screen_info_,
                               const Device& device_, MemoryAllocator& memory_allocator_,
-                              StateTracker& state_tracker_, VKScheduler& scheduler_);
+                              StateTracker& state_tracker_, Scheduler& scheduler_);
     ~RasterizerVulkan() override;
 
     void Draw(bool is_indexed, bool is_instanced) override;
@@ -143,15 +143,15 @@ private:
 
     Tegra::GPU& gpu;
 
-    VKScreenInfo& screen_info;
+    ScreenInfo& screen_info;
     const Device& device;
     MemoryAllocator& memory_allocator;
     StateTracker& state_tracker;
-    VKScheduler& scheduler;
+    Scheduler& scheduler;
 
     StagingBufferPool staging_pool;
     DescriptorPool descriptor_pool;
-    VKUpdateDescriptorQueue update_descriptor_queue;
+    UpdateDescriptorQueue update_descriptor_queue;
     BlitImageHelper blit_image;
     ASTCDecoderPass astc_decoder_pass;
     RenderPassCache render_pass_cache;
@@ -161,9 +161,9 @@ private:
     BufferCacheRuntime buffer_cache_runtime;
     BufferCache buffer_cache;
     PipelineCache pipeline_cache;
-    VKQueryCache query_cache;
+    QueryCache query_cache;
     AccelerateDMA accelerate_dma;
-    VKFenceManager fence_manager;
+    FenceManager fence_manager;
 
     vk::Event wfi_event;
 

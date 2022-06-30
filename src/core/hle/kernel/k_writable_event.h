@@ -25,8 +25,8 @@ public:
     static void PostDestroy([[maybe_unused]] uintptr_t arg) {}
 
     void Initialize(KEvent* parent_, std::string&& name_);
-    ResultCode Signal();
-    ResultCode Clear();
+    Result Signal();
+    Result Clear();
 
     KEvent* GetParent() const {
         return parent;

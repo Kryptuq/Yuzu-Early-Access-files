@@ -28,9 +28,9 @@ public:
 
     ~StandardUserSystemClockCore() override;
 
-    ResultCode SetAutomaticCorrectionEnabled(Core::System& system, bool value);
+    Result SetAutomaticCorrectionEnabled(Core::System& system, bool value);
 
-    ResultCode GetClockContext(Core::System& system, SystemClockContext& ctx) const override;
+    Result GetClockContext(Core::System& system, SystemClockContext& ctx) const override;
 
     bool IsAutomaticCorrectionEnabled() const {
         return auto_correction_enabled;
@@ -41,11 +41,11 @@ public:
     }
 
 protected:
-    ResultCode Flush(const SystemClockContext&) override;
+    Result Flush(const SystemClockContext&) override;
 
-    ResultCode SetClockContext(const SystemClockContext&) override;
+    Result SetClockContext(const SystemClockContext&) override;
 
-    ResultCode ApplyAutomaticCorrection(Core::System& system, bool value) const;
+    Result ApplyAutomaticCorrection(Core::System& system, bool value) const;
 
     const SteadyClockTimePoint& GetAutomaticCorrectionUpdatedTime() const {
         return auto_correction_time;

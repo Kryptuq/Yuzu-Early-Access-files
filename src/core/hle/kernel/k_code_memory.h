@@ -7,7 +7,7 @@
 #include "core/device_memory.h"
 #include "core/hle/kernel/k_auto_object.h"
 #include "core/hle/kernel/k_light_lock.h"
-#include "core/hle/kernel/k_page_linked_list.h"
+#include "core/hle/kernel/k_page_group.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/slab_helpers.h"
 #include "core/hle/kernel/svc_types.h"
@@ -29,13 +29,13 @@ class KCodeMemory final
 public:
     explicit KCodeMemory(KernelCore& kernel_);
 
-    ResultCode Initialize(Core::DeviceMemory& device_memory, VAddr address, size_t size);
+    Result Initialize(Core::DeviceMemory& device_memory, VAddr address, size_t size);
     void Finalize();
 
-    ResultCode Map(VAddr address, size_t size);
-    ResultCode Unmap(VAddr address, size_t size);
-    ResultCode MapToOwner(VAddr address, size_t size, Svc::MemoryPermission perm);
-    ResultCode UnmapFromOwner(VAddr address, size_t size);
+    Result Map(VAddr address, size_t size);
+    Result Unmap(VAddr address, size_t size);
+    Result MapToOwner(VAddr address, size_t size, Svc::MemoryPermission perm);
+    Result UnmapFromOwner(VAddr address, size_t size);
 
     bool IsInitialized() const {
         return m_is_initialized;
@@ -53,7 +53,7 @@ public:
     }
 
 private:
-    KPageLinkedList m_page_group{};
+    KPageGroup m_page_group{};
     KProcess* m_owner{};
     VAddr m_address{};
     KLightLock m_lock;

@@ -12,18 +12,18 @@
 
 namespace Vulkan {
 
-VKUpdateDescriptorQueue::VKUpdateDescriptorQueue(const Device& device_, VKScheduler& scheduler_)
+UpdateDescriptorQueue::UpdateDescriptorQueue(const Device& device_, Scheduler& scheduler_)
     : device{device_}, scheduler{scheduler_} {
     payload_cursor = payload.data();
 }
 
-VKUpdateDescriptorQueue::~VKUpdateDescriptorQueue() = default;
+UpdateDescriptorQueue::~UpdateDescriptorQueue() = default;
 
-void VKUpdateDescriptorQueue::TickFrame() {
+void UpdateDescriptorQueue::TickFrame() {
     payload_cursor = payload.data();
 }
 
-void VKUpdateDescriptorQueue::Acquire() {
+void UpdateDescriptorQueue::Acquire() {
     // Minimum number of entries required.
     // This is the maximum number of entries a single draw call migth use.
     static constexpr size_t MIN_ENTRIES = 0x400;

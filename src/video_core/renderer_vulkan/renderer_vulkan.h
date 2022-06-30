@@ -65,14 +65,14 @@ private:
     vk::DebugUtilsMessenger debug_callback;
     vk::SurfaceKHR surface;
 
-    VKScreenInfo screen_info;
+    ScreenInfo screen_info;
 
     Device device;
     MemoryAllocator memory_allocator;
     StateTracker state_tracker;
-    VKScheduler scheduler;
-    VKSwapchain swapchain;
-    VKBlitScreen blit_screen;
+    Scheduler scheduler;
+    Swapchain swapchain;
+    BlitScreen blit_screen;
     RasterizerVulkan rasterizer;
 };
 

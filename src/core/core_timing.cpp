@@ -42,10 +42,10 @@ CoreTiming::CoreTiming()
 
 CoreTiming::~CoreTiming() = default;
 
-void CoreTiming::ThreadEntry(CoreTiming& instance) {
-    constexpr char name[] = "yuzu:HostTiming";
-    MicroProfileOnThreadCreate(name);
-    Common::SetCurrentThreadName(name);
+void CoreTiming::ThreadEntry(CoreTiming& instance, size_t id) {
+    const std::string name = "yuzu:HostTiming_" + std::to_string(id);
+    MicroProfileOnThreadCreate(name.c_str());
+    Common::SetCurrentThreadName(name.c_str());
     Common::SetCurrentThreadPriority(Common::ThreadPriority::Critical);
     instance.on_thread_init();
     instance.ThreadLoop();
@@ -61,9 +61,10 @@ void CoreTiming::Initialize(std::function<void()>&& on_thread_init_) {
     ev_lost = CreateEvent("_lost_event", empty_timed_callback);
     if (is_multicore) {
         const auto hardware_concurrency = std::thread::hardware_concurrency();
-        worker_threads.emplace_back(ThreadEntry, std::ref(*this));
+        size_t id = 0;
+        worker_threads.emplace_back(ThreadEntry, std::ref(*this), id++);
         if (hardware_concurrency > 8) {
-            worker_threads.emplace_back(ThreadEntry, std::ref(*this));
+            worker_threads.emplace_back(ThreadEntry, std::ref(*this), id++);
         }
     }
 }
@@ -71,11 +72,10 @@ void CoreTiming::Initialize(std::function<void()>&& on_thread_init_) {
 void CoreTiming::Shutdown() {
     is_paused = true;
     shutting_down = true;
-    {
-        std::unique_lock main_lock(event_mutex);
-        event_cv.notify_all();
-        wait_pause_cv.notify_all();
-    }
+    std::atomic_thread_fence(std::memory_order_release);
+
+    event_cv.notify_all();
+    wait_pause_cv.notify_all();
     for (auto& thread : worker_threads) {
         thread.join();
     }

@@ -90,10 +90,10 @@ void TimeZoneContentManager::Initialize(TimeManager& time_manager) {
     }
 }
 
-ResultCode TimeZoneContentManager::LoadTimeZoneRule(TimeZoneRule& rules,
-                                                    const std::string& location_name) const {
+Result TimeZoneContentManager::LoadTimeZoneRule(TimeZoneRule& rules,
+                                                const std::string& location_name) const {
     FileSys::VirtualFile vfs_file;
-    if (const ResultCode result{GetTimeZoneInfoFile(location_name, vfs_file)};
+    if (const Result result{GetTimeZoneInfoFile(location_name, vfs_file)};
         result != ResultSuccess) {
         return result;
     }
@@ -106,8 +106,8 @@ bool TimeZoneContentManager::IsLocationNameValid(const std::string& location_nam
            location_name_cache.end();
 }
 
-ResultCode TimeZoneContentManager::GetTimeZoneInfoFile(const std::string& location_name,
-                                                       FileSys::VirtualFile& vfs_file) const {
+Result TimeZoneContentManager::GetTimeZoneInfoFile(const std::string& location_name,
+                                                   FileSys::VirtualFile& vfs_file) const {
     if (!IsLocationNameValid(location_name)) {
         return ERROR_TIME_NOT_FOUND;
     }
