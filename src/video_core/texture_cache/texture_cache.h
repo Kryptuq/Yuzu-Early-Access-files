@@ -1,5 +1,7 @@
-// SPDX-FileCopyrightText: 2021 yuzu Emulator Project
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2021 yuzu emulator team
+// (https://github.com/skyline-emu/)
+// SPDX-License-Identifier: GPL-3.0-or-later Licensed under GPLv3
+// or any later version Refer to the license.txt file included.
 
 #pragma once
 
@@ -355,6 +357,7 @@ void TextureCache<P>::UpdateRenderTargets(bool is_clear) {
         (maxwell3d->regs.render_area.width * up_scale) >> down_shift,
         (maxwell3d->regs.render_area.height * up_scale) >> down_shift,
     };
+    render_targets.is_rescaled = is_rescaling;
 
     flags[Dirty::DepthBiasGlobal] = true;
 }

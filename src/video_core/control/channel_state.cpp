@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2022 yuzu Emulator Project
-// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2021 yuzu Emulator Project
+// Licensed under GPLv3 or any later version
+// Refer to the license.txt file included.
 
 #include "common/assert.h"
 #include "video_core/control/channel_state.h"

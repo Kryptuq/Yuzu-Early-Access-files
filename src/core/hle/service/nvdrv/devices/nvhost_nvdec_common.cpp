@@ -47,15 +47,21 @@ std::size_t WriteVectors(std::vector<u8>& dst, const std::vector<T>& src, std::s
 } // Anonymous namespace
 
 std::unordered_map<DeviceFD, u32> nvhost_nvdec_common::fd_to_id{};
+std::deque<u32> nvhost_nvdec_common::syncpts_accumulated{};
 
 nvhost_nvdec_common::nvhost_nvdec_common(Core::System& system_, NvCore::Container& core_,
                                          NvCore::ChannelType channel_type_)
     : nvdevice{system_}, core{core_}, syncpoint_manager{core.GetSyncpointManager()},
       nvmap{core.GetNvMapFile()}, channel_type{channel_type_} {
-    channel_syncpoint = syncpoint_manager.AllocateSyncpoint(false);
+    if (syncpts_accumulated.empty()) {
+        channel_syncpoint = syncpoint_manager.AllocateSyncpoint(false);
+    } else {
+        channel_syncpoint = syncpts_accumulated.front();
+        syncpts_accumulated.pop_front();
+    }
 }
 nvhost_nvdec_common::~nvhost_nvdec_common() {
-    syncpoint_manager.FreeSyncpoint(channel_syncpoint);
+    syncpts_accumulated.push_back(channel_syncpoint);
 }
 
 NvResult nvhost_nvdec_common::SetNVMAPfd(const std::vector<u8>& input) {

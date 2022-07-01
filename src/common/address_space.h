@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2021 Skyline Team and Contributors
-// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright © 2021 Skyline Team and Contributors (https://github.com/skyline-emu/)
+// Licensed under GPLv3 or any later version
+// Refer to the license.txt file included.
 
 #pragma once
 
@@ -23,29 +24,9 @@ template <typename VaType, VaType UnmappedVa, typename PaType, PaType UnmappedPa
           bool PaContigSplit, size_t AddressSpaceBits, typename ExtraBlockInfo = EmptyStruct>
 requires AddressSpaceValid<VaType, AddressSpaceBits>
 class FlatAddressSpaceMap {
-public:
-    /// The maximum VA that this AS can technically reach
-    static constexpr VaType VaMaximum{(1ULL << (AddressSpaceBits - 1)) +
-                                      ((1ULL << (AddressSpaceBits - 1)) - 1)};
-
-    explicit FlatAddressSpaceMap(VaType va_limit,
-                                 std::function<void(VaType, VaType)> unmap_callback = {});
-
-    FlatAddressSpaceMap() = default;
-
-    void Map(VaType virt, PaType phys, VaType size, ExtraBlockInfo extra_info = {}) {
-        std::scoped_lock lock(block_mutex);
-        MapLocked(virt, phys, size, extra_info);
-    }
-
-    void Unmap(VaType virt, VaType size) {
-        std::scoped_lock lock(block_mutex);
-        UnmapLocked(virt, size);
-    }
-
-    VaType GetVALimit() const {
-        return va_limit;
-    }
+private:
+    std::function<void(VaType, VaType)>
+        unmapCallback{}; //!< Callback called when the mappings in an region have changed
 
 protected:
     /**
@@ -53,55 +34,68 @@ protected:
      * another block with a different phys address is hit
      */
     struct Block {
-        /// VA of the block
-        VaType virt{UnmappedVa};
-        /// PA of the block, will increase 1-1 with VA until a new block is encountered
-        PaType phys{UnmappedPa};
-        [[no_unique_address]] ExtraBlockInfo extra_info;
+        VaType virt{UnmappedVa}; //!< VA of the block
+        PaType phys{UnmappedPa}; //!< PA of the block, will increase 1-1 with VA until a new block
+                                 //!< is encountered
+        [[no_unique_address]] ExtraBlockInfo extraInfo;
 
         Block() = default;
 
-        Block(VaType virt_, PaType phys_, ExtraBlockInfo extra_info_)
-            : virt(virt_), phys(phys_), extra_info(extra_info_) {}
+        Block(VaType virt_, PaType phys_, ExtraBlockInfo extraInfo_)
+            : virt(virt_), phys(phys_), extraInfo(extraInfo_) {}
 
-        bool Valid() const {
+        constexpr bool Valid() {
             return virt != UnmappedVa;
         }
 
-        bool Mapped() const {
+        constexpr bool Mapped() {
             return phys != UnmappedPa;
         }
 
-        bool Unmapped() const {
+        constexpr bool Unmapped() {
             return phys == UnmappedPa;
         }
 
-        bool operator<(const VaType& p_virt) const {
-            return virt < p_virt;
+        bool operator<(const VaType& pVirt) const {
+            return virt < pVirt;
         }
     };
 
+    std::mutex blockMutex;
+    std::vector<Block> blocks{Block{}};
+
     /**
      * @brief Maps a PA range into the given AS region
-     * @note block_mutex MUST be locked when calling this
+     * @note blockMutex MUST be locked when calling this
      */
-    void MapLocked(VaType virt, PaType phys, VaType size, ExtraBlockInfo extra_info);
+    void MapLocked(VaType virt, PaType phys, VaType size, ExtraBlockInfo extraInfo);
 
     /**
      * @brief Unmaps the given range and merges it with other unmapped regions
-     * @note block_mutex MUST be locked when calling this
+     * @note blockMutex MUST be locked when calling this
      */
     void UnmapLocked(VaType virt, VaType size);
 
-    std::mutex block_mutex;
-    std::vector<Block> blocks{Block{}};
+public:
+    static constexpr VaType VaMaximum{(1ULL << (AddressSpaceBits - 1)) +
+                                      ((1ULL << (AddressSpaceBits - 1)) -
+                                       1)}; //!< The maximum VA that this AS can technically reach
 
-    /// a soft limit on the maximum VA of the AS
-    VaType va_limit{VaMaximum};
+    VaType vaLimit{VaMaximum}; //!< A soft limit on the maximum VA of the AS
 
-private:
-    /// Callback called when the mappings in an region have changed
-    std::function<void(VaType, VaType)> unmap_callback{};
+    FlatAddressSpaceMap(VaType vaLimit, std::function<void(VaType, VaType)> unmapCallback = {});
+
+    FlatAddressSpaceMap() = default;
+
+    void Map(VaType virt, PaType phys, VaType size, ExtraBlockInfo extraInfo = {}) {
+        std::scoped_lock lock(blockMutex);
+        MapLocked(virt, phys, size, extraInfo);
+    }
+
+    void Unmap(VaType virt, VaType size) {
+        std::scoped_lock lock(blockMutex);
+        UnmapLocked(virt, size);
+    }
 };
 
 /**
@@ -115,8 +109,14 @@ class FlatAllocator
 private:
     using Base = FlatAddressSpaceMap<VaType, UnmappedVa, bool, false, false, AddressSpaceBits>;
 
+    VaType currentLinearAllocEnd; //!< The end address for the initial linear allocation pass, once
+                                  //!< this reaches the AS limit the slower allocation path will be
+                                  //!< used
+
 public:
-    explicit FlatAllocator(VaType virt_start, VaType va_limit = Base::VaMaximum);
+    VaType vaStart; //!< The base VA of the allocator, no allocations will be below this
+
+    FlatAllocator(VaType vaStart, VaType vaLimit = Base::VaMaximum);
 
     /**
      * @brief Allocates a region in the AS of the given size and returns its address
@@ -132,19 +132,5 @@ public:
      * @brief Frees an AS region so it can be used again
      */
     void Free(VaType virt, VaType size);
-
-    VaType GetVAStart() const {
-        return virt_start;
-    }
-
-private:
-    /// The base VA of the allocator, no allocations will be below this
-    VaType virt_start;
-
-    /**
-     * The end address for the initial linear allocation pass
-     * Once this reaches the AS limit the slower allocation path will be used
-     */
-    VaType current_linear_alloc_end;
 };
 } // namespace Common

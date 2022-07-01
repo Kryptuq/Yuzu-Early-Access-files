@@ -1475,7 +1475,7 @@ bool Image::BlitScaleHelper(bool scale_up) {
     };
     const VkExtent2D extent{
         .width = std::max(scaled_width, info.size.width),
-        .height = std::max(scaled_height, info.size.width),
+        .height = std::max(scaled_height, info.size.height),
     };
 
     auto* view_ptr = blit_view.get();
@@ -1772,7 +1772,6 @@ void Framebuffer::CreateFramebuffer(TextureCacheRuntime& runtime,
     s32 num_layers = 1;
 
     const auto& resolution = runtime.resolution;
-    is_rescaled |= resolution.active;
 
     u32 width = 0;
     u32 height = 0;

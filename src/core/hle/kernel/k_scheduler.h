@@ -55,6 +55,11 @@ public:
         return idle_thread;
     }
 
+    /// Returns true if the scheduler is idle
+    [[nodiscard]] bool IsIdle() const {
+        return GetSchedulerCurrentThread() == idle_thread;
+    }
+
     /// Gets the timestamp for the last context switch in ticks.
     [[nodiscard]] u64 GetLastContextSwitchTicks() const;
 

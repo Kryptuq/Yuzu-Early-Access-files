@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <deque>
 #include <vector>
 #include "common/common_types.h"
 #include "common/swap.h"
@@ -127,6 +128,8 @@ protected:
     NvCore::NvMap& nvmap;
     NvCore::ChannelType channel_type;
     std::array<u32, MaxSyncPoints> device_syncpoints{};
+
+    static std::deque<u32> syncpts_accumulated;
 };
 }; // namespace Devices
 } // namespace Service::Nvidia

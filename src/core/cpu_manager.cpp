@@ -194,7 +194,9 @@ void CpuManager::PreemptSingleCore(bool from_running_enviroment) {
     {
         auto& scheduler = system.Kernel().Scheduler(current_core);
         scheduler.Reload(scheduler.GetSchedulerCurrentThread());
-        idle_count = 0;
+        if (!scheduler.IsIdle()) {
+            idle_count = 0;
+        }
     }
 }
 

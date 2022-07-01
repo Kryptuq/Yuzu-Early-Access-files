@@ -1,6 +1,7 @@
-// SPDX-FileCopyrightText: 2021 yuzu Emulator Project
-// SPDX-FileCopyrightText: 2021 Skyline Team and Contributors
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2021 yuzu emulator team, Skyline Team and Contributors
+// (https://github.com/skyline-emu/)
+// SPDX-License-Identifier: GPL-3.0-or-later Licensed under GPLv3
+// or any later version Refer to the license.txt file included.
 
 #include <bit>
 #include <cstdlib>

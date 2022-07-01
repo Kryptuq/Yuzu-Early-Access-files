@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2022 yuzu Emulator Project
-// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2021 yuzu Emulator Project
+// Licensed under GPLv2 or any later version
+// Refer to the license.txt file included.
 
 #include "common/assert.h"
 #include "common/logging/log.h"
@@ -73,21 +74,13 @@ void Puller::ProcessSemaphoreTriggerMethod() {
     const auto op =
         static_cast<GpuSemaphoreOperation>(regs.semaphore_trigger & semaphoreOperationMask);
     if (op == GpuSemaphoreOperation::WriteLong) {
-        struct Block {
-            u32 sequence;
-            u32 zeros = 0;
-            u64 timestamp;
-        };
-
         const GPUVAddr sequence_address{regs.semaphore_address.SemaphoreAddress()};
         const u32 payload = regs.semaphore_sequence;
         std::function<void()> operation([this, sequence_address, payload] {
-            Block block{};
-            block.sequence = payload;
-            block.timestamp = gpu.GetTicks();
-            memory_manager.WriteBlockUnsafe(sequence_address, &block, sizeof(block));
+            memory_manager.Write<u64>(sequence_address + sizeof(u64), gpu.GetTicks());
+            memory_manager.Write<u64>(sequence_address, payload);
         });
-        rasterizer->SyncOperation(std::move(operation));
+        rasterizer->SignalFence(std::move(operation));
     } else {
         do {
             const u32 word{memory_manager.Read<u32>(regs.semaphore_address.SemaphoreAddress())};
