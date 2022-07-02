@@ -1570,7 +1570,7 @@ BufferId BufferCache<P>::CreateBuffer(VAddr cpu_addr, u32 wanted_size) {
         JoinOverlap(new_buffer_id, overlap_id, !overlap.has_stream_leap);
     }
     Register(new_buffer_id);
-    TouchBuffer(new_buffer, new_buffer_id);
+    TouchBuffer(slot_buffers[new_buffer_id], new_buffer_id);
     return new_buffer_id;
 }
 

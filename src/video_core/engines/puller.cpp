@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2022 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "common/assert.h"
 #include "common/logging/log.h"

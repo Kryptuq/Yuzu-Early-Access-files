@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv3 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "common/microprofile.h"
 #include "video_core/host1x/syncpoint_manager.h"

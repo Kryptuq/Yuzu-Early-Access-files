@@ -1,7 +1,6 @@
-// SPDX-FileCopyrightText: 2022 yuzu emulator team and Skyline Team and Contributors
-// (https://github.com/skyline-emu/)
-// SPDX-License-Identifier: GPL-3.0-or-later Licensed under GPLv3
-// or any later version Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2022 yuzu Emulator Project
+// SPDX-FileCopyrightText: 2022 Skyline Team and Contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "core/hle/service/nvdrv/core/container.h"
 #include "core/hle/service/nvdrv/core/nvmap.h"

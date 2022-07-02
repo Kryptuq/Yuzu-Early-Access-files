@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: GPLv3 or later
-// Copyright © 2021 Skyline Team and Contributors (https://github.com/skyline-emu/)
+// SPDX-FileCopyrightText: 2021 Skyline Team and Contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "common/address_space.h"
 #include "common/assert.h"
@@ -30,137 +30,151 @@
         FlatAllocator<VaType, UnmappedVa, AddressSpaceBits>
 
 namespace Common {
-MAP_MEMBER_CONST()::FlatAddressSpaceMap(VaType vaLimit_,
-                                        std::function<void(VaType, VaType)> unmapCallback_)
-    : unmapCallback(std::move(unmapCallback_)), vaLimit(vaLimit_) {
-    if (vaLimit > VaMaximum)
+MAP_MEMBER_CONST()::FlatAddressSpaceMap(VaType va_limit_,
+                                        std::function<void(VaType, VaType)> unmap_callback_)
+    : va_limit{va_limit_}, unmap_callback{std::move(unmap_callback_)} {
+    if (va_limit > VaMaximum) {
         UNREACHABLE_MSG("Invalid VA limit!");
+    }
 }
 
-MAP_MEMBER(void)::MapLocked(VaType virt, PaType phys, VaType size, ExtraBlockInfo extraInfo) {
-    VaType virtEnd{virt + size};
+MAP_MEMBER(void)::MapLocked(VaType virt, PaType phys, VaType size, ExtraBlockInfo extra_info) {
+    VaType virt_end{virt + size};
 
-    if (virtEnd > vaLimit)
-        UNREACHABLE_MSG("Trying to map a block past the VA limit: virtEnd: 0x{:X}, vaLimit: 0x{:X}",
-                        virtEnd, vaLimit);
+    if (virt_end > va_limit) {
+        UNREACHABLE_MSG(
+            "Trying to map a block past the VA limit: virt_end: 0x{:X}, va_limit: 0x{:X}", virt_end,
+            va_limit);
+    }
 
-    auto blockEndSuccessor{std::lower_bound(blocks.begin(), blocks.end(), virtEnd)};
-    if (blockEndSuccessor == blocks.begin())
-        UNREACHABLE_MSG("Trying to map a block before the VA start: virtEnd: 0x{:X}", virtEnd);
+    auto block_end_successor{std::lower_bound(blocks.begin(), blocks.end(), virt_end)};
+    if (block_end_successor == blocks.begin()) {
+        UNREACHABLE_MSG("Trying to map a block before the VA start: virt_end: 0x{:X}", virt_end);
+    }
 
-    auto blockEndPredecessor{std::prev(blockEndSuccessor)};
+    auto block_end_predecessor{std::prev(block_end_successor)};
 
-    if (blockEndSuccessor != blocks.end()) {
+    if (block_end_successor != blocks.end()) {
         // We have blocks in front of us, if one is directly in front then we don't have to add a
         // tail
-        if (blockEndSuccessor->virt != virtEnd) {
+        if (block_end_successor->virt != virt_end) {
             PaType tailPhys{[&]() -> PaType {
                 if constexpr (!PaContigSplit) {
-                    return blockEndPredecessor
-                        ->phys; // Always propagate unmapped regions rather than calculating offset
+                    // Always propagate unmapped regions rather than calculating offset
+                    return block_end_predecessor->phys;
                 } else {
-                    if (blockEndPredecessor->Unmapped())
-                        return blockEndPredecessor->phys; // Always propagate unmapped regions
-                                                          // rather than calculating offset
-                    else
-                        return blockEndPredecessor->phys + virtEnd - blockEndPredecessor->virt;
+                    if (block_end_predecessor->Unmapped()) {
+                        // Always propagate unmapped regions rather than calculating offset
+                        return block_end_predecessor->phys;
+                    } else {
+                        return block_end_predecessor->phys + virt_end - block_end_predecessor->virt;
+                    }
                 }
             }()};
 
-            if (blockEndPredecessor->virt >= virt) {
+            if (block_end_predecessor->virt >= virt) {
                 // If this block's start would be overlapped by the map then reuse it as a tail
                 // block
-                blockEndPredecessor->virt = virtEnd;
-                blockEndPredecessor->phys = tailPhys;
-                blockEndPredecessor->extraInfo = blockEndPredecessor->extraInfo;
+                block_end_predecessor->virt = virt_end;
+                block_end_predecessor->phys = tailPhys;
+                block_end_predecessor->extra_info = block_end_predecessor->extra_info;
 
                 // No longer predecessor anymore
-                blockEndSuccessor = blockEndPredecessor--;
+                block_end_successor = block_end_predecessor--;
             } else {
                 // Else insert a new one and we're done
-                blocks.insert(blockEndSuccessor,
-                              {Block(virt, phys, extraInfo),
-                               Block(virtEnd, tailPhys, blockEndPredecessor->extraInfo)});
-                if (unmapCallback)
-                    unmapCallback(virt, size);
+                blocks.insert(block_end_successor,
+                              {Block(virt, phys, extra_info),
+                               Block(virt_end, tailPhys, block_end_predecessor->extra_info)});
+                if (unmap_callback) {
+                    unmap_callback(virt, size);
+                }
 
                 return;
             }
         }
     } else {
-        // blockEndPredecessor will always be unmapped as blocks has to be terminated by an unmapped
-        // chunk
-        if (blockEndPredecessor != blocks.begin() && blockEndPredecessor->virt >= virt) {
+        // block_end_predecessor will always be unmapped as blocks has to be terminated by an
+        // unmapped chunk
+        if (block_end_predecessor != blocks.begin() && block_end_predecessor->virt >= virt) {
             // Move the unmapped block start backwards
-            blockEndPredecessor->virt = virtEnd;
+            block_end_predecessor->virt = virt_end;
 
             // No longer predecessor anymore
-            blockEndSuccessor = blockEndPredecessor--;
+            block_end_successor = block_end_predecessor--;
         } else {
             // Else insert a new one and we're done
-            blocks.insert(blockEndSuccessor,
-                          {Block(virt, phys, extraInfo), Block(virtEnd, UnmappedPa, {})});
-            if (unmapCallback)
-                unmapCallback(virt, size);
+            blocks.insert(block_end_successor,
+                          {Block(virt, phys, extra_info), Block(virt_end, UnmappedPa, {})});
+            if (unmap_callback) {
+                unmap_callback(virt, size);
+            }
 
             return;
         }
     }
 
-    auto blockStartSuccessor{blockEndSuccessor};
+    auto block_start_successor{block_end_successor};
 
     // Walk the block vector to find the start successor as this is more efficient than another
     // binary search in most scenarios
-    while (std::prev(blockStartSuccessor)->virt >= virt)
-        blockStartSuccessor--;
-
-    // Check that the start successor is either the end block or something in between
-    if (blockStartSuccessor->virt > virtEnd) {
-        UNREACHABLE_MSG("Unsorted block in AS map: virt: 0x{:X}", blockStartSuccessor->virt);
-    } else if (blockStartSuccessor->virt == virtEnd) {
-        // We need to create a new block as there are none spare that we would overwrite
-        blocks.insert(blockStartSuccessor, Block(virt, phys, extraInfo));
-    } else {
-        // Erase overwritten blocks
-        if (auto eraseStart{std::next(blockStartSuccessor)}; eraseStart != blockEndSuccessor)
-            blocks.erase(eraseStart, blockEndSuccessor);
-
-        // Reuse a block that would otherwise be overwritten as a start block
-        blockStartSuccessor->virt = virt;
-        blockStartSuccessor->phys = phys;
-        blockStartSuccessor->extraInfo = extraInfo;
+    while (std::prev(block_start_successor)->virt >= virt) {
+        block_start_successor--;
     }
 
-    if (unmapCallback)
-        unmapCallback(virt, size);
+    // Check that the start successor is either the end block or something in between
+    if (block_start_successor->virt > virt_end) {
+        UNREACHABLE_MSG("Unsorted block in AS map: virt: 0x{:X}", block_start_successor->virt);
+    } else if (block_start_successor->virt == virt_end) {
+        // We need to create a new block as there are none spare that we would overwrite
+        blocks.insert(block_start_successor, Block(virt, phys, extra_info));
+    } else {
+        // Erase overwritten blocks
+        if (auto eraseStart{std::next(block_start_successor)}; eraseStart != block_end_successor) {
+            blocks.erase(eraseStart, block_end_successor);
+        }
+
+        // Reuse a block that would otherwise be overwritten as a start block
+        block_start_successor->virt = virt;
+        block_start_successor->phys = phys;
+        block_start_successor->extra_info = extra_info;
+    }
+
+    if (unmap_callback) {
+        unmap_callback(virt, size);
+    }
 }
 
 MAP_MEMBER(void)::UnmapLocked(VaType virt, VaType size) {
-    VaType virtEnd{virt + size};
+    VaType virt_end{virt + size};
 
-    if (virtEnd > vaLimit)
-        UNREACHABLE_MSG("Trying to map a block past the VA limit: virtEnd: 0x{:X}, vaLimit: 0x{:X}",
-                        virtEnd, vaLimit);
+    if (virt_end > va_limit) {
+        UNREACHABLE_MSG(
+            "Trying to map a block past the VA limit: virt_end: 0x{:X}, va_limit: 0x{:X}", virt_end,
+            va_limit);
+    }
 
-    auto blockEndSuccessor{std::lower_bound(blocks.begin(), blocks.end(), virtEnd)};
-    if (blockEndSuccessor == blocks.begin())
-        UNREACHABLE_MSG("Trying to unmap a block before the VA start: virtEnd: 0x{:X}", virtEnd);
+    auto block_end_successor{std::lower_bound(blocks.begin(), blocks.end(), virt_end)};
+    if (block_end_successor == blocks.begin()) {
+        UNREACHABLE_MSG("Trying to unmap a block before the VA start: virt_end: 0x{:X}", virt_end);
+    }
 
-    auto blockEndPredecessor{std::prev(blockEndSuccessor)};
+    auto block_end_predecessor{std::prev(block_end_successor)};
 
-    auto walkBackToPredecessor{[&](auto iter) {
-        while (iter->virt >= virt)
+    auto walk_back_to_predecessor{[&](auto iter) {
+        while (iter->virt >= virt) {
             iter--;
+        }
 
         return iter;
     }};
 
-    auto eraseBlocksWithEndUnmapped{[&](auto unmappedEnd) {
-        auto blockStartPredecessor{walkBackToPredecessor(unmappedEnd)};
-        auto blockStartSuccessor{std::next(blockStartPredecessor)};
+    auto erase_blocks_with_end_unmapped{[&](auto unmappedEnd) {
+        auto block_start_predecessor{walk_back_to_predecessor(unmappedEnd)};
+        auto block_start_successor{std::next(block_start_predecessor)};
 
         auto eraseEnd{[&]() {
-            if (blockStartPredecessor->Unmapped()) {
+            if (block_start_predecessor->Unmapped()) {
                 // If the start predecessor is unmapped then we can erase everything in our region
                 // and be done
                 return std::next(unmappedEnd);
@@ -174,158 +188,171 @@ MAP_MEMBER(void)::UnmapLocked(VaType virt, VaType size) {
 
         // We can't have two unmapped regions after each other
         if (eraseEnd != blocks.end() &&
-            (eraseEnd == blockStartSuccessor ||
-             (blockStartPredecessor->Unmapped() && eraseEnd->Unmapped())))
+            (eraseEnd == block_start_successor ||
+             (block_start_predecessor->Unmapped() && eraseEnd->Unmapped()))) {
             UNREACHABLE_MSG("Multiple contiguous unmapped regions are unsupported!");
+        }
 
-        blocks.erase(blockStartSuccessor, eraseEnd);
+        blocks.erase(block_start_successor, eraseEnd);
     }};
 
     // We can avoid any splitting logic if these are the case
-    if (blockEndPredecessor->Unmapped()) {
-        if (blockEndPredecessor->virt > virt)
-            eraseBlocksWithEndUnmapped(blockEndPredecessor);
+    if (block_end_predecessor->Unmapped()) {
+        if (block_end_predecessor->virt > virt) {
+            erase_blocks_with_end_unmapped(block_end_predecessor);
+        }
 
-        if (unmapCallback)
-            unmapCallback(virt, size);
+        if (unmap_callback) {
+            unmap_callback(virt, size);
+        }
 
         return; // The region is unmapped, bail out early
-    } else if (blockEndSuccessor->virt == virtEnd && blockEndSuccessor->Unmapped()) {
-        eraseBlocksWithEndUnmapped(blockEndSuccessor);
+    } else if (block_end_successor->virt == virt_end && block_end_successor->Unmapped()) {
+        erase_blocks_with_end_unmapped(block_end_successor);
 
-        if (unmapCallback)
-            unmapCallback(virt, size);
+        if (unmap_callback) {
+            unmap_callback(virt, size);
+        }
 
         return; // The region is unmapped here and doesn't need splitting, bail out early
-    } else if (blockEndSuccessor == blocks.end()) {
+    } else if (block_end_successor == blocks.end()) {
         // This should never happen as the end should always follow an unmapped block
         UNREACHABLE_MSG("Unexpected Memory Manager state!");
-    } else if (blockEndSuccessor->virt != virtEnd) {
+    } else if (block_end_successor->virt != virt_end) {
         // If one block is directly in front then we don't have to add a tail
 
         // The previous block is mapped so we will need to add a tail with an offset
         PaType tailPhys{[&]() {
-            if constexpr (PaContigSplit)
-                return blockEndPredecessor->phys + virtEnd - blockEndPredecessor->virt;
-            else
-                return blockEndPredecessor->phys;
+            if constexpr (PaContigSplit) {
+                return block_end_predecessor->phys + virt_end - block_end_predecessor->virt;
+            } else {
+                return block_end_predecessor->phys;
+            }
         }()};
 
-        if (blockEndPredecessor->virt >= virt) {
+        if (block_end_predecessor->virt >= virt) {
             // If this block's start would be overlapped by the unmap then reuse it as a tail block
-            blockEndPredecessor->virt = virtEnd;
-            blockEndPredecessor->phys = tailPhys;
+            block_end_predecessor->virt = virt_end;
+            block_end_predecessor->phys = tailPhys;
 
             // No longer predecessor anymore
-            blockEndSuccessor = blockEndPredecessor--;
+            block_end_successor = block_end_predecessor--;
         } else {
-            blocks.insert(blockEndSuccessor,
+            blocks.insert(block_end_successor,
                           {Block(virt, UnmappedPa, {}),
-                           Block(virtEnd, tailPhys, blockEndPredecessor->extraInfo)});
-            if (unmapCallback)
-                unmapCallback(virt, size);
+                           Block(virt_end, tailPhys, block_end_predecessor->extra_info)});
+            if (unmap_callback) {
+                unmap_callback(virt, size);
+            }
 
-            return; // The previous block is mapped and ends before
+            // The previous block is mapped and ends before
+            return;
         }
     }
 
     // Walk the block vector to find the start predecessor as this is more efficient than another
     // binary search in most scenarios
-    auto blockStartPredecessor{walkBackToPredecessor(blockEndSuccessor)};
-    auto blockStartSuccessor{std::next(blockStartPredecessor)};
+    auto block_start_predecessor{walk_back_to_predecessor(block_end_successor)};
+    auto block_start_successor{std::next(block_start_predecessor)};
 
-    if (blockStartSuccessor->virt > virtEnd) {
-        UNREACHABLE_MSG("Unsorted block in AS map: virt: 0x{:X}", blockStartSuccessor->virt);
-    } else if (blockStartSuccessor->virt == virtEnd) {
+    if (block_start_successor->virt > virt_end) {
+        UNREACHABLE_MSG("Unsorted block in AS map: virt: 0x{:X}", block_start_successor->virt);
+    } else if (block_start_successor->virt == virt_end) {
         // There are no blocks between the start and the end that would let us skip inserting a new
         // one for head
 
         // The previous block is may be unmapped, if so we don't need to insert any unmaps after it
-        if (blockStartPredecessor->Mapped())
-            blocks.insert(blockStartSuccessor, Block(virt, UnmappedPa, {}));
-    } else if (blockStartPredecessor->Unmapped()) {
+        if (block_start_predecessor->Mapped()) {
+            blocks.insert(block_start_successor, Block(virt, UnmappedPa, {}));
+        }
+    } else if (block_start_predecessor->Unmapped()) {
         // If the previous block is unmapped
-        blocks.erase(blockStartSuccessor, blockEndPredecessor);
+        blocks.erase(block_start_successor, block_end_predecessor);
     } else {
         // Erase overwritten blocks, skipping the first one as we have written the unmapped start
         // block there
-        if (auto eraseStart{std::next(blockStartSuccessor)}; eraseStart != blockEndSuccessor)
-            blocks.erase(eraseStart, blockEndSuccessor);
+        if (auto eraseStart{std::next(block_start_successor)}; eraseStart != block_end_successor) {
+            blocks.erase(eraseStart, block_end_successor);
+        }
 
         // Add in the unmapped block header
-        blockStartSuccessor->virt = virt;
-        blockStartSuccessor->phys = UnmappedPa;
+        block_start_successor->virt = virt;
+        block_start_successor->phys = UnmappedPa;
     }
 
-    if (unmapCallback)
-        unmapCallback(virt, size);
+    if (unmap_callback)
+        unmap_callback(virt, size);
 }
 
-ALLOC_MEMBER_CONST()::FlatAllocator(VaType vaStart_, VaType vaLimit_)
-    : Base(vaLimit_), currentLinearAllocEnd(vaStart_), vaStart(vaStart_) {}
+ALLOC_MEMBER_CONST()::FlatAllocator(VaType virt_start_, VaType va_limit_)
+    : Base{va_limit_}, virt_start{virt_start_}, current_linear_alloc_end{virt_start_} {}
 
 ALLOC_MEMBER(VaType)::Allocate(VaType size) {
-    std::scoped_lock lock(this->blockMutex);
+    std::scoped_lock lock(this->block_mutex);
 
-    VaType allocStart{UnmappedVa};
-    VaType allocEnd{currentLinearAllocEnd + size};
+    VaType alloc_start{UnmappedVa};
+    VaType alloc_end{current_linear_alloc_end + size};
 
     // Avoid searching backwards in the address space if possible
-    if (allocEnd >= currentLinearAllocEnd && allocEnd <= this->vaLimit) {
-        auto allocEndSuccessor{
-            std::lower_bound(this->blocks.begin(), this->blocks.end(), allocEnd)};
-        if (allocEndSuccessor == this->blocks.begin())
+    if (alloc_end >= current_linear_alloc_end && alloc_end <= this->va_limit) {
+        auto alloc_end_successor{
+            std::lower_bound(this->blocks.begin(), this->blocks.end(), alloc_end)};
+        if (alloc_end_successor == this->blocks.begin()) {
             UNREACHABLE_MSG("First block in AS map is invalid!");
+        }
 
-        auto allocEndPredecessor{std::prev(allocEndSuccessor)};
-        if (allocEndPredecessor->virt <= currentLinearAllocEnd) {
-            allocStart = currentLinearAllocEnd;
+        auto alloc_end_predecessor{std::prev(alloc_end_successor)};
+        if (alloc_end_predecessor->virt <= current_linear_alloc_end) {
+            alloc_start = current_linear_alloc_end;
         } else {
             // Skip over fixed any mappings in front of us
-            while (allocEndSuccessor != this->blocks.end()) {
-                if (allocEndSuccessor->virt - allocEndPredecessor->virt < size ||
-                    allocEndPredecessor->Mapped()) {
-                    allocStart = allocEndPredecessor->virt;
+            while (alloc_end_successor != this->blocks.end()) {
+                if (alloc_end_successor->virt - alloc_end_predecessor->virt < size ||
+                    alloc_end_predecessor->Mapped()) {
+                    alloc_start = alloc_end_predecessor->virt;
                     break;
                 }
 
-                allocEndPredecessor = allocEndSuccessor++;
+                alloc_end_predecessor = alloc_end_successor++;
 
                 // Use the VA limit to calculate if we can fit in the final block since it has no
                 // successor
-                if (allocEndSuccessor == this->blocks.end()) {
-                    allocEnd = allocEndPredecessor->virt + size;
+                if (alloc_end_successor == this->blocks.end()) {
+                    alloc_end = alloc_end_predecessor->virt + size;
 
-                    if (allocEnd >= allocEndPredecessor->virt && allocEnd <= this->vaLimit)
-                        allocStart = allocEndPredecessor->virt;
+                    if (alloc_end >= alloc_end_predecessor->virt && alloc_end <= this->va_limit) {
+                        alloc_start = alloc_end_predecessor->virt;
+                    }
                 }
             }
         }
     }
 
-    if (allocStart != UnmappedVa) {
-        currentLinearAllocEnd = allocStart + size;
+    if (alloc_start != UnmappedVa) {
+        current_linear_alloc_end = alloc_start + size;
     } else { // If linear allocation overflows the AS then find a gap
-        if (this->blocks.size() <= 2)
+        if (this->blocks.size() <= 2) {
             UNREACHABLE_MSG("Unexpected allocator state!");
-
-        auto searchPredecessor{this->blocks.begin()};
-        auto searchSuccessor{std::next(searchPredecessor)};
-
-        while (searchSuccessor != this->blocks.end() &&
-               (searchSuccessor->virt - searchPredecessor->virt < size ||
-                searchPredecessor->Mapped())) {
-            searchPredecessor = searchSuccessor++;
         }
 
-        if (searchSuccessor != this->blocks.end())
-            allocStart = searchPredecessor->virt;
-        else
+        auto search_predecessor{this->blocks.begin()};
+        auto search_successor{std::next(search_predecessor)};
+
+        while (search_successor != this->blocks.end() &&
+               (search_successor->virt - search_predecessor->virt < size ||
+                search_predecessor->Mapped())) {
+            search_predecessor = search_successor++;
+        }
+
+        if (search_successor != this->blocks.end()) {
+            alloc_start = search_predecessor->virt;
+        } else {
             return {}; // AS is full
+        }
     }
 
-    this->MapLocked(allocStart, true, size, {});
-    return allocStart;
+    this->MapLocked(alloc_start, true, size, {});
+    return alloc_start;
 }
 
 ALLOC_MEMBER(void)::AllocateFixed(VaType virt, VaType size) {
