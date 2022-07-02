@@ -131,8 +131,11 @@ constexpr std::array VIEW_CLASS_ASTC_8x8_RGBA{
 // PixelFormat::ASTC_2D_10X5_SRGB
 
 // Missing formats:
-// PixelFormat::ASTC_2D_10X6_UNORM
 // PixelFormat::ASTC_2D_10X6_SRGB
+
+constexpr std::array VIEW_CLASS_ASTC_10x6_RGBA{
+    PixelFormat::ASTC_2D_10X6_UNORM,
+};
 
 constexpr std::array VIEW_CLASS_ASTC_10x8_RGBA{
     PixelFormat::ASTC_2D_10X8_UNORM,
@@ -226,6 +229,7 @@ constexpr Table MakeViewTable() {
     EnableRange(view, VIEW_CLASS_ASTC_6x6_RGBA);
     EnableRange(view, VIEW_CLASS_ASTC_8x5_RGBA);
     EnableRange(view, VIEW_CLASS_ASTC_8x8_RGBA);
+    EnableRange(view, VIEW_CLASS_ASTC_10x6_RGBA);
     EnableRange(view, VIEW_CLASS_ASTC_10x8_RGBA);
     EnableRange(view, VIEW_CLASS_ASTC_10x10_RGBA);
     EnableRange(view, VIEW_CLASS_ASTC_12x12_RGBA);

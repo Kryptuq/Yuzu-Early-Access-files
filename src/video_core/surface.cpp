@@ -247,6 +247,7 @@ bool IsPixelFormatASTC(PixelFormat format) {
     case PixelFormat::ASTC_2D_10X8_SRGB:
     case PixelFormat::ASTC_2D_6X6_UNORM:
     case PixelFormat::ASTC_2D_6X6_SRGB:
+    case PixelFormat::ASTC_2D_10X6_UNORM:
     case PixelFormat::ASTC_2D_10X10_UNORM:
     case PixelFormat::ASTC_2D_10X10_SRGB:
     case PixelFormat::ASTC_2D_12X12_UNORM:

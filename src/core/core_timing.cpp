@@ -64,9 +64,6 @@ void CoreTiming::Initialize(std::function<void()>&& on_thread_init_) {
         const auto hardware_concurrency = std::thread::hardware_concurrency();
         size_t id = 0;
         worker_threads.emplace_back(ThreadEntry, std::ref(*this), id++);
-        if (hardware_concurrency > 8) {
-            worker_threads.emplace_back(ThreadEntry, std::ref(*this), id++);
-        }
     }
 }
 
@@ -228,14 +225,11 @@ std::optional<s64> CoreTiming::Advance() {
         event_queue.pop_back();
 
         if (const auto event_type{evt.type.lock()}) {
-            sequence_mutex.lock();
+
             event_mutex.unlock();
 
-            event_type->guard.lock();
-            sequence_mutex.unlock();
             const s64 delay = static_cast<s64>(GetGlobalTimeNs().count() - evt.time);
             event_type->callback(evt.user_data, std::chrono::nanoseconds{delay});
-            event_type->guard.unlock();
 
             event_mutex.lock();
             pending_events.fetch_sub(1, std::memory_order_relaxed);

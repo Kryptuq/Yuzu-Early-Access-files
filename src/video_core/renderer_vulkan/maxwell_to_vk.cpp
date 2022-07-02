@@ -195,6 +195,7 @@ struct FormatTuple {
     {VK_FORMAT_ASTC_10x8_SRGB_BLOCK},                          // ASTC_2D_10X8_SRGB
     {VK_FORMAT_ASTC_6x6_UNORM_BLOCK},                          // ASTC_2D_6X6_UNORM
     {VK_FORMAT_ASTC_6x6_SRGB_BLOCK},                           // ASTC_2D_6X6_SRGB
+    {VK_FORMAT_ASTC_10x6_UNORM_BLOCK},                         // ASTC_2D_10X6_UNORM
     {VK_FORMAT_ASTC_10x10_UNORM_BLOCK},                        // ASTC_2D_10X10_UNORM
     {VK_FORMAT_ASTC_10x10_SRGB_BLOCK},                         // ASTC_2D_10X10_SRGB
     {VK_FORMAT_ASTC_12x12_UNORM_BLOCK},                        // ASTC_2D_12X12_UNORM

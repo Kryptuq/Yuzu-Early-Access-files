@@ -94,6 +94,7 @@ enum class PixelFormat {
     ASTC_2D_10X8_SRGB,
     ASTC_2D_6X6_UNORM,
     ASTC_2D_6X6_SRGB,
+    ASTC_2D_10X6_UNORM,
     ASTC_2D_10X10_UNORM,
     ASTC_2D_10X10_SRGB,
     ASTC_2D_12X12_UNORM,
@@ -227,6 +228,7 @@ constexpr std::array<u8, MaxPixelFormat> BLOCK_WIDTH_TABLE = {{
     10, // ASTC_2D_10X8_SRGB
     6,  // ASTC_2D_6X6_UNORM
     6,  // ASTC_2D_6X6_SRGB
+    10, // ASTC_2D_10X6_UNORM
     10, // ASTC_2D_10X10_UNORM
     10, // ASTC_2D_10X10_SRGB
     12, // ASTC_2D_12X12_UNORM
@@ -329,6 +331,7 @@ constexpr std::array<u8, MaxPixelFormat> BLOCK_HEIGHT_TABLE = {{
     8,  // ASTC_2D_10X8_SRGB
     6,  // ASTC_2D_6X6_UNORM
     6,  // ASTC_2D_6X6_SRGB
+    6,  // ASTC_2D_10X6_UNORM
     10, // ASTC_2D_10X10_UNORM
     10, // ASTC_2D_10X10_SRGB
     12, // ASTC_2D_12X12_UNORM
@@ -431,6 +434,7 @@ constexpr std::array<u8, MaxPixelFormat> BITS_PER_BLOCK_TABLE = {{
     128, // ASTC_2D_10X8_SRGB
     128, // ASTC_2D_6X6_UNORM
     128, // ASTC_2D_6X6_SRGB
+    128, // ASTC_2D_10X6_UNORM
     128, // ASTC_2D_10X10_UNORM
     128, // ASTC_2D_10X10_SRGB
     128, // ASTC_2D_12X12_UNORM
