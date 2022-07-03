@@ -61,9 +61,7 @@ void CoreTiming::Initialize(std::function<void()>&& on_thread_init_) {
     const auto empty_timed_callback = [](std::uintptr_t, std::chrono::nanoseconds) {};
     ev_lost = CreateEvent("_lost_event", empty_timed_callback);
     if (is_multicore) {
-        const auto hardware_concurrency = std::thread::hardware_concurrency();
-        size_t id = 0;
-        worker_threads.emplace_back(ThreadEntry, std::ref(*this), id++);
+        worker_threads.emplace_back(ThreadEntry, std::ref(*this), 0);
     }
 }
 

@@ -41,51 +41,32 @@ void CpuManager::Shutdown() {
     }
 }
 
-std::function<void(void*)> CpuManager::GetGuestThreadStartFunc() {
-    return GuestThreadFunction;
-}
-
-std::function<void(void*)> CpuManager::GetIdleThreadStartFunc() {
-    return IdleThreadFunction;
-}
-
-std::function<void(void*)> CpuManager::GetShutdownThreadStartFunc() {
-    return ShutdownThreadFunction;
-}
-
-void CpuManager::GuestThreadFunction(void* cpu_manager_) {
-    CpuManager* cpu_manager = static_cast<CpuManager*>(cpu_manager_);
-    if (cpu_manager->is_multicore) {
-        cpu_manager->MultiCoreRunGuestThread();
+void CpuManager::GuestThreadFunction() {
+    if (is_multicore) {
+        MultiCoreRunGuestThread();
     } else {
-        cpu_manager->SingleCoreRunGuestThread();
+        SingleCoreRunGuestThread();
     }
 }
 
-void CpuManager::GuestRewindFunction(void* cpu_manager_) {
-    CpuManager* cpu_manager = static_cast<CpuManager*>(cpu_manager_);
-    if (cpu_manager->is_multicore) {
-        cpu_manager->MultiCoreRunGuestLoop();
+void CpuManager::GuestRewindFunction() {
+    if (is_multicore) {
+        MultiCoreRunGuestLoop();
     } else {
-        cpu_manager->SingleCoreRunGuestLoop();
+        SingleCoreRunGuestLoop();
     }
 }
 
-void CpuManager::IdleThreadFunction(void* cpu_manager_) {
-    CpuManager* cpu_manager = static_cast<CpuManager*>(cpu_manager_);
-    if (cpu_manager->is_multicore) {
-        cpu_manager->MultiCoreRunIdleThread();
+void CpuManager::IdleThreadFunction() {
+    if (is_multicore) {
+        MultiCoreRunIdleThread();
     } else {
-        cpu_manager->SingleCoreRunIdleThread();
+        SingleCoreRunIdleThread();
     }
 }
 
-void CpuManager::ShutdownThreadFunction(void* cpu_manager) {
-    static_cast<CpuManager*>(cpu_manager)->ShutdownThread();
-}
-
-void* CpuManager::GetStartFuncParameter() {
-    return this;
+void CpuManager::ShutdownThreadFunction() {
+    ShutdownThread();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -97,7 +78,7 @@ void CpuManager::MultiCoreRunGuestThread() {
     kernel.CurrentScheduler()->OnThreadStart();
     auto* thread = kernel.CurrentScheduler()->GetSchedulerCurrentThread();
     auto& host_context = thread->GetHostContext();
-    host_context->SetRewindPoint(GuestRewindFunction, this);
+    host_context->SetRewindPoint([this] { GuestRewindFunction(); });
     MultiCoreRunGuestLoop();
 }
 
@@ -134,7 +115,7 @@ void CpuManager::SingleCoreRunGuestThread() {
     kernel.CurrentScheduler()->OnThreadStart();
     auto* thread = kernel.CurrentScheduler()->GetSchedulerCurrentThread();
     auto& host_context = thread->GetHostContext();
-    host_context->SetRewindPoint(GuestRewindFunction, this);
+    host_context->SetRewindPoint([this] { GuestRewindFunction(); });
     SingleCoreRunGuestLoop();
 }
 

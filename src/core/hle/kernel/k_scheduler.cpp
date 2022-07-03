@@ -622,7 +622,7 @@ void KScheduler::YieldToAnyThread(KernelCore& kernel) {
 }
 
 KScheduler::KScheduler(Core::System& system_, s32 core_id_) : system{system_}, core_id{core_id_} {
-    switch_fiber = std::make_shared<Common::Fiber>(OnSwitch, this);
+    switch_fiber = std::make_shared<Common::Fiber>([this] { SwitchToCurrent(); });
     state.needs_scheduling.store(true);
     state.interrupt_task_thread_runnable = false;
     state.should_count_idle = false;
@@ -776,11 +776,6 @@ void KScheduler::ScheduleImpl() {
     /// When a thread wakes up, the scheduler may have changed to other in another core.
     auto& next_scheduler = *system.Kernel().CurrentScheduler();
     next_scheduler.SwitchContextStep2();
-}
-
-void KScheduler::OnSwitch(void* this_scheduler) {
-    KScheduler* sched = static_cast<KScheduler*>(this_scheduler);
-    sched->SwitchToCurrent();
 }
 
 void KScheduler::SwitchToCurrent() {

@@ -32,7 +32,6 @@ struct EventType {
     TimedCallback callback;
     /// A pointer to the name of the event.
     const std::string name;
-    mutable std::mutex guard;
 };
 
 /**
@@ -157,7 +156,6 @@ private:
     std::condition_variable wait_pause_cv;
     std::condition_variable wait_signal_cv;
     mutable std::mutex event_mutex;
-    mutable std::mutex sequence_mutex;
 
     std::atomic<bool> paused_state{};
     bool is_paused{};

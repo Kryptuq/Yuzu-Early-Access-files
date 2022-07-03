@@ -246,14 +246,12 @@ Result KThread::Initialize(KThreadFunction func, uintptr_t arg, VAddr user_stack
 
 Result KThread::InitializeThread(KThread* thread, KThreadFunction func, uintptr_t arg,
                                  VAddr user_stack_top, s32 prio, s32 core, KProcess* owner,
-                                 ThreadType type, std::function<void(void*)>&& init_func,
-                                 void* init_func_parameter) {
+                                 ThreadType type, std::function<void()>&& init_func) {
     // Initialize the thread.
     R_TRY(thread->Initialize(func, arg, user_stack_top, prio, core, owner, type));
 
     // Initialize emulation parameters.
-    thread->host_context =
-        std::make_shared<Common::Fiber>(std::move(init_func), init_func_parameter);
+    thread->host_context = std::make_shared<Common::Fiber>(std::move(init_func));
     thread->is_single_core = !Settings::values.use_multi_core.GetValue();
 
     return ResultSuccess;
@@ -265,15 +263,13 @@ Result KThread::InitializeDummyThread(KThread* thread) {
 
 Result KThread::InitializeIdleThread(Core::System& system, KThread* thread, s32 virt_core) {
     return InitializeThread(thread, {}, {}, {}, IdleThreadPriority, virt_core, {}, ThreadType::Main,
-                            Core::CpuManager::GetIdleThreadStartFunc(),
-                            system.GetCpuManager().GetStartFuncParameter());
+                            system.GetCpuManager().GetIdleThreadStartFunc());
 }
 
 Result KThread::InitializeHighPriorityThread(Core::System& system, KThread* thread,
                                              KThreadFunction func, uintptr_t arg, s32 virt_core) {
     return InitializeThread(thread, func, arg, {}, {}, virt_core, nullptr, ThreadType::HighPriority,
-                            Core::CpuManager::GetShutdownThreadStartFunc(),
-                            system.GetCpuManager().GetStartFuncParameter());
+                            system.GetCpuManager().GetShutdownThreadStartFunc());
 }
 
 Result KThread::InitializeUserThread(Core::System& system, KThread* thread, KThreadFunction func,
@@ -281,8 +277,7 @@ Result KThread::InitializeUserThread(Core::System& system, KThread* thread, KThr
                                      KProcess* owner) {
     system.Kernel().GlobalSchedulerContext().AddThread(thread);
     return InitializeThread(thread, func, arg, user_stack_top, prio, virt_core, owner,
-                            ThreadType::User, Core::CpuManager::GetGuestThreadStartFunc(),
-                            system.GetCpuManager().GetStartFuncParameter());
+                            ThreadType::User, system.GetCpuManager().GetGuestThreadStartFunc());
 }
 
 void KThread::PostDestroy(uintptr_t arg) {

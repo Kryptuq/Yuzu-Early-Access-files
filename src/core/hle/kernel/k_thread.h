@@ -729,8 +729,7 @@ private:
     [[nodiscard]] static Result InitializeThread(KThread* thread, KThreadFunction func,
                                                  uintptr_t arg, VAddr user_stack_top, s32 prio,
                                                  s32 core, KProcess* owner, ThreadType type,
-                                                 std::function<void(void*)>&& init_func,
-                                                 void* init_func_parameter);
+                                                 std::function<void()>&& init_func);
 
     static void RestorePriority(KernelCore& kernel_ctx, KThread* thread);
 

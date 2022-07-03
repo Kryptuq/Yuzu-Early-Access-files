@@ -50,10 +50,15 @@ public:
     void Initialize();
     void Shutdown();
 
-    static std::function<void(void*)> GetGuestThreadStartFunc();
-    static std::function<void(void*)> GetIdleThreadStartFunc();
-    static std::function<void(void*)> GetShutdownThreadStartFunc();
-    void* GetStartFuncParameter();
+    std::function<void()> GetGuestThreadStartFunc() {
+        return [this] { GuestThreadFunction(); };
+    }
+    std::function<void()> GetIdleThreadStartFunc() {
+        return [this] { IdleThreadFunction(); };
+    }
+    std::function<void()> GetShutdownThreadStartFunc() {
+        return [this] { ShutdownThreadFunction(); };
+    }
 
     void PreemptSingleCore(bool from_running_enviroment = true);
 
@@ -62,10 +67,10 @@ public:
     }
 
 private:
-    static void GuestThreadFunction(void* cpu_manager);
-    static void GuestRewindFunction(void* cpu_manager);
-    static void IdleThreadFunction(void* cpu_manager);
-    static void ShutdownThreadFunction(void* cpu_manager);
+    void GuestThreadFunction();
+    void GuestRewindFunction();
+    void IdleThreadFunction();
+    void ShutdownThreadFunction();
 
     void MultiCoreRunGuestThread();
     void MultiCoreRunGuestLoop();

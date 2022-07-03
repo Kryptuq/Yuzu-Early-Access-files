@@ -170,7 +170,6 @@ private:
      */
     void UpdateLastContextSwitchTime(KThread* thread, KProcess* process);
 
-    static void OnSwitch(void* this_scheduler);
     void SwitchToCurrent();
 
     KThread* prev_thread{};
