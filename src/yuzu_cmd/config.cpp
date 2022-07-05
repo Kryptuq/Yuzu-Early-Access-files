@@ -90,17 +90,17 @@ static const std::array<std::array<int, 5>, Settings::NativeAnalog::NumAnalogs> 
 }};
 
 template <>
-void Config::ReadSetting(const std::string& group, Settings::BasicSetting<std::string>& setting) {
+void Config::ReadSetting(const std::string& group, Settings::Setting<std::string>& setting) {
     setting = sdl2_config->Get(group, setting.GetLabel(), setting.GetDefault());
 }
 
 template <>
-void Config::ReadSetting(const std::string& group, Settings::BasicSetting<bool>& setting) {
+void Config::ReadSetting(const std::string& group, Settings::Setting<bool>& setting) {
     setting = sdl2_config->GetBoolean(group, setting.GetLabel(), setting.GetDefault());
 }
 
 template <typename Type>
-void Config::ReadSetting(const std::string& group, Settings::BasicSetting<Type>& setting) {
+void Config::ReadSetting(const std::string& group, Settings::Setting<Type>& setting) {
     setting = static_cast<Type>(sdl2_config->GetInteger(group, setting.GetLabel(),
                                                         static_cast<long>(setting.GetDefault())));
 }

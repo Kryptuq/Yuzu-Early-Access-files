@@ -838,11 +838,11 @@ bool Controller_NPad::VibrateControllerAtIndex(Core::HID::NpadIdType npad_id,
 
         const auto now = steady_clock::now();
 
-        // Filter out non-zero vibrations that are within 10ms of each other.
+        // Filter out non-zero vibrations that are within 15ms of each other.
         if ((vibration_value.low_amplitude != 0.0f || vibration_value.high_amplitude != 0.0f) &&
             duration_cast<milliseconds>(
                 now - controller.vibration[device_index].last_vibration_timepoint) <
-                milliseconds(10)) {
+                milliseconds(15)) {
             return false;
         }
 

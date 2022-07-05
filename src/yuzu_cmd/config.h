@@ -28,11 +28,11 @@ public:
 
 private:
     /**
-     * Applies a value read from the sdl2_config to a BasicSetting.
+     * Applies a value read from the sdl2_config to a Setting.
      *
      * @param group The name of the INI group
      * @param setting The yuzu setting to modify
      */
     template <typename Type>
-    void ReadSetting(const std::string& group, Settings::BasicSetting<Type>& setting);
+    void ReadSetting(const std::string& group, Settings::Setting<Type>& setting);
 };

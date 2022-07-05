@@ -438,8 +438,15 @@ SDLDriver::SDLDriver(std::string input_engine_) : InputEngine(std::move(input_en
             using namespace std::chrono_literals;
             while (initialized) {
                 SDL_PumpEvents();
-                SendVibrations();
                 std::this_thread::sleep_for(1ms);
+            }
+        });
+        vibration_thread = std::thread([this] {
+            Common::SetCurrentThreadName("yuzu:input:SDL_Vibration");
+            using namespace std::chrono_literals;
+            while (initialized) {
+                SendVibrations();
+                std::this_thread::sleep_for(10ms);
             }
         });
     }
@@ -457,6 +464,7 @@ SDLDriver::~SDLDriver() {
     initialized = false;
     if (start_thread) {
         poll_thread.join();
+        vibration_thread.join();
         SDL_QuitSubSystem(SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER);
     }
 }

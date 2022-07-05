@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifdef YUZU_USE_QT_WEB_ENGINE
+#include <bit>
+
 #include <QApplication>
 #include <QKeyEvent>
 
@@ -211,8 +213,10 @@ template <Core::HID::NpadButton... T>
 void QtNXWebEngineView::HandleWindowFooterButtonPressedOnce() {
     const auto f = [this](Core::HID::NpadButton button) {
         if (input_interpreter->IsButtonPressedOnce(button)) {
+            const auto button_index = std::countr_zero(static_cast<u64>(button));
+
             page()->runJavaScript(
-                QStringLiteral("yuzu_key_callbacks[%1] == null;").arg(static_cast<u8>(button)),
+                QStringLiteral("yuzu_key_callbacks[%1] == null;").arg(button_index),
                 [this, button](const QVariant& variant) {
                     if (variant.toBool()) {
                         switch (button) {
@@ -236,7 +240,7 @@ void QtNXWebEngineView::HandleWindowFooterButtonPressedOnce() {
 
             page()->runJavaScript(
                 QStringLiteral("if (yuzu_key_callbacks[%1] != null) { yuzu_key_callbacks[%1](); }")
-                    .arg(static_cast<u8>(button)));
+                    .arg(button_index));
         }
     };
 

@@ -133,7 +133,7 @@ void Config::Initialize(const std::string& config_name) {
 // Explicit std::string definition: Qt can't implicitly convert a std::string to a QVariant, nor
 // can it implicitly convert a QVariant back to a {std::,Q}string
 template <>
-void Config::ReadBasicSetting(Settings::BasicSetting<std::string>& setting) {
+void Config::ReadBasicSetting(Settings::Setting<std::string>& setting) {
     const QString name = QString::fromStdString(setting.GetLabel());
     const auto default_value = QString::fromStdString(setting.GetDefault());
     if (qt_config->value(name + QStringLiteral("/default"), false).toBool()) {
@@ -144,7 +144,7 @@ void Config::ReadBasicSetting(Settings::BasicSetting<std::string>& setting) {
 }
 
 template <typename Type>
-void Config::ReadBasicSetting(Settings::BasicSetting<Type>& setting) {
+void Config::ReadBasicSetting(Settings::Setting<Type>& setting) {
     const QString name = QString::fromStdString(setting.GetLabel());
     const Type default_value = setting.GetDefault();
     if (qt_config->value(name + QStringLiteral("/default"), false).toBool()) {
@@ -157,7 +157,7 @@ void Config::ReadBasicSetting(Settings::BasicSetting<Type>& setting) {
 
 // Explicit std::string definition: Qt can't implicitly convert a std::string to a QVariant
 template <>
-void Config::WriteBasicSetting(const Settings::BasicSetting<std::string>& setting) {
+void Config::WriteBasicSetting(const Settings::Setting<std::string>& setting) {
     const QString name = QString::fromStdString(setting.GetLabel());
     const std::string& value = setting.GetValue();
     qt_config->setValue(name + QStringLiteral("/default"), value == setting.GetDefault());
@@ -165,7 +165,7 @@ void Config::WriteBasicSetting(const Settings::BasicSetting<std::string>& settin
 }
 
 template <typename Type>
-void Config::WriteBasicSetting(const Settings::BasicSetting<Type>& setting) {
+void Config::WriteBasicSetting(const Settings::Setting<Type>& setting) {
     const QString name = QString::fromStdString(setting.GetLabel());
     const Type value = setting.GetValue();
     qt_config->setValue(name + QStringLiteral("/default"), value == setting.GetDefault());
@@ -173,7 +173,7 @@ void Config::WriteBasicSetting(const Settings::BasicSetting<Type>& setting) {
 }
 
 template <typename Type>
-void Config::WriteGlobalSetting(const Settings::Setting<Type>& setting) {
+void Config::WriteGlobalSetting(const Settings::SwitchableSetting<Type>& setting) {
     const QString name = QString::fromStdString(setting.GetLabel());
     const Type& value = setting.GetValue(global);
     if (!global) {
@@ -1422,7 +1422,7 @@ QVariant Config::ReadSetting(const QString& name, const QVariant& default_value)
 }
 
 template <typename Type>
-void Config::ReadGlobalSetting(Settings::Setting<Type>& setting) {
+void Config::ReadGlobalSetting(Settings::SwitchableSetting<Type>& setting) {
     QString name = QString::fromStdString(setting.GetLabel());
     const bool use_global = qt_config->value(name + QStringLiteral("/use_global"), true).toBool();
     setting.SetGlobal(use_global);

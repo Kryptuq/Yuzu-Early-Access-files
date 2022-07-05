@@ -191,8 +191,10 @@ std::string GDBStubA64::RegRead(const Kernel::KThread* thread, size_t id) const 
     const auto& gprs{context.cpu_registers};
     const auto& fprs{context.vector_registers};
 
-    if (id <= SP_REGISTER) {
+    if (id < SP_REGISTER) {
         return ValueToHex(gprs[id]);
+    } else if (id == SP_REGISTER) {
+        return ValueToHex(context.sp);
     } else if (id == PC_REGISTER) {
         return ValueToHex(context.pc);
     } else if (id == PSTATE_REGISTER) {
@@ -215,8 +217,10 @@ void GDBStubA64::RegWrite(Kernel::KThread* thread, size_t id, std::string_view v
 
     auto& context{thread->GetContext64()};
 
-    if (id <= SP_REGISTER) {
+    if (id < SP_REGISTER) {
         context.cpu_registers[id] = HexToValue<u64>(value);
+    } else if (id == SP_REGISTER) {
+        context.sp = HexToValue<u64>(value);
     } else if (id == PC_REGISTER) {
         context.pc = HexToValue<u64>(value);
     } else if (id == PSTATE_REGISTER) {

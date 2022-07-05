@@ -128,5 +128,6 @@ private:
     std::atomic<bool> initialized = false;
 
     std::thread poll_thread;
+    std::thread vibration_thread;
 };
 } // namespace InputCommon

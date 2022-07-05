@@ -9,7 +9,7 @@
 #include "yuzu/configuration/configuration_shared.h"
 #include "yuzu/configuration/configure_per_game.h"
 
-void ConfigurationShared::ApplyPerGameSetting(Settings::Setting<bool>* setting,
+void ConfigurationShared::ApplyPerGameSetting(Settings::SwitchableSetting<bool>* setting,
                                               const QCheckBox* checkbox,
                                               const CheckState& tracker) {
     if (Settings::IsConfiguringGlobal() && setting->UsingGlobal()) {
@@ -25,7 +25,7 @@ void ConfigurationShared::ApplyPerGameSetting(Settings::Setting<bool>* setting,
 }
 
 void ConfigurationShared::SetPerGameSetting(QCheckBox* checkbox,
-                                            const Settings::Setting<bool>* setting) {
+                                            const Settings::SwitchableSetting<bool>* setting) {
     if (setting->UsingGlobal()) {
         checkbox->setCheckState(Qt::PartiallyChecked);
     } else {
@@ -45,7 +45,7 @@ void ConfigurationShared::SetHighlight(QWidget* widget, bool highlighted) {
 }
 
 void ConfigurationShared::SetColoredTristate(QCheckBox* checkbox,
-                                             const Settings::Setting<bool>& setting,
+                                             const Settings::SwitchableSetting<bool>& setting,
                                              CheckState& tracker) {
     if (setting.UsingGlobal()) {
         tracker = CheckState::Global;

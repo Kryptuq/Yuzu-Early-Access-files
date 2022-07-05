@@ -160,7 +160,7 @@ private:
      * @param The setting
      */
     template <typename Type>
-    void ReadGlobalSetting(Settings::Setting<Type>& setting);
+    void ReadGlobalSetting(Settings::SwitchableSetting<Type>& setting);
 
     /**
      * Sets a value to the qt_config using the setting's label and default value. If the config is a
@@ -169,7 +169,7 @@ private:
      * @param The setting
      */
     template <typename Type>
-    void WriteGlobalSetting(const Settings::Setting<Type>& setting);
+    void WriteGlobalSetting(const Settings::SwitchableSetting<Type>& setting);
 
     /**
      * Reads a value from the qt_config using the setting's label and default value and applies the
@@ -178,14 +178,14 @@ private:
      * @param The setting
      */
     template <typename Type>
-    void ReadBasicSetting(Settings::BasicSetting<Type>& setting);
+    void ReadBasicSetting(Settings::Setting<Type>& setting);
 
     /** Sets a value from the setting in the qt_config using the setting's label and default value.
      *
      * @param The setting
      */
     template <typename Type>
-    void WriteBasicSetting(const Settings::BasicSetting<Type>& setting);
+    void WriteBasicSetting(const Settings::Setting<Type>& setting);
 
     ConfigType type;
     std::unique_ptr<QSettings> qt_config;
