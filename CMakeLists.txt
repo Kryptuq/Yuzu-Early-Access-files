@@ -627,6 +627,14 @@ add_definitions(-DBOOST_ERROR_CODE_HEADER_ONLY
     -DBOOST_DATE_TIME_NO_LIB
     -DBOOST_REGEX_NO_LIB
 )
+# Adjustments for MSVC + Ninja
+if (MSVC AND CMAKE_GENERATOR STREQUAL "Ninja")
+    add_compile_options(
+        /wd4711 # function 'function' selected for automatic inline expansion
+        /wd4464 # relative include path contains '..'
+        /wd4820 # 'identifier1': '4' bytes padding added after data member 'identifier2'
+    )
+endif()
 
 enable_testing()
 add_subdirectory(externals)

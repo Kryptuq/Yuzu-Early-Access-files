@@ -36,7 +36,6 @@ if (MSVC)
     # /GT                 - Supports fiber safety for data allocated using static thread-local storage
     add_compile_options(
         /MP
-        /Zi
         /Zm200
         /Zo
         /permissive-
@@ -78,6 +77,13 @@ if (MSVC)
         /we5038 # data member 'member1' will be initialized after data member 'member2'
         /we5245 # 'function': unreferenced function with internal linkage has been removed
     )
+
+    if (USE_CCACHE)
+    # when caching, we need to use /Z7 to downgrade debug info to use an older but more cachable format
+        add_compile_options(/Z7)
+    else()
+        add_compile_options(/Zi)
+    endif()
 
     if (ARCHITECTURE_x86_64)
         add_compile_options(/QIntel-jcc-erratum)

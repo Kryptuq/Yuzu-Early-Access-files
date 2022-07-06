@@ -25,8 +25,10 @@ void CpuManager::ThreadStart(std::stop_token stop_token, CpuManager& cpu_manager
 }
 
 void CpuManager::Initialize() {
+    running_mode = true;
     num_cores = is_multicore ? Core::Hardware::NUM_CPU_CORES : 1;
     gpu_barrier = std::make_unique<Common::Barrier>(num_cores + 1);
+    pause_barrier = std::make_unique<Common::Barrier>(num_cores + 1);
 
     for (std::size_t core = 0; core < num_cores; core++) {
         core_data[core].host_thread = std::jthread(ThreadStart, std::ref(*this), core);
@@ -34,11 +36,8 @@ void CpuManager::Initialize() {
 }
 
 void CpuManager::Shutdown() {
-    for (std::size_t core = 0; core < num_cores; core++) {
-        if (core_data[core].host_thread.joinable()) {
-            core_data[core].host_thread.join();
-        }
-    }
+    running_mode = false;
+    Pause(false);
 }
 
 void CpuManager::GuestThreadFunction() {
@@ -63,10 +62,6 @@ void CpuManager::IdleThreadFunction() {
     } else {
         SingleCoreRunIdleThread();
     }
-}
-
-void CpuManager::ShutdownThreadFunction() {
-    ShutdownThread();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -181,13 +176,41 @@ void CpuManager::PreemptSingleCore(bool from_running_enviroment) {
     }
 }
 
-void CpuManager::ShutdownThread() {
+void CpuManager::SuspendThread() {
     auto& kernel = system.Kernel();
-    auto core = is_multicore ? kernel.CurrentPhysicalCoreIndex() : 0;
-    auto* current_thread = kernel.GetCurrentEmuThread();
+    kernel.CurrentScheduler()->OnThreadStart();
 
-    Common::Fiber::YieldTo(current_thread->GetHostContext(), *core_data[core].host_context);
-    UNREACHABLE();
+    while (true) {
+        auto core = is_multicore ? kernel.CurrentPhysicalCoreIndex() : 0;
+        auto& scheduler = *kernel.CurrentScheduler();
+        Kernel::KThread* current_thread = scheduler.GetSchedulerCurrentThread();
+        Common::Fiber::YieldTo(current_thread->GetHostContext(), *core_data[core].host_context);
+
+        // This shouldn't be here. This is here because the scheduler needs the current
+        // thread to have dispatch disabled before explicitly rescheduling. Ideally in the
+        // future this will be called by RequestScheduleOnInterrupt and explicitly disabling
+        // dispatch outside the scheduler will not be necessary.
+        current_thread->DisableDispatch();
+
+        scheduler.RescheduleCurrentCore();
+    }
+}
+
+void CpuManager::Pause(bool paused) {
+    std::scoped_lock lk{pause_lock};
+
+    if (pause_state == paused) {
+        return;
+    }
+
+    // Set the new state
+    pause_state.store(paused);
+
+    // Wake up any waiting threads
+    pause_state.notify_all();
+
+    // Wait for all threads to successfully change state before returning
+    pause_barrier->Sync();
 }
 
 void CpuManager::RunThread(std::size_t core) {
@@ -218,9 +241,27 @@ void CpuManager::RunThread(std::size_t core) {
         system.GPU().ObtainContext();
     }
 
-    auto* current_thread = system.Kernel().CurrentScheduler()->GetIdleThread();
-    Kernel::SetCurrentThread(system.Kernel(), current_thread);
-    Common::Fiber::YieldTo(data.host_context, *current_thread->GetHostContext());
+    {
+        // Set the current thread on entry
+        auto* current_thread = system.Kernel().CurrentScheduler()->GetIdleThread();
+        Kernel::SetCurrentThread(system.Kernel(), current_thread);
+    }
+
+    while (running_mode) {
+        if (pause_state.load(std::memory_order_relaxed)) {
+            // Wait for caller to acknowledge pausing
+            pause_barrier->Sync();
+
+            // Wait until unpaused
+            pause_state.wait(true, std::memory_order_relaxed);
+
+            // Wait for caller to acknowledge unpausing
+            pause_barrier->Sync();
+        }
+
+        auto current_thread = system.Kernel().CurrentScheduler()->GetSchedulerCurrentThread();
+        Common::Fiber::YieldTo(data.host_context, *current_thread->GetHostContext());
+    }
 }
 
 } // namespace Core

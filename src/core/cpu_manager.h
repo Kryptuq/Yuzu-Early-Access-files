@@ -50,14 +50,16 @@ public:
     void Initialize();
     void Shutdown();
 
+    void Pause(bool paused);
+
     std::function<void()> GetGuestThreadStartFunc() {
         return [this] { GuestThreadFunction(); };
     }
     std::function<void()> GetIdleThreadStartFunc() {
         return [this] { IdleThreadFunction(); };
     }
-    std::function<void()> GetShutdownThreadStartFunc() {
-        return [this] { ShutdownThreadFunction(); };
+    std::function<void()> GetSuspendThreadStartFunc() {
+        return [this] { SuspendThread(); };
     }
 
     void PreemptSingleCore(bool from_running_enviroment = true);
@@ -70,7 +72,6 @@ private:
     void GuestThreadFunction();
     void GuestRewindFunction();
     void IdleThreadFunction();
-    void ShutdownThreadFunction();
 
     void MultiCoreRunGuestThread();
     void MultiCoreRunGuestLoop();
@@ -82,7 +83,7 @@ private:
 
     static void ThreadStart(std::stop_token stop_token, CpuManager& cpu_manager, std::size_t core);
 
-    void ShutdownThread();
+    void SuspendThread();
     void RunThread(std::size_t core);
 
     struct CoreData {
@@ -90,7 +91,12 @@ private:
         std::jthread host_thread;
     };
 
+    std::atomic<bool> running_mode{};
+    std::atomic<bool> pause_state{};
+    std::unique_ptr<Common::Barrier> pause_barrier{};
     std::unique_ptr<Common::Barrier> gpu_barrier{};
+    std::mutex pause_lock{};
+
     std::array<CoreData, Core::Hardware::NUM_CPU_CORES> core_data{};
 
     bool is_async_gpu{};

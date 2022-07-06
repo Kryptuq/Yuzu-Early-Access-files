@@ -280,9 +280,6 @@ public:
     /// Exceptional exit all processes.
     void ExceptionalExit();
 
-    /// Notify emulated CPU cores to shut down.
-    void ShutdownCores();
-
     bool IsMulticore() const;
 
     bool IsShuttingDown() const;

@@ -138,6 +138,7 @@ struct System::Impl {
 
         kernel.Suspend(false);
         core_timing.SyncPause(false);
+        cpu_manager.Pause(false);
         is_paused = false;
 
         return status;
@@ -149,6 +150,7 @@ struct System::Impl {
 
         core_timing.SyncPause(true);
         kernel.Suspend(true);
+        cpu_manager.Pause(true);
         is_paused = true;
 
         return status;
@@ -158,6 +160,7 @@ struct System::Impl {
         std::unique_lock<std::mutex> lk(suspend_guard);
         kernel.Suspend(true);
         core_timing.SyncPause(true);
+        cpu_manager.Pause(true);
         return lk;
     }
 
@@ -165,6 +168,7 @@ struct System::Impl {
         if (!is_paused) {
             core_timing.SyncPause(false);
             kernel.Suspend(false);
+            cpu_manager.Pause(false);
         }
     }
 
@@ -330,8 +334,6 @@ struct System::Impl {
             gpu_core->NotifyShutdown();
         }
 
-        kernel.ShutdownCores();
-        cpu_manager.Shutdown();
         debugger.reset();
         services.reset();
         service_manager.reset();

@@ -32,8 +32,7 @@ static void RunThread(std::stop_token stop_token, Core::System& system,
     VideoCore::RasterizerInterface* const rasterizer = renderer.ReadRasterizer();
 
     while (!stop_token.stop_requested()) {
-        CommandDataContainer next;
-        state.queue.Pop(next, stop_token);
+        CommandDataContainer next = state.queue.PopWait(stop_token);
         if (stop_token.stop_requested()) {
             break;
         }
