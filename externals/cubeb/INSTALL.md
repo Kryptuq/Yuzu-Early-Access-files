@@ -2,7 +2,7 @@
 
 You must have CMake v3.1 or later installed.
 
-1. `git clone --recursive https://github.com/kinetiknz/cubeb.git`
+1. `git clone --recursive https://github.com/mozilla/cubeb.git`
 2. `mkdir cubeb-build`
 3. `cd cubeb-build`
 3. `cmake ../cubeb`

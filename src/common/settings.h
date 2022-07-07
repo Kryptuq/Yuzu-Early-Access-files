@@ -371,10 +371,12 @@ struct TouchFromButtonMap {
 
 struct Values {
     // Audio
-    Setting<std::string> audio_device_id{"auto", "output_device"};
     Setting<std::string> sink_id{"auto", "output_engine"};
+    Setting<std::string> audio_output_device_id{"auto", "output_device"};
+    Setting<std::string> audio_input_device_id{"auto", "input_device"};
     Setting<bool> audio_muted{false, "audio_muted"};
     SwitchableSetting<u8> volume{100, 0, 100, "volume"};
+    Setting<bool> dump_audio_commands{false, "dump_audio_commands"};
 
     // Core
     SwitchableSetting<bool> use_multi_core{true, "use_multi_core"};

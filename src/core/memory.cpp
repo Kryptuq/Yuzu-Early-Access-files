@@ -511,7 +511,7 @@ struct Memory::Impl {
 
     [[nodiscard]] u8* GetPointerImpl(VAddr vaddr, auto on_unmapped, auto on_rasterizer) const {
         // AARCH64 masks the upper 16 bit of all memory accesses
-        vaddr &= 0xffffffffffffLL;
+        vaddr &= 0xffffffffffffULL;
 
         if (vaddr >= 1uLL << current_page_table->GetAddressSpaceBits()) {
             on_unmapped();
@@ -783,6 +783,10 @@ void Memory::WriteBlockUnsafe(const VAddr dest_addr, const void* src_buffer,
 void Memory::CopyBlock(const Kernel::KProcess& process, VAddr dest_addr, VAddr src_addr,
                        const std::size_t size) {
     impl->CopyBlock(process, dest_addr, src_addr, size);
+}
+
+void Memory::ZeroBlock(const Kernel::KProcess& process, VAddr dest_addr, const std::size_t size) {
+    impl->ZeroBlock(process, dest_addr, size);
 }
 
 void Memory::RasterizerMarkRegionCached(VAddr vaddr, u64 size, bool cached) {

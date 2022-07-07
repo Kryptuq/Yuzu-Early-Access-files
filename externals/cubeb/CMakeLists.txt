@@ -139,7 +139,7 @@ if(NOT BUNDLE_SPEEX)
 endif()
 
 if(NOT TARGET speex)
-  add_library(speex STATIC subprojects/speex/resample.c)
+  add_library(speex OBJECT subprojects/speex/resample.c)
   set_target_properties(speex PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
   target_include_directories(speex INTERFACE subprojects)
   target_compile_definitions(speex PUBLIC
@@ -259,7 +259,7 @@ if(USE_WASAPI)
   target_sources(cubeb PRIVATE
     src/cubeb_wasapi.cpp)
   target_compile_definitions(cubeb PRIVATE USE_WASAPI)
-  target_link_libraries(cubeb PRIVATE avrt ole32)
+  target_link_libraries(cubeb PRIVATE avrt ole32 ksuser)
 endif()
 
 check_include_files("windows.h;mmsystem.h" USE_WINMM)
@@ -284,9 +284,22 @@ if(HAVE_SYS_SOUNDCARD_H)
   try_compile(USE_OSS "${PROJECT_BINARY_DIR}/compile_tests"
     ${PROJECT_SOURCE_DIR}/cmake/compile_tests/oss_is_v4.c)
   if(USE_OSS)
-    target_sources(cubeb PRIVATE
-      src/cubeb_oss.c)
-    target_compile_definitions(cubeb PRIVATE USE_OSS)
+    # strlcpy is not available on BSD systems that use glibc,
+    # like Debian kfreebsd, so try using libbsd if available
+    include(CheckSymbolExists)
+    check_symbol_exists(strlcpy string.h HAVE_STRLCPY)
+    if(NOT HAVE_STRLCPY)
+      pkg_check_modules(libbsd-overlay IMPORTED_TARGET libbsd-overlay)
+      if(libbsd-overlay_FOUND)
+        target_link_libraries(cubeb PRIVATE PkgConfig::libbsd-overlay)
+        set(HAVE_STRLCPY true)
+      endif()
+    endif()
+    if (HAVE_STRLCPY)
+      target_sources(cubeb PRIVATE
+        src/cubeb_oss.c)
+      target_compile_definitions(cubeb PRIVATE USE_OSS)
+    endif()
   endif()
 endif()
 
@@ -367,7 +380,7 @@ if(BUILD_TESTS)
     add_executable(test_${NAME} test/test_${NAME}.cpp)
     target_include_directories(test_${NAME} PRIVATE ${gtest_SOURCE_DIR}/include src)
     target_link_libraries(test_${NAME} PRIVATE cubeb gtest_main)
-    add_test(${NAME} test_${NAME})
+    add_test(${NAME} test_${NAME} --gtest_death_test_style=threadsafe)
     add_sanitizers(test_${NAME})
     install(TARGETS test_${NAME})
   endmacro(cubeb_add_test)

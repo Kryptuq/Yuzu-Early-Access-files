@@ -3,8 +3,8 @@
 
 #include <memory>
 
-#include "audio_core/sink.h"
-#include "audio_core/sink_details.h"
+#include "audio_core/sink/sink.h"
+#include "audio_core/sink/sink_details.h"
 #include "common/settings.h"
 #include "core/core.h"
 #include "ui_configure_audio.h"
@@ -15,11 +15,11 @@ ConfigureAudio::ConfigureAudio(const Core::System& system_, QWidget* parent)
     : QWidget(parent), ui(std::make_unique<Ui::ConfigureAudio>()), system{system_} {
     ui->setupUi(this);
 
-    InitializeAudioOutputSinkComboBox();
+    InitializeAudioSinkComboBox();
 
     connect(ui->volume_slider, &QSlider::valueChanged, this,
             &ConfigureAudio::SetVolumeIndicatorText);
-    connect(ui->output_sink_combo_box, qOverload<int>(&QComboBox::currentIndexChanged), this,
+    connect(ui->sink_combo_box, qOverload<int>(&QComboBox::currentIndexChanged), this,
             &ConfigureAudio::UpdateAudioDevices);
 
     ui->volume_label->setVisible(Settings::IsConfiguringGlobal());
@@ -30,8 +30,9 @@ ConfigureAudio::ConfigureAudio(const Core::System& system_, QWidget* parent)
     SetConfiguration();
 
     const bool is_powered_on = system_.IsPoweredOn();
-    ui->output_sink_combo_box->setEnabled(!is_powered_on);
-    ui->audio_device_combo_box->setEnabled(!is_powered_on);
+    ui->sink_combo_box->setEnabled(!is_powered_on);
+    ui->output_combo_box->setEnabled(!is_powered_on);
+    ui->input_combo_box->setEnabled(!is_powered_on);
 }
 
 ConfigureAudio::~ConfigureAudio() = default;
@@ -40,9 +41,9 @@ void ConfigureAudio::SetConfiguration() {
     SetOutputSinkFromSinkID();
 
     // The device list cannot be pre-populated (nor listed) until the output sink is known.
-    UpdateAudioDevices(ui->output_sink_combo_box->currentIndex());
+    UpdateAudioDevices(ui->sink_combo_box->currentIndex());
 
-    SetAudioDeviceFromDeviceID();
+    SetAudioDevicesFromDeviceID();
 
     const auto volume_value = static_cast<int>(Settings::values.volume.GetValue());
     ui->volume_slider->setValue(volume_value);
@@ -62,32 +63,45 @@ void ConfigureAudio::SetConfiguration() {
 }
 
 void ConfigureAudio::SetOutputSinkFromSinkID() {
-    [[maybe_unused]] const QSignalBlocker blocker(ui->output_sink_combo_box);
+    [[maybe_unused]] const QSignalBlocker blocker(ui->sink_combo_box);
 
     int new_sink_index = 0;
     const QString sink_id = QString::fromStdString(Settings::values.sink_id.GetValue());
-    for (int index = 0; index < ui->output_sink_combo_box->count(); index++) {
-        if (ui->output_sink_combo_box->itemText(index) == sink_id) {
+    for (int index = 0; index < ui->sink_combo_box->count(); index++) {
+        if (ui->sink_combo_box->itemText(index) == sink_id) {
             new_sink_index = index;
             break;
         }
     }
 
-    ui->output_sink_combo_box->setCurrentIndex(new_sink_index);
+    ui->sink_combo_box->setCurrentIndex(new_sink_index);
 }
 
-void ConfigureAudio::SetAudioDeviceFromDeviceID() {
+void ConfigureAudio::SetAudioDevicesFromDeviceID() {
     int new_device_index = -1;
 
-    const QString device_id = QString::fromStdString(Settings::values.audio_device_id.GetValue());
-    for (int index = 0; index < ui->audio_device_combo_box->count(); index++) {
-        if (ui->audio_device_combo_box->itemText(index) == device_id) {
+    const QString output_device_id =
+        QString::fromStdString(Settings::values.audio_output_device_id.GetValue());
+    for (int index = 0; index < ui->output_combo_box->count(); index++) {
+        if (ui->output_combo_box->itemText(index) == output_device_id) {
             new_device_index = index;
             break;
         }
     }
 
-    ui->audio_device_combo_box->setCurrentIndex(new_device_index);
+    ui->output_combo_box->setCurrentIndex(new_device_index);
+
+    new_device_index = -1;
+    const QString input_device_id =
+        QString::fromStdString(Settings::values.audio_input_device_id.GetValue());
+    for (int index = 0; index < ui->input_combo_box->count(); index++) {
+        if (ui->input_combo_box->itemText(index) == input_device_id) {
+            new_device_index = index;
+            break;
+        }
+    }
+
+    ui->input_combo_box->setCurrentIndex(new_device_index);
 }
 
 void ConfigureAudio::SetVolumeIndicatorText(int percentage) {
@@ -95,14 +109,13 @@ void ConfigureAudio::SetVolumeIndicatorText(int percentage) {
 }
 
 void ConfigureAudio::ApplyConfiguration() {
-
     if (Settings::IsConfiguringGlobal()) {
         Settings::values.sink_id =
-            ui->output_sink_combo_box->itemText(ui->output_sink_combo_box->currentIndex())
-                .toStdString();
-        Settings::values.audio_device_id.SetValue(
-            ui->audio_device_combo_box->itemText(ui->audio_device_combo_box->currentIndex())
-                .toStdString());
+            ui->sink_combo_box->itemText(ui->sink_combo_box->currentIndex()).toStdString();
+        Settings::values.audio_output_device_id.SetValue(
+            ui->output_combo_box->itemText(ui->output_combo_box->currentIndex()).toStdString());
+        Settings::values.audio_input_device_id.SetValue(
+            ui->input_combo_box->itemText(ui->input_combo_box->currentIndex()).toStdString());
 
         // Guard if during game and set to game-specific value
         if (Settings::values.volume.UsingGlobal()) {
@@ -129,21 +142,27 @@ void ConfigureAudio::changeEvent(QEvent* event) {
 }
 
 void ConfigureAudio::UpdateAudioDevices(int sink_index) {
-    ui->audio_device_combo_box->clear();
-    ui->audio_device_combo_box->addItem(QString::fromUtf8(AudioCore::auto_device_name));
+    ui->output_combo_box->clear();
+    ui->output_combo_box->addItem(QString::fromUtf8(AudioCore::Sink::auto_device_name));
 
-    const std::string sink_id = ui->output_sink_combo_box->itemText(sink_index).toStdString();
-    for (const auto& device : AudioCore::GetDeviceListForSink(sink_id)) {
-        ui->audio_device_combo_box->addItem(QString::fromStdString(device));
+    const std::string sink_id = ui->sink_combo_box->itemText(sink_index).toStdString();
+    for (const auto& device : AudioCore::Sink::GetDeviceListForSink(sink_id, false)) {
+        ui->output_combo_box->addItem(QString::fromStdString(device));
+    }
+
+    ui->input_combo_box->clear();
+    ui->input_combo_box->addItem(QString::fromUtf8(AudioCore::Sink::auto_device_name));
+    for (const auto& device : AudioCore::Sink::GetDeviceListForSink(sink_id, true)) {
+        ui->input_combo_box->addItem(QString::fromStdString(device));
     }
 }
 
-void ConfigureAudio::InitializeAudioOutputSinkComboBox() {
-    ui->output_sink_combo_box->clear();
-    ui->output_sink_combo_box->addItem(QString::fromUtf8(AudioCore::auto_device_name));
+void ConfigureAudio::InitializeAudioSinkComboBox() {
+    ui->sink_combo_box->clear();
+    ui->sink_combo_box->addItem(QString::fromUtf8(AudioCore::Sink::auto_device_name));
 
-    for (const char* id : AudioCore::GetSinkIDs()) {
-        ui->output_sink_combo_box->addItem(QString::fromUtf8(id));
+    for (const char* id : AudioCore::Sink::GetSinkIDs()) {
+        ui->sink_combo_box->addItem(QString::fromUtf8(id));
     }
 }
 
@@ -164,8 +183,10 @@ void ConfigureAudio::SetupPerGameUI() {
         ConfigurationShared::SetHighlight(ui->volume_layout, index == 1);
     });
 
-    ui->output_sink_combo_box->setVisible(false);
-    ui->output_sink_label->setVisible(false);
-    ui->audio_device_combo_box->setVisible(false);
-    ui->audio_device_label->setVisible(false);
+    ui->sink_combo_box->setVisible(false);
+    ui->sink_label->setVisible(false);
+    ui->output_combo_box->setVisible(false);
+    ui->output_label->setVisible(false);
+    ui->input_combo_box->setVisible(false);
+    ui->input_label->setVisible(false);
 }

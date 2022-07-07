@@ -109,6 +109,9 @@ public:
     /// Clears all resources in use by the kernel instance.
     void Shutdown();
 
+    /// Close all active services in use by the kernel instance.
+    void CloseServices();
+
     /// Retrieves a shared pointer to the system resource limit instance.
     const KResourceLimit* GetSystemResourceLimit() const;
 

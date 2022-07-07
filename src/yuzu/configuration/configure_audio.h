@@ -31,14 +31,14 @@ public:
 private:
     void changeEvent(QEvent* event) override;
 
-    void InitializeAudioOutputSinkComboBox();
+    void InitializeAudioSinkComboBox();
 
     void RetranslateUI();
 
     void UpdateAudioDevices(int sink_index);
 
     void SetOutputSinkFromSinkID();
-    void SetAudioDeviceFromDeviceID();
+    void SetAudioDevicesFromDeviceID();
     void SetVolumeIndicatorText(int percentage);
 
     void SetupPerGameUI();

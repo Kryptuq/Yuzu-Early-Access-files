@@ -45,6 +45,7 @@ add_library(common STATIC
     alignment.h
     assert.cpp
     assert.h
+    atomic_helpers.h
     atomic_ops.h
     detached_tasks.cpp
     detached_tasks.h
@@ -66,6 +67,7 @@ add_library(common STATIC
     expected.h
     fiber.cpp
     fiber.h
+    fixed_point.h
     fs/file.cpp
     fs/file.h
     fs/fs.cpp
@@ -113,6 +115,7 @@ add_library(common STATIC
     parent_of_member.h
     point.h
     quaternion.h
+    reader_writer_queue.h
     ring_buffer.h
     scm_rev.cpp
     scm_rev.h

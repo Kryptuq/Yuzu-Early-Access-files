@@ -26,6 +26,7 @@ struct CoreTiming::Event {
     u64 fifo_order;
     std::uintptr_t user_data;
     std::weak_ptr<EventType> type;
+    u64 reschedule_time;
 
     // Sort by time, unless the times are the same, in which case sort by
     // the order added to the queue
@@ -134,7 +135,40 @@ void CoreTiming::ScheduleEvent(std::chrono::nanoseconds ns_into_future,
     std::unique_lock main_lock(event_mutex);
     const u64 timeout = static_cast<u64>((GetGlobalTimeNs() + ns_into_future).count());
 
-    event_queue.emplace_back(Event{timeout, event_fifo_id++, user_data, event_type});
+    event_queue.emplace_back(Event{timeout, event_fifo_id++, user_data, event_type, 0});
+    pending_events.fetch_add(1, std::memory_order_relaxed);
+
+    std::push_heap(event_queue.begin(), event_queue.end(), std::greater<>());
+
+    if (is_multicore) {
+        event_cv.notify_one();
+    }
+}
+
+void CoreTiming::ScheduleEventAt(std::chrono::nanoseconds next_time,
+                                 const std::shared_ptr<EventType>& event_type,
+                                 std::uintptr_t user_data) {
+    std::unique_lock main_lock(event_mutex);
+    const u64 timeout = static_cast<u64>(next_time.count());
+
+    event_queue.emplace_back(Event{timeout, event_fifo_id++, user_data, event_type, 0});
+    pending_events.fetch_add(1, std::memory_order_relaxed);
+
+    std::push_heap(event_queue.begin(), event_queue.end(), std::greater<>());
+
+    if (is_multicore) {
+        event_cv.notify_one();
+    }
+}
+
+void CoreTiming::ScheduleLoopingEvent(std::chrono::nanoseconds time,
+                                      const std::shared_ptr<EventType>& event_type,
+                                      std::uintptr_t user_data) {
+    std::unique_lock main_lock(event_mutex);
+    const u64 timeout = static_cast<u64>((GetGlobalTimeNs() + time).count());
+
+    event_queue.emplace_back(
+        Event{timeout, event_fifo_id++, user_data, event_type, static_cast<u64>(time.count())});
     pending_events.fetch_add(1, std::memory_order_relaxed);
 
     std::push_heap(event_queue.begin(), event_queue.end(), std::greater<>());
@@ -231,6 +265,13 @@ std::optional<s64> CoreTiming::Advance() {
 
             event_mutex.lock();
             pending_events.fetch_sub(1, std::memory_order_relaxed);
+        }
+
+        if (evt.reschedule_time != 0) {
+            event_queue.emplace_back(
+                Event{global_timer + evt.reschedule_time - (global_timer - evt.time),
+                      event_fifo_id++, evt.user_data, evt.type, evt.reschedule_time});
+            std::push_heap(event_queue.begin(), event_queue.end(), std::greater<>());
         }
 
         global_timer = GetGlobalTimeNs().count();

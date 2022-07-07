@@ -1442,6 +1442,13 @@ audiounit_destroy(cubeb * ctx)
           audiounit_active_streams(ctx));
     }
 
+    // Destroying a cubeb context with device collection callbacks registered
+    // is misuse of the API, assert then attempt to clean up.
+    assert(!ctx->input_collection_changed_callback &&
+           !ctx->input_collection_changed_user_ptr &&
+           !ctx->output_collection_changed_callback &&
+           !ctx->output_collection_changed_user_ptr);
+
     /* Unregister the callback if necessary. */
     if (ctx->input_collection_changed_callback) {
       audiounit_remove_device_listener(ctx, CUBEB_DEVICE_TYPE_INPUT);
@@ -2700,7 +2707,8 @@ audiounit_setup_stream(cubeb_stream * stm)
   stm->resampler.reset(cubeb_resampler_create(
       stm, has_input(stm) ? &input_unconverted_params : NULL,
       has_output(stm) ? &stm->output_stream_params : NULL, target_sample_rate,
-      stm->data_callback, stm->user_ptr, CUBEB_RESAMPLER_QUALITY_DESKTOP));
+      stm->data_callback, stm->user_ptr, CUBEB_RESAMPLER_QUALITY_DESKTOP,
+      CUBEB_RESAMPLER_RECLOCK_NONE));
   if (!stm->resampler) {
     LOG("(%p) Could not create resampler.", stm);
     return CUBEB_ERROR;

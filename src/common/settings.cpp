@@ -62,7 +62,8 @@ void LogSettings() {
     log_setting("Renderer_UseAsynchronousShaders", values.use_asynchronous_shaders.GetValue());
     log_setting("Renderer_AnisotropicFilteringLevel", values.max_anisotropy.GetValue());
     log_setting("Audio_OutputEngine", values.sink_id.GetValue());
-    log_setting("Audio_OutputDevice", values.audio_device_id.GetValue());
+    log_setting("Audio_OutputDevice", values.audio_output_device_id.GetValue());
+    log_setting("Audio_InputDevice", values.audio_input_device_id.GetValue());
     log_setting("DataStorage_UseVirtualSd", values.use_virtual_sd.GetValue());
     log_path("DataStorage_CacheDir", Common::FS::GetYuzuPath(Common::FS::YuzuPath::CacheDir));
     log_path("DataStorage_ConfigDir", Common::FS::GetYuzuPath(Common::FS::YuzuPath::ConfigDir));

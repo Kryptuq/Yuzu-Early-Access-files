@@ -277,6 +277,14 @@ public:
     std::size_t WriteBuffer(const void* buffer, std::size_t size,
                             std::size_t buffer_index = 0) const;
 
+    /// Helper function to write buffer B
+    std::size_t WriteBufferB(const void* buffer, std::size_t size,
+                             std::size_t buffer_index = 0) const;
+
+    /// Helper function to write buffer C
+    std::size_t WriteBufferC(const void* buffer, std::size_t size,
+                             std::size_t buffer_index = 0) const;
+
     /* Helper function to write a buffer using the appropriate buffer descriptor
      *
      * @tparam T an arbitrary container that satisfies the

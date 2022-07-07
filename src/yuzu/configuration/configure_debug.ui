@@ -235,6 +235,16 @@
        </widget>
       </item>
       <item row="1" column="0">
+       <widget class="QCheckBox" name="dump_audio_commands">
+        <property name="text">
+         <string>Dump Audio Commands To Console**</string>
+        </property>
+        <property name="toolTip">
+         <string>Enable this to output the latest generated audio command list to the console. Only affects games using the audio renderer.</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
        <widget class="QCheckBox" name="reporting_services">
         <property name="text">
          <string>Enable Verbose Reporting Services**</string>
@@ -325,6 +335,7 @@
   <tabstop>disable_loop_safety_checks</tabstop>
   <tabstop>fs_access_log</tabstop>
   <tabstop>reporting_services</tabstop>
+  <tabstop>dump_audio_commands</tabstop>
   <tabstop>quest_flag</tabstop>
   <tabstop>enable_cpu_debugging</tabstop>
   <tabstop>use_debug_asserts</tabstop>

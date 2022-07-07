@@ -44,6 +44,7 @@ void ConfigureDebug::SetConfiguration() {
     ui->fs_access_log->setEnabled(runtime_lock);
     ui->fs_access_log->setChecked(Settings::values.enable_fs_access_log.GetValue());
     ui->reporting_services->setChecked(Settings::values.reporting_services.GetValue());
+    ui->dump_audio_commands->setChecked(Settings::values.dump_audio_commands.GetValue());
     ui->quest_flag->setChecked(Settings::values.quest_flag.GetValue());
     ui->use_debug_asserts->setChecked(Settings::values.use_debug_asserts.GetValue());
     ui->use_auto_stub->setChecked(Settings::values.use_auto_stub.GetValue());
@@ -83,6 +84,7 @@ void ConfigureDebug::ApplyConfiguration() {
     Settings::values.program_args = ui->homebrew_args_edit->text().toStdString();
     Settings::values.enable_fs_access_log = ui->fs_access_log->isChecked();
     Settings::values.reporting_services = ui->reporting_services->isChecked();
+    Settings::values.dump_audio_commands = ui->dump_audio_commands->isChecked();
     Settings::values.quest_flag = ui->quest_flag->isChecked();
     Settings::values.use_debug_asserts = ui->use_debug_asserts->isChecked();
     Settings::values.use_auto_stub = ui->use_auto_stub->isChecked();

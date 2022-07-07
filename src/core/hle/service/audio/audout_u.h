@@ -3,12 +3,10 @@
 
 #pragma once
 
-#include <vector>
+#include "audio_core/audio_out_manager.h"
+#include "audio_core/out/audio_out.h"
+#include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/service.h"
-
-namespace AudioCore {
-class AudioOut;
-}
 
 namespace Core {
 class System;
@@ -17,6 +15,11 @@ class System;
 namespace Kernel {
 class HLERequestContext;
 }
+
+namespace AudioCore::AudioOut {
+class Manager;
+class Out;
+} // namespace AudioCore::AudioOut
 
 namespace Service::Audio {
 
@@ -28,11 +31,11 @@ public:
     ~AudOutU() override;
 
 private:
-    void ListAudioOutsImpl(Kernel::HLERequestContext& ctx);
-    void OpenAudioOutImpl(Kernel::HLERequestContext& ctx);
+    void ListAudioOuts(Kernel::HLERequestContext& ctx);
+    void OpenAudioOut(Kernel::HLERequestContext& ctx);
 
-    std::vector<std::shared_ptr<IAudioOut>> audio_out_interfaces;
-    std::unique_ptr<AudioCore::AudioOut> audio_core;
+    KernelHelpers::ServiceContext service_context;
+    std::unique_ptr<AudioCore::AudioOut::Manager> impl;
 };
 
 } // namespace Service::Audio

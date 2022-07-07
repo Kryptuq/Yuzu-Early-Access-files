@@ -95,19 +95,7 @@ struct KernelCore::Impl {
 
         process_list.clear();
 
-        // Close all open server sessions and ports.
-        std::unordered_set<KAutoObject*> server_objects_;
-        {
-            std::scoped_lock lk(server_objects_lock);
-            server_objects_ = server_objects;
-            server_objects.clear();
-        }
-        for (auto* server_object : server_objects_) {
-            server_object->Close();
-        }
-
-        // Ensures all service threads gracefully shutdown.
-        ClearServiceThreads();
+        CloseServices();
 
         next_object_id = 0;
         next_kernel_process_id = KProcess::InitialKIPIDMin;
@@ -189,6 +177,22 @@ struct KernelCore::Impl {
         // Ensure that the object list container is finalized and properly shutdown.
         global_object_list_container->Finalize();
         global_object_list_container.reset();
+    }
+
+    void CloseServices() {
+        // Close all open server sessions and ports.
+        std::unordered_set<KAutoObject*> server_objects_;
+        {
+            std::scoped_lock lk(server_objects_lock);
+            server_objects_ = server_objects;
+            server_objects.clear();
+        }
+        for (auto* server_object : server_objects_) {
+            server_object->Close();
+        }
+
+        // Ensures all service threads gracefully shutdown.
+        ClearServiceThreads();
     }
 
     void InitializePhysicalCores() {
@@ -810,6 +814,10 @@ void KernelCore::InitializeCores() {
 
 void KernelCore::Shutdown() {
     impl->Shutdown();
+}
+
+void KernelCore::CloseServices() {
+    impl->CloseServices();
 }
 
 const KResourceLimit* KernelCore::GetSystemResourceLimit() const {

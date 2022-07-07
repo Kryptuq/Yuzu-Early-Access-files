@@ -438,6 +438,19 @@ public:
                    std::size_t size);
 
     /**
+     * Zeros a range of bytes within the current process' address space at the specified
+     * virtual address.
+     *
+     * @param process   The process that will have data zeroed within its address space.
+     * @param dest_addr The destination virtual address to zero the data from.
+     * @param size      The size of the range to zero out, in bytes.
+     *
+     * @post The range [dest_addr, size) within the process' address space contains the
+     *       value 0.
+     */
+    void ZeroBlock(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size);
+
+    /**
      * Marks each page within the specified address range as cached or uncached.
      *
      * @param vaddr  The virtual address indicating the start of the address range.

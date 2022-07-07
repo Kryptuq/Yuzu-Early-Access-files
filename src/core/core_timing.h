@@ -95,6 +95,17 @@ public:
     void ScheduleEvent(std::chrono::nanoseconds ns_into_future,
                        const std::shared_ptr<EventType>& event_type, std::uintptr_t user_data = 0);
 
+    /// Schedules an event with an absolute time in core timing
+    void ScheduleEventAt(std::chrono::nanoseconds next_time,
+                         const std::shared_ptr<EventType>& event_type,
+                         std::uintptr_t user_data = 0);
+
+    /// Schedules an event which will automatically re-schedule itself with the given time, until
+    /// unscheduled
+    void ScheduleLoopingEvent(std::chrono::nanoseconds time,
+                              const std::shared_ptr<EventType>& event_type,
+                              std::uintptr_t user_data = 0);
+
     void UnscheduleEvent(const std::shared_ptr<EventType>& event_type, std::uintptr_t user_data);
 
     /// We only permit one event of each type in the queue at a time.

@@ -5,7 +5,6 @@
 #include <array>
 #include <cinttypes>
 #include <cstring>
-#include "audio_core/audio_renderer.h"
 #include "common/settings.h"
 #include "core/core.h"
 #include "core/file_sys/control_metadata.h"
@@ -285,7 +284,7 @@ ISelfController::ISelfController(Core::System& system_, NVFlinger::NVFlinger& nv
         {62, &ISelfController::SetIdleTimeDetectionExtension, "SetIdleTimeDetectionExtension"},
         {63, &ISelfController::GetIdleTimeDetectionExtension, "GetIdleTimeDetectionExtension"},
         {64, nullptr, "SetInputDetectionSourceSet"},
-        {65, nullptr, "ReportUserIsActive"},
+        {65, &ISelfController::ReportUserIsActive, "ReportUserIsActive"},
         {66, nullptr, "GetCurrentIlluminance"},
         {67, nullptr, "IsIlluminanceAvailable"},
         {68, &ISelfController::SetAutoSleepDisabled, "SetAutoSleepDisabled"},
@@ -515,6 +514,13 @@ void ISelfController::GetIdleTimeDetectionExtension(Kernel::HLERequestContext& c
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);
     rb.Push<u32>(idle_time_detection_extension);
+}
+
+void ISelfController::ReportUserIsActive(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_AM, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
 }
 
 void ISelfController::SetAutoSleepDisabled(Kernel::HLERequestContext& ctx) {

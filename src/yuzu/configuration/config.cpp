@@ -372,8 +372,9 @@ void Config::ReadAudioValues() {
     qt_config->beginGroup(QStringLiteral("Audio"));
 
     if (global) {
-        ReadBasicSetting(Settings::values.audio_device_id);
         ReadBasicSetting(Settings::values.sink_id);
+        ReadBasicSetting(Settings::values.audio_output_device_id);
+        ReadBasicSetting(Settings::values.audio_input_device_id);
     }
     ReadGlobalSetting(Settings::values.volume);
 
@@ -1028,7 +1029,8 @@ void Config::SaveAudioValues() {
 
     if (global) {
         WriteBasicSetting(Settings::values.sink_id);
-        WriteBasicSetting(Settings::values.audio_device_id);
+        WriteBasicSetting(Settings::values.audio_output_device_id);
+        WriteBasicSetting(Settings::values.audio_input_device_id);
     }
     WriteGlobalSetting(Settings::values.volume);
 
