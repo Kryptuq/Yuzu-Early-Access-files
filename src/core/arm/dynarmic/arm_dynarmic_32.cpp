@@ -434,18 +434,38 @@ void ARM_Dynarmic_32::PageTableChanged(Common::PageTable& page_table,
 }
 
 std::vector<ARM_Interface::BacktraceEntry> ARM_Dynarmic_32::GetBacktrace(Core::System& system,
-                                                                         u64 sp, u64 lr) {
-    // No way to get accurate stack traces in A32 yet
-    return {};
+                                                                         u64 fp, u64 lr, u64 pc) {
+    std::vector<BacktraceEntry> out;
+    auto& memory = system.Memory();
+
+    out.push_back({"", 0, pc, 0, ""});
+
+    // fp (= r11) points to the last frame record.
+    // Frame records are two words long:
+    // fp+0 : pointer to previous frame record
+    // fp+4 : value of lr for frame
+    while (true) {
+        out.push_back({"", 0, lr, 0, ""});
+        if (!fp || (fp % 4 != 0) || !memory.IsValidVirtualAddressRange(fp, 8)) {
+            break;
+        }
+        lr = memory.Read32(fp + 4);
+        fp = memory.Read32(fp);
+    }
+
+    SymbolicateBacktrace(system, out);
+
+    return out;
 }
 
 std::vector<ARM_Interface::BacktraceEntry> ARM_Dynarmic_32::GetBacktraceFromContext(
     System& system, const ThreadContext32& ctx) {
-    return GetBacktrace(system, ctx.cpu_registers[13], ctx.cpu_registers[14]);
+    const auto& reg = ctx.cpu_registers;
+    return GetBacktrace(system, reg[11], reg[14], reg[15]);
 }
 
 std::vector<ARM_Interface::BacktraceEntry> ARM_Dynarmic_32::GetBacktrace() const {
-    return GetBacktrace(system, GetReg(13), GetReg(14));
+    return GetBacktrace(system, GetReg(11), GetReg(14), GetReg(15));
 }
 
 } // namespace Core

@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#ifndef _MSC_VER
+#include <cxxabi.h>
+#endif
+
 #include <map>
 #include <optional>
 #include "common/bit_field.h"
@@ -68,8 +72,19 @@ void ARM_Interface::SymbolicateBacktrace(Core::System& system, std::vector<Backt
         if (symbol_set != symbols.end()) {
             const auto symbol = Symbols::GetSymbolName(symbol_set->second, entry.offset);
             if (symbol.has_value()) {
+#ifdef _MSC_VER
                 // TODO(DarkLordZach): Add demangling of symbol names.
                 entry.name = *symbol;
+#else
+                int status{-1};
+                char* demangled{abi::__cxa_demangle(symbol->c_str(), nullptr, nullptr, &status)};
+                if (status == 0 && demangled != nullptr) {
+                    entry.name = demangled;
+                    std::free(demangled);
+                } else {
+                    entry.name = *symbol;
+                }
+#endif
             }
         }
     }

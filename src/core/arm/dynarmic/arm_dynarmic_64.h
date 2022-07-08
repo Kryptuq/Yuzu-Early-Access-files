@@ -73,7 +73,7 @@ private:
     std::shared_ptr<Dynarmic::A64::Jit> MakeJit(Common::PageTable* page_table,
                                                 std::size_t address_space_bits) const;
 
-    static std::vector<BacktraceEntry> GetBacktrace(Core::System& system, u64 fp, u64 lr);
+    static std::vector<BacktraceEntry> GetBacktrace(Core::System& system, u64 fp, u64 lr, u64 pc);
 
     using JitCacheKey = std::pair<Common::PageTable*, std::size_t>;
     using JitCacheType =

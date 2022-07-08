@@ -78,7 +78,7 @@ protected:
 private:
     std::shared_ptr<Dynarmic::A32::Jit> MakeJit(Common::PageTable* page_table) const;
 
-    static std::vector<BacktraceEntry> GetBacktrace(Core::System& system, u64 sp, u64 lr);
+    static std::vector<BacktraceEntry> GetBacktrace(Core::System& system, u64 fp, u64 lr, u64 pc);
 
     using JitCacheKey = std::pair<Common::PageTable*, std::size_t>;
     using JitCacheType =
