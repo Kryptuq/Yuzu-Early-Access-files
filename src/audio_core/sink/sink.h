@@ -63,8 +63,7 @@ public:
      * @return A pointer to the created SinkStream
      */
     virtual SinkStream* AcquireSinkStream(Core::System& system, u32 system_channels,
-                                          const std::string& name, StreamType type,
-                                          Common::Event* event = nullptr) = 0;
+                                          const std::string& name, StreamType type) = 0;
 
     /**
      * Get the number of channels the hardware device supports.

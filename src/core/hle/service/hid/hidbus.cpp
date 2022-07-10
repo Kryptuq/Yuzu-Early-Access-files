@@ -50,12 +50,15 @@ HidBus::HidBus(Core::System& system_)
     // Register update callbacks
     hidbus_update_event = Core::Timing::CreateEvent(
         "Hidbus::UpdateCallback",
-        [this](std::uintptr_t user_data, std::chrono::nanoseconds ns_late) {
+        [this](std::uintptr_t user_data, s64 time,
+               std::chrono::nanoseconds ns_late) -> std::optional<std::chrono::nanoseconds> {
             const auto guard = LockService();
             UpdateHidbus(user_data, ns_late);
+            return std::nullopt;
         });
 
-    system_.CoreTiming().ScheduleEvent(hidbus_update_ns, hidbus_update_event);
+    system_.CoreTiming().ScheduleLoopingEvent(hidbus_update_ns, hidbus_update_ns,
+                                              hidbus_update_event);
 }
 
 HidBus::~HidBus() {
@@ -63,8 +66,6 @@ HidBus::~HidBus() {
 }
 
 void HidBus::UpdateHidbus(std::uintptr_t user_data, std::chrono::nanoseconds ns_late) {
-    auto& core_timing = system.CoreTiming();
-
     if (is_hidbus_enabled) {
         for (std::size_t i = 0; i < devices.size(); ++i) {
             if (!devices[i].is_device_initializated) {
@@ -82,13 +83,6 @@ void HidBus::UpdateHidbus(std::uintptr_t user_data, std::chrono::nanoseconds ns_
                         sizeof(HidbusStatusManagerEntry));
         }
     }
-
-    // If ns_late is higher than the update rate ignore the delay
-    if (ns_late > hidbus_update_ns) {
-        ns_late = {};
-    }
-
-    core_timing.ScheduleEvent(hidbus_update_ns - ns_late, hidbus_update_event);
 }
 
 std::optional<std::size_t> HidBus::GetDeviceIndexFromHandle(BusHandle handle) const {

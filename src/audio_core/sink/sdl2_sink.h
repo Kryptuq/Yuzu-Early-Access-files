@@ -37,8 +37,7 @@ public:
      * @return A pointer to the created SinkStream
      */
     SinkStream* AcquireSinkStream(Core::System& system, u32 system_channels,
-                                  const std::string& name, StreamType type,
-                                  Common::Event* event = nullptr) override;
+                                  const std::string& name, StreamType type) override;
 
     /**
      * Close a given stream.

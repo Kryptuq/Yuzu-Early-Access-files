@@ -18,8 +18,7 @@ public:
     SinkStream* AcquireSinkStream([[maybe_unused]] Core::System& system,
                                   [[maybe_unused]] u32 system_channels,
                                   [[maybe_unused]] const std::string& name,
-                                  [[maybe_unused]] StreamType type,
-                                  [[maybe_unused]] Common::Event* event = nullptr) override {
+                                  [[maybe_unused]] StreamType type) override {
         return &null_sink_stream;
     }
 

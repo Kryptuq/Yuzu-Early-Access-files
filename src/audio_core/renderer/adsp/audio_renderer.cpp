@@ -128,8 +128,8 @@ void AudioRenderer::CreateSinkStreams() {
     u32 channels{sink.GetDeviceChannels()};
     for (u32 i = 0; i < MaxRendererSessions; i++) {
         std::string name{fmt::format("ADSP_RenderStream-{}", i)};
-        streams[i] = sink.AcquireSinkStream(system, channels, name,
-                                            ::AudioCore::Sink::StreamType::Render, &render_event);
+        streams[i] =
+            sink.AcquireSinkStream(system, channels, name, ::AudioCore::Sink::StreamType::Render);
         streams[i]->SetSystemChannels(streams[i]->GetDeviceChannels());
     }
 }
@@ -199,12 +199,9 @@ void AudioRenderer::ThreadFunc() {
                             command_list_processor.Process(index) - start_time;
                     }
 
-                    // If the stream queue is building up too much, wait for a signal
-                    // from the backend that a buffer was consumed.
-                    // In practice this will wait longer than 1 buffer due to timing.
-                    auto stream{command_list_processor.GetOutputSinkStream()};
-                    if (stream->GetQueueSize() >= 4) {
-                        render_event.WaitFor(std::chrono::milliseconds(5));
+                    if (index == 0) {
+                        auto stream{command_list_processor.GetOutputSinkStream()};
+                        system.AudioCore().SetStreamQueue(stream->GetQueueSize());
                     }
 
                     const auto end_time{system.CoreTiming().GetClockTicks()};

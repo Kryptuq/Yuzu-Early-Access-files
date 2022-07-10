@@ -65,6 +65,20 @@ public:
      */
     void PauseSinks(bool pausing) const;
 
+    /**
+     * Get the size of the current stream queue.
+     *
+     * @return Current stream queue size.
+     */
+    u32 GetStreamQueue() const;
+
+    /**
+     * Get the size of the current stream queue.
+     *
+     * @param size - New stream size.
+     */
+    void SetStreamQueue(u32 size);
+
 private:
     /**
      * Create the sinks on startup.
@@ -79,6 +93,8 @@ private:
     std::unique_ptr<Sink::Sink> input_sink;
     /// The ADSP in the sysmodule
     std::unique_ptr<AudioRenderer::ADSP::ADSP> adsp;
+    /// Current size of the stream queue
+    std::atomic<u32> estimated_queue{0};
 };
 
 } // namespace AudioCore

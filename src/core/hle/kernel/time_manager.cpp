@@ -11,15 +11,17 @@
 namespace Kernel {
 
 TimeManager::TimeManager(Core::System& system_) : system{system_} {
-    time_manager_event_type =
-        Core::Timing::CreateEvent("Kernel::TimeManagerCallback",
-                                  [this](std::uintptr_t thread_handle, std::chrono::nanoseconds) {
-                                      KThread* thread = reinterpret_cast<KThread*>(thread_handle);
-                                      {
-                                          KScopedSchedulerLock sl(system.Kernel());
-                                          thread->OnTimer();
-                                      }
-                                  });
+    time_manager_event_type = Core::Timing::CreateEvent(
+        "Kernel::TimeManagerCallback",
+        [this](std::uintptr_t thread_handle, s64 time,
+               std::chrono::nanoseconds) -> std::optional<std::chrono::nanoseconds> {
+            KThread* thread = reinterpret_cast<KThread*>(thread_handle);
+            {
+                KScopedSchedulerLock sl(system.Kernel());
+                thread->OnTimer();
+            }
+            return std::nullopt;
+        });
 }
 
 void TimeManager::ScheduleTimeEvent(KThread* thread, s64 nanoseconds) {

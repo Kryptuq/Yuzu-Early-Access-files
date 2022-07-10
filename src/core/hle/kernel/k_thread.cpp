@@ -269,7 +269,7 @@ Result KThread::InitializeIdleThread(Core::System& system, KThread* thread, s32 
 Result KThread::InitializeHighPriorityThread(Core::System& system, KThread* thread,
                                              KThreadFunction func, uintptr_t arg, s32 virt_core) {
     return InitializeThread(thread, func, arg, {}, {}, virt_core, nullptr, ThreadType::HighPriority,
-                            system.GetCpuManager().GetSuspendThreadStartFunc());
+                            system.GetCpuManager().GetShutdownThreadStartFunc());
 }
 
 Result KThread::InitializeUserThread(Core::System& system, KThread* thread, KThreadFunction func,
@@ -737,6 +737,19 @@ void KThread::Continue() {
 
     // Note the state change in scheduler.
     KScheduler::OnThreadStateChanged(kernel, this, old_state);
+}
+
+void KThread::WaitUntilSuspended() {
+    // Make sure we have a suspend requested.
+    ASSERT(IsSuspendRequested());
+
+    // Loop until the thread is not executing on any core.
+    for (std::size_t i = 0; i < static_cast<std::size_t>(Core::Hardware::NUM_CPU_CORES); ++i) {
+        KThread* core_thread{};
+        do {
+            core_thread = kernel.Scheduler(i).GetSchedulerCurrentThread();
+        } while (core_thread == this);
+    }
 }
 
 Result KThread::SetActivity(Svc::ThreadActivity activity) {

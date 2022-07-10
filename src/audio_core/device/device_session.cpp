@@ -37,13 +37,16 @@ Result DeviceSession::Initialize(std::string_view name_, SampleFormat sample_for
         sink = &system.AudioCore().GetOutputSink();
     }
     stream = sink->AcquireSinkStream(system, channel_count, name, type);
+    initialized = true;
     return ResultSuccess;
 }
 
 void DeviceSession::Finalize() {
-    Stop();
-    sink->CloseStream(stream);
-    stream = nullptr;
+    if (initialized) {
+        Stop();
+        sink->CloseStream(stream);
+        stream = nullptr;
+    }
 }
 
 void DeviceSession::Start() {

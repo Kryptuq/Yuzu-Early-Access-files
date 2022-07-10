@@ -69,21 +69,20 @@ NVFlinger::NVFlinger(Core::System& system_, HosBinderDriverServer& hos_binder_dr
 
     // Schedule the screen composition events
     composition_event = Core::Timing::CreateEvent(
-        "ScreenComposition", [this](std::uintptr_t, std::chrono::nanoseconds ns_late) {
+        "ScreenComposition",
+        [this](std::uintptr_t, s64 time,
+               std::chrono::nanoseconds ns_late) -> std::optional<std::chrono::nanoseconds> {
             const auto lock_guard = Lock();
             Compose();
 
-            const auto ticks = std::chrono::nanoseconds{GetNextTicks()};
-            const auto ticks_delta = ticks - ns_late;
-            const auto future_ns = std::max(std::chrono::nanoseconds::zero(), ticks_delta);
-
-            this->system.CoreTiming().ScheduleEvent(future_ns, composition_event);
+            return std::max(std::chrono::nanoseconds::zero(),
+                            std::chrono::nanoseconds(GetNextTicks()) - ns_late);
         });
 
     if (system.IsMulticore()) {
         vsync_thread = std::jthread([this](std::stop_token token) { SplitVSync(token); });
     } else {
-        system.CoreTiming().ScheduleEvent(frame_ns, composition_event);
+        system.CoreTiming().ScheduleLoopingEvent(frame_ns, frame_ns, composition_event);
     }
 }
 

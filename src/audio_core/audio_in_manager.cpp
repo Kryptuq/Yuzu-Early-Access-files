@@ -5,6 +5,8 @@
 #include "audio_core/audio_in_manager.h"
 #include "audio_core/audio_manager.h"
 #include "audio_core/in/audio_in.h"
+#include "audio_core/sink/sink_details.h"
+#include "common/settings.h"
 #include "core/core.h"
 #include "core/hle/service/audio/errors.h"
 
@@ -78,9 +80,12 @@ u32 Manager::GetDeviceNames(std::vector<AudioRenderer::AudioDevice::AudioDeviceN
 
     LinkToManager();
 
-    names.push_back(AudioRenderer::AudioDevice::AudioDeviceName("Uac"));
-
-    return 1;
+    auto input_devices{Sink::GetDeviceListForSink(Settings::values.sink_id.GetValue(), true)};
+    if (input_devices.size() > 1) {
+        names.push_back(AudioRenderer::AudioDevice::AudioDeviceName("Uac"));
+        return 1;
+    }
+    return 0;
 }
 
 } // namespace AudioCore::AudioIn

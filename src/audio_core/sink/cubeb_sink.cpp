@@ -44,8 +44,8 @@ public:
      */
     CubebSinkStream(cubeb* ctx_, const u32 device_channels_, const u32 system_channels_,
                     cubeb_devid output_device, cubeb_devid input_device, const std::string& name_,
-                    const StreamType type_, Core::System& system_, Common::Event* event)
-        : ctx{ctx_}, type{type_}, system{system_}, render_event{event} {
+                    const StreamType type_, Core::System& system_)
+        : ctx{ctx_}, type{type_}, system{system_} {
 #ifdef _WIN32
         CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 #endif
@@ -306,7 +306,6 @@ private:
             manager.SetEvent(Event::Type::AudioInManager, true);
             break;
         case StreamType::Render:
-            render_event->Set();
             break;
         }
     }
@@ -469,8 +468,6 @@ private:
     ::AudioCore::Sink::SinkBuffer released_buffer{};
     /// The last played (or received) frame of audio, used when the callback underruns
     std::array<s16, MaxChannels> last_frame{};
-    /// Audio render-only event, signalled when a render buffer is consumed
-    Common::Event* render_event;
 };
 
 CubebSink::CubebSink(std::string_view target_device_name) {
@@ -525,11 +522,9 @@ CubebSink::~CubebSink() {
 }
 
 SinkStream* CubebSink::AcquireSinkStream(Core::System& system, const u32 system_channels,
-                                         const std::string& name, const StreamType type,
-                                         Common::Event* event) {
-    SinkStreamPtr& stream = sink_streams.emplace_back(
-        std::make_unique<CubebSinkStream>(ctx, device_channels, system_channels, output_device,
-                                          input_device, name, type, system, event));
+                                         const std::string& name, const StreamType type) {
+    SinkStreamPtr& stream = sink_streams.emplace_back(std::make_unique<CubebSinkStream>(
+        ctx, device_channels, system_channels, output_device, input_device, name, type, system));
 
     return stream.get();
 }

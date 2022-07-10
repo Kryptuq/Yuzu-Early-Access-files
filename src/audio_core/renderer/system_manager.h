@@ -6,6 +6,7 @@
 #include <list>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <thread>
 
 #include "audio_core/renderer/system.h"
@@ -70,7 +71,20 @@ private:
     /**
      * Signalling core timing thread to run ThreadFunc.
      */
-    void ThreadFunc2();
+    std::optional<std::chrono::nanoseconds> ThreadFunc2(s64 time);
+
+    /**
+     * Callback from core timing when pausing, used to detect shutdowns and stop ThreadFunc.
+     *
+     * @param paused - Are we pausing or resuming?
+     */
+    void PauseCallback(bool paused);
+
+    enum class StreamState {
+        Filling,
+        Steady,
+        Draining,
+    };
 
     /// Core system
     Core::System& core;
@@ -92,6 +106,8 @@ private:
     std::shared_ptr<Core::Timing::EventType> thread_event;
     /// Atomic for main thread to wait on
     std::atomic<bool> update{};
+    /// Current state of the streams
+    StreamState state{StreamState::Filling};
 };
 
 } // namespace AudioCore::AudioRenderer

@@ -46,8 +46,8 @@ public:
      */
     SDLSinkStream(u32 device_channels_, const u32 system_channels_,
                   const std::string& output_device, const std::string& input_device,
-                  const StreamType type_, Core::System& system_, Common::Event* event)
-        : type{type_}, system{system_}, render_event{event} {
+                  const StreamType type_, Core::System& system_)
+        : type{type_}, system{system_} {
         system_channels = system_channels_;
         device_channels = device_channels_;
 
@@ -279,7 +279,6 @@ private:
             manager.SetEvent(Event::Type::AudioInManager, true);
             break;
         case StreamType::Render:
-            render_event->Set();
             break;
         }
     }
@@ -417,8 +416,6 @@ private:
     ::AudioCore::Sink::SinkBuffer released_buffer{};
     /// The last played (or received) frame of audio, used when the callback underruns
     std::array<s16, MaxChannels> last_frame{};
-    /// Audio render-only event, signalled when a render buffer is consumed
-    Common::Event* render_event;
 };
 
 SDLSink::SDLSink(std::string_view target_device_name) {
@@ -441,10 +438,9 @@ SDLSink::SDLSink(std::string_view target_device_name) {
 SDLSink::~SDLSink() = default;
 
 SinkStream* SDLSink::AcquireSinkStream(Core::System& system, const u32 system_channels,
-                                       const std::string&, const StreamType type,
-                                       Common::Event* event) {
+                                       const std::string&, const StreamType type) {
     SinkStreamPtr& stream = sink_streams.emplace_back(std::make_unique<SDLSinkStream>(
-        device_channels, system_channels, output_device, input_device, type, system, event));
+        device_channels, system_channels, output_device, input_device, type, system));
     return stream.get();
 }
 

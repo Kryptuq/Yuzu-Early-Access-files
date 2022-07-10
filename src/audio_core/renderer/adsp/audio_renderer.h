@@ -14,8 +14,11 @@
 #include "common/thread.h"
 
 namespace Core {
-class System;
+namespace Timing {
+struct EventType;
 }
+class System;
+} // namespace Core
 
 namespace AudioCore {
 namespace Sink {
@@ -194,8 +197,6 @@ private:
     Sink::Sink& sink;
     /// The streams which will receive the processed samples
     std::array<Sink::SinkStream*, MaxRendererSessions> streams;
-    /// An event signalled from the backend when a buffer is consumed, used for timing.
-    Common::Event render_event{};
 };
 
 } // namespace AudioRenderer::ADSP

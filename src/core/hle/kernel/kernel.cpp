@@ -76,7 +76,7 @@ struct KernelCore::Impl {
         InitializeMemoryLayout();
         Init::InitializeKPageBufferSlabHeap(system);
         InitializeSchedulers();
-        InitializeSuspendThreads();
+        InitializeShutdownThreads();
         InitializePreemption(kernel);
 
         RegisterHostThread();
@@ -131,9 +131,9 @@ struct KernelCore::Impl {
         CleanupObject(system_resource_limit);
 
         for (u32 core_id = 0; core_id < Core::Hardware::NUM_CPU_CORES; core_id++) {
-            if (suspend_threads[core_id]) {
-                suspend_threads[core_id]->Close();
-                suspend_threads[core_id] = nullptr;
+            if (shutdown_threads[core_id]) {
+                shutdown_threads[core_id]->Close();
+                shutdown_threads[core_id] = nullptr;
             }
 
             schedulers[core_id]->Finalize();
@@ -238,26 +238,27 @@ struct KernelCore::Impl {
 
     void InitializePreemption(KernelCore& kernel) {
         preemption_event = Core::Timing::CreateEvent(
-            "PreemptionCallback", [this, &kernel](std::uintptr_t, std::chrono::nanoseconds) {
+            "PreemptionCallback",
+            [this, &kernel](std::uintptr_t, s64 time,
+                            std::chrono::nanoseconds) -> std::optional<std::chrono::nanoseconds> {
                 {
                     KScopedSchedulerLock lock(kernel);
                     global_scheduler_context->PreemptThreads();
                 }
-                const auto time_interval = std::chrono::nanoseconds{std::chrono::milliseconds(10)};
-                system.CoreTiming().ScheduleEvent(time_interval, preemption_event);
+                return std::nullopt;
             });
 
         const auto time_interval = std::chrono::nanoseconds{std::chrono::milliseconds(10)};
-        system.CoreTiming().ScheduleEvent(time_interval, preemption_event);
+        system.CoreTiming().ScheduleLoopingEvent(time_interval, time_interval, preemption_event);
     }
 
-    void InitializeSuspendThreads() {
+    void InitializeShutdownThreads() {
         for (u32 core_id = 0; core_id < Core::Hardware::NUM_CPU_CORES; core_id++) {
-            suspend_threads[core_id] = KThread::Create(system.Kernel());
-            ASSERT(KThread::InitializeHighPriorityThread(system, suspend_threads[core_id], {}, {},
+            shutdown_threads[core_id] = KThread::Create(system.Kernel());
+            ASSERT(KThread::InitializeHighPriorityThread(system, shutdown_threads[core_id], {}, {},
                                                          core_id)
                        .IsSuccess());
-            suspend_threads[core_id]->SetName(fmt::format("SuspendThread:{}", core_id));
+            shutdown_threads[core_id]->SetName(fmt::format("SuspendThread:{}", core_id));
         }
     }
 
@@ -779,7 +780,7 @@ struct KernelCore::Impl {
     std::weak_ptr<ServiceThread> default_service_thread;
     Common::ThreadWorker service_threads_manager;
 
-    std::array<KThread*, Core::Hardware::NUM_CPU_CORES> suspend_threads;
+    std::array<KThread*, Core::Hardware::NUM_CPU_CORES> shutdown_threads;
     std::array<Core::CPUInterruptHandler, Core::Hardware::NUM_CPU_CORES> interrupts{};
     std::array<std::unique_ptr<Kernel::KScheduler>, Core::Hardware::NUM_CPU_CORES> schedulers{};
 
@@ -1093,14 +1094,25 @@ const Kernel::KSharedMemory& KernelCore::GetHidBusSharedMem() const {
 
 void KernelCore::Suspend(bool suspended) {
     const bool should_suspend{exception_exited || suspended};
-    const auto state{should_suspend ? ThreadState::Runnable : ThreadState::Waiting};
-    {
-        KScopedSchedulerLock lk{*this};
-        for (auto* thread : impl->suspend_threads) {
-            thread->SetState(state);
-            thread->SetWaitReasonForDebugging(ThreadWaitReasonForDebugging::Suspended);
+    const auto activity = should_suspend ? ProcessActivity::Paused : ProcessActivity::Runnable;
+
+    for (auto* process : GetProcessList()) {
+        process->SetActivity(activity);
+
+        if (should_suspend) {
+            // Wait for execution to stop
+            for (auto* thread : process->GetThreadList()) {
+                thread->WaitUntilSuspended();
+            }
         }
     }
+}
+
+void KernelCore::ShutdownCores() {
+    for (auto* thread : impl->shutdown_threads) {
+        void(thread->Run());
+    }
+    InterruptAllPhysicalCores();
 }
 
 bool KernelCore::IsMulticore() const {

@@ -100,7 +100,7 @@ private:
     /// System
     Core::System& system;
     /// Output sink this device will use
-    Sink::Sink* sink;
+    Sink::Sink* sink{};
     /// The backend stream for this device session to send samples to
     Sink::SinkStream* stream{};
     /// Name of this device session
@@ -119,6 +119,8 @@ private:
     u64 applet_resource_user_id{};
     /// Total number of samples played by this device session
     u64 played_sample_count{};
+    /// Is this session initialised?
+    bool initialized{};
 };
 
 } // namespace AudioCore

@@ -53,8 +53,10 @@ Freezer::Freezer(Core::Timing::CoreTiming& core_timing_, Core::Memory::Memory& m
     : core_timing{core_timing_}, memory{memory_} {
     event = Core::Timing::CreateEvent(
         "MemoryFreezer::FrameCallback",
-        [this](std::uintptr_t user_data, std::chrono::nanoseconds ns_late) {
+        [this](std::uintptr_t user_data, s64 time,
+               std::chrono::nanoseconds ns_late) -> std::optional<std::chrono::nanoseconds> {
             FrameCallback(user_data, ns_late);
+            return std::nullopt;
         });
     core_timing.ScheduleEvent(memory_freezer_ns, event);
 }

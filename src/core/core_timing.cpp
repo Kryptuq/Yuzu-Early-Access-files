@@ -22,11 +22,11 @@ std::shared_ptr<EventType> CreateEvent(std::string name, TimedCallback&& callbac
 }
 
 struct CoreTiming::Event {
-    u64 time;
+    s64 time;
     u64 fifo_order;
     std::uintptr_t user_data;
     std::weak_ptr<EventType> type;
-    u64 reschedule_time;
+    s64 reschedule_time;
 
     // Sort by time, unless the times are the same, in which case sort by
     // the order added to the queue
@@ -59,7 +59,8 @@ void CoreTiming::Initialize(std::function<void()>&& on_thread_init_) {
     event_fifo_id = 0;
     shutting_down = false;
     ticks = 0;
-    const auto empty_timed_callback = [](std::uintptr_t, std::chrono::nanoseconds) {};
+    const auto empty_timed_callback = [](std::uintptr_t, u64, std::chrono::nanoseconds)
+        -> std::optional<std::chrono::nanoseconds> { return std::nullopt; };
     ev_lost = CreateEvent("_lost_event", empty_timed_callback);
     if (is_multicore) {
         worker_threads.emplace_back(ThreadEntry, std::ref(*this), 0);
@@ -77,6 +78,7 @@ void CoreTiming::Shutdown() {
         thread.join();
     }
     worker_threads.clear();
+    pause_callbacks.clear();
     ClearPendingEvents();
     has_started = false;
 }
@@ -94,6 +96,14 @@ void CoreTiming::Pause(bool is_paused_) {
         }
     }
     paused_state.store(is_paused_, std::memory_order_relaxed);
+
+    if (!is_paused_) {
+        pause_end_time = GetGlobalTimeNs().count();
+    }
+
+    for (auto& cb : pause_callbacks) {
+        cb(is_paused_);
+    }
 }
 
 void CoreTiming::SyncPause(bool is_paused_) {
@@ -117,6 +127,14 @@ void CoreTiming::SyncPause(bool is_paused_) {
             wait_signal_cv.wait(main_lock, [this] { return pause_count == 0; });
         }
     }
+
+    if (!is_paused_) {
+        pause_end_time = GetGlobalTimeNs().count();
+    }
+
+    for (auto& cb : pause_callbacks) {
+        cb(is_paused_);
+    }
 }
 
 bool CoreTiming::IsRunning() const {
@@ -130,12 +148,12 @@ bool CoreTiming::HasPendingEvents() const {
 
 void CoreTiming::ScheduleEvent(std::chrono::nanoseconds ns_into_future,
                                const std::shared_ptr<EventType>& event_type,
-                               std::uintptr_t user_data) {
+                               std::uintptr_t user_data, bool absolute_time) {
 
     std::unique_lock main_lock(event_mutex);
-    const u64 timeout = static_cast<u64>((GetGlobalTimeNs() + ns_into_future).count());
+    const auto next_time{absolute_time ? ns_into_future : GetGlobalTimeNs() + ns_into_future};
 
-    event_queue.emplace_back(Event{timeout, event_fifo_id++, user_data, event_type, 0});
+    event_queue.emplace_back(Event{next_time.count(), event_fifo_id++, user_data, event_type, 0});
     pending_events.fetch_add(1, std::memory_order_relaxed);
 
     std::push_heap(event_queue.begin(), event_queue.end(), std::greater<>());
@@ -145,30 +163,15 @@ void CoreTiming::ScheduleEvent(std::chrono::nanoseconds ns_into_future,
     }
 }
 
-void CoreTiming::ScheduleEventAt(std::chrono::nanoseconds next_time,
-                                 const std::shared_ptr<EventType>& event_type,
-                                 std::uintptr_t user_data) {
-    std::unique_lock main_lock(event_mutex);
-    const u64 timeout = static_cast<u64>(next_time.count());
-
-    event_queue.emplace_back(Event{timeout, event_fifo_id++, user_data, event_type, 0});
-    pending_events.fetch_add(1, std::memory_order_relaxed);
-
-    std::push_heap(event_queue.begin(), event_queue.end(), std::greater<>());
-
-    if (is_multicore) {
-        event_cv.notify_one();
-    }
-}
-
-void CoreTiming::ScheduleLoopingEvent(std::chrono::nanoseconds time,
+void CoreTiming::ScheduleLoopingEvent(std::chrono::nanoseconds start_time,
+                                      std::chrono::nanoseconds resched_time,
                                       const std::shared_ptr<EventType>& event_type,
-                                      std::uintptr_t user_data) {
+                                      std::uintptr_t user_data, bool absolute_time) {
     std::unique_lock main_lock(event_mutex);
-    const u64 timeout = static_cast<u64>((GetGlobalTimeNs() + time).count());
+    const auto next_time{absolute_time ? start_time : GetGlobalTimeNs() + start_time};
 
     event_queue.emplace_back(
-        Event{timeout, event_fifo_id++, user_data, event_type, static_cast<u64>(time.count())});
+        Event{next_time.count(), event_fifo_id++, user_data, event_type, resched_time.count()});
     pending_events.fetch_add(1, std::memory_order_relaxed);
 
     std::push_heap(event_queue.begin(), event_queue.end(), std::greater<>());
@@ -247,6 +250,11 @@ void CoreTiming::RemoveEvent(const std::shared_ptr<EventType>& event_type) {
     }
 }
 
+void CoreTiming::RegisterPauseCallback(PauseCallback&& callback) {
+    std::unique_lock main_lock(event_mutex);
+    pause_callbacks.emplace_back(std::move(callback));
+}
+
 std::optional<s64> CoreTiming::Advance() {
     global_timer = GetGlobalTimeNs().count();
 
@@ -257,21 +265,31 @@ std::optional<s64> CoreTiming::Advance() {
         event_queue.pop_back();
 
         if (const auto event_type{evt.type.lock()}) {
-
             event_mutex.unlock();
 
-            const s64 delay = static_cast<s64>(GetGlobalTimeNs().count() - evt.time);
-            event_type->callback(evt.user_data, std::chrono::nanoseconds{delay});
+            const auto new_schedule_time{event_type->callback(
+                evt.user_data, evt.time,
+                std::chrono::nanoseconds{GetGlobalTimeNs().count() - evt.time})};
 
             event_mutex.lock();
             pending_events.fetch_sub(1, std::memory_order_relaxed);
-        }
 
-        if (evt.reschedule_time != 0) {
-            event_queue.emplace_back(
-                Event{global_timer + evt.reschedule_time - (global_timer - evt.time),
-                      event_fifo_id++, evt.user_data, evt.type, evt.reschedule_time});
-            std::push_heap(event_queue.begin(), event_queue.end(), std::greater<>());
+            if (evt.reschedule_time != 0) {
+                // If this event was scheduled into a pause, its time now is going to be way behind.
+                // Re-set this event to continue from the end of the pause.
+                auto next_time{evt.time + evt.reschedule_time};
+                if (evt.time < pause_end_time) {
+                    next_time = pause_end_time + evt.reschedule_time;
+                }
+
+                const auto next_schedule_time{new_schedule_time.has_value()
+                                                  ? new_schedule_time.value().count()
+                                                  : evt.reschedule_time};
+                event_queue.emplace_back(
+                    Event{next_time, event_fifo_id++, evt.user_data, evt.type, next_schedule_time});
+                pending_events.fetch_add(1, std::memory_order_relaxed);
+                std::push_heap(event_queue.begin(), event_queue.end(), std::greater<>());
+            }
         }
 
         global_timer = GetGlobalTimeNs().count();

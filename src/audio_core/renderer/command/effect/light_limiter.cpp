@@ -63,7 +63,8 @@ static void ApplyLightLimiterEffect(const LightLimiterInfo::ParameterVersion2& p
 
         for (u32 sample_index = 0; sample_index < sample_count; sample_index++) {
             for (u32 channel = 0; channel < params.channel_count; channel++) {
-                auto sample{Common::FixedPoint<49, 15>(inputs[channel][sample_index]) *
+                auto sample{(Common::FixedPoint<49, 15>(inputs[channel][sample_index]) /
+                             Common::FixedPoint<49, 15>::one) *
                             params.input_gain};
                 auto abs_sample{sample};
                 if (sample < 0.0f) {
@@ -85,15 +86,17 @@ static void ApplyLightLimiterEffect(const LightLimiterInfo::ParameterVersion2& p
                 auto lookahead_sample{
                     state.look_ahead_sample_buffers[channel]
                                                    [state.look_ahead_sample_offsets[channel]]};
+
                 state.look_ahead_sample_buffers[channel][state.look_ahead_sample_offsets[channel]] =
                     sample;
                 state.look_ahead_sample_offsets[channel] =
                     (state.look_ahead_sample_offsets[channel] + 1) % params.look_ahead_samples_min;
 
-                outputs[channel][sample_index] = static_cast<s32>(std::clamp(
-                    (lookahead_sample * state.compression_gain[channel] * params.output_gain)
-                        .to_long(),
-                    min, max));
+                outputs[channel][sample_index] = static_cast<s32>(
+                    std::clamp((lookahead_sample * state.compression_gain[channel] *
+                                params.output_gain * Common::FixedPoint<49, 15>::one)
+                                   .to_long(),
+                               min, max));
 
                 if (statistics) {
                     statistics->channel_max_sample[channel] =

@@ -184,10 +184,12 @@ CheatEngine::~CheatEngine() {
 void CheatEngine::Initialize() {
     event = Core::Timing::CreateEvent(
         "CheatEngine::FrameCallback::" + Common::HexToString(metadata.main_nso_build_id),
-        [this](std::uintptr_t user_data, std::chrono::nanoseconds ns_late) {
+        [this](std::uintptr_t user_data, s64 time,
+               std::chrono::nanoseconds ns_late) -> std::optional<std::chrono::nanoseconds> {
             FrameCallback(user_data, ns_late);
+            return std::nullopt;
         });
-    core_timing.ScheduleEvent(CHEAT_ENGINE_NS, event);
+    core_timing.ScheduleLoopingEvent(CHEAT_ENGINE_NS, CHEAT_ENGINE_NS, event);
 
     metadata.process_id = system.CurrentProcess()->GetProcessID();
     metadata.title_id = system.GetCurrentProcessProgramID();
@@ -237,8 +239,6 @@ void CheatEngine::FrameCallback(std::uintptr_t, std::chrono::nanoseconds ns_late
     MICROPROFILE_SCOPE(Cheat_Engine);
 
     vm.Execute(metadata);
-
-    core_timing.ScheduleEvent(CHEAT_ENGINE_NS - ns_late, event);
 }
 
 } // namespace Core::Memory

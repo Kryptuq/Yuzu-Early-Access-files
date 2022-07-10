@@ -74,26 +74,34 @@ IAppletResource::IAppletResource(Core::System& system_,
     // Register update callbacks
     pad_update_event = Core::Timing::CreateEvent(
         "HID::UpdatePadCallback",
-        [this](std::uintptr_t user_data, std::chrono::nanoseconds ns_late) {
+        [this](std::uintptr_t user_data, s64 time,
+               std::chrono::nanoseconds ns_late) -> std::optional<std::chrono::nanoseconds> {
             const auto guard = LockService();
             UpdateControllers(user_data, ns_late);
+            return std::nullopt;
         });
     mouse_keyboard_update_event = Core::Timing::CreateEvent(
         "HID::UpdateMouseKeyboardCallback",
-        [this](std::uintptr_t user_data, std::chrono::nanoseconds ns_late) {
+        [this](std::uintptr_t user_data, s64 time,
+               std::chrono::nanoseconds ns_late) -> std::optional<std::chrono::nanoseconds> {
             const auto guard = LockService();
             UpdateMouseKeyboard(user_data, ns_late);
+            return std::nullopt;
         });
     motion_update_event = Core::Timing::CreateEvent(
         "HID::UpdateMotionCallback",
-        [this](std::uintptr_t user_data, std::chrono::nanoseconds ns_late) {
+        [this](std::uintptr_t user_data, s64 time,
+               std::chrono::nanoseconds ns_late) -> std::optional<std::chrono::nanoseconds> {
             const auto guard = LockService();
             UpdateMotion(user_data, ns_late);
+            return std::nullopt;
         });
 
-    system.CoreTiming().ScheduleEvent(pad_update_ns, pad_update_event);
-    system.CoreTiming().ScheduleEvent(mouse_keyboard_update_ns, mouse_keyboard_update_event);
-    system.CoreTiming().ScheduleEvent(motion_update_ns, motion_update_event);
+    system.CoreTiming().ScheduleLoopingEvent(pad_update_ns, pad_update_ns, pad_update_event);
+    system.CoreTiming().ScheduleLoopingEvent(mouse_keyboard_update_ns, mouse_keyboard_update_ns,
+                                             mouse_keyboard_update_event);
+    system.CoreTiming().ScheduleLoopingEvent(motion_update_ns, motion_update_ns,
+                                             motion_update_event);
 
     system.HIDCore().ReloadInputDevices();
 }
@@ -135,13 +143,6 @@ void IAppletResource::UpdateControllers(std::uintptr_t user_data,
         }
         controller->OnUpdate(core_timing);
     }
-
-    // If ns_late is higher than the update rate ignore the delay
-    if (ns_late > pad_update_ns) {
-        ns_late = {};
-    }
-
-    core_timing.ScheduleEvent(pad_update_ns - ns_late, pad_update_event);
 }
 
 void IAppletResource::UpdateMouseKeyboard(std::uintptr_t user_data,
@@ -150,26 +151,12 @@ void IAppletResource::UpdateMouseKeyboard(std::uintptr_t user_data,
 
     controllers[static_cast<size_t>(HidController::Mouse)]->OnUpdate(core_timing);
     controllers[static_cast<size_t>(HidController::Keyboard)]->OnUpdate(core_timing);
-
-    // If ns_late is higher than the update rate ignore the delay
-    if (ns_late > mouse_keyboard_update_ns) {
-        ns_late = {};
-    }
-
-    core_timing.ScheduleEvent(mouse_keyboard_update_ns - ns_late, mouse_keyboard_update_event);
 }
 
 void IAppletResource::UpdateMotion(std::uintptr_t user_data, std::chrono::nanoseconds ns_late) {
     auto& core_timing = system.CoreTiming();
 
     controllers[static_cast<size_t>(HidController::NPad)]->OnMotionUpdate(core_timing);
-
-    // If ns_late is higher than the update rate ignore the delay
-    if (ns_late > motion_update_ns) {
-        ns_late = {};
-    }
-
-    core_timing.ScheduleEvent(motion_update_ns - ns_late, motion_update_event);
 }
 
 class IActiveVibrationDeviceList final : public ServiceFramework<IActiveVibrationDeviceList> {
