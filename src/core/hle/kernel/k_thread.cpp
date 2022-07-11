@@ -308,14 +308,20 @@ void KThread::Finalize() {
 
         auto it = waiter_list.begin();
         while (it != waiter_list.end()) {
-            // Clear the lock owner
-            it->SetLockOwner(nullptr);
+            // Get the thread.
+            KThread* const waiter = std::addressof(*it);
+
+            // The thread shouldn't be a kernel waiter.
+            ASSERT(!IsKernelAddressKey(waiter->GetAddressKey()));
+
+            // Clear the lock owner.
+            waiter->SetLockOwner(nullptr);
 
             // Erase the waiter from our list.
             it = waiter_list.erase(it);
 
             // Cancel the thread's wait.
-            it->CancelWait(ResultInvalidState, true);
+            waiter->CancelWait(ResultInvalidState, true);
         }
     }
 
