@@ -5,9 +5,11 @@
 
 #include <atomic>
 #include "common/assert.h"
+#include "core/hle/kernel/k_interrupt_manager.h"
 #include "core/hle/kernel/k_spin_lock.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/kernel/physical_core.h"
 
 namespace Kernel {
 

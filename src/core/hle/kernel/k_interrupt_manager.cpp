@@ -6,6 +6,7 @@
 #include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/kernel/physical_core.h"
 
 namespace Kernel::KInterruptManager {
 
@@ -14,6 +15,9 @@ void HandleInterrupt(KernelCore& kernel, s32 core_id) {
     if (!process) {
         return;
     }
+
+    // Acknowledge the interrupt.
+    kernel.PhysicalCore(core_id).ClearInterrupt();
 
     auto& current_thread = GetCurrentThread(kernel);
 
@@ -27,6 +31,9 @@ void HandleInterrupt(KernelCore& kernel, s32 core_id) {
         // Set the interrupt flag for the thread.
         GetCurrentThread(kernel).SetInterruptFlag();
     }
+
+    // Request interrupt scheduling.
+    kernel.CurrentScheduler()->RequestScheduleOnInterrupt();
 }
 
 } // namespace Kernel::KInterruptManager

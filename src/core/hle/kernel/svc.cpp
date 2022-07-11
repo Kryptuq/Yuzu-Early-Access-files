@@ -887,7 +887,7 @@ static Result GetInfo(Core::System& system, u64* result, u64 info_id, Handle han
         const auto* const current_thread = GetCurrentThreadPointer(system.Kernel());
         const bool same_thread = current_thread == thread.GetPointerUnsafe();
 
-        const u64 prev_ctx_ticks = scheduler.GetLastContextSwitchTicks();
+        const u64 prev_ctx_ticks = scheduler.GetLastContextSwitchTime();
         u64 out_ticks = 0;
         if (same_thread && info_sub_id == 0xFFFFFFFFFFFFFFFF) {
             const u64 thread_ticks = current_thread->GetCpuTime();
@@ -3026,11 +3026,6 @@ void Call(Core::System& system, u32 immediate) {
     }
 
     kernel.ExitSVCProfile();
-
-    if (!thread->IsCallingSvc()) {
-        auto* host_context = thread->GetHostContext().get();
-        host_context->Rewind();
-    }
 }
 
 } // namespace Kernel::Svc

@@ -43,6 +43,7 @@ void PhysicalCore::Initialize([[maybe_unused]] bool is_64_bit) {
 
 void PhysicalCore::Run() {
     arm_interface->Run();
+    arm_interface->ClearExclusiveState();
 }
 
 void PhysicalCore::Idle() {

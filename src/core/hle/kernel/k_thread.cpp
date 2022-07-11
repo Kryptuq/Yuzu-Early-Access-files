@@ -258,7 +258,18 @@ Result KThread::InitializeThread(KThread* thread, KThreadFunction func, uintptr_
 }
 
 Result KThread::InitializeDummyThread(KThread* thread) {
-    return thread->Initialize({}, {}, {}, DummyThreadPriority, 3, {}, ThreadType::Dummy);
+    // Initialize the thread.
+    R_TRY(thread->Initialize({}, {}, {}, DummyThreadPriority, 3, {}, ThreadType::Dummy));
+
+    // Initialize emulation parameters.
+    thread->stack_parameters.disable_count = 0;
+
+    return ResultSuccess;
+}
+
+Result KThread::InitializeMainThread(Core::System& system, KThread* thread, s32 virt_core) {
+    return InitializeThread(thread, {}, {}, {}, IdleThreadPriority, virt_core, {}, ThreadType::Main,
+                            system.GetCpuManager().GetGuestActivateFunc());
 }
 
 Result KThread::InitializeIdleThread(Core::System& system, KThread* thread, s32 virt_core) {
@@ -277,7 +288,7 @@ Result KThread::InitializeUserThread(Core::System& system, KThread* thread, KThr
                                      KProcess* owner) {
     system.Kernel().GlobalSchedulerContext().AddThread(thread);
     return InitializeThread(thread, func, arg, user_stack_top, prio, virt_core, owner,
-                            ThreadType::User, system.GetCpuManager().GetGuestThreadStartFunc());
+                            ThreadType::User, system.GetCpuManager().GetGuestThreadFunc());
 }
 
 void KThread::PostDestroy(uintptr_t arg) {
@@ -1058,6 +1069,8 @@ void KThread::Exit() {
         // Register the thread as a work task.
         KWorkerTaskManager::AddTask(kernel, KWorkerTaskManager::WorkerType::Exit, this);
     }
+
+    UNREACHABLE_MSG("KThread::Exit() would return");
 }
 
 Result KThread::Sleep(s64 timeout) {
@@ -1092,6 +1105,8 @@ void KThread::IfDummyThreadTryWait() {
     if (GetState() != ThreadState::Waiting) {
         return;
     }
+
+    ASSERT(!kernel.IsPhantomModeForSingleCore());
 
     // Block until we are no longer waiting.
     std::unique_lock lk(dummy_wait_lock);
@@ -1197,16 +1212,13 @@ KScopedDisableDispatch::~KScopedDisableDispatch() {
         return;
     }
 
-    // Skip the reschedule if single-core, as dispatch tracking is disabled here.
-    if (!Settings::values.use_multi_core.GetValue()) {
-        return;
-    }
-
     if (GetCurrentThread(kernel).GetDisableDispatchCount() <= 1) {
-        auto scheduler = kernel.CurrentScheduler();
+        auto* scheduler = kernel.CurrentScheduler();
 
-        if (scheduler) {
+        if (scheduler && !kernel.IsPhantomModeForSingleCore()) {
             scheduler->RescheduleCurrentCore();
+        } else {
+            KScheduler::RescheduleCurrentHLEThread(kernel);
         }
     } else {
         GetCurrentThread(kernel).EnableDispatch();

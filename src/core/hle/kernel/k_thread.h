@@ -413,6 +413,9 @@ public:
 
     [[nodiscard]] static Result InitializeDummyThread(KThread* thread);
 
+    [[nodiscard]] static Result InitializeMainThread(Core::System& system, KThread* thread,
+                                                     s32 virt_core);
+
     [[nodiscard]] static Result InitializeIdleThread(Core::System& system, KThread* thread,
                                                      s32 virt_core);
 
@@ -480,39 +483,16 @@ public:
         return per_core_priority_queue_entry[core];
     }
 
-    [[nodiscard]] bool IsKernelThread() const {
-        return GetActiveCore() == 3;
-    }
-
-    [[nodiscard]] bool IsDispatchTrackingDisabled() const {
-        return is_single_core || IsKernelThread();
-    }
-
     [[nodiscard]] s32 GetDisableDispatchCount() const {
-        if (IsDispatchTrackingDisabled()) {
-            // TODO(bunnei): Until kernel threads are emulated, we cannot enable/disable dispatch.
-            return 1;
-        }
-
         return this->GetStackParameters().disable_count;
     }
 
     void DisableDispatch() {
-        if (IsDispatchTrackingDisabled()) {
-            // TODO(bunnei): Until kernel threads are emulated, we cannot enable/disable dispatch.
-            return;
-        }
-
         ASSERT(GetCurrentThread(kernel).GetDisableDispatchCount() >= 0);
         this->GetStackParameters().disable_count++;
     }
 
     void EnableDispatch() {
-        if (IsDispatchTrackingDisabled()) {
-            // TODO(bunnei): Until kernel threads are emulated, we cannot enable/disable dispatch.
-            return;
-        }
-
         ASSERT(GetCurrentThread(kernel).GetDisableDispatchCount() > 0);
         this->GetStackParameters().disable_count--;
     }

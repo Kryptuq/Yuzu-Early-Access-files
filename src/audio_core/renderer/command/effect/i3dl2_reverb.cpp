@@ -73,6 +73,7 @@ static void UpdateI3dl2ReverbEffectParameter(const I3dl2ReverbInfo::ParameterVer
 
     Common::FixedPoint<50, 14> delay{static_cast<f32>(params.sample_rate) / 1000.0f};
 
+    state.dry_gain = params.dry_gain;
     Common::FixedPoint<50, 14> early_gain{
         std::min(params.room_gain + params.reflection_gain, 5000.0f) / 2000.0f};
     state.early_gain = pow_10(early_gain.to_float());
