@@ -134,6 +134,10 @@ public:
         Atomic::Or(&jit_state.halt_reason, static_cast<u32>(hr));
     }
 
+    void ClearHalt(HaltReason hr) {
+        Atomic::And(&jit_state.halt_reason, ~static_cast<u32>(hr));
+    }
+
     u64 GetSP() const {
         return jit_state.sp;
     }
@@ -349,6 +353,10 @@ void Jit::Reset() {
 
 void Jit::HaltExecution(HaltReason hr) {
     impl->HaltExecution(hr);
+}
+
+void Jit::ClearHalt(HaltReason hr) {
+    impl->ClearHalt(hr);
 }
 
 u64 Jit::GetSP() const {

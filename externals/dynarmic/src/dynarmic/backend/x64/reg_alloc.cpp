@@ -541,7 +541,7 @@ HostLoc RegAlloc::LoadImmediate(IR::Value imm, HostLoc host_loc) {
         if (imm_value == 0) {
             MAYBE_AVX(xorps, reg, reg);
         } else {
-            MAYBE_AVX(movaps, reg, code.MConst(code.xword, imm_value));
+            MAYBE_AVX(movaps, reg, code.XmmBConst<64>(code.xword, imm_value));
         }
         return host_loc;
     }

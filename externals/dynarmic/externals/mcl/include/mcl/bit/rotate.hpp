@@ -11,7 +11,8 @@
 namespace mcl::bit {
 
 template<BitIntegral T>
-constexpr T rotate_right(T x, size_t amount) {
+constexpr T rotate_right(T x, size_t amount)
+{
     amount %= bitsizeof<T>;
     if (amount == 0) {
         return x;
@@ -20,7 +21,8 @@ constexpr T rotate_right(T x, size_t amount) {
 }
 
 template<BitIntegral T>
-constexpr T rotate_left(T x, size_t amount) {
+constexpr T rotate_left(T x, size_t amount)
+{
     amount %= bitsizeof<T>;
     if (amount == 0) {
         return x;

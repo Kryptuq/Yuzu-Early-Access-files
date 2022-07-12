@@ -325,7 +325,9 @@ void EmitX64::Patch(const IR::LocationDescriptor& target_desc, CodePtr target_co
 }
 
 void EmitX64::Unpatch(const IR::LocationDescriptor& target_desc) {
-    Patch(target_desc, nullptr);
+    if (patch_information.count(target_desc)) {
+        Patch(target_desc, nullptr);
+    }
 }
 
 void EmitX64::ClearCache() {
@@ -345,9 +347,8 @@ void EmitX64::InvalidateBasicBlocks(const tsl::robin_set<IR::LocationDescriptor>
             continue;
         }
 
-        if (patch_information.count(descriptor)) {
-            Unpatch(descriptor);
-        }
+        Unpatch(descriptor);
+
         block_descriptors.erase(it);
     }
 }

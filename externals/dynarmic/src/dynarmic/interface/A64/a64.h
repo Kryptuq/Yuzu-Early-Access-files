@@ -58,9 +58,14 @@ public:
 
     /**
      * Stops execution in Jit::Run.
-     * Can only be called from a callback.
      */
     void HaltExecution(HaltReason hr = HaltReason::UserDefined1);
+
+    /**
+     * Clears a halt reason from flags.
+     * Warning: Only use this if you're sure this won't introduce races.
+     */
+    void ClearHalt(HaltReason hr = HaltReason::UserDefined1);
 
     /// Read Stack Pointer
     std::uint64_t GetSP() const;

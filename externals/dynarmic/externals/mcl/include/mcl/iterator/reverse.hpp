@@ -13,12 +13,14 @@ template<typename T>
 struct reverse_adapter {
     T& iterable;
 
-    constexpr auto begin() {
+    constexpr auto begin()
+    {
         using namespace std;
         return rbegin(iterable);
     }
 
-    constexpr auto end() {
+    constexpr auto end()
+    {
         using namespace std;
         return rend(iterable);
     }
@@ -27,7 +29,8 @@ struct reverse_adapter {
 }  // namespace detail
 
 template<typename T>
-constexpr detail::reverse_adapter<T> reverse(T&& iterable) {
+constexpr detail::reverse_adapter<T> reverse(T&& iterable)
+{
     return detail::reverse_adapter<T>{iterable};
 }
 

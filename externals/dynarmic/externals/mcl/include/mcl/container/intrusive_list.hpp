@@ -21,7 +21,8 @@ class intrusive_list_iterator;
 template<typename T>
 class intrusive_list_node {
 public:
-    bool is_sentinel() const {
+    bool is_sentinel() const
+    {
         return is_sentinel_;
     }
 
@@ -42,7 +43,8 @@ class intrusive_list_sentinel final : public intrusive_list_node<T> {
     using intrusive_list_node<T>::is_sentinel_;
 
 public:
-    intrusive_list_sentinel() {
+    intrusive_list_sentinel()
+    {
         next = this;
         prev = this;
         is_sentinel_ = true;
@@ -72,50 +74,56 @@ public:
     intrusive_list_iterator& operator=(const intrusive_list_iterator& other) = default;
 
     explicit intrusive_list_iterator(node_pointer list_node)
-            : node(list_node) {
-    }
+        : node(list_node) {}
     explicit intrusive_list_iterator(pointer data)
-            : node(data) {
-    }
+        : node(data) {}
     explicit intrusive_list_iterator(reference data)
-            : node(&data) {
-    }
+        : node(&data) {}
 
-    intrusive_list_iterator& operator++() {
+    intrusive_list_iterator& operator++()
+    {
         node = node->next;
         return *this;
     }
-    intrusive_list_iterator& operator--() {
+    intrusive_list_iterator& operator--()
+    {
         node = node->prev;
         return *this;
     }
-    intrusive_list_iterator operator++(int) {
+    intrusive_list_iterator operator++(int)
+    {
         intrusive_list_iterator it(*this);
         ++*this;
         return it;
     }
-    intrusive_list_iterator operator--(int) {
+    intrusive_list_iterator operator--(int)
+    {
         intrusive_list_iterator it(*this);
         --*this;
         return it;
     }
 
-    bool operator==(const intrusive_list_iterator& other) const {
+    bool operator==(const intrusive_list_iterator& other) const
+    {
         return node == other.node;
     }
-    bool operator!=(const intrusive_list_iterator& other) const {
+    bool operator!=(const intrusive_list_iterator& other) const
+    {
         return !operator==(other);
     }
 
-    reference operator*() const {
+    reference operator*() const
+    {
         DEBUG_ASSERT(!node->is_sentinel());
         return static_cast<reference>(*node);
     }
-    pointer operator->() const {
+    pointer operator->() const
+    {
         return std::addressof(operator*());
     }
 
-    node_pointer AsNodePointer() const {
+    node_pointer AsNodePointer() const
+    {
         return node;
     }
 
@@ -145,7 +153,8 @@ public:
      * @param location The location to insert the node.
      * @param new_node The node to add.
      */
-    iterator insert(iterator location, pointer new_node) {
+    iterator insert(iterator location, pointer new_node)
+    {
         return insert_before(location, new_node);
     }
 
@@ -156,7 +165,8 @@ public:
      * @param location The location to insert the new node.
      * @param new_node The node to insert into the list.
      */
-    iterator insert_before(iterator location, pointer new_node) {
+    iterator insert_before(iterator location, pointer new_node)
+    {
         auto existing_node = location.AsNodePointer();
 
         new_node->next = existing_node;
@@ -173,7 +183,8 @@ public:
      * @param position Location to insert the node in front of.
      * @param new_node The node to be inserted into the list.
      */
-    iterator insert_after(iterator position, pointer new_node) {
+    iterator insert_after(iterator position, pointer new_node)
+    {
         if (empty())
             return insert(begin(), new_node);
 
@@ -184,7 +195,8 @@ public:
      * Add an entry to the start of the list.
      * @param node Node to add to the list.
      */
-    void push_front(pointer node) {
+    void push_front(pointer node)
+    {
         insert(begin(), node);
     }
 
@@ -192,7 +204,8 @@ public:
      * Add an entry to the end of the list
      * @param node Node to add to the list.
      */
-    void push_back(pointer node) {
+    void push_back(pointer node)
+    {
         insert(end(), node);
     }
 
@@ -200,7 +213,8 @@ public:
      * Erases the node at the front of the list.
      * @note Must not be called on an empty list.
      */
-    void pop_front() {
+    void pop_front()
+    {
         DEBUG_ASSERT(!empty());
         erase(begin());
     }
@@ -209,7 +223,8 @@ public:
      * Erases the node at the back of the list.
      * @note Must not be called on an empty list.
      */
-    void pop_back() {
+    void pop_back()
+    {
         DEBUG_ASSERT(!empty());
         erase(--end());
     }
@@ -218,7 +233,8 @@ public:
      * Removes a node from this list
      * @param it An iterator that points to the node to remove from list.
      */
-    pointer remove(iterator& it) {
+    pointer remove(iterator& it)
+    {
         DEBUG_ASSERT(it != end());
 
         pointer node = &*it++;
@@ -237,7 +253,8 @@ public:
      * Removes a node from this list
      * @param it A constant iterator that points to the node to remove from list.
      */
-    pointer remove(const iterator& it) {
+    pointer remove(const iterator& it)
+    {
         iterator copy = it;
         return remove(copy);
     }
@@ -246,7 +263,8 @@ public:
      * Removes a node from this list.
      * @param node A pointer to the node to remove.
      */
-    pointer remove(pointer node) {
+    pointer remove(pointer node)
+    {
         return remove(iterator(node));
     }
 
@@ -254,7 +272,8 @@ public:
      * Removes a node from this list.
      * @param node A reference to the node to remove.
      */
-    pointer remove(reference node) {
+    pointer remove(reference node)
+    {
         return remove(iterator(node));
     }
 
@@ -262,7 +281,8 @@ public:
      * Is this list empty?
      * @returns true if there are no nodes in this list.
      */
-    bool empty() const {
+    bool empty() const
+    {
         return root->next == root.get();
     }
 
@@ -270,7 +290,8 @@ public:
      * Gets the total number of elements within this list.
      * @return the number of elements in this list.
      */
-    size_type size() const {
+    size_type size() const
+    {
         return static_cast<size_type>(std::distance(begin(), end()));
     }
 
@@ -278,7 +299,8 @@ public:
      * Retrieves a reference to the node at the front of the list.
      * @note Must not be called on an empty list.
      */
-    reference front() {
+    reference front()
+    {
         DEBUG_ASSERT(!empty());
         return *begin();
     }
@@ -287,7 +309,8 @@ public:
      * Retrieves a constant reference to the node at the front of the list.
      * @note Must not be called on an empty list.
      */
-    const_reference front() const {
+    const_reference front() const
+    {
         DEBUG_ASSERT(!empty());
         return *begin();
     }
@@ -296,7 +319,8 @@ public:
      * Retrieves a reference to the node at the back of the list.
      * @note Must not be called on an empty list.
      */
-    reference back() {
+    reference back()
+    {
         DEBUG_ASSERT(!empty());
         return *--end();
     }
@@ -305,7 +329,8 @@ public:
      * Retrieves a constant reference to the node at the back of the list.
      * @note Must not be called on an empty list.
      */
-    const_reference back() const {
+    const_reference back() const
+    {
         DEBUG_ASSERT(!empty());
         return *--end();
     }
@@ -331,7 +356,8 @@ public:
      * Erases a node from the list, indicated by an iterator.
      * @param it The iterator that points to the node to erase.
      */
-    iterator erase(iterator it) {
+    iterator erase(iterator it)
+    {
         remove(it);
         return it;
     }
@@ -340,7 +366,8 @@ public:
      * Erases a node from this list.
      * @param node A pointer to the node to erase from this list.
      */
-    iterator erase(pointer node) {
+    iterator erase(pointer node)
+    {
         return erase(iterator(node));
     }
 
@@ -348,7 +375,8 @@ public:
      * Erases a node from this list.
      * @param node A reference to the node to erase from this list.
      */
-    iterator erase(reference node) {
+    iterator erase(reference node)
+    {
         return erase(iterator(node));
     }
 
@@ -356,7 +384,8 @@ public:
      * Exchanges contents of this list with another list instance.
      * @param other The other list to swap with.
      */
-    void swap(intrusive_list& other) noexcept {
+    void swap(intrusive_list& other) noexcept
+    {
         root.swap(other.root);
     }
 
@@ -371,7 +400,8 @@ private:
  * @param rhs The second list.
  */
 template<typename T>
-void swap(intrusive_list<T>& lhs, intrusive_list<T>& rhs) noexcept {
+void swap(intrusive_list<T>& lhs, intrusive_list<T>& rhs) noexcept
+{
     lhs.swap(rhs);
 }
 

@@ -13,12 +13,14 @@
 namespace mcl::bit {
 
 template<BitIntegral T>
-inline size_t count_ones(T x) {
+inline size_t count_ones(T x)
+{
     return std::bitset<bitsizeof<T>>(x).count();
 }
 
 template<BitIntegral T>
-constexpr size_t count_leading_zeros(T x) {
+constexpr size_t count_leading_zeros(T x)
+{
     size_t result = bitsizeof<T>;
     while (x != 0) {
         x >>= 1;
@@ -28,7 +30,8 @@ constexpr size_t count_leading_zeros(T x) {
 }
 
 template<BitIntegral T>
-constexpr int highest_set_bit(T x) {
+constexpr int highest_set_bit(T x)
+{
     int result = -1;
     while (x != 0) {
         x >>= 1;
@@ -38,7 +41,8 @@ constexpr int highest_set_bit(T x) {
 }
 
 template<BitIntegral T>
-constexpr size_t lowest_set_bit(T x) {
+constexpr size_t lowest_set_bit(T x)
+{
     if (x == 0) {
         return bitsizeof<T>;
     }

@@ -72,7 +72,7 @@ enum class Op {
 template<Op op, size_t esize>
 void EmitVectorSignedSaturated(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
     static_assert(esize == 32 || esize == 64);
-    constexpr u64 msb_mask = esize == 32 ? 0x8000000080000000 : 0x8000000000000000;
+    constexpr u64 msb_mask = esize == 32 ? 0x80000000 : 0x8000000000000000;
 
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
 
@@ -97,7 +97,7 @@ void EmitVectorSignedSaturated(BlockOfCode& code, EmitContext& ctx, IR::Inst* in
             code.vpmovq2m(k1, xmm0);
         }
         ICODE(vpsra)(result | k1, result, u8(esize - 1));
-        ICODE(vpxor)(result | k1, result, code.MConst(xword_b, msb_mask, msb_mask));
+        ICODE(vpxor)(result | k1, result, code.XmmBConst<esize>(xword_b, msb_mask));
 
         code.ktestb(k1, k1);
         code.setnz(overflow);
@@ -148,10 +148,10 @@ void EmitVectorSignedSaturated(BlockOfCode& code, EmitContext& ctx, IR::Inst* in
     if constexpr (esize == 64) {
         code.pshufd(tmp, tmp, 0b11110101);
     }
-    code.pxor(tmp, code.MConst(xword, msb_mask, msb_mask));
+    code.pxor(tmp, code.XmmBConst<esize>(xword, msb_mask));
 
     if (code.HasHostFeature(HostFeature::SSE41)) {
-        code.ptest(xmm0, code.MConst(xword, msb_mask, msb_mask));
+        code.ptest(xmm0, code.XmmBConst<esize>(xword, msb_mask));
     } else {
         FCODE(movmskp)(overflow.cvt32(), xmm0);
         code.test(overflow.cvt32(), overflow.cvt32());

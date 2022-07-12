@@ -17,4 +17,12 @@ inline void Or(volatile u32* ptr, u32 value) {
 #endif
 }
 
+inline void And(volatile u32* ptr, u32 value) {
+#ifdef _MSC_VER
+    _InterlockedAnd(reinterpret_cast<volatile long*>(ptr), value);
+#else
+    __atomic_and_fetch(ptr, value, __ATOMIC_SEQ_CST);
+#endif
+}
+
 }  // namespace Dynarmic::Atomic

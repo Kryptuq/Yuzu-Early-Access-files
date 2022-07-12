@@ -20,6 +20,8 @@ endif()
 if ("A64" IN_LIST DYNARMIC_FRONTENDS)
     target_sources(dynarmic_tests PRIVATE
         A64/a64.cpp
+        A64/misaligned_page_table.cpp
+        A64/test_invalidation.cpp
         A64/testenv.h
     )
 endif()
@@ -44,7 +46,6 @@ if (DYNARMIC_TESTS_USE_UNICORN)
     if ("A64" IN_LIST DYNARMIC_FRONTENDS)
         target_sources(dynarmic_tests PRIVATE
             A64/fuzz_with_unicorn.cpp
-            A64/misaligned_page_table.cpp
             A64/verify_unicorn.cpp
             unicorn_emu/a64_unicorn.cpp
             unicorn_emu/a64_unicorn.h

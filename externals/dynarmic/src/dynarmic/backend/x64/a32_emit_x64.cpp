@@ -235,8 +235,9 @@ void A32EmitX64::GenTerminalHandlers() {
         calculate_location_descriptor();
         code.L(rsb_cache_miss);
         code.mov(r12, reinterpret_cast<u64>(fast_dispatch_table.data()));
+        code.mov(rbp, rbx);
         if (code.HasHostFeature(HostFeature::SSE42)) {
-            code.crc32(ebp, r12d);
+            code.crc32(rbp, r12);
         }
         code.and_(ebp, fast_dispatch_table_mask);
         code.lea(rbp, ptr[r12 + rbp]);
@@ -254,11 +255,12 @@ void A32EmitX64::GenTerminalHandlers() {
         fast_dispatch_table_lookup = code.getCurr<FastDispatchEntry& (*)(u64)>();
         code.mov(code.ABI_PARAM2, reinterpret_cast<u64>(fast_dispatch_table.data()));
         if (code.HasHostFeature(HostFeature::SSE42)) {
-            code.crc32(code.ABI_PARAM1.cvt32(), code.ABI_PARAM2.cvt32());
+            code.crc32(code.ABI_PARAM1, code.ABI_PARAM2);
         }
         code.and_(code.ABI_PARAM1.cvt32(), fast_dispatch_table_mask);
         code.lea(code.ABI_RETURN, code.ptr[code.ABI_PARAM1 + code.ABI_PARAM2]);
         code.ret();
+        PerfMapRegister(fast_dispatch_table_lookup, code.getCurr(), "a32_fast_dispatch_table_lookup");
     }
 }
 

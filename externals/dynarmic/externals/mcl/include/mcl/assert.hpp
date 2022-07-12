@@ -13,11 +13,12 @@
 
 namespace mcl::detail {
 
-[[noreturn]] void assert_terminate_impl(fmt::string_view msg, fmt::format_args args);
+[[noreturn]] void assert_terminate_impl(const char* expr_str, fmt::string_view msg, fmt::format_args args);
 
 template<typename... Ts>
-[[noreturn]] void assert_terminate(fmt::string_view msg, Ts... args) {
-    assert_terminate_impl(msg, fmt::make_format_args(args...));
+[[noreturn]] void assert_terminate(const char* expr_str, fmt::string_view msg, Ts... args)
+{
+    assert_terminate_impl(expr_str, msg, fmt::make_format_args(args...));
 }
 
 }  // namespace mcl::detail
@@ -32,25 +33,25 @@ template<typename... Ts>
             }                                                            \
         } else {                                                         \
             if (!(expr)) [[unlikely]] {                                  \
-                ::mcl::detail::assert_terminate(#expr);                  \
+                ::mcl::detail::assert_terminate(#expr, "(none)");        \
             }                                                            \
         }                                                                \
     }()
 
-#define ASSERT_MSG(expr, ...)                                                     \
-    [&] {                                                                         \
-        if (std::is_constant_evaluated()) {                                       \
-            if (!(expr)) {                                                        \
-                throw std::logic_error{"ASSERT_MSG failed at compile time"};      \
-            }                                                                     \
-        } else {                                                                  \
-            if (!(expr)) [[unlikely]] {                                           \
-                ::mcl::detail::assert_terminate(#expr "\nMessage: " __VA_ARGS__); \
-            }                                                                     \
-        }                                                                         \
+#define ASSERT_MSG(expr, ...)                                                \
+    [&] {                                                                    \
+        if (std::is_constant_evaluated()) {                                  \
+            if (!(expr)) {                                                   \
+                throw std::logic_error{"ASSERT_MSG failed at compile time"}; \
+            }                                                                \
+        } else {                                                             \
+            if (!(expr)) [[unlikely]] {                                      \
+                ::mcl::detail::assert_terminate(#expr, __VA_ARGS__);         \
+            }                                                                \
+        }                                                                    \
     }()
 
-#define ASSERT_FALSE(...) ::mcl::detail::assert_terminate("false\nMessage: " __VA_ARGS__)
+#define ASSERT_FALSE(...) ::mcl::detail::assert_terminate("false", __VA_ARGS__)
 
 #if defined(NDEBUG) || defined(MCL_IGNORE_ASSERTS)
 #    define DEBUG_ASSERT(expr) ASSUME(expr)

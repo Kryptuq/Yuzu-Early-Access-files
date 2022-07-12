@@ -1,0 +1,38 @@
+on: [push, pull_request]
+
+jobs:
+  test_on_ubuntu:
+    runs-on: ubuntu-latest
+    name: Build on ${{ matrix.distro }} ${{ matrix.arch }}
+
+    strategy:
+      matrix:
+        include:
+          - arch: aarch64
+            distro: ubuntu_latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: uraimo/run-on-arch-action@v2
+        name: Build and Test
+        id: build
+        with:
+          arch: ${{ matrix.arch }}
+          distro: ${{ matrix.distro }}
+          shell: /bin/bash
+
+          install: |
+            apt-get update -q -y
+            apt-get install -q -y make cmake g++ git
+
+            pushd /tmp
+            git clone https://github.com/catchorg/Catch2.git
+            cd Catch2
+            cmake -Bbuild -H. -DBUILD_TESTING=OFF
+            cmake --build build/ --target install
+            popd
+
+          run: |
+            cmake -Bbuild -H.
+            cmake --build build
+            ./build/oaknut-tests
