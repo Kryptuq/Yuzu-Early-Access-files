@@ -9,6 +9,7 @@
 #include "audio_core/renderer/command/effect/aux_.h"
 #include "audio_core/renderer/command/effect/biquad_filter.h"
 #include "audio_core/renderer/command/effect/capture.h"
+#include "audio_core/renderer/command/effect/compressor.h"
 #include "audio_core/renderer/command/effect/delay.h"
 #include "audio_core/renderer/command/effect/i3dl2_reverb.h"
 #include "audio_core/renderer/command/effect/light_limiter.h"

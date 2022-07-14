@@ -65,84 +65,78 @@ static void InitializeDelayEffect(const DelayInfo::ParameterVersion1& params,
  * Delay effect impl, according to the parameters and current state, on the input mix buffers,
  * saving the results to the output mix buffers.
  *
+ * @tparam NumChannels - Number of channels to process. 1-6.
  * @param params       - Input parameters to use.
  * @param state        - State to use, must be initialized (see InitializeDelayEffect).
  * @param inputs       - Input mix buffers to performan the delay on.
  * @param outputs      - Output mix buffers to receive the delayed samples.
  * @param sample_count - Number of samples to process.
  */
-template <size_t Channels>
+template <size_t NumChannels>
 static void ApplyDelay(const DelayInfo::ParameterVersion1& params, DelayInfo::State& state,
                        std::vector<std::span<const s32>>& inputs,
                        std::vector<std::span<s32>>& outputs, const u32 sample_count) {
-    for (u32 i = 0; i < sample_count; i++) {
-        std::array<Common::FixedPoint<50, 14>, Channels> input_samples{};
-        for (u32 channel = 0; channel < Channels; channel++) {
-            input_samples[channel] = inputs[channel][i] * 64;
+    for (u32 sample_index = 0; sample_index < sample_count; sample_index++) {
+        std::array<Common::FixedPoint<50, 14>, NumChannels> input_samples{};
+        for (u32 channel = 0; channel < NumChannels; channel++) {
+            input_samples[channel] = inputs[channel][sample_index] * 64;
         }
 
-        std::array<Common::FixedPoint<50, 14>, Channels> delay_samples{};
-        for (u32 channel = 0; channel < Channels; channel++) {
+        std::array<Common::FixedPoint<50, 14>, NumChannels> delay_samples{};
+        for (u32 channel = 0; channel < NumChannels; channel++) {
             delay_samples[channel] = state.delay_lines[channel].Read();
         }
 
-        std::array<std::array<Common::FixedPoint<18, 14>, Channels>, Channels> matrix{};
-        if constexpr (Channels == 1) {
+        // clang-format off
+        std::array<std::array<Common::FixedPoint<18, 14>, NumChannels>, NumChannels> matrix{};
+        if constexpr (NumChannels == 1) {
             matrix = {{
                 {state.feedback_gain},
             }};
-        } else if constexpr (Channels == 2) {
+        } else if constexpr (NumChannels == 2) {
             matrix = {{
                 {state.delay_feedback_gain, state.delay_feedback_cross_gain},
                 {state.delay_feedback_cross_gain, state.delay_feedback_gain},
             }};
-        } else if constexpr (Channels == 4) {
+        } else if constexpr (NumChannels == 4) {
             matrix = {{
-                {state.delay_feedback_gain, state.delay_feedback_cross_gain,
-                 state.delay_feedback_cross_gain, 0.0f},
-                {state.delay_feedback_cross_gain, state.delay_feedback_gain, 0.0f,
-                 state.delay_feedback_cross_gain},
-                {state.delay_feedback_cross_gain, 0.0f, state.delay_feedback_gain,
-                 state.delay_feedback_cross_gain},
-                {0.0f, state.delay_feedback_cross_gain, state.delay_feedback_cross_gain,
-                 state.delay_feedback_gain},
+                {state.delay_feedback_gain, state.delay_feedback_cross_gain, state.delay_feedback_cross_gain, 0.0f},
+                {state.delay_feedback_cross_gain, state.delay_feedback_gain, 0.0f, state.delay_feedback_cross_gain},
+                {state.delay_feedback_cross_gain, 0.0f, state.delay_feedback_gain, state.delay_feedback_cross_gain},
+                {0.0f, state.delay_feedback_cross_gain, state.delay_feedback_cross_gain, state.delay_feedback_gain},
             }};
-        } else if constexpr (Channels == 6) {
+        } else if constexpr (NumChannels == 6) {
             matrix = {{
-                {state.delay_feedback_gain, 0.0f, 0.0f, 0.0f, state.delay_feedback_cross_gain,
-                 state.delay_feedback_cross_gain},
-                {0.0f, state.delay_feedback_gain, 0.0f, state.delay_feedback_cross_gain,
-                 state.delay_feedback_cross_gain, 0.0f},
-                {state.delay_feedback_cross_gain, 0.0f, state.delay_feedback_gain,
-                 state.delay_feedback_cross_gain, 0.0f, 0.0f},
-                {0.0f, state.delay_feedback_cross_gain, state.delay_feedback_cross_gain,
-                 state.delay_feedback_gain, 0.0f, 0.0f},
-                {state.delay_feedback_cross_gain, state.delay_feedback_cross_gain, 0.0f, 0.0f,
-                 state.delay_feedback_gain, 0.0f},
-                {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, params.feedback_gain},
+                {state.delay_feedback_gain, 0.0f, state.delay_feedback_cross_gain, 0.0f, state.delay_feedback_cross_gain, 0.0f},
+                {0.0f, state.delay_feedback_gain, state.delay_feedback_cross_gain, 0.0f, 0.0f, state.delay_feedback_cross_gain},
+                {state.delay_feedback_cross_gain, state.delay_feedback_cross_gain, state.delay_feedback_gain, 0.0f, 0.0f, 0.0f},
+                {0.0f, 0.0f, 0.0f, params.feedback_gain, 0.0f, 0.0f},
+                {state.delay_feedback_cross_gain, 0.0f, 0.0f, 0.0f, state.delay_feedback_gain, state.delay_feedback_cross_gain},
+                {0.0f, state.delay_feedback_cross_gain, 0.0f, 0.0f, state.delay_feedback_cross_gain, state.delay_feedback_gain},
             }};
         }
+        // clang-format on
 
-        std::array<Common::FixedPoint<50, 14>, Channels> gained_samples{};
-        for (u32 channel = 0; channel < Channels; channel++) {
+        std::array<Common::FixedPoint<50, 14>, NumChannels> gained_samples{};
+        for (u32 channel = 0; channel < NumChannels; channel++) {
             Common::FixedPoint<50, 14> delay{};
-            for (u32 j = 0; j < Channels; j++) {
+            for (u32 j = 0; j < NumChannels; j++) {
                 delay += delay_samples[j] * matrix[j][channel];
             }
             gained_samples[channel] = input_samples[channel] * params.in_gain + delay;
         }
 
-        for (u32 channel = 0; channel < Channels; channel++) {
+        for (u32 channel = 0; channel < NumChannels; channel++) {
             state.lowpass_z[channel] = gained_samples[channel] * state.lowpass_gain +
                                        state.lowpass_z[channel] * state.lowpass_feedback_gain;
             state.delay_lines[channel].Write(state.lowpass_z[channel]);
         }
 
-        for (u32 channel = 0; channel < Channels; channel++) {
-            outputs[channel][i] = (input_samples[channel] * params.dry_gain +
-                                   delay_samples[channel] * params.wet_gain)
-                                      .to_int_floor() /
-                                  64;
+        for (u32 channel = 0; channel < NumChannels; channel++) {
+            outputs[channel][sample_index] = (input_samples[channel] * params.dry_gain +
+                                              delay_samples[channel] * params.wet_gain)
+                                                 .to_int_floor() /
+                                             64;
         }
     }
 }

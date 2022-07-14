@@ -7,7 +7,7 @@
 #include <string>
 
 #include "audio_core/renderer/command/icommand.h"
-#include "audio_core/renderer/effect/i3dl2.h"
+#include "audio_core/renderer/effect/compressor.h"
 #include "common/common_types.h"
 
 namespace AudioCore::AudioRenderer {
@@ -16,10 +16,10 @@ class CommandListProcessor;
 }
 
 /**
- * AudioRenderer command for a I3DL2Reverb effect. Apply a reverb to inputs mix buffer according to
- * the I3DL2 spec, outputs receives the results.
+ * AudioRenderer command for limiting volume between a high and low threshold.
+ * Version 1.
  */
-struct I3dl2ReverbCommand : ICommand {
+struct CompressorCommand : ICommand {
     /**
      * Print this command's information to a string.
      *
@@ -48,7 +48,7 @@ struct I3dl2ReverbCommand : ICommand {
     /// Output mix buffer offsets for each channel
     std::array<s16, MaxChannels> outputs;
     /// Input parameters
-    I3dl2ReverbInfo::ParameterVersion1 parameter;
+    CompressorInfo::ParameterVersion2 parameter;
     /// State, updated each call
     CpuAddr state;
     /// Game-supplied workbuffer (Unused)

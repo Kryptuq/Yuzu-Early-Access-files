@@ -107,7 +107,7 @@ private:
     }
 
     void RequestUpdate(Kernel::HLERequestContext& ctx) {
-        LOG_DEBUG(Service_Audio, "called");
+        LOG_TRACE(Service_Audio, "called");
 
         std::vector<u8> input{ctx.ReadBuffer(0)};
 

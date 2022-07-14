@@ -3,7 +3,7 @@
 
 #include "audio_core/renderer/adsp/command_list_processor.h"
 #include "audio_core/renderer/command/effect/capture.h"
-#include "audio_core/renderer/effect/effect_aux_info.h"
+#include "audio_core/renderer/effect/aux_.h"
 #include "core/memory.h"
 
 namespace AudioCore::AudioRenderer {

@@ -130,7 +130,6 @@ void AudioRenderer::CreateSinkStreams() {
         std::string name{fmt::format("ADSP_RenderStream-{}", i)};
         streams[i] =
             sink.AcquireSinkStream(system, channels, name, ::AudioCore::Sink::StreamType::Render);
-        streams[i]->SetSystemChannels(streams[i]->GetDeviceChannels());
     }
 }
 

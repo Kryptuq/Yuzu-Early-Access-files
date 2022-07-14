@@ -29,6 +29,7 @@ public:
         BiquadFilter,
         LightLimiter,
         Capture,
+        Compressor,
     };
 
     enum class UsageState {

@@ -42,6 +42,7 @@ enum class CommandId : u8 {
     /* 0x1B */ LightLimiterVersion2,
     /* 0x1C */ MultiTapBiquadFilter,
     /* 0x1D */ Capture,
+    /* 0x1E */ Compressor,
 };
 
 constexpr u32 CommandMagic{0xCAFEBABE};

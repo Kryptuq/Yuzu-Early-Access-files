@@ -104,17 +104,22 @@ bool BehaviorInfo::IsCommandProcessingTimeEstimatorVersion4Supported() const {
                                  user_revision);
 }
 
-bool BehaviorInfo::IsAudioRenererProcessingTimeLimit70PercentSupported() const {
+bool BehaviorInfo::IsCommandProcessingTimeEstimatorVersion5Supported() const {
+    return CheckFeatureSupported(SupportTags::CommandProcessingTimeEstimatorVersion4,
+                                 user_revision);
+}
+
+bool BehaviorInfo::IsAudioRendererProcessingTimeLimit70PercentSupported() const {
     return CheckFeatureSupported(SupportTags::AudioRendererProcessingTimeLimit70Percent,
                                  user_revision);
 }
 
-bool BehaviorInfo::IsAudioRenererProcessingTimeLimit75PercentSupported() const {
+bool BehaviorInfo::IsAudioRendererProcessingTimeLimit75PercentSupported() const {
     return CheckFeatureSupported(SupportTags::AudioRendererProcessingTimeLimit75Percent,
                                  user_revision);
 }
 
-bool BehaviorInfo::IsAudioRenererProcessingTimeLimit80PercentSupported() const {
+bool BehaviorInfo::IsAudioRendererProcessingTimeLimit80PercentSupported() const {
     return CheckFeatureSupported(SupportTags::AudioRendererProcessingTimeLimit80Percent,
                                  user_revision);
 }
@@ -147,7 +152,7 @@ bool BehaviorInfo::IsVoicePlayedSampleCountResetAtLoopPointSupported() const {
                                  user_revision);
 }
 
-bool BehaviorInfo::IsBiquadFilterEffectStateClaerBugFixed() const {
+bool BehaviorInfo::IsBiquadFilterEffectStateClearBugFixed() const {
     return CheckFeatureSupported(SupportTags::BiquadFilterEffectStateClearBugFix, user_revision);
 }
 
@@ -169,6 +174,18 @@ bool BehaviorInfo::UseMultiTapBiquadFilterProcessing() const {
 
 bool BehaviorInfo::IsDeviceApiVersion2Supported() const {
     return CheckFeatureSupported(SupportTags::DeviceApiVersion2, user_revision);
+}
+
+bool BehaviorInfo::IsDelayChannelMappingChanged() const {
+    return CheckFeatureSupported(SupportTags::DelayChannelMappingChange, user_revision);
+}
+
+bool BehaviorInfo::IsReverbChannelMappingChanged() const {
+    return CheckFeatureSupported(SupportTags::ReverbChannelMappingChange, user_revision);
+}
+
+bool BehaviorInfo::IsI3dl2ReverbChannelMappingChanged() const {
+    return CheckFeatureSupported(SupportTags::I3dl2ReverbChannelMappingChange, user_revision);
 }
 
 } // namespace AudioCore::AudioRenderer

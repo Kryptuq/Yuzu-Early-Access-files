@@ -53,6 +53,15 @@ static void ApplyLightLimiterEffect(const LightLimiterInfo::ParameterVersion2& p
     constexpr s64 min{std::numeric_limits<s32>::min()};
     constexpr s64 max{std::numeric_limits<s32>::max()};
 
+    const auto recip_estimate = [](f64 a) -> f64 {
+        s32 q, s;
+        f64 r;
+        q = (s32)(a * 512.0);               /* a in units of 1/512 rounded down */
+        r = 1.0 / (((f64)q + 0.5) / 512.0); /* reciprocal r */
+        s = (s32)(256.0 * r + 0.5);         /* r in units of 1/256 rounded to nearest */
+        return ((f64)s / 256.0);
+    };
+
     if (enabled) {
         if (statistics && params.statistics_reset_required) {
             for (u32 i = 0; i < params.channel_count; i++) {
@@ -75,9 +84,17 @@ static void ApplyLightLimiterEffect(const LightLimiterInfo::ParameterVersion2& p
                 state.samples_average[channel] +=
                     ((abs_sample - state.samples_average[channel]) * coeff).to_float();
 
+                // Reciprocal estimate
+                auto new_average_sample{Common::FixedPoint<49, 15>(
+                    recip_estimate(state.samples_average[channel].to_double()))};
+                if (params.processing_mode != LightLimiterInfo::ProcessingMode::Mode1) {
+                    // Two Newton-Raphson steps
+                    auto temp{2.0 - (state.samples_average[channel] * new_average_sample)};
+                    new_average_sample = 2.0 - (state.samples_average[channel] * temp);
+                }
+
                 auto above_threshold{state.samples_average[channel] > params.threshold};
-                auto attenuation{above_threshold ? params.threshold / state.samples_average[channel]
-                                                 : 1.0f};
+                auto attenuation{above_threshold ? params.threshold * new_average_sample : 1.0f};
                 coeff = attenuation < state.compression_gain[channel] ? params.attack_coeff
                                                                       : params.release_coeff;
                 state.compression_gain[channel] +=
@@ -173,8 +190,6 @@ void LightLimiterVersion2Command::Dump([[maybe_unused]] const ADSP::CommandListP
 }
 
 void LightLimiterVersion2Command::Process(const ADSP::CommandListProcessor& processor) {
-    auto state_{reinterpret_cast<LightLimiterInfo::State*>(state)};
-
     std::vector<std::span<const s32>> input_buffers(parameter.channel_count);
     std::vector<std::span<s32>> output_buffers(parameter.channel_count);
 
@@ -184,6 +199,8 @@ void LightLimiterVersion2Command::Process(const ADSP::CommandListProcessor& proc
         output_buffers[i] = processor.mix_buffers.subspan(outputs[i] * processor.sample_count,
                                                           processor.sample_count);
     }
+
+    auto state_{reinterpret_cast<LightLimiterInfo::State*>(state)};
 
     if (effect_enabled) {
         if (parameter.state == LightLimiterInfo::ParameterState::Updating) {

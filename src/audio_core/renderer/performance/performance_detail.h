@@ -9,19 +9,20 @@
 namespace AudioCore::AudioRenderer {
 
 enum class PerformanceDetailType : u8 {
-    /*  0 */ Invalid,
-    /*  1 */ Unk1,
-    /*  2 */ Unk2,
-    /*  3 */ Unk3,
-    /*  4 */ Unk4,
-    /*  5 */ Unk5,
-    /*  6 */ Unk6,
-    /*  7 */ Unk7,
-    /*  8 */ Unk8,
-    /*  9 */ Unk9,
-    /* 10 */ Unk10,
-    /* 11 */ Unk11,
-    /* 12 */ Unk12,
+    Invalid,
+    Unk1,
+    Unk2,
+    Unk3,
+    Unk4,
+    Unk5,
+    Unk6,
+    Unk7,
+    Unk8,
+    Unk9,
+    Unk10,
+    Unk11,
+    Unk12,
+    Unk13,
 };
 
 struct PerformanceDetailVersion1 {

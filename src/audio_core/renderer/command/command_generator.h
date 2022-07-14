@@ -245,6 +245,16 @@ public:
     void GenerateCaptureCommand(s16 buffer_offset, EffectInfoBase& effect_info, s32 node_id);
 
     /**
+     * Generate a compressor effect command.
+     *
+     * @param buffer_offset    - Base mix buffer offset to use.
+     * @param effect_info_base - Compressor effect info.
+     * @param node_id          - Node id of the mix this command is generated for.
+     */
+    void GenerateCompressorCommand(const s16 buffer_offset, EffectInfoBase& effect_info,
+                                   const s32 node_id);
+
+    /**
      * Generate all effect commands for a mix.
      *
      * @param mix_info - Mix to generate effects from.

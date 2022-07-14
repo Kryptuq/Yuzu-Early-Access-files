@@ -12,7 +12,7 @@
 #include "common/common_types.h"
 
 namespace AudioCore {
-constexpr u32 CurrentRevision = 10;
+constexpr u32 CurrentRevision = 11;
 
 enum class SupportTags {
     CommandProcessingTimeEstimatorVersion4,
@@ -40,6 +40,9 @@ enum class SupportTags {
     LongSizePreDelay,
     AudioUsbDeviceOutput,
     DeviceApiVersion2,
+    DelayChannelMappingChange,
+    ReverbChannelMappingChange,
+    I3dl2ReverbChannelMappingChange,
 
     // Not a real tag, just here to get the count.
     Size
@@ -80,6 +83,9 @@ constexpr bool CheckFeatureSupported(SupportTags tag, u32 user_revision) {
             {SupportTags::EffectInfoVer2, 9},
             {SupportTags::CommandProcessingTimeEstimatorVersion4, 10},
             {SupportTags::MultiTapBiquadFilterProcessing, 10},
+            {SupportTags::DelayChannelMappingChange, 11},
+            {SupportTags::ReverbChannelMappingChange, 11},
+            {SupportTags::I3dl2ReverbChannelMappingChange, 11},
         }};
 
     const auto& feature =

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <numeric>
+#include <span>
 
 #include "common/assert.h"
 #include "common/common_funcs.h"
@@ -40,6 +41,25 @@ enum class SessionTypes {
     FinalOutputRecorder,
 };
 
+enum class Channels : u32 {
+    FrontLeft,
+    FrontRight,
+    Center,
+    LFE,
+    BackLeft,
+    BackRight,
+};
+
+// These are used by Delay, Reverb and I3dl2Reverb prior to Revision 11.
+enum class OldChannels : u32 {
+    FrontLeft,
+    FrontRight,
+    BackLeft,
+    BackRight,
+    Center,
+    LFE,
+};
+
 constexpr u32 BufferCount = 32;
 
 constexpr u32 MaxRendererSessions = 2;
@@ -64,6 +84,27 @@ constexpr u32 MaxEffects = 256;
 constexpr bool IsChannelCountValid(u16 channel_count) {
     return channel_count <= 6 &&
            (channel_count == 1 || channel_count == 2 || channel_count == 4 || channel_count == 6);
+}
+
+constexpr void UseOldChannelMapping(std::span<s16> inputs, std::span<s16> outputs) {
+    constexpr auto old_center{static_cast<u32>(OldChannels::Center)};
+    constexpr auto new_center{static_cast<u32>(Channels::Center)};
+    constexpr auto old_lfe{static_cast<u32>(OldChannels::LFE)};
+    constexpr auto new_lfe{static_cast<u32>(Channels::LFE)};
+
+    auto center{inputs[old_center]};
+    auto lfe{inputs[old_lfe]};
+    inputs[old_center] = inputs[new_center];
+    inputs[old_lfe] = inputs[new_lfe];
+    inputs[new_center] = center;
+    inputs[new_lfe] = lfe;
+
+    center = outputs[old_center];
+    lfe = outputs[old_lfe];
+    outputs[old_center] = outputs[new_center];
+    outputs[old_lfe] = outputs[new_lfe];
+    outputs[new_center] = center;
+    outputs[new_lfe] = lfe;
 }
 
 constexpr u32 GetSplitterInParamHeaderMagic() {

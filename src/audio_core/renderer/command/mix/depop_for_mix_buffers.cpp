@@ -43,8 +43,9 @@ void DepopForMixBuffersCommand::Dump([[maybe_unused]] const ADSP::CommandListPro
 }
 
 void DepopForMixBuffersCommand::Process(const ADSP::CommandListProcessor& processor) {
-    std::span<s32> depop_buff{reinterpret_cast<s32*>(depop_buffer), MaxMixBuffers};
     auto end_index{std::min(processor.buffer_count, input + count)};
+    std::span<s32> depop_buff{reinterpret_cast<s32*>(depop_buffer), end_index};
+
     for (u32 index = input; index < end_index; index++) {
         const auto depop_sample{depop_buff[index]};
         if (depop_sample != 0) {

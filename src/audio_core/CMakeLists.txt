@@ -57,6 +57,8 @@ add_library(audio_core STATIC
     renderer/command/effect/biquad_filter.h
     renderer/command/effect/capture.cpp
     renderer/command/effect/capture.h
+    renderer/command/effect/compressor.cpp
+    renderer/command/effect/compressor.h
     renderer/command/effect/delay.cpp
     renderer/command/effect/delay.h
     renderer/command/effect/i3dl2_reverb.cpp
@@ -106,27 +108,29 @@ add_library(audio_core STATIC
     renderer/command/command_processing_time_estimator.h
     renderer/command/commands.h
     renderer/command/icommand.h
-    renderer/effect/effect_aux_info.cpp
-    renderer/effect/effect_aux_info.h
-    renderer/effect/effect_biquad_filter_info.cpp
-    renderer/effect/effect_biquad_filter_info.h
-    renderer/effect/effect_buffer_mixer_info.cpp
-    renderer/effect/effect_buffer_mixer_info.h
-    renderer/effect/effect_capture_info.cpp
-    renderer/effect/effect_capture_info.h
+    renderer/effect/aux_.cpp
+    renderer/effect/aux_.h
+    renderer/effect/biquad_filter.cpp
+    renderer/effect/biquad_filter.h
+    renderer/effect/buffer_mixer.cpp
+    renderer/effect/buffer_mixer.h
+    renderer/effect/capture.cpp
+    renderer/effect/capture.h
+    renderer/effect/compressor.cpp
+    renderer/effect/compressor.h
+    renderer/effect/delay.cpp
+    renderer/effect/delay.h
     renderer/effect/effect_context.cpp
     renderer/effect/effect_context.h
-    renderer/effect/effect_delay_info.cpp
-    renderer/effect/effect_delay_info.h
-    renderer/effect/effect_i3dl2_info.cpp
-    renderer/effect/effect_i3dl2_info.h
-    renderer/effect/effect_reset.h
     renderer/effect/effect_info_base.h
-    renderer/effect/effect_light_limiter_info.cpp
-    renderer/effect/effect_light_limiter_info.h
+    renderer/effect/effect_reset.h
     renderer/effect/effect_result_state.h
-    renderer/effect/effect_reverb_info.h
-    renderer/effect/effect_reverb_info.cpp
+    renderer/effect/i3dl2.cpp
+    renderer/effect/i3dl2.h
+    renderer/effect/light_limiter.cpp
+    renderer/effect/light_limiter.h
+    renderer/effect/reverb.h
+    renderer/effect/reverb.cpp
     renderer/mix/mix_context.cpp
     renderer/mix/mix_context.h
     renderer/mix/mix_info.cpp

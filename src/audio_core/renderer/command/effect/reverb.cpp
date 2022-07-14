@@ -239,7 +239,7 @@ static Common::FixedPoint<50, 14> Axfx2AllPassTick(ReverbInfo::ReverbDelayLine& 
  * Impl. Apply a Reverb according to the current state, on the input mix buffers,
  * saving the results to the output mix buffers.
  *
- * @tparam Channels    - Number of channels to process. 1-6.
+ * @tparam NumChannels - Number of channels to process. 1-6.
                          Inputs/outputs should have this many buffers.
  * @param params       - Input parameters to update the state.
  * @param state        - State to use, must be initialized (see InitializeReverbEffect).
@@ -247,7 +247,7 @@ static Common::FixedPoint<50, 14> Axfx2AllPassTick(ReverbInfo::ReverbDelayLine& 
  * @param outputs      - Output mix buffers to receive the reverbed samples.
  * @param sample_count - Number of samples to process.
  */
-template <size_t Channels>
+template <size_t NumChannels>
 static void ApplyReverbEffect(const ReverbInfo::ParameterVersion2& params, ReverbInfo::State& state,
                               std::vector<std::span<const s32>>& inputs,
                               std::vector<std::span<s32>>& outputs, const u32 sample_count) {
@@ -261,38 +261,38 @@ static void ApplyReverbEffect(const ReverbInfo::ParameterVersion2& params, Rever
         0, 0, 1, 1, 0, 1, 2, 2, 3, 3,
     };
     constexpr std::array<u8, ReverbInfo::MaxDelayTaps> OutTapIndexes6Ch{
-        0, 0, 1, 1, 4, 4, 2, 2, 3, 3,
+        0, 0, 1, 1, 2, 2, 4, 4, 5, 5,
     };
 
     std::span<const u8> tap_indexes{};
-    if constexpr (Channels == 1) {
+    if constexpr (NumChannels == 1) {
         tap_indexes = OutTapIndexes1Ch;
-    } else if constexpr (Channels == 2) {
+    } else if constexpr (NumChannels == 2) {
         tap_indexes = OutTapIndexes2Ch;
-    } else if constexpr (Channels == 4) {
+    } else if constexpr (NumChannels == 4) {
         tap_indexes = OutTapIndexes4Ch;
-    } else if constexpr (Channels == 6) {
+    } else if constexpr (NumChannels == 6) {
         tap_indexes = OutTapIndexes6Ch;
     }
 
     for (u32 sample_index = 0; sample_index < sample_count; sample_index++) {
-        std::array<Common::FixedPoint<50, 14>, Channels> output_samples{};
+        std::array<Common::FixedPoint<50, 14>, NumChannels> output_samples{};
 
         for (u32 early_tap = 0; early_tap < ReverbInfo::MaxDelayTaps; early_tap++) {
             const auto sample{state.pre_delay_line.TapOut(state.early_delay_times[early_tap]) *
                               state.early_gains[early_tap]};
             output_samples[tap_indexes[early_tap]] += sample;
-            if constexpr (Channels == 6) {
-                output_samples[5] += sample;
+            if constexpr (NumChannels == 6) {
+                output_samples[static_cast<u32>(Channels::LFE)] += sample;
             }
         }
 
-        if constexpr (Channels == 6) {
-            output_samples[5] *= 0.2f;
+        if constexpr (NumChannels == 6) {
+            output_samples[static_cast<u32>(Channels::LFE)] *= 0.2f;
         }
 
         Common::FixedPoint<50, 14> input_sample{};
-        for (u32 channel = 0; channel < Channels; channel++) {
+        for (u32 channel = 0; channel < NumChannels; channel++) {
             input_sample += inputs[channel][sample_index];
         }
 
@@ -316,34 +316,41 @@ static void ApplyReverbEffect(const ReverbInfo::ParameterVersion2& params, Rever
             state.prev_feedback_output[1] - state.prev_feedback_output[2] + pre_delay_sample,
         };
 
-        std::array<Common::FixedPoint<50, 14>, ReverbInfo::MaxDelayLines> out_line_samples{};
+        std::array<Common::FixedPoint<50, 14>, ReverbInfo::MaxDelayLines> allpass_samples{};
         for (u32 i = 0; i < ReverbInfo::MaxDelayLines; i++) {
-            out_line_samples[i] = Axfx2AllPassTick(state.decay_delay_lines[i],
-                                                   state.fdn_delay_lines[i], mix_matrix[i]);
+            allpass_samples[i] = Axfx2AllPassTick(state.decay_delay_lines[i],
+                                                  state.fdn_delay_lines[i], mix_matrix[i]);
         }
+
         const auto dry_gain{Common::FixedPoint<50, 14>::from_base(params.dry_gain)};
         const auto wet_gain{Common::FixedPoint<50, 14>::from_base(params.wet_gain)};
 
-        const auto out_channels{std::min(Channels, size_t(4))};
-        for (u32 channel = 0; channel < out_channels; channel++) {
-            auto in_sample{inputs[channel][channel] * dry_gain};
-            auto out_sample{((output_samples[channel] + out_line_samples[channel]) * wet_gain) /
-                            64};
-            outputs[channel][sample_index] = (in_sample + out_sample).to_int();
-        }
+        if constexpr (NumChannels == 6) {
+            const std::array<Common::FixedPoint<50, 14>, MaxChannels> allpass_outputs{
+                allpass_samples[0], allpass_samples[1], allpass_samples[2] - allpass_samples[3],
+                allpass_samples[3], allpass_samples[2], allpass_samples[3],
+            };
 
-        if constexpr (Channels == 6) {
-            auto center{
-                state.center_delay_line.Tick((out_line_samples[2] - out_line_samples[3]) * 0.5f)};
-            auto in_sample{inputs[4][sample_index] * dry_gain};
-            auto out_sample{((output_samples[4] + center) * wet_gain) / 64};
+            for (u32 channel = 0; channel < NumChannels; channel++) {
+                auto in_sample{inputs[channel][sample_index] * dry_gain};
 
-            outputs[4][sample_index] = (in_sample + out_sample).to_int();
+                Common::FixedPoint<50, 14> allpass{};
+                if (channel == static_cast<u32>(Channels::Center)) {
+                    allpass = state.center_delay_line.Tick(allpass_outputs[channel] * 0.5f);
+                } else {
+                    allpass = allpass_outputs[channel];
+                }
 
-            in_sample = inputs[5][sample_index] * dry_gain;
-            out_sample = ((output_samples[5] + out_line_samples[3]) * wet_gain) / 64;
-
-            outputs[5][sample_index] = (in_sample + out_sample).to_int();
+                auto out_sample{((output_samples[channel] + allpass) * wet_gain) / 64};
+                outputs[channel][sample_index] = (in_sample + out_sample).to_int();
+            }
+        } else {
+            for (u32 channel = 0; channel < NumChannels; channel++) {
+                auto in_sample{inputs[channel][sample_index] * dry_gain};
+                auto out_sample{((output_samples[channel] + allpass_samples[channel]) * wet_gain) /
+                                64};
+                outputs[channel][sample_index] = (in_sample + out_sample).to_int();
+            }
         }
     }
 }

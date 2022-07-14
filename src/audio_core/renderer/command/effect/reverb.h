@@ -7,7 +7,7 @@
 #include <string>
 
 #include "audio_core/renderer/command/icommand.h"
-#include "audio_core/renderer/effect/effect_reverb_info.h"
+#include "audio_core/renderer/effect/reverb.h"
 #include "common/common_types.h"
 
 namespace AudioCore::AudioRenderer {

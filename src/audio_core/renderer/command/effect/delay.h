@@ -7,7 +7,7 @@
 #include <string>
 
 #include "audio_core/renderer/command/icommand.h"
-#include "audio_core/renderer/effect/effect_delay_info.h"
+#include "audio_core/renderer/effect/delay.h"
 #include "common/common_types.h"
 
 namespace AudioCore::AudioRenderer {
@@ -44,9 +44,9 @@ struct DelayCommand : ICommand {
     bool Verify(const ADSP::CommandListProcessor& processor) override;
 
     /// Input mix buffer offsets for each channel
-    std::array<s8, MaxChannels> inputs;
+    std::array<s16, MaxChannels> inputs;
     /// Output mix buffer offsets for each channel
-    std::array<s8, MaxChannels> outputs;
+    std::array<s16, MaxChannels> outputs;
     /// Input parameters
     DelayInfo::ParameterVersion1 parameter;
     /// State, updated each call

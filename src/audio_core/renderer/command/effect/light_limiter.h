@@ -7,7 +7,7 @@
 #include <string>
 
 #include "audio_core/renderer/command/icommand.h"
-#include "audio_core/renderer/effect/effect_light_limiter_info.h"
+#include "audio_core/renderer/effect/light_limiter.h"
 #include "common/common_types.h"
 
 namespace AudioCore::AudioRenderer {

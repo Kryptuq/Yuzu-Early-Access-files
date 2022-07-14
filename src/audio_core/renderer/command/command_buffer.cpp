@@ -5,9 +5,9 @@
 #include "audio_core/renderer/command/command_buffer.h"
 #include "audio_core/renderer/command/command_list_header.h"
 #include "audio_core/renderer/command/command_processing_time_estimator.h"
-#include "audio_core/renderer/effect/effect_biquad_filter_info.h"
-#include "audio_core/renderer/effect/effect_delay_info.h"
-#include "audio_core/renderer/effect/effect_reverb_info.h"
+#include "audio_core/renderer/effect/biquad_filter.h"
+#include "audio_core/renderer/effect/delay.h"
+#include "audio_core/renderer/effect/reverb.h"
 #include "audio_core/renderer/memory/memory_pool_info.h"
 #include "audio_core/renderer/mix/mix_info.h"
 #include "audio_core/renderer/sink/circular_buffer_sink_info.h"
@@ -368,9 +368,13 @@ void CommandBuffer::GenerateDelayCommand(const s32 node_id, EffectInfoBase& effe
     if (IsChannelCountValid(parameter.channel_count)) {
         const auto state_buffer{memory_pool->Translate(CpuAddr(state), sizeof(DelayInfo::State))};
         if (state_buffer) {
-            for (s8 channel = 0; channel < parameter.channel_count; channel++) {
-                cmd.inputs[channel] = static_cast<s8>(buffer_offset + parameter.inputs[channel]);
-                cmd.outputs[channel] = static_cast<s8>(buffer_offset + parameter.outputs[channel]);
+            for (s16 channel = 0; channel < parameter.channel_count; channel++) {
+                cmd.inputs[channel] = buffer_offset + parameter.inputs[channel];
+                cmd.outputs[channel] = buffer_offset + parameter.outputs[channel];
+            }
+
+            if (!behavior->IsDelayChannelMappingChanged() && parameter.channel_count == 6) {
+                UseOldChannelMapping(cmd.inputs, cmd.outputs);
             }
 
             cmd.parameter = parameter;
@@ -506,9 +510,13 @@ void CommandBuffer::GenerateReverbCommand(const s32 node_id, EffectInfoBase& eff
     if (IsChannelCountValid(parameter.channel_count)) {
         const auto state_buffer{memory_pool->Translate(CpuAddr(state), sizeof(ReverbInfo::State))};
         if (state_buffer) {
-            for (s8 channel = 0; channel < parameter.channel_count; channel++) {
+            for (s16 channel = 0; channel < parameter.channel_count; channel++) {
                 cmd.inputs[channel] = buffer_offset + parameter.inputs[channel];
                 cmd.outputs[channel] = buffer_offset + parameter.outputs[channel];
+            }
+
+            if (!behavior->IsReverbChannelMappingChanged() && parameter.channel_count == 6) {
+                UseOldChannelMapping(cmd.inputs, cmd.outputs);
             }
 
             cmd.parameter = parameter;
@@ -534,9 +542,13 @@ void CommandBuffer::GenerateI3dl2ReverbCommand(const s32 node_id, EffectInfoBase
         const auto state_buffer{
             memory_pool->Translate(CpuAddr(state), sizeof(I3dl2ReverbInfo::State))};
         if (state_buffer) {
-            for (s8 channel = 0; channel < parameter.channel_count; channel++) {
+            for (s16 channel = 0; channel < parameter.channel_count; channel++) {
                 cmd.inputs[channel] = buffer_offset + parameter.inputs[channel];
                 cmd.outputs[channel] = buffer_offset + parameter.outputs[channel];
+            }
+
+            if (!behavior->IsI3dl2ReverbChannelMappingChanged() && parameter.channel_count == 6) {
+                UseOldChannelMapping(cmd.inputs, cmd.outputs);
             }
 
             cmd.parameter = parameter;
@@ -673,6 +685,30 @@ void CommandBuffer::GenerateCaptureCommand(const s32 node_id, EffectInfoBase& ef
     }
 
     GenerateEnd<CaptureCommand>(cmd);
+}
+
+void CommandBuffer::GenerateCompressorCommand(s16 buffer_offset, EffectInfoBase& effect_info,
+                                              s32 node_id) {
+    auto& cmd{GenerateStart<CompressorCommand, CommandId::Compressor>(node_id)};
+
+    auto& parameter{
+        *reinterpret_cast<CompressorInfo::ParameterVersion2*>(effect_info.GetParameter())};
+    auto state{reinterpret_cast<CompressorInfo::State*>(effect_info.GetStateBuffer())};
+
+    if (IsChannelCountValid(parameter.channel_count)) {
+        auto state_buffer{memory_pool->Translate(CpuAddr(state), sizeof(CompressorInfo::State))};
+        if (state_buffer) {
+            for (u16 channel = 0; channel < parameter.channel_count; channel++) {
+                cmd.inputs[channel] = buffer_offset + parameter.inputs[channel];
+                cmd.outputs[channel] = buffer_offset + parameter.outputs[channel];
+            }
+            cmd.parameter = parameter;
+            cmd.workbuffer = state_buffer;
+            cmd.enabled = effect_info.IsEnabled();
+        }
+    }
+
+    GenerateEnd<CompressorCommand>(cmd);
 }
 
 } // namespace AudioCore::AudioRenderer

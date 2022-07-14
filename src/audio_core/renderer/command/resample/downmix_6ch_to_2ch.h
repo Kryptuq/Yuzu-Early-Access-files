@@ -16,7 +16,7 @@ class CommandListProcessor;
 
 /**
  * AudioRenderer command for downmixing 6 channels to 2.
- * Channels:
+ * Channel layout (SMPTE):
  *     0 - front left
  *     1 - front right
  *     2 - center

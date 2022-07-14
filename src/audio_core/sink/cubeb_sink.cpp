@@ -181,36 +181,67 @@ public:
             queue.enqueue(buffer);
             queued_buffers++;
         } else {
-            static constexpr s32 min = std::numeric_limits<s16>::min();
-            static constexpr s32 max = std::numeric_limits<s16>::max();
+            constexpr s32 min{std::numeric_limits<s16>::min()};
+            constexpr s32 max{std::numeric_limits<s16>::max()};
 
             auto yuzu_volume{Settings::Volume()};
             auto volume{system_volume * device_volume * yuzu_volume};
+
             if (system_channels == 6 && device_channels == 2) {
-                std::array<f32, 4> down_mix_coeff{1.0f, 0.707f, 0.251f, 0.707f};
+                // We're given 6 channels, but our device only outputs 2, so downmix.
+                constexpr std::array<f32, 4> down_mix_coeff{1.0f, 0.707f, 0.251f, 0.707f};
+
                 for (u32 read_index = 0, write_index = 0; read_index < samples.size();
                      read_index += system_channels, write_index += device_channels) {
-                    const auto left_sample =
-                        ((Common::FixedPoint<49, 15>(samples[read_index + 0]) * down_mix_coeff[0] +
-                          samples[read_index + 2] * down_mix_coeff[1] +
-                          samples[read_index + 3] * down_mix_coeff[2] +
-                          samples[read_index + 4] * down_mix_coeff[3]) *
+                    const auto left_sample{
+                        ((Common::FixedPoint<49, 15>(
+                              samples[read_index + static_cast<u32>(Channels::FrontLeft)]) *
+                              down_mix_coeff[0] +
+                          samples[read_index + static_cast<u32>(Channels::Center)] *
+                              down_mix_coeff[1] +
+                          samples[read_index + static_cast<u32>(Channels::LFE)] *
+                              down_mix_coeff[2] +
+                          samples[read_index + static_cast<u32>(Channels::BackLeft)] *
+                              down_mix_coeff[3]) *
                          volume)
-                            .to_int();
+                            .to_int()};
 
-                    const auto right_sample =
-                        ((Common::FixedPoint<49, 15>(samples[read_index + 1]) * down_mix_coeff[0] +
-                          samples[read_index + 2] * down_mix_coeff[1] +
-                          samples[read_index + 3] * down_mix_coeff[2] +
-                          samples[read_index + 5] * down_mix_coeff[3]) *
+                    const auto right_sample{
+                        ((Common::FixedPoint<49, 15>(
+                              samples[read_index + static_cast<u32>(Channels::FrontRight)]) *
+                              down_mix_coeff[0] +
+                          samples[read_index + static_cast<u32>(Channels::Center)] *
+                              down_mix_coeff[1] +
+                          samples[read_index + static_cast<u32>(Channels::LFE)] *
+                              down_mix_coeff[2] +
+                          samples[read_index + static_cast<u32>(Channels::BackRight)] *
+                              down_mix_coeff[3]) *
                          volume)
-                            .to_int();
+                            .to_int()};
 
-                    samples[write_index + 0] = static_cast<s16>(std::clamp(left_sample, min, max));
-                    samples[write_index + 1] = static_cast<s16>(std::clamp(right_sample, min, max));
+                    samples[write_index + static_cast<u32>(Channels::FrontLeft)] =
+                        static_cast<s16>(std::clamp(left_sample, min, max));
+                    samples[write_index + static_cast<u32>(Channels::FrontRight)] =
+                        static_cast<s16>(std::clamp(right_sample, min, max));
                 }
 
                 samples.resize(samples.size() / system_channels * device_channels);
+
+            } else if (system_channels == 2 && device_channels == 6) {
+                // We need moar samples! Not all games will provide 6 channel audio.
+                // TODO: Implement some upmixing here. Currently just passthrough, with other
+                // channels left as silence.
+                std::vector<s16> new_samples(samples.size() / system_channels * device_channels, 0);
+
+                for (u32 read_index = 0, write_index = 0; read_index < samples.size();
+                     read_index += system_channels, write_index += device_channels) {
+                    new_samples[write_index + static_cast<u32>(Channels::FrontLeft)] =
+                        samples[read_index + static_cast<u32>(Channels::FrontLeft)];
+                    new_samples[write_index + static_cast<u32>(Channels::FrontRight)] =
+                        samples[read_index + static_cast<u32>(Channels::FrontRight)];
+                }
+                samples = std::move(new_samples);
+
             } else if (volume != 1.0f) {
                 for (u32 i = 0; i < samples.size(); i++) {
                     samples[i] = static_cast<s16>(std::clamp(

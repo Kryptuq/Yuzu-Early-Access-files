@@ -6,11 +6,12 @@
 #include "audio_core/renderer/command/command_buffer.h"
 #include "audio_core/renderer/command/command_generator.h"
 #include "audio_core/renderer/command/command_list_header.h"
-#include "audio_core/renderer/effect/effect_aux_info.h"
-#include "audio_core/renderer/effect/effect_biquad_filter_info.h"
-#include "audio_core/renderer/effect/effect_buffer_mixer_info.h"
-#include "audio_core/renderer/effect/effect_capture_info.h"
+#include "audio_core/renderer/effect/aux_.h"
+#include "audio_core/renderer/effect/biquad_filter.h"
+#include "audio_core/renderer/effect/buffer_mixer.h"
+#include "audio_core/renderer/effect/capture.h"
 #include "audio_core/renderer/effect/effect_context.h"
+#include "audio_core/renderer/effect/light_limiter.h"
 #include "audio_core/renderer/mix/mix_context.h"
 #include "audio_core/renderer/performance/detail_aspect.h"
 #include "audio_core/renderer/performance/entry_aspect.h"
@@ -371,7 +372,7 @@ void CommandGenerator::GenerateBiquadFilterEffectCommand(const s16 buffer_offset
             break;
         case EffectInfoBase::ParameterState::Updating:
         case EffectInfoBase::ParameterState::Updated:
-            if (render_context.behavior->IsBiquadFilterEffectStateClaerBugFixed()) {
+            if (render_context.behavior->IsBiquadFilterEffectStateClearBugFixed()) {
                 needs_init = false;
             } else {
                 needs_init = parameter.state == EffectInfoBase::ParameterState::Updating;
@@ -440,6 +441,11 @@ void CommandGenerator::GenerateCaptureCommand(const s16 buffer_offset, EffectInf
             write_offset = new_update_count;
         }
     }
+}
+
+void CommandGenerator::GenerateCompressorCommand(const s16 buffer_offset,
+                                                 EffectInfoBase& effect_info, const s32 node_id) {
+    command_buffer.GenerateCompressorCommand(buffer_offset, effect_info, node_id);
 }
 
 void CommandGenerator::GenerateEffectCommand(MixInfo& mix_info) {
@@ -543,6 +549,17 @@ void CommandGenerator::GenerateEffectCommand(MixInfo& mix_info) {
             DetailAspect capture_detail_aspect(*this, entry_type, mix_info.node_id,
                                                PerformanceDetailType::Unk12);
             GenerateCaptureCommand(mix_info.buffer_offset, effect_info, mix_info.node_id);
+            if (capture_detail_aspect.initialized) {
+                command_buffer.GeneratePerformanceCommand(
+                    capture_detail_aspect.node_id, PerformanceState::Stop,
+                    capture_detail_aspect.performance_entry_address);
+            }
+        } break;
+
+        case EffectInfoBase::Type::Compressor: {
+            DetailAspect capture_detail_aspect(*this, entry_type, mix_info.node_id,
+                                               PerformanceDetailType::Unk13);
+            GenerateCompressorCommand(mix_info.buffer_offset, effect_info, mix_info.node_id);
             if (capture_detail_aspect.initialized) {
                 command_buffer.GeneratePerformanceCommand(
                     capture_detail_aspect.node_id, PerformanceState::Stop,

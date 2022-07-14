@@ -367,7 +367,11 @@ Result System::Initialize(const AudioRendererParameterInternal& params,
 
     // nn::audio::dsp::FlushDataCache(transferMemory, transferMemorySize);
 
-    if (behavior.IsCommandProcessingTimeEstimatorVersion4Supported()) {
+    if (behavior.IsCommandProcessingTimeEstimatorVersion5Supported()) {
+        command_processing_time_estimator =
+            std::make_unique<CommandProcessingTimeEstimatorVersion5>(sample_count,
+                                                                     mix_buffer_count);
+    } else if (behavior.IsCommandProcessingTimeEstimatorVersion4Supported()) {
         command_processing_time_estimator =
             std::make_unique<CommandProcessingTimeEstimatorVersion4>(sample_count,
                                                                      mix_buffer_count);
@@ -595,13 +599,13 @@ void System::SendCommandToDsp() {
                 memory_pool_info.Translate(CpuAddr(command_workbuffer.data()), command_size)};
 
             auto time_limit_percent{70.0f};
-            if (behavior.IsAudioRenererProcessingTimeLimit80PercentSupported()) {
+            if (behavior.IsAudioRendererProcessingTimeLimit80PercentSupported()) {
                 time_limit_percent = 80.0f;
-            } else if (behavior.IsAudioRenererProcessingTimeLimit75PercentSupported()) {
+            } else if (behavior.IsAudioRendererProcessingTimeLimit75PercentSupported()) {
                 time_limit_percent = 75.0f;
             } else {
                 // result ignored and 70 is used anyway
-                behavior.IsAudioRenererProcessingTimeLimit70PercentSupported();
+                behavior.IsAudioRendererProcessingTimeLimit70PercentSupported();
                 time_limit_percent = 70.0f;
             }
 
@@ -698,13 +702,14 @@ u64 System::GenerateCommand(std::span<u8> in_command_buffer,
 
     if (drop_voice) {
         f32 time_limit_percent{70.0f};
-        if (render_context.behavior->IsAudioRenererProcessingTimeLimit80PercentSupported()) {
+        if (render_context.behavior->IsAudioRendererProcessingTimeLimit80PercentSupported()) {
             time_limit_percent = 80.0f;
-        } else if (render_context.behavior->IsAudioRenererProcessingTimeLimit75PercentSupported()) {
+        } else if (render_context.behavior
+                       ->IsAudioRendererProcessingTimeLimit75PercentSupported()) {
             time_limit_percent = 75.0f;
         } else {
             // result is ignored
-            render_context.behavior->IsAudioRenererProcessingTimeLimit70PercentSupported();
+            render_context.behavior->IsAudioRendererProcessingTimeLimit70PercentSupported();
             time_limit_percent = 70.0f;
         }
         const auto time_limit{static_cast<u32>(

@@ -3,14 +3,15 @@
 
 #pragma once
 
-#include "audio_core/renderer/effect/effect_aux_info.h"
-#include "audio_core/renderer/effect/effect_biquad_filter_info.h"
-#include "audio_core/renderer/effect/effect_buffer_mixer_info.h"
-#include "audio_core/renderer/effect/effect_capture_info.h"
-#include "audio_core/renderer/effect/effect_delay_info.h"
-#include "audio_core/renderer/effect/effect_i3dl2_info.h"
-#include "audio_core/renderer/effect/effect_light_limiter_info.h"
-#include "audio_core/renderer/effect/effect_reverb_info.h"
+#include "audio_core/renderer/effect/aux_.h"
+#include "audio_core/renderer/effect/biquad_filter.h"
+#include "audio_core/renderer/effect/buffer_mixer.h"
+#include "audio_core/renderer/effect/capture.h"
+#include "audio_core/renderer/effect/compressor.h"
+#include "audio_core/renderer/effect/delay.h"
+#include "audio_core/renderer/effect/i3dl2.h"
+#include "audio_core/renderer/effect/light_limiter.h"
+#include "audio_core/renderer/effect/reverb.h"
 #include "common/common_types.h"
 
 namespace AudioCore::AudioRenderer {
@@ -59,6 +60,10 @@ static void ResetEffect(EffectInfoBase* effect, const EffectInfoBase::Type type)
     case EffectInfoBase::Type::Capture:
         std::construct_at<CaptureInfo>(reinterpret_cast<CaptureInfo*>(effect));
         effect->SetType(EffectInfoBase::Type::Capture);
+        break;
+    case EffectInfoBase::Type::Compressor:
+        std::construct_at<CompressorInfo>(reinterpret_cast<CompressorInfo*>(effect));
+        effect->SetType(EffectInfoBase::Type::Compressor);
         break;
     }
 }

@@ -199,28 +199,32 @@ public:
     bool IsCommandProcessingTimeEstimatorVersion4Supported() const;
 
     /**
-     * Check if the AudioRenderer can use up to 70% of the allocated processing timeslice.
-     * Note: Name is correct, Nintendo have the typo here
+     * Check if the command time estimator version 5 is supported.
      *
      * @return True if supported, otherwise false.
      */
-    bool IsAudioRenererProcessingTimeLimit70PercentSupported() const;
+    bool IsCommandProcessingTimeEstimatorVersion5Supported() const;
+
+    /**
+     * Check if the AudioRenderer can use up to 70% of the allocated processing timeslice.
+     *
+     * @return True if supported, otherwise false.
+     */
+    bool IsAudioRendererProcessingTimeLimit70PercentSupported() const;
 
     /**
      * Check if the AudioRenderer can use up to 75% of the allocated processing timeslice.
-     * Note: Name is correct, Nintendo have the typo here
      *
      * @return True if supported, otherwise false.
      */
-    bool IsAudioRenererProcessingTimeLimit75PercentSupported() const;
+    bool IsAudioRendererProcessingTimeLimit75PercentSupported() const;
 
     /**
      * Check if the AudioRenderer can use up to 80% of the allocated processing timeslice.
-     * Note: Name is correct, Nintendo have the typo here
      *
      * @return True if supported, otherwise false.
      */
-    bool IsAudioRenererProcessingTimeLimit80PercentSupported() const;
+    bool IsAudioRendererProcessingTimeLimit80PercentSupported() const;
 
     /**
      * Check if voice flushing is supported
@@ -279,11 +283,10 @@ public:
      * Check if the clear state bug for biquad filters is fixed.
      * The biquad state was not marked as needing re-initialisation when the effect was updated, it
      * was only initialized once with a new effect.
-     * Note: Name is correct, Nintendo have the typo here
      *
      * @return True if fixed, otherwise false.
      */
-    bool IsBiquadFilterEffectStateClaerBugFixed() const;
+    bool IsBiquadFilterEffectStateClearBugFixed() const;
 
     /**
      * Check if Q23 precision is supported for fixed point.
@@ -321,6 +324,42 @@ public:
      * @return True if supported, otherwise false.
      */
     bool IsDeviceApiVersion2Supported() const;
+
+    /**
+     * Check if new channel mappings are used for Delay commands.
+     * Older commands used:
+     *   front left/front right/back left/back right/center/lfe
+     * Whereas everywhere else in the code uses:
+     *   front left/front right/center/lfe/back left/back right
+     * This corrects that and makes everything standardised.
+     *
+     * @return True if supported, otherwise false.
+     */
+    bool IsDelayChannelMappingChanged() const;
+
+    /**
+     * Check if new channel mappings are used for Reverb commands.
+     * Older commands used:
+     *   front left/front right/back left/back right/center/lfe
+     * Whereas everywhere else in the code uses:
+     *   front left/front right/center/lfe/back left/back right
+     * This corrects that and makes everything standardised.
+     *
+     * @return True if supported, otherwise false.
+     */
+    bool IsReverbChannelMappingChanged() const;
+
+    /**
+     * Check if new channel mappings are used for I3dl2Reverb commands.
+     * Older commands used:
+     *   front left/front right/back left/back right/center/lfe
+     * Whereas everywhere else in the code uses:
+     *   front left/front right/center/lfe/back left/back right
+     * This corrects that and makes everything standardised.
+     *
+     * @return True if supported, otherwise false.
+     */
+    bool IsI3dl2ReverbChannelMappingChanged() const;
 
     /// Host version
     u32 process_revision;

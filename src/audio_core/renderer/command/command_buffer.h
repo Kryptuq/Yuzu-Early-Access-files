@@ -6,7 +6,7 @@
 #include <span>
 
 #include "audio_core/renderer/command/commands.h"
-#include "audio_core/renderer/effect/effect_light_limiter_info.h"
+#include "audio_core/renderer/effect/light_limiter.h"
 #include "audio_core/renderer/performance/performance_manager.h"
 #include "common/common_types.h"
 
@@ -427,6 +427,15 @@ public:
     void GenerateCaptureCommand(s32 node_id, EffectInfoBase& effect_info, s16 input_index,
                                 s16 output_index, s16 buffer_offset, u32 update_count,
                                 u32 count_max, u32 write_offset);
+
+    /**
+     * Generate a compressor command, adding it to the command list.
+     *
+     * @param buffer_offset - Base mix buffer offset to use.
+     * @param effect_info   - Capture effect info to generate this command from.
+     * @param node_id       - Node id of the voice this command is generated for.
+     */
+    void GenerateCompressorCommand(s16 buffer_offset, EffectInfoBase& effect_info, s32 node_id);
 
     /// Command list buffer generated commands will be added to
     std::span<u8> command_list{};
