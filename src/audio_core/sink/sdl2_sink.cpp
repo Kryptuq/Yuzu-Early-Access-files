@@ -208,10 +208,24 @@ public:
 
                 for (u32 read_index = 0, write_index = 0; read_index < samples.size();
                      read_index += system_channels, write_index += device_channels) {
-                    new_samples[write_index + static_cast<u32>(Channels::FrontLeft)] =
-                        samples[read_index + static_cast<u32>(Channels::FrontLeft)];
+                    const auto left_sample{static_cast<s16>(std::clamp(
+                        static_cast<s32>(
+                            static_cast<f32>(
+                                samples[read_index + static_cast<u32>(Channels::FrontLeft)]) *
+                            volume),
+                        min, max))};
+
+                    new_samples[write_index + static_cast<u32>(Channels::FrontLeft)] = left_sample;
+
+                    const auto right_sample{static_cast<s16>(std::clamp(
+                        static_cast<s32>(
+                            static_cast<f32>(
+                                samples[read_index + static_cast<u32>(Channels::FrontRight)]) *
+                            volume),
+                        min, max))};
+
                     new_samples[write_index + static_cast<u32>(Channels::FrontRight)] =
-                        samples[read_index + static_cast<u32>(Channels::FrontRight)];
+                        right_sample;
                 }
                 samples = std::move(new_samples);
 

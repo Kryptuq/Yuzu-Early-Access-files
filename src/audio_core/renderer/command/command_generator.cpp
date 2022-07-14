@@ -774,10 +774,6 @@ void CommandGenerator::GenerateDeviceSinkCommand(const s16 buffer_offset, SinkIn
     if (render_context.channels == 2 && parameter.downmix_enabled) {
         command_buffer.GenerateDownMix6chTo2chCommand(InvalidNodeId, parameter.inputs,
                                                       buffer_offset, parameter.downmix_coeff);
-    } else if (render_context.channels == 2 && parameter.input_count == 6) {
-        constexpr std::array<f32, 4> default_coeffs{{1.0f, 0.707f, 0.251f, 0.707f}};
-        command_buffer.GenerateDownMix6chTo2chCommand(InvalidNodeId, parameter.inputs,
-                                                      buffer_offset, default_coeffs);
     }
 
     if (state.upsampler_info != nullptr) {
