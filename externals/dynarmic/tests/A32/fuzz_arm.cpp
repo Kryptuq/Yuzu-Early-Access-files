@@ -398,9 +398,8 @@ static void RunTestInstance(Dynarmic::A32::Jit& jit,
     }
 
     if (uni.GetRegisters()[15] > jit.Regs()[15]) {
-        const u32 final_pc = jit.Regs()[15];
         int trials = 0;
-        while (final_pc >= initial_pc && final_pc < expected_end_pc && trials++ < 100) {
+        while (jit.Regs()[15] >= initial_pc && jit.Regs()[15] < expected_end_pc && trials++ < 100 && uni.GetRegisters()[15] != jit.Regs()[15]) {
             fmt::print("Warning: Possible unicorn overrrun, attempt recovery\n");
             jit.Step();
         }

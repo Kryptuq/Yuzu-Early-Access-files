@@ -118,7 +118,7 @@ class GMainWindow : public QMainWindow {
 public:
     void filterBarSetChecked(bool state);
     void UpdateUITheme();
-    explicit GMainWindow();
+    explicit GMainWindow(bool has_broken_vulkan);
     ~GMainWindow() override;
 
     bool DropAction(QDropEvent* event);
@@ -244,6 +244,7 @@ private:
     bool ConfirmChangeGame();
     bool ConfirmForceLockedExit();
     void RequestGameExit();
+    void RequestGameResume();
     void closeEvent(QCloseEvent* event) override;
 
 private slots:

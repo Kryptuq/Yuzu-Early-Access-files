@@ -110,6 +110,7 @@ protected:
     FakeCall FastmemCallback(u64 rip);
 
     // Memory access helpers
+    void EmitCheckMemoryAbort(A32EmitContext& ctx, IR::Inst* inst, Xbyak::Label* end = nullptr);
     template<std::size_t bitsize, auto callback>
     void EmitMemoryRead(A32EmitContext& ctx, IR::Inst* inst);
     template<std::size_t bitsize, auto callback>

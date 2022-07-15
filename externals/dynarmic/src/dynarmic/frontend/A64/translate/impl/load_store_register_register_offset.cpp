@@ -70,7 +70,7 @@ static bool RegSharedDecodeAndOperation(TranslatorVisitor& v, size_t scale, u8 s
         UNREACHABLE();
     }
 
-    return v.MemoryInstructionContinues();
+    return true;
 }
 
 bool TranslatorVisitor::STRx_reg(Imm<2> size, Imm<1> opc_1, Reg Rm, Imm<3> option, bool S, Reg Rn, Reg Rt) {
@@ -128,7 +128,7 @@ static bool VecSharedDecodeAndOperation(TranslatorVisitor& v, size_t scale, u8 s
         UNREACHABLE();
     }
 
-    return v.MemoryInstructionContinues();
+    return true;
 }
 
 bool TranslatorVisitor::STR_reg_fpsimd(Imm<2> size, Imm<1> opc_1, Reg Rm, Imm<3> option, bool S, Reg Rn, Vec Vt) {

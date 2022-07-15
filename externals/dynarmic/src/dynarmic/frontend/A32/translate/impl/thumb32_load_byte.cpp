@@ -34,7 +34,7 @@ static bool LoadByteLiteral(TranslatorVisitor& v, bool U, Reg t, Imm<12> imm12, 
     const auto data = (v.ir.*ext_fn)(v.ir.ReadMemory8(v.ir.Imm32(address), IR::AccType::NORMAL));
 
     v.ir.SetRegister(t, data);
-    return v.MemoryInstructionContinues();
+    return true;
 }
 
 static bool LoadByteRegister(TranslatorVisitor& v, Reg n, Reg t, Imm<2> imm2, Reg m, ExtensionFunction ext_fn) {
@@ -49,7 +49,7 @@ static bool LoadByteRegister(TranslatorVisitor& v, Reg n, Reg t, Imm<2> imm2, Re
     const auto data = (v.ir.*ext_fn)(v.ir.ReadMemory8(address, IR::AccType::NORMAL));
 
     v.ir.SetRegister(t, data);
-    return v.MemoryInstructionContinues();
+    return true;
 }
 
 static bool LoadByteImmediate(TranslatorVisitor& v, Reg n, Reg t, bool P, bool U, bool W, Imm<12> imm12, ExtensionFunction ext_fn) {
@@ -64,7 +64,7 @@ static bool LoadByteImmediate(TranslatorVisitor& v, Reg n, Reg t, bool P, bool U
     if (W) {
         v.ir.SetRegister(n, offset_address);
     }
-    return v.MemoryInstructionContinues();
+    return true;
 }
 
 bool TranslatorVisitor::thumb32_PLD_lit(bool /*U*/, Imm<12> /*imm12*/) {

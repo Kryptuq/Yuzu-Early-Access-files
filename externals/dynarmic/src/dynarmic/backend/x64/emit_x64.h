@@ -6,6 +6,8 @@
 #pragma once
 
 #include <array>
+#include <functional>
+#include <memory>
 #include <optional>
 #include <string>
 #include <type_traits>
@@ -14,6 +16,7 @@
 #include <mcl/bitsizeof.hpp>
 #include <tsl/robin_map.h>
 #include <tsl/robin_set.h>
+#include <xbyak/xbyak.h>
 #include <xbyak/xbyak_util.h>
 
 #include "dynarmic/backend/x64/exception_handler.h"
@@ -48,6 +51,7 @@ using HalfVectorArray = std::array<T, A64FullVectorWidth::value / mcl::bitsizeof
 
 struct EmitContext {
     EmitContext(RegAlloc& reg_alloc, IR::Block& block);
+    virtual ~EmitContext();
 
     size_t GetInstOffset(IR::Inst* inst) const;
     void EraseInstruction(IR::Inst* inst);
@@ -58,7 +62,15 @@ struct EmitContext {
 
     RegAlloc& reg_alloc;
     IR::Block& block;
+
+    std::vector<std::function<void()>> deferred_emits;
 };
+
+using SharedLabel = std::shared_ptr<Xbyak::Label>;
+
+inline SharedLabel GenSharedLabel() {
+    return std::make_shared<Xbyak::Label>();
+}
 
 class EmitX64 {
 public:
@@ -93,7 +105,7 @@ protected:
     virtual std::string LocationDescriptorToFriendlyName(const IR::LocationDescriptor&) const = 0;
     void EmitAddCycles(size_t cycles);
     Xbyak::Label EmitCond(IR::Cond cond);
-    BlockDescriptor RegisterBlock(const IR::LocationDescriptor& location_descriptor, CodePtr entrypoint, CodePtr entrypoint_far, size_t size);
+    BlockDescriptor RegisterBlock(const IR::LocationDescriptor& location_descriptor, CodePtr entrypoint, size_t size);
     void PushRSBHelper(Xbyak::Reg64 loc_desc_reg, Xbyak::Reg64 index_reg, IR::LocationDescriptor target);
 
     // Terminal instruction emitters

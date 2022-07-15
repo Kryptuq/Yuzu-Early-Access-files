@@ -32,6 +32,8 @@ using namespace Xbyak::util;
 EmitContext::EmitContext(RegAlloc& reg_alloc, IR::Block& block)
         : reg_alloc(reg_alloc), block(block) {}
 
+EmitContext::~EmitContext() = default;
+
 size_t EmitContext::GetInstOffset(IR::Inst* inst) const {
     return static_cast<size_t>(std::distance(block.begin(), IR::Block::iterator(inst)));
 }
@@ -274,11 +276,8 @@ Xbyak::Label EmitX64::EmitCond(IR::Cond cond) {
     return pass;
 }
 
-EmitX64::BlockDescriptor EmitX64::RegisterBlock(const IR::LocationDescriptor& descriptor, CodePtr entrypoint, CodePtr entrypoint_far, size_t size) {
+EmitX64::BlockDescriptor EmitX64::RegisterBlock(const IR::LocationDescriptor& descriptor, CodePtr entrypoint, size_t size) {
     PerfMapRegister(entrypoint, code.getCurr(), LocationDescriptorToFriendlyName(descriptor));
-    code.SwitchToFarCode();
-    PerfMapRegister(entrypoint_far, code.getCurr(), LocationDescriptorToFriendlyName(descriptor) + "_far");
-    code.SwitchToNearCode();
     Patch(descriptor, entrypoint);
 
     BlockDescriptor block_desc{entrypoint, size};

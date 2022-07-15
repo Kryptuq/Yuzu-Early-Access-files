@@ -205,7 +205,7 @@ public:
         const auto match{parent.MatchingWatchpoint(addr, size, type)};
         if (match) {
             parent.halted_watchpoint = match;
-            ReturnException(parent.jit.load()->GetPC(), ARM_Interface::watchpoint);
+            parent.jit.load()->HaltExecution(ARM_Interface::watchpoint);
             return false;
         }
 
@@ -271,7 +271,6 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable* 
 
     // Code cache size
     config.code_cache_size = 512_MiB;
-    config.far_code_offset = 400_MiB;
 
     // Allow memory fault handling to work
     if (system.DebuggerEnabled()) {
@@ -282,7 +281,6 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable* 
     if (!page_table) {
         // Don't waste too much memory on null_jit
         config.code_cache_size = 8_MiB;
-        config.far_code_offset = 4_MiB;
     }
 
     // Safe optimizations

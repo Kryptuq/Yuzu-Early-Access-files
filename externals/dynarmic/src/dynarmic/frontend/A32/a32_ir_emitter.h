@@ -110,6 +110,7 @@ public:
 
 private:
     enum ArchVersion arch_version;
+    IR::U64 ImmCurrentLocationDescriptor();
 };
 
 }  // namespace Dynarmic::A32

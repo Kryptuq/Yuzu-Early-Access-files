@@ -95,6 +95,9 @@ public:
     void SetFPCR(const IR::U32& value);
     void SetFPSR(const IR::U32& value);
     void SetPC(const IR::U64& value);
+
+private:
+    IR::U64 ImmCurrentLocationDescriptor();
 };
 
 }  // namespace Dynarmic::A64

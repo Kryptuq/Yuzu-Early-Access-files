@@ -90,6 +90,7 @@ public:
     AppletMessage PopMessage();
     std::size_t GetMessageCount() const;
     void RequestExit();
+    void RequestResume();
     void FocusStateChanged();
     void OperationModeChanged();
 

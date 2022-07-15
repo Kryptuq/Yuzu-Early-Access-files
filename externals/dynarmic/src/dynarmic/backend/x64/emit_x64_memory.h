@@ -53,19 +53,19 @@ void EmitDetectMisalignedVAddr(BlockOfCode& code, EmitContext& ctx, size_t bitsi
 
     const u32 page_align_mask = static_cast<u32>(page_size - 1) & ~align_mask;
 
-    Xbyak::Label detect_boundary, resume;
+    SharedLabel detect_boundary = GenSharedLabel(), resume = GenSharedLabel();
 
-    code.jnz(detect_boundary, code.T_NEAR);
-    code.L(resume);
+    code.jnz(*detect_boundary, code.T_NEAR);
+    code.L(*resume);
 
-    code.SwitchToFarCode();
-    code.L(detect_boundary);
-    code.mov(tmp, vaddr);
-    code.and_(tmp, page_align_mask);
-    code.cmp(tmp, page_align_mask);
-    code.jne(resume, code.T_NEAR);
-    // NOTE: We expect to fallthrough into abort code here.
-    code.SwitchToNearCode();
+    ctx.deferred_emits.emplace_back([=, &code] {
+        code.L(*detect_boundary);
+        code.mov(tmp, vaddr);
+        code.and_(tmp, page_align_mask);
+        code.cmp(tmp, page_align_mask);
+        code.jne(*resume, code.T_NEAR);
+        // NOTE: We expect to fallthrough into abort code here.
+    });
 }
 
 template<typename EmitContext>

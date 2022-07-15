@@ -642,6 +642,10 @@ void AppletMessageQueue::RequestExit() {
     PushMessage(AppletMessage::Exit);
 }
 
+void AppletMessageQueue::RequestResume() {
+    PushMessage(AppletMessage::Resume);
+}
+
 void AppletMessageQueue::FocusStateChanged() {
     PushMessage(AppletMessage::FocusStateChanged);
 }

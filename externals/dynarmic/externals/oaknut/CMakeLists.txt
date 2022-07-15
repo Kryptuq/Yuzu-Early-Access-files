@@ -39,7 +39,11 @@ target_compile_features(oaknut INTERFACE cxx_std_20)
 
 # Tests
 if (MASTER_PROJECT)
-    find_package(Catch2 3 REQUIRED)
+    if (DYNARMIC_USE_BUNDLED_CATCH)
+        add_subdirectory(externals/catch)
+    else()
+        find_package(Catch2 3 REQUIRED)
+    endif()
 
     add_executable(oaknut-tests
         tests/basic.cpp
@@ -49,9 +53,4 @@ if (MASTER_PROJECT)
     target_include_directories(oaknut-tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/tests)
     target_link_libraries(oaknut-tests PRIVATE Catch2::Catch2WithMain merry::oaknut)
     target_compile_options(oaknut-tests PRIVATE -Wall -Wextra -Wcast-qual -pedantic -pedantic-errors -Wfatal-errors -Wno-missing-braces)
-
-    include(CTest)
-    include(Catch)
-    catch_discover_tests(oaknut-tests)
-    enable_testing()
 endif()

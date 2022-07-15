@@ -29,12 +29,6 @@ struct TranslationOptions {
     /// If this is false, we treat the instruction as a NOP.
     /// If this is true, we emit an ExceptionRaised instruction.
     bool hook_hint_instructions = true;
-
-    /// This changes what IR we emit when we translate a memory instruction.
-    /// If this is false, memory accesses are not considered terminal.
-    /// If this is true, memory access are considered terminal. This allows
-    /// accurately emulating protection fault handlers.
-    bool check_halt_on_memory_access = false;
 };
 
 /**

@@ -36,11 +36,7 @@ static bool TableBranch(TranslatorVisitor& v, Reg n, Reg m, bool half) {
 
     v.ir.UpdateUpperLocationDescriptor();
     v.ir.BranchWritePC(branch_value);
-    if (v.options.check_halt_on_memory_access) {
-        v.ir.SetTerm(IR::Term::CheckHalt{IR::Term::ReturnToDispatch{}});
-    } else {
-        v.ir.SetTerm(IR::Term::FastDispatchHint{});
-    }
+    v.ir.SetTerm(IR::Term::FastDispatchHint{});
     return false;
 }
 
@@ -72,7 +68,7 @@ static bool LoadDualImmediate(TranslatorVisitor& v, bool P, bool U, bool W, Reg 
     if (W) {
         v.ir.SetRegister(n, offset_address);
     }
-    return v.MemoryInstructionContinues();
+    return true;
 }
 
 static bool LoadDualLiteral(TranslatorVisitor& v, bool U, bool W, Reg t, Reg t2, Imm<8> imm8) {
@@ -98,7 +94,7 @@ static bool LoadDualLiteral(TranslatorVisitor& v, bool U, bool W, Reg t, Reg t2,
         v.ir.SetRegister(t2, v.ir.MostSignificantWord(data).result);
     }
 
-    return v.MemoryInstructionContinues();
+    return true;
 }
 
 static bool StoreDual(TranslatorVisitor& v, bool P, bool U, bool W, Reg n, Reg t, Reg t2, Imm<8> imm8) {
@@ -127,7 +123,7 @@ static bool StoreDual(TranslatorVisitor& v, bool P, bool U, bool W, Reg n, Reg t
     if (W) {
         v.ir.SetRegister(n, offset_address);
     }
-    return v.MemoryInstructionContinues();
+    return true;
 }
 
 bool TranslatorVisitor::thumb32_LDA(Reg n, Reg t) {
@@ -173,7 +169,7 @@ bool TranslatorVisitor::thumb32_LDREX(Reg n, Reg t, Imm<8> imm8) {
     const auto value = ir.ExclusiveReadMemory32(address, IR::AccType::ATOMIC);
 
     ir.SetRegister(t, value);
-    return MemoryInstructionContinues();
+    return true;
 }
 
 bool TranslatorVisitor::thumb32_LDREXB(Reg n, Reg t) {
@@ -185,7 +181,7 @@ bool TranslatorVisitor::thumb32_LDREXB(Reg n, Reg t) {
     const auto value = ir.ZeroExtendToWord(ir.ExclusiveReadMemory8(address, IR::AccType::ATOMIC));
 
     ir.SetRegister(t, value);
-    return MemoryInstructionContinues();
+    return true;
 }
 
 bool TranslatorVisitor::thumb32_LDREXD(Reg n, Reg t, Reg t2) {
@@ -199,7 +195,7 @@ bool TranslatorVisitor::thumb32_LDREXD(Reg n, Reg t, Reg t2) {
     // DO NOT SWAP hi AND lo IN BIG ENDIAN MODE, THIS IS CORRECT BEHAVIOUR
     ir.SetRegister(t, lo);
     ir.SetRegister(t2, hi);
-    return MemoryInstructionContinues();
+    return true;
 }
 
 bool TranslatorVisitor::thumb32_LDREXH(Reg n, Reg t) {
@@ -211,7 +207,7 @@ bool TranslatorVisitor::thumb32_LDREXH(Reg n, Reg t) {
     const auto value = ir.ZeroExtendToWord(ir.ExclusiveReadMemory16(address, IR::AccType::ATOMIC));
 
     ir.SetRegister(t, value);
-    return MemoryInstructionContinues();
+    return true;
 }
 
 bool TranslatorVisitor::thumb32_STL(Reg n, Reg t) {
@@ -221,7 +217,7 @@ bool TranslatorVisitor::thumb32_STL(Reg n, Reg t) {
 
     const auto address = ir.GetRegister(n);
     ir.WriteMemory32(address, ir.GetRegister(t), IR::AccType::ORDERED);
-    return MemoryInstructionContinues();
+    return true;
 }
 
 bool TranslatorVisitor::thumb32_STREX(Reg n, Reg t, Reg d, Imm<8> imm8) {
@@ -236,7 +232,7 @@ bool TranslatorVisitor::thumb32_STREX(Reg n, Reg t, Reg d, Imm<8> imm8) {
     const auto value = ir.GetRegister(t);
     const auto passed = ir.ExclusiveWriteMemory32(address, value, IR::AccType::ATOMIC);
     ir.SetRegister(d, passed);
-    return MemoryInstructionContinues();
+    return true;
 }
 
 bool TranslatorVisitor::thumb32_STREXB(Reg n, Reg t, Reg d) {
@@ -251,7 +247,7 @@ bool TranslatorVisitor::thumb32_STREXB(Reg n, Reg t, Reg d) {
     const auto value = ir.LeastSignificantByte(ir.GetRegister(t));
     const auto passed = ir.ExclusiveWriteMemory8(address, value, IR::AccType::ATOMIC);
     ir.SetRegister(d, passed);
-    return MemoryInstructionContinues();
+    return true;
 }
 
 bool TranslatorVisitor::thumb32_STREXD(Reg n, Reg t, Reg t2, Reg d) {
@@ -267,7 +263,7 @@ bool TranslatorVisitor::thumb32_STREXD(Reg n, Reg t, Reg t2, Reg d) {
     const auto value_hi = ir.GetRegister(t2);
     const auto passed = ir.ExclusiveWriteMemory64(address, value_lo, value_hi, IR::AccType::ATOMIC);
     ir.SetRegister(d, passed);
-    return MemoryInstructionContinues();
+    return true;
 }
 
 bool TranslatorVisitor::thumb32_STREXH(Reg n, Reg t, Reg d) {
@@ -282,7 +278,7 @@ bool TranslatorVisitor::thumb32_STREXH(Reg n, Reg t, Reg d) {
     const auto value = ir.LeastSignificantHalf(ir.GetRegister(t));
     const auto passed = ir.ExclusiveWriteMemory16(address, value, IR::AccType::ATOMIC);
     ir.SetRegister(d, passed);
-    return MemoryInstructionContinues();
+    return true;
 }
 
 bool TranslatorVisitor::thumb32_TBB(Reg n, Reg m) {

@@ -36,7 +36,7 @@ struct RunCodeCallbacks {
 
 class BlockOfCode final : public Xbyak::CodeGenerator {
 public:
-    BlockOfCode(RunCodeCallbacks cb, JitStateInfo jsi, size_t total_code_size, size_t far_code_offset, std::function<void(BlockOfCode&)> rcp);
+    BlockOfCode(RunCodeCallbacks cb, JitStateInfo jsi, size_t total_code_size, std::function<void(BlockOfCode&)> rcp);
     BlockOfCode(const BlockOfCode&) = delete;
 
     /// Call when external emitters have finished emitting their preludes.
@@ -49,7 +49,7 @@ public:
 
     /// Clears this block of code and resets code pointer to beginning.
     void ClearCache();
-    /// Calculates how much space is remaining to use. This is the minimum of near code and far code.
+    /// Calculates how much space is remaining to use.
     size_t SpaceRemaining() const;
 
     /// Runs emulated code from code_ptr.
@@ -125,11 +125,6 @@ public:
                         mcl::bit::replicate_element<u64>(esize, value));
     }
 
-    /// Far code sits far away from the near code. Execution remains primarily in near code.
-    /// "Cold" / Rarely executed instructions sit in far code, so the CPU doesn't fetch them unless necessary.
-    void SwitchToFarCode();
-    void SwitchToNearCode();
-
     CodePtr GetCodeBegin() const;
     size_t GetTotalCodeSize() const;
 
@@ -180,17 +175,11 @@ public:
 private:
     RunCodeCallbacks cb;
     JitStateInfo jsi;
-    size_t far_code_offset;
 
     bool prelude_complete = false;
-    CodePtr near_code_begin = nullptr;
-    CodePtr far_code_begin = nullptr;
+    CodePtr code_begin = nullptr;
 
     ConstantPool constant_pool;
-
-    bool in_far_code = false;
-    CodePtr near_code_ptr;
-    CodePtr far_code_ptr;
 
     using RunCodeFuncType = HaltReason (*)(void*, CodePtr);
     RunCodeFuncType run_code = nullptr;

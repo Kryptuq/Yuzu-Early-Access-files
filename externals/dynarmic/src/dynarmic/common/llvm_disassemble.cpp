@@ -69,6 +69,10 @@ std::string DisassembleAArch32([[maybe_unused]] bool is_thumb, [[maybe_unused]] 
     char buffer[1024];
     while (length) {
         size_t inst_size = LLVMDisasmInstruction(llvm_ctx, const_cast<u8*>(instructions), length, pc, buffer, sizeof(buffer));
+        const char* const disassembled = inst_size > 0 ? buffer : "<invalid instruction>";
+
+        if (inst_size == 0)
+            inst_size = is_thumb ? 2 : 4;
 
         result += fmt::format("{:08x}    ", pc);
         for (size_t i = 0; i < 4; i++) {
@@ -78,11 +82,9 @@ std::string DisassembleAArch32([[maybe_unused]] bool is_thumb, [[maybe_unused]] 
                 result += "  ";
             }
         }
-        result += inst_size > 0 ? buffer : "<invalid instruction>";
+        result += disassembled;
         result += '\n';
 
-        if (inst_size == 0)
-            inst_size = is_thumb ? 2 : 4;
         if (length <= inst_size)
             break;
 
@@ -111,7 +113,8 @@ std::string DisassembleAArch64([[maybe_unused]] u32 instruction, [[maybe_unused]
 
     char buffer[80];
     size_t inst_size = LLVMDisasmInstruction(llvm_ctx, (u8*)&instruction, sizeof(instruction), pc, buffer, sizeof(buffer));
-    result = inst_size > 0 ? buffer : "<invalid instruction>";
+    result = fmt::format("{:016x}  {:08x} ", pc, instruction);
+    result += inst_size > 0 ? buffer : "<invalid instruction>";
     result += '\n';
 
     LLVMDisasmDispose(llvm_ctx);

@@ -104,7 +104,7 @@ static bool SharedDecodeAndOperation(TranslatorVisitor& v, bool wback, IR::MemOp
         }
     }
 
-    return v.MemoryInstructionContinues();
+    return true;
 }
 
 bool TranslatorVisitor::STx_mult_1(bool Q, Imm<4> opcode, Imm<2> size, Reg Rn, Vec Vt) {

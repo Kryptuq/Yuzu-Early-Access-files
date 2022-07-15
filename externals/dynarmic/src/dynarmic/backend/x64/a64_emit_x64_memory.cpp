@@ -407,4 +407,25 @@ void A64EmitX64::EmitA64ExclusiveWriteMemory128(A64EmitContext& ctx, IR::Inst* i
     }
 }
 
+void A64EmitX64::EmitCheckMemoryAbort(A64EmitContext&, IR::Inst* inst, Xbyak::Label* end) {
+    if (!conf.check_halt_on_memory_access) {
+        return;
+    }
+
+    Xbyak::Label skip;
+
+    const A64::LocationDescriptor current_location{IR::LocationDescriptor{inst->GetArg(0).GetU64()}};
+
+    code.test(dword[r15 + offsetof(A64JitState, halt_reason)], static_cast<u32>(HaltReason::MemoryAbort));
+    if (end) {
+        code.jz(*end, code.T_NEAR);
+    } else {
+        code.jz(skip, code.T_NEAR);
+    }
+    code.mov(rax, current_location.PC());
+    code.mov(qword[r15 + offsetof(A64JitState, pc)], rax);
+    code.ForceReturnFromRunCode();
+    code.L(skip);
+}
+
 }  // namespace Dynarmic::Backend::X64

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>471</width>
+    <width>541</width>
     <height>759</height>
    </rect>
   </property>
@@ -573,13 +573,6 @@
       </size>
      </property>
     </spacer>
-   </item>
-   <item>
-    <widget class="QPushButton" name="button_check_vulkan">
-     <property name="text">
-      <string>Check for Working Vulkan</string>
-     </property>
-    </widget>
    </item>
   </layout>
  </widget>

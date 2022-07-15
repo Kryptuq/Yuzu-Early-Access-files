@@ -30,7 +30,6 @@ struct TranslatorVisitor final {
     bool ReservedValue();
     bool UnallocatedEncoding();
     bool RaiseException(Exception exception);
-    bool MemoryInstructionContinues();
 
     struct BitMasks {
         u64 wmask, tmask;

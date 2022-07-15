@@ -30,19 +30,19 @@ public:
     explicit KCodeMemory(KernelCore& kernel_);
 
     Result Initialize(Core::DeviceMemory& device_memory, VAddr address, size_t size);
-    void Finalize();
+    void Finalize() override;
 
     Result Map(VAddr address, size_t size);
     Result Unmap(VAddr address, size_t size);
     Result MapToOwner(VAddr address, size_t size, Svc::MemoryPermission perm);
     Result UnmapFromOwner(VAddr address, size_t size);
 
-    bool IsInitialized() const {
+    bool IsInitialized() const override {
         return m_is_initialized;
     }
     static void PostDestroy([[maybe_unused]] uintptr_t arg) {}
 
-    KProcess* GetOwner() const {
+    KProcess* GetOwner() const override {
         return m_owner;
     }
     VAddr GetSourceAddress() const {

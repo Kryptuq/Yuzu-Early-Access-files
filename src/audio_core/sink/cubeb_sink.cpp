@@ -545,7 +545,7 @@ CubebSink::CubebSink(std::string_view target_device_name) {
     }
 
     cubeb_get_max_channel_count(ctx, &device_channels);
-    device_channels = std::clamp(device_channels, 2U, 6U);
+    device_channels = device_channels >= 6U ? 6U : 2U;
 }
 
 CubebSink::~CubebSink() {

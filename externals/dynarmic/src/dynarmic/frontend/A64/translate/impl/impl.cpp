@@ -41,15 +41,6 @@ bool TranslatorVisitor::RaiseException(Exception exception) {
     return false;
 }
 
-bool TranslatorVisitor::MemoryInstructionContinues() {
-    if (options.check_halt_on_memory_access) {
-        ir.SetTerm(IR::Term::LinkBlock{ir.current_location->AdvancePC(4)});
-        return false;
-    }
-
-    return true;
-}
-
 std::optional<TranslatorVisitor::BitMasks> TranslatorVisitor::DecodeBitMasks(bool immN, Imm<6> imms, Imm<6> immr, bool immediate) {
     const int len = mcl::bit::highest_set_bit((immN ? 1 << 6 : 0) | (imms.ZeroExtend() ^ 0b111111));
     if (len < 1) {

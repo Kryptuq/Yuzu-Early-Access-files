@@ -34,6 +34,7 @@ enum class TransactionId {
 
 class IBinder {
 public:
+    virtual ~IBinder() = default;
     virtual void Transact(Kernel::HLERequestContext& ctx, android::TransactionId code,
                           u32 flags) = 0;
     virtual Kernel::KReadableEvent& GetNativeHandle() = 0;

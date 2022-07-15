@@ -23,16 +23,12 @@ bool TranslatorVisitor::thumb32_LDR_lit(bool U, Reg t, Imm<12> imm12) {
     if (t == Reg::PC) {
         ir.UpdateUpperLocationDescriptor();
         ir.LoadWritePC(data);
-        if (options.check_halt_on_memory_access) {
-            ir.SetTerm(IR::Term::CheckHalt{IR::Term::ReturnToDispatch{}});
-        } else {
-            ir.SetTerm(IR::Term::FastDispatchHint{});
-        }
+        ir.SetTerm(IR::Term::FastDispatchHint{});
         return false;
     }
 
     ir.SetRegister(t, data);
-    return MemoryInstructionContinues();
+    return true;
 }
 
 bool TranslatorVisitor::thumb32_LDR_imm8(Reg n, Reg t, bool P, bool U, bool W, Imm<8> imm8) {
@@ -62,9 +58,7 @@ bool TranslatorVisitor::thumb32_LDR_imm8(Reg n, Reg t, bool P, bool U, bool W, I
         ir.UpdateUpperLocationDescriptor();
         ir.LoadWritePC(data);
 
-        if (options.check_halt_on_memory_access) {
-            ir.SetTerm(IR::Term::CheckHalt{IR::Term::ReturnToDispatch{}});
-        } else if (!P && W && n == Reg::R13) {
+        if (!P && W && n == Reg::R13) {
             ir.SetTerm(IR::Term::PopRSBHint{});
         } else {
             ir.SetTerm(IR::Term::FastDispatchHint{});
@@ -74,7 +68,7 @@ bool TranslatorVisitor::thumb32_LDR_imm8(Reg n, Reg t, bool P, bool U, bool W, I
     }
 
     ir.SetRegister(t, data);
-    return MemoryInstructionContinues();
+    return true;
 }
 
 bool TranslatorVisitor::thumb32_LDR_imm12(Reg n, Reg t, Imm<12> imm12) {
@@ -90,16 +84,12 @@ bool TranslatorVisitor::thumb32_LDR_imm12(Reg n, Reg t, Imm<12> imm12) {
     if (t == Reg::PC) {
         ir.UpdateUpperLocationDescriptor();
         ir.LoadWritePC(data);
-        if (options.check_halt_on_memory_access) {
-            ir.SetTerm(IR::Term::CheckHalt{IR::Term::ReturnToDispatch{}});
-        } else {
-            ir.SetTerm(IR::Term::FastDispatchHint{});
-        }
+        ir.SetTerm(IR::Term::FastDispatchHint{});
         return false;
     }
 
     ir.SetRegister(t, data);
-    return MemoryInstructionContinues();
+    return true;
 }
 
 bool TranslatorVisitor::thumb32_LDR_reg(Reg n, Reg t, Imm<2> imm2, Reg m) {
@@ -119,16 +109,12 @@ bool TranslatorVisitor::thumb32_LDR_reg(Reg n, Reg t, Imm<2> imm2, Reg m) {
     if (t == Reg::PC) {
         ir.UpdateUpperLocationDescriptor();
         ir.LoadWritePC(data);
-        if (options.check_halt_on_memory_access) {
-            ir.SetTerm(IR::Term::CheckHalt{IR::Term::ReturnToDispatch{}});
-        } else {
-            ir.SetTerm(IR::Term::FastDispatchHint{});
-        }
+        ir.SetTerm(IR::Term::FastDispatchHint{});
         return false;
     }
 
     ir.SetRegister(t, data);
-    return MemoryInstructionContinues();
+    return true;
 }
 
 bool TranslatorVisitor::thumb32_LDRT(Reg n, Reg t, Imm<8> imm8) {

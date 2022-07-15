@@ -147,7 +147,6 @@ void ARM_Interface::Run() {
 
         // Notify the debugger and go to sleep if a watchpoint was hit.
         if (Has(hr, watchpoint)) {
-            RewindBreakpointInstruction();
             if (system.DebuggerEnabled()) {
                 system.GetDebugger().NotifyThreadWatchpoint(current_thread, *HaltedWatchpoint());
             }

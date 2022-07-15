@@ -114,9 +114,6 @@ A32EmitX64::BlockDescriptor A32EmitX64::Emit(IR::Block& block) {
     // Start emitting.
     code.align();
     const u8* const entrypoint = code.getCurr();
-    code.SwitchToFarCode();
-    const u8* const entrypoint_far = code.getCurr();
-    code.SwitchToNearCode();
 
     EmitCondPrelude(ctx);
 
@@ -155,6 +152,11 @@ A32EmitX64::BlockDescriptor A32EmitX64::Emit(IR::Block& block) {
     EmitX64::EmitTerminal(block.GetTerminal(), ctx.Location().SetSingleStepping(false), ctx.IsSingleStep());
     code.int3();
 
+    for (auto& deferred_emit : ctx.deferred_emits) {
+        deferred_emit();
+    }
+    code.int3();
+
     const size_t size = static_cast<size_t>(code.getCurr() - entrypoint);
 
     const A32::LocationDescriptor descriptor{block.Location()};
@@ -163,7 +165,7 @@ A32EmitX64::BlockDescriptor A32EmitX64::Emit(IR::Block& block) {
     const auto range = boost::icl::discrete_interval<u32>::closed(descriptor.PC(), end_location.PC() - 1);
     block_ranges.AddRange(range, descriptor);
 
-    return RegisterBlock(descriptor, entrypoint, entrypoint_far, size);
+    return RegisterBlock(descriptor, entrypoint, size);
 }
 
 void A32EmitX64::ClearCache() {
@@ -1168,16 +1170,9 @@ void A32EmitX64::EmitTerminalImpl(IR::Term::LinkBlock terminal, IR::LocationDesc
         }
     }
 
-    Xbyak::Label dest;
-    code.jmp(dest, Xbyak::CodeGenerator::T_NEAR);
-
-    code.SwitchToFarCode();
-    code.align(16);
-    code.L(dest);
     code.mov(MJitStateReg(A32::Reg::PC), A32::LocationDescriptor{terminal.next}.PC());
     PushRSBHelper(rax, rbx, terminal.next);
     code.ForceReturnFromRunCode();
-    code.SwitchToNearCode();
 }
 
 void A32EmitX64::EmitTerminalImpl(IR::Term::LinkBlockFast terminal, IR::LocationDescriptor initial_location, bool is_single_step) {

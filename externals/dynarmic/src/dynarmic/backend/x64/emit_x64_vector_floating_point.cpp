@@ -112,36 +112,35 @@ void HandleNaNs(BlockOfCode& code, EmitContext& ctx, bool fpcr_controlled, std::
         code.cmp(bitmask, 0);
     }
 
-    Xbyak::Label end;
-    Xbyak::Label nan;
+    SharedLabel end = GenSharedLabel(), nan = GenSharedLabel();
 
-    code.jnz(nan, code.T_NEAR);
-    code.L(end);
+    code.jnz(*nan, code.T_NEAR);
+    code.L(*end);
 
-    code.SwitchToFarCode();
-    code.L(nan);
+    ctx.deferred_emits.emplace_back([=, &code, &ctx] {
+        code.L(*nan);
 
-    const Xbyak::Xmm result = xmms[0];
+        const Xbyak::Xmm result = xmms[0];
 
-    code.sub(rsp, 8);
-    ABI_PushCallerSaveRegistersAndAdjustStackExcept(code, HostLocXmmIdx(result.getIdx()));
+        code.sub(rsp, 8);
+        ABI_PushCallerSaveRegistersAndAdjustStackExcept(code, HostLocXmmIdx(result.getIdx()));
 
-    const size_t stack_space = xmms.size() * 16;
-    code.sub(rsp, stack_space + ABI_SHADOW_SPACE);
-    for (size_t i = 0; i < xmms.size(); ++i) {
-        code.movaps(xword[rsp + ABI_SHADOW_SPACE + i * 16], xmms[i]);
-    }
-    code.lea(code.ABI_PARAM1, ptr[rsp + ABI_SHADOW_SPACE + 0 * 16]);
-    code.mov(code.ABI_PARAM2, ctx.FPCR(fpcr_controlled).Value());
+        const size_t stack_space = xmms.size() * 16;
+        code.sub(rsp, static_cast<u32>(stack_space + ABI_SHADOW_SPACE));
+        for (size_t i = 0; i < xmms.size(); ++i) {
+            code.movaps(xword[rsp + ABI_SHADOW_SPACE + i * 16], xmms[i]);
+        }
+        code.lea(code.ABI_PARAM1, ptr[rsp + ABI_SHADOW_SPACE + 0 * 16]);
+        code.mov(code.ABI_PARAM2, ctx.FPCR(fpcr_controlled).Value());
 
-    code.CallFunction(nan_handler);
+        code.CallFunction(nan_handler);
 
-    code.movaps(result, xword[rsp + ABI_SHADOW_SPACE + 0 * 16]);
-    code.add(rsp, stack_space + ABI_SHADOW_SPACE);
-    ABI_PopCallerSaveRegistersAndAdjustStackExcept(code, HostLocXmmIdx(result.getIdx()));
-    code.add(rsp, 8);
-    code.jmp(end, code.T_NEAR);
-    code.SwitchToNearCode();
+        code.movaps(result, xword[rsp + ABI_SHADOW_SPACE + 0 * 16]);
+        code.add(rsp, static_cast<u32>(stack_space + ABI_SHADOW_SPACE));
+        ABI_PopCallerSaveRegistersAndAdjustStackExcept(code, HostLocXmmIdx(result.getIdx()));
+        code.add(rsp, 8);
+        code.jmp(*end, code.T_NEAR);
+    });
 }
 
 template<size_t fsize>
@@ -1117,7 +1116,7 @@ void EmitFPVectorMulAdd(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
             const Xbyak::Xmm xmm_c = ctx.reg_alloc.UseXmm(args[2]);
             const Xbyak::Xmm tmp = ctx.reg_alloc.ScratchXmm();
 
-            Xbyak::Label end, fallback;
+            SharedLabel end = GenSharedLabel(), fallback = GenSharedLabel();
 
             MaybeStandardFPSCRValue(code, ctx, fpcr_controlled, [&] {
                 code.movaps(result, xmm_a);
@@ -1127,19 +1126,19 @@ void EmitFPVectorMulAdd(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
                 code.andnps(tmp, result);
                 FCODE(vcmpeq_uqp)(tmp, tmp, GetSmallestNormalVector<fsize>(code));
                 code.vptest(tmp, tmp);
-                code.jnz(fallback, code.T_NEAR);
-                code.L(end);
+                code.jnz(*fallback, code.T_NEAR);
+                code.L(*end);
             });
 
-            code.SwitchToFarCode();
-            code.L(fallback);
-            code.sub(rsp, 8);
-            ABI_PushCallerSaveRegistersAndAdjustStackExcept(code, HostLocXmmIdx(result.getIdx()));
-            EmitFourOpFallbackWithoutRegAlloc(code, ctx, result, xmm_a, xmm_b, xmm_c, fallback_fn, fpcr_controlled);
-            ABI_PopCallerSaveRegistersAndAdjustStackExcept(code, HostLocXmmIdx(result.getIdx()));
-            code.add(rsp, 8);
-            code.jmp(end, code.T_NEAR);
-            code.SwitchToNearCode();
+            ctx.deferred_emits.emplace_back([=, &code, &ctx] {
+                code.L(*fallback);
+                code.sub(rsp, 8);
+                ABI_PushCallerSaveRegistersAndAdjustStackExcept(code, HostLocXmmIdx(result.getIdx()));
+                EmitFourOpFallbackWithoutRegAlloc(code, ctx, result, xmm_a, xmm_b, xmm_c, fallback_fn, fpcr_controlled);
+                ABI_PopCallerSaveRegistersAndAdjustStackExcept(code, HostLocXmmIdx(result.getIdx()));
+                code.add(rsp, 8);
+                code.jmp(*end, code.T_NEAR);
+            });
 
             ctx.reg_alloc.DefineValue(inst, result);
             return;
@@ -1377,7 +1376,7 @@ static void EmitRecipStepFused(BlockOfCode& code, EmitContext& ctx, IR::Inst* in
             const Xbyak::Xmm operand2 = ctx.reg_alloc.UseXmm(args[1]);
             const Xbyak::Xmm tmp = ctx.reg_alloc.ScratchXmm();
 
-            Xbyak::Label end, fallback;
+            SharedLabel end = GenSharedLabel(), fallback = GenSharedLabel();
 
             MaybeStandardFPSCRValue(code, ctx, fpcr_controlled, [&] {
                 code.movaps(result, GetVectorOf<fsize, false, 0, 2>(code));
@@ -1385,19 +1384,19 @@ static void EmitRecipStepFused(BlockOfCode& code, EmitContext& ctx, IR::Inst* in
 
                 FCODE(vcmpunordp)(tmp, result, result);
                 code.vptest(tmp, tmp);
-                code.jnz(fallback, code.T_NEAR);
-                code.L(end);
+                code.jnz(*fallback, code.T_NEAR);
+                code.L(*end);
             });
 
-            code.SwitchToFarCode();
-            code.L(fallback);
-            code.sub(rsp, 8);
-            ABI_PushCallerSaveRegistersAndAdjustStackExcept(code, HostLocXmmIdx(result.getIdx()));
-            EmitThreeOpFallbackWithoutRegAlloc(code, ctx, result, operand1, operand2, fallback_fn, fpcr_controlled);
-            ABI_PopCallerSaveRegistersAndAdjustStackExcept(code, HostLocXmmIdx(result.getIdx()));
-            code.add(rsp, 8);
-            code.jmp(end, code.T_NEAR);
-            code.SwitchToNearCode();
+            ctx.deferred_emits.emplace_back([=, &code, &ctx] {
+                code.L(*fallback);
+                code.sub(rsp, 8);
+                ABI_PushCallerSaveRegistersAndAdjustStackExcept(code, HostLocXmmIdx(result.getIdx()));
+                EmitThreeOpFallbackWithoutRegAlloc(code, ctx, result, operand1, operand2, fallback_fn, fpcr_controlled);
+                ABI_PopCallerSaveRegistersAndAdjustStackExcept(code, HostLocXmmIdx(result.getIdx()));
+                code.add(rsp, 8);
+                code.jmp(*end, code.T_NEAR);
+            });
 
             ctx.reg_alloc.DefineValue(inst, result);
             return;
@@ -1591,7 +1590,7 @@ static void EmitRSqrtStepFused(BlockOfCode& code, EmitContext& ctx, IR::Inst* in
             const Xbyak::Xmm tmp = ctx.reg_alloc.ScratchXmm();
             const Xbyak::Xmm mask = ctx.reg_alloc.ScratchXmm();
 
-            Xbyak::Label end, fallback;
+            SharedLabel end = GenSharedLabel(), fallback = GenSharedLabel();
 
             MaybeStandardFPSCRValue(code, ctx, fpcr_controlled, [&] {
                 code.vmovaps(result, GetVectorOf<fsize, false, 0, 3>(code));
@@ -1602,21 +1601,21 @@ static void EmitRSqrtStepFused(BlockOfCode& code, EmitContext& ctx, IR::Inst* in
                 FCODE(vandp)(tmp, result, mask);
                 ICODE(vpcmpeq)(tmp, tmp, mask);
                 code.ptest(tmp, tmp);
-                code.jnz(fallback, code.T_NEAR);
+                code.jnz(*fallback, code.T_NEAR);
 
                 FCODE(vmulp)(result, result, GetVectorOf<fsize, false, -1, 1>(code));
-                code.L(end);
+                code.L(*end);
             });
 
-            code.SwitchToFarCode();
-            code.L(fallback);
-            code.sub(rsp, 8);
-            ABI_PushCallerSaveRegistersAndAdjustStackExcept(code, HostLocXmmIdx(result.getIdx()));
-            EmitThreeOpFallbackWithoutRegAlloc(code, ctx, result, operand1, operand2, fallback_fn, fpcr_controlled);
-            ABI_PopCallerSaveRegistersAndAdjustStackExcept(code, HostLocXmmIdx(result.getIdx()));
-            code.add(rsp, 8);
-            code.jmp(end, code.T_NEAR);
-            code.SwitchToNearCode();
+            ctx.deferred_emits.emplace_back([=, &code, &ctx] {
+                code.L(*fallback);
+                code.sub(rsp, 8);
+                ABI_PushCallerSaveRegistersAndAdjustStackExcept(code, HostLocXmmIdx(result.getIdx()));
+                EmitThreeOpFallbackWithoutRegAlloc(code, ctx, result, operand1, operand2, fallback_fn, fpcr_controlled);
+                ABI_PopCallerSaveRegistersAndAdjustStackExcept(code, HostLocXmmIdx(result.getIdx()));
+                code.add(rsp, 8);
+                code.jmp(*end, code.T_NEAR);
+            });
 
             ctx.reg_alloc.DefineValue(inst, result);
             return;

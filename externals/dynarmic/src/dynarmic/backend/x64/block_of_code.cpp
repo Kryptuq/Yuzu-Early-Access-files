@@ -185,22 +185,19 @@ HostFeature GetHostFeatures() {
 
 }  // anonymous namespace
 
-BlockOfCode::BlockOfCode(RunCodeCallbacks cb, JitStateInfo jsi, size_t total_code_size, size_t far_code_offset, std::function<void(BlockOfCode&)> rcp)
+BlockOfCode::BlockOfCode(RunCodeCallbacks cb, JitStateInfo jsi, size_t total_code_size, std::function<void(BlockOfCode&)> rcp)
         : Xbyak::CodeGenerator(total_code_size, nullptr, &s_allocator)
         , cb(std::move(cb))
         , jsi(jsi)
-        , far_code_offset(far_code_offset)
         , constant_pool(*this, CONSTANT_POOL_SIZE)
         , host_features(GetHostFeatures()) {
-    ASSERT(total_code_size > far_code_offset);
     EnableWriting();
     GenRunCode(rcp);
 }
 
 void BlockOfCode::PreludeComplete() {
     prelude_complete = true;
-    near_code_begin = getCurr();
-    far_code_begin = getCurr() + far_code_offset;
+    code_begin = getCurr();
     ClearCache();
     DisableWriting();
 }
@@ -219,21 +216,15 @@ void BlockOfCode::DisableWriting() {
 
 void BlockOfCode::ClearCache() {
     ASSERT(prelude_complete);
-    in_far_code = false;
-    near_code_ptr = near_code_begin;
-    far_code_ptr = far_code_begin;
-    SetCodePtr(near_code_begin);
+    SetCodePtr(code_begin);
 }
 
 size_t BlockOfCode::SpaceRemaining() const {
     ASSERT(prelude_complete);
-    const u8* current_near_ptr = in_far_code ? reinterpret_cast<const u8*>(near_code_ptr) : getCurr<const u8*>();
-    const u8* current_far_ptr = in_far_code ? getCurr<const u8*>() : reinterpret_cast<const u8*>(far_code_ptr);
-    if (current_near_ptr >= far_code_begin)
+    const u8* current_ptr = getCurr<const u8*>();
+    if (current_ptr >= &top_[maxSize_])
         return 0;
-    if (current_far_ptr >= &top_[maxSize_])
-        return 0;
-    return std::min(reinterpret_cast<const u8*>(far_code_begin) - current_near_ptr, &top_[maxSize_] - current_far_ptr);
+    return &top_[maxSize_] - current_ptr;
 }
 
 HaltReason BlockOfCode::RunCode(void* jit_state, CodePtr code_ptr) const {
@@ -406,26 +397,8 @@ Xbyak::Address BlockOfCode::XmmConst(const Xbyak::AddressFrame& frame, u64 lower
     return constant_pool.GetConstant(frame, lower, upper);
 }
 
-void BlockOfCode::SwitchToFarCode() {
-    ASSERT(prelude_complete);
-    ASSERT(!in_far_code);
-    in_far_code = true;
-    near_code_ptr = getCurr();
-    SetCodePtr(far_code_ptr);
-
-    ASSERT_MSG(near_code_ptr < far_code_begin, "Near code has overwritten far code!");
-}
-
-void BlockOfCode::SwitchToNearCode() {
-    ASSERT(prelude_complete);
-    ASSERT(in_far_code);
-    in_far_code = false;
-    far_code_ptr = getCurr();
-    SetCodePtr(near_code_ptr);
-}
-
 CodePtr BlockOfCode::GetCodeBegin() const {
-    return near_code_begin;
+    return code_begin;
 }
 
 size_t BlockOfCode::GetTotalCodeSize() const {

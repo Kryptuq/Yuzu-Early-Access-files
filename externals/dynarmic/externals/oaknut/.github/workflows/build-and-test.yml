@@ -3,36 +3,38 @@ on: [push, pull_request]
 jobs:
   test_on_ubuntu:
     runs-on: ubuntu-latest
-    name: Build on ${{ matrix.distro }} ${{ matrix.arch }}
-
-    strategy:
-      matrix:
-        include:
-          - arch: aarch64
-            distro: ubuntu_latest
+    name: g++-10
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: uraimo/run-on-arch-action@v2
-        name: Build and Test
-        id: build
-        with:
-          arch: ${{ matrix.arch }}
-          distro: ${{ matrix.distro }}
-          shell: /bin/bash
+      - name: Checkout oaknut repo
+        uses: actions/checkout@v3
 
-          install: |
-            apt-get update -q -y
-            apt-get install -q -y make cmake g++ git
+      - name: Install dependencies
+        run: >
+          sudo apt-get install -q -y
+          gcc-10-aarch64-linux-gnu
+          g++-10-aarch64-linux-gnu
+          ninja-build
+          qemu-user
 
-            pushd /tmp
-            git clone https://github.com/catchorg/Catch2.git
-            cd Catch2
-            cmake -Bbuild -H. -DBUILD_TESTING=OFF
-            cmake --build build/ --target install
-            popd
+      - name: Checkout Catch2 v3 repo
+        run: git clone https://github.com/catchorg/Catch2.git externals/catch
 
-          run: |
-            cmake -Bbuild -H.
-            cmake --build build
-            ./build/oaknut-tests
+      - name: Configure CMake
+        env:
+          CC: aarch64-linux-gnu-gcc-10
+          CXX: aarch64-linux-gnu-g++-10
+        run: >
+          cmake
+          -B ${{github.workspace}}/build
+          -H.
+          -GNinja
+          -DDYNARMIC_USE_BUNDLED_CATCH=ON
+
+      - name: Build
+        working-directory: ${{github.workspace}}/build
+        run: ninja
+
+      - name: Test
+        working-directory: ${{github.workspace}}/build
+        run: qemu-aarch64 -L /usr/aarch64-linux-gnu ./oaknut-tests -d yes
