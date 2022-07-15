@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -28,6 +28,7 @@
 #include "SDL_blit.h"
 #include "SDL_pixels_c.h"
 #include "SDL_RLEaccel_c.h"
+#include "../SDL_list.h"
 
 
 /* Lookup tables to expand partial bytes to the full 0..255 range */
@@ -677,7 +678,7 @@ int
 SDL_SetPixelFormatPalette(SDL_PixelFormat * format, SDL_Palette *palette)
 {
     if (!format) {
-        return SDL_SetError("SDL_SetPixelFormatPalette() passed NULL format");
+        return SDL_InvalidParamError("SDL_SetPixelFormatPalette(): format");
     }
 
     if (palette && palette->ncolors > (1 << format->BitsPerPixel)) {
@@ -1024,12 +1025,6 @@ SDL_AllocBlitMap(void)
 }
 
 
-typedef struct SDL_ListNode
-{
-    void *entry;
-    struct SDL_ListNode *next;
-} SDL_ListNode;
-
 void
 SDL_InvalidateAllBlitMap(SDL_Surface *surface)
 {
@@ -1042,40 +1037,6 @@ SDL_InvalidateAllBlitMap(SDL_Surface *surface)
         SDL_InvalidateMap((SDL_BlitMap *)l->entry);
         l = l->next;
         SDL_free(tmp);
-    }
-}
-
-static void SDL_ListAdd(SDL_ListNode **head, void *ent);
-static void SDL_ListRemove(SDL_ListNode **head, void *ent);
-
-void
-SDL_ListAdd(SDL_ListNode **head, void *ent)
-{
-    SDL_ListNode *node = SDL_malloc(sizeof (*node));
-
-    if (node == NULL) {
-        SDL_OutOfMemory();
-        return;
-    }
-
-    node->entry = ent;
-    node->next = *head;
-    *head = node;
-}
-
-void
-SDL_ListRemove(SDL_ListNode **head, void *ent)
-{
-    SDL_ListNode **ptr = head;
-
-    while (*ptr) {
-        if ((*ptr)->entry == ent) {
-            SDL_ListNode *tmp = *ptr;
-            *ptr = (*ptr)->next;
-            SDL_free(tmp);
-            return;
-        }
-        ptr = &(*ptr)->next;
     }
 }
 

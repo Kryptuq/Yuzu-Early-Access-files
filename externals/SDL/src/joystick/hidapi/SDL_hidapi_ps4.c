@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -155,7 +155,7 @@ HIDAPI_DriverPS4_IsSupportedDevice(const char *name, SDL_GameControllerType type
 }
 
 static const char *
-HIDAPI_DriverPS4_GetDeviceName(Uint16 vendor_id, Uint16 product_id)
+HIDAPI_DriverPS4_GetDeviceName(const char *name, Uint16 vendor_id, Uint16 product_id)
 {
     if (vendor_id == USB_VENDOR_SONY) {
         return "PS4 Controller";
@@ -177,6 +177,12 @@ static SDL_bool HIDAPI_DriverPS4_CanRumble(Uint16 vendor_id, Uint16 product_id)
         (product_id == USB_PRODUCT_RAZER_PANTHERA || product_id == USB_PRODUCT_RAZER_PANTHERA_EVO)) {
         return SDL_FALSE;
     }
+
+    /* The Victrix Pro FS v2 will hang on reboot if we send output reports */
+    if (vendor_id == USB_VENDOR_PDP && product_id == USB_PRODUCT_VICTRIX_FS_PRO_V2) {
+        return SDL_FALSE;
+    }
+
     return SDL_TRUE;
 }
 
@@ -795,18 +801,18 @@ HIDAPI_DriverPS4_HandleStatePacket(SDL_Joystick *joystick, SDL_hid_device *dev, 
     SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_RIGHTY, axis);
 
     if (packet->ucBatteryLevel & 0x10) {
-        joystick->epowerlevel = SDL_JOYSTICK_POWER_WIRED;
+        SDL_PrivateJoystickBatteryLevel(joystick, SDL_JOYSTICK_POWER_WIRED);
     } else {
         /* Battery level ranges from 0 to 10 */
         int level = (packet->ucBatteryLevel & 0xF);
         if (level == 0) {
-            joystick->epowerlevel = SDL_JOYSTICK_POWER_EMPTY;
+            SDL_PrivateJoystickBatteryLevel(joystick, SDL_JOYSTICK_POWER_EMPTY);
         } else if (level <= 2) {
-            joystick->epowerlevel = SDL_JOYSTICK_POWER_LOW;
+            SDL_PrivateJoystickBatteryLevel(joystick, SDL_JOYSTICK_POWER_LOW);
         } else if (level <= 7) {
-            joystick->epowerlevel = SDL_JOYSTICK_POWER_MEDIUM;
+            SDL_PrivateJoystickBatteryLevel(joystick, SDL_JOYSTICK_POWER_MEDIUM);
         } else {
-            joystick->epowerlevel = SDL_JOYSTICK_POWER_FULL;
+            SDL_PrivateJoystickBatteryLevel(joystick, SDL_JOYSTICK_POWER_FULL);
         }
     }
 

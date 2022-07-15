@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -253,7 +253,7 @@ SDL_IsXInputDevice(Uint16 vendor_id, Uint16 product_id, const char* hidPath)
         return SDL_TRUE;
     }
 
-    type = SDL_GetJoystickGameControllerType("", vendor_id, product_id, -1, 0, 0, 0);
+    type = SDL_GetJoystickGameControllerTypeFromVIDPID(vendor_id, product_id, NULL, SDL_FALSE);
     if (type == SDL_CONTROLLER_TYPE_XBOX360 ||
         type == SDL_CONTROLLER_TYPE_XBOXONE ||
         (vendor_id == USB_VENDOR_VALVE && product_id == USB_PRODUCT_STEAM_VIRTUAL_GAMEPAD)) {
@@ -456,7 +456,7 @@ EnumJoystickDetectCallback(LPCDIDEVICEINSTANCE pDeviceInstance, LPVOID pContext)
     pNewJoystick = *(JoyStick_DeviceData**)pContext;
     while (pNewJoystick) {
         /* update GUIDs of joysticks with matching paths, in case they're not open yet */
-        if (SDL_strcmp(pNewJoystick->hidPath, hidPath) == 0) {
+        if (SDL_strcmp(pNewJoystick->path, hidPath) == 0) {
             /* if we are replacing the front of the list then update it */
             if (pNewJoystick == *(JoyStick_DeviceData**)pContext) {
                 *(JoyStick_DeviceData**)pContext = pNewJoystick->pNext;
@@ -483,7 +483,7 @@ EnumJoystickDetectCallback(LPCDIDEVICEINSTANCE pDeviceInstance, LPVOID pContext)
     CHECK(pNewJoystick);
 
     SDL_zerop(pNewJoystick);
-    SDL_strlcpy(pNewJoystick->hidPath, hidPath, SDL_arraysize(pNewJoystick->hidPath));
+    SDL_strlcpy(pNewJoystick->path, hidPath, SDL_arraysize(pNewJoystick->path));
     SDL_memcpy(&pNewJoystick->dxdevice, pDeviceInstance, sizeof(DIDEVICEINSTANCE));
     SDL_memset(pNewJoystick->guid.data, 0, sizeof(pNewJoystick->guid.data));
 
@@ -585,6 +585,10 @@ SDL_DINPUT_JoystickPresent(Uint16 vendor_id, Uint16 product_id, Uint16 version_n
 {
     Joystick_PresentData data;
 
+    if (dinput == NULL) {
+        return SDL_FALSE;
+    }
+
     data.vendor = vendor_id;
     data.product = product_id;
     data.present = SDL_FALSE;
@@ -679,7 +683,7 @@ EnumDevObjectsCallback(LPCDIDEVICEOBJECTINSTANCE pDeviceObject, LPVOID pContext)
 /* Sort using the data offset into the DInput struct.
  * This gives a reasonable ordering for the inputs.
  */
-static int
+static int SDLCALL
 SortDevFunc(const void *a, const void *b)
 {
     const input_t *inputA = (const input_t*)a;

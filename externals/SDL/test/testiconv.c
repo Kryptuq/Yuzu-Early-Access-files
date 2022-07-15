@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -13,6 +13,7 @@
 #include <stdio.h>
 
 #include "SDL.h"
+#include "testutils.h"
 
 static size_t
 widelen(char *data)
@@ -43,7 +44,7 @@ main(int argc, char *argv[])
         "UCS-4",
     };
 
-    const char * fname;
+    char * fname;
     char buffer[BUFSIZ];
     char *ucs4;
     char *test[2];
@@ -54,12 +55,13 @@ main(int argc, char *argv[])
     /* Enable standard application logging */
     SDL_LogSetPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO);
 
-    fname = (argc < 2) ? "utf8.txt" : argv[1];
+    fname = GetResourceFilename(argc > 1 ? argv[1] : NULL, "utf8.txt");
     file = fopen(fname, "rb");
     if (!file) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to open %s\n", fname);
         return (1);
     }
+    SDL_free(fname);
 
     while (fgets(buffer, sizeof(buffer), file)) {
         /* Convert to UCS-4 */

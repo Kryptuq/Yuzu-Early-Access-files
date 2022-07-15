@@ -22,7 +22,7 @@ using UserIDArray = std::array<Common::UUID, MAX_USERS>;
 
 /// Contains extra data related to a user.
 /// TODO: RE this structure
-struct ProfileData {
+struct UserData {
     INSERT_PADDING_WORDS_NOINIT(1);
     u32 icon_id;
     u8 bg_color_id;
@@ -30,7 +30,7 @@ struct ProfileData {
     INSERT_PADDING_BYTES_NOINIT(0x10);
     INSERT_PADDING_BYTES_NOINIT(0x60);
 };
-static_assert(sizeof(ProfileData) == 0x80, "ProfileData structure has incorrect size");
+static_assert(sizeof(UserData) == 0x80, "UserData structure has incorrect size");
 
 /// This holds general information about a users profile. This is where we store all the information
 /// based on a specific user
@@ -38,7 +38,7 @@ struct ProfileInfo {
     Common::UUID user_uuid{};
     ProfileUsername username{};
     u64 creation_time{};
-    ProfileData data{}; // TODO(ognik): Work out what this is
+    UserData data{}; // TODO(ognik): Work out what this is
     bool is_open{};
 };
 
@@ -74,10 +74,9 @@ public:
     bool GetProfileBase(Common::UUID uuid, ProfileBase& profile) const;
     bool GetProfileBase(const ProfileInfo& user, ProfileBase& profile) const;
     bool GetProfileBaseAndData(std::optional<std::size_t> index, ProfileBase& profile,
-                               ProfileData& data) const;
-    bool GetProfileBaseAndData(Common::UUID uuid, ProfileBase& profile, ProfileData& data) const;
-    bool GetProfileBaseAndData(const ProfileInfo& user, ProfileBase& profile,
-                               ProfileData& data) const;
+                               UserData& data) const;
+    bool GetProfileBaseAndData(Common::UUID uuid, ProfileBase& profile, UserData& data) const;
+    bool GetProfileBaseAndData(const ProfileInfo& user, ProfileBase& profile, UserData& data) const;
     std::size_t GetUserCount() const;
     std::size_t GetOpenUserCount() const;
     bool UserExists(Common::UUID uuid) const;
@@ -93,7 +92,7 @@ public:
     bool RemoveUser(Common::UUID uuid);
     bool SetProfileBase(Common::UUID uuid, const ProfileBase& profile_new);
     bool SetProfileBaseAndData(Common::UUID uuid, const ProfileBase& profile_new,
-                               const ProfileData& data_new);
+                               const UserData& data_new);
 
 private:
     void ParseUserSaveFile();

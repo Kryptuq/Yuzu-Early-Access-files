@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -35,8 +35,8 @@
 #define IDD_PB_FIRST        1003
 
 typedef struct _MSGBOXDLGDATA {
-    USHORT       cb;
-    HWND         hwndUnder;
+    USHORT      cb;
+    HWND        hwndUnder;
 } MSGBOXDLGDATA;
 
 static VOID _wmInitDlg(HWND hwnd, MSGBOXDLGDATA *pDlgData)
@@ -205,9 +205,9 @@ static HWND _makeDlg(const SDL_MessageBoxData *messageboxdata)
         pSDLBtnData =  (SDL_MessageBoxButtonData *)messageboxdata->buttons;
     ULONG               cSDLBtnData = messageboxdata->numbuttons;
 
-    PSZ                 pszTitle = OS2_UTF8ToSys((PSZ) messageboxdata->title);
+    PSZ                 pszTitle = OS2_UTF8ToSys(messageboxdata->title);
     ULONG               cbTitle  = (pszTitle == NULL)? 1 : (SDL_strlen(pszTitle) + 1);
-    PSZ                 pszText  = OS2_UTF8ToSys((PSZ) messageboxdata->message);
+    PSZ                 pszText  = OS2_UTF8ToSys(messageboxdata->message);
     ULONG               cbText   = (pszText  == NULL)? 1 : (SDL_strlen(pszText) + 1);
 
     PDLGTEMPLATE        pTemplate;
@@ -377,8 +377,8 @@ static HWND _makeDlg(const SDL_MessageBoxData *messageboxdata)
 
     pDlgItem->cchText = 3; /* 0xFF, low byte of the icon Id, high byte of icon Id. */
     pDlgItem->offText = pcDlgData - (PCHAR)pTemplate;   /* Offset to the Id. */
-    /* Write susyem icon ID into dialog template. */
-    *pcDlgData = 0xFF; /* First byte is 0xFF - next 2 bytes is system pointer Id. */
+    /* Write system icon ID into dialog template. */
+    *((PBYTE)pcDlgData) = 0xFF; /* First byte is 0xFF, next 2 are system pointer Id. */
     pcDlgData++;
     *((PUSHORT)pcDlgData) = ((messageboxdata->flags & SDL_MESSAGEBOX_ERROR) != 0)?
                               SPTR_ICONERROR :
@@ -406,7 +406,7 @@ static HWND _makeDlg(const SDL_MessageBoxData *messageboxdata)
         pDlgItem->cchClassName = 0;  /* 0 - offClassname is WC_ constant. */
         pDlgItem->offClassName = (USHORT)WC_BUTTON;
 
-        pszBtnText = OS2_UTF8ToSys((PSZ)pSDLBtnData[ulIdx].text);
+        pszBtnText = OS2_UTF8ToSys(pSDLBtnData[ulIdx].text);
         cbBtnText = (pszBtnText == NULL)? 1 : (SDL_strlen(pszBtnText) + 1);
         pDlgItem->cchText = cbBtnText;
         pDlgItem->offText = pcDlgData - (PCHAR)pTemplate; /* Offset to the text. */

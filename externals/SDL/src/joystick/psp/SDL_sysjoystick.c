@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -142,7 +142,6 @@ static void PSP_JoystickDetect(void)
 }
 
 #if 0
-/* Function to get the device-dependent name of a joystick */
 static const char *PSP_JoystickName(int idx)
 {
     if (idx == 0) return "PSP controller";
@@ -151,10 +150,14 @@ static const char *PSP_JoystickName(int idx)
 }
 #endif
 
-/* Function to get the device-dependent name of a joystick */
 static const char *PSP_JoystickGetDeviceName(int device_index)
 {
     return "PSP builtin joypad";
+}
+
+static const char *PSP_JoystickGetDevicePath(int device_index)
+{
+    return NULL;
 }
 
 static int PSP_JoystickGetDevicePlayerIndex(int device_index)
@@ -304,6 +307,7 @@ SDL_JoystickDriver SDL_PSP_JoystickDriver =
     PSP_NumJoysticks,
     PSP_JoystickDetect,
     PSP_JoystickGetDeviceName,
+    PSP_JoystickGetDevicePath,
     PSP_JoystickGetDevicePlayerIndex,
     PSP_JoystickSetDevicePlayerIndex,
     PSP_JoystickGetDeviceGUID,

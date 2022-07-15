@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -278,11 +278,16 @@ UIKit_ForceUpdateHomeIndicator()
  */
 
 #if !defined(SDL_VIDEO_DRIVER_COCOA)
-void SDL_NSLog(const char *text)
+void SDL_NSLog(const char *prefix, const char *text)
 {
     @autoreleasepool {
-        NSString *str = [NSString stringWithUTF8String:text];
-        NSLog(@"%@", str);
+        NSString *nsText = [NSString stringWithUTF8String:text];
+        if (prefix) {
+            NSString *nsPrefix = [NSString stringWithUTF8String:prefix];
+            NSLog(@"%@: %@", nsPrefix, nsText);
+        } else {
+            NSLog(@"%@", nsText);
+        }
     }
 }
 #endif /* SDL_VIDEO_DRIVER_COCOA */

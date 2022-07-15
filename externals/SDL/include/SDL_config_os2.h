@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -38,8 +38,14 @@
 #define SDL_VIDEO_DRIVER_DUMMY 1
 #define SDL_VIDEO_DRIVER_OS2 1
 #define SDL_JOYSTICK_OS2 1
+#ifndef HAVE_LIBUSB_H  /* see Makefile */
 #define SDL_HIDAPI_DISABLED 1
 /*#undef SDL_JOYSTICK_HIDAPI */
+#else
+#define SDL_JOYSTICK_HIDAPI 1
+/* dynamically loaded libusb-1.0 dll: */
+#define SDL_LIBUSB_DYNAMIC "usb100.dll"
+#endif
 /*#undef SDL_JOYSTICK_VIRTUAL */
 
 /* Enable OpenGL support */
@@ -49,9 +55,6 @@
 #define SDL_LOADSO_OS2 1
 #define SDL_TIMER_OS2 1
 #define SDL_FILESYSTEM_OS2 1
-
-/* Enable assembly routines */
-#define SDL_ASSEMBLY_ROUTINES 1
 
 /* use libsamplerate for audio rate conversion. */
 /*#define HAVE_LIBSAMPLERATE_H 1 */
@@ -99,7 +102,11 @@
 #define HAVE_GETENV 1
 #define HAVE_SETENV 1
 #define HAVE_PUTENV 1
+/* OpenWatcom requires specific calling conventions for qsort and bsearch */
+#ifndef __WATCOMC__
 #define HAVE_QSORT 1
+#define HAVE_BSEARCH 1
+#endif
 #define HAVE_ABS 1
 #define HAVE_BCOPY 1
 #define HAVE_MEMSET 1

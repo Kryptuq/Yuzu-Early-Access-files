@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -153,7 +153,7 @@ WIN_CreateCursor(SDL_Surface * surface, int hot_x, int hot_y)
 
     /* The cursor returned by CreateIconIndirect does not respect system cursor size
         preference, use CopyImage to duplicate the cursor with desired sizes */
-    hcursor = CopyImage(hicon, IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE);
+    hcursor = CopyImage(hicon, IMAGE_CURSOR, surface->w, surface->h, 0);
     DestroyIcon(hicon);
 
     if (!hcursor) {
@@ -175,11 +175,13 @@ WIN_CreateCursor(SDL_Surface * surface, int hot_x, int hot_y)
 static SDL_Cursor *
 WIN_CreateBlankCursor()
 {
+    SDL_Cursor *cursor = NULL;
     SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(0, 32, 32, 32, SDL_PIXELFORMAT_ARGB8888);
     if (surface) {
-        return WIN_CreateCursor(surface, 0, 0);
+        cursor = WIN_CreateCursor(surface, 0, 0);
+        SDL_FreeSurface(surface);
     }
-    return NULL;
+    return cursor;
 }
 
 static SDL_Cursor *
@@ -288,6 +290,7 @@ WIN_WarpMouseGlobal(int x, int y)
 {
     POINT pt;
 
+    WIN_ScreenPointFromSDL(&x, &y, NULL);
     pt.x = x;
     pt.y = y;
     SetCursorPos(pt.x, pt.y);
@@ -331,6 +334,7 @@ WIN_GetGlobalMouseState(int *x, int *y)
     GetCursorPos(&pt);
     *x = (int) pt.x;
     *y = (int) pt.y;
+    WIN_ScreenPointToSDL(x, y);
 
     retval |= GetAsyncKeyState(!swapButtons ? VK_LBUTTON : VK_RBUTTON) & 0x8000 ? SDL_BUTTON_LMASK : 0;
     retval |= GetAsyncKeyState(!swapButtons ? VK_RBUTTON : VK_LBUTTON) & 0x8000 ? SDL_BUTTON_RMASK : 0;
@@ -370,7 +374,8 @@ WIN_QuitMouse(_THIS)
     }
 
     if (SDL_blank_cursor) {
-        SDL_FreeCursor(SDL_blank_cursor);
+        WIN_FreeCursor(SDL_blank_cursor);
+        SDL_blank_cursor = NULL;
     }
 }
 

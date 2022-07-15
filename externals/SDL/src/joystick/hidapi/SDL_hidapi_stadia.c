@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -55,7 +55,7 @@ HIDAPI_DriverStadia_IsSupportedDevice(const char *name, SDL_GameControllerType t
 }
 
 static const char *
-HIDAPI_DriverStadia_GetDeviceName(Uint16 vendor_id, Uint16 product_id)
+HIDAPI_DriverStadia_GetDeviceName(const char *name, Uint16 vendor_id, Uint16 product_id)
 {
     return "Google Stadia Controller";
 }

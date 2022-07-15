@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -82,7 +82,7 @@ int SDL_SemWaitTimeout(SDL_sem *sem, Uint32 timeout)
     int res;
 
     if (sem == NULL) {
-        SDL_SetError("Passed a NULL sem");
+        SDL_InvalidParamError("sem");
         return 0;
     }
 
@@ -128,7 +128,7 @@ Uint32 SDL_SemValue(SDL_sem *sem)
     SceKernelSemaInfo info;
 
     if (sem == NULL) {
-        SDL_SetError("Passed a NULL sem");
+        SDL_InvalidParamError("sem");
         return 0;
     }
 
@@ -144,7 +144,7 @@ int SDL_SemPost(SDL_sem *sem)
     int res;
 
     if (sem == NULL) {
-        return SDL_SetError("Passed a NULL sem");
+        return SDL_InvalidParamError("sem");
     }
 
     res = sceKernelSignalSema(sem->semid, 1);

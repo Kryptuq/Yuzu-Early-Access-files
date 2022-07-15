@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -90,16 +90,23 @@ SDL_bool VITA_GetWindowWMInfo(_THIS, SDL_Window * window,
                              struct SDL_SysWMinfo *info);
 
 #if SDL_VIDEO_DRIVER_VITA
+#if defined(SDL_VIDEO_VITA_PVR_OGL)
 /* OpenGL functions */
 int VITA_GL_LoadLibrary(_THIS, const char *path);
-void *VITA_GL_GetProcAddress(_THIS, const char *proc);
-void VITA_GL_UnloadLibrary(_THIS);
 SDL_GLContext VITA_GL_CreateContext(_THIS, SDL_Window * window);
-int VITA_GL_MakeCurrent(_THIS, SDL_Window * window, SDL_GLContext context);
-int VITA_GL_SetSwapInterval(_THIS, int interval);
-int VITA_GL_GetSwapInterval(_THIS);
-int VITA_GL_SwapWindow(_THIS, SDL_Window * window);
-void VITA_GL_DeleteContext(_THIS, SDL_GLContext context);
+void *VITA_GL_GetProcAddress(_THIS, const char *proc);
+#endif
+
+/* OpenGLES functions */
+int VITA_GLES_LoadLibrary(_THIS, const char *path);
+void *VITA_GLES_GetProcAddress(_THIS, const char *proc);
+void VITA_GLES_UnloadLibrary(_THIS);
+SDL_GLContext VITA_GLES_CreateContext(_THIS, SDL_Window * window);
+int VITA_GLES_MakeCurrent(_THIS, SDL_Window * window, SDL_GLContext context);
+int VITA_GLES_SetSwapInterval(_THIS, int interval);
+int VITA_GLES_GetSwapInterval(_THIS);
+int VITA_GLES_SwapWindow(_THIS, SDL_Window * window);
+void VITA_GLES_DeleteContext(_THIS, SDL_GLContext context);
 #endif
 
 /* VITA on screen keyboard */

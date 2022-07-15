@@ -67,7 +67,7 @@ std::unique_ptr<WallClock> CreateBestMatchingClock(u64 emulated_cpu_frequency,
     const auto& caps = GetCPUCaps();
     u64 rtsc_frequency = 0;
     if (caps.invariant_tsc) {
-        rtsc_frequency = EstimateRDTSCFrequency();
+        rtsc_frequency = caps.tsc_frequency ? caps.tsc_frequency : EstimateRDTSCFrequency();
     }
 
     // Fallback to StandardWallClock if the hardware TSC does not have the precision greater than:

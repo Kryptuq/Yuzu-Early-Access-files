@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -27,7 +27,7 @@ typedef SDL_bool (*_SDL_IME_Init)(void);
 typedef void (*_SDL_IME_Quit)(void);
 typedef void (*_SDL_IME_SetFocus)(SDL_bool);
 typedef void (*_SDL_IME_Reset)(void);
-typedef SDL_bool (*_SDL_IME_ProcessKeyEvent)(Uint32, Uint32);
+typedef SDL_bool (*_SDL_IME_ProcessKeyEvent)(Uint32, Uint32, Uint8 state);
 typedef void (*_SDL_IME_UpdateTextRect)(SDL_Rect *);
 typedef void (*_SDL_IME_PumpEvents)(void);
 
@@ -127,10 +127,10 @@ SDL_IME_Reset(void)
 }
 
 SDL_bool
-SDL_IME_ProcessKeyEvent(Uint32 keysym, Uint32 keycode)
+SDL_IME_ProcessKeyEvent(Uint32 keysym, Uint32 keycode, Uint8 state)
 {
     if (SDL_IME_ProcessKeyEvent_Real)
-        return SDL_IME_ProcessKeyEvent_Real(keysym, keycode);
+        return SDL_IME_ProcessKeyEvent_Real(keysym, keycode, state);
 
     return SDL_FALSE;
 }

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -38,6 +38,10 @@
 
 #if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
 #include <xmmintrin.h>
+#endif
+
+#if defined(PS2)
+#include <kernel.h>
 #endif
 
 #if defined(__WATCOMC__) && defined(__386__)
@@ -131,7 +135,19 @@ SDL_AtomicTryLock(SDL_SpinLock *lock)
 #elif defined(__SOLARIS__) && !defined(_LP64)
     /* Used for Solaris with non-gcc compilers. */
     return (SDL_bool) ((int) atomic_cas_32((volatile uint32_t*)lock, 0, 1) == 0);
+#elif defined(PS2)
+    uint32_t oldintr;
+    SDL_bool res = SDL_FALSE;
+    // disable interuption
+    oldintr = DIntr();
 
+    if (*lock == 0) {
+        *lock = 1;
+        res = SDL_TRUE;
+    }
+    // enable interuption
+    if(oldintr) { EIntr(); }
+    return res;
 #else
 #error Please implement for your platform.
     return SDL_FALSE;

@@ -161,6 +161,22 @@ static CPUCaps Detect() {
         caps.invariant_tsc = Common::Bit<8>(cpu_id[3]);
     }
 
+    if (max_std_fn >= 0x15) {
+        __cpuid(cpu_id, 0x15);
+        caps.tsc_crystal_ratio_denominator = cpu_id[0];
+        caps.tsc_crystal_ratio_numerator = cpu_id[1];
+        caps.crystal_frequency = cpu_id[2];
+        // Some CPU models might not return a crystal frequency.
+        // The CPU model can be detected to use the values from turbostat
+        // https://github.com/torvalds/linux/blob/master/tools/power/x86/turbostat/turbostat.c#L5569
+        // but it's easier to just estimate the TSC tick rate for these cases.
+        if (caps.tsc_crystal_ratio_denominator) {
+            caps.tsc_frequency = static_cast<u64>(caps.crystal_frequency) *
+                                 caps.tsc_crystal_ratio_numerator /
+                                 caps.tsc_crystal_ratio_denominator;
+        }
+    }
+
     if (max_std_fn >= 0x16) {
         __cpuid(cpu_id, 0x16);
         caps.base_frequency = cpu_id[0];

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -129,7 +129,7 @@ SDL_CreateThread(SDL_ThreadFunction fn, const char *name, void *data,
                  pfnSDL_CurrentEndThread pfnEndThread);
 
 extern DECLSPEC SDL_Thread *SDLCALL
-SDL_CreateThreadWithStackSize(int (SDLCALL * fn) (void *),
+SDL_CreateThreadWithStackSize(SDL_ThreadFunction fn,
                  const char *name, const size_t stacksize, void *data,
                  pfnSDL_CurrentBeginThread pfnBeginThread,
                  pfnSDL_CurrentEndThread pfnEndThread);

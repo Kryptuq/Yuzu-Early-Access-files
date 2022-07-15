@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -268,9 +268,15 @@ static const char *
 BSD_JoystickGetDeviceName(int device_index)
 {
     if (joydevnames[device_index] != NULL) {
-        return (joydevnames[device_index]);
+        return joydevnames[device_index];
     }
-    return (joynames[device_index]);
+    return joynames[device_index];
+}
+
+static const char *
+BSD_JoystickGetDevicePath(int device_index)
+{
+    return joynames[device_index];
 }
 
 static int
@@ -807,6 +813,7 @@ SDL_JoystickDriver SDL_BSD_JoystickDriver =
     BSD_JoystickGetCount,
     BSD_JoystickDetect,
     BSD_JoystickGetDeviceName,
+    BSD_JoystickGetDevicePath,
     BSD_JoystickGetDevicePlayerIndex,
     BSD_JoystickSetDevicePlayerIndex,
     BSD_JoystickGetDeviceGUID,

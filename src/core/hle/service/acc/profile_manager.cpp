@@ -22,7 +22,7 @@ struct UserRaw {
     UUID uuid2{};
     u64 timestamp{};
     ProfileUsername username{};
-    ProfileData extra_data{};
+    UserData extra_data{};
 };
 static_assert(sizeof(UserRaw) == 0xC8, "UserRaw has incorrect size.");
 
@@ -263,7 +263,7 @@ UUID ProfileManager::GetLastOpenedUser() const {
 
 /// Return the users profile base and the unknown arbitary data.
 bool ProfileManager::GetProfileBaseAndData(std::optional<std::size_t> index, ProfileBase& profile,
-                                           ProfileData& data) const {
+                                           UserData& data) const {
     if (GetProfileBase(index, profile)) {
         data = profiles[*index].data;
         return true;
@@ -272,15 +272,14 @@ bool ProfileManager::GetProfileBaseAndData(std::optional<std::size_t> index, Pro
 }
 
 /// Return the users profile base and the unknown arbitary data.
-bool ProfileManager::GetProfileBaseAndData(UUID uuid, ProfileBase& profile,
-                                           ProfileData& data) const {
+bool ProfileManager::GetProfileBaseAndData(UUID uuid, ProfileBase& profile, UserData& data) const {
     const auto idx = GetUserIndex(uuid);
     return GetProfileBaseAndData(idx, profile, data);
 }
 
 /// Return the users profile base and the unknown arbitary data.
 bool ProfileManager::GetProfileBaseAndData(const ProfileInfo& user, ProfileBase& profile,
-                                           ProfileData& data) const {
+                                           UserData& data) const {
     return GetProfileBaseAndData(user.user_uuid, profile, data);
 }
 
@@ -318,7 +317,7 @@ bool ProfileManager::SetProfileBase(UUID uuid, const ProfileBase& profile_new) {
 }
 
 bool ProfileManager::SetProfileBaseAndData(Common::UUID uuid, const ProfileBase& profile_new,
-                                           const ProfileData& data_new) {
+                                           const UserData& data_new) {
     const auto index = GetUserIndex(uuid);
     if (index.has_value() && SetProfileBase(uuid, profile_new)) {
         profiles[*index].data = data_new;

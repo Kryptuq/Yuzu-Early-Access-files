@@ -237,6 +237,7 @@ IDebugFunctions::IDebugFunctions(Core::System& system_)
         {130, nullptr, "FriendInvitationSetApplicationParameter"},
         {131, nullptr, "FriendInvitationClearApplicationParameter"},
         {132, nullptr, "FriendInvitationPushApplicationParameter"},
+        {140, nullptr, "RestrictPowerOperationForSecureLaunchModeForDebug"},
         {900, nullptr, "GetGrcProcessLaunchedSystemEvent"},
     };
     // clang-format on
@@ -1316,6 +1317,8 @@ IApplicationFunctions::IApplicationFunctions(Core::System& system_)
         {33, &IApplicationFunctions::EndBlockingHomeButton, "EndBlockingHomeButton"},
         {34, nullptr, "SelectApplicationLicense"},
         {35, nullptr, "GetDeviceSaveDataSizeMax"},
+        {36, nullptr, "GetLimitedApplicationLicense"},
+        {37, nullptr, "GetLimitedApplicationLicenseUpgradableEvent"},
         {40, &IApplicationFunctions::NotifyRunning, "NotifyRunning"},
         {50, &IApplicationFunctions::GetPseudoDeviceId, "GetPseudoDeviceId"},
         {60, nullptr, "SetMediaPlaybackStateForApplication"},

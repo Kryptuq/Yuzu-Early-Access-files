@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -48,6 +48,12 @@ DUMMY_JoystickDetect(void)
 
 static const char *
 DUMMY_JoystickGetDeviceName(int device_index)
+{
+    return NULL;
+}
+
+static const char *
+DUMMY_JoystickGetDevicePath(int device_index)
 {
     return NULL;
 }
@@ -146,6 +152,7 @@ SDL_JoystickDriver SDL_DUMMY_JoystickDriver =
     DUMMY_JoystickGetCount,
     DUMMY_JoystickDetect,
     DUMMY_JoystickGetDeviceName,
+    DUMMY_JoystickGetDevicePath,
     DUMMY_JoystickGetDevicePlayerIndex,
     DUMMY_JoystickSetDevicePlayerIndex,
     DUMMY_JoystickGetDeviceGUID,

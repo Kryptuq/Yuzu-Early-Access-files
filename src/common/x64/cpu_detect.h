@@ -30,6 +30,11 @@ struct CPUCaps {
     u32 max_frequency;
     u32 bus_frequency;
 
+    u32 tsc_crystal_ratio_denominator;
+    u32 tsc_crystal_ratio_numerator;
+    u32 crystal_frequency;
+    u64 tsc_frequency; // Derived from the above three values
+
     bool sse : 1;
     bool sse2 : 1;
     bool sse3 : 1;

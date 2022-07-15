@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -119,8 +119,8 @@ void trianglepoint_2_fixedpoint(SDL_Point *a) {
     a->y <<= FP_BITS;
 }
 
-/* bounding rect of three points */
-static void bounding_rect(const SDL_Point *a, const SDL_Point *b, const SDL_Point *c, SDL_Rect *r)
+/* bounding rect of three points (in fixed point) */
+static void bounding_rect_fixedpoint(const SDL_Point *a, const SDL_Point *b, const SDL_Point *c, SDL_Rect *r)
 {
     int min_x = SDL_min(a->x, SDL_min(b->x, c->x));
     int max_x = SDL_max(a->x, SDL_max(b->x, c->x));
@@ -132,6 +132,20 @@ static void bounding_rect(const SDL_Point *a, const SDL_Point *b, const SDL_Poin
     r->w = (max_x - min_x) >> FP_BITS;
     r->h = (max_y - min_y) >> FP_BITS;
 }
+
+/* bounding rect of three points */
+static void bounding_rect(const SDL_Point *a, const SDL_Point *b, const SDL_Point *c, SDL_Rect *r)
+{
+    int min_x = SDL_min(a->x, SDL_min(b->x, c->x));
+    int max_x = SDL_max(a->x, SDL_max(b->x, c->x));
+    int min_y = SDL_min(a->y, SDL_min(b->y, c->y));
+    int max_y = SDL_max(a->y, SDL_max(b->y, c->y));
+    r->x = min_x;
+    r->y = min_y;
+    r->w = (max_x - min_x);
+    r->h = (max_y - min_y);
+}
+
 
 /* Triangle rendering, using Barycentric coordinates (w0, w1, w2)
  *
@@ -232,7 +246,7 @@ int SDL_SW_FillTriangle(SDL_Surface *dst, SDL_Point *d0, SDL_Point *d1, SDL_Poin
         }
     }
 
-    bounding_rect(d0, d1, d2, &dstrect);
+    bounding_rect_fixedpoint(d0, d1, d2, &dstrect);
 
     {
         /* Clip triangle rect with surface rect */
@@ -438,7 +452,6 @@ int SDL_SW_BlitTriangle(
 
     SDL_BlendMode blend;
 
-    SDL_Rect srcrect;
     SDL_Rect dstrect;
 
     SDL_Point s2_x_area;
@@ -495,10 +508,28 @@ int SDL_SW_BlitTriangle(
 
     is_uniform = COLOR_EQ(c0, c1) && COLOR_EQ(c1, c2);
 
-    bounding_rect(s0, s1, s2, &srcrect);
-    bounding_rect(d0, d1, d2, &dstrect);
+    bounding_rect_fixedpoint(d0, d1, d2, &dstrect);
 
     SDL_GetSurfaceBlendMode(src, &blend);
+
+    /* TRIANGLE_GET_TEXTCOORD interpolates up to the max values included, so reduce by 1 */
+    {
+        SDL_Rect srcrect;
+        int maxx, maxy;
+        bounding_rect(s0, s1, s2, &srcrect);
+        maxx = srcrect.x + srcrect.w;
+        maxy = srcrect.y + srcrect.h;
+        if (srcrect.w > 0) {
+            if (s0->x == maxx) s0->x--;
+            if (s1->x == maxx) s1->x--;
+            if (s2->x == maxx) s2->x--;
+        }
+        if (srcrect.h > 0) {
+            if (s0->y == maxy) s0->y--;
+            if (s1->y == maxy) s1->y--;
+            if (s2->y == maxy) s2->y--;
+        }
+    }
 
     if (is_uniform) {
         // SDL_GetSurfaceColorMod(src, &r, &g, &b);
@@ -687,6 +718,21 @@ end:
 }
 
 
+#define FORMAT_ALPHA      0
+#define FORMAT_NO_ALPHA  -1
+#define FORMAT_2101010    1
+#define FORMAT_HAS_ALPHA(format)        format == 0
+#define FORMAT_HAS_NO_ALPHA(format)     format < 0
+static int SDL_INLINE detect_format(SDL_PixelFormat *pf) {
+    if (pf->format == SDL_PIXELFORMAT_ARGB2101010) {
+        return FORMAT_2101010;
+    } else if (pf->Amask) {
+        return FORMAT_ALPHA;
+    } else {
+        return FORMAT_NO_ALPHA;
+    }
+}
+
 static void
 SDL_BlitTriangle_Slow(SDL_BlitInfo *info,
         SDL_Point s2_x_area, SDL_Rect dstrect, int area, int bias_w0, int bias_w1, int bias_w2,
@@ -707,11 +753,16 @@ SDL_BlitTriangle_Slow(SDL_BlitInfo *info,
     SDL_PixelFormat *dst_fmt = info->dst_fmt;
     int srcbpp = src_fmt->BytesPerPixel;
     int dstbpp = dst_fmt->BytesPerPixel;
+    int srcfmt_val;
+    int dstfmt_val;
     Uint32 rgbmask = ~src_fmt->Amask;
     Uint32 ckey = info->colorkey & rgbmask;
 
     Uint8 *dst_ptr = info->dst;
     int dst_pitch = info->dst_pitch;;
+
+    srcfmt_val = detect_format(src_fmt);
+    dstfmt_val = detect_format(dst_fmt);
 
     TRIANGLE_BEGIN_LOOP
     {
@@ -719,13 +770,15 @@ SDL_BlitTriangle_Slow(SDL_BlitInfo *info,
         Uint8 *dst = dptr;
         TRIANGLE_GET_TEXTCOORD
         src = (info->src + (srcy * info->src_pitch) + (srcx * srcbpp));
-        if (src_fmt->Amask) {
-            DISEMBLE_RGBA(src, srcbpp, src_fmt, srcpixel, srcR, srcG,
-                          srcB, srcA);
-        } else {
-            DISEMBLE_RGB(src, srcbpp, src_fmt, srcpixel, srcR, srcG,
-                         srcB);
+        if (FORMAT_HAS_ALPHA(srcfmt_val)) {
+            DISEMBLE_RGBA(src, srcbpp, src_fmt, srcpixel, srcR, srcG, srcB, srcA);
+        } else if (FORMAT_HAS_NO_ALPHA(srcfmt_val)) {
+            DISEMBLE_RGB(src, srcbpp, src_fmt, srcpixel, srcR, srcG, srcB);
             srcA = 0xFF;
+        } else {
+            /* SDL_PIXELFORMAT_ARGB2101010 */
+            srcpixel = *((Uint32 *)(src));
+            RGBA_FROM_ARGB2101010(srcpixel, srcR, srcG, srcB, srcA);
         }
         if (flags & SDL_COPY_COLORKEY) {
             /* srcpixel isn't set for 24 bpp */
@@ -737,13 +790,15 @@ SDL_BlitTriangle_Slow(SDL_BlitInfo *info,
                 continue;
             }
         }
-        if (dst_fmt->Amask) {
-            DISEMBLE_RGBA(dst, dstbpp, dst_fmt, dstpixel, dstR, dstG,
-                          dstB, dstA);
-        } else {
-            DISEMBLE_RGB(dst, dstbpp, dst_fmt, dstpixel, dstR, dstG,
-                         dstB);
+        if (FORMAT_HAS_ALPHA(dstfmt_val)) {
+            DISEMBLE_RGBA(dst, dstbpp, dst_fmt, dstpixel, dstR, dstG, dstB, dstA);
+        } else if (FORMAT_HAS_NO_ALPHA(dstfmt_val)) {
+            DISEMBLE_RGB(dst, dstbpp, dst_fmt, dstpixel, dstR, dstG, dstB);
             dstA = 0xFF;
+        } else {
+            /* SDL_PIXELFORMAT_ARGB2101010 */
+            dstpixel = *((Uint32 *)(dst));
+            RGBA_FROM_ARGB2101010(dstpixel, dstR, dstG, dstB, dstA);
         }
 
         if (! is_uniform) {
@@ -814,10 +869,15 @@ SDL_BlitTriangle_Slow(SDL_BlitInfo *info,
                 dstA = 255;
             break;
         }
-        if (dst_fmt->Amask) {
+        if (FORMAT_HAS_ALPHA(dstfmt_val)) {
             ASSEMBLE_RGBA(dst, dstbpp, dst_fmt, dstR, dstG, dstB, dstA);
-        } else {
+        } else if (FORMAT_HAS_NO_ALPHA(dstfmt_val)) {
             ASSEMBLE_RGB(dst, dstbpp, dst_fmt, dstR, dstG, dstB);
+        } else {
+            /* SDL_PIXELFORMAT_ARGB2101010 */
+            Uint32 pixel;
+            ARGB2101010_FROM_RGBA(pixel, dstR, dstG, dstB, dstA);
+            *(Uint32 *)dst = pixel;
         }
     }
     TRIANGLE_END_LOOP

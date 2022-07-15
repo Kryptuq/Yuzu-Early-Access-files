@@ -607,6 +607,10 @@ add_library(core STATIC
     hle/service/psc/psc.h
     hle/service/ptm/psm.cpp
     hle/service/ptm/psm.h
+    hle/service/ptm/ptm.cpp
+    hle/service/ptm/ptm.h
+    hle/service/ptm/ts.cpp
+    hle/service/ptm/ts.h
     hle/service/kernel_helpers.cpp
     hle/service/kernel_helpers.h
     hle/service/service.cpp

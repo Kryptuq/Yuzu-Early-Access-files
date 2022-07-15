@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -269,18 +269,18 @@ do {                                                                    \
 {                                                                       \
     switch (bpp) {                                                      \
         case 1: {                                                       \
-            Uint8 _Pixel;                                               \
+            Uint8 _pixel;                                               \
                                                                         \
-            PIXEL_FROM_RGB(_Pixel, fmt, r, g, b);                       \
-            *((Uint8 *)(buf)) = _Pixel;                                 \
+            PIXEL_FROM_RGB(_pixel, fmt, r, g, b);                       \
+            *((Uint8 *)(buf)) = _pixel;                                 \
         }                                                               \
         break;                                                          \
                                                                         \
         case 2: {                                                       \
-            Uint16 _Pixel;                                              \
+            Uint16 _pixel;                                              \
                                                                         \
-            PIXEL_FROM_RGB(_Pixel, fmt, r, g, b);                       \
-            *((Uint16 *)(buf)) = _Pixel;                                \
+            PIXEL_FROM_RGB(_pixel, fmt, r, g, b);                       \
+            *((Uint16 *)(buf)) = _pixel;                                \
         }                                                               \
         break;                                                          \
                                                                         \
@@ -298,10 +298,10 @@ do {                                                                    \
         break;                                                          \
                                                                         \
         case 4: {                                                       \
-            Uint32 _Pixel;                                              \
+            Uint32 _pixel;                                              \
                                                                         \
-            PIXEL_FROM_RGB(_Pixel, fmt, r, g, b);                       \
-            *((Uint32 *)(buf)) = _Pixel;                                \
+            PIXEL_FROM_RGB(_pixel, fmt, r, g, b);                       \
+            *((Uint32 *)(buf)) = _pixel;                                \
         }                                                               \
         break;                                                          \
     }                                                                   \

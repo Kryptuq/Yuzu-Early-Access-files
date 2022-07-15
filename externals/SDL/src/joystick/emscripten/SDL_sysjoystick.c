@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -280,6 +280,12 @@ EMSCRIPTEN_JoystickGetDeviceName(int device_index)
     return JoystickByDeviceIndex(device_index)->name;
 }
 
+static const char *
+EMSCRIPTEN_JoystickGetDevicePath(int device_index)
+{
+    return NULL;
+}
+
 static int
 EMSCRIPTEN_JoystickGetDevicePlayerIndex(int device_index)
 {
@@ -444,6 +450,7 @@ SDL_JoystickDriver SDL_EMSCRIPTEN_JoystickDriver =
     EMSCRIPTEN_JoystickGetCount,
     EMSCRIPTEN_JoystickDetect,
     EMSCRIPTEN_JoystickGetDeviceName,
+    EMSCRIPTEN_JoystickGetDevicePath,
     EMSCRIPTEN_JoystickGetDevicePlayerIndex,
     EMSCRIPTEN_JoystickSetDevicePlayerIndex,
     EMSCRIPTEN_JoystickGetDeviceGUID,

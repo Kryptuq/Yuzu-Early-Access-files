@@ -58,7 +58,7 @@
 #include "core/hle/service/pm/pm.h"
 #include "core/hle/service/prepo/prepo.h"
 #include "core/hle/service/psc/psc.h"
-#include "core/hle/service/ptm/psm.h"
+#include "core/hle/service/ptm/ptm.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/set/settings.h"
 #include "core/hle/service/sm/sm.h"
@@ -287,7 +287,7 @@ Services::Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system
     PlayReport::InstallInterfaces(*sm, system);
     PM::InstallInterfaces(system);
     PSC::InstallInterfaces(*sm, system);
-    PSM::InstallInterfaces(*sm, system);
+    PTM::InstallInterfaces(*sm, system);
     Set::InstallInterfaces(*sm, system);
     Sockets::InstallInterfaces(*sm, system);
     SPL::InstallInterfaces(*sm, system);

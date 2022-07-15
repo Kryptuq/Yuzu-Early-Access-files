@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -169,7 +169,7 @@ SDLTest_GenerateExecKey(const char *runSeed, const char *suiteName, const char *
 * \return Timer id or -1 on failure.
 */
 static SDL_TimerID
-SDLTest_SetTestTimeout(int timeout, void (*callback)(void))
+SDLTest_SetTestTimeout(int timeout, void (SDLCALL *callback)(void))
 {
     Uint32 timeoutInMilliseconds;
     SDL_TimerID timerID;
@@ -209,7 +209,7 @@ SDLTest_SetTestTimeout(int timeout, void (*callback)(void))
 #if defined(__WATCOMC__)
 #pragma aux SDLTest_BailOut aborts;
 #endif
-static SDL_NORETURN void
+static SDL_NORETURN void SDLCALL
 SDLTest_BailOut(void)
 {
     SDLTest_LogError("TestCaseTimeout timer expired. Aborting test run.");
@@ -349,7 +349,7 @@ static void SDLTest_LogTestSuiteSummary(SDLTest_TestSuiteReference *testSuites)
 /* Gets a timer value in seconds */
 static float GetClock()
 {
-    float currentClock = clock() / (float) CLOCKS_PER_SEC;
+    float currentClock = SDL_GetPerformanceCounter() / (float) SDL_GetPerformanceFrequency();
     return currentClock;
 }
 
@@ -441,6 +441,11 @@ int SDLTest_RunSuites(SDLTest_TestSuiteReference *testSuites[], const char *user
             testCounter++;
             totalNumberOfTests++;
         }
+    }
+
+    if (totalNumberOfTests == 0) {
+        SDLTest_LogError("No tests to run?");
+        return -1;
     }
 
     /* Pre-allocate an array for tracking failed tests (potentially all test cases) */

@@ -290,7 +290,7 @@ protected:
     void Get(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.RawString());
         ProfileBase profile_base{};
-        ProfileData data{};
+        UserData data{};
         if (profile_manager.GetProfileBaseAndData(user_id, profile_base, data)) {
             ctx.WriteBuffer(data);
             IPC::ResponseBuilder rb{ctx, 16};
@@ -373,18 +373,18 @@ protected:
                       reinterpret_cast<const char*>(base.username.data()), base.username.size()),
                   base.timestamp, base.user_uuid.RawString());
 
-        if (user_data.size() < sizeof(ProfileData)) {
-            LOG_ERROR(Service_ACC, "ProfileData buffer too small!");
+        if (user_data.size() < sizeof(UserData)) {
+            LOG_ERROR(Service_ACC, "UserData buffer too small!");
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ERR_INVALID_BUFFER);
             return;
         }
 
-        ProfileData data;
-        std::memcpy(&data, user_data.data(), sizeof(ProfileData));
+        UserData data;
+        std::memcpy(&data, user_data.data(), sizeof(UserData));
 
         if (!profile_manager.SetProfileBaseAndData(user_id, base, data)) {
-            LOG_ERROR(Service_ACC, "Failed to update profile data and base!");
+            LOG_ERROR(Service_ACC, "Failed to update user data and base!");
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ERR_FAILED_SAVE_DATA);
             return;
@@ -406,15 +406,15 @@ protected:
                       reinterpret_cast<const char*>(base.username.data()), base.username.size()),
                   base.timestamp, base.user_uuid.RawString());
 
-        if (user_data.size() < sizeof(ProfileData)) {
-            LOG_ERROR(Service_ACC, "ProfileData buffer too small!");
+        if (user_data.size() < sizeof(UserData)) {
+            LOG_ERROR(Service_ACC, "UserData buffer too small!");
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ERR_INVALID_BUFFER);
             return;
         }
 
-        ProfileData data;
-        std::memcpy(&data, user_data.data(), sizeof(ProfileData));
+        UserData data;
+        std::memcpy(&data, user_data.data(), sizeof(UserData));
 
         Common::FS::IOFile image(GetImagePath(user_id), Common::FS::FileAccessMode::Write,
                                  Common::FS::FileType::BinaryFile);

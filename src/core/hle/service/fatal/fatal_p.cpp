@@ -6,7 +6,13 @@
 namespace Service::Fatal {
 
 Fatal_P::Fatal_P(std::shared_ptr<Module> module_, Core::System& system_)
-    : Interface(std::move(module_), system_, "fatal:p") {}
+    : Interface(std::move(module_), system_, "fatal:p") {
+    static const FunctionInfo functions[] = {
+        {0, nullptr, "GetFatalEvent"},
+        {10, nullptr, "GetFatalContext"},
+    };
+    RegisterHandlers(functions);
+}
 
 Fatal_P::~Fatal_P() = default;
 

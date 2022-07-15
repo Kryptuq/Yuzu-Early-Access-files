@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1004,7 +1004,7 @@ HIDAPI_DriverSteam_IsSupportedDevice(const char *name, SDL_GameControllerType ty
 }
 
 static const char *
-HIDAPI_DriverSteam_GetDeviceName(Uint16 vendor_id, Uint16 product_id)
+HIDAPI_DriverSteam_GetDeviceName(const char *name, Uint16 vendor_id, Uint16 product_id)
 {
     return "Steam Controller";
 }

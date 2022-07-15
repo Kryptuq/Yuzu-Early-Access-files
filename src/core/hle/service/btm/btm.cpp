@@ -214,8 +214,12 @@ public:
             {76, nullptr, "Unknown76"},
             {100, nullptr, "Unknown100"},
             {101, nullptr, "Unknown101"},
-            {110, nullptr, "Unknown102"},
-            {111, nullptr, "Unknown103"},
+            {110, nullptr, "Unknown110"},
+            {111, nullptr, "Unknown111"},
+            {112, nullptr, "Unknown112"},
+            {113, nullptr, "Unknown113"},
+            {114, nullptr, "Unknown114"},
+            {115, nullptr, "Unknown115"},
         };
         // clang-format on
 

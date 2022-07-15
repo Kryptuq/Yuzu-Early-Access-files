@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -47,6 +47,9 @@
 #define USB_PRODUCT_NINTENDO_SWITCH_JOY_CON_LEFT            0x2006
 #define USB_PRODUCT_NINTENDO_SWITCH_JOY_CON_RIGHT           0x2007
 #define USB_PRODUCT_NINTENDO_SWITCH_JOY_CON_GRIP            0x200e
+#define USB_PRODUCT_NINTENDO_N64_CONTROLLER                 0x2019
+#define USB_PRODUCT_NINTENDO_SEGA_GENESIS_CONTROLLER        0x201e
+#define USB_PRODUCT_NINTENDO_SNES_CONTROLLER                0x2017
 #define USB_PRODUCT_RAZER_PANTHERA                          0x0401
 #define USB_PRODUCT_RAZER_PANTHERA_EVO                      0x1008
 #define USB_PRODUCT_RAZER_ATROX                             0x0a00
@@ -54,6 +57,7 @@
 #define USB_PRODUCT_SONY_DS4_DONGLE                         0x0ba0
 #define USB_PRODUCT_SONY_DS4_SLIM                           0x09cc
 #define USB_PRODUCT_SONY_DS5                                0x0ce6
+#define USB_PRODUCT_VICTRIX_FS_PRO_V2                       0x0207
 #define USB_PRODUCT_XBOX360_XUSB_CONTROLLER                 0x02a1    /* XUSB driver software PID */
 #define USB_PRODUCT_XBOX360_WIRED_CONTROLLER                0x028e
 #define USB_PRODUCT_XBOX360_WIRELESS_RECEIVER               0x0719

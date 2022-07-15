@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -249,7 +249,7 @@ SDLTest_CommonArg(SDLTest_CommonState * state, int index)
     }
     if (SDL_strcasecmp(argv[index], "--windows") == 0) {
         ++index;
-        if (!argv[index] || !SDL_isdigit(*argv[index])) {
+        if (!argv[index] || !SDL_isdigit((unsigned char) *argv[index])) {
             return -1;
         }
         if (!(state->window_flags & SDL_WINDOW_FULLSCREEN)) {
@@ -1331,8 +1331,7 @@ SDLTest_CommonInit(SDLTest_CommonState * state)
                     n = SDL_GetNumRenderDrivers();
                     for (j = 0; j < n; ++j) {
                         SDL_GetRenderDriverInfo(j, &info);
-                        if (SDL_strcasecmp(info.name, state->renderdriver) ==
-                            0) {
+                        if (SDL_strcasecmp(info.name, state->renderdriver) == 0) {
                             m = j;
                             break;
                         }
@@ -1465,10 +1464,12 @@ default: return "???";
 static void
 SDLTest_PrintEvent(SDL_Event * event)
 {
+#ifndef VERBOSE_MOTION_EVENTS
     if ((event->type == SDL_MOUSEMOTION) || (event->type == SDL_FINGERMOTION)) {
         /* Mouse and finger motion are really spammy */
         return;
     }
+#endif
 
     switch (event->type) {
     case SDL_DISPLAYEVENT:
@@ -1937,7 +1938,7 @@ SDLTest_CommonEvent(SDLTest_CommonState * state, SDL_Event * event, int *done)
                     const int delta = 100;
                     int x, y;
                     SDL_GetWindowPosition(window, &x, &y);
-                    
+
                     if (event->key.keysym.sym == SDLK_UP)    y -= delta;
                     if (event->key.keysym.sym == SDLK_DOWN)  y += delta;
                     if (event->key.keysym.sym == SDLK_LEFT)  x -= delta;
