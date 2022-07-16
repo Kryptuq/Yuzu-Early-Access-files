@@ -39,7 +39,7 @@ VkPresentModeKHR ChooseSwapPresentMode(vk::Span<VkPresentModeKHR> modes) {
         found_mailbox != modes.end()) {
         return VK_PRESENT_MODE_MAILBOX_KHR;
     }
-    if (Settings::values.disable_fps_limit.GetValue()) {
+    if (!Settings::values.use_speed_limit.GetValue()) {
         // FIFO present mode locks the framerate to the monitor's refresh rate,
         // Find an alternative to surpass this limitation if FPS is unlocked.
         const auto found_imm = std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_IMMEDIATE_KHR);
@@ -214,7 +214,7 @@ void Swapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, u3
 
     extent = swapchain_ci.imageExtent;
     current_srgb = srgb;
-    current_fps_unlocked = Settings::values.disable_fps_limit.GetValue();
+    current_fps_unlocked = !Settings::values.use_speed_limit.GetValue();
 
     images = swapchain.GetImages();
     image_count = static_cast<u32>(images.size());
@@ -268,7 +268,7 @@ void Swapchain::Destroy() {
 }
 
 bool Swapchain::HasFpsUnlockChanged() const {
-    return current_fps_unlocked != Settings::values.disable_fps_limit.GetValue();
+    return current_fps_unlocked != !Settings::values.use_speed_limit.GetValue();
 }
 
 bool Swapchain::NeedsPresentModeUpdate() const {

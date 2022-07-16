@@ -146,7 +146,16 @@ public:
     }
 
     constexpr void Assign(const T& value) {
+#ifdef _MSC_VER
         storage = static_cast<StorageType>((storage & ~mask) | FormatValue(value));
+#else
+        // Explicitly reload with memcpy to avoid compiler aliasing quirks
+        // regarding optimization: GCC/Clang clobber chained stores to
+        // different bitfields in the same struct with the last value.
+        StorageTypeWithEndian storage_;
+        std::memcpy(&storage_, &storage, sizeof(storage_));
+        storage = static_cast<StorageType>((storage_ & ~mask) | FormatValue(value));
+#endif
     }
 
     [[nodiscard]] constexpr T Value() const {

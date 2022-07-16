@@ -1058,7 +1058,7 @@ void GMainWindow::InitializeHotkeys() {
         Settings::values.volume.SetValue(static_cast<u8>(new_volume));
     });
     connect_shortcut(QStringLiteral("Toggle Framerate Limit"), [] {
-        Settings::values.disable_fps_limit.SetValue(!Settings::values.disable_fps_limit.GetValue());
+        Settings::values.use_speed_limit.SetValue(!Settings::values.use_speed_limit.GetValue());
     });
     connect_shortcut(QStringLiteral("Toggle Mouse Panning"), [&] {
         Settings::values.mouse_panning = !Settings::values.mouse_panning;
@@ -1481,9 +1481,6 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
                                           : fmt::format("{:016X}", title_id);
         Config per_game_config(*system, config_file_name, Config::ConfigType::PerGameConfig);
     }
-
-    // Disable fps limit toggle when booting a new title
-    Settings::values.disable_fps_limit.SetValue(false);
 
     // Save configurations
     UpdateUISettings();
@@ -3280,7 +3277,7 @@ void GMainWindow::UpdateStatusBar() {
     } else {
         emu_speed_label->setText(tr("Speed: %1%").arg(results.emulation_speed * 100.0, 0, 'f', 0));
     }
-    if (Settings::values.disable_fps_limit) {
+    if (!Settings::values.use_speed_limit) {
         game_fps_label->setText(
             tr("Game: %1 FPS (Unlocked)").arg(std::round(results.average_game_fps), 0, 'f', 0));
     } else {

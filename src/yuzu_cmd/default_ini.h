@@ -330,10 +330,6 @@ bg_red =
 bg_blue =
 bg_green =
 
-# Caps the unlocked framerate to a multiple of the title's target FPS.
-# 1 - 1000: Target FPS multiple cap. 1000 (default)
-fps_cap =
-
 [Audio]
 # Which audio output engine to use.
 # auto (default): Auto-select
@@ -434,9 +430,6 @@ use_debug_asserts =
 use_auto_stub =
 # Enables/Disables the macro JIT compiler
 disable_macro_jit=false
-# Presents guest frames as they become available. Experimental.
-# false: Disabled (default), true: Enabled
-disable_fps_limit=false
 # Determines whether to enable the GDB stub and wait for the debugger to attach before running.
 # false: Disabled (default), true: Enabled
 use_gdbstub=false
