@@ -925,18 +925,15 @@ cbjack_stream_init(cubeb * context, cubeb_stream ** stream,
   if (stm->devs == DUPLEX) {
     stm->resampler = cubeb_resampler_create(
         stm, &stm->in_params, &stm->out_params, stream_actual_rate,
-        stm->data_callback, stm->user_ptr, CUBEB_RESAMPLER_QUALITY_DESKTOP,
-        CUBEB_RESAMPLER_RECLOCK_NONE);
+        stm->data_callback, stm->user_ptr, CUBEB_RESAMPLER_QUALITY_DESKTOP);
   } else if (stm->devs == IN_ONLY) {
     stm->resampler = cubeb_resampler_create(
         stm, &stm->in_params, nullptr, stream_actual_rate, stm->data_callback,
-        stm->user_ptr, CUBEB_RESAMPLER_QUALITY_DESKTOP,
-        CUBEB_RESAMPLER_RECLOCK_NONE);
+        stm->user_ptr, CUBEB_RESAMPLER_QUALITY_DESKTOP);
   } else if (stm->devs == OUT_ONLY) {
     stm->resampler = cubeb_resampler_create(
         stm, nullptr, &stm->out_params, stream_actual_rate, stm->data_callback,
-        stm->user_ptr, CUBEB_RESAMPLER_QUALITY_DESKTOP,
-        CUBEB_RESAMPLER_RECLOCK_NONE);
+        stm->user_ptr, CUBEB_RESAMPLER_QUALITY_DESKTOP);
   }
 
   if (!stm->resampler) {

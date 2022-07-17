@@ -96,8 +96,9 @@ struct oss_stream {
   oss_devnode_t name;
   int fd;
   void * buf;
+  unsigned int nfr; /* Number of frames allocated */
+  unsigned int nfrags;
   unsigned int bufframes;
-  unsigned int maxframes;
 
   struct stream_info {
     int channels;
@@ -823,9 +824,9 @@ retry:
       pfds[0].fd = s->play.fd;
       pfds[1].fd = -1;
       goto retry;
-    } else if (tnfr > (long)s->play.maxframes) {
+    } else if (tnfr > (long)s->play.bufframes) {
       /* too many frames available - limit */
-      tnfr = (long)s->play.maxframes;
+      tnfr = (long)s->play.bufframes;
     }
     if (nfr > tnfr) {
       nfr = tnfr;
@@ -841,9 +842,9 @@ retry:
       pfds[0].fd = -1;
       pfds[1].fd = s->record.fd;
       goto retry;
-    } else if (tnfr > (long)s->record.maxframes) {
+    } else if (tnfr > (long)s->record.bufframes) {
       /* too many frames available - limit */
-      tnfr = (long)s->record.maxframes;
+      tnfr = (long)s->record.bufframes;
     }
     if (nfr > tnfr) {
       nfr = tnfr;
@@ -1060,8 +1061,6 @@ oss_stream_init(cubeb * context, cubeb_stream ** stream,
   }
   if (input_stream_params != NULL) {
     unsigned int nb_channels;
-    uint32_t minframes;
-
     if (input_stream_params->prefs & CUBEB_STREAM_PREF_LOOPBACK) {
       LOG("Loopback not supported");
       ret = CUBEB_ERROR_NOT_SUPPORTED;
@@ -1090,17 +1089,18 @@ oss_stream_init(cubeb * context, cubeb_stream ** stream,
         (input_stream_params->format == CUBEB_SAMPLE_FLOAT32NE);
     s->record.frame_size =
         s->record.info.channels * (s->record.info.precision / 8);
-    s->record.bufframes = latency_frames;
-
-    oss_get_min_latency(context, *input_stream_params, &minframes);
-    if (s->record.bufframes < minframes) {
-      s->record.bufframes = minframes;
+    s->record.nfrags = OSS_NFRAGS;
+    s->record.nfr = latency_frames / OSS_NFRAGS;
+    s->record.bufframes = s->record.nfrags * s->record.nfr;
+    uint32_t minnfr;
+    oss_get_min_latency(context, *input_stream_params, &minnfr);
+    if (s->record.nfr < minnfr) {
+      s->record.nfr = minnfr;
+      s->record.nfrags = latency_frames / minnfr;
     }
   }
   if (output_stream_params != NULL) {
     unsigned int nb_channels;
-    uint32_t minframes;
-
     if (output_stream_params->prefs & CUBEB_STREAM_PREF_LOOPBACK) {
       LOG("Loopback not supported");
       ret = CUBEB_ERROR_NOT_SUPPORTED;
@@ -1128,16 +1128,19 @@ oss_stream_init(cubeb * context, cubeb_stream ** stream,
     }
     s->play.floating = (output_stream_params->format == CUBEB_SAMPLE_FLOAT32NE);
     s->play.frame_size = s->play.info.channels * (s->play.info.precision / 8);
-    s->play.bufframes = latency_frames;
-
-    oss_get_min_latency(context, *output_stream_params, &minframes);
-    if (s->play.bufframes < minframes) {
-      s->play.bufframes = minframes;
+    s->play.nfrags = OSS_NFRAGS;
+    s->play.nfr = latency_frames / OSS_NFRAGS;
+    uint32_t minnfr;
+    oss_get_min_latency(context, *output_stream_params, &minnfr);
+    if (s->play.nfr < minnfr) {
+      s->play.nfr = minnfr;
+      s->play.nfrags = latency_frames / minnfr;
     }
+    s->play.bufframes = s->play.nfrags * s->play.nfr;
   }
   if (s->play.fd != -1) {
     int frag = oss_get_frag_params(
-        oss_calc_frag_shift(s->play.bufframes, s->play.frame_size));
+        oss_calc_frag_shift(s->play.nfr, s->play.frame_size));
     if (ioctl(s->play.fd, SNDCTL_DSP_SETFRAGMENT, &frag))
       LOG("Failed to set play fd with SNDCTL_DSP_SETFRAGMENT. frag: 0x%x",
           frag);
@@ -1145,28 +1148,19 @@ oss_stream_init(cubeb * context, cubeb_stream ** stream,
     if (ioctl(s->play.fd, SNDCTL_DSP_GETOSPACE, &bi))
       LOG("Failed to get play fd's buffer info.");
     else {
-      s->play.bufframes = (bi.fragsize * bi.fragstotal) / s->play.frame_size;
+      s->play.nfr = bi.fragsize / s->play.frame_size;
+      s->play.nfrags = bi.fragments;
+      s->play.bufframes = s->play.nfr * s->play.nfrags;
     }
-    int lw;
 
-    /*
-     * Force 32 ms service intervals at most, or when recording is
-     * active, use the recording service intervals as a reference.
-     */
-    s->play.maxframes = (32 * output_stream_params->rate) / 1000;
-    if (s->record.fd != -1 || s->play.maxframes >= s->play.bufframes) {
-      lw = s->play.frame_size; /* Feed data when possible. */
-      s->play.maxframes = s->play.bufframes;
-    } else {
-      lw = (s->play.bufframes - s->play.maxframes) * s->play.frame_size;
-    }
+    int lw = s->play.frame_size;
     if (ioctl(s->play.fd, SNDCTL_DSP_LOW_WATER, &lw))
       LOG("Audio device \"%s\" (play) could not set trigger threshold",
           s->play.name);
   }
   if (s->record.fd != -1) {
     int frag = oss_get_frag_params(
-        oss_calc_frag_shift(s->record.bufframes, s->record.frame_size));
+        oss_calc_frag_shift(s->record.nfr, s->record.frame_size));
     if (ioctl(s->record.fd, SNDCTL_DSP_SETFRAGMENT, &frag))
       LOG("Failed to set record fd with SNDCTL_DSP_SETFRAGMENT. frag: 0x%x",
           frag);
@@ -1174,11 +1168,11 @@ oss_stream_init(cubeb * context, cubeb_stream ** stream,
     if (ioctl(s->record.fd, SNDCTL_DSP_GETISPACE, &bi))
       LOG("Failed to get record fd's buffer info.");
     else {
-      s->record.bufframes =
-          (bi.fragsize * bi.fragstotal) / s->record.frame_size;
+      s->record.nfr = bi.fragsize / s->record.frame_size;
+      s->record.nfrags = bi.fragments;
+      s->record.bufframes = s->record.nfr * s->record.nfrags;
     }
 
-    s->record.maxframes = s->record.bufframes;
     int lw = s->record.frame_size;
     if (ioctl(s->record.fd, SNDCTL_DSP_LOW_WATER, &lw))
       LOG("Audio device \"%s\" (record) could not set trigger threshold",

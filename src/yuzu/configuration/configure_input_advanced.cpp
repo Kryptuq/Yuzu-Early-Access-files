@@ -89,6 +89,7 @@ ConfigureInputAdvanced::ConfigureInputAdvanced(QWidget* parent)
             [this] { CallMotionTouchConfigDialog(); });
     connect(ui->ring_controller_configure, &QPushButton::clicked, this,
             [this] { CallRingControllerDialog(); });
+    connect(ui->camera_configure, &QPushButton::clicked, this, [this] { CallCameraDialog(); });
 
 #ifndef _WIN32
     ui->enable_raw_input->setVisible(false);
@@ -136,6 +137,7 @@ void ConfigureInputAdvanced::ApplyConfiguration() {
     Settings::values.enable_udp_controller = ui->enable_udp_controller->isChecked();
     Settings::values.controller_navigation = ui->controller_navigation->isChecked();
     Settings::values.enable_ring_controller = ui->enable_ring_controller->isChecked();
+    Settings::values.enable_ir_sensor = ui->enable_ir_sensor->isChecked();
 }
 
 void ConfigureInputAdvanced::LoadConfiguration() {
@@ -169,6 +171,7 @@ void ConfigureInputAdvanced::LoadConfiguration() {
     ui->enable_udp_controller->setChecked(Settings::values.enable_udp_controller.GetValue());
     ui->controller_navigation->setChecked(Settings::values.controller_navigation.GetValue());
     ui->enable_ring_controller->setChecked(Settings::values.enable_ring_controller.GetValue());
+    ui->enable_ir_sensor->setChecked(Settings::values.enable_ir_sensor.GetValue());
 
     UpdateUIEnabled();
 }

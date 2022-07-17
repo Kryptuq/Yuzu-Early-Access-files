@@ -5,6 +5,8 @@
 #include <glad/glad.h>
 
 #include <QApplication>
+#include <QCameraImageCapture>
+#include <QCameraInfo>
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QPainter>
@@ -31,6 +33,7 @@
 #include "core/core.h"
 #include "core/cpu_manager.h"
 #include "core/frontend/framebuffer_layout.h"
+#include "input_common/drivers/camera.h"
 #include "input_common/drivers/keyboard.h"
 #include "input_common/drivers/mouse.h"
 #include "input_common/drivers/tas_input.h"
@@ -799,6 +802,74 @@ void GRenderWindow::TouchUpdateEvent(const QTouchEvent* event) {
 
 void GRenderWindow::TouchEndEvent() {
     input_subsystem->GetTouchScreen()->ReleaseAllTouch();
+}
+
+void GRenderWindow::InitializeCamera() {
+    if (!Settings::values.enable_ir_sensor) {
+        return;
+    }
+
+    bool camera_found = false;
+    const QList<QCameraInfo> cameras = QCameraInfo::availableCameras();
+    for (const QCameraInfo& cameraInfo : cameras) {
+        if (Settings::values.ir_sensor_device.GetValue() == cameraInfo.deviceName().toStdString() ||
+            Settings::values.ir_sensor_device.GetValue() == "Auto") {
+            camera = std::make_unique<QCamera>(cameraInfo);
+            camera_found = true;
+            break;
+        }
+    }
+
+    if (!camera_found) {
+        return;
+    }
+
+    camera_capture = std::make_unique<QCameraImageCapture>(camera.get());
+    connect(camera_capture.get(), &QCameraImageCapture::imageCaptured, this,
+            &GRenderWindow::OnCameraCapture);
+    camera->unload();
+    camera->setCaptureMode(QCamera::CaptureViewfinder);
+    camera->load();
+
+    camera_timer = std::make_unique<QTimer>();
+    connect(camera_timer.get(), &QTimer::timeout, [this] { RequestCameraCapture(); });
+    // This timer should be dependent of camera resolution 5ms for every 100 pixels
+    camera_timer->start(100);
+}
+
+void GRenderWindow::FinalizeCamera() {
+    if (camera_timer) {
+        camera_timer->stop();
+    }
+    if (camera) {
+        camera->unload();
+    }
+}
+
+void GRenderWindow::RequestCameraCapture() {
+    if (!Settings::values.enable_ir_sensor) {
+        return;
+    }
+
+    // Idealy one should only call capture but Qt refuses to take a second capture without
+    // stopping the camera
+    camera->stop();
+    camera->start();
+
+    camera_capture->capture();
+}
+
+void GRenderWindow::OnCameraCapture(int requestId, const QImage& img) {
+    constexpr std::size_t camera_width = 320;
+    constexpr std::size_t camera_height = 240;
+    const auto converted =
+        img.scaled(camera_width, camera_height, Qt::AspectRatioMode::IgnoreAspectRatio,
+                   Qt::TransformationMode::SmoothTransformation)
+            .mirrored(false, true);
+    std::vector<u32> camera_data{};
+    camera_data.resize(camera_width * camera_height);
+    std::memcpy(camera_data.data(), converted.bits(), camera_width * camera_height * sizeof(u32));
+    input_subsystem->GetCamera()->SetCameraData(camera_width, camera_height, camera_data);
 }
 
 bool GRenderWindow::event(QEvent* event) {

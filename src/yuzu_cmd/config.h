@@ -33,6 +33,6 @@ private:
      * @param group The name of the INI group
      * @param setting The yuzu setting to modify
      */
-    template <typename Type>
-    void ReadSetting(const std::string& group, Settings::Setting<Type>& setting);
+    template <typename Type, bool ranged>
+    void ReadSetting(const std::string& group, Settings::Setting<Type, ranged>& setting);
 };

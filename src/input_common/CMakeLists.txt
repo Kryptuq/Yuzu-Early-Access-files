@@ -1,4 +1,6 @@
 add_library(input_common STATIC
+    drivers/camera.cpp
+    drivers/camera.h
     drivers/gc_adapter.cpp
     drivers/gc_adapter.h
     drivers/keyboard.cpp

@@ -935,8 +935,7 @@ aaudio_stream_init_impl(cubeb_stream * stm, cubeb_devid input_device,
   stm->resampler = cubeb_resampler_create(
       stm, input_stream_params ? &in_params : NULL,
       output_stream_params ? &out_params : NULL, target_sample_rate,
-      stm->data_callback, stm->user_ptr, CUBEB_RESAMPLER_QUALITY_DEFAULT,
-      CUBEB_RESAMPLER_RECLOCK_NONE);
+      stm->data_callback, stm->user_ptr, CUBEB_RESAMPLER_QUALITY_DEFAULT);
 
   if (!stm->resampler) {
     LOG("Failed to create resampler");

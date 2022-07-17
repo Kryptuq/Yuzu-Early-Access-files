@@ -106,7 +106,7 @@ struct ResolutionScalingInfo {
  * configurations. Specifying a default value and label is required. A minimum and maximum range can
  * be specified for sanitization.
  */
-template <typename Type>
+template <typename Type, bool ranged = false>
 class Setting {
 protected:
     Setting() = default;
@@ -126,8 +126,8 @@ public:
      * @param default_val Intial value of the setting, and default value of the setting
      * @param name Label for the setting
      */
-    explicit Setting(const Type& default_val, const std::string& name)
-        : value{default_val}, default_value{default_val}, ranged{false}, label{name} {}
+    explicit Setting(const Type& default_val, const std::string& name) requires(!ranged)
+        : value{default_val}, default_value{default_val}, label{name} {}
     virtual ~Setting() = default;
 
     /**
@@ -139,9 +139,9 @@ public:
      * @param name Label for the setting
      */
     explicit Setting(const Type& default_val, const Type& min_val, const Type& max_val,
-                     const std::string& name)
-        : value{default_val}, default_value{default_val}, maximum{max_val}, minimum{min_val},
-          ranged{true}, label{name} {}
+                     const std::string& name) requires(ranged)
+        : value{default_val},
+          default_value{default_val}, maximum{max_val}, minimum{min_val}, label{name} {}
 
     /**
      *  Returns a reference to the setting's value.
@@ -158,7 +158,7 @@ public:
      * @param val The desired value
      */
     virtual void SetValue(const Type& val) {
-        Type temp{(ranged) ? std::clamp(val, minimum, maximum) : val};
+        Type temp{ranged ? std::clamp(val, minimum, maximum) : val};
         std::swap(value, temp);
     }
 
@@ -188,7 +188,7 @@ public:
      * @returns A reference to the setting
      */
     virtual const Type& operator=(const Type& val) {
-        Type temp{(ranged) ? std::clamp(val, minimum, maximum) : val};
+        Type temp{ranged ? std::clamp(val, minimum, maximum) : val};
         std::swap(value, temp);
         return value;
     }
@@ -207,7 +207,6 @@ protected:
     const Type default_value{}; ///< The default value
     const Type maximum{};       ///< Maximum allowed value of the setting
     const Type minimum{};       ///< Minimum allowed value of the setting
-    const bool ranged;          ///< The setting has sanitization ranges
     const std::string label{};  ///< The setting's label
 };
 
@@ -219,8 +218,8 @@ protected:
  *
  * By default, the global setting is used.
  */
-template <typename Type>
-class SwitchableSetting : virtual public Setting<Type> {
+template <typename Type, bool ranged = false>
+class SwitchableSetting : virtual public Setting<Type, ranged> {
 public:
     /**
      * Sets a default value, label, and setting value.
@@ -228,7 +227,7 @@ public:
      * @param default_val Intial value of the setting, and default value of the setting
      * @param name Label for the setting
      */
-    explicit SwitchableSetting(const Type& default_val, const std::string& name)
+    explicit SwitchableSetting(const Type& default_val, const std::string& name) requires(!ranged)
         : Setting<Type>{default_val, name} {}
     virtual ~SwitchableSetting() = default;
 
@@ -241,8 +240,8 @@ public:
      * @param name Label for the setting
      */
     explicit SwitchableSetting(const Type& default_val, const Type& min_val, const Type& max_val,
-                               const std::string& name)
-        : Setting<Type>{default_val, min_val, max_val, name} {}
+                               const std::string& name) requires(ranged)
+        : Setting<Type, true>{default_val, min_val, max_val, name} {}
 
     /**
      * Tells this setting to represent either the global or custom setting when other member
@@ -290,7 +289,7 @@ public:
      * @param val The new value
      */
     void SetValue(const Type& val) override {
-        Type temp{(this->ranged) ? std::clamp(val, this->minimum, this->maximum) : val};
+        Type temp{ranged ? std::clamp(val, this->minimum, this->maximum) : val};
         if (use_global) {
             std::swap(this->value, temp);
         } else {
@@ -306,7 +305,7 @@ public:
      * @returns A reference to the current setting value
      */
     const Type& operator=(const Type& val) override {
-        Type temp{(this->ranged) ? std::clamp(val, this->minimum, this->maximum) : val};
+        Type temp{ranged ? std::clamp(val, this->minimum, this->maximum) : val};
         if (use_global) {
             std::swap(this->value, temp);
             return this->value;
@@ -375,7 +374,7 @@ struct Values {
     Setting<std::string> audio_output_device_id{"auto", "output_device"};
     Setting<std::string> audio_input_device_id{"auto", "input_device"};
     Setting<bool> audio_muted{false, "audio_muted"};
-    SwitchableSetting<u8> volume{100, 0, 100, "volume"};
+    SwitchableSetting<u8, true> volume{100, 0, 100, "volume"};
     Setting<bool> dump_audio_commands{false, "dump_audio_commands"};
 
     // Core
@@ -383,8 +382,8 @@ struct Values {
     SwitchableSetting<bool> use_extended_memory_layout{false, "use_extended_memory_layout"};
 
     // Cpu
-    SwitchableSetting<CPUAccuracy> cpu_accuracy{CPUAccuracy::Auto, CPUAccuracy::Auto,
-                                                CPUAccuracy::Paranoid, "cpu_accuracy"};
+    SwitchableSetting<CPUAccuracy, true> cpu_accuracy{CPUAccuracy::Auto, CPUAccuracy::Auto,
+                                                      CPUAccuracy::Paranoid, "cpu_accuracy"};
     // TODO: remove cpu_accuracy_first_time, migration setting added 8 July 2021
     Setting<bool> cpu_accuracy_first_time{true, "cpu_accuracy_first_time"};
     Setting<bool> cpu_debug_mode{false, "cpu_debug_mode"};
@@ -411,7 +410,7 @@ struct Values {
         true, "cpuopt_unsafe_ignore_global_monitor"};
 
     // Renderer
-    SwitchableSetting<RendererBackend> renderer_backend{
+    SwitchableSetting<RendererBackend, true> renderer_backend{
         RendererBackend::Vulkan, RendererBackend::OpenGL, RendererBackend::Vulkan, "backend"};
     Setting<bool> renderer_debug{false, "debug"};
     Setting<bool> renderer_shader_feedback{false, "shader_feedback"};
@@ -425,26 +424,26 @@ struct Values {
     SwitchableSetting<AntiAliasing> anti_aliasing{AntiAliasing::None, "anti_aliasing"};
     // *nix platforms may have issues with the borderless windowed fullscreen mode.
     // Default to exclusive fullscreen on these platforms for now.
-    SwitchableSetting<FullscreenMode> fullscreen_mode{
+    SwitchableSetting<FullscreenMode, true> fullscreen_mode{
 #ifdef _WIN32
         FullscreenMode::Borderless,
 #else
         FullscreenMode::Exclusive,
 #endif
         FullscreenMode::Borderless, FullscreenMode::Exclusive, "fullscreen_mode"};
-    SwitchableSetting<int> aspect_ratio{0, 0, 3, "aspect_ratio"};
-    SwitchableSetting<int> max_anisotropy{0, 0, 5, "max_anisotropy"};
+    SwitchableSetting<int, true> aspect_ratio{0, 0, 3, "aspect_ratio"};
+    SwitchableSetting<int, true> max_anisotropy{0, 0, 5, "max_anisotropy"};
     SwitchableSetting<bool> use_speed_limit{true, "use_speed_limit"};
-    SwitchableSetting<u16> speed_limit{100, 0, 9999, "speed_limit"};
+    SwitchableSetting<u16, true> speed_limit{100, 0, 9999, "speed_limit"};
     SwitchableSetting<bool> use_disk_shader_cache{true, "use_disk_shader_cache"};
-    SwitchableSetting<GPUAccuracy> gpu_accuracy{GPUAccuracy::High, GPUAccuracy::Normal,
-                                                GPUAccuracy::Extreme, "gpu_accuracy"};
+    SwitchableSetting<GPUAccuracy, true> gpu_accuracy{GPUAccuracy::High, GPUAccuracy::Normal,
+                                                      GPUAccuracy::Extreme, "gpu_accuracy"};
     SwitchableSetting<bool> use_asynchronous_gpu_emulation{true, "use_asynchronous_gpu_emulation"};
     SwitchableSetting<NvdecEmulation> nvdec_emulation{NvdecEmulation::GPU, "nvdec_emulation"};
     SwitchableSetting<bool> accelerate_astc{true, "accelerate_astc"};
     SwitchableSetting<bool> use_vsync{true, "use_vsync"};
-    SwitchableSetting<ShaderBackend> shader_backend{ShaderBackend::GLASM, ShaderBackend::GLSL,
-                                                    ShaderBackend::SPIRV, "shader_backend"};
+    SwitchableSetting<ShaderBackend, true> shader_backend{ShaderBackend::GLASM, ShaderBackend::GLSL,
+                                                          ShaderBackend::SPIRV, "shader_backend"};
     SwitchableSetting<bool> use_asynchronous_shaders{false, "use_asynchronous_shaders"};
     SwitchableSetting<bool> use_fast_gpu_time{true, "use_fast_gpu_time"};
 
@@ -460,10 +459,10 @@ struct Values {
     s64 custom_rtc_differential;
 
     Setting<s32> current_user{0, "current_user"};
-    SwitchableSetting<s32> language_index{1, 0, 17, "language_index"};
-    SwitchableSetting<s32> region_index{1, 0, 6, "region_index"};
-    SwitchableSetting<s32> time_zone_index{0, 0, 45, "time_zone_index"};
-    SwitchableSetting<s32> sound_index{1, 0, 2, "sound_index"};
+    SwitchableSetting<s32, true> language_index{1, 0, 17, "language_index"};
+    SwitchableSetting<s32, true> region_index{1, 0, 6, "region_index"};
+    SwitchableSetting<s32, true> time_zone_index{0, 0, 45, "time_zone_index"};
+    SwitchableSetting<s32, true> sound_index{1, 0, 2, "sound_index"};
 
     // Controls
     InputSetting<std::array<PlayerInput, 10>> players;
@@ -485,7 +484,7 @@ struct Values {
     Setting<bool> tas_loop{false, "tas_loop"};
 
     Setting<bool> mouse_panning{false, "mouse_panning"};
-    Setting<u8> mouse_panning_sensitivity{10, 1, 100, "mouse_panning_sensitivity"};
+    Setting<u8, true> mouse_panning_sensitivity{10, 1, 100, "mouse_panning_sensitivity"};
     Setting<bool> mouse_enabled{false, "mouse_enabled"};
 
     Setting<bool> emulate_analog_keyboard{false, "emulate_analog_keyboard"};
@@ -503,6 +502,9 @@ struct Values {
 
     Setting<bool> enable_ring_controller{true, "enable_ring_controller"};
     RingconRaw ringcon_analogs;
+
+    Setting<bool> enable_ir_sensor{false, "enable_ir_sensor"};
+    Setting<std::string> ir_sensor_device{"auto", "ir_sensor_device"};
 
     // Data Storage
     Setting<bool> use_virtual_sd{true, "use_virtual_sd"};

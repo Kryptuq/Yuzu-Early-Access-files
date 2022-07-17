@@ -99,8 +99,8 @@ void Config::ReadSetting(const std::string& group, Settings::Setting<bool>& sett
     setting = sdl2_config->GetBoolean(group, setting.GetLabel(), setting.GetDefault());
 }
 
-template <typename Type>
-void Config::ReadSetting(const std::string& group, Settings::Setting<Type>& setting) {
+template <typename Type, bool ranged>
+void Config::ReadSetting(const std::string& group, Settings::Setting<Type, ranged>& setting) {
     setting = static_cast<Type>(sdl2_config->GetInteger(group, setting.GetLabel(),
                                                         static_cast<long>(setting.GetDefault())));
 }

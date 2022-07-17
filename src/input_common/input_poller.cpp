@@ -664,6 +664,47 @@ private:
     InputEngine* input_engine;
 };
 
+class InputFromCamera final : public Common::Input::InputDevice {
+public:
+    explicit InputFromCamera(PadIdentifier identifier_, InputEngine* input_engine_)
+        : identifier(identifier_), input_engine(input_engine_) {
+        UpdateCallback engine_callback{[this]() { OnChange(); }};
+        const InputIdentifier input_identifier{
+            .identifier = identifier,
+            .type = EngineInputType::Camera,
+            .index = 0,
+            .callback = engine_callback,
+        };
+        callback_key = input_engine->SetCallback(input_identifier);
+    }
+
+    ~InputFromCamera() override {
+        input_engine->DeleteCallback(callback_key);
+    }
+
+    Common::Input::CameraStatus GetStatus() const {
+        return input_engine->GetCamera(identifier);
+    }
+
+    void ForceUpdate() override {
+        OnChange();
+    }
+
+    void OnChange() {
+        const Common::Input::CallbackStatus status{
+            .type = Common::Input::InputType::IrSensor,
+            .camera_status = GetStatus(),
+        };
+
+        TriggerOnChange(status);
+    }
+
+private:
+    const PadIdentifier identifier;
+    int callback_key;
+    InputEngine* input_engine;
+};
+
 class OutputFromIdentifier final : public Common::Input::OutputDevice {
 public:
     explicit OutputFromIdentifier(PadIdentifier identifier_, InputEngine* input_engine_)
@@ -680,6 +721,10 @@ public:
 
     Common::Input::PollingError SetPollingMode(Common::Input::PollingMode polling_mode) override {
         return input_engine->SetPollingMode(identifier, polling_mode);
+    }
+
+    Common::Input::CameraError SetCameraFormat(Common::Input::CameraFormat camera_format) override {
+        return input_engine->SetCameraFormat(identifier, camera_format);
     }
 
 private:
@@ -920,6 +965,18 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateMotionDevice(
                                                  properties_y, properties_z, input_engine.get());
 }
 
+std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateCameraDevice(
+    const Common::ParamPackage& params) {
+    const PadIdentifier identifier = {
+        .guid = Common::UUID{params.Get("guid", "")},
+        .port = static_cast<std::size_t>(params.Get("port", 0)),
+        .pad = static_cast<std::size_t>(params.Get("pad", 0)),
+    };
+
+    input_engine->PreSetController(identifier);
+    return std::make_unique<InputFromCamera>(identifier, input_engine.get());
+}
+
 InputFactory::InputFactory(std::shared_ptr<InputEngine> input_engine_)
     : input_engine(std::move(input_engine_)) {}
 
@@ -927,6 +984,9 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::Create(
     const Common::ParamPackage& params) {
     if (params.Has("battery")) {
         return CreateBatteryDevice(params);
+    }
+    if (params.Has("camera")) {
+        return CreateCameraDevice(params);
     }
     if (params.Has("button") && params.Has("axis")) {
         return CreateTriggerDevice(params);

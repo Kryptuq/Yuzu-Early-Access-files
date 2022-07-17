@@ -28,7 +28,7 @@ enum class InputType {
     Color,
     Vibration,
     Nfc,
-    Ir,
+    IrSensor,
 };
 
 // Internal battery charge level
@@ -53,6 +53,15 @@ enum class PollingMode {
     IR,
 };
 
+enum class CameraFormat {
+    Size320x240,
+    Size160x120,
+    Size80x60,
+    Size40x30,
+    Size20x15,
+    None,
+};
+
 // Vibration reply from the controller
 enum class VibrationError {
     None,
@@ -63,6 +72,13 @@ enum class VibrationError {
 
 // Polling mode reply from the controller
 enum class PollingError {
+    None,
+    NotSupported,
+    Unknown,
+};
+
+// Ir camera reply from the controller
+enum class CameraError {
     None,
     NotSupported,
     Unknown,
@@ -176,6 +192,12 @@ struct LedStatus {
     bool led_4{};
 };
 
+// Raw data fom camera
+struct CameraStatus {
+    CameraFormat format{CameraFormat::None};
+    std::vector<u8> data{};
+};
+
 // List of buttons to be passed to Qt that can be translated
 enum class ButtonNames {
     Undefined,
@@ -233,6 +255,7 @@ struct CallbackStatus {
     BodyColorStatus color_status{};
     BatteryStatus battery_status{};
     VibrationStatus vibration_status{};
+    CameraStatus camera_status{};
 };
 
 // Triggered once every input change
@@ -280,6 +303,10 @@ public:
 
     virtual PollingError SetPollingMode([[maybe_unused]] PollingMode polling_mode) {
         return PollingError::NotSupported;
+    }
+
+    virtual CameraError SetCameraFormat([[maybe_unused]] CameraFormat camera_format) {
+        return CameraError::NotSupported;
     }
 };
 
