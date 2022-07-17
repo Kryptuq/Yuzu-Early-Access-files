@@ -52,7 +52,7 @@ public:
         if (!memory.IsValidVirtualAddressRange(vaddr, sizeof(u32))) {
             return std::nullopt;
         }
-        return MemoryRead32(vaddr);
+        return memory.Read32(vaddr);
     }
 
     void MemoryWrite8(u32 vaddr, u8 value) override {
@@ -97,7 +97,7 @@ public:
         parent.LogBacktrace();
         LOG_ERROR(Core_ARM,
                   "Unimplemented instruction @ 0x{:X} for {} instructions (instr = {:08X})", pc,
-                  num_instructions, MemoryRead32(pc));
+                  num_instructions, memory.Read32(pc));
     }
 
     void ExceptionRaised(u32 pc, Dynarmic::A32::Exception exception) override {
@@ -115,7 +115,7 @@ public:
             parent.LogBacktrace();
             LOG_CRITICAL(Core_ARM,
                          "ExceptionRaised(exception = {}, pc = {:08X}, code = {:08X}, thumb = {})",
-                         exception, pc, MemoryRead32(pc), parent.IsInThumbMode());
+                         exception, pc, memory.Read32(pc), parent.IsInThumbMode());
         }
     }
 

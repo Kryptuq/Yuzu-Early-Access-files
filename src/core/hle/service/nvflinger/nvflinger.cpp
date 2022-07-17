@@ -299,7 +299,10 @@ s64 NVFlinger::GetNextTicks() const {
             speed_scale = 0.01f;
         }
     }
-    return static_cast<s64>(((1000000000 * (1LL << swap_interval)) / max_hertz) * speed_scale);
+
+    const auto next_ticks = ((1000000000 * (1LL << swap_interval)) / max_hertz);
+
+    return static_cast<s64>(speed_scale * static_cast<float>(next_ticks));
 }
 
 } // namespace Service::NVFlinger
