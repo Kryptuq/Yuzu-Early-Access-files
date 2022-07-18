@@ -22,13 +22,14 @@ void A64CallbackConfigPass(IR::Block& block, const A64::UserConfig& conf) {
             continue;
         }
 
-        const auto op = static_cast<A64::DataCacheOperation>(inst.GetArg(0).GetU64());
+        const auto op = static_cast<A64::DataCacheOperation>(inst.GetArg(1).GetU64());
         if (op == A64::DataCacheOperation::ZeroByVA) {
             A64::IREmitter ir{block};
+            ir.current_location = A64::LocationDescriptor{IR::LocationDescriptor{inst.GetArg(0).GetU64()}};
             ir.SetInsertionPoint(&inst);
 
             size_t bytes = 4 << static_cast<size_t>(conf.dczid_el0 & 0b1111);
-            IR::U64 addr{inst.GetArg(1)};
+            IR::U64 addr{inst.GetArg(2)};
 
             const IR::U128 zero_u128 = ir.ZeroExtendToQuad(ir.Imm64(0));
             while (bytes >= 16) {

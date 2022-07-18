@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: Copyright (c) 2022 merryhime <https://mary.rs>
 // SPDX-License-Identifier: MIT
 
+#pragma once
+
 #include <bit>
 #include <cstddef>
 #include <cstdint>

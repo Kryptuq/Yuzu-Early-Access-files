@@ -55,7 +55,7 @@ void IREmitter::ExceptionRaised(Exception exception) {
 }
 
 void IREmitter::DataCacheOperationRaised(DataCacheOperation op, const IR::U64& value) {
-    Inst(Opcode::A64DataCacheOperationRaised, Imm64(static_cast<u64>(op)), value);
+    Inst(Opcode::A64DataCacheOperationRaised, ImmCurrentLocationDescriptor(), Imm64(static_cast<u64>(op)), value);
 }
 
 void IREmitter::InstructionCacheOperationRaised(InstructionCacheOperation op, const IR::U64& value) {
