@@ -720,7 +720,25 @@ std::pair<s32, Errno> BSD::RecvImpl(s32 fd, u32 flags, std::vector<u8>& message)
     if (!IsFileDescriptorValid(fd)) {
         return {-1, Errno::BADF};
     }
-    return Translate(file_descriptors[fd]->socket->Recv(flags, message));
+
+    FileDescriptor& descriptor = *file_descriptors[fd];
+
+    // Apply flags
+    if ((flags & FLAG_MSG_DONTWAIT) != 0) {
+        flags &= ~FLAG_MSG_DONTWAIT;
+        if ((descriptor.flags & FLAG_O_NONBLOCK) == 0) {
+            descriptor.socket->SetNonBlock(true);
+        }
+    }
+
+    const auto [ret, bsd_errno] = Translate(descriptor.socket->Recv(flags, message));
+
+    // Restore original state
+    if ((descriptor.flags & FLAG_O_NONBLOCK) == 0) {
+        descriptor.socket->SetNonBlock(false);
+    }
+
+    return {ret, bsd_errno};
 }
 
 std::pair<s32, Errno> BSD::RecvFromImpl(s32 fd, u32 flags, std::vector<u8>& message,
