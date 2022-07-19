@@ -543,10 +543,9 @@ ALSA_set_buffer_size(_THIS, snd_pcm_hw_params_t *params)
 }
 
 static int
-ALSA_OpenDevice(_THIS, const char *devname)
+ALSA_OpenDevice(_THIS, void *handle, const char *devname, int iscapture)
 {
     int status = 0;
-    SDL_bool iscapture = this->iscapture;
     snd_pcm_t *pcm_handle = NULL;
     snd_pcm_hw_params_t *hwparams = NULL;
     snd_pcm_sw_params_t *swparams = NULL;
@@ -570,7 +569,7 @@ ALSA_OpenDevice(_THIS, const char *devname)
     /* Open the audio device */
     /* Name of device should depend on # channels in spec */
     status = ALSA_snd_pcm_open(&pcm_handle,
-                get_audio_device(this->handle, this->spec.channels),
+                get_audio_device(handle, this->spec.channels),
                 iscapture ? SND_PCM_STREAM_CAPTURE : SND_PCM_STREAM_PLAYBACK,
                 SND_PCM_NONBLOCK);
 
@@ -598,7 +597,10 @@ ALSA_OpenDevice(_THIS, const char *devname)
     }
 
     /* Try for a closest match on audio format */
-    for (test_format = SDL_FirstAudioFormat(this->spec.format); test_format; test_format = SDL_NextAudioFormat()) {
+    status = -1;
+    for (test_format = SDL_FirstAudioFormat(this->spec.format);
+         test_format && (status < 0);) {
+        status = 0;             /* if we can't support a format, it'll become -1. */
         switch (test_format) {
         case AUDIO_U8:
             format = SND_PCM_FORMAT_U8;
@@ -631,14 +633,19 @@ ALSA_OpenDevice(_THIS, const char *devname)
             format = SND_PCM_FORMAT_FLOAT_BE;
             break;
         default:
-            continue;
-        }
-        if (ALSA_snd_pcm_hw_params_set_format(pcm_handle, hwparams, format) >= 0) {
+            status = -1;
             break;
         }
+        if (status >= 0) {
+            status = ALSA_snd_pcm_hw_params_set_format(pcm_handle,
+                                                       hwparams, format);
+        }
+        if (status < 0) {
+            test_format = SDL_NextAudioFormat();
+        }
     }
-    if (!test_format) {
-        return SDL_SetError("%s: Unsupported audio format", "alsa");
+    if (status < 0) {
+        return SDL_SetError("ALSA: Couldn't find any hardware audio formats");
     }
     this->spec.format = test_format;
 
@@ -990,11 +997,11 @@ ALSA_Deinitialize(void)
     UnloadALSALibrary();
 }
 
-static SDL_bool
+static int
 ALSA_Init(SDL_AudioDriverImpl * impl)
 {
     if (LoadALSALibrary() < 0) {
-        return SDL_FALSE;
+        return 0;
     }
 
     /* Set the function pointers */
@@ -1010,12 +1017,12 @@ ALSA_Init(SDL_AudioDriverImpl * impl)
 
     impl->HasCaptureSupport = SDL_TRUE;
 
-    return SDL_TRUE;   /* this audio target is available. */
+    return 1;   /* this audio target is available. */
 }
 
 
 AudioBootStrap ALSA_bootstrap = {
-    "alsa", "ALSA PCM audio", ALSA_Init, SDL_FALSE
+    "alsa", "ALSA PCM audio", ALSA_Init, 0
 };
 
 #endif /* SDL_AUDIO_DRIVER_ALSA */

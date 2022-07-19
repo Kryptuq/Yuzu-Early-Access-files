@@ -23,7 +23,7 @@
 
 #if SDL_HAVE_BLIT_AUTO
 
-/* *INDENT-OFF* */ /* clang-format off */
+/* *INDENT-OFF* */
 
 #include "SDL_video.h"
 #include "SDL_blit.h"
@@ -756,6 +756,7 @@ static void SDL_Blit_RGB888_ARGB8888_Scale(SDL_BlitInfo *info)
 {
     Uint32 pixel;
     const Uint32 A = 0xFF;
+    Uint32 R, G, B;
     int srcy, srcx;
     Uint32 posy, posx;
     int incy, incx;
@@ -775,7 +776,8 @@ static void SDL_Blit_RGB888_ARGB8888_Scale(SDL_BlitInfo *info)
             srcx = posx >> 16;
             src = (Uint32 *)(info->src + (srcy * info->src_pitch) + (srcx * 4));
             pixel = *src;
-            pixel |= (A << 24);
+            R = (Uint8)(pixel >> 16); G = (Uint8)(pixel >> 8); B = (Uint8)pixel;
+            pixel = (A << 24) | (R << 16) | (G << 8) | B;
             *dst = pixel;
             posx += incx;
             ++dst;
@@ -2230,6 +2232,7 @@ static void SDL_Blit_BGR888_ARGB8888_Modulate_Blend_Scale(SDL_BlitInfo *info)
 static void SDL_Blit_ARGB8888_RGB888_Scale(SDL_BlitInfo *info)
 {
     Uint32 pixel;
+    Uint32 R, G, B;
     int srcy, srcx;
     Uint32 posy, posx;
     int incy, incx;
@@ -2249,7 +2252,8 @@ static void SDL_Blit_ARGB8888_RGB888_Scale(SDL_BlitInfo *info)
             srcx = posx >> 16;
             src = (Uint32 *)(info->src + (srcy * info->src_pitch) + (srcx * 4));
             pixel = *src;
-            pixel &= 0xFFFFFF;
+            R = (Uint8)(pixel >> 16); G = (Uint8)(pixel >> 8); B = (Uint8)pixel;
+            pixel = (R << 16) | (G << 8) | B;
             *dst = pixel;
             posx += incx;
             ++dst;
@@ -3391,6 +3395,7 @@ static void SDL_Blit_ARGB8888_ARGB8888_Modulate_Blend_Scale(SDL_BlitInfo *info)
 static void SDL_Blit_RGBA8888_RGB888_Scale(SDL_BlitInfo *info)
 {
     Uint32 pixel;
+    Uint32 R, G, B;
     int srcy, srcx;
     Uint32 posy, posx;
     int incy, incx;
@@ -3410,7 +3415,8 @@ static void SDL_Blit_RGBA8888_RGB888_Scale(SDL_BlitInfo *info)
             srcx = posx >> 16;
             src = (Uint32 *)(info->src + (srcy * info->src_pitch) + (srcx * 4));
             pixel = *src;
-            pixel >>= 8;
+            R = (Uint8)(pixel >> 24); G = (Uint8)(pixel >> 16); B = (Uint8)(pixel >> 8);
+            pixel = (R << 16) | (G << 8) | B;
             *dst = pixel;
             posx += incx;
             ++dst;
@@ -4157,6 +4163,7 @@ static void SDL_Blit_RGBA8888_BGR888_Modulate_Blend_Scale(SDL_BlitInfo *info)
 static void SDL_Blit_RGBA8888_ARGB8888_Scale(SDL_BlitInfo *info)
 {
     Uint32 pixel;
+    Uint32 R, G, B, A;
     int srcy, srcx;
     Uint32 posy, posx;
     int incy, incx;
@@ -4176,7 +4183,8 @@ static void SDL_Blit_RGBA8888_ARGB8888_Scale(SDL_BlitInfo *info)
             srcx = posx >> 16;
             src = (Uint32 *)(info->src + (srcy * info->src_pitch) + (srcx * 4));
             pixel = *src;
-            pixel = (pixel >> 8) | (pixel << 24);
+            R = (Uint8)(pixel >> 24); G = (Uint8)(pixel >> 16); B = (Uint8)(pixel >> 8); A = (Uint8)pixel;
+            pixel = (A << 24) | (R << 16) | (G << 8) | B;
             *dst = pixel;
             posx += incx;
             ++dst;
@@ -4939,6 +4947,7 @@ static void SDL_Blit_ABGR8888_RGB888_Modulate_Blend_Scale(SDL_BlitInfo *info)
 static void SDL_Blit_ABGR8888_BGR888_Scale(SDL_BlitInfo *info)
 {
     Uint32 pixel;
+    Uint32 R, G, B;
     int srcy, srcx;
     Uint32 posy, posx;
     int incy, incx;
@@ -4958,7 +4967,8 @@ static void SDL_Blit_ABGR8888_BGR888_Scale(SDL_BlitInfo *info)
             srcx = posx >> 16;
             src = (Uint32 *)(info->src + (srcy * info->src_pitch) + (srcx * 4));
             pixel = *src;
-            pixel &= 0xFFFFFF;
+            B = (Uint8)(pixel >> 16); G = (Uint8)(pixel >> 8); R = (Uint8)pixel;
+            pixel = (B << 16) | (G << 8) | R;
             *dst = pixel;
             posx += incx;
             ++dst;
@@ -6105,6 +6115,7 @@ static void SDL_Blit_BGRA8888_RGB888_Modulate_Blend_Scale(SDL_BlitInfo *info)
 static void SDL_Blit_BGRA8888_BGR888_Scale(SDL_BlitInfo *info)
 {
     Uint32 pixel;
+    Uint32 R, G, B;
     int srcy, srcx;
     Uint32 posy, posx;
     int incy, incx;
@@ -6124,7 +6135,8 @@ static void SDL_Blit_BGRA8888_BGR888_Scale(SDL_BlitInfo *info)
             srcx = posx >> 16;
             src = (Uint32 *)(info->src + (srcy * info->src_pitch) + (srcx * 4));
             pixel = *src;
-            pixel >>= 8;
+            B = (Uint8)(pixel >> 24); G = (Uint8)(pixel >> 16); R = (Uint8)(pixel >> 8);
+            pixel = (B << 16) | (G << 8) | R;
             *dst = pixel;
             posx += incx;
             ++dst;
@@ -7014,7 +7026,7 @@ SDL_BlitFuncEntry SDL_GeneratedBlitFuncTable[] = {
     { 0, 0, 0, 0, NULL }
 };
 
-/* *INDENT-ON* */ /* clang-format on */
+/* *INDENT-ON* */
 
 #endif /* SDL_HAVE_BLIT_AUTO */
 

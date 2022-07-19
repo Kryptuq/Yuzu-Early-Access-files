@@ -121,8 +121,6 @@ static const Uint8 GLES2_Fragment_TextureBGR[] = " \
     } \
 ";
 
-#if SDL_HAVE_YUV
-
 #define JPEG_SHADER_CONSTANTS                                   \
 "// YUV offset \n"                                              \
 "const vec3 offset = vec3(0, -0.501960814, -0.501960814);\n"    \
@@ -301,7 +299,6 @@ static const Uint8 GLES2_Fragment_TextureNV21BT709[] = \
         BT709_SHADER_CONSTANTS \
         NV21_SHADER_BODY \
 ;
-#endif
 
 /* Custom Android video format texture */
 static const Uint8 GLES2_Fragment_TextureExternalOES[] = " \
@@ -338,7 +335,6 @@ const Uint8 *GLES2_GetShader(GLES2_ShaderType type)
         return GLES2_Fragment_TextureRGB;
     case GLES2_SHADER_FRAGMENT_TEXTURE_BGR:
         return GLES2_Fragment_TextureBGR;
-#if SDL_HAVE_YUV
     case GLES2_SHADER_FRAGMENT_TEXTURE_YUV_JPEG:
         return GLES2_Fragment_TextureYUVJPEG;
     case GLES2_SHADER_FRAGMENT_TEXTURE_YUV_BT601:
@@ -361,7 +357,6 @@ const Uint8 *GLES2_GetShader(GLES2_ShaderType type)
         return GLES2_Fragment_TextureNV21BT601;
     case GLES2_SHADER_FRAGMENT_TEXTURE_NV21_BT709:
         return GLES2_Fragment_TextureNV21BT709;
-#endif
     case GLES2_SHADER_FRAGMENT_TEXTURE_EXTERNAL_OES:
         return GLES2_Fragment_TextureExternalOES;
     default:

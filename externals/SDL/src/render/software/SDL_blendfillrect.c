@@ -220,7 +220,7 @@ SDL_BlendFillRect(SDL_Surface * dst, const SDL_Rect * rect,
     SDL_Rect clipped;
 
     if (!dst) {
-        return SDL_InvalidParamError("SDL_BlendFillRect(): dst");
+        return SDL_SetError("Passed NULL destination surface");
     }
 
     /* This function doesn't work on surfaces < 8 bpp */
@@ -291,7 +291,7 @@ SDL_BlendFillRects(SDL_Surface * dst, const SDL_Rect * rects, int count,
     int status = 0;
 
     if (!dst) {
-        return SDL_InvalidParamError("SDL_BlendFillRects(): dst");
+        return SDL_SetError("Passed NULL destination surface");
     }
 
     /* This function doesn't work on surfaces < 8 bpp */

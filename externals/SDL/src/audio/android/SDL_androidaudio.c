@@ -36,10 +36,9 @@ static SDL_AudioDevice* audioDevice = NULL;
 static SDL_AudioDevice* captureDevice = NULL;
 
 static int
-ANDROIDAUDIO_OpenDevice(_THIS, const char *devname)
+ANDROIDAUDIO_OpenDevice(_THIS, void *handle, const char *devname, int iscapture)
 {
     SDL_AudioFormat test_format;
-    SDL_bool iscapture = this->iscapture;
 
     SDL_assert((captureDevice == NULL) || !iscapture);
     SDL_assert((audioDevice == NULL) || iscapture);
@@ -55,18 +54,20 @@ ANDROIDAUDIO_OpenDevice(_THIS, const char *devname)
         return SDL_OutOfMemory();
     }
 
-    for (test_format = SDL_FirstAudioFormat(this->spec.format); test_format; test_format = SDL_NextAudioFormat()) {
+    test_format = SDL_FirstAudioFormat(this->spec.format);
+    while (test_format != 0) { /* no "UNKNOWN" constant */
         if ((test_format == AUDIO_U8) ||
             (test_format == AUDIO_S16) ||
             (test_format == AUDIO_F32)) {
             this->spec.format = test_format;
             break;
         }
+        test_format = SDL_NextAudioFormat();
     }
 
-    if (!test_format) {
+    if (test_format == 0) {
         /* Didn't find a compatible format :( */
-        return SDL_SetError("%s: Unsupported audio format", "android");
+        return SDL_SetError("No compatible audio format!");
     }
 
     if (Android_JNI_OpenAudioDevice(iscapture, &this->spec) < 0) {
@@ -119,7 +120,7 @@ ANDROIDAUDIO_CloseDevice(_THIS)
     SDL_free(this->hidden);
 }
 
-static SDL_bool
+static int
 ANDROIDAUDIO_Init(SDL_AudioDriverImpl * impl)
 {
     /* Set the function pointers */
@@ -132,14 +133,14 @@ ANDROIDAUDIO_Init(SDL_AudioDriverImpl * impl)
 
     /* and the capabilities */
     impl->HasCaptureSupport = SDL_TRUE;
-    impl->OnlyHasDefaultOutputDevice = SDL_TRUE;
-    impl->OnlyHasDefaultCaptureDevice = SDL_TRUE;
+    impl->OnlyHasDefaultOutputDevice = 1;
+    impl->OnlyHasDefaultCaptureDevice = 1;
 
-    return SDL_TRUE;   /* this audio target is available. */
+    return 1;   /* this audio target is available. */
 }
 
 AudioBootStrap ANDROIDAUDIO_bootstrap = {
-    "android", "SDL Android audio driver", ANDROIDAUDIO_Init, SDL_FALSE
+    "android", "SDL Android audio driver", ANDROIDAUDIO_Init, 0
 };
 
 /* Pause (block) all non already paused audio devices by taking their mixer lock */

@@ -500,7 +500,9 @@ extern DECLSPEC const char *SDLCALL SDL_GetAudioDeviceName(int index,
  * hardware.
  *
  * `spec` will be filled with the sample rate, sample format, and channel
- * count.
+ * count. All other values in the structure are filled with 0. When the
+ * supported struct members are 0, SDL was unable to get the property from the
+ * backend.
  *
  * \param index the index of the audio device; valid values range from 0 to
  *              SDL_GetNumAudioDevices() - 1
@@ -584,7 +586,6 @@ extern DECLSPEC int SDLCALL SDL_GetAudioDeviceSpec(int index,
  * - `SDL_AUDIO_ALLOW_FREQUENCY_CHANGE`
  * - `SDL_AUDIO_ALLOW_FORMAT_CHANGE`
  * - `SDL_AUDIO_ALLOW_CHANNELS_CHANGE`
- * - `SDL_AUDIO_ALLOW_SAMPLES_CHANGE`
  * - `SDL_AUDIO_ALLOW_ANY_CHANGE`
  *
  * These flags specify how SDL should behave when a device cannot offer a

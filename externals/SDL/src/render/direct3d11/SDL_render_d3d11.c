@@ -27,9 +27,6 @@
 
 #define COBJMACROS
 #include "../../core/windows/SDL_windows.h"
-#if !defined(__WINRT__)
-#include "../../video/windows/SDL_windowswindow.h"
-#endif
 #include "SDL_hints.h"
 #include "SDL_loadso.h"
 #include "SDL_syswm.h"
@@ -94,7 +91,7 @@ typedef struct
     int lockedTexturePositionX;
     int lockedTexturePositionY;
     D3D11_FILTER scaleMode;
-#if SDL_HAVE_YUV
+
     /* YV12 texture support */
     SDL_bool yuv;
     ID3D11Texture2D *mainTextureU;
@@ -110,7 +107,6 @@ typedef struct
     Uint8 *pixels;
     int pitch;
     SDL_Rect locked_rect;
-#endif
 } D3D11_TextureData;
 
 /* Blend mode data */
@@ -489,11 +485,6 @@ D3D11_CreateDeviceResources(SDL_Renderer * renderer)
     /* Make sure Direct3D's debugging feature gets used, if the app requests it. */
     if (SDL_GetHintBoolean(SDL_HINT_RENDER_DIRECT3D11_DEBUG, SDL_FALSE)) {
         creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
-    }
-
-    /* Create a single-threaded device unless the app requests otherwise. */
-    if (!SDL_GetHintBoolean(SDL_HINT_RENDER_DIRECT3D_THREADSAFE, SDL_FALSE)) {
-        creationFlags |= D3D11_CREATE_DEVICE_SINGLETHREADED;
     }
 
     /* Create the Direct3D 11 API device object and a corresponding context. */
@@ -913,11 +904,7 @@ D3D11_CreateWindowSizeDependentResources(SDL_Renderer * renderer)
     /* The width and height of the swap chain must be based on the display's
      * non-rotated size.
      */
-#if defined(__WINRT__)
     SDL_GetWindowSize(renderer->window, &w, &h);
-#else
-    WIN_GetDrawableSize(renderer->window, &w, &h);
-#endif
     data->rotation = D3D11_GetCurrentRotation();
     /* SDL_Log("%s: windowSize={%d,%d}, orientation=%d\n", __FUNCTION__, w, h, (int)data->rotation); */
     if (D3D11_IsDisplayRotated90Degrees(data->rotation)) {
@@ -1005,16 +992,6 @@ D3D11_CreateWindowSizeDependentResources(SDL_Renderer * renderer)
         goto done;
     }
 
-    /* Set the swap chain target immediately, so that a target is always set
-     * even before we get to SetDrawState. Without this it's possible to hit
-     * null references in places like ReadPixels!
-     */
-    ID3D11DeviceContext_OMSetRenderTargets(data->d3dContext,
-        1,
-        &data->mainRenderTargetView,
-        NULL
-        );
-
     data->viewportDirty = SDL_TRUE;
 
 done:
@@ -1057,15 +1034,6 @@ D3D11_WindowEvent(SDL_Renderer * renderer, const SDL_WindowEvent *event)
         D3D11_UpdateForWindowSizeChange(renderer);
     }
 }
-
-#if !defined(__WINRT__)
-static int
-D3D11_GetOutputSize(SDL_Renderer * renderer, int *w, int *h)
-{
-    WIN_GetDrawableSize(renderer->window, w, h);
-    return 0;
-}
-#endif
 
 static SDL_bool
 D3D11_SupportsBlendMode(SDL_Renderer * renderer, SDL_BlendMode blendMode)
@@ -1141,9 +1109,10 @@ D3D11_CreateTexture(SDL_Renderer * renderer, SDL_Texture * texture)
         );
     if (FAILED(result)) {
         D3D11_DestroyTexture(renderer, texture);
-        return WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateTexture2D"), result);
+        WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateTexture2D"), result);
+        return -1;
     }
-#if SDL_HAVE_YUV
+
     if (texture->format == SDL_PIXELFORMAT_YV12 ||
         texture->format == SDL_PIXELFORMAT_IYUV) {
         textureData->yuv = SDL_TRUE;
@@ -1158,7 +1127,8 @@ D3D11_CreateTexture(SDL_Renderer * renderer, SDL_Texture * texture)
             );
         if (FAILED(result)) {
             D3D11_DestroyTexture(renderer, texture);
-            return WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateTexture2D"), result);
+            WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateTexture2D"), result);
+            return -1;
         }
 
         result = ID3D11Device_CreateTexture2D(rendererData->d3dDevice,
@@ -1168,7 +1138,8 @@ D3D11_CreateTexture(SDL_Renderer * renderer, SDL_Texture * texture)
             );
         if (FAILED(result)) {
             D3D11_DestroyTexture(renderer, texture);
-            return WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateTexture2D"), result);
+            WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateTexture2D"), result);
+            return -1;
         }
     }
 
@@ -1189,11 +1160,11 @@ D3D11_CreateTexture(SDL_Renderer * renderer, SDL_Texture * texture)
             );
         if (FAILED(result)) {
             D3D11_DestroyTexture(renderer, texture);
-            return WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateTexture2D"), result);
+            WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateTexture2D"), result);
+            return -1;
         }
     }
-#endif /* SDL_HAVE_YUV */
-    SDL_zero(resourceViewDesc);
+
     resourceViewDesc.Format = textureDesc.Format;
     resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
     resourceViewDesc.Texture2D.MostDetailedMip = 0;
@@ -1205,9 +1176,10 @@ D3D11_CreateTexture(SDL_Renderer * renderer, SDL_Texture * texture)
         );
     if (FAILED(result)) {
         D3D11_DestroyTexture(renderer, texture);
-        return WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateShaderResourceView"), result);
+        WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateShaderResourceView"), result);
+        return -1;
     }
-#if SDL_HAVE_YUV
+
     if (textureData->yuv) {
         result = ID3D11Device_CreateShaderResourceView(rendererData->d3dDevice,
             (ID3D11Resource *)textureData->mainTextureU,
@@ -1216,7 +1188,8 @@ D3D11_CreateTexture(SDL_Renderer * renderer, SDL_Texture * texture)
             );
         if (FAILED(result)) {
             D3D11_DestroyTexture(renderer, texture);
-            return WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateShaderResourceView"), result);
+            WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateShaderResourceView"), result);
+            return -1;
         }
         result = ID3D11Device_CreateShaderResourceView(rendererData->d3dDevice,
             (ID3D11Resource *)textureData->mainTextureV,
@@ -1225,7 +1198,8 @@ D3D11_CreateTexture(SDL_Renderer * renderer, SDL_Texture * texture)
             );
         if (FAILED(result)) {
             D3D11_DestroyTexture(renderer, texture);
-            return WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateShaderResourceView"), result);
+            WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateShaderResourceView"), result);
+            return -1;
         }
     }
 
@@ -1241,14 +1215,13 @@ D3D11_CreateTexture(SDL_Renderer * renderer, SDL_Texture * texture)
             );
         if (FAILED(result)) {
             D3D11_DestroyTexture(renderer, texture);
-            return WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateShaderResourceView"), result);
+            WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateShaderResourceView"), result);
+            return -1;
         }
     }
-#endif /* SDL_HAVE_YUV */
 
     if (texture->access & SDL_TEXTUREACCESS_TARGET) {
         D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-        SDL_zero(renderTargetViewDesc);
         renderTargetViewDesc.Format = textureDesc.Format;
         renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
         renderTargetViewDesc.Texture2D.MipSlice = 0;
@@ -1259,7 +1232,8 @@ D3D11_CreateTexture(SDL_Renderer * renderer, SDL_Texture * texture)
             &textureData->mainTextureRenderTargetView);
         if (FAILED(result)) {
             D3D11_DestroyTexture(renderer, texture);
-            return WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateRenderTargetView"), result);
+            WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateRenderTargetView"), result);
+            return -1;
         }
     }
 
@@ -1280,7 +1254,6 @@ D3D11_DestroyTexture(SDL_Renderer * renderer,
     SAFE_RELEASE(data->mainTextureResourceView);
     SAFE_RELEASE(data->mainTextureRenderTargetView);
     SAFE_RELEASE(data->stagingTexture);
-#if SDL_HAVE_YUV
     SAFE_RELEASE(data->mainTextureU);
     SAFE_RELEASE(data->mainTextureResourceViewU);
     SAFE_RELEASE(data->mainTextureV);
@@ -1288,7 +1261,6 @@ D3D11_DestroyTexture(SDL_Renderer * renderer,
     SAFE_RELEASE(data->mainTextureNV);
     SAFE_RELEASE(data->mainTextureResourceViewNV);
     SDL_free(data->pixels);
-#endif
     SDL_free(data);
     texture->driverdata = NULL;
 }
@@ -1318,7 +1290,8 @@ D3D11_UpdateTextureInternal(D3D11_RenderData *rendererData, ID3D11Texture2D *tex
         NULL,
         &stagingTexture);
     if (FAILED(result)) {
-        return WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateTexture2D [create staging texture]"), result);
+        WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateTexture2D [create staging texture]"), result);
+        return -1;
     }
 
     /* Get a write-only pointer to data in the staging texture: */
@@ -1330,8 +1303,9 @@ D3D11_UpdateTextureInternal(D3D11_RenderData *rendererData, ID3D11Texture2D *tex
         &textureMemory
         );
     if (FAILED(result)) {
+        WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11DeviceContext1::Map [map staging texture]"), result);
         SAFE_RELEASE(stagingTexture);
-        return WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11DeviceContext1::Map [map staging texture]"), result);
+        return -1;
     }
 
     src = (const Uint8 *)pixels;
@@ -1383,13 +1357,14 @@ D3D11_UpdateTexture(SDL_Renderer * renderer, SDL_Texture * texture,
     D3D11_TextureData *textureData = (D3D11_TextureData *)texture->driverdata;
 
     if (!textureData) {
-        return SDL_SetError("Texture is not currently available");
+        SDL_SetError("Texture is not currently available");
+        return -1;
     }
 
     if (D3D11_UpdateTextureInternal(rendererData, textureData->mainTexture, SDL_BYTESPERPIXEL(texture->format), rect->x, rect->y, rect->w, rect->h, srcPixels, srcPitch) < 0) {
         return -1;
     }
-#if SDL_HAVE_YUV
+
     if (textureData->yuv) {
         /* Skip to the correct offset into the next texture */
         srcPixels = (const void*)((const Uint8*)srcPixels + rect->h * srcPitch);
@@ -1413,7 +1388,6 @@ D3D11_UpdateTexture(SDL_Renderer * renderer, SDL_Texture * texture,
             return -1;
         }
     }
-#endif /* SDL_HAVE_YUV */
     return 0;
 }
 
@@ -1429,7 +1403,8 @@ D3D11_UpdateTextureYUV(SDL_Renderer * renderer, SDL_Texture * texture,
     D3D11_TextureData *textureData = (D3D11_TextureData *)texture->driverdata;
 
     if (!textureData) {
-        return SDL_SetError("Texture is not currently available");
+        SDL_SetError("Texture is not currently available");
+        return -1;
     }
 
     if (D3D11_UpdateTextureInternal(rendererData, textureData->mainTexture, SDL_BYTESPERPIXEL(texture->format), rect->x, rect->y, rect->w, rect->h, Yplane, Ypitch) < 0) {
@@ -1454,7 +1429,8 @@ D3D11_UpdateTextureNV(SDL_Renderer * renderer, SDL_Texture * texture,
     D3D11_TextureData *textureData = (D3D11_TextureData *)texture->driverdata;
 
     if (!textureData) {
-        return SDL_SetError("Texture is not currently available");
+        SDL_SetError("Texture is not currently available");
+        return -1;
     }
 
     if (D3D11_UpdateTextureInternal(rendererData, textureData->mainTexture, SDL_BYTESPERPIXEL(texture->format), rect->x, rect->y, rect->w, rect->h, Yplane, Ypitch) < 0) {
@@ -1479,9 +1455,10 @@ D3D11_LockTexture(SDL_Renderer * renderer, SDL_Texture * texture,
     D3D11_MAPPED_SUBRESOURCE textureMemory;
 
     if (!textureData) {
-        return SDL_SetError("Texture is not currently available");
+        SDL_SetError("Texture is not currently available");
+        return -1;
     }
-#if SDL_HAVE_YUV
+
     if (textureData->yuv || textureData->nv12) {
         /* It's more efficient to upload directly... */
         if (!textureData->pixels) {
@@ -1498,7 +1475,7 @@ D3D11_LockTexture(SDL_Renderer * renderer, SDL_Texture * texture,
         *pitch = textureData->pitch;
         return 0;
     }
-#endif
+
     if (textureData->stagingTexture) {
         return SDL_SetError("texture is already locked");
     }
@@ -1523,7 +1500,8 @@ D3D11_LockTexture(SDL_Renderer * renderer, SDL_Texture * texture,
         NULL,
         &textureData->stagingTexture);
     if (FAILED(result)) {
-        return WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateTexture2D [create staging texture]"), result);
+        WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateTexture2D [create staging texture]"), result);
+        return -1;
     }
 
     /* Get a write-only pointer to data in the staging texture: */
@@ -1535,8 +1513,9 @@ D3D11_LockTexture(SDL_Renderer * renderer, SDL_Texture * texture,
         &textureMemory
         );
     if (FAILED(result)) {
+        WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11DeviceContext1::Map [map staging texture]"), result);
         SAFE_RELEASE(textureData->stagingTexture);
-        return WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11DeviceContext1::Map [map staging texture]"), result);
+        return -1;
     }
 
     /* Make note of where the staging texture will be written to 
@@ -1562,7 +1541,7 @@ D3D11_UnlockTexture(SDL_Renderer * renderer, SDL_Texture * texture)
     if (!textureData) {
         return;
     }
-#if SDL_HAVE_YUV
+
     if (textureData->yuv || textureData->nv12) {
         const SDL_Rect *rect = &textureData->locked_rect;
         void *pixels =
@@ -1571,7 +1550,7 @@ D3D11_UnlockTexture(SDL_Renderer * renderer, SDL_Texture * texture)
         D3D11_UpdateTexture(renderer, texture, rect, pixels, textureData->pitch);
         return;
     }
-#endif
+
     /* Commit the pixel buffer's changes back to the staging texture: */
     ID3D11DeviceContext_Unmap(rendererData->d3dContext,
         (ID3D11Resource *)textureData->stagingTexture,
@@ -1734,7 +1713,8 @@ D3D11_UpdateVertexBuffer(SDL_Renderer *renderer,
             &mappedResource
             );
         if (FAILED(result)) {
-            return WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11DeviceContext1::Map [vertex buffer]"), result);
+            WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11DeviceContext1::Map [vertex buffer]"), result);
+            return -1;
         }
         SDL_memcpy(mappedResource.pData, vertexData, dataSizeInBytes);
         ID3D11DeviceContext_Unmap(rendererData->d3dContext, (ID3D11Resource *)rendererData->vertexBuffers[vbidx], 0);
@@ -1761,7 +1741,8 @@ D3D11_UpdateVertexBuffer(SDL_Renderer *renderer,
             &rendererData->vertexBuffers[vbidx]
             );
         if (FAILED(result)) {
-            return WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateBuffer [vertex buffer]"), result);
+            WIN_SetErrorFromHRESULT(SDL_COMPOSE_ERROR("ID3D11Device1::CreateBuffer [vertex buffer]"), result);
+            return -1;
         }
 
         rendererData->vertexBufferSizes[vbidx] = dataSizeInBytes;
@@ -2014,7 +1995,7 @@ D3D11_SetCopyState(SDL_Renderer * renderer, const SDL_RenderCommand *cmd, const 
     default:
         return SDL_SetError("Unknown scale mode: %d\n", textureData->scaleMode);
     }
-#if SDL_HAVE_YUV
+
     if (textureData->yuv) {
         ID3D11ShaderResourceView *shaderResources[] = {
             textureData->mainTextureResourceView,
@@ -2065,7 +2046,7 @@ D3D11_SetCopyState(SDL_Renderer * renderer, const SDL_RenderCommand *cmd, const 
                                   SDL_arraysize(shaderResources), shaderResources, textureSampler, matrix);
 
     }
-#endif /* SDL_HAVE_YUV */
+
     return D3D11_SetDrawState(renderer, cmd, rendererData->pixelShaders[SHADER_RGB],
                               1, &textureData->mainTextureResourceView, textureSampler, matrix);
 }
@@ -2268,19 +2249,29 @@ D3D11_RenderReadPixels(SDL_Renderer * renderer, const SDL_Rect * rect,
     /* Copy the data into the desired buffer, converting pixels to the
      * desired format at the same time:
      */
-    status = SDL_ConvertPixels(
+    if (SDL_ConvertPixels(
         rect->w, rect->h,
         D3D11_DXGIFormatToSDLPixelFormat(stagingTextureDesc.Format),
         textureMemory.pData,
         textureMemory.RowPitch,
         format,
         pixels,
-        pitch);
+        pitch) != 0) {
+        /* When SDL_ConvertPixels fails, it'll have already set the format.
+         * Get the error message, and attach some extra data to it.
+         */
+        char errorMessage[1024];
+        SDL_snprintf(errorMessage, sizeof(errorMessage), "%s, Convert Pixels failed: %s", __FUNCTION__, SDL_GetError());
+        SDL_SetError("%s", errorMessage);
+        goto done;
+    }
 
     /* Unmap the texture: */
     ID3D11DeviceContext_Unmap(data->d3dContext,
         (ID3D11Resource *)stagingTexture,
         0);
+
+    status = 0;
 
 done:
     SAFE_RELEASE(backBuffer);
@@ -2374,7 +2365,6 @@ D3D11_CreateRenderer(SDL_Window * window, Uint32 flags)
 
     data = (D3D11_RenderData *) SDL_calloc(1, sizeof(*data));
     if (!data) {
-        SDL_free(renderer);
         SDL_OutOfMemory();
         return NULL;
     }
@@ -2382,9 +2372,6 @@ D3D11_CreateRenderer(SDL_Window * window, Uint32 flags)
     data->identity = MatrixIdentity();
 
     renderer->WindowEvent = D3D11_WindowEvent;
-#if !defined(__WINRT__)
-    renderer->GetOutputSize = D3D11_GetOutputSize;
-#endif
     renderer->SupportsBlendMode = D3D11_SupportsBlendMode;
     renderer->CreateTexture = D3D11_CreateTexture;
     renderer->UpdateTexture = D3D11_UpdateTexture;

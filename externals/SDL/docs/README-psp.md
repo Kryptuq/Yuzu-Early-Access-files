@@ -1,36 +1,31 @@
 PSP
 ======
-SDL2 port for the Sony PSP contributed by:
-- Captian Lex 
-- Francisco Javier Trujillo Mata
-- Wouter Wijsman
-
+SDL port for the Sony PSP contributed by 
+   Captian Lex 
 
 Credit to
    Marcus R.Brown,Jim Paris,Matthew H for the original SDL 1.2 for PSP
    Geecko for his PSP GU lib "Glib2d"
 
-## Building
-To build SDL2 library for the PSP, make sure you have the latest PSPDev status and run:
-```bash
-cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=$PSPDEV/psp/share/pspdev.cmake
-cmake --build build
-cmake --install build
-```
+Building
+--------
+To build SDL2 library for the PSP, make sure psp-config is in the path and run:
+   make -f Makefile.psp
 
 
-## Getting PSP Dev
-[Installing PSP Dev](https://github.com/pspdev/pspdev)
+Getting PSP toolchain
+---------------------
+https://github.com/pspdev/psptoolchain
 
-## Running on PPSSPP Emulator
-[PPSSPP](https://github.com/hrydgard/ppsspp)
+Running on PPSSPP Emulator
+--------------------------
+https://github.com/hrydgard/ppsspp
+( https://github.com/hrydgard/ppsspp/wiki/Build-instructions )
 
-[Build Instructions](https://github.com/hrydgard/ppsspp/wiki/Build-instructions)
+Compiling an HelloWorld
+-----------------------
+https://psp-dev.org/doku.php?id=tutorial:hello_world
 
-
-## Compiling a HelloWorld
-[PSP Hello World](https://psp-dev.org/doku.php?id=tutorial:hello_world)
-
-## To Do
-- PSP Screen Keyboard
-- Dialogs
+To Do
+------
+PSP Screen Keyboard

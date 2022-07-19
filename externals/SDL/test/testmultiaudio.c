@@ -17,8 +17,6 @@
 #include <emscripten/emscripten.h>
 #endif
 
-#include "testutils.h"
-
 static SDL_AudioSpec spec;
 static Uint8 *sound = NULL;     /* Pointer to wave data */
 static Uint32 soundlen = 0;     /* Length of wave data */
@@ -182,7 +180,7 @@ main(int argc, char **argv)
     if (devcount < 1) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Don't see any specific audio devices!\n");
     } else {
-        char *file = GetResourceFilename(argc > 1 ? argv[1] : NULL, "sample.wav");
+        const char *file = (argc < 2) ? "sample.wav" : argv[1];
 
         /* Load the wave file into memory */
         if (SDL_LoadWAV(file, &spec, &sound, &soundlen) == NULL) {
@@ -192,8 +190,6 @@ main(int argc, char **argv)
             test_multi_audio(devcount);
             SDL_FreeWAV(sound);
         }
-
-        SDL_free(file);
     }
 
     SDL_Quit();

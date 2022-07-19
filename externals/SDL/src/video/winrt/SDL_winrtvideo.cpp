@@ -478,7 +478,8 @@ WINRT_InitModes(_THIS)
 
     hr = CreateDXGIFactory1(SDL_IID_IDXGIFactory2, (void **)&dxgiFactory2);
     if (FAILED(hr)) {
-        return WIN_SetErrorFromHRESULT(__FUNCTION__ ", CreateDXGIFactory1() failed", hr);
+        WIN_SetErrorFromHRESULT(__FUNCTION__ ", CreateDXGIFactory1() failed", hr);
+        return -1;
     }
 
     for (int adapterIndex = 0; ; ++adapterIndex) {
@@ -629,12 +630,14 @@ WINRT_CreateWindow(_THIS, SDL_Window * window)
     // Make sure that only one window gets created, at least until multimonitor
     // support is added.
     if (WINRT_GlobalSDLWindow != NULL) {
-        return SDL_SetError("WinRT only supports one window");
+        SDL_SetError("WinRT only supports one window");
+        return -1;
     }
 
     SDL_WindowData *data = new SDL_WindowData;  /* use 'new' here as SDL_WindowData may use WinRT/C++ types */
     if (!data) {
-        return SDL_OutOfMemory();
+        SDL_OutOfMemory();
+        return -1;
     }
     window->driverdata = data;
     data->sdlWindow = window;
@@ -670,8 +673,9 @@ WINRT_CreateWindow(_THIS, SDL_Window * window)
          * be passed into eglCreateWindowSurface.
          */
         if (SDL_EGL_ChooseConfig(_this) != 0) {
-            /* SDL_EGL_ChooseConfig failed, SDL_GetError() should have info */
-            return -1; 
+            char buf[512];
+            SDL_snprintf(buf, sizeof(buf), "SDL_EGL_ChooseConfig failed: %s", SDL_GetError());
+            return SDL_SetError("%s", buf);
         }
 
         if (video_data->winrtEglWindow) {   /* ... is the 'old' version of ANGLE/WinRT being used? */
@@ -834,8 +838,8 @@ WINRT_GetWindowWMInfo(_THIS, SDL_Window * window, SDL_SysWMinfo * info)
         info->info.winrt.window = reinterpret_cast<IInspectable *>(data->coreWindow.Get());
         return SDL_TRUE;
     } else {
-        SDL_SetError("Application not compiled with SDL %d",
-                     SDL_MAJOR_VERSION);
+        SDL_SetError("Application not compiled with SDL %d.%d",
+                     SDL_MAJOR_VERSION, SDL_MINOR_VERSION);
         return SDL_FALSE;
     }
     return SDL_FALSE;

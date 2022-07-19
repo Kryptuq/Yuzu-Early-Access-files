@@ -28,7 +28,7 @@
 #include "SDL_dummyaudio.h"
 
 static int
-DUMMYAUDIO_OpenDevice(_THIS, const char *devname)
+DUMMYAUDIO_OpenDevice(_THIS, void *handle, const char *devname, int iscapture)
 {
     _this->hidden = (void *) 0x1;  /* just something non-NULL */
     return 0;                   /* always succeeds. */
@@ -45,22 +45,22 @@ DUMMYAUDIO_CaptureFromDevice(_THIS, void *buffer, int buflen)
     return buflen;
 }
 
-static SDL_bool
+static int
 DUMMYAUDIO_Init(SDL_AudioDriverImpl * impl)
 {
     /* Set the function pointers */
     impl->OpenDevice = DUMMYAUDIO_OpenDevice;
     impl->CaptureFromDevice = DUMMYAUDIO_CaptureFromDevice;
 
-    impl->OnlyHasDefaultOutputDevice = SDL_TRUE;
-    impl->OnlyHasDefaultCaptureDevice = SDL_TRUE;
+    impl->OnlyHasDefaultOutputDevice = 1;
+    impl->OnlyHasDefaultCaptureDevice = 1;
     impl->HasCaptureSupport = SDL_TRUE;
 
-    return SDL_TRUE;   /* this audio target is available. */
+    return 1;   /* this audio target is available. */
 }
 
 AudioBootStrap DUMMYAUDIO_bootstrap = {
-    "dummy", "SDL dummy audio driver", DUMMYAUDIO_Init, SDL_TRUE
+    "dummy", "SDL dummy audio driver", DUMMYAUDIO_Init, 1
 };
 
 /* vi: set ts=4 sw=4 expandtab: */

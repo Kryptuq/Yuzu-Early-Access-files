@@ -46,7 +46,6 @@
 #include "SDL_nullvideo.h"
 #include "SDL_nullevents_c.h"
 #include "SDL_nullframebuffer_c.h"
-#include "SDL_hints.h"
 
 #define DUMMYVID_DRIVER_NAME "dummy"
 
@@ -60,7 +59,7 @@ static void DUMMY_VideoQuit(_THIS);
 static int
 DUMMY_Available(void)
 {
-    const char *envr = SDL_GetHint(SDL_HINT_VIDEODRIVER);
+    const char *envr = SDL_getenv("SDL_VIDEODRIVER");
     if ((envr) && (SDL_strcmp(envr, DUMMYVID_DRIVER_NAME) == 0)) {
         return (1);
     }

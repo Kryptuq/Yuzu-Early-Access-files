@@ -208,7 +208,7 @@ get_progname(void)
 
 
 static int
-ESD_OpenDevice(_THIS, const char *devname)
+ESD_OpenDevice(_THIS, void *handle, const char *devname, int iscapture)
 {
     esd_format_t format = (ESD_STREAM | ESD_PLAY);
     SDL_AudioFormat test_format = 0;
@@ -293,11 +293,11 @@ ESD_Deinitialize(void)
     UnloadESDLibrary();
 }
 
-static SDL_bool
+static int
 ESD_Init(SDL_AudioDriverImpl * impl)
 {
     if (LoadESDLibrary() < 0) {
-        return SDL_FALSE;
+        return 0;
     } else {
         int connection = 0;
 
@@ -308,7 +308,7 @@ ESD_Init(SDL_AudioDriverImpl * impl)
         if (connection < 0) {
             UnloadESDLibrary();
             SDL_SetError("ESD: esd_open_sound failed (no audio server?)");
-            return SDL_FALSE;
+            return 0;
         }
         SDL_NAME(esd_close) (connection);
     }
@@ -320,14 +320,14 @@ ESD_Init(SDL_AudioDriverImpl * impl)
     impl->GetDeviceBuf = ESD_GetDeviceBuf;
     impl->CloseDevice = ESD_CloseDevice;
     impl->Deinitialize = ESD_Deinitialize;
-    impl->OnlyHasDefaultOutputDevice = SDL_TRUE;
+    impl->OnlyHasDefaultOutputDevice = 1;
 
-    return SDL_TRUE;   /* this audio target is available. */
+    return 1;   /* this audio target is available. */
 }
 
 
 AudioBootStrap ESD_bootstrap = {
-    "esd", "Enlightened Sound Daemon", ESD_Init, SDL_FALSE
+    "esd", "Enlightened Sound Daemon", ESD_Init, 0
 };
 
 #endif /* SDL_AUDIO_DRIVER_ESD */

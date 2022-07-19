@@ -107,7 +107,7 @@
 #ifdef __BORLANDC__
 #pragma nopackwarning
 #endif
-#ifdef _WIN64
+#ifdef _M_X64
 /* Use 8-byte alignment on 64-bit architectures, so pointers are aligned */
 #pragma pack(push,8)
 #else

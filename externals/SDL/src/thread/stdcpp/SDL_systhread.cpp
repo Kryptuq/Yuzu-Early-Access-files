@@ -52,9 +52,11 @@ SDL_SYS_CreateThread(SDL_Thread * thread)
         thread->handle = (void *) new std::thread(std::move(cpp_thread));
         return 0;
     } catch (std::system_error & ex) {
-        return SDL_SetError("unable to start a C++ thread: code=%d; %s", ex.code(), ex.what());
+        SDL_SetError("unable to start a C++ thread: code=%d; %s", ex.code(), ex.what());
+        return -1;
     } catch (std::bad_alloc &) {
-        return SDL_OutOfMemory();
+        SDL_OutOfMemory();
+        return -1;
     }
 }
 

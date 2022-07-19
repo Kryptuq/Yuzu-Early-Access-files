@@ -85,7 +85,7 @@ SDL_LockMutex(SDL_mutex * mutex)
 #endif
 
     if (mutex == NULL) {
-        return SDL_InvalidParamError("mutex");
+        return SDL_SetError("Passed a NULL mutex");
     }
 
 #if FAKE_RECURSIVE_MUTEX
@@ -122,7 +122,7 @@ SDL_TryLockMutex(SDL_mutex * mutex)
 #endif
 
     if (mutex == NULL) {
-        return SDL_InvalidParamError("mutex");
+        return SDL_SetError("Passed a NULL mutex");
     }
 
     retval = 0;
@@ -162,7 +162,7 @@ int
 SDL_UnlockMutex(SDL_mutex * mutex)
 {
     if (mutex == NULL) {
-        return SDL_InvalidParamError("mutex");
+        return SDL_SetError("Passed a NULL mutex");
     }
 
 #if FAKE_RECURSIVE_MUTEX

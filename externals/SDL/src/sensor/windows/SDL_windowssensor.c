@@ -325,10 +325,7 @@ static int DisconnectSensor(ISensor *sensor)
     for (i = 0; i < SDL_num_sensors; ++i) {
         old_sensor = &SDL_sensors[i];
         if (sensor == old_sensor->sensor) {
-            /* This call hangs for some reason:
-             * https://github.com/libsdl-org/SDL/issues/5288
-             */
-            /*ISensor_SetEventSink(sensor, NULL);*/
+            ISensor_SetEventSink(sensor, NULL);
             ISensor_Release(sensor);
             SDL_free(old_sensor->name);
             --SDL_num_sensors;

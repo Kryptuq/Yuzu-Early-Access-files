@@ -26,7 +26,6 @@
 #endif
 
 #include "SDL.h"
-#include "testutils.h"
 
 static SDL_AudioSpec spec;
 static Uint8 *sound = NULL;     /* Pointer to wave data */
@@ -138,7 +137,7 @@ int
 main(int argc, char *argv[])
 {
     int i;
-    char *filename = NULL;
+    char filename[4096];
 
     /* Enable standard application logging */
     SDL_LogSetPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO);
@@ -152,13 +151,11 @@ main(int argc, char *argv[])
     /* Some targets (Mac CoreAudio) need an event queue for audio hotplug, so make and immediately hide a window. */
     SDL_MinimizeWindow(SDL_CreateWindow("testaudiohotplug", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, 0));
 
-    filename = GetResourceFilename(argc > 1 ? argv[1] : NULL, "sample.wav");
-
-    if (filename == NULL) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s\n", SDL_GetError());
-        quit(1);
+    if (argc > 1) {
+        SDL_strlcpy(filename, argv[1], sizeof(filename));
+    } else {
+        SDL_strlcpy(filename, "sample.wav", sizeof(filename));
     }
-
     /* Load the wave file into memory */
     if (SDL_LoadWAV(filename, &spec, &sound, &soundlen) == NULL) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load %s: %s\n", filename, SDL_GetError());
@@ -199,7 +196,6 @@ main(int argc, char *argv[])
     /* Quit audio first, then free WAV. This prevents access violations in the audio threads. */
     SDL_QuitSubSystem(SDL_INIT_AUDIO);
     SDL_FreeWAV(sound);
-    SDL_free(filename);
     SDL_Quit();
     return (0);
 }

@@ -57,7 +57,7 @@ HIDAPI_DriverXbox360W_IsSupportedDevice(const char *name, SDL_GameControllerType
 }
 
 static const char *
-HIDAPI_DriverXbox360W_GetDeviceName(const char *name, Uint16 vendor_id, Uint16 product_id)
+HIDAPI_DriverXbox360W_GetDeviceName(Uint16 vendor_id, Uint16 product_id)
 {
     return "Xbox 360 Wireless Controller";
 }
@@ -81,13 +81,13 @@ UpdatePowerLevel(SDL_Joystick *joystick, Uint8 level)
     float normalized_level = (float)level / 255.0f;
 
     if (normalized_level <= 0.05f) {
-        SDL_PrivateJoystickBatteryLevel(joystick, SDL_JOYSTICK_POWER_EMPTY);
+        joystick->epowerlevel = SDL_JOYSTICK_POWER_EMPTY;
     } else if (normalized_level <= 0.20f) {
-        SDL_PrivateJoystickBatteryLevel(joystick, SDL_JOYSTICK_POWER_LOW);
+        joystick->epowerlevel = SDL_JOYSTICK_POWER_LOW;
     } else if (normalized_level <= 0.70f) {
-        SDL_PrivateJoystickBatteryLevel(joystick, SDL_JOYSTICK_POWER_MEDIUM);
+        joystick->epowerlevel = SDL_JOYSTICK_POWER_MEDIUM;
     } else {
-        SDL_PrivateJoystickBatteryLevel(joystick, SDL_JOYSTICK_POWER_FULL);
+        joystick->epowerlevel = SDL_JOYSTICK_POWER_FULL;
     }
 }
 

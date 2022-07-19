@@ -52,7 +52,7 @@ SDL_SetHintWithPriority(const char *name, const char *value,
     SDL_Hint *hint;
     SDL_HintWatch *entry;
 
-    if (!name) {
+    if (!name || !value) {
         return SDL_FALSE;
     }
 
@@ -66,7 +66,7 @@ SDL_SetHintWithPriority(const char *name, const char *value,
             if (priority < hint->priority) {
                 return SDL_FALSE;
             }
-            if (((hint->value == NULL) != (value == NULL)) || (value && (SDL_strcmp(hint->value, value) != 0))) {
+            if (!hint->value || !value || SDL_strcmp(hint->value, value) != 0) {
                 for (entry = hint->callbacks; entry; ) {
                     /* Save the next entry in case this one is deleted */
                     SDL_HintWatch *next = entry->next;
@@ -178,12 +178,6 @@ SDL_AddHintCallback(const char *name, SDL_HintCallback callback, void *userdata)
             return;
         }
         hint->name = SDL_strdup(name);
-        if (!hint->name) {
-            SDL_free(entry);
-            SDL_free(hint);
-            SDL_OutOfMemory();
-            return;
-        }
         hint->value = NULL;
         hint->priority = SDL_HINT_DEFAULT;
         hint->callbacks = NULL;

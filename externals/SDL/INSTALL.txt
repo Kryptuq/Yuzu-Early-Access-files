@@ -8,10 +8,10 @@ To compile and install SDL:
         * Read the FAQ at https://wiki.libsdl.org/FAQWindows
         * Run './configure; make; make install'
 
-        macOS with Xcode:
+        Mac OS X with Xcode:
         * Read docs/README-macosx.md
 
-        macOS from the command line:
+        Mac OS X from the command line:
         * Run './configure; make; make install'
 
         Linux and other UNIX systems:

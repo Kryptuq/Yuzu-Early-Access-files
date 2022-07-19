@@ -86,7 +86,7 @@ UIKit_ShowMessageBoxAlertController(const SDL_MessageBoxData *messageboxdata, in
 
         action = [UIAlertAction actionWithTitle:@(sdlButton->text)
                                 style:style
-                                handler:^(UIAlertAction *alertAction) {
+                                handler:^(UIAlertAction *action) {
                                     clickedindex = (int)(sdlButton - messageboxdata->buttons);
                                 }];
         [alert addAction:action];
@@ -186,8 +186,8 @@ UIKit_ShowMessageBoxAlertView(const SDL_MessageBoxData *messageboxdata, int *but
 #endif /* __IPHONE_OS_VERSION_MIN_REQUIRED < 80000 */
 }
 
-static void
-UIKit_ShowMessageBoxImpl(const SDL_MessageBoxData *messageboxdata, int *buttonid, int *returnValue)
+int
+UIKit_ShowMessageBox(const SDL_MessageBoxData *messageboxdata, int *buttonid)
 {
     BOOL success = NO;
 
@@ -199,25 +199,11 @@ UIKit_ShowMessageBoxImpl(const SDL_MessageBoxData *messageboxdata, int *buttonid
     }
 
     if (!success) {
-        *returnValue = SDL_SetError("Could not show message box.");
-    } else {
-        *returnValue = 0;
+        return SDL_SetError("Could not show message box.");
     }
+
+    return 0;
 }
-
-int
-UIKit_ShowMessageBox(const SDL_MessageBoxData *messageboxdata, int *buttonid)
-{ @autoreleasepool
-{
-    __block int returnValue = 0;
-
-    if ([NSThread isMainThread]) {
-        UIKit_ShowMessageBoxImpl(messageboxdata, buttonid, &returnValue);
-    } else {
-        dispatch_sync(dispatch_get_main_queue(), ^{ UIKit_ShowMessageBoxImpl(messageboxdata, buttonid, &returnValue); });
-    }
-    return returnValue;
-}}
 
 #endif /* SDL_VIDEO_DRIVER_UIKIT */
 

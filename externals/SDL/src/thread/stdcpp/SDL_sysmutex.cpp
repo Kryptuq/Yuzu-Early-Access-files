@@ -65,14 +65,16 @@ int
 SDL_mutexP(SDL_mutex * mutex)
 {
     if (mutex == NULL) {
-        return SDL_InvalidParamError("mutex");
+        SDL_SetError("Passed a NULL mutex");
+        return -1;
     }
 
     try {
         mutex->cpp_mutex.lock();
         return 0;
     } catch (std::system_error & ex) {
-        return SDL_SetError("unable to lock a C++ mutex: code=%d; %s", ex.code(), ex.what());
+        SDL_SetError("unable to lock a C++ mutex: code=%d; %s", ex.code(), ex.what());
+        return -1;
     }
 }
 
@@ -82,7 +84,7 @@ SDL_TryLockMutex(SDL_mutex * mutex)
 {
     int retval = 0;
     if (mutex == NULL) {
-        return SDL_InvalidParamError("mutex");
+        return SDL_SetError("Passed a NULL mutex");
     }
 
     if (mutex->cpp_mutex.try_lock() == false) {
@@ -97,7 +99,8 @@ int
 SDL_mutexV(SDL_mutex * mutex)
 {
     if (mutex == NULL) {
-        return SDL_InvalidParamError("mutex");
+        SDL_SetError("Passed a NULL mutex");
+        return -1;
     }
 
     mutex->cpp_mutex.unlock();

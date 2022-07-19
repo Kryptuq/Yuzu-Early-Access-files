@@ -18,9 +18,10 @@
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 */
+#include <windows.h>
 
-#include "../SDL_sysurl.h"
 #include "../../core/windows/SDL_windows.h"
+#include "../SDL_sysurl.h"
 
 int
 SDL_SYS_OpenURL(const char *url)

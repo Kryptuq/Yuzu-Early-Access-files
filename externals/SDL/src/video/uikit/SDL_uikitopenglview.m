@@ -89,7 +89,7 @@
             glGetIntegerv(GL_MAX_SAMPLES, &maxsamples);
 
             /* Clamp the samples to the max supported count. */
-            samples = SDL_min(samples, maxsamples);
+            samples = MIN(samples, maxsamples);
         }
 
         if (sRGB) {

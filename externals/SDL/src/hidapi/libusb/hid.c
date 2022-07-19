@@ -31,24 +31,9 @@
 #include "SDL_thread.h"
 #include "SDL_mutex.h"
 
-#ifndef HAVE_WCSDUP
-#ifdef HAVE__WCSDUP
+#if defined(HAVE__WCSDUP) && !defined(HAVE_WCSDUP)
 #define wcsdup _wcsdup
-#else
-#define wcsdup _dupwcs
-static wchar_t *_dupwcs(const wchar_t *src)
-{
-    wchar_t *dst = NULL;
-    if (src) {
-        size_t len = SDL_wcslen(src) + 1;
-        len *= sizeof(wchar_t);
-        dst = (wchar_t *) malloc(len);
-        if (dst) memcpy(dst, src, len);
-    }
-    return dst;
-}
 #endif
-#endif /* HAVE_WCSDUP */
 
 #include <libusb.h>
 #include <locale.h> /* setlocale */
@@ -74,8 +59,12 @@ typedef struct _SDL_ThreadBarrier
 
 static int SDL_CreateThreadBarrier(SDL_ThreadBarrier *barrier, Uint32 count)
 {
-	SDL_assert(barrier != NULL);
-	SDL_assert(count != 0);
+	if (barrier == NULL) {
+		return SDL_SetError("barrier must be non-NULL");
+	}
+	if (count == 0) {
+		return SDL_SetError("count must be > 0");
+	}
 
 	barrier->mutex = SDL_CreateMutex();
 	if (barrier->mutex == NULL) {
@@ -384,16 +373,12 @@ static int is_language_supported(libusb_device_handle *dev, uint16_t lang)
 /* This function returns a newly allocated wide string containing the USB
    device string numbered by the index. The returned string must be freed
    by using free(). */
-#if defined(__OS2__) /* don't use iconv on OS/2: no support for wchar_t. */
-#define NO_ICONV
-#endif
 static wchar_t *get_usb_string(libusb_device_handle *dev, uint8_t idx)
 {
 	char buf[512];
 	int len;
 	wchar_t *str = NULL;
 
-#if !defined(NO_ICONV)
 	wchar_t wbuf[256];
 	SDL_iconv_t ic;
 	size_t inbytes;
@@ -401,9 +386,6 @@ static wchar_t *get_usb_string(libusb_device_handle *dev, uint8_t idx)
 	size_t res;
 	const char *inptr;
 	char *outptr;
-#else
-	int i;
-#endif
 
 	/* Determine which language to use. */
 	uint16_t lang;
@@ -420,23 +402,6 @@ static wchar_t *get_usb_string(libusb_device_handle *dev, uint8_t idx)
 	if (len < 0)
 		return NULL;
 
-#if defined(NO_ICONV) /* original hidapi code for NO_ICONV : */
-
-	/* Bionic does not have wchar_t iconv support, so it
-	   has to be done manually.  The following code will only work for
-	   code points that can be represented as a single UTF-16 character,
-	   and will incorrectly convert any code points which require more
-	   than one UTF-16 character.
-
-	   Skip over the first character (2-bytes).  */
-	len -= 2;
-	str = (wchar_t*) malloc((len / 2 + 1) * sizeof(wchar_t));
-	for (i = 0; i < len / 2; i++) {
-		str[i] = buf[i * 2 + 2] | (buf[i * 2 + 3] << 8);
-	}
-	str[len / 2] = 0x00000000;
-
-#else
 	/* buf does not need to be explicitly NULL-terminated because
 	   it is only passed into iconv() which does not need it. */
 
@@ -469,7 +434,6 @@ static wchar_t *get_usb_string(libusb_device_handle *dev, uint8_t idx)
 
 err:
 	SDL_iconv_close(ic);
-#endif
 
 	return str;
 }
@@ -635,7 +599,6 @@ static int is_xbox360(unsigned short vendor_id, const struct libusb_interface_de
 		0x1bad, /* Harmonix */
 		0x20d6, /* PowerA */
 		0x24c6, /* PowerA */
-		0x2c22, /* Qanba */
 	};
 
 	if (intf_desc->bInterfaceClass == LIBUSB_CLASS_VENDOR_SPEC &&
@@ -995,7 +958,7 @@ static void LIBUSB_CALL read_callback(struct libusb_transfer *transfer)
 }
 
 
-static int SDLCALL read_thread(void *param)
+static int read_thread(void *param)
 {
 	hid_device *dev = (hid_device *)param;
 	uint8_t *buf;
@@ -1498,7 +1461,6 @@ void HID_API_EXPORT hid_close(hid_device *dev)
 
 	/* Clean up the Transfer objects allocated in read_thread(). */
 	free(dev->transfer->buffer);
-	dev->transfer->buffer = NULL;
 	libusb_free_transfer(dev->transfer);
 
 	/* release the interface */

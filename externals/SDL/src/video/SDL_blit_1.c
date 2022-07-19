@@ -50,7 +50,7 @@ Blit1to1(SDL_BlitInfo * info)
 
     while (height--) {
 #ifdef USE_DUFFS_LOOP
-        /* *INDENT-OFF* */ /* clang-format off */
+        /* *INDENT-OFF* */
         DUFFS_LOOP(
             {
               *dst = map[*src];
@@ -58,7 +58,7 @@ Blit1to1(SDL_BlitInfo * info)
             dst++;
             src++;
         , width);
-        /* *INDENT-ON* */ /* clang-format on */
+        /* *INDENT-ON* */
 #else
         for (c = width; c; --c) {
             *dst = map[*src];
@@ -103,14 +103,14 @@ Blit1to2(SDL_BlitInfo * info)
 
 #ifdef USE_DUFFS_LOOP
     while (height--) {
-        /* *INDENT-OFF* */ /* clang-format off */
+        /* *INDENT-OFF* */
         DUFFS_LOOP(
         {
             *(Uint16 *)dst = map[*src++];
             dst += 2;
         },
         width);
-        /* *INDENT-ON* */ /* clang-format on */
+        /* *INDENT-ON* */
         src += srcskip;
         dst += dstskip;
     }
@@ -210,7 +210,7 @@ Blit1to3(SDL_BlitInfo * info)
 
     while (height--) {
 #ifdef USE_DUFFS_LOOP
-        /* *INDENT-OFF* */ /* clang-format off */
+        /* *INDENT-OFF* */
         DUFFS_LOOP(
             {
                 o = *src * 4;
@@ -221,7 +221,7 @@ Blit1to3(SDL_BlitInfo * info)
             src++;
             dst += 3;
         , width);
-        /* *INDENT-ON* */ /* clang-format on */
+        /* *INDENT-ON* */
 #else
         for (c = width; c; --c) {
             o = *src * 4;
@@ -259,11 +259,11 @@ Blit1to4(SDL_BlitInfo * info)
 
     while (height--) {
 #ifdef USE_DUFFS_LOOP
-        /* *INDENT-OFF* */ /* clang-format off */
+        /* *INDENT-OFF* */
         DUFFS_LOOP(
             *dst++ = map[*src++];
         , width);
-        /* *INDENT-ON* */ /* clang-format on */
+        /* *INDENT-ON* */
 #else
         for (c = width / 4; c; --c) {
             *dst++ = map[*src++];
@@ -299,7 +299,7 @@ Blit1to1Key(SDL_BlitInfo * info)
 
     if (palmap) {
         while (height--) {
-            /* *INDENT-OFF* */ /* clang-format off */
+            /* *INDENT-OFF* */
             DUFFS_LOOP(
             {
                 if ( *src != ckey ) {
@@ -309,13 +309,13 @@ Blit1to1Key(SDL_BlitInfo * info)
                 src++;
             },
             width);
-            /* *INDENT-ON* */ /* clang-format on */
+            /* *INDENT-ON* */
             src += srcskip;
             dst += dstskip;
         }
     } else {
         while (height--) {
-            /* *INDENT-OFF* */ /* clang-format off */
+            /* *INDENT-OFF* */
             DUFFS_LOOP(
             {
                 if ( *src != ckey ) {
@@ -325,7 +325,7 @@ Blit1to1Key(SDL_BlitInfo * info)
                 src++;
             },
             width);
-            /* *INDENT-ON* */ /* clang-format on */
+            /* *INDENT-ON* */
             src += srcskip;
             dst += dstskip;
         }
@@ -348,7 +348,7 @@ Blit1to2Key(SDL_BlitInfo * info)
     dstskip /= 2;
 
     while (height--) {
-        /* *INDENT-OFF* */ /* clang-format off */
+        /* *INDENT-OFF* */
         DUFFS_LOOP(
         {
             if ( *src != ckey ) {
@@ -358,7 +358,7 @@ Blit1to2Key(SDL_BlitInfo * info)
             dstp++;
         },
         width);
-        /* *INDENT-ON* */ /* clang-format on */
+        /* *INDENT-ON* */
         src += srcskip;
         dstp += dstskip;
     }
@@ -378,7 +378,7 @@ Blit1to3Key(SDL_BlitInfo * info)
     int o;
 
     while (height--) {
-        /* *INDENT-OFF* */ /* clang-format off */
+        /* *INDENT-OFF* */
         DUFFS_LOOP(
         {
             if ( *src != ckey ) {
@@ -391,7 +391,7 @@ Blit1to3Key(SDL_BlitInfo * info)
             dst += 3;
         },
         width);
-        /* *INDENT-ON* */ /* clang-format on */
+        /* *INDENT-ON* */
         src += srcskip;
         dst += dstskip;
     }
@@ -413,7 +413,7 @@ Blit1to4Key(SDL_BlitInfo * info)
     dstskip /= 4;
 
     while (height--) {
-        /* *INDENT-OFF* */ /* clang-format off */
+        /* *INDENT-OFF* */
         DUFFS_LOOP(
         {
             if ( *src != ckey ) {
@@ -423,7 +423,7 @@ Blit1to4Key(SDL_BlitInfo * info)
             dstp++;
         },
         width);
-        /* *INDENT-ON* */ /* clang-format on */
+        /* *INDENT-ON* */
         src += srcskip;
         dstp += dstskip;
     }
@@ -450,7 +450,7 @@ Blit1toNAlpha(SDL_BlitInfo * info)
     dstbpp = dstfmt->BytesPerPixel;
 
     while (height--) {
-        /* *INDENT-OFF* */ /* clang-format off */
+        /* *INDENT-OFF* */
         DUFFS_LOOP4(
         {
             sR = srcpal[*src].r;
@@ -463,7 +463,7 @@ Blit1toNAlpha(SDL_BlitInfo * info)
             dst += dstbpp;
         },
         width);
-        /* *INDENT-ON* */ /* clang-format on */
+        /* *INDENT-ON* */
         src += srcskip;
         dst += dstskip;
     }
@@ -491,7 +491,7 @@ Blit1toNAlphaKey(SDL_BlitInfo * info)
     dstbpp = dstfmt->BytesPerPixel;
 
     while (height--) {
-        /* *INDENT-OFF* */ /* clang-format off */
+        /* *INDENT-OFF* */
         DUFFS_LOOP(
         {
             if ( *src != ckey ) {
@@ -506,7 +506,7 @@ Blit1toNAlphaKey(SDL_BlitInfo * info)
             dst += dstbpp;
         },
         width);
-        /* *INDENT-ON* */ /* clang-format on */
+        /* *INDENT-ON* */
         src += srcskip;
         dst += dstskip;
     }

@@ -205,13 +205,6 @@ int HAIKU_GetWindowGammaRamp(_THIS, SDL_Window * window, Uint16 * ramp) {
 }
 
 
-void HAIKU_SetWindowMinimumSize(_THIS, SDL_Window * window){
-    BMessage msg(BWIN_MINIMUM_SIZE_WINDOW);
-    msg.AddInt32("window-w", window->w -1);
-    msg.AddInt32("window-h", window->h -1);
-    _ToBeWin(window)->PostMessage(&msg);
-}
-
 void HAIKU_SetWindowMouseGrab(_THIS, SDL_Window * window, SDL_bool grabbed) {
     /* TODO: Implement this! */
 }
@@ -226,12 +219,13 @@ void HAIKU_DestroyWindow(_THIS, SDL_Window * window) {
 SDL_bool HAIKU_GetWindowWMInfo(_THIS, SDL_Window * window,
                                     struct SDL_SysWMinfo *info) {
     /* FIXME: What is the point of this? What information should be included? */
-	if (info->version.major == SDL_MAJOR_VERSION) {
+	if (info->version.major == SDL_MAJOR_VERSION &&
+	    info->version.minor == SDL_MINOR_VERSION) {
 	    info->subsystem = SDL_SYSWM_HAIKU;
 	    return SDL_TRUE;
 	} else {
-	    SDL_SetError("Application not compiled with SDL %d",
-	                 SDL_MAJOR_VERSION);
+	    SDL_SetError("Application not compiled with SDL %d.%d",
+	                 SDL_MAJOR_VERSION, SDL_MINOR_VERSION);
 	    return SDL_FALSE;
 	}
 }

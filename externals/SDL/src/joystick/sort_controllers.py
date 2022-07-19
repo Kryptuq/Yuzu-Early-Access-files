@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 #
 # Script to sort the game controller database entries in SDL_gamecontroller.c
 

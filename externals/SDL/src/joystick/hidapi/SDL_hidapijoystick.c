@@ -110,96 +110,11 @@ HIDAPI_RemapVal(float val, float val_min, float val_max, float output_min, float
 static void HIDAPI_JoystickDetect(void);
 static void HIDAPI_JoystickClose(SDL_Joystick *joystick);
 
-static SDL_GameControllerType
-SDL_GetJoystickGameControllerProtocol(const char *name, Uint16 vendor, Uint16 product, int interface_number, int interface_class, int interface_subclass, int interface_protocol)
-{
-    static const int LIBUSB_CLASS_VENDOR_SPEC = 0xFF;
-    static const int XB360_IFACE_SUBCLASS = 93;
-    static const int XB360_IFACE_PROTOCOL = 1; /* Wired */
-    static const int XB360W_IFACE_PROTOCOL = 129; /* Wireless */
-    static const int XBONE_IFACE_SUBCLASS = 71;
-    static const int XBONE_IFACE_PROTOCOL = 208;
-
-    SDL_GameControllerType type = SDL_CONTROLLER_TYPE_UNKNOWN;
-
-    /* This code should match the checks in libusb/hid.c and HIDDeviceManager.java */
-    if (interface_class == LIBUSB_CLASS_VENDOR_SPEC &&
-        interface_subclass == XB360_IFACE_SUBCLASS &&
-        (interface_protocol == XB360_IFACE_PROTOCOL ||
-         interface_protocol == XB360W_IFACE_PROTOCOL)) {
-
-        static const int SUPPORTED_VENDORS[] = {
-            0x0079, /* GPD Win 2 */
-            0x044f, /* Thrustmaster */
-            0x045e, /* Microsoft */
-            0x046d, /* Logitech */
-            0x056e, /* Elecom */
-            0x06a3, /* Saitek */
-            0x0738, /* Mad Catz */
-            0x07ff, /* Mad Catz */
-            0x0e6f, /* PDP */
-            0x0f0d, /* Hori */
-            0x1038, /* SteelSeries */
-            0x11c9, /* Nacon */
-            0x12ab, /* Unknown */
-            0x1430, /* RedOctane */
-            0x146b, /* BigBen */
-            0x1532, /* Razer */
-            0x15e4, /* Numark */
-            0x162e, /* Joytech */
-            0x1689, /* Razer Onza */
-            0x1949, /* Lab126, Inc. */
-            0x1bad, /* Harmonix */
-            0x20d6, /* PowerA */
-            0x24c6, /* PowerA */
-            0x2c22, /* Qanba */
-        };
-
-        int i;
-        for (i = 0; i < SDL_arraysize(SUPPORTED_VENDORS); ++i) {
-            if (vendor == SUPPORTED_VENDORS[i]) {
-                type = SDL_CONTROLLER_TYPE_XBOX360;
-                break;
-            }
-        }
-    }
-
-    if (interface_number == 0 &&
-        interface_class == LIBUSB_CLASS_VENDOR_SPEC &&
-        interface_subclass == XBONE_IFACE_SUBCLASS &&
-        interface_protocol == XBONE_IFACE_PROTOCOL) {
-
-        static const int SUPPORTED_VENDORS[] = {
-            0x045e, /* Microsoft */
-            0x0738, /* Mad Catz */
-            0x0e6f, /* PDP */
-            0x0f0d, /* Hori */
-            0x1532, /* Razer */
-            0x20d6, /* PowerA */
-            0x24c6, /* PowerA */
-            0x2e24, /* Hyperkin */
-        };
-
-        int i;
-        for (i = 0; i < SDL_arraysize(SUPPORTED_VENDORS); ++i) {
-            if (vendor == SUPPORTED_VENDORS[i]) {
-                type = SDL_CONTROLLER_TYPE_XBOXONE;
-                break;
-            }
-        }
-    }
-
-    if (type == SDL_CONTROLLER_TYPE_UNKNOWN) {
-        type = SDL_GetJoystickGameControllerTypeFromVIDPID(vendor, product, name, SDL_FALSE);
-    }
-    return type;
-}
-
 static SDL_bool
 HIDAPI_IsDeviceSupported(Uint16 vendor_id, Uint16 product_id, Uint16 version, const char *name)
 {
     int i;
-    SDL_GameControllerType type = SDL_GetJoystickGameControllerProtocol(name, vendor_id, product_id, -1, 0, 0, 0);
+    SDL_GameControllerType type = SDL_GetJoystickGameControllerType(name, vendor_id, product_id, -1, 0, 0, 0);
 
     for (i = 0; i < SDL_arraysize(SDL_HIDAPI_drivers); ++i) {
         SDL_HIDAPI_DeviceDriver *driver = SDL_HIDAPI_drivers[i];
@@ -219,8 +134,14 @@ HIDAPI_GetDeviceDriver(SDL_HIDAPI_Device *device)
     const Uint16 USAGE_MULTIAXISCONTROLLER = 0x0008;
     int i;
     SDL_GameControllerType type;
+    SDL_JoystickGUID check_guid;
 
-    if (SDL_ShouldIgnoreJoystick(device->name, device->guid)) {
+    /* Make sure we have a generic GUID here, otherwise if we pass a HIDAPI
+       guid, this call will create a game controller mapping for the device.
+     */
+    check_guid = device->guid;
+    check_guid.data[14] = 0;
+    if (SDL_ShouldIgnoreJoystick(device->name, check_guid)) {
         return NULL;
     }
 
@@ -233,7 +154,7 @@ HIDAPI_GetDeviceDriver(SDL_HIDAPI_Device *device)
         }
     }
 
-    type = SDL_GetJoystickGameControllerProtocol(device->name, device->vendor_id, device->product_id, device->interface_number, device->interface_class, device->interface_subclass, device->interface_protocol);
+    type = SDL_GetJoystickGameControllerType(device->name, device->vendor_id, device->product_id, device->interface_number, device->interface_class, device->interface_subclass, device->interface_protocol);
     for (i = 0; i < SDL_arraysize(SDL_HIDAPI_drivers); ++i) {
         SDL_HIDAPI_DeviceDriver *driver = SDL_HIDAPI_drivers[i];
         if (driver->enabled && driver->IsSupportedDevice(device->name, type, device->vendor_id, device->product_id, device->version, device->interface_number, device->interface_class, device->interface_subclass, device->interface_protocol)) {
@@ -285,8 +206,8 @@ HIDAPI_SetupDeviceDriver(SDL_HIDAPI_Device *device)
 
     device->driver = HIDAPI_GetDeviceDriver(device);
     if (device->driver) {
-        const char *name = device->driver->GetDeviceName(device->name, device->vendor_id, device->product_id);
-        if (name && name != device->name) {
+        const char *name = device->driver->GetDeviceName(device->vendor_id, device->product_id);
+        if (name) {
             SDL_free(device->name);
             device->name = SDL_strdup(name);
         }
@@ -306,7 +227,7 @@ HIDAPI_CleanupDeviceDriver(SDL_HIDAPI_Device *device)
     }
 
     /* Disconnect any joysticks */
-    while (device->num_joysticks && device->joysticks) {
+    while (device->num_joysticks) {
         HIDAPI_JoystickDisconnected(device, device->joysticks[0]);
     }
 
@@ -388,7 +309,8 @@ HIDAPI_JoystickInit(void)
 #endif
 
     if (SDL_hid_init() < 0) {
-        return SDL_SetError("Couldn't initialize hidapi");
+        SDL_SetError("Couldn't initialize hidapi");
+        return -1;
     }
 
     for (i = 0; i < SDL_arraysize(SDL_HIDAPI_drivers); ++i) {
@@ -542,6 +464,38 @@ HIDAPI_AddDevice(struct SDL_hid_device_info *info)
         char *serial_number = HIDAPI_ConvertString(info->serial_number);
 
         device->name = SDL_CreateJoystickName(device->vendor_id, device->product_id, manufacturer_string, product_string);
+        if (SDL_strncmp(device->name, "0x", 2) == 0) {
+            /* Couldn't find a controller name, try to give it one based on device type */
+            const char *name = NULL;
+
+            switch (SDL_GetJoystickGameControllerType(NULL, device->vendor_id, device->product_id, device->interface_number, device->interface_class, device->interface_subclass, device->interface_protocol)) {
+            case SDL_CONTROLLER_TYPE_XBOX360:
+                name = "Xbox 360 Controller";
+                break;
+            case SDL_CONTROLLER_TYPE_XBOXONE:
+                name = "Xbox One Controller";
+                break;
+            case SDL_CONTROLLER_TYPE_PS3:
+                name = "PS3 Controller";
+                break;
+            case SDL_CONTROLLER_TYPE_PS4:
+                name = "PS4 Controller";
+                break;
+            case SDL_CONTROLLER_TYPE_PS5:
+                name = "PS5 Controller";
+                break;
+            case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO:
+                name = "Nintendo Switch Pro Controller";
+                break;
+            default:
+                break;
+            }
+
+            if (name) {
+                SDL_free(device->name);
+                device->name = SDL_strdup(name);
+            }
+        }
 
         if (manufacturer_string) {
             SDL_free(manufacturer_string);
@@ -674,13 +628,13 @@ HIDAPI_IsEquivalentToDevice(Uint16 vendor_id, Uint16 product_id, SDL_HIDAPI_Devi
 
         /* If we're looking for the raw input Xbox One controller, match it against any other Xbox One controller */
         if (product_id == USB_PRODUCT_XBOX_ONE_XBOXGIP_CONTROLLER &&
-            SDL_GetJoystickGameControllerProtocol(device->name, device->vendor_id, device->product_id, device->interface_number, device->interface_class, device->interface_subclass, device->interface_protocol) == SDL_CONTROLLER_TYPE_XBOXONE) {
+            SDL_GetJoystickGameControllerType(device->name, device->vendor_id, device->product_id, device->interface_number, device->interface_class, device->interface_subclass, device->interface_protocol) == SDL_CONTROLLER_TYPE_XBOXONE) {
             return SDL_TRUE;
         }
 
         /* If we're looking for an XInput controller, match it against any other Xbox controller */
         if (product_id == USB_PRODUCT_XBOX_ONE_XINPUT_CONTROLLER) {
-            SDL_GameControllerType type = SDL_GetJoystickGameControllerProtocol(device->name, device->vendor_id, device->product_id, device->interface_number, device->interface_class, device->interface_subclass, device->interface_protocol);
+            SDL_GameControllerType type = SDL_GetJoystickGameControllerType(device->name, device->vendor_id, device->product_id, device->interface_number, device->interface_class, device->interface_subclass, device->interface_protocol);
             if (type == SDL_CONTROLLER_TYPE_XBOX360 || type == SDL_CONTROLLER_TYPE_XBOXONE) {
                 return SDL_TRUE;
             }
@@ -709,7 +663,7 @@ HIDAPI_IsDeviceTypePresent(SDL_GameControllerType type)
     device = SDL_HIDAPI_devices;
     while (device) {
         if (device->driver &&
-            SDL_GetJoystickGameControllerProtocol(device->name, device->vendor_id, device->product_id, device->interface_number, device->interface_class, device->interface_subclass, device->interface_protocol) == type) {
+            SDL_GetJoystickGameControllerType(device->name, device->vendor_id, device->product_id, device->interface_number, device->interface_class, device->interface_subclass, device->interface_protocol) == type) {
             result = SDL_TRUE;
             break;
         }
@@ -830,21 +784,6 @@ HIDAPI_JoystickGetDeviceName(int device_index)
     return name;
 }
 
-static const char *
-HIDAPI_JoystickGetDevicePath(int device_index)
-{
-    SDL_HIDAPI_Device *device;
-    const char *path = NULL;
-
-    device = HIDAPI_GetDeviceByIndex(device_index, NULL);
-    if (device) {
-        /* FIXME: The device could be freed after this path is returned... */
-        path = device->path;
-    }
-
-    return path;
-}
-
 static int
 HIDAPI_JoystickGetDevicePlayerIndex(int device_index)
 {
@@ -932,7 +871,8 @@ HIDAPI_JoystickRumble(SDL_Joystick *joystick, Uint16 low_frequency_rumble, Uint1
 
         result = device->driver->RumbleJoystick(device, joystick, low_frequency_rumble, high_frequency_rumble);
     } else {
-        result = SDL_SetError("Rumble failed, device disconnected");
+        SDL_SetError("Rumble failed, device disconnected");
+        result = -1;
     }
 
     return result;
@@ -948,7 +888,8 @@ HIDAPI_JoystickRumbleTriggers(SDL_Joystick *joystick, Uint16 left_rumble, Uint16
 
         result = device->driver->RumbleJoystickTriggers(device, joystick, left_rumble, right_rumble);
     } else {
-        result = SDL_SetError("Rumble failed, device disconnected");
+        SDL_SetError("Rumble failed, device disconnected");
+        result = -1;
     }
 
     return result;
@@ -978,7 +919,8 @@ HIDAPI_JoystickSetLED(SDL_Joystick *joystick, Uint8 red, Uint8 green, Uint8 blue
 
         result = device->driver->SetJoystickLED(device, joystick, red, green, blue);
     } else {
-        result = SDL_SetError("SetLED failed, device disconnected");
+        SDL_SetError("SetLED failed, device disconnected");
+        result = -1;
     }
 
     return result;
@@ -994,7 +936,8 @@ HIDAPI_JoystickSendEffect(SDL_Joystick *joystick, const void *data, int size)
 
         result = device->driver->SendJoystickEffect(device, joystick, data, size);
     } else {
-        result = SDL_SetError("SendEffect failed, device disconnected");
+        SDL_SetError("SendEffect failed, device disconnected");
+        result = -1;
     }
 
     return result;
@@ -1010,7 +953,8 @@ HIDAPI_JoystickSetSensorsEnabled(SDL_Joystick *joystick, SDL_bool enabled)
 
         result = device->driver->SetJoystickSensorsEnabled(device, joystick, enabled);
     } else {
-        result = SDL_SetError("SetSensorsEnabled failed, device disconnected");
+        SDL_SetError("SetSensorsEnabled failed, device disconnected");
+        result = -1;
     }
 
     return result;
@@ -1092,7 +1036,6 @@ SDL_JoystickDriver SDL_HIDAPI_JoystickDriver =
     HIDAPI_JoystickGetCount,
     HIDAPI_JoystickDetect,
     HIDAPI_JoystickGetDeviceName,
-    HIDAPI_JoystickGetDevicePath,
     HIDAPI_JoystickGetDevicePlayerIndex,
     HIDAPI_JoystickSetDevicePlayerIndex,
     HIDAPI_JoystickGetDeviceGUID,

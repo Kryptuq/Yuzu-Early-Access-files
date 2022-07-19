@@ -492,7 +492,8 @@ SDL_DINPUT_HapticOpenFromJoystick(SDL_Haptic * haptic, SDL_Joystick * joystick)
         ++index;
     }
 
-    return SDL_SetError("Couldn't find joystick in haptic device list");
+    SDL_SetError("Couldn't find joystick in haptic device list");
+    return -1;
 }
 
 void
@@ -958,7 +959,8 @@ SDL_DINPUT_HapticNewEffect(SDL_Haptic * haptic, struct haptic_effect *effect, SD
     REFGUID type = SDL_SYS_HapticEffectType(base);
 
     if (type == NULL) {
-        return SDL_SetError("Haptic: Unknown effect type.");
+        SDL_SetError("Haptic: Unknown effect type.");
+        return -1;
     }
 
     /* Get the effect. */

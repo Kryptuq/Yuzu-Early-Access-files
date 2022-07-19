@@ -237,6 +237,26 @@ NAS_CloseDevice(_THIS)
     SDL_free(this->hidden);
 }
 
+static unsigned char
+sdlformat_to_auformat(unsigned int fmt)
+{
+    switch (fmt) {
+    case AUDIO_U8:
+        return AuFormatLinearUnsigned8;
+    case AUDIO_S8:
+        return AuFormatLinearSigned8;
+    case AUDIO_U16LSB:
+        return AuFormatLinearUnsigned16LSB;
+    case AUDIO_U16MSB:
+        return AuFormatLinearUnsigned16MSB;
+    case AUDIO_S16LSB:
+        return AuFormatLinearSigned16LSB;
+    case AUDIO_S16MSB:
+        return AuFormatLinearSigned16MSB;
+    }
+    return AuNone;
+}
+
 static AuBool
 event_handler(AuServer * aud, AuEvent * ev, AuEventHandlerRec * hnd)
 {
@@ -311,12 +331,11 @@ find_device(_THIS)
 }
 
 static int
-NAS_OpenDevice(_THIS, const char *devname)
+NAS_OpenDevice(_THIS, void *handle, const char *devname, int iscapture)
 {
     AuElement elms[3];
     int buffer_size;
-    SDL_bool iscapture = this->iscapture;
-    SDL_AudioFormat test_format, format = 0;
+    SDL_AudioFormat test_format, format;
 
     /* Initialize all variables that we clean on shutdown */
     this->hidden = (struct SDL_PrivateAudioData *)
@@ -327,33 +346,16 @@ NAS_OpenDevice(_THIS, const char *devname)
     SDL_zerop(this->hidden);
 
     /* Try for a closest match on audio format */
-    for (test_format = SDL_FirstAudioFormat(this->spec.format); test_format; test_format = SDL_NextAudioFormat()) {
-        switch (test_format) {
-        case AUDIO_U8:
-            format = AuFormatLinearUnsigned8;
-            break;
-        case AUDIO_S8:
-            format = AuFormatLinearSigned8;
-            break;
-        case AUDIO_U16LSB:
-            format = AuFormatLinearUnsigned16LSB;
-            break;
-        case AUDIO_U16MSB:
-            format = AuFormatLinearUnsigned16MSB;
-            break;
-        case AUDIO_S16LSB:
-            format = AuFormatLinearSigned16LSB;
-            break;
-        case AUDIO_S16MSB:
-            format = AuFormatLinearSigned16MSB;
-            break;
-        default:
-            continue;
+    format = 0;
+    for (test_format = SDL_FirstAudioFormat(this->spec.format);
+         !format && test_format;) {
+        format = sdlformat_to_auformat(test_format);
+        if (format == AuNone) {
+            test_format = SDL_NextAudioFormat();
         }
-        break;
     }
-    if (!test_format) {
-        return SDL_SetError("%s: Unsupported audio format", "nas");
+    if (format == 0) {
+        return SDL_SetError("NAS: Couldn't find any hardware audio formats");
     }
     this->spec.format = test_format;
 
@@ -421,16 +423,16 @@ NAS_Deinitialize(void)
     UnloadNASLibrary();
 }
 
-static SDL_bool
+static int
 NAS_Init(SDL_AudioDriverImpl * impl)
 {
     if (LoadNASLibrary() < 0) {
-        return SDL_FALSE;
+        return 0;
     } else {
         AuServer *aud = NAS_AuOpenServer("", 0, NULL, 0, NULL, NULL);
         if (aud == NULL) {
             SDL_SetError("NAS: AuOpenServer() failed (no audio server?)");
-            return SDL_FALSE;
+            return 0;
         }
         NAS_AuCloseServer(aud);
     }
@@ -445,15 +447,15 @@ NAS_Init(SDL_AudioDriverImpl * impl)
     impl->CloseDevice = NAS_CloseDevice;
     impl->Deinitialize = NAS_Deinitialize;
 
-    impl->OnlyHasDefaultOutputDevice = SDL_TRUE;
-    impl->OnlyHasDefaultCaptureDevice = SDL_TRUE;
+    impl->OnlyHasDefaultOutputDevice = 1;
+    impl->OnlyHasDefaultCaptureDevice = 1;
     impl->HasCaptureSupport = SDL_TRUE;
 
-    return SDL_TRUE;   /* this audio target is available. */
+    return 1;   /* this audio target is available. */
 }
 
 AudioBootStrap NAS_bootstrap = {
-    "nas", "Network Audio System", NAS_Init, SDL_FALSE
+    "nas", "Network Audio System", NAS_Init, 0
 };
 
 #endif /* SDL_AUDIO_DRIVER_NAS */

@@ -187,13 +187,13 @@ int render_testPrimitives (void *arg)
 
    ret = SDL_RenderDrawLine(renderer, 79, 59, 50, 30 );
    SDLTest_AssertCheck(ret == 0, "Validate result from SDL_RenderDrawLine, expected: 0, got: %i", ret);
-
+   
+   /* Make current */
+   SDL_RenderPresent(renderer);
+   
    /* See if it's the same. */
    referenceSurface = SDLTest_ImagePrimitives();
    _compare(referenceSurface, ALLOWABLE_ERROR_OPAQUE );
-
-   /* Make current */
-   SDL_RenderPresent(renderer);
 
    /* Clean up. */
    SDL_FreeSurface(referenceSurface);
@@ -335,12 +335,12 @@ int render_testPrimitivesBlend (void *arg)
    SDLTest_AssertCheck(checkFailCount2 == 0, "Validate results from calls to SDL_SetRenderDrawBlendMode, expected: 0, got: %i", checkFailCount2);
    SDLTest_AssertCheck(checkFailCount3 == 0, "Validate results from calls to SDL_RenderDrawPoint, expected: 0, got: %i", checkFailCount3);
 
+   /* Make current */
+   SDL_RenderPresent(renderer);
+
    /* See if it's the same. */
    referenceSurface = SDLTest_ImagePrimitivesBlend();
    _compare(referenceSurface, ALLOWABLE_ERROR_BLENDED );
-
-   /* Make current */
-   SDL_RenderPresent(renderer);
 
    /* Clean up. */
    SDL_FreeSurface(referenceSurface);
@@ -404,12 +404,12 @@ render_testBlit(void *arg)
    }
    SDLTest_AssertCheck(checkFailCount1 == 0, "Validate results from calls to SDL_RenderCopy, expected: 0, got: %i", checkFailCount1);
 
+   /* Make current */
+   SDL_RenderPresent(renderer);
+
    /* See if it's the same */
    referenceSurface = SDLTest_ImageBlit();
    _compare(referenceSurface, ALLOWABLE_ERROR_OPAQUE );
-
-   /* Make current */
-   SDL_RenderPresent(renderer);
 
    /* Clean up. */
    SDL_DestroyTexture( tface );
@@ -478,12 +478,12 @@ render_testBlitColor (void *arg)
    SDLTest_AssertCheck(checkFailCount1 == 0, "Validate results from calls to SDL_SetTextureColorMod, expected: 0, got: %i", checkFailCount1);
    SDLTest_AssertCheck(checkFailCount2 == 0, "Validate results from calls to SDL_RenderCopy, expected: 0, got: %i", checkFailCount2);
 
+   /* Make current */
+   SDL_RenderPresent(renderer);
+
    /* See if it's the same. */
    referenceSurface = SDLTest_ImageBlitColor();
    _compare(referenceSurface, ALLOWABLE_ERROR_OPAQUE );
-
-   /* Make current */
-   SDL_RenderPresent(renderer);
 
    /* Clean up. */
    SDL_DestroyTexture( tface );
@@ -555,12 +555,12 @@ render_testBlitAlpha (void *arg)
    SDLTest_AssertCheck(checkFailCount1 == 0, "Validate results from calls to SDL_SetTextureAlphaMod, expected: 0, got: %i", checkFailCount1);
    SDLTest_AssertCheck(checkFailCount2 == 0, "Validate results from calls to SDL_RenderCopy, expected: 0, got: %i", checkFailCount2);
 
+   /* Make current */
+   SDL_RenderPresent(renderer);
+
    /* See if it's the same. */
    referenceSurface = SDLTest_ImageBlitAlpha();
    _compare(referenceSurface, ALLOWABLE_ERROR_BLENDED );
-
-   /* Make current */
-   SDL_RenderPresent(renderer);
 
    /* Clean up. */
    SDL_DestroyTexture( tface );
@@ -674,10 +674,9 @@ render_testBlitBlend (void *arg)
    _testBlitBlendMode( tface, SDL_BLENDMODE_NONE );
    referenceSurface = SDLTest_ImageBlitBlendNone();
 
-   /* Compare, then Present */
-   _compare(referenceSurface, ALLOWABLE_ERROR_OPAQUE );
+   /* Make current and compare */
    SDL_RenderPresent(renderer);
-
+   _compare(referenceSurface, ALLOWABLE_ERROR_OPAQUE );
    SDL_FreeSurface(referenceSurface);
    referenceSurface = NULL;
 
@@ -685,10 +684,9 @@ render_testBlitBlend (void *arg)
    _testBlitBlendMode( tface, SDL_BLENDMODE_BLEND );
    referenceSurface = SDLTest_ImageBlitBlend();
 
-   /* Compare, then Present */
-   _compare(referenceSurface, ALLOWABLE_ERROR_BLENDED );
+   /* Make current and compare */
    SDL_RenderPresent(renderer);
-
+   _compare(referenceSurface, ALLOWABLE_ERROR_BLENDED );
    SDL_FreeSurface(referenceSurface);
    referenceSurface = NULL;
 
@@ -696,10 +694,9 @@ render_testBlitBlend (void *arg)
    _testBlitBlendMode( tface, SDL_BLENDMODE_ADD );
    referenceSurface = SDLTest_ImageBlitBlendAdd();
 
-   /* Compare, then Present */
-   _compare(referenceSurface, ALLOWABLE_ERROR_BLENDED );
+   /* Make current and compare */
    SDL_RenderPresent(renderer);
-
+   _compare(referenceSurface, ALLOWABLE_ERROR_BLENDED );
    SDL_FreeSurface(referenceSurface);
    referenceSurface = NULL;
 
@@ -707,10 +704,9 @@ render_testBlitBlend (void *arg)
    _testBlitBlendMode( tface, SDL_BLENDMODE_MOD);
    referenceSurface = SDLTest_ImageBlitBlendMod();
 
-   /* Compare, then Present */
-   _compare(referenceSurface, ALLOWABLE_ERROR_BLENDED );
+   /* Make current and compare */
    SDL_RenderPresent(renderer);
-
+   _compare(referenceSurface, ALLOWABLE_ERROR_BLENDED );
    SDL_FreeSurface(referenceSurface);
    referenceSurface = NULL;
 
@@ -757,13 +753,12 @@ render_testBlitBlend (void *arg)
    /* Clean up. */
    SDL_DestroyTexture( tface );
 
-   /* Check to see if final image matches. */
-   referenceSurface = SDLTest_ImageBlitBlendAll();
-   _compare(referenceSurface, ALLOWABLE_ERROR_BLENDED);
-
    /* Make current */
    SDL_RenderPresent(renderer);
 
+   /* Check to see if final image matches. */
+   referenceSurface = SDLTest_ImageBlitBlendAll();
+   _compare(referenceSurface, ALLOWABLE_ERROR_BLENDED);
    SDL_FreeSurface(referenceSurface);
    referenceSurface = NULL;
 

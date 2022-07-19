@@ -269,18 +269,18 @@ do {                                                                    \
 {                                                                       \
     switch (bpp) {                                                      \
         case 1: {                                                       \
-            Uint8 _pixel;                                               \
+            Uint8 _Pixel;                                               \
                                                                         \
-            PIXEL_FROM_RGB(_pixel, fmt, r, g, b);                       \
-            *((Uint8 *)(buf)) = _pixel;                                 \
+            PIXEL_FROM_RGB(_Pixel, fmt, r, g, b);                       \
+            *((Uint8 *)(buf)) = _Pixel;                                 \
         }                                                               \
         break;                                                          \
                                                                         \
         case 2: {                                                       \
-            Uint16 _pixel;                                              \
+            Uint16 _Pixel;                                              \
                                                                         \
-            PIXEL_FROM_RGB(_pixel, fmt, r, g, b);                       \
-            *((Uint16 *)(buf)) = _pixel;                                \
+            PIXEL_FROM_RGB(_Pixel, fmt, r, g, b);                       \
+            *((Uint16 *)(buf)) = _Pixel;                                \
         }                                                               \
         break;                                                          \
                                                                         \
@@ -298,10 +298,10 @@ do {                                                                    \
         break;                                                          \
                                                                         \
         case 4: {                                                       \
-            Uint32 _pixel;                                              \
+            Uint32 _Pixel;                                              \
                                                                         \
-            PIXEL_FROM_RGB(_pixel, fmt, r, g, b);                       \
-            *((Uint32 *)(buf)) = _pixel;                                \
+            PIXEL_FROM_RGB(_Pixel, fmt, r, g, b);                       \
+            *((Uint32 *)(buf)) = _Pixel;                                \
         }                                                               \
         break;                                                          \
     }                                                                   \

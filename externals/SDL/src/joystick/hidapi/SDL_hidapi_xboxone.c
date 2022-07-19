@@ -285,7 +285,7 @@ HIDAPI_DriverXboxOne_IsSupportedDevice(const char *name, SDL_GameControllerType 
 }
 
 static const char *
-HIDAPI_DriverXboxOne_GetDeviceName(const char *name, Uint16 vendor_id, Uint16 product_id)
+HIDAPI_DriverXboxOne_GetDeviceName(Uint16 vendor_id, Uint16 product_id)
 {
     return NULL;
 }
@@ -478,6 +478,30 @@ HIDAPI_DriverXboxOne_SetJoystickSensorsEnabled(SDL_HIDAPI_Device *device, SDL_Jo
     return SDL_Unsupported();
 }
 
+static Sint16 FilterLeftThumb(Sint16 axis)
+{
+    if (axis <= XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE && axis >= -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
+        return 0;
+    }
+    return axis;
+}
+
+static Sint16 FilterRightThumb(Sint16 axis)
+{
+    if (axis <= XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE && axis >= -XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE) {
+        return 0;
+    }
+    return axis;
+}
+
+static Sint16 FilterTrigger(Sint16 axis)
+{
+    if (axis <= XINPUT_GAMEPAD_TRIGGER_THRESHOLD) {
+        return 0;
+    }
+    return axis;
+}
+
 static void
 HIDAPI_DriverXboxOne_HandleStatePacket(SDL_Joystick *joystick, SDL_DriverXboxOne_Context *ctx, Uint8 *data, int size)
 {
@@ -612,7 +636,7 @@ HIDAPI_DriverXboxOne_HandleStatePacket(SDL_Joystick *joystick, SDL_DriverXboxOne
     if (axis == -32768 && size == 30 && (data[22] & 0x80) != 0) {
         axis = 32767;
     }
-    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_TRIGGERLEFT, axis);
+    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_TRIGGERLEFT, FilterTrigger(axis));
 
     axis = ((int)*(Sint16*)(&data[8]) * 64) - 32768;
     if (axis == -32768 && size == 30 && (data[22] & 0x40) != 0) {
@@ -621,16 +645,16 @@ HIDAPI_DriverXboxOne_HandleStatePacket(SDL_Joystick *joystick, SDL_DriverXboxOne
     if (axis == 32704) {
         axis = 32767;
     }
-    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_TRIGGERRIGHT, axis);
+    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_TRIGGERRIGHT, FilterTrigger(axis));
 
     axis = *(Sint16*)(&data[10]);
-    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_LEFTX, axis);
+    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_LEFTX, FilterLeftThumb(axis));
     axis = *(Sint16*)(&data[12]);
-    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_LEFTY, ~axis);
+    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_LEFTY, FilterLeftThumb(~axis));
     axis = *(Sint16*)(&data[14]);
-    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_RIGHTX, axis);
+    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_RIGHTX, FilterRightThumb(axis));
     axis = *(Sint16*)(&data[16]);
-    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_RIGHTY, ~axis);
+    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_RIGHTY, FilterRightThumb(~axis));
 
     SDL_memcpy(ctx->last_state, data, SDL_min(size, sizeof(ctx->last_state)));
 }
@@ -830,22 +854,22 @@ HIDAPI_DriverXboxOneBluetooth_HandleStatePacket(SDL_Joystick *joystick, SDL_Driv
     if (axis == 32704) {
         axis = 32767;
     }
-    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_TRIGGERLEFT, axis);
+    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_TRIGGERLEFT, FilterTrigger(axis));
 
     axis = ((int)*(Sint16*)(&data[11]) * 64) - 32768;
     if (axis == 32704) {
         axis = 32767;
     }
-    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_TRIGGERRIGHT, axis);
+    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_TRIGGERRIGHT, FilterTrigger(axis));
 
     axis = (int)*(Uint16*)(&data[1]) - 0x8000;
-    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_LEFTX, axis);
+    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_LEFTX, FilterLeftThumb(axis));
     axis = (int)*(Uint16*)(&data[3]) - 0x8000;
-    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_LEFTY, axis);
+    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_LEFTY, FilterLeftThumb(axis));
     axis = (int)*(Uint16*)(&data[5]) - 0x8000;
-    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_RIGHTX, axis);
+    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_RIGHTX, FilterRightThumb(axis));
     axis = (int)*(Uint16*)(&data[7]) - 0x8000;
-    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_RIGHTY, axis);
+    SDL_PrivateJoystickAxis(joystick, SDL_CONTROLLER_AXIS_RIGHTY, FilterRightThumb(axis));
 
     SDL_memcpy(ctx->last_state, data, SDL_min(size, sizeof(ctx->last_state)));
 }

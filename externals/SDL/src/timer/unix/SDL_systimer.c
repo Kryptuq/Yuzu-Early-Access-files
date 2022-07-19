@@ -187,6 +187,13 @@ SDL_GetPerformanceFrequency(void)
 void
 SDL_Delay(Uint32 ms)
 {
+#ifdef __EMSCRIPTEN__
+    if (emscripten_has_asyncify() && SDL_GetHintBoolean(SDL_HINT_EMSCRIPTEN_ASYNCIFY, SDL_TRUE)) {
+        /* pseudo-synchronous pause, used directly or through e.g. SDL_WaitEvent */
+        emscripten_sleep(ms);
+        return;
+    }
+#endif
     int was_error;
 
 #if HAVE_NANOSLEEP
@@ -194,14 +201,6 @@ SDL_Delay(Uint32 ms)
 #else
     struct timeval tv;
     Uint64 then, now, elapsed;
-#endif
-
-#ifdef __EMSCRIPTEN__
-    if (emscripten_has_asyncify() && SDL_GetHintBoolean(SDL_HINT_EMSCRIPTEN_ASYNCIFY, SDL_TRUE)) {
-        /* pseudo-synchronous pause, used directly or through e.g. SDL_WaitEvent */
-        emscripten_sleep(ms);
-        return;
-    }
 #endif
 
     /* Set the timeout interval */

@@ -83,7 +83,7 @@ int SDL_SemWaitTimeout(SDL_sem *sem, Uint32 timeout)
        unsigned int res;
 
     if (sem == NULL) {
-        SDL_InvalidParamError("sem");
+        SDL_SetError("Passed a NULL sem");
         return 0;
     }
 
@@ -130,7 +130,7 @@ Uint32 SDL_SemValue(SDL_sem *sem)
     info.size = sizeof(info);
 
     if (sem == NULL) {
-        SDL_InvalidParamError("sem");
+        SDL_SetError("Passed a NULL sem");
         return 0;
     }
 
@@ -146,7 +146,7 @@ int SDL_SemPost(SDL_sem *sem)
     int res;
 
     if (sem == NULL) {
-        return SDL_InvalidParamError("sem");
+        return SDL_SetError("Passed a NULL sem");
     }
 
     res = sceKernelSignalSema(sem->semid, 1);

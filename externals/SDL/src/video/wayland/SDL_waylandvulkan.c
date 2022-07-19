@@ -139,11 +139,11 @@ void Wayland_Vulkan_GetDrawableSize(_THIS, SDL_Window *window, int *w, int *h)
         data = (SDL_WindowData *) window->driverdata;
 
         if (w) {
-            *w = data->drawable_width;
+            *w = window->w * data->scale_factor;
         }
 
         if (h) {
-            *h = data->drawable_height;
+            *h = window->h * data->scale_factor;
         }
     }
 }

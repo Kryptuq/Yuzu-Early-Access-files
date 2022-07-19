@@ -23,6 +23,8 @@
 #include "SDL_xinput.h"
 
 
+#ifdef HAVE_XINPUT_H
+
 XInputGetState_t SDL_XInputGetState = NULL;
 XInputSetState_t SDL_XInputSetState = NULL;
 XInputGetCapabilities_t SDL_XInputGetCapabilities = NULL;
@@ -135,5 +137,6 @@ WIN_UnloadXInputDLL(void)
 }
 
 #endif /* __WINRT__ */
+#endif /* HAVE_XINPUT_H */
 
 /* vi: set ts=4 sw=4 expandtab: */

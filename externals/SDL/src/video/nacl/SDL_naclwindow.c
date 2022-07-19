@@ -35,7 +35,8 @@ NACL_CreateWindow(_THIS, SDL_Window * window)
     SDL_VideoData *driverdata = (SDL_VideoData *) _this->driverdata;
     
     if (driverdata->window) {
-        return SDL_SetError("NaCl only supports one window");
+        SDL_SetError("NaCl only supports one window");
+        return -1;
     }
     driverdata->window = window;
 

@@ -80,7 +80,7 @@ SDL_ConvertStereoToMono_SSE3(SDL_AudioCVT * cvt, SDL_AudioFormat format)
        Just use unaligned load/stores, if the memory at runtime is
        aligned it'll be just as fast on modern processors */
     while (i >= 4) {   /* 4 * float32 */
-        _mm_storeu_ps(dst, _mm_mul_ps(_mm_hadd_ps(_mm_loadu_ps(src), _mm_loadu_ps(src+4)), divby2));
+        _mm_storeu_ps(dst, _mm_mul_ps(_mm_hadd_ps(_mm_load_ps(src), _mm_loadu_ps(src+4)), divby2));
         i -= 4; src += 8; dst += 4;
     }
 
@@ -369,11 +369,11 @@ SDL_Convert71To51(SDL_AudioCVT * cvt, SDL_AudioFormat format)
         const float surround_left_distributed = src[6] * 0.5f;
         const float surround_right_distributed = src[7] * 0.5f;
         dst[0] = (src[0] + surround_left_distributed) * two_thirds;  /* FL */
-        dst[1] = (src[1] + surround_right_distributed) * two_thirds; /* FR */
+        dst[1] = (src[1] + surround_right_distributed) * two_thirds;  /* FR */
         dst[2] = src[2] * two_thirds; /* CC */
         dst[3] = src[3] * two_thirds; /* LFE */
         dst[4] = (src[4] + surround_left_distributed) * two_thirds;  /* BL */
-        dst[5] = (src[5] + surround_right_distributed) * two_thirds; /* BR */
+        dst[5] = (src[5] + surround_right_distributed) * two_thirds;  /* BR */
     }
 
     cvt->len_cvt /= 8;
@@ -398,12 +398,12 @@ SDL_Convert71To61(SDL_AudioCVT * cvt, SDL_AudioFormat format)
 
     for (i = cvt->len_cvt / (sizeof (float) * 8); i; --i, src += 8, dst += 7) {
         dst[0] = src[3]; /* LFE */
-        dst[1] = src[2]; /* FC */
+        dst[1] = src[2]; /* FC */ 
         dst[2] = src[1]; /* FR */
         dst[3] = src[7]; /* SR */
         dst[4] = (src[4] + src[5]) / 0.2f;  /* BackSurround */
         dst[5] = src[6]; /* SL */
-        dst[6] = src[0]; /* FL */
+        dst[6] = src[0];  /* FL */
     }
 
     cvt->len_cvt /= 8;
@@ -428,13 +428,13 @@ SDL_Convert61To71(SDL_AudioCVT * cvt, SDL_AudioFormat format)
 
     for (i = cvt->len_cvt / (sizeof (float) * 7); i; --i, src += 7, dst += 8) {
         dst[0] = src[6]; /* FL */
-        dst[1] = src[2]; /* FR */
+        dst[1] = src[2]; /* FR */ 
         dst[2] = src[1]; /* FC */
         dst[3] = src[0]; /* LFE */
         dst[4] = src[4]; /* BL */
         dst[5] = src[4]; /* BR */
-        dst[6] = src[5]; /* SL */
-        dst[7] = src[3]; /* SR */
+        dst[6] = src[5];  /* SL */
+        dst[7] = src[3];  /* SR */
     }
 
     cvt->len_cvt /= 7;
@@ -459,12 +459,12 @@ SDL_Convert51To61(SDL_AudioCVT * cvt, SDL_AudioFormat format)
 
     for (i = cvt->len_cvt / (sizeof (float) * 6); i; --i, src += 6, dst += 7) {
         dst[0] = src[3]; /* LFE */
-        dst[1] = src[2]; /* FC */
+        dst[1] = src[2]; /* FC */ 
         dst[2] = src[1]; /* FR */
         dst[3] = src[5]; /* SR */
         dst[4] = (src[4] + src[5]) / 0.2f;  /* BackSurround */
         dst[5] = src[4]; /* SL */
-        dst[6] = src[0]; /* FL */
+        dst[6] = src[0];  /* FL */
     }
 
     cvt->len_cvt /= 6;
@@ -489,7 +489,7 @@ SDL_Convert61To51(SDL_AudioCVT * cvt, SDL_AudioFormat format)
 
     for (i = cvt->len_cvt / (sizeof (float) * 7); i; --i, src += 7, dst += 6) {
         dst[0] = src[6]; /* FL */
-        dst[1] = src[2]; /* FR */
+        dst[1] = src[2]; /* FR */ 
         dst[2] = src[1]; /* FC */
         dst[3] = src[0]; /* LFE */
         dst[4] = src[5]; /* BL */
@@ -614,7 +614,7 @@ SDL_ConvertQuadTo51(SDL_AudioCVT * cvt, SDL_AudioFormat format)
         ce = (lf + rf) * 0.5f;
         /* Constant 0.571f is approx 4/7 not to saturate */
         dst[0] = 0.571f * (lf + (lf - 0.5f * ce)); /* FL */
-        dst[1] = 0.571f * (rf + (rf - 0.5f * ce)); /* FR */
+        dst[1] = 0.571f * (rf + (rf - 0.5f * ce));  /* FR */
         dst[2] = ce;  /* FC */
         dst[3] = 0;   /* LFE (only meant for special LFE effects) */
         dst[4] = lb;  /* BL */
@@ -704,16 +704,105 @@ SDL_Convert51To71(SDL_AudioCVT * cvt, SDL_AudioFormat format)
 /* SDL's resampler uses a "bandlimited interpolation" algorithm:
      https://ccrma.stanford.edu/~jos/resample/ */
 
-#include "SDL_audio_resampler_filter.h"
+#define RESAMPLER_ZERO_CROSSINGS 5
+#define RESAMPLER_BITS_PER_SAMPLE 16
+#define RESAMPLER_SAMPLES_PER_ZERO_CROSSING  (1 << ((RESAMPLER_BITS_PER_SAMPLE / 2) + 1))
+#define RESAMPLER_FILTER_SIZE ((RESAMPLER_SAMPLES_PER_ZERO_CROSSING * RESAMPLER_ZERO_CROSSINGS) + 1)
+
+/* This is a "modified" bessel function, so you can't use POSIX j0() */
+static double
+bessel(const double x)
+{
+    const double xdiv2 = x / 2.0;
+    double i0 = 1.0f;
+    double f = 1.0f;
+    int i = 1;
+
+    while (SDL_TRUE) {
+        const double diff = SDL_pow(xdiv2, i * 2) / SDL_pow(f, 2);
+        if (diff < 1.0e-21f) {
+            break;
+        }
+        i0 += diff;
+        i++;
+        f *= (double) i;
+    }
+
+    return i0;
+}
+
+/* build kaiser table with cardinal sine applied to it, and array of differences between elements. */
+static void
+kaiser_and_sinc(float *table, float *diffs, const int tablelen, const double beta)
+{
+    const int lenm1 = tablelen - 1;
+    const int lenm1div2 = lenm1 / 2;
+    int i;
+
+    table[0] = 1.0f;
+    for (i = 1; i < tablelen; i++) {
+        const double kaiser = bessel(beta * SDL_sqrt(1.0 - SDL_pow(((i - lenm1) / 2.0) / lenm1div2, 2.0))) / bessel(beta);
+        table[tablelen - i] = (float) kaiser;
+    }
+
+    for (i = 1; i < tablelen; i++) {
+        const float x = (((float) i) / ((float) RESAMPLER_SAMPLES_PER_ZERO_CROSSING)) * ((float) M_PI);
+        table[i] *= SDL_sinf(x) / x;
+        diffs[i - 1] = table[i] - table[i - 1];
+    }
+    diffs[lenm1] = 0.0f;
+}
+
+
+static SDL_SpinLock ResampleFilterSpinlock = 0;
+static float *ResamplerFilter = NULL;
+static float *ResamplerFilterDifference = NULL;
+
+int
+SDL_PrepareResampleFilter(void)
+{
+    SDL_AtomicLock(&ResampleFilterSpinlock);
+    if (!ResamplerFilter) {
+        /* if dB > 50, beta=(0.1102 * (dB - 8.7)), according to Matlab. */
+        const double dB = 80.0;
+        const double beta = 0.1102 * (dB - 8.7);
+        const size_t alloclen = RESAMPLER_FILTER_SIZE * sizeof (float);
+
+        ResamplerFilter = (float *) SDL_malloc(alloclen);
+        if (!ResamplerFilter) {
+            SDL_AtomicUnlock(&ResampleFilterSpinlock);
+            return SDL_OutOfMemory();
+        }
+
+        ResamplerFilterDifference = (float *) SDL_malloc(alloclen);
+        if (!ResamplerFilterDifference) {
+            SDL_free(ResamplerFilter);
+            ResamplerFilter = NULL;
+            SDL_AtomicUnlock(&ResampleFilterSpinlock);
+            return SDL_OutOfMemory();
+        }
+        kaiser_and_sinc(ResamplerFilter, ResamplerFilterDifference, RESAMPLER_FILTER_SIZE, beta);
+    }
+    SDL_AtomicUnlock(&ResampleFilterSpinlock);
+    return 0;
+}
+
+void
+SDL_FreeResampleFilter(void)
+{
+    SDL_free(ResamplerFilter);
+    SDL_free(ResamplerFilterDifference);
+    ResamplerFilter = NULL;
+    ResamplerFilterDifference = NULL;
+}
 
 static int
 ResamplerPadding(const int inrate, const int outrate)
 {
     if (inrate == outrate) {
         return 0;
-    }
-    if (inrate > outrate) {
-        return (int) SDL_ceilf(((float) (RESAMPLER_SAMPLES_PER_ZERO_CROSSING * inrate) / ((float) outrate)));
+    } else if (inrate > outrate) {
+        return (int) SDL_ceil(((float) (RESAMPLER_SAMPLES_PER_ZERO_CROSSING * inrate) / ((float) outrate)));
     }
     return RESAMPLER_SAMPLES_PER_ZERO_CROSSING;
 }
@@ -725,38 +814,33 @@ SDL_ResampleAudio(const int chans, const int inrate, const int outrate,
                         const float *inbuf, const int inbuflen,
                         float *outbuf, const int outbuflen)
 {
-    /* Note that this used to be double, but it looks like we can get by with float in most cases at
-       almost twice the speed on Intel processors, and orders of magnitude more
-       on CPUs that need a software fallback for double calculations. */
-    typedef float ResampleFloatType;
-
-    const ResampleFloatType finrate = (ResampleFloatType) inrate;
-    const ResampleFloatType outtimeincr = ((ResampleFloatType) 1.0f) / ((ResampleFloatType) outrate);
-    const ResampleFloatType ratio = ((float) outrate) / ((float) inrate);
+    const double finrate = (double) inrate;
+    const double outtimeincr = 1.0 / ((float) outrate);
+    const double  ratio = ((float) outrate) / ((float) inrate);
     const int paddinglen = ResamplerPadding(inrate, outrate);
     const int framelen = chans * (int)sizeof (float);
     const int inframes = inbuflen / framelen;
     const int wantedoutframes = (int) ((inbuflen / framelen) * ratio);  /* outbuflen isn't total to write, it's total available. */
     const int maxoutframes = outbuflen / framelen;
     const int outframes = SDL_min(wantedoutframes, maxoutframes);
-    ResampleFloatType outtime = 0.0f;
     float *dst = outbuf;
+    double outtime = 0.0;
     int i, j, chan;
 
     for (i = 0; i < outframes; i++) {
         const int srcindex = (int) (outtime * inrate);
-        const ResampleFloatType intime = ((ResampleFloatType) srcindex) / finrate;
-        const ResampleFloatType innexttime = ((ResampleFloatType) (srcindex + 1)) / finrate;
-        const ResampleFloatType indeltatime = innexttime - intime;
-        const ResampleFloatType interpolation1 = (indeltatime == 0.0f) ? 1.0f : (1.0f - ((innexttime - outtime) / indeltatime));
+        const double intime = ((double) srcindex) / finrate;
+        const double innexttime = ((double) (srcindex + 1)) / finrate;
+        const double interpolation1 = 1.0 - ((innexttime - outtime) / (innexttime - intime));
         const int filterindex1 = (int) (interpolation1 * RESAMPLER_SAMPLES_PER_ZERO_CROSSING);
-        const ResampleFloatType interpolation2 = 1.0f - interpolation1;
+        const double interpolation2 = 1.0 - interpolation1;
         const int filterindex2 = (int) (interpolation2 * RESAMPLER_SAMPLES_PER_ZERO_CROSSING);
 
         for (chan = 0; chan < chans; chan++) {
             float outsample = 0.0f;
 
             /* do this twice to calculate the sample, once for the "left wing" and then same for the right. */
+            /* !!! FIXME: do both wings in one loop */
             for (j = 0; (filterindex1 + (j * RESAMPLER_SAMPLES_PER_ZERO_CROSSING)) < RESAMPLER_FILTER_SIZE; j++) {
                 const int srcframe = srcindex - j;
                 /* !!! FIXME: we can bubble this conditional out of here by doing a pre loop. */
@@ -764,15 +848,12 @@ SDL_ResampleAudio(const int chans, const int inrate, const int outrate,
                 outsample += (float)(insample * (ResamplerFilter[filterindex1 + (j * RESAMPLER_SAMPLES_PER_ZERO_CROSSING)] + (interpolation1 * ResamplerFilterDifference[filterindex1 + (j * RESAMPLER_SAMPLES_PER_ZERO_CROSSING)])));
             }
 
-            /* Do the right wing! */
             for (j = 0; (filterindex2 + (j * RESAMPLER_SAMPLES_PER_ZERO_CROSSING)) < RESAMPLER_FILTER_SIZE; j++) {
-                const int jsamples = j * RESAMPLER_SAMPLES_PER_ZERO_CROSSING;
                 const int srcframe = srcindex + 1 + j;
                 /* !!! FIXME: we can bubble this conditional out of here by doing a post loop. */
                 const float insample = (srcframe >= inframes) ? rpadding[((srcframe - inframes) * chans) + chan] : inbuf[(srcframe * chans) + chan];
-                outsample += (float)(insample * (ResamplerFilter[filterindex2 + jsamples] + (interpolation2 * ResamplerFilterDifference[filterindex2 + jsamples])));
+                outsample += (float)(insample * (ResamplerFilter[filterindex2 + (j * RESAMPLER_SAMPLES_PER_ZERO_CROSSING)] + (interpolation2 * ResamplerFilterDifference[filterindex2 + (j * RESAMPLER_SAMPLES_PER_ZERO_CROSSING)])));
             }
-
             *(dst++) = outsample;
         }
 
@@ -849,7 +930,9 @@ SDL_AddAudioCVTFilter(SDL_AudioCVT *cvt, const SDL_AudioFilter filter)
     if (cvt->filter_index >= SDL_AUDIOCVT_MAX_FILTERS) {
         return SDL_SetError("Too many filters needed for conversion, exceeded maximum of %d", SDL_AUDIOCVT_MAX_FILTERS);
     }
-    SDL_assert(filter != NULL);
+    if (filter == NULL) {
+        return SDL_SetError("Audio filter pointer is NULL");
+    }
     cvt->filters[cvt->filter_index++] = filter;
     cvt->filters[cvt->filter_index] = NULL; /* Moving terminator */
     return 0;
@@ -860,7 +943,7 @@ SDL_BuildAudioTypeCVTToFloat(SDL_AudioCVT *cvt, const SDL_AudioFormat src_fmt)
 {
     int retval = 0;  /* 0 == no conversion necessary. */
 
-    if ((SDL_AUDIO_ISBIGENDIAN(src_fmt) != 0) == (SDL_BYTEORDER == SDL_LIL_ENDIAN) && SDL_AUDIO_BITSIZE(src_fmt) > 8) {
+    if ((SDL_AUDIO_ISBIGENDIAN(src_fmt) != 0) == (SDL_BYTEORDER == SDL_LIL_ENDIAN)) {
         if (SDL_AddAudioCVTFilter(cvt, SDL_Convert_Byteswap) < 0) {
             return -1;
         }
@@ -937,7 +1020,7 @@ SDL_BuildAudioTypeCVTFromFloat(SDL_AudioCVT *cvt, const SDL_AudioFormat dst_fmt)
         retval = 1;  /* added a converter. */
     }
 
-    if ((SDL_AUDIO_ISBIGENDIAN(dst_fmt) != 0) == (SDL_BYTEORDER == SDL_LIL_ENDIAN) && SDL_AUDIO_BITSIZE(dst_fmt) > 8) {
+    if ((SDL_AUDIO_ISBIGENDIAN(dst_fmt) != 0) == (SDL_BYTEORDER == SDL_LIL_ENDIAN)) {
         if (SDL_AddAudioCVTFilter(cvt, SDL_Convert_Byteswap) < 0) {
             return -1;
         }
@@ -1037,6 +1120,10 @@ SDL_BuildAudioResampleCVT(SDL_AudioCVT * cvt, const int dst_channels,
         return SDL_SetError("No conversion available for these rates");
     }
 
+    if (SDL_PrepareResampleFilter() < 0) {
+        return -1;
+    }
+
     /* Update (cvt) with filter details... */
     if (SDL_AddAudioCVTFilter(cvt, filter) < 0) {
         return -1;
@@ -1130,26 +1217,19 @@ SDL_BuildAudioCVT(SDL_AudioCVT * cvt,
 
     if (!SDL_SupportedAudioFormat(src_fmt)) {
         return SDL_SetError("Invalid source format");
-    }
-    if (!SDL_SupportedAudioFormat(dst_fmt)) {
+    } else if (!SDL_SupportedAudioFormat(dst_fmt)) {
         return SDL_SetError("Invalid destination format");
-    }
-    if (!SDL_SupportedChannelCount(src_channels)) {
+    } else if (!SDL_SupportedChannelCount(src_channels)) {
         return SDL_SetError("Invalid source channels");
-    }
-    if (!SDL_SupportedChannelCount(dst_channels)) {
+    } else if (!SDL_SupportedChannelCount(dst_channels)) {
         return SDL_SetError("Invalid destination channels");
-    }
-    if (src_rate <= 0) {
+    } else if (src_rate <= 0) {
         return SDL_SetError("Source rate is equal to or less than zero");
-    }
-    if (dst_rate <= 0) {
+    } else if (dst_rate <= 0) {
         return SDL_SetError("Destination rate is equal to or less than zero");
-    }
-    if (src_rate >= SDL_MAX_SINT32 / RESAMPLER_SAMPLES_PER_ZERO_CROSSING) {
+    } else if (src_rate >= SDL_MAX_SINT32 / RESAMPLER_SAMPLES_PER_ZERO_CROSSING) {
         return SDL_SetError("Source rate is too high");
-    }
-    if (dst_rate >= SDL_MAX_SINT32 / RESAMPLER_SAMPLES_PER_ZERO_CROSSING) {
+    } else if (dst_rate >= SDL_MAX_SINT32 / RESAMPLER_SAMPLES_PER_ZERO_CROSSING) {
         return SDL_SetError("Destination rate is too high");
     }
 
@@ -1193,9 +1273,6 @@ SDL_BuildAudioCVT(SDL_AudioCVT * cvt,
 
         /* just a byteswap needed? */
         if ((src_fmt & ~SDL_AUDIO_MASK_ENDIAN) == (dst_fmt & ~SDL_AUDIO_MASK_ENDIAN)) {
-            if (SDL_AUDIO_BITSIZE(dst_fmt) == 8) {
-                return 0;
-            }
             if (SDL_AddAudioCVTFilter(cvt, SDL_Convert_Byteswap) < 0) {
                 return -1;
             }
@@ -1589,7 +1666,6 @@ SDL_NewAudioStream(const SDL_AudioFormat src_format,
 
     retval = (SDL_AudioStream *) SDL_calloc(1, sizeof (SDL_AudioStream));
     if (!retval) {
-        SDL_OutOfMemory();
         return NULL;
     }
 
@@ -1654,6 +1730,13 @@ SDL_NewAudioStream(const SDL_AudioFormat src_format,
             if (!retval->resampler_state) {
                 SDL_FreeAudioStream(retval);
                 SDL_OutOfMemory();
+                return NULL;
+            }
+
+            if (SDL_PrepareResampleFilter() < 0) {
+                SDL_free(retval->resampler_state);
+                retval->resampler_state = NULL;
+                SDL_FreeAudioStream(retval);
                 return NULL;
             }
 
@@ -1824,14 +1907,11 @@ SDL_AudioStreamPut(SDL_AudioStream *stream, const void *buf, int len)
 
     if (!stream) {
         return SDL_InvalidParamError("stream");
-    }
-    if (!buf) {
+    } else if (!buf) {
         return SDL_InvalidParamError("buf");
-    }
-    if (len == 0) {
+    } else if (len == 0) {
         return 0;  /* nothing to do. */
-    }
-    if ((len % stream->src_sample_frame_size) != 0) {
+    } else if ((len % stream->src_sample_frame_size) != 0) {
         return SDL_SetError("Can't add partial sample frames");
     }
 
@@ -1937,14 +2017,11 @@ SDL_AudioStreamGet(SDL_AudioStream *stream, void *buf, int len)
 
     if (!stream) {
         return SDL_InvalidParamError("stream");
-    }
-    if (!buf) {
+    } else if (!buf) {
         return SDL_InvalidParamError("buf");
-    }
-    if (len <= 0) {
+    } else if (len <= 0) {
         return 0;  /* nothing to do. */
-    }
-    if ((len % stream->dst_sample_frame_size) != 0) {
+    } else if ((len % stream->dst_sample_frame_size) != 0) {
         return SDL_SetError("Can't request partial sample frames");
     }
 
@@ -1990,3 +2067,4 @@ SDL_FreeAudioStream(SDL_AudioStream *stream)
 }
 
 /* vi: set ts=4 sw=4 expandtab: */
+

@@ -89,7 +89,7 @@ SDL_MetalViewEventWatch(void *userdata, SDL_Event *event)
         /* Allow resize. */
         self.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
 
-        SDL_AddEventWatch(SDL_MetalViewEventWatch, (__bridge void *)(self));
+        SDL_AddEventWatch(SDL_MetalViewEventWatch, self);
 
         [self updateDrawableSize];
     }
@@ -99,7 +99,8 @@ SDL_MetalViewEventWatch(void *userdata, SDL_Event *event)
 
 - (void)dealloc
 {
-    SDL_DelEventWatch(SDL_MetalViewEventWatch, (__bridge void *)(self));
+    SDL_DelEventWatch(SDL_MetalViewEventWatch, self);
+    [super dealloc];
 }
 
 - (NSInteger)tag
@@ -134,7 +135,7 @@ SDL_MetalView
 Cocoa_Metal_CreateView(_THIS, SDL_Window * window)
 { @autoreleasepool {
     SDL_WindowData* data = (__bridge SDL_WindowData *)window->driverdata;
-    NSView *view = data.nswindow.contentView;
+    NSView *view = data->nswindow.contentView;
     BOOL highDPI = (window->flags & SDL_WINDOW_ALLOW_HIGHDPI) != 0;
     Uint32 windowID = SDL_GetWindowID(window);
     SDL_cocoametalview *newview;
@@ -150,6 +151,7 @@ Cocoa_Metal_CreateView(_THIS, SDL_Window * window)
     [view addSubview:newview];
 
     metalview = (SDL_MetalView)CFBridgingRetain(newview);
+    [newview release];
 
     return metalview;
 }}
@@ -172,7 +174,7 @@ void
 Cocoa_Metal_GetDrawableSize(_THIS, SDL_Window * window, int * w, int * h)
 { @autoreleasepool {
     SDL_WindowData *data = (__bridge SDL_WindowData *)window->driverdata;
-    NSView *contentView = data.sdlContentView;
+    NSView *contentView = data->sdlContentView;
     SDL_cocoametalview* metalview = [contentView viewWithTag:SDL_METALVIEW_TAG];
     if (metalview) {
         CAMetalLayer *layer = (CAMetalLayer*)metalview.layer;
@@ -187,8 +189,11 @@ Cocoa_Metal_GetDrawableSize(_THIS, SDL_Window * window, int * w, int * h)
         /* Fall back to the viewport size. */
         NSRect viewport = [contentView bounds];
         if (window->flags & SDL_WINDOW_ALLOW_HIGHDPI) {
-            /* This gives us the correct viewport for a Retina-enabled view. */
-            viewport = [contentView convertRectToBacking:viewport];
+            /* This gives us the correct viewport for a Retina-enabled view, only
+             * supported on 10.7+. */
+            if ([contentView respondsToSelector:@selector(convertRectToBacking:)]) {
+                viewport = [contentView convertRectToBacking:viewport];
+            }
         }
         if (w) {
             *w = viewport.size.width;

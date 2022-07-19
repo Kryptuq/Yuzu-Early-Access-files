@@ -190,8 +190,7 @@ loop(void)
                     case SDLK_i: {
                         for (i = 0; i < SDL_GetNumTouchDevices(); ++i) {
                             const SDL_TouchID id = SDL_GetTouchDevice(i);
-                            const char *name = SDL_GetTouchName(i);
-                            SDL_Log("Fingers Down on device %"SDL_PRIs64" (%s): %d", id, name, SDL_GetNumTouchFingers(id));
+                            SDL_Log("Fingers Down on device %"SDL_PRIs64": %d", id, SDL_GetNumTouchFingers(id));
                         }
                         break;
                     }

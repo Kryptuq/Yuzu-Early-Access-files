@@ -30,8 +30,8 @@
 #define NUM_BUFFERS 2
 
 struct SDL_PrivateAudioData {
-    /* The hardware input/output port. */
-    int     port;
+    /* The hardware output channel. */
+    int     channel;
     /* The raw allocated mixing buffer. */
     Uint8   *rawbuf;
     /* Individual mixing buffers. */

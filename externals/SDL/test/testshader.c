@@ -126,52 +126,21 @@ static PFNGLUSEPROGRAMOBJECTARBPROC glUseProgramObjectARB;
 
 static SDL_bool CompileShader(GLhandleARB shader, const char *source)
 {
-    GLint status = 0;
+    GLint status;
 
     glShaderSourceARB(shader, 1, &source, NULL);
     glCompileShaderARB(shader);
     glGetObjectParameterivARB(shader, GL_OBJECT_COMPILE_STATUS_ARB, &status);
     if (status == 0) {
-        GLint length = 0;
+        GLint length;
         char *info;
 
         glGetObjectParameterivARB(shader, GL_OBJECT_INFO_LOG_LENGTH_ARB, &length);
-        info = (char *) SDL_malloc(length + 1);
-        if (!info) {
-            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Out of memory!");
-        } else {
-            glGetInfoLogARB(shader, length, NULL, info);
-            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to compile shader:\n%s\n%s", source, info);
-            SDL_free(info);
-        }
-        return SDL_FALSE;
-    } else {
-        return SDL_TRUE;
-    }
-}
+        info = SDL_stack_alloc(char, length+1);
+        glGetInfoLogARB(shader, length, NULL, info);
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to compile shader:\n%s\n%s", source, info);
+        SDL_stack_free(info);
 
-static SDL_bool LinkProgram(ShaderData *data)
-{
-    GLint status = 0;
-
-    glAttachObjectARB(data->program, data->vert_shader);
-    glAttachObjectARB(data->program, data->frag_shader);
-    glLinkProgramARB(data->program);
-
-    glGetObjectParameterivARB(data->program, GL_OBJECT_LINK_STATUS_ARB, &status);
-    if (status == 0) {
-        GLint length = 0;
-        char *info;
-
-        glGetObjectParameterivARB(data->program, GL_OBJECT_INFO_LOG_LENGTH_ARB, &length);
-        info = (char *) SDL_malloc(length + 1);
-        if (!info) {
-            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Out of memory!");
-        } else {
-            glGetInfoLogARB(data->program, length, NULL, info);
-            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to link program:\n%s", info);
-            SDL_free(info);
-        }
         return SDL_FALSE;
     } else {
         return SDL_TRUE;
@@ -202,9 +171,9 @@ static SDL_bool CompileShaderProgram(ShaderData *data)
     }
 
     /* ... and in the darkness bind them */
-    if (!LinkProgram(data)) {
-        return SDL_FALSE;
-    }
+    glAttachObjectARB(data->program, data->vert_shader);
+    glAttachObjectARB(data->program, data->frag_shader);
+    glLinkProgramARB(data->program);
 
     /* Set up some uniform variables */
     glUseProgramObjectARB(data->program);

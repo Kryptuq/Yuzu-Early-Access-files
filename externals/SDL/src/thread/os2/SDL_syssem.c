@@ -89,7 +89,7 @@ SDL_SemWaitTimeout(SDL_sem * sem, Uint32 timeout)
     ULONG cPost;
 
     if (sem == NULL)
-        return SDL_InvalidParamError("sem");
+        return SDL_SetError("Passed a NULL sem");
 
     if (timeout != SEM_INDEFINITE_WAIT)
         DosQuerySysInfo(QSV_MS_COUNT, QSV_MS_COUNT, &ulStartTime, sizeof(ULONG));
@@ -147,7 +147,7 @@ SDL_SemValue(SDL_sem * sem)
     ULONG ulRC;
 
     if (sem == NULL) {
-        SDL_InvalidParamError("sem");
+        SDL_SetError("Passed a NULL sem");
         return 0;
     }
 
@@ -167,7 +167,7 @@ SDL_SemPost(SDL_sem * sem)
     ULONG ulRC;
 
     if (sem == NULL)
-        return SDL_InvalidParamError("sem");
+        return SDL_SetError("Passed a NULL sem");
 
     ulRC = DosRequestMutexSem(sem->hMtx, SEM_INDEFINITE_WAIT);
     if (ulRC != NO_ERROR)

@@ -52,14 +52,6 @@ enum libdecor_window_state;
 #include "xkbcommon/xkbcommon.h"
 #include "xkbcommon/xkbcommon-compose.h"
 
-/* Must be included before our #defines, see Bugzilla #4957 */
-#include "wayland-client-core.h"
-
-#define SDL_WAYLAND_CHECK_VERSION(x, y, z) \
-  (WAYLAND_VERSION_MAJOR > x || \
-   (WAYLAND_VERSION_MAJOR == x && WAYLAND_VERSION_MINOR > y) || \
-   (WAYLAND_VERSION_MAJOR == x && WAYLAND_VERSION_MINOR == y && WAYLAND_VERSION_MICRO >= z))
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -78,6 +70,9 @@ void SDL_WAYLAND_UnloadSymbols(void);
 #ifdef __cplusplus
 }
 #endif
+
+/* Must be included before our #defines, see Bugzilla #4957 */
+#include "wayland-client-core.h"
 
 #ifdef SDL_VIDEO_DRIVER_WAYLAND_DYNAMIC
 
@@ -153,7 +148,6 @@ void SDL_WAYLAND_UnloadSymbols(void);
 #define libdecor_state_free (*WAYLAND_libdecor_state_free)
 #define libdecor_configuration_get_content_size (*WAYLAND_libdecor_configuration_get_content_size)
 #define libdecor_configuration_get_window_state (*WAYLAND_libdecor_configuration_get_window_state)
-#define libdecor_dispatch (*WAYLAND_libdecor_dispatch)
 #endif
 
 #else /* SDL_VIDEO_DRIVER_WAYLAND_DYNAMIC */

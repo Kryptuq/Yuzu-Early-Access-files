@@ -42,7 +42,7 @@
 #define PSPAUDIO_DRIVER_NAME    "psp"
 
 static int
-PSPAUDIO_OpenDevice(_THIS, const char *devname)
+PSPAUDIO_OpenDevice(_THIS, void *handle, const char *devname, int iscapture)
 {
     int format, mixlen, i;
 
@@ -158,7 +158,7 @@ static void PSPAUDIO_ThreadInit(_THIS)
     }
 }
 
-static SDL_bool
+static int
 PSPAUDIO_Init(SDL_AudioDriverImpl * impl)
 {
     /* Set the function pointers */
@@ -170,16 +170,16 @@ PSPAUDIO_Init(SDL_AudioDriverImpl * impl)
     impl->ThreadInit = PSPAUDIO_ThreadInit;
 
     /* PSP audio device */
-    impl->OnlyHasDefaultOutputDevice = SDL_TRUE;
+    impl->OnlyHasDefaultOutputDevice = 1;
     /*
-    impl->HasCaptureSupport = SDL_TRUE;
-    impl->OnlyHasDefaultCaptureDevice = SDL_TRUE;
+    impl->HasCaptureSupport = 1;
+    impl->OnlyHasDefaultCaptureDevice = 1;
     */
-    return SDL_TRUE;   /* this audio target is available. */
+    return 1;   /* this audio target is available. */
 }
 
 AudioBootStrap PSPAUDIO_bootstrap = {
-    "psp", "PSP audio driver", PSPAUDIO_Init, SDL_FALSE
+    "psp", "PSP audio driver", PSPAUDIO_Init, 0
 };
 
 #endif /* SDL_AUDIO_DRIVER_PSP */

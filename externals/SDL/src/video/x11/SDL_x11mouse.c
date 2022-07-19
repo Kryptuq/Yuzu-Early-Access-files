@@ -244,8 +244,8 @@ X11_CreateSystemCursor(SDL_SystemCursor id)
     case SDL_SYSTEM_CURSOR_WAIT:      shape = XC_watch; break;
     case SDL_SYSTEM_CURSOR_CROSSHAIR: shape = XC_tcross; break;
     case SDL_SYSTEM_CURSOR_WAITARROW: shape = XC_watch; break;
-    case SDL_SYSTEM_CURSOR_SIZENWSE:  shape = XC_top_left_corner; break;
-    case SDL_SYSTEM_CURSOR_SIZENESW:  shape = XC_top_right_corner; break;
+    case SDL_SYSTEM_CURSOR_SIZENWSE:  shape = XC_fleur; break;
+    case SDL_SYSTEM_CURSOR_SIZENESW:  shape = XC_fleur; break;
     case SDL_SYSTEM_CURSOR_SIZEWE:    shape = XC_sb_h_double_arrow; break;
     case SDL_SYSTEM_CURSOR_SIZENS:    shape = XC_sb_v_double_arrow; break;
     case SDL_SYSTEM_CURSOR_SIZEALL:   shape = XC_fleur; break;
@@ -294,15 +294,14 @@ X11_ShowCursor(SDL_Cursor * cursor)
         SDL_VideoDevice *video = SDL_GetVideoDevice();
         Display *display = GetDisplay();
         SDL_Window *window;
+        SDL_WindowData *data;
 
         for (window = video->windows; window; window = window->next) {
-            SDL_WindowData *data = (SDL_WindowData *)window->driverdata;
-            if (data) {
-                if (x11_cursor != None) {
-                    X11_XDefineCursor(display, data->xwindow, x11_cursor);
-                } else {
-                    X11_XUndefineCursor(display, data->xwindow);
-                }
+            data = (SDL_WindowData *)window->driverdata;
+            if (x11_cursor != None) {
+                X11_XDefineCursor(display, data->xwindow, x11_cursor);
+            } else {
+                X11_XUndefineCursor(display, data->xwindow);
             }
         }
         X11_XFlush(display);
@@ -406,8 +405,6 @@ X11_GetGlobalMouseState(int *x, int *y)
                     buttons |= (mask & Button1Mask) ? SDL_BUTTON_LMASK : 0;
                     buttons |= (mask & Button2Mask) ? SDL_BUTTON_MMASK : 0;
                     buttons |= (mask & Button3Mask) ? SDL_BUTTON_RMASK : 0;
-                    /* Use the SDL state for the extended buttons - it's better than nothing */
-                    buttons |= (SDL_GetMouseState(NULL, NULL) & (SDL_BUTTON_X1MASK|SDL_BUTTON_X2MASK));
                     /* SDL_DisplayData->x,y point to screen origin, and adding them to mouse coordinates relative to root window doesn't do the right thing
                      * (observed on dual monitor setup with primary display being the rightmost one - mouse was offset to the right).
                      *

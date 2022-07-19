@@ -522,12 +522,8 @@ static void
 outputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBufferRef inBuffer)
 {
     SDL_AudioDevice *this = (SDL_AudioDevice *) inUserData;
-
-    SDL_LockMutex(this->mixer_lock);
-
     if (SDL_AtomicGet(&this->hidden->shutdown)) {
-        SDL_UnlockMutex(this->mixer_lock);
-        return;  /* don't do anything, since we don't even want to enqueue this buffer again. */
+        return;  /* don't do anything. */
     }
 
     if (!SDL_AtomicGet(&this->enabled) || SDL_AtomicGet(&this->paused)) {
@@ -540,8 +536,10 @@ outputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBufferRef inBuffe
         while (remaining > 0) {
             if (SDL_AudioStreamAvailable(this->stream) == 0) {
                 /* Generate the data */
+                SDL_LockMutex(this->mixer_lock);
                 (*this->callbackspec.callback)(this->callbackspec.userdata,
                                                this->hidden->buffer, this->hidden->bufferSize);
+                SDL_UnlockMutex(this->mixer_lock);
                 this->hidden->bufferOffset = 0;
                 SDL_AudioStreamPut(this->stream, this->hidden->buffer, this->hidden->bufferSize);
             }
@@ -567,8 +565,10 @@ outputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBufferRef inBuffe
             UInt32 len;
             if (this->hidden->bufferOffset >= this->hidden->bufferSize) {
                 /* Generate the data */
+                SDL_LockMutex(this->mixer_lock);
                 (*this->callbackspec.callback)(this->callbackspec.userdata,
                             this->hidden->buffer, this->hidden->bufferSize);
+                SDL_UnlockMutex(this->mixer_lock);
                 this->hidden->bufferOffset = 0;
             }
 
@@ -587,8 +587,6 @@ outputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBufferRef inBuffe
     AudioQueueEnqueueBuffer(this->hidden->audioQueue, inBuffer, 0, NULL);
 
     inBuffer->mAudioDataByteSize = inBuffer->mAudioDataBytesCapacity;
-
-    SDL_UnlockMutex(this->mixer_lock);
 }
 
 static void
@@ -743,10 +741,8 @@ COREAUDIO_CloseDevice(_THIS)
 
 #if MACOSX_COREAUDIO
 static int
-prepare_device(_THIS)
+prepare_device(_THIS, void *handle, int iscapture)
 {
-    void *handle = this->handle;
-    SDL_bool iscapture = this->iscapture;
     AudioDeviceID devid = (AudioDeviceID) ((size_t) handle);
     OSStatus result = noErr;
     UInt32 size = 0;
@@ -987,7 +983,7 @@ audioqueue_thread(void *arg)
                and quits (flagging the audioqueue for shutdown), or toggles to some other system
                output device (in which case we'll try again). */
             const AudioDeviceID prev_devid = this->hidden->deviceID;
-            if (prepare_device(this) && (prev_devid != this->hidden->deviceID)) {
+            if (prepare_device(this, this->handle, this->iscapture) && (prev_devid != this->hidden->deviceID)) {
                 AudioQueueStop(this->hidden->audioQueue, 1);
                 if (assign_device_to_audioqueue(this)) {
                     int i;
@@ -1019,11 +1015,11 @@ audioqueue_thread(void *arg)
 }
 
 static int
-COREAUDIO_OpenDevice(_THIS, const char *devname)
+COREAUDIO_OpenDevice(_THIS, void *handle, const char *devname, int iscapture)
 {
     AudioStreamBasicDescription *strdesc;
-    SDL_AudioFormat test_format;
-    SDL_bool iscapture = this->iscapture;
+    SDL_AudioFormat test_format = SDL_FirstAudioFormat(this->spec.format);
+    int valid_datatype = 0;
     SDL_AudioDevice **new_open_devices;
 
     /* Initialize all variables that we clean on shutdown */
@@ -1080,7 +1076,8 @@ COREAUDIO_OpenDevice(_THIS, const char *devname)
     strdesc->mSampleRate = this->spec.freq;
     strdesc->mFramesPerPacket = 1;
 
-    for (test_format = SDL_FirstAudioFormat(this->spec.format); test_format; test_format = SDL_NextAudioFormat()) {
+    while ((!valid_datatype) && (test_format)) {
+        this->spec.format = test_format;
         /* CoreAudio handles most of SDL's formats natively, but not U16, apparently. */
         switch (test_format) {
         case AUDIO_U8:
@@ -1091,32 +1088,32 @@ COREAUDIO_OpenDevice(_THIS, const char *devname)
         case AUDIO_S32MSB:
         case AUDIO_F32LSB:
         case AUDIO_F32MSB:
+            valid_datatype = 1;
+            strdesc->mBitsPerChannel = SDL_AUDIO_BITSIZE(this->spec.format);
+            if (SDL_AUDIO_ISBIGENDIAN(this->spec.format))
+                strdesc->mFormatFlags |= kLinearPCMFormatFlagIsBigEndian;
+
+            if (SDL_AUDIO_ISFLOAT(this->spec.format))
+                strdesc->mFormatFlags |= kLinearPCMFormatFlagIsFloat;
+            else if (SDL_AUDIO_ISSIGNED(this->spec.format))
+                strdesc->mFormatFlags |= kLinearPCMFormatFlagIsSignedInteger;
             break;
 
         default:
-            continue;
+            test_format = SDL_NextAudioFormat();
+            break;
         }
-        break;
     }
 
-    if (!test_format) {      /* shouldn't happen, but just in case... */
-        return SDL_SetError("%s: Unsupported audio format", "coreaudio");
+    if (!valid_datatype) {      /* shouldn't happen, but just in case... */
+        return SDL_SetError("Unsupported audio format");
     }
-    this->spec.format = test_format;
-    strdesc->mBitsPerChannel = SDL_AUDIO_BITSIZE(test_format);
-    if (SDL_AUDIO_ISBIGENDIAN(test_format))
-        strdesc->mFormatFlags |= kLinearPCMFormatFlagIsBigEndian;
-
-    if (SDL_AUDIO_ISFLOAT(test_format))
-        strdesc->mFormatFlags |= kLinearPCMFormatFlagIsFloat;
-    else if (SDL_AUDIO_ISSIGNED(test_format))
-        strdesc->mFormatFlags |= kLinearPCMFormatFlagIsSignedInteger;
 
     strdesc->mBytesPerFrame = strdesc->mChannelsPerFrame * strdesc->mBitsPerChannel / 8;
     strdesc->mBytesPerPacket = strdesc->mBytesPerFrame * strdesc->mFramesPerPacket;
 
 #if MACOSX_COREAUDIO
-    if (!prepare_device(this)) {
+    if (!prepare_device(this, handle, iscapture)) {
         return -1;
     }
 #endif
@@ -1138,7 +1135,8 @@ COREAUDIO_OpenDevice(_THIS, const char *devname)
     this->hidden->ready_semaphore = NULL;
 
     if ((this->hidden->thread != NULL) && (this->hidden->thread_error != NULL)) {
-        return SDL_SetError("%s", this->hidden->thread_error);
+        SDL_SetError("%s", this->hidden->thread_error);
+        return -1;
     }
 
     return (this->hidden->thread != NULL) ? 0 : -1;
@@ -1154,7 +1152,7 @@ COREAUDIO_Deinitialize(void)
 #endif
 }
 
-static SDL_bool
+static int
 COREAUDIO_Init(SDL_AudioDriverImpl * impl)
 {
     /* Set the function pointers */
@@ -1166,18 +1164,18 @@ COREAUDIO_Init(SDL_AudioDriverImpl * impl)
     impl->DetectDevices = COREAUDIO_DetectDevices;
     AudioObjectAddPropertyListener(kAudioObjectSystemObject, &devlist_address, device_list_changed, NULL);
 #else
-    impl->OnlyHasDefaultOutputDevice = SDL_TRUE;
-    impl->OnlyHasDefaultCaptureDevice = SDL_TRUE;
+    impl->OnlyHasDefaultOutputDevice = 1;
+    impl->OnlyHasDefaultCaptureDevice = 1;
 #endif
 
-    impl->ProvidesOwnCallbackThread = SDL_TRUE;
-    impl->HasCaptureSupport = SDL_TRUE;
+    impl->ProvidesOwnCallbackThread = 1;
+    impl->HasCaptureSupport = 1;
 
-    return SDL_TRUE;   /* this audio target is available. */
+    return 1;   /* this audio target is available. */
 }
 
 AudioBootStrap COREAUDIO_bootstrap = {
-    "coreaudio", "CoreAudio", COREAUDIO_Init, SDL_FALSE
+    "coreaudio", "CoreAudio", COREAUDIO_Init, 0
 };
 
 #endif /* SDL_AUDIO_DRIVER_COREAUDIO */

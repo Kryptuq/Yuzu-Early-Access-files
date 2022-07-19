@@ -98,8 +98,10 @@ DSOUND_Load(void)
 static int
 SetDSerror(const char *function, int code)
 {
-    const char *error;
+    static const char *error;
+    static char errbuf[1024];
 
+    errbuf[0] = 0;
     switch (code) {
     case E_NOINTERFACE:
         error = "Unsupported interface -- Is DirectX 8.0 or later installed?";
@@ -135,11 +137,15 @@ SetDSerror(const char *function, int code)
         error = "Function not supported";
         break;
     default:
-        error = "Unknown DirectSound error";
+        SDL_snprintf(errbuf, SDL_arraysize(errbuf),
+                     "%s: Unknown DirectSound error: 0x%x", function, code);
         break;
     }
-
-    return SDL_SetError("%s: %s (0x%x)", function, error, code);
+    if (!errbuf[0]) {
+        SDL_snprintf(errbuf, SDL_arraysize(errbuf), "%s: %s", function,
+                     error);
+    }
+    return SDL_SetError("%s", errbuf);
 }
 
 static void
@@ -467,14 +473,14 @@ CreateCaptureBuffer(_THIS, const DWORD bufsize, WAVEFORMATEX *wfmt)
 }
 
 static int
-DSOUND_OpenDevice(_THIS, const char *devname)
+DSOUND_OpenDevice(_THIS, void *handle, const char *devname, int iscapture)
 {
     const DWORD numchunks = 8;
     HRESULT result;
+    SDL_bool valid_format = SDL_FALSE;
     SDL_bool tried_format = SDL_FALSE;
-    SDL_bool iscapture = this->iscapture;
-    SDL_AudioFormat test_format;
-    LPGUID guid = (LPGUID) this->handle;
+    SDL_AudioFormat test_format = SDL_FirstAudioFormat(this->spec.format);
+    LPGUID guid = (LPGUID) handle;
     DWORD bufsize;
 
     /* Initialize all variables that we clean on shutdown */
@@ -504,7 +510,7 @@ DSOUND_OpenDevice(_THIS, const char *devname)
         }
     }
 
-    for (test_format = SDL_FirstAudioFormat(this->spec.format); test_format; test_format = SDL_NextAudioFormat()) {
+    while ((!valid_format) && (test_format)) {
         switch (test_format) {
         case AUDIO_U8:
         case AUDIO_S16:
@@ -541,21 +547,19 @@ DSOUND_OpenDevice(_THIS, const char *devname)
                 rc = iscapture ? CreateCaptureBuffer(this, bufsize, &wfmt) : CreateSecondary(this, bufsize, &wfmt);
                 if (rc == 0) {
                     this->hidden->num_buffers = numchunks;
-                    break;
+                    valid_format = SDL_TRUE;
                 }
             }
-            continue;
-        default:
-            continue;
+            break;
         }
-        break;
+        test_format = SDL_NextAudioFormat();
     }
 
-    if (!test_format) {
+    if (!valid_format) {
         if (tried_format) {
             return -1;  /* CreateSecondary() should have called SDL_SetError(). */
         }
-        return SDL_SetError("%s: Unsupported audio format", "directsound");
+        return SDL_SetError("DirectSound: Unsupported audio format");
     }
 
     /* Playback buffers will auto-start playing in DSOUND_WaitDevice() */
@@ -571,11 +575,11 @@ DSOUND_Deinitialize(void)
 }
 
 
-static SDL_bool
+static int
 DSOUND_Init(SDL_AudioDriverImpl * impl)
 {
     if (!DSOUND_Load()) {
-        return SDL_FALSE;
+        return 0;
     }
 
     /* Set the function pointers */
@@ -592,11 +596,11 @@ DSOUND_Init(SDL_AudioDriverImpl * impl)
 
     impl->HasCaptureSupport = SDL_TRUE;
 
-    return SDL_TRUE;   /* this audio target is available. */
+    return 1;   /* this audio target is available. */
 }
 
 AudioBootStrap DSOUND_bootstrap = {
-    "directsound", "DirectSound", DSOUND_Init, SDL_FALSE
+    "directsound", "DirectSound", DSOUND_Init, 0
 };
 
 #endif /* SDL_AUDIO_DRIVER_DSOUND */

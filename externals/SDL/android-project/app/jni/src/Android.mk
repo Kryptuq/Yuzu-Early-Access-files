@@ -13,6 +13,6 @@ LOCAL_SRC_FILES := YourSourceHere.c
 
 LOCAL_SHARED_LIBRARIES := SDL2
 
-LOCAL_LDLIBS := -lGLESv1_CM -lGLESv2 -lOpenSLES -llog -landroid
+LOCAL_LDLIBS := -lGLESv1_CM -lGLESv2 -llog
 
 include $(BUILD_SHARED_LIBRARY)

@@ -43,6 +43,21 @@
 typedef LONG NTSTATUS;
 #endif
 
+/* SDL C runtime functions */
+#include "SDL_stdinc.h"
+
+#define calloc SDL_calloc
+#define free SDL_free
+#define malloc SDL_malloc
+#define memcpy SDL_memcpy
+#define memset SDL_memset
+#define strcmp SDL_strcmp
+#define strlen SDL_strlen
+#define strstr SDL_strstr
+#define strtol SDL_strtol
+#define wcscmp SDL_wcscmp
+#define _wcsdup SDL_wcsdup
+
 /* The maximum number of characters that can be passed into the
    HidD_Get*String() functions without it failing.*/
 #define MAX_STRING_WCHARS 0xFFF
@@ -79,26 +94,11 @@ extern "C" {
 } /* extern "C" */
 #endif
 
-#include "../hidapi/hidapi.h"
-
 /*#include <stdio.h>*/
 /*#include <stdlib.h>*/
 
-/* SDL C runtime functions */
-#include "SDL_stdinc.h"
 
-#define calloc SDL_calloc
-#define free SDL_free
-#define malloc SDL_malloc
-#define memcpy SDL_memcpy
-#define memset SDL_memset
-#define strcmp SDL_strcmp
-#define strlen SDL_strlen
-#define strstr SDL_strstr
-#define strtol SDL_strtol
-#define wcscmp SDL_wcscmp
-#define _wcsdup SDL_wcsdup
-
+#include "../hidapi/hidapi.h"
 
 #undef MIN
 #define MIN(x,y) ((x) < (y)? (x): (y))

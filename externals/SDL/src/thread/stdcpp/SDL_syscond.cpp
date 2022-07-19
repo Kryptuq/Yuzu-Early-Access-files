@@ -70,7 +70,8 @@ int
 SDL_CondSignal(SDL_cond * cond)
 {
     if (!cond) {
-        return SDL_InvalidParamError("cond");
+        SDL_SetError("Passed a NULL condition variable");
+        return -1;
     }
 
     cond->cpp_cond.notify_one();
@@ -83,7 +84,8 @@ int
 SDL_CondBroadcast(SDL_cond * cond)
 {
     if (!cond) {
-        return SDL_InvalidParamError("cond");
+        SDL_SetError("Passed a NULL condition variable");
+        return -1;
     }
 
     cond->cpp_cond.notify_all();
@@ -116,11 +118,13 @@ int
 SDL_CondWaitTimeout(SDL_cond * cond, SDL_mutex * mutex, Uint32 ms)
 {
     if (!cond) {
-        return SDL_InvalidParamError("cond");
+        SDL_SetError("Passed a NULL condition variable");
+        return -1;
     }
 
     if (!mutex) {
-        return SDL_InvalidParamError("mutex");
+        SDL_SetError("Passed a NULL mutex variable");
+        return -1;
     }
 
     try {
@@ -144,7 +148,8 @@ SDL_CondWaitTimeout(SDL_cond * cond, SDL_mutex * mutex, Uint32 ms)
             }
         }
     } catch (std::system_error & ex) {
-        return SDL_SetError("unable to wait on a C++ condition variable: code=%d; %s", ex.code(), ex.what());
+        SDL_SetError("unable to wait on a C++ condition variable: code=%d; %s", ex.code(), ex.what());
+        return -1;
     }
 }
 

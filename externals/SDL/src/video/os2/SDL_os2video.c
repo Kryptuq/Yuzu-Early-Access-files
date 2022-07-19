@@ -335,7 +335,7 @@ static VOID _wmChar(WINDATA *pWinData, MPARAM mp1, MPARAM mp2)
 static VOID _wmMove(WINDATA *pWinData)
 {
     SDL_DisplayMode *pSDLDisplayMode = _getDisplayModeForSDLWindow(pWinData->window);
-    POINTL  pointl = { 0,0 };
+    POINTL  pointl = { 0 };
     RECTL   rectl;
 
     WinQueryWindowRect(pWinData->hwnd, &rectl);
@@ -1137,8 +1137,8 @@ static SDL_bool OS2_GetWindowWMInfo(_THIS, SDL_Window * window,
         return SDL_TRUE;
     }
 
-    SDL_SetError("Application not compiled with SDL %u",
-                 SDL_MAJOR_VERSION);
+    SDL_SetError("Application not compiled with SDL %u.%u",
+                 SDL_MAJOR_VERSION, SDL_MINOR_VERSION);
     return SDL_FALSE;
 }
 
@@ -1219,7 +1219,7 @@ static int OS2_SetWindowShape(SDL_WindowShaper *shaper, SDL_Surface *shape,
 {
     SDL_ShapeTree *pShapeTree;
     WINDATA       *pWinData;
-    SHAPERECTS     stShapeRects;
+    SHAPERECTS     stShapeRects = { 0 };
     HPS            hps;
 
     debug_os2("Enter");
@@ -1235,7 +1235,6 @@ static int OS2_SetWindowShape(SDL_WindowShaper *shaper, SDL_Surface *shape,
     pShapeTree = SDL_CalculateShapeTree(*shape_mode, shape);
     shaper->driverdata = pShapeTree;
 
-    SDL_zero(stShapeRects);
     stShapeRects.ulWinHeight = shaper->window->h;
     SDL_TraverseShapeTree(pShapeTree, &_combineRectRegions, &stShapeRects);
 
@@ -1402,19 +1401,18 @@ static char *OS2_GetClipboardText(_THIS)
 static SDL_bool OS2_HasClipboardText(_THIS)
 {
     SDL_VideoData *pVData = (SDL_VideoData *)_this->driverdata;
-    PSZ pszClipboard;
-    SDL_bool  result;
+    SDL_bool   fClipboard;
 
     if (!WinOpenClipbrd(pVData->hab)) {
         debug_os2("WinOpenClipbrd() failed");
         return SDL_FALSE;
     }
 
-    pszClipboard = (PSZ)WinQueryClipbrdData(pVData->hab, CF_TEXT);
-    result = (pszClipboard && *pszClipboard) ? SDL_TRUE : SDL_FALSE;
+    fClipboard = ((PSZ)WinQueryClipbrdData(pVData->hab, CF_TEXT) != NULL)?
+                   SDL_TRUE : SDL_FALSE;
     WinCloseClipbrd(pVData->hab);
 
-    return result;
+    return fClipboard;
 }
 
 

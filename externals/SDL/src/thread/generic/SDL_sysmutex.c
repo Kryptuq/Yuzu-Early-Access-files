@@ -78,7 +78,7 @@ SDL_LockMutex(SDL_mutex * mutex)
     SDL_threadID this_thread;
 
     if (mutex == NULL) {
-        return SDL_InvalidParamError("mutex");
+        return SDL_SetError("Passed a NULL mutex");
     }
 
     this_thread = SDL_ThreadID();
@@ -109,7 +109,7 @@ SDL_TryLockMutex(SDL_mutex * mutex)
     SDL_threadID this_thread;
 
     if (mutex == NULL) {
-        return SDL_InvalidParamError("mutex");
+        return SDL_SetError("Passed a NULL mutex");
     }
 
     this_thread = SDL_ThreadID();
@@ -139,7 +139,7 @@ SDL_mutexV(SDL_mutex * mutex)
     return 0;
 #else
     if (mutex == NULL) {
-        return SDL_InvalidParamError("mutex");
+        return SDL_SetError("Passed a NULL mutex");
     }
 
     /* If we don't own the mutex, we can't unlock it */

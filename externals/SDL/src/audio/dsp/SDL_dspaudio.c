@@ -68,9 +68,8 @@ DSP_CloseDevice(_THIS)
 
 
 static int
-DSP_OpenDevice(_THIS, const char *devname)
+DSP_OpenDevice(_THIS, void *handle, const char *devname, int iscapture)
 {
-    SDL_bool iscapture = this->iscapture;
     const int flags = ((iscapture) ? OPEN_FLAGS_INPUT : OPEN_FLAGS_OUTPUT);
     int format;
     int value;
@@ -302,14 +301,13 @@ look_for_devices_test(int fd)
     return 0;
 }
 
-static SDL_bool
+static int
 DSP_Init(SDL_AudioDriverImpl * impl)
 {
     InitTimeDevicesExist = SDL_FALSE;
     SDL_EnumUnixAudioDevices(0, look_for_devices_test);
     if (!InitTimeDevicesExist) {
-        SDL_SetError("dsp: No such audio device");
-        return SDL_FALSE;  /* maybe try a different backend. */
+        return 0;  /* maybe try a different backend. */
     }
 
     /* Set the function pointers */
@@ -321,15 +319,15 @@ DSP_Init(SDL_AudioDriverImpl * impl)
     impl->CaptureFromDevice = DSP_CaptureFromDevice;
     impl->FlushCapture = DSP_FlushCapture;
 
-    impl->AllowsArbitraryDeviceNames = SDL_TRUE;
+    impl->AllowsArbitraryDeviceNames = 1;
     impl->HasCaptureSupport = SDL_TRUE;
 
-    return SDL_TRUE;   /* this audio target is available. */
+    return 1;   /* this audio target is available. */
 }
 
 
 AudioBootStrap DSP_bootstrap = {
-    "dsp", "OSS /dev/dsp standard audio", DSP_Init, SDL_FALSE
+    "dsp", "OSS /dev/dsp standard audio", DSP_Init, 0
 };
 
 #endif /* SDL_AUDIO_DRIVER_OSS */

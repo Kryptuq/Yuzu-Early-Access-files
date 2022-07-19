@@ -23,7 +23,6 @@
 #if SDL_VIDEO_DRIVER_RISCOS
 
 #include "../SDL_sysvideo.h"
-#include "../../events/SDL_mouse_c.h"
 
 #include "SDL_riscosvideo.h"
 #include "SDL_riscosmodes.h"
@@ -305,8 +304,8 @@ RISCOS_SetDisplayMode(_THIS, SDL_VideoDisplay * display, SDL_DisplayMode * mode)
         _kernel_oswrch(disable_cursor[i]);
     }
 
-    /* Update cursor visibility, since it may have been disabled by the mode change. */
-    SDL_SetCursor(NULL);
+    /* Turn the mouse pointer on */
+    /* _kernel_osbyte(106, 1, 0); */
 
     return 0;
 }

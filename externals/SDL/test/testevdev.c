@@ -41,7 +41,6 @@ static const struct
     CLS(SOUND),
     CLS(TOUCHSCREEN),
     CLS(ACCELEROMETER),
-    CLS(TOUCHPAD),
 #undef CLS
     { 0, NULL }
 };
@@ -186,7 +185,9 @@ static const GuessTest guess_tests[] =
       .bus_type = 0x0003,
       .vendor_id = 0x054c,
       .product_id = 0x09cc,
-      .expected = SDL_UDEV_DEVICE_TOUCHPAD,
+      /* TODO: Should this be MOUSE? That's what it most closely
+       * resembles */
+      .expected = SDL_UDEV_DEVICE_UNKNOWN,
       /* SYN, KEY, ABS */
       .ev = { 0x0b },
       /* X, Y, multitouch */
@@ -595,7 +596,7 @@ static const GuessTest guess_tests[] =
        * to the arrow, page up and page down keys, so it's a joystick
        * with a subset of a keyboard attached. */
       /* TODO: Should this be JOYSTICK, or even JOYSTICK|KEYBOARD? */
-      .expected = SDL_UDEV_DEVICE_KEYBOARD,
+      .expected = SDL_UDEV_DEVICE_UNKNOWN,
       /* SYN, KEY */
       .ev = { 0x03 },
       .keys = {
@@ -607,7 +608,7 @@ static const GuessTest guess_tests[] =
           /* BTN_1, BTN_2, BTN_A, BTN_B, BTN_MODE */
           /* 0x100 */ 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x10,
           /* 0x140 */ ZEROx8,
-          /* next (keyboard page down), previous (keyboard page up) */
+          /* next, previous */
           /* 0x180 */ 0x00, 0x00, 0x80, 0x10, ZEROx4,
       },
     },
@@ -658,7 +659,7 @@ static const GuessTest guess_tests[] =
       .name = "Wiimote - Classic Controller",
       /* TODO: Should this be JOYSTICK, or maybe JOYSTICK|KEYBOARD?
        * It's unusual in the same ways as the Wiimote */
-      .expected = SDL_UDEV_DEVICE_KEYBOARD,
+      .expected = SDL_UDEV_DEVICE_UNKNOWN,
       /* SYN, KEY, ABS */
       .ev = { 0x0b },
       /* Hat 1-3 */
@@ -672,7 +673,7 @@ static const GuessTest guess_tests[] =
           /* A, B, X, Y, MODE, TL, TL2, TR, TR2 */
           /* 0x100 */ ZEROx4, 0x00, 0x13, 0xdb, 0x10,
           /* 0x140 */ ZEROx8,
-          /* next (keyboard page down), previous (keyboard page up) */
+          /* next, previous */
           /* 0x180 */ 0x00, 0x00, 0x80, 0x10, ZEROx4,
       },
     },
@@ -717,7 +718,9 @@ static const GuessTest guess_tests[] =
       .vendor_id = 0x06cb,
       .product_id = 0x0000,
       .version = 0x0000,
-      .expected = SDL_UDEV_DEVICE_TOUCHPAD,
+      /* TODO: Should this be MOUSE? That's what it most closely
+       * resembles */
+      .expected = SDL_UDEV_DEVICE_UNKNOWN,
       /* SYN, KEY, ABS */
       .ev = { 0x0b },
       /* X, Y, pressure, multitouch */
@@ -753,8 +756,7 @@ static const GuessTest guess_tests[] =
     },
     {
       .name = "Thinkpad ACPI buttons",
-      /* SDL treats this as a keyboard because it has a power button */
-      .expected = SDL_UDEV_DEVICE_KEYBOARD,
+      .expected = SDL_UDEV_DEVICE_UNKNOWN,
       /* SYN, KEY, MSC, SW */
       .ev = { 0x33 },
       .keys = {
@@ -813,8 +815,7 @@ static const GuessTest guess_tests[] =
       .vendor_id = 0x0000,
       .product_id = 0x0003,
       .version = 0x0000,
-      /* SDL treats KEY_SLEEP as indicating a keyboard */
-      .expected = SDL_UDEV_DEVICE_KEYBOARD,
+      .expected = SDL_UDEV_DEVICE_UNKNOWN,
       /* SYN, KEY */
       .ev = { 0x03 },
       .keys = {
@@ -840,8 +841,7 @@ static const GuessTest guess_tests[] =
       .vendor_id = 0x0000,
       .product_id = 0x0001,
       .version = 0x0000,
-      /* SDL treats KEY_POWER as indicating a keyboard */
-      .expected = SDL_UDEV_DEVICE_KEYBOARD,
+      .expected = SDL_UDEV_DEVICE_UNKNOWN,
       /* SYN, KEY */
       .ev = { 0x03 },
       .keys = {
@@ -856,8 +856,7 @@ static const GuessTest guess_tests[] =
       .vendor_id = 0x0000,
       .product_id = 0x0006,
       .version = 0x0000,
-      /* SDL treats brightness control, etc. as keyboard keys */
-      .expected = SDL_UDEV_DEVICE_KEYBOARD,
+      .expected = SDL_UDEV_DEVICE_UNKNOWN,
       /* SYN, KEY */
       .ev = { 0x03 },
       .keys = {
@@ -874,7 +873,7 @@ static const GuessTest guess_tests[] =
       .vendor_id = 0x17aa,
       .product_id = 0x5054,
       .version = 0x4101,
-      .expected = SDL_UDEV_DEVICE_KEYBOARD,
+      .expected = SDL_UDEV_DEVICE_UNKNOWN,
       /* SYN, KEY */
       .ev = { 0x03 },
       .keys = {
@@ -912,8 +911,9 @@ static const GuessTest guess_tests[] =
       .product_id = 0x6009,
       /* For some reason the special keys like mute and wlan toggle
        * show up here instead of, or in addition to, as part of
-       * the keyboard - so both udev and SDL report this as having keys too. */
-      .expected = SDL_UDEV_DEVICE_MOUSE | SDL_UDEV_DEVICE_KEYBOARD,
+       * the keyboard - so udev reports this as having keys too.
+       * SDL currently doesn't. */
+      .expected = SDL_UDEV_DEVICE_MOUSE,
       /* SYN, KEY, REL, MSC, LED */
       .ev = { 0x17, 0x00, 0x02 },
       /* X, Y */
@@ -1019,7 +1019,7 @@ static int
 run_test(void)
 {
     printf("SDL compiled without evdev capability check.\n");
-    return 1;
+    return 0;
 }
 
 #endif

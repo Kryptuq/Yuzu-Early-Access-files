@@ -476,9 +476,9 @@ SDL_bool KMSDRM_Vulkan_CreateSurface(_THIS,
         }
     }
 
-    /* If we couldn't find an appropriate plane, error out. */
+    /* If we couldn't find an appropiate plane, error out. */
     if (plane == UINT32_MAX) {
-        SDL_SetError("Vulkan couldn't find an appropriate plane.");
+        SDL_SetError("Vulkan couldn't find an appropiate plane.");
         goto clean;
     }
 

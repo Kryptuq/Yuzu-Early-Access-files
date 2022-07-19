@@ -549,9 +549,8 @@ int SDL_isblank(int x) { return ((x) == ' ') || ((x) == '\t'); }
 __declspec(selectany) int _fltused = 1;
 #endif
 
-/* The optimizer on Visual Studio 2005 and later generates memcpy() and memset() calls.
-   Always provide it for the SDL2 DLL, but skip it when building static lib w/ static runtime. */
-#if (_MSC_VER >= 1400) && (!defined(_MT) || defined(DLL_EXPORT))
+/* The optimizer on Visual Studio 2005 and later generates memcpy() and memset() calls */
+#if _MSC_VER >= 1400
 extern void *memcpy(void* dst, const void* src, size_t len);
 #pragma intrinsic(memcpy)
 
@@ -571,7 +570,7 @@ memset(void *dst, int c, size_t len)
 {
     return SDL_memset(dst, c, len);
 }
-#endif /* (_MSC_VER >= 1400) && (!defined(_MT) || defined(DLL_EXPORT)) */
+#endif /* _MSC_VER >= 1400 */
 
 #ifdef _M_IX86
 

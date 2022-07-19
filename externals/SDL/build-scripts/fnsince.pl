@@ -46,15 +46,9 @@ my @releases = sort {
 
 # this happens to work for how SDL versions things at the moment.
 my $current_release = $releases[-1];
-my $next_release;
-
-if ($current_release eq '2.0.22') {  # Hack for our jump from 2.0.22 to 2.24.0...
-    $next_release = '2.24.0';
-} else {
-    my @current_release_segments = split /\./, $current_release;
-    @current_release_segments[1] = '' . ($current_release_segments[1] + 2);
-    $next_release = join('.', @current_release_segments);
-}
+my @current_release_segments = split /\./, $current_release;
+@current_release_segments[2] = '' . ($current_release_segments[2] + 2);
+my $next_release = join('.', @current_release_segments);
 
 #print("\n\nSORTED\n");
 #foreach (@releases) {
