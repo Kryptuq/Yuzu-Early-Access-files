@@ -1,0 +1,16 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 9c07732..54b4b23 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -321,6 +321,11 @@ include(cmake/ssl.cmake)
+ include(cmake/upb.cmake)
+ include(cmake/xxhash.cmake)
+ include(cmake/zlib.cmake)
++ 
++if (ABSL_USE_CXX17)
++    message(STATUS "Found absl uses CXX17, enable CXX17 feature.")
++    set(CMAKE_CXX_STANDARD 17)
++endif()
+ 
+ if(WIN32)
+   set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32 crypt32 gdi32)

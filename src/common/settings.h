@@ -503,9 +503,6 @@ struct Values {
     Setting<bool> enable_ring_controller{true, "enable_ring_controller"};
     RingconRaw ringcon_analogs;
 
-    Setting<bool> enable_ir_sensor{false, "enable_ir_sensor"};
-    Setting<std::string> ir_sensor_device{"auto", "ir_sensor_device"};
-
     // Data Storage
     Setting<bool> use_virtual_sd{true, "use_virtual_sd"};
     Setting<bool> gamecard_inserted{false, "gamecard_inserted"};

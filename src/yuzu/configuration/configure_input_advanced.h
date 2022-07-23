@@ -29,7 +29,6 @@ signals:
     void CallTouchscreenConfigDialog();
     void CallMotionTouchConfigDialog();
     void CallRingControllerDialog();
-    void CallCameraDialog();
 
 private:
     void changeEvent(QEvent* event) override;

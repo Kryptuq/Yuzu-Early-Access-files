@@ -105,12 +105,10 @@ static u32 DecodeAdpcm(Core::Memory::Memory& memory, std::span<s16> out_buffer,
     constexpr u32 NibblesPerFrame{16};
 
     if (req.buffer == 0 || req.buffer_size == 0) {
-        LOG_ERROR(Service_Audio, "Buffer is 0!");
         return 0;
     }
 
-    if (req.start_offset >= req.end_offset) {
-        LOG_ERROR(Service_Audio, "Start offset greater than end offset!");
+    if (req.end_offset < req.start_offset) {
         return 0;
     }
 
@@ -122,8 +120,7 @@ static u32 DecodeAdpcm(Core::Memory::Memory& memory, std::span<s16> out_buffer,
         end += 1;
     }
 
-    if (end / 2 > req.buffer_size) {
-        LOG_ERROR(Service_Audio, "End greater than buffer size!");
+    if (req.buffer_size < end / 2) {
         return 0;
     }
 
@@ -141,7 +138,7 @@ static u32 DecodeAdpcm(Core::Memory::Memory& memory, std::span<s16> out_buffer,
     }
 
     const auto size{std::max((samples_to_process / 8U) * SamplesPerFrame, 8U)};
-    std::vector<u8> wavebuffer(size, 0);
+    std::vector<u8> wavebuffer(size);
     memory.ReadBlockUnsafe(req.buffer + position_in_frame / 2, wavebuffer.data(),
                            wavebuffer.size());
 
@@ -239,7 +236,7 @@ void DecodeFromWaveBuffers(Core::Memory::Memory& memory, const DecodeFromWaveBuf
         args.pitch};
     const auto size_required{fraction + remaining_sample_count * sample_rate_ratio};
 
-    if (size_required.to_int_floor() < 0) {
+    if (size_required < 0) {
         return;
     }
 
@@ -325,19 +322,22 @@ void DecodeFromWaveBuffers(Core::Memory::Memory& memory, const DecodeFromWaveBuf
             switch (args.sample_format) {
             case SampleFormat::PcmInt16:
                 samples_decoded = DecodePcm<s16>(
-                    memory, {&temp_buffer[temp_buffer_pos], args.sample_count}, decode_arg);
+                    memory, {&temp_buffer[temp_buffer_pos], TempBufferSize - temp_buffer_pos},
+                    decode_arg);
                 break;
 
             case SampleFormat::PcmFloat:
                 samples_decoded = DecodePcm<f32>(
-                    memory, {&temp_buffer[temp_buffer_pos], args.sample_count}, decode_arg);
+                    memory, {&temp_buffer[temp_buffer_pos], TempBufferSize - temp_buffer_pos},
+                    decode_arg);
                 break;
 
             case SampleFormat::Adpcm: {
                 decode_arg.adpcm_context = &voice_state.adpcm_context;
                 memory.ReadBlockUnsafe(args.data_address, &decode_arg.coefficients, args.data_size);
                 samples_decoded = DecodeAdpcm(
-                    memory, {&temp_buffer[temp_buffer_pos], args.sample_count}, decode_arg);
+                    memory, {&temp_buffer[temp_buffer_pos], TempBufferSize - temp_buffer_pos},
+                    decode_arg);
             } break;
 
             default:

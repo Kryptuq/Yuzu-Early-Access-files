@@ -87,8 +87,12 @@ u32 GetBytesPerPixel(const Tegra::FramebufferConfig& framebuffer) {
 }
 
 std::size_t GetSizeInBytes(const Tegra::FramebufferConfig& framebuffer) {
-    return static_cast<std::size_t>(framebuffer.stride) *
-           static_cast<std::size_t>(framebuffer.height) * GetBytesPerPixel(framebuffer);
+    // TODO(Rodrigo): Read this from HLE
+    constexpr u32 block_height_log2 = 4;
+    const u32 bytes_per_pixel = GetBytesPerPixel(framebuffer);
+    const u64 size_bytes{Tegra::Texture::CalculateSize(
+        true, bytes_per_pixel, framebuffer.stride, framebuffer.height, 1, block_height_log2, 0)};
+    return size_bytes;
 }
 
 VkFormat GetFormat(const Tegra::FramebufferConfig& framebuffer) {
@@ -169,9 +173,8 @@ VkSemaphore BlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
         // TODO(Rodrigo): Read this from HLE
         constexpr u32 block_height_log2 = 4;
         const u32 bytes_per_pixel = GetBytesPerPixel(framebuffer);
-        const u64 size_bytes{Tegra::Texture::CalculateSize(true, bytes_per_pixel,
-                                                           framebuffer.stride, framebuffer.height,
-                                                           1, block_height_log2, 0)};
+        const u64 size_bytes{GetSizeInBytes(framebuffer)};
+
         Tegra::Texture::UnswizzleTexture(
             mapped_span.subspan(image_offset, size_bytes), std::span(host_ptr, size_bytes),
             bytes_per_pixel, framebuffer.width, framebuffer.height, 1, block_height_log2, 0);

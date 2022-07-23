@@ -5,7 +5,6 @@
 #include <memory>
 #include "common/input.h"
 #include "common/param_package.h"
-#include "input_common/drivers/camera.h"
 #include "input_common/drivers/gc_adapter.h"
 #include "input_common/drivers/keyboard.h"
 #include "input_common/drivers/mouse.h"
@@ -78,15 +77,6 @@ struct InputSubsystem::Impl {
                                                                    tas_input_factory);
         Common::Input::RegisterFactory<Common::Input::OutputDevice>(tas_input->GetEngineName(),
                                                                     tas_output_factory);
-
-        camera = std::make_shared<Camera>("camera");
-        camera->SetMappingCallback(mapping_callback);
-        camera_input_factory = std::make_shared<InputFactory>(camera);
-        camera_output_factory = std::make_shared<OutputFactory>(camera);
-        Common::Input::RegisterFactory<Common::Input::InputDevice>(camera->GetEngineName(),
-                                                                   camera_input_factory);
-        Common::Input::RegisterFactory<Common::Input::OutputDevice>(camera->GetEngineName(),
-                                                                    camera_output_factory);
 
 #ifdef HAVE_SDL2
         sdl = std::make_shared<SDLDriver>("sdl");
@@ -327,7 +317,6 @@ struct InputSubsystem::Impl {
     std::shared_ptr<TouchScreen> touch_screen;
     std::shared_ptr<TasInput::Tas> tas_input;
     std::shared_ptr<CemuhookUDP::UDPClient> udp_client;
-    std::shared_ptr<Camera> camera;
 
     std::shared_ptr<InputFactory> keyboard_factory;
     std::shared_ptr<InputFactory> mouse_factory;
@@ -335,14 +324,12 @@ struct InputSubsystem::Impl {
     std::shared_ptr<InputFactory> touch_screen_factory;
     std::shared_ptr<InputFactory> udp_client_input_factory;
     std::shared_ptr<InputFactory> tas_input_factory;
-    std::shared_ptr<InputFactory> camera_input_factory;
 
     std::shared_ptr<OutputFactory> keyboard_output_factory;
     std::shared_ptr<OutputFactory> mouse_output_factory;
     std::shared_ptr<OutputFactory> gcadapter_output_factory;
     std::shared_ptr<OutputFactory> udp_client_output_factory;
     std::shared_ptr<OutputFactory> tas_output_factory;
-    std::shared_ptr<OutputFactory> camera_output_factory;
 
 #ifdef HAVE_SDL2
     std::shared_ptr<SDLDriver> sdl;
@@ -393,14 +380,6 @@ TasInput::Tas* InputSubsystem::GetTas() {
 
 const TasInput::Tas* InputSubsystem::GetTas() const {
     return impl->tas_input.get();
-}
-
-Camera* InputSubsystem::GetCamera() {
-    return impl->camera.get();
-}
-
-const Camera* InputSubsystem::GetCamera() const {
-    return impl->camera.get();
 }
 
 std::vector<Common::ParamPackage> InputSubsystem::GetInputDevices() const {

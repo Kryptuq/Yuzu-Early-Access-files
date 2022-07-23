@@ -126,14 +126,10 @@ void EmulatedController::LoadDevices() {
     battery_params[LeftIndex].Set("battery", true);
     battery_params[RightIndex].Set("battery", true);
 
-    camera_params = Common::ParamPackage{"engine:camera,camera:1"};
-
     output_params[LeftIndex] = left_joycon;
     output_params[RightIndex] = right_joycon;
-    output_params[2] = camera_params;
     output_params[LeftIndex].Set("output", true);
     output_params[RightIndex].Set("output", true);
-    output_params[2].Set("output", true);
 
     LoadTASParams();
 
@@ -150,7 +146,6 @@ void EmulatedController::LoadDevices() {
                    Common::Input::CreateDevice<Common::Input::InputDevice>);
     std::transform(battery_params.begin(), battery_params.end(), battery_devices.begin(),
                    Common::Input::CreateDevice<Common::Input::InputDevice>);
-    camera_devices = Common::Input::CreateDevice<Common::Input::InputDevice>(camera_params);
     std::transform(output_params.begin(), output_params.end(), output_devices.begin(),
                    Common::Input::CreateDevice<Common::Input::OutputDevice>);
 
@@ -270,14 +265,6 @@ void EmulatedController::ReloadInput() {
                 },
         });
         motion_devices[index]->ForceUpdate();
-    }
-
-    if (camera_devices) {
-        camera_devices->SetCallback({
-            .on_change =
-                [this](const Common::Input::CallbackStatus& callback) { SetCamera(callback); },
-        });
-        camera_devices->ForceUpdate();
     }
 
     // Use a common UUID for TAS
@@ -864,25 +851,6 @@ void EmulatedController::SetBattery(const Common::Input::CallbackStatus& callbac
     TriggerOnChange(ControllerTriggerType::Battery, true);
 }
 
-void EmulatedController::SetCamera(const Common::Input::CallbackStatus& callback) {
-    std::unique_lock lock{mutex};
-    controller.camera_values = TransformToCamera(callback);
-
-    if (is_configuring) {
-        lock.unlock();
-        TriggerOnChange(ControllerTriggerType::IrSensor, false);
-        return;
-    }
-
-    controller.camera_state.sample++;
-    controller.camera_state.format =
-        static_cast<Core::IrSensor::ImageTransferProcessorFormat>(controller.camera_values.format);
-    controller.camera_state.data = controller.camera_values.data;
-
-    lock.unlock();
-    TriggerOnChange(ControllerTriggerType::IrSensor, true);
-}
-
 bool EmulatedController::SetVibration(std::size_t device_index, VibrationValue vibration) {
     if (device_index >= output_devices.size()) {
         return false;
@@ -958,23 +926,6 @@ bool EmulatedController::SetPollingMode(Common::Input::PollingMode polling_mode)
     LOG_INFO(Service_HID, "Set polling mode {}", polling_mode);
     auto& output_device = output_devices[static_cast<std::size_t>(DeviceIndex::Right)];
     return output_device->SetPollingMode(polling_mode) == Common::Input::PollingError::None;
-}
-
-bool EmulatedController::SetCameraFormat(
-    Core::IrSensor::ImageTransferProcessorFormat camera_format) {
-    LOG_INFO(Service_HID, "Set camera format {}", camera_format);
-
-    auto& right_output_device = output_devices[static_cast<std::size_t>(DeviceIndex::Right)];
-    auto& camera_output_device = output_devices[2];
-
-    if (right_output_device->SetCameraFormat(static_cast<Common::Input::CameraFormat>(
-            camera_format)) == Common::Input::CameraError::None) {
-        return true;
-    }
-
-    // Fallback to Qt camera if native device doesn't have support
-    return camera_output_device->SetCameraFormat(static_cast<Common::Input::CameraFormat>(
-               camera_format)) == Common::Input::CameraError::None;
 }
 
 void EmulatedController::SetLedPattern() {
@@ -1212,11 +1163,6 @@ BatteryValues EmulatedController::GetBatteryValues() const {
     return controller.battery_values;
 }
 
-CameraValues EmulatedController::GetCameraValues() const {
-    std::scoped_lock lock{mutex};
-    return controller.camera_values;
-}
-
 HomeButtonState EmulatedController::GetHomeButtons() const {
     std::scoped_lock lock{mutex};
     if (is_configuring) {
@@ -1303,11 +1249,6 @@ ControllerColors EmulatedController::GetColors() const {
 BatteryLevelState EmulatedController::GetBattery() const {
     std::scoped_lock lock{mutex};
     return controller.battery_state;
-}
-
-const CameraState& EmulatedController::GetCamera() const {
-    std::scoped_lock lock{mutex};
-    return controller.camera_state;
 }
 
 void EmulatedController::TriggerOnChange(ControllerTriggerType type, bool is_npad_service_update) {

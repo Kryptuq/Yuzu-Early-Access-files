@@ -36,12 +36,11 @@ struct BasicMotion {
 // Types of input that are stored in the engine
 enum class EngineInputType {
     None,
-    Analog,
-    Battery,
     Button,
-    Camera,
     HatButton,
+    Analog,
     Motion,
+    Battery,
 };
 
 namespace std {
@@ -116,15 +115,8 @@ public:
     // Sets polling mode to a controller
     virtual Common::Input::PollingError SetPollingMode(
         [[maybe_unused]] const PadIdentifier& identifier,
-        [[maybe_unused]] const Common::Input::PollingMode polling_mode) {
+        [[maybe_unused]] const Common::Input::PollingMode vibration) {
         return Common::Input::PollingError::NotSupported;
-    }
-
-    // Sets camera format to a controller
-    virtual Common::Input::CameraError SetCameraFormat(
-        [[maybe_unused]] const PadIdentifier& identifier,
-        [[maybe_unused]] Common::Input::CameraFormat camera_format) {
-        return Common::Input::CameraError::NotSupported;
     }
 
     // Returns the engine name
@@ -182,7 +174,6 @@ public:
     f32 GetAxis(const PadIdentifier& identifier, int axis) const;
     Common::Input::BatteryLevel GetBattery(const PadIdentifier& identifier) const;
     BasicMotion GetMotion(const PadIdentifier& identifier, int motion) const;
-    Common::Input::CameraStatus GetCamera(const PadIdentifier& identifier) const;
 
     int SetCallback(InputIdentifier input_identifier);
     void SetMappingCallback(MappingCallback callback);
@@ -194,7 +185,6 @@ protected:
     void SetAxis(const PadIdentifier& identifier, int axis, f32 value);
     void SetBattery(const PadIdentifier& identifier, Common::Input::BatteryLevel value);
     void SetMotion(const PadIdentifier& identifier, int motion, const BasicMotion& value);
-    void SetCamera(const PadIdentifier& identifier, const Common::Input::CameraStatus& value);
 
     virtual std::string GetHatButtonName([[maybe_unused]] u8 direction_value) const {
         return "Unknown";
@@ -207,7 +197,6 @@ private:
         std::unordered_map<int, float> axes;
         std::unordered_map<int, BasicMotion> motions;
         Common::Input::BatteryLevel battery{};
-        Common::Input::CameraStatus camera{};
     };
 
     void TriggerOnButtonChange(const PadIdentifier& identifier, int button, bool value);
@@ -216,8 +205,6 @@ private:
     void TriggerOnBatteryChange(const PadIdentifier& identifier, Common::Input::BatteryLevel value);
     void TriggerOnMotionChange(const PadIdentifier& identifier, int motion,
                                const BasicMotion& value);
-    void TriggerOnCameraChange(const PadIdentifier& identifier,
-                               const Common::Input::CameraStatus& value);
 
     bool IsInputIdentifierEqual(const InputIdentifier& input_identifier,
                                 const PadIdentifier& identifier, EngineInputType type,

@@ -35,6 +35,16 @@ option(YUZU_USE_BUNDLED_OPUS "Compile bundled opus" ON)
 
 option(YUZU_TESTS "Compile tests" ON)
 
+option(YUZU_USE_BUNDLED_VCPKG "Use vcpkg for yuzu dependencies" OFF)
+
+if (YUZU_USE_BUNDLED_VCPKG)
+    include(${CMAKE_SOURCE_DIR}/externals/vcpkg/scripts/buildsystems/vcpkg.cmake)
+elseif(NOT "$ENV{VCPKG_TOOLCHAIN_FILE}" STREQUAL "")
+    # Disable manifest mode (use vcpkg classic mode) when using a custom vcpkg installation
+    option(VCPKG_MANIFEST_MODE "")
+    include("$ENV{VCPKG_TOOLCHAIN_FILE}")
+endif()
+
 # Default to a Release build
 get_property(IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if (NOT IS_MULTI_CONFIG AND NOT CMAKE_BUILD_TYPE)
@@ -144,82 +154,34 @@ endif()
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 # System imported libraries
-# If not found, download any missing through Conan
 # =======================================================================
-set(CONAN_CMAKE_SILENT_OUTPUT TRUE)
-set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
-if (YUZU_CONAN_INSTALLED)
-    if (IS_MULTI_CONFIG)
-        include(${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
-    else()
-        include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-    endif()
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}")
-    list(APPEND CMAKE_PREFIX_PATH "${CMAKE_BINARY_DIR}")
-    conan_basic_setup()
-    message(STATUS "Adding conan installed libraries to the search path")
+
+find_package(fmt 8.0.1 REQUIRED CONFIG)
+find_package(lz4 1.8 REQUIRED)
+find_package(nlohmann_json 3.8 REQUIRED CONFIG)
+find_package(ZLIB 1.2 REQUIRED)
+
+# Search for config-only package first (for vcpkg), then try non-config
+find_package(zstd 1.5 CONFIG)
+if (NOT zstd_FOUND)
+    find_package(zstd 1.5 REQUIRED)
 endif()
 
-macro(yuzu_find_packages)
-    set(options FORCE_REQUIRED)
-    cmake_parse_arguments(FN "${options}" "" "" ${ARGN})
+if (YUZU_TESTS)
+    find_package(Catch2 2.13.7 REQUIRED CONFIG)
+endif()
 
-    # Cmake has a *serious* lack of 2D array or associative array...
-    # Capitalization matters here. We need the naming to match the generated paths from Conan
-    set(REQUIRED_LIBS
-    #    Cmake Pkg Prefix  Version     Conan Pkg
-        "fmt               8.0.1       fmt/8.1.1"
-        "lz4               1.8         lz4/1.9.2"
-        "nlohmann_json     3.8         nlohmann_json/3.8.0"
-        "ZLIB              1.2         zlib/1.2.11"
-        "zstd              1.5         zstd/1.5.0"
-    # can't use opus until AVX check is fixed: https://github.com/yuzu-emu/yuzu/pull/4068
-        #"opus              1.3         opus/1.3.1"
-    )
-    if (YUZU_TESTS)
-        list(APPEND REQUIRED_LIBS
-        "Catch2            2.13.7      catch2/2.13.7"
-        )
-    endif()
-
-    foreach(PACKAGE ${REQUIRED_LIBS})
-        string(REGEX REPLACE "[ \t\r\n]+" ";" PACKAGE_SPLIT ${PACKAGE})
-        list(GET PACKAGE_SPLIT 0 PACKAGE_PREFIX)
-        list(GET PACKAGE_SPLIT 1 PACKAGE_VERSION)
-        list(GET PACKAGE_SPLIT 2 PACKAGE_CONAN)
-        # This function is called twice, once to check if the packages exist on the system already
-        # and a second time to check if conan installed them properly. The second check passes in FORCE_REQUIRED
-        if (NOT ${PACKAGE_PREFIX}_FOUND)
-            if (FN_FORCE_REQUIRED)
-                find_package(${PACKAGE_PREFIX} ${PACKAGE_VERSION} REQUIRED)
-            else()
-                find_package(${PACKAGE_PREFIX} ${PACKAGE_VERSION})
-            endif()
-        endif()
-        if (NOT ${PACKAGE_PREFIX}_FOUND)
-            list(APPEND CONAN_REQUIRED_LIBS ${PACKAGE_CONAN})
-        else()
-            # Set a legacy findPackage.cmake style PACKAGE_LIBRARIES variable for subprojects that rely on this
-            set(${PACKAGE_PREFIX}_LIBRARIES "${PACKAGE_PREFIX}::${PACKAGE_PREFIX}")
-        endif()
-    endforeach()
-    unset(FN_FORCE_REQUIRED)
-endmacro()
-
-find_package(Boost 1.73.0 COMPONENTS context headers)
+find_package(Boost 1.73.0 COMPONENTS context)
 if (Boost_FOUND)
     set(Boost_LIBRARIES Boost::boost)
-    # Conditionally add Boost::context only if the active version of the Conan or system Boost package provides it
+    # Conditionally add Boost::context only if the found Boost package provides it
     # The old version is missing Boost::context, so we want to avoid adding in that case
     # The new version requires adding Boost::context to prevent linking issues
-    #
-    # This one is used by Conan on subsequent CMake configures, not the first configure.
     if (TARGET Boost::context)
         list(APPEND Boost_LIBRARIES Boost::context)
     endif()
 else()
-    message(STATUS "Boost 1.79.0 or newer not found, falling back to Conan")
-    list(APPEND CONAN_REQUIRED_LIBS "boost/1.79.0")
+    message(FATAL_ERROR "Boost 1.73.0 or newer not found")
 endif()
 
 # boost:asio has functions that require AcceptEx et al
@@ -227,24 +189,14 @@ if (MINGW)
     find_library(MSWSOCK_LIBRARY mswsock REQUIRED)
 endif()
 
-# Attempt to locate any packages that are required and report the missing ones in CONAN_REQUIRED_LIBS
-yuzu_find_packages()
-
 # Qt5 requires that we find components, so it doesn't fit our pretty little find package function
 if(ENABLE_QT)
     set(QT_VERSION 5.15)
-    # We want to load the generated conan qt config so that we get the QT_ROOT var so that we can use the official
-    # Qt5Config inside the root folder instead of the conan generated one.
-    if(EXISTS ${CMAKE_BINARY_DIR}/qtConfig.cmake)
-        include(${CMAKE_BINARY_DIR}/qtConfig.cmake)
-        list(APPEND CMAKE_MODULE_PATH "${CONAN_QT_ROOT_RELEASE}")
-        list(APPEND CMAKE_PREFIX_PATH "${CONAN_QT_ROOT_RELEASE}")
-    endif()
 
     # Check for system Qt on Linux, fallback to bundled Qt
     if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
         if (NOT YUZU_USE_BUNDLED_QT)
-            find_package(Qt5 ${QT_VERSION} COMPONENTS Widgets DBus Multimedia)
+            find_package(Qt5 ${QT_VERSION} COMPONENTS Widgets DBus)
         endif()
         if (NOT Qt5_FOUND OR YUZU_USE_BUNDLED_QT)
             # Check for dependencies, then enable bundled Qt download
@@ -330,9 +282,6 @@ if(ENABLE_QT)
 
     set(YUZU_QT_NO_CMAKE_SYSTEM_PATH)
 
-    # Workaround for an issue where conan tries to build Qt from scratch instead of download prebuilt binaries
-    set(QT_PREFIX_HINT)
-
     if(YUZU_USE_BUNDLED_QT)
         if ((MSVC_VERSION GREATER_EQUAL 1920 AND MSVC_VERSION LESS 1940) AND ARCHITECTURE_x86_64)
             set(QT_BUILD qt-5.15.2-msvc2019_64)
@@ -351,12 +300,12 @@ if(ENABLE_QT)
         set(YUZU_QT_NO_CMAKE_SYSTEM_PATH "NO_CMAKE_SYSTEM_PATH")
     endif()
     if ((${CMAKE_SYSTEM_NAME} STREQUAL "Linux") AND YUZU_USE_BUNDLED_QT)
-        find_package(Qt5 ${QT_VERSION} REQUIRED COMPONENTS Widgets DBus Multimedia ${QT_PREFIX_HINT} ${YUZU_QT_NO_CMAKE_SYSTEM_PATH})
+        find_package(Qt5 ${QT_VERSION} REQUIRED COMPONENTS Widgets Concurrent DBus ${QT_PREFIX_HINT} ${YUZU_QT_NO_CMAKE_SYSTEM_PATH})
     else()
-        find_package(Qt5 ${QT_VERSION} REQUIRED COMPONENTS Widgets Multimedia ${QT_PREFIX_HINT} ${YUZU_QT_NO_CMAKE_SYSTEM_PATH})
+        find_package(Qt5 ${QT_VERSION} REQUIRED COMPONENTS Widgets Concurrent ${QT_PREFIX_HINT} ${YUZU_QT_NO_CMAKE_SYSTEM_PATH})
     endif()
     if (YUZU_USE_QT_WEB_ENGINE)
-        find_package(Qt5 COMPONENTS WebEngineCore WebEngineWidgets)
+        find_package(Qt5 REQUIRED COMPONENTS WebEngineCore WebEngineWidgets)
     endif()
 
     if (ENABLE_QT_TRANSLATION)
@@ -403,71 +352,8 @@ if (ENABLE_SDL2)
     endif()
 endif()
 
-# Install any missing dependencies with conan install
-if (CONAN_REQUIRED_LIBS)
-    message(STATUS "Packages ${CONAN_REQUIRED_LIBS} not found!")
-    # Use Conan to fetch the libraries that aren't found
-    # Download conan.cmake automatically, you can also just copy the conan.cmake file
-    if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
-        message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-        file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/release/0.18/conan.cmake" "${CMAKE_BINARY_DIR}/conan.cmake")
-    endif()
-    include(${CMAKE_BINARY_DIR}/conan.cmake)
-
-    conan_check(VERSION 1.45.0 REQUIRED)
-
-    # Manually add iconv to fix a dep conflict between qt and sdl2
-    # We don't need to add it through find_package or anything since the other two can find it just fine
-    if ("${CONAN_REQUIRED_LIBS}" MATCHES "qt" AND "${CONAN_REQUIRED_LIBS}" MATCHES "sdl")
-        list(APPEND CONAN_REQUIRED_LIBS "libiconv/1.16")
-    endif()
-    if (IS_MULTI_CONFIG)
-        conan_cmake_run(REQUIRES ${CONAN_REQUIRED_LIBS}
-                        OPTIONS ${CONAN_LIB_OPTIONS}
-                        BUILD missing
-                        CONFIGURATION_TYPES "Release;Debug"
-                        GENERATORS cmake_multi cmake_find_package_multi)
-        include(${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
-    else()
-        conan_cmake_run(REQUIRES ${CONAN_REQUIRED_LIBS}
-                        OPTIONS ${CONAN_LIB_OPTIONS}
-                        BUILD missing
-                        GENERATORS cmake cmake_find_package_multi)
-        include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-    endif()
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}")
-    list(APPEND CMAKE_PREFIX_PATH "${CMAKE_BINARY_DIR}")
-    conan_basic_setup()
-
-    set(YUZU_CONAN_INSTALLED TRUE CACHE BOOL "If true, the following builds will add conan to the lib search path" FORCE)
-
-    # Now that we've installed what we are missing, try to locate them again,
-    # this time with required, so we bail if its not found.
-    yuzu_find_packages(FORCE_REQUIRED)
-
-    if (NOT Boost_FOUND)
-        find_package(Boost 1.73.0 REQUIRED COMPONENTS context headers)
-        set(Boost_LIBRARIES Boost::boost)
-        # Conditionally add Boost::context only if the active version of the Conan Boost package provides it
-        # The old version is missing Boost::context, so we want to avoid adding in that case
-        # The new version requires adding Boost::context to prevent linking issues
-        if (TARGET Boost::context)
-            list(APPEND Boost_LIBRARIES Boost::context)
-        endif()
-    endif()
-
-    # Due to issues with variable scopes in functions, we need to also find_package(qt5) outside of the function
-    if(ENABLE_QT)
-        list(APPEND CMAKE_MODULE_PATH "${CONAN_QT_ROOT_RELEASE}")
-        list(APPEND CMAKE_PREFIX_PATH "${CONAN_QT_ROOT_RELEASE}")
-        find_package(Qt5 5.15 REQUIRED COMPONENTS Widgets Multimedia)
-        if (YUZU_USE_QT_WEB_ENGINE)
-            find_package(Qt5 REQUIRED COMPONENTS WebEngineCore WebEngineWidgets)
-        endif()
-    endif()
-
-endif()
-
+# TODO(lat9nq): Determine what if any of this we still need
+#
 # Reexport some targets that are named differently when using the upstream CmakeConfig vs the generated Conan config
 # In order to ALIAS targets to a new name, they first need to be IMPORTED_GLOBAL
 # Dynarmic checks for target `boost` and so we want to make sure it can find it through our system instead of using their external

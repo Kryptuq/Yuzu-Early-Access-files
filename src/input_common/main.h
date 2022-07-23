@@ -30,7 +30,6 @@ enum Values : int;
 }
 
 namespace InputCommon {
-class Camera;
 class Keyboard;
 class Mouse;
 class TouchScreen;
@@ -93,14 +92,8 @@ public:
     /// Retrieves the underlying tas input device.
     [[nodiscard]] TasInput::Tas* GetTas();
 
-    /// Retrieves the underlying tas input device.
+    /// Retrieves the underlying  tas input  device.
     [[nodiscard]] const TasInput::Tas* GetTas() const;
-
-    /// Retrieves the underlying camera input device.
-    [[nodiscard]] Camera* GetCamera();
-
-    /// Retrieves the underlying camera input device.
-    [[nodiscard]] const Camera* GetCamera() const;
 
     /**
      * Returns all available input devices that this Factory can create a new device with.

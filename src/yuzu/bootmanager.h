@@ -20,8 +20,6 @@
 
 class GRenderWindow;
 class GMainWindow;
-class QCamera;
-class QCameraImageCapture;
 class QKeyEvent;
 
 namespace Core {
@@ -166,9 +164,6 @@ public:
     void mouseReleaseEvent(QMouseEvent* event) override;
     void wheelEvent(QWheelEvent* event) override;
 
-    void InitializeCamera();
-    void FinalizeCamera();
-
     bool event(QEvent* event) override;
 
     void focusOutEvent(QFocusEvent* event) override;
@@ -212,9 +207,6 @@ private:
     void TouchUpdateEvent(const QTouchEvent* event);
     void TouchEndEvent();
 
-    void RequestCameraCapture();
-    void OnCameraCapture(int requestId, const QImage& img);
-
     void OnMinimalClientAreaChangeRequest(std::pair<u32, u32> minimal_size) override;
 
     bool InitializeOpenGL();
@@ -239,10 +231,6 @@ private:
 
     bool first_frame = false;
     InputCommon::TasInput::TasState last_tas_state;
-
-    std::unique_ptr<QCamera> camera;
-    std::unique_ptr<QCameraImageCapture> camera_capture;
-    std::unique_ptr<QTimer> camera_timer;
 
     Core::System& system;
 

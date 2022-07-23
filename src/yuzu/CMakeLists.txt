@@ -41,9 +41,6 @@ add_executable(yuzu
     configuration/configure_audio.cpp
     configuration/configure_audio.h
     configuration/configure_audio.ui
-    configuration/configure_camera.cpp
-    configuration/configure_camera.h
-    configuration/configure_camera.ui
     configuration/configure_cpu.cpp
     configuration/configure_cpu.h
     configuration/configure_cpu.ui
@@ -257,7 +254,7 @@ endif()
 create_target_directory_groups(yuzu)
 
 target_link_libraries(yuzu PRIVATE common core input_common video_core)
-target_link_libraries(yuzu PRIVATE Boost::boost glad Qt::Widgets Qt::Multimedia)
+target_link_libraries(yuzu PRIVATE Boost::boost glad Qt::Widgets)
 target_link_libraries(yuzu PRIVATE ${PLATFORM_LIBRARIES} Threads::Threads)
 
 target_include_directories(yuzu PRIVATE ../../externals/Vulkan-Headers/include)

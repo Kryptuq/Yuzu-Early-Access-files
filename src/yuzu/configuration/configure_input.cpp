@@ -15,7 +15,6 @@
 #include "ui_configure_input.h"
 #include "ui_configure_input_advanced.h"
 #include "ui_configure_input_player.h"
-#include "yuzu/configuration/configure_camera.h"
 #include "yuzu/configuration/configure_debug_controller.h"
 #include "yuzu/configuration/configure_input.h"
 #include "yuzu/configuration/configure_input_advanced.h"
@@ -163,10 +162,6 @@ void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem,
     connect(advanced, &ConfigureInputAdvanced::CallRingControllerDialog,
             [this, input_subsystem, &hid_core] {
                 CallConfigureDialog<ConfigureRingController>(*this, input_subsystem, hid_core);
-            });
-    connect(advanced, &ConfigureInputAdvanced::CallCameraDialog,
-            [this, input_subsystem, &hid_core] {
-                CallConfigureDialog<ConfigureCamera>(*this, input_subsystem);
             });
 
     connect(ui->vibrationButton, &QPushButton::clicked,

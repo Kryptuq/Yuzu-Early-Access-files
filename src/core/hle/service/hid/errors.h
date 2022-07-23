@@ -19,10 +19,3 @@ constexpr Result InvalidNpadId{ErrorModule::HID, 709};
 constexpr Result NpadNotConnected{ErrorModule::HID, 710};
 
 } // namespace Service::HID
-
-namespace Service::IRS {
-
-constexpr Result InvalidProcessorState{ErrorModule::Irsensor, 78};
-constexpr Result InvalidIrCameraHandle{ErrorModule::Irsensor, 204};
-
-} // namespace Service::IRS

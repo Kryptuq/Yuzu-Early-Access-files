@@ -368,11 +368,6 @@ void Config::ReadHidbusValues() {
     }
 }
 
-void Config::ReadIrCameraValues() {
-    ReadBasicSetting(Settings::values.enable_ir_sensor);
-    ReadBasicSetting(Settings::values.ir_sensor_device);
-}
-
 void Config::ReadAudioValues() {
     qt_config->beginGroup(QStringLiteral("Audio"));
 
@@ -398,7 +393,6 @@ void Config::ReadControlValues() {
     ReadTouchscreenValues();
     ReadMotionTouchValues();
     ReadHidbusValues();
-    ReadIrCameraValues();
 
 #ifdef _WIN32
     ReadBasicSetting(Settings::values.enable_raw_input);
@@ -1004,11 +998,6 @@ void Config::SaveHidbusValues() {
                  QString::fromStdString(default_param));
 }
 
-void Config::SaveIrCameraValues() {
-    WriteBasicSetting(Settings::values.enable_ir_sensor);
-    WriteBasicSetting(Settings::values.ir_sensor_device);
-}
-
 void Config::SaveValues() {
     if (global) {
         SaveControlValues();
@@ -1051,7 +1040,6 @@ void Config::SaveControlValues() {
     SaveTouchscreenValues();
     SaveMotionTouchValues();
     SaveHidbusValues();
-    SaveIrCameraValues();
 
     WriteGlobalSetting(Settings::values.use_docked_mode);
     WriteGlobalSetting(Settings::values.vibration_enabled);

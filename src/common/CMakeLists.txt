@@ -189,8 +189,9 @@ create_target_directory_groups(common)
 
 target_link_libraries(common PUBLIC ${Boost_LIBRARIES} fmt::fmt microprofile Threads::Threads)
 target_link_libraries(common PRIVATE lz4::lz4 xbyak)
-if (MSVC)
+if (TARGET zstd::zstd)
   target_link_libraries(common PRIVATE zstd::zstd)
 else()
-  target_link_libraries(common PRIVATE zstd)
+  target_link_libraries(common PRIVATE
+    $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>)
 endif()

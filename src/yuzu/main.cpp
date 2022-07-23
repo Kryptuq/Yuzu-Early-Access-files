@@ -1541,8 +1541,6 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
         mouse_hide_timer.start();
     }
 
-    render_window->InitializeCamera();
-
     std::string title_name;
     std::string title_version;
     const auto res = system->GetGameName(title_name);
@@ -1624,7 +1622,6 @@ void GMainWindow::ShutdownGame() {
     tas_label->clear();
     input_subsystem->GetTas()->Stop();
     OnTasStateChanged();
-    render_window->FinalizeCamera();
 
     // Enable all controllers
     system->HIDCore().SetSupportedStyleTag({Core::HID::NpadStyleSet::All});
@@ -2862,12 +2859,6 @@ void GMainWindow::OnConfigure() {
 
     if (UISettings::values.hide_mouse) {
         mouse_hide_timer.start();
-    }
-
-    // Restart camera config
-    if (emulation_running) {
-        render_window->FinalizeCamera();
-        render_window->InitializeCamera();
     }
 
     if (!UISettings::values.has_broken_vulkan) {
