@@ -36,6 +36,7 @@ jobs:
       - name: Before Build
         run: |
           git clone https://github.com/Kryptuq/glslang.git
+          git clone https://github.com/fmtlib/fmt.git
           mkdir build
           cd build
           cmake --version
