@@ -48,8 +48,6 @@ jobs:
 
       - name: After Build
         run: |
-          cd ${{ github.workspace }}\build\bin
-          ls
           mv ${{ github.workspace }}\build\bin\Release ${{ github.workspace }}\build\bin\yuzu-early-access
 
       - name: Zip the Build Folder
