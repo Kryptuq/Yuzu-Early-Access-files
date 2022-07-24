@@ -40,7 +40,7 @@ jobs:
           mkdir build
           cd build
           cmake --version
-          cmake .. -G "Visual Studio 17 2022" -A x64 -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.event.head_commit.message }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.event.head_commit.message }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DUSE_DISCORD_PRESENCE=ON -DYUZU_USE_QT_WEB_ENGINE=OFF -DYUZU_ENABLE_COMPATIBILITY_REPORTING=ON -Dfmt_DIR=C:\actions-runner_work\Yuzu-Early-Access-files\Yuzu-Early-Access-files\fmt\share\fmt -DYUZU_TESTS=OFF -DYUZU_USE_BUNDLED_VCPKG=ON
+          cmake .. -G "Visual Studio 17 2022" -A x64 -DCMAKE_TOOLCHAIN_FILE=D:/YuzuEA/Yuzu-Early-Access-files/externals/vcpkg/scripts/buildsystems/vcpkg.cmake -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.event.head_commit.message }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.event.head_commit.message }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DUSE_DISCORD_PRESENCE=ON -DYUZU_USE_QT_WEB_ENGINE=OFF -DYUZU_ENABLE_COMPATIBILITY_REPORTING=ON -Dfmt_DIR=C:\actions-runner_work\Yuzu-Early-Access-files\Yuzu-Early-Access-files\fmt\share\fmt -DYUZU_TESTS=OFF -DYUZU_USE_BUNDLED_VCPKG=ON
 
       #Build the .sln
       - name: Build app for release
