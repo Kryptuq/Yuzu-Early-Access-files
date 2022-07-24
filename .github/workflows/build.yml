@@ -12,7 +12,7 @@ on:
 jobs:
   build:
     name: Building Yuzu Binaries
-    runs-on: windows-latest
+    runs-on: self-hosted
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: actions/checkout
