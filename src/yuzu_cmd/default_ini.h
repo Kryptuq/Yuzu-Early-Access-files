@@ -124,7 +124,11 @@ keyboard_enabled =
 [Core]
 # Whether to use multi-core for CPU emulation
 # 0: Disabled, 1 (default): Enabled
-use_multi_core=
+use_multi_core =
+
+# Enable extended guest system memory layout (6GB DRAM)
+# 0 (default): Disabled, 1: Enabled
+use_extended_memory_layout =
 
 [Cpu]
 # Adjusts various optimizations.
@@ -174,6 +178,14 @@ cpuopt_reduce_misalign_checks =
 # 0: Disabled, 1 (default): Enabled
 cpuopt_fastmem =
 
+# Enable Host MMU Emulation for exclusive memory instructions (faster guest memory access)
+# 0: Disabled, 1 (default): Enabled
+cpuopt_fastmem_exclusives =
+
+# Enable fallback on failure of fastmem of exclusive memory instructions (faster guest memory access)
+# 0: Disabled, 1 (default): Enabled
+cpuopt_recompile_exclusives =
+
 # Enable unfuse FMA (improve performance on CPUs without FMA)
 # Only enabled if cpu_accuracy is set to Unsafe. Automatically chosen with cpu_accuracy = Auto-select.
 # 0: Disabled, 1 (default): Enabled
@@ -199,9 +211,14 @@ cpuopt_unsafe_inaccurate_nan =
 # 0: Disabled, 1 (default): Enabled
 cpuopt_unsafe_fastmem_check =
 
+# Enable faster exclusive instructions
+# Only enabled if cpu_accuracy is set to Unsafe. Automatically chosen with cpu_accuracy = Auto-select.
+# 0: Disabled, 1 (default): Enabled
+cpuopt_unsafe_ignore_global_monitor =
+
 [Renderer]
 # Which backend API to use.
-# 0 (default): OpenGL, 1: Vulkan
+# 0: OpenGL, 1 (default): Vulkan
 backend =
 
 # Enable graphics API debugging mode.
@@ -313,10 +330,6 @@ bg_red =
 bg_blue =
 bg_green =
 
-# Caps the unlocked framerate to a multiple of the title's target FPS.
-# 1 - 1000: Target FPS multiple cap. 1000 (default)
-fps_cap =
-
 [Audio]
 # Which audio output engine to use.
 # auto (default): Auto-select
@@ -324,12 +337,6 @@ fps_cap =
 # sdl2: SDL2 audio engine (if available)
 # null: No audio output
 output_engine =
-
-# Whether or not to enable the audio-stretching post-processing effect.
-# This effect adjusts audio speed to match emulation speed and helps prevent audio stutter,
-# at the cost of increasing audio latency.
-# 0: No, 1 (default): Yes
-enable_audio_stretching =
 
 # Which audio device to use.
 # auto (default): Auto-select
@@ -423,9 +430,11 @@ use_debug_asserts =
 use_auto_stub =
 # Enables/Disables the macro JIT compiler
 disable_macro_jit=false
-# Presents guest frames as they become available. Experimental.
+# Determines whether to enable the GDB stub and wait for the debugger to attach before running.
 # false: Disabled (default), true: Enabled
-disable_fps_limit=false
+use_gdbstub=false
+# The port to use for the GDB server, if it is enabled.
+gdbstub_port=6543
 
 [WebService]
 # Whether or not to enable telemetry

@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -30,16 +29,16 @@ public:
         is_initialized = true;
     }
 
-    ResultCode SetDeviceLocationNameWithTimeZoneRule(const std::string& location_name,
-                                                     FileSys::VirtualFile& vfs_file);
-    ResultCode SetUpdatedTime(const Clock::SteadyClockTimePoint& value);
-    ResultCode GetDeviceLocationName(TimeZone::LocationName& value) const;
-    ResultCode ToCalendarTime(const TimeZoneRule& rules, s64 time, CalendarInfo& calendar) const;
-    ResultCode ToCalendarTimeWithMyRules(s64 time, CalendarInfo& calendar) const;
-    ResultCode ParseTimeZoneRuleBinary(TimeZoneRule& rules, FileSys::VirtualFile& vfs_file) const;
-    ResultCode ToPosixTime(const TimeZoneRule& rules, const CalendarTime& calendar_time,
-                           s64& posix_time) const;
-    ResultCode ToPosixTimeWithMyRule(const CalendarTime& calendar_time, s64& posix_time) const;
+    Result SetDeviceLocationNameWithTimeZoneRule(const std::string& location_name,
+                                                 FileSys::VirtualFile& vfs_file);
+    Result SetUpdatedTime(const Clock::SteadyClockTimePoint& value);
+    Result GetDeviceLocationName(TimeZone::LocationName& value) const;
+    Result ToCalendarTime(const TimeZoneRule& rules, s64 time, CalendarInfo& calendar) const;
+    Result ToCalendarTimeWithMyRules(s64 time, CalendarInfo& calendar) const;
+    Result ParseTimeZoneRuleBinary(TimeZoneRule& rules, FileSys::VirtualFile& vfs_file) const;
+    Result ToPosixTime(const TimeZoneRule& rules, const CalendarTime& calendar_time,
+                       s64& posix_time) const;
+    Result ToPosixTimeWithMyRule(const CalendarTime& calendar_time, s64& posix_time) const;
 
 private:
     bool is_initialized{};

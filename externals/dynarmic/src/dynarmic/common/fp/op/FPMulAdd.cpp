@@ -5,7 +5,8 @@
 
 #include "dynarmic/common/fp/op/FPMulAdd.h"
 
-#include "dynarmic/common/common_types.h"
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/fp/fused.h"

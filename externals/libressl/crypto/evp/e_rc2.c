@@ -1,4 +1,4 @@
-/* $OpenBSD: e_rc2.c,v 1.12 2017/01/29 17:49:23 beck Exp $ */
+/* $OpenBSD: e_rc2.c,v 1.14 2022/01/20 11:31:37 inoguchi Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -150,7 +150,8 @@ rc2_meth_to_magic(EVP_CIPHER_CTX *e)
 {
 	int i;
 
-	EVP_CIPHER_CTX_ctrl(e, EVP_CTRL_GET_RC2_KEY_BITS, 0, &i);
+	if (EVP_CIPHER_CTX_ctrl(e, EVP_CTRL_GET_RC2_KEY_BITS, 0, &i) <= 0)
+		return (0);
 	if (i == 128)
 		return (RC2_128_MAGIC);
 	else if (i == 64)
@@ -199,9 +200,11 @@ rc2_get_asn1_type_and_iv(EVP_CIPHER_CTX *c, ASN1_TYPE *type)
 			return (-1);
 		if (i > 0 && !EVP_CipherInit_ex(c, NULL, NULL, NULL, iv, -1))
 			return -1;
-		EVP_CIPHER_CTX_ctrl(c, EVP_CTRL_SET_RC2_KEY_BITS,
-		    key_bits, NULL);
-		EVP_CIPHER_CTX_set_key_length(c, key_bits / 8);
+		if (EVP_CIPHER_CTX_ctrl(c, EVP_CTRL_SET_RC2_KEY_BITS,
+		    key_bits, NULL) <= 0)
+			return -1;
+		if (!EVP_CIPHER_CTX_set_key_length(c, key_bits / 8))
+			return -1;
 	}
 	return (i);
 }

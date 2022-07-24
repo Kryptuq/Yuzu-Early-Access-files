@@ -7,7 +7,6 @@
 #include <array>
 #include <chrono>
 #include <cstddef>
-#include <string_view>
 #include "common/logging/log.h"
 
 namespace Common::Log {

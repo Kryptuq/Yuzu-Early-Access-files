@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/arm/dynarmic/arm_exclusive_monitor.h"
 #include "core/memory.h"
@@ -37,8 +36,8 @@ u128 DynarmicExclusiveMonitor::ExclusiveRead128(std::size_t core_index, VAddr ad
     });
 }
 
-void DynarmicExclusiveMonitor::ClearExclusive() {
-    monitor.Clear();
+void DynarmicExclusiveMonitor::ClearExclusive(std::size_t core_index) {
+    monitor.ClearProcessor(core_index);
 }
 
 bool DynarmicExclusiveMonitor::ExclusiveWrite8(std::size_t core_index, VAddr vaddr, u8 value) {

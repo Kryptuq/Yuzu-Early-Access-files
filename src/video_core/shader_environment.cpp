@@ -1,9 +1,7 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
-#include <bit>
 #include <filesystem>
 #include <fstream>
 #include <memory>
@@ -190,11 +188,11 @@ void GenericEnvironment::Serialize(std::ofstream& file) const {
         .write(reinterpret_cast<const char*>(&cached_highest), sizeof(cached_highest))
         .write(reinterpret_cast<const char*>(&stage), sizeof(stage))
         .write(reinterpret_cast<const char*>(code.data()), code_size);
-    for (const auto [key, type] : texture_types) {
+    for (const auto& [key, type] : texture_types) {
         file.write(reinterpret_cast<const char*>(&key), sizeof(key))
             .write(reinterpret_cast<const char*>(&type), sizeof(type));
     }
-    for (const auto [key, type] : cbuf_values) {
+    for (const auto& [key, type] : cbuf_values) {
         file.write(reinterpret_cast<const char*>(&key), sizeof(key))
             .write(reinterpret_cast<const char*>(&type), sizeof(type));
     }
@@ -282,7 +280,7 @@ GraphicsEnvironment::GraphicsEnvironment(Tegra::Engines::Maxwell3D& maxwell3d_,
         stage_index = 4;
         break;
     default:
-        UNREACHABLE_MSG("Invalid program={}", program);
+        ASSERT_MSG(false, "Invalid program={}", program);
         break;
     }
     const u64 local_size{sph.LocalMemorySize()};

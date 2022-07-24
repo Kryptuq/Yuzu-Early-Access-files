@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <chrono>
 #include <ctime>
@@ -211,6 +210,11 @@ public:
             {127, nullptr, "Unknown127"},
             {128, nullptr, "Unknown128"},
             {129, nullptr, "Unknown129"},
+            {130, nullptr, "Unknown130"},
+            {131, nullptr, "Unknown131"},
+            {132, nullptr, "Unknown132"},
+            {133, nullptr, "Unknown133"},
+            {134, nullptr, "Unknown134"},
         };
         // clang-format on
 
@@ -287,6 +291,7 @@ public:
             {502, nullptr, "RequestDownloadTicketForPrepurchasedContents"},
             {503, nullptr, "RequestSyncTicket"},
             {504, nullptr, "RequestDownloadTicketForPrepurchasedContents2"},
+            {505, nullptr, "RequestDownloadTicketForPrepurchasedContentsForAccount"},
         };
         // clang-format on
 

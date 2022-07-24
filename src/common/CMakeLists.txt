@@ -39,10 +39,13 @@ add_custom_command(OUTPUT scm_rev.cpp
 )
 
 add_library(common STATIC
+    address_space.h
+    address_space.cpp
     algorithm.h
     alignment.h
     assert.cpp
     assert.h
+    atomic_helpers.h
     atomic_ops.h
     detached_tasks.cpp
     detached_tasks.h
@@ -58,11 +61,13 @@ add_library(common STATIC
     div_ceil.h
     dynamic_library.cpp
     dynamic_library.h
+    elf.h
     error.cpp
     error.h
     expected.h
     fiber.cpp
     fiber.h
+    fixed_point.h
     fs/file.cpp
     fs/file.h
     fs/fs.cpp
@@ -99,6 +104,8 @@ add_library(common STATIC
     microprofile.cpp
     microprofile.h
     microprofileui.h
+    multi_level_page_table.cpp
+    multi_level_page_table.h
     nvidia_flags.cpp
     nvidia_flags.h
     page_table.cpp
@@ -108,6 +115,7 @@ add_library(common STATIC
     parent_of_member.h
     point.h
     quaternion.h
+    reader_writer_queue.h
     ring_buffer.h
     scm_rev.cpp
     scm_rev.h
@@ -181,8 +189,9 @@ create_target_directory_groups(common)
 
 target_link_libraries(common PUBLIC ${Boost_LIBRARIES} fmt::fmt microprofile Threads::Threads)
 target_link_libraries(common PRIVATE lz4::lz4 xbyak)
-if (MSVC)
+if (TARGET zstd::zstd)
   target_link_libraries(common PRIVATE zstd::zstd)
 else()
-  target_link_libraries(common PRIVATE zstd)
+  target_link_libraries(common PRIVATE
+    $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>)
 endif()

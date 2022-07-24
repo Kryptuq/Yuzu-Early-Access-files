@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -15,10 +14,9 @@ public:
     virtual ~KThreadQueue() = default;
 
     virtual void NotifyAvailable(KThread* waiting_thread, KSynchronizationObject* signaled_object,
-                                 ResultCode wait_result);
-    virtual void EndWait(KThread* waiting_thread, ResultCode wait_result);
-    virtual void CancelWait(KThread* waiting_thread, ResultCode wait_result,
-                            bool cancel_timer_task);
+                                 Result wait_result);
+    virtual void EndWait(KThread* waiting_thread, Result wait_result);
+    virtual void CancelWait(KThread* waiting_thread, Result wait_result, bool cancel_timer_task);
 
 private:
     KernelCore& kernel;
@@ -29,7 +27,7 @@ class KThreadQueueWithoutEndWait : public KThreadQueue {
 public:
     explicit KThreadQueueWithoutEndWait(KernelCore& kernel_) : KThreadQueue(kernel_) {}
 
-    void EndWait(KThread* waiting_thread, ResultCode wait_result) override final;
+    void EndWait(KThread* waiting_thread, Result wait_result) override final;
 };
 
 } // namespace Kernel

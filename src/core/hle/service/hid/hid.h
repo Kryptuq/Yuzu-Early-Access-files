@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -59,13 +58,14 @@ public:
 
 private:
     template <typename T>
-    void MakeController(HidController controller) {
-        controllers[static_cast<std::size_t>(controller)] = std::make_unique<T>(system.HIDCore());
+    void MakeController(HidController controller, u8* shared_memory) {
+        controllers[static_cast<std::size_t>(controller)] =
+            std::make_unique<T>(system.HIDCore(), shared_memory);
     }
     template <typename T>
-    void MakeControllerWithServiceContext(HidController controller) {
+    void MakeControllerWithServiceContext(HidController controller, u8* shared_memory) {
         controllers[static_cast<std::size_t>(controller)] =
-            std::make_unique<T>(system.HIDCore(), service_context);
+            std::make_unique<T>(system.HIDCore(), shared_memory, service_context);
     }
 
     void GetSharedMemoryHandle(Kernel::HLERequestContext& ctx);
@@ -103,6 +103,7 @@ private:
     void DeactivateSixAxisSensor(Kernel::HLERequestContext& ctx);
     void StartSixAxisSensor(Kernel::HLERequestContext& ctx);
     void StopSixAxisSensor(Kernel::HLERequestContext& ctx);
+    void IsSixAxisSensorFusionEnabled(Kernel::HLERequestContext& ctx);
     void EnableSixAxisSensorFusion(Kernel::HLERequestContext& ctx);
     void SetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx);
     void GetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx);
@@ -112,6 +113,11 @@ private:
     void ResetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx);
     void IsSixAxisSensorAtRest(Kernel::HLERequestContext& ctx);
     void IsFirmwareUpdateAvailableForSixAxisSensor(Kernel::HLERequestContext& ctx);
+    void EnableSixAxisSensorUnalteredPassthrough(Kernel::HLERequestContext& ctx);
+    void IsSixAxisSensorUnalteredPassthroughEnabled(Kernel::HLERequestContext& ctx);
+    void LoadSixAxisSensorCalibrationParameter(Kernel::HLERequestContext& ctx);
+    void GetSixAxisSensorIcInformation(Kernel::HLERequestContext& ctx);
+    void ResetIsSixAxisSensorDeviceNewlyAssigned(Kernel::HLERequestContext& ctx);
     void ActivateGesture(Kernel::HLERequestContext& ctx);
     void SetSupportedNpadStyleSet(Kernel::HLERequestContext& ctx);
     void GetSupportedNpadStyleSet(Kernel::HLERequestContext& ctx);
@@ -159,11 +165,13 @@ private:
     void InitializeSevenSixAxisSensor(Kernel::HLERequestContext& ctx);
     void FinalizeSevenSixAxisSensor(Kernel::HLERequestContext& ctx);
     void ResetSevenSixAxisSensorTimestamp(Kernel::HLERequestContext& ctx);
+    void IsUsbFullKeyControllerEnabled(Kernel::HLERequestContext& ctx);
     void SetIsPalmaAllConnectable(Kernel::HLERequestContext& ctx);
     void SetPalmaBoostMode(Kernel::HLERequestContext& ctx);
     void SetNpadCommunicationMode(Kernel::HLERequestContext& ctx);
     void GetNpadCommunicationMode(Kernel::HLERequestContext& ctx);
     void SetTouchScreenConfiguration(Kernel::HLERequestContext& ctx);
+    void IsFirmwareUpdateNeededForNotification(Kernel::HLERequestContext& ctx);
 
     std::shared_ptr<IAppletResource> applet_resource;
 

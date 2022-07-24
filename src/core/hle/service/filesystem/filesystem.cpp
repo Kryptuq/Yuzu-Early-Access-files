@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <utility>
 
@@ -50,7 +49,7 @@ std::string VfsDirectoryServiceWrapper::GetName() const {
     return backing->GetName();
 }
 
-ResultCode VfsDirectoryServiceWrapper::CreateFile(const std::string& path_, u64 size) const {
+Result VfsDirectoryServiceWrapper::CreateFile(const std::string& path_, u64 size) const {
     std::string path(Common::FS::SanitizePath(path_));
     auto dir = GetDirectoryRelativeWrapped(backing, Common::FS::GetParentPath(path));
     if (dir == nullptr) {
@@ -74,7 +73,7 @@ ResultCode VfsDirectoryServiceWrapper::CreateFile(const std::string& path_, u64 
     return ResultSuccess;
 }
 
-ResultCode VfsDirectoryServiceWrapper::DeleteFile(const std::string& path_) const {
+Result VfsDirectoryServiceWrapper::DeleteFile(const std::string& path_) const {
     std::string path(Common::FS::SanitizePath(path_));
     if (path.empty()) {
         // TODO(DarkLordZach): Why do games call this and what should it do? Works as is but...
@@ -93,7 +92,7 @@ ResultCode VfsDirectoryServiceWrapper::DeleteFile(const std::string& path_) cons
     return ResultSuccess;
 }
 
-ResultCode VfsDirectoryServiceWrapper::CreateDirectory(const std::string& path_) const {
+Result VfsDirectoryServiceWrapper::CreateDirectory(const std::string& path_) const {
     std::string path(Common::FS::SanitizePath(path_));
 
     // NOTE: This is inaccurate behavior. CreateDirectory is not recursive.
@@ -117,7 +116,7 @@ ResultCode VfsDirectoryServiceWrapper::CreateDirectory(const std::string& path_)
     return ResultSuccess;
 }
 
-ResultCode VfsDirectoryServiceWrapper::DeleteDirectory(const std::string& path_) const {
+Result VfsDirectoryServiceWrapper::DeleteDirectory(const std::string& path_) const {
     std::string path(Common::FS::SanitizePath(path_));
     auto dir = GetDirectoryRelativeWrapped(backing, Common::FS::GetParentPath(path));
     if (!dir->DeleteSubdirectory(Common::FS::GetFilename(path))) {
@@ -127,7 +126,7 @@ ResultCode VfsDirectoryServiceWrapper::DeleteDirectory(const std::string& path_)
     return ResultSuccess;
 }
 
-ResultCode VfsDirectoryServiceWrapper::DeleteDirectoryRecursively(const std::string& path_) const {
+Result VfsDirectoryServiceWrapper::DeleteDirectoryRecursively(const std::string& path_) const {
     std::string path(Common::FS::SanitizePath(path_));
     auto dir = GetDirectoryRelativeWrapped(backing, Common::FS::GetParentPath(path));
     if (!dir->DeleteSubdirectoryRecursive(Common::FS::GetFilename(path))) {
@@ -137,7 +136,7 @@ ResultCode VfsDirectoryServiceWrapper::DeleteDirectoryRecursively(const std::str
     return ResultSuccess;
 }
 
-ResultCode VfsDirectoryServiceWrapper::CleanDirectoryRecursively(const std::string& path) const {
+Result VfsDirectoryServiceWrapper::CleanDirectoryRecursively(const std::string& path) const {
     const std::string sanitized_path(Common::FS::SanitizePath(path));
     auto dir = GetDirectoryRelativeWrapped(backing, Common::FS::GetParentPath(sanitized_path));
 
@@ -149,8 +148,8 @@ ResultCode VfsDirectoryServiceWrapper::CleanDirectoryRecursively(const std::stri
     return ResultSuccess;
 }
 
-ResultCode VfsDirectoryServiceWrapper::RenameFile(const std::string& src_path_,
-                                                  const std::string& dest_path_) const {
+Result VfsDirectoryServiceWrapper::RenameFile(const std::string& src_path_,
+                                              const std::string& dest_path_) const {
     std::string src_path(Common::FS::SanitizePath(src_path_));
     std::string dest_path(Common::FS::SanitizePath(dest_path_));
     auto src = backing->GetFileRelative(src_path);
@@ -174,7 +173,7 @@ ResultCode VfsDirectoryServiceWrapper::RenameFile(const std::string& src_path_,
     ASSERT_MSG(dest != nullptr, "Newly created file with success cannot be found.");
 
     ASSERT_MSG(dest->WriteBytes(src->ReadAllBytes()) == src->GetSize(),
-               "Could not write all of the bytes but everything else has succeded.");
+               "Could not write all of the bytes but everything else has succeeded.");
 
     if (!src->GetContainingDirectory()->DeleteFile(Common::FS::GetFilename(src_path))) {
         // TODO(DarkLordZach): Find a better error code for this
@@ -184,8 +183,8 @@ ResultCode VfsDirectoryServiceWrapper::RenameFile(const std::string& src_path_,
     return ResultSuccess;
 }
 
-ResultCode VfsDirectoryServiceWrapper::RenameDirectory(const std::string& src_path_,
-                                                       const std::string& dest_path_) const {
+Result VfsDirectoryServiceWrapper::RenameDirectory(const std::string& src_path_,
+                                                   const std::string& dest_path_) const {
     std::string src_path(Common::FS::SanitizePath(src_path_));
     std::string dest_path(Common::FS::SanitizePath(dest_path_));
     auto src = GetDirectoryRelativeWrapped(backing, src_path);
@@ -274,28 +273,27 @@ FileSystemController::FileSystemController(Core::System& system_) : system{syste
 
 FileSystemController::~FileSystemController() = default;
 
-ResultCode FileSystemController::RegisterRomFS(std::unique_ptr<FileSys::RomFSFactory>&& factory) {
+Result FileSystemController::RegisterRomFS(std::unique_ptr<FileSys::RomFSFactory>&& factory) {
     romfs_factory = std::move(factory);
     LOG_DEBUG(Service_FS, "Registered RomFS");
     return ResultSuccess;
 }
 
-ResultCode FileSystemController::RegisterSaveData(
-    std::unique_ptr<FileSys::SaveDataFactory>&& factory) {
+Result FileSystemController::RegisterSaveData(std::unique_ptr<FileSys::SaveDataFactory>&& factory) {
     ASSERT_MSG(save_data_factory == nullptr, "Tried to register a second save data");
     save_data_factory = std::move(factory);
     LOG_DEBUG(Service_FS, "Registered save data");
     return ResultSuccess;
 }
 
-ResultCode FileSystemController::RegisterSDMC(std::unique_ptr<FileSys::SDMCFactory>&& factory) {
+Result FileSystemController::RegisterSDMC(std::unique_ptr<FileSys::SDMCFactory>&& factory) {
     ASSERT_MSG(sdmc_factory == nullptr, "Tried to register a second SDMC");
     sdmc_factory = std::move(factory);
     LOG_DEBUG(Service_FS, "Registered SDMC");
     return ResultSuccess;
 }
 
-ResultCode FileSystemController::RegisterBIS(std::unique_ptr<FileSys::BISFactory>&& factory) {
+Result FileSystemController::RegisterBIS(std::unique_ptr<FileSys::BISFactory>&& factory) {
     ASSERT_MSG(bis_factory == nullptr, "Tried to register a second BIS");
     bis_factory = std::move(factory);
     LOG_DEBUG(Service_FS, "Registered BIS");

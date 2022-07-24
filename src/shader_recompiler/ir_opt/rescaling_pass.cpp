@@ -1,8 +1,6 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#include "common/alignment.h"
 #include "common/settings.h"
 #include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/ir_emitter.h"
@@ -183,6 +181,31 @@ void ScaleIntegerComposite(IR::IREmitter& ir, IR::Inst& inst, const IR::U1& is_s
     }
 }
 
+void ScaleIntegerOffsetComposite(IR::IREmitter& ir, IR::Inst& inst, const IR::U1& is_scaled,
+                                 size_t index) {
+    const IR::Value composite{inst.Arg(index)};
+    if (composite.IsEmpty()) {
+        return;
+    }
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const IR::U32 x{Scale(ir, is_scaled, IR::U32{ir.CompositeExtract(composite, 0)})};
+    const IR::U32 y{Scale(ir, is_scaled, IR::U32{ir.CompositeExtract(composite, 1)})};
+    switch (info.type) {
+    case TextureType::ColorArray2D:
+    case TextureType::Color2D:
+        inst.SetArg(index, ir.CompositeConstruct(x, y));
+        break;
+    case TextureType::Color1D:
+    case TextureType::ColorArray1D:
+    case TextureType::Color3D:
+    case TextureType::ColorCube:
+    case TextureType::ColorArrayCube:
+    case TextureType::Buffer:
+        // Nothing to patch here
+        break;
+    }
+}
+
 void SubScaleCoord(IR::IREmitter& ir, IR::Inst& inst, const IR::U1& is_scaled) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const IR::Value coord{inst.Arg(1)};
@@ -220,7 +243,7 @@ void SubScaleImageFetch(IR::Block& block, IR::Inst& inst) {
     const IR::U1 is_scaled{ir.IsTextureScaled(ir.Imm32(info.descriptor_index))};
     SubScaleCoord(ir, inst, is_scaled);
     // Scale ImageFetch offset
-    ScaleIntegerComposite(ir, inst, is_scaled, 2);
+    ScaleIntegerOffsetComposite(ir, inst, is_scaled, 2);
 }
 
 void SubScaleImageRead(IR::Block& block, IR::Inst& inst) {
@@ -242,7 +265,7 @@ void PatchImageFetch(IR::Block& block, IR::Inst& inst) {
     const IR::U1 is_scaled{ir.IsTextureScaled(ir.Imm32(info.descriptor_index))};
     ScaleIntegerComposite(ir, inst, is_scaled, 1);
     // Scale ImageFetch offset
-    ScaleIntegerComposite(ir, inst, is_scaled, 2);
+    ScaleIntegerOffsetComposite(ir, inst, is_scaled, 2);
 }
 
 void PatchImageRead(IR::Block& block, IR::Inst& inst) {

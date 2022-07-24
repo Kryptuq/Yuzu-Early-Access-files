@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 
@@ -9,6 +8,7 @@
 #include "video_core/host_shaders/convert_d24s8_to_abgr8_frag_spv.h"
 #include "video_core/host_shaders/convert_depth_to_float_frag_spv.h"
 #include "video_core/host_shaders/convert_float_to_depth_frag_spv.h"
+#include "video_core/host_shaders/convert_s8d24_to_abgr8_frag_spv.h"
 #include "video_core/host_shaders/full_screen_triangle_vert_spv.h"
 #include "video_core/host_shaders/vulkan_blit_color_float_frag_spv.h"
 #include "video_core/host_shaders/vulkan_blit_depth_stencil_frag_spv.h"
@@ -349,7 +349,7 @@ VkExtent2D GetConversionExtent(const ImageView& src_image_view) {
 }
 } // Anonymous namespace
 
-BlitImageHelper::BlitImageHelper(const Device& device_, VKScheduler& scheduler_,
+BlitImageHelper::BlitImageHelper(const Device& device_, Scheduler& scheduler_,
                                  StateTracker& state_tracker_, DescriptorPool& descriptor_pool)
     : device{device_}, scheduler{scheduler_}, state_tracker{state_tracker_},
       one_texture_set_layout(device.GetLogical().CreateDescriptorSetLayout(
@@ -366,16 +366,14 @@ BlitImageHelper::BlitImageHelper(const Device& device_, VKScheduler& scheduler_,
           PipelineLayoutCreateInfo(two_textures_set_layout.address()))),
       full_screen_vert(BuildShader(device, FULL_SCREEN_TRIANGLE_VERT_SPV)),
       blit_color_to_color_frag(BuildShader(device, VULKAN_BLIT_COLOR_FLOAT_FRAG_SPV)),
+      blit_depth_stencil_frag(BuildShader(device, VULKAN_BLIT_DEPTH_STENCIL_FRAG_SPV)),
       convert_depth_to_float_frag(BuildShader(device, CONVERT_DEPTH_TO_FLOAT_FRAG_SPV)),
       convert_float_to_depth_frag(BuildShader(device, CONVERT_FLOAT_TO_DEPTH_FRAG_SPV)),
       convert_abgr8_to_d24s8_frag(BuildShader(device, CONVERT_ABGR8_TO_D24S8_FRAG_SPV)),
       convert_d24s8_to_abgr8_frag(BuildShader(device, CONVERT_D24S8_TO_ABGR8_FRAG_SPV)),
+      convert_s8d24_to_abgr8_frag(BuildShader(device, CONVERT_S8D24_TO_ABGR8_FRAG_SPV)),
       linear_sampler(device.GetLogical().CreateSampler(SAMPLER_CREATE_INFO<VK_FILTER_LINEAR>)),
-      nearest_sampler(device.GetLogical().CreateSampler(SAMPLER_CREATE_INFO<VK_FILTER_NEAREST>)) {
-    if (device.IsExtShaderStencilExportSupported()) {
-        blit_depth_stencil_frag = BuildShader(device, VULKAN_BLIT_DEPTH_STENCIL_FRAG_SPV);
-    }
-}
+      nearest_sampler(device.GetLogical().CreateSampler(SAMPLER_CREATE_INFO<VK_FILTER_NEAREST>)) {}
 
 BlitImageHelper::~BlitImageHelper() = default;
 
@@ -472,6 +470,13 @@ void BlitImageHelper::ConvertD24S8ToABGR8(const Framebuffer* dst_framebuffer,
     ConvertPipelineColorTargetEx(convert_d24s8_to_abgr8_pipeline, dst_framebuffer->RenderPass(),
                                  convert_d24s8_to_abgr8_frag);
     ConvertDepthStencil(*convert_d24s8_to_abgr8_pipeline, dst_framebuffer, src_image_view);
+}
+
+void BlitImageHelper::ConvertS8D24ToABGR8(const Framebuffer* dst_framebuffer,
+                                          ImageView& src_image_view) {
+    ConvertPipelineColorTargetEx(convert_s8d24_to_abgr8_pipeline, dst_framebuffer->RenderPass(),
+                                 convert_s8d24_to_abgr8_frag);
+    ConvertDepthStencil(*convert_s8d24_to_abgr8_pipeline, dst_framebuffer, src_image_view);
 }
 
 void BlitImageHelper::Convert(VkPipeline pipeline, const Framebuffer* dst_framebuffer,

@@ -1,4 +1,4 @@
-/* $OpenBSD: pvkfmt.c,v 1.22 2019/07/08 11:56:18 inoguchi Exp $ */
+/* $OpenBSD: pvkfmt.c,v 1.25 2022/01/07 09:55:31 tb Exp $ */
 /* Written by Dr Stephen N Henson (steve@openssl.org) for the OpenSSL
  * project 2005.
  */
@@ -74,6 +74,9 @@
 #include <openssl/rsa.h>
 
 #include "bn_lcl.h"
+#include "dsa_locl.h"
+#include "evp_locl.h"
+#include "rsa_locl.h"
 
 /* Utility function: read a DWORD (4 byte unsigned integer) in little endian
  * format

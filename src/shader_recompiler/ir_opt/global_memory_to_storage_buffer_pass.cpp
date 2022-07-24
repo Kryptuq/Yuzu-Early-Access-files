@@ -1,11 +1,7 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#include <algorithm>
-#include <compare>
 #include <optional>
-#include <queue>
 
 #include <boost/container/flat_set.hpp>
 #include <boost/container/small_vector.hpp>
@@ -92,6 +88,15 @@ bool IsGlobalMemory(const IR::Inst& inst) {
     case IR::Opcode::GlobalAtomicOr64:
     case IR::Opcode::GlobalAtomicXor64:
     case IR::Opcode::GlobalAtomicExchange64:
+    case IR::Opcode::GlobalAtomicIAdd32x2:
+    case IR::Opcode::GlobalAtomicSMin32x2:
+    case IR::Opcode::GlobalAtomicUMin32x2:
+    case IR::Opcode::GlobalAtomicSMax32x2:
+    case IR::Opcode::GlobalAtomicUMax32x2:
+    case IR::Opcode::GlobalAtomicAnd32x2:
+    case IR::Opcode::GlobalAtomicOr32x2:
+    case IR::Opcode::GlobalAtomicXor32x2:
+    case IR::Opcode::GlobalAtomicExchange32x2:
     case IR::Opcode::GlobalAtomicAddF32:
     case IR::Opcode::GlobalAtomicAddF16x2:
     case IR::Opcode::GlobalAtomicAddF32x2:
@@ -135,6 +140,15 @@ bool IsGlobalMemoryWrite(const IR::Inst& inst) {
     case IR::Opcode::GlobalAtomicOr64:
     case IR::Opcode::GlobalAtomicXor64:
     case IR::Opcode::GlobalAtomicExchange64:
+    case IR::Opcode::GlobalAtomicIAdd32x2:
+    case IR::Opcode::GlobalAtomicSMin32x2:
+    case IR::Opcode::GlobalAtomicUMin32x2:
+    case IR::Opcode::GlobalAtomicSMax32x2:
+    case IR::Opcode::GlobalAtomicUMax32x2:
+    case IR::Opcode::GlobalAtomicAnd32x2:
+    case IR::Opcode::GlobalAtomicOr32x2:
+    case IR::Opcode::GlobalAtomicXor32x2:
+    case IR::Opcode::GlobalAtomicExchange32x2:
     case IR::Opcode::GlobalAtomicAddF32:
     case IR::Opcode::GlobalAtomicAddF16x2:
     case IR::Opcode::GlobalAtomicAddF32x2:
@@ -199,6 +213,8 @@ IR::Opcode GlobalToStorage(IR::Opcode opcode) {
         return IR::Opcode::StorageAtomicOr32;
     case IR::Opcode::GlobalAtomicXor32:
         return IR::Opcode::StorageAtomicXor32;
+    case IR::Opcode::GlobalAtomicExchange32:
+        return IR::Opcode::StorageAtomicExchange32;
     case IR::Opcode::GlobalAtomicIAdd64:
         return IR::Opcode::StorageAtomicIAdd64;
     case IR::Opcode::GlobalAtomicSMin64:
@@ -215,10 +231,26 @@ IR::Opcode GlobalToStorage(IR::Opcode opcode) {
         return IR::Opcode::StorageAtomicOr64;
     case IR::Opcode::GlobalAtomicXor64:
         return IR::Opcode::StorageAtomicXor64;
-    case IR::Opcode::GlobalAtomicExchange32:
-        return IR::Opcode::StorageAtomicExchange32;
     case IR::Opcode::GlobalAtomicExchange64:
         return IR::Opcode::StorageAtomicExchange64;
+    case IR::Opcode::GlobalAtomicIAdd32x2:
+        return IR::Opcode::StorageAtomicIAdd32x2;
+    case IR::Opcode::GlobalAtomicSMin32x2:
+        return IR::Opcode::StorageAtomicSMin32x2;
+    case IR::Opcode::GlobalAtomicUMin32x2:
+        return IR::Opcode::StorageAtomicUMin32x2;
+    case IR::Opcode::GlobalAtomicSMax32x2:
+        return IR::Opcode::StorageAtomicSMax32x2;
+    case IR::Opcode::GlobalAtomicUMax32x2:
+        return IR::Opcode::StorageAtomicUMax32x2;
+    case IR::Opcode::GlobalAtomicAnd32x2:
+        return IR::Opcode::StorageAtomicAnd32x2;
+    case IR::Opcode::GlobalAtomicOr32x2:
+        return IR::Opcode::StorageAtomicOr32x2;
+    case IR::Opcode::GlobalAtomicXor32x2:
+        return IR::Opcode::StorageAtomicXor32x2;
+    case IR::Opcode::GlobalAtomicExchange32x2:
+        return IR::Opcode::StorageAtomicExchange32x2;
     case IR::Opcode::GlobalAtomicAddF32:
         return IR::Opcode::StorageAtomicAddF32;
     case IR::Opcode::GlobalAtomicAddF16x2:
@@ -298,7 +330,8 @@ std::optional<LowAddrInfo> TrackLowAddress(IR::Inst* inst) {
 /// Tries to track the storage buffer address used by a global memory instruction
 std::optional<StorageBufferAddr> Track(const IR::Value& value, const Bias* bias) {
     const auto pred{[bias](const IR::Inst* inst) -> std::optional<StorageBufferAddr> {
-        if (inst->GetOpcode() != IR::Opcode::GetCbufU32) {
+        if (inst->GetOpcode() != IR::Opcode::GetCbufU32 &&
+            inst->GetOpcode() != IR::Opcode::GetCbufU32x2) {
             return std::nullopt;
         }
         const IR::Value index{inst->Arg(0)};
@@ -454,6 +487,15 @@ void Replace(IR::Block& block, IR::Inst& inst, const IR::U32& storage_index,
     case IR::Opcode::GlobalAtomicOr64:
     case IR::Opcode::GlobalAtomicXor64:
     case IR::Opcode::GlobalAtomicExchange64:
+    case IR::Opcode::GlobalAtomicIAdd32x2:
+    case IR::Opcode::GlobalAtomicSMin32x2:
+    case IR::Opcode::GlobalAtomicUMin32x2:
+    case IR::Opcode::GlobalAtomicSMax32x2:
+    case IR::Opcode::GlobalAtomicUMax32x2:
+    case IR::Opcode::GlobalAtomicAnd32x2:
+    case IR::Opcode::GlobalAtomicOr32x2:
+    case IR::Opcode::GlobalAtomicXor32x2:
+    case IR::Opcode::GlobalAtomicExchange32x2:
     case IR::Opcode::GlobalAtomicAddF32:
     case IR::Opcode::GlobalAtomicAddF16x2:
     case IR::Opcode::GlobalAtomicAddF32x2:

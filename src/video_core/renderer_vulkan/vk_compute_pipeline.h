@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -11,7 +10,6 @@
 #include "common/common_types.h"
 #include "common/thread_worker.h"
 #include "shader_recompiler/shader_info.h"
-#include "video_core/memory_manager.h"
 #include "video_core/renderer_vulkan/vk_buffer_cache.h"
 #include "video_core/renderer_vulkan/vk_descriptor_pool.h"
 #include "video_core/renderer_vulkan/vk_texture_cache.h"
@@ -26,12 +24,12 @@ namespace Vulkan {
 
 class Device;
 class PipelineStatistics;
-class VKScheduler;
+class Scheduler;
 
 class ComputePipeline {
 public:
     explicit ComputePipeline(const Device& device, DescriptorPool& descriptor_pool,
-                             VKUpdateDescriptorQueue& update_descriptor_queue,
+                             UpdateDescriptorQueue& update_descriptor_queue,
                              Common::ThreadWorker* thread_worker,
                              PipelineStatistics* pipeline_statistics,
                              VideoCore::ShaderNotify* shader_notify, const Shader::Info& info,
@@ -44,11 +42,11 @@ public:
     ComputePipeline(const ComputePipeline&) = delete;
 
     void Configure(Tegra::Engines::KeplerCompute& kepler_compute, Tegra::MemoryManager& gpu_memory,
-                   VKScheduler& scheduler, BufferCache& buffer_cache, TextureCache& texture_cache);
+                   Scheduler& scheduler, BufferCache& buffer_cache, TextureCache& texture_cache);
 
 private:
     const Device& device;
-    VKUpdateDescriptorQueue& update_descriptor_queue;
+    UpdateDescriptorQueue& update_descriptor_queue;
     Shader::Info info;
 
     VideoCommon::ComputeUniformBufferSizes uniform_buffer_sizes{};

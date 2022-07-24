@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/hle/kernel/k_light_condition_variable.h"
 #include "core/hle/kernel/k_scheduler.h"
@@ -18,8 +17,7 @@ public:
                                               bool term)
         : KThreadQueue(kernel_), m_wait_list(wl), m_allow_terminating_thread(term) {}
 
-    void CancelWait(KThread* waiting_thread, ResultCode wait_result,
-                    bool cancel_timer_task) override {
+    void CancelWait(KThread* waiting_thread, Result wait_result, bool cancel_timer_task) override {
         // Only process waits if we're allowed to.
         if (ResultTerminationRequested == wait_result && m_allow_terminating_thread) {
             return;

@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <atomic>
 #include <fstream>
@@ -14,10 +13,8 @@
 #include "common/fs/fs.h"
 #include "common/fs/path_util.h"
 #include "common/logging/log.h"
-#include "common/scope_exit.h"
 #include "common/settings.h"
 #include "common/thread_worker.h"
-#include "core/core.h"
 #include "shader_recompiler/backend/glasm/emit_glasm.h"
 #include "shader_recompiler/backend/glsl/emit_glsl.h"
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
@@ -29,7 +26,6 @@
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/memory_manager.h"
 #include "video_core/renderer_opengl/gl_rasterizer.h"
-#include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/renderer_opengl/gl_shader_cache.h"
 #include "video_core/renderer_opengl/gl_shader_util.h"
 #include "video_core/renderer_opengl/gl_state_tracker.h"
@@ -89,7 +85,7 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
             case Maxwell::TessellationPrimitive::Quads:
                 return Shader::TessPrimitive::Quads;
             }
-            UNREACHABLE();
+            ASSERT(false);
             return Shader::TessPrimitive::Triangles;
         }();
         info.tess_spacing = [&] {
@@ -101,7 +97,7 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
             case Maxwell::TessellationSpacing::FractionalEven:
                 return Shader::TessSpacing::FractionalEven;
             }
-            UNREACHABLE();
+            ASSERT(false);
             return Shader::TessSpacing::Equal;
         }();
         break;
@@ -155,16 +151,13 @@ void SetXfbState(VideoCommon::TransformFeedbackState& state, const Maxwell& regs
 } // Anonymous namespace
 
 ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindow& emu_window_,
-                         Tegra::Engines::Maxwell3D& maxwell3d_,
-                         Tegra::Engines::KeplerCompute& kepler_compute_,
-                         Tegra::MemoryManager& gpu_memory_, const Device& device_,
-                         TextureCache& texture_cache_, BufferCache& buffer_cache_,
-                         ProgramManager& program_manager_, StateTracker& state_tracker_,
-                         VideoCore::ShaderNotify& shader_notify_)
-    : VideoCommon::ShaderCache{rasterizer_, gpu_memory_, maxwell3d_, kepler_compute_},
-      emu_window{emu_window_}, device{device_}, texture_cache{texture_cache_},
-      buffer_cache{buffer_cache_}, program_manager{program_manager_}, state_tracker{state_tracker_},
-      shader_notify{shader_notify_}, use_asynchronous_shaders{device.UseAsynchronousShaders()},
+                         const Device& device_, TextureCache& texture_cache_,
+                         BufferCache& buffer_cache_, ProgramManager& program_manager_,
+                         StateTracker& state_tracker_, VideoCore::ShaderNotify& shader_notify_)
+    : VideoCommon::ShaderCache{rasterizer_}, emu_window{emu_window_}, device{device_},
+      texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, program_manager{program_manager_},
+      state_tracker{state_tracker_}, shader_notify{shader_notify_},
+      use_asynchronous_shaders{device.UseAsynchronousShaders()},
       profile{
           .supported_spirv = 0x00010000,
 
@@ -261,7 +254,7 @@ void ShaderCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
             [this, key, env = std::move(env), &state, &callback](Context* ctx) mutable {
                 ctx->pools.ReleaseContents();
                 auto pipeline{CreateComputePipeline(ctx->pools, key, env)};
-                std::lock_guard lock{state.mutex};
+                std::scoped_lock lock{state.mutex};
                 if (pipeline) {
                     compute_cache.emplace(key, std::move(pipeline));
                 }
@@ -283,7 +276,7 @@ void ShaderCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
                 }
                 ctx->pools.ReleaseContents();
                 auto pipeline{CreateGraphicsPipeline(ctx->pools, key, MakeSpan(env_ptrs), false)};
-                std::lock_guard lock{state.mutex};
+                std::scoped_lock lock{state.mutex};
                 if (pipeline) {
                     graphics_cache.emplace(key, std::move(pipeline));
                 }
@@ -314,7 +307,7 @@ GraphicsPipeline* ShaderCache::CurrentGraphicsPipeline() {
         current_pipeline = nullptr;
         return nullptr;
     }
-    const auto& regs{maxwell3d.regs};
+    const auto& regs{maxwell3d->regs};
     graphics_key.raw = 0;
     graphics_key.early_z.Assign(regs.force_early_fragment_tests != 0 ? 1 : 0);
     graphics_key.gs_input_topology.Assign(graphics_key.unique_hashes[4] != 0
@@ -355,13 +348,13 @@ GraphicsPipeline* ShaderCache::BuiltPipeline(GraphicsPipeline* pipeline) const n
     }
     // If something is using depth, we can assume that games are not rendering anything which
     // will be used one time.
-    if (maxwell3d.regs.zeta_enable) {
+    if (maxwell3d->regs.zeta_enable) {
         return nullptr;
     }
     // If games are using a small index count, we can assume these are full screen quads.
     // Usually these shaders are only used once for building textures so we can assume they
     // can't be built async
-    if (maxwell3d.regs.index_array.count <= 6 || maxwell3d.regs.vertex_buffer.count <= 6) {
+    if (maxwell3d->regs.index_array.count <= 6 || maxwell3d->regs.vertex_buffer.count <= 6) {
         return pipeline;
     }
     return nullptr;
@@ -372,7 +365,7 @@ ComputePipeline* ShaderCache::CurrentComputePipeline() {
     if (!shader) {
         return nullptr;
     }
-    const auto& qmd{kepler_compute.launch_description};
+    const auto& qmd{kepler_compute->launch_description};
     const ComputePipelineKey key{
         .unique_hash = shader->unique_hash,
         .shared_memory_size = qmd.shared_alloc,
@@ -484,9 +477,9 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
         previous_program = &program;
     }
     auto* const thread_worker{build_in_parallel ? workers.get() : nullptr};
-    return std::make_unique<GraphicsPipeline>(
-        device, texture_cache, buffer_cache, gpu_memory, maxwell3d, program_manager, state_tracker,
-        thread_worker, &shader_notify, sources, sources_spirv, infos, key);
+    return std::make_unique<GraphicsPipeline>(device, texture_cache, buffer_cache, program_manager,
+                                              state_tracker, thread_worker, &shader_notify, sources,
+                                              sources_spirv, infos, key);
 
 } catch (Shader::Exception& exception) {
     LOG_ERROR(Render_OpenGL, "{}", exception.what());
@@ -495,9 +488,9 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
 
 std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(
     const ComputePipelineKey& key, const VideoCommon::ShaderInfo* shader) {
-    const GPUVAddr program_base{kepler_compute.regs.code_loc.Address()};
-    const auto& qmd{kepler_compute.launch_description};
-    ComputeEnvironment env{kepler_compute, gpu_memory, program_base, qmd.program_start};
+    const GPUVAddr program_base{kepler_compute->regs.code_loc.Address()};
+    const auto& qmd{kepler_compute->launch_description};
+    ComputeEnvironment env{*kepler_compute, *gpu_memory, program_base, qmd.program_start};
     env.SetCachedSize(shader->size_bytes);
 
     main_pools.ReleaseContents();
@@ -540,9 +533,8 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(
         break;
     }
 
-    return std::make_unique<ComputePipeline>(device, texture_cache, buffer_cache, gpu_memory,
-                                             kepler_compute, program_manager, program.info, code,
-                                             code_spirv);
+    return std::make_unique<ComputePipeline>(device, texture_cache, buffer_cache, program_manager,
+                                             program.info, code, code_spirv);
 } catch (Shader::Exception& exception) {
     LOG_ERROR(Render_OpenGL, "{}", exception.what());
     return nullptr;

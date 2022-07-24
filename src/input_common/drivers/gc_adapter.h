@@ -1,12 +1,10 @@
-// Copyright 2014 Dolphin Emulator Project
-// Licensed under GPLv2+
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2014 Dolphin Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <array>
 #include <memory>
-#include <mutex>
 #include <stop_token>
 #include <string>
 #include <thread>
@@ -35,6 +33,8 @@ public:
     ButtonMapping GetButtonMappingForDevice(const Common::ParamPackage& params) override;
     AnalogMapping GetAnalogMappingForDevice(const Common::ParamPackage& params) override;
     Common::Input::ButtonNames GetUIName(const Common::ParamPackage& params) const override;
+
+    bool IsStickInverted(const Common::ParamPackage& params) override;
 
 private:
     enum class PadButton {

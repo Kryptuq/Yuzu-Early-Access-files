@@ -4,8 +4,8 @@
  */
 
 #include <boost/variant/get.hpp>
+#include <mcl/stdint.hpp>
 
-#include "dynarmic/common/common_types.h"
 #include "dynarmic/frontend/A64/a64_location_descriptor.h"
 #include "dynarmic/frontend/A64/translate/a64_translate.h"
 #include "dynarmic/interface/A64/config.h"
@@ -16,10 +16,12 @@ namespace Dynarmic::Optimization {
 
 void A64MergeInterpretBlocksPass(IR::Block& block, A64::UserCallbacks* cb) {
     const auto is_interpret_instruction = [cb](A64::LocationDescriptor location) {
-        const u32 instruction = cb->MemoryReadCode(location.PC());
+        const auto instruction = cb->MemoryReadCode(location.PC());
+        if (!instruction)
+            return false;
 
         IR::Block new_block{location};
-        A64::TranslateSingleInstruction(new_block, location, instruction);
+        A64::TranslateSingleInstruction(new_block, location, *instruction);
 
         if (!new_block.Instructions().empty())
             return false;

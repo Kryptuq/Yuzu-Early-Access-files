@@ -1,13 +1,18 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/hle/service/fatal/fatal_p.h"
 
 namespace Service::Fatal {
 
 Fatal_P::Fatal_P(std::shared_ptr<Module> module_, Core::System& system_)
-    : Interface(std::move(module_), system_, "fatal:p") {}
+    : Interface(std::move(module_), system_, "fatal:p") {
+    static const FunctionInfo functions[] = {
+        {0, nullptr, "GetFatalEvent"},
+        {10, nullptr, "GetFatalContext"},
+    };
+    RegisterHandlers(functions);
+}
 
 Fatal_P::~Fatal_P() = default;
 

@@ -1,4 +1,4 @@
-/* $OpenBSD: a_strnid.c,v 1.21 2017/01/29 17:49:22 beck Exp $ */
+/* $OpenBSD: a_strnid.c,v 1.25 2021/12/13 17:55:53 schwarze Exp $ */
 /* Written by Dr Stephen N Henson (steve@openssl.org) for the OpenSSL
  * project 1999.
  */
@@ -56,8 +56,9 @@
  *
  */
 
-#include <ctype.h>
-#include <stdio.h>
+#include <errno.h>
+#include <limits.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <openssl/asn1.h>
@@ -65,12 +66,15 @@
 #include <openssl/objects.h>
 
 static STACK_OF(ASN1_STRING_TABLE) *stable = NULL;
+
+static ASN1_STRING_TABLE *stable_get(int nid);
 static void st_free(ASN1_STRING_TABLE *tbl);
 static int sk_table_cmp(const ASN1_STRING_TABLE * const *a,
     const ASN1_STRING_TABLE * const *b);
 
 
-/* This is the global mask for the mbstring functions: this is use to
+/*
+ * This is the global mask for the mbstring functions: this is used to
  * mask out certain types (such as BMPString and UTF8String) because
  * certain software (e.g. Netscape) has problems with them.
  */
@@ -89,7 +93,8 @@ ASN1_STRING_get_default_mask(void)
 	return global_mask;
 }
 
-/* This function sets the default to various "flavours" of configuration.
+/*
+ * This function sets the default to various "flavours" of configuration
  * based on an ASCII string. Currently this is:
  * MASK:XXXX : a numerical mask value.
  * nobmp : Don't use BMPStrings (just Printable, T61).
@@ -103,20 +108,26 @@ ASN1_STRING_set_default_mask_asc(const char *p)
 {
 	unsigned long mask;
 	char *end;
+	int save_errno;
 
-	if (!strncmp(p, "MASK:", 5)) {
-		if (!p[5])
+	if (strncmp(p, "MASK:", 5) == 0) {
+		if (p[5] == '\0')
 			return 0;
+		save_errno = errno;
+		errno = 0;
 		mask = strtoul(p + 5, &end, 0);
-		if (*end)
+		if (errno == ERANGE && mask == ULONG_MAX)
 			return 0;
-	} else if (!strcmp(p, "nombstr"))
+		errno = save_errno;
+		if (*end != '\0')
+			return 0;
+	} else if (strcmp(p, "nombstr") == 0)
 		mask = ~((unsigned long)(B_ASN1_BMPSTRING|B_ASN1_UTF8STRING));
-	else if (!strcmp(p, "pkix"))
+	else if (strcmp(p, "pkix") == 0)
 		mask = ~((unsigned long)B_ASN1_T61STRING);
-	else if (!strcmp(p, "utf8only"))
+	else if (strcmp(p, "utf8only") == 0)
 		mask = B_ASN1_UTF8STRING;
-	else if (!strcmp(p, "default"))
+	else if (strcmp(p, "default") == 0)
 		mask = 0xFFFFFFFFL;
 	else
 		return 0;
@@ -124,7 +135,8 @@ ASN1_STRING_set_default_mask_asc(const char *p)
 	return 1;
 }
 
-/* The following function generates an ASN1_STRING based on limits in a table.
+/*
+ * The following function generates an ASN1_STRING based on limits in a table.
  * Frequently the types and length of an ASN1_STRING are restricted by a
  * corresponding OID. For example certificates and certificate requests.
  */
@@ -137,12 +149,13 @@ ASN1_STRING_set_by_NID(ASN1_STRING **out, const unsigned char *in, int inlen,
 	ASN1_STRING *str = NULL;
 	unsigned long mask;
 	int ret;
-	if (!out)
+
+	if (out == NULL)
 		out = &str;
 	tbl = ASN1_STRING_TABLE_get(nid);
-	if (tbl) {
+	if (tbl != NULL) {
 		mask = tbl->mask;
-		if (!(tbl->flags & STABLE_NO_MASK))
+		if ((tbl->flags & STABLE_NO_MASK) == 0)
 			mask &= global_mask;
 		ret = ASN1_mbstring_ncopy(out, in, inlen, inform, mask,
 		    tbl->minsize, tbl->maxsize);
@@ -154,7 +167,8 @@ ASN1_STRING_set_by_NID(ASN1_STRING **out, const unsigned char *in, int inlen,
 	return *out;
 }
 
-/* Now the tables and helper functions for the string table:
+/*
+ * Now the tables and helper functions for the string table:
  */
 
 /* size limits: this stuff is taken straight from RFC3280 */
@@ -231,20 +245,59 @@ ASN1_STRING_TABLE *
 ASN1_STRING_TABLE_get(int nid)
 {
 	int idx;
-	ASN1_STRING_TABLE *ttmp;
 	ASN1_STRING_TABLE fnd;
 
 	fnd.nid = nid;
-	ttmp = OBJ_bsearch_table(&fnd, tbl_standard,
+	if (stable != NULL) {
+		idx = sk_ASN1_STRING_TABLE_find(stable, &fnd);
+		if (idx >= 0)
+			return sk_ASN1_STRING_TABLE_value(stable, idx);
+	}
+	return OBJ_bsearch_table(&fnd, tbl_standard,
 	    sizeof(tbl_standard)/sizeof(ASN1_STRING_TABLE));
-	if (ttmp)
-		return ttmp;
-	if (!stable)
+}
+
+/*
+ * Return a string table pointer which can be modified: either directly
+ * from table or a copy of an internal value added to the table.
+ */
+
+static ASN1_STRING_TABLE *
+stable_get(int nid)
+{
+	ASN1_STRING_TABLE *tmp, *rv;
+
+	/* Always need a string table so allocate one if NULL */
+	if (stable == NULL) {
+		stable = sk_ASN1_STRING_TABLE_new(sk_table_cmp);
+		if (stable == NULL)
+			return NULL;
+	}
+	tmp = ASN1_STRING_TABLE_get(nid);
+	if (tmp != NULL && (tmp->flags & STABLE_FLAGS_MALLOC) != 0)
+		return tmp;
+
+	if ((rv = calloc(1, sizeof(*rv))) == NULL) {
+		ASN1error(ERR_R_MALLOC_FAILURE);
 		return NULL;
-	idx = sk_ASN1_STRING_TABLE_find(stable, &fnd);
-	if (idx < 0)
+	}
+	if (!sk_ASN1_STRING_TABLE_push(stable, rv)) {
+		free(rv);
 		return NULL;
-	return sk_ASN1_STRING_TABLE_value(stable, idx);
+	}
+	if (tmp != NULL) {
+		rv->nid = tmp->nid;
+		rv->minsize = tmp->minsize;
+		rv->maxsize = tmp->maxsize;
+		rv->mask = tmp->mask;
+		rv->flags = tmp->flags | STABLE_FLAGS_MALLOC;
+	} else {
+		rv->nid = nid;
+		rv->minsize = -1;
+		rv->maxsize = -1;
+		rv->flags = STABLE_FLAGS_MALLOC;
+	}
+	return rv;
 }
 
 int
@@ -252,37 +305,20 @@ ASN1_STRING_TABLE_add(int nid, long minsize, long maxsize, unsigned long mask,
     unsigned long flags)
 {
 	ASN1_STRING_TABLE *tmp;
-	char new_nid = 0;
 
-	flags &= ~STABLE_FLAGS_MALLOC;
-	if (!stable)
-		stable = sk_ASN1_STRING_TABLE_new(sk_table_cmp);
-	if (!stable) {
+	if ((tmp = stable_get(nid)) == NULL) {
 		ASN1error(ERR_R_MALLOC_FAILURE);
 		return 0;
 	}
-	if (!(tmp = ASN1_STRING_TABLE_get(nid))) {
-		tmp = malloc(sizeof(ASN1_STRING_TABLE));
-		if (!tmp) {
-			ASN1error(ERR_R_MALLOC_FAILURE);
-			return 0;
-		}
-		tmp->flags = flags | STABLE_FLAGS_MALLOC;
-		tmp->nid = nid;
-		new_nid = 1;
-	} else tmp->flags = (tmp->flags & STABLE_FLAGS_MALLOC) | flags;
-		if (minsize != -1)
+	if (minsize >= 0)
 		tmp->minsize = minsize;
-	if (maxsize != -1)
+	if (maxsize >= 0)
 		tmp->maxsize = maxsize;
-	tmp->mask = mask;
-	if (new_nid) {
-		if (sk_ASN1_STRING_TABLE_push(stable, tmp) == 0) {
-			free(tmp);
-			ASN1error(ERR_R_MALLOC_FAILURE);
-			return 0;
-		}
-	}
+	if (mask != 0)
+		tmp->mask = mask;
+	if (flags != 0)
+		tmp->flags = flags | STABLE_FLAGS_MALLOC;
+
 	return 1;
 }
 
@@ -292,7 +328,7 @@ ASN1_STRING_TABLE_cleanup(void)
 	STACK_OF(ASN1_STRING_TABLE) *tmp;
 
 	tmp = stable;
-	if (!tmp)
+	if (tmp == NULL)
 		return;
 	stable = NULL;
 	sk_ASN1_STRING_TABLE_pop_free(tmp, st_free);

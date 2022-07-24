@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <memory>
@@ -118,6 +117,7 @@ bool Inst::MayHaveSideEffects() const noexcept {
     case Opcode::SharedAtomicXor32:
     case Opcode::SharedAtomicExchange32:
     case Opcode::SharedAtomicExchange64:
+    case Opcode::SharedAtomicExchange32x2:
     case Opcode::GlobalAtomicIAdd32:
     case Opcode::GlobalAtomicSMin32:
     case Opcode::GlobalAtomicUMin32:
@@ -138,6 +138,15 @@ bool Inst::MayHaveSideEffects() const noexcept {
     case Opcode::GlobalAtomicOr64:
     case Opcode::GlobalAtomicXor64:
     case Opcode::GlobalAtomicExchange64:
+    case Opcode::GlobalAtomicIAdd32x2:
+    case Opcode::GlobalAtomicSMin32x2:
+    case Opcode::GlobalAtomicUMin32x2:
+    case Opcode::GlobalAtomicSMax32x2:
+    case Opcode::GlobalAtomicUMax32x2:
+    case Opcode::GlobalAtomicAnd32x2:
+    case Opcode::GlobalAtomicOr32x2:
+    case Opcode::GlobalAtomicXor32x2:
+    case Opcode::GlobalAtomicExchange32x2:
     case Opcode::GlobalAtomicAddF32:
     case Opcode::GlobalAtomicAddF16x2:
     case Opcode::GlobalAtomicAddF32x2:
@@ -165,6 +174,15 @@ bool Inst::MayHaveSideEffects() const noexcept {
     case Opcode::StorageAtomicOr64:
     case Opcode::StorageAtomicXor64:
     case Opcode::StorageAtomicExchange64:
+    case Opcode::StorageAtomicIAdd32x2:
+    case Opcode::StorageAtomicSMin32x2:
+    case Opcode::StorageAtomicUMin32x2:
+    case Opcode::StorageAtomicSMax32x2:
+    case Opcode::StorageAtomicUMax32x2:
+    case Opcode::StorageAtomicAnd32x2:
+    case Opcode::StorageAtomicOr32x2:
+    case Opcode::StorageAtomicXor32x2:
+    case Opcode::StorageAtomicExchange32x2:
     case Opcode::StorageAtomicAddF32:
     case Opcode::StorageAtomicAddF16x2:
     case Opcode::StorageAtomicAddF32x2:
@@ -305,6 +323,11 @@ void Inst::AddPhiOperand(Block* predecessor, const Value& value) {
         Use(value);
     }
     phi_args.emplace_back(predecessor, value);
+}
+
+void Inst::ErasePhiOperand(size_t index) {
+    const auto operand_it{phi_args.begin() + static_cast<ptrdiff_t>(index)};
+    phi_args.erase(operand_it);
 }
 
 void Inst::OrderPhiArgs() {

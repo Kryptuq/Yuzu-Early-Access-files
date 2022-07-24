@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <cstring>
 
@@ -9,6 +8,7 @@
 #include "core/frontend/applets/controller.h"
 #include "core/frontend/applets/error.h"
 #include "core/frontend/applets/general_frontend.h"
+#include "core/frontend/applets/mii_edit.h"
 #include "core/frontend/applets/profile_select.h"
 #include "core/frontend/applets/software_keyboard.h"
 #include "core/frontend/applets/web_browser.h"
@@ -19,6 +19,7 @@
 #include "core/hle/service/am/applets/applet_controller.h"
 #include "core/hle/service/am/applets/applet_error.h"
 #include "core/hle/service/am/applets/applet_general_backend.h"
+#include "core/hle/service/am/applets/applet_mii_edit.h"
 #include "core/hle/service/am/applets/applet_profile_select.h"
 #include "core/hle/service/am/applets/applet_software_keyboard.h"
 #include "core/hle/service/am/applets/applet_web_browser.h"
@@ -171,11 +172,12 @@ void Applet::Initialize() {
 AppletFrontendSet::AppletFrontendSet() = default;
 
 AppletFrontendSet::AppletFrontendSet(ControllerApplet controller_applet, ErrorApplet error_applet,
+                                     MiiEdit mii_edit_,
                                      ParentalControlsApplet parental_controls_applet,
                                      PhotoViewer photo_viewer_, ProfileSelect profile_select_,
                                      SoftwareKeyboard software_keyboard_, WebBrowser web_browser_)
     : controller{std::move(controller_applet)}, error{std::move(error_applet)},
-      parental_controls{std::move(parental_controls_applet)},
+      mii_edit{std::move(mii_edit_)}, parental_controls{std::move(parental_controls_applet)},
       photo_viewer{std::move(photo_viewer_)}, profile_select{std::move(profile_select_)},
       software_keyboard{std::move(software_keyboard_)}, web_browser{std::move(web_browser_)} {}
 
@@ -200,6 +202,10 @@ void AppletManager::SetAppletFrontendSet(AppletFrontendSet set) {
 
     if (set.error != nullptr) {
         frontend.error = std::move(set.error);
+    }
+
+    if (set.mii_edit != nullptr) {
+        frontend.mii_edit = std::move(set.mii_edit);
     }
 
     if (set.parental_controls != nullptr) {
@@ -236,6 +242,10 @@ void AppletManager::SetDefaultAppletsIfMissing() {
 
     if (frontend.error == nullptr) {
         frontend.error = std::make_unique<Core::Frontend::DefaultErrorApplet>();
+    }
+
+    if (frontend.mii_edit == nullptr) {
+        frontend.mii_edit = std::make_unique<Core::Frontend::DefaultMiiEditApplet>();
     }
 
     if (frontend.parental_controls == nullptr) {
@@ -277,6 +287,8 @@ std::shared_ptr<Applet> AppletManager::GetApplet(AppletId id, LibraryAppletMode 
         return std::make_shared<ProfileSelect>(system, mode, *frontend.profile_select);
     case AppletId::SoftwareKeyboard:
         return std::make_shared<SoftwareKeyboard>(system, mode, *frontend.software_keyboard);
+    case AppletId::MiiEdit:
+        return std::make_shared<MiiEdit>(system, mode, *frontend.mii_edit);
     case AppletId::Web:
     case AppletId::Shop:
     case AppletId::OfflineWeb:

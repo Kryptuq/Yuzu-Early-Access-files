@@ -8,9 +8,8 @@
 #include <functional>
 #include <vector>
 
+#include <mcl/stdint.hpp>
 #include <xbyak/xbyak.h>
-
-#include "dynarmic/common/common_types.h"
 
 namespace Dynarmic::Backend::X64 {
 

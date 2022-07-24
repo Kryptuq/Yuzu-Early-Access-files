@@ -7,7 +7,7 @@
 
 #include <array>
 
-#include "dynarmic/common/common_types.h"
+#include <mcl/stdint.hpp>
 
 namespace Dynarmic::Backend::X64 {
 
@@ -27,7 +27,6 @@ struct alignas(16) StackLayout {
     u32 save_host_MXCSR;
 
     bool check_bit;
-    bool halt_requested;
 };
 
 #ifdef _MSC_VER

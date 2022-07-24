@@ -1,11 +1,6 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#include <QComboBox>
-
-#include "common/common_types.h"
-#include "common/logging/log.h"
 #include "common/settings.h"
 #include "core/core.h"
 #include "ui_configure_cpu_debug.h"
@@ -44,6 +39,12 @@ void ConfigureCpuDebug::SetConfiguration() {
         Settings::values.cpuopt_reduce_misalign_checks.GetValue());
     ui->cpuopt_fastmem->setEnabled(runtime_lock);
     ui->cpuopt_fastmem->setChecked(Settings::values.cpuopt_fastmem.GetValue());
+    ui->cpuopt_fastmem_exclusives->setEnabled(runtime_lock);
+    ui->cpuopt_fastmem_exclusives->setChecked(
+        Settings::values.cpuopt_fastmem_exclusives.GetValue());
+    ui->cpuopt_recompile_exclusives->setEnabled(runtime_lock);
+    ui->cpuopt_recompile_exclusives->setChecked(
+        Settings::values.cpuopt_recompile_exclusives.GetValue());
 }
 
 void ConfigureCpuDebug::ApplyConfiguration() {
@@ -56,6 +57,8 @@ void ConfigureCpuDebug::ApplyConfiguration() {
     Settings::values.cpuopt_misc_ir = ui->cpuopt_misc_ir->isChecked();
     Settings::values.cpuopt_reduce_misalign_checks = ui->cpuopt_reduce_misalign_checks->isChecked();
     Settings::values.cpuopt_fastmem = ui->cpuopt_fastmem->isChecked();
+    Settings::values.cpuopt_fastmem_exclusives = ui->cpuopt_fastmem_exclusives->isChecked();
+    Settings::values.cpuopt_recompile_exclusives = ui->cpuopt_recompile_exclusives->isChecked();
 }
 
 void ConfigureCpuDebug::changeEvent(QEvent* event) {

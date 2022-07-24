@@ -1,4 +1,4 @@
-/* $OpenBSD: hm_pmeth.c,v 1.10 2017/05/02 03:59:44 deraadt Exp $ */
+/* $OpenBSD: hm_pmeth.c,v 1.13 2022/03/30 07:17:48 tb Exp $ */
 /* Written by Dr Stephen N Henson (steve@openssl.org) for the OpenSSL
  * project 2007.
  */
@@ -65,6 +65,7 @@
 #include <openssl/x509v3.h>
 
 #include "evp_locl.h"
+#include "hmac_local.h"
 
 /* HMAC pkey context structure */
 
@@ -79,13 +80,9 @@ pkey_hmac_init(EVP_PKEY_CTX *ctx)
 {
 	HMAC_PKEY_CTX *hctx;
 
-	hctx = malloc(sizeof(HMAC_PKEY_CTX));
-	if (!hctx)
+	if ((hctx = calloc(1, sizeof(HMAC_PKEY_CTX))) == NULL)
 		return 0;
-	hctx->md = NULL;
-	hctx->ktmp.data = NULL;
-	hctx->ktmp.length = 0;
-	hctx->ktmp.flags = 0;
+
 	hctx->ktmp.type = V_ASN1_OCTET_STRING;
 	HMAC_CTX_init(&hctx->ctx);
 
@@ -119,7 +116,10 @@ pkey_hmac_copy(EVP_PKEY_CTX *dst, EVP_PKEY_CTX *src)
 static void
 pkey_hmac_cleanup(EVP_PKEY_CTX *ctx)
 {
-	HMAC_PKEY_CTX *hctx = ctx->data;
+	HMAC_PKEY_CTX *hctx;
+
+	if ((hctx = ctx->data) == NULL)
+		return;
 
 	HMAC_CTX_cleanup(&hctx->ctx);
 	freezero(hctx->ktmp.data, hctx->ktmp.length);

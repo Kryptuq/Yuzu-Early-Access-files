@@ -14,9 +14,9 @@
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <mcl/bit/swap.hpp>
+#include <mcl/stdint.hpp>
 
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
 #include "dynarmic/common/llvm_disassemble.h"
 #include "dynarmic/frontend/A32/a32_location_descriptor.h"
 #include "dynarmic/frontend/A32/decoder/arm.h"
@@ -98,7 +98,7 @@ void PrintA64Instruction(u32 instruction) {
 void PrintThumbInstruction(u32 instruction) {
     const size_t inst_size = (instruction >> 16) == 0 ? 2 : 4;
     if (inst_size == 4)
-        instruction = Common::SwapHalves32(instruction);
+        instruction = mcl::bit::swap_halves_32(instruction);
 
     fmt::print("{:08x} {}\n", instruction, Common::DisassembleAArch32(true, 0, (u8*)&instruction, inst_size));
 
@@ -157,7 +157,7 @@ public:
     }
 
     void InterpreterFallback(u32 pc, size_t num_instructions) override {
-        fmt::print("> InterpreterFallback({:08x}, {}) code = {:08x}\n", pc, num_instructions, MemoryReadCode(pc));
+        fmt::print("> InterpreterFallback({:08x}, {}) code = {:08x}\n", pc, num_instructions, *MemoryReadCode(pc));
     }
     void CallSVC(std::uint32_t swi) override {
         fmt::print("> CallSVC({})\n", swi);

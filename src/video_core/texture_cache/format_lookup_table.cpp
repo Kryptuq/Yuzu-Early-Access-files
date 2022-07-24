@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/common_types.h"
 #include "common/logging/log.h"
@@ -63,6 +62,10 @@ PixelFormat PixelFormatFromTextureInfo(TextureFormat format, ComponentType red, 
         return PixelFormat::A1B5G5R5_UNORM;
     case Hash(TextureFormat::A4B4G4R4, UNORM):
         return PixelFormat::A4B4G4R4_UNORM;
+    case Hash(TextureFormat::G4R4, UNORM):
+        return PixelFormat::G4R4_UNORM;
+    case Hash(TextureFormat::A5B5G5R1, UNORM):
+        return PixelFormat::A5B5G5R1_UNORM;
     case Hash(TextureFormat::R8, UNORM):
         return PixelFormat::R8_UNORM;
     case Hash(TextureFormat::R8, SNORM):
@@ -143,6 +146,8 @@ PixelFormat PixelFormatFromTextureInfo(TextureFormat format, ComponentType red, 
         return PixelFormat::S8_UINT_D24_UNORM;
     case Hash(TextureFormat::R8G24, UINT, UNORM, UNORM, UNORM, LINEAR):
         return PixelFormat::S8_UINT_D24_UNORM;
+    case Hash(TextureFormat::D24S8, UNORM, UINT, UINT, UINT, LINEAR):
+        return PixelFormat::D24_UNORM_S8_UINT;
     case Hash(TextureFormat::D32S8, FLOAT, UINT, UNORM, UNORM, LINEAR):
         return PixelFormat::D32_FLOAT_S8_UINT;
     case Hash(TextureFormat::BC1_RGBA, UNORM, LINEAR):
@@ -201,6 +206,8 @@ PixelFormat PixelFormatFromTextureInfo(TextureFormat format, ComponentType red, 
         return PixelFormat::ASTC_2D_6X6_UNORM;
     case Hash(TextureFormat::ASTC_2D_6X6, UNORM, SRGB):
         return PixelFormat::ASTC_2D_6X6_SRGB;
+    case Hash(TextureFormat::ASTC_2D_10X6, UNORM, LINEAR):
+        return PixelFormat::ASTC_2D_10X6_UNORM;
     case Hash(TextureFormat::ASTC_2D_10X10, UNORM, LINEAR):
         return PixelFormat::ASTC_2D_10X10_UNORM;
     case Hash(TextureFormat::ASTC_2D_10X10, UNORM, SRGB):

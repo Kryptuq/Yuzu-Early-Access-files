@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -194,6 +193,11 @@ struct ProgramHeader {
             [[nodiscard]] std::array<bool, 4> EnabledOutputComponents(u32 rt) const noexcept {
                 const u32 bits{omap.target >> (rt * 4)};
                 return {(bits & 1) != 0, (bits & 2) != 0, (bits & 4) != 0, (bits & 8) != 0};
+            }
+
+            [[nodiscard]] bool HasOutputComponents(u32 rt) const noexcept {
+                const u32 bits{omap.target >> (rt * 4)};
+                return (bits & 0xf) != 0;
             }
 
             [[nodiscard]] std::array<PixelImap, 4> GenericInputMap(u32 attribute) const {

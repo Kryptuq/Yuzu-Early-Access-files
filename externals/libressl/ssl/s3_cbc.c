@@ -1,4 +1,4 @@
-/* $OpenBSD: s3_cbc.c,v 1.22 2020/06/19 21:26:40 tb Exp $ */
+/* $OpenBSD: s3_cbc.c,v 1.25 2021/12/09 17:45:49 tb Exp $ */
 /* ====================================================================
  * Copyright (c) 2012 The OpenSSL Project.  All rights reserved.
  *
@@ -53,10 +53,10 @@
  *
  */
 
-#include "ssl_locl.h"
-
 #include <openssl/md5.h>
 #include <openssl/sha.h>
+
+#include "ssl_locl.h"
 
 /* MAX_HASH_BIT_COUNT_BYTES is the maximum number of bytes in the hash's length
  * field. (SHA-384/512 have 128-bit length.) */
@@ -101,7 +101,7 @@ constant_time_eq_8(unsigned int a, unsigned int b)
 	return DUPLICATE_MSB_TO_ALL_8(c);
 }
 
-/* tls1_cbc_remove_padding removes the CBC padding from the decrypted, TLS, CBC
+/* ssl3_cbc_remove_padding removes the CBC padding from the decrypted, TLS, CBC
  * record in |rec| in constant time and returns 1 if the padding is valid and
  * -1 otherwise. It also removes any explicit IV from the start of the record
  * without leaking any timing about whether there was enough space after the
@@ -113,25 +113,23 @@ constant_time_eq_8(unsigned int a, unsigned int b)
  *   1: if the padding was valid
  *  -1: otherwise. */
 int
-tls1_cbc_remove_padding(const SSL* s, SSL3_RECORD_INTERNAL *rec,
-    unsigned int block_size, unsigned int mac_size)
+ssl3_cbc_remove_padding(SSL3_RECORD_INTERNAL *rec, unsigned int eiv_len,
+    unsigned int mac_size)
 {
 	unsigned int padding_length, good, to_check, i;
 	const unsigned int overhead = 1 /* padding length byte */ + mac_size;
 
-	/* Check if version requires explicit IV */
-	if (SSL_USE_EXPLICIT_IV(s)) {
-		/* These lengths are all public so we can test them in
-		 * non-constant time.
-		 */
-		if (overhead + block_size > rec->length)
-			return 0;
-		/* We can now safely skip explicit IV */
-		rec->data += block_size;
-		rec->input += block_size;
-		rec->length -= block_size;
-	} else if (overhead > rec->length)
+	/*
+	 * These lengths are all public so we can test them in
+	 * non-constant time.
+	 */
+	if (overhead + eiv_len > rec->length)
 		return 0;
+
+	/* We can now safely skip explicit IV, if any. */
+	rec->data += eiv_len;
+	rec->input += eiv_len;
+	rec->length -= eiv_len;
 
 	padding_length = rec->data[rec->length - 1];
 
@@ -406,7 +404,7 @@ ssl3_cbc_digest_record(const EVP_MD_CTX *ctx, unsigned char* md_out,
 	unsigned char first_block[MAX_HASH_BLOCK_SIZE];
 	unsigned char mac_out[EVP_MAX_MD_SIZE];
 	unsigned int i, j, md_out_size_u;
-	EVP_MD_CTX md_ctx;
+	EVP_MD_CTX *md_ctx;
 	/* mdLengthSize is the number of bytes in the length field that terminates
 	* the hash. */
 	unsigned int md_length_size = 8;
@@ -607,9 +605,10 @@ ssl3_cbc_digest_record(const EVP_MD_CTX *ctx, unsigned char* md_out,
 			mac_out[j] |= block[j]&is_block_b;
 	}
 
-	EVP_MD_CTX_init(&md_ctx);
-	if (!EVP_DigestInit_ex(&md_ctx, ctx->digest, NULL /* engine */)) {
-		EVP_MD_CTX_cleanup(&md_ctx);
+	if ((md_ctx = EVP_MD_CTX_new()) == NULL)
+		return 0;
+	if (!EVP_DigestInit_ex(md_ctx, EVP_MD_CTX_md(ctx), NULL /* engine */)) {
+		EVP_MD_CTX_free(md_ctx);
 		return 0;
 	}
 
@@ -617,13 +616,13 @@ ssl3_cbc_digest_record(const EVP_MD_CTX *ctx, unsigned char* md_out,
 	for (i = 0; i < md_block_size; i++)
 		hmac_pad[i] ^= 0x6a;
 
-	EVP_DigestUpdate(&md_ctx, hmac_pad, md_block_size);
-	EVP_DigestUpdate(&md_ctx, mac_out, md_size);
+	EVP_DigestUpdate(md_ctx, hmac_pad, md_block_size);
+	EVP_DigestUpdate(md_ctx, mac_out, md_size);
 
-	EVP_DigestFinal(&md_ctx, md_out, &md_out_size_u);
+	EVP_DigestFinal(md_ctx, md_out, &md_out_size_u);
 	if (md_out_size)
 		*md_out_size = md_out_size_u;
-	EVP_MD_CTX_cleanup(&md_ctx);
+	EVP_MD_CTX_free(md_ctx);
 
 	return 1;
 }

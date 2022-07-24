@@ -7,10 +7,10 @@
 #include <utility>
 #include <QGridLayout>
 #include <QInputDialog>
-#include <QKeyEvent>
 #include <QMenu>
 #include <QMessageBox>
 #include <QTimer>
+#include "common/assert.h"
 #include "common/param_package.h"
 #include "core/hid/emulated_controller.h"
 #include "core/hid/hid_core.h"
@@ -23,7 +23,6 @@
 #include "yuzu/configuration/config.h"
 #include "yuzu/configuration/configure_input_player.h"
 #include "yuzu/configuration/configure_input_player_widget.h"
-#include "yuzu/configuration/configure_vibration.h"
 #include "yuzu/configuration/input_profiles.h"
 #include "yuzu/util/limitable_input_dialog.h"
 
@@ -102,9 +101,40 @@ QString GetButtonName(Common::Input::ButtonNames button_name) {
         return QObject::tr("Share");
     case Common::Input::ButtonNames::Options:
         return QObject::tr("Options");
+    case Common::Input::ButtonNames::Home:
+        return QObject::tr("Home");
+    case Common::Input::ButtonNames::Touch:
+        return QObject::tr("Touch");
+    case Common::Input::ButtonNames::ButtonMouseWheel:
+        return QObject::tr("Wheel", "Indicates the mouse wheel");
+    case Common::Input::ButtonNames::ButtonBackward:
+        return QObject::tr("Backward");
+    case Common::Input::ButtonNames::ButtonForward:
+        return QObject::tr("Forward");
+    case Common::Input::ButtonNames::ButtonTask:
+        return QObject::tr("Task");
+    case Common::Input::ButtonNames::ButtonExtra:
+        return QObject::tr("Extra");
     default:
         return QObject::tr("[undefined]");
     }
+}
+
+QString GetDirectionName(const std::string& direction) {
+    if (direction == "left") {
+        return QObject::tr("Left");
+    }
+    if (direction == "right") {
+        return QObject::tr("Right");
+    }
+    if (direction == "up") {
+        return QObject::tr("Up");
+    }
+    if (direction == "down") {
+        return QObject::tr("Down");
+    }
+    UNIMPLEMENTED_MSG("Unimplemented direction name={}", direction);
+    return QString::fromStdString(direction);
 }
 
 void SetAnalogParam(const Common::ParamPackage& input_param, Common::ParamPackage& analog_param,
@@ -137,7 +167,7 @@ QString ConfigureInputPlayer::ButtonToText(const Common::ParamPackage& param) {
     // Retrieve the names from Qt
     if (param.Get("engine", "") == "keyboard") {
         const QString button_str = GetKeyName(param.Get("code", 0));
-        return QObject::tr("%1%2").arg(toggle, button_str);
+        return QObject::tr("%1%2%3").arg(toggle, inverted, button_str);
     }
 
     if (common_button_name == Common::Input::ButtonNames::Invalid) {
@@ -150,7 +180,7 @@ QString ConfigureInputPlayer::ButtonToText(const Common::ParamPackage& param) {
 
     if (common_button_name == Common::Input::ButtonNames::Value) {
         if (param.Has("hat")) {
-            const QString hat = QString::fromStdString(param.Get("direction", ""));
+            const QString hat = GetDirectionName(param.Get("direction", ""));
             return QObject::tr("%1%2Hat %3").arg(toggle, inverted, hat);
         }
         if (param.Has("axis")) {
@@ -234,15 +264,16 @@ QString ConfigureInputPlayer::AnalogToText(const Common::ParamPackage& param,
     return QObject::tr("[unknown]");
 }
 
-ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_index,
-                                           QWidget* bottom_row,
+ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_index_,
+                                           QWidget* bottom_row_,
                                            InputCommon::InputSubsystem* input_subsystem_,
                                            InputProfiles* profiles_, Core::HID::HIDCore& hid_core_,
-                                           bool is_powered_on_, bool debug)
-    : QWidget(parent), ui(std::make_unique<Ui::ConfigureInputPlayer>()), player_index(player_index),
-      debug(debug), is_powered_on{is_powered_on_}, input_subsystem{input_subsystem_},
-      profiles(profiles_), timeout_timer(std::make_unique<QTimer>()),
-      poll_timer(std::make_unique<QTimer>()), bottom_row(bottom_row), hid_core{hid_core_} {
+                                           bool is_powered_on_, bool debug_)
+    : QWidget(parent),
+      ui(std::make_unique<Ui::ConfigureInputPlayer>()), player_index{player_index_}, debug{debug_},
+      is_powered_on{is_powered_on_}, input_subsystem{input_subsystem_}, profiles(profiles_),
+      timeout_timer(std::make_unique<QTimer>()),
+      poll_timer(std::make_unique<QTimer>()), bottom_row{bottom_row_}, hid_core{hid_core_} {
     if (player_index == 0) {
         auto* emulated_controller_p1 =
             hid_core.GetEmulatedController(Core::HID::NpadIdType::Player1);
@@ -316,7 +347,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         connect(button, &QPushButton::clicked, [=, this] {
             HandleClick(
                 button, button_id,
-                [=, this](Common::ParamPackage params) {
+                [=, this](const Common::ParamPackage& params) {
                     emulated_controller->SetButtonParam(button_id, params);
                 },
                 InputCommon::Polling::InputType::Button);
@@ -331,7 +362,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                         emulated_controller->SetButtonParam(button_id, {});
                         button_map[button_id]->setText(tr("[not set]"));
                     });
-                    if (param.Has("button") || param.Has("hat")) {
+                    if (param.Has("code") || param.Has("button") || param.Has("hat")) {
                         context_menu.addAction(tr("Toggle button"), [&] {
                             const bool toggle_value = !param.Get("toggle", false);
                             param.Set("toggle", toggle_value);
@@ -339,8 +370,8 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                             emulated_controller->SetButtonParam(button_id, param);
                         });
                         context_menu.addAction(tr("Invert button"), [&] {
-                            const bool toggle_value = !param.Get("inverted", false);
-                            param.Set("inverted", toggle_value);
+                            const bool invert_value = !param.Get("inverted", false);
+                            param.Set("inverted", invert_value);
                             button_map[button_id]->setText(ButtonToText(param));
                             emulated_controller->SetButtonParam(button_id, param);
                         });
@@ -382,7 +413,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         connect(button, &QPushButton::clicked, [=, this] {
             HandleClick(
                 button, motion_id,
-                [=, this](Common::ParamPackage params) {
+                [=, this](const Common::ParamPackage& params) {
                     emulated_controller->SetMotionParam(motion_id, params);
                 },
                 InputCommon::Polling::InputType::Motion);
@@ -393,10 +424,22 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         connect(button, &QPushButton::customContextMenuRequested,
                 [=, this](const QPoint& menu_location) {
                     QMenu context_menu;
+                    Common::ParamPackage param = emulated_controller->GetMotionParam(motion_id);
                     context_menu.addAction(tr("Clear"), [&] {
                         emulated_controller->SetMotionParam(motion_id, {});
                         motion_map[motion_id]->setText(tr("[not set]"));
                     });
+                    if (param.Has("motion")) {
+                        context_menu.addAction(tr("Set gyro threshold"), [&] {
+                            const int gyro_threshold =
+                                static_cast<int>(param.Get("threshold", 0.007f) * 1000.0f);
+                            const int new_threshold = QInputDialog::getInt(
+                                this, tr("Set threshold"), tr("Choose a value between 0% and 100%"),
+                                gyro_threshold, 0, 100);
+                            param.Set("threshold", new_threshold / 1000.0f);
+                            emulated_controller->SetMotionParam(motion_id, param);
+                        });
+                    }
                     context_menu.exec(motion_map[motion_id]->mapToGlobal(menu_location));
                 });
     }
@@ -447,6 +490,25 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                     [=, this](const Common::ParamPackage& params) {
                         Common::ParamPackage param = emulated_controller->GetStickParam(analog_id);
                         SetAnalogParam(params, param, analog_sub_buttons[sub_button_id]);
+                        // Correct axis direction for inverted sticks
+                        if (input_subsystem->IsStickInverted(param)) {
+                            switch (analog_id) {
+                            case Settings::NativeAnalog::LStick: {
+                                const bool invert_value = param.Get("invert_x", "+") == "-";
+                                const std::string invert_str = invert_value ? "+" : "-";
+                                param.Set("invert_x", invert_str);
+                                break;
+                            }
+                            case Settings::NativeAnalog::RStick: {
+                                const bool invert_value = param.Get("invert_y", "+") == "-";
+                                const std::string invert_str = invert_value ? "+" : "-";
+                                param.Set("invert_y", invert_str);
+                                break;
+                            }
+                            default:
+                                break;
+                            }
+                        }
                         emulated_controller->SetStickParam(analog_id, param);
                     },
                     InputCommon::Polling::InputType::Stick);
@@ -459,8 +521,55 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                         QMenu context_menu;
                         Common::ParamPackage param = emulated_controller->GetStickParam(analog_id);
                         context_menu.addAction(tr("Clear"), [&] {
-                            emulated_controller->SetStickParam(analog_id, {});
+                            if (param.Get("engine", "") != "analog_from_button") {
+                                emulated_controller->SetStickParam(analog_id, {});
+                                for (auto button : analog_map_buttons[analog_id]) {
+                                    button->setText(tr("[not set]"));
+                                }
+                                return;
+                            }
+                            switch (sub_button_id) {
+                            case 0:
+                                param.Erase("up");
+                                break;
+                            case 1:
+                                param.Erase("down");
+                                break;
+                            case 2:
+                                param.Erase("left");
+                                break;
+                            case 3:
+                                param.Erase("right");
+                                break;
+                            }
+                            emulated_controller->SetStickParam(analog_id, param);
                             analog_map_buttons[analog_id][sub_button_id]->setText(tr("[not set]"));
+                        });
+                        context_menu.addAction(tr("Center axis"), [&] {
+                            const auto stick_value =
+                                emulated_controller->GetSticksValues()[analog_id];
+                            const float offset_x = stick_value.x.properties.offset;
+                            const float offset_y = stick_value.y.properties.offset;
+                            float raw_value_x = stick_value.x.raw_value;
+                            float raw_value_y = stick_value.y.raw_value;
+                            // See Core::HID::SanitizeStick() to obtain the original raw axis value
+                            if (std::abs(offset_x) < 0.5f) {
+                                if (raw_value_x > 0) {
+                                    raw_value_x *= 1 + offset_x;
+                                } else {
+                                    raw_value_x *= 1 - offset_x;
+                                }
+                            }
+                            if (std::abs(offset_x) < 0.5f) {
+                                if (raw_value_y > 0) {
+                                    raw_value_y *= 1 + offset_y;
+                                } else {
+                                    raw_value_y *= 1 - offset_y;
+                                }
+                            }
+                            param.Set("offset_x", -raw_value_x + offset_x);
+                            param.Set("offset_y", -raw_value_y + offset_y);
+                            emulated_controller->SetStickParam(analog_id, param);
                         });
                         context_menu.addAction(tr("Invert axis"), [&] {
                             if (sub_button_id == 2 || sub_button_id == 3) {
@@ -475,10 +584,11 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                                 param.Set("invert_y", invert_str);
                                 emulated_controller->SetStickParam(analog_id, param);
                             }
-                            for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM;
-                                 ++sub_button_id) {
-                                analog_map_buttons[analog_id][sub_button_id]->setText(
-                                    AnalogToText(param, analog_sub_buttons[sub_button_id]));
+                            for (int analog_sub_button_id = 0;
+                                 analog_sub_button_id < ANALOG_SUB_BUTTONS_NUM;
+                                 ++analog_sub_button_id) {
+                                analog_map_buttons[analog_id][analog_sub_button_id]->setText(
+                                    AnalogToText(param, analog_sub_buttons[analog_sub_button_id]));
                             }
                         });
                         context_menu.exec(analog_map_buttons[analog_id][sub_button_id]->mapToGlobal(
@@ -500,28 +610,37 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
 
         analog_map_modifier_button[analog_id]->setContextMenuPolicy(Qt::CustomContextMenu);
 
-        connect(analog_map_modifier_button[analog_id], &QPushButton::customContextMenuRequested,
-                [=, this](const QPoint& menu_location) {
-                    QMenu context_menu;
-                    Common::ParamPackage param = emulated_controller->GetStickParam(analog_id);
-                    context_menu.addAction(tr("Clear"), [&] {
-                        param.Set("modifier", "");
-                        analog_map_modifier_button[analog_id]->setText(tr("[not set]"));
-                        emulated_controller->SetStickParam(analog_id, param);
-                    });
-                    context_menu.addAction(tr("Toggle button"), [&] {
-                        Common::ParamPackage modifier_param =
-                            Common::ParamPackage{param.Get("modifier", "")};
-                        const bool toggle_value = !modifier_param.Get("toggle", false);
-                        modifier_param.Set("toggle", toggle_value);
-                        param.Set("modifier", modifier_param.Serialize());
-                        analog_map_modifier_button[analog_id]->setText(
-                            ButtonToText(modifier_param));
-                        emulated_controller->SetStickParam(analog_id, param);
-                    });
-                    context_menu.exec(
-                        analog_map_modifier_button[analog_id]->mapToGlobal(menu_location));
+        connect(
+            analog_map_modifier_button[analog_id], &QPushButton::customContextMenuRequested,
+            [=, this](const QPoint& menu_location) {
+                QMenu context_menu;
+                Common::ParamPackage param = emulated_controller->GetStickParam(analog_id);
+                context_menu.addAction(tr("Clear"), [&] {
+                    param.Set("modifier", "");
+                    analog_map_modifier_button[analog_id]->setText(tr("[not set]"));
+                    emulated_controller->SetStickParam(analog_id, param);
                 });
+                context_menu.addAction(tr("Toggle button"), [&] {
+                    Common::ParamPackage modifier_param =
+                        Common::ParamPackage{param.Get("modifier", "")};
+                    const bool toggle_value = !modifier_param.Get("toggle", false);
+                    modifier_param.Set("toggle", toggle_value);
+                    param.Set("modifier", modifier_param.Serialize());
+                    analog_map_modifier_button[analog_id]->setText(ButtonToText(modifier_param));
+                    emulated_controller->SetStickParam(analog_id, param);
+                });
+                context_menu.addAction(tr("Invert button"), [&] {
+                    Common::ParamPackage modifier_param =
+                        Common::ParamPackage{param.Get("modifier", "")};
+                    const bool invert_value = !modifier_param.Get("inverted", false);
+                    modifier_param.Set("inverted", invert_value);
+                    param.Set("modifier", modifier_param.Serialize());
+                    analog_map_modifier_button[analog_id]->setText(ButtonToText(modifier_param));
+                    emulated_controller->SetStickParam(analog_id, param);
+                });
+                context_menu.exec(
+                    analog_map_modifier_button[analog_id]->mapToGlobal(menu_location));
+            });
 
         connect(analog_map_range_spinbox[analog_id], qOverload<int>(&QSpinBox::valueChanged),
                 [=, this] {
@@ -578,39 +697,38 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
     UpdateControllerEnabledButtons();
     UpdateControllerButtonNames();
     UpdateMotionButtons();
-    connect(ui->comboControllerType, qOverload<int>(&QComboBox::currentIndexChanged),
-            [this, player_index](int) {
-                UpdateControllerAvailableButtons();
-                UpdateControllerEnabledButtons();
-                UpdateControllerButtonNames();
-                UpdateMotionButtons();
-                const Core::HID::NpadStyleIndex type =
-                    GetControllerTypeFromIndex(ui->comboControllerType->currentIndex());
+    connect(ui->comboControllerType, qOverload<int>(&QComboBox::currentIndexChanged), [this](int) {
+        UpdateControllerAvailableButtons();
+        UpdateControllerEnabledButtons();
+        UpdateControllerButtonNames();
+        UpdateMotionButtons();
+        const Core::HID::NpadStyleIndex type =
+            GetControllerTypeFromIndex(ui->comboControllerType->currentIndex());
 
-                if (player_index == 0) {
-                    auto* emulated_controller_p1 =
-                        hid_core.GetEmulatedController(Core::HID::NpadIdType::Player1);
-                    auto* emulated_controller_handheld =
-                        hid_core.GetEmulatedController(Core::HID::NpadIdType::Handheld);
-                    bool is_connected = emulated_controller->IsConnected(true);
+        if (player_index == 0) {
+            auto* emulated_controller_p1 =
+                hid_core.GetEmulatedController(Core::HID::NpadIdType::Player1);
+            auto* emulated_controller_handheld =
+                hid_core.GetEmulatedController(Core::HID::NpadIdType::Handheld);
+            bool is_connected = emulated_controller->IsConnected(true);
 
-                    emulated_controller_p1->SetNpadStyleIndex(type);
-                    emulated_controller_handheld->SetNpadStyleIndex(type);
-                    if (is_connected) {
-                        if (type == Core::HID::NpadStyleIndex::Handheld) {
-                            emulated_controller_p1->Disconnect();
-                            emulated_controller_handheld->Connect(true);
-                            emulated_controller = emulated_controller_handheld;
-                        } else {
-                            emulated_controller_handheld->Disconnect();
-                            emulated_controller_p1->Connect(true);
-                            emulated_controller = emulated_controller_p1;
-                        }
-                    }
-                    ui->controllerFrame->SetController(emulated_controller);
+            emulated_controller_p1->SetNpadStyleIndex(type);
+            emulated_controller_handheld->SetNpadStyleIndex(type);
+            if (is_connected) {
+                if (type == Core::HID::NpadStyleIndex::Handheld) {
+                    emulated_controller_p1->Disconnect();
+                    emulated_controller_handheld->Connect(true);
+                    emulated_controller = emulated_controller_handheld;
+                } else {
+                    emulated_controller_handheld->Disconnect();
+                    emulated_controller_p1->Connect(true);
+                    emulated_controller = emulated_controller_p1;
                 }
-                emulated_controller->SetNpadStyleIndex(type);
-            });
+            }
+            ui->controllerFrame->SetController(emulated_controller);
+        }
+        emulated_controller->SetNpadStyleIndex(type);
+    });
 
     connect(ui->comboDevices, qOverload<int>(&QComboBox::activated), this,
             &ConfigureInputPlayer::UpdateMappingWithDefaults);
@@ -752,7 +870,7 @@ void ConfigureInputPlayer::UpdateInputDeviceCombobox() {
     if (devices.size() == 1) {
         const auto devices_it = std::find_if(
             input_devices.begin(), input_devices.end(),
-            [first_engine, first_guid, first_port, first_pad](const Common::ParamPackage param) {
+            [first_engine, first_guid, first_port, first_pad](const Common::ParamPackage& param) {
                 return param.Get("engine", "") == first_engine &&
                        param.Get("guid", "") == first_guid && param.Get("port", 0) == first_port &&
                        param.Get("pad", 0) == first_pad;
@@ -783,7 +901,7 @@ void ConfigureInputPlayer::UpdateInputDeviceCombobox() {
     if (is_engine_equal && is_port_equal) {
         const auto devices_it = std::find_if(
             input_devices.begin(), input_devices.end(),
-            [first_engine, first_guid, second_guid, first_port](const Common::ParamPackage param) {
+            [first_engine, first_guid, second_guid, first_port](const Common::ParamPackage& param) {
                 const bool is_guid_valid =
                     (param.Get("guid", "") == first_guid &&
                      param.Get("guid2", "") == second_guid) ||
@@ -891,7 +1009,7 @@ void ConfigureInputPlayer::UpdateUI() {
             slider_value = static_cast<int>(param.Get("deadzone", 0.15f) * 100);
             deadzone_label->setText(tr("Deadzone: %1%").arg(slider_value));
             deadzone_slider->setValue(slider_value);
-            range_spinbox->setValue(static_cast<int>(param.Get("range", 1.0f) * 100));
+            range_spinbox->setValue(static_cast<int>(param.Get("range", 0.95f) * 100));
         } else {
             slider_value = static_cast<int>(param.Get("modifier_scale", 0.5f) * 100);
             modifier_label->setText(tr("Modifier Range: %1%").arg(slider_value));
@@ -995,7 +1113,7 @@ int ConfigureInputPlayer::GetIndexFromControllerType(Core::HID::NpadStyleIndex t
 void ConfigureInputPlayer::UpdateInputDevices() {
     input_devices = input_subsystem->GetInputDevices();
     ui->comboDevices->clear();
-    for (auto device : input_devices) {
+    for (const auto& device : input_devices) {
         ui->comboDevices->addItem(QString::fromStdString(device.Get("display", "Unknown")), {});
     }
 }
@@ -1270,6 +1388,9 @@ void ConfigureInputPlayer::HandleClick(
     QPushButton* button, std::size_t button_id,
     std::function<void(const Common::ParamPackage&)> new_input_setter,
     InputCommon::Polling::InputType type) {
+    if (timeout_timer->isActive()) {
+        return;
+    }
     if (button == ui->buttonMotionLeft || button == ui->buttonMotionRight) {
         button->setText(tr("Shake!"));
     } else {
@@ -1277,7 +1398,7 @@ void ConfigureInputPlayer::HandleClick(
     }
     button->setFocus();
 
-    input_setter = new_input_setter;
+    input_setter = std::move(new_input_setter);
 
     input_subsystem->BeginMapping(type);
 
@@ -1327,7 +1448,7 @@ bool ConfigureInputPlayer::IsInputAcceptable(const Common::ParamPackage& params)
         return params.Get("engine", "") == "keyboard" || params.Get("engine", "") == "mouse";
     }
 
-    const auto current_input_device = input_devices[ui->comboDevices->currentIndex()];
+    const auto& current_input_device = input_devices[ui->comboDevices->currentIndex()];
     return params.Get("engine", "") == current_input_device.Get("engine", "") &&
            (params.Get("guid", "") == current_input_device.Get("guid", "") ||
             params.Get("guid", "") == current_input_device.Get("guid2", "")) &&
@@ -1344,10 +1465,10 @@ void ConfigureInputPlayer::mousePressEvent(QMouseEvent* event) {
 }
 
 void ConfigureInputPlayer::keyPressEvent(QKeyEvent* event) {
-    event->ignore();
     if (!input_setter || !event) {
         return;
     }
+    event->ignore();
     if (event->key() != Qt::Key_Escape) {
         input_subsystem->GetKeyboard()->PressKey(event->key());
     }

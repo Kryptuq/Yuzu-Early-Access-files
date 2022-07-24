@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -38,6 +37,8 @@ struct fmt::formatter<VideoCore::Surface::PixelFormat> : fmt::formatter<fmt::str
                 return "A2B10G10R10_UINT";
             case PixelFormat::A1B5G5R5_UNORM:
                 return "A1B5G5R5_UNORM";
+            case PixelFormat::A5B5G5R1_UNORM:
+                return "A5B5G5R1_UNORM";
             case PixelFormat::R8_UNORM:
                 return "R8_UNORM";
             case PixelFormat::R8_SNORM:
@@ -152,6 +153,8 @@ struct fmt::formatter<VideoCore::Surface::PixelFormat> : fmt::formatter<fmt::str
                 return "BC7_SRGB";
             case PixelFormat::A4B4G4R4_UNORM:
                 return "A4B4G4R4_UNORM";
+            case PixelFormat::G4R4_UNORM:
+                return "G4R4_UNORM";
             case PixelFormat::ASTC_2D_4X4_SRGB:
                 return "ASTC_2D_4X4_SRGB";
             case PixelFormat::ASTC_2D_8X8_SRGB:
@@ -172,6 +175,8 @@ struct fmt::formatter<VideoCore::Surface::PixelFormat> : fmt::formatter<fmt::str
                 return "ASTC_2D_6X6_UNORM";
             case PixelFormat::ASTC_2D_6X6_SRGB:
                 return "ASTC_2D_6X6_SRGB";
+            case PixelFormat::ASTC_2D_10X6_UNORM:
+                return "ASTC_2D_10X6_UNORM";
             case PixelFormat::ASTC_2D_10X10_UNORM:
                 return "ASTC_2D_10X10_UNORM";
             case PixelFormat::ASTC_2D_10X10_SRGB:

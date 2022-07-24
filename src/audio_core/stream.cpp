@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <cmath>
@@ -79,14 +78,15 @@ static void VolumeAdjustSamples(std::vector<s16>& samples, float game_volume) {
         return;
     }
 
-    // Implementation of a volume slider with a dynamic range of 60 dB
-    const float volume_scale_factor = volume == 0 ? 0 : std::exp(6.90775f * volume) * 0.001f;
+    // Perceived volume is not the same as the volume level
+    const float volume_scale_factor = (0.85f * ((volume * volume) - volume)) + volume;
     for (auto& sample : samples) {
         sample = static_cast<s16>(sample * volume_scale_factor);
     }
 }
 
 void Stream::PlayNextBuffer(std::chrono::nanoseconds ns_late) {
+#ifndef _WIN32
     auto now = std::chrono::steady_clock::now();
     auto duration = now.time_since_epoch();
     auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration);
@@ -94,6 +94,7 @@ void Stream::PlayNextBuffer(std::chrono::nanoseconds ns_late) {
     if (nanoseconds > expected_cb_time) {
         ns_late = nanoseconds - expected_cb_time;
     }
+#endif
 
     if (!IsPlaying()) {
         // Ensure we are in playing state before playing the next buffer
@@ -129,7 +130,9 @@ void Stream::PlayNextBuffer(std::chrono::nanoseconds ns_late) {
         ns_late = {};
     }
 
+#ifndef _WIN32
     expected_cb_time = nanoseconds + (buffer_release_ns - ns_late);
+#endif
     core_timing.ScheduleEvent(buffer_release_ns - ns_late, release_event, {});
 }
 

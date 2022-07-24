@@ -1,18 +1,16 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <array>
 
-#include "common/common_types.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace Vulkan {
 
 class Device;
-class VKScheduler;
+class Scheduler;
 
 struct DescriptorUpdateEntry {
     struct Empty {};
@@ -30,10 +28,10 @@ struct DescriptorUpdateEntry {
     };
 };
 
-class VKUpdateDescriptorQueue final {
+class UpdateDescriptorQueue final {
 public:
-    explicit VKUpdateDescriptorQueue(const Device& device_, VKScheduler& scheduler_);
-    ~VKUpdateDescriptorQueue();
+    explicit UpdateDescriptorQueue(const Device& device_, Scheduler& scheduler_);
+    ~UpdateDescriptorQueue();
 
     void TickFrame();
 
@@ -73,7 +71,7 @@ public:
 
 private:
     const Device& device;
-    VKScheduler& scheduler;
+    Scheduler& scheduler;
 
     DescriptorUpdateEntry* payload_cursor = nullptr;
     const DescriptorUpdateEntry* upload_start = nullptr;

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2012 Gekko Emulator
+// SPDX-FileContributor: ShizZy <shizzy247@gmail.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 /**
  * Copyright (C) 2005-2012 Gekko Emulator
  *
@@ -46,13 +50,3 @@ using GPUVAddr = u64; ///< Represents a pointer in the GPU virtual address space
 
 using u128 = std::array<std::uint64_t, 2>;
 static_assert(sizeof(u128) == 16, "u128 must be 128 bits wide");
-
-// An inheritable class to disallow the copy constructor and operator= functions
-class NonCopyable {
-protected:
-    constexpr NonCopyable() = default;
-    ~NonCopyable() = default;
-
-    NonCopyable(const NonCopyable&) = delete;
-    NonCopyable& operator=(const NonCopyable&) = delete;
-};

@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <climits>
 
@@ -111,10 +110,9 @@ static constexpr s64 GetLeapDaysFromYear(s64 year) {
     }
 }
 
-static constexpr int GetMonthLength(bool is_leap_year, int month) {
-    constexpr std::array<int, 12> month_lengths{31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-    constexpr std::array<int, 12> month_lengths_leap{31, 29, 31, 30, 31, 30,
-                                                     31, 31, 30, 31, 30, 31};
+static constexpr s8 GetMonthLength(bool is_leap_year, int month) {
+    constexpr std::array<s8, 12> month_lengths{31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    constexpr std::array<s8, 12> month_lengths_leap{31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
     return is_leap_year ? month_lengths_leap[month] : month_lengths[month];
 }
 
@@ -281,7 +279,7 @@ static constexpr int TransitionTime(int year, Rule rule, int offset) {
         break;
     }
     default:
-        UNREACHABLE();
+        ASSERT(false);
     }
     return value + rule.transition_time + offset;
 }
@@ -668,8 +666,8 @@ static bool ParseTimeZoneBinary(TimeZoneRule& time_zone_rule, FileSys::VirtualFi
     return true;
 }
 
-static ResultCode CreateCalendarTime(s64 time, int gmt_offset, CalendarTimeInternal& calendar_time,
-                                     CalendarAdditionalInfo& calendar_additional_info) {
+static Result CreateCalendarTime(s64 time, int gmt_offset, CalendarTimeInternal& calendar_time,
+                                 CalendarAdditionalInfo& calendar_additional_info) {
     s64 year{epoch_year};
     s64 time_days{time / seconds_per_day};
     s64 remaining_seconds{time % seconds_per_day};
@@ -743,9 +741,9 @@ static ResultCode CreateCalendarTime(s64 time, int gmt_offset, CalendarTimeInter
     return ResultSuccess;
 }
 
-static ResultCode ToCalendarTimeInternal(const TimeZoneRule& rules, s64 time,
-                                         CalendarTimeInternal& calendar_time,
-                                         CalendarAdditionalInfo& calendar_additional_info) {
+static Result ToCalendarTimeInternal(const TimeZoneRule& rules, s64 time,
+                                     CalendarTimeInternal& calendar_time,
+                                     CalendarAdditionalInfo& calendar_additional_info) {
     if ((rules.go_ahead && time < rules.ats[0]) ||
         (rules.go_back && time > rules.ats[rules.time_count - 1])) {
         s64 seconds{};
@@ -768,7 +766,7 @@ static ResultCode ToCalendarTimeInternal(const TimeZoneRule& rules, s64 time,
         if (new_time < rules.ats[0] && new_time > rules.ats[rules.time_count - 1]) {
             return ERROR_TIME_NOT_FOUND;
         }
-        if (const ResultCode result{
+        if (const Result result{
                 ToCalendarTimeInternal(rules, new_time, calendar_time, calendar_additional_info)};
             result != ResultSuccess) {
             return result;
@@ -799,8 +797,8 @@ static ResultCode ToCalendarTimeInternal(const TimeZoneRule& rules, s64 time,
         tti_index = rules.types[low - 1];
     }
 
-    if (const ResultCode result{CreateCalendarTime(time, rules.ttis[tti_index].gmt_offset,
-                                                   calendar_time, calendar_additional_info)};
+    if (const Result result{CreateCalendarTime(time, rules.ttis[tti_index].gmt_offset,
+                                               calendar_time, calendar_additional_info)};
         result != ResultSuccess) {
         return result;
     }
@@ -813,9 +811,9 @@ static ResultCode ToCalendarTimeInternal(const TimeZoneRule& rules, s64 time,
     return ResultSuccess;
 }
 
-static ResultCode ToCalendarTimeImpl(const TimeZoneRule& rules, s64 time, CalendarInfo& calendar) {
+static Result ToCalendarTimeImpl(const TimeZoneRule& rules, s64 time, CalendarInfo& calendar) {
     CalendarTimeInternal calendar_time{};
-    const ResultCode result{
+    const Result result{
         ToCalendarTimeInternal(rules, time, calendar_time, calendar.additional_info)};
     calendar.time.year = static_cast<s16>(calendar_time.year);
 
@@ -832,13 +830,13 @@ static ResultCode ToCalendarTimeImpl(const TimeZoneRule& rules, s64 time, Calend
 TimeZoneManager::TimeZoneManager() = default;
 TimeZoneManager::~TimeZoneManager() = default;
 
-ResultCode TimeZoneManager::ToCalendarTime(const TimeZoneRule& rules, s64 time,
-                                           CalendarInfo& calendar) const {
+Result TimeZoneManager::ToCalendarTime(const TimeZoneRule& rules, s64 time,
+                                       CalendarInfo& calendar) const {
     return ToCalendarTimeImpl(rules, time, calendar);
 }
 
-ResultCode TimeZoneManager::SetDeviceLocationNameWithTimeZoneRule(const std::string& location_name,
-                                                                  FileSys::VirtualFile& vfs_file) {
+Result TimeZoneManager::SetDeviceLocationNameWithTimeZoneRule(const std::string& location_name,
+                                                              FileSys::VirtualFile& vfs_file) {
     TimeZoneRule rule{};
     if (ParseTimeZoneBinary(rule, vfs_file)) {
         device_location_name = location_name;
@@ -848,12 +846,12 @@ ResultCode TimeZoneManager::SetDeviceLocationNameWithTimeZoneRule(const std::str
     return ERROR_TIME_ZONE_CONVERSION_FAILED;
 }
 
-ResultCode TimeZoneManager::SetUpdatedTime(const Clock::SteadyClockTimePoint& value) {
+Result TimeZoneManager::SetUpdatedTime(const Clock::SteadyClockTimePoint& value) {
     time_zone_update_time_point = value;
     return ResultSuccess;
 }
 
-ResultCode TimeZoneManager::ToCalendarTimeWithMyRules(s64 time, CalendarInfo& calendar) const {
+Result TimeZoneManager::ToCalendarTimeWithMyRules(s64 time, CalendarInfo& calendar) const {
     if (is_initialized) {
         return ToCalendarTime(time_zone_rule, time, calendar);
     } else {
@@ -861,16 +859,16 @@ ResultCode TimeZoneManager::ToCalendarTimeWithMyRules(s64 time, CalendarInfo& ca
     }
 }
 
-ResultCode TimeZoneManager::ParseTimeZoneRuleBinary(TimeZoneRule& rules,
-                                                    FileSys::VirtualFile& vfs_file) const {
+Result TimeZoneManager::ParseTimeZoneRuleBinary(TimeZoneRule& rules,
+                                                FileSys::VirtualFile& vfs_file) const {
     if (!ParseTimeZoneBinary(rules, vfs_file)) {
         return ERROR_TIME_ZONE_CONVERSION_FAILED;
     }
     return ResultSuccess;
 }
 
-ResultCode TimeZoneManager::ToPosixTime(const TimeZoneRule& rules,
-                                        const CalendarTime& calendar_time, s64& posix_time) const {
+Result TimeZoneManager::ToPosixTime(const TimeZoneRule& rules, const CalendarTime& calendar_time,
+                                    s64& posix_time) const {
     posix_time = 0;
 
     CalendarTimeInternal internal_time{
@@ -1022,8 +1020,8 @@ ResultCode TimeZoneManager::ToPosixTime(const TimeZoneRule& rules,
     return ResultSuccess;
 }
 
-ResultCode TimeZoneManager::ToPosixTimeWithMyRule(const CalendarTime& calendar_time,
-                                                  s64& posix_time) const {
+Result TimeZoneManager::ToPosixTimeWithMyRule(const CalendarTime& calendar_time,
+                                              s64& posix_time) const {
     if (is_initialized) {
         return ToPosixTime(time_zone_rule, calendar_time, posix_time);
     }
@@ -1031,7 +1029,7 @@ ResultCode TimeZoneManager::ToPosixTimeWithMyRule(const CalendarTime& calendar_t
     return ERROR_UNINITIALIZED_CLOCK;
 }
 
-ResultCode TimeZoneManager::GetDeviceLocationName(LocationName& value) const {
+Result TimeZoneManager::GetDeviceLocationName(LocationName& value) const {
     if (!is_initialized) {
         return ERROR_UNINITIALIZED_CLOCK;
     }

@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <map>
 #include <set>
@@ -44,7 +43,7 @@ static void ValidateUses(const IR::Program& program) {
             }
         }
     }
-    for (const auto [inst, uses] : actual_uses) {
+    for (const auto& [inst, uses] : actual_uses) {
         if (inst->UseCount() != uses) {
             throw LogicError("Invalid uses in block: {}", IR::DumpProgram(program));
         }

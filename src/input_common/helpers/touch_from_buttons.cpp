@@ -4,7 +4,6 @@
 
 #include <algorithm>
 #include "common/settings.h"
-#include "core/frontend/framebuffer_layout.h"
 #include "input_common/helpers/touch_from_buttons.h"
 
 namespace InputCommon {

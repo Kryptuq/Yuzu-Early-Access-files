@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -13,6 +12,10 @@ namespace Common {
 
 class WallClock {
 public:
+    static constexpr u64 NS_RATIO = 1'000'000'000;
+    static constexpr u64 US_RATIO = 1'000'000;
+    static constexpr u64 MS_RATIO = 1'000;
+
     virtual ~WallClock() = default;
 
     /// Returns current wall time in nanoseconds
@@ -49,7 +52,7 @@ private:
     bool is_native;
 };
 
-[[nodiscard]] std::unique_ptr<WallClock> CreateBestMatchingClock(u32 emulated_cpu_frequency,
-                                                                 u32 emulated_clock_frequency);
+[[nodiscard]] std::unique_ptr<WallClock> CreateBestMatchingClock(u64 emulated_cpu_frequency,
+                                                                 u64 emulated_clock_frequency);
 
 } // namespace Common

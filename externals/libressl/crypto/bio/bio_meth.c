@@ -1,4 +1,4 @@
-/*	$OpenBSD: bio_meth.c,v 1.6 2018/06/02 04:41:12 tb Exp $	*/
+/*	$OpenBSD: bio_meth.c,v 1.8 2022/01/14 08:40:57 tb Exp $	*/
 /*
  * Copyright (c) 2018 Theo Buehler <tb@openbsd.org>
  *
@@ -18,6 +18,8 @@
 #include <stdlib.h>
 
 #include <openssl/bio.h>
+
+#include "bio_local.h"
 
 BIO_METHOD *
 BIO_meth_new(int type, const char *name)
@@ -133,15 +135,13 @@ BIO_meth_set_destroy(BIO_METHOD *biom, int (*destroy)(BIO *))
 long
 (*BIO_meth_get_callback_ctrl(const BIO_METHOD *biom))(BIO *, int, BIO_info_cb *)
 {
-	return
-	    (long (*)(BIO *, int, BIO_info_cb *))biom->callback_ctrl; /* XXX */
+	return biom->callback_ctrl;
 }
 
 int
 BIO_meth_set_callback_ctrl(BIO_METHOD *biom,
     long (*callback_ctrl)(BIO *, int, BIO_info_cb *))
 {
-	biom->callback_ctrl =
-	    (long (*)(BIO *, int, bio_info_cb *))callback_ctrl;	/* XXX */
+	biom->callback_ctrl = callback_ctrl;
 	return 1;
 }

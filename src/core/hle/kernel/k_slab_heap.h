@@ -1,12 +1,12 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <atomic>
 
 #include "common/assert.h"
+#include "common/common_funcs.h"
 #include "common/common_types.h"
 
 namespace Kernel {
@@ -15,35 +15,34 @@ class KernelCore;
 
 namespace impl {
 
-class KSlabHeapImpl final : NonCopyable {
+class KSlabHeapImpl {
+    YUZU_NON_COPYABLE(KSlabHeapImpl);
+    YUZU_NON_MOVEABLE(KSlabHeapImpl);
+
 public:
     struct Node {
         Node* next{};
     };
 
+public:
     constexpr KSlabHeapImpl() = default;
 
-    void Initialize(std::size_t size) {
-        ASSERT(head == nullptr);
-        obj_size = size;
-    }
-
-    constexpr std::size_t GetObjectSize() const {
-        return obj_size;
+    void Initialize() {
+        ASSERT(m_head == nullptr);
     }
 
     Node* GetHead() const {
-        return head;
+        return m_head;
     }
 
     void* Allocate() {
-        Node* ret = head.load();
+        Node* ret = m_head.load();
 
         do {
             if (ret == nullptr) {
                 break;
             }
-        } while (!head.compare_exchange_weak(ret, ret->next));
+        } while (!m_head.compare_exchange_weak(ret, ret->next));
 
         return ret;
     }
@@ -51,166 +50,157 @@ public:
     void Free(void* obj) {
         Node* node = static_cast<Node*>(obj);
 
-        Node* cur_head = head.load();
+        Node* cur_head = m_head.load();
         do {
             node->next = cur_head;
-        } while (!head.compare_exchange_weak(cur_head, node));
+        } while (!m_head.compare_exchange_weak(cur_head, node));
     }
 
 private:
-    std::atomic<Node*> head{};
-    std::size_t obj_size{};
+    std::atomic<Node*> m_head{};
 };
 
 } // namespace impl
 
-class KSlabHeapBase : NonCopyable {
+template <bool SupportDynamicExpansion>
+class KSlabHeapBase : protected impl::KSlabHeapImpl {
+    YUZU_NON_COPYABLE(KSlabHeapBase);
+    YUZU_NON_MOVEABLE(KSlabHeapBase);
+
+private:
+    size_t m_obj_size{};
+    uintptr_t m_peak{};
+    uintptr_t m_start{};
+    uintptr_t m_end{};
+
+private:
+    void UpdatePeakImpl(uintptr_t obj) {
+        static_assert(std::atomic_ref<uintptr_t>::is_always_lock_free);
+        std::atomic_ref<uintptr_t> peak_ref(m_peak);
+
+        const uintptr_t alloc_peak = obj + this->GetObjectSize();
+        uintptr_t cur_peak = m_peak;
+        do {
+            if (alloc_peak <= cur_peak) {
+                break;
+            }
+        } while (!peak_ref.compare_exchange_strong(cur_peak, alloc_peak));
+    }
+
 public:
     constexpr KSlabHeapBase() = default;
 
-    constexpr bool Contains(uintptr_t addr) const {
-        return start <= addr && addr < end;
+    bool Contains(uintptr_t address) const {
+        return m_start <= address && address < m_end;
     }
 
-    constexpr std::size_t GetSlabHeapSize() const {
-        return (end - start) / GetObjectSize();
-    }
-
-    constexpr std::size_t GetObjectSize() const {
-        return impl.GetObjectSize();
-    }
-
-    constexpr uintptr_t GetSlabHeapAddress() const {
-        return start;
-    }
-
-    std::size_t GetObjectIndexImpl(const void* obj) const {
-        return (reinterpret_cast<uintptr_t>(obj) - start) / GetObjectSize();
-    }
-
-    std::size_t GetPeakIndex() const {
-        return GetObjectIndexImpl(reinterpret_cast<const void*>(peak));
-    }
-
-    void* AllocateImpl() {
-        return impl.Allocate();
-    }
-
-    void FreeImpl(void* obj) {
-        // Don't allow freeing an object that wasn't allocated from this heap
-        ASSERT(Contains(reinterpret_cast<uintptr_t>(obj)));
-
-        impl.Free(obj);
-    }
-
-    void InitializeImpl(std::size_t obj_size, void* memory, std::size_t memory_size) {
-        // Ensure we don't initialize a slab using null memory
+    void Initialize(size_t obj_size, void* memory, size_t memory_size) {
+        // Ensure we don't initialize a slab using null memory.
         ASSERT(memory != nullptr);
 
-        // Initialize the base allocator
-        impl.Initialize(obj_size);
+        // Set our object size.
+        m_obj_size = obj_size;
 
-        // Set our tracking variables
-        const std::size_t num_obj = (memory_size / obj_size);
-        start = reinterpret_cast<uintptr_t>(memory);
-        end = start + num_obj * obj_size;
-        peak = start;
+        // Initialize the base allocator.
+        KSlabHeapImpl::Initialize();
 
-        // Free the objects
-        u8* cur = reinterpret_cast<u8*>(end);
+        // Set our tracking variables.
+        const size_t num_obj = (memory_size / obj_size);
+        m_start = reinterpret_cast<uintptr_t>(memory);
+        m_end = m_start + num_obj * obj_size;
+        m_peak = m_start;
 
-        for (std::size_t i{}; i < num_obj; i++) {
+        // Free the objects.
+        u8* cur = reinterpret_cast<u8*>(m_end);
+
+        for (size_t i = 0; i < num_obj; i++) {
             cur -= obj_size;
-            impl.Free(cur);
+            KSlabHeapImpl::Free(cur);
         }
     }
 
-private:
-    using Impl = impl::KSlabHeapImpl;
+    size_t GetSlabHeapSize() const {
+        return (m_end - m_start) / this->GetObjectSize();
+    }
 
-    Impl impl;
-    uintptr_t peak{};
-    uintptr_t start{};
-    uintptr_t end{};
+    size_t GetObjectSize() const {
+        return m_obj_size;
+    }
+
+    void* Allocate() {
+        void* obj = KSlabHeapImpl::Allocate();
+
+        return obj;
+    }
+
+    void Free(void* obj) {
+        // Don't allow freeing an object that wasn't allocated from this heap.
+        const bool contained = this->Contains(reinterpret_cast<uintptr_t>(obj));
+        ASSERT(contained);
+        KSlabHeapImpl::Free(obj);
+    }
+
+    size_t GetObjectIndex(const void* obj) const {
+        if constexpr (SupportDynamicExpansion) {
+            if (!this->Contains(reinterpret_cast<uintptr_t>(obj))) {
+                return std::numeric_limits<size_t>::max();
+            }
+        }
+
+        return (reinterpret_cast<uintptr_t>(obj) - m_start) / this->GetObjectSize();
+    }
+
+    size_t GetPeakIndex() const {
+        return this->GetObjectIndex(reinterpret_cast<const void*>(m_peak));
+    }
+
+    uintptr_t GetSlabHeapAddress() const {
+        return m_start;
+    }
+
+    size_t GetNumRemaining() const {
+        // Only calculate the number of remaining objects under debug configuration.
+        return 0;
+    }
 };
 
 template <typename T>
-class KSlabHeap final : public KSlabHeapBase {
+class KSlabHeap final : public KSlabHeapBase<false> {
+private:
+    using BaseHeap = KSlabHeapBase<false>;
+
 public:
-    enum class AllocationType {
-        Host,
-        Guest,
-    };
+    constexpr KSlabHeap() = default;
 
-    explicit constexpr KSlabHeap(AllocationType allocation_type_ = AllocationType::Host)
-        : KSlabHeapBase(), allocation_type{allocation_type_} {}
-
-    void Initialize(void* memory, std::size_t memory_size) {
-        if (allocation_type == AllocationType::Guest) {
-            InitializeImpl(sizeof(T), memory, memory_size);
-        }
+    void Initialize(void* memory, size_t memory_size) {
+        BaseHeap::Initialize(sizeof(T), memory, memory_size);
     }
 
     T* Allocate() {
-        switch (allocation_type) {
-        case AllocationType::Host:
-            // Fallback for cases where we do not yet support allocating guest memory from the slab
-            // heap, such as for kernel memory regions.
-            return new T;
+        T* obj = static_cast<T*>(BaseHeap::Allocate());
 
-        case AllocationType::Guest:
-            T* obj = static_cast<T*>(AllocateImpl());
-            if (obj != nullptr) {
-                new (obj) T();
-            }
-            return obj;
+        if (obj != nullptr) [[likely]] {
+            std::construct_at(obj);
         }
-
-        UNREACHABLE_MSG("Invalid AllocationType {}", allocation_type);
-        return nullptr;
+        return obj;
     }
 
-    T* AllocateWithKernel(KernelCore& kernel) {
-        switch (allocation_type) {
-        case AllocationType::Host:
-            // Fallback for cases where we do not yet support allocating guest memory from the slab
-            // heap, such as for kernel memory regions.
-            return new T(kernel);
+    T* Allocate(KernelCore& kernel) {
+        T* obj = static_cast<T*>(BaseHeap::Allocate());
 
-        case AllocationType::Guest:
-            T* obj = static_cast<T*>(AllocateImpl());
-            if (obj != nullptr) {
-                new (obj) T(kernel);
-            }
-            return obj;
+        if (obj != nullptr) [[likely]] {
+            std::construct_at(obj, kernel);
         }
-
-        UNREACHABLE_MSG("Invalid AllocationType {}", allocation_type);
-        return nullptr;
+        return obj;
     }
 
     void Free(T* obj) {
-        switch (allocation_type) {
-        case AllocationType::Host:
-            // Fallback for cases where we do not yet support allocating guest memory from the slab
-            // heap, such as for kernel memory regions.
-            delete obj;
-            return;
-
-        case AllocationType::Guest:
-            FreeImpl(obj);
-            return;
-        }
-
-        UNREACHABLE_MSG("Invalid AllocationType {}", allocation_type);
+        BaseHeap::Free(obj);
     }
 
-    constexpr std::size_t GetObjectIndex(const T* obj) const {
-        return GetObjectIndexImpl(obj);
+    size_t GetObjectIndex(const T* obj) const {
+        return BaseHeap::GetObjectIndex(obj);
     }
-
-private:
-    const AllocationType allocation_type;
 };
 
 } // namespace Kernel

@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/k_port.h"
@@ -51,13 +50,18 @@ bool KPort::IsServerClosed() const {
     return state == State::ServerClosed;
 }
 
-ResultCode KPort::EnqueueSession(KServerSession* session) {
+Result KPort::EnqueueSession(KServerSession* session) {
     KScopedSchedulerLock sl{kernel};
 
     R_UNLESS(state == State::Normal, ResultPortClosed);
 
     server.EnqueueSession(session);
-    server.GetSessionRequestHandler()->ClientConnected(server.AcceptSession());
+
+    if (auto session_ptr = server.GetSessionRequestHandler().lock()) {
+        session_ptr->ClientConnected(server.AcceptSession());
+    } else {
+        ASSERT(false);
+    }
 
     return ResultSuccess;
 }

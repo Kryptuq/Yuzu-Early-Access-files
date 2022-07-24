@@ -6,7 +6,6 @@
 
 #include <QCheckBox>
 #include <QComboBox>
-#include <QString>
 #include "common/settings.h"
 
 namespace ConfigurationShared {
@@ -26,10 +25,11 @@ enum class CheckState {
 // Global-aware apply and set functions
 
 // ApplyPerGameSetting, given a Settings::Setting and a Qt UI element, properly applies a Setting
-void ApplyPerGameSetting(Settings::Setting<bool>* setting, const QCheckBox* checkbox,
+void ApplyPerGameSetting(Settings::SwitchableSetting<bool>* setting, const QCheckBox* checkbox,
                          const CheckState& tracker);
-template <typename Type>
-void ApplyPerGameSetting(Settings::Setting<Type>* setting, const QComboBox* combobox) {
+template <typename Type, bool ranged>
+void ApplyPerGameSetting(Settings::SwitchableSetting<Type, ranged>* setting,
+                         const QComboBox* combobox) {
     if (Settings::IsConfiguringGlobal() && setting->UsingGlobal()) {
         setting->SetValue(static_cast<Type>(combobox->currentIndex()));
     } else if (!Settings::IsConfiguringGlobal()) {
@@ -44,10 +44,11 @@ void ApplyPerGameSetting(Settings::Setting<Type>* setting, const QComboBox* comb
 }
 
 // Sets a Qt UI element given a Settings::Setting
-void SetPerGameSetting(QCheckBox* checkbox, const Settings::Setting<bool>* setting);
+void SetPerGameSetting(QCheckBox* checkbox, const Settings::SwitchableSetting<bool>* setting);
 
-template <typename Type>
-void SetPerGameSetting(QComboBox* combobox, const Settings::Setting<Type>* setting) {
+template <typename Type, bool ranged>
+void SetPerGameSetting(QComboBox* combobox,
+                       const Settings::SwitchableSetting<Type, ranged>* setting) {
     combobox->setCurrentIndex(setting->UsingGlobal() ? ConfigurationShared::USE_GLOBAL_INDEX
                                                      : static_cast<int>(setting->GetValue()) +
                                                            ConfigurationShared::USE_GLOBAL_OFFSET);
@@ -57,7 +58,7 @@ void SetPerGameSetting(QComboBox* combobox, const Settings::Setting<Type>* setti
 void SetHighlight(QWidget* widget, bool highlighted);
 
 // Sets up a QCheckBox like a tristate one, given a Setting
-void SetColoredTristate(QCheckBox* checkbox, const Settings::Setting<bool>& setting,
+void SetColoredTristate(QCheckBox* checkbox, const Settings::SwitchableSetting<bool>& setting,
                         CheckState& tracker);
 void SetColoredTristate(QCheckBox* checkbox, bool global, bool state, bool global_state,
                         CheckState& tracker);

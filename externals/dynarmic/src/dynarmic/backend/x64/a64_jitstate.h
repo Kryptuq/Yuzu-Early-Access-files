@@ -7,8 +7,9 @@
 
 #include <array>
 
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/backend/x64/nzcv_util.h"
-#include "dynarmic/common/common_types.h"
 #include "dynarmic/frontend/A64/a64_location_descriptor.h"
 
 namespace Dynarmic::Backend::X64 {
@@ -43,7 +44,7 @@ struct A64JitState {
     // For internal use (See: BlockOfCode::RunCode)
     u32 guest_MXCSR = 0x00001f80;
     u32 asimd_MXCSR = 0x00009fc0;
-    bool halt_requested = false;
+    volatile u32 halt_reason = 0;
 
     // Exclusive state
     static constexpr u64 RESERVATION_GRANULE_MASK = 0xFFFF'FFFF'FFFF'FFF0ull;

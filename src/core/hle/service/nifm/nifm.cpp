@@ -1,11 +1,9 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
-#include "core/hle/kernel/kernel.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/nifm/nifm.h"
 #include "core/hle/service/service.h"
@@ -30,6 +28,19 @@ enum class RequestState : u32 {
     Error = 1, ///< The duplicate 1 is intentional; it means both not submitted and error on HW.
     Pending = 2,
     Connected = 3,
+};
+
+enum class InternetConnectionType : u8 {
+    WiFi = 1,
+    Ethernet = 2,
+};
+
+enum class InternetConnectionStatus : u8 {
+    ConnectingUnknown1,
+    ConnectingUnknown2,
+    ConnectingUnknown3,
+    ConnectingUnknown4,
+    Connected,
 };
 
 struct IpAddressSetting {
@@ -273,6 +284,7 @@ private:
         rb.Push(ResultSuccess);
         rb.Push<u64>(client_id); // Client ID needs to be non zero otherwise it's considered invalid
     }
+
     void CreateScanRequest(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIFM, "called");
 
@@ -281,6 +293,7 @@ private:
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IScanRequest>(system);
     }
+
     void CreateRequest(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIFM, "called");
 
@@ -289,6 +302,7 @@ private:
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IRequest>(system);
     }
+
     void GetCurrentNetworkProfile(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
@@ -337,12 +351,14 @@ private:
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
+
     void RemoveNetworkProfile(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
+
     void GetCurrentIpAddress(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
@@ -356,6 +372,7 @@ private:
         rb.Push(ResultSuccess);
         rb.PushRaw(*ipv4);
     }
+
     void CreateTemporaryNetworkProfile(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIFM, "called");
 
@@ -371,6 +388,7 @@ private:
         rb.PushIpcInterface<INetworkProfile>(system);
         rb.PushRaw<u128>(uuid);
     }
+
     void GetCurrentIpConfigInfo(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
@@ -407,6 +425,7 @@ private:
         rb.Push(ResultSuccess);
         rb.PushRaw<IpConfigInfo>(ip_config_info);
     }
+
     void IsWirelessCommunicationEnabled(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
@@ -414,6 +433,24 @@ private:
         rb.Push(ResultSuccess);
         rb.Push<u8>(0);
     }
+
+    void GetInternetConnectionStatus(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
+
+        struct Output {
+            InternetConnectionType type{InternetConnectionType::WiFi};
+            u8 wifi_strength{3};
+            InternetConnectionStatus state{InternetConnectionStatus::Connected};
+        };
+        static_assert(sizeof(Output) == 0x3, "Output has incorrect size.");
+
+        constexpr Output out{};
+
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(ResultSuccess);
+        rb.PushRaw(out);
+    }
+
     void IsEthernetCommunicationEnabled(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
@@ -425,6 +462,7 @@ private:
             rb.Push<u8>(0);
         }
     }
+
     void IsAnyInternetRequestAccepted(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
@@ -458,7 +496,7 @@ IGeneralService::IGeneralService(Core::System& system_)
         {15, &IGeneralService::GetCurrentIpConfigInfo, "GetCurrentIpConfigInfo"},
         {16, nullptr, "SetWirelessCommunicationEnabled"},
         {17, &IGeneralService::IsWirelessCommunicationEnabled, "IsWirelessCommunicationEnabled"},
-        {18, nullptr, "GetInternetConnectionStatus"},
+        {18, &IGeneralService::GetInternetConnectionStatus, "GetInternetConnectionStatus"},
         {19, nullptr, "SetEthernetCommunicationEnabled"},
         {20, &IGeneralService::IsEthernetCommunicationEnabled, "IsEthernetCommunicationEnabled"},
         {21, &IGeneralService::IsAnyInternetRequestAccepted, "IsAnyInternetRequestAccepted"},

@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -9,10 +8,8 @@
 
 #include "common/common_types.h"
 
-#include "video_core/engines/maxwell_3d.h"
 #include "video_core/surface.h"
 #include "video_core/texture_cache/image_base.h"
-#include "video_core/texture_cache/image_view_base.h"
 #include "video_core/texture_cache/types.h"
 #include "video_core/textures/texture.h"
 

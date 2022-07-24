@@ -1,4 +1,4 @@
-/* $OpenBSD: d1_srtp.c,v 1.24 2020/03/16 15:25:13 tb Exp $ */
+/* $OpenBSD: d1_srtp.c,v 1.30 2022/01/28 13:11:56 inoguchi Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -118,15 +118,16 @@
 #include <stdio.h>
 
 #include <openssl/objects.h>
-
-#include "ssl_locl.h"
+#include <openssl/opensslconf.h>
 
 #ifndef OPENSSL_NO_SRTP
 
 #include "bytestring.h"
+#include "dtls_locl.h"
+#include "ssl_locl.h"
 #include "srtp.h"
 
-static SRTP_PROTECTION_PROFILE srtp_known_profiles[] = {
+static const SRTP_PROTECTION_PROFILE srtp_known_profiles[] = {
 	{
 		"SRTP_AES128_CM_SHA1_80",
 		SRTP_AES128_CM_SHA1_80,
@@ -135,14 +136,22 @@ static SRTP_PROTECTION_PROFILE srtp_known_profiles[] = {
 		"SRTP_AES128_CM_SHA1_32",
 		SRTP_AES128_CM_SHA1_32,
 	},
+	{
+		"SRTP_AEAD_AES_128_GCM",
+		SRTP_AEAD_AES_128_GCM,
+	},
+	{
+		"SRTP_AEAD_AES_256_GCM",
+		SRTP_AEAD_AES_256_GCM,
+	},
 	{0}
 };
 
 int
-srtp_find_profile_by_name(char *profile_name, SRTP_PROTECTION_PROFILE **pptr,
-    unsigned int len)
+srtp_find_profile_by_name(const char *profile_name,
+    const SRTP_PROTECTION_PROFILE **pptr, unsigned int len)
 {
-	SRTP_PROTECTION_PROFILE *p;
+	const SRTP_PROTECTION_PROFILE *p;
 
 	p = srtp_known_profiles;
 	while (p->name) {
@@ -160,9 +169,9 @@ srtp_find_profile_by_name(char *profile_name, SRTP_PROTECTION_PROFILE **pptr,
 
 int
 srtp_find_profile_by_num(unsigned int profile_num,
-    SRTP_PROTECTION_PROFILE **pptr)
+    const SRTP_PROTECTION_PROFILE **pptr)
 {
-	SRTP_PROTECTION_PROFILE *p;
+	const SRTP_PROTECTION_PROFILE *p;
 
 	p = srtp_known_profiles;
 	while (p->name) {
@@ -181,11 +190,9 @@ ssl_ctx_make_profiles(const char *profiles_string,
     STACK_OF(SRTP_PROTECTION_PROFILE) **out)
 {
 	STACK_OF(SRTP_PROTECTION_PROFILE) *profiles;
-
 	char *col;
-	char *ptr = (char *)profiles_string;
-
-	SRTP_PROTECTION_PROFILE *p;
+	const char *ptr = profiles_string;
+	const SRTP_PROTECTION_PROFILE *p;
 
 	if (!(profiles = sk_SRTP_PROTECTION_PROFILE_new_null())) {
 		SSLerrorx(SSL_R_SRTP_COULD_NOT_ALLOCATE_PROFILES);
@@ -197,7 +204,10 @@ ssl_ctx_make_profiles(const char *profiles_string,
 
 		if (!srtp_find_profile_by_name(ptr, &p,
 		    col ? col - ptr : (int)strlen(ptr))) {
-			sk_SRTP_PROTECTION_PROFILE_push(profiles, p);
+			if (!sk_SRTP_PROTECTION_PROFILE_push(profiles, p)) {
+				sk_SRTP_PROTECTION_PROFILE_free(profiles);
+				return 1;
+			}
 		} else {
 			SSLerrorx(SSL_R_SRTP_UNKNOWN_PROTECTION_PROFILE);
 			sk_SRTP_PROTECTION_PROFILE_free(profiles);
@@ -245,7 +255,8 @@ SSL_get_srtp_profiles(SSL *s)
 SRTP_PROTECTION_PROFILE *
 SSL_get_selected_srtp_profile(SSL *s)
 {
-	return s->internal->srtp_profile;
+	/* XXX cast away the const */
+	return (SRTP_PROTECTION_PROFILE *)s->internal->srtp_profile;
 }
 
 #endif

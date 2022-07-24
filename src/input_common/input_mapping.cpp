@@ -1,15 +1,13 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#include "common/common_types.h"
 #include "common/settings.h"
 #include "input_common/input_engine.h"
 #include "input_common/input_mapping.h"
 
 namespace InputCommon {
 
-MappingFactory::MappingFactory() {}
+MappingFactory::MappingFactory() = default;
 
 void MappingFactory::BeginMapping(Polling::InputType type) {
     is_enabled = true;
@@ -19,7 +17,7 @@ void MappingFactory::BeginMapping(Polling::InputType type) {
     second_axis = -1;
 }
 
-[[nodiscard]] const Common::ParamPackage MappingFactory::GetNextInput() {
+Common::ParamPackage MappingFactory::GetNextInput() {
     Common::ParamPackage input;
     input_queue.Pop(input);
     return input;
@@ -57,8 +55,8 @@ void MappingFactory::StopMapping() {
 void MappingFactory::RegisterButton(const MappingData& data) {
     Common::ParamPackage new_input;
     new_input.Set("engine", data.engine);
-    if (data.pad.guid != Common::UUID{}) {
-        new_input.Set("guid", data.pad.guid.Format());
+    if (data.pad.guid.IsValid()) {
+        new_input.Set("guid", data.pad.guid.RawString());
     }
     new_input.Set("port", static_cast<int>(data.pad.port));
     new_input.Set("pad", static_cast<int>(data.pad.pad));
@@ -93,8 +91,8 @@ void MappingFactory::RegisterButton(const MappingData& data) {
 void MappingFactory::RegisterStick(const MappingData& data) {
     Common::ParamPackage new_input;
     new_input.Set("engine", data.engine);
-    if (data.pad.guid != Common::UUID{}) {
-        new_input.Set("guid", data.pad.guid.Format());
+    if (data.pad.guid.IsValid()) {
+        new_input.Set("guid", data.pad.guid.RawString());
     }
     new_input.Set("port", static_cast<int>(data.pad.port));
     new_input.Set("pad", static_cast<int>(data.pad.pad));
@@ -138,11 +136,24 @@ void MappingFactory::RegisterStick(const MappingData& data) {
 void MappingFactory::RegisterMotion(const MappingData& data) {
     Common::ParamPackage new_input;
     new_input.Set("engine", data.engine);
-    if (data.pad.guid != Common::UUID{}) {
-        new_input.Set("guid", data.pad.guid.Format());
+    if (data.pad.guid.IsValid()) {
+        new_input.Set("guid", data.pad.guid.RawString());
     }
     new_input.Set("port", static_cast<int>(data.pad.port));
     new_input.Set("pad", static_cast<int>(data.pad.pad));
+
+    // If engine is mouse map the mouse position as 3 axis motion
+    if (data.engine == "mouse") {
+        new_input.Set("axis_x", 1);
+        new_input.Set("invert_x", "-");
+        new_input.Set("axis_y", 0);
+        new_input.Set("axis_z", 4);
+        new_input.Set("range", 1.0f);
+        new_input.Set("deadzone", 0.0f);
+        input_queue.Push(new_input);
+        return;
+    }
+
     switch (data.type) {
     case EngineInputType::Button:
     case EngineInputType::HatButton:

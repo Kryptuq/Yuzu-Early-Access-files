@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <memory>
 
@@ -17,19 +16,19 @@ public:
     explicit IDsInterface(Core::System& system_) : ServiceFramework{system_, "IDsInterface"} {
         // clang-format off
         static const FunctionInfo functions[] = {
-            {0, nullptr, "GetDsEndpoint"},
-            {1, nullptr, "GetSetupEvent"},
-            {2, nullptr, "Unknown2"},
-            {3, nullptr, "EnableInterface"},
-            {4, nullptr, "DisableInterface"},
-            {5, nullptr, "CtrlInPostBufferAsync"},
-            {6, nullptr, "CtrlOutPostBufferAsync"},
-            {7, nullptr, "GetCtrlInCompletionEvent"},
-            {8, nullptr, "GetCtrlInReportData"},
-            {9, nullptr, "GetCtrlOutCompletionEvent"},
-            {10, nullptr, "GetCtrlOutReportData"},
-            {11, nullptr, "StallCtrl"},
-            {12, nullptr, "AppendConfigurationData"},
+            {0, nullptr, "BindDevice"},
+            {1, nullptr, "BindClientProcess"},
+            {2, nullptr, "AddInterface"},
+            {3, nullptr, "GetStateChangeEvent"},
+            {4, nullptr, "GetState"},
+            {5, nullptr, "ClearDeviceData"},
+            {6, nullptr, "AddUsbStringDescriptor"},
+            {7, nullptr, "DeleteUsbStringDescriptor"},
+            {8, nullptr, "SetUsbDeviceDescriptor"},
+            {9, nullptr, "SetBinaryObjectStore"},
+            {10, nullptr, "Enable"},
+            {11, nullptr, "Disable"},
+            {12, nullptr, "Unknown12"},
         };
         // clang-format on
 
@@ -42,19 +41,7 @@ public:
     explicit USB_DS(Core::System& system_) : ServiceFramework{system_, "usb:ds"} {
         // clang-format off
         static const FunctionInfo functions[] = {
-            {0, nullptr, "BindDevice"},
-            {1, nullptr, "BindClientProcess"},
-            {2, nullptr, "GetDsInterface"},
-            {3, nullptr, "GetStateChangeEvent"},
-            {4, nullptr, "GetState"},
-            {5, nullptr, "ClearDeviceData"},
-            {6, nullptr, "AddUsbStringDescriptor"},
-            {7, nullptr, "DeleteUsbStringDescriptor"},
-            {8, nullptr, "SetUsbDeviceDescriptor"},
-            {9, nullptr, "SetBinaryObjectStore"},
-            {10, nullptr, "Enable"},
-            {11, nullptr, "Disable"},
-            {12, nullptr, "Unknown12"},
+            {0, nullptr, "OpenDsService"},
         };
         // clang-format on
 
@@ -120,7 +107,7 @@ public:
             {5, nullptr, "DestroyInterfaceAvailableEvent"},
             {6, nullptr, "GetInterfaceStateChangeEvent"},
             {7, nullptr, "AcquireUsbIf"},
-            {8, nullptr, "Unknown8"},
+            {8, nullptr, "ResetDevice"},
         };
         // clang-format on
 

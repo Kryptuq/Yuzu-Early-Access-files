@@ -1,7 +1,7 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
 #include <random>
 
 #include "common/input.h"
@@ -28,7 +28,7 @@ Common::Input::BatteryStatus TransformToBattery(const Common::Input::CallbackSta
         if (value > 0.8f) {
             battery = Common::Input::BatteryLevel::Full;
         }
-        if (value >= 1.0f) {
+        if (value >= 0.95f) {
             battery = Common::Input::BatteryLevel::Charging;
         }
         break;
@@ -114,7 +114,7 @@ Common::Input::MotionStatus TransformToMotion(const Common::Input::CallbackStatu
         if (TransformToButton(callback).value) {
             std::random_device device;
             std::mt19937 gen(device());
-            std::uniform_int_distribution<s16> distribution(-1000, 1000);
+            std::uniform_int_distribution<s16> distribution(-5000, 5000);
             status.accel.x.raw_value = static_cast<f32>(distribution(gen)) * 0.001f;
             status.accel.y.raw_value = static_cast<f32>(distribution(gen)) * 0.001f;
             status.accel.z.raw_value = static_cast<f32>(distribution(gen)) * 0.001f;
@@ -196,6 +196,9 @@ Common::Input::TouchStatus TransformToTouch(const Common::Input::CallbackStatus&
     // clamp value
     x = std::clamp(x, 0.0f, 1.0f);
     y = std::clamp(y, 0.0f, 1.0f);
+
+    // Limit id to maximum number of fingers
+    status.id = std::clamp(status.id, 0, 16);
 
     if (status.pressed.inverted) {
         status.pressed.value = !status.pressed.value;
@@ -328,7 +331,7 @@ void SanitizeStick(Common::Input::AnalogStatus& analog_x, Common::Input::AnalogS
     raw_y += properties_y.offset;
 
     // Apply X scale correction from offset
-    if (std::abs(properties_x.offset) < 0.5f) {
+    if (std::abs(properties_x.offset) < 0.75f) {
         if (raw_x > 0) {
             raw_x /= 1 + properties_x.offset;
         } else {
@@ -337,7 +340,7 @@ void SanitizeStick(Common::Input::AnalogStatus& analog_x, Common::Input::AnalogS
     }
 
     // Apply Y scale correction from offset
-    if (std::abs(properties_y.offset) < 0.5f) {
+    if (std::abs(properties_y.offset) < 0.75f) {
         if (raw_y > 0) {
             raw_y /= 1 + properties_y.offset;
         } else {

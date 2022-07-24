@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -10,7 +9,6 @@
 #include <limits>
 #include <optional>
 #include <type_traits>
-#include <unordered_map>
 #include <vector>
 
 #include "common/assert.h"
@@ -95,7 +93,7 @@ public:
         };
 
         enum class QuerySelect : u32 {
-            Zero = 0,
+            Payload = 0,
             TimeElapsed = 2,
             TransformFeedbackPrimitivesGenerated = 11,
             PrimitivesGenerated = 18,
@@ -204,7 +202,7 @@ public:
                 case Size::Size_11_11_10:
                     return 3;
                 default:
-                    UNREACHABLE();
+                    ASSERT(false);
                     return 1;
                 }
             }
@@ -240,7 +238,7 @@ public:
                 case Size::Size_11_11_10:
                     return 4;
                 default:
-                    UNREACHABLE();
+                    ASSERT(false);
                     return 1;
                 }
             }
@@ -276,7 +274,7 @@ public:
                 case Size::Size_11_11_10:
                     return "11_11_10";
                 default:
-                    UNREACHABLE();
+                    ASSERT(false);
                     return {};
                 }
             }
@@ -298,7 +296,7 @@ public:
                 case Type::Float:
                     return "FLOAT";
                 }
-                UNREACHABLE();
+                ASSERT(false);
                 return {};
             }
 
@@ -338,7 +336,7 @@ public:
                 case 3:
                     return {x3, y3};
                 default:
-                    UNREACHABLE();
+                    ASSERT(false);
                     return {0, 0};
                 }
             }
@@ -360,6 +358,22 @@ public:
             Quads = 0x7,
             QuadStrip = 0x8,
             Polygon = 0x9,
+            LinesAdjacency = 0xa,
+            LineStripAdjacency = 0xb,
+            TrianglesAdjacency = 0xc,
+            TriangleStripAdjacency = 0xd,
+            Patches = 0xe,
+        };
+
+        // Constants as from NVC0_3D_UNK1970_D3D
+        // https://gitlab.freedesktop.org/mesa/mesa/-/blob/main/src/gallium/drivers/nouveau/nvc0/nvc0_3d.xml.h#L1598
+        enum class PrimitiveTopologyOverride : u32 {
+            None = 0x0,
+            Points = 0x1,
+            Lines = 0x2,
+            LineStrip = 0x3,
+            Triangles = 0x4,
+            TriangleStrip = 0x5,
             LinesAdjacency = 0xa,
             LineStripAdjacency = 0xb,
             TrianglesAdjacency = 0xc,
@@ -1179,7 +1193,7 @@ public:
                         case IndexFormat::UnsignedInt:
                             return 4;
                         }
-                        UNREACHABLE();
+                        ASSERT(false);
                         return 1;
                     }
 
@@ -1200,7 +1214,17 @@ public:
                     }
                 } index_array;
 
-                INSERT_PADDING_WORDS_NOINIT(0x7);
+                union {
+                    BitField<0, 16, u32> first;
+                    BitField<16, 16, u32> count;
+                } small_index;
+
+                union {
+                    BitField<0, 16, u32> first;
+                    BitField<16, 16, u32> count;
+                } small_index_2;
+
+                INSERT_PADDING_WORDS_NOINIT(0x5);
 
                 INSERT_PADDING_WORDS_NOINIT(0x1F);
 
@@ -1244,7 +1268,11 @@ public:
                     BitField<11, 1, u32> depth_clamp_disabled;
                 } view_volume_clip_control;
 
-                INSERT_PADDING_WORDS_NOINIT(0x1F);
+                INSERT_PADDING_WORDS_NOINIT(0xC);
+
+                PrimitiveTopologyOverride topology_override;
+
+                INSERT_PADDING_WORDS_NOINIT(0x12);
 
                 u32 depth_bounds_enable;
 
@@ -1520,16 +1548,17 @@ private:
     void ProcessSyncPoint();
 
     /// Handles a write to the CB_DATA[i] register.
-    void StartCBData(u32 method);
     void ProcessCBData(u32 value);
-    void ProcessCBMultiData(u32 method, const u32* start_base, u32 amount);
-    void FinishCBData();
+    void ProcessCBMultiData(const u32* start_base, u32 amount);
 
     /// Handles a write to the CB_BIND register.
     void ProcessCBBind(size_t stage_index);
 
     /// Handles a write to the VERTEX_END_GL register, triggering a draw.
     void DrawArrays();
+
+    /// Handles use of topology overrides (e.g., to avoid using a topology assigned from a macro)
+    void ProcessTopologyOverride();
 
     // Handles a instance drawcall from MME
     void StepInstance(MMEDrawMode expected_mode, u32 count);
@@ -1555,19 +1584,10 @@ private:
     /// Interpreter for the macro codes uploaded to the GPU.
     std::unique_ptr<MacroEngine> macro_engine;
 
-    static constexpr u32 null_cb_data = 0xFFFFFFFF;
-    struct CBDataState {
-        std::array<std::array<u32, 0x4000>, 16> buffer;
-        u32 current{null_cb_data};
-        u32 id{null_cb_data};
-        u32 start_pos{};
-        u32 counter{};
-    };
-    CBDataState cb_data_state;
-
     Upload::State upload_state;
 
     bool execute_on{true};
+    bool use_topology_override{false};
 };
 
 #define ASSERT_REG_POSITION(field_name, position)                                                  \
@@ -1684,6 +1704,7 @@ ASSERT_REG_POSITION(draw, 0x585);
 ASSERT_REG_POSITION(primitive_restart, 0x591);
 ASSERT_REG_POSITION(provoking_vertex_last, 0x5A1);
 ASSERT_REG_POSITION(index_array, 0x5F2);
+ASSERT_REG_POSITION(small_index, 0x5F9);
 ASSERT_REG_POSITION(polygon_offset_clamp, 0x61F);
 ASSERT_REG_POSITION(instanced_arrays, 0x620);
 ASSERT_REG_POSITION(vp_point_size, 0x644);
@@ -1693,6 +1714,7 @@ ASSERT_REG_POSITION(cull_face, 0x648);
 ASSERT_REG_POSITION(pixel_center_integer, 0x649);
 ASSERT_REG_POSITION(viewport_transform_enabled, 0x64B);
 ASSERT_REG_POSITION(view_volume_clip_control, 0x64F);
+ASSERT_REG_POSITION(topology_override, 0x65C);
 ASSERT_REG_POSITION(depth_bounds_enable, 0x66F);
 ASSERT_REG_POSITION(logic_op, 0x671);
 ASSERT_REG_POSITION(clear_buffers, 0x674);

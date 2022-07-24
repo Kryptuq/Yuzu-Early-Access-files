@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1011,13 +1011,38 @@ int SDL_hid_init(void)
         return 0;
     }
 
+#if defined(SDL_USE_LIBUDEV)
+    if (SDL_getenv("SDL_HIDAPI_JOYSTICK_DISABLE_UDEV") != NULL) {
+        SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+                     "udev disabled by SDL_HIDAPI_JOYSTICK_DISABLE_UDEV");
+        linux_enumeration_method = ENUMERATION_FALLBACK;
+    } else if (access("/.flatpak-info", F_OK) == 0
+               || access("/run/host/container-manager", F_OK) == 0) {
+        /* Explicitly check `/.flatpak-info` because, for old versions of
+         * Flatpak, this was the only available way to tell if we were in
+         * a Flatpak container. */
+        SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+                     "Container detected, disabling HIDAPI udev integration");
+        linux_enumeration_method = ENUMERATION_FALLBACK;
+    } else {
+        SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+                     "Using udev for HIDAPI joystick device discovery");
+        linux_enumeration_method = ENUMERATION_LIBUDEV;
+    }
+#endif
+
 #ifdef SDL_LIBUSB_DYNAMIC
     ++attempts;
     libusb_ctx.libhandle = SDL_LoadObject(SDL_LIBUSB_DYNAMIC);
     if (libusb_ctx.libhandle != NULL) {
         SDL_bool loaded = SDL_TRUE;
+        #ifdef __OS2__
+        #define LOAD_LIBUSB_SYMBOL(func) \
+            if (!(libusb_ctx.func = SDL_LoadFunction(libusb_ctx.libhandle,"_libusb_" #func))) {loaded = SDL_FALSE;}
+        #else
         #define LOAD_LIBUSB_SYMBOL(func) \
             if (!(libusb_ctx.func = SDL_LoadFunction(libusb_ctx.libhandle, "libusb_" #func))) {loaded = SDL_FALSE;}
+        #endif
         LOAD_LIBUSB_SYMBOL(init)
         LOAD_LIBUSB_SYMBOL(exit)
         LOAD_LIBUSB_SYMBOL(get_device_list)

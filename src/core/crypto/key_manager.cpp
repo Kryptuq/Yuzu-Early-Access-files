@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <array>
@@ -141,7 +140,6 @@ u64 GetSignatureTypeDataSize(SignatureType type) {
         return 0x3C;
     }
     UNREACHABLE();
-    return 0;
 }
 
 u64 GetSignatureTypePaddingSize(SignatureType type) {
@@ -156,7 +154,6 @@ u64 GetSignatureTypePaddingSize(SignatureType type) {
         return 0x40;
     }
     UNREACHABLE();
-    return 0;
 }
 
 SignatureType Ticket::GetSignatureType() const {

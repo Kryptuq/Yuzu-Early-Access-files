@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <mutex>
 
@@ -42,12 +41,7 @@ void GlobalSchedulerContext::PreemptThreads() {
     ASSERT(IsLocked());
     for (u32 core_id = 0; core_id < Core::Hardware::NUM_CPU_CORES; core_id++) {
         const u32 priority = preemption_priorities[core_id];
-        kernel.Scheduler(core_id).RotateScheduledQueue(core_id, priority);
-
-        // Signal an interrupt occurred. For core 3, this is a certainty, as preemption will result
-        // in the rotator thread being scheduled. For cores 0-2, this is to simulate or system
-        // interrupts that may have occurred.
-        kernel.PhysicalCore(core_id).Interrupt();
+        KScheduler::RotateScheduledQueue(kernel, core_id, priority);
     }
 }
 

@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/logging/log.h"
 #include "common/settings.h"
@@ -158,6 +157,7 @@ IApplicationManagerInterface::IApplicationManagerInterface(Core::System& system_
         {605, nullptr, "ListApplicationContentMetaStatusWithRightsCheck"},
         {606, nullptr, "GetContentMetaStorage"},
         {607, nullptr, "ListAvailableAddOnContent"},
+        {609, nullptr, "ListAvailabilityAssuredAddOnContent"},
         {700, nullptr, "PushDownloadTaskList"},
         {701, nullptr, "ClearTaskStatusList"},
         {702, nullptr, "RequestDownloadTaskList"},
@@ -289,6 +289,11 @@ IApplicationManagerInterface::IApplicationManagerInterface(Core::System& system_
         {2514, nullptr, "ClearTaskOfAsyncTaskManager"},
         {2515, nullptr, "CleanupAllPlaceHolderAndFragmentsIfNoTask"},
         {2516, nullptr, "EnsureApplicationCertificate"},
+        {2517, nullptr, "CreateApplicationInstance"},
+        {2518, nullptr, "UpdateQualificationForDebug"},
+        {2519, nullptr, "IsQualificationTransitionSupported"},
+        {2520, nullptr, "IsQualificationTransitionSupportedByProcessId"},
+        {2521, nullptr, "GetRightsUserChangedEvent"},
         {2800, nullptr, "GetApplicationIdOfPreomia"},
         {3000, nullptr, "RegisterDeviceLockKey"},
         {3001, nullptr, "UnregisterDeviceLockKey"},

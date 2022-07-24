@@ -1,4 +1,4 @@
-/* $OpenBSD: ec2_oct.c,v 1.11 2018/07/15 16:27:39 tb Exp $ */
+/* $OpenBSD: ec2_oct.c,v 1.16 2021/05/03 14:42:45 tb Exp $ */
 /* ====================================================================
  * Copyright 2002 Sun Microsystems, Inc. ALL RIGHTS RESERVED.
  *
@@ -121,6 +121,10 @@ ec_GF2m_simple_set_compressed_coordinates(const EC_GROUP *group, EC_POINT *point
 	if (!BN_GF2m_mod_arr(x, x_, group->poly))
 		goto err;
 	if (BN_is_zero(x)) {
+		if (y_bit != 0) {
+			ECerror(EC_R_INVALID_COMPRESSED_POINT);
+			goto err;
+		}
 		if (!BN_GF2m_mod_sqrt_arr(y, &group->b, group->poly, ctx))
 			goto err;
 	} else {
@@ -152,7 +156,7 @@ ec_GF2m_simple_set_compressed_coordinates(const EC_GROUP *group, EC_POINT *point
 		}
 	}
 
-	if (!EC_POINT_set_affine_coordinates_GF2m(group, point, x, y, ctx))
+	if (!EC_POINT_set_affine_coordinates(group, point, x, y, ctx))
 		goto err;
 
 	ret = 1;
@@ -221,7 +225,7 @@ ec_GF2m_simple_point2oct(const EC_GROUP *group, const EC_POINT *point,
 		if ((yxi = BN_CTX_get(ctx)) == NULL)
 			goto err;
 
-		if (!EC_POINT_get_affine_coordinates_GF2m(group, point, x, y, ctx))
+		if (!EC_POINT_get_affine_coordinates(group, point, x, y, ctx))
 			goto err;
 
 		buf[0] = form;
@@ -280,10 +284,11 @@ ec_GF2m_simple_point2oct(const EC_GROUP *group, const EC_POINT *point,
 }
 
 
-/* Converts an octet string representation to an EC_POINT.
+/*
+ * Converts an octet string representation to an EC_POINT.
  * Note that the simple implementation only uses affine coordinates.
  */
-int 
+int
 ec_GF2m_simple_oct2point(const EC_GROUP *group, EC_POINT *point,
     const unsigned char *buf, size_t len, BN_CTX *ctx)
 {
@@ -298,19 +303,35 @@ ec_GF2m_simple_oct2point(const EC_GROUP *group, EC_POINT *point,
 		ECerror(EC_R_BUFFER_TOO_SMALL);
 		return 0;
 	}
-	form = buf[0];
-	y_bit = form & 1;
-	form = form & ~1U;
-	if ((form != 0) && (form != POINT_CONVERSION_COMPRESSED) &&
-	    (form != POINT_CONVERSION_UNCOMPRESSED) &&
-	    (form != POINT_CONVERSION_HYBRID)) {
+
+	/*
+	 * The first octet is the point conversion octet PC, see X9.62, page 4
+	 * and section 4.4.2.  It must be:
+	 *	0x00		for the point at infinity
+	 *	0x02 or 0x03	for compressed form
+	 *	0x04		for uncompressed form
+	 *	0x06 or 0x07	for hybrid form.
+	 * For compressed or hybrid forms, we store the last bit of buf[0] as
+	 * y_bit and clear it from buf[0] so as to obtain a POINT_CONVERSION_*.
+	 * We error if buf[0] contains any but the above values.
+	 */
+	y_bit = buf[0] & 1;
+	form = buf[0] & ~1U;
+
+	if (form != 0 && form != POINT_CONVERSION_COMPRESSED &&
+	    form != POINT_CONVERSION_UNCOMPRESSED &&
+	    form != POINT_CONVERSION_HYBRID) {
 		ECerror(EC_R_INVALID_ENCODING);
 		return 0;
 	}
-	if ((form == 0 || form == POINT_CONVERSION_UNCOMPRESSED) && y_bit) {
-		ECerror(EC_R_INVALID_ENCODING);
-		return 0;
+	if (form == 0 || form == POINT_CONVERSION_UNCOMPRESSED) {
+		if (y_bit != 0) {
+			ECerror(EC_R_INVALID_ENCODING);
+			return 0;
+		}
 	}
+
+	/* The point at infinity is represented by a single zero octet. */
 	if (form == 0) {
 		if (len != 1) {
 			ECerror(EC_R_INVALID_ENCODING);
@@ -318,6 +339,7 @@ ec_GF2m_simple_oct2point(const EC_GROUP *group, EC_POINT *point,
 		}
 		return EC_POINT_set_to_infinity(group, point);
 	}
+
 	field_len = (EC_GROUP_get_degree(group) + 7) / 8;
 	enc_len = (form == POINT_CONVERSION_COMPRESSED) ? 1 + field_len :
 	    1 + 2 * field_len;
@@ -326,6 +348,7 @@ ec_GF2m_simple_oct2point(const EC_GROUP *group, EC_POINT *point,
 		ECerror(EC_R_INVALID_ENCODING);
 		return 0;
 	}
+
 	if (ctx == NULL) {
 		ctx = new_ctx = BN_CTX_new();
 		if (ctx == NULL)
@@ -346,7 +369,11 @@ ec_GF2m_simple_oct2point(const EC_GROUP *group, EC_POINT *point,
 		goto err;
 	}
 	if (form == POINT_CONVERSION_COMPRESSED) {
-		if (!EC_POINT_set_compressed_coordinates_GF2m(group, point, x, y_bit, ctx))
+		/*
+		 * EC_POINT_set_compressed_coordinates checks that the
+		 * point is on the curve as required by X9.62.
+		 */
+		if (!EC_POINT_set_compressed_coordinates(group, point, x, y_bit, ctx))
 			goto err;
 	} else {
 		if (!BN_bin2bn(buf + 1 + field_len, field_len, y))
@@ -356,22 +383,34 @@ ec_GF2m_simple_oct2point(const EC_GROUP *group, EC_POINT *point,
 			goto err;
 		}
 		if (form == POINT_CONVERSION_HYBRID) {
-			if (!group->meth->field_div(group, yxi, y, x, ctx))
-				goto err;
-			if (y_bit != BN_is_odd(yxi)) {
-				ECerror(EC_R_INVALID_ENCODING);
-				goto err;
+			/*
+			 * Check that the form in the encoding was set
+			 * correctly according to X9.62 4.4.2.a, 4(c),
+			 * see also first paragraph of X9.62 4.4.1.b.
+			 */
+			if (BN_is_zero(x)) {
+				if (y_bit != 0) {
+					ECerror(EC_R_INVALID_ENCODING);
+					goto err;
+				}
+			} else {
+				if (!group->meth->field_div(group, yxi, y, x,
+				    ctx))
+					goto err;
+				if (y_bit != BN_is_odd(yxi)) {
+					ECerror(EC_R_INVALID_ENCODING);
+					goto err;
+				}
 			}
 		}
-		if (!EC_POINT_set_affine_coordinates_GF2m(group, point, x, y, ctx))
+		/*
+		 * EC_POINT_set_affine_coordinates checks that the
+		 * point is on the curve as required by X9.62.
+		 */
+		if (!EC_POINT_set_affine_coordinates(group, point, x, y, ctx))
 			goto err;
 	}
 
-	/* test required by X9.62 */
-	if (EC_POINT_is_on_curve(group, point, ctx) <= 0) {
-		ECerror(EC_R_POINT_IS_NOT_ON_CURVE);
-		goto err;
-	}
 	ret = 1;
 
  err:

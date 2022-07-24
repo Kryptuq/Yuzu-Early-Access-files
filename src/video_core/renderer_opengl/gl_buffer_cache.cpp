@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <span>
@@ -135,6 +134,20 @@ BufferCacheRuntime::BufferCacheRuntime(const Device& device_)
         buffer.Create();
         glNamedBufferData(buffer.handle, 0x10'000, nullptr, GL_STREAM_COPY);
     }
+
+    device_access_memory = [this]() -> u64 {
+        if (device.CanReportMemoryUsage()) {
+            return device.GetCurrentDedicatedVideoMemory() + 512_MiB;
+        }
+        return 2_GiB; // Return minimum requirements
+    }();
+}
+
+u64 BufferCacheRuntime::GetDeviceMemoryUsage() const {
+    if (device.CanReportMemoryUsage()) {
+        return device_access_memory - device.GetCurrentDedicatedVideoMemory();
+    }
+    return 2_GiB;
 }
 
 void BufferCacheRuntime::CopyBuffer(Buffer& dst_buffer, Buffer& src_buffer,

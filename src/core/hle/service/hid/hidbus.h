@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -29,10 +28,9 @@ private:
     static const std::size_t max_number_of_handles = 0x13;
 
     enum class HidBusDeviceId : std::size_t {
-        // Verify starlink external device id
-        Starlink = 0x19,
         RingController = 0x20,
         FamicomRight = 0x21,
+        Starlink = 0x28,
     };
 
     // This is nn::hidbus::detail::StatusManagerType
@@ -73,7 +71,7 @@ private:
     struct HidbusStatusManagerEntry {
         u8 is_connected{};
         INSERT_PADDING_BYTES(0x3);
-        ResultCode is_connected_result{0};
+        Result is_connected_result{0};
         u8 is_enabled{};
         u8 is_in_focus{};
         u8 is_polling_mode{};

@@ -8,10 +8,12 @@
 #include <glad/glad.h>
 #include "common/common_types.h"
 #include "common/math_util.h"
+
 #include "video_core/renderer_base.h"
 #include "video_core/renderer_opengl/gl_device.h"
 #include "video_core/renderer_opengl/gl_rasterizer.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
+#include "video_core/renderer_opengl/gl_shader_manager.h"
 #include "video_core/renderer_opengl/gl_state_tracker.h"
 
 namespace Core {
@@ -44,7 +46,7 @@ struct TextureInfo {
     GLsizei height;
     GLenum gl_format;
     GLenum gl_type;
-    Tegra::FramebufferConfig::PixelFormat pixel_format;
+    Service::android::PixelFormat pixel_format;
 };
 
 /// Structure used for storing information about the display target for the Switch screen
@@ -133,8 +135,10 @@ private:
     std::vector<u8> gl_framebuffer_data;
 
     /// Used for transforming the framebuffer orientation
-    Tegra::FramebufferConfig::TransformFlags framebuffer_transform_flags{};
+    Service::android::BufferTransformFlags framebuffer_transform_flags{};
     Common::Rectangle<int> framebuffer_crop_rect;
+    u32 framebuffer_width;
+    u32 framebuffer_height;
 };
 
 } // namespace OpenGL

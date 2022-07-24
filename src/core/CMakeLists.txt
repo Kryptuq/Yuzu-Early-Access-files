@@ -13,6 +13,8 @@ add_library(core STATIC
     arm/dynarmic/arm_exclusive_monitor.h
     arm/exclusive_monitor.cpp
     arm/exclusive_monitor.h
+    arm/symbols.cpp
+    arm/symbols.h
     constants.cpp
     constants.h
     core.cpp
@@ -34,6 +36,13 @@ add_library(core STATIC
     crypto/ctr_encryption_layer.h
     crypto/xts_encryption_layer.cpp
     crypto/xts_encryption_layer.h
+    debugger/debugger_interface.h
+    debugger/debugger.cpp
+    debugger/debugger.h
+    debugger/gdbstub_arch.cpp
+    debugger/gdbstub_arch.h
+    debugger/gdbstub.cpp
+    debugger/gdbstub.h
     device_memory.cpp
     device_memory.h
     file_sys/bis_factory.cpp
@@ -122,6 +131,8 @@ add_library(core STATIC
     frontend/applets/error.h
     frontend/applets/general_frontend.cpp
     frontend/applets/general_frontend.h
+    frontend/applets/mii_edit.cpp
+    frontend/applets/mii_edit.h
     frontend/applets/profile_select.cpp
     frontend/applets/profile_select.h
     frontend/applets/software_keyboard.cpp
@@ -132,8 +143,6 @@ add_library(core STATIC
     frontend/emu_window.h
     frontend/framebuffer_layout.cpp
     frontend/framebuffer_layout.h
-    hardware_interrupt_manager.cpp
-    hardware_interrupt_manager.h
     hid/emulated_console.cpp
     hid/emulated_console.h
     hid/emulated_controller.cpp
@@ -152,6 +161,7 @@ add_library(core STATIC
     hle/api_version.h
     hle/ipc.h
     hle/ipc_helpers.h
+    hle/kernel/board/nintendo/nx/k_memory_layout.h
     hle/kernel/board/nintendo/nx/k_system_control.cpp
     hle/kernel/board/nintendo/nx/k_system_control.h
     hle/kernel/board/nintendo/nx/secure_monitor.h
@@ -164,6 +174,7 @@ add_library(core STATIC
     hle/kernel/hle_ipc.h
     hle/kernel/init/init_slab_setup.cpp
     hle/kernel/init/init_slab_setup.h
+    hle/kernel/initial_process.h
     hle/kernel/k_address_arbiter.cpp
     hle/kernel/k_address_arbiter.h
     hle/kernel/k_address_space_info.cpp
@@ -205,9 +216,11 @@ add_library(core STATIC
     hle/kernel/k_memory_region.h
     hle/kernel/k_memory_region_type.h
     hle/kernel/k_page_bitmap.h
+    hle/kernel/k_page_buffer.cpp
+    hle/kernel/k_page_buffer.h
     hle/kernel/k_page_heap.cpp
     hle/kernel/k_page_heap.h
-    hle/kernel/k_page_linked_list.h
+    hle/kernel/k_page_group.h
     hle/kernel/k_page_table.cpp
     hle/kernel/k_page_table.h
     hle/kernel/k_port.cpp
@@ -242,11 +255,16 @@ add_library(core STATIC
     hle/kernel/k_system_control.h
     hle/kernel/k_thread.cpp
     hle/kernel/k_thread.h
+    hle/kernel/k_thread_local_page.cpp
+    hle/kernel/k_thread_local_page.h
     hle/kernel/k_thread_queue.cpp
     hle/kernel/k_thread_queue.h
     hle/kernel/k_trace.h
     hle/kernel/k_transfer_memory.cpp
     hle/kernel/k_transfer_memory.h
+    hle/kernel/k_worker_task.h
+    hle/kernel/k_worker_task_manager.cpp
+    hle/kernel/k_worker_task_manager.h
     hle/kernel/k_writable_event.cpp
     hle/kernel/k_writable_event.h
     hle/kernel/kernel.cpp
@@ -295,6 +313,9 @@ add_library(core STATIC
     hle/service/am/applets/applet_error.h
     hle/service/am/applets/applet_general_backend.cpp
     hle/service/am/applets/applet_general_backend.h
+    hle/service/am/applets/applet_mii_edit.cpp
+    hle/service/am/applets/applet_mii_edit.h
+    hle/service/am/applets/applet_mii_edit_types.h
     hle/service/am/applets/applet_profile_select.cpp
     hle/service/am/applets/applet_profile_select.h
     hle/service/am/applets/applet_software_keyboard.cpp
@@ -454,6 +475,10 @@ add_library(core STATIC
     hle/service/hid/hidbus/starlink.h
     hle/service/hid/hidbus/stubbed.cpp
     hle/service/hid/hidbus/stubbed.h
+    hle/service/jit/jit_context.cpp
+    hle/service/jit/jit_context.h
+    hle/service/jit/jit.cpp
+    hle/service/jit/jit.h
     hle/service/lbl/lbl.cpp
     hle/service/lbl/lbl.h
     hle/service/ldn/errors.h
@@ -474,6 +499,8 @@ add_library(core STATIC
     hle/service/mii/types.h
     hle/service/mm/mm_u.cpp
     hle/service/mm/mm_u.h
+    hle/service/mnpp/mnpp_app.cpp
+    hle/service/mnpp/mnpp_app.h
     hle/service/ncm/ncm.cpp
     hle/service/ncm/ncm.h
     hle/service/nfc/nfc.cpp
@@ -499,6 +526,12 @@ add_library(core STATIC
     hle/service/ns/pdm_qry.h
     hle/service/ns/pl_u.cpp
     hle/service/ns/pl_u.h
+    hle/service/nvdrv/core/container.cpp
+    hle/service/nvdrv/core/container.h
+    hle/service/nvdrv/core/nvmap.cpp
+    hle/service/nvdrv/core/nvmap.h
+    hle/service/nvdrv/core/syncpoint_manager.cpp
+    hle/service/nvdrv/core/syncpoint_manager.h
     hle/service/nvdrv/devices/nvdevice.h
     hle/service/nvdrv/devices/nvdisp_disp0.cpp
     hle/service/nvdrv/devices/nvdisp_disp0.h
@@ -527,12 +560,35 @@ add_library(core STATIC
     hle/service/nvdrv/nvdrv_interface.h
     hle/service/nvdrv/nvmemp.cpp
     hle/service/nvdrv/nvmemp.h
-    hle/service/nvdrv/syncpoint_manager.cpp
-    hle/service/nvdrv/syncpoint_manager.h
-    hle/service/nvflinger/buffer_queue.cpp
-    hle/service/nvflinger/buffer_queue.h
+    hle/service/nvflinger/binder.h
+    hle/service/nvflinger/buffer_item.h
+    hle/service/nvflinger/buffer_item_consumer.cpp
+    hle/service/nvflinger/buffer_item_consumer.h
+    hle/service/nvflinger/buffer_queue_consumer.cpp
+    hle/service/nvflinger/buffer_queue_consumer.h
+    hle/service/nvflinger/buffer_queue_core.cpp
+    hle/service/nvflinger/buffer_queue_core.h
+    hle/service/nvflinger/buffer_queue_defs.h
+    hle/service/nvflinger/buffer_queue_producer.cpp
+    hle/service/nvflinger/buffer_queue_producer.h
+    hle/service/nvflinger/buffer_slot.h
+    hle/service/nvflinger/buffer_transform_flags.h
+    hle/service/nvflinger/consumer_base.cpp
+    hle/service/nvflinger/consumer_base.h
+    hle/service/nvflinger/consumer_listener.h
+    hle/service/nvflinger/graphic_buffer_producer.cpp
+    hle/service/nvflinger/graphic_buffer_producer.h
+    hle/service/nvflinger/hos_binder_driver_server.cpp
+    hle/service/nvflinger/hos_binder_driver_server.h
     hle/service/nvflinger/nvflinger.cpp
     hle/service/nvflinger/nvflinger.h
+    hle/service/nvflinger/parcel.h
+    hle/service/nvflinger/pixel_format.h
+    hle/service/nvflinger/producer_listener.h
+    hle/service/nvflinger/status.h
+    hle/service/nvflinger/ui/fence.h
+    hle/service/nvflinger/ui/graphic_buffer.h
+    hle/service/nvflinger/window.h
     hle/service/olsc/olsc.cpp
     hle/service/olsc/olsc.h
     hle/service/pcie/pcie.cpp
@@ -551,6 +607,10 @@ add_library(core STATIC
     hle/service/psc/psc.h
     hle/service/ptm/psm.cpp
     hle/service/ptm/psm.h
+    hle/service/ptm/ptm.cpp
+    hle/service/ptm/ptm.h
+    hle/service/ptm/ts.cpp
+    hle/service/ptm/ts.h
     hle/service/kernel_helpers.cpp
     hle/service/kernel_helpers.h
     hle/service/service.cpp
@@ -689,16 +749,11 @@ if (MSVC)
         /we4244 # 'conversion': conversion from 'type1' to 'type2', possible loss of data
         /we4245 # 'conversion': conversion from 'type1' to 'type2', signed/unsigned mismatch
         /we4254 # 'operator': conversion from 'type1:field_bits' to 'type2:field_bits', possible loss of data
-        /we4456 # Declaration of 'identifier' hides previous local declaration
-        /we4457 # Declaration of 'identifier' hides function parameter
-        /we4458 # Declaration of 'identifier' hides class member
-        /we4459 # Declaration of 'identifier' hides global declaration
     )
 else()
     target_compile_options(core PRIVATE
         -Werror=conversion
         -Werror=ignored-qualifiers
-        -Werror=shadow
 
         $<$<CXX_COMPILER_ID:GNU>:-Werror=class-memaccess>
         $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-parameter>
@@ -714,6 +769,9 @@ create_target_directory_groups(core)
 
 target_link_libraries(core PUBLIC common PRIVATE audio_core video_core)
 target_link_libraries(core PUBLIC Boost::boost PRIVATE fmt::fmt nlohmann_json::nlohmann_json mbedtls Opus::Opus)
+if (MINGW)
+    target_link_libraries(core PRIVATE ${MSWSOCK_LIBRARY})
+endif()
 
 if (ENABLE_WEB_SERVICE)
     target_compile_definitions(core PRIVATE -DENABLE_WEB_SERVICE)

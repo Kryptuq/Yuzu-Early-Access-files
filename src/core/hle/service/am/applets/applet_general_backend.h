@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -26,7 +25,7 @@ public:
 
     void Initialize() override;
     bool TransactionComplete() const override;
-    ResultCode GetStatus() const override;
+    Result GetStatus() const override;
     void ExecuteInteractive() override;
     void Execute() override;
 
@@ -57,7 +56,7 @@ public:
 
     void Initialize() override;
     bool TransactionComplete() const override;
-    ResultCode GetStatus() const override;
+    Result GetStatus() const override;
     void ExecuteInteractive() override;
     void Execute() override;
 
@@ -78,7 +77,7 @@ public:
     void Initialize() override;
 
     bool TransactionComplete() const override;
-    ResultCode GetStatus() const override;
+    Result GetStatus() const override;
     void ExecuteInteractive() override;
     void Execute() override;
 

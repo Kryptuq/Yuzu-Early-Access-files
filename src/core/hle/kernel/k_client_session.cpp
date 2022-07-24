@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/k_client_session.h"
@@ -22,8 +21,8 @@ void KClientSession::Destroy() {
 
 void KClientSession::OnServerClosed() {}
 
-ResultCode KClientSession::SendSyncRequest(KThread* thread, Core::Memory::Memory& memory,
-                                           Core::Timing::CoreTiming& core_timing) {
+Result KClientSession::SendSyncRequest(KThread* thread, Core::Memory::Memory& memory,
+                                       Core::Timing::CoreTiming& core_timing) {
     // Signal the server session that new data is available
     return parent->GetServerSession().HandleSyncRequest(thread, memory, core_timing);
 }

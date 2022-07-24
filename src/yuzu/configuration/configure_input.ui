@@ -166,7 +166,7 @@
          <item>
           <widget class="QRadioButton" name="radioUndocked">
            <property name="text">
-            <string>Undocked</string>
+            <string>Handheld</string>
            </property>
           </widget>
          </item>

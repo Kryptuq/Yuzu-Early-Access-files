@@ -6,14 +6,12 @@
 
 #include <memory>
 #include <optional>
-#include <unordered_map>
 
 #include <QMainWindow>
 #include <QTimer>
 #include <QTranslator>
 
 #include "common/common_types.h"
-#include "core/hle/service/acc/profile_manager.h"
 #include "yuzu/compatibility_list.h"
 #include "yuzu/hotkeys.h"
 
@@ -120,7 +118,7 @@ class GMainWindow : public QMainWindow {
 public:
     void filterBarSetChecked(bool state);
     void UpdateUITheme();
-    explicit GMainWindow();
+    explicit GMainWindow(bool has_broken_vulkan);
     ~GMainWindow() override;
 
     bool DropAction(QDropEvent* event);
@@ -246,6 +244,7 @@ private:
     bool ConfirmChangeGame();
     bool ConfirmForceLockedExit();
     void RequestGameExit();
+    void RequestGameResume();
     void closeEvent(QCloseEvent* event) override;
 
 private slots:
@@ -284,6 +283,9 @@ private slots:
     void OnTasStartStop();
     void OnTasRecord();
     void OnTasReset();
+    void OnToggleDockedMode();
+    void OnToggleGpuAccuracy();
+    void OnToggleAdaptingFilter();
     void OnConfigurePerGame();
     void OnLoadAmiibo();
     void OnOpenYuzuFolder();
@@ -319,6 +321,7 @@ private:
     void MigrateConfigFiles();
     void UpdateWindowTitle(std::string_view title_name = {}, std::string_view title_version = {},
                            std::string_view gpu_vendor = {});
+    void UpdateDockedButton();
     void UpdateFilterText();
     void UpdateAAText();
     void UpdateStatusBar();
@@ -327,6 +330,7 @@ private:
     void UpdateUISettings();
     void HideMouseCursor();
     void ShowMouseCursor();
+    void CenterMouseCursor();
     void OpenURL(const QUrl& url);
     void LoadTranslation();
     void OpenPerGameConfiguration(u64 title_id, const std::string& file_name);
@@ -366,10 +370,12 @@ private:
     bool emulation_running = false;
     std::unique_ptr<EmuThread> emu_thread;
     // The path to the game currently running
-    QString game_path;
+    QString current_game_path;
 
     bool auto_paused = false;
+    bool auto_muted = false;
     QTimer mouse_hide_timer;
+    QTimer mouse_center_timer;
 
     // FS
     std::shared_ptr<FileSys::VfsFilesystem> vfs;
@@ -396,9 +402,6 @@ private:
     // Last game booted, used for multi-process apps
     QString last_filename_booted;
 
-    // Disables the web applet for the rest of the emulated session
-    bool disable_web_applet{};
-
     // Applets
     QtSoftwareKeyboardDialog* software_keyboard = nullptr;
 
@@ -419,4 +422,5 @@ protected:
     void dropEvent(QDropEvent* event) override;
     void dragEnterEvent(QDragEnterEvent* event) override;
     void dragMoveEvent(QDragMoveEvent* event) override;
+    void leaveEvent(QEvent* event) override;
 };

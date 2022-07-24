@@ -5,9 +5,11 @@
 
 #include "dynarmic/common/fp/op/FPToFixed.h"
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/assert.hpp>
+#include <mcl/bit/bit_count.hpp>
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/fp/mantissa_util.h"
@@ -50,7 +52,7 @@ u64 FPToFixed(size_t ibits, FPT op, size_t fbits, bool unsigned_, FPCR fpcr, Rou
     bool round_up = false;
     switch (rounding) {
     case RoundingMode::ToNearest_TieEven:
-        round_up = error > ResidualError::Half || (error == ResidualError::Half && Common::Bit<0>(int_result));
+        round_up = error > ResidualError::Half || (error == ResidualError::Half && mcl::bit::get_bit<0>(int_result));
         break;
     case RoundingMode::TowardsPlusInfinity:
         round_up = error != ResidualError::Zero;
@@ -59,10 +61,10 @@ u64 FPToFixed(size_t ibits, FPT op, size_t fbits, bool unsigned_, FPCR fpcr, Rou
         round_up = false;
         break;
     case RoundingMode::TowardsZero:
-        round_up = error != ResidualError::Zero && Common::MostSignificantBit(int_result);
+        round_up = error != ResidualError::Zero && mcl::bit::most_significant_bit(int_result);
         break;
     case RoundingMode::ToNearest_TieAwayFromZero:
-        round_up = error > ResidualError::Half || (error == ResidualError::Half && !Common::MostSignificantBit(int_result));
+        round_up = error > ResidualError::Half || (error == ResidualError::Half && !mcl::bit::most_significant_bit(int_result));
         break;
     case RoundingMode::ToOdd:
         UNREACHABLE();
@@ -73,12 +75,12 @@ u64 FPToFixed(size_t ibits, FPT op, size_t fbits, bool unsigned_, FPCR fpcr, Rou
     }
 
     // Detect Overflow
-    const int min_exponent_for_overflow = static_cast<int>(ibits) - static_cast<int>(Common::HighestSetBit(value.mantissa + (round_up ? 1 : 0))) - (unsigned_ ? 0 : 1);
+    const int min_exponent_for_overflow = static_cast<int>(ibits) - static_cast<int>(mcl::bit::highest_set_bit(value.mantissa + (round_up ? 1 : 0))) - (unsigned_ ? 0 : 1);
     if (exponent >= min_exponent_for_overflow) {
         // Positive overflow
         if (unsigned_ || !sign) {
             FPProcessException(FPExc::InvalidOp, fpcr, fpsr);
-            return Common::Ones<u64>(ibits - (unsigned_ ? 0 : 1));
+            return mcl::bit::ones<u64>(ibits - (unsigned_ ? 0 : 1));
         }
 
         // Negative overflow
@@ -92,7 +94,7 @@ u64 FPToFixed(size_t ibits, FPT op, size_t fbits, bool unsigned_, FPCR fpcr, Rou
     if (error != ResidualError::Zero) {
         FPProcessException(FPExc::Inexact, fpcr, fpsr);
     }
-    return int_result & Common::Ones<u64>(ibits);
+    return int_result & mcl::bit::ones<u64>(ibits);
 }
 
 template u64 FPToFixed<u16>(size_t ibits, u16 op, size_t fbits, bool unsigned_, FPCR fpcr, RoundingMode rounding, FPSR& fpsr);

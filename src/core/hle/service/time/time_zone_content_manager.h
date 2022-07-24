@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -33,12 +32,12 @@ public:
         return time_zone_manager;
     }
 
-    ResultCode LoadTimeZoneRule(TimeZoneRule& rules, const std::string& location_name) const;
+    Result LoadTimeZoneRule(TimeZoneRule& rules, const std::string& location_name) const;
 
 private:
     bool IsLocationNameValid(const std::string& location_name) const;
-    ResultCode GetTimeZoneInfoFile(const std::string& location_name,
-                                   FileSys::VirtualFile& vfs_file) const;
+    Result GetTimeZoneInfoFile(const std::string& location_name,
+                               FileSys::VirtualFile& vfs_file) const;
 
     Core::System& system;
     TimeZoneManager time_zone_manager;

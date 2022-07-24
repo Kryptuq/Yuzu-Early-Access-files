@@ -1,75 +1,40 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
+#include <atomic>
 #include <map>
 #include <optional>
 #include <vector>
 
 #include "common/common_types.h"
+#include "common/multi_level_page_table.h"
+#include "common/virtual_buffer.h"
 
 namespace VideoCore {
 class RasterizerInterface;
 }
 
 namespace Core {
+class DeviceMemory;
+namespace Memory {
+class Memory;
+} // namespace Memory
 class System;
-}
+} // namespace Core
 
 namespace Tegra {
 
-class PageEntry final {
-public:
-    enum class State : u32 {
-        Unmapped = static_cast<u32>(-1),
-        Allocated = static_cast<u32>(-2),
-    };
-
-    constexpr PageEntry() = default;
-    constexpr PageEntry(State state_) : state{state_} {}
-    constexpr PageEntry(VAddr addr) : state{static_cast<State>(addr >> ShiftBits)} {}
-
-    [[nodiscard]] constexpr bool IsUnmapped() const {
-        return state == State::Unmapped;
-    }
-
-    [[nodiscard]] constexpr bool IsAllocated() const {
-        return state == State::Allocated;
-    }
-
-    [[nodiscard]] constexpr bool IsValid() const {
-        return !IsUnmapped() && !IsAllocated();
-    }
-
-    [[nodiscard]] constexpr VAddr ToAddress() const {
-        if (!IsValid()) {
-            return {};
-        }
-
-        return static_cast<VAddr>(state) << ShiftBits;
-    }
-
-    [[nodiscard]] constexpr PageEntry operator+(u64 offset) const {
-        // If this is a reserved value, offsets do not apply
-        if (!IsValid()) {
-            return *this;
-        }
-        return PageEntry{(static_cast<VAddr>(state) << ShiftBits) + offset};
-    }
-
-private:
-    static constexpr std::size_t ShiftBits{12};
-
-    State state{State::Unmapped};
-};
-static_assert(sizeof(PageEntry) == 4, "PageEntry is too large");
-
 class MemoryManager final {
 public:
-    explicit MemoryManager(Core::System& system_);
+    explicit MemoryManager(Core::System& system_, u64 address_space_bits_ = 40,
+                           u64 big_page_bits_ = 16, u64 page_bits_ = 12);
     ~MemoryManager();
+
+    size_t GetID() const {
+        return unique_identifier;
+    }
 
     /// Binds a renderer to the memory manager.
     void BindRasterizer(VideoCore::RasterizerInterface* rasterizer);
@@ -86,9 +51,6 @@ public:
 
     [[nodiscard]] u8* GetPointer(GPUVAddr addr);
     [[nodiscard]] const u8* GetPointer(GPUVAddr addr) const;
-
-    /// Returns the number of bytes until the end of the memory map containing the given GPU address
-    [[nodiscard]] size_t BytesToMapEnd(GPUVAddr gpu_addr) const noexcept;
 
     /**
      * ReadBlock and WriteBlock are full read and write operations over virtual
@@ -136,54 +98,95 @@ public:
     std::vector<std::pair<GPUVAddr, std::size_t>> GetSubmappedRange(GPUVAddr gpu_addr,
                                                                     std::size_t size) const;
 
-    [[nodiscard]] GPUVAddr Map(VAddr cpu_addr, GPUVAddr gpu_addr, std::size_t size);
-    [[nodiscard]] GPUVAddr MapAllocate(VAddr cpu_addr, std::size_t size, std::size_t align);
-    [[nodiscard]] GPUVAddr MapAllocate32(VAddr cpu_addr, std::size_t size);
-    [[nodiscard]] std::optional<GPUVAddr> AllocateFixed(GPUVAddr gpu_addr, std::size_t size);
-    [[nodiscard]] GPUVAddr Allocate(std::size_t size, std::size_t align);
+    GPUVAddr Map(GPUVAddr gpu_addr, VAddr cpu_addr, std::size_t size, bool is_big_pages = true);
+    GPUVAddr MapSparse(GPUVAddr gpu_addr, std::size_t size, bool is_big_pages = true);
     void Unmap(GPUVAddr gpu_addr, std::size_t size);
-
-private:
-    [[nodiscard]] PageEntry GetPageEntry(GPUVAddr gpu_addr) const;
-    void SetPageEntry(GPUVAddr gpu_addr, PageEntry page_entry, std::size_t size = page_size);
-    GPUVAddr UpdateRange(GPUVAddr gpu_addr, PageEntry page_entry, std::size_t size);
-    [[nodiscard]] std::optional<GPUVAddr> FindFreeRange(std::size_t size, std::size_t align,
-                                                        bool start_32bit_address = false) const;
-
-    void TryLockPage(PageEntry page_entry, std::size_t size);
-    void TryUnlockPage(PageEntry page_entry, std::size_t size);
 
     void FlushRegion(GPUVAddr gpu_addr, size_t size) const;
 
-    void ReadBlockImpl(GPUVAddr gpu_src_addr, void* dest_buffer, std::size_t size,
-                       bool is_safe) const;
-    void WriteBlockImpl(GPUVAddr gpu_dest_addr, const void* src_buffer, std::size_t size,
-                        bool is_safe);
+    void InvalidateRegion(GPUVAddr gpu_addr, size_t size) const;
 
-    [[nodiscard]] static constexpr std::size_t PageEntryIndex(GPUVAddr gpu_addr) {
-        return (gpu_addr >> page_bits) & page_table_mask;
+    bool IsMemoryDirty(GPUVAddr gpu_addr, size_t size) const;
+
+    size_t MaxContinousRange(GPUVAddr gpu_addr, size_t size) const;
+
+    bool IsWithinGPUAddressRange(GPUVAddr gpu_addr) const {
+        return gpu_addr < address_space_size;
     }
 
-    static constexpr u64 address_space_size = 1ULL << 40;
-    static constexpr u64 address_space_start = 1ULL << 32;
-    static constexpr u64 address_space_start_low = 1ULL << 16;
-    static constexpr u64 page_bits{16};
-    static constexpr u64 page_size{1 << page_bits};
-    static constexpr u64 page_mask{page_size - 1};
-    static constexpr u64 page_table_bits{24};
-    static constexpr u64 page_table_size{1 << page_table_bits};
-    static constexpr u64 page_table_mask{page_table_size - 1};
+private:
+    template <bool is_big_pages, typename FuncMapped, typename FuncReserved, typename FuncUnmapped>
+    inline void MemoryOperation(GPUVAddr gpu_src_addr, std::size_t size, FuncMapped&& func_mapped,
+                                FuncReserved&& func_reserved, FuncUnmapped&& func_unmapped) const;
+
+    template <bool is_safe>
+    void ReadBlockImpl(GPUVAddr gpu_src_addr, void* dest_buffer, std::size_t size) const;
+
+    template <bool is_safe>
+    void WriteBlockImpl(GPUVAddr gpu_dest_addr, const void* src_buffer, std::size_t size);
+
+    template <bool is_big_page>
+    [[nodiscard]] inline std::size_t PageEntryIndex(GPUVAddr gpu_addr) const {
+        if constexpr (is_big_page) {
+            return (gpu_addr >> big_page_bits) & big_page_table_mask;
+        } else {
+            return (gpu_addr >> page_bits) & page_table_mask;
+        }
+    }
+
+    inline bool IsBigPageContinous(size_t big_page_index) const;
+    inline void SetBigPageContinous(size_t big_page_index, bool value);
 
     Core::System& system;
+    Core::Memory::Memory& memory;
+    Core::DeviceMemory& device_memory;
+
+    const u64 address_space_bits;
+    const u64 page_bits;
+    u64 address_space_size;
+    u64 page_size;
+    u64 page_mask;
+    u64 page_table_mask;
+    static constexpr u64 cpu_page_bits{12};
+
+    const u64 big_page_bits;
+    u64 big_page_size;
+    u64 big_page_mask;
+    u64 big_page_table_mask;
 
     VideoCore::RasterizerInterface* rasterizer = nullptr;
 
-    std::vector<PageEntry> page_table;
+    enum class EntryType : u64 {
+        Free = 0,
+        Reserved = 1,
+        Mapped = 2,
+    };
 
-    using MapRange = std::pair<GPUVAddr, size_t>;
-    std::vector<MapRange> map_ranges;
+    std::vector<u64> entries;
+    std::vector<u64> big_entries;
 
-    std::vector<std::pair<VAddr, std::size_t>> cache_invalidate_queue;
+    template <EntryType entry_type>
+    GPUVAddr PageTableOp(GPUVAddr gpu_addr, [[maybe_unused]] VAddr cpu_addr, size_t size);
+
+    template <EntryType entry_type>
+    GPUVAddr BigPageTableOp(GPUVAddr gpu_addr, [[maybe_unused]] VAddr cpu_addr, size_t size);
+
+    template <bool is_big_page>
+    inline EntryType GetEntry(size_t position) const;
+
+    template <bool is_big_page>
+    inline void SetEntry(size_t position, EntryType entry);
+
+    Common::MultiLevelPageTable<u32> page_table;
+    Common::VirtualBuffer<u32> big_page_table_cpu;
+
+    std::vector<u64> big_page_continous;
+
+    constexpr static size_t continous_bits = 64;
+
+    const size_t unique_identifier;
+
+    static std::atomic<size_t> unique_identifier_generator;
 };
 
 } // namespace Tegra

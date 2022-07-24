@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -30,7 +29,7 @@ namespace Common {
  */
 class Fiber {
 public:
-    Fiber(std::function<void(void*)>&& entry_point_func, void* start_parameter);
+    Fiber(std::function<void()>&& entry_point_func);
     ~Fiber();
 
     Fiber(const Fiber&) = delete;
@@ -44,15 +43,12 @@ public:
     static void YieldTo(std::weak_ptr<Fiber> weak_from, Fiber& to);
     [[nodiscard]] static std::shared_ptr<Fiber> ThreadToFiber();
 
-    void SetRewindPoint(std::function<void(void*)>&& rewind_func, void* rewind_param);
+    void SetRewindPoint(std::function<void()>&& rewind_func);
 
     void Rewind();
 
     /// Only call from main thread's fiber
     void Exit();
-
-    /// Changes the start parameter of the fiber. Has no effect if the fiber already started
-    void SetStartParameter(void* new_parameter);
 
 private:
     Fiber();

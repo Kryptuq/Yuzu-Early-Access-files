@@ -10,10 +10,10 @@
 #include <mutex>
 
 #include <QImage>
+#include <QStringList>
 #include <QThread>
 #include <QTouchEvent>
 #include <QWidget>
-#include <QWindow>
 
 #include "common/thread.h"
 #include "core/frontend/emu_window.h"
@@ -21,7 +21,6 @@
 class GRenderWindow;
 class GMainWindow;
 class QKeyEvent;
-class QStringList;
 
 namespace Core {
 enum class SystemResultStatus : u32;
@@ -56,22 +55,13 @@ public:
     void run() override;
 
     /**
-     * Steps the emulation thread by a single CPU instruction (if the CPU is not already running)
-     * @note This function is thread-safe
-     */
-    void ExecStep() {
-        exec_step = true;
-        running_cv.notify_all();
-    }
-
-    /**
      * Sets whether the emulation thread is running or not
-     * @param running Boolean value, set the emulation thread to running if true
+     * @param running_ Boolean value, set the emulation thread to running if true
      * @note This function is thread-safe
      */
-    void SetRunning(bool running) {
+    void SetRunning(bool running_) {
         std::unique_lock lock{running_mutex};
-        this->running = running;
+        running = running_;
         lock.unlock();
         running_cv.notify_all();
         if (!running) {
@@ -100,7 +90,6 @@ public:
     }
 
 private:
-    bool exec_step = false;
     bool running = false;
     std::stop_source stop_source;
     std::mutex running_mutex;
@@ -149,8 +138,8 @@ public:
 
     void BackupGeometry();
     void RestoreGeometry();
-    void restoreGeometry(const QByteArray& geometry); // overridden
-    QByteArray saveGeometry();                        // overridden
+    void restoreGeometry(const QByteArray& geometry_); // overridden
+    QByteArray saveGeometry();                         // overridden
 
     qreal windowPixelRatio() const;
 
@@ -200,7 +189,7 @@ public:
     void Exit();
 
 public slots:
-    void OnEmulationStarting(EmuThread* emu_thread);
+    void OnEmulationStarting(EmuThread* emu_thread_);
     void OnEmulationStopping();
     void OnFramebufferSizeChanged();
 
@@ -217,10 +206,6 @@ private:
     void TouchBeginEvent(const QTouchEvent* event);
     void TouchUpdateEvent(const QTouchEvent* event);
     void TouchEndEvent();
-
-    void TouchStart(const QTouchEvent::TouchPoint& touch_point);
-    bool TouchUpdate(const QTouchEvent::TouchPoint& touch_point);
-    bool TouchExist(std::size_t id, const QList<QTouchEvent::TouchPoint>& touch_points) const;
 
     void OnMinimalClientAreaChangeRequest(std::pair<u32, u32> minimal_size) override;
 
@@ -246,8 +231,6 @@ private:
 
     bool first_frame = false;
     InputCommon::TasInput::TasState last_tas_state;
-
-    std::array<std::size_t, 16> touch_ids{};
 
     Core::System& system;
 

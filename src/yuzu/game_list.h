@@ -5,16 +5,11 @@
 #pragma once
 
 #include <QFileSystemWatcher>
-#include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QList>
-#include <QModelIndex>
-#include <QSettings>
-#include <QStandardItem>
 #include <QStandardItemModel>
 #include <QString>
-#include <QToolButton>
 #include <QTreeView>
 #include <QVBoxLayout>
 #include <QVector>
@@ -72,8 +67,8 @@ public:
         COLUMN_COUNT, // Number of columns
     };
 
-    explicit GameList(std::shared_ptr<FileSys::VfsFilesystem> vfs,
-                      FileSys::ManualContentProvider* provider, Core::System& system_,
+    explicit GameList(std::shared_ptr<FileSys::VfsFilesystem> vfs_,
+                      FileSys::ManualContentProvider* provider_, Core::System& system_,
                       GMainWindow* parent = nullptr);
     ~GameList() override;
 
@@ -171,6 +166,9 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent* event) override;
 
 private:
+    void changeEvent(QEvent* event) override;
+    void RetranslateUI();
+
     QVBoxLayout* layout = nullptr;
     QLabel* image = nullptr;
     QLabel* text = nullptr;

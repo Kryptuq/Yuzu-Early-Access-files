@@ -1,12 +1,12 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <array>
 #include <optional>
 
+#include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/swap.h"
 #include "common/uuid.h"
@@ -22,7 +22,7 @@ using UserIDArray = std::array<Common::UUID, MAX_USERS>;
 
 /// Contains extra data related to a user.
 /// TODO: RE this structure
-struct ProfileData {
+struct UserData {
     INSERT_PADDING_WORDS_NOINIT(1);
     u32 icon_id;
     u8 bg_color_id;
@@ -30,15 +30,15 @@ struct ProfileData {
     INSERT_PADDING_BYTES_NOINIT(0x10);
     INSERT_PADDING_BYTES_NOINIT(0x60);
 };
-static_assert(sizeof(ProfileData) == 0x80, "ProfileData structure has incorrect size");
+static_assert(sizeof(UserData) == 0x80, "UserData structure has incorrect size");
 
 /// This holds general information about a users profile. This is where we store all the information
 /// based on a specific user
 struct ProfileInfo {
-    Common::UUID user_uuid{Common::INVALID_UUID};
+    Common::UUID user_uuid{};
     ProfileUsername username{};
     u64 creation_time{};
-    ProfileData data{}; // TODO(ognik): Work out what this is
+    UserData data{}; // TODO(ognik): Work out what this is
     bool is_open{};
 };
 
@@ -49,7 +49,7 @@ struct ProfileBase {
 
     // Zero out all the fields to make the profile slot considered "Empty"
     void Invalidate() {
-        user_uuid.Invalidate();
+        user_uuid = {};
         timestamp = 0;
         username.fill(0);
     }
@@ -64,9 +64,9 @@ public:
     ProfileManager();
     ~ProfileManager();
 
-    ResultCode AddUser(const ProfileInfo& user);
-    ResultCode CreateNewUser(Common::UUID uuid, const ProfileUsername& username);
-    ResultCode CreateNewUser(Common::UUID uuid, const std::string& username);
+    Result AddUser(const ProfileInfo& user);
+    Result CreateNewUser(Common::UUID uuid, const ProfileUsername& username);
+    Result CreateNewUser(Common::UUID uuid, const std::string& username);
     std::optional<Common::UUID> GetUser(std::size_t index) const;
     std::optional<std::size_t> GetUserIndex(const Common::UUID& uuid) const;
     std::optional<std::size_t> GetUserIndex(const ProfileInfo& user) const;
@@ -74,10 +74,9 @@ public:
     bool GetProfileBase(Common::UUID uuid, ProfileBase& profile) const;
     bool GetProfileBase(const ProfileInfo& user, ProfileBase& profile) const;
     bool GetProfileBaseAndData(std::optional<std::size_t> index, ProfileBase& profile,
-                               ProfileData& data) const;
-    bool GetProfileBaseAndData(Common::UUID uuid, ProfileBase& profile, ProfileData& data) const;
-    bool GetProfileBaseAndData(const ProfileInfo& user, ProfileBase& profile,
-                               ProfileData& data) const;
+                               UserData& data) const;
+    bool GetProfileBaseAndData(Common::UUID uuid, ProfileBase& profile, UserData& data) const;
+    bool GetProfileBaseAndData(const ProfileInfo& user, ProfileBase& profile, UserData& data) const;
     std::size_t GetUserCount() const;
     std::size_t GetOpenUserCount() const;
     bool UserExists(Common::UUID uuid) const;
@@ -93,7 +92,7 @@ public:
     bool RemoveUser(Common::UUID uuid);
     bool SetProfileBase(Common::UUID uuid, const ProfileBase& profile_new);
     bool SetProfileBaseAndData(Common::UUID uuid, const ProfileBase& profile_new,
-                               const ProfileData& data_new);
+                               const UserData& data_new);
 
 private:
     void ParseUserSaveFile();
@@ -103,7 +102,7 @@ private:
 
     std::array<ProfileInfo, MAX_USERS> profiles{};
     std::size_t user_count{};
-    Common::UUID last_opened_user{Common::INVALID_UUID};
+    Common::UUID last_opened_user{};
 };
 
 }; // namespace Service::Account

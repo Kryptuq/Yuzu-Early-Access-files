@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <cstring>
 #include "common/common_types.h"
@@ -13,7 +12,12 @@
 namespace Service::HID {
 constexpr std::size_t SHARED_MEMORY_OFFSET = 0x3400;
 
-Controller_Mouse::Controller_Mouse(Core::HID::HIDCore& hid_core_) : ControllerBase{hid_core_} {
+Controller_Mouse::Controller_Mouse(Core::HID::HIDCore& hid_core_, u8* raw_shared_memory_)
+    : ControllerBase{hid_core_} {
+    static_assert(SHARED_MEMORY_OFFSET + sizeof(MouseSharedMemory) < shared_memory_size,
+                  "MouseSharedMemory is bigger than the shared memory");
+    shared_memory = std::construct_at(
+        reinterpret_cast<MouseSharedMemory*>(raw_shared_memory_ + SHARED_MEMORY_OFFSET));
     emulated_devices = hid_core.GetEmulatedDevices();
 }
 
@@ -22,16 +26,14 @@ Controller_Mouse::~Controller_Mouse() = default;
 void Controller_Mouse::OnInit() {}
 void Controller_Mouse::OnRelease() {}
 
-void Controller_Mouse::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* data,
-                                std::size_t size) {
+void Controller_Mouse::OnUpdate(const Core::Timing::CoreTiming& core_timing) {
     if (!IsControllerActivated()) {
-        mouse_lifo.buffer_count = 0;
-        mouse_lifo.buffer_tail = 0;
-        std::memcpy(data + SHARED_MEMORY_OFFSET, &mouse_lifo, sizeof(mouse_lifo));
+        shared_memory->mouse_lifo.buffer_count = 0;
+        shared_memory->mouse_lifo.buffer_tail = 0;
         return;
     }
 
-    const auto& last_entry = mouse_lifo.ReadCurrentEntry().state;
+    const auto& last_entry = shared_memory->mouse_lifo.ReadCurrentEntry().state;
     next_state.sampling_number = last_entry.sampling_number + 1;
 
     next_state.attribute.raw = 0;
@@ -51,8 +53,7 @@ void Controller_Mouse::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8*
         next_state.button = mouse_button_state;
     }
 
-    mouse_lifo.WriteNextEntry(next_state);
-    std::memcpy(data + SHARED_MEMORY_OFFSET, &mouse_lifo, sizeof(mouse_lifo));
+    shared_memory->mouse_lifo.WriteNextEntry(next_state);
 }
 
 } // namespace Service::HID

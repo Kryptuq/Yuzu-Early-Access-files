@@ -1,6 +1,6 @@
-// Copyright 2013 Dolphin Emulator Project / 2014 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2013 Dolphin Emulator Project
+// SPDX-FileCopyrightText: 2014 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -17,7 +17,7 @@ namespace Common {
 class Event {
 public:
     void Set() {
-        std::lock_guard lk{mutex};
+        std::scoped_lock lk{mutex};
         if (!is_set) {
             is_set = true;
             condvar.notify_one();
@@ -92,6 +92,7 @@ enum class ThreadPriority : u32 {
     Normal = 1,
     High = 2,
     VeryHigh = 3,
+    Critical = 4,
 };
 
 void SetCurrentThreadPriority(ThreadPriority new_priority);

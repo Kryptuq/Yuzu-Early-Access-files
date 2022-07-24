@@ -11,15 +11,19 @@
 #include <utility>
 #include <vector>
 
+#include <mcl/stdint.hpp>
 #include <xbyak/xbyak.h>
 
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/hostloc.h"
 #include "dynarmic/backend/x64/oparg.h"
-#include "dynarmic/common/common_types.h"
 #include "dynarmic/ir/cond.h"
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/value.h"
+
+namespace Dynarmic::IR {
+enum class AccType;
+}  // namespace Dynarmic::IR
 
 namespace Dynarmic::Backend::X64 {
 
@@ -75,6 +79,7 @@ public:
     u64 GetImmediateS32() const;
     u64 GetImmediateU64() const;
     IR::Cond GetImmediateCond() const;
+    IR::AccType GetImmediateAccType() const;
 
     /// Is this value currently in a GPR?
     bool IsInGpr() const;

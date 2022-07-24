@@ -4,18 +4,19 @@
  */
 #pragma once
 
-#include "dynarmic/common/common_types.h"
+#include <cstdint>
+#include <optional>
 
 namespace Dynarmic::A32 {
 
-using VAddr = u32;
+using VAddr = std::uint32_t;
 
 class IREmitter;
 
 struct TranslateCallbacks {
     // All reads through this callback are 4-byte aligned.
     // Memory must be interpreted as little endian.
-    virtual std::uint32_t MemoryReadCode(VAddr vaddr) = 0;
+    virtual std::optional<std::uint32_t> MemoryReadCode(VAddr vaddr) = 0;
 
     // Thus function is called before the instruction at pc is interpreted.
     // IR code can be emitted by the callee prior to translation of the instruction.

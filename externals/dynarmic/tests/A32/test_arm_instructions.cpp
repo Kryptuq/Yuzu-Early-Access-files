@@ -559,3 +559,25 @@ TEST_CASE("arm: Memory access (fastmem)", "[arm][A32]") {
     jit.Run();
     REQUIRE(strncmp(backing_memory + 0x100, backing_memory + 0x1F0, 4) == 0);
 }
+
+TEST_CASE("arm: vmsr, vcmp, vmrs", "[arm][A32]") {
+    ArmTestEnv test_env;
+    A32::Jit jit{GetUserConfig(&test_env)};
+    test_env.code_mem = {
+        0xeee10a10,  // vmsr fpscr, r0
+        0xeeb48a4a,  // vcmp.f32 s16, s20
+        0xeef1fa10,  // vmrs apsr_nzcv, fpscr
+        0xe12fff1e,  // bx lr
+    };
+
+    jit.ExtRegs()[16] = 0xFF7FFFFF;
+    jit.ExtRegs()[20] = 0xFF7FFFFF;
+
+    jit.Regs()[0] = 0x60000000;
+
+    jit.SetFpscr(0x3ee22ac0);
+    jit.SetCpsr(0x60000000);  // User-mode
+
+    test_env.ticks_left = 4;
+    jit.Run();
+}

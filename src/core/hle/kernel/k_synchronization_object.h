@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -25,9 +24,9 @@ public:
         KThread* thread{};
     };
 
-    [[nodiscard]] static ResultCode Wait(KernelCore& kernel, s32* out_index,
-                                         KSynchronizationObject** objects, const s32 num_objects,
-                                         s64 timeout);
+    [[nodiscard]] static Result Wait(KernelCore& kernel, s32* out_index,
+                                     KSynchronizationObject** objects, const s32 num_objects,
+                                     s64 timeout);
 
     void Finalize() override;
 
@@ -73,7 +72,7 @@ protected:
 
     virtual void OnFinalizeSynchronizationObject() {}
 
-    void NotifyAvailable(ResultCode result);
+    void NotifyAvailable(Result result);
     void NotifyAvailable() {
         return this->NotifyAvailable(ResultSuccess);
     }

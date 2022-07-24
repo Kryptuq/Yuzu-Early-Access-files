@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -30,6 +29,7 @@ constexpr std::array<FormatTuple, VideoCore::Surface::MaxPixelFormat> FORMAT_TAB
     {GL_RGB10_A2, GL_RGBA, GL_UNSIGNED_INT_2_10_10_10_REV},           // A2B10G10R10_UNORM
     {GL_RGB10_A2UI, GL_RGBA_INTEGER, GL_UNSIGNED_INT_2_10_10_10_REV}, // A2B10G10R10_UINT
     {GL_RGB5_A1, GL_RGBA, GL_UNSIGNED_SHORT_1_5_5_5_REV},             // A1B5G5R5_UNORM
+    {GL_RGB5_A1, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1},                 // A5B5G5R1_UNORM
     {GL_R8, GL_RED, GL_UNSIGNED_BYTE},                                // R8_UNORM
     {GL_R8_SNORM, GL_RED, GL_BYTE},                                   // R8_SNORM
     {GL_R8I, GL_RED_INTEGER, GL_BYTE},                                // R8_SINT
@@ -87,6 +87,7 @@ constexpr std::array<FormatTuple, VideoCore::Surface::MaxPixelFormat> FORMAT_TAB
     {GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT},                         // BC3_SRGB
     {GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM},                            // BC7_SRGB
     {GL_RGBA4, GL_RGBA, GL_UNSIGNED_SHORT_4_4_4_4_REV},               // A4B4G4R4_UNORM
+    {GL_R8, GL_RED, GL_UNSIGNED_BYTE},                                // G4R4_UNORM
     {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR},                        // ASTC_2D_4X4_SRGB
     {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x8_KHR},                        // ASTC_2D_8X8_SRGB
     {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x5_KHR},                        // ASTC_2D_8X5_SRGB
@@ -97,6 +98,7 @@ constexpr std::array<FormatTuple, VideoCore::Surface::MaxPixelFormat> FORMAT_TAB
     {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x8_KHR},                       // ASTC_2D_10X8_SRGB
     {GL_COMPRESSED_RGBA_ASTC_6x6_KHR},                                // ASTC_2D_6X6_UNORM
     {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x6_KHR},                        // ASTC_2D_6X6_SRGB
+    {GL_COMPRESSED_RGBA_ASTC_10x6_KHR},                               // ASTC_2D_10X6_UNORM
     {GL_COMPRESSED_RGBA_ASTC_10x10_KHR},                              // ASTC_2D_10X10_UNORM
     {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x10_KHR},                      // ASTC_2D_10X10_SRGB
     {GL_COMPRESSED_RGBA_ASTC_12x12_KHR},                              // ASTC_2D_12X12_UNORM
@@ -184,6 +186,8 @@ inline GLenum VertexFormat(Maxwell::VertexAttribute attrib) {
         case Maxwell::VertexAttribute::Size::Size_32_32_32:
         case Maxwell::VertexAttribute::Size::Size_32_32_32_32:
             return GL_FLOAT;
+        case Maxwell::VertexAttribute::Size::Size_11_11_10:
+            return GL_UNSIGNED_INT_10F_11F_11F_REV;
         default:
             break;
         }
@@ -203,7 +207,7 @@ inline GLenum IndexFormat(Maxwell::IndexFormat index_format) {
     case Maxwell::IndexFormat::UnsignedInt:
         return GL_UNSIGNED_INT;
     }
-    UNREACHABLE_MSG("Invalid index_format={}", index_format);
+    ASSERT_MSG(false, "Invalid index_format={}", index_format);
     return {};
 }
 
@@ -240,7 +244,7 @@ inline GLenum PrimitiveTopology(Maxwell::PrimitiveTopology topology) {
     case Maxwell::PrimitiveTopology::Patches:
         return GL_PATCHES;
     }
-    UNREACHABLE_MSG("Invalid topology={}", topology);
+    ASSERT_MSG(false, "Invalid topology={}", topology);
     return GL_POINTS;
 }
 
@@ -268,8 +272,8 @@ inline GLenum TextureFilterMode(Tegra::Texture::TextureFilter filter_mode,
         }
         break;
     }
-    UNREACHABLE_MSG("Invalid texture filter mode={} and mipmap filter mode={}", filter_mode,
-                    mipmap_filter_mode);
+    ASSERT_MSG(false, "Invalid texture filter mode={} and mipmap filter mode={}", filter_mode,
+               mipmap_filter_mode);
     return GL_NEAREST;
 }
 
@@ -547,7 +551,7 @@ inline GLenum PolygonMode(Maxwell::PolygonMode polygon_mode) {
     case Maxwell::PolygonMode::Fill:
         return GL_FILL;
     }
-    UNREACHABLE_MSG("Invalid polygon mode={}", polygon_mode);
+    ASSERT_MSG(false, "Invalid polygon mode={}", polygon_mode);
     return GL_FILL;
 }
 
@@ -560,7 +564,7 @@ inline GLenum ReductionFilter(Tegra::Texture::SamplerReduction filter) {
     case Tegra::Texture::SamplerReduction::Max:
         return GL_MAX;
     }
-    UNREACHABLE_MSG("Invalid reduction filter={}", static_cast<int>(filter));
+    ASSERT_MSG(false, "Invalid reduction filter={}", static_cast<int>(filter));
     return GL_WEIGHTED_AVERAGE_ARB;
 }
 

@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -59,10 +58,10 @@ public:
     explicit FileSystemController(Core::System& system_);
     ~FileSystemController();
 
-    ResultCode RegisterRomFS(std::unique_ptr<FileSys::RomFSFactory>&& factory);
-    ResultCode RegisterSaveData(std::unique_ptr<FileSys::SaveDataFactory>&& factory);
-    ResultCode RegisterSDMC(std::unique_ptr<FileSys::SDMCFactory>&& factory);
-    ResultCode RegisterBIS(std::unique_ptr<FileSys::BISFactory>&& factory);
+    Result RegisterRomFS(std::unique_ptr<FileSys::RomFSFactory>&& factory);
+    Result RegisterSaveData(std::unique_ptr<FileSys::SaveDataFactory>&& factory);
+    Result RegisterSDMC(std::unique_ptr<FileSys::SDMCFactory>&& factory);
+    Result RegisterBIS(std::unique_ptr<FileSys::BISFactory>&& factory);
 
     void SetPackedUpdate(FileSys::VirtualFile update_raw);
     ResultVal<FileSys::VirtualFile> OpenRomFSCurrentProcess() const;
@@ -142,7 +141,7 @@ private:
 
 void InstallInterfaces(Core::System& system);
 
-// A class that wraps a VfsDirectory with methods that return ResultVal and ResultCode instead of
+// A class that wraps a VfsDirectory with methods that return ResultVal and Result instead of
 // pointers and booleans. This makes using a VfsDirectory with switch services much easier and
 // avoids repetitive code.
 class VfsDirectoryServiceWrapper {
@@ -161,35 +160,35 @@ public:
      * @param size The size of the new file, filled with zeroes
      * @return Result of the operation
      */
-    ResultCode CreateFile(const std::string& path, u64 size) const;
+    Result CreateFile(const std::string& path, u64 size) const;
 
     /**
      * Delete a file specified by its path
      * @param path Path relative to the archive
      * @return Result of the operation
      */
-    ResultCode DeleteFile(const std::string& path) const;
+    Result DeleteFile(const std::string& path) const;
 
     /**
      * Create a directory specified by its path
      * @param path Path relative to the archive
      * @return Result of the operation
      */
-    ResultCode CreateDirectory(const std::string& path) const;
+    Result CreateDirectory(const std::string& path) const;
 
     /**
      * Delete a directory specified by its path
      * @param path Path relative to the archive
      * @return Result of the operation
      */
-    ResultCode DeleteDirectory(const std::string& path) const;
+    Result DeleteDirectory(const std::string& path) const;
 
     /**
      * Delete a directory specified by its path and anything under it
      * @param path Path relative to the archive
      * @return Result of the operation
      */
-    ResultCode DeleteDirectoryRecursively(const std::string& path) const;
+    Result DeleteDirectoryRecursively(const std::string& path) const;
 
     /**
      * Cleans the specified directory. This is similar to DeleteDirectoryRecursively,
@@ -201,7 +200,7 @@ public:
      *
      * @return Result of the operation.
      */
-    ResultCode CleanDirectoryRecursively(const std::string& path) const;
+    Result CleanDirectoryRecursively(const std::string& path) const;
 
     /**
      * Rename a File specified by its path
@@ -209,7 +208,7 @@ public:
      * @param dest_path Destination path relative to the archive
      * @return Result of the operation
      */
-    ResultCode RenameFile(const std::string& src_path, const std::string& dest_path) const;
+    Result RenameFile(const std::string& src_path, const std::string& dest_path) const;
 
     /**
      * Rename a Directory specified by its path
@@ -217,7 +216,7 @@ public:
      * @param dest_path Destination path relative to the archive
      * @return Result of the operation
      */
-    ResultCode RenameDirectory(const std::string& src_path, const std::string& dest_path) const;
+    Result RenameDirectory(const std::string& src_path, const std::string& dest_path) const;
 
     /**
      * Open a file specified by its path, using the specified mode

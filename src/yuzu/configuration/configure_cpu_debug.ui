@@ -144,7 +144,34 @@
            </string>
           </property>
           <property name="text">
-           <string>Enable Host MMU Emulation</string>
+           <string>Enable Host MMU Emulation (general memory instructions)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_fastmem_exclusives">
+          <property name="toolTip">
+           <string>
+            &lt;div style=&quot;white-space: nowrap&quot;&gt;This optimization speeds up exclusive memory accesses by the guest program.&lt;/div&gt;
+            &lt;div style=&quot;white-space: nowrap&quot;&gt;Enabling it causes guest exclusive memory reads/writes to be done directly into memory and make use of Host's MMU.&lt;/div&gt;
+            &lt;div style=&quot;white-space: nowrap&quot;&gt;Disabling this forces all exclusive memory accesses to use Software MMU Emulation.&lt;/div&gt;
+           </string>
+          </property>
+          <property name="text">
+           <string>Enable Host MMU Emulation (exclusive memory instructions)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_recompile_exclusives">
+          <property name="toolTip">
+           <string>
+            &lt;div style=&quot;white-space: nowrap&quot;&gt;This optimization speeds up exclusive memory accesses by the guest program.&lt;/div&gt;
+            &lt;div style=&quot;white-space: nowrap&quot;&gt;Enabling it reduces the overhead of fastmem failure of exclusive memory accesses.&lt;/div&gt;
+           </string>
+          </property>
+          <property name="text">
+           <string>Enable recompilation of exclusive memory instructions</string>
           </property>
          </widget>
         </item>

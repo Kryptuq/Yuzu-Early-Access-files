@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -14,7 +13,6 @@
 #include "common/common_types.h"
 #include "shader_recompiler/shader_info.h"
 #include "video_core/engines/maxwell_3d.h"
-#include "video_core/memory_manager.h"
 #include "video_core/renderer_opengl/gl_buffer_cache.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/renderer_opengl/gl_texture_cache.h"
@@ -73,10 +71,9 @@ static_assert(std::is_trivially_constructible_v<GraphicsPipelineKey>);
 class GraphicsPipeline {
 public:
     explicit GraphicsPipeline(const Device& device, TextureCache& texture_cache_,
-                              BufferCache& buffer_cache_, Tegra::MemoryManager& gpu_memory_,
-                              Tegra::Engines::Maxwell3D& maxwell3d_,
-                              ProgramManager& program_manager_, StateTracker& state_tracker_,
-                              ShaderWorker* thread_worker, VideoCore::ShaderNotify* shader_notify,
+                              BufferCache& buffer_cache_, ProgramManager& program_manager_,
+                              StateTracker& state_tracker_, ShaderWorker* thread_worker,
+                              VideoCore::ShaderNotify* shader_notify,
                               std::array<std::string, 5> sources,
                               std::array<std::vector<u32>, 5> sources_spirv,
                               const std::array<const Shader::Info*, 5>& infos,
@@ -100,15 +97,18 @@ public:
         return writes_global_memory;
     }
 
-    [[nodiscard]] bool IsBuilt() const noexcept {
-        return is_built.load(std::memory_order::relaxed);
-    }
+    [[nodiscard]] bool IsBuilt() noexcept;
 
     template <typename Spec>
     static auto MakeConfigureSpecFunc() {
         return [](GraphicsPipeline* pipeline, bool is_indexed) {
             pipeline->ConfigureImpl<Spec>(is_indexed);
         };
+    }
+
+    void SetEngine(Tegra::Engines::Maxwell3D* maxwell3d_, Tegra::MemoryManager* gpu_memory_) {
+        maxwell3d = maxwell3d_;
+        gpu_memory = gpu_memory_;
     }
 
 private:
@@ -123,8 +123,8 @@ private:
 
     TextureCache& texture_cache;
     BufferCache& buffer_cache;
-    Tegra::MemoryManager& gpu_memory;
-    Tegra::Engines::Maxwell3D& maxwell3d;
+    Tegra::MemoryManager* gpu_memory;
+    Tegra::Engines::Maxwell3D* maxwell3d;
     ProgramManager& program_manager;
     StateTracker& state_tracker;
     const GraphicsPipelineKey key;
@@ -154,7 +154,8 @@ private:
 
     std::mutex built_mutex;
     std::condition_variable built_condvar;
-    std::atomic_bool is_built{false};
+    OGLSync built_fence{};
+    bool is_built{false};
 };
 
 } // namespace OpenGL

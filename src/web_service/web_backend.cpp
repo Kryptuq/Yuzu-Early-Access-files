@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include <array>
-#include <cstdlib>
 #include <mutex>
 #include <string>
 
@@ -31,10 +30,10 @@ constexpr std::array<const char, 1> API_VERSION{'1'};
 constexpr std::size_t TIMEOUT_SECONDS = 30;
 
 struct Client::Impl {
-    Impl(std::string host, std::string username, std::string token)
-        : host{std::move(host)}, username{std::move(username)}, token{std::move(token)} {
-        std::lock_guard lock{jwt_cache.mutex};
-        if (this->username == jwt_cache.username && this->token == jwt_cache.token) {
+    Impl(std::string host_, std::string username_, std::string token_)
+        : host{std::move(host_)}, username{std::move(username_)}, token{std::move(token_)} {
+        std::scoped_lock lock{jwt_cache.mutex};
+        if (username == jwt_cache.username && token == jwt_cache.token) {
             jwt = jwt_cache.jwt;
         }
     }
@@ -70,8 +69,8 @@ struct Client::Impl {
      */
     WebResult GenericRequest(const std::string& method, const std::string& path,
                              const std::string& data, const std::string& accept,
-                             const std::string& jwt = "", const std::string& username = "",
-                             const std::string& token = "") {
+                             const std::string& jwt_ = "", const std::string& username_ = "",
+                             const std::string& token_ = "") {
         if (cli == nullptr) {
             cli = std::make_unique<httplib::Client>(host.c_str());
         }
@@ -86,14 +85,14 @@ struct Client::Impl {
         cli->set_write_timeout(TIMEOUT_SECONDS);
 
         httplib::Headers params;
-        if (!jwt.empty()) {
+        if (!jwt_.empty()) {
             params = {
-                {std::string("Authorization"), fmt::format("Bearer {}", jwt)},
+                {std::string("Authorization"), fmt::format("Bearer {}", jwt_)},
             };
-        } else if (!username.empty()) {
+        } else if (!username_.empty()) {
             params = {
-                {std::string("x-username"), username},
-                {std::string("x-token"), token},
+                {std::string("x-username"), username_},
+                {std::string("x-token"), token_},
             };
         }
 
@@ -148,7 +147,7 @@ struct Client::Impl {
         if (result.result_code != WebResult::Code::Success) {
             LOG_ERROR(WebService, "UpdateJWT failed");
         } else {
-            std::lock_guard lock{jwt_cache.mutex};
+            std::scoped_lock lock{jwt_cache.mutex};
             jwt_cache.username = username;
             jwt_cache.token = token;
             jwt_cache.jwt = jwt = result.returned_data;

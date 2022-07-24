@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 
@@ -115,7 +114,7 @@ void ServerVoiceInfo::UpdateParameters(const VoiceInfo::InParams& voice_in,
         in_params.current_playstate = ServerPlayState::Play;
         break;
     default:
-        UNREACHABLE_MSG("Unknown playstate {}", voice_in.play_state);
+        ASSERT_MSG(false, "Unknown playstate {}", voice_in.play_state);
         break;
     }
 
@@ -411,7 +410,7 @@ bool ServerVoiceInfo::UpdateParametersForCommandGeneration(
         return in_params.should_depop;
     }
     default:
-        UNREACHABLE_MSG("Invalid playstate {}", in_params.current_playstate);
+        ASSERT_MSG(false, "Invalid playstate {}", in_params.current_playstate);
     }
 
     return false;

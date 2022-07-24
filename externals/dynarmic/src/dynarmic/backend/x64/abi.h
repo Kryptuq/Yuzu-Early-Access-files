@@ -6,8 +6,9 @@
 
 #include <array>
 
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/backend/x64/hostloc.h"
-#include "dynarmic/common/common_types.h"
 
 namespace Dynarmic::Backend::X64 {
 

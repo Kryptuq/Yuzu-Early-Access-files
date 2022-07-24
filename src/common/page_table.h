@@ -1,11 +1,9 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <atomic>
-#include <tuple>
 
 #include "common/common_types.h"
 #include "common/virtual_buffer.h"
@@ -17,6 +15,9 @@ enum class PageType : u8 {
     Unmapped,
     /// Page is mapped to regular memory. This is the only type you can get pointers to.
     Memory,
+    /// Page is mapped to regular memory, but inaccessible from CPU fastmem and must use
+    /// the callbacks.
+    DebugMemory,
     /// Page is mapped to regular memory, but also needs to check for rasterizer cache flushing and
     /// invalidation
     RasterizerCachedMemory,
@@ -27,6 +28,16 @@ enum class PageType : u8 {
  * mimics the way a real CPU page table works.
  */
 struct PageTable {
+    struct TraversalEntry {
+        u64 phys_addr{};
+        std::size_t block_size{};
+    };
+
+    struct TraversalContext {
+        u64 next_page{};
+        u64 next_offset{};
+    };
+
     /// Number of bits reserved for attribute tagging.
     /// This can be at most the guaranteed alignment of the pointers in the page table.
     static constexpr int ATTRIBUTE_BITS = 2;
@@ -89,6 +100,10 @@ struct PageTable {
     PageTable(PageTable&&) noexcept = default;
     PageTable& operator=(PageTable&&) noexcept = default;
 
+    bool BeginTraversal(TraversalEntry& out_entry, TraversalContext& out_context,
+                        u64 address) const;
+    bool ContinueTraversal(TraversalEntry& out_entry, TraversalContext& context) const;
+
     /**
      * Resizes the page table to be able to accommodate enough pages within
      * a given address space.
@@ -96,9 +111,9 @@ struct PageTable {
      * @param address_space_width_in_bits The address size width in bits.
      * @param page_size_in_bits           The page size in bits.
      */
-    void Resize(size_t address_space_width_in_bits, size_t page_size_in_bits);
+    void Resize(std::size_t address_space_width_in_bits, std::size_t page_size_in_bits);
 
-    size_t GetAddressSpaceBits() const {
+    std::size_t GetAddressSpaceBits() const {
         return current_address_space_width_in_bits;
     }
 
@@ -110,9 +125,11 @@ struct PageTable {
 
     VirtualBuffer<u64> backing_addr;
 
-    size_t current_address_space_width_in_bits;
+    std::size_t current_address_space_width_in_bits{};
 
-    u8* fastmem_arena;
+    u8* fastmem_arena{};
+
+    std::size_t page_size{};
 };
 
 } // namespace Common

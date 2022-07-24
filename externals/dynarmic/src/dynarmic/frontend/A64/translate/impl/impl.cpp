@@ -5,7 +5,10 @@
 
 #include "dynarmic/frontend/A64/translate/impl/impl.h"
 
-#include "dynarmic/common/bit_util.h"
+#include <mcl/bit/bit_count.hpp>
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/bit/rotate.hpp>
+
 #include "dynarmic/ir/terminal.h"
 
 namespace Dynarmic::A64 {
@@ -39,12 +42,12 @@ bool TranslatorVisitor::RaiseException(Exception exception) {
 }
 
 std::optional<TranslatorVisitor::BitMasks> TranslatorVisitor::DecodeBitMasks(bool immN, Imm<6> imms, Imm<6> immr, bool immediate) {
-    const int len = Common::HighestSetBit((immN ? 1 << 6 : 0) | (imms.ZeroExtend() ^ 0b111111));
+    const int len = mcl::bit::highest_set_bit((immN ? 1 << 6 : 0) | (imms.ZeroExtend() ^ 0b111111));
     if (len < 1) {
         return std::nullopt;
     }
 
-    const size_t levels = Common::Ones<size_t>(len);
+    const size_t levels = mcl::bit::ones<size_t>(len);
     if (immediate && (imms.ZeroExtend() & levels) == levels) {
         return std::nullopt;
     }
@@ -54,10 +57,10 @@ std::optional<TranslatorVisitor::BitMasks> TranslatorVisitor::DecodeBitMasks(boo
     const u64 d = u64(S - R) & levels;
 
     const size_t esize = size_t{1} << len;
-    const u64 welem = Common::Ones<u64>(S + 1);
-    const u64 telem = Common::Ones<u64>(d + 1);
-    const u64 wmask = Common::RotateRight(Common::Replicate(welem, esize), R);
-    const u64 tmask = Common::Replicate(telem, esize);
+    const u64 welem = mcl::bit::ones<u64>(S + 1);
+    const u64 telem = mcl::bit::ones<u64>(d + 1);
+    const u64 wmask = mcl::bit::rotate_right(mcl::bit::replicate_element<u64>(esize, welem), R);
+    const u64 tmask = mcl::bit::replicate_element<u64>(esize, telem);
 
     return BitMasks{wmask, tmask};
 }
@@ -217,74 +220,74 @@ void TranslatorVisitor::Vpart_scalar(size_t bitsize, Vec vec, size_t part, IR::U
     }
 }
 
-IR::UAnyU128 TranslatorVisitor::Mem(IR::U64 address, size_t bytesize, IR::AccType /*acc_type*/) {
+IR::UAnyU128 TranslatorVisitor::Mem(IR::U64 address, size_t bytesize, IR::AccType acc_type) {
     switch (bytesize) {
     case 1:
-        return ir.ReadMemory8(address);
+        return ir.ReadMemory8(address, acc_type);
     case 2:
-        return ir.ReadMemory16(address);
+        return ir.ReadMemory16(address, acc_type);
     case 4:
-        return ir.ReadMemory32(address);
+        return ir.ReadMemory32(address, acc_type);
     case 8:
-        return ir.ReadMemory64(address);
+        return ir.ReadMemory64(address, acc_type);
     case 16:
-        return ir.ReadMemory128(address);
+        return ir.ReadMemory128(address, acc_type);
     default:
         ASSERT_FALSE("Invalid bytesize parameter {}", bytesize);
     }
 }
 
-void TranslatorVisitor::Mem(IR::U64 address, size_t bytesize, IR::AccType /*acc_type*/, IR::UAnyU128 value) {
+void TranslatorVisitor::Mem(IR::U64 address, size_t bytesize, IR::AccType acc_type, IR::UAnyU128 value) {
     switch (bytesize) {
     case 1:
-        ir.WriteMemory8(address, value);
+        ir.WriteMemory8(address, value, acc_type);
         return;
     case 2:
-        ir.WriteMemory16(address, value);
+        ir.WriteMemory16(address, value, acc_type);
         return;
     case 4:
-        ir.WriteMemory32(address, value);
+        ir.WriteMemory32(address, value, acc_type);
         return;
     case 8:
-        ir.WriteMemory64(address, value);
+        ir.WriteMemory64(address, value, acc_type);
         return;
     case 16:
-        ir.WriteMemory128(address, value);
+        ir.WriteMemory128(address, value, acc_type);
         return;
     default:
         ASSERT_FALSE("Invalid bytesize parameter {}", bytesize);
     }
 }
 
-IR::UAnyU128 TranslatorVisitor::ExclusiveMem(IR::U64 address, size_t bytesize, IR::AccType /*acctype*/) {
+IR::UAnyU128 TranslatorVisitor::ExclusiveMem(IR::U64 address, size_t bytesize, IR::AccType acc_type) {
     switch (bytesize) {
     case 1:
-        return ir.ExclusiveReadMemory8(address);
+        return ir.ExclusiveReadMemory8(address, acc_type);
     case 2:
-        return ir.ExclusiveReadMemory16(address);
+        return ir.ExclusiveReadMemory16(address, acc_type);
     case 4:
-        return ir.ExclusiveReadMemory32(address);
+        return ir.ExclusiveReadMemory32(address, acc_type);
     case 8:
-        return ir.ExclusiveReadMemory64(address);
+        return ir.ExclusiveReadMemory64(address, acc_type);
     case 16:
-        return ir.ExclusiveReadMemory128(address);
+        return ir.ExclusiveReadMemory128(address, acc_type);
     default:
         ASSERT_FALSE("Invalid bytesize parameter {}", bytesize);
     }
 }
 
-IR::U32 TranslatorVisitor::ExclusiveMem(IR::U64 address, size_t bytesize, IR::AccType /*acctype*/, IR::UAnyU128 value) {
+IR::U32 TranslatorVisitor::ExclusiveMem(IR::U64 address, size_t bytesize, IR::AccType acc_type, IR::UAnyU128 value) {
     switch (bytesize) {
     case 1:
-        return ir.ExclusiveWriteMemory8(address, value);
+        return ir.ExclusiveWriteMemory8(address, value, acc_type);
     case 2:
-        return ir.ExclusiveWriteMemory16(address, value);
+        return ir.ExclusiveWriteMemory16(address, value, acc_type);
     case 4:
-        return ir.ExclusiveWriteMemory32(address, value);
+        return ir.ExclusiveWriteMemory32(address, value, acc_type);
     case 8:
-        return ir.ExclusiveWriteMemory64(address, value);
+        return ir.ExclusiveWriteMemory64(address, value, acc_type);
     case 16:
-        return ir.ExclusiveWriteMemory128(address, value);
+        return ir.ExclusiveWriteMemory128(address, value, acc_type);
     default:
         ASSERT_FALSE("Invalid bytesize parameter {}", bytesize);
     }

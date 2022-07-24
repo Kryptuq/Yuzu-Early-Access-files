@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -179,8 +178,12 @@ public:
 
     /// Get a pointer to the block of a phi argument.
     [[nodiscard]] Block* PhiBlock(size_t index) const;
+
     /// Add phi operand to a phi instruction.
     void AddPhiOperand(Block* predecessor, const Value& value);
+
+    // Erase the phi operand at the given index.
+    void ErasePhiOperand(size_t index);
 
     /// Orders the Phi arguments from farthest away to nearest.
     void OrderPhiArgs();

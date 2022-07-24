@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/logging/log.h"
 #include "core/core.h"
@@ -14,10 +13,10 @@ namespace Service::PCTL {
 
 namespace Error {
 
-constexpr ResultCode ResultNoFreeCommunication{ErrorModule::PCTL, 101};
-constexpr ResultCode ResultStereoVisionRestricted{ErrorModule::PCTL, 104};
-constexpr ResultCode ResultNoCapability{ErrorModule::PCTL, 131};
-constexpr ResultCode ResultNoRestrictionEnabled{ErrorModule::PCTL, 181};
+constexpr Result ResultNoFreeCommunication{ErrorModule::PCTL, 101};
+constexpr Result ResultStereoVisionRestricted{ErrorModule::PCTL, 104};
+constexpr Result ResultNoCapability{ErrorModule::PCTL, 131};
+constexpr Result ResultNoRestrictionEnabled{ErrorModule::PCTL, 181};
 
 } // namespace Error
 

@@ -6,7 +6,6 @@
 #include <QKeyEvent>
 #include <QMessageBox>
 #include <QMouseEvent>
-#include <QResizeEvent>
 #include <QStandardItemModel>
 #include <QTimer>
 #include "common/param_package.h"
@@ -69,10 +68,10 @@ static QString ButtonToText(const Common::ParamPackage& param) {
 }
 
 ConfigureTouchFromButton::ConfigureTouchFromButton(
-    QWidget* parent, const std::vector<Settings::TouchFromButtonMap>& touch_maps,
+    QWidget* parent, const std::vector<Settings::TouchFromButtonMap>& touch_maps_,
     InputCommon::InputSubsystem* input_subsystem_, const int default_index)
     : QDialog(parent), ui(std::make_unique<Ui::ConfigureTouchFromButton>()),
-      touch_maps(touch_maps), input_subsystem{input_subsystem_}, selected_index(default_index),
+      touch_maps{touch_maps_}, input_subsystem{input_subsystem_}, selected_index{default_index},
       timeout_timer(std::make_unique<QTimer>()), poll_timer(std::make_unique<QTimer>()) {
     ui->setupUi(this);
     binding_list_model = new QStandardItemModel(0, 3, this);
@@ -227,6 +226,9 @@ void ConfigureTouchFromButton::RenameMapping() {
 }
 
 void ConfigureTouchFromButton::GetButtonInput(const int row_index, const bool is_new) {
+    if (timeout_timer->isActive()) {
+        return;
+    }
     binding_list_model->item(row_index, 0)->setText(tr("[press key]"));
 
     input_setter = [this, row_index, is_new](const Common::ParamPackage& params,

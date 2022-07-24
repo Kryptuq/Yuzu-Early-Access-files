@@ -8,8 +8,9 @@
 #include <array>
 #include <type_traits>
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/assert.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/ir/type.h"
 
 namespace Dynarmic::A32 {
@@ -25,6 +26,7 @@ enum class Vec;
 namespace Dynarmic::IR {
 
 class Inst;
+enum class AccType;
 enum class Cond;
 
 /**
@@ -49,6 +51,7 @@ public:
     explicit Value(u64 value);
     explicit Value(CoprocessorInfo value);
     explicit Value(Cond value);
+    explicit Value(AccType value);
 
     bool IsIdentity() const;
     bool IsEmpty() const;
@@ -68,6 +71,7 @@ public:
     u64 GetU64() const;
     CoprocessorInfo GetCoprocInfo() const;
     Cond GetCond() const;
+    AccType GetAccType() const;
 
     /**
      * Retrieves the immediate of a Value instance as a signed 64-bit value.
@@ -140,6 +144,7 @@ private:
         u64 imm_u64;
         CoprocessorInfo imm_coproc;
         Cond imm_cond;
+        AccType imm_acctype;
     } inner;
 };
 static_assert(sizeof(Value) <= 2 * sizeof(u64), "IR::Value should be kept small in size");

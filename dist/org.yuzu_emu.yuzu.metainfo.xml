@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.yuzu_emu.yuzu</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <name>yuzu</name>
+  <summary>Nintendo Switch emulator</summary>
+  <description>
+    <p>yuzu is the world's most popular, open-source, Nintendo Switch emulator — started by the creators of Citra.</p>
+    <p>The emulator is capable of running most commercial games at full speed, provided you meet the necessary hardware requirements.</p>
+    <p>For a full list of games yuzu support, please visit our Compatibility page.</p>
+    <p>Check out our website for the latest news on exciting features, monthly progress reports, and more!</p>
+  </description>
+  <categories>
+    <category>Game</category>
+    <category>Emulator</category>
+  </categories>
+  <keywords>
+    <keyword>switch</keyword>
+    <keyword>emulator</keyword>
+  </keywords>
+  <url type="homepage">https://yuzu-emu.org/</url>
+  <url type="bugtracker">https://github.com/yuzu-emu/yuzu/issues</url>
+  <url type="faq">https://yuzu-emu.org/wiki/faq/</url>
+  <url type="help">https://yuzu-emu.org/wiki/home/</url>
+  <url type="donation">https://yuzu-emu.org/donate/</url>
+  <url type="translate">https://www.transifex.com/projects/p/yuzu</url>
+  <url type="contact">https://community.citra-emu.org/</url>
+  <url type="vcs-browser">https://github.com/yuzu-emu/yuzu</url>
+  <url type="contribute">https://yuzu-emu.org/wiki/contributing/</url>
+  <launchable type="desktop-id">org.yuzu_emu.yuzu.desktop</launchable>
+  <provides>
+    <binary>yuzu</binary>
+    <binary>yuzu-cmd</binary>
+  </provides>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+    <control>gamepad</control>
+  </supports>
+  <requires>
+    <memory>8192</memory>
+  </requires>
+  <recommends>
+    <memory>16384</memory>
+  </recommends>
+  <project_license>GPL-3.0-or-later</project_license>
+  <developer_name>yuzu Emulator Team</developer_name>
+  <content_rating type="oars-1.0"/>
+  <screenshots>
+    <screenshot type="default">https://raw.githubusercontent.com/yuzu-emu/yuzu-emu.github.io/master/images/screenshots/001-Super%20Mario%20Odyssey%20.png</screenshot>
+    <screenshot>https://raw.githubusercontent.com/yuzu-emu/yuzu-emu.github.io/master/images/screenshots/004-The%20Legend%20of%20Zelda%20Skyward%20Sword%20HD.png</screenshot>
+    <screenshot>https://raw.githubusercontent.com/yuzu-emu/yuzu-emu.github.io/master/images/screenshots/007-Pokemon%20Sword.png</screenshot>
+    <screenshot>https://raw.githubusercontent.com/yuzu-emu/yuzu-emu.github.io/master/images/screenshots/010-Hyrule%20Warriors%20Age%20of%20Calamity.png</screenshot>
+    <screenshot>https://raw.githubusercontent.com/yuzu-emu/yuzu-emu.github.io/master/images/screenshots/039-Pok%C3%A9mon%20Mystery%20Dungeon%20Rescue%20Team%20DX.png.png.png</screenshot>
+  </screenshots>
+</component>

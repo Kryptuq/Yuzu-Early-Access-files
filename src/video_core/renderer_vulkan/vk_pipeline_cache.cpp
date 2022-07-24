@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <cstddef>
@@ -16,13 +15,11 @@
 #include "common/microprofile.h"
 #include "common/thread_worker.h"
 #include "core/core.h"
-#include "core/memory.h"
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
 #include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/maxwell/control_flow.h"
 #include "shader_recompiler/frontend/maxwell/translate_program.h"
 #include "shader_recompiler/program_header.h"
-#include "video_core/dirty_flags.h"
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/memory_manager.h"
@@ -177,7 +174,7 @@ Shader::RuntimeInfo MakeRuntimeInfo(std::span<const Shader::IR::Program> program
             case Maxwell::TessellationPrimitive::Quads:
                 return Shader::TessPrimitive::Quads;
             }
-            UNREACHABLE();
+            ASSERT(false);
             return Shader::TessPrimitive::Triangles;
         }();
         info.tess_spacing = [&] {
@@ -190,7 +187,7 @@ Shader::RuntimeInfo MakeRuntimeInfo(std::span<const Shader::IR::Program> program
             case Maxwell::TessellationSpacing::FractionalEven:
                 return Shader::TessSpacing::FractionalEven;
             }
-            UNREACHABLE();
+            ASSERT(false);
             return Shader::TessSpacing::Equal;
         }();
         break;
@@ -262,17 +259,15 @@ bool GraphicsPipelineCacheKey::operator==(const GraphicsPipelineCacheKey& rhs) c
     return std::memcmp(&rhs, this, Size()) == 0;
 }
 
-PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::Engines::Maxwell3D& maxwell3d_,
-                             Tegra::Engines::KeplerCompute& kepler_compute_,
-                             Tegra::MemoryManager& gpu_memory_, const Device& device_,
-                             VKScheduler& scheduler_, DescriptorPool& descriptor_pool_,
-                             VKUpdateDescriptorQueue& update_descriptor_queue_,
+PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, const Device& device_,
+                             Scheduler& scheduler_, DescriptorPool& descriptor_pool_,
+                             UpdateDescriptorQueue& update_descriptor_queue_,
                              RenderPassCache& render_pass_cache_, BufferCache& buffer_cache_,
                              TextureCache& texture_cache_, VideoCore::ShaderNotify& shader_notify_)
-    : VideoCommon::ShaderCache{rasterizer_, gpu_memory_, maxwell3d_, kepler_compute_},
-      device{device_}, scheduler{scheduler_}, descriptor_pool{descriptor_pool_},
-      update_descriptor_queue{update_descriptor_queue_}, render_pass_cache{render_pass_cache_},
-      buffer_cache{buffer_cache_}, texture_cache{texture_cache_}, shader_notify{shader_notify_},
+    : VideoCommon::ShaderCache{rasterizer_}, device{device_}, scheduler{scheduler_},
+      descriptor_pool{descriptor_pool_}, update_descriptor_queue{update_descriptor_queue_},
+      render_pass_cache{render_pass_cache_}, buffer_cache{buffer_cache_},
+      texture_cache{texture_cache_}, shader_notify{shader_notify_},
       use_asynchronous_shaders{Settings::values.use_asynchronous_shaders.GetValue()},
       workers(std::max(std::thread::hardware_concurrency(), 2U) - 1, "yuzu:PipelineBuilder"),
       serialization_thread(1, "yuzu:PipelineSerialization") {
@@ -340,7 +335,7 @@ GraphicsPipeline* PipelineCache::CurrentGraphicsPipeline() {
         current_pipeline = nullptr;
         return nullptr;
     }
-    graphics_key.state.Refresh(maxwell3d, device.IsExtExtendedDynamicStateSupported(),
+    graphics_key.state.Refresh(*maxwell3d, device.IsExtExtendedDynamicStateSupported(),
                                device.IsExtVertexInputDynamicStateSupported());
 
     if (current_pipeline) {
@@ -360,7 +355,7 @@ ComputePipeline* PipelineCache::CurrentComputePipeline() {
     if (!shader) {
         return nullptr;
     }
-    const auto& qmd{kepler_compute.launch_description};
+    const auto& qmd{kepler_compute->launch_description};
     const ComputePipelineCacheKey key{
         .unique_hash = shader->unique_hash,
         .shared_memory_size = qmd.shared_alloc,
@@ -406,7 +401,7 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
         workers.QueueWork([this, key, env = std::move(env), &state, &callback]() mutable {
             ShaderPools pools;
             auto pipeline{CreateComputePipeline(pools, key, env, state.statistics.get(), false)};
-            std::lock_guard lock{state.mutex};
+            std::scoped_lock lock{state.mutex};
             if (pipeline) {
                 compute_cache.emplace(key, std::move(pipeline));
             }
@@ -436,7 +431,7 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
             auto pipeline{CreateGraphicsPipeline(pools, key, MakeSpan(env_ptrs),
                                                  state.statistics.get(), false)};
 
-            std::lock_guard lock{state.mutex};
+            std::scoped_lock lock{state.mutex};
             graphics_cache.emplace(key, std::move(pipeline));
             ++state.built;
             if (state.has_loaded) {
@@ -487,13 +482,13 @@ GraphicsPipeline* PipelineCache::BuiltPipeline(GraphicsPipeline* pipeline) const
     }
     // If something is using depth, we can assume that games are not rendering anything which
     // will be used one time.
-    if (maxwell3d.regs.zeta_enable) {
+    if (maxwell3d->regs.zeta_enable) {
         return nullptr;
     }
     // If games are using a small index count, we can assume these are full screen quads.
     // Usually these shaders are only used once for building textures so we can assume they
     // can't be built async
-    if (maxwell3d.regs.index_array.count <= 6 || maxwell3d.regs.vertex_buffer.count <= 6) {
+    if (maxwell3d->regs.index_array.count <= 6 || maxwell3d->regs.vertex_buffer.count <= 6) {
         return pipeline;
     }
     return nullptr;
@@ -558,10 +553,10 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
         previous_stage = &program;
     }
     Common::ThreadWorker* const thread_worker{build_in_parallel ? &workers : nullptr};
-    return std::make_unique<GraphicsPipeline>(
-        maxwell3d, gpu_memory, scheduler, buffer_cache, texture_cache, &shader_notify, device,
-        descriptor_pool, update_descriptor_queue, thread_worker, statistics, render_pass_cache, key,
-        std::move(modules), infos);
+    return std::make_unique<GraphicsPipeline>(scheduler, buffer_cache, texture_cache,
+                                              &shader_notify, device, descriptor_pool,
+                                              update_descriptor_queue, thread_worker, statistics,
+                                              render_pass_cache, key, std::move(modules), infos);
 
 } catch (const Shader::Exception& exception) {
     LOG_ERROR(Render_Vulkan, "{}", exception.what());
@@ -593,9 +588,9 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline() {
 
 std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
     const ComputePipelineCacheKey& key, const ShaderInfo* shader) {
-    const GPUVAddr program_base{kepler_compute.regs.code_loc.Address()};
-    const auto& qmd{kepler_compute.launch_description};
-    ComputeEnvironment env{kepler_compute, gpu_memory, program_base, qmd.program_start};
+    const GPUVAddr program_base{kepler_compute->regs.code_loc.Address()};
+    const auto& qmd{kepler_compute->launch_description};
+    ComputeEnvironment env{*kepler_compute, *gpu_memory, program_base, qmd.program_start};
     env.SetCachedSize(shader->size_bytes);
 
     main_pools.ReleaseContents();

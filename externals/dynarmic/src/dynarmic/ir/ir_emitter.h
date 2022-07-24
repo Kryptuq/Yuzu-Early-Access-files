@@ -5,7 +5,9 @@
 
 #pragma once
 
-#include "dynarmic/common/common_types.h"
+#include <mcl/stdint.hpp>
+
+#include "dynarmic/ir/acc_type.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/location_descriptor.h"
 #include "dynarmic/ir/terminal.h"
@@ -54,24 +56,6 @@ struct ResultAndGE {
 struct UpperAndLower {
     U128 upper;
     U128 lower;
-};
-
-enum class AccType {
-    NORMAL,
-    VEC,
-    STREAM,
-    VECSTREAM,
-    ATOMIC,
-    ORDERED,
-    ORDEREDRW,
-    LIMITEDORDERED,
-    UNPRIV,
-    IFETCH,
-    PTW,
-    DC,
-    IC,
-    DCZVA,
-    AT,
 };
 
 enum class MemOp {
@@ -235,6 +219,10 @@ public:
     U128 AESMixColumns(const U128& a);
 
     U8 SM4AccessSubstitutionBox(const U8& a);
+
+    U128 SHA256Hash(const U128& x, const U128& y, const U128& w, bool part1);
+    U128 SHA256MessageSchedule0(const U128& x, const U128& y);
+    U128 SHA256MessageSchedule1(const U128& x, const U128& y, const U128& z);
 
     UAny VectorGetElement(size_t esize, const U128& a, size_t index);
     U128 VectorSetElement(size_t esize, const U128& a, size_t index, const UAny& elem);

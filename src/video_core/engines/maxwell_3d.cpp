@@ -1,12 +1,12 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <cstring>
 #include <optional>
 #include "common/assert.h"
 #include "core/core.h"
 #include "core/core_timing.h"
+#include "video_core/dirty_flags.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/gpu.h"
 #include "video_core/memory_manager.h"
@@ -31,6 +31,7 @@ Maxwell3D::~Maxwell3D() = default;
 
 void Maxwell3D::BindRasterizer(VideoCore::RasterizerInterface* rasterizer_) {
     rasterizer = rasterizer_;
+    upload_state.BindRasterizer(rasterizer_);
 }
 
 void Maxwell3D::InitializeRegisterDefaults() {
@@ -172,6 +173,8 @@ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argume
     case MAXWELL3D_REG_INDEX(shadow_ram_control):
         shadow_state.shadow_ram_control = static_cast<Regs::ShadowRamControl>(nonshadow_argument);
         return;
+    case MAXWELL3D_REG_INDEX(macros.upload_address):
+        return macro_engine->ClearCode(regs.macros.upload_address);
     case MAXWELL3D_REG_INDEX(macros.data):
         return macro_engine->AddCode(regs.macros.upload_address, argument);
     case MAXWELL3D_REG_INDEX(macros.bind):
@@ -194,7 +197,7 @@ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argume
     case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 13:
     case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 14:
     case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 15:
-        return StartCBData(method);
+        return ProcessCBData(argument);
     case MAXWELL3D_REG_INDEX(cb_bind[0]):
         return ProcessCBBind(0);
     case MAXWELL3D_REG_INDEX(cb_bind[1]):
@@ -207,6 +210,21 @@ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argume
         return ProcessCBBind(4);
     case MAXWELL3D_REG_INDEX(draw.vertex_end_gl):
         return DrawArrays();
+    case MAXWELL3D_REG_INDEX(small_index):
+        regs.index_array.count = regs.small_index.count;
+        regs.index_array.first = regs.small_index.first;
+        dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
+        return DrawArrays();
+    case MAXWELL3D_REG_INDEX(small_index_2):
+        regs.index_array.count = regs.small_index_2.count;
+        regs.index_array.first = regs.small_index_2.first;
+        dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
+        // a macro calls this one over and over, should it increase instancing?
+        // Used by Hades and likely other Vulkan games.
+        return DrawArrays();
+    case MAXWELL3D_REG_INDEX(topology_override):
+        use_topology_override = true;
+        return;
     case MAXWELL3D_REG_INDEX(clear_buffers):
         return ProcessClearBuffers();
     case MAXWELL3D_REG_INDEX(query.query_get):
@@ -221,11 +239,12 @@ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argume
         return upload_state.ProcessExec(regs.exec_upload.linear != 0);
     case MAXWELL3D_REG_INDEX(data_upload):
         upload_state.ProcessData(argument, is_last_call);
-        if (is_last_call) {
-        }
         return;
     case MAXWELL3D_REG_INDEX(fragment_barrier):
         return rasterizer->FragmentBarrier();
+    case MAXWELL3D_REG_INDEX(invalidate_texture_data_cache):
+        rasterizer->InvalidateGPUCache();
+        return rasterizer->WaitForIdle();
     case MAXWELL3D_REG_INDEX(tiled_cache_barrier):
         return rasterizer->TiledCacheBarrier();
     }
@@ -240,21 +259,13 @@ void Maxwell3D::CallMacroMethod(u32 method, const std::vector<u32>& parameters) 
         ((method - MacroRegistersStart) >> 1) % static_cast<u32>(macro_positions.size());
 
     // Execute the current macro.
-    macro_engine->Execute(*this, macro_positions[entry], parameters);
+    macro_engine->Execute(macro_positions[entry], parameters);
     if (mme_draw.current_mode != MMEDrawMode::Undefined) {
         FlushMMEInlineDraw();
     }
 }
 
 void Maxwell3D::CallMethod(u32 method, u32 method_argument, bool is_last_call) {
-    if (method == cb_data_state.current) {
-        regs.reg_array[method] = method_argument;
-        ProcessCBData(method_argument);
-        return;
-    } else if (cb_data_state.current != null_cb_data) {
-        FinishCBData();
-    }
-
     // It is an error to write to a register other than the current macro's ARG register before it
     // has finished execution.
     if (executing_macro != 0) {
@@ -301,8 +312,11 @@ void Maxwell3D::CallMultiMethod(u32 method, const u32* base_start, u32 amount,
     case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 13:
     case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 14:
     case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 15:
-        ProcessCBMultiData(method, base_start, amount);
+        ProcessCBMultiData(base_start, amount);
         break;
+    case MAXWELL3D_REG_INDEX(data_upload):
+        upload_state.ProcessData(base_start, static_cast<size_t>(amount));
+        return;
     default:
         for (std::size_t i = 0; i < amount; i++) {
             CallMethod(method, base_start[i], methods_pending - static_cast<u32>(i) <= 1);
@@ -359,6 +373,35 @@ void Maxwell3D::CallMethodFromMME(u32 method, u32 method_argument) {
     }
 }
 
+void Maxwell3D::ProcessTopologyOverride() {
+    using PrimitiveTopology = Maxwell3D::Regs::PrimitiveTopology;
+    using PrimitiveTopologyOverride = Maxwell3D::Regs::PrimitiveTopologyOverride;
+
+    PrimitiveTopology topology{};
+
+    switch (regs.topology_override) {
+    case PrimitiveTopologyOverride::None:
+        topology = regs.draw.topology;
+        break;
+    case PrimitiveTopologyOverride::Points:
+        topology = PrimitiveTopology::Points;
+        break;
+    case PrimitiveTopologyOverride::Lines:
+        topology = PrimitiveTopology::Lines;
+        break;
+    case PrimitiveTopologyOverride::LineStrip:
+        topology = PrimitiveTopology::LineStrip;
+        break;
+    default:
+        topology = static_cast<PrimitiveTopology>(regs.topology_override);
+        break;
+    }
+
+    if (use_topology_override) {
+        regs.draw.topology.Assign(topology);
+    }
+}
+
 void Maxwell3D::FlushMMEInlineDraw() {
     LOG_TRACE(HW_GPU, "called, topology={}, count={}", regs.draw.topology.Value(),
               regs.vertex_buffer.count);
@@ -368,6 +411,8 @@ void Maxwell3D::FlushMMEInlineDraw() {
     // Both instance configuration registers can not be set at the same time.
     ASSERT_MSG(!regs.draw.instance_next || !regs.draw.instance_cont,
                "Illegal combination of instancing parameters");
+
+    ProcessTopologyOverride();
 
     const bool is_indexed = mme_draw.current_mode == MMEDrawMode::Indexed;
     if (ShouldExecute()) {
@@ -408,18 +453,10 @@ void Maxwell3D::ProcessFirmwareCall4() {
 }
 
 void Maxwell3D::StampQueryResult(u64 payload, bool long_query) {
-    struct LongQueryResult {
-        u64_le value;
-        u64_le timestamp;
-    };
-    static_assert(sizeof(LongQueryResult) == 16, "LongQueryResult has wrong size");
     const GPUVAddr sequence_address{regs.query.QueryAddress()};
     if (long_query) {
-        // Write the 128-bit result structure in long mode. Note: We emulate an infinitely fast
-        // GPU, this command may actually take a while to complete in real hardware due to GPU
-        // wait queues.
-        LongQueryResult query_result{payload, system.GPU().GetTicks()};
-        memory_manager.WriteBlock(sequence_address, &query_result, sizeof(query_result));
+        memory_manager.Write<u64>(sequence_address + sizeof(u64), system.GPU().GetTicks());
+        memory_manager.Write<u64>(sequence_address, payload);
     } else {
         memory_manager.Write<u32>(sequence_address, static_cast<u32>(payload));
     }
@@ -433,10 +470,25 @@ void Maxwell3D::ProcessQueryGet() {
 
     switch (regs.query.query_get.operation) {
     case Regs::QueryOperation::Release:
-        if (regs.query.query_get.fence == 1) {
-            rasterizer->SignalSemaphore(regs.query.QueryAddress(), regs.query.query_sequence);
+        if (regs.query.query_get.fence == 1 || regs.query.query_get.short_query != 0) {
+            const GPUVAddr sequence_address{regs.query.QueryAddress()};
+            const u32 payload = regs.query.query_sequence;
+            std::function<void()> operation([this, sequence_address, payload] {
+                memory_manager.Write<u32>(sequence_address, payload);
+            });
+            rasterizer->SignalFence(std::move(operation));
         } else {
-            StampQueryResult(regs.query.query_sequence, regs.query.query_get.short_query == 0);
+            struct LongQueryResult {
+                u64_le value;
+                u64_le timestamp;
+            };
+            const GPUVAddr sequence_address{regs.query.QueryAddress()};
+            const u32 payload = regs.query.query_sequence;
+            std::function<void()> operation([this, sequence_address, payload] {
+                memory_manager.Write<u64>(sequence_address + sizeof(u64), system.GPU().GetTicks());
+                memory_manager.Write<u64>(sequence_address, payload);
+            });
+            rasterizer->SyncOperation(std::move(operation));
         }
         break;
     case Regs::QueryOperation::Acquire:
@@ -528,6 +580,8 @@ void Maxwell3D::DrawArrays() {
     ASSERT_MSG(!regs.draw.instance_next || !regs.draw.instance_cont,
                "Illegal combination of instancing parameters");
 
+    ProcessTopologyOverride();
+
     if (regs.draw.instance_next) {
         // Increment the current instance *before* drawing.
         state.current_instance += 1;
@@ -554,8 +608,8 @@ void Maxwell3D::DrawArrays() {
 
 std::optional<u64> Maxwell3D::GetQueryResult() {
     switch (regs.query.query_get.select) {
-    case Regs::QuerySelect::Zero:
-        return 0;
+    case Regs::QuerySelect::Payload:
+        return regs.query.query_sequence;
     case Regs::QuerySelect::SamplesPassed:
         // Deferred.
         rasterizer->Query(regs.query.QueryAddress(), QueryType::SamplesPassed,
@@ -586,46 +640,7 @@ void Maxwell3D::ProcessCBBind(size_t stage_index) {
     rasterizer->BindGraphicsUniformBuffer(stage_index, bind_data.index, gpu_addr, size);
 }
 
-void Maxwell3D::ProcessCBData(u32 value) {
-    const u32 id = cb_data_state.id;
-    cb_data_state.buffer[id][cb_data_state.counter] = value;
-    // Increment the current buffer position.
-    regs.const_buffer.cb_pos = regs.const_buffer.cb_pos + 4;
-    cb_data_state.counter++;
-}
-
-void Maxwell3D::StartCBData(u32 method) {
-    constexpr u32 first_cb_data = MAXWELL3D_REG_INDEX(const_buffer.cb_data);
-    cb_data_state.start_pos = regs.const_buffer.cb_pos;
-    cb_data_state.id = method - first_cb_data;
-    cb_data_state.current = method;
-    cb_data_state.counter = 0;
-    ProcessCBData(regs.const_buffer.cb_data[cb_data_state.id]);
-}
-
-void Maxwell3D::ProcessCBMultiData(u32 method, const u32* start_base, u32 amount) {
-    if (cb_data_state.current != method) {
-        if (cb_data_state.current != null_cb_data) {
-            FinishCBData();
-        }
-        constexpr u32 first_cb_data = MAXWELL3D_REG_INDEX(const_buffer.cb_data);
-        cb_data_state.start_pos = regs.const_buffer.cb_pos;
-        cb_data_state.id = method - first_cb_data;
-        cb_data_state.current = method;
-        cb_data_state.counter = 0;
-    }
-    const std::size_t id = cb_data_state.id;
-    const std::size_t size = amount;
-    std::size_t i = 0;
-    for (; i < size; i++) {
-        cb_data_state.buffer[id][cb_data_state.counter] = start_base[i];
-        cb_data_state.counter++;
-    }
-    // Increment the current buffer position.
-    regs.const_buffer.cb_pos = regs.const_buffer.cb_pos + 4 * amount;
-}
-
-void Maxwell3D::FinishCBData() {
+void Maxwell3D::ProcessCBMultiData(const u32* start_base, u32 amount) {
     // Write the input value to the current const buffer at the current position.
     const GPUVAddr buffer_address = regs.const_buffer.BufferAddress();
     ASSERT(buffer_address != 0);
@@ -633,14 +648,16 @@ void Maxwell3D::FinishCBData() {
     // Don't allow writing past the end of the buffer.
     ASSERT(regs.const_buffer.cb_pos <= regs.const_buffer.cb_size);
 
-    const GPUVAddr address{buffer_address + cb_data_state.start_pos};
-    const std::size_t size = regs.const_buffer.cb_pos - cb_data_state.start_pos;
+    const GPUVAddr address{buffer_address + regs.const_buffer.cb_pos};
+    const size_t copy_size = amount * sizeof(u32);
+    memory_manager.WriteBlock(address, start_base, copy_size);
 
-    const u32 id = cb_data_state.id;
-    memory_manager.WriteBlock(address, cb_data_state.buffer[id].data(), size);
+    // Increment the current buffer position.
+    regs.const_buffer.cb_pos += static_cast<u32>(copy_size);
+}
 
-    cb_data_state.id = null_cb_data;
-    cb_data_state.current = null_cb_data;
+void Maxwell3D::ProcessCBData(u32 value) {
+    ProcessCBMultiData(&value, 1);
 }
 
 Texture::TICEntry Maxwell3D::GetTICEntry(u32 tic_index) const {

@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -9,7 +8,7 @@
 #include "core/hle/kernel/k_condition_variable.h"
 #include "core/hle/kernel/svc_types.h"
 
-union ResultCode;
+union Result;
 
 namespace Core {
 class System;
@@ -26,8 +25,7 @@ public:
     explicit KAddressArbiter(Core::System& system_);
     ~KAddressArbiter();
 
-    [[nodiscard]] ResultCode SignalToAddress(VAddr addr, Svc::SignalType type, s32 value,
-                                             s32 count) {
+    [[nodiscard]] Result SignalToAddress(VAddr addr, Svc::SignalType type, s32 value, s32 count) {
         switch (type) {
         case Svc::SignalType::Signal:
             return Signal(addr, count);
@@ -36,12 +34,12 @@ public:
         case Svc::SignalType::SignalAndModifyByWaitingCountIfEqual:
             return SignalAndModifyByWaitingCountIfEqual(addr, value, count);
         }
-        UNREACHABLE();
+        ASSERT(false);
         return ResultUnknown;
     }
 
-    [[nodiscard]] ResultCode WaitForAddress(VAddr addr, Svc::ArbitrationType type, s32 value,
-                                            s64 timeout) {
+    [[nodiscard]] Result WaitForAddress(VAddr addr, Svc::ArbitrationType type, s32 value,
+                                        s64 timeout) {
         switch (type) {
         case Svc::ArbitrationType::WaitIfLessThan:
             return WaitIfLessThan(addr, value, false, timeout);
@@ -50,16 +48,16 @@ public:
         case Svc::ArbitrationType::WaitIfEqual:
             return WaitIfEqual(addr, value, timeout);
         }
-        UNREACHABLE();
+        ASSERT(false);
         return ResultUnknown;
     }
 
 private:
-    [[nodiscard]] ResultCode Signal(VAddr addr, s32 count);
-    [[nodiscard]] ResultCode SignalAndIncrementIfEqual(VAddr addr, s32 value, s32 count);
-    [[nodiscard]] ResultCode SignalAndModifyByWaitingCountIfEqual(VAddr addr, s32 value, s32 count);
-    [[nodiscard]] ResultCode WaitIfLessThan(VAddr addr, s32 value, bool decrement, s64 timeout);
-    [[nodiscard]] ResultCode WaitIfEqual(VAddr addr, s32 value, s64 timeout);
+    [[nodiscard]] Result Signal(VAddr addr, s32 count);
+    [[nodiscard]] Result SignalAndIncrementIfEqual(VAddr addr, s32 value, s32 count);
+    [[nodiscard]] Result SignalAndModifyByWaitingCountIfEqual(VAddr addr, s32 value, s32 count);
+    [[nodiscard]] Result WaitIfLessThan(VAddr addr, s32 value, bool decrement, s64 timeout);
+    [[nodiscard]] Result WaitIfEqual(VAddr addr, s32 value, s64 timeout);
 
     ThreadTree thread_tree;
 

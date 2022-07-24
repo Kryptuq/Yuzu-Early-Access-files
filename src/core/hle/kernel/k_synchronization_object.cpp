@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/assert.h"
 #include "common/common_types.h"
@@ -23,7 +22,7 @@ public:
         : KThreadQueueWithoutEndWait(kernel_), m_objects(o), m_nodes(n), m_count(c) {}
 
     void NotifyAvailable(KThread* waiting_thread, KSynchronizationObject* signaled_object,
-                         ResultCode wait_result) override {
+                         Result wait_result) override {
         // Determine the sync index, and unlink all nodes.
         s32 sync_index = -1;
         for (auto i = 0; i < m_count; ++i) {
@@ -46,8 +45,7 @@ public:
         KThreadQueue::EndWait(waiting_thread, wait_result);
     }
 
-    void CancelWait(KThread* waiting_thread, ResultCode wait_result,
-                    bool cancel_timer_task) override {
+    void CancelWait(KThread* waiting_thread, Result wait_result, bool cancel_timer_task) override {
         // Remove all nodes from our list.
         for (auto i = 0; i < m_count; ++i) {
             m_objects[i]->UnlinkNode(std::addressof(m_nodes[i]));
@@ -73,9 +71,9 @@ void KSynchronizationObject::Finalize() {
     KAutoObject::Finalize();
 }
 
-ResultCode KSynchronizationObject::Wait(KernelCore& kernel_ctx, s32* out_index,
-                                        KSynchronizationObject** objects, const s32 num_objects,
-                                        s64 timeout) {
+Result KSynchronizationObject::Wait(KernelCore& kernel_ctx, s32* out_index,
+                                    KSynchronizationObject** objects, const s32 num_objects,
+                                    s64 timeout) {
     // Allocate space on stack for thread nodes.
     std::vector<ThreadListNode> thread_nodes(num_objects);
 
@@ -149,7 +147,7 @@ KSynchronizationObject::KSynchronizationObject(KernelCore& kernel_)
 
 KSynchronizationObject::~KSynchronizationObject() = default;
 
-void KSynchronizationObject::NotifyAvailable(ResultCode result) {
+void KSynchronizationObject::NotifyAvailable(Result result) {
     KScopedSchedulerLock sl(kernel);
 
     // If we're not signaled, we've nothing to notify.

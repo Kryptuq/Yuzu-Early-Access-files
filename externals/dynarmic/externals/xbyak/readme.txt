@@ -1,5 +1,5 @@
 
-    C++用x86(IA-32), x64(AMD64, x86-64) JITアセンブラ Xbyak 5.991
+    C++用x86(IA-32), x64(AMD64, x86-64) JITアセンブラ Xbyak 6.60.1
 
 -----------------------------------------------------------------------------
 ◎概要
@@ -277,6 +277,24 @@ L(label);
 assert(label.getAddress(), getCurr());
 ```
 
+4. farジャンプ
+
+`jmp(mem, T_FAR)`, `call(mem, T_FAR)`, `retf()`をサポートします。
+サイズを明示するために`ptr`の代わりに`word|dword|qword`を利用してください。
+
+32bit
+```
+jmp(word[eax], T_FAR);  // jmp m16:16(FF /5)
+jmp(dword[eax], T_FAR); // jmp m16:32(FF /5)
+```
+
+64bit
+```
+jmp(word[rax], T_FAR);  // jmp m16:16(FF /5)
+jmp(dword[rax], T_FAR); // jmp m16:32(FF /5)
+jmp(qword[rax], T_FAR); // jmp m16:64(REX.W FF /5)
+```
+
 ・Xbyak::CodeGenerator()コンストラクタインタフェース
 
 @param maxSize [in] コード生成最大サイズ(デフォルト4096byte)
@@ -382,6 +400,23 @@ sample/{echo,hello}.bfは http://www.kmonos.net/alang/etc/brainfuck.php から
 -----------------------------------------------------------------------------
 ◎履歴
 
+2022/06/15 ver 6.60.1 Visual Studio /O0でXbyak::util::Cpuがリンクエラーになるのに対応
+2022/06/06 ver 6.60 バージョンのつけ方を数値が戻らないように変更
+2022/06/01 ver 6.06 Cpu::TypeクラスのリファクタリングとXBYAK_USE_MEMFDが定義されたときのMmapAllocatorの改善
+2022/05/20 ver 6.052 Cpu::operator==()を正しく定義
+2022/05/13 ver 6.051 XYBAK_NO_EXCEPTIONを定義したときのCpuクラスのコンパイルエラー修正
+2022/05/12 ver 6.05 movdiri, movdir64b, clwb, cldemoteを追加
+2022/04/05 ver 6.04 tpause, umonitor, umwaitを追加
+2022/03/08 ver 6.03 MmapAllocatorがmemfd用のユーザ定義文字列をサポート
+2022/01/28 ver 6.02 dispacementの32bit範囲チェックの厳密化
+2021/12/14 ver 6.01 T_FAR jump/callとretfをサポート
+2021/09/14 ver 6.00 AVX512-FP16を完全サポート
+2021/09/09 ver 5.997 vrndscale*を{sae}をサポートするよう修正
+2021/09/03 ver 5.996 v{add,sub,mul,div,max,min}{sd,ss}をT_rd_saeなどをサポートするよう修正
+2021/08/15 ver 5.995 Linux上でXBYAK_USE_MEMFDが定義されたなら/proc/self/mapsにラベル追加
+2021/06/17 ver 5.994 マスクレジスタ用のvcmpXX{ps,pd,ss,sd}のalias追加
+2021/06/06 ver 5.993 gather/scatterのレジスタの組み合わせの厳密なチェック
+2021/05/09 ver 5.992 endbr32とendbr64のサポート
 2020/11/16 ver 5.991 g++-5のC++14でconstexpr機能の抑制
 2020/10/19 ver 5.99 VNNI命令サポート(Thanks to akharito)
 2020/10/17 ver 5.98 [scale * reg]のサポート

@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 // This is based on the proposed implementation of std::expected (P0323)
 // https://github.com/TartanLlama/expected/blob/master/include/tl/expected.hpp

@@ -1,4 +1,4 @@
-/* $OpenBSD: tasn_dec.c,v 1.37 2019/04/01 15:48:04 jsing Exp $ */
+/* $OpenBSD: tasn_dec.c,v 1.49 2022/03/13 14:58:14 jsing Exp $ */
 /* Written by Dr Stephen N Henson (steve@openssl.org) for the OpenSSL
  * project 2000.
  */
@@ -56,14 +56,18 @@
  *
  */
 
-
+#include <limits.h>
 #include <stddef.h>
 #include <string.h>
+
 #include <openssl/asn1.h>
 #include <openssl/asn1t.h>
-#include <openssl/objects.h>
 #include <openssl/buffer.h>
 #include <openssl/err.h>
+#include <openssl/objects.h>
+
+#include "asn1_locl.h"
+#include "bytestring.h"
 
 /* Constructed types with a recursive definition (such as can be found in PKCS7)
  * could eventually exceed the stack given malicious input with excessive
@@ -74,15 +78,16 @@
 static int asn1_check_eoc(const unsigned char **in, long len);
 static int asn1_find_end(const unsigned char **in, long len, char inf);
 
-static int asn1_collect(BUF_MEM *buf, const unsigned char **in, long len,
+static int asn1_collect(CBB *cbb, const unsigned char **in, long len,
     char inf, int tag, int aclass, int depth);
-
-static int collect_data(BUF_MEM *buf, const unsigned char **p, long plen);
 
 static int asn1_check_tlen(long *olen, int *otag, unsigned char *oclass,
     char *inf, char *cst, const unsigned char **in, long len, int exptag,
     int expclass, char opt, ASN1_TLC *ctx);
 
+static int asn1_item_ex_d2i(ASN1_VALUE **pval, const unsigned char **in,
+    long len, const ASN1_ITEM *it, int tag, int aclass, char opt, ASN1_TLC *ctx,
+    int depth);
 static int asn1_template_ex_d2i(ASN1_VALUE **pval, const unsigned char **in,
     long len, const ASN1_TEMPLATE *tt, char opt, ASN1_TLC *ctx, int depth);
 static int asn1_template_noexp_d2i(ASN1_VALUE **val, const unsigned char **in,
@@ -90,67 +95,43 @@ static int asn1_template_noexp_d2i(ASN1_VALUE **val, const unsigned char **in,
 static int asn1_d2i_ex_primitive(ASN1_VALUE **pval, const unsigned char **in,
     long len, const ASN1_ITEM *it, int tag, int aclass, char opt,
     ASN1_TLC *ctx);
+static int asn1_ex_c2i(ASN1_VALUE **pval, const unsigned char *content, int len,
+    int utype, const ASN1_ITEM *it);
 
-/* Table to convert tags to bit values, used for MSTRING type */
-static const unsigned long tag2bit[32] = {
-	0,	0,	0,	B_ASN1_BIT_STRING,	/* tags  0 -  3 */
-	B_ASN1_OCTET_STRING,	0,	0,		B_ASN1_UNKNOWN,/* tags  4- 7 */
-	B_ASN1_UNKNOWN,	B_ASN1_UNKNOWN,	B_ASN1_UNKNOWN,	B_ASN1_UNKNOWN,/* tags  8-11 */
-	B_ASN1_UTF8STRING,B_ASN1_UNKNOWN,B_ASN1_UNKNOWN,B_ASN1_UNKNOWN,/* tags 12-15 */
-	B_ASN1_SEQUENCE,0,B_ASN1_NUMERICSTRING,B_ASN1_PRINTABLESTRING, /* tags 16-19 */
-	B_ASN1_T61STRING,B_ASN1_VIDEOTEXSTRING,B_ASN1_IA5STRING,       /* tags 20-22 */
-	B_ASN1_UTCTIME, B_ASN1_GENERALIZEDTIME,			       /* tags 23-24 */
-	B_ASN1_GRAPHICSTRING,B_ASN1_ISO64STRING,B_ASN1_GENERALSTRING,  /* tags 25-27 */
-	B_ASN1_UNIVERSALSTRING,B_ASN1_UNKNOWN,B_ASN1_BMPSTRING,B_ASN1_UNKNOWN, /* tags 28-31 */
-};
-
-unsigned long
-ASN1_tag2bit(int tag)
+static void
+asn1_tlc_invalidate(ASN1_TLC *ctx)
 {
-	if ((tag < 0) || (tag > 30))
-		return 0;
-	return tag2bit[tag];
+	if (ctx != NULL)
+		ctx->valid = 0;
 }
-
-/* Macro to initialize and invalidate the cache */
-
-#define asn1_tlc_clear(c)	if (c) (c)->valid = 0
-/* Version to avoid compiler warning about 'c' always non-NULL */
-#define asn1_tlc_clear_nc(c)	(c)->valid = 0
-
-/* Decode an ASN1 item, this currently behaves just
- * like a standard 'd2i' function. 'in' points to
- * a buffer to read the data from, in future we will
- * have more advanced versions that can input data
- * a piece at a time and this will simply be a special
- * case.
- */
 
 ASN1_VALUE *
 ASN1_item_d2i(ASN1_VALUE **pval, const unsigned char **in, long len,
     const ASN1_ITEM *it)
 {
-	ASN1_TLC c;
 	ASN1_VALUE *ptmpval = NULL;
+	ASN1_TLC ctx;
 
-	if (!pval)
+	asn1_tlc_invalidate(&ctx);
+
+	if (pval == NULL)
 		pval = &ptmpval;
-	asn1_tlc_clear_nc(&c);
-	if (ASN1_item_ex_d2i(pval, in, len, it, -1, 0, 0, &c) > 0)
-		return *pval;
-	return NULL;
+	if (asn1_item_ex_d2i(pval, in, len, it, -1, 0, 0, &ctx, 0) <= 0)
+		return NULL;
+
+	return *pval;
 }
 
 int
 ASN1_template_d2i(ASN1_VALUE **pval, const unsigned char **in, long len,
     const ASN1_TEMPLATE *tt)
 {
-	ASN1_TLC c;
+	ASN1_TLC ctx;
 
-	asn1_tlc_clear_nc(&c);
-	return asn1_template_ex_d2i(pval, in, len, tt, 0, &c, 0);
+	asn1_tlc_invalidate(&ctx);
+
+	return asn1_template_ex_d2i(pval, in, len, tt, 0, &ctx, 0);
 }
-
 
 /* Decode an item, taking care of IMPLICIT tagging, if any.
  * If 'opt' set and tag mismatch return -1 to handle OPTIONAL
@@ -210,6 +191,16 @@ asn1_item_ex_d2i(ASN1_VALUE **pval, const unsigned char **in, long len,
 		break;
 
 	case ASN1_ITYPE_MSTRING:
+		/*
+		 * It never makes sense for multi-strings to have implicit
+		 * tagging, so if tag != -1, then this looks like an error in
+		 * the template.
+		 */
+		if (tag != -1) {
+			ASN1error(ASN1_R_BAD_TEMPLATE);
+			goto err;
+		}
+
 		p = *in;
 		/* Just read in tag and class */
 		ret = asn1_check_tlen(NULL, &otag, &oclass, NULL, NULL,
@@ -245,6 +236,16 @@ asn1_item_ex_d2i(ASN1_VALUE **pval, const unsigned char **in, long len,
 		    it, tag, aclass, opt, ctx);
 
 	case ASN1_ITYPE_CHOICE:
+		/*
+		 * It never makes sense for CHOICE types to have implicit
+		 * tagging, so if tag != -1, then this looks like an error in
+		 * the template.
+		 */
+		if (tag != -1) {
+			ASN1error(ASN1_R_BAD_TEMPLATE);
+			goto err;
+		}
+
 		if (asn1_cb && !asn1_cb(ASN1_OP_D2I_PRE, pval, it, NULL))
 			goto auxerr;
 
@@ -446,9 +447,9 @@ asn1_item_ex_d2i(ASN1_VALUE **pval, const unsigned char **in, long len,
 		return 0;
 	}
 
-auxerr:
+ auxerr:
 	ASN1error(ASN1_R_AUX_ERROR);
-err:
+ err:
 	if (combine == 0)
 		ASN1_item_ex_free(pval, it);
 	if (errtt)
@@ -535,7 +536,7 @@ asn1_template_ex_d2i(ASN1_VALUE **val, const unsigned char **in, long inlen,
 	*in = p;
 	return 1;
 
-err:
+ err:
 	ASN1_template_free(val, tt);
 	return 0;
 }
@@ -652,7 +653,7 @@ asn1_template_noexp_d2i(ASN1_VALUE **val, const unsigned char **in, long len,
 	*in = p;
 	return 1;
 
-err:
+ err:
 	ASN1_template_free(val, tt);
 	return 0;
 }
@@ -663,15 +664,15 @@ asn1_d2i_ex_primitive(ASN1_VALUE **pval, const unsigned char **in, long inlen,
 {
 	int ret = 0, utype;
 	long plen;
-	char cst, inf, free_cont = 0;
+	char cst, inf;
 	const unsigned char *p;
-	BUF_MEM buf;
-	const unsigned char *cont = NULL;
+	const unsigned char *content = NULL;
+	uint8_t *data = NULL;
+	size_t data_len = 0;
+	CBB cbb;
 	long len;
 
-	buf.length = 0;
-	buf.max = 0;
-	buf.data = NULL;
+	memset(&cbb, 0, sizeof(cbb));
 
 	if (!pval) {
 		ASN1error(ASN1_R_ILLEGAL_NULL);
@@ -726,69 +727,68 @@ asn1_d2i_ex_primitive(ASN1_VALUE **pval, const unsigned char **in, long inlen,
 		 * when we have a exact match wont work
 		 */
 		if (utype == V_ASN1_OTHER) {
-			asn1_tlc_clear(ctx);
-		}
-		/* SEQUENCE and SET must be constructed */
-		else if (!cst) {
+			asn1_tlc_invalidate(ctx);
+		} else if (!cst) {
+			/* SEQUENCE and SET must be constructed */
 			ASN1error(ASN1_R_TYPE_NOT_CONSTRUCTED);
 			return 0;
 		}
 
-		cont = *in;
+		content = *in;
 		/* If indefinite length constructed find the real end */
 		if (inf) {
 			if (!asn1_find_end(&p, plen, inf))
 				goto err;
-			len = p - cont;
+			len = p - content;
 		} else {
-			len = p - cont + plen;
+			len = p - content + plen;
 			p += plen;
-			buf.data = NULL;
 		}
 	} else if (cst) {
-		/* Should really check the internal tags are correct but
+		/*
+		 * Should really check the internal tags are correct but
 		 * some things may get this wrong. The relevant specs
 		 * say that constructed string types should be OCTET STRINGs
 		 * internally irrespective of the type. So instead just check
 		 * for UNIVERSAL class and ignore the tag.
 		 */
-		if (!asn1_collect(&buf, &p, plen, inf, -1, V_ASN1_UNIVERSAL, 0)) {
-			free_cont = 1;
+		if (!CBB_init(&cbb, 0))
 			goto err;
-		}
-		len = buf.length;
-		/* Append a final null to string */
-		if (!BUF_MEM_grow_clean(&buf, len + 1)) {
-			ASN1error(ERR_R_MALLOC_FAILURE);
-			return 0;
-		}
-		buf.data[len] = 0;
-		cont = (const unsigned char *)buf.data;
-		free_cont = 1;
+		if (!asn1_collect(&cbb, &p, plen, inf, -1, V_ASN1_UNIVERSAL, 0))
+			goto err;
+		if (!CBB_finish(&cbb, &data, &data_len))
+			goto err;
+
+		if (data_len > LONG_MAX)
+			goto err;
+
+		content = data;
+		len = data_len;
 	} else {
-		cont = p;
+		content = p;
 		len = plen;
 		p += plen;
 	}
 
 	/* We now have content length and type: translate into a structure */
-	if (!asn1_ex_c2i(pval, cont, len, utype, &free_cont, it))
+	if (!asn1_ex_c2i(pval, content, len, utype, it))
 		goto err;
 
 	*in = p;
 	ret = 1;
 
-err:
-	if (free_cont && buf.data)
-		free(buf.data);
+ err:
+	CBB_cleanup(&cbb);
+	freezero(data, data_len);
+
 	return ret;
 }
 
 /* Translate ASN1 content octets into a structure */
 
-int
-asn1_ex_c2i(ASN1_VALUE **pval, const unsigned char *cont, int len, int utype,
-    char *free_cont, const ASN1_ITEM *it)
+static int
+asn1_ex_c2i(ASN1_VALUE **pval, const unsigned char *content, int len, int utype,
+    const ASN1_ITEM *it)
 {
 	ASN1_VALUE **opval = NULL;
 	ASN1_STRING *stmp;
@@ -798,10 +798,11 @@ asn1_ex_c2i(ASN1_VALUE **pval, const unsigned char *cont, int len, int utype,
 
 	if (it->funcs != NULL) {
 		const ASN1_PRIMITIVE_FUNCS *pf = it->funcs;
+		char free_content = 0;
 
 		if (pf->prim_c2i == NULL)
 			return 0;
-		return pf->prim_c2i(pval, cont, len, utype, free_cont, it);
+		return pf->prim_c2i(pval, content, len, utype, &free_content, it);
 	}
 
 	/* If ANY type clear type and set pointer to internal value */
@@ -821,7 +822,7 @@ asn1_ex_c2i(ASN1_VALUE **pval, const unsigned char *cont, int len, int utype,
 	}
 	switch (utype) {
 	case V_ASN1_OBJECT:
-		if (!c2i_ASN1_OBJECT((ASN1_OBJECT **)pval, &cont, len))
+		if (!c2i_ASN1_OBJECT((ASN1_OBJECT **)pval, &content, len))
 			goto err;
 		break;
 
@@ -840,19 +841,19 @@ asn1_ex_c2i(ASN1_VALUE **pval, const unsigned char *cont, int len, int utype,
 		} else {
 			ASN1_BOOLEAN *tbool;
 			tbool = (ASN1_BOOLEAN *)pval;
-			*tbool = *cont;
+			*tbool = *content;
 		}
 		break;
 
 	case V_ASN1_BIT_STRING:
-		if (!c2i_ASN1_BIT_STRING((ASN1_BIT_STRING **)pval, &cont, len))
+		if (!c2i_ASN1_BIT_STRING((ASN1_BIT_STRING **)pval, &content, len))
 			goto err;
 		break;
 
 	case V_ASN1_INTEGER:
 	case V_ASN1_ENUMERATED:
 		tint = (ASN1_INTEGER **)pval;
-		if (!c2i_ASN1_INTEGER(tint, &cont, len))
+		if (!c2i_ASN1_INTEGER(tint, &content, len))
 			goto err;
 		/* Fixup type to match the expected form */
 		(*tint)->type = utype | ((*tint)->type & V_ASN1_NEG);
@@ -884,10 +885,9 @@ asn1_ex_c2i(ASN1_VALUE **pval, const unsigned char *cont, int len, int utype,
 			ASN1error(ASN1_R_UNIVERSALSTRING_IS_WRONG_LENGTH);
 			goto err;
 		}
-		/* All based on ASN1_STRING and handled the same */
-		if (!*pval) {
-			stmp = ASN1_STRING_type_new(utype);
-			if (!stmp) {
+		/* All based on ASN1_STRING and handled the same way. */
+		if (*pval == NULL) {
+			if ((stmp = ASN1_STRING_type_new(utype)) == NULL) {
 				ASN1error(ERR_R_MALLOC_FAILURE);
 				goto err;
 			}
@@ -896,19 +896,10 @@ asn1_ex_c2i(ASN1_VALUE **pval, const unsigned char *cont, int len, int utype,
 			stmp = (ASN1_STRING *)*pval;
 			stmp->type = utype;
 		}
-		/* If we've already allocated a buffer use it */
-		if (*free_cont) {
-			free(stmp->data);
-			stmp->data = (unsigned char *)cont; /* UGLY CAST! RL */
-			stmp->length = len;
-			*free_cont = 0;
-		} else {
-			if (!ASN1_STRING_set(stmp, cont, len)) {
-				ASN1error(ERR_R_MALLOC_FAILURE);
-				ASN1_STRING_free(stmp);
-				*pval = NULL;
-				goto err;
-			}
+		if (!ASN1_STRING_set(stmp, content, len)) {
+			ASN1_STRING_free(stmp);
+			*pval = NULL;
+			goto err;
 		}
 		break;
 	}
@@ -918,7 +909,7 @@ asn1_ex_c2i(ASN1_VALUE **pval, const unsigned char *cont, int len, int utype,
 
 	ret = 1;
 
-err:
+ err:
 	if (!ret) {
 		ASN1_TYPE_free(typ);
 		if (opval)
@@ -926,7 +917,6 @@ err:
 	}
 	return ret;
 }
-
 
 /* This function finds the end of an ASN1 structure when passed its maximum
  * length, whether it is indefinite length and a pointer to the content.
@@ -996,21 +986,21 @@ asn1_find_end(const unsigned char **in, long len, char inf)
 #endif
 
 static int
-asn1_collect(BUF_MEM *buf, const unsigned char **in, long len, char inf,
+asn1_collect(CBB *cbb, const unsigned char **in, long len, char inf,
     int tag, int aclass, int depth)
 {
 	const unsigned char *p, *q;
 	long plen;
 	char cst, ininf;
 
+	if (depth > ASN1_MAX_STRING_NEST) {
+		ASN1error(ASN1_R_NESTED_ASN1_STRING);
+		return 0;
+	}
+
 	p = *in;
 	inf &= 1;
-	/* If no buffer and not indefinite length constructed just pass over
-	 * the encoded data */
-	if (!buf && !inf) {
-		*in += len;
-		return 1;
-	}
+
 	while (len > 0) {
 		q = p;
 		/* Check for EOC */
@@ -1033,15 +1023,14 @@ asn1_collect(BUF_MEM *buf, const unsigned char **in, long len, char inf,
 
 		/* If indefinite length constructed update max length */
 		if (cst) {
-			if (depth >= ASN1_MAX_STRING_NEST) {
-				ASN1error(ASN1_R_NESTED_ASN1_STRING);
-				return 0;
-			}
-			if (!asn1_collect(buf, &p, plen, ininf, tag, aclass,
+			if (!asn1_collect(cbb, &p, plen, ininf, tag, aclass,
 			    depth + 1))
 				return 0;
-		} else if (plen && !collect_data(buf, &p, plen))
-			return 0;
+		} else if (plen > 0) {
+			if (!CBB_add_bytes(cbb, p, plen))
+				return 0;
+			p += plen;
+		}
 		len -= p - q;
 	}
 	if (inf) {
@@ -1049,22 +1038,6 @@ asn1_collect(BUF_MEM *buf, const unsigned char **in, long len, char inf,
 		return 0;
 	}
 	*in = p;
-	return 1;
-}
-
-static int
-collect_data(BUF_MEM *buf, const unsigned char **p, long plen)
-{
-	int len;
-	if (buf) {
-		len = buf->length;
-		if (!BUF_MEM_grow_clean(buf, len + plen)) {
-			ASN1error(ERR_R_MALLOC_FAILURE);
-			return 0;
-		}
-		memcpy(buf->data + len, *p, plen);
-	}
-	*p += plen;
 	return 1;
 }
 
@@ -1125,7 +1098,7 @@ asn1_check_tlen(long *olen, int *otag, unsigned char *oclass, char *inf,
 			 */
 			if (!(i & 0x81) && ((plen + ctx->hdrlen) > len)) {
 				ASN1error(ASN1_R_TOO_LONG);
-				asn1_tlc_clear(ctx);
+				asn1_tlc_invalidate(ctx);
 				return 0;
 			}
 		}
@@ -1133,7 +1106,7 @@ asn1_check_tlen(long *olen, int *otag, unsigned char *oclass, char *inf,
 
 	if (i & 0x80) {
 		ASN1error(ASN1_R_BAD_OBJECT_HEADER);
-		asn1_tlc_clear(ctx);
+		asn1_tlc_invalidate(ctx);
 		return 0;
 	}
 	if (exptag >= 0) {
@@ -1143,13 +1116,13 @@ asn1_check_tlen(long *olen, int *otag, unsigned char *oclass, char *inf,
 			 */
 			if (opt)
 				return -1;
-			asn1_tlc_clear(ctx);
+			asn1_tlc_invalidate(ctx);
 			ASN1error(ASN1_R_WRONG_TAG);
 			return 0;
 		}
 		/* We have a tag and class match:
 		 * assume we are going to do something with it */
-		asn1_tlc_clear(ctx);
+		asn1_tlc_invalidate(ctx);
 	}
 
 	if (i & 1)

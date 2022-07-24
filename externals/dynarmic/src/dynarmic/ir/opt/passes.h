@@ -20,6 +20,13 @@ class Block;
 
 namespace Dynarmic::Optimization {
 
+struct PolyfillOptions {
+    bool sha256 = false;
+
+    bool operator==(const PolyfillOptions&) const = default;
+};
+
+void PolyfillPass(IR::Block& block, const PolyfillOptions& opt);
 void A32ConstantMemoryReads(IR::Block& block, A32::UserCallbacks* cb);
 void A32GetSetElimination(IR::Block& block);
 void A64CallbackConfigPass(IR::Block& block, const A64::UserConfig& conf);

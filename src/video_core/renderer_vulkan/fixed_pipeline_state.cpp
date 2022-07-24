@@ -1,12 +1,8 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <cstring>
-#include <tuple>
-
-#include <boost/functional/hash.hpp>
 
 #include "common/bit_cast.h"
 #include "common/cityhash.h"

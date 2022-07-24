@@ -7,7 +7,7 @@
 
 #include <array>
 
-#include "dynarmic/common/common_types.h"
+#include <mcl/stdint.hpp>
 
 namespace Dynarmic::Backend::X64 {
 
@@ -40,7 +40,7 @@ struct A32JitState {
     // For internal use (See: BlockOfCode::RunCode)
     u32 guest_MXCSR = 0x00001f80;
     u32 asimd_MXCSR = 0x00009fc0;
-    bool halt_requested = false;
+    volatile u32 halt_reason = 0;
 
     // Exclusive state
     u32 exclusive_state = 0;
@@ -53,7 +53,7 @@ struct A32JitState {
     void ResetRSB();
 
     u32 fpsr_exc = 0;
-    u32 fpsr_qc = 0;  // Dummy value
+    u32 fpsr_qc = 0;
     u32 fpsr_nzcv = 0;
     u32 Fpscr() const;
     void SetFpscr(u32 FPSCR);

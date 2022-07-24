@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <QDateTime>
 #include "yuzu/applets/qt_error.h"
@@ -15,7 +14,7 @@ QtErrorDisplay::QtErrorDisplay(GMainWindow& parent) {
 
 QtErrorDisplay::~QtErrorDisplay() = default;
 
-void QtErrorDisplay::ShowError(ResultCode error, std::function<void()> finished) const {
+void QtErrorDisplay::ShowError(Result error, std::function<void()> finished) const {
     callback = std::move(finished);
     emit MainWindowDisplayError(
         tr("Error Code: %1-%2 (0x%3)")
@@ -25,7 +24,7 @@ void QtErrorDisplay::ShowError(ResultCode error, std::function<void()> finished)
         tr("An error has occurred.\nPlease try again or contact the developer of the software."));
 }
 
-void QtErrorDisplay::ShowErrorWithTimestamp(ResultCode error, std::chrono::seconds time,
+void QtErrorDisplay::ShowErrorWithTimestamp(Result error, std::chrono::seconds time,
                                             std::function<void()> finished) const {
     callback = std::move(finished);
 
@@ -41,7 +40,7 @@ void QtErrorDisplay::ShowErrorWithTimestamp(ResultCode error, std::chrono::secon
             .arg(date_time.toString(QStringLiteral("h:mm:ss A"))));
 }
 
-void QtErrorDisplay::ShowCustomErrorText(ResultCode error, std::string dialog_text,
+void QtErrorDisplay::ShowCustomErrorText(Result error, std::string dialog_text,
                                          std::string fullscreen_text,
                                          std::function<void()> finished) const {
     callback = std::move(finished);

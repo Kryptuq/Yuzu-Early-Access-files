@@ -20,7 +20,8 @@ struct JitStateInfo {
             , offsetof_rsb_codeptrs(offsetof(JitStateType, rsb_codeptrs))
             , offsetof_cpsr_nzcv(offsetof(JitStateType, cpsr_nzcv))
             , offsetof_fpsr_exc(offsetof(JitStateType, fpsr_exc))
-            , offsetof_fpsr_qc(offsetof(JitStateType, fpsr_qc)) {}
+            , offsetof_fpsr_qc(offsetof(JitStateType, fpsr_qc))
+            , offsetof_halt_reason(offsetof(JitStateType, halt_reason)) {}
 
     const size_t offsetof_guest_MXCSR;
     const size_t offsetof_asimd_MXCSR;
@@ -31,6 +32,7 @@ struct JitStateInfo {
     const size_t offsetof_cpsr_nzcv;
     const size_t offsetof_fpsr_exc;
     const size_t offsetof_fpsr_qc;
+    const size_t offsetof_halt_reason;
 };
 
 }  // namespace Dynarmic::Backend::X64

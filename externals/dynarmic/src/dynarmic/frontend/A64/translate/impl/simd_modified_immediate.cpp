@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include "dynarmic/common/bit_util.h"
+#include <mcl/bit/bit_field.hpp>
+
 #include "dynarmic/frontend/A64/translate/impl/impl.h"
 
 namespace Dynarmic::A64 {
@@ -119,7 +120,7 @@ bool TranslatorVisitor::FMOV_3(bool Q, Imm<1> a, Imm<1> b, Imm<1> c, Imm<1> d, I
         imm16 |= imm8.Bits<0, 5, u16>() << 6;
         return imm16;
     }();
-    const u64 imm64 = Common::Replicate<u64>(imm16, 16);
+    const u64 imm64 = mcl::bit::replicate_element<u16, u64>(imm16);
 
     const IR::U128 imm = datasize == 64 ? ir.ZeroExtendToQuad(ir.Imm64(imm64)) : ir.VectorBroadcast(64, ir.Imm64(imm64));
     V(128, Vd, imm);

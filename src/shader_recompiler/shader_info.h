@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -61,8 +60,10 @@ struct TextureBufferDescriptor {
     bool has_secondary;
     u32 cbuf_index;
     u32 cbuf_offset;
+    u32 shift_left;
     u32 secondary_cbuf_index;
     u32 secondary_cbuf_offset;
+    u32 secondary_shift_left;
     u32 count;
     u32 size_shift;
 };
@@ -85,8 +86,10 @@ struct TextureDescriptor {
     bool has_secondary;
     u32 cbuf_index;
     u32 cbuf_offset;
+    u32 shift_left;
     u32 secondary_cbuf_index;
     u32 secondary_cbuf_offset;
+    u32 secondary_shift_left;
     u32 count;
     u32 size_shift;
 };
@@ -105,6 +108,7 @@ struct ImageDescriptor {
 using ImageDescriptors = boost::container::small_vector<ImageDescriptor, 4>;
 
 struct Info {
+    static constexpr size_t MAX_INDIRECT_CBUFS{14};
     static constexpr size_t MAX_CBUFS{18};
     static constexpr size_t MAX_SSBOS{32};
 
@@ -173,9 +177,11 @@ struct Info {
     bool uses_atomic_image_u32{};
     bool uses_shadow_lod{};
     bool uses_rescaling_uniform{};
+    bool uses_cbuf_indirect{};
 
     IR::Type used_constant_buffer_types{};
     IR::Type used_storage_buffer_types{};
+    IR::Type used_indirect_cbuf_types{};
 
     u32 constant_buffer_mask{};
     std::array<u32, MAX_CBUFS> constant_buffer_used_sizes{};

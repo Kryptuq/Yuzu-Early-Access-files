@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <memory>
 
@@ -9,7 +8,6 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/ns/pdm_qry.h"
 #include "core/hle/service/service.h"
-#include "core/hle/service/sm/sm.h"
 
 namespace Service::NS {
 
@@ -59,7 +57,7 @@ void PDM_QRY::QueryPlayStatisticsByApplicationIdAndUserAccountId(Kernel::HLERequ
 
     LOG_WARNING(Service_NS,
                 "(STUBBED) called. unknown={}. application_id=0x{:016X}, user_account_uid=0x{}",
-                unknown, application_id, user_account_uid.Format());
+                unknown, application_id, user_account_uid.RawString());
 
     IPC::ResponseBuilder rb{ctx, 12};
     rb.Push(ResultSuccess);

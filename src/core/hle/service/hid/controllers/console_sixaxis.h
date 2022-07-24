@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -8,7 +7,6 @@
 
 #include "common/common_types.h"
 #include "common/quaternion.h"
-#include "core/hid/hid_types.h"
 #include "core/hle/service/hid/controllers/controller_base.h"
 #include "core/hle/service/hid/ring_lifo.h"
 
@@ -19,7 +17,7 @@ class EmulatedConsole;
 namespace Service::HID {
 class Controller_ConsoleSixAxis final : public ControllerBase {
 public:
-    explicit Controller_ConsoleSixAxis(Core::HID::HIDCore& hid_core_);
+    explicit Controller_ConsoleSixAxis(Core::HID::HIDCore& hid_core_, u8* raw_shared_memory_);
     ~Controller_ConsoleSixAxis() override;
 
     // Called when the controller is initialized
@@ -29,7 +27,7 @@ public:
     void OnRelease() override;
 
     // When the controller is requesting an update for the shared memory
-    void OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* data, size_t size) override;
+    void OnUpdate(const Core::Timing::CoreTiming& core_timing) override;
 
     // Called on InitializeSevenSixAxisSensor
     void SetTransferMemoryPointer(u8* t_mem);
@@ -63,12 +61,13 @@ private:
     Lifo<SevenSixAxisState, 0x21> seven_sixaxis_lifo{};
     static_assert(sizeof(seven_sixaxis_lifo) == 0xA70, "SevenSixAxisState is an invalid size");
 
-    Core::HID::EmulatedConsole* console;
+    SevenSixAxisState next_seven_sixaxis_state{};
     u8* transfer_memory = nullptr;
+    ConsoleSharedMemory* shared_memory = nullptr;
+    Core::HID::EmulatedConsole* console = nullptr;
+
     bool is_transfer_memory_set = false;
     u64 last_saved_timestamp{};
     u64 last_global_timestamp{};
-    ConsoleSharedMemory console_six_axis{};
-    SevenSixAxisState next_seven_sixaxis_state{};
 };
 } // namespace Service::HID

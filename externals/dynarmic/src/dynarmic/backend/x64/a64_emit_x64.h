@@ -7,6 +7,7 @@
 
 #include <array>
 #include <map>
+#include <optional>
 #include <tuple>
 
 #include "dynarmic/backend/x64/a64_jitstate.h"
@@ -67,10 +68,12 @@ protected:
 
     void (*memory_read_128)();
     void (*memory_write_128)();
+    void (*memory_exclusive_write_128)();
     void GenMemory128Accessors();
 
-    std::map<std::tuple<size_t, int, int>, void (*)()> read_fallbacks;
-    std::map<std::tuple<size_t, int, int>, void (*)()> write_fallbacks;
+    std::map<std::tuple<bool, size_t, int, int>, void (*)()> read_fallbacks;
+    std::map<std::tuple<bool, size_t, int, int>, void (*)()> write_fallbacks;
+    std::map<std::tuple<bool, size_t, int, int>, void (*)()> exclusive_write_fallbacks;
     void GenFastmemFallbacks();
 
     const void* terminal_handler_pop_rsb_hint;
@@ -97,6 +100,7 @@ protected:
         u64 resume_rip;
         u64 callback;
         DoNotFastmemMarker marker;
+        bool recompile;
     };
     tsl::robin_map<u64, FastmemPatchInfo> fastmem_patch_info;
     std::set<DoNotFastmemMarker> do_not_fastmem;
@@ -104,6 +108,7 @@ protected:
     FakeCall FastmemCallback(u64 rip);
 
     // Memory access helpers
+    void EmitCheckMemoryAbort(A64EmitContext& ctx, IR::Inst* inst, Xbyak::Label* end = nullptr);
     template<std::size_t bitsize, auto callback>
     void EmitMemoryRead(A64EmitContext& ctx, IR::Inst* inst);
     template<std::size_t bitsize, auto callback>
@@ -112,6 +117,10 @@ protected:
     void EmitExclusiveReadMemory(A64EmitContext& ctx, IR::Inst* inst);
     template<std::size_t bitsize, auto callback>
     void EmitExclusiveWriteMemory(A64EmitContext& ctx, IR::Inst* inst);
+    template<std::size_t bitsize, auto callback>
+    void EmitExclusiveReadMemoryInline(A64EmitContext& ctx, IR::Inst* inst);
+    template<std::size_t bitsize, auto callback>
+    void EmitExclusiveWriteMemoryInline(A64EmitContext& ctx, IR::Inst* inst);
 
     // Terminal instruction emitters
     void EmitTerminalImpl(IR::Term::Interpret terminal, IR::LocationDescriptor initial_location, bool is_single_step) override;
@@ -127,6 +136,7 @@ protected:
     // Patching
     void Unpatch(const IR::LocationDescriptor& target_desc) override;
     void EmitPatchJg(const IR::LocationDescriptor& target_desc, CodePtr target_code_ptr = nullptr) override;
+    void EmitPatchJz(const IR::LocationDescriptor& target_desc, CodePtr target_code_ptr = nullptr) override;
     void EmitPatchJmp(const IR::LocationDescriptor& target_desc, CodePtr target_code_ptr = nullptr) override;
     void EmitPatchMovRcx(CodePtr target_code_ptr = nullptr) override;
 };

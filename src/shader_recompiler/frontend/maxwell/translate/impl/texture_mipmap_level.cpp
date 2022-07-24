@@ -1,8 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
-
-#include <optional>
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/bit_field.h"
 #include "common/common_types.h"
@@ -83,7 +80,7 @@ void Impl(TranslatorVisitor& v, u64 insn, bool is_bindless) {
     } const tmml{insn};
 
     if ((tmml.mask & 0b1100) != 0) {
-        throw NotImplementedException("TMML BA results are not implmented");
+        throw NotImplementedException("TMML BA results are not implemented");
     }
     const IR::Value coords{MakeCoords(v, tmml.coord_reg, tmml.type)};
 

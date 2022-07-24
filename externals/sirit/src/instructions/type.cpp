@@ -28,6 +28,14 @@ Id Module::TypeInt(int width, bool is_signed) {
     return *declarations << OpId{spv::Op::OpTypeInt} << width << is_signed << EndOp{};
 }
 
+Id Module::TypeSInt(int width) {
+    return TypeInt(width, true);
+}
+
+Id Module::TypeUInt(int width) {
+    return TypeInt(width, false);
+}
+
 Id Module::TypeFloat(int width) {
     declarations->Reserve(3);
     return *declarations << OpId{spv::Op::OpTypeFloat} << width << EndOp{};

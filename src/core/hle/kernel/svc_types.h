@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -95,5 +94,7 @@ constexpr inline s32 IdealCoreNoUpdate = -3;
 
 constexpr inline s32 LowestThreadPriority = 63;
 constexpr inline s32 HighestThreadPriority = 0;
+
+constexpr inline size_t ThreadLocalRegionSize = 0x200;
 
 } // namespace Kernel::Svc

@@ -1,4 +1,4 @@
-/* $OpenBSD: ssl_err.c,v 1.37 2020/01/21 05:19:02 jsing Exp $ */
+/* $OpenBSD: ssl_err.c,v 1.40 2022/02/05 14:54:10 jsing Exp $ */
 /* ====================================================================
  * Copyright (c) 1999-2011 The OpenSSL Project.  All rights reserved.
  *
@@ -61,6 +61,7 @@
 #include <stdio.h>
 
 #include <openssl/err.h>
+#include <openssl/opensslconf.h>
 #include <openssl/ssl.h>
 
 #include "ssl_locl.h"
@@ -293,6 +294,7 @@ static ERR_STRING_DATA SSL_str_reasons[]= {
 	{ERR_REASON(SSL_R_MISSING_VERIFY_MESSAGE), "missing verify message"},
 	{ERR_REASON(SSL_R_MULTIPLE_SGC_RESTARTS) , "multiple sgc restarts"},
 	{ERR_REASON(SSL_R_NON_SSLV2_INITIAL_PACKET), "non sslv2 initial packet"},
+	{ERR_REASON(SSL_R_NO_APPLICATION_PROTOCOL), "no application protocol"},
 	{ERR_REASON(SSL_R_NO_CERTIFICATES_RETURNED), "no certificates returned"},
 	{ERR_REASON(SSL_R_NO_CERTIFICATE_ASSIGNED), "no certificate assigned"},
 	{ERR_REASON(SSL_R_NO_CERTIFICATE_RETURNED), "no certificate returned"},
@@ -664,5 +666,5 @@ void
 SSL_error_internal(const SSL *s, int r, char *f, int l)
 {
 	ERR_PUT_error(ERR_LIB_SSL,
-	    (SSL_state_func_code(S3I(s)->hs.state)), r, f, l);
+	    (SSL_state_func_code(s->s3->hs.state)), r, f, l);
 }

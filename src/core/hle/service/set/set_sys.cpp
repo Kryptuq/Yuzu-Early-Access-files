@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/assert.h"
 #include "common/logging/log.h"
@@ -33,7 +32,7 @@ void GetFirmwareVersionImpl(Kernel::HLERequestContext& ctx, GetFirmwareVersionTy
     // consistence (currently reports as 5.1.0-0.0)
     const auto archive = FileSys::SystemArchive::SystemVersion();
 
-    const auto early_exit_failure = [&ctx](std::string_view desc, ResultCode code) {
+    const auto early_exit_failure = [&ctx](std::string_view desc, Result code) {
         LOG_ERROR(Service_SET, "General failure while attempting to resolve firmware version ({}).",
                   desc);
         IPC::ResponseBuilder rb{ctx, 2};
@@ -307,6 +306,8 @@ SET_SYS::SET_SYS(Core::System& system_) : ServiceFramework{system_, "set:sys"} {
         {202, nullptr, "SetFieldTestingFlag"},
         {203, nullptr, "GetPanelCrcMode"},
         {204, nullptr, "SetPanelCrcMode"},
+        {205, nullptr, "GetNxControllerSettingsEx"},
+        {206, nullptr, "SetNxControllerSettingsEx"},
     };
     // clang-format on
 

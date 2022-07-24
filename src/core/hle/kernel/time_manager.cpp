@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/assert.h"
 #include "core/core.h"
@@ -12,19 +11,21 @@
 namespace Kernel {
 
 TimeManager::TimeManager(Core::System& system_) : system{system_} {
-    time_manager_event_type =
-        Core::Timing::CreateEvent("Kernel::TimeManagerCallback",
-                                  [this](std::uintptr_t thread_handle, std::chrono::nanoseconds) {
-                                      KThread* thread = reinterpret_cast<KThread*>(thread_handle);
-                                      {
-                                          KScopedSchedulerLock sl(system.Kernel());
-                                          thread->OnTimer();
-                                      }
-                                  });
+    time_manager_event_type = Core::Timing::CreateEvent(
+        "Kernel::TimeManagerCallback",
+        [this](std::uintptr_t thread_handle, s64 time,
+               std::chrono::nanoseconds) -> std::optional<std::chrono::nanoseconds> {
+            KThread* thread = reinterpret_cast<KThread*>(thread_handle);
+            {
+                KScopedSchedulerLock sl(system.Kernel());
+                thread->OnTimer();
+            }
+            return std::nullopt;
+        });
 }
 
 void TimeManager::ScheduleTimeEvent(KThread* thread, s64 nanoseconds) {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     if (nanoseconds > 0) {
         ASSERT(thread);
         ASSERT(thread->GetState() != ThreadState::Runnable);
@@ -35,7 +36,7 @@ void TimeManager::ScheduleTimeEvent(KThread* thread, s64 nanoseconds) {
 }
 
 void TimeManager::UnscheduleTimeEvent(KThread* thread) {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     system.CoreTiming().UnscheduleEvent(time_manager_event_type,
                                         reinterpret_cast<uintptr_t>(thread));
 }

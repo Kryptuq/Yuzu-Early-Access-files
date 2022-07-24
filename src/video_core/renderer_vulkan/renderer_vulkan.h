@@ -1,12 +1,10 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "common/dynamic_library.h"
 #include "video_core/renderer_base.h"
@@ -67,14 +65,14 @@ private:
     vk::DebugUtilsMessenger debug_callback;
     vk::SurfaceKHR surface;
 
-    VKScreenInfo screen_info;
+    ScreenInfo screen_info;
 
     Device device;
     MemoryAllocator memory_allocator;
     StateTracker state_tracker;
-    VKScheduler scheduler;
-    VKSwapchain swapchain;
-    VKBlitScreen blit_screen;
+    Scheduler scheduler;
+    Swapchain swapchain;
+    BlitScreen blit_screen;
     RasterizerVulkan rasterizer;
 };
 

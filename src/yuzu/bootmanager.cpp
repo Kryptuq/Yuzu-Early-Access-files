@@ -6,7 +6,6 @@
 
 #include <QApplication>
 #include <QHBoxLayout>
-#include <QKeyEvent>
 #include <QMessageBox>
 #include <QPainter>
 #include <QScreen>
@@ -28,9 +27,9 @@
 #include "common/assert.h"
 #include "common/microprofile.h"
 #include "common/scm_rev.h"
-#include "common/scope_exit.h"
 #include "common/settings.h"
 #include "core/core.h"
+#include "core/cpu_manager.h"
 #include "core/frontend/framebuffer_layout.h"
 #include "input_common/drivers/keyboard.h"
 #include "input_common/drivers/mouse.h"
@@ -38,7 +37,6 @@
 #include "input_common/drivers/touch_screen.h"
 #include "input_common/main.h"
 #include "video_core/renderer_base.h"
-#include "video_core/video_core.h"
 #include "yuzu/bootmanager.h"
 #include "yuzu/main.h"
 
@@ -53,6 +51,7 @@ void EmuThread::run() {
 
     auto& gpu = system.GPU();
     auto stop_token = stop_source.get_token();
+    bool debugger_should_start = system.DebuggerEnabled();
 
     system.RegisterHostThread();
 
@@ -75,6 +74,8 @@ void EmuThread::run() {
 
     gpu.ReleaseContext();
 
+    system.GetCpuManager().OnGpuReady();
+
     // Holds whether the cpu was running during the last iteration,
     // so that the DebugModeLeft signal can be emitted before the
     // next execution step
@@ -92,6 +93,12 @@ void EmuThread::run() {
                 this->SetRunning(false);
                 emit ErrorThrown(result, system.GetStatusDetails());
             }
+
+            if (debugger_should_start) {
+                system.InitializeDebugger();
+                debugger_should_start = false;
+            }
+
             running_wait.Wait();
             result = system.Pause();
             if (result != Core::SystemResultStatus::Success) {
@@ -105,11 +112,9 @@ void EmuThread::run() {
                 was_active = true;
                 emit DebugModeEntered();
             }
-        } else if (exec_step) {
-            UNIMPLEMENTED();
         } else {
             std::unique_lock lock{running_mutex};
-            running_cv.wait(lock, stop_token, [this] { return IsRunning() || exec_step; });
+            running_cv.wait(lock, stop_token, [this] { return IsRunning(); });
         }
     }
 
@@ -125,7 +130,7 @@ void EmuThread::run() {
 class OpenGLSharedContext : public Core::Frontend::GraphicsContext {
 public:
     /// Create the original context that should be shared from
-    explicit OpenGLSharedContext(QSurface* surface) : surface(surface) {
+    explicit OpenGLSharedContext(QSurface* surface_) : surface{surface_} {
         QSurfaceFormat format;
         format.setVersion(4, 6);
         format.setProfile(QSurfaceFormat::CompatibilityProfile);
@@ -362,9 +367,9 @@ void GRenderWindow::RestoreGeometry() {
     QWidget::restoreGeometry(geometry);
 }
 
-void GRenderWindow::restoreGeometry(const QByteArray& geometry) {
+void GRenderWindow::restoreGeometry(const QByteArray& geometry_) {
     // Make sure users of this class don't need to deal with backing up the geometry themselves
-    QWidget::restoreGeometry(geometry);
+    QWidget::restoreGeometry(geometry_);
     BackupGeometry();
 }
 
@@ -750,7 +755,7 @@ void GRenderWindow::mouseMoveEvent(QMouseEvent* event) {
     input_subsystem->GetMouse()->MouseMove(x, y, touch_x, touch_y, center_x, center_y);
 
     if (Settings::values.mouse_panning && !Settings::values.mouse_enabled) {
-        QCursor::setPos(mapToGlobal({center_x, center_y}));
+        QCursor::setPos(mapToGlobal(QPoint{center_x, center_y}));
     }
 
     emit MouseActivity();
@@ -775,65 +780,25 @@ void GRenderWindow::wheelEvent(QWheelEvent* event) {
 void GRenderWindow::TouchBeginEvent(const QTouchEvent* event) {
     QList<QTouchEvent::TouchPoint> touch_points = event->touchPoints();
     for (const auto& touch_point : touch_points) {
-        if (!TouchUpdate(touch_point)) {
-            TouchStart(touch_point);
-        }
+        const auto [x, y] = ScaleTouch(touch_point.pos());
+        const auto [touch_x, touch_y] = MapToTouchScreen(x, y);
+        input_subsystem->GetTouchScreen()->TouchPressed(touch_x, touch_y, touch_point.id());
     }
 }
 
 void GRenderWindow::TouchUpdateEvent(const QTouchEvent* event) {
     QList<QTouchEvent::TouchPoint> touch_points = event->touchPoints();
+    input_subsystem->GetTouchScreen()->ClearActiveFlag();
     for (const auto& touch_point : touch_points) {
-        if (!TouchUpdate(touch_point)) {
-            TouchStart(touch_point);
-        }
+        const auto [x, y] = ScaleTouch(touch_point.pos());
+        const auto [touch_x, touch_y] = MapToTouchScreen(x, y);
+        input_subsystem->GetTouchScreen()->TouchMoved(touch_x, touch_y, touch_point.id());
     }
-    // Release all inactive points
-    for (std::size_t id = 0; id < touch_ids.size(); ++id) {
-        if (!TouchExist(touch_ids[id], touch_points)) {
-            touch_ids[id] = 0;
-            input_subsystem->GetTouchScreen()->TouchReleased(id);
-        }
-    }
+    input_subsystem->GetTouchScreen()->ReleaseInactiveTouch();
 }
 
 void GRenderWindow::TouchEndEvent() {
-    for (std::size_t id = 0; id < touch_ids.size(); ++id) {
-        if (touch_ids[id] != 0) {
-            touch_ids[id] = 0;
-            input_subsystem->GetTouchScreen()->TouchReleased(id);
-        }
-    }
-}
-
-void GRenderWindow::TouchStart(const QTouchEvent::TouchPoint& touch_point) {
-    for (std::size_t id = 0; id < touch_ids.size(); ++id) {
-        if (touch_ids[id] == 0) {
-            touch_ids[id] = touch_point.id() + 1;
-            const auto [x, y] = ScaleTouch(touch_point.pos());
-            const auto [touch_x, touch_y] = MapToTouchScreen(x, y);
-            input_subsystem->GetTouchScreen()->TouchPressed(touch_x, touch_y, id);
-        }
-    }
-}
-
-bool GRenderWindow::TouchUpdate(const QTouchEvent::TouchPoint& touch_point) {
-    for (std::size_t id = 0; id < touch_ids.size(); ++id) {
-        if (touch_ids[id] == static_cast<std::size_t>(touch_point.id() + 1)) {
-            const auto [x, y] = ScaleTouch(touch_point.pos());
-            const auto [touch_x, touch_y] = MapToTouchScreen(x, y);
-            input_subsystem->GetTouchScreen()->TouchMoved(touch_x, touch_y, id);
-            return true;
-        }
-    }
-    return false;
-}
-
-bool GRenderWindow::TouchExist(std::size_t id,
-                               const QList<QTouchEvent::TouchPoint>& touch_points) const {
-    return std::any_of(touch_points.begin(), touch_points.end(), [id](const auto& point) {
-        return id == static_cast<std::size_t>(point.id() + 1);
-    });
+    input_subsystem->GetTouchScreen()->ReleaseAllTouch();
 }
 
 bool GRenderWindow::event(QEvent* event) {
@@ -935,6 +900,12 @@ void GRenderWindow::ReleaseRenderTarget() {
 void GRenderWindow::CaptureScreenshot(const QString& screenshot_path) {
     auto& renderer = system.Renderer();
     const f32 res_scale = Settings::values.resolution_info.up_factor;
+
+    if (renderer.IsScreenshotPending()) {
+        LOG_WARNING(Render,
+                    "A screenshot is already requested or in progress, ignoring the request");
+        return;
+    }
 
     const Layout::FramebufferLayout layout{Layout::FrameLayoutFromResolutionScale(res_scale)};
     screenshot_image = QImage(QSize(layout.width, layout.height), QImage::Format_RGB32);
@@ -1046,8 +1017,8 @@ QStringList GRenderWindow::GetUnsupportedGLExtensions() const {
     return unsupported_ext;
 }
 
-void GRenderWindow::OnEmulationStarting(EmuThread* emu_thread) {
-    this->emu_thread = emu_thread;
+void GRenderWindow::OnEmulationStarting(EmuThread* emu_thread_) {
+    emu_thread = emu_thread_;
 }
 
 void GRenderWindow::OnEmulationStopping() {

@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <span>
@@ -216,15 +215,14 @@ ConfigureFuncPtr ConfigureFunc(const std::array<vk::ShaderModule, NUM_STAGES>& m
 } // Anonymous namespace
 
 GraphicsPipeline::GraphicsPipeline(
-    Tegra::Engines::Maxwell3D& maxwell3d_, Tegra::MemoryManager& gpu_memory_,
-    VKScheduler& scheduler_, BufferCache& buffer_cache_, TextureCache& texture_cache_,
+    Scheduler& scheduler_, BufferCache& buffer_cache_, TextureCache& texture_cache_,
     VideoCore::ShaderNotify* shader_notify, const Device& device_, DescriptorPool& descriptor_pool,
-    VKUpdateDescriptorQueue& update_descriptor_queue_, Common::ThreadWorker* worker_thread,
+    UpdateDescriptorQueue& update_descriptor_queue_, Common::ThreadWorker* worker_thread,
     PipelineStatistics* pipeline_statistics, RenderPassCache& render_pass_cache,
     const GraphicsPipelineCacheKey& key_, std::array<vk::ShaderModule, NUM_STAGES> stages,
     const std::array<const Shader::Info*, NUM_STAGES>& infos)
-    : key{key_}, maxwell3d{maxwell3d_}, gpu_memory{gpu_memory_}, device{device_},
-      texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, scheduler{scheduler_},
+    : key{key_}, device{device_}, texture_cache{texture_cache_},
+      buffer_cache{buffer_cache_}, scheduler{scheduler_},
       update_descriptor_queue{update_descriptor_queue_}, spv_modules{std::move(stages)} {
     if (shader_notify) {
         shader_notify->MarkShaderBuilding();
@@ -258,7 +256,7 @@ GraphicsPipeline::GraphicsPipeline(
             pipeline_statistics->Collect(*pipeline);
         }
 
-        std::lock_guard lock{build_mutex};
+        std::scoped_lock lock{build_mutex};
         is_built = true;
         build_condvar.notify_one();
         if (shader_notify) {
@@ -289,7 +287,7 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
 
     buffer_cache.SetUniformBuffersState(enabled_uniform_buffer_masks, &uniform_buffer_sizes);
 
-    const auto& regs{maxwell3d.regs};
+    const auto& regs{maxwell3d->regs};
     const bool via_header_index{regs.sampler_index == Maxwell::SamplerIndex::ViaHeaderIndex};
     const auto config_stage{[&](size_t stage) LAMBDA_FORCEINLINE {
         const Shader::Info& info{stage_infos[stage]};
@@ -303,7 +301,7 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
                 ++ssbo_index;
             }
         }
-        const auto& cbufs{maxwell3d.state.shader_stages[stage].const_buffers};
+        const auto& cbufs{maxwell3d->state.shader_stages[stage].const_buffers};
         const auto read_handle{[&](const auto& desc, u32 index) {
             ASSERT(cbufs[desc.cbuf_index].enabled);
             const u32 index_offset{index << desc.size_shift};
@@ -316,13 +314,14 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
                     const u32 second_offset{desc.secondary_cbuf_offset + index_offset};
                     const GPUVAddr separate_addr{cbufs[desc.secondary_cbuf_index].address +
                                                  second_offset};
-                    const u32 lhs_raw{gpu_memory.Read<u32>(addr)};
-                    const u32 rhs_raw{gpu_memory.Read<u32>(separate_addr)};
+                    const u32 lhs_raw{gpu_memory->Read<u32>(addr) << desc.shift_left};
+                    const u32 rhs_raw{gpu_memory->Read<u32>(separate_addr)
+                                      << desc.secondary_shift_left};
                     const u32 raw{lhs_raw | rhs_raw};
                     return TexturePair(raw, via_header_index);
                 }
             }
-            return TexturePair(gpu_memory.Read<u32>(addr), via_header_index);
+            return TexturePair(gpu_memory->Read<u32>(addr), via_header_index);
         }};
         const auto add_image{[&](const auto& desc, bool blacklist) LAMBDA_FORCEINLINE {
             for (u32 index = 0; index < desc.count; ++index) {

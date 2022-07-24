@@ -2207,6 +2207,19 @@ QPushButton#GPUStatusBarButton:!checked {
   color: #40dd40;
 }
 
+QPushButton#DockingStatusBarButton {
+    min-width: 0px;
+    color: #ffffff;
+    border: 1px solid transparent;
+    background-color: transparent;
+    padding: 0px 3px 0px 3px;
+    text-align: center;
+}
+
+QPushButton#DockingStatusBarButton:hover {
+    border: 1px solid #76797C;
+}
+
 QPushButton#buttonRefreshDevices {
   min-width: 19px;
   min-height: 19px;

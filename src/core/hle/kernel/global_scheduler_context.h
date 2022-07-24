@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -8,7 +7,6 @@
 #include <vector>
 
 #include "common/common_types.h"
-#include "common/spin_lock.h"
 #include "core/hardware_properties.h"
 #include "core/hle/kernel/k_priority_queue.h"
 #include "core/hle/kernel/k_scheduler_lock.h"
@@ -80,7 +78,7 @@ private:
 
     /// Lists all thread ids that aren't deleted/etc.
     std::vector<KThread*> thread_list;
-    Common::SpinLock global_list_guard{};
+    std::mutex global_list_guard;
 };
 
 } // namespace Kernel

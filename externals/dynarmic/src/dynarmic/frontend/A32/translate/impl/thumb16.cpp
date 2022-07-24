@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: 0BSD
  */
 
+#include <mcl/bit/bit_count.hpp>
+
 #include "dynarmic/frontend/A32/translate/impl/a32_translate_impl.h"
 #include "dynarmic/interface/A32/config.h"
 
@@ -444,7 +446,7 @@ bool TranslatorVisitor::thumb16_MOV_reg(bool d_hi, Reg m, Reg d_lo) {
 bool TranslatorVisitor::thumb16_LDR_literal(Reg t, Imm<8> imm8) {
     const u32 imm32 = imm8.ZeroExtend() << 2;
     const u32 address = ir.AlignPC(4) + imm32;
-    const auto data = ir.ReadMemory32(ir.Imm32(address));
+    const auto data = ir.ReadMemory32(ir.Imm32(address), IR::AccType::NORMAL);
 
     ir.SetRegister(t, data);
     return true;
@@ -456,7 +458,7 @@ bool TranslatorVisitor::thumb16_STR_reg(Reg m, Reg n, Reg t) {
     const auto address = ir.Add(ir.GetRegister(n), ir.GetRegister(m));
     const auto data = ir.GetRegister(t);
 
-    ir.WriteMemory32(address, data);
+    ir.WriteMemory32(address, data, IR::AccType::NORMAL);
     return true;
 }
 
@@ -466,7 +468,7 @@ bool TranslatorVisitor::thumb16_STRH_reg(Reg m, Reg n, Reg t) {
     const auto address = ir.Add(ir.GetRegister(n), ir.GetRegister(m));
     const auto data = ir.LeastSignificantHalf(ir.GetRegister(t));
 
-    ir.WriteMemory16(address, data);
+    ir.WriteMemory16(address, data, IR::AccType::NORMAL);
     return true;
 }
 
@@ -476,7 +478,7 @@ bool TranslatorVisitor::thumb16_STRB_reg(Reg m, Reg n, Reg t) {
     const auto address = ir.Add(ir.GetRegister(n), ir.GetRegister(m));
     const auto data = ir.LeastSignificantByte(ir.GetRegister(t));
 
-    ir.WriteMemory8(address, data);
+    ir.WriteMemory8(address, data, IR::AccType::NORMAL);
     return true;
 }
 
@@ -484,7 +486,7 @@ bool TranslatorVisitor::thumb16_STRB_reg(Reg m, Reg n, Reg t) {
 // Rt cannot encode R15.
 bool TranslatorVisitor::thumb16_LDRSB_reg(Reg m, Reg n, Reg t) {
     const auto address = ir.Add(ir.GetRegister(n), ir.GetRegister(m));
-    const auto data = ir.SignExtendByteToWord(ir.ReadMemory8(address));
+    const auto data = ir.SignExtendByteToWord(ir.ReadMemory8(address, IR::AccType::NORMAL));
 
     ir.SetRegister(t, data);
     return true;
@@ -494,7 +496,7 @@ bool TranslatorVisitor::thumb16_LDRSB_reg(Reg m, Reg n, Reg t) {
 // Rt cannot encode R15.
 bool TranslatorVisitor::thumb16_LDR_reg(Reg m, Reg n, Reg t) {
     const auto address = ir.Add(ir.GetRegister(n), ir.GetRegister(m));
-    const auto data = ir.ReadMemory32(address);
+    const auto data = ir.ReadMemory32(address, IR::AccType::NORMAL);
 
     ir.SetRegister(t, data);
     return true;
@@ -504,7 +506,7 @@ bool TranslatorVisitor::thumb16_LDR_reg(Reg m, Reg n, Reg t) {
 // Rt cannot encode R15.
 bool TranslatorVisitor::thumb16_LDRH_reg(Reg m, Reg n, Reg t) {
     const auto address = ir.Add(ir.GetRegister(n), ir.GetRegister(m));
-    const auto data = ir.ZeroExtendHalfToWord(ir.ReadMemory16(address));
+    const auto data = ir.ZeroExtendHalfToWord(ir.ReadMemory16(address, IR::AccType::NORMAL));
 
     ir.SetRegister(t, data);
     return true;
@@ -514,7 +516,7 @@ bool TranslatorVisitor::thumb16_LDRH_reg(Reg m, Reg n, Reg t) {
 // Rt cannot encode R15.
 bool TranslatorVisitor::thumb16_LDRB_reg(Reg m, Reg n, Reg t) {
     const auto address = ir.Add(ir.GetRegister(n), ir.GetRegister(m));
-    const auto data = ir.ZeroExtendByteToWord(ir.ReadMemory8(address));
+    const auto data = ir.ZeroExtendByteToWord(ir.ReadMemory8(address, IR::AccType::NORMAL));
 
     ir.SetRegister(t, data);
     return true;
@@ -524,7 +526,7 @@ bool TranslatorVisitor::thumb16_LDRB_reg(Reg m, Reg n, Reg t) {
 // Rt cannot encode R15.
 bool TranslatorVisitor::thumb16_LDRSH_reg(Reg m, Reg n, Reg t) {
     const auto address = ir.Add(ir.GetRegister(n), ir.GetRegister(m));
-    const auto data = ir.SignExtendHalfToWord(ir.ReadMemory16(address));
+    const auto data = ir.SignExtendHalfToWord(ir.ReadMemory16(address, IR::AccType::NORMAL));
 
     ir.SetRegister(t, data);
     return true;
@@ -537,7 +539,7 @@ bool TranslatorVisitor::thumb16_STR_imm_t1(Imm<5> imm5, Reg n, Reg t) {
     const auto address = ir.Add(ir.GetRegister(n), ir.Imm32(imm32));
     const auto data = ir.GetRegister(t);
 
-    ir.WriteMemory32(address, data);
+    ir.WriteMemory32(address, data, IR::AccType::NORMAL);
     return true;
 }
 
@@ -546,7 +548,7 @@ bool TranslatorVisitor::thumb16_STR_imm_t1(Imm<5> imm5, Reg n, Reg t) {
 bool TranslatorVisitor::thumb16_LDR_imm_t1(Imm<5> imm5, Reg n, Reg t) {
     const u32 imm32 = imm5.ZeroExtend() << 2;
     const auto address = ir.Add(ir.GetRegister(n), ir.Imm32(imm32));
-    const auto data = ir.ReadMemory32(address);
+    const auto data = ir.ReadMemory32(address, IR::AccType::NORMAL);
 
     ir.SetRegister(t, data);
     return true;
@@ -559,7 +561,7 @@ bool TranslatorVisitor::thumb16_STRB_imm(Imm<5> imm5, Reg n, Reg t) {
     const auto address = ir.Add(ir.GetRegister(n), ir.Imm32(imm32));
     const auto data = ir.LeastSignificantByte(ir.GetRegister(t));
 
-    ir.WriteMemory8(address, data);
+    ir.WriteMemory8(address, data, IR::AccType::NORMAL);
     return true;
 }
 
@@ -568,7 +570,7 @@ bool TranslatorVisitor::thumb16_STRB_imm(Imm<5> imm5, Reg n, Reg t) {
 bool TranslatorVisitor::thumb16_LDRB_imm(Imm<5> imm5, Reg n, Reg t) {
     const u32 imm32 = imm5.ZeroExtend();
     const auto address = ir.Add(ir.GetRegister(n), ir.Imm32(imm32));
-    const auto data = ir.ZeroExtendByteToWord(ir.ReadMemory8(address));
+    const auto data = ir.ZeroExtendByteToWord(ir.ReadMemory8(address, IR::AccType::NORMAL));
 
     ir.SetRegister(t, data);
     return true;
@@ -580,7 +582,7 @@ bool TranslatorVisitor::thumb16_STRH_imm(Imm<5> imm5, Reg n, Reg t) {
     const auto address = ir.Add(ir.GetRegister(n), ir.Imm32(imm32));
     const auto data = ir.LeastSignificantHalf(ir.GetRegister(t));
 
-    ir.WriteMemory16(address, data);
+    ir.WriteMemory16(address, data, IR::AccType::NORMAL);
     return true;
 }
 
@@ -588,7 +590,7 @@ bool TranslatorVisitor::thumb16_STRH_imm(Imm<5> imm5, Reg n, Reg t) {
 bool TranslatorVisitor::thumb16_LDRH_imm(Imm<5> imm5, Reg n, Reg t) {
     const u32 imm32 = imm5.ZeroExtend() << 1;
     const auto address = ir.Add(ir.GetRegister(n), ir.Imm32(imm32));
-    const auto data = ir.ZeroExtendHalfToWord(ir.ReadMemory16(address));
+    const auto data = ir.ZeroExtendHalfToWord(ir.ReadMemory16(address, IR::AccType::NORMAL));
 
     ir.SetRegister(t, data);
     return true;
@@ -602,7 +604,7 @@ bool TranslatorVisitor::thumb16_STR_imm_t2(Reg t, Imm<8> imm8) {
     const auto address = ir.Add(ir.GetRegister(n), ir.Imm32(imm32));
     const auto data = ir.GetRegister(t);
 
-    ir.WriteMemory32(address, data);
+    ir.WriteMemory32(address, data, IR::AccType::NORMAL);
     return true;
 }
 
@@ -612,7 +614,7 @@ bool TranslatorVisitor::thumb16_LDR_imm_t2(Reg t, Imm<8> imm8) {
     const u32 imm32 = imm8.ZeroExtend() << 2;
     const Reg n = Reg::SP;
     const auto address = ir.Add(ir.GetRegister(n), ir.Imm32(imm32));
-    const auto data = ir.ReadMemory32(address);
+    const auto data = ir.ReadMemory32(address, IR::AccType::NORMAL);
 
     ir.SetRegister(t, data);
     return true;
@@ -705,7 +707,7 @@ bool TranslatorVisitor::thumb16_NOP() {
 // IT{<x>{<y>{<z>}}} <cond>
 bool TranslatorVisitor::thumb16_IT(Imm<8> imm8) {
     ASSERT_MSG((imm8.Bits<0, 3>() != 0b0000), "Decode Error");
-    if (imm8.Bits<4, 7>() == 0b1111 || (imm8.Bits<4, 7>() == 0b1110 && Common::BitCount(imm8.Bits<0, 3>()) != 1)) {
+    if (imm8.Bits<4, 7>() == 0b1111 || (imm8.Bits<4, 7>() == 0b1110 && mcl::bit::count_ones(imm8.Bits<0, 3>()) != 1)) {
         return UnpredictableInstruction();
     }
     if (ir.current_location.IT().IsInITBlock()) {
@@ -755,18 +757,18 @@ bool TranslatorVisitor::thumb16_PUSH(bool M, RegList reg_list) {
     if (M) {
         reg_list |= 1 << 14;
     }
-    if (Common::BitCount(reg_list) < 1) {
+    if (mcl::bit::count_ones(reg_list) < 1) {
         return UnpredictableInstruction();
     }
 
-    const u32 num_bytes_to_push = static_cast<u32>(4 * Common::BitCount(reg_list));
+    const u32 num_bytes_to_push = static_cast<u32>(4 * mcl::bit::count_ones(reg_list));
     const auto final_address = ir.Sub(ir.GetRegister(Reg::SP), ir.Imm32(num_bytes_to_push));
     auto address = final_address;
     for (size_t i = 0; i < 16; i++) {
-        if (Common::Bit(i, reg_list)) {
+        if (mcl::bit::get_bit(i, reg_list)) {
             // TODO: Deal with alignment
             const auto Ri = ir.GetRegister(static_cast<Reg>(i));
-            ir.WriteMemory32(address, Ri);
+            ir.WriteMemory32(address, Ri, IR::AccType::ATOMIC);
             address = ir.Add(address, ir.Imm32(4));
         }
     }
@@ -781,23 +783,23 @@ bool TranslatorVisitor::thumb16_POP(bool P, RegList reg_list) {
     if (P) {
         reg_list |= 1 << 15;
     }
-    if (Common::BitCount(reg_list) < 1) {
+    if (mcl::bit::count_ones(reg_list) < 1) {
         return UnpredictableInstruction();
     }
 
     auto address = ir.GetRegister(Reg::SP);
     for (size_t i = 0; i < 15; i++) {
-        if (Common::Bit(i, reg_list)) {
+        if (mcl::bit::get_bit(i, reg_list)) {
             // TODO: Deal with alignment
-            const auto data = ir.ReadMemory32(address);
+            const auto data = ir.ReadMemory32(address, IR::AccType::ATOMIC);
             ir.SetRegister(static_cast<Reg>(i), data);
             address = ir.Add(address, ir.Imm32(4));
         }
     }
 
-    if (Common::Bit<15>(reg_list)) {
+    if (mcl::bit::get_bit<15>(reg_list)) {
         // TODO(optimization): Possible location for an RSB pop.
-        const auto data = ir.ReadMemory32(address);
+        const auto data = ir.ReadMemory32(address, IR::AccType::ATOMIC);
         ir.UpdateUpperLocationDescriptor();
         ir.LoadWritePC(data);
         address = ir.Add(address, ir.Imm32(4));
@@ -868,18 +870,18 @@ bool TranslatorVisitor::thumb16_BKPT(Imm<8> /*imm8*/) {
 
 // STM <Rn>!, <reg_list>
 bool TranslatorVisitor::thumb16_STMIA(Reg n, RegList reg_list) {
-    if (Common::BitCount(reg_list) == 0) {
+    if (mcl::bit::count_ones(reg_list) == 0) {
         return UnpredictableInstruction();
     }
-    if (Common::Bit(static_cast<size_t>(n), reg_list) && n != static_cast<Reg>(Common::LowestSetBit(reg_list))) {
+    if (mcl::bit::get_bit(static_cast<size_t>(n), reg_list) && n != static_cast<Reg>(mcl::bit::lowest_set_bit(reg_list))) {
         return UnpredictableInstruction();
     }
 
     auto address = ir.GetRegister(n);
     for (size_t i = 0; i < 8; i++) {
-        if (Common::Bit(i, reg_list)) {
+        if (mcl::bit::get_bit(i, reg_list)) {
             const auto Ri = ir.GetRegister(static_cast<Reg>(i));
-            ir.WriteMemory32(address, Ri);
+            ir.WriteMemory32(address, Ri, IR::AccType::ATOMIC);
             address = ir.Add(address, ir.Imm32(4));
         }
     }
@@ -890,16 +892,16 @@ bool TranslatorVisitor::thumb16_STMIA(Reg n, RegList reg_list) {
 
 // LDM <Rn>!, <reg_list>
 bool TranslatorVisitor::thumb16_LDMIA(Reg n, RegList reg_list) {
-    if (Common::BitCount(reg_list) == 0) {
+    if (mcl::bit::count_ones(reg_list) == 0) {
         return UnpredictableInstruction();
     }
 
-    const bool write_back = !Common::Bit(static_cast<size_t>(n), reg_list);
+    const bool write_back = !mcl::bit::get_bit(static_cast<size_t>(n), reg_list);
     auto address = ir.GetRegister(n);
 
     for (size_t i = 0; i < 8; i++) {
-        if (Common::Bit(i, reg_list)) {
-            const auto data = ir.ReadMemory32(address);
+        if (mcl::bit::get_bit(i, reg_list)) {
+            const auto data = ir.ReadMemory32(address, IR::AccType::ATOMIC);
             ir.SetRegister(static_cast<Reg>(i), data);
             address = ir.Add(address, ir.Imm32(4));
         }

@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -17,8 +16,7 @@ namespace OpenGL {
 
 class GLInnerFence : public VideoCommon::FenceBase {
 public:
-    explicit GLInnerFence(u32 payload_, bool is_stubbed_);
-    explicit GLInnerFence(GPUVAddr address_, u32 payload_, bool is_stubbed_);
+    explicit GLInnerFence(bool is_stubbed_);
     ~GLInnerFence();
 
     void Queue();
@@ -41,8 +39,7 @@ public:
                                 QueryCache& query_cache);
 
 protected:
-    Fence CreateFence(u32 value, bool is_stubbed) override;
-    Fence CreateFence(GPUVAddr addr, u32 value, bool is_stubbed) override;
+    Fence CreateFence(bool is_stubbed) override;
     void QueueFence(Fence& fence) override;
     bool IsFenceSignaled(Fence& fence) const override;
     void WaitFence(Fence& fence) override;

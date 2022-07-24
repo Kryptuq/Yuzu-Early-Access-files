@@ -7,7 +7,8 @@
 
 #include <optional>
 
-#include "dynarmic/common/common_types.h"
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/frontend/A64/a64_location_descriptor.h"
 #include "dynarmic/frontend/A64/a64_types.h"
 #include "dynarmic/interface/A64/config.h"
@@ -56,26 +57,26 @@ public:
     void SetTPIDR(const IR::U64& value);
 
     void ClearExclusive();
-    IR::U8 ReadMemory8(const IR::U64& vaddr);
-    IR::U16 ReadMemory16(const IR::U64& vaddr);
-    IR::U32 ReadMemory32(const IR::U64& vaddr);
-    IR::U64 ReadMemory64(const IR::U64& vaddr);
-    IR::U128 ReadMemory128(const IR::U64& vaddr);
-    IR::U8 ExclusiveReadMemory8(const IR::U64& vaddr);
-    IR::U16 ExclusiveReadMemory16(const IR::U64& vaddr);
-    IR::U32 ExclusiveReadMemory32(const IR::U64& vaddr);
-    IR::U64 ExclusiveReadMemory64(const IR::U64& vaddr);
-    IR::U128 ExclusiveReadMemory128(const IR::U64& vaddr);
-    void WriteMemory8(const IR::U64& vaddr, const IR::U8& value);
-    void WriteMemory16(const IR::U64& vaddr, const IR::U16& value);
-    void WriteMemory32(const IR::U64& vaddr, const IR::U32& value);
-    void WriteMemory64(const IR::U64& vaddr, const IR::U64& value);
-    void WriteMemory128(const IR::U64& vaddr, const IR::U128& value);
-    IR::U32 ExclusiveWriteMemory8(const IR::U64& vaddr, const IR::U8& value);
-    IR::U32 ExclusiveWriteMemory16(const IR::U64& vaddr, const IR::U16& value);
-    IR::U32 ExclusiveWriteMemory32(const IR::U64& vaddr, const IR::U32& value);
-    IR::U32 ExclusiveWriteMemory64(const IR::U64& vaddr, const IR::U64& value);
-    IR::U32 ExclusiveWriteMemory128(const IR::U64& vaddr, const IR::U128& value);
+    IR::U8 ReadMemory8(const IR::U64& vaddr, IR::AccType acc_type);
+    IR::U16 ReadMemory16(const IR::U64& vaddr, IR::AccType acc_type);
+    IR::U32 ReadMemory32(const IR::U64& vaddr, IR::AccType acc_type);
+    IR::U64 ReadMemory64(const IR::U64& vaddr, IR::AccType acc_type);
+    IR::U128 ReadMemory128(const IR::U64& vaddr, IR::AccType acc_type);
+    IR::U8 ExclusiveReadMemory8(const IR::U64& vaddr, IR::AccType acc_type);
+    IR::U16 ExclusiveReadMemory16(const IR::U64& vaddr, IR::AccType acc_type);
+    IR::U32 ExclusiveReadMemory32(const IR::U64& vaddr, IR::AccType acc_type);
+    IR::U64 ExclusiveReadMemory64(const IR::U64& vaddr, IR::AccType acc_type);
+    IR::U128 ExclusiveReadMemory128(const IR::U64& vaddr, IR::AccType acc_type);
+    void WriteMemory8(const IR::U64& vaddr, const IR::U8& value, IR::AccType acc_type);
+    void WriteMemory16(const IR::U64& vaddr, const IR::U16& value, IR::AccType acc_type);
+    void WriteMemory32(const IR::U64& vaddr, const IR::U32& value, IR::AccType acc_type);
+    void WriteMemory64(const IR::U64& vaddr, const IR::U64& value, IR::AccType acc_type);
+    void WriteMemory128(const IR::U64& vaddr, const IR::U128& value, IR::AccType acc_type);
+    IR::U32 ExclusiveWriteMemory8(const IR::U64& vaddr, const IR::U8& value, IR::AccType acc_type);
+    IR::U32 ExclusiveWriteMemory16(const IR::U64& vaddr, const IR::U16& value, IR::AccType acc_type);
+    IR::U32 ExclusiveWriteMemory32(const IR::U64& vaddr, const IR::U32& value, IR::AccType acc_type);
+    IR::U32 ExclusiveWriteMemory64(const IR::U64& vaddr, const IR::U64& value, IR::AccType acc_type);
+    IR::U32 ExclusiveWriteMemory128(const IR::U64& vaddr, const IR::U128& value, IR::AccType acc_type);
 
     IR::U32 GetW(Reg source_reg);
     IR::U64 GetX(Reg source_reg);
@@ -94,6 +95,9 @@ public:
     void SetFPCR(const IR::U32& value);
     void SetFPSR(const IR::U32& value);
     void SetPC(const IR::U64& value);
+
+private:
+    IR::U64 ImmCurrentLocationDescriptor();
 };
 
 }  // namespace Dynarmic::A64

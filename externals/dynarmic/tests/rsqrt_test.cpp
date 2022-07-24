@@ -5,8 +5,8 @@
 
 #include <catch2/catch.hpp>
 #include <fmt/printf.h>
+#include <mcl/stdint.hpp>
 
-#include "dynarmic/common/common_types.h"
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/fp/op/FPRSqrtEstimate.h"

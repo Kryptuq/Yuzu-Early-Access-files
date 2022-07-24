@@ -1,30 +1,10 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-FileCopyrightText: Ryujinx Team and Contributors
+// SPDX-License-Identifier: GPL-2.0-or-later AND MIT
 
 // This files contains code from Ryujinx
 // A copy of the code can be obtained from https://github.com/Ryujinx/Ryujinx
 // The sections using code from Ryujinx are marked with a link to the original version
-
-// MIT License
-//
-// Copyright (c) Ryujinx Team and Contributors
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
-// associated documentation files (the "Software"), to deal in the Software without restriction,
-// including without limitation the rights to use, copy, modify, merge, publish, distribute,
-// sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all copies or
-// substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
-// NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
 
 #include <algorithm>
 #include <array>
@@ -537,7 +517,6 @@ void SwizzleBlockLinearImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr
     const u32 host_bytes_per_layer = num_blocks_per_layer * bytes_per_block;
 
     UNIMPLEMENTED_IF(info.tile_width_spacing > 0);
-
     UNIMPLEMENTED_IF(copy.image_offset.x != 0);
     UNIMPLEMENTED_IF(copy.image_offset.y != 0);
     UNIMPLEMENTED_IF(copy.image_offset.z != 0);
@@ -775,7 +754,7 @@ bool IsValidEntry(const Tegra::MemoryManager& gpu_memory, const TICEntry& config
     if (address == 0) {
         return false;
     }
-    if (address > (1ULL << 48)) {
+    if (address >= (1ULL << 40)) {
         return false;
     }
     if (gpu_memory.GpuToCpuAddress(address).has_value()) {

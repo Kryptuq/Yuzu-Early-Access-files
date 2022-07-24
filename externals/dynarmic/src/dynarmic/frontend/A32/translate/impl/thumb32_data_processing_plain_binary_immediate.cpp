@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/bit_util.h"
+#include <mcl/assert.hpp>
+#include <mcl/bitsizeof.hpp>
+
 #include "dynarmic/frontend/A32/translate/impl/a32_translate_impl.h"
 
 namespace Dynarmic::A32 {
@@ -101,7 +102,7 @@ bool TranslatorVisitor::thumb32_BFC(Imm<3> imm3, Reg d, Imm<2> imm2, Imm<5> msb)
         return UnpredictableInstruction();
     }
 
-    const u32 mask = ~(Common::Ones<u32>(msbit - lsbit + 1) << lsbit);
+    const u32 mask = ~(mcl::bit::ones<u32>(msbit - lsbit + 1) << lsbit);
     const auto reg_d = ir.GetRegister(d);
     const auto result = ir.And(reg_d, ir.Imm32(mask));
 
@@ -121,7 +122,7 @@ bool TranslatorVisitor::thumb32_BFI(Reg n, Imm<3> imm3, Reg d, Imm<2> imm2, Imm<
         return UnpredictableInstruction();
     }
 
-    const u32 inclusion_mask = Common::Ones<u32>(msbit - lsbit + 1) << lsbit;
+    const u32 inclusion_mask = mcl::bit::ones<u32>(msbit - lsbit + 1) << lsbit;
     const u32 exclusion_mask = ~inclusion_mask;
     const IR::U32 operand1 = ir.And(ir.GetRegister(d), ir.Imm32(exclusion_mask));
     const IR::U32 operand2 = ir.And(ir.LogicalShiftLeft(ir.GetRegister(n), ir.Imm8(u8(lsbit))), ir.Imm32(inclusion_mask));
@@ -163,11 +164,11 @@ bool TranslatorVisitor::thumb32_SBFX(Reg n, Imm<3> imm3, Reg d, Imm<2> imm2, Imm
     const u32 lsbit = concatenate(imm3, imm2).ZeroExtend();
     const u32 widthm1_value = widthm1.ZeroExtend();
     const u32 msb = lsbit + widthm1_value;
-    if (msb >= Common::BitSize<u32>()) {
+    if (msb >= mcl::bitsizeof<u32>) {
         return UnpredictableInstruction();
     }
 
-    constexpr size_t max_width = Common::BitSize<u32>();
+    constexpr size_t max_width = mcl::bitsizeof<u32>;
     const auto width = widthm1_value + 1;
     const auto left_shift_amount = static_cast<u8>(max_width - width - lsbit);
     const auto right_shift_amount = static_cast<u8>(max_width - width);
@@ -208,12 +209,12 @@ bool TranslatorVisitor::thumb32_UBFX(Reg n, Imm<3> imm3, Reg d, Imm<2> imm2, Imm
     const u32 lsbit = concatenate(imm3, imm2).ZeroExtend();
     const u32 widthm1_value = widthm1.ZeroExtend();
     const u32 msb = lsbit + widthm1_value;
-    if (msb >= Common::BitSize<u32>()) {
+    if (msb >= mcl::bitsizeof<u32>) {
         return UnpredictableInstruction();
     }
 
     const auto operand = ir.GetRegister(n);
-    const auto mask = ir.Imm32(Common::Ones<u32>(widthm1_value + 1));
+    const auto mask = ir.Imm32(mcl::bit::ones<u32>(widthm1_value + 1));
     const auto result = ir.And(ir.LogicalShiftRight(operand, ir.Imm8(u8(lsbit))), mask);
 
     ir.SetRegister(d, result);

@@ -9,6 +9,7 @@
 #include <QDirIterator>
 #include "common/common_types.h"
 #include "common/fs/path_util.h"
+#include "common/logging/log.h"
 #include "common/settings.h"
 #include "core/core.h"
 #include "ui_configure_ui.h"
@@ -170,14 +171,74 @@ void ConfigureUi::RetranslateUI() {
 }
 
 void ConfigureUi::InitializeLanguageComboBox() {
+    // This is a list of lexicographically sorted languages, only the available translations are
+    // shown to the user.
+    static const struct {
+        const QString name;
+        const char* id;
+    } languages[] = {
+        // clang-format off
+        {QStringLiteral(u"Bahasa Indonesia"), "id"},                                 // Indonesian
+        {QStringLiteral(u"Bahasa Melayu"), "ms"},                                    // Malay
+        {QStringLiteral(u"Catal\u00E0"), "ca"},                                      // Catalan
+        {QStringLiteral(u"\u010Ce\u0161tina"), "cs"},                                // Czech
+        {QStringLiteral(u"Dansk"), "da"},                                            // Danish
+        {QStringLiteral(u"Deutsch"), "de"},                                          // German
+        {QStringLiteral(u"English"), "en"},                                          // English
+        {QStringLiteral(u"Espa\u00F1ol"), "es"},                                     // Spanish
+        {QStringLiteral(u"Fran\u00E7ais"), "fr"},                                    // French
+        {QStringLiteral(u"Hrvatski"), "hr"},                                         // Croatian
+        {QStringLiteral(u"Italiano"), "it"},                                         // Italian
+        {QStringLiteral(u"Magyar"), "hu"},                                           // Hungarian
+        {QStringLiteral(u"Nederlands"), "nl"},                                       // Dutch
+        {QStringLiteral(u"Norsk bokm\u00E5l"), "nb"},                                // Norwegian
+        {QStringLiteral(u"Polski"), "pl"},                                           // Polish
+        {QStringLiteral(u"Portugu\u00EAs"), "pt_PT"},                                // Portuguese
+        {QStringLiteral(u"Portugu\u00EAs (Brasil)"), "pt_BR"},                       // Portuguese (Brazil)
+        {QStringLiteral(u"Rom\u00E2n\u0103"), "ro"},                                 // Romanian
+        {QStringLiteral(u"Srpski"), "sr"},                                           // Serbian
+        {QStringLiteral(u"Suomi"), "fi"},                                            // Finnish
+        {QStringLiteral(u"Svenska"), "sv"},                                          // Swedish
+        {QStringLiteral(u"Ti\u1EBFng Vi\u1EC7t"), "vi"},                             // Vietnamese
+        {QStringLiteral(u"Ti\u1EBFng Vi\u1EC7t (Vi\u1EC7t Nam)"), "vi_VN"},          // Vietnamese
+        {QStringLiteral(u"T\u00FCrk\u00E7e"), "tr_TR"},                              // Turkish
+        {QStringLiteral(u"\u0395\u03BB\u03BB\u03B7\u03BD\u03B9\u03BA\u03AC"), "el"}, // Greek
+        {QStringLiteral(u"\u0420\u0443\u0441\u0441\u043A\u0438\u0439"), "ru_RU"},    // Russian
+        {QStringLiteral(u"\u0423\u043A\u0440\u0430\u0457\u043D\u0441\u044C\u043A\u0430"),
+         "uk"},                                                                      // Ukrainian
+        {QStringLiteral(u"\u0627\u0644\u0639\u0631\u0628\u064A\u0629"), "ar"},       // Arabic
+        {QStringLiteral(u"\u0641\u0627\u0631\u0633\u06CC"), "fa"},                   // Farsi
+        {QStringLiteral(u"\uD55C\uAD6D\uC5B4"), "ko_KR"},                            // Korean
+        {QStringLiteral(u"\u65E5\u672C\u8A9E"), "ja_JP"},                            // Japanese
+        {QStringLiteral(u"\u7B80\u4F53\u4E2D\u6587"), "zh_CN"},                      // Simplified Chinese
+        {QStringLiteral(u"\u7E41\u9AD4\u4E2D\u6587"), "zh_TW"},                      // Traditional Chinese
+        // clang-format on
+    };
     ui->language_combobox->addItem(tr("<System>"), QString{});
-    ui->language_combobox->addItem(tr("English"), QStringLiteral("en"));
-    QDirIterator it(QStringLiteral(":/languages"), QDirIterator::NoIteratorFlags);
-    while (it.hasNext()) {
-        QString locale = it.next();
+    QDir languages_dir{QStringLiteral(":/languages")};
+    QStringList language_files = languages_dir.entryList();
+    for (const auto& lang : languages) {
+        if (QString::fromLatin1(lang.id) == QStringLiteral("en")) {
+            ui->language_combobox->addItem(lang.name, QStringLiteral("en"));
+            continue;
+        }
+        for (int i = 0; i < language_files.size(); ++i) {
+            QString locale = language_files[i];
+            locale.truncate(locale.lastIndexOf(QLatin1Char{'.'}));
+            if (QString::fromLatin1(lang.id) == locale) {
+                ui->language_combobox->addItem(lang.name, locale);
+                language_files.removeAt(i);
+                break;
+            }
+        }
+    }
+    // Anything remaining will be at the bottom
+    for (const QString& file : language_files) {
+        LOG_CRITICAL(Frontend, "Unexpected Language File: {}", file.toStdString());
+        QString locale = file;
         locale.truncate(locale.lastIndexOf(QLatin1Char{'.'}));
-        locale.remove(0, locale.lastIndexOf(QLatin1Char{'/'}) + 1);
-        const QString lang = QLocale::languageToString(QLocale(locale).language());
+        const QString language_name = QLocale::languageToString(QLocale(locale).language());
+        const QString lang = QStringLiteral("%1 [%2]").arg(language_name, locale);
         ui->language_combobox->addItem(lang, locale);
     }
 

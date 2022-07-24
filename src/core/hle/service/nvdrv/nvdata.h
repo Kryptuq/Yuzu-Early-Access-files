@@ -1,6 +1,6 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2021 yuzu Emulator Project
+// SPDX-FileCopyrightText: 2021 Skyline Team and Contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 #pragma once
 
@@ -16,17 +16,11 @@ using DeviceFD = s32;
 
 constexpr DeviceFD INVALID_NVDRV_FD = -1;
 
-struct Fence {
+struct NvFence {
     s32 id;
     u32 value;
 };
-
-static_assert(sizeof(Fence) == 8, "Fence has wrong size");
-
-struct MultiFence {
-    u32 num_fences;
-    std::array<Fence, 4> fences;
-};
+static_assert(sizeof(NvFence) == 8, "NvFence has wrong size");
 
 enum class NvResult : u32 {
     Success = 0x0,
@@ -85,11 +79,15 @@ enum class NvResult : u32 {
     ModuleNotPresent = 0xA000E,
 };
 
+// obtained from
+// https://github.com/skyline-emu/skyline/blob/nvdec-dev/app/src/main/cpp/skyline/services/nvdrv/devices/nvhost/ctrl.h#L47
 enum class EventState {
-    Free = 0,
-    Registered = 1,
-    Waiting = 2,
-    Busy = 3,
+    Available = 0,
+    Waiting = 1,
+    Cancelling = 2,
+    Signalling = 3,
+    Signalled = 4,
+    Cancelled = 5,
 };
 
 union Ioctl {

@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -33,11 +32,12 @@ enum class ImageFlagBits : u32 {
                           ///< garbage collection priority
     Alias = 1 << 11,      ///< This image has aliases and has priority on garbage
                           ///< collection
+    CostlyLoad = 1 << 12, ///< Protected from low-tier GC as it is costly to load back.
 
     // Rescaler
-    Rescaled = 1 << 12,
-    CheckingRescalable = 1 << 13,
-    IsRescalable = 1 << 14,
+    Rescaled = 1 << 13,
+    CheckingRescalable = 1 << 14,
+    IsRescalable = 1 << 15,
 };
 DECLARE_ENUM_FLAG_OPERATORS(ImageFlagBits)
 
@@ -88,6 +88,9 @@ struct ImageBase {
     u32 scale_rating = 0;
     u64 scale_tick = 0;
     bool has_scaled = false;
+
+    size_t channel = 0;
+
     ImageFlagBits flags = ImageFlagBits::CpuModified;
 
     GPUVAddr gpu_addr = 0;

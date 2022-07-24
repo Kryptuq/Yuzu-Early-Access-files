@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <memory>
+#include <optional>
 #include <sstream>
 
 // Ignore -Wimplicit-fallthrough due to https://github.com/libsdl-org/SDL/issues/4307
@@ -20,7 +21,6 @@
 #include "common/fs/fs.h"
 #include "common/fs/path_util.h"
 #include "common/logging/log.h"
-#include "common/param_package.h"
 #include "common/settings.h"
 #include "core/hle/service/acc/profile_manager.h"
 #include "input_common/main.h"
@@ -29,11 +29,12 @@
 
 namespace FS = Common::FS;
 
-Config::Config() {
-    // TODO: Don't hardcode the path; let the frontend decide where to put the config files.
-    sdl2_config_loc = FS::GetYuzuPath(FS::YuzuPath::ConfigDir) / "sdl2-config.ini";
-    sdl2_config = std::make_unique<INIReader>(FS::PathToUTF8String(sdl2_config_loc));
+const std::filesystem::path default_config_path =
+    FS::GetYuzuPath(FS::YuzuPath::ConfigDir) / "sdl2-config.ini";
 
+Config::Config(std::optional<std::filesystem::path> config_path)
+    : sdl2_config_loc{config_path.value_or(default_config_path)},
+      sdl2_config{std::make_unique<INIReader>(FS::PathToUTF8String(sdl2_config_loc))} {
     Reload();
 }
 
@@ -66,6 +67,11 @@ static const std::array<int, Settings::NativeButton::NumButtons> default_buttons
     SDL_SCANCODE_M, SDL_SCANCODE_N, SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_B,
 };
 
+static const std::array<int, Settings::NativeMotion::NumMotions> default_motions = {
+    SDL_SCANCODE_7,
+    SDL_SCANCODE_8,
+};
+
 static const std::array<std::array<int, 5>, Settings::NativeAnalog::NumAnalogs> default_analogs{{
     {
         SDL_SCANCODE_UP,
@@ -84,17 +90,17 @@ static const std::array<std::array<int, 5>, Settings::NativeAnalog::NumAnalogs> 
 }};
 
 template <>
-void Config::ReadSetting(const std::string& group, Settings::BasicSetting<std::string>& setting) {
+void Config::ReadSetting(const std::string& group, Settings::Setting<std::string>& setting) {
     setting = sdl2_config->Get(group, setting.GetLabel(), setting.GetDefault());
 }
 
 template <>
-void Config::ReadSetting(const std::string& group, Settings::BasicSetting<bool>& setting) {
+void Config::ReadSetting(const std::string& group, Settings::Setting<bool>& setting) {
     setting = sdl2_config->GetBoolean(group, setting.GetLabel(), setting.GetDefault());
 }
 
-template <typename Type>
-void Config::ReadSetting(const std::string& group, Settings::BasicSetting<Type>& setting) {
+template <typename Type, bool ranged>
+void Config::ReadSetting(const std::string& group, Settings::Setting<Type, ranged>& setting) {
     setting = static_cast<Type>(sdl2_config->GetInteger(group, setting.GetLabel(),
                                                         static_cast<long>(setting.GetDefault())));
 }
@@ -102,27 +108,42 @@ void Config::ReadSetting(const std::string& group, Settings::BasicSetting<Type>&
 void Config::ReadValues() {
     // Controls
     for (std::size_t p = 0; p < Settings::values.players.GetValue().size(); ++p) {
+        auto& player = Settings::values.players.GetValue()[p];
+
         const auto group = fmt::format("ControlsP{}", p);
         for (int i = 0; i < Settings::NativeButton::NumButtons; ++i) {
             std::string default_param = InputCommon::GenerateKeyboardParam(default_buttons[i]);
-            Settings::values.players.GetValue()[p].buttons[i] =
+            player.buttons[i] =
                 sdl2_config->Get(group, Settings::NativeButton::mapping[i], default_param);
-            if (Settings::values.players.GetValue()[p].buttons[i].empty())
-                Settings::values.players.GetValue()[p].buttons[i] = default_param;
+            if (player.buttons[i].empty()) {
+                player.buttons[i] = default_param;
+            }
         }
 
         for (int i = 0; i < Settings::NativeAnalog::NumAnalogs; ++i) {
             std::string default_param = InputCommon::GenerateAnalogParamFromKeys(
                 default_analogs[i][0], default_analogs[i][1], default_analogs[i][2],
                 default_analogs[i][3], default_analogs[i][4], 0.5f);
-            Settings::values.players.GetValue()[p].analogs[i] =
+            player.analogs[i] =
                 sdl2_config->Get(group, Settings::NativeAnalog::mapping[i], default_param);
-            if (Settings::values.players.GetValue()[p].analogs[i].empty())
-                Settings::values.players.GetValue()[p].analogs[i] = default_param;
+            if (player.analogs[i].empty()) {
+                player.analogs[i] = default_param;
+            }
         }
 
-        Settings::values.players.GetValue()[p].connected =
-            sdl2_config->GetBoolean(group, "connected", false);
+        for (int i = 0; i < Settings::NativeMotion::NumMotions; ++i) {
+            const std::string default_param =
+                InputCommon::GenerateKeyboardParam(default_motions[i]);
+            auto& player_motions = player.motions[i];
+
+            player_motions =
+                sdl2_config->Get(group, Settings::NativeMotion::mapping[i], default_param);
+            if (player_motions.empty()) {
+                player_motions = default_param;
+            }
+        }
+
+        player.connected = sdl2_config->GetBoolean(group, "connected", false);
     }
 
     ReadSetting("ControlsGeneral", Settings::values.mouse_enabled);
@@ -246,6 +267,7 @@ void Config::ReadValues() {
 
     // Core
     ReadSetting("Core", Settings::values.use_multi_core);
+    ReadSetting("Core", Settings::values.use_extended_memory_layout);
 
     // Cpu
     ReadSetting("Cpu", Settings::values.cpu_accuracy);
@@ -259,11 +281,14 @@ void Config::ReadValues() {
     ReadSetting("Cpu", Settings::values.cpuopt_misc_ir);
     ReadSetting("Cpu", Settings::values.cpuopt_reduce_misalign_checks);
     ReadSetting("Cpu", Settings::values.cpuopt_fastmem);
+    ReadSetting("Cpu", Settings::values.cpuopt_fastmem_exclusives);
+    ReadSetting("Cpu", Settings::values.cpuopt_recompile_exclusives);
     ReadSetting("Cpu", Settings::values.cpuopt_unsafe_unfuse_fma);
     ReadSetting("Cpu", Settings::values.cpuopt_unsafe_reduce_fp_error);
     ReadSetting("Cpu", Settings::values.cpuopt_unsafe_ignore_standard_fpcr);
     ReadSetting("Cpu", Settings::values.cpuopt_unsafe_inaccurate_nan);
     ReadSetting("Cpu", Settings::values.cpuopt_unsafe_fastmem_check);
+    ReadSetting("Cpu", Settings::values.cpuopt_unsafe_ignore_global_monitor);
 
     // Renderer
     ReadSetting("Renderer", Settings::values.renderer_backend);
@@ -285,8 +310,6 @@ void Config::ReadValues() {
     ReadSetting("Renderer", Settings::values.gpu_accuracy);
     ReadSetting("Renderer", Settings::values.use_asynchronous_gpu_emulation);
     ReadSetting("Renderer", Settings::values.use_vsync);
-    ReadSetting("Renderer", Settings::values.fps_cap);
-    ReadSetting("Renderer", Settings::values.disable_fps_limit);
     ReadSetting("Renderer", Settings::values.shader_backend);
     ReadSetting("Renderer", Settings::values.use_asynchronous_shaders);
     ReadSetting("Renderer", Settings::values.nvdec_emulation);
@@ -299,7 +322,7 @@ void Config::ReadValues() {
 
     // Audio
     ReadSetting("Audio", Settings::values.sink_id);
-    ReadSetting("Audio", Settings::values.audio_device_id);
+    ReadSetting("Audio", Settings::values.audio_output_device_id);
     ReadSetting("Audio", Settings::values.volume);
 
     // Miscellaneous
@@ -319,6 +342,8 @@ void Config::ReadValues() {
     ReadSetting("Debugging", Settings::values.use_debug_asserts);
     ReadSetting("Debugging", Settings::values.use_auto_stub);
     ReadSetting("Debugging", Settings::values.disable_macro_jit);
+    ReadSetting("Debugging", Settings::values.use_gdbstub);
+    ReadSetting("Debugging", Settings::values.gdbstub_port);
 
     const auto title_list = sdl2_config->Get("AddOns", "title_ids", "");
     std::stringstream ss(title_list);

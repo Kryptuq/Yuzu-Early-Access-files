@@ -1,6 +1,5 @@
-// Copyright 2022 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2022 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <memory>
 #include <QKeyEvent>
@@ -166,10 +165,10 @@ ConfigureRingController::ConfigureRingController(QWidget* parent,
                         const std::string invert_str = invert_value ? "+" : "-";
                         param.Set("invert_x", invert_str);
                         emulated_device->SetRingParam(param);
-                        for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM;
-                             ++sub_button_id) {
-                            analog_map_buttons[sub_button_id]->setText(
-                                AnalogToText(param, analog_sub_buttons[sub_button_id]));
+                        for (int sub_button_id2 = 0; sub_button_id2 < ANALOG_SUB_BUTTONS_NUM;
+                             ++sub_button_id2) {
+                            analog_map_buttons[sub_button_id2]->setText(
+                                AnalogToText(param, analog_sub_buttons[sub_button_id2]));
                         }
                     });
                     context_menu.exec(
@@ -305,10 +304,10 @@ void ConfigureRingController::mousePressEvent(QMouseEvent* event) {
 }
 
 void ConfigureRingController::keyPressEvent(QKeyEvent* event) {
-    event->ignore();
     if (!input_setter || !event) {
         return;
     }
+    event->ignore();
     if (event->key() != Qt::Key_Escape) {
         input_subsystem->GetKeyboard()->PressKey(event->key());
     }

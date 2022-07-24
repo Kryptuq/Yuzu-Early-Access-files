@@ -1,9 +1,9 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
+#include "audio_core/audio_render_manager.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/service.h"
 
@@ -16,6 +16,7 @@ class HLERequestContext;
 }
 
 namespace Service::Audio {
+class IAudioRenderer;
 
 class AudRenU final : public ServiceFramework<AudRenU> {
 public:
@@ -24,28 +25,14 @@ public:
 
 private:
     void OpenAudioRenderer(Kernel::HLERequestContext& ctx);
-    void GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx);
+    void GetWorkBufferSize(Kernel::HLERequestContext& ctx);
     void GetAudioDeviceService(Kernel::HLERequestContext& ctx);
     void OpenAudioRendererForManualExecution(Kernel::HLERequestContext& ctx);
     void GetAudioDeviceServiceWithRevisionInfo(Kernel::HLERequestContext& ctx);
 
-    void OpenAudioRendererImpl(Kernel::HLERequestContext& ctx);
-
     KernelHelpers::ServiceContext service_context;
-
-    std::size_t audren_instance_count = 0;
-    Kernel::KEvent* buffer_event;
+    std::unique_ptr<AudioCore::AudioRenderer::Manager> impl;
+    u32 num_audio_devices{0};
 };
-
-// Describes a particular audio feature that may be supported in a particular revision.
-enum class AudioFeatures : u32 {
-    AudioUSBDeviceOutput,
-    Splitter,
-    PerformanceMetricsVersion2,
-    VariadicCommandBuffer,
-};
-
-// Tests if a particular audio feature is supported with a given audio revision.
-bool IsFeatureSupported(AudioFeatures feature, u32_le revision);
 
 } // namespace Service::Audio

@@ -1,12 +1,10 @@
-﻿// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+﻿// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <memory>
 #include <string>
-#include <vector>
 
 #include <QDialog>
 #include <QList>
@@ -41,14 +39,14 @@ class ConfigurePerGame : public QDialog {
 
 public:
     // Cannot use std::filesystem::path due to https://bugreports.qt.io/browse/QTBUG-73263
-    explicit ConfigurePerGame(QWidget* parent, u64 title_id, const std::string& file_name,
+    explicit ConfigurePerGame(QWidget* parent, u64 title_id_, const std::string& file_name,
                               Core::System& system_);
     ~ConfigurePerGame() override;
 
     /// Save all button configurations to settings file
     void ApplyConfiguration();
 
-    void LoadFromFile(FileSys::VirtualFile file);
+    void LoadFromFile(FileSys::VirtualFile file_);
 
 private:
     void changeEvent(QEvent* event) override;

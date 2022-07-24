@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include <memory>
-#include <thread>
 #include "common/input.h"
 #include "common/param_package.h"
 #include "input_common/drivers/gc_adapter.h"
@@ -27,7 +26,7 @@ namespace InputCommon {
 struct InputSubsystem::Impl {
     void Initialize() {
         mapping_factory = std::make_shared<MappingFactory>();
-        MappingCallback mapping_callback{[this](MappingData data) { RegisterInput(data); }};
+        MappingCallback mapping_callback{[this](const MappingData& data) { RegisterInput(data); }};
 
         keyboard = std::make_shared<Keyboard>("keyboard");
         keyboard->SetMappingCallback(mapping_callback);
@@ -242,6 +241,28 @@ struct InputSubsystem::Impl {
         return Common::Input::ButtonNames::Invalid;
     }
 
+    bool IsStickInverted(const Common::ParamPackage& params) {
+        const std::string engine = params.Get("engine", "");
+        if (engine == mouse->GetEngineName()) {
+            return mouse->IsStickInverted(params);
+        }
+        if (engine == gcadapter->GetEngineName()) {
+            return gcadapter->IsStickInverted(params);
+        }
+        if (engine == udp_client->GetEngineName()) {
+            return udp_client->IsStickInverted(params);
+        }
+        if (engine == tas_input->GetEngineName()) {
+            return tas_input->IsStickInverted(params);
+        }
+#ifdef HAVE_SDL2
+        if (engine == sdl->GetEngineName()) {
+            return sdl->IsStickInverted(params);
+        }
+#endif
+        return false;
+    }
+
     bool IsController(const Common::ParamPackage& params) {
         const std::string engine = params.Get("engine", "");
         if (engine == mouse->GetEngineName()) {
@@ -284,7 +305,7 @@ struct InputSubsystem::Impl {
 #endif
     }
 
-    void RegisterInput(MappingData data) {
+    void RegisterInput(const MappingData& data) {
         mapping_factory->RegisterInput(data);
     }
 
@@ -385,6 +406,13 @@ bool InputSubsystem::IsController(const Common::ParamPackage& params) const {
     return impl->IsController(params);
 }
 
+bool InputSubsystem::IsStickInverted(const Common::ParamPackage& params) const {
+    if (params.Has("axis_x") && params.Has("axis_y")) {
+        return impl->IsStickInverted(params);
+    }
+    return false;
+}
+
 void InputSubsystem::ReloadInputDevices() {
     impl->udp_client.get()->ReloadSockets();
 }
@@ -394,7 +422,7 @@ void InputSubsystem::BeginMapping(Polling::InputType type) {
     impl->mapping_factory->BeginMapping(type);
 }
 
-const Common::ParamPackage InputSubsystem::GetNextInput() const {
+Common::ParamPackage InputSubsystem::GetNextInput() const {
     return impl->mapping_factory->GetNextInput();
 }
 

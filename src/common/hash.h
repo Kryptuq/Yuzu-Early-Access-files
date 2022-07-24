@@ -19,4 +19,11 @@ struct PairHash {
     }
 };
 
+template <typename T>
+struct IdentityHash {
+    [[nodiscard]] size_t operator()(T value) const noexcept {
+        return static_cast<size_t>(value);
+    }
+};
+
 } // namespace Common

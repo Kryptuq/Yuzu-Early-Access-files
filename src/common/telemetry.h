@@ -8,6 +8,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include "common/common_funcs.h"
 #include "common/common_types.h"
 
 namespace Common::Telemetry {
@@ -28,7 +29,7 @@ struct VisitorInterface;
 /**
  * Interface class for telemetry data fields.
  */
-class FieldInterface : NonCopyable {
+class FieldInterface {
 public:
     virtual ~FieldInterface() = default;
 
@@ -52,14 +53,15 @@ public:
 template <typename T>
 class Field : public FieldInterface {
 public:
-    Field(FieldType type_, std::string name_, T value_)
-        : name(std::move(name_)), type(type_), value(std::move(value_)) {}
+    YUZU_NON_COPYABLE(Field);
 
-    Field(const Field&) = default;
-    Field& operator=(const Field&) = default;
+    Field(FieldType type_, std::string_view name_, T value_)
+        : name(name_), type(type_), value(std::move(value_)) {}
 
-    Field(Field&&) = default;
-    Field& operator=(Field&& other) = default;
+    ~Field() override = default;
+
+    Field(Field&&) noexcept = default;
+    Field& operator=(Field&& other) noexcept = default;
 
     void Accept(VisitorInterface& visitor) const override;
 
@@ -98,9 +100,15 @@ private:
 /**
  * Collection of data fields that have been logged.
  */
-class FieldCollection final : NonCopyable {
+class FieldCollection final {
 public:
+    YUZU_NON_COPYABLE(FieldCollection);
+
     FieldCollection() = default;
+    ~FieldCollection() = default;
+
+    FieldCollection(FieldCollection&&) noexcept = default;
+    FieldCollection& operator=(FieldCollection&&) noexcept = default;
 
     /**
      * Accept method for the visitor pattern, visits each field in the collection.
@@ -115,7 +123,7 @@ public:
      * @param value Value for the field to add.
      */
     template <typename T>
-    void AddField(FieldType type, const char* name, T value) {
+    void AddField(FieldType type, std::string_view name, T value) {
         return AddField(std::make_unique<Field<T>>(type, name, std::move(value)));
     }
 
@@ -133,7 +141,7 @@ private:
  * Telemetry fields visitor interface class. A backend to log to a web service should implement
  * this interface.
  */
-struct VisitorInterface : NonCopyable {
+struct VisitorInterface {
     virtual ~VisitorInterface() = default;
 
     virtual void Visit(const Field<bool>& field) = 0;
@@ -160,8 +168,11 @@ struct VisitorInterface : NonCopyable {
  * Empty implementation of VisitorInterface that drops all fields. Used when a functional
  * backend implementation is not available.
  */
-struct NullVisitor : public VisitorInterface {
-    ~NullVisitor() = default;
+struct NullVisitor final : public VisitorInterface {
+    YUZU_NON_COPYABLE(NullVisitor);
+
+    NullVisitor() = default;
+    ~NullVisitor() override = default;
 
     void Visit(const Field<bool>& /*field*/) override {}
     void Visit(const Field<double>& /*field*/) override {}

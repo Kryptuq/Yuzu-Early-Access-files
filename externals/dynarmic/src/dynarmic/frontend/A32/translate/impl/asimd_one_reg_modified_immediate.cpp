@@ -3,14 +3,15 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/bit_util.h"
+#include <mcl/assert.hpp>
+#include <mcl/bit/bit_field.hpp>
+
 #include "dynarmic/frontend/A32/translate/impl/a32_translate_impl.h"
 
 namespace Dynarmic::A32 {
 
 bool TranslatorVisitor::asimd_VMOV_imm(Imm<1> a, bool D, Imm<1> b, Imm<1> c, Imm<1> d, size_t Vd, Imm<4> cmode, bool Q, bool op, Imm<1> e, Imm<1> f, Imm<1> g, Imm<1> h) {
-    if (Q && Common::Bit<0>(Vd)) {
+    if (Q && mcl::bit::get_bit<0>(Vd)) {
         return UndefinedInstruction();
     }
 
@@ -29,7 +30,8 @@ bool TranslatorVisitor::asimd_VMOV_imm(Imm<1> a, bool D, Imm<1> b, Imm<1> c, Imm
     };
 
     // VMVN
-    const auto mvn = [&] {
+    // mvn is a predefined macro in arm64 MSVC
+    const auto mvn_ = [&] {
         const auto imm64 = ir.Imm64(~imm);
         if (Q) {
             ir.SetVector(d_reg, ir.VectorBroadcast(64, imm64));
@@ -88,7 +90,7 @@ bool TranslatorVisitor::asimd_VMOV_imm(Imm<1> a, bool D, Imm<1> b, Imm<1> c, Imm
     case 0b10101:
     case 0b11001:
     case 0b11011:
-        return mvn();
+        return mvn_();
     case 0b00010:
     case 0b00110:
     case 0b01010:

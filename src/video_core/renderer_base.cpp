@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include "common/logging/log.h"
-#include "common/settings.h"
 #include "core/frontend/emu_window.h"
 #include "video_core/renderer_base.h"
 
@@ -25,6 +24,10 @@ void RendererBase::UpdateCurrentFramebufferLayout() {
     const Layout::FramebufferLayout& layout = render_window.GetFramebufferLayout();
 
     render_window.UpdateCurrentFramebufferLayout(layout.width, layout.height);
+}
+
+bool RendererBase::IsScreenshotPending() const {
+    return renderer_settings.screenshot_requested;
 }
 
 void RendererBase::RequestScreenshot(void* data, std::function<void(bool)> callback,

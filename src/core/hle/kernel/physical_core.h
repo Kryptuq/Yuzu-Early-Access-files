@@ -1,17 +1,13 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <cstddef>
 #include <memory>
+#include <mutex>
 
 #include "core/arm/arm_interface.h"
-
-namespace Common {
-class SpinLock;
-}
 
 namespace Kernel {
 class KScheduler;
@@ -91,7 +87,7 @@ private:
     Core::System& system;
     Kernel::KScheduler& scheduler;
     Core::CPUInterrupts& interrupts;
-    std::unique_ptr<Common::SpinLock> guard;
+    std::unique_ptr<std::mutex> guard;
     std::unique_ptr<Core::ARM_Interface> arm_interface;
 };
 

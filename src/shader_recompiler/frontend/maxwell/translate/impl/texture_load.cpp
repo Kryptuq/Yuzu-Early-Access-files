@@ -1,8 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
-
-#include <optional>
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/bit_field.h"
 #include "common/common_types.h"
@@ -134,7 +131,7 @@ void Impl(TranslatorVisitor& v, u64 insn, bool is_bindless) {
         multisample = v.X(meta_reg++);
     }
     if (tld.clamp != 0) {
-        throw NotImplementedException("TLD.CL - CLAMP is not implmented");
+        throw NotImplementedException("TLD.CL - CLAMP is not implemented");
     }
     IR::TextureInstInfo info{};
     info.type.Assign(GetType(tld.type));

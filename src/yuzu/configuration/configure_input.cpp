@@ -2,12 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <algorithm>
 #include <memory>
 #include <thread>
-
-#include <QSignalBlocker>
-#include <QTimer>
 
 #include "core/core.h"
 #include "core/hid/emulated_controller.h"
@@ -169,7 +165,7 @@ void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem,
             });
 
     connect(ui->vibrationButton, &QPushButton::clicked,
-            [this] { CallConfigureDialog<ConfigureVibration>(*this); });
+            [this, &hid_core] { CallConfigureDialog<ConfigureVibration>(*this, hid_core); });
 
     connect(ui->motionButton, &QPushButton::clicked, [this, input_subsystem] {
         CallConfigureDialog<ConfigureMotionTouch>(*this, input_subsystem);

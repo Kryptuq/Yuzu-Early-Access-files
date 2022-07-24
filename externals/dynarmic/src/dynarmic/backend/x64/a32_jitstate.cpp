@@ -5,11 +5,12 @@
 
 #include "dynarmic/backend/x64/a32_jitstate.h"
 
+#include <mcl/assert.hpp>
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/nzcv_util.h"
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
 #include "dynarmic/frontend/A32/a32_location_descriptor.h"
 
 namespace Dynarmic::Backend::X64 {
@@ -57,13 +58,13 @@ u32 A32JitState::Cpsr() const {
     // Q flag
     cpsr |= cpsr_q ? 1 << 27 : 0;
     // GE flags
-    cpsr |= Common::Bit<31>(cpsr_ge) ? 1 << 19 : 0;
-    cpsr |= Common::Bit<23>(cpsr_ge) ? 1 << 18 : 0;
-    cpsr |= Common::Bit<15>(cpsr_ge) ? 1 << 17 : 0;
-    cpsr |= Common::Bit<7>(cpsr_ge) ? 1 << 16 : 0;
+    cpsr |= mcl::bit::get_bit<31>(cpsr_ge) ? 1 << 19 : 0;
+    cpsr |= mcl::bit::get_bit<23>(cpsr_ge) ? 1 << 18 : 0;
+    cpsr |= mcl::bit::get_bit<15>(cpsr_ge) ? 1 << 17 : 0;
+    cpsr |= mcl::bit::get_bit<7>(cpsr_ge) ? 1 << 16 : 0;
     // E flag, T flag
-    cpsr |= Common::Bit<1>(upper_location_descriptor) ? 1 << 9 : 0;
-    cpsr |= Common::Bit<0>(upper_location_descriptor) ? 1 << 5 : 0;
+    cpsr |= mcl::bit::get_bit<1>(upper_location_descriptor) ? 1 << 9 : 0;
+    cpsr |= mcl::bit::get_bit<0>(upper_location_descriptor) ? 1 << 5 : 0;
     // IT state
     cpsr |= static_cast<u32>(upper_location_descriptor & 0b11111100'00000000);
     cpsr |= static_cast<u32>(upper_location_descriptor & 0b00000011'00000000) << 17;
@@ -77,18 +78,18 @@ void A32JitState::SetCpsr(u32 cpsr) {
     // NZCV flags
     cpsr_nzcv = NZCV::ToX64(cpsr);
     // Q flag
-    cpsr_q = Common::Bit<27>(cpsr) ? 1 : 0;
+    cpsr_q = mcl::bit::get_bit<27>(cpsr) ? 1 : 0;
     // GE flags
     cpsr_ge = 0;
-    cpsr_ge |= Common::Bit<19>(cpsr) ? 0xFF000000 : 0;
-    cpsr_ge |= Common::Bit<18>(cpsr) ? 0x00FF0000 : 0;
-    cpsr_ge |= Common::Bit<17>(cpsr) ? 0x0000FF00 : 0;
-    cpsr_ge |= Common::Bit<16>(cpsr) ? 0x000000FF : 0;
+    cpsr_ge |= mcl::bit::get_bit<19>(cpsr) ? 0xFF000000 : 0;
+    cpsr_ge |= mcl::bit::get_bit<18>(cpsr) ? 0x00FF0000 : 0;
+    cpsr_ge |= mcl::bit::get_bit<17>(cpsr) ? 0x0000FF00 : 0;
+    cpsr_ge |= mcl::bit::get_bit<16>(cpsr) ? 0x000000FF : 0;
 
     upper_location_descriptor &= 0xFFFF0000;
     // E flag, T flag
-    upper_location_descriptor |= Common::Bit<9>(cpsr) ? 2 : 0;
-    upper_location_descriptor |= Common::Bit<5>(cpsr) ? 1 : 0;
+    upper_location_descriptor |= mcl::bit::get_bit<9>(cpsr) ? 2 : 0;
+    upper_location_descriptor |= mcl::bit::get_bit<5>(cpsr) ? 1 : 0;
     // IT state
     upper_location_descriptor |= (cpsr >> 0) & 0b11111100'00000000;
     upper_location_descriptor |= (cpsr >> 17) & 0b00000011'00000000;
@@ -172,6 +173,7 @@ u32 A32JitState::Fpscr() const {
     FPSCR |= (mxcsr & 0b0000000000001);       // IOC = IE
     FPSCR |= (mxcsr & 0b0000000111100) >> 1;  // IXC, UFC, OFC, DZC = PE, UE, OE, ZE
     FPSCR |= fpsr_exc;
+    FPSCR |= fpsr_qc != 0 ? 1 << 27 : 0;
 
     return FPSCR;
 }
@@ -184,6 +186,7 @@ void A32JitState::SetFpscr(u32 FPSCR) {
     upper_location_descriptor |= FPSCR & FPSCR_MODE_MASK;
 
     fpsr_nzcv = FPSCR & FPSCR_NZCV_MASK;
+    fpsr_qc = (FPSCR >> 27) & 1;
 
     guest_MXCSR = 0x00001f80;
     asimd_MXCSR = 0x00009fc0;
@@ -195,7 +198,7 @@ void A32JitState::SetFpscr(u32 FPSCR) {
     // Cumulative flags IDC, IOC, IXC, UFC, OFC, DZC
     fpsr_exc = FPSCR & 0x9F;
 
-    if (Common::Bit<24>(FPSCR)) {
+    if (mcl::bit::get_bit<24>(FPSCR)) {
         // VFP Flush to Zero
         guest_MXCSR |= (1 << 15);  // SSE Flush to Zero
         guest_MXCSR |= (1 << 6);   // SSE Denormals are Zero

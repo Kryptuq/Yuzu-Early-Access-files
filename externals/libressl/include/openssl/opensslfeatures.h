@@ -3,7 +3,8 @@
  * are enabled, rather than not being able to tell when things are
  * enabled (or possibly not yet not implemented, or removed!).
  */
-/* #define LIBRESSL_HAS_TLS1_3 */
+#define LIBRESSL_HAS_TLS1_3
+#define LIBRESSL_HAS_DTLS1_2
 
 #define OPENSSL_THREADS
 
@@ -83,7 +84,7 @@
 /* #define OPENSSL_NO_RC4 */
 #define OPENSSL_NO_RC5
 /* #define OPENSSL_NO_RDRAND */
-#define OPENSSL_NO_RFC3779
+/* #define OPENSSL_NO_RFC3779 */
 /* #define OPENSSL_NO_RMD160 */
 /* #define OPENSSL_NO_RSA */
 /* #define OPENSSL_NO_SCRYPT */

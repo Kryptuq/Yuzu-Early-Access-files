@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/assert.h"
 #include "common/hex_util.h"
@@ -14,7 +13,7 @@
 
 namespace Service::AM::Applets {
 
-constexpr ResultCode ERROR_INVALID_PIN{ErrorModule::PCTL, 221};
+constexpr Result ERROR_INVALID_PIN{ErrorModule::PCTL, 221};
 
 static void LogCurrentStorage(AppletDataBroker& broker, std::string_view prefix) {
     std::shared_ptr<IStorage> storage = broker.PopNormalDataToApplet();
@@ -72,12 +71,12 @@ bool Auth::TransactionComplete() const {
     return complete;
 }
 
-ResultCode Auth::GetStatus() const {
+Result Auth::GetStatus() const {
     return successful ? ResultSuccess : ERROR_INVALID_PIN;
 }
 
 void Auth::ExecuteInteractive() {
-    UNREACHABLE_MSG("Unexpected interactive applet data.");
+    ASSERT_MSG(false, "Unexpected interactive applet data.");
 }
 
 void Auth::Execute() {
@@ -137,7 +136,7 @@ void Auth::AuthFinished(bool is_successful) {
     successful = is_successful;
 
     struct Return {
-        ResultCode result_code;
+        Result result_code;
     };
     static_assert(sizeof(Return) == 0x4, "Return (AuthApplet) has incorrect size.");
 
@@ -171,12 +170,12 @@ bool PhotoViewer::TransactionComplete() const {
     return complete;
 }
 
-ResultCode PhotoViewer::GetStatus() const {
+Result PhotoViewer::GetStatus() const {
     return ResultSuccess;
 }
 
 void PhotoViewer::ExecuteInteractive() {
-    UNREACHABLE_MSG("Unexpected interactive applet data.");
+    ASSERT_MSG(false, "Unexpected interactive applet data.");
 }
 
 void PhotoViewer::Execute() {
@@ -224,7 +223,7 @@ bool StubApplet::TransactionComplete() const {
     return true;
 }
 
-ResultCode StubApplet::GetStatus() const {
+Result StubApplet::GetStatus() const {
     LOG_WARNING(Service_AM, "called (STUBBED)");
     return ResultSuccess;
 }

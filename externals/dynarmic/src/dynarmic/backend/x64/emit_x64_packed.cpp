@@ -47,15 +47,13 @@ void EmitX64::EmitPackedAddS8(EmitContext& ctx, IR::Inst* inst) {
     const Xbyak::Xmm xmm_b = ctx.reg_alloc.UseXmm(args[1]);
 
     if (ge_inst) {
-        const Xbyak::Xmm saturated_sum = ctx.reg_alloc.ScratchXmm();
         const Xbyak::Xmm xmm_ge = ctx.reg_alloc.ScratchXmm();
 
-        code.pxor(xmm_ge, xmm_ge);
-        code.movdqa(saturated_sum, xmm_a);
-        code.paddsb(saturated_sum, xmm_b);
-        code.pcmpgtb(xmm_ge, saturated_sum);
-        code.pcmpeqb(saturated_sum, saturated_sum);
-        code.pxor(xmm_ge, saturated_sum);
+        code.pcmpeqb(xmm0, xmm0);
+
+        code.movdqa(xmm_ge, xmm_a);
+        code.paddsb(xmm_ge, xmm_b);
+        code.pcmpgtb(xmm_ge, xmm0);
 
         ctx.reg_alloc.DefineValue(ge_inst, xmm_ge);
         ctx.EraseInstruction(ge_inst);
@@ -96,8 +94,8 @@ void EmitX64::EmitPackedAddU16(EmitContext& ctx, IR::Inst* inst) {
             // !(b <= a+b) == b > a+b
             code.movdqa(tmp_a, xmm_a);
             code.movdqa(tmp_b, xmm_b);
-            code.paddw(tmp_a, code.MConst(xword, 0x80008000));
-            code.paddw(tmp_b, code.MConst(xword, 0x80008000));
+            code.paddw(tmp_a, code.XmmBConst<16>(xword, 0x8000));
+            code.paddw(tmp_b, code.XmmBConst<16>(xword, 0x8000));
             code.pcmpgtw(tmp_b, tmp_a);  // *Signed* comparison!
 
             ctx.reg_alloc.DefineValue(ge_inst, tmp_b);
@@ -116,15 +114,13 @@ void EmitX64::EmitPackedAddS16(EmitContext& ctx, IR::Inst* inst) {
     const Xbyak::Xmm xmm_b = ctx.reg_alloc.UseXmm(args[1]);
 
     if (ge_inst) {
-        const Xbyak::Xmm saturated_sum = ctx.reg_alloc.ScratchXmm();
         const Xbyak::Xmm xmm_ge = ctx.reg_alloc.ScratchXmm();
 
-        code.pxor(xmm_ge, xmm_ge);
-        code.movdqa(saturated_sum, xmm_a);
-        code.paddsw(saturated_sum, xmm_b);
-        code.pcmpgtw(xmm_ge, saturated_sum);
-        code.pcmpeqw(saturated_sum, saturated_sum);
-        code.pxor(xmm_ge, saturated_sum);
+        code.pcmpeqw(xmm0, xmm0);
+
+        code.movdqa(xmm_ge, xmm_a);
+        code.paddsw(xmm_ge, xmm_b);
+        code.pcmpgtw(xmm_ge, xmm0);
 
         ctx.reg_alloc.DefineValue(ge_inst, xmm_ge);
         ctx.EraseInstruction(ge_inst);
@@ -166,15 +162,13 @@ void EmitX64::EmitPackedSubS8(EmitContext& ctx, IR::Inst* inst) {
     const Xbyak::Xmm xmm_b = ctx.reg_alloc.UseXmm(args[1]);
 
     if (ge_inst) {
-        const Xbyak::Xmm saturated_sum = ctx.reg_alloc.ScratchXmm();
         const Xbyak::Xmm xmm_ge = ctx.reg_alloc.ScratchXmm();
 
-        code.pxor(xmm_ge, xmm_ge);
-        code.movdqa(saturated_sum, xmm_a);
-        code.psubsb(saturated_sum, xmm_b);
-        code.pcmpgtb(xmm_ge, saturated_sum);
-        code.pcmpeqb(saturated_sum, saturated_sum);
-        code.pxor(xmm_ge, saturated_sum);
+        code.pcmpeqb(xmm0, xmm0);
+
+        code.movdqa(xmm_ge, xmm_a);
+        code.psubsb(xmm_ge, xmm_b);
+        code.pcmpgtb(xmm_ge, xmm0);
 
         ctx.reg_alloc.DefineValue(ge_inst, xmm_ge);
         ctx.EraseInstruction(ge_inst);
@@ -223,8 +217,8 @@ void EmitX64::EmitPackedSubU16(EmitContext& ctx, IR::Inst* inst) {
 
     // (a >= b) == !(b > a)
     code.pcmpeqb(ones, ones);
-    code.paddw(xmm_a, code.MConst(xword, 0x80008000));
-    code.paddw(xmm_b, code.MConst(xword, 0x80008000));
+    code.paddw(xmm_a, code.XmmBConst<16>(xword, 0x8000));
+    code.paddw(xmm_b, code.XmmBConst<16>(xword, 0x8000));
     code.movdqa(xmm_ge, xmm_b);
     code.pcmpgtw(xmm_ge, xmm_a);  // *Signed* comparison!
     code.pxor(xmm_ge, ones);
@@ -244,15 +238,13 @@ void EmitX64::EmitPackedSubS16(EmitContext& ctx, IR::Inst* inst) {
     const Xbyak::Xmm xmm_b = ctx.reg_alloc.UseXmm(args[1]);
 
     if (ge_inst) {
-        const Xbyak::Xmm saturated_diff = ctx.reg_alloc.ScratchXmm();
         const Xbyak::Xmm xmm_ge = ctx.reg_alloc.ScratchXmm();
 
-        code.pxor(xmm_ge, xmm_ge);
-        code.movdqa(saturated_diff, xmm_a);
-        code.psubsw(saturated_diff, xmm_b);
-        code.pcmpgtw(xmm_ge, saturated_diff);
-        code.pcmpeqw(saturated_diff, saturated_diff);
-        code.pxor(xmm_ge, saturated_diff);
+        code.pcmpeqw(xmm0, xmm0);
+
+        code.movdqa(xmm_ge, xmm_a);
+        code.psubsw(xmm_ge, xmm_b);
+        code.pcmpgtw(xmm_ge, xmm0);
 
         ctx.reg_alloc.DefineValue(ge_inst, xmm_ge);
         ctx.EraseInstruction(ge_inst);
@@ -662,7 +654,7 @@ void EmitX64::EmitPackedAbsDiffSumS8(EmitContext& ctx, IR::Inst* inst) {
     const Xbyak::Xmm tmp = ctx.reg_alloc.ScratchXmm();
 
     // TODO: Optimize with zero-extension detection
-    code.movaps(tmp, code.MConst(xword, 0xFFFFFFFF));
+    code.movaps(tmp, code.XmmBConst<8>(xword, 0xFF));
     code.pand(xmm_a, tmp);
     code.pand(xmm_b, tmp);
     code.psadbw(xmm_a, xmm_b);

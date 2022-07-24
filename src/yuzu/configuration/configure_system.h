@@ -6,7 +6,6 @@
 
 #include <memory>
 
-#include <QList>
 #include <QWidget>
 
 namespace Core {

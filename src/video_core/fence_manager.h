@@ -1,46 +1,27 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <algorithm>
+#include <cstring>
+#include <deque>
+#include <functional>
+#include <memory>
 #include <queue>
 
 #include "common/common_types.h"
-#include "common/settings.h"
-#include "core/core.h"
 #include "video_core/delayed_destruction_ring.h"
 #include "video_core/gpu.h"
-#include "video_core/memory_manager.h"
+#include "video_core/host1x/host1x.h"
+#include "video_core/host1x/syncpoint_manager.h"
 #include "video_core/rasterizer_interface.h"
 
 namespace VideoCommon {
 
 class FenceBase {
 public:
-    explicit FenceBase(u32 payload_, bool is_stubbed_)
-        : address{}, payload{payload_}, is_semaphore{false}, is_stubbed{is_stubbed_} {}
-
-    explicit FenceBase(GPUVAddr address_, u32 payload_, bool is_stubbed_)
-        : address{address_}, payload{payload_}, is_semaphore{true}, is_stubbed{is_stubbed_} {}
-
-    GPUVAddr GetAddress() const {
-        return address;
-    }
-
-    u32 GetPayload() const {
-        return payload;
-    }
-
-    bool IsSemaphore() const {
-        return is_semaphore;
-    }
-
-private:
-    GPUVAddr address;
-    u32 payload;
-    bool is_semaphore;
+    explicit FenceBase(bool is_stubbed_) : is_stubbed{is_stubbed_} {}
 
 protected:
     bool is_stubbed;
@@ -60,30 +41,28 @@ public:
         buffer_cache.AccumulateFlushes();
     }
 
-    void SignalSemaphore(GPUVAddr addr, u32 value) {
+    void SyncOperation(std::function<void()>&& func) {
+        uncommitted_operations.emplace_back(std::move(func));
+    }
+
+    void SignalFence(std::function<void()>&& func) {
         TryReleasePendingFences();
         const bool should_flush = ShouldFlush();
         CommitAsyncFlushes();
-        TFence new_fence = CreateFence(addr, value, !should_flush);
+        uncommitted_operations.emplace_back(std::move(func));
+        CommitOperations();
+        TFence new_fence = CreateFence(!should_flush);
         fences.push(new_fence);
         QueueFence(new_fence);
         if (should_flush) {
             rasterizer.FlushCommands();
         }
-        rasterizer.SyncGuestHost();
     }
 
     void SignalSyncPoint(u32 value) {
-        TryReleasePendingFences();
-        const bool should_flush = ShouldFlush();
-        CommitAsyncFlushes();
-        TFence new_fence = CreateFence(value, !should_flush);
-        fences.push(new_fence);
-        QueueFence(new_fence);
-        if (should_flush) {
-            rasterizer.FlushCommands();
-        }
-        rasterizer.SyncGuestHost();
+        syncpoint_manager.IncrementGuest(value);
+        std::function<void()> func([this, value] { syncpoint_manager.IncrementHost(value); });
+        SignalFence(std::move(func));
     }
 
     void WaitPendingFences() {
@@ -93,11 +72,10 @@ public:
                 WaitFence(current_fence);
             }
             PopAsyncFlushes();
-            if (current_fence->IsSemaphore()) {
-                gpu_memory.template Write<u32>(current_fence->GetAddress(),
-                                               current_fence->GetPayload());
-            } else {
-                gpu.IncrementSyncPoint(current_fence->GetPayload());
+            auto operations = std::move(pending_operations.front());
+            pending_operations.pop_front();
+            for (auto& operation : operations) {
+                operation();
             }
             PopFence();
         }
@@ -107,16 +85,14 @@ protected:
     explicit FenceManager(VideoCore::RasterizerInterface& rasterizer_, Tegra::GPU& gpu_,
                           TTextureCache& texture_cache_, TTBufferCache& buffer_cache_,
                           TQueryCache& query_cache_)
-        : rasterizer{rasterizer_}, gpu{gpu_}, gpu_memory{gpu.MemoryManager()},
+        : rasterizer{rasterizer_}, gpu{gpu_}, syncpoint_manager{gpu.Host1x().GetSyncpointManager()},
           texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, query_cache{query_cache_} {}
 
     virtual ~FenceManager() = default;
 
-    /// Creates a Sync Point Fence Interface, does not create a backend fence if 'is_stubbed' is
+    /// Creates a Fence Interface, does not create a backend fence if 'is_stubbed' is
     /// true
-    virtual TFence CreateFence(u32 value, bool is_stubbed) = 0;
-    /// Creates a Semaphore Fence Interface, does not create a backend fence if 'is_stubbed' is true
-    virtual TFence CreateFence(GPUVAddr addr, u32 value, bool is_stubbed) = 0;
+    virtual TFence CreateFence(bool is_stubbed) = 0;
     /// Queues a fence into the backend if the fence isn't stubbed.
     virtual void QueueFence(TFence& fence) = 0;
     /// Notifies that the backend fence has been signaled/reached in host GPU.
@@ -126,7 +102,7 @@ protected:
 
     VideoCore::RasterizerInterface& rasterizer;
     Tegra::GPU& gpu;
-    Tegra::MemoryManager& gpu_memory;
+    Tegra::Host1x::SyncpointManager& syncpoint_manager;
     TTextureCache& texture_cache;
     TTBufferCache& buffer_cache;
     TQueryCache& query_cache;
@@ -139,11 +115,10 @@ private:
                 return;
             }
             PopAsyncFlushes();
-            if (current_fence->IsSemaphore()) {
-                gpu_memory.template Write<u32>(current_fence->GetAddress(),
-                                               current_fence->GetPayload());
-            } else {
-                gpu.IncrementSyncPoint(current_fence->GetPayload());
+            auto operations = std::move(pending_operations.front());
+            pending_operations.pop_front();
+            for (auto& operation : operations) {
+                operation();
             }
             PopFence();
         }
@@ -162,16 +137,20 @@ private:
     }
 
     void PopAsyncFlushes() {
-        std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
-        texture_cache.PopAsyncFlushes();
-        buffer_cache.PopAsyncFlushes();
+        {
+            std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
+            texture_cache.PopAsyncFlushes();
+            buffer_cache.PopAsyncFlushes();
+        }
         query_cache.PopAsyncFlushes();
     }
 
     void CommitAsyncFlushes() {
-        std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
-        texture_cache.CommitAsyncFlushes();
-        buffer_cache.CommitAsyncFlushes();
+        {
+            std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
+            texture_cache.CommitAsyncFlushes();
+            buffer_cache.CommitAsyncFlushes();
+        }
         query_cache.CommitAsyncFlushes();
     }
 
@@ -180,7 +159,13 @@ private:
         fences.pop();
     }
 
+    void CommitOperations() {
+        pending_operations.emplace_back(std::move(uncommitted_operations));
+    }
+
     std::queue<TFence> fences;
+    std::deque<std::function<void()>> uncommitted_operations;
+    std::deque<std::deque<std::function<void()>>> pending_operations;
 
     DelayedDestructionRing<TFence, 6> delayed_destruction_ring;
 };

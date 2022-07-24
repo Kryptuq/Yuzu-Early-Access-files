@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <bit>
 
@@ -69,9 +68,9 @@ u32 GetFlagBitOffset(CapabilityType type) {
 
 } // Anonymous namespace
 
-ResultCode ProcessCapabilities::InitializeForKernelProcess(const u32* capabilities,
-                                                           std::size_t num_capabilities,
-                                                           KPageTable& page_table) {
+Result ProcessCapabilities::InitializeForKernelProcess(const u32* capabilities,
+                                                       std::size_t num_capabilities,
+                                                       KPageTable& page_table) {
     Clear();
 
     // Allow all cores and priorities.
@@ -82,9 +81,9 @@ ResultCode ProcessCapabilities::InitializeForKernelProcess(const u32* capabiliti
     return ParseCapabilities(capabilities, num_capabilities, page_table);
 }
 
-ResultCode ProcessCapabilities::InitializeForUserProcess(const u32* capabilities,
-                                                         std::size_t num_capabilities,
-                                                         KPageTable& page_table) {
+Result ProcessCapabilities::InitializeForUserProcess(const u32* capabilities,
+                                                     std::size_t num_capabilities,
+                                                     KPageTable& page_table) {
     Clear();
 
     return ParseCapabilities(capabilities, num_capabilities, page_table);
@@ -108,9 +107,8 @@ void ProcessCapabilities::InitializeForMetadatalessProcess() {
     can_force_debug = true;
 }
 
-ResultCode ProcessCapabilities::ParseCapabilities(const u32* capabilities,
-                                                  std::size_t num_capabilities,
-                                                  KPageTable& page_table) {
+Result ProcessCapabilities::ParseCapabilities(const u32* capabilities, std::size_t num_capabilities,
+                                              KPageTable& page_table) {
     u32 set_flags = 0;
     u32 set_svc_bits = 0;
 
@@ -156,8 +154,8 @@ ResultCode ProcessCapabilities::ParseCapabilities(const u32* capabilities,
     return ResultSuccess;
 }
 
-ResultCode ProcessCapabilities::ParseSingleFlagCapability(u32& set_flags, u32& set_svc_bits,
-                                                          u32 flag, KPageTable& page_table) {
+Result ProcessCapabilities::ParseSingleFlagCapability(u32& set_flags, u32& set_svc_bits, u32 flag,
+                                                      KPageTable& page_table) {
     const auto type = GetCapabilityType(flag);
 
     if (type == CapabilityType::Unset) {
@@ -225,7 +223,7 @@ void ProcessCapabilities::Clear() {
     can_force_debug = false;
 }
 
-ResultCode ProcessCapabilities::HandlePriorityCoreNumFlags(u32 flags) {
+Result ProcessCapabilities::HandlePriorityCoreNumFlags(u32 flags) {
     if (priority_mask != 0 || core_mask != 0) {
         LOG_ERROR(Kernel, "Core or priority mask are not zero! priority_mask={}, core_mask={}",
                   priority_mask, core_mask);
@@ -267,7 +265,7 @@ ResultCode ProcessCapabilities::HandlePriorityCoreNumFlags(u32 flags) {
     return ResultSuccess;
 }
 
-ResultCode ProcessCapabilities::HandleSyscallFlags(u32& set_svc_bits, u32 flags) {
+Result ProcessCapabilities::HandleSyscallFlags(u32& set_svc_bits, u32 flags) {
     const u32 index = flags >> 29;
     const u32 svc_bit = 1U << index;
 
@@ -291,23 +289,23 @@ ResultCode ProcessCapabilities::HandleSyscallFlags(u32& set_svc_bits, u32 flags)
     return ResultSuccess;
 }
 
-ResultCode ProcessCapabilities::HandleMapPhysicalFlags(u32 flags, u32 size_flags,
-                                                       KPageTable& page_table) {
+Result ProcessCapabilities::HandleMapPhysicalFlags(u32 flags, u32 size_flags,
+                                                   KPageTable& page_table) {
     // TODO(Lioncache): Implement once the memory manager can handle this.
     return ResultSuccess;
 }
 
-ResultCode ProcessCapabilities::HandleMapIOFlags(u32 flags, KPageTable& page_table) {
+Result ProcessCapabilities::HandleMapIOFlags(u32 flags, KPageTable& page_table) {
     // TODO(Lioncache): Implement once the memory manager can handle this.
     return ResultSuccess;
 }
 
-ResultCode ProcessCapabilities::HandleMapRegionFlags(u32 flags, KPageTable& page_table) {
+Result ProcessCapabilities::HandleMapRegionFlags(u32 flags, KPageTable& page_table) {
     // TODO(Lioncache): Implement once the memory manager can handle this.
     return ResultSuccess;
 }
 
-ResultCode ProcessCapabilities::HandleInterruptFlags(u32 flags) {
+Result ProcessCapabilities::HandleInterruptFlags(u32 flags) {
     constexpr u32 interrupt_ignore_value = 0x3FF;
     const u32 interrupt0 = (flags >> 12) & 0x3FF;
     const u32 interrupt1 = (flags >> 22) & 0x3FF;
@@ -334,7 +332,7 @@ ResultCode ProcessCapabilities::HandleInterruptFlags(u32 flags) {
     return ResultSuccess;
 }
 
-ResultCode ProcessCapabilities::HandleProgramTypeFlags(u32 flags) {
+Result ProcessCapabilities::HandleProgramTypeFlags(u32 flags) {
     const u32 reserved = flags >> 17;
     if (reserved != 0) {
         LOG_ERROR(Kernel, "Reserved value is non-zero! reserved={}", reserved);
@@ -345,7 +343,7 @@ ResultCode ProcessCapabilities::HandleProgramTypeFlags(u32 flags) {
     return ResultSuccess;
 }
 
-ResultCode ProcessCapabilities::HandleKernelVersionFlags(u32 flags) {
+Result ProcessCapabilities::HandleKernelVersionFlags(u32 flags) {
     // Yes, the internal member variable is checked in the actual kernel here.
     // This might look odd for options that are only allowed to be initialized
     // just once, however the kernel has a separate initialization function for
@@ -365,7 +363,7 @@ ResultCode ProcessCapabilities::HandleKernelVersionFlags(u32 flags) {
     return ResultSuccess;
 }
 
-ResultCode ProcessCapabilities::HandleHandleTableFlags(u32 flags) {
+Result ProcessCapabilities::HandleHandleTableFlags(u32 flags) {
     const u32 reserved = flags >> 26;
     if (reserved != 0) {
         LOG_ERROR(Kernel, "Reserved value is non-zero! reserved={}", reserved);
@@ -376,7 +374,7 @@ ResultCode ProcessCapabilities::HandleHandleTableFlags(u32 flags) {
     return ResultSuccess;
 }
 
-ResultCode ProcessCapabilities::HandleDebugFlags(u32 flags) {
+Result ProcessCapabilities::HandleDebugFlags(u32 flags) {
     const u32 reserved = flags >> 19;
     if (reserved != 0) {
         LOG_ERROR(Kernel, "Reserved value is non-zero! reserved={}", reserved);

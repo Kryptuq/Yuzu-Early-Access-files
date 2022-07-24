@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <optional>
@@ -8,6 +7,7 @@
 #include <vector>
 
 #include "common/common_types.h"
+#include "common/div_ceil.h"
 #include "video_core/surface.h"
 #include "video_core/texture_cache/formatter.h"
 #include "video_core/texture_cache/image_base.h"
@@ -183,10 +183,6 @@ void AddImageAlias(ImageBase& lhs, ImageBase& rhs, ImageId lhs_id, ImageId rhs_i
     };
     const bool is_lhs_compressed = lhs_block.width > 1 || lhs_block.height > 1;
     const bool is_rhs_compressed = rhs_block.width > 1 || rhs_block.height > 1;
-    if (is_lhs_compressed && is_rhs_compressed) {
-        LOG_ERROR(HW_GPU, "Compressed to compressed image aliasing is not implemented");
-        return;
-    }
     const s32 lhs_mips = lhs.info.resources.levels;
     const s32 rhs_mips = rhs.info.resources.levels;
     const s32 num_mips = std::min(lhs_mips - base->level, rhs_mips);
@@ -200,12 +196,12 @@ void AddImageAlias(ImageBase& lhs, ImageBase& rhs, ImageId lhs_id, ImageId rhs_i
         Extent3D lhs_size = MipSize(lhs.info.size, base->level + mip_level);
         Extent3D rhs_size = MipSize(rhs.info.size, mip_level);
         if (is_lhs_compressed) {
-            lhs_size.width /= lhs_block.width;
-            lhs_size.height /= lhs_block.height;
+            lhs_size.width = Common::DivCeil(lhs_size.width, lhs_block.width);
+            lhs_size.height = Common::DivCeil(lhs_size.height, lhs_block.height);
         }
         if (is_rhs_compressed) {
-            rhs_size.width /= rhs_block.width;
-            rhs_size.height /= rhs_block.height;
+            rhs_size.width = Common::DivCeil(rhs_size.width, rhs_block.width);
+            rhs_size.height = Common::DivCeil(rhs_size.height, rhs_block.height);
         }
         const Extent3D copy_size{
             .width = std::min(lhs_size.width, rhs_size.width),

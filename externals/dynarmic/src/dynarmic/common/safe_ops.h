@@ -7,8 +7,9 @@
 
 #include <type_traits>
 
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/bitsizeof.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/common/u128.h"
 
 namespace Dynarmic::Safe {
@@ -26,7 +27,7 @@ template<typename T>
 T LogicalShiftLeft(T value, int shift_amount) {
     static_assert(std::is_integral_v<T>);
 
-    if (shift_amount >= static_cast<int>(Common::BitSize<T>())) {
+    if (shift_amount >= static_cast<int>(mcl::bitsizeof<T>)) {
         return 0;
     }
 
@@ -47,7 +48,7 @@ template<typename T>
 T LogicalShiftRight(T value, int shift_amount) {
     static_assert(std::is_integral_v<T>);
 
-    if (shift_amount >= static_cast<int>(Common::BitSize<T>())) {
+    if (shift_amount >= static_cast<int>(mcl::bitsizeof<T>)) {
         return 0;
     }
 
@@ -66,14 +67,14 @@ inline u128 LogicalShiftRight(u128 value, int shift_amount) {
 
 template<typename T>
 T LogicalShiftRightDouble(T top, T bottom, int shift_amount) {
-    return LogicalShiftLeft(top, int(Common::BitSize<T>()) - shift_amount) | LogicalShiftRight(bottom, shift_amount);
+    return LogicalShiftLeft(top, int(mcl::bitsizeof<T>) - shift_amount) | LogicalShiftRight(bottom, shift_amount);
 }
 
 template<typename T>
 T ArithmeticShiftLeft(T value, int shift_amount) {
     static_assert(std::is_integral_v<T>);
 
-    if (shift_amount >= static_cast<int>(Common::BitSize<T>())) {
+    if (shift_amount >= static_cast<int>(mcl::bitsizeof<T>)) {
         return 0;
     }
 
@@ -89,8 +90,8 @@ template<typename T>
 T ArithmeticShiftRight(T value, int shift_amount) {
     static_assert(std::is_integral_v<T>);
 
-    if (shift_amount >= static_cast<int>(Common::BitSize<T>())) {
-        return Common::MostSignificantBit(value) ? ~static_cast<T>(0) : 0;
+    if (shift_amount >= static_cast<int>(mcl::bitsizeof<T>)) {
+        return mcl::bit::most_significant_bit(value) ? ~static_cast<T>(0) : 0;
     }
 
     if (shift_amount < 0) {
@@ -103,7 +104,7 @@ T ArithmeticShiftRight(T value, int shift_amount) {
 
 template<typename T>
 T ArithmeticShiftRightDouble(T top, T bottom, int shift_amount) {
-    return ArithmeticShiftLeft(top, int(Common::BitSize<T>()) - shift_amount) | LogicalShiftRight(bottom, shift_amount);
+    return ArithmeticShiftLeft(top, int(mcl::bitsizeof<T>) - shift_amount) | LogicalShiftRight(bottom, shift_amount);
 }
 
 template<typename T>

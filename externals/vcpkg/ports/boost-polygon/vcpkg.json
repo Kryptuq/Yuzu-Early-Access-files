@@ -1,0 +1,11 @@
+{
+  "name": "boost-polygon",
+  "version": "1.79.0",
+  "description": "Boost polygon module",
+  "homepage": "https://github.com/boostorg/polygon",
+  "license": "BSL-1.0",
+  "dependencies": [
+    "boost-config",
+    "boost-vcpkg-helpers"
+  ]
+}

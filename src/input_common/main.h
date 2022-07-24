@@ -119,6 +119,9 @@ public:
     /// Returns true if device is a controller.
     [[nodiscard]] bool IsController(const Common::ParamPackage& params) const;
 
+    /// Returns true if axis of a stick aren't mapped in the correct direction
+    [[nodiscard]] bool IsStickInverted(const Common::ParamPackage& device) const;
+
     /// Reloads the input devices.
     void ReloadInputDevices();
 
@@ -126,7 +129,7 @@ public:
     void BeginMapping(Polling::InputType type);
 
     /// Returns an input event with mapping information.
-    [[nodiscard]] const Common::ParamPackage GetNextInput() const;
+    [[nodiscard]] Common::ParamPackage GetNextInput() const;
 
     /// Stop polling from all backends.
     void StopMapping() const;

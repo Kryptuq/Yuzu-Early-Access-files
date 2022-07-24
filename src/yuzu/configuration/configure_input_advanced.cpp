@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <QColorDialog>
 #include "common/settings.h"
@@ -135,6 +134,7 @@ void ConfigureInputAdvanced::ApplyConfiguration() {
     Settings::values.touchscreen.enabled = ui->touchscreen_enabled->isChecked();
     Settings::values.enable_raw_input = ui->enable_raw_input->isChecked();
     Settings::values.enable_udp_controller = ui->enable_udp_controller->isChecked();
+    Settings::values.controller_navigation = ui->controller_navigation->isChecked();
     Settings::values.enable_ring_controller = ui->enable_ring_controller->isChecked();
 }
 
@@ -167,6 +167,7 @@ void ConfigureInputAdvanced::LoadConfiguration() {
     ui->touchscreen_enabled->setChecked(Settings::values.touchscreen.enabled);
     ui->enable_raw_input->setChecked(Settings::values.enable_raw_input.GetValue());
     ui->enable_udp_controller->setChecked(Settings::values.enable_udp_controller.GetValue());
+    ui->controller_navigation->setChecked(Settings::values.controller_navigation.GetValue());
     ui->enable_ring_controller->setChecked(Settings::values.enable_ring_controller.GetValue());
 
     UpdateUIEnabled();

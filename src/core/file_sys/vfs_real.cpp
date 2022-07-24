@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <cstddef>
@@ -145,7 +144,7 @@ VirtualFile RealVfsFilesystem::MoveFile(std::string_view old_path_, std::string_
             LOG_ERROR(Service_FS, "Failed to open path {} in order to re-cache it", new_path);
         }
     } else {
-        UNREACHABLE();
+        ASSERT(false);
         return nullptr;
     }
 

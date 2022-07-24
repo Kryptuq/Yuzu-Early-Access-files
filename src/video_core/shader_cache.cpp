@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <array>
@@ -9,6 +8,7 @@
 #include "common/assert.h"
 #include "shader_recompiler/frontend/maxwell/control_flow.h"
 #include "shader_recompiler/object_pool.h"
+#include "video_core/control/channel_state.h"
 #include "video_core/dirty_flags.h"
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/engines/maxwell_3d.h"
@@ -25,7 +25,7 @@ void ShaderCache::InvalidateRegion(VAddr addr, size_t size) {
 }
 
 void ShaderCache::OnCPUWrite(VAddr addr, size_t size) {
-    std::lock_guard lock{invalidation_mutex};
+    std::scoped_lock lock{invalidation_mutex};
     InvalidatePagesInRegion(addr, size);
 }
 
@@ -34,29 +34,25 @@ void ShaderCache::SyncGuestHost() {
     RemovePendingShaders();
 }
 
-ShaderCache::ShaderCache(VideoCore::RasterizerInterface& rasterizer_,
-                         Tegra::MemoryManager& gpu_memory_, Tegra::Engines::Maxwell3D& maxwell3d_,
-                         Tegra::Engines::KeplerCompute& kepler_compute_)
-    : gpu_memory{gpu_memory_}, maxwell3d{maxwell3d_}, kepler_compute{kepler_compute_},
-      rasterizer{rasterizer_} {}
+ShaderCache::ShaderCache(VideoCore::RasterizerInterface& rasterizer_) : rasterizer{rasterizer_} {}
 
 bool ShaderCache::RefreshStages(std::array<u64, 6>& unique_hashes) {
-    auto& dirty{maxwell3d.dirty.flags};
+    auto& dirty{maxwell3d->dirty.flags};
     if (!dirty[VideoCommon::Dirty::Shaders]) {
         return last_shaders_valid;
     }
     dirty[VideoCommon::Dirty::Shaders] = false;
 
-    const GPUVAddr base_addr{maxwell3d.regs.code_address.CodeAddress()};
+    const GPUVAddr base_addr{maxwell3d->regs.code_address.CodeAddress()};
     for (size_t index = 0; index < Tegra::Engines::Maxwell3D::Regs::MaxShaderProgram; ++index) {
-        if (!maxwell3d.regs.IsShaderConfigEnabled(index)) {
+        if (!maxwell3d->regs.IsShaderConfigEnabled(index)) {
             unique_hashes[index] = 0;
             continue;
         }
-        const auto& shader_config{maxwell3d.regs.shader_config[index]};
+        const auto& shader_config{maxwell3d->regs.shader_config[index]};
         const auto program{static_cast<Tegra::Engines::Maxwell3D::Regs::ShaderProgram>(index)};
         const GPUVAddr shader_addr{base_addr + shader_config.offset};
-        const std::optional<VAddr> cpu_shader_addr{gpu_memory.GpuToCpuAddress(shader_addr)};
+        const std::optional<VAddr> cpu_shader_addr{gpu_memory->GpuToCpuAddress(shader_addr)};
         if (!cpu_shader_addr) {
             LOG_ERROR(HW_GPU, "Invalid GPU address for shader 0x{:016x}", shader_addr);
             last_shaders_valid = false;
@@ -65,7 +61,7 @@ bool ShaderCache::RefreshStages(std::array<u64, 6>& unique_hashes) {
         const ShaderInfo* shader_info{TryGet(*cpu_shader_addr)};
         if (!shader_info) {
             const u32 start_address{shader_config.offset};
-            GraphicsEnvironment env{maxwell3d, gpu_memory, program, base_addr, start_address};
+            GraphicsEnvironment env{*maxwell3d, *gpu_memory, program, base_addr, start_address};
             shader_info = MakeShaderInfo(env, *cpu_shader_addr);
         }
         shader_infos[index] = shader_info;
@@ -76,10 +72,10 @@ bool ShaderCache::RefreshStages(std::array<u64, 6>& unique_hashes) {
 }
 
 const ShaderInfo* ShaderCache::ComputeShader() {
-    const GPUVAddr program_base{kepler_compute.regs.code_loc.Address()};
-    const auto& qmd{kepler_compute.launch_description};
+    const GPUVAddr program_base{kepler_compute->regs.code_loc.Address()};
+    const auto& qmd{kepler_compute->launch_description};
     const GPUVAddr shader_addr{program_base + qmd.program_start};
-    const std::optional<VAddr> cpu_shader_addr{gpu_memory.GpuToCpuAddress(shader_addr)};
+    const std::optional<VAddr> cpu_shader_addr{gpu_memory->GpuToCpuAddress(shader_addr)};
     if (!cpu_shader_addr) {
         LOG_ERROR(HW_GPU, "Invalid GPU address for shader 0x{:016x}", shader_addr);
         return nullptr;
@@ -87,22 +83,22 @@ const ShaderInfo* ShaderCache::ComputeShader() {
     if (const ShaderInfo* const shader = TryGet(*cpu_shader_addr)) {
         return shader;
     }
-    ComputeEnvironment env{kepler_compute, gpu_memory, program_base, qmd.program_start};
+    ComputeEnvironment env{*kepler_compute, *gpu_memory, program_base, qmd.program_start};
     return MakeShaderInfo(env, *cpu_shader_addr);
 }
 
 void ShaderCache::GetGraphicsEnvironments(GraphicsEnvironments& result,
                                           const std::array<u64, NUM_PROGRAMS>& unique_hashes) {
     size_t env_index{};
-    const GPUVAddr base_addr{maxwell3d.regs.code_address.CodeAddress()};
+    const GPUVAddr base_addr{maxwell3d->regs.code_address.CodeAddress()};
     for (size_t index = 0; index < NUM_PROGRAMS; ++index) {
         if (unique_hashes[index] == 0) {
             continue;
         }
         const auto program{static_cast<Tegra::Engines::Maxwell3D::Regs::ShaderProgram>(index)};
         auto& env{result.envs[index]};
-        const u32 start_address{maxwell3d.regs.shader_config[index].offset};
-        env = GraphicsEnvironment{maxwell3d, gpu_memory, program, base_addr, start_address};
+        const u32 start_address{maxwell3d->regs.shader_config[index].offset};
+        env = GraphicsEnvironment{*maxwell3d, *gpu_memory, program, base_addr, start_address};
         env.SetCachedSize(shader_infos[index]->size_bytes);
         result.env_ptrs[env_index++] = &env;
     }
@@ -170,7 +166,7 @@ void ShaderCache::RemovePendingShaders() {
     marked_for_removal.clear();
 
     if (!removed_shaders.empty()) {
-        RemoveShadersFromStorage(std::move(removed_shaders));
+        RemoveShadersFromStorage(removed_shaders);
     }
 }
 
@@ -213,7 +209,7 @@ void ShaderCache::UnmarkMemory(Entry* entry) {
     rasterizer.UpdatePagesCachedCount(addr, size, -1);
 }
 
-void ShaderCache::RemoveShadersFromStorage(std::vector<ShaderInfo*> removed_shaders) {
+void ShaderCache::RemoveShadersFromStorage(std::span<ShaderInfo*> removed_shaders) {
     // Remove them from the cache
     std::erase_if(storage, [&removed_shaders](const std::unique_ptr<ShaderInfo>& shader) {
         return std::ranges::find(removed_shaders, shader.get()) != removed_shaders.end();

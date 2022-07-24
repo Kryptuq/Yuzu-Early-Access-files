@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -25,6 +24,6 @@ struct fmt::formatter<Shader::Maxwell::Opcode> {
     }
     template <typename FormatContext>
     auto format(const Shader::Maxwell::Opcode& opcode, FormatContext& ctx) {
-        return format_to(ctx.out(), "{}", NameOf(opcode));
+        return fmt::format_to(ctx.out(), "{}", NameOf(opcode));
     }
 };

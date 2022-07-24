@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <array>
@@ -71,7 +70,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     case ImageType::Buffer:
         break;
     }
-    UNREACHABLE_MSG("Invalid image type={}", type);
+    ASSERT_MSG(false, "Invalid image type={}", type);
     return {};
 }
 
@@ -88,7 +87,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     case 16:
         return VK_SAMPLE_COUNT_16_BIT;
     default:
-        UNREACHABLE_MSG("Invalid number of samples={}", num_samples);
+        ASSERT_MSG(false, "Invalid number of samples={}", num_samples);
         return VK_SAMPLE_COUNT_1_BIT;
     }
 }
@@ -108,7 +107,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
             usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
             break;
         default:
-            UNREACHABLE_MSG("Invalid surface type");
+            ASSERT_MSG(false, "Invalid surface type");
         }
     }
     if (info.storage) {
@@ -180,7 +179,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     case VideoCore::Surface::SurfaceType::DepthStencil:
         return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     default:
-        UNREACHABLE_MSG("Invalid surface type");
+        ASSERT_MSG(false, "Invalid surface type");
         return VkImageAspectFlags{};
     }
 }
@@ -222,7 +221,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     case SwizzleSource::OneInt:
         return VK_COMPONENT_SWIZZLE_ONE;
     }
-    UNREACHABLE_MSG("Invalid swizzle={}", swizzle);
+    ASSERT_MSG(false, "Invalid swizzle={}", swizzle);
     return VK_COMPONENT_SWIZZLE_ZERO;
 }
 
@@ -243,10 +242,10 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     case Shader::TextureType::ColorArrayCube:
         return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
     case Shader::TextureType::Buffer:
-        UNREACHABLE_MSG("Texture buffers can't be image views");
+        ASSERT_MSG(false, "Texture buffers can't be image views");
         return VK_IMAGE_VIEW_TYPE_1D;
     }
-    UNREACHABLE_MSG("Invalid image view type={}", type);
+    ASSERT_MSG(false, "Invalid image view type={}", type);
     return VK_IMAGE_VIEW_TYPE_2D;
 }
 
@@ -270,10 +269,10 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
         UNIMPLEMENTED_MSG("Rect image view");
         return VK_IMAGE_VIEW_TYPE_2D;
     case VideoCommon::ImageViewType::Buffer:
-        UNREACHABLE_MSG("Texture buffers can't be image views");
+        ASSERT_MSG(false, "Texture buffers can't be image views");
         return VK_IMAGE_VIEW_TYPE_1D;
     }
-    UNREACHABLE_MSG("Invalid image view type={}", type);
+    ASSERT_MSG(false, "Invalid image view type={}", type);
     return VK_IMAGE_VIEW_TYPE_2D;
 }
 
@@ -438,6 +437,32 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     }
 }
 
+[[nodiscard]] SwizzleSource SwapGreenRed(SwizzleSource value) {
+    switch (value) {
+    case SwizzleSource::R:
+        return SwizzleSource::G;
+    case SwizzleSource::G:
+        return SwizzleSource::R;
+    default:
+        return value;
+    }
+}
+
+[[nodiscard]] SwizzleSource SwapSpecial(SwizzleSource value) {
+    switch (value) {
+    case SwizzleSource::A:
+        return SwizzleSource::R;
+    case SwizzleSource::R:
+        return SwizzleSource::A;
+    case SwizzleSource::G:
+        return SwizzleSource::B;
+    case SwizzleSource::B:
+        return SwizzleSource::G;
+    default:
+        return value;
+    }
+}
+
 void CopyBufferToImage(vk::CommandBuffer cmdbuf, VkBuffer src_buffer, VkImage image,
                        VkImageAspectFlags aspect_mask, bool is_initialized,
                        std::span<const VkBufferImageCopy> copies) {
@@ -554,12 +579,25 @@ void CopyBufferToImage(vk::CommandBuffer cmdbuf, VkBuffer src_buffer, VkImage im
     };
 }
 
-[[nodiscard]] bool IsFormatFlipped(PixelFormat format) {
+void TryTransformSwizzleIfNeeded(PixelFormat format, std::array<SwizzleSource, 4>& swizzle,
+                                 bool emulate_bgr565) {
     switch (format) {
     case PixelFormat::A1B5G5R5_UNORM:
-        return true;
+        std::ranges::transform(swizzle, swizzle.begin(), SwapBlueRed);
+        break;
+    case PixelFormat::B5G6R5_UNORM:
+        if (emulate_bgr565) {
+            std::ranges::transform(swizzle, swizzle.begin(), SwapBlueRed);
+        }
+        break;
+    case PixelFormat::A5B5G5R1_UNORM:
+        std::ranges::transform(swizzle, swizzle.begin(), SwapSpecial);
+        break;
+    case PixelFormat::G4R4_UNORM:
+        std::ranges::transform(swizzle, swizzle.begin(), SwapGreenRed);
+        break;
     default:
-        return false;
+        break;
     }
 }
 
@@ -606,11 +644,11 @@ struct RangedBarrierRange {
     case Shader::ImageFormat::R32G32B32A32_UINT:
         return VK_FORMAT_R32G32B32A32_UINT;
     }
-    UNREACHABLE_MSG("Invalid image format={}", format);
+    ASSERT_MSG(false, "Invalid image format={}", format);
     return VK_FORMAT_R32_UINT;
 }
 
-void BlitScale(VKScheduler& scheduler, VkImage src_image, VkImage dst_image, const ImageInfo& info,
+void BlitScale(Scheduler& scheduler, VkImage src_image, VkImage dst_image, const ImageInfo& info,
                VkImageAspectFlags aspect_mask, const Settings::ResolutionScalingInfo& resolution,
                bool up_scaling = true) {
     const bool is_2d = info.type == ImageType::e2D;
@@ -750,7 +788,7 @@ void BlitScale(VKScheduler& scheduler, VkImage src_image, VkImage dst_image, con
 }
 } // Anonymous namespace
 
-TextureCacheRuntime::TextureCacheRuntime(const Device& device_, VKScheduler& scheduler_,
+TextureCacheRuntime::TextureCacheRuntime(const Device& device_, Scheduler& scheduler_,
                                          MemoryAllocator& memory_allocator_,
                                          StagingBufferPool& staging_buffer_pool_,
                                          BlitImageHelper& blit_image_helper_,
@@ -775,11 +813,6 @@ StagingBufferRef TextureCacheRuntime::DownloadStagingBuffer(size_t size) {
 
 bool TextureCacheRuntime::ShouldReinterpret(Image& dst, Image& src) {
     if (VideoCore::Surface::GetFormatType(dst.info.format) ==
-            VideoCore::Surface::SurfaceType::DepthStencil &&
-        !device.IsExtShaderStencilExportSupported()) {
-        return true;
-    }
-    if (VideoCore::Surface::GetFormatType(src.info.format) ==
             VideoCore::Surface::SurfaceType::DepthStencil &&
         !device.IsExtShaderStencilExportSupported()) {
         return true;
@@ -1068,6 +1101,9 @@ void TextureCacheRuntime::ConvertImage(Framebuffer* dst, ImageView& dst_view, Im
         if (src_view.format == PixelFormat::S8_UINT_D24_UNORM) {
             return blit_image_helper.ConvertD24S8ToABGR8(dst, src_view);
         }
+        if (src_view.format == PixelFormat::D24_UNORM_S8_UINT) {
+            return blit_image_helper.ConvertS8D24ToABGR8(dst, src_view);
+        }
         break;
     case PixelFormat::R32_FLOAT:
         if (src_view.format == PixelFormat::D32_FLOAT) {
@@ -1189,6 +1225,14 @@ u64 TextureCacheRuntime::GetDeviceLocalMemory() const {
     return device.GetDeviceLocalMemory();
 }
 
+u64 TextureCacheRuntime::GetDeviceMemoryUsage() const {
+    return device.GetDeviceMemoryUsage();
+}
+
+bool TextureCacheRuntime::CanReportMemoryUsage() const {
+    return device.CanReportMemoryUsage();
+}
+
 void TextureCacheRuntime::TickFrame() {}
 
 Image::Image(TextureCacheRuntime& runtime_, const ImageInfo& info_, GPUVAddr gpu_addr_,
@@ -1203,6 +1247,7 @@ Image::Image(TextureCacheRuntime& runtime_, const ImageInfo& info_, GPUVAddr gpu
         } else {
             flags |= VideoCommon::ImageFlagBits::Converted;
         }
+        flags |= VideoCommon::ImageFlagBits::CostlyLoad;
     }
     if (runtime->device.HasDebuggingToolAttached()) {
         original_image.SetObjectNameEXT(VideoCommon::Name(*this).c_str());
@@ -1430,22 +1475,23 @@ bool Image::BlitScaleHelper(bool scale_up) {
     };
     const VkExtent2D extent{
         .width = std::max(scaled_width, info.size.width),
-        .height = std::max(scaled_height, info.size.width),
+        .height = std::max(scaled_height, info.size.height),
     };
 
     auto* view_ptr = blit_view.get();
     if (aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT) {
         if (!blit_framebuffer) {
-            blit_framebuffer = std::make_unique<Framebuffer>(*runtime, view_ptr, nullptr, extent);
+            blit_framebuffer =
+                std::make_unique<Framebuffer>(*runtime, view_ptr, nullptr, extent, scale_up);
         }
         const auto color_view = blit_view->Handle(Shader::TextureType::Color2D);
 
         runtime->blit_image_helper.BlitColor(blit_framebuffer.get(), color_view, dst_region,
                                              src_region, operation, BLIT_OPERATION);
-    } else if (!runtime->device.IsBlitDepthStencilSupported() &&
-               aspect_mask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
+    } else if (aspect_mask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
         if (!blit_framebuffer) {
-            blit_framebuffer = std::make_unique<Framebuffer>(*runtime, nullptr, view_ptr, extent);
+            blit_framebuffer =
+                std::make_unique<Framebuffer>(*runtime, nullptr, view_ptr, extent, scale_up);
         }
         runtime->blit_image_helper.BlitDepthStencil(blit_framebuffer.get(), blit_view->DepthView(),
                                                     blit_view->StencilView(), dst_region,
@@ -1488,9 +1534,7 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
     };
     if (!info.IsRenderTarget()) {
         swizzle = info.Swizzle();
-        if (IsFormatFlipped(format)) {
-            std::ranges::transform(swizzle, swizzle.begin(), SwapBlueRed);
-        }
+        TryTransformSwizzleIfNeeded(format, swizzle, device->MustEmulateBGR565());
         if ((aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
             std::ranges::transform(swizzle, swizzle.begin(), ConvertGreenRed);
         }
@@ -1554,7 +1598,7 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
         UNIMPLEMENTED();
         break;
     case VideoCommon::ImageViewType::Buffer:
-        UNREACHABLE();
+        ASSERT(false);
         break;
     }
 }
@@ -1705,34 +1749,42 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM
           .width = key.size.width,
           .height = key.size.height,
       }} {
-    CreateFramebuffer(runtime, color_buffers, depth_buffer);
+    CreateFramebuffer(runtime, color_buffers, depth_buffer, key.is_rescaled);
     if (runtime.device.HasDebuggingToolAttached()) {
         framebuffer.SetObjectNameEXT(VideoCommon::Name(key).c_str());
     }
 }
 
 Framebuffer::Framebuffer(TextureCacheRuntime& runtime, ImageView* color_buffer,
-                         ImageView* depth_buffer, VkExtent2D extent)
+                         ImageView* depth_buffer, VkExtent2D extent, bool is_rescaled)
     : render_area{extent} {
     std::array<ImageView*, NUM_RT> color_buffers{color_buffer};
-    CreateFramebuffer(runtime, color_buffers, depth_buffer);
+    CreateFramebuffer(runtime, color_buffers, depth_buffer, is_rescaled);
 }
 
 Framebuffer::~Framebuffer() = default;
 
 void Framebuffer::CreateFramebuffer(TextureCacheRuntime& runtime,
                                     std::span<ImageView*, NUM_RT> color_buffers,
-                                    ImageView* depth_buffer) {
+                                    ImageView* depth_buffer, bool is_rescaled) {
     std::vector<VkImageView> attachments;
     RenderPassKey renderpass_key{};
     s32 num_layers = 1;
 
+    const auto& resolution = runtime.resolution;
+
+    u32 width = 0;
+    u32 height = 0;
     for (size_t index = 0; index < NUM_RT; ++index) {
         const ImageView* const color_buffer = color_buffers[index];
         if (!color_buffer) {
             renderpass_key.color_formats[index] = PixelFormat::Invalid;
             continue;
         }
+        width = std::max(width, is_rescaled ? resolution.ScaleUp(color_buffer->size.width)
+                                            : color_buffer->size.width);
+        height = std::max(height, is_rescaled ? resolution.ScaleUp(color_buffer->size.height)
+                                              : color_buffer->size.height);
         attachments.push_back(color_buffer->RenderTarget());
         renderpass_key.color_formats[index] = color_buffer->format;
         num_layers = std::max(num_layers, color_buffer->range.extent.layers);
@@ -1743,6 +1795,10 @@ void Framebuffer::CreateFramebuffer(TextureCacheRuntime& runtime,
     }
     const size_t num_colors = attachments.size();
     if (depth_buffer) {
+        width = std::max(width, is_rescaled ? resolution.ScaleUp(depth_buffer->size.width)
+                                            : depth_buffer->size.width);
+        height = std::max(height, is_rescaled ? resolution.ScaleUp(depth_buffer->size.height)
+                                              : depth_buffer->size.height);
         attachments.push_back(depth_buffer->RenderTarget());
         renderpass_key.depth_format = depth_buffer->format;
         num_layers = std::max(num_layers, depth_buffer->range.extent.layers);
@@ -1759,6 +1815,8 @@ void Framebuffer::CreateFramebuffer(TextureCacheRuntime& runtime,
     renderpass_key.samples = samples;
 
     renderpass = runtime.render_pass_cache.Get(renderpass_key);
+    render_area.width = std::min(render_area.width, width);
+    render_area.height = std::min(render_area.height, height);
 
     num_color_buffers = static_cast<u32>(num_colors);
     framebuffer = runtime.device.GetLogical().CreateFramebuffer({
@@ -1780,7 +1838,7 @@ void TextureCacheRuntime::AccelerateImageUpload(
     if (IsPixelFormatASTC(image.info.format)) {
         return astc_decoder_pass.Assemble(image, map, swizzles);
     }
-    UNREACHABLE();
+    ASSERT(false);
 }
 
 } // namespace Vulkan

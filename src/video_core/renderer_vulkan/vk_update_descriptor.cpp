@@ -1,11 +1,9 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <variant>
 #include <boost/container/static_vector.hpp>
 
-#include "common/assert.h"
 #include "common/logging/log.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_update_descriptor.h"
@@ -14,18 +12,18 @@
 
 namespace Vulkan {
 
-VKUpdateDescriptorQueue::VKUpdateDescriptorQueue(const Device& device_, VKScheduler& scheduler_)
+UpdateDescriptorQueue::UpdateDescriptorQueue(const Device& device_, Scheduler& scheduler_)
     : device{device_}, scheduler{scheduler_} {
     payload_cursor = payload.data();
 }
 
-VKUpdateDescriptorQueue::~VKUpdateDescriptorQueue() = default;
+UpdateDescriptorQueue::~UpdateDescriptorQueue() = default;
 
-void VKUpdateDescriptorQueue::TickFrame() {
+void UpdateDescriptorQueue::TickFrame() {
     payload_cursor = payload.data();
 }
 
-void VKUpdateDescriptorQueue::Acquire() {
+void UpdateDescriptorQueue::Acquire() {
     // Minimum number of entries required.
     // This is the maximum number of entries a single draw call migth use.
     static constexpr size_t MIN_ENTRIES = 0x400;

@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -32,14 +31,14 @@ public:
 private:
     void changeEvent(QEvent* event) override;
 
-    void InitializeAudioOutputSinkComboBox();
+    void InitializeAudioSinkComboBox();
 
     void RetranslateUI();
 
     void UpdateAudioDevices(int sink_index);
 
     void SetOutputSinkFromSinkID();
-    void SetAudioDeviceFromDeviceID();
+    void SetAudioDevicesFromDeviceID();
     void SetVolumeIndicatorText(int percentage);
 
     void SetupPerGameUI();

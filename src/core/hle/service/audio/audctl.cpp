@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
@@ -41,14 +40,14 @@ AudCtl::AudCtl(Core::System& system_) : ServiceFramework{system_, "audctl"} {
         {27, nullptr, "SetVolumeMappingTableForDev"},
         {28, nullptr, "GetAudioOutputChannelCountForPlayReport"},
         {29, nullptr, "BindAudioOutputChannelCountUpdateEventForPlayReport"},
-        {30, nullptr, "Unknown30"},
-        {31, nullptr, "Unknown31"},
-        {32, nullptr, "Unknown32"},
-        {33, nullptr, "Unknown33"},
-        {34, nullptr, "Unknown34"},
-        {10000, nullptr, "Unknown10000"},
-        {10001, nullptr, "Unknown10001"},
-        {10002, nullptr, "Unknown10002"},
+        {30, nullptr, "SetSpeakerAutoMuteEnabled"},
+        {31, nullptr, "IsSpeakerAutoMuteEnabled"},
+        {32, nullptr, "GetActiveOutputTarget"},
+        {33, nullptr, "GetTargetDeviceInfo"},
+        {34, nullptr, "AcquireTargetNotification"},
+        {10000, nullptr, "NotifyAudioOutputTargetForPlayReport"},
+        {10001, nullptr, "NotifyAudioOutputChannelCountForPlayReport"},
+        {10002, nullptr, "NotifyUnsupportedUsbOutputDeviceAttachedForPlayReport"},
     };
     // clang-format on
 

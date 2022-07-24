@@ -70,28 +70,29 @@ const std::array<int, 2> Config::default_ringcon_analogs{{
 // This must be in alphabetical order according to action name as it must have the same order as
 // UISetting::values.shortcuts, which is alphabetically ordered.
 // clang-format off
-const std::array<UISettings::Shortcut, 21> Config::default_hotkeys{{
-    {QStringLiteral("Capture Screenshot"),       QStringLiteral("Main Window"), {QStringLiteral("Ctrl+P"),  QStringLiteral("Screenshot"), Qt::WidgetWithChildrenShortcut}},
-    {QStringLiteral("Change Docked Mode"),       QStringLiteral("Main Window"), {QStringLiteral("F10"),     QStringLiteral("Home+X"), Qt::ApplicationShortcut}},
-    {QStringLiteral("Continue/Pause Emulation"), QStringLiteral("Main Window"), {QStringLiteral("F4"),      QStringLiteral("Home+Plus"), Qt::WindowShortcut}},
-    {QStringLiteral("Decrease Speed Limit"),     QStringLiteral("Main Window"), {QStringLiteral("-"),       QStringLiteral(""), Qt::ApplicationShortcut}},
-    {QStringLiteral("Exit Fullscreen"),          QStringLiteral("Main Window"), {QStringLiteral("Esc"),     QStringLiteral(""), Qt::WindowShortcut}},
-    {QStringLiteral("Exit yuzu"),                QStringLiteral("Main Window"), {QStringLiteral("Ctrl+Q"),  QStringLiteral("Home+Minus"), Qt::WindowShortcut}},
-    {QStringLiteral("Fullscreen"),               QStringLiteral("Main Window"), {QStringLiteral("F11"),     QStringLiteral("Home+B"), Qt::WindowShortcut}},
-    {QStringLiteral("Increase Speed Limit"),     QStringLiteral("Main Window"), {QStringLiteral("+"),       QStringLiteral(""), Qt::ApplicationShortcut}},
-    {QStringLiteral("Load Amiibo"),              QStringLiteral("Main Window"), {QStringLiteral("F2"),      QStringLiteral("Home+A"), Qt::WidgetWithChildrenShortcut}},
-    {QStringLiteral("Load File"),                QStringLiteral("Main Window"), {QStringLiteral("Ctrl+O"),  QStringLiteral(""), Qt::WidgetWithChildrenShortcut}},
-    {QStringLiteral("Mute Audio"),               QStringLiteral("Main Window"), {QStringLiteral("Ctrl+M"),  QStringLiteral(""), Qt::WindowShortcut}},
-    {QStringLiteral("Restart Emulation"),        QStringLiteral("Main Window"), {QStringLiteral("F6"),      QStringLiteral(""), Qt::WindowShortcut}},
-    {QStringLiteral("Stop Emulation"),           QStringLiteral("Main Window"), {QStringLiteral("F5"),      QStringLiteral(""), Qt::WindowShortcut}},
-    {QStringLiteral("TAS Start/Stop"),           QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F5"), QStringLiteral(""), Qt::ApplicationShortcut}},
-    {QStringLiteral("TAS Reset"),                QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F6"), QStringLiteral(""), Qt::ApplicationShortcut}},
-    {QStringLiteral("TAS Record"),               QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F7"), QStringLiteral(""), Qt::ApplicationShortcut}},
-    {QStringLiteral("Toggle Filter Bar"),        QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F"),  QStringLiteral(""), Qt::WindowShortcut}},
-    {QStringLiteral("Toggle Framerate Limit"),   QStringLiteral("Main Window"), {QStringLiteral("Ctrl+U"),  QStringLiteral("Home+Y"), Qt::ApplicationShortcut}},
-    {QStringLiteral("Toggle Mouse Panning"),     QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F9"), QStringLiteral(""), Qt::ApplicationShortcut}},
-    {QStringLiteral("Toggle Speed Limit"),       QStringLiteral("Main Window"), {QStringLiteral("Ctrl+Z"),  QStringLiteral(""), Qt::ApplicationShortcut}},
-    {QStringLiteral("Toggle Status Bar"),        QStringLiteral("Main Window"), {QStringLiteral("Ctrl+S"),  QStringLiteral(""), Qt::WindowShortcut}},
+const std::array<UISettings::Shortcut, 22> Config::default_hotkeys{{
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Audio Mute/Unmute")),        QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+M"),  QStringLiteral("Home+Dpad_Right"), Qt::WindowShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Audio Volume Down")),        QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("-"),       QStringLiteral("Home+Dpad_Down"), Qt::ApplicationShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Audio Volume Up")),          QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("+"),       QStringLiteral("Home+Dpad_Up"), Qt::ApplicationShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Capture Screenshot")),       QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+P"),  QStringLiteral("Screenshot"), Qt::WidgetWithChildrenShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Change Adapting Filter")),   QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F8"),      QStringLiteral("Home+L"), Qt::ApplicationShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Change Docked Mode")),       QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F10"),     QStringLiteral("Home+X"), Qt::ApplicationShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Change GPU Accuracy")),      QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F9"),      QStringLiteral("Home+R"), Qt::ApplicationShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Continue/Pause Emulation")), QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F4"),      QStringLiteral("Home+Plus"), Qt::WindowShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Exit Fullscreen")),          QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Esc"),     QStringLiteral(""), Qt::WindowShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Exit yuzu")),                QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+Q"),  QStringLiteral("Home+Minus"), Qt::WindowShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Fullscreen")),               QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F11"),     QStringLiteral("Home+B"), Qt::WindowShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Load File")),                QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+O"),  QStringLiteral(""), Qt::WidgetWithChildrenShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Load/Remove Amiibo")),       QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F2"),      QStringLiteral("Home+A"), Qt::WidgetWithChildrenShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Restart Emulation")),        QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F6"),      QStringLiteral(""), Qt::WindowShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Stop Emulation")),           QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F5"),      QStringLiteral(""), Qt::WindowShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "TAS Record")),               QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+F7"), QStringLiteral(""), Qt::ApplicationShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "TAS Reset")),                QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+F6"), QStringLiteral(""), Qt::ApplicationShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "TAS Start/Stop")),           QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+F5"), QStringLiteral(""), Qt::ApplicationShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Toggle Filter Bar")),        QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+F"),  QStringLiteral(""), Qt::WindowShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Toggle Framerate Limit")),   QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+U"),  QStringLiteral("Home+Y"), Qt::ApplicationShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Toggle Mouse Panning")),     QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+F9"), QStringLiteral(""), Qt::ApplicationShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Toggle Status Bar")),        QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+S"),  QStringLiteral(""), Qt::WindowShortcut}},
 }};
 // clang-format on
 
@@ -132,7 +133,7 @@ void Config::Initialize(const std::string& config_name) {
 // Explicit std::string definition: Qt can't implicitly convert a std::string to a QVariant, nor
 // can it implicitly convert a QVariant back to a {std::,Q}string
 template <>
-void Config::ReadBasicSetting(Settings::BasicSetting<std::string>& setting) {
+void Config::ReadBasicSetting(Settings::Setting<std::string>& setting) {
     const QString name = QString::fromStdString(setting.GetLabel());
     const auto default_value = QString::fromStdString(setting.GetDefault());
     if (qt_config->value(name + QStringLiteral("/default"), false).toBool()) {
@@ -142,8 +143,8 @@ void Config::ReadBasicSetting(Settings::BasicSetting<std::string>& setting) {
     }
 }
 
-template <typename Type>
-void Config::ReadBasicSetting(Settings::BasicSetting<Type>& setting) {
+template <typename Type, bool ranged>
+void Config::ReadBasicSetting(Settings::Setting<Type, ranged>& setting) {
     const QString name = QString::fromStdString(setting.GetLabel());
     const Type default_value = setting.GetDefault();
     if (qt_config->value(name + QStringLiteral("/default"), false).toBool()) {
@@ -156,23 +157,23 @@ void Config::ReadBasicSetting(Settings::BasicSetting<Type>& setting) {
 
 // Explicit std::string definition: Qt can't implicitly convert a std::string to a QVariant
 template <>
-void Config::WriteBasicSetting(const Settings::BasicSetting<std::string>& setting) {
+void Config::WriteBasicSetting(const Settings::Setting<std::string>& setting) {
     const QString name = QString::fromStdString(setting.GetLabel());
     const std::string& value = setting.GetValue();
     qt_config->setValue(name + QStringLiteral("/default"), value == setting.GetDefault());
     qt_config->setValue(name, QString::fromStdString(value));
 }
 
-template <typename Type>
-void Config::WriteBasicSetting(const Settings::BasicSetting<Type>& setting) {
+template <typename Type, bool ranged>
+void Config::WriteBasicSetting(const Settings::Setting<Type, ranged>& setting) {
     const QString name = QString::fromStdString(setting.GetLabel());
     const Type value = setting.GetValue();
     qt_config->setValue(name + QStringLiteral("/default"), value == setting.GetDefault());
     qt_config->setValue(name, value);
 }
 
-template <typename Type>
-void Config::WriteGlobalSetting(const Settings::Setting<Type>& setting) {
+template <typename Type, bool ranged>
+void Config::WriteGlobalSetting(const Settings::SwitchableSetting<Type, ranged>& setting) {
     const QString name = QString::fromStdString(setting.GetLabel());
     const Type& value = setting.GetValue(global);
     if (!global) {
@@ -371,8 +372,9 @@ void Config::ReadAudioValues() {
     qt_config->beginGroup(QStringLiteral("Audio"));
 
     if (global) {
-        ReadBasicSetting(Settings::values.audio_device_id);
         ReadBasicSetting(Settings::values.sink_id);
+        ReadBasicSetting(Settings::values.audio_output_device_id);
+        ReadBasicSetting(Settings::values.audio_input_device_id);
     }
     ReadGlobalSetting(Settings::values.volume);
 
@@ -416,6 +418,8 @@ void Config::ReadControlValues() {
     ReadGlobalSetting(Settings::values.vibration_enabled);
     ReadGlobalSetting(Settings::values.enable_accurate_vibrations);
     ReadGlobalSetting(Settings::values.motion_enabled);
+
+    ReadBasicSetting(Settings::values.controller_navigation);
 
     qt_config->endGroup();
 }
@@ -465,6 +469,7 @@ void Config::ReadCoreValues() {
     qt_config->beginGroup(QStringLiteral("Core"));
 
     ReadGlobalSetting(Settings::values.use_multi_core);
+    ReadGlobalSetting(Settings::values.use_extended_memory_layout);
 
     qt_config->endGroup();
 }
@@ -521,6 +526,9 @@ void Config::ReadDebuggingValues() {
     // Intentionally not using the QT default setting as this is intended to be changed in the ini
     Settings::values.record_frame_times =
         qt_config->value(QStringLiteral("record_frame_times"), false).toBool();
+
+    ReadBasicSetting(Settings::values.use_gdbstub);
+    ReadBasicSetting(Settings::values.gdbstub_port);
     ReadBasicSetting(Settings::values.program_args);
     ReadBasicSetting(Settings::values.dump_exefs);
     ReadBasicSetting(Settings::values.dump_nso);
@@ -628,6 +636,7 @@ void Config::ReadCpuValues() {
     ReadGlobalSetting(Settings::values.cpuopt_unsafe_ignore_standard_fpcr);
     ReadGlobalSetting(Settings::values.cpuopt_unsafe_inaccurate_nan);
     ReadGlobalSetting(Settings::values.cpuopt_unsafe_fastmem_check);
+    ReadGlobalSetting(Settings::values.cpuopt_unsafe_ignore_global_monitor);
 
     if (global) {
         ReadBasicSetting(Settings::values.cpu_debug_mode);
@@ -640,6 +649,8 @@ void Config::ReadCpuValues() {
         ReadBasicSetting(Settings::values.cpuopt_misc_ir);
         ReadBasicSetting(Settings::values.cpuopt_reduce_misalign_checks);
         ReadBasicSetting(Settings::values.cpuopt_fastmem);
+        ReadBasicSetting(Settings::values.cpuopt_fastmem_exclusives);
+        ReadBasicSetting(Settings::values.cpuopt_recompile_exclusives);
     }
 
     qt_config->endGroup();
@@ -658,7 +669,6 @@ void Config::ReadRendererValues() {
     ReadGlobalSetting(Settings::values.max_anisotropy);
     ReadGlobalSetting(Settings::values.use_speed_limit);
     ReadGlobalSetting(Settings::values.speed_limit);
-    ReadGlobalSetting(Settings::values.fps_cap);
     ReadGlobalSetting(Settings::values.use_disk_shader_cache);
     ReadGlobalSetting(Settings::values.gpu_accuracy);
     ReadGlobalSetting(Settings::values.use_asynchronous_gpu_emulation);
@@ -766,7 +776,9 @@ void Config::ReadUIValues() {
     qt_config->beginGroup(QStringLiteral("UI"));
 
     UISettings::values.theme =
-        ReadSetting(QStringLiteral("theme"), QString::fromUtf8(UISettings::themes[0].second))
+        ReadSetting(
+            QStringLiteral("theme"),
+            QString::fromUtf8(UISettings::themes[static_cast<size_t>(default_theme)].second))
             .toString();
     ReadBasicSetting(UISettings::values.enable_discord_presence);
     ReadBasicSetting(UISettings::values.select_user_on_boot);
@@ -787,7 +799,9 @@ void Config::ReadUIValues() {
     ReadBasicSetting(UISettings::values.callout_flags);
     ReadBasicSetting(UISettings::values.show_console);
     ReadBasicSetting(UISettings::values.pause_when_in_background);
+    ReadBasicSetting(UISettings::values.mute_when_in_background);
     ReadBasicSetting(UISettings::values.hide_mouse);
+    ReadBasicSetting(UISettings::values.disable_web_applet);
 
     qt_config->endGroup();
 }
@@ -1007,7 +1021,8 @@ void Config::SaveAudioValues() {
 
     if (global) {
         WriteBasicSetting(Settings::values.sink_id);
-        WriteBasicSetting(Settings::values.audio_device_id);
+        WriteBasicSetting(Settings::values.audio_output_device_id);
+        WriteBasicSetting(Settings::values.audio_input_device_id);
     }
     WriteGlobalSetting(Settings::values.volume);
 
@@ -1034,6 +1049,7 @@ void Config::SaveControlValues() {
     WriteBasicSetting(Settings::values.keyboard_enabled);
     WriteBasicSetting(Settings::values.emulate_analog_keyboard);
     WriteBasicSetting(Settings::values.mouse_panning_sensitivity);
+    WriteBasicSetting(Settings::values.controller_navigation);
 
     WriteBasicSetting(Settings::values.tas_enable);
     WriteBasicSetting(Settings::values.tas_loop);
@@ -1046,6 +1062,7 @@ void Config::SaveCoreValues() {
     qt_config->beginGroup(QStringLiteral("Core"));
 
     WriteGlobalSetting(Settings::values.use_multi_core);
+    WriteGlobalSetting(Settings::values.use_extended_memory_layout);
 
     qt_config->endGroup();
 }
@@ -1082,6 +1099,8 @@ void Config::SaveDebuggingValues() {
 
     // Intentionally not using the QT default setting as this is intended to be changed in the ini
     qt_config->setValue(QStringLiteral("record_frame_times"), Settings::values.record_frame_times);
+    WriteBasicSetting(Settings::values.use_gdbstub);
+    WriteBasicSetting(Settings::values.gdbstub_port);
     WriteBasicSetting(Settings::values.program_args);
     WriteBasicSetting(Settings::values.dump_exefs);
     WriteBasicSetting(Settings::values.dump_nso);
@@ -1164,6 +1183,7 @@ void Config::SaveCpuValues() {
     WriteGlobalSetting(Settings::values.cpuopt_unsafe_ignore_standard_fpcr);
     WriteGlobalSetting(Settings::values.cpuopt_unsafe_inaccurate_nan);
     WriteGlobalSetting(Settings::values.cpuopt_unsafe_fastmem_check);
+    WriteGlobalSetting(Settings::values.cpuopt_unsafe_ignore_global_monitor);
 
     if (global) {
         WriteBasicSetting(Settings::values.cpu_debug_mode);
@@ -1176,6 +1196,8 @@ void Config::SaveCpuValues() {
         WriteBasicSetting(Settings::values.cpuopt_misc_ir);
         WriteBasicSetting(Settings::values.cpuopt_reduce_misalign_checks);
         WriteBasicSetting(Settings::values.cpuopt_fastmem);
+        WriteBasicSetting(Settings::values.cpuopt_fastmem_exclusives);
+        WriteBasicSetting(Settings::values.cpuopt_recompile_exclusives);
     }
 
     qt_config->endGroup();
@@ -1209,7 +1231,6 @@ void Config::SaveRendererValues() {
     WriteGlobalSetting(Settings::values.max_anisotropy);
     WriteGlobalSetting(Settings::values.use_speed_limit);
     WriteGlobalSetting(Settings::values.speed_limit);
-    WriteGlobalSetting(Settings::values.fps_cap);
     WriteGlobalSetting(Settings::values.use_disk_shader_cache);
     WriteSetting(QString::fromStdString(Settings::values.gpu_accuracy.GetLabel()),
                  static_cast<u32>(Settings::values.gpu_accuracy.GetValue(global)),
@@ -1305,7 +1326,7 @@ void Config::SaveUIValues() {
     qt_config->beginGroup(QStringLiteral("UI"));
 
     WriteSetting(QStringLiteral("theme"), UISettings::values.theme,
-                 QString::fromUtf8(UISettings::themes[0].second));
+                 QString::fromUtf8(UISettings::themes[static_cast<size_t>(default_theme)].second));
     WriteBasicSetting(UISettings::values.enable_discord_presence);
     WriteBasicSetting(UISettings::values.select_user_on_boot);
 
@@ -1325,7 +1346,9 @@ void Config::SaveUIValues() {
     WriteBasicSetting(UISettings::values.callout_flags);
     WriteBasicSetting(UISettings::values.show_console);
     WriteBasicSetting(UISettings::values.pause_when_in_background);
+    WriteBasicSetting(UISettings::values.mute_when_in_background);
     WriteBasicSetting(UISettings::values.hide_mouse);
+    WriteBasicSetting(UISettings::values.disable_web_applet);
 
     qt_config->endGroup();
 }
@@ -1390,8 +1413,8 @@ QVariant Config::ReadSetting(const QString& name, const QVariant& default_value)
     return result;
 }
 
-template <typename Type>
-void Config::ReadGlobalSetting(Settings::Setting<Type>& setting) {
+template <typename Type, bool ranged>
+void Config::ReadGlobalSetting(Settings::SwitchableSetting<Type, ranged>& setting) {
     QString name = QString::fromStdString(setting.GetLabel());
     const bool use_global = qt_config->value(name + QStringLiteral("/use_global"), true).toBool();
     setting.SetGlobal(use_global);

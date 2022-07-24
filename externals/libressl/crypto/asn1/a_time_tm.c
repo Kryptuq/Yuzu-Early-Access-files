@@ -1,4 +1,4 @@
-/* $OpenBSD: a_time_tm.c,v 1.15 2018/04/25 11:48:21 tb Exp $ */
+/* $OpenBSD: a_time_tm.c,v 1.19 2022/03/31 13:04:47 tb Exp $ */
 /*
  * Copyright (c) 2015 Bob Beck <beck@openbsd.org>
  *
@@ -163,10 +163,9 @@ ASN1_time_parse(const char *bytes, size_t len, struct tm *tm, int mode)
 		return (-1);
 
 	lt = tm;
-	if (lt == NULL) {
-		memset(&ltm, 0, sizeof(ltm));
+	if (lt == NULL)
 		lt = &ltm;
-	}
+	memset(lt, 0, sizeof(*lt));
 
 	/* Timezone is required and must be GMT (Zulu). */
 	if (bytes[len - 1] != 'Z')
@@ -260,10 +259,10 @@ ASN1_TIME_adj_internal(ASN1_TIME *s, time_t t, int offset_day, long offset_sec,
 	int allocated = 0;
 	struct tm tm;
 	size_t len;
-	char * p;
+	char *p;
 
- 	if (gmtime_r(&t, &tm) == NULL)
- 		return (NULL);
+	if (gmtime_r(&t, &tm) == NULL)
+		return (NULL);
 
 	if (offset_day || offset_sec) {
 		if (!OPENSSL_gmtime_adj(&tm, offset_day, offset_sec))
@@ -289,8 +288,10 @@ ASN1_TIME_adj_internal(ASN1_TIME *s, time_t t, int offset_day, long offset_sec,
 	}
 
 	if (s == NULL) {
-		if ((s = ASN1_TIME_new()) == NULL)
+		if ((s = ASN1_TIME_new()) == NULL) {
+			free(p);
 			return (NULL);
+		}
 		allocated = 1;
 	}
 
@@ -299,7 +300,7 @@ ASN1_TIME_adj_internal(ASN1_TIME *s, time_t t, int offset_day, long offset_sec,
 	case GENTIME_LENGTH:
 		s->type = V_ASN1_GENERALIZEDTIME;
 		break;
- 	case UTCTIME_LENGTH:
+	case UTCTIME_LENGTH:
 		s->type = V_ASN1_UTCTIME;
 		break;
 	default:
@@ -354,7 +355,6 @@ ASN1_TIME_to_generalizedtime(const ASN1_TIME *t, ASN1_GENERALIZEDTIME **out)
 	if (t->type != V_ASN1_GENERALIZEDTIME && t->type != V_ASN1_UTCTIME)
 		return (NULL);
 
-	memset(&tm, 0, sizeof(tm));
 	if (t->type != ASN1_time_parse(t->data, t->length, &tm, t->type))
 		return (NULL);
 	if ((str = gentime_string_from_tm(&tm)) == NULL)

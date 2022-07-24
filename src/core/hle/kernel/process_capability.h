@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -8,7 +7,7 @@
 
 #include "common/common_types.h"
 
-union ResultCode;
+union Result;
 
 namespace Kernel {
 
@@ -87,8 +86,8 @@ public:
     /// @returns ResultSuccess if this capabilities instance was able to be initialized,
     ///          otherwise, an error code upon failure.
     ///
-    ResultCode InitializeForKernelProcess(const u32* capabilities, std::size_t num_capabilities,
-                                          KPageTable& page_table);
+    Result InitializeForKernelProcess(const u32* capabilities, std::size_t num_capabilities,
+                                      KPageTable& page_table);
 
     /// Initializes this process capabilities instance for a userland process.
     ///
@@ -100,8 +99,8 @@ public:
     /// @returns ResultSuccess if this capabilities instance was able to be initialized,
     ///          otherwise, an error code upon failure.
     ///
-    ResultCode InitializeForUserProcess(const u32* capabilities, std::size_t num_capabilities,
-                                        KPageTable& page_table);
+    Result InitializeForUserProcess(const u32* capabilities, std::size_t num_capabilities,
+                                    KPageTable& page_table);
 
     /// Initializes this process capabilities instance for a process that does not
     /// have any metadata to parse.
@@ -186,8 +185,8 @@ private:
     ///
     /// @return ResultSuccess if no errors occur, otherwise an error code.
     ///
-    ResultCode ParseCapabilities(const u32* capabilities, std::size_t num_capabilities,
-                                 KPageTable& page_table);
+    Result ParseCapabilities(const u32* capabilities, std::size_t num_capabilities,
+                             KPageTable& page_table);
 
     /// Attempts to parse a capability descriptor that is only represented by a
     /// single flag set.
@@ -201,8 +200,8 @@ private:
     ///
     /// @return ResultSuccess if no errors occurred, otherwise an error code.
     ///
-    ResultCode ParseSingleFlagCapability(u32& set_flags, u32& set_svc_bits, u32 flag,
-                                         KPageTable& page_table);
+    Result ParseSingleFlagCapability(u32& set_flags, u32& set_svc_bits, u32 flag,
+                                     KPageTable& page_table);
 
     /// Clears the internal state of this process capability instance. Necessary,
     /// to have a sane starting point due to us allowing running executables without
@@ -220,34 +219,34 @@ private:
     void Clear();
 
     /// Handles flags related to the priority and core number capability flags.
-    ResultCode HandlePriorityCoreNumFlags(u32 flags);
+    Result HandlePriorityCoreNumFlags(u32 flags);
 
     /// Handles flags related to determining the allowable SVC mask.
-    ResultCode HandleSyscallFlags(u32& set_svc_bits, u32 flags);
+    Result HandleSyscallFlags(u32& set_svc_bits, u32 flags);
 
     /// Handles flags related to mapping physical memory pages.
-    ResultCode HandleMapPhysicalFlags(u32 flags, u32 size_flags, KPageTable& page_table);
+    Result HandleMapPhysicalFlags(u32 flags, u32 size_flags, KPageTable& page_table);
 
     /// Handles flags related to mapping IO pages.
-    ResultCode HandleMapIOFlags(u32 flags, KPageTable& page_table);
+    Result HandleMapIOFlags(u32 flags, KPageTable& page_table);
 
     /// Handles flags related to mapping physical memory regions.
-    ResultCode HandleMapRegionFlags(u32 flags, KPageTable& page_table);
+    Result HandleMapRegionFlags(u32 flags, KPageTable& page_table);
 
     /// Handles flags related to the interrupt capability flags.
-    ResultCode HandleInterruptFlags(u32 flags);
+    Result HandleInterruptFlags(u32 flags);
 
     /// Handles flags related to the program type.
-    ResultCode HandleProgramTypeFlags(u32 flags);
+    Result HandleProgramTypeFlags(u32 flags);
 
     /// Handles flags related to the handle table size.
-    ResultCode HandleHandleTableFlags(u32 flags);
+    Result HandleHandleTableFlags(u32 flags);
 
     /// Handles flags related to the kernel version capability flags.
-    ResultCode HandleKernelVersionFlags(u32 flags);
+    Result HandleKernelVersionFlags(u32 flags);
 
     /// Handles flags related to debug-specific capabilities.
-    ResultCode HandleDebugFlags(u32 flags);
+    Result HandleDebugFlags(u32 flags);
 
     SyscallCapabilities svc_capabilities;
     InterruptCapabilities interrupt_capabilities;

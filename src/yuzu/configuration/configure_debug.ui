@@ -3,54 +3,108 @@
  <class>ConfigureDebug</class>
  <widget class="QWidget" name="ConfigureDebug">
   <layout class="QVBoxLayout" name="verticalLayout_1">
+    <item>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QGroupBox" name="groupBox">
+         <property name="title">
+          <string>Debugger</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_3">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_11">
+            <item>
+             <widget class="QCheckBox" name="toggle_gdbstub">
+              <property name="text">
+               <string>Enable GDB Stub</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QLabel" name="label_11">
+              <property name="text">
+               <string>Port:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="gdbport_spinbox">
+              <property name="minimum">
+                <number>1024</number>
+              </property>
+              <property name="maximum">
+               <number>65535</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </item>
    <item>
     <widget class="QGroupBox" name="groupBox_2">
      <property name="title">
       <string>Logging</string>
      </property>
-        <layout class="QGridLayout" name="gridLayout_1">
-         <item row="0" column="0" colspan="2">
-          <layout class="QHBoxLayout" name="horizontalLayout_1">
-          <item>
-           <widget class="QLabel" name="label_1">
-           <property name="text">
-            <string>Global Log Filter</string>
-           </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="log_filter_edit"/>
-         </item>
-        </layout>
-         </item>
-         <item row="1" column="0">
-          <widget class="QCheckBox" name="toggle_console">
-           <property name="text">
-            <string>Show Log in Console</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-           <widget class="QPushButton" name="open_log_button">
-            <property name="text">
-             <string>Open Log Location</string>
-            </property>
-           </widget>
-          </item>
-         <item row="2" column="0">
-          <widget class="QCheckBox" name="extended_logging">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
-          <property name="toolTip">
-           <string>When checked, the max size of the log increases from 100 MB to 1 GB</string>
-          </property>
+     <layout class="QGridLayout" name="gridLayout_1">
+      <item row="0" column="0" colspan="2">
+       <layout class="QHBoxLayout" name="horizontalLayout_1">
+        <item>
+         <widget class="QLabel" name="label_1">
           <property name="text">
-           <string>Enable Extended Logging**</string>
+           <string>Global Log Filter</string>
           </property>
-          </widget>
-         </item>
-        </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="log_filter_edit"/>
+        </item>
+       </layout>
+      </item>
+      <item row="1" column="0">
+       <widget class="QCheckBox" name="toggle_console">
+        <property name="text">
+         <string>Show Log in Console</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QPushButton" name="open_log_button">
+        <property name="text">
+         <string>Open Log Location</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QCheckBox" name="extended_logging">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>When checked, the max size of the log increases from 100 MB to 1 GB</string>
+        </property>
+        <property name="text">
+         <string>Enable Extended Logging**</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
    <item>
@@ -118,6 +172,19 @@
         </property>
        </widget>
       </item>
+      <item row="0" column="2">
+       <widget class="QCheckBox" name="dump_macros">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>When checked, it will dump all the macro programs of the GPU</string>
+        </property>
+        <property name="text">
+         <string>Dump Maxwell Macros</string>
+        </property>
+       </widget>
+      </item>
       <item row="0" column="1">
        <widget class="QCheckBox" name="disable_macro_jit">
         <property name="enabled">
@@ -168,6 +235,16 @@
        </widget>
       </item>
       <item row="1" column="0">
+       <widget class="QCheckBox" name="dump_audio_commands">
+        <property name="text">
+         <string>Dump Audio Commands To Console**</string>
+        </property>
+        <property name="toolTip">
+         <string>Enable this to output the latest generated audio command list to the console. Only affects games using the audio renderer.</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
        <widget class="QCheckBox" name="reporting_services">
         <property name="text">
          <string>Enable Verbose Reporting Services**</string>
@@ -183,7 +260,7 @@
       <string>Advanced</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
-      <item> row="0" column="0">
+      <item row="0" column="0">
        <widget class="QCheckBox" name="quest_flag">
         <property name="text">
          <string>Kiosk (Quest) Mode</string>
@@ -214,7 +291,14 @@
       <item row="1" column="1">
        <widget class="QCheckBox" name="enable_all_controllers">
         <property name="text">
-         <string>Enable all Controller Types</string>
+         <string>Enable All Controller Types</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QCheckBox" name="disable_web_applet">
+        <property name="text">
+         <string>Disable Web Applet</string>
         </property>
        </widget>
       </item>
@@ -251,6 +335,7 @@
   <tabstop>disable_loop_safety_checks</tabstop>
   <tabstop>fs_access_log</tabstop>
   <tabstop>reporting_services</tabstop>
+  <tabstop>dump_audio_commands</tabstop>
   <tabstop>quest_flag</tabstop>
   <tabstop>enable_cpu_debugging</tabstop>
   <tabstop>use_debug_asserts</tabstop>

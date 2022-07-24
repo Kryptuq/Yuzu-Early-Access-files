@@ -192,6 +192,25 @@ std::size_t UDPClient::GetClientNumber(std::string_view host, u16 port) const {
     return MAX_UDP_CLIENTS;
 }
 
+Common::Input::BatteryLevel UDPClient::GetBatteryLevel(Response::Battery battery) const {
+    switch (battery) {
+    case Response::Battery::Dying:
+        return Common::Input::BatteryLevel::Empty;
+    case Response::Battery::Low:
+        return Common::Input::BatteryLevel::Critical;
+    case Response::Battery::Medium:
+        return Common::Input::BatteryLevel::Low;
+    case Response::Battery::High:
+        return Common::Input::BatteryLevel::Medium;
+    case Response::Battery::Full:
+    case Response::Battery::Charged:
+        return Common::Input::BatteryLevel::Full;
+    case Response::Battery::Charging:
+    default:
+        return Common::Input::BatteryLevel::Charging;
+    }
+}
+
 void UDPClient::OnVersion([[maybe_unused]] Response::Version data) {
     LOG_TRACE(Input, "Version packet received: {}", data.version);
 }
@@ -252,7 +271,7 @@ void UDPClient::OnPadData(Response::PadData data, std::size_t client) {
         const auto touch_axis_y_id =
             static_cast<int>(id == 0 ? PadAxes::Touch1Y : PadAxes::Touch2Y);
         const auto touch_button_id =
-            static_cast<int>(id == 0 ? PadButton::Touch1 : PadButton::touch2);
+            static_cast<int>(id == 0 ? PadButton::Touch1 : PadButton::Touch2);
 
         // TODO: Use custom calibration per device
         const Common::ParamPackage touch_param(Settings::values.touch_device.GetValue());
@@ -299,6 +318,11 @@ void UDPClient::OnPadData(Response::PadData data, std::size_t client) {
         const int button = static_cast<int>(buttons[i]);
         SetButton(identifier, button, button_status);
     }
+
+    SetButton(identifier, static_cast<int>(PadButton::Home), data.home != 0);
+    SetButton(identifier, static_cast<int>(PadButton::TouchHardPress), data.touch_hard_press != 0);
+
+    SetBattery(identifier, GetBatteryLevel(data.info.battery));
 }
 
 void UDPClient::StartCommunication(std::size_t client, const std::string& host, u16 port) {
@@ -318,7 +342,7 @@ void UDPClient::StartCommunication(std::size_t client, const std::string& host, 
     }
 }
 
-const PadIdentifier UDPClient::GetPadIdentifier(std::size_t pad_index) const {
+PadIdentifier UDPClient::GetPadIdentifier(std::size_t pad_index) const {
     const std::size_t client = pad_index / PADS_PER_CLIENT;
     return {
         .guid = clients[client].uuid,
@@ -327,9 +351,9 @@ const PadIdentifier UDPClient::GetPadIdentifier(std::size_t pad_index) const {
     };
 }
 
-const Common::UUID UDPClient::GetHostUUID(const std::string host) const {
-    const auto ip = boost::asio::ip::address_v4::from_string(host);
-    const auto hex_host = fmt::format("{:06x}", ip.to_ulong());
+Common::UUID UDPClient::GetHostUUID(const std::string& host) const {
+    const auto ip = boost::asio::ip::make_address_v4(host);
+    const auto hex_host = fmt::format("00000000-0000-0000-0000-0000{:06x}", ip.to_uint());
     return Common::UUID{hex_host};
 }
 
@@ -361,7 +385,7 @@ std::vector<Common::ParamPackage> UDPClient::GetInputDevices() const {
             Common::ParamPackage identifier{};
             identifier.Set("engine", GetEngineName());
             identifier.Set("display", fmt::format("UDP Controller {}", pad_identifier.pad));
-            identifier.Set("guid", pad_identifier.guid.Format());
+            identifier.Set("guid", pad_identifier.guid.RawString());
             identifier.Set("port", static_cast<int>(pad_identifier.port));
             identifier.Set("pad", static_cast<int>(pad_identifier.pad));
             devices.emplace_back(identifier);
@@ -372,7 +396,7 @@ std::vector<Common::ParamPackage> UDPClient::GetInputDevices() const {
 
 ButtonMapping UDPClient::GetButtonMappingForDevice(const Common::ParamPackage& params) {
     // This list excludes any button that can't be really mapped
-    static constexpr std::array<std::pair<Settings::NativeButton::Values, PadButton>, 18>
+    static constexpr std::array<std::pair<Settings::NativeButton::Values, PadButton>, 20>
         switch_to_dsu_button = {
             std::pair{Settings::NativeButton::A, PadButton::Circle},
             {Settings::NativeButton::B, PadButton::Cross},
@@ -392,6 +416,8 @@ ButtonMapping UDPClient::GetButtonMappingForDevice(const Common::ParamPackage& p
             {Settings::NativeButton::SR, PadButton::R2},
             {Settings::NativeButton::LStick, PadButton::L3},
             {Settings::NativeButton::RStick, PadButton::R3},
+            {Settings::NativeButton::Home, PadButton::Home},
+            {Settings::NativeButton::Screenshot, PadButton::TouchHardPress},
         };
     if (!params.Has("guid") || !params.Has("port") || !params.Has("pad")) {
         return {};
@@ -496,6 +522,12 @@ Common::Input::ButtonNames UDPClient::GetUIButtonName(const Common::ParamPackage
         return Common::Input::ButtonNames::Share;
     case PadButton::Options:
         return Common::Input::ButtonNames::Options;
+    case PadButton::Home:
+        return Common::Input::ButtonNames::Home;
+    case PadButton::Touch1:
+    case PadButton::Touch2:
+    case PadButton::TouchHardPress:
+        return Common::Input::ButtonNames::Touch;
     default:
         return Common::Input::ButtonNames::Undefined;
     }
@@ -513,6 +545,22 @@ Common::Input::ButtonNames UDPClient::GetUIName(const Common::ParamPackage& para
     }
 
     return Common::Input::ButtonNames::Invalid;
+}
+
+bool UDPClient::IsStickInverted(const Common::ParamPackage& params) {
+    if (!params.Has("guid") || !params.Has("port") || !params.Has("pad")) {
+        return false;
+    }
+
+    const auto x_axis = static_cast<PadAxes>(params.Get("axis_x", 0));
+    const auto y_axis = static_cast<PadAxes>(params.Get("axis_y", 0));
+    if (x_axis != PadAxes::LeftStickY && x_axis != PadAxes::RightStickY) {
+        return false;
+    }
+    if (y_axis != PadAxes::LeftStickX && y_axis != PadAxes::RightStickX) {
+        return false;
+    }
+    return true;
 }
 
 void TestCommunication(const std::string& host, u16 port,

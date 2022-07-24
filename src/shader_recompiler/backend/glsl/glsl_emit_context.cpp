@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "shader_recompiler/backend/bindings.h"
 #include "shader_recompiler/backend/glsl/glsl_emit_context.h"
@@ -359,6 +358,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         header += "layout(location=0) uniform vec4 scaling;";
     }
     DefineConstantBuffers(bindings);
+    DefineConstantBufferIndirect();
     DefineStorageBuffers(bindings);
     SetupImages(bindings);
     SetupTextures(bindings);
@@ -436,6 +436,24 @@ void EmitContext::DefineConstantBuffers(Bindings& bindings) {
     }
 }
 
+void EmitContext::DefineConstantBufferIndirect() {
+    if (!info.uses_cbuf_indirect) {
+        return;
+    }
+
+    header += profile.has_gl_cbuf_ftou_bug ? "uvec4 " : "vec4 ";
+    header += "GetCbufIndirect(uint binding, uint offset){"
+              "switch(binding){"
+              "default:";
+
+    for (const auto& desc : info.constant_buffer_descriptors) {
+        header +=
+            fmt::format("case {}:return {}_cbuf{}[offset];", desc.index, stage_name, desc.index);
+    }
+
+    header += "}}";
+}
+
 void EmitContext::DefineStorageBuffers(Bindings& bindings) {
     if (info.storage_buffers_descriptors.empty()) {
         return;
@@ -458,9 +476,10 @@ void EmitContext::DefineGenericOutput(size_t index, u32 invocations) {
         std::string definition{fmt::format("layout(location={}", index)};
         const u32 remainder{4 - element};
         const TransformFeedbackVarying* xfb_varying{};
-        if (!runtime_info.xfb_varyings.empty()) {
-            xfb_varying = &runtime_info.xfb_varyings[base_index + element];
-            xfb_varying = xfb_varying && xfb_varying->components > 0 ? xfb_varying : nullptr;
+        const size_t xfb_varying_index{base_index + element};
+        if (xfb_varying_index < runtime_info.xfb_varyings.size()) {
+            xfb_varying = &runtime_info.xfb_varyings[xfb_varying_index];
+            xfb_varying = xfb_varying->components > 0 ? xfb_varying : nullptr;
         }
         const u32 num_components{xfb_varying ? xfb_varying->components : remainder};
         if (element > 0) {

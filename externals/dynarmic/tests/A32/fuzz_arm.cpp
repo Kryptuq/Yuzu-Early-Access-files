@@ -11,16 +11,18 @@
 #include <vector>
 
 #include <catch2/catch.hpp>
+#include <mcl/bit/bit_count.hpp>
+#include <mcl/bit/swap.hpp>
+#include <mcl/scope_exit.hpp>
+#include <mcl/stdint.hpp>
 
 #include "../fuzz_util.h"
 #include "../rand_int.h"
 #include "../unicorn_emu/a32_unicorn.h"
 #include "./testenv.h"
-#include "dynarmic/common/common_types.h"
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/llvm_disassemble.h"
-#include "dynarmic/common/scope_exit.h"
 #include "dynarmic/frontend/A32/ITState.h"
 #include "dynarmic/frontend/A32/a32_location_descriptor.h"
 #include "dynarmic/frontend/A32/a32_types.h"
@@ -194,6 +196,7 @@ std::vector<u16> GenRandomThumbInst(u32 pc, bool is_last_inst, A32::ITState it_s
 
             // Unicorn is incorrect?
             "thumb32_MRS_reg",
+            "thumb32_MSR_reg",
 
             // Unicorn has incorrect implementation (incorrect rounding and unsets CPSR.T??)
             "vfp_VCVT_to_fixed",
@@ -254,7 +257,7 @@ std::vector<u16> GenRandomThumbInst(u32 pc, bool is_last_inst, A32::ITState it_s
         const u32 inst = instructions.generators[index].Generate();
         const bool is_four_bytes = (inst >> 16) != 0;
 
-        if (ShouldTestInst(is_four_bytes ? Common::SwapHalves32(inst) : inst, pc, true, is_last_inst, it_state)) {
+        if (ShouldTestInst(is_four_bytes ? mcl::bit::swap_halves_32(inst) : inst, pc, true, is_last_inst, it_state)) {
             if (is_four_bytes)
                 return {static_cast<u16>(inst >> 16), static_cast<u16>(inst)};
             return {static_cast<u16>(inst)};
@@ -285,6 +288,7 @@ static void RunTestInstance(Dynarmic::A32::Jit& jit,
     const u32 initial_pc = regs[15];
     const u32 num_words = initial_pc / sizeof(typename TestEnv::InstructionType);
     const u32 code_mem_size = num_words + static_cast<u32>(instructions.size());
+    const u32 expected_end_pc = code_mem_size * sizeof(typename TestEnv::InstructionType);
 
     jit_env.code_mem.resize(code_mem_size);
     uni_env.code_mem.resize(code_mem_size);
@@ -393,10 +397,18 @@ static void RunTestInstance(Dynarmic::A32::Jit& jit,
         uni.SetPC(new_uni_pc);
     }
 
+    if (uni.GetRegisters()[15] > jit.Regs()[15]) {
+        int trials = 0;
+        while (jit.Regs()[15] >= initial_pc && jit.Regs()[15] < expected_end_pc && trials++ < 100 && uni.GetRegisters()[15] != jit.Regs()[15]) {
+            fmt::print("Warning: Possible unicorn overrrun, attempt recovery\n");
+            jit.Step();
+        }
+    }
+
     REQUIRE(uni.GetRegisters() == jit.Regs());
     REQUIRE(uni.GetExtRegs() == jit.ExtRegs());
     REQUIRE((uni.GetCpsr() & 0xFFFFFDDF) == (jit.Cpsr() & 0xFFFFFDDF));
-    REQUIRE((uni.GetFpscr() & 0xF0000000) == (jit.Fpscr() & 0xF0000000));
+    REQUIRE((uni.GetFpscr() & 0xF8000000) == (jit.Fpscr() & 0xF8000000));
     REQUIRE(uni_env.modified_memory == jit_env.modified_memory);
     REQUIRE(uni_env.interrupts.empty());
 }
@@ -524,6 +536,37 @@ TEST_CASE("A32: Single random thumb instruction", "[thumb]") {
     }
 }
 
+TEST_CASE("A32: Single random thumb instruction (offset)", "[thumb]") {
+    ThumbTestEnv jit_env{};
+    ThumbTestEnv uni_env{};
+
+    Dynarmic::A32::Jit jit{GetUserConfig(jit_env)};
+    A32Unicorn<ThumbTestEnv> uni{uni_env};
+
+    A32Unicorn<ThumbTestEnv>::RegisterArray regs;
+    A32Unicorn<ThumbTestEnv>::ExtRegArray ext_reg;
+    std::vector<u16> instructions;
+
+    for (size_t iteration = 0; iteration < 100000; ++iteration) {
+        std::generate(regs.begin(), regs.end(), [] { return RandInt<u32>(0, ~u32(0)); });
+        std::generate(ext_reg.begin(), ext_reg.end(), [] { return RandInt<u32>(0, ~u32(0)); });
+
+        instructions.clear();
+        instructions.push_back(0xbf00);  // NOP
+        const std::vector<u16> inst = GenRandomThumbInst(0, true);
+        instructions.insert(instructions.end(), inst.begin(), inst.end());
+
+        const u32 start_address = 100;
+        const u32 cpsr = (RandInt<u32>(0, 0xF) << 28) | 0x1F0;
+        const u32 fpcr = RandomFpcr();
+
+        INFO("Instruction: 0x" << std::hex << inst[0]);
+
+        regs[15] = start_address;
+        RunTestInstance(jit, uni, jit_env, uni_env, regs, ext_reg, instructions, cpsr, fpcr, 2);
+    }
+}
+
 TEST_CASE("A32: Small random thumb block", "[thumb]") {
     ThumbTestEnv jit_env{};
     ThumbTestEnv uni_env{};
@@ -583,7 +626,7 @@ TEST_CASE("A32: Test thumb IT instruction", "[thumb]") {
         A32::ITState it_state = [&] {
             while (true) {
                 const u16 imm8 = RandInt<u16>(0, 0xFF);
-                if (Common::Bits<0, 3>(imm8) == 0b0000 || Common::Bits<4, 7>(imm8) == 0b1111 || (Common::Bits<4, 7>(imm8) == 0b1110 && Common::BitCount(Common::Bits<0, 3>(imm8)) != 1)) {
+                if (mcl::bit::get_bits<0, 3>(imm8) == 0b0000 || mcl::bit::get_bits<4, 7>(imm8) == 0b1111 || (mcl::bit::get_bits<4, 7>(imm8) == 0b1110 && mcl::bit::count_ones(mcl::bit::get_bits<0, 3>(imm8)) != 1)) {
                     continue;
                 }
                 instructions.push_back(0b1011111100000000 | imm8);

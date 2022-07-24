@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 
 #include "dynarmic/interface/optimization_flags.h"
 
@@ -45,6 +46,9 @@ enum class Exception {
     Yield,
     /// A BRK instruction was executed. (Hint instruction.)
     Breakpoint,
+    /// Attempted to execute a code block at an address for which MemoryReadCode returned std::nullopt.
+    /// (Intended to be used to emulate memory protection faults.)
+    NoExecuteFault,
 };
 
 enum class DataCacheOperation {
@@ -82,7 +86,7 @@ struct UserCallbacks {
 
     // All reads through this callback are 4-byte aligned.
     // Memory must be interpreted as little endian.
-    virtual std::uint32_t MemoryReadCode(VAddr vaddr) { return MemoryRead32(vaddr); }
+    virtual std::optional<std::uint32_t> MemoryReadCode(VAddr vaddr) { return MemoryRead32(vaddr); }
 
     // Reads through these callbacks may not be aligned.
     virtual std::uint8_t MemoryRead8(VAddr vaddr) = 0;
@@ -254,6 +258,15 @@ struct UserConfig {
     /// This is only used if fastmem_pointer is not nullptr.
     bool silently_mirror_fastmem = true;
 
+    /// Determines if we should use the above fastmem_pointer for exclusive reads and
+    /// writes. On x64, dynarmic currently relies on x64 cmpxchg semantics which may not
+    /// provide fully accurate emulation.
+    bool fastmem_exclusive_access = false;
+    /// Determines if exclusive access instructions that pagefault should cause
+    /// recompilation of that block with fastmem disabled. Recompiled code will use memory
+    /// callbacks.
+    bool recompile_on_exclusive_fastmem_failure = true;
+
     /// This option relates to translation. Generally when we run into an unpredictable
     /// instruction the ExceptionRaised callback is called. If this is true, we define
     /// definite behaviour for some unpredictable instructions.
@@ -264,16 +277,17 @@ struct UserConfig {
     /// to avoid writting certain unnecessary code only needed for cycle timers.
     bool wall_clock_cntpct = false;
 
-    // Determines whether AddTicks and GetTicksRemaining are called.
-    // If false, execution will continue until soon after Jit::HaltExecution is called.
-    // bool enable_ticks = true; // TODO
+    /// This allows accurately emulating protection fault handlers. If true, we check
+    /// for exit after every data memory access by the emulated program.
+    bool check_halt_on_memory_access = false;
+
+    /// This option allows you to disable cycle counting. If this is set to false,
+    /// AddTicks and GetTicksRemaining are never called, and no cycle counting is done.
+    bool enable_cycle_counting = true;
 
     // Minimum size is about 8MiB. Maximum size is about 2GiB. Maximum size is limited by
     // the maximum length of a x64 jump.
     size_t code_cache_size = 256 * 1024 * 1024;  // bytes
-    // Determines the relative size of the near and far code caches. Must be smaller than
-    // code_cache_size.
-    size_t far_code_offset = 200 * 1024 * 1024;  // bytes
 };
 
 }  // namespace A64

@@ -5,9 +5,10 @@
 
 #include "dynarmic/common/fp/op/FPRoundInt.h"
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/assert.hpp>
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/fp/info.h"
@@ -53,7 +54,7 @@ u64 FPRoundInt(FPT op, FPCR fpcr, RoundingMode rounding, bool exact, FPSR& fpsr)
     bool round_up = false;
     switch (rounding) {
     case RoundingMode::ToNearest_TieEven:
-        round_up = error > ResidualError::Half || (error == ResidualError::Half && Common::Bit<0>(int_result));
+        round_up = error > ResidualError::Half || (error == ResidualError::Half && mcl::bit::get_bit<0>(int_result));
         break;
     case RoundingMode::TowardsPlusInfinity:
         round_up = error != ResidualError::Zero;
@@ -62,10 +63,10 @@ u64 FPRoundInt(FPT op, FPCR fpcr, RoundingMode rounding, bool exact, FPSR& fpsr)
         round_up = false;
         break;
     case RoundingMode::TowardsZero:
-        round_up = error != ResidualError::Zero && Common::MostSignificantBit(int_result);
+        round_up = error != ResidualError::Zero && mcl::bit::most_significant_bit(int_result);
         break;
     case RoundingMode::ToNearest_TieAwayFromZero:
-        round_up = error > ResidualError::Half || (error == ResidualError::Half && !Common::MostSignificantBit(int_result));
+        round_up = error > ResidualError::Half || (error == ResidualError::Half && !mcl::bit::most_significant_bit(int_result));
         break;
     case RoundingMode::ToOdd:
         UNREACHABLE();
@@ -75,7 +76,7 @@ u64 FPRoundInt(FPT op, FPCR fpcr, RoundingMode rounding, bool exact, FPSR& fpsr)
         int_result++;
     }
 
-    const bool new_sign = Common::MostSignificantBit(int_result);
+    const bool new_sign = mcl::bit::most_significant_bit(int_result);
     const u64 abs_int_result = new_sign ? Safe::Negate<u64>(int_result) : static_cast<u64>(int_result);
 
     const FPT result = int_result == 0

@@ -1,15 +1,12 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <cstdio>
 #include <filesystem>
-#include <fstream>
 #include <span>
 #include <type_traits>
-#include <vector>
 
 #include "common/concepts.h"
 #include "common/fs/fs_types.h"
@@ -188,9 +185,8 @@ public:
 
 #ifdef _WIN32
     template <typename Path>
-    [[nodiscard]] void Open(const Path& path, FileAccessMode mode,
-                            FileType type = FileType::BinaryFile,
-                            FileShareFlag flag = FileShareFlag::ShareReadOnly) {
+    void Open(const Path& path, FileAccessMode mode, FileType type = FileType::BinaryFile,
+              FileShareFlag flag = FileShareFlag::ShareReadOnly) {
         using ValueType = typename Path::value_type;
         if constexpr (IsChar<ValueType>) {
             Open(ToU8String(path), mode, type, flag);

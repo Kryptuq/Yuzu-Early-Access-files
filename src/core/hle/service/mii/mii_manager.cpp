@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <cstring>
 #include <random>
@@ -12,13 +11,12 @@
 #include "core/hle/service/acc/profile_manager.h"
 #include "core/hle/service/mii/mii_manager.h"
 #include "core/hle/service/mii/raw_data.h"
-#include "core/hle/service/mii/types.h"
 
 namespace Service::Mii {
 
 namespace {
 
-constexpr ResultCode ERROR_CANNOT_FIND_ENTRY{ErrorModule::Mii, 4};
+constexpr Result ERROR_CANNOT_FIND_ENTRY{ErrorModule::Mii, 4};
 
 constexpr std::size_t BaseMiiCount{2};
 constexpr std::size_t DefaultMiiCount{RawData::DefaultMii.size()};
@@ -116,16 +114,6 @@ u16 GenerateCrc16(const void* data, std::size_t size) {
         }
     }
     return Common::swap16(static_cast<u16>(crc));
-}
-
-Common::UUID GenerateValidUUID() {
-    auto uuid{Common::UUID::Generate()};
-
-    // Bit 7 must be set, and bit 6 unset for the UUID to be valid
-    uuid.uuid[1] &= 0xFFFFFFFFFFFFFF3FULL;
-    uuid.uuid[1] |= 0x0000000000000080ULL;
-
-    return uuid;
 }
 
 template <typename T>
@@ -302,7 +290,7 @@ MiiStoreData BuildRandomStoreData(Age age, Gender gender, Race race, const Commo
     u8 glasses_type{};
     while (glasses_type_start < glasses_type_info.values[glasses_type]) {
         if (++glasses_type >= glasses_type_info.values_count) {
-            UNREACHABLE();
+            ASSERT(false);
             break;
         }
     }
@@ -383,7 +371,7 @@ MiiStoreData::MiiStoreData() = default;
 MiiStoreData::MiiStoreData(const MiiStoreData::Name& name, const MiiStoreBitFields& bit_fields,
                            const Common::UUID& user_id) {
     data.name = name;
-    data.uuid = GenerateValidUUID();
+    data.uuid = Common::UUID::MakeRandomRFC4122V4();
 
     std::memcpy(data.data.data(), &bit_fields, sizeof(MiiStoreBitFields));
     data_crc = GenerateCrc16(data.data.data(), sizeof(data));
@@ -453,7 +441,7 @@ ResultVal<std::vector<MiiInfoElement>> MiiManager::GetDefault(SourceFlag source_
     return result;
 }
 
-ResultCode MiiManager::GetIndex([[maybe_unused]] const MiiInfo& info, u32& index) {
+Result MiiManager::GetIndex([[maybe_unused]] const MiiInfo& info, u32& index) {
     constexpr u32 INVALID_INDEX{0xFFFFFFFF};
 
     index = INVALID_INDEX;

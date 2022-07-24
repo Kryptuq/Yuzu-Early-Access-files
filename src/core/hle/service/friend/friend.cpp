@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <queue>
 #include "common/logging/log.h"
@@ -27,13 +26,13 @@ public:
             {10101, &IFriendService::GetFriendList, "GetFriendList"},
             {10102, nullptr, "UpdateFriendInfo"},
             {10110, nullptr, "GetFriendProfileImage"},
-            {10120, nullptr, "Unknown10120"},
-            {10121, nullptr, "Unknown10121"},
+            {10120, nullptr, "IsFriendListCacheAvailable"},
+            {10121, nullptr, "EnsureFriendListAvailable"},
             {10200, nullptr, "SendFriendRequestForApplication"},
             {10211, nullptr, "AddFacedFriendRequestForApplication"},
             {10400, &IFriendService::GetBlockedUserListIds, "GetBlockedUserListIds"},
-            {10420, nullptr, "Unknown10420"},
-            {10421, nullptr, "Unknown10421"},
+            {10420, nullptr, "IsBlockedUserListCacheAvailable"},
+            {10421, nullptr, "EnsureBlockedUserListAvailable"},
             {10500, nullptr, "GetProfileList"},
             {10600, nullptr, "DeclareOpenOnlinePlaySession"},
             {10601, &IFriendService::DeclareCloseOnlinePlaySession, "DeclareCloseOnlinePlaySession"},
@@ -103,8 +102,8 @@ public:
             {30900, nullptr, "SendFriendInvitation"},
             {30910, nullptr, "ReadFriendInvitation"},
             {30911, nullptr, "ReadAllFriendInvitations"},
-            {40100, nullptr, "Unknown40100"},
-            {40400, nullptr, "Unknown40400"},
+            {40100, nullptr, "DeleteFriendListCache"},
+            {40400, nullptr, "DeleteBlockedUserListCache"},
             {49900, nullptr, "DeleteNetworkServiceAccountCache"},
         };
         // clang-format on
@@ -173,7 +172,7 @@ private:
         const auto uuid = rp.PopRaw<Common::UUID>();
 
         LOG_WARNING(Service_Friend, "(STUBBED) called, local_play={}, uuid=0x{}", local_play,
-                    uuid.Format());
+                    uuid.RawString());
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
@@ -186,7 +185,7 @@ private:
         [[maybe_unused]] const auto filter = rp.PopRaw<SizedFriendFilter>();
         const auto pid = rp.Pop<u64>();
         LOG_WARNING(Service_Friend, "(STUBBED) called, offset={}, uuid=0x{}, pid={}", friend_offset,
-                    uuid.Format(), pid);
+                    uuid.RawString(), pid);
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
@@ -312,7 +311,7 @@ void Module::Interface::CreateNotificationService(Kernel::HLERequestContext& ctx
     IPC::RequestParser rp{ctx};
     auto uuid = rp.PopRaw<Common::UUID>();
 
-    LOG_DEBUG(Service_Friend, "called, uuid=0x{}", uuid.Format());
+    LOG_DEBUG(Service_Friend, "called, uuid=0x{}", uuid.RawString());
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);

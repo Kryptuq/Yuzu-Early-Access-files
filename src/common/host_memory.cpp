@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifdef _WIN32
 
@@ -18,6 +17,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include "common/scope_exit.h"
 
 #endif // ^^^ Linux ^^^
 
@@ -27,7 +27,6 @@
 #include "common/assert.h"
 #include "common/host_memory.h"
 #include "common/logging/log.h"
-#include "common/scope_exit.h"
 
 namespace Common {
 
@@ -149,7 +148,7 @@ public:
     }
 
     void Unmap(size_t virtual_offset, size_t length) {
-        std::lock_guard lock{placeholder_mutex};
+        std::scoped_lock lock{placeholder_mutex};
 
         // Unmap until there are no more placeholders
         while (UnmapOnePlaceholder(virtual_offset, length)) {
@@ -169,7 +168,7 @@ public:
         }
         const size_t virtual_end = virtual_offset + length;
 
-        std::lock_guard lock{placeholder_mutex};
+        std::scoped_lock lock{placeholder_mutex};
         auto [it, end] = placeholders.equal_range({virtual_offset, virtual_end});
         while (it != end) {
             const size_t offset = std::max(it->lower(), virtual_offset);
@@ -327,8 +326,8 @@ private:
     bool IsNiechePlaceholder(size_t virtual_offset, size_t length) const {
         const auto it = placeholders.upper_bound({virtual_offset, virtual_offset + length});
         if (it != placeholders.end() && it->lower() == virtual_offset + length) {
-            const bool is_root = it == placeholders.begin() && virtual_offset == 0;
-            return is_root || std::prev(it)->upper() == virtual_offset;
+            return it == placeholders.begin() ? virtual_offset == 0
+                                              : std::prev(it)->upper() == virtual_offset;
         }
         return false;
     }

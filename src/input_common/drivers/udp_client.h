@@ -15,6 +15,7 @@ namespace InputCommon::CemuhookUDP {
 class Socket;
 
 namespace Response {
+enum class Battery : u8;
 struct PadData;
 struct PortInfo;
 struct TouchPad;
@@ -63,6 +64,8 @@ public:
     MotionMapping GetMotionMappingForDevice(const Common::ParamPackage& params) override;
     Common::Input::ButtonNames GetUIName(const Common::ParamPackage& params) const override;
 
+    bool IsStickInverted(const Common::ParamPackage& params) override;
+
 private:
     enum class PadButton {
         Undefined = 0x0000,
@@ -83,7 +86,9 @@ private:
         Cross = 0x4000,
         Square = 0x8000,
         Touch1 = 0x10000,
-        touch2 = 0x20000,
+        Touch2 = 0x20000,
+        Home = 0x40000,
+        TouchHardPress = 0x80000,
     };
 
     enum class PadAxes : u8 {
@@ -123,7 +128,7 @@ private:
     struct ClientConnection {
         ClientConnection();
         ~ClientConnection();
-        Common::UUID uuid{"7F000001"};
+        Common::UUID uuid{"00000000-0000-0000-0000-00007F000001"};
         std::string host{"127.0.0.1"};
         u16 port{26760};
         s8 active{-1};
@@ -137,12 +142,15 @@ private:
     // Translates configuration to client number
     std::size_t GetClientNumber(std::string_view host, u16 port) const;
 
+    // Translates UDP battery level to input engine battery level
+    Common::Input::BatteryLevel GetBatteryLevel(Response::Battery battery) const;
+
     void OnVersion(Response::Version);
     void OnPortInfo(Response::PortInfo);
     void OnPadData(Response::PadData, std::size_t client);
     void StartCommunication(std::size_t client, const std::string& host, u16 port);
-    const PadIdentifier GetPadIdentifier(std::size_t pad_index) const;
-    const Common::UUID GetHostUUID(const std::string host) const;
+    PadIdentifier GetPadIdentifier(std::size_t pad_index) const;
+    Common::UUID GetHostUUID(const std::string& host) const;
 
     Common::Input::ButtonNames GetUIButtonName(const Common::ParamPackage& params) const;
 

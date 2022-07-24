@@ -4,6 +4,7 @@
 
 #include <cinttypes>
 #include <clocale>
+#include <cmath>
 #include <memory>
 #include <thread>
 #ifdef __APPLE__
@@ -20,11 +21,11 @@
 #include "configuration/configure_input.h"
 #include "configuration/configure_per_game.h"
 #include "configuration/configure_tas.h"
-#include "configuration/configure_vibration.h"
 #include "core/file_sys/vfs.h"
 #include "core/file_sys/vfs_real.h"
 #include "core/frontend/applets/controller.h"
 #include "core/frontend/applets/general_frontend.h"
+#include "core/frontend/applets/mii_edit.h"
 #include "core/frontend/applets/software_keyboard.h"
 #include "core/hid/emulated_controller.h"
 #include "core/hid/hid_core.h"
@@ -52,9 +53,6 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #define QT_NO_OPENGL
 #include <QClipboard>
 #include <QDesktopServices>
-#include <QDesktopWidget>
-#include <QDialogButtonBox>
-#include <QDir>
 #include <QFile>
 #include <QFileDialog>
 #include <QInputDialog>
@@ -62,6 +60,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include <QProgressBar>
 #include <QProgressDialog>
 #include <QPushButton>
+#include <QScreen>
 #include <QShortcut>
 #include <QStatusBar>
 #include <QString>
@@ -76,11 +75,9 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include <fmt/format.h>
 #include "common/detached_tasks.h"
 #include "common/fs/fs.h"
-#include "common/fs/fs_paths.h"
 #include "common/fs/path_util.h"
 #include "common/literals.h"
 #include "common/logging/backend.h"
-#include "common/logging/filter.h"
 #include "common/logging/log.h"
 #include "common/memory_detect.h"
 #include "common/microprofile.h"
@@ -134,6 +131,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "yuzu/install_dialog.h"
 #include "yuzu/loading_screen.h"
 #include "yuzu/main.h"
+#include "yuzu/startup_checks.h"
 #include "yuzu/uisettings.h"
 
 using namespace Common::Literals;
@@ -156,7 +154,8 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 #endif
 
-constexpr int default_mouse_timeout = 2500;
+constexpr int default_mouse_hide_timeout = 2500;
+constexpr int default_mouse_center_timeout = 10;
 
 /**
  * "Callouts" are one-time instructional messages shown to the user. In the config settings, there
@@ -201,7 +200,60 @@ static void RemoveCachedContents() {
     Common::FS::RemoveDirRecursively(offline_system_data);
 }
 
-GMainWindow::GMainWindow()
+static void LogRuntimes() {
+#ifdef _MSC_VER
+    // It is possible that the name of the dll will change.
+    // vcruntime140.dll is for 2015 and onwards
+    constexpr char runtime_dll_name[] = "vcruntime140.dll";
+    UINT sz = GetFileVersionInfoSizeA(runtime_dll_name, nullptr);
+    bool runtime_version_inspection_worked = false;
+    if (sz > 0) {
+        std::vector<u8> buf(sz);
+        if (GetFileVersionInfoA(runtime_dll_name, 0, sz, buf.data())) {
+            VS_FIXEDFILEINFO* pvi;
+            sz = sizeof(VS_FIXEDFILEINFO);
+            if (VerQueryValueA(buf.data(), "\\", reinterpret_cast<LPVOID*>(&pvi), &sz)) {
+                if (pvi->dwSignature == VS_FFI_SIGNATURE) {
+                    runtime_version_inspection_worked = true;
+                    LOG_INFO(Frontend, "MSVC Compiler: {} Runtime: {}.{}.{}.{}", _MSC_VER,
+                             pvi->dwProductVersionMS >> 16, pvi->dwProductVersionMS & 0xFFFF,
+                             pvi->dwProductVersionLS >> 16, pvi->dwProductVersionLS & 0xFFFF);
+                }
+            }
+        }
+    }
+    if (!runtime_version_inspection_worked) {
+        LOG_INFO(Frontend, "Unable to inspect {}", runtime_dll_name);
+    }
+#endif
+}
+
+static QString PrettyProductName() {
+#ifdef _WIN32
+    // After Windows 10 Version 2004, Microsoft decided to switch to a different notation: 20H2
+    // With that notation change they changed the registry key used to denote the current version
+    QSettings windows_registry(
+        QStringLiteral("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"),
+        QSettings::NativeFormat);
+    const QString release_id = windows_registry.value(QStringLiteral("ReleaseId")).toString();
+    if (release_id == QStringLiteral("2009")) {
+        const u32 current_build = windows_registry.value(QStringLiteral("CurrentBuild")).toUInt();
+        const QString display_version =
+            windows_registry.value(QStringLiteral("DisplayVersion")).toString();
+        const u32 ubr = windows_registry.value(QStringLiteral("UBR")).toUInt();
+        u32 version = 10;
+        if (current_build >= 22000) {
+            version = 11;
+        }
+        return QStringLiteral("Windows %1 Version %2 (Build %3.%4)")
+            .arg(QString::number(version), display_version, QString::number(current_build),
+                 QString::number(ubr));
+    }
+#endif
+    return QSysInfo::prettyProductName();
+}
+
+GMainWindow::GMainWindow(bool has_broken_vulkan)
     : ui{std::make_unique<Ui::MainWindow>()}, system{std::make_unique<Core::System>()},
       input_subsystem{std::make_shared<InputCommon::InputSubsystem>()},
       config{std::make_unique<Config>(*system)},
@@ -246,12 +298,13 @@ GMainWindow::GMainWindow()
     const auto yuzu_build_version = override_build.empty() ? yuzu_build : override_build;
 
     LOG_INFO(Frontend, "yuzu Version: {}", yuzu_build_version);
+    LogRuntimes();
 #ifdef ARCHITECTURE_x86_64
     const auto& caps = Common::GetCPUCaps();
     std::string cpu_string = caps.cpu_string;
-    if (caps.avx || caps.avx2 || caps.avx512) {
+    if (caps.avx || caps.avx2 || caps.avx512f) {
         cpu_string += " | AVX";
-        if (caps.avx512) {
+        if (caps.avx512f) {
             cpu_string += "512";
         } else if (caps.avx2) {
             cpu_string += '2';
@@ -262,7 +315,7 @@ GMainWindow::GMainWindow()
     }
     LOG_INFO(Frontend, "Host CPU: {}", cpu_string);
 #endif
-    LOG_INFO(Frontend, "Host OS: {}", QSysInfo::prettyProductName().toStdString());
+    LOG_INFO(Frontend, "Host OS: {}", PrettyProductName().toStdString());
     LOG_INFO(Frontend, "Host RAM: {:.2f} GiB",
              Common::GetMemInfo().TotalPhysicalMemory / f64{1_GiB});
     LOG_INFO(Frontend, "Host Swap: {:.2f} GiB", Common::GetMemInfo().TotalSwapMemory / f64{1_GiB});
@@ -291,13 +344,29 @@ GMainWindow::GMainWindow()
     ui->menubar->setCursor(QCursor());
     statusBar()->setCursor(QCursor());
 
-    mouse_hide_timer.setInterval(default_mouse_timeout);
+    mouse_hide_timer.setInterval(default_mouse_hide_timeout);
     connect(&mouse_hide_timer, &QTimer::timeout, this, &GMainWindow::HideMouseCursor);
     connect(ui->menubar, &QMenuBar::hovered, this, &GMainWindow::ShowMouseCursor);
 
+    mouse_center_timer.setInterval(default_mouse_center_timeout);
+    connect(&mouse_center_timer, &QTimer::timeout, this, &GMainWindow::CenterMouseCursor);
+
     MigrateConfigFiles();
 
-    ui->action_Fullscreen->setChecked(false);
+    if (has_broken_vulkan) {
+        UISettings::values.has_broken_vulkan = true;
+
+        QMessageBox::warning(this, tr("Broken Vulkan Installation Detected"),
+                             tr("Vulkan initialization failed during boot.<br><br>Click <a "
+                                "href='https://yuzu-emu.org/wiki/faq/"
+                                "#yuzu-starts-with-the-error-broken-vulkan-installation-detected'>"
+                                "here for instructions to fix the issue</a>."));
+
+        Settings::values.renderer_backend = Settings::RendererBackend::OpenGL;
+
+        renderer_status_button->setDisabled(true);
+        renderer_status_button->setChecked(false);
+    }
 
 #if defined(HAVE_SDL2) && !defined(_WIN32)
     SDL_InitSubSystem(SDL_INIT_VIDEO);
@@ -316,17 +385,20 @@ GMainWindow::GMainWindow()
     }
 
     QString game_path;
+    bool has_gamepath = false;
+    bool is_fullscreen = false;
 
     for (int i = 1; i < args.size(); ++i) {
         // Preserves drag/drop functionality
         if (args.size() == 2 && !args[1].startsWith(QChar::fromLatin1('-'))) {
             game_path = args[1];
+            has_gamepath = true;
             break;
         }
 
         // Launch game in fullscreen mode
         if (args[i] == QStringLiteral("-f")) {
-            ui->action_Fullscreen->setChecked(true);
+            is_fullscreen = true;
             continue;
         }
 
@@ -369,7 +441,13 @@ GMainWindow::GMainWindow()
             }
 
             game_path = args[++i];
+            has_gamepath = true;
         }
+    }
+
+    // Override fullscreen setting if gamepath or argument is provided
+    if (has_gamepath || is_fullscreen) {
+        ui->action_Fullscreen->setChecked(is_fullscreen);
     }
 
     if (!game_path.isEmpty()) {
@@ -586,7 +664,7 @@ void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,
 #ifdef YUZU_USE_QT_WEB_ENGINE
 
     // Raw input breaks with the web applet, Disable web applets if enabled
-    if (disable_web_applet || Settings::values.enable_raw_input) {
+    if (UISettings::values.disable_web_applet || Settings::values.enable_raw_input) {
         emit WebBrowserClosed(Service::AM::Applets::WebExitReason::WindowClosed,
                               "http://localhost/");
         return;
@@ -651,12 +729,12 @@ void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,
     connect(exit_action, &QAction::triggered, this, [this, &web_browser_view] {
         const auto result = QMessageBox::warning(
             this, tr("Disable Web Applet"),
-            tr("Disabling the web applet will cause it to not be shown again for the rest of the "
-               "emulated session. This can lead to undefined behavior and should only be used with "
-               "Super Mario 3D All-Stars. Are you sure you want to disable the web applet?"),
+            tr("Disabling the web applet can lead to undefined behavior and should only be used "
+               "with Super Mario 3D All-Stars. Are you sure you want to disable the web "
+               "applet?\n(This can be re-enabled in the Debug settings.)"),
             QMessageBox::Yes | QMessageBox::No);
         if (result == QMessageBox::Yes) {
-            disable_web_applet = true;
+            UISettings::values.disable_web_applet = true;
             web_browser_view.SetFinished(true);
         }
     });
@@ -806,21 +884,8 @@ void GMainWindow::InitializeWidgets() {
     filter_status_button = new QPushButton();
     filter_status_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
     filter_status_button->setFocusPolicy(Qt::NoFocus);
-    connect(filter_status_button, &QPushButton::clicked, [&] {
-        auto filter = Settings::values.scaling_filter.GetValue();
-        if (filter == Settings::ScalingFilter::LastFilter) {
-            filter = Settings::ScalingFilter::NearestNeighbor;
-        } else {
-            filter = static_cast<Settings::ScalingFilter>(static_cast<u32>(filter) + 1);
-        }
-        if (Settings::values.renderer_backend.GetValue() == Settings::RendererBackend::OpenGL &&
-            filter == Settings::ScalingFilter::Fsr) {
-            filter = Settings::ScalingFilter::NearestNeighbor;
-        }
-        Settings::values.scaling_filter.SetValue(filter);
-        filter_status_button->setChecked(true);
-        UpdateFilterText();
-    });
+    connect(filter_status_button, &QPushButton::clicked, this,
+            &GMainWindow::OnToggleAdaptingFilter);
     auto filter = Settings::values.scaling_filter.GetValue();
     if (Settings::values.renderer_backend.GetValue() == Settings::RendererBackend::OpenGL &&
         filter == Settings::ScalingFilter::Fsr) {
@@ -833,52 +898,18 @@ void GMainWindow::InitializeWidgets() {
 
     // Setup Dock button
     dock_status_button = new QPushButton();
-    dock_status_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
+    dock_status_button->setObjectName(QStringLiteral("DockingStatusBarButton"));
     dock_status_button->setFocusPolicy(Qt::NoFocus);
-    connect(dock_status_button, &QPushButton::clicked, [&] {
-        const bool is_docked = Settings::values.use_docked_mode.GetValue();
-        auto* player_1 = system->HIDCore().GetEmulatedController(Core::HID::NpadIdType::Player1);
-        auto* handheld = system->HIDCore().GetEmulatedController(Core::HID::NpadIdType::Handheld);
-
-        if (!is_docked && handheld->IsConnected()) {
-            QMessageBox::warning(this, tr("Invalid config detected"),
-                                 tr("Handheld controller can't be used on docked mode. Pro "
-                                    "controller will be selected."));
-            handheld->Disconnect();
-            player_1->SetNpadStyleIndex(Core::HID::NpadStyleIndex::ProController);
-            player_1->Connect();
-            controller_dialog->refreshConfiguration();
-        }
-
-        Settings::values.use_docked_mode.SetValue(!is_docked);
-        dock_status_button->setChecked(!is_docked);
-        OnDockedModeChanged(is_docked, !is_docked, *system);
-    });
-    dock_status_button->setText(tr("DOCK"));
+    connect(dock_status_button, &QPushButton::clicked, this, &GMainWindow::OnToggleDockedMode);
     dock_status_button->setCheckable(true);
-    dock_status_button->setChecked(Settings::values.use_docked_mode.GetValue());
+    UpdateDockedButton();
     statusBar()->insertPermanentWidget(0, dock_status_button);
 
     gpu_accuracy_button = new QPushButton();
     gpu_accuracy_button->setObjectName(QStringLiteral("GPUStatusBarButton"));
     gpu_accuracy_button->setCheckable(true);
     gpu_accuracy_button->setFocusPolicy(Qt::NoFocus);
-    connect(gpu_accuracy_button, &QPushButton::clicked, [this] {
-        switch (Settings::values.gpu_accuracy.GetValue()) {
-        case Settings::GPUAccuracy::High: {
-            Settings::values.gpu_accuracy.SetValue(Settings::GPUAccuracy::Normal);
-            break;
-        }
-        case Settings::GPUAccuracy::Normal:
-        case Settings::GPUAccuracy::Extreme:
-        default: {
-            Settings::values.gpu_accuracy.SetValue(Settings::GPUAccuracy::High);
-        }
-        }
-
-        system->ApplySettings();
-        UpdateGPUAccuracyButton();
-    });
+    connect(gpu_accuracy_button, &QPushButton::clicked, this, &GMainWindow::OnToggleGpuAccuracy);
     UpdateGPUAccuracyButton();
     statusBar()->insertPermanentWidget(0, gpu_accuracy_button);
 
@@ -902,8 +933,7 @@ void GMainWindow::InitializeWidgets() {
             Settings::values.renderer_backend.SetValue(Settings::RendererBackend::Vulkan);
         } else {
             Settings::values.renderer_backend.SetValue(Settings::RendererBackend::OpenGL);
-            const auto filter = Settings::values.scaling_filter.GetValue();
-            if (filter == Settings::ScalingFilter::Fsr) {
+            if (Settings::values.scaling_filter.GetValue() == Settings::ScalingFilter::Fsr) {
                 Settings::values.scaling_filter.SetValue(Settings::ScalingFilter::NearestNeighbor);
                 UpdateFilterText();
             }
@@ -965,21 +995,23 @@ void GMainWindow::LinkActionShortcut(QAction* action, const QString& action_name
     static const QString main_window = QStringLiteral("Main Window");
     action->setShortcut(hotkey_registry.GetKeySequence(main_window, action_name));
     action->setShortcutContext(hotkey_registry.GetShortcutContext(main_window, action_name));
+    action->setAutoRepeat(false);
 
     this->addAction(action);
 
     auto* controller = system->HIDCore().GetEmulatedController(Core::HID::NpadIdType::Player1);
     const auto* controller_hotkey =
         hotkey_registry.GetControllerHotkey(main_window, action_name, controller);
-    connect(controller_hotkey, &ControllerShortcut::Activated, this,
-            [action] { action->trigger(); });
+    connect(
+        controller_hotkey, &ControllerShortcut::Activated, this, [action] { action->trigger(); },
+        Qt::QueuedConnection);
 }
 
 void GMainWindow::InitializeHotkeys() {
     hotkey_registry.LoadHotkeys();
 
     LinkActionShortcut(ui->action_Load_File, QStringLiteral("Load File"));
-    LinkActionShortcut(ui->action_Load_Amiibo, QStringLiteral("Load Amiibo"));
+    LinkActionShortcut(ui->action_Load_Amiibo, QStringLiteral("Load/Remove Amiibo"));
     LinkActionShortcut(ui->action_Exit, QStringLiteral("Exit yuzu"));
     LinkActionShortcut(ui->action_Restart, QStringLiteral("Restart Emulation"));
     LinkActionShortcut(ui->action_Pause, QStringLiteral("Continue/Pause Emulation"));
@@ -999,7 +1031,8 @@ void GMainWindow::InitializeHotkeys() {
         const auto* controller_hotkey =
             hotkey_registry.GetControllerHotkey(main_window, action_name, controller);
         connect(hotkey, &QShortcut::activated, this, function);
-        connect(controller_hotkey, &ControllerShortcut::Activated, this, function);
+        connect(controller_hotkey, &ControllerShortcut::Activated, this, function,
+                Qt::QueuedConnection);
     };
 
     connect_shortcut(QStringLiteral("Exit Fullscreen"), [&] {
@@ -1008,35 +1041,24 @@ void GMainWindow::InitializeHotkeys() {
             ToggleFullscreen();
         }
     });
-    connect_shortcut(QStringLiteral("Toggle Speed Limit"), [&] {
-        Settings::values.use_speed_limit.SetValue(!Settings::values.use_speed_limit.GetValue());
-        UpdateStatusBar();
-    });
-    constexpr u16 SPEED_LIMIT_STEP = 5;
-    connect_shortcut(QStringLiteral("Increase Speed Limit"), [&] {
-        if (Settings::values.speed_limit.GetValue() < 9999 - SPEED_LIMIT_STEP) {
-            Settings::values.speed_limit.SetValue(SPEED_LIMIT_STEP +
-                                                  Settings::values.speed_limit.GetValue());
-            UpdateStatusBar();
-        }
-    });
-    connect_shortcut(QStringLiteral("Decrease Speed Limit"), [&] {
-        if (Settings::values.speed_limit.GetValue() > SPEED_LIMIT_STEP) {
-            Settings::values.speed_limit.SetValue(Settings::values.speed_limit.GetValue() -
-                                                  SPEED_LIMIT_STEP);
-            UpdateStatusBar();
-        }
-    });
-    connect_shortcut(QStringLiteral("Change Docked Mode"), [&] {
-        Settings::values.use_docked_mode.SetValue(!Settings::values.use_docked_mode.GetValue());
-        OnDockedModeChanged(!Settings::values.use_docked_mode.GetValue(),
-                            Settings::values.use_docked_mode.GetValue(), *system);
-        dock_status_button->setChecked(Settings::values.use_docked_mode.GetValue());
-    });
-    connect_shortcut(QStringLiteral("Mute Audio"),
+    connect_shortcut(QStringLiteral("Change Adapting Filter"),
+                     &GMainWindow::OnToggleAdaptingFilter);
+    connect_shortcut(QStringLiteral("Change Docked Mode"), &GMainWindow::OnToggleDockedMode);
+    connect_shortcut(QStringLiteral("Change GPU Accuracy"), &GMainWindow::OnToggleGpuAccuracy);
+    connect_shortcut(QStringLiteral("Audio Mute/Unmute"),
                      [] { Settings::values.audio_muted = !Settings::values.audio_muted; });
+    connect_shortcut(QStringLiteral("Audio Volume Down"), [] {
+        const auto current_volume = static_cast<int>(Settings::values.volume.GetValue());
+        const auto new_volume = std::max(current_volume - 5, 0);
+        Settings::values.volume.SetValue(static_cast<u8>(new_volume));
+    });
+    connect_shortcut(QStringLiteral("Audio Volume Up"), [] {
+        const auto current_volume = static_cast<int>(Settings::values.volume.GetValue());
+        const auto new_volume = std::min(current_volume + 5, 100);
+        Settings::values.volume.SetValue(static_cast<u8>(new_volume));
+    });
     connect_shortcut(QStringLiteral("Toggle Framerate Limit"), [] {
-        Settings::values.disable_fps_limit.SetValue(!Settings::values.disable_fps_limit.GetValue());
+        Settings::values.use_speed_limit.SetValue(!Settings::values.use_speed_limit.GetValue());
     });
     connect_shortcut(QStringLiteral("Toggle Mouse Panning"), [&] {
         Settings::values.mouse_panning = !Settings::values.mouse_panning;
@@ -1049,7 +1071,7 @@ void GMainWindow::InitializeHotkeys() {
 
 void GMainWindow::SetDefaultUIGeometry() {
     // geometry: 53% of the window contents are in the upper screen half, 47% in the lower half
-    const QRect screenRect = QApplication::desktop()->screenGeometry(this);
+    const QRect screenRect = QGuiApplication::primaryScreen()->geometry();
 
     const int w = screenRect.width() * 2 / 3;
     const int h = screenRect.height() * 2 / 3;
@@ -1060,8 +1082,14 @@ void GMainWindow::SetDefaultUIGeometry() {
 }
 
 void GMainWindow::RestoreUIState() {
+    setWindowFlags(windowFlags() & ~Qt::FramelessWindowHint);
     restoreGeometry(UISettings::values.geometry);
+    // Work-around because the games list isn't supposed to be full screen
+    if (isFullScreen()) {
+        showNormal();
+    }
     restoreState(UISettings::values.state);
+    render_window->setWindowFlags(render_window->windowFlags() & ~Qt::FramelessWindowHint);
     render_window->restoreGeometry(UISettings::values.renderwindow_geometry);
 #if MICROPROFILE_ENABLED
     microProfileDialog->restoreGeometry(UISettings::values.microprofile_geometry);
@@ -1088,21 +1116,32 @@ void GMainWindow::RestoreUIState() {
 }
 
 void GMainWindow::OnAppFocusStateChanged(Qt::ApplicationState state) {
-    if (!UISettings::values.pause_when_in_background) {
-        return;
-    }
     if (state != Qt::ApplicationHidden && state != Qt::ApplicationInactive &&
         state != Qt::ApplicationActive) {
         LOG_DEBUG(Frontend, "ApplicationState unusual flag: {} ", state);
     }
-    if (emulation_running) {
+    if (!emulation_running) {
+        return;
+    }
+    if (UISettings::values.pause_when_in_background) {
         if (emu_thread->IsRunning() &&
             (state & (Qt::ApplicationHidden | Qt::ApplicationInactive))) {
             auto_paused = true;
             OnPauseGame();
         } else if (!emu_thread->IsRunning() && auto_paused && state == Qt::ApplicationActive) {
             auto_paused = false;
+            RequestGameResume();
             OnStartGame();
+        }
+    }
+    if (UISettings::values.mute_when_in_background) {
+        if (!Settings::values.audio_muted &&
+            (state & (Qt::ApplicationHidden | Qt::ApplicationInactive))) {
+            Settings::values.audio_muted = true;
+            auto_muted = true;
+        } else if (auto_muted && state == Qt::ApplicationActive) {
+            Settings::values.audio_muted = false;
+            auto_muted = false;
         }
     }
 }
@@ -1328,6 +1367,7 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
     system->SetAppletFrontendSet({
         std::make_unique<QtControllerSelector>(*this), // Controller Selector
         std::make_unique<QtErrorDisplay>(*this),       // Error Display
+        nullptr,                                       // Mii Editor
         nullptr,                                       // Parental Controls
         nullptr,                                       // Photo Viewer
         std::make_unique<QtProfileSelector>(*this),    // Profile Selector
@@ -1401,7 +1441,7 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
         }
         return false;
     }
-    game_path = filename;
+    current_game_path = filename;
 
     system->TelemetrySession().AddField(Common::Telemetry::FieldType::App, "Frontend", "Qt");
     return true;
@@ -1435,15 +1475,13 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
     if (loader != nullptr && loader->ReadProgramId(title_id) == Loader::ResultStatus::Success &&
         type == StartGameType::Normal) {
         // Load per game settings
-        const auto file_path = std::filesystem::path{filename.toStdU16String()};
+        const auto file_path =
+            std::filesystem::path{Common::U16StringFromBuffer(filename.utf16(), filename.size())};
         const auto config_file_name = title_id == 0
                                           ? Common::FS::PathToUTF8String(file_path.filename())
                                           : fmt::format("{:016X}", title_id);
         Config per_game_config(*system, config_file_name, Config::ConfigType::PerGameConfig);
     }
-
-    // Disable fps limit toggle when booting a new title
-    Settings::values.disable_fps_limit.SetValue(false);
 
     // Save configurations
     UpdateUISettings();
@@ -1459,6 +1497,8 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
     if (!LoadROM(filename, program_id, program_index))
         return;
 
+    system->SetShuttingDown(false);
+
     // Create and start the emulation thread
     emu_thread = std::make_unique<EmuThread>(*system);
     emit EmulationStarting(emu_thread.get());
@@ -1466,7 +1506,7 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
 
     // Register an ExecuteProgram callback such that Core can execute a sub-program
     system->RegisterExecuteProgramCallback(
-        [this](std::size_t program_index) { render_window->ExecuteProgram(program_index); });
+        [this](std::size_t program_index_) { render_window->ExecuteProgram(program_index_); });
 
     // Register an Exit callback such that Core can exit the currently running application.
     system->RegisterExitCallback([this]() { render_window->Exit(); });
@@ -1516,7 +1556,8 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
     }
     if (res != Loader::ResultStatus::Success || title_name.empty()) {
         title_name = Common::FS::PathToUTF8String(
-            std::filesystem::path{filename.toStdU16String()}.filename());
+            std::filesystem::path{Common::U16StringFromBuffer(filename.utf16(), filename.size())}
+                .filename());
     }
     const bool is_64bit = system->Kernel().CurrentProcess()->Is64BitProcess();
     const auto instruction_set_suffix = is_64bit ? tr("(64-bit)") : tr("(32-bit)");
@@ -1548,6 +1589,8 @@ void GMainWindow::ShutdownGame() {
 
     AllowOSSleep();
 
+    system->SetShuttingDown(true);
+    system->DetachDebugger();
     discord_rpc->Pause();
     emu_thread->RequestStop();
 
@@ -1595,9 +1638,9 @@ void GMainWindow::ShutdownGame() {
     emu_speed_label->setVisible(false);
     game_fps_label->setVisible(false);
     emu_frametime_label->setVisible(false);
-    renderer_status_button->setEnabled(true);
+    renderer_status_button->setEnabled(!UISettings::values.has_broken_vulkan);
 
-    game_path.clear();
+    current_game_path.clear();
 
     // When closing the game, destroy the GLWindow to clear the context after the game is closed
     render_window->ReleaseRenderTarget();
@@ -1615,7 +1658,7 @@ void GMainWindow::StoreRecentFile(const QString& filename) {
 
 void GMainWindow::UpdateRecentFiles() {
     const int num_recent_files =
-        std::min(UISettings::values.recent_files.size(), max_recent_files_item);
+        std::min(static_cast<int>(UISettings::values.recent_files.size()), max_recent_files_item);
 
     for (int i = 0; i < num_recent_files; i++) {
         const QString text = QStringLiteral("&%1. %2").arg(i + 1).arg(
@@ -1696,7 +1739,7 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
 
             const auto user_save_data_path = FileSys::SaveDataFactory::GetFullPath(
                 *system, FileSys::SaveDataSpaceId::NandUser, FileSys::SaveDataType::SaveData,
-                program_id, user_id->uuid, 0);
+                program_id, user_id->AsU128(), 0);
 
             path = Common::FS::ConcatPathSafe(nand_dir, user_save_data_path);
         } else {
@@ -2516,7 +2559,7 @@ void GMainWindow::OnRestartGame() {
         return;
     }
     // Make a copy since BootGame edits game_path
-    BootGame(QString(game_path));
+    BootGame(QString(current_game_path));
 }
 
 void GMainWindow::OnPauseGame() {
@@ -2530,6 +2573,7 @@ void GMainWindow::OnPauseContinueGame() {
         if (emu_thread->IsRunning()) {
             OnPauseGame();
         } else {
+            RequestGameResume();
             OnStartGame();
         }
     }
@@ -2613,6 +2657,18 @@ void GMainWindow::ToggleFullscreen() {
     }
 }
 
+// We're going to return the screen that the given window has the most pixels on
+static QScreen* GuessCurrentScreen(QWidget* window) {
+    const QList<QScreen*> screens = QGuiApplication::screens();
+    return *std::max_element(
+        screens.cbegin(), screens.cend(), [window](const QScreen* left, const QScreen* right) {
+            const QSize left_size = left->geometry().intersected(window->geometry()).size();
+            const QSize right_size = right->geometry().intersected(window->geometry()).size();
+            return (left_size.height() * left_size.width()) <
+                   (right_size.height() * right_size.width());
+        });
+}
+
 void GMainWindow::ShowFullscreen() {
     const auto show_fullscreen = [](QWidget* window) {
         if (Settings::values.fullscreen_mode.GetValue() == Settings::FullscreenMode::Exclusive) {
@@ -2621,7 +2677,7 @@ void GMainWindow::ShowFullscreen() {
         }
         window->hide();
         window->setWindowFlags(window->windowFlags() | Qt::FramelessWindowHint);
-        const auto screen_geometry = QApplication::desktop()->screenGeometry(window);
+        const auto screen_geometry = GuessCurrentScreen(window)->geometry();
         window->setGeometry(screen_geometry.x(), screen_geometry.y(), screen_geometry.width(),
                             screen_geometry.height() + 1);
         window->raise();
@@ -2805,6 +2861,10 @@ void GMainWindow::OnConfigure() {
         mouse_hide_timer.start();
     }
 
+    if (!UISettings::values.has_broken_vulkan) {
+        renderer_status_button->setEnabled(!emulation_running);
+    }
+
     UpdateStatusButtons();
     controller_dialog->refreshConfiguration();
 }
@@ -2874,9 +2934,62 @@ void GMainWindow::OnTasReset() {
     input_subsystem->GetTas()->Reset();
 }
 
+void GMainWindow::OnToggleDockedMode() {
+    const bool is_docked = Settings::values.use_docked_mode.GetValue();
+    auto* player_1 = system->HIDCore().GetEmulatedController(Core::HID::NpadIdType::Player1);
+    auto* handheld = system->HIDCore().GetEmulatedController(Core::HID::NpadIdType::Handheld);
+
+    if (!is_docked && handheld->IsConnected()) {
+        QMessageBox::warning(this, tr("Invalid config detected"),
+                             tr("Handheld controller can't be used on docked mode. Pro "
+                                "controller will be selected."));
+        handheld->Disconnect();
+        player_1->SetNpadStyleIndex(Core::HID::NpadStyleIndex::ProController);
+        player_1->Connect();
+        controller_dialog->refreshConfiguration();
+    }
+
+    Settings::values.use_docked_mode.SetValue(!is_docked);
+    UpdateDockedButton();
+    OnDockedModeChanged(is_docked, !is_docked, *system);
+}
+
+void GMainWindow::OnToggleGpuAccuracy() {
+    switch (Settings::values.gpu_accuracy.GetValue()) {
+    case Settings::GPUAccuracy::High: {
+        Settings::values.gpu_accuracy.SetValue(Settings::GPUAccuracy::Normal);
+        break;
+    }
+    case Settings::GPUAccuracy::Normal:
+    case Settings::GPUAccuracy::Extreme:
+    default: {
+        Settings::values.gpu_accuracy.SetValue(Settings::GPUAccuracy::High);
+    }
+    }
+
+    system->ApplySettings();
+    UpdateGPUAccuracyButton();
+}
+
+void GMainWindow::OnToggleAdaptingFilter() {
+    auto filter = Settings::values.scaling_filter.GetValue();
+    if (filter == Settings::ScalingFilter::LastFilter) {
+        filter = Settings::ScalingFilter::NearestNeighbor;
+    } else {
+        filter = static_cast<Settings::ScalingFilter>(static_cast<u32>(filter) + 1);
+    }
+    if (Settings::values.renderer_backend.GetValue() == Settings::RendererBackend::OpenGL &&
+        filter == Settings::ScalingFilter::Fsr) {
+        filter = Settings::ScalingFilter::NearestNeighbor;
+    }
+    Settings::values.scaling_filter.SetValue(filter);
+    filter_status_button->setChecked(true);
+    UpdateFilterText();
+}
+
 void GMainWindow::OnConfigurePerGame() {
     const u64 title_id = system->GetCurrentProcessProgramID();
-    OpenPerGameConfiguration(title_id, game_path.toStdString());
+    OpenPerGameConfiguration(title_id, current_game_path.toStdString());
 }
 
 void GMainWindow::OpenPerGameConfiguration(u64 title_id, const std::string& file_name) {
@@ -2918,6 +3031,25 @@ void GMainWindow::OnLoadAmiibo() {
         return;
     }
 
+    Service::SM::ServiceManager& sm = system->ServiceManager();
+    auto nfc = sm.GetService<Service::NFP::Module::Interface>("nfp:user");
+    if (nfc == nullptr) {
+        QMessageBox::warning(this, tr("Error"), tr("The current game is not looking for amiibos"));
+        return;
+    }
+    const auto nfc_state = nfc->GetCurrentState();
+    if (nfc_state == Service::NFP::DeviceState::TagFound ||
+        nfc_state == Service::NFP::DeviceState::TagMounted) {
+        nfc->CloseAmiibo();
+        QMessageBox::warning(this, tr("Amiibo"), tr("The current amiibo has been removed"));
+        return;
+    }
+
+    if (nfc_state != Service::NFP::DeviceState::SearchingForTag) {
+        QMessageBox::warning(this, tr("Error"), tr("The current game is not looking for amiibos"));
+        return;
+    }
+
     is_amiibo_file_select_active = true;
     const QString extensions{QStringLiteral("*.bin")};
     const QString file_filter = tr("Amiibo File (%1);; All Files (*.*)").arg(extensions);
@@ -2935,6 +3067,15 @@ void GMainWindow::LoadAmiibo(const QString& filename) {
     Service::SM::ServiceManager& sm = system->ServiceManager();
     auto nfc = sm.GetService<Service::NFP::Module::Interface>("nfp:user");
     if (nfc == nullptr) {
+        return;
+    }
+
+    // Remove amiibo if one is connected
+    const auto nfc_state = nfc->GetCurrentState();
+    if (nfc_state == Service::NFP::DeviceState::TagFound ||
+        nfc_state == Service::NFP::DeviceState::TagMounted) {
+        nfc->CloseAmiibo();
+        QMessageBox::warning(this, tr("Amiibo"), tr("The current amiibo has been removed"));
         return;
     }
 
@@ -3103,7 +3244,7 @@ void GMainWindow::OnTasStateChanged() {
 }
 
 void GMainWindow::UpdateStatusBar() {
-    if (emu_thread == nullptr) {
+    if (emu_thread == nullptr || !system->IsPoweredOn()) {
         status_bar_update_timer.stop();
         return;
     }
@@ -3137,11 +3278,12 @@ void GMainWindow::UpdateStatusBar() {
     } else {
         emu_speed_label->setText(tr("Speed: %1%").arg(results.emulation_speed * 100.0, 0, 'f', 0));
     }
-    if (Settings::values.disable_fps_limit) {
+    if (!Settings::values.use_speed_limit) {
         game_fps_label->setText(
-            tr("Game: %1 FPS (Unlocked)").arg(results.average_game_fps, 0, 'f', 0));
+            tr("Game: %1 FPS (Unlocked)").arg(std::round(results.average_game_fps), 0, 'f', 0));
     } else {
-        game_fps_label->setText(tr("Game: %1 FPS").arg(results.average_game_fps, 0, 'f', 0));
+        game_fps_label->setText(
+            tr("Game: %1 FPS").arg(std::round(results.average_game_fps), 0, 'f', 0));
     }
     emu_frametime_label->setText(tr("Frame: %1 ms").arg(results.frametime * 1000.0, 0, 'f', 2));
 
@@ -3173,6 +3315,12 @@ void GMainWindow::UpdateGPUAccuracyButton() {
         gpu_accuracy_button->setChecked(true);
     }
     }
+}
+
+void GMainWindow::UpdateDockedButton() {
+    const bool is_docked = Settings::values.use_docked_mode.GetValue();
+    dock_status_button->setChecked(is_docked);
+    dock_status_button->setText(is_docked ? tr("DOCKED") : tr("HANDHELD"));
 }
 
 void GMainWindow::UpdateFilterText() {
@@ -3218,10 +3366,10 @@ void GMainWindow::UpdateAAText() {
 }
 
 void GMainWindow::UpdateStatusButtons() {
-    dock_status_button->setChecked(Settings::values.use_docked_mode.GetValue());
     renderer_status_button->setChecked(Settings::values.renderer_backend.GetValue() ==
                                        Settings::RendererBackend::Vulkan);
     UpdateGPUAccuracyButton();
+    UpdateDockedButton();
     UpdateFilterText();
     UpdateAAText();
 }
@@ -3260,10 +3408,26 @@ void GMainWindow::ShowMouseCursor() {
     }
 }
 
+void GMainWindow::CenterMouseCursor() {
+    if (emu_thread == nullptr || !Settings::values.mouse_panning) {
+        mouse_center_timer.stop();
+        return;
+    }
+    if (!this->isActiveWindow()) {
+        mouse_center_timer.stop();
+        return;
+    }
+    const int center_x = render_window->width() / 2;
+    const int center_y = render_window->height() / 2;
+
+    QCursor::setPos(mapToGlobal(QPoint{center_x, center_y}));
+}
+
 void GMainWindow::OnMouseActivity() {
     if (!Settings::values.mouse_panning) {
         ShowMouseCursor();
     }
+    mouse_center_timer.stop();
 }
 
 void GMainWindow::OnCoreError(Core::SystemResultStatus result, std::string details) {
@@ -3536,6 +3700,22 @@ void GMainWindow::dragMoveEvent(QDragMoveEvent* event) {
     AcceptDropEvent(event);
 }
 
+void GMainWindow::leaveEvent(QEvent* event) {
+    if (Settings::values.mouse_panning) {
+        const QRect& rect = geometry();
+        QPoint position = QCursor::pos();
+
+        qint32 x = qBound(rect.left(), position.x(), rect.right());
+        qint32 y = qBound(rect.top(), position.y(), rect.bottom());
+        // Only start the timer if the mouse has left the window bound.
+        // The leave event is also triggered when the window looses focus.
+        if (x != position.x() || y != position.y()) {
+            mouse_center_timer.start();
+        }
+        event->accept();
+    }
+}
+
 bool GMainWindow::ConfirmChangeGame() {
     if (emu_thread == nullptr)
         return true;
@@ -3571,6 +3751,21 @@ void GMainWindow::RequestGameExit() {
 
     if (applet_ae != nullptr && !has_signalled) {
         applet_ae->GetMessageQueue()->RequestExit();
+    }
+}
+
+void GMainWindow::RequestGameResume() {
+    auto& sm{system->ServiceManager()};
+    auto applet_oe = sm.GetService<Service::AM::AppletOE>("appletOE");
+    auto applet_ae = sm.GetService<Service::AM::AppletAE>("appletAE");
+
+    if (applet_oe != nullptr) {
+        applet_oe->GetMessageQueue()->RequestResume();
+        return;
+    }
+
+    if (applet_ae != nullptr) {
+        applet_ae->GetMessageQueue()->RequestResume();
     }
 }
 
@@ -3610,6 +3805,14 @@ void GMainWindow::UpdateUITheme() {
         qApp->setStyleSheet({});
         setStyleSheet({});
     }
+
+    QPalette new_pal(qApp->palette());
+    if (UISettings::IsDarkTheme()) {
+        new_pal.setColor(QPalette::Link, QColor(0, 190, 255, 255));
+    } else {
+        new_pal.setColor(QPalette::Link, QColor(0, 140, 200, 255));
+    }
+    qApp->setPalette(new_pal);
 
     QIcon::setThemeName(current_theme);
     QIcon::setThemeSearchPaths(theme_paths);
@@ -3667,6 +3870,11 @@ void GMainWindow::SetDiscordEnabled([[maybe_unused]] bool state) {
 #endif
 
 int main(int argc, char* argv[]) {
+    bool has_broken_vulkan = false;
+    if (StartupChecks(argv[0], &has_broken_vulkan)) {
+        return 0;
+    }
+
     Common::DetachedTasks detached_tasks;
     MicroProfileOnThreadCreate("Frontend");
     SCOPE_EXIT({ MicroProfileShutdown(); });
@@ -3706,7 +3914,7 @@ int main(int argc, char* argv[]) {
     // generating shaders
     setlocale(LC_ALL, "C");
 
-    GMainWindow main_window{};
+    GMainWindow main_window{has_broken_vulkan};
     // After settings have been loaded by GMainWindow, apply the filter
     main_window.show();
 

@@ -13,7 +13,6 @@
 #include "common/scope_exit.h"
 #include "common/settings.h"
 #include "core/core.h"
-#include "core/device_memory.h"
 #include "core/file_sys/program_metadata.h"
 #include "core/hle/kernel/code_set.h"
 #include "core/hle/kernel/k_memory_block_manager.h"
@@ -24,7 +23,6 @@
 #include "core/hle/kernel/k_scoped_resource_reservation.h"
 #include "core/hle/kernel/k_shared_memory.h"
 #include "core/hle/kernel/k_shared_memory_info.h"
-#include "core/hle/kernel/k_slab_heap.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/svc_results.h"
@@ -59,76 +57,22 @@ void SetupMainThread(Core::System& system, KProcess& owner_process, u32 priority
     thread->GetContext64().cpu_registers[0] = 0;
     thread->GetContext32().cpu_registers[1] = thread_handle;
     thread->GetContext64().cpu_registers[1] = thread_handle;
-    thread->DisableDispatch();
 
-    auto& kernel = system.Kernel();
-    // Threads by default are dormant, wake up the main thread so it runs when the scheduler fires
-    {
-        KScopedSchedulerLock lock{kernel};
-        thread->SetState(ThreadState::Runnable);
+    if (system.DebuggerEnabled()) {
+        thread->RequestSuspend(SuspendType::Debug);
     }
+
+    // Run our thread.
+    void(thread->Run());
 }
 } // Anonymous namespace
 
-// Represents a page used for thread-local storage.
-//
-// Each TLS page contains slots that may be used by processes and threads.
-// Every process and thread is created with a slot in some arbitrary page
-// (whichever page happens to have an available slot).
-class TLSPage {
-public:
-    static constexpr std::size_t num_slot_entries =
-        Core::Memory::PAGE_SIZE / Core::Memory::TLS_ENTRY_SIZE;
-
-    explicit TLSPage(VAddr address) : base_address{address} {}
-
-    bool HasAvailableSlots() const {
-        return !is_slot_used.all();
-    }
-
-    VAddr GetBaseAddress() const {
-        return base_address;
-    }
-
-    std::optional<VAddr> ReserveSlot() {
-        for (std::size_t i = 0; i < is_slot_used.size(); i++) {
-            if (is_slot_used[i]) {
-                continue;
-            }
-
-            is_slot_used[i] = true;
-            return base_address + (i * Core::Memory::TLS_ENTRY_SIZE);
-        }
-
-        return std::nullopt;
-    }
-
-    void ReleaseSlot(VAddr address) {
-        // Ensure that all given addresses are consistent with how TLS pages
-        // are intended to be used when releasing slots.
-        ASSERT(IsWithinPage(address));
-        ASSERT((address % Core::Memory::TLS_ENTRY_SIZE) == 0);
-
-        const std::size_t index = (address - base_address) / Core::Memory::TLS_ENTRY_SIZE;
-        is_slot_used[index] = false;
-    }
-
-private:
-    bool IsWithinPage(VAddr address) const {
-        return base_address <= address && address < base_address + Core::Memory::PAGE_SIZE;
-    }
-
-    VAddr base_address;
-    std::bitset<num_slot_entries> is_slot_used;
-};
-
-ResultCode KProcess::Initialize(KProcess* process, Core::System& system, std::string process_name,
-                                ProcessType type) {
+Result KProcess::Initialize(KProcess* process, Core::System& system, std::string process_name,
+                            ProcessType type, KResourceLimit* res_limit) {
     auto& kernel = system.Kernel();
 
     process->name = std::move(process_name);
-
-    process->resource_limit = kernel.GetSystemResourceLimit();
+    process->resource_limit = res_limit;
     process->status = ProcessStatus::Created;
     process->program_id = 0;
     process->process_id = type == ProcessType::KernelInternal ? kernel.CreateNewKernelProcessID()
@@ -143,30 +87,38 @@ ResultCode KProcess::Initialize(KProcess* process, Core::System& system, std::st
 
     kernel.AppendNewProcess(process);
 
+    // Clear remaining fields.
+    process->num_running_threads = 0;
+    process->is_signaled = false;
+    process->exception_thread = nullptr;
+    process->is_suspended = false;
+    process->schedule_count = 0;
+
     // Open a reference to the resource limit.
     process->resource_limit->Open();
 
     return ResultSuccess;
 }
 
+void KProcess::DoWorkerTaskImpl() {
+    UNIMPLEMENTED();
+}
+
 KResourceLimit* KProcess::GetResourceLimit() const {
     return resource_limit;
 }
 
-void KProcess::IncrementThreadCount() {
-    ASSERT(num_threads >= 0);
-    num_created_threads++;
-
-    if (const auto count = ++num_threads; count > peak_num_threads) {
-        peak_num_threads = count;
-    }
+void KProcess::IncrementRunningThreadCount() {
+    ASSERT(num_running_threads.load() >= 0);
+    ++num_running_threads;
 }
 
-void KProcess::DecrementThreadCount() {
-    ASSERT(num_threads > 0);
+void KProcess::DecrementRunningThreadCount() {
+    ASSERT(num_running_threads.load() > 0);
 
-    if (const auto count = --num_threads; count == 0) {
-        LOG_WARNING(Kernel, "Process termination is not fully implemented.");
+    if (const auto prev = num_running_threads--; prev == 1) {
+        // TODO(bunnei): Process termination to be implemented when multiprocess is supported.
+        UNIMPLEMENTED_MSG("KProcess termination is not implemennted!");
     }
 }
 
@@ -209,7 +161,7 @@ bool KProcess::ReleaseUserException(KThread* thread) {
                 std::addressof(num_waiters),
                 reinterpret_cast<uintptr_t>(std::addressof(exception_thread)));
             next != nullptr) {
-            next->SetState(ThreadState::Runnable);
+            next->EndWait(ResultSuccess);
         }
 
         KScheduler::SetSchedulerUpdateNeeded(kernel);
@@ -224,7 +176,8 @@ void KProcess::PinCurrentThread(s32 core_id) {
     ASSERT(kernel.GlobalSchedulerContext().IsLocked());
 
     // Get the current thread.
-    KThread* cur_thread = kernel.Scheduler(static_cast<std::size_t>(core_id)).GetCurrentThread();
+    KThread* cur_thread =
+        kernel.Scheduler(static_cast<std::size_t>(core_id)).GetSchedulerCurrentThread();
 
     // If the thread isn't terminated, pin it.
     if (!cur_thread->IsTerminationRequested()) {
@@ -241,7 +194,8 @@ void KProcess::UnpinCurrentThread(s32 core_id) {
     ASSERT(kernel.GlobalSchedulerContext().IsLocked());
 
     // Get the current thread.
-    KThread* cur_thread = kernel.Scheduler(static_cast<std::size_t>(core_id)).GetCurrentThread();
+    KThread* cur_thread =
+        kernel.Scheduler(static_cast<std::size_t>(core_id)).GetSchedulerCurrentThread();
 
     // Unpin it.
     cur_thread->Unpin();
@@ -265,8 +219,8 @@ void KProcess::UnpinThread(KThread* thread) {
     KScheduler::SetSchedulerUpdateNeeded(kernel);
 }
 
-ResultCode KProcess::AddSharedMemory(KSharedMemory* shmem, [[maybe_unused]] VAddr address,
-                                     [[maybe_unused]] size_t size) {
+Result KProcess::AddSharedMemory(KSharedMemory* shmem, [[maybe_unused]] VAddr address,
+                                 [[maybe_unused]] size_t size) {
     // Lock ourselves, to prevent concurrent access.
     KScopedLightLock lk(state_lock);
 
@@ -318,15 +272,19 @@ void KProcess::RemoveSharedMemory(KSharedMemory* shmem, [[maybe_unused]] VAddr a
     shmem->Close();
 }
 
-void KProcess::RegisterThread(const KThread* thread) {
+void KProcess::RegisterThread(KThread* thread) {
+    KScopedLightLock lk{list_lock};
+
     thread_list.push_back(thread);
 }
 
-void KProcess::UnregisterThread(const KThread* thread) {
+void KProcess::UnregisterThread(KThread* thread) {
+    KScopedLightLock lk{list_lock};
+
     thread_list.remove(thread);
 }
 
-ResultCode KProcess::Reset() {
+Result KProcess::Reset() {
     // Lock the process and the scheduler.
     KScopedLightLock lk(state_lock);
     KScopedSchedulerLock sl{kernel};
@@ -340,8 +298,51 @@ ResultCode KProcess::Reset() {
     return ResultSuccess;
 }
 
-ResultCode KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata,
-                                      std::size_t code_size) {
+Result KProcess::SetActivity(ProcessActivity activity) {
+    // Lock ourselves and the scheduler.
+    KScopedLightLock lk{state_lock};
+    KScopedLightLock list_lk{list_lock};
+    KScopedSchedulerLock sl{kernel};
+
+    // Validate our state.
+    R_UNLESS(status != ProcessStatus::Exiting, ResultInvalidState);
+    R_UNLESS(status != ProcessStatus::Exited, ResultInvalidState);
+
+    // Either pause or resume.
+    if (activity == ProcessActivity::Paused) {
+        // Verify that we're not suspended.
+        if (is_suspended) {
+            return ResultInvalidState;
+        }
+
+        // Suspend all threads.
+        for (auto* thread : GetThreadList()) {
+            thread->RequestSuspend(SuspendType::Process);
+        }
+
+        // Set ourselves as suspended.
+        SetSuspended(true);
+    } else {
+        ASSERT(activity == ProcessActivity::Runnable);
+
+        // Verify that we're suspended.
+        if (!is_suspended) {
+            return ResultInvalidState;
+        }
+
+        // Resume all threads.
+        for (auto* thread : GetThreadList()) {
+            thread->Resume(SuspendType::Process);
+        }
+
+        // Set ourselves as resumed.
+        SetSuspended(false);
+    }
+
+    return ResultSuccess;
+}
+
+Result KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata, std::size_t code_size) {
     program_id = metadata.GetTitleID();
     ideal_core = metadata.GetMainThreadCore();
     is_64bit_process = metadata.Is64BitProgram();
@@ -356,24 +357,24 @@ ResultCode KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata,
         return ResultLimitReached;
     }
     // Initialize proces address space
-    if (const ResultCode result{
-            page_table->InitializeForProcess(metadata.GetAddressSpaceType(), false, 0x8000000,
-                                             code_size, KMemoryManager::Pool::Application)};
+    if (const Result result{page_table->InitializeForProcess(metadata.GetAddressSpaceType(), false,
+                                                             0x8000000, code_size,
+                                                             KMemoryManager::Pool::Application)};
         result.IsError()) {
         return result;
     }
 
     // Map process code region
-    if (const ResultCode result{page_table->MapProcessCode(page_table->GetCodeRegionStart(),
-                                                           code_size / PageSize, KMemoryState::Code,
-                                                           KMemoryPermission::None)};
+    if (const Result result{page_table->MapProcessCode(page_table->GetCodeRegionStart(),
+                                                       code_size / PageSize, KMemoryState::Code,
+                                                       KMemoryPermission::None)};
         result.IsError()) {
         return result;
     }
 
     // Initialize process capabilities
     const auto& caps{metadata.GetKernelCapabilities()};
-    if (const ResultCode result{
+    if (const Result result{
             capabilities.InitializeForUserProcess(caps.data(), caps.size(), *page_table)};
         result.IsError()) {
         return result;
@@ -393,11 +394,11 @@ ResultCode KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata,
         break;
 
     default:
-        UNREACHABLE();
+        ASSERT(false);
     }
 
     // Create TLS region
-    tls_region_address = CreateTLSRegion();
+    R_TRY(this->CreateThreadLocalRegion(std::addressof(tls_region_address)));
     memory_reservation.Commit();
 
     return handle_table.Initialize(capabilities.GetHandleTableSize());
@@ -420,11 +421,11 @@ void KProcess::PrepareForTermination() {
     ChangeStatus(ProcessStatus::Exiting);
 
     const auto stop_threads = [this](const std::vector<KThread*>& in_thread_list) {
-        for (auto& thread : in_thread_list) {
+        for (auto* thread : in_thread_list) {
             if (thread->GetOwnerProcess() != this)
                 continue;
 
-            if (thread == kernel.CurrentScheduler()->GetCurrentThread())
+            if (thread == GetCurrentThreadPointer(kernel))
                 continue;
 
             // TODO(Subv): When are the other running/ready threads terminated?
@@ -437,7 +438,7 @@ void KProcess::PrepareForTermination() {
 
     stop_threads(kernel.System().GlobalSchedulerContext().GetThreadList());
 
-    FreeTLSRegion(tls_region_address);
+    this->DeleteThreadLocalRegion(tls_region_address);
     tls_region_address = 0;
 
     if (resource_limit) {
@@ -449,9 +450,6 @@ void KProcess::PrepareForTermination() {
 }
 
 void KProcess::Finalize() {
-    // Finalize the handle table and close any open handles.
-    handle_table.Finalize();
-
     // Free all shared memory infos.
     {
         auto it = shared_memory_list.begin();
@@ -476,81 +474,170 @@ void KProcess::Finalize() {
         resource_limit = nullptr;
     }
 
+    // Finalize the page table.
+    page_table.reset();
+
     // Perform inherited finalization.
-    KAutoObjectWithSlabHeapAndContainer<KProcess, KSynchronizationObject>::Finalize();
+    KAutoObjectWithSlabHeapAndContainer<KProcess, KWorkerTask>::Finalize();
 }
 
-/**
- * Attempts to find a TLS page that contains a free slot for
- * use by a thread.
- *
- * @returns If a page with an available slot is found, then an iterator
- *          pointing to the page is returned. Otherwise the end iterator
- *          is returned instead.
- */
-static auto FindTLSPageWithAvailableSlots(std::vector<TLSPage>& tls_pages) {
-    return std::find_if(tls_pages.begin(), tls_pages.end(),
-                        [](const auto& page) { return page.HasAvailableSlots(); });
-}
+Result KProcess::CreateThreadLocalRegion(VAddr* out) {
+    KThreadLocalPage* tlp = nullptr;
+    VAddr tlr = 0;
 
-VAddr KProcess::CreateTLSRegion() {
-    KScopedSchedulerLock lock(kernel);
-    if (auto tls_page_iter{FindTLSPageWithAvailableSlots(tls_pages)};
-        tls_page_iter != tls_pages.cend()) {
-        return *tls_page_iter->ReserveSlot();
+    // See if we can get a region from a partially used TLP.
+    {
+        KScopedSchedulerLock sl{kernel};
+
+        if (auto it = partially_used_tlp_tree.begin(); it != partially_used_tlp_tree.end()) {
+            tlr = it->Reserve();
+            ASSERT(tlr != 0);
+
+            if (it->IsAllUsed()) {
+                tlp = std::addressof(*it);
+                partially_used_tlp_tree.erase(it);
+                fully_used_tlp_tree.insert(*tlp);
+            }
+
+            *out = tlr;
+            return ResultSuccess;
+        }
     }
 
-    Page* const tls_page_ptr{kernel.GetUserSlabHeapPages().Allocate()};
-    ASSERT(tls_page_ptr);
+    // Allocate a new page.
+    tlp = KThreadLocalPage::Allocate(kernel);
+    R_UNLESS(tlp != nullptr, ResultOutOfMemory);
+    auto tlp_guard = SCOPE_GUARD({ KThreadLocalPage::Free(kernel, tlp); });
 
-    const VAddr start{page_table->GetKernelMapRegionStart()};
-    const VAddr size{page_table->GetKernelMapRegionEnd() - start};
-    const PAddr tls_map_addr{kernel.System().DeviceMemory().GetPhysicalAddr(tls_page_ptr)};
-    const VAddr tls_page_addr{page_table
-                                  ->AllocateAndMapMemory(1, PageSize, true, start, size / PageSize,
-                                                         KMemoryState::ThreadLocal,
-                                                         KMemoryPermission::ReadAndWrite,
-                                                         tls_map_addr)
-                                  .ValueOr(0)};
+    // Initialize the new page.
+    R_TRY(tlp->Initialize(kernel, this));
 
-    ASSERT(tls_page_addr);
+    // Reserve a TLR.
+    tlr = tlp->Reserve();
+    ASSERT(tlr != 0);
 
-    std::memset(tls_page_ptr, 0, PageSize);
-    tls_pages.emplace_back(tls_page_addr);
+    // Insert into our tree.
+    {
+        KScopedSchedulerLock sl{kernel};
+        if (tlp->IsAllUsed()) {
+            fully_used_tlp_tree.insert(*tlp);
+        } else {
+            partially_used_tlp_tree.insert(*tlp);
+        }
+    }
 
-    const auto reserve_result{tls_pages.back().ReserveSlot()};
-    ASSERT(reserve_result.has_value());
-
-    return *reserve_result;
+    // We succeeded!
+    tlp_guard.Cancel();
+    *out = tlr;
+    return ResultSuccess;
 }
 
-void KProcess::FreeTLSRegion(VAddr tls_address) {
-    KScopedSchedulerLock lock(kernel);
-    const VAddr aligned_address = Common::AlignDown(tls_address, Core::Memory::PAGE_SIZE);
-    auto iter =
-        std::find_if(tls_pages.begin(), tls_pages.end(), [aligned_address](const auto& page) {
-            return page.GetBaseAddress() == aligned_address;
-        });
+Result KProcess::DeleteThreadLocalRegion(VAddr addr) {
+    KThreadLocalPage* page_to_free = nullptr;
 
-    // Something has gone very wrong if we're freeing a region
-    // with no actual page available.
-    ASSERT(iter != tls_pages.cend());
+    // Release the region.
+    {
+        KScopedSchedulerLock sl{kernel};
 
-    iter->ReleaseSlot(tls_address);
+        // Try to find the page in the partially used list.
+        auto it = partially_used_tlp_tree.find_key(Common::AlignDown(addr, PageSize));
+        if (it == partially_used_tlp_tree.end()) {
+            // If we don't find it, it has to be in the fully used list.
+            it = fully_used_tlp_tree.find_key(Common::AlignDown(addr, PageSize));
+            R_UNLESS(it != fully_used_tlp_tree.end(), ResultInvalidAddress);
+
+            // Release the region.
+            it->Release(addr);
+
+            // Move the page out of the fully used list.
+            KThreadLocalPage* tlp = std::addressof(*it);
+            fully_used_tlp_tree.erase(it);
+            if (tlp->IsAllFree()) {
+                page_to_free = tlp;
+            } else {
+                partially_used_tlp_tree.insert(*tlp);
+            }
+        } else {
+            // Release the region.
+            it->Release(addr);
+
+            // Handle the all-free case.
+            KThreadLocalPage* tlp = std::addressof(*it);
+            if (tlp->IsAllFree()) {
+                partially_used_tlp_tree.erase(it);
+                page_to_free = tlp;
+            }
+        }
+    }
+
+    // If we should free the page it was in, do so.
+    if (page_to_free != nullptr) {
+        page_to_free->Finalize();
+
+        KThreadLocalPage::Free(kernel, page_to_free);
+    }
+
+    return ResultSuccess;
+}
+
+bool KProcess::InsertWatchpoint(Core::System& system, VAddr addr, u64 size,
+                                DebugWatchpointType type) {
+    const auto watch{std::find_if(watchpoints.begin(), watchpoints.end(), [&](const auto& wp) {
+        return wp.type == DebugWatchpointType::None;
+    })};
+
+    if (watch == watchpoints.end()) {
+        return false;
+    }
+
+    watch->start_address = addr;
+    watch->end_address = addr + size;
+    watch->type = type;
+
+    for (VAddr page = Common::AlignDown(addr, PageSize); page < addr + size; page += PageSize) {
+        debug_page_refcounts[page]++;
+        system.Memory().MarkRegionDebug(page, PageSize, true);
+    }
+
+    return true;
+}
+
+bool KProcess::RemoveWatchpoint(Core::System& system, VAddr addr, u64 size,
+                                DebugWatchpointType type) {
+    const auto watch{std::find_if(watchpoints.begin(), watchpoints.end(), [&](const auto& wp) {
+        return wp.start_address == addr && wp.end_address == addr + size && wp.type == type;
+    })};
+
+    if (watch == watchpoints.end()) {
+        return false;
+    }
+
+    watch->start_address = 0;
+    watch->end_address = 0;
+    watch->type = DebugWatchpointType::None;
+
+    for (VAddr page = Common::AlignDown(addr, PageSize); page < addr + size; page += PageSize) {
+        debug_page_refcounts[page]--;
+        if (!debug_page_refcounts[page]) {
+            system.Memory().MarkRegionDebug(page, PageSize, false);
+        }
+    }
+
+    return true;
 }
 
 void KProcess::LoadModule(CodeSet code_set, VAddr base_addr) {
     const auto ReprotectSegment = [&](const CodeSet::Segment& segment,
-                                      KMemoryPermission permission) {
+                                      Svc::MemoryPermission permission) {
         page_table->SetProcessMemoryPermission(segment.addr + base_addr, segment.size, permission);
     };
 
     kernel.System().Memory().WriteBlock(*this, base_addr, code_set.memory.data(),
                                         code_set.memory.size());
 
-    ReprotectSegment(code_set.CodeSegment(), KMemoryPermission::ReadAndExecute);
-    ReprotectSegment(code_set.RODataSegment(), KMemoryPermission::Read);
-    ReprotectSegment(code_set.DataSegment(), KMemoryPermission::ReadAndWrite);
+    ReprotectSegment(code_set.CodeSegment(), Svc::MemoryPermission::ReadExecute);
+    ReprotectSegment(code_set.RODataSegment(), Svc::MemoryPermission::Read);
+    ReprotectSegment(code_set.DataSegment(), Svc::MemoryPermission::ReadWrite);
 }
 
 bool KProcess::IsSignaled() const {
@@ -559,9 +646,10 @@ bool KProcess::IsSignaled() const {
 }
 
 KProcess::KProcess(KernelCore& kernel_)
-    : KAutoObjectWithSlabHeapAndContainer{kernel_},
-      page_table{std::make_unique<KPageTable>(kernel_.System())}, handle_table{kernel_},
-      address_arbiter{kernel_.System()}, condition_var{kernel_.System()}, state_lock{kernel_} {}
+    : KAutoObjectWithSlabHeapAndContainer{kernel_}, page_table{std::make_unique<KPageTable>(
+                                                        kernel_.System())},
+      handle_table{kernel_}, address_arbiter{kernel_.System()}, condition_var{kernel_.System()},
+      state_lock{kernel_}, list_lock{kernel_} {}
 
 KProcess::~KProcess() = default;
 
@@ -575,7 +663,7 @@ void KProcess::ChangeStatus(ProcessStatus new_status) {
     NotifyAvailable();
 }
 
-ResultCode KProcess::AllocateMainThreadStack(std::size_t stack_size) {
+Result KProcess::AllocateMainThreadStack(std::size_t stack_size) {
     ASSERT(stack_size);
 
     // The kernel always ensures that the given stack size is page aligned.
@@ -587,7 +675,7 @@ ResultCode KProcess::AllocateMainThreadStack(std::size_t stack_size) {
     CASCADE_RESULT(main_thread_stack_top,
                    page_table->AllocateAndMapMemory(
                        main_thread_stack_size / PageSize, PageSize, false, start, size / PageSize,
-                       KMemoryState::Stack, KMemoryPermission::ReadAndWrite));
+                       KMemoryState::Stack, KMemoryPermission::UserReadWrite));
 
     main_thread_stack_top += main_thread_stack_size;
 

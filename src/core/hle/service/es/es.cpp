@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/crypto/key_manager.h"
 #include "core/hle/ipc_helpers.h"
@@ -9,8 +8,8 @@
 
 namespace Service::ES {
 
-constexpr ResultCode ERROR_INVALID_ARGUMENT{ErrorModule::ETicket, 2};
-constexpr ResultCode ERROR_INVALID_RIGHTS_ID{ErrorModule::ETicket, 3};
+constexpr Result ERROR_INVALID_ARGUMENT{ErrorModule::ETicket, 2};
+constexpr Result ERROR_INVALID_RIGHTS_ID{ErrorModule::ETicket, 3};
 
 class ETicket final : public ServiceFramework<ETicket> {
 public:

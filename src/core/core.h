@@ -75,18 +75,21 @@ class TimeManager;
 namespace Tegra {
 class DebugContext;
 class GPU;
+namespace Host1x {
+class Host1x;
+} // namespace Host1x
 } // namespace Tegra
 
 namespace VideoCore {
 class RendererBase;
 } // namespace VideoCore
 
+namespace AudioCore {
+class AudioCore;
+} // namespace AudioCore
+
 namespace Core::Timing {
 class CoreTiming;
-}
-
-namespace Core::Hardware {
-class InterruptManager;
 }
 
 namespace Core::HID {
@@ -97,6 +100,7 @@ namespace Core {
 
 class ARM_Interface;
 class CpuManager;
+class Debugger;
 class DeviceMemory;
 class ExclusiveMonitor;
 class SpeedLimiter;
@@ -147,11 +151,8 @@ public:
      */
     [[nodiscard]] SystemResultStatus Pause();
 
-    /**
-     * Step the CPU one instruction
-     * @return Result status, indicating whether or not the operation succeeded.
-     */
-    [[nodiscard]] SystemResultStatus SingleStep();
+    /// Check if the core is currently paused.
+    [[nodiscard]] bool IsPaused() const;
 
     /**
      * Invalidate the CPU instruction caches
@@ -165,8 +166,22 @@ public:
     /// Shutdown the emulated system.
     void Shutdown();
 
-    std::unique_lock<std::mutex> StallCPU();
-    void UnstallCPU();
+    /// Check if the core is shutting down.
+    [[nodiscard]] bool IsShuttingDown() const;
+
+    /// Set the shutting down state.
+    void SetShuttingDown(bool shutting_down);
+
+    /// Forcibly detach the debugger if it is running.
+    void DetachDebugger();
+
+    std::unique_lock<std::mutex> StallProcesses();
+    void UnstallProcesses();
+
+    /**
+     * Initialize the debugger.
+     */
+    void InitializeDebugger();
 
     /**
      * Load an executable application.
@@ -192,9 +207,6 @@ public:
 
     /// Gets a reference to the telemetry session for this emulation session.
     [[nodiscard]] const Core::TelemetrySession& TelemetrySession() const;
-
-    /// Prepare the core emulation for a reschedule
-    void PrepareReschedule();
 
     /// Prepare the core emulation for a reschedule
     void PrepareReschedule(u32 core_index);
@@ -244,11 +256,23 @@ public:
     /// Gets an immutable reference to the GPU interface.
     [[nodiscard]] const Tegra::GPU& GPU() const;
 
+    /// Gets a mutable reference to the Host1x interface
+    [[nodiscard]] Tegra::Host1x::Host1x& Host1x();
+
+    /// Gets an immutable reference to the Host1x interface.
+    [[nodiscard]] const Tegra::Host1x::Host1x& Host1x() const;
+
     /// Gets a mutable reference to the renderer.
     [[nodiscard]] VideoCore::RendererBase& Renderer();
 
     /// Gets an immutable reference to the renderer.
     [[nodiscard]] const VideoCore::RendererBase& Renderer() const;
+
+    /// Gets a mutable reference to the audio interface
+    [[nodiscard]] AudioCore::AudioCore& AudioCore();
+
+    /// Gets an immutable reference to the audio interface.
+    [[nodiscard]] const AudioCore::AudioCore& AudioCore() const;
 
     /// Gets the global scheduler
     [[nodiscard]] Kernel::GlobalSchedulerContext& GlobalSchedulerContext();
@@ -273,12 +297,6 @@ public:
 
     /// Provides a constant reference to the core timing instance.
     [[nodiscard]] const Timing::CoreTiming& CoreTiming() const;
-
-    /// Provides a reference to the interrupt manager instance.
-    [[nodiscard]] Core::Hardware::InterruptManager& InterruptManager();
-
-    /// Provides a constant reference to the interrupt manager instance.
-    [[nodiscard]] const Core::Hardware::InterruptManager& InterruptManager() const;
 
     /// Provides a reference to the kernel instance.
     [[nodiscard]] Kernel::KernelCore& Kernel();
@@ -357,6 +375,9 @@ public:
     [[nodiscard]] Service::Time::TimeManager& GetTimeManager();
     [[nodiscard]] const Service::Time::TimeManager& GetTimeManager() const;
 
+    [[nodiscard]] Core::Debugger& GetDebugger();
+    [[nodiscard]] const Core::Debugger& GetDebugger() const;
+
     void SetExitLock(bool locked);
     [[nodiscard]] bool GetExitLock() const;
 
@@ -377,6 +398,9 @@ public:
 
     /// Tells if system is running on multicore.
     [[nodiscard]] bool IsMulticore() const;
+
+    /// Tells if the system debugger is enabled.
+    [[nodiscard]] bool DebuggerEnabled() const;
 
     /// Type used for the frontend to designate a callback for System to re-launch the application
     /// using a specified program index.

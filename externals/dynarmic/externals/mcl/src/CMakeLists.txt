@@ -1,0 +1,70 @@
+add_library(mcl
+    ../include/mcl/assert.hpp
+    ../include/mcl/bit/bit_count.hpp
+    ../include/mcl/bit/bit_field.hpp
+    ../include/mcl/bit/rotate.hpp
+    ../include/mcl/bit/swap.hpp
+    ../include/mcl/bit_cast.hpp
+    ../include/mcl/bitsizeof.hpp
+    ../include/mcl/concepts/bit_integral.hpp
+    ../include/mcl/concepts/is_any_of.hpp
+    ../include/mcl/concepts/same_as.hpp
+    ../include/mcl/container/intrusive_list.hpp
+    ../include/mcl/hint/assume.hpp
+    ../include/mcl/iterator/reverse.hpp
+    ../include/mcl/macro/anonymous_variable.hpp
+    ../include/mcl/macro/architecture.hpp
+    ../include/mcl/macro/concatenate_tokens.hpp
+    ../include/mcl/mp/metafunction/apply.hpp
+    ../include/mcl/mp/metafunction/bind.hpp
+    ../include/mcl/mp/metafunction/identity.hpp
+    ../include/mcl/mp/metafunction/map.hpp
+    ../include/mcl/mp/metavalue/bit_and.hpp
+    ../include/mcl/mp/metavalue/bit_not.hpp
+    ../include/mcl/mp/metavalue/bit_or.hpp
+    ../include/mcl/mp/metavalue/bit_xor.hpp
+    ../include/mcl/mp/metavalue/conjunction.hpp
+    ../include/mcl/mp/metavalue/disjunction.hpp
+    ../include/mcl/mp/metavalue/lift_value.hpp
+    ../include/mcl/mp/metavalue/logic_and.hpp
+    ../include/mcl/mp/metavalue/logic_if.hpp
+    ../include/mcl/mp/metavalue/logic_not.hpp
+    ../include/mcl/mp/metavalue/logic_or.hpp
+    ../include/mcl/mp/metavalue/product.hpp
+    ../include/mcl/mp/metavalue/sum.hpp
+    ../include/mcl/mp/metavalue/value.hpp
+    ../include/mcl/mp/metavalue/value_cast.hpp
+    ../include/mcl/mp/metavalue/value_equal.hpp
+    ../include/mcl/mp/misc/argument_count.hpp
+    ../include/mcl/mp/typelist/append.hpp
+    ../include/mcl/mp/typelist/cartesian_product.hpp
+    ../include/mcl/mp/typelist/concat.hpp
+    ../include/mcl/mp/typelist/contains.hpp
+    ../include/mcl/mp/typelist/drop.hpp
+    ../include/mcl/mp/typelist/get.hpp
+    ../include/mcl/mp/typelist/head.hpp
+    ../include/mcl/mp/typelist/length.hpp
+    ../include/mcl/mp/typelist/lift_sequence.hpp
+    ../include/mcl/mp/typelist/list.hpp
+    ../include/mcl/mp/typelist/lower_to_tuple.hpp
+    ../include/mcl/mp/typelist/prepend.hpp
+    ../include/mcl/mp/typelist/tail.hpp
+    ../include/mcl/scope_exit.hpp
+    ../include/mcl/stdint.hpp
+    ../include/mcl/type_traits/function_info.hpp
+    ../include/mcl/type_traits/integer_of_size.hpp
+    ../include/mcl/type_traits/is_instance_of_template.hpp
+    assert.cpp
+)
+target_include_directories(mcl
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+target_compile_options(mcl PRIVATE ${MCL_CXX_FLAGS})
+target_link_libraries(mcl PUBLIC $<BUILD_INTERFACE:fmt::fmt>)
+set_property(TARGET mcl PROPERTY POSITION_INDEPENDENT_CODE ON)
+add_library(merry::mcl ALIAS mcl)
+
+include(CreateTargetDirectoryGroups)
+create_target_directory_groups(mcl)

@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <filesystem>
@@ -12,17 +11,11 @@
 
 #include <QAbstractButton>
 #include <QCheckBox>
-#include <QDialogButtonBox>
-#include <QHeaderView>
-#include <QMenu>
 #include <QPushButton>
-#include <QStandardItemModel>
 #include <QString>
 #include <QTimer>
-#include <QTreeView>
 
 #include "common/fs/fs_util.h"
-#include "common/fs/path_util.h"
 #include "core/core.h"
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/patch_manager.h"
@@ -42,10 +35,10 @@
 #include "yuzu/uisettings.h"
 #include "yuzu/util/util.h"
 
-ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id, const std::string& file_name,
+ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id_, const std::string& file_name,
                                    Core::System& system_)
-    : QDialog(parent), ui(std::make_unique<Ui::ConfigurePerGame>()),
-      title_id(title_id), system{system_} {
+    : QDialog(parent),
+      ui(std::make_unique<Ui::ConfigurePerGame>()), title_id{title_id_}, system{system_} {
     const auto file_path = std::filesystem::path(Common::FS::ToU8String(file_name));
     const auto config_file_name = title_id == 0 ? Common::FS::PathToUTF8String(file_path.filename())
                                                 : fmt::format("{:016X}", title_id);
@@ -123,8 +116,8 @@ void ConfigurePerGame::HandleApplyButtonClicked() {
     ApplyConfiguration();
 }
 
-void ConfigurePerGame::LoadFromFile(FileSys::VirtualFile file) {
-    this->file = std::move(file);
+void ConfigurePerGame::LoadFromFile(FileSys::VirtualFile file_) {
+    file = std::move(file_);
     LoadConfiguration();
 }
 

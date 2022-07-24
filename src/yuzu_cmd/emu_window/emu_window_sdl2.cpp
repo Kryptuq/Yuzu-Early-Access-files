@@ -93,7 +93,7 @@ void EmuWindow_SDL2::OnFingerMotion(float x, float y, std::size_t id) {
 }
 
 void EmuWindow_SDL2::OnFingerUp() {
-    input_subsystem->GetTouchScreen()->TouchReleased(0);
+    input_subsystem->GetTouchScreen()->ReleaseAllTouch();
 }
 
 void EmuWindow_SDL2::OnKeyEvent(int key, u8 state) {
@@ -123,14 +123,15 @@ void EmuWindow_SDL2::ShowCursor(bool show_cursor) {
 }
 
 void EmuWindow_SDL2::Fullscreen() {
+    SDL_DisplayMode display_mode;
     switch (Settings::values.fullscreen_mode.GetValue()) {
     case Settings::FullscreenMode::Exclusive:
-        // Set window size to render size before entering fullscreen -- SDL does not resize to
-        // display dimensions in this mode.
-        // TODO: Multiply the window size by resolution_factor (for both docked modes)
-        if (Settings::values.use_docked_mode) {
-            SDL_SetWindowSize(render_window, Layout::ScreenDocked::Width,
-                              Layout::ScreenDocked::Height);
+        // Set window size to render size before entering fullscreen -- SDL2 does not resize window
+        // to display dimensions automatically in this mode.
+        if (SDL_GetDesktopDisplayMode(0, &display_mode) == 0) {
+            SDL_SetWindowSize(render_window, display_mode.w, display_mode.h);
+        } else {
+            LOG_ERROR(Frontend, "SDL_GetDesktopDisplayMode failed: {}", SDL_GetError());
         }
 
         if (SDL_SetWindowFullscreen(render_window, SDL_WINDOW_FULLSCREEN) == 0) {
@@ -161,7 +162,15 @@ void EmuWindow_SDL2::WaitEvent() {
     SDL_Event event;
 
     if (!SDL_WaitEvent(&event)) {
-        LOG_CRITICAL(Frontend, "SDL_WaitEvent failed: {}", SDL_GetError());
+        const char* error = SDL_GetError();
+        if (!error || strcmp(error, "") == 0) {
+            // https://github.com/libsdl-org/SDL/issues/5780
+            // Sometimes SDL will return without actually having hit an error condition;
+            // just ignore it in this case.
+            return;
+        }
+
+        LOG_CRITICAL(Frontend, "SDL_WaitEvent failed: {}", error);
         exit(1);
     }
 

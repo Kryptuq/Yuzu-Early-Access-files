@@ -8,11 +8,11 @@
 #include <algorithm>
 #include <vector>
 
+#include <mcl/iterator/reverse.hpp>
+#include <mcl/stdint.hpp>
 #include <xbyak/xbyak.h>
 
 #include "dynarmic/backend/x64/block_of_code.h"
-#include "dynarmic/common/common_types.h"
-#include "dynarmic/common/iterator_util.h"
 
 namespace Dynarmic::Backend::X64 {
 
@@ -97,7 +97,7 @@ void ABI_PopRegistersAndAdjustStack(BlockOfCode& code, size_t frame_size, const 
         code.add(rsp, u32(frame_info.stack_subtraction));
     }
 
-    for (HostLoc gpr : Common::Reverse(regs)) {
+    for (HostLoc gpr : mcl::iterator::reverse(regs)) {
         if (HostLocIsGPR(gpr)) {
             code.pop(HostLocToReg64(gpr));
         }

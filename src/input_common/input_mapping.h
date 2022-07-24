@@ -1,9 +1,14 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
+
+#include "common/param_package.h"
 #include "common/threadsafe_queue.h"
+
+namespace InputCommon::Polling {
+enum class InputType;
+}
 
 namespace InputCommon {
 class InputEngine;
@@ -20,7 +25,7 @@ public:
     void BeginMapping(Polling::InputType type);
 
     /// Returns an input event with mapping information from the input_queue
-    [[nodiscard]] const Common::ParamPackage GetNextInput();
+    [[nodiscard]] Common::ParamPackage GetNextInput();
 
     /**
      * Registers mapping input data from the driver

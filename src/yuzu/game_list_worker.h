@@ -1,22 +1,17 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <atomic>
-#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 
 #include <QList>
 #include <QObject>
 #include <QRunnable>
 #include <QString>
-#include <QVector>
 
-#include "common/common_types.h"
 #include "yuzu/compatibility_list.h"
 
 namespace Core {
@@ -38,10 +33,10 @@ class GameListWorker : public QObject, public QRunnable {
     Q_OBJECT
 
 public:
-    explicit GameListWorker(std::shared_ptr<FileSys::VfsFilesystem> vfs,
-                            FileSys::ManualContentProvider* provider,
-                            QVector<UISettings::GameDir>& game_dirs,
-                            const CompatibilityList& compatibility_list, Core::System& system_);
+    explicit GameListWorker(std::shared_ptr<FileSys::VfsFilesystem> vfs_,
+                            FileSys::ManualContentProvider* provider_,
+                            QVector<UISettings::GameDir>& game_dirs_,
+                            const CompatibilityList& compatibility_list_, Core::System& system_);
     ~GameListWorker() override;
 
     /// Starts the processing of directory tree information.

@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <chrono>
 #include <cstring>
@@ -299,7 +298,7 @@ void HwOpus::OpenHardwareOpusDecoderEx(Kernel::HLERequestContext& ctx) {
     const auto sample_rate = rp.Pop<u32>();
     const auto channel_count = rp.Pop<u32>();
 
-    LOG_CRITICAL(Audio, "called sample_rate={}, channel_count={}", sample_rate, channel_count);
+    LOG_DEBUG(Audio, "called sample_rate={}, channel_count={}", sample_rate, channel_count);
 
     ASSERT_MSG(sample_rate == 48000 || sample_rate == 24000 || sample_rate == 16000 ||
                    sample_rate == 12000 || sample_rate == 8000,

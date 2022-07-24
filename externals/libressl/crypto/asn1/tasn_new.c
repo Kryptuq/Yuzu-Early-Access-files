@@ -1,4 +1,4 @@
-/* $OpenBSD: tasn_new.c,v 1.18 2019/04/01 15:48:04 jsing Exp $ */
+/* $OpenBSD: tasn_new.c,v 1.21 2022/01/07 12:24:17 tb Exp $ */
 /* Written by Dr Stephen N Henson (steve@openssl.org) for the OpenSSL
  * project 2000.
  */
@@ -64,6 +64,8 @@
 #include <openssl/asn1t.h>
 #include <string.h>
 
+#include "asn1_locl.h"
+
 static int asn1_item_ex_combine_new(ASN1_VALUE **pval, const ASN1_ITEM *it,
     int combine);
 static void asn1_item_clear(ASN1_VALUE **pval, const ASN1_ITEM *it);
@@ -103,10 +105,6 @@ asn1_item_ex_combine_new(ASN1_VALUE **pval, const ASN1_ITEM *it, int combine)
 	if (!combine)
 		*pval = NULL;
 
-#ifdef CRYPTO_MDEBUG
-	if (it->sname)
-		CRYPTO_push_info(it->sname);
-#endif
 
 	switch (it->itype) {
 	case ASN1_ITYPE_EXTERN:
@@ -136,10 +134,6 @@ asn1_item_ex_combine_new(ASN1_VALUE **pval, const ASN1_ITEM *it, int combine)
 			if (!i)
 				goto auxerr;
 			if (i == 2) {
-#ifdef CRYPTO_MDEBUG
-				if (it->sname)
-					CRYPTO_pop_info();
-#endif
 				return 1;
 			}
 		}
@@ -160,10 +154,6 @@ asn1_item_ex_combine_new(ASN1_VALUE **pval, const ASN1_ITEM *it, int combine)
 			if (!i)
 				goto auxerr;
 			if (i == 2) {
-#ifdef CRYPTO_MDEBUG
-				if (it->sname)
-					CRYPTO_pop_info();
-#endif
 				return 1;
 			}
 		}
@@ -183,27 +173,15 @@ asn1_item_ex_combine_new(ASN1_VALUE **pval, const ASN1_ITEM *it, int combine)
 			goto auxerr;
 		break;
 	}
-#ifdef CRYPTO_MDEBUG
-	if (it->sname)
-		CRYPTO_pop_info();
-#endif
 	return 1;
 
-memerr:
+ memerr:
 	ASN1error(ERR_R_MALLOC_FAILURE);
-#ifdef CRYPTO_MDEBUG
-	if (it->sname)
-		CRYPTO_pop_info();
-#endif
 	return 0;
 
-auxerr:
+ auxerr:
 	ASN1error(ASN1_R_AUX_ERROR);
 	ASN1_item_ex_free(pval, it);
-#ifdef CRYPTO_MDEBUG
-	if (it->sname)
-		CRYPTO_pop_info();
-#endif
 	return 0;
 
 }
@@ -257,10 +235,6 @@ ASN1_template_new(ASN1_VALUE **pval, const ASN1_TEMPLATE *tt)
 		*pval = NULL;
 		return 1;
 	}
-#ifdef CRYPTO_MDEBUG
-	if (tt->field_name)
-		CRYPTO_push_info(tt->field_name);
-#endif
 	/* If SET OF or SEQUENCE OF, its a STACK */
 	if (tt->flags & ASN1_TFLG_SK_MASK) {
 		STACK_OF(ASN1_VALUE) *skval;
@@ -276,11 +250,7 @@ ASN1_template_new(ASN1_VALUE **pval, const ASN1_TEMPLATE *tt)
 	}
 	/* Otherwise pass it back to the item routine */
 	ret = asn1_item_ex_combine_new(pval, it, tt->flags & ASN1_TFLG_COMBINE);
-done:
-#ifdef CRYPTO_MDEBUG
-	if (it->sname)
-		CRYPTO_pop_info();
-#endif
+ done:
 	return ret;
 }
 

@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <memory>
@@ -8,7 +7,6 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include <version>
 
 #include <fmt/format.h>
 
@@ -17,7 +15,6 @@
 #include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/ir_emitter.h"
-#include "shader_recompiler/frontend/maxwell/decode.h"
 #include "shader_recompiler/frontend/maxwell/structured_control_flow.h"
 #include "shader_recompiler/frontend/maxwell/translate/translate.h"
 #include "shader_recompiler/host_translate_info.h"
@@ -967,9 +964,9 @@ private:
         demote_endif_node.type = Type::EndIf;
         demote_endif_node.data.end_if.merge = return_block_it->data.block;
 
-        asl.insert(return_block_it, demote_endif_node);
-        asl.insert(return_block_it, demote_node);
-        asl.insert(return_block_it, demote_if_node);
+        const auto next_it_1 = asl.insert(return_block_it, demote_endif_node);
+        const auto next_it_2 = asl.insert(next_it_1, demote_node);
+        asl.insert(next_it_2, demote_if_node);
     }
 
     ObjectPool<Statement>& stmt_pool;
@@ -978,13 +975,7 @@ private:
     Environment& env;
     IR::AbstractSyntaxList& syntax_list;
     bool uses_demote_to_helper{};
-
-// TODO: C++20 Remove this when all compilers support constexpr std::vector
-#if __cpp_lib_constexpr_vector >= 201907
-    static constexpr Flow::Block dummy_flow_block;
-#else
     const Flow::Block dummy_flow_block;
-#endif
 };
 } // Anonymous namespace
 

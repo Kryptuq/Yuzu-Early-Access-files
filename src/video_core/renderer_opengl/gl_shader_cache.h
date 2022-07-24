@@ -1,21 +1,15 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
-#include <array>
 #include <filesystem>
 #include <stop_token>
 #include <unordered_map>
 
-#include <glad/glad.h>
-
 #include "common/common_types.h"
 #include "common/thread_worker.h"
-#include "shader_recompiler/frontend/ir/value.h"
 #include "shader_recompiler/host_translate_info.h"
-#include "shader_recompiler/object_pool.h"
 #include "shader_recompiler/profile.h"
 #include "video_core/renderer_opengl/gl_compute_pipeline.h"
 #include "video_core/renderer_opengl/gl_graphics_pipeline.h"
@@ -36,12 +30,9 @@ using ShaderWorker = Common::StatefulThreadWorker<ShaderContext::Context>;
 class ShaderCache : public VideoCommon::ShaderCache {
 public:
     explicit ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindow& emu_window_,
-                         Tegra::Engines::Maxwell3D& maxwell3d_,
-                         Tegra::Engines::KeplerCompute& kepler_compute_,
-                         Tegra::MemoryManager& gpu_memory_, const Device& device_,
-                         TextureCache& texture_cache_, BufferCache& buffer_cache_,
-                         ProgramManager& program_manager_, StateTracker& state_tracker_,
-                         VideoCore::ShaderNotify& shader_notify_);
+                         const Device& device_, TextureCache& texture_cache_,
+                         BufferCache& buffer_cache_, ProgramManager& program_manager_,
+                         StateTracker& state_tracker_, VideoCore::ShaderNotify& shader_notify_);
     ~ShaderCache();
 
     void LoadDiskResources(u64 title_id, std::stop_token stop_loading,

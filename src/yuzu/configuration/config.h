@@ -47,7 +47,15 @@ public:
         default_mouse_buttons;
     static const std::array<int, Settings::NativeKeyboard::NumKeyboardKeys> default_keyboard_keys;
     static const std::array<int, Settings::NativeKeyboard::NumKeyboardMods> default_keyboard_mods;
-    static const std::array<UISettings::Shortcut, 21> default_hotkeys;
+    static const std::array<UISettings::Shortcut, 22> default_hotkeys;
+
+    static constexpr UISettings::Theme default_theme{
+#ifdef _WIN32
+        UISettings::Theme::DarkColorful
+#else
+        UISettings::Theme::DefaultColorful
+#endif
+    };
 
 private:
     void Initialize(const std::string& config_name);
@@ -151,8 +159,8 @@ private:
      *
      * @param The setting
      */
-    template <typename Type>
-    void ReadGlobalSetting(Settings::Setting<Type>& setting);
+    template <typename Type, bool ranged>
+    void ReadGlobalSetting(Settings::SwitchableSetting<Type, ranged>& setting);
 
     /**
      * Sets a value to the qt_config using the setting's label and default value. If the config is a
@@ -160,8 +168,8 @@ private:
      *
      * @param The setting
      */
-    template <typename Type>
-    void WriteGlobalSetting(const Settings::Setting<Type>& setting);
+    template <typename Type, bool ranged>
+    void WriteGlobalSetting(const Settings::SwitchableSetting<Type, ranged>& setting);
 
     /**
      * Reads a value from the qt_config using the setting's label and default value and applies the
@@ -169,15 +177,15 @@ private:
      *
      * @param The setting
      */
-    template <typename Type>
-    void ReadBasicSetting(Settings::BasicSetting<Type>& setting);
+    template <typename Type, bool ranged>
+    void ReadBasicSetting(Settings::Setting<Type, ranged>& setting);
 
     /** Sets a value from the setting in the qt_config using the setting's label and default value.
      *
      * @param The setting
      */
-    template <typename Type>
-    void WriteBasicSetting(const Settings::BasicSetting<Type>& setting);
+    template <typename Type, bool ranged>
+    void WriteBasicSetting(const Settings::Setting<Type, ranged>& setting);
 
     ConfigType type;
     std::unique_ptr<QSettings> qt_config;

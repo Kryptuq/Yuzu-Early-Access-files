@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <atomic>
 #include <cstdlib>
@@ -44,7 +43,15 @@ class TestControl1 {
 public:
     TestControl1() = default;
 
-    void DoWork();
+    void DoWork() {
+        const u32 id = thread_ids.Get();
+        u32 value = items[id];
+        for (u32 i = 0; i < id; i++) {
+            value++;
+        }
+        results[id] = value;
+        Fiber::YieldTo(work_fibers[id], *thread_fibers[id]);
+    }
 
     void ExecuteThread(u32 id);
 
@@ -55,33 +62,14 @@ public:
     std::vector<u32> results;
 };
 
-static void WorkControl1(void* control) {
-    auto* test_control = static_cast<TestControl1*>(control);
-    test_control->DoWork();
-}
-
-void TestControl1::DoWork() {
-    const u32 id = thread_ids.Get();
-    u32 value = items[id];
-    for (u32 i = 0; i < id; i++) {
-        value++;
-    }
-    results[id] = value;
-    Fiber::YieldTo(work_fibers[id], *thread_fibers[id]);
-}
-
 void TestControl1::ExecuteThread(u32 id) {
     thread_ids.Register(id);
     auto thread_fiber = Fiber::ThreadToFiber();
     thread_fibers[id] = thread_fiber;
-    work_fibers[id] = std::make_shared<Fiber>(std::function<void(void*)>{WorkControl1}, this);
+    work_fibers[id] = std::make_shared<Fiber>([this] { DoWork(); });
     items[id] = rand() % 256;
     Fiber::YieldTo(thread_fibers[id], *work_fibers[id]);
     thread_fibers[id]->Exit();
-}
-
-static void ThreadStart1(u32 id, TestControl1& test_control) {
-    test_control.ExecuteThread(id);
 }
 
 /** This test checks for fiber setup configuration and validates that fibers are
@@ -96,7 +84,7 @@ TEST_CASE("Fibers::Setup", "[common]") {
     test_control.results.resize(num_threads, 0);
     std::vector<std::thread> threads;
     for (u32 i = 0; i < num_threads; i++) {
-        threads.emplace_back(ThreadStart1, i, std::ref(test_control));
+        threads.emplace_back([&test_control, i] { test_control.ExecuteThread(i); });
     }
     for (u32 i = 0; i < num_threads; i++) {
         threads[i].join();
@@ -168,21 +156,6 @@ public:
     std::shared_ptr<Common::Fiber> fiber3;
 };
 
-static void WorkControl2_1(void* control) {
-    auto* test_control = static_cast<TestControl2*>(control);
-    test_control->DoWork1();
-}
-
-static void WorkControl2_2(void* control) {
-    auto* test_control = static_cast<TestControl2*>(control);
-    test_control->DoWork2();
-}
-
-static void WorkControl2_3(void* control) {
-    auto* test_control = static_cast<TestControl2*>(control);
-    test_control->DoWork3();
-}
-
 void TestControl2::ExecuteThread(u32 id) {
     thread_ids.Register(id);
     auto thread_fiber = Fiber::ThreadToFiber();
@@ -194,18 +167,6 @@ void TestControl2::Exit() {
     thread_fibers[id]->Exit();
 }
 
-static void ThreadStart2_1(u32 id, TestControl2& test_control) {
-    test_control.ExecuteThread(id);
-    test_control.CallFiber1();
-    test_control.Exit();
-}
-
-static void ThreadStart2_2(u32 id, TestControl2& test_control) {
-    test_control.ExecuteThread(id);
-    test_control.CallFiber2();
-    test_control.Exit();
-}
-
 /** This test checks for fiber thread exchange configuration and validates that fibers are
  *  that a fiber has been successfully transferred from one thread to another and that the TLS
  *  region of the thread is kept while changing fibers.
@@ -213,14 +174,19 @@ static void ThreadStart2_2(u32 id, TestControl2& test_control) {
 TEST_CASE("Fibers::InterExchange", "[common]") {
     TestControl2 test_control{};
     test_control.thread_fibers.resize(2);
-    test_control.fiber1 =
-        std::make_shared<Fiber>(std::function<void(void*)>{WorkControl2_1}, &test_control);
-    test_control.fiber2 =
-        std::make_shared<Fiber>(std::function<void(void*)>{WorkControl2_2}, &test_control);
-    test_control.fiber3 =
-        std::make_shared<Fiber>(std::function<void(void*)>{WorkControl2_3}, &test_control);
-    std::thread thread1(ThreadStart2_1, 0, std::ref(test_control));
-    std::thread thread2(ThreadStart2_2, 1, std::ref(test_control));
+    test_control.fiber1 = std::make_shared<Fiber>([&test_control] { test_control.DoWork1(); });
+    test_control.fiber2 = std::make_shared<Fiber>([&test_control] { test_control.DoWork2(); });
+    test_control.fiber3 = std::make_shared<Fiber>([&test_control] { test_control.DoWork3(); });
+    std::thread thread1{[&test_control] {
+        test_control.ExecuteThread(0);
+        test_control.CallFiber1();
+        test_control.Exit();
+    }};
+    std::thread thread2{[&test_control] {
+        test_control.ExecuteThread(1);
+        test_control.CallFiber2();
+        test_control.Exit();
+    }};
     thread1.join();
     thread2.join();
     REQUIRE(test_control.assert1);
@@ -271,16 +237,6 @@ public:
     std::shared_ptr<Common::Fiber> fiber2;
 };
 
-static void WorkControl3_1(void* control) {
-    auto* test_control = static_cast<TestControl3*>(control);
-    test_control->DoWork1();
-}
-
-static void WorkControl3_2(void* control) {
-    auto* test_control = static_cast<TestControl3*>(control);
-    test_control->DoWork2();
-}
-
 void TestControl3::ExecuteThread(u32 id) {
     thread_ids.Register(id);
     auto thread_fiber = Fiber::ThreadToFiber();
@@ -292,12 +248,6 @@ void TestControl3::Exit() {
     thread_fibers[id]->Exit();
 }
 
-static void ThreadStart3(u32 id, TestControl3& test_control) {
-    test_control.ExecuteThread(id);
-    test_control.CallFiber1();
-    test_control.Exit();
-}
-
 /** This test checks for one two threads racing for starting the same fiber.
  *  It checks execution occurred in an ordered manner and by no time there were
  *  two contexts at the same time.
@@ -305,12 +255,15 @@ static void ThreadStart3(u32 id, TestControl3& test_control) {
 TEST_CASE("Fibers::StartRace", "[common]") {
     TestControl3 test_control{};
     test_control.thread_fibers.resize(2);
-    test_control.fiber1 =
-        std::make_shared<Fiber>(std::function<void(void*)>{WorkControl3_1}, &test_control);
-    test_control.fiber2 =
-        std::make_shared<Fiber>(std::function<void(void*)>{WorkControl3_2}, &test_control);
-    std::thread thread1(ThreadStart3, 0, std::ref(test_control));
-    std::thread thread2(ThreadStart3, 1, std::ref(test_control));
+    test_control.fiber1 = std::make_shared<Fiber>([&test_control] { test_control.DoWork1(); });
+    test_control.fiber2 = std::make_shared<Fiber>([&test_control] { test_control.DoWork2(); });
+    const auto race_function{[&test_control](u32 id) {
+        test_control.ExecuteThread(id);
+        test_control.CallFiber1();
+        test_control.Exit();
+    }};
+    std::thread thread1([&] { race_function(0); });
+    std::thread thread2([&] { race_function(1); });
     thread1.join();
     thread2.join();
     REQUIRE(test_control.value1 == 1);
@@ -320,12 +273,10 @@ TEST_CASE("Fibers::StartRace", "[common]") {
 
 class TestControl4;
 
-static void WorkControl4(void* control);
-
 class TestControl4 {
 public:
     TestControl4() {
-        fiber1 = std::make_shared<Fiber>(std::function<void(void*)>{WorkControl4}, this);
+        fiber1 = std::make_shared<Fiber>([this] { DoWork(); });
         goal_reached = false;
         rewinded = false;
     }
@@ -337,7 +288,7 @@ public:
     }
 
     void DoWork() {
-        fiber1->SetRewindPoint(std::function<void(void*)>{WorkControl4}, this);
+        fiber1->SetRewindPoint([this] { DoWork(); });
         if (rewinded) {
             goal_reached = true;
             Fiber::YieldTo(fiber1, *thread_fiber);
@@ -351,11 +302,6 @@ public:
     bool goal_reached;
     bool rewinded;
 };
-
-static void WorkControl4(void* control) {
-    auto* test_control = static_cast<TestControl4*>(control);
-    test_control->DoWork();
-}
 
 TEST_CASE("Fibers::Rewind", "[common]") {
     TestControl4 test_control{};

@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <memory>
 #include <optional>
@@ -261,7 +260,8 @@ std::unique_ptr<AppLoader> GetLoader(Core::System& system, FileSys::VirtualFile 
 
     // Special case: 00 is either a NCA or NAX.
     if (type != filename_type && !(file->GetName() == "00" && type == FileType::NAX)) {
-        LOG_WARNING(Loader, "File {} has a different type than its extension.", file->GetName());
+        LOG_WARNING(Loader, "File {} has a different type ({}) than its extension.",
+                    file->GetName(), GetFileTypeString(type));
         if (FileType::Unknown == type) {
             type = filename_type;
         }

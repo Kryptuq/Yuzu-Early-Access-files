@@ -1,4 +1,4 @@
-/* $OpenBSD: dh_ameth.c,v 1.18 2020/01/04 13:57:43 inoguchi Exp $ */
+/* $OpenBSD: dh_ameth.c,v 1.23 2022/01/20 11:00:34 inoguchi Exp $ */
 /* Written by Dr Stephen N Henson (steve@openssl.org) for the OpenSSL
  * project 2006.
  */
@@ -10,7 +10,7 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -65,6 +65,8 @@
 #include <openssl/x509.h>
 
 #include "asn1_locl.h"
+#include "dh_local.h"
+#include "evp_locl.h"
 
 static void
 int_dh_free(EVP_PKEY *pkey)
@@ -93,7 +95,7 @@ dh_pub_decode(EVP_PKEY *pkey, X509_PUBKEY *pubkey)
 		goto err;
 	}
 
-	pstr = pval;	
+	pstr = pval;
 	pm = pstr->data;
 	pmlen = pstr->length;
 
@@ -178,7 +180,7 @@ err:
  * that the AlgorithmIdentifier contains the paramaters, the private key
  * is explcitly included and the pubkey must be recalculated.
  */
-	
+
 static int
 dh_priv_decode(EVP_PKEY *pkey, const PKCS8_PRIV_KEY_INFO *p8)
 {
@@ -202,7 +204,7 @@ dh_priv_decode(EVP_PKEY *pkey, const PKCS8_PRIV_KEY_INFO *p8)
 	if (!(privkey=d2i_ASN1_INTEGER(NULL, &p, pklen)))
 		goto decerr;
 
-	pstr = pval;	
+	pstr = pval;
 	pm = pstr->data;
 	pmlen = pstr->length;
 	if (!(dh = d2i_DHparams(NULL, &pm, pmlen)))
@@ -351,7 +353,8 @@ do_dh_print(BIO *bp, const DH *x, int indent, ASN1_PCTX *ctx, int ptype)
 		goto err;
 	}
 
-	BIO_indent(bp, indent, 128);
+	if (!BIO_indent(bp, indent, 128))
+		goto err;
 	if (BIO_printf(bp, "%s: (%d bit)\n", ktype, BN_num_bits(x->p)) <= 0)
 		goto err;
 	indent += 4;
@@ -366,7 +369,8 @@ do_dh_print(BIO *bp, const DH *x, int indent, ASN1_PCTX *ctx, int ptype)
 	if (!ASN1_bn_print(bp, "generator:", x->g, m, indent))
 		goto err;
 	if (x->length != 0) {
-		BIO_indent(bp, indent, 128);
+		if (!BIO_indent(bp, indent, 128))
+			goto err;
 		if (BIO_printf(bp, "recommended-private-length: %d bits\n",
 		    (int)x->length) <= 0)
 			goto err;
@@ -464,6 +468,32 @@ DHparams_print(BIO *bp, const DH *x)
 	return do_dh_print(bp, x, 4, NULL, 0);
 }
 
+static int
+dh_pkey_public_check(const EVP_PKEY *pkey)
+{
+	DH *dh = pkey->pkey.dh;
+
+	if (dh->pub_key == NULL) {
+		DHerror(DH_R_MISSING_PUBKEY);
+		return 0;
+	}
+
+	return DH_check_pub_key_ex(dh, dh->pub_key);
+}
+
+static int
+dh_pkey_param_check(const EVP_PKEY *pkey)
+{
+	DH *dh = pkey->pkey.dh;
+
+	/*
+	 * It would have made more sense to support EVP_PKEY_check() for DH
+	 * keys and call DH_check_ex() there and keeping this as a wrapper
+	 * for DH_param_check_ex(). We follow OpenSSL's choice.
+	 */
+	return DH_check_ex(dh);
+}
+
 const EVP_PKEY_ASN1_METHOD dh_asn1_meth = {
 	.pkey_id = EVP_PKEY_DH,
 	.pkey_base_id = EVP_PKEY_DH,
@@ -491,4 +521,8 @@ const EVP_PKEY_ASN1_METHOD dh_asn1_meth = {
 	.param_print = dh_param_print,
 
 	.pkey_free = int_dh_free,
+
+	.pkey_check = NULL,
+	.pkey_public_check = dh_pkey_public_check,
+	.pkey_param_check = dh_pkey_param_check,
 };

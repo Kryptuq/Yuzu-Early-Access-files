@@ -6,18 +6,21 @@
 #pragma once
 
 #include <array>
+#include <functional>
+#include <memory>
 #include <optional>
 #include <string>
 #include <type_traits>
 #include <vector>
 
+#include <mcl/bitsizeof.hpp>
 #include <tsl/robin_map.h>
 #include <tsl/robin_set.h>
+#include <xbyak/xbyak.h>
 #include <xbyak/xbyak_util.h>
 
 #include "dynarmic/backend/x64/exception_handler.h"
 #include "dynarmic/backend/x64/reg_alloc.h"
-#include "dynarmic/common/bit_util.h"
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/ir/location_descriptor.h"
 #include "dynarmic/ir/terminal.h"
@@ -41,13 +44,14 @@ using A64FullVectorWidth = std::integral_constant<size_t, 128>;
 // relative to the size of a vector register. e.g. T = u32 would result
 // in a std::array<u32, 4>.
 template<typename T>
-using VectorArray = std::array<T, A64FullVectorWidth::value / Common::BitSize<T>()>;
+using VectorArray = std::array<T, A64FullVectorWidth::value / mcl::bitsizeof<T>>;
 
 template<typename T>
-using HalfVectorArray = std::array<T, A64FullVectorWidth::value / Common::BitSize<T>() / 2>;
+using HalfVectorArray = std::array<T, A64FullVectorWidth::value / mcl::bitsizeof<T> / 2>;
 
 struct EmitContext {
     EmitContext(RegAlloc& reg_alloc, IR::Block& block);
+    virtual ~EmitContext();
 
     size_t GetInstOffset(IR::Inst* inst) const;
     void EraseInstruction(IR::Inst* inst);
@@ -58,7 +62,15 @@ struct EmitContext {
 
     RegAlloc& reg_alloc;
     IR::Block& block;
+
+    std::vector<std::function<void()>> deferred_emits;
 };
+
+using SharedLabel = std::shared_ptr<Xbyak::Label>;
+
+inline SharedLabel GenSharedLabel() {
+    return std::make_shared<Xbyak::Label>();
+}
 
 class EmitX64 {
 public:
@@ -93,7 +105,7 @@ protected:
     virtual std::string LocationDescriptorToFriendlyName(const IR::LocationDescriptor&) const = 0;
     void EmitAddCycles(size_t cycles);
     Xbyak::Label EmitCond(IR::Cond cond);
-    BlockDescriptor RegisterBlock(const IR::LocationDescriptor& location_descriptor, CodePtr entrypoint, CodePtr entrypoint_far, size_t size);
+    BlockDescriptor RegisterBlock(const IR::LocationDescriptor& location_descriptor, CodePtr entrypoint, size_t size);
     void PushRSBHelper(Xbyak::Reg64 loc_desc_reg, Xbyak::Reg64 index_reg, IR::LocationDescriptor target);
 
     // Terminal instruction emitters
@@ -111,12 +123,14 @@ protected:
     // Patching
     struct PatchInformation {
         std::vector<CodePtr> jg;
+        std::vector<CodePtr> jz;
         std::vector<CodePtr> jmp;
         std::vector<CodePtr> mov_rcx;
     };
     void Patch(const IR::LocationDescriptor& target_desc, CodePtr target_code_ptr);
     virtual void Unpatch(const IR::LocationDescriptor& target_desc);
     virtual void EmitPatchJg(const IR::LocationDescriptor& target_desc, CodePtr target_code_ptr = nullptr) = 0;
+    virtual void EmitPatchJz(const IR::LocationDescriptor& target_desc, CodePtr target_code_ptr = nullptr) = 0;
     virtual void EmitPatchJmp(const IR::LocationDescriptor& target_desc, CodePtr target_code_ptr = nullptr) = 0;
     virtual void EmitPatchMovRcx(CodePtr target_code_ptr = nullptr) = 0;
 

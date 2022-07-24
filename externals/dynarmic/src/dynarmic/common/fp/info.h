@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/bit/bit_count.hpp>
+#include <mcl/stdint.hpp>
 
 namespace Dynarmic::FP {
 
@@ -124,7 +124,7 @@ constexpr FPT FPValue() {
     }
 
     constexpr int point_position = static_cast<int>(FPInfo<FPT>::explicit_mantissa_width);
-    constexpr int highest_bit = Common::HighestSetBit(value);
+    constexpr int highest_bit = mcl::bit::highest_set_bit(value);
     constexpr int offset = point_position - highest_bit;
     constexpr int normalized_exponent = exponent - offset + point_position;
     static_assert(offset >= 0);

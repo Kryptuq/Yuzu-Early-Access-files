@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <unordered_map>
 
@@ -36,7 +35,7 @@ VkAttachmentDescription AttachmentDescription(const Device& device, PixelFormat 
 RenderPassCache::RenderPassCache(const Device& device_) : device{&device_} {}
 
 VkRenderPass RenderPassCache::Get(const RenderPassKey& key) {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
     const auto [pair, is_new] = cache.try_emplace(key);
     if (!is_new) {
         return *pair->second;

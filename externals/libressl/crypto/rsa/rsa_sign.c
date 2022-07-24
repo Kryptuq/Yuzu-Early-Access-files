@@ -1,4 +1,4 @@
-/* $OpenBSD: rsa_sign.c,v 1.31 2018/09/05 00:55:33 djm Exp $ */
+/* $OpenBSD: rsa_sign.c,v 1.34 2022/01/07 11:13:55 tb Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -65,7 +65,9 @@
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
 
+#include "asn1_locl.h"
 #include "rsa_locl.h"
+#include "x509_lcl.h"
 
 /* Size of an SSL signature: MD5+SHA1 */
 #define SSL_SIG_LENGTH	36
@@ -108,7 +110,7 @@ encode_pkcs1(unsigned char **out, int *out_len, int type,
 	sig.algor->parameter = &parameter;
 
 	sig.digest = &digest;
-	sig.digest->data = (unsigned char*)m; /* TMP UGLY CAST */
+	sig.digest->data = (unsigned char *)m; /* TMP UGLY CAST */
 	sig.digest->length = m_len;
 
 	if ((len = i2d_X509_SIG(&sig, &der)) < 0)
@@ -194,7 +196,7 @@ int_rsa_verify(int type, const unsigned char *m, unsigned int m_len,
 	if ((decrypt_len = RSA_public_decrypt((int)siglen, sigbuf, decrypt_buf,
 	    rsa, RSA_PKCS1_PADDING)) <= 0)
 		goto err;
-	   
+
 	if (type == NID_md5_sha1) {
 		/*
 		 * NID_md5_sha1 corresponds to the MD5/SHA1 combination in
@@ -229,7 +231,7 @@ int_rsa_verify(int type, const unsigned char *m, unsigned int m_len,
 		if (rm != NULL) {
 			const EVP_MD *md;
 
-		       	if ((md = EVP_get_digestbynid(type)) == NULL) {
+			if ((md = EVP_get_digestbynid(type)) == NULL) {
 				RSAerror(RSA_R_UNKNOWN_ALGORITHM_TYPE);
 				goto err;
 			}

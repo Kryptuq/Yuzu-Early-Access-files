@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <array>
 
@@ -85,7 +84,7 @@ u64 KAddressSpaceInfo::GetAddressSpaceStart(std::size_t width, Type type) {
         ASSERT(IsAllowedIndexForAddress(AddressSpaceIndices39Bit[index]));
         return AddressSpaceInfos[AddressSpaceIndices39Bit[index]].address;
     }
-    UNREACHABLE();
+    ASSERT(false);
     return 0;
 }
 
@@ -102,7 +101,7 @@ std::size_t KAddressSpaceInfo::GetAddressSpaceSize(std::size_t width, Type type)
         ASSERT(IsAllowed39BitType(type));
         return AddressSpaceInfos[AddressSpaceIndices39Bit[index]].size;
     }
-    UNREACHABLE();
+    ASSERT(false);
     return 0;
 }
 

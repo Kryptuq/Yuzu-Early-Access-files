@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/logging/log.h"
 #include "core/core.h"
@@ -44,8 +43,7 @@ private:
         }
 
         s64 posix_time{};
-        if (const ResultCode result{clock_core.GetCurrentTime(system, posix_time)};
-            result.IsError()) {
+        if (const Result result{clock_core.GetCurrentTime(system, posix_time)}; result.IsError()) {
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(result);
             return;
@@ -66,7 +64,7 @@ private:
         }
 
         Clock::SystemClockContext system_clock_context{};
-        if (const ResultCode result{clock_core.GetClockContext(system, system_clock_context)};
+        if (const Result result{clock_core.GetClockContext(system, system_clock_context)};
             result.IsError()) {
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(result);
@@ -117,7 +115,7 @@ private:
     Clock::SteadyClockCore& clock_core;
 };
 
-ResultCode Module::Interface::GetClockSnapshotFromSystemClockContextInternal(
+Result Module::Interface::GetClockSnapshotFromSystemClockContextInternal(
     Kernel::KThread* thread, Clock::SystemClockContext user_context,
     Clock::SystemClockContext network_context, Clock::TimeType type,
     Clock::ClockSnapshot& clock_snapshot) {
@@ -130,7 +128,7 @@ ResultCode Module::Interface::GetClockSnapshotFromSystemClockContextInternal(
         time_manager.GetStandardUserSystemClockCore().IsAutomaticCorrectionEnabled();
     clock_snapshot.type = type;
 
-    if (const ResultCode result{
+    if (const Result result{
             time_manager.GetTimeZoneContentManager().GetTimeZoneManager().GetDeviceLocationName(
                 clock_snapshot.location_name)};
         result != ResultSuccess) {
@@ -139,7 +137,7 @@ ResultCode Module::Interface::GetClockSnapshotFromSystemClockContextInternal(
 
     clock_snapshot.user_context = user_context;
 
-    if (const ResultCode result{Clock::ClockSnapshot::GetCurrentTime(
+    if (const Result result{Clock::ClockSnapshot::GetCurrentTime(
             clock_snapshot.user_time, clock_snapshot.steady_clock_time_point,
             clock_snapshot.user_context)};
         result != ResultSuccess) {
@@ -147,7 +145,7 @@ ResultCode Module::Interface::GetClockSnapshotFromSystemClockContextInternal(
     }
 
     TimeZone::CalendarInfo userCalendarInfo{};
-    if (const ResultCode result{
+    if (const Result result{
             time_manager.GetTimeZoneContentManager().GetTimeZoneManager().ToCalendarTimeWithMyRules(
                 clock_snapshot.user_time, userCalendarInfo)};
         result != ResultSuccess) {
@@ -166,7 +164,7 @@ ResultCode Module::Interface::GetClockSnapshotFromSystemClockContextInternal(
     }
 
     TimeZone::CalendarInfo networkCalendarInfo{};
-    if (const ResultCode result{
+    if (const Result result{
             time_manager.GetTimeZoneContentManager().GetTimeZoneManager().ToCalendarTimeWithMyRules(
                 clock_snapshot.network_time, networkCalendarInfo)};
         result != ResultSuccess) {
@@ -263,7 +261,7 @@ void Module::Interface::GetClockSnapshot(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called, type={}", type);
 
     Clock::SystemClockContext user_context{};
-    if (const ResultCode result{
+    if (const Result result{
             system.GetTimeManager().GetStandardUserSystemClockCore().GetClockContext(system,
                                                                                      user_context)};
         result.IsError()) {
@@ -273,7 +271,7 @@ void Module::Interface::GetClockSnapshot(Kernel::HLERequestContext& ctx) {
     }
 
     Clock::SystemClockContext network_context{};
-    if (const ResultCode result{
+    if (const Result result{
             system.GetTimeManager().GetStandardNetworkSystemClockCore().GetClockContext(
                 system, network_context)};
         result.IsError()) {
@@ -283,7 +281,7 @@ void Module::Interface::GetClockSnapshot(Kernel::HLERequestContext& ctx) {
     }
 
     Clock::ClockSnapshot clock_snapshot{};
-    if (const ResultCode result{GetClockSnapshotFromSystemClockContextInternal(
+    if (const Result result{GetClockSnapshotFromSystemClockContextInternal(
             &ctx.GetThread(), user_context, network_context, type, clock_snapshot)};
         result.IsError()) {
         IPC::ResponseBuilder rb{ctx, 2};
@@ -309,7 +307,7 @@ void Module::Interface::GetClockSnapshotFromSystemClockContext(Kernel::HLEReques
     LOG_DEBUG(Service_Time, "called, type={}", type);
 
     Clock::ClockSnapshot clock_snapshot{};
-    if (const ResultCode result{GetClockSnapshotFromSystemClockContextInternal(
+    if (const Result result{GetClockSnapshotFromSystemClockContextInternal(
             &ctx.GetThread(), user_context, network_context, type, clock_snapshot)};
         result != ResultSuccess) {
         IPC::ResponseBuilder rb{ctx, 2};
@@ -366,7 +364,7 @@ void Module::Interface::CalculateSpanBetween(Kernel::HLERequestContext& ctx) {
     Clock::TimeSpanType time_span_type{};
     s64 span{};
 
-    if (const ResultCode result{snapshot_a.steady_clock_time_point.GetSpanBetween(
+    if (const Result result{snapshot_a.steady_clock_time_point.GetSpanBetween(
             snapshot_b.steady_clock_time_point, span)};
         result != ResultSuccess) {
         if (snapshot_a.network_time && snapshot_b.network_time) {

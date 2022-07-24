@@ -1,3 +1,9 @@
+# Always build externals as static libraries, even when dynarmic is built as shared
+if (BUILD_SHARED_LIBS)
+    set(BUILD_SHARED_LIBS OFF)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
+
 # For libraries that already come with a CMakeLists file,
 # simply add the directory to that file as a subdirectory
 # to have CMake automatically recognize them.
@@ -16,21 +22,24 @@ if (NOT TARGET fmt AND NOT TARGET fmt::fmt)
     add_subdirectory(fmt)
 endif()
 
-# mp
+# mcl
 
-add_library(mp INTERFACE)
-target_include_directories(mp INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mp/include>)
+if (NOT TARGET merry::mcl)
+    add_subdirectory(mcl)
+endif()
+
+# oaknut
+
+if (NOT TARGET merry::oaknut)
+    if (ARCHITECTURE STREQUAL "arm64")
+        add_subdirectory(oaknut)
+    endif()
+endif()
 
 # robin-map
 
 if (NOT TARGET tsl::robin_map)
     add_subdirectory(robin-map)
-endif()
-
-# vixl
-
-if (ARCHITECTURE STREQUAL "arm64")
-    add_subdirectory(vixl EXCLUDE_FROM_ALL)
 endif()
 
 # xbyak

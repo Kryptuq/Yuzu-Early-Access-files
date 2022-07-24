@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/hle/service/glue/errors.h"
 #include "core/hle/service/glue/glue_manager.h"
@@ -42,8 +41,8 @@ ResultVal<std::vector<u8>> ARPManager::GetControlProperty(u64 title_id) const {
     return iter->second.control;
 }
 
-ResultCode ARPManager::Register(u64 title_id, ApplicationLaunchProperty launch,
-                                std::vector<u8> control) {
+Result ARPManager::Register(u64 title_id, ApplicationLaunchProperty launch,
+                            std::vector<u8> control) {
     if (title_id == 0) {
         return ERR_INVALID_PROCESS_ID;
     }
@@ -57,7 +56,7 @@ ResultCode ARPManager::Register(u64 title_id, ApplicationLaunchProperty launch,
     return ResultSuccess;
 }
 
-ResultCode ARPManager::Unregister(u64 title_id) {
+Result ARPManager::Unregister(u64 title_id) {
     if (title_id == 0) {
         return ERR_INVALID_PROCESS_ID;
     }

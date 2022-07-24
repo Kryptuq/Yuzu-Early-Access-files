@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdlib>
-#include <cstring>
 #include <memory>
 
 #include <glad/glad.h>
@@ -15,11 +14,9 @@
 #include "common/microprofile.h"
 #include "common/settings.h"
 #include "common/telemetry.h"
-#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/frontend/emu_window.h"
 #include "core/memory.h"
-#include "core/perf_stats.h"
 #include "core/telemetry_session.h"
 #include "video_core/host_shaders/fxaa_frag.h"
 #include "video_core/host_shaders/fxaa_vert.h"
@@ -82,7 +79,7 @@ const char* GetSource(GLenum source) {
     case GL_DEBUG_SOURCE_OTHER:
         return "OTHER";
     default:
-        UNREACHABLE();
+        ASSERT(false);
         return "Unknown source";
     }
 }
@@ -104,7 +101,7 @@ const char* GetType(GLenum type) {
     case GL_DEBUG_TYPE_MARKER:
         return "MARKER";
     default:
-        UNREACHABLE();
+        ASSERT(false);
         return "Unknown type";
     }
 }
@@ -135,7 +132,7 @@ RendererOpenGL::RendererOpenGL(Core::TelemetrySession& telemetry_session_,
                                Core::Memory::Memory& cpu_memory_, Tegra::GPU& gpu_,
                                std::unique_ptr<Core::Frontend::GraphicsContext> context_)
     : RendererBase{emu_window_, std::move(context_)}, telemetry_session{telemetry_session_},
-      emu_window{emu_window_}, cpu_memory{cpu_memory_}, gpu{gpu_}, state_tracker{gpu},
+      emu_window{emu_window_}, cpu_memory{cpu_memory_}, gpu{gpu_}, state_tracker{},
       program_manager{device},
       rasterizer(emu_window, gpu, cpu_memory, device, screen_info, program_manager, state_tracker) {
     if (Settings::values.renderer_debug && GLAD_GL_KHR_debug) {
@@ -211,6 +208,8 @@ void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuf
     // Framebuffer orientation handling
     framebuffer_transform_flags = framebuffer.transform_flags;
     framebuffer_crop_rect = framebuffer.crop_rect;
+    framebuffer_width = framebuffer.width;
+    framebuffer_height = framebuffer.height;
 
     const VAddr framebuffer_addr{framebuffer.address + framebuffer.offset};
     screen_info.was_accelerated =
@@ -326,12 +325,12 @@ void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
 
     GLint internal_format;
     switch (framebuffer.pixel_format) {
-    case Tegra::FramebufferConfig::PixelFormat::A8B8G8R8_UNORM:
+    case Service::android::PixelFormat::Rgba8888:
         internal_format = GL_RGBA8;
         texture.gl_format = GL_RGBA;
         texture.gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
         break;
-    case Tegra::FramebufferConfig::PixelFormat::RGB565_UNORM:
+    case Service::android::PixelFormat::Rgb565:
         internal_format = GL_RGB565;
         texture.gl_format = GL_RGB;
         texture.gl_type = GL_UNSIGNED_SHORT_5_6_5;
@@ -467,8 +466,8 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
     const auto& texcoords = screen_info.display_texcoords;
     auto left = texcoords.left;
     auto right = texcoords.right;
-    if (framebuffer_transform_flags != Tegra::FramebufferConfig::TransformFlags::Unset) {
-        if (framebuffer_transform_flags == Tegra::FramebufferConfig::TransformFlags::FlipV) {
+    if (framebuffer_transform_flags != Service::android::BufferTransformFlags::Unset) {
+        if (framebuffer_transform_flags == Service::android::BufferTransformFlags::FlipV) {
             // Flip the framebuffer vertically
             left = texcoords.right;
             right = texcoords.left;
@@ -483,9 +482,12 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
     ASSERT_MSG(framebuffer_crop_rect.top == 0, "Unimplemented");
     ASSERT_MSG(framebuffer_crop_rect.left == 0, "Unimplemented");
 
+    f32 scale_u = static_cast<f32>(framebuffer_width) / static_cast<f32>(screen_info.texture.width);
+    f32 scale_v =
+        static_cast<f32>(framebuffer_height) / static_cast<f32>(screen_info.texture.height);
+
     // Scale the output by the crop width/height. This is commonly used with 1280x720 rendering
     // (e.g. handheld mode) on a 1920x1080 framebuffer.
-    f32 scale_u = 1.f, scale_v = 1.f;
     if (framebuffer_crop_rect.GetWidth() > 0) {
         scale_u = static_cast<f32>(framebuffer_crop_rect.GetWidth()) /
                   static_cast<f32>(screen_info.texture.width);

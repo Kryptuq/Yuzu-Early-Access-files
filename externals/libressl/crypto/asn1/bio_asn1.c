@@ -1,4 +1,4 @@
-/* $OpenBSD: bio_asn1.c,v 1.13 2018/05/01 13:29:09 tb Exp $ */
+/* $OpenBSD: bio_asn1.c,v 1.17 2022/01/14 08:40:57 tb Exp $ */
 /* Written by Dr Stephen N Henson (steve@openssl.org) for the OpenSSL
  * project.
  */
@@ -67,6 +67,8 @@
 #include <openssl/bio.h>
 #include <openssl/asn1.h>
 
+#include "bio_local.h"
+
 /* Must be large enough for biggest tag+length */
 #define DEFAULT_ASN1_BUF_SIZE 20
 
@@ -116,9 +118,8 @@ static int asn1_bio_gets(BIO *h, char *str, int size);
 static long asn1_bio_ctrl(BIO *h, int cmd, long arg1, void *arg2);
 static int asn1_bio_new(BIO *h);
 static int asn1_bio_free(BIO *data);
-static long asn1_bio_callback_ctrl(BIO *h, int cmd, bio_info_cb *fp);
+static long asn1_bio_callback_ctrl(BIO *h, int cmd, BIO_info_cb *fp);
 
-static int asn1_bio_init(BIO_ASN1_BUF_CTX *ctx, int size);
 static int asn1_bio_flush_ex(BIO *b, BIO_ASN1_BUF_CTX *ctx,
     asn1_ps_func *cleanup, asn1_bio_state_t next);
 static int asn1_bio_setup_ex(BIO *b, BIO_ASN1_BUF_CTX *ctx,
@@ -148,35 +149,23 @@ static int
 asn1_bio_new(BIO *b)
 {
 	BIO_ASN1_BUF_CTX *ctx;
-	ctx = malloc(sizeof(BIO_ASN1_BUF_CTX));
-	if (!ctx)
+
+	if ((ctx = calloc(1, sizeof(*ctx))) == NULL)
 		return 0;
-	if (!asn1_bio_init(ctx, DEFAULT_ASN1_BUF_SIZE)) {
+
+	if ((ctx->buf = malloc(DEFAULT_ASN1_BUF_SIZE)) == NULL) {
 		free(ctx);
 		return 0;
 	}
+	ctx->bufsize = DEFAULT_ASN1_BUF_SIZE;
+	ctx->asn1_class = V_ASN1_UNIVERSAL;
+	ctx->asn1_tag = V_ASN1_OCTET_STRING;
+	ctx->state = ASN1_STATE_START;
+
 	b->init = 1;
 	b->ptr = (char *)ctx;
 	b->flags = 0;
-	return 1;
-}
 
-static int
-asn1_bio_init(BIO_ASN1_BUF_CTX *ctx, int size)
-{
-	ctx->buf = malloc(size);
-	if (!ctx->buf)
-		return 0;
-	ctx->bufsize = size;
-	ctx->bufpos = 0;
-	ctx->buflen = 0;
-	ctx->copylen = 0;
-	ctx->asn1_class = V_ASN1_UNIVERSAL;
-	ctx->asn1_tag = V_ASN1_OCTET_STRING;
-	ctx->ex_buf = NULL;
-	ctx->ex_pos = 0;
-	ctx->ex_len = 0;
-	ctx->state = ASN1_STATE_START;
 	return 1;
 }
 
@@ -284,7 +273,7 @@ asn1_bio_write(BIO *b, const char *in , int inl)
 
 	}
 
-done:
+ done:
 	BIO_clear_retry_flags(b);
 	BIO_copy_next_retry(b);
 
@@ -357,7 +346,7 @@ asn1_bio_gets(BIO *b, char *str, int size)
 }
 
 static long
-asn1_bio_callback_ctrl(BIO *b, int cmd, bio_info_cb *fp)
+asn1_bio_callback_ctrl(BIO *b, int cmd, BIO_info_cb *fp)
 {
 	if (b->next_bio == NULL)
 		return (0);

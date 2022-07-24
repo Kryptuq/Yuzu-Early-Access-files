@@ -13,10 +13,6 @@ if (ARCHITECTURE_x86 OR ARCHITECTURE_x86_64)
     target_compile_definitions(xbyak INTERFACE XBYAK_NO_OP_NAMES)
 endif()
 
-# Catch
-add_library(catch-single-include INTERFACE)
-target_include_directories(catch-single-include INTERFACE catch/single_include)
-
 # Dynarmic
 if (ARCHITECTURE_x86_64)
     set(DYNARMIC_TESTS OFF)
@@ -43,6 +39,11 @@ target_include_directories(mbedtls PUBLIC ./mbedtls/include)
 # MicroProfile
 add_library(microprofile INTERFACE)
 target_include_directories(microprofile INTERFACE ./microprofile)
+
+# GCC bugs
+if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "12" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND MINGW)
+    target_compile_options(microprofile INTERFACE "-Wno-array-bounds")
+endif()
 
 # libusb
 if (NOT LIBUSB_FOUND OR YUZU_USE_BUNDLED_LIBUSB)
@@ -71,9 +72,6 @@ if (YUZU_USE_EXTERNAL_SDL2)
     add_subdirectory(SDL EXCLUDE_FROM_ALL)
     add_library(SDL2 ALIAS SDL2-static)
 endif()
-
-# SoundTouch
-add_subdirectory(soundtouch)
 
 # Cubeb
 if(ENABLE_CUBEB)

@@ -6,7 +6,6 @@
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
 #include <QColorDialog>
-#include <QComboBox>
 #include <QVulkanInstance>
 
 #include "common/common_types.h"
@@ -18,6 +17,7 @@
 #include "video_core/vulkan_common/vulkan_library.h"
 #include "yuzu/configuration/configuration_shared.h"
 #include "yuzu/configuration/configure_graphics.h"
+#include "yuzu/uisettings.h"
 
 ConfigureGraphics::ConfigureGraphics(const Core::System& system_, QWidget* parent)
     : QWidget(parent), ui{std::make_unique<Ui::ConfigureGraphics>()}, system{system_} {
@@ -58,6 +58,9 @@ ConfigureGraphics::ConfigureGraphics(const Core::System& system_, QWidget* paren
         UpdateBackgroundColorButton(new_bg_color);
     });
 
+    ui->api->setEnabled(!UISettings::values.has_broken_vulkan);
+    ui->api_widget->setEnabled(!UISettings::values.has_broken_vulkan ||
+                               Settings::IsConfiguringGlobal());
     ui->bg_label->setVisible(Settings::IsConfiguringGlobal());
     ui->bg_combobox->setVisible(!Settings::IsConfiguringGlobal());
 }
@@ -320,6 +323,10 @@ void ConfigureGraphics::UpdateAPILayout() {
 }
 
 void ConfigureGraphics::RetrieveVulkanDevices() try {
+    if (UISettings::values.has_broken_vulkan) {
+        return;
+    }
+
     using namespace Vulkan;
 
     vk::InstanceDispatch dld;
@@ -333,7 +340,6 @@ void ConfigureGraphics::RetrieveVulkanDevices() try {
         const std::string name = vk::PhysicalDevice(device, dld).GetProperties().deviceName;
         vulkan_devices.push_back(QString::fromStdString(name));
     }
-
 } catch (const Vulkan::vk::Exception& exception) {
     LOG_ERROR(Frontend, "Failed to enumerate devices with error: {}", exception.what());
 }

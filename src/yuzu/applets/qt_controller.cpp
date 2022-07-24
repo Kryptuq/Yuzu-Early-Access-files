@@ -1,12 +1,10 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <thread>
 
 #include "common/assert.h"
-#include "common/param_package.h"
 #include "common/string_util.h"
 #include "core/core.h"
 #include "core/hid/emulated_controller.h"
@@ -257,7 +255,7 @@ void QtControllerSelectorDialog::LoadConfiguration() {
 }
 
 void QtControllerSelectorDialog::CallConfigureVibrationDialog() {
-    ConfigureVibration dialog(this);
+    ConfigureVibration dialog(this, system.HIDCore());
 
     dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
                           Qt::WindowSystemMenuHint);
@@ -633,7 +631,7 @@ void QtControllerSelectorDialog::DisableUnsupportedPlayers() {
     switch (max_supported_players) {
     case 0:
     default:
-        UNREACHABLE();
+        ASSERT(false);
         return;
     case 1:
         ui->widgetSpacer->hide();

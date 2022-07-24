@@ -1,28 +1,28 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <thread>
 #include <vector>
 
 #include "common/common_types.h"
-#include "common/spin_lock.h"
-#include "common/thread.h"
 #include "common/wall_clock.h"
 
 namespace Core::Timing {
 
 /// A callback that may be scheduled for a particular core timing event.
-using TimedCallback =
-    std::function<void(std::uintptr_t user_data, std::chrono::nanoseconds ns_late)>;
+using TimedCallback = std::function<std::optional<std::chrono::nanoseconds>(
+    std::uintptr_t user_data, s64 time, std::chrono::nanoseconds ns_late)>;
+using PauseCallback = std::function<void(bool paused)>;
 
 /// Contains the characteristics of a particular event.
 struct EventType {
@@ -94,7 +94,15 @@ public:
 
     /// Schedules an event in core timing
     void ScheduleEvent(std::chrono::nanoseconds ns_into_future,
-                       const std::shared_ptr<EventType>& event_type, std::uintptr_t user_data = 0);
+                       const std::shared_ptr<EventType>& event_type, std::uintptr_t user_data = 0,
+                       bool absolute_time = false);
+
+    /// Schedules an event which will automatically re-schedule itself with the given time, until
+    /// unscheduled
+    void ScheduleLoopingEvent(std::chrono::nanoseconds start_time,
+                              std::chrono::nanoseconds resched_time,
+                              const std::shared_ptr<EventType>& event_type,
+                              std::uintptr_t user_data = 0, bool absolute_time = false);
 
     void UnscheduleEvent(const std::shared_ptr<EventType>& event_type, std::uintptr_t user_data);
 
@@ -126,18 +134,21 @@ public:
     /// Checks for events manually and returns time in nanoseconds for next event, threadsafe.
     std::optional<s64> Advance();
 
+    /// Register a callback function to be called when coretiming pauses.
+    void RegisterPauseCallback(PauseCallback&& callback);
+
 private:
     struct Event;
 
     /// Clear all pending events. This should ONLY be done on exit.
     void ClearPendingEvents();
 
-    static void ThreadEntry(CoreTiming& instance);
+    static void ThreadEntry(CoreTiming& instance, size_t id);
     void ThreadLoop();
 
     std::unique_ptr<Common::WallClock> clock;
 
-    u64 global_timer = 0;
+    s64 global_timer = 0;
 
     // The queue is a min-heap using std::make_heap/push_heap/pop_heap.
     // We don't use std::priority_queue because we need to be able to serialize, unserialize and
@@ -145,25 +156,31 @@ private:
     // accomodated by the standard adaptor class.
     std::vector<Event> event_queue;
     u64 event_fifo_id = 0;
+    std::atomic<size_t> pending_events{};
 
     std::shared_ptr<EventType> ev_lost;
-    Common::Event event{};
-    Common::Event pause_event{};
-    Common::SpinLock basic_lock{};
-    Common::SpinLock advance_lock{};
-    std::unique_ptr<std::thread> timer_thread;
-    std::atomic<bool> paused{};
-    std::atomic<bool> paused_set{};
-    std::atomic<bool> wait_set{};
-    std::atomic<bool> shutting_down{};
     std::atomic<bool> has_started{};
     std::function<void()> on_thread_init{};
 
+    std::vector<std::thread> worker_threads;
+
+    std::condition_variable event_cv;
+    std::condition_variable wait_pause_cv;
+    std::condition_variable wait_signal_cv;
+    mutable std::mutex event_mutex;
+
+    std::atomic<bool> paused_state{};
+    bool is_paused{};
+    bool shutting_down{};
     bool is_multicore{};
+    size_t pause_count{};
+    s64 pause_end_time{};
 
     /// Cycle timing
     u64 ticks{};
     s64 downcount{};
+
+    std::vector<PauseCallback> pause_callbacks{};
 };
 
 /// Creates a core timing event with the given name and callback.

@@ -5,8 +5,9 @@
 
 #include "dynarmic/ir/ir_emitter.h"
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/cast_util.h"
+#include <mcl/assert.hpp>
+#include <mcl/bit_cast.hpp>
+
 #include "dynarmic/ir/opcodes.h"
 
 namespace Dynarmic::IR {
@@ -901,6 +902,18 @@ U128 IREmitter::AESMixColumns(const U128& a) {
 
 U8 IREmitter::SM4AccessSubstitutionBox(const U8& a) {
     return Inst<U8>(Opcode::SM4AccessSubstitutionBox, a);
+}
+
+U128 IREmitter::SHA256Hash(const U128& x, const U128& y, const U128& w, bool part1) {
+    return Inst<U128>(Opcode::SHA256Hash, x, y, w, Imm1(part1));
+}
+
+U128 IREmitter::SHA256MessageSchedule0(const U128& x, const U128& y) {
+    return Inst<U128>(Opcode::SHA256MessageSchedule0, x, y);
+}
+
+U128 IREmitter::SHA256MessageSchedule1(const U128& x, const U128& y, const U128& z) {
+    return Inst<U128>(Opcode::SHA256MessageSchedule1, x, y, z);
 }
 
 UAny IREmitter::VectorGetElement(size_t esize, const U128& a, size_t index) {
@@ -2705,19 +2718,19 @@ void IREmitter::Breakpoint() {
 }
 
 void IREmitter::CallHostFunction(void (*fn)(void)) {
-    Inst(Opcode::CallHostFunction, Imm64(Common::BitCast<u64>(fn)));
+    Inst(Opcode::CallHostFunction, Imm64(mcl::bit_cast<u64>(fn)));
 }
 
 void IREmitter::CallHostFunction(void (*fn)(u64), const U64& arg1) {
-    Inst(Opcode::CallHostFunction, Imm64(Common::BitCast<u64>(fn)), arg1);
+    Inst(Opcode::CallHostFunction, Imm64(mcl::bit_cast<u64>(fn)), arg1);
 }
 
 void IREmitter::CallHostFunction(void (*fn)(u64, u64), const U64& arg1, const U64& arg2) {
-    Inst(Opcode::CallHostFunction, Imm64(Common::BitCast<u64>(fn)), arg1, arg2);
+    Inst(Opcode::CallHostFunction, Imm64(mcl::bit_cast<u64>(fn)), arg1, arg2);
 }
 
 void IREmitter::CallHostFunction(void (*fn)(u64, u64, u64), const U64& arg1, const U64& arg2, const U64& arg3) {
-    Inst(Opcode::CallHostFunction, Imm64(Common::BitCast<u64>(fn)), arg1, arg2, arg3);
+    Inst(Opcode::CallHostFunction, Imm64(mcl::bit_cast<u64>(fn)), arg1, arg2, arg3);
 }
 
 void IREmitter::SetTerm(const Terminal& terminal) {

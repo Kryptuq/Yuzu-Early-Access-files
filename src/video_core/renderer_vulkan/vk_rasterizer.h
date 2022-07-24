@@ -1,30 +1,24 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <array>
-#include <bitset>
-#include <memory>
-#include <utility>
-#include <vector>
 
 #include <boost/container/static_vector.hpp>
 
 #include "common/common_types.h"
+#include "video_core/control/channel_state_cache.h"
 #include "video_core/engines/maxwell_dma.h"
 #include "video_core/rasterizer_accelerated.h"
 #include "video_core/rasterizer_interface.h"
 #include "video_core/renderer_vulkan/blit_image.h"
-#include "video_core/renderer_vulkan/fixed_pipeline_state.h"
 #include "video_core/renderer_vulkan/vk_buffer_cache.h"
 #include "video_core/renderer_vulkan/vk_descriptor_pool.h"
 #include "video_core/renderer_vulkan/vk_fence_manager.h"
 #include "video_core/renderer_vulkan/vk_pipeline_cache.h"
 #include "video_core/renderer_vulkan/vk_query_cache.h"
 #include "video_core/renderer_vulkan/vk_render_pass_cache.h"
-#include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_staging_buffer_pool.h"
 #include "video_core/renderer_vulkan/vk_texture_cache.h"
 #include "video_core/renderer_vulkan/vk_update_descriptor.h"
@@ -45,7 +39,7 @@ class Maxwell3D;
 
 namespace Vulkan {
 
-struct VKScreenInfo;
+struct ScreenInfo;
 
 class StateTracker;
 
@@ -61,13 +55,13 @@ private:
     BufferCache& buffer_cache;
 };
 
-class RasterizerVulkan final : public VideoCore::RasterizerAccelerated {
+class RasterizerVulkan final : public VideoCore::RasterizerAccelerated,
+                               protected VideoCommon::ChannelSetupCaches<VideoCommon::ChannelInfo> {
 public:
     explicit RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra::GPU& gpu_,
-                              Tegra::MemoryManager& gpu_memory_, Core::Memory::Memory& cpu_memory_,
-                              VKScreenInfo& screen_info_, const Device& device_,
-                              MemoryAllocator& memory_allocator_, StateTracker& state_tracker_,
-                              VKScheduler& scheduler_);
+                              Core::Memory::Memory& cpu_memory_, ScreenInfo& screen_info_,
+                              const Device& device_, MemoryAllocator& memory_allocator_,
+                              StateTracker& state_tracker_, Scheduler& scheduler_);
     ~RasterizerVulkan() override;
 
     void Draw(bool is_indexed, bool is_instanced) override;
@@ -82,10 +76,11 @@ public:
     bool MustFlushRegion(VAddr addr, u64 size) override;
     void InvalidateRegion(VAddr addr, u64 size) override;
     void OnCPUWrite(VAddr addr, u64 size) override;
-    void SyncGuestHost() override;
+    void InvalidateGPUCache() override;
     void UnmapMemory(VAddr addr, u64 size) override;
-    void ModifyGPUMemory(GPUVAddr addr, u64 size) override;
-    void SignalSemaphore(GPUVAddr addr, u32 value) override;
+    void ModifyGPUMemory(size_t as_id, GPUVAddr addr, u64 size) override;
+    void SignalFence(std::function<void()>&& func) override;
+    void SyncOperation(std::function<void()>&& func) override;
     void SignalSyncPoint(u32 value) override;
     void SignalReference() override;
     void ReleaseFences() override;
@@ -99,10 +94,18 @@ public:
                                const Tegra::Engines::Fermi2D::Surface& dst,
                                const Tegra::Engines::Fermi2D::Config& copy_config) override;
     Tegra::Engines::AccelerateDMAInterface& AccessAccelerateDMA() override;
+    void AccelerateInlineToMemory(GPUVAddr address, size_t copy_size,
+                                  std::span<const u8> memory) override;
     bool AccelerateDisplay(const Tegra::FramebufferConfig& config, VAddr framebuffer_addr,
                            u32 pixel_stride) override;
     void LoadDiskResources(u64 title_id, std::stop_token stop_loading,
                            const VideoCore::DiskResourceLoadCallback& callback) override;
+
+    void InitializeChannel(Tegra::Control::ChannelState& channel) override;
+
+    void BindChannel(Tegra::Control::ChannelState& channel) override;
+
+    void ReleaseChannel(s32 channel_id) override;
 
 private:
     static constexpr size_t MAX_TEXTURES = 192;
@@ -139,19 +142,16 @@ private:
     void UpdateVertexInput(Tegra::Engines::Maxwell3D::Regs& regs);
 
     Tegra::GPU& gpu;
-    Tegra::MemoryManager& gpu_memory;
-    Tegra::Engines::Maxwell3D& maxwell3d;
-    Tegra::Engines::KeplerCompute& kepler_compute;
 
-    VKScreenInfo& screen_info;
+    ScreenInfo& screen_info;
     const Device& device;
     MemoryAllocator& memory_allocator;
     StateTracker& state_tracker;
-    VKScheduler& scheduler;
+    Scheduler& scheduler;
 
     StagingBufferPool staging_pool;
     DescriptorPool descriptor_pool;
-    VKUpdateDescriptorQueue update_descriptor_queue;
+    UpdateDescriptorQueue update_descriptor_queue;
     BlitImageHelper blit_image;
     ASTCDecoderPass astc_decoder_pass;
     RenderPassCache render_pass_cache;
@@ -161,9 +161,9 @@ private:
     BufferCacheRuntime buffer_cache_runtime;
     BufferCache buffer_cache;
     PipelineCache pipeline_cache;
-    VKQueryCache query_cache;
+    QueryCache query_cache;
     AccelerateDMA accelerate_dma;
-    VKFenceManager fence_manager;
+    FenceManager fence_manager;
 
     vk::Event wfi_event;
 

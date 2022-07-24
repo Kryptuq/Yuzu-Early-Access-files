@@ -10,6 +10,7 @@
 #include <memory>
 #include <type_traits>
 
+#include <mcl/stdint.hpp>
 #include <xbyak/xbyak.h>
 #include <xbyak/xbyak_util.h>
 
@@ -19,7 +20,8 @@
 #include "dynarmic/backend/x64/host_feature.h"
 #include "dynarmic/backend/x64/jitstate_info.h"
 #include "dynarmic/common/cast_util.h"
-#include "dynarmic/common/common_types.h"
+#include "dynarmic/interface/halt_reason.h"
+#include "mcl/bit/bit_field.hpp"
 
 namespace Dynarmic::Backend::X64 {
 
@@ -29,11 +31,12 @@ struct RunCodeCallbacks {
     std::unique_ptr<Callback> LookupBlock;
     std::unique_ptr<Callback> AddTicks;
     std::unique_ptr<Callback> GetTicksRemaining;
+    bool enable_cycle_counting;
 };
 
 class BlockOfCode final : public Xbyak::CodeGenerator {
 public:
-    BlockOfCode(RunCodeCallbacks cb, JitStateInfo jsi, size_t total_code_size, size_t far_code_offset, std::function<void(BlockOfCode&)> rcp);
+    BlockOfCode(RunCodeCallbacks cb, JitStateInfo jsi, size_t total_code_size, std::function<void(BlockOfCode&)> rcp);
     BlockOfCode(const BlockOfCode&) = delete;
 
     /// Call when external emitters have finished emitting their preludes.
@@ -46,13 +49,13 @@ public:
 
     /// Clears this block of code and resets code pointer to beginning.
     void ClearCache();
-    /// Calculates how much space is remaining to use. This is the minimum of near code and far code.
+    /// Calculates how much space is remaining to use.
     size_t SpaceRemaining() const;
 
     /// Runs emulated code from code_ptr.
-    void RunCode(void* jit_state, CodePtr code_ptr) const;
+    HaltReason RunCode(void* jit_state, CodePtr code_ptr) const;
     /// Runs emulated code from code_ptr for a single cycle.
-    void StepCode(void* jit_state, CodePtr code_ptr) const;
+    HaltReason StepCode(void* jit_state, CodePtr code_ptr) const;
     /// Code emitter: Returns to dispatcher
     void ReturnFromRunCode(bool mxcsr_already_exited = false);
     /// Code emitter: Returns to dispatcher, forces return to host
@@ -96,12 +99,31 @@ public:
         CallFunction(Common::FptrCast(l));
     }
 
-    Xbyak::Address MConst(const Xbyak::AddressFrame& frame, u64 lower, u64 upper = 0);
+    void ZeroExtendFrom(size_t bitsize, Xbyak::Reg64 reg) {
+        switch (bitsize) {
+        case 8:
+            movzx(reg.cvt32(), reg.cvt8());
+            return;
+        case 16:
+            movzx(reg.cvt32(), reg.cvt16());
+            return;
+        case 32:
+            mov(reg.cvt32(), reg.cvt32());
+            return;
+        case 64:
+            return;
+        default:
+            UNREACHABLE();
+        }
+    }
 
-    /// Far code sits far away from the near code. Execution remains primarily in near code.
-    /// "Cold" / Rarely executed instructions sit in far code, so the CPU doesn't fetch them unless necessary.
-    void SwitchToFarCode();
-    void SwitchToNearCode();
+    Xbyak::Address XmmConst(const Xbyak::AddressFrame& frame, u64 lower, u64 upper);
+
+    template<size_t esize>
+    Xbyak::Address XmmBConst(const Xbyak::AddressFrame& frame, u64 value) {
+        return XmmConst(frame, mcl::bit::replicate_element<u64>(esize, value),
+                        mcl::bit::replicate_element<u64>(esize, value));
+    }
 
     CodePtr GetCodeBegin() const;
     size_t GetTotalCodeSize() const;
@@ -153,19 +175,13 @@ public:
 private:
     RunCodeCallbacks cb;
     JitStateInfo jsi;
-    size_t far_code_offset;
 
     bool prelude_complete = false;
-    CodePtr near_code_begin = nullptr;
-    CodePtr far_code_begin = nullptr;
+    CodePtr code_begin = nullptr;
 
     ConstantPool constant_pool;
 
-    bool in_far_code = false;
-    CodePtr near_code_ptr;
-    CodePtr far_code_ptr;
-
-    using RunCodeFuncType = void (*)(void*, CodePtr);
+    using RunCodeFuncType = HaltReason (*)(void*, CodePtr);
     RunCodeFuncType run_code = nullptr;
     RunCodeFuncType step_code = nullptr;
     static constexpr size_t MXCSR_ALREADY_EXITED = 1 << 0;

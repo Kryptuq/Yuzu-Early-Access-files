@@ -1,8 +1,6 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#include <QGraphicsItem>
 #include <QtConcurrent/QtConcurrent>
 #include "common/settings.h"
 #include "core/core.h"
@@ -28,7 +26,15 @@ void ConfigureNetwork::ApplyConfiguration() {
     Settings::values.network_interface = ui->network_interface->currentText().toStdString();
 }
 
-void ConfigureNetwork::RetranslateUi() {
+void ConfigureNetwork::changeEvent(QEvent* event) {
+    if (event->type() == QEvent::LanguageChange) {
+        RetranslateUI();
+    }
+
+    QWidget::changeEvent(event);
+}
+
+void ConfigureNetwork::RetranslateUI() {
     ui->retranslateUi(this);
 }
 

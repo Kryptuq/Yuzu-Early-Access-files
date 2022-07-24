@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -162,6 +161,7 @@ public:
 private:
     void SetupExtensions();
     void DefineConstantBuffers(Bindings& bindings);
+    void DefineConstantBufferIndirect();
     void DefineStorageBuffers(Bindings& bindings);
     void DefineGenericOutput(size_t index, u32 invocations);
     void DefineHelperFunctions();

@@ -1,12 +1,10 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <span>
 #include <string>
-#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -342,6 +340,12 @@ public:
         return device_access_memory;
     }
 
+    bool CanReportMemoryUsage() const {
+        return ext_memory_budget;
+    }
+
+    u64 GetDeviceMemoryUsage() const;
+
     u32 GetSetsPerPool() const {
         return sets_per_pool;
     }
@@ -352,6 +356,10 @@ public:
 
     bool CantBlitMSAA() const {
         return cant_blit_msaa;
+    }
+
+    bool MustEmulateBGR565() const {
+        return must_emulate_bgr565;
     }
 
 private:
@@ -418,6 +426,9 @@ private:
     bool is_topology_list_restart_supported{};  ///< Support for primitive restart with list
                                                 ///< topologies.
     bool is_patch_list_restart_supported{};     ///< Support for primitive restart with list patch.
+    bool is_integrated{};                       ///< Is GPU an iGPU.
+    bool is_virtual{};                          ///< Is GPU a virtual GPU.
+    bool is_non_gpu{};                          ///< Is SoftwareRasterizer, FPGA, non-GPU device.
     bool nv_viewport_swizzle{};                 ///< Support for VK_NV_viewport_swizzle.
     bool nv_viewport_array2{};                  ///< Support for VK_NV_viewport_array2.
     bool nv_geometry_shader_passthrough{};      ///< Support for VK_NV_geometry_shader_passthrough.
@@ -442,16 +453,19 @@ private:
     bool ext_shader_atomic_int64{};         ///< Support for VK_KHR_shader_atomic_int64.
     bool ext_conservative_rasterization{};  ///< Support for VK_EXT_conservative_rasterization.
     bool ext_provoking_vertex{};            ///< Support for VK_EXT_provoking_vertex.
+    bool ext_memory_budget{};               ///< Support for VK_EXT_memory_budget.
     bool nv_device_diagnostics_config{};    ///< Support for VK_NV_device_diagnostics_config.
     bool has_broken_cube_compatibility{};   ///< Has broken cube compatiblity bit
     bool has_renderdoc{};                   ///< Has RenderDoc attached
     bool has_nsight_graphics{};             ///< Has Nsight Graphics attached
     bool supports_d24_depth{};              ///< Supports D24 depth buffers.
     bool cant_blit_msaa{};                  ///< Does not support MSAA<->MSAA blitting.
+    bool must_emulate_bgr565{};             ///< Emulates BGR565 by swizzling RGB565 format.
 
     // Telemetry parameters
     std::string vendor_name;                       ///< Device's driver name.
     std::vector<std::string> supported_extensions; ///< Reported Vulkan extensions.
+    std::vector<size_t> valid_heap_memory;         ///< Heaps used.
 
     /// Format properties dictionary.
     std::unordered_map<VkFormat, VkFormatProperties> format_properties;

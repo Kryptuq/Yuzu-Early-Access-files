@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <iterator>
 
@@ -26,7 +25,7 @@ VkFilter Filter(Tegra::Texture::TextureFilter filter) {
     case Tegra::Texture::TextureFilter::Linear:
         return VK_FILTER_LINEAR;
     }
-    UNREACHABLE_MSG("Invalid sampler filter={}", filter);
+    ASSERT_MSG(false, "Invalid sampler filter={}", filter);
     return {};
 }
 
@@ -43,7 +42,7 @@ VkSamplerMipmapMode MipmapMode(Tegra::Texture::TextureMipmapFilter mipmap_filter
     case Tegra::Texture::TextureMipmapFilter::Linear:
         return VK_SAMPLER_MIPMAP_MODE_LINEAR;
     }
-    UNREACHABLE_MSG("Invalid sampler mipmap mode={}", mipmap_filter);
+    ASSERT_MSG(false, "Invalid sampler mipmap mode={}", mipmap_filter);
     return {};
 }
 
@@ -71,7 +70,7 @@ VkSamplerAddressMode WrapMode(const Device& device, Tegra::Texture::WrapMode wra
         case Tegra::Texture::TextureFilter::Linear:
             return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
         }
-        UNREACHABLE();
+        ASSERT(false);
         return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     case Tegra::Texture::WrapMode::MirrorOnceClampToEdge:
         return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
@@ -127,6 +126,7 @@ struct FormatTuple {
     {VK_FORMAT_A2B10G10R10_UNORM_PACK32, Attachable | Storage}, // A2B10G10R10_UNORM
     {VK_FORMAT_A2B10G10R10_UINT_PACK32, Attachable | Storage},  // A2B10G10R10_UINT
     {VK_FORMAT_A1R5G5B5_UNORM_PACK16, Attachable},         // A1B5G5R5_UNORM (flipped with swizzle)
+    {VK_FORMAT_R5G5B5A1_UNORM_PACK16},                     // A5B5G5R1_UNORM (specially swizzled)
     {VK_FORMAT_R8_UNORM, Attachable | Storage},            // R8_UNORM
     {VK_FORMAT_R8_SNORM, Attachable | Storage},            // R8_SNORM
     {VK_FORMAT_R8_SINT, Attachable | Storage},             // R8_SINT
@@ -184,6 +184,7 @@ struct FormatTuple {
     {VK_FORMAT_BC3_SRGB_BLOCK},                                // BC3_SRGB
     {VK_FORMAT_BC7_SRGB_BLOCK},                                // BC7_SRGB
     {VK_FORMAT_R4G4B4A4_UNORM_PACK16, Attachable},             // A4B4G4R4_UNORM
+    {VK_FORMAT_R4G4_UNORM_PACK8},                              // G4R4_UNORM
     {VK_FORMAT_ASTC_4x4_SRGB_BLOCK},                           // ASTC_2D_4X4_SRGB
     {VK_FORMAT_ASTC_8x8_SRGB_BLOCK},                           // ASTC_2D_8X8_SRGB
     {VK_FORMAT_ASTC_8x5_SRGB_BLOCK},                           // ASTC_2D_8X5_SRGB
@@ -194,6 +195,7 @@ struct FormatTuple {
     {VK_FORMAT_ASTC_10x8_SRGB_BLOCK},                          // ASTC_2D_10X8_SRGB
     {VK_FORMAT_ASTC_6x6_UNORM_BLOCK},                          // ASTC_2D_6X6_UNORM
     {VK_FORMAT_ASTC_6x6_SRGB_BLOCK},                           // ASTC_2D_6X6_SRGB
+    {VK_FORMAT_ASTC_10x6_UNORM_BLOCK},                         // ASTC_2D_10X6_UNORM
     {VK_FORMAT_ASTC_10x10_UNORM_BLOCK},                        // ASTC_2D_10X10_UNORM
     {VK_FORMAT_ASTC_10x10_SRGB_BLOCK},                         // ASTC_2D_10X10_SRGB
     {VK_FORMAT_ASTC_12x12_UNORM_BLOCK},                        // ASTC_2D_12X12_UNORM
@@ -495,6 +497,8 @@ VkFormat VertexFormat(Maxwell::VertexAttribute::Type type, Maxwell::VertexAttrib
             return VK_FORMAT_R32G32B32_SFLOAT;
         case Maxwell::VertexAttribute::Size::Size_32_32_32_32:
             return VK_FORMAT_R32G32B32A32_SFLOAT;
+        case Maxwell::VertexAttribute::Size::Size_11_11_10:
+            return VK_FORMAT_B10G11R11_UFLOAT_PACK32;
         default:
             break;
         }
@@ -741,7 +745,7 @@ VkViewportCoordinateSwizzleNV ViewportSwizzle(Maxwell::ViewportSwizzle swizzle) 
     case Maxwell::ViewportSwizzle::NegativeW:
         return VK_VIEWPORT_COORDINATE_SWIZZLE_NEGATIVE_W_NV;
     }
-    UNREACHABLE_MSG("Invalid swizzle={}", swizzle);
+    ASSERT_MSG(false, "Invalid swizzle={}", swizzle);
     return {};
 }
 
@@ -754,7 +758,7 @@ VkSamplerReductionMode SamplerReduction(Tegra::Texture::SamplerReduction reducti
     case Tegra::Texture::SamplerReduction::Max:
         return VK_SAMPLER_REDUCTION_MODE_MAX_EXT;
     }
-    UNREACHABLE_MSG("Invalid sampler mode={}", static_cast<int>(reduction));
+    ASSERT_MSG(false, "Invalid sampler mode={}", static_cast<int>(reduction));
     return VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE_EXT;
 }
 
@@ -777,7 +781,7 @@ VkSampleCountFlagBits MsaaMode(Tegra::Texture::MsaaMode msaa_mode) {
     case Tegra::Texture::MsaaMode::Msaa4x4:
         return VK_SAMPLE_COUNT_16_BIT;
     default:
-        UNREACHABLE_MSG("Invalid msaa_mode={}", static_cast<int>(msaa_mode));
+        ASSERT_MSG(false, "Invalid msaa_mode={}", static_cast<int>(msaa_mode));
         return VK_SAMPLE_COUNT_1_BIT;
     }
 }

@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/assert.h"
 #include "common/logging/log.h"
@@ -34,7 +33,7 @@ void Controller::CloneCurrentObject(Kernel::HLERequestContext& ctx) {
 
     // Create a session.
     Kernel::KClientSession* session{};
-    const ResultCode result = parent_port.CreateSession(std::addressof(session), session_manager);
+    const Result result = parent_port.CreateSession(std::addressof(session), session_manager);
     if (result.IsError()) {
         LOG_CRITICAL(Service, "CreateSession failed with error 0x{:08X}", result.raw);
         IPC::ResponseBuilder rb{ctx, 2};

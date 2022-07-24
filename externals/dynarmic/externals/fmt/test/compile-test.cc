@@ -59,7 +59,24 @@ TEST(compile_test, compile_fallback) {
   EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), 42));
 }
 
-#ifdef __cpp_if_constexpr
+struct type_with_get {
+  template <int> friend void get(type_with_get);
+};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<type_with_get> : formatter<int> {
+  template <typename FormatContext>
+  auto format(type_with_get, FormatContext& ctx) -> decltype(ctx.out()) {
+    return formatter<int>::format(42, ctx);
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(compile_test, compile_type_with_get) {
+  EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), type_with_get()));
+}
+
+#if defined(__cpp_if_constexpr) && defined(__cpp_return_type_deduction)
 struct test_formattable {};
 
 FMT_BEGIN_NAMESPACE

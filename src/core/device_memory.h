@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -12,12 +11,8 @@ namespace Core {
 namespace DramMemoryMap {
 enum : u64 {
     Base = 0x80000000ULL,
-    Size = 0x100000000ULL,
-    End = Base + Size,
     KernelReserveBase = Base + 0x60000,
     SlabHeapBase = KernelReserveBase + 0x85000,
-    SlapHeapSize = 0xa21000,
-    SlabHeapEnd = SlabHeapBase + SlapHeapSize,
 };
 }; // namespace DramMemoryMap
 

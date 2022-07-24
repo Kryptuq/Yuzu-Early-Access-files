@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <bit>
@@ -20,8 +19,10 @@ namespace {
 struct ConstBufferAddr {
     u32 index;
     u32 offset;
+    u32 shift_left;
     u32 secondary_index;
     u32 secondary_offset;
+    u32 secondary_shift_left;
     IR::U32 dynamic_offset;
     u32 count;
     bool has_secondary;
@@ -173,19 +174,41 @@ bool IsTextureInstruction(const IR::Inst& inst) {
     return IndexedInstruction(inst) != IR::Opcode::Void;
 }
 
-std::optional<ConstBufferAddr> TryGetConstBuffer(const IR::Inst* inst);
+std::optional<ConstBufferAddr> TryGetConstBuffer(const IR::Inst* inst, Environment& env);
 
-std::optional<ConstBufferAddr> Track(const IR::Value& value) {
-    return IR::BreadthFirstSearch(value, TryGetConstBuffer);
+std::optional<ConstBufferAddr> Track(const IR::Value& value, Environment& env) {
+    return IR::BreadthFirstSearch(
+        value, [&env](const IR::Inst* inst) { return TryGetConstBuffer(inst, env); });
 }
 
-std::optional<ConstBufferAddr> TryGetConstBuffer(const IR::Inst* inst) {
+std::optional<u32> TryGetConstant(IR::Value& value, Environment& env) {
+    const IR::Inst* inst = value.InstRecursive();
+    if (inst->GetOpcode() != IR::Opcode::GetCbufU32) {
+        return std::nullopt;
+    }
+    const IR::Value index{inst->Arg(0)};
+    const IR::Value offset{inst->Arg(1)};
+    if (!index.IsImmediate()) {
+        return std::nullopt;
+    }
+    if (!offset.IsImmediate()) {
+        return std::nullopt;
+    }
+    const auto index_number = index.U32();
+    if (index_number != 1) {
+        return std::nullopt;
+    }
+    const auto offset_number = offset.U32();
+    return env.ReadCbufValue(index_number, offset_number);
+}
+
+std::optional<ConstBufferAddr> TryGetConstBuffer(const IR::Inst* inst, Environment& env) {
     switch (inst->GetOpcode()) {
     default:
         return std::nullopt;
     case IR::Opcode::BitwiseOr32: {
-        std::optional lhs{Track(inst->Arg(0))};
-        std::optional rhs{Track(inst->Arg(1))};
+        std::optional lhs{Track(inst->Arg(0), env)};
+        std::optional rhs{Track(inst->Arg(1), env)};
         if (!lhs || !rhs) {
             return std::nullopt;
         }
@@ -195,18 +218,61 @@ std::optional<ConstBufferAddr> TryGetConstBuffer(const IR::Inst* inst) {
         if (lhs->count > 1 || rhs->count > 1) {
             return std::nullopt;
         }
-        if (lhs->index > rhs->index || lhs->offset > rhs->offset) {
+        if (lhs->shift_left > 0 || lhs->index > rhs->index || lhs->offset > rhs->offset) {
             std::swap(lhs, rhs);
         }
         return ConstBufferAddr{
             .index = lhs->index,
             .offset = lhs->offset,
+            .shift_left = lhs->shift_left,
             .secondary_index = rhs->index,
             .secondary_offset = rhs->offset,
+            .secondary_shift_left = rhs->shift_left,
             .dynamic_offset = {},
             .count = 1,
             .has_secondary = true,
         };
+    }
+    case IR::Opcode::ShiftLeftLogical32: {
+        const IR::Value shift{inst->Arg(1)};
+        if (!shift.IsImmediate()) {
+            return std::nullopt;
+        }
+        std::optional lhs{Track(inst->Arg(0), env)};
+        if (lhs) {
+            lhs->shift_left = shift.U32();
+        }
+        return lhs;
+        break;
+    }
+    case IR::Opcode::BitwiseAnd32: {
+        IR::Value op1{inst->Arg(0)};
+        IR::Value op2{inst->Arg(1)};
+        if (op1.IsImmediate()) {
+            std::swap(op1, op2);
+        }
+        if (!op2.IsImmediate() && !op1.IsImmediate()) {
+            do {
+                auto try_index = TryGetConstant(op1, env);
+                if (try_index) {
+                    op1 = op2;
+                    op2 = IR::Value{*try_index};
+                    break;
+                }
+                auto try_index_2 = TryGetConstant(op2, env);
+                if (try_index_2) {
+                    op2 = IR::Value{*try_index_2};
+                    break;
+                }
+                return std::nullopt;
+            } while (false);
+        }
+        std::optional lhs{Track(op1, env)};
+        if (lhs) {
+            lhs->shift_left = static_cast<u32>(std::countr_zero(op2.U32()));
+        }
+        return lhs;
+        break;
     }
     case IR::Opcode::GetCbufU32x2:
     case IR::Opcode::GetCbufU32:
@@ -223,8 +289,10 @@ std::optional<ConstBufferAddr> TryGetConstBuffer(const IR::Inst* inst) {
         return ConstBufferAddr{
             .index = index.U32(),
             .offset = offset.U32(),
+            .shift_left = 0,
             .secondary_index = 0,
             .secondary_offset = 0,
+            .secondary_shift_left = 0,
             .dynamic_offset = {},
             .count = 1,
             .has_secondary = false,
@@ -248,8 +316,10 @@ std::optional<ConstBufferAddr> TryGetConstBuffer(const IR::Inst* inst) {
     return ConstBufferAddr{
         .index = index.U32(),
         .offset = base_offset,
+        .shift_left = 0,
         .secondary_index = 0,
         .secondary_offset = 0,
+        .secondary_shift_left = 0,
         .dynamic_offset = dynamic_offset,
         .count = 8,
         .has_secondary = false,
@@ -259,7 +329,7 @@ std::optional<ConstBufferAddr> TryGetConstBuffer(const IR::Inst* inst) {
 TextureInst MakeInst(Environment& env, IR::Block* block, IR::Inst& inst) {
     ConstBufferAddr addr;
     if (IsBindless(inst)) {
-        const std::optional<ConstBufferAddr> track_addr{Track(inst.Arg(0))};
+        const std::optional<ConstBufferAddr> track_addr{Track(inst.Arg(0), env)};
         if (!track_addr) {
             throw NotImplementedException("Failed to track bindless texture constant buffer");
         }
@@ -268,8 +338,10 @@ TextureInst MakeInst(Environment& env, IR::Block* block, IR::Inst& inst) {
         addr = ConstBufferAddr{
             .index = env.TextureBoundBuffer(),
             .offset = inst.Arg(0).U32(),
+            .shift_left = 0,
             .secondary_index = 0,
             .secondary_offset = 0,
+            .secondary_shift_left = 0,
             .dynamic_offset = {},
             .count = 1,
             .has_secondary = false,
@@ -285,8 +357,9 @@ TextureInst MakeInst(Environment& env, IR::Block* block, IR::Inst& inst) {
 TextureType ReadTextureType(Environment& env, const ConstBufferAddr& cbuf) {
     const u32 secondary_index{cbuf.has_secondary ? cbuf.secondary_index : cbuf.index};
     const u32 secondary_offset{cbuf.has_secondary ? cbuf.secondary_offset : cbuf.offset};
-    const u32 lhs_raw{env.ReadCbufValue(cbuf.index, cbuf.offset)};
-    const u32 rhs_raw{env.ReadCbufValue(secondary_index, secondary_offset)};
+    const u32 lhs_raw{env.ReadCbufValue(cbuf.index, cbuf.offset) << cbuf.shift_left};
+    const u32 rhs_raw{env.ReadCbufValue(secondary_index, secondary_offset)
+                      << cbuf.secondary_shift_left};
     return env.ReadTextureType(lhs_raw | rhs_raw);
 }
 
@@ -465,8 +538,10 @@ void TexturePass(Environment& env, IR::Program& program) {
                     .has_secondary = cbuf.has_secondary,
                     .cbuf_index = cbuf.index,
                     .cbuf_offset = cbuf.offset,
+                    .shift_left = cbuf.shift_left,
                     .secondary_cbuf_index = cbuf.secondary_index,
                     .secondary_cbuf_offset = cbuf.secondary_offset,
+                    .secondary_shift_left = cbuf.secondary_shift_left,
                     .count = cbuf.count,
                     .size_shift = DESCRIPTOR_SIZE_SHIFT,
                 });
@@ -477,8 +552,10 @@ void TexturePass(Environment& env, IR::Program& program) {
                     .has_secondary = cbuf.has_secondary,
                     .cbuf_index = cbuf.index,
                     .cbuf_offset = cbuf.offset,
+                    .shift_left = cbuf.shift_left,
                     .secondary_cbuf_index = cbuf.secondary_index,
                     .secondary_cbuf_offset = cbuf.secondary_offset,
+                    .secondary_shift_left = cbuf.secondary_shift_left,
                     .count = cbuf.count,
                     .size_shift = DESCRIPTOR_SIZE_SHIFT,
                 });

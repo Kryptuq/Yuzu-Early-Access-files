@@ -5,7 +5,12 @@
 #pragma once
 
 #include <array>
+#include <span>
 #include <vector>
+
+#include <dynarmic/interface/halt_reason.h>
+
+#include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "core/hardware_properties.h"
 
@@ -15,17 +20,23 @@ struct PageTable;
 
 namespace Kernel {
 enum class VMAPermission : u8;
-}
+enum class DebugWatchpointType : u8;
+struct DebugWatchpoint;
+} // namespace Kernel
 
 namespace Core {
 class System;
 class CPUInterruptHandler;
 
 using CPUInterrupts = std::array<CPUInterruptHandler, Core::Hardware::NUM_CPU_CORES>;
+using WatchpointArray = std::array<Kernel::DebugWatchpoint, Core::Hardware::NUM_WATCHPOINTS>;
 
 /// Generic ARMv8 CPU interface
-class ARM_Interface : NonCopyable {
+class ARM_Interface {
 public:
+    YUZU_NON_COPYABLE(ARM_Interface);
+    YUZU_NON_MOVEABLE(ARM_Interface);
+
     explicit ARM_Interface(System& system_, CPUInterrupts& interrupt_handlers_,
                            bool uses_wall_clock_)
         : system{system_}, interrupt_handlers{interrupt_handlers_}, uses_wall_clock{
@@ -60,10 +71,7 @@ public:
     static_assert(sizeof(ThreadContext64) == 0x320);
 
     /// Runs the CPU until an event happens
-    virtual void Run() = 0;
-
-    /// Step CPU by one instruction
-    virtual void Step() = 0;
+    void Run();
 
     /// Clear all instruction cache
     virtual void ClearInstructionCache() = 0;
@@ -95,6 +103,12 @@ public:
      * @return Returns current PC
      */
     virtual u64 GetPC() const = 0;
+
+    /**
+     * Get the current Stack Pointer
+     * @return Returns current SP
+     */
+    virtual u64 GetSP() const = 0;
 
     /**
      * Get an ARM register
@@ -160,12 +174,13 @@ public:
     virtual void SaveContext(ThreadContext64& ctx) = 0;
     virtual void LoadContext(const ThreadContext32& ctx) = 0;
     virtual void LoadContext(const ThreadContext64& ctx) = 0;
+    void LoadWatchpointArray(const WatchpointArray& wp);
 
     /// Clears the exclusive monitor's state.
     virtual void ClearExclusiveState() = 0;
 
-    /// Prepare core for thread reschedule (if needed to correctly handle state)
-    virtual void PrepareReschedule() = 0;
+    /// Signal an interrupt and ask the core to halt as soon as possible.
+    virtual void SignalInterrupt() = 0;
 
     struct BacktraceEntry {
         std::string module;
@@ -176,23 +191,37 @@ public:
     };
 
     static std::vector<BacktraceEntry> GetBacktraceFromContext(System& system,
+                                                               const ThreadContext32& ctx);
+    static std::vector<BacktraceEntry> GetBacktraceFromContext(System& system,
                                                                const ThreadContext64& ctx);
 
-    std::vector<BacktraceEntry> GetBacktrace() const;
+    virtual std::vector<BacktraceEntry> GetBacktrace() const = 0;
 
-    /// fp (= r29) points to the last frame record.
-    /// Note that this is the frame record for the *previous* frame, not the current one.
-    /// Note we need to subtract 4 from our last read to get the proper address
-    /// Frame records are two words long:
-    /// fp+0 : pointer to previous frame record
-    /// fp+8 : value of lr for frame
     void LogBacktrace() const;
+
+    static constexpr Dynarmic::HaltReason step_thread = Dynarmic::HaltReason::Step;
+    static constexpr Dynarmic::HaltReason break_loop = Dynarmic::HaltReason::UserDefined2;
+    static constexpr Dynarmic::HaltReason svc_call = Dynarmic::HaltReason::UserDefined3;
+    static constexpr Dynarmic::HaltReason breakpoint = Dynarmic::HaltReason::UserDefined4;
+    static constexpr Dynarmic::HaltReason watchpoint = Dynarmic::HaltReason::MemoryAbort;
+    static constexpr Dynarmic::HaltReason no_execute = Dynarmic::HaltReason::UserDefined6;
 
 protected:
     /// System context that this ARM interface is running under.
     System& system;
     CPUInterrupts& interrupt_handlers;
+    const WatchpointArray* watchpoints;
     bool uses_wall_clock;
+
+    static void SymbolicateBacktrace(Core::System& system, std::vector<BacktraceEntry>& out);
+    const Kernel::DebugWatchpoint* MatchingWatchpoint(
+        VAddr addr, u64 size, Kernel::DebugWatchpointType access_type) const;
+
+    virtual Dynarmic::HaltReason RunJit() = 0;
+    virtual Dynarmic::HaltReason StepJit() = 0;
+    virtual u32 GetSvcNumber() const = 0;
+    virtual const Kernel::DebugWatchpoint* HaltedWatchpoint() const = 0;
+    virtual void RewindBreakpointInstruction() = 0;
 };
 
 } // namespace Core

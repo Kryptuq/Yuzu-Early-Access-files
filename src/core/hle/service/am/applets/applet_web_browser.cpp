@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/assert.h"
 #include "common/fs/file.h"
@@ -280,7 +279,7 @@ void WebBrowser::Initialize() {
         InitializeLobby();
         break;
     default:
-        UNREACHABLE_MSG("Invalid ShimKind={}", web_arg_header.shim_kind);
+        ASSERT_MSG(false, "Invalid ShimKind={}", web_arg_header.shim_kind);
         break;
     }
 }
@@ -289,7 +288,7 @@ bool WebBrowser::TransactionComplete() const {
     return complete;
 }
 
-ResultCode WebBrowser::GetStatus() const {
+Result WebBrowser::GetStatus() const {
     return status;
 }
 
@@ -321,7 +320,7 @@ void WebBrowser::Execute() {
         ExecuteLobby();
         break;
     default:
-        UNREACHABLE_MSG("Invalid ShimKind={}", web_arg_header.shim_kind);
+        ASSERT_MSG(false, "Invalid ShimKind={}", web_arg_header.shim_kind);
         WebBrowserExit(WebExitReason::EndButtonPressed);
         break;
     }
@@ -446,6 +445,14 @@ void WebBrowser::ExecuteLogin() {
 }
 
 void WebBrowser::ExecuteOffline() {
+    // TODO (Morph): This is a hack for WebSession foreground web applets such as those used by
+    //               Super Mario 3D All-Stars.
+    // TODO (Morph): Implement WebSession.
+    if (applet_mode == LibraryAppletMode::AllForegroundInitiallyHidden) {
+        LOG_WARNING(Service_AM, "WebSession is not implemented");
+        return;
+    }
+
     const auto main_url = GetMainURL(Common::FS::PathToUTF8String(offline_document));
 
     if (!Common::FS::Exists(main_url)) {

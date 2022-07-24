@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include "dynarmic/common/common_types.h"
+#include <mcl/stdint.hpp>
 
 namespace Dynarmic::Common {
 

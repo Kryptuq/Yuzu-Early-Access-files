@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/logging/log.h"
 #include "core/core.h"
@@ -182,6 +181,11 @@ public:
             {147, nullptr, "RegisterAudioControlNotification"},
             {148, nullptr, "SendAudioControlPassthroughCommand"},
             {149, nullptr, "SendAudioControlSetAbsoluteVolumeCommand"},
+            {150, nullptr, "AcquireAudioSinkVolumeLocallyChangedEvent"},
+            {151, nullptr, "AcquireAudioSinkVolumeUpdateRequestCompletedEvent"},
+            {152, nullptr, "GetAudioSinkVolume"},
+            {153, nullptr, "RequestUpdateAudioSinkVolume"},
+            {154, nullptr, "IsAudioSinkVolumeSupported"},
             {256, nullptr, "IsManufacturingMode"},
             {257, nullptr, "EmulateBluetoothCrash"},
             {258, nullptr, "GetBleChannelMap"},

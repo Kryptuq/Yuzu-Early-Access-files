@@ -1,23 +1,24 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
-#include <filesystem>
-#include <mutex>
 #include <span>
-#include <string>
-#include <vector>
 
 #include "common/common_types.h"
-#include "common/dynamic_library.h"
-#include "video_core/vulkan_common/vulkan_wrapper.h"
 
 #ifdef HAS_NSIGHT_AFTERMATH
+#include <filesystem>
+#include <mutex>
+
+// Vulkan headers must be included before Aftermath
+#include "video_core/vulkan_common/vulkan_wrapper.h"
+
 #include <GFSDK_Aftermath_Defines.h>
 #include <GFSDK_Aftermath_GpuCrashDump.h>
 #include <GFSDK_Aftermath_GpuCrashDumpDecoding.h>
+
+#include "common/dynamic_library.h"
 #endif
 
 namespace Vulkan {

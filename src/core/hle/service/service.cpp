@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <fmt/format.h>
 #include "common/assert.h"
@@ -32,6 +31,7 @@
 #include "core/hle/service/glue/glue.h"
 #include "core/hle/service/grc/grc.h"
 #include "core/hle/service/hid/hid.h"
+#include "core/hle/service/jit/jit.h"
 #include "core/hle/service/lbl/lbl.h"
 #include "core/hle/service/ldn/ldn.h"
 #include "core/hle/service/ldr/ldr.h"
@@ -39,6 +39,7 @@
 #include "core/hle/service/mig/mig.h"
 #include "core/hle/service/mii/mii.h"
 #include "core/hle/service/mm/mm_u.h"
+#include "core/hle/service/mnpp/mnpp_app.h"
 #include "core/hle/service/ncm/ncm.h"
 #include "core/hle/service/nfc/nfc.h"
 #include "core/hle/service/nfp/nfp.h"
@@ -48,6 +49,7 @@
 #include "core/hle/service/npns/npns.h"
 #include "core/hle/service/ns/ns.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
+#include "core/hle/service/nvflinger/hos_binder_driver_server.h"
 #include "core/hle/service/nvflinger/nvflinger.h"
 #include "core/hle/service/olsc/olsc.h"
 #include "core/hle/service/pcie/pcie.h"
@@ -56,7 +58,7 @@
 #include "core/hle/service/pm/pm.h"
 #include "core/hle/service/prepo/prepo.h"
 #include "core/hle/service/psc/psc.h"
-#include "core/hle/service/ptm/psm.h"
+#include "core/hle/service/ptm/ptm.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/set/settings.h"
 #include "core/hle/service/sm/sm.h"
@@ -89,8 +91,9 @@ namespace Service {
 }
 
 ServiceFrameworkBase::ServiceFrameworkBase(Core::System& system_, const char* service_name_,
-                                           u32 max_sessions_, InvokerFn* handler_invoker_)
-    : SessionRequestHandler(system_.Kernel(), service_name_), system{system_},
+                                           ServiceThreadType thread_type, u32 max_sessions_,
+                                           InvokerFn* handler_invoker_)
+    : SessionRequestHandler(system_.Kernel(), service_name_, thread_type), system{system_},
       service_name{service_name_}, max_sessions{max_sessions_}, handler_invoker{handler_invoker_} {}
 
 ServiceFrameworkBase::~ServiceFrameworkBase() {
@@ -187,8 +190,8 @@ void ServiceFrameworkBase::InvokeRequestTipc(Kernel::HLERequestContext& ctx) {
     handler_invoker(this, info->handler_callback, ctx);
 }
 
-ResultCode ServiceFrameworkBase::HandleSyncRequest(Kernel::KServerSession& session,
-                                                   Kernel::HLERequestContext& ctx) {
+Result ServiceFrameworkBase::HandleSyncRequest(Kernel::KServerSession& session,
+                                               Kernel::HLERequestContext& ctx) {
     const auto guard = LockService();
 
     switch (ctx.GetCommandType()) {
@@ -229,7 +232,8 @@ ResultCode ServiceFrameworkBase::HandleSyncRequest(Kernel::KServerSession& sessi
 
 /// Initialize Services
 Services::Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system)
-    : nv_flinger{std::make_unique<NVFlinger::NVFlinger>(system)} {
+    : hos_binder_driver_server{std::make_unique<NVFlinger::HosBinderDriverServer>(system)},
+      nv_flinger{std::make_unique<NVFlinger::NVFlinger>(system, *hos_binder_driver_server)} {
 
     // NVFlinger needs to be accessed by several services like Vi and AppletOE so we instantiate it
     // here and pass it into the respective InstallInterfaces functions.
@@ -258,6 +262,7 @@ Services::Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system
     Glue::InstallInterfaces(system);
     GRC::InstallInterfaces(*sm, system);
     HID::InstallInterfaces(*sm, system);
+    JIT::InstallInterfaces(*sm, system);
     LBL::InstallInterfaces(*sm, system);
     LDN::InstallInterfaces(*sm, system);
     LDR::InstallInterfaces(*sm, system);
@@ -265,6 +270,7 @@ Services::Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system
     Migration::InstallInterfaces(*sm, system);
     Mii::InstallInterfaces(*sm, system);
     MM::InstallInterfaces(*sm, system);
+    MNPP::InstallInterfaces(*sm, system);
     NCM::InstallInterfaces(*sm, system);
     NFC::InstallInterfaces(*sm, system);
     NFP::InstallInterfaces(*sm, system);
@@ -281,14 +287,14 @@ Services::Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system
     PlayReport::InstallInterfaces(*sm, system);
     PM::InstallInterfaces(system);
     PSC::InstallInterfaces(*sm, system);
-    PSM::InstallInterfaces(*sm, system);
+    PTM::InstallInterfaces(*sm, system);
     Set::InstallInterfaces(*sm, system);
     Sockets::InstallInterfaces(*sm, system);
     SPL::InstallInterfaces(*sm, system);
     SSL::InstallInterfaces(*sm, system);
     Time::InstallInterfaces(system);
     USB::InstallInterfaces(*sm, system);
-    VI::InstallInterfaces(*sm, system, *nv_flinger);
+    VI::InstallInterfaces(*sm, system, *nv_flinger, *hos_binder_driver_server);
     WLAN::InstallInterfaces(*sm, system);
 }
 

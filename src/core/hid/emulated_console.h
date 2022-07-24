@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -10,6 +9,7 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/input.h"
 #include "common/param_package.h"
@@ -182,6 +182,7 @@ private:
     TouchDevices touch_devices;
 
     mutable std::mutex mutex;
+    mutable std::mutex callback_mutex;
     std::unordered_map<int, ConsoleUpdateCallback> callback_list;
     int last_callback_key = 0;
 

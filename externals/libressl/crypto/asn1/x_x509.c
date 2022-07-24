@@ -1,4 +1,4 @@
-/* $OpenBSD: x_x509.c,v 1.26 2018/02/17 15:50:42 jsing Exp $ */
+/* $OpenBSD: x_x509.c,v 1.30 2021/12/25 13:17:48 jsing Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -64,6 +64,8 @@
 #include <openssl/evp.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
+
+#include "x509_lcl.h"
 
 static const ASN1_AUX X509_CINF_aux = {
 	.flags = ASN1_AFLG_ENCODING,
@@ -185,6 +187,10 @@ x509_cb(int operation, ASN1_VALUE **pval, const ASN1_ITEM *it, void *exarg)
 		ret->akid = NULL;
 		ret->aux = NULL;
 		ret->crldp = NULL;
+#ifndef OPENSSL_NO_RFC3779
+		ret->rfc3779_addr = NULL;
+		ret->rfc3779_asid = NULL;
+#endif
 		CRYPTO_new_ex_data(CRYPTO_EX_INDEX_X509, ret, &ret->ex_data);
 		break;
 
@@ -202,6 +208,10 @@ x509_cb(int operation, ASN1_VALUE **pval, const ASN1_ITEM *it, void *exarg)
 		policy_cache_free(ret->policy_cache);
 		GENERAL_NAMES_free(ret->altname);
 		NAME_CONSTRAINTS_free(ret->nc);
+#ifndef OPENSSL_NO_RFC3779
+		sk_IPAddressFamily_pop_free(ret->rfc3779_addr, IPAddressFamily_free);
+		ASIdentifiers_free(ret->rfc3779_asid);
+#endif
 		free(ret->name);
 		ret->name = NULL;
 		break;
@@ -329,7 +339,7 @@ d2i_X509_AUX(X509 **a, const unsigned char **pp, long length)
 	}
 	return ret;
 
-err:
+ err:
 	X509_free(ret);
 	return NULL;
 }
@@ -343,6 +353,13 @@ i2d_X509_AUX(X509 *a, unsigned char **pp)
 	if (a)
 		length += i2d_X509_CERT_AUX(a->aux, pp);
 	return length;
+}
+
+int
+i2d_re_X509_tbs(X509 *x, unsigned char **pp)
+{
+	x->cert_info->enc.modified = 1;
+	return i2d_X509_CINF(x->cert_info, pp);
 }
 
 void

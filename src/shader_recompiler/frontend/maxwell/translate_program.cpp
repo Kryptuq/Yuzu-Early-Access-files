@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <memory>
@@ -212,10 +211,10 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
     }
     Optimization::SsaRewritePass(program);
 
+    Optimization::ConstantPropagationPass(program);
+
     Optimization::GlobalMemoryToStorageBufferPass(program);
     Optimization::TexturePass(env, program);
-
-    Optimization::ConstantPropagationPass(program);
 
     if (Settings::values.resolution_info.active) {
         Optimization::RescalingPass(program);

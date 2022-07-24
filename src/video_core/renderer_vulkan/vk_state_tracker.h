@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -8,9 +7,14 @@
 #include <limits>
 
 #include "common/common_types.h"
-#include "core/core.h"
 #include "video_core/dirty_flags.h"
 #include "video_core/engines/maxwell_3d.h"
+
+namespace Tegra {
+namespace Control {
+struct ChannelState;
+}
+} // namespace Tegra
 
 namespace Vulkan {
 
@@ -55,19 +59,19 @@ class StateTracker {
     using Maxwell = Tegra::Engines::Maxwell3D::Regs;
 
 public:
-    explicit StateTracker(Tegra::GPU& gpu);
+    explicit StateTracker();
 
     void InvalidateCommandBufferState() {
-        flags |= invalidation_flags;
+        (*flags) |= invalidation_flags;
         current_topology = INVALID_TOPOLOGY;
     }
 
     void InvalidateViewports() {
-        flags[Dirty::Viewports] = true;
+        (*flags)[Dirty::Viewports] = true;
     }
 
     void InvalidateScissors() {
-        flags[Dirty::Scissors] = true;
+        (*flags)[Dirty::Scissors] = true;
     }
 
     bool TouchViewports() {
@@ -141,16 +145,22 @@ public:
         return has_changed;
     }
 
+    void SetupTables(Tegra::Control::ChannelState& channel_state);
+
+    void ChangeChannel(Tegra::Control::ChannelState& channel_state);
+
+    void InvalidateState();
+
 private:
     static constexpr auto INVALID_TOPOLOGY = static_cast<Maxwell::PrimitiveTopology>(~0u);
 
     bool Exchange(std::size_t id, bool new_value) const noexcept {
-        const bool is_dirty = flags[id];
-        flags[id] = new_value;
+        const bool is_dirty = (*flags)[id];
+        (*flags)[id] = new_value;
         return is_dirty;
     }
 
-    Tegra::Engines::Maxwell3D::DirtyState::Flags& flags;
+    Tegra::Engines::Maxwell3D::DirtyState::Flags* flags;
     Tegra::Engines::Maxwell3D::DirtyState::Flags invalidation_flags;
     Maxwell::PrimitiveTopology current_topology = INVALID_TOPOLOGY;
 };

@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <vector>
@@ -26,7 +25,7 @@ using Shader::Backend::SPIRV::RESCALING_LAYOUT_WORDS_OFFSET;
 using Tegra::Texture::TexturePair;
 
 ComputePipeline::ComputePipeline(const Device& device_, DescriptorPool& descriptor_pool,
-                                 VKUpdateDescriptorQueue& update_descriptor_queue_,
+                                 UpdateDescriptorQueue& update_descriptor_queue_,
                                  Common::ThreadWorker* thread_worker,
                                  PipelineStatistics* pipeline_statistics,
                                  VideoCore::ShaderNotify* shader_notify, const Shader::Info& info_,
@@ -77,7 +76,7 @@ ComputePipeline::ComputePipeline(const Device& device_, DescriptorPool& descript
         if (pipeline_statistics) {
             pipeline_statistics->Collect(*pipeline);
         }
-        std::lock_guard lock{build_mutex};
+        std::scoped_lock lock{build_mutex};
         is_built = true;
         build_condvar.notify_one();
         if (shader_notify) {
@@ -92,7 +91,7 @@ ComputePipeline::ComputePipeline(const Device& device_, DescriptorPool& descript
 }
 
 void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
-                                Tegra::MemoryManager& gpu_memory, VKScheduler& scheduler,
+                                Tegra::MemoryManager& gpu_memory, Scheduler& scheduler,
                                 BufferCache& buffer_cache, TextureCache& texture_cache) {
     update_descriptor_queue.Acquire();
 
@@ -127,8 +126,8 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
                 const u32 secondary_offset{desc.secondary_cbuf_offset + index_offset};
                 const GPUVAddr separate_addr{cbufs[desc.secondary_cbuf_index].Address() +
                                              secondary_offset};
-                const u32 lhs_raw{gpu_memory.Read<u32>(addr)};
-                const u32 rhs_raw{gpu_memory.Read<u32>(separate_addr)};
+                const u32 lhs_raw{gpu_memory.Read<u32>(addr) << desc.shift_left};
+                const u32 rhs_raw{gpu_memory.Read<u32>(separate_addr) << desc.secondary_shift_left};
                 return TexturePair(lhs_raw | rhs_raw, via_header_index);
             }
         }

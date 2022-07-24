@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/assert.h"
 #include "core/hle/service/nvdrv/syncpoint_manager.h"
@@ -24,7 +23,7 @@ u32 SyncpointManager::AllocateSyncpoint() {
             return syncpoint_id;
         }
     }
-    UNREACHABLE_MSG("No more available syncpoints!");
+    ASSERT_MSG(false, "No more available syncpoints!");
     return {};
 }
 

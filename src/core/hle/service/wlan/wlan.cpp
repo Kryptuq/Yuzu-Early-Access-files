@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <memory>
 
@@ -53,6 +52,7 @@ public:
             {35, nullptr, "Unknown35"},
             {36, nullptr, "Unknown36"},
             {37, nullptr, "Unknown37"},
+            {38, nullptr, "Unknown38"},
         };
         // clang-format on
 
@@ -117,7 +117,6 @@ public:
             {49, nullptr, "Unknown49"},
             {50, nullptr, "Unknown50"},
             {51, nullptr, "Unknown51"},
-            {52, nullptr, "Unknown52"},
         };
         // clang-format on
 

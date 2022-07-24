@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/stdint.hpp>
 
 namespace Dynarmic::FP {
 
@@ -30,112 +30,112 @@ public:
 
     /// Get negative condition flag
     bool N() const {
-        return Common::Bit<31>(value);
+        return mcl::bit::get_bit<31>(value);
     }
 
     /// Set negative condition flag
     void N(bool N_) {
-        value = Common::ModifyBit<31>(value, N_);
+        value = mcl::bit::set_bit<31>(value, N_);
     }
 
     /// Get zero condition flag
     bool Z() const {
-        return Common::Bit<30>(value);
+        return mcl::bit::get_bit<30>(value);
     }
 
     /// Set zero condition flag
     void Z(bool Z_) {
-        value = Common::ModifyBit<30>(value, Z_);
+        value = mcl::bit::set_bit<30>(value, Z_);
     }
 
     /// Get carry condition flag
     bool C() const {
-        return Common::Bit<29>(value);
+        return mcl::bit::get_bit<29>(value);
     }
 
     /// Set carry condition flag
     void C(bool C_) {
-        value = Common::ModifyBit<29>(value, C_);
+        value = mcl::bit::set_bit<29>(value, C_);
     }
 
     /// Get overflow condition flag
     bool V() const {
-        return Common::Bit<28>(value);
+        return mcl::bit::get_bit<28>(value);
     }
 
     /// Set overflow condition flag
     void V(bool V_) {
-        value = Common::ModifyBit<28>(value, V_);
+        value = mcl::bit::set_bit<28>(value, V_);
     }
 
     /// Get cumulative saturation bit
     bool QC() const {
-        return Common::Bit<27>(value);
+        return mcl::bit::get_bit<27>(value);
     }
 
     /// Set cumulative saturation bit
     void QC(bool QC_) {
-        value = Common::ModifyBit<27>(value, QC_);
+        value = mcl::bit::set_bit<27>(value, QC_);
     }
 
     /// Get input denormal floating-point exception bit
     bool IDC() const {
-        return Common::Bit<7>(value);
+        return mcl::bit::get_bit<7>(value);
     }
 
     /// Set input denormal floating-point exception bit
     void IDC(bool IDC_) {
-        value = Common::ModifyBit<7>(value, IDC_);
+        value = mcl::bit::set_bit<7>(value, IDC_);
     }
 
     /// Get inexact cumulative floating-point exception bit
     bool IXC() const {
-        return Common::Bit<4>(value);
+        return mcl::bit::get_bit<4>(value);
     }
 
     /// Set inexact cumulative floating-point exception bit
     void IXC(bool IXC_) {
-        value = Common::ModifyBit<4>(value, IXC_);
+        value = mcl::bit::set_bit<4>(value, IXC_);
     }
 
     /// Get underflow cumulative floating-point exception bit
     bool UFC() const {
-        return Common::Bit<3>(value);
+        return mcl::bit::get_bit<3>(value);
     }
 
     /// Set underflow cumulative floating-point exception bit
     void UFC(bool UFC_) {
-        value = Common::ModifyBit<3>(value, UFC_);
+        value = mcl::bit::set_bit<3>(value, UFC_);
     }
 
     /// Get overflow cumulative floating-point exception bit
     bool OFC() const {
-        return Common::Bit<2>(value);
+        return mcl::bit::get_bit<2>(value);
     }
 
     /// Set overflow cumulative floating-point exception bit
     void OFC(bool OFC_) {
-        value = Common::ModifyBit<2>(value, OFC_);
+        value = mcl::bit::set_bit<2>(value, OFC_);
     }
 
     /// Get divide by zero cumulative floating-point exception bit
     bool DZC() const {
-        return Common::Bit<1>(value);
+        return mcl::bit::get_bit<1>(value);
     }
 
     /// Set divide by zero cumulative floating-point exception bit
     void DZC(bool DZC_) {
-        value = Common::ModifyBit<1>(value, DZC_);
+        value = mcl::bit::set_bit<1>(value, DZC_);
     }
 
     /// Get invalid operation cumulative floating-point exception bit
     bool IOC() const {
-        return Common::Bit<0>(value);
+        return mcl::bit::get_bit<0>(value);
     }
 
     /// Set invalid operation cumulative floating-point exception bit
     void IOC(bool IOC_) {
-        value = Common::ModifyBit<0>(value, IOC_);
+        value = mcl::bit::set_bit<0>(value, IOC_);
     }
 
     /// Gets the underlying raw value within the FPSR.

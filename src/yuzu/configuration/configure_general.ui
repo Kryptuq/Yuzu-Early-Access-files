@@ -28,87 +28,6 @@
         <item>
          <layout class="QVBoxLayout" name="GeneralVerticalLayout">
           <item>
-           <widget class="QWidget" name="fps_cap_layout" native="true">
-            <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,1">
-             <property name="leftMargin">
-              <number>0</number>
-             </property>
-             <property name="topMargin">
-              <number>0</number>
-             </property>
-             <property name="rightMargin">
-              <number>0</number>
-             </property>
-             <property name="bottomMargin">
-              <number>0</number>
-             </property>
-             <item>
-              <layout class="QHBoxLayout" name="horizontalLayout_4">
-               <item>
-                <widget class="QComboBox" name="fps_cap_combobox">
-                 <property name="currentText">
-                  <string>Use global framerate cap</string>
-                 </property>
-                 <property name="currentIndex">
-                  <number>0</number>
-                 </property>
-                 <item>
-                  <property name="text">
-                   <string>Use global framerate cap</string>
-                  </property>
-                 </item>
-                 <item>
-                  <property name="text">
-                   <string>Set framerate cap:</string>
-                  </property>
-                 </item>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="fps_cap_label">
-                 <property name="toolTip">
-                  <string>Requires the use of the FPS Limiter Toggle hotkey to take effect.</string>
-                 </property>
-                 <property name="text">
-                  <string>Framerate Cap</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <spacer name="horizontalSpacer">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>40</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-              </layout>
-             </item>
-             <item>
-              <widget class="QSpinBox" name="fps_cap">
-               <property name="suffix">
-                <string>x</string>
-               </property>
-               <property name="minimum">
-                <number>1</number>
-               </property>
-               <property name="maximum">
-                <number>1000</number>
-               </property>
-               <property name="value">
-                <number>500</number>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-          <item>
            <layout class="QHBoxLayout" name="horizontalLayout_2">
             <item>
              <widget class="QCheckBox" name="toggle_speed_limit">
@@ -143,6 +62,13 @@
            </widget>
           </item>
           <item>
+           <widget class="QCheckBox" name="use_extended_memory_layout">
+            <property name="text">
+             <string>Extended memory layout (6GB DRAM)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QCheckBox" name="toggle_check_exit">
             <property name="text">
              <string>Confirm exit while emulation is running</string>
@@ -160,6 +86,13 @@
            <widget class="QCheckBox" name="toggle_background_pause">
             <property name="text">
              <string>Pause emulation when in background</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="toggle_background_mute">
+            <property name="text">
+             <string>Mute audio when in background</string>
             </property>
            </widget>
           </item>

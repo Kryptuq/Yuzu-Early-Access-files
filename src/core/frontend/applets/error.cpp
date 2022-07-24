@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/logging/log.h"
 #include "core/frontend/applets/error.h"
@@ -9,12 +8,12 @@ namespace Core::Frontend {
 
 ErrorApplet::~ErrorApplet() = default;
 
-void DefaultErrorApplet::ShowError(ResultCode error, std::function<void()> finished) const {
+void DefaultErrorApplet::ShowError(Result error, std::function<void()> finished) const {
     LOG_CRITICAL(Service_Fatal, "Application requested error display: {:04}-{:04} (raw={:08X})",
                  error.module.Value(), error.description.Value(), error.raw);
 }
 
-void DefaultErrorApplet::ShowErrorWithTimestamp(ResultCode error, std::chrono::seconds time,
+void DefaultErrorApplet::ShowErrorWithTimestamp(Result error, std::chrono::seconds time,
                                                 std::function<void()> finished) const {
     LOG_CRITICAL(
         Service_Fatal,
@@ -22,7 +21,7 @@ void DefaultErrorApplet::ShowErrorWithTimestamp(ResultCode error, std::chrono::s
         error.module.Value(), error.description.Value(), error.raw, time.count());
 }
 
-void DefaultErrorApplet::ShowCustomErrorText(ResultCode error, std::string main_text,
+void DefaultErrorApplet::ShowCustomErrorText(Result error, std::string main_text,
                                              std::string detail_text,
                                              std::function<void()> finished) const {
     LOG_CRITICAL(Service_Fatal,

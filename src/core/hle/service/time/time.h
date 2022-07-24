@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -37,7 +36,7 @@ public:
         void GetSharedMemoryNativeHandle(Kernel::HLERequestContext& ctx);
 
     private:
-        ResultCode GetClockSnapshotFromSystemClockContextInternal(
+        Result GetClockSnapshotFromSystemClockContextInternal(
             Kernel::KThread* thread, Clock::SystemClockContext user_context,
             Clock::SystemClockContext network_context, Clock::TimeType type,
             Clock::ClockSnapshot& cloc_snapshot);

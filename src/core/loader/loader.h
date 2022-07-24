@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -11,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/vfs.h"
@@ -139,8 +139,11 @@ std::string GetResultStatusString(ResultStatus status);
 std::ostream& operator<<(std::ostream& os, ResultStatus status);
 
 /// Interface for loading an application
-class AppLoader : NonCopyable {
+class AppLoader {
 public:
+    YUZU_NON_COPYABLE(AppLoader);
+    YUZU_NON_MOVEABLE(AppLoader);
+
     struct LoadParameters {
         s32 main_thread_priority;
         u64 main_thread_stack_size;

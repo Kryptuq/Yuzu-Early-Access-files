@@ -1,14 +1,13 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "common/alignment.h"
 #include "common/common_types.h"
 #include "core/device_memory.h"
-#include "core/hle/kernel/k_auto_object.h"
 #include "core/hle/kernel/k_code_memory.h"
 #include "core/hle/kernel/k_light_lock.h"
 #include "core/hle/kernel/k_memory_block.h"
-#include "core/hle/kernel/k_page_linked_list.h"
+#include "core/hle/kernel/k_page_group.h"
 #include "core/hle/kernel/k_page_table.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/slab_helpers.h"
@@ -20,7 +19,7 @@ namespace Kernel {
 KCodeMemory::KCodeMemory(KernelCore& kernel_)
     : KAutoObjectWithSlabHeapAndContainer{kernel_}, m_lock(kernel_) {}
 
-ResultCode KCodeMemory::Initialize(Core::DeviceMemory& device_memory, VAddr addr, size_t size) {
+Result KCodeMemory::Initialize(Core::DeviceMemory& device_memory, VAddr addr, size_t size) {
     // Set members.
     m_owner = kernel.CurrentProcess();
 
@@ -28,11 +27,10 @@ ResultCode KCodeMemory::Initialize(Core::DeviceMemory& device_memory, VAddr addr
     auto& page_table = m_owner->PageTable();
 
     // Construct the page group.
-    KMemoryInfo kBlockInfo = page_table.QueryInfo(addr);
-    m_page_group = KPageLinkedList(kBlockInfo.GetAddress(), kBlockInfo.GetNumPages());
+    m_page_group = {};
 
     // Lock the memory.
-    R_TRY(page_table.LockForCodeMemory(addr, size))
+    R_TRY(page_table.LockForCodeMemory(&m_page_group, addr, size))
 
     // Clear the memory.
     for (const auto& block : m_page_group.Nodes()) {
@@ -40,6 +38,7 @@ ResultCode KCodeMemory::Initialize(Core::DeviceMemory& device_memory, VAddr addr
     }
 
     // Set remaining tracking members.
+    m_owner->Open();
     m_address = addr;
     m_is_initialized = true;
     m_is_owner_mapped = false;
@@ -53,11 +52,17 @@ void KCodeMemory::Finalize() {
     // Unlock.
     if (!m_is_mapped && !m_is_owner_mapped) {
         const size_t size = m_page_group.GetNumPages() * PageSize;
-        m_owner->PageTable().UnlockForCodeMemory(m_address, size);
+        m_owner->PageTable().UnlockForCodeMemory(m_address, size, m_page_group);
     }
+
+    // Close the page group.
+    m_page_group = {};
+
+    // Close our reference to our owner.
+    m_owner->Close();
 }
 
-ResultCode KCodeMemory::Map(VAddr address, size_t size) {
+Result KCodeMemory::Map(VAddr address, size_t size) {
     // Validate the size.
     R_UNLESS(m_page_group.GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
 
@@ -77,7 +82,7 @@ ResultCode KCodeMemory::Map(VAddr address, size_t size) {
     return ResultSuccess;
 }
 
-ResultCode KCodeMemory::Unmap(VAddr address, size_t size) {
+Result KCodeMemory::Unmap(VAddr address, size_t size) {
     // Validate the size.
     R_UNLESS(m_page_group.GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
 
@@ -94,7 +99,7 @@ ResultCode KCodeMemory::Unmap(VAddr address, size_t size) {
     return ResultSuccess;
 }
 
-ResultCode KCodeMemory::MapToOwner(VAddr address, size_t size, Svc::MemoryPermission perm) {
+Result KCodeMemory::MapToOwner(VAddr address, size_t size, Svc::MemoryPermission perm) {
     // Validate the size.
     R_UNLESS(m_page_group.GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
 
@@ -114,7 +119,8 @@ ResultCode KCodeMemory::MapToOwner(VAddr address, size_t size, Svc::MemoryPermis
         k_perm = KMemoryPermission::UserReadExecute;
         break;
     default:
-        break;
+        // Already validated by ControlCodeMemory svc
+        UNREACHABLE();
     }
 
     // Map the memory.
@@ -127,7 +133,7 @@ ResultCode KCodeMemory::MapToOwner(VAddr address, size_t size, Svc::MemoryPermis
     return ResultSuccess;
 }
 
-ResultCode KCodeMemory::UnmapFromOwner(VAddr address, size_t size) {
+Result KCodeMemory::UnmapFromOwner(VAddr address, size_t size) {
     // Validate the size.
     R_UNLESS(m_page_group.GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
 

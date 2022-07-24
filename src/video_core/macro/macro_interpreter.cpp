@@ -1,6 +1,8 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include <array>
+#include <optional>
 
 #include "common/assert.h"
 #include "common/logging/log.h"
@@ -11,16 +13,81 @@
 MICROPROFILE_DEFINE(MacroInterp, "GPU", "Execute macro interpreter", MP_RGB(128, 128, 192));
 
 namespace Tegra {
-MacroInterpreter::MacroInterpreter(Engines::Maxwell3D& maxwell3d_)
-    : MacroEngine{maxwell3d_}, maxwell3d{maxwell3d_} {}
+namespace {
+class MacroInterpreterImpl final : public CachedMacro {
+public:
+    explicit MacroInterpreterImpl(Engines::Maxwell3D& maxwell3d_, const std::vector<u32>& code_)
+        : maxwell3d{maxwell3d_}, code{code_} {}
 
-std::unique_ptr<CachedMacro> MacroInterpreter::Compile(const std::vector<u32>& code) {
-    return std::make_unique<MacroInterpreterImpl>(maxwell3d, code);
-}
+    void Execute(const std::vector<u32>& params, u32 method) override;
 
-MacroInterpreterImpl::MacroInterpreterImpl(Engines::Maxwell3D& maxwell3d_,
-                                           const std::vector<u32>& code_)
-    : maxwell3d{maxwell3d_}, code{code_} {}
+private:
+    /// Resets the execution engine state, zeroing registers, etc.
+    void Reset();
+
+    /**
+     * Executes a single macro instruction located at the current program counter. Returns whether
+     * the interpreter should keep running.
+     *
+     * @param is_delay_slot Whether the current step is being executed due to a delay slot in a
+     *                      previous instruction.
+     */
+    bool Step(bool is_delay_slot);
+
+    /// Calculates the result of an ALU operation. src_a OP src_b;
+    u32 GetALUResult(Macro::ALUOperation operation, u32 src_a, u32 src_b);
+
+    /// Performs the result operation on the input result and stores it in the specified register
+    /// (if necessary).
+    void ProcessResult(Macro::ResultOperation operation, u32 reg, u32 result);
+
+    /// Evaluates the branch condition and returns whether the branch should be taken or not.
+    bool EvaluateBranchCondition(Macro::BranchCondition cond, u32 value) const;
+
+    /// Reads an opcode at the current program counter location.
+    Macro::Opcode GetOpcode() const;
+
+    /// Returns the specified register's value. Register 0 is hardcoded to always return 0.
+    u32 GetRegister(u32 register_id) const;
+
+    /// Sets the register to the input value.
+    void SetRegister(u32 register_id, u32 value);
+
+    /// Sets the method address to use for the next Send instruction.
+    void SetMethodAddress(u32 address);
+
+    /// Calls a GPU Engine method with the input parameter.
+    void Send(u32 value);
+
+    /// Reads a GPU register located at the method address.
+    u32 Read(u32 method) const;
+
+    /// Returns the next parameter in the parameter queue.
+    u32 FetchParameter();
+
+    Engines::Maxwell3D& maxwell3d;
+
+    /// Current program counter
+    u32 pc{};
+    /// Program counter to execute at after the delay slot is executed.
+    std::optional<u32> delayed_pc;
+
+    /// General purpose macro registers.
+    std::array<u32, Macro::NUM_MACRO_REGISTERS> registers = {};
+
+    /// Method address to use for the next Send instruction.
+    Macro::MethodAddress method_address = {};
+
+    /// Input parameters of the current macro.
+    std::unique_ptr<u32[]> parameters;
+    std::size_t num_parameters = 0;
+    std::size_t parameters_capacity = 0;
+    /// Index of the next parameter that will be fetched by the 'parm' instruction.
+    u32 next_parameter_index = 0;
+
+    bool carry_flag = false;
+    const std::vector<u32>& code;
+};
 
 void MacroInterpreterImpl::Execute(const std::vector<u32>& params, u32 method) {
     MICROPROFILE_SCOPE(MacroInterp);
@@ -241,7 +308,6 @@ bool MacroInterpreterImpl::EvaluateBranchCondition(Macro::BranchCondition cond, 
         return value != 0;
     }
     UNREACHABLE();
-    return true;
 }
 
 Macro::Opcode MacroInterpreterImpl::GetOpcode() const {
@@ -282,6 +348,14 @@ u32 MacroInterpreterImpl::Read(u32 method) const {
 u32 MacroInterpreterImpl::FetchParameter() {
     ASSERT(next_parameter_index < num_parameters);
     return parameters[next_parameter_index++];
+}
+} // Anonymous namespace
+
+MacroInterpreter::MacroInterpreter(Engines::Maxwell3D& maxwell3d_)
+    : MacroEngine{maxwell3d_}, maxwell3d{maxwell3d_} {}
+
+std::unique_ptr<CachedMacro> MacroInterpreter::Compile(const std::vector<u32>& code) {
+    return std::make_unique<MacroInterpreterImpl>(maxwell3d, code);
 }
 
 } // namespace Tegra

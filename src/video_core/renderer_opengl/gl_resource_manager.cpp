@@ -3,9 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <string_view>
-#include <utility>
 #include <glad/glad.h>
-#include "common/common_types.h"
 #include "common/microprofile.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/renderer_opengl/gl_shader_util.h"

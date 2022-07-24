@@ -1,40 +1,23 @@
-// MIT License
-//
-// Copyright (c) Ryujinx Team and Contributors
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
-// associated documentation files (the "Software"), to deal in the Software without restriction,
-// including without limitation the rights to use, copy, modify, merge, publish, distribute,
-// sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all copies or
-// substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
-// NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// SPDX-FileCopyrightText: Ryujinx Team and Contributors
+// SPDX-License-Identifier: MIT
 
 #include <bit>
-#include "command_classes/host1x.h"
-#include "command_classes/nvdec.h"
-#include "command_classes/vic.h"
 #include "video_core/cdma_pusher.h"
-#include "video_core/command_classes/nvdec_common.h"
-#include "video_core/command_classes/sync_manager.h"
 #include "video_core/engines/maxwell_3d.h"
-#include "video_core/gpu.h"
+#include "video_core/host1x/control.h"
+#include "video_core/host1x/host1x.h"
+#include "video_core/host1x/nvdec.h"
+#include "video_core/host1x/nvdec_common.h"
+#include "video_core/host1x/sync_manager.h"
+#include "video_core/host1x/vic.h"
 #include "video_core/memory_manager.h"
 
 namespace Tegra {
-CDmaPusher::CDmaPusher(GPU& gpu_)
-    : gpu{gpu_}, nvdec_processor(std::make_shared<Nvdec>(gpu)),
-      vic_processor(std::make_unique<Vic>(gpu, nvdec_processor)),
-      host1x_processor(std::make_unique<Host1x>(gpu)),
-      sync_manager(std::make_unique<SyncptIncrManager>(gpu)) {}
+CDmaPusher::CDmaPusher(Host1x::Host1x& host1x_)
+    : host1x{host1x_}, nvdec_processor(std::make_shared<Host1x::Nvdec>(host1x)),
+      vic_processor(std::make_unique<Host1x::Vic>(host1x, nvdec_processor)),
+      host1x_processor(std::make_unique<Host1x::Control>(host1x)),
+      sync_manager(std::make_unique<Host1x::SyncptIncrManager>(host1x)) {}
 
 CDmaPusher::~CDmaPusher() = default;
 
@@ -128,16 +111,17 @@ void CDmaPusher::ExecuteCommand(u32 state_offset, u32 data) {
         case ThiMethod::SetMethod1:
             LOG_DEBUG(Service_NVDRV, "VIC method 0x{:X}, Args=({})",
                       static_cast<u32>(vic_thi_state.method_0), data);
-            vic_processor->ProcessMethod(static_cast<Vic::Method>(vic_thi_state.method_0), data);
+            vic_processor->ProcessMethod(static_cast<Host1x::Vic::Method>(vic_thi_state.method_0),
+                                         data);
             break;
         default:
             break;
         }
         break;
-    case ChClassId::Host1x:
+    case ChClassId::Control:
         // This device is mainly for syncpoint synchronization
         LOG_DEBUG(Service_NVDRV, "Host1X Class Method");
-        host1x_processor->ProcessMethod(static_cast<Host1x::Method>(offset), data);
+        host1x_processor->ProcessMethod(static_cast<Host1x::Control::Method>(offset), data);
         break;
     default:
         UNIMPLEMENTED_MSG("Current class not implemented {:X}", static_cast<u32>(current_class));

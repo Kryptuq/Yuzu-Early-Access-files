@@ -1,13 +1,14 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <mutex>
 #include <string>
 #include <tuple>
 
+#include "common/logging/log.h"
 #include "common/microprofile.h"
+#include "common/thread.h"
 #include "core/core_timing.h"
 #include "core/core_timing_util.h"
 #include "core/hardware_properties.h"
@@ -21,10 +22,11 @@ std::shared_ptr<EventType> CreateEvent(std::string name, TimedCallback&& callbac
 }
 
 struct CoreTiming::Event {
-    u64 time;
+    s64 time;
     u64 fifo_order;
     std::uintptr_t user_data;
     std::weak_ptr<EventType> type;
+    s64 reschedule_time;
 
     // Sort by time, unless the times are the same, in which case sort by
     // the order added to the queue
@@ -42,11 +44,11 @@ CoreTiming::CoreTiming()
 
 CoreTiming::~CoreTiming() = default;
 
-void CoreTiming::ThreadEntry(CoreTiming& instance) {
-    constexpr char name[] = "yuzu:HostTiming";
-    MicroProfileOnThreadCreate(name);
-    Common::SetCurrentThreadName(name);
-    Common::SetCurrentThreadPriority(Common::ThreadPriority::VeryHigh);
+void CoreTiming::ThreadEntry(CoreTiming& instance, size_t id) {
+    const std::string name = "yuzu:HostTiming_" + std::to_string(id);
+    MicroProfileOnThreadCreate(name.c_str());
+    Common::SetCurrentThreadName(name.c_str());
+    Common::SetCurrentThreadPriority(Common::ThreadPriority::Critical);
     instance.on_thread_init();
     instance.ThreadLoop();
     MicroProfileOnThreadExit();
@@ -57,71 +59,131 @@ void CoreTiming::Initialize(std::function<void()>&& on_thread_init_) {
     event_fifo_id = 0;
     shutting_down = false;
     ticks = 0;
-    const auto empty_timed_callback = [](std::uintptr_t, std::chrono::nanoseconds) {};
+    const auto empty_timed_callback = [](std::uintptr_t, u64, std::chrono::nanoseconds)
+        -> std::optional<std::chrono::nanoseconds> { return std::nullopt; };
     ev_lost = CreateEvent("_lost_event", empty_timed_callback);
     if (is_multicore) {
-        timer_thread = std::make_unique<std::thread>(ThreadEntry, std::ref(*this));
+        worker_threads.emplace_back(ThreadEntry, std::ref(*this), 0);
     }
 }
 
 void CoreTiming::Shutdown() {
-    paused = true;
+    is_paused = true;
     shutting_down = true;
-    pause_event.Set();
-    event.Set();
-    if (timer_thread) {
-        timer_thread->join();
+    std::atomic_thread_fence(std::memory_order_release);
+
+    event_cv.notify_all();
+    wait_pause_cv.notify_all();
+    for (auto& thread : worker_threads) {
+        thread.join();
     }
+    worker_threads.clear();
+    pause_callbacks.clear();
     ClearPendingEvents();
-    timer_thread.reset();
     has_started = false;
 }
 
-void CoreTiming::Pause(bool is_paused) {
-    paused = is_paused;
-    pause_event.Set();
-}
-
-void CoreTiming::SyncPause(bool is_paused) {
-    if (is_paused == paused && paused_set == paused) {
+void CoreTiming::Pause(bool is_paused_) {
+    std::unique_lock main_lock(event_mutex);
+    if (is_paused_ == paused_state.load(std::memory_order_relaxed)) {
         return;
     }
-    Pause(is_paused);
-    if (timer_thread) {
-        if (!is_paused) {
-            pause_event.Set();
+    if (is_multicore) {
+        is_paused = is_paused_;
+        event_cv.notify_all();
+        if (!is_paused_) {
+            wait_pause_cv.notify_all();
         }
-        event.Set();
-        while (paused_set != is_paused)
-            ;
+    }
+    paused_state.store(is_paused_, std::memory_order_relaxed);
+
+    if (!is_paused_) {
+        pause_end_time = GetGlobalTimeNs().count();
+    }
+
+    for (auto& cb : pause_callbacks) {
+        cb(is_paused_);
+    }
+}
+
+void CoreTiming::SyncPause(bool is_paused_) {
+    std::unique_lock main_lock(event_mutex);
+    if (is_paused_ == paused_state.load(std::memory_order_relaxed)) {
+        return;
+    }
+
+    if (is_multicore) {
+        is_paused = is_paused_;
+        event_cv.notify_all();
+        if (!is_paused_) {
+            wait_pause_cv.notify_all();
+        }
+    }
+    paused_state.store(is_paused_, std::memory_order_relaxed);
+    if (is_multicore) {
+        if (is_paused_) {
+            wait_signal_cv.wait(main_lock, [this] { return pause_count == worker_threads.size(); });
+        } else {
+            wait_signal_cv.wait(main_lock, [this] { return pause_count == 0; });
+        }
+    }
+
+    if (!is_paused_) {
+        pause_end_time = GetGlobalTimeNs().count();
+    }
+
+    for (auto& cb : pause_callbacks) {
+        cb(is_paused_);
     }
 }
 
 bool CoreTiming::IsRunning() const {
-    return !paused_set;
+    return !paused_state.load(std::memory_order_acquire);
 }
 
 bool CoreTiming::HasPendingEvents() const {
-    return !(wait_set && event_queue.empty());
+    std::unique_lock main_lock(event_mutex);
+    return !event_queue.empty() || pending_events.load(std::memory_order_relaxed) != 0;
 }
 
 void CoreTiming::ScheduleEvent(std::chrono::nanoseconds ns_into_future,
                                const std::shared_ptr<EventType>& event_type,
-                               std::uintptr_t user_data) {
-    {
-        std::scoped_lock scope{basic_lock};
-        const u64 timeout = static_cast<u64>((GetGlobalTimeNs() + ns_into_future).count());
+                               std::uintptr_t user_data, bool absolute_time) {
 
-        event_queue.emplace_back(Event{timeout, event_fifo_id++, user_data, event_type});
+    std::unique_lock main_lock(event_mutex);
+    const auto next_time{absolute_time ? ns_into_future : GetGlobalTimeNs() + ns_into_future};
 
-        std::push_heap(event_queue.begin(), event_queue.end(), std::greater<>());
+    event_queue.emplace_back(Event{next_time.count(), event_fifo_id++, user_data, event_type, 0});
+    pending_events.fetch_add(1, std::memory_order_relaxed);
+
+    std::push_heap(event_queue.begin(), event_queue.end(), std::greater<>());
+
+    if (is_multicore) {
+        event_cv.notify_one();
     }
-    event.Set();
+}
+
+void CoreTiming::ScheduleLoopingEvent(std::chrono::nanoseconds start_time,
+                                      std::chrono::nanoseconds resched_time,
+                                      const std::shared_ptr<EventType>& event_type,
+                                      std::uintptr_t user_data, bool absolute_time) {
+    std::unique_lock main_lock(event_mutex);
+    const auto next_time{absolute_time ? start_time : GetGlobalTimeNs() + start_time};
+
+    event_queue.emplace_back(
+        Event{next_time.count(), event_fifo_id++, user_data, event_type, resched_time.count()});
+    pending_events.fetch_add(1, std::memory_order_relaxed);
+
+    std::push_heap(event_queue.begin(), event_queue.end(), std::greater<>());
+
+    if (is_multicore) {
+        event_cv.notify_one();
+    }
 }
 
 void CoreTiming::UnscheduleEvent(const std::shared_ptr<EventType>& event_type,
                                  std::uintptr_t user_data) {
-    std::scoped_lock scope{basic_lock};
+    std::unique_lock main_lock(event_mutex);
     const auto itr = std::remove_if(event_queue.begin(), event_queue.end(), [&](const Event& e) {
         return e.type.lock().get() == event_type.get() && e.user_data == user_data;
     });
@@ -130,6 +192,7 @@ void CoreTiming::UnscheduleEvent(const std::shared_ptr<EventType>& event_type,
     if (itr != event_queue.end()) {
         event_queue.erase(itr, event_queue.end());
         std::make_heap(event_queue.begin(), event_queue.end(), std::greater<>());
+        pending_events.fetch_sub(1, std::memory_order_relaxed);
     }
 }
 
@@ -169,11 +232,12 @@ u64 CoreTiming::GetClockTicks() const {
 }
 
 void CoreTiming::ClearPendingEvents() {
+    std::unique_lock main_lock(event_mutex);
     event_queue.clear();
 }
 
 void CoreTiming::RemoveEvent(const std::shared_ptr<EventType>& event_type) {
-    std::scoped_lock lock{basic_lock};
+    std::unique_lock main_lock(event_mutex);
 
     const auto itr = std::remove_if(event_queue.begin(), event_queue.end(), [&](const Event& e) {
         return e.type.lock().get() == event_type.get();
@@ -186,22 +250,48 @@ void CoreTiming::RemoveEvent(const std::shared_ptr<EventType>& event_type) {
     }
 }
 
+void CoreTiming::RegisterPauseCallback(PauseCallback&& callback) {
+    std::unique_lock main_lock(event_mutex);
+    pause_callbacks.emplace_back(std::move(callback));
+}
+
 std::optional<s64> CoreTiming::Advance() {
-    std::scoped_lock lock{advance_lock, basic_lock};
     global_timer = GetGlobalTimeNs().count();
 
+    std::unique_lock main_lock(event_mutex);
     while (!event_queue.empty() && event_queue.front().time <= global_timer) {
         Event evt = std::move(event_queue.front());
         std::pop_heap(event_queue.begin(), event_queue.end(), std::greater<>());
         event_queue.pop_back();
-        basic_lock.unlock();
 
         if (const auto event_type{evt.type.lock()}) {
-            event_type->callback(
-                evt.user_data, std::chrono::nanoseconds{static_cast<s64>(global_timer - evt.time)});
+            event_mutex.unlock();
+
+            const auto new_schedule_time{event_type->callback(
+                evt.user_data, evt.time,
+                std::chrono::nanoseconds{GetGlobalTimeNs().count() - evt.time})};
+
+            event_mutex.lock();
+            pending_events.fetch_sub(1, std::memory_order_relaxed);
+
+            if (evt.reschedule_time != 0) {
+                // If this event was scheduled into a pause, its time now is going to be way behind.
+                // Re-set this event to continue from the end of the pause.
+                auto next_time{evt.time + evt.reschedule_time};
+                if (evt.time < pause_end_time) {
+                    next_time = pause_end_time + evt.reschedule_time;
+                }
+
+                const auto next_schedule_time{new_schedule_time.has_value()
+                                                  ? new_schedule_time.value().count()
+                                                  : evt.reschedule_time};
+                event_queue.emplace_back(
+                    Event{next_time, event_fifo_id++, evt.user_data, evt.type, next_schedule_time});
+                pending_events.fetch_add(1, std::memory_order_relaxed);
+                std::push_heap(event_queue.begin(), event_queue.end(), std::greater<>());
+            }
         }
 
-        basic_lock.lock();
         global_timer = GetGlobalTimeNs().count();
     }
 
@@ -214,26 +304,34 @@ std::optional<s64> CoreTiming::Advance() {
 }
 
 void CoreTiming::ThreadLoop() {
+    const auto predicate = [this] { return !event_queue.empty() || is_paused; };
     has_started = true;
     while (!shutting_down) {
-        while (!paused) {
-            paused_set = false;
+        while (!is_paused && !shutting_down) {
             const auto next_time = Advance();
             if (next_time) {
                 if (*next_time > 0) {
                     std::chrono::nanoseconds next_time_ns = std::chrono::nanoseconds(*next_time);
-                    event.WaitFor(next_time_ns);
+                    std::unique_lock main_lock(event_mutex);
+                    event_cv.wait_for(main_lock, next_time_ns, predicate);
                 }
             } else {
-                wait_set = true;
-                event.Wait();
+                std::unique_lock main_lock(event_mutex);
+                event_cv.wait(main_lock, predicate);
             }
-            wait_set = false;
         }
-        paused_set = true;
-        clock->Pause(true);
-        pause_event.Wait();
-        clock->Pause(false);
+        std::unique_lock main_lock(event_mutex);
+        pause_count++;
+        if (pause_count == worker_threads.size()) {
+            clock->Pause(true);
+            wait_signal_cv.notify_all();
+        }
+        wait_pause_cv.wait(main_lock, [this] { return !is_paused || shutting_down; });
+        pause_count--;
+        if (pause_count == 0) {
+            clock->Pause(false);
+            wait_signal_cv.notify_all();
+        }
     }
 }
 

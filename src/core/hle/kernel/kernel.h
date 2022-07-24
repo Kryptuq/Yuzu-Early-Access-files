@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -14,7 +13,6 @@
 #include "core/hardware_properties.h"
 #include "core/hle/kernel/k_auto_object.h"
 #include "core/hle/kernel/k_slab_heap.h"
-#include "core/hle/kernel/memory_types.h"
 #include "core/hle/kernel/svc_common.h"
 
 namespace Core {
@@ -41,7 +39,9 @@ class KClientSession;
 class KEvent;
 class KHandleTable;
 class KLinkedListNode;
+class KMemoryLayout;
 class KMemoryManager;
+class KPageBuffer;
 class KPort;
 class KProcess;
 class KResourceLimit;
@@ -51,7 +51,9 @@ class KSession;
 class KSharedMemory;
 class KSharedMemoryInfo;
 class KThread;
+class KThreadLocalPage;
 class KTransferMemory;
+class KWorkerTaskManager;
 class KWritableEvent;
 class KCodeMemory;
 class PhysicalCore;
@@ -106,6 +108,9 @@ public:
 
     /// Clears all resources in use by the kernel instance.
     void Shutdown();
+
+    /// Close all active services in use by the kernel instance.
+    void CloseServices();
 
     /// Retrieves a shared pointer to the system resource limit instance.
     const KResourceLimit* GetSystemResourceLimit() const;
@@ -182,6 +187,8 @@ public:
 
     const std::array<Core::CPUInterruptHandler, Core::Hardware::NUM_CPU_CORES>& Interrupts() const;
 
+    void InterruptAllPhysicalCores();
+
     void InvalidateAllInstructionCaches();
 
     void InvalidateCpuInstructionCacheRange(VAddr addr, std::size_t size);
@@ -192,13 +199,13 @@ public:
     /// Opens a port to a service previously registered with RegisterNamedService.
     KClientPort* CreateNamedServicePort(std::string name);
 
-    /// Registers a server session with the gobal emulation state, to be freed on shutdown. This is
-    /// necessary because we do not emulate processes for HLE sessions.
-    void RegisterServerSession(KServerSession* server_session);
+    /// Registers a server session or port with the gobal emulation state, to be freed on shutdown.
+    /// This is necessary because we do not emulate processes for HLE sessions and ports.
+    void RegisterServerObject(KAutoObject* server_object);
 
-    /// Unregisters a server session previously registered with RegisterServerSession when it was
-    /// destroyed during the current emulation session.
-    void UnregisterServerSession(KServerSession* server_session);
+    /// Unregisters a server session or port previously registered with RegisterServerSession when
+    /// it was destroyed during the current emulation session.
+    void UnregisterServerObject(KAutoObject* server_object);
 
     /// Registers all kernel objects with the global emulation state, this is purely for tracking
     /// leaks after emulation has been shutdown.
@@ -222,6 +229,9 @@ public:
     /// Gets the current host_thread/guest_thread pointer.
     KThread* GetCurrentEmuThread() const;
 
+    /// Sets the current guest_thread pointer.
+    void SetCurrentEmuThread(KThread* thread);
+
     /// Gets the current host_thread handle.
     u32 GetCurrentHostThreadID() const;
 
@@ -236,12 +246,6 @@ public:
 
     /// Gets the virtual memory manager for the kernel.
     const KMemoryManager& MemoryManager() const;
-
-    /// Gets the slab heap allocated for user space pages.
-    KSlabHeap<Page>& GetUserSlabHeapPages();
-
-    /// Gets the slab heap allocated for user space pages.
-    const KSlabHeap<Page>& GetUserSlabHeapPages() const;
 
     /// Gets the shared memory object for HID services.
     Kernel::KSharedMemory& GetHidSharedMem();
@@ -273,11 +277,14 @@ public:
     /// Gets the shared memory object for HIDBus services.
     const Kernel::KSharedMemory& GetHidBusSharedMem() const;
 
-    /// Suspend/unsuspend the OS.
-    void Suspend(bool in_suspention);
+    /// Suspend/unsuspend all processes.
+    void Suspend(bool suspend);
 
-    /// Exceptional exit the OS.
+    /// Exceptional exit all processes.
     void ExceptionalExit();
+
+    /// Notify emulated CPU cores to shut down.
+    void ShutdownCores();
 
     bool IsMulticore() const;
 
@@ -288,14 +295,24 @@ public:
     void ExitSVCProfile();
 
     /**
-     * Creates an HLE service thread, which are used to execute service routines asynchronously.
-     * While these are allocated per ServerSession, these need to be owned and managed outside
-     * of ServerSession to avoid a circular dependency.
+     * Creates a host thread to execute HLE service requests, which are used to execute service
+     * routines asynchronously. While these are allocated per ServerSession, these need to be owned
+     * and managed outside of ServerSession to avoid a circular dependency. In general, most
+     * services can just use the default service thread, and not need their own host service thread.
+     * See GetDefaultServiceThread.
      * @param name String name for the ServerSession creating this thread, used for debug
      * purposes.
      * @returns The a weak pointer newly created service thread.
      */
     std::weak_ptr<Kernel::ServiceThread> CreateServiceThread(const std::string& name);
+
+    /**
+     * Gets the default host service thread, which executes HLE service requests. Unless service
+     * requests need to block on the host, the default service thread should be used in favor of
+     * creating a new service thread.
+     * @returns The a weak pointer for the default service thread.
+     */
+    std::weak_ptr<Kernel::ServiceThread> GetDefaultServiceThread() const;
 
     /**
      * Releases a HLE service thread, instructing KernelCore to free it. This should be called when
@@ -340,6 +357,10 @@ public:
             return slab_heap_container->writeable_event;
         } else if constexpr (std::is_same_v<T, KCodeMemory>) {
             return slab_heap_container->code_memory;
+        } else if constexpr (std::is_same_v<T, KPageBuffer>) {
+            return slab_heap_container->page_buffer;
+        } else if constexpr (std::is_same_v<T, KThreadLocalPage>) {
+            return slab_heap_container->thread_local_page;
         }
     }
 
@@ -348,6 +369,15 @@ public:
 
     /// Gets the current slab resource counts.
     const Init::KSlabResourceCounts& SlabResourceCounts() const;
+
+    /// Gets the current worker task manager, used for dispatching KThread/KProcess tasks.
+    KWorkerTaskManager& WorkerTaskManager();
+
+    /// Gets the current worker task manager, used for dispatching KThread/KProcess tasks.
+    const KWorkerTaskManager& WorkerTaskManager() const;
+
+    /// Gets the memory layout.
+    const KMemoryLayout& MemoryLayout() const;
 
 private:
     friend class KProcess;
@@ -392,6 +422,8 @@ private:
         KSlabHeap<KTransferMemory> transfer_memory;
         KSlabHeap<KWritableEvent> writeable_event;
         KSlabHeap<KCodeMemory> code_memory;
+        KSlabHeap<KPageBuffer> page_buffer;
+        KSlabHeap<KThreadLocalPage> thread_local_page;
     };
 
     std::unique_ptr<SlabHeapContainer> slab_heap_container;

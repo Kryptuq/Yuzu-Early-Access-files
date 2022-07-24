@@ -9,8 +9,9 @@
 #include <iosfwd>
 #include <tuple>
 
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/ir/location_descriptor.h"
 
@@ -24,7 +25,7 @@ namespace Dynarmic::A64 {
 class LocationDescriptor {
 public:
     static constexpr size_t pc_bit_count = 56;
-    static constexpr u64 pc_mask = Common::Ones<u64>(pc_bit_count);
+    static constexpr u64 pc_mask = mcl::bit::ones<u64>(pc_bit_count);
     static constexpr u32 fpcr_mask = 0x07C8'0000;
     static constexpr size_t fpcr_shift = 37;
     static constexpr size_t single_stepping_bit = 57;
@@ -36,9 +37,9 @@ public:
     explicit LocationDescriptor(const IR::LocationDescriptor& o)
             : pc(o.Value() & pc_mask)
             , fpcr((o.Value() >> fpcr_shift) & fpcr_mask)
-            , single_stepping(Common::Bit<single_stepping_bit>(o.Value())) {}
+            , single_stepping(mcl::bit::get_bit<single_stepping_bit>(o.Value())) {}
 
-    u64 PC() const { return Common::SignExtend<pc_bit_count>(pc); }
+    u64 PC() const { return mcl::bit::sign_extend<pc_bit_count>(pc); }
     FP::FPCR FPCR() const { return fpcr; }
     bool SingleStepping() const { return single_stepping; }
 

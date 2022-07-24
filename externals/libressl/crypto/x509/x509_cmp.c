@@ -1,4 +1,4 @@
-/* $OpenBSD: x509_cmp.c,v 1.35 2019/03/13 20:34:00 tb Exp $ */
+/* $OpenBSD: x509_cmp.c,v 1.39 2022/02/24 22:05:06 beck Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -67,6 +67,9 @@
 #include <openssl/objects.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
+
+#include "evp_locl.h"
+#include "x509_lcl.h"
 
 int
 X509_issuer_and_serial_cmp(const X509 *a, const X509 *b)
@@ -140,7 +143,7 @@ X509_CRL_cmp(const X509_CRL *a, const X509_CRL *b)
 int
 X509_CRL_match(const X509_CRL *a, const X509_CRL *b)
 {
-	return memcmp(a->sha1_hash, b->sha1_hash, 20);
+	return memcmp(a->hash, b->hash, X509_CRL_HASH_LEN);
 }
 #endif
 
@@ -213,7 +216,7 @@ X509_cmp(const X509 *a, const X509 *b)
 	X509_check_purpose((X509 *)a, -1, 0);
 	X509_check_purpose((X509 *)b, -1, 0);
 
-	return memcmp(a->sha1_hash, b->sha1_hash, SHA_DIGEST_LENGTH);
+	return memcmp(a->hash, b->hash, X509_CERT_HASH_LEN);
 }
 #endif
 

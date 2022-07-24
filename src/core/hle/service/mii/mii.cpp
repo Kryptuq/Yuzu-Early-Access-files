@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <memory>
 
@@ -13,7 +12,7 @@
 
 namespace Service::Mii {
 
-constexpr ResultCode ERROR_INVALID_ARGUMENT{ErrorModule::Mii, 1};
+constexpr Result ERROR_INVALID_ARGUMENT{ErrorModule::Mii, 1};
 
 class IDatabaseService final : public ServiceFramework<IDatabaseService> {
 public:

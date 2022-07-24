@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -46,6 +45,7 @@ enum class Protocol : u32 {
 
 enum class OptName : u32 {
     REUSEADDR = 0x4,
+    KEEPALIVE = 0x8,
     BROADCAST = 0x20,
     LINGER = 0x80,
     SNDBUF = 0x1001,

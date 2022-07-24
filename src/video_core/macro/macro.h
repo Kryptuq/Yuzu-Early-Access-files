@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -118,8 +117,11 @@ public:
     // Store the uploaded macro code to compile them when they're called.
     void AddCode(u32 method, u32 data);
 
+    // Clear the code associated with a method.
+    void ClearCode(u32 method);
+
     // Compiles the macro if its not in the cache, and executes the compiled macro
-    void Execute(Engines::Maxwell3D& maxwell3d, u32 method, const std::vector<u32>& parameters);
+    void Execute(u32 method, const std::vector<u32>& parameters);
 
 protected:
     virtual std::unique_ptr<CachedMacro> Compile(const std::vector<u32>& code) = 0;

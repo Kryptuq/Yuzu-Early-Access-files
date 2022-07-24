@@ -6,10 +6,11 @@
 #include <cstddef>
 #include <type_traits>
 
+#include <mcl/assert.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/emit_x64.h"
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/common_types.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/opcodes.h"
@@ -146,44 +147,44 @@ static void EmitConditionalSelect(BlockOfCode& code, EmitContext& ctx, IR::Inst*
     // add al, 0x7F restores OF
 
     switch (args[0].GetImmediateCond()) {
-    case IR::Cond::EQ:  //z
+    case IR::Cond::EQ:  // z
         code.sahf();
         code.cmovz(else_, then_);
         break;
-    case IR::Cond::NE:  //!z
+    case IR::Cond::NE:  //! z
         code.sahf();
         code.cmovnz(else_, then_);
         break;
-    case IR::Cond::CS:  //c
+    case IR::Cond::CS:  // c
         code.sahf();
         code.cmovc(else_, then_);
         break;
-    case IR::Cond::CC:  //!c
+    case IR::Cond::CC:  //! c
         code.sahf();
         code.cmovnc(else_, then_);
         break;
-    case IR::Cond::MI:  //n
+    case IR::Cond::MI:  // n
         code.sahf();
         code.cmovs(else_, then_);
         break;
-    case IR::Cond::PL:  //!n
+    case IR::Cond::PL:  //! n
         code.sahf();
         code.cmovns(else_, then_);
         break;
-    case IR::Cond::VS:  //v
+    case IR::Cond::VS:  // v
         code.cmp(nzcv.cvt8(), 0x81);
         code.cmovo(else_, then_);
         break;
-    case IR::Cond::VC:  //!v
+    case IR::Cond::VC:  //! v
         code.cmp(nzcv.cvt8(), 0x81);
         code.cmovno(else_, then_);
         break;
-    case IR::Cond::HI:  //c & !z
+    case IR::Cond::HI:  // c & !z
         code.sahf();
         code.cmc();
         code.cmova(else_, then_);
         break;
-    case IR::Cond::LS:  //!c | z
+    case IR::Cond::LS:  //! c | z
         code.sahf();
         code.cmc();
         code.cmovna(else_, then_);

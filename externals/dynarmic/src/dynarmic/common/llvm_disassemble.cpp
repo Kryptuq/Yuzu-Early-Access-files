@@ -12,9 +12,10 @@
 #    include <llvm-c/Target.h>
 #endif
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/cast_util.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/assert.hpp>
+#include <mcl/bit_cast.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/common/llvm_disassemble.h"
 
 namespace Dynarmic::Common {
@@ -49,7 +50,7 @@ std::string DisassembleX64(const void* begin, const void* end) {
     LLVMDisasmDispose(llvm_ctx);
 #else
     result += fmt::format("(recompile with DYNARMIC_USE_LLVM=ON to disassemble the generated x86_64 code)\n");
-    result += fmt::format("start: {:016x}, end: {:016x}\n", BitCast<u64>(begin), BitCast<u64>(end));
+    result += fmt::format("start: {:016x}, end: {:016x}\n", mcl::bit_cast<u64>(begin), mcl::bit_cast<u64>(end));
 #endif
 
     return result;
@@ -68,6 +69,10 @@ std::string DisassembleAArch32([[maybe_unused]] bool is_thumb, [[maybe_unused]] 
     char buffer[1024];
     while (length) {
         size_t inst_size = LLVMDisasmInstruction(llvm_ctx, const_cast<u8*>(instructions), length, pc, buffer, sizeof(buffer));
+        const char* const disassembled = inst_size > 0 ? buffer : "<invalid instruction>";
+
+        if (inst_size == 0)
+            inst_size = is_thumb ? 2 : 4;
 
         result += fmt::format("{:08x}    ", pc);
         for (size_t i = 0; i < 4; i++) {
@@ -77,11 +82,9 @@ std::string DisassembleAArch32([[maybe_unused]] bool is_thumb, [[maybe_unused]] 
                 result += "  ";
             }
         }
-        result += inst_size > 0 ? buffer : "<invalid instruction>";
+        result += disassembled;
         result += '\n';
 
-        if (inst_size == 0)
-            inst_size = is_thumb ? 2 : 4;
         if (length <= inst_size)
             break;
 
@@ -110,7 +113,8 @@ std::string DisassembleAArch64([[maybe_unused]] u32 instruction, [[maybe_unused]
 
     char buffer[80];
     size_t inst_size = LLVMDisasmInstruction(llvm_ctx, (u8*)&instruction, sizeof(instruction), pc, buffer, sizeof(buffer));
-    result = inst_size > 0 ? buffer : "<invalid instruction>";
+    result = fmt::format("{:016x}  {:08x} ", pc, instruction);
+    result += inst_size > 0 ? buffer : "<invalid instruction>";
     result += '\n';
 
     LLVMDisasmDispose(llvm_ctx);

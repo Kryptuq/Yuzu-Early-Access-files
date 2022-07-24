@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -34,11 +33,11 @@ class ImageView;
 class Framebuffer;
 class RenderPassCache;
 class StagingBufferPool;
-class VKScheduler;
+class Scheduler;
 
 class TextureCacheRuntime {
 public:
-    explicit TextureCacheRuntime(const Device& device_, VKScheduler& scheduler_,
+    explicit TextureCacheRuntime(const Device& device_, Scheduler& scheduler_,
                                  MemoryAllocator& memory_allocator_,
                                  StagingBufferPool& staging_buffer_pool_,
                                  BlitImageHelper& blit_image_helper_,
@@ -54,6 +53,10 @@ public:
     void TickFrame();
 
     u64 GetDeviceLocalMemory() const;
+
+    u64 GetDeviceMemoryUsage() const;
+
+    bool CanReportMemoryUsage() const;
 
     void BlitImage(Framebuffer* dst_framebuffer, ImageView& dst, ImageView& src,
                    const Region2D& dst_region, const Region2D& src_region,
@@ -90,7 +93,7 @@ public:
     [[nodiscard]] VkBuffer GetTemporaryBuffer(size_t needed_size);
 
     const Device& device;
-    VKScheduler& scheduler;
+    Scheduler& scheduler;
     MemoryAllocator& memory_allocator;
     StagingBufferPool& staging_buffer_pool;
     BlitImageHelper& blit_image_helper;
@@ -151,7 +154,7 @@ private:
 
     bool NeedsScaleHelper() const;
 
-    VKScheduler* scheduler{};
+    Scheduler* scheduler{};
     TextureCacheRuntime* runtime{};
 
     vk::Image original_image;
@@ -265,7 +268,7 @@ public:
                          ImageView* depth_buffer, const VideoCommon::RenderTargets& key);
 
     explicit Framebuffer(TextureCacheRuntime& runtime, ImageView* color_buffer,
-                         ImageView* depth_buffer, VkExtent2D extent);
+                         ImageView* depth_buffer, VkExtent2D extent, bool is_rescaled);
 
     ~Framebuffer();
 
@@ -276,7 +279,8 @@ public:
     Framebuffer& operator=(Framebuffer&&) = default;
 
     void CreateFramebuffer(TextureCacheRuntime& runtime,
-                           std::span<ImageView*, NUM_RT> color_buffers, ImageView* depth_buffer);
+                           std::span<ImageView*, NUM_RT> color_buffers, ImageView* depth_buffer,
+                           bool is_rescaled = false);
 
     [[nodiscard]] VkFramebuffer Handle() const noexcept {
         return *framebuffer;

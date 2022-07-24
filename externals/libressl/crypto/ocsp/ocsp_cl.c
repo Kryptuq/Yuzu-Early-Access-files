@@ -1,4 +1,4 @@
-/* $OpenBSD: ocsp_cl.c,v 1.16 2018/11/25 19:48:43 jmc Exp $ */
+/* $OpenBSD: ocsp_cl.c,v 1.21 2022/01/07 09:45:52 tb Exp $ */
 /* Written by Tom Titchener <Tom_Titchener@groove.net> for the OpenSSL
  * project. */
 
@@ -71,6 +71,8 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
+#include "ocsp_local.h"
+
 /* Utility functions related to sending OCSP requests and extracting
  * relevant information from the response.
  */
@@ -81,18 +83,19 @@
 OCSP_ONEREQ *
 OCSP_request_add0_id(OCSP_REQUEST *req, OCSP_CERTID *cid)
 {
-	OCSP_ONEREQ *one = NULL;
+	OCSP_ONEREQ *one;
 
-	if (!(one = OCSP_ONEREQ_new()))
+	if ((one = OCSP_ONEREQ_new()) == NULL)
 		goto err;
-	if (one->reqCert)
-		OCSP_CERTID_free(one->reqCert);
+	if (req != NULL) {
+		if (!sk_OCSP_ONEREQ_push(req->tbsRequest->requestList, one))
+			goto err;
+	}
+	OCSP_CERTID_free(one->reqCert);
 	one->reqCert = cid;
-	if (req && !sk_OCSP_ONEREQ_push(req->tbsRequest->requestList, one))
-		goto err;
 	return one;
 
-err:
+ err:
 	OCSP_ONEREQ_free(one);
 	return NULL;
 }
@@ -135,7 +138,7 @@ OCSP_request_add1_cert(OCSP_REQUEST *req, X509 *cert)
 
 	if (!sk_X509_push(sig->certs, cert))
 		return 0;
-	CRYPTO_add(&cert->references, 1, CRYPTO_LOCK_X509);
+	X509_up_ref(cert);
 	return 1;
 }
 
@@ -230,6 +233,55 @@ OCSP_resp_get0(OCSP_BASICRESP *bs, int idx)
 	if (!bs)
 		return NULL;
 	return sk_OCSP_SINGLERESP_value(bs->tbsResponseData->responses, idx);
+}
+
+const ASN1_GENERALIZEDTIME *
+OCSP_resp_get0_produced_at(const OCSP_BASICRESP *bs)
+{
+	return bs->tbsResponseData->producedAt;
+}
+
+const STACK_OF(X509) *
+OCSP_resp_get0_certs(const OCSP_BASICRESP *bs)
+{
+	return bs->certs;
+}
+
+int
+OCSP_resp_get0_id(const OCSP_BASICRESP *bs, const ASN1_OCTET_STRING **pid,
+    const X509_NAME **pname)
+{
+	const OCSP_RESPID *rid = bs->tbsResponseData->responderId;
+
+	if (rid->type == V_OCSP_RESPID_NAME) {
+		*pname = rid->value.byName;
+		*pid = NULL;
+	} else if (rid->type == V_OCSP_RESPID_KEY) {
+		*pid = rid->value.byKey;
+		*pname = NULL;
+	} else {
+		return 0;
+	}
+
+	return 1;
+}
+
+const ASN1_OCTET_STRING *
+OCSP_resp_get0_signature(const OCSP_BASICRESP *bs)
+{
+	return bs->signature;
+}
+
+const X509_ALGOR *
+OCSP_resp_get0_tbs_sigalg(const OCSP_BASICRESP *bs)
+{
+	return bs->signatureAlgorithm;
+}
+
+const OCSP_RESPDATA *
+OCSP_resp_get0_respdata(const OCSP_BASICRESP *bs)
+{
+	return bs->tbsResponseData;
 }
 
 /* Look single response matching a given certificate ID */

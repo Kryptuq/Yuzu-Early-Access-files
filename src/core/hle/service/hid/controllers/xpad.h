@@ -1,13 +1,10 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include "common/bit_field.h"
-#include "common/common_funcs.h"
 #include "common/common_types.h"
-#include "common/swap.h"
 #include "core/hid/hid_types.h"
 #include "core/hle/service/hid/controllers/controller_base.h"
 #include "core/hle/service/hid/ring_lifo.h"
@@ -15,7 +12,7 @@
 namespace Service::HID {
 class Controller_XPad final : public ControllerBase {
 public:
-    explicit Controller_XPad(Core::HID::HIDCore& hid_core_);
+    explicit Controller_XPad(Core::HID::HIDCore& hid_core_, u8* raw_shared_memory_);
     ~Controller_XPad() override;
 
     // Called when the controller is initialized
@@ -25,7 +22,7 @@ public:
     void OnRelease() override;
 
     // When the controller is requesting an update for the shared memory
-    void OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* data, std::size_t size) override;
+    void OnUpdate(const Core::Timing::CoreTiming& core_timing) override;
 
 private:
     // This is nn::hid::BasicXpadAttributeSet
@@ -93,17 +90,23 @@ private:
 
     // This is nn::hid::detail::BasicXpadState
     struct BasicXpadState {
-        s64 sampling_number;
-        BasicXpadAttributeSet attributes;
-        BasicXpadButtonSet pad_states;
-        Core::HID::AnalogStickState l_stick;
-        Core::HID::AnalogStickState r_stick;
+        s64 sampling_number{};
+        BasicXpadAttributeSet attributes{};
+        BasicXpadButtonSet pad_states{};
+        Core::HID::AnalogStickState l_stick{};
+        Core::HID::AnalogStickState r_stick{};
     };
     static_assert(sizeof(BasicXpadState) == 0x20, "BasicXpadState is an invalid size");
 
-    // This is nn::hid::detail::BasicXpadLifo
-    Lifo<BasicXpadState, hid_entry_count> basic_xpad_lifo{};
-    static_assert(sizeof(basic_xpad_lifo) == 0x2C8, "basic_xpad_lifo is an invalid size");
+    struct XpadSharedMemory {
+        // This is nn::hid::detail::BasicXpadLifo
+        Lifo<BasicXpadState, hid_entry_count> basic_xpad_lifo{};
+        static_assert(sizeof(basic_xpad_lifo) == 0x2C8, "basic_xpad_lifo is an invalid size");
+        INSERT_PADDING_WORDS(0x4E);
+    };
+    static_assert(sizeof(XpadSharedMemory) == 0x400, "XpadSharedMemory is an invalid size");
+
     BasicXpadState next_state{};
+    XpadSharedMemory* shared_memory = nullptr;
 };
 } // namespace Service::HID

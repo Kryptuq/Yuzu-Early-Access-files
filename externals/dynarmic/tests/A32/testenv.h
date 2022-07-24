@@ -11,8 +11,9 @@
 #include <string>
 #include <vector>
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/assert.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/interface/A32/a32.h"
 
 template<typename InstructionType_, u32 infinite_loop_u32>
@@ -47,7 +48,7 @@ public:
         return vaddr < sizeof(InstructionType) * code_mem.size();
     }
 
-    std::uint32_t MemoryReadCode(u32 vaddr) override {
+    std::optional<std::uint32_t> MemoryReadCode(u32 vaddr) override {
         if (IsInCodeMem(vaddr)) {
             u32 value;
             std::memcpy(&value, &code_mem[vaddr / sizeof(InstructionType)], sizeof(u32));
@@ -94,11 +95,11 @@ public:
         MemoryWrite32(vaddr + 4, static_cast<u32>(value >> 32));
     }
 
-    void InterpreterFallback(u32 pc, size_t num_instructions) override { ASSERT_MSG(false, "InterpreterFallback({:08x}, {}) code = {:08x}", pc, num_instructions, MemoryReadCode(pc)); }
+    void InterpreterFallback(u32 pc, size_t num_instructions) override { ASSERT_MSG(false, "InterpreterFallback({:08x}, {}) code = {:08x}", pc, num_instructions, *MemoryReadCode(pc)); }
 
     void CallSVC(std::uint32_t swi) override { ASSERT_MSG(false, "CallSVC({})", swi); }
 
-    void ExceptionRaised(u32 pc, Dynarmic::A32::Exception /*exception*/) override { ASSERT_MSG(false, "ExceptionRaised({:08x}) code = {:08x}", pc, MemoryReadCode(pc)); }
+    void ExceptionRaised(u32 pc, Dynarmic::A32::Exception /*exception*/) override { ASSERT_MSG(false, "ExceptionRaised({:08x}) code = {:08x}", pc, *MemoryReadCode(pc)); }
 
     void AddTicks(std::uint64_t ticks) override {
         if (ticks > ticks_left) {
@@ -134,7 +135,7 @@ public:
         memcpy(backing_memory + vaddr, &value, sizeof(T));
     }
 
-    std::uint32_t MemoryReadCode(std::uint32_t vaddr) override {
+    std::optional<std::uint32_t> MemoryReadCode(std::uint32_t vaddr) override {
         return read<std::uint32_t>(vaddr);
     }
 

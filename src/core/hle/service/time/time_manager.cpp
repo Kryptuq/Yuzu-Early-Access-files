@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <chrono>
 #include <ctime>
@@ -45,7 +44,7 @@ struct TimeManager::Impl final {
           time_zone_content_manager{system} {
 
         const auto system_time{Clock::TimeSpanType::FromSeconds(GetExternalRtcValue())};
-        SetupStandardSteadyClock(system, Common::UUID::Generate(), system_time, {}, {});
+        SetupStandardSteadyClock(system, Common::UUID::MakeRandom(), system_time, {}, {});
         SetupStandardLocalSystemClock(system, {}, system_time.ToSeconds());
 
         Clock::SystemClockContext clock_context{};
@@ -112,7 +111,7 @@ struct TimeManager::Impl final {
                               FileSys::VirtualFile& vfs_file) {
         if (time_zone_content_manager.GetTimeZoneManager().SetDeviceLocationNameWithTimeZoneRule(
                 location_name, vfs_file) != ResultSuccess) {
-            UNREACHABLE();
+            ASSERT(false);
             return;
         }
 
@@ -156,7 +155,7 @@ struct TimeManager::Impl final {
         } else {
             if (standard_local_system_clock_core.SetCurrentTime(system_, posix_time) !=
                 ResultSuccess) {
-                UNREACHABLE();
+                ASSERT(false);
                 return;
             }
         }
@@ -171,7 +170,7 @@ struct TimeManager::Impl final {
 
         if (standard_network_system_clock_core.SetSystemClockContext(clock_context) !=
             ResultSuccess) {
-            UNREACHABLE();
+            ASSERT(false);
             return;
         }
 
@@ -184,7 +183,7 @@ struct TimeManager::Impl final {
                                       Clock::SteadyClockTimePoint steady_clock_time_point) {
         if (standard_user_system_clock_core.SetAutomaticCorrectionEnabled(
                 system_, is_automatic_correction_enabled) != ResultSuccess) {
-            UNREACHABLE();
+            ASSERT(false);
             return;
         }
 
@@ -204,7 +203,7 @@ struct TimeManager::Impl final {
         if (GetStandardLocalSystemClockCore()
                 .SetCurrentTime(system_, timespan.ToSeconds())
                 .IsError()) {
-            UNREACHABLE();
+            ASSERT(false);
             return;
         }
     }

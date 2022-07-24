@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <random>
@@ -109,7 +108,7 @@ ContentRecordType GetCRTypeFromNCAType(NCAContentType type) {
         // TODO(DarkLordZach): Peek at NCA contents to differentiate Manual and Legal.
         return ContentRecordType::HtmlDocument;
     default:
-        UNREACHABLE_MSG("Invalid NCAContentType={:02X}", type);
+        ASSERT_MSG(false, "Invalid NCAContentType={:02X}", type);
         return ContentRecordType{};
     }
 }
@@ -387,15 +386,17 @@ std::vector<NcaID> RegisteredCache::AccumulateFiles() const {
             continue;
 
         for (const auto& nca_dir : d2_dir->GetSubdirectories()) {
-            if (!FollowsNcaIdFormat(nca_dir->GetName()))
+            if (nca_dir == nullptr || !FollowsNcaIdFormat(nca_dir->GetName())) {
                 continue;
+            }
 
             ids.push_back(Common::HexStringToArray<0x10, true>(nca_dir->GetName().substr(0, 0x20)));
         }
 
         for (const auto& nca_file : d2_dir->GetFiles()) {
-            if (!FollowsNcaIdFormat(nca_file->GetName()))
+            if (nca_file == nullptr || !FollowsNcaIdFormat(nca_file->GetName())) {
                 continue;
+            }
 
             ids.push_back(
                 Common::HexStringToArray<0x10, true>(nca_file->GetName().substr(0, 0x20)));

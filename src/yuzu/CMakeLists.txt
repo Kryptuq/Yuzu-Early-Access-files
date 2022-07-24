@@ -153,6 +153,8 @@ add_executable(yuzu
     main.cpp
     main.h
     main.ui
+    startup_checks.cpp
+    startup_checks.h
     uisettings.cpp
     uisettings.h
     util/controller_navigation.cpp
@@ -187,7 +189,7 @@ if (ENABLE_QT_TRANSLATION)
     # Update source TS file if enabled
     if (GENERATE_QT_TRANSLATION)
         get_target_property(SRCS yuzu SOURCES)
-        qt5_create_translation(QM_FILES
+        qt_create_translation(QM_FILES
             ${SRCS}
             ${UIS}
             ${YUZU_QT_LANGUAGES}/en.ts
@@ -203,7 +205,7 @@ if (ENABLE_QT_TRANSLATION)
     list(REMOVE_ITEM LANGUAGES_TS ${YUZU_QT_LANGUAGES}/en.ts)
 
     # Compile TS files to QM files
-    qt5_add_translation(LANGUAGES_QM ${LANGUAGES_TS})
+    qt_add_translation(LANGUAGES_QM ${LANGUAGES_TS})
 
     # Build a QRC file from the QM file list
     set(LANGUAGES_QRC ${CMAKE_CURRENT_BINARY_DIR}/languages.qrc)
@@ -215,7 +217,7 @@ if (ENABLE_QT_TRANSLATION)
     file(APPEND ${LANGUAGES_QRC} "</qresource></RCC>")
 
     # Add the QRC file to package in all QM files
-    qt5_add_resources(LANGUAGES ${LANGUAGES_QRC})
+    qt_add_resources(LANGUAGES ${LANGUAGES_QRC})
 else()
     set(LANGUAGES)
 endif()
@@ -236,18 +238,23 @@ if (APPLE)
     set_target_properties(yuzu PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist)
 elseif(WIN32)
     # compile as a win32 gui application instead of a console application
-    target_link_libraries(yuzu PRIVATE Qt5::WinMain)
+    if (QT_VERSION VERSION_GREATER 6)
+        target_link_libraries(yuzu PRIVATE Qt6::EntryPointPrivate)
+    else()
+        target_link_libraries(yuzu PRIVATE Qt5::WinMain)
+    endif()
     if(MSVC)
+        target_link_libraries(yuzu PRIVATE version.lib)
         set_target_properties(yuzu PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS")
     elseif(MINGW)
-        set_target_properties(yuzu PROPERTIES LINK_FLAGS_RELEASE "-mwindows")
+        set_target_properties(yuzu PROPERTIES LINK_FLAGS_RELEASE "-Wl,--subsystem,windows")
     endif()
 endif()
 
 create_target_directory_groups(yuzu)
 
 target_link_libraries(yuzu PRIVATE common core input_common video_core)
-target_link_libraries(yuzu PRIVATE Boost::boost glad Qt5::Widgets)
+target_link_libraries(yuzu PRIVATE Boost::boost glad Qt::Widgets)
 target_link_libraries(yuzu PRIVATE ${PLATFORM_LIBRARIES} Threads::Threads)
 
 target_include_directories(yuzu PRIVATE ../../externals/Vulkan-Headers/include)
@@ -255,7 +262,7 @@ if (NOT WIN32)
     target_include_directories(yuzu PRIVATE ${Qt5Gui_PRIVATE_INCLUDE_DIRS})
 endif()
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-    target_link_libraries(yuzu PRIVATE Qt5::DBus)
+    target_link_libraries(yuzu PRIVATE Qt::DBus)
 endif()
 
 target_compile_definitions(yuzu PRIVATE
@@ -291,12 +298,12 @@ if (USE_DISCORD_PRESENCE)
 endif()
 
 if (YUZU_USE_QT_WEB_ENGINE)
-    target_link_libraries(yuzu PRIVATE Qt5::WebEngineCore Qt5::WebEngineWidgets)
+    target_link_libraries(yuzu PRIVATE Qt::WebEngineCore Qt::WebEngineWidgets)
     target_compile_definitions(yuzu PRIVATE -DYUZU_USE_QT_WEB_ENGINE)
 endif ()
 
 if(UNIX AND NOT APPLE)
-    install(TARGETS yuzu RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+    install(TARGETS yuzu)
 endif()
 
 if (YUZU_USE_BUNDLED_QT)
@@ -318,4 +325,8 @@ endif()
 
 if (NOT APPLE)
     target_compile_definitions(yuzu PRIVATE HAS_OPENGL)
+endif()
+
+if (ARCHITECTURE_x86_64)
+    target_link_libraries(yuzu PRIVATE dynarmic)
 endif()

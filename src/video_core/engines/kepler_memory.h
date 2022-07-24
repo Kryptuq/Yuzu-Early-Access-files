@@ -1,18 +1,15 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <array>
 #include <cstddef>
-#include <vector>
 #include "common/bit_field.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "video_core/engines/engine_interface.h"
 #include "video_core/engines/engine_upload.h"
-#include "video_core/gpu.h"
 
 namespace Core {
 class System;
@@ -20,6 +17,10 @@ class System;
 
 namespace Tegra {
 class MemoryManager;
+}
+
+namespace VideoCore {
+class RasterizerInterface;
 }
 
 namespace Tegra::Engines {
@@ -37,6 +38,9 @@ class KeplerMemory final : public EngineInterface {
 public:
     explicit KeplerMemory(Core::System& system_, MemoryManager& memory_manager);
     ~KeplerMemory() override;
+
+    /// Binds a rasterizer to this engine.
+    void BindRasterizer(VideoCore::RasterizerInterface* rasterizer);
 
     /// Write the value to the register identified by method.
     void CallMethod(u32 method, u32 method_argument, bool is_last_call) override;

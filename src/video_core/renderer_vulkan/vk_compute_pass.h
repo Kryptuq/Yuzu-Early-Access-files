@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -21,8 +20,8 @@ namespace Vulkan {
 
 class Device;
 class StagingBufferPool;
-class VKScheduler;
-class VKUpdateDescriptorQueue;
+class Scheduler;
+class UpdateDescriptorQueue;
 class Image;
 struct StagingBufferRef;
 
@@ -49,9 +48,9 @@ private:
 
 class Uint8Pass final : public ComputePass {
 public:
-    explicit Uint8Pass(const Device& device_, VKScheduler& scheduler_,
+    explicit Uint8Pass(const Device& device_, Scheduler& scheduler_,
                        DescriptorPool& descriptor_pool_, StagingBufferPool& staging_buffer_pool_,
-                       VKUpdateDescriptorQueue& update_descriptor_queue_);
+                       UpdateDescriptorQueue& update_descriptor_queue_);
     ~Uint8Pass();
 
     /// Assemble uint8 indices into an uint16 index buffer
@@ -60,17 +59,17 @@ public:
                                                u32 src_offset);
 
 private:
-    VKScheduler& scheduler;
+    Scheduler& scheduler;
     StagingBufferPool& staging_buffer_pool;
-    VKUpdateDescriptorQueue& update_descriptor_queue;
+    UpdateDescriptorQueue& update_descriptor_queue;
 };
 
 class QuadIndexedPass final : public ComputePass {
 public:
-    explicit QuadIndexedPass(const Device& device_, VKScheduler& scheduler_,
+    explicit QuadIndexedPass(const Device& device_, Scheduler& scheduler_,
                              DescriptorPool& descriptor_pool_,
                              StagingBufferPool& staging_buffer_pool_,
-                             VKUpdateDescriptorQueue& update_descriptor_queue_);
+                             UpdateDescriptorQueue& update_descriptor_queue_);
     ~QuadIndexedPass();
 
     std::pair<VkBuffer, VkDeviceSize> Assemble(
@@ -78,17 +77,17 @@ public:
         u32 base_vertex, VkBuffer src_buffer, u32 src_offset);
 
 private:
-    VKScheduler& scheduler;
+    Scheduler& scheduler;
     StagingBufferPool& staging_buffer_pool;
-    VKUpdateDescriptorQueue& update_descriptor_queue;
+    UpdateDescriptorQueue& update_descriptor_queue;
 };
 
 class ASTCDecoderPass final : public ComputePass {
 public:
-    explicit ASTCDecoderPass(const Device& device_, VKScheduler& scheduler_,
+    explicit ASTCDecoderPass(const Device& device_, Scheduler& scheduler_,
                              DescriptorPool& descriptor_pool_,
                              StagingBufferPool& staging_buffer_pool_,
-                             VKUpdateDescriptorQueue& update_descriptor_queue_,
+                             UpdateDescriptorQueue& update_descriptor_queue_,
                              MemoryAllocator& memory_allocator_);
     ~ASTCDecoderPass();
 
@@ -96,9 +95,9 @@ public:
                   std::span<const VideoCommon::SwizzleParameters> swizzles);
 
 private:
-    VKScheduler& scheduler;
+    Scheduler& scheduler;
     StagingBufferPool& staging_buffer_pool;
-    VKUpdateDescriptorQueue& update_descriptor_queue;
+    UpdateDescriptorQueue& update_descriptor_queue;
     MemoryAllocator& memory_allocator;
 };
 

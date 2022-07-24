@@ -7,14 +7,16 @@
 #include <array>
 #include <cstddef>
 #include <list>
+#include <map>
 #include <string>
-#include <vector>
 #include "common/common_types.h"
 #include "core/hle/kernel/k_address_arbiter.h"
 #include "core/hle/kernel/k_auto_object.h"
 #include "core/hle/kernel/k_condition_variable.h"
 #include "core/hle/kernel/k_handle_table.h"
 #include "core/hle/kernel/k_synchronization_object.h"
+#include "core/hle/kernel/k_thread_local_page.h"
+#include "core/hle/kernel/k_worker_task.h"
 #include "core/hle/kernel/process_capability.h"
 #include "core/hle/kernel/slab_helpers.h"
 #include "core/hle/result.h"
@@ -62,8 +64,26 @@ enum class ProcessStatus {
     DebugBreak,
 };
 
-class KProcess final
-    : public KAutoObjectWithSlabHeapAndContainer<KProcess, KSynchronizationObject> {
+enum class ProcessActivity : u32 {
+    Runnable,
+    Paused,
+};
+
+enum class DebugWatchpointType : u8 {
+    None = 0,
+    Read = 1 << 0,
+    Write = 1 << 1,
+    ReadOrWrite = Read | Write,
+};
+DECLARE_ENUM_FLAG_OPERATORS(DebugWatchpointType);
+
+struct DebugWatchpoint {
+    VAddr start_address;
+    VAddr end_address;
+    DebugWatchpointType type;
+};
+
+class KProcess final : public KAutoObjectWithSlabHeapAndContainer<KProcess, KWorkerTask> {
     KERNEL_AUTOOBJECT_TRAITS(KProcess, KSynchronizationObject);
 
 public:
@@ -90,8 +110,8 @@ public:
 
     static constexpr std::size_t RANDOM_ENTROPY_SIZE = 4;
 
-    static ResultCode Initialize(KProcess* process, Core::System& system, std::string process_name,
-                                 ProcessType type);
+    static Result Initialize(KProcess* process, Core::System& system, std::string process_name,
+                             ProcessType type, KResourceLimit* res_limit);
 
     /// Gets a reference to the process' page table.
     KPageTable& PageTable() {
@@ -113,11 +133,11 @@ public:
         return handle_table;
     }
 
-    ResultCode SignalToAddress(VAddr address) {
+    Result SignalToAddress(VAddr address) {
         return condition_var.SignalToAddress(address);
     }
 
-    ResultCode WaitForAddress(Handle handle, VAddr address, u32 tag) {
+    Result WaitForAddress(Handle handle, VAddr address, u32 tag) {
         return condition_var.WaitForAddress(handle, address, tag);
     }
 
@@ -125,17 +145,16 @@ public:
         return condition_var.Signal(cv_key, count);
     }
 
-    ResultCode WaitConditionVariable(VAddr address, u64 cv_key, u32 tag, s64 ns) {
+    Result WaitConditionVariable(VAddr address, u64 cv_key, u32 tag, s64 ns) {
         return condition_var.Wait(address, cv_key, tag, ns);
     }
 
-    ResultCode SignalAddressArbiter(VAddr address, Svc::SignalType signal_type, s32 value,
-                                    s32 count) {
+    Result SignalAddressArbiter(VAddr address, Svc::SignalType signal_type, s32 value, s32 count) {
         return address_arbiter.SignalToAddress(address, signal_type, value, count);
     }
 
-    ResultCode WaitAddressArbiter(VAddr address, Svc::ArbitrationType arb_type, s32 value,
-                                  s64 timeout) {
+    Result WaitAddressArbiter(VAddr address, Svc::ArbitrationType arb_type, s32 value,
+                              s64 timeout) {
         return address_arbiter.WaitForAddress(address, arb_type, value, timeout);
     }
 
@@ -235,8 +254,8 @@ public:
         ++schedule_count;
     }
 
-    void IncrementThreadCount();
-    void DecrementThreadCount();
+    void IncrementRunningThreadCount();
+    void DecrementRunningThreadCount();
 
     void SetRunningThread(s32 core, KThread* thread, u64 idle_count) {
         running_threads[core] = thread;
@@ -282,17 +301,17 @@ public:
     u64 GetTotalPhysicalMemoryUsedWithoutSystemResource() const;
 
     /// Gets the list of all threads created with this process as their owner.
-    const std::list<const KThread*>& GetThreadList() const {
+    std::list<KThread*>& GetThreadList() {
         return thread_list;
     }
 
     /// Registers a thread as being created under this process,
     /// adding it to this process' thread list.
-    void RegisterThread(const KThread* thread);
+    void RegisterThread(KThread* thread);
 
     /// Unregisters a thread from this process, removing it
     /// from this process' thread list.
-    void UnregisterThread(const KThread* thread);
+    void UnregisterThread(KThread* thread);
 
     /// Clears the signaled state of the process if and only if it's signaled.
     ///
@@ -302,7 +321,7 @@ public:
     /// @pre The process must be in a signaled state. If this is called on a
     ///      process instance that is not signaled, ERR_INVALID_STATE will be
     ///      returned.
-    ResultCode Reset();
+    Result Reset();
 
     /**
      * Loads process-specifics configuration info with metadata provided
@@ -313,7 +332,7 @@ public:
      * @returns ResultSuccess if all relevant metadata was able to be
      *          loaded and parsed. Otherwise, an error code is returned.
      */
-    ResultCode LoadFromMetadata(const FileSys::ProgramMetadata& metadata, std::size_t code_size);
+    Result LoadFromMetadata(const FileSys::ProgramMetadata& metadata, std::size_t code_size);
 
     /**
      * Starts the main application thread for this process.
@@ -345,6 +364,10 @@ public:
 
     bool IsSignaled() const override;
 
+    void DoWorkerTaskImpl();
+
+    Result SetActivity(ProcessActivity activity);
+
     void PinCurrentThread(s32 core_id);
     void UnpinCurrentThread(s32 core_id);
     void UnpinThread(KThread* thread);
@@ -353,17 +376,30 @@ public:
         return state_lock;
     }
 
-    ResultCode AddSharedMemory(KSharedMemory* shmem, VAddr address, size_t size);
+    Result AddSharedMemory(KSharedMemory* shmem, VAddr address, size_t size);
     void RemoveSharedMemory(KSharedMemory* shmem, VAddr address, size_t size);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Thread-local storage management
 
     // Marks the next available region as used and returns the address of the slot.
-    [[nodiscard]] VAddr CreateTLSRegion();
+    [[nodiscard]] Result CreateThreadLocalRegion(VAddr* out);
 
     // Frees a used TLS slot identified by the given address
-    void FreeTLSRegion(VAddr tls_address);
+    Result DeleteThreadLocalRegion(VAddr addr);
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Debug watchpoint management
+
+    // Attempts to insert a watchpoint into a free slot. Returns false if none are available.
+    bool InsertWatchpoint(Core::System& system, VAddr addr, u64 size, DebugWatchpointType type);
+
+    // Attempts to remove the watchpoint specified by the given parameters.
+    bool RemoveWatchpoint(Core::System& system, VAddr addr, u64 size, DebugWatchpointType type);
+
+    const std::array<DebugWatchpoint, Core::Hardware::NUM_WATCHPOINTS>& GetWatchpoints() const {
+        return watchpoints;
+    }
 
 private:
     void PinThread(s32 core_id, KThread* thread) {
@@ -386,7 +422,7 @@ private:
     void ChangeStatus(ProcessStatus new_status);
 
     /// Allocates the main thread stack for the process, given the stack size in bytes.
-    ResultCode AllocateMainThreadStack(std::size_t stack_size);
+    Result AllocateMainThreadStack(std::size_t stack_size);
 
     /// Memory manager for this process
     std::unique_ptr<KPageTable> page_table;
@@ -411,13 +447,6 @@ private:
     /// The ideal CPU core for this process, threads are scheduled on this core by default.
     u8 ideal_core = 0;
 
-    /// The Thread Local Storage area is allocated as processes create threads,
-    /// each TLS area is 0x200 bytes, so one page (0x1000) is split up in 8 parts, and each part
-    /// holds the TLS for a specific thread. This vector contains which parts are in use for each
-    /// page as a bitmask.
-    /// This vector will grow as more pages are allocated for new threads.
-    std::vector<TLSPage> tls_pages;
-
     /// Contains the parsed process capability descriptors.
     ProcessCapabilities capabilities;
 
@@ -427,7 +456,7 @@ private:
     bool is_64bit_process = true;
 
     /// Total running time for the process in ticks.
-    u64 total_process_running_time_ticks = 0;
+    std::atomic<u64> total_process_running_time_ticks = 0;
 
     /// Per-process handle table for storing created object handles in.
     KHandleTable handle_table;
@@ -447,7 +476,7 @@ private:
     std::array<u64, RANDOM_ENTROPY_SIZE> random_entropy{};
 
     /// List of threads that are running with this process as their owner.
-    std::list<const KThread*> thread_list;
+    std::list<KThread*> thread_list;
 
     /// List of shared memory that are running with this process as their owner.
     std::list<KSharedMemoryInfo*> shared_memory_list;
@@ -471,17 +500,24 @@ private:
     bool is_suspended{};
     bool is_initialized{};
 
-    std::atomic<s32> num_created_threads{};
-    std::atomic<u16> num_threads{};
-    u16 peak_num_threads{};
+    std::atomic<u16> num_running_threads{};
 
     std::array<KThread*, Core::Hardware::NUM_CPU_CORES> running_threads{};
     std::array<u64, Core::Hardware::NUM_CPU_CORES> running_thread_idle_counts{};
     std::array<KThread*, Core::Hardware::NUM_CPU_CORES> pinned_threads{};
+    std::array<DebugWatchpoint, Core::Hardware::NUM_WATCHPOINTS> watchpoints{};
+    std::map<VAddr, u64> debug_page_refcounts;
 
     KThread* exception_thread{};
 
     KLightLock state_lock;
+    KLightLock list_lock;
+
+    using TLPTree =
+        Common::IntrusiveRedBlackTreeBaseTraits<KThreadLocalPage>::TreeType<KThreadLocalPage>;
+    using TLPIterator = TLPTree::iterator;
+    TLPTree fully_used_tlp_tree;
+    TLPTree partially_used_tlp_tree;
 };
 
 } // namespace Kernel

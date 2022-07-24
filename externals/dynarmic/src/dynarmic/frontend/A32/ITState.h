@@ -5,8 +5,9 @@
 
 #pragma once
 
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/ir/cond.h"
 
 namespace Dynarmic::A32 {
@@ -26,22 +27,22 @@ public:
         if (value == 0b00000000) {
             return IR::Cond::AL;
         }
-        return static_cast<IR::Cond>(Common::Bits<4, 7>(value));
+        return static_cast<IR::Cond>(mcl::bit::get_bits<4, 7>(value));
     }
 
     bool IsInITBlock() const {
-        return Common::Bits<0, 3>(value) != 0b0000;
+        return mcl::bit::get_bits<0, 3>(value) != 0b0000;
     }
 
     bool IsLastInITBlock() const {
-        return Common::Bits<0, 3>(value) == 0b1000;
+        return mcl::bit::get_bits<0, 3>(value) == 0b1000;
     }
 
     ITState Advance() const {
-        if (Common::Bits<0, 2>(value) == 0b000) {
+        if (mcl::bit::get_bits<0, 2>(value) == 0b000) {
             return ITState{0b00000000};
         }
-        return ITState{Common::ModifyBits<0, 4>(value, static_cast<u8>(Common::Bits<0, 4>(value) << 1))};
+        return ITState{mcl::bit::set_bits<0, 4>(value, static_cast<u8>(mcl::bit::get_bits<0, 4>(value) << 1))};
     }
 
     u8 Value() const {

@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_resource_limit.h"
@@ -14,8 +13,8 @@ KTransferMemory::KTransferMemory(KernelCore& kernel_)
 
 KTransferMemory::~KTransferMemory() = default;
 
-ResultCode KTransferMemory::Initialize(VAddr address_, std::size_t size_,
-                                       Svc::MemoryPermission owner_perm_) {
+Result KTransferMemory::Initialize(VAddr address_, std::size_t size_,
+                                   Svc::MemoryPermission owner_perm_) {
     // Set members.
     owner = kernel.CurrentProcess();
 

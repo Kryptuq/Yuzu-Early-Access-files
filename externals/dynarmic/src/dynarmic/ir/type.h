@@ -8,7 +8,7 @@
 #include <iosfwd>
 #include <string>
 
-#include "dynarmic/common/common_types.h"
+#include <mcl/stdint.hpp>
 
 namespace Dynarmic::IR {
 
@@ -32,6 +32,7 @@ enum class Type {
     NZCVFlags = 1 << 12,
     Cond = 1 << 13,
     Table = 1 << 14,
+    AccType = 1 << 15,
 };
 
 constexpr Type operator|(Type a, Type b) {

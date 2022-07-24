@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -127,7 +126,7 @@ public:
     void Initialize() override;
 
     bool TransactionComplete() const override;
-    ResultCode GetStatus() const override;
+    Result GetStatus() const override;
     void ExecuteInteractive() override;
     void Execute() override;
 
@@ -144,7 +143,7 @@ private:
     ControllerUpdateFirmwareArg controller_update_arg;
     ControllerKeyRemappingArg controller_key_remapping_arg;
     bool complete{false};
-    ResultCode status{ResultSuccess};
+    Result status{ResultSuccess};
     bool is_single_mode{false};
     std::vector<u8> out_data;
 };

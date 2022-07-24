@@ -21,30 +21,44 @@
      </property>
      <layout class="QVBoxLayout">
       <item>
-       <layout class="QHBoxLayout" name="_3">
+       <layout class="QHBoxLayout" name="engine_layout">
         <item>
-         <widget class="QLabel" name="output_sink_label">
+         <widget class="QLabel" name="sink_label">
           <property name="text">
            <string>Output Engine:</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QComboBox" name="output_sink_combo_box"/>
+         <widget class="QComboBox" name="sink_combo_box"/>
         </item>
        </layout>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="_2">
+       <layout class="QHBoxLayout" name="output_layout">
         <item>
-         <widget class="QLabel" name="audio_device_label">
+         <widget class="QLabel" name="output_label">
           <property name="text">
-           <string>Audio Device:</string>
+           <string>Output Device</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QComboBox" name="audio_device_combo_box"/>
+         <widget class="QComboBox" name="output_combo_box"/>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="input_layout">
+        <item>
+         <widget class="QLabel" name="input_label">
+          <property name="text">
+           <string>Input Device</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="input_combo_box"/>
         </item>
        </layout>
       </item>

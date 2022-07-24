@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <cstring>
 #include "common/assert.h"
@@ -8,11 +7,19 @@
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/hle/service/nvdrv/devices/nvhost_ctrl_gpu.h"
+#include "core/hle/service/nvdrv/nvdrv.h"
 
 namespace Service::Nvidia::Devices {
 
-nvhost_ctrl_gpu::nvhost_ctrl_gpu(Core::System& system_) : nvdevice{system_} {}
-nvhost_ctrl_gpu::~nvhost_ctrl_gpu() = default;
+nvhost_ctrl_gpu::nvhost_ctrl_gpu(Core::System& system_, EventInterface& events_interface_)
+    : nvdevice{system_}, events_interface{events_interface_} {
+    error_notifier_event = events_interface.CreateEvent("CtrlGpuErrorNotifier");
+    unknown_event = events_interface.CreateEvent("CtrlGpuUknownEvent");
+}
+nvhost_ctrl_gpu::~nvhost_ctrl_gpu() {
+    events_interface.FreeEvent(error_notifier_event);
+    events_interface.FreeEvent(unknown_event);
+}
 
 NvResult nvhost_ctrl_gpu::Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
                                  std::vector<u8>& output) {
@@ -285,6 +292,19 @@ NvResult nvhost_ctrl_gpu::GetGpuTime(const std::vector<u8>& input, std::vector<u
     params.gpu_time = static_cast<u64_le>(system.CoreTiming().GetGlobalTimeNs().count());
     std::memcpy(output.data(), &params, output.size());
     return NvResult::Success;
+}
+
+Kernel::KEvent* nvhost_ctrl_gpu::QueryEvent(u32 event_id) {
+    switch (event_id) {
+    case 1:
+        return error_notifier_event;
+    case 2:
+        return unknown_event;
+    default: {
+        LOG_CRITICAL(Service_NVDRV, "Unknown Ctrl GPU Event {}", event_id);
+    }
+    }
+    return nullptr;
 }
 
 } // namespace Service::Nvidia::Devices

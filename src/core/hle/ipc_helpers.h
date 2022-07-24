@@ -19,7 +19,7 @@
 
 namespace IPC {
 
-constexpr ResultCode ERR_REMOTE_PROCESS_DEAD{ErrorModule::HIPC, 301};
+constexpr Result ERR_REMOTE_PROCESS_DEAD{ErrorModule::HIPC, 301};
 
 class RequestHelperBase {
 protected:
@@ -176,7 +176,7 @@ public:
     void PushImpl(float value);
     void PushImpl(double value);
     void PushImpl(bool value);
-    void PushImpl(ResultCode value);
+    void PushImpl(Result value);
 
     template <typename T>
     void Push(T value) {
@@ -251,7 +251,7 @@ void ResponseBuilder::PushRaw(const T& value) {
     index += (sizeof(T) + 3) / 4; // round up to word length
 }
 
-inline void ResponseBuilder::PushImpl(ResultCode value) {
+inline void ResponseBuilder::PushImpl(Result value) {
     // Result codes are actually 64-bit in the IPC buffer, but only the high part is discarded.
     Push(value.raw);
     Push<u32>(0);
@@ -385,7 +385,7 @@ public:
     T PopRaw();
 
     template <class T>
-    std::shared_ptr<T> PopIpcInterface() {
+    std::weak_ptr<T> PopIpcInterface() {
         ASSERT(context->Session()->IsDomain());
         ASSERT(context->GetDomainMessageHeader().input_object_count > 0);
         return context->GetDomainHandler<T>(Pop<u32>() - 1);
@@ -404,6 +404,11 @@ inline s32 RequestParser::Pop() {
     return static_cast<s32>(Pop<u32>());
 }
 
+// Ignore the -Wclass-memaccess warning on memcpy for non-trivially default constructible objects.
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
+#endif
 template <typename T>
 void RequestParser::PopRaw(T& value) {
     static_assert(std::is_trivially_copyable_v<T>,
@@ -411,6 +416,9 @@ void RequestParser::PopRaw(T& value) {
     std::memcpy(&value, cmdbuf + index, sizeof(T));
     index += (sizeof(T) + 3) / 4; // round up to word length
 }
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 template <typename T>
 T RequestParser::PopRaw() {
@@ -473,8 +481,8 @@ inline bool RequestParser::Pop() {
 }
 
 template <>
-inline ResultCode RequestParser::Pop() {
-    return ResultCode{Pop<u32>()};
+inline Result RequestParser::Pop() {
+    return Result{Pop<u32>()};
 }
 
 template <typename T>

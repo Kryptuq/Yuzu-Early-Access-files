@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -8,7 +7,6 @@
 
 #include <boost/container/small_vector.hpp>
 
-#include "common/assert.h"
 #include "common/common_types.h"
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
 #include "shader_recompiler/shader_info.h"
@@ -16,7 +14,6 @@
 #include "video_core/renderer_vulkan/vk_update_descriptor.h"
 #include "video_core/texture_cache/texture_cache.h"
 #include "video_core/texture_cache/types.h"
-#include "video_core/textures/texture.h"
 #include "video_core/vulkan_common/vulkan_device.h"
 
 namespace Vulkan {
@@ -171,7 +168,7 @@ private:
 };
 
 inline void PushImageDescriptors(TextureCache& texture_cache,
-                                 VKUpdateDescriptorQueue& update_descriptor_queue,
+                                 UpdateDescriptorQueue& update_descriptor_queue,
                                  const Shader::Info& info, RescalingPushConstant& rescaling,
                                  const VkSampler*& samplers,
                                  const VideoCommon::ImageViewInOut*& views) {

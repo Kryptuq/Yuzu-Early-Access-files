@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -59,7 +58,7 @@ class KAutoObjectWithSlabHeapAndContainer : public Base {
 
 private:
     static Derived* Allocate(KernelCore& kernel) {
-        return kernel.SlabHeap<Derived>().AllocateWithKernel(kernel);
+        return kernel.SlabHeap<Derived>().Allocate(kernel);
     }
 
     static void Free(KernelCore& kernel, Derived* obj) {

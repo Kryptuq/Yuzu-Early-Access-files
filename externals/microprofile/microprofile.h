@@ -1246,7 +1246,7 @@ struct MicroProfileScopeLock
 {
     bool bUseLock;
     std::recursive_mutex& m;
-    MicroProfileScopeLock(std::recursive_mutex& m) : bUseLock(g_bUseLock), m(m)
+    MicroProfileScopeLock(std::recursive_mutex& m_) : bUseLock(g_bUseLock), m(m_)
     {
         if(bUseLock)
             m.lock();

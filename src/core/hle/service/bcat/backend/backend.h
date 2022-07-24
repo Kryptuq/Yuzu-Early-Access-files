@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -50,7 +49,7 @@ struct DeliveryCacheProgressImpl {
     };
 
     Status status;
-    ResultCode result = ResultSuccess;
+    Result result = ResultSuccess;
     DirectoryName current_directory;
     FileName current_file;
     s64 current_downloaded_bytes; ///< Bytes downloaded on current file.
@@ -91,7 +90,7 @@ public:
     void CommitDirectory(std::string_view dir_name);
 
     // Notifies the application that the operation completed with result code result.
-    void FinishDownload(ResultCode result);
+    void FinishDownload(Result result);
 
 private:
     explicit ProgressServiceBackend(Core::System& system, std::string_view event_name);

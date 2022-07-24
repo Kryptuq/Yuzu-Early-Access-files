@@ -125,6 +125,12 @@ public:
     /// Returns type integer.
     Id TypeInt(int width, bool is_signed);
 
+    /// Returns type signed integer.
+    Id TypeSInt(int width);
+
+    /// Returns type unsigned integer.
+    Id TypeUInt(int width);
+
     /// Returns type float.
     Id TypeFloat(int width);
 

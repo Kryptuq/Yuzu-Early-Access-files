@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <array>
@@ -51,7 +50,7 @@ std::pair<std::size_t, std::size_t> SearchBucketEntry(u64 offset, const BlockTyp
             low = mid + 1;
         }
     }
-    UNREACHABLE_MSG("Offset could not be found in BKTR block.");
+    ASSERT_MSG(false, "Offset could not be found in BKTR block.");
     return {0, 0};
 }
 } // Anonymous namespace

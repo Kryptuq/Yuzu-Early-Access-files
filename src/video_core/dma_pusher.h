@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -11,6 +10,7 @@
 #include "common/bit_field.h"
 #include "common/common_types.h"
 #include "video_core/engines/engine_interface.h"
+#include "video_core/engines/puller.h"
 
 namespace Core {
 class System;
@@ -18,7 +18,12 @@ class System;
 
 namespace Tegra {
 
+namespace Control {
+struct ChannelState;
+}
+
 class GPU;
+class MemoryManager;
 
 enum class SubmissionMode : u32 {
     IncreasingOld = 0,
@@ -32,24 +37,32 @@ enum class SubmissionMode : u32 {
 // Note that, traditionally, methods are treated as 4-byte addressable locations, and hence
 // their numbers are written down multiplied by 4 in Docs. Here we are not multiply by 4.
 // So the values you see in docs might be multiplied by 4.
+// Register documentation:
+// https://github.com/NVIDIA/open-gpu-doc/blob/ab27fc22db5de0d02a4cabe08e555663b62db4d4/classes/host/cla26f.h
+//
+// Register Description (approx):
+// https://github.com/NVIDIA/open-gpu-doc/blob/ab27fc22db5de0d02a4cabe08e555663b62db4d4/manuals/volta/gv100/dev_pbdma.ref.txt
 enum class BufferMethods : u32 {
     BindObject = 0x0,
+    Illegal = 0x1,
     Nop = 0x2,
     SemaphoreAddressHigh = 0x4,
     SemaphoreAddressLow = 0x5,
-    SemaphoreSequence = 0x6,
-    SemaphoreTrigger = 0x7,
-    NotifyIntr = 0x8,
+    SemaphoreSequencePayload = 0x6,
+    SemaphoreOperation = 0x7,
+    NonStallInterrupt = 0x8,
     WrcacheFlush = 0x9,
-    Unk28 = 0xA,
-    UnkCacheFlush = 0xB,
+    MemOpA = 0xA,
+    MemOpB = 0xB,
+    MemOpC = 0xC,
+    MemOpD = 0xD,
     RefCnt = 0x14,
     SemaphoreAcquire = 0x1A,
     SemaphoreRelease = 0x1B,
-    FenceValue = 0x1C,
-    FenceAction = 0x1D,
-    WaitForInterrupt = 0x1E,
-    Unk7c = 0x1F,
+    SyncpointPayload = 0x1C,
+    SyncpointOperation = 0x1D,
+    WaitForIdle = 0x1E,
+    CRCCheck = 0x1F,
     Yield = 0x20,
     NonPullerMethods = 0x40,
 };
@@ -103,7 +116,8 @@ struct CommandList final {
  */
 class DmaPusher final {
 public:
-    explicit DmaPusher(Core::System& system_, GPU& gpu_);
+    explicit DmaPusher(Core::System& system_, GPU& gpu_, MemoryManager& memory_manager_,
+                       Control::ChannelState& channel_state_);
     ~DmaPusher();
 
     void Push(CommandList&& entries) {
@@ -115,6 +129,8 @@ public:
     void BindSubchannel(Engines::EngineInterface* engine, u32 subchannel_id) {
         subchannels[subchannel_id] = engine;
     }
+
+    void BindRasterizer(VideoCore::RasterizerInterface* rasterizer);
 
 private:
     static constexpr u32 non_puller_methods = 0x40;
@@ -149,6 +165,8 @@ private:
 
     GPU& gpu;
     Core::System& system;
+    MemoryManager& memory_manager;
+    mutable Engines::Puller puller;
 };
 
 } // namespace Tegra

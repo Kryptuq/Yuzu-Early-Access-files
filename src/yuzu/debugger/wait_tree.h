@@ -8,7 +8,6 @@
 #include <memory>
 #include <vector>
 
-#include <QAbstractItemModel>
 #include <QDockWidget>
 #include <QTreeView>
 
@@ -79,7 +78,7 @@ public:
 class WaitTreeMutexInfo : public WaitTreeExpandableItem {
     Q_OBJECT
 public:
-    explicit WaitTreeMutexInfo(VAddr mutex_address, const Kernel::KHandleTable& handle_table,
+    explicit WaitTreeMutexInfo(VAddr mutex_address_, const Kernel::KHandleTable& handle_table,
                                Core::System& system_);
     ~WaitTreeMutexInfo() override;
 
@@ -98,7 +97,7 @@ private:
 class WaitTreeCallstack : public WaitTreeExpandableItem {
     Q_OBJECT
 public:
-    explicit WaitTreeCallstack(const Kernel::KThread& thread, Core::System& system_);
+    explicit WaitTreeCallstack(const Kernel::KThread& thread_, Core::System& system_);
     ~WaitTreeCallstack() override;
 
     QString GetText() const override;
@@ -113,7 +112,7 @@ private:
 class WaitTreeSynchronizationObject : public WaitTreeExpandableItem {
     Q_OBJECT
 public:
-    explicit WaitTreeSynchronizationObject(const Kernel::KSynchronizationObject& object,
+    explicit WaitTreeSynchronizationObject(const Kernel::KSynchronizationObject& object_,
                                            Core::System& system_);
     ~WaitTreeSynchronizationObject() override;
 
@@ -163,7 +162,7 @@ private:
 class WaitTreeEvent : public WaitTreeSynchronizationObject {
     Q_OBJECT
 public:
-    explicit WaitTreeEvent(const Kernel::KReadableEvent& object, Core::System& system_);
+    explicit WaitTreeEvent(const Kernel::KReadableEvent& object_, Core::System& system_);
     ~WaitTreeEvent() override;
 };
 

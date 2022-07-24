@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_readable_event.h"
@@ -19,11 +18,11 @@ void KWritableEvent::Initialize(KEvent* parent_event_, std::string&& name_) {
     parent->GetReadableEvent().Open();
 }
 
-ResultCode KWritableEvent::Signal() {
+Result KWritableEvent::Signal() {
     return parent->GetReadableEvent().Signal();
 }
 
-ResultCode KWritableEvent::Clear() {
+Result KWritableEvent::Clear() {
     return parent->GetReadableEvent().Clear();
 }
 

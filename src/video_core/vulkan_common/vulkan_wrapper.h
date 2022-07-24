@@ -1,11 +1,9 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <exception>
-#include <iterator>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -173,6 +171,7 @@ struct InstanceDispatch {
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR{};
     PFN_vkGetPhysicalDeviceFormatProperties vkGetPhysicalDeviceFormatProperties{};
     PFN_vkGetPhysicalDeviceMemoryProperties vkGetPhysicalDeviceMemoryProperties{};
+    PFN_vkGetPhysicalDeviceMemoryProperties2 vkGetPhysicalDeviceMemoryProperties2{};
     PFN_vkGetPhysicalDeviceProperties vkGetPhysicalDeviceProperties{};
     PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR{};
     PFN_vkGetPhysicalDeviceQueueFamilyProperties vkGetPhysicalDeviceQueueFamilyProperties{};
@@ -951,7 +950,8 @@ public:
 
     std::vector<VkPresentModeKHR> GetSurfacePresentModesKHR(VkSurfaceKHR) const;
 
-    VkPhysicalDeviceMemoryProperties GetMemoryProperties() const noexcept;
+    VkPhysicalDeviceMemoryProperties2 GetMemoryProperties(
+        void* next_structures = nullptr) const noexcept;
 
 private:
     VkPhysicalDevice physical_device = nullptr;

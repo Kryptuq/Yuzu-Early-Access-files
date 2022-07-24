@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/logging/log.h"
 #include "common/math_util.h"
@@ -24,25 +23,28 @@ constexpr f32 Square(s32 num) {
     return static_cast<f32>(num * num);
 }
 
-Controller_Gesture::Controller_Gesture(Core::HID::HIDCore& hid_core_) : ControllerBase(hid_core_) {
+Controller_Gesture::Controller_Gesture(Core::HID::HIDCore& hid_core_, u8* raw_shared_memory_)
+    : ControllerBase(hid_core_) {
+    static_assert(SHARED_MEMORY_OFFSET + sizeof(GestureSharedMemory) < shared_memory_size,
+                  "GestureSharedMemory is bigger than the shared memory");
+    shared_memory = std::construct_at(
+        reinterpret_cast<GestureSharedMemory*>(raw_shared_memory_ + SHARED_MEMORY_OFFSET));
     console = hid_core.GetEmulatedConsole();
 }
 Controller_Gesture::~Controller_Gesture() = default;
 
 void Controller_Gesture::OnInit() {
-    gesture_lifo.buffer_count = 0;
-    gesture_lifo.buffer_tail = 0;
+    shared_memory->gesture_lifo.buffer_count = 0;
+    shared_memory->gesture_lifo.buffer_tail = 0;
     force_update = true;
 }
 
 void Controller_Gesture::OnRelease() {}
 
-void Controller_Gesture::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* data,
-                                  std::size_t size) {
+void Controller_Gesture::OnUpdate(const Core::Timing::CoreTiming& core_timing) {
     if (!IsControllerActivated()) {
-        gesture_lifo.buffer_count = 0;
-        gesture_lifo.buffer_tail = 0;
-        std::memcpy(data + SHARED_MEMORY_OFFSET, &gesture_lifo, sizeof(gesture_lifo));
+        shared_memory->gesture_lifo.buffer_count = 0;
+        shared_memory->gesture_lifo.buffer_tail = 0;
         return;
     }
 
@@ -50,15 +52,16 @@ void Controller_Gesture::OnUpdate(const Core::Timing::CoreTiming& core_timing, u
 
     GestureProperties gesture = GetGestureProperties();
     f32 time_difference =
-        static_cast<f32>(gesture_lifo.timestamp - last_update_timestamp) / (1000 * 1000 * 1000);
+        static_cast<f32>(shared_memory->gesture_lifo.timestamp - last_update_timestamp) /
+        (1000 * 1000 * 1000);
 
     // Only update if necesary
     if (!ShouldUpdateGesture(gesture, time_difference)) {
         return;
     }
 
-    last_update_timestamp = gesture_lifo.timestamp;
-    UpdateGestureSharedMemory(data, size, gesture, time_difference);
+    last_update_timestamp = shared_memory->gesture_lifo.timestamp;
+    UpdateGestureSharedMemory(gesture, time_difference);
 }
 
 void Controller_Gesture::ReadTouchInput() {
@@ -92,13 +95,12 @@ bool Controller_Gesture::ShouldUpdateGesture(const GestureProperties& gesture,
     return false;
 }
 
-void Controller_Gesture::UpdateGestureSharedMemory(u8* data, std::size_t size,
-                                                   GestureProperties& gesture,
+void Controller_Gesture::UpdateGestureSharedMemory(GestureProperties& gesture,
                                                    f32 time_difference) {
     GestureType type = GestureType::Idle;
     GestureAttribute attributes{};
 
-    const auto& last_entry = gesture_lifo.ReadCurrentEntry().state;
+    const auto& last_entry = shared_memory->gesture_lifo.ReadCurrentEntry().state;
 
     // Reset next state to default
     next_state.sampling_number = last_entry.sampling_number + 1;
@@ -128,8 +130,7 @@ void Controller_Gesture::UpdateGestureSharedMemory(u8* data, std::size_t size,
     next_state.points = gesture.points;
     last_gesture = gesture;
 
-    gesture_lifo.WriteNextEntry(next_state);
-    std::memcpy(data + SHARED_MEMORY_OFFSET, &gesture_lifo, sizeof(gesture_lifo));
+    shared_memory->gesture_lifo.WriteNextEntry(next_state);
 }
 
 void Controller_Gesture::NewGesture(GestureProperties& gesture, GestureType& type,
@@ -306,7 +307,7 @@ void Controller_Gesture::SetSwipeEvent(GestureProperties& gesture,
 }
 
 const Controller_Gesture::GestureState& Controller_Gesture::GetLastGestureEntry() const {
-    return gesture_lifo.ReadCurrentEntry().state;
+    return shared_memory->gesture_lifo.ReadCurrentEntry().state;
 }
 
 Controller_Gesture::GestureProperties Controller_Gesture::GetGestureProperties() {

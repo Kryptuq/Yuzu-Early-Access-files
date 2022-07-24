@@ -35,8 +35,9 @@ ConfigureHotkeys::ConfigureHotkeys(Core::HID::HIDCore& hid_core, QWidget* parent
     ui->hotkey_list->setContextMenuPolicy(Qt::CustomContextMenu);
     ui->hotkey_list->setModel(model);
 
-    ui->hotkey_list->setColumnWidth(name_column, 200);
-    ui->hotkey_list->resizeColumnToContents(hotkey_column);
+    ui->hotkey_list->header()->setStretchLastSection(false);
+    ui->hotkey_list->header()->setSectionResizeMode(name_column, QHeaderView::ResizeMode::Stretch);
+    ui->hotkey_list->header()->setMinimumSectionSize(150);
 
     connect(ui->button_restore_defaults, &QPushButton::clicked, this,
             &ConfigureHotkeys::RestoreDefaults);
@@ -60,14 +61,18 @@ ConfigureHotkeys::~ConfigureHotkeys() = default;
 
 void ConfigureHotkeys::Populate(const HotkeyRegistry& registry) {
     for (const auto& group : registry.hotkey_groups) {
-        auto* parent_item = new QStandardItem(group.first);
+        auto* parent_item =
+            new QStandardItem(QCoreApplication::translate("Hotkeys", qPrintable(group.first)));
         parent_item->setEditable(false);
+        parent_item->setData(group.first);
         for (const auto& hotkey : group.second) {
-            auto* action = new QStandardItem(hotkey.first);
+            auto* action =
+                new QStandardItem(QCoreApplication::translate("Hotkeys", qPrintable(hotkey.first)));
             auto* keyseq =
                 new QStandardItem(hotkey.second.keyseq.toString(QKeySequence::NativeText));
             auto* controller_keyseq = new QStandardItem(hotkey.second.controller_keyseq);
             action->setEditable(false);
+            action->setData(hotkey.first);
             keyseq->setEditable(false);
             controller_keyseq->setEditable(false);
             parent_item->appendRow({action, keyseq, controller_keyseq});
@@ -76,8 +81,8 @@ void ConfigureHotkeys::Populate(const HotkeyRegistry& registry) {
     }
 
     ui->hotkey_list->expandAll();
-    ui->hotkey_list->resizeColumnToContents(name_column);
     ui->hotkey_list->resizeColumnToContents(hotkey_column);
+    ui->hotkey_list->resizeColumnToContents(controller_column);
 }
 
 void ConfigureHotkeys::changeEvent(QEvent* event) {
@@ -92,6 +97,16 @@ void ConfigureHotkeys::RetranslateUI() {
     ui->retranslateUi(this);
 
     model->setHorizontalHeaderLabels({tr("Action"), tr("Hotkey"), tr("Controller Hotkey")});
+    for (int key_id = 0; key_id < model->rowCount(); key_id++) {
+        QStandardItem* parent = model->item(key_id, 0);
+        parent->setText(
+            QCoreApplication::translate("Hotkeys", qPrintable(parent->data().toString())));
+        for (int key_column_id = 0; key_column_id < parent->rowCount(); key_column_id++) {
+            QStandardItem* action = parent->child(key_column_id, name_column);
+            action->setText(
+                QCoreApplication::translate("Hotkeys", qPrintable(action->data().toString())));
+        }
+    }
 }
 
 void ConfigureHotkeys::Configure(QModelIndex index) {
@@ -178,52 +193,52 @@ void ConfigureHotkeys::SetPollingResult(Core::HID::NpadButton button, const bool
 QString ConfigureHotkeys::GetButtonName(Core::HID::NpadButton button) const {
     Core::HID::NpadButtonState state{button};
     if (state.a) {
-        return tr("A");
+        return QStringLiteral("A");
     }
     if (state.b) {
-        return tr("B");
+        return QStringLiteral("B");
     }
     if (state.x) {
-        return tr("X");
+        return QStringLiteral("X");
     }
     if (state.y) {
-        return tr("Y");
+        return QStringLiteral("Y");
     }
     if (state.l || state.right_sl || state.left_sl) {
-        return tr("L");
+        return QStringLiteral("L");
     }
     if (state.r || state.right_sr || state.left_sr) {
-        return tr("R");
+        return QStringLiteral("R");
     }
     if (state.zl) {
-        return tr("ZL");
+        return QStringLiteral("ZL");
     }
     if (state.zr) {
-        return tr("ZR");
+        return QStringLiteral("ZR");
     }
     if (state.left) {
-        return tr("Dpad_Left");
+        return QStringLiteral("Dpad_Left");
     }
     if (state.right) {
-        return tr("Dpad_Right");
+        return QStringLiteral("Dpad_Right");
     }
     if (state.up) {
-        return tr("Dpad_Up");
+        return QStringLiteral("Dpad_Up");
     }
     if (state.down) {
-        return tr("Dpad_Down");
+        return QStringLiteral("Dpad_Down");
     }
     if (state.stick_l) {
-        return tr("Left_Stick");
+        return QStringLiteral("Left_Stick");
     }
     if (state.stick_r) {
-        return tr("Right_Stick");
+        return QStringLiteral("Right_Stick");
     }
     if (state.minus) {
-        return tr("Minus");
+        return QStringLiteral("Minus");
     }
     if (state.plus) {
-        return tr("Plus");
+        return QStringLiteral("Plus");
     }
     return tr("Invalid");
 }
@@ -272,10 +287,10 @@ void ConfigureHotkeys::ApplyConfiguration(HotkeyRegistry& registry) {
             const QStandardItem* controller_keyseq =
                 parent->child(key_column_id, controller_column);
             for (auto& [group, sub_actions] : registry.hotkey_groups) {
-                if (group != parent->text())
+                if (group != parent->data())
                     continue;
                 for (auto& [action_name, hotkey] : sub_actions) {
-                    if (action_name != action->text())
+                    if (action_name != action->data())
                         continue;
                     hotkey.keyseq = QKeySequence(keyseq->text());
                     hotkey.controller_keyseq = controller_keyseq->text();

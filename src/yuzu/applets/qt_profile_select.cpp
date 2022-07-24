@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <mutex>
 #include <QApplication>
@@ -10,6 +9,7 @@
 #include <QLineEdit>
 #include <QScrollArea>
 #include <QStandardItemModel>
+#include <QTreeView>
 #include <QVBoxLayout>
 #include "common/fs/path_util.h"
 #include "common/string_util.h"
@@ -23,13 +23,13 @@ QString FormatUserEntryText(const QString& username, Common::UUID uuid) {
     return QtProfileSelectionDialog::tr(
                "%1\n%2", "%1 is the profile username, %2 is the formatted UUID (e.g. "
                          "00112233-4455-6677-8899-AABBCCDDEEFF))")
-        .arg(username, QString::fromStdString(uuid.FormatSwitch()));
+        .arg(username, QString::fromStdString(uuid.FormattedString()));
 }
 
 QString GetImagePath(Common::UUID uuid) {
     const auto path =
         Common::FS::GetYuzuPath(Common::FS::YuzuPath::NANDDir) /
-        fmt::format("system/save/8000000000000010/su/avators/{}.jpg", uuid.FormatSwitch());
+        fmt::format("system/save/8000000000000010/su/avators/{}.jpg", uuid.FormattedString());
     return QString::fromStdString(Common::FS::PathToUTF8String(path));
 }
 

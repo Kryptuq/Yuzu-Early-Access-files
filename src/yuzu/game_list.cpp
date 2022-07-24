@@ -10,10 +10,10 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QKeyEvent>
 #include <QList>
 #include <QMenu>
 #include <QThreadPool>
+#include <QToolButton>
 #include <fmt/format.h>
 #include "common/common_types.h"
 #include "common/logging/log.h"
@@ -28,8 +28,8 @@
 #include "yuzu/uisettings.h"
 #include "yuzu/util/controller_navigation.h"
 
-GameListSearchField::KeyReleaseEater::KeyReleaseEater(GameList* gamelist, QObject* parent)
-    : QObject(parent), gamelist{gamelist} {}
+GameListSearchField::KeyReleaseEater::KeyReleaseEater(GameList* gamelist_, QObject* parent)
+    : QObject(parent), gamelist{gamelist_} {}
 
 // EventFilter in order to process systemkeys while editing the searchfield
 bool GameListSearchField::KeyReleaseEater::eventFilter(QObject* obj, QEvent* event) {
@@ -80,9 +80,9 @@ bool GameListSearchField::KeyReleaseEater::eventFilter(QObject* obj, QEvent* eve
     return QObject::eventFilter(obj, event);
 }
 
-void GameListSearchField::setFilterResult(int visible, int total) {
-    this->visible = visible;
-    this->total = total;
+void GameListSearchField::setFilterResult(int visible_, int total_) {
+    visible = visible_;
+    total = total_;
 
     label_filter_result->setText(tr("%1 of %n result(s)", "", total).arg(visible));
 }
@@ -161,7 +161,7 @@ GameListSearchField::GameListSearchField(GameList* parent) : QWidget{parent} {
  * @return true if the haystack contains all words of userinput
  */
 static bool ContainsAllWords(const QString& haystack, const QString& userinput) {
-    const QStringList userinput_split = userinput.split(QLatin1Char{' '}, QString::SkipEmptyParts);
+    const QStringList userinput_split = userinput.split(QLatin1Char{' '}, Qt::SkipEmptyParts);
 
     return std::all_of(userinput_split.begin(), userinput_split.end(),
                        [&haystack](const QString& s) { return haystack.contains(s); });
@@ -309,9 +309,9 @@ void GameList::OnFilterCloseClicked() {
     main_window->filterBarSetChecked(false);
 }
 
-GameList::GameList(FileSys::VirtualFilesystem vfs, FileSys::ManualContentProvider* provider,
+GameList::GameList(FileSys::VirtualFilesystem vfs_, FileSys::ManualContentProvider* provider_,
                    Core::System& system_, GMainWindow* parent)
-    : QWidget{parent}, vfs(std::move(vfs)), provider(provider), system{system_} {
+    : QWidget{parent}, vfs{std::move(vfs_)}, provider{provider_}, system{system_} {
     watcher = new QFileSystemWatcher(this);
     connect(watcher, &QFileSystemWatcher::directoryChanged, this, &GameList::RefreshGameDirectory);
 
@@ -483,7 +483,7 @@ void GameList::DonePopulating(const QStringList& watch_list) {
     // Also artificially caps the watcher to a certain number of directories
     constexpr int LIMIT_WATCH_DIRECTORIES = 5000;
     constexpr int SLICE_SIZE = 25;
-    int len = std::min(watch_list.length(), LIMIT_WATCH_DIRECTORIES);
+    int len = std::min(static_cast<int>(watch_list.size()), LIMIT_WATCH_DIRECTORIES);
     for (int i = 0; i < len; i += SLICE_SIZE) {
         watcher->addPaths(watch_list.mid(i, i + SLICE_SIZE));
         QCoreApplication::processEvents();
@@ -870,7 +870,7 @@ GameListPlaceholder::GameListPlaceholder(GMainWindow* parent) : QWidget{parent} 
     layout->setAlignment(Qt::AlignCenter);
     image->setPixmap(QIcon::fromTheme(QStringLiteral("plus_folder")).pixmap(200));
 
-    text->setText(tr("Double-click to add a new folder to the game list"));
+    RetranslateUI();
     QFont font = text->font();
     font.setPointSize(20);
     text->setFont(font);
@@ -890,4 +890,16 @@ void GameListPlaceholder::onUpdateThemedIcons() {
 
 void GameListPlaceholder::mouseDoubleClickEvent(QMouseEvent* event) {
     emit GameListPlaceholder::AddDirectory();
+}
+
+void GameListPlaceholder::changeEvent(QEvent* event) {
+    if (event->type() == QEvent::LanguageChange) {
+        RetranslateUI();
+    }
+
+    QWidget::changeEvent(event);
+}
+
+void GameListPlaceholder::RetranslateUI() {
+    text->setText(tr("Double-click to add a new folder to the game list"));
 }

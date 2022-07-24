@@ -8,14 +8,18 @@
 #include "fmt/xchar.h"
 
 #include <complex>
+#include <cwchar>
+#include <vector>
 
 #include "fmt/chrono.h"
 #include "fmt/color.h"
 #include "fmt/ostream.h"
 #include "fmt/ranges.h"
-#include "gtest/gtest.h"
+#include "gtest-extra.h"  // Contains
+#include "util.h"         // get_locale
 
 using fmt::detail::max_value;
+using testing::Contains;
 
 namespace test_ns {
 template <typename Char> class test_string {
@@ -85,6 +89,10 @@ TEST(xchar_test, format) {
   EXPECT_EQ(L"Cyrillic letter \x42e",
             fmt::format(L"Cyrillic letter {}", L'\x42e'));
   EXPECT_EQ(L"abc1", fmt::format(L"{}c{}", L"ab", 1));
+}
+
+TEST(xchar_test, is_formattable) {
+  static_assert(!fmt::is_formattable<const wchar_t*>::value, "");
 }
 
 TEST(xchar_test, compile_time_string) {
@@ -257,6 +265,55 @@ TEST(xchar_test, chrono) {
   EXPECT_EQ(fmt::format("The date is {:%Y-%m-%d %H:%M:%S}.", tm),
             "The date is 2016-04-25 11:22:33.");
   EXPECT_EQ(L"42s", fmt::format(L"{}", std::chrono::seconds(42)));
+  EXPECT_EQ(fmt::format(L"{:%F}", tm), L"2016-04-25");
+  EXPECT_EQ(fmt::format(L"{:%T}", tm), L"11:22:33");
+}
+
+std::wstring system_wcsftime(const std::wstring& format, const std::tm* timeptr,
+                             std::locale* locptr = nullptr) {
+  auto loc = locptr ? *locptr : std::locale::classic();
+  auto& facet = std::use_facet<std::time_put<wchar_t>>(loc);
+  std::wostringstream os;
+  os.imbue(loc);
+  facet.put(os, os, L' ', timeptr, format.c_str(),
+            format.c_str() + format.size());
+#ifdef _WIN32
+  // Workaround a bug in older versions of Universal CRT.
+  auto str = os.str();
+  if (str == L"-0000") str = L"+0000";
+  return str;
+#else
+  return os.str();
+#endif
+}
+
+TEST(chrono_test, time_point) {
+  auto t1 = std::chrono::system_clock::now();
+
+  std::vector<std::wstring> spec_list = {
+      L"%%",  L"%n",  L"%t",  L"%Y",  L"%EY", L"%y",  L"%Oy", L"%Ey", L"%C",
+      L"%EC", L"%G",  L"%g",  L"%b",  L"%h",  L"%B",  L"%m",  L"%Om", L"%U",
+      L"%OU", L"%W",  L"%OW", L"%V",  L"%OV", L"%j",  L"%d",  L"%Od", L"%e",
+      L"%Oe", L"%a",  L"%A",  L"%w",  L"%Ow", L"%u",  L"%Ou", L"%H",  L"%OH",
+      L"%I",  L"%OI", L"%M",  L"%OM", L"%S",  L"%OS", L"%x",  L"%Ex", L"%X",
+      L"%EX", L"%D",  L"%F",  L"%R",  L"%T",  L"%p",  L"%z",  L"%Z"};
+  spec_list.push_back(L"%Y-%m-%d %H:%M:%S");
+#ifndef _WIN32
+  // Disabled on Windows, because these formats is not consistent among
+  // platforms.
+  spec_list.insert(spec_list.end(), {L"%c", L"%Ec", L"%r"});
+#endif
+
+  for (const auto& spec : spec_list) {
+    auto t = std::chrono::system_clock::to_time_t(t1);
+    auto tm = *std::localtime(&t);
+
+    auto sys_output = system_wcsftime(spec, &tm);
+
+    auto fmt_spec = fmt::format(L"{{:{}}}", spec);
+    EXPECT_EQ(sys_output, fmt::format(fmt_spec, t1));
+    EXPECT_EQ(sys_output, fmt::format(fmt_spec, tm));
+  }
 }
 
 TEST(xchar_test, color) {
@@ -301,10 +358,12 @@ template <typename Char> struct small_grouping : std::numpunct<Char> {
   Char do_thousands_sep() const override { return ','; }
 };
 
-TEST(locale_test, double_decimal_point) {
+TEST(locale_test, localized_double) {
   auto loc = std::locale(std::locale(), new numpunct<char>());
   EXPECT_EQ("1?23", fmt::format(loc, "{:L}", 1.23));
   EXPECT_EQ("1?230000", fmt::format(loc, "{:Lf}", 1.23));
+  EXPECT_EQ("1~234?5", fmt::format(loc, "{:L}", 1234.5));
+  EXPECT_EQ("12~000", fmt::format(loc, "{:L}", 12000.0));
 }
 
 TEST(locale_test, format) {
@@ -403,7 +462,7 @@ template <class charT> struct formatter<std::complex<double>, charT> {
         specs_.precision, specs_.precision_ref, ctx);
     auto specs = std::string();
     if (specs_.precision > 0) specs = fmt::format(".{}", specs_.precision);
-    if (specs_.type) specs += specs_.type;
+    if (specs_.type == presentation_type::fixed_lower) specs += 'f';
     auto real = fmt::format(ctx.locale().template get<std::locale>(),
                             fmt::runtime("{:" + specs + "}"), c.real());
     auto imag = fmt::format(ctx.locale().template get<std::locale>(),
@@ -422,6 +481,22 @@ TEST(locale_test, complex) {
   EXPECT_EQ(s, "(1+2i)");
   EXPECT_EQ(fmt::format("{:.2f}", std::complex<double>(1, 2)), "(1.00+2.00i)");
   EXPECT_EQ(fmt::format("{:8}", std::complex<double>(1, 2)), "  (1+2i)");
+}
+
+TEST(locale_test, chrono_weekday) {
+  auto loc = get_locale("ru_RU.UTF-8", "Russian_Russia.1251");
+  auto loc_old = std::locale::global(loc);
+  auto mon = fmt::weekday(1);
+  EXPECT_EQ(fmt::format(L"{}", mon), L"Mon");
+  if (loc != std::locale::classic()) {
+    // {L"\x43F\x43D", L"\x41F\x43D", L"\x43F\x43D\x434", L"\x41F\x43D\x434"}
+    // {L"пн", L"Пн", L"пнд", L"Пнд"}
+    EXPECT_THAT(
+        (std::vector<std::wstring>{L"\x43F\x43D", L"\x41F\x43D",
+                                   L"\x43F\x43D\x434", L"\x41F\x43D\x434"}),
+        Contains(fmt::format(loc, L"{:L}", mon)));
+  }
+  std::locale::global(loc_old);
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

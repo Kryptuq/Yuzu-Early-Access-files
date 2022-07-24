@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -23,7 +22,7 @@ struct SteadyClockTimePoint {
     s64 time_point;
     Common::UUID clock_source_id;
 
-    ResultCode GetSpanBetween(SteadyClockTimePoint other, s64& span) const {
+    Result GetSpanBetween(SteadyClockTimePoint other, s64& span) const {
         span = 0;
 
         if (clock_source_id != other.clock_source_id) {
@@ -36,7 +35,7 @@ struct SteadyClockTimePoint {
     }
 
     static SteadyClockTimePoint GetRandom() {
-        return {0, Common::UUID::Generate()};
+        return {0, Common::UUID::MakeRandom()};
     }
 };
 static_assert(sizeof(SteadyClockTimePoint) == 0x18, "SteadyClockTimePoint is incorrect size");
@@ -93,9 +92,9 @@ struct ClockSnapshot {
     TimeType type;
     INSERT_PADDING_BYTES_NOINIT(0x2);
 
-    static ResultCode GetCurrentTime(s64& current_time,
-                                     const SteadyClockTimePoint& steady_clock_time_point,
-                                     const SystemClockContext& context) {
+    static Result GetCurrentTime(s64& current_time,
+                                 const SteadyClockTimePoint& steady_clock_time_point,
+                                 const SystemClockContext& context) {
         if (steady_clock_time_point.clock_source_id != context.steady_time_point.clock_source_id) {
             current_time = 0;
             return ERROR_TIME_MISMATCH;

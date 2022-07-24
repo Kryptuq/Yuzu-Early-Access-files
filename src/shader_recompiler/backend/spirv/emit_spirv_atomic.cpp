@@ -1,6 +1,7 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include <bit>
 
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
 #include "shader_recompiler/backend/spirv/emit_spirv_instructions.h"
@@ -74,12 +75,23 @@ Id StorageAtomicU64(EmitContext& ctx, const IR::Value& binding, const IR::Value&
         const auto [scope, semantics]{AtomicArgs(ctx)};
         return (ctx.*atomic_func)(ctx.U64, pointer, scope, semantics, value);
     }
-    LOG_ERROR(Shader_SPIRV, "Int64 atomics not supported, fallback to non-atomic");
+    LOG_WARNING(Shader_SPIRV, "Int64 atomics not supported, fallback to non-atomic");
     const Id pointer{StoragePointer(ctx, ctx.storage_types.U32x2, &StorageDefinitions::U32x2,
                                     binding, offset, sizeof(u32[2]))};
     const Id original_value{ctx.OpBitcast(ctx.U64, ctx.OpLoad(ctx.U32[2], pointer))};
     const Id result{(ctx.*non_atomic_func)(ctx.U64, value, original_value)};
     ctx.OpStore(pointer, ctx.OpBitcast(ctx.U32[2], result));
+    return original_value;
+}
+
+Id StorageAtomicU32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset, Id value,
+                      Id (Sirit::Module::*non_atomic_func)(Id, Id, Id)) {
+    LOG_WARNING(Shader_SPIRV, "Int64 atomics not supported, fallback to non-atomic");
+    const Id pointer{StoragePointer(ctx, ctx.storage_types.U32x2, &StorageDefinitions::U32x2,
+                                    binding, offset, sizeof(u32[2]))};
+    const Id original_value{ctx.OpLoad(ctx.U32[2], pointer)};
+    const Id result{(ctx.*non_atomic_func)(ctx.U32[2], value, original_value)};
+    ctx.OpStore(pointer, result);
     return original_value;
 }
 } // Anonymous namespace
@@ -141,7 +153,7 @@ Id EmitSharedAtomicExchange64(EmitContext& ctx, Id offset, Id value) {
         const auto [scope, semantics]{AtomicArgs(ctx)};
         return ctx.OpAtomicExchange(ctx.U64, pointer, scope, semantics, value);
     }
-    LOG_ERROR(Shader_SPIRV, "Int64 atomics not supported, fallback to non-atomic");
+    LOG_WARNING(Shader_SPIRV, "Int64 atomics not supported, fallback to non-atomic");
     const Id pointer_1{SharedPointer(ctx, offset, 0)};
     const Id pointer_2{SharedPointer(ctx, offset, 1)};
     const Id value_1{ctx.OpLoad(ctx.U32[1], pointer_1)};
@@ -150,6 +162,18 @@ Id EmitSharedAtomicExchange64(EmitContext& ctx, Id offset, Id value) {
     ctx.OpStore(pointer_1, ctx.OpCompositeExtract(ctx.U32[1], new_vector, 0U));
     ctx.OpStore(pointer_2, ctx.OpCompositeExtract(ctx.U32[1], new_vector, 1U));
     return ctx.OpBitcast(ctx.U64, ctx.OpCompositeConstruct(ctx.U32[2], value_1, value_2));
+}
+
+Id EmitSharedAtomicExchange32x2(EmitContext& ctx, Id offset, Id value) {
+    LOG_WARNING(Shader_SPIRV, "Int64 atomics not supported, fallback to non-atomic");
+    const Id pointer_1{SharedPointer(ctx, offset, 0)};
+    const Id pointer_2{SharedPointer(ctx, offset, 1)};
+    const Id value_1{ctx.OpLoad(ctx.U32[1], pointer_1)};
+    const Id value_2{ctx.OpLoad(ctx.U32[1], pointer_2)};
+    const Id new_vector{ctx.OpBitcast(ctx.U32[2], value)};
+    ctx.OpStore(pointer_1, ctx.OpCompositeExtract(ctx.U32[1], new_vector, 0U));
+    ctx.OpStore(pointer_2, ctx.OpCompositeExtract(ctx.U32[1], new_vector, 1U));
+    return ctx.OpCompositeConstruct(ctx.U32[2], value_1, value_2);
 }
 
 Id EmitStorageAtomicIAdd32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
@@ -267,10 +291,60 @@ Id EmitStorageAtomicExchange64(EmitContext& ctx, const IR::Value& binding, const
         const auto [scope, semantics]{AtomicArgs(ctx)};
         return ctx.OpAtomicExchange(ctx.U64, pointer, scope, semantics, value);
     }
-    LOG_ERROR(Shader_SPIRV, "Int64 atomics not supported, fallback to non-atomic");
+    LOG_WARNING(Shader_SPIRV, "Int64 atomics not supported, fallback to non-atomic");
     const Id pointer{StoragePointer(ctx, ctx.storage_types.U32x2, &StorageDefinitions::U32x2,
                                     binding, offset, sizeof(u32[2]))};
     const Id original{ctx.OpBitcast(ctx.U64, ctx.OpLoad(ctx.U32[2], pointer))};
+    ctx.OpStore(pointer, value);
+    return original;
+}
+
+Id EmitStorageAtomicIAdd32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                             Id value) {
+    return StorageAtomicU32x2(ctx, binding, offset, value, &Sirit::Module::OpIAdd);
+}
+
+Id EmitStorageAtomicSMin32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                             Id value) {
+    return StorageAtomicU32x2(ctx, binding, offset, value, &Sirit::Module::OpSMin);
+}
+
+Id EmitStorageAtomicUMin32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                             Id value) {
+    return StorageAtomicU32x2(ctx, binding, offset, value, &Sirit::Module::OpUMin);
+}
+
+Id EmitStorageAtomicSMax32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                             Id value) {
+    return StorageAtomicU32x2(ctx, binding, offset, value, &Sirit::Module::OpSMax);
+}
+
+Id EmitStorageAtomicUMax32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                             Id value) {
+    return StorageAtomicU32x2(ctx, binding, offset, value, &Sirit::Module::OpUMax);
+}
+
+Id EmitStorageAtomicAnd32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                            Id value) {
+    return StorageAtomicU32x2(ctx, binding, offset, value, &Sirit::Module::OpBitwiseAnd);
+}
+
+Id EmitStorageAtomicOr32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                           Id value) {
+    return StorageAtomicU32x2(ctx, binding, offset, value, &Sirit::Module::OpBitwiseOr);
+}
+
+Id EmitStorageAtomicXor32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                            Id value) {
+    return StorageAtomicU32x2(ctx, binding, offset, value, &Sirit::Module::OpBitwiseXor);
+}
+
+Id EmitStorageAtomicExchange32x2(EmitContext& ctx, const IR::Value& binding,
+                                 const IR::Value& offset, Id value) {
+    LOG_WARNING(Shader_SPIRV, "Int64 atomics not supported, fallback to non-atomic");
+    const Id pointer{StoragePointer(ctx, ctx.storage_types.U32x2, &StorageDefinitions::U32x2,
+                                    binding, offset, sizeof(u32[2]))};
+    const Id original{ctx.OpLoad(ctx.U32[2], pointer)};
     ctx.OpStore(pointer, value);
     return original;
 }
@@ -415,6 +489,50 @@ Id EmitGlobalAtomicXor64(EmitContext&) {
 }
 
 Id EmitGlobalAtomicExchange64(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+Id EmitGlobalAtomicIAdd32x2(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+Id EmitGlobalAtomicSMin32x2(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+Id EmitGlobalAtomicUMin32x2(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+Id EmitGlobalAtomicSMax32x2(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+Id EmitGlobalAtomicUMax32x2(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+Id EmitGlobalAtomicInc32x2(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+Id EmitGlobalAtomicDec32x2(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+Id EmitGlobalAtomicAnd32x2(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+Id EmitGlobalAtomicOr32x2(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+Id EmitGlobalAtomicXor32x2(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+Id EmitGlobalAtomicExchange32x2(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 

@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -26,8 +25,8 @@ public:
     static void PostDestroy([[maybe_unused]] uintptr_t arg) {}
 
     void Initialize(KEvent* parent_, std::string&& name_);
-    ResultCode Signal();
-    ResultCode Clear();
+    Result Signal();
+    Result Clear();
 
     KEvent* GetParent() const {
         return parent;

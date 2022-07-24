@@ -1,13 +1,11 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <vector>
 #include <QDialog>
 #include <QList>
-#include <QTreeView>
 #include "core/frontend/applets/profile_select.h"
 #include "core/hle/service/acc/profile_manager.h"
 
@@ -19,6 +17,7 @@ class QLabel;
 class QScrollArea;
 class QStandardItem;
 class QStandardItemModel;
+class QTreeView;
 class QVBoxLayout;
 
 namespace Core::HID {

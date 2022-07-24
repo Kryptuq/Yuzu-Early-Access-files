@@ -50,6 +50,7 @@ std::unique_ptr<Tegra::GPU> CreateGPU(Core::Frontend::EmuWindow& emu_window, Cor
         gpu->BindRenderer(std::move(renderer));
         return gpu;
     } catch (const std::runtime_error& exception) {
+        scope.Cancel();
         LOG_ERROR(HW_GPU, "Failed to initialize GPU: {}", exception.what());
         return nullptr;
     }

@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -8,7 +7,6 @@
 #include <utility>
 
 #if defined(_WIN32)
-#include <winsock.h>
 #elif !YUZU_UNIX
 #error "Platform not implemented"
 #endif
@@ -67,6 +65,8 @@ public:
     Errno SetLinger(bool enable, u32 linger);
 
     Errno SetReuseAddr(bool enable);
+
+    Errno SetKeepAlive(bool enable);
 
     Errno SetBroadcast(bool enable);
 

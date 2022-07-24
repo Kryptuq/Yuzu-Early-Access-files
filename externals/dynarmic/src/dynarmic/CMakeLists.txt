@@ -1,9 +1,5 @@
 add_library(dynarmic
-    common/assert.cpp
-    common/assert.h
-    common/bit_util.h
     common/cast_util.h
-    common/common_types.h
     common/crypto/aes.cpp
     common/crypto/aes.h
     common/crypto/crc32.cpp
@@ -46,24 +42,19 @@ add_library(dynarmic
     common/fp/unpacked.cpp
     common/fp/unpacked.h
     common/fp/util.h
-    common/intrusive_list.h
-    common/iterator_util.h
     common/llvm_disassemble.cpp
     common/llvm_disassemble.h
     common/lut_from_list.h
-    common/macro_util.h
     common/math_util.cpp
     common/math_util.h
     common/memory_pool.cpp
     common/memory_pool.h
     common/safe_ops.h
-    common/scope_exit.h
+    common/spin_lock.h
     common/string_util.h
     common/u128.cpp
     common/u128.h
     common/variant_util.h
-    common/x64_disassemble.cpp
-    common/x64_disassemble.h
     frontend/A32/a32_types.cpp
     frontend/A32/a32_types.h
     frontend/A64/a64_types.cpp
@@ -74,6 +65,7 @@ add_library(dynarmic
     frontend/imm.h
     interface/exclusive_monitor.h
     interface/optimization_flags.h
+    ir/acc_type.h
     ir/basic_block.cpp
     ir/basic_block.h
     ir/cond.h
@@ -91,6 +83,7 @@ add_library(dynarmic
     ir/opt/identity_removal_pass.cpp
     ir/opt/ir_matcher.h
     ir/opt/passes.h
+    ir/opt/polyfill_pass.cpp
     ir/opt/verification_pass.cpp
     ir/terminal.h
     ir/type.cpp
@@ -262,6 +255,12 @@ if ("A64" IN_LIST DYNARMIC_FRONTENDS)
 endif()
 
 if (ARCHITECTURE STREQUAL "x86_64")
+    target_link_libraries(dynarmic
+        PRIVATE
+            $<BUILD_INTERFACE:xbyak>
+            $<BUILD_INTERFACE:Zydis>
+    )
+
     target_sources(dynarmic PRIVATE
         backend/x64/abi.cpp
         backend/x64/abi.h
@@ -281,14 +280,18 @@ if (ARCHITECTURE STREQUAL "x86_64")
         backend/x64/emit_x64_crc32.cpp
         backend/x64/emit_x64_data_processing.cpp
         backend/x64/emit_x64_floating_point.cpp
+        backend/x64/emit_x64_memory.h
+        backend/x64/emit_x64_memory.cpp.inc
         backend/x64/emit_x64_packed.cpp
         backend/x64/emit_x64_saturation.cpp
         backend/x64/emit_x64_sm4.cpp
+        backend/x64/emit_x64_sha.cpp
         backend/x64/emit_x64_vector.cpp
         backend/x64/emit_x64_vector_floating_point.cpp
         backend/x64/emit_x64_vector_saturation.cpp
         backend/x64/exception_handler.h
         backend/x64/exclusive_monitor.cpp
+        backend/x64/exclusive_monitor_friend.h
         backend/x64/host_feature.h
         backend/x64/hostloc.cpp
         backend/x64/hostloc.h
@@ -299,12 +302,17 @@ if (ARCHITECTURE STREQUAL "x86_64")
         backend/x64/reg_alloc.cpp
         backend/x64/reg_alloc.h
         backend/x64/stack_layout.h
+        common/spin_lock_x64.cpp
+        common/spin_lock_x64.h
+        common/x64_disassemble.cpp
+        common/x64_disassemble.h
     )
 
     if ("A32" IN_LIST DYNARMIC_FRONTENDS)
         target_sources(dynarmic PRIVATE
             backend/x64/a32_emit_x64.cpp
             backend/x64/a32_emit_x64.h
+            backend/x64/a32_emit_x64_memory.cpp
             backend/x64/a32_interface.cpp
             backend/x64/a32_jitstate.cpp
             backend/x64/a32_jitstate.h
@@ -315,6 +323,7 @@ if (ARCHITECTURE STREQUAL "x86_64")
         target_sources(dynarmic PRIVATE
             backend/x64/a64_emit_x64.cpp
             backend/x64/a64_emit_x64.h
+            backend/x64/a64_emit_x64_memory.cpp
             backend/x64/a64_interface.cpp
             backend/x64/a64_jitstate.cpp
             backend/x64/a64_jitstate.h
@@ -374,14 +383,13 @@ set_target_properties(dynarmic PROPERTIES
 target_compile_options(dynarmic PRIVATE ${DYNARMIC_CXX_FLAGS})
 # $<BUILD_INTERFACE:> required because of https://gitlab.kitware.com/cmake/cmake/-/issues/15415
 target_link_libraries(dynarmic
+    PUBLIC
+        $<BUILD_INTERFACE:merry::mcl>
     PRIVATE
         $<BUILD_INTERFACE:boost>
         $<BUILD_INTERFACE:fmt::fmt>
-        $<BUILD_INTERFACE:mp>
         tsl::robin_map
-        $<BUILD_INTERFACE:xbyak>
-        $<BUILD_INTERFACE:Zydis>
-        $<$<BOOL:DYNARMIC_USE_LLVM>:${llvm_libs}>
+        "$<$<BOOL:DYNARMIC_USE_LLVM>:${llvm_libs}>"
 )
 if (DYNARMIC_ENABLE_CPU_FEATURE_DETECTION)
     target_compile_definitions(dynarmic PRIVATE DYNARMIC_ENABLE_CPU_FEATURE_DETECTION=1)
@@ -390,7 +398,7 @@ if (DYNARMIC_ENABLE_NO_EXECUTE_SUPPORT)
     target_compile_definitions(dynarmic PRIVATE DYNARMIC_ENABLE_NO_EXECUTE_SUPPORT=1)
 endif()
 if (DYNARMIC_IGNORE_ASSERTS)
-    target_compile_definitions(dynarmic PRIVATE DYNARMIC_IGNORE_ASSERTS=1)
+    target_compile_definitions(dynarmic PRIVATE MCL_IGNORE_ASSERTS=1)
 endif()
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_compile_definitions(dynarmic PRIVATE FMT_USE_WINDOWS_H=0)

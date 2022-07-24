@@ -1,12 +1,10 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/cityhash.h"
 #include "common/microprofile.h"
 #include "common/settings.h"
 #include "core/core.h"
-#include "core/memory.h"
 #include "video_core/dma_pusher.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/gpu.h"
@@ -14,7 +12,10 @@
 
 namespace Tegra {
 
-DmaPusher::DmaPusher(Core::System& system_, GPU& gpu_) : gpu{gpu_}, system{system_} {}
+DmaPusher::DmaPusher(Core::System& system_, GPU& gpu_, MemoryManager& memory_manager_,
+                     Control::ChannelState& channel_state_)
+    : gpu{gpu_}, system{system_}, memory_manager{memory_manager_}, puller{gpu_, memory_manager_,
+                                                                          *this, channel_state_} {}
 
 DmaPusher::~DmaPusher() = default;
 
@@ -22,8 +23,6 @@ MICROPROFILE_DEFINE(DispatchCalls, "GPU", "Execute command buffer", MP_RGB(128, 
 
 void DmaPusher::DispatchCalls() {
     MICROPROFILE_SCOPE(DispatchCalls);
-
-    gpu.SyncGuestHost();
 
     dma_pushbuffer_subindex = 0;
 
@@ -35,7 +34,6 @@ void DmaPusher::DispatchCalls() {
         }
     }
     gpu.FlushCommands();
-    gpu.SyncGuestHost();
     gpu.OnCommandListEnd();
 }
 
@@ -78,11 +76,11 @@ bool DmaPusher::Step() {
         // Push buffer non-empty, read a word
         command_headers.resize(command_list_header.size);
         if (Settings::IsGPULevelHigh()) {
-            gpu.MemoryManager().ReadBlock(dma_get, command_headers.data(),
-                                          command_list_header.size * sizeof(u32));
+            memory_manager.ReadBlock(dma_get, command_headers.data(),
+                                     command_list_header.size * sizeof(u32));
         } else {
-            gpu.MemoryManager().ReadBlockUnsafe(dma_get, command_headers.data(),
-                                                command_list_header.size * sizeof(u32));
+            memory_manager.ReadBlockUnsafe(dma_get, command_headers.data(),
+                                           command_list_header.size * sizeof(u32));
         }
     }
     for (std::size_t index = 0; index < command_headers.size();) {
@@ -156,7 +154,7 @@ void DmaPusher::SetState(const CommandHeader& command_header) {
 
 void DmaPusher::CallMethod(u32 argument) const {
     if (dma_state.method < non_puller_methods) {
-        gpu.CallMethod(GPU::MethodCall{
+        puller.CallPullerMethod(Engines::Puller::MethodCall{
             dma_state.method,
             argument,
             dma_state.subchannel,
@@ -170,12 +168,16 @@ void DmaPusher::CallMethod(u32 argument) const {
 
 void DmaPusher::CallMultiMethod(const u32* base_start, u32 num_methods) const {
     if (dma_state.method < non_puller_methods) {
-        gpu.CallMultiMethod(dma_state.method, dma_state.subchannel, base_start, num_methods,
-                            dma_state.method_count);
+        puller.CallMultiMethod(dma_state.method, dma_state.subchannel, base_start, num_methods,
+                               dma_state.method_count);
     } else {
         subchannels[dma_state.subchannel]->CallMultiMethod(dma_state.method, base_start,
                                                            num_methods, dma_state.method_count);
     }
+}
+
+void DmaPusher::BindRasterizer(VideoCore::RasterizerInterface* rasterizer) {
+    puller.BindRasterizer(rasterizer);
 }
 
 } // namespace Tegra

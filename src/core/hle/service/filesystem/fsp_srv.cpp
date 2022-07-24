@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <cinttypes>
 #include <cstring>
@@ -58,7 +57,8 @@ enum class FileSystemType : u8 {
 class IStorage final : public ServiceFramework<IStorage> {
 public:
     explicit IStorage(Core::System& system_, FileSys::VirtualFile backend_)
-        : ServiceFramework{system_, "IStorage"}, backend(std::move(backend_)) {
+        : ServiceFramework{system_, "IStorage", ServiceThreadType::CreateNew},
+          backend(std::move(backend_)) {
         static const FunctionInfo functions[] = {
             {0, &IStorage::Read, "Read"},
             {1, nullptr, "Write"},
@@ -116,7 +116,8 @@ private:
 class IFile final : public ServiceFramework<IFile> {
 public:
     explicit IFile(Core::System& system_, FileSys::VirtualFile backend_)
-        : ServiceFramework{system_, "IFile"}, backend(std::move(backend_)) {
+        : ServiceFramework{system_, "IFile", ServiceThreadType::CreateNew},
+          backend(std::move(backend_)) {
         static const FunctionInfo functions[] = {
             {0, &IFile::Read, "Read"},
             {1, &IFile::Write, "Write"},
@@ -252,7 +253,8 @@ static void BuildEntryIndex(std::vector<FileSys::Entry>& entries, const std::vec
 class IDirectory final : public ServiceFramework<IDirectory> {
 public:
     explicit IDirectory(Core::System& system_, FileSys::VirtualDir backend_)
-        : ServiceFramework{system_, "IDirectory"}, backend(std::move(backend_)) {
+        : ServiceFramework{system_, "IDirectory", ServiceThreadType::CreateNew},
+          backend(std::move(backend_)) {
         static const FunctionInfo functions[] = {
             {0, &IDirectory::Read, "Read"},
             {1, &IDirectory::GetEntryCount, "GetEntryCount"},
@@ -308,8 +310,8 @@ private:
 class IFileSystem final : public ServiceFramework<IFileSystem> {
 public:
     explicit IFileSystem(Core::System& system_, FileSys::VirtualDir backend_, SizeGetter size_)
-        : ServiceFramework{system_, "IFileSystem"}, backend{std::move(backend_)}, size{std::move(
-                                                                                      size_)} {
+        : ServiceFramework{system_, "IFileSystem", ServiceThreadType::CreateNew},
+          backend{std::move(backend_)}, size{std::move(size_)} {
         static const FunctionInfo functions[] = {
             {0, &IFileSystem::CreateFile, "CreateFile"},
             {1, &IFileSystem::DeleteFile, "DeleteFile"},
@@ -744,6 +746,7 @@ FSP_SRV::FSP_SRV(Core::System& system_)
         {203, &FSP_SRV::OpenPatchDataStorageByCurrentProcess, "OpenPatchDataStorageByCurrentProcess"},
         {204, nullptr, "OpenDataFileSystemByProgramIndex"},
         {205, &FSP_SRV::OpenDataStorageWithProgramIndex, "OpenDataStorageWithProgramIndex"},
+        {206, nullptr, "OpenDataStorageByPath"},
         {400, nullptr, "OpenDeviceOperator"},
         {500, nullptr, "OpenSdCardDetectionEventNotifier"},
         {501, nullptr, "OpenGameCardDetectionEventNotifier"},
@@ -796,6 +799,8 @@ FSP_SRV::FSP_SRV(Core::System& system_)
         {1014, nullptr, "OutputMultiProgramTagAccessLog"},
         {1016, nullptr, "FlushAccessLogOnSdCard"},
         {1017, nullptr, "OutputApplicationInfoAccessLog"},
+        {1018, nullptr, "SetDebugOption"},
+        {1019, nullptr, "UnsetDebugOption"},
         {1100, nullptr, "OverrideSaveDataTransferTokenSignVerificationKey"},
         {1110, nullptr, "CorruptSaveDataFileSystemBySaveDataSpaceId2"},
         {1200, &FSP_SRV::OpenMultiCommitManager, "OpenMultiCommitManager"},
@@ -894,7 +899,7 @@ void FSP_SRV::OpenSaveDataFileSystem(Kernel::HLERequestContext& ctx) {
     case FileSys::SaveDataSpaceId::TemporaryStorage:
     case FileSys::SaveDataSpaceId::ProperSystem:
     case FileSys::SaveDataSpaceId::SafeMode:
-        UNREACHABLE();
+        ASSERT(false);
     }
 
     auto filesystem = std::make_shared<IFileSystem>(system, std::move(dir.Unwrap()),

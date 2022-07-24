@@ -72,6 +72,7 @@ enum class PollingError {
 enum class VibrationAmplificationType {
     Linear,
     Exponential,
+    Test,
 };
 
 // Analog properties for calibration
@@ -209,6 +210,15 @@ enum class ButtonNames {
     Triangle,
     Share,
     Options,
+    Home,
+    Touch,
+
+    // Mouse buttons
+    ButtonMouseWheel,
+    ButtonBackward,
+    ButtonForward,
+    ButtonTask,
+    ButtonExtra,
 };
 
 // Callback data consisting of an input type and the equivalent data status

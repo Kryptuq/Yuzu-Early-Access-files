@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -19,7 +18,7 @@
 #include "core/hle/ipc.h"
 #include "core/hle/kernel/svc_common.h"
 
-union ResultCode;
+union Result;
 
 namespace Core::Memory {
 class Memory;
@@ -32,6 +31,11 @@ class ResponseBuilder;
 namespace Service {
 class ServiceFrameworkBase;
 }
+
+enum class ServiceThreadType {
+    Default,
+    CreateNew,
+};
 
 namespace Kernel {
 
@@ -57,7 +61,8 @@ enum class ThreadWakeupReason;
  */
 class SessionRequestHandler : public std::enable_shared_from_this<SessionRequestHandler> {
 public:
-    SessionRequestHandler(KernelCore& kernel, const char* service_name_);
+    SessionRequestHandler(KernelCore& kernel_, const char* service_name_,
+                          ServiceThreadType thread_type);
     virtual ~SessionRequestHandler();
 
     /**
@@ -66,10 +71,10 @@ public:
      * it should be used to differentiate which client (As in ClientSession) we're answering to.
      * TODO(Subv): Use a wrapper structure to hold all the information relevant to
      * this request (ServerSession, Originator thread, Translated command buffer, etc).
-     * @returns ResultCode the result code of the translate operation.
+     * @returns Result the result code of the translate operation.
      */
-    virtual ResultCode HandleSyncRequest(Kernel::KServerSession& session,
-                                         Kernel::HLERequestContext& context) = 0;
+    virtual Result HandleSyncRequest(Kernel::KServerSession& session,
+                                     Kernel::HLERequestContext& context) = 0;
 
     /**
      * Signals that a client has just connected to this HLE handler and keeps the
@@ -94,6 +99,7 @@ protected:
     std::weak_ptr<ServiceThread> service_thread;
 };
 
+using SessionRequestHandlerWeakPtr = std::weak_ptr<SessionRequestHandler>;
 using SessionRequestHandlerPtr = std::shared_ptr<SessionRequestHandler>;
 
 /**
@@ -135,11 +141,11 @@ public:
         if (index < DomainHandlerCount()) {
             domain_handlers[index] = nullptr;
         } else {
-            UNREACHABLE_MSG("Unexpected handler index {}", index);
+            ASSERT_MSG(false, "Unexpected handler index {}", index);
         }
     }
 
-    SessionRequestHandlerPtr DomainHandler(std::size_t index) const {
+    SessionRequestHandlerWeakPtr DomainHandler(std::size_t index) const {
         ASSERT_MSG(index < DomainHandlerCount(), "Unexpected handler index {}", index);
         return domain_handlers.at(index);
     }
@@ -206,11 +212,10 @@ public:
     }
 
     /// Populates this context with data from the requesting process/thread.
-    ResultCode PopulateFromIncomingCommandBuffer(const KHandleTable& handle_table,
-                                                 u32_le* src_cmdbuf);
+    Result PopulateFromIncomingCommandBuffer(const KHandleTable& handle_table, u32_le* src_cmdbuf);
 
     /// Writes data from this context back to the requesting process/thread.
-    ResultCode WriteToOutgoingCommandBuffer(KThread& requesting_thread);
+    Result WriteToOutgoingCommandBuffer(KThread& requesting_thread);
 
     u32_le GetHipcCommand() const {
         return command;
@@ -272,6 +277,14 @@ public:
     std::size_t WriteBuffer(const void* buffer, std::size_t size,
                             std::size_t buffer_index = 0) const;
 
+    /// Helper function to write buffer B
+    std::size_t WriteBufferB(const void* buffer, std::size_t size,
+                             std::size_t buffer_index = 0) const;
+
+    /// Helper function to write buffer C
+    std::size_t WriteBufferC(const void* buffer, std::size_t size,
+                             std::size_t buffer_index = 0) const;
+
     /* Helper function to write a buffer using the appropriate buffer descriptor
      *
      * @tparam T an arbitrary container that satisfies the
@@ -328,10 +341,10 @@ public:
 
     template <typename T>
     std::shared_ptr<T> GetDomainHandler(std::size_t index) const {
-        return std::static_pointer_cast<T>(manager->DomainHandler(index));
+        return std::static_pointer_cast<T>(manager.lock()->DomainHandler(index).lock());
     }
 
-    void SetSessionRequestManager(std::shared_ptr<SessionRequestManager> manager_) {
+    void SetSessionRequestManager(std::weak_ptr<SessionRequestManager> manager_) {
         manager = std::move(manager_);
     }
 
@@ -339,10 +352,6 @@ public:
 
     KThread& GetThread() {
         return *thread;
-    }
-
-    bool IsThreadWaiting() const {
-        return is_thread_waiting;
     }
 
 private:
@@ -378,8 +387,7 @@ private:
     u32 handles_offset{};
     u32 domain_offset{};
 
-    std::shared_ptr<SessionRequestManager> manager;
-    bool is_thread_waiting{};
+    std::weak_ptr<SessionRequestManager> manager;
 
     KernelCore& kernel;
     Core::Memory::Memory& memory;

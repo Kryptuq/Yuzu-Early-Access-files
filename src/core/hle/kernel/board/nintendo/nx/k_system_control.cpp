@@ -1,10 +1,10 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <random>
 
 #include "common/literals.h"
+#include "common/settings.h"
 
 #include "core/hle/kernel/board/nintendo/nx/k_system_control.h"
 #include "core/hle/kernel/board/nintendo/nx/secure_monitor.h"
@@ -28,32 +28,19 @@ namespace {
 
 using namespace Common::Literals;
 
-u32 GetMemoryModeForInit() {
-    return 0x01;
-}
-
 u32 GetMemorySizeForInit() {
-    return 0;
+    return Settings::values.use_extended_memory_layout ? Smc::MemorySize_6GB : Smc::MemorySize_4GB;
 }
 
 Smc::MemoryArrangement GetMemoryArrangeForInit() {
-    switch (GetMemoryModeForInit() & 0x3F) {
-    case 0x01:
-    default:
-        return Smc::MemoryArrangement_4GB;
-    case 0x02:
-        return Smc::MemoryArrangement_4GBForAppletDev;
-    case 0x03:
-        return Smc::MemoryArrangement_4GBForSystemDev;
-    case 0x11:
-        return Smc::MemoryArrangement_6GB;
-    case 0x12:
-        return Smc::MemoryArrangement_6GBForAppletDev;
-    case 0x21:
-        return Smc::MemoryArrangement_8GB;
-    }
+    return Settings::values.use_extended_memory_layout ? Smc::MemoryArrangement_6GB
+                                                       : Smc::MemoryArrangement_4GB;
 }
 } // namespace
+
+size_t KSystemControl::Init::GetRealMemorySize() {
+    return GetIntendedMemorySize();
+}
 
 // Initialization.
 size_t KSystemControl::Init::GetIntendedMemorySize() {
@@ -69,7 +56,13 @@ size_t KSystemControl::Init::GetIntendedMemorySize() {
 }
 
 PAddr KSystemControl::Init::GetKernelPhysicalBaseAddress(u64 base_address) {
-    return base_address;
+    const size_t real_dram_size = KSystemControl::Init::GetRealMemorySize();
+    const size_t intended_dram_size = KSystemControl::Init::GetIntendedMemorySize();
+    if (intended_dram_size * 2 < real_dram_size) {
+        return base_address;
+    } else {
+        return base_address + ((real_dram_size - intended_dram_size) / 2);
+    }
 }
 
 bool KSystemControl::Init::ShouldIncreaseThreadResourceLimit() {
@@ -154,9 +147,9 @@ u64 GenerateUniformRange(u64 min, u64 max, F f) {
 } // Anonymous namespace
 
 u64 KSystemControl::GenerateRandomU64() {
-    static std::random_device device;
-    static std::mt19937 gen(device());
-    static std::uniform_int_distribution<u64> distribution(1, std::numeric_limits<u64>::max());
+    std::random_device device;
+    std::mt19937 gen(device());
+    std::uniform_int_distribution<u64> distribution(1, std::numeric_limits<u64>::max());
     return distribution(gen);
 }
 

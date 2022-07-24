@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <cstring>
 
@@ -13,7 +12,7 @@
 
 namespace Service::AM::Applets {
 
-constexpr ResultCode ERR_USER_CANCELLED_SELECTION{ErrorModule::Account, 1};
+constexpr Result ERR_USER_CANCELLED_SELECTION{ErrorModule::Account, 1};
 
 ProfileSelect::ProfileSelect(Core::System& system_, LibraryAppletMode applet_mode_,
                              const Core::Frontend::ProfileSelectApplet& frontend_)
@@ -40,12 +39,12 @@ bool ProfileSelect::TransactionComplete() const {
     return complete;
 }
 
-ResultCode ProfileSelect::GetStatus() const {
+Result ProfileSelect::GetStatus() const {
     return status;
 }
 
 void ProfileSelect::ExecuteInteractive() {
-    UNREACHABLE_MSG("Attempted to call interactive execution on non-interactive applet.");
+    ASSERT_MSG(false, "Attempted to call interactive execution on non-interactive applet.");
 }
 
 void ProfileSelect::Execute() {
@@ -62,11 +61,11 @@ void ProfileSelect::SelectionComplete(std::optional<Common::UUID> uuid) {
 
     if (uuid.has_value() && uuid->IsValid()) {
         output.result = 0;
-        output.uuid_selected = uuid->uuid;
+        output.uuid_selected = *uuid;
     } else {
         status = ERR_USER_CANCELLED_SELECTION;
         output.result = ERR_USER_CANCELLED_SELECTION.raw;
-        output.uuid_selected = Common::INVALID_UUID;
+        output.uuid_selected = Common::InvalidUUID;
     }
 
     final_data = std::vector<u8>(sizeof(UserSelectionOutput));

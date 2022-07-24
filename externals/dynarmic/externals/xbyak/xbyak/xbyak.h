@@ -95,6 +95,12 @@
 	#include <stdint.h>
 #endif
 
+// MFD_CLOEXEC defined only linux 3.17 or later.
+// Android wraps the memfd_create syscall from API version 30.
+#if !defined(MFD_CLOEXEC) || (defined(__ANDROID__) && __ANDROID_API__ < 30)
+	#undef XBYAK_USE_MEMFD
+#endif
+
 #if defined(_WIN64) || defined(__MINGW64__) || (defined(__CYGWIN__) && defined(__x86_64__))
 	#define XBYAK64_WIN
 #elif defined(__x86_64__)
@@ -138,7 +144,7 @@ namespace Xbyak {
 
 enum {
 	DEFAULT_MAX_CODE_SIZE = 4096,
-	VERSION = 0x5991 /* 0xABCD = A.BC(D) */
+	VERSION = 0x6601 /* 0xABCD = A.BC(.D) */
 };
 
 #ifndef MIE_INTEGER_TYPE_DEFINED
@@ -209,6 +215,7 @@ enum {
 	ERR_INVALID_MIB_ADDRESS,
 	ERR_X2APIC_IS_NOT_SUPPORTED,
 	ERR_NOT_SUPPORTED,
+	ERR_SAME_REGS_ARE_INVALID,
 	ERR_INTERNAL // Put it at last.
 };
 
@@ -261,6 +268,7 @@ inline const char *ConvertErrorToString(int err)
 		"invalid mib address",
 		"x2APIC is not supported",
 		"not supported",
+		"same regs are invalid",
 		"internal error"
 	};
 	assert(ERR_INTERNAL + 1 == sizeof(errTbl) / sizeof(*errTbl));
@@ -285,10 +293,10 @@ inline void SetError(int err) {
 inline void ClearError() {
 	local::GetErrorRef() = 0;
 }
-inline int GetError() { return local::GetErrorRef(); }
+inline int GetError() { return Xbyak::local::GetErrorRef(); }
 
-#define XBYAK_THROW(err) { local::SetError(err); return; }
-#define XBYAK_THROW_RET(err, r) { local::SetError(err); return r; }
+#define XBYAK_THROW(err) { Xbyak::local::SetError(err); return; }
+#define XBYAK_THROW_RET(err, r) { Xbyak::local::SetError(err); return r; }
 
 #else
 class Error : public std::exception {
@@ -377,6 +385,7 @@ enum LabelMode {
 	custom allocator
 */
 struct Allocator {
+	explicit Allocator(const std::string& = "") {} // same interface with MmapAllocator
 	virtual uint8_t *alloc(size_t size) { return reinterpret_cast<uint8_t*>(AlignedMalloc(size, inner::ALIGN_PAGE_SIZE)); }
 	virtual void free(uint8_t *p) { AlignedFree(p); }
 	virtual ~Allocator() {}
@@ -408,10 +417,21 @@ inline int getMacOsVersion()
 
 } // util
 #endif
-class MmapAllocator : Allocator {
-	typedef XBYAK_STD_UNORDERED_MAP<uintptr_t, size_t> SizeList;
-	SizeList sizeList_;
+class MmapAllocator : public Allocator {
+	struct Allocation {
+		size_t size;
+#if defined(XBYAK_USE_MEMFD)
+		// fd_ is only used with XBYAK_USE_MEMFD. We keep the file open
+		// during the lifetime of each allocation in order to support
+		// checkpoint/restore by unprivileged users.
+		int fd;
+#endif
+	};
+	const std::string name_; // only used with XBYAK_USE_MEMFD
+	typedef XBYAK_STD_UNORDERED_MAP<uintptr_t, Allocation> AllocationList;
+	AllocationList allocList_;
 public:
+	explicit MmapAllocator(const std::string& name = "xbyak") : name_(name) {}
 	uint8_t *alloc(size_t size)
 	{
 		const size_t alignedSizeM1 = inner::ALIGN_PAGE_SIZE - 1;
@@ -427,21 +447,44 @@ public:
 		const int mojaveVersion = 18;
 		if (util::getMacOsVersion() >= mojaveVersion) mode |= MAP_JIT;
 #endif
-		void *p = mmap(NULL, size, PROT_READ | PROT_WRITE, mode, -1, 0);
-		if (p == MAP_FAILED) XBYAK_THROW_RET(ERR_CANT_ALLOC, 0)
+		int fd = -1;
+#if defined(XBYAK_USE_MEMFD)
+		fd = memfd_create(name_.c_str(), MFD_CLOEXEC);
+		if (fd != -1) {
+			mode = MAP_SHARED;
+			if (ftruncate(fd, size) != 0) {
+				close(fd);
+				XBYAK_THROW_RET(ERR_CANT_ALLOC, 0)
+			}
+		}
+#endif
+		void *p = mmap(NULL, size, PROT_READ | PROT_WRITE, mode, fd, 0);
+		if (p == MAP_FAILED) {
+			if (fd != -1) close(fd);
+			XBYAK_THROW_RET(ERR_CANT_ALLOC, 0)
+		}
 		assert(p);
-		sizeList_[(uintptr_t)p] = size;
+		Allocation &alloc = allocList_[(uintptr_t)p];
+		alloc.size = size;
+#if defined(XBYAK_USE_MEMFD)
+		alloc.fd = fd;
+#endif
 		return (uint8_t*)p;
 	}
 	void free(uint8_t *p)
 	{
 		if (p == 0) return;
-		SizeList::iterator i = sizeList_.find((uintptr_t)p);
-		if (i == sizeList_.end()) XBYAK_THROW(ERR_BAD_PARAMETER)
-		if (munmap((void*)i->first, i->second) < 0) XBYAK_THROW(ERR_MUNMAP)
-		sizeList_.erase(i);
+		AllocationList::iterator i = allocList_.find((uintptr_t)p);
+		if (i == allocList_.end()) XBYAK_THROW(ERR_BAD_PARAMETER)
+		if (munmap((void*)i->first, i->second.size) < 0) XBYAK_THROW(ERR_MUNMAP)
+#if defined(XBYAK_USE_MEMFD)
+		if (i->second.fd != -1) close(i->second.fd);
+#endif
+		allocList_.erase(i);
 	}
 };
+#else
+typedef Allocator MmapAllocator;
 #endif
 
 class Address;
@@ -1557,6 +1600,7 @@ public:
 	enum LabelType {
 		T_SHORT,
 		T_NEAR,
+		T_FAR, // far jump
 		T_AUTO // T_SHORT if possible
 	};
 private:
@@ -1605,6 +1649,11 @@ private:
 	{
 		return op1.isREG(i32e) && ((op2.isREG(i32e) && op1.getBit() == op2.getBit()) || op2.isMEM());
 	}
+	static inline bool isValidSSE(const Operand& op1)
+	{
+		// SSE instructions do not support XMM16 - XMM31
+		return !(op1.isXMM() && op1.getIdx() >= 16);
+	}
 	void rex(const Operand& op1, const Operand& op2 = Operand())
 	{
 		uint8_t rex = 0;
@@ -1635,9 +1684,10 @@ private:
 		//
 		T_N_VL = 1 << 3, // N * (1, 2, 4) for VL
 		T_DUP = 1 << 4, // N = (8, 32, 64)
-		T_66 = 1 << 5,
-		T_F3 = 1 << 6,
-		T_F2 = 1 << 7,
+		T_66 = 1 << 5, // pp = 1
+		T_F3 = 1 << 6, // pp = 2
+		T_F2 = T_66 | T_F3, // pp = 3
+		T_ER_R = 1 << 7, // reg{er}
 		T_0F = 1 << 8,
 		T_0F38 = 1 << 9,
 		T_0F3A = 1 << 10,
@@ -1658,11 +1708,17 @@ private:
 		T_MUST_EVEX = 1 << 25, // contains T_EVEX
 		T_B32 = 1 << 26, // m32bcst
 		T_B64 = 1 << 27, // m64bcst
+		T_B16 = T_B32 | T_B64, // m16bcst (Be careful)
 		T_M_K = 1 << 28, // mem{k}
 		T_VSIB = 1 << 29,
 		T_MEM_EVEX = 1 << 30, // use evex if mem
+		T_FP16 = 1 << 31, // avx512-fp16
+		T_MAP5 = T_FP16 | T_0F,
+		T_MAP6 = T_FP16 | T_0F38,
 		T_XXX
 	};
+	// T_66 = 1, T_F3 = 2, T_F2 = 3
+	uint32_t getPP(int type) const { return (type >> 5) & 3; }
 	void vex(const Reg& reg, const Reg& base, const Operand *v, int type, int code, bool x = false)
 	{
 		int w = (type & T_W1) ? 1 : 0;
@@ -1671,7 +1727,7 @@ private:
 		bool b = base.isExtIdx();
 		int idx = v ? v->getIdx() : 0;
 		if ((idx | reg.getIdx() | base.getIdx()) >= 16) XBYAK_THROW(ERR_BAD_COMBINATION)
-		uint32_t pp = (type & T_66) ? 1 : (type & T_F3) ? 2 : (type & T_F2) ? 3 : 0;
+		uint32_t pp = getPP(type);
 		uint32_t vvvv = (((~idx) & 15) << 3) | (is256 ? 4 : 0) | pp;
 		if (!b && !x && !w && (type & T_0F)) {
 			db(0xC5); db((r ? 0 : 0x80) | vvvv);
@@ -1688,6 +1744,7 @@ private:
 	}
 	void verifyER(const Reg& r, int type) const
 	{
+		if ((type & T_ER_R) && r.isREG(32|64)) return;
 		if (((type & T_ER_X) && r.isXMM()) || ((type & T_ER_Y) && r.isYMM()) || ((type & T_ER_Z) && r.isZMM())) return;
 		XBYAK_THROW(ERR_ER_IS_INVALID)
 	}
@@ -1702,9 +1759,9 @@ private:
 	{
 		if (!(type & (T_EVEX | T_MUST_EVEX))) XBYAK_THROW_RET(ERR_EVEX_IS_INVALID, 0)
 		int w = (type & T_EW1) ? 1 : 0;
-		uint32_t mm = (type & T_0F) ? 1 : (type & T_0F38) ? 2 : (type & T_0F3A) ? 3 : 0;
-		uint32_t pp = (type & T_66) ? 1 : (type & T_F3) ? 2 : (type & T_F2) ? 3 : 0;
-
+		uint32_t mmm = (type & T_0F) ? 1 : (type & T_0F38) ? 2 : (type & T_0F3A) ? 3 : 0;
+		if (type & T_FP16) mmm |= 4;
+		uint32_t pp = getPP(type);
 		int idx = v ? v->getIdx() : 0;
 		uint32_t vvvv = ~idx;
 
@@ -1727,7 +1784,7 @@ private:
 			VL = (std::max)((std::max)(reg.getBit(), base.getBit()), VL);
 			LL = (VL == 512) ? 2 : (VL == 256) ? 1 : 0;
 			if (b) {
-				disp8N = (type & T_B32) ? 4 : 8;
+				disp8N = ((type & T_B16) == T_B16) ? 2 : (type & T_B32) ? 4 : 8;
 			} else if (type & T_DUP) {
 				disp8N = VL == 128 ? 8 : VL == 256 ? 32 : 64;
 			} else {
@@ -1746,7 +1803,7 @@ private:
 		if (aaa == 0) aaa = verifyDuplicate(base.getOpmaskIdx(), reg.getOpmaskIdx(), (v ? v->getOpmaskIdx() : 0), ERR_OPMASK_IS_ALREADY_SET);
 		if (aaa == 0) z = 0; // clear T_z if mask is not set
 		db(0x62);
-		db((R ? 0x80 : 0) | (X ? 0x40 : 0) | (B ? 0x20 : 0) | (Rp ? 0x10 : 0) | (mm & 3));
+		db((R ? 0x80 : 0) | (X ? 0x40 : 0) | (B ? 0x20 : 0) | (Rp ? 0x10 : 0) | mmm);
 		db((w == 1 ? 0x80 : 0) | ((vvvv & 15) << 3) | 4 | (pp & 3));
 		db((z ? 0x80 : 0) | ((LL & 3) << 5) | (b ? 0x10 : 0) | (Vp ? 8 : 0) | (aaa & 7));
 		db(code);
@@ -1760,8 +1817,15 @@ private:
 	{
 		uint64_t disp64 = e.getDisp();
 #ifdef XBYAK64
+#ifdef XBYAK_OLD_DISP_CHECK
+		// treat 0xffffffff as 0xffffffffffffffff
 		uint64_t high = disp64 >> 32;
 		if (high != 0 && high != 0xFFFFFFFF) XBYAK_THROW(ERR_OFFSET_IS_TOO_BIG)
+#else
+		// displacement should be a signed 32-bit value, so also check sign bit
+		uint64_t high = disp64 >> 31;
+		if (high != 0 && high != 0x1FFFFFFFF) XBYAK_THROW(ERR_OFFSET_IS_TOO_BIG)
+#endif
 #endif
 		uint32_t disp = static_cast<uint32_t>(disp64);
 		const Reg& base = e.getBase();
@@ -1862,6 +1926,7 @@ private:
 	template<class T>
 	void opJmp(T& label, LabelType type, uint8_t shortCode, uint8_t longCode, uint8_t longPref)
 	{
+		if (type == T_FAR) XBYAK_THROW(ERR_NOT_SUPPORTED)
 		if (isAutoGrow() && size_ + 16 >= maxSize_) growMemory(); /* avoid splitting code of jmp */
 		size_t offset = 0;
 		if (labelMgr_.getOffset(&offset, label)) { /* label exists */
@@ -1882,6 +1947,7 @@ private:
 	}
 	void opJmpAbs(const void *addr, LabelType type, uint8_t shortCode, uint8_t longCode, uint8_t longPref = 0)
 	{
+		if (type == T_FAR) XBYAK_THROW(ERR_NOT_SUPPORTED)
 		if (isAutoGrow()) {
 			if (!isNEAR(type)) XBYAK_THROW(ERR_ONLY_T_NEAR_IS_SUPPORTED_IN_AUTO_GROW)
 			if (size_ + 16 >= maxSize_) growMemory();
@@ -1893,6 +1959,16 @@ private:
 			makeJmp(inner::VerifyInInt32(reinterpret_cast<const uint8_t*>(addr) - getCurr()), type, shortCode, longCode, longPref);
 		}
 
+	}
+	void opJmpOp(const Operand& op, LabelType type, int ext)
+	{
+		const int bit = 16|i32e;
+		if (type == T_FAR) {
+			if (!op.isMEM(bit)) XBYAK_THROW(ERR_NOT_SUPPORTED)
+			opR_ModM(op, bit, ext + 1, 0xFF, NONE, NONE, false);
+		} else {
+			opR_ModM(op, bit, ext, 0xFF, NONE, NONE, true);
+		}
 	}
 	// reg is reg field of ModRM
 	// immSize is the size for immediate value
@@ -1920,6 +1996,7 @@ private:
 	void opGen(const Operand& reg, const Operand& op, int code, int pref, bool isValid(const Operand&, const Operand&), int imm8 = NONE, int preCode = NONE)
 	{
 		if (isValid && !isValid(reg, op)) XBYAK_THROW(ERR_BAD_COMBINATION)
+		if (!isValidSSE(reg) || !isValidSSE(op)) XBYAK_THROW(ERR_NOT_SUPPORTED)
 		if (pref != NONE) db(pref);
 		if (op.isMEM()) {
 			opModM(op.getAddress(), reg.getReg(), 0x0F, preCode, code, (imm8 != NONE) ? 1 : 0);
@@ -1930,6 +2007,7 @@ private:
 	}
 	void opMMX_IMM(const Mmx& mmx, int imm8, int code, int ext)
 	{
+		if (!isValidSSE(mmx)) XBYAK_THROW(ERR_NOT_SUPPORTED)
 		if (mmx.isXMM()) db(0x66);
 		opModR(Reg32(ext), mmx, 0x0F, code);
 		db(imm8);
@@ -1940,6 +2018,7 @@ private:
 	}
 	void opMovXMM(const Operand& op1, const Operand& op2, int code, int pref)
 	{
+		if (!isValidSSE(op1) || !isValidSSE(op2)) XBYAK_THROW(ERR_NOT_SUPPORTED)
 		if (pref != NONE) db(pref);
 		if (op1.isXMM() && op2.isMEM()) {
 			opModM(op2.getAddress(), op1.getReg(), 0x0F, code);
@@ -1951,6 +2030,7 @@ private:
 	}
 	void opExt(const Operand& op, const Mmx& mmx, int code, int imm, bool hasMMX2 = false)
 	{
+		if (!isValidSSE(op) || !isValidSSE(mmx)) XBYAK_THROW(ERR_NOT_SUPPORTED)
 		if (hasMMX2 && op.isREG(i32e)) { /* pextrw is special */
 			if (mmx.isXMM()) db(0x66);
 			opModR(op.getReg(), mmx, 0x0F, 0xC5); db(imm);
@@ -2211,11 +2291,15 @@ private:
 	{
 		if (!(x.isXMM() && op.is(Operand::XMM | Operand::YMM | Operand::MEM)) && !(x.isYMM() && op.is(Operand::ZMM | Operand::MEM))) XBYAK_THROW(ERR_BAD_COMBINATION)
 	}
+	void opCvt(const Xmm& x, const Operand& op, int type, int code)
+	{
+		Operand::Kind kind = x.isXMM() ? (op.isBit(256) ? Operand::YMM : Operand::XMM) : Operand::ZMM;
+		opVex(x.copyAndSetKind(kind), &xm0, op, type, code);
+	}
 	void opCvt2(const Xmm& x, const Operand& op, int type, int code)
 	{
 		checkCvt2(x, op);
-		Operand::Kind kind = x.isXMM() ? (op.isBit(256) ? Operand::YMM : Operand::XMM) : Operand::ZMM;
-		opVex(x.copyAndSetKind(kind), &xm0, op, type, code);
+		opCvt(x, op, type, code);
 	}
 	void opCvt3(const Xmm& x1, const Xmm& x2, const Operand& op, int type, int type64, int type32, uint8_t code)
 	{
@@ -2223,6 +2307,18 @@ private:
 		Xmm x(op.getIdx());
 		const Operand *p = op.isREG() ? &x : &op;
 		opVex(x1, &x2, *p, type | (op.isBit(64) ? type64 : type32), code);
+	}
+	// (x, x/y/xword/yword), (y, z/m)
+	void checkCvt4(const Xmm& x, const Operand& op) const
+	{
+		if (!(x.isXMM() && op.is(Operand::XMM | Operand::YMM | Operand::MEM) && op.isBit(128|256)) && !(x.isYMM() && op.is(Operand::ZMM | Operand::MEM))) XBYAK_THROW(ERR_BAD_COMBINATION)
+	}
+	// (x, x/y/z/xword/yword/zword)
+	void opCvt5(const Xmm& x, const Operand& op, int type, int code)
+	{
+		if (!(x.isXMM() && op.isBit(128|256|512))) XBYAK_THROW(ERR_BAD_COMBINATION)
+		Operand::Kind kind = op.isBit(128) ? Operand::XMM : op.isBit(256) ? Operand::YMM : Operand::ZMM;
+		opVex(x.copyAndSetKind(kind), &xm0, op, type, code);
 	}
 	const Xmm& cvtIdx0(const Operand& x) const
 	{
@@ -2261,7 +2357,11 @@ private:
 			}
 			if (!isOK) XBYAK_THROW(ERR_BAD_VSIB_ADDRESSING)
 		}
-		opAVX_X_X_XM(isAddrYMM ? Ymm(x1.getIdx()) : x1, isAddrYMM ? Ymm(x2.getIdx()) : x2, addr, type, code);
+		int i1 = x1.getIdx();
+		int i2 = regExp.getIndex().getIdx();
+		int i3 = x2.getIdx();
+		if (i1 == i2 || i1 == i3 || i2 == i3) XBYAK_THROW(ERR_SAME_REGS_ARE_INVALID);
+		opAVX_X_X_XM(isAddrYMM ? Ymm(i1) : x1, isAddrYMM ? Ymm(i3) : x2, addr, type, code);
 	}
 	enum {
 		xx_yy_zz = 0,
@@ -2284,7 +2384,12 @@ private:
 	void opGather2(const Xmm& x, const Address& addr, int type, uint8_t code, int mode)
 	{
 		if (x.hasZero()) XBYAK_THROW(ERR_INVALID_ZERO)
-		checkGather2(x, addr.getRegExp().getIndex(), mode);
+		const RegExp& regExp = addr.getRegExp();
+		checkGather2(x, regExp.getIndex(), mode);
+		int maskIdx = x.getOpmaskIdx();
+		if ((type & T_M_K) && addr.getOpmaskIdx()) maskIdx = addr.getOpmaskIdx();
+		if (maskIdx == 0) XBYAK_THROW(ERR_K0_IS_INVALID);
+		if (!(type & T_M_K) && x.getIdx() == regExp.getIndex().getIdx()) XBYAK_THROW(ERR_SAME_REGS_ARE_INVALID);
 		opVex(x, 0, addr, type, code);
 	}
 	/*
@@ -2424,13 +2529,13 @@ public:
 
 	// set default type of `jmp` of undefined label to T_NEAR
 	void setDefaultJmpNEAR(bool isNear) { isDefaultJmpNEAR_ = isNear; }
-	void jmp(const Operand& op) { opR_ModM(op, BIT, 4, 0xFF, NONE, NONE, true); }
+	void jmp(const Operand& op, LabelType type = T_AUTO) { opJmpOp(op, type, 4); }
 	void jmp(std::string label, LabelType type = T_AUTO) { opJmp(label, type, 0xEB, 0xE9, 0); }
 	void jmp(const char *label, LabelType type = T_AUTO) { jmp(std::string(label), type); }
 	void jmp(const Label& label, LabelType type = T_AUTO) { opJmp(label, type, 0xEB, 0xE9, 0); }
 	void jmp(const void *addr, LabelType type = T_AUTO) { opJmpAbs(addr, type, 0xEB, 0xE9); }
 
-	void call(const Operand& op) { opR_ModM(op, 16 | i32e, 2, 0xFF, NONE, NONE, true); }
+	void call(const Operand& op, LabelType type = T_AUTO) { opJmpOp(op, type, 2); }
 	// call(string label), not const std::string&
 	void call(std::string label) { opJmp(label, T_NEAR, 0, 0xE8, 0); }
 	void call(const char *label) { call(std::string(label)); }

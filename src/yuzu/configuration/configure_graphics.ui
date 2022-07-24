@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>437</width>
-    <height>482</height>
+    <width>541</width>
+    <height>759</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -171,11 +171,11 @@
          </widget>
         </item>
         <item>
-          <widget class="QCheckBox" name="accelerate_astc">
-            <property name="text">
-              <string>Accelerate ASTC texture decoding</string>
-            </property>
-          </widget>
+         <widget class="QCheckBox" name="accelerate_astc">
+          <property name="text">
+           <string>Accelerate ASTC texture decoding</string>
+          </property>
+         </widget>
         </item>
         <item>
          <widget class="QWidget" name="nvdec_emulation_widget" native="true">
@@ -429,7 +429,7 @@
              </item>
              <item>
               <property name="text">
-               <string>AMD FidelityFX™️ Super Resolution [Vulkan Only]</string>
+               <string>AMD FidelityFX™️ Super Resolution (Vulkan Only)</string>
               </property>
              </item>
             </widget>
@@ -438,43 +438,43 @@
          </widget>
         </item>
         <item>
-          <widget class="QWidget" name="anti_aliasing_layout" native="true">
-            <layout class="QHBoxLayout" name="horizontalLayout_7">
-              <property name="leftMargin">
-                <number>0</number>
+         <widget class="QWidget" name="anti_aliasing_layout" native="true">
+          <layout class="QHBoxLayout" name="horizontalLayout_7">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="anti_aliasing_label">
+             <property name="text">
+              <string>Anti-Aliasing Method:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="anti_aliasing_combobox">
+             <item>
+              <property name="text">
+               <string>None</string>
               </property>
-              <property name="topMargin">
-                <number>0</number>
+             </item>
+             <item>
+              <property name="text">
+               <string>FXAA</string>
               </property>
-              <property name="rightMargin">
-                <number>0</number>
-              </property>
-              <property name="bottomMargin">
-                <number>0</number>
-              </property>
-              <item>
-                <widget class="QLabel" name="anti_aliasing_label">
-                  <property name="text">
-                    <string>Anti-Aliasing Method:</string>
-                  </property>
-                </widget>
-              </item>
-              <item>
-                <widget class="QComboBox" name="anti_aliasing_combobox">
-                  <item>
-                    <property name="text">
-                      <string>None</string>
-                    </property>
-                  </item>
-                  <item>
-                    <property name="text">
-                      <string>FXAA</string>
-                    </property>
-                  </item>
-                </widget>
-              </item>
-            </layout>
-          </widget>
+             </item>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </item>
         <item>
          <widget class="QWidget" name="bg_layout" native="true">

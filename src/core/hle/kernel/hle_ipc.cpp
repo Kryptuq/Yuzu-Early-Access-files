@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <array>
@@ -17,7 +16,6 @@
 #include "core/hle/kernel/k_auto_object.h"
 #include "core/hle/kernel/k_handle_table.h"
 #include "core/hle/kernel/k_process.h"
-#include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/k_server_session.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
@@ -25,8 +23,15 @@
 
 namespace Kernel {
 
-SessionRequestHandler::SessionRequestHandler(KernelCore& kernel_, const char* service_name_)
-    : kernel{kernel_}, service_thread{kernel.CreateServiceThread(service_name_)} {}
+SessionRequestHandler::SessionRequestHandler(KernelCore& kernel_, const char* service_name_,
+                                             ServiceThreadType thread_type)
+    : kernel{kernel_} {
+    if (thread_type == ServiceThreadType::CreateNew) {
+        service_thread = kernel.CreateServiceThread(service_name_);
+    } else {
+        service_thread = kernel.GetDefaultServiceThread();
+    }
+}
 
 SessionRequestHandler::~SessionRequestHandler() {
     kernel.ReleaseServiceThread(service_thread);
@@ -45,7 +50,7 @@ bool SessionRequestManager::HasSessionRequestHandler(const HLERequestContext& co
             LOG_CRITICAL(IPC, "object_id {} is too big!", object_id);
             return false;
         }
-        return DomainHandler(object_id - 1) != nullptr;
+        return !DomainHandler(object_id - 1).expired();
     } else {
         return session_handler != nullptr;
     }
@@ -55,7 +60,7 @@ void SessionRequestHandler::ClientConnected(KServerSession* session) {
     session->ClientConnected(shared_from_this());
 
     // Ensure our server session is tracked globally.
-    kernel.RegisterServerSession(session);
+    kernel.RegisterServerObject(session);
 }
 
 void SessionRequestHandler::ClientDisconnected(KServerSession* session) {
@@ -183,8 +188,8 @@ void HLERequestContext::ParseCommandBuffer(const KHandleTable& handle_table, u32
     rp.Skip(1, false); // The command is actually an u64, but we don't use the high part.
 }
 
-ResultCode HLERequestContext::PopulateFromIncomingCommandBuffer(const KHandleTable& handle_table,
-                                                                u32_le* src_cmdbuf) {
+Result HLERequestContext::PopulateFromIncomingCommandBuffer(const KHandleTable& handle_table,
+                                                            u32_le* src_cmdbuf) {
     ParseCommandBuffer(handle_table, src_cmdbuf, true);
 
     if (command_header->IsCloseCommand()) {
@@ -197,7 +202,7 @@ ResultCode HLERequestContext::PopulateFromIncomingCommandBuffer(const KHandleTab
     return ResultSuccess;
 }
 
-ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(KThread& requesting_thread) {
+Result HLERequestContext::WriteToOutgoingCommandBuffer(KThread& requesting_thread) {
     auto current_offset = handles_offset;
     auto& owner_process = *requesting_thread.GetOwnerProcess();
     auto& handle_table = owner_process.GetHandleTable();
@@ -282,15 +287,49 @@ std::size_t HLERequestContext::WriteBuffer(const void* buffer, std::size_t size,
             BufferDescriptorB().size() > buffer_index &&
                 BufferDescriptorB()[buffer_index].Size() >= size,
             { return 0; }, "BufferDescriptorB is invalid, index={}, size={}", buffer_index, size);
-        memory.WriteBlock(BufferDescriptorB()[buffer_index].Address(), buffer, size);
+        WriteBufferB(buffer, size, buffer_index);
     } else {
         ASSERT_OR_EXECUTE_MSG(
             BufferDescriptorC().size() > buffer_index &&
                 BufferDescriptorC()[buffer_index].Size() >= size,
             { return 0; }, "BufferDescriptorC is invalid, index={}, size={}", buffer_index, size);
-        memory.WriteBlock(BufferDescriptorC()[buffer_index].Address(), buffer, size);
+        WriteBufferC(buffer, size, buffer_index);
     }
 
+    return size;
+}
+
+std::size_t HLERequestContext::WriteBufferB(const void* buffer, std::size_t size,
+                                            std::size_t buffer_index) const {
+    if (buffer_index >= BufferDescriptorB().size() || size == 0) {
+        return 0;
+    }
+
+    const auto buffer_size{BufferDescriptorB()[buffer_index].Size()};
+    if (size > buffer_size) {
+        LOG_CRITICAL(Core, "size ({:016X}) is greater than buffer_size ({:016X})", size,
+                     buffer_size);
+        size = buffer_size; // TODO(bunnei): This needs to be HW tested
+    }
+
+    memory.WriteBlock(BufferDescriptorB()[buffer_index].Address(), buffer, size);
+    return size;
+}
+
+std::size_t HLERequestContext::WriteBufferC(const void* buffer, std::size_t size,
+                                            std::size_t buffer_index) const {
+    if (buffer_index >= BufferDescriptorC().size() || size == 0) {
+        return 0;
+    }
+
+    const auto buffer_size{BufferDescriptorC()[buffer_index].Size()};
+    if (size > buffer_size) {
+        LOG_CRITICAL(Core, "size ({:016X}) is greater than buffer_size ({:016X})", size,
+                     buffer_size);
+        size = buffer_size; // TODO(bunnei): This needs to be HW tested
+    }
+
+    memory.WriteBlock(BufferDescriptorC()[buffer_index].Address(), buffer, size);
     return size;
 }
 

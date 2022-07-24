@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include "dynarmic/common/bit_util.h"
+#include <mcl/bit/bit_count.hpp>
+
 #include "dynarmic/common/fp/rounding_mode.h"
 #include "dynarmic/frontend/A64/translate/impl/impl.h"
 
@@ -56,7 +57,7 @@ bool ShiftRight(TranslatorVisitor& v, bool Q, Imm<4> immh, Imm<3> immb, Vec Vn, 
         return v.ReservedValue();
     }
 
-    const size_t esize = 8 << Common::HighestSetBit(immh.ZeroExtend());
+    const size_t esize = 8 << mcl::bit::highest_set_bit(immh.ZeroExtend());
     const size_t datasize = Q ? 128 : 64;
 
     const u8 shift_amount = static_cast<u8>(2 * esize) - concatenate(immh, immb).ZeroExtend<u8>();
@@ -93,7 +94,7 @@ bool ShiftRightNarrowing(TranslatorVisitor& v, bool Q, Imm<4> immh, Imm<3> immb,
         return v.ReservedValue();
     }
 
-    const size_t esize = 8 << Common::HighestSetBit(immh.ZeroExtend());
+    const size_t esize = 8 << mcl::bit::highest_set_bit(immh.ZeroExtend());
     const size_t source_esize = 2 * esize;
     const size_t part = Q ? 1 : 0;
 
@@ -142,7 +143,7 @@ bool ShiftLeftLong(TranslatorVisitor& v, bool Q, Imm<4> immh, Imm<3> immb, Vec V
         return v.ReservedValue();
     }
 
-    const size_t esize = 8 << Common::HighestSetBit(immh.ZeroExtend());
+    const size_t esize = 8 << mcl::bit::highest_set_bit(immh.ZeroExtend());
     const size_t datasize = 64;
     const size_t part = Q ? 1 : 0;
 
@@ -166,7 +167,7 @@ bool SaturatingShiftLeft(TranslatorVisitor& v, bool Q, Imm<4> immh, Imm<3> immb,
         return v.ReservedValue();
     }
 
-    const size_t esize = 8 << Common::HighestSetBit(immh.ZeroExtend());
+    const size_t esize = 8 << mcl::bit::highest_set_bit(immh.ZeroExtend());
     const size_t datasize = Q ? 128 : 64;
     const size_t shift = concatenate(immh, immb).ZeroExtend() - esize;
 
@@ -201,7 +202,7 @@ bool ConvertFloat(TranslatorVisitor& v, bool Q, Imm<4> immh, Imm<3> immb, Vec Vn
         return v.ReservedValue();
     }
 
-    const size_t esize = 8 << Common::HighestSetBit(immh.ZeroExtend());
+    const size_t esize = 8 << mcl::bit::highest_set_bit(immh.ZeroExtend());
     const size_t datasize = Q ? 128 : 64;
 
     const u8 fbits = static_cast<u8>(esize * 2) - concatenate(immh, immb).ZeroExtend<u8>();
@@ -250,7 +251,7 @@ bool TranslatorVisitor::SHL_2(bool Q, Imm<4> immh, Imm<3> immb, Vec Vn, Vec Vd) 
     if (immh.Bit<3>() && !Q) {
         return ReservedValue();
     }
-    const size_t esize = 8 << Common::HighestSetBit(immh.ZeroExtend());
+    const size_t esize = 8 << mcl::bit::highest_set_bit(immh.ZeroExtend());
     const size_t datasize = Q ? 128 : 64;
 
     const u8 shift_amount = concatenate(immh, immb).ZeroExtend<u8>() - static_cast<u8>(esize);
@@ -339,11 +340,11 @@ bool TranslatorVisitor::SRI_2(bool Q, Imm<4> immh, Imm<3> immb, Vec Vn, Vec Vd) 
         return ReservedValue();
     }
 
-    const size_t esize = 8 << Common::HighestSetBit(immh.ZeroExtend());
+    const size_t esize = 8 << mcl::bit::highest_set_bit(immh.ZeroExtend());
     const size_t datasize = Q ? 128 : 64;
 
     const u8 shift_amount = static_cast<u8>((esize * 2) - concatenate(immh, immb).ZeroExtend<u8>());
-    const u64 mask = shift_amount == esize ? 0 : Common::Ones<u64>(esize) >> shift_amount;
+    const u64 mask = shift_amount == esize ? 0 : mcl::bit::ones<u64>(esize) >> shift_amount;
 
     const IR::U128 operand1 = V(datasize, Vn);
     const IR::U128 operand2 = V(datasize, Vd);
@@ -365,11 +366,11 @@ bool TranslatorVisitor::SLI_2(bool Q, Imm<4> immh, Imm<3> immb, Vec Vn, Vec Vd) 
         return ReservedValue();
     }
 
-    const size_t esize = 8 << Common::HighestSetBit(immh.ZeroExtend());
+    const size_t esize = 8 << mcl::bit::highest_set_bit(immh.ZeroExtend());
     const size_t datasize = Q ? 128 : 64;
 
     const u8 shift_amount = concatenate(immh, immb).ZeroExtend<u8>() - static_cast<u8>(esize);
-    const u64 mask = Common::Ones<u64>(esize) << shift_amount;
+    const u64 mask = mcl::bit::ones<u64>(esize) << shift_amount;
 
     const IR::U128 operand1 = V(datasize, Vn);
     const IR::U128 operand2 = V(datasize, Vd);

@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -26,12 +25,12 @@ public:
     ~KConditionVariable();
 
     // Arbitration
-    [[nodiscard]] ResultCode SignalToAddress(VAddr addr);
-    [[nodiscard]] ResultCode WaitForAddress(Handle handle, VAddr addr, u32 value);
+    [[nodiscard]] Result SignalToAddress(VAddr addr);
+    [[nodiscard]] Result WaitForAddress(Handle handle, VAddr addr, u32 value);
 
     // Condition variable
     void Signal(u64 cv_key, s32 count);
-    [[nodiscard]] ResultCode Wait(VAddr addr, u64 key, u32 value, s64 timeout);
+    [[nodiscard]] Result Wait(VAddr addr, u64 key, u32 value, s64 timeout);
 
 private:
     void SignalImpl(KThread* thread);

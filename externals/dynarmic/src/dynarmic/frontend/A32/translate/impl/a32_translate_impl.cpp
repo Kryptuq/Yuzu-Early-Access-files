@@ -5,7 +5,8 @@
 
 #include "dynarmic/frontend/A32/translate/impl/a32_translate_impl.h"
 
-#include "dynarmic/common/assert.h"
+#include <mcl/assert.hpp>
+
 #include "dynarmic/interface/A32/config.h"
 
 namespace Dynarmic::A32 {

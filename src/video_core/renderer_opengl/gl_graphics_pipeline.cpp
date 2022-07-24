@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <array>
@@ -49,7 +48,7 @@ GLenum Stage(size_t stage_index) {
     case 4:
         return GL_FRAGMENT_SHADER;
     }
-    UNREACHABLE_MSG("{}", stage_index);
+    ASSERT_MSG(false, "{}", stage_index);
     return GL_NONE;
 }
 
@@ -66,7 +65,7 @@ GLenum AssemblyStage(size_t stage_index) {
     case 4:
         return GL_FRAGMENT_PROGRAM_NV;
     }
-    UNREACHABLE_MSG("{}", stage_index);
+    ASSERT_MSG(false, "{}", stage_index);
     return GL_NONE;
 }
 
@@ -170,15 +169,15 @@ ConfigureFuncPtr ConfigureFunc(const std::array<Shader::Info, 5>& infos, u32 ena
 }
 } // Anonymous namespace
 
-GraphicsPipeline::GraphicsPipeline(
-    const Device& device, TextureCache& texture_cache_, BufferCache& buffer_cache_,
-    Tegra::MemoryManager& gpu_memory_, Tegra::Engines::Maxwell3D& maxwell3d_,
-    ProgramManager& program_manager_, StateTracker& state_tracker_, ShaderWorker* thread_worker,
-    VideoCore::ShaderNotify* shader_notify, std::array<std::string, 5> sources,
-    std::array<std::vector<u32>, 5> sources_spirv, const std::array<const Shader::Info*, 5>& infos,
-    const GraphicsPipelineKey& key_)
-    : texture_cache{texture_cache_}, buffer_cache{buffer_cache_},
-      gpu_memory{gpu_memory_}, maxwell3d{maxwell3d_}, program_manager{program_manager_},
+GraphicsPipeline::GraphicsPipeline(const Device& device, TextureCache& texture_cache_,
+                                   BufferCache& buffer_cache_, ProgramManager& program_manager_,
+                                   StateTracker& state_tracker_, ShaderWorker* thread_worker,
+                                   VideoCore::ShaderNotify* shader_notify,
+                                   std::array<std::string, 5> sources,
+                                   std::array<std::vector<u32>, 5> sources_spirv,
+                                   const std::array<const Shader::Info*, 5>& infos,
+                                   const GraphicsPipelineKey& key_)
+    : texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, program_manager{program_manager_},
       state_tracker{state_tracker_}, key{key_} {
     if (shader_notify) {
         shader_notify->MarkShaderBuilding();
@@ -243,10 +242,6 @@ GraphicsPipeline::GraphicsPipeline(
             case Settings::ShaderBackend::GLASM:
                 if (!sources[stage].empty()) {
                     assembly_programs[stage] = CompileProgram(sources[stage], AssemblyStage(stage));
-                    if (in_parallel) {
-                        // Make sure program is built before continuing when building in parallel
-                        glGetString(GL_PROGRAM_ERROR_STRING_NV);
-                    }
                 }
                 break;
             case Settings::ShaderBackend::SPIRV:
@@ -256,20 +251,18 @@ GraphicsPipeline::GraphicsPipeline(
                 break;
             }
         }
-        if (in_parallel && backend != Settings::ShaderBackend::GLASM) {
-            // Make sure programs have built if we are building shaders in parallel
-            for (OGLProgram& program : source_programs) {
-                if (program.handle != 0) {
-                    GLint status{};
-                    glGetProgramiv(program.handle, GL_LINK_STATUS, &status);
-                }
-            }
+        if (in_parallel) {
+            std::scoped_lock lock{built_mutex};
+            built_fence.Create();
+            // Flush this context to ensure compilation commands and fence are in the GPU pipe.
+            glFlush();
+            built_condvar.notify_one();
+        } else {
+            is_built = true;
         }
         if (shader_notify) {
             shader_notify->MarkShaderComplete();
         }
-        is_built = true;
-        built_condvar.notify_one();
     }};
     if (thread_worker) {
         thread_worker->QueueWork(std::move(func));
@@ -292,7 +285,7 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
     buffer_cache.runtime.SetBaseStorageBindings(base_storage_bindings);
     buffer_cache.runtime.SetEnableStorageBuffers(use_storage_buffers);
 
-    const auto& regs{maxwell3d.regs};
+    const auto& regs{maxwell3d->regs};
     const bool via_header_index{regs.sampler_index == Maxwell::SamplerIndex::ViaHeaderIndex};
     const auto config_stage{[&](size_t stage) LAMBDA_FORCEINLINE {
         const Shader::Info& info{stage_infos[stage]};
@@ -306,7 +299,7 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
                 ++ssbo_index;
             }
         }
-        const auto& cbufs{maxwell3d.state.shader_stages[stage].const_buffers};
+        const auto& cbufs{maxwell3d->state.shader_stages[stage].const_buffers};
         const auto read_handle{[&](const auto& desc, u32 index) {
             ASSERT(cbufs[desc.cbuf_index].enabled);
             const u32 index_offset{index << desc.size_shift};
@@ -319,13 +312,14 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
                     const u32 second_offset{desc.secondary_cbuf_offset + index_offset};
                     const GPUVAddr separate_addr{cbufs[desc.secondary_cbuf_index].address +
                                                  second_offset};
-                    const u32 lhs_raw{gpu_memory.Read<u32>(addr)};
-                    const u32 rhs_raw{gpu_memory.Read<u32>(separate_addr)};
+                    const u32 lhs_raw{gpu_memory->Read<u32>(addr) << desc.shift_left};
+                    const u32 rhs_raw{gpu_memory->Read<u32>(separate_addr)
+                                      << desc.secondary_shift_left};
                     const u32 raw{lhs_raw | rhs_raw};
                     return TexturePair(raw, via_header_index);
                 }
             }
-            return TexturePair(gpu_memory.Read<u32>(addr), via_header_index);
+            return TexturePair(gpu_memory->Read<u32>(addr), via_header_index);
         }};
         const auto add_image{[&](const auto& desc, bool blacklist) LAMBDA_FORCEINLINE {
             for (u32 index = 0; index < desc.count; ++index) {
@@ -440,7 +434,7 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
     buffer_cache.UpdateGraphicsBuffers(is_indexed);
     buffer_cache.BindHostGeometryBuffers(is_indexed);
 
-    if (!is_built.load(std::memory_order::relaxed)) {
+    if (!IsBuilt()) {
         WaitForBuild();
     }
     const bool use_assembly{assembly_programs[0].handle != 0};
@@ -585,8 +579,26 @@ void GraphicsPipeline::GenerateTransformFeedbackState() {
 }
 
 void GraphicsPipeline::WaitForBuild() {
-    std::unique_lock lock{built_mutex};
-    built_condvar.wait(lock, [this] { return is_built.load(std::memory_order::relaxed); });
+    if (built_fence.handle == 0) {
+        std::unique_lock lock{built_mutex};
+        built_condvar.wait(lock, [this] { return built_fence.handle != 0; });
+    }
+    ASSERT(glClientWaitSync(built_fence.handle, 0, GL_TIMEOUT_IGNORED) != GL_WAIT_FAILED);
+    is_built = true;
+}
+
+bool GraphicsPipeline::IsBuilt() noexcept {
+    if (is_built) {
+        return true;
+    }
+    if (built_fence.handle == 0) {
+        return false;
+    }
+    // Timeout of zero means this is non-blocking
+    const auto sync_status = glClientWaitSync(built_fence.handle, 0, 0);
+    ASSERT(sync_status != GL_WAIT_FAILED);
+    is_built = sync_status != GL_TIMEOUT_EXPIRED;
+    return is_built;
 }
 
 } // namespace OpenGL

@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -22,7 +21,6 @@ class KClientPort;
 class KClientSession;
 class KernelCore;
 class KPort;
-class KServerPort;
 class SessionRequestHandler;
 } // namespace Kernel
 
@@ -48,7 +46,6 @@ private:
     ServiceManager& service_manager;
     bool is_initialized{};
     Kernel::KernelCore& kernel;
-    std::vector<Kernel::KServerPort*> server_ports;
 };
 
 class ServiceManager {
@@ -58,9 +55,9 @@ public:
     explicit ServiceManager(Kernel::KernelCore& kernel_);
     ~ServiceManager();
 
-    ResultCode RegisterService(std::string name, u32 max_sessions,
-                               Kernel::SessionRequestHandlerPtr handler);
-    ResultCode UnregisterService(const std::string& name);
+    Result RegisterService(std::string name, u32 max_sessions,
+                           Kernel::SessionRequestHandlerPtr handler);
+    Result UnregisterService(const std::string& name);
     ResultVal<Kernel::KPort*> GetServicePort(const std::string& name);
 
     template <Common::DerivedFrom<Kernel::SessionRequestHandler> T>

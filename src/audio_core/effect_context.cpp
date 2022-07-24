@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include "audio_core/effect_context.h"
@@ -51,7 +50,7 @@ EffectBase* EffectContext::RetargetEffect(std::size_t i, EffectType effect) {
         effects[i] = std::make_unique<EffectBiquadFilter>();
         break;
     default:
-        UNREACHABLE_MSG("Unimplemented effect {}", effect);
+        ASSERT_MSG(false, "Unimplemented effect {}", effect);
         effects[i] = std::make_unique<EffectStubbed>();
     }
     return GetInfo(i);
@@ -105,7 +104,7 @@ void EffectI3dl2Reverb::Update(EffectInfo::InParams& in_params) {
     auto& params = GetParams();
     const auto* reverb_params = reinterpret_cast<I3dl2ReverbParams*>(in_params.raw.data());
     if (!ValidChannelCountForEffect(reverb_params->max_channels)) {
-        UNREACHABLE_MSG("Invalid reverb max channel count {}", reverb_params->max_channels);
+        ASSERT_MSG(false, "Invalid reverb max channel count {}", reverb_params->max_channels);
         return;
     }
 

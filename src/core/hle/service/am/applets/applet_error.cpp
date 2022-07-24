@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <array>
 #include <cstring>
@@ -26,15 +25,15 @@ struct ErrorCode {
         };
     }
 
-    static constexpr ErrorCode FromResultCode(ResultCode result) {
+    static constexpr ErrorCode FromResult(Result result) {
         return {
             .error_category{2000 + static_cast<u32>(result.module.Value())},
             .error_number{result.description.Value()},
         };
     }
 
-    constexpr ResultCode ToResultCode() const {
-        return ResultCode{static_cast<ErrorModule>(error_category - 2000), error_number};
+    constexpr Result ToResult() const {
+        return Result{static_cast<ErrorModule>(error_category - 2000), error_number};
     }
 };
 static_assert(sizeof(ErrorCode) == 0x8, "ErrorCode has incorrect size.");
@@ -98,8 +97,8 @@ void CopyArgumentData(const std::vector<u8>& data, T& variable) {
     std::memcpy(&variable, data.data(), sizeof(T));
 }
 
-ResultCode Decode64BitError(u64 error) {
-    return ErrorCode::FromU64(error).ToResultCode();
+Result Decode64BitError(u64 error) {
+    return ErrorCode::FromU64(error).ToResult();
 }
 
 } // Anonymous namespace
@@ -128,16 +127,16 @@ void Error::Initialize() {
         if (args->error.use_64bit_error_code) {
             error_code = Decode64BitError(args->error.error_code_64);
         } else {
-            error_code = ResultCode(args->error.error_code_32);
+            error_code = Result(args->error.error_code_32);
         }
         break;
     case ErrorAppletMode::ShowSystemError:
         CopyArgumentData(data, args->system_error);
-        error_code = ResultCode(Decode64BitError(args->system_error.error_code_64));
+        error_code = Result(Decode64BitError(args->system_error.error_code_64));
         break;
     case ErrorAppletMode::ShowApplicationError:
         CopyArgumentData(data, args->application_error);
-        error_code = ResultCode(args->application_error.error_code);
+        error_code = Result(args->application_error.error_code);
         break;
     case ErrorAppletMode::ShowErrorRecord:
         CopyArgumentData(data, args->error_record);
@@ -152,12 +151,12 @@ bool Error::TransactionComplete() const {
     return complete;
 }
 
-ResultCode Error::GetStatus() const {
+Result Error::GetStatus() const {
     return ResultSuccess;
 }
 
 void Error::ExecuteInteractive() {
-    UNREACHABLE_MSG("Unexpected interactive applet data!");
+    ASSERT_MSG(false, "Unexpected interactive applet data!");
 }
 
 void Error::Execute() {

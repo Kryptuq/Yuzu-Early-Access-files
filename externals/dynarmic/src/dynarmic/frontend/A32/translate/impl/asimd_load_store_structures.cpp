@@ -6,7 +6,8 @@
 #include <optional>
 #include <tuple>
 
-#include "dynarmic/common/bit_util.h"
+#include <mcl/bit/bit_field.hpp>
+
 #include "dynarmic/frontend/A32/translate/impl/a32_translate_impl.h"
 
 namespace Dynarmic::A32 {
@@ -16,7 +17,7 @@ namespace {
 std::optional<std::tuple<size_t, size_t, size_t>> DecodeType(Imm<4> type, size_t size, size_t align) {
     switch (type.ZeroExtend()) {
     case 0b0111:  // VST1 A1 / VLD1 A1
-        if (Common::Bit<1>(align)) {
+        if (mcl::bit::get_bit<1>(align)) {
             return std::nullopt;
         }
         return std::tuple<size_t, size_t, size_t>{1, 1, 0};
@@ -26,7 +27,7 @@ std::optional<std::tuple<size_t, size_t, size_t>> DecodeType(Imm<4> type, size_t
         }
         return std::tuple<size_t, size_t, size_t>{1, 2, 0};
     case 0b0110:  // VST1 A3 / VLD1 A3
-        if (Common::Bit<1>(align)) {
+        if (mcl::bit::get_bit<1>(align)) {
             return std::nullopt;
         }
         return std::tuple<size_t, size_t, size_t>{1, 3, 0};
@@ -48,12 +49,12 @@ std::optional<std::tuple<size_t, size_t, size_t>> DecodeType(Imm<4> type, size_t
         }
         return std::tuple<size_t, size_t, size_t>{2, 2, 2};
     case 0b0100:  // VST3 / VLD3
-        if (size == 0b11 || Common::Bit<1>(align)) {
+        if (size == 0b11 || mcl::bit::get_bit<1>(align)) {
             return std::nullopt;
         }
         return std::tuple<size_t, size_t, size_t>{3, 1, 1};
     case 0b0101:  // VST3 / VLD3
-        if (size == 0b11 || Common::Bit<1>(align)) {
+        if (size == 0b11 || mcl::bit::get_bit<1>(align)) {
             return std::nullopt;
         }
         return std::tuple<size_t, size_t, size_t>{3, 1, 2};
@@ -103,7 +104,7 @@ bool TranslatorVisitor::v8_VST_multiple(bool D, Reg n, size_t Vd, Imm<4> type, s
                 const ExtReg ext_reg = d + i * inc + r;
                 const IR::U64 shifted_element = ir.LogicalShiftRight(ir.GetExtendedRegister(ext_reg), ir.Imm8(static_cast<u8>(e * ebytes * 8)));
                 const IR::UAny element = ir.LeastSignificant(8 * ebytes, shifted_element);
-                ir.WriteMemory(8 * ebytes, address, element);
+                ir.WriteMemory(8 * ebytes, address, element, IR::AccType::NORMAL);
 
                 address = ir.Add(address, ir.Imm32(static_cast<u32>(ebytes)));
             }
@@ -156,7 +157,7 @@ bool TranslatorVisitor::v8_VLD_multiple(bool D, Reg n, size_t Vd, Imm<4> type, s
     for (size_t r = 0; r < regs; r++) {
         for (size_t e = 0; e < elements; e++) {
             for (size_t i = 0; i < nelem; i++) {
-                const IR::U64 element = ir.ZeroExtendToLong(ir.ReadMemory(ebytes * 8, address));
+                const IR::U64 element = ir.ZeroExtendToLong(ir.ReadMemory(ebytes * 8, address, IR::AccType::NORMAL));
                 const IR::U64 shifted_element = ir.LogicalShiftLeft(element, ir.Imm8(static_cast<u8>(e * ebytes * 8)));
 
                 const ExtReg ext_reg = d + i * inc + r;
@@ -221,7 +222,7 @@ bool TranslatorVisitor::v8_VLD_all_lanes(bool D, Reg n, size_t Vd, size_t nn, si
 
     auto address = ir.GetRegister(n);
     for (size_t i = 0; i < nelem; i++) {
-        const auto element = ir.ReadMemory(ebytes * 8, address);
+        const auto element = ir.ReadMemory(ebytes * 8, address, IR::AccType::NORMAL);
         const auto replicated_element = ir.VectorBroadcast(ebytes * 8, element);
 
         for (size_t r = 0; r < regs; r++) {
@@ -250,14 +251,14 @@ bool TranslatorVisitor::v8_VST_single(bool D, Reg n, size_t Vd, size_t sz, size_
         return DecodeError();
     }
 
-    if (nelem == 1 && Common::Bit(sz, index_align)) {
+    if (nelem == 1 && mcl::bit::get_bit(sz, index_align)) {
         return UndefinedInstruction();
     }
 
     const size_t ebytes = size_t(1) << sz;
-    const size_t index = Common::Bits(sz + 1, 3, index_align);
-    const size_t inc = (sz != 0 && Common::Bit(sz, index_align)) ? 2 : 1;
-    const size_t a = Common::Bits(0, sz ? sz - 1 : 0, index_align);
+    const size_t index = mcl::bit::get_bits(sz + 1, 3, index_align);
+    const size_t inc = (sz != 0 && mcl::bit::get_bit(sz, index_align)) ? 2 : 1;
+    const size_t a = mcl::bit::get_bits(0, sz ? sz - 1 : 0, index_align);
 
     if (nelem == 1 && inc == 2) {
         return UndefinedInstruction();
@@ -265,7 +266,7 @@ bool TranslatorVisitor::v8_VST_single(bool D, Reg n, size_t Vd, size_t sz, size_
     if (nelem == 1 && sz == 2 && (a != 0b00 && a != 0b11)) {
         return UndefinedInstruction();
     }
-    if (nelem == 2 && Common::Bit<1>(a)) {
+    if (nelem == 2 && mcl::bit::get_bit<1>(a)) {
         return UndefinedInstruction();
     }
     if (nelem == 3 && a != 0b00) {
@@ -291,7 +292,7 @@ bool TranslatorVisitor::v8_VST_single(bool D, Reg n, size_t Vd, size_t sz, size_
         const ExtReg ext_reg = d + i * inc;
         const auto element = ir.VectorGetElement(ebytes * 8, ir.GetVector(ext_reg), index);
 
-        ir.WriteMemory(ebytes * 8, address, element);
+        ir.WriteMemory(ebytes * 8, address, element, IR::AccType::NORMAL);
 
         address = ir.Add(address, ir.Imm32(static_cast<u32>(ebytes)));
     }
@@ -314,14 +315,14 @@ bool TranslatorVisitor::v8_VLD_single(bool D, Reg n, size_t Vd, size_t sz, size_
         return DecodeError();
     }
 
-    if (nelem == 1 && Common::Bit(sz, index_align)) {
+    if (nelem == 1 && mcl::bit::get_bit(sz, index_align)) {
         return UndefinedInstruction();
     }
 
     const size_t ebytes = size_t(1) << sz;
-    const size_t index = Common::Bits(sz + 1, 3, index_align);
-    const size_t inc = (sz != 0 && Common::Bit(sz, index_align)) ? 2 : 1;
-    const size_t a = Common::Bits(0, sz ? sz - 1 : 0, index_align);
+    const size_t index = mcl::bit::get_bits(sz + 1, 3, index_align);
+    const size_t inc = (sz != 0 && mcl::bit::get_bit(sz, index_align)) ? 2 : 1;
+    const size_t a = mcl::bit::get_bits(0, sz ? sz - 1 : 0, index_align);
 
     if (nelem == 1 && inc == 2) {
         return UndefinedInstruction();
@@ -329,7 +330,7 @@ bool TranslatorVisitor::v8_VLD_single(bool D, Reg n, size_t Vd, size_t sz, size_
     if (nelem == 1 && sz == 2 && (a != 0b00 && a != 0b11)) {
         return UndefinedInstruction();
     }
-    if (nelem == 2 && Common::Bit<1>(a)) {
+    if (nelem == 2 && mcl::bit::get_bit<1>(a)) {
         return UndefinedInstruction();
     }
     if (nelem == 3 && a != 0b00) {
@@ -352,7 +353,7 @@ bool TranslatorVisitor::v8_VLD_single(bool D, Reg n, size_t Vd, size_t sz, size_
 
     auto address = ir.GetRegister(n);
     for (size_t i = 0; i < nelem; i++) {
-        const auto element = ir.ReadMemory(ebytes * 8, address);
+        const auto element = ir.ReadMemory(ebytes * 8, address, IR::AccType::NORMAL);
 
         const ExtReg ext_reg = d + i * inc;
         const auto new_reg = ir.VectorSetElement(ebytes * 8, ir.GetVector(ext_reg), index, element);

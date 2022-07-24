@@ -8,7 +8,7 @@
 #include <array>
 #include <iosfwd>
 
-#include "dynarmic/common/common_types.h"
+#include <mcl/stdint.hpp>
 
 using Vector = std::array<u64, 2>;
 

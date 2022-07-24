@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <string_view>
 
@@ -11,7 +10,7 @@
 
 namespace Settings {
 
-Values values = {};
+Values values;
 static bool configuring_global = true;
 
 std::string GetTimeZoneString() {
@@ -63,7 +62,8 @@ void LogSettings() {
     log_setting("Renderer_UseAsynchronousShaders", values.use_asynchronous_shaders.GetValue());
     log_setting("Renderer_AnisotropicFilteringLevel", values.max_anisotropy.GetValue());
     log_setting("Audio_OutputEngine", values.sink_id.GetValue());
-    log_setting("Audio_OutputDevice", values.audio_device_id.GetValue());
+    log_setting("Audio_OutputDevice", values.audio_output_device_id.GetValue());
+    log_setting("Audio_InputDevice", values.audio_input_device_id.GetValue());
     log_setting("DataStorage_UseVirtualSd", values.use_virtual_sd.GetValue());
     log_path("DataStorage_CacheDir", Common::FS::GetYuzuPath(Common::FS::YuzuPath::CacheDir));
     log_path("DataStorage_ConfigDir", Common::FS::GetYuzuPath(Common::FS::YuzuPath::ConfigDir));
@@ -71,6 +71,7 @@ void LogSettings() {
     log_path("DataStorage_NANDDir", Common::FS::GetYuzuPath(Common::FS::YuzuPath::NANDDir));
     log_path("DataStorage_SDMCDir", Common::FS::GetYuzuPath(Common::FS::YuzuPath::SDMCDir));
     log_setting("Debugging_ProgramArgs", values.program_args.GetValue());
+    log_setting("Debugging_GDBStub", values.use_gdbstub.GetValue());
     log_setting("Input_EnableMotion", values.motion_enabled.GetValue());
     log_setting("Input_EnableVibration", values.vibration_enabled.GetValue());
     log_setting("Input_EnableRawInput", values.enable_raw_input.GetValue());
@@ -147,7 +148,7 @@ void UpdateRescalingInfo() {
         info.down_shift = 0;
         break;
     default:
-        UNREACHABLE();
+        ASSERT(false);
         info.up_scale = 1;
         info.down_shift = 0;
     }
@@ -167,6 +168,7 @@ void RestoreGlobalState(bool is_powered_on) {
 
     // Core
     values.use_multi_core.SetGlobal(true);
+    values.use_extended_memory_layout.SetGlobal(true);
 
     // CPU
     values.cpu_accuracy.SetGlobal(true);
@@ -175,6 +177,7 @@ void RestoreGlobalState(bool is_powered_on) {
     values.cpuopt_unsafe_ignore_standard_fpcr.SetGlobal(true);
     values.cpuopt_unsafe_inaccurate_nan.SetGlobal(true);
     values.cpuopt_unsafe_fastmem_check.SetGlobal(true);
+    values.cpuopt_unsafe_ignore_global_monitor.SetGlobal(true);
 
     // Renderer
     values.renderer_backend.SetGlobal(true);
@@ -183,7 +186,6 @@ void RestoreGlobalState(bool is_powered_on) {
     values.max_anisotropy.SetGlobal(true);
     values.use_speed_limit.SetGlobal(true);
     values.speed_limit.SetGlobal(true);
-    values.fps_cap.SetGlobal(true);
     values.use_disk_shader_cache.SetGlobal(true);
     values.gpu_accuracy.SetGlobal(true);
     values.use_asynchronous_gpu_emulation.SetGlobal(true);

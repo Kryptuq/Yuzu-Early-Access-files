@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -18,8 +17,6 @@ class NVDRV final : public ServiceFramework<NVDRV> {
 public:
     explicit NVDRV(Core::System& system_, std::shared_ptr<Module> nvdrv_, const char* name);
     ~NVDRV() override;
-
-    void SignalGPUInterruptSyncpt(u32 syncpoint_id, u32 value);
 
 private:
     void Open(Kernel::HLERequestContext& ctx);

@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/hle/service/acc/acc_su.h"
 
@@ -37,8 +36,8 @@ ACC_SU::ACC_SU(std::shared_ptr<Module> module_, std::shared_ptr<ProfileManager> 
         {130, nullptr, "ActivateOpenContextRetention"},
         {140, &ACC_SU::ListQualifiedUsers, "ListQualifiedUsers"},
         {150, nullptr, "AuthenticateApplicationAsync"},
-        {151, nullptr, "Unknown151"},
-        {152, nullptr, "Unknown152"},
+        {151, nullptr, "EnsureSignedDeviceIdentifierCacheForNintendoAccountAsync"},
+        {152, nullptr, "LoadSignedDeviceIdentifierCacheForNintendoAccount"},
         {190, nullptr, "GetUserLastOpenedApplication"},
         {191, nullptr, "ActivateOpenContextHolder"},
         {200, nullptr, "BeginUserRegistration"},

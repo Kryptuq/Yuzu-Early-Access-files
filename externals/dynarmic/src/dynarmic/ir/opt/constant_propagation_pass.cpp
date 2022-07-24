@@ -5,9 +5,11 @@
 
 #include <optional>
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/assert.hpp>
+#include <mcl/bit/rotate.hpp>
+#include <mcl/bit/swap.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/common/safe_ops.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/ir_emitter.h"
@@ -138,13 +140,13 @@ void FoldByteReverse(IR::Inst& inst, Op op) {
     }
 
     if (op == Op::ByteReverseWord) {
-        const u32 result = Common::SwapBytes32(static_cast<u32>(operand.GetImmediateAsU64()));
+        const u32 result = mcl::bit::swap_bytes_32(static_cast<u32>(operand.GetImmediateAsU64()));
         inst.ReplaceUsesWith(IR::Value{result});
     } else if (op == Op::ByteReverseHalf) {
-        const u16 result = Common::SwapBytes16(static_cast<u16>(operand.GetImmediateAsU64()));
+        const u16 result = mcl::bit::swap_bytes_16(static_cast<u16>(operand.GetImmediateAsU64()));
         inst.ReplaceUsesWith(IR::Value{result});
     } else {
-        const u64 result = Common::SwapBytes64(operand.GetImmediateAsU64());
+        const u64 result = mcl::bit::swap_bytes_64(operand.GetImmediateAsU64());
         inst.ReplaceUsesWith(IR::Value{result});
     }
 }
@@ -237,7 +239,7 @@ void FoldMostSignificantWord(IR::Inst& inst) {
 
     const auto operand = inst.GetArg(0);
     if (carry_inst) {
-        carry_inst->ReplaceUsesWith(IR::Value{Common::Bit<31>(operand.GetImmediateAsU64())});
+        carry_inst->ReplaceUsesWith(IR::Value{mcl::bit::get_bit<31>(operand.GetImmediateAsU64())});
     }
     inst.ReplaceUsesWith(IR::Value{static_cast<u32>(operand.GetImmediateAsU64() >> 32)});
 }
@@ -425,12 +427,12 @@ void ConstantPropagation(IR::Block& block) {
             break;
         case Op::RotateRight32:
             if (FoldShifts(inst)) {
-                ReplaceUsesWith(inst, true, Common::RotateRight<u32>(inst.GetArg(0).GetU32(), inst.GetArg(1).GetU8()));
+                ReplaceUsesWith(inst, true, mcl::bit::rotate_right<u32>(inst.GetArg(0).GetU32(), inst.GetArg(1).GetU8()));
             }
             break;
         case Op::RotateRight64:
             if (FoldShifts(inst)) {
-                ReplaceUsesWith(inst, false, Common::RotateRight<u64>(inst.GetArg(0).GetU64(), inst.GetArg(1).GetU8()));
+                ReplaceUsesWith(inst, false, mcl::bit::rotate_right<u64>(inst.GetArg(0).GetU64(), inst.GetArg(1).GetU8()));
             }
             break;
         case Op::LogicalShiftLeftMasked32:
@@ -465,12 +467,12 @@ void ConstantPropagation(IR::Block& block) {
             break;
         case Op::RotateRightMasked32:
             if (inst.AreAllArgsImmediates()) {
-                ReplaceUsesWith(inst, true, Common::RotateRight<u32>(inst.GetArg(0).GetU32(), inst.GetArg(1).GetU32()));
+                ReplaceUsesWith(inst, true, mcl::bit::rotate_right<u32>(inst.GetArg(0).GetU32(), inst.GetArg(1).GetU32()));
             }
             break;
         case Op::RotateRightMasked64:
             if (inst.AreAllArgsImmediates()) {
-                ReplaceUsesWith(inst, false, Common::RotateRight<u64>(inst.GetArg(0).GetU64(), inst.GetArg(1).GetU64()));
+                ReplaceUsesWith(inst, false, mcl::bit::rotate_right<u64>(inst.GetArg(0).GetU64(), inst.GetArg(1).GetU64()));
             }
             break;
         case Op::Add32:

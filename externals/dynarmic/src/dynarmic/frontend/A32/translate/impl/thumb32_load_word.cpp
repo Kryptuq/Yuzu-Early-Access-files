@@ -18,7 +18,7 @@ bool TranslatorVisitor::thumb32_LDR_lit(bool U, Reg t, Imm<12> imm12) {
     const u32 imm32 = imm12.ZeroExtend();
     const u32 base = ir.AlignPC(4);
     const u32 address = U ? base + imm32 : base - imm32;
-    const auto data = ir.ReadMemory32(ir.Imm32(address));
+    const auto data = ir.ReadMemory32(ir.Imm32(address), IR::AccType::NORMAL);
 
     if (t == Reg::PC) {
         ir.UpdateUpperLocationDescriptor();
@@ -48,7 +48,7 @@ bool TranslatorVisitor::thumb32_LDR_imm8(Reg n, Reg t, bool P, bool U, bool W, I
                                      : ir.Sub(reg_n, ir.Imm32(imm32));
     const IR::U32 address = P ? offset_address
                               : reg_n;
-    const IR::U32 data = ir.ReadMemory32(address);
+    const IR::U32 data = ir.ReadMemory32(address, IR::AccType::NORMAL);
 
     if (W) {
         ir.SetRegister(n, offset_address);
@@ -79,7 +79,7 @@ bool TranslatorVisitor::thumb32_LDR_imm12(Reg n, Reg t, Imm<12> imm12) {
     const auto imm32 = imm12.ZeroExtend();
     const auto reg_n = ir.GetRegister(n);
     const auto address = ir.Add(reg_n, ir.Imm32(imm32));
-    const auto data = ir.ReadMemory32(address);
+    const auto data = ir.ReadMemory32(address, IR::AccType::NORMAL);
 
     if (t == Reg::PC) {
         ir.UpdateUpperLocationDescriptor();
@@ -104,7 +104,7 @@ bool TranslatorVisitor::thumb32_LDR_reg(Reg n, Reg t, Imm<2> imm2, Reg m) {
     const auto reg_n = ir.GetRegister(n);
     const auto offset = ir.LogicalShiftLeft(reg_m, ir.Imm8(imm2.ZeroExtend<u8>()));
     const auto address = ir.Add(reg_n, offset);
-    const auto data = ir.ReadMemory32(address);
+    const auto data = ir.ReadMemory32(address, IR::AccType::NORMAL);
 
     if (t == Reg::PC) {
         ir.UpdateUpperLocationDescriptor();

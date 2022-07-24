@@ -1,10 +1,12 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <array>
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
 #include <span>
 #include <string>
 #include <utility>
@@ -14,11 +16,13 @@
 
 #include "common/common_types.h"
 #include "common/intrusive_red_black_tree.h"
+#include "common/spin_lock.h"
 #include "core/arm/arm_interface.h"
 #include "core/hle/kernel/k_affinity_mask.h"
 #include "core/hle/kernel/k_light_lock.h"
 #include "core/hle/kernel/k_spin_lock.h"
 #include "core/hle/kernel/k_synchronization_object.h"
+#include "core/hle/kernel/k_worker_task.h"
 #include "core/hle/kernel/slab_helpers.h"
 #include "core/hle/kernel/svc_common.h"
 #include "core/hle/kernel/svc_types.h"
@@ -96,11 +100,18 @@ enum class ThreadWaitReasonForDebugging : u32 {
     Suspended,       ///< Thread is waiting due to process suspension
 };
 
+enum class StepState : u32 {
+    NotStepping,   ///< Thread is not currently stepping
+    StepPending,   ///< Thread will step when next scheduled
+    StepPerformed, ///< Thread has stepped, waiting to be scheduled again
+};
+
+void SetCurrentThread(KernelCore& kernel, KThread* thread);
 [[nodiscard]] KThread* GetCurrentThreadPointer(KernelCore& kernel);
 [[nodiscard]] KThread& GetCurrentThread(KernelCore& kernel);
 [[nodiscard]] s32 GetCurrentCoreId(KernelCore& kernel);
 
-class KThread final : public KAutoObjectWithSlabHeapAndContainer<KThread, KSynchronizationObject>,
+class KThread final : public KAutoObjectWithSlabHeapAndContainer<KThread, KWorkerTask>,
                       public boost::intrusive::list_base_hook<> {
     KERNEL_AUTOOBJECT_TRAITS(KThread, KSynchronizationObject);
 
@@ -111,6 +122,7 @@ private:
 public:
     static constexpr s32 DefaultThreadPriority = 44;
     static constexpr s32 IdleThreadPriority = Svc::LowestThreadPriority + 1;
+    static constexpr s32 DummyThreadPriority = Svc::LowestThreadPriority + 2;
 
     explicit KThread(KernelCore& kernel_);
     ~KThread() override;
@@ -164,7 +176,7 @@ public:
 
     void SetBasePriority(s32 value);
 
-    [[nodiscard]] ResultCode Run();
+    [[nodiscard]] Result Run();
 
     void Exit();
 
@@ -192,9 +204,11 @@ public:
 
     void TrySuspend();
 
+    void UpdateState();
+
     void Continue();
 
-    void Suspend();
+    void WaitUntilSuspended();
 
     constexpr void SetSyncedIndex(s32 index) {
         synced_index = index;
@@ -204,11 +218,11 @@ public:
         return synced_index;
     }
 
-    constexpr void SetWaitResult(ResultCode wait_res) {
+    constexpr void SetWaitResult(Result wait_res) {
         wait_result = wait_res;
     }
 
-    [[nodiscard]] constexpr ResultCode GetWaitResult() const {
+    [[nodiscard]] constexpr Result GetWaitResult() const {
         return wait_result;
     }
 
@@ -253,14 +267,22 @@ public:
     [[nodiscard]] std::shared_ptr<Common::Fiber>& GetHostContext();
 
     [[nodiscard]] ThreadState GetState() const {
-        return thread_state & ThreadState::Mask;
+        return thread_state.load(std::memory_order_relaxed) & ThreadState::Mask;
     }
 
     [[nodiscard]] ThreadState GetRawState() const {
-        return thread_state;
+        return thread_state.load(std::memory_order_relaxed);
     }
 
     void SetState(ThreadState state);
+
+    [[nodiscard]] StepState GetStepState() const {
+        return step_state;
+    }
+
+    void SetStepState(StepState state) {
+        step_state = state;
+    }
 
     [[nodiscard]] s64 GetLastScheduledTick() const {
         return last_scheduled_tick;
@@ -323,15 +345,15 @@ public:
         return physical_affinity_mask;
     }
 
-    [[nodiscard]] ResultCode GetCoreMask(s32* out_ideal_core, u64* out_affinity_mask);
+    [[nodiscard]] Result GetCoreMask(s32* out_ideal_core, u64* out_affinity_mask);
 
-    [[nodiscard]] ResultCode GetPhysicalCoreMask(s32* out_ideal_core, u64* out_affinity_mask);
+    [[nodiscard]] Result GetPhysicalCoreMask(s32* out_ideal_core, u64* out_affinity_mask);
 
-    [[nodiscard]] ResultCode SetCoreMask(s32 cpu_core_id, u64 v_affinity_mask);
+    [[nodiscard]] Result SetCoreMask(s32 cpu_core_id, u64 v_affinity_mask);
 
-    [[nodiscard]] ResultCode SetActivity(Svc::ThreadActivity activity);
+    [[nodiscard]] Result SetActivity(Svc::ThreadActivity activity);
 
-    [[nodiscard]] ResultCode Sleep(s64 timeout);
+    [[nodiscard]] Result Sleep(s64 timeout);
 
     [[nodiscard]] s64 GetYieldScheduleCount() const {
         return schedule_count;
@@ -385,22 +407,26 @@ public:
 
     void OnTimer();
 
+    void DoWorkerTaskImpl();
+
     static void PostDestroy(uintptr_t arg);
 
-    [[nodiscard]] static ResultCode InitializeDummyThread(KThread* thread);
+    [[nodiscard]] static Result InitializeDummyThread(KThread* thread);
 
-    [[nodiscard]] static ResultCode InitializeIdleThread(Core::System& system, KThread* thread,
-                                                         s32 virt_core);
+    [[nodiscard]] static Result InitializeMainThread(Core::System& system, KThread* thread,
+                                                     s32 virt_core);
 
-    [[nodiscard]] static ResultCode InitializeHighPriorityThread(Core::System& system,
-                                                                 KThread* thread,
-                                                                 KThreadFunction func,
-                                                                 uintptr_t arg, s32 virt_core);
+    [[nodiscard]] static Result InitializeIdleThread(Core::System& system, KThread* thread,
+                                                     s32 virt_core);
 
-    [[nodiscard]] static ResultCode InitializeUserThread(Core::System& system, KThread* thread,
-                                                         KThreadFunction func, uintptr_t arg,
-                                                         VAddr user_stack_top, s32 prio,
-                                                         s32 virt_core, KProcess* owner);
+    [[nodiscard]] static Result InitializeHighPriorityThread(Core::System& system, KThread* thread,
+                                                             KThreadFunction func, uintptr_t arg,
+                                                             s32 virt_core);
+
+    [[nodiscard]] static Result InitializeUserThread(Core::System& system, KThread* thread,
+                                                     KThreadFunction func, uintptr_t arg,
+                                                     VAddr user_stack_top, s32 prio, s32 virt_core,
+                                                     KProcess* owner);
 
 public:
     struct StackParameters {
@@ -457,39 +483,16 @@ public:
         return per_core_priority_queue_entry[core];
     }
 
-    [[nodiscard]] bool IsKernelThread() const {
-        return GetActiveCore() == 3;
-    }
-
-    [[nodiscard]] bool IsDispatchTrackingDisabled() const {
-        return is_single_core || IsKernelThread();
-    }
-
     [[nodiscard]] s32 GetDisableDispatchCount() const {
-        if (IsDispatchTrackingDisabled()) {
-            // TODO(bunnei): Until kernel threads are emulated, we cannot enable/disable dispatch.
-            return 1;
-        }
-
         return this->GetStackParameters().disable_count;
     }
 
     void DisableDispatch() {
-        if (IsDispatchTrackingDisabled()) {
-            // TODO(bunnei): Until kernel threads are emulated, we cannot enable/disable dispatch.
-            return;
-        }
-
         ASSERT(GetCurrentThread(kernel).GetDisableDispatchCount() >= 0);
         this->GetStackParameters().disable_count++;
     }
 
     void EnableDispatch() {
-        if (IsDispatchTrackingDisabled()) {
-            // TODO(bunnei): Until kernel threads are emulated, we cannot enable/disable dispatch.
-            return;
-        }
-
         ASSERT(GetCurrentThread(kernel).GetDisableDispatchCount() > 0);
         this->GetStackParameters().disable_count--;
     }
@@ -550,8 +553,12 @@ public:
         return wait_reason_for_debugging;
     }
 
-    [[nodiscard]] ThreadType GetThreadTypeForDebugging() const {
-        return thread_type_for_debugging;
+    [[nodiscard]] ThreadType GetThreadType() const {
+        return thread_type;
+    }
+
+    [[nodiscard]] bool IsDummyThread() const {
+        return GetThreadType() == ThreadType::Dummy;
     }
 
     void SetWaitObjectsForDebugging(const std::span<KSynchronizationObject*>& objects) {
@@ -582,7 +589,7 @@ public:
 
     void RemoveWaiter(KThread* thread);
 
-    [[nodiscard]] ResultCode GetThreadContext3(std::vector<u8>& out);
+    [[nodiscard]] Result GetThreadContext3(std::vector<u8>& out);
 
     [[nodiscard]] KThread* RemoveWaiterByKey(s32* out_num_waiters, VAddr key);
 
@@ -608,9 +615,9 @@ public:
     }
 
     void BeginWait(KThreadQueue* queue);
-    void NotifyAvailable(KSynchronizationObject* signaled_object, ResultCode wait_result_);
-    void EndWait(ResultCode wait_result_);
-    void CancelWait(ResultCode wait_result_, bool cancel_timer_task);
+    void NotifyAvailable(KSynchronizationObject* signaled_object, Result wait_result_);
+    void EndWait(Result wait_result_);
+    void CancelWait(Result wait_result_, bool cancel_timer_task);
 
     [[nodiscard]] bool HasWaiters() const {
         return !waiter_list.empty();
@@ -628,6 +635,21 @@ public:
         return condvar_key;
     }
 
+    // Dummy threads (used for HLE host threads) cannot wait based on the guest scheduler, and
+    // therefore will not block on guest kernel synchronization primitives. These methods handle
+    // blocking as needed.
+
+    void IfDummyThreadTryWait();
+    void IfDummyThreadEndWait();
+
+    [[nodiscard]] uintptr_t GetArgument() const {
+        return argument;
+    }
+
+    [[nodiscard]] VAddr GetUserStackTop() const {
+        return stack_top;
+    }
+
 private:
     static constexpr size_t PriorityInheritanceCountMax = 10;
     union SyncObjectBuffer {
@@ -640,7 +662,7 @@ private:
     static_assert(sizeof(SyncObjectBuffer::sync_objects) == sizeof(SyncObjectBuffer::handles));
 
     struct ConditionVariableComparator {
-        struct LightCompareType {
+        struct RedBlackKeyType {
             u64 cv_key{};
             s32 priority{};
 
@@ -656,8 +678,8 @@ private:
         template <typename T>
         requires(
             std::same_as<T, KThread> ||
-            std::same_as<T, LightCompareType>) static constexpr int Compare(const T& lhs,
-                                                                            const KThread& rhs) {
+            std::same_as<T, RedBlackKeyType>) static constexpr int Compare(const T& lhs,
+                                                                           const KThread& rhs) {
             const u64 l_key = lhs.GetConditionVariableKey();
             const u64 r_key = rhs.GetConditionVariableKey();
 
@@ -679,14 +701,15 @@ private:
 
     void StartTermination();
 
-    [[nodiscard]] ResultCode Initialize(KThreadFunction func, uintptr_t arg, VAddr user_stack_top,
-                                        s32 prio, s32 virt_core, KProcess* owner, ThreadType type);
+    void FinishTermination();
 
-    [[nodiscard]] static ResultCode InitializeThread(KThread* thread, KThreadFunction func,
-                                                     uintptr_t arg, VAddr user_stack_top, s32 prio,
-                                                     s32 core, KProcess* owner, ThreadType type,
-                                                     std::function<void(void*)>&& init_func,
-                                                     void* init_func_parameter);
+    [[nodiscard]] Result Initialize(KThreadFunction func, uintptr_t arg, VAddr user_stack_top,
+                                    s32 prio, s32 virt_core, KProcess* owner, ThreadType type);
+
+    [[nodiscard]] static Result InitializeThread(KThread* thread, KThreadFunction func,
+                                                 uintptr_t arg, VAddr user_stack_top, s32 prio,
+                                                 s32 core, KProcess* owner, ThreadType type,
+                                                 std::function<void()>&& init_func);
 
     static void RestorePriority(KernelCore& kernel_ctx, KThread* thread);
 
@@ -723,7 +746,7 @@ private:
     u32 suspend_request_flags{};
     u32 suspend_allowed_flags{};
     s32 synced_index{};
-    ResultCode wait_result{ResultSuccess};
+    Result wait_result{ResultSuccess};
     s32 base_priority{};
     s32 physical_ideal_core_id{};
     s32 virtual_ideal_core_id{};
@@ -733,7 +756,7 @@ private:
     KAffinityMask original_physical_affinity_mask{};
     s32 original_physical_ideal_core_id{};
     s32 num_core_migration_disables{};
-    ThreadState thread_state{};
+    std::atomic<ThreadState> thread_state{};
     std::atomic<bool> termination_requested{};
     bool wait_cancelled{};
     bool cancellable{};
@@ -743,17 +766,22 @@ private:
     s8 priority_inheritance_count{};
     bool resource_limit_release_hint{};
     StackParameters stack_parameters{};
-    KSpinLock context_guard{};
+    Common::SpinLock context_guard{};
 
     // For emulation
     std::shared_ptr<Common::Fiber> host_context{};
     bool is_single_core{};
+    ThreadType thread_type{};
+    StepState step_state{};
+    std::mutex dummy_wait_lock;
+    std::condition_variable dummy_wait_cv;
 
     // For debugging
     std::vector<KSynchronizationObject*> wait_objects_for_debugging;
     VAddr mutex_wait_address_for_debugging{};
     ThreadWaitReasonForDebugging wait_reason_for_debugging{};
-    ThreadType thread_type_for_debugging{};
+    uintptr_t argument;
+    VAddr stack_top;
 
 public:
     using ConditionVariableThreadTreeType = ConditionVariableThreadTree;

@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/math_util.h"
 #include "core/hid/motion_input.h"
@@ -10,7 +9,7 @@ namespace Core::HID {
 MotionInput::MotionInput() {
     // Initialize PID constants with default values
     SetPID(0.3f, 0.005f, 0.0f);
-    SetGyroThreshold(0.001f);
+    SetGyroThreshold(0.007f);
 }
 
 void MotionInput::SetPID(f32 new_kp, f32 new_ki, f32 new_kd) {
@@ -31,7 +30,7 @@ void MotionInput::SetGyroscope(const Common::Vec3f& gyroscope) {
         gyro_bias = (gyro_bias * 0.9999f) + (gyroscope * 0.0001f);
     }
 
-    if (gyro.Length2() < gyro_threshold) {
+    if (gyro.Length() < gyro_threshold) {
         gyro = {};
     } else {
         only_accelerometer = false;

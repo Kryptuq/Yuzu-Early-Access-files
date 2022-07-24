@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+    <mime-type type="application/x-nx-nro">
+        <comment>Nintendo Switch homebrew executable</comment>
+        <acronym>NRO</acronym>
+        <icon name="org.yuzu_emu.yuzu"/>
+        <glob pattern="*.nro"/>
+        <magic><match value="NRO" type="string" offset="16"/></magic>
+    </mime-type>
+
+    <mime-type type="application/x-nx-nso">
+        <comment>Nintendo Switch homebrew executable</comment>
+        <acronym>NSO</acronym>
+        <icon name="org.yuzu_emu.yuzu"/>
+        <glob pattern="*.nso"/>
+        <magic><match value="NSO" type="string" offset="0"/></magic>
+    </mime-type>
+
+    <mime-type type="application/x-nx-nsp">
+        <comment>Nintendo Switch Package</comment>
+        <acronym>NSP</acronym>
+        <icon name="org.yuzu_emu.yuzu"/>
+        <glob pattern="*.nsp"/>
+        <magic><match value="PFS" type="string" offset="0"/></magic>
+    </mime-type>
+
+    <mime-type type="application/x-nx-xci">
+        <comment>Nintendo Switch Card Image</comment>
+        <acronym>XCI</acronym>
+        <icon name="org.yuzu_emu.yuzu"/>
+        <glob pattern="*.xci"/>
+    </mime-type>
+</mime-info>

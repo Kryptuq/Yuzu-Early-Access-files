@@ -29,7 +29,7 @@ SurfaceTarget SurfaceTargetFromTextureType(Tegra::Texture::TextureType texture_t
         return SurfaceTarget::Texture2DArray;
     default:
         LOG_CRITICAL(HW_GPU, "Unimplemented texture_type={}", texture_type);
-        UNREACHABLE();
+        ASSERT(false);
         return SurfaceTarget::Texture2D;
     }
 }
@@ -48,7 +48,7 @@ bool SurfaceTargetIsLayered(SurfaceTarget target) {
         return true;
     default:
         LOG_CRITICAL(HW_GPU, "Unimplemented surface_target={}", target);
-        UNREACHABLE();
+        ASSERT(false);
         return false;
     }
 }
@@ -67,7 +67,7 @@ bool SurfaceTargetIsArray(SurfaceTarget target) {
         return true;
     default:
         LOG_CRITICAL(HW_GPU, "Unimplemented surface_target={}", target);
-        UNREACHABLE();
+        ASSERT(false);
         return false;
     }
 }
@@ -190,13 +190,13 @@ PixelFormat PixelFormatFromRenderTargetFormat(Tegra::RenderTargetFormat format) 
     }
 }
 
-PixelFormat PixelFormatFromGPUPixelFormat(Tegra::FramebufferConfig::PixelFormat format) {
+PixelFormat PixelFormatFromGPUPixelFormat(Service::android::PixelFormat format) {
     switch (format) {
-    case Tegra::FramebufferConfig::PixelFormat::A8B8G8R8_UNORM:
+    case Service::android::PixelFormat::Rgba8888:
         return PixelFormat::A8B8G8R8_UNORM;
-    case Tegra::FramebufferConfig::PixelFormat::RGB565_UNORM:
+    case Service::android::PixelFormat::Rgb565:
         return PixelFormat::R5G6B5_UNORM;
-    case Tegra::FramebufferConfig::PixelFormat::B8G8R8A8_UNORM:
+    case Service::android::PixelFormat::Bgra8888:
         return PixelFormat::B8G8R8A8_UNORM;
     default:
         UNIMPLEMENTED_MSG("Unimplemented format={}", format);
@@ -247,6 +247,7 @@ bool IsPixelFormatASTC(PixelFormat format) {
     case PixelFormat::ASTC_2D_10X8_SRGB:
     case PixelFormat::ASTC_2D_6X6_UNORM:
     case PixelFormat::ASTC_2D_6X6_SRGB:
+    case PixelFormat::ASTC_2D_10X6_UNORM:
     case PixelFormat::ASTC_2D_10X10_UNORM:
     case PixelFormat::ASTC_2D_10X10_SRGB:
     case PixelFormat::ASTC_2D_12X12_UNORM:

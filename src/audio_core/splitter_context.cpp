@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "audio_core/behavior_info.h"
 #include "audio_core/splitter_context.h"
@@ -484,7 +483,7 @@ bool NodeStates::DepthFirstSearch(EdgeMatrix& edge_matrix) {
                     // Add more work
                     index_stack.push(j);
                 } else if (node_state == NodeStates::State::InFound) {
-                    UNREACHABLE_MSG("Node start marked as found");
+                    ASSERT_MSG(false, "Node start marked as found");
                     ResetState();
                     return false;
                 }

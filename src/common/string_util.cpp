@@ -1,15 +1,13 @@
-// Copyright 2013 Dolphin Emulator Project / 2014 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2013 Dolphin Emulator Project
+// SPDX-FileCopyrightText: 2014 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <cctype>
 #include <codecvt>
-#include <cstdlib>
 #include <locale>
 #include <sstream>
 
-#include "common/logging/log.h"
 #include "common/string_util.h"
 
 #ifdef _WIN32
@@ -179,6 +177,10 @@ std::wstring UTF8ToUTF16W(const std::string& input) {
 }
 
 #endif
+
+std::u16string U16StringFromBuffer(const u16* input, std::size_t length) {
+    return std::u16string(reinterpret_cast<const char16_t*>(input), length);
+}
 
 std::string StringFromFixedZeroTerminatedBuffer(std::string_view buffer, std::size_t max_len) {
     std::size_t len = 0;

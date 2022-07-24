@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -8,6 +7,15 @@
 
 namespace Service::HID {
 
-constexpr ResultCode ERR_NPAD_NOT_CONNECTED{ErrorModule::HID, 710};
+constexpr Result NpadInvalidHandle{ErrorModule::HID, 100};
+constexpr Result NpadDeviceIndexOutOfRange{ErrorModule::HID, 107};
+constexpr Result VibrationInvalidStyleIndex{ErrorModule::HID, 122};
+constexpr Result VibrationInvalidNpadId{ErrorModule::HID, 123};
+constexpr Result VibrationDeviceIndexOutOfRange{ErrorModule::HID, 124};
+constexpr Result InvalidSixAxisFusionRange{ErrorModule::HID, 423};
+constexpr Result NpadIsDualJoycon{ErrorModule::HID, 601};
+constexpr Result NpadIsSameType{ErrorModule::HID, 602};
+constexpr Result InvalidNpadId{ErrorModule::HID, 709};
+constexpr Result NpadNotConnected{ErrorModule::HID, 710};
 
 } // namespace Service::HID

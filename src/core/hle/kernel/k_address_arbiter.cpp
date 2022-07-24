@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/arm/exclusive_monitor.h"
 #include "core/core.h"
@@ -49,7 +48,7 @@ bool DecrementIfLessThan(Core::System& system, s32* out, VAddr address, s32 valu
         }
     } else {
         // Otherwise, clear our exclusive hold and finish
-        monitor.ClearExclusive();
+        monitor.ClearExclusive(current_core);
     }
 
     // We're done.
@@ -78,7 +77,7 @@ bool UpdateIfEqual(Core::System& system, s32* out, VAddr address, s32 value, s32
         }
     } else {
         // Otherwise, clear our exclusive hold and finish.
-        monitor.ClearExclusive();
+        monitor.ClearExclusive(current_core);
     }
 
     // We're done.
@@ -91,8 +90,7 @@ public:
     explicit ThreadQueueImplForKAddressArbiter(KernelCore& kernel_, KAddressArbiter::ThreadTree* t)
         : KThreadQueue(kernel_), m_tree(t) {}
 
-    void CancelWait(KThread* waiting_thread, ResultCode wait_result,
-                    bool cancel_timer_task) override {
+    void CancelWait(KThread* waiting_thread, Result wait_result, bool cancel_timer_task) override {
         // If the thread is waiting on an address arbiter, remove it from the tree.
         if (waiting_thread->IsWaitingForAddressArbiter()) {
             m_tree->erase(m_tree->iterator_to(*waiting_thread));
@@ -109,13 +107,13 @@ private:
 
 } // namespace
 
-ResultCode KAddressArbiter::Signal(VAddr addr, s32 count) {
+Result KAddressArbiter::Signal(VAddr addr, s32 count) {
     // Perform signaling.
     s32 num_waiters{};
     {
         KScopedSchedulerLock sl(kernel);
 
-        auto it = thread_tree.nfind_light({addr, -1});
+        auto it = thread_tree.nfind_key({addr, -1});
         while ((it != thread_tree.end()) && (count <= 0 || num_waiters < count) &&
                (it->GetAddressArbiterKey() == addr)) {
             // End the thread's wait.
@@ -132,7 +130,7 @@ ResultCode KAddressArbiter::Signal(VAddr addr, s32 count) {
     return ResultSuccess;
 }
 
-ResultCode KAddressArbiter::SignalAndIncrementIfEqual(VAddr addr, s32 value, s32 count) {
+Result KAddressArbiter::SignalAndIncrementIfEqual(VAddr addr, s32 value, s32 count) {
     // Perform signaling.
     s32 num_waiters{};
     {
@@ -148,7 +146,7 @@ ResultCode KAddressArbiter::SignalAndIncrementIfEqual(VAddr addr, s32 value, s32
             return ResultInvalidState;
         }
 
-        auto it = thread_tree.nfind_light({addr, -1});
+        auto it = thread_tree.nfind_key({addr, -1});
         while ((it != thread_tree.end()) && (count <= 0 || num_waiters < count) &&
                (it->GetAddressArbiterKey() == addr)) {
             // End the thread's wait.
@@ -165,13 +163,13 @@ ResultCode KAddressArbiter::SignalAndIncrementIfEqual(VAddr addr, s32 value, s32
     return ResultSuccess;
 }
 
-ResultCode KAddressArbiter::SignalAndModifyByWaitingCountIfEqual(VAddr addr, s32 value, s32 count) {
+Result KAddressArbiter::SignalAndModifyByWaitingCountIfEqual(VAddr addr, s32 value, s32 count) {
     // Perform signaling.
     s32 num_waiters{};
     {
         [[maybe_unused]] const KScopedSchedulerLock sl(kernel);
 
-        auto it = thread_tree.nfind_light({addr, -1});
+        auto it = thread_tree.nfind_key({addr, -1});
         // Determine the updated value.
         s32 new_value{};
         if (count <= 0) {
@@ -233,9 +231,9 @@ ResultCode KAddressArbiter::SignalAndModifyByWaitingCountIfEqual(VAddr addr, s32
     return ResultSuccess;
 }
 
-ResultCode KAddressArbiter::WaitIfLessThan(VAddr addr, s32 value, bool decrement, s64 timeout) {
+Result KAddressArbiter::WaitIfLessThan(VAddr addr, s32 value, bool decrement, s64 timeout) {
     // Prepare to wait.
-    KThread* cur_thread = kernel.CurrentScheduler()->GetCurrentThread();
+    KThread* cur_thread = GetCurrentThreadPointer(kernel);
     ThreadQueueImplForKAddressArbiter wait_queue(kernel, std::addressof(thread_tree));
 
     {
@@ -286,9 +284,9 @@ ResultCode KAddressArbiter::WaitIfLessThan(VAddr addr, s32 value, bool decrement
     return cur_thread->GetWaitResult();
 }
 
-ResultCode KAddressArbiter::WaitIfEqual(VAddr addr, s32 value, s64 timeout) {
+Result KAddressArbiter::WaitIfEqual(VAddr addr, s32 value, s64 timeout) {
     // Prepare to wait.
-    KThread* cur_thread = kernel.CurrentScheduler()->GetCurrentThread();
+    KThread* cur_thread = GetCurrentThreadPointer(kernel);
     ThreadQueueImplForKAddressArbiter wait_queue(kernel, std::addressof(thread_tree));
 
     {

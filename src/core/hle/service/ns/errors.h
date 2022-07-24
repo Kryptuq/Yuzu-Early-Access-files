@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -8,5 +7,5 @@
 
 namespace Service::NS {
 
-constexpr ResultCode ERR_APPLICATION_LANGUAGE_NOT_FOUND{ErrorModule::NS, 300};
+constexpr Result ERR_APPLICATION_LANGUAGE_NOT_FOUND{ErrorModule::NS, 300};
 }

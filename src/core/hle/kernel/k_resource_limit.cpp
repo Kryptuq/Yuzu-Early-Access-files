@@ -1,8 +1,8 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/assert.h"
+#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/hle/kernel/k_resource_limit.h"
 #include "core/hle/kernel/svc_results.h"
@@ -73,7 +73,7 @@ s64 KResourceLimit::GetFreeValue(LimitableResource which) const {
     return value;
 }
 
-ResultCode KResourceLimit::SetLimitValue(LimitableResource which, s64 value) {
+Result KResourceLimit::SetLimitValue(LimitableResource which, s64 value) {
     const auto index = static_cast<std::size_t>(which);
     KScopedLightLock lk(lock);
     R_UNLESS(current_values[index] <= value, ResultInvalidState);
@@ -149,6 +149,24 @@ void KResourceLimit::Release(LimitableResource which, s64 value, s64 hint) {
     if (waiter_count != 0) {
         cond_var.Broadcast();
     }
+}
+
+KResourceLimit* CreateResourceLimitForProcess(Core::System& system, s64 physical_memory_size) {
+    auto* resource_limit = KResourceLimit::Create(system.Kernel());
+    resource_limit->Initialize(&system.CoreTiming());
+
+    // Initialize default resource limit values.
+    // TODO(bunnei): These values are the system defaults, the limits for service processes are
+    // lower. These should use the correct limit values.
+
+    ASSERT(resource_limit->SetLimitValue(LimitableResource::PhysicalMemory, physical_memory_size)
+               .IsSuccess());
+    ASSERT(resource_limit->SetLimitValue(LimitableResource::Threads, 800).IsSuccess());
+    ASSERT(resource_limit->SetLimitValue(LimitableResource::Events, 900).IsSuccess());
+    ASSERT(resource_limit->SetLimitValue(LimitableResource::TransferMemory, 200).IsSuccess());
+    ASSERT(resource_limit->SetLimitValue(LimitableResource::Sessions, 1133).IsSuccess());
+
+    return resource_limit;
 }
 
 } // namespace Kernel

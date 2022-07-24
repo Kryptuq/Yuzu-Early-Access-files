@@ -1,4 +1,4 @@
-/* $OpenBSD: x509type.c,v 1.13 2018/05/30 15:59:33 tb Exp $ */
+/* $OpenBSD: x509type.c,v 1.15 2021/12/12 21:30:14 tb Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -61,6 +61,9 @@
 #include <openssl/evp.h>
 #include <openssl/objects.h>
 #include <openssl/x509.h>
+
+#include "evp_locl.h"
+#include "x509_lcl.h"
 
 int
 X509_certificate_type(const X509 *x, const EVP_PKEY *pkey)

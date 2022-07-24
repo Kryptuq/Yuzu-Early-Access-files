@@ -5,7 +5,8 @@
 
 #include "dynarmic/backend/x64/a64_jitstate.h"
 
-#include "dynarmic/common/bit_util.h"
+#include <mcl/bit/bit_field.hpp>
+
 #include "dynarmic/frontend/A64/a64_location_descriptor.h"
 
 namespace Dynarmic::Backend::X64 {
@@ -65,7 +66,7 @@ void A64JitState::SetFpcr(u32 value) {
     const std::array<u32, 4> MXCSR_RMode{0x0, 0x4000, 0x2000, 0x6000};
     guest_MXCSR |= MXCSR_RMode[(value >> 22) & 0x3];
 
-    if (Common::Bit<24>(value)) {
+    if (mcl::bit::get_bit<24>(value)) {
         guest_MXCSR |= (1 << 15);  // SSE Flush to Zero
         guest_MXCSR |= (1 << 6);   // SSE Denormals are Zero
     }

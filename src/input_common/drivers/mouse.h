@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -68,6 +67,8 @@ public:
 private:
     void UpdateThread(std::stop_token stop_token);
     void StopPanning();
+
+    Common::Input::ButtonNames GetUIButtonName(const Common::ParamPackage& params) const;
 
     Common::Vec2<int> mouse_origin;
     Common::Vec2<int> last_mouse_position;

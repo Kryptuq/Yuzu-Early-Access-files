@@ -1,4 +1,4 @@
-/* $OpenBSD: crypto.h,v 1.50 2019/01/19 01:07:00 tb Exp $ */
+/* $OpenBSD: crypto.h,v 1.54 2022/01/14 08:23:25 tb Exp $ */
 /* ====================================================================
  * Copyright (c) 1998-2006 The OpenSSL Project.  All rights reserved.
  *
@@ -143,15 +143,6 @@ extern "C" {
 #define SSLEAY_PLATFORM		4
 #define SSLEAY_DIR		5
 
-/* A generic structure to pass assorted data in a expandable way */
-typedef struct openssl_item_st {
-	int code;
-	void *value;		/* Not used for flag attributes */
-	size_t value_size;	/* Max size of value for output, length for input */
-	size_t *value_length;	/* Returned length of value for output */
-} OPENSSL_ITEM;
-
-
 /* When changing the CRYPTO_LOCK_* list, be sure to maintain the text lock
  * names in cryptlib.c
  */
@@ -205,15 +196,15 @@ typedef struct openssl_item_st {
 
 #ifndef CRYPTO_w_lock
 #define CRYPTO_w_lock(type)	\
-	CRYPTO_lock(CRYPTO_LOCK|CRYPTO_WRITE,type,__FILE__,__LINE__)
+	CRYPTO_lock(CRYPTO_LOCK|CRYPTO_WRITE,type,NULL,0)
 #define CRYPTO_w_unlock(type)	\
-	CRYPTO_lock(CRYPTO_UNLOCK|CRYPTO_WRITE,type,__FILE__,__LINE__)
+	CRYPTO_lock(CRYPTO_UNLOCK|CRYPTO_WRITE,type,NULL,0)
 #define CRYPTO_r_lock(type)	\
-	CRYPTO_lock(CRYPTO_LOCK|CRYPTO_READ,type,__FILE__,__LINE__)
+	CRYPTO_lock(CRYPTO_LOCK|CRYPTO_READ,type,NULL,0)
 #define CRYPTO_r_unlock(type)	\
-	CRYPTO_lock(CRYPTO_UNLOCK|CRYPTO_READ,type,__FILE__,__LINE__)
+	CRYPTO_lock(CRYPTO_UNLOCK|CRYPTO_READ,type,NULL,0)
 #define CRYPTO_add(addr,amount,type)	\
-	CRYPTO_add_lock(addr,amount,type,__FILE__,__LINE__)
+	CRYPTO_add_lock(addr,amount,type,NULL,0)
 #endif
 
 /* Some applications as well as some parts of OpenSSL need to allocate
@@ -309,19 +300,19 @@ int CRYPTO_is_mem_check_on(void);
 #define MemCheck_start() CRYPTO_mem_ctrl(CRYPTO_MEM_CHECK_ON)
 #define MemCheck_stop()	CRYPTO_mem_ctrl(CRYPTO_MEM_CHECK_OFF)
 
-#define OPENSSL_malloc(num)	CRYPTO_malloc((int)num,__FILE__,__LINE__)
-#define OPENSSL_strdup(str)	CRYPTO_strdup((str),__FILE__,__LINE__)
+#define OPENSSL_malloc(num)	CRYPTO_malloc((int)num,NULL,0)
+#define OPENSSL_strdup(str)	CRYPTO_strdup((str),NULL,0)
 #define OPENSSL_realloc(addr,num) \
-	CRYPTO_realloc((char *)addr,(int)num,__FILE__,__LINE__)
+	CRYPTO_realloc((char *)addr,(int)num,NULL,0)
 #define OPENSSL_realloc_clean(addr,old_num,num) \
-	CRYPTO_realloc_clean(addr,old_num,num,__FILE__,__LINE__)
+	CRYPTO_realloc_clean(addr,old_num,num,NULL,0)
 #define OPENSSL_remalloc(addr,num) \
-	CRYPTO_remalloc((char **)addr,(int)num,__FILE__,__LINE__)
+	CRYPTO_remalloc((char **)addr,(int)num,NULL,0)
 #define OPENSSL_freeFunc	CRYPTO_free
 #define OPENSSL_free(addr)	CRYPTO_free(addr)
 
 #define OPENSSL_malloc_locked(num) \
-	CRYPTO_malloc_locked((int)num,__FILE__,__LINE__)
+	CRYPTO_malloc_locked((int)num,NULL,0)
 #define OPENSSL_free_locked(addr) CRYPTO_free_locked(addr)
 #endif
 
@@ -457,7 +448,7 @@ void CRYPTO_set_mem_debug_options(long bits);
 long CRYPTO_get_mem_debug_options(void);
 
 #define CRYPTO_push_info(info) \
-        CRYPTO_push_info_(info, __FILE__, __LINE__);
+        CRYPTO_push_info_(info, NULL, 0);
 int CRYPTO_push_info_(const char *info, const char *file, int line);
 int CRYPTO_pop_info(void);
 int CRYPTO_remove_all_info(void);
@@ -505,6 +496,9 @@ uint64_t OPENSSL_cpu_caps(void);
 int OPENSSL_isservice(void);
 
 #ifndef LIBRESSL_INTERNAL
+int FIPS_mode(void);
+int FIPS_mode_set(int r);
+
 void OPENSSL_init(void);
 
 /* CRYPTO_memcmp returns zero iff the |len| bytes at |a| and |b| are equal. It

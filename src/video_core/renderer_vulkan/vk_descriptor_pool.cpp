@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <mutex>
@@ -122,7 +121,7 @@ vk::DescriptorSets DescriptorAllocator::AllocateDescriptors(size_t count) {
     throw vk::Exception(VK_ERROR_OUT_OF_POOL_MEMORY);
 }
 
-DescriptorPool::DescriptorPool(const Device& device_, VKScheduler& scheduler)
+DescriptorPool::DescriptorPool(const Device& device_, Scheduler& scheduler)
     : device{device_}, master_semaphore{scheduler.GetMasterSemaphore()} {}
 
 DescriptorPool::~DescriptorPool() = default;

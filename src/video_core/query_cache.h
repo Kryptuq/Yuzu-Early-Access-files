@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -18,9 +17,8 @@
 
 #include "common/assert.h"
 #include "common/settings.h"
-#include "core/core.h"
+#include "video_core/control/channel_state_cache.h"
 #include "video_core/engines/maxwell_3d.h"
-#include "video_core/gpu.h"
 #include "video_core/memory_manager.h"
 #include "video_core/rasterizer_interface.h"
 
@@ -93,13 +91,10 @@ private:
 };
 
 template <class QueryCache, class CachedQuery, class CounterStream, class HostCounter>
-class QueryCacheBase {
+class QueryCacheBase : public VideoCommon::ChannelSetupCaches<VideoCommon::ChannelInfo> {
 public:
-    explicit QueryCacheBase(VideoCore::RasterizerInterface& rasterizer_,
-                            Tegra::Engines::Maxwell3D& maxwell3d_,
-                            Tegra::MemoryManager& gpu_memory_)
-        : rasterizer{rasterizer_}, maxwell3d{maxwell3d_},
-          gpu_memory{gpu_memory_}, streams{{CounterStream{static_cast<QueryCache&>(*this),
+    explicit QueryCacheBase(VideoCore::RasterizerInterface& rasterizer_)
+        : rasterizer{rasterizer_}, streams{{CounterStream{static_cast<QueryCache&>(*this),
                                                           VideoCore::QueryType::SamplesPassed}}} {}
 
     void InvalidateRegion(VAddr addr, std::size_t size) {
@@ -120,13 +115,13 @@ public:
      */
     void Query(GPUVAddr gpu_addr, VideoCore::QueryType type, std::optional<u64> timestamp) {
         std::unique_lock lock{mutex};
-        const std::optional<VAddr> cpu_addr = gpu_memory.GpuToCpuAddress(gpu_addr);
+        const std::optional<VAddr> cpu_addr = gpu_memory->GpuToCpuAddress(gpu_addr);
         ASSERT(cpu_addr);
 
         CachedQuery* query = TryGet(*cpu_addr);
         if (!query) {
             ASSERT_OR_EXECUTE(cpu_addr, return;);
-            u8* const host_ptr = gpu_memory.GetPointer(gpu_addr);
+            u8* const host_ptr = gpu_memory->GetPointer(gpu_addr);
 
             query = Register(type, *cpu_addr, host_ptr, timestamp.has_value());
         }
@@ -140,7 +135,7 @@ public:
     /// Updates counters from GPU state. Expected to be called once per draw, clear or dispatch.
     void UpdateCounters() {
         std::unique_lock lock{mutex};
-        const auto& regs = maxwell3d.regs;
+        const auto& regs = maxwell3d->regs;
         Stream(VideoCore::QueryType::SamplesPassed).Update(regs.samplecnt_enable);
     }
 
@@ -267,8 +262,6 @@ private:
     static constexpr unsigned PAGE_BITS = 12;
 
     VideoCore::RasterizerInterface& rasterizer;
-    Tegra::Engines::Maxwell3D& maxwell3d;
-    Tegra::MemoryManager& gpu_memory;
 
     std::recursive_mutex mutex;
 

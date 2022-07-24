@@ -96,6 +96,17 @@ public:
     [[nodiscard]] bool IsValidVirtualAddress(VAddr vaddr) const;
 
     /**
+     * Checks whether or not the supplied range of addresses are all valid
+     * virtual addresses for the current process.
+     *
+     * @param base The address to begin checking.
+     * @param size The amount of bytes to check.
+     *
+     * @returns True if all bytes in the given range are valid, false otherwise.
+     */
+    [[nodiscard]] bool IsValidVirtualAddressRange(VAddr base, u64 size) const;
+
+    /**
      * Gets a pointer to the given address.
      *
      * @param vaddr Virtual address to retrieve a pointer to.
@@ -104,6 +115,7 @@ public:
      *          If the address is not valid, nullptr will be returned.
      */
     u8* GetPointer(VAddr vaddr);
+    u8* GetPointerSilent(VAddr vaddr);
 
     template <typename T>
     T* GetPointer(VAddr vaddr) {
@@ -426,6 +438,19 @@ public:
                    std::size_t size);
 
     /**
+     * Zeros a range of bytes within the current process' address space at the specified
+     * virtual address.
+     *
+     * @param process   The process that will have data zeroed within its address space.
+     * @param dest_addr The destination virtual address to zero the data from.
+     * @param size      The size of the range to zero out, in bytes.
+     *
+     * @post The range [dest_addr, size) within the process' address space contains the
+     *       value 0.
+     */
+    void ZeroBlock(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size);
+
+    /**
      * Marks each page within the specified address range as cached or uncached.
      *
      * @param vaddr  The virtual address indicating the start of the address range.
@@ -434,6 +459,17 @@ public:
      *               marked as cached or uncached.
      */
     void RasterizerMarkRegionCached(VAddr vaddr, u64 size, bool cached);
+
+    /**
+     * Marks each page within the specified address range as debug or non-debug.
+     * Debug addresses are not accessible from fastmem pointers.
+     *
+     * @param vaddr The virtual address indicating the start of the address range.
+     * @param size  The size of the address range in bytes.
+     * @param debug Whether or not any pages within the address range should be
+     *              marked as debug or non-debug.
+     */
+    void MarkRegionDebug(VAddr vaddr, u64 size, bool debug);
 
 private:
     Core::System& system;

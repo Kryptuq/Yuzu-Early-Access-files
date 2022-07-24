@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <cctype>
 #include <mbedtls/md5.h>
@@ -19,15 +18,15 @@
 
 namespace Service::BCAT {
 
-constexpr ResultCode ERROR_INVALID_ARGUMENT{ErrorModule::BCAT, 1};
-constexpr ResultCode ERROR_FAILED_OPEN_ENTITY{ErrorModule::BCAT, 2};
-constexpr ResultCode ERROR_ENTITY_ALREADY_OPEN{ErrorModule::BCAT, 6};
-constexpr ResultCode ERROR_NO_OPEN_ENTITY{ErrorModule::BCAT, 7};
+constexpr Result ERROR_INVALID_ARGUMENT{ErrorModule::BCAT, 1};
+constexpr Result ERROR_FAILED_OPEN_ENTITY{ErrorModule::BCAT, 2};
+constexpr Result ERROR_ENTITY_ALREADY_OPEN{ErrorModule::BCAT, 6};
+constexpr Result ERROR_NO_OPEN_ENTITY{ErrorModule::BCAT, 7};
 
 // The command to clear the delivery cache just calls fs IFileSystem DeleteFile on all of the files
 // and if any of them have a non-zero result it just forwards that result. This is the FS error code
 // for permission denied, which is the closest approximation of this scenario.
-constexpr ResultCode ERROR_FAILED_CLEAR_CACHE{ErrorModule::FS, 6400};
+constexpr Result ERROR_FAILED_CLEAR_CACHE{ErrorModule::FS, 6400};
 
 using BCATDigest = std::array<u8, 0x10>;
 
@@ -141,8 +140,8 @@ public:
             {20401, nullptr, "UnregisterSystemApplicationDeliveryTask"},
             {20410, nullptr, "SetSystemApplicationDeliveryTaskTimer"},
             {30100, &IBcatService::SetPassphrase, "SetPassphrase"},
-            {30101, nullptr, "Unknown"},
-            {30102, nullptr, "Unknown2"},
+            {30101, nullptr, "Unknown30101"},
+            {30102, nullptr, "Unknown30102"},
             {30200, nullptr, "RegisterBackgroundDeliveryTask"},
             {30201, nullptr, "UnregisterBackgroundDeliveryTask"},
             {30202, nullptr, "BlockDeliveryTask"},

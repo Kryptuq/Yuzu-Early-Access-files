@@ -15,6 +15,8 @@
 #include <array>
 #include <cstring>
 
+#include <mcl/assert.hpp>
+#include <mcl/bit/bit_field.hpp>
 #include <xbyak/xbyak.h>
 
 #include "dynarmic/backend/x64/a32_jitstate.h"
@@ -22,8 +24,6 @@
 #include "dynarmic/backend/x64/hostloc.h"
 #include "dynarmic/backend/x64/perf_map.h"
 #include "dynarmic/backend/x64/stack_layout.h"
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/bit_util.h"
 
 namespace Dynarmic::Backend::X64 {
 
@@ -52,6 +52,41 @@ constexpr size_t CONSTANT_POOL_SIZE = 2 * 1024 * 1024;
 
 class CustomXbyakAllocator : public Xbyak::Allocator {
 public:
+#ifndef _WIN32
+    static constexpr size_t PAGE_SIZE = 4096;
+
+    // Can't subclass Xbyak::MmapAllocator because it is not a pure interface
+    // and doesn't expose its construtor
+    uint8_t* alloc(size_t size) override {
+        // Waste a page to store the size
+        size += PAGE_SIZE;
+
+#    if defined(MAP_ANONYMOUS)
+        int mode = MAP_PRIVATE | MAP_ANONYMOUS;
+#    elif defined(MAP_ANON)
+        int mode = MAP_PRIVATE | MAP_ANON;
+#    else
+#        error "not supported"
+#    endif
+#    ifdef MAP_JIT
+        mode |= MAP_JIT;
+#    endif
+
+        void* p = mmap(nullptr, size, PROT_READ | PROT_WRITE, mode, -1, 0);
+        if (p == MAP_FAILED) {
+            throw Xbyak::Error(Xbyak::ERR_CANT_ALLOC);
+        }
+        std::memcpy(p, &size, sizeof(size_t));
+        return static_cast<uint8_t*>(p) + PAGE_SIZE;
+    }
+
+    void free(uint8_t* p) override {
+        size_t size;
+        std::memcpy(&size, p - PAGE_SIZE, sizeof(size_t));
+        munmap(p - PAGE_SIZE, size);
+    }
+#endif
+
 #ifdef DYNARMIC_ENABLE_NO_EXECUTE_SUPPORT
     bool useProtect() const override { return false; }
 #endif
@@ -114,6 +149,8 @@ HostFeature GetHostFeatures() {
         features |= HostFeature::FMA;
     if (cpu_info.has(Cpu::tAESNI))
         features |= HostFeature::AES;
+    if (cpu_info.has(Cpu::tSHA))
+        features |= HostFeature::SHA;
     if (cpu_info.has(Cpu::tPOPCNT))
         features |= HostFeature::POPCNT;
     if (cpu_info.has(Cpu::tBMI1))
@@ -132,8 +169,8 @@ HostFeature GetHostFeatures() {
         if (cpu_info.has(Cpu::tAMD)) {
             std::array<u32, 4> data{};
             cpu_info.getCpuid(1, data.data());
-            const u32 family_base = Common::Bits<8, 11>(data[0]);
-            const u32 family_extended = Common::Bits<20, 27>(data[0]);
+            const u32 family_base = mcl::bit::get_bits<8, 11>(data[0]);
+            const u32 family_extended = mcl::bit::get_bits<20, 27>(data[0]);
             const u32 family = family_base + family_extended;
             if (family >= 0x19)
                 features |= HostFeature::FastBMI2;
@@ -148,22 +185,19 @@ HostFeature GetHostFeatures() {
 
 }  // anonymous namespace
 
-BlockOfCode::BlockOfCode(RunCodeCallbacks cb, JitStateInfo jsi, size_t total_code_size, size_t far_code_offset, std::function<void(BlockOfCode&)> rcp)
+BlockOfCode::BlockOfCode(RunCodeCallbacks cb, JitStateInfo jsi, size_t total_code_size, std::function<void(BlockOfCode&)> rcp)
         : Xbyak::CodeGenerator(total_code_size, nullptr, &s_allocator)
         , cb(std::move(cb))
         , jsi(jsi)
-        , far_code_offset(far_code_offset)
         , constant_pool(*this, CONSTANT_POOL_SIZE)
         , host_features(GetHostFeatures()) {
-    ASSERT(total_code_size > far_code_offset);
     EnableWriting();
     GenRunCode(rcp);
 }
 
 void BlockOfCode::PreludeComplete() {
     prelude_complete = true;
-    near_code_begin = getCurr();
-    far_code_begin = getCurr() + far_code_offset;
+    code_begin = getCurr();
     ClearCache();
     DisableWriting();
 }
@@ -182,29 +216,23 @@ void BlockOfCode::DisableWriting() {
 
 void BlockOfCode::ClearCache() {
     ASSERT(prelude_complete);
-    in_far_code = false;
-    near_code_ptr = near_code_begin;
-    far_code_ptr = far_code_begin;
-    SetCodePtr(near_code_begin);
+    SetCodePtr(code_begin);
 }
 
 size_t BlockOfCode::SpaceRemaining() const {
     ASSERT(prelude_complete);
-    const u8* current_near_ptr = in_far_code ? reinterpret_cast<const u8*>(near_code_ptr) : getCode<const u8*>();
-    const u8* current_far_ptr = in_far_code ? getCode<const u8*>() : reinterpret_cast<const u8*>(far_code_ptr);
-    if (current_near_ptr >= far_code_begin)
+    const u8* current_ptr = getCurr<const u8*>();
+    if (current_ptr >= &top_[maxSize_])
         return 0;
-    if (current_far_ptr >= &top_[maxSize_])
-        return 0;
-    return std::min(reinterpret_cast<const u8*>(far_code_begin) - current_near_ptr, &top_[maxSize_] - current_far_ptr);
+    return &top_[maxSize_] - current_ptr;
 }
 
-void BlockOfCode::RunCode(void* jit_state, CodePtr code_ptr) const {
-    run_code(jit_state, code_ptr);
+HaltReason BlockOfCode::RunCode(void* jit_state, CodePtr code_ptr) const {
+    return run_code(jit_state, code_ptr);
 }
 
-void BlockOfCode::StepCode(void* jit_state, CodePtr code_ptr) const {
-    step_code(jit_state, code_ptr);
+HaltReason BlockOfCode::StepCode(void* jit_state, CodePtr code_ptr) const {
+    return step_code(jit_state, code_ptr);
 }
 
 void BlockOfCode::ReturnFromRunCode(bool mxcsr_already_exited) {
@@ -222,6 +250,8 @@ void BlockOfCode::ForceReturnFromRunCode(bool mxcsr_already_exited) {
 }
 
 void BlockOfCode::GenRunCode(std::function<void(BlockOfCode&)> rcp) {
+    Xbyak::Label return_to_caller, return_to_caller_mxcsr_already_exited;
+
     align();
     run_code = getCurr<RunCodeFuncType>();
 
@@ -234,11 +264,16 @@ void BlockOfCode::GenRunCode(std::function<void(BlockOfCode&)> rcp) {
     mov(r15, ABI_PARAM1);
     mov(rbx, ABI_PARAM2);  // save temporarily in non-volatile register
 
-    cb.GetTicksRemaining->EmitCall(*this);
-    mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)], ABI_RETURN);
-    mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], ABI_RETURN);
+    if (cb.enable_cycle_counting) {
+        cb.GetTicksRemaining->EmitCall(*this);
+        mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)], ABI_RETURN);
+        mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], ABI_RETURN);
+    }
 
     rcp(*this);
+
+    cmp(dword[r15 + jsi.offsetof_halt_reason], 0);
+    jne(return_to_caller_mxcsr_already_exited, T_NEAR);
 
     SwitchMxcsrOnEntry();
     jmp(rbx);
@@ -250,31 +285,44 @@ void BlockOfCode::GenRunCode(std::function<void(BlockOfCode&)> rcp) {
 
     mov(r15, ABI_PARAM1);
 
-    mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)], 1);
-    mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], 1);
+    if (cb.enable_cycle_counting) {
+        mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)], 1);
+        mov(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], 1);
+    }
 
     rcp(*this);
+
+    cmp(dword[r15 + jsi.offsetof_halt_reason], 0);
+    jne(return_to_caller_mxcsr_already_exited, T_NEAR);
+    lock();
+    or_(dword[r15 + jsi.offsetof_halt_reason], static_cast<u32>(HaltReason::Step));
 
     SwitchMxcsrOnEntry();
     jmp(ABI_PARAM2);
 
     // Dispatcher loop
 
-    Xbyak::Label return_to_caller, return_to_caller_mxcsr_already_exited;
-
     align();
     return_from_run_code[0] = getCurr<const void*>();
 
-    cmp(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], 0);
-    jng(return_to_caller);
+    cmp(dword[r15 + jsi.offsetof_halt_reason], 0);
+    jne(return_to_caller);
+    if (cb.enable_cycle_counting) {
+        cmp(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], 0);
+        jng(return_to_caller);
+    }
     cb.LookupBlock->EmitCall(*this);
     jmp(ABI_RETURN);
 
     align();
     return_from_run_code[MXCSR_ALREADY_EXITED] = getCurr<const void*>();
 
-    cmp(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], 0);
-    jng(return_to_caller_mxcsr_already_exited);
+    cmp(dword[r15 + jsi.offsetof_halt_reason], 0);
+    jne(return_to_caller_mxcsr_already_exited);
+    if (cb.enable_cycle_counting) {
+        cmp(qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)], 0);
+        jng(return_to_caller_mxcsr_already_exited);
+    }
     SwitchMxcsrOnEntry();
     cb.LookupBlock->EmitCall(*this);
     jmp(ABI_RETURN);
@@ -289,10 +337,16 @@ void BlockOfCode::GenRunCode(std::function<void(BlockOfCode&)> rcp) {
     return_from_run_code[MXCSR_ALREADY_EXITED | FORCE_RETURN] = getCurr<const void*>();
     L(return_to_caller_mxcsr_already_exited);
 
-    cb.AddTicks->EmitCall(*this, [this](RegList param) {
-        mov(param[0], qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)]);
-        sub(param[0], qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)]);
-    });
+    if (cb.enable_cycle_counting) {
+        cb.AddTicks->EmitCall(*this, [this](RegList param) {
+            mov(param[0], qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)]);
+            sub(param[0], qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)]);
+        });
+    }
+
+    xor_(eax, eax);
+    lock();
+    xchg(dword[r15 + jsi.offsetof_halt_reason], eax);
 
     ABI_PopCalleeSaveRegistersAndAdjustStack(*this, sizeof(StackLayout));
     ret();
@@ -321,6 +375,10 @@ void BlockOfCode::LeaveStandardASIMD() {
 }
 
 void BlockOfCode::UpdateTicks() {
+    if (!cb.enable_cycle_counting) {
+        return;
+    }
+
     cb.AddTicks->EmitCall(*this, [this](RegList param) {
         mov(param[0], qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_to_run)]);
         sub(param[0], qword[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, cycles_remaining)]);
@@ -335,30 +393,12 @@ void BlockOfCode::LookupBlock() {
     cb.LookupBlock->EmitCall(*this);
 }
 
-Xbyak::Address BlockOfCode::MConst(const Xbyak::AddressFrame& frame, u64 lower, u64 upper) {
+Xbyak::Address BlockOfCode::XmmConst(const Xbyak::AddressFrame& frame, u64 lower, u64 upper) {
     return constant_pool.GetConstant(frame, lower, upper);
 }
 
-void BlockOfCode::SwitchToFarCode() {
-    ASSERT(prelude_complete);
-    ASSERT(!in_far_code);
-    in_far_code = true;
-    near_code_ptr = getCurr();
-    SetCodePtr(far_code_ptr);
-
-    ASSERT_MSG(near_code_ptr < far_code_begin, "Near code has overwritten far code!");
-}
-
-void BlockOfCode::SwitchToNearCode() {
-    ASSERT(prelude_complete);
-    ASSERT(in_far_code);
-    in_far_code = false;
-    far_code_ptr = getCurr();
-    SetCodePtr(near_code_ptr);
-}
-
 CodePtr BlockOfCode::GetCodeBegin() const {
-    return near_code_begin;
+    return code_begin;
 }
 
 size_t BlockOfCode::GetTotalCodeSize() const {

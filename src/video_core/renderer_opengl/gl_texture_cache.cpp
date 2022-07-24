@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <array>
@@ -84,7 +83,7 @@ GLenum ImageTarget(const VideoCommon::ImageInfo& info) {
     case ImageType::Buffer:
         return GL_TEXTURE_BUFFER;
     }
-    UNREACHABLE_MSG("Invalid image type={}", info.type);
+    ASSERT_MSG(false, "Invalid image type={}", info.type);
     return GL_NONE;
 }
 
@@ -108,7 +107,7 @@ GLenum ImageTarget(Shader::TextureType type, int num_samples = 1) {
     case Shader::TextureType::Buffer:
         return GL_TEXTURE_BUFFER;
     }
-    UNREACHABLE_MSG("Invalid image view type={}", type);
+    ASSERT_MSG(false, "Invalid image view type={}", type);
     return GL_NONE;
 }
 
@@ -120,7 +119,7 @@ GLenum TextureMode(PixelFormat format, bool is_first) {
     case PixelFormat::S8_UINT_D24_UNORM:
         return is_first ? GL_STENCIL_INDEX : GL_DEPTH_COMPONENT;
     default:
-        UNREACHABLE();
+        ASSERT(false);
         return GL_DEPTH_COMPONENT;
     }
 }
@@ -141,7 +140,7 @@ GLint Swizzle(SwizzleSource source) {
     case SwizzleSource::OneFloat:
         return GL_ONE;
     }
-    UNREACHABLE_MSG("Invalid swizzle source={}", source);
+    ASSERT_MSG(false, "Invalid swizzle source={}", source);
     return GL_NONE;
 }
 
@@ -182,6 +181,26 @@ GLenum AttachmentType(PixelFormat format) {
     }
 }
 
+GLint ConvertA5B5G5R1_UNORM(SwizzleSource source) {
+    switch (source) {
+    case SwizzleSource::Zero:
+        return GL_ZERO;
+    case SwizzleSource::R:
+        return GL_ALPHA;
+    case SwizzleSource::G:
+        return GL_BLUE;
+    case SwizzleSource::B:
+        return GL_GREEN;
+    case SwizzleSource::A:
+        return GL_RED;
+    case SwizzleSource::OneInt:
+    case SwizzleSource::OneFloat:
+        return GL_ONE;
+    }
+    ASSERT_MSG(false, "Invalid swizzle source={}", source);
+    return GL_NONE;
+}
+
 void ApplySwizzle(GLuint handle, PixelFormat format, std::array<SwizzleSource, 4> swizzle) {
     switch (format) {
     case PixelFormat::D24_UNORM_S8_UINT:
@@ -192,6 +211,12 @@ void ApplySwizzle(GLuint handle, PixelFormat format, std::array<SwizzleSource, 4
                             TextureMode(format, swizzle[0] == SwizzleSource::R));
         std::ranges::transform(swizzle, swizzle.begin(), ConvertGreenRed);
         break;
+    case PixelFormat::A5B5G5R1_UNORM: {
+        std::array<GLint, 4> gl_swizzle;
+        std::ranges::transform(swizzle, gl_swizzle.begin(), ConvertA5B5G5R1_UNORM);
+        glTextureParameteriv(handle, GL_TEXTURE_SWIZZLE_RGBA, gl_swizzle.data());
+        return;
+    }
     default:
         break;
     }
@@ -356,10 +381,10 @@ OGLTexture MakeImage(const VideoCommon::ImageInfo& info, GLenum gl_internal_form
         glTextureStorage3D(handle, gl_num_levels, gl_internal_format, width, height, depth);
         break;
     case GL_TEXTURE_BUFFER:
-        UNREACHABLE();
+        ASSERT(false);
         break;
     default:
-        UNREACHABLE_MSG("Invalid target=0x{:x}", target);
+        ASSERT_MSG(false, "Invalid target=0x{:x}", target);
         break;
     }
     return texture;
@@ -395,7 +420,7 @@ OGLTexture MakeImage(const VideoCommon::ImageInfo& info, GLenum gl_internal_form
     case Shader::ImageFormat::R32G32B32A32_UINT:
         return GL_RGBA32UI;
     }
-    UNREACHABLE_MSG("Invalid image format={}", format);
+    ASSERT_MSG(false, "Invalid image format={}", format);
     return GL_R32UI;
 }
 
@@ -409,8 +434,8 @@ ImageBufferMap::~ImageBufferMap() {
 
 TextureCacheRuntime::TextureCacheRuntime(const Device& device_, ProgramManager& program_manager,
                                          StateTracker& state_tracker_)
-    : device{device_}, state_tracker{state_tracker_},
-      util_shaders(program_manager), resolution{Settings::values.resolution_info} {
+    : device{device_}, state_tracker{state_tracker_}, util_shaders(program_manager),
+      format_conversion_pass{util_shaders}, resolution{Settings::values.resolution_info} {
     static constexpr std::array TARGETS{GL_TEXTURE_1D_ARRAY, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D};
     for (size_t i = 0; i < TARGETS.size(); ++i) {
         const GLenum target = TARGETS[i];
@@ -484,6 +509,13 @@ TextureCacheRuntime::TextureCacheRuntime(const Device& device_, ProgramManager& 
             rescale_read_fbos[i].Create();
         }
     }
+
+    device_access_memory = [this]() -> u64 {
+        if (device.CanReportMemoryUsage()) {
+            return device.GetCurrentDedicatedVideoMemory() + 512_MiB;
+        }
+        return 2_GiB; // Return minimum requirements
+    }();
 }
 
 TextureCacheRuntime::~TextureCacheRuntime() = default;
@@ -500,13 +532,11 @@ ImageBufferMap TextureCacheRuntime::DownloadStagingBuffer(size_t size) {
     return download_buffers.RequestMap(size, false);
 }
 
-u64 TextureCacheRuntime::GetDeviceLocalMemory() const {
-    if (GLAD_GL_NVX_gpu_memory_info) {
-        GLint cur_avail_mem_kb = 0;
-        glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &cur_avail_mem_kb);
-        return static_cast<u64>(cur_avail_mem_kb) * 1_KiB;
+u64 TextureCacheRuntime::GetDeviceMemoryUsage() const {
+    if (device.CanReportMemoryUsage()) {
+        return device_access_memory - device.GetCurrentDedicatedVideoMemory();
     }
-    return 2_GiB; // Return minimum requirements
+    return 2_GiB;
 }
 
 void TextureCacheRuntime::CopyImage(Image& dst_image, Image& src_image,
@@ -549,7 +579,7 @@ void TextureCacheRuntime::EmulateCopyImage(Image& dst, Image& src,
     } else if (IsPixelFormatBGR(dst.info.format) || IsPixelFormatBGR(src.info.format)) {
         format_conversion_pass.ConvertImage(dst, src, copies);
     } else {
-        UNREACHABLE();
+        ASSERT(false);
     }
 }
 
@@ -590,7 +620,7 @@ void TextureCacheRuntime::AccelerateImageUpload(Image& image, const ImageBufferM
     case ImageType::Linear:
         return util_shaders.PitchUpload(image, map, swizzles);
     default:
-        UNREACHABLE();
+        ASSERT(false);
         break;
     }
 }
@@ -609,7 +639,7 @@ FormatProperties TextureCacheRuntime::FormatInfo(ImageType type, GLenum internal
     case ImageType::e3D:
         return format_properties[2].at(internal_format);
     default:
-        UNREACHABLE();
+        ASSERT(false);
         return FormatProperties{};
     }
 }
@@ -686,6 +716,7 @@ Image::Image(TextureCacheRuntime& runtime_, const VideoCommon::ImageInfo& info_,
     }
     if (IsConverted(runtime->device, info.format, info.type)) {
         flags |= ImageFlagBits::Converted;
+        flags |= ImageFlagBits::CostlyLoad;
         gl_internal_format = IsPixelFormatSRGB(info.format) ? GL_SRGB8_ALPHA8 : GL_RGBA8;
         gl_format = GL_RGBA;
         gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
@@ -857,7 +888,7 @@ void Image::CopyBufferToImage(const VideoCommon::BufferImageCopy& copy, size_t b
         }
         break;
     default:
-        UNREACHABLE();
+        ASSERT(false);
     }
 }
 
@@ -893,7 +924,7 @@ void Image::CopyImageToBuffer(const VideoCommon::BufferImageCopy& copy, size_t b
         depth = copy.image_extent.depth;
         break;
     default:
-        UNREACHABLE();
+        ASSERT(false);
     }
     // Compressed formats don't have a pixel format or type
     const bool is_compressed = gl_format == GL_NONE;
@@ -919,7 +950,7 @@ void Image::Scale(bool up_scale) {
         case SurfaceType::DepthStencil:
             return GL_DEPTH_STENCIL_ATTACHMENT;
         default:
-            UNREACHABLE();
+            ASSERT(false);
             return GL_COLOR_ATTACHMENT0;
         }
     }();
@@ -934,7 +965,7 @@ void Image::Scale(bool up_scale) {
         case SurfaceType::DepthStencil:
             return GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
         default:
-            UNREACHABLE();
+            ASSERT(false);
             return GL_COLOR_BUFFER_BIT;
         }
     }();
@@ -949,7 +980,7 @@ void Image::Scale(bool up_scale) {
         case SurfaceType::DepthStencil:
             return 3;
         default:
-            UNREACHABLE();
+            ASSERT(false);
             return 0;
         }
     }();
@@ -1014,7 +1045,7 @@ bool Image::ScaleUp(bool ignore) {
         return false;
     }
     if (info.type == ImageType::Linear) {
-        UNREACHABLE();
+        ASSERT(false);
         return false;
     }
     flags |= ImageFlagBits::Rescaled;
@@ -1108,7 +1139,7 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
         UNIMPLEMENTED();
         break;
     case ImageViewType::Buffer:
-        UNREACHABLE();
+        ASSERT(false);
         break;
     }
     switch (info.type) {
@@ -1288,7 +1319,7 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM
             buffer_bits |= GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
             break;
         default:
-            UNREACHABLE();
+            ASSERT(false);
             buffer_bits |= GL_DEPTH_BUFFER_BIT;
             break;
         }
@@ -1318,6 +1349,9 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM
 }
 
 Framebuffer::~Framebuffer() = default;
+
+FormatConversionPass::FormatConversionPass(UtilShaders& util_shaders_)
+    : util_shaders{util_shaders_} {}
 
 void FormatConversionPass::ConvertImage(Image& dst_image, Image& src_image,
                                         std::span<const VideoCommon::ImageCopy> copies) {
@@ -1350,6 +1384,12 @@ void FormatConversionPass::ConvertImage(Image& dst_image, Image& src_image,
         glTextureSubImage3D(dst_image.Handle(), dst_origin.level, dst_origin.x, dst_origin.y,
                             dst_origin.z, region.width, region.height, region.depth,
                             dst_image.GlFormat(), dst_image.GlType(), nullptr);
+    }
+
+    // Swap component order of S8D24 to ABGR8 reinterprets
+    if (src_image.info.format == PixelFormat::D24_UNORM_S8_UINT &&
+        dst_image.info.format == PixelFormat::A8B8G8R8_UNORM) {
+        util_shaders.ConvertS8D24(dst_image, copies);
     }
 }
 

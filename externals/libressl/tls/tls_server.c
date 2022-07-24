@@ -1,4 +1,4 @@
-/* $OpenBSD: tls_server.c,v 1.45 2019/05/13 22:36:01 bcook Exp $ */
+/* $OpenBSD: tls_server.c,v 1.48 2022/01/19 11:10:55 inoguchi Exp $ */
 /*
  * Copyright (c) 2014 Joel Sing <jsing@openbsd.org>
  *
@@ -109,7 +109,7 @@ tls_servername_cb(SSL *ssl, int *al, void *arg)
             inet_pton(AF_INET6, name, &addrbuf) == 1)
 		return (SSL_TLSEXT_ERR_NOACK);
 
-	free((char *)conn_ctx->servername);
+	free(conn_ctx->servername);
 	if ((conn_ctx->servername = strdup(name)) == NULL)
 		goto err;
 
@@ -133,7 +133,7 @@ tls_servername_cb(SSL *ssl, int *al, void *arg)
 	 * There is no way to tell libssl that an internal failure occurred.
 	 * The only option we have is to return a fatal alert.
 	 */
-	*al = TLS1_AD_INTERNAL_ERROR;
+	*al = SSL_AD_INTERNAL_ERROR;
 	return (SSL_TLSEXT_ERR_ALERT_FATAL);
 }
 
@@ -185,10 +185,16 @@ tls_server_ticket_cb(SSL *ssl, unsigned char *keyname, unsigned char *iv,
 
 		memcpy(keyname, key->key_name, sizeof(key->key_name));
 		arc4random_buf(iv, EVP_MAX_IV_LENGTH);
-		EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL,
-		    key->aes_key, iv);
-		HMAC_Init_ex(hctx, key->hmac_key, sizeof(key->hmac_key),
-		    EVP_sha256(), NULL);
+		if (!EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL,
+		    key->aes_key, iv)) {
+			tls_set_errorx(tls_ctx, "failed to init encrypt");
+			return (-1);
+		}
+		if (!HMAC_Init_ex(hctx, key->hmac_key, sizeof(key->hmac_key),
+		    EVP_sha256(), NULL)) {
+			tls_set_errorx(tls_ctx, "failed to init hmac");
+			return (-1);
+		}
 		return (0);
 	} else {
 		/* get key by name */
@@ -196,10 +202,16 @@ tls_server_ticket_cb(SSL *ssl, unsigned char *keyname, unsigned char *iv,
 		if (key == NULL)
 			return (0);
 
-		EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL,
-		    key->aes_key, iv);
-		HMAC_Init_ex(hctx, key->hmac_key, sizeof(key->hmac_key),
-		    EVP_sha256(), NULL);
+		if (!EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL,
+		    key->aes_key, iv)) {
+			tls_set_errorx(tls_ctx, "failed to init decrypt");
+			return (-1);
+		}
+		if (!HMAC_Init_ex(hctx, key->hmac_key, sizeof(key->hmac_key),
+		    EVP_sha256(), NULL)) {
+			tls_set_errorx(tls_ctx, "failed to init hmac");
+			return (-1);
+		}
 
 		/* time to renew the ticket? is it the primary key? */
 		if (key != &tls_ctx->config->ticket_keys[0])

@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 
 #include "dynarmic/frontend/A32/translate/translate_callbacks.h"
 #include "dynarmic/interface/A32/arch_version.h"
@@ -51,6 +52,9 @@ enum class Exception {
     PreloadDataWithIntentToWrite,
     /// A PLI instruction was executed. (Hint instruction.)
     PreloadInstruction,
+    /// Attempted to execute a code block at an address for which MemoryReadCode returned std::nullopt.
+    /// (Intended to be used to emulate memory protection faults.)
+    NoExecuteFault,
 };
 
 /// These function pointers may be inserted into compiled code.
@@ -59,7 +63,7 @@ struct UserCallbacks : public TranslateCallbacks {
 
     // All reads through this callback are 4-byte aligned.
     // Memory must be interpreted as little endian.
-    std::uint32_t MemoryReadCode(VAddr vaddr) override { return MemoryRead32(vaddr); }
+    std::optional<std::uint32_t> MemoryReadCode(VAddr vaddr) override { return MemoryRead32(vaddr); }
 
     // Thus function is called before the instruction at pc is interpreted.
     // IR code can be emitted by the callee prior to translation of the instruction.
@@ -177,6 +181,15 @@ struct UserConfig {
     /// accesses will hit the memory callbacks.
     bool recompile_on_fastmem_failure = true;
 
+    /// Determines if we should use the above fastmem_pointer for exclusive reads and
+    /// writes. On x64, dynarmic currently relies on x64 cmpxchg semantics which may not
+    /// provide fully accurate emulation.
+    bool fastmem_exclusive_access = false;
+    /// Determines if exclusive access instructions that pagefault should cause
+    /// recompilation of that block with fastmem disabled. Recompiled code will use memory
+    /// callbacks.
+    bool recompile_on_exclusive_fastmem_failure = true;
+
     // Coprocessors
     std::array<std::shared_ptr<Coprocessor>, 16> coprocessors{};
 
@@ -199,6 +212,14 @@ struct UserConfig {
     /// to avoid writting certain unnecessary code only needed for cycle timers.
     bool wall_clock_cntpct = false;
 
+    /// This allows accurately emulating protection fault handlers. If true, we check
+    /// for exit after every data memory access by the emulated program.
+    bool check_halt_on_memory_access = false;
+
+    /// This option allows you to disable cycle counting. If this is set to false,
+    /// AddTicks and GetTicksRemaining are never called, and no cycle counting is done.
+    bool enable_cycle_counting = true;
+
     /// This option relates to the CPSR.E flag. Enabling this option disables modification
     /// of CPSR.E by the emulated program, forcing it to 0.
     /// NOTE: Calling Jit::SetCpsr with CPSR.E=1 while this option is enabled may result
@@ -208,9 +229,6 @@ struct UserConfig {
     // Minimum size is about 8MiB. Maximum size is about 2GiB. Maximum size is limited by
     // the maximum length of a x64 jump.
     size_t code_cache_size = 256 * 1024 * 1024;  // bytes
-    // Determines the relative size of the near and far code caches. Must be smaller than
-    // code_cache_size.
-    size_t far_code_offset = 200 * 1024 * 1024;  // bytes
 };
 
 }  // namespace A32

@@ -1,6 +1,6 @@
-// Copyright 2014 Citra Emulator Project / PPSSPP Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2012 PPSSPP Project
+// SPDX-FileCopyrightText: 2014 Dolphin Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 

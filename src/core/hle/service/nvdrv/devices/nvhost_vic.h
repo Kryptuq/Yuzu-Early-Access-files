@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -10,8 +9,7 @@ namespace Service::Nvidia::Devices {
 
 class nvhost_vic final : public nvhost_nvdec_common {
 public:
-    explicit nvhost_vic(Core::System& system_, std::shared_ptr<nvmap> nvmap_dev_,
-                        SyncpointManager& syncpoint_manager_);
+    explicit nvhost_vic(Core::System& system_, NvCore::Container& core);
     ~nvhost_vic();
 
     NvResult Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
@@ -25,6 +23,6 @@ public:
     void OnClose(DeviceFD fd) override;
 
 private:
-    u32 next_id{};
+    static u32 next_id;
 };
 } // namespace Service::Nvidia::Devices

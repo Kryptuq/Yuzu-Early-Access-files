@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <cstring>
@@ -598,6 +597,10 @@ Errno Socket::SetLinger(bool enable, u32 linger) {
 
 Errno Socket::SetReuseAddr(bool enable) {
     return SetSockOpt<u32>(fd, SO_REUSEADDR, enable ? 1 : 0);
+}
+
+Errno Socket::SetKeepAlive(bool enable) {
+    return SetSockOpt<u32>(fd, SO_KEEPALIVE, enable ? 1 : 0);
 }
 
 Errno Socket::SetBroadcast(bool enable) {

@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -57,11 +56,11 @@ constexpr std::size_t KernelPageTableHeapSize = GetMaximumOverheadSize(MainMemor
 constexpr std::size_t KernelInitialPageHeapSize = 128_KiB;
 
 constexpr std::size_t KernelSlabHeapDataSize = 5_MiB;
-constexpr std::size_t KernelSlabHeapGapsSize = 2_MiB - 64_KiB;
-constexpr std::size_t KernelSlabHeapSize = KernelSlabHeapDataSize + KernelSlabHeapGapsSize;
+constexpr std::size_t KernelSlabHeapGapsSizeMax = 2_MiB - 64_KiB;
+constexpr std::size_t KernelSlabHeapSize = KernelSlabHeapDataSize + KernelSlabHeapGapsSizeMax;
 
 // NOTE: This is calculated from KThread slab counts, assuming KThread size <= 0x860.
-constexpr std::size_t KernelSlabHeapAdditionalSize = 416_KiB;
+constexpr std::size_t KernelSlabHeapAdditionalSize = 0x68000;
 
 constexpr std::size_t KernelResourceSize =
     KernelPageTableHeapSize + KernelInitialPageHeapSize + KernelSlabHeapSize;
@@ -171,6 +170,10 @@ public:
 
     const KMemoryRegion& GetVirtualLinearRegion(VAddr address) const {
         return Dereference(FindVirtualLinear(address));
+    }
+
+    const KMemoryRegion& GetPhysicalLinearRegion(PAddr address) const {
+        return Dereference(FindPhysicalLinear(address));
     }
 
     const KMemoryRegion* GetPhysicalKernelTraceBufferRegion() const {

@@ -23,7 +23,6 @@ if (MSVC)
 
     # /W3                 - Level 3 warnings
     # /MP                 - Multi-threaded compilation
-    # /Zf                 - Improves PDB generation time in parallel builds
     # /Zi                 - Output debugging information
     # /Zm                 - Specifies the precompiled header memory allocation limit
     # /Zo                 - Enhanced debug info for optimized builds
@@ -37,9 +36,7 @@ if (MSVC)
     # /GT                 - Supports fiber safety for data allocated using static thread-local storage
     add_compile_options(
         /MP
-        /Zf
-        /Zi
-        /Zm400
+        /Zm200
         /Zo
         /permissive-
         /EHsc
@@ -67,13 +64,26 @@ if (MSVC)
         /we4305 # 'context': truncation from 'type1' to 'type2'
         /we4388 # 'expression': signed/unsigned mismatch
         /we4389 # 'operator': signed/unsigned mismatch
+        /we4456 # Declaration of 'identifier' hides previous local declaration
+        /we4457 # Declaration of 'identifier' hides function parameter
+        /we4458 # Declaration of 'identifier' hides class member
+        /we4459 # Declaration of 'identifier' hides global declaration
+        /we4505 # 'function': unreferenced local function has been removed
         /we4547 # 'operator': operator before comma has no effect; expected operator with side-effect
         /we4549 # 'operator1': operator before comma has no effect; did you intend 'operator2'?
         /we4555 # Expression has no effect; expected expression with side-effect
         /we4715 # 'function': not all control paths return a value
         /we4834 # Discarding return value of function with 'nodiscard' attribute
         /we5038 # data member 'member1' will be initialized after data member 'member2'
+        /we5245 # 'function': unreferenced function with internal linkage has been removed
     )
+
+    if (USE_CCACHE)
+    # when caching, we need to use /Z7 to downgrade debug info to use an older but more cachable format
+        add_compile_options(/Z7)
+    else()
+        add_compile_options(/Zi)
+    endif()
 
     if (ARCHITECTURE_x86_64)
         add_compile_options(/QIntel-jcc-erratum)
@@ -83,7 +93,7 @@ if (MSVC)
     add_compile_options("$<$<CONFIG:Release>:/GS->")
 
     set(CMAKE_EXE_LINKER_FLAGS_DEBUG   "/DEBUG /MANIFEST:NO" CACHE STRING "" FORCE)
-    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /DEBUG /MANIFEST:NO /INCREMENTAL:NO /OPT:REF,ICF" CACHE STRING "" FORCE)
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/DEBUG /MANIFEST:NO /INCREMENTAL:NO /OPT:REF,ICF" CACHE STRING "" FORCE)
 else()
     add_compile_options(
         -Wall
@@ -92,6 +102,7 @@ else()
         -Werror=missing-declarations
         -Werror=missing-field-initializers
         -Werror=reorder
+        -Werror=shadow
         -Werror=sign-compare
         -Werror=switch
         -Werror=uninitialized
@@ -105,14 +116,9 @@ else()
         -Wno-unused-parameter
     )
 
-    # TODO: Remove when we update to a GCC compiler that enables this
-    #       by default (i.e. GCC 10 or newer).
-    if (CMAKE_CXX_COMPILER_ID STREQUAL GNU)
-        add_compile_options(-fconcepts)
-    endif()
-
     if (ARCHITECTURE_x86_64)
         add_compile_options("-mcx16")
+        add_compile_options("-fwrapv")
     endif()
 
     if (APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL Clang)
@@ -153,7 +159,10 @@ add_subdirectory(audio_core)
 add_subdirectory(video_core)
 add_subdirectory(input_common)
 add_subdirectory(shader_recompiler)
-add_subdirectory(tests)
+
+if (YUZU_TESTS)
+    add_subdirectory(tests)
+endif()
 
 if (ENABLE_SDL2)
     add_subdirectory(yuzu_cmd)

@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -32,12 +31,13 @@ struct KSlabResourceCounts {
     size_t num_KObjectName;
     size_t num_KResourceLimit;
     size_t num_KDebug;
-    size_t num_KAlpha;
-    size_t num_KBeta;
+    size_t num_KIoPool;
+    size_t num_KIoRegion;
 };
 
 void InitializeSlabResourceCounts(KernelCore& kernel);
 size_t CalculateTotalSlabHeapSize(const KernelCore& kernel);
+void InitializeKPageBufferSlabHeap(Core::System& system);
 void InitializeSlabHeaps(Core::System& system, KMemoryLayout& memory_layout);
 
 } // namespace Kernel::Init

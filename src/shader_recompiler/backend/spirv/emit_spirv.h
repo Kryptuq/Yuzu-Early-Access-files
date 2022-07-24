@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -22,7 +21,7 @@ constexpr u32 NUM_TEXTURE_AND_IMAGE_SCALING_WORDS =
 struct RescalingLayout {
     alignas(16) std::array<u32, NUM_TEXTURE_SCALING_WORDS> rescaling_textures;
     alignas(16) std::array<u32, NUM_IMAGE_SCALING_WORDS> rescaling_images;
-    alignas(16) u32 down_factor;
+    u32 down_factor;
 };
 constexpr u32 RESCALING_LAYOUT_WORDS_OFFSET = offsetof(RescalingLayout, rescaling_textures);
 constexpr u32 RESCALING_LAYOUT_DOWN_FACTOR_OFFSET = offsetof(RescalingLayout, down_factor);

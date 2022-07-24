@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/settings_input.h"
 #include "core/hid/emulated_controller.h"
@@ -39,7 +38,10 @@ void ControllerNavigation::TriggerButton(Settings::NativeButton::Values native_b
 }
 
 void ControllerNavigation::ControllerUpdateEvent(Core::HID::ControllerTriggerType type) {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{mutex};
+    if (!Settings::values.controller_navigation) {
+        return;
+    }
     if (type == Core::HID::ControllerTriggerType::Button) {
         ControllerUpdateButton();
         return;

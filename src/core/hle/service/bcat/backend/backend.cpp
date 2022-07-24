@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/hex_util.h"
 #include "common/logging/log.h"
@@ -75,7 +74,7 @@ void ProgressServiceBackend::CommitDirectory(std::string_view dir_name) {
     SignalUpdate();
 }
 
-void ProgressServiceBackend::FinishDownload(ResultCode result) {
+void ProgressServiceBackend::FinishDownload(Result result) {
     impl.total_downloaded_bytes = impl.total_bytes;
     impl.status = DeliveryCacheProgressImpl::Status::Done;
     impl.result = result;

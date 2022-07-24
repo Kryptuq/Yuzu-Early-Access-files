@@ -1,17 +1,14 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <algorithm>
 #include <array>
-#include <deque>
 #include <memory>
 #include <mutex>
 #include <numeric>
 #include <span>
-#include <unordered_map>
 #include <vector>
 
 #include <boost/container/small_vector.hpp>
@@ -22,10 +19,10 @@
 #include "common/literals.h"
 #include "common/lru_cache.h"
 #include "common/microprofile.h"
-#include "common/scope_exit.h"
 #include "common/settings.h"
 #include "core/memory.h"
 #include "video_core/buffer_cache/buffer_base.h"
+#include "video_core/control/channel_state_cache.h"
 #include "video_core/delayed_destruction_ring.h"
 #include "video_core/dirty_flags.h"
 #include "video_core/engines/kepler_compute.h"
@@ -59,7 +56,7 @@ using UniformBufferSizes = std::array<std::array<u32, NUM_GRAPHICS_UNIFORM_BUFFE
 using ComputeUniformBufferSizes = std::array<u32, NUM_COMPUTE_UNIFORM_BUFFERS>;
 
 template <typename P>
-class BufferCache {
+class BufferCache : public VideoCommon::ChannelSetupCaches<VideoCommon::ChannelInfo> {
 
     // Page size for caching purposes.
     // This is unrelated to the CPU page size and it can be changed as it seems optimal.
@@ -78,8 +75,9 @@ class BufferCache {
 
     static constexpr BufferId NULL_BUFFER_ID{0};
 
-    static constexpr u64 EXPECTED_MEMORY = 512_MiB;
-    static constexpr u64 CRITICAL_MEMORY = 1_GiB;
+    static constexpr s64 DEFAULT_EXPECTED_MEMORY = 512_MiB;
+    static constexpr s64 DEFAULT_CRITICAL_MEMORY = 1_GiB;
+    static constexpr s64 TARGET_THRESHOLD = 4_GiB;
 
     using Maxwell = Tegra::Engines::Maxwell3D::Regs;
 
@@ -118,10 +116,7 @@ public:
     static constexpr u32 DEFAULT_SKIP_CACHE_SIZE = static_cast<u32>(4_KiB);
 
     explicit BufferCache(VideoCore::RasterizerInterface& rasterizer_,
-                         Tegra::Engines::Maxwell3D& maxwell3d_,
-                         Tegra::Engines::KeplerCompute& kepler_compute_,
-                         Tegra::MemoryManager& gpu_memory_, Core::Memory::Memory& cpu_memory_,
-                         Runtime& runtime_);
+                         Core::Memory::Memory& cpu_memory_, Runtime& runtime_);
 
     void TickFrame();
 
@@ -130,6 +125,8 @@ public:
     void CachedWriteMemory(VAddr cpu_addr, u64 size);
 
     void DownloadMemory(VAddr cpu_addr, u64 size);
+
+    bool InlineMemory(VAddr dest_address, size_t copy_size, std::span<const u8> inlined_buffer);
 
     void BindGraphicsUniformBuffer(size_t stage, u32 index, GPUVAddr gpu_addr, u32 size);
 
@@ -353,7 +350,7 @@ private:
 
     void NotifyBufferDeletion();
 
-    [[nodiscard]] Binding StorageBufferBinding(GPUVAddr ssbo_addr) const;
+    [[nodiscard]] Binding StorageBufferBinding(GPUVAddr ssbo_addr, bool is_written = false) const;
 
     [[nodiscard]] TextureBufferBinding GetTextureBufferBinding(GPUVAddr gpu_addr, u32 size,
                                                                PixelFormat format);
@@ -367,9 +364,6 @@ private:
     void ClearDownload(IntervalType subtract_interval);
 
     VideoCore::RasterizerInterface& rasterizer;
-    Tegra::Engines::Maxwell3D& maxwell3d;
-    Tegra::Engines::KeplerCompute& kepler_compute;
-    Tegra::MemoryManager& gpu_memory;
     Core::Memory::Memory& cpu_memory;
 
     SlotVector<Buffer> slot_buffers;
@@ -436,26 +430,43 @@ private:
     Common::LeastRecentlyUsedCache<LRUItemParams> lru_cache;
     u64 frame_tick = 0;
     u64 total_used_memory = 0;
+    u64 minimum_memory = 0;
+    u64 critical_memory = 0;
 
     std::array<BufferId, ((1ULL << 39) >> PAGE_BITS)> page_table;
 };
 
 template <class P>
 BufferCache<P>::BufferCache(VideoCore::RasterizerInterface& rasterizer_,
-                            Tegra::Engines::Maxwell3D& maxwell3d_,
-                            Tegra::Engines::KeplerCompute& kepler_compute_,
-                            Tegra::MemoryManager& gpu_memory_, Core::Memory::Memory& cpu_memory_,
-                            Runtime& runtime_)
-    : runtime{runtime_}, rasterizer{rasterizer_}, maxwell3d{maxwell3d_},
-      kepler_compute{kepler_compute_}, gpu_memory{gpu_memory_}, cpu_memory{cpu_memory_} {
+                            Core::Memory::Memory& cpu_memory_, Runtime& runtime_)
+    : runtime{runtime_}, rasterizer{rasterizer_}, cpu_memory{cpu_memory_} {
     // Ensure the first slot is used for the null buffer
     void(slot_buffers.insert(runtime, NullBufferParams{}));
     common_ranges.clear();
+
+    if (!runtime.CanReportMemoryUsage()) {
+        minimum_memory = DEFAULT_EXPECTED_MEMORY;
+        critical_memory = DEFAULT_CRITICAL_MEMORY;
+        return;
+    }
+
+    const s64 device_memory = static_cast<s64>(runtime.GetDeviceLocalMemory());
+    const s64 min_spacing_expected = device_memory - 1_GiB - 512_MiB;
+    const s64 min_spacing_critical = device_memory - 1_GiB;
+    const s64 mem_threshold = std::min(device_memory, TARGET_THRESHOLD);
+    const s64 min_vacancy_expected = (6 * mem_threshold) / 10;
+    const s64 min_vacancy_critical = (3 * mem_threshold) / 10;
+    minimum_memory = static_cast<u64>(
+        std::max(std::min(device_memory - min_vacancy_expected, min_spacing_expected),
+                 DEFAULT_EXPECTED_MEMORY));
+    critical_memory = static_cast<u64>(
+        std::max(std::min(device_memory - min_vacancy_critical, min_spacing_critical),
+                 DEFAULT_CRITICAL_MEMORY));
 }
 
 template <class P>
 void BufferCache<P>::RunGarbageCollector() {
-    const bool aggressive_gc = total_used_memory >= CRITICAL_MEMORY;
+    const bool aggressive_gc = total_used_memory >= critical_memory;
     const u64 ticks_to_destroy = aggressive_gc ? 60 : 120;
     int num_iterations = aggressive_gc ? 64 : 32;
     const auto clean_up = [this, &num_iterations](BufferId buffer_id) {
@@ -486,7 +497,11 @@ void BufferCache<P>::TickFrame() {
     const bool skip_preferred = hits * 256 < shots * 251;
     uniform_buffer_skip_cache_size = skip_preferred ? DEFAULT_SKIP_CACHE_SIZE : 0;
 
-    if (total_used_memory >= EXPECTED_MEMORY) {
+    // If we can obtain the memory info, use it instead of the estimate.
+    if (runtime.CanReportMemoryUsage()) {
+        total_used_memory = runtime.GetDeviceMemoryUsage();
+    }
+    if (total_used_memory >= minimum_memory) {
         RunGarbageCollector();
     }
     ++frame_tick;
@@ -527,8 +542,8 @@ void BufferCache<P>::ClearDownload(IntervalType subtract_interval) {
 
 template <class P>
 bool BufferCache<P>::DMACopy(GPUVAddr src_address, GPUVAddr dest_address, u64 amount) {
-    const std::optional<VAddr> cpu_src_address = gpu_memory.GpuToCpuAddress(src_address);
-    const std::optional<VAddr> cpu_dest_address = gpu_memory.GpuToCpuAddress(dest_address);
+    const std::optional<VAddr> cpu_src_address = gpu_memory->GpuToCpuAddress(src_address);
+    const std::optional<VAddr> cpu_dest_address = gpu_memory->GpuToCpuAddress(dest_address);
     if (!cpu_src_address || !cpu_dest_address) {
         return false;
     }
@@ -586,7 +601,7 @@ bool BufferCache<P>::DMACopy(GPUVAddr src_address, GPUVAddr dest_address, u64 am
 
 template <class P>
 bool BufferCache<P>::DMAClear(GPUVAddr dst_address, u64 amount, u32 value) {
-    const std::optional<VAddr> cpu_dst_address = gpu_memory.GpuToCpuAddress(dst_address);
+    const std::optional<VAddr> cpu_dst_address = gpu_memory->GpuToCpuAddress(dst_address);
     if (!cpu_dst_address) {
         return false;
     }
@@ -610,7 +625,7 @@ bool BufferCache<P>::DMAClear(GPUVAddr dst_address, u64 amount, u32 value) {
 template <class P>
 void BufferCache<P>::BindGraphicsUniformBuffer(size_t stage, u32 index, GPUVAddr gpu_addr,
                                                u32 size) {
-    const std::optional<VAddr> cpu_addr = gpu_memory.GpuToCpuAddress(gpu_addr);
+    const std::optional<VAddr> cpu_addr = gpu_memory->GpuToCpuAddress(gpu_addr);
     const Binding binding{
         .cpu_addr = *cpu_addr,
         .size = size,
@@ -648,7 +663,7 @@ void BufferCache<P>::BindHostGeometryBuffers(bool is_indexed) {
     if (is_indexed) {
         BindHostIndexBuffer();
     } else if constexpr (!HAS_FULL_INDEX_AND_PRIMITIVE_SUPPORT) {
-        const auto& regs = maxwell3d.regs;
+        const auto& regs = maxwell3d->regs;
         if (regs.draw.topology == Maxwell::PrimitiveTopology::Quads) {
             runtime.BindQuadArrayIndexBuffer(regs.vertex_buffer.first, regs.vertex_buffer.count);
         }
@@ -708,9 +723,9 @@ void BufferCache<P>::BindGraphicsStorageBuffer(size_t stage, size_t ssbo_index, 
     enabled_storage_buffers[stage] |= 1U << ssbo_index;
     written_storage_buffers[stage] |= (is_written ? 1U : 0U) << ssbo_index;
 
-    const auto& cbufs = maxwell3d.state.shader_stages[stage];
+    const auto& cbufs = maxwell3d->state.shader_stages[stage];
     const GPUVAddr ssbo_addr = cbufs.const_buffers[cbuf_index].address + cbuf_offset;
-    storage_buffers[stage][ssbo_index] = StorageBufferBinding(ssbo_addr);
+    storage_buffers[stage][ssbo_index] = StorageBufferBinding(ssbo_addr, is_written);
 }
 
 template <class P>
@@ -745,12 +760,12 @@ void BufferCache<P>::BindComputeStorageBuffer(size_t ssbo_index, u32 cbuf_index,
     enabled_compute_storage_buffers |= 1U << ssbo_index;
     written_compute_storage_buffers |= (is_written ? 1U : 0U) << ssbo_index;
 
-    const auto& launch_desc = kepler_compute.launch_description;
+    const auto& launch_desc = kepler_compute->launch_description;
     ASSERT(((launch_desc.const_buffer_enable_mask >> cbuf_index) & 1) != 0);
 
     const auto& cbufs = launch_desc.const_buffer_config;
     const GPUVAddr ssbo_addr = cbufs[cbuf_index].Address() + cbuf_offset;
-    compute_storage_buffers[ssbo_index] = StorageBufferBinding(ssbo_addr);
+    compute_storage_buffers[ssbo_index] = StorageBufferBinding(ssbo_addr, is_written);
 }
 
 template <class P>
@@ -808,6 +823,21 @@ void BufferCache<P>::CommitAsyncFlushesHigh() {
         return;
     }
     MICROPROFILE_SCOPE(GPU_DownloadMemory);
+    const bool is_accuracy_normal =
+        Settings::values.gpu_accuracy.GetValue() == Settings::GPUAccuracy::Normal;
+
+    auto it = committed_ranges.begin();
+    while (it != committed_ranges.end()) {
+        auto& current_intervals = *it;
+        auto next_it = std::next(it);
+        while (next_it != committed_ranges.end()) {
+            for (auto& interval : *next_it) {
+                current_intervals.subtract(interval);
+            }
+            next_it++;
+        }
+        it++;
+    }
 
     boost::container::small_vector<std::pair<BufferCopy, BufferId>, 1> downloads;
     u64 total_size_bytes = 0;
@@ -819,6 +849,9 @@ void BufferCache<P>::CommitAsyncFlushesHigh() {
             ForEachBufferInRange(cpu_addr, size, [&](BufferId buffer_id, Buffer& buffer) {
                 buffer.ForEachDownloadRangeAndClear(
                     cpu_addr, size, [&](u64 range_offset, u64 range_size) {
+                        if (is_accuracy_normal) {
+                            return;
+                        }
                         const VAddr buffer_addr = buffer.CpuAddr();
                         const auto add_download = [&](VAddr start, VAddr end) {
                             const u64 new_offset = start - buffer_addr;
@@ -961,19 +994,19 @@ void BufferCache<P>::BindHostIndexBuffer() {
     const u32 size = index_buffer.size;
     SynchronizeBuffer(buffer, index_buffer.cpu_addr, size);
     if constexpr (HAS_FULL_INDEX_AND_PRIMITIVE_SUPPORT) {
-        const u32 new_offset = offset + maxwell3d.regs.index_array.first *
-                                            maxwell3d.regs.index_array.FormatSizeInBytes();
+        const u32 new_offset = offset + maxwell3d->regs.index_array.first *
+                                            maxwell3d->regs.index_array.FormatSizeInBytes();
         runtime.BindIndexBuffer(buffer, new_offset, size);
     } else {
-        runtime.BindIndexBuffer(maxwell3d.regs.draw.topology, maxwell3d.regs.index_array.format,
-                                maxwell3d.regs.index_array.first, maxwell3d.regs.index_array.count,
-                                buffer, offset, size);
+        runtime.BindIndexBuffer(maxwell3d->regs.draw.topology, maxwell3d->regs.index_array.format,
+                                maxwell3d->regs.index_array.first,
+                                maxwell3d->regs.index_array.count, buffer, offset, size);
     }
 }
 
 template <class P>
 void BufferCache<P>::BindHostVertexBuffers() {
-    auto& flags = maxwell3d.dirty.flags;
+    auto& flags = maxwell3d->dirty.flags;
     for (u32 index = 0; index < NUM_VERTEX_BUFFERS; ++index) {
         const Binding& binding = vertex_buffers[index];
         Buffer& buffer = slot_buffers[binding.buffer_id];
@@ -984,7 +1017,7 @@ void BufferCache<P>::BindHostVertexBuffers() {
         }
         flags[Dirty::VertexBuffer0 + index] = false;
 
-        const u32 stride = maxwell3d.regs.vertex_array[index].stride;
+        const u32 stride = maxwell3d->regs.vertex_array[index].stride;
         const u32 offset = buffer.Offset(binding.cpu_addr);
         runtime.BindVertexBuffer(index, buffer, offset, binding.size, stride);
     }
@@ -1124,7 +1157,7 @@ void BufferCache<P>::BindHostGraphicsTextureBuffers(size_t stage) {
 
 template <class P>
 void BufferCache<P>::BindHostTransformFeedbackBuffers() {
-    if (maxwell3d.regs.tfb_enabled == 0) {
+    if (maxwell3d->regs.tfb_enabled == 0) {
         return;
     }
     for (u32 index = 0; index < NUM_TRANSFORM_FEEDBACK_BUFFERS; ++index) {
@@ -1209,16 +1242,19 @@ void BufferCache<P>::BindHostComputeTextureBuffers() {
 
 template <class P>
 void BufferCache<P>::DoUpdateGraphicsBuffers(bool is_indexed) {
-    if (is_indexed) {
-        UpdateIndexBuffer();
-    }
-    UpdateVertexBuffers();
-    UpdateTransformFeedbackBuffers();
-    for (size_t stage = 0; stage < NUM_STAGES; ++stage) {
-        UpdateUniformBuffers(stage);
-        UpdateStorageBuffers(stage);
-        UpdateTextureBuffers(stage);
-    }
+    do {
+        has_deleted_buffers = false;
+        if (is_indexed) {
+            UpdateIndexBuffer();
+        }
+        UpdateVertexBuffers();
+        UpdateTransformFeedbackBuffers();
+        for (size_t stage = 0; stage < NUM_STAGES; ++stage) {
+            UpdateUniformBuffers(stage);
+            UpdateStorageBuffers(stage);
+            UpdateTextureBuffers(stage);
+        }
+    } while (has_deleted_buffers);
 }
 
 template <class P>
@@ -1232,8 +1268,8 @@ template <class P>
 void BufferCache<P>::UpdateIndexBuffer() {
     // We have to check for the dirty flags and index count
     // The index count is currently changed without updating the dirty flags
-    const auto& index_array = maxwell3d.regs.index_array;
-    auto& flags = maxwell3d.dirty.flags;
+    const auto& index_array = maxwell3d->regs.index_array;
+    auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::IndexBuffer] && last_index_count == index_array.count) {
         return;
     }
@@ -1242,7 +1278,7 @@ void BufferCache<P>::UpdateIndexBuffer() {
 
     const GPUVAddr gpu_addr_begin = index_array.StartAddress();
     const GPUVAddr gpu_addr_end = index_array.EndAddress();
-    const std::optional<VAddr> cpu_addr = gpu_memory.GpuToCpuAddress(gpu_addr_begin);
+    const std::optional<VAddr> cpu_addr = gpu_memory->GpuToCpuAddress(gpu_addr_begin);
     const u32 address_size = static_cast<u32>(gpu_addr_end - gpu_addr_begin);
     const u32 draw_size = (index_array.count + index_array.first) * index_array.FormatSizeInBytes();
     const u32 size = std::min(address_size, draw_size);
@@ -1259,8 +1295,8 @@ void BufferCache<P>::UpdateIndexBuffer() {
 
 template <class P>
 void BufferCache<P>::UpdateVertexBuffers() {
-    auto& flags = maxwell3d.dirty.flags;
-    if (!maxwell3d.dirty.flags[Dirty::VertexBuffers]) {
+    auto& flags = maxwell3d->dirty.flags;
+    if (!maxwell3d->dirty.flags[Dirty::VertexBuffers]) {
         return;
     }
     flags[Dirty::VertexBuffers] = false;
@@ -1272,20 +1308,25 @@ void BufferCache<P>::UpdateVertexBuffers() {
 
 template <class P>
 void BufferCache<P>::UpdateVertexBuffer(u32 index) {
-    if (!maxwell3d.dirty.flags[Dirty::VertexBuffer0 + index]) {
+    if (!maxwell3d->dirty.flags[Dirty::VertexBuffer0 + index]) {
         return;
     }
-    const auto& array = maxwell3d.regs.vertex_array[index];
-    const auto& limit = maxwell3d.regs.vertex_array_limit[index];
+    const auto& array = maxwell3d->regs.vertex_array[index];
+    const auto& limit = maxwell3d->regs.vertex_array_limit[index];
     const GPUVAddr gpu_addr_begin = array.StartAddress();
     const GPUVAddr gpu_addr_end = limit.LimitAddress() + 1;
-    const std::optional<VAddr> cpu_addr = gpu_memory.GpuToCpuAddress(gpu_addr_begin);
-    const u32 address_size = static_cast<u32>(gpu_addr_end - gpu_addr_begin);
-    const u32 size = address_size; // TODO: Analyze stride and number of vertices
-    if (array.enable == 0 || size == 0 || !cpu_addr) {
+    const std::optional<VAddr> cpu_addr = gpu_memory->GpuToCpuAddress(gpu_addr_begin);
+    u32 address_size = static_cast<u32>(
+        std::min(gpu_addr_end - gpu_addr_begin, static_cast<u64>(std::numeric_limits<u32>::max())));
+    if (array.enable == 0 || address_size == 0 || !cpu_addr) {
         vertex_buffers[index] = NULL_BINDING;
         return;
     }
+    if (!gpu_memory->IsWithinGPUAddressRange(gpu_addr_end)) {
+        address_size =
+            static_cast<u32>(gpu_memory->MaxContinousRange(gpu_addr_begin, address_size));
+    }
+    const u32 size = address_size; // TODO: Analyze stride and number of vertices
     vertex_buffers[index] = Binding{
         .cpu_addr = *cpu_addr,
         .size = size,
@@ -1339,7 +1380,7 @@ void BufferCache<P>::UpdateTextureBuffers(size_t stage) {
 
 template <class P>
 void BufferCache<P>::UpdateTransformFeedbackBuffers() {
-    if (maxwell3d.regs.tfb_enabled == 0) {
+    if (maxwell3d->regs.tfb_enabled == 0) {
         return;
     }
     for (u32 index = 0; index < NUM_TRANSFORM_FEEDBACK_BUFFERS; ++index) {
@@ -1349,10 +1390,10 @@ void BufferCache<P>::UpdateTransformFeedbackBuffers() {
 
 template <class P>
 void BufferCache<P>::UpdateTransformFeedbackBuffer(u32 index) {
-    const auto& binding = maxwell3d.regs.tfb_bindings[index];
+    const auto& binding = maxwell3d->regs.tfb_bindings[index];
     const GPUVAddr gpu_addr = binding.Address() + binding.buffer_offset;
     const u32 size = binding.buffer_size;
-    const std::optional<VAddr> cpu_addr = gpu_memory.GpuToCpuAddress(gpu_addr);
+    const std::optional<VAddr> cpu_addr = gpu_memory->GpuToCpuAddress(gpu_addr);
     if (binding.buffer_enable == 0 || size == 0 || !cpu_addr) {
         transform_feedback_buffers[index] = NULL_BINDING;
         return;
@@ -1371,10 +1412,10 @@ void BufferCache<P>::UpdateComputeUniformBuffers() {
     ForEachEnabledBit(enabled_compute_uniform_buffer_mask, [&](u32 index) {
         Binding& binding = compute_uniform_buffers[index];
         binding = NULL_BINDING;
-        const auto& launch_desc = kepler_compute.launch_description;
+        const auto& launch_desc = kepler_compute->launch_description;
         if (((launch_desc.const_buffer_enable_mask >> index) & 1) != 0) {
             const auto& cbuf = launch_desc.const_buffer_config[index];
-            const std::optional<VAddr> cpu_addr = gpu_memory.GpuToCpuAddress(cbuf.Address());
+            const std::optional<VAddr> cpu_addr = gpu_memory->GpuToCpuAddress(cbuf.Address());
             if (cpu_addr) {
                 binding.cpu_addr = *cpu_addr;
                 binding.size = cbuf.size;
@@ -1417,10 +1458,8 @@ void BufferCache<P>::MarkWrittenBuffer(BufferId buffer_id, VAddr cpu_addr, u32 s
     const IntervalType base_interval{cpu_addr, cpu_addr + size};
     common_ranges.add(base_interval);
 
-    const bool is_accuracy_high =
-        Settings::values.gpu_accuracy.GetValue() == Settings::GPUAccuracy::High;
     const bool is_async = Settings::values.use_asynchronous_gpu_emulation.GetValue();
-    if (!is_async && !is_accuracy_high) {
+    if (!is_async) {
         return;
     }
     uncommitted_ranges.add(base_interval);
@@ -1464,17 +1503,27 @@ typename BufferCache<P>::OverlapResult BufferCache<P>::ResolveOverlaps(VAddr cpu
         overlap_ids.push_back(overlap_id);
         overlap.Pick();
         const VAddr overlap_cpu_addr = overlap.CpuAddr();
-        if (overlap_cpu_addr < begin) {
+        const bool expands_left = overlap_cpu_addr < begin;
+        if (expands_left) {
             cpu_addr = begin = overlap_cpu_addr;
         }
-        end = std::max(end, overlap_cpu_addr + overlap.SizeBytes());
-
+        const VAddr overlap_end = overlap_cpu_addr + overlap.SizeBytes();
+        const bool expands_right = overlap_end > end;
+        if (overlap_end > end) {
+            end = overlap_end;
+        }
         stream_score += overlap.StreamScore();
         if (stream_score > STREAM_LEAP_THRESHOLD && !has_stream_leap) {
             // When this memory region has been joined a bunch of times, we assume it's being used
             // as a stream buffer. Increase the size to skip constantly recreating buffers.
             has_stream_leap = true;
-            end += PAGE_SIZE * 256;
+            if (expands_right) {
+                begin -= PAGE_SIZE * 256;
+                cpu_addr = begin;
+            }
+            if (expands_left) {
+                end += PAGE_SIZE * 256;
+            }
         }
     }
     return OverlapResult{
@@ -1515,6 +1564,8 @@ BufferId BufferCache<P>::CreateBuffer(VAddr cpu_addr, u32 wanted_size) {
     const OverlapResult overlap = ResolveOverlaps(cpu_addr, wanted_size);
     const u32 size = static_cast<u32>(overlap.end - overlap.begin);
     const BufferId new_buffer_id = slot_buffers.insert(runtime, rasterizer, overlap.begin, size);
+    auto& new_buffer = slot_buffers[new_buffer_id];
+    runtime.ClearBuffer(new_buffer, 0, new_buffer.SizeBytes(), 0);
     for (const BufferId overlap_id : overlap.ids) {
         JoinOverlap(new_buffer_id, overlap_id, !overlap.has_stream_leap);
     }
@@ -1642,6 +1693,42 @@ void BufferCache<P>::MappedUploadMemory(Buffer& buffer, u64 total_size_bytes,
 }
 
 template <class P>
+bool BufferCache<P>::InlineMemory(VAddr dest_address, size_t copy_size,
+                                  std::span<const u8> inlined_buffer) {
+    const bool is_dirty = IsRegionRegistered(dest_address, copy_size);
+    if (!is_dirty) {
+        return false;
+    }
+    if (!IsRegionGpuModified(dest_address, copy_size)) {
+        return false;
+    }
+
+    const IntervalType subtract_interval{dest_address, dest_address + copy_size};
+    ClearDownload(subtract_interval);
+    common_ranges.subtract(subtract_interval);
+
+    BufferId buffer_id = FindBuffer(dest_address, static_cast<u32>(copy_size));
+    auto& buffer = slot_buffers[buffer_id];
+    SynchronizeBuffer(buffer, dest_address, static_cast<u32>(copy_size));
+
+    if constexpr (USE_MEMORY_MAPS) {
+        std::array copies{BufferCopy{
+            .src_offset = 0,
+            .dst_offset = buffer.Offset(dest_address),
+            .size = copy_size,
+        }};
+        auto upload_staging = runtime.UploadStagingBuffer(copy_size);
+        u8* const src_pointer = upload_staging.mapped_span.data();
+        std::memcpy(src_pointer, inlined_buffer.data(), copy_size);
+        runtime.CopyBuffer(buffer, upload_staging.buffer, copies);
+    } else {
+        buffer.ImmediateUpload(buffer.Offset(dest_address), inlined_buffer.first(copy_size));
+    }
+
+    return true;
+}
+
+template <class P>
 void BufferCache<P>::DownloadBufferMemory(Buffer& buffer) {
     DownloadBufferMemory(buffer, buffer.CpuAddr(), buffer.SizeBytes());
 }
@@ -1743,7 +1830,7 @@ void BufferCache<P>::NotifyBufferDeletion() {
         dirty_uniform_buffers.fill(~u32{0});
         uniform_buffer_binding_sizes.fill({});
     }
-    auto& flags = maxwell3d.dirty.flags;
+    auto& flags = maxwell3d->dirty.flags;
     flags[Dirty::IndexBuffer] = true;
     flags[Dirty::VertexBuffers] = true;
     for (u32 index = 0; index < NUM_VERTEX_BUFFERS; ++index) {
@@ -1753,16 +1840,18 @@ void BufferCache<P>::NotifyBufferDeletion() {
 }
 
 template <class P>
-typename BufferCache<P>::Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr) const {
-    const GPUVAddr gpu_addr = gpu_memory.Read<u64>(ssbo_addr);
-    const u32 size = gpu_memory.Read<u32>(ssbo_addr + 8);
-    const std::optional<VAddr> cpu_addr = gpu_memory.GpuToCpuAddress(gpu_addr);
+typename BufferCache<P>::Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr,
+                                                                      bool is_written) const {
+    const GPUVAddr gpu_addr = gpu_memory->Read<u64>(ssbo_addr);
+    const u32 size = gpu_memory->Read<u32>(ssbo_addr + 8);
+    const std::optional<VAddr> cpu_addr = gpu_memory->GpuToCpuAddress(gpu_addr);
     if (!cpu_addr || size == 0) {
         return NULL_BINDING;
     }
+    const VAddr cpu_end = Common::AlignUp(*cpu_addr + size, Core::Memory::PAGE_SIZE);
     const Binding binding{
         .cpu_addr = *cpu_addr,
-        .size = size,
+        .size = is_written ? size : static_cast<u32>(cpu_end - *cpu_addr),
         .buffer_id = BufferId{},
     };
     return binding;
@@ -1771,7 +1860,7 @@ typename BufferCache<P>::Binding BufferCache<P>::StorageBufferBinding(GPUVAddr s
 template <class P>
 typename BufferCache<P>::TextureBufferBinding BufferCache<P>::GetTextureBufferBinding(
     GPUVAddr gpu_addr, u32 size, PixelFormat format) {
-    const std::optional<VAddr> cpu_addr = gpu_memory.GpuToCpuAddress(gpu_addr);
+    const std::optional<VAddr> cpu_addr = gpu_memory->GpuToCpuAddress(gpu_addr);
     TextureBufferBinding binding;
     if (!cpu_addr || size == 0) {
         binding.cpu_addr = 0;

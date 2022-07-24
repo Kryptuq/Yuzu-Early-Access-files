@@ -754,13 +754,13 @@
                       <string>%</string>
                      </property>
                      <property name="minimum">
-                      <number>50</number>
+                      <number>25</number>
                      </property>
                      <property name="maximum">
                       <number>150</number>
                      </property>
                      <property name="value">
-                      <number>100</number>
+                      <number>95</number>
                      </property>
                     </widget>
                    </item>
@@ -2985,13 +2985,13 @@
                       <string>%</string>
                      </property>
                      <property name="minimum">
-                      <number>50</number>
+                      <number>25</number>
                      </property>
                      <property name="maximum">
                       <number>150</number>
                      </property>
                      <property name="value">
-                      <number>100</number>
+                      <number>95</number>
                      </property>
                     </widget>
                    </item>

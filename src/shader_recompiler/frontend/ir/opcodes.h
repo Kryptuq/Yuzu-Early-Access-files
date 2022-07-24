@@ -1,12 +1,10 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <algorithm>
 #include <array>
-#include <string_view>
 
 #include <fmt/format.h>
 
@@ -105,6 +103,6 @@ struct fmt::formatter<Shader::IR::Opcode> {
     }
     template <typename FormatContext>
     auto format(const Shader::IR::Opcode& op, FormatContext& ctx) {
-        return format_to(ctx.out(), "{}", Shader::IR::NameOf(op));
+        return fmt::format_to(ctx.out(), "{}", Shader::IR::NameOf(op));
     }
 };

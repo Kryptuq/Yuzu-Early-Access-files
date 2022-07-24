@@ -7,9 +7,9 @@
 #include <vector>
 
 #include <catch2/catch.hpp>
+#include <mcl/stdint.hpp>
 
 #include "../rand_int.h"
-#include "dynarmic/common/common_types.h"
 #include "dynarmic/common/fp/mantissa_util.h"
 #include "dynarmic/common/safe_ops.h"
 
@@ -37,7 +37,7 @@ TEST_CASE("ResidualErrorOnRightShift", "[fp]") {
 
 TEST_CASE("ResidualErrorOnRightShift Randomized", "[fp]") {
     for (size_t test = 0; test < 100000; test++) {
-        const u64 mantissa = Common::SignExtend<32, u64>(RandInt<u32>(0, 0xFFFFFFFF));
+        const u64 mantissa = mcl::bit::sign_extend<32, u64>(RandInt<u32>(0, 0xFFFFFFFF));
         const int shift = RandInt<int>(-60, 60);
 
         const ResidualError result = ResidualErrorOnRightShift(mantissa, shift);

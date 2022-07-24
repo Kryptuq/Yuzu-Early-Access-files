@@ -39,8 +39,7 @@ struct Memory::Impl {
     void MapMemoryRegion(Common::PageTable& page_table, VAddr base, u64 size, PAddr target) {
         ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: {:016X}", size);
         ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: {:016X}", base);
-        ASSERT_MSG(target >= DramMemoryMap::Base && target < DramMemoryMap::End,
-                   "Out of bounds target: {:016X}", target);
+        ASSERT_MSG(target >= DramMemoryMap::Base, "Out of bounds target: {:016X}", target);
         MapPages(page_table, base / PAGE_SIZE, size / PAGE_SIZE, target, Common::PageType::Memory);
 
         if (Settings::IsFastmemEnabled()) {
@@ -62,6 +61,16 @@ struct Memory::Impl {
         const PAddr paddr{current_page_table->backing_addr[vaddr >> PAGE_BITS]};
 
         if (!paddr) {
+            return {};
+        }
+
+        return system.DeviceMemory().GetPointer(paddr) + vaddr;
+    }
+
+    [[nodiscard]] u8* GetPointerFromDebugMemory(VAddr vaddr) const {
+        const PAddr paddr{current_page_table->backing_addr[vaddr >> PAGE_BITS]};
+
+        if (paddr == 0) {
             return {};
         }
 
@@ -185,6 +194,12 @@ struct Memory::Impl {
             case Common::PageType::Memory: {
                 DEBUG_ASSERT(pointer);
                 u8* mem_ptr = pointer + page_offset + (page_index << PAGE_BITS);
+                on_memory(copy_amount, mem_ptr);
+                break;
+            }
+            case Common::PageType::DebugMemory: {
+                DEBUG_ASSERT(pointer);
+                u8* const mem_ptr{GetPointerFromDebugMemory(current_vaddr)};
                 on_memory(copy_amount, mem_ptr);
                 break;
             }
@@ -317,6 +332,58 @@ struct Memory::Impl {
             });
     }
 
+    void MarkRegionDebug(VAddr vaddr, u64 size, bool debug) {
+        if (vaddr == 0) {
+            return;
+        }
+
+        // Iterate over a contiguous CPU address space, marking/unmarking the region.
+        // The region is at a granularity of CPU pages.
+
+        const u64 num_pages = ((vaddr + size - 1) >> PAGE_BITS) - (vaddr >> PAGE_BITS) + 1;
+        for (u64 i = 0; i < num_pages; ++i, vaddr += PAGE_SIZE) {
+            const Common::PageType page_type{
+                current_page_table->pointers[vaddr >> PAGE_BITS].Type()};
+            if (debug) {
+                // Switch page type to debug if now debug
+                switch (page_type) {
+                case Common::PageType::Unmapped:
+                    ASSERT_MSG(false, "Attempted to mark unmapped pages as debug");
+                    break;
+                case Common::PageType::RasterizerCachedMemory:
+                case Common::PageType::DebugMemory:
+                    // Page is already marked.
+                    break;
+                case Common::PageType::Memory:
+                    current_page_table->pointers[vaddr >> PAGE_BITS].Store(
+                        nullptr, Common::PageType::DebugMemory);
+                    break;
+                default:
+                    UNREACHABLE();
+                }
+            } else {
+                // Switch page type to non-debug if now non-debug
+                switch (page_type) {
+                case Common::PageType::Unmapped:
+                    ASSERT_MSG(false, "Attempted to mark unmapped pages as non-debug");
+                    break;
+                case Common::PageType::RasterizerCachedMemory:
+                case Common::PageType::Memory:
+                    // Don't mess with already non-debug or rasterizer memory.
+                    break;
+                case Common::PageType::DebugMemory: {
+                    u8* const pointer{GetPointerFromDebugMemory(vaddr & ~PAGE_MASK)};
+                    current_page_table->pointers[vaddr >> PAGE_BITS].Store(
+                        pointer - (vaddr & ~PAGE_MASK), Common::PageType::Memory);
+                    break;
+                }
+                default:
+                    UNREACHABLE();
+                }
+            }
+        }
+    }
+
     void RasterizerMarkRegionCached(VAddr vaddr, u64 size, bool cached) {
         if (vaddr == 0) {
             return;
@@ -343,6 +410,7 @@ struct Memory::Impl {
                     // It is not necessary for a process to have this region mapped into its address
                     // space, for example, a system module need not have a VRAM mapping.
                     break;
+                case Common::PageType::DebugMemory:
                 case Common::PageType::Memory:
                     current_page_table->pointers[vaddr >> PAGE_BITS].Store(
                         nullptr, Common::PageType::RasterizerCachedMemory);
@@ -361,6 +429,7 @@ struct Memory::Impl {
                     // It is not necessary for a process to have this region mapped into its address
                     // space, for example, a system module need not have a VRAM mapping.
                     break;
+                case Common::PageType::DebugMemory:
                 case Common::PageType::Memory:
                     // There can be more than one GPU region mapped per CPU region, so it's common
                     // that this area is already unmarked as cached.
@@ -442,7 +511,7 @@ struct Memory::Impl {
 
     [[nodiscard]] u8* GetPointerImpl(VAddr vaddr, auto on_unmapped, auto on_rasterizer) const {
         // AARCH64 masks the upper 16 bit of all memory accesses
-        vaddr &= 0xffffffffffffLL;
+        vaddr &= 0xffffffffffffULL;
 
         if (vaddr >= 1uLL << current_page_table->GetAddressSpaceBits()) {
             on_unmapped();
@@ -461,6 +530,8 @@ struct Memory::Impl {
         case Common::PageType::Memory:
             ASSERT_MSG(false, "Mapped memory page without a pointer @ 0x{:016X}", vaddr);
             return nullptr;
+        case Common::PageType::DebugMemory:
+            return GetPointerFromDebugMemory(vaddr);
         case Common::PageType::RasterizerCachedMemory: {
             u8* const host_ptr{GetPointerFromRasterizerCachedMemory(vaddr)};
             on_rasterizer();
@@ -476,6 +547,11 @@ struct Memory::Impl {
         return GetPointerImpl(
             vaddr, [vaddr]() { LOG_ERROR(HW_Memory, "Unmapped GetPointer @ 0x{:016X}", vaddr); },
             []() {});
+    }
+
+    [[nodiscard]] u8* GetPointerSilent(const VAddr vaddr) const {
+        return GetPointerImpl(
+            vaddr, []() {}, []() {});
     }
 
     /**
@@ -592,11 +668,29 @@ bool Memory::IsValidVirtualAddress(const VAddr vaddr) const {
         return false;
     }
     const auto [pointer, type] = page_table.pointers[page].PointerType();
-    return pointer != nullptr || type == Common::PageType::RasterizerCachedMemory;
+    return pointer != nullptr || type == Common::PageType::RasterizerCachedMemory ||
+           type == Common::PageType::DebugMemory;
+}
+
+bool Memory::IsValidVirtualAddressRange(VAddr base, u64 size) const {
+    VAddr end = base + size;
+    VAddr page = Common::AlignDown(base, PAGE_SIZE);
+
+    for (; page < end; page += PAGE_SIZE) {
+        if (!IsValidVirtualAddress(page)) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 u8* Memory::GetPointer(VAddr vaddr) {
     return impl->GetPointer(vaddr);
+}
+
+u8* Memory::GetPointerSilent(VAddr vaddr) {
+    return impl->GetPointerSilent(vaddr);
 }
 
 const u8* Memory::GetPointer(VAddr vaddr) const {
@@ -691,8 +785,16 @@ void Memory::CopyBlock(const Kernel::KProcess& process, VAddr dest_addr, VAddr s
     impl->CopyBlock(process, dest_addr, src_addr, size);
 }
 
+void Memory::ZeroBlock(const Kernel::KProcess& process, VAddr dest_addr, const std::size_t size) {
+    impl->ZeroBlock(process, dest_addr, size);
+}
+
 void Memory::RasterizerMarkRegionCached(VAddr vaddr, u64 size, bool cached) {
     impl->RasterizerMarkRegionCached(vaddr, size, cached);
+}
+
+void Memory::MarkRegionDebug(VAddr vaddr, u64 size, bool debug) {
+    impl->MarkRegionDebug(vaddr, size, debug);
 }
 
 } // namespace Core::Memory

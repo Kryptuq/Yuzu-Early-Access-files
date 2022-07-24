@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <memory>
 
@@ -201,6 +200,26 @@ public:
             {62, nullptr, "Unknown62"},
             {63, nullptr, "Unknown63"},
             {64, nullptr, "Unknown64"},
+            {65, nullptr, "Unknown65"},
+            {66, nullptr, "Unknown66"},
+            {67, nullptr, "Unknown67"},
+            {68, nullptr, "Unknown68"},
+            {69, nullptr, "Unknown69"},
+            {70, nullptr, "Unknown70"},
+            {71, nullptr, "Unknown71"},
+            {72, nullptr, "Unknown72"},
+            {73, nullptr, "Unknown73"},
+            {74, nullptr, "Unknown74"},
+            {75, nullptr, "Unknown75"},
+            {76, nullptr, "Unknown76"},
+            {100, nullptr, "Unknown100"},
+            {101, nullptr, "Unknown101"},
+            {110, nullptr, "Unknown110"},
+            {111, nullptr, "Unknown111"},
+            {112, nullptr, "Unknown112"},
+            {113, nullptr, "Unknown113"},
+            {114, nullptr, "Unknown114"},
+            {115, nullptr, "Unknown115"},
         };
         // clang-format on
 
@@ -249,6 +268,20 @@ public:
             {7, nullptr, "AcquireRadioEvent"},
             {8, nullptr, "AcquireGamepadPairingEvent"},
             {9, nullptr, "IsGamepadPairingStarted"},
+            {10, nullptr, "StartAudioDeviceDiscovery"},
+            {11, nullptr, "StopAudioDeviceDiscovery"},
+            {12, nullptr, "IsDiscoveryingAudioDevice"},
+            {13, nullptr, "GetDiscoveredAudioDevice"},
+            {14, nullptr, "AcquireAudioDeviceConnectionEvent"},
+            {15, nullptr, "ConnectAudioDevice"},
+            {16, nullptr, "IsConnectingAudioDevice"},
+            {17, nullptr, "GetConnectedAudioDevices"},
+            {18, nullptr, "DisconnectAudioDevice"},
+            {19, nullptr, "AcquirePairedAudioDeviceInfoChangedEvent"},
+            {20, nullptr, "GetPairedAudioDevices"},
+            {21, nullptr, "RemoveAudioDevicePairing"},
+            {22, nullptr, "RequestAudioDeviceConnectionRejection"},
+            {23, nullptr, "CancelAudioDeviceConnectionRejection"}
         };
         // clang-format on
 

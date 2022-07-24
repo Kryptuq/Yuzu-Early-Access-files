@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <memory>
 #include <fmt/format.h>
@@ -12,8 +11,8 @@
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_page_table.h"
-#include "core/hle/kernel/k_system_control.h"
 #include "core/hle/kernel/svc_results.h"
+#include "core/hle/kernel/svc_types.h"
 #include "core/hle/service/ldr/ldr.h"
 #include "core/hle/service/service.h"
 #include "core/loader/nro.h"
@@ -21,20 +20,20 @@
 
 namespace Service::LDR {
 
-constexpr ResultCode ERROR_INSUFFICIENT_ADDRESS_SPACE{ErrorModule::RO, 2};
+constexpr Result ERROR_INSUFFICIENT_ADDRESS_SPACE{ErrorModule::RO, 2};
 
-[[maybe_unused]] constexpr ResultCode ERROR_INVALID_MEMORY_STATE{ErrorModule::Loader, 51};
-constexpr ResultCode ERROR_INVALID_NRO{ErrorModule::Loader, 52};
-constexpr ResultCode ERROR_INVALID_NRR{ErrorModule::Loader, 53};
-constexpr ResultCode ERROR_MISSING_NRR_HASH{ErrorModule::Loader, 54};
-constexpr ResultCode ERROR_MAXIMUM_NRO{ErrorModule::Loader, 55};
-constexpr ResultCode ERROR_MAXIMUM_NRR{ErrorModule::Loader, 56};
-constexpr ResultCode ERROR_ALREADY_LOADED{ErrorModule::Loader, 57};
-constexpr ResultCode ERROR_INVALID_ALIGNMENT{ErrorModule::Loader, 81};
-constexpr ResultCode ERROR_INVALID_SIZE{ErrorModule::Loader, 82};
-constexpr ResultCode ERROR_INVALID_NRO_ADDRESS{ErrorModule::Loader, 84};
-[[maybe_unused]] constexpr ResultCode ERROR_INVALID_NRR_ADDRESS{ErrorModule::Loader, 85};
-constexpr ResultCode ERROR_NOT_INITIALIZED{ErrorModule::Loader, 87};
+[[maybe_unused]] constexpr Result ERROR_INVALID_MEMORY_STATE{ErrorModule::Loader, 51};
+constexpr Result ERROR_INVALID_NRO{ErrorModule::Loader, 52};
+constexpr Result ERROR_INVALID_NRR{ErrorModule::Loader, 53};
+constexpr Result ERROR_MISSING_NRR_HASH{ErrorModule::Loader, 54};
+constexpr Result ERROR_MAXIMUM_NRO{ErrorModule::Loader, 55};
+constexpr Result ERROR_MAXIMUM_NRR{ErrorModule::Loader, 56};
+constexpr Result ERROR_ALREADY_LOADED{ErrorModule::Loader, 57};
+constexpr Result ERROR_INVALID_ALIGNMENT{ErrorModule::Loader, 81};
+constexpr Result ERROR_INVALID_SIZE{ErrorModule::Loader, 82};
+constexpr Result ERROR_INVALID_NRO_ADDRESS{ErrorModule::Loader, 84};
+[[maybe_unused]] constexpr Result ERROR_INVALID_NRR_ADDRESS{ErrorModule::Loader, 85};
+constexpr Result ERROR_NOT_INITIALIZED{ErrorModule::Loader, 87};
 
 constexpr std::size_t MAXIMUM_LOADED_RO{0x40};
 constexpr std::size_t MAXIMUM_MAP_RETRIES{0x200};
@@ -160,7 +159,8 @@ public:
 
 class RelocatableObject final : public ServiceFramework<RelocatableObject> {
 public:
-    explicit RelocatableObject(Core::System& system_) : ServiceFramework{system_, "ldr:ro"} {
+    explicit RelocatableObject(Core::System& system_)
+        : ServiceFramework{system_, "ldr:ro", ServiceThreadType::CreateNew} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &RelocatableObject::LoadModule, "LoadModule"},
@@ -287,7 +287,7 @@ public:
     }
 
     bool ValidateRegionForMap(Kernel::KPageTable& page_table, VAddr start, std::size_t size) const {
-        constexpr std::size_t padding_size{4 * Kernel::PageSize};
+        const std::size_t padding_size{page_table.GetNumGuardPages() * Kernel::PageSize};
         const auto start_info{page_table.QueryInfo(start - 1)};
 
         if (start_info.state != Kernel::KMemoryState::Free) {
@@ -307,31 +307,69 @@ public:
         return (start + size + padding_size) <= (end_info.GetAddress() + end_info.GetSize());
     }
 
-    VAddr GetRandomMapRegion(const Kernel::KPageTable& page_table, std::size_t size) const {
-        VAddr addr{};
-        const std::size_t end_pages{(page_table.GetAliasCodeRegionSize() - size) >>
-                                    Kernel::PageBits};
-        do {
-            addr = page_table.GetAliasCodeRegionStart() +
-                   (Kernel::KSystemControl::GenerateRandomRange(0, end_pages) << Kernel::PageBits);
-        } while (!page_table.IsInsideAddressSpace(addr, size) ||
-                 page_table.IsInsideHeapRegion(addr, size) ||
-                 page_table.IsInsideAliasRegion(addr, size));
-        return addr;
+    Result GetAvailableMapRegion(Kernel::KPageTable& page_table, u64 size, VAddr& out_addr) {
+        size = Common::AlignUp(size, Kernel::PageSize);
+        size += page_table.GetNumGuardPages() * Kernel::PageSize * 4;
+
+        const auto is_region_available = [&](VAddr addr) {
+            const auto end_addr = addr + size;
+            while (addr < end_addr) {
+                if (system.Memory().IsValidVirtualAddress(addr)) {
+                    return false;
+                }
+
+                if (!page_table.IsInsideAddressSpace(out_addr, size)) {
+                    return false;
+                }
+
+                if (page_table.IsInsideHeapRegion(out_addr, size)) {
+                    return false;
+                }
+
+                if (page_table.IsInsideAliasRegion(out_addr, size)) {
+                    return false;
+                }
+
+                addr += Kernel::PageSize;
+            }
+            return true;
+        };
+
+        bool succeeded = false;
+        const auto map_region_end =
+            page_table.GetAliasCodeRegionStart() + page_table.GetAliasCodeRegionSize();
+        while (current_map_addr < map_region_end) {
+            if (is_region_available(current_map_addr)) {
+                succeeded = true;
+                break;
+            }
+            current_map_addr += 0x100000;
+        }
+
+        if (!succeeded) {
+            ASSERT_MSG(false, "Out of address space!");
+            return Kernel::ResultOutOfMemory;
+        }
+
+        out_addr = current_map_addr;
+        current_map_addr += size;
+
+        return ResultSuccess;
     }
 
-    ResultVal<VAddr> MapProcessCodeMemory(Kernel::KProcess* process, VAddr baseAddress,
-                                          u64 size) const {
-        for (std::size_t retry = 0; retry < MAXIMUM_MAP_RETRIES; retry++) {
-            auto& page_table{process->PageTable()};
-            const VAddr addr{GetRandomMapRegion(page_table, size)};
-            const ResultCode result{page_table.MapProcessCodeMemory(addr, baseAddress, size)};
+    ResultVal<VAddr> MapProcessCodeMemory(Kernel::KProcess* process, VAddr base_addr, u64 size) {
+        auto& page_table{process->PageTable()};
+        VAddr addr{};
 
+        for (std::size_t retry = 0; retry < MAXIMUM_MAP_RETRIES; retry++) {
+            R_TRY(GetAvailableMapRegion(page_table, size, addr));
+
+            const Result result{page_table.MapCodeMemory(addr, base_addr, size)};
             if (result == Kernel::ResultInvalidCurrentMemory) {
                 continue;
             }
 
-            CASCADE_CODE(result);
+            R_TRY(result);
 
             if (ValidateRegionForMap(page_table, addr, size)) {
                 return addr;
@@ -342,7 +380,7 @@ public:
     }
 
     ResultVal<VAddr> MapNro(Kernel::KProcess* process, VAddr nro_addr, std::size_t nro_size,
-                            VAddr bss_addr, std::size_t bss_size, std::size_t size) const {
+                            VAddr bss_addr, std::size_t bss_size, std::size_t size) {
         for (std::size_t retry = 0; retry < MAXIMUM_MAP_RETRIES; retry++) {
             auto& page_table{process->PageTable()};
             VAddr addr{};
@@ -351,12 +389,15 @@ public:
 
             if (bss_size) {
                 auto block_guard = detail::ScopeExit([&] {
-                    page_table.UnmapProcessCodeMemory(addr + nro_size, bss_addr, bss_size);
-                    page_table.UnmapProcessCodeMemory(addr, nro_addr, nro_size);
+                    page_table.UnmapCodeMemory(
+                        addr + nro_size, bss_addr, bss_size,
+                        Kernel::KPageTable::ICacheInvalidationStrategy::InvalidateRange);
+                    page_table.UnmapCodeMemory(
+                        addr, nro_addr, nro_size,
+                        Kernel::KPageTable::ICacheInvalidationStrategy::InvalidateRange);
                 });
 
-                const ResultCode result{
-                    page_table.MapProcessCodeMemory(addr + nro_size, bss_addr, bss_size)};
+                const Result result{page_table.MapCodeMemory(addr + nro_size, bss_addr, bss_size)};
 
                 if (result == Kernel::ResultInvalidCurrentMemory) {
                     continue;
@@ -377,8 +418,8 @@ public:
         return ERROR_INSUFFICIENT_ADDRESS_SPACE;
     }
 
-    ResultCode LoadNro(Kernel::KProcess* process, const NROHeader& nro_header, VAddr nro_addr,
-                       VAddr start) const {
+    Result LoadNro(Kernel::KProcess* process, const NROHeader& nro_header, VAddr nro_addr,
+                   VAddr start) const {
         const VAddr text_start{start + nro_header.segment_headers[TEXT_INDEX].memory_offset};
         const VAddr ro_start{start + nro_header.segment_headers[RO_INDEX].memory_offset};
         const VAddr data_start{start + nro_header.segment_headers[DATA_INDEX].memory_offset};
@@ -397,12 +438,12 @@ public:
                  nro_header.segment_headers[DATA_INDEX].memory_size);
 
         CASCADE_CODE(process->PageTable().SetProcessMemoryPermission(
-            text_start, ro_start - text_start, Kernel::KMemoryPermission::ReadAndExecute));
+            text_start, ro_start - text_start, Kernel::Svc::MemoryPermission::ReadExecute));
         CASCADE_CODE(process->PageTable().SetProcessMemoryPermission(
-            ro_start, data_start - ro_start, Kernel::KMemoryPermission::Read));
+            ro_start, data_start - ro_start, Kernel::Svc::MemoryPermission::Read));
 
         return process->PageTable().SetProcessMemoryPermission(
-            data_start, bss_end_addr - data_start, Kernel::KMemoryPermission::ReadAndWrite);
+            data_start, bss_end_addr - data_start, Kernel::Svc::MemoryPermission::ReadWrite);
     }
 
     void LoadModule(Kernel::HLERequestContext& ctx) {
@@ -527,19 +568,26 @@ public:
         rb.Push(*map_result);
     }
 
-    ResultCode UnmapNro(const NROInfo& info) {
+    Result UnmapNro(const NROInfo& info) {
         // Each region must be unmapped separately to validate memory state
         auto& page_table{system.CurrentProcess()->PageTable()};
-        CASCADE_CODE(page_table.UnmapProcessCodeMemory(info.nro_address + info.text_size +
-                                                           info.ro_size + info.data_size,
-                                                       info.bss_address, info.bss_size));
-        CASCADE_CODE(page_table.UnmapProcessCodeMemory(
+
+        if (info.bss_size != 0) {
+            CASCADE_CODE(page_table.UnmapCodeMemory(
+                info.nro_address + info.text_size + info.ro_size + info.data_size, info.bss_address,
+                info.bss_size, Kernel::KPageTable::ICacheInvalidationStrategy::InvalidateRange));
+        }
+
+        CASCADE_CODE(page_table.UnmapCodeMemory(
             info.nro_address + info.text_size + info.ro_size,
-            info.src_addr + info.text_size + info.ro_size, info.data_size));
-        CASCADE_CODE(page_table.UnmapProcessCodeMemory(
-            info.nro_address + info.text_size, info.src_addr + info.text_size, info.ro_size));
-        CASCADE_CODE(
-            page_table.UnmapProcessCodeMemory(info.nro_address, info.src_addr, info.text_size));
+            info.src_addr + info.text_size + info.ro_size, info.data_size,
+            Kernel::KPageTable::ICacheInvalidationStrategy::InvalidateRange));
+        CASCADE_CODE(page_table.UnmapCodeMemory(
+            info.nro_address + info.text_size, info.src_addr + info.text_size, info.ro_size,
+            Kernel::KPageTable::ICacheInvalidationStrategy::InvalidateRange));
+        CASCADE_CODE(page_table.UnmapCodeMemory(
+            info.nro_address, info.src_addr, info.text_size,
+            Kernel::KPageTable::ICacheInvalidationStrategy::InvalidateRange));
         return ResultSuccess;
     }
 
@@ -593,6 +641,7 @@ public:
         LOG_WARNING(Service_LDR, "(STUBBED) called");
 
         initialized = true;
+        current_map_addr = system.CurrentProcess()->PageTable().GetAliasCodeRegionStart();
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
@@ -603,6 +652,7 @@ private:
 
     std::map<VAddr, NROInfo> nro;
     std::map<VAddr, std::vector<SHA256Hash>> nrr;
+    VAddr current_map_addr{};
 
     bool IsValidNROHash(const SHA256Hash& hash) const {
         return std::any_of(nrr.begin(), nrr.end(), [&hash](const auto& p) {

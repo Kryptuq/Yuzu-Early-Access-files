@@ -8,14 +8,16 @@
 #include <mutex>
 
 #include <boost/icl/interval_set.hpp>
+#include <mcl/assert.hpp>
+#include <mcl/bit_cast.hpp>
+#include <mcl/scope_exit.hpp>
 
 #include "dynarmic/backend/x64/a64_emit_x64.h"
 #include "dynarmic/backend/x64/a64_jitstate.h"
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/devirtualize.h"
 #include "dynarmic/backend/x64/jitstate_info.h"
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/scope_exit.h"
+#include "dynarmic/common/atomic.h"
 #include "dynarmic/common/x64_disassemble.h"
 #include "dynarmic/frontend/A64/translate/a64_translate.h"
 #include "dynarmic/interface/A64/a64.h"
@@ -26,22 +28,29 @@ namespace Dynarmic::A64 {
 
 using namespace Backend::X64;
 
-static RunCodeCallbacks GenRunCodeCallbacks(A64::UserCallbacks* cb, CodePtr (*LookupBlock)(void* lookup_block_arg), void* arg) {
+static RunCodeCallbacks GenRunCodeCallbacks(A64::UserCallbacks* cb, CodePtr (*LookupBlock)(void* lookup_block_arg), void* arg, const A64::UserConfig& conf) {
     return RunCodeCallbacks{
         std::make_unique<ArgCallback>(LookupBlock, reinterpret_cast<u64>(arg)),
         std::make_unique<ArgCallback>(Devirtualize<&A64::UserCallbacks::AddTicks>(cb)),
         std::make_unique<ArgCallback>(Devirtualize<&A64::UserCallbacks::GetTicksRemaining>(cb)),
+        conf.enable_cycle_counting,
     };
 }
 
 static std::function<void(BlockOfCode&)> GenRCP(const A64::UserConfig& conf) {
     return [conf](BlockOfCode& code) {
         if (conf.page_table) {
-            code.mov(code.r14, Common::BitCast<u64>(conf.page_table));
+            code.mov(code.r14, mcl::bit_cast<u64>(conf.page_table));
         }
         if (conf.fastmem_pointer) {
-            code.mov(code.r13, Common::BitCast<u64>(conf.fastmem_pointer));
+            code.mov(code.r13, mcl::bit_cast<u64>(conf.fastmem_pointer));
         }
+    };
+}
+
+static Optimization::PolyfillOptions GenPolyfillOptions(const BlockOfCode& code) {
+    return Optimization::PolyfillOptions{
+        .sha256 = !code.HasHostFeature(HostFeature::SHA),
     };
 }
 
@@ -49,20 +58,20 @@ struct Jit::Impl final {
 public:
     Impl(Jit* jit, UserConfig conf)
             : conf(conf)
-            , block_of_code(GenRunCodeCallbacks(conf.callbacks, &GetCurrentBlockThunk, this), JitStateInfo{jit_state}, conf.code_cache_size, conf.far_code_offset, GenRCP(conf))
-            , emitter(block_of_code, conf, jit) {
+            , block_of_code(GenRunCodeCallbacks(conf.callbacks, &GetCurrentBlockThunk, this, conf), JitStateInfo{jit_state}, conf.code_cache_size, GenRCP(conf))
+            , emitter(block_of_code, conf, jit)
+            , polyfill_options(GenPolyfillOptions(block_of_code)) {
         ASSERT(conf.page_table_address_space_bits >= 12 && conf.page_table_address_space_bits <= 64);
     }
 
     ~Impl() = default;
 
-    void Run() {
+    HaltReason Run() {
         ASSERT(!is_executing);
         PerformRequestedCacheInvalidation();
 
         is_executing = true;
         SCOPE_EXIT { this->is_executing = false; };
-        jit_state.halt_requested = false;
 
         // TODO: Check code alignment
 
@@ -76,29 +85,33 @@ public:
 
             return GetCurrentBlock();
         }();
-        block_of_code.RunCode(&jit_state, current_code_ptr);
+
+        const HaltReason hr = block_of_code.RunCode(&jit_state, current_code_ptr);
 
         PerformRequestedCacheInvalidation();
+
+        return hr;
     }
 
-    void Step() {
+    HaltReason Step() {
         ASSERT(!is_executing);
         PerformRequestedCacheInvalidation();
 
         is_executing = true;
         SCOPE_EXIT { this->is_executing = false; };
-        jit_state.halt_requested = true;
 
-        block_of_code.StepCode(&jit_state, GetCurrentSingleStep());
+        const HaltReason hr = block_of_code.StepCode(&jit_state, GetCurrentSingleStep());
 
         PerformRequestedCacheInvalidation();
+
+        return hr;
     }
 
     void ClearCache() {
         std::unique_lock lock{invalidation_mutex};
         invalidate_entire_cache = true;
         if (is_executing) {
-            jit_state.halt_requested = true;
+            HaltExecution(HaltReason::CacheInvalidation);
         }
     }
 
@@ -108,7 +121,7 @@ public:
         const auto range = boost::icl::discrete_interval<u64>::closed(start_address, end_address);
         invalid_cache_ranges.add(range);
         if (is_executing) {
-            jit_state.halt_requested = true;
+            HaltExecution(HaltReason::CacheInvalidation);
         }
     }
 
@@ -117,8 +130,12 @@ public:
         jit_state = {};
     }
 
-    void HaltExecution() {
-        jit_state.halt_requested = true;
+    void HaltExecution(HaltReason hr) {
+        Atomic::Or(&jit_state.halt_reason, static_cast<u32>(hr));
+    }
+
+    void ClearHalt(HaltReason hr) {
+        Atomic::And(&jit_state.halt_reason, ~static_cast<u32>(hr));
     }
 
     u64 GetSP() const {
@@ -253,8 +270,9 @@ private:
         const auto get_code = [this](u64 vaddr) { return conf.callbacks->MemoryReadCode(vaddr); };
         IR::Block ir_block = A64::Translate(A64::LocationDescriptor{current_location}, get_code,
                                             {conf.define_unpredictable_behaviour, conf.wall_clock_cntpct});
+        Optimization::PolyfillPass(ir_block, polyfill_options);
         Optimization::A64CallbackConfigPass(ir_block, conf);
-        if (conf.HasOptimization(OptimizationFlag::GetSetElimination)) {
+        if (conf.HasOptimization(OptimizationFlag::GetSetElimination) && !conf.check_halt_on_memory_access) {
             Optimization::A64GetSetElimination(ir_block);
             Optimization::DeadCodeElimination(ir_block);
         }
@@ -271,7 +289,7 @@ private:
 
     void RequestCacheInvalidation() {
         if (is_executing) {
-            jit_state.halt_requested = true;
+            HaltExecution(HaltReason::CacheInvalidation);
             return;
         }
 
@@ -301,6 +319,7 @@ private:
     A64JitState jit_state;
     BlockOfCode block_of_code;
     A64EmitX64 emitter;
+    Optimization::PolyfillOptions polyfill_options;
 
     bool invalidate_entire_cache = false;
     boost::icl::interval_set<u64> invalid_cache_ranges;
@@ -312,12 +331,12 @@ Jit::Jit(UserConfig conf)
 
 Jit::~Jit() = default;
 
-void Jit::Run() {
-    impl->Run();
+HaltReason Jit::Run() {
+    return impl->Run();
 }
 
-void Jit::Step() {
-    impl->Step();
+HaltReason Jit::Step() {
+    return impl->Step();
 }
 
 void Jit::ClearCache() {
@@ -332,8 +351,12 @@ void Jit::Reset() {
     impl->Reset();
 }
 
-void Jit::HaltExecution() {
-    impl->HaltExecution();
+void Jit::HaltExecution(HaltReason hr) {
+    impl->HaltExecution(hr);
+}
+
+void Jit::ClearHalt(HaltReason hr) {
+    impl->ClearHalt(hr);
 }
 
 u64 Jit::GetSP() const {

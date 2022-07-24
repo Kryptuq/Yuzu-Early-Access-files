@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <bitset>
 #include "common/assert.h"
@@ -10,7 +9,6 @@
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/memory_manager.h"
 #include "video_core/rasterizer_interface.h"
-#include "video_core/renderer_base.h"
 #include "video_core/textures/decoders.h"
 
 namespace Tegra::Engines {
@@ -22,6 +20,7 @@ KeplerCompute::~KeplerCompute() = default;
 
 void KeplerCompute::BindRasterizer(VideoCore::RasterizerInterface* rasterizer_) {
     rasterizer = rasterizer_;
+    upload_state.BindRasterizer(rasterizer);
 }
 
 void KeplerCompute::CallMethod(u32 method, u32 method_argument, bool is_last_call) {
@@ -37,8 +36,6 @@ void KeplerCompute::CallMethod(u32 method, u32 method_argument, bool is_last_cal
     }
     case KEPLER_COMPUTE_REG_INDEX(data_upload): {
         upload_state.ProcessData(method_argument, is_last_call);
-        if (is_last_call) {
-        }
         break;
     }
     case KEPLER_COMPUTE_REG_INDEX(launch):
@@ -51,8 +48,15 @@ void KeplerCompute::CallMethod(u32 method, u32 method_argument, bool is_last_cal
 
 void KeplerCompute::CallMultiMethod(u32 method, const u32* base_start, u32 amount,
                                     u32 methods_pending) {
-    for (std::size_t i = 0; i < amount; i++) {
-        CallMethod(method, base_start[i], methods_pending - static_cast<u32>(i) <= 1);
+    switch (method) {
+    case KEPLER_COMPUTE_REG_INDEX(data_upload):
+        upload_state.ProcessData(base_start, static_cast<size_t>(amount));
+        return;
+    default:
+        for (std::size_t i = 0; i < amount; i++) {
+            CallMethod(method, base_start[i], methods_pending - static_cast<u32>(i) <= 1);
+        }
+        break;
     }
 }
 

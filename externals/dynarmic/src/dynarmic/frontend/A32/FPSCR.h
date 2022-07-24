@@ -7,8 +7,9 @@
 
 #include <optional>
 
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/common/fp/rounding_mode.h"
 
 namespace Dynarmic::A32 {
@@ -33,52 +34,52 @@ public:
 
     /// Negative condition flag.
     bool N() const {
-        return Common::Bit<31>(value);
+        return mcl::bit::get_bit<31>(value);
     }
 
     /// Zero condition flag.
     bool Z() const {
-        return Common::Bit<30>(value);
+        return mcl::bit::get_bit<30>(value);
     }
 
     /// Carry condition flag.
     bool C() const {
-        return Common::Bit<29>(value);
+        return mcl::bit::get_bit<29>(value);
     }
 
     /// Overflow condition flag.
     bool V() const {
-        return Common::Bit<28>(value);
+        return mcl::bit::get_bit<28>(value);
     }
 
     /// Cumulative saturation flag.
     bool QC() const {
-        return Common::Bit<27>(value);
+        return mcl::bit::get_bit<27>(value);
     }
 
     /// Alternate half-precision control flag.
     bool AHP() const {
-        return Common::Bit<26>(value);
+        return mcl::bit::get_bit<26>(value);
     }
 
     /// Default NaN mode control bit.
     bool DN() const {
-        return Common::Bit<25>(value);
+        return mcl::bit::get_bit<25>(value);
     }
 
     /// Flush-to-zero mode control bit.
     bool FTZ() const {
-        return Common::Bit<24>(value);
+        return mcl::bit::get_bit<24>(value);
     }
 
     /// Rounding mode control field.
     FP::RoundingMode RMode() const {
-        return static_cast<FP::RoundingMode>(Common::Bits<22, 23>(value));
+        return static_cast<FP::RoundingMode>(mcl::bit::get_bits<22, 23>(value));
     }
 
     /// Indicates the stride of a vector.
     std::optional<size_t> Stride() const {
-        switch (Common::Bits<20, 21>(value)) {
+        switch (mcl::bit::get_bits<20, 21>(value)) {
         case 0b00:
             return 1;
         case 0b11:
@@ -90,67 +91,67 @@ public:
 
     /// Indicates the length of a vector.
     size_t Len() const {
-        return Common::Bits<16, 18>(value) + 1;
+        return mcl::bit::get_bits<16, 18>(value) + 1;
     }
 
     /// Input denormal exception trap enable flag.
     bool IDE() const {
-        return Common::Bit<15>(value);
+        return mcl::bit::get_bit<15>(value);
     }
 
     /// Inexact exception trap enable flag.
     bool IXE() const {
-        return Common::Bit<12>(value);
+        return mcl::bit::get_bit<12>(value);
     }
 
     /// Underflow exception trap enable flag.
     bool UFE() const {
-        return Common::Bit<11>(value);
+        return mcl::bit::get_bit<11>(value);
     }
 
     /// Overflow exception trap enable flag.
     bool OFE() const {
-        return Common::Bit<10>(value);
+        return mcl::bit::get_bit<10>(value);
     }
 
     /// Division by zero exception trap enable flag.
     bool DZE() const {
-        return Common::Bit<9>(value);
+        return mcl::bit::get_bit<9>(value);
     }
 
     /// Invalid operation exception trap enable flag.
     bool IOE() const {
-        return Common::Bit<8>(value);
+        return mcl::bit::get_bit<8>(value);
     }
 
     /// Input denormal cumulative exception bit.
     bool IDC() const {
-        return Common::Bit<7>(value);
+        return mcl::bit::get_bit<7>(value);
     }
 
     /// Inexact cumulative exception bit.
     bool IXC() const {
-        return Common::Bit<4>(value);
+        return mcl::bit::get_bit<4>(value);
     }
 
     /// Underflow cumulative exception bit.
     bool UFC() const {
-        return Common::Bit<3>(value);
+        return mcl::bit::get_bit<3>(value);
     }
 
     /// Overflow cumulative exception bit.
     bool OFC() const {
-        return Common::Bit<2>(value);
+        return mcl::bit::get_bit<2>(value);
     }
 
     /// Division by zero cumulative exception bit.
     bool DZC() const {
-        return Common::Bit<1>(value);
+        return mcl::bit::get_bit<1>(value);
     }
 
     /// Invalid operation cumulative exception bit.
     bool IOC() const {
-        return Common::Bit<0>(value);
+        return mcl::bit::get_bit<0>(value);
     }
 
     /**

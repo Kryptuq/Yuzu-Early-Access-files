@@ -1,24 +1,16 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <unordered_map>
 #include <QBuffer>
 #include <QByteArray>
 #include <QGraphicsOpacityEffect>
-#include <QHBoxLayout>
 #include <QIODevice>
 #include <QImage>
-#include <QLabel>
 #include <QPainter>
-#include <QPalette>
 #include <QPixmap>
-#include <QProgressBar>
 #include <QPropertyAnimation>
 #include <QStyleOption>
-#include <QTime>
-#include <QtConcurrent/QtConcurrentRun>
-#include "common/logging/log.h"
 #include "core/frontend/framebuffer_layout.h"
 #include "core/loader/loader.h"
 #include "ui_loading_screen.h"
@@ -191,7 +183,7 @@ void LoadingScreen::OnLoadProgress(VideoCore::LoadCallbackStage stage, std::size
 
 void LoadingScreen::paintEvent(QPaintEvent* event) {
     QStyleOption opt;
-    opt.init(this);
+    opt.initFrom(this);
     QPainter p(this);
     style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
     QWidget::paintEvent(event);

@@ -1,7 +1,7 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "common/algorithm.h"
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "common/microprofile.h"
@@ -53,18 +53,15 @@ void MaxwellDMA::Launch() {
 
     // TODO(Subv): Perform more research and implement all features of this engine.
     const LaunchDMA& launch = regs.launch_dma;
-    ASSERT(launch.semaphore_type == LaunchDMA::SemaphoreType::NONE);
     ASSERT(launch.interrupt_type == LaunchDMA::InterruptType::NONE);
     ASSERT(launch.data_transfer_type == LaunchDMA::DataTransferType::NON_PIPELINED);
-    ASSERT(regs.dst_params.origin.x == 0);
-    ASSERT(regs.dst_params.origin.y == 0);
 
     const bool is_src_pitch = launch.src_memory_layout == LaunchDMA::MemoryLayout::PITCH;
     const bool is_dst_pitch = launch.dst_memory_layout == LaunchDMA::MemoryLayout::PITCH;
 
     if (!is_src_pitch && !is_dst_pitch) {
         // If both the source and the destination are in block layout, assert.
-        UNREACHABLE_MSG("Tiled->Tiled DMA transfers are not yet implemented");
+        UNIMPLEMENTED_MSG("Tiled->Tiled DMA transfers are not yet implemented");
         return;
     }
 
@@ -79,6 +76,7 @@ void MaxwellDMA::Launch() {
             CopyPitchToBlockLinear();
         }
     }
+    ReleaseSemaphore();
 }
 
 void MaxwellDMA::CopyPitchToPitch() {
@@ -122,12 +120,13 @@ void MaxwellDMA::CopyPitchToPitch() {
 
 void MaxwellDMA::CopyBlockLinearToPitch() {
     UNIMPLEMENTED_IF(regs.src_params.block_size.width != 0);
-    UNIMPLEMENTED_IF(regs.src_params.block_size.depth != 0);
     UNIMPLEMENTED_IF(regs.src_params.layer != 0);
+
+    const bool is_remapping = regs.launch_dma.remap_enable != 0;
 
     // Optimized path for micro copies.
     const size_t dst_size = static_cast<size_t>(regs.pitch_out) * regs.line_count;
-    if (dst_size < GOB_SIZE && regs.pitch_out <= GOB_SIZE_X &&
+    if (!is_remapping && dst_size < GOB_SIZE && regs.pitch_out <= GOB_SIZE_X &&
         regs.src_params.height > GOB_SIZE_Y) {
         FastCopyBlockLinearToPitch();
         return;
@@ -135,9 +134,27 @@ void MaxwellDMA::CopyBlockLinearToPitch() {
 
     // Deswizzle the input and copy it over.
     UNIMPLEMENTED_IF(regs.launch_dma.remap_enable != 0);
-    const u32 bytes_per_pixel = regs.pitch_out / regs.line_length_in;
     const Parameters& src_params = regs.src_params;
-    const u32 width = src_params.width;
+
+    const u32 num_remap_components = regs.remap_const.num_dst_components_minus_one + 1;
+    const u32 remap_components_size = regs.remap_const.component_size_minus_one + 1;
+
+    const u32 base_bpp = !is_remapping ? 1U : num_remap_components * remap_components_size;
+
+    u32 width = src_params.width;
+    u32 x_elements = regs.line_length_in;
+    u32 x_offset = src_params.origin.x;
+    u32 bpp_shift = 0U;
+    if (!is_remapping) {
+        bpp_shift = Common::FoldRight(
+            4U, [](u32 x, u32 y) { return std::min(x, static_cast<u32>(std::countr_zero(y))); },
+            width, x_elements, x_offset, static_cast<u32>(regs.offset_in));
+        width >>= bpp_shift;
+        x_elements >>= bpp_shift;
+        x_offset >>= bpp_shift;
+    }
+
+    const u32 bytes_per_pixel = base_bpp << bpp_shift;
     const u32 height = src_params.height;
     const u32 depth = src_params.depth;
     const u32 block_height = src_params.block_size.height;
@@ -155,29 +172,46 @@ void MaxwellDMA::CopyBlockLinearToPitch() {
     memory_manager.ReadBlock(regs.offset_in, read_buffer.data(), src_size);
     memory_manager.ReadBlock(regs.offset_out, write_buffer.data(), dst_size);
 
-    UnswizzleSubrect(regs.line_length_in, regs.line_count, regs.pitch_out, width, bytes_per_pixel,
-                     block_height, src_params.origin.x, src_params.origin.y, write_buffer.data(),
-                     read_buffer.data());
+    UnswizzleSubrect(write_buffer, read_buffer, bytes_per_pixel, width, height, depth, x_offset,
+                     src_params.origin.y, x_elements, regs.line_count, block_height, block_depth,
+                     regs.pitch_out);
 
     memory_manager.WriteBlock(regs.offset_out, write_buffer.data(), dst_size);
 }
 
 void MaxwellDMA::CopyPitchToBlockLinear() {
     UNIMPLEMENTED_IF_MSG(regs.dst_params.block_size.width != 0, "Block width is not one");
+    UNIMPLEMENTED_IF(regs.dst_params.layer != 0);
     UNIMPLEMENTED_IF(regs.launch_dma.remap_enable != 0);
 
+    const bool is_remapping = regs.launch_dma.remap_enable != 0;
+    const u32 num_remap_components = regs.remap_const.num_dst_components_minus_one + 1;
+    const u32 remap_components_size = regs.remap_const.component_size_minus_one + 1;
+
     const auto& dst_params = regs.dst_params;
-    const u32 bytes_per_pixel = regs.pitch_in / regs.line_length_in;
-    const u32 width = dst_params.width;
+
+    const u32 base_bpp = !is_remapping ? 1U : num_remap_components * remap_components_size;
+
+    u32 width = dst_params.width;
+    u32 x_elements = regs.line_length_in;
+    u32 x_offset = dst_params.origin.x;
+    u32 bpp_shift = 0U;
+    if (!is_remapping) {
+        bpp_shift = Common::FoldRight(
+            4U, [](u32 x, u32 y) { return std::min(x, static_cast<u32>(std::countr_zero(y))); },
+            width, x_elements, x_offset, static_cast<u32>(regs.offset_out));
+        width >>= bpp_shift;
+        x_elements >>= bpp_shift;
+        x_offset >>= bpp_shift;
+    }
+
+    const u32 bytes_per_pixel = base_bpp << bpp_shift;
     const u32 height = dst_params.height;
     const u32 depth = dst_params.depth;
     const u32 block_height = dst_params.block_size.height;
     const u32 block_depth = dst_params.block_size.depth;
     const size_t dst_size =
         CalculateSize(true, bytes_per_pixel, width, height, depth, block_height, block_depth);
-    const size_t dst_layer_size =
-        CalculateSize(true, bytes_per_pixel, width, height, 1, block_height, block_depth);
-
     const size_t src_size = static_cast<size_t>(regs.pitch_in) * regs.line_count;
 
     if (read_buffer.size() < src_size) {
@@ -187,31 +221,19 @@ void MaxwellDMA::CopyPitchToBlockLinear() {
         write_buffer.resize(dst_size);
     }
 
-    if (Settings::IsGPULevelExtreme()) {
-        memory_manager.ReadBlock(regs.offset_in, read_buffer.data(), src_size);
-        memory_manager.ReadBlock(regs.offset_out, write_buffer.data(), dst_size);
-    } else {
-        memory_manager.ReadBlockUnsafe(regs.offset_in, read_buffer.data(), src_size);
-        memory_manager.ReadBlockUnsafe(regs.offset_out, write_buffer.data(), dst_size);
-    }
+    memory_manager.ReadBlock(regs.offset_in, read_buffer.data(), src_size);
+    memory_manager.ReadBlock(regs.offset_out, write_buffer.data(), dst_size);
 
     // If the input is linear and the output is tiled, swizzle the input and copy it over.
-    if (regs.dst_params.block_size.depth > 0) {
-        ASSERT(dst_params.layer == 0);
-        SwizzleSliceToVoxel(regs.line_length_in, regs.line_count, regs.pitch_in, width, height,
-                            bytes_per_pixel, block_height, block_depth, dst_params.origin.x,
-                            dst_params.origin.y, write_buffer.data(), read_buffer.data());
-    } else {
-        SwizzleSubrect(regs.line_length_in, regs.line_count, regs.pitch_in, width, bytes_per_pixel,
-                       write_buffer.data() + dst_layer_size * dst_params.layer, read_buffer.data(),
-                       block_height, dst_params.origin.x, dst_params.origin.y);
-    }
+    SwizzleSubrect(write_buffer, read_buffer, bytes_per_pixel, width, height, depth, x_offset,
+                   dst_params.origin.y, x_elements, regs.line_count, block_height, block_depth,
+                   regs.pitch_in);
 
     memory_manager.WriteBlock(regs.offset_out, write_buffer.data(), dst_size);
 }
 
 void MaxwellDMA::FastCopyBlockLinearToPitch() {
-    const u32 bytes_per_pixel = regs.pitch_out / regs.line_length_in;
+    const u32 bytes_per_pixel = 1U;
     const size_t src_size = GOB_SIZE;
     const size_t dst_size = static_cast<size_t>(regs.pitch_out) * regs.line_count;
     u32 pos_x = regs.src_params.origin.x;
@@ -237,11 +259,38 @@ void MaxwellDMA::FastCopyBlockLinearToPitch() {
         memory_manager.ReadBlockUnsafe(regs.offset_out, write_buffer.data(), dst_size);
     }
 
-    UnswizzleSubrect(regs.line_length_in, regs.line_count, regs.pitch_out, regs.src_params.width,
-                     bytes_per_pixel, regs.src_params.block_size.height, pos_x, pos_y,
-                     write_buffer.data(), read_buffer.data());
+    UnswizzleSubrect(write_buffer, read_buffer, bytes_per_pixel, regs.src_params.width,
+                     regs.src_params.height, 1, pos_x, pos_y, regs.line_length_in, regs.line_count,
+                     regs.src_params.block_size.height, regs.src_params.block_size.depth,
+                     regs.pitch_out);
 
     memory_manager.WriteBlock(regs.offset_out, write_buffer.data(), dst_size);
+}
+
+void MaxwellDMA::ReleaseSemaphore() {
+    const auto type = regs.launch_dma.semaphore_type;
+    const GPUVAddr address = regs.semaphore.address;
+    const u32 payload = regs.semaphore.payload;
+    switch (type) {
+    case LaunchDMA::SemaphoreType::NONE:
+        break;
+    case LaunchDMA::SemaphoreType::RELEASE_ONE_WORD_SEMAPHORE: {
+        std::function<void()> operation(
+            [this, address, payload] { memory_manager.Write<u32>(address, payload); });
+        rasterizer->SignalFence(std::move(operation));
+        break;
+    }
+    case LaunchDMA::SemaphoreType::RELEASE_FOUR_WORD_SEMAPHORE: {
+        std::function<void()> operation([this, address, payload] {
+            memory_manager.Write<u64>(address + sizeof(u64), system.GPU().GetTicks());
+            memory_manager.Write<u64>(address, payload);
+        });
+        rasterizer->SignalFence(std::move(operation));
+        break;
+    }
+    default:
+        ASSERT_MSG(false, "Unknown semaphore type: {}", static_cast<u32>(type.Value()));
+    }
 }
 
 } // namespace Tegra::Engines

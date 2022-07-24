@@ -12,7 +12,12 @@
 
 #include <string>
 
-#include "fmt/os.h"
+#ifdef FMT_MODULE_TEST
+import fmt;
+#else
+#  include "fmt/os.h"
+#endif  // FMG_MODULE_TEST
+
 #include "gmock/gmock.h"
 
 #define FMT_TEST_THROW_(statement, expected_exception, expected_message, fail) \
@@ -129,6 +134,7 @@ class suppress_assert {
   ~suppress_assert() {
     _set_invalid_parameter_handler(original_handler_);
     _CrtSetReportMode(_CRT_ASSERT, original_report_mode_);
+    (void)original_report_mode_;
   }
 };
 

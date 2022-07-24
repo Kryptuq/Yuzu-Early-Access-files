@@ -1,8 +1,12 @@
-// Copyright 2013 Dolphin Emulator Project / 2015 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2022 yuzu Emulator Project
+// SPDX-FileCopyrightText: Copyright 2013 Dolphin Emulator Project / 2015 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <array>
 #include <cstring>
+#include <iterator>
+#include <string_view>
+#include "common/bit_util.h"
 #include "common/common_types.h"
 #include "common/x64/cpu_detect.h"
 
@@ -17,7 +21,7 @@
 // clang-format on
 #endif
 
-static inline void __cpuidex(int info[4], int function_id, int subfunction_id) {
+static inline void __cpuidex(int info[4], u32 function_id, u32 subfunction_id) {
 #if defined(__DragonFly__) || defined(__FreeBSD__)
     // Despite the name, this is just do_cpuid() with ECX as second input.
     cpuid_count((u_int)function_id, (u_int)subfunction_id, (u_int*)info);
@@ -30,7 +34,7 @@ static inline void __cpuidex(int info[4], int function_id, int subfunction_id) {
 #endif
 }
 
-static inline void __cpuid(int info[4], int function_id) {
+static inline void __cpuid(int info[4], u32 function_id) {
     return __cpuidex(info, function_id, 0);
 }
 
@@ -45,6 +49,17 @@ static inline u64 _xgetbv(u32 index) {
 
 namespace Common {
 
+CPUCaps::Manufacturer CPUCaps::ParseManufacturer(std::string_view brand_string) {
+    if (brand_string == "GenuineIntel") {
+        return Manufacturer::Intel;
+    } else if (brand_string == "AuthenticAMD") {
+        return Manufacturer::AMD;
+    } else if (brand_string == "HygonGenuine") {
+        return Manufacturer::Hygon;
+    }
+    return Manufacturer::Unknown;
+}
+
 // Detects the various CPU features
 static CPUCaps Detect() {
     CPUCaps caps = {};
@@ -53,75 +68,74 @@ static CPUCaps Detect() {
     // yuzu at all anyway
 
     int cpu_id[4];
-    memset(caps.brand_string, 0, sizeof(caps.brand_string));
 
-    // Detect CPU's CPUID capabilities and grab CPU string
+    // Detect CPU's CPUID capabilities and grab manufacturer string
     __cpuid(cpu_id, 0x00000000);
-    u32 max_std_fn = cpu_id[0]; // EAX
+    const u32 max_std_fn = cpu_id[0]; // EAX
 
-    std::memcpy(&caps.brand_string[0], &cpu_id[1], sizeof(int));
-    std::memcpy(&caps.brand_string[4], &cpu_id[3], sizeof(int));
-    std::memcpy(&caps.brand_string[8], &cpu_id[2], sizeof(int));
-    if (cpu_id[1] == 0x756e6547 && cpu_id[2] == 0x6c65746e && cpu_id[3] == 0x49656e69)
-        caps.manufacturer = Manufacturer::Intel;
-    else if (cpu_id[1] == 0x68747541 && cpu_id[2] == 0x444d4163 && cpu_id[3] == 0x69746e65)
-        caps.manufacturer = Manufacturer::AMD;
-    else if (cpu_id[1] == 0x6f677948 && cpu_id[2] == 0x656e6975 && cpu_id[3] == 0x6e65476e)
-        caps.manufacturer = Manufacturer::Hygon;
-    else
-        caps.manufacturer = Manufacturer::Unknown;
+    std::memset(caps.brand_string, 0, std::size(caps.brand_string));
+    std::memcpy(&caps.brand_string[0], &cpu_id[1], sizeof(u32));
+    std::memcpy(&caps.brand_string[4], &cpu_id[3], sizeof(u32));
+    std::memcpy(&caps.brand_string[8], &cpu_id[2], sizeof(u32));
+
+    caps.manufacturer = CPUCaps::ParseManufacturer(caps.brand_string);
+
+    // Set reasonable default cpu string even if brand string not available
+    std::strncpy(caps.cpu_string, caps.brand_string, std::size(caps.brand_string));
 
     __cpuid(cpu_id, 0x80000000);
 
-    u32 max_ex_fn = cpu_id[0];
-
-    // Set reasonable default brand string even if brand string not available
-    strcpy(caps.cpu_string, caps.brand_string);
+    const u32 max_ex_fn = cpu_id[0];
 
     // Detect family and other miscellaneous features
     if (max_std_fn >= 1) {
         __cpuid(cpu_id, 0x00000001);
-        if ((cpu_id[3] >> 25) & 1)
-            caps.sse = true;
-        if ((cpu_id[3] >> 26) & 1)
-            caps.sse2 = true;
-        if ((cpu_id[2]) & 1)
-            caps.sse3 = true;
-        if ((cpu_id[2] >> 9) & 1)
-            caps.ssse3 = true;
-        if ((cpu_id[2] >> 19) & 1)
-            caps.sse4_1 = true;
-        if ((cpu_id[2] >> 20) & 1)
-            caps.sse4_2 = true;
-        if ((cpu_id[2] >> 25) & 1)
-            caps.aes = true;
+        caps.sse = Common::Bit<25>(cpu_id[3]);
+        caps.sse2 = Common::Bit<26>(cpu_id[3]);
+        caps.sse3 = Common::Bit<0>(cpu_id[2]);
+        caps.pclmulqdq = Common::Bit<1>(cpu_id[2]);
+        caps.ssse3 = Common::Bit<9>(cpu_id[2]);
+        caps.sse4_1 = Common::Bit<19>(cpu_id[2]);
+        caps.sse4_2 = Common::Bit<20>(cpu_id[2]);
+        caps.movbe = Common::Bit<22>(cpu_id[2]);
+        caps.popcnt = Common::Bit<23>(cpu_id[2]);
+        caps.aes = Common::Bit<25>(cpu_id[2]);
+        caps.f16c = Common::Bit<29>(cpu_id[2]);
 
         // AVX support requires 3 separate checks:
         //  - Is the AVX bit set in CPUID?
         //  - Is the XSAVE bit set in CPUID?
         //  - XGETBV result has the XCR bit set.
-        if (((cpu_id[2] >> 28) & 1) && ((cpu_id[2] >> 27) & 1)) {
+        if (Common::Bit<28>(cpu_id[2]) && Common::Bit<27>(cpu_id[2])) {
             if ((_xgetbv(_XCR_XFEATURE_ENABLED_MASK) & 0x6) == 0x6) {
                 caps.avx = true;
-                if ((cpu_id[2] >> 12) & 1)
+                if (Common::Bit<12>(cpu_id[2]))
                     caps.fma = true;
             }
         }
 
         if (max_std_fn >= 7) {
             __cpuidex(cpu_id, 0x00000007, 0x00000000);
-            // Can't enable AVX2 unless the XSAVE/XGETBV checks above passed
-            if ((cpu_id[1] >> 5) & 1)
-                caps.avx2 = caps.avx;
-            if ((cpu_id[1] >> 3) & 1)
-                caps.bmi1 = true;
-            if ((cpu_id[1] >> 8) & 1)
-                caps.bmi2 = true;
-            // Checks for AVX512F, AVX512CD, AVX512VL, AVX512DQ, AVX512BW (Intel Skylake-X/SP)
-            if ((cpu_id[1] >> 16) & 1 && (cpu_id[1] >> 28) & 1 && (cpu_id[1] >> 31) & 1 &&
-                (cpu_id[1] >> 17) & 1 && (cpu_id[1] >> 30) & 1) {
-                caps.avx512 = caps.avx2;
+            // Can't enable AVX{2,512} unless the XSAVE/XGETBV checks above passed
+            if (caps.avx) {
+                caps.avx2 = Common::Bit<5>(cpu_id[1]);
+                caps.avx512f = Common::Bit<16>(cpu_id[1]);
+                caps.avx512dq = Common::Bit<17>(cpu_id[1]);
+                caps.avx512cd = Common::Bit<28>(cpu_id[1]);
+                caps.avx512bw = Common::Bit<30>(cpu_id[1]);
+                caps.avx512vl = Common::Bit<31>(cpu_id[1]);
+                caps.avx512vbmi = Common::Bit<1>(cpu_id[2]);
+                caps.avx512bitalg = Common::Bit<12>(cpu_id[2]);
             }
+
+            caps.bmi1 = Common::Bit<3>(cpu_id[1]);
+            caps.bmi2 = Common::Bit<8>(cpu_id[1]);
+            caps.sha = Common::Bit<29>(cpu_id[1]);
+
+            caps.gfni = Common::Bit<8>(cpu_id[2]);
+
+            __cpuidex(cpu_id, 0x00000007, 0x00000001);
+            caps.avx_vnni = caps.avx && Common::Bit<4>(cpu_id[0]);
         }
     }
 
@@ -138,14 +152,28 @@ static CPUCaps Detect() {
     if (max_ex_fn >= 0x80000001) {
         // Check for more features
         __cpuid(cpu_id, 0x80000001);
-        if ((cpu_id[2] >> 16) & 1)
-            caps.fma4 = true;
+        caps.lzcnt = Common::Bit<5>(cpu_id[2]);
+        caps.fma4 = Common::Bit<16>(cpu_id[2]);
     }
 
     if (max_ex_fn >= 0x80000007) {
         __cpuid(cpu_id, 0x80000007);
-        if (cpu_id[3] & (1 << 8)) {
-            caps.invariant_tsc = true;
+        caps.invariant_tsc = Common::Bit<8>(cpu_id[3]);
+    }
+
+    if (max_std_fn >= 0x15) {
+        __cpuid(cpu_id, 0x15);
+        caps.tsc_crystal_ratio_denominator = cpu_id[0];
+        caps.tsc_crystal_ratio_numerator = cpu_id[1];
+        caps.crystal_frequency = cpu_id[2];
+        // Some CPU models might not return a crystal frequency.
+        // The CPU model can be detected to use the values from turbostat
+        // https://github.com/torvalds/linux/blob/master/tools/power/x86/turbostat/turbostat.c#L5569
+        // but it's easier to just estimate the TSC tick rate for these cases.
+        if (caps.tsc_crystal_ratio_denominator) {
+            caps.tsc_frequency = static_cast<u64>(caps.crystal_frequency) *
+                                 caps.tsc_crystal_ratio_numerator /
+                                 caps.tsc_crystal_ratio_denominator;
         }
     }
 

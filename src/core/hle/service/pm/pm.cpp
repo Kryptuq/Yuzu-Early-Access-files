@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
@@ -13,12 +12,12 @@ namespace Service::PM {
 
 namespace {
 
-constexpr ResultCode ResultProcessNotFound{ErrorModule::PM, 1};
-[[maybe_unused]] constexpr ResultCode ResultAlreadyStarted{ErrorModule::PM, 2};
-[[maybe_unused]] constexpr ResultCode ResultNotTerminated{ErrorModule::PM, 3};
-[[maybe_unused]] constexpr ResultCode ResultDebugHookInUse{ErrorModule::PM, 4};
-[[maybe_unused]] constexpr ResultCode ResultApplicationRunning{ErrorModule::PM, 5};
-[[maybe_unused]] constexpr ResultCode ResultInvalidSize{ErrorModule::PM, 6};
+constexpr Result ResultProcessNotFound{ErrorModule::PM, 1};
+[[maybe_unused]] constexpr Result ResultAlreadyStarted{ErrorModule::PM, 2};
+[[maybe_unused]] constexpr Result ResultNotTerminated{ErrorModule::PM, 3};
+[[maybe_unused]] constexpr Result ResultDebugHookInUse{ErrorModule::PM, 4};
+[[maybe_unused]] constexpr Result ResultApplicationRunning{ErrorModule::PM, 5};
+[[maybe_unused]] constexpr Result ResultInvalidSize{ErrorModule::PM, 6};
 
 constexpr u64 NO_PROCESS_FOUND_PID{0};
 
@@ -91,6 +90,8 @@ public:
             {4, &DebugMonitor::GetApplicationProcessId, "GetApplicationProcessId"},
             {5, nullptr, "HookToCreateApplicationProgress"},
             {6, nullptr, "ClearHook"},
+            {65000, &DebugMonitor::AtmosphereGetProcessInfo, "AtmosphereGetProcessInfo"},
+            {65001, nullptr, "AtmosphereGetCurrentLimitInfo"},
         };
         // clang-format on
 
@@ -123,6 +124,49 @@ private:
     void GetApplicationProcessId(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_PM, "called");
         GetApplicationPidGeneric(ctx, kernel.GetProcessList());
+    }
+
+    void AtmosphereGetProcessInfo(Kernel::HLERequestContext& ctx) {
+        // https://github.com/Atmosphere-NX/Atmosphere/blob/master/stratosphere/pm/source/impl/pm_process_manager.cpp#L614
+        // This implementation is incomplete; only a handle to the process is returned.
+        IPC::RequestParser rp{ctx};
+        const auto pid = rp.PopRaw<u64>();
+
+        LOG_WARNING(Service_PM, "(Partial Implementation) called, pid={:016X}", pid);
+
+        const auto process = SearchProcessList(kernel.GetProcessList(), [pid](const auto& proc) {
+            return proc->GetProcessID() == pid;
+        });
+
+        if (!process.has_value()) {
+            IPC::ResponseBuilder rb{ctx, 2};
+            rb.Push(ResultProcessNotFound);
+            return;
+        }
+
+        struct ProgramLocation {
+            u64 program_id;
+            u8 storage_id;
+        };
+        static_assert(sizeof(ProgramLocation) == 0x10, "ProgramLocation has an invalid size");
+
+        struct OverrideStatus {
+            u64 keys_held;
+            u64 flags;
+        };
+        static_assert(sizeof(OverrideStatus) == 0x10, "OverrideStatus has an invalid size");
+
+        OverrideStatus override_status{};
+        ProgramLocation program_location{
+            .program_id = (*process)->GetProgramID(),
+            .storage_id = 0,
+        };
+
+        IPC::ResponseBuilder rb{ctx, 10, 1};
+        rb.Push(ResultSuccess);
+        rb.PushCopyObjects(*process);
+        rb.PushRaw(program_location);
+        rb.PushRaw(override_status);
     }
 
     const Kernel::KernelCore& kernel;

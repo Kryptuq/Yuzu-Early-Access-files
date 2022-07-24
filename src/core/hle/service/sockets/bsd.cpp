@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <array>
 #include <memory>
@@ -10,7 +9,6 @@
 #include <fmt/format.h>
 
 #include "common/microprofile.h"
-#include "common/thread.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/service/sockets/bsd.h"
@@ -569,9 +567,9 @@ std::pair<s32, Errno> BSD::AcceptImpl(s32 fd, std::vector<u8>& write_buffer) {
     new_descriptor.socket = std::move(result.socket);
     new_descriptor.is_connection_based = descriptor.is_connection_based;
 
-    ASSERT(write_buffer.size() == sizeof(SockAddrIn));
     const SockAddrIn guest_addr_in = Translate(result.sockaddr_in);
-    std::memcpy(write_buffer.data(), &guest_addr_in, sizeof(guest_addr_in));
+    const size_t length = std::min(sizeof(guest_addr_in), write_buffer.size());
+    std::memcpy(write_buffer.data(), &guest_addr_in, length);
 
     return {new_fd, Errno::SUCCESS};
 }
@@ -690,6 +688,9 @@ Errno BSD::SetSockOptImpl(s32 fd, u32 level, OptName optname, size_t optlen, con
     case OptName::REUSEADDR:
         ASSERT(value == 0 || value == 1);
         return Translate(socket->SetReuseAddr(value != 0));
+    case OptName::KEEPALIVE:
+        ASSERT(value == 0 || value == 1);
+        return Translate(socket->SetKeepAlive(value != 0));
     case OptName::BROADCAST:
         ASSERT(value == 0 || value == 1);
         return Translate(socket->SetBroadcast(value != 0));
@@ -719,7 +720,25 @@ std::pair<s32, Errno> BSD::RecvImpl(s32 fd, u32 flags, std::vector<u8>& message)
     if (!IsFileDescriptorValid(fd)) {
         return {-1, Errno::BADF};
     }
-    return Translate(file_descriptors[fd]->socket->Recv(flags, message));
+
+    FileDescriptor& descriptor = *file_descriptors[fd];
+
+    // Apply flags
+    if ((flags & FLAG_MSG_DONTWAIT) != 0) {
+        flags &= ~FLAG_MSG_DONTWAIT;
+        if ((descriptor.flags & FLAG_O_NONBLOCK) == 0) {
+            descriptor.socket->SetNonBlock(true);
+        }
+    }
+
+    const auto [ret, bsd_errno] = Translate(descriptor.socket->Recv(flags, message));
+
+    // Restore original state
+    if ((descriptor.flags & FLAG_O_NONBLOCK) == 0) {
+        descriptor.socket->SetNonBlock(false);
+    }
+
+    return {ret, bsd_errno};
 }
 
 std::pair<s32, Errno> BSD::RecvFromImpl(s32 fd, u32 flags, std::vector<u8>& message,
@@ -838,7 +857,8 @@ void BSD::BuildErrnoResponse(Kernel::HLERequestContext& ctx, Errno bsd_errno) co
     rb.PushEnum(bsd_errno);
 }
 
-BSD::BSD(Core::System& system_, const char* name) : ServiceFramework{system_, name} {
+BSD::BSD(Core::System& system_, const char* name)
+    : ServiceFramework{system_, name, ServiceThreadType::CreateNew} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, &BSD::RegisterClient, "RegisterClient"},

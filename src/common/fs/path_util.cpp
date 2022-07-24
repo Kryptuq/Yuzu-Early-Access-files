@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <unordered_map>
@@ -233,9 +232,7 @@ void SetYuzuPath(YuzuPath yuzu_path, const fs::path& new_path) {
 fs::path GetExeDirectory() {
     wchar_t exe_path[MAX_PATH];
 
-    GetModuleFileNameW(nullptr, exe_path, MAX_PATH);
-
-    if (!exe_path) {
+    if (GetModuleFileNameW(nullptr, exe_path, MAX_PATH) == 0) {
         LOG_ERROR(Common_Filesystem,
                   "Failed to get the path to the executable of the current process");
     }

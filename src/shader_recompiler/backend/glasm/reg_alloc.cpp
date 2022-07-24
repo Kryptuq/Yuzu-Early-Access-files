@@ -1,12 +1,8 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
-
-#include <string>
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <fmt/format.h>
 
-#include "shader_recompiler/backend/glasm/glasm_emit_context.h"
 #include "shader_recompiler/backend/glasm/reg_alloc.h"
 #include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/ir/value.h"

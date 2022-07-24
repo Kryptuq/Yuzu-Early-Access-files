@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -19,14 +18,16 @@
 /// Helper macros to insert unused bytes or words to properly align structs. These values will be
 /// zero-initialized.
 #define INSERT_PADDING_BYTES(num_bytes)                                                            \
-    std::array<u8, num_bytes> CONCAT2(pad, __LINE__) {}
+    [[maybe_unused]] std::array<u8, num_bytes> CONCAT2(pad, __LINE__) {}
 #define INSERT_PADDING_WORDS(num_words)                                                            \
-    std::array<u32, num_words> CONCAT2(pad, __LINE__) {}
+    [[maybe_unused]] std::array<u32, num_words> CONCAT2(pad, __LINE__) {}
 
 /// These are similar to the INSERT_PADDING_* macros but do not zero-initialize the contents.
 /// This keeps the structure trivial to construct.
-#define INSERT_PADDING_BYTES_NOINIT(num_bytes) std::array<u8, num_bytes> CONCAT2(pad, __LINE__)
-#define INSERT_PADDING_WORDS_NOINIT(num_words) std::array<u32, num_words> CONCAT2(pad, __LINE__)
+#define INSERT_PADDING_BYTES_NOINIT(num_bytes)                                                     \
+    [[maybe_unused]] std::array<u8, num_bytes> CONCAT2(pad, __LINE__)
+#define INSERT_PADDING_WORDS_NOINIT(num_words)                                                     \
+    [[maybe_unused]] std::array<u32, num_words> CONCAT2(pad, __LINE__)
 
 #ifndef _MSC_VER
 

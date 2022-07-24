@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/alignment.h"
 #include "shader_recompiler/environment.h"
@@ -27,6 +26,41 @@ void AddConstantBufferDescriptor(Info& info, u32 index, u32 count) {
                      .index = index,
                      .count = 1,
                  });
+}
+
+void AddRegisterIndexedLdc(Info& info) {
+    info.uses_cbuf_indirect = true;
+
+    for (u32 i = 0; i < Info::MAX_INDIRECT_CBUFS; i++) {
+        AddConstantBufferDescriptor(info, i, 1);
+
+        // The shader can use any possible access size
+        info.constant_buffer_used_sizes[i] = 0x10'000;
+    }
+}
+
+u32 GetElementSize(IR::Type& used_type, Shader::IR::Opcode opcode) {
+    switch (opcode) {
+    case IR::Opcode::GetCbufU8:
+    case IR::Opcode::GetCbufS8:
+        used_type |= IR::Type::U8;
+        return 1;
+    case IR::Opcode::GetCbufU16:
+    case IR::Opcode::GetCbufS16:
+        used_type |= IR::Type::U16;
+        return 2;
+    case IR::Opcode::GetCbufU32:
+        used_type |= IR::Type::U32;
+        return 4;
+    case IR::Opcode::GetCbufF32:
+        used_type |= IR::Type::F32;
+        return 4;
+    case IR::Opcode::GetCbufU32x2:
+        used_type |= IR::Type::U32x2;
+        return 8;
+    default:
+        throw InvalidArgument("Invalid opcode {}", opcode);
+    }
 }
 
 void GetPatch(Info& info, IR::Patch patch) {
@@ -360,6 +394,15 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::GlobalAtomicOr64:
     case IR::Opcode::GlobalAtomicXor64:
     case IR::Opcode::GlobalAtomicExchange64:
+    case IR::Opcode::GlobalAtomicIAdd32x2:
+    case IR::Opcode::GlobalAtomicSMin32x2:
+    case IR::Opcode::GlobalAtomicUMin32x2:
+    case IR::Opcode::GlobalAtomicSMax32x2:
+    case IR::Opcode::GlobalAtomicUMax32x2:
+    case IR::Opcode::GlobalAtomicAnd32x2:
+    case IR::Opcode::GlobalAtomicOr32x2:
+    case IR::Opcode::GlobalAtomicXor32x2:
+    case IR::Opcode::GlobalAtomicExchange32x2:
     case IR::Opcode::GlobalAtomicAddF32:
     case IR::Opcode::GlobalAtomicAddF16x2:
     case IR::Opcode::GlobalAtomicAddF32x2:
@@ -454,42 +497,18 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::GetCbufU32x2: {
         const IR::Value index{inst.Arg(0)};
         const IR::Value offset{inst.Arg(1)};
-        if (!index.IsImmediate()) {
-            throw NotImplementedException("Constant buffer with non-immediate index");
-        }
-        AddConstantBufferDescriptor(info, index.U32(), 1);
-        u32 element_size{};
-        switch (inst.GetOpcode()) {
-        case IR::Opcode::GetCbufU8:
-        case IR::Opcode::GetCbufS8:
-            info.used_constant_buffer_types |= IR::Type::U8;
-            element_size = 1;
-            break;
-        case IR::Opcode::GetCbufU16:
-        case IR::Opcode::GetCbufS16:
-            info.used_constant_buffer_types |= IR::Type::U16;
-            element_size = 2;
-            break;
-        case IR::Opcode::GetCbufU32:
-            info.used_constant_buffer_types |= IR::Type::U32;
-            element_size = 4;
-            break;
-        case IR::Opcode::GetCbufF32:
-            info.used_constant_buffer_types |= IR::Type::F32;
-            element_size = 4;
-            break;
-        case IR::Opcode::GetCbufU32x2:
-            info.used_constant_buffer_types |= IR::Type::U32x2;
-            element_size = 8;
-            break;
-        default:
-            break;
-        }
-        u32& size{info.constant_buffer_used_sizes[index.U32()]};
-        if (offset.IsImmediate()) {
-            size = Common::AlignUp(std::max(size, offset.U32() + element_size), 16u);
+        if (index.IsImmediate()) {
+            AddConstantBufferDescriptor(info, index.U32(), 1);
+            u32 element_size = GetElementSize(info.used_constant_buffer_types, inst.GetOpcode());
+            u32& size{info.constant_buffer_used_sizes[index.U32()]};
+            if (offset.IsImmediate()) {
+                size = Common::AlignUp(std::max(size, offset.U32() + element_size), 16u);
+            } else {
+                size = 0x10'000;
+            }
         } else {
-            size = 0x10'000;
+            AddRegisterIndexedLdc(info);
+            GetElementSize(info.used_indirect_cbuf_types, inst.GetOpcode());
         }
         break;
     }
@@ -597,6 +616,15 @@ void VisitUsages(Info& info, IR::Inst& inst) {
         break;
     case IR::Opcode::LoadStorage64:
     case IR::Opcode::WriteStorage64:
+    case IR::Opcode::StorageAtomicIAdd32x2:
+    case IR::Opcode::StorageAtomicSMin32x2:
+    case IR::Opcode::StorageAtomicUMin32x2:
+    case IR::Opcode::StorageAtomicSMax32x2:
+    case IR::Opcode::StorageAtomicUMax32x2:
+    case IR::Opcode::StorageAtomicAnd32x2:
+    case IR::Opcode::StorageAtomicOr32x2:
+    case IR::Opcode::StorageAtomicXor32x2:
+    case IR::Opcode::StorageAtomicExchange32x2:
         info.used_storage_buffer_types |= IR::Type::U32x2;
         break;
     case IR::Opcode::LoadStorage128:
@@ -688,7 +716,7 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::StorageAtomicAnd64:
     case IR::Opcode::StorageAtomicOr64:
     case IR::Opcode::StorageAtomicXor64:
-        info.used_storage_buffer_types |= IR::Type::U64;
+        info.used_storage_buffer_types |= IR::Type::U64 | IR::Type::U32x2;
         info.uses_int64_bit_atomics = true;
         break;
     case IR::Opcode::BindlessImageAtomicIAdd32:

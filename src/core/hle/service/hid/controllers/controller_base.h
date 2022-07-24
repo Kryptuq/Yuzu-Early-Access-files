@@ -1,11 +1,9 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include "common/common_types.h"
-#include "common/swap.h"
 
 namespace Core::Timing {
 class CoreTiming;
@@ -28,12 +26,10 @@ public:
     virtual void OnRelease() = 0;
 
     // When the controller is requesting an update for the shared memory
-    virtual void OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* data,
-                          std::size_t size) = 0;
+    virtual void OnUpdate(const Core::Timing::CoreTiming& core_timing) = 0;
 
     // When the controller is requesting a motion update for the shared memory
-    virtual void OnMotionUpdate(const Core::Timing::CoreTiming& core_timing, u8* data,
-                                std::size_t size) {}
+    virtual void OnMotionUpdate(const Core::Timing::CoreTiming& core_timing) {}
 
     void ActivateController();
 
@@ -42,6 +38,7 @@ public:
     bool IsControllerActivated() const;
 
     static const std::size_t hid_entry_count = 17;
+    static const std::size_t shared_memory_size = 0x40000;
 
 protected:
     bool is_activated{false};

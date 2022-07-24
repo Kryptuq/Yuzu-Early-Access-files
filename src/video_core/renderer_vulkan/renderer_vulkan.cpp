@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <array>
@@ -13,16 +12,15 @@
 #include <fmt/format.h>
 
 #include "common/logging/log.h"
+#include "common/scope_exit.h"
 #include "common/settings.h"
 #include "common/telemetry.h"
-#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/frontend/emu_window.h"
 #include "core/telemetry_session.h"
 #include "video_core/gpu.h"
 #include "video_core/renderer_vulkan/renderer_vulkan.h"
 #include "video_core/renderer_vulkan/vk_blit_screen.h"
-#include "video_core/renderer_vulkan/vk_master_semaphore.h"
 #include "video_core/renderer_vulkan/vk_rasterizer.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_state_tracker.h"
@@ -104,13 +102,13 @@ RendererVulkan::RendererVulkan(Core::TelemetrySession& telemetry_session_,
       debug_callback(Settings::values.renderer_debug ? CreateDebugCallback(instance) : nullptr),
       surface(CreateSurface(instance, render_window)),
       device(CreateDevice(instance, dld, *surface)), memory_allocator(device, false),
-      state_tracker(gpu), scheduler(device, state_tracker),
+      state_tracker(), scheduler(device, state_tracker),
       swapchain(*surface, device, scheduler, render_window.GetFramebufferLayout().width,
                 render_window.GetFramebufferLayout().height, false),
       blit_screen(cpu_memory, render_window, device, memory_allocator, swapchain, scheduler,
                   screen_info),
-      rasterizer(render_window, gpu, gpu.MemoryManager(), cpu_memory, screen_info, device,
-                 memory_allocator, state_tracker, scheduler) {
+      rasterizer(render_window, gpu, cpu_memory, screen_info, device, memory_allocator,
+                 state_tracker, scheduler) {
     Report();
 } catch (const vk::Exception& exception) {
     LOG_ERROR(Render_Vulkan, "Vulkan initialization failed with error: {}", exception.what());
@@ -129,6 +127,11 @@ void RendererVulkan::SwapBuffers(const Tegra::FramebufferConfig* framebuffer) {
     if (!render_window.IsShown()) {
         return;
     }
+    // Update screen info if the framebuffer size has changed.
+    if (screen_info.width != framebuffer->width || screen_info.height != framebuffer->height) {
+        screen_info.width = framebuffer->width;
+        screen_info.height = framebuffer->height;
+    }
     const VAddr framebuffer_addr = framebuffer->address + framebuffer->offset;
     const bool use_accelerated =
         rasterizer.AccelerateDisplay(*framebuffer, framebuffer_addr, framebuffer->stride);
@@ -139,7 +142,7 @@ void RendererVulkan::SwapBuffers(const Tegra::FramebufferConfig* framebuffer) {
     const auto recreate_swapchain = [&] {
         if (!has_been_recreated) {
             has_been_recreated = true;
-            scheduler.WaitWorker();
+            scheduler.Finish();
         }
         const Layout::FramebufferLayout layout = render_window.GetFramebufferLayout();
         swapchain.Create(layout.width, layout.height, is_srgb);

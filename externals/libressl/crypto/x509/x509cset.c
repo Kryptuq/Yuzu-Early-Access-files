@@ -1,4 +1,4 @@
-/* $OpenBSD: x509cset.c,v 1.14 2018/02/22 17:01:44 jsing Exp $ */
+/* $OpenBSD: x509cset.c,v 1.16 2021/11/01 20:53:08 tb Exp $ */
 /* Written by Dr Stephen N Henson (steve@openssl.org) for the OpenSSL
  * project 2001.
  */
@@ -63,8 +63,10 @@
 #include <openssl/objects.h>
 #include <openssl/x509.h>
 
+#include "x509_lcl.h"
+
 int
-X509_CRL_up_ref(X509_CRL *x)   
+X509_CRL_up_ref(X509_CRL *x)
 {
 	int refs = CRYPTO_add(&x->references, 1, CRYPTO_LOCK_X509_CRL);
 	return (refs > 1) ? 1 : 0;
@@ -207,4 +209,11 @@ X509_REVOKED_set_serialNumber(X509_REVOKED *x, ASN1_INTEGER *serial)
 		}
 	}
 	return (in != NULL);
+}
+
+int
+i2d_re_X509_CRL_tbs(X509_CRL *crl, unsigned char **pp)
+{
+	crl->crl->enc.modified = 1;
+	return i2d_X509_CRL_INFO(crl->crl, pp);
 }

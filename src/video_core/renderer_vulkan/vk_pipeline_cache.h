@@ -1,17 +1,14 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <array>
 #include <cstddef>
 #include <filesystem>
-#include <iosfwd>
 #include <memory>
 #include <type_traits>
 #include <unordered_map>
-#include <utility>
 #include <vector>
 
 #include "common/common_types.h"
@@ -29,7 +26,6 @@
 #include "video_core/renderer_vulkan/vk_graphics_pipeline.h"
 #include "video_core/renderer_vulkan/vk_texture_cache.h"
 #include "video_core/shader_cache.h"
-#include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace Core {
 class System;
@@ -85,8 +81,8 @@ class Device;
 class PipelineStatistics;
 class RasterizerVulkan;
 class RenderPassCache;
-class VKScheduler;
-class VKUpdateDescriptorQueue;
+class Scheduler;
+class UpdateDescriptorQueue;
 
 using VideoCommon::ShaderInfo;
 
@@ -104,11 +100,9 @@ struct ShaderPools {
 
 class PipelineCache : public VideoCommon::ShaderCache {
 public:
-    explicit PipelineCache(RasterizerVulkan& rasterizer, Tegra::Engines::Maxwell3D& maxwell3d,
-                           Tegra::Engines::KeplerCompute& kepler_compute,
-                           Tegra::MemoryManager& gpu_memory, const Device& device,
-                           VKScheduler& scheduler, DescriptorPool& descriptor_pool,
-                           VKUpdateDescriptorQueue& update_descriptor_queue,
+    explicit PipelineCache(RasterizerVulkan& rasterizer, const Device& device, Scheduler& scheduler,
+                           DescriptorPool& descriptor_pool,
+                           UpdateDescriptorQueue& update_descriptor_queue,
                            RenderPassCache& render_pass_cache, BufferCache& buffer_cache,
                            TextureCache& texture_cache, VideoCore::ShaderNotify& shader_notify_);
     ~PipelineCache();
@@ -142,9 +136,9 @@ private:
                                                            bool build_in_parallel);
 
     const Device& device;
-    VKScheduler& scheduler;
+    Scheduler& scheduler;
     DescriptorPool& descriptor_pool;
-    VKUpdateDescriptorQueue& update_descriptor_queue;
+    UpdateDescriptorQueue& update_descriptor_queue;
     RenderPassCache& render_pass_cache;
     BufferCache& buffer_cache;
     TextureCache& texture_cache;

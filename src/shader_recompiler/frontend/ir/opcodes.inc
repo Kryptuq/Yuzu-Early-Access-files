@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 //     opcode name,                                         return type,    arg1 type,      arg2 type,      arg3 type,      arg4 type,      arg4 type,      ...
 OPCODE(Phi,                                                 Opaque,                                                                                         )
@@ -341,6 +340,7 @@ OPCODE(SharedAtomicOr32,                                    U32,            U32,
 OPCODE(SharedAtomicXor32,                                   U32,            U32,            U32,                                                            )
 OPCODE(SharedAtomicExchange32,                              U32,            U32,            U32,                                                            )
 OPCODE(SharedAtomicExchange64,                              U64,            U32,            U64,                                                            )
+OPCODE(SharedAtomicExchange32x2,                            U32x2,          U32,            U32x2,                                                          )
 
 OPCODE(GlobalAtomicIAdd32,                                  U32,            U64,            U32,                                                            )
 OPCODE(GlobalAtomicSMin32,                                  U32,            U64,            U32,                                                            )
@@ -362,6 +362,15 @@ OPCODE(GlobalAtomicAnd64,                                   U64,            U64,
 OPCODE(GlobalAtomicOr64,                                    U64,            U64,            U64,                                                            )
 OPCODE(GlobalAtomicXor64,                                   U64,            U64,            U64,                                                            )
 OPCODE(GlobalAtomicExchange64,                              U64,            U64,            U64,                                                            )
+OPCODE(GlobalAtomicIAdd32x2,                                U32x2,          U32x2,          U32x2,                                                          )
+OPCODE(GlobalAtomicSMin32x2,                                U32x2,          U32x2,          U32x2,                                                          )
+OPCODE(GlobalAtomicUMin32x2,                                U32x2,          U32x2,          U32x2,                                                          )
+OPCODE(GlobalAtomicSMax32x2,                                U32x2,          U32x2,          U32x2,                                                          )
+OPCODE(GlobalAtomicUMax32x2,                                U32x2,          U32x2,          U32x2,                                                          )
+OPCODE(GlobalAtomicAnd32x2,                                 U32x2,          U32x2,          U32x2,                                                          )
+OPCODE(GlobalAtomicOr32x2,                                  U32x2,          U32x2,          U32x2,                                                          )
+OPCODE(GlobalAtomicXor32x2,                                 U32x2,          U32x2,          U32x2,                                                          )
+OPCODE(GlobalAtomicExchange32x2,                            U32x2,          U32x2,          U32x2,                                                          )
 OPCODE(GlobalAtomicAddF32,                                  F32,            U64,            F32,                                                            )
 OPCODE(GlobalAtomicAddF16x2,                                U32,            U64,            F16x2,                                                          )
 OPCODE(GlobalAtomicAddF32x2,                                U32,            U64,            F32x2,                                                          )
@@ -390,6 +399,15 @@ OPCODE(StorageAtomicAnd64,                                  U64,            U32,
 OPCODE(StorageAtomicOr64,                                   U64,            U32,            U32,            U64,                                            )
 OPCODE(StorageAtomicXor64,                                  U64,            U32,            U32,            U64,                                            )
 OPCODE(StorageAtomicExchange64,                             U64,            U32,            U32,            U64,                                            )
+OPCODE(StorageAtomicIAdd32x2,                               U32x2,          U32,            U32,            U32x2,                                          )
+OPCODE(StorageAtomicSMin32x2,                               U32x2,          U32,            U32,            U32x2,                                          )
+OPCODE(StorageAtomicUMin32x2,                               U32x2,          U32,            U32,            U32x2,                                          )
+OPCODE(StorageAtomicSMax32x2,                               U32x2,          U32,            U32,            U32x2,                                          )
+OPCODE(StorageAtomicUMax32x2,                               U32x2,          U32,            U32,            U32x2,                                          )
+OPCODE(StorageAtomicAnd32x2,                                U32x2,          U32,            U32,            U32x2,                                          )
+OPCODE(StorageAtomicOr32x2,                                 U32x2,          U32,            U32,            U32x2,                                          )
+OPCODE(StorageAtomicXor32x2,                                U32x2,          U32,            U32,            U32x2,                                          )
+OPCODE(StorageAtomicExchange32x2,                           U32x2,          U32,            U32,            U32x2,                                          )
 OPCODE(StorageAtomicAddF32,                                 F32,            U32,            U32,            F32,                                            )
 OPCODE(StorageAtomicAddF16x2,                               U32,            U32,            U32,            F16x2,                                          )
 OPCODE(StorageAtomicAddF32x2,                               U32,            U32,            U32,            F32x2,                                          )

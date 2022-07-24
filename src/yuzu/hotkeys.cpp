@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include <sstream>
-#include <QKeySequence>
 #include <QShortcut>
 #include <QTreeWidgetItem>
 #include <QtGlobal>
@@ -188,6 +187,9 @@ void ControllerShortcut::ControllerUpdateEvent(Core::HID::ControllerTriggerType 
         return;
     }
     if (type != Core::HID::ControllerTriggerType::Button) {
+        return;
+    }
+    if (!Settings::values.controller_navigation) {
         return;
     }
     if (button_sequence.npad.raw == Core::HID::NpadButton::None &&

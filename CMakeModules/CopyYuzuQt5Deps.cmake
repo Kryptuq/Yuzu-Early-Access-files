@@ -19,9 +19,6 @@ function(copy_yuzu_Qt5_deps target_dir)
     set(IMAGEFORMATS ${DLL_DEST}plugins/imageformats/)
     if (MSVC)
         windows_copy_files(${target_dir} ${Qt5_DLL_DIR} ${DLL_DEST}
-            icudt*.dll
-            icuin*.dll
-            icuuc*.dll
             Qt5Core$<$<CONFIG:Debug>:d>.*
             Qt5Gui$<$<CONFIG:Debug>:d>.*
             Qt5Widgets$<$<CONFIG:Debug>:d>.*
@@ -37,18 +34,17 @@ function(copy_yuzu_Qt5_deps target_dir)
                 Qt5Quick$<$<CONFIG:Debug>:d>.*
                 Qt5QuickWidgets$<$<CONFIG:Debug>:d>.*
                 Qt5WebChannel$<$<CONFIG:Debug>:d>.*
-                Qt5WebEngine$<$<CONFIG:Debug>:d>.*
                 Qt5WebEngineCore$<$<CONFIG:Debug>:d>.*
                 Qt5WebEngineWidgets$<$<CONFIG:Debug>:d>.*
                 QtWebEngineProcess$<$<CONFIG:Debug>:d>.*
             )
 
             windows_copy_files(${target_dir} ${Qt5_RESOURCES_DIR} ${DLL_DEST}
-                qtwebengine_resources.pak
+                icudtl.dat
                 qtwebengine_devtools_resources.pak
+                qtwebengine_resources.pak
                 qtwebengine_resources_100p.pak
                 qtwebengine_resources_200p.pak
-                icudtl.dat
             )
         endif ()
         windows_copy_files(yuzu ${Qt5_PLATFORMS_DIR} ${PLATFORMS} qwindows$<$<CONFIG:Debug>:d>.*)
@@ -56,7 +52,7 @@ function(copy_yuzu_Qt5_deps target_dir)
         windows_copy_files(yuzu ${Qt5_IMAGEFORMATS_DIR} ${IMAGEFORMATS}
             qjpeg$<$<CONFIG:Debug>:d>.*
             qgif$<$<CONFIG:Debug>:d>.*
-            )
+        )
     else()
         set(Qt5_DLLS
             "${Qt5_DLL_DIR}libQt5Core.so.5"

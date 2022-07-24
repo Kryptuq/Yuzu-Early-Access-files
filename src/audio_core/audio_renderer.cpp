@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <limits>
 #include <vector>
@@ -99,13 +98,13 @@ AudioRenderer::AudioRenderer(Core::Timing::CoreTiming& core_timing_, Core::Memor
 
 AudioRenderer::~AudioRenderer() = default;
 
-ResultCode AudioRenderer::Start() {
+Result AudioRenderer::Start() {
     audio_out->StartStream(stream);
     ReleaseAndQueueBuffers();
     return ResultSuccess;
 }
 
-ResultCode AudioRenderer::Stop() {
+Result AudioRenderer::Stop() {
     audio_out->StopStream(stream);
     return ResultSuccess;
 }
@@ -126,8 +125,8 @@ Stream::State AudioRenderer::GetStreamState() const {
     return stream->GetState();
 }
 
-ResultCode AudioRenderer::UpdateAudioRenderer(const std::vector<u8>& input_params,
-                                              std::vector<u8>& output_params) {
+Result AudioRenderer::UpdateAudioRenderer(const std::vector<u8>& input_params,
+                                          std::vector<u8>& output_params) {
     std::scoped_lock lock{mutex};
     InfoUpdater info_updater{input_params, output_params, behavior_info};
 

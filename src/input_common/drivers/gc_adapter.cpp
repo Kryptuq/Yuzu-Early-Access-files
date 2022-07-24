@@ -1,6 +1,5 @@
-// Copyright 2014 Dolphin Emulator Project
-// Licensed under GPLv2+
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2014 Dolphin Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <fmt/format.h>
 #include <libusb.h>
@@ -248,7 +247,7 @@ bool GCAdapter::Setup() {
         std::size_t port = 0;
         for (GCController& pad : pads) {
             pad.identifier = {
-                .guid = Common::UUID{Common::INVALID_UUID},
+                .guid = Common::UUID{},
                 .port = port++,
                 .pad = 0,
             };
@@ -522,6 +521,22 @@ Common::Input::ButtonNames GCAdapter::GetUIName(const Common::ParamPackage& para
     }
 
     return Common::Input::ButtonNames::Invalid;
+}
+
+bool GCAdapter::IsStickInverted(const Common::ParamPackage& params) {
+    if (!params.Has("port")) {
+        return false;
+    }
+
+    const auto x_axis = static_cast<PadAxes>(params.Get("axis_x", 0));
+    const auto y_axis = static_cast<PadAxes>(params.Get("axis_y", 0));
+    if (x_axis != PadAxes::StickY && x_axis != PadAxes::SubstickY) {
+        return false;
+    }
+    if (y_axis != PadAxes::StickX && y_axis != PadAxes::SubstickX) {
+        return false;
+    }
+    return true;
 }
 
 } // namespace InputCommon

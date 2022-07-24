@@ -1,14 +1,17 @@
-// Copyright 2019 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
+#include <memory>
+
 #include "common/common_types.h"
 
-namespace Service::NVFlinger {
-class BufferQueue;
-}
+namespace Service::android {
+class BufferItemConsumer;
+class BufferQueueCore;
+class BufferQueueProducer;
+} // namespace Service::android
 
 namespace Service::VI {
 
@@ -17,10 +20,13 @@ class Layer {
 public:
     /// Constructs a layer with a given ID and buffer queue.
     ///
-    /// @param id    The ID to assign to this layer.
-    /// @param queue The buffer queue for this layer to use.
+    /// @param layer_id_ The ID to assign to this layer.
+    /// @param binder_id_ The binder ID to assign to this layer.
+    /// @param binder_ The buffer producer queue for this layer to use.
     ///
-    Layer(u64 id, NVFlinger::BufferQueue& queue);
+    Layer(u64 layer_id_, u32 binder_id_, android::BufferQueueCore& core_,
+          android::BufferQueueProducer& binder_,
+          std::shared_ptr<android::BufferItemConsumer>&& consumer_);
     ~Layer();
 
     Layer(const Layer&) = delete;
@@ -30,23 +36,47 @@ public:
     Layer& operator=(Layer&&) = delete;
 
     /// Gets the ID for this layer.
-    u64 GetID() const {
+    u64 GetLayerId() const {
         return layer_id;
     }
 
+    /// Gets the binder ID for this layer.
+    u32 GetBinderId() const {
+        return binder_id;
+    }
+
     /// Gets a reference to the buffer queue this layer is using.
-    NVFlinger::BufferQueue& GetBufferQueue() {
-        return buffer_queue;
+    android::BufferQueueProducer& GetBufferQueue() {
+        return binder;
     }
 
     /// Gets a const reference to the buffer queue this layer is using.
-    const NVFlinger::BufferQueue& GetBufferQueue() const {
-        return buffer_queue;
+    const android::BufferQueueProducer& GetBufferQueue() const {
+        return binder;
+    }
+
+    android::BufferItemConsumer& GetConsumer() {
+        return *consumer;
+    }
+
+    const android::BufferItemConsumer& GetConsumer() const {
+        return *consumer;
+    }
+
+    android::BufferQueueCore& Core() {
+        return core;
+    }
+
+    const android::BufferQueueCore& Core() const {
+        return core;
     }
 
 private:
-    u64 layer_id;
-    NVFlinger::BufferQueue& buffer_queue;
+    const u64 layer_id;
+    const u32 binder_id;
+    android::BufferQueueCore& core;
+    android::BufferQueueProducer& binder;
+    std::shared_ptr<android::BufferItemConsumer> consumer;
 };
 
 } // namespace Service::VI

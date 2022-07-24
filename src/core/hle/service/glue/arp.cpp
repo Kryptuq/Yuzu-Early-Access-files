@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <memory>
 
@@ -154,7 +153,7 @@ class IRegistrar final : public ServiceFramework<IRegistrar> {
     friend class ARP_W;
 
 public:
-    using IssuerFn = std::function<ResultCode(u64, ApplicationLaunchProperty, std::vector<u8>)>;
+    using IssuerFn = std::function<Result(u64, ApplicationLaunchProperty, std::vector<u8>)>;
 
     explicit IRegistrar(Core::System& system_, IssuerFn&& issuer)
         : ServiceFramework{system_, "IRegistrar"}, issue_process_id{std::move(issuer)} {

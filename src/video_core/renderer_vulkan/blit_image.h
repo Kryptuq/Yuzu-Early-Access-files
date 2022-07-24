@@ -1,10 +1,7 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
-
-#include <compare>
 
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/renderer_vulkan/vk_descriptor_pool.h"
@@ -19,7 +16,7 @@ class Device;
 class Framebuffer;
 class ImageView;
 class StateTracker;
-class VKScheduler;
+class Scheduler;
 
 struct BlitImagePipelineKey {
     constexpr auto operator<=>(const BlitImagePipelineKey&) const noexcept = default;
@@ -30,7 +27,7 @@ struct BlitImagePipelineKey {
 
 class BlitImageHelper {
 public:
-    explicit BlitImageHelper(const Device& device, VKScheduler& scheduler,
+    explicit BlitImageHelper(const Device& device, Scheduler& scheduler,
                              StateTracker& state_tracker, DescriptorPool& descriptor_pool);
     ~BlitImageHelper();
 
@@ -55,6 +52,8 @@ public:
     void ConvertABGR8ToD24S8(const Framebuffer* dst_framebuffer, const ImageView& src_image_view);
 
     void ConvertD24S8ToABGR8(const Framebuffer* dst_framebuffer, ImageView& src_image_view);
+
+    void ConvertS8D24ToABGR8(const Framebuffer* dst_framebuffer, ImageView& src_image_view);
 
 private:
     void Convert(VkPipeline pipeline, const Framebuffer* dst_framebuffer,
@@ -83,7 +82,7 @@ private:
                                       vk::ShaderModule& module);
 
     const Device& device;
-    VKScheduler& scheduler;
+    Scheduler& scheduler;
     StateTracker& state_tracker;
 
     vk::DescriptorSetLayout one_texture_set_layout;
@@ -99,6 +98,7 @@ private:
     vk::ShaderModule convert_float_to_depth_frag;
     vk::ShaderModule convert_abgr8_to_d24s8_frag;
     vk::ShaderModule convert_d24s8_to_abgr8_frag;
+    vk::ShaderModule convert_s8d24_to_abgr8_frag;
     vk::Sampler linear_sampler;
     vk::Sampler nearest_sampler;
 
@@ -112,6 +112,7 @@ private:
     vk::Pipeline convert_r16_to_d16_pipeline;
     vk::Pipeline convert_abgr8_to_d24s8_pipeline;
     vk::Pipeline convert_d24s8_to_abgr8_pipeline;
+    vk::Pipeline convert_s8d24_to_abgr8_pipeline;
 };
 
 } // namespace Vulkan

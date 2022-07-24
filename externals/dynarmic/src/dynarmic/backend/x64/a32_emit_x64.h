@@ -71,8 +71,12 @@ protected:
     std::array<FastDispatchEntry, fast_dispatch_table_size> fast_dispatch_table;
     void ClearFastDispatchTable();
 
-    std::map<std::tuple<size_t, int, int>, void (*)()> read_fallbacks;
-    std::map<std::tuple<size_t, int, int>, void (*)()> write_fallbacks;
+    void (*memory_read_128)() = nullptr;   // Dummy
+    void (*memory_write_128)() = nullptr;  // Dummy
+
+    std::map<std::tuple<bool, size_t, int, int>, void (*)()> read_fallbacks;
+    std::map<std::tuple<bool, size_t, int, int>, void (*)()> write_fallbacks;
+    std::map<std::tuple<bool, size_t, int, int>, void (*)()> exclusive_write_fallbacks;
     void GenFastmemFallbacks();
 
     const void* terminal_handler_pop_rsb_hint;
@@ -98,6 +102,7 @@ protected:
         u64 resume_rip;
         u64 callback;
         DoNotFastmemMarker marker;
+        bool recompile;
     };
     tsl::robin_map<u64, FastmemPatchInfo> fastmem_patch_info;
     std::set<DoNotFastmemMarker> do_not_fastmem;
@@ -105,14 +110,19 @@ protected:
     FakeCall FastmemCallback(u64 rip);
 
     // Memory access helpers
+    void EmitCheckMemoryAbort(A32EmitContext& ctx, IR::Inst* inst, Xbyak::Label* end = nullptr);
     template<std::size_t bitsize, auto callback>
     void EmitMemoryRead(A32EmitContext& ctx, IR::Inst* inst);
     template<std::size_t bitsize, auto callback>
     void EmitMemoryWrite(A32EmitContext& ctx, IR::Inst* inst);
     template<std::size_t bitsize, auto callback>
-    void ExclusiveReadMemory(A32EmitContext& ctx, IR::Inst* inst);
+    void EmitExclusiveReadMemory(A32EmitContext& ctx, IR::Inst* inst);
     template<std::size_t bitsize, auto callback>
-    void ExclusiveWriteMemory(A32EmitContext& ctx, IR::Inst* inst);
+    void EmitExclusiveWriteMemory(A32EmitContext& ctx, IR::Inst* inst);
+    template<std::size_t bitsize, auto callback>
+    void EmitExclusiveReadMemoryInline(A32EmitContext& ctx, IR::Inst* inst);
+    template<std::size_t bitsize, auto callback>
+    void EmitExclusiveWriteMemoryInline(A32EmitContext& ctx, IR::Inst* inst);
 
     // Terminal instruction emitters
     void EmitSetUpperLocationDescriptor(IR::LocationDescriptor new_location, IR::LocationDescriptor old_location);
@@ -129,6 +139,7 @@ protected:
     // Patching
     void Unpatch(const IR::LocationDescriptor& target_desc) override;
     void EmitPatchJg(const IR::LocationDescriptor& target_desc, CodePtr target_code_ptr = nullptr) override;
+    void EmitPatchJz(const IR::LocationDescriptor& target_desc, CodePtr target_code_ptr = nullptr) override;
     void EmitPatchJmp(const IR::LocationDescriptor& target_desc, CodePtr target_code_ptr = nullptr) override;
     void EmitPatchMovRcx(CodePtr target_code_ptr = nullptr) override;
 };

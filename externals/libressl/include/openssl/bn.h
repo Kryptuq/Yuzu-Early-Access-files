@@ -1,4 +1,4 @@
-/* $OpenBSD: bn.h,v 1.39 2019/08/25 19:23:59 schwarze Exp $ */
+/* $OpenBSD: bn.h,v 1.52 2022/01/14 08:01:47 tb Exp $ */
 /* Copyright (C) 1995-1997 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -226,84 +226,36 @@ extern "C" {
 #endif
 
 #ifndef OPENSSL_NO_DEPRECATED
-#define BN_FLG_FREE		0x8000	/* used for debuging */
+#define BN_FLG_FREE		0x8000	/* used for debugging */
 #endif
-#define BN_set_flags(b,n)	((b)->flags|=(n))
-#define BN_get_flags(b,n)	((b)->flags&(n))
+void BN_set_flags(BIGNUM *b, int n);
+int BN_get_flags(const BIGNUM *b, int n);
+void BN_with_flags(BIGNUM *dest, const BIGNUM *src, int flags);
 
-/* get a clone of a BIGNUM with changed flags, for *temporary* use only
- * (the two BIGNUMs cannot not be used in parallel!) */
-#define BN_with_flags(dest,b,n)  ((dest)->d=(b)->d, \
-                                  (dest)->top=(b)->top, \
-                                  (dest)->dmax=(b)->dmax, \
-                                  (dest)->neg=(b)->neg, \
-                                  (dest)->flags=(((dest)->flags & BN_FLG_MALLOCED) \
-                                                 |  ((b)->flags & ~BN_FLG_MALLOCED) \
-                                                 |  BN_FLG_STATIC_DATA \
-                                                 |  (n)))
+/* Values for |top| in BN_rand() */
+#define BN_RAND_TOP_ANY    -1
+#define BN_RAND_TOP_ONE     0
+#define BN_RAND_TOP_TWO     1
 
-struct bignum_st {
-	BN_ULONG *d;	/* Pointer to an array of 'BN_BITS2' bit chunks. */
-	int top;	/* Index of last used d +1. */
-	/* The next are internal book keeping for bn_expand. */
-	int dmax;	/* Size of the d array. */
-	int neg;	/* one if the number is negative */
-	int flags;
-};
-
-/* Used for montgomery multiplication */
-struct bn_mont_ctx_st {
-	int ri;        /* number of bits in R */
-	BIGNUM RR;     /* used to convert to montgomery form */
-	BIGNUM N;      /* The modulus */
-	BIGNUM Ni;     /* R*(1/R mod N) - N*Ni = 1
-	                * (Ni is only stored for bignum algorithm) */
-	BN_ULONG n0[2];/* least significant word(s) of Ni;
-	                  (type changed with 0.9.9, was "BN_ULONG n0;" before) */
-	int flags;
-};
-
-/* Used for reciprocal division/mod functions
- * It cannot be shared between threads
- */
-struct bn_recp_ctx_st {
-	BIGNUM N;	/* the divisor */
-	BIGNUM Nr;	/* the reciprocal */
-	int num_bits;
-	int shift;
-	int flags;
-};
-
-/* Used for slow "generation" functions. */
-struct bn_gencb_st {
-	unsigned int ver;	/* To handle binary (in)compatibility */
-	void *arg;		/* callback-specific data */
-	union {
-		/* if(ver==1) - handles old style callbacks */
-		void (*cb_1)(int, int, void *);
-		/* if(ver==2) - new callback style */
-		int (*cb_2)(int, int, BN_GENCB *);
-	} cb;
-};
+/* Values for |bottom| in BN_rand() */
+#define BN_RAND_BOTTOM_ANY  0
+#define BN_RAND_BOTTOM_ODD  1
 
 BN_GENCB *BN_GENCB_new(void);
 void BN_GENCB_free(BN_GENCB *cb);
-void *BN_GENCB_get_arg(BN_GENCB *cb);
 
 /* Wrapper function to make using BN_GENCB easier,  */
 int BN_GENCB_call(BN_GENCB *cb, int a, int b);
-/* Macro to populate a BN_GENCB structure with an "old"-style callback */
-#define BN_GENCB_set_old(gencb, callback, cb_arg) { \
-		BN_GENCB *tmp_gencb = (gencb); \
-		tmp_gencb->ver = 1; \
-		tmp_gencb->arg = (cb_arg); \
-		tmp_gencb->cb.cb_1 = (callback); }
-/* Macro to populate a BN_GENCB structure with a "new"-style callback */
-#define BN_GENCB_set(gencb, callback, cb_arg) { \
-		BN_GENCB *tmp_gencb = (gencb); \
-		tmp_gencb->ver = 2; \
-		tmp_gencb->arg = (cb_arg); \
-		tmp_gencb->cb.cb_2 = (callback); }
+
+/* Populate a BN_GENCB structure with an "old"-style callback */
+void BN_GENCB_set_old(BN_GENCB *gencb, void (*callback)(int, int, void *),
+    void *cb_arg);
+
+/* Populate a BN_GENCB structure with a "new"-style callback */
+void BN_GENCB_set(BN_GENCB *gencb, int (*callback)(int, int, BN_GENCB *),
+    void *cb_arg);
+
+void *BN_GENCB_get_arg(BN_GENCB *cb);
 
 #define BN_prime_checks 0 /* default: select number of iterations
 			     based on the size of the number */
@@ -380,24 +332,18 @@ int BN_GENCB_call(BN_GENCB *cb, int a, int b);
 				(b) >=  308 ?  8 : \
 				(b) >=  55  ? 27 : \
 				/* b >= 6 */ 34)
- 
+
 #define BN_num_bytes(a)	((BN_num_bits(a)+7)/8)
 
-/* Note that BN_abs_is_word didn't work reliably for w == 0 until 0.9.8 */
-#define BN_abs_is_word(a,w) ((((a)->top == 1) && ((a)->d[0] == (BN_ULONG)(w))) || \
-				(((w) == 0) && ((a)->top == 0)))
-#define BN_is_zero(a)       ((a)->top == 0)
-#define BN_is_one(a)        (BN_abs_is_word((a),1) && !(a)->neg)
-#define BN_is_word(a,w)     (BN_abs_is_word((a),(w)) && (!(w) || !(a)->neg))
-#define BN_is_odd(a)	    (((a)->top > 0) && ((a)->d[0] & 1))
+int BN_abs_is_word(const BIGNUM *a, const BN_ULONG w);
+int BN_is_zero(const BIGNUM *a);
+int BN_is_one(const BIGNUM *a);
+int BN_is_word(const BIGNUM *a, const BN_ULONG w);
+int BN_is_odd(const BIGNUM *a);
 
-#define BN_one(a)	(BN_set_word((a),1))
-#define BN_zero_ex(a) \
-	do { \
-		BIGNUM *_tmp_bn = (a); \
-		_tmp_bn->top = 0; \
-		_tmp_bn->neg = 0; \
-	} while(0)
+#define BN_one(a)	BN_set_word((a), 1)
+
+void BN_zero_ex(BIGNUM *a);
 
 #ifdef OPENSSL_NO_DEPRECATED
 #define BN_zero(a)	BN_zero_ex(a)
@@ -428,6 +374,9 @@ BIGNUM *BN_copy(BIGNUM *a, const BIGNUM *b);
 void	BN_swap(BIGNUM *a, BIGNUM *b);
 BIGNUM *BN_bin2bn(const unsigned char *s, int len, BIGNUM *ret);
 int	BN_bn2bin(const BIGNUM *a, unsigned char *to);
+int	BN_bn2binpad(const BIGNUM *a, unsigned char *to, int tolen);
+BIGNUM *BN_lebin2bn(const unsigned char *s, int len, BIGNUM *ret);
+int	BN_bn2lebinpad(const BIGNUM *a, unsigned char *to, int tolen);
 BIGNUM *BN_mpi2bn(const unsigned char *s, int len, BIGNUM *ret);
 int	BN_bn2mpi(const BIGNUM *a, unsigned char *to);
 int	BN_sub(BIGNUM *r, const BIGNUM *a, const BIGNUM *b);
@@ -441,11 +390,8 @@ int	BN_sqr(BIGNUM *r, const BIGNUM *a, BN_CTX *ctx);
  * \param  n  0 if the BIGNUM b should be positive and a value != 0 otherwise
  */
 void	BN_set_negative(BIGNUM *b, int n);
-/** BN_is_negative returns 1 if the BIGNUM is negative
- * \param  a  pointer to the BIGNUM object
- * \return 1 if a < 0 and 0 otherwise
- */
-#define BN_is_negative(a) ((a)->neg != 0)
+
+int BN_is_negative(const BIGNUM *b);
 
 #ifndef LIBRESSL_INTERNAL
 int	BN_div(BIGNUM *dv, BIGNUM *rem, const BIGNUM *m, const BIGNUM *d,
@@ -560,8 +506,8 @@ BN_MONT_CTX *BN_MONT_CTX_new(void );
 void BN_MONT_CTX_init(BN_MONT_CTX *ctx);
 int BN_mod_mul_montgomery(BIGNUM *r, const BIGNUM *a, const BIGNUM *b,
     BN_MONT_CTX *mont, BN_CTX *ctx);
-#define BN_to_montgomery(r,a,mont,ctx)	BN_mod_mul_montgomery(\
-	(r),(a),&((mont)->RR),(mont),(ctx))
+int BN_to_montgomery(BIGNUM *r, const BIGNUM *a, BN_MONT_CTX *mont,
+    BN_CTX *ctx);
 int BN_from_montgomery(BIGNUM *r, const BIGNUM *a,
     BN_MONT_CTX *mont, BN_CTX *ctx);
 void BN_MONT_CTX_free(BN_MONT_CTX *mont);

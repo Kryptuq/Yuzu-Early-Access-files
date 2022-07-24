@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/hle/service/time/steady_clock_core.h"
 #include "core/hle/service/time/system_clock_context_update_callback.h"
@@ -15,13 +14,13 @@ SystemClockCore::SystemClockCore(SteadyClockCore& steady_clock_core_)
 
 SystemClockCore::~SystemClockCore() = default;
 
-ResultCode SystemClockCore::GetCurrentTime(Core::System& system, s64& posix_time) const {
+Result SystemClockCore::GetCurrentTime(Core::System& system, s64& posix_time) const {
     posix_time = 0;
 
     const SteadyClockTimePoint current_time_point{steady_clock_core.GetCurrentTimePoint(system)};
 
     SystemClockContext clock_context{};
-    if (const ResultCode result{GetClockContext(system, clock_context)}; result != ResultSuccess) {
+    if (const Result result{GetClockContext(system, clock_context)}; result != ResultSuccess) {
         return result;
     }
 
@@ -34,26 +33,26 @@ ResultCode SystemClockCore::GetCurrentTime(Core::System& system, s64& posix_time
     return ResultSuccess;
 }
 
-ResultCode SystemClockCore::SetCurrentTime(Core::System& system, s64 posix_time) {
+Result SystemClockCore::SetCurrentTime(Core::System& system, s64 posix_time) {
     const SteadyClockTimePoint current_time_point{steady_clock_core.GetCurrentTimePoint(system)};
     const SystemClockContext clock_context{posix_time - current_time_point.time_point,
                                            current_time_point};
 
-    if (const ResultCode result{SetClockContext(clock_context)}; result != ResultSuccess) {
+    if (const Result result{SetClockContext(clock_context)}; result != ResultSuccess) {
         return result;
     }
     return Flush(clock_context);
 }
 
-ResultCode SystemClockCore::Flush(const SystemClockContext& clock_context) {
+Result SystemClockCore::Flush(const SystemClockContext& clock_context) {
     if (!system_clock_context_update_callback) {
         return ResultSuccess;
     }
     return system_clock_context_update_callback->Update(clock_context);
 }
 
-ResultCode SystemClockCore::SetSystemClockContext(const SystemClockContext& clock_context) {
-    if (const ResultCode result{SetClockContext(clock_context)}; result != ResultSuccess) {
+Result SystemClockCore::SetSystemClockContext(const SystemClockContext& clock_context) {
+    if (const Result result{SetClockContext(clock_context)}; result != ResultSuccess) {
         return result;
     }
     return Flush(clock_context);

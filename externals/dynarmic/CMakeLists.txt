@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(dynarmic LANGUAGES C CXX ASM VERSION 5)
+project(dynarmic LANGUAGES C CXX ASM VERSION 6.2.1)
 
 # Determine if we're built as a subproject (using add_subdirectory)
 # or if this is the master project.
@@ -154,7 +154,7 @@ if (DYNARMIC_USE_LLVM)
     llvm_map_components_to_libnames(llvm_libs armdesc armdisassembler aarch64desc aarch64disassembler x86desc x86disassembler)
 endif()
 
-if (DYNARMIC_TESTS_USE_UNICORN)
+if (DYNARMIC_TESTS_USE_UNICORN AND DYNARMIC_TESTS)
     find_package(Unicorn REQUIRED)
 endif()
 

@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/common_types.h"
 #include "common/input.h"
@@ -181,7 +180,7 @@ public:
             .raw_value = input_engine->GetAxis(identifier, axis_y),
             .properties = properties_y,
         };
-        // This is a workaround too keep compatibility with old yuzu versions. Vertical axis is
+        // This is a workaround to keep compatibility with old yuzu versions. Vertical axis is
         // inverted on SDL compared to Nintendo
         if (invert_axis_y) {
             status.y.raw_value = -status.y.raw_value;
@@ -470,7 +469,7 @@ public:
     }
 
     Common::Input::BatteryStatus GetStatus() const {
-        return static_cast<Common::Input::BatteryLevel>(input_engine->GetBattery(identifier));
+        return input_engine->GetBattery(identifier);
     }
 
     void ForceUpdate() override {
@@ -504,9 +503,10 @@ private:
 
 class InputFromMotion final : public Common::Input::InputDevice {
 public:
-    explicit InputFromMotion(PadIdentifier identifier_, int motion_sensor_,
+    explicit InputFromMotion(PadIdentifier identifier_, int motion_sensor_, float gyro_threshold_,
                              InputEngine* input_engine_)
-        : identifier(identifier_), motion_sensor(motion_sensor_), input_engine(input_engine_) {
+        : identifier(identifier_), motion_sensor(motion_sensor_), gyro_threshold(gyro_threshold_),
+          input_engine(input_engine_) {
         UpdateCallback engine_callback{[this]() { OnChange(); }};
         const InputIdentifier input_identifier{
             .identifier = identifier,
@@ -525,8 +525,9 @@ public:
         const auto basic_motion = input_engine->GetMotion(identifier, motion_sensor);
         Common::Input::MotionStatus status{};
         const Common::Input::AnalogProperties properties = {
-            .deadzone = 0.001f,
+            .deadzone = 0.0f,
             .range = 1.0f,
+            .threshold = gyro_threshold,
             .offset = 0.0f,
         };
         status.accel.x = {.raw_value = basic_motion.accel_x, .properties = properties};
@@ -551,6 +552,7 @@ public:
 private:
     const PadIdentifier identifier;
     const int motion_sensor;
+    const float gyro_threshold;
     int callback_key;
     InputEngine* input_engine;
 };
@@ -730,7 +732,7 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateHatButtonDevice(
 std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateStickDevice(
     const Common::ParamPackage& params) {
     const auto deadzone = std::clamp(params.Get("deadzone", 0.15f), 0.0f, 1.0f);
-    const auto range = std::clamp(params.Get("range", 1.0f), 0.25f, 1.50f);
+    const auto range = std::clamp(params.Get("range", 0.95f), 0.25f, 1.50f);
     const auto threshold = std::clamp(params.Get("threshold", 0.5f), 0.0f, 1.0f);
     const PadIdentifier identifier = {
         .guid = Common::UUID{params.Get("guid", "")},
@@ -873,9 +875,11 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateMotionDevice(
 
     if (params.Has("motion")) {
         const auto motion_sensor = params.Get("motion", 0);
+        const auto gyro_threshold = params.Get("threshold", 0.007f);
         input_engine->PreSetController(identifier);
         input_engine->PreSetMotion(identifier, motion_sensor);
-        return std::make_unique<InputFromMotion>(identifier, motion_sensor, input_engine.get());
+        return std::make_unique<InputFromMotion>(identifier, motion_sensor, gyro_threshold,
+                                                 input_engine.get());
     }
 
     const auto deadzone = std::clamp(params.Get("deadzone", 0.15f), 0.0f, 1.0f);

@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -34,16 +33,6 @@ struct BasicMotion {
     u64 delta_timestamp{};
 };
 
-// Stages of a battery charge
-enum class BatteryLevel {
-    Empty,
-    Critical,
-    Low,
-    Medium,
-    Full,
-    Charging,
-};
-
 // Types of input that are stored in the engine
 enum class EngineInputType {
     None,
@@ -59,7 +48,7 @@ namespace std {
 template <>
 struct hash<PadIdentifier> {
     size_t operator()(const PadIdentifier& pad_id) const noexcept {
-        u64 hash_value = pad_id.guid.uuid[1] ^ pad_id.guid.uuid[0];
+        u64 hash_value = pad_id.guid.Hash();
         hash_value ^= (static_cast<u64>(pad_id.port) << 32);
         hash_value ^= static_cast<u64>(pad_id.pad);
         return static_cast<size_t>(hash_value);
@@ -89,7 +78,7 @@ struct UpdateCallback {
 
 // Triggered if data changed on the controller and the engine is on configuring mode
 struct MappingCallback {
-    std::function<void(MappingData)> on_data;
+    std::function<void(const MappingData&)> on_data;
 };
 
 // Input Identifier of data source
@@ -167,6 +156,11 @@ public:
         return 0;
     }
 
+    /// Returns true if axis of a stick aren't mapped in the correct direction
+    virtual bool IsStickInverted([[maybe_unused]] const Common::ParamPackage& params) {
+        return false;
+    }
+
     void PreSetController(const PadIdentifier& identifier);
     void PreSetButton(const PadIdentifier& identifier, int button);
     void PreSetHatButton(const PadIdentifier& identifier, int button);
@@ -178,7 +172,7 @@ public:
     bool GetButton(const PadIdentifier& identifier, int button) const;
     bool GetHatButton(const PadIdentifier& identifier, int button, u8 direction) const;
     f32 GetAxis(const PadIdentifier& identifier, int axis) const;
-    BatteryLevel GetBattery(const PadIdentifier& identifier) const;
+    Common::Input::BatteryLevel GetBattery(const PadIdentifier& identifier) const;
     BasicMotion GetMotion(const PadIdentifier& identifier, int motion) const;
 
     int SetCallback(InputIdentifier input_identifier);
@@ -189,7 +183,7 @@ protected:
     void SetButton(const PadIdentifier& identifier, int button, bool value);
     void SetHatButton(const PadIdentifier& identifier, int button, u8 value);
     void SetAxis(const PadIdentifier& identifier, int axis, f32 value);
-    void SetBattery(const PadIdentifier& identifier, BatteryLevel value);
+    void SetBattery(const PadIdentifier& identifier, Common::Input::BatteryLevel value);
     void SetMotion(const PadIdentifier& identifier, int motion, const BasicMotion& value);
 
     virtual std::string GetHatButtonName([[maybe_unused]] u8 direction_value) const {
@@ -202,13 +196,13 @@ private:
         std::unordered_map<int, u8> hat_buttons;
         std::unordered_map<int, float> axes;
         std::unordered_map<int, BasicMotion> motions;
-        BatteryLevel battery{};
+        Common::Input::BatteryLevel battery{};
     };
 
     void TriggerOnButtonChange(const PadIdentifier& identifier, int button, bool value);
     void TriggerOnHatButtonChange(const PadIdentifier& identifier, int button, u8 value);
     void TriggerOnAxisChange(const PadIdentifier& identifier, int axis, f32 value);
-    void TriggerOnBatteryChange(const PadIdentifier& identifier, BatteryLevel value);
+    void TriggerOnBatteryChange(const PadIdentifier& identifier, Common::Input::BatteryLevel value);
     void TriggerOnMotionChange(const PadIdentifier& identifier, int motion,
                                const BasicMotion& value);
 

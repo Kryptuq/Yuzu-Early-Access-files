@@ -1,4 +1,4 @@
-/* $OpenBSD: bn_lib.c,v 1.47 2019/06/17 17:11:48 tb Exp $ */
+/* $OpenBSD: bn_lib.c,v 1.53 2021/12/27 15:12:22 jsing Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -92,6 +92,63 @@ static int bn_limit_num_high = 8;   /* (1<<bn_limit_bits_high) */
 static int bn_limit_bits_mont = 0;
 static int bn_limit_num_mont = 8;   /* (1<<bn_limit_bits_mont) */
 
+BIGNUM *
+BN_new(void)
+{
+	BIGNUM *ret;
+
+	if ((ret = malloc(sizeof(BIGNUM))) == NULL) {
+		BNerror(ERR_R_MALLOC_FAILURE);
+		return (NULL);
+	}
+	ret->flags = BN_FLG_MALLOCED;
+	ret->top = 0;
+	ret->neg = 0;
+	ret->dmax = 0;
+	ret->d = NULL;
+	bn_check_top(ret);
+	return (ret);
+}
+
+void
+BN_init(BIGNUM *a)
+{
+	memset(a, 0, sizeof(BIGNUM));
+	bn_check_top(a);
+}
+
+void
+BN_clear(BIGNUM *a)
+{
+	bn_check_top(a);
+	if (a->d != NULL)
+		explicit_bzero(a->d, a->dmax * sizeof(a->d[0]));
+	a->top = 0;
+	a->neg = 0;
+}
+
+void
+BN_clear_free(BIGNUM *a)
+{
+	int i;
+
+	if (a == NULL)
+		return;
+	bn_check_top(a);
+	if (a->d != NULL && !(BN_get_flags(a, BN_FLG_STATIC_DATA)))
+		freezero(a->d, a->dmax * sizeof(a->d[0]));
+	i = BN_get_flags(a, BN_FLG_MALLOCED);
+	explicit_bzero(a, sizeof(BIGNUM));
+	if (i)
+		free(a);
+}
+
+void
+BN_free(BIGNUM *a)
+{
+	BN_clear_free(a);
+}
+
 void
 BN_set_params(int mult, int high, int low, int mont)
 {
@@ -137,6 +194,30 @@ BN_get_params(int which)
 }
 #endif
 
+void
+BN_set_flags(BIGNUM *b, int n)
+{
+	b->flags |= n;
+}
+
+int
+BN_get_flags(const BIGNUM *b, int n)
+{
+	return b->flags & n;
+}
+
+void
+BN_with_flags(BIGNUM *dest, const BIGNUM *b, int flags)
+{
+	int dest_flags;
+
+	dest_flags = (dest->flags & BN_FLG_MALLOCED) |
+	    (b->flags & ~BN_FLG_MALLOCED) | BN_FLG_STATIC_DATA | flags;
+
+	*dest = *b;
+	dest->flags = dest_flags;
+}
+
 const BIGNUM *
 BN_value_one(void)
 {
@@ -180,53 +261,6 @@ BN_num_bits(const BIGNUM *a)
 	if (BN_is_zero(a))
 		return 0;
 	return ((i * BN_BITS2) + BN_num_bits_word(a->d[i]));
-}
-
-void
-BN_clear_free(BIGNUM *a)
-{
-	int i;
-
-	if (a == NULL)
-		return;
-	bn_check_top(a);
-	if (a->d != NULL && !(BN_get_flags(a, BN_FLG_STATIC_DATA)))
-		freezero(a->d, a->dmax * sizeof(a->d[0]));
-	i = BN_get_flags(a, BN_FLG_MALLOCED);
-	explicit_bzero(a, sizeof(BIGNUM));
-	if (i)
-		free(a);
-}
-
-void
-BN_free(BIGNUM *a)
-{
-	BN_clear_free(a);
-}
-
-void
-BN_init(BIGNUM *a)
-{
-	memset(a, 0, sizeof(BIGNUM));
-	bn_check_top(a);
-}
-
-BIGNUM *
-BN_new(void)
-{
-	BIGNUM *ret;
-
-	if ((ret = malloc(sizeof(BIGNUM))) == NULL) {
-		BNerror(ERR_R_MALLOC_FAILURE);
-		return (NULL);
-	}
-	ret->flags = BN_FLG_MALLOCED;
-	ret->top = 0;
-	ret->neg = 0;
-	ret->dmax = 0;
-	ret->d = NULL;
-	bn_check_top(ret);
-	return (ret);
 }
 
 /* This is used both by bn_expand2() and bn_dup_expand() */
@@ -494,16 +528,6 @@ BN_swap(BIGNUM *a, BIGNUM *b)
 	bn_check_top(b);
 }
 
-void
-BN_clear(BIGNUM *a)
-{
-	bn_check_top(a);
-	if (a->d != NULL)
-		explicit_bzero(a->d, a->dmax * sizeof(a->d[0]));
-	a->top = 0;
-	a->neg = 0;
-}
-
 BN_ULONG
 BN_get_word(const BIGNUM *a)
 {
@@ -583,20 +607,143 @@ BN_bin2bn(const unsigned char *s, int len, BIGNUM *ret)
 	return (ret);
 }
 
+typedef enum {
+	big,
+	little,
+} endianness_t;
+
 /* ignore negative */
+static int
+bn2binpad(const BIGNUM *a, unsigned char *to, int tolen, endianness_t endianness)
+{
+	int n;
+	size_t i, lasti, j, atop, mask;
+	BN_ULONG l;
+
+	/*
+	 * In case |a| is fixed-top, BN_num_bytes can return bogus length,
+	 * but it's assumed that fixed-top inputs ought to be "nominated"
+	 * even for padded output, so it works out...
+	 */
+	n = BN_num_bytes(a);
+	if (tolen == -1)
+		tolen = n;
+	else if (tolen < n) {	/* uncommon/unlike case */
+		BIGNUM temp = *a;
+
+		bn_correct_top(&temp);
+
+		n = BN_num_bytes(&temp);
+		if (tolen < n)
+			return -1;
+	}
+
+	/* Swipe through whole available data and don't give away padded zero. */
+	atop = a->dmax * BN_BYTES;
+	if (atop == 0) {
+		explicit_bzero(to, tolen);
+		return tolen;
+	}
+
+	lasti = atop - 1;
+	atop = a->top * BN_BYTES;
+
+	if (endianness == big)
+		to += tolen; /* start from the end of the buffer */
+
+	for (i = 0, j = 0; j < (size_t)tolen; j++) {
+		unsigned char val;
+
+		l = a->d[i / BN_BYTES];
+		mask = 0 - ((j - atop) >> (8 * sizeof(i) - 1));
+		val = (unsigned char)(l >> (8 * (i % BN_BYTES)) & mask);
+
+		if (endianness == big)
+			*--to = val;
+		else
+			*to++ = val;
+
+		i += (i - lasti) >> (8 * sizeof(i) - 1); /* stay on last limb */
+	}
+
+	return tolen;
+}
+
+int
+BN_bn2binpad(const BIGNUM *a, unsigned char *to, int tolen)
+{
+	if (tolen < 0)
+		return -1;
+	return bn2binpad(a, to, tolen, big);
+}
+
 int
 BN_bn2bin(const BIGNUM *a, unsigned char *to)
 {
-	int n, i;
-	BN_ULONG l;
+	return bn2binpad(a, to, -1, big);
+}
 
-	bn_check_top(a);
-	n = i=BN_num_bytes(a);
-	while (i--) {
-		l = a->d[i / BN_BYTES];
-		*(to++) = (unsigned char)(l >> (8 * (i % BN_BYTES))) & 0xff;
+BIGNUM *
+BN_lebin2bn(const unsigned char *s, int len, BIGNUM *ret)
+{
+	unsigned int i, m, n;
+	BN_ULONG l;
+	BIGNUM *bn = NULL;
+
+	if (ret == NULL)
+		ret = bn = BN_new();
+	if (ret == NULL)
+		return NULL;
+
+	bn_check_top(ret);
+
+	s += len;
+	/* Skip trailing zeroes. */
+	for (; len > 0 && s[-1] == 0; s--, len--)
+		continue;
+
+	n = len;
+	if (n == 0) {
+		ret->top = 0;
+		return ret;
 	}
-	return (n);
+
+	i = ((n - 1) / BN_BYTES) + 1;
+	m = (n - 1) % BN_BYTES;
+	if (bn_wexpand(ret, (int)i) == NULL) {
+		BN_free(bn);
+		return NULL;
+	}
+
+	ret->top = i;
+	ret->neg = 0;
+	l = 0;
+	while (n-- > 0) {
+		s--;
+		l = (l << 8L) | *s;
+		if (m-- == 0) {
+			ret->d[--i] = l;
+			l = 0;
+			m = BN_BYTES - 1;
+		}
+	}
+
+	/*
+	 * need to call this due to clear byte at top if avoiding having the
+	 * top bit set (-ve number)
+	 */
+	bn_correct_top(ret);
+
+	return ret;
+}
+
+int
+BN_bn2lebinpad(const BIGNUM *a, unsigned char *to, int tolen)
+{
+	if (tolen < 0)
+		return -1;
+
+	return bn2binpad(a, to, tolen, little);
 }
 
 int
@@ -914,6 +1061,50 @@ BN_swap_ct(BN_ULONG condition, BIGNUM *a, BIGNUM *b, size_t nwords)
 	return 1;
 }
 
+void
+BN_zero_ex(BIGNUM *a)
+{
+	a->neg = 0;
+	a->top = 0;
+	/* XXX: a->flags &= ~BN_FIXED_TOP */
+}
+
+int
+BN_abs_is_word(const BIGNUM *a, const BN_ULONG w)
+{
+	return (a->top == 1 && a->d[0] == w) || (w == 0 && a->top == 0);
+}
+
+int
+BN_is_zero(const BIGNUM *a)
+{
+	return a->top == 0;
+}
+
+int
+BN_is_one(const BIGNUM *a)
+{
+	return BN_abs_is_word(a, 1) && !a->neg;
+}
+
+int
+BN_is_word(const BIGNUM *a, const BN_ULONG w)
+{
+	return BN_abs_is_word(a, w) && (w == 0 || !a->neg);
+}
+
+int
+BN_is_odd(const BIGNUM *a)
+{
+	return a->top > 0 && (a->d[0] & 1);
+}
+
+int
+BN_is_negative(const BIGNUM *a)
+{
+	return a->neg != 0;
+}
+
 BN_GENCB *
 BN_GENCB_new(void)
 {
@@ -931,6 +1122,24 @@ BN_GENCB_free(BN_GENCB *cb)
 	if (cb == NULL)
 		return;
 	free(cb);
+}
+
+/* Populate a BN_GENCB structure with an "old"-style callback */
+void
+BN_GENCB_set_old(BN_GENCB *gencb, void (*cb)(int, int, void *), void *cb_arg)
+{
+	gencb->ver = 1;
+	gencb->cb.cb_1 = cb;
+	gencb->arg = cb_arg;
+}
+
+/* Populate a BN_GENCB structure with a "new"-style callback */
+void
+BN_GENCB_set(BN_GENCB *gencb, int (*cb)(int, int, BN_GENCB *), void *cb_arg)
+{
+	gencb->ver = 2;
+	gencb->cb.cb_2 = cb;
+	gencb->arg = cb_arg;
 }
 
 void *

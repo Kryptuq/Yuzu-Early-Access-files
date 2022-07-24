@@ -6,12 +6,13 @@
 #pragma once
 
 #include <bit>
+#include <cstddef>
+#include <span>
 #include <utility>
 
+#include <mcl/stdint.hpp>
 #include <tsl/robin_map.h>
 #include <xbyak/xbyak.h>
-
-#include "dynarmic/common/common_types.h"
 
 namespace Dynarmic::Backend::X64 {
 
@@ -30,18 +31,20 @@ public:
 private:
     static constexpr size_t align_size = 16;  // bytes
 
+    using ConstantT = std::pair<u64, u64>;
+    static_assert(sizeof(ConstantT) == align_size);
+
     struct ConstantHash {
-        std::size_t operator()(const std::pair<u64, u64>& constant) const noexcept {
+        std::size_t operator()(const ConstantT& constant) const noexcept {
             return constant.first ^ std::rotl<u64>(constant.second, 1);
         }
     };
 
-    tsl::robin_map<std::pair<u64, u64>, void*, ConstantHash> constant_info;
+    tsl::robin_map<ConstantT, void*, ConstantHash> constant_info;
 
     BlockOfCode& code;
-    size_t pool_size;
-    u8* pool_begin;
-    u8* current_pool_ptr;
+    std::span<ConstantT> pool;
+    std::size_t insertion_point;
 };
 
 }  // namespace Dynarmic::Backend::X64

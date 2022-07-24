@@ -5,7 +5,8 @@
 
 #include "dynarmic/frontend/A64/a64_ir_emitter.h"
 
-#include "dynarmic/common/assert.h"
+#include <mcl/assert.hpp>
+
 #include "dynarmic/ir/opcodes.h"
 
 namespace Dynarmic::A64 {
@@ -54,7 +55,7 @@ void IREmitter::ExceptionRaised(Exception exception) {
 }
 
 void IREmitter::DataCacheOperationRaised(DataCacheOperation op, const IR::U64& value) {
-    Inst(Opcode::A64DataCacheOperationRaised, Imm64(static_cast<u64>(op)), value);
+    Inst(Opcode::A64DataCacheOperationRaised, ImmCurrentLocationDescriptor(), Imm64(static_cast<u64>(op)), value);
 }
 
 void IREmitter::InstructionCacheOperationRaised(InstructionCacheOperation op, const IR::U64& value) {
@@ -105,84 +106,84 @@ void IREmitter::ClearExclusive() {
     Inst(Opcode::A64ClearExclusive);
 }
 
-IR::U8 IREmitter::ReadMemory8(const IR::U64& vaddr) {
-    return Inst<IR::U8>(Opcode::A64ReadMemory8, vaddr);
+IR::U8 IREmitter::ReadMemory8(const IR::U64& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U8>(Opcode::A64ReadMemory8, ImmCurrentLocationDescriptor(), vaddr, IR::Value{acc_type});
 }
 
-IR::U16 IREmitter::ReadMemory16(const IR::U64& vaddr) {
-    return Inst<IR::U16>(Opcode::A64ReadMemory16, vaddr);
+IR::U16 IREmitter::ReadMemory16(const IR::U64& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U16>(Opcode::A64ReadMemory16, ImmCurrentLocationDescriptor(), vaddr, IR::Value{acc_type});
 }
 
-IR::U32 IREmitter::ReadMemory32(const IR::U64& vaddr) {
-    return Inst<IR::U32>(Opcode::A64ReadMemory32, vaddr);
+IR::U32 IREmitter::ReadMemory32(const IR::U64& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U32>(Opcode::A64ReadMemory32, ImmCurrentLocationDescriptor(), vaddr, IR::Value{acc_type});
 }
 
-IR::U64 IREmitter::ReadMemory64(const IR::U64& vaddr) {
-    return Inst<IR::U64>(Opcode::A64ReadMemory64, vaddr);
+IR::U64 IREmitter::ReadMemory64(const IR::U64& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U64>(Opcode::A64ReadMemory64, ImmCurrentLocationDescriptor(), vaddr, IR::Value{acc_type});
 }
 
-IR::U128 IREmitter::ReadMemory128(const IR::U64& vaddr) {
-    return Inst<IR::U128>(Opcode::A64ReadMemory128, vaddr);
+IR::U128 IREmitter::ReadMemory128(const IR::U64& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U128>(Opcode::A64ReadMemory128, ImmCurrentLocationDescriptor(), vaddr, IR::Value{acc_type});
 }
 
-IR::U8 IREmitter::ExclusiveReadMemory8(const IR::U64& vaddr) {
-    return Inst<IR::U8>(Opcode::A64ExclusiveReadMemory8, vaddr);
+IR::U8 IREmitter::ExclusiveReadMemory8(const IR::U64& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U8>(Opcode::A64ExclusiveReadMemory8, ImmCurrentLocationDescriptor(), vaddr, IR::Value{acc_type});
 }
 
-IR::U16 IREmitter::ExclusiveReadMemory16(const IR::U64& vaddr) {
-    return Inst<IR::U16>(Opcode::A64ExclusiveReadMemory16, vaddr);
+IR::U16 IREmitter::ExclusiveReadMemory16(const IR::U64& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U16>(Opcode::A64ExclusiveReadMemory16, ImmCurrentLocationDescriptor(), vaddr, IR::Value{acc_type});
 }
 
-IR::U32 IREmitter::ExclusiveReadMemory32(const IR::U64& vaddr) {
-    return Inst<IR::U32>(Opcode::A64ExclusiveReadMemory32, vaddr);
+IR::U32 IREmitter::ExclusiveReadMemory32(const IR::U64& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U32>(Opcode::A64ExclusiveReadMemory32, ImmCurrentLocationDescriptor(), vaddr, IR::Value{acc_type});
 }
 
-IR::U64 IREmitter::ExclusiveReadMemory64(const IR::U64& vaddr) {
-    return Inst<IR::U64>(Opcode::A64ExclusiveReadMemory64, vaddr);
+IR::U64 IREmitter::ExclusiveReadMemory64(const IR::U64& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U64>(Opcode::A64ExclusiveReadMemory64, ImmCurrentLocationDescriptor(), vaddr, IR::Value{acc_type});
 }
 
-IR::U128 IREmitter::ExclusiveReadMemory128(const IR::U64& vaddr) {
-    return Inst<IR::U128>(Opcode::A64ExclusiveReadMemory128, vaddr);
+IR::U128 IREmitter::ExclusiveReadMemory128(const IR::U64& vaddr, IR::AccType acc_type) {
+    return Inst<IR::U128>(Opcode::A64ExclusiveReadMemory128, ImmCurrentLocationDescriptor(), vaddr, IR::Value{acc_type});
 }
 
-void IREmitter::WriteMemory8(const IR::U64& vaddr, const IR::U8& value) {
-    Inst(Opcode::A64WriteMemory8, vaddr, value);
+void IREmitter::WriteMemory8(const IR::U64& vaddr, const IR::U8& value, IR::AccType acc_type) {
+    Inst(Opcode::A64WriteMemory8, ImmCurrentLocationDescriptor(), vaddr, value, IR::Value{acc_type});
 }
 
-void IREmitter::WriteMemory16(const IR::U64& vaddr, const IR::U16& value) {
-    Inst(Opcode::A64WriteMemory16, vaddr, value);
+void IREmitter::WriteMemory16(const IR::U64& vaddr, const IR::U16& value, IR::AccType acc_type) {
+    Inst(Opcode::A64WriteMemory16, ImmCurrentLocationDescriptor(), vaddr, value, IR::Value{acc_type});
 }
 
-void IREmitter::WriteMemory32(const IR::U64& vaddr, const IR::U32& value) {
-    Inst(Opcode::A64WriteMemory32, vaddr, value);
+void IREmitter::WriteMemory32(const IR::U64& vaddr, const IR::U32& value, IR::AccType acc_type) {
+    Inst(Opcode::A64WriteMemory32, ImmCurrentLocationDescriptor(), vaddr, value, IR::Value{acc_type});
 }
 
-void IREmitter::WriteMemory64(const IR::U64& vaddr, const IR::U64& value) {
-    Inst(Opcode::A64WriteMemory64, vaddr, value);
+void IREmitter::WriteMemory64(const IR::U64& vaddr, const IR::U64& value, IR::AccType acc_type) {
+    Inst(Opcode::A64WriteMemory64, ImmCurrentLocationDescriptor(), vaddr, value, IR::Value{acc_type});
 }
 
-void IREmitter::WriteMemory128(const IR::U64& vaddr, const IR::U128& value) {
-    Inst(Opcode::A64WriteMemory128, vaddr, value);
+void IREmitter::WriteMemory128(const IR::U64& vaddr, const IR::U128& value, IR::AccType acc_type) {
+    Inst(Opcode::A64WriteMemory128, ImmCurrentLocationDescriptor(), vaddr, value, IR::Value{acc_type});
 }
 
-IR::U32 IREmitter::ExclusiveWriteMemory8(const IR::U64& vaddr, const IR::U8& value) {
-    return Inst<IR::U32>(Opcode::A64ExclusiveWriteMemory8, vaddr, value);
+IR::U32 IREmitter::ExclusiveWriteMemory8(const IR::U64& vaddr, const IR::U8& value, IR::AccType acc_type) {
+    return Inst<IR::U32>(Opcode::A64ExclusiveWriteMemory8, ImmCurrentLocationDescriptor(), vaddr, value, IR::Value{acc_type});
 }
 
-IR::U32 IREmitter::ExclusiveWriteMemory16(const IR::U64& vaddr, const IR::U16& value) {
-    return Inst<IR::U32>(Opcode::A64ExclusiveWriteMemory16, vaddr, value);
+IR::U32 IREmitter::ExclusiveWriteMemory16(const IR::U64& vaddr, const IR::U16& value, IR::AccType acc_type) {
+    return Inst<IR::U32>(Opcode::A64ExclusiveWriteMemory16, ImmCurrentLocationDescriptor(), vaddr, value, IR::Value{acc_type});
 }
 
-IR::U32 IREmitter::ExclusiveWriteMemory32(const IR::U64& vaddr, const IR::U32& value) {
-    return Inst<IR::U32>(Opcode::A64ExclusiveWriteMemory32, vaddr, value);
+IR::U32 IREmitter::ExclusiveWriteMemory32(const IR::U64& vaddr, const IR::U32& value, IR::AccType acc_type) {
+    return Inst<IR::U32>(Opcode::A64ExclusiveWriteMemory32, ImmCurrentLocationDescriptor(), vaddr, value, IR::Value{acc_type});
 }
 
-IR::U32 IREmitter::ExclusiveWriteMemory64(const IR::U64& vaddr, const IR::U64& value) {
-    return Inst<IR::U32>(Opcode::A64ExclusiveWriteMemory64, vaddr, value);
+IR::U32 IREmitter::ExclusiveWriteMemory64(const IR::U64& vaddr, const IR::U64& value, IR::AccType acc_type) {
+    return Inst<IR::U32>(Opcode::A64ExclusiveWriteMemory64, ImmCurrentLocationDescriptor(), vaddr, value, IR::Value{acc_type});
 }
 
-IR::U32 IREmitter::ExclusiveWriteMemory128(const IR::U64& vaddr, const IR::U128& value) {
-    return Inst<IR::U32>(Opcode::A64ExclusiveWriteMemory128, vaddr, value);
+IR::U32 IREmitter::ExclusiveWriteMemory128(const IR::U64& vaddr, const IR::U128& value, IR::AccType acc_type) {
+    return Inst<IR::U32>(Opcode::A64ExclusiveWriteMemory128, ImmCurrentLocationDescriptor(), vaddr, value, IR::Value{acc_type});
 }
 
 IR::U32 IREmitter::GetW(Reg reg) {
@@ -259,6 +260,10 @@ void IREmitter::SetFPSR(const IR::U32& value) {
 
 void IREmitter::SetPC(const IR::U64& value) {
     Inst(Opcode::A64SetPC, value);
+}
+
+IR::U64 IREmitter::ImmCurrentLocationDescriptor() {
+    return Imm64(IR::LocationDescriptor{*current_location}.Value());
 }
 
 }  // namespace Dynarmic::A64

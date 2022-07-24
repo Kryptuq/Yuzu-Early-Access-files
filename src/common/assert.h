@@ -1,6 +1,6 @@
-// Copyright 2013 Dolphin Emulator Project / 2014 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2013 Dolphin Emulator Project
+// SPDX-FileCopyrightText: 2014 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -9,44 +9,43 @@
 // Sometimes we want to try to continue even after hitting an assert.
 // However touching this file yields a global recompilation as this header is included almost
 // everywhere. So let's just move the handling of the failed assert to a single cpp file.
-void assert_handle_failure();
 
-// For asserts we'd like to keep all the junk executed when an assert happens away from the
-// important code in the function. One way of doing this is to put all the relevant code inside a
-// lambda and force the compiler to not inline it. Unfortunately, MSVC seems to have no syntax to
-// specify __declspec on lambda functions, so what we do instead is define a noinline wrapper
-// template that calls the lambda. This seems to generate an extra instruction at the call-site
-// compared to the ideal implementation (which wouldn't support ASSERT_MSG parameters), but is good
-// enough for our purposes.
-template <typename Fn>
-#if defined(_MSC_VER)
-[[msvc::noinline]]
-#elif defined(__GNUC__)
-[[gnu::cold, gnu::noinline]]
+void assert_fail_impl();
+[[noreturn]] void unreachable_impl();
+
+#ifdef _MSC_VER
+#define YUZU_NO_INLINE __declspec(noinline)
+#else
+#define YUZU_NO_INLINE __attribute__((noinline))
 #endif
-static void
-assert_noinline_call(const Fn& fn) {
-    fn();
-    assert_handle_failure();
-}
 
 #define ASSERT(_a_)                                                                                \
-    do                                                                                             \
+    ([&]() YUZU_NO_INLINE {                                                                        \
         if (!(_a_)) [[unlikely]] {                                                                 \
-            assert_noinline_call([] { LOG_CRITICAL(Debug, "Assertion Failed!"); });                \
+            LOG_CRITICAL(Debug, "Assertion Failed!");                                              \
+            assert_fail_impl();                                                                    \
         }                                                                                          \
-    while (0)
+    }())
 
 #define ASSERT_MSG(_a_, ...)                                                                       \
-    do                                                                                             \
+    ([&]() YUZU_NO_INLINE {                                                                        \
         if (!(_a_)) [[unlikely]] {                                                                 \
-            assert_noinline_call([&] { LOG_CRITICAL(Debug, "Assertion Failed!\n" __VA_ARGS__); }); \
+            LOG_CRITICAL(Debug, "Assertion Failed!\n" __VA_ARGS__);                                \
+            assert_fail_impl();                                                                    \
         }                                                                                          \
-    while (0)
+    }())
 
-#define UNREACHABLE() assert_noinline_call([] { LOG_CRITICAL(Debug, "Unreachable code!"); })
+#define UNREACHABLE()                                                                              \
+    do {                                                                                           \
+        LOG_CRITICAL(Debug, "Unreachable code!");                                                  \
+        unreachable_impl();                                                                        \
+    } while (0)
+
 #define UNREACHABLE_MSG(...)                                                                       \
-    assert_noinline_call([&] { LOG_CRITICAL(Debug, "Unreachable code!\n" __VA_ARGS__); })
+    do {                                                                                           \
+        LOG_CRITICAL(Debug, "Unreachable code!\n" __VA_ARGS__);                                    \
+        unreachable_impl();                                                                        \
+    } while (0)
 
 #ifdef _DEBUG
 #define DEBUG_ASSERT(_a_) ASSERT(_a_)
@@ -70,7 +69,7 @@ assert_noinline_call(const Fn& fn) {
 #define ASSERT_OR_EXECUTE(_a_, _b_)                                                                \
     do {                                                                                           \
         ASSERT(_a_);                                                                               \
-        if (!(_a_)) [[unlikely]] {                                                                 \
+        if (!(_a_)) {                                                                              \
             _b_                                                                                    \
         }                                                                                          \
     } while (0)
@@ -79,7 +78,7 @@ assert_noinline_call(const Fn& fn) {
 #define ASSERT_OR_EXECUTE_MSG(_a_, _b_, ...)                                                       \
     do {                                                                                           \
         ASSERT_MSG(_a_, __VA_ARGS__);                                                              \
-        if (!(_a_)) [[unlikely]] {                                                                 \
+        if (!(_a_)) {                                                                              \
             _b_                                                                                    \
         }                                                                                          \
     } while (0)

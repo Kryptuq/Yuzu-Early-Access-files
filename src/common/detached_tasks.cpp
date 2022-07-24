@@ -33,9 +33,9 @@ void DetachedTasks::AddTask(std::function<void()> task) {
     ++instance->count;
     std::thread([task{std::move(task)}]() {
         task();
-        std::unique_lock lock{instance->mutex};
+        std::unique_lock thread_lock{instance->mutex};
         --instance->count;
-        std::notify_all_at_thread_exit(instance->cv, std::move(lock));
+        std::notify_all_at_thread_exit(instance->cv, std::move(thread_lock));
     }).detach();
 }
 

@@ -1,4 +1,4 @@
-/* $OpenBSD: p_lib.c,v 1.25 2019/03/17 18:17:45 tb Exp $ */
+/* $OpenBSD: p_lib.c,v 1.28 2022/01/20 11:06:24 inoguchi Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -61,6 +61,7 @@
 #include <openssl/opensslconf.h>
 
 #include <openssl/bn.h>
+#include <openssl/cmac.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/objects.h>
@@ -81,6 +82,7 @@
 #endif
 
 #include "asn1_locl.h"
+#include "evp_locl.h"
 
 static void EVP_PKEY_free_it(EVP_PKEY *x);
 
@@ -216,10 +218,14 @@ EVP_PKEY_up_ref(EVP_PKEY *pkey)
  */
 
 static int
-pkey_set_type(EVP_PKEY *pkey, int type, const char *str, int len)
+pkey_set_type(EVP_PKEY *pkey, ENGINE *e, int type, const char *str, int len)
 {
 	const EVP_PKEY_ASN1_METHOD *ameth;
-	ENGINE *e = NULL;
+	ENGINE **eptr = NULL;
+
+	if (e == NULL)
+		eptr = &e;
+
 	if (pkey) {
 		if (pkey->pkey.ptr)
 			EVP_PKEY_free_it(pkey);
@@ -234,11 +240,11 @@ pkey_set_type(EVP_PKEY *pkey, int type, const char *str, int len)
 #endif
 	}
 	if (str)
-		ameth = EVP_PKEY_asn1_find_str(&e, str, len);
+		ameth = EVP_PKEY_asn1_find_str(eptr, str, len);
 	else
-		ameth = EVP_PKEY_asn1_find(&e, type);
+		ameth = EVP_PKEY_asn1_find(eptr, type);
 #ifndef OPENSSL_NO_ENGINE
-	if (pkey == NULL)
+	if (pkey == NULL && eptr != NULL)
 		ENGINE_finish(e);
 #endif
 	if (!ameth) {
@@ -258,13 +264,43 @@ pkey_set_type(EVP_PKEY *pkey, int type, const char *str, int len)
 int
 EVP_PKEY_set_type(EVP_PKEY *pkey, int type)
 {
-	return pkey_set_type(pkey, type, NULL, -1);
+	return pkey_set_type(pkey, NULL, type, NULL, -1);
+}
+
+EVP_PKEY *
+EVP_PKEY_new_CMAC_key(ENGINE *e, const unsigned char *priv, size_t len,
+    const EVP_CIPHER *cipher)
+{
+	EVP_PKEY *ret = NULL;
+	CMAC_CTX *cmctx = NULL;
+
+	if ((ret = EVP_PKEY_new()) == NULL)
+		goto err;
+	if ((cmctx = CMAC_CTX_new()) == NULL)
+		goto err;
+
+	if (!pkey_set_type(ret, e, EVP_PKEY_CMAC, NULL, -1))
+		goto err;
+
+	if (!CMAC_Init(cmctx, priv, len, cipher, e)) {
+		EVPerror(EVP_R_KEY_SETUP_FAILED);
+		goto err;
+	}
+
+	ret->pkey.ptr = (char *)cmctx;
+
+	return ret;
+
+ err:
+	EVP_PKEY_free(ret);
+	CMAC_CTX_free(cmctx);
+	return NULL;
 }
 
 int
 EVP_PKEY_set_type_str(EVP_PKEY *pkey, const char *str, int len)
 {
-	return pkey_set_type(pkey, EVP_PKEY_NONE, str, len);
+	return pkey_set_type(pkey, NULL, EVP_PKEY_NONE, str, len);
 }
 
 int
@@ -490,7 +526,8 @@ EVP_PKEY_free_it(EVP_PKEY *x)
 static int
 unsup_alg(BIO *out, const EVP_PKEY *pkey, int indent, const char *kstr)
 {
-	BIO_indent(out, indent, 128);
+	if (!BIO_indent(out, indent, 128))
+		return 0;
 	BIO_printf(out, "%s algorithm \"%s\" unsupported\n",
 	    kstr, OBJ_nid2ln(pkey->type));
 	return 1;

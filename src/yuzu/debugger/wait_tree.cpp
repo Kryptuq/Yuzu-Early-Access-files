@@ -7,9 +7,7 @@
 
 #include "yuzu/debugger/wait_tree.h"
 #include "yuzu/uisettings.h"
-#include "yuzu/util/util.h"
 
-#include "common/assert.h"
 #include "core/arm/arm_interface.h"
 #include "core/core.h"
 #include "core/hle/kernel/k_class_token.h"
@@ -95,7 +93,7 @@ std::vector<std::unique_ptr<WaitTreeThread>> WaitTreeItem::MakeThreadItemList(
     std::size_t row = 0;
     auto add_threads = [&](const std::vector<Kernel::KThread*>& threads) {
         for (std::size_t i = 0; i < threads.size(); ++i) {
-            if (threads[i]->GetThreadTypeForDebugging() == Kernel::ThreadType::User) {
+            if (threads[i]->GetThreadType() == Kernel::ThreadType::User) {
                 item_list.push_back(std::make_unique<WaitTreeThread>(*threads[i], system));
                 item_list.back()->row = row;
             }
@@ -115,9 +113,9 @@ QString WaitTreeText::GetText() const {
     return text;
 }
 
-WaitTreeMutexInfo::WaitTreeMutexInfo(VAddr mutex_address, const Kernel::KHandleTable& handle_table,
+WaitTreeMutexInfo::WaitTreeMutexInfo(VAddr mutex_address_, const Kernel::KHandleTable& handle_table,
                                      Core::System& system_)
-    : mutex_address(mutex_address), system{system_} {
+    : mutex_address{mutex_address_}, system{system_} {
     mutex_value = system.Memory().Read32(mutex_address);
     owner_handle = static_cast<Kernel::Handle>(mutex_value & Kernel::Svc::HandleWaitMask);
     owner = handle_table.GetObject<Kernel::KThread>(owner_handle).GetPointerUnsafe();
@@ -142,8 +140,8 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeMutexInfo::GetChildren() cons
     return list;
 }
 
-WaitTreeCallstack::WaitTreeCallstack(const Kernel::KThread& thread, Core::System& system_)
-    : thread(thread), system{system_} {}
+WaitTreeCallstack::WaitTreeCallstack(const Kernel::KThread& thread_, Core::System& system_)
+    : thread{thread_}, system{system_} {}
 WaitTreeCallstack::~WaitTreeCallstack() = default;
 
 QString WaitTreeCallstack::GetText() const {
@@ -153,7 +151,7 @@ QString WaitTreeCallstack::GetText() const {
 std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeCallstack::GetChildren() const {
     std::vector<std::unique_ptr<WaitTreeItem>> list;
 
-    if (thread.GetThreadTypeForDebugging() != Kernel::ThreadType::User) {
+    if (thread.GetThreadType() != Kernel::ThreadType::User) {
         return list;
     }
 
@@ -173,8 +171,8 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeCallstack::GetChildren() cons
 }
 
 WaitTreeSynchronizationObject::WaitTreeSynchronizationObject(
-    const Kernel::KSynchronizationObject& o, Core::System& system_)
-    : object(o), system{system_} {}
+    const Kernel::KSynchronizationObject& object_, Core::System& system_)
+    : object{object_}, system{system_} {}
 WaitTreeSynchronizationObject::~WaitTreeSynchronizationObject() = default;
 
 WaitTreeExpandableItem::WaitTreeExpandableItem() = default;
@@ -382,8 +380,8 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeThread::GetChildren() const {
     return list;
 }
 
-WaitTreeEvent::WaitTreeEvent(const Kernel::KReadableEvent& object, Core::System& system_)
-    : WaitTreeSynchronizationObject(object, system_) {}
+WaitTreeEvent::WaitTreeEvent(const Kernel::KReadableEvent& object_, Core::System& system_)
+    : WaitTreeSynchronizationObject(object_, system_) {}
 WaitTreeEvent::~WaitTreeEvent() = default;
 
 WaitTreeThreadList::WaitTreeThreadList(std::vector<Kernel::KThread*>&& list, Core::System& system_)

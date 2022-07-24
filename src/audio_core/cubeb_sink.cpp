@@ -1,13 +1,11 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <atomic>
 #include <cstring>
 #include "audio_core/cubeb_sink.h"
 #include "audio_core/stream.h"
-#include "audio_core/time_stretch.h"
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "common/ring_buffer.h"
@@ -23,8 +21,7 @@ class CubebSinkStream final : public SinkStream {
 public:
     CubebSinkStream(cubeb* ctx_, u32 sample_rate, u32 num_channels_, cubeb_devid output_device,
                     const std::string& name)
-        : ctx{ctx_}, num_channels{std::min(num_channels_, 6u)}, time_stretch{sample_rate,
-                                                                             num_channels} {
+        : ctx{ctx_}, num_channels{std::min(num_channels_, 6u)} {
 
         cubeb_stream_params params{};
         params.rate = sample_rate;
@@ -131,7 +128,6 @@ private:
     Common::RingBuffer<s16, 0x10000> queue;
     std::array<s16, 2> last_frame{};
     std::atomic<bool> should_flush{};
-    TimeStretcher time_stretch;
 
     static long DataCallback(cubeb_stream* stream, void* user_data, const void* input_buffer,
                              void* output_buffer, long num_frames);
@@ -205,25 +201,7 @@ long CubebSinkStream::DataCallback([[maybe_unused]] cubeb_stream* stream, void* 
 
     const std::size_t num_channels = impl->GetNumChannels();
     const std::size_t samples_to_write = num_channels * num_frames;
-    std::size_t samples_written;
-
-    /*
-    if (Settings::values.enable_audio_stretching.GetValue()) {
-        const std::vector<s16> in{impl->queue.Pop()};
-        const std::size_t num_in{in.size() / num_channels};
-        s16* const out{reinterpret_cast<s16*>(buffer)};
-        const std::size_t out_frames =
-            impl->time_stretch.Process(in.data(), num_in, out, num_frames);
-        samples_written = out_frames * num_channels;
-
-        if (impl->should_flush) {
-            impl->time_stretch.Flush();
-            impl->should_flush = false;
-        }
-    } else {
-        samples_written = impl->queue.Pop(buffer, samples_to_write);
-    }*/
-    samples_written = impl->queue.Pop(buffer, samples_to_write);
+    const std::size_t samples_written = impl->queue.Pop(buffer, samples_to_write);
 
     if (samples_written >= num_channels) {
         std::memcpy(&impl->last_frame[0], buffer + (samples_written - num_channels) * sizeof(s16),

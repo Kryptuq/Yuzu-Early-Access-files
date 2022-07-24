@@ -1,4 +1,4 @@
-/* $OpenBSD: eck_prn.c,v 1.15 2018/07/15 16:27:39 tb Exp $ */
+/* $OpenBSD: eck_prn.c,v 1.17 2021/04/20 17:12:43 tb Exp $ */
 /*
  * Written by Nils Larsch for the OpenSSL project.
  */
@@ -63,8 +63,6 @@
 
 #include <stdio.h>
 #include <string.h>
-
-#include <openssl/opensslconf.h>
 
 #include <openssl/bn.h>
 #include <openssl/ec.h>
@@ -214,19 +212,9 @@ ECPKParameters_print(BIO * bp, const EC_GROUP * x, int off)
 			reason = ERR_R_MALLOC_FAILURE;
 			goto err;
 		}
-#ifndef OPENSSL_NO_EC2M
-		if (is_char_two) {
-			if (!EC_GROUP_get_curve_GF2m(x, p, a, b, ctx)) {
-				reason = ERR_R_EC_LIB;
-				goto err;
-			}
-		} else		/* prime field */
-#endif
-		{
-			if (!EC_GROUP_get_curve_GFp(x, p, a, b, ctx)) {
-				reason = ERR_R_EC_LIB;
-				goto err;
-			}
+		if (!EC_GROUP_get_curve(x, p, a, b, ctx)) {
+			reason = ERR_R_EC_LIB;
+			goto err;
 		}
 
 		if ((point = EC_GROUP_get0_generator(x)) == NULL) {

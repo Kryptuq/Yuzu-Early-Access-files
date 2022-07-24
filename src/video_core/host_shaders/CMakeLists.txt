@@ -14,9 +14,11 @@ set(SHADER_FILES
     convert_d24s8_to_abgr8.frag
     convert_depth_to_float.frag
     convert_float_to_depth.frag
+    convert_s8d24_to_abgr8.frag
     full_screen_triangle.vert
     fxaa.frag
     fxaa.vert
+    opengl_convert_s8d24.comp
     opengl_copy_bc4.comp
     opengl_present.frag
     opengl_present.vert

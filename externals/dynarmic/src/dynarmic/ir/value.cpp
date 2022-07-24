@@ -5,8 +5,9 @@
 
 #include "dynarmic/ir/value.h"
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/bit_util.h"
+#include <mcl/assert.hpp>
+#include <mcl/bit/bit_field.hpp>
+
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/opcodes.h"
 #include "dynarmic/ir/type.h"
@@ -71,6 +72,11 @@ Value::Value(CoprocessorInfo value)
 Value::Value(Cond value)
         : type(Type::Cond) {
     inner.imm_cond = value;
+}
+
+Value::Value(AccType value)
+        : type(Type::AccType) {
+    inner.imm_acctype = value;
 }
 
 bool Value::IsIdentity() const {
@@ -178,6 +184,13 @@ Cond Value::GetCond() const {
     return inner.imm_cond;
 }
 
+AccType Value::GetAccType() const {
+    if (IsIdentity())
+        return inner.inst->GetArg(0).GetAccType();
+    ASSERT(type == Type::AccType);
+    return inner.imm_acctype;
+}
+
 s64 Value::GetImmediateAsS64() const {
     ASSERT(IsImmediate());
 
@@ -185,11 +198,11 @@ s64 Value::GetImmediateAsS64() const {
     case IR::Type::U1:
         return s64(GetU1());
     case IR::Type::U8:
-        return s64(Common::SignExtend<8, u64>(GetU8()));
+        return s64(mcl::bit::sign_extend<8, u64>(GetU8()));
     case IR::Type::U16:
-        return s64(Common::SignExtend<16, u64>(GetU16()));
+        return s64(mcl::bit::sign_extend<16, u64>(GetU16()));
     case IR::Type::U32:
-        return s64(Common::SignExtend<32, u64>(GetU32()));
+        return s64(mcl::bit::sign_extend<32, u64>(GetU32()));
     case IR::Type::U64:
         return s64(GetU64());
     default:

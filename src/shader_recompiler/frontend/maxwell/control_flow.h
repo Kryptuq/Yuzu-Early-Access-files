@@ -1,10 +1,8 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
-#include <compare>
 #include <optional>
 #include <span>
 #include <string>
@@ -15,6 +13,7 @@
 
 #include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/condition.h"
+#include "shader_recompiler/frontend/ir/reg.h"
 #include "shader_recompiler/frontend/maxwell/instruction.h"
 #include "shader_recompiler/frontend/maxwell/location.h"
 #include "shader_recompiler/frontend/maxwell/opcodes.h"
@@ -59,7 +58,7 @@ public:
     [[nodiscard]] Stack Remove(Token token) const;
 
 private:
-    boost::container::small_vector<StackEntry, 3> entries;
+    std::vector<StackEntry> entries;
 };
 
 struct IndirectBranch {

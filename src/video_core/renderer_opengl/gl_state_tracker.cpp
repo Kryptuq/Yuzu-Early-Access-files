@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <array>
@@ -8,8 +7,8 @@
 
 #include "common/common_types.h"
 #include "core/core.h"
+#include "video_core/control/channel_state.h"
 #include "video_core/engines/maxwell_3d.h"
-#include "video_core/gpu.h"
 #include "video_core/renderer_opengl/gl_state_tracker.h"
 
 #define OFF(field_name) MAXWELL3D_REG_INDEX(field_name)
@@ -203,9 +202,8 @@ void SetupDirtyMisc(Tables& tables) {
 
 } // Anonymous namespace
 
-StateTracker::StateTracker(Tegra::GPU& gpu) : flags{gpu.Maxwell3D().dirty.flags} {
-    auto& dirty = gpu.Maxwell3D().dirty;
-    auto& tables = dirty.tables;
+void StateTracker::SetupTables(Tegra::Control::ChannelState& channel_state) {
+    auto& tables{channel_state.maxwell_3d->dirty.tables};
     SetupDirtyFlags(tables);
     SetupDirtyColorMasks(tables);
     SetupDirtyViewports(tables);
@@ -230,5 +228,15 @@ StateTracker::StateTracker(Tegra::GPU& gpu) : flags{gpu.Maxwell3D().dirty.flags}
     SetupDirtyDepthClampEnabled(tables);
     SetupDirtyMisc(tables);
 }
+
+void StateTracker::ChangeChannel(Tegra::Control::ChannelState& channel_state) {
+    flags = &channel_state.maxwell_3d->dirty.flags;
+}
+
+void StateTracker::InvalidateState() {
+    flags->set();
+}
+
+StateTracker::StateTracker() : flags{} {}
 
 } // namespace OpenGL

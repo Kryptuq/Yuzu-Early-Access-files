@@ -32,15 +32,15 @@ static bool StoreRegister(TranslatorVisitor& v, Reg n, Reg t, Imm<2> imm2, Reg m
 using StoreImmFn = void (*)(TranslatorVisitor&, const IR::U32&, const IR::U32&);
 
 static void StoreImmByteFn(TranslatorVisitor& v, const IR::U32& address, const IR::U32& data) {
-    v.ir.WriteMemory8(address, v.ir.LeastSignificantByte(data));
+    v.ir.WriteMemory8(address, v.ir.LeastSignificantByte(data), IR::AccType::NORMAL);
 }
 
 static void StoreImmHalfFn(TranslatorVisitor& v, const IR::U32& address, const IR::U32& data) {
-    v.ir.WriteMemory16(address, v.ir.LeastSignificantHalf(data));
+    v.ir.WriteMemory16(address, v.ir.LeastSignificantHalf(data), IR::AccType::NORMAL);
 }
 
 static void StoreImmWordFn(TranslatorVisitor& v, const IR::U32& address, const IR::U32& data) {
-    v.ir.WriteMemory32(address, data);
+    v.ir.WriteMemory32(address, data, IR::AccType::NORMAL);
 }
 
 static bool StoreImmediate(TranslatorVisitor& v, Reg n, Reg t, bool P, bool U, bool W, Imm<12> imm12, StoreImmFn store_fn) {
@@ -110,7 +110,7 @@ bool TranslatorVisitor::thumb32_STRBT(Reg n, Reg t, Imm<8> imm8) {
 
 bool TranslatorVisitor::thumb32_STRB(Reg n, Reg t, Imm<2> imm2, Reg m) {
     return StoreRegister(*this, n, t, imm2, m, [this](const IR::U32& offset_address, const IR::U32& data) {
-        ir.WriteMemory8(offset_address, ir.LeastSignificantByte(data));
+        ir.WriteMemory8(offset_address, ir.LeastSignificantByte(data), IR::AccType::NORMAL);
     });
 }
 
@@ -163,7 +163,7 @@ bool TranslatorVisitor::thumb32_STRHT(Reg n, Reg t, Imm<8> imm8) {
 
 bool TranslatorVisitor::thumb32_STRH(Reg n, Reg t, Imm<2> imm2, Reg m) {
     return StoreRegister(*this, n, t, imm2, m, [this](const IR::U32& offset_address, const IR::U32& data) {
-        ir.WriteMemory16(offset_address, ir.LeastSignificantHalf(data));
+        ir.WriteMemory16(offset_address, ir.LeastSignificantHalf(data), IR::AccType::NORMAL);
     });
 }
 
@@ -216,7 +216,7 @@ bool TranslatorVisitor::thumb32_STRT(Reg n, Reg t, Imm<8> imm8) {
 
 bool TranslatorVisitor::thumb32_STR_reg(Reg n, Reg t, Imm<2> imm2, Reg m) {
     return StoreRegister(*this, n, t, imm2, m, [this](const IR::U32& offset_address, const IR::U32& data) {
-        ir.WriteMemory32(offset_address, data);
+        ir.WriteMemory32(offset_address, data, IR::AccType::NORMAL);
     });
 }
 

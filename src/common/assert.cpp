@@ -1,14 +1,18 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/assert.h"
 #include "common/common_funcs.h"
 
 #include "common/settings.h"
 
-void assert_handle_failure() {
+void assert_fail_impl() {
     if (Settings::values.use_debug_asserts) {
         Crash();
     }
+}
+
+[[noreturn]] void unreachable_impl() {
+    Crash();
+    throw std::runtime_error("Unreachable code");
 }

@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #version 450
 
@@ -155,9 +154,6 @@ uint SwizzleOffset(uvec2 pos) {
 // Replicates low num_bits such that [(to_bit - 1):(to_bit - 1 - from_bit)]
 // is the same as [(num_bits - 1):0] and repeats all the way down.
 uint Replicate(uint val, uint num_bits, uint to_bit) {
-    if (num_bits == 0 || to_bit == 0) {
-        return 0;
-    }
     const uint v = val & uint((1 << num_bits) - 1);
     uint res = v;
     uint reslen = num_bits;
@@ -187,42 +183,57 @@ uint ReplicateBitTo9(uint value) {
     return REPLICATE_1_BIT_TO_9_TABLE[value];
 }
 
-uint FastReplicateTo8(uint value, uint num_bits) {
-    switch (num_bits) {
-    case 1:
-        return REPLICATE_1_BIT_TO_8_TABLE[value];
-    case 2:
-        return REPLICATE_2_BIT_TO_8_TABLE[value];
-    case 3:
-        return REPLICATE_3_BIT_TO_8_TABLE[value];
-    case 4:
-        return REPLICATE_4_BIT_TO_8_TABLE[value];
-    case 5:
-        return REPLICATE_5_BIT_TO_8_TABLE[value];
-    case 6:
-        return REPLICATE_6_BIT_TO_8_TABLE[value];
-    case 7:
-        return REPLICATE_7_BIT_TO_8_TABLE[value];
-    case 8:
+uint FastReplicate(uint value, uint num_bits, uint to_bit) {
+    if (num_bits == 0) {
+        return 0;
+    }
+    if (num_bits == to_bit) {
         return value;
     }
-    return Replicate(value, num_bits, 8);
+    if (to_bit == 6) {
+        switch (num_bits) {
+        case 1:
+            return REPLICATE_1_BIT_TO_6_TABLE[value];
+        case 2:
+            return REPLICATE_2_BIT_TO_6_TABLE[value];
+        case 3:
+            return REPLICATE_3_BIT_TO_6_TABLE[value];
+        case 4:
+            return REPLICATE_4_BIT_TO_6_TABLE[value];
+        case 5:
+            return REPLICATE_5_BIT_TO_6_TABLE[value];
+        default:
+            break;
+        }
+    } else { /* if (to_bit == 8) */
+        switch (num_bits) {
+        case 1:
+            return REPLICATE_1_BIT_TO_8_TABLE[value];
+        case 2:
+            return REPLICATE_2_BIT_TO_8_TABLE[value];
+        case 3:
+            return REPLICATE_3_BIT_TO_8_TABLE[value];
+        case 4:
+            return REPLICATE_4_BIT_TO_8_TABLE[value];
+        case 5:
+            return REPLICATE_5_BIT_TO_8_TABLE[value];
+        case 6:
+            return REPLICATE_6_BIT_TO_8_TABLE[value];
+        case 7:
+            return REPLICATE_7_BIT_TO_8_TABLE[value];
+        default:
+            break;
+        }
+    }
+    return Replicate(value, num_bits, to_bit);
+}
+
+uint FastReplicateTo8(uint value, uint num_bits) {
+    return FastReplicate(value, num_bits, 8);
 }
 
 uint FastReplicateTo6(uint value, uint num_bits) {
-    switch (num_bits) {
-    case 1:
-        return REPLICATE_1_BIT_TO_6_TABLE[value];
-    case 2:
-        return REPLICATE_2_BIT_TO_6_TABLE[value];
-    case 3:
-        return REPLICATE_3_BIT_TO_6_TABLE[value];
-    case 4:
-        return REPLICATE_4_BIT_TO_6_TABLE[value];
-    case 5:
-        return REPLICATE_5_BIT_TO_6_TABLE[value];
-    }
-    return Replicate(value, num_bits, 6);
+    return FastReplicate(value, num_bits, 6);
 }
 
 uint Div3Floor(uint v) {

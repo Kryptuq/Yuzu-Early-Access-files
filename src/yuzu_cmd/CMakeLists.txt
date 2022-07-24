@@ -45,7 +45,7 @@ if (YUZU_USE_EXTERNAL_SDL2)
 endif()
 
 if(UNIX AND NOT APPLE)
-    install(TARGETS yuzu-cmd RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+    install(TARGETS yuzu-cmd)
 endif()
 
 if (MSVC)

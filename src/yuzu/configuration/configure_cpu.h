@@ -1,12 +1,10 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <memory>
 #include <QWidget>
-#include "common/settings.h"
 
 namespace Core {
 class System;
@@ -45,6 +43,7 @@ private:
     ConfigurationShared::CheckState cpuopt_unsafe_ignore_standard_fpcr;
     ConfigurationShared::CheckState cpuopt_unsafe_inaccurate_nan;
     ConfigurationShared::CheckState cpuopt_unsafe_fastmem_check;
+    ConfigurationShared::CheckState cpuopt_unsafe_ignore_global_monitor;
 
     const Core::System& system;
 };

@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -22,6 +21,7 @@ class NVFlinger;
 
 namespace Service::AM {
 
+// This is nn::settings::Language
 enum SystemLanguage {
     Japanese = 0,
     English = 1, // en-US
@@ -41,16 +41,44 @@ enum SystemLanguage {
     // 4.0.0+
     SimplifiedChinese = 15,
     TraditionalChinese = 16,
+    // 10.1.0+
+    BrazilianPortuguese = 17,
 };
 
 class AppletMessageQueue {
 public:
+    // This is nn::am::AppletMessage
     enum class AppletMessage : u32 {
-        NoMessage = 0,
-        ExitRequested = 4,
+        None = 0,
+        ChangeIntoForeground = 1,
+        ChangeIntoBackground = 2,
+        Exit = 4,
+        ApplicationExited = 6,
         FocusStateChanged = 15,
+        Resume = 16,
+        DetectShortPressingHomeButton = 20,
+        DetectLongPressingHomeButton = 21,
+        DetectShortPressingPowerButton = 22,
+        DetectMiddlePressingPowerButton = 23,
+        DetectLongPressingPowerButton = 24,
+        RequestToPrepareSleep = 25,
+        FinishedSleepSequence = 26,
+        SleepRequiredByHighTemperature = 27,
+        SleepRequiredByLowBattery = 28,
+        AutoPowerDown = 29,
         OperationModeChanged = 30,
         PerformanceModeChanged = 31,
+        DetectReceivingCecSystemStandby = 32,
+        SdCardRemoved = 33,
+        LaunchApplicationRequested = 50,
+        RequestToDisplay = 51,
+        ShowApplicationLogo = 55,
+        HideApplicationLogo = 56,
+        ForceHideApplicationLogo = 57,
+        FloatingApplicationDetected = 60,
+        DetectShortPressingCaptureButton = 90,
+        AlbumScreenShotTaken = 92,
+        AlbumRecordingSaved = 93,
     };
 
     explicit AppletMessageQueue(Core::System& system);
@@ -62,6 +90,7 @@ public:
     AppletMessage PopMessage();
     std::size_t GetMessageCount() const;
     void RequestExit();
+    void RequestResume();
     void FocusStateChanged();
     void OperationModeChanged();
 
@@ -146,6 +175,7 @@ private:
     void SetHandlesRequestToDisplay(Kernel::HLERequestContext& ctx);
     void SetIdleTimeDetectionExtension(Kernel::HLERequestContext& ctx);
     void GetIdleTimeDetectionExtension(Kernel::HLERequestContext& ctx);
+    void ReportUserIsActive(Kernel::HLERequestContext& ctx);
     void SetAutoSleepDisabled(Kernel::HLERequestContext& ctx);
     void IsAutoSleepDisabled(Kernel::HLERequestContext& ctx);
     void GetAccumulatedSuspendedTickValue(Kernel::HLERequestContext& ctx);
@@ -179,14 +209,29 @@ public:
     ~ICommonStateGetter() override;
 
 private:
+    // This is nn::oe::FocusState
     enum class FocusState : u8 {
         InFocus = 1,
         NotInFocus = 2,
+        Background = 3,
     };
 
+    // This is nn::oe::OperationMode
     enum class OperationMode : u8 {
         Handheld = 0,
         Docked = 1,
+    };
+
+    // This is nn::am::service::SystemButtonType
+    enum class SystemButtonType {
+        None,
+        HomeButtonShortPressing,
+        HomeButtonLongPressing,
+        PowerButtonShortPressing,
+        PowerButtonLongPressing,
+        ShutdownSystem,
+        CaptureButtonShortPressing,
+        CaptureButtonLongPressing,
     };
 
     void GetEventHandle(Kernel::HLERequestContext& ctx);
@@ -203,6 +248,7 @@ private:
     void EndVrModeEx(Kernel::HLERequestContext& ctx);
     void GetDefaultDisplayResolution(Kernel::HLERequestContext& ctx);
     void SetCpuBoostMode(Kernel::HLERequestContext& ctx);
+    void PerformSystemButtonPressingIfInFocus(Kernel::HLERequestContext& ctx);
     void SetRequestExitToLibraryAppletAtExecuteNextProgramEnabled(Kernel::HLERequestContext& ctx);
 
     std::shared_ptr<AppletMessageQueue> msg_queue;
@@ -304,6 +350,7 @@ private:
     void TryPopFromFriendInvitationStorageChannel(Kernel::HLERequestContext& ctx);
     void GetNotificationStorageChannelEvent(Kernel::HLERequestContext& ctx);
     void GetHealthWarningDisappearedSystemEvent(Kernel::HLERequestContext& ctx);
+    void PrepareForJit(Kernel::HLERequestContext& ctx);
 
     KernelHelpers::ServiceContext service_context;
 

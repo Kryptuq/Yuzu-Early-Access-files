@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
@@ -17,7 +16,7 @@ public:
         static const FunctionInfo functions[] = {
             {0, &ISession::SetPerformanceConfiguration, "SetPerformanceConfiguration"},
             {1, &ISession::GetPerformanceConfiguration, "GetPerformanceConfiguration"},
-            {2, nullptr, "SetCpuOverclockEnabled"},
+            {2, &ISession::SetCpuOverclockEnabled, "SetCpuOverclockEnabled"},
         };
         RegisterHandlers(functions);
     }
@@ -45,6 +44,18 @@ private:
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
         rb.PushEnum(controller.GetCurrentPerformanceConfiguration(mode));
+    }
+
+    void SetCpuOverclockEnabled(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+
+        const auto cpu_overclock_enabled = rp.Pop<bool>();
+
+        LOG_WARNING(Service_APM, "(STUBBED) called, cpu_overclock_enabled={}",
+                    cpu_overclock_enabled);
+
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(ResultSuccess);
     }
 
     Controller& controller;

@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <utility>
 
@@ -199,6 +198,26 @@ void Lower(IR::Block& block, IR::Inst& inst) {
         return ShiftRightLogical64To32(block, inst);
     case IR::Opcode::ShiftRightArithmetic64:
         return ShiftRightArithmetic64To32(block, inst);
+    case IR::Opcode::SharedAtomicExchange64:
+        return inst.ReplaceOpcode(IR::Opcode::SharedAtomicExchange32x2);
+    case IR::Opcode::GlobalAtomicIAdd64:
+        return inst.ReplaceOpcode(IR::Opcode::GlobalAtomicIAdd32x2);
+    case IR::Opcode::GlobalAtomicSMin64:
+        return inst.ReplaceOpcode(IR::Opcode::GlobalAtomicSMin32x2);
+    case IR::Opcode::GlobalAtomicUMin64:
+        return inst.ReplaceOpcode(IR::Opcode::GlobalAtomicUMin32x2);
+    case IR::Opcode::GlobalAtomicSMax64:
+        return inst.ReplaceOpcode(IR::Opcode::GlobalAtomicSMax32x2);
+    case IR::Opcode::GlobalAtomicUMax64:
+        return inst.ReplaceOpcode(IR::Opcode::GlobalAtomicUMax32x2);
+    case IR::Opcode::GlobalAtomicAnd64:
+        return inst.ReplaceOpcode(IR::Opcode::GlobalAtomicAnd32x2);
+    case IR::Opcode::GlobalAtomicOr64:
+        return inst.ReplaceOpcode(IR::Opcode::GlobalAtomicOr32x2);
+    case IR::Opcode::GlobalAtomicXor64:
+        return inst.ReplaceOpcode(IR::Opcode::GlobalAtomicXor32x2);
+    case IR::Opcode::GlobalAtomicExchange64:
+        return inst.ReplaceOpcode(IR::Opcode::GlobalAtomicExchange32x2);
     default:
         break;
     }

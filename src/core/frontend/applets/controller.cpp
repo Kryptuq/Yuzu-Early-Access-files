@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/assert.h"
 #include "common/logging/log.h"
@@ -66,7 +65,7 @@ void DefaultControllerApplet::ReconfigureControllers(std::function<void()> callb
             controller->SetNpadStyleIndex(Core::HID::NpadStyleIndex::Handheld);
             controller->Connect(true);
         } else {
-            UNREACHABLE_MSG("Unable to add a new controller based on the given parameters!");
+            ASSERT_MSG(false, "Unable to add a new controller based on the given parameters!");
         }
     }
 

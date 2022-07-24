@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -69,6 +68,7 @@ enum class Class : u8 {
     Service_GRC,       ///< The game recording service
     Service_HID,       ///< The HID (Human interface device) service
     Service_IRS,       ///< The IRS service
+    Service_JIT,       ///< The JIT service
     Service_LBL,       ///< The LBL (LCD backlight) service
     Service_LDN,       ///< The LDN (Local domain network) service
     Service_LDR,       ///< The loader service
@@ -76,6 +76,7 @@ enum class Class : u8 {
     Service_Migration, ///< The migration service
     Service_Mii,       ///< The Mii service
     Service_MM,        ///< The MM (Multimedia) service
+    Service_MNPP,      ///< The MNPP service
     Service_NCM,       ///< The NCM service
     Service_NFC,       ///< The NFC (Near-field communication) service
     Service_NFP,       ///< The NFP service
@@ -86,6 +87,7 @@ enum class Class : u8 {
     Service_NPNS,      ///< The NPNS service
     Service_NS,        ///< The NS services
     Service_NVDRV,     ///< The NVDRV (Nvidia driver) service
+    Service_NVFlinger, ///< The NVFlinger service
     Service_OLSC,      ///< The OLSC service
     Service_PCIE,      ///< The PCIe service
     Service_PCTL,      ///< The PCTL (Parental control) service
@@ -93,7 +95,7 @@ enum class Class : u8 {
     Service_PM,        ///< The PM service
     Service_PREPO,     ///< The PREPO (Play report) service
     Service_PSC,       ///< The PSC service
-    Service_PSM,       ///< The PSM service
+    Service_PTM,       ///< The PTM service
     Service_SET,       ///< The SET (Settings) service
     Service_SM,        ///< The SM (Service manager) service
     Service_SPL,       ///< The SPL service

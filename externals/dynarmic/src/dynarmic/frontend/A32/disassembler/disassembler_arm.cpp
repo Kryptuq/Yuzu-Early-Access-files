@@ -8,8 +8,9 @@
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/bit/rotate.hpp>
 
-#include "dynarmic/common/bit_util.h"
 #include "dynarmic/common/string_util.h"
 #include "dynarmic/frontend/A32/a32_types.h"
 #include "dynarmic/frontend/A32/decoder/arm.h"
@@ -24,7 +25,7 @@ public:
     using instruction_return_type = std::string;
 
     static u32 ArmExpandImm(int rotate, Imm<8> imm8) {
-        return Common::RotateRight(static_cast<u32>(imm8.ZeroExtend()), rotate * 2);
+        return mcl::bit::rotate_right(static_cast<u32>(imm8.ZeroExtend()), rotate * 2);
     }
 
     static std::string ShiftStr(ShiftType shift, Imm<5> imm5) {
@@ -150,15 +151,15 @@ public:
 
     // Branch instructions
     std::string arm_B(Cond cond, Imm<24> imm24) {
-        const s32 offset = Common::SignExtend<26, s32>(imm24.ZeroExtend() << 2) + 8;
+        const s32 offset = static_cast<s32>(mcl::bit::sign_extend<26, u32>(imm24.ZeroExtend() << 2) + 8);
         return fmt::format("b{} {}#{}", CondToString(cond), Common::SignToChar(offset), abs(offset));
     }
     std::string arm_BL(Cond cond, Imm<24> imm24) {
-        const s32 offset = Common::SignExtend<26, s32>(imm24.ZeroExtend() << 2) + 8;
+        const s32 offset = static_cast<s32>(mcl::bit::sign_extend<26, u32>(imm24.ZeroExtend() << 2) + 8);
         return fmt::format("bl{} {}#{}", CondToString(cond), Common::SignToChar(offset), abs(offset));
     }
     std::string arm_BLX_imm(bool H, Imm<24> imm24) {
-        const s32 offset = Common::SignExtend<26, s32>(imm24.ZeroExtend() << 2) + 8 + (H ? 2 : 0);
+        const s32 offset = static_cast<s32>(mcl::bit::sign_extend<26, u32>(imm24.ZeroExtend() << 2) + 8 + (H ? 2 : 0));
         return fmt::format("blx {}#{}", Common::SignToChar(offset), abs(offset));
     }
     std::string arm_BLX_reg(Cond cond, Reg m) {
@@ -1209,11 +1210,11 @@ public:
     std::string arm_MRS(Cond cond, Reg d) {
         return fmt::format("mrs{} {}, apsr", CondToString(cond), d);
     }
-    std::string arm_MSR_imm(Cond cond, int mask, int rotate, Imm<8> imm8) {
-        const bool write_c = Common::Bit<0>(mask);
-        const bool write_x = Common::Bit<1>(mask);
-        const bool write_s = Common::Bit<2>(mask);
-        const bool write_f = Common::Bit<3>(mask);
+    std::string arm_MSR_imm(Cond cond, unsigned mask, int rotate, Imm<8> imm8) {
+        const bool write_c = mcl::bit::get_bit<0>(mask);
+        const bool write_x = mcl::bit::get_bit<1>(mask);
+        const bool write_s = mcl::bit::get_bit<2>(mask);
+        const bool write_f = mcl::bit::get_bit<3>(mask);
         return fmt::format("msr{} cpsr_{}{}{}{}, #{}",
                            CondToString(cond),
                            write_c ? "c" : "",
@@ -1222,11 +1223,11 @@ public:
                            write_f ? "f" : "",
                            ArmExpandImm(rotate, imm8));
     }
-    std::string arm_MSR_reg(Cond cond, int mask, Reg n) {
-        const bool write_c = Common::Bit<0>(mask);
-        const bool write_x = Common::Bit<1>(mask);
-        const bool write_s = Common::Bit<2>(mask);
-        const bool write_f = Common::Bit<3>(mask);
+    std::string arm_MSR_reg(Cond cond, unsigned mask, Reg n) {
+        const bool write_c = mcl::bit::get_bit<0>(mask);
+        const bool write_x = mcl::bit::get_bit<1>(mask);
+        const bool write_s = mcl::bit::get_bit<2>(mask);
+        const bool write_f = mcl::bit::get_bit<3>(mask);
         return fmt::format("msr{} cpsr_{}{}{}{}, {}",
                            CondToString(cond),
                            write_c ? "c" : "",

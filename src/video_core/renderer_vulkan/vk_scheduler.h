@@ -1,10 +1,8 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
-#include <atomic>
 #include <condition_variable>
 #include <cstddef>
 #include <memory>
@@ -24,14 +22,14 @@ class Device;
 class Framebuffer;
 class GraphicsPipeline;
 class StateTracker;
-class VKQueryCache;
+class QueryCache;
 
 /// The scheduler abstracts command buffer and fence management with an interface that's able to do
 /// OpenGL-like operations on Vulkan command buffers.
-class VKScheduler {
+class Scheduler {
 public:
-    explicit VKScheduler(const Device& device, StateTracker& state_tracker);
-    ~VKScheduler();
+    explicit Scheduler(const Device& device, StateTracker& state_tracker);
+    ~Scheduler();
 
     /// Sends the current execution context to the GPU.
     void Flush(VkSemaphore signal_semaphore = nullptr, VkSemaphore wait_semaphore = nullptr);
@@ -63,7 +61,7 @@ public:
     void InvalidateState();
 
     /// Assigns the query cache.
-    void SetQueryCache(VKQueryCache& query_cache_) {
+    void SetQueryCache(QueryCache& query_cache_) {
         query_cache = &query_cache_;
     }
 
@@ -146,6 +144,7 @@ private:
             using FuncType = TypedCommand<T>;
             static_assert(sizeof(FuncType) < sizeof(data), "Lambda is too large");
 
+            recorded_counts++;
             command_offset = Common::AlignUp(command_offset, alignof(FuncType));
             if (command_offset > sizeof(data) - sizeof(FuncType)) {
                 return false;
@@ -167,7 +166,7 @@ private:
         }
 
         bool Empty() const {
-            return command_offset == 0;
+            return recorded_counts == 0;
         }
 
         bool HasSubmit() const {
@@ -178,6 +177,7 @@ private:
         Command* first = nullptr;
         Command* last = nullptr;
 
+        size_t recorded_counts = 0;
         size_t command_offset = 0;
         bool submit = false;
         alignas(std::max_align_t) std::array<u8, 0x8000> data{};
@@ -212,7 +212,7 @@ private:
     std::unique_ptr<MasterSemaphore> master_semaphore;
     std::unique_ptr<CommandPool> command_pool;
 
-    VKQueryCache* query_cache = nullptr;
+    QueryCache* query_cache = nullptr;
 
     vk::CommandBuffer current_cmdbuf;
 

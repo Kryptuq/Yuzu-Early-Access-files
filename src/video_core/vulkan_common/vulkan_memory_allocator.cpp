@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <bit>
@@ -50,7 +49,7 @@ struct Range {
         return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
                VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
     }
-    UNREACHABLE_MSG("Invalid memory usage={}", usage);
+    ASSERT_MSG(false, "Invalid memory usage={}", usage);
     return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 }
 
@@ -227,7 +226,7 @@ void MemoryCommit::Release() {
 }
 
 MemoryAllocator::MemoryAllocator(const Device& device_, bool export_allocations_)
-    : device{device_}, properties{device_.GetPhysical().GetMemoryProperties()},
+    : device{device_}, properties{device_.GetPhysical().GetMemoryProperties().memoryProperties},
       export_allocations{export_allocations_},
       buffer_image_granularity{
           device_.GetPhysical().GetProperties().limits.bufferImageGranularity} {}
@@ -326,7 +325,7 @@ VkMemoryPropertyFlags MemoryAllocator::MemoryPropertyFlags(u32 type_mask,
         // Remove device local, if it's not supported by the requested resource
         return MemoryPropertyFlags(type_mask, flags & ~VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     }
-    UNREACHABLE_MSG("No compatible memory types found");
+    ASSERT_MSG(false, "No compatible memory types found");
     return 0;
 }
 
@@ -350,7 +349,7 @@ bool IsHostVisible(MemoryUsage usage) noexcept {
     case MemoryUsage::Download:
         return true;
     }
-    UNREACHABLE_MSG("Invalid memory usage={}", usage);
+    ASSERT_MSG(false, "Invalid memory usage={}", usage);
     return false;
 }
 

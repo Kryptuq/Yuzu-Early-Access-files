@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -9,7 +8,6 @@
 #include <string>
 #include <boost/container/flat_map.hpp>
 #include "common/common_types.h"
-#include "common/spin_lock.h"
 #include "core/hle/kernel/hle_ipc.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -33,8 +31,9 @@ class FileSystemController;
 }
 
 namespace NVFlinger {
+class HosBinderDriverServer;
 class NVFlinger;
-}
+} // namespace NVFlinger
 
 namespace SM {
 class ServiceManager;
@@ -80,8 +79,8 @@ public:
     Kernel::KClientPort& CreatePort();
 
     /// Handles a synchronization request for the service.
-    ResultCode HandleSyncRequest(Kernel::KServerSession& session,
-                                 Kernel::HLERequestContext& context) override;
+    Result HandleSyncRequest(Kernel::KServerSession& session,
+                             Kernel::HLERequestContext& context) override;
 
 protected:
     /// Member-function pointer type of SyncRequest handlers.
@@ -89,7 +88,7 @@ protected:
     using HandlerFnP = void (Self::*)(Kernel::HLERequestContext&);
 
     /// Used to gain exclusive access to the service members, e.g. from CoreTiming thread.
-    [[nodiscard]] std::scoped_lock<Common::SpinLock> LockService() {
+    [[nodiscard]] std::scoped_lock<std::mutex> LockService() {
         return std::scoped_lock{lock_service};
     }
 
@@ -113,7 +112,8 @@ private:
                            Kernel::HLERequestContext& ctx);
 
     explicit ServiceFrameworkBase(Core::System& system_, const char* service_name_,
-                                  u32 max_sessions_, InvokerFn* handler_invoker_);
+                                  ServiceThreadType thread_type, u32 max_sessions_,
+                                  InvokerFn* handler_invoker_);
     ~ServiceFrameworkBase() override;
 
     void RegisterHandlersBase(const FunctionInfoBase* functions, std::size_t n);
@@ -133,7 +133,7 @@ private:
     boost::container::flat_map<u32, FunctionInfoBase> handlers_tipc;
 
     /// Used to gain exclusive access to the service members, e.g. from CoreTiming thread.
-    Common::SpinLock lock_service;
+    std::mutex lock_service;
 };
 
 /**
@@ -175,14 +175,17 @@ protected:
     /**
      * Initializes the handler with no functions installed.
      *
-     * @param system_       The system context to construct this service under.
+     * @param system_ The system context to construct this service under.
      * @param service_name_ Name of the service.
-     * @param max_sessions_ Maximum number of sessions that can be
-     *                      connected to this service at the same time.
+     * @param thread_type Specifies the thread type for this service. If this is set to CreateNew,
+     *                    it creates a new thread for it, otherwise this uses the default thread.
+     * @param max_sessions_ Maximum number of sessions that can be connected to this service at the
+     * same time.
      */
     explicit ServiceFramework(Core::System& system_, const char* service_name_,
+                              ServiceThreadType thread_type = ServiceThreadType::Default,
                               u32 max_sessions_ = ServerSessionCountMax)
-        : ServiceFrameworkBase(system_, service_name_, max_sessions_, Invoker) {}
+        : ServiceFrameworkBase(system_, service_name_, thread_type, max_sessions_, Invoker) {}
 
     /// Registers handlers in the service.
     template <std::size_t N>
@@ -236,6 +239,7 @@ public:
     ~Services();
 
 private:
+    std::unique_ptr<NVFlinger::HosBinderDriverServer> hos_binder_driver_server;
     std::unique_ptr<NVFlinger::NVFlinger> nv_flinger;
 };
 

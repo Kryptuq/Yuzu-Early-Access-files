@@ -3,13 +3,6 @@
 // Refer to the license.txt file included.
 
 #include <memory>
-#include <QAbstractButton>
-#include <QDialogButtonBox>
-#include <QHash>
-#include <QListWidgetItem>
-#include <QPushButton>
-#include <QSignalBlocker>
-#include <QTabWidget>
 #include "common/logging/log.h"
 #include "common/settings.h"
 #include "core/core.h"
@@ -32,13 +25,13 @@
 #include "yuzu/configuration/configure_ui.h"
 #include "yuzu/configuration/configure_web.h"
 #include "yuzu/hotkeys.h"
+#include "yuzu/uisettings.h"
 
-ConfigureDialog::ConfigureDialog(QWidget* parent, HotkeyRegistry& registry,
+ConfigureDialog::ConfigureDialog(QWidget* parent, HotkeyRegistry& registry_,
                                  InputCommon::InputSubsystem* input_subsystem,
                                  Core::System& system_)
-    : QDialog(parent), ui{std::make_unique<Ui::ConfigureDialog>()},
-      registry(registry), system{system_}, audio_tab{std::make_unique<ConfigureAudio>(system_,
-                                                                                      this)},
+    : QDialog(parent), ui{std::make_unique<Ui::ConfigureDialog>()}, registry{registry_},
+      system{system_}, audio_tab{std::make_unique<ConfigureAudio>(system_, this)},
       cpu_tab{std::make_unique<ConfigureCpu>(system_, this)},
       debug_tab_tab{std::make_unique<ConfigureDebugTab>(system_, this)},
       filesystem_tab{std::make_unique<ConfigureFilesystem>(this)},
@@ -109,7 +102,7 @@ void ConfigureDialog::ApplyConfiguration() {
     ui_tab->ApplyConfiguration();
     system_tab->ApplyConfiguration();
     profile_tab->ApplyConfiguration();
-    filesystem_tab->applyConfiguration();
+    filesystem_tab->ApplyConfiguration();
     input_tab->ApplyConfiguration();
     hotkeys_tab->ApplyConfiguration(registry);
     cpu_tab->ApplyConfiguration();
@@ -176,6 +169,8 @@ void ConfigureDialog::PopulateSelectionList() {
 
 void ConfigureDialog::OnLanguageChanged(const QString& locale) {
     emit LanguageChanged(locale);
+    //  Reloading the game list is needed to force retranslation.
+    UISettings::values.is_game_list_reload_pending = true;
     // first apply the configuration, and then restore the display
     ApplyConfiguration();
     RetranslateUI();

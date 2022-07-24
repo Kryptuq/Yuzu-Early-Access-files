@@ -24,7 +24,6 @@
 #include "yuzu/configuration/configure_input.h"
 #include "yuzu/configuration/configure_per_game_addons.h"
 #include "yuzu/uisettings.h"
-#include "yuzu/util/util.h"
 
 ConfigurePerGameAddons::ConfigurePerGameAddons(Core::System& system_, QWidget* parent)
     : QWidget(parent), ui{std::make_unique<Ui::ConfigurePerGameAddons>()}, system{system_} {
@@ -47,6 +46,10 @@ ConfigurePerGameAddons::ConfigurePerGameAddons(Core::System& system_, QWidget* p
     item_model->insertColumns(0, 2);
     item_model->setHeaderData(0, Qt::Horizontal, tr("Patch Name"));
     item_model->setHeaderData(1, Qt::Horizontal, tr("Version"));
+
+    tree_view->header()->setStretchLastSection(false);
+    tree_view->header()->setSectionResizeMode(0, QHeaderView::ResizeMode::Stretch);
+    tree_view->header()->setMinimumSectionSize(150);
 
     // We must register all custom types with the Qt Automoc system so that we are able to use it
     // with signals/slots. In this case, QList falls under the umbrella of custom types.
@@ -86,8 +89,8 @@ void ConfigurePerGameAddons::ApplyConfiguration() {
     Settings::values.disabled_addons[title_id] = disabled_addons;
 }
 
-void ConfigurePerGameAddons::LoadFromFile(FileSys::VirtualFile file) {
-    this->file = std::move(file);
+void ConfigurePerGameAddons::LoadFromFile(FileSys::VirtualFile file_) {
+    file = std::move(file_);
     LoadConfiguration();
 }
 
@@ -139,5 +142,5 @@ void ConfigurePerGameAddons::LoadConfiguration() {
         item_model->appendRow(list_items.back());
     }
 
-    tree_view->setColumnWidth(0, 5 * tree_view->width() / 16);
+    tree_view->resizeColumnToContents(1);
 }

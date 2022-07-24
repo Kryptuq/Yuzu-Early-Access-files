@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <tuple>
 #include "common/assert.h"
@@ -18,10 +17,10 @@
 
 namespace Service::SM {
 
-constexpr ResultCode ERR_NOT_INITIALIZED(ErrorModule::SM, 2);
-constexpr ResultCode ERR_ALREADY_REGISTERED(ErrorModule::SM, 4);
-constexpr ResultCode ERR_INVALID_NAME(ErrorModule::SM, 6);
-constexpr ResultCode ERR_SERVICE_NOT_REGISTERED(ErrorModule::SM, 7);
+constexpr Result ERR_NOT_INITIALIZED(ErrorModule::SM, 2);
+constexpr Result ERR_ALREADY_REGISTERED(ErrorModule::SM, 4);
+constexpr Result ERR_INVALID_NAME(ErrorModule::SM, 6);
+constexpr Result ERR_SERVICE_NOT_REGISTERED(ErrorModule::SM, 7);
 
 ServiceManager::ServiceManager(Kernel::KernelCore& kernel_) : kernel{kernel_} {}
 ServiceManager::~ServiceManager() = default;
@@ -30,7 +29,7 @@ void ServiceManager::InvokeControlRequest(Kernel::HLERequestContext& context) {
     controller_interface->InvokeRequest(context);
 }
 
-static ResultCode ValidateServiceName(const std::string& name) {
+static Result ValidateServiceName(const std::string& name) {
     if (name.empty() || name.size() > 8) {
         LOG_ERROR(Service_SM, "Invalid service name! service={}", name);
         return ERR_INVALID_NAME;
@@ -44,8 +43,8 @@ Kernel::KClientPort& ServiceManager::InterfaceFactory(ServiceManager& self, Core
     return self.sm_interface->CreatePort();
 }
 
-ResultCode ServiceManager::RegisterService(std::string name, u32 max_sessions,
-                                           Kernel::SessionRequestHandlerPtr handler) {
+Result ServiceManager::RegisterService(std::string name, u32 max_sessions,
+                                       Kernel::SessionRequestHandlerPtr handler) {
 
     CASCADE_CODE(ValidateServiceName(name));
 
@@ -59,7 +58,7 @@ ResultCode ServiceManager::RegisterService(std::string name, u32 max_sessions,
     return ResultSuccess;
 }
 
-ResultCode ServiceManager::UnregisterService(const std::string& name) {
+Result ServiceManager::UnregisterService(const std::string& name) {
     CASCADE_CODE(ValidateServiceName(name));
 
     const auto iter = registered_services.find(name);
@@ -81,6 +80,8 @@ ResultVal<Kernel::KPort*> ServiceManager::GetServicePort(const std::string& name
     }
 
     auto* port = Kernel::KPort::Create(kernel);
+    SCOPE_EXIT({ port->Close(); });
+
     port->Initialize(ServerSessionCountMax, false, name);
     auto handler = it->second;
     port->GetServerPort().SetSessionHandler(std::move(handler));
@@ -93,7 +94,7 @@ ResultVal<Kernel::KPort*> ServiceManager::GetServicePort(const std::string& name
  *  Inputs:
  *      0: 0x00000000
  *  Outputs:
- *      0: ResultCode
+ *      0: Result
  */
 void SM::Initialize(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_SM, "called");
@@ -151,7 +152,7 @@ ResultVal<Kernel::KClientSession*> SM::GetServiceImpl(Kernel::HLERequestContext&
     auto& port = port_result.Unwrap();
     SCOPE_EXIT({ port->GetClientPort().Close(); });
 
-    server_ports.emplace_back(&port->GetServerPort());
+    kernel.RegisterServerObject(&port->GetServerPort());
 
     // Create a new session.
     Kernel::KClientSession* session{};
@@ -204,7 +205,7 @@ void SM::UnregisterService(Kernel::HLERequestContext& ctx) {
 }
 
 SM::SM(ServiceManager& service_manager_, Core::System& system_)
-    : ServiceFramework{system_, "sm:", 4},
+    : ServiceFramework{system_, "sm:", ServiceThreadType::Default, 4},
       service_manager{service_manager_}, kernel{system_.Kernel()} {
     RegisterHandlers({
         {0, &SM::Initialize, "Initialize"},
@@ -222,10 +223,6 @@ SM::SM(ServiceManager& service_manager_, Core::System& system_)
     });
 }
 
-SM::~SM() {
-    for (auto& server_port : server_ports) {
-        server_port->Close();
-    }
-}
+SM::~SM() = default;
 
 } // namespace Service::SM

@@ -1,8 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
-
-#include <cstdint>
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/uint128.h"
 #include "common/wall_clock.h"
@@ -65,14 +62,20 @@ private:
 
 #ifdef ARCHITECTURE_x86_64
 
-std::unique_ptr<WallClock> CreateBestMatchingClock(u32 emulated_cpu_frequency,
-                                                   u32 emulated_clock_frequency) {
+std::unique_ptr<WallClock> CreateBestMatchingClock(u64 emulated_cpu_frequency,
+                                                   u64 emulated_clock_frequency) {
     const auto& caps = GetCPUCaps();
     u64 rtsc_frequency = 0;
     if (caps.invariant_tsc) {
-        rtsc_frequency = EstimateRDTSCFrequency();
+        rtsc_frequency = caps.tsc_frequency ? caps.tsc_frequency : EstimateRDTSCFrequency();
     }
-    if (rtsc_frequency == 0) {
+
+    // Fallback to StandardWallClock if the hardware TSC does not have the precision greater than:
+    // - A nanosecond
+    // - The emulated CPU frequency
+    // - The emulated clock counter frequency (CNTFRQ)
+    if (rtsc_frequency <= WallClock::NS_RATIO || rtsc_frequency <= emulated_cpu_frequency ||
+        rtsc_frequency <= emulated_clock_frequency) {
         return std::make_unique<StandardWallClock>(emulated_cpu_frequency,
                                                    emulated_clock_frequency);
     } else {
@@ -83,8 +86,8 @@ std::unique_ptr<WallClock> CreateBestMatchingClock(u32 emulated_cpu_frequency,
 
 #else
 
-std::unique_ptr<WallClock> CreateBestMatchingClock(u32 emulated_cpu_frequency,
-                                                   u32 emulated_clock_frequency) {
+std::unique_ptr<WallClock> CreateBestMatchingClock(u64 emulated_cpu_frequency,
+                                                   u64 emulated_clock_frequency) {
     return std::make_unique<StandardWallClock>(emulated_cpu_frequency, emulated_clock_frequency);
 }
 

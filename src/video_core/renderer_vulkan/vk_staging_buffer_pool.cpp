@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <utility>
@@ -86,7 +85,7 @@ size_t Region(size_t iterator) noexcept {
 } // Anonymous namespace
 
 StagingBufferPool::StagingBufferPool(const Device& device_, MemoryAllocator& memory_allocator_,
-                                     VKScheduler& scheduler_)
+                                     Scheduler& scheduler_)
     : device{device_}, memory_allocator{memory_allocator_}, scheduler{scheduler_} {
     const vk::Device& dev = device.GetLogical();
     stream_buffer = dev.CreateBuffer(VkBufferCreateInfo{
@@ -118,7 +117,7 @@ StagingBufferPool::StagingBufferPool(const Device& device_, MemoryAllocator& mem
         .image = nullptr,
         .buffer = *stream_buffer,
     };
-    const auto memory_properties = device.GetPhysical().GetMemoryProperties();
+    const auto memory_properties = device.GetPhysical().GetMemoryProperties().memoryProperties;
     VkMemoryAllocateInfo stream_memory_info{
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
         .pNext = make_dedicated ? &dedicated_info : nullptr,
@@ -264,7 +263,7 @@ StagingBufferPool::StagingBuffersCache& StagingBufferPool::GetCache(MemoryUsage 
     case MemoryUsage::Download:
         return download_cache;
     default:
-        UNREACHABLE_MSG("Invalid memory usage={}", usage);
+        ASSERT_MSG(false, "Invalid memory usage={}", usage);
         return upload_cache;
     }
 }

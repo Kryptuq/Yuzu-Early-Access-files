@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <condition_variable>
 #include <functional>
@@ -12,6 +11,7 @@
 #include "common/scope_exit.h"
 #include "common/thread.h"
 #include "core/hle/kernel/k_session.h"
+#include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/service_thread.h"
 
@@ -48,6 +48,7 @@ ServiceThread::Impl::Impl(KernelCore& kernel, std::size_t num_threads, const std
                 return;
             }
 
+            // Allocate a dummy guest thread for this host thread.
             kernel.RegisterHostThread();
 
             while (true) {

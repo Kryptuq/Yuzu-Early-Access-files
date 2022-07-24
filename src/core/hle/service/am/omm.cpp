@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/hle/service/am/omm.h"
 
@@ -37,6 +36,7 @@ OMM::OMM(Core::System& system_) : ServiceFramework{system_, "omm"} {
         {25, nullptr, "SetApplicationCecSettingsAndNotifyChanged"},
         {26, nullptr, "GetOperationModeSystemInfo"},
         {27, nullptr, "GetAppletFullAwakingSystemEvent"},
+        {28, nullptr, "CreateCradleFirmwareUpdater"},
     };
     // clang-format on
 

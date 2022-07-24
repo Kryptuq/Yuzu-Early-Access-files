@@ -1,17 +1,13 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
-#include <cstring>
 #include <memory>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include <glad/glad.h>
 
-#include "common/assert.h"
 #include "core/core.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/memory_manager.h"
@@ -30,9 +26,8 @@ constexpr GLenum GetTarget(VideoCore::QueryType type) {
 
 } // Anonymous namespace
 
-QueryCache::QueryCache(RasterizerOpenGL& rasterizer_, Tegra::Engines::Maxwell3D& maxwell3d_,
-                       Tegra::MemoryManager& gpu_memory_)
-    : QueryCacheBase(rasterizer_, maxwell3d_, gpu_memory_), gl_rasterizer{rasterizer_} {}
+QueryCache::QueryCache(RasterizerOpenGL& rasterizer_)
+    : QueryCacheBase(rasterizer_), gl_rasterizer{rasterizer_} {}
 
 QueryCache::~QueryCache() = default;
 

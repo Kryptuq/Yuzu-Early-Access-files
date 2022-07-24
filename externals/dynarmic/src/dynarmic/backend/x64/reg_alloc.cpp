@@ -10,11 +10,11 @@
 #include <utility>
 
 #include <fmt/ostream.h>
+#include <mcl/assert.hpp>
 #include <xbyak/xbyak.h>
 
 #include "dynarmic/backend/x64/abi.h"
 #include "dynarmic/backend/x64/stack_layout.h"
-#include "dynarmic/common/assert.h"
 
 namespace Dynarmic::Backend::X64 {
 
@@ -42,6 +42,7 @@ static size_t GetBitWidth(IR::Type type) {
     case IR::Type::Cond:
     case IR::Type::Void:
     case IR::Type::Table:
+    case IR::Type::AccType:
         ASSERT_FALSE("Type {} cannot be represented at runtime", type);
     case IR::Type::Opaque:
         ASSERT_FALSE("Not a concrete type");
@@ -205,6 +206,11 @@ u64 Argument::GetImmediateU64() const {
 IR::Cond Argument::GetImmediateCond() const {
     ASSERT(IsImmediate() && GetType() == IR::Type::Cond);
     return value.GetCond();
+}
+
+IR::AccType Argument::GetImmediateAccType() const {
+    ASSERT(IsImmediate() && GetType() == IR::Type::AccType);
+    return value.GetAccType();
 }
 
 bool Argument::IsInGpr() const {
@@ -410,7 +416,7 @@ void RegAlloc::HostCall(IR::Inst* result_def,
     for (size_t i = 0; i < args_count; i++) {
         if (args[i] && !args[i]->get().IsVoid()) {
             UseScratch(*args[i], args_hostloc[i]);
-#if defined(__llvm__) && !defined(_WIN32)
+
             // LLVM puts the burden of zero-extension of 8 and 16 bit values on the caller instead of the callee
             const Xbyak::Reg64 reg = HostLocToReg64(args_hostloc[i]);
             switch (args[i]->get().GetType()) {
@@ -420,10 +426,12 @@ void RegAlloc::HostCall(IR::Inst* result_def,
             case IR::Type::U16:
                 code.movzx(reg.cvt32(), reg.cvt16());
                 break;
+            case IR::Type::U32:
+                code.mov(reg.cvt32(), reg.cvt32());
+                break;
             default:
                 break;  // Nothing needs to be done
             }
-#endif
         }
     }
 
@@ -533,7 +541,7 @@ HostLoc RegAlloc::LoadImmediate(IR::Value imm, HostLoc host_loc) {
         if (imm_value == 0) {
             MAYBE_AVX(xorps, reg, reg);
         } else {
-            MAYBE_AVX(movaps, reg, code.MConst(code.xword, imm_value));
+            MAYBE_AVX(movaps, reg, code.XmmBConst<64>(code.xword, imm_value));
         }
         return host_loc;
     }

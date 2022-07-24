@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/service/time/errors.h"
@@ -31,8 +30,8 @@ void SystemClockContextUpdateCallback::BroadcastOperationEvent() {
     }
 }
 
-ResultCode SystemClockContextUpdateCallback::Update(const SystemClockContext& value) {
-    ResultCode result{ResultSuccess};
+Result SystemClockContextUpdateCallback::Update(const SystemClockContext& value) {
+    Result result{ResultSuccess};
 
     if (NeedUpdate(value)) {
         context = value;
@@ -48,7 +47,7 @@ ResultCode SystemClockContextUpdateCallback::Update(const SystemClockContext& va
     return result;
 }
 
-ResultCode SystemClockContextUpdateCallback::Update() {
+Result SystemClockContextUpdateCallback::Update() {
     return ResultSuccess;
 }
 

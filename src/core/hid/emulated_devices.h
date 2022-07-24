@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -234,6 +233,7 @@ private:
     RingAnalogDevice ring_analog_device;
 
     mutable std::mutex mutex;
+    mutable std::mutex callback_mutex;
     std::unordered_map<int, InterfaceUpdateCallback> callback_list;
     int last_callback_key = 0;
 

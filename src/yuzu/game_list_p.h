@@ -11,7 +11,6 @@
 
 #include <QCoreApplication>
 #include <QFileInfo>
-#include <QImage>
 #include <QObject>
 #include <QStandardItem>
 #include <QString>
@@ -165,8 +164,8 @@ public:
         }
         const CompatStatus& status = iterator->second;
         setData(compatibility, CompatNumberRole);
-        setText(QObject::tr(status.text));
-        setToolTip(QObject::tr(status.tooltip));
+        setText(tr(status.text));
+        setToolTip(tr(status.tooltip));
         setData(CreateCirclePixmapFromColor(status.color), Qt::DecorationRole);
     }
 
@@ -226,8 +225,8 @@ public:
     static constexpr int GameDirRole = Qt::UserRole + 2;
 
     explicit GameListDir(UISettings::GameDir& directory,
-                         GameListItemType dir_type = GameListItemType::CustomDir)
-        : dir_type{dir_type} {
+                         GameListItemType dir_type_ = GameListItemType::CustomDir)
+        : dir_type{dir_type_} {
         setData(type(), TypeRole);
 
         UISettings::GameDir* game_dir = &directory;
@@ -349,7 +348,7 @@ public:
     explicit GameListSearchField(GameList* parent = nullptr);
 
     QString filterText() const;
-    void setFilterResult(int visible, int total);
+    void setFilterResult(int visible_, int total_);
 
     void clear();
     void setFocus();
@@ -357,7 +356,7 @@ public:
 private:
     class KeyReleaseEater : public QObject {
     public:
-        explicit KeyReleaseEater(GameList* gamelist, QObject* parent = nullptr);
+        explicit KeyReleaseEater(GameList* gamelist_, QObject* parent = nullptr);
 
     private:
         GameList* gamelist = nullptr;

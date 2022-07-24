@@ -13,12 +13,12 @@
 #include <tuple>
 
 #include <catch2/catch.hpp>
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/stdint.hpp>
 
 #include "../rand_int.h"
 #include "../unicorn_emu/a32_unicorn.h"
 #include "./testenv.h"
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
 #include "dynarmic/frontend/A32/FPSCR.h"
 #include "dynarmic/frontend/A32/PSR.h"
 #include "dynarmic/frontend/A32/a32_location_descriptor.h"
@@ -236,8 +236,8 @@ void FuzzJitThumb32(const size_t instruction_count, const size_t instructions_to
 
         for (size_t i = 0; i < instruction_count; i++) {
             const auto instruction = instruction_generator();
-            const auto first_halfword = static_cast<u16>(Common::Bits<0, 15>(instruction));
-            const auto second_halfword = static_cast<u16>(Common::Bits<16, 31>(instruction));
+            const auto first_halfword = static_cast<u16>(mcl::bit::get_bits<0, 15>(instruction));
+            const auto second_halfword = static_cast<u16>(mcl::bit::get_bits<16, 31>(instruction));
 
             test_env.code_mem[i * 2 + 0] = second_halfword;
             test_env.code_mem[i * 2 + 1] = first_halfword;
@@ -249,39 +249,39 @@ void FuzzJitThumb32(const size_t instruction_count, const size_t instructions_to
 
 TEST_CASE("Fuzz Thumb instructions set 1", "[JitX64][Thumb][Thumb16]") {
     const std::array instructions = {
-        ThumbInstGen("00000xxxxxxxxxxx"),                                          // LSL <Rd>, <Rm>, #<imm5>
-        ThumbInstGen("00001xxxxxxxxxxx"),                                          // LSR <Rd>, <Rm>, #<imm5>
-        ThumbInstGen("00010xxxxxxxxxxx"),                                          // ASR <Rd>, <Rm>, #<imm5>
-        ThumbInstGen("000110oxxxxxxxxx"),                                          // ADD/SUB_reg
-        ThumbInstGen("000111oxxxxxxxxx"),                                          // ADD/SUB_imm
-        ThumbInstGen("001ooxxxxxxxxxxx"),                                          // ADD/SUB/CMP/MOV_imm
-        ThumbInstGen("010000ooooxxxxxx"),                                          // Data Processing
-        ThumbInstGen("010001000hxxxxxx"),                                          // ADD (high registers)
-        ThumbInstGen("0100010101xxxxxx",                                           // CMP (high registers)
-                     [](u32 inst) { return Common::Bits<3, 5>(inst) != 0b111; }),  // R15 is UNPREDICTABLE
-        ThumbInstGen("0100010110xxxxxx",                                           // CMP (high registers)
-                     [](u32 inst) { return Common::Bits<0, 2>(inst) != 0b111; }),  // R15 is UNPREDICTABLE
-        ThumbInstGen("010001100hxxxxxx"),                                          // MOV (high registers)
-        ThumbInstGen("10110000oxxxxxxx"),                                          // Adjust stack pointer
-        ThumbInstGen("10110010ooxxxxxx"),                                          // SXT/UXT
-        ThumbInstGen("1011101000xxxxxx"),                                          // REV
-        ThumbInstGen("1011101001xxxxxx"),                                          // REV16
-        ThumbInstGen("1011101011xxxxxx"),                                          // REVSH
-        ThumbInstGen("01001xxxxxxxxxxx"),                                          // LDR Rd, [PC, #]
-        ThumbInstGen("0101oooxxxxxxxxx"),                                          // LDR/STR Rd, [Rn, Rm]
-        ThumbInstGen("011xxxxxxxxxxxxx"),                                          // LDR(B)/STR(B) Rd, [Rn, #]
-        ThumbInstGen("1000xxxxxxxxxxxx"),                                          // LDRH/STRH Rd, [Rn, #offset]
-        ThumbInstGen("1001xxxxxxxxxxxx"),                                          // LDR/STR Rd, [SP, #]
-        ThumbInstGen("1011010xxxxxxxxx",                                           // PUSH
-                     [](u32 inst) { return Common::Bits<0, 7>(inst) != 0; }),      // Empty reg_list is UNPREDICTABLE
-        ThumbInstGen("10111100xxxxxxxx",                                           // POP (P = 0)
-                     [](u32 inst) { return Common::Bits<0, 7>(inst) != 0; }),      // Empty reg_list is UNPREDICTABLE
-        ThumbInstGen("1100xxxxxxxxxxxx",                                           // STMIA/LDMIA
+        ThumbInstGen("00000xxxxxxxxxxx"),                                                // LSL <Rd>, <Rm>, #<imm5>
+        ThumbInstGen("00001xxxxxxxxxxx"),                                                // LSR <Rd>, <Rm>, #<imm5>
+        ThumbInstGen("00010xxxxxxxxxxx"),                                                // ASR <Rd>, <Rm>, #<imm5>
+        ThumbInstGen("000110oxxxxxxxxx"),                                                // ADD/SUB_reg
+        ThumbInstGen("000111oxxxxxxxxx"),                                                // ADD/SUB_imm
+        ThumbInstGen("001ooxxxxxxxxxxx"),                                                // ADD/SUB/CMP/MOV_imm
+        ThumbInstGen("010000ooooxxxxxx"),                                                // Data Processing
+        ThumbInstGen("010001000hxxxxxx"),                                                // ADD (high registers)
+        ThumbInstGen("0100010101xxxxxx",                                                 // CMP (high registers)
+                     [](u32 inst) { return mcl::bit::get_bits<3, 5>(inst) != 0b111; }),  // R15 is UNPREDICTABLE
+        ThumbInstGen("0100010110xxxxxx",                                                 // CMP (high registers)
+                     [](u32 inst) { return mcl::bit::get_bits<0, 2>(inst) != 0b111; }),  // R15 is UNPREDICTABLE
+        ThumbInstGen("010001100hxxxxxx"),                                                // MOV (high registers)
+        ThumbInstGen("10110000oxxxxxxx"),                                                // Adjust stack pointer
+        ThumbInstGen("10110010ooxxxxxx"),                                                // SXT/UXT
+        ThumbInstGen("1011101000xxxxxx"),                                                // REV
+        ThumbInstGen("1011101001xxxxxx"),                                                // REV16
+        ThumbInstGen("1011101011xxxxxx"),                                                // REVSH
+        ThumbInstGen("01001xxxxxxxxxxx"),                                                // LDR Rd, [PC, #]
+        ThumbInstGen("0101oooxxxxxxxxx"),                                                // LDR/STR Rd, [Rn, Rm]
+        ThumbInstGen("011xxxxxxxxxxxxx"),                                                // LDR(B)/STR(B) Rd, [Rn, #]
+        ThumbInstGen("1000xxxxxxxxxxxx"),                                                // LDRH/STRH Rd, [Rn, #offset]
+        ThumbInstGen("1001xxxxxxxxxxxx"),                                                // LDR/STR Rd, [SP, #]
+        ThumbInstGen("1011010xxxxxxxxx",                                                 // PUSH
+                     [](u32 inst) { return mcl::bit::get_bits<0, 7>(inst) != 0; }),      // Empty reg_list is UNPREDICTABLE
+        ThumbInstGen("10111100xxxxxxxx",                                                 // POP (P = 0)
+                     [](u32 inst) { return mcl::bit::get_bits<0, 7>(inst) != 0; }),      // Empty reg_list is UNPREDICTABLE
+        ThumbInstGen("1100xxxxxxxxxxxx",                                                 // STMIA/LDMIA
                      [](u32 inst) {
                          // Ensure that the architecturally undefined case of
                          // the base register being within the list isn't hit.
-                         const u32 rn = Common::Bits<8, 10>(inst);
-                         return (inst & (1U << rn)) == 0 && Common::Bits<0, 7>(inst) != 0;
+                         const u32 rn = mcl::bit::get_bits<8, 10>(inst);
+                         return (inst & (1U << rn)) == 0 && mcl::bit::get_bits<0, 7>(inst) != 0;
                      }),
     // TODO: We should properly test against swapped
     //       endianness cases, however Unicorn doesn't
@@ -325,7 +325,7 @@ TEST_CASE("Fuzz Thumb instructions set 2 (affects PC)", "[JitX64][Thumb][Thumb16
 #if 0
         ThumbInstGen("01000111xmmmm000",  // BLX/BX
                      [](u32 inst){
-                         const u32 Rm = Common::Bits<3, 6>(inst);
+                         const u32 Rm = mcl::bit::get_bits<3, 6>(inst);
                          return Rm != 15;
                      }),
 #endif
@@ -335,7 +335,7 @@ TEST_CASE("Fuzz Thumb instructions set 2 (affects PC)", "[JitX64][Thumb][Thumb16
         ThumbInstGen("01000110h0xxxxxx"),  // MOV (high registers)
         ThumbInstGen("1101ccccxxxxxxxx",   // B<cond>
                      [](u32 inst) {
-                         const u32 c = Common::Bits<9, 12>(inst);
+                         const u32 c = mcl::bit::get_bits<9, 12>(inst);
                          return c < 0b1110;  // Don't want SWI or undefined instructions.
                      }),
         ThumbInstGen("1011o0i1iiiiinnn"),  // CBZ/CBNZ
@@ -360,18 +360,18 @@ TEST_CASE("Fuzz Thumb instructions set 2 (affects PC)", "[JitX64][Thumb][Thumb16
 
 TEST_CASE("Fuzz Thumb32 instructions set", "[JitX64][Thumb][Thumb32]") {
     const auto three_reg_not_r15 = [](u32 inst) {
-        const auto d = Common::Bits<8, 11>(inst);
-        const auto m = Common::Bits<0, 3>(inst);
-        const auto n = Common::Bits<16, 19>(inst);
+        const auto d = mcl::bit::get_bits<8, 11>(inst);
+        const auto m = mcl::bit::get_bits<0, 3>(inst);
+        const auto n = mcl::bit::get_bits<16, 19>(inst);
         return d != 15 && m != 15 && n != 15;
     };
 
     const std::array instructions = {
         ThumbInstGen("111110101011nnnn1111dddd1000mmmm",  // CLZ
                      [](u32 inst) {
-                         const auto d = Common::Bits<8, 11>(inst);
-                         const auto m = Common::Bits<0, 3>(inst);
-                         const auto n = Common::Bits<16, 19>(inst);
+                         const auto d = mcl::bit::get_bits<8, 11>(inst);
+                         const auto m = mcl::bit::get_bits<0, 3>(inst);
+                         const auto n = mcl::bit::get_bits<16, 19>(inst);
                          return m == n && d != 15 && m != 15;
                      }),
         ThumbInstGen("111110101000nnnn1111dddd1000mmmm",  // QADD
@@ -396,30 +396,30 @@ TEST_CASE("Fuzz Thumb32 instructions set", "[JitX64][Thumb][Thumb32]") {
                      three_reg_not_r15),
         ThumbInstGen("111110101001nnnn1111dddd1010mmmm",  // RBIT
                      [](u32 inst) {
-                         const auto d = Common::Bits<8, 11>(inst);
-                         const auto m = Common::Bits<0, 3>(inst);
-                         const auto n = Common::Bits<16, 19>(inst);
+                         const auto d = mcl::bit::get_bits<8, 11>(inst);
+                         const auto m = mcl::bit::get_bits<0, 3>(inst);
+                         const auto n = mcl::bit::get_bits<16, 19>(inst);
                          return m == n && d != 15 && m != 15;
                      }),
         ThumbInstGen("111110101001nnnn1111dddd1000mmmm",  // REV
                      [](u32 inst) {
-                         const auto d = Common::Bits<8, 11>(inst);
-                         const auto m = Common::Bits<0, 3>(inst);
-                         const auto n = Common::Bits<16, 19>(inst);
+                         const auto d = mcl::bit::get_bits<8, 11>(inst);
+                         const auto m = mcl::bit::get_bits<0, 3>(inst);
+                         const auto n = mcl::bit::get_bits<16, 19>(inst);
                          return m == n && d != 15 && m != 15;
                      }),
         ThumbInstGen("111110101001nnnn1111dddd1001mmmm",  // REV16
                      [](u32 inst) {
-                         const auto d = Common::Bits<8, 11>(inst);
-                         const auto m = Common::Bits<0, 3>(inst);
-                         const auto n = Common::Bits<16, 19>(inst);
+                         const auto d = mcl::bit::get_bits<8, 11>(inst);
+                         const auto m = mcl::bit::get_bits<0, 3>(inst);
+                         const auto n = mcl::bit::get_bits<16, 19>(inst);
                          return m == n && d != 15 && m != 15;
                      }),
         ThumbInstGen("111110101001nnnn1111dddd1011mmmm",  // REVSH
                      [](u32 inst) {
-                         const auto d = Common::Bits<8, 11>(inst);
-                         const auto m = Common::Bits<0, 3>(inst);
-                         const auto n = Common::Bits<16, 19>(inst);
+                         const auto d = mcl::bit::get_bits<8, 11>(inst);
+                         const auto m = mcl::bit::get_bits<0, 3>(inst);
+                         const auto n = mcl::bit::get_bits<16, 19>(inst);
                          return m == n && d != 15 && m != 15;
                      }),
         ThumbInstGen("111110101000nnnn1111dddd0000mmmm",  // SADD8

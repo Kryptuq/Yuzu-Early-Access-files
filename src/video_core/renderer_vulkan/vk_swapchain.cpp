@@ -1,17 +1,14 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <array>
 #include <limits>
 #include <vector>
 
-#include "common/assert.h"
 #include "common/logging/log.h"
 #include "common/settings.h"
 #include "core/core.h"
-#include "core/frontend/framebuffer_layout.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_swapchain.h"
 #include "video_core/vulkan_common/vulkan_device.h"
@@ -38,10 +35,11 @@ VkSurfaceFormatKHR ChooseSwapSurfaceFormat(vk::Span<VkSurfaceFormatKHR> formats)
 VkPresentModeKHR ChooseSwapPresentMode(vk::Span<VkPresentModeKHR> modes) {
     // Mailbox doesn't lock the application like fifo (vsync), prefer it
     const auto found_mailbox = std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_MAILBOX_KHR);
-    if (found_mailbox != modes.end()) {
+    if (Settings::values.fullscreen_mode.GetValue() == Settings::FullscreenMode::Borderless &&
+        found_mailbox != modes.end()) {
         return VK_PRESENT_MODE_MAILBOX_KHR;
     }
-    if (Settings::values.disable_fps_limit.GetValue()) {
+    if (!Settings::values.use_speed_limit.GetValue()) {
         // FIFO present mode locks the framerate to the monitor's refresh rate,
         // Find an alternative to surpass this limitation if FPS is unlocked.
         const auto found_imm = std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_IMMEDIATE_KHR);
@@ -67,15 +65,15 @@ VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, u32 wi
 
 } // Anonymous namespace
 
-VKSwapchain::VKSwapchain(VkSurfaceKHR surface_, const Device& device_, VKScheduler& scheduler_,
-                         u32 width, u32 height, bool srgb)
+Swapchain::Swapchain(VkSurfaceKHR surface_, const Device& device_, Scheduler& scheduler_, u32 width,
+                     u32 height, bool srgb)
     : surface{surface_}, device{device_}, scheduler{scheduler_} {
     Create(width, height, srgb);
 }
 
-VKSwapchain::~VKSwapchain() = default;
+Swapchain::~Swapchain() = default;
 
-void VKSwapchain::Create(u32 width, u32 height, bool srgb) {
+void Swapchain::Create(u32 width, u32 height, bool srgb) {
     is_outdated = false;
     is_suboptimal = false;
 
@@ -96,7 +94,7 @@ void VKSwapchain::Create(u32 width, u32 height, bool srgb) {
     resource_ticks.resize(image_count);
 }
 
-void VKSwapchain::AcquireNextImage() {
+void Swapchain::AcquireNextImage() {
     const VkResult result = device.GetLogical().AcquireNextImageKHR(
         *swapchain, std::numeric_limits<u64>::max(), *present_semaphores[frame_index],
         VK_NULL_HANDLE, &image_index);
@@ -117,7 +115,7 @@ void VKSwapchain::AcquireNextImage() {
     resource_ticks[image_index] = scheduler.CurrentTick();
 }
 
-void VKSwapchain::Present(VkSemaphore render_semaphore) {
+void Swapchain::Present(VkSemaphore render_semaphore) {
     const auto present_queue{device.GetPresentQueue()};
     const VkPresentInfoKHR present_info{
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -148,8 +146,8 @@ void VKSwapchain::Present(VkSemaphore render_semaphore) {
     }
 }
 
-void VKSwapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, u32 width,
-                                  u32 height, bool srgb) {
+void Swapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, u32 width, u32 height,
+                                bool srgb) {
     const auto physical_device{device.GetPhysical()};
     const auto formats{physical_device.GetSurfaceFormatsKHR(surface)};
     const auto present_modes{physical_device.GetSurfacePresentModesKHR(surface)};
@@ -158,8 +156,16 @@ void VKSwapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, 
     present_mode = ChooseSwapPresentMode(present_modes);
 
     u32 requested_image_count{capabilities.minImageCount + 1};
-    if (capabilities.maxImageCount > 0 && requested_image_count > capabilities.maxImageCount) {
-        requested_image_count = capabilities.maxImageCount;
+    // Ensure Tripple buffering if possible.
+    if (capabilities.maxImageCount > 0) {
+        if (requested_image_count > capabilities.maxImageCount) {
+            requested_image_count = capabilities.maxImageCount;
+        } else {
+            requested_image_count =
+                std::max(requested_image_count, std::min(3U, capabilities.maxImageCount));
+        }
+    } else {
+        requested_image_count = std::max(requested_image_count, 3U);
     }
     VkSwapchainCreateInfoKHR swapchain_ci{
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
@@ -208,20 +214,20 @@ void VKSwapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, 
 
     extent = swapchain_ci.imageExtent;
     current_srgb = srgb;
-    current_fps_unlocked = Settings::values.disable_fps_limit.GetValue();
+    current_fps_unlocked = !Settings::values.use_speed_limit.GetValue();
 
     images = swapchain.GetImages();
     image_count = static_cast<u32>(images.size());
     image_view_format = srgb ? VK_FORMAT_B8G8R8A8_SRGB : VK_FORMAT_B8G8R8A8_UNORM;
 }
 
-void VKSwapchain::CreateSemaphores() {
+void Swapchain::CreateSemaphores() {
     present_semaphores.resize(image_count);
     std::ranges::generate(present_semaphores,
                           [this] { return device.GetLogical().CreateSemaphore(); });
 }
 
-void VKSwapchain::CreateImageViews() {
+void Swapchain::CreateImageViews() {
     VkImageViewCreateInfo ci{
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .pNext = nullptr,
@@ -253,7 +259,7 @@ void VKSwapchain::CreateImageViews() {
     }
 }
 
-void VKSwapchain::Destroy() {
+void Swapchain::Destroy() {
     frame_index = 0;
     present_semaphores.clear();
     framebuffers.clear();
@@ -261,11 +267,11 @@ void VKSwapchain::Destroy() {
     swapchain.reset();
 }
 
-bool VKSwapchain::HasFpsUnlockChanged() const {
-    return current_fps_unlocked != Settings::values.disable_fps_limit.GetValue();
+bool Swapchain::HasFpsUnlockChanged() const {
+    return current_fps_unlocked != !Settings::values.use_speed_limit.GetValue();
 }
 
-bool VKSwapchain::NeedsPresentModeUpdate() const {
+bool Swapchain::NeedsPresentModeUpdate() const {
     // Mailbox present mode is the ideal for all scenarios. If it is not available,
     // A different present mode is needed to support unlocked FPS above the monitor's refresh rate.
     return present_mode != VK_PRESENT_MODE_MAILBOX_KHR && HasFpsUnlockChanged();

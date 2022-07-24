@@ -5,8 +5,9 @@
 
 #pragma once
 
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/frontend/A32/ITState.h"
 
 namespace Dynarmic::A32 {
@@ -65,52 +66,52 @@ public:
     }
 
     bool N() const {
-        return Common::Bit<31>(value);
+        return mcl::bit::get_bit<31>(value);
     }
     void N(bool set) {
-        value = Common::ModifyBit<31>(value, set);
+        value = mcl::bit::set_bit<31>(value, set);
     }
 
     bool Z() const {
-        return Common::Bit<30>(value);
+        return mcl::bit::get_bit<30>(value);
     }
     void Z(bool set) {
-        value = Common::ModifyBit<30>(value, set);
+        value = mcl::bit::set_bit<30>(value, set);
     }
 
     bool C() const {
-        return Common::Bit<29>(value);
+        return mcl::bit::get_bit<29>(value);
     }
     void C(bool set) {
-        value = Common::ModifyBit<29>(value, set);
+        value = mcl::bit::set_bit<29>(value, set);
     }
 
     bool V() const {
-        return Common::Bit<28>(value);
+        return mcl::bit::get_bit<28>(value);
     }
     void V(bool set) {
-        value = Common::ModifyBit<28>(value, set);
+        value = mcl::bit::set_bit<28>(value, set);
     }
 
     bool Q() const {
-        return Common::Bit<27>(value);
+        return mcl::bit::get_bit<27>(value);
     }
     void Q(bool set) {
-        value = Common::ModifyBit<27>(value, set);
+        value = mcl::bit::set_bit<27>(value, set);
     }
 
     bool J() const {
-        return Common::Bit<24>(value);
+        return mcl::bit::get_bit<24>(value);
     }
     void J(bool set) {
-        value = Common::ModifyBit<24>(value, set);
+        value = mcl::bit::set_bit<24>(value, set);
     }
 
     u32 GE() const {
-        return Common::Bits<16, 19>(value);
+        return mcl::bit::get_bits<16, 19>(value);
     }
     void GE(u32 data) {
-        value = Common::ModifyBits<16, 19>(value, data);
+        value = mcl::bit::set_bits<16, 19>(value, data);
     }
 
     ITState IT() const {
@@ -123,45 +124,45 @@ public:
     }
 
     bool E() const {
-        return Common::Bit<9>(value);
+        return mcl::bit::get_bit<9>(value);
     }
     void E(bool set) {
-        value = Common::ModifyBit<9>(value, set);
+        value = mcl::bit::set_bit<9>(value, set);
     }
 
     bool A() const {
-        return Common::Bit<8>(value);
+        return mcl::bit::get_bit<8>(value);
     }
     void A(bool set) {
-        value = Common::ModifyBit<8>(value, set);
+        value = mcl::bit::set_bit<8>(value, set);
     }
 
     bool I() const {
-        return Common::Bit<7>(value);
+        return mcl::bit::get_bit<7>(value);
     }
     void I(bool set) {
-        value = Common::ModifyBit<7>(value, set);
+        value = mcl::bit::set_bit<7>(value, set);
     }
 
     bool F() const {
-        return Common::Bit<6>(value);
+        return mcl::bit::get_bit<6>(value);
     }
     void F(bool set) {
-        value = Common::ModifyBit<6>(value, set);
+        value = mcl::bit::set_bit<6>(value, set);
     }
 
     bool T() const {
-        return Common::Bit<5>(value);
+        return mcl::bit::get_bit<5>(value);
     }
     void T(bool set) {
-        value = Common::ModifyBit<5>(value, set);
+        value = mcl::bit::set_bit<5>(value, set);
     }
 
     Mode M() const {
-        return static_cast<Mode>(Common::Bits<0, 4>(value));
+        return static_cast<Mode>(mcl::bit::get_bits<0, 4>(value));
     }
     void M(Mode mode) {
-        value = Common::ModifyBits<0, 4>(value, static_cast<u32>(mode));
+        value = mcl::bit::set_bits<0, 4>(value, static_cast<u32>(mode));
     }
 
     u32 Value() const {

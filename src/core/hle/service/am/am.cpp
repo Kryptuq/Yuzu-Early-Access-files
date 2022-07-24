@@ -1,12 +1,10 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <array>
 #include <cinttypes>
 #include <cstring>
-#include "audio_core/audio_renderer.h"
 #include "common/settings.h"
 #include "core/core.h"
 #include "core/file_sys/control_metadata.h"
@@ -41,9 +39,9 @@
 
 namespace Service::AM {
 
-constexpr ResultCode ERR_NO_DATA_IN_CHANNEL{ErrorModule::AM, 2};
-constexpr ResultCode ERR_NO_MESSAGES{ErrorModule::AM, 3};
-constexpr ResultCode ERR_SIZE_OUT_OF_BOUNDS{ErrorModule::AM, 503};
+constexpr Result ERR_NO_DATA_IN_CHANNEL{ErrorModule::AM, 2};
+constexpr Result ERR_NO_MESSAGES{ErrorModule::AM, 3};
+constexpr Result ERR_SIZE_OUT_OF_BOUNDS{ErrorModule::AM, 503};
 
 enum class LaunchParameterKind : u32 {
     ApplicationSpecific = 1,
@@ -55,7 +53,7 @@ constexpr u32 LAUNCH_PARAMETER_ACCOUNT_PRESELECTED_USER_MAGIC = 0xC79497CA;
 struct LaunchParameterAccountPreselectedUser {
     u32_le magic;
     u32_le is_account_selected;
-    u128 current_user;
+    Common::UUID current_user;
     INSERT_PADDING_BYTES(0x70);
 };
 static_assert(sizeof(LaunchParameterAccountPreselectedUser) == 0x88);
@@ -239,6 +237,7 @@ IDebugFunctions::IDebugFunctions(Core::System& system_)
         {130, nullptr, "FriendInvitationSetApplicationParameter"},
         {131, nullptr, "FriendInvitationClearApplicationParameter"},
         {132, nullptr, "FriendInvitationPushApplicationParameter"},
+        {140, nullptr, "RestrictPowerOperationForSecureLaunchModeForDebug"},
         {900, nullptr, "GetGrcProcessLaunchedSystemEvent"},
     };
     // clang-format on
@@ -286,7 +285,7 @@ ISelfController::ISelfController(Core::System& system_, NVFlinger::NVFlinger& nv
         {62, &ISelfController::SetIdleTimeDetectionExtension, "SetIdleTimeDetectionExtension"},
         {63, &ISelfController::GetIdleTimeDetectionExtension, "GetIdleTimeDetectionExtension"},
         {64, nullptr, "SetInputDetectionSourceSet"},
-        {65, nullptr, "ReportUserIsActive"},
+        {65, &ISelfController::ReportUserIsActive, "ReportUserIsActive"},
         {66, nullptr, "GetCurrentIlluminance"},
         {67, nullptr, "IsIlluminanceAvailable"},
         {68, &ISelfController::SetAutoSleepDisabled, "SetAutoSleepDisabled"},
@@ -366,7 +365,7 @@ void ISelfController::LeaveFatalSection(Kernel::HLERequestContext& ctx) {
     // Entry and exit of fatal sections must be balanced.
     if (num_fatal_sections_entered == 0) {
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultCode{ErrorModule::AM, 512});
+        rb.Push(Result{ErrorModule::AM, 512});
         return;
     }
 
@@ -518,6 +517,13 @@ void ISelfController::GetIdleTimeDetectionExtension(Kernel::HLERequestContext& c
     rb.Push<u32>(idle_time_detection_extension);
 }
 
+void ISelfController::ReportUserIsActive(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_AM, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
 void ISelfController::SetAutoSleepDisabled(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     is_auto_sleep_disabled = rp.Pop<bool>();
@@ -618,7 +624,7 @@ void AppletMessageQueue::PushMessage(AppletMessage msg) {
 AppletMessageQueue::AppletMessage AppletMessageQueue::PopMessage() {
     if (messages.empty()) {
         on_new_message->GetWritableEvent().Clear();
-        return AppletMessage::NoMessage;
+        return AppletMessage::None;
     }
     auto msg = messages.front();
     messages.pop();
@@ -633,7 +639,11 @@ std::size_t AppletMessageQueue::GetMessageCount() const {
 }
 
 void AppletMessageQueue::RequestExit() {
-    PushMessage(AppletMessage::ExitRequested);
+    PushMessage(AppletMessage::Exit);
+}
+
+void AppletMessageQueue::RequestResume() {
+    PushMessage(AppletMessage::Resume);
 }
 
 void AppletMessageQueue::FocusStateChanged() {
@@ -687,7 +697,7 @@ ICommonStateGetter::ICommonStateGetter(Core::System& system_,
         {66, &ICommonStateGetter::SetCpuBoostMode, "SetCpuBoostMode"},
         {67, nullptr, "CancelCpuBoostMode"},
         {68, nullptr, "GetBuiltInDisplayType"},
-        {80, nullptr, "PerformSystemButtonPressingIfInFocus"},
+        {80, &ICommonStateGetter::PerformSystemButtonPressingIfInFocus, "PerformSystemButtonPressingIfInFocus"},
         {90, nullptr, "SetPerformanceConfigurationChangedNotification"},
         {91, nullptr, "GetCurrentPerformanceConfiguration"},
         {100, nullptr, "SetHandlingHomeButtonShortPressedEnabled"},
@@ -732,7 +742,7 @@ void ICommonStateGetter::ReceiveMessage(Kernel::HLERequestContext& ctx) {
     const auto message = msg_queue->PopMessage();
     IPC::ResponseBuilder rb{ctx, 3};
 
-    if (message == AppletMessageQueue::AppletMessage::NoMessage) {
+    if (message == AppletMessageQueue::AppletMessage::None) {
         LOG_ERROR(Service_AM, "Message queue is empty");
         rb.Push(ERR_NO_MESSAGES);
         rb.PushEnum<AppletMessageQueue::AppletMessage>(message);
@@ -825,6 +835,16 @@ void ICommonStateGetter::SetCpuBoostMode(Kernel::HLERequestContext& ctx) {
     ASSERT(apm_sys != nullptr);
 
     apm_sys->SetCpuBoostMode(ctx);
+}
+
+void ICommonStateGetter::PerformSystemButtonPressingIfInFocus(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto system_button{rp.PopEnum<SystemButtonType>()};
+
+    LOG_WARNING(Service_AM, "(STUBBED) called, system_button={}", system_button);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
 }
 
 void ICommonStateGetter::SetRequestExitToLibraryAppletAtExecuteNextProgramEnabled(
@@ -980,7 +1000,7 @@ private:
         LOG_DEBUG(Service_AM, "called");
 
         IPC::RequestParser rp{ctx};
-        applet->GetBroker().PushNormalDataFromGame(rp.PopIpcInterface<IStorage>());
+        applet->GetBroker().PushNormalDataFromGame(rp.PopIpcInterface<IStorage>().lock());
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
@@ -1007,7 +1027,7 @@ private:
         LOG_DEBUG(Service_AM, "called");
 
         IPC::RequestParser rp{ctx};
-        applet->GetBroker().PushInteractiveDataFromGame(rp.PopIpcInterface<IStorage>());
+        applet->GetBroker().PushInteractiveDataFromGame(rp.PopIpcInterface<IStorage>().lock());
 
         ASSERT(applet->IsInitialized());
         applet->ExecuteInteractive();
@@ -1301,6 +1321,8 @@ IApplicationFunctions::IApplicationFunctions(Core::System& system_)
         {33, &IApplicationFunctions::EndBlockingHomeButton, "EndBlockingHomeButton"},
         {34, nullptr, "SelectApplicationLicense"},
         {35, nullptr, "GetDeviceSaveDataSizeMax"},
+        {36, nullptr, "GetLimitedApplicationLicense"},
+        {37, nullptr, "GetLimitedApplicationLicenseUpgradableEvent"},
         {40, &IApplicationFunctions::NotifyRunning, "NotifyRunning"},
         {50, &IApplicationFunctions::GetPseudoDeviceId, "GetPseudoDeviceId"},
         {60, nullptr, "SetMediaPlaybackStateForApplication"},
@@ -1337,7 +1359,7 @@ IApplicationFunctions::IApplicationFunctions(Core::System& system_)
         {200, nullptr, "GetLastApplicationExitReason"},
         {500, nullptr, "StartContinuousRecordingFlushForDebug"},
         {1000, nullptr, "CreateMovieMaker"},
-        {1001, nullptr, "PrepareForJit"},
+        {1001, &IApplicationFunctions::PrepareForJit, "PrepareForJit"},
     };
     // clang-format on
 
@@ -1453,8 +1475,8 @@ void IApplicationFunctions::PopLaunchParameter(Kernel::HLERequestContext& ctx) {
 
         Account::ProfileManager profile_manager{};
         const auto uuid = profile_manager.GetUser(static_cast<s32>(Settings::values.current_user));
-        ASSERT(uuid);
-        params.current_user = uuid->uuid;
+        ASSERT(uuid.has_value() && uuid->IsValid());
+        params.current_user = *uuid;
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
 
@@ -1785,6 +1807,13 @@ void IApplicationFunctions::GetHealthWarningDisappearedSystemEvent(Kernel::HLERe
     IPC::ResponseBuilder rb{ctx, 2, 1};
     rb.Push(ResultSuccess);
     rb.PushCopyObjects(health_warning_disappeared_system_event->GetReadableEvent());
+}
+
+void IApplicationFunctions::PrepareForJit(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_AM, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager, NVFlinger::NVFlinger& nvflinger,

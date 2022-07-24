@@ -1,11 +1,10 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <climits>
-#include <string_view>
 
 #include <boost/container/static_vector.hpp>
 
@@ -164,9 +163,10 @@ void DefineGenericOutput(EmitContext& ctx, size_t index, std::optional<u32> invo
     while (element < 4) {
         const u32 remainder{4 - element};
         const TransformFeedbackVarying* xfb_varying{};
-        if (!ctx.runtime_info.xfb_varyings.empty()) {
-            xfb_varying = &ctx.runtime_info.xfb_varyings[base_attr_index + element];
-            xfb_varying = xfb_varying && xfb_varying->components > 0 ? xfb_varying : nullptr;
+        const size_t xfb_varying_index{base_attr_index + element};
+        if (xfb_varying_index < ctx.runtime_info.xfb_varyings.size()) {
+            xfb_varying = &ctx.runtime_info.xfb_varyings[xfb_varying_index];
+            xfb_varying = xfb_varying->components > 0 ? xfb_varying : nullptr;
         }
         const u32 num_components{xfb_varying ? xfb_varying->components : remainder};
 
@@ -463,6 +463,7 @@ EmitContext::EmitContext(const Profile& profile_, const RuntimeInfo& runtime_inf
     DefineSharedMemory(program);
     DefineSharedMemoryFunctions(program);
     DefineConstantBuffers(program.info, uniform_binding);
+    DefineConstantBufferIndirectFunctions(program.info);
     DefineStorageBuffers(program.info, storage_binding);
     DefineTextureBuffers(program.info, texture_binding);
     DefineImageBuffers(program.info, image_binding);
@@ -992,7 +993,7 @@ void EmitContext::DefineConstantBuffers(const Info& info, u32& binding) {
         }
         return;
     }
-    IR::Type types{info.used_constant_buffer_types};
+    IR::Type types{info.used_constant_buffer_types | info.used_indirect_cbuf_types};
     if (True(types & IR::Type::U8)) {
         if (profile.support_int8) {
             DefineConstBuffers(*this, info, &UniformDefinitions::U8, binding, U8, 'u', sizeof(u8));
@@ -1024,6 +1025,63 @@ void EmitContext::DefineConstantBuffers(const Info& info, u32& binding) {
                            sizeof(u32[2]));
     }
     binding += static_cast<u32>(info.constant_buffer_descriptors.size());
+}
+
+void EmitContext::DefineConstantBufferIndirectFunctions(const Info& info) {
+    if (!info.uses_cbuf_indirect) {
+        return;
+    }
+    const auto make_accessor{[&](Id buffer_type, Id UniformDefinitions::*member_ptr) {
+        const Id func_type{TypeFunction(buffer_type, U32[1], U32[1])};
+        const Id func{OpFunction(buffer_type, spv::FunctionControlMask::MaskNone, func_type)};
+        const Id binding{OpFunctionParameter(U32[1])};
+        const Id offset{OpFunctionParameter(U32[1])};
+
+        AddLabel();
+
+        const Id merge_label{OpLabel()};
+        const Id uniform_type{uniform_types.*member_ptr};
+
+        std::array<Id, Info::MAX_INDIRECT_CBUFS> buf_labels;
+        std::array<Sirit::Literal, Info::MAX_INDIRECT_CBUFS> buf_literals;
+        for (u32 i = 0; i < Info::MAX_INDIRECT_CBUFS; i++) {
+            buf_labels[i] = OpLabel();
+            buf_literals[i] = Sirit::Literal{i};
+        }
+        OpSelectionMerge(merge_label, spv::SelectionControlMask::MaskNone);
+        OpSwitch(binding, buf_labels[0], buf_literals, buf_labels);
+        for (u32 i = 0; i < Info::MAX_INDIRECT_CBUFS; i++) {
+            AddLabel(buf_labels[i]);
+            const Id cbuf{cbufs[i].*member_ptr};
+            const Id access_chain{OpAccessChain(uniform_type, cbuf, u32_zero_value, offset)};
+            const Id result{OpLoad(buffer_type, access_chain)};
+            OpReturnValue(result);
+        }
+        AddLabel(merge_label);
+        OpUnreachable();
+        OpFunctionEnd();
+        return func;
+    }};
+    IR::Type types{info.used_indirect_cbuf_types};
+    bool supports_aliasing = profile.support_descriptor_aliasing;
+    if (supports_aliasing && True(types & IR::Type::U8)) {
+        load_const_func_u8 = make_accessor(U8, &UniformDefinitions::U8);
+    }
+    if (supports_aliasing && True(types & IR::Type::U16)) {
+        load_const_func_u16 = make_accessor(U16, &UniformDefinitions::U16);
+    }
+    if (supports_aliasing && True(types & IR::Type::F32)) {
+        load_const_func_f32 = make_accessor(F32[1], &UniformDefinitions::F32);
+    }
+    if (supports_aliasing && True(types & IR::Type::U32)) {
+        load_const_func_u32 = make_accessor(U32[1], &UniformDefinitions::U32);
+    }
+    if (supports_aliasing && True(types & IR::Type::U32x2)) {
+        load_const_func_u32x2 = make_accessor(U32[2], &UniformDefinitions::U32x2);
+    }
+    if (!supports_aliasing || True(types & IR::Type::U32x4)) {
+        load_const_func_u32x4 = make_accessor(U32[4], &UniformDefinitions::U32x4);
+    }
 }
 
 void EmitContext::DefineStorageBuffers(const Info& info, u32& binding) {

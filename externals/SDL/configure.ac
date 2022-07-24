@@ -22,9 +22,9 @@ dnl Set various version strings - taken gratefully from the GTk sources
 #
 SDL_MAJOR_VERSION=2
 SDL_MINOR_VERSION=0
-SDL_MICRO_VERSION=19
-SDL_INTERFACE_AGE=1
-SDL_BINARY_AGE=19
+SDL_MICRO_VERSION=20
+SDL_INTERFACE_AGE=2
+SDL_BINARY_AGE=20
 SDL_VERSION=$SDL_MAJOR_VERSION.$SDL_MINOR_VERSION.$SDL_MICRO_VERSION
 
 AC_SUBST(SDL_MAJOR_VERSION)
@@ -2325,7 +2325,7 @@ CheckKMSDRM()
             AC_MSG_RESULT($kmsdrm_shared)
             if test x$kmsdrm_shared = xyes; then
                 echo "-- dynamic libdrm -> $drm_lib"
-                echo "-- dynamic libgmb -> $gbm_lib"
+                echo "-- dynamic libgbm -> $gbm_lib"
             fi
             have_video=yes
         fi
@@ -3271,7 +3271,14 @@ XINPUT_STATE_EX s1;
         fi
     fi
 
-    AC_CHECK_HEADER(windows.gaming.input.h, have_wgi=yes)
+    AC_MSG_CHECKING(for windows.gaming.input.h)
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#define COBJMACROS
+#include <windows.gaming.input.h>
+__x_ABI_CWindows_CGaming_CInput_CIGamepadStatics2 *s2;
+        ]],[])], [have_wgi=yes],[have_wgi=no])
+    AC_MSG_RESULT($have_wgi)
+
     if test x$have_wgi = xyes; then
         AC_DEFINE(HAVE_WINDOWS_GAMING_INPUT_H, 1, [ ])
     fi
@@ -3482,6 +3489,9 @@ CheckHIDAPI()
                 enable_hidapi_libusb=yes
                 require_hidapi_libusb=yes
                 ;;
+           *-*-os2* )
+                enable_hidapi_libusb=yes
+                ;;
         esac
 
         hidapi_support=yes
@@ -3513,6 +3523,9 @@ CheckHIDAPI()
                             ;;
                         *-*-cygwin* | *-*-mingw* )
                             libusb_lib="libusb-1.0.dll"
+                            ;;
+                        *-*-os2* )
+                            libusb_lib="usb100.dll"
                             ;;
                     esac
                     if test x$libusb_lib = x; then
@@ -3963,6 +3976,10 @@ case "$host" in
                 SOURCES="$SOURCES $srcdir/src/haptic/windows/*.c"
                 have_haptic=yes
             fi
+        fi
+        AC_CHECK_HEADER(tpcshrd.h,have_tpcshrd_h=yes)
+        if test x$have_tpcshrd_h = xyes; then
+            AC_DEFINE(HAVE_TPCSHRD_H, 1, [ ])
         fi
         # Set up files for the sensor library
         AC_CHECK_HEADER(sensorsapi.h,have_winsensors=yes,have_winsensors=no)
@@ -4418,6 +4435,7 @@ case "$host" in
         CheckDummyVideo
         CheckDiskAudio
         CheckDummyAudio
+        CheckHIDAPI
 
         # Set up the core platform files
         SOURCES="$SOURCES $srcdir/src/core/os2/*.c"

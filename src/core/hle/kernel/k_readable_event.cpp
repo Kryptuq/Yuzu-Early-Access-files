@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/assert.h"
 #include "core/hle/kernel/k_event.h"
@@ -28,7 +27,7 @@ void KReadableEvent::Destroy() {
     }
 }
 
-ResultCode KReadableEvent::Signal() {
+Result KReadableEvent::Signal() {
     KScopedSchedulerLock lk{kernel};
 
     if (!is_signaled) {
@@ -39,13 +38,13 @@ ResultCode KReadableEvent::Signal() {
     return ResultSuccess;
 }
 
-ResultCode KReadableEvent::Clear() {
+Result KReadableEvent::Clear() {
     Reset();
 
     return ResultSuccess;
 }
 
-ResultCode KReadableEvent::Reset() {
+Result KReadableEvent::Reset() {
     KScopedSchedulerLock lk{kernel};
 
     if (!is_signaled) {

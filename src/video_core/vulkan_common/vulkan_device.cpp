@@ -1,24 +1,24 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <bitset>
 #include <chrono>
 #include <optional>
-#include <string_view>
 #include <thread>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "common/assert.h"
+#include "common/literals.h"
 #include "common/settings.h"
 #include "video_core/vulkan_common/nsight_aftermath_tracker.h"
 #include "video_core/vulkan_common/vulkan_device.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace Vulkan {
+using namespace Common::Literals;
 namespace {
 namespace Alternatives {
 constexpr std::array STENCIL8_UINT{
@@ -39,6 +39,17 @@ constexpr std::array DEPTH16_UNORM_STENCIL8_UINT{
     VK_FORMAT_D32_SFLOAT_S8_UINT,
     VK_FORMAT_UNDEFINED,
 };
+
+constexpr std::array B5G6R5_UNORM_PACK16{
+    VK_FORMAT_R5G6B5_UNORM_PACK16,
+    VK_FORMAT_UNDEFINED,
+};
+
+constexpr std::array R4G4_UNORM_PACK8{
+    VK_FORMAT_R8_UNORM,
+    VK_FORMAT_UNDEFINED,
+};
+
 } // namespace Alternatives
 
 enum class NvidiaArchitecture {
@@ -87,6 +98,10 @@ constexpr const VkFormat* GetFormatAlternatives(VkFormat format) {
         return Alternatives::DEPTH24_UNORM_STENCIL8_UINT.data();
     case VK_FORMAT_D16_UNORM_S8_UINT:
         return Alternatives::DEPTH16_UNORM_STENCIL8_UINT.data();
+    case VK_FORMAT_B5G6R5_UNORM_PACK16:
+        return Alternatives::B5G6R5_UNORM_PACK16.data();
+    case VK_FORMAT_R4G4_UNORM_PACK8:
+        return Alternatives::R4G4_UNORM_PACK8.data();
     default:
         return nullptr;
     }
@@ -114,6 +129,8 @@ std::unordered_map<VkFormat, VkFormatProperties> GetFormatProperties(vk::Physica
         VK_FORMAT_A8B8G8R8_SRGB_PACK32,
         VK_FORMAT_R5G6B5_UNORM_PACK16,
         VK_FORMAT_B5G6R5_UNORM_PACK16,
+        VK_FORMAT_R5G5B5A1_UNORM_PACK16,
+        VK_FORMAT_B5G5R5A1_UNORM_PACK16,
         VK_FORMAT_A2B10G10R10_UNORM_PACK32,
         VK_FORMAT_A2B10G10R10_UINT_PACK32,
         VK_FORMAT_A1R5G5B5_UNORM_PACK16,
@@ -152,7 +169,9 @@ std::unordered_map<VkFormat, VkFormatProperties> GetFormatProperties(vk::Physica
         VK_FORMAT_R16G16B16A16_SFLOAT,
         VK_FORMAT_B8G8R8A8_UNORM,
         VK_FORMAT_B8G8R8A8_SRGB,
+        VK_FORMAT_R4G4_UNORM_PACK8,
         VK_FORMAT_R4G4B4A4_UNORM_PACK16,
+        VK_FORMAT_B4G4R4A4_UNORM_PACK16,
         VK_FORMAT_D32_SFLOAT,
         VK_FORMAT_D16_UNORM,
         VK_FORMAT_S8_UINT,
@@ -224,9 +243,14 @@ std::vector<std::string> GetSupportedExtensions(vk::PhysicalDevice physical) {
     return supported_extensions;
 }
 
+bool IsExtensionSupported(std::span<const std::string> supported_extensions,
+                          std::string_view extension) {
+    return std::ranges::find(supported_extensions, extension) != supported_extensions.end();
+}
+
 NvidiaArchitecture GetNvidiaArchitecture(vk::PhysicalDevice physical,
                                          std::span<const std::string> exts) {
-    if (std::ranges::find(exts, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME) != exts.end()) {
+    if (IsExtensionSupported(exts, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME)) {
         VkPhysicalDeviceFragmentShadingRatePropertiesKHR shading_rate_props{};
         shading_rate_props.sType =
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_PROPERTIES_KHR;
@@ -239,7 +263,7 @@ NvidiaArchitecture GetNvidiaArchitecture(vk::PhysicalDevice physical,
             return NvidiaArchitecture::AmpereOrNewer;
         }
     }
-    if (std::ranges::find(exts, VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME) != exts.end()) {
+    if (IsExtensionSupported(exts, VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME)) {
         return NvidiaArchitecture::Turing;
     }
     return NvidiaArchitecture::VoltaOrOlder;
@@ -542,7 +566,7 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     }
 
     VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR workgroup_layout;
-    if (khr_workgroup_memory_explicit_layout) {
+    if (khr_workgroup_memory_explicit_layout && is_shader_int16_supported) {
         workgroup_layout = {
             .sType =
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR,
@@ -553,6 +577,11 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             .workgroupMemoryExplicitLayout16BitAccess = VK_TRUE,
         };
         SetNext(next, workgroup_layout);
+    } else if (khr_workgroup_memory_explicit_layout) {
+        // TODO(lat9nq): Find a proper fix for this
+        LOG_WARNING(Render_Vulkan, "Disabling VK_KHR_workgroup_memory_explicit_layout due to a "
+                                   "yuzu bug when host driver does not support 16-bit integers");
+        khr_workgroup_memory_explicit_layout = false;
     }
 
     VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR executable_properties;
@@ -585,6 +614,11 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     }
     logical = vk::Device::Create(physical, queue_cis, extensions, first_next, dld);
 
+    is_integrated = properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+    is_virtual = properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU;
+    is_non_gpu = properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_OTHER ||
+                 properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU;
+
     CollectPhysicalMemoryInfo();
     CollectTelemetryParameters();
     CollectToolingInfo();
@@ -603,14 +637,31 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             khr_push_descriptor = false;
             break;
         }
+        const u32 nv_major_version = (properties.driverVersion >> 22) & 0x3ff;
+        if (nv_major_version >= 510) {
+            LOG_WARNING(Render_Vulkan, "NVIDIA Drivers >= 510 do not support MSAA image blits");
+            cant_blit_msaa = true;
+        }
     }
-    if (ext_extended_dynamic_state && driver_id == VK_DRIVER_ID_MESA_RADV) {
+    const bool is_radv = driver_id == VK_DRIVER_ID_MESA_RADV;
+    if (ext_extended_dynamic_state && is_radv) {
         // Mask driver version variant
         const u32 version = (properties.driverVersion << 3) >> 3;
         if (version < VK_MAKE_API_VERSION(0, 21, 2, 0)) {
             LOG_WARNING(Render_Vulkan,
                         "RADV versions older than 21.2 have broken VK_EXT_extended_dynamic_state");
             ext_extended_dynamic_state = false;
+        }
+    }
+    if (ext_vertex_input_dynamic_state && is_radv) {
+        // TODO(ameerj): Blacklist only offending driver versions
+        // TODO(ameerj): Confirm if RDNA1 is affected
+        const bool is_rdna2 =
+            IsExtensionSupported(supported_extensions, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+        if (is_rdna2) {
+            LOG_WARNING(Render_Vulkan,
+                        "RADV has broken VK_EXT_vertex_input_dynamic_state on RDNA2 hardware");
+            ext_vertex_input_dynamic_state = false;
         }
     }
     sets_per_pool = 64;
@@ -628,7 +679,7 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             has_broken_cube_compatibility = true;
         }
     }
-    const bool is_amd_or_radv = is_amd || driver_id == VK_DRIVER_ID_MESA_RADV;
+    const bool is_amd_or_radv = is_amd || is_radv;
     if (ext_sampler_filter_minmax && is_amd_or_radv) {
         // Disable ext_sampler_filter_minmax on AMD GCN4 and lower as it is broken.
         if (!is_float16_supported) {
@@ -639,6 +690,7 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     }
 
     const bool is_intel_windows = driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS;
+    const bool is_intel_anv = driver_id == VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA;
     if (ext_vertex_input_dynamic_state && is_intel_windows) {
         LOG_WARNING(Render_Vulkan, "Blacklisting Intel for VK_EXT_vertex_input_dynamic_state");
         ext_vertex_input_dynamic_state = false;
@@ -651,6 +703,10 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     if (is_intel_windows) {
         LOG_WARNING(Render_Vulkan, "Intel proprietary drivers do not support MSAA image blits");
         cant_blit_msaa = true;
+    }
+    if (is_intel_anv) {
+        LOG_WARNING(Render_Vulkan, "ANV driver does not support native BGR format");
+        must_emulate_bgr565 = true;
     }
 
     supports_d24_depth =
@@ -671,9 +727,10 @@ VkFormat Device::GetSupportedFormat(VkFormat wanted_format, VkFormatFeatureFlags
     // The wanted format is not supported by hardware, search for alternatives
     const VkFormat* alternatives = GetFormatAlternatives(wanted_format);
     if (alternatives == nullptr) {
-        UNREACHABLE_MSG("Format={} with usage={} and type={} has no defined alternatives and host "
-                        "hardware does not support it",
-                        wanted_format, wanted_usage, format_type);
+        ASSERT_MSG(false,
+                   "Format={} with usage={} and type={} has no defined alternatives and host "
+                   "hardware does not support it",
+                   wanted_format, wanted_usage, format_type);
         return wanted_format;
     }
 
@@ -689,14 +746,15 @@ VkFormat Device::GetSupportedFormat(VkFormat wanted_format, VkFormatFeatureFlags
     }
 
     // No alternatives found, panic
-    UNREACHABLE_MSG("Format={} with usage={} and type={} is not supported by the host hardware and "
-                    "doesn't support any of the alternatives",
-                    wanted_format, wanted_usage, format_type);
+    ASSERT_MSG(false,
+               "Format={} with usage={} and type={} is not supported by the host hardware and "
+               "doesn't support any of the alternatives",
+               wanted_format, wanted_usage, format_type);
     return wanted_format;
 }
 
 void Device::ReportLoss() const {
-    LOG_CRITICAL(Render_Vulkan, "Device loss occured!");
+    LOG_CRITICAL(Render_Vulkan, "Device loss occurred!");
 
     // Wait for the log to flush and for Nsight Aftermath to dump the results
     std::this_thread::sleep_for(std::chrono::seconds{15});
@@ -957,6 +1015,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         test(has_khr_swapchain_mutable_format, VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME,
              false);
         test(has_ext_line_rasterization, VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME, false);
+        test(ext_memory_budget, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME, true);
         if (Settings::values.enable_nsight_aftermath) {
             test(nv_device_diagnostics_config, VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME,
                  true);
@@ -969,7 +1028,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
     VkPhysicalDeviceFeatures2KHR features{};
     features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR;
 
-    VkPhysicalDeviceProperties2KHR physical_properties;
+    VkPhysicalDeviceProperties2KHR physical_properties{};
     physical_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
 
     if (has_khr_shader_float16_int8) {
@@ -1038,7 +1097,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
     }
     if (has_ext_shader_atomic_int64) {
         VkPhysicalDeviceShaderAtomicInt64Features atomic_int64;
-        atomic_int64.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+        atomic_int64.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES;
         atomic_int64.pNext = nullptr;
         features.pNext = &atomic_int64;
         physical.GetFeatures2KHR(features);
@@ -1239,15 +1298,50 @@ void Device::CollectTelemetryParameters() {
     vendor_name = driver.driverName;
 }
 
+u64 Device::GetDeviceMemoryUsage() const {
+    VkPhysicalDeviceMemoryBudgetPropertiesEXT budget;
+    budget.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
+    budget.pNext = nullptr;
+    physical.GetMemoryProperties(&budget);
+    u64 result{};
+    for (const size_t heap : valid_heap_memory) {
+        result += budget.heapUsage[heap];
+    }
+    return result;
+}
+
 void Device::CollectPhysicalMemoryInfo() {
-    const auto mem_properties = physical.GetMemoryProperties();
+    VkPhysicalDeviceMemoryBudgetPropertiesEXT budget{};
+    budget.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
+    const auto mem_info = physical.GetMemoryProperties(ext_memory_budget ? &budget : nullptr);
+    const auto& mem_properties = mem_info.memoryProperties;
     const size_t num_properties = mem_properties.memoryHeapCount;
     device_access_memory = 0;
+    u64 device_initial_usage = 0;
+    u64 local_memory = 0;
     for (size_t element = 0; element < num_properties; ++element) {
-        if ((mem_properties.memoryHeaps[element].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) != 0) {
-            device_access_memory += mem_properties.memoryHeaps[element].size;
+        const bool is_heap_local =
+            (mem_properties.memoryHeaps[element].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) != 0;
+        if (!is_integrated && !is_heap_local) {
+            continue;
         }
+        valid_heap_memory.push_back(element);
+        if (is_heap_local) {
+            local_memory += mem_properties.memoryHeaps[element].size;
+        }
+        if (ext_memory_budget) {
+            device_initial_usage += budget.heapUsage[element];
+            device_access_memory += budget.heapBudget[element];
+            continue;
+        }
+        device_access_memory += mem_properties.memoryHeaps[element].size;
     }
+    if (!is_integrated) {
+        return;
+    }
+    const s64 available_memory = static_cast<s64>(device_access_memory - device_initial_usage);
+    device_access_memory = static_cast<u64>(std::max<s64>(
+        std::min<s64>(available_memory - 8_GiB, 4_GiB), static_cast<s64>(local_memory)));
 }
 
 void Device::CollectToolingInfo() {

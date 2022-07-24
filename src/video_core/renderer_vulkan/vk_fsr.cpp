@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <cmath>
 #include "common/bit_cast.h"
@@ -173,7 +172,7 @@ FSR::FSR(const Device& device_, MemoryAllocator& memory_allocator_, size_t image
     CreatePipeline();
 }
 
-VkImageView FSR::Draw(VKScheduler& scheduler, size_t image_index, VkImageView image_view,
+VkImageView FSR::Draw(Scheduler& scheduler, size_t image_index, VkImageView image_view,
                       VkExtent2D input_image_extent, const Common::Rectangle<int>& crop_rect) {
 
     UpdateDescriptorSet(image_index, image_view);
@@ -214,7 +213,7 @@ VkImageView FSR::Draw(VKScheduler& scheduler, size_t image_index, VkImageView im
 
         {
             VkImageMemoryBarrier fsr_write_barrier = base_barrier;
-            fsr_write_barrier.image = *images[image_index],
+            fsr_write_barrier.image = *images[image_index];
             fsr_write_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
             cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,

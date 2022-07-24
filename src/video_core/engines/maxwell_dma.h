@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -8,10 +7,8 @@
 #include <cstddef>
 #include <vector>
 #include "common/bit_field.h"
-#include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "video_core/engines/engine_interface.h"
-#include "video_core/gpu.h"
 
 namespace Core {
 class System;
@@ -192,10 +189,16 @@ public:
             BitField<4, 3, Swizzle> dst_y;
             BitField<8, 3, Swizzle> dst_z;
             BitField<12, 3, Swizzle> dst_w;
+            BitField<0, 12, u32> dst_components_raw;
             BitField<16, 2, u32> component_size_minus_one;
             BitField<20, 2, u32> num_src_components_minus_one;
             BitField<24, 2, u32> num_dst_components_minus_one;
         };
+
+        Swizzle GetComponent(size_t i) {
+            const u32 raw = dst_components_raw;
+            return static_cast<Swizzle>((raw >> (i * 3)) & 0x7);
+        }
     };
     static_assert(sizeof(RemapConst) == 12);
 
@@ -223,6 +226,8 @@ private:
     void CopyPitchToBlockLinear();
 
     void FastCopyBlockLinearToPitch();
+
+    void ReleaseSemaphore();
 
     Core::System& system;
 

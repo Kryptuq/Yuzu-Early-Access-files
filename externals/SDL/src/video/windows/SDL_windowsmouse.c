@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -153,7 +153,7 @@ WIN_CreateCursor(SDL_Surface * surface, int hot_x, int hot_y)
 
     /* The cursor returned by CreateIconIndirect does not respect system cursor size
         preference, use CopyImage to duplicate the cursor with desired sizes */
-    hcursor = CopyImage(hicon, IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE);
+    hcursor = CopyImage(hicon, IMAGE_CURSOR, surface->w, surface->h, 0);
     DestroyIcon(hicon);
 
     if (!hcursor) {

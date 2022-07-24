@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <algorithm>
 #include <optional>
@@ -16,11 +15,16 @@
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/service/nvdrv/devices/nvdisp_disp0.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
-#include "core/hle/service/nvflinger/buffer_queue.h"
+#include "core/hle/service/nvflinger/buffer_item_consumer.h"
+#include "core/hle/service/nvflinger/buffer_queue_core.h"
+#include "core/hle/service/nvflinger/hos_binder_driver_server.h"
 #include "core/hle/service/nvflinger/nvflinger.h"
+#include "core/hle/service/nvflinger/ui/graphic_buffer.h"
 #include "core/hle/service/vi/display/vi_display.h"
 #include "core/hle/service/vi/layer/vi_layer.h"
 #include "video_core/gpu.h"
+#include "video_core/host1x/host1x.h"
+#include "video_core/host1x/syncpoint_manager.h"
 
 namespace Service::NVFlinger {
 
@@ -53,52 +57,60 @@ void NVFlinger::SplitVSync(std::stop_token stop_token) {
     }
 }
 
-NVFlinger::NVFlinger(Core::System& system_)
-    : system(system_), service_context(system_, "nvflinger") {
-    displays.emplace_back(0, "Default", service_context, system);
-    displays.emplace_back(1, "External", service_context, system);
-    displays.emplace_back(2, "Edid", service_context, system);
-    displays.emplace_back(3, "Internal", service_context, system);
-    displays.emplace_back(4, "Null", service_context, system);
+NVFlinger::NVFlinger(Core::System& system_, HosBinderDriverServer& hos_binder_driver_server_)
+    : system(system_), service_context(system_, "nvflinger"),
+      hos_binder_driver_server(hos_binder_driver_server_) {
+    displays.emplace_back(0, "Default", hos_binder_driver_server, service_context, system);
+    displays.emplace_back(1, "External", hos_binder_driver_server, service_context, system);
+    displays.emplace_back(2, "Edid", hos_binder_driver_server, service_context, system);
+    displays.emplace_back(3, "Internal", hos_binder_driver_server, service_context, system);
+    displays.emplace_back(4, "Null", hos_binder_driver_server, service_context, system);
     guard = std::make_shared<std::mutex>();
 
     // Schedule the screen composition events
     composition_event = Core::Timing::CreateEvent(
-        "ScreenComposition", [this](std::uintptr_t, std::chrono::nanoseconds ns_late) {
+        "ScreenComposition",
+        [this](std::uintptr_t, s64 time,
+               std::chrono::nanoseconds ns_late) -> std::optional<std::chrono::nanoseconds> {
             const auto lock_guard = Lock();
             Compose();
 
-            const auto ticks = std::chrono::nanoseconds{GetNextTicks()};
-            const auto ticks_delta = ticks - ns_late;
-            const auto future_ns = std::max(std::chrono::nanoseconds::zero(), ticks_delta);
-
-            this->system.CoreTiming().ScheduleEvent(future_ns, composition_event);
+            return std::max(std::chrono::nanoseconds::zero(),
+                            std::chrono::nanoseconds(GetNextTicks()) - ns_late);
         });
 
     if (system.IsMulticore()) {
         vsync_thread = std::jthread([this](std::stop_token token) { SplitVSync(token); });
     } else {
-        system.CoreTiming().ScheduleEvent(frame_ns, composition_event);
+        system.CoreTiming().ScheduleLoopingEvent(frame_ns, frame_ns, composition_event);
     }
 }
 
 NVFlinger::~NVFlinger() {
-    for (auto& buffer_queue : buffer_queues) {
-        buffer_queue->Disconnect();
-    }
     if (!system.IsMulticore()) {
         system.CoreTiming().UnscheduleEvent(composition_event, 0);
+    }
+
+    for (auto& display : displays) {
+        for (size_t layer = 0; layer < display.GetNumLayers(); ++layer) {
+            display.GetLayer(layer).Core().NotifyShutdown();
+        }
+    }
+
+    if (nvdrv) {
+        nvdrv->Close(disp_fd);
     }
 }
 
 void NVFlinger::SetNVDrvInstance(std::shared_ptr<Nvidia::Module> instance) {
     nvdrv = std::move(instance);
+    disp_fd = nvdrv->Open("/dev/nvdisp_disp0");
 }
 
 std::optional<u64> NVFlinger::OpenDisplay(std::string_view name) {
     const auto lock_guard = Lock();
 
-    LOG_DEBUG(Service, "Opening \"{}\" display", name);
+    LOG_DEBUG(Service_NVFlinger, "Opening \"{}\" display", name);
 
     const auto itr =
         std::find_if(displays.begin(), displays.end(),
@@ -125,10 +137,8 @@ std::optional<u64> NVFlinger::CreateLayer(u64 display_id) {
 }
 
 void NVFlinger::CreateLayerAtId(VI::Display& display, u64 layer_id) {
-    const u32 buffer_queue_id = next_buffer_queue_id++;
-    buffer_queues.emplace_back(
-        std::make_unique<BufferQueue>(system.Kernel(), buffer_queue_id, layer_id, service_context));
-    display.CreateLayer(layer_id, *buffer_queues.back());
+    const auto buffer_id = next_buffer_queue_id++;
+    display.CreateLayer(layer_id, buffer_id, nvdrv->container);
 }
 
 void NVFlinger::CloseLayer(u64 layer_id) {
@@ -147,7 +157,7 @@ std::optional<u32> NVFlinger::FindBufferQueueId(u64 display_id, u64 layer_id) {
         return std::nullopt;
     }
 
-    return layer->GetBufferQueue().GetId();
+    return layer->GetBinderId();
 }
 
 Kernel::KReadableEvent* NVFlinger::FindVsyncEvent(u64 display_id) {
@@ -159,18 +169,6 @@ Kernel::KReadableEvent* NVFlinger::FindVsyncEvent(u64 display_id) {
     }
 
     return &display->GetVSyncEvent();
-}
-
-BufferQueue* NVFlinger::FindBufferQueue(u32 id) {
-    const auto lock_guard = Lock();
-    const auto itr = std::find_if(buffer_queues.begin(), buffer_queues.end(),
-                                  [id](const auto& queue) { return queue->GetId() == id; });
-
-    if (itr == buffer_queues.end()) {
-        return nullptr;
-    }
-
-    return itr->get();
 }
 
 VI::Display* NVFlinger::FindDisplay(u64 display_id) {
@@ -227,7 +225,7 @@ VI::Layer* NVFlinger::FindOrCreateLayer(u64 display_id, u64 layer_id) {
     auto* layer = display->FindLayer(layer_id);
 
     if (layer == nullptr) {
-        LOG_DEBUG(Service, "Layer at id {} not found. Trying to create it.", layer_id);
+        LOG_DEBUG(Service_NVFlinger, "Layer at id {} not found. Trying to create it.", layer_id);
         CreateLayerAtId(*display, layer_id);
         return display->FindLayer(layer_id);
     }
@@ -246,44 +244,43 @@ void NVFlinger::Compose() {
 
         // TODO(Subv): Support more than 1 layer.
         VI::Layer& layer = display.GetLayer(0);
-        auto& buffer_queue = layer.GetBufferQueue();
 
-        // Search for a queued buffer and acquire it
-        auto buffer = buffer_queue.AcquireBuffer();
+        android::BufferItem buffer{};
+        const auto status = layer.GetConsumer().AcquireBuffer(&buffer, {}, false);
 
-        if (!buffer) {
+        if (status != android::Status::NoError) {
             continue;
         }
 
-        const auto& igbp_buffer = buffer->get().igbp_buffer;
+        const auto& igbp_buffer = *buffer.graphic_buffer;
 
         if (!system.IsPoweredOn()) {
             return; // We are likely shutting down
         }
 
-        auto& gpu = system.GPU();
-        const auto& multi_fence = buffer->get().multi_fence;
-        guard->unlock();
-        for (u32 fence_id = 0; fence_id < multi_fence.num_fences; fence_id++) {
-            const auto& fence = multi_fence.fences[fence_id];
-            gpu.WaitFence(fence.id, fence.value);
-        }
-        guard->lock();
-
-        MicroProfileFlip();
-
         // Now send the buffer to the GPU for drawing.
         // TODO(Subv): Support more than just disp0. The display device selection is probably based
         // on which display we're drawing (Default, Internal, External, etc)
-        auto nvdisp = nvdrv->GetDevice<Nvidia::Devices::nvdisp_disp0>("/dev/nvdisp_disp0");
+        auto nvdisp = nvdrv->GetDevice<Nvidia::Devices::nvdisp_disp0>(disp_fd);
         ASSERT(nvdisp);
 
-        nvdisp->flip(igbp_buffer.gpu_buffer_id, igbp_buffer.offset, igbp_buffer.external_format,
-                     igbp_buffer.width, igbp_buffer.height, igbp_buffer.stride,
-                     buffer->get().transform, buffer->get().crop_rect);
+        guard->unlock();
+        Common::Rectangle<int> crop_rect{
+            static_cast<int>(buffer.crop.Left()), static_cast<int>(buffer.crop.Top()),
+            static_cast<int>(buffer.crop.Right()), static_cast<int>(buffer.crop.Bottom())};
 
-        swap_interval = buffer->get().swap_interval;
-        buffer_queue.ReleaseBuffer(buffer->get().slot);
+        nvdisp->flip(igbp_buffer.BufferId(), igbp_buffer.Offset(), igbp_buffer.ExternalFormat(),
+                     igbp_buffer.Width(), igbp_buffer.Height(), igbp_buffer.Stride(),
+                     static_cast<android::BufferTransformFlags>(buffer.transform), crop_rect,
+                     buffer.fence.fences, buffer.fence.num_fences);
+
+        MicroProfileFlip();
+        guard->lock();
+
+        swap_interval = buffer.swap_interval;
+
+        auto fence = android::Fence::NoFence();
+        layer.GetConsumer().ReleaseBuffer(buffer, fence);
     }
 }
 
@@ -291,9 +288,21 @@ s64 NVFlinger::GetNextTicks() const {
     static constexpr s64 max_hertz = 120LL;
 
     const auto& settings = Settings::values;
-    const bool unlocked_fps = settings.disable_fps_limit.GetValue();
-    const s64 fps_cap = unlocked_fps ? static_cast<s64>(settings.fps_cap.GetValue()) : 1;
-    return (1000000000 * (1LL << swap_interval)) / (max_hertz * fps_cap);
+    auto speed_scale = 1.f;
+    if (settings.use_multi_core.GetValue()) {
+        if (settings.use_speed_limit.GetValue()) {
+            // Scales the speed based on speed_limit setting on MC. SC is handled by
+            // SpeedLimiter::DoSpeedLimiting.
+            speed_scale = 100.f / settings.speed_limit.GetValue();
+        } else {
+            // Run at unlocked framerate.
+            speed_scale = 0.01f;
+        }
+    }
+
+    const auto next_ticks = ((1000000000 * (1LL << swap_interval)) / max_hertz);
+
+    return static_cast<s64>(speed_scale * static_cast<float>(next_ticks));
 }
 
 } // namespace Service::NVFlinger

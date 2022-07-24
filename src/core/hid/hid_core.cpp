@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/assert.h"
 #include "core/hid/emulated_console.h"
@@ -49,7 +48,7 @@ EmulatedController* HIDCore::GetEmulatedController(NpadIdType npad_id_type) {
         return handheld.get();
     case NpadIdType::Invalid:
     default:
-        UNREACHABLE_MSG("Invalid NpadIdType={}", npad_id_type);
+        ASSERT_MSG(false, "Invalid NpadIdType={}", npad_id_type);
         return nullptr;
     }
 }
@@ -78,7 +77,7 @@ const EmulatedController* HIDCore::GetEmulatedController(NpadIdType npad_id_type
         return handheld.get();
     case NpadIdType::Invalid:
     default:
-        UNREACHABLE_MSG("Invalid NpadIdType={}", npad_id_type);
+        ASSERT_MSG(false, "Invalid NpadIdType={}", npad_id_type);
         return nullptr;
     }
 }

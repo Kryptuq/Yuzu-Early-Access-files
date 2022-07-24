@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "audio_core/behavior_info.h"
 #include "audio_core/effect_context.h"
@@ -286,9 +285,8 @@ bool InfoUpdater::UpdateSplitterInfo(SplitterContext& splitter_context) {
     return true;
 }
 
-ResultCode InfoUpdater::UpdateMixes(MixContext& mix_context, std::size_t mix_buffer_count,
-                                    SplitterContext& splitter_context,
-                                    EffectContext& effect_context) {
+Result InfoUpdater::UpdateMixes(MixContext& mix_context, std::size_t mix_buffer_count,
+                                SplitterContext& splitter_context, EffectContext& effect_context) {
     std::vector<MixInfo::InParams> mix_in_params;
 
     if (!behavior_info.IsMixInParameterDirtyOnlyUpdateSupported()) {

@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <tuple>
 #include <utility>
@@ -8,7 +7,6 @@
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"
-#include "common/scope_exit.h"
 #include "core/core_timing.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/hle_ipc.h"
@@ -28,10 +26,7 @@ namespace Kernel {
 
 KServerSession::KServerSession(KernelCore& kernel_) : KSynchronizationObject{kernel_} {}
 
-KServerSession::~KServerSession() {
-    // Ensure that the global list tracking server sessions does not hold on to a reference.
-    kernel.UnregisterServerSession(this);
-}
+KServerSession::~KServerSession() = default;
 
 void KServerSession::Initialize(KSession* parent_session_, std::string&& name_,
                                 std::shared_ptr<SessionRequestManager> manager_) {
@@ -50,6 +45,12 @@ void KServerSession::Destroy() {
     parent->OnServerClosed();
 
     parent->Close();
+
+    // Release host emulation members.
+    manager.reset();
+
+    // Ensure that the global list tracking server objects does not hold on to a reference.
+    kernel.UnregisterServerObject(this);
 }
 
 void KServerSession::OnClientClosed() {
@@ -78,7 +79,7 @@ std::size_t KServerSession::NumDomainRequestHandlers() const {
     return manager->DomainHandlerCount();
 }
 
-ResultCode KServerSession::HandleDomainSyncRequest(Kernel::HLERequestContext& context) {
+Result KServerSession::HandleDomainSyncRequest(Kernel::HLERequestContext& context) {
     if (!context.HasDomainMessageHeader()) {
         return ResultSuccess;
     }
@@ -96,10 +97,15 @@ ResultCode KServerSession::HandleDomainSyncRequest(Kernel::HLERequestContext& co
                          "object_id {} is too big! This probably means a recent service call "
                          "to {} needed to return a new interface!",
                          object_id, name);
-            UNREACHABLE();
+            ASSERT(false);
             return ResultSuccess; // Ignore error if asserts are off
         }
-        return manager->DomainHandler(object_id - 1)->HandleSyncRequest(*this, context);
+        if (auto strong_ptr = manager->DomainHandler(object_id - 1).lock()) {
+            return strong_ptr->HandleSyncRequest(*this, context);
+        } else {
+            ASSERT(false);
+            return ResultSuccess;
+        }
 
     case IPC::DomainMessageHeader::CommandType::CloseVirtualHandle: {
         LOG_DEBUG(IPC, "CloseVirtualHandle, object_id=0x{:08X}", object_id);
@@ -117,26 +123,16 @@ ResultCode KServerSession::HandleDomainSyncRequest(Kernel::HLERequestContext& co
     return ResultSuccess;
 }
 
-ResultCode KServerSession::QueueSyncRequest(KThread* thread, Core::Memory::Memory& memory) {
+Result KServerSession::QueueSyncRequest(KThread* thread, Core::Memory::Memory& memory) {
     u32* cmd_buf{reinterpret_cast<u32*>(memory.GetPointer(thread->GetTLSAddress()))};
     auto context = std::make_shared<HLERequestContext>(kernel, memory, this, thread);
 
     context->PopulateFromIncomingCommandBuffer(kernel.CurrentProcess()->GetHandleTable(), cmd_buf);
 
-    // In the event that something fails here, stub a result to prevent the game from crashing.
-    // This is a work-around in the event that somehow we process a service request after the
-    // session has been closed by the game. This has been observed to happen rarely in Pokemon
-    // Sword/Shield and is likely a result of us using host threads/scheduling for services.
-    // TODO(bunnei): Find a better solution here.
-    auto error_guard = SCOPE_GUARD({ CompleteSyncRequest(*context); });
-
     // Ensure we have a session request handler
     if (manager->HasSessionRequestHandler(*context)) {
         if (auto strong_ptr = manager->GetServiceThread().lock()) {
             strong_ptr->QueueSyncRequest(*parent, std::move(context));
-
-            // We succeeded.
-            error_guard.Cancel();
         } else {
             ASSERT_MSG(false, "strong_ptr is nullptr!");
         }
@@ -147,8 +143,8 @@ ResultCode KServerSession::QueueSyncRequest(KThread* thread, Core::Memory::Memor
     return ResultSuccess;
 }
 
-ResultCode KServerSession::CompleteSyncRequest(HLERequestContext& context) {
-    ResultCode result = ResultSuccess;
+Result KServerSession::CompleteSyncRequest(HLERequestContext& context) {
+    Result result = ResultSuccess;
 
     // If the session has been converted to a domain, handle the domain request
     if (manager->HasSessionRequestHandler(context)) {
@@ -171,19 +167,14 @@ ResultCode KServerSession::CompleteSyncRequest(HLERequestContext& context) {
         convert_to_domain = false;
     }
 
-    // Some service requests require the thread to block
-    {
-        KScopedSchedulerLock lock(kernel);
-        if (!context.IsThreadWaiting()) {
-            context.GetThread().EndWait(result);
-        }
-    }
+    // The calling thread is waiting for this request to complete, so wake it up.
+    context.GetThread().EndWait(result);
 
     return result;
 }
 
-ResultCode KServerSession::HandleSyncRequest(KThread* thread, Core::Memory::Memory& memory,
-                                             Core::Timing::CoreTiming& core_timing) {
+Result KServerSession::HandleSyncRequest(KThread* thread, Core::Memory::Memory& memory,
+                                         Core::Timing::CoreTiming& core_timing) {
     return QueueSyncRequest(thread, memory);
 }
 

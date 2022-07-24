@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -8,5 +7,5 @@
 
 namespace Service::Friend {
 
-constexpr ResultCode ERR_NO_NOTIFICATIONS{ErrorModule::Account, 15};
+constexpr Result ERR_NO_NOTIFICATIONS{ErrorModule::Account, 15};
 }

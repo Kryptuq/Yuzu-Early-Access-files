@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/hle/kernel/k_handle_table.h"
 
@@ -9,7 +8,7 @@ namespace Kernel {
 KHandleTable::KHandleTable(KernelCore& kernel_) : kernel{kernel_} {}
 KHandleTable::~KHandleTable() = default;
 
-ResultCode KHandleTable::Finalize() {
+Result KHandleTable::Finalize() {
     // Get the table and clear our record of it.
     u16 saved_table_size = 0;
     {
@@ -63,7 +62,7 @@ bool KHandleTable::Remove(Handle handle) {
     return true;
 }
 
-ResultCode KHandleTable::Add(Handle* out_handle, KAutoObject* obj, u16 type) {
+Result KHandleTable::Add(Handle* out_handle, KAutoObject* obj) {
     KScopedDisableDispatch dd(kernel);
     KScopedSpinLock lk(m_lock);
 
@@ -75,7 +74,7 @@ ResultCode KHandleTable::Add(Handle* out_handle, KAutoObject* obj, u16 type) {
         const auto linear_id = this->AllocateLinearId();
         const auto index = this->AllocateEntry();
 
-        m_entry_infos[index].info = {.linear_id = linear_id, .type = type};
+        m_entry_infos[index].linear_id = linear_id;
         m_objects[index] = obj;
 
         obj->Open();
@@ -86,7 +85,7 @@ ResultCode KHandleTable::Add(Handle* out_handle, KAutoObject* obj, u16 type) {
     return ResultSuccess;
 }
 
-ResultCode KHandleTable::Reserve(Handle* out_handle) {
+Result KHandleTable::Reserve(Handle* out_handle) {
     KScopedDisableDispatch dd(kernel);
     KScopedSpinLock lk(m_lock);
 
@@ -116,7 +115,7 @@ void KHandleTable::Unreserve(Handle handle) {
     }
 }
 
-void KHandleTable::Register(Handle handle, KAutoObject* obj, u16 type) {
+void KHandleTable::Register(Handle handle, KAutoObject* obj) {
     KScopedDisableDispatch dd(kernel);
     KScopedSpinLock lk(m_lock);
 
@@ -132,7 +131,7 @@ void KHandleTable::Register(Handle handle, KAutoObject* obj, u16 type) {
         // Set the entry.
         ASSERT(m_objects[index] == nullptr);
 
-        m_entry_infos[index].info = {.linear_id = static_cast<u16>(linear_id), .type = type};
+        m_entry_infos[index].linear_id = static_cast<u16>(linear_id);
         m_objects[index] = obj;
 
         obj->Open();

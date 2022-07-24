@@ -1,4 +1,4 @@
-/* $OpenBSD: bn_mont.c,v 1.26 2017/01/21 11:00:46 beck Exp $ */
+/* $OpenBSD: bn_mont.c,v 1.28 2022/02/07 19:44:23 tb Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -173,6 +173,12 @@ BN_mod_mul_montgomery(BIGNUM *r, const BIGNUM *a, const BIGNUM *b,
 err:
 	BN_CTX_end(ctx);
 	return (ret);
+}
+
+int
+BN_to_montgomery(BIGNUM *r, const BIGNUM *a, BN_MONT_CTX *mont, BN_CTX *ctx)
+{
+	return BN_mod_mul_montgomery(r, a, &mont->RR, mont, ctx);
 }
 
 #ifdef MONT_WORD
@@ -362,6 +368,9 @@ BN_MONT_CTX_set(BN_MONT_CTX *mont, const BIGNUM *mod, BN_CTX *ctx)
 {
 	int ret = 0;
 	BIGNUM *Ri, *R;
+
+	if (BN_is_zero(mod))
+		return 0;
 
 	BN_CTX_start(ctx);
 	if ((Ri = BN_CTX_get(ctx)) == NULL)

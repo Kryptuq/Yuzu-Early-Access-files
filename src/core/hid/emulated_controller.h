@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -13,8 +12,6 @@
 #include "common/common_types.h"
 #include "common/input.h"
 #include "common/param_package.h"
-#include "common/point.h"
-#include "common/quaternion.h"
 #include "common/settings.h"
 #include "common/vector_math.h"
 #include "core/hid/hid_types.h"
@@ -301,15 +298,22 @@ public:
 
     /**
      * Sends a specific vibration to the output device
-     * @return returns true if vibration had no errors
+     * @return true if vibration had no errors
      */
     bool SetVibration(std::size_t device_index, VibrationValue vibration);
 
     /**
      * Sends a small vibration to the output device
-     * @return returns true if SetVibration was successfull
+     * @return true if SetVibration was successfull
      */
     bool TestVibration(std::size_t device_index);
+
+    /**
+     * Sets the desired data to be polled from a controller
+     * @param polling_mode type of input desired buttons, gyro, nfc, ir, etc.
+     * @return true if SetPollingMode was successfull
+     */
+    bool SetPollingMode(Common::Input::PollingMode polling_mode);
 
     /// Returns the led pattern corresponding to this emulated controller
     LedPattern GetLedPattern() const;
@@ -395,7 +399,7 @@ private:
      */
     void TriggerOnChange(ControllerTriggerType type, bool is_service_update);
 
-    NpadIdType npad_id_type;
+    const NpadIdType npad_id_type;
     NpadStyleIndex npad_type{NpadStyleIndex::None};
     NpadStyleTag supported_style_tag{NpadStyleSet::All};
     bool is_connected{false};
@@ -429,6 +433,7 @@ private:
     StickDevices tas_stick_devices;
 
     mutable std::mutex mutex;
+    mutable std::mutex callback_mutex;
     std::unordered_map<int, ControllerUpdateCallback> callback_list;
     int last_callback_key = 0;
 

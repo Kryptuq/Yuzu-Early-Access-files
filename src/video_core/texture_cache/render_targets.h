@@ -1,12 +1,10 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <algorithm>
 #include <span>
-#include <utility>
 
 #include "common/bit_cast.h"
 #include "video_core/texture_cache/types.h"
@@ -28,6 +26,7 @@ struct RenderTargets {
     ImageViewId depth_buffer_id{};
     std::array<u8, NUM_RT> draw_buffers{};
     Extent2D size{};
+    bool is_rescaled{};
 };
 
 } // namespace VideoCommon

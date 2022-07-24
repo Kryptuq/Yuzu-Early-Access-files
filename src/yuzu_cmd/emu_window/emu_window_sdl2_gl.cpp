@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <cstdlib>
@@ -11,7 +10,6 @@
 
 #include <fmt/format.h>
 #include <glad/glad.h>
-#include "common/assert.h"
 #include "common/logging/log.h"
 #include "common/scm_rev.h"
 #include "common/settings.h"
@@ -75,9 +73,9 @@ bool EmuWindow_SDL2_GL::SupportsRequiredGLExtensions() {
     return unsupported_ext.empty();
 }
 
-EmuWindow_SDL2_GL::EmuWindow_SDL2_GL(InputCommon::InputSubsystem* input_subsystem,
+EmuWindow_SDL2_GL::EmuWindow_SDL2_GL(InputCommon::InputSubsystem* input_subsystem_,
                                      Core::System& system_, bool fullscreen)
-    : EmuWindow_SDL2{input_subsystem, system_} {
+    : EmuWindow_SDL2{input_subsystem_, system_} {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);

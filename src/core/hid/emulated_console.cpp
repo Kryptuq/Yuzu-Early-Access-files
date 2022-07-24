@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/settings.h"
 #include "core/hid/emulated_console.h"
@@ -28,12 +27,19 @@ void EmulatedConsole::SetTouchParams() {
         // We can't use mouse as touch if native mouse is enabled
         touch_params[index++] = Common::ParamPackage{"engine:mouse,axis_x:10,axis_y:11,button:0"};
     }
-    touch_params[index++] = Common::ParamPackage{"engine:touch,axis_x:0,axis_y:1,button:0"};
-    touch_params[index++] = Common::ParamPackage{"engine:touch,axis_x:2,axis_y:3,button:1"};
+
     touch_params[index++] =
-        Common::ParamPackage{"engine:cemuhookudp,axis_x:17,axis_y:18,button:65536"};
+        Common::ParamPackage{"engine:touch,axis_x:0,axis_y:1,button:0,touch_id:0"};
     touch_params[index++] =
-        Common::ParamPackage{"engine:cemuhookudp,axis_x:19,axis_y:20,button:131072"};
+        Common::ParamPackage{"engine:touch,axis_x:2,axis_y:3,button:1,touch_id:1"};
+    touch_params[index++] =
+        Common::ParamPackage{"engine:touch,axis_x:4,axis_y:5,button:2,touch_id:2"};
+    touch_params[index++] =
+        Common::ParamPackage{"engine:touch,axis_x:6,axis_y:7,button:3,touch_id:3"};
+    touch_params[index++] =
+        Common::ParamPackage{"engine:cemuhookudp,axis_x:17,axis_y:18,button:65536,touch_id:0"};
+    touch_params[index++] =
+        Common::ParamPackage{"engine:cemuhookudp,axis_x:19,axis_y:20,button:131072,touch_id:1"};
 
     const auto button_index =
         static_cast<u64>(Settings::values.touch_from_button_map_index.GetValue());
@@ -132,7 +138,7 @@ void EmulatedConsole::SetMotionParam(Common::ParamPackage param) {
 }
 
 void EmulatedConsole::SetMotion(const Common::Input::CallbackStatus& callback) {
-    std::lock_guard lock{mutex};
+    std::unique_lock lock{mutex};
     auto& raw_status = console.motion_values.raw_status;
     auto& emulated = console.motion_values.emulated;
 
@@ -151,6 +157,7 @@ void EmulatedConsole::SetMotion(const Common::Input::CallbackStatus& callback) {
     emulated.UpdateOrientation(raw_status.delta_timestamp);
 
     if (is_configuring) {
+        lock.unlock();
         TriggerOnChange(ConsoleTriggerType::Motion);
         return;
     }
@@ -158,7 +165,7 @@ void EmulatedConsole::SetMotion(const Common::Input::CallbackStatus& callback) {
     auto& motion = console.motion_state;
     motion.accel = emulated.GetAcceleration();
     motion.gyro = emulated.GetGyroscope();
-    motion.rotation = emulated.GetGyroscope();
+    motion.rotation = emulated.GetRotations();
     motion.orientation = emulated.GetOrientation();
     motion.quaternion = emulated.GetQuaternion();
     motion.gyro_bias = emulated.GetGyroBias();
@@ -166,6 +173,7 @@ void EmulatedConsole::SetMotion(const Common::Input::CallbackStatus& callback) {
     // Find what is this value
     motion.verticalization_error = 0.0f;
 
+    lock.unlock();
     TriggerOnChange(ConsoleTriggerType::Motion);
 }
 
@@ -173,11 +181,12 @@ void EmulatedConsole::SetTouch(const Common::Input::CallbackStatus& callback, st
     if (index >= console.touch_values.size()) {
         return;
     }
-    std::lock_guard lock{mutex};
+    std::unique_lock lock{mutex};
 
     console.touch_values[index] = TransformToTouch(callback);
 
     if (is_configuring) {
+        lock.unlock();
         TriggerOnChange(ConsoleTriggerType::Touch);
         return;
     }
@@ -189,26 +198,32 @@ void EmulatedConsole::SetTouch(const Common::Input::CallbackStatus& callback, st
         .pressed = console.touch_values[index].pressed.value,
     };
 
+    lock.unlock();
     TriggerOnChange(ConsoleTriggerType::Touch);
 }
 
 ConsoleMotionValues EmulatedConsole::GetMotionValues() const {
+    std::scoped_lock lock{mutex};
     return console.motion_values;
 }
 
 TouchValues EmulatedConsole::GetTouchValues() const {
+    std::scoped_lock lock{mutex};
     return console.touch_values;
 }
 
 ConsoleMotion EmulatedConsole::GetMotion() const {
+    std::scoped_lock lock{mutex};
     return console.motion_state;
 }
 
 TouchFingerState EmulatedConsole::GetTouch() const {
+    std::scoped_lock lock{mutex};
     return console.touch_state;
 }
 
 void EmulatedConsole::TriggerOnChange(ConsoleTriggerType type) {
+    std::scoped_lock lock{callback_mutex};
     for (const auto& poller_pair : callback_list) {
         const ConsoleUpdateCallback& poller = poller_pair.second;
         if (poller.on_change) {
@@ -218,13 +233,13 @@ void EmulatedConsole::TriggerOnChange(ConsoleTriggerType type) {
 }
 
 int EmulatedConsole::SetCallback(ConsoleUpdateCallback update_callback) {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{callback_mutex};
     callback_list.insert_or_assign(last_callback_key, update_callback);
     return last_callback_key++;
 }
 
 void EmulatedConsole::DeleteCallback(int key) {
-    std::lock_guard lock{mutex};
+    std::scoped_lock lock{callback_mutex};
     const auto& iterator = callback_list.find(key);
     if (iterator == callback_list.end()) {
         LOG_ERROR(Input, "Tried to delete non-existent callback {}", key);

@@ -1,10 +1,10 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include <mutex>
 
 #include "common/assert.h"
 #include "common/fiber.h"
-#include "common/spin_lock.h"
 #include "common/virtual_buffer.h"
 
 #include <boost/context/detail/fcontext.hpp>
@@ -19,11 +19,9 @@ struct Fiber::FiberImpl {
     VirtualBuffer<u8> stack;
     VirtualBuffer<u8> rewind_stack;
 
-    SpinLock guard{};
-    std::function<void(void*)> entry_point;
-    std::function<void(void*)> rewind_point;
-    void* rewind_parameter{};
-    void* start_parameter{};
+    std::mutex guard;
+    std::function<void()> entry_point;
+    std::function<void()> rewind_point;
     std::shared_ptr<Fiber> previous_fiber;
     bool is_thread_fiber{};
     bool released{};
@@ -34,13 +32,8 @@ struct Fiber::FiberImpl {
     boost::context::detail::fcontext_t rewind_context{};
 };
 
-void Fiber::SetStartParameter(void* new_parameter) {
-    impl->start_parameter = new_parameter;
-}
-
-void Fiber::SetRewindPoint(std::function<void(void*)>&& rewind_func, void* rewind_param) {
+void Fiber::SetRewindPoint(std::function<void()>&& rewind_func) {
     impl->rewind_point = std::move(rewind_func);
-    impl->rewind_parameter = rewind_param;
 }
 
 void Fiber::Start(boost::context::detail::transfer_t& transfer) {
@@ -48,7 +41,7 @@ void Fiber::Start(boost::context::detail::transfer_t& transfer) {
     impl->previous_fiber->impl->context = transfer.fctx;
     impl->previous_fiber->impl->guard.unlock();
     impl->previous_fiber.reset();
-    impl->entry_point(impl->start_parameter);
+    impl->entry_point();
     UNREACHABLE();
 }
 
@@ -59,7 +52,7 @@ void Fiber::OnRewind([[maybe_unused]] boost::context::detail::transfer_t& transf
     u8* tmp = impl->stack_limit;
     impl->stack_limit = impl->rewind_stack_limit;
     impl->rewind_stack_limit = tmp;
-    impl->rewind_point(impl->rewind_parameter);
+    impl->rewind_point();
     UNREACHABLE();
 }
 
@@ -73,10 +66,8 @@ void Fiber::RewindStartFunc(boost::context::detail::transfer_t transfer) {
     fiber->OnRewind(transfer);
 }
 
-Fiber::Fiber(std::function<void(void*)>&& entry_point_func, void* start_parameter)
-    : impl{std::make_unique<FiberImpl>()} {
+Fiber::Fiber(std::function<void()>&& entry_point_func) : impl{std::make_unique<FiberImpl>()} {
     impl->entry_point = std::move(entry_point_func);
-    impl->start_parameter = start_parameter;
     impl->stack_limit = impl->stack.data();
     impl->rewind_stack_limit = impl->rewind_stack.data();
     u8* stack_base = impl->stack_limit + default_stack_size;
@@ -124,7 +115,10 @@ void Fiber::YieldTo(std::weak_ptr<Fiber> weak_from, Fiber& to) {
 
     // "from" might no longer be valid if the thread was killed
     if (auto from = weak_from.lock()) {
-        ASSERT(from->impl->previous_fiber != nullptr);
+        if (from->impl->previous_fiber == nullptr) {
+            ASSERT_MSG(false, "previous_fiber is nullptr!");
+            return;
+        }
         from->impl->previous_fiber->impl->context = transfer.fctx;
         from->impl->previous_fiber->impl->guard.unlock();
         from->impl->previous_fiber.reset();

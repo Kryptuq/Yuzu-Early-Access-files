@@ -1,4 +1,4 @@
-/* $OpenBSD: t_req.c,v 1.19 2017/01/29 17:49:22 beck Exp $ */
+/* $OpenBSD: t_req.c,v 1.21 2021/12/25 13:17:48 jsing Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -73,6 +73,8 @@
 #ifndef OPENSSL_NO_RSA
 #include <openssl/rsa.h>
 #endif
+
+#include "x509_lcl.h"
 
 int
 X509_REQ_print_fp(FILE *fp, X509_REQ *x)
@@ -192,7 +194,7 @@ X509_REQ_print_ex(BIO *bp, X509_REQ *x, unsigned long nmflags,
 						ii = 0;
 						count = sk_ASN1_TYPE_num(
 						    a->value.set);
-get_next:
+ get_next:
 						at = sk_ASN1_TYPE_value(
 						    a->value.set, ii);
 						type = at->type;
@@ -255,7 +257,7 @@ get_next:
 
 	return (1);
 
-err:
+ err:
 	X509error(ERR_R_BUF_LIB);
 	return (0);
 }

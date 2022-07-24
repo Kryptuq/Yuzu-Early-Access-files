@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -19,9 +18,7 @@ namespace Kernel {
 class KernelCore;
 class KProcess;
 
-#define KERNEL_AUTOOBJECT_TRAITS(CLASS, BASE_CLASS)                                                \
-    YUZU_NON_COPYABLE(CLASS);                                                                      \
-    YUZU_NON_MOVEABLE(CLASS);                                                                      \
+#define KERNEL_AUTOOBJECT_TRAITS_IMPL(CLASS, BASE_CLASS, ATTRIBUTE)                                \
                                                                                                    \
 private:                                                                                           \
     friend class ::Kernel::KClassTokenGenerator;                                                   \
@@ -32,6 +29,9 @@ private:                                                                        
     }                                                                                              \
                                                                                                    \
 public:                                                                                            \
+    YUZU_NON_COPYABLE(CLASS);                                                                      \
+    YUZU_NON_MOVEABLE(CLASS);                                                                      \
+                                                                                                   \
     using BaseClass = BASE_CLASS;                                                                  \
     static constexpr TypeObj GetStaticTypeObj() {                                                  \
         constexpr ClassTokenType Token = ClassToken();                                             \
@@ -40,15 +40,18 @@ public:                                                                         
     static constexpr const char* GetStaticTypeName() {                                             \
         return TypeName;                                                                           \
     }                                                                                              \
-    virtual TypeObj GetTypeObj() const {                                                           \
+    virtual TypeObj GetTypeObj() ATTRIBUTE {                                                       \
         return GetStaticTypeObj();                                                                 \
     }                                                                                              \
-    virtual const char* GetTypeName() const {                                                      \
+    virtual const char* GetTypeName() ATTRIBUTE {                                                  \
         return GetStaticTypeName();                                                                \
     }                                                                                              \
                                                                                                    \
 private:                                                                                           \
     constexpr bool operator!=(const TypeObj& rhs)
+
+#define KERNEL_AUTOOBJECT_TRAITS(CLASS, BASE_CLASS)                                                \
+    KERNEL_AUTOOBJECT_TRAITS_IMPL(CLASS, BASE_CLASS, const override)
 
 class KAutoObject {
 protected:
@@ -82,15 +85,13 @@ protected:
     };
 
 private:
-    KERNEL_AUTOOBJECT_TRAITS(KAutoObject, KAutoObject);
+    KERNEL_AUTOOBJECT_TRAITS_IMPL(KAutoObject, KAutoObject, const);
 
 public:
     explicit KAutoObject(KernelCore& kernel_) : kernel(kernel_) {
         RegisterWithKernel();
     }
-    virtual ~KAutoObject() {
-        UnregisterWithKernel();
-    }
+    virtual ~KAutoObject() = default;
 
     static KAutoObject* Create(KAutoObject* ptr);
 
@@ -162,11 +163,12 @@ public:
         do {
             ASSERT(cur_ref_count > 0);
         } while (!m_ref_count.compare_exchange_weak(cur_ref_count, cur_ref_count - 1,
-                                                    std::memory_order_relaxed));
+                                                    std::memory_order_acq_rel));
 
         // If ref count hits zero, destroy the object.
         if (cur_ref_count - 1 == 0) {
             this->Destroy();
+            this->UnregisterWithKernel();
         }
     }
 
@@ -224,9 +226,9 @@ private:
 
 template <typename T>
 class KScopedAutoObject {
+public:
     YUZU_NON_COPYABLE(KScopedAutoObject);
 
-public:
     constexpr KScopedAutoObject() = default;
 
     constexpr KScopedAutoObject(T* o) : m_obj(o) {

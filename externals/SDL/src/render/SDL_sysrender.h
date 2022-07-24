@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -107,6 +107,21 @@ typedef struct SDL_RenderCommand
 } SDL_RenderCommand;
 
 
+typedef struct SDL_VertexSolid
+{
+    SDL_FPoint position;
+    SDL_Color  color;
+} SDL_VertexSolid;
+
+
+typedef enum
+{
+    SDL_RENDERLINEMETHOD_POINTS,
+    SDL_RENDERLINEMETHOD_LINES,
+    SDL_RENDERLINEMETHOD_GEOMETRY,
+} SDL_RenderLineMethod;
+
+
 /* Define the SDL renderer structure */
 struct SDL_Renderer
 {
@@ -130,7 +145,7 @@ struct SDL_Renderer
                         const SDL_Rect * srcquad, const SDL_FRect * dstrect,
                         const double angle, const SDL_FPoint *center, const SDL_RendererFlip flip);
     int (*QueueGeometry) (SDL_Renderer *renderer, SDL_RenderCommand *cmd, SDL_Texture *texture,
-                          const float *xy, int xy_stride, const int *color, int color_stride, const float *uv, int uv_stride,
+                          const float *xy, int xy_stride, const SDL_Color *color, int color_stride, const float *uv, int uv_stride,
                           int num_vertices, const void *indices, int num_indices, int size_indices,
                           float scale_x, float scale_y);
 
@@ -206,6 +221,9 @@ struct SDL_Renderer
 
     /* Whether or not to scale relative mouse motion */
     SDL_bool relative_scaling;
+
+    /* The method of drawing lines */
+    SDL_RenderLineMethod line_method;
 
     /* Remainder from scaled relative motion */
     float xrel;

@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -10,6 +9,10 @@
 
 namespace Core {
 class System;
+}
+
+namespace Kernel {
+class KEvent;
 }
 
 namespace Service::Nvidia::Devices {
@@ -64,6 +67,10 @@ public:
      * @param fd The device fd
      */
     virtual void OnClose(DeviceFD fd) = 0;
+
+    virtual Kernel::KEvent* QueryEvent(u32 event_id) {
+        return nullptr;
+    }
 
 protected:
     Core::System& system;

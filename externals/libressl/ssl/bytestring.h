@@ -1,4 +1,4 @@
-/*	$OpenBSD: bytestring.h,v 1.17 2018/08/16 18:39:37 jsing Exp $	*/
+/*	$OpenBSD: bytestring.h,v 1.23 2022/01/06 14:30:30 jsing Exp $	*/
 /*
  * Copyright (c) 2014, Google Inc.
  *
@@ -12,15 +12,14 @@
  * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
- * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. */
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
 
 #ifndef OPENSSL_HEADER_BYTESTRING_H
 #define OPENSSL_HEADER_BYTESTRING_H
 
 #include <sys/types.h>
 #include <stdint.h>
-
-#include <openssl/opensslconf.h>
 
 __BEGIN_HIDDEN_DECLS
 
@@ -135,6 +134,18 @@ int CBS_get_u24(CBS *cbs, uint32_t *out);
 int CBS_get_u32(CBS *cbs, uint32_t *out);
 
 /*
+ * CBS_get_u64 sets |*out| to the next, big-endian uint64_t value from |cbs|
+ * and advances |cbs|. It returns one on success and zero on error.
+ */
+int CBS_get_u64(CBS *cbs, uint64_t *out);
+
+/*
+ * CBS_get_last_u8 sets |*out| to the last uint8_t from |cbs| and shortens
+ * |cbs|. It returns one on success and zero on error.
+ */
+int CBS_get_last_u8(CBS *cbs, uint8_t *out);
+
+/*
  * CBS_get_bytes sets |*out| to the next |len| bytes from |cbs| and advances
  * |cbs|. It returns one on success and zero on error.
  */
@@ -160,6 +171,36 @@ int CBS_get_u16_length_prefixed(CBS *cbs, CBS *out);
  * returns one on success and zero on error.
  */
 int CBS_get_u24_length_prefixed(CBS *cbs, CBS *out);
+
+/*
+ * CBS_peek_u8 sets |*out| to the next uint8_t from |cbs|, but does not advance
+ * |cbs|. It returns one on success and zero on error.
+ */
+int CBS_peek_u8(CBS *cbs, uint8_t *out);
+
+/*
+ * CBS_peek_u16 sets |*out| to the next, big-endian uint16_t from |cbs|, but
+ * does not advance |cbs|. It returns one on success and zero on error.
+ */
+int CBS_peek_u16(CBS *cbs, uint16_t *out);
+
+/*
+ * CBS_peek_u24 sets |*out| to the next, big-endian 24-bit value from |cbs|, but
+ * does not advance |cbs|. It returns one on success and zero on error.
+ */
+int CBS_peek_u24(CBS *cbs, uint32_t *out);
+
+/*
+ * CBS_peek_u32 sets |*out| to the next, big-endian uint32_t value from |cbs|,
+ * but does not advance |cbs|. It returns one on success and zero on error.
+ */
+int CBS_peek_u32(CBS *cbs, uint32_t *out);
+
+/*
+ * CBS_peek_last_u8 sets |*out| to the last uint8_t from |cbs|, but does not
+ * shorten |cbs|. It returns one on success and zero on error.
+ */
+int CBS_peek_last_u8(CBS *cbs, uint8_t *out);
 
 
 /* Parsing ASN.1 */
@@ -466,6 +507,12 @@ int CBB_add_u24(CBB *cbb, size_t value);
  * returns one on success and zero otherwise.
  */
 int CBB_add_u32(CBB *cbb, size_t value);
+
+/*
+ * CBB_add_u64 appends a 64-bit, big-endian number from |value| to |cbb|. It
+ * returns one on success and zero otherwise.
+ */
+int CBB_add_u64(CBB *cbb, uint64_t value);
 
 /*
  * CBB_add_asn1_uint64 writes an ASN.1 INTEGER into |cbb| using |CBB_add_asn1|

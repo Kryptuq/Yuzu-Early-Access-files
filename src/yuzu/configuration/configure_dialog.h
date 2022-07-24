@@ -40,7 +40,7 @@ class ConfigureDialog : public QDialog {
     Q_OBJECT
 
 public:
-    explicit ConfigureDialog(QWidget* parent, HotkeyRegistry& registry,
+    explicit ConfigureDialog(QWidget* parent, HotkeyRegistry& registry_,
                              InputCommon::InputSubsystem* input_subsystem, Core::System& system_);
     ~ConfigureDialog() override;
 

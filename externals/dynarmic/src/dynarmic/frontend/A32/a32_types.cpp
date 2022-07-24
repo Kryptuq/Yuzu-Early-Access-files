@@ -8,7 +8,7 @@
 #include <array>
 #include <ostream>
 
-#include "dynarmic/common/bit_util.h"
+#include <mcl/bit/bit_field.hpp>
 
 namespace Dynarmic::A32 {
 
@@ -46,7 +46,7 @@ std::string RegListToString(RegList reg_list) {
     std::string ret;
     bool first_reg = true;
     for (size_t i = 0; i < 16; i++) {
-        if (Common::Bit(i, reg_list)) {
+        if (mcl::bit::get_bit(i, reg_list)) {
             if (!first_reg) {
                 ret += ", ";
             }

@@ -5,9 +5,13 @@
 
 #pragma once
 
-#include "dynarmic/common/assert.h"
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
+#include <type_traits>
+
+#include <mcl/assert.hpp>
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/bitsizeof.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/common/math_util.h"
 
 namespace Dynarmic {
@@ -23,32 +27,32 @@ public:
 
     explicit Imm(u32 value)
             : value(value) {
-        ASSERT_MSG((Common::Bits<0, bit_size - 1>(value) == value), "More bits in value than expected");
+        ASSERT_MSG((mcl::bit::get_bits<0, bit_size - 1>(value) == value), "More bits in value than expected");
     }
 
     template<typename T = u32>
     T ZeroExtend() const {
-        static_assert(Common::BitSize<T>() >= bit_size);
+        static_assert(mcl::bitsizeof<T> >= bit_size);
         return static_cast<T>(value);
     }
 
     template<typename T = s32>
     T SignExtend() const {
-        static_assert(Common::BitSize<T>() >= bit_size);
-        return Common::SignExtend<bit_size, T>(value);
+        static_assert(mcl::bitsizeof<T> >= bit_size);
+        return static_cast<T>(mcl::bit::sign_extend<bit_size, std::make_unsigned_t<T>>(value));
     }
 
     template<size_t bit>
     bool Bit() const {
         static_assert(bit < bit_size);
-        return Common::Bit<bit>(value);
+        return mcl::bit::get_bit<bit>(value);
     }
 
     template<size_t begin_bit, size_t end_bit, typename T = u32>
     T Bits() const {
         static_assert(begin_bit <= end_bit && end_bit < bit_size);
-        static_assert(Common::BitSize<T>() >= end_bit - begin_bit + 1);
-        return static_cast<T>(Common::Bits<begin_bit, end_bit>(value));
+        static_assert(mcl::bitsizeof<T> >= end_bit - begin_bit + 1);
+        return static_cast<T>(mcl::bit::get_bits<begin_bit, end_bit>(value));
     }
 
     bool operator==(Imm other) const {

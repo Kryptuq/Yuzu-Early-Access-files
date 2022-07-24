@@ -1,6 +1,5 @@
-// Copyright 2021 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <tuple>
 #include "common/assert.h"
@@ -62,6 +61,12 @@ void KServerPort::Destroy() {
 
     // Close our reference to our parent.
     parent->Close();
+
+    // Release host emulation members.
+    session_handler.reset();
+
+    // Ensure that the global list tracking server objects does not hold on to a reference.
+    kernel.UnregisterServerObject(this);
 }
 
 bool KServerPort::IsSignaled() const {

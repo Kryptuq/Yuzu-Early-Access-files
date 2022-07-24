@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <array>
@@ -47,7 +46,7 @@ size_t BytesPerIndex(VkIndexType index_type) {
     case VK_INDEX_TYPE_UINT32:
         return 4;
     default:
-        UNREACHABLE_MSG("Invalid index type={}", index_type);
+        ASSERT_MSG(false, "Invalid index type={}", index_type);
         return 1;
     }
 }
@@ -125,8 +124,8 @@ VkBufferView Buffer::View(u32 offset, u32 size, VideoCore::Surface::PixelFormat 
 }
 
 BufferCacheRuntime::BufferCacheRuntime(const Device& device_, MemoryAllocator& memory_allocator_,
-                                       VKScheduler& scheduler_, StagingBufferPool& staging_pool_,
-                                       VKUpdateDescriptorQueue& update_descriptor_queue_,
+                                       Scheduler& scheduler_, StagingBufferPool& staging_pool_,
+                                       UpdateDescriptorQueue& update_descriptor_queue_,
                                        DescriptorPool& descriptor_pool)
     : device{device_}, memory_allocator{memory_allocator_}, scheduler{scheduler_},
       staging_pool{staging_pool_}, update_descriptor_queue{update_descriptor_queue_},
@@ -139,6 +138,18 @@ StagingBufferRef BufferCacheRuntime::UploadStagingBuffer(size_t size) {
 
 StagingBufferRef BufferCacheRuntime::DownloadStagingBuffer(size_t size) {
     return staging_pool.Request(size, MemoryUsage::Download);
+}
+
+u64 BufferCacheRuntime::GetDeviceLocalMemory() const {
+    return device.GetDeviceLocalMemory();
+}
+
+u64 BufferCacheRuntime::GetDeviceMemoryUsage() const {
+    return device.GetDeviceMemoryUsage();
+}
+
+bool BufferCacheRuntime::CanReportMemoryUsage() const {
+    return device.CanReportMemoryUsage();
 }
 
 void BufferCacheRuntime::Finish() {
@@ -355,7 +366,7 @@ void BufferCacheRuntime::ReserveQuadArrayLUT(u32 num_indices, bool wait_for_idle
                 std::memcpy(staging_data, MakeQuadIndices<u32>(quad, first).data(), quad_size);
                 break;
             default:
-                UNREACHABLE();
+                ASSERT(false);
                 break;
             }
             staging_data += quad_size;

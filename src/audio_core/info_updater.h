@@ -1,6 +1,5 @@
-// Copyright 2020 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -33,8 +32,8 @@ public:
                       VAddr audio_codec_dsp_addr);
     bool UpdateEffects(EffectContext& effect_context, bool is_active);
     bool UpdateSplitterInfo(SplitterContext& splitter_context);
-    ResultCode UpdateMixes(MixContext& mix_context, std::size_t mix_buffer_count,
-                           SplitterContext& splitter_context, EffectContext& effect_context);
+    Result UpdateMixes(MixContext& mix_context, std::size_t mix_buffer_count,
+                       SplitterContext& splitter_context, EffectContext& effect_context);
     bool UpdateSinks(SinkContext& sink_context);
     bool UpdatePerformanceBuffer();
     bool UpdateErrorInfo(BehaviorInfo& in_behavior_info);

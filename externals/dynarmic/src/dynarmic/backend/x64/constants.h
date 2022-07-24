@@ -7,8 +7,9 @@
 
 #include <optional>
 
-#include "dynarmic/common/bit_util.h"
-#include "dynarmic/common/common_types.h"
+#include <mcl/bit/bit_field.hpp>
+#include <mcl/stdint.hpp>
+
 #include "dynarmic/common/fp/rounding_mode.h"
 
 namespace Dynarmic::Backend::X64 {
@@ -96,13 +97,13 @@ constexpr u8 SNaN = 0b10000000;
 
 // Opcodes for use with vfixupimm
 enum class FpFixup : u8 {
-    A = 0b0000,         // A
-    B = 0b0001,         // B
-    QNaN_B = 0b0010,    // QNaN with sign of B
+    Dest = 0b0000,      // Preserve destination
+    Norm_Src = 0b0001,  // Source operand (Denormal as positive-zero)
+    QNaN_Src = 0b0010,  // QNaN with sign of source (Denormal as positive-zero)
     IndefNaN = 0b0011,  // Indefinite QNaN (Negative QNaN with no payload on x86)
     NegInf = 0b0100,    // -Infinity
     PosInf = 0b0101,    // +Infinity
-    Inf_B = 0b0110,     // Infinity with sign of B
+    Inf_Src = 0b0110,   // Infinity with sign of source (Denormal as positive-zero)
     NegZero = 0b0111,   // -0.0
     PosZero = 0b1000,   // +0.0
     NegOne = 0b1001,    // -1.0
@@ -115,23 +116,23 @@ enum class FpFixup : u8 {
 };
 
 // Generates 32-bit LUT for vfixupimm instruction
-constexpr u32 FixupLUT(FpFixup src_qnan = FpFixup::A,
-                       FpFixup src_snan = FpFixup::A,
-                       FpFixup src_zero = FpFixup::A,
-                       FpFixup src_posone = FpFixup::A,
-                       FpFixup src_neginf = FpFixup::A,
-                       FpFixup src_posinf = FpFixup::A,
-                       FpFixup src_pos = FpFixup::A,
-                       FpFixup src_neg = FpFixup::A) {
+constexpr u32 FixupLUT(FpFixup src_qnan = FpFixup::Dest,
+                       FpFixup src_snan = FpFixup::Dest,
+                       FpFixup src_zero = FpFixup::Dest,
+                       FpFixup src_posone = FpFixup::Dest,
+                       FpFixup src_neginf = FpFixup::Dest,
+                       FpFixup src_posinf = FpFixup::Dest,
+                       FpFixup src_pos = FpFixup::Dest,
+                       FpFixup src_neg = FpFixup::Dest) {
     u32 fixup_lut = 0;
-    fixup_lut = Common::ModifyBits<0, 3, u32>(fixup_lut, static_cast<u32>(src_qnan));
-    fixup_lut = Common::ModifyBits<4, 7, u32>(fixup_lut, static_cast<u32>(src_snan));
-    fixup_lut = Common::ModifyBits<8, 11, u32>(fixup_lut, static_cast<u32>(src_zero));
-    fixup_lut = Common::ModifyBits<12, 15, u32>(fixup_lut, static_cast<u32>(src_posone));
-    fixup_lut = Common::ModifyBits<16, 19, u32>(fixup_lut, static_cast<u32>(src_neginf));
-    fixup_lut = Common::ModifyBits<20, 23, u32>(fixup_lut, static_cast<u32>(src_posinf));
-    fixup_lut = Common::ModifyBits<24, 27, u32>(fixup_lut, static_cast<u32>(src_pos));
-    fixup_lut = Common::ModifyBits<28, 31, u32>(fixup_lut, static_cast<u32>(src_neg));
+    fixup_lut = mcl::bit::set_bits<0, 3, u32>(fixup_lut, static_cast<u32>(src_qnan));
+    fixup_lut = mcl::bit::set_bits<4, 7, u32>(fixup_lut, static_cast<u32>(src_snan));
+    fixup_lut = mcl::bit::set_bits<8, 11, u32>(fixup_lut, static_cast<u32>(src_zero));
+    fixup_lut = mcl::bit::set_bits<12, 15, u32>(fixup_lut, static_cast<u32>(src_posone));
+    fixup_lut = mcl::bit::set_bits<16, 19, u32>(fixup_lut, static_cast<u32>(src_neginf));
+    fixup_lut = mcl::bit::set_bits<20, 23, u32>(fixup_lut, static_cast<u32>(src_posinf));
+    fixup_lut = mcl::bit::set_bits<24, 27, u32>(fixup_lut, static_cast<u32>(src_pos));
+    fixup_lut = mcl::bit::set_bits<28, 31, u32>(fixup_lut, static_cast<u32>(src_neg));
     return fixup_lut;
 }
 
@@ -153,8 +154,8 @@ enum class FpRangeSign : u8 {
 // Generates 8-bit immediate LUT for vrange instruction
 constexpr u8 FpRangeLUT(FpRangeSelect range_select, FpRangeSign range_sign) {
     u8 range_lut = 0;
-    range_lut = Common::ModifyBits<0, 1, u8>(range_lut, static_cast<u8>(range_select));
-    range_lut = Common::ModifyBits<2, 3, u8>(range_lut, static_cast<u8>(range_sign));
+    range_lut = mcl::bit::set_bits<0, 1, u8>(range_lut, static_cast<u8>(range_select));
+    range_lut = mcl::bit::set_bits<2, 3, u8>(range_lut, static_cast<u8>(range_sign));
     return range_lut;
 }
 

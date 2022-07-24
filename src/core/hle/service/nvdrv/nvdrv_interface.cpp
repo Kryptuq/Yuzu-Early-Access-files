@@ -1,21 +1,18 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2021 yuzu Emulator Project
+// SPDX-FileCopyrightText: 2021 Skyline Team and Contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <cinttypes>
 #include "common/logging/log.h"
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/service/nvdrv/nvdata.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/nvdrv/nvdrv_interface.h"
 
 namespace Service::Nvidia {
-
-void NVDRV::SignalGPUInterruptSyncpt(const u32 syncpoint_id, const u32 value) {
-    nvdrv->SignalSyncpt(syncpoint_id, value);
-}
 
 void NVDRV::Open(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_NVDRV, "called");
@@ -26,7 +23,7 @@ void NVDRV::Open(Kernel::HLERequestContext& ctx) {
         rb.Push<DeviceFD>(0);
         rb.PushEnum(NvResult::NotInitialized);
 
-        LOG_ERROR(Service_NVDRV, "NvServices is not initalized!");
+        LOG_ERROR(Service_NVDRV, "NvServices is not initialized!");
         return;
     }
 
@@ -61,7 +58,7 @@ void NVDRV::Ioctl1(Kernel::HLERequestContext& ctx) {
 
     if (!is_initialized) {
         ServiceError(ctx, NvResult::NotInitialized);
-        LOG_ERROR(Service_NVDRV, "NvServices is not initalized!");
+        LOG_ERROR(Service_NVDRV, "NvServices is not initialized!");
         return;
     }
 
@@ -87,7 +84,7 @@ void NVDRV::Ioctl2(Kernel::HLERequestContext& ctx) {
 
     if (!is_initialized) {
         ServiceError(ctx, NvResult::NotInitialized);
-        LOG_ERROR(Service_NVDRV, "NvServices is not initalized!");
+        LOG_ERROR(Service_NVDRV, "NvServices is not initialized!");
         return;
     }
 
@@ -114,7 +111,7 @@ void NVDRV::Ioctl3(Kernel::HLERequestContext& ctx) {
 
     if (!is_initialized) {
         ServiceError(ctx, NvResult::NotInitialized);
-        LOG_ERROR(Service_NVDRV, "NvServices is not initalized!");
+        LOG_ERROR(Service_NVDRV, "NvServices is not initialized!");
         return;
     }
 
@@ -139,7 +136,7 @@ void NVDRV::Close(Kernel::HLERequestContext& ctx) {
 
     if (!is_initialized) {
         ServiceError(ctx, NvResult::NotInitialized);
-        LOG_ERROR(Service_NVDRV, "NvServices is not initalized!");
+        LOG_ERROR(Service_NVDRV, "NvServices is not initialized!");
         return;
     }
 
@@ -165,33 +162,28 @@ void NVDRV::Initialize(Kernel::HLERequestContext& ctx) {
 void NVDRV::QueryEvent(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto fd = rp.Pop<DeviceFD>();
-    const auto event_id = rp.Pop<u32>() & 0x00FF;
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called, fd={:X}, event_id={:X}", fd, event_id);
+    const auto event_id = rp.Pop<u32>();
 
     if (!is_initialized) {
         ServiceError(ctx, NvResult::NotInitialized);
-        LOG_ERROR(Service_NVDRV, "NvServices is not initalized!");
+        LOG_ERROR(Service_NVDRV, "NvServices is not initialized!");
         return;
     }
 
-    const auto nv_result = nvdrv->VerifyFD(fd);
-    if (nv_result != NvResult::Success) {
-        LOG_ERROR(Service_NVDRV, "Invalid FD specified DeviceFD={}!", fd);
-        ServiceError(ctx, nv_result);
-        return;
-    }
+    Kernel::KEvent* event = nullptr;
+    NvResult result = nvdrv->QueryEvent(fd, event_id, event);
 
-    if (event_id < MaxNvEvents) {
+    if (result == NvResult::Success) {
         IPC::ResponseBuilder rb{ctx, 3, 1};
         rb.Push(ResultSuccess);
-        auto& event = nvdrv->GetEvent(event_id);
-        event.Clear();
-        rb.PushCopyObjects(event);
+        auto& readable_event = event->GetReadableEvent();
+        rb.PushCopyObjects(readable_event);
         rb.PushEnum(NvResult::Success);
     } else {
+        LOG_ERROR(Service_NVDRV, "Invalid event request!");
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
-        rb.PushEnum(NvResult::BadParameter);
+        rb.PushEnum(result);
     }
 }
 
@@ -230,7 +222,7 @@ void NVDRV::DumpGraphicsMemoryInfo(Kernel::HLERequestContext& ctx) {
 }
 
 NVDRV::NVDRV(Core::System& system_, std::shared_ptr<Module> nvdrv_, const char* name)
-    : ServiceFramework{system_, name}, nvdrv{std::move(nvdrv_)} {
+    : ServiceFramework{system_, name, ServiceThreadType::CreateNew}, nvdrv{std::move(nvdrv_)} {
     static const FunctionInfo functions[] = {
         {0, &NVDRV::Open, "Open"},
         {1, &NVDRV::Ioctl1, "Ioctl"},

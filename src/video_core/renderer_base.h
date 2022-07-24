@@ -5,9 +5,10 @@
 #pragma once
 
 #include <atomic>
+#include <functional>
 #include <memory>
-#include <optional>
 
+#include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "core/frontend/emu_window.h"
 #include "video_core/gpu.h"
@@ -28,8 +29,11 @@ struct RendererSettings {
     Layout::FramebufferLayout screenshot_framebuffer_layout;
 };
 
-class RendererBase : NonCopyable {
+class RendererBase {
 public:
+    YUZU_NON_COPYABLE(RendererBase);
+    YUZU_NON_MOVEABLE(RendererBase);
+
     explicit RendererBase(Core::Frontend::EmuWindow& window,
                           std::unique_ptr<Core::Frontend::GraphicsContext> context);
     virtual ~RendererBase();
@@ -78,6 +82,9 @@ public:
 
     /// Refreshes the settings common to all renderers
     void RefreshBaseSettings();
+
+    /// Returns true if a screenshot is being processed
+    bool IsScreenshotPending() const;
 
     /// Request a screenshot of the next frame
     void RequestScreenshot(void* data, std::function<void(bool)> callback,

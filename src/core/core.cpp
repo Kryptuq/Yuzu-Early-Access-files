@@ -8,6 +8,7 @@
 #include <memory>
 #include <utility>
 
+#include "audio_core/audio_core.h"
 #include "common/fs/fs.h"
 #include "common/logging/log.h"
 #include "common/microprofile.h"
@@ -17,6 +18,7 @@
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/cpu_manager.h"
+#include "core/debugger/debugger.h"
 #include "core/device_memory.h"
 #include "core/file_sys/bis_factory.h"
 #include "core/file_sys/mode.h"
@@ -26,9 +28,10 @@
 #include "core/file_sys/savedata_factory.h"
 #include "core/file_sys/vfs_concat.h"
 #include "core/file_sys/vfs_real.h"
-#include "core/hardware_interrupt_manager.h"
 #include "core/hid/hid_core.h"
+#include "core/hle/kernel/k_memory_manager.h"
 #include "core/hle/kernel/k_process.h"
+#include "core/hle/kernel/k_resource_limit.h"
 #include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/physical_core.h"
@@ -36,7 +39,6 @@
 #include "core/hle/service/apm/apm_controller.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/glue/glue_manager.h"
-#include "core/hle/service/hid/hid.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/hle/service/time/time_manager.h"
@@ -48,6 +50,7 @@
 #include "core/reporter.h"
 #include "core/telemetry_session.h"
 #include "core/tools/freezer.h"
+#include "video_core/host1x/host1x.h"
 #include "video_core/renderer_base.h"
 #include "video_core/video_core.h"
 
@@ -136,8 +139,9 @@ struct System::Impl {
 
         kernel.Suspend(false);
         core_timing.SyncPause(false);
-        cpu_manager.Pause(false);
         is_paused = false;
+
+        audio_core->PauseSinks(false);
 
         return status;
     }
@@ -146,28 +150,36 @@ struct System::Impl {
         std::unique_lock<std::mutex> lk(suspend_guard);
         status = SystemResultStatus::Success;
 
+        audio_core->PauseSinks(true);
+
         core_timing.SyncPause(true);
         kernel.Suspend(true);
-        cpu_manager.Pause(true);
         is_paused = true;
 
         return status;
     }
 
-    std::unique_lock<std::mutex> StallCPU() {
+    bool IsPaused() const {
+        std::unique_lock lk(suspend_guard);
+        return is_paused;
+    }
+
+    std::unique_lock<std::mutex> StallProcesses() {
         std::unique_lock<std::mutex> lk(suspend_guard);
         kernel.Suspend(true);
         core_timing.SyncPause(true);
-        cpu_manager.Pause(true);
         return lk;
     }
 
-    void UnstallCPU() {
+    void UnstallProcesses() {
         if (!is_paused) {
             core_timing.SyncPause(false);
             kernel.Suspend(false);
-            cpu_manager.Pause(false);
         }
+    }
+
+    void InitializeDebugger(System& system, u16 port) {
+        debugger = std::make_unique<Debugger>(system, port);
     }
 
     SystemResultStatus Init(System& system, Frontend::EmuWindow& emu_window) {
@@ -207,14 +219,16 @@ struct System::Impl {
 
         telemetry_session = std::make_unique<Core::TelemetrySession>();
 
+        host1x_core = std::make_unique<Tegra::Host1x::Host1x>(system);
         gpu_core = VideoCore::CreateGPU(emu_window, system);
         if (!gpu_core) {
             return SystemResultStatus::ErrorVideoCore;
         }
 
+        audio_core = std::make_unique<AudioCore::AudioCore>(system);
+
         service_manager = std::make_shared<Service::SM::ServiceManager>(kernel);
         services = std::make_unique<Service::Services>(service_manager, system);
-        interrupt_manager = std::make_unique<Hardware::InterruptManager>(system);
 
         // Initialize time manager, which must happen after kernel is created
         time_manager.Initialize();
@@ -252,9 +266,16 @@ struct System::Impl {
         }
 
         telemetry_session->AddInitialInfo(*app_loader, fs_controller, *content_provider);
+
+        // Create a resource limit for the process.
+        const auto physical_memory_size =
+            kernel.MemoryManager().GetSize(Kernel::KMemoryManager::Pool::Application);
+        auto* resource_limit = Kernel::CreateResourceLimitForProcess(system, physical_memory_size);
+
+        // Create the process.
         auto main_process = Kernel::KProcess::Create(system.Kernel());
         ASSERT(Kernel::KProcess::Initialize(main_process, system, "main",
-                                            Kernel::KProcess::ProcessType::Userland)
+                                            Kernel::KProcess::ProcessType::Userland, resource_limit)
                    .IsSuccess());
         const auto [load_result, load_parameters] = app_loader->Load(*main_process, system);
         if (load_result != Loader::ResultStatus::Success) {
@@ -281,7 +302,7 @@ struct System::Impl {
             if (Settings::values.gamecard_current_game) {
                 fs_controller.SetGameCard(GetGameFileFromPath(virtual_filesystem, filepath));
             } else if (!Settings::values.gamecard_path.GetValue().empty()) {
-                const auto gamecard_path = Settings::values.gamecard_path.GetValue();
+                const auto& gamecard_path = Settings::values.gamecard_path.GetValue();
                 fs_controller.SetGameCard(GetGameFileFromPath(virtual_filesystem, gamecard_path));
             }
         }
@@ -299,6 +320,8 @@ struct System::Impl {
     }
 
     void Shutdown() {
+        SetShuttingDown(true);
+
         // Log last frame performance stats if game was loded
         if (perf_stats) {
             const auto perf_results = GetAndResetPerfStats();
@@ -317,23 +340,38 @@ struct System::Impl {
         is_powered_on = false;
         exit_lock = false;
 
-        gpu_core->NotifyShutdown();
+        if (gpu_core != nullptr) {
+            gpu_core->NotifyShutdown();
+        }
 
+        kernel.ShutdownCores();
+        cpu_manager.Shutdown();
+        debugger.reset();
+        kernel.CloseServices();
         services.reset();
         service_manager.reset();
         cheat_engine.reset();
         telemetry_session.reset();
-        cpu_manager.Shutdown();
         time_manager.Shutdown();
         core_timing.Shutdown();
         app_loader.reset();
+        audio_core.reset();
         gpu_core.reset();
+        host1x_core.reset();
         perf_stats.reset();
         kernel.Shutdown();
         memory.Reset();
         applet_manager.ClearAll();
 
         LOG_DEBUG(Core, "Shutdown OK");
+    }
+
+    bool IsShuttingDown() const {
+        return is_shutting_down;
+    }
+
+    void SetShuttingDown(bool shutting_down) {
+        is_shutting_down = shutting_down;
     }
 
     Loader::ResultStatus GetGameName(std::string& out) const {
@@ -378,8 +416,9 @@ struct System::Impl {
         return perf_stats->GetAndResetStats(core_timing.GetGlobalTimeUs());
     }
 
-    std::mutex suspend_guard;
+    mutable std::mutex suspend_guard;
     bool is_paused{};
+    std::atomic<bool> is_shutting_down{};
 
     Timing::CoreTiming core_timing;
     Kernel::KernelCore kernel;
@@ -389,10 +428,11 @@ struct System::Impl {
     std::unique_ptr<FileSys::ContentProviderUnion> content_provider;
     Service::FileSystem::FileSystemController fs_controller;
     /// AppLoader used to load the current executing application
+    std::unique_ptr<Tegra::Host1x::Host1x> host1x_core;
     std::unique_ptr<Loader::AppLoader> app_loader;
     std::unique_ptr<Tegra::GPU> gpu_core;
-    std::unique_ptr<Hardware::InterruptManager> interrupt_manager;
     std::unique_ptr<Core::DeviceMemory> device_memory;
+    std::unique_ptr<AudioCore::AudioCore> audio_core;
     Core::Memory::Memory memory;
     Core::HID::HIDCore hid_core;
     CpuManager cpu_manager;
@@ -425,6 +465,9 @@ struct System::Impl {
 
     /// Network instance
     Network::NetworkInstance network_instance;
+
+    /// Debugger
+    std::unique_ptr<Core::Debugger> debugger;
 
     SystemResultStatus status = SystemResultStatus::Success;
     std::string status_details = "";
@@ -462,8 +505,8 @@ SystemResultStatus System::Pause() {
     return impl->Pause();
 }
 
-SystemResultStatus System::SingleStep() {
-    return SystemResultStatus::Success;
+bool System::IsPaused() const {
+    return impl->IsPaused();
 }
 
 void System::InvalidateCpuInstructionCaches() {
@@ -478,12 +521,30 @@ void System::Shutdown() {
     impl->Shutdown();
 }
 
-std::unique_lock<std::mutex> System::StallCPU() {
-    return impl->StallCPU();
+bool System::IsShuttingDown() const {
+    return impl->IsShuttingDown();
 }
 
-void System::UnstallCPU() {
-    impl->UnstallCPU();
+void System::SetShuttingDown(bool shutting_down) {
+    impl->SetShuttingDown(shutting_down);
+}
+
+void System::DetachDebugger() {
+    if (impl->debugger) {
+        impl->debugger->NotifyShutdown();
+    }
+}
+
+std::unique_lock<std::mutex> System::StallProcesses() {
+    return impl->StallProcesses();
+}
+
+void System::UnstallProcesses() {
+    impl->UnstallProcesses();
+}
+
+void System::InitializeDebugger() {
+    impl->InitializeDebugger(*this, Settings::values.gdbstub_port.GetValue());
 }
 
 SystemResultStatus System::Load(Frontend::EmuWindow& emu_window, const std::string& filepath,
@@ -493,10 +554,6 @@ SystemResultStatus System::Load(Frontend::EmuWindow& emu_window, const std::stri
 
 bool System::IsPoweredOn() const {
     return impl->is_powered_on.load(std::memory_order::relaxed);
-}
-
-void System::PrepareReschedule() {
-    // Deprecated, does nothing, kept for backward compatibility.
 }
 
 void System::PrepareReschedule(const u32 core_index) {
@@ -581,20 +638,20 @@ const Core::Memory::Memory& System::Memory() const {
     return impl->memory;
 }
 
+Tegra::Host1x::Host1x& System::Host1x() {
+    return *impl->host1x_core;
+}
+
+const Tegra::Host1x::Host1x& System::Host1x() const {
+    return *impl->host1x_core;
+}
+
 Tegra::GPU& System::GPU() {
     return *impl->gpu_core;
 }
 
 const Tegra::GPU& System::GPU() const {
     return *impl->gpu_core;
-}
-
-Core::Hardware::InterruptManager& System::InterruptManager() {
-    return *impl->interrupt_manager;
-}
-
-const Core::Hardware::InterruptManager& System::InterruptManager() const {
-    return *impl->interrupt_manager;
 }
 
 VideoCore::RendererBase& System::Renderer() {
@@ -619,6 +676,14 @@ HID::HIDCore& System::HIDCore() {
 
 const HID::HIDCore& System::HIDCore() const {
     return impl->hid_core;
+}
+
+AudioCore::AudioCore& System::AudioCore() {
+    return *impl->audio_core;
+}
+
+const AudioCore::AudioCore& System::AudioCore() const {
+    return *impl->audio_core;
 }
 
 Timing::CoreTiming& System::CoreTiming() {
@@ -801,6 +866,18 @@ void System::ExitDynarmicProfile() {
 
 bool System::IsMulticore() const {
     return impl->is_multicore;
+}
+
+bool System::DebuggerEnabled() const {
+    return Settings::values.use_gdbstub.GetValue();
+}
+
+Core::Debugger& System::GetDebugger() {
+    return *impl->debugger;
+}
+
+const Core::Debugger& System::GetDebugger() const {
+    return *impl->debugger;
 }
 
 void System::RegisterExecuteProgramCallback(ExecuteProgramCallback&& callback) {

@@ -1,6 +1,5 @@
-// Copyright 2018 yuzu emulator team
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/assert.h"
 #include "common/logging/log.h"
@@ -10,9 +9,10 @@
 
 namespace Service::Nvidia::Devices {
 
-nvhost_nvdec::nvhost_nvdec(Core::System& system_, std::shared_ptr<nvmap> nvmap_dev_,
-                           SyncpointManager& syncpoint_manager_)
-    : nvhost_nvdec_common{system_, std::move(nvmap_dev_), syncpoint_manager_} {}
+u32 nvhost_nvdec::next_id{};
+
+nvhost_nvdec::nvhost_nvdec(Core::System& system_, NvCore::Container& core_)
+    : nvhost_nvdec_common{system_, core_, NvCore::ChannelType::NvDec} {}
 nvhost_nvdec::~nvhost_nvdec() = default;
 
 NvResult nvhost_nvdec::Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,

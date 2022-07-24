@@ -1,6 +1,5 @@
-// Copyright 2019 yuzu Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -8,6 +7,7 @@
 #include <memory>
 #include <QString>
 #include <QWidget>
+#include <QtGlobal>
 
 #if !QT_CONFIG(movie)
 #define YUZU_QT_MOVIE_MISSING 1
@@ -89,4 +89,6 @@ private:
     std::size_t slow_shader_first_value = 0;
 };
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 Q_DECLARE_METATYPE(VideoCore::LoadCallbackStage);
+#endif
