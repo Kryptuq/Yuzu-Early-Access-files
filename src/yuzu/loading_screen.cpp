@@ -147,6 +147,10 @@ void LoadingScreen::OnLoadProgress(VideoCore::LoadCallbackStage stage, std::size
         ui->progress_bar->setMaximum(static_cast<int>(total));
         previous_total = total;
     }
+    // Reset the progress bar ranges if compilation is done
+    if (stage == VideoCore::LoadCallbackStage::Complete) {
+        ui->progress_bar->setRange(0, 0);
+    }
 
     QString estimate;
     // If theres a drastic slowdown in the rate, then display an estimate

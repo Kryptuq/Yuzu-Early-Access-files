@@ -17,6 +17,8 @@ struct KeyboardInitializeParameters {
     std::u16string sub_text;
     std::u16string guide_text;
     std::u16string initial_text;
+    char16_t left_optional_symbol_key;
+    char16_t right_optional_symbol_key;
     u32 max_text_length;
     u32 min_text_length;
     s32 initial_cursor_position;

@@ -161,6 +161,8 @@ signals:
     void WebBrowserExtractOfflineRomFS();
     void WebBrowserClosed(Service::AM::Applets::WebExitReason exit_reason, std::string last_url);
 
+    void SigInterrupt();
+
 public slots:
     void OnLoadComplete();
     void OnExecuteProgram(std::size_t program_index);
@@ -199,6 +201,8 @@ private:
     void ConnectWidgetEvents();
     void ConnectMenuEvents();
     void UpdateMenuState();
+
+    void SetupPrepareForSleep();
 
     void PreventOSSleep();
     void AllowOSSleep();
@@ -247,12 +251,19 @@ private:
     void RequestGameResume();
     void closeEvent(QCloseEvent* event) override;
 
+#ifdef __linux__
+    void SetupSigInterrupts();
+    static void HandleSigInterrupt(int);
+    void OnSigInterruptNotifierActivated();
+#endif
+
 private slots:
     void OnStartGame();
     void OnRestartGame();
     void OnPauseGame();
     void OnPauseContinueGame();
     void OnStopGame();
+    void OnPrepareForSleep(bool prepare_sleep);
     void OnMenuReportCompatibility();
     void OnOpenModsPage();
     void OnOpenQuickstartGuide();
@@ -415,6 +426,9 @@ private:
     bool is_tas_recording_dialog_active{};
 
 #ifdef __linux__
+    QSocketNotifier* sig_interrupt_notifier;
+    static std::array<int, 3> sig_interrupt_fds;
+
     QDBusObjectPath wake_lock{};
 #endif
 

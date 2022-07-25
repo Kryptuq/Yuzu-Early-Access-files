@@ -211,7 +211,7 @@ private:
     std::array<std::array<QPushButton*, NUM_COLUMNS_NUMPAD>, NUM_ROWS_NUMPAD> numberpad_buttons;
 
     // Contains a set of all buttons used in keyboard_buttons and numberpad_buttons.
-    std::array<QPushButton*, 110> all_buttons;
+    std::array<QPushButton*, 112> all_buttons;
 
     std::size_t row{0};
     std::size_t column{0};

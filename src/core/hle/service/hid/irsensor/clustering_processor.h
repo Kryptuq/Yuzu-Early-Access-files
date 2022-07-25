@@ -5,12 +5,19 @@
 
 #include "common/common_types.h"
 #include "core/hid/irs_types.h"
+#include "core/hle/service/hid/irs_ring_lifo.h"
 #include "core/hle/service/hid/irsensor/processor_base.h"
+
+namespace Core::HID {
+class EmulatedController;
+} // namespace Core::HID
 
 namespace Service::IRS {
 class ClusteringProcessor final : public ProcessorBase {
 public:
-    explicit ClusteringProcessor(Core::IrSensor::DeviceFormat& device_format);
+    explicit ClusteringProcessor(Core::HID::HIDCore& hid_core_,
+                                 Core::IrSensor::DeviceFormat& device_format,
+                                 std::size_t npad_index);
     ~ClusteringProcessor() override;
 
     // Called when the processor is initialized
@@ -26,6 +33,10 @@ public:
     void SetConfig(Core::IrSensor::PackedClusteringProcessorConfig config);
 
 private:
+    static constexpr auto format = Core::IrSensor::ImageTransferProcessorFormat::Size320x240;
+    static constexpr std::size_t width = 320;
+    static constexpr std::size_t height = 240;
+
     // This is nn::irsensor::ClusteringProcessorConfig
     struct ClusteringProcessorConfig {
         Core::IrSensor::CameraConfig camera_config;
@@ -68,7 +79,32 @@ private:
     static_assert(sizeof(ClusteringProcessorState) == 0x198,
                   "ClusteringProcessorState is an invalid size");
 
+    struct ClusteringSharedMemory {
+        Service::IRS::Lifo<ClusteringProcessorState, 6> clustering_lifo;
+        static_assert(sizeof(clustering_lifo) == 0x9A0, "clustering_lifo is an invalid size");
+        INSERT_PADDING_WORDS(0x11F);
+    };
+    static_assert(sizeof(ClusteringSharedMemory) == 0xE20,
+                  "ClusteringSharedMemory is an invalid size");
+
+    void OnControllerUpdate(Core::HID::ControllerTriggerType type);
+    void RemoveLowIntensityData(std::vector<u8>& data);
+    ClusteringData GetClusterProperties(std::vector<u8>& data, std::size_t x, std::size_t y);
+    ClusteringData GetPixelProperties(const std::vector<u8>& data, std::size_t x,
+                                      std::size_t y) const;
+    ClusteringData MergeCluster(const ClusteringData a, const ClusteringData b) const;
+    u8 GetPixel(const std::vector<u8>& data, std::size_t x, std::size_t y) const;
+    void SetPixel(std::vector<u8>& data, std::size_t x, std::size_t y, u8 value);
+
+    // Sets config parameters of the camera
+    void SetDefaultConfig();
+
+    ClusteringSharedMemory* shared_memory = nullptr;
+    ClusteringProcessorState next_state{};
+
     ClusteringProcessorConfig current_config{};
     Core::IrSensor::DeviceFormat& device;
+    Core::HID::EmulatedController* npad_device;
+    int callback_key{};
 };
 } // namespace Service::IRS

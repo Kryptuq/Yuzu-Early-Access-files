@@ -270,6 +270,20 @@ Common::Input::AnalogStatus TransformToAnalog(const Common::Input::CallbackStatu
     return status;
 }
 
+Common::Input::CameraStatus TransformToCamera(const Common::Input::CallbackStatus& callback) {
+    Common::Input::CameraStatus camera{};
+    switch (callback.type) {
+    case Common::Input::InputType::IrSensor:
+        camera = callback.camera_status;
+        break;
+    default:
+        LOG_ERROR(Input, "Conversion from type {} to camera not implemented", callback.type);
+        break;
+    }
+
+    return camera;
+}
+
 void SanitizeAnalog(Common::Input::AnalogStatus& analog, bool clamp_value) {
     const auto& properties = analog.properties;
     float& raw_value = analog.raw_value;

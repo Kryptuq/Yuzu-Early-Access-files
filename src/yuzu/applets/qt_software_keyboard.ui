@@ -3298,6 +3298,24 @@ p, li { white-space: pre-wrap; }
               </property>
              </widget>
             </item>
+            <item row="4" column="2">
+             <widget class="QPushButton" name="button_left_optional_num">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>1</horstretch>
+                <verstretch>1</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="font">
+               <font>
+                <pointsize>28</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string notr="true"></string>
+              </property>
+             </widget>
+            </item>
             <item row="4" column="3">
              <widget class="QPushButton" name="button_0_num">
               <property name="sizePolicy">
@@ -3313,6 +3331,24 @@ p, li { white-space: pre-wrap; }
               </property>
               <property name="text">
                <string notr="true">0</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="4">
+             <widget class="QPushButton" name="button_right_optional_num">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>1</horstretch>
+                <verstretch>1</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="font">
+               <font>
+                <pointsize>28</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string notr="true"></string>
               </property>
              </widget>
             </item>
@@ -3494,7 +3530,9 @@ p, li { white-space: pre-wrap; }
   <tabstop>button_7_num</tabstop>
   <tabstop>button_8_num</tabstop>
   <tabstop>button_9_num</tabstop>
+  <tabstop>button_left_optional_num</tabstop>
   <tabstop>button_0_num</tabstop>
+  <tabstop>button_right_optional_num</tabstop>
  </tabstops>
  <resources>
   <include location="../../../dist/icons/overlay/overlay.qrc"/>

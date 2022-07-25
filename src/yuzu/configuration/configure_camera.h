@@ -44,6 +44,8 @@ private:
 
     InputCommon::InputSubsystem* input_subsystem;
 
+    bool is_virtual_camera;
+    int pending_snapshots;
     std::unique_ptr<QCamera> camera;
     std::unique_ptr<QCameraImageCapture> camera_capture;
     std::unique_ptr<QTimer> camera_timer;

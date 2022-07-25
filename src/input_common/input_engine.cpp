@@ -90,6 +90,18 @@ void InputEngine::SetMotion(const PadIdentifier& identifier, int motion, const B
     TriggerOnMotionChange(identifier, motion, value);
 }
 
+void InputEngine::SetCamera(const PadIdentifier& identifier,
+                            const Common::Input::CameraStatus& value) {
+    {
+        std::scoped_lock lock{mutex};
+        ControllerData& controller = controller_list.at(identifier);
+        if (!configuring) {
+            controller.camera = value;
+        }
+    }
+    TriggerOnCameraChange(identifier, value);
+}
+
 bool InputEngine::GetButton(const PadIdentifier& identifier, int button) const {
     std::scoped_lock lock{mutex};
     const auto controller_iter = controller_list.find(identifier);
@@ -163,6 +175,18 @@ BasicMotion InputEngine::GetMotion(const PadIdentifier& identifier, int motion) 
     }
     const ControllerData& controller = controller_iter->second;
     return controller.motions.at(motion);
+}
+
+Common::Input::CameraStatus InputEngine::GetCamera(const PadIdentifier& identifier) const {
+    std::scoped_lock lock{mutex};
+    const auto controller_iter = controller_list.find(identifier);
+    if (controller_iter == controller_list.cend()) {
+        LOG_ERROR(Input, "Invalid identifier guid={}, pad={}, port={}", identifier.guid.RawString(),
+                  identifier.pad, identifier.port);
+        return {};
+    }
+    const ControllerData& controller = controller_iter->second;
+    return controller.camera;
 }
 
 void InputEngine::ResetButtonState() {
@@ -315,6 +339,20 @@ void InputEngine::TriggerOnMotionChange(const PadIdentifier& identifier, int mot
         .index = motion,
         .motion_value = value,
     });
+}
+
+void InputEngine::TriggerOnCameraChange(const PadIdentifier& identifier,
+                                        [[maybe_unused]] const Common::Input::CameraStatus& value) {
+    std::scoped_lock lock{mutex_callback};
+    for (const auto& poller_pair : callback_list) {
+        const InputIdentifier& poller = poller_pair.second;
+        if (!IsInputIdentifierEqual(poller, identifier, EngineInputType::Camera, 0)) {
+            continue;
+        }
+        if (poller.callback.on_change) {
+            poller.callback.on_change();
+        }
+    }
 }
 
 bool InputEngine::IsInputIdentifierEqual(const InputIdentifier& input_identifier,
