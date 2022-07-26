@@ -96,6 +96,10 @@ namespace Core::HID {
 class HIDCore;
 }
 
+namespace Network {
+class RoomNetwork;
+}
+
 namespace Core {
 
 class ARM_Interface;
@@ -377,6 +381,12 @@ public:
 
     [[nodiscard]] Core::Debugger& GetDebugger();
     [[nodiscard]] const Core::Debugger& GetDebugger() const;
+
+    /// Gets a mutable reference to the Room Network.
+    [[nodiscard]] Network::RoomNetwork& GetRoomNetwork();
+
+    /// Gets an immutable reference to the Room Network.
+    [[nodiscard]] const Network::RoomNetwork& GetRoomNetwork() const;
 
     void SetExitLock(bool locked);
     [[nodiscard]] bool GetExitLock() const;

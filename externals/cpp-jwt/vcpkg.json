@@ -1,0 +1,11 @@
+{
+  "name": "cpp-jwt",
+  "version": "1.5",
+  "description": "JSON Web Token library for C++",
+  "homepage": "https://github.com/arun11299/cpp-jwt",
+  "dependencies": [
+    "nlohmann-json",
+    "openssl",
+    "gtest"
+  ]
+}

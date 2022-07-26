@@ -154,6 +154,7 @@
    <addaction name="menu_Emulation"/>
    <addaction name="menu_View"/>
    <addaction name="menu_Tools"/>
+   <addaction name="menu_Multiplayer"/>
    <addaction name="menu_Help"/>
   </widget>
   <action name="action_Install_File_NAND">
@@ -243,6 +244,43 @@
    </property>
    <property name="iconText">
     <string>Show Status Bar</string>
+   </property>
+  </action>
+  <action name="action_View_Lobby">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Browse Public Game Lobby</string>
+   </property>
+  </action>
+  <action name="action_Start_Room">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Create Room</string>
+   </property>
+  </action>
+  <action name="action_Leave_Room">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Leave Room</string>
+   </property>
+  </action>
+  <action name="action_Connect_To_Room">
+   <property name="text">
+    <string>Direct Connect to Room</string>
+   </property>
+  </action>
+  <action name="action_Show_Room">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Show Current Room</string>
    </property>
   </action>
   <action name="action_Fullscreen">

@@ -73,6 +73,10 @@ if (YUZU_USE_EXTERNAL_SDL2)
     add_library(SDL2 ALIAS SDL2-static)
 endif()
 
+# ENet
+add_subdirectory(enet)
+target_include_directories(enet INTERFACE ./enet/include)
+
 # Cubeb
 if(ENABLE_CUBEB)
     set(BUILD_TESTS OFF CACHE BOOL "")
@@ -112,6 +116,11 @@ if (ENABLE_WEB_SERVICE)
     if (WIN32)
         target_link_libraries(httplib INTERFACE crypt32 cryptui ws2_32)
     endif()
+	
+    # cpp-jwt
+    add_library(cpp-jwt INTERFACE)
+    target_include_directories(cpp-jwt INTERFACE ./cpp-jwt/include)
+    target_compile_definitions(cpp-jwt INTERFACE CPP_JWT_USE_VENDORED_NLOHMANN_JSON)
 endif()
 
 # Opus

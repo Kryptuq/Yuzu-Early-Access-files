@@ -1,0 +1,56 @@
+name: CMake
+
+on: [push, pull_request]
+
+env:
+  BUILD_TYPE: Debug
+  CMAKE_ARGS: '-DCMAKE_BUILD_TYPE=Debug -DCPP_JWT_USE_VENDORED_NLOHMANN_JSON=off'
+  VCPKG_ARGUMENTS: 'nlohmann-json openssl gtest'
+  VCPKG_VERSION: '6be82cfac67649a31d4c3eba56d2fafa9dc6736a' # May 13, 2022
+
+jobs:
+  build:
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {
+            name: 'Windows/2019/MSVC-19.30.30528.0',
+            os: windows-2019,
+            triplet: x64-windows,
+            parallel: 2,
+          }
+          - {
+            name: 'MacOSX/11/AppleClang-12.0.5.12050022',
+            os: macos-11,
+            triplet: x64-osx,
+            parallel: 3,
+          }
+          - {
+            name: 'Ubuntu/20.04/GCC-9.3.0',
+            os: ubuntu-20.04,
+            triplet: x64-linux,
+            parallel: 2,
+          }
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Install vcpkg
+        uses: lukka/run-vcpkg@v7
+        with:
+          vcpkgDirectory: ${{ runner.workspace }}/vcpkg
+          vcpkgArguments: ${{ env.VCPKG_ARGUMENTS }}
+          vcpkgGitCommitId: ${{ env.VCPKG_VERSION }}
+          vcpkgTriplet: ${{ matrix.config.triplet }}
+
+      - name: Configure CMake
+        run: cmake -B ${{ github.workspace }}/build -DCMAKE_TOOLCHAIN_FILE=${{ runner.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake ${{ env.CMAKE_ARGS }}
+
+      - name: Build
+        run: cmake --build ${{ github.workspace }}/build --config ${{ env.BUILD_TYPE }} --parallel ${{ matrix.config.parallel }}
+
+      - name: Test
+        working-directory: ${{ github.workspace }}/build
+        run: ctest -C ${{ env.BUILD_TYPE }} -T test --parallel ${{ matrix.config.parallel }} --output-on-failure --timeout 200

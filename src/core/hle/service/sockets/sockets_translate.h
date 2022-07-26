@@ -7,7 +7,7 @@
 
 #include "common/common_types.h"
 #include "core/hle/service/sockets/sockets.h"
-#include "core/network/network.h"
+#include "core/internal_network/network.h"
 
 namespace Service::Sockets {
 

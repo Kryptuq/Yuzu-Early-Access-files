@@ -20,6 +20,7 @@ public:
     ~ConfigureWeb() override;
 
     void ApplyConfiguration();
+    void SetWebServiceConfigEnabled(bool enabled);
 
 private:
     void changeEvent(QEvent* event) override;

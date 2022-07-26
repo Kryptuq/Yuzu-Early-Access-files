@@ -89,6 +89,7 @@ private:
     void ReadUIGamelistValues();
     void ReadUILayoutValues();
     void ReadWebServiceValues();
+    void ReadMultiplayerValues();
 
     void SaveValues();
     void SavePlayerValue(std::size_t player_index);
@@ -118,6 +119,7 @@ private:
     void SaveUIGamelistValues();
     void SaveUILayoutValues();
     void SaveWebServiceValues();
+    void SaveMultiplayerValues();
 
     /**
      * Reads a setting from the qt_config.

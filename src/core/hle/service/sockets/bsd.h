@@ -16,7 +16,7 @@ class System;
 
 namespace Network {
 class Socket;
-}
+} // namespace Network
 
 namespace Service::Sockets {
 

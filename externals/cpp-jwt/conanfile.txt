@@ -1,0 +1,10 @@
+[requires]
+gtest/1.10.0
+nlohmann_json/3.7.0
+openssl/1.1.1d
+
+[generators]
+cmake_find_package
+cmake_paths
+
+[options]

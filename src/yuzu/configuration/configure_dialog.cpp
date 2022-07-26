@@ -29,9 +29,10 @@
 
 ConfigureDialog::ConfigureDialog(QWidget* parent, HotkeyRegistry& registry_,
                                  InputCommon::InputSubsystem* input_subsystem,
-                                 Core::System& system_)
-    : QDialog(parent), ui{std::make_unique<Ui::ConfigureDialog>()}, registry{registry_},
-      system{system_}, audio_tab{std::make_unique<ConfigureAudio>(system_, this)},
+                                 Core::System& system_, bool enable_web_config)
+    : QDialog(parent), ui{std::make_unique<Ui::ConfigureDialog>()},
+      registry(registry_), system{system_}, audio_tab{std::make_unique<ConfigureAudio>(system_,
+                                                                                       this)},
       cpu_tab{std::make_unique<ConfigureCpu>(system_, this)},
       debug_tab_tab{std::make_unique<ConfigureDebugTab>(system_, this)},
       filesystem_tab{std::make_unique<ConfigureFilesystem>(this)},
@@ -64,6 +65,7 @@ ConfigureDialog::ConfigureDialog(QWidget* parent, HotkeyRegistry& registry_,
     ui->tabWidget->addTab(ui_tab.get(), tr("Game List"));
     ui->tabWidget->addTab(web_tab.get(), tr("Web"));
 
+    web_tab->SetWebServiceConfigEnabled(enable_web_config);
     hotkeys_tab->Populate(registry);
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 

@@ -42,14 +42,15 @@
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/hle/service/time/time_manager.h"
+#include "core/internal_network/network.h"
 #include "core/loader/loader.h"
 #include "core/memory.h"
 #include "core/memory/cheat_engine.h"
-#include "core/network/network.h"
 #include "core/perf_stats.h"
 #include "core/reporter.h"
 #include "core/telemetry_session.h"
 #include "core/tools/freezer.h"
+#include "network/network.h"
 #include "video_core/host1x/host1x.h"
 #include "video_core/renderer_base.h"
 #include "video_core/video_core.h"
@@ -130,7 +131,7 @@ FileSys::VirtualFile GetGameFileFromPath(const FileSys::VirtualFilesystem& vfs,
 
 struct System::Impl {
     explicit Impl(System& system)
-        : kernel{system}, fs_controller{system}, memory{system}, hid_core{},
+        : kernel{system}, fs_controller{system}, memory{system}, hid_core{}, room_network{},
           cpu_manager{system}, reporter{system}, applet_manager{system}, time_manager{system} {}
 
     SystemResultStatus Run() {
@@ -315,6 +316,17 @@ struct System::Impl {
         GetAndResetPerfStats();
         perf_stats->BeginSystemFrame();
 
+        std::string name = "Unknown Game";
+        if (app_loader->ReadTitle(name) != Loader::ResultStatus::Success) {
+            LOG_ERROR(Core, "Failed to read title for ROM (Error {})", load_result);
+        }
+        if (auto room_member = room_network.GetRoomMember().lock()) {
+            Network::GameInfo game_info;
+            game_info.name = name;
+            game_info.id = program_id;
+            room_member->SendGameInfo(game_info);
+        }
+
         status = SystemResultStatus::Success;
         return status;
     }
@@ -362,6 +374,11 @@ struct System::Impl {
         kernel.Shutdown();
         memory.Reset();
         applet_manager.ClearAll();
+
+        if (auto room_member = room_network.GetRoomMember().lock()) {
+            Network::GameInfo game_info{};
+            room_member->SendGameInfo(game_info);
+        }
 
         LOG_DEBUG(Core, "Shutdown OK");
     }
@@ -435,6 +452,8 @@ struct System::Impl {
     std::unique_ptr<AudioCore::AudioCore> audio_core;
     Core::Memory::Memory memory;
     Core::HID::HIDCore hid_core;
+    Network::RoomNetwork room_network;
+
     CpuManager cpu_manager;
     std::atomic_bool is_powered_on{};
     bool exit_lock = false;
@@ -878,6 +897,14 @@ Core::Debugger& System::GetDebugger() {
 
 const Core::Debugger& System::GetDebugger() const {
     return *impl->debugger;
+}
+
+Network::RoomNetwork& System::GetRoomNetwork() {
+    return impl->room_network;
+}
+
+const Network::RoomNetwork& System::GetRoomNetwork() const {
+    return impl->room_network;
 }
 
 void System::RegisterExecuteProgramCallback(ExecuteProgramCallback&& callback) {

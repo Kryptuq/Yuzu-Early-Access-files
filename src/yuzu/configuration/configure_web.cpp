@@ -169,3 +169,8 @@ void ConfigureWeb::OnLoginVerified() {
                                  "correctly, and that your internet connection is working."));
     }
 }
+
+void ConfigureWeb::SetWebServiceConfigEnabled(bool enabled) {
+    ui->label_disable_info->setVisible(!enabled);
+    ui->groupBoxWebConfig->setEnabled(enabled);
+}

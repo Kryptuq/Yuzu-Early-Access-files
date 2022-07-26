@@ -43,6 +43,7 @@ add_library(common STATIC
     address_space.cpp
     algorithm.h
     alignment.h
+    announce_multiplayer_room.h
     assert.cpp
     assert.h
     atomic_helpers.h

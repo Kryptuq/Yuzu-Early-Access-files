@@ -499,6 +499,8 @@ void GameList::DonePopulating(const QStringList& watch_list) {
     }
     item_model->sort(tree_view->header()->sortIndicatorSection(),
                      tree_view->header()->sortIndicatorOrder());
+
+    emit PopulatingCompleted();
 }
 
 void GameList::PopupContextMenu(const QPoint& menu_location) {
@@ -750,6 +752,10 @@ void GameList::LoadCompatibilityList() {
                                        std::make_pair(QString::number(compatibility), directory));
         }
     }
+}
+
+QStandardItemModel* GameList::GetModel() const {
+    return item_model;
 }
 
 void GameList::PopulateAsync(QVector<UISettings::GameDir>& game_dirs) {

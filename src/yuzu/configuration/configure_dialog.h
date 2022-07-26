@@ -41,7 +41,8 @@ class ConfigureDialog : public QDialog {
 
 public:
     explicit ConfigureDialog(QWidget* parent, HotkeyRegistry& registry_,
-                             InputCommon::InputSubsystem* input_subsystem, Core::System& system_);
+                             InputCommon::InputSubsystem* input_subsystem, Core::System& system_,
+                             bool enable_web_config = true);
     ~ConfigureDialog() override;
 
     void ApplyConfiguration();

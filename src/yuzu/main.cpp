@@ -37,6 +37,7 @@
 #include "core/hle/service/am/applet_ae.h"
 #include "core/hle/service/am/applet_oe.h"
 #include "core/hle/service/am/applets/applets.h"
+#include "yuzu/multiplayer/state.h"
 #include "yuzu/util/controller_navigation.h"
 
 // These are wrappers to avoid the calls to CreateDirectory and CreateFile because of the Windows
@@ -137,6 +138,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "yuzu/main.h"
 #include "yuzu/startup_checks.h"
 #include "yuzu/uisettings.h"
+#include "yuzu/util/clickable_label.h"
 
 using namespace Common::Literals;
 
@@ -279,6 +281,8 @@ GMainWindow::GMainWindow(bool has_broken_vulkan)
 
     SetDiscordEnabled(UISettings::values.enable_discord_presence.GetValue());
     discord_rpc->Update();
+
+    system->GetRoomNetwork().Init();
 
     RegisterMetaTypes();
 
@@ -470,6 +474,8 @@ GMainWindow::~GMainWindow() {
     if (render_window->parent() == nullptr) {
         delete render_window;
     }
+
+    system->GetRoomNetwork().Shutdown();
 
 #ifdef __linux__
     ::close(sig_interrupt_fds[0]);
@@ -838,6 +844,10 @@ void GMainWindow::InitializeWidgets() {
         }
     });
 
+    multiplayer_state = new MultiplayerState(this, game_list->GetModel(), ui->action_Leave_Room,
+                                             ui->action_Show_Room, system->GetRoomNetwork());
+    multiplayer_state->setVisible(false);
+
     // Create status bar
     message_label = new QLabel();
     // Configured separately for left alignment
@@ -869,6 +879,10 @@ void GMainWindow::InitializeWidgets() {
         label->setContentsMargins(4, 0, 4, 0);
         statusBar()->addPermanentWidget(label);
     }
+
+    // TODO (flTobi): Add the widget when multiplayer is fully implemented
+    // statusBar()->addPermanentWidget(multiplayer_state->GetStatusText(), 0);
+    // statusBar()->addPermanentWidget(multiplayer_state->GetStatusIcon(), 0);
 
     tas_label = new QLabel();
     tas_label->setObjectName(QStringLiteral("TASlabel"));
@@ -1179,6 +1193,8 @@ void GMainWindow::ConnectWidgetEvents() {
     connect(game_list_placeholder, &GameListPlaceholder::AddDirectory, this,
             &GMainWindow::OnGameListAddDirectory);
     connect(game_list, &GameList::ShowList, this, &GMainWindow::OnGameListShowList);
+    connect(game_list, &GameList::PopulatingCompleted,
+            [this] { multiplayer_state->UpdateGameList(game_list->GetModel()); });
 
     connect(game_list, &GameList::OpenPerGameGeneralRequested, this,
             &GMainWindow::OnGameListOpenPerGameProperties);
@@ -1196,6 +1212,9 @@ void GMainWindow::ConnectWidgetEvents() {
     connect(this, &GMainWindow::EmulationStopping, this, &GMainWindow::SoftwareKeyboardExit);
 
     connect(&status_bar_update_timer, &QTimer::timeout, this, &GMainWindow::UpdateStatusBar);
+
+    connect(this, &GMainWindow::UpdateThemedIcons, multiplayer_state,
+            &MultiplayerState::UpdateThemedIcons);
 }
 
 void GMainWindow::ConnectMenuEvents() {
@@ -1238,6 +1257,18 @@ void GMainWindow::ConnectMenuEvents() {
     ui->menu_Reset_Window_Size->addActions({ui->action_Reset_Window_Size_720,
                                             ui->action_Reset_Window_Size_900,
                                             ui->action_Reset_Window_Size_1080});
+
+    // Multiplayer
+    connect(ui->action_View_Lobby, &QAction::triggered, multiplayer_state,
+            &MultiplayerState::OnViewLobby);
+    connect(ui->action_Start_Room, &QAction::triggered, multiplayer_state,
+            &MultiplayerState::OnCreateRoom);
+    connect(ui->action_Leave_Room, &QAction::triggered, multiplayer_state,
+            &MultiplayerState::OnCloseRoom);
+    connect(ui->action_Connect_To_Room, &QAction::triggered, multiplayer_state,
+            &MultiplayerState::OnDirectConnectToRoom);
+    connect(ui->action_Show_Room, &QAction::triggered, multiplayer_state,
+            &MultiplayerState::OnOpenNetworkRoom);
 
     // Tools
     connect_menu(ui->action_Rederive, std::bind(&GMainWindow::OnReinitializeKeys, this,
@@ -2882,7 +2913,8 @@ void GMainWindow::OnConfigure() {
     const bool old_discord_presence = UISettings::values.enable_discord_presence.GetValue();
 
     Settings::SetConfiguringGlobal(true);
-    ConfigureDialog configure_dialog(this, hotkey_registry, input_subsystem.get(), *system);
+    ConfigureDialog configure_dialog(this, hotkey_registry, input_subsystem.get(), *system,
+                                     !multiplayer_state->IsHostingPublicRoom());
     connect(&configure_dialog, &ConfigureDialog::LanguageChanged, this,
             &GMainWindow::OnLanguageChanged);
 
@@ -2939,6 +2971,11 @@ void GMainWindow::OnConfigure() {
     if (UISettings::values.enable_discord_presence.GetValue() != old_discord_presence) {
         SetDiscordEnabled(UISettings::values.enable_discord_presence.GetValue());
     }
+
+    if (!multiplayer_state->IsHostingPublicRoom()) {
+        multiplayer_state->UpdateCredentials();
+    }
+
     emit UpdateThemedIcons();
 
     const auto reload = UISettings::values.is_game_list_reload_pending.exchange(false);
@@ -3760,6 +3797,7 @@ void GMainWindow::closeEvent(QCloseEvent* event) {
     }
 
     render_window->close();
+    multiplayer_state->Close();
 
     QWidget::closeEvent(event);
 }
@@ -3956,6 +3994,7 @@ void GMainWindow::OnLanguageChanged(const QString& locale) {
     UISettings::values.language = locale;
     LoadTranslation();
     ui->retranslateUi(this);
+    multiplayer_state->retranslateUi();
     UpdateWindowTitle();
 }
 

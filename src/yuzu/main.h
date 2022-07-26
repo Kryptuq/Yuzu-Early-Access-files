@@ -11,6 +11,7 @@
 #include <QTimer>
 #include <QTranslator>
 
+#include "common/announce_multiplayer_room.h"
 #include "common/common_types.h"
 #include "yuzu/compatibility_list.h"
 #include "yuzu/hotkeys.h"
@@ -22,6 +23,7 @@
 #endif
 
 class Config;
+class ClickableLabel;
 class EmuThread;
 class GameList;
 class GImageInfo;
@@ -31,6 +33,7 @@ class MicroProfileDialog;
 class ProfilerWidget;
 class ControllerDialog;
 class QLabel;
+class MultiplayerState;
 class QPushButton;
 class QProgressDialog;
 class WaitTreeWidget;
@@ -353,6 +356,8 @@ private:
     std::unique_ptr<Core::System> system;
     std::unique_ptr<DiscordRPC::DiscordInterface> discord_rpc;
     std::shared_ptr<InputCommon::InputSubsystem> input_subsystem;
+
+    MultiplayerState* multiplayer_state = nullptr;
 
     GRenderWindow* render_window;
     GameList* game_list;

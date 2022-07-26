@@ -18,8 +18,8 @@ namespace {
 
 } // Anonymous namespace
 
-#include "core/network/network.h"
-#include "core/network/network_interface.h"
+#include "core/internal_network/network.h"
+#include "core/internal_network/network_interface.h"
 
 namespace Service::NIFM {
 

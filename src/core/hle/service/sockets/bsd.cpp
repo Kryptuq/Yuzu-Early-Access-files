@@ -13,8 +13,8 @@
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/service/sockets/bsd.h"
 #include "core/hle/service/sockets/sockets_translate.h"
-#include "core/network/network.h"
-#include "core/network/sockets.h"
+#include "core/internal_network/network.h"
+#include "core/internal_network/sockets.h"
 
 namespace Service::Sockets {
 

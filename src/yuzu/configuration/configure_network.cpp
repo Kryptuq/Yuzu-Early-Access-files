@@ -4,7 +4,7 @@
 #include <QtConcurrent/QtConcurrent>
 #include "common/settings.h"
 #include "core/core.h"
-#include "core/network/network_interface.h"
+#include "core/internal_network/network_interface.h"
 #include "ui_configure_network.h"
 #include "yuzu/configuration/configure_network.h"
 

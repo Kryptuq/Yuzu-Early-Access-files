@@ -16,8 +16,13 @@
 #include <QWidget>
 
 #include "common/common_types.h"
+#include "core/core.h"
 #include "uisettings.h"
 #include "yuzu/compatibility_list.h"
+
+namespace Core {
+class System;
+}
 
 class ControllerNavigation;
 class GameListWorker;
@@ -84,6 +89,8 @@ public:
     void SaveInterfaceLayout();
     void LoadInterfaceLayout();
 
+    QStandardItemModel* GetModel() const;
+
     /// Disables events from the emulated controller
     void UnloadController();
 
@@ -108,6 +115,7 @@ signals:
     void OpenDirectory(const QString& directory);
     void AddDirectory();
     void ShowList(bool show);
+    void PopulatingCompleted();
 
 private slots:
     void OnItemExpanded(const QModelIndex& item);

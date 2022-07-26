@@ -103,10 +103,11 @@ void ClusteringProcessor::RemoveLowIntensityData(std::vector<u8>& data) {
 ClusteringProcessor::ClusteringData ClusteringProcessor::GetClusterProperties(std::vector<u8>& data,
                                                                               std::size_t x,
                                                                               std::size_t y) {
-    std::queue<Common::Point<std::size_t>> search_points{};
+    using DataPoint = Common::Point<std::size_t>;
+    std::queue<DataPoint> search_points{};
     ClusteringData current_cluster = GetPixelProperties(data, x, y);
     SetPixel(data, x, y, 0);
-    search_points.emplace(x, y);
+    search_points.emplace<DataPoint>({x, y});
 
     while (!search_points.empty()) {
         const auto point = search_points.front();
@@ -117,8 +118,8 @@ ClusteringProcessor::ClusteringData ClusteringProcessor::GetClusterProperties(st
             continue;
         }
 
-        std::array<Common::Point<std::size_t>, 4> new_points{
-            Common::Point<std::size_t>{point.x - 1, point.y},
+        std::array<DataPoint, 4> new_points{
+            DataPoint{point.x - 1, point.y},
             {point.x, point.y - 1},
             {point.x + 1, point.y},
             {point.x, point.y + 1},
@@ -137,7 +138,7 @@ ClusteringProcessor::ClusteringData ClusteringProcessor::GetClusterProperties(st
             const ClusteringData cluster = GetPixelProperties(data, new_point.x, new_point.y);
             current_cluster = MergeCluster(current_cluster, cluster);
             SetPixel(data, new_point.x, new_point.y, 0);
-            search_points.emplace(new_point.x, new_point.y);
+            search_points.emplace<DataPoint>({new_point.x, new_point.y});
         }
     }
 

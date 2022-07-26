@@ -156,10 +156,36 @@ add_executable(yuzu
     main.cpp
     main.h
     main.ui
+    multiplayer/chat_room.cpp
+    multiplayer/chat_room.h
+    multiplayer/chat_room.ui
+    multiplayer/client_room.h
+    multiplayer/client_room.cpp
+    multiplayer/client_room.ui
+    multiplayer/direct_connect.cpp
+    multiplayer/direct_connect.h
+    multiplayer/direct_connect.ui
+    multiplayer/host_room.cpp
+    multiplayer/host_room.h
+    multiplayer/host_room.ui
+    multiplayer/lobby.cpp
+    multiplayer/lobby.h
+    multiplayer/lobby.ui
+    multiplayer/lobby_p.h
+    multiplayer/message.cpp
+    multiplayer/message.h
+    multiplayer/moderation_dialog.cpp
+    multiplayer/moderation_dialog.h
+    multiplayer/moderation_dialog.ui
+    multiplayer/state.cpp
+    multiplayer/state.h
+    multiplayer/validation.h
     startup_checks.cpp
     startup_checks.h
     uisettings.cpp
     uisettings.h
+    util/clickable_label.cpp
+    util/clickable_label.h
     util/controller_navigation.cpp
     util/controller_navigation.h
     util/limitable_input_dialog.cpp
@@ -256,7 +282,7 @@ endif()
 
 create_target_directory_groups(yuzu)
 
-target_link_libraries(yuzu PRIVATE common core input_common video_core)
+target_link_libraries(yuzu PRIVATE common core input_common network video_core)
 target_link_libraries(yuzu PRIVATE Boost::boost glad Qt::Widgets Qt::Multimedia)
 target_link_libraries(yuzu PRIVATE ${PLATFORM_LIBRARIES} Threads::Threads)
 
@@ -298,6 +324,10 @@ if (USE_DISCORD_PRESENCE)
     )
     target_link_libraries(yuzu PRIVATE discord-rpc)
     target_compile_definitions(yuzu PRIVATE -DUSE_DISCORD_PRESENCE)
+endif()
+
+if (ENABLE_WEB_SERVICE)
+    target_compile_definitions(yuzu PRIVATE -DENABLE_WEB_SERVICE)
 endif()
 
 if (YUZU_USE_QT_WEB_ENGINE)
