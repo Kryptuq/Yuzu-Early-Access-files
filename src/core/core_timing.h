@@ -5,7 +5,6 @@
 
 #include <atomic>
 #include <chrono>
-#include <condition_variable>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -15,6 +14,7 @@
 #include <vector>
 
 #include "common/common_types.h"
+#include "common/thread.h"
 #include "common/wall_clock.h"
 
 namespace Core::Timing {
@@ -143,7 +143,7 @@ private:
     /// Clear all pending events. This should ONLY be done on exit.
     void ClearPendingEvents();
 
-    static void ThreadEntry(CoreTiming& instance, size_t id);
+    static void ThreadEntry(CoreTiming& instance);
     void ThreadLoop();
 
     std::unique_ptr<Common::WallClock> clock;
@@ -156,24 +156,21 @@ private:
     // accomodated by the standard adaptor class.
     std::vector<Event> event_queue;
     u64 event_fifo_id = 0;
-    std::atomic<size_t> pending_events{};
 
     std::shared_ptr<EventType> ev_lost;
+    Common::Event event{};
+    Common::Event pause_event{};
+    std::mutex basic_lock;
+    std::mutex advance_lock;
+    std::unique_ptr<std::thread> timer_thread;
+    std::atomic<bool> paused{};
+    std::atomic<bool> paused_set{};
+    std::atomic<bool> wait_set{};
+    std::atomic<bool> shutting_down{};
     std::atomic<bool> has_started{};
     std::function<void()> on_thread_init{};
 
-    std::vector<std::thread> worker_threads;
-
-    std::condition_variable event_cv;
-    std::condition_variable wait_pause_cv;
-    std::condition_variable wait_signal_cv;
-    mutable std::mutex event_mutex;
-
-    std::atomic<bool> paused_state{};
-    bool is_paused{};
-    bool shutting_down{};
     bool is_multicore{};
-    size_t pause_count{};
     s64 pause_end_time{};
 
     /// Cycle timing

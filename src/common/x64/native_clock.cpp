@@ -75,8 +75,8 @@ NativeClock::NativeClock(u64 emulated_cpu_frequency_, u64 emulated_clock_frequen
 }
 
 u64 NativeClock::GetRTSC() {
-    TimePoint current_time_point{};
     TimePoint new_time_point{};
+    TimePoint current_time_point{};
 
     current_time_point.pack = Common::AtomicLoad128(time_point.pack.data());
     do {
