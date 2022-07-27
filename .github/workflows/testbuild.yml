@@ -24,7 +24,7 @@ jobs:
           mkdir build
           cd build
           mkdir bin
-          cd bin
+          cd bine
 
       #Check if Update happened with script
       - name: Run Script for Check
