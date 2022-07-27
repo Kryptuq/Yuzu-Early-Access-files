@@ -19,21 +19,17 @@ jobs:
         uses: actions/checkout@v2
 
       #Check if Update happened with script
-      - name: Run Script
+      - name: Run Script for Check
         shell: pwsh
         run: ./check.ps1
-        
-      
-#      - name: After Update
-#        run: |
-#          mv ${{ github.workspace }}\build\bin\Release ${{ github.workspace }}\build\bin\yuzu-early-access
-
-#      - name: Zip the Build Folder
-#        uses: vimtor/action-zip@v1
-#        with:
-#          files: build/bin
-#          dest: yuzu-early-access-EA${{ github.event.head_commit.message }}.zip
-#          recursive: true
+  
+      #If Update exists
+      - name: Zip the New Update
+        uses: vimtor/action-zip@v1
+        with:
+          files: C:\Users\Sven\AppData\Local\yuzu\yuzu-early-access
+          dest: yuzu-early-access-EA${{ github.event.head_commit.message }}.zip
+          recursive: true
 
       #Publishing to Release
 #      - name: Release to GitHub Releases
