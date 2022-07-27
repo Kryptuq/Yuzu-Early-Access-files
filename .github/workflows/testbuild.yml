@@ -20,8 +20,9 @@ jobs:
 
       #Check if Update happened with script
       - name: Run Script
-        run: ./check.ps1
         shell: pwsh
+        run: ./check.ps1
+        
       
 #      - name: After Update
 #        run: |
