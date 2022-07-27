@@ -1,0 +1,57 @@
+name: Yuzu Build Script
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Building Yuzu Binaries
+    runs-on: self-hosted
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: actions/checkout
+        uses: actions/checkout@v2
+
+      #Check if Update happened with script
+      - name: Run Script
+        run: ./check.ps1
+        shell: pwsh
+      
+#      - name: After Update
+#        run: |
+#          mv ${{ github.workspace }}\build\bin\Release ${{ github.workspace }}\build\bin\yuzu-early-access
+
+#      - name: Zip the Build Folder
+#        uses: vimtor/action-zip@v1
+#        with:
+#          files: build/bin
+#          dest: yuzu-early-access-EA${{ github.event.head_commit.message }}.zip
+#          recursive: true
+
+      #Publishing to Release
+#      - name: Release to GitHub Releases
+#        uses: softprops/action-gh-release@v1
+#        with:
+#          name: EA${{ github.event.head_commit.message }}
+#          tag_name: EA${{ github.event.head_commit.message }}
+#          body: "Yuzu Early Access CI Builds with Github Actions [Current Build: yuzu Early Access ${{ github.event.head_commit.message }}]"
+#          files: ${{ github.workspace }}\yuzu-early-access-EA${{ github.event.head_commit.message }}.zip
+
+      #Upload Artifacts Just in Case
+ #     - uses: actions/upload-artifact@v2
+  #      with:
+   #       name: Built yuzu Emulator
+    #      path: ${{ github.workspace }}\build\bin\yuzu-early-access
+
+      #Upload Log if build Fails
+      - name: Upload Logs if Failure
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          path: ${{ github.workspace }}\build\CMakeFiles
