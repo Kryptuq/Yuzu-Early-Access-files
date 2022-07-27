@@ -29,7 +29,7 @@ jobs:
       #Check if Update happened with script
       - name: Run Script for Check
         shell: pwsh
-        run: ./check.ps1
+        run: ./check.ps1.
   
       #If Update exists
       - name: Zip the New Update
