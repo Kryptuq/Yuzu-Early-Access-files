@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2019 yuzu Emulator Project
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
 <RCC>
     <qresource prefix="icons/colorful_dark">
         <file alias="16x16/connected.png">../colorful/icons/16x16/connected.png</file>

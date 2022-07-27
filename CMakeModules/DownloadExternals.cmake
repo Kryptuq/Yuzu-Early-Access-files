@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2017 yuzu Emulator Project
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # This function downloads a binary library package from our external repo.
 # Params:

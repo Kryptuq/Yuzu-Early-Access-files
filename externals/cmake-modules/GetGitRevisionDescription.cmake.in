@@ -1,4 +1,7 @@
-# 
+# SPDX-FileCopyrightText: 2009 Iowa State University
+# SPDX-FileContributor: Ryan Pavlik <rpavlik@iastate.edu> <abiryan@ryand.net>
+# SPDX-License-Identifier: BSL-1.0
+
 # Internal file for GetGitRevisionDescription.cmake
 #
 # Requires CMake 2.6 or newer (uses the 'function' command)

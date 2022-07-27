@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2020 yuzu Emulator Project
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 if (MINGW OR (${CMAKE_SYSTEM_NAME} MATCHES "Linux") OR APPLE)
     set(LIBUSB_FOUND ON CACHE BOOL "libusb is present" FORCE)
     set(LIBUSB_VERSION "1.0.24" CACHE STRING "libusb version string" FORCE)

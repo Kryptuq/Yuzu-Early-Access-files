@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2022 yuzu Emulator Project
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 set(MINGW_PREFIX                /usr/x86_64-w64-mingw32/)
 set(CMAKE_SYSTEM_NAME           Windows)
 set(CMAKE_SYSTEM_PROCESSOR      x86_64)

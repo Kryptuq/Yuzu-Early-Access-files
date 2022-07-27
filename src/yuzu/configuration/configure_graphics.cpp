@@ -1,6 +1,5 @@
-// Copyright 2016 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2016 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 // Include this early to include Vulkan headers how we want to
 #include "video_core/vulkan_common/vulkan_wrapper.h"

@@ -1,4 +1,5 @@
-// This file is under the public domain.
+// SPDX-FileCopyrightText: 2014 Jannik Vogel <email@jannikvogel.de>
+// SPDX-License-Identifier: CC0-1.0
 
 #pragma once
 

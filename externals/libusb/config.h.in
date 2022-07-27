@@ -1,3 +1,8 @@
+/* 
+ * SPDX-FileCopyrightText: 2020 yuzu Emulator Project
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
 /* Default visibility */
 #if defined(__GNUC__) || defined(__clang__)
   #define DEFAULT_VISIBILITY __attribute__((visibility("default")))

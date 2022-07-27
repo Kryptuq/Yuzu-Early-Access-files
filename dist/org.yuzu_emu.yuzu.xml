@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2018 yuzu Emulator Project
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
 <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
     <mime-type type="application/x-nx-nro">
         <comment>Nintendo Switch homebrew executable</comment>

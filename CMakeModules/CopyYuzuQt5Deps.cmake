@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2016 Citra Emulator Project
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 function(copy_yuzu_Qt5_deps target_dir)
     include(WindowsCopyFiles)
     if (MSVC)

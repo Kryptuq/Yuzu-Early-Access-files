@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2022 yuzu Emulator Project
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 add_library(network STATIC
     network.cpp
     network.h

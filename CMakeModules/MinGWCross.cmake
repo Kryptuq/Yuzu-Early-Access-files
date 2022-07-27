@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2018 tech4me <guiwanglong@gmail.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 set(MINGW_PREFIX   /usr/x86_64-w64-mingw32/)
 set(CMAKE_SYSTEM_NAME               Windows)
 set(CMAKE_SYSTEM_PROCESSOR           x86_64)

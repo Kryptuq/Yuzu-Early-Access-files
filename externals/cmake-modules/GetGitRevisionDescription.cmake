@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2009 Iowa State University
+# SPDX-FileContributor: Ryan Pavlik <rpavlik@iastate.edu> <abiryan@ryand.net>
+# SPDX-License-Identifier: BSL-1.0
+
 # - Returns a version string from Git
 #
 # These functions force a re-configure on each git commit so that you can

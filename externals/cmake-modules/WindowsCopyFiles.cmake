@@ -1,6 +1,5 @@
-# Copyright 2018 Yuzu Emulator Project
-# Licensed under GPLv2 or any later version
-# Refer to the license.txt file included.
+# SPDX-FileCopyrightText: 2018 yuzu Emulator Project
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # This file provides the function windows_copy_files.
 # This is only valid on Windows.

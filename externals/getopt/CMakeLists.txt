@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2015 Greg Wicks <gpwicks@email.wm.edu>
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 add_library(getopt
     getopt.c
     getopt.h

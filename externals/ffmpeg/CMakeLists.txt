@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2021 yuzu Emulator Project
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 if (NOT WIN32)
     # Build FFmpeg from externals
     message(STATUS "Using FFmpeg from externals")

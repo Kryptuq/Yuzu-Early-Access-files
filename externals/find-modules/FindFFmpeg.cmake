@@ -1,8 +1,8 @@
+# SPDX-FileCopyrightText: 2019 Citra Emulator Project
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 # FindFFmpeg
 # ----------
-#
-# Copyright 2019 Citra Emulator Project
-# Licensed under GPLv2 or any later version
 #
 # Find the native FFmpeg includes and libraries
 #

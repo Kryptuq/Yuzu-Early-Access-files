@@ -1,10 +1,11 @@
+# SPDX-FileCopyrightText: 2009 Michal Cihar <michal@cihar.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 # - Find libusb-1.0 library
 # This module defines
 #  LIBUSB_INCLUDE_DIR, where to find bluetooth.h
 #  LIBUSB_LIBRARIES, the libraries needed to use libusb-1.0.
 #  LIBUSB_FOUND, If false, do not try to use libusb-1.0.
-#
-# Copyright (c) 2009, Michal Cihar, <michal@cihar.com>
 #
 # vim: expandtab sw=4 ts=4 sts=4:
 

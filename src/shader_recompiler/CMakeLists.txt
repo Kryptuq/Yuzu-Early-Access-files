@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2018 yuzu Emulator Project
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 add_library(shader_recompiler STATIC
     backend/bindings.h
     backend/glasm/emit_glasm.cpp

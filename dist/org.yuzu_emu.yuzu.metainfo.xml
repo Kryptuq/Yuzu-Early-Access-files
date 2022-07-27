@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2021 yuzu Emulator Project
+SPDX-License-Identifier: CC0-1.0
+-->
+
 <component type="desktop-application">
   <id>org.yuzu_emu.yuzu</id>
   <metadata_license>CC0-1.0</metadata_license>

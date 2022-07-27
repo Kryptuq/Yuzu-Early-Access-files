@@ -1,4 +1,5 @@
-# Definitions for all external bundled libraries
+# SPDX-FileCopyrightText: 2016 Citra Emulator Project
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMakeModules")
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/externals/find-modules")

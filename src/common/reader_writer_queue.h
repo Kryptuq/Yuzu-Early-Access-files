@@ -1,6 +1,5 @@
-// ©2013-2020 Cameron Desrochers.
-// Distributed under the simplified BSD license (see the license file that
-// should have come with this header).
+// SPDX-FileCopyrightText: 2013-2020 Cameron Desrochers
+// SPDX-License-Identifier: BSD-2-Clause
 
 #pragma once
 

@@ -1,4 +1,7 @@
-// ©2013-2016 Cameron Desrochers.
+// SPDX-FileCopyrightText: 2013-2016 Cameron Desrochers
+// SPDX-FileCopyrightText: 2015 Jeff Preshing
+// SPDX-License-Identifier: BSD-2-Clause AND Zlib
+
 // Distributed under the simplified BSD license (see the license file that
 // should have come with this header).
 // Uses Jeff Preshing's semaphore implementation (under the terms of its

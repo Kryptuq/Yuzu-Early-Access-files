@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2019 yuzu Emulator Project
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 # Gets a UTC timstamp and sets the provided variable to it
 function(get_timestamp _var)
     string(TIMESTAMP timestamp UTC)
