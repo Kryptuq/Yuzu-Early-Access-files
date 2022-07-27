@@ -17,6 +17,14 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: actions/checkout
         uses: actions/checkout@v2
+        
+      #Preparing Update
+      - name: Before Build
+        run: |
+          mkdir build
+          cd build
+          mkdir bin
+          cd bin
 
       #Check if Update happened with script
       - name: Run Script for Check
@@ -27,9 +35,14 @@ jobs:
       - name: Zip the New Update
         uses: vimtor/action-zip@v1
         with:
-          files: C:\Users\Sven\AppData\Local\yuzu\yuzu-early-access
+          files: build/bin
           dest: yuzu-early-access-EA${{ github.event.head_commit.message }}.zip
           recursive: true
+          
+      #Revert with Script
+      - name: Run Script for Reverting
+        shell: pwsh
+        run: ./revert.ps1
 
       #Publishing to Release
 #      - name: Release to GitHub Releases
