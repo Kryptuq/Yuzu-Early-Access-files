@@ -19,7 +19,7 @@ void DepopPrepareCommand::Dump([[maybe_unused]] const ADSP::CommandListProcessor
 
 void DepopPrepareCommand::Process(const ADSP::CommandListProcessor& processor) {
     auto samples{reinterpret_cast<s32*>(previous_samples)};
-    auto buffer{std::span(reinterpret_cast<s32*>(depop_buffer), buffer_count)};
+    auto buffer{reinterpret_cast<s32*>(depop_buffer)};
 
     for (u32 i = 0; i < buffer_count; i++) {
         if (samples[i]) {

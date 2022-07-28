@@ -40,20 +40,16 @@ void NVFlinger::SplitVSync(std::stop_token stop_token) {
 
     Common::SetCurrentThreadName(name.c_str());
     Common::SetCurrentThreadPriority(Common::ThreadPriority::High);
-    s64 delay = 0;
+
     while (!stop_token.stop_requested()) {
+        vsync_signal.wait(false);
+        vsync_signal.store(false);
+
         guard->lock();
-        const s64 time_start = system.CoreTiming().GetGlobalTimeNs().count();
+
         Compose();
-        const auto ticks = GetNextTicks();
-        const s64 time_end = system.CoreTiming().GetGlobalTimeNs().count();
-        const s64 time_passed = time_end - time_start;
-        const s64 next_time = std::max<s64>(0, ticks - time_passed - delay);
+
         guard->unlock();
-        if (next_time > 0) {
-            std::this_thread::sleep_for(std::chrono::nanoseconds{next_time});
-        }
-        delay = (system.CoreTiming().GetGlobalTimeNs().count() - time_end) - next_time;
     }
 }
 
@@ -68,27 +64,41 @@ NVFlinger::NVFlinger(Core::System& system_, HosBinderDriverServer& hos_binder_dr
     guard = std::make_shared<std::mutex>();
 
     // Schedule the screen composition events
-    composition_event = Core::Timing::CreateEvent(
+    multi_composition_event = Core::Timing::CreateEvent(
+        "ScreenComposition",
+        [this](std::uintptr_t, s64 time,
+               std::chrono::nanoseconds ns_late) -> std::optional<std::chrono::nanoseconds> {
+            vsync_signal.store(true);
+            vsync_signal.notify_all();
+            return std::chrono::nanoseconds(GetNextTicks());
+        });
+
+    single_composition_event = Core::Timing::CreateEvent(
         "ScreenComposition",
         [this](std::uintptr_t, s64 time,
                std::chrono::nanoseconds ns_late) -> std::optional<std::chrono::nanoseconds> {
             const auto lock_guard = Lock();
             Compose();
 
-            return std::max(std::chrono::nanoseconds::zero(),
-                            std::chrono::nanoseconds(GetNextTicks()) - ns_late);
+            return std::chrono::nanoseconds(GetNextTicks());
         });
 
     if (system.IsMulticore()) {
+        system.CoreTiming().ScheduleLoopingEvent(frame_ns, frame_ns, multi_composition_event);
         vsync_thread = std::jthread([this](std::stop_token token) { SplitVSync(token); });
     } else {
-        system.CoreTiming().ScheduleLoopingEvent(frame_ns, frame_ns, composition_event);
+        system.CoreTiming().ScheduleLoopingEvent(frame_ns, frame_ns, single_composition_event);
     }
 }
 
 NVFlinger::~NVFlinger() {
-    if (!system.IsMulticore()) {
-        system.CoreTiming().UnscheduleEvent(composition_event, 0);
+    if (system.IsMulticore()) {
+        system.CoreTiming().UnscheduleEvent(multi_composition_event, {});
+        vsync_thread.request_stop();
+        vsync_signal.store(true);
+        vsync_signal.notify_all();
+    } else {
+        system.CoreTiming().UnscheduleEvent(single_composition_event, {});
     }
 
     for (auto& display : displays) {

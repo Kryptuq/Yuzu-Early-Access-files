@@ -243,16 +243,16 @@ std::optional<s64> CoreTiming::Advance() {
             basic_lock.lock();
 
             if (evt.reschedule_time != 0) {
-                // If this event was scheduled into a pause, its time now is going to be way behind.
-                // Re-set this event to continue from the end of the pause.
-                auto next_time{evt.time + evt.reschedule_time};
-                if (evt.time < pause_end_time) {
-                    next_time = pause_end_time + evt.reschedule_time;
-                }
-
                 const auto next_schedule_time{new_schedule_time.has_value()
                                                   ? new_schedule_time.value().count()
                                                   : evt.reschedule_time};
+
+                // If this event was scheduled into a pause, its time now is going to be way behind.
+                // Re-set this event to continue from the end of the pause.
+                auto next_time{evt.time + next_schedule_time};
+                if (evt.time < pause_end_time) {
+                    next_time = pause_end_time + next_schedule_time;
+                }
 
                 event_queue.emplace_back(
                     Event{next_time, event_fifo_id++, evt.user_data, evt.type, next_schedule_time});
@@ -264,8 +264,7 @@ std::optional<s64> CoreTiming::Advance() {
     }
 
     if (!event_queue.empty()) {
-        const s64 next_time = event_queue.front().time - global_timer;
-        return next_time;
+        return event_queue.front().time;
     } else {
         return std::nullopt;
     }
@@ -278,11 +277,28 @@ void CoreTiming::ThreadLoop() {
             paused_set = false;
             const auto next_time = Advance();
             if (next_time) {
-                if (*next_time > 0) {
-                    std::chrono::nanoseconds next_time_ns = std::chrono::nanoseconds(*next_time);
-                    event.WaitFor(next_time_ns);
+                // There are more events left in the queue, sleep until the next event.
+                const auto diff_ns{*next_time - GetGlobalTimeNs().count()};
+                if (diff_ns > 0) {
+                    // Only try to sleep if the remaining time is >= 1ms. Take off 500 microseconds
+                    // from the target time to account for possible over-sleeping, and spin the
+                    // remaining.
+                    const auto sleep_time_ns{diff_ns - 500LL * 1'000LL};
+                    const auto sleep_time_ms{sleep_time_ns / 1'000'000LL};
+                    if (sleep_time_ms >= 1) {
+                        event.WaitFor(std::chrono::nanoseconds(sleep_time_ns));
+                    }
+
+                    const auto end_time{std::chrono::nanoseconds(*next_time)};
+                    while (!paused && !event.IsSet() && GetGlobalTimeNs() < end_time) {
+                    }
+
+                    if (event.IsSet()) {
+                        event.Reset();
+                    }
                 }
             } else {
+                // Queue is empty, wait until another event is scheduled and signals us to continue.
                 wait_set = true;
                 event.Wait();
             }

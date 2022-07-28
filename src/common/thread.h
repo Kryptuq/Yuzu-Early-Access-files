@@ -54,6 +54,10 @@ public:
         is_set = false;
     }
 
+    [[nodiscard]] bool IsSet() {
+        return is_set;
+    }
+
 private:
     std::condition_variable condvar;
     std::mutex mutex;

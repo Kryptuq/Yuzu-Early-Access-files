@@ -1077,12 +1077,26 @@ void GMainWindow::InitializeHotkeys() {
                      [] { Settings::values.audio_muted = !Settings::values.audio_muted; });
     connect_shortcut(QStringLiteral("Audio Volume Down"), [] {
         const auto current_volume = static_cast<int>(Settings::values.volume.GetValue());
-        const auto new_volume = std::max(current_volume - 5, 0);
+        int step = 5;
+        if (current_volume <= 30) {
+            step = 2;
+        }
+        if (current_volume <= 6) {
+            step = 1;
+        }
+        const auto new_volume = std::max(current_volume - step, 0);
         Settings::values.volume.SetValue(static_cast<u8>(new_volume));
     });
     connect_shortcut(QStringLiteral("Audio Volume Up"), [] {
         const auto current_volume = static_cast<int>(Settings::values.volume.GetValue());
-        const auto new_volume = std::min(current_volume + 5, 100);
+        int step = 5;
+        if (current_volume < 30) {
+            step = 2;
+        }
+        if (current_volume < 6) {
+            step = 1;
+        }
+        const auto new_volume = std::min(current_volume + step, 100);
         Settings::values.volume.SetValue(static_cast<u8>(new_volume));
     });
     connect_shortcut(QStringLiteral("Toggle Framerate Limit"), [] {

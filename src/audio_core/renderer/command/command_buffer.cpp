@@ -339,7 +339,7 @@ void CommandBuffer::GenerateDepopPrepareCommand(const s32 node_id, const VoiceSt
     cmd.previous_samples = memory_pool->Translate(CpuAddr(voice_state.previous_samples.data()),
                                                   MaxMixBuffers * sizeof(s32));
     cmd.buffer_count = buffer_count;
-    cmd.depop_buffer = memory_pool->Translate(CpuAddr(buffer.data()), buffer_count * sizeof(s32));
+    cmd.depop_buffer = memory_pool->Translate(CpuAddr(buffer.data()), buffer.size_bytes());
 
     GenerateEnd<DepopPrepareCommand>(cmd);
 }
