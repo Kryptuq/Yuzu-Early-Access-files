@@ -3977,11 +3977,6 @@ void GMainWindow::UpdateUITheme() {
 }
 
 void GMainWindow::LoadTranslation() {
-    // If the selected language is English, no need to install any translation
-    if (UISettings::values.language == QStringLiteral("en")) {
-        return;
-    }
-
     bool loaded;
 
     if (UISettings::values.language.isEmpty()) {

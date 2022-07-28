@@ -219,6 +219,7 @@ void ConfigureUi::InitializeLanguageComboBox() {
     for (const auto& lang : languages) {
         if (QString::fromLatin1(lang.id) == QStringLiteral("en")) {
             ui->language_combobox->addItem(lang.name, QStringLiteral("en"));
+            language_files.removeOne(QStringLiteral("en.qm"));
             continue;
         }
         for (int i = 0; i < language_files.size(); ++i) {

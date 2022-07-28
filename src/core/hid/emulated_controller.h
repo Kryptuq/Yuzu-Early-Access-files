@@ -433,6 +433,7 @@ private:
 
     const NpadIdType npad_id_type;
     NpadStyleIndex npad_type{NpadStyleIndex::None};
+    NpadStyleIndex original_npad_type{NpadStyleIndex::None};
     NpadStyleTag supported_style_tag{NpadStyleSet::All};
     bool is_connected{false};
     bool is_configuring{false};

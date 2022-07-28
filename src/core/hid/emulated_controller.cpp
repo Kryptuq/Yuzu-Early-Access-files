@@ -99,8 +99,10 @@ void EmulatedController::ReloadFromSettings() {
     // Other or debug controller should always be a pro controller
     if (npad_id_type != NpadIdType::Other) {
         SetNpadStyleIndex(MapSettingsTypeToNPad(player.controller_type));
+        original_npad_type = npad_type;
     } else {
         SetNpadStyleIndex(NpadStyleIndex::ProController);
+        original_npad_type = npad_type;
     }
 
     if (player.connected) {
@@ -352,6 +354,7 @@ void EmulatedController::DisableConfiguration() {
             Disconnect();
         }
         SetNpadStyleIndex(tmp_npad_type);
+        original_npad_type = tmp_npad_type;
     }
 
     // Apply temporary connected status to the real controller
@@ -999,16 +1002,46 @@ void EmulatedController::SetSupportedNpadStyleTag(NpadStyleTag supported_styles)
     if (!is_connected) {
         return;
     }
+
+    // Attempt to reconnect with the original type
+    if (npad_type != original_npad_type) {
+        Disconnect();
+        const auto current_npad_type = npad_type;
+        SetNpadStyleIndex(original_npad_type);
+        if (IsControllerSupported()) {
+            Connect();
+            return;
+        }
+        SetNpadStyleIndex(current_npad_type);
+        Connect();
+    }
+
     if (IsControllerSupported()) {
         return;
     }
 
     Disconnect();
 
-    // Fallback fullkey controllers to Pro controllers
+    // Fallback Fullkey controllers to Pro controllers
     if (IsControllerFullkey() && supported_style_tag.fullkey) {
         LOG_WARNING(Service_HID, "Reconnecting controller type {} as Pro controller", npad_type);
         SetNpadStyleIndex(NpadStyleIndex::ProController);
+        Connect();
+        return;
+    }
+
+    // Fallback Dual joycon controllers to Pro controllers
+    if (npad_type == NpadStyleIndex::JoyconDual && supported_style_tag.fullkey) {
+        LOG_WARNING(Service_HID, "Reconnecting controller type {} as Pro controller", npad_type);
+        SetNpadStyleIndex(NpadStyleIndex::ProController);
+        Connect();
+        return;
+    }
+
+    // Fallback Pro controllers to Dual joycon
+    if (npad_type == NpadStyleIndex::ProController && supported_style_tag.joycon_dual) {
+        LOG_WARNING(Service_HID, "Reconnecting controller type {} as Dual Joycons", npad_type);
+        SetNpadStyleIndex(NpadStyleIndex::JoyconDual);
         Connect();
         return;
     }
