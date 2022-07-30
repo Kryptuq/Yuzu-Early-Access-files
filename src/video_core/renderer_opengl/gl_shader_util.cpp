@@ -17,6 +17,8 @@ static OGLProgram LinkSeparableProgram(GLuint shader) {
     glProgramParameteri(program.handle, GL_PROGRAM_SEPARABLE, GL_TRUE);
     glAttachShader(program.handle, shader);
     glLinkProgram(program.handle);
+    glDetachShader(program.handle, shader);
+    glDeleteShader(shader);
     if (!Settings::values.renderer_debug) {
         return program;
     }
