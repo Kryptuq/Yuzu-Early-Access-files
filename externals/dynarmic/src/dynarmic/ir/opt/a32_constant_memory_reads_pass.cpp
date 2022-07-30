@@ -13,13 +13,6 @@ namespace Dynarmic::Optimization {
 void A32ConstantMemoryReads(IR::Block& block, A32::UserCallbacks* cb) {
     for (auto& inst : block) {
         switch (inst.GetOpcode()) {
-        case IR::Opcode::A32SetCFlag: {
-            const IR::Value arg = inst.GetArg(0);
-            if (!arg.IsImmediate() && arg.GetInst()->GetOpcode() == IR::Opcode::A32GetCFlag) {
-                inst.Invalidate();
-            }
-            break;
-        }
         case IR::Opcode::A32ReadMemory8: {
             if (!inst.AreAllArgsImmediates()) {
                 break;

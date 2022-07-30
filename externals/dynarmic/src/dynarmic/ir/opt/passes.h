@@ -26,9 +26,14 @@ struct PolyfillOptions {
     bool operator==(const PolyfillOptions&) const = default;
 };
 
+struct A32GetSetEliminationOptions {
+    bool convert_nzc_to_nz = false;
+    bool convert_nz_to_nzc = false;
+};
+
 void PolyfillPass(IR::Block& block, const PolyfillOptions& opt);
 void A32ConstantMemoryReads(IR::Block& block, A32::UserCallbacks* cb);
-void A32GetSetElimination(IR::Block& block);
+void A32GetSetElimination(IR::Block& block, A32GetSetEliminationOptions opt);
 void A64CallbackConfigPass(IR::Block& block, const A64::UserConfig& conf);
 void A64GetSetElimination(IR::Block& block);
 void A64MergeInterpretBlocksPass(IR::Block& block, A64::UserCallbacks* cb);

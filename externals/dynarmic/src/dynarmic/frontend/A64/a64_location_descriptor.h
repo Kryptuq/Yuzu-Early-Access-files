@@ -6,9 +6,10 @@
 #pragma once
 
 #include <functional>
-#include <iosfwd>
+#include <string>
 #include <tuple>
 
+#include <fmt/format.h>
 #include <mcl/bit/bit_field.hpp>
 #include <mcl/stdint.hpp>
 
@@ -84,10 +85,9 @@ private:
 /**
  * Provides a string representation of a LocationDescriptor.
  *
- * @param o          Output stream
  * @param descriptor The descriptor to get a string representation of
  */
-std::ostream& operator<<(std::ostream& o, const LocationDescriptor& descriptor);
+std::string ToString(const LocationDescriptor& descriptor);
 
 }  // namespace Dynarmic::A64
 
@@ -105,3 +105,11 @@ struct hash<Dynarmic::A64::LocationDescriptor> {
     }
 };
 }  // namespace std
+
+template<>
+struct fmt::formatter<Dynarmic::A64::LocationDescriptor> : fmt::formatter<std::string> {
+    template<typename FormatContext>
+    auto format(Dynarmic::A64::LocationDescriptor descriptor, FormatContext& ctx) const {
+        return formatter<std::string>::format(Dynarmic::A64::ToString(descriptor), ctx);
+    }
+};

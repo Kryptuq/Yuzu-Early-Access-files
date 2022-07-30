@@ -211,7 +211,7 @@ static void RunTestInstance(Dynarmic::A64::Jit& jit, A64Unicorn& uni, A64TestEnv
             fmt::print("{:3s}: {:016x}\n", A64::RegToString(static_cast<A64::Reg>(i)), regs[i]);
         }
         for (size_t i = 0; i < vecs.size(); ++i) {
-            fmt::print("{:3s}: {}{}\n", A64::VecToString(static_cast<A64::Vec>(i)), vecs[i][1], vecs[i][0]);
+            fmt::print("{:3s}: {:016x}{:016x}\n", A64::VecToString(static_cast<A64::Vec>(i)), vecs[i][1], vecs[i][0]);
         }
         fmt::print("sp : {:016x}\n", initial_sp);
         fmt::print("pc : {:016x}\n", instructions_start);

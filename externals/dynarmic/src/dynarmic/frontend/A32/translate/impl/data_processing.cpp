@@ -181,9 +181,7 @@ bool TranslatorVisitor::arm_AND_imm(Cond cond, bool S, Reg n, Reg d, int rotate,
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(imm_carry.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), imm_carry.carry);
     }
 
     return true;
@@ -210,9 +208,7 @@ bool TranslatorVisitor::arm_AND_reg(Cond cond, bool S, Reg n, Reg d, Imm<5> imm5
     }
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(shifted.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), shifted.carry);
     }
 
     return true;
@@ -235,9 +231,7 @@ bool TranslatorVisitor::arm_AND_rsr(Cond cond, bool S, Reg n, Reg d, Reg s, Shif
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(shifted.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), shifted.carry);
     }
 
     return true;
@@ -264,9 +258,7 @@ bool TranslatorVisitor::arm_BIC_imm(Cond cond, bool S, Reg n, Reg d, int rotate,
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(imm_carry.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), imm_carry.carry);
     }
 
     return true;
@@ -294,9 +286,7 @@ bool TranslatorVisitor::arm_BIC_reg(Cond cond, bool S, Reg n, Reg d, Imm<5> imm5
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(shifted.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), shifted.carry);
     }
 
     return true;
@@ -319,9 +309,7 @@ bool TranslatorVisitor::arm_BIC_rsr(Cond cond, bool S, Reg n, Reg d, Reg s, Shif
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(shifted.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), shifted.carry);
     }
 
     return true;
@@ -438,9 +426,7 @@ bool TranslatorVisitor::arm_EOR_imm(Cond cond, bool S, Reg n, Reg d, int rotate,
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(imm_carry.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), imm_carry.carry);
     }
 
     return true;
@@ -468,9 +454,7 @@ bool TranslatorVisitor::arm_EOR_reg(Cond cond, bool S, Reg n, Reg d, Imm<5> imm5
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(shifted.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), shifted.carry);
     }
 
     return true;
@@ -493,9 +477,7 @@ bool TranslatorVisitor::arm_EOR_rsr(Cond cond, bool S, Reg n, Reg d, Reg s, Shif
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(shifted.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), shifted.carry);
     }
 
     return true;
@@ -522,9 +504,7 @@ bool TranslatorVisitor::arm_MOV_imm(Cond cond, bool S, Reg d, int rotate, Imm<8>
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(imm_carry.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), imm_carry.carry);
     }
 
     return true;
@@ -552,9 +532,7 @@ bool TranslatorVisitor::arm_MOV_reg(Cond cond, bool S, Reg d, Imm<5> imm5, Shift
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(shifted.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), shifted.carry);
     }
 
     return true;
@@ -575,9 +553,7 @@ bool TranslatorVisitor::arm_MOV_rsr(Cond cond, bool S, Reg d, Reg s, ShiftType s
     const auto result = shifted.result;
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(shifted.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), shifted.carry);
     }
 
     return true;
@@ -604,9 +580,7 @@ bool TranslatorVisitor::arm_MVN_imm(Cond cond, bool S, Reg d, int rotate, Imm<8>
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(imm_carry.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), imm_carry.carry);
     }
 
     return true;
@@ -634,9 +608,7 @@ bool TranslatorVisitor::arm_MVN_reg(Cond cond, bool S, Reg d, Imm<5> imm5, Shift
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(shifted.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), shifted.carry);
     }
 
     return true;
@@ -659,9 +631,7 @@ bool TranslatorVisitor::arm_MVN_rsr(Cond cond, bool S, Reg d, Reg s, ShiftType s
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(shifted.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), shifted.carry);
     }
 
     return true;
@@ -688,9 +658,7 @@ bool TranslatorVisitor::arm_ORR_imm(Cond cond, bool S, Reg n, Reg d, int rotate,
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(imm_carry.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), imm_carry.carry);
     }
 
     return true;
@@ -718,9 +686,7 @@ bool TranslatorVisitor::arm_ORR_reg(Cond cond, bool S, Reg n, Reg d, Imm<5> imm5
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(shifted.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), shifted.carry);
     }
 
     return true;
@@ -743,9 +709,7 @@ bool TranslatorVisitor::arm_ORR_rsr(Cond cond, bool S, Reg n, Reg d, Reg s, Shif
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(shifted.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), shifted.carry);
     }
 
     return true;
@@ -1066,9 +1030,7 @@ bool TranslatorVisitor::arm_TEQ_imm(Cond cond, Reg n, int rotate, Imm<8> imm8) {
     const auto imm_carry = ArmExpandImm_C(rotate, imm8, ir.GetCFlag());
     const auto result = ir.Eor(ir.GetRegister(n), ir.Imm32(imm_carry.imm32));
 
-    ir.SetNFlag(ir.MostSignificantBit(result));
-    ir.SetZFlag(ir.IsZero(result));
-    ir.SetCFlag(imm_carry.carry);
+    ir.SetCpsrNZC(ir.NZFrom(result), imm_carry.carry);
     return true;
 }
 
@@ -1082,9 +1044,7 @@ bool TranslatorVisitor::arm_TEQ_reg(Cond cond, Reg n, Imm<5> imm5, ShiftType shi
     const auto shifted = EmitImmShift(ir.GetRegister(m), shift, imm5, carry_in);
     const auto result = ir.Eor(ir.GetRegister(n), shifted.result);
 
-    ir.SetNFlag(ir.MostSignificantBit(result));
-    ir.SetZFlag(ir.IsZero(result));
-    ir.SetCFlag(shifted.carry);
+    ir.SetCpsrNZC(ir.NZFrom(result), shifted.carry);
     return true;
 }
 
@@ -1103,9 +1063,7 @@ bool TranslatorVisitor::arm_TEQ_rsr(Cond cond, Reg n, Reg s, ShiftType shift, Re
     const auto shifted = EmitRegShift(ir.GetRegister(m), shift, shift_n, carry_in);
     const auto result = ir.Eor(ir.GetRegister(n), shifted.result);
 
-    ir.SetNFlag(ir.MostSignificantBit(result));
-    ir.SetZFlag(ir.IsZero(result));
-    ir.SetCFlag(shifted.carry);
+    ir.SetCpsrNZC(ir.NZFrom(result), shifted.carry);
     return true;
 }
 
@@ -1118,9 +1076,7 @@ bool TranslatorVisitor::arm_TST_imm(Cond cond, Reg n, int rotate, Imm<8> imm8) {
     const auto imm_carry = ArmExpandImm_C(rotate, imm8, ir.GetCFlag());
     const auto result = ir.And(ir.GetRegister(n), ir.Imm32(imm_carry.imm32));
 
-    ir.SetNFlag(ir.MostSignificantBit(result));
-    ir.SetZFlag(ir.IsZero(result));
-    ir.SetCFlag(imm_carry.carry);
+    ir.SetCpsrNZC(ir.NZFrom(result), imm_carry.carry);
     return true;
 }
 
@@ -1134,9 +1090,7 @@ bool TranslatorVisitor::arm_TST_reg(Cond cond, Reg n, Imm<5> imm5, ShiftType shi
     const auto shifted = EmitImmShift(ir.GetRegister(m), shift, imm5, carry_in);
     const auto result = ir.And(ir.GetRegister(n), shifted.result);
 
-    ir.SetNFlag(ir.MostSignificantBit(result));
-    ir.SetZFlag(ir.IsZero(result));
-    ir.SetCFlag(shifted.carry);
+    ir.SetCpsrNZC(ir.NZFrom(result), shifted.carry);
     return true;
 }
 
@@ -1155,9 +1109,7 @@ bool TranslatorVisitor::arm_TST_rsr(Cond cond, Reg n, Reg s, ShiftType shift, Re
     const auto shifted = EmitRegShift(ir.GetRegister(m), shift, shift_n, carry_in);
     const auto result = ir.And(ir.GetRegister(n), shifted.result);
 
-    ir.SetNFlag(ir.MostSignificantBit(result));
-    ir.SetZFlag(ir.IsZero(result));
-    ir.SetCFlag(shifted.carry);
+    ir.SetCpsrNZC(ir.NZFrom(result), shifted.carry);
     return true;
 }
 

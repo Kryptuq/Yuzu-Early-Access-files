@@ -73,8 +73,4 @@ std::string GetNameOf(Opcode op) {
     return OpcodeInfo::opcode_info.at(static_cast<size_t>(op)).name;
 }
 
-std::ostream& operator<<(std::ostream& o, Opcode opcode) {
-    return o << GetNameOf(opcode);
-}
-
 }  // namespace Dynarmic::IR

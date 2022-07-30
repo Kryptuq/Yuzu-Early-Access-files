@@ -7,7 +7,6 @@
 
 #include <algorithm>
 
-#include <fmt/ostream.h>
 #include <mcl/assert.hpp>
 
 #include "dynarmic/ir/opcodes.h"
@@ -176,10 +175,8 @@ bool Inst::WritesToCPSR() const {
     case Opcode::A32SetCpsrNZCVRaw:
     case Opcode::A32SetCpsrNZCV:
     case Opcode::A32SetCpsrNZCVQ:
-    case Opcode::A32SetNFlag:
-    case Opcode::A32SetZFlag:
-    case Opcode::A32SetCFlag:
-    case Opcode::A32SetVFlag:
+    case Opcode::A32SetCpsrNZ:
+    case Opcode::A32SetCpsrNZC:
     case Opcode::A32OrQFlag:
     case Opcode::A32SetGEFlags:
     case Opcode::A32SetGEFlagsCompressed:
@@ -546,8 +543,12 @@ bool Inst::IsAPseudoOperation() const {
     case Opcode::GetOverflowFromOp:
     case Opcode::GetGEFromOp:
     case Opcode::GetNZCVFromOp:
+    case Opcode::GetNZFromOp:
     case Opcode::GetUpperFromOp:
     case Opcode::GetLowerFromOp:
+    case Opcode::MostSignificantBit:
+    case Opcode::IsZero32:
+    case Opcode::IsZero64:
         return true;
 
     default:
@@ -583,40 +584,19 @@ bool Inst::AreAllArgsImmediates() const {
 }
 
 bool Inst::HasAssociatedPseudoOperation() const {
-    return carry_inst
-        || overflow_inst
-        || ge_inst
-        || nzcv_inst
-        || upper_inst
-        || lower_inst;
+    return next_pseudoop && !IsAPseudoOperation();
 }
 
 Inst* Inst::GetAssociatedPseudoOperation(Opcode opcode) {
-    // This is faster than doing a search through the block.
-    switch (opcode) {
-    case Opcode::GetCarryFromOp:
-        ASSERT(!carry_inst || carry_inst->GetOpcode() == Opcode::GetCarryFromOp);
-        return carry_inst;
-    case Opcode::GetOverflowFromOp:
-        ASSERT(!overflow_inst || overflow_inst->GetOpcode() == Opcode::GetOverflowFromOp);
-        return overflow_inst;
-    case Opcode::GetGEFromOp:
-        ASSERT(!ge_inst || ge_inst->GetOpcode() == Opcode::GetGEFromOp);
-        return ge_inst;
-    case Opcode::GetNZCVFromOp:
-        ASSERT(!nzcv_inst || nzcv_inst->GetOpcode() == Opcode::GetNZCVFromOp);
-        return nzcv_inst;
-    case Opcode::GetUpperFromOp:
-        ASSERT(!upper_inst || upper_inst->GetOpcode() == Opcode::GetUpperFromOp);
-        return upper_inst;
-    case Opcode::GetLowerFromOp:
-        ASSERT(!lower_inst || lower_inst->GetOpcode() == Opcode::GetLowerFromOp);
-        return lower_inst;
-    default:
-        break;
+    Inst* pseudoop = next_pseudoop;
+    while (pseudoop) {
+        if (pseudoop->GetOpcode() == opcode) {
+            ASSERT(pseudoop->GetArg(0).GetInst() == this);
+            return pseudoop;
+        }
+        pseudoop = pseudoop->next_pseudoop;
     }
-
-    ASSERT_FALSE("Not a valid pseudo-operation");
+    return nullptr;
 }
 
 Type Inst::GetType() const {
@@ -679,67 +659,31 @@ void Inst::ReplaceUsesWith(Value replacement) {
 void Inst::Use(const Value& value) {
     value.GetInst()->use_count++;
 
-    switch (op) {
-    case Opcode::GetCarryFromOp:
-        ASSERT_MSG(!value.GetInst()->carry_inst, "Only one of each type of pseudo-op allowed");
-        value.GetInst()->carry_inst = this;
-        break;
-    case Opcode::GetOverflowFromOp:
-        ASSERT_MSG(!value.GetInst()->overflow_inst, "Only one of each type of pseudo-op allowed");
-        value.GetInst()->overflow_inst = this;
-        break;
-    case Opcode::GetGEFromOp:
-        ASSERT_MSG(!value.GetInst()->ge_inst, "Only one of each type of pseudo-op allowed");
-        value.GetInst()->ge_inst = this;
-        break;
-    case Opcode::GetNZCVFromOp:
-        ASSERT_MSG(!value.GetInst()->nzcv_inst, "Only one of each type of pseudo-op allowed");
-        ASSERT_MSG(value.GetInst()->MayGetNZCVFromOp(), "This value doesn't support the GetNZCVFromOp pseduo-op");
-        value.GetInst()->nzcv_inst = this;
-        break;
-    case Opcode::GetUpperFromOp:
-        ASSERT_MSG(!value.GetInst()->upper_inst, "Only one of each type of pseudo-op allowed");
-        value.GetInst()->upper_inst = this;
-        break;
-    case Opcode::GetLowerFromOp:
-        ASSERT_MSG(!value.GetInst()->lower_inst, "Only one of each type of pseudo-op allowed");
-        value.GetInst()->lower_inst = this;
-        break;
-    default:
-        break;
+    if (IsAPseudoOperation()) {
+        if (op == Opcode::GetNZCVFromOp) {
+            ASSERT_MSG(value.GetInst()->MayGetNZCVFromOp(), "This value doesn't support the GetNZCVFromOp pseduo-op");
+        }
+
+        Inst* insert_point = value.GetInst();
+        while (insert_point->next_pseudoop) {
+            insert_point = insert_point->next_pseudoop;
+            DEBUG_ASSERT(insert_point->GetArg(0).GetInst() == value.GetInst());
+        }
+        insert_point->next_pseudoop = this;
     }
 }
 
 void Inst::UndoUse(const Value& value) {
     value.GetInst()->use_count--;
 
-    switch (op) {
-    case Opcode::GetCarryFromOp:
-        ASSERT(value.GetInst()->carry_inst->GetOpcode() == Opcode::GetCarryFromOp);
-        value.GetInst()->carry_inst = nullptr;
-        break;
-    case Opcode::GetOverflowFromOp:
-        ASSERT(value.GetInst()->overflow_inst->GetOpcode() == Opcode::GetOverflowFromOp);
-        value.GetInst()->overflow_inst = nullptr;
-        break;
-    case Opcode::GetGEFromOp:
-        ASSERT(value.GetInst()->ge_inst->GetOpcode() == Opcode::GetGEFromOp);
-        value.GetInst()->ge_inst = nullptr;
-        break;
-    case Opcode::GetNZCVFromOp:
-        ASSERT(value.GetInst()->nzcv_inst->GetOpcode() == Opcode::GetNZCVFromOp);
-        value.GetInst()->nzcv_inst = nullptr;
-        break;
-    case Opcode::GetUpperFromOp:
-        ASSERT(value.GetInst()->upper_inst->GetOpcode() == Opcode::GetUpperFromOp);
-        value.GetInst()->upper_inst = nullptr;
-        break;
-    case Opcode::GetLowerFromOp:
-        ASSERT(value.GetInst()->lower_inst->GetOpcode() == Opcode::GetLowerFromOp);
-        value.GetInst()->lower_inst = nullptr;
-        break;
-    default:
-        break;
+    if (IsAPseudoOperation()) {
+        Inst* insert_point = value.GetInst();
+        while (insert_point->next_pseudoop != this) {
+            insert_point = insert_point->next_pseudoop;
+            DEBUG_ASSERT(insert_point->GetArg(0).GetInst() == value.GetInst());
+        }
+        insert_point->next_pseudoop = next_pseudoop;
+        next_pseudoop = nullptr;
     }
 }
 

@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include <iosfwd>
 #include <string>
 
+#include <fmt/format.h>
 #include <mcl/assert.hpp>
 #include <mcl/stdint.hpp>
 
@@ -101,9 +101,6 @@ const char* CondToString(Cond cond);
 std::string RegToString(Reg reg);
 std::string VecToString(Vec vec);
 
-std::ostream& operator<<(std::ostream& o, Reg reg);
-std::ostream& operator<<(std::ostream& o, Vec vec);
-
 constexpr size_t RegNumber(Reg reg) {
     return static_cast<size_t>(reg);
 }
@@ -127,3 +124,19 @@ inline Vec operator+(Vec vec, size_t number) {
 }
 
 }  // namespace Dynarmic::A64
+
+template<>
+struct fmt::formatter<Dynarmic::A64::Reg> : fmt::formatter<std::string> {
+    template<typename FormatContext>
+    auto format(Dynarmic::A64::Reg reg, FormatContext& ctx) const {
+        return formatter<std::string>::format(Dynarmic::A64::RegToString(reg), ctx);
+    }
+};
+
+template<>
+struct fmt::formatter<Dynarmic::A64::Vec> : fmt::formatter<std::string> {
+    template<typename FormatContext>
+    auto format(Dynarmic::A64::Vec vec, FormatContext& ctx) const {
+        return formatter<std::string>::format(Dynarmic::A64::VecToString(vec), ctx);
+    }
+};

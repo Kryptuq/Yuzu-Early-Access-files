@@ -39,7 +39,7 @@ public:
     template <typename Arg>
     void Push(Arg&& t) {
         // create the element, add it to the queue
-        write_ptr->current = std::forward<Arg>(t);
+        write_ptr->current = std::move(t);
         // set the next pointer to a new element ptr
         // then advance the write pointer
         ElementPtr* new_ptr = new ElementPtr();

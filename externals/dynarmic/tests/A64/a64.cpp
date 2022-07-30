@@ -1179,3 +1179,23 @@ TEST_CASE("A64: Memory access (fastmem)", "[a64]") {
     jit.Run();
     REQUIRE(strncmp(backing_memory + 0x100, backing_memory + 0x1F0, 23) == 0);
 }
+
+TEST_CASE("A64: SQRDMULH QC flag when output invalidated", "[a64]") {
+    A64TestEnv env;
+    A64::Jit jit{A64::UserConfig{&env}};
+
+    env.code_mem.emplace_back(0x0fbcd38b);  // SQRDMULH.2S V11, V28, V28[1]
+    env.code_mem.emplace_back(0x7ef0f8eb);  // FMINP.2D    D11, V7
+    env.code_mem.emplace_back(0x14000000);  // B .
+
+    jit.SetPC(0);
+    jit.SetVector(7, {0xb1b5'd0b1'4e54'e281, 0xb4cb'4fec'8563'1032});
+    jit.SetVector(28, {0x8000'0000'0000'0000, 0x0000'0000'0000'0000});
+    jit.SetFpcr(0x05400000);
+
+    env.ticks_left = 3;
+    jit.Run();
+
+    REQUIRE(jit.GetFpsr() == 0x08000000);
+    REQUIRE(jit.GetVector(11) == Vector{0xb4cb'4fec'8563'1032, 0x0000'0000'0000'0000});
+}

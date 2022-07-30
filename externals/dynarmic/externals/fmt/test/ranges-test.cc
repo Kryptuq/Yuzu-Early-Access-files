@@ -21,7 +21,7 @@
 #  define FMT_RANGES_TEST_ENABLE_C_STYLE_ARRAY
 #endif
 
-#if !FMT_MSC_VER || FMT_MSC_VER > 1910
+#if !FMT_MSC_VERSION || FMT_MSC_VERSION > 1910
 #  define FMT_RANGES_TEST_ENABLE_JOIN
 #  define FMT_RANGES_TEST_ENABLE_FORMAT_STRUCT
 #endif
@@ -46,11 +46,13 @@ TEST(ranges_test, format_array_of_literals) {
 TEST(ranges_test, format_vector) {
   auto v = std::vector<int>{1, 2, 3, 5, 7, 11};
   EXPECT_EQ(fmt::format("{}", v), "[1, 2, 3, 5, 7, 11]");
+  EXPECT_EQ(fmt::format("{::#x}", v), "[0x1, 0x2, 0x3, 0x5, 0x7, 0xb]");
 }
 
 TEST(ranges_test, format_vector2) {
   auto v = std::vector<std::vector<int>>{{1, 2}, {3, 5}, {7, 11}};
   EXPECT_EQ(fmt::format("{}", v), "[[1, 2], [3, 5], [7, 11]]");
+  EXPECT_EQ(fmt::format("{:::#x}", v), "[[0x1, 0x2], [0x3, 0x5], [0x7, 0xb]]");
 }
 
 TEST(ranges_test, format_map) {
@@ -63,16 +65,42 @@ TEST(ranges_test, format_set) {
             "{\"one\", \"two\"}");
 }
 
+namespace adl {
+struct box {
+  int value;
+};
+
+auto begin(const box& b) -> const int* { return &b.value; }
+
+auto end(const box& b) -> const int* { return &b.value + 1; }
+}  // namespace adl
+
+TEST(ranges_test, format_adl_begin_end) {
+  auto b = adl::box{42};
+  EXPECT_EQ(fmt::format("{}", b), "[42]");
+}
+
 TEST(ranges_test, format_pair) {
   auto p = std::pair<int, float>(42, 1.5f);
   EXPECT_EQ(fmt::format("{}", p), "(42, 1.5)");
 }
+
+struct unformattable {};
 
 TEST(ranges_test, format_tuple) {
   auto t =
       std::tuple<int, float, std::string, char>(42, 1.5f, "this is tuple", 'i');
   EXPECT_EQ(fmt::format("{}", t), "(42, 1.5, \"this is tuple\", 'i')");
   EXPECT_EQ(fmt::format("{}", std::tuple<>()), "()");
+
+  EXPECT_TRUE((fmt::is_formattable<std::tuple<>>::value));
+  EXPECT_FALSE((fmt::is_formattable<unformattable>::value));
+  EXPECT_FALSE((fmt::is_formattable<std::tuple<unformattable>>::value));
+  EXPECT_FALSE((fmt::is_formattable<std::tuple<unformattable, int>>::value));
+  EXPECT_FALSE((fmt::is_formattable<std::tuple<int, unformattable>>::value));
+  EXPECT_FALSE(
+      (fmt::is_formattable<std::tuple<unformattable, unformattable>>::value));
+  EXPECT_TRUE((fmt::is_formattable<std::tuple<int, float>>::value));
 }
 
 #ifdef FMT_RANGES_TEST_ENABLE_FORMAT_STRUCT
@@ -131,8 +159,8 @@ TEST(ranges_test, path_like) {
 struct string_like {
   const char* begin();
   const char* end();
-  explicit operator fmt::string_view() const { return "foo"; }
-  explicit operator std::string_view() const { return "foo"; }
+  operator fmt::string_view() const { return "foo"; }
+  operator std::string_view() const { return "foo"; }
 };
 
 TEST(ranges_test, format_string_like) {
@@ -196,14 +224,14 @@ TEST(ranges_test, range) {
 }
 
 enum test_enum { foo };
+auto format_as(test_enum e) -> int { return e; }
 
 TEST(ranges_test, enum_range) {
   auto v = std::vector<test_enum>{test_enum::foo};
   EXPECT_EQ(fmt::format("{}", v), "[0]");
 }
 
-#if !FMT_MSC_VER
-struct unformattable {};
+#if !FMT_MSC_VERSION
 
 TEST(ranges_test, unformattable_range) {
   EXPECT_FALSE((fmt::has_formatter<std::vector<unformattable>,
@@ -296,6 +324,7 @@ static_assert(std::input_iterator<cpp20_only_range::iterator>);
 TEST(ranges_test, join_sentinel) {
   auto hello = zstring{"hello"};
   EXPECT_EQ(fmt::format("{}", hello), "['h', 'e', 'l', 'l', 'o']");
+  EXPECT_EQ(fmt::format("{::}", hello), "[h, e, l, l, o]");
   EXPECT_EQ(fmt::format("{}", fmt::join(hello, "_")), "h_e_l_l_o");
 }
 
@@ -348,6 +377,7 @@ TEST(ranges_test, escape_string) {
     EXPECT_EQ(fmt::format("{}", vec{"\xf0\xaa\x9b\x9e"}), "[\"\\U0002a6de\"]");
     EXPECT_EQ(fmt::format("{}", vec{"\xf4\x8f\xbf\xc0"}),
               "[\"\\xf4\\x8f\\xbf\\xc0\"]");
+    EXPECT_EQ(fmt::format("{}", vec{"понедельник"}), "[\"понедельник\"]");
   }
 }
 
@@ -361,3 +391,18 @@ TEST(ranges_test, escape_convertible_to_string_view) {
             "[\"foo\"]");
 }
 #endif  // FMT_USE_STRING_VIEW
+
+template <typename R> struct fmt_ref_view {
+  R* r;
+
+  auto begin() const -> decltype(r->begin()) { return r->begin(); }
+  auto end() const -> decltype(r->end()) { return r->end(); }
+};
+
+TEST(ranges_test, range_of_range_of_mixed_const) {
+  std::vector<std::vector<int>> v = {{1, 2, 3}, {4, 5}};
+  EXPECT_EQ(fmt::format("{}", v), "[[1, 2, 3], [4, 5]]");
+
+  fmt_ref_view<decltype(v)> r{&v};
+  EXPECT_EQ(fmt::format("{}", r), "[[1, 2, 3], [4, 5]]");
+}

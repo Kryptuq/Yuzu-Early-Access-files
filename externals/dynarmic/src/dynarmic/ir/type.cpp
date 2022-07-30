@@ -43,8 +43,4 @@ bool AreTypesCompatible(Type t1, Type t2) {
     return t1 == t2 || t1 == Type::Opaque || t2 == Type::Opaque;
 }
 
-std::ostream& operator<<(std::ostream& o, Type type) {
-    return o << GetNameOf(type);
-}
-
 }  // namespace Dynarmic::IR

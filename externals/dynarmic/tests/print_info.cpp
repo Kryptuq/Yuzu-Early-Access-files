@@ -64,7 +64,7 @@ void PrintA32Instruction(u32 instruction) {
     fmt::print("IR:\n");
     fmt::print("{}\n", IR::DumpBlock(block));
 
-    Optimization::A32GetSetElimination(block);
+    Optimization::A32GetSetElimination(block, {});
     Optimization::DeadCodeElimination(block);
     Optimization::ConstantPropagation(block);
     Optimization::DeadCodeElimination(block);
@@ -109,7 +109,7 @@ void PrintThumbInstruction(u32 instruction) {
     fmt::print("IR:\n");
     fmt::print("{}\n", IR::DumpBlock(block));
 
-    Optimization::A32GetSetElimination(block);
+    Optimization::A32GetSetElimination(block, {});
     Optimization::DeadCodeElimination(block);
     Optimization::ConstantPropagation(block);
     Optimization::DeadCodeElimination(block);

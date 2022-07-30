@@ -38,9 +38,13 @@ option(YUZU_USE_BUNDLED_OPUS "Compile bundled opus" ON)
 
 option(YUZU_TESTS "Compile tests" ON)
 
-option(YUZU_USE_BUNDLED_VCPKG "Use vcpkg for yuzu dependencies" OFF)
+option(YUZU_USE_BUNDLED_VCPKG "Use vcpkg for yuzu dependencies" "${MSVC}")
 
 if (YUZU_USE_BUNDLED_VCPKG)
+    if (YUZU_TESTS)
+        list(APPEND VCPKG_MANIFEST_FEATURES "yuzu-tests")
+    endif()
+
     include(${CMAKE_SOURCE_DIR}/externals/vcpkg/scripts/buildsystems/vcpkg.cmake)
 elseif(NOT "$ENV{VCPKG_TOOLCHAIN_FILE}" STREQUAL "")
     # Disable manifest mode (use vcpkg classic mode) when using a custom vcpkg installation
@@ -165,7 +169,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 # =======================================================================
 
 find_package(fmt 8.0.1 REQUIRED CONFIG)
-find_package(lz4 1.8 REQUIRED)
 find_package(nlohmann_json 3.8 REQUIRED CONFIG)
 find_package(ZLIB 1.2 REQUIRED)
 
@@ -173,6 +176,12 @@ find_package(ZLIB 1.2 REQUIRED)
 find_package(zstd 1.5 CONFIG)
 if (NOT zstd_FOUND)
     find_package(zstd 1.5 REQUIRED)
+endif()
+
+# lz4 1.8 is required, but vcpkg's lz4-config.cmake does not have version info
+find_package(lz4 CONFIG)
+if (NOT lz4_FOUND)
+    find_package(lz4 1.8 REQUIRED)
 endif()
 
 if (YUZU_TESTS)
@@ -360,16 +369,10 @@ if (ENABLE_SDL2)
     endif()
 endif()
 
-# TODO(lat9nq): Determine what if any of this we still need
-#
-# Reexport some targets that are named differently when using the upstream CmakeConfig vs the generated Conan config
+# Reexport some targets that are named differently when using the upstream CmakeConfig
 # In order to ALIAS targets to a new name, they first need to be IMPORTED_GLOBAL
 # Dynarmic checks for target `boost` and so we want to make sure it can find it through our system instead of using their external
-if (TARGET Boost::Boost)
-    set_target_properties(Boost::Boost PROPERTIES IMPORTED_GLOBAL TRUE)
-    add_library(Boost::boost ALIAS Boost::Boost)
-    add_library(boost ALIAS Boost::Boost)
-elseif (TARGET Boost::boost)
+if (TARGET Boost::boost)
     set_target_properties(Boost::boost PROPERTIES IMPORTED_GLOBAL TRUE)
     add_library(boost ALIAS Boost::boost)
 endif()

@@ -79,6 +79,12 @@ Value::Value(AccType value)
     inner.imm_acctype = value;
 }
 
+Value Value::EmptyNZCVImmediateMarker() {
+    Value result{};
+    result.type = Type::NZCVFlags;
+    return result;
+}
+
 bool Value::IsIdentity() const {
     if (type == Type::Opaque)
         return inner.inst->GetOpcode() == Opcode::Identity;

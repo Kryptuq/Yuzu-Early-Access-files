@@ -31,7 +31,7 @@ enum class ThumbInstSize {
 };
 
 bool IsThumb16(u16 first_part) {
-    return (first_part & 0xF800) < 0xE800;
+    return first_part < 0xE800;
 }
 
 bool IsUnconditionalInstruction(bool is_thumb_16, u32 instruction) {

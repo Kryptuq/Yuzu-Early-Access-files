@@ -4,7 +4,7 @@
 import errno, os, re, sys
 from subprocess import check_call, CalledProcessError, Popen, PIPE, STDOUT
 
-versions = ['1.0.0', '1.1.0', '2.0.0', '3.0.2', '4.0.0', '4.1.0', '5.0.0', '5.1.0', '5.2.0', '5.2.1', '5.3.0', '6.0.0', '6.1.0', '6.1.1', '6.1.2', '6.2.0', '6.2.1', '7.0.0', '7.0.1', '7.0.2', '7.0.3', '7.1.0', '7.1.1', '7.1.2', '7.1.3', '8.0.0', '8.0.1', '8.1.0', '8.1.1']
+versions = ['1.0.0', '1.1.0', '2.0.0', '3.0.2', '4.0.0', '4.1.0', '5.0.0', '5.1.0', '5.2.0', '5.2.1', '5.3.0', '6.0.0', '6.1.0', '6.1.1', '6.1.2', '6.2.0', '6.2.1', '7.0.0', '7.0.1', '7.0.2', '7.0.3', '7.1.0', '7.1.1', '7.1.2', '7.1.3', '8.0.0', '8.0.1', '8.1.0', '8.1.1', '9.0.0']
 
 class Pip:
   def __init__(self, venv_dir):
@@ -28,6 +28,9 @@ def create_build_env(venv_dir='virtualenv'):
   pip.install('six')
   # See: https://github.com/sphinx-doc/sphinx/issues/9777
   pip.install('docutils==0.17.1')
+  # Jinja2 >= 3.1 incompatible with sphinx 3.3.0
+  # See: https://github.com/sphinx-doc/sphinx/issues/10291
+  pip.install('Jinja2<3.1')
   pip.install('sphinx-doc/sphinx', 'v3.3.0')
   pip.install('michaeljones/breathe', 'v4.25.0')
 
@@ -65,6 +68,7 @@ def build_docs(version='dev', **kwargs):
                           FMT_USE_RVALUE_REFERENCES=1 \
                           FMT_USE_USER_DEFINED_LITERALS=1 \
                           FMT_USE_ALIAS_TEMPLATES=1 \
+                          FMT_USE_NONTYPE_TEMPLATE_ARGS=1 \
                           FMT_API= \
                           "FMT_BEGIN_NAMESPACE=namespace fmt {{" \
                           "FMT_END_NAMESPACE=}}" \

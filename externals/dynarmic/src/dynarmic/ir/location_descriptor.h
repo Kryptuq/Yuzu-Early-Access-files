@@ -6,8 +6,9 @@
 #pragma once
 
 #include <functional>
-#include <iosfwd>
+#include <string>
 
+#include <fmt/format.h>
 #include <mcl/stdint.hpp>
 
 namespace Dynarmic::IR {
@@ -31,7 +32,7 @@ private:
     u64 value;
 };
 
-std::ostream& operator<<(std::ostream& o, const LocationDescriptor& descriptor);
+std::string ToString(const LocationDescriptor& descriptor);
 
 inline bool operator<(const LocationDescriptor& x, const LocationDescriptor& y) noexcept {
     return x.Value() < y.Value();
@@ -53,3 +54,11 @@ struct hash<Dynarmic::IR::LocationDescriptor> {
     }
 };
 }  // namespace std
+
+template<>
+struct fmt::formatter<Dynarmic::IR::LocationDescriptor> : fmt::formatter<std::string> {
+    template<typename FormatContext>
+    auto format(Dynarmic::IR::LocationDescriptor descriptor, FormatContext& ctx) const {
+        return formatter<std::string>::format(ToString(descriptor), ctx);
+    }
+};

@@ -53,6 +53,8 @@ public:
     explicit Value(Cond value);
     explicit Value(AccType value);
 
+    static Value EmptyNZCVImmediateMarker();
+
     bool IsIdentity() const;
     bool IsEmpty() const;
     bool IsImmediate() const;

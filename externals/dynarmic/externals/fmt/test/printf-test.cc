@@ -11,7 +11,6 @@
 #include <climits>
 #include <cstring>
 
-#include "fmt/ostream.h"
 #include "fmt/xchar.h"
 #include "gtest-extra.h"
 #include "util.h"
@@ -505,6 +504,7 @@ TEST(printf_test, pointer) {
 }
 
 enum test_enum { answer = 42 };
+auto format_as(test_enum e) -> int { return e; }
 
 TEST(printf_test, enum) {
   EXPECT_PRINTF("42", "%d", answer);
@@ -531,10 +531,6 @@ TEST(printf_test, printf_error) {
 
 TEST(printf_test, wide_string) {
   EXPECT_EQ(L"abc", fmt::sprintf(L"%s", L"abc"));
-}
-
-TEST(printf_test, printf_custom) {
-  EXPECT_EQ("abc", test_sprintf("%s", test_string("abc")));
 }
 
 TEST(printf_test, vprintf) {

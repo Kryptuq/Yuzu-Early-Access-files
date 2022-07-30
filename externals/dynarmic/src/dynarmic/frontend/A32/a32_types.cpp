@@ -57,24 +57,4 @@ std::string RegListToString(RegList reg_list) {
     return ret;
 }
 
-std::ostream& operator<<(std::ostream& o, Reg reg) {
-    o << RegToString(reg);
-    return o;
-}
-
-std::ostream& operator<<(std::ostream& o, ExtReg reg) {
-    o << ExtRegToString(reg);
-    return o;
-}
-
-std::ostream& operator<<(std::ostream& o, CoprocReg reg) {
-    o << CoprocRegToString(reg);
-    return o;
-}
-
-std::ostream& operator<<(std::ostream& o, RegList reg_list) {
-    o << RegListToString(reg_list);
-    return o;
-}
-
 }  // namespace Dynarmic::A32

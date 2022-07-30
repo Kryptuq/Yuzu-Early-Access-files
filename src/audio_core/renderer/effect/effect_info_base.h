@@ -419,13 +419,13 @@ protected:
     /// Workbuffers assigned to this effect
     std::array<AddressInfo, 2> workbuffers{AddressInfo(CpuAddr(0), 0), AddressInfo(CpuAddr(0), 0)};
     /// Aux/Capture buffer info for reading
-    CpuAddr send_buffer_info;
+    CpuAddr send_buffer_info{};
     /// Aux/Capture buffer for reading
-    CpuAddr send_buffer;
+    CpuAddr send_buffer{};
     /// Aux/Capture buffer info for writing
-    CpuAddr return_buffer_info;
+    CpuAddr return_buffer_info{};
     /// Aux/Capture buffer for writing
-    CpuAddr return_buffer;
+    CpuAddr return_buffer{};
     /// Parameters of this effect
     std::array<u8, sizeof(InParameterVersion2)> parameter{};
     /// State of this effect used by the AudioRenderer across calls

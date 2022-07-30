@@ -24,9 +24,7 @@ bool ShiftInstruction(TranslatorVisitor& v, Reg m, Reg d, Reg s, bool S, ShiftFu
     const auto result_carry = (v.ir.*shift_fn)(v.ir.GetRegister(m), shift_s, apsr_c);
 
     if (S) {
-        v.ir.SetNFlag(v.ir.MostSignificantBit(result_carry.result));
-        v.ir.SetZFlag(v.ir.IsZero(result_carry.result));
-        v.ir.SetCFlag(result_carry.carry);
+        v.ir.SetCpsrNZC(v.ir.NZFrom(result_carry.result), result_carry.carry);
     }
 
     v.ir.SetRegister(d, result_carry.result);

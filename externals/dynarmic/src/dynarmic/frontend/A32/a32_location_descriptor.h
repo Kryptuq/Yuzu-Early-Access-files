@@ -6,9 +6,10 @@
 #pragma once
 
 #include <functional>
-#include <iosfwd>
+#include <string>
 #include <tuple>
 
+#include <fmt/format.h>
 #include <mcl/stdint.hpp>
 
 #include "dynarmic/frontend/A32/FPSCR.h"
@@ -131,10 +132,9 @@ private:
 /**
  * Provides a string representation of a LocationDescriptor.
  *
- * @param o          Output stream
  * @param descriptor The descriptor to get a string representation of
  */
-std::ostream& operator<<(std::ostream& o, const LocationDescriptor& descriptor);
+std::string ToString(const LocationDescriptor& descriptor);
 
 }  // namespace Dynarmic::A32
 
@@ -152,3 +152,11 @@ struct hash<Dynarmic::A32::LocationDescriptor> {
     }
 };
 }  // namespace std
+
+template<>
+struct fmt::formatter<Dynarmic::A32::LocationDescriptor> : fmt::formatter<std::string> {
+    template<typename FormatContext>
+    auto format(Dynarmic::A32::LocationDescriptor descriptor, FormatContext& ctx) const {
+        return formatter<std::string>::format(Dynarmic::A32::ToString(descriptor), ctx);
+    }
+};

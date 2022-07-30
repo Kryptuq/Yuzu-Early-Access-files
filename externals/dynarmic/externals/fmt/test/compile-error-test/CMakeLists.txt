@@ -6,6 +6,8 @@ project(compile-error-test CXX)
 set(fmt_headers "
   #include <fmt/format.h>
   #include <fmt/xchar.h>
+  #include <fmt/ostream.h>
+  #include <iostream>
 ")
 
 set(error_test_names "")
@@ -154,6 +156,28 @@ expect_compile(format-function-error "
   fmt::format(\"{}\", f);
 " ERROR)
 
+# Formatting an unformattable argument should always be a compile time error
+expect_compile(format-lots-of-arguments-with-unformattable "
+  struct E {};
+  fmt::format(\"\", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, E());
+" ERROR)
+expect_compile(format-lots-of-arguments-with-function "
+  void (*f)();
+  fmt::format(\"\", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, f);
+" ERROR)
+
+# Check if user-defined literals are available
+include(CheckCXXSourceCompiles)
+set(CMAKE_REQUIRED_FLAGS ${CXX_STANDARD_FLAG})
+check_cxx_source_compiles("
+  void operator\"\" _udl(long double);
+  int main() {}"
+  SUPPORTS_USER_DEFINED_LITERALS)
+set(CMAKE_REQUIRED_FLAGS )
+if (NOT SUPPORTS_USER_DEFINED_LITERALS)
+  set (SUPPORTS_USER_DEFINED_LITERALS OFF)
+endif ()
+
 # Make sure that compiler features detected in the header
 # match the features detected in CMake.
 if (SUPPORTS_USER_DEFINED_LITERALS)
@@ -181,16 +205,30 @@ if (CMAKE_CXX_STANDARD GREATER_EQUAL 20)
       #error
     #endif
   " ERROR)
+  expect_compile(print-string-number-spec-error "
+    #ifdef FMT_HAS_CONSTEVAL
+      fmt::print(\"{:d}\", \"I am not a number\");
+    #else
+      #error
+    #endif
+  " ERROR)
+  expect_compile(print-stream-string-number-spec-error "
+  #ifdef FMT_HAS_CONSTEVAL
+    fmt::print(std::cout, \"{:d}\", \"I am not a number\");
+  #else
+    #error
+  #endif
+  " ERROR)
 
   # Compile-time argument name check
   expect_compile(format-string-name "
-    #if defined(FMT_HAS_CONSTEVAL) && FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+    #if defined(FMT_HAS_CONSTEVAL) && FMT_USE_NONTYPE_TEMPLATE_ARGS
       using namespace fmt::literals;
       fmt::print(\"{foo}\", \"foo\"_a=42);
     #endif
   ")
   expect_compile(format-string-name-error "
-    #if defined(FMT_HAS_CONSTEVAL) && FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+    #if defined(FMT_HAS_CONSTEVAL) && FMT_USE_NONTYPE_TEMPLATE_ARGS
       using namespace fmt::literals;
       fmt::print(\"{foo}\", \"bar\"_a=42);
     #else

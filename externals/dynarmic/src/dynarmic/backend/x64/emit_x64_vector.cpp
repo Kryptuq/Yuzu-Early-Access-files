@@ -3829,29 +3829,29 @@ void EmitX64::EmitVectorSignedSaturatedDoublingMultiply16(EmitContext& ctx, IR::
         ctx.EraseInstruction(lower_inst);
     }
 
+    const Xbyak::Xmm upper_result = ctx.reg_alloc.ScratchXmm();
+
+    if (code.HasHostFeature(HostFeature::AVX)) {
+        code.vpsrlw(lower_tmp, lower_tmp, 15);
+        code.vpaddw(upper_tmp, upper_tmp, upper_tmp);
+        code.vpor(upper_result, upper_tmp, lower_tmp);
+        code.vpcmpeqw(upper_tmp, upper_result, code.XmmBConst<16>(xword, 0x8000));
+        code.vpxor(upper_result, upper_result, upper_tmp);
+    } else {
+        code.paddw(upper_tmp, upper_tmp);
+        code.psrlw(lower_tmp, 15);
+        code.movdqa(upper_result, upper_tmp);
+        code.por(upper_result, lower_tmp);
+        code.movdqa(upper_tmp, code.XmmBConst<16>(xword, 0x8000));
+        code.pcmpeqw(upper_tmp, upper_result);
+        code.pxor(upper_result, upper_tmp);
+    }
+
+    const Xbyak::Reg32 bit = ctx.reg_alloc.ScratchGpr().cvt32();
+    code.pmovmskb(bit, upper_tmp);
+    code.or_(code.dword[code.r15 + code.GetJitStateInfo().offsetof_fpsr_qc], bit);
+
     if (upper_inst) {
-        const Xbyak::Xmm upper_result = ctx.reg_alloc.ScratchXmm();
-
-        if (code.HasHostFeature(HostFeature::AVX)) {
-            code.vpsrlw(lower_tmp, lower_tmp, 15);
-            code.vpaddw(upper_tmp, upper_tmp, upper_tmp);
-            code.vpor(upper_result, upper_tmp, lower_tmp);
-            code.vpcmpeqw(upper_tmp, upper_result, code.XmmBConst<16>(xword, 0x8000));
-            code.vpxor(upper_result, upper_result, upper_tmp);
-        } else {
-            code.paddw(upper_tmp, upper_tmp);
-            code.psrlw(lower_tmp, 15);
-            code.movdqa(upper_result, upper_tmp);
-            code.por(upper_result, lower_tmp);
-            code.movdqa(upper_tmp, code.XmmBConst<16>(xword, 0x8000));
-            code.pcmpeqw(upper_tmp, upper_result);
-            code.pxor(upper_result, upper_tmp);
-        }
-
-        const Xbyak::Reg32 bit = ctx.reg_alloc.ScratchGpr().cvt32();
-        code.pmovmskb(bit, upper_tmp);
-        code.or_(code.dword[code.r15 + code.GetJitStateInfo().offsetof_fpsr_qc], bit);
-
         ctx.reg_alloc.DefineValue(upper_inst, upper_result);
         ctx.EraseInstruction(upper_inst);
     }
@@ -3880,23 +3880,23 @@ void EmitX64::EmitVectorSignedSaturatedDoublingMultiply32(EmitContext& ctx, IR::
         code.vpaddq(odds, odds, odds);
         code.vpaddq(even, even, even);
 
+        const Xbyak::Xmm upper_result = ctx.reg_alloc.ScratchXmm();
+
+        code.vpsrlq(upper_result, odds, 32);
+        code.vblendps(upper_result, upper_result, even, 0b1010);
+
+        const Xbyak::Xmm mask = ctx.reg_alloc.ScratchXmm();
+        const Xbyak::Reg32 bit = ctx.reg_alloc.ScratchGpr().cvt32();
+
+        code.vpcmpeqd(mask, upper_result, code.XmmBConst<32>(xword, 0x80000000));
+        code.vpxor(upper_result, upper_result, mask);
+        code.pmovmskb(bit, mask);
+        code.or_(code.dword[code.r15 + code.GetJitStateInfo().offsetof_fpsr_qc], bit);
+
+        ctx.reg_alloc.Release(mask);
+        ctx.reg_alloc.Release(bit);
+
         if (upper_inst) {
-            const Xbyak::Xmm upper_result = ctx.reg_alloc.ScratchXmm();
-
-            code.vpsrlq(upper_result, odds, 32);
-            code.vblendps(upper_result, upper_result, even, 0b1010);
-
-            const Xbyak::Xmm mask = ctx.reg_alloc.ScratchXmm();
-            const Xbyak::Reg32 bit = ctx.reg_alloc.ScratchGpr().cvt32();
-
-            code.vpcmpeqd(mask, upper_result, code.XmmBConst<32>(xword, 0x80000000));
-            code.vpxor(upper_result, upper_result, mask);
-            code.pmovmskb(bit, mask);
-            code.or_(code.dword[code.r15 + code.GetJitStateInfo().offsetof_fpsr_qc], bit);
-
-            ctx.reg_alloc.Release(mask);
-            ctx.reg_alloc.Release(bit);
-
             ctx.reg_alloc.DefineValue(upper_inst, upper_result);
             ctx.EraseInstruction(upper_inst);
         }
@@ -3955,15 +3955,15 @@ void EmitX64::EmitVectorSignedSaturatedDoublingMultiply32(EmitContext& ctx, IR::
     code.por(lower_result, x);
     code.psubd(upper_result, sign_correction);
 
+    const Xbyak::Reg32 bit = ctx.reg_alloc.ScratchGpr().cvt32();
+
+    code.movdqa(tmp, code.XmmBConst<32>(xword, 0x80000000));
+    code.pcmpeqd(tmp, upper_result);
+    code.pxor(upper_result, tmp);
+    code.pmovmskb(bit, tmp);
+    code.or_(code.dword[code.r15 + code.GetJitStateInfo().offsetof_fpsr_qc], bit);
+
     if (upper_inst) {
-        const Xbyak::Reg32 bit = ctx.reg_alloc.ScratchGpr().cvt32();
-
-        code.movdqa(tmp, code.XmmBConst<32>(xword, 0x80000000));
-        code.pcmpeqd(tmp, upper_result);
-        code.pxor(upper_result, tmp);
-        code.pmovmskb(bit, tmp);
-        code.or_(code.dword[code.r15 + code.GetJitStateInfo().offsetof_fpsr_qc], bit);
-
         ctx.reg_alloc.DefineValue(upper_inst, upper_result);
         ctx.EraseInstruction(upper_inst);
     }

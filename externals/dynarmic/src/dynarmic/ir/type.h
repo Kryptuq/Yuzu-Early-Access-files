@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include <iosfwd>
 #include <string>
 
+#include <fmt/format.h>
 #include <mcl/stdint.hpp>
 
 namespace Dynarmic::IR {
@@ -49,6 +49,12 @@ std::string GetNameOf(Type type);
 /// @returns true if t1 and t2 are compatible types
 bool AreTypesCompatible(Type t1, Type t2);
 
-std::ostream& operator<<(std::ostream& o, Type type);
-
 }  // namespace Dynarmic::IR
+
+template<>
+struct fmt::formatter<Dynarmic::IR::Type> : fmt::formatter<std::string> {
+    template<typename FormatContext>
+    auto format(Dynarmic::IR::Type type, FormatContext& ctx) const {
+        return formatter<std::string>::format(Dynarmic::IR::GetNameOf(type), ctx);
+    }
+};

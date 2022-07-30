@@ -4,9 +4,7 @@ set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
 add_library(test-main STATIC ${TEST_MAIN_SRC})
 target_include_directories(test-main PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
-target_link_libraries(test-main gtest)
-
-include(CheckCXXCompilerFlag)
+target_link_libraries(test-main gtest fmt)
 
 function(add_fmt_executable name)
   add_executable(${name} ${ARGN})
@@ -79,6 +77,15 @@ endif()
 add_fmt_test(printf-test)
 add_fmt_test(ranges-test ranges-odr-test.cc)
 add_fmt_test(scan-test)
+add_fmt_test(std-test)
+try_compile(compile_result_unused
+            ${CMAKE_CURRENT_BINARY_DIR}
+            SOURCES ${CMAKE_CURRENT_LIST_DIR}/detect-stdfs.cc
+            OUTPUT_VARIABLE RAWOUTPUT)
+string(REGEX REPLACE ".*libfound \"([^\"]*)\".*" "\\1" STDLIBFS "${RAWOUTPUT}")
+if (STDLIBFS)
+  target_link_libraries(std-test ${STDLIBFS})
+endif ()
 add_fmt_test(unicode-test HEADER_ONLY)
 if (MSVC)
   target_compile_options(unicode-test PRIVATE /utf-8)
@@ -128,9 +135,6 @@ if (NOT MSVC_STATIC_RUNTIME)
   if (FMT_PEDANTIC)
     target_compile_options(posix-mock-test PRIVATE ${PEDANTIC_COMPILE_FLAGS})
   endif ()
-  if (HAVE_STRTOD_L)
-    target_compile_definitions(posix-mock-test PRIVATE FMT_LOCALE)
-  endif ()
   add_test(NAME posix-mock-test COMMAND posix-mock-test)
   add_fmt_test(os-test)
 endif ()
@@ -148,9 +152,7 @@ if (FMT_PEDANTIC)
     target_include_directories(
       noexception-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
     target_compile_options(noexception-test PRIVATE -fno-exceptions)
-    if (FMT_PEDANTIC)
-      target_compile_options(noexception-test PRIVATE ${PEDANTIC_COMPILE_FLAGS})
-    endif ()
+    target_compile_options(noexception-test PRIVATE ${PEDANTIC_COMPILE_FLAGS})
   endif ()
 
   # Test that the library compiles without locale.
@@ -174,8 +176,8 @@ if (FMT_PEDANTIC AND NOT WIN32)
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
     "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
     "-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}"
-    "-DFMT_DIR=${CMAKE_SOURCE_DIR}"
-    "-DSUPPORTS_USER_DEFINED_LITERALS=${SUPPORTS_USER_DEFINED_LITERALS}")
+    "-DCXX_STANDARD_FLAG=${CXX_STANDARD_FLAG}"
+    "-DFMT_DIR=${CMAKE_SOURCE_DIR}")
 
   # Test if the targets are found from the build directory.
   add_test(find-package-test ${CMAKE_CTEST_COMMAND}

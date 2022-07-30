@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include <iosfwd>
 #include <string>
 
+#include <fmt/format.h>
 #include <mcl/stdint.hpp>
 
 namespace Dynarmic::IR {
@@ -43,6 +43,12 @@ Type GetArgTypeOf(Opcode op, size_t arg_index);
 /// Get the name of an opcode.
 std::string GetNameOf(Opcode op);
 
-std::ostream& operator<<(std::ostream& o, Opcode opcode);
-
 }  // namespace Dynarmic::IR
+
+template<>
+struct fmt::formatter<Dynarmic::IR::Opcode> : fmt::formatter<std::string> {
+    template<typename FormatContext>
+    auto format(Dynarmic::IR::Opcode op, FormatContext& ctx) const {
+        return formatter<std::string>::format(Dynarmic::IR::GetNameOf(op), ctx);
+    }
+};

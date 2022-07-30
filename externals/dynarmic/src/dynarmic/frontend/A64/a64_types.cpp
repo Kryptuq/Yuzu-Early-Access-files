@@ -30,14 +30,4 @@ std::string VecToString(Vec vec) {
     return fmt::format("v{}", static_cast<size_t>(vec));
 }
 
-std::ostream& operator<<(std::ostream& o, Reg reg) {
-    o << RegToString(reg);
-    return o;
-}
-
-std::ostream& operator<<(std::ostream& o, Vec vec) {
-    o << VecToString(vec);
-    return o;
-}
-
 }  // namespace Dynarmic::A64

@@ -166,22 +166,6 @@ IR::U1 IREmitter::GetCFlag() {
     return Inst<IR::U1>(Opcode::A32GetCFlag);
 }
 
-void IREmitter::SetNFlag(const IR::U1& value) {
-    Inst(Opcode::A32SetNFlag, value);
-}
-
-void IREmitter::SetZFlag(const IR::U1& value) {
-    Inst(Opcode::A32SetZFlag, value);
-}
-
-void IREmitter::SetCFlag(const IR::U1& value) {
-    Inst(Opcode::A32SetCFlag, value);
-}
-
-void IREmitter::SetVFlag(const IR::U1& value) {
-    Inst(Opcode::A32SetVFlag, value);
-}
-
 void IREmitter::OrQFlag(const IR::U1& value) {
     Inst(Opcode::A32OrQFlag, value);
 }
@@ -196,6 +180,18 @@ void IREmitter::SetGEFlags(const IR::U32& value) {
 
 void IREmitter::SetGEFlagsCompressed(const IR::U32& value) {
     Inst(Opcode::A32SetGEFlagsCompressed, value);
+}
+
+IR::NZCV IREmitter::NZFrom(const IR::Value& value) {
+    return Inst<IR::NZCV>(Opcode::GetNZFromOp, value);
+}
+
+void IREmitter::SetCpsrNZ(const IR::NZCV& nz) {
+    Inst(Opcode::A32SetCpsrNZ, nz);
+}
+
+void IREmitter::SetCpsrNZC(const IR::NZCV& nz, const IR::U1& c) {
+    Inst(Opcode::A32SetCpsrNZC, nz, c);
 }
 
 void IREmitter::DataSynchronizationBarrier() {

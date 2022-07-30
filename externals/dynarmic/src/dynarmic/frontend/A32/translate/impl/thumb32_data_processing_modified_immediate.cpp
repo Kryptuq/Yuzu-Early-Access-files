@@ -15,9 +15,7 @@ bool TranslatorVisitor::thumb32_TST_imm(Imm<1> i, Reg n, Imm<3> imm3, Imm<8> imm
     const auto imm_carry = ThumbExpandImm_C(i, imm3, imm8, ir.GetCFlag());
     const auto result = ir.And(ir.GetRegister(n), ir.Imm32(imm_carry.imm32));
 
-    ir.SetNFlag(ir.MostSignificantBit(result));
-    ir.SetZFlag(ir.IsZero(result));
-    ir.SetCFlag(imm_carry.carry);
+    ir.SetCpsrNZC(ir.NZFrom(result), imm_carry.carry);
     return true;
 }
 
@@ -32,9 +30,7 @@ bool TranslatorVisitor::thumb32_AND_imm(Imm<1> i, bool S, Reg n, Imm<3> imm3, Re
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(imm_carry.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), imm_carry.carry);
     }
     return true;
 }
@@ -49,9 +45,7 @@ bool TranslatorVisitor::thumb32_BIC_imm(Imm<1> i, bool S, Reg n, Imm<3> imm3, Re
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(imm_carry.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), imm_carry.carry);
     }
     return true;
 }
@@ -66,9 +60,7 @@ bool TranslatorVisitor::thumb32_MOV_imm(Imm<1> i, bool S, Imm<3> imm3, Reg d, Im
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(imm_carry.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), imm_carry.carry);
     }
     return true;
 }
@@ -84,9 +76,7 @@ bool TranslatorVisitor::thumb32_ORR_imm(Imm<1> i, bool S, Reg n, Imm<3> imm3, Re
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(imm_carry.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), imm_carry.carry);
     }
     return true;
 }
@@ -101,9 +91,7 @@ bool TranslatorVisitor::thumb32_MVN_imm(Imm<1> i, bool S, Imm<3> imm3, Reg d, Im
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(imm_carry.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), imm_carry.carry);
     }
     return true;
 }
@@ -119,9 +107,7 @@ bool TranslatorVisitor::thumb32_ORN_imm(Imm<1> i, bool S, Reg n, Imm<3> imm3, Re
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(imm_carry.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), imm_carry.carry);
     }
     return true;
 }
@@ -134,9 +120,7 @@ bool TranslatorVisitor::thumb32_TEQ_imm(Imm<1> i, Reg n, Imm<3> imm3, Imm<8> imm
     const auto imm_carry = ThumbExpandImm_C(i, imm3, imm8, ir.GetCFlag());
     const auto result = ir.Eor(ir.GetRegister(n), ir.Imm32(imm_carry.imm32));
 
-    ir.SetNFlag(ir.MostSignificantBit(result));
-    ir.SetZFlag(ir.IsZero(result));
-    ir.SetCFlag(imm_carry.carry);
+    ir.SetCpsrNZC(ir.NZFrom(result), imm_carry.carry);
     return true;
 }
 
@@ -151,9 +135,7 @@ bool TranslatorVisitor::thumb32_EOR_imm(Imm<1> i, bool S, Reg n, Imm<3> imm3, Re
 
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
-        ir.SetCFlag(imm_carry.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result), imm_carry.carry);
     }
     return true;
 }

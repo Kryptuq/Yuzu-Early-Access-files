@@ -22,9 +22,7 @@ bool TranslatorVisitor::thumb16_LSL_imm(Imm<5> imm5, Reg m, Reg d) {
 
     ir.SetRegister(d, result.result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result.result));
-        ir.SetZFlag(ir.IsZero(result.result));
-        ir.SetCFlag(result.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result.result), result.carry);
     }
     return true;
 }
@@ -37,9 +35,7 @@ bool TranslatorVisitor::thumb16_LSR_imm(Imm<5> imm5, Reg m, Reg d) {
 
     ir.SetRegister(d, result.result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result.result));
-        ir.SetZFlag(ir.IsZero(result.result));
-        ir.SetCFlag(result.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result.result), result.carry);
     }
     return true;
 }
@@ -52,9 +48,7 @@ bool TranslatorVisitor::thumb16_ASR_imm(Imm<5> imm5, Reg m, Reg d) {
 
     ir.SetRegister(d, result.result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result.result));
-        ir.SetZFlag(ir.IsZero(result.result));
-        ir.SetCFlag(result.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result.result), result.carry);
     }
     return true;
 }
@@ -117,8 +111,7 @@ bool TranslatorVisitor::thumb16_MOV_imm(Reg d, Imm<8> imm8) {
 
     ir.SetRegister(d, result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
+        ir.SetCpsrNZ(ir.NZFrom(result));
     }
     return true;
 }
@@ -171,8 +164,7 @@ bool TranslatorVisitor::thumb16_AND_reg(Reg m, Reg d_n) {
 
     ir.SetRegister(d, result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
+        ir.SetCpsrNZ(ir.NZFrom(result));
     }
     return true;
 }
@@ -186,8 +178,7 @@ bool TranslatorVisitor::thumb16_EOR_reg(Reg m, Reg d_n) {
 
     ir.SetRegister(d, result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
+        ir.SetCpsrNZ(ir.NZFrom(result));
     }
     return true;
 }
@@ -202,9 +193,7 @@ bool TranslatorVisitor::thumb16_LSL_reg(Reg m, Reg d_n) {
 
     ir.SetRegister(d, result_carry.result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result_carry.result));
-        ir.SetZFlag(ir.IsZero(result_carry.result));
-        ir.SetCFlag(result_carry.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result_carry.result), result_carry.carry);
     }
     return true;
 }
@@ -219,9 +208,7 @@ bool TranslatorVisitor::thumb16_LSR_reg(Reg m, Reg d_n) {
 
     ir.SetRegister(d, result.result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result.result));
-        ir.SetZFlag(ir.IsZero(result.result));
-        ir.SetCFlag(result.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result.result), result.carry);
     }
     return true;
 }
@@ -236,9 +223,7 @@ bool TranslatorVisitor::thumb16_ASR_reg(Reg m, Reg d_n) {
 
     ir.SetRegister(d, result.result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result.result));
-        ir.SetZFlag(ir.IsZero(result.result));
-        ir.SetCFlag(result.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result.result), result.carry);
     }
     return true;
 }
@@ -283,9 +268,7 @@ bool TranslatorVisitor::thumb16_ROR_reg(Reg m, Reg d_n) {
 
     ir.SetRegister(d, result.result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result.result));
-        ir.SetZFlag(ir.IsZero(result.result));
-        ir.SetCFlag(result.carry);
+        ir.SetCpsrNZC(ir.NZFrom(result.result), result.carry);
     }
     return true;
 }
@@ -293,8 +276,7 @@ bool TranslatorVisitor::thumb16_ROR_reg(Reg m, Reg d_n) {
 // TST <Rn>, <Rm>
 bool TranslatorVisitor::thumb16_TST_reg(Reg m, Reg n) {
     const auto result = ir.And(ir.GetRegister(n), ir.GetRegister(m));
-    ir.SetNFlag(ir.MostSignificantBit(result));
-    ir.SetZFlag(ir.IsZero(result));
+    ir.SetCpsrNZ(ir.NZFrom(result));
     return true;
 }
 
@@ -332,8 +314,7 @@ bool TranslatorVisitor::thumb16_ORR_reg(Reg m, Reg d_n) {
 
     ir.SetRegister(d, result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
+        ir.SetCpsrNZ(ir.NZFrom(result));
     }
     return true;
 }
@@ -347,8 +328,7 @@ bool TranslatorVisitor::thumb16_MUL_reg(Reg n, Reg d_m) {
 
     ir.SetRegister(d, result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
+        ir.SetCpsrNZ(ir.NZFrom(result));
     }
     return true;
 }
@@ -362,8 +342,7 @@ bool TranslatorVisitor::thumb16_BIC_reg(Reg m, Reg d_n) {
 
     ir.SetRegister(d, result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
+        ir.SetCpsrNZ(ir.NZFrom(result));
     }
     return true;
 }
@@ -375,8 +354,7 @@ bool TranslatorVisitor::thumb16_MVN_reg(Reg m, Reg d) {
 
     ir.SetRegister(d, result);
     if (!ir.current_location.IT().IsInITBlock()) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
+        ir.SetCpsrNZ(ir.NZFrom(result));
     }
     return true;
 }

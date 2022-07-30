@@ -148,7 +148,7 @@ void PolyfillPass(IR::Block& block, const PolyfillOptions& polyfill) {
     IR::IREmitter ir{block};
 
     for (auto& inst : block) {
-        ir.SetInsertionPoint(&inst);
+        ir.SetInsertionPointBefore(&inst);
 
         switch (inst.GetOpcode()) {
         case IR::Opcode::SHA256MessageSchedule0:

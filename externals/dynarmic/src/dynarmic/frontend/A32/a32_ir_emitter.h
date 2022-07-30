@@ -62,14 +62,14 @@ public:
     void SetCheckBit(const IR::U1& value);
     IR::U1 GetOverflowFrom(const IR::Value& value);
     IR::U1 GetCFlag();
-    void SetNFlag(const IR::U1& value);
-    void SetZFlag(const IR::U1& value);
-    void SetCFlag(const IR::U1& value);
-    void SetVFlag(const IR::U1& value);
     void OrQFlag(const IR::U1& value);
     IR::U32 GetGEFlags();
     void SetGEFlags(const IR::U32& value);
     void SetGEFlagsCompressed(const IR::U32& value);
+
+    IR::NZCV NZFrom(const IR::Value& value);
+    void SetCpsrNZ(const IR::NZCV& nz);
+    void SetCpsrNZC(const IR::NZCV& nz, const IR::U1& c);
 
     void DataSynchronizationBarrier();
     void DataMemoryBarrier();

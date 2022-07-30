@@ -149,18 +149,8 @@ private:
     size_t use_count = 0;
     std::array<Value, max_arg_count> args;
 
-    // Pointers to related pseudooperations:
-    // Since not all combinations are possible, we use a union to save space
-    union {
-        Inst* carry_inst = nullptr;
-        Inst* ge_inst;
-        Inst* upper_inst;
-    };
-    Inst* overflow_inst = nullptr;
-    union {
-        Inst* nzcv_inst = nullptr;
-        Inst* lower_inst;
-    };
+    // Linked list of pseudooperations associated with this instruction.
+    Inst* next_pseudoop = nullptr;
 };
 
 }  // namespace Dynarmic::IR

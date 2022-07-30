@@ -20,8 +20,7 @@ bool TranslatorVisitor::arm_MLA(Cond cond, bool S, Reg d, Reg a, Reg m, Reg n) {
     const auto result = ir.Add(ir.Mul(ir.GetRegister(n), ir.GetRegister(m)), ir.GetRegister(a));
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
+        ir.SetCpsrNZ(ir.NZFrom(result));
     }
 
     return true;
@@ -59,8 +58,7 @@ bool TranslatorVisitor::arm_MUL(Cond cond, bool S, Reg d, Reg m, Reg n) {
     const auto result = ir.Mul(ir.GetRegister(n), ir.GetRegister(m));
     ir.SetRegister(d, result);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(result));
-        ir.SetZFlag(ir.IsZero(result));
+        ir.SetCpsrNZ(ir.NZFrom(result));
     }
 
     return true;
@@ -91,8 +89,7 @@ bool TranslatorVisitor::arm_SMLAL(Cond cond, bool S, Reg dHi, Reg dLo, Reg m, Re
     ir.SetRegister(dLo, lo);
     ir.SetRegister(dHi, hi);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(hi));
-        ir.SetZFlag(ir.IsZero(result));
+        ir.SetCpsrNZ(ir.NZFrom(result));
     }
 
     return true;
@@ -121,8 +118,7 @@ bool TranslatorVisitor::arm_SMULL(Cond cond, bool S, Reg dHi, Reg dLo, Reg m, Re
     ir.SetRegister(dLo, lo);
     ir.SetRegister(dHi, hi);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(hi));
-        ir.SetZFlag(ir.IsZero(result));
+        ir.SetCpsrNZ(ir.NZFrom(result));
     }
 
     return true;
@@ -177,8 +173,7 @@ bool TranslatorVisitor::arm_UMLAL(Cond cond, bool S, Reg dHi, Reg dLo, Reg m, Re
     ir.SetRegister(dLo, lo);
     ir.SetRegister(dHi, hi);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(hi));
-        ir.SetZFlag(ir.IsZero(result));
+        ir.SetCpsrNZ(ir.NZFrom(result));
     }
 
     return true;
@@ -207,8 +202,7 @@ bool TranslatorVisitor::arm_UMULL(Cond cond, bool S, Reg dHi, Reg dLo, Reg m, Re
     ir.SetRegister(dLo, lo);
     ir.SetRegister(dHi, hi);
     if (S) {
-        ir.SetNFlag(ir.MostSignificantBit(hi));
-        ir.SetZFlag(ir.IsZero(result));
+        ir.SetCpsrNZ(ir.NZFrom(result));
     }
 
     return true;
