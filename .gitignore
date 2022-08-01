@@ -1,3 +1,36 @@
+# SPDX-FileCopyrightText: 2013 Citra Emulator Project
+# SPDX-License-Identifier: GPL-2.0-or-later
 
-README.md
-src/video_core/host_shaders/CMakeLists.txt
+# Build directory
+[Bb]uild/
+doc-build/
+
+# Generated source files
+src/common/scm_rev.cpp
+dist/english_plurals/generated_en.ts
+
+# Project/editor files
+*.swp
+.idea/
+.vs/
+.vscode/
+CMakeLists.txt.user*
+
+# *nix related
+# Common convention for backup or temporary files
+*~
+
+# Visual Studio CMake settings
+CMakeSettings.json
+
+# OSX global filetypes
+# Created by Finder or Spotlight in directories for various OS functionality (indexing, etc)
+.DS_Store
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+
+# Windows global filetypes
+Thumbs.db
+

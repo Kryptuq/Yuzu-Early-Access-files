@@ -1,5 +1,0 @@
-function(vcpkg_replace_string filename match replace)
-    file(READ "${filename}" contents)
-    string(REPLACE "${match}" "${replace}" contents "${contents}")
-    file(WRITE "${filename}" "${contents}")
-endfunction()

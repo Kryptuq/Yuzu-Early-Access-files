@@ -1,7 +1,0 @@
-# ignore python compiled object
-*.pyc
-*.html
-.sconsign.dblite
-log/
-obj/
-tools/.cached_lint_results.pkl

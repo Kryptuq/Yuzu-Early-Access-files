@@ -194,13 +194,16 @@ Result ServiceFrameworkBase::HandleSyncRequest(Kernel::KServerSession& session,
                                                Kernel::HLERequestContext& ctx) {
     const auto guard = LockService();
 
+    Result result = ResultSuccess;
+
     switch (ctx.GetCommandType()) {
     case IPC::CommandType::Close:
     case IPC::CommandType::TIPC_Close: {
         session.Close();
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
-        return IPC::ERR_REMOTE_PROCESS_DEAD;
+        result = IPC::ERR_REMOTE_PROCESS_DEAD;
+        break;
     }
     case IPC::CommandType::ControlWithContext:
     case IPC::CommandType::Control: {
@@ -227,7 +230,7 @@ Result ServiceFrameworkBase::HandleSyncRequest(Kernel::KServerSession& session,
         ctx.WriteToOutgoingCommandBuffer(ctx.GetThread());
     }
 
-    return ResultSuccess;
+    return result;
 }
 
 /// Initialize Services

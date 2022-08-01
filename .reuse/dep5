@@ -1,0 +1,115 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Comment: It is best to use this file to record copyright information about
+         generated, binary and third party files
+
+Files: dist/english_plurals/*
+       dist/icons/controller/*.png
+       dist/icons/overlay/*.png
+       dist/languages/*
+       dist/qt_themes/*/icons/index.theme
+       dist/qt_themes/default/style.qss
+Copyright: yuzu Emulator Project
+License: GPL-2.0-or-later
+
+Files: dist/qt_themes/default/icons/256x256/yuzu.png
+       dist/yuzu.bmp
+       dist/yuzu.icns
+       dist/yuzu.ico
+       dist/yuzu.svg
+Copyright: yuzu Emulator Project
+License: GPL-2.0-or-later
+
+Files: dist/qt_themes/qdarkstyle*/LICENSE.*
+       dist/qt_themes/qdarkstyle*/style.qrc
+       dist/qt_themes/qdarkstyle*/style.qss
+Copyright: 2013 Colin Duquesnoy
+           2019 Daniel Cosmo Pizetta
+License: MIT
+
+Files: dist/qt_themes/qdarkstyle*/rc/*
+Copyright: 2013 Colin Duquesnoy
+           2019 Daniel Cosmo Pizetta
+License: CC-BY-4.0
+
+Files: dist/qt_themes/*/icons/16x16/connected.png
+       dist/qt_themes/*/icons/16x16/connected_notification.png
+       dist/qt_themes/*/icons/16x16/disconnected.png
+       dist/qt_themes/*/icons/16x16/lock.png
+       dist/qt_themes/*/icons/48x48/bad_folder.png
+       dist/qt_themes/*/icons/48x48/chip.png
+       dist/qt_themes/*/icons/48x48/folder.png
+       dist/qt_themes/*/icons/48x48/no_avatar.png
+       dist/qt_themes/*/icons/48x48/sd_card.png
+       dist/qt_themes/*/icons/48x48/star.png
+       dist/qt_themes/*/icons/256x256/plus_folder.png
+       dist/qt_themes/colorful/icons/48x48/plus.png
+       dist/qt_themes/default/icons/16x16/checked.png
+       dist/qt_themes/default/icons/16x16/failed.png
+Copyright: https://icons8.com
+License: CC-BY-ND-3.0
+
+Files: dist/qt_themes/*/icons/16x16/refresh.png
+       dist/qt_themes/*/icons/16x16/view-refresh.png
+Copyright: Google, Inc.
+License: Apache-2.0
+
+Files: dist/qt_themes/default/icons/48x48/plus.png
+       dist/qt_themes/qdarkstyle/icons/48x48/plus.png
+       dist/qt_themes/qdarkstyle_midnight_blue/icons/48x48/plus.png
+Copyright: BreadFish64
+License: CC0-1.0
+
+Files: externals/getopt/getopt.c
+       externals/getopt/getopt.h
+Copyright: 2011 Ludvik Jerabek
+License: LGPL-3.0-or-later
+
+Files: externals/glad/include/glad/glad.h
+       externals/glad/src/glad.c
+Copyright: The Khronos Group Inc.
+License: (WTFPL OR CC0-1.0) AND Apache-2.0
+Comment: https://github.com/Dav1dde/glad/issues/365#issuecomment-1138419515
+
+Files: externals/glad/include/KHR/khrplatform.h
+Copyright: 2008-2018 The Khronos Group Inc.
+License: MIT
+
+Files: externals/microprofile/*
+Copyright: Jonas Meyer
+License: Unlicense
+
+Files: externals/FidelityFX-FSR/*
+Copyright: 2021 Advanced Micro Devices, Inc.
+License: MIT
+
+Files: src/yuzu/*.ui
+Copyright: 2018-2022 yuzu Emulator Project
+License: GPL-2.0-or-later
+
+Files: src/yuzu/compatdb.ui
+       src/yuzu/main.ui
+Copyright: 2014-2017 Citra Emulator Project
+License: GPL-2.0-or-later
+
+Files: src/yuzu/loading_screen.ui
+Copyright: 2019 James Rowe <jroweboy@gmail.com>
+License: GPL-2.0-or-later
+
+Files: src/yuzu/applets/aboutdialog.ui
+       src/yuzu/applets/qt_software_keyboard.ui
+       src/yuzu/util/overlay_dialog.ui
+Copyright: 2020-2021 Its-Rei <kupfel@gmail.com>
+           2020-2021 yuzu Emulator Project
+License: GPL-2.0-or-later
+
+Files: vcpkg.json
+Copyright: 2022 yuzu Emulator Project
+License: GPL-3.0-or-later
+
+Files: .github/ISSUE_TEMPLATE/config.yml
+Copyright: 2020 tgsm <doodrabbit@hotmail.com>
+License: GPL-2.0-or-later
+
+Files: .github/ISSUE_TEMPLATE/bug-report-feature-request.md
+Copyright: 2016 MerryMage
+License: GPL-2.0-or-later
