@@ -41,8 +41,9 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
 
     // Make sure the first index is reserved for the null resources
     // This way the null resource becomes a compile time constant
-    void(slot_images.insert(NullImageParams{}));
-    void(slot_image_views.insert(runtime, NullImageViewParams{}));
+    void(slot_images.insert(runtime, NullImageParams{}));
+    void(slot_image_views.insert(runtime, ImageViewInfo{}, NULL_IMAGE_ID,
+                                 slot_images[NULL_IMAGE_ID]));
     void(slot_samplers.insert(runtime, sampler_descriptor));
 
     if constexpr (HAS_DEVICE_MEMORY_INFO) {
@@ -1443,8 +1444,7 @@ ImageViewId TextureCache<P>::FindOrEmplaceImageView(ImageId image_id, const Imag
     if (const ImageViewId image_view_id = image.FindView(info); image_view_id) {
         return image_view_id;
     }
-    const ImageViewId image_view_id =
-        slot_image_views.insert(runtime, info, image_id, image, slot_images);
+    const ImageViewId image_view_id = slot_image_views.insert(runtime, info, image_id, image);
     image.InsertView(info, image_view_id);
     return image_view_id;
 }

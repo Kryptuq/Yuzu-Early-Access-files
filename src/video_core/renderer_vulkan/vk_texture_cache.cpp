@@ -1287,7 +1287,16 @@ Image::Image(TextureCacheRuntime& runtime_, const ImageInfo& info_, GPUVAddr gpu
     }
 }
 
-Image::Image(const VideoCommon::NullImageParams& params) : VideoCommon::ImageBase{params} {}
+Image::Image(TextureCacheRuntime& runtime_, const VideoCommon::NullImageParams& params)
+    : VideoCommon::ImageBase(params), scheduler{&runtime_.scheduler}, runtime{&runtime_},
+      original_image{MakeImage(runtime_.device, info)},
+      commit(runtime_.memory_allocator.Commit(original_image, MemoryUsage::DeviceLocal)),
+      aspect_mask{ImageAspectMask(info.format)} {
+    if (runtime->device.HasDebuggingToolAttached()) {
+        original_image.SetObjectNameEXT("NullImage");
+    }
+    current_image = *original_image;
+}
 
 Image::~Image() = default;
 
