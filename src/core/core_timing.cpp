@@ -143,13 +143,17 @@ void CoreTiming::ScheduleLoopingEvent(std::chrono::nanoseconds start_time,
                                       std::chrono::nanoseconds resched_time,
                                       const std::shared_ptr<EventType>& event_type,
                                       std::uintptr_t user_data, bool absolute_time) {
-    std::scoped_lock scope{basic_lock};
-    const auto next_time{absolute_time ? start_time : GetGlobalTimeNs() + start_time};
+    {
+        std::scoped_lock scope{basic_lock};
+        const auto next_time{absolute_time ? start_time : GetGlobalTimeNs() + start_time};
 
-    event_queue.emplace_back(
-        Event{next_time.count(), event_fifo_id++, user_data, event_type, resched_time.count()});
+        event_queue.emplace_back(
+            Event{next_time.count(), event_fifo_id++, user_data, event_type, resched_time.count()});
 
-    std::push_heap(event_queue.begin(), event_queue.end(), std::greater<>());
+        std::push_heap(event_queue.begin(), event_queue.end(), std::greater<>());
+    }
+
+    event.Set();
 }
 
 void CoreTiming::UnscheduleEvent(const std::shared_ptr<EventType>& event_type,
@@ -277,20 +281,21 @@ void CoreTiming::ThreadLoop() {
             paused_set = false;
             const auto next_time = Advance();
             if (next_time) {
-                // There are more events left in the queue, sleep until the next event.
-                const auto diff_ns{*next_time - GetGlobalTimeNs().count()};
-                if (diff_ns > 0) {
-                    // Only try to sleep if the remaining time is >= 1ms. Take off 500 microseconds
-                    // from the target time to account for possible over-sleeping, and spin the
-                    // remaining.
-                    const auto sleep_time_ns{diff_ns - 500LL * 1'000LL};
-                    const auto sleep_time_ms{sleep_time_ns / 1'000'000LL};
-                    if (sleep_time_ms >= 1) {
-                        event.WaitFor(std::chrono::nanoseconds(sleep_time_ns));
+                // There are more events left in the queue, wait until the next event.
+                const auto wait_time = *next_time - GetGlobalTimeNs().count();
+                if (wait_time > 0) {
+                    // Assume a timer resolution of 1ms.
+                    static constexpr s64 TimerResolutionNS = 1000000;
+
+                    // Sleep in discrete intervals of the timer resolution, and spin the rest.
+                    const auto sleep_time = wait_time - (wait_time % TimerResolutionNS);
+                    if (sleep_time > 0) {
+                        event.WaitFor(std::chrono::nanoseconds(sleep_time));
                     }
 
-                    const auto end_time{std::chrono::nanoseconds(*next_time)};
-                    while (!paused && !event.IsSet() && GetGlobalTimeNs() < end_time) {
+                    while (!paused && !event.IsSet() && GetGlobalTimeNs().count() < *next_time) {
+                        // Yield to reduce thread starvation.
+                        std::this_thread::yield();
                     }
 
                     if (event.IsSet()) {

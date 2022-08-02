@@ -729,8 +729,6 @@ add_library(core STATIC
     internal_network/sockets.h
     loader/deconstructed_rom_directory.cpp
     loader/deconstructed_rom_directory.h
-    loader/elf.cpp
-    loader/elf.h
     loader/kip.cpp
     loader/kip.h
     loader/loader.cpp

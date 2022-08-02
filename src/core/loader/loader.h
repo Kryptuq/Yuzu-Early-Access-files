@@ -34,7 +34,6 @@ namespace Loader {
 enum class FileType {
     Error,
     Unknown,
-    ELF,
     NSO,
     NRO,
     NCA,

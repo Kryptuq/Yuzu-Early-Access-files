@@ -935,7 +935,7 @@ void RasterizerVulkan::UpdateVertexInput(Tegra::Engines::Maxwell3D::Regs& regs) 
                 .pNext = nullptr,
                 .location = static_cast<u32>(index),
                 .binding = binding,
-                .format = MaxwellToVK::VertexFormat(attribute.type, attribute.size),
+                .format = MaxwellToVK::VertexFormat(device, attribute.type, attribute.size),
                 .offset = attribute.offset,
             });
         }

@@ -42,8 +42,8 @@ add_custom_command(OUTPUT scm_rev.cpp
 )
 
 add_library(common STATIC
-    address_space.h
     address_space.cpp
+    address_space.h
     algorithm.h
     alignment.h
     announce_multiplayer_room.h

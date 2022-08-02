@@ -12,7 +12,6 @@
 #include "core/core.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/loader/deconstructed_rom_directory.h"
-#include "core/loader/elf.h"
 #include "core/loader/kip.h"
 #include "core/loader/nax.h"
 #include "core/loader/nca.h"
@@ -39,8 +38,6 @@ std::optional<FileType> IdentifyFileLoader(FileSys::VirtualFile file) {
 FileType IdentifyFile(FileSys::VirtualFile file) {
     if (const auto romdir_type = IdentifyFileLoader<AppLoader_DeconstructedRomDirectory>(file)) {
         return *romdir_type;
-    } else if (const auto elf_type = IdentifyFileLoader<AppLoader_ELF>(file)) {
-        return *elf_type;
     } else if (const auto nso_type = IdentifyFileLoader<AppLoader_NSO>(file)) {
         return *nso_type;
     } else if (const auto nro_type = IdentifyFileLoader<AppLoader_NRO>(file)) {
@@ -69,8 +66,6 @@ FileType GuessFromFilename(const std::string& name) {
     const std::string extension =
         Common::ToLower(std::string(Common::FS::GetExtensionFromFilename(name)));
 
-    if (extension == "elf")
-        return FileType::ELF;
     if (extension == "nro")
         return FileType::NRO;
     if (extension == "nso")
@@ -89,8 +84,6 @@ FileType GuessFromFilename(const std::string& name) {
 
 std::string GetFileTypeString(FileType type) {
     switch (type) {
-    case FileType::ELF:
-        return "ELF";
     case FileType::NRO:
         return "NRO";
     case FileType::NSO:
@@ -208,10 +201,6 @@ static std::unique_ptr<AppLoader> GetFileLoader(Core::System& system, FileSys::V
                                                 FileType type, u64 program_id,
                                                 std::size_t program_index) {
     switch (type) {
-    // Standard ELF file format.
-    case FileType::ELF:
-        return std::make_unique<AppLoader_ELF>(std::move(file));
-
     // NX NSO file format.
     case FileType::NSO:
         return std::make_unique<AppLoader_NSO>(std::move(file));

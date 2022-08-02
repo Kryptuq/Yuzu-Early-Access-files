@@ -559,7 +559,7 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
             vertex_attributes.push_back({
                 .location = static_cast<u32>(index),
                 .binding = attribute.buffer,
-                .format = MaxwellToVK::VertexFormat(attribute.Type(), attribute.Size()),
+                .format = MaxwellToVK::VertexFormat(device, attribute.Type(), attribute.Size()),
                 .offset = attribute.offset,
             });
         }

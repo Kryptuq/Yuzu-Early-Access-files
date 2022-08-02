@@ -444,9 +444,9 @@ struct System::Impl {
     std::unique_ptr<FileSys::ContentProviderUnion> content_provider;
     Service::FileSystem::FileSystemController fs_controller;
     /// AppLoader used to load the current executing application
-    std::unique_ptr<Tegra::Host1x::Host1x> host1x_core;
     std::unique_ptr<Loader::AppLoader> app_loader;
     std::unique_ptr<Tegra::GPU> gpu_core;
+    std::unique_ptr<Tegra::Host1x::Host1x> host1x_core;
     std::unique_ptr<Core::DeviceMemory> device_memory;
     std::unique_ptr<AudioCore::AudioCore> audio_core;
     Core::Memory::Memory memory;
@@ -656,20 +656,20 @@ const Core::Memory::Memory& System::Memory() const {
     return impl->memory;
 }
 
-Tegra::Host1x::Host1x& System::Host1x() {
-    return *impl->host1x_core;
-}
-
-const Tegra::Host1x::Host1x& System::Host1x() const {
-    return *impl->host1x_core;
-}
-
 Tegra::GPU& System::GPU() {
     return *impl->gpu_core;
 }
 
 const Tegra::GPU& System::GPU() const {
     return *impl->gpu_core;
+}
+
+Tegra::Host1x::Host1x& System::Host1x() {
+    return *impl->host1x_core;
+}
+
+const Tegra::Host1x::Host1x& System::Host1x() const {
+    return *impl->host1x_core;
 }
 
 VideoCore::RendererBase& System::Renderer() {

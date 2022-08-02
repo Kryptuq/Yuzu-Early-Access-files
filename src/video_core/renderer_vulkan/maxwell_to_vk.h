@@ -48,7 +48,8 @@ VkShaderStageFlagBits ShaderStage(Shader::Stage stage);
 
 VkPrimitiveTopology PrimitiveTopology(const Device& device, Maxwell::PrimitiveTopology topology);
 
-VkFormat VertexFormat(Maxwell::VertexAttribute::Type type, Maxwell::VertexAttribute::Size size);
+VkFormat VertexFormat(const Device& device, Maxwell::VertexAttribute::Type type,
+                      Maxwell::VertexAttribute::Size size);
 
 VkCompareOp ComparisonOp(Maxwell::ComparisonOp comparison);
 
