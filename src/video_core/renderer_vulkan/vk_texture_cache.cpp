@@ -1287,17 +1287,7 @@ Image::Image(TextureCacheRuntime& runtime_, const ImageInfo& info_, GPUVAddr gpu
     }
 }
 
-Image::Image(TextureCacheRuntime& runtime_, const VideoCommon::NullImageParams& params)
-    : VideoCommon::ImageBase(params), scheduler{&runtime_.scheduler}, runtime{&runtime_} {
-    info.format = PixelFormat::A8B8G8R8_UNORM;
-    original_image = MakeImage(runtime_.device, info);
-    aspect_mask = ImageAspectMask(info.format);
-    commit = runtime_.memory_allocator.Commit(original_image, MemoryUsage::DeviceLocal);
-    if (runtime->device.HasDebuggingToolAttached()) {
-        original_image.SetObjectNameEXT("NullImage");
-    }
-    current_image = *original_image;
-}
+Image::Image(const VideoCommon::NullImageParams& params) : VideoCommon::ImageBase{params} {}
 
 Image::~Image() = default;
 
@@ -1630,6 +1620,9 @@ ImageView::ImageView(TextureCacheRuntime&, const VideoCommon::NullImageViewParam
 ImageView::~ImageView() = default;
 
 VkImageView ImageView::DepthView() {
+    if (!image_handle) {
+        return VK_NULL_HANDLE;
+    }
     if (depth_view) {
         return *depth_view;
     }
@@ -1639,6 +1632,9 @@ VkImageView ImageView::DepthView() {
 }
 
 VkImageView ImageView::StencilView() {
+    if (!image_handle) {
+        return VK_NULL_HANDLE;
+    }
     if (stencil_view) {
         return *stencil_view;
     }
@@ -1648,6 +1644,9 @@ VkImageView ImageView::StencilView() {
 }
 
 VkImageView ImageView::ColorView() {
+    if (!image_handle) {
+        return VK_NULL_HANDLE;
+    }
     if (color_view) {
         return *color_view;
     }
@@ -1657,6 +1656,9 @@ VkImageView ImageView::ColorView() {
 
 VkImageView ImageView::StorageView(Shader::TextureType texture_type,
                                    Shader::ImageFormat image_format) {
+    if (!image_handle) {
+        return VK_NULL_HANDLE;
+    }
     if (image_format == Shader::ImageFormat::Typeless) {
         return Handle(texture_type);
     }

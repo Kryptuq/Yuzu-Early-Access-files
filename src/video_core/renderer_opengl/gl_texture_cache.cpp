@@ -737,8 +737,7 @@ Image::Image(TextureCacheRuntime& runtime_, const VideoCommon::ImageInfo& info_,
     }
 }
 
-Image::Image(TextureCacheRuntime&, const VideoCommon::NullImageParams& params)
-    : VideoCommon::ImageBase{params} {}
+Image::Image(const VideoCommon::NullImageParams& params) : VideoCommon::ImageBase{params} {}
 
 Image::~Image() = default;
 
@@ -1079,7 +1078,7 @@ bool Image::ScaleDown(bool ignore) {
 }
 
 ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewInfo& info,
-                     ImageId image_id_, Image& image)
+                     ImageId image_id_, Image& image, const SlotVector<Image>&)
     : VideoCommon::ImageViewBase{info, image.info, image_id_}, views{runtime.null_image_views} {
     const Device& device = runtime.device;
     if (True(image.flags & ImageFlagBits::Converted)) {
