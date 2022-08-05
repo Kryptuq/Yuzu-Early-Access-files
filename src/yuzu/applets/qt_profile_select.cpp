@@ -100,6 +100,7 @@ QtProfileSelectionDialog::QtProfileSelectionDialog(Core::HID::HIDCore& hid_core,
                 }
                 QKeyEvent* event = new QKeyEvent(QEvent::KeyPress, key, Qt::NoModifier);
                 QCoreApplication::postEvent(tree_view, event);
+                SelectUser(tree_view->currentIndex());
             });
 
     const auto& profiles = profile_manager->GetAllUsers();

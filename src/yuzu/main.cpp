@@ -1589,17 +1589,18 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
     return true;
 }
 
-void GMainWindow::SelectAndSetCurrentUser() {
+bool GMainWindow::SelectAndSetCurrentUser() {
     QtProfileSelectionDialog dialog(system->HIDCore(), this);
     dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
                           Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint);
     dialog.setWindowModality(Qt::WindowModal);
 
     if (dialog.exec() == QDialog::Rejected) {
-        return;
+        return false;
     }
 
     Settings::values.current_user = dialog.GetIndex();
+    return true;
 }
 
 void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t program_index,
@@ -1633,11 +1634,14 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
     Settings::LogSettings();
 
     if (UISettings::values.select_user_on_boot) {
-        SelectAndSetCurrentUser();
+        if (SelectAndSetCurrentUser() == false) {
+            return;
+        }
     }
 
-    if (!LoadROM(filename, program_id, program_index))
+    if (!LoadROM(filename, program_id, program_index)) {
         return;
+    }
 
     system->SetShuttingDown(false);
 

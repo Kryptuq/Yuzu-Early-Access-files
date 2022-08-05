@@ -218,7 +218,7 @@ private:
     void SetDiscordEnabled(bool state);
     void LoadAmiibo(const QString& filename);
 
-    void SelectAndSetCurrentUser();
+    bool SelectAndSetCurrentUser();
 
     /**
      * Stores the filename in the recently loaded files list.
