@@ -163,28 +163,51 @@ void Controller_NPad::InitNewlyAddedController(Core::HID::NpadIdType npad_id) {
     }
     LOG_DEBUG(Service_HID, "Npad connected {}", npad_id);
     const auto controller_type = controller.device->GetNpadStyleIndex();
+    const auto& body_colors = controller.device->GetColors();
+    const auto& battery_level = controller.device->GetBattery();
     auto* shared_memory = controller.shared_memory;
     if (controller_type == Core::HID::NpadStyleIndex::None) {
         controller.styleset_changed_event->GetWritableEvent().Signal();
         return;
     }
+
+    // Reset memory values
     shared_memory->style_tag.raw = Core::HID::NpadStyleSet::None;
     shared_memory->device_type.raw = 0;
     shared_memory->system_properties.raw = 0;
+    shared_memory->joycon_color.attribute = ColorAttribute::NoController;
+    shared_memory->joycon_color.attribute = ColorAttribute::NoController;
+    shared_memory->fullkey_color = {};
+    shared_memory->joycon_color.left = {};
+    shared_memory->joycon_color.right = {};
+    shared_memory->battery_level_dual = {};
+    shared_memory->battery_level_left = {};
+    shared_memory->battery_level_right = {};
+
     switch (controller_type) {
     case Core::HID::NpadStyleIndex::None:
         ASSERT(false);
         break;
     case Core::HID::NpadStyleIndex::ProController:
+        shared_memory->fullkey_color.attribute = ColorAttribute::Ok;
+        shared_memory->fullkey_color.fullkey = body_colors.fullkey;
+        shared_memory->battery_level_dual = battery_level.dual.battery_level;
         shared_memory->style_tag.fullkey.Assign(1);
         shared_memory->device_type.fullkey.Assign(1);
         shared_memory->system_properties.is_vertical.Assign(1);
         shared_memory->system_properties.use_plus.Assign(1);
         shared_memory->system_properties.use_minus.Assign(1);
+        shared_memory->system_properties.is_charging_joy_dual.Assign(
+            battery_level.dual.is_charging);
         shared_memory->applet_nfc_xcd.applet_footer.type = AppletFooterUiType::SwitchProController;
         shared_memory->sixaxis_fullkey_properties.is_newly_assigned.Assign(1);
         break;
     case Core::HID::NpadStyleIndex::Handheld:
+        shared_memory->fullkey_color.attribute = ColorAttribute::Ok;
+        shared_memory->joycon_color.attribute = ColorAttribute::Ok;
+        shared_memory->fullkey_color.fullkey = body_colors.fullkey;
+        shared_memory->joycon_color.left = body_colors.left;
+        shared_memory->joycon_color.right = body_colors.right;
         shared_memory->style_tag.handheld.Assign(1);
         shared_memory->device_type.handheld_left.Assign(1);
         shared_memory->device_type.handheld_right.Assign(1);
@@ -192,47 +215,86 @@ void Controller_NPad::InitNewlyAddedController(Core::HID::NpadIdType npad_id) {
         shared_memory->system_properties.use_plus.Assign(1);
         shared_memory->system_properties.use_minus.Assign(1);
         shared_memory->system_properties.use_directional_buttons.Assign(1);
+        shared_memory->system_properties.is_charging_joy_dual.Assign(
+            battery_level.left.is_charging);
+        shared_memory->system_properties.is_charging_joy_left.Assign(
+            battery_level.left.is_charging);
+        shared_memory->system_properties.is_charging_joy_right.Assign(
+            battery_level.right.is_charging);
         shared_memory->assignment_mode = NpadJoyAssignmentMode::Dual;
         shared_memory->applet_nfc_xcd.applet_footer.type =
             AppletFooterUiType::HandheldJoyConLeftJoyConRight;
         shared_memory->sixaxis_handheld_properties.is_newly_assigned.Assign(1);
         break;
     case Core::HID::NpadStyleIndex::JoyconDual:
+        shared_memory->fullkey_color.attribute = ColorAttribute::Ok;
+        shared_memory->joycon_color.attribute = ColorAttribute::Ok;
         shared_memory->style_tag.joycon_dual.Assign(1);
         if (controller.is_dual_left_connected) {
+            shared_memory->joycon_color.left = body_colors.left;
+            shared_memory->battery_level_left = battery_level.left.battery_level;
             shared_memory->device_type.joycon_left.Assign(1);
             shared_memory->system_properties.use_minus.Assign(1);
+            shared_memory->system_properties.is_charging_joy_left.Assign(
+                battery_level.left.is_charging);
             shared_memory->sixaxis_dual_left_properties.is_newly_assigned.Assign(1);
         }
         if (controller.is_dual_right_connected) {
+            shared_memory->joycon_color.right = body_colors.right;
+            shared_memory->battery_level_right = battery_level.right.battery_level;
             shared_memory->device_type.joycon_right.Assign(1);
             shared_memory->system_properties.use_plus.Assign(1);
+            shared_memory->system_properties.is_charging_joy_right.Assign(
+                battery_level.right.is_charging);
             shared_memory->sixaxis_dual_right_properties.is_newly_assigned.Assign(1);
         }
         shared_memory->system_properties.use_directional_buttons.Assign(1);
         shared_memory->system_properties.is_vertical.Assign(1);
         shared_memory->assignment_mode = NpadJoyAssignmentMode::Dual;
+
         if (controller.is_dual_left_connected && controller.is_dual_right_connected) {
             shared_memory->applet_nfc_xcd.applet_footer.type = AppletFooterUiType::JoyDual;
+            shared_memory->fullkey_color.fullkey = body_colors.left;
+            shared_memory->battery_level_dual = battery_level.left.battery_level;
+            shared_memory->system_properties.is_charging_joy_dual.Assign(
+                battery_level.left.is_charging);
         } else if (controller.is_dual_left_connected) {
             shared_memory->applet_nfc_xcd.applet_footer.type = AppletFooterUiType::JoyDualLeftOnly;
+            shared_memory->fullkey_color.fullkey = body_colors.left;
+            shared_memory->battery_level_dual = battery_level.left.battery_level;
+            shared_memory->system_properties.is_charging_joy_dual.Assign(
+                battery_level.left.is_charging);
         } else {
             shared_memory->applet_nfc_xcd.applet_footer.type = AppletFooterUiType::JoyDualRightOnly;
+            shared_memory->fullkey_color.fullkey = body_colors.right;
+            shared_memory->battery_level_dual = battery_level.right.battery_level;
+            shared_memory->system_properties.is_charging_joy_dual.Assign(
+                battery_level.right.is_charging);
         }
         break;
     case Core::HID::NpadStyleIndex::JoyconLeft:
+        shared_memory->joycon_color.attribute = ColorAttribute::Ok;
+        shared_memory->joycon_color.left = body_colors.left;
+        shared_memory->battery_level_dual = battery_level.left.battery_level;
         shared_memory->style_tag.joycon_left.Assign(1);
         shared_memory->device_type.joycon_left.Assign(1);
         shared_memory->system_properties.is_horizontal.Assign(1);
         shared_memory->system_properties.use_minus.Assign(1);
+        shared_memory->system_properties.is_charging_joy_left.Assign(
+            battery_level.left.is_charging);
         shared_memory->applet_nfc_xcd.applet_footer.type = AppletFooterUiType::JoyLeftHorizontal;
         shared_memory->sixaxis_left_properties.is_newly_assigned.Assign(1);
         break;
     case Core::HID::NpadStyleIndex::JoyconRight:
+        shared_memory->joycon_color.attribute = ColorAttribute::Ok;
+        shared_memory->joycon_color.right = body_colors.right;
+        shared_memory->battery_level_right = battery_level.right.battery_level;
         shared_memory->style_tag.joycon_right.Assign(1);
         shared_memory->device_type.joycon_right.Assign(1);
         shared_memory->system_properties.is_horizontal.Assign(1);
         shared_memory->system_properties.use_plus.Assign(1);
+        shared_memory->system_properties.is_charging_joy_right.Assign(
+            battery_level.right.is_charging);
         shared_memory->applet_nfc_xcd.applet_footer.type = AppletFooterUiType::JoyRightHorizontal;
         shared_memory->sixaxis_right_properties.is_newly_assigned.Assign(1);
         break;
@@ -268,21 +330,6 @@ void Controller_NPad::InitNewlyAddedController(Core::HID::NpadIdType npad_id) {
     default:
         break;
     }
-
-    const auto& body_colors = controller.device->GetColors();
-
-    shared_memory->fullkey_color.attribute = ColorAttribute::Ok;
-    shared_memory->fullkey_color.fullkey = body_colors.fullkey;
-
-    shared_memory->joycon_color.attribute = ColorAttribute::Ok;
-    shared_memory->joycon_color.left = body_colors.left;
-    shared_memory->joycon_color.right = body_colors.right;
-
-    // TODO: Investigate when we should report all batery types
-    const auto& battery_level = controller.device->GetBattery();
-    shared_memory->battery_level_dual = battery_level.dual.battery_level;
-    shared_memory->battery_level_left = battery_level.left.battery_level;
-    shared_memory->battery_level_right = battery_level.right.battery_level;
 
     controller.is_connected = true;
     controller.device->Connect();

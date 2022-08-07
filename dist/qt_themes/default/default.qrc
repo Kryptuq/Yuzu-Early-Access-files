@@ -17,7 +17,7 @@ SPDX-License-Identifier: GPL-2.0-or-later
         <file alias="48x48/chip.png">icons/48x48/chip.png</file>
         <file alias="48x48/folder.png">icons/48x48/folder.png</file>
         <file alias="48x48/no_avatar.png">icons/48x48/no_avatar.png</file>
-        <file alias="48x48/plus.png">icons/48x48/plus.png</file>
+        <file alias="48x48/list-add.png">icons/48x48/list-add.png</file>
         <file alias="48x48/sd_card.png">icons/48x48/sd_card.png</file>
         <file alias="48x48/star.png">icons/48x48/star.png</file>
         <file alias="256x256/yuzu.png">icons/256x256/yuzu.png</file>

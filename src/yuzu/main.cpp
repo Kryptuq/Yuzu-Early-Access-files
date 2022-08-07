@@ -258,6 +258,18 @@ static QString PrettyProductName() {
     return QSysInfo::prettyProductName();
 }
 
+bool GMainWindow::check_dark_mode() {
+#ifdef __linux__
+    const QPalette test_palette(qApp->palette());
+    const QColor text_color = test_palette.color(QPalette::Active, QPalette::Text);
+    const QColor window_color = test_palette.color(QPalette::Active, QPalette::Window);
+    return (text_color.value() > window_color.value());
+#else
+    // TODO: Windows
+    return false;
+#endif // __linux__
+}
+
 GMainWindow::GMainWindow(bool has_broken_vulkan)
     : ui{std::make_unique<Ui::MainWindow>()}, system{std::make_unique<Core::System>()},
       input_subsystem{std::make_shared<InputCommon::InputSubsystem>()},
@@ -274,6 +286,13 @@ GMainWindow::GMainWindow(bool has_broken_vulkan)
     setAcceptDrops(true);
     ui->setupUi(this);
     statusBar()->hide();
+
+    // Check dark mode before a theme is loaded
+    os_dark_mode = check_dark_mode();
+    startup_icon_theme = QIcon::themeName();
+    // fallback can only be set once, colorful theme icons are okay on both light/dark
+    QIcon::setFallbackThemeName(QStringLiteral("colorful"));
+    QIcon::setFallbackSearchPaths(QStringList(QStringLiteral(":/icons")));
 
     default_theme_paths = QIcon::themeSearchPaths();
     UpdateUITheme();
@@ -3936,8 +3955,21 @@ void GMainWindow::filterBarSetChecked(bool state) {
     emit(OnToggleFilterBar());
 }
 
+static void AdjustLinkColor() {
+    QPalette new_pal(qApp->palette());
+    if (UISettings::IsDarkTheme()) {
+        new_pal.setColor(QPalette::Link, QColor(0, 190, 255, 255));
+    } else {
+        new_pal.setColor(QPalette::Link, QColor(0, 140, 200, 255));
+    }
+    if (qApp->palette().color(QPalette::Link) != new_pal.color(QPalette::Link)) {
+        qApp->setPalette(new_pal);
+    }
+}
+
 void GMainWindow::UpdateUITheme() {
-    const QString default_theme = QStringLiteral("default");
+    const QString default_theme =
+        QString::fromUtf8(UISettings::themes[static_cast<size_t>(Config::default_theme)].second);
     QString current_theme = UISettings::values.theme;
     QStringList theme_paths(default_theme_paths);
 
@@ -3945,6 +3977,23 @@ void GMainWindow::UpdateUITheme() {
         current_theme = default_theme;
     }
 
+#ifdef _WIN32
+    QIcon::setThemeName(current_theme);
+    AdjustLinkColor();
+#else
+    if (current_theme == QStringLiteral("default") || current_theme == QStringLiteral("colorful")) {
+        QIcon::setThemeName(current_theme == QStringLiteral("colorful") ? current_theme
+                                                                        : startup_icon_theme);
+        QIcon::setThemeSearchPaths(theme_paths);
+        if (check_dark_mode()) {
+            current_theme = QStringLiteral("default_dark");
+        }
+    } else {
+        QIcon::setThemeName(current_theme);
+        QIcon::setThemeSearchPaths(QStringList(QStringLiteral(":/icons")));
+        AdjustLinkColor();
+    }
+#endif
     if (current_theme != default_theme) {
         QString theme_uri{QStringLiteral(":%1/style.qss").arg(current_theme)};
         QFile f(theme_uri);
@@ -3967,17 +4016,6 @@ void GMainWindow::UpdateUITheme() {
         qApp->setStyleSheet({});
         setStyleSheet({});
     }
-
-    QPalette new_pal(qApp->palette());
-    if (UISettings::IsDarkTheme()) {
-        new_pal.setColor(QPalette::Link, QColor(0, 190, 255, 255));
-    } else {
-        new_pal.setColor(QPalette::Link, QColor(0, 140, 200, 255));
-    }
-    qApp->setPalette(new_pal);
-
-    QIcon::setThemeName(current_theme);
-    QIcon::setThemeSearchPaths(theme_paths);
 }
 
 void GMainWindow::LoadTranslation() {
@@ -4021,6 +4059,26 @@ void GMainWindow::SetDiscordEnabled([[maybe_unused]] bool state) {
     discord_rpc = std::make_unique<DiscordRPC::NullImpl>();
 #endif
     discord_rpc->Update();
+}
+
+void GMainWindow::changeEvent(QEvent* event) {
+#ifdef __linux__
+    // PaletteChange event appears to only reach so far into the GUI, explicitly asking to
+    // UpdateUITheme is a decent work around
+    if (event->type() == QEvent::PaletteChange) {
+        const QPalette test_palette(qApp->palette());
+        const QString current_theme = UISettings::values.theme;
+        // Keeping eye on QPalette::Window to avoid looping. QPalette::Text might be useful too
+        static QColor last_window_color;
+        const QColor window_color = test_palette.color(QPalette::Active, QPalette::Window);
+        if (last_window_color != window_color && (current_theme == QStringLiteral("default") ||
+                                                  current_theme == QStringLiteral("colorful"))) {
+            UpdateUITheme();
+        }
+        last_window_color = window_color;
+    }
+#endif // __linux__
+    QWidget::changeEvent(event);
 }
 
 #ifdef main
@@ -4067,6 +4125,15 @@ int main(int argc, char* argv[]) {
     // Enables the core to make the qt created contexts current on std::threads
     QCoreApplication::setAttribute(Qt::AA_DontCheckOpenGLContextThreadAffinity);
     QApplication app(argc, argv);
+
+    // Workaround for QTBUG-85409, for Suzhou numerals the number 1 is actually \u3021
+    // so we can see if we get \u3008 instead
+    // TL;DR all other number formats are consecutive in unicode code points
+    // This bug is fixed in Qt6, specifically 6.0.0-alpha1
+    const QLocale locale = QLocale::system();
+    if (QStringLiteral("\u3008") == locale.toString(1)) {
+        QLocale::setDefault(QLocale::system().name());
+    }
 
     // Qt changes the locale and causes issues in float conversion using std::to_string() when
     // generating shaders

@@ -294,7 +294,7 @@ public:
 
         const int icon_size = UISettings::values.folder_icon_size.GetValue();
 
-        setData(QIcon::fromTheme(QStringLiteral("plus"))
+        setData(QIcon::fromTheme(QStringLiteral("list-add"))
                     .pixmap(icon_size)
                     .scaled(icon_size, icon_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation),
                 Qt::DecorationRole);

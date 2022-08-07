@@ -286,7 +286,7 @@ void GameList::OnUpdateThemedIcons() {
         }
         case GameListItemType::AddDir:
             child->setData(
-                QIcon::fromTheme(QStringLiteral("plus"))
+                QIcon::fromTheme(QStringLiteral("list-add"))
                     .pixmap(icon_size)
                     .scaled(icon_size, icon_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation),
                 Qt::DecorationRole);

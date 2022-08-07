@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "common/thread.h"
 #include "core/hid/emulated_controller.h"
 #include "core/hid/input_converter.h"
 
@@ -84,17 +85,56 @@ void EmulatedController::ReloadFromSettings() {
         motion_params[index] = Common::ParamPackage(player.motions[index]);
     }
 
+    controller.colors_state.fullkey = {
+        .body =
+            {
+                .b = static_cast<u8>((player.body_color_left >> 16) & 0xFF),
+                .g = static_cast<u8>((player.body_color_left >> 8) & 0xFF),
+                .r = static_cast<u8>(player.body_color_left & 0xFF),
+                .a = 0xff,
+            },
+        .button =
+            {
+                .b = static_cast<u8>((player.button_color_left >> 16) & 0xFF),
+                .g = static_cast<u8>((player.button_color_left >> 8) & 0xFF),
+                .r = static_cast<u8>(player.button_color_left & 0xFF),
+                .a = 0xff,
+            },
+    };
+
     controller.colors_state.left = {
-        .body = player.body_color_left,
-        .button = player.button_color_left,
+        .body =
+            {
+                .b = static_cast<u8>((player.body_color_left >> 16) & 0xFF),
+                .g = static_cast<u8>((player.body_color_left >> 8) & 0xFF),
+                .r = static_cast<u8>(player.body_color_left & 0xFF),
+                .a = 0xff,
+            },
+        .button =
+            {
+                .b = static_cast<u8>((player.button_color_left >> 16) & 0xFF),
+                .g = static_cast<u8>((player.button_color_left >> 8) & 0xFF),
+                .r = static_cast<u8>(player.button_color_left & 0xFF),
+                .a = 0xff,
+            },
     };
 
     controller.colors_state.right = {
-        .body = player.body_color_right,
-        .button = player.button_color_right,
+        .body =
+            {
+                .b = static_cast<u8>((player.body_color_right >> 16) & 0xFF),
+                .g = static_cast<u8>((player.body_color_right >> 8) & 0xFF),
+                .r = static_cast<u8>(player.body_color_right & 0xFF),
+                .a = 0xff,
+            },
+        .button =
+            {
+                .b = static_cast<u8>((player.button_color_right >> 16) & 0xFF),
+                .g = static_cast<u8>((player.button_color_right >> 8) & 0xFF),
+                .r = static_cast<u8>(player.button_color_right & 0xFF),
+                .a = 0xff,
+            },
     };
-
-    controller.colors_state.fullkey = controller.colors_state.left;
 
     // Other or debug controller should always be a pro controller
     if (npad_id_type != NpadIdType::Other) {
@@ -951,6 +991,9 @@ bool EmulatedController::TestVibration(std::size_t device_index) {
 
     // Send a slight vibration to test for rumble support
     output_devices[device_index]->SetVibration(test_vibration);
+
+    // Wait for about 15ms to ensure the controller is ready for the stop command
+    std::this_thread::sleep_for(std::chrono::milliseconds(15));
 
     // Stop any vibration and return the result
     return output_devices[device_index]->SetVibration(zero_vibration) ==

@@ -251,6 +251,7 @@ private:
     bool ConfirmForceLockedExit();
     void RequestGameExit();
     void RequestGameResume();
+    void changeEvent(QEvent* event) override;
     void closeEvent(QCloseEvent* event) override;
 
 #ifdef __linux__
@@ -391,6 +392,10 @@ private:
     bool auto_muted = false;
     QTimer mouse_hide_timer;
     QTimer mouse_center_timer;
+
+    QString startup_icon_theme;
+    bool os_dark_mode = false;
+    bool check_dark_mode();
 
     // FS
     std::shared_ptr<FileSys::VfsFilesystem> vfs;
