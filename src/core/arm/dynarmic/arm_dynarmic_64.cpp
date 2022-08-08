@@ -10,7 +10,6 @@
 #include "common/logging/log.h"
 #include "common/page_table.h"
 #include "common/settings.h"
-#include "core/arm/cpu_interrupt_handler.h"
 #include "core/arm/dynarmic/arm_dynarmic_64.h"
 #include "core/arm/dynarmic/arm_exclusive_monitor.h"
 #include "core/core.h"
@@ -184,7 +183,7 @@ public:
 
     u64 GetTicksRemaining() override {
         if (parent.uses_wall_clock) {
-            if (!parent.interrupt_handlers[parent.core_index].IsInterrupted()) {
+            if (!IsInterrupted()) {
                 return minimum_run_cycles;
             }
             return 0U;
@@ -216,6 +215,10 @@ public:
         parent.SaveContext(parent.breakpoint_context);
         parent.breakpoint_context.pc = pc;
         parent.jit.load()->HaltExecution(hr);
+    }
+
+    bool IsInterrupted() {
+        return parent.system.Kernel().PhysicalCore(parent.core_index).IsInterrupted();
     }
 
     ARM_Dynarmic_64& parent;
@@ -378,10 +381,9 @@ void ARM_Dynarmic_64::RewindBreakpointInstruction() {
     LoadContext(breakpoint_context);
 }
 
-ARM_Dynarmic_64::ARM_Dynarmic_64(System& system_, CPUInterrupts& interrupt_handlers_,
-                                 bool uses_wall_clock_, ExclusiveMonitor& exclusive_monitor_,
-                                 std::size_t core_index_)
-    : ARM_Interface{system_, interrupt_handlers_, uses_wall_clock_},
+ARM_Dynarmic_64::ARM_Dynarmic_64(System& system_, bool uses_wall_clock_,
+                                 ExclusiveMonitor& exclusive_monitor_, std::size_t core_index_)
+    : ARM_Interface{system_, uses_wall_clock_},
       cb(std::make_unique<DynarmicCallbacks64>(*this)), core_index{core_index_},
       exclusive_monitor{dynamic_cast<DynarmicExclusiveMonitor&>(exclusive_monitor_)},
       null_jit{MakeJit(nullptr, 48)}, jit{null_jit.get()} {}
@@ -466,6 +468,10 @@ void ARM_Dynarmic_64::LoadContext(const ThreadContext64& ctx) {
 
 void ARM_Dynarmic_64::SignalInterrupt() {
     jit.load()->HaltExecution(break_loop);
+}
+
+void ARM_Dynarmic_64::ClearInterrupt() {
+    jit.load()->ClearHalt(break_loop);
 }
 
 void ARM_Dynarmic_64::ClearInstructionCache() {

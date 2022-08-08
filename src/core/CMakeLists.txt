@@ -6,8 +6,6 @@ add_library(core STATIC
     announce_multiplayer_session.h
     arm/arm_interface.h
     arm/arm_interface.cpp
-    arm/cpu_interrupt_handler.cpp
-    arm/cpu_interrupt_handler.h
     arm/dynarmic/arm_dynarmic_32.cpp
     arm/dynarmic/arm_dynarmic_32.h
     arm/dynarmic/arm_dynarmic_64.cpp

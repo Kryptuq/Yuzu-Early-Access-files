@@ -9,14 +9,12 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "core/arm/cpu_interrupt_handler.h"
 #include "core/hardware_properties.h"
 #include "core/hle/kernel/k_auto_object.h"
 #include "core/hle/kernel/k_slab_heap.h"
 #include "core/hle/kernel/svc_common.h"
 
 namespace Core {
-class CPUInterruptHandler;
 class ExclusiveMonitor;
 class System;
 } // namespace Core
@@ -182,12 +180,6 @@ public:
     KAutoObjectWithListContainer& ObjectListContainer();
 
     const KAutoObjectWithListContainer& ObjectListContainer() const;
-
-    std::array<Core::CPUInterruptHandler, Core::Hardware::NUM_CPU_CORES>& Interrupts();
-
-    const std::array<Core::CPUInterruptHandler, Core::Hardware::NUM_CPU_CORES>& Interrupts() const;
-
-    void InterruptAllPhysicalCores();
 
     void InvalidateAllInstructionCaches();
 

@@ -3358,7 +3358,8 @@ void GMainWindow::MigrateConfigFiles() {
         }
         const auto origin = config_dir_fs_path / filename;
         const auto destination = config_dir_fs_path / "custom" / filename;
-        LOG_INFO(Frontend, "Migrating config file from {} to {}", origin, destination);
+        LOG_INFO(Frontend, "Migrating config file from {} to {}", origin.string(),
+                 destination.string());
         if (!Common::FS::RenameFile(origin, destination)) {
             // Delete the old config file if one already exists in the new location.
             Common::FS::RemoveFile(origin);

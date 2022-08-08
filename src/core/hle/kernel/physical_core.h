@@ -14,7 +14,6 @@ class KScheduler;
 } // namespace Kernel
 
 namespace Core {
-class CPUInterruptHandler;
 class ExclusiveMonitor;
 class System;
 } // namespace Core
@@ -23,15 +22,11 @@ namespace Kernel {
 
 class PhysicalCore {
 public:
-    PhysicalCore(std::size_t core_index_, Core::System& system_, KScheduler& scheduler_,
-                 Core::CPUInterrupts& interrupts_);
+    PhysicalCore(std::size_t core_index_, Core::System& system_, KScheduler& scheduler_);
     ~PhysicalCore();
 
-    PhysicalCore(const PhysicalCore&) = delete;
-    PhysicalCore& operator=(const PhysicalCore&) = delete;
-
-    PhysicalCore(PhysicalCore&&) = default;
-    PhysicalCore& operator=(PhysicalCore&&) = delete;
+    YUZU_NON_COPYABLE(PhysicalCore);
+    YUZU_NON_MOVEABLE(PhysicalCore);
 
     /// Initialize the core for the specified parameters.
     void Initialize(bool is_64_bit);
@@ -86,9 +81,11 @@ private:
     const std::size_t core_index;
     Core::System& system;
     Kernel::KScheduler& scheduler;
-    Core::CPUInterrupts& interrupts;
-    std::unique_ptr<std::mutex> guard;
+
+    std::mutex guard;
+    std::condition_variable on_interrupt;
     std::unique_ptr<Core::ARM_Interface> arm_interface;
+    bool is_interrupted;
 };
 
 } // namespace Kernel

@@ -15,6 +15,7 @@
 #include "core/debugger/debugger_interface.h"
 #include "core/debugger/gdbstub.h"
 #include "core/hle/kernel/global_scheduler_context.h"
+#include "core/hle/kernel/k_scheduler.h"
 
 template <typename Readable, typename Buffer, typename Callback>
 static void AsyncReceiveInto(Readable& r, Buffer& buffer, Callback&& c) {
@@ -230,13 +231,12 @@ private:
     }
 
     void PauseEmulation() {
+        Kernel::KScopedSchedulerLock sl{system.Kernel()};
+
         // Put all threads to sleep on next scheduler round.
         for (auto* thread : ThreadList()) {
             thread->RequestSuspend(Kernel::SuspendType::Debug);
         }
-
-        // Signal an interrupt so that scheduler will fire.
-        system.Kernel().InterruptAllPhysicalCores();
     }
 
     void ResumeEmulation(Kernel::KThread* except = nullptr) {
@@ -253,7 +253,8 @@ private:
 
     template <typename Callback>
     void MarkResumed(Callback&& cb) {
-        std::scoped_lock lk{connection_lock};
+        Kernel::KScopedSchedulerLock sl{system.Kernel()};
+        std::scoped_lock cl{connection_lock};
         stopped = false;
         cb();
     }

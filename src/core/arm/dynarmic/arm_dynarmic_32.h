@@ -28,8 +28,8 @@ class System;
 
 class ARM_Dynarmic_32 final : public ARM_Interface {
 public:
-    ARM_Dynarmic_32(System& system_, CPUInterrupts& interrupt_handlers_, bool uses_wall_clock_,
-                    ExclusiveMonitor& exclusive_monitor_, std::size_t core_index_);
+    ARM_Dynarmic_32(System& system_, bool uses_wall_clock_, ExclusiveMonitor& exclusive_monitor_,
+                    std::size_t core_index_);
     ~ARM_Dynarmic_32() override;
 
     void SetPC(u64 pc) override;
@@ -56,6 +56,7 @@ public:
     void LoadContext(const ThreadContext64& ctx) override {}
 
     void SignalInterrupt() override;
+    void ClearInterrupt() override;
     void ClearExclusiveState() override;
 
     void ClearInstructionCache() override;

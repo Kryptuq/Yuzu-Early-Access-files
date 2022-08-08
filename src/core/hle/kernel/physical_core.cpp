@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include "core/arm/cpu_interrupt_handler.h"
 #include "core/arm/dynarmic/arm_dynarmic_32.h"
 #include "core/arm/dynarmic/arm_dynarmic_64.h"
 #include "core/core.h"
@@ -11,16 +10,14 @@
 
 namespace Kernel {
 
-PhysicalCore::PhysicalCore(std::size_t core_index_, Core::System& system_, KScheduler& scheduler_,
-                           Core::CPUInterrupts& interrupts_)
-    : core_index{core_index_}, system{system_}, scheduler{scheduler_},
-      interrupts{interrupts_}, guard{std::make_unique<std::mutex>()} {
+PhysicalCore::PhysicalCore(std::size_t core_index_, Core::System& system_, KScheduler& scheduler_)
+    : core_index{core_index_}, system{system_}, scheduler{scheduler_} {
 #ifdef ARCHITECTURE_x86_64
     // TODO(bunnei): Initialization relies on a core being available. We may later replace this with
     // a 32-bit instance of Dynarmic. This should be abstracted out to a CPU manager.
     auto& kernel = system.Kernel();
     arm_interface = std::make_unique<Core::ARM_Dynarmic_64>(
-        system, interrupts, kernel.IsMulticore(), kernel.GetExclusiveMonitor(), core_index);
+        system, kernel.IsMulticore(), kernel.GetExclusiveMonitor(), core_index);
 #else
 #error Platform not supported yet.
 #endif
@@ -34,7 +31,7 @@ void PhysicalCore::Initialize([[maybe_unused]] bool is_64_bit) {
     if (!is_64_bit) {
         // We already initialized a 64-bit core, replace with a 32-bit one.
         arm_interface = std::make_unique<Core::ARM_Dynarmic_32>(
-            system, interrupts, kernel.IsMulticore(), kernel.GetExclusiveMonitor(), core_index);
+            system, kernel.IsMulticore(), kernel.GetExclusiveMonitor(), core_index);
     }
 #else
 #error Platform not supported yet.
@@ -47,24 +44,26 @@ void PhysicalCore::Run() {
 }
 
 void PhysicalCore::Idle() {
-    interrupts[core_index].AwaitInterrupt();
+    std::unique_lock lk{guard};
+    on_interrupt.wait(lk, [this] { return is_interrupted; });
 }
 
 bool PhysicalCore::IsInterrupted() const {
-    return interrupts[core_index].IsInterrupted();
+    return is_interrupted;
 }
 
 void PhysicalCore::Interrupt() {
-    guard->lock();
-    interrupts[core_index].SetInterrupt(true);
+    std::unique_lock lk{guard};
+    is_interrupted = true;
     arm_interface->SignalInterrupt();
-    guard->unlock();
+    on_interrupt.notify_all();
 }
 
 void PhysicalCore::ClearInterrupt() {
-    guard->lock();
-    interrupts[core_index].SetInterrupt(false);
-    guard->unlock();
+    std::unique_lock lk{guard};
+    is_interrupted = false;
+    arm_interface->ClearInterrupt();
+    on_interrupt.notify_all();
 }
 
 } // namespace Kernel

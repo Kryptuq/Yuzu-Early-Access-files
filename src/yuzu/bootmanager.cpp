@@ -1089,8 +1089,8 @@ QStringList GRenderWindow::GetUnsupportedGLExtensions() const {
     }
 
     if (!unsupported_ext.empty()) {
-        LOG_ERROR(Frontend, "GPU does not support all required extensions: {}",
-                  glGetString(GL_RENDERER));
+        const std::string gl_renderer{reinterpret_cast<const char*>(glGetString(GL_RENDERER))};
+        LOG_ERROR(Frontend, "GPU does not support all required extensions: {}", gl_renderer);
     }
     for (const QString& ext : unsupported_ext) {
         LOG_ERROR(Frontend, "Unsupported GL extension: {}", ext.toStdString());

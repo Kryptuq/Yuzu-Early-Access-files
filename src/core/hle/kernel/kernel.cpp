@@ -17,7 +17,6 @@
 #include "common/thread.h"
 #include "common/thread_worker.h"
 #include "core/arm/arm_interface.h"
-#include "core/arm/cpu_interrupt_handler.h"
 #include "core/arm/exclusive_monitor.h"
 #include "core/core.h"
 #include "core/core_timing.h"
@@ -82,7 +81,7 @@ struct KernelCore::Impl {
 
     void InitializeCores() {
         for (u32 core_id = 0; core_id < Core::Hardware::NUM_CPU_CORES; core_id++) {
-            cores[core_id].Initialize((*current_process).Is64BitProcess());
+            cores[core_id]->Initialize((*current_process).Is64BitProcess());
             system.Memory().SetCurrentPageTable(*current_process, core_id);
         }
     }
@@ -100,7 +99,9 @@ struct KernelCore::Impl {
         next_user_process_id = KProcess::ProcessIDMin;
         next_thread_id = 1;
 
-        cores.clear();
+        for (auto& core : cores) {
+            core = nullptr;
+        }
 
         global_handle_table->Finalize();
         global_handle_table.reset();
@@ -199,7 +200,7 @@ struct KernelCore::Impl {
             const s32 core{static_cast<s32>(i)};
 
             schedulers[i] = std::make_unique<Kernel::KScheduler>(system.Kernel());
-            cores.emplace_back(i, system, *schedulers[i], interrupts);
+            cores[i] = std::make_unique<Kernel::PhysicalCore>(i, system, *schedulers[i]);
 
             auto* main_thread{Kernel::KThread::Create(system.Kernel())};
             main_thread->SetName(fmt::format("MainThread:{}", core));
@@ -761,7 +762,7 @@ struct KernelCore::Impl {
     std::unordered_set<KAutoObject*> registered_in_use_objects;
 
     std::unique_ptr<Core::ExclusiveMonitor> exclusive_monitor;
-    std::vector<Kernel::PhysicalCore> cores;
+    std::array<std::unique_ptr<Kernel::PhysicalCore>, Core::Hardware::NUM_CPU_CORES> cores;
 
     // Next host thead ID to use, 0-3 IDs represent core threads, >3 represent others
     std::atomic<u32> next_host_thread_id{Core::Hardware::NUM_CPU_CORES};
@@ -785,7 +786,6 @@ struct KernelCore::Impl {
     Common::ThreadWorker service_threads_manager;
 
     std::array<KThread*, Core::Hardware::NUM_CPU_CORES> shutdown_threads;
-    std::array<Core::CPUInterruptHandler, Core::Hardware::NUM_CPU_CORES> interrupts{};
     std::array<std::unique_ptr<Kernel::KScheduler>, Core::Hardware::NUM_CPU_CORES> schedulers{};
 
     bool is_multicore{};
@@ -874,11 +874,11 @@ const Kernel::KScheduler& KernelCore::Scheduler(std::size_t id) const {
 }
 
 Kernel::PhysicalCore& KernelCore::PhysicalCore(std::size_t id) {
-    return impl->cores[id];
+    return *impl->cores[id];
 }
 
 const Kernel::PhysicalCore& KernelCore::PhysicalCore(std::size_t id) const {
-    return impl->cores[id];
+    return *impl->cores[id];
 }
 
 size_t KernelCore::CurrentPhysicalCoreIndex() const {
@@ -890,11 +890,11 @@ size_t KernelCore::CurrentPhysicalCoreIndex() const {
 }
 
 Kernel::PhysicalCore& KernelCore::CurrentPhysicalCore() {
-    return impl->cores[CurrentPhysicalCoreIndex()];
+    return *impl->cores[CurrentPhysicalCoreIndex()];
 }
 
 const Kernel::PhysicalCore& KernelCore::CurrentPhysicalCore() const {
-    return impl->cores[CurrentPhysicalCoreIndex()];
+    return *impl->cores[CurrentPhysicalCoreIndex()];
 }
 
 Kernel::KScheduler* KernelCore::CurrentScheduler() {
@@ -904,15 +904,6 @@ Kernel::KScheduler* KernelCore::CurrentScheduler() {
         return {};
     }
     return impl->schedulers[core_id].get();
-}
-
-std::array<Core::CPUInterruptHandler, Core::Hardware::NUM_CPU_CORES>& KernelCore::Interrupts() {
-    return impl->interrupts;
-}
-
-const std::array<Core::CPUInterruptHandler, Core::Hardware::NUM_CPU_CORES>& KernelCore::Interrupts()
-    const {
-    return impl->interrupts;
 }
 
 Kernel::TimeManager& KernelCore::TimeManager() {
@@ -939,24 +930,18 @@ const KAutoObjectWithListContainer& KernelCore::ObjectListContainer() const {
     return *impl->global_object_list_container;
 }
 
-void KernelCore::InterruptAllPhysicalCores() {
-    for (auto& physical_core : impl->cores) {
-        physical_core.Interrupt();
-    }
-}
-
 void KernelCore::InvalidateAllInstructionCaches() {
     for (auto& physical_core : impl->cores) {
-        physical_core.ArmInterface().ClearInstructionCache();
+        physical_core->ArmInterface().ClearInstructionCache();
     }
 }
 
 void KernelCore::InvalidateCpuInstructionCacheRange(VAddr addr, std::size_t size) {
     for (auto& physical_core : impl->cores) {
-        if (!physical_core.IsInitialized()) {
+        if (!physical_core->IsInitialized()) {
             continue;
         }
-        physical_core.ArmInterface().InvalidateCacheRange(addr, size);
+        physical_core->ArmInterface().InvalidateCacheRange(addr, size);
     }
 }
 

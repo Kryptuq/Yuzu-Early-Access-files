@@ -27,7 +27,6 @@ namespace Core {
 class System;
 class CPUInterruptHandler;
 
-using CPUInterrupts = std::array<CPUInterruptHandler, Core::Hardware::NUM_CPU_CORES>;
 using WatchpointArray = std::array<Kernel::DebugWatchpoint, Core::Hardware::NUM_WATCHPOINTS>;
 
 /// Generic ARMv8 CPU interface
@@ -36,10 +35,8 @@ public:
     YUZU_NON_COPYABLE(ARM_Interface);
     YUZU_NON_MOVEABLE(ARM_Interface);
 
-    explicit ARM_Interface(System& system_, CPUInterrupts& interrupt_handlers_,
-                           bool uses_wall_clock_)
-        : system{system_}, interrupt_handlers{interrupt_handlers_}, uses_wall_clock{
-                                                                        uses_wall_clock_} {}
+    explicit ARM_Interface(System& system_, bool uses_wall_clock_)
+        : system{system_}, uses_wall_clock{uses_wall_clock_} {}
     virtual ~ARM_Interface() = default;
 
     struct ThreadContext32 {
@@ -181,6 +178,9 @@ public:
     /// Signal an interrupt and ask the core to halt as soon as possible.
     virtual void SignalInterrupt() = 0;
 
+    /// Clear a previous interrupt.
+    virtual void ClearInterrupt() = 0;
+
     struct BacktraceEntry {
         std::string module;
         u64 address;
@@ -208,7 +208,6 @@ public:
 protected:
     /// System context that this ARM interface is running under.
     System& system;
-    CPUInterrupts& interrupt_handlers;
     const WatchpointArray* watchpoints;
     bool uses_wall_clock;
 
