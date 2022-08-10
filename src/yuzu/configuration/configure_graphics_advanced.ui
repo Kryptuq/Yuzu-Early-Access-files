@@ -75,7 +75,7 @@
            <string>VSync prevents the screen from tearing, but some graphics cards have lower performance with VSync enabled. Keep it enabled if you don't notice a performance difference.</string>
           </property>
           <property name="text">
-           <string>Use VSync (OpenGL only)</string>
+           <string>Use VSync</string>
           </property>
          </widget>
         </item>

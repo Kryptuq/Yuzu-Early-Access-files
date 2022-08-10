@@ -425,6 +425,13 @@ private:
     void SetCamera(const Common::Input::CallbackStatus& callback);
 
     /**
+     * Converts a color format from bgra to rgba
+     * @param color in bgra format
+     * @return NpadColor in rgba format
+     */
+    NpadColor GetNpadColor(u32 color);
+
+    /**
      * Triggers a callback that something has changed on the controller status
      * @param type Input type of the event to trigger
      * @param is_service_update indicates if this event should only be sent to HID services

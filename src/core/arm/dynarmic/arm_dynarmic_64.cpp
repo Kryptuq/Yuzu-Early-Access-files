@@ -250,7 +250,7 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable* 
         config.fastmem_address_space_bits = address_space_bits;
         config.silently_mirror_fastmem = false;
 
-        config.fastmem_exclusive_access = true;
+        config.fastmem_exclusive_access = config.fastmem_pointer != nullptr;
         config.recompile_on_exclusive_fastmem_failure = true;
     }
 
@@ -314,6 +314,7 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable* 
         }
         if (!Settings::values.cpuopt_fastmem) {
             config.fastmem_pointer = nullptr;
+            config.fastmem_exclusive_access = false;
         }
         if (!Settings::values.cpuopt_fastmem_exclusives) {
             config.fastmem_exclusive_access = false;

@@ -33,10 +33,11 @@ VkSurfaceFormatKHR ChooseSwapSurfaceFormat(vk::Span<VkSurfaceFormatKHR> formats)
 }
 
 VkPresentModeKHR ChooseSwapPresentMode(vk::Span<VkPresentModeKHR> modes) {
-    // Mailbox doesn't lock the application like fifo (vsync), prefer it
+    // Mailbox (triple buffering) doesn't lock the application like fifo (vsync),
+    // prefer it if vsync option is not selected
     const auto found_mailbox = std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_MAILBOX_KHR);
     if (Settings::values.fullscreen_mode.GetValue() == Settings::FullscreenMode::Borderless &&
-        found_mailbox != modes.end()) {
+        found_mailbox != modes.end() && !Settings::values.use_vsync.GetValue()) {
         return VK_PRESENT_MODE_MAILBOX_KHR;
     }
     if (!Settings::values.use_speed_limit.GetValue()) {

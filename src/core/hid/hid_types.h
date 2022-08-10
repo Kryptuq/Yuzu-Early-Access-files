@@ -328,9 +328,9 @@ struct TouchState {
 static_assert(sizeof(TouchState) == 0x28, "Touchstate is an invalid size");
 
 struct NpadColor {
-    u8 b{};
-    u8 g{};
     u8 r{};
+    u8 g{};
+    u8 b{};
     u8 a{};
 };
 static_assert(sizeof(NpadColor) == 4, "NpadColor is an invalid size");

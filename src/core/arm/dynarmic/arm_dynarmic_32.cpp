@@ -195,14 +195,16 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
     if (page_table) {
         config.page_table = reinterpret_cast<std::array<std::uint8_t*, NUM_PAGE_TABLE_ENTRIES>*>(
             page_table->pointers.data());
+        config.absolute_offset_page_table = true;
+        config.page_table_pointer_mask_bits = Common::PageTable::ATTRIBUTE_BITS;
+        config.detect_misaligned_access_via_page_table = 16 | 32 | 64 | 128;
+        config.only_detect_misalignment_via_page_table_on_page_boundary = true;
+
         config.fastmem_pointer = page_table->fastmem_arena;
+
+        config.fastmem_exclusive_access = config.fastmem_pointer != nullptr;
+        config.recompile_on_exclusive_fastmem_failure = true;
     }
-    config.absolute_offset_page_table = true;
-    config.page_table_pointer_mask_bits = Common::PageTable::ATTRIBUTE_BITS;
-    config.detect_misaligned_access_via_page_table = 16 | 32 | 64 | 128;
-    config.only_detect_misalignment_via_page_table_on_page_boundary = true;
-    config.fastmem_exclusive_access = true;
-    config.recompile_on_exclusive_fastmem_failure = true;
 
     // Multi-process state
     config.processor_id = core_index;
@@ -254,6 +256,7 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
         }
         if (!Settings::values.cpuopt_fastmem) {
             config.fastmem_pointer = nullptr;
+            config.fastmem_exclusive_access = false;
         }
         if (!Settings::values.cpuopt_fastmem_exclusives) {
             config.fastmem_exclusive_access = false;

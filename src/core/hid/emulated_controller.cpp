@@ -86,54 +86,16 @@ void EmulatedController::ReloadFromSettings() {
     }
 
     controller.colors_state.fullkey = {
-        .body =
-            {
-                .b = static_cast<u8>((player.body_color_left >> 16) & 0xFF),
-                .g = static_cast<u8>((player.body_color_left >> 8) & 0xFF),
-                .r = static_cast<u8>(player.body_color_left & 0xFF),
-                .a = 0xff,
-            },
-        .button =
-            {
-                .b = static_cast<u8>((player.button_color_left >> 16) & 0xFF),
-                .g = static_cast<u8>((player.button_color_left >> 8) & 0xFF),
-                .r = static_cast<u8>(player.button_color_left & 0xFF),
-                .a = 0xff,
-            },
+        .body = GetNpadColor(player.body_color_left),
+        .button = GetNpadColor(player.button_color_left),
     };
-
     controller.colors_state.left = {
-        .body =
-            {
-                .b = static_cast<u8>((player.body_color_left >> 16) & 0xFF),
-                .g = static_cast<u8>((player.body_color_left >> 8) & 0xFF),
-                .r = static_cast<u8>(player.body_color_left & 0xFF),
-                .a = 0xff,
-            },
-        .button =
-            {
-                .b = static_cast<u8>((player.button_color_left >> 16) & 0xFF),
-                .g = static_cast<u8>((player.button_color_left >> 8) & 0xFF),
-                .r = static_cast<u8>(player.button_color_left & 0xFF),
-                .a = 0xff,
-            },
+        .body = GetNpadColor(player.body_color_left),
+        .button = GetNpadColor(player.button_color_left),
     };
-
-    controller.colors_state.right = {
-        .body =
-            {
-                .b = static_cast<u8>((player.body_color_right >> 16) & 0xFF),
-                .g = static_cast<u8>((player.body_color_right >> 8) & 0xFF),
-                .r = static_cast<u8>(player.body_color_right & 0xFF),
-                .a = 0xff,
-            },
-        .button =
-            {
-                .b = static_cast<u8>((player.button_color_right >> 16) & 0xFF),
-                .g = static_cast<u8>((player.button_color_right >> 8) & 0xFF),
-                .r = static_cast<u8>(player.button_color_right & 0xFF),
-                .a = 0xff,
-            },
+    controller.colors_state.left = {
+        .body = GetNpadColor(player.body_color_right),
+        .button = GetNpadColor(player.button_color_right),
     };
 
     // Other or debug controller should always be a pro controller
@@ -1384,6 +1346,15 @@ BatteryLevelState EmulatedController::GetBattery() const {
 const CameraState& EmulatedController::GetCamera() const {
     std::scoped_lock lock{mutex};
     return controller.camera_state;
+}
+
+NpadColor EmulatedController::GetNpadColor(u32 color) {
+    return {
+        .r = static_cast<u8>((color >> 16) & 0xFF),
+        .g = static_cast<u8>((color >> 8) & 0xFF),
+        .b = static_cast<u8>(color & 0xFF),
+        .a = 0xff,
+    };
 }
 
 void EmulatedController::TriggerOnChange(ControllerTriggerType type, bool is_npad_service_update) {
