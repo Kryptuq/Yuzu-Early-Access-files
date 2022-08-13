@@ -73,7 +73,7 @@ const std::array<int, 2> Config::default_ringcon_analogs{{
 const std::array<UISettings::Shortcut, 22> Config::default_hotkeys{{
     {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Audio Mute/Unmute")),        QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+M"),  QStringLiteral("Home+Dpad_Right"), Qt::WindowShortcut}},
     {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Audio Volume Down")),        QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("-"),       QStringLiteral("Home+Dpad_Down"), Qt::ApplicationShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Audio Volume Up")),          QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("+"),       QStringLiteral("Home+Dpad_Up"), Qt::ApplicationShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Audio Volume Up")),          QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("="),       QStringLiteral("Home+Dpad_Up"), Qt::ApplicationShortcut}},
     {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Capture Screenshot")),       QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+P"),  QStringLiteral("Screenshot"), Qt::WidgetWithChildrenShortcut}},
     {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Change Adapting Filter")),   QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F8"),      QStringLiteral("Home+L"), Qt::ApplicationShortcut}},
     {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Change Docked Mode")),       QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F10"),     QStringLiteral("Home+X"), Qt::ApplicationShortcut}},

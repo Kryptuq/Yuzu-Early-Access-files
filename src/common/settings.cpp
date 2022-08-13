@@ -105,7 +105,7 @@ float Volume() {
     if (values.audio_muted) {
         return 0.0f;
     }
-    return values.volume.GetValue() / 100.0f;
+    return values.volume.GetValue() / static_cast<f32>(values.volume.GetDefault());
 }
 
 void UpdateRescalingInfo() {

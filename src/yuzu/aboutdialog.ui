@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>616</width>
-    <height>261</height>
+    <height>294</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -165,6 +165,7 @@ p, li { white-space: pre-wrap; }
  </widget>
  <resources>
   <include location="../../dist/qt_themes_default/default/default.qrc"/>
+  <include location="../../dist/qt_themes/default/default.qrc"/>
  </resources>
  <connections>
   <connection>

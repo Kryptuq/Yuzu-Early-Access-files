@@ -500,9 +500,10 @@ add_library(core STATIC
     hle/service/jit/jit.h
     hle/service/lbl/lbl.cpp
     hle/service/lbl/lbl.h
-    hle/service/ldn/errors.h
+    hle/service/ldn/ldn_results.h
     hle/service/ldn/ldn.cpp
     hle/service/ldn/ldn.h
+    hle/service/ldn/ldn_types.h
     hle/service/ldr/ldr.cpp
     hle/service/ldr/ldr.h
     hle/service/lm/lm.cpp

@@ -83,7 +83,7 @@
                <number>5</number>
               </property>
               <property name="placeholderText">
-               <string>24872</string>
+               <string notr="true" extracomment="placeholder string that tells user default port">24872</string>
               </property>
              </widget>
             </item>

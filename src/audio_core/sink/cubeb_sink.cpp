@@ -185,6 +185,9 @@ public:
             constexpr s32 max{std::numeric_limits<s16>::max()};
 
             auto yuzu_volume{Settings::Volume()};
+            if (yuzu_volume > 1.0f) {
+                yuzu_volume = 0.6f + 20 * std::log10(yuzu_volume);
+            }
             auto volume{system_volume * device_volume * yuzu_volume};
 
             if (system_channels == 6 && device_channels == 2) {

@@ -374,7 +374,7 @@ struct Values {
     Setting<std::string> audio_output_device_id{"auto", "output_device"};
     Setting<std::string> audio_input_device_id{"auto", "input_device"};
     Setting<bool> audio_muted{false, "audio_muted"};
-    SwitchableSetting<u8, true> volume{100, 0, 100, "volume"};
+    SwitchableSetting<u8, true> volume{100, 0, 200, "volume"};
     Setting<bool> dump_audio_commands{false, "dump_audio_commands"};
 
     // Core

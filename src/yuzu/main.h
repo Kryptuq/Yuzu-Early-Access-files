@@ -348,6 +348,7 @@ private:
     void OpenURL(const QUrl& url);
     void LoadTranslation();
     void OpenPerGameConfiguration(u64 title_id, const std::string& file_name);
+    bool CheckDarkMode();
 
     QString GetTasStateDescription() const;
 
@@ -395,7 +396,6 @@ private:
 
     QString startup_icon_theme;
     bool os_dark_mode = false;
-    bool check_dark_mode();
 
     // FS
     std::shared_ptr<FileSys::VfsFilesystem> vfs;
