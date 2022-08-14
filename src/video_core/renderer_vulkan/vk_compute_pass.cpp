@@ -26,8 +26,6 @@
 
 namespace Vulkan {
 
-using Tegra::Texture::SWIZZLE_TABLE;
-
 namespace {
 
 constexpr u32 ASTC_BINDING_INPUT_BUFFER = 0;
