@@ -7,14 +7,17 @@
 #include <vector>
 
 #include "common/common_types.h"
+#include "common/socket_types.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/sockets/sockets.h"
+#include "network/network.h"
 
 namespace Core {
 class System;
 }
 
 namespace Network {
+class SocketBase;
 class Socket;
 } // namespace Network
 
@@ -30,7 +33,7 @@ private:
     static constexpr size_t MAX_FD = 128;
 
     struct FileDescriptor {
-        std::unique_ptr<Network::Socket> socket;
+        std::unique_ptr<Network::SocketBase> socket;
         s32 flags = 0;
         bool is_connection_based = false;
     };
@@ -165,6 +168,14 @@ private:
     void BuildErrnoResponse(Kernel::HLERequestContext& ctx, Errno bsd_errno) const noexcept;
 
     std::array<std::optional<FileDescriptor>, MAX_FD> file_descriptors;
+
+    Network::RoomNetwork& room_network;
+
+    /// Callback to parse and handle a received wifi packet.
+    void OnProxyPacketReceived(const Network::ProxyPacket& packet);
+
+    // Callback identifier for the OnProxyPacketReceived event.
+    Network::RoomMember::CallbackHandle<Network::ProxyPacket> proxy_packet_received;
 };
 
 class BSDCFG final : public ServiceFramework<BSDCFG> {

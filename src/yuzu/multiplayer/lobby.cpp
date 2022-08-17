@@ -169,7 +169,7 @@ void Lobby::OnJoinRoom(const QModelIndex& source) {
         }
 #endif
         if (auto room_member = room_network.GetRoomMember().lock()) {
-            room_member->Join(nickname, "", ip.c_str(), port, 0, Network::NoPreferredMac, password,
+            room_member->Join(nickname, ip.c_str(), port, 0, Network::NoPreferredIP, password,
                               token);
         }
     });

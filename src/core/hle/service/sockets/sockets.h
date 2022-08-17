@@ -22,7 +22,9 @@ enum class Errno : u32 {
     AGAIN = 11,
     INVAL = 22,
     MFILE = 24,
+    MSGSIZE = 90,
     NOTCONN = 107,
+    TIMEDOUT = 110,
 };
 
 enum class Domain : u32 {
@@ -95,10 +97,6 @@ struct Linger {
     u32 onoff;
     u32 linger;
 };
-
-constexpr u32 FLAG_MSG_DONTWAIT = 0x80;
-
-constexpr u32 FLAG_O_NONBLOCK = 0x800;
 
 /// Registers all Sockets services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system);

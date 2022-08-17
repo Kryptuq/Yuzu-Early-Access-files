@@ -6,7 +6,6 @@
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/nifm/nifm.h"
-#include "core/hle/service/service.h"
 
 namespace {
 
@@ -271,142 +270,45 @@ public:
     }
 };
 
-class IGeneralService final : public ServiceFramework<IGeneralService> {
-public:
-    explicit IGeneralService(Core::System& system_);
+void IGeneralService::GetClientId(Kernel::HLERequestContext& ctx) {
+    static constexpr u32 client_id = 1;
+    LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
-private:
-    void GetClientId(Kernel::HLERequestContext& ctx) {
-        static constexpr u32 client_id = 1;
-        LOG_WARNING(Service_NIFM, "(STUBBED) called");
+    IPC::ResponseBuilder rb{ctx, 4};
+    rb.Push(ResultSuccess);
+    rb.Push<u64>(client_id); // Client ID needs to be non zero otherwise it's considered invalid
+}
 
-        IPC::ResponseBuilder rb{ctx, 4};
-        rb.Push(ResultSuccess);
-        rb.Push<u64>(client_id); // Client ID needs to be non zero otherwise it's considered invalid
-    }
+void IGeneralService::CreateScanRequest(Kernel::HLERequestContext& ctx) {
+    LOG_DEBUG(Service_NIFM, "called");
 
-    void CreateScanRequest(Kernel::HLERequestContext& ctx) {
-        LOG_DEBUG(Service_NIFM, "called");
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(ResultSuccess);
+    rb.PushIpcInterface<IScanRequest>(system);
+}
 
-        rb.Push(ResultSuccess);
-        rb.PushIpcInterface<IScanRequest>(system);
-    }
+void IGeneralService::CreateRequest(Kernel::HLERequestContext& ctx) {
+    LOG_DEBUG(Service_NIFM, "called");
 
-    void CreateRequest(Kernel::HLERequestContext& ctx) {
-        LOG_DEBUG(Service_NIFM, "called");
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(ResultSuccess);
+    rb.PushIpcInterface<IRequest>(system);
+}
 
-        rb.Push(ResultSuccess);
-        rb.PushIpcInterface<IRequest>(system);
-    }
+void IGeneralService::GetCurrentNetworkProfile(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
-    void GetCurrentNetworkProfile(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NIFM, "(STUBBED) called");
+    const auto net_iface = Network::GetSelectedNetworkInterface();
 
-        const auto net_iface = Network::GetSelectedNetworkInterface();
-
-        const SfNetworkProfileData network_profile_data = [&net_iface] {
-            if (!net_iface) {
-                return SfNetworkProfileData{};
-            }
-
-            return SfNetworkProfileData{
-                .ip_setting_data{
-                    .ip_address_setting{
-                        .is_automatic{true},
-                        .current_address{Network::TranslateIPv4(net_iface->ip_address)},
-                        .subnet_mask{Network::TranslateIPv4(net_iface->subnet_mask)},
-                        .gateway{Network::TranslateIPv4(net_iface->gateway)},
-                    },
-                    .dns_setting{
-                        .is_automatic{true},
-                        .primary_dns{1, 1, 1, 1},
-                        .secondary_dns{1, 0, 0, 1},
-                    },
-                    .proxy_setting{
-                        .enabled{false},
-                        .port{},
-                        .proxy_server{},
-                        .automatic_auth_enabled{},
-                        .user{},
-                        .password{},
-                    },
-                    .mtu{1500},
-                },
-                .uuid{0xdeadbeef, 0xdeadbeef},
-                .network_name{"yuzu Network"},
-                .wireless_setting_data{
-                    .ssid_length{12},
-                    .ssid{"yuzu Network"},
-                    .passphrase{"yuzupassword"},
-                },
-            };
-        }();
-
-        ctx.WriteBuffer(network_profile_data);
-
-        IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultSuccess);
-    }
-
-    void RemoveNetworkProfile(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NIFM, "(STUBBED) called");
-
-        IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultSuccess);
-    }
-
-    void GetCurrentIpAddress(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NIFM, "(STUBBED) called");
-
-        auto ipv4 = Network::GetHostIPv4Address();
-        if (!ipv4) {
-            LOG_ERROR(Service_NIFM, "Couldn't get host IPv4 address, defaulting to 0.0.0.0");
-            ipv4.emplace(Network::IPv4Address{0, 0, 0, 0});
+    SfNetworkProfileData network_profile_data = [&net_iface] {
+        if (!net_iface) {
+            return SfNetworkProfileData{};
         }
 
-        IPC::ResponseBuilder rb{ctx, 3};
-        rb.Push(ResultSuccess);
-        rb.PushRaw(*ipv4);
-    }
-
-    void CreateTemporaryNetworkProfile(Kernel::HLERequestContext& ctx) {
-        LOG_DEBUG(Service_NIFM, "called");
-
-        ASSERT_MSG(ctx.GetReadBufferSize() == 0x17c,
-                   "SfNetworkProfileData is not the correct size");
-        u128 uuid{};
-        auto buffer = ctx.ReadBuffer();
-        std::memcpy(&uuid, buffer.data() + 8, sizeof(u128));
-
-        IPC::ResponseBuilder rb{ctx, 6, 0, 1};
-
-        rb.Push(ResultSuccess);
-        rb.PushIpcInterface<INetworkProfile>(system);
-        rb.PushRaw<u128>(uuid);
-    }
-
-    void GetCurrentIpConfigInfo(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NIFM, "(STUBBED) called");
-
-        struct IpConfigInfo {
-            IpAddressSetting ip_address_setting{};
-            DnsSetting dns_setting{};
-        };
-        static_assert(sizeof(IpConfigInfo) == sizeof(IpAddressSetting) + sizeof(DnsSetting),
-                      "IpConfigInfo has incorrect size.");
-
-        const auto net_iface = Network::GetSelectedNetworkInterface();
-
-        const IpConfigInfo ip_config_info = [&net_iface] {
-            if (!net_iface) {
-                return IpConfigInfo{};
-            }
-
-            return IpConfigInfo{
+        return SfNetworkProfileData{
+            .ip_setting_data{
                 .ip_address_setting{
                     .is_automatic{true},
                     .current_address{Network::TranslateIPv4(net_iface->ip_address)},
@@ -418,66 +320,178 @@ private:
                     .primary_dns{1, 1, 1, 1},
                     .secondary_dns{1, 0, 0, 1},
                 },
-            };
-        }();
+                .proxy_setting{
+                    .enabled{false},
+                    .port{},
+                    .proxy_server{},
+                    .automatic_auth_enabled{},
+                    .user{},
+                    .password{},
+                },
+                .mtu{1500},
+            },
+            .uuid{0xdeadbeef, 0xdeadbeef},
+            .network_name{"yuzu Network"},
+            .wireless_setting_data{
+                .ssid_length{12},
+                .ssid{"yuzu Network"},
+                .passphrase{"yuzupassword"},
+            },
+        };
+    }();
 
-        IPC::ResponseBuilder rb{ctx, 2 + (sizeof(IpConfigInfo) + 3) / sizeof(u32)};
-        rb.Push(ResultSuccess);
-        rb.PushRaw<IpConfigInfo>(ip_config_info);
+    // When we're connected to a room, spoof the hosts IP address
+    if (auto room_member = network.GetRoomMember().lock()) {
+        if (room_member->IsConnected()) {
+            network_profile_data.ip_setting_data.ip_address_setting.current_address =
+                room_member->GetFakeIpAddress();
+        }
     }
 
-    void IsWirelessCommunicationEnabled(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NIFM, "(STUBBED) called");
+    ctx.WriteBuffer(network_profile_data);
 
-        IPC::ResponseBuilder rb{ctx, 3};
-        rb.Push(ResultSuccess);
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void IGeneralService::RemoveNetworkProfile(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_NIFM, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void IGeneralService::GetCurrentIpAddress(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_NIFM, "(STUBBED) called");
+
+    auto ipv4 = Network::GetHostIPv4Address();
+    if (!ipv4) {
+        LOG_ERROR(Service_NIFM, "Couldn't get host IPv4 address, defaulting to 0.0.0.0");
+        ipv4.emplace(Network::IPv4Address{0, 0, 0, 0});
+    }
+
+    // When we're connected to a room, spoof the hosts IP address
+    if (auto room_member = network.GetRoomMember().lock()) {
+        if (room_member->IsConnected()) {
+            ipv4 = room_member->GetFakeIpAddress();
+        }
+    }
+
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(ResultSuccess);
+    rb.PushRaw(*ipv4);
+}
+
+void IGeneralService::CreateTemporaryNetworkProfile(Kernel::HLERequestContext& ctx) {
+    LOG_DEBUG(Service_NIFM, "called");
+
+    ASSERT_MSG(ctx.GetReadBufferSize() == 0x17c, "SfNetworkProfileData is not the correct size");
+    u128 uuid{};
+    auto buffer = ctx.ReadBuffer();
+    std::memcpy(&uuid, buffer.data() + 8, sizeof(u128));
+
+    IPC::ResponseBuilder rb{ctx, 6, 0, 1};
+
+    rb.Push(ResultSuccess);
+    rb.PushIpcInterface<INetworkProfile>(system);
+    rb.PushRaw<u128>(uuid);
+}
+
+void IGeneralService::GetCurrentIpConfigInfo(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_NIFM, "(STUBBED) called");
+
+    struct IpConfigInfo {
+        IpAddressSetting ip_address_setting{};
+        DnsSetting dns_setting{};
+    };
+    static_assert(sizeof(IpConfigInfo) == sizeof(IpAddressSetting) + sizeof(DnsSetting),
+                  "IpConfigInfo has incorrect size.");
+
+    const auto net_iface = Network::GetSelectedNetworkInterface();
+
+    IpConfigInfo ip_config_info = [&net_iface] {
+        if (!net_iface) {
+            return IpConfigInfo{};
+        }
+
+        return IpConfigInfo{
+            .ip_address_setting{
+                .is_automatic{true},
+                .current_address{Network::TranslateIPv4(net_iface->ip_address)},
+                .subnet_mask{Network::TranslateIPv4(net_iface->subnet_mask)},
+                .gateway{Network::TranslateIPv4(net_iface->gateway)},
+            },
+            .dns_setting{
+                .is_automatic{true},
+                .primary_dns{1, 1, 1, 1},
+                .secondary_dns{1, 0, 0, 1},
+            },
+        };
+    }();
+
+    // When we're connected to a room, spoof the hosts IP address
+    if (auto room_member = network.GetRoomMember().lock()) {
+        if (room_member->IsConnected()) {
+            ip_config_info.ip_address_setting.current_address = room_member->GetFakeIpAddress();
+        }
+    }
+
+    IPC::ResponseBuilder rb{ctx, 2 + (sizeof(IpConfigInfo) + 3) / sizeof(u32)};
+    rb.Push(ResultSuccess);
+    rb.PushRaw<IpConfigInfo>(ip_config_info);
+}
+
+void IGeneralService::IsWirelessCommunicationEnabled(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_NIFM, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(ResultSuccess);
+    rb.Push<u8>(1);
+}
+
+void IGeneralService::GetInternetConnectionStatus(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_NIFM, "(STUBBED) called");
+
+    struct Output {
+        InternetConnectionType type{InternetConnectionType::WiFi};
+        u8 wifi_strength{3};
+        InternetConnectionStatus state{InternetConnectionStatus::Connected};
+    };
+    static_assert(sizeof(Output) == 0x3, "Output has incorrect size.");
+
+    constexpr Output out{};
+
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(ResultSuccess);
+    rb.PushRaw(out);
+}
+
+void IGeneralService::IsEthernetCommunicationEnabled(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_NIFM, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(ResultSuccess);
+    if (Network::GetHostIPv4Address().has_value()) {
+        rb.Push<u8>(1);
+    } else {
         rb.Push<u8>(0);
     }
+}
 
-    void GetInternetConnectionStatus(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NIFM, "(STUBBED) called");
+void IGeneralService::IsAnyInternetRequestAccepted(Kernel::HLERequestContext& ctx) {
+    LOG_ERROR(Service_NIFM, "(STUBBED) called");
 
-        struct Output {
-            InternetConnectionType type{InternetConnectionType::WiFi};
-            u8 wifi_strength{3};
-            InternetConnectionStatus state{InternetConnectionStatus::Connected};
-        };
-        static_assert(sizeof(Output) == 0x3, "Output has incorrect size.");
-
-        constexpr Output out{};
-
-        IPC::ResponseBuilder rb{ctx, 3};
-        rb.Push(ResultSuccess);
-        rb.PushRaw(out);
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(ResultSuccess);
+    if (Network::GetHostIPv4Address().has_value()) {
+        rb.Push<u8>(1);
+    } else {
+        rb.Push<u8>(0);
     }
-
-    void IsEthernetCommunicationEnabled(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NIFM, "(STUBBED) called");
-
-        IPC::ResponseBuilder rb{ctx, 3};
-        rb.Push(ResultSuccess);
-        if (Network::GetHostIPv4Address().has_value()) {
-            rb.Push<u8>(1);
-        } else {
-            rb.Push<u8>(0);
-        }
-    }
-
-    void IsAnyInternetRequestAccepted(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NIFM, "(STUBBED) called");
-
-        IPC::ResponseBuilder rb{ctx, 3};
-        rb.Push(ResultSuccess);
-        if (Network::GetHostIPv4Address().has_value()) {
-            rb.Push<u8>(1);
-        } else {
-            rb.Push<u8>(0);
-        }
-    }
-};
+}
 
 IGeneralService::IGeneralService(Core::System& system_)
-    : ServiceFramework{system_, "IGeneralService"} {
+    : ServiceFramework{system_, "IGeneralService"}, network{system_.GetRoomNetwork()} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {1, &IGeneralService::GetClientId, "GetClientId"},
@@ -527,6 +541,8 @@ IGeneralService::IGeneralService(Core::System& system_)
 
     RegisterHandlers(functions);
 }
+
+IGeneralService::~IGeneralService() = default;
 
 class NetworkInterface final : public ServiceFramework<NetworkInterface> {
 public:

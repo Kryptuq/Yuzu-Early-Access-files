@@ -31,7 +31,7 @@ AnnounceMultiplayerSession::AnnounceMultiplayerSession(Network::RoomNetwork& roo
 }
 
 WebService::WebResult AnnounceMultiplayerSession::Register() {
-    std::shared_ptr<Network::Room> room = room_network.GetRoom().lock();
+    auto room = room_network.GetRoom().lock();
     if (!room) {
         return WebService::WebResult{WebService::WebResult::Code::LibError,
                                      "Network is not initialized", ""};
@@ -102,7 +102,7 @@ void AnnounceMultiplayerSession::UpdateBackendData(std::shared_ptr<Network::Room
 void AnnounceMultiplayerSession::AnnounceMultiplayerLoop() {
     // Invokes all current bound error callbacks.
     const auto ErrorCallback = [this](WebService::WebResult result) {
-        std::lock_guard<std::mutex> lock(callback_mutex);
+        std::lock_guard lock(callback_mutex);
         for (auto callback : error_callbacks) {
             (*callback)(result);
         }
@@ -120,7 +120,7 @@ void AnnounceMultiplayerSession::AnnounceMultiplayerLoop() {
     std::future<WebService::WebResult> future;
     while (!shutdown_event.WaitUntil(update_time)) {
         update_time += announce_time_interval;
-        std::shared_ptr<Network::Room> room = room_network.GetRoom().lock();
+        auto room = room_network.GetRoom().lock();
         if (!room) {
             break;
         }

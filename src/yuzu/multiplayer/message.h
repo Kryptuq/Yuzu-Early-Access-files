@@ -40,8 +40,7 @@ public:
     static const ConnectionError GENERIC_ERROR;
     static const ConnectionError LOST_CONNECTION;
     static const ConnectionError HOST_KICKED;
-    static const ConnectionError MAC_COLLISION;
-    static const ConnectionError CONSOLE_ID_COLLISION;
+    static const ConnectionError IP_COLLISION;
     static const ConnectionError PERMISSION_DENIED;
     static const ConnectionError NO_SUCH_USER;
     /**

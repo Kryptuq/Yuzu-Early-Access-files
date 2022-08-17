@@ -14,20 +14,88 @@
 
 #include "common/common_types.h"
 #include "core/internal_network/network.h"
+#include "network/network.h"
 
 // TODO: C++20 Replace std::vector usages with std::span
 
 namespace Network {
 
-class Socket {
+class SocketBase {
 public:
+#ifdef YUZU_UNIX
+    using SOCKET = int;
+    static constexpr SOCKET INVALID_SOCKET = -1;
+    static constexpr SOCKET SOCKET_ERROR = -1;
+#endif
+
     struct AcceptResult {
-        std::unique_ptr<Socket> socket;
+        std::unique_ptr<SocketBase> socket;
         SockAddrIn sockaddr_in;
     };
+    virtual ~SocketBase() = default;
 
-    explicit Socket() = default;
-    ~Socket();
+    virtual SocketBase& operator=(const SocketBase&) = delete;
+
+    // Avoid closing sockets implicitly
+    virtual SocketBase& operator=(SocketBase&&) noexcept = delete;
+
+    virtual Errno Initialize(Domain domain, Type type, Protocol protocol) = 0;
+
+    virtual Errno Close() = 0;
+
+    virtual std::pair<AcceptResult, Errno> Accept() = 0;
+
+    virtual Errno Connect(SockAddrIn addr_in) = 0;
+
+    virtual std::pair<SockAddrIn, Errno> GetPeerName() = 0;
+
+    virtual std::pair<SockAddrIn, Errno> GetSockName() = 0;
+
+    virtual Errno Bind(SockAddrIn addr) = 0;
+
+    virtual Errno Listen(s32 backlog) = 0;
+
+    virtual Errno Shutdown(ShutdownHow how) = 0;
+
+    virtual std::pair<s32, Errno> Recv(int flags, std::vector<u8>& message) = 0;
+
+    virtual std::pair<s32, Errno> RecvFrom(int flags, std::vector<u8>& message,
+                                           SockAddrIn* addr) = 0;
+
+    virtual std::pair<s32, Errno> Send(const std::vector<u8>& message, int flags) = 0;
+
+    virtual std::pair<s32, Errno> SendTo(u32 flags, const std::vector<u8>& message,
+                                         const SockAddrIn* addr) = 0;
+
+    virtual Errno SetLinger(bool enable, u32 linger) = 0;
+
+    virtual Errno SetReuseAddr(bool enable) = 0;
+
+    virtual Errno SetKeepAlive(bool enable) = 0;
+
+    virtual Errno SetBroadcast(bool enable) = 0;
+
+    virtual Errno SetSndBuf(u32 value) = 0;
+
+    virtual Errno SetRcvBuf(u32 value) = 0;
+
+    virtual Errno SetSndTimeo(u32 value) = 0;
+
+    virtual Errno SetRcvTimeo(u32 value) = 0;
+
+    virtual Errno SetNonBlock(bool enable) = 0;
+
+    virtual bool IsOpened() const = 0;
+
+    virtual void HandleProxyPacket(const ProxyPacket& packet) = 0;
+
+    SOCKET fd = INVALID_SOCKET;
+};
+
+class Socket : public SocketBase {
+public:
+    Socket() = default;
+    ~Socket() override;
 
     Socket(const Socket&) = delete;
     Socket& operator=(const Socket&) = delete;
@@ -37,57 +105,57 @@ public:
     // Avoid closing sockets implicitly
     Socket& operator=(Socket&&) noexcept = delete;
 
-    Errno Initialize(Domain domain, Type type, Protocol protocol);
+    Errno Initialize(Domain domain, Type type, Protocol protocol) override;
 
-    Errno Close();
+    Errno Close() override;
 
-    std::pair<AcceptResult, Errno> Accept();
+    std::pair<AcceptResult, Errno> Accept() override;
 
-    Errno Connect(SockAddrIn addr_in);
+    Errno Connect(SockAddrIn addr_in) override;
 
-    std::pair<SockAddrIn, Errno> GetPeerName();
+    std::pair<SockAddrIn, Errno> GetPeerName() override;
 
-    std::pair<SockAddrIn, Errno> GetSockName();
+    std::pair<SockAddrIn, Errno> GetSockName() override;
 
-    Errno Bind(SockAddrIn addr);
+    Errno Bind(SockAddrIn addr) override;
 
-    Errno Listen(s32 backlog);
+    Errno Listen(s32 backlog) override;
 
-    Errno Shutdown(ShutdownHow how);
+    Errno Shutdown(ShutdownHow how) override;
 
-    std::pair<s32, Errno> Recv(int flags, std::vector<u8>& message);
+    std::pair<s32, Errno> Recv(int flags, std::vector<u8>& message) override;
 
-    std::pair<s32, Errno> RecvFrom(int flags, std::vector<u8>& message, SockAddrIn* addr);
+    std::pair<s32, Errno> RecvFrom(int flags, std::vector<u8>& message, SockAddrIn* addr) override;
 
-    std::pair<s32, Errno> Send(const std::vector<u8>& message, int flags);
+    std::pair<s32, Errno> Send(const std::vector<u8>& message, int flags) override;
 
-    std::pair<s32, Errno> SendTo(u32 flags, const std::vector<u8>& message, const SockAddrIn* addr);
+    std::pair<s32, Errno> SendTo(u32 flags, const std::vector<u8>& message,
+                                 const SockAddrIn* addr) override;
 
-    Errno SetLinger(bool enable, u32 linger);
+    Errno SetLinger(bool enable, u32 linger) override;
 
-    Errno SetReuseAddr(bool enable);
+    Errno SetReuseAddr(bool enable) override;
 
-    Errno SetKeepAlive(bool enable);
+    Errno SetKeepAlive(bool enable) override;
 
-    Errno SetBroadcast(bool enable);
+    Errno SetBroadcast(bool enable) override;
 
-    Errno SetSndBuf(u32 value);
+    Errno SetSndBuf(u32 value) override;
 
-    Errno SetRcvBuf(u32 value);
+    Errno SetRcvBuf(u32 value) override;
 
-    Errno SetSndTimeo(u32 value);
+    Errno SetSndTimeo(u32 value) override;
 
-    Errno SetRcvTimeo(u32 value);
+    Errno SetRcvTimeo(u32 value) override;
 
-    Errno SetNonBlock(bool enable);
+    Errno SetNonBlock(bool enable) override;
 
-    bool IsOpened() const;
+    template <typename T>
+    Errno SetSockOpt(SOCKET fd, int option, T value);
 
-#if defined(_WIN32)
-    SOCKET fd = INVALID_SOCKET;
-#elif YUZU_UNIX
-    int fd = -1;
-#endif
+    bool IsOpened() const override;
+
+    void HandleProxyPacket(const ProxyPacket& packet) override;
 };
 
 std::pair<s32, Errno> Poll(std::vector<PollFD>& poll_fds, s32 timeout);

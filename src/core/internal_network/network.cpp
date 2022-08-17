@@ -32,6 +32,7 @@
 #include "core/internal_network/network.h"
 #include "core/internal_network/network_interface.h"
 #include "core/internal_network/sockets.h"
+#include "network/network.h"
 
 namespace Network {
 
@@ -114,7 +115,10 @@ Errno TranslateNativeError(int e) {
         return Errno::NETDOWN;
     case WSAENETUNREACH:
         return Errno::NETUNREACH;
+    case WSAEMSGSIZE:
+        return Errno::MSGSIZE;
     default:
+        UNIMPLEMENTED_MSG("Unimplemented errno={}", e);
         return Errno::OTHER;
     }
 }
@@ -125,7 +129,6 @@ using SOCKET = int;
 using WSAPOLLFD = pollfd;
 using ULONG = u64;
 
-constexpr SOCKET INVALID_SOCKET = -1;
 constexpr SOCKET SOCKET_ERROR = -1;
 
 constexpr int SD_RECEIVE = SHUT_RD;
@@ -206,7 +209,10 @@ Errno TranslateNativeError(int e) {
         return Errno::NETDOWN;
     case ENETUNREACH:
         return Errno::NETUNREACH;
+    case EMSGSIZE:
+        return Errno::MSGSIZE;
     default:
+        UNIMPLEMENTED_MSG("Unimplemented errno={}", e);
         return Errno::OTHER;
     }
 }
@@ -329,16 +335,6 @@ PollEvents TranslatePollRevents(short revents) {
     return result;
 }
 
-template <typename T>
-Errno SetSockOpt(SOCKET fd, int option, T value) {
-    const int result =
-        setsockopt(fd, SOL_SOCKET, option, reinterpret_cast<const char*>(&value), sizeof(value));
-    if (result != SOCKET_ERROR) {
-        return Errno::SUCCESS;
-    }
-    return GetAndLogLastError();
-}
-
 } // Anonymous namespace
 
 NetworkInstance::NetworkInstance() {
@@ -350,26 +346,16 @@ NetworkInstance::~NetworkInstance() {
 }
 
 std::optional<IPv4Address> GetHostIPv4Address() {
-    const std::string& selected_network_interface = Settings::values.network_interface.GetValue();
-    const auto network_interfaces = Network::GetAvailableNetworkInterfaces();
-    if (network_interfaces.size() == 0) {
-        LOG_ERROR(Network, "GetAvailableNetworkInterfaces returned no interfaces");
+    const auto network_interface = Network::GetSelectedNetworkInterface();
+    if (!network_interface.has_value()) {
+        LOG_ERROR(Network, "GetSelectedNetworkInterface returned no interface");
         return {};
     }
 
-    const auto res =
-        std::ranges::find_if(network_interfaces, [&selected_network_interface](const auto& iface) {
-            return iface.name == selected_network_interface;
-        });
-
-    if (res != network_interfaces.end()) {
-        char ip_addr[16] = {};
-        ASSERT(inet_ntop(AF_INET, &res->ip_address, ip_addr, sizeof(ip_addr)) != nullptr);
-        return TranslateIPv4(res->ip_address);
-    } else {
-        LOG_ERROR(Network, "Couldn't find selected interface \"{}\"", selected_network_interface);
-        return {};
-    }
+    std::array<char, 16> ip_addr = {};
+    ASSERT(inet_ntop(AF_INET, &network_interface->ip_address, ip_addr.data(), sizeof(ip_addr)) !=
+           nullptr);
+    return TranslateIPv4(network_interface->ip_address);
 }
 
 std::pair<s32, Errno> Poll(std::vector<PollFD>& pollfds, s32 timeout) {
@@ -412,7 +398,19 @@ Socket::~Socket() {
     fd = INVALID_SOCKET;
 }
 
-Socket::Socket(Socket&& rhs) noexcept : fd{std::exchange(rhs.fd, INVALID_SOCKET)} {}
+Socket::Socket(Socket&& rhs) noexcept {
+    fd = std::exchange(rhs.fd, INVALID_SOCKET);
+}
+
+template <typename T>
+Errno Socket::SetSockOpt(SOCKET fd_, int option, T value) {
+    const int result =
+        setsockopt(fd_, SOL_SOCKET, option, reinterpret_cast<const char*>(&value), sizeof(value));
+    if (result != SOCKET_ERROR) {
+        return Errno::SUCCESS;
+    }
+    return GetAndLogLastError();
+}
 
 Errno Socket::Initialize(Domain domain, Type type, Protocol protocol) {
     fd = socket(TranslateDomain(domain), TranslateType(type), TranslateProtocol(protocol));
@@ -423,7 +421,7 @@ Errno Socket::Initialize(Domain domain, Type type, Protocol protocol) {
     return GetAndLogLastError();
 }
 
-std::pair<Socket::AcceptResult, Errno> Socket::Accept() {
+std::pair<SocketBase::AcceptResult, Errno> Socket::Accept() {
     sockaddr addr;
     socklen_t addrlen = sizeof(addr);
     const SOCKET new_socket = accept(fd, &addr, &addrlen);
@@ -632,6 +630,10 @@ Errno Socket::SetNonBlock(bool enable) {
 
 bool Socket::IsOpened() const {
     return fd != INVALID_SOCKET;
+}
+
+void Socket::HandleProxyPacket(const ProxyPacket& packet) {
+    LOG_WARNING(Network, "ProxyPacket received, but not in Proxy mode!");
 }
 
 } // namespace Network

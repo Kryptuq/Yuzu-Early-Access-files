@@ -59,7 +59,9 @@ MultiplayerState::MultiplayerState(QWidget* parent, QStandardItemModel* game_lis
             });
 }
 
-MultiplayerState::~MultiplayerState() {
+MultiplayerState::~MultiplayerState() = default;
+
+void MultiplayerState::Close() {
     if (state_callback_handle) {
         if (auto member = room_network.GetRoomMember().lock()) {
             member->Unbind(state_callback_handle);
@@ -71,9 +73,6 @@ MultiplayerState::~MultiplayerState() {
             member->Unbind(error_callback_handle);
         }
     }
-}
-
-void MultiplayerState::Close() {
     if (host_room) {
         host_room->close();
     }
@@ -95,7 +94,6 @@ void MultiplayerState::retranslateUi() {
         status_text->setText(tr("Not Connected. Click here to find a room!"));
     } else if (current_state == Network::RoomMember::State::Joined ||
                current_state == Network::RoomMember::State::Moderator) {
-
         status_text->setText(tr("Connected"));
     } else {
         status_text->setText(tr("Not Connected"));
@@ -151,11 +149,8 @@ void MultiplayerState::OnNetworkError(const Network::RoomMember::Error& error) {
         NetworkMessage::ErrorManager::ShowError(
             NetworkMessage::ErrorManager::USERNAME_NOT_VALID_SERVER);
         break;
-    case Network::RoomMember::Error::MacCollision:
-        NetworkMessage::ErrorManager::ShowError(NetworkMessage::ErrorManager::MAC_COLLISION);
-        break;
-    case Network::RoomMember::Error::ConsoleIdCollision:
-        NetworkMessage::ErrorManager::ShowError(NetworkMessage::ErrorManager::CONSOLE_ID_COLLISION);
+    case Network::RoomMember::Error::IpCollision:
+        NetworkMessage::ErrorManager::ShowError(NetworkMessage::ErrorManager::IP_COLLISION);
         break;
     case Network::RoomMember::Error::RoomIsFull:
         NetworkMessage::ErrorManager::ShowError(NetworkMessage::ErrorManager::ROOM_IS_FULL);

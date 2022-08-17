@@ -9,6 +9,7 @@
 #include <vector>
 #include "common/announce_multiplayer_room.h"
 #include "common/common_types.h"
+#include "common/socket_types.h"
 #include "network/room.h"
 
 namespace Network {
@@ -17,22 +18,12 @@ using AnnounceMultiplayerRoom::GameInfo;
 using AnnounceMultiplayerRoom::RoomInformation;
 
 /// Information about the received WiFi packets.
-/// Acts as our own 802.11 header.
-struct WifiPacket {
-    enum class PacketType : u8 {
-        Beacon,
-        Data,
-        Authentication,
-        AssociationResponse,
-        Deauthentication,
-        NodeMap
-    };
-    PacketType type;      ///< The type of 802.11 frame.
-    std::vector<u8> data; ///< Raw 802.11 frame data, starting at the management frame header
-                          /// for management frames.
-    MacAddress transmitter_address; ///< Mac address of the transmitter.
-    MacAddress destination_address; ///< Mac address of the receiver.
-    u8 channel;                     ///< WiFi channel where this frame was transmitted.
+struct ProxyPacket {
+    SockAddrIn local_endpoint;
+    SockAddrIn remote_endpoint;
+    Protocol protocol;
+    bool broadcast;
+    std::vector<u8> data;
 };
 
 /// Represents a chat message.
@@ -72,15 +63,14 @@ public:
         HostKicked,     ///< Kicked by the host
 
         // Reasons why connection was rejected
-        UnknownError,       ///< Some error [permissions to network device missing or something]
-        NameCollision,      ///< Somebody is already using this name
-        MacCollision,       ///< Somebody is already using that mac-address
-        ConsoleIdCollision, ///< Somebody in the room has the same Console ID
-        WrongVersion,       ///< The room version is not the same as for this RoomMember
-        WrongPassword,      ///< The password doesn't match the one from the Room
-        CouldNotConnect,    ///< The room is not responding to a connection attempt
-        RoomIsFull,         ///< Room is already at the maximum number of players
-        HostBanned,         ///< The user is banned by the host
+        UnknownError,    ///< Some error [permissions to network device missing or something]
+        NameCollision,   ///< Somebody is already using this name
+        IpCollision,     ///< Somebody is already using that fake-ip-address
+        WrongVersion,    ///< The room version is not the same as for this RoomMember
+        WrongPassword,   ///< The password doesn't match the one from the Room
+        CouldNotConnect, ///< The room is not responding to a connection attempt
+        RoomIsFull,      ///< Room is already at the maximum number of players
+        HostBanned,      ///< The user is banned by the host
 
         // Reasons why moderation request failed
         PermissionDenied, ///< The user does not have mod permissions
@@ -92,9 +82,9 @@ public:
         std::string username;     ///< The web services username of the member. Can be empty.
         std::string display_name; ///< The web services display name of the member. Can be empty.
         std::string avatar_url;   ///< Url to the member's avatar. Can be empty.
-        GameInfo game_info;     ///< Name of the game they're currently playing, or empty if they're
-                                /// not playing anything.
-        MacAddress mac_address; ///< MAC address associated with this member.
+        GameInfo game_info;  ///< Name of the game they're currently playing, or empty if they're
+                             /// not playing anything.
+        IPv4Address fake_ip; ///< Fake Ip address associated with this member.
     };
     using MemberList = std::vector<MemberInformation>;
 
@@ -135,7 +125,7 @@ public:
     /**
      * Returns the MAC address of the RoomMember.
      */
-    const MacAddress& GetMacAddress() const;
+    const IPv4Address& GetFakeIpAddress() const;
 
     /**
      * Returns information about the room we're currently connected to.
@@ -149,19 +139,17 @@ public:
 
     /**
      * Attempts to join a room at the specified address and port, using the specified nickname.
-     * A console ID hash is passed in to check console ID conflicts.
-     * This may fail if the username or console ID is already taken.
      */
-    void Join(const std::string& nickname, const std::string& console_id_hash,
-              const char* server_addr = "127.0.0.1", u16 server_port = DefaultRoomPort,
-              u16 client_port = 0, const MacAddress& preferred_mac = NoPreferredMac,
+    void Join(const std::string& nickname, const char* server_addr = "127.0.0.1",
+              u16 server_port = DefaultRoomPort, u16 client_port = 0,
+              const IPv4Address& preferred_fake_ip = NoPreferredIP,
               const std::string& password = "", const std::string& token = "");
 
     /**
      * Sends a WiFi packet to the room.
      * @param packet The WiFi packet to send.
      */
-    void SendWifiPacket(const WifiPacket& packet);
+    void SendProxyPacket(const ProxyPacket& packet);
 
     /**
      * Sends a chat message to the room.
@@ -207,14 +195,14 @@ public:
     CallbackHandle<Error> BindOnError(std::function<void(const Error&)> callback);
 
     /**
-     * Binds a function to an event that will be triggered every time a WifiPacket is received.
+     * Binds a function to an event that will be triggered every time a ProxyPacket is received.
      * The function wil be called everytime the event is triggered.
      * The callback function must not bind or unbind a function. Doing so will cause a deadlock
      * @param callback The function to call
      * @return A handle used for removing the function from the registered list
      */
-    CallbackHandle<WifiPacket> BindOnWifiPacketReceived(
-        std::function<void(const WifiPacket&)> callback);
+    CallbackHandle<ProxyPacket> BindOnProxyPacketReceived(
+        std::function<void(const ProxyPacket&)> callback);
 
     /**
      * Binds a function to an event that will be triggered every time the RoomInformation changes.
@@ -292,10 +280,8 @@ inline const char* GetErrorStr(const RoomMember::Error& e) {
         return "UnknownError";
     case RoomMember::Error::NameCollision:
         return "NameCollision";
-    case RoomMember::Error::MacCollision:
-        return "MaxCollision";
-    case RoomMember::Error::ConsoleIdCollision:
-        return "ConsoleIdCollision";
+    case RoomMember::Error::IpCollision:
+        return "IpCollision";
     case RoomMember::Error::WrongVersion:
         return "WrongVersion";
     case RoomMember::Error::WrongPassword:

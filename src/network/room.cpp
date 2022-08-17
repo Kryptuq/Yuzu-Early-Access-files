@@ -20,9 +20,7 @@ namespace Network {
 
 class Room::RoomImpl {
 public:
-    // This MAC address is used to generate a 'Nintendo' like Mac address.
-    const MacAddress NintendoOUI;
-    std::mt19937 random_gen; ///< Random number generator. Used for GenerateMacAddress
+    std::mt19937 random_gen; ///< Random number generator. Used for GenerateFakeIPAddress
 
     ENetHost* server = nullptr; ///< Network interface.
 
@@ -35,10 +33,9 @@ public:
     std::string password; ///< The password required to connect to this room.
 
     struct Member {
-        std::string nickname;        ///< The nickname of the member.
-        std::string console_id_hash; ///< A hash of the console ID of the member.
-        GameInfo game_info;          ///< The current game of the member
-        MacAddress mac_address;      ///< The assigned mac address of the member.
+        std::string nickname; ///< The nickname of the member.
+        GameInfo game_info;   ///< The current game of the member
+        IPv4Address fake_ip;  ///< The assigned fake ip address of the member.
         /// Data of the user, often including authenticated forum username.
         VerifyUser::UserData user_data;
         ENetPeer* peer; ///< The remote peer.
@@ -51,8 +48,7 @@ public:
     IPBanList ip_ban_list;             ///< List of banned IP addresses
     mutable std::mutex ban_list_mutex; ///< Mutex for the ban lists
 
-    RoomImpl()
-        : NintendoOUI{0x00, 0x1F, 0x32, 0x00, 0x00, 0x00}, random_gen(std::random_device()()) {}
+    RoomImpl() : random_gen(std::random_device()()) {}
 
     /// Thread that receives and dispatches network packets
     std::unique_ptr<std::thread> room_thread;
@@ -101,16 +97,10 @@ public:
     bool IsValidNickname(const std::string& nickname) const;
 
     /**
-     * Returns whether the MAC address is valid, ie. isn't already taken by someone else in the
+     * Returns whether the fake ip address is valid, ie. isn't already taken by someone else in the
      * room.
      */
-    bool IsValidMacAddress(const MacAddress& address) const;
-
-    /**
-     * Returns whether the console ID (hash) is valid, ie. isn't already taken by someone else in
-     * the room.
-     */
-    bool IsValidConsoleId(const std::string& console_id_hash) const;
+    bool IsValidFakeIPAddress(const IPv4Address& address) const;
 
     /**
      * Returns whether a user has mod permissions.
@@ -128,15 +118,9 @@ public:
     void SendNameCollision(ENetPeer* client);
 
     /**
-     * Sends a ID_ROOM_MAC_COLLISION message telling the client that the MAC is invalid.
+     * Sends a ID_ROOM_IP_COLLISION message telling the client that the IP is invalid.
      */
-    void SendMacCollision(ENetPeer* client);
-
-    /**
-     * Sends a IdConsoleIdCollison message telling the client that another member with the same
-     * console ID exists.
-     */
-    void SendConsoleIdCollision(ENetPeer* client);
+    void SendIPCollision(ENetPeer* client);
 
     /**
      * Sends a ID_ROOM_VERSION_MISMATCH message telling the client that the version is invalid.
@@ -152,13 +136,13 @@ public:
      * Notifies the member that its connection attempt was successful,
      * and it is now part of the room.
      */
-    void SendJoinSuccess(ENetPeer* client, MacAddress mac_address);
+    void SendJoinSuccess(ENetPeer* client, IPv4Address fake_ip);
 
     /**
      * Notifies the member that its connection attempt was successful,
      * and it is now part of the room, and it has been granted mod permissions.
      */
-    void SendJoinSuccessAsMod(ENetPeer* client, MacAddress mac_address);
+    void SendJoinSuccessAsMod(ENetPeer* client, IPv4Address fake_ip);
 
     /**
      * Sends a IdHostKicked message telling the client that they have been kicked.
@@ -210,7 +194,7 @@ public:
      * <u32> num_members: the number of currently joined clients
      * This is followed by the following three values for each member:
      * <String> nickname of that member
-     * <MacAddress> mac_address of that member
+     * <IPv4Address> fake_ip of that member
      * <String> game_name of that member
      */
     void BroadcastRoomInformation();
@@ -219,13 +203,13 @@ public:
      * Generates a free MAC address to assign to a new client.
      * The first 3 bytes are the NintendoOUI 0x00, 0x1F, 0x32
      */
-    MacAddress GenerateMacAddress();
+    IPv4Address GenerateFakeIPAddress();
 
     /**
      * Broadcasts this packet to all members except the sender.
      * @param event The ENet event containing the data
      */
-    void HandleWifiPacket(const ENetEvent* event);
+    void HandleProxyPacket(const ENetEvent* event);
 
     /**
      * Extracts a chat entry from a received ENet packet and adds it to the chat queue.
@@ -250,7 +234,7 @@ public:
 void Room::RoomImpl::ServerLoop() {
     while (state != State::Closed) {
         ENetEvent event;
-        if (enet_host_service(server, &event, 16) > 0) {
+        if (enet_host_service(server, &event, 50) > 0) {
             switch (event.type) {
             case ENET_EVENT_TYPE_RECEIVE:
                 switch (event.packet->data[0]) {
@@ -260,8 +244,8 @@ void Room::RoomImpl::ServerLoop() {
                 case IdSetGameInfo:
                     HandleGameNamePacket(&event);
                     break;
-                case IdWifiPacket:
-                    HandleWifiPacket(&event);
+                case IdProxyPacket:
+                    HandleProxyPacket(&event);
                     break;
                 case IdChatMessage:
                     HandleChatPacket(&event);
@@ -313,11 +297,8 @@ void Room::RoomImpl::HandleJoinRequest(const ENetEvent* event) {
     std::string nickname;
     packet.Read(nickname);
 
-    std::string console_id_hash;
-    packet.Read(console_id_hash);
-
-    MacAddress preferred_mac;
-    packet.Read(preferred_mac);
+    IPv4Address preferred_fake_ip;
+    packet.Read(preferred_fake_ip);
 
     u32 client_version;
     packet.Read(client_version);
@@ -338,20 +319,15 @@ void Room::RoomImpl::HandleJoinRequest(const ENetEvent* event) {
         return;
     }
 
-    if (preferred_mac != NoPreferredMac) {
-        // Verify if the preferred mac is available
-        if (!IsValidMacAddress(preferred_mac)) {
-            SendMacCollision(event->peer);
+    if (preferred_fake_ip != NoPreferredIP) {
+        // Verify if the preferred fake ip is available
+        if (!IsValidFakeIPAddress(preferred_fake_ip)) {
+            SendIPCollision(event->peer);
             return;
         }
     } else {
-        // Assign a MAC address of this client automatically
-        preferred_mac = GenerateMacAddress();
-    }
-
-    if (!IsValidConsoleId(console_id_hash)) {
-        SendConsoleIdCollision(event->peer);
-        return;
+        // Assign a fake ip address of this client automatically
+        preferred_fake_ip = GenerateFakeIPAddress();
     }
 
     if (client_version != network_version) {
@@ -361,8 +337,7 @@ void Room::RoomImpl::HandleJoinRequest(const ENetEvent* event) {
 
     // At this point the client is ready to be added to the room.
     Member member{};
-    member.mac_address = preferred_mac;
-    member.console_id_hash = console_id_hash;
+    member.fake_ip = preferred_fake_ip;
     member.nickname = nickname;
     member.peer = event->peer;
 
@@ -408,9 +383,9 @@ void Room::RoomImpl::HandleJoinRequest(const ENetEvent* event) {
     // Notify everyone that the room information has changed.
     BroadcastRoomInformation();
     if (HasModPermission(event->peer)) {
-        SendJoinSuccessAsMod(event->peer, preferred_mac);
+        SendJoinSuccessAsMod(event->peer, preferred_fake_ip);
     } else {
-        SendJoinSuccess(event->peer, preferred_mac);
+        SendJoinSuccess(event->peer, preferred_fake_ip);
     }
 }
 
@@ -575,19 +550,11 @@ bool Room::RoomImpl::IsValidNickname(const std::string& nickname) const {
                        [&nickname](const auto& member) { return member.nickname != nickname; });
 }
 
-bool Room::RoomImpl::IsValidMacAddress(const MacAddress& address) const {
-    // A MAC address is valid if it is not already taken by anybody else in the room.
+bool Room::RoomImpl::IsValidFakeIPAddress(const IPv4Address& address) const {
+    // An IP address is valid if it is not already taken by anybody else in the room.
     std::lock_guard lock(member_mutex);
     return std::all_of(members.begin(), members.end(),
-                       [&address](const auto& member) { return member.mac_address != address; });
-}
-
-bool Room::RoomImpl::IsValidConsoleId(const std::string& console_id_hash) const {
-    // A Console ID is valid if it is not already taken by anybody else in the room.
-    std::lock_guard lock(member_mutex);
-    return std::all_of(members.begin(), members.end(), [&console_id_hash](const auto& member) {
-        return member.console_id_hash != console_id_hash;
-    });
+                       [&address](const auto& member) { return member.fake_ip != address; });
 }
 
 bool Room::RoomImpl::HasModPermission(const ENetPeer* client) const {
@@ -621,19 +588,9 @@ void Room::RoomImpl::SendNameCollision(ENetPeer* client) {
     enet_host_flush(server);
 }
 
-void Room::RoomImpl::SendMacCollision(ENetPeer* client) {
+void Room::RoomImpl::SendIPCollision(ENetPeer* client) {
     Packet packet;
-    packet.Write(static_cast<u8>(IdMacCollision));
-
-    ENetPacket* enet_packet =
-        enet_packet_create(packet.GetData(), packet.GetDataSize(), ENET_PACKET_FLAG_RELIABLE);
-    enet_peer_send(client, 0, enet_packet);
-    enet_host_flush(server);
-}
-
-void Room::RoomImpl::SendConsoleIdCollision(ENetPeer* client) {
-    Packet packet;
-    packet.Write(static_cast<u8>(IdConsoleIdCollision));
+    packet.Write(static_cast<u8>(IdIpCollision));
 
     ENetPacket* enet_packet =
         enet_packet_create(packet.GetData(), packet.GetDataSize(), ENET_PACKET_FLAG_RELIABLE);
@@ -672,20 +629,20 @@ void Room::RoomImpl::SendVersionMismatch(ENetPeer* client) {
     enet_host_flush(server);
 }
 
-void Room::RoomImpl::SendJoinSuccess(ENetPeer* client, MacAddress mac_address) {
+void Room::RoomImpl::SendJoinSuccess(ENetPeer* client, IPv4Address fake_ip) {
     Packet packet;
     packet.Write(static_cast<u8>(IdJoinSuccess));
-    packet.Write(mac_address);
+    packet.Write(fake_ip);
     ENetPacket* enet_packet =
         enet_packet_create(packet.GetData(), packet.GetDataSize(), ENET_PACKET_FLAG_RELIABLE);
     enet_peer_send(client, 0, enet_packet);
     enet_host_flush(server);
 }
 
-void Room::RoomImpl::SendJoinSuccessAsMod(ENetPeer* client, MacAddress mac_address) {
+void Room::RoomImpl::SendJoinSuccessAsMod(ENetPeer* client, IPv4Address fake_ip) {
     Packet packet;
     packet.Write(static_cast<u8>(IdJoinSuccessAsMod));
-    packet.Write(mac_address);
+    packet.Write(fake_ip);
     ENetPacket* enet_packet =
         enet_packet_create(packet.GetData(), packet.GetDataSize(), ENET_PACKET_FLAG_RELIABLE);
     enet_peer_send(client, 0, enet_packet);
@@ -818,7 +775,7 @@ void Room::RoomImpl::BroadcastRoomInformation() {
         std::lock_guard lock(member_mutex);
         for (const auto& member : members) {
             packet.Write(member.nickname);
-            packet.Write(member.mac_address);
+            packet.Write(member.fake_ip);
             packet.Write(member.game_info.name);
             packet.Write(member.game_info.id);
             packet.Write(member.user_data.username);
@@ -833,34 +790,43 @@ void Room::RoomImpl::BroadcastRoomInformation() {
     enet_host_flush(server);
 }
 
-MacAddress Room::RoomImpl::GenerateMacAddress() {
-    MacAddress result_mac =
-        NintendoOUI; // The first three bytes of each MAC address will be the NintendoOUI
-    std::uniform_int_distribution<> dis(0x00, 0xFF); // Random byte between 0 and 0xFF
+IPv4Address Room::RoomImpl::GenerateFakeIPAddress() {
+    IPv4Address result_ip{192, 168, 0, 0};
+    std::uniform_int_distribution<> dis(0x01, 0xFE); // Random byte between 1 and 0xFE
     do {
-        for (std::size_t i = 3; i < result_mac.size(); ++i) {
-            result_mac[i] = dis(random_gen);
+        for (std::size_t i = 2; i < result_ip.size(); ++i) {
+            result_ip[i] = dis(random_gen);
         }
-    } while (!IsValidMacAddress(result_mac));
-    return result_mac;
+    } while (!IsValidFakeIPAddress(result_ip));
+
+    return result_ip;
 }
 
-void Room::RoomImpl::HandleWifiPacket(const ENetEvent* event) {
+void Room::RoomImpl::HandleProxyPacket(const ENetEvent* event) {
     Packet in_packet;
     in_packet.Append(event->packet->data, event->packet->dataLength);
-    in_packet.IgnoreBytes(sizeof(u8));         // Message type
-    in_packet.IgnoreBytes(sizeof(u8));         // WifiPacket Type
-    in_packet.IgnoreBytes(sizeof(u8));         // WifiPacket Channel
-    in_packet.IgnoreBytes(sizeof(MacAddress)); // WifiPacket Transmitter Address
-    MacAddress destination_address;
-    in_packet.Read(destination_address);
+    in_packet.IgnoreBytes(sizeof(u8)); // Message type
+
+    in_packet.IgnoreBytes(sizeof(u8));          // Domain
+    in_packet.IgnoreBytes(sizeof(IPv4Address)); // IP
+    in_packet.IgnoreBytes(sizeof(u16));         // Port
+
+    in_packet.IgnoreBytes(sizeof(u8)); // Domain
+    IPv4Address remote_ip;
+    in_packet.Read(remote_ip);          // IP
+    in_packet.IgnoreBytes(sizeof(u16)); // Port
+
+    in_packet.IgnoreBytes(sizeof(u8)); // Protocol
+    bool broadcast;
+    in_packet.Read(broadcast); // Broadcast
 
     Packet out_packet;
     out_packet.Append(event->packet->data, event->packet->dataLength);
     ENetPacket* enet_packet = enet_packet_create(out_packet.GetData(), out_packet.GetDataSize(),
                                                  ENET_PACKET_FLAG_RELIABLE);
 
-    if (destination_address == BroadcastMac) { // Send the data to everyone except the sender
+    const auto& destination_address = remote_ip;
+    if (broadcast) { // Send the data to everyone except the sender
         std::lock_guard lock(member_mutex);
         bool sent_packet = false;
         for (const auto& member : members) {
@@ -877,16 +843,16 @@ void Room::RoomImpl::HandleWifiPacket(const ENetEvent* event) {
         std::lock_guard lock(member_mutex);
         auto member = std::find_if(members.begin(), members.end(),
                                    [destination_address](const Member& member_entry) -> bool {
-                                       return member_entry.mac_address == destination_address;
+                                       return member_entry.fake_ip == destination_address;
                                    });
         if (member != members.end()) {
             enet_peer_send(member->peer, 0, enet_packet);
         } else {
             LOG_ERROR(Network,
-                      "Attempting to send to unknown MAC address: "
-                      "{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}",
+                      "Attempting to send to unknown IP address: "
+                      "{}.{}.{}.{}",
                       destination_address[0], destination_address[1], destination_address[2],
-                      destination_address[3], destination_address[4], destination_address[5]);
+                      destination_address[3]);
             enet_packet_destroy(enet_packet);
         }
     }
@@ -1073,7 +1039,7 @@ std::vector<Member> Room::GetRoomMemberList() const {
         member.username = member_impl.user_data.username;
         member.display_name = member_impl.user_data.display_name;
         member.avatar_url = member_impl.user_data.avatar_url;
-        member.mac_address = member_impl.mac_address;
+        member.fake_ip = member_impl.fake_ip;
         member.game = member_impl.game_info;
         member_list.push_back(member);
     }

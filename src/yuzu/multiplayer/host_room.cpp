@@ -201,8 +201,8 @@ void HostRoomWindow::Host() {
         }
 #endif
         // TODO: Check what to do with this
-        member->Join(ui->username->text().toStdString(), "", "127.0.0.1", port, 0,
-                     Network::NoPreferredMac, password, token);
+        member->Join(ui->username->text().toStdString(), "127.0.0.1", port, 0,
+                     Network::NoPreferredIP, password, token);
 
         // Store settings
         UISettings::values.multiplayer_room_nickname = ui->username->text();

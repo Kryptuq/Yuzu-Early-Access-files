@@ -316,21 +316,19 @@ void ChatRoom::OnStatusMessageReceive(const Network::StatusMessageEntry& status_
 }
 
 void ChatRoom::OnSendChat() {
-    if (auto room = room_network->GetRoomMember().lock()) {
-        if (room->GetState() != Network::RoomMember::State::Joined &&
-            room->GetState() != Network::RoomMember::State::Moderator) {
-
+    if (auto room_member = room_network->GetRoomMember().lock()) {
+        if (!room_member->IsConnected()) {
             return;
         }
         auto message = ui->chat_message->text().toStdString();
         if (!ValidateMessage(message)) {
             return;
         }
-        auto nick = room->GetNickname();
-        auto username = room->GetUsername();
+        auto nick = room_member->GetNickname();
+        auto username = room_member->GetUsername();
         Network::ChatEntry chat{nick, username, message};
 
-        auto members = room->GetMemberInformation();
+        auto members = room_member->GetMemberInformation();
         auto it = std::find_if(members.begin(), members.end(),
                                [&chat](const Network::RoomMember::MemberInformation& member) {
                                    return member.nickname == chat.nickname &&
@@ -341,7 +339,7 @@ void ChatRoom::OnSendChat() {
         }
         auto player = std::distance(members.begin(), it);
         ChatMessage m(chat, *room_network);
-        room->SendChatMessage(message);
+        room_member->SendChatMessage(message);
         AppendChatMessage(m.GetPlayerChatMessage(player));
         ui->chat_message->clear();
     }

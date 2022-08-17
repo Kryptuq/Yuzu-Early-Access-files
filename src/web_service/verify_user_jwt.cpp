@@ -39,8 +39,10 @@ Network::VerifyUser::UserData VerifyUserJWT::LoadUserData(const std::string& ver
     const std::string audience = fmt::format("external-{}", verify_uid);
     using namespace jwt::params;
     std::error_code error;
+
+    // We use the Citra backend so the issuer is citra-core
     auto decoded =
-        jwt::decode(token, algorithms({"rs256"}), error, secret(pub_key), issuer("yuzu-core"),
+        jwt::decode(token, algorithms({"rs256"}), error, secret(pub_key), issuer("citra-core"),
                     aud(audience), validate_iat(true), validate_jti(true));
     if (error) {
         LOG_INFO(WebService, "Verification failed: category={}, code={}, message={}",

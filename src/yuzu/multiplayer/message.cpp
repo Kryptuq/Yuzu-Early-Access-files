@@ -43,11 +43,8 @@ const ConnectionError ErrorManager::LOST_CONNECTION(
     QT_TR_NOOP("Connection to room lost. Try to reconnect."));
 const ConnectionError ErrorManager::HOST_KICKED(
     QT_TR_NOOP("You have been kicked by the room host."));
-const ConnectionError ErrorManager::MAC_COLLISION(
-    QT_TR_NOOP("MAC address is already in use. Please choose another."));
-const ConnectionError ErrorManager::CONSOLE_ID_COLLISION(QT_TR_NOOP(
-    "Your Console ID conflicted with someone else's in the room.\n\nPlease go to Emulation "
-    "> Configure > System to regenerate your Console ID."));
+const ConnectionError ErrorManager::IP_COLLISION(
+    QT_TR_NOOP("IP address is already in use. Please choose another."));
 const ConnectionError ErrorManager::PERMISSION_DENIED(
     QT_TR_NOOP("You do not have enough permission to perform this action."));
 const ConnectionError ErrorManager::NO_SUCH_USER(QT_TR_NOOP(

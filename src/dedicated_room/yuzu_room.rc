@@ -1,0 +1,20 @@
+// SPDX-FileCopyrightText: 2017 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "winresrc.h"
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+YUZU_ICON              ICON                    "../../dist/yuzu.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// RT_MANIFEST
+//
+
+0                       RT_MANIFEST             "../../dist/yuzu.manifest"

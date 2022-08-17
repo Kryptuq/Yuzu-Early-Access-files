@@ -108,13 +108,9 @@ static void OnNetworkError(const Network::RoomMember::Error& error) {
             "You tried to use the same nickname as another user that is connected to the Room");
         exit(1);
         break;
-    case Network::RoomMember::Error::MacCollision:
-        LOG_ERROR(Network, "You tried to use the same MAC-Address as another user that is "
+    case Network::RoomMember::Error::IpCollision:
+        LOG_ERROR(Network, "You tried to use the same fake IP-Address as another user that is "
                            "connected to the Room");
-        exit(1);
-        break;
-    case Network::RoomMember::Error::ConsoleIdCollision:
-        LOG_ERROR(Network, "Your Console ID conflicted with someone else in the Room");
         exit(1);
         break;
     case Network::RoomMember::Error::WrongPassword:
@@ -365,7 +361,7 @@ int main(int argc, char** argv) {
             member->BindOnError(OnNetworkError);
             LOG_DEBUG(Network, "Start connection to {}:{} with nickname {}", address, port,
                       nickname);
-            member->Join(nickname, "", address.c_str(), port, 0, Network::NoPreferredMac, password);
+            member->Join(nickname, address.c_str(), port, 0, Network::NoPreferredIP, password);
         } else {
             LOG_ERROR(Network, "Could not access RoomMember");
             return 0;

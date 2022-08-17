@@ -9,12 +9,16 @@
 #include <fmt/format.h>
 
 #include "common/microprofile.h"
+#include "common/socket_types.h"
+#include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/service/sockets/bsd.h"
 #include "core/hle/service/sockets/sockets_translate.h"
 #include "core/internal_network/network.h"
+#include "core/internal_network/socket_proxy.h"
 #include "core/internal_network/sockets.h"
+#include "network/network.h"
 
 namespace Service::Sockets {
 
@@ -472,7 +476,13 @@ std::pair<s32, Errno> BSD::SocketImpl(Domain domain, Type type, Protocol protoco
 
     LOG_INFO(Service, "New socket fd={}", fd);
 
-    descriptor.socket = std::make_unique<Network::Socket>();
+    auto room_member = room_network.GetRoomMember().lock();
+    if (room_member && room_member->IsConnected()) {
+        descriptor.socket = std::make_unique<Network::ProxySocket>(room_network);
+    } else {
+        descriptor.socket = std::make_unique<Network::Socket>();
+    }
+
     descriptor.socket->Initialize(Translate(domain), Translate(type), Translate(type, protocol));
     descriptor.is_connection_based = IsConnectionBased(type);
 
@@ -648,7 +658,7 @@ std::pair<s32, Errno> BSD::FcntlImpl(s32 fd, FcntlCmd cmd, s32 arg) {
         ASSERT(arg == 0);
         return {descriptor.flags, Errno::SUCCESS};
     case FcntlCmd::SETFL: {
-        const bool enable = (arg & FLAG_O_NONBLOCK) != 0;
+        const bool enable = (arg & Network::FLAG_O_NONBLOCK) != 0;
         const Errno bsd_errno = Translate(descriptor.socket->SetNonBlock(enable));
         if (bsd_errno != Errno::SUCCESS) {
             return {-1, bsd_errno};
@@ -669,7 +679,7 @@ Errno BSD::SetSockOptImpl(s32 fd, u32 level, OptName optname, size_t optlen, con
         return Errno::BADF;
     }
 
-    Network::Socket* const socket = file_descriptors[fd]->socket.get();
+    Network::SocketBase* const socket = file_descriptors[fd]->socket.get();
 
     if (optname == OptName::LINGER) {
         ASSERT(optlen == sizeof(Linger));
@@ -724,6 +734,8 @@ std::pair<s32, Errno> BSD::RecvImpl(s32 fd, u32 flags, std::vector<u8>& message)
     FileDescriptor& descriptor = *file_descriptors[fd];
 
     // Apply flags
+    using Network::FLAG_MSG_DONTWAIT;
+    using Network::FLAG_O_NONBLOCK;
     if ((flags & FLAG_MSG_DONTWAIT) != 0) {
         flags &= ~FLAG_MSG_DONTWAIT;
         if ((descriptor.flags & FLAG_O_NONBLOCK) == 0) {
@@ -759,6 +771,8 @@ std::pair<s32, Errno> BSD::RecvFromImpl(s32 fd, u32 flags, std::vector<u8>& mess
     }
 
     // Apply flags
+    using Network::FLAG_MSG_DONTWAIT;
+    using Network::FLAG_O_NONBLOCK;
     if ((flags & FLAG_MSG_DONTWAIT) != 0) {
         flags &= ~FLAG_MSG_DONTWAIT;
         if ((descriptor.flags & FLAG_O_NONBLOCK) == 0) {
@@ -857,8 +871,19 @@ void BSD::BuildErrnoResponse(Kernel::HLERequestContext& ctx, Errno bsd_errno) co
     rb.PushEnum(bsd_errno);
 }
 
+void BSD::OnProxyPacketReceived(const Network::ProxyPacket& packet) {
+    for (auto& optional_descriptor : file_descriptors) {
+        if (!optional_descriptor.has_value()) {
+            continue;
+        }
+        FileDescriptor& descriptor = *optional_descriptor;
+        descriptor.socket.get()->HandleProxyPacket(packet);
+    }
+}
+
 BSD::BSD(Core::System& system_, const char* name)
-    : ServiceFramework{system_, name, ServiceThreadType::CreateNew} {
+    : ServiceFramework{system_, name, ServiceThreadType::CreateNew}, room_network{
+                                                                         system_.GetRoomNetwork()} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, &BSD::RegisterClient, "RegisterClient"},
@@ -899,6 +924,13 @@ BSD::BSD(Core::System& system_, const char* name)
     // clang-format on
 
     RegisterHandlers(functions);
+
+    if (auto room_member = room_network.GetRoomMember().lock()) {
+        proxy_packet_received = room_member->BindOnProxyPacketReceived(
+            [this](const Network::ProxyPacket& packet) { OnProxyPacketReceived(packet); });
+    } else {
+        LOG_ERROR(Service, "Network isn't initalized");
+    }
 }
 
 BSD::~BSD() = default;

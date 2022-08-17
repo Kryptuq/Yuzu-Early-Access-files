@@ -7,6 +7,7 @@
 #include <set>
 #include <thread>
 #include "common/assert.h"
+#include "common/socket_types.h"
 #include "enet/enet.h"
 #include "network/packet.h"
 #include "network/room_member.h"
@@ -38,7 +39,7 @@ public:
     std::string username;              ///< The username of this member.
     mutable std::mutex username_mutex; ///< Mutex for locking username.
 
-    MacAddress mac_address; ///< The mac_address of this member.
+    IPv4Address fake_ip; ///< The fake ip of this member.
 
     std::mutex network_mutex; ///< Mutex that controls access to the `client` variable.
     /// Thread that receives and dispatches network packets
@@ -56,7 +57,7 @@ public:
         CallbackSet<T>& Get();
 
     private:
-        CallbackSet<WifiPacket> callback_set_wifi_packet;
+        CallbackSet<ProxyPacket> callback_set_proxy_packet;
         CallbackSet<ChatEntry> callback_set_chat_messages;
         CallbackSet<StatusMessageEntry> callback_set_status_messages;
         CallbackSet<RoomInformation> callback_set_room_information;
@@ -78,15 +79,15 @@ public:
 
     /**
      * Sends a request to the server, asking for permission to join a room with the specified
-     * nickname and preferred mac.
+     * nickname and preferred fake ip.
      * @params nickname The desired nickname.
-     * @params console_id_hash A hash of the Console ID.
-     * @params preferred_mac The preferred MAC address to use in the room, the NoPreferredMac tells
+     * @params preferred_fake_ip The preferred IP address to use in the room, the NoPreferredIP
+     * tells
      * @params password The password for the room
      * the server to assign one for us.
      */
-    void SendJoinRequest(const std::string& nickname_, const std::string& console_id_hash,
-                         const MacAddress& preferred_mac = NoPreferredMac,
+    void SendJoinRequest(const std::string& nickname_,
+                         const IPv4Address& preferred_fake_ip = NoPreferredIP,
                          const std::string& password = "", const std::string& token = "");
 
     /**
@@ -101,10 +102,10 @@ public:
     void HandleRoomInformationPacket(const ENetEvent* event);
 
     /**
-     * Extracts a WifiPacket from a received ENet packet.
+     * Extracts a ProxyPacket from a received ENet packet.
      * @param event The  ENet event that was received.
      */
-    void HandleWifiPackets(const ENetEvent* event);
+    void HandleProxyPackets(const ENetEvent* event);
 
     /**
      * Extracts a chat entry from a received ENet packet and adds it to the chat queue.
@@ -158,12 +159,12 @@ void RoomMember::RoomMemberImpl::MemberLoop() {
     while (IsConnected()) {
         std::lock_guard lock(network_mutex);
         ENetEvent event;
-        if (enet_host_service(client, &event, 16) > 0) {
+        if (enet_host_service(client, &event, 100) > 0) {
             switch (event.type) {
             case ENET_EVENT_TYPE_RECEIVE:
                 switch (event.packet->data[0]) {
-                case IdWifiPacket:
-                    HandleWifiPackets(&event);
+                case IdProxyPacket:
+                    HandleProxyPackets(&event);
                     break;
                 case IdChatMessage:
                     HandleChatPacket(&event);
@@ -198,13 +199,9 @@ void RoomMember::RoomMemberImpl::MemberLoop() {
                     SetState(State::Idle);
                     SetError(Error::NameCollision);
                     break;
-                case IdMacCollision:
+                case IdIpCollision:
                     SetState(State::Idle);
-                    SetError(Error::MacCollision);
-                    break;
-                case IdConsoleIdCollision:
-                    SetState(State::Idle);
-                    SetError(Error::ConsoleIdCollision);
+                    SetError(Error::IpCollision);
                     break;
                 case IdVersionMismatch:
                     SetState(State::Idle);
@@ -275,15 +272,13 @@ void RoomMember::RoomMemberImpl::Send(Packet&& packet) {
 }
 
 void RoomMember::RoomMemberImpl::SendJoinRequest(const std::string& nickname_,
-                                                 const std::string& console_id_hash,
-                                                 const MacAddress& preferred_mac,
+                                                 const IPv4Address& preferred_fake_ip,
                                                  const std::string& password,
                                                  const std::string& token) {
     Packet packet;
     packet.Write(static_cast<u8>(IdJoinRequest));
     packet.Write(nickname_);
-    packet.Write(console_id_hash);
-    packet.Write(preferred_mac);
+    packet.Write(preferred_fake_ip);
     packet.Write(network_version);
     packet.Write(password);
     packet.Write(token);
@@ -317,7 +312,7 @@ void RoomMember::RoomMemberImpl::HandleRoomInformationPacket(const ENetEvent* ev
 
     for (auto& member : member_information) {
         packet.Read(member.nickname);
-        packet.Read(member.mac_address);
+        packet.Read(member.fake_ip);
         packet.Read(member.game_info.name);
         packet.Read(member.game_info.id);
         packet.Read(member.username);
@@ -342,29 +337,38 @@ void RoomMember::RoomMemberImpl::HandleJoinPacket(const ENetEvent* event) {
     packet.IgnoreBytes(sizeof(u8)); // Ignore the message type
 
     // Parse the MAC Address from the packet
-    packet.Read(mac_address);
+    packet.Read(fake_ip);
 }
 
-void RoomMember::RoomMemberImpl::HandleWifiPackets(const ENetEvent* event) {
-    WifiPacket wifi_packet{};
+void RoomMember::RoomMemberImpl::HandleProxyPackets(const ENetEvent* event) {
+    ProxyPacket proxy_packet{};
     Packet packet;
     packet.Append(event->packet->data, event->packet->dataLength);
 
     // Ignore the first byte, which is the message id.
     packet.IgnoreBytes(sizeof(u8)); // Ignore the message type
 
-    // Parse the WifiPacket from the packet
-    u8 frame_type;
-    packet.Read(frame_type);
-    WifiPacket::PacketType type = static_cast<WifiPacket::PacketType>(frame_type);
+    // Parse the ProxyPacket from the packet
+    u8 local_family;
+    packet.Read(local_family);
+    proxy_packet.local_endpoint.family = static_cast<Domain>(local_family);
+    packet.Read(proxy_packet.local_endpoint.ip);
+    packet.Read(proxy_packet.local_endpoint.portno);
 
-    wifi_packet.type = type;
-    packet.Read(wifi_packet.channel);
-    packet.Read(wifi_packet.transmitter_address);
-    packet.Read(wifi_packet.destination_address);
-    packet.Read(wifi_packet.data);
+    u8 remote_family;
+    packet.Read(remote_family);
+    proxy_packet.remote_endpoint.family = static_cast<Domain>(remote_family);
+    packet.Read(proxy_packet.remote_endpoint.ip);
+    packet.Read(proxy_packet.remote_endpoint.portno);
 
-    Invoke<WifiPacket>(wifi_packet);
+    u8 protocol_type;
+    packet.Read(protocol_type);
+    proxy_packet.protocol = static_cast<Protocol>(protocol_type);
+
+    packet.Read(proxy_packet.broadcast);
+    packet.Read(proxy_packet.data);
+
+    Invoke<ProxyPacket>(proxy_packet);
 }
 
 void RoomMember::RoomMemberImpl::HandleChatPacket(const ENetEvent* event) {
@@ -440,8 +444,8 @@ void RoomMember::RoomMemberImpl::Disconnect() {
 }
 
 template <>
-RoomMember::RoomMemberImpl::CallbackSet<WifiPacket>& RoomMember::RoomMemberImpl::Callbacks::Get() {
-    return callback_set_wifi_packet;
+RoomMember::RoomMemberImpl::CallbackSet<ProxyPacket>& RoomMember::RoomMemberImpl::Callbacks::Get() {
+    return callback_set_proxy_packet;
 }
 
 template <>
@@ -525,19 +529,18 @@ const std::string& RoomMember::GetUsername() const {
     return room_member_impl->username;
 }
 
-const MacAddress& RoomMember::GetMacAddress() const {
-    ASSERT_MSG(IsConnected(), "Tried to get MAC address while not connected");
-    return room_member_impl->mac_address;
+const IPv4Address& RoomMember::GetFakeIpAddress() const {
+    ASSERT_MSG(IsConnected(), "Tried to get fake ip address while not connected");
+    return room_member_impl->fake_ip;
 }
 
 RoomInformation RoomMember::GetRoomInformation() const {
     return room_member_impl->room_information;
 }
 
-void RoomMember::Join(const std::string& nick, const std::string& console_id_hash,
-                      const char* server_addr, u16 server_port, u16 client_port,
-                      const MacAddress& preferred_mac, const std::string& password,
-                      const std::string& token) {
+void RoomMember::Join(const std::string& nick, const char* server_addr, u16 server_port,
+                      u16 client_port, const IPv4Address& preferred_fake_ip,
+                      const std::string& password, const std::string& token) {
     // If the member is connected, kill the connection first
     if (room_member_impl->loop_thread && room_member_impl->loop_thread->joinable()) {
         Leave();
@@ -571,7 +574,7 @@ void RoomMember::Join(const std::string& nick, const std::string& console_id_has
     if (net > 0 && event.type == ENET_EVENT_TYPE_CONNECT) {
         room_member_impl->nickname = nick;
         room_member_impl->StartLoop();
-        room_member_impl->SendJoinRequest(nick, console_id_hash, preferred_mac, password, token);
+        room_member_impl->SendJoinRequest(nick, preferred_fake_ip, password, token);
         SendGameInfo(room_member_impl->current_game_info);
     } else {
         enet_peer_disconnect(room_member_impl->server, 0);
@@ -584,14 +587,22 @@ bool RoomMember::IsConnected() const {
     return room_member_impl->IsConnected();
 }
 
-void RoomMember::SendWifiPacket(const WifiPacket& wifi_packet) {
+void RoomMember::SendProxyPacket(const ProxyPacket& proxy_packet) {
     Packet packet;
-    packet.Write(static_cast<u8>(IdWifiPacket));
-    packet.Write(static_cast<u8>(wifi_packet.type));
-    packet.Write(wifi_packet.channel);
-    packet.Write(wifi_packet.transmitter_address);
-    packet.Write(wifi_packet.destination_address);
-    packet.Write(wifi_packet.data);
+    packet.Write(static_cast<u8>(IdProxyPacket));
+
+    packet.Write(static_cast<u8>(proxy_packet.local_endpoint.family));
+    packet.Write(proxy_packet.local_endpoint.ip);
+    packet.Write(proxy_packet.local_endpoint.portno);
+
+    packet.Write(static_cast<u8>(proxy_packet.remote_endpoint.family));
+    packet.Write(proxy_packet.remote_endpoint.ip);
+    packet.Write(proxy_packet.remote_endpoint.portno);
+
+    packet.Write(static_cast<u8>(proxy_packet.protocol));
+    packet.Write(proxy_packet.broadcast);
+    packet.Write(proxy_packet.data);
+
     room_member_impl->Send(std::move(packet));
 }
 
@@ -645,8 +656,8 @@ RoomMember::CallbackHandle<RoomMember::Error> RoomMember::BindOnError(
     return room_member_impl->Bind(callback);
 }
 
-RoomMember::CallbackHandle<WifiPacket> RoomMember::BindOnWifiPacketReceived(
-    std::function<void(const WifiPacket&)> callback) {
+RoomMember::CallbackHandle<ProxyPacket> RoomMember::BindOnProxyPacketReceived(
+    std::function<void(const ProxyPacket&)> callback) {
     return room_member_impl->Bind(callback);
 }
 
@@ -685,7 +696,7 @@ void RoomMember::Leave() {
     room_member_impl->client = nullptr;
 }
 
-template void RoomMember::Unbind(CallbackHandle<WifiPacket>);
+template void RoomMember::Unbind(CallbackHandle<ProxyPacket>);
 template void RoomMember::Unbind(CallbackHandle<RoomMember::State>);
 template void RoomMember::Unbind(CallbackHandle<RoomMember::Error>);
 template void RoomMember::Unbind(CallbackHandle<RoomInformation>);

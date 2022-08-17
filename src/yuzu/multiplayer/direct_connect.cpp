@@ -97,9 +97,9 @@ void DirectConnectWindow::Connect() {
     QFuture<void> f = QtConcurrent::run([&] {
         if (auto room_member = room_network.GetRoomMember().lock()) {
             auto port = UISettings::values.multiplayer_port.GetValue();
-            room_member->Join(ui->nickname->text().toStdString(), "",
-                              ui->ip->text().toStdString().c_str(), port, 0,
-                              Network::NoPreferredMac, ui->password->text().toStdString().c_str());
+            room_member->Join(ui->nickname->text().toStdString(),
+                              ui->ip->text().toStdString().c_str(), port, 0, Network::NoPreferredIP,
+                              ui->password->text().toStdString().c_str());
         }
     });
     watcher->setFuture(f);
@@ -121,9 +121,7 @@ void DirectConnectWindow::OnConnection() {
     EndConnecting();
 
     if (auto room_member = room_network.GetRoomMember().lock()) {
-        if (room_member->GetState() == Network::RoomMember::State::Joined ||
-            room_member->GetState() == Network::RoomMember::State::Moderator) {
-
+        if (room_member->IsConnected()) {
             close();
         }
     }

@@ -9,12 +9,12 @@
 #include <vector>
 #include "common/announce_multiplayer_room.h"
 #include "common/common_types.h"
+#include "common/socket_types.h"
 #include "network/verify_user.h"
 
 namespace Network {
 
 using AnnounceMultiplayerRoom::GameInfo;
-using AnnounceMultiplayerRoom::MacAddress;
 using AnnounceMultiplayerRoom::Member;
 using AnnounceMultiplayerRoom::RoomInformation;
 
@@ -29,12 +29,9 @@ static constexpr u32 MaxConcurrentConnections = 254;
 
 constexpr std::size_t NumChannels = 1; // Number of channels used for the connection
 
-/// A special MAC address that tells the room we're joining to assign us a MAC address
+/// A special IP address that tells the room we're joining to assign us a IP address
 /// automatically.
-constexpr MacAddress NoPreferredMac = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-
-// 802.11 broadcast MAC address
-constexpr MacAddress BroadcastMac = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+constexpr IPv4Address NoPreferredIP = {0xFF, 0xFF, 0xFF, 0xFF};
 
 // The different types of messages that can be sent. The first byte of each packet defines the type
 enum RoomMessageTypes : u8 {
@@ -42,15 +39,14 @@ enum RoomMessageTypes : u8 {
     IdJoinSuccess,
     IdRoomInformation,
     IdSetGameInfo,
-    IdWifiPacket,
+    IdProxyPacket,
     IdChatMessage,
     IdNameCollision,
-    IdMacCollision,
+    IdIpCollision,
     IdVersionMismatch,
     IdWrongPassword,
     IdCloseRoom,
     IdRoomIsFull,
-    IdConsoleIdCollision,
     IdStatusMessage,
     IdHostKicked,
     IdHostBanned,

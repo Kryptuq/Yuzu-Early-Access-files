@@ -8,6 +8,7 @@
 
 #include "common/common_funcs.h"
 #include "common/common_types.h"
+#include "common/socket_types.h"
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -17,6 +18,7 @@
 
 namespace Network {
 
+class SocketBase;
 class Socket;
 
 /// Error code for network functions
@@ -31,44 +33,9 @@ enum class Errno {
     HOSTUNREACH,
     NETDOWN,
     NETUNREACH,
+    TIMEDOUT,
+    MSGSIZE,
     OTHER,
-};
-
-/// Address families
-enum class Domain {
-    INET, ///< Address family for IPv4
-};
-
-/// Socket types
-enum class Type {
-    STREAM,
-    DGRAM,
-    RAW,
-    SEQPACKET,
-};
-
-/// Protocol values for sockets
-enum class Protocol {
-    ICMP,
-    TCP,
-    UDP,
-};
-
-/// Shutdown mode
-enum class ShutdownHow {
-    RD,
-    WR,
-    RDWR,
-};
-
-/// Array of IPv4 address
-using IPv4Address = std::array<u8, 4>;
-
-/// Cross-platform sockaddr structure
-struct SockAddrIn {
-    Domain family;
-    IPv4Address ip;
-    u16 portno;
 };
 
 /// Cross-platform poll fd structure
@@ -86,7 +53,7 @@ enum class PollEvents : u16 {
 DECLARE_ENUM_FLAG_OPERATORS(PollEvents);
 
 struct PollFD {
-    Socket* socket;
+    SocketBase* socket;
     PollEvents events;
     PollEvents revents;
 };

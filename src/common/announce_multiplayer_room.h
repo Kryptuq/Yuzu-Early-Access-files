@@ -8,11 +8,10 @@
 #include <string>
 #include <vector>
 #include "common/common_types.h"
+#include "common/socket_types.h"
 #include "web_service/web_result.h"
 
 namespace AnnounceMultiplayerRoom {
-
-using MacAddress = std::array<u8, 6>;
 
 struct GameInfo {
     std::string name{""};
@@ -24,7 +23,7 @@ struct Member {
     std::string nickname;
     std::string display_name;
     std::string avatar_url;
-    MacAddress mac_address;
+    Network::IPv4Address fake_ip;
     GameInfo game;
 };
 
@@ -75,10 +74,7 @@ public:
                                     const bool has_password, const GameInfo& preferred_game) = 0;
     /**
      * Adds a player information to the data that gets announced
-     * @param nickname The nickname of the player
-     * @param mac_address The MAC Address of the player
-     * @param game_id The title id of the game the player plays
-     * @param game_name The name of the game the player plays
+     * @param member The player to add
      */
     virtual void AddPlayer(const Member& member) = 0;
 

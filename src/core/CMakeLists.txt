@@ -726,6 +726,8 @@ add_library(core STATIC
     internal_network/network_interface.cpp
     internal_network/network_interface.h
     internal_network/sockets.h
+    internal_network/socket_proxy.cpp
+    internal_network/socket_proxy.h
     loader/deconstructed_rom_directory.cpp
     loader/deconstructed_rom_directory.h
     loader/kip.cpp

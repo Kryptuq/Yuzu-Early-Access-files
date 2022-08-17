@@ -128,6 +128,7 @@ add_library(common STATIC
     settings.h
     settings_input.cpp
     settings_input.h
+    socket_types.h
     spin_lock.cpp
     spin_lock.h
     stream.cpp

@@ -10,7 +10,7 @@
 class Validation {
 public:
     Validation()
-        : room_name(room_name_regex), nickname(nickname_regex), ip(ip_regex), port(0, 65535) {}
+        : room_name(room_name_regex), nickname(nickname_regex), ip(ip_regex), port(0, UINT16_MAX) {}
 
     ~Validation() = default;
 
