@@ -12,7 +12,6 @@
 #pragma intrinsic(_udiv128)
 #else
 #include <cstring>
-#include <x86intrin.h>
 #endif
 
 #include "common/common_types.h"
