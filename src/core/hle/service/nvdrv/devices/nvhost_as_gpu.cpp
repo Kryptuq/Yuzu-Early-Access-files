@@ -96,7 +96,7 @@ NvResult nvhost_as_gpu::AllocAsEx(const std::vector<u8>& input, std::vector<u8>&
     std::scoped_lock lock(mutex);
 
     if (vm.initialised) {
-        UNREACHABLE_MSG("Cannot initialise an address space twice!");
+        ASSERT_MSG(false, "Cannot initialise an address space twice!");
         return NvResult::InvalidState;
     }
 
@@ -174,7 +174,7 @@ NvResult nvhost_as_gpu::AllocateSpace(const std::vector<u8>& input, std::vector<
     } else {
         params.offset = static_cast<u64>(allocator.Allocate(params.pages)) << page_size_bits;
         if (!params.offset) {
-            UNREACHABLE_MSG("Failed to allocate free space in the GPU AS!");
+            ASSERT_MSG(false, "Failed to allocate free space in the GPU AS!");
             return NvResult::InsufficientMemory;
         }
     }
@@ -372,7 +372,7 @@ NvResult nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8
         else if (Common::IsAligned(handle->align, VM::PAGE_SIZE))
             return false;
         else {
-            UNREACHABLE();
+            ASSERT(false);
             return false;
         }
     }()};
@@ -382,7 +382,7 @@ NvResult nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8
 
         if (alloc-- == allocation_map.begin() ||
             (params.offset - alloc->first) + size > alloc->second.size) {
-            UNREACHABLE_MSG("Cannot perform a fixed mapping into an unallocated region!");
+            ASSERT_MSG(false, "Cannot perform a fixed mapping into an unallocated region!");
             return NvResult::BadValue;
         }
 
@@ -403,7 +403,7 @@ NvResult nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8
                             static_cast<u32>(Common::AlignUp(size, page_size) >> page_size_bits)))
                         << page_size_bits;
         if (!params.offset) {
-            UNREACHABLE_MSG("Failed to allocate free space in the GPU AS!");
+            ASSERT_MSG(false, "Failed to allocate free space in the GPU AS!");
             return NvResult::InsufficientMemory;
         }
 

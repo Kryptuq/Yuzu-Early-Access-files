@@ -29,7 +29,7 @@ SyncpointManager::~SyncpointManager() = default;
 
 u32 SyncpointManager::ReserveSyncpoint(u32 id, bool clientManaged) {
     if (syncpoints.at(id).reserved) {
-        UNREACHABLE_MSG("Requested syncpoint is in use");
+        ASSERT_MSG(false, "Requested syncpoint is in use");
         return 0;
     }
 
@@ -45,7 +45,7 @@ u32 SyncpointManager::FindFreeSyncpoint() {
             return i;
         }
     }
-    UNREACHABLE_MSG("Failed to find a free syncpoint!");
+    ASSERT_MSG(false, "Failed to find a free syncpoint!");
     return 0;
 }
 
@@ -68,7 +68,7 @@ bool SyncpointManager::HasSyncpointExpired(u32 id, u32 threshold) {
     const SyncpointInfo& syncpoint{syncpoints.at(id)};
 
     if (!syncpoint.reserved) {
-        UNREACHABLE();
+        ASSERT(false);
         return 0;
     }
 
@@ -83,7 +83,7 @@ bool SyncpointManager::HasSyncpointExpired(u32 id, u32 threshold) {
 
 u32 SyncpointManager::IncrementSyncpointMaxExt(u32 id, u32 amount) {
     if (!syncpoints.at(id).reserved) {
-        UNREACHABLE();
+        ASSERT(false);
         return 0;
     }
 
@@ -92,7 +92,7 @@ u32 SyncpointManager::IncrementSyncpointMaxExt(u32 id, u32 amount) {
 
 u32 SyncpointManager::ReadSyncpointMinValue(u32 id) {
     if (!syncpoints.at(id).reserved) {
-        UNREACHABLE();
+        ASSERT(false);
         return 0;
     }
 
@@ -101,7 +101,7 @@ u32 SyncpointManager::ReadSyncpointMinValue(u32 id) {
 
 u32 SyncpointManager::UpdateMin(u32 id) {
     if (!syncpoints.at(id).reserved) {
-        UNREACHABLE();
+        ASSERT(false);
         return 0;
     }
 
@@ -111,7 +111,7 @@ u32 SyncpointManager::UpdateMin(u32 id) {
 
 NvFence SyncpointManager::GetSyncpointFence(u32 id) {
     if (!syncpoints.at(id).reserved) {
-        UNREACHABLE();
+        ASSERT(false);
         return NvFence{};
     }
 
