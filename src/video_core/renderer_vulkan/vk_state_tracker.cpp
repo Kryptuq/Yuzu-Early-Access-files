@@ -206,6 +206,7 @@ void StateTracker::InvalidateState() {
     flags->set();
 }
 
-StateTracker::StateTracker() : flags{}, invalidation_flags{MakeInvalidationFlags()} {}
+StateTracker::StateTracker()
+    : flags{&default_flags}, default_flags{}, invalidation_flags{MakeInvalidationFlags()} {}
 
 } // namespace Vulkan

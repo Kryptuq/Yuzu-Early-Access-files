@@ -223,6 +223,7 @@ public:
 
 private:
     Tegra::Engines::Maxwell3D::DirtyState::Flags* flags;
+    Tegra::Engines::Maxwell3D::DirtyState::Flags default_flags{};
 
     GLuint framebuffer = 0;
     GLuint index_buffer = 0;

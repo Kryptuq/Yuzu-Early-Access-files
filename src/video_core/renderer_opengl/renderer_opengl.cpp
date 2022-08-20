@@ -478,13 +478,16 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
         }
     }
 
-    ASSERT_MSG(framebuffer_crop_rect.top == 0, "Unimplemented");
     ASSERT_MSG(framebuffer_crop_rect.left == 0, "Unimplemented");
 
+    f32 left_start{};
+    if (framebuffer_crop_rect.Top() > 0) {
+        left_start = static_cast<f32>(framebuffer_crop_rect.Top()) /
+                     static_cast<f32>(framebuffer_crop_rect.Bottom());
+    }
     f32 scale_u = static_cast<f32>(framebuffer_width) / static_cast<f32>(screen_info.texture.width);
     f32 scale_v =
         static_cast<f32>(framebuffer_height) / static_cast<f32>(screen_info.texture.height);
-
     // Scale the output by the crop width/height. This is commonly used with 1280x720 rendering
     // (e.g. handheld mode) on a 1920x1080 framebuffer.
     if (framebuffer_crop_rect.GetWidth() > 0) {
@@ -503,10 +506,14 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
 
     const auto& screen = layout.screen;
     const std::array vertices = {
-        ScreenRectVertex(screen.left, screen.top, texcoords.top * scale_u, left * scale_v),
-        ScreenRectVertex(screen.right, screen.top, texcoords.bottom * scale_u, left * scale_v),
-        ScreenRectVertex(screen.left, screen.bottom, texcoords.top * scale_u, right * scale_v),
-        ScreenRectVertex(screen.right, screen.bottom, texcoords.bottom * scale_u, right * scale_v),
+        ScreenRectVertex(screen.left, screen.top, texcoords.top * scale_u,
+                         left_start + left * scale_v),
+        ScreenRectVertex(screen.right, screen.top, texcoords.bottom * scale_u,
+                         left_start + left * scale_v),
+        ScreenRectVertex(screen.left, screen.bottom, texcoords.top * scale_u,
+                         left_start + right * scale_v),
+        ScreenRectVertex(screen.right, screen.bottom, texcoords.bottom * scale_u,
+                         left_start + right * scale_v),
     };
     glNamedBufferSubData(vertex_buffer.handle, 0, sizeof(vertices), std::data(vertices));
 

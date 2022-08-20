@@ -161,6 +161,7 @@ private:
     }
 
     Tegra::Engines::Maxwell3D::DirtyState::Flags* flags;
+    Tegra::Engines::Maxwell3D::DirtyState::Flags default_flags;
     Tegra::Engines::Maxwell3D::DirtyState::Flags invalidation_flags;
     Maxwell::PrimitiveTopology current_topology = INVALID_TOPOLOGY;
 };

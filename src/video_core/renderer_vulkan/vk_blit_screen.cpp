@@ -1402,12 +1402,15 @@ void BlitScreen::SetVertexData(BufferData& data, const Tegra::FramebufferConfig&
         break;
     }
 
-    UNIMPLEMENTED_IF(framebuffer_crop_rect.top != 0);
     UNIMPLEMENTED_IF(framebuffer_crop_rect.left != 0);
 
+    f32 left_start{};
+    if (framebuffer_crop_rect.Top() > 0) {
+        left_start = static_cast<f32>(framebuffer_crop_rect.Top()) /
+                     static_cast<f32>(framebuffer_crop_rect.Bottom());
+    }
     f32 scale_u = static_cast<f32>(framebuffer.width) / static_cast<f32>(screen_info.width);
     f32 scale_v = static_cast<f32>(framebuffer.height) / static_cast<f32>(screen_info.height);
-
     // Scale the output by the crop width/height. This is commonly used with 1280x720 rendering
     // (e.g. handheld mode) on a 1920x1080 framebuffer.
     if (!fsr) {
@@ -1426,10 +1429,13 @@ void BlitScreen::SetVertexData(BufferData& data, const Tegra::FramebufferConfig&
     const auto y = static_cast<f32>(screen.top);
     const auto w = static_cast<f32>(screen.GetWidth());
     const auto h = static_cast<f32>(screen.GetHeight());
-    data.vertices[0] = ScreenRectVertex(x, y, texcoords.top * scale_u, left * scale_v);
-    data.vertices[1] = ScreenRectVertex(x + w, y, texcoords.bottom * scale_u, left * scale_v);
-    data.vertices[2] = ScreenRectVertex(x, y + h, texcoords.top * scale_u, right * scale_v);
-    data.vertices[3] = ScreenRectVertex(x + w, y + h, texcoords.bottom * scale_u, right * scale_v);
+    data.vertices[0] = ScreenRectVertex(x, y, texcoords.top * scale_u, left_start + left * scale_v);
+    data.vertices[1] =
+        ScreenRectVertex(x + w, y, texcoords.bottom * scale_u, left_start + left * scale_v);
+    data.vertices[2] =
+        ScreenRectVertex(x, y + h, texcoords.top * scale_u, left_start + right * scale_v);
+    data.vertices[3] =
+        ScreenRectVertex(x + w, y + h, texcoords.bottom * scale_u, left_start + right * scale_v);
 }
 
 void BlitScreen::CreateFSR() {

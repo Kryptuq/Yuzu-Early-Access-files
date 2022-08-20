@@ -135,8 +135,10 @@ public:
     /// Updates counters from GPU state. Expected to be called once per draw, clear or dispatch.
     void UpdateCounters() {
         std::unique_lock lock{mutex};
-        const auto& regs = maxwell3d->regs;
-        Stream(VideoCore::QueryType::SamplesPassed).Update(regs.samplecnt_enable);
+        if (maxwell3d) {
+            const auto& regs = maxwell3d->regs;
+            Stream(VideoCore::QueryType::SamplesPassed).Update(regs.samplecnt_enable);
+        }
     }
 
     /// Resets a counter to zero. It doesn't disable the query after resetting.
