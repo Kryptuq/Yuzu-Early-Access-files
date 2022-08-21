@@ -353,6 +353,9 @@ public:
     void setFocus();
 
 private:
+    void changeEvent(QEvent*) override;
+    void RetranslateUI();
+
     class KeyReleaseEater : public QObject {
     public:
         explicit KeyReleaseEater(GameList* gamelist_, QObject* parent = nullptr);

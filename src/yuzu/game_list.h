@@ -140,6 +140,9 @@ private:
     void AddPermDirPopup(QMenu& context_menu, QModelIndex selected);
     void AddFavoritesPopup(QMenu& context_menu);
 
+    void changeEvent(QEvent*) override;
+    void RetranslateUI();
+
     std::shared_ptr<FileSys::VfsFilesystem> vfs;
     FileSys::ManualContentProvider* provider;
     GameListSearchField* search_field;

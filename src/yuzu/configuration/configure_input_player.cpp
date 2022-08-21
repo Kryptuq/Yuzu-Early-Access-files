@@ -1475,7 +1475,7 @@ void ConfigureInputPlayer::keyPressEvent(QKeyEvent* event) {
 
 void ConfigureInputPlayer::CreateProfile() {
     const auto profile_name =
-        LimitableInputDialog::GetText(this, tr("New Profile"), tr("Enter a profile name:"), 1, 20,
+        LimitableInputDialog::GetText(this, tr("New Profile"), tr("Enter a profile name:"), 1, 30,
                                       LimitableInputDialog::InputLimiter::Filesystem);
 
     if (profile_name.isEmpty()) {
