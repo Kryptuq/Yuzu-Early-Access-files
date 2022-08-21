@@ -190,8 +190,8 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
     config.callbacks = cb.get();
     config.coprocessors[15] = cp15;
     config.define_unpredictable_behaviour = true;
-    static constexpr std::size_t PAGE_BITS = 12;
-    static constexpr std::size_t NUM_PAGE_TABLE_ENTRIES = 1 << (32 - PAGE_BITS);
+    static constexpr std::size_t YUZU_PAGEBITS = 12;
+    static constexpr std::size_t NUM_PAGE_TABLE_ENTRIES = 1 << (32 - YUZU_PAGEBITS);
     if (page_table) {
         config.page_table = reinterpret_cast<std::array<std::uint8_t*, NUM_PAGE_TABLE_ENTRIES>*>(
             page_table->pointers.data());

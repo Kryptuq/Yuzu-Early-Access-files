@@ -191,7 +191,7 @@ VirtualDir PatchManager::PatchExeFS(VirtualDir exefs) const {
 std::vector<VirtualFile> PatchManager::CollectPatches(const std::vector<VirtualDir>& patch_dirs,
                                                       const std::string& build_id) const {
     const auto& disabled = Settings::values.disabled_addons[title_id];
-    const auto nso_build_id = fmt::format("{:0>64}", build_id);
+    const auto nso_build_id = fmt::format("{:0<64}", build_id);
 
     std::vector<VirtualFile> out;
     out.reserve(patch_dirs.size());
@@ -206,7 +206,7 @@ std::vector<VirtualFile> PatchManager::CollectPatches(const std::vector<VirtualD
                     auto name = file->GetName();
 
                     const auto this_build_id =
-                        fmt::format("{:0>64}", name.substr(0, name.find('.')));
+                        fmt::format("{:0<64}", name.substr(0, name.find('.')));
                     if (nso_build_id == this_build_id)
                         out.push_back(file);
                 } else if (file->GetExtension() == "pchtxt") {

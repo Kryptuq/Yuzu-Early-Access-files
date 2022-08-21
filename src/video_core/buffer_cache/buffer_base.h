@@ -36,7 +36,7 @@ struct NullBufferParams {};
 template <class RasterizerInterface>
 class BufferBase {
     static constexpr u64 PAGES_PER_WORD = 64;
-    static constexpr u64 BYTES_PER_PAGE = Core::Memory::PAGE_SIZE;
+    static constexpr u64 BYTES_PER_PAGE = Core::Memory::YUZU_PAGESIZE;
     static constexpr u64 BYTES_PER_WORD = PAGES_PER_WORD * BYTES_PER_PAGE;
 
     /// Vector tracking modified pages tightly packed with small vector optimization

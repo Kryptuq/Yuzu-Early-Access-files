@@ -16,7 +16,7 @@
 #include "core/hle/service/nvdrv/devices/nvmap.h"
 #include "core/memory.h"
 
-using Core::Memory::PAGE_SIZE;
+using Core::Memory::YUZU_PAGESIZE;
 
 namespace Service::Nvidia::Devices {
 
@@ -75,7 +75,8 @@ NvResult nvmap::IocCreate(const std::vector<u8>& input, std::vector<u8>& output)
     LOG_DEBUG(Service_NVDRV, "called, size=0x{:08X}", params.size);
 
     std::shared_ptr<NvCore::NvMap::Handle> handle_description{};
-    auto result = file.CreateHandle(Common::AlignUp(params.size, PAGE_SIZE), handle_description);
+    auto result =
+        file.CreateHandle(Common::AlignUp(params.size, YUZU_PAGESIZE), handle_description);
     if (result != NvResult::Success) {
         LOG_CRITICAL(Service_NVDRV, "Failed to create Object");
         return result;
@@ -104,8 +105,8 @@ NvResult nvmap::IocAlloc(const std::vector<u8>& input, std::vector<u8>& output) 
     }
 
     // Force page size alignment at a minimum
-    if (params.align < PAGE_SIZE) {
-        params.align = PAGE_SIZE;
+    if (params.align < YUZU_PAGESIZE) {
+        params.align = YUZU_PAGESIZE;
     }
 
     auto handle_description{file.GetHandle(params.handle)};

@@ -22,8 +22,9 @@ constexpr VAddr c = 0x1328914000;
 class RasterizerInterface {
 public:
     void UpdatePagesCachedCount(VAddr addr, u64 size, int delta) {
-        const u64 page_start{addr >> Core::Memory::PAGE_BITS};
-        const u64 page_end{(addr + size + Core::Memory::PAGE_SIZE - 1) >> Core::Memory::PAGE_BITS};
+        const u64 page_start{addr >> Core::Memory::YUZU_PAGEBITS};
+        const u64 page_end{(addr + size + Core::Memory::YUZU_PAGESIZE - 1) >>
+                           Core::Memory::YUZU_PAGEBITS};
         for (u64 page = page_start; page < page_end; ++page) {
             int& value = page_table[page];
             value += delta;
@@ -37,7 +38,7 @@ public:
     }
 
     [[nodiscard]] int Count(VAddr addr) const noexcept {
-        const auto it = page_table.find(addr >> Core::Memory::PAGE_BITS);
+        const auto it = page_table.find(addr >> Core::Memory::YUZU_PAGEBITS);
         return it == page_table.end() ? 0 : it->second;
     }
 

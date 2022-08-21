@@ -256,4 +256,4 @@ PRIVATE
     opus/src
 )
 
-add_library(Opus::Opus ALIAS opus)
+add_library(Opus::opus ALIAS opus)

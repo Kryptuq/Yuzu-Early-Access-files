@@ -217,7 +217,7 @@ void IPSwitchCompiler::Parse() {
             break;
         } else if (StartsWith(line, "@nsobid-")) {
             // NSO Build ID Specifier
-            const auto raw_build_id = fmt::format("{:0>64}", line.substr(8));
+            const auto raw_build_id = fmt::format("{:0<64}", line.substr(8));
             nso_build_id = Common::HexStringToArray<0x20>(raw_build_id);
         } else if (StartsWith(line, "#")) {
             // Mandatory Comment

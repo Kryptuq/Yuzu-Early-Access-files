@@ -27,9 +27,9 @@ namespace Core::Memory {
  * Page size used by the ARM architecture. This is the smallest granularity with which memory can
  * be mapped.
  */
-constexpr std::size_t PAGE_BITS = 12;
-constexpr u64 PAGE_SIZE = 1ULL << PAGE_BITS;
-constexpr u64 PAGE_MASK = PAGE_SIZE - 1;
+constexpr std::size_t YUZU_PAGEBITS = 12;
+constexpr u64 YUZU_PAGESIZE = 1ULL << YUZU_PAGEBITS;
+constexpr u64 YUZU_PAGEMASK = YUZU_PAGESIZE - 1;
 
 /// Virtual user-space memory regions
 enum : VAddr {

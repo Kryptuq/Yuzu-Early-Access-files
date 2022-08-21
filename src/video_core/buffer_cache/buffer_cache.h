@@ -60,8 +60,8 @@ class BufferCache : public VideoCommon::ChannelSetupCaches<VideoCommon::ChannelI
 
     // Page size for caching purposes.
     // This is unrelated to the CPU page size and it can be changed as it seems optimal.
-    static constexpr u32 PAGE_BITS = 16;
-    static constexpr u64 PAGE_SIZE = u64{1} << PAGE_BITS;
+    static constexpr u32 YUZU_PAGEBITS = 16;
+    static constexpr u64 YUZU_PAGESIZE = u64{1} << YUZU_PAGEBITS;
 
     static constexpr bool IS_OPENGL = P::IS_OPENGL;
     static constexpr bool HAS_PERSISTENT_UNIFORM_BUFFER_BINDINGS =
@@ -213,8 +213,8 @@ private:
 
     template <typename Func>
     void ForEachBufferInRange(VAddr cpu_addr, u64 size, Func&& func) {
-        const u64 page_end = Common::DivCeil(cpu_addr + size, PAGE_SIZE);
-        for (u64 page = cpu_addr >> PAGE_BITS; page < page_end;) {
+        const u64 page_end = Common::DivCeil(cpu_addr + size, YUZU_PAGESIZE);
+        for (u64 page = cpu_addr >> YUZU_PAGEBITS; page < page_end;) {
             const BufferId buffer_id = page_table[page];
             if (!buffer_id) {
                 ++page;
@@ -224,7 +224,7 @@ private:
             func(buffer_id, buffer);
 
             const VAddr end_addr = buffer.CpuAddr() + buffer.SizeBytes();
-            page = Common::DivCeil(end_addr, PAGE_SIZE);
+            page = Common::DivCeil(end_addr, YUZU_PAGESIZE);
         }
     }
 
@@ -259,8 +259,8 @@ private:
     }
 
     static bool IsRangeGranular(VAddr cpu_addr, size_t size) {
-        return (cpu_addr & ~Core::Memory::PAGE_MASK) ==
-               ((cpu_addr + size) & ~Core::Memory::PAGE_MASK);
+        return (cpu_addr & ~Core::Memory::YUZU_PAGEMASK) ==
+               ((cpu_addr + size) & ~Core::Memory::YUZU_PAGEMASK);
     }
 
     void RunGarbageCollector();
@@ -433,7 +433,7 @@ private:
     u64 minimum_memory = 0;
     u64 critical_memory = 0;
 
-    std::array<BufferId, ((1ULL << 39) >> PAGE_BITS)> page_table;
+    std::array<BufferId, ((1ULL << 39) >> YUZU_PAGEBITS)> page_table;
 };
 
 template <class P>
@@ -929,8 +929,8 @@ void BufferCache<P>::PopAsyncFlushes() {}
 
 template <class P>
 bool BufferCache<P>::IsRegionGpuModified(VAddr addr, size_t size) {
-    const u64 page_end = Common::DivCeil(addr + size, PAGE_SIZE);
-    for (u64 page = addr >> PAGE_BITS; page < page_end;) {
+    const u64 page_end = Common::DivCeil(addr + size, YUZU_PAGESIZE);
+    for (u64 page = addr >> YUZU_PAGEBITS; page < page_end;) {
         const BufferId image_id = page_table[page];
         if (!image_id) {
             ++page;
@@ -941,7 +941,7 @@ bool BufferCache<P>::IsRegionGpuModified(VAddr addr, size_t size) {
             return true;
         }
         const VAddr end_addr = buffer.CpuAddr() + buffer.SizeBytes();
-        page = Common::DivCeil(end_addr, PAGE_SIZE);
+        page = Common::DivCeil(end_addr, YUZU_PAGESIZE);
     }
     return false;
 }
@@ -949,8 +949,8 @@ bool BufferCache<P>::IsRegionGpuModified(VAddr addr, size_t size) {
 template <class P>
 bool BufferCache<P>::IsRegionRegistered(VAddr addr, size_t size) {
     const VAddr end_addr = addr + size;
-    const u64 page_end = Common::DivCeil(end_addr, PAGE_SIZE);
-    for (u64 page = addr >> PAGE_BITS; page < page_end;) {
+    const u64 page_end = Common::DivCeil(end_addr, YUZU_PAGESIZE);
+    for (u64 page = addr >> YUZU_PAGEBITS; page < page_end;) {
         const BufferId buffer_id = page_table[page];
         if (!buffer_id) {
             ++page;
@@ -962,15 +962,15 @@ bool BufferCache<P>::IsRegionRegistered(VAddr addr, size_t size) {
         if (buf_start_addr < end_addr && addr < buf_end_addr) {
             return true;
         }
-        page = Common::DivCeil(end_addr, PAGE_SIZE);
+        page = Common::DivCeil(end_addr, YUZU_PAGESIZE);
     }
     return false;
 }
 
 template <class P>
 bool BufferCache<P>::IsRegionCpuModified(VAddr addr, size_t size) {
-    const u64 page_end = Common::DivCeil(addr + size, PAGE_SIZE);
-    for (u64 page = addr >> PAGE_BITS; page < page_end;) {
+    const u64 page_end = Common::DivCeil(addr + size, YUZU_PAGESIZE);
+    for (u64 page = addr >> YUZU_PAGEBITS; page < page_end;) {
         const BufferId image_id = page_table[page];
         if (!image_id) {
             ++page;
@@ -981,7 +981,7 @@ bool BufferCache<P>::IsRegionCpuModified(VAddr addr, size_t size) {
             return true;
         }
         const VAddr end_addr = buffer.CpuAddr() + buffer.SizeBytes();
-        page = Common::DivCeil(end_addr, PAGE_SIZE);
+        page = Common::DivCeil(end_addr, YUZU_PAGESIZE);
     }
     return false;
 }
@@ -1470,7 +1470,7 @@ BufferId BufferCache<P>::FindBuffer(VAddr cpu_addr, u32 size) {
     if (cpu_addr == 0) {
         return NULL_BUFFER_ID;
     }
-    const u64 page = cpu_addr >> PAGE_BITS;
+    const u64 page = cpu_addr >> YUZU_PAGEBITS;
     const BufferId buffer_id = page_table[page];
     if (!buffer_id) {
         return CreateBuffer(cpu_addr, size);
@@ -1491,8 +1491,9 @@ typename BufferCache<P>::OverlapResult BufferCache<P>::ResolveOverlaps(VAddr cpu
     VAddr end = cpu_addr + wanted_size;
     int stream_score = 0;
     bool has_stream_leap = false;
-    for (; cpu_addr >> PAGE_BITS < Common::DivCeil(end, PAGE_SIZE); cpu_addr += PAGE_SIZE) {
-        const BufferId overlap_id = page_table[cpu_addr >> PAGE_BITS];
+    for (; cpu_addr >> YUZU_PAGEBITS < Common::DivCeil(end, YUZU_PAGESIZE);
+         cpu_addr += YUZU_PAGESIZE) {
+        const BufferId overlap_id = page_table[cpu_addr >> YUZU_PAGEBITS];
         if (!overlap_id) {
             continue;
         }
@@ -1518,11 +1519,11 @@ typename BufferCache<P>::OverlapResult BufferCache<P>::ResolveOverlaps(VAddr cpu
             // as a stream buffer. Increase the size to skip constantly recreating buffers.
             has_stream_leap = true;
             if (expands_right) {
-                begin -= PAGE_SIZE * 256;
+                begin -= YUZU_PAGESIZE * 256;
                 cpu_addr = begin;
             }
             if (expands_left) {
-                end += PAGE_SIZE * 256;
+                end += YUZU_PAGESIZE * 256;
             }
         }
     }
@@ -1598,8 +1599,8 @@ void BufferCache<P>::ChangeRegister(BufferId buffer_id) {
     }
     const VAddr cpu_addr_begin = buffer.CpuAddr();
     const VAddr cpu_addr_end = cpu_addr_begin + size;
-    const u64 page_begin = cpu_addr_begin / PAGE_SIZE;
-    const u64 page_end = Common::DivCeil(cpu_addr_end, PAGE_SIZE);
+    const u64 page_begin = cpu_addr_begin / YUZU_PAGESIZE;
+    const u64 page_end = Common::DivCeil(cpu_addr_end, YUZU_PAGESIZE);
     for (u64 page = page_begin; page != page_end; ++page) {
         if constexpr (insert) {
             page_table[page] = buffer_id;
@@ -1848,7 +1849,7 @@ typename BufferCache<P>::Binding BufferCache<P>::StorageBufferBinding(GPUVAddr s
     if (!cpu_addr || size == 0) {
         return NULL_BINDING;
     }
-    const VAddr cpu_end = Common::AlignUp(*cpu_addr + size, Core::Memory::PAGE_SIZE);
+    const VAddr cpu_end = Common::AlignUp(*cpu_addr + size, Core::Memory::YUZU_PAGESIZE);
     const Binding binding{
         .cpu_addr = *cpu_addr,
         .size = is_written ? size : static_cast<u32>(cpu_end - *cpu_addr),

@@ -153,7 +153,7 @@ NvResult nvhost_as_gpu::AllocateSpace(const std::vector<u8>& input, std::vector<
         return NvResult::BadValue;
     }
 
-    if (params.page_size != VM::PAGE_SIZE && params.page_size != vm.big_page_size) {
+    if (params.page_size != VM::YUZU_PAGESIZE && params.page_size != vm.big_page_size) {
         return NvResult::BadValue;
     }
 
@@ -163,11 +163,11 @@ NvResult nvhost_as_gpu::AllocateSpace(const std::vector<u8>& input, std::vector<
         return NvResult::NotImplemented;
     }
 
-    const u32 page_size_bits{params.page_size == VM::PAGE_SIZE ? VM::PAGE_SIZE_BITS
-                                                               : vm.big_page_size_bits};
+    const u32 page_size_bits{params.page_size == VM::YUZU_PAGESIZE ? VM::PAGE_SIZE_BITS
+                                                                   : vm.big_page_size_bits};
 
-    auto& allocator{params.page_size == VM::PAGE_SIZE ? *vm.small_page_allocator
-                                                      : *vm.big_page_allocator};
+    auto& allocator{params.page_size == VM::YUZU_PAGESIZE ? *vm.small_page_allocator
+                                                          : *vm.big_page_allocator};
 
     if ((params.flags & MappingFlags::Fixed) != MappingFlags::None) {
         allocator.AllocateFixed(static_cast<u32>(params.offset >> page_size_bits), params.pages);
@@ -190,7 +190,7 @@ NvResult nvhost_as_gpu::AllocateSpace(const std::vector<u8>& input, std::vector<
         .mappings{},
         .page_size = params.page_size,
         .sparse = (params.flags & MappingFlags::Sparse) != MappingFlags::None,
-        .big_pages = params.page_size != VM::PAGE_SIZE,
+        .big_pages = params.page_size != VM::YUZU_PAGESIZE,
     };
 
     std::memcpy(output.data(), &params, output.size());
@@ -248,10 +248,10 @@ NvResult nvhost_as_gpu::FreeSpace(const std::vector<u8>& input, std::vector<u8>&
             gmmu->Unmap(params.offset, allocation.size);
         }
 
-        auto& allocator{params.page_size == VM::PAGE_SIZE ? *vm.small_page_allocator
-                                                          : *vm.big_page_allocator};
-        u32 page_size_bits{params.page_size == VM::PAGE_SIZE ? VM::PAGE_SIZE_BITS
-                                                             : vm.big_page_size_bits};
+        auto& allocator{params.page_size == VM::YUZU_PAGESIZE ? *vm.small_page_allocator
+                                                              : *vm.big_page_allocator};
+        u32 page_size_bits{params.page_size == VM::YUZU_PAGESIZE ? VM::PAGE_SIZE_BITS
+                                                                 : vm.big_page_size_bits};
 
         allocator.Free(static_cast<u32>(params.offset >> page_size_bits),
                        static_cast<u32>(allocation.size >> page_size_bits));
@@ -369,7 +369,7 @@ NvResult nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8
     bool big_page{[&]() {
         if (Common::IsAligned(handle->align, vm.big_page_size))
             return true;
-        else if (Common::IsAligned(handle->align, VM::PAGE_SIZE))
+        else if (Common::IsAligned(handle->align, VM::YUZU_PAGESIZE))
             return false;
         else {
             ASSERT(false);
@@ -396,7 +396,7 @@ NvResult nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8
     } else {
 
         auto& allocator{big_page ? *vm.big_page_allocator : *vm.small_page_allocator};
-        u32 page_size{big_page ? vm.big_page_size : VM::PAGE_SIZE};
+        u32 page_size{big_page ? vm.big_page_size : VM::YUZU_PAGESIZE};
         u32 page_size_bits{big_page ? vm.big_page_size_bits : VM::PAGE_SIZE_BITS};
 
         params.offset = static_cast<u64>(allocator.Allocate(
@@ -473,7 +473,7 @@ void nvhost_as_gpu::GetVARegionsImpl(IoctlGetVaRegions& params) {
     params.regions = std::array<VaRegion, 2>{
         VaRegion{
             .offset = vm.small_page_allocator->GetVAStart() << VM::PAGE_SIZE_BITS,
-            .page_size = VM::PAGE_SIZE,
+            .page_size = VM::YUZU_PAGESIZE,
             ._pad0_{},
             .pages = vm.small_page_allocator->GetVALimit() - vm.small_page_allocator->GetVAStart(),
         },

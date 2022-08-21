@@ -82,7 +82,7 @@ public:
 template <class P>
 class TextureCache : public VideoCommon::ChannelSetupCaches<TextureCacheChannelInfo> {
     /// Address shift for caching images into a hash table
-    static constexpr u64 PAGE_BITS = 20;
+    static constexpr u64 YUZU_PAGEBITS = 20;
 
     /// Enables debugging features to the texture cache
     static constexpr bool ENABLE_VALIDATION = P::ENABLE_VALIDATION;
@@ -210,8 +210,8 @@ private:
     template <typename Func>
     static void ForEachCPUPage(VAddr addr, size_t size, Func&& func) {
         static constexpr bool RETURNS_BOOL = std::is_same_v<std::invoke_result<Func, u64>, bool>;
-        const u64 page_end = (addr + size - 1) >> PAGE_BITS;
-        for (u64 page = addr >> PAGE_BITS; page <= page_end; ++page) {
+        const u64 page_end = (addr + size - 1) >> YUZU_PAGEBITS;
+        for (u64 page = addr >> YUZU_PAGEBITS; page <= page_end; ++page) {
             if constexpr (RETURNS_BOOL) {
                 if (func(page)) {
                     break;
@@ -225,8 +225,8 @@ private:
     template <typename Func>
     static void ForEachGPUPage(GPUVAddr addr, size_t size, Func&& func) {
         static constexpr bool RETURNS_BOOL = std::is_same_v<std::invoke_result<Func, u64>, bool>;
-        const u64 page_end = (addr + size - 1) >> PAGE_BITS;
-        for (u64 page = addr >> PAGE_BITS; page <= page_end; ++page) {
+        const u64 page_end = (addr + size - 1) >> YUZU_PAGEBITS;
+        for (u64 page = addr >> YUZU_PAGEBITS; page <= page_end; ++page) {
             if constexpr (RETURNS_BOOL) {
                 if (func(page)) {
                     break;

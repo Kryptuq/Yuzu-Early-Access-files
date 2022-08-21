@@ -128,7 +128,7 @@ endif()
 if (YUZU_USE_BUNDLED_OPUS)
     add_subdirectory(opus EXCLUDE_FROM_ALL)
 else()
-    find_package(opus 1.3 REQUIRED)
+    find_package(Opus 1.3 REQUIRED)
 endif()
 
 # FFMpeg

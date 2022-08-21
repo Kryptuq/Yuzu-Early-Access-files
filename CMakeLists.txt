@@ -40,6 +40,8 @@ option(YUZU_TESTS "Compile tests" ON)
 
 option(YUZU_USE_BUNDLED_VCPKG "Use vcpkg for yuzu dependencies" "${MSVC}")
 
+option(YUZU_CHECK_SUBMODULES "Check if submodules are present" ON)
+
 if (YUZU_USE_BUNDLED_VCPKG)
     if (YUZU_TESTS)
         list(APPEND VCPKG_MANIFEST_FEATURES "yuzu-tests")
@@ -81,7 +83,7 @@ function(check_submodules_present)
     endforeach()
 endfunction()
 
-if(EXISTS ${PROJECT_SOURCE_DIR}/.gitmodules)
+if(EXISTS ${PROJECT_SOURCE_DIR}/.gitmodules AND YUZU_CHECK_SUBMODULES)
     check_submodules_present()
 endif()
 configure_file(${PROJECT_SOURCE_DIR}/dist/compatibility_list/compatibility_list.qrc

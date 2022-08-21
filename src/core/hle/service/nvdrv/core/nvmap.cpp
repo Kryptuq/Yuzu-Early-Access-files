@@ -9,7 +9,7 @@
 #include "core/memory.h"
 #include "video_core/host1x/host1x.h"
 
-using Core::Memory::PAGE_SIZE;
+using Core::Memory::YUZU_PAGESIZE;
 
 namespace Service::Nvidia::NvCore {
 NvMap::Handle::Handle(u64 size_, Id id_)
@@ -27,7 +27,7 @@ NvResult NvMap::Handle::Alloc(Flags pFlags, u32 pAlign, u8 pKind, u64 pAddress) 
 
     flags = pFlags;
     kind = pKind;
-    align = pAlign < PAGE_SIZE ? PAGE_SIZE : pAlign;
+    align = pAlign < YUZU_PAGESIZE ? YUZU_PAGESIZE : pAlign;
 
     // This flag is only applicable for handles with an address passed
     if (pAddress) {
@@ -37,7 +37,7 @@ NvResult NvMap::Handle::Alloc(Flags pFlags, u32 pAlign, u8 pKind, u64 pAddress) 
                      "Mapping nvmap handles without a CPU side address is unimplemented!");
     }
 
-    size = Common::AlignUp(size, PAGE_SIZE);
+    size = Common::AlignUp(size, YUZU_PAGESIZE);
     aligned_size = Common::AlignUp(size, align);
     address = pAddress;
     allocated = true;
