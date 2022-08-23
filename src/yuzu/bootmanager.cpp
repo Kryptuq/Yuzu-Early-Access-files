@@ -815,6 +815,12 @@ void GRenderWindow::InitializeCamera() {
         if (Settings::values.ir_sensor_device.GetValue() == cameraInfo.deviceName().toStdString() ||
             Settings::values.ir_sensor_device.GetValue() == "Auto") {
             camera = std::make_unique<QCamera>(cameraInfo);
+            if (!camera->isCaptureModeSupported(QCamera::CaptureMode::CaptureViewfinder) &&
+                !camera->isCaptureModeSupported(QCamera::CaptureMode::CaptureStillImage)) {
+                LOG_ERROR(Frontend,
+                          "Camera doesn't support CaptureViewfinder or CaptureStillImage");
+                continue;
+            }
             camera_found = true;
             break;
         }
@@ -825,10 +831,22 @@ void GRenderWindow::InitializeCamera() {
     }
 
     camera_capture = std::make_unique<QCameraImageCapture>(camera.get());
+
+    if (!camera_capture->isCaptureDestinationSupported(
+            QCameraImageCapture::CaptureDestination::CaptureToBuffer)) {
+        LOG_ERROR(Frontend, "Camera doesn't support saving to buffer");
+        return;
+    }
+
+    camera_capture->setCaptureDestination(QCameraImageCapture::CaptureDestination::CaptureToBuffer);
     connect(camera_capture.get(), &QCameraImageCapture::imageCaptured, this,
             &GRenderWindow::OnCameraCapture);
     camera->unload();
-    camera->setCaptureMode(QCamera::CaptureViewfinder);
+    if (camera->isCaptureModeSupported(QCamera::CaptureMode::CaptureViewfinder)) {
+        camera->setCaptureMode(QCamera::CaptureViewfinder);
+    } else if (camera->isCaptureModeSupported(QCamera::CaptureMode::CaptureStillImage)) {
+        camera->setCaptureMode(QCamera::CaptureStillImage);
+    }
     camera->load();
     camera->start();
 
