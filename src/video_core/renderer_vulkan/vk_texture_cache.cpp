@@ -230,6 +230,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     case Shader::TextureType::Color1D:
         return VK_IMAGE_VIEW_TYPE_1D;
     case Shader::TextureType::Color2D:
+    case Shader::TextureType::Color2DRect:
         return VK_IMAGE_VIEW_TYPE_2D;
     case Shader::TextureType::ColorCube:
         return VK_IMAGE_VIEW_TYPE_CUBE;
@@ -254,6 +255,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     case VideoCommon::ImageViewType::e1D:
         return VK_IMAGE_VIEW_TYPE_1D;
     case VideoCommon::ImageViewType::e2D:
+    case VideoCommon::ImageViewType::Rect:
         return VK_IMAGE_VIEW_TYPE_2D;
     case VideoCommon::ImageViewType::Cube:
         return VK_IMAGE_VIEW_TYPE_CUBE;
@@ -265,9 +267,6 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
         return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     case VideoCommon::ImageViewType::CubeArray:
         return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
-    case VideoCommon::ImageViewType::Rect:
-        UNIMPLEMENTED_MSG("Rect image view");
-        return VK_IMAGE_VIEW_TYPE_2D;
     case VideoCommon::ImageViewType::Buffer:
         ASSERT_MSG(false, "Texture buffers can't be image views");
         return VK_IMAGE_VIEW_TYPE_1D;
@@ -1581,6 +1580,7 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
         break;
     case VideoCommon::ImageViewType::e2D:
     case VideoCommon::ImageViewType::e2DArray:
+    case VideoCommon::ImageViewType::Rect:
         create(TextureType::Color2D, 1);
         create(TextureType::ColorArray2D, std::nullopt);
         render_target = Handle(Shader::TextureType::ColorArray2D);
@@ -1593,9 +1593,6 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
     case VideoCommon::ImageViewType::CubeArray:
         create(TextureType::ColorCube, 6);
         create(TextureType::ColorArrayCube, std::nullopt);
-        break;
-    case VideoCommon::ImageViewType::Rect:
-        UNIMPLEMENTED();
         break;
     case VideoCommon::ImageViewType::Buffer:
         ASSERT(false);

@@ -86,6 +86,7 @@ std::string_view SamplerType(TextureType type, bool is_depth) {
     case TextureType::ColorArray1D:
         return "sampler1DArray";
     case TextureType::Color2D:
+    case TextureType::Color2DRect:
         return "sampler2D";
     case TextureType::ColorArray2D:
         return "sampler2DArray";

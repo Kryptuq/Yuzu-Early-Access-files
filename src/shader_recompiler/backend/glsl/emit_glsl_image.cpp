@@ -466,6 +466,7 @@ void EmitImageQueryDimensions(EmitContext& ctx, IR::Inst& inst, const IR::Value&
     case TextureType::ColorArray1D:
     case TextureType::Color2D:
     case TextureType::ColorCube:
+    case TextureType::Color2DRect:
         return ctx.AddU32x4(
             "{}=uvec4(uvec2(textureSize({},int({}))),0u,uint(textureQueryLevels({})));", inst,
             texture, lod, texture);

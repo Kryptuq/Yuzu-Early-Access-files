@@ -24,8 +24,9 @@ enum class TextureType : u32 {
     ColorCube,
     ColorArrayCube,
     Buffer,
+    Color2DRect,
 };
-constexpr u32 NUM_TEXTURE_TYPES = 8;
+constexpr u32 NUM_TEXTURE_TYPES = 9;
 
 enum class ImageFormat : u32 {
     Typeless,

@@ -436,6 +436,21 @@ private:
     TextureDescriptors& texture_descriptors;
     ImageDescriptors& image_descriptors;
 };
+
+void PatchImageSampleImplicitLod(IR::Block& block, IR::Inst& inst) {
+    IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const IR::Value coord(inst.Arg(1));
+    const IR::Value handle(ir.Imm32(0));
+    const IR::U32 lod{ir.Imm32(0)};
+    const IR::Value texture_size = ir.ImageQueryDimension(handle, lod, info);
+    inst.SetArg(
+        1, ir.CompositeConstruct(
+               ir.FPMul(IR::F32(ir.CompositeExtract(coord, 0)),
+                        ir.FPRecip(ir.ConvertUToF(32, 32, ir.CompositeExtract(texture_size, 0)))),
+               ir.FPMul(IR::F32(ir.CompositeExtract(coord, 1)),
+                        ir.FPRecip(ir.ConvertUToF(32, 32, ir.CompositeExtract(texture_size, 1))))));
+}
 } // Anonymous namespace
 
 void TexturePass(Environment& env, IR::Program& program) {
@@ -472,6 +487,14 @@ void TexturePass(Environment& env, IR::Program& program) {
         case IR::Opcode::ImageQueryDimensions:
             flags.type.Assign(ReadTextureType(env, cbuf));
             inst->SetFlags(flags);
+            break;
+        case IR::Opcode::ImageSampleImplicitLod:
+            if (flags.type == TextureType::Color2D) {
+                auto texture_type = ReadTextureType(env, cbuf);
+                if (texture_type == TextureType::Color2DRect) {
+                    PatchImageSampleImplicitLod(*texture_inst.block, *texture_inst.inst);
+                }
+            }
             break;
         case IR::Opcode::ImageFetch:
             if (flags.type != TextureType::Color1D) {

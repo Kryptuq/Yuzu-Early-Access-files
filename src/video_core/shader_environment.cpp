@@ -39,7 +39,11 @@ static Shader::TextureType ConvertType(const Tegra::Texture::TICEntry& entry) {
         return Shader::TextureType::Color1D;
     case Tegra::Texture::TextureType::Texture2D:
     case Tegra::Texture::TextureType::Texture2DNoMipmap:
-        return Shader::TextureType::Color2D;
+        if (entry.normalized_coords) {
+            return Shader::TextureType::Color2D;
+        } else {
+            return Shader::TextureType::Color2DRect;
+        }
     case Tegra::Texture::TextureType::Texture3D:
         return Shader::TextureType::Color3D;
     case Tegra::Texture::TextureType::TextureCubemap:
@@ -53,7 +57,8 @@ static Shader::TextureType ConvertType(const Tegra::Texture::TICEntry& entry) {
     case Tegra::Texture::TextureType::TextureCubeArray:
         return Shader::TextureType::ColorArrayCube;
     default:
-        throw Shader::NotImplementedException("Unknown texture type");
+        UNIMPLEMENTED();
+        return Shader::TextureType::Color2D;
     }
 }
 

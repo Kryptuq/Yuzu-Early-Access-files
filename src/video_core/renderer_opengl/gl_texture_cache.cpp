@@ -93,6 +93,7 @@ GLenum ImageTarget(Shader::TextureType type, int num_samples = 1) {
     case Shader::TextureType::Color1D:
         return GL_TEXTURE_1D;
     case Shader::TextureType::Color2D:
+    case Shader::TextureType::Color2DRect:
         return is_multisampled ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
     case Shader::TextureType::ColorCube:
         return GL_TEXTURE_CUBE_MAP;
@@ -502,6 +503,7 @@ TextureCacheRuntime::TextureCacheRuntime(const Device& device_, ProgramManager& 
     set_view(Shader::TextureType::ColorArray1D, null_image_1d_array.handle);
     set_view(Shader::TextureType::ColorArray2D, null_image_view_2d_array.handle);
     set_view(Shader::TextureType::ColorArrayCube, null_image_cube_array.handle);
+    set_view(Shader::TextureType::Color2DRect, null_image_view_2d.handle);
 
     if (resolution.active) {
         for (size_t i = 0; i < rescale_draw_fbos.size(); ++i) {
@@ -1110,6 +1112,7 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
         flat_range.extent.layers = 1;
         [[fallthrough]];
     case ImageViewType::e2D:
+    case ImageViewType::Rect:
         if (True(flags & VideoCommon::ImageViewFlagBits::Slice)) {
             // 2D and 2D array views on a 3D textures are used exclusively for render targets
             ASSERT(info.range.extent.levels == 1);
@@ -1135,9 +1138,6 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
         SetupView(Shader::TextureType::ColorCube);
         SetupView(Shader::TextureType::ColorArrayCube);
         break;
-    case ImageViewType::Rect:
-        UNIMPLEMENTED();
-        break;
     case ImageViewType::Buffer:
         ASSERT(false);
         break;
@@ -1150,6 +1150,7 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
         default_handle = Handle(Shader::TextureType::ColorArray1D);
         break;
     case ImageViewType::e2D:
+    case ImageViewType::Rect:
         default_handle = Handle(Shader::TextureType::Color2D);
         break;
     case ImageViewType::e2DArray:
@@ -1210,6 +1211,7 @@ GLuint ImageView::MakeView(Shader::TextureType view_type, GLenum view_format) {
     case Shader::TextureType::Color1D:
     case Shader::TextureType::Color2D:
     case Shader::TextureType::ColorCube:
+    case Shader::TextureType::Color2DRect:
         view_range = flat_range;
         break;
     case Shader::TextureType::ColorArray1D:
@@ -1250,7 +1252,6 @@ Sampler::Sampler(TextureCacheRuntime& runtime, const TSCEntry& config) {
     const GLint seamless = config.cubemap_interface_filtering ? GL_TRUE : GL_FALSE;
 
     UNIMPLEMENTED_IF(config.cubemap_anisotropy != 1);
-    UNIMPLEMENTED_IF(config.float_coord_normalization != 0);
 
     sampler.Create();
     const GLuint handle = sampler.handle;

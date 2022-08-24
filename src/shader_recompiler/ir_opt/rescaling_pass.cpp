@@ -16,6 +16,7 @@ namespace {
     switch (type) {
     case TextureType::Color2D:
     case TextureType::ColorArray2D:
+    case TextureType::Color2DRect:
         return true;
     case TextureType::Color1D:
     case TextureType::ColorArray1D:
@@ -132,7 +133,8 @@ void PatchImageQueryDimensions(IR::Block& block, IR::Inst& inst) {
     const IR::U1 is_scaled{ir.IsTextureScaled(ir.Imm32(info.descriptor_index))};
     switch (info.type) {
     case TextureType::Color2D:
-    case TextureType::ColorArray2D: {
+    case TextureType::ColorArray2D:
+    case TextureType::Color2DRect: {
         const IR::Value new_inst{&*block.PrependNewInst(it, inst)};
         const IR::U32 width{DownScale(ir, is_scaled, IR::U32{ir.CompositeExtract(new_inst, 0)})};
         const IR::U32 height{DownScale(ir, is_scaled, IR::U32{ir.CompositeExtract(new_inst, 1)})};
@@ -163,6 +165,7 @@ void ScaleIntegerComposite(IR::IREmitter& ir, IR::Inst& inst, const IR::U1& is_s
     const IR::U32 y{Scale(ir, is_scaled, IR::U32{ir.CompositeExtract(composite, 1)})};
     switch (info.type) {
     case TextureType::Color2D:
+    case TextureType::Color2DRect:
         inst.SetArg(index, ir.CompositeConstruct(x, y));
         break;
     case TextureType::ColorArray2D: {
@@ -193,6 +196,7 @@ void ScaleIntegerOffsetComposite(IR::IREmitter& ir, IR::Inst& inst, const IR::U1
     switch (info.type) {
     case TextureType::ColorArray2D:
     case TextureType::Color2D:
+    case TextureType::Color2DRect:
         inst.SetArg(index, ir.CompositeConstruct(x, y));
         break;
     case TextureType::Color1D:
@@ -216,6 +220,7 @@ void SubScaleCoord(IR::IREmitter& ir, IR::Inst& inst, const IR::U1& is_scaled) {
     const IR::U32 scaled_y{SubScale(ir, is_scaled, coord_y, IR::Attribute::PositionY)};
     switch (info.type) {
     case TextureType::Color2D:
+    case TextureType::Color2DRect:
         inst.SetArg(1, ir.CompositeConstruct(scaled_x, scaled_y));
         break;
     case TextureType::ColorArray2D: {

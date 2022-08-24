@@ -41,6 +41,7 @@ Id ImageType(EmitContext& ctx, const TextureDescriptor& desc) {
     case TextureType::ColorArray1D:
         return ctx.TypeImage(type, spv::Dim::Dim1D, depth, true, false, 1, format);
     case TextureType::Color2D:
+    case TextureType::Color2DRect:
         return ctx.TypeImage(type, spv::Dim::Dim2D, depth, false, false, 1, format);
     case TextureType::ColorArray2D:
         return ctx.TypeImage(type, spv::Dim::Dim2D, depth, true, false, 1, format);

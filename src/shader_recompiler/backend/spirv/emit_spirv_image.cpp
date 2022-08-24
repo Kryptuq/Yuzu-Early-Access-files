@@ -453,6 +453,7 @@ Id EmitImageQueryDimensions(EmitContext& ctx, IR::Inst* inst, const IR::Value& i
     case TextureType::ColorArray1D:
     case TextureType::Color2D:
     case TextureType::ColorCube:
+    case TextureType::Color2DRect:
         return ctx.OpCompositeConstruct(ctx.U32[4], ctx.OpImageQuerySizeLod(ctx.U32[2], image, lod),
                                         zero, mips());
     case TextureType::ColorArray2D:

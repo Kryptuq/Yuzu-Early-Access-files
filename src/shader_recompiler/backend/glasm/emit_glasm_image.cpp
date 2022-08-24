@@ -67,6 +67,7 @@ std::string_view TextureType(IR::TextureInstInfo info) {
         case TextureType::ColorArray1D:
             return "SHADOWARRAY1D";
         case TextureType::Color2D:
+        case TextureType::Color2DRect:
             return "SHADOW2D";
         case TextureType::ColorArray2D:
             return "SHADOWARRAY2D";
@@ -86,6 +87,7 @@ std::string_view TextureType(IR::TextureInstInfo info) {
         case TextureType::ColorArray1D:
             return "ARRAY1D";
         case TextureType::Color2D:
+        case TextureType::Color2DRect:
             return "2D";
         case TextureType::ColorArray2D:
             return "ARRAY2D";
