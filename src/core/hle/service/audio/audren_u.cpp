@@ -50,7 +50,7 @@ public:
             {7, &IAudioRenderer::QuerySystemEvent, "QuerySystemEvent"},
             {8, &IAudioRenderer::SetRenderingTimeLimit, "SetRenderingTimeLimit"},
             {9, &IAudioRenderer::GetRenderingTimeLimit, "GetRenderingTimeLimit"},
-            {10, nullptr, "RequestUpdateAuto"},
+            {10, &IAudioRenderer::RequestUpdate, "RequestUpdateAuto"},
             {11, nullptr, "ExecuteAudioRendererRendering"},
         };
         // clang-format on
@@ -113,15 +113,30 @@ private:
 
         // These buffers are written manually to avoid an issue with WriteBuffer throwing errors for
         // checking size 0. Performance size is 0 for most games.
-        const auto buffers{ctx.BufferDescriptorB()};
-        std::vector<u8> output(buffers[0].Size(), 0);
-        std::vector<u8> performance(buffers[1].Size(), 0);
+
+        std::vector<u8> output{};
+        std::vector<u8> performance{};
+        auto is_buffer_b{ctx.BufferDescriptorB()[0].Size() != 0};
+        if (is_buffer_b) {
+            const auto buffersB{ctx.BufferDescriptorB()};
+            output.resize(buffersB[0].Size(), 0);
+            performance.resize(buffersB[1].Size(), 0);
+        } else {
+            const auto buffersC{ctx.BufferDescriptorC()};
+            output.resize(buffersC[0].Size(), 0);
+            performance.resize(buffersC[1].Size(), 0);
+        }
 
         auto result = impl->RequestUpdate(input, performance, output);
 
         if (result.IsSuccess()) {
-            ctx.WriteBufferB(output.data(), output.size(), 0);
-            ctx.WriteBufferB(performance.data(), performance.size(), 1);
+            if (is_buffer_b) {
+                ctx.WriteBufferB(output.data(), output.size(), 0);
+                ctx.WriteBufferB(performance.data(), performance.size(), 1);
+            } else {
+                ctx.WriteBufferC(output.data(), output.size(), 0);
+                ctx.WriteBufferC(performance.data(), performance.size(), 1);
+            }
         } else {
             LOG_ERROR(Service_Audio, "RequestUpdate failed error 0x{:02X}!", result.description);
         }
