@@ -432,7 +432,9 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
                                                  state.statistics.get(), false)};
 
             std::scoped_lock lock{state.mutex};
-            graphics_cache.emplace(key, std::move(pipeline));
+            if (pipeline) {
+                graphics_cache.emplace(key, std::move(pipeline));
+            }
             ++state.built;
             if (state.has_loaded) {
                 callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
