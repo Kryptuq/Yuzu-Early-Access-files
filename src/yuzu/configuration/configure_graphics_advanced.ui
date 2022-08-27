@@ -100,6 +100,16 @@
          </widget>
         </item>
         <item>
+         <widget class="QCheckBox" name="use_pessimistic_flushes">
+          <property name="toolTip">
+            <string>Enables pessimistic buffer flushes. This option will force unmodified buffers to be flushed, which can cost performance.</string>
+          </property>
+          <property name="text">
+           <string>Use pessimistic buffer flushes (Hack)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QWidget" name="af_layout" native="true">
           <layout class="QHBoxLayout" name="horizontalLayout_1">
            <property name="leftMargin">

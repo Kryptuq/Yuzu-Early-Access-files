@@ -12,6 +12,7 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/div_ceil.h"
+#include "common/settings.h"
 #include "core/memory.h"
 
 namespace VideoCommon {
@@ -219,7 +220,9 @@ public:
             NotifyRasterizer<false>(word_index, untracked_words[word_index], cached_bits);
             untracked_words[word_index] |= cached_bits;
             cpu_words[word_index] |= cached_bits;
-            cached_words[word_index] = 0;
+            if (!Settings::values.use_pessimistic_flushes) {
+                cached_words[word_index] = 0;
+            }
         }
     }
 

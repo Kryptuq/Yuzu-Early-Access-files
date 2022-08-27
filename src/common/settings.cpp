@@ -195,6 +195,7 @@ void RestoreGlobalState(bool is_powered_on) {
     values.shader_backend.SetGlobal(true);
     values.use_asynchronous_shaders.SetGlobal(true);
     values.use_fast_gpu_time.SetGlobal(true);
+    values.use_pessimistic_flushes.SetGlobal(true);
     values.bg_red.SetGlobal(true);
     values.bg_green.SetGlobal(true);
     values.bg_blue.SetGlobal(true);

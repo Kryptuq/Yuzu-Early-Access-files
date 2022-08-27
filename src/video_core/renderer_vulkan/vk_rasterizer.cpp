@@ -70,10 +70,17 @@ VkViewport GetViewportState(const Device& device, const Maxwell& regs, size_t in
     const float width = conv(src.scale_x * 2.0f);
     float y = conv(src.translate_y - src.scale_y);
     float height = conv(src.scale_y * 2.0f);
-    if (regs.screen_y_control.y_negate) {
+    bool y_negate = regs.screen_y_control.y_negate;
+
+    if (!device.IsNvViewportSwizzleSupported()) {
+        y_negate = y_negate != (src.swizzle.y == Maxwell::ViewportSwizzle::NegativeY);
+    }
+
+    if (y_negate) {
         y += height;
         height = -height;
     }
+
     const float reduce_z = regs.depth_mode == Maxwell::DepthMode::MinusOneToOne ? 1.0f : 0.0f;
     VkViewport viewport{
         .x = x,

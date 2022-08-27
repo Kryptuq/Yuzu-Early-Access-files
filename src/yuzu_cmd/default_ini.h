@@ -319,6 +319,10 @@ use_asynchronous_gpu_emulation =
 # 0: Off, 1 (default): On
 use_fast_gpu_time =
 
+# Force unmodified buffers to be flushed, which can cost performance.
+# 0: Off (default), 1: On
+use_pessimistic_flushes =
+
 # Whether to use garbage collection or not for GPU caches.
 # 0 (default): Off, 1: On
 use_caches_gc =

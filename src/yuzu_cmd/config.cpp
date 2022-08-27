@@ -314,6 +314,7 @@ void Config::ReadValues() {
     ReadSetting("Renderer", Settings::values.nvdec_emulation);
     ReadSetting("Renderer", Settings::values.accelerate_astc);
     ReadSetting("Renderer", Settings::values.use_fast_gpu_time);
+    ReadSetting("Renderer", Settings::values.use_pessimistic_flushes);
 
     ReadSetting("Renderer", Settings::values.bg_red);
     ReadSetting("Renderer", Settings::values.bg_green);

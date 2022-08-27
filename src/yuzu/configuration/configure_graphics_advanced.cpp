@@ -28,6 +28,7 @@ void ConfigureGraphicsAdvanced::SetConfiguration() {
     ui->use_vsync->setChecked(Settings::values.use_vsync.GetValue());
     ui->use_asynchronous_shaders->setChecked(Settings::values.use_asynchronous_shaders.GetValue());
     ui->use_fast_gpu_time->setChecked(Settings::values.use_fast_gpu_time.GetValue());
+    ui->use_pessimistic_flushes->setChecked(Settings::values.use_pessimistic_flushes.GetValue());
 
     if (Settings::IsConfiguringGlobal()) {
         ui->gpu_accuracy->setCurrentIndex(
@@ -55,6 +56,8 @@ void ConfigureGraphicsAdvanced::ApplyConfiguration() {
                                              use_asynchronous_shaders);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_fast_gpu_time,
                                              ui->use_fast_gpu_time, use_fast_gpu_time);
+    ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_pessimistic_flushes,
+                                             ui->use_pessimistic_flushes, use_pessimistic_flushes);
 }
 
 void ConfigureGraphicsAdvanced::changeEvent(QEvent* event) {
@@ -77,6 +80,8 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
         ui->use_asynchronous_shaders->setEnabled(
             Settings::values.use_asynchronous_shaders.UsingGlobal());
         ui->use_fast_gpu_time->setEnabled(Settings::values.use_fast_gpu_time.UsingGlobal());
+        ui->use_pessimistic_flushes->setEnabled(
+            Settings::values.use_pessimistic_flushes.UsingGlobal());
         ui->anisotropic_filtering_combobox->setEnabled(
             Settings::values.max_anisotropy.UsingGlobal());
 
@@ -89,6 +94,9 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
                                             use_asynchronous_shaders);
     ConfigurationShared::SetColoredTristate(ui->use_fast_gpu_time,
                                             Settings::values.use_fast_gpu_time, use_fast_gpu_time);
+    ConfigurationShared::SetColoredTristate(ui->use_pessimistic_flushes,
+                                            Settings::values.use_pessimistic_flushes,
+                                            use_pessimistic_flushes);
     ConfigurationShared::SetColoredComboBox(
         ui->gpu_accuracy, ui->label_gpu_accuracy,
         static_cast<int>(Settings::values.gpu_accuracy.GetValue(true)));
