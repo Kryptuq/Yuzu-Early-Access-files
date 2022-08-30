@@ -26,6 +26,12 @@ void ProxySocket::HandleProxyPacket(const ProxyPacket& packet) {
         closed) {
         return;
     }
+
+    if (!broadcast && packet.broadcast) {
+        LOG_INFO(Network, "Received broadcast packet, but not configured for broadcast mode");
+        return;
+    }
+
     std::lock_guard guard(packets_mutex);
     received_packets.push(packet);
 }
@@ -203,7 +209,7 @@ std::pair<s32, Errno> ProxySocket::SendTo(u32 flags, const std::vector<u8>& mess
     packet.local_endpoint = local_endpoint;
     packet.remote_endpoint = *addr;
     packet.protocol = protocol;
-    packet.broadcast = broadcast;
+    packet.broadcast = broadcast && packet.remote_endpoint.ip[3] == 255;
 
     auto& ip = local_endpoint.ip;
     auto ipv4 = Network::GetHostIPv4Address();

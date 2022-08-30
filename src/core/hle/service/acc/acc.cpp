@@ -534,7 +534,7 @@ public:
 
 private:
     void CheckAvailability(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_ACC, "(STUBBED) called");
+        LOG_DEBUG(Service_ACC, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
         rb.Push(false); // TODO: Check when this is supposed to return true and when not

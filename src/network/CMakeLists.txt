@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 add_library(network STATIC
+    announce_multiplayer_session.cpp
+    announce_multiplayer_session.h
     network.cpp
     network.h
     packet.cpp
@@ -17,3 +19,7 @@ add_library(network STATIC
 create_target_directory_groups(network)
 
 target_link_libraries(network PRIVATE common enet Boost::boost)
+if (ENABLE_WEB_SERVICE)
+    target_compile_definitions(network PRIVATE -DENABLE_WEB_SERVICE)
+    target_link_libraries(network PRIVATE web_service)
+endif()

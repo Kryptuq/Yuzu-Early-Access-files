@@ -113,7 +113,7 @@ enum class LinkLevel : s8 {
     Bad,
     Low,
     Good,
-    Excelent,
+    Excellent,
 };
 
 struct NodeLatestUpdate {
@@ -145,11 +145,19 @@ struct NetworkId {
 static_assert(sizeof(NetworkId) == 0x20, "NetworkId is an invalid size");
 
 struct Ssid {
-    u8 length;
-    std::array<char, SsidLengthMax + 1> raw;
+    u8 length{};
+    std::array<char, SsidLengthMax + 1> raw{};
+
+    Ssid() = default;
+
+    Ssid(std::string data) {
+        length = static_cast<u8>(std::min(data.size(), SsidLengthMax));
+        std::memcpy(raw.data(), data.data(), length);
+        raw[length] = 0;
+    }
 
     std::string GetStringValue() const {
-        return std::string(raw.data(), length);
+        return std::string(raw.data());
     }
 };
 static_assert(sizeof(Ssid) == 0x22, "Ssid is an invalid size");

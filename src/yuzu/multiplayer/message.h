@@ -43,11 +43,20 @@ public:
     static const ConnectionError IP_COLLISION;
     static const ConnectionError PERMISSION_DENIED;
     static const ConnectionError NO_SUCH_USER;
+    static const ConnectionError NO_INTERFACE_SELECTED;
     /**
      *  Shows a standard QMessageBox with a error message
      */
     static void ShowError(const ConnectionError& e);
 };
+
+/**
+ * Show a standard QMessageBox with a warning message about joining a room when
+ * the game is already running
+ * return true if the user wants to close the network connection
+ */
+bool WarnGameRunning();
+
 /**
  * Show a standard QMessageBox with a warning message about leaving the room
  * return true if the user wants to close the network connection

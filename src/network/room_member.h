@@ -146,7 +146,7 @@ public:
               const std::string& password = "", const std::string& token = "");
 
     /**
-     * Sends a WiFi packet to the room.
+     * Sends a Proxy packet to the room.
      * @param packet The WiFi packet to send.
      */
     void SendProxyPacket(const ProxyPacket& packet);

@@ -933,7 +933,11 @@ BSD::BSD(Core::System& system_, const char* name)
     }
 }
 
-BSD::~BSD() = default;
+BSD::~BSD() {
+    if (auto room_member = room_network.GetRoomMember().lock()) {
+        room_member->Unbind(proxy_packet_received);
+    }
+}
 
 BSDCFG::BSDCFG(Core::System& system_) : ServiceFramework{system_, "bsdcfg"} {
     // clang-format off

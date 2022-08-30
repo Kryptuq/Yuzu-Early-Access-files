@@ -6,6 +6,7 @@
 #include <QtConcurrent/QtConcurrentRun>
 #include "common/logging/log.h"
 #include "common/settings.h"
+#include "core/internal_network/network_interface.h"
 #include "network/network.h"
 #include "ui_lobby.h"
 #include "yuzu/game_list_p.h"
@@ -22,11 +23,11 @@
 #endif
 
 Lobby::Lobby(QWidget* parent, QStandardItemModel* list,
-             std::shared_ptr<Core::AnnounceMultiplayerSession> session,
-             Network::RoomNetwork& room_network_)
+             std::shared_ptr<Core::AnnounceMultiplayerSession> session, Core::System& system_)
     : QDialog(parent, Qt::WindowTitleHint | Qt::WindowCloseButtonHint | Qt::WindowSystemMenuHint),
       ui(std::make_unique<Ui::Lobby>()),
-      announce_multiplayer_session(session), room_network{room_network_} {
+      announce_multiplayer_session(session), system{system_}, room_network{
+                                                                  system.GetRoomNetwork()} {
     ui->setupUi(this);
 
     // setup the watcher for background connections
@@ -114,6 +115,18 @@ void Lobby::OnExpandRoom(const QModelIndex& index) {
 }
 
 void Lobby::OnJoinRoom(const QModelIndex& source) {
+    if (!Network::GetSelectedNetworkInterface()) {
+        NetworkMessage::ErrorManager::ShowError(
+            NetworkMessage::ErrorManager::NO_INTERFACE_SELECTED);
+        return;
+    }
+
+    if (system.IsPoweredOn()) {
+        if (!NetworkMessage::WarnGameRunning()) {
+            return;
+        }
+    }
+
     if (const auto member = room_network.GetRoomMember().lock()) {
         // Prevent the user from trying to join a room while they are already joining.
         if (member->GetState() == Network::RoomMember::State::Joining) {

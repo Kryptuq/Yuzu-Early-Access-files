@@ -27,8 +27,8 @@
 #include "common/scm_rev.h"
 #include "common/settings.h"
 #include "common/string_util.h"
-#include "core/announce_multiplayer_session.h"
 #include "core/core.h"
+#include "network/announce_multiplayer_session.h"
 #include "network/network.h"
 #include "network/room.h"
 #include "network/verify_user.h"
@@ -74,6 +74,12 @@ static void PrintVersion() {
 static constexpr char BanListMagic[] = "YuzuRoom-BanList-1";
 
 static constexpr char token_delimiter{':'};
+
+static void PadToken(std::string& token) {
+    while (token.size() % 4 != 0) {
+        token.push_back('=');
+    }
+}
 
 static std::string UsernameFromDisplayToken(const std::string& display_token) {
     std::size_t outlen;
@@ -300,6 +306,7 @@ int main(int argc, char** argv) {
         if (username.empty()) {
             LOG_INFO(Network, "Hosting a public room");
             Settings::values.web_api_url = web_api_url;
+            PadToken(token);
             Settings::values.yuzu_username = UsernameFromDisplayToken(token);
             username = Settings::values.yuzu_username.GetValue();
             Settings::values.yuzu_token = TokenFromDisplayToken(token);

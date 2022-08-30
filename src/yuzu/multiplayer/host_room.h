@@ -8,6 +8,7 @@
 #include <QSortFilterProxyModel>
 #include <QStandardItemModel>
 #include <QVariant>
+#include "core/core.h"
 #include "network/network.h"
 #include "yuzu/multiplayer/chat_room.h"
 #include "yuzu/multiplayer/validation.h"
@@ -35,7 +36,7 @@ class HostRoomWindow : public QDialog {
 public:
     explicit HostRoomWindow(QWidget* parent, QStandardItemModel* list,
                             std::shared_ptr<Core::AnnounceMultiplayerSession> session,
-                            Network::RoomNetwork& room_network_);
+                            Core::System& system_);
     ~HostRoomWindow();
 
     /**
@@ -54,6 +55,7 @@ private:
     QStandardItemModel* game_list;
     ComboBoxProxyModel* proxy;
     Validation validation;
+    Core::System& system;
     Network::RoomNetwork& room_network;
 };
 

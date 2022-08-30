@@ -9,7 +9,8 @@
 #include <QSortFilterProxyModel>
 #include <QStandardItemModel>
 #include "common/announce_multiplayer_room.h"
-#include "core/announce_multiplayer_session.h"
+#include "core/core.h"
+#include "network/announce_multiplayer_session.h"
 #include "network/network.h"
 #include "yuzu/multiplayer/validation.h"
 
@@ -30,7 +31,7 @@ class Lobby : public QDialog {
 public:
     explicit Lobby(QWidget* parent, QStandardItemModel* list,
                    std::shared_ptr<Core::AnnounceMultiplayerSession> session,
-                   Network::RoomNetwork& room_network_);
+                   Core::System& system_);
     ~Lobby() override;
 
     /**
@@ -94,6 +95,7 @@ private:
     std::weak_ptr<Core::AnnounceMultiplayerSession> announce_multiplayer_session;
     QFutureWatcher<void>* watcher;
     Validation validation;
+    Core::System& system;
     Network::RoomNetwork& room_network;
 };
 

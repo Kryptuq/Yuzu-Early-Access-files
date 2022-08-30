@@ -12,7 +12,8 @@
 #include <QtConcurrent/QtConcurrentRun>
 #include "common/logging/log.h"
 #include "common/settings.h"
-#include "core/announce_multiplayer_session.h"
+#include "core/internal_network/network_interface.h"
+#include "network/announce_multiplayer_session.h"
 #include "ui_host_room.h"
 #include "yuzu/game_list_p.h"
 #include "yuzu/main.h"
@@ -27,10 +28,11 @@
 
 HostRoomWindow::HostRoomWindow(QWidget* parent, QStandardItemModel* list,
                                std::shared_ptr<Core::AnnounceMultiplayerSession> session,
-                               Network::RoomNetwork& room_network_)
+                               Core::System& system_)
     : QDialog(parent, Qt::WindowTitleHint | Qt::WindowCloseButtonHint | Qt::WindowSystemMenuHint),
       ui(std::make_unique<Ui::HostRoom>()),
-      announce_multiplayer_session(session), room_network{room_network_} {
+      announce_multiplayer_session(session), system{system_}, room_network{
+                                                                  system.GetRoomNetwork()} {
     ui->setupUi(this);
 
     // set up validation for all of the fields
@@ -105,6 +107,11 @@ std::unique_ptr<Network::VerifyUser::Backend> HostRoomWindow::CreateVerifyBacken
 }
 
 void HostRoomWindow::Host() {
+    if (!Network::GetSelectedNetworkInterface()) {
+        NetworkMessage::ErrorManager::ShowError(
+            NetworkMessage::ErrorManager::NO_INTERFACE_SELECTED);
+        return;
+    }
     if (!ui->username->hasAcceptableInput()) {
         NetworkMessage::ErrorManager::ShowError(NetworkMessage::ErrorManager::USERNAME_NOT_VALID);
         return;
@@ -120,6 +127,11 @@ void HostRoomWindow::Host() {
     if (ui->game_list->currentIndex() == -1) {
         NetworkMessage::ErrorManager::ShowError(NetworkMessage::ErrorManager::GAME_NOT_SELECTED);
         return;
+    }
+    if (system.IsPoweredOn()) {
+        if (!NetworkMessage::WarnGameRunning()) {
+            return;
+        }
     }
     if (auto member = room_network.GetRoomMember().lock()) {
         if (member->GetState() == Network::RoomMember::State::Joining) {

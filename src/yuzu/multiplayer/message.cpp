@@ -49,6 +49,9 @@ const ConnectionError ErrorManager::PERMISSION_DENIED(
     QT_TR_NOOP("You do not have enough permission to perform this action."));
 const ConnectionError ErrorManager::NO_SUCH_USER(QT_TR_NOOP(
     "The user you are trying to kick/ban could not be found.\nThey may have left the room."));
+const ConnectionError ErrorManager::NO_INTERFACE_SELECTED(
+    QT_TR_NOOP("No network interface is selected.\nPlease go to Configure -> System -> Network and "
+               "make a selection."));
 
 static bool WarnMessage(const std::string& title, const std::string& text) {
     return QMessageBox::Ok == QMessageBox::warning(nullptr, QObject::tr(title.c_str()),
@@ -58,6 +61,13 @@ static bool WarnMessage(const std::string& title, const std::string& text) {
 
 void ErrorManager::ShowError(const ConnectionError& e) {
     QMessageBox::critical(nullptr, tr("Error"), tr(e.GetString().c_str()));
+}
+
+bool WarnGameRunning() {
+    return WarnMessage(
+        QT_TR_NOOP("Game already running"),
+        QT_TR_NOOP("Joining a room when the game is already running is discouraged "
+                   "and can cause the room feature not to work correctly.\nProceed anyway?"));
 }
 
 bool WarnCloseRoom() {

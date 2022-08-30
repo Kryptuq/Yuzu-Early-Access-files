@@ -19,10 +19,9 @@
 #include "yuzu/util/clickable_label.h"
 
 MultiplayerState::MultiplayerState(QWidget* parent, QStandardItemModel* game_list_model_,
-                                   QAction* leave_room_, QAction* show_room_,
-                                   Network::RoomNetwork& room_network_)
+                                   QAction* leave_room_, QAction* show_room_, Core::System& system_)
     : QWidget(parent), game_list_model(game_list_model_), leave_room(leave_room_),
-      show_room(show_room_), room_network{room_network_} {
+      show_room(show_room_), system{system_}, room_network{system.GetRoomNetwork()} {
     if (auto member = room_network.GetRoomMember().lock()) {
         // register the network structs to use in slots and signals
         state_callback_handle = member->BindOnStateChanged(
@@ -208,15 +207,14 @@ static void BringWidgetToFront(QWidget* widget) {
 
 void MultiplayerState::OnViewLobby() {
     if (lobby == nullptr) {
-        lobby = new Lobby(this, game_list_model, announce_multiplayer_session, room_network);
+        lobby = new Lobby(this, game_list_model, announce_multiplayer_session, system);
     }
     BringWidgetToFront(lobby);
 }
 
 void MultiplayerState::OnCreateRoom() {
     if (host_room == nullptr) {
-        host_room =
-            new HostRoomWindow(this, game_list_model, announce_multiplayer_session, room_network);
+        host_room = new HostRoomWindow(this, game_list_model, announce_multiplayer_session, system);
     }
     BringWidgetToFront(host_room);
 }
@@ -279,7 +277,7 @@ void MultiplayerState::OnOpenNetworkRoom() {
 
 void MultiplayerState::OnDirectConnectToRoom() {
     if (direct_connect == nullptr) {
-        direct_connect = new DirectConnectWindow(room_network, this);
+        direct_connect = new DirectConnectWindow(system, this);
     }
     BringWidgetToFront(direct_connect);
 }

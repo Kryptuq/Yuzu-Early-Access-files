@@ -221,7 +221,7 @@ public:
      * Extracts the game name from a received ENet packet and broadcasts it.
      * @param event The ENet event that was received.
      */
-    void HandleGameNamePacket(const ENetEvent* event);
+    void HandleGameInfoPacket(const ENetEvent* event);
 
     /**
      * Removes the client from the members list if it was in it and announces the change
@@ -234,7 +234,7 @@ public:
 void Room::RoomImpl::ServerLoop() {
     while (state != State::Closed) {
         ENetEvent event;
-        if (enet_host_service(server, &event, 50) > 0) {
+        if (enet_host_service(server, &event, 5) > 0) {
             switch (event.type) {
             case ENET_EVENT_TYPE_RECEIVE:
                 switch (event.packet->data[0]) {
@@ -242,7 +242,7 @@ void Room::RoomImpl::ServerLoop() {
                     HandleJoinRequest(&event);
                     break;
                 case IdSetGameInfo:
-                    HandleGameNamePacket(&event);
+                    HandleGameInfoPacket(&event);
                     break;
                 case IdProxyPacket:
                     HandleProxyPacket(&event);
@@ -778,6 +778,7 @@ void Room::RoomImpl::BroadcastRoomInformation() {
             packet.Write(member.fake_ip);
             packet.Write(member.game_info.name);
             packet.Write(member.game_info.id);
+            packet.Write(member.game_info.version);
             packet.Write(member.user_data.username);
             packet.Write(member.user_data.display_name);
             packet.Write(member.user_data.avatar_url);
@@ -817,6 +818,7 @@ void Room::RoomImpl::HandleProxyPacket(const ENetEvent* event) {
     in_packet.IgnoreBytes(sizeof(u16)); // Port
 
     in_packet.IgnoreBytes(sizeof(u8)); // Protocol
+
     bool broadcast;
     in_packet.Read(broadcast); // Broadcast
 
@@ -909,7 +911,7 @@ void Room::RoomImpl::HandleChatPacket(const ENetEvent* event) {
     }
 }
 
-void Room::RoomImpl::HandleGameNamePacket(const ENetEvent* event) {
+void Room::RoomImpl::HandleGameInfoPacket(const ENetEvent* event) {
     Packet in_packet;
     in_packet.Append(event->packet->data, event->packet->dataLength);
 
@@ -917,6 +919,7 @@ void Room::RoomImpl::HandleGameNamePacket(const ENetEvent* event) {
     GameInfo game_info;
     in_packet.Read(game_info.name);
     in_packet.Read(game_info.id);
+    in_packet.Read(game_info.version);
 
     {
         std::lock_guard lock(member_mutex);
@@ -935,7 +938,8 @@ void Room::RoomImpl::HandleGameNamePacket(const ENetEvent* event) {
             if (game_info.name.empty()) {
                 LOG_INFO(Network, "{} is not playing", display_name);
             } else {
-                LOG_INFO(Network, "{} is playing {}", display_name, game_info.name);
+                LOG_INFO(Network, "{} is playing {} ({})", display_name, game_info.name,
+                         game_info.version);
             }
         }
     }

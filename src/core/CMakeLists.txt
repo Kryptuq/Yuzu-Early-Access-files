@@ -2,8 +2,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 add_library(core STATIC
-    announce_multiplayer_session.cpp
-    announce_multiplayer_session.h
     arm/arm_interface.h
     arm/arm_interface.cpp
     arm/dynarmic/arm_dynarmic_32.cpp

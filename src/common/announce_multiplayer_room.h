@@ -16,6 +16,7 @@ namespace AnnounceMultiplayerRoom {
 struct GameInfo {
     std::string name{""};
     u64 id{0};
+    std::string version{""};
 };
 
 struct Member {

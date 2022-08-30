@@ -861,7 +861,7 @@ void GMainWindow::InitializeWidgets() {
     });
 
     multiplayer_state = new MultiplayerState(this, game_list->GetModel(), ui->action_Leave_Room,
-                                             ui->action_Show_Room, system->GetRoomNetwork());
+                                             ui->action_Show_Room, *system);
     multiplayer_state->setVisible(false);
 
     // Create status bar

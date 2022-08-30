@@ -6,6 +6,7 @@
 #include <memory>
 #include <QDialog>
 #include <QFutureWatcher>
+#include "core/core.h"
 #include "yuzu/multiplayer/validation.h"
 
 namespace Ui {
@@ -16,7 +17,7 @@ class DirectConnectWindow : public QDialog {
     Q_OBJECT
 
 public:
-    explicit DirectConnectWindow(Network::RoomNetwork& room_network_, QWidget* parent = nullptr);
+    explicit DirectConnectWindow(Core::System& system_, QWidget* parent = nullptr);
     ~DirectConnectWindow();
 
     void RetranslateUi();
@@ -39,5 +40,6 @@ private:
     QFutureWatcher<void>* watcher;
     std::unique_ptr<Ui::DirectConnect> ui;
     Validation validation;
+    Core::System& system;
     Network::RoomNetwork& room_network;
 };

@@ -8,6 +8,7 @@
 #include <QString>
 #include <QtConcurrent/QtConcurrentRun>
 #include "common/settings.h"
+#include "core/internal_network/network_interface.h"
 #include "network/network.h"
 #include "ui_direct_connect.h"
 #include "yuzu/main.h"
@@ -20,9 +21,10 @@
 
 enum class ConnectionType : u8 { TraversalServer, IP };
 
-DirectConnectWindow::DirectConnectWindow(Network::RoomNetwork& room_network_, QWidget* parent)
+DirectConnectWindow::DirectConnectWindow(Core::System& system_, QWidget* parent)
     : QDialog(parent, Qt::WindowTitleHint | Qt::WindowCloseButtonHint | Qt::WindowSystemMenuHint),
-      ui(std::make_unique<Ui::DirectConnect>()), room_network{room_network_} {
+      ui(std::make_unique<Ui::DirectConnect>()), system{system_}, room_network{
+                                                                      system.GetRoomNetwork()} {
 
     ui->setupUi(this);
 
@@ -53,9 +55,19 @@ void DirectConnectWindow::RetranslateUi() {
 }
 
 void DirectConnectWindow::Connect() {
+    if (!Network::GetSelectedNetworkInterface()) {
+        NetworkMessage::ErrorManager::ShowError(
+            NetworkMessage::ErrorManager::NO_INTERFACE_SELECTED);
+        return;
+    }
     if (!ui->nickname->hasAcceptableInput()) {
         NetworkMessage::ErrorManager::ShowError(NetworkMessage::ErrorManager::USERNAME_NOT_VALID);
         return;
+    }
+    if (system.IsPoweredOn()) {
+        if (!NetworkMessage::WarnGameRunning()) {
+            return;
+        }
     }
     if (const auto member = room_network.GetRoomMember().lock()) {
         // Prevent the user from trying to join a room while they are already joining.
