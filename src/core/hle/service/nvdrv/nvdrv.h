@@ -46,7 +46,7 @@ class Module;
 
 class EventInterface {
 public:
-    EventInterface(Module& module_);
+    explicit EventInterface(Module& module_);
     ~EventInterface();
 
     Kernel::KEvent* CreateEvent(std::string name);

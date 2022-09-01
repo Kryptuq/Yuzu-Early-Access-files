@@ -18,23 +18,23 @@ SyncpointManager::SyncpointManager(Tegra::Host1x::Host1x& host1x_) : host1x{host
     ReserveSyncpoint(VBlank0SyncpointId, true);
     ReserveSyncpoint(VBlank1SyncpointId, true);
 
-    for (u32 syncpointId : channel_syncpoints) {
-        if (syncpointId) {
-            ReserveSyncpoint(syncpointId, false);
+    for (u32 syncpoint_id : channel_syncpoints) {
+        if (syncpoint_id) {
+            ReserveSyncpoint(syncpoint_id, false);
         }
     }
 }
 
 SyncpointManager::~SyncpointManager() = default;
 
-u32 SyncpointManager::ReserveSyncpoint(u32 id, bool clientManaged) {
+u32 SyncpointManager::ReserveSyncpoint(u32 id, bool client_managed) {
     if (syncpoints.at(id).reserved) {
         ASSERT_MSG(false, "Requested syncpoint is in use");
         return 0;
     }
 
     syncpoints.at(id).reserved = true;
-    syncpoints.at(id).interfaceManaged = clientManaged;
+    syncpoints.at(id).interface_managed = client_managed;
 
     return id;
 }
@@ -49,9 +49,9 @@ u32 SyncpointManager::FindFreeSyncpoint() {
     return 0;
 }
 
-u32 SyncpointManager::AllocateSyncpoint(bool clientManaged) {
+u32 SyncpointManager::AllocateSyncpoint(bool client_managed) {
     std::lock_guard lock(reservation_lock);
-    return ReserveSyncpoint(FindFreeSyncpoint(), clientManaged);
+    return ReserveSyncpoint(FindFreeSyncpoint(), client_managed);
 }
 
 void SyncpointManager::FreeSyncpoint(u32 id) {
@@ -64,7 +64,7 @@ bool SyncpointManager::IsSyncpointAllocated(u32 id) {
     return (id <= SyncpointCount) && syncpoints[id].reserved;
 }
 
-bool SyncpointManager::HasSyncpointExpired(u32 id, u32 threshold) {
+bool SyncpointManager::HasSyncpointExpired(u32 id, u32 threshold) const {
     const SyncpointInfo& syncpoint{syncpoints.at(id)};
 
     if (!syncpoint.reserved) {
@@ -74,10 +74,10 @@ bool SyncpointManager::HasSyncpointExpired(u32 id, u32 threshold) {
 
     // If the interface manages counters then we don't keep track of the maximum value as it handles
     // sanity checking the values then
-    if (syncpoint.interfaceManaged) {
-        return static_cast<s32>(syncpoint.counterMin - threshold) >= 0;
+    if (syncpoint.interface_managed) {
+        return static_cast<s32>(syncpoint.counter_min - threshold) >= 0;
     } else {
-        return (syncpoint.counterMax - threshold) >= (syncpoint.counterMin - threshold);
+        return (syncpoint.counter_max - threshold) >= (syncpoint.counter_min - threshold);
     }
 }
 
@@ -87,7 +87,7 @@ u32 SyncpointManager::IncrementSyncpointMaxExt(u32 id, u32 amount) {
         return 0;
     }
 
-    return syncpoints.at(id).counterMax += amount;
+    return syncpoints.at(id).counter_max += amount;
 }
 
 u32 SyncpointManager::ReadSyncpointMinValue(u32 id) {
@@ -96,7 +96,7 @@ u32 SyncpointManager::ReadSyncpointMinValue(u32 id) {
         return 0;
     }
 
-    return syncpoints.at(id).counterMin;
+    return syncpoints.at(id).counter_min;
 }
 
 u32 SyncpointManager::UpdateMin(u32 id) {
@@ -105,8 +105,8 @@ u32 SyncpointManager::UpdateMin(u32 id) {
         return 0;
     }
 
-    syncpoints.at(id).counterMin = host1x.GetSyncpointManager().GetHostSyncpointValue(id);
-    return syncpoints.at(id).counterMin;
+    syncpoints.at(id).counter_min = host1x.GetSyncpointManager().GetHostSyncpointValue(id);
+    return syncpoints.at(id).counter_min;
 }
 
 NvFence SyncpointManager::GetSyncpointFence(u32 id) {
@@ -115,7 +115,7 @@ NvFence SyncpointManager::GetSyncpointFence(u32 id) {
         return NvFence{};
     }
 
-    return {.id = static_cast<s32>(id), .value = syncpoints.at(id).counterMax};
+    return {.id = static_cast<s32>(id), .value = syncpoints.at(id).counter_max};
 }
 
 } // namespace Service::Nvidia::NvCore

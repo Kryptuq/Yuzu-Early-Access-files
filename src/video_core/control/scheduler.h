@@ -19,7 +19,7 @@ struct ChannelState;
 
 class Scheduler {
 public:
-    Scheduler(GPU& gpu_);
+    explicit Scheduler(GPU& gpu_);
     ~Scheduler();
 
     void Push(s32 channel, CommandList&& entries);

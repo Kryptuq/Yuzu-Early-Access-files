@@ -11,13 +11,9 @@
 #include "common/common_types.h"
 #include "core/hle/service/nvdrv/nvdata.h"
 
-namespace Tegra {
-
-namespace Host1x {
+namespace Tegra::Host1x {
 class Host1x;
-} // namespace Host1x
-
-} // namespace Tegra
+} // namespace Tegra::Host1x
 
 namespace Service::Nvidia::NvCore {
 
@@ -54,15 +50,15 @@ public:
      * @brief Finds a free syncpoint and reserves it
      * @return The ID of the reserved syncpoint
      */
-    u32 AllocateSyncpoint(bool clientManaged);
+    u32 AllocateSyncpoint(bool client_managed);
 
     /**
      * @url
      * https://github.com/Jetson-TX1-AndroidTV/android_kernel_jetson_tx1_hdmi_primary/blob/8f74a72394efb871cb3f886a3de2998cd7ff2990/drivers/gpu/host1x/syncpt.c#L259
      */
-    bool HasSyncpointExpired(u32 id, u32 threshold);
+    bool HasSyncpointExpired(u32 id, u32 threshold) const;
 
-    bool IsFenceSignalled(NvFence fence) {
+    bool IsFenceSignalled(NvFence fence) const {
         return HasSyncpointExpired(fence.id, fence.value);
     }
 
@@ -107,7 +103,7 @@ private:
     /**
      * @note reservation_lock should be locked when calling this
      */
-    u32 ReserveSyncpoint(u32 id, bool clientManaged);
+    u32 ReserveSyncpoint(u32 id, bool client_managed);
 
     /**
      * @return The ID of the first free syncpoint
@@ -115,15 +111,15 @@ private:
     u32 FindFreeSyncpoint();
 
     struct SyncpointInfo {
-        std::atomic<u32> counterMin; //!< The least value the syncpoint can be (The value it was
-                                     //!< when it was last synchronized with host1x)
-        std::atomic<u32> counterMax; //!< The maximum value the syncpoint can reach according to the
-                                     //!< current usage
-        bool interfaceManaged; //!< If the syncpoint is managed by a host1x client interface, a
-                               //!< client interface is a HW block that can handle host1x
-                               //!< transactions on behalf of a host1x client (Which would otherwise
-                               //!< need to be manually synced using PIO which is synchronous and
-                               //!< requires direct cooperation of the CPU)
+        std::atomic<u32> counter_min; //!< The least value the syncpoint can be (The value it was
+                                      //!< when it was last synchronized with host1x)
+        std::atomic<u32> counter_max; //!< The maximum value the syncpoint can reach according to
+                                      //!< the current usage
+        bool interface_managed; //!< If the syncpoint is managed by a host1x client interface, a
+                                //!< client interface is a HW block that can handle host1x
+                                //!< transactions on behalf of a host1x client (Which would
+                                //!< otherwise need to be manually synced using PIO which is
+                                //!< synchronous and requires direct cooperation of the CPU)
         bool reserved; //!< If the syncpoint is reserved or not, not to be confused with a reserved
                        //!< value
     };

@@ -32,7 +32,7 @@ namespace VideoCommon {
 class ChannelInfo {
 public:
     ChannelInfo() = delete;
-    ChannelInfo(Tegra::Control::ChannelState& state);
+    explicit ChannelInfo(Tegra::Control::ChannelState& state);
     ChannelInfo(const ChannelInfo& state) = delete;
     ChannelInfo& operator=(const ChannelInfo&) = delete;
     ChannelInfo(ChannelInfo&& other) = default;

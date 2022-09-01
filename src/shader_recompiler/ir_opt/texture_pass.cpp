@@ -489,11 +489,11 @@ void TexturePass(Environment& env, IR::Program& program) {
             inst->SetFlags(flags);
             break;
         case IR::Opcode::ImageSampleImplicitLod:
-            if (flags.type == TextureType::Color2D) {
-                auto texture_type = ReadTextureType(env, cbuf);
-                if (texture_type == TextureType::Color2DRect) {
-                    PatchImageSampleImplicitLod(*texture_inst.block, *texture_inst.inst);
-                }
+            if (flags.type != TextureType::Color2D) {
+                break;
+            }
+            if (ReadTextureType(env, cbuf) == TextureType::Color2DRect) {
+                PatchImageSampleImplicitLod(*texture_inst.block, *texture_inst.inst);
             }
             break;
         case IR::Opcode::ImageFetch:

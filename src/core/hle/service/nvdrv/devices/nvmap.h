@@ -23,8 +23,8 @@ public:
     explicit nvmap(Core::System& system_, NvCore::Container& container);
     ~nvmap() override;
 
-    nvmap(nvmap const&) = delete;
-    nvmap& operator=(nvmap const&) = delete;
+    nvmap(const nvmap&) = delete;
+    nvmap& operator=(const nvmap&) = delete;
 
     NvResult Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
                     std::vector<u8>& output) override;

@@ -119,7 +119,7 @@ std::shared_ptr<NvMap::Handle> NvMap::GetHandle(Handle::Id handle) {
     std::scoped_lock lock(handles_lock);
     try {
         return handles.at(handle);
-    } catch ([[maybe_unused]] std::out_of_range& e) {
+    } catch (std::out_of_range&) {
         return nullptr;
     }
 }
@@ -128,7 +128,7 @@ VAddr NvMap::GetHandleAddress(Handle::Id handle) {
     std::scoped_lock lock(handles_lock);
     try {
         return handles.at(handle)->address;
-    } catch ([[maybe_unused]] std::out_of_range& e) {
+    } catch (std::out_of_range&) {
         return 0;
     }
 }

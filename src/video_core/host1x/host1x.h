@@ -19,7 +19,7 @@ namespace Host1x {
 
 class Host1x {
 public:
-    Host1x(Core::System& system);
+    explicit Host1x(Core::System& system);
 
     SyncpointManager& GetSyncpointManager() {
         return syncpoint_manager;

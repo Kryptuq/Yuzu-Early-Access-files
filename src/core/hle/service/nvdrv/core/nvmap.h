@@ -98,35 +98,6 @@ public:
         }
     };
 
-private:
-    std::list<std::shared_ptr<Handle>> unmap_queue{};
-    std::mutex unmap_queue_lock{}; //!< Protects access to `unmap_queue`
-
-    std::unordered_map<Handle::Id, std::shared_ptr<Handle>>
-        handles{};           //!< Main owning map of handles
-    std::mutex handles_lock; //!< Protects access to `handles`
-
-    static constexpr u32 HandleIdIncrement{
-        4}; //!< Each new handle ID is an increment of 4 from the previous
-    std::atomic<u32> next_handle_id{HandleIdIncrement};
-    Tegra::Host1x::Host1x& host1x;
-
-    void AddHandle(std::shared_ptr<Handle> handle);
-
-    /**
-     * @brief Unmaps and frees the SMMU memory region a handle is mapped to
-     * @note Both `unmap_queue_lock` and `handle_description.mutex` MUST be locked when calling this
-     */
-    void UnmapHandle(Handle& handle_description);
-
-    /**
-     * @brief Removes a handle from the map taking its dupes into account
-     * @note handle_description.mutex MUST be locked when calling this
-     * @return If the handle was removed from the map
-     */
-    bool TryRemoveHandle(const Handle& handle_description);
-
-public:
     /**
      * @brief Encapsulates the result of a FreeHandle operation
      */
@@ -136,7 +107,7 @@ public:
         bool was_uncached; //!< If the handle was allocated as uncached
     };
 
-    NvMap(Tegra::Host1x::Host1x& host1x);
+    explicit NvMap(Tegra::Host1x::Host1x& host1x);
 
     /**
      * @brief Creates an unallocated handle of the given size
@@ -172,5 +143,33 @@ public:
      * describing the prior state of the handle
      */
     std::optional<FreeInfo> FreeHandle(Handle::Id handle, bool internal_session);
+
+private:
+    std::list<std::shared_ptr<Handle>> unmap_queue{};
+    std::mutex unmap_queue_lock{}; //!< Protects access to `unmap_queue`
+
+    std::unordered_map<Handle::Id, std::shared_ptr<Handle>>
+        handles{};           //!< Main owning map of handles
+    std::mutex handles_lock; //!< Protects access to `handles`
+
+    static constexpr u32 HandleIdIncrement{
+        4}; //!< Each new handle ID is an increment of 4 from the previous
+    std::atomic<u32> next_handle_id{HandleIdIncrement};
+    Tegra::Host1x::Host1x& host1x;
+
+    void AddHandle(std::shared_ptr<Handle> handle);
+
+    /**
+     * @brief Unmaps and frees the SMMU memory region a handle is mapped to
+     * @note Both `unmap_queue_lock` and `handle_description.mutex` MUST be locked when calling this
+     */
+    void UnmapHandle(Handle& handle_description);
+
+    /**
+     * @brief Removes a handle from the map taking its dupes into account
+     * @note handle_description.mutex MUST be locked when calling this
+     * @return If the handle was removed from the map
+     */
+    bool TryRemoveHandle(const Handle& handle_description);
 };
 } // namespace Service::Nvidia::NvCore

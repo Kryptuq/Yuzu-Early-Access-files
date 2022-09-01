@@ -25,12 +25,18 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:12pt;&quot;&gt;yuzu is an experimental open-source emulator for the Nintendo Switch licensed under GPLv3.0+.&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:&apos;MS Shell Dlg 2&apos;; font-size:12pt;&quot;&gt;This software should not be used to play games you have not legally obtained.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Ubuntu&apos;; font-size:11pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:&apos;MS Shell Dlg 2&apos;; font-size:12pt;&quot;&gt;yuzu jest eksperymentalnym emulatorem konsoli Nintendo Switch z otwartym kodem źródłowym, na licencji GPLv3.0+&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:&apos;MS Shell Dlg 2&apos;; font-size:8pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:&apos;MS Shell Dlg 2&apos;; font-size:12pt;&quot;&gt;Nie należy używać tego programu żeby grać w gry uzyskane nielegalnie.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/aboutdialog.ui" line="130"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://yuzu-emu.org/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#039be5;&quot;&gt;Website&lt;/span&gt;&lt;/a&gt; | &lt;a href=&quot;https://github.com/yuzu-emu&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#039be5;&quot;&gt;Source Code&lt;/span&gt;&lt;/a&gt; | &lt;a href=&quot;https://github.com/yuzu-emu/yuzu/graphs/contributors&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#039be5;&quot;&gt;Contributors&lt;/span&gt;&lt;/a&gt; | &lt;a href=&quot;https://github.com/yuzu-emu/yuzu/blob/master/LICENSE.txt&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#039be5;&quot;&gt;License&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://yuzu-emu.org/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#039be5;&quot;&gt;Strona&lt;/span&gt;&lt;/a&gt;I&lt;a href=&quot;https://github.com/yuzu-emu&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#039be5;&quot;&gt;Kod Źródłowy&lt;/span&gt;&lt;/a&gt;I&lt;a href=&quot;https://github.com/yuzu-emu/yuzu/graphs/contributors&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#039be5;&quot;&gt;Kontrybutorzy&lt;/span&gt;&lt;/a&gt;I&lt;a href=&quot;https://github.com/yuzu-emu/yuzu/blob/master/LICENSE.txt&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#039be5;&quot;&gt;Licencja&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/aboutdialog.ui" line="146"/>
@@ -81,90 +87,92 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/multiplayer/chat_room.ui" line="40"/>
         <source>Send Chat Message</source>
-        <translation type="unfinished"/>
+        <translation>Wyślij Wiadomość na Czacie</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/chat_room.ui" line="47"/>
         <source>Send Message</source>
-        <translation type="unfinished"/>
+        <translation>Wyślij Wiadomość</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="166"/>
         <source>Members</source>
-        <translation type="unfinished"/>
+        <translation>Członkowie</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="299"/>
         <source>%1 has joined</source>
-        <translation type="unfinished"/>
+        <translation>%1 dołączył/a</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="302"/>
         <source>%1 has left</source>
-        <translation type="unfinished"/>
+        <translation>%1 wyszedł/ła</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="305"/>
         <source>%1 has been kicked</source>
-        <translation type="unfinished"/>
+        <translation>%1 został/a wyrzucony/a</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="308"/>
         <source>%1 has been banned</source>
-        <translation type="unfinished"/>
+        <translation>%1 został/a zbanowany/a</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="311"/>
         <source>%1 has been unbanned</source>
-        <translation type="unfinished"/>
+        <translation>%1 został/a odbanowany/a</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="429"/>
+        <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="427"/>
         <source>View Profile</source>
-        <translation type="unfinished"/>
+        <translation>Wyświetl Profil</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="442"/>
-        <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="452"/>
+        <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="440"/>
+        <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="450"/>
         <source>Block Player</source>
-        <translation type="unfinished"/>
+        <translation>Zablokuj Gracza</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="453"/>
+        <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="451"/>
         <source>When you block a player, you will no longer receive chat messages from them.&lt;br&gt;&lt;br&gt;Are you sure you would like to block %1?</source>
-        <translation type="unfinished"/>
+        <translation>Po zablokowaniu gracza nie będziesz otrzymywał od niego/jej wiadomości. &lt;br&gt;&lt;br&gt;Czy na pewno chcesz zablokować %1? </translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="466"/>
+        <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="464"/>
         <source>Kick</source>
-        <translation type="unfinished"/>
+        <translation>Wyrzuć</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="467"/>
+        <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="465"/>
         <source>Ban</source>
-        <translation type="unfinished"/>
+        <translation>Zbanuj</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="471"/>
+        <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="469"/>
         <source>Kick Player</source>
-        <translation type="unfinished"/>
+        <translation>Wyrzuć Gracza</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="472"/>
+        <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="470"/>
         <source>Are you sure you would like to &lt;b&gt;kick&lt;/b&gt; %1?</source>
-        <translation type="unfinished"/>
+        <translation>Na pewno chcesz &lt;b&gt;wyrzucić&lt;/b&gt; %1?</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="480"/>
+        <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="478"/>
         <source>Ban Player</source>
-        <translation type="unfinished"/>
+        <translation>Zbanuj Gracza</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="481"/>
+        <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="479"/>
         <source>Are you sure you would like to &lt;b&gt;kick and ban&lt;/b&gt; %1?
 
 This would ban both their forum username and their IP address.</source>
-        <translation type="unfinished"/>
+        <translation>Czy na pewno chcesz &lt;b&gt;wyrzucić i zbanować&lt;/b&gt; %1
+
+To zbanuje jego/jej nick na forum, oraz jego/jej adres IP.</translation>
     </message>
 </context>
 <context>
@@ -177,35 +185,35 @@ This would ban both their forum username and their IP address.</source>
     <message>
         <location filename="../../src/yuzu/multiplayer/client_room.ui" line="27"/>
         <source>Room Description</source>
-        <translation type="unfinished"/>
+        <translation>Opis Pokoju Multiplayer</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/client_room.ui" line="47"/>
         <source>Moderation...</source>
-        <translation type="unfinished"/>
+        <translation>Moderacja...</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/client_room.ui" line="57"/>
         <source>Leave Room</source>
-        <translation type="unfinished"/>
+        <translation>Wyjdź z Pokoju Multiplayer</translation>
     </message>
 </context>
 <context>
     <name>ClientRoomWindow</name>
     <message>
-        <location filename="../../src/yuzu/multiplayer/client_room.cpp" line="79"/>
+        <location filename="../../src/yuzu/multiplayer/client_room.cpp" line="78"/>
         <source>Connected</source>
-        <translation>Połączony</translation>
+        <translation>Połączono</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/client_room.cpp" line="88"/>
+        <location filename="../../src/yuzu/multiplayer/client_room.cpp" line="87"/>
         <source>Disconnected</source>
-        <translation type="unfinished"/>
+        <translation>Rozłączono</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/client_room.cpp" line="101"/>
+        <location filename="../../src/yuzu/multiplayer/client_room.cpp" line="100"/>
         <source>%1 (%2/%3 members) - connected</source>
-        <translation type="unfinished"/>
+        <translation>%1 (%2/%3 uczestników) - połączono</translation>
     </message>
 </context>
 <context>
@@ -234,7 +242,7 @@ This would ban both their forum username and their IP address.</source>
     <message>
         <location filename="../../src/yuzu/compatdb.ui" line="79"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Game functions flawlessly with no audio or graphical glitches.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Gra działa bez zarzutu, bez błędów graficznych lub dźwiękowych.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Gra działa idealnie - bez żadnych glitchy audio czy graficznych.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/compatdb.ui" line="89"/>
@@ -244,7 +252,7 @@ This would ban both their forum username and their IP address.</source>
     <message>
         <location filename="../../src/yuzu/compatdb.ui" line="96"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Game functions with minor graphical or audio glitches and is playable from start to finish. May require some workarounds.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Gra działa z pomniejszymi błędami dźwiękowymi lub graficznymi, jest grywalna od początku do końca. Może wymagać kilku obejść/poprawek.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Gra działa z pomniejszymi błędami audio lub graficznymi, jest grywalna od początku do końca. Potrzebne mogą być &quot;obejścia&quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/compatdb.ui" line="106"/>
@@ -254,7 +262,7 @@ This would ban both their forum username and their IP address.</source>
     <message>
         <location filename="../../src/yuzu/compatdb.ui" line="113"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Game functions with major graphical or audio glitches, but game is playable from start to finish with workarounds.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Gra działa z większymi błędami dźwiękowymi lub graficznymi, ale jest grywalna od początku do końca. Może wymagać kilku obejść/poprawek.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Gra działa, ale występują znaczące glitche graficzne, lub glitche audio. Przez glitche nie można przejść specyficznych sekcji gry, nawet używając &quot;obejść&quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/compatdb.ui" line="123"/>
@@ -264,7 +272,7 @@ This would ban both their forum username and their IP address.</source>
     <message>
         <location filename="../../src/yuzu/compatdb.ui" line="130"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Game functions, but with major graphical or audio glitches. Unable to progress in specific areas due to glitches even with workarounds.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Gra działa z większymi błędami dźwiękowymi lub graficznymi. Niemożliwe jest przejście konkretnych miejsc nawet z obejściami.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Gra działa, ale występują znaczące glitche graficzne, lub glitche audio. Przez glitche nie można przejść specyficznych sekcji gry, nawet używając &quot;obejść&quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/compatdb.ui" line="140"/>
@@ -274,12 +282,12 @@ This would ban both their forum username and their IP address.</source>
     <message>
         <location filename="../../src/yuzu/compatdb.ui" line="147"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Game is completely unplayable due to major graphical or audio glitches. Unable to progress past the Start Screen.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Gra w żadnym stopniu nie jest grywalna ze względu na poważne błędy graficzne lub dźwiękowe. Niemożliwe jest przejście ekranu początkowego.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Gra jest totalnie niegrywalna przez znaczące glitche graficzne lub audio. Nie można przejść przez ekran startowy.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/compatdb.ui" line="157"/>
         <source>Won&apos;t Boot</source>
-        <translation>Nie uruchomia się</translation>
+        <translation>Nie uruchamia się</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/compatdb.ui" line="170"/>
@@ -289,7 +297,7 @@ This would ban both their forum username and their IP address.</source>
     <message>
         <location filename="../../src/yuzu/compatdb.ui" line="182"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Independent of speed or performance, how well does this game play from start to finish on this version of yuzu?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Pomijając prędkość lub wydajność, jak dobrze ta gra zachowuje się w tej wersji yuzu?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Pomijając prędkość gry, i jej wydajność, czy można spokojnie przejść ją od początku do końca na tej wersji yuzu?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/compatdb.ui" line="206"/>
@@ -328,12 +336,12 @@ This would ban both their forum username and their IP address.</source>
     <message>
         <location filename="../../src/yuzu/configuration/configure_audio.ui" line="28"/>
         <source>Output Engine:</source>
-        <translation>Silnik wyjścia</translation>
+        <translation>Silnik wyjściowy</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_audio.ui" line="42"/>
         <source>Output Device</source>
-        <translation type="unfinished"/>
+        <translation>Urządzenie Wyjściowe</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_audio.ui" line="56"/>
@@ -372,7 +380,7 @@ This would ban both their forum username and their IP address.</source>
     <message>
         <location filename="../../src/yuzu/configuration/configure_camera.ui" line="14"/>
         <source>Configure Infrared Camera</source>
-        <translation type="unfinished"/>
+        <translation>Skonfiguruj Kamerę IR</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_camera.ui" line="26"/>
@@ -387,7 +395,7 @@ This would ban both their forum username and their IP address.</source>
     <message>
         <location filename="../../src/yuzu/configuration/configure_camera.ui" line="71"/>
         <source>Input device:</source>
-        <translation type="unfinished"/>
+        <translation>Urządzenie wejściowe:</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_camera.ui" line="96"/>
@@ -397,7 +405,7 @@ This would ban both their forum username and their IP address.</source>
     <message>
         <location filename="../../src/yuzu/configuration/configure_camera.ui" line="108"/>
         <source>Resolution: 320*240</source>
-        <translation type="unfinished"/>
+        <translation>Rozdzielczość: 320*240</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_camera.ui" line="115"/>
@@ -410,7 +418,7 @@ This would ban both their forum username and their IP address.</source>
         <translation>Przywróć domyślne</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_camera.cpp" line="117"/>
+        <location filename="../../src/yuzu/configuration/configure_camera.cpp" line="135"/>
         <source>Auto</source>
         <translation>Automatyczny</translation>
     </message>
@@ -477,7 +485,8 @@ This would ban both their forum username and their IP address.</source>
         <source>
             &lt;div&gt;This option improves speed by reducing accuracy of fused-multiply-add instructions on CPUs without native FMA support.&lt;/div&gt;
            </source>
-        <translation>&lt;div&gt; Ta opcja zwiększa prędkość zmniejszając dokładność operacji FMA na procesorach bez wsparcia tej instrukcji&lt;/div&gt;</translation>
+        <translation>
+&lt;div&gt;Ta opcja zwiększa prędkość zmniejszając dokładność operacji FMA na procesorach bez natywnego wsparcia FMA.&lt;/div&gt;</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu.ui" line="106"/>
@@ -489,7 +498,8 @@ This would ban both their forum username and their IP address.</source>
         <source>
             &lt;div&gt;This option improves the speed of some approximate floating-point functions by using less accurate native approximations.&lt;/div&gt;
            </source>
-        <translation>&lt;div&gt;Ta opcja zwiększa prędkość wykonując przybliżenia operacji zmiennoprzecinkowych przez wykorzystanie mniej dokładnych natywnych przybliżeń&lt;/div&gt;</translation>
+        <translation>
+&lt;div&gt;Ta opcja zwiększa prędkość wykonując przybliżenia operacji zmiennoprzecinkowych przez wykorzystanie mniej dokładnych natywnych przybliżeń&lt;/div&gt;</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu.ui" line="118"/>
@@ -575,9 +585,9 @@ Wyłączenie tej opcji może pozwolić grze na zapis lub odczyt pamięci emulato
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu_debug.ui" line="31"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;For debugging only.&lt;/span&gt;&lt;br/&gt;If you&apos;re not sure what these do, keep all of these enabled. &lt;br/&gt;These settings, when disabled, only take effect when CPU Debugging is enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>Tylko do debugowania.
-Jeśli nie wiesz, co te ustawienia robią, zostaw je włączone.
-Będąc nieaktywne, zadziałają tylko gdy debugowanie CPU jest włączone.</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Tylko do debugowania.&lt;/span&gt;&lt;br/&gt;
+Jeśli nie wiesz, co te ustawienia robią, zostaw je włączone.&lt;br/&gt;
+Będąc nieaktywne, zadziałają tylko gdy debugowanie CPU jest włączone.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu_debug.ui" line="41"/>
@@ -1255,7 +1265,7 @@ Gdy ta opcja jest włączona, niedopasowanie jest uruchamiane tylko wtedy, gdy d
     <message>
         <location filename="../../src/yuzu/configuration/configure_general.ui" line="95"/>
         <source>Mute audio when in background</source>
-        <translation type="unfinished"/>
+        <translation>Wyciszaj audio gdy yuzu działa w tle</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_general.ui" line="102"/>
@@ -1537,8 +1547,8 @@ Pozostaw tą funkcję włączoną, jeśli nie widać różnicy w wydajności.</t
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="78"/>
-        <source>Use VSync (OpenGL only)</source>
-        <translation>Używaj Vsync (Tylko OpenGL)</translation>
+        <source>Use VSync</source>
+        <translation>Używaj VSync</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="85"/>
@@ -2984,7 +2994,7 @@ Aby odwrócić osie, najpierw przesuń joystick pionowo, a następnie poziomo.</
     <message>
         <location filename="../../src/yuzu/configuration/configure_ringcon.ui" line="14"/>
         <source>Configure Ring Controller</source>
-        <translation type="unfinished"/>
+        <translation>Skonfiguruj Kontroler &quot;Ring&quot;</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ringcon.ui" line="26"/>
@@ -3863,7 +3873,7 @@ Przeciągnij punkty, aby zmienić pozycję, lub kliknij dwukrotnie komórki tabe
     <message>
         <location filename="../../src/yuzu/configuration/configure_vibration.ui" line="23"/>
         <source>Press any controller button to vibrate the controller.</source>
-        <translation type="unfinished"/>
+        <translation>Naciśnij dowolny przycisk aby kontroler zawibrował.</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_vibration.ui" line="30"/>
@@ -4097,22 +4107,22 @@ Przeciągnij punkty, aby zmienić pozycję, lub kliknij dwukrotnie komórki tabe
     <message>
         <location filename="../../src/yuzu/multiplayer/direct_connect.ui" line="33"/>
         <source>IP Address</source>
-        <translation type="unfinished"/>
+        <translation>Adres IP</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/direct_connect.ui" line="56"/>
         <source>IP</source>
-        <translation type="unfinished"/>
+        <translation>IP</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/direct_connect.ui" line="63"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;IPv4 address of the host&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Adres IPv4 hosta&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/direct_connect.ui" line="73"/>
         <source>Port</source>
-        <translation type="unfinished"/>
+        <translation>Port</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/direct_connect.ui" line="80"/>
@@ -4120,24 +4130,19 @@ Przeciągnij punkty, aby zmienić pozycję, lub kliknij dwukrotnie komórki tabe
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/direct_connect.ui" line="86"/>
-        <source>24872</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
         <location filename="../../src/yuzu/multiplayer/direct_connect.ui" line="100"/>
         <source>Nickname</source>
-        <translation type="unfinished"/>
+        <translation>Nick</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/direct_connect.ui" line="114"/>
         <source>Password</source>
-        <translation type="unfinished"/>
+        <translation>Hasło</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/direct_connect.ui" line="156"/>
         <source>Connect</source>
-        <translation type="unfinished"/>
+        <translation>Połącz</translation>
     </message>
 </context>
 <context>
@@ -4145,12 +4150,12 @@ Przeciągnij punkty, aby zmienić pozycję, lub kliknij dwukrotnie komórki tabe
     <message>
         <location filename="../../src/yuzu/multiplayer/direct_connect.cpp" line="112"/>
         <source>Connecting</source>
-        <translation type="unfinished"/>
+        <translation>Łączenie</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/direct_connect.cpp" line="117"/>
         <source>Connect</source>
-        <translation type="unfinished"/>
+        <translation>Połącz</translation>
     </message>
 </context>
 <context>
@@ -4166,478 +4171,479 @@ Przeciągnij punkty, aby zmienić pozycję, lub kliknij dwukrotnie komórki tabe
         <translation>Telemetria</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="369"/>
+        <location filename="../../src/yuzu/main.cpp" line="388"/>
         <source>Broken Vulkan Installation Detected</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="370"/>
+        <location filename="../../src/yuzu/main.cpp" line="389"/>
         <source>Vulkan initialization failed during boot.&lt;br&gt;&lt;br&gt;Click &lt;a href=&apos;https://yuzu-emu.org/wiki/faq/#yuzu-starts-with-the-error-broken-vulkan-installation-detected&apos;&gt;here for instructions to fix the issue&lt;/a&gt;.</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="700"/>
+        <location filename="../../src/yuzu/main.cpp" line="717"/>
         <source>Loading Web Applet...</source>
         <translation>Ładowanie apletu internetowego...</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="747"/>
-        <location filename="../../src/yuzu/main.cpp" line="750"/>
+        <location filename="../../src/yuzu/main.cpp" line="764"/>
+        <location filename="../../src/yuzu/main.cpp" line="767"/>
         <source>Disable Web Applet</source>
         <translation>Wyłącz Aplet internetowy</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="751"/>
+        <location filename="../../src/yuzu/main.cpp" line="768"/>
         <source>Disabling the web applet can lead to undefined behavior and should only be used with Super Mario 3D All-Stars. Are you sure you want to disable the web applet?
 (This can be re-enabled in the Debug settings.)</source>
-        <translation type="unfinished"/>
+        <translation>Wyłączanie web appletu może doprowadzić do nieokreślonych zachowań - wyłączyć applet należy jedynie grając w Super Mario 3D All-Stars. Na pewno chcesz wyłączyć web applet?
+(Można go ponownie włączyć w ustawieniach debug.)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="858"/>
+        <location filename="../../src/yuzu/main.cpp" line="875"/>
         <source>The amount of shaders currently being built</source>
         <translation>Ilość budowanych shaderów</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="860"/>
+        <location filename="../../src/yuzu/main.cpp" line="877"/>
         <source>The current selected resolution scaling multiplier.</source>
         <translation>Obecnie wybrany mnożnik rozdzielczości.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="863"/>
+        <location filename="../../src/yuzu/main.cpp" line="880"/>
         <source>Current emulation speed. Values higher or lower than 100% indicate emulation is running faster or slower than a Switch.</source>
         <translation>Aktualna prędkość emulacji. Wartości większe lub niższe niż 100% wskazują, że emulacja działa szybciej lub wolniej niż Switch.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="866"/>
+        <location filename="../../src/yuzu/main.cpp" line="883"/>
         <source>How many frames per second the game is currently displaying. This will vary from game to game and scene to scene.</source>
         <translation>Ile klatek na sekundę gra aktualnie wyświetla. To będzie się różnić w zależności od gry, od sceny do sceny.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="870"/>
+        <location filename="../../src/yuzu/main.cpp" line="887"/>
         <source>Time taken to emulate a Switch frame, not counting framelimiting or v-sync. For full-speed emulation this should be at most 16.67 ms.</source>
         <translation>Czas potrzebny do emulacji klatki na sekundę Switcha, nie licząc ograniczania klatek ani v-sync. Dla emulacji pełnej szybkości powinno to wynosić co najwyżej 16,67 ms.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="949"/>
+        <location filename="../../src/yuzu/main.cpp" line="966"/>
         <source>VULKAN</source>
         <translation>VULKAN</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="949"/>
+        <location filename="../../src/yuzu/main.cpp" line="966"/>
         <source>OPENGL</source>
         <translation>OPENGL</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1011"/>
+        <location filename="../../src/yuzu/main.cpp" line="1028"/>
         <source>&amp;Clear Recent Files</source>
         <translation>&amp;Usuń Ostatnie pliki</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1320"/>
+        <location filename="../../src/yuzu/main.cpp" line="1335"/>
         <source>&amp;Continue</source>
         <translation>&amp;Kontynuuj</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1322"/>
+        <location filename="../../src/yuzu/main.cpp" line="1337"/>
         <source>&amp;Pause</source>
         <translation>&amp;Pauza</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1400"/>
+        <location filename="../../src/yuzu/main.cpp" line="1415"/>
         <source>yuzu is running a game</source>
         <extracomment>TRANSLATORS: This string is shown to the user to explain why yuzu needs to prevent the computer from sleeping</extracomment>
         <translation>yuzu jest w trakcie gry</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1531"/>
+        <location filename="../../src/yuzu/main.cpp" line="1546"/>
         <source>Warning Outdated Game Format</source>
         <translation>OSTRZEŻENIE! Nieaktualny format gry</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1532"/>
+        <location filename="../../src/yuzu/main.cpp" line="1547"/>
         <source>You are using the deconstructed ROM directory format for this game, which is an outdated format that has been superseded by others such as NCA, NAX, XCI, or NSP. Deconstructed ROM directories lack icons, metadata, and update support.&lt;br&gt;&lt;br&gt;For an explanation of the various Switch formats yuzu supports, &lt;a href=&apos;https://yuzu-emu.org/wiki/overview-of-switch-game-formats&apos;&gt;check out our wiki&lt;/a&gt;. This message will not be shown again.</source>
         <translation>Używasz zdekonstruowanego formatu katalogu ROM dla tej gry, który jest przestarzałym formatem, który został zastąpiony przez inne, takie jak NCA, NAX, XCI lub NSP. W zdekonstruowanych katalogach ROM brakuje ikon, metadanych i obsługi aktualizacji.&lt;br&gt;&lt;br&gt; Aby znaleźć wyjaśnienie różnych formatów Switch obsługiwanych przez yuzu,&lt;a href=&apos;https://yuzu-emu.org/wiki/overview-of-switch-game-formats&apos;&gt; sprawdź nasze wiki&lt;/a&gt;. Ta wiadomość nie pojawi się ponownie.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1544"/>
-        <location filename="../../src/yuzu/main.cpp" line="1578"/>
+        <location filename="../../src/yuzu/main.cpp" line="1559"/>
+        <location filename="../../src/yuzu/main.cpp" line="1593"/>
         <source>Error while loading ROM!</source>
         <translation>Błąd podczas wczytywania ROMu!</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1545"/>
+        <location filename="../../src/yuzu/main.cpp" line="1560"/>
         <source>The ROM format is not supported.</source>
         <translation>Ten format ROMu nie jest wspierany.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1549"/>
+        <location filename="../../src/yuzu/main.cpp" line="1564"/>
         <source>An error occurred initializing the video core.</source>
         <translation>Wystąpił błąd podczas inicjowania rdzenia wideo.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1550"/>
+        <location filename="../../src/yuzu/main.cpp" line="1565"/>
         <source>yuzu has encountered an error while running the video core. This is usually caused by outdated GPU drivers, including integrated ones. Please see the log for more details. For more information on accessing the log, please see the following page: &lt;a href=&apos;https://yuzu-emu.org/help/reference/log-files/&apos;&gt;How to Upload the Log File&lt;/a&gt;. </source>
         <translation>yuzu napotkał błąd podczas uruchamiania rdzenia wideo. Jest to zwykle spowodowane przestarzałymi sterownikami GPU, w tym zintegrowanymi. Więcej szczegółów znajdziesz w pliku log. Więcej informacji na temat dostępu do log-u można znaleźć na następującej stronie: &lt;a href=&apos;https://yuzu-emu.org/help/reference/log-files/&apos;&gt;Jak przesłać plik log&lt;/a&gt;.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1565"/>
+        <location filename="../../src/yuzu/main.cpp" line="1580"/>
         <source>Error while loading ROM! %1</source>
         <comment>%1 signifies a numeric error code.</comment>
         <translation>Błąd podczas wczytywania ROMu! %1</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1568"/>
+        <location filename="../../src/yuzu/main.cpp" line="1583"/>
         <source>%1&lt;br&gt;Please follow &lt;a href=&apos;https://yuzu-emu.org/help/quickstart/&apos;&gt;the yuzu quickstart guide&lt;/a&gt; to redump your files.&lt;br&gt;You can refer to the yuzu wiki&lt;/a&gt; or the yuzu Discord&lt;/a&gt; for help.</source>
         <comment>%1 signifies an error string.</comment>
         <translation>%1&lt;br&gt;Postępuj zgodnie z&lt;a href=&apos;https://yuzu-emu.org/help/quickstart/&apos;&gt;yuzu quickstart guide&lt;/a&gt; aby zrzucić ponownie swoje pliki.&lt;br&gt;Możesz odwołać się do wiki yuzu&lt;/a&gt;lub discord yuzu &lt;/a&gt; po pomoc.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1579"/>
+        <location filename="../../src/yuzu/main.cpp" line="1594"/>
         <source>An unknown error occurred. Please see the log for more details.</source>
         <translation>Wystąpił nieznany błąd. Więcej informacji można znaleźć w pliku log.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1706"/>
+        <location filename="../../src/yuzu/main.cpp" line="1725"/>
         <source>(64-bit)</source>
         <translation>(64-bit)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1706"/>
+        <location filename="../../src/yuzu/main.cpp" line="1725"/>
         <source>(32-bit)</source>
         <translation>(32-bit)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1707"/>
+        <location filename="../../src/yuzu/main.cpp" line="1726"/>
         <source>%1 %2</source>
         <comment>%1 is the title name. %2 indicates if the title is 64-bit or 32-bit</comment>
         <translation>%1 %2</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1857"/>
+        <location filename="../../src/yuzu/main.cpp" line="1876"/>
         <source>Save Data</source>
         <translation>Zapis danych</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1905"/>
+        <location filename="../../src/yuzu/main.cpp" line="1924"/>
         <source>Mod Data</source>
         <translation>Dane modów</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1917"/>
+        <location filename="../../src/yuzu/main.cpp" line="1936"/>
         <source>Error Opening %1 Folder</source>
         <translation>Błąd podczas otwarcia folderu %1</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1918"/>
-        <location filename="../../src/yuzu/main.cpp" line="2324"/>
+        <location filename="../../src/yuzu/main.cpp" line="1937"/>
+        <location filename="../../src/yuzu/main.cpp" line="2343"/>
         <source>Folder does not exist!</source>
         <translation>Folder nie istnieje!</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1930"/>
+        <location filename="../../src/yuzu/main.cpp" line="1949"/>
         <source>Error Opening Transferable Shader Cache</source>
         <translation>Błąd podczas otwierania przenośnej pamięci podręcznej Shaderów.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1931"/>
+        <location filename="../../src/yuzu/main.cpp" line="1950"/>
         <source>Failed to create the shader cache directory for this title.</source>
         <translation>Nie udało się stworzyć ścieżki shaderów dla tego tytułu.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1983"/>
+        <location filename="../../src/yuzu/main.cpp" line="2002"/>
         <source>Contents</source>
         <translation>Zawartość</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1985"/>
+        <location filename="../../src/yuzu/main.cpp" line="2004"/>
         <source>Update</source>
         <translation>Łatka</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1987"/>
+        <location filename="../../src/yuzu/main.cpp" line="2006"/>
         <source>DLC</source>
         <translation>DLC</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1994"/>
+        <location filename="../../src/yuzu/main.cpp" line="2013"/>
         <source>Remove Entry</source>
         <translation>Usuń wpis</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1994"/>
+        <location filename="../../src/yuzu/main.cpp" line="2013"/>
         <source>Remove Installed Game %1?</source>
         <translation>Usunąć zainstalowaną grę %1?</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2024"/>
-        <location filename="../../src/yuzu/main.cpp" line="2040"/>
-        <location filename="../../src/yuzu/main.cpp" line="2071"/>
-        <location filename="../../src/yuzu/main.cpp" line="2132"/>
-        <location filename="../../src/yuzu/main.cpp" line="2150"/>
-        <location filename="../../src/yuzu/main.cpp" line="2173"/>
+        <location filename="../../src/yuzu/main.cpp" line="2043"/>
+        <location filename="../../src/yuzu/main.cpp" line="2059"/>
+        <location filename="../../src/yuzu/main.cpp" line="2090"/>
+        <location filename="../../src/yuzu/main.cpp" line="2151"/>
+        <location filename="../../src/yuzu/main.cpp" line="2169"/>
+        <location filename="../../src/yuzu/main.cpp" line="2192"/>
         <source>Successfully Removed</source>
         <translation>Pomyślnie usunięto</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2025"/>
+        <location filename="../../src/yuzu/main.cpp" line="2044"/>
         <source>Successfully removed the installed base game.</source>
         <translation>Pomyślnie usunięto zainstalowaną grę.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2028"/>
-        <location filename="../../src/yuzu/main.cpp" line="2043"/>
-        <location filename="../../src/yuzu/main.cpp" line="2066"/>
+        <location filename="../../src/yuzu/main.cpp" line="2047"/>
+        <location filename="../../src/yuzu/main.cpp" line="2062"/>
+        <location filename="../../src/yuzu/main.cpp" line="2085"/>
         <source>Error Removing %1</source>
         <translation>Błąd podczas usuwania %1</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2029"/>
+        <location filename="../../src/yuzu/main.cpp" line="2048"/>
         <source>The base game is not installed in the NAND and cannot be removed.</source>
         <translation>Gra nie jest zainstalowana w NAND i nie może zostać usunięta.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2041"/>
+        <location filename="../../src/yuzu/main.cpp" line="2060"/>
         <source>Successfully removed the installed update.</source>
         <translation>Pomyślnie usunięto zainstalowaną łatkę.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2044"/>
+        <location filename="../../src/yuzu/main.cpp" line="2063"/>
         <source>There is no update installed for this title.</source>
         <translation>Brak zainstalowanych łatek dla tego tytułu.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2067"/>
+        <location filename="../../src/yuzu/main.cpp" line="2086"/>
         <source>There are no DLC installed for this title.</source>
         <translation>Brak zainstalowanych DLC dla tego tytułu.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2072"/>
+        <location filename="../../src/yuzu/main.cpp" line="2091"/>
         <source>Successfully removed %1 installed DLC.</source>
         <translation>Pomyślnie usunięto %1 zainstalowane DLC.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2080"/>
+        <location filename="../../src/yuzu/main.cpp" line="2099"/>
         <source>Delete OpenGL Transferable Shader Cache?</source>
         <translation>Usunąć Transferowalne Shadery OpenGL?</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2082"/>
+        <location filename="../../src/yuzu/main.cpp" line="2101"/>
         <source>Delete Vulkan Transferable Shader Cache?</source>
         <translation>Usunąć Transferowalne Shadery Vulkan?</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2084"/>
+        <location filename="../../src/yuzu/main.cpp" line="2103"/>
         <source>Delete All Transferable Shader Caches?</source>
         <translation>Usunąć Wszystkie Transferowalne Shadery?</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2086"/>
+        <location filename="../../src/yuzu/main.cpp" line="2105"/>
         <source>Remove Custom Game Configuration?</source>
         <translation>Usunąć niestandardową konfigurację gry?</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2092"/>
+        <location filename="../../src/yuzu/main.cpp" line="2111"/>
         <source>Remove File</source>
         <translation>Usuń plik</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2127"/>
-        <location filename="../../src/yuzu/main.cpp" line="2135"/>
+        <location filename="../../src/yuzu/main.cpp" line="2146"/>
+        <location filename="../../src/yuzu/main.cpp" line="2154"/>
         <source>Error Removing Transferable Shader Cache</source>
         <translation>Błąd podczas usuwania przenośnej pamięci podręcznej Shaderów.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2128"/>
-        <location filename="../../src/yuzu/main.cpp" line="2146"/>
+        <location filename="../../src/yuzu/main.cpp" line="2147"/>
+        <location filename="../../src/yuzu/main.cpp" line="2165"/>
         <source>A shader cache for this title does not exist.</source>
         <translation>Pamięć podręczna Shaderów dla tego tytułu nie istnieje.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2133"/>
+        <location filename="../../src/yuzu/main.cpp" line="2152"/>
         <source>Successfully removed the transferable shader cache.</source>
         <translation>Pomyślnie usunięto przenośną pamięć podręczną Shaderów.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2136"/>
+        <location filename="../../src/yuzu/main.cpp" line="2155"/>
         <source>Failed to remove the transferable shader cache.</source>
         <translation>Nie udało się usunąć przenośnej pamięci Shaderów.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2145"/>
-        <location filename="../../src/yuzu/main.cpp" line="2153"/>
+        <location filename="../../src/yuzu/main.cpp" line="2164"/>
+        <location filename="../../src/yuzu/main.cpp" line="2172"/>
         <source>Error Removing Transferable Shader Caches</source>
         <translation>Błąd podczas usuwania Transferowalnych Shaderów</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2151"/>
+        <location filename="../../src/yuzu/main.cpp" line="2170"/>
         <source>Successfully removed the transferable shader caches.</source>
         <translation>Pomyślnie usunięto transferowalne shadery.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2154"/>
+        <location filename="../../src/yuzu/main.cpp" line="2173"/>
         <source>Failed to remove the transferable shader cache directory.</source>
         <translation>Nie udało się usunąć ścieżki transferowalnych shaderów.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2167"/>
-        <location filename="../../src/yuzu/main.cpp" line="2176"/>
+        <location filename="../../src/yuzu/main.cpp" line="2186"/>
+        <location filename="../../src/yuzu/main.cpp" line="2195"/>
         <source>Error Removing Custom Configuration</source>
         <translation>Błąd podczas usuwania niestandardowej konfiguracji</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2168"/>
+        <location filename="../../src/yuzu/main.cpp" line="2187"/>
         <source>A custom configuration for this title does not exist.</source>
         <translation>Niestandardowa konfiguracja nie istnieje dla tego tytułu.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2174"/>
+        <location filename="../../src/yuzu/main.cpp" line="2193"/>
         <source>Successfully removed the custom game configuration.</source>
         <translation>Pomyślnie usunięto niestandardową konfiguracje gry.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2177"/>
+        <location filename="../../src/yuzu/main.cpp" line="2196"/>
         <source>Failed to remove the custom game configuration.</source>
         <translation>Nie udało się usunąć niestandardowej konfiguracji gry.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2184"/>
-        <location filename="../../src/yuzu/main.cpp" line="2263"/>
+        <location filename="../../src/yuzu/main.cpp" line="2203"/>
+        <location filename="../../src/yuzu/main.cpp" line="2282"/>
         <source>RomFS Extraction Failed!</source>
         <translation>Wypakowanie RomFS nieudane!</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2185"/>
+        <location filename="../../src/yuzu/main.cpp" line="2204"/>
         <source>There was an error copying the RomFS files or the user cancelled the operation.</source>
         <translation>Wystąpił błąd podczas kopiowania plików RomFS lub użytkownik anulował operację.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2243"/>
+        <location filename="../../src/yuzu/main.cpp" line="2262"/>
         <source>Full</source>
         <translation>Pełny</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2243"/>
+        <location filename="../../src/yuzu/main.cpp" line="2262"/>
         <source>Skeleton</source>
         <translation>Szkielet</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2245"/>
+        <location filename="../../src/yuzu/main.cpp" line="2264"/>
         <source>Select RomFS Dump Mode</source>
         <translation>Wybierz tryb zrzutu RomFS</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2246"/>
+        <location filename="../../src/yuzu/main.cpp" line="2265"/>
         <source>Please select the how you would like the RomFS dumped.&lt;br&gt;Full will copy all of the files into the new directory while &lt;br&gt;skeleton will only create the directory structure.</source>
         <translation>Proszę wybrać w jaki sposób chcesz, aby zrzut pliku RomFS został wykonany. &lt;br&gt;Pełna kopia ze wszystkimi plikami do nowego folderu, gdy &lt;br&gt;skielet utworzy tylko strukturę folderu.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2264"/>
+        <location filename="../../src/yuzu/main.cpp" line="2283"/>
         <source>There is not enough free space at %1 to extract the RomFS. Please free up space or select a different dump directory at Emulation &gt; Configure &gt; System &gt; Filesystem &gt; Dump Root</source>
         <translation>Nie ma wystarczająco miejsca w %1 aby wyodrębnić RomFS. 
 Zwolnij trochę miejsca, albo zmień ścieżkę zrzutu RomFs w Emulacja&gt; Konfiguruj&gt; System&gt; System Plików&gt; Źródło Zrzutu</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2271"/>
+        <location filename="../../src/yuzu/main.cpp" line="2290"/>
         <source>Extracting RomFS...</source>
         <translation>Wypakowywanie RomFS...</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2271"/>
-        <location filename="../../src/yuzu/main.cpp" line="2457"/>
+        <location filename="../../src/yuzu/main.cpp" line="2290"/>
+        <location filename="../../src/yuzu/main.cpp" line="2476"/>
         <source>Cancel</source>
         <translation>Anuluj</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2278"/>
+        <location filename="../../src/yuzu/main.cpp" line="2297"/>
         <source>RomFS Extraction Succeeded!</source>
         <translation>Wypakowanie RomFS zakończone pomyślnie!</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2279"/>
+        <location filename="../../src/yuzu/main.cpp" line="2298"/>
         <source>The operation completed successfully.</source>
         <translation>Operacja zakończona sukcesem.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2323"/>
+        <location filename="../../src/yuzu/main.cpp" line="2342"/>
         <source>Error Opening %1</source>
         <translation>Błąd podczas otwierania %1</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2332"/>
+        <location filename="../../src/yuzu/main.cpp" line="2351"/>
         <source>Select Directory</source>
         <translation>Wybierz folder...</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2359"/>
+        <location filename="../../src/yuzu/main.cpp" line="2378"/>
         <source>Properties</source>
         <translation>Właściwości</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2360"/>
+        <location filename="../../src/yuzu/main.cpp" line="2379"/>
         <source>The game properties could not be loaded.</source>
         <translation>Właściwości tej gry nie mogły zostać załadowane.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2377"/>
+        <location filename="../../src/yuzu/main.cpp" line="2396"/>
         <source>Switch Executable (%1);;All Files (*.*)</source>
         <comment>%1 is an identifier for the Switch executable file extensions.</comment>
         <translation>Plik wykonywalny Switcha (%1);;Wszystkie pliki (*.*)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2381"/>
+        <location filename="../../src/yuzu/main.cpp" line="2400"/>
         <source>Load File</source>
         <translation>Załaduj plik...</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2394"/>
+        <location filename="../../src/yuzu/main.cpp" line="2413"/>
         <source>Open Extracted ROM Directory</source>
         <translation>Otwórz folder wypakowanego ROMu</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2405"/>
+        <location filename="../../src/yuzu/main.cpp" line="2424"/>
         <source>Invalid Directory Selected</source>
         <translation>Wybrano niewłaściwy folder</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2406"/>
+        <location filename="../../src/yuzu/main.cpp" line="2425"/>
         <source>The directory you have selected does not contain a &apos;main&apos; file.</source>
         <translation>Folder wybrany przez ciebie nie zawiera &apos;głownego&apos; pliku.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2416"/>
+        <location filename="../../src/yuzu/main.cpp" line="2435"/>
         <source>Installable Switch File (*.nca *.nsp *.xci);;Nintendo Content Archive (*.nca);;Nintendo Submission Package (*.nsp);;NX Cartridge Image (*.xci)</source>
         <translation>Instalacyjne pliki Switch&apos;a (*.nca *.nsp *.xci);;Archiwum zawartości Nintendo (*.nca);;Pakiet poddany Nintendo (*.nsp);;Obraz z kartridża NX (*.xci)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2421"/>
+        <location filename="../../src/yuzu/main.cpp" line="2440"/>
         <source>Install Files</source>
         <translation>Zainstaluj pliki</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../src/yuzu/main.cpp" line="2465"/>
+        <location filename="../../src/yuzu/main.cpp" line="2484"/>
         <source>%n file(s) remaining</source>
         <translation><numerusform>1 plik został</numerusform><numerusform>%n plików zostało</numerusform><numerusform>%n plików zostało</numerusform><numerusform>%n plików zostało</numerusform></translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2467"/>
+        <location filename="../../src/yuzu/main.cpp" line="2486"/>
         <source>Installing file &quot;%1&quot;...</source>
         <translation>Instalowanie pliku &quot;%1&quot;...</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2513"/>
-        <location filename="../../src/yuzu/main.cpp" line="2527"/>
+        <location filename="../../src/yuzu/main.cpp" line="2532"/>
+        <location filename="../../src/yuzu/main.cpp" line="2546"/>
         <source>Install Results</source>
         <translation>Wynik instalacji</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2514"/>
+        <location filename="../../src/yuzu/main.cpp" line="2533"/>
         <source>To avoid possible conflicts, we discourage users from installing base games to the NAND.
 Please, only use this feature to install updates and DLC.</source>
         <translation>Aby uniknąć ewentualnych konfliktów, odradzamy użytkownikom instalowanie gier na NAND.
 Proszę, używaj tej funkcji tylko do instalowania łatek i DLC.</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../src/yuzu/main.cpp" line="2520"/>
+        <location filename="../../src/yuzu/main.cpp" line="2539"/>
         <source>%n file(s) were newly installed
 </source>
         <translation><numerusform>1 nowy plik został zainstalowany
@@ -4647,424 +4653,424 @@ Proszę, używaj tej funkcji tylko do instalowania łatek i DLC.</translation>
 </numerusform></translation>
     </message>
     <message numerus="yes">
-        <location filename="../../src/yuzu/main.cpp" line="2523"/>
+        <location filename="../../src/yuzu/main.cpp" line="2542"/>
         <source>%n file(s) were overwritten
 </source>
         <translation><numerusform>1 plik został nadpisany</numerusform><numerusform>%n plików zostało nadpisane</numerusform><numerusform>%n plików zostało nadpisane</numerusform><numerusform>%n plików zostało nadpisane</numerusform></translation>
     </message>
     <message numerus="yes">
-        <location filename="../../src/yuzu/main.cpp" line="2525"/>
+        <location filename="../../src/yuzu/main.cpp" line="2544"/>
         <source>%n file(s) failed to install
 </source>
         <translation><numerusform>1 pliku nie udało się zainstalować</numerusform><numerusform>%n plików nie udało się zainstalować</numerusform><numerusform>%n plików nie udało się zainstalować</numerusform><numerusform>%n plików nie udało się zainstalować</numerusform></translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2626"/>
+        <location filename="../../src/yuzu/main.cpp" line="2645"/>
         <source>System Application</source>
         <translation>Aplikacja systemowa</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2627"/>
+        <location filename="../../src/yuzu/main.cpp" line="2646"/>
         <source>System Archive</source>
         <translation>Archiwum systemu</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2628"/>
+        <location filename="../../src/yuzu/main.cpp" line="2647"/>
         <source>System Application Update</source>
         <translation>Aktualizacja aplikacji systemowej</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2629"/>
+        <location filename="../../src/yuzu/main.cpp" line="2648"/>
         <source>Firmware Package (Type A)</source>
         <translation>Paczka systemowa (Typ A)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2630"/>
+        <location filename="../../src/yuzu/main.cpp" line="2649"/>
         <source>Firmware Package (Type B)</source>
         <translation>Paczka systemowa (Typ B)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2631"/>
+        <location filename="../../src/yuzu/main.cpp" line="2650"/>
         <source>Game</source>
         <translation>Gra</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2632"/>
+        <location filename="../../src/yuzu/main.cpp" line="2651"/>
         <source>Game Update</source>
         <translation>Aktualizacja gry</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2633"/>
+        <location filename="../../src/yuzu/main.cpp" line="2652"/>
         <source>Game DLC</source>
         <translation>Dodatek do gry</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2634"/>
+        <location filename="../../src/yuzu/main.cpp" line="2653"/>
         <source>Delta Title</source>
         <translation>Tytuł Delta</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2637"/>
+        <location filename="../../src/yuzu/main.cpp" line="2656"/>
         <source>Select NCA Install Type...</source>
         <translation>Wybierz typ instalacji NCA...</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2638"/>
+        <location filename="../../src/yuzu/main.cpp" line="2657"/>
         <source>Please select the type of title you would like to install this NCA as:
 (In most instances, the default &apos;Game&apos; is fine.)</source>
         <translation>Wybierz typ tytułu, do którego chcesz zainstalować ten NCA, jako:
 (W większości przypadków domyślna &quot;gra&quot; jest w porządku.)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2644"/>
+        <location filename="../../src/yuzu/main.cpp" line="2663"/>
         <source>Failed to Install</source>
         <translation>Instalacja nieudana</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2645"/>
+        <location filename="../../src/yuzu/main.cpp" line="2664"/>
         <source>The title type you selected for the NCA is invalid.</source>
         <translation>Typ tytułu wybrany dla NCA jest nieprawidłowy.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2680"/>
+        <location filename="../../src/yuzu/main.cpp" line="2699"/>
         <source>File not found</source>
         <translation>Nie znaleziono pliku</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2681"/>
+        <location filename="../../src/yuzu/main.cpp" line="2700"/>
         <source>File &quot;%1&quot; not found</source>
         <translation>Nie znaleziono pliku &quot;%1&quot;</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2751"/>
+        <location filename="../../src/yuzu/main.cpp" line="2770"/>
         <source>OK</source>
         <translation>OK</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2765"/>
+        <location filename="../../src/yuzu/main.cpp" line="2784"/>
         <source>Missing yuzu Account</source>
         <translation>Brakuje konta Yuzu</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2766"/>
+        <location filename="../../src/yuzu/main.cpp" line="2785"/>
         <source>In order to submit a game compatibility test case, you must link your yuzu account.&lt;br&gt;&lt;br/&gt;To link your yuzu account, go to Emulation &amp;gt; Configuration &amp;gt; Web.</source>
         <translation>Aby przesłać test zgodności gry, musisz połączyć swoje konto yuzu.&lt;br&gt;&lt;br/&gt; Aby połączyć swoje konto yuzu, przejdź do opcji Emulacja &amp;gt; Konfiguracja &amp;gt; Sieć.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2776"/>
+        <location filename="../../src/yuzu/main.cpp" line="2795"/>
         <source>Error opening URL</source>
         <translation>Błąd otwierania adresu URL</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2777"/>
+        <location filename="../../src/yuzu/main.cpp" line="2796"/>
         <source>Unable to open the URL &quot;%1&quot;.</source>
         <translation>Nie można otworzyć adresu URL &quot;%1&quot;.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3072"/>
+        <location filename="../../src/yuzu/main.cpp" line="3091"/>
         <source>TAS Recording</source>
         <translation>Nagrywanie TAS</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3073"/>
+        <location filename="../../src/yuzu/main.cpp" line="3092"/>
         <source>Overwrite file of player 1?</source>
         <translation>Nadpisać plik gracza 1?</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3099"/>
+        <location filename="../../src/yuzu/main.cpp" line="3118"/>
         <source>Invalid config detected</source>
         <translation>Wykryto nieprawidłową konfigurację</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3100"/>
+        <location filename="../../src/yuzu/main.cpp" line="3119"/>
         <source>Handheld controller can&apos;t be used on docked mode. Pro controller will be selected.</source>
         <translation>Nie można używać kontrolera handheld w trybie zadokowanym. Zostanie wybrany kontroler Pro.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3193"/>
-        <location filename="../../src/yuzu/main.cpp" line="3205"/>
+        <location filename="../../src/yuzu/main.cpp" line="3212"/>
+        <location filename="../../src/yuzu/main.cpp" line="3224"/>
         <source>Error</source>
-        <translation type="unfinished"/>
+        <translation>Błąd</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3193"/>
-        <location filename="../../src/yuzu/main.cpp" line="3205"/>
+        <location filename="../../src/yuzu/main.cpp" line="3212"/>
+        <location filename="../../src/yuzu/main.cpp" line="3224"/>
         <source>The current game is not looking for amiibos</source>
-        <translation type="unfinished"/>
+        <translation>Ta gra nie szuka amiibo</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3200"/>
-        <location filename="../../src/yuzu/main.cpp" line="3234"/>
+        <location filename="../../src/yuzu/main.cpp" line="3219"/>
+        <location filename="../../src/yuzu/main.cpp" line="3253"/>
         <source>Amiibo</source>
-        <translation type="unfinished"/>
+        <translation>Amiibo</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3200"/>
-        <location filename="../../src/yuzu/main.cpp" line="3234"/>
+        <location filename="../../src/yuzu/main.cpp" line="3219"/>
+        <location filename="../../src/yuzu/main.cpp" line="3253"/>
         <source>The current amiibo has been removed</source>
-        <translation type="unfinished"/>
+        <translation>Amiibo zostało &quot;zdjęte&quot;</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3211"/>
+        <location filename="../../src/yuzu/main.cpp" line="3230"/>
         <source>Amiibo File (%1);; All Files (*.*)</source>
         <translation>Plik Amiibo (%1);;Wszyskie pliki (*.*)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3212"/>
+        <location filename="../../src/yuzu/main.cpp" line="3231"/>
         <source>Load Amiibo</source>
         <translation>Załaduj Amiibo</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3240"/>
+        <location filename="../../src/yuzu/main.cpp" line="3259"/>
         <source>Error opening Amiibo data file</source>
         <translation>Błąd otwarcia pliku danych Amiibo</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3241"/>
+        <location filename="../../src/yuzu/main.cpp" line="3260"/>
         <source>Unable to open Amiibo file &quot;%1&quot; for reading.</source>
         <translation>Nie można otworzyć pliku Amiibo &quot;%1&quot; do odczytu.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3249"/>
+        <location filename="../../src/yuzu/main.cpp" line="3268"/>
         <source>Error reading Amiibo data file</source>
         <translation>Błąd podczas odczytu pliku danych Amiibo</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3250"/>
+        <location filename="../../src/yuzu/main.cpp" line="3269"/>
         <source>Unable to fully read Amiibo data. Expected to read %1 bytes, but was only able to read %2 bytes.</source>
         <translation>Nie można w pełni odczytać danych Amiibo. Oczekiwano odczytu %1 bajtów, ale był on w stanie odczytać tylko %2 bajty.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3258"/>
+        <location filename="../../src/yuzu/main.cpp" line="3277"/>
         <source>Error loading Amiibo data</source>
         <translation>Błąd podczas ładowania pliku danych Amiibo</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3259"/>
+        <location filename="../../src/yuzu/main.cpp" line="3278"/>
         <source>Unable to load Amiibo data.</source>
         <translation>Nie można załadować danych Amiibo.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3308"/>
+        <location filename="../../src/yuzu/main.cpp" line="3327"/>
         <source>Capture Screenshot</source>
         <translation>Zrób zrzut ekranu</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3309"/>
+        <location filename="../../src/yuzu/main.cpp" line="3328"/>
         <source>PNG Image (*.png)</source>
         <translation>Obrazek PNG (*.png)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3374"/>
+        <location filename="../../src/yuzu/main.cpp" line="3394"/>
         <source>TAS state: Running %1/%2</source>
         <translation>Status TAS: Działa %1%2</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3376"/>
+        <location filename="../../src/yuzu/main.cpp" line="3396"/>
         <source>TAS state: Recording %1</source>
         <translation>Status TAS: Nagrywa %1</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3378"/>
+        <location filename="../../src/yuzu/main.cpp" line="3398"/>
         <source>TAS state: Idle %1/%2</source>
         <translation>Status TAS: Bezczynny %1%2</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3380"/>
+        <location filename="../../src/yuzu/main.cpp" line="3400"/>
         <source>TAS State: Invalid</source>
         <translation>Status TAS: Niepoprawny</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3394"/>
+        <location filename="../../src/yuzu/main.cpp" line="3414"/>
         <source>&amp;Stop Running</source>
         <translation>&amp;Wyłącz</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3394"/>
+        <location filename="../../src/yuzu/main.cpp" line="3414"/>
         <source>&amp;Start</source>
         <translation>&amp;Start</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3395"/>
+        <location filename="../../src/yuzu/main.cpp" line="3415"/>
         <source>Stop R&amp;ecording</source>
         <translation>Przestań N&amp;agrywać</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3395"/>
+        <location filename="../../src/yuzu/main.cpp" line="3415"/>
         <source>R&amp;ecord</source>
         <translation>N&amp;agraj</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../src/yuzu/main.cpp" line="3419"/>
+        <location filename="../../src/yuzu/main.cpp" line="3439"/>
         <source>Building: %n shader(s)</source>
         <translation><numerusform>Budowanie shadera</numerusform><numerusform>Budowanie: %n shaderów</numerusform><numerusform>Budowanie: %n shaderów</numerusform><numerusform>Budowanie: %n shaderów</numerusform></translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3428"/>
+        <location filename="../../src/yuzu/main.cpp" line="3448"/>
         <source>Scale: %1x</source>
         <comment>%1 is the resolution scaling factor</comment>
         <translation>Skala: %1x</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3431"/>
+        <location filename="../../src/yuzu/main.cpp" line="3451"/>
         <source>Speed: %1% / %2%</source>
         <translation>Prędkość: %1% / %2%</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3435"/>
+        <location filename="../../src/yuzu/main.cpp" line="3455"/>
         <source>Speed: %1%</source>
         <translation>Prędkość: %1%</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3439"/>
+        <location filename="../../src/yuzu/main.cpp" line="3459"/>
         <source>Game: %1 FPS (Unlocked)</source>
         <translation>Gra: %1 FPS (Odblokowane)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3441"/>
+        <location filename="../../src/yuzu/main.cpp" line="3461"/>
         <source>Game: %1 FPS</source>
         <translation>Gra: %1 FPS</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3443"/>
+        <location filename="../../src/yuzu/main.cpp" line="3463"/>
         <source>Frame: %1 ms</source>
         <translation>Klatka: %1 ms</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3454"/>
+        <location filename="../../src/yuzu/main.cpp" line="3474"/>
         <source>GPU NORMAL</source>
         <translation>GPU NORMALNE</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3459"/>
+        <location filename="../../src/yuzu/main.cpp" line="3479"/>
         <source>GPU HIGH</source>
         <translation>GPU WYSOKIE</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3464"/>
+        <location filename="../../src/yuzu/main.cpp" line="3484"/>
         <source>GPU EXTREME</source>
         <translation>GPU EKSTREMALNE</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3469"/>
+        <location filename="../../src/yuzu/main.cpp" line="3489"/>
         <source>GPU ERROR</source>
         <translation>BŁĄD GPU</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3478"/>
+        <location filename="../../src/yuzu/main.cpp" line="3498"/>
         <source>DOCKED</source>
-        <translation type="unfinished"/>
+        <translation>TRYB ZADOKOWANY</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3478"/>
+        <location filename="../../src/yuzu/main.cpp" line="3498"/>
         <source>HANDHELD</source>
-        <translation type="unfinished"/>
+        <translation>TRYB PRZENOŚNY</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3485"/>
+        <location filename="../../src/yuzu/main.cpp" line="3505"/>
         <source>NEAREST</source>
         <translation>NAJBLIŻSZY</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3488"/>
-        <location filename="../../src/yuzu/main.cpp" line="3503"/>
+        <location filename="../../src/yuzu/main.cpp" line="3508"/>
+        <location filename="../../src/yuzu/main.cpp" line="3523"/>
         <source>BILINEAR</source>
         <translation>BILINEARNY</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3491"/>
+        <location filename="../../src/yuzu/main.cpp" line="3511"/>
         <source>BICUBIC</source>
         <translation>BIKUBICZNY</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3494"/>
+        <location filename="../../src/yuzu/main.cpp" line="3514"/>
         <source>GAUSSIAN</source>
         <translation>GAUSSIAN</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3497"/>
+        <location filename="../../src/yuzu/main.cpp" line="3517"/>
         <source>SCALEFORCE</source>
         <translation>SCALEFORCE</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3500"/>
+        <location filename="../../src/yuzu/main.cpp" line="3520"/>
         <source>FSR</source>
         <translation>FSR</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3512"/>
-        <location filename="../../src/yuzu/main.cpp" line="3518"/>
+        <location filename="../../src/yuzu/main.cpp" line="3532"/>
+        <location filename="../../src/yuzu/main.cpp" line="3538"/>
         <source>NO AA</source>
         <translation>BEZ AA</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3515"/>
+        <location filename="../../src/yuzu/main.cpp" line="3535"/>
         <source>FXAA</source>
         <translation>FXAA</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3592"/>
+        <location filename="../../src/yuzu/main.cpp" line="3612"/>
         <source>The game you are trying to load requires additional files from your Switch to be dumped before playing.&lt;br/&gt;&lt;br/&gt;For more information on dumping these files, please see the following wiki page: &lt;a href=&apos;https://yuzu-emu.org/wiki/dumping-system-archives-and-the-shared-fonts-from-a-switch-console/&apos;&gt;Dumping System Archives and the Shared Fonts from a Switch Console&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;Would you like to quit back to the game list? Continuing emulation may result in crashes, corrupted save data, or other bugs.</source>
         <translation>Gra, którą próbujesz wczytać, wymaga dodatkowych plików z Switch&apos;a, które zostaną zrzucone przed graniem.&lt;br/&gt;&lt;br/&gt; Aby uzyskać więcej informacji na temat wyrzucania tych plików, odwiedź następującą stronę wiki:&lt;a href=&apos;https://yuzu-emu.org/wiki/dumping-system-archives-and-the-shared-fonts-from-a-switch-console/&apos;&gt; Zrzut archiw systemu i udostępnionych czcionek z konsoli Nintendo Switch&lt;/a&gt;. &lt;br/&gt;&lt;br/&gt;Czy chcesz wrócić do listy gier? Kontynuacja emulacji może spowodować awarie, uszkodzone dane zapisu lub inne błędy.
 </translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3607"/>
+        <location filename="../../src/yuzu/main.cpp" line="3627"/>
         <source>yuzu was unable to locate a Switch system archive. %1</source>
         <translation>yuzu nie był w stanie znaleźć archiwum systemu Switch. %1</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3609"/>
+        <location filename="../../src/yuzu/main.cpp" line="3629"/>
         <source>yuzu was unable to locate a Switch system archive: %1. %2</source>
         <translation>yuzu nie był w stanie znaleźć archiwum systemu Switch. %1. %2</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3613"/>
+        <location filename="../../src/yuzu/main.cpp" line="3633"/>
         <source>System Archive Not Found</source>
         <translation>Archiwum systemu nie znalezione.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3615"/>
+        <location filename="../../src/yuzu/main.cpp" line="3635"/>
         <source>System Archive Missing</source>
         <translation>Brak archiwum systemowego</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3621"/>
+        <location filename="../../src/yuzu/main.cpp" line="3641"/>
         <source>yuzu was unable to locate the Switch shared fonts. %1</source>
         <translation>yuzu nie był w stanie zlokalizować czcionek Switch&apos;a. %1</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3622"/>
+        <location filename="../../src/yuzu/main.cpp" line="3642"/>
         <source>Shared Fonts Not Found</source>
         <translation>Czcionki nie zostały znalezione</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3624"/>
+        <location filename="../../src/yuzu/main.cpp" line="3644"/>
         <source>Shared Font Missing</source>
         <translation>Brak wspólnej czcionki</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3630"/>
+        <location filename="../../src/yuzu/main.cpp" line="3650"/>
         <source>Fatal Error</source>
         <translation>Fatalny błąd</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3631"/>
+        <location filename="../../src/yuzu/main.cpp" line="3651"/>
         <source>yuzu has encountered a fatal error, please see the log for more details. For more information on accessing the log, please see the following page: &lt;a href=&apos;https://community.citra-emu.org/t/how-to-upload-the-log-file/296&apos;&gt;How to Upload the Log File&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;Would you like to quit back to the game list? Continuing emulation may result in crashes, corrupted save data, or other bugs.</source>
         <translation>yuzu napotkał błąd, proszę zobaczyć log po więcej szczegółów. Aby uzyskać więcej informacji na temat uzyskiwania dostępu do pliku log, zobacz następującą stronę: &lt;a href=&apos;https://community.citra-emu.org/t/how-to-upload-the-log-file/296&apos;&gt;Jak przesłać plik log&lt;/a&gt;?&lt;br/&gt;&lt;br/&gt; Czy chcesz wrócić do listy gier? Kontynuacja emulacji może spowodować awarie, uszkodzone dane zapisu lub inne błędy.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3640"/>
+        <location filename="../../src/yuzu/main.cpp" line="3660"/>
         <source>Fatal Error encountered</source>
         <translation>Wystąpił błąd krytyczny</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3663"/>
+        <location filename="../../src/yuzu/main.cpp" line="3683"/>
         <source>Confirm Key Rederivation</source>
         <translation>Potwierdź ponowną aktywacje klucza</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3664"/>
+        <location filename="../../src/yuzu/main.cpp" line="3684"/>
         <source>You are about to force rederive all of your keys. 
 If you do not know what this means or what you are doing, 
 this is a potentially destructive action. 
@@ -5081,37 +5087,37 @@ i opcjonalnie tworzyć kopie zapasowe.
 Spowoduje to usunięcie wygenerowanych automatycznie plików kluczy i ponowne uruchomienie modułu pochodnego klucza.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3696"/>
+        <location filename="../../src/yuzu/main.cpp" line="3716"/>
         <source>Missing fuses</source>
         <translation>Brakujące bezpieczniki</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3699"/>
+        <location filename="../../src/yuzu/main.cpp" line="3719"/>
         <source> - Missing BOOT0</source>
         <translation> - Brak BOOT0</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3702"/>
+        <location filename="../../src/yuzu/main.cpp" line="3722"/>
         <source> - Missing BCPKG2-1-Normal-Main</source>
         <translation> - Brak BCPKG2-1-Normal-Main</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3705"/>
+        <location filename="../../src/yuzu/main.cpp" line="3725"/>
         <source> - Missing PRODINFO</source>
         <translation> - Brak PRODINFO</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3709"/>
+        <location filename="../../src/yuzu/main.cpp" line="3729"/>
         <source>Derivation Components Missing</source>
         <translation>Brak komponentów wyprowadzania</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3710"/>
+        <location filename="../../src/yuzu/main.cpp" line="3730"/>
         <source>Encryption keys are missing. &lt;br&gt;Please follow &lt;a href=&apos;https://yuzu-emu.org/help/quickstart/&apos;&gt;the yuzu quickstart guide&lt;/a&gt; to get all your keys, firmware and games.&lt;br&gt;&lt;br&gt;&lt;small&gt;(%1)&lt;/small&gt;</source>
         <translation>Brakuje elementów, które mogą uniemożliwić zakończenie wyprowadzania kluczy.  &lt;br&gt;Postępuj zgodnie z &lt;a href=&apos;https://yuzu-emu.org/help/quickstart/&apos;&gt;yuzu quickstart guide&lt;/a&gt; aby zdobyć wszystkie swoje klucze i gry.&lt;br&gt;&lt;br&gt;&lt;small&gt;(%1)&lt;/small&gt;</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3719"/>
+        <location filename="../../src/yuzu/main.cpp" line="3739"/>
         <source>Deriving keys...
 This may take up to a minute depending 
 on your system&apos;s performance.</source>
@@ -5120,39 +5126,39 @@ Zależnie od tego może potrwać do minuty
 na wydajność twojego systemu.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3721"/>
+        <location filename="../../src/yuzu/main.cpp" line="3741"/>
         <source>Deriving Keys</source>
         <translation>Wyprowadzanie kluczy...</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3766"/>
+        <location filename="../../src/yuzu/main.cpp" line="3786"/>
         <source>Select RomFS Dump Target</source>
         <translation>Wybierz cel zrzutu RomFS</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3767"/>
+        <location filename="../../src/yuzu/main.cpp" line="3787"/>
         <source>Please select which RomFS you would like to dump.</source>
         <translation>Proszę wybrać RomFS, jakie chcesz zrzucić.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3782"/>
+        <location filename="../../src/yuzu/main.cpp" line="3802"/>
         <source>Are you sure you want to close yuzu?</source>
         <translation>Czy na pewno chcesz zamknąć yuzu?</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3783"/>
-        <location filename="../../src/yuzu/main.cpp" line="3880"/>
-        <location filename="../../src/yuzu/main.cpp" line="3893"/>
+        <location filename="../../src/yuzu/main.cpp" line="3803"/>
+        <location filename="../../src/yuzu/main.cpp" line="3901"/>
+        <location filename="../../src/yuzu/main.cpp" line="3914"/>
         <source>yuzu</source>
         <translation>yuzu</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3881"/>
+        <location filename="../../src/yuzu/main.cpp" line="3902"/>
         <source>Are you sure you want to stop the emulation? Any unsaved progress will be lost.</source>
         <translation>Czy na pewno chcesz zatrzymać emulację? Wszystkie niezapisane postępy zostaną utracone.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3890"/>
+        <location filename="../../src/yuzu/main.cpp" line="3911"/>
         <source>The currently running application has requested yuzu to not exit.
 
 Would you like to bypass this and exit anyway?</source>
@@ -5164,38 +5170,38 @@ Czy chcesz to ominąć i mimo to wyjść?</translation>
 <context>
     <name>GRenderWindow</name>
     <message>
-        <location filename="../../src/yuzu/bootmanager.cpp" line="1029"/>
+        <location filename="../../src/yuzu/bootmanager.cpp" line="1047"/>
         <source>OpenGL not available!</source>
         <translation>OpenGL niedostępny!</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/bootmanager.cpp" line="1030"/>
+        <location filename="../../src/yuzu/bootmanager.cpp" line="1048"/>
         <source>yuzu has not been compiled with OpenGL support.</source>
         <translation>yuzu nie zostało skompilowane z obsługą OpenGL.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/bootmanager.cpp" line="1049"/>
-        <location filename="../../src/yuzu/bootmanager.cpp" line="1069"/>
+        <location filename="../../src/yuzu/bootmanager.cpp" line="1067"/>
+        <location filename="../../src/yuzu/bootmanager.cpp" line="1087"/>
         <source>Error while initializing OpenGL!</source>
         <translation>Błąd podczas inicjowania OpenGL!</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/bootmanager.cpp" line="1050"/>
+        <location filename="../../src/yuzu/bootmanager.cpp" line="1068"/>
         <source>Your GPU may not support OpenGL, or you do not have the latest graphics driver.</source>
         <translation>Twoja karta graficzna może nie obsługiwać OpenGL lub nie masz najnowszych sterowników karty graficznej.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/bootmanager.cpp" line="1059"/>
+        <location filename="../../src/yuzu/bootmanager.cpp" line="1077"/>
         <source>Error while initializing OpenGL 4.6!</source>
         <translation>Błąd podczas inicjowania OpenGL 4.6!</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/bootmanager.cpp" line="1060"/>
+        <location filename="../../src/yuzu/bootmanager.cpp" line="1078"/>
         <source>Your GPU may not support OpenGL 4.6, or you do not have the latest graphics driver.&lt;br&gt;&lt;br&gt;GL Renderer:&lt;br&gt;%1</source>
         <translation>Twoja karta graficzna może nie obsługiwać OpenGL 4.6 lub nie masz najnowszych sterowników karty graficznej.&lt;br&gt;&lt;br&gt;GL Renderer:&lt;br&gt;%1</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/bootmanager.cpp" line="1070"/>
+        <location filename="../../src/yuzu/bootmanager.cpp" line="1088"/>
         <source>Your GPU may not support one or more required OpenGL extensions. Please ensure you have the latest graphics driver.&lt;br&gt;&lt;br&gt;GL Renderer:&lt;br&gt;%1&lt;br&gt;&lt;br&gt;Unsupported extensions:&lt;br&gt;%2</source>
         <translation>Twoja karta graficzna może nie obsługiwać co najmniej jednego wymaganego rozszerzenia OpenGL. Upewnij się, że masz najnowsze sterowniki karty graficznej&lt;br&gt;&lt;br&gt;GL Renderer:&lt;br&gt;%1&lt;br&gt;&lt;br&gt;Nieobsługiwane rozszerzenia:&lt;br&gt;%2</translation>
     </message>
@@ -5203,155 +5209,155 @@ Czy chcesz to ominąć i mimo to wyjść?</translation>
 <context>
     <name>GameList</name>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="336"/>
-        <source>Name</source>
-        <translation>Nazwa gry</translation>
-    </message>
-    <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="337"/>
-        <source>Compatibility</source>
-        <translation>Kompatybilność</translation>
-    </message>
-    <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="339"/>
-        <source>Add-ons</source>
-        <translation>Dodatki</translation>
-    </message>
-    <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="341"/>
-        <source>File type</source>
-        <translation>Typ pliku</translation>
-    </message>
-    <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="342"/>
-        <source>Size</source>
-        <translation>Rozmiar</translation>
-    </message>
-    <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="536"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="531"/>
         <source>Favorite</source>
         <translation>Ulubione</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="538"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="533"/>
         <source>Start Game</source>
         <translation>Uruchom grę</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="540"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="535"/>
         <source>Start Game without Custom Configuration</source>
         <translation>Uruchom grę bez niestandardowej konfiguracji</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="542"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="537"/>
         <source>Open Save Data Location</source>
         <translation>Otwórz lokalizację zapisów</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="543"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="538"/>
         <source>Open Mod Data Location</source>
         <translation>Otwórz lokalizację modyfikacji</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="545"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="540"/>
         <source>Open Transferable Pipeline Cache</source>
         <translation>Otwórz Transferowalną Pamięć Podręczną Pipeline</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="547"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="542"/>
         <source>Remove</source>
         <translation>Usuń</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="548"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="543"/>
         <source>Remove Installed Update</source>
         <translation>Usuń zainstalowaną łatkę</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="549"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="544"/>
         <source>Remove All Installed DLC</source>
         <translation>Usuń wszystkie zainstalowane DLC</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="550"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="545"/>
         <source>Remove Custom Configuration</source>
         <translation>Usuń niestandardową konfigurację</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="551"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="546"/>
         <source>Remove OpenGL Pipeline Cache</source>
         <translation>Usuń Pamięć Podręczną Pipeline OpenGL</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="552"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="547"/>
         <source>Remove Vulkan Pipeline Cache</source>
         <translation>Usuń Pamięć Podręczną Pipeline Vulkan</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="554"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="549"/>
         <source>Remove All Pipeline Caches</source>
         <translation>Usuń całą pamięć podręczną Pipeline</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="555"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="550"/>
         <source>Remove All Installed Contents</source>
         <translation>Usuń całą zainstalowaną zawartość</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="556"/>
-        <location filename="../../src/yuzu/game_list.cpp" line="557"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="551"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="552"/>
         <source>Dump RomFS</source>
         <translation>Zrzuć RomFS</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="558"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="553"/>
         <source>Dump RomFS to SDMC</source>
         <translation>Zrzuć RomFS do SDMC</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="559"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="554"/>
         <source>Copy Title ID to Clipboard</source>
         <translation>Kopiuj identyfikator gry do schowka</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="560"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="555"/>
         <source>Navigate to GameDB entry</source>
         <translation>Nawiguj do wpisu kompatybilności gry</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="562"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="557"/>
         <source>Properties</source>
         <translation>Właściwości</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="634"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="629"/>
         <source>Scan Subfolders</source>
         <translation>Skanuj podfoldery</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="635"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="630"/>
         <source>Remove Game Directory</source>
         <translation>Usuń katalog gier</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="654"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="649"/>
         <source>▲ Move Up</source>
         <translation>▲ Przenieś w górę</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="655"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="650"/>
         <source>▼ Move Down</source>
         <translation>▼ Przenieś w dół</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="656"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="651"/>
         <source>Open Directory Location</source>
         <translation>Otwórz lokalizacje katalogu</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="701"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="696"/>
         <source>Clear</source>
         <translation>Wyczyść</translation>
+    </message>
+    <message>
+        <location filename="../../src/yuzu/game_list.cpp" line="760"/>
+        <source>Name</source>
+        <translation>Nazwa gry</translation>
+    </message>
+    <message>
+        <location filename="../../src/yuzu/game_list.cpp" line="761"/>
+        <source>Compatibility</source>
+        <translation>Kompatybilność</translation>
+    </message>
+    <message>
+        <location filename="../../src/yuzu/game_list.cpp" line="762"/>
+        <source>Add-ons</source>
+        <translation>Dodatki</translation>
+    </message>
+    <message>
+        <location filename="../../src/yuzu/game_list.cpp" line="763"/>
+        <source>File type</source>
+        <translation>Typ pliku</translation>
+    </message>
+    <message>
+        <location filename="../../src/yuzu/game_list.cpp" line="764"/>
+        <source>Size</source>
+        <translation>Rozmiar</translation>
     </message>
 </context>
 <context>
@@ -5440,7 +5446,7 @@ startowy.</translation>
 <context>
     <name>GameListPlaceholder</name>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="909"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="933"/>
         <source>Double-click to add a new folder to the game list</source>
         <translation>Kliknij podwójnie aby dodać folder do listy gier</translation>
     </message>
@@ -5453,12 +5459,12 @@ startowy.</translation>
         <translation><numerusform>1 z %n rezultatów</numerusform><numerusform>%1 z %n rezultatów</numerusform><numerusform>%1 z %n rezultatów</numerusform><numerusform>%1 z %n rezultatów</numerusform></translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="129"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="776"/>
         <source>Filter:</source>
         <translation>Filter:</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="132"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="777"/>
         <source>Enter pattern to filter</source>
         <translation>Wpisz typ do filtra</translation>
     </message>
@@ -5468,22 +5474,22 @@ startowy.</translation>
     <message>
         <location filename="../../src/yuzu/multiplayer/host_room.ui" line="14"/>
         <source>Create Room</source>
-        <translation type="unfinished"/>
+        <translation>Utwórz Pokój</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/host_room.ui" line="37"/>
         <source>Room Name</source>
-        <translation type="unfinished"/>
+        <translation>Nazwa Pokoju</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/host_room.ui" line="51"/>
         <source>Preferred Game</source>
-        <translation type="unfinished"/>
+        <translation>Preferowana Gra</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/host_room.ui" line="61"/>
         <source>Max Players</source>
-        <translation type="unfinished"/>
+        <translation>Maksymalna liczba Graczy</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/host_room.ui" line="91"/>
@@ -5498,17 +5504,17 @@ startowy.</translation>
     <message>
         <location filename="../../src/yuzu/multiplayer/host_room.ui" line="118"/>
         <source>Password</source>
-        <translation type="unfinished"/>
+        <translation>Hasło</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/host_room.ui" line="125"/>
         <source>Port</source>
-        <translation type="unfinished"/>
+        <translation>Port</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/host_room.ui" line="139"/>
         <source>Room Description</source>
-        <translation type="unfinished"/>
+        <translation>Opis Pokoju Multiplayer</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/host_room.ui" line="153"/>
@@ -5518,7 +5524,7 @@ startowy.</translation>
     <message>
         <location filename="../../src/yuzu/multiplayer/host_room.ui" line="184"/>
         <source>Public</source>
-        <translation type="unfinished"/>
+        <translation>Publiczne</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/host_room.ui" line="189"/>
@@ -5536,7 +5542,7 @@ startowy.</translation>
     <message>
         <location filename="../../src/yuzu/multiplayer/host_room.cpp" line="169"/>
         <source>Error</source>
-        <translation type="unfinished"/>
+        <translation>Błąd</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/host_room.cpp" line="170"/>
@@ -5550,7 +5556,7 @@ Debug Message: </source>
     <message>
         <location filename="../../src/yuzu/configuration/config.cpp" line="74"/>
         <source>Audio Mute/Unmute</source>
-        <translation type="unfinished"/>
+        <translation>Wycisz/Odcisz Audio</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/config.cpp" line="74"/>
@@ -5611,17 +5617,17 @@ Debug Message: </source>
     <message>
         <location filename="../../src/yuzu/configuration/config.cpp" line="81"/>
         <source>Continue/Pause Emulation</source>
-        <translation type="unfinished"/>
+        <translation>Kontynuuj/Zatrzymaj Emulację</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/config.cpp" line="82"/>
         <source>Exit Fullscreen</source>
-        <translation type="unfinished"/>
+        <translation>Wyłącz Pełny Ekran</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/config.cpp" line="83"/>
         <source>Exit yuzu</source>
-        <translation type="unfinished"/>
+        <translation>Wyjdź z yuzu</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/config.cpp" line="84"/>
@@ -5636,17 +5642,17 @@ Debug Message: </source>
     <message>
         <location filename="../../src/yuzu/configuration/config.cpp" line="86"/>
         <source>Load/Remove Amiibo</source>
-        <translation type="unfinished"/>
+        <translation>Załaduj/Usuń Amiibo</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/config.cpp" line="87"/>
         <source>Restart Emulation</source>
-        <translation type="unfinished"/>
+        <translation>Zrestartuj Emulację</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/config.cpp" line="88"/>
         <source>Stop Emulation</source>
-        <translation type="unfinished"/>
+        <translation>Zatrzymaj Emulację</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/config.cpp" line="89"/>
@@ -5766,12 +5772,12 @@ Debug Message: </source>
         <location filename="../../src/yuzu/multiplayer/lobby.ui" line="32"/>
         <location filename="../../src/yuzu/multiplayer/lobby.ui" line="39"/>
         <source>Nickname</source>
-        <translation type="unfinished"/>
+        <translation>Nick</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/lobby.ui" line="59"/>
         <source>Filters</source>
-        <translation type="unfinished"/>
+        <translation>Filtry</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/lobby.ui" line="66"/>
@@ -5781,42 +5787,42 @@ Debug Message: </source>
     <message>
         <location filename="../../src/yuzu/multiplayer/lobby.ui" line="76"/>
         <source>Games I Own</source>
-        <translation type="unfinished"/>
+        <translation>Gry, które posiadam</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/lobby.ui" line="83"/>
         <source>Hide Full Rooms</source>
-        <translation type="unfinished"/>
+        <translation>Ukryj Pełne Pokoje</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/lobby.ui" line="103"/>
         <source>Refresh Lobby</source>
-        <translation type="unfinished"/>
+        <translation>Odśwież Lobby</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="106"/>
         <source>Password Required to Join</source>
-        <translation type="unfinished"/>
+        <translation>Aby dołączyć, potrzebne jest hasło</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="106"/>
         <source>Password:</source>
-        <translation type="unfinished"/>
+        <translation>Hasło:</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="192"/>
         <source>Room Name</source>
-        <translation type="unfinished"/>
+        <translation>Nazwa Pokoju</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="193"/>
         <source>Preferred Game</source>
-        <translation type="unfinished"/>
+        <translation>Preferowana Gra</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="194"/>
         <source>Host</source>
-        <translation type="unfinished"/>
+        <translation>Host</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="195"/>
@@ -5826,12 +5832,12 @@ Debug Message: </source>
     <message>
         <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="202"/>
         <source>Refreshing</source>
-        <translation type="unfinished"/>
+        <translation>Odświeżam</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="259"/>
         <source>Refresh List</source>
-        <translation type="unfinished"/>
+        <translation>Odśwież listę</translation>
     </message>
 </context>
 <context>
@@ -5994,12 +6000,12 @@ Debug Message: </source>
     <message>
         <location filename="../../src/yuzu/main.ui" line="262"/>
         <source>Create Room</source>
-        <translation type="unfinished"/>
+        <translation>Stwórz Pokój</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="270"/>
         <source>Leave Room</source>
-        <translation type="unfinished"/>
+        <translation>Wyjdź z Pokoju Multiplayer</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="275"/>
@@ -6024,7 +6030,7 @@ Debug Message: </source>
     <message>
         <location filename="../../src/yuzu/main.ui" line="307"/>
         <source>Load/Remove &amp;Amiibo...</source>
-        <translation type="unfinished"/>
+        <translation>Załaduj/Usuń &amp;Amiibo...</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/main.ui" line="315"/>
@@ -6095,7 +6101,7 @@ Debug Message: </source>
     <message>
         <location filename="../../src/yuzu/multiplayer/moderation_dialog.ui" line="6"/>
         <source>Moderation</source>
-        <translation type="unfinished"/>
+        <translation>Moderacja</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/moderation_dialog.ui" line="20"/>
@@ -6106,7 +6112,7 @@ Debug Message: </source>
         <location filename="../../src/yuzu/multiplayer/moderation_dialog.ui" line="41"/>
         <location filename="../../src/yuzu/multiplayer/moderation_dialog.cpp" line="73"/>
         <source>Refreshing</source>
-        <translation type="unfinished"/>
+        <translation>Odświeżam</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/moderation_dialog.ui" line="51"/>
@@ -6131,56 +6137,56 @@ Debug Message: </source>
     <message>
         <location filename="../../src/yuzu/multiplayer/moderation_dialog.cpp" line="88"/>
         <source>IP Address</source>
-        <translation type="unfinished"/>
+        <translation>Adres IP</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/moderation_dialog.cpp" line="95"/>
         <source>Refresh</source>
-        <translation type="unfinished"/>
+        <translation>Odśwież</translation>
     </message>
 </context>
 <context>
     <name>MultiplayerState</name>
     <message>
         <location filename="../../src/yuzu/multiplayer/state.cpp" line="47"/>
-        <location filename="../../src/yuzu/multiplayer/state.cpp" line="92"/>
+        <location filename="../../src/yuzu/multiplayer/state.cpp" line="91"/>
         <source>Current connection status</source>
         <translation type="unfinished"/>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/state.cpp" line="48"/>
-        <location filename="../../src/yuzu/multiplayer/state.cpp" line="95"/>
+        <location filename="../../src/yuzu/multiplayer/state.cpp" line="94"/>
         <source>Not Connected. Click here to find a room!</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/state.cpp" line="99"/>
-        <location filename="../../src/yuzu/multiplayer/state.cpp" line="125"/>
-        <location filename="../../src/yuzu/multiplayer/state.cpp" line="265"/>
+        <location filename="../../src/yuzu/multiplayer/state.cpp" line="97"/>
+        <location filename="../../src/yuzu/multiplayer/state.cpp" line="123"/>
+        <location filename="../../src/yuzu/multiplayer/state.cpp" line="260"/>
         <source>Connected</source>
         <translation>Połączony</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/state.cpp" line="101"/>
-        <location filename="../../src/yuzu/multiplayer/state.cpp" line="130"/>
+        <location filename="../../src/yuzu/multiplayer/state.cpp" line="99"/>
+        <location filename="../../src/yuzu/multiplayer/state.cpp" line="128"/>
         <source>Not Connected</source>
-        <translation type="unfinished"/>
+        <translation>Nie połączono</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/state.cpp" line="186"/>
+        <location filename="../../src/yuzu/multiplayer/state.cpp" line="181"/>
         <source>Error</source>
-        <translation type="unfinished"/>
+        <translation>Błąd</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/state.cpp" line="187"/>
+        <location filename="../../src/yuzu/multiplayer/state.cpp" line="182"/>
         <source>Failed to update the room information. Please check your Internet connection and try hosting the room again.
 Debug Message: </source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/state.cpp" line="259"/>
+        <location filename="../../src/yuzu/multiplayer/state.cpp" line="254"/>
         <source>New Messages Received</source>
-        <translation type="unfinished"/>
+        <translation>Otrzymano nowe wiadomości</translation>
     </message>
 </context>
 <context>
@@ -6188,27 +6194,27 @@ Debug Message: </source>
     <message>
         <location filename="../../src/yuzu/multiplayer/message.cpp" line="11"/>
         <source>Username is not valid. Must be 4 to 20 alphanumeric characters.</source>
-        <translation type="unfinished"/>
+        <translation>Nick nie jest poprawny. Musi zawierać od 4 do 20 znaków alfanumerycznych.</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/message.cpp" line="13"/>
         <source>Room name is not valid. Must be 4 to 20 alphanumeric characters.</source>
-        <translation type="unfinished"/>
+        <translation>Nazwa pokoju nie jest poprawna. Musi zawierać od 4 do 20 znaków alfanumerycznych.</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/message.cpp" line="15"/>
         <source>Username is already in use or not valid. Please choose another.</source>
-        <translation type="unfinished"/>
+        <translation>Nick już jest w użyciu, albo nie jest aktualny. Wybierz inny.</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/message.cpp" line="17"/>
         <source>IP is not a valid IPv4 address.</source>
-        <translation type="unfinished"/>
+        <translation>IP nie jest poprawnym adresem IPv4.</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/message.cpp" line="19"/>
         <source>Port must be a number between 0 to 65535.</source>
-        <translation type="unfinished"/>
+        <translation>Port musi być numerem od 0 do 65535.</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/message.cpp" line="20"/>
@@ -6218,7 +6224,7 @@ Debug Message: </source>
     <message>
         <location filename="../../src/yuzu/multiplayer/message.cpp" line="24"/>
         <source>Unable to find an internet connection. Check your internet settings.</source>
-        <translation type="unfinished"/>
+        <translation>Nie znaleziono połączenia internetowego. Sprawdź swoje ustawienia internetu.</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/message.cpp" line="26"/>
@@ -6228,22 +6234,22 @@ Debug Message: </source>
     <message>
         <location filename="../../src/yuzu/multiplayer/message.cpp" line="30"/>
         <source>Unable to connect to the room because it is already full.</source>
-        <translation type="unfinished"/>
+        <translation>Nie można połączyć się z pokojem, ponieważ jest pełny.</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/message.cpp" line="32"/>
         <source>Creating a room failed. Please retry. Restarting yuzu might be necessary.</source>
-        <translation type="unfinished"/>
+        <translation>Nie udało się utworzyć pokoju. Spróbuj ponownie. Możliwe, że należy zrestartować yuzu.</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/message.cpp" line="34"/>
         <source>The host of the room has banned you. Speak with the host to unban you or try a different room.</source>
-        <translation type="unfinished"/>
+        <translation>Host tego pokoju cię zbanował. Porozmawiaj z hostem, i poproś go, żeby cię odbanował, albo zagraj w innym pokoju.</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/message.cpp" line="37"/>
         <source>Version mismatch! Please update to the latest version of yuzu. If the problem persists, contact the room host and ask them to update the server.</source>
-        <translation type="unfinished"/>
+        <translation>Niezgodna wersja! Powinieneś zaktualizować yuzu do najnowszej wersji. Jeśli ten problem nie zniknie, skontaktuj się z hostem.</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/message.cpp" line="39"/>
@@ -6258,63 +6264,57 @@ Debug Message: </source>
     <message>
         <location filename="../../src/yuzu/multiplayer/message.cpp" line="43"/>
         <source>Connection to room lost. Try to reconnect.</source>
-        <translation type="unfinished"/>
+        <translation>Utracono połączenie z pokojem multiplayer. Spróbuj znów się połączyć.</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/message.cpp" line="45"/>
         <source>You have been kicked by the room host.</source>
-        <translation type="unfinished"/>
+        <translation>Zostałeś wyrzucony przez hosta.</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/message.cpp" line="47"/>
-        <source>MAC address is already in use. Please choose another.</source>
-        <translation type="unfinished"/>
+        <source>IP address is already in use. Please choose another.</source>
+        <translation>Adres IP już jest w użyciu. Wybierz inny.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/message.cpp" line="48"/>
-        <source>Your Console ID conflicted with someone else's in the room.
-
-Please go to Emulation &gt; Configure &gt; System to regenerate your Console ID.</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location filename="../../src/yuzu/multiplayer/message.cpp" line="52"/>
+        <location filename="../../src/yuzu/multiplayer/message.cpp" line="49"/>
         <source>You do not have enough permission to perform this action.</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/message.cpp" line="53"/>
+        <location filename="../../src/yuzu/multiplayer/message.cpp" line="50"/>
         <source>The user you are trying to kick/ban could not be found.
 They may have left the room.</source>
-        <translation type="unfinished"/>
+        <translation>Użytkownik, którego próbujesz wyrzucić/zbanować nie został znaleziony.
+Możliwe, że opuścił/a pokój.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/message.cpp" line="68"/>
+        <location filename="../../src/yuzu/multiplayer/message.cpp" line="65"/>
         <source>Leave Room</source>
-        <translation type="unfinished"/>
+        <translation>Wyjdź z Pokoju Multiplayer</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/message.cpp" line="69"/>
+        <location filename="../../src/yuzu/multiplayer/message.cpp" line="66"/>
         <source>You are about to close the room. Any network connections will be closed.</source>
-        <translation type="unfinished"/>
+        <translation>Zamierzasz zamknąć pokój multiplayer. Wszystkie połączenia zostaną zamknięte.</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/message.cpp" line="74"/>
+        <location filename="../../src/yuzu/multiplayer/message.cpp" line="71"/>
         <source>Disconnect</source>
-        <translation type="unfinished"/>
+        <translation>Rozłącz</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/message.cpp" line="75"/>
+        <location filename="../../src/yuzu/multiplayer/message.cpp" line="72"/>
         <source>You are about to leave the room. Any network connections will be closed.</source>
-        <translation type="unfinished"/>
+        <translation>Wychodzisz z pokoju multiplayer. Wszystkie połączenia zostaną zamknięte.</translation>
     </message>
 </context>
 <context>
     <name>NetworkMessage::ErrorManager</name>
     <message>
-        <location filename="../../src/yuzu/multiplayer/message.cpp" line="63"/>
+        <location filename="../../src/yuzu/multiplayer/message.cpp" line="60"/>
         <source>Error</source>
-        <translation type="unfinished"/>
+        <translation>Błąd</translation>
     </message>
 </context>
 <context>
@@ -6363,17 +6363,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/multiplayer/lobby_p.h" line="230"/>
         <source>%1 is not playing a game</source>
-        <translation type="unfinished"/>
+        <translation>%1 nie gra w żadną grę</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/lobby_p.h" line="232"/>
         <source>%1 is playing %2</source>
-        <translation type="unfinished"/>
+        <translation>%1 gra w %2</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/chat_room.cpp" line="134"/>
         <source>Not playing a game</source>
-        <translation type="unfinished"/>
+        <translation>Nie gra w żadną grę</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/game_list_p.h" line="242"/>
@@ -7027,7 +7027,7 @@ Spróbuj ponownie lub skontaktuj się z twórcą oprogramowania.</translation>
         <translation>Użytkownicy</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/applets/qt_profile_select.cpp" line="122"/>
+        <location filename="../../src/yuzu/applets/qt_profile_select.cpp" line="123"/>
         <source>Profile Selector</source>
         <translation>Wybór profilu</translation>
     </message>

@@ -10,9 +10,11 @@
 namespace Service::Nvidia::NvCore {
 
 struct ContainerImpl {
-    ContainerImpl(Tegra::Host1x::Host1x& host1x_) : file{host1x_}, manager{host1x_} {}
+    explicit ContainerImpl(Tegra::Host1x::Host1x& host1x_)
+        : file{host1x_}, manager{host1x_}, device_file_data{} {}
     NvMap file;
     SyncpointManager manager;
+    Container::Host1xDeviceFileData device_file_data;
 };
 
 Container::Container(Tegra::Host1x::Host1x& host1x_) {
@@ -27,6 +29,14 @@ NvMap& Container::GetNvMapFile() {
 
 const NvMap& Container::GetNvMapFile() const {
     return impl->file;
+}
+
+Container::Host1xDeviceFileData& Container::Host1xDeviceFile() {
+    return impl->device_file_data;
+}
+
+const Container::Host1xDeviceFileData& Container::Host1xDeviceFile() const {
+    return impl->device_file_data;
 }
 
 SyncpointManager& Container::GetSyncpointManager() {

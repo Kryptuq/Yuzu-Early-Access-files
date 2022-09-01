@@ -34,7 +34,7 @@ class DmaPusher;
 namespace Control {
 
 struct ChannelState {
-    ChannelState(s32 bind_id);
+    explicit ChannelState(s32 bind_id);
     ChannelState(const ChannelState& state) = delete;
     ChannelState& operator=(const ChannelState&) = delete;
     ChannelState(ChannelState&& other) noexcept = default;
@@ -60,7 +60,7 @@ struct ChannelState {
 
     std::unique_ptr<DmaPusher> dma_pusher;
 
-    bool initiated{};
+    bool initialized{};
 };
 
 } // namespace Control

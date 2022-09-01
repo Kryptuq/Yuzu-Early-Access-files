@@ -79,7 +79,7 @@ private:
         // Used for waiting on a syncpoint & canceling it.
         Tegra::Host1x::SyncpointManager::ActionHandle wait_handle{};
 
-        bool IsBeingUsed() {
+        bool IsBeingUsed() const {
             const auto current_status = status.load(std::memory_order_acquire);
             return current_status == EventState::Waiting ||
                    current_status == EventState::Cancelling ||

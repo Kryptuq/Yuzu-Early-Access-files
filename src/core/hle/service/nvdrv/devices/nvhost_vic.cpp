@@ -4,12 +4,11 @@
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "core/core.h"
+#include "core/hle/service/nvdrv/core/container.h"
 #include "core/hle/service/nvdrv/devices/nvhost_vic.h"
 #include "video_core/renderer_base.h"
 
 namespace Service::Nvidia::Devices {
-
-u32 nvhost_vic::next_id{};
 
 nvhost_vic::nvhost_vic(Core::System& system_, NvCore::Container& core_)
     : nvhost_nvdec_common{system_, core_, NvCore::ChannelType::VIC} {}
@@ -21,11 +20,13 @@ NvResult nvhost_vic::Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& i
     switch (command.group) {
     case 0x0:
         switch (command.cmd) {
-        case 0x1:
-            if (!fd_to_id.contains(fd)) {
-                fd_to_id[fd] = next_id++;
+        case 0x1: {
+            auto& host1x_file = core.Host1xDeviceFile();
+            if (!host1x_file.fd_to_id.contains(fd)) {
+                host1x_file.fd_to_id[fd] = host1x_file.vic_next_id++;
             }
             return Submit(fd, input, output);
+        }
         case 0x2:
             return GetSyncpoint(input, output);
         case 0x3:
@@ -69,8 +70,9 @@ NvResult nvhost_vic::Ioctl3(DeviceFD fd, Ioctl command, const std::vector<u8>& i
 void nvhost_vic::OnOpen(DeviceFD fd) {}
 
 void nvhost_vic::OnClose(DeviceFD fd) {
-    const auto iter = fd_to_id.find(fd);
-    if (iter != fd_to_id.end()) {
+    auto& host1x_file = core.Host1xDeviceFile();
+    const auto iter = host1x_file.fd_to_id.find(fd);
+    if (iter != host1x_file.fd_to_id.end()) {
         system.GPU().ClearCdmaInstance(iter->second);
     }
 }

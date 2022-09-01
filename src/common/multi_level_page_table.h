@@ -46,19 +46,19 @@ public:
 
     void ReserveRange(u64 start, std::size_t size);
 
-    [[nodiscard]] constexpr const BaseAddr& operator[](std::size_t index) const {
+    [[nodiscard]] const BaseAddr& operator[](std::size_t index) const {
         return base_ptr[index];
     }
 
-    [[nodiscard]] constexpr BaseAddr& operator[](std::size_t index) {
+    [[nodiscard]] BaseAddr& operator[](std::size_t index) {
         return base_ptr[index];
     }
 
-    [[nodiscard]] constexpr BaseAddr* data() {
+    [[nodiscard]] BaseAddr* data() {
         return base_ptr;
     }
 
-    [[nodiscard]] constexpr const BaseAddr* data() const {
+    [[nodiscard]] const BaseAddr* data() const {
         return base_ptr;
     }
 

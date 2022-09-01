@@ -184,7 +184,7 @@ NvResult nvhost_gpu::AllocGPFIFOEx2(const std::vector<u8>& input, std::vector<u8
                 params.num_entries, params.flags, params.unk0, params.unk1, params.unk2,
                 params.unk3);
 
-    if (channel_state->initiated) {
+    if (channel_state->initialized) {
         LOG_CRITICAL(Service_NVDRV, "Already allocated!");
         return NvResult::AlreadyAllocated;
     }

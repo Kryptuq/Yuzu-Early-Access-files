@@ -12,13 +12,13 @@ MICROPROFILE_DEFINE(GPU_wait, "GPU", "Wait for the GPU", MP_RGB(128, 128, 192));
 
 SyncpointManager::ActionHandle SyncpointManager::RegisterAction(
     std::atomic<u32>& syncpoint, std::list<RegisteredAction>& action_storage, u32 expected_value,
-    std::function<void(void)>& action) {
+    std::function<void()>&& action) {
     if (syncpoint.load(std::memory_order_acquire) >= expected_value) {
         action();
         return {};
     }
 
-    std::unique_lock<std::mutex> lk(guard);
+    std::unique_lock lk(guard);
     if (syncpoint.load(std::memory_order_relaxed) >= expected_value) {
         action();
         return {};
@@ -30,12 +30,12 @@ SyncpointManager::ActionHandle SyncpointManager::RegisterAction(
         }
         ++it;
     }
-    return action_storage.emplace(it, expected_value, action);
+    return action_storage.emplace(it, expected_value, std::move(action));
 }
 
 void SyncpointManager::DeregisterAction(std::list<RegisteredAction>& action_storage,
                                         ActionHandle& handle) {
-    std::unique_lock<std::mutex> lk(guard);
+    std::unique_lock lk(guard);
     action_storage.erase(handle);
 }
 
@@ -68,7 +68,7 @@ void SyncpointManager::Increment(std::atomic<u32>& syncpoint, std::condition_var
                                  std::list<RegisteredAction>& action_storage) {
     auto new_value{syncpoint.fetch_add(1, std::memory_order_acq_rel) + 1};
 
-    std::unique_lock<std::mutex> lk(guard);
+    std::unique_lock lk(guard);
     auto it = action_storage.begin();
     while (it != action_storage.end()) {
         if (it->expected_value > new_value) {
@@ -87,7 +87,7 @@ void SyncpointManager::Wait(std::atomic<u32>& syncpoint, std::condition_variable
         return;
     }
 
-    std::unique_lock<std::mutex> lk(guard);
+    std::unique_lock lk(guard);
     wait_cv.wait(lk, pred);
 }
 

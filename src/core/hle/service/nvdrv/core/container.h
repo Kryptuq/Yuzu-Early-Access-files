@@ -4,15 +4,15 @@
 
 #pragma once
 
+#include <deque>
 #include <memory>
+#include <unordered_map>
 
-namespace Tegra {
+#include "core/hle/service/nvdrv/nvdata.h"
 
-namespace Host1x {
+namespace Tegra::Host1x {
 class Host1x;
-} // namespace Host1x
-
-} // namespace Tegra
+} // namespace Tegra::Host1x
 
 namespace Service::Nvidia::NvCore {
 
@@ -23,7 +23,7 @@ struct ContainerImpl;
 
 class Container {
 public:
-    Container(Tegra::Host1x::Host1x& host1x);
+    explicit Container(Tegra::Host1x::Host1x& host1x);
     ~Container();
 
     NvMap& GetNvMapFile();
@@ -33,6 +33,17 @@ public:
     SyncpointManager& GetSyncpointManager();
 
     const SyncpointManager& GetSyncpointManager() const;
+
+    struct Host1xDeviceFileData {
+        std::unordered_map<DeviceFD, u32> fd_to_id{};
+        std::deque<u32> syncpts_accumulated{};
+        u32 nvdec_next_id{};
+        u32 vic_next_id{};
+    };
+
+    Host1xDeviceFileData& Host1xDeviceFile();
+
+    const Host1xDeviceFileData& Host1xDeviceFile() const;
 
 private:
     std::unique_ptr<ContainerImpl> impl;

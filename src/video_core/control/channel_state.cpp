@@ -14,10 +14,7 @@
 
 namespace Tegra::Control {
 
-ChannelState::ChannelState(s32 bind_id_) {
-    bind_id = bind_id_;
-    initiated = false;
-}
+ChannelState::ChannelState(s32 bind_id_) : bind_id{bind_id_}, initialized{} {}
 
 void ChannelState::Init(Core::System& system, GPU& gpu) {
     ASSERT(memory_manager);
@@ -27,7 +24,7 @@ void ChannelState::Init(Core::System& system, GPU& gpu) {
     kepler_compute = std::make_unique<Engines::KeplerCompute>(system, *memory_manager);
     maxwell_dma = std::make_unique<Engines::MaxwellDMA>(system, *memory_manager);
     kepler_memory = std::make_unique<Engines::KeplerMemory>(system, *memory_manager);
-    initiated = true;
+    initialized = true;
 }
 
 void ChannelState::BindRasterizer(VideoCore::RasterizerInterface* rasterizer) {

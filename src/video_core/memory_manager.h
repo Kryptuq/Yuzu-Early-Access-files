@@ -126,7 +126,7 @@ private:
     void WriteBlockImpl(GPUVAddr gpu_dest_addr, const void* src_buffer, std::size_t size);
 
     template <bool is_big_page>
-    [[nodiscard]] inline std::size_t PageEntryIndex(GPUVAddr gpu_addr) const {
+    [[nodiscard]] std::size_t PageEntryIndex(GPUVAddr gpu_addr) const {
         if constexpr (is_big_page) {
             return (gpu_addr >> big_page_bits) & big_page_table_mask;
         } else {

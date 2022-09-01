@@ -18,34 +18,34 @@ namespace Host1x {
 
 class SyncpointManager {
 public:
-    u32 GetGuestSyncpointValue(u32 id) {
+    u32 GetGuestSyncpointValue(u32 id) const {
         return syncpoints_guest[id].load(std::memory_order_acquire);
     }
 
-    u32 GetHostSyncpointValue(u32 id) {
+    u32 GetHostSyncpointValue(u32 id) const {
         return syncpoints_host[id].load(std::memory_order_acquire);
     }
 
     struct RegisteredAction {
-        RegisteredAction(u32 expected_value_, std::function<void(void)>& action_)
-            : expected_value{expected_value_}, action{action_} {}
+        explicit RegisteredAction(u32 expected_value_, std::function<void()>&& action_)
+            : expected_value{expected_value_}, action{std::move(action_)} {}
         u32 expected_value;
-        std::function<void(void)> action;
+        std::function<void()> action;
     };
     using ActionHandle = std::list<RegisteredAction>::iterator;
 
     template <typename Func>
     ActionHandle RegisterGuestAction(u32 syncpoint_id, u32 expected_value, Func&& action) {
-        std::function<void(void)> func(action);
+        std::function<void()> func(action);
         return RegisterAction(syncpoints_guest[syncpoint_id], guest_action_storage[syncpoint_id],
-                              expected_value, func);
+                              expected_value, std::move(func));
     }
 
     template <typename Func>
     ActionHandle RegisterHostAction(u32 syncpoint_id, u32 expected_value, Func&& action) {
-        std::function<void(void)> func(action);
+        std::function<void()> func(action);
         return RegisterAction(syncpoints_host[syncpoint_id], host_action_storage[syncpoint_id],
-                              expected_value, func);
+                              expected_value, std::move(func));
     }
 
     void DeregisterGuestAction(u32 syncpoint_id, ActionHandle& handle);
@@ -60,11 +60,11 @@ public:
 
     void WaitHost(u32 syncpoint_id, u32 expected_value);
 
-    bool IsReadyGuest(u32 syncpoint_id, u32 expected_value) {
+    bool IsReadyGuest(u32 syncpoint_id, u32 expected_value) const {
         return syncpoints_guest[syncpoint_id].load(std::memory_order_acquire) >= expected_value;
     }
 
-    bool IsReadyHost(u32 syncpoint_id, u32 expected_value) {
+    bool IsReadyHost(u32 syncpoint_id, u32 expected_value) const {
         return syncpoints_host[syncpoint_id].load(std::memory_order_acquire) >= expected_value;
     }
 
@@ -74,7 +74,7 @@ private:
 
     ActionHandle RegisterAction(std::atomic<u32>& syncpoint,
                                 std::list<RegisteredAction>& action_storage, u32 expected_value,
-                                std::function<void(void)>& action);
+                                std::function<void()>&& action);
 
     void DeregisterAction(std::list<RegisteredAction>& action_storage, ActionHandle& handle);
 

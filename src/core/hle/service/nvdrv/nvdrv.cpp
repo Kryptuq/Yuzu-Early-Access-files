@@ -101,9 +101,7 @@ Module::Module(Core::System& system)
     };
 }
 
-Module::~Module() {
-    Devices::nvhost_nvdec_common::Reset();
-}
+Module::~Module() {}
 
 NvResult Module::VerifyFD(DeviceFD fd) const {
     if (fd < 0) {
