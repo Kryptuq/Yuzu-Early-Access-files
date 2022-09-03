@@ -4,7 +4,7 @@
 #pragma once
 
 #include <memory>
-#include <QWidget>
+#include <QScrollArea>
 
 namespace Core {
 class System;
@@ -14,7 +14,7 @@ namespace Ui {
 class ConfigureDebug;
 }
 
-class ConfigureDebug : public QWidget {
+class ConfigureDebug : public QScrollArea {
     Q_OBJECT
 
 public:

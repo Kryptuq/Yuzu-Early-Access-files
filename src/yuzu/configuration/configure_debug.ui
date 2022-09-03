@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>ConfigureDebug</class>
- <widget class="QWidget" name="ConfigureDebug">
+ <widget class="QScrollArea" name="ConfigureDebug">
+  <property name="widgetResizable">
+   <bool>true</bool>
+  </property>
+ <widget class="QWidget">
   <layout class="QVBoxLayout" name="verticalLayout_1">
     <item>
       <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -321,6 +325,7 @@
     </widget>
    </item>
   </layout>
+ </widget>
  </widget>
  <tabstops>
   <tabstop>log_filter_edit</tabstop>
