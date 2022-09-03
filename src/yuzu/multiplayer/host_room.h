@@ -8,7 +8,6 @@
 #include <QSortFilterProxyModel>
 #include <QStandardItemModel>
 #include <QVariant>
-#include "core/core.h"
 #include "network/network.h"
 #include "yuzu/multiplayer/chat_room.h"
 #include "yuzu/multiplayer/validation.h"
@@ -18,8 +17,9 @@ class HostRoom;
 }
 
 namespace Core {
+class System;
 class AnnounceMultiplayerSession;
-}
+} // namespace Core
 
 class ConnectionError;
 class ComboBoxProxyModel;

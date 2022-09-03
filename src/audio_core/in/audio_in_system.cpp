@@ -93,6 +93,7 @@ Result System::Start() {
     std::vector<AudioBuffer> buffers_to_flush{};
     buffers.RegisterBuffers(buffers_to_flush);
     session->AppendBuffers(buffers_to_flush);
+    session->SetRingSize(static_cast<u32>(buffers_to_flush.size()));
 
     return ResultSuccess;
 }
@@ -112,8 +113,13 @@ bool System::AppendBuffer(const AudioInBuffer& buffer, const u64 tag) {
         return false;
     }
 
-    AudioBuffer new_buffer{
-        .played_timestamp = 0, .samples = buffer.samples, .tag = tag, .size = buffer.size};
+    const auto timestamp{buffers.GetNextTimestamp()};
+    AudioBuffer new_buffer{.start_timestamp = timestamp,
+                           .end_timestamp = timestamp + buffer.size / (channel_count * sizeof(s16)),
+                           .played_timestamp = 0,
+                           .samples = buffer.samples,
+                           .tag = tag,
+                           .size = buffer.size};
 
     buffers.AppendBuffer(new_buffer);
     RegisterBuffers();

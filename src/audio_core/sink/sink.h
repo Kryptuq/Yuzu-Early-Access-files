@@ -32,7 +32,7 @@ public:
      *
      * @param stream - The stream to close.
      */
-    virtual void CloseStream(const SinkStream* stream) = 0;
+    virtual void CloseStream(SinkStream* stream) = 0;
 
     /**
      * Close all streams.

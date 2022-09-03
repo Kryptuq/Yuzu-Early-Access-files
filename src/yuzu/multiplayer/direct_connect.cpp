@@ -8,6 +8,7 @@
 #include <QString>
 #include <QtConcurrent/QtConcurrentRun>
 #include "common/settings.h"
+#include "core/core.h"
 #include "core/internal_network/network_interface.h"
 #include "network/network.h"
 #include "ui_direct_connect.h"

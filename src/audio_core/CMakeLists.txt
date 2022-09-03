@@ -194,6 +194,7 @@ add_library(audio_core STATIC
     sink/sink.h
     sink/sink_details.cpp
     sink/sink_details.h
+    sink/sink_stream.cpp
     sink/sink_stream.h
 )
 

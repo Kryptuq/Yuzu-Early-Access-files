@@ -15,8 +15,7 @@ MICROPROFILE_DEFINE(Audio_RenderSystemManager, "Audio", "Render System Manager",
                     MP_RGB(60, 19, 97));
 
 namespace AudioCore::AudioRenderer {
-constexpr std::chrono::nanoseconds BaseRenderTime{5'000'000UL};
-constexpr std::chrono::nanoseconds RenderTimeOffset{400'000UL};
+constexpr std::chrono::nanoseconds RENDER_TIME{5'000'000UL};
 
 SystemManager::SystemManager(Core::System& core_)
     : core{core_}, adsp{core.AudioCore().GetADSP()}, mailbox{adsp.GetRenderMailbox()},
@@ -36,8 +35,8 @@ bool SystemManager::InitializeUnsafe() {
         if (adsp.Start()) {
             active = true;
             thread = std::jthread([this](std::stop_token stop_token) { ThreadFunc(); });
-            core.CoreTiming().ScheduleLoopingEvent(std::chrono::nanoseconds(0),
-                                                   BaseRenderTime - RenderTimeOffset, thread_event);
+            core.CoreTiming().ScheduleLoopingEvent(std::chrono::nanoseconds(0), RENDER_TIME,
+                                                   thread_event);
         }
     }
 
@@ -121,35 +120,9 @@ void SystemManager::ThreadFunc() {
 }
 
 std::optional<std::chrono::nanoseconds> SystemManager::ThreadFunc2(s64 time) {
-    std::optional<std::chrono::nanoseconds> new_schedule_time{std::nullopt};
-    const auto queue_size{core.AudioCore().GetStreamQueue()};
-    switch (state) {
-    case StreamState::Filling:
-        if (queue_size >= 5) {
-            new_schedule_time = BaseRenderTime;
-            state = StreamState::Steady;
-        }
-        break;
-    case StreamState::Steady:
-        if (queue_size <= 2) {
-            new_schedule_time = BaseRenderTime - RenderTimeOffset;
-            state = StreamState::Filling;
-        } else if (queue_size > 5) {
-            new_schedule_time = BaseRenderTime + RenderTimeOffset;
-            state = StreamState::Draining;
-        }
-        break;
-    case StreamState::Draining:
-        if (queue_size <= 5) {
-            new_schedule_time = BaseRenderTime;
-            state = StreamState::Steady;
-        }
-        break;
-    }
-
     update.store(true);
     update.notify_all();
-    return new_schedule_time;
+    return std::nullopt;
 }
 
 void SystemManager::PauseCallback(bool paused) {

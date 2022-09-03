@@ -11,7 +11,7 @@ namespace Common {
 namespace detail {
 template <typename T, size_t Size, size_t Align>
 struct TypedStorageImpl {
-    std::aligned_storage_t<Size, Align> storage_;
+    alignas(Align) u8 storage_[Size];
 };
 } // namespace detail
 

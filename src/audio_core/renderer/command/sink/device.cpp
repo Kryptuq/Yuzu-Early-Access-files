@@ -46,6 +46,10 @@ void DeviceSinkCommand::Process(const ADSP::CommandListProcessor& processor) {
 
     out_buffer.tag = reinterpret_cast<u64>(samples.data());
     stream->AppendBuffer(out_buffer, samples);
+
+    if (stream->IsPaused()) {
+        stream->Start();
+    }
 }
 
 bool DeviceSinkCommand::Verify(const ADSP::CommandListProcessor& processor) {

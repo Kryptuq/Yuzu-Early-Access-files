@@ -4,7 +4,6 @@
 #pragma once
 
 #include <QWidget>
-#include "core/core.h"
 #include "network/announce_multiplayer_session.h"
 #include "network/network.h"
 
@@ -14,6 +13,10 @@ class HostRoomWindow;
 class ClientRoomWindow;
 class DirectConnectWindow;
 class ClickableLabel;
+
+namespace Core {
+class System;
+}
 
 class MultiplayerState : public QWidget {
     Q_OBJECT;

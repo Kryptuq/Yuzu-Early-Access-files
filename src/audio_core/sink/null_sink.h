@@ -3,10 +3,29 @@
 
 #pragma once
 
+#include <string>
+#include <string_view>
+#include <vector>
+
 #include "audio_core/sink/sink.h"
 #include "audio_core/sink/sink_stream.h"
 
+namespace Core {
+class System;
+} // namespace Core
+
 namespace AudioCore::Sink {
+class NullSinkStreamImpl final : public SinkStream {
+public:
+    explicit NullSinkStreamImpl(Core::System& system_, StreamType type_)
+        : SinkStream{system_, type_} {}
+    ~NullSinkStreamImpl() override {}
+    void AppendBuffer(SinkBuffer&, std::vector<s16>&) override {}
+    std::vector<s16> ReleaseBuffer(u64) override {
+        return {};
+    }
+};
+
 /**
  * A no-op sink for when no audio out is wanted.
  */
@@ -15,14 +34,15 @@ public:
     explicit NullSink(std::string_view) {}
     ~NullSink() override = default;
 
-    SinkStream* AcquireSinkStream([[maybe_unused]] Core::System& system,
-                                  [[maybe_unused]] u32 system_channels,
-                                  [[maybe_unused]] const std::string& name,
-                                  [[maybe_unused]] StreamType type) override {
-        return &null_sink_stream;
+    SinkStream* AcquireSinkStream(Core::System& system, u32, const std::string&,
+                                  StreamType type) override {
+        if (null_sink == nullptr) {
+            null_sink = std::make_unique<NullSinkStreamImpl>(system, type);
+        }
+        return null_sink.get();
     }
 
-    void CloseStream([[maybe_unused]] const SinkStream* stream) override {}
+    void CloseStream(SinkStream*) override {}
     void CloseStreams() override {}
     void PauseStreams() override {}
     void UnpauseStreams() override {}
@@ -33,20 +53,7 @@ public:
     void SetSystemVolume(f32 volume) override {}
 
 private:
-    struct NullSinkStreamImpl final : SinkStream {
-        void Finalize() override {}
-        void Start(bool resume = false) override {}
-        void Stop() override {}
-        void AppendBuffer([[maybe_unused]] ::AudioCore::Sink::SinkBuffer& buffer,
-                          [[maybe_unused]] std::vector<s16>& samples) override {}
-        std::vector<s16> ReleaseBuffer([[maybe_unused]] u64 num_samples) override {
-            return {};
-        }
-        bool IsBufferConsumed([[maybe_unused]] const u64 tag) {
-            return true;
-        }
-        void ClearQueue() override {}
-    } null_sink_stream;
+    SinkStreamPtr null_sink{};
 };
 
 } // namespace AudioCore::Sink

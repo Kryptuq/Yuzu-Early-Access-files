@@ -3,12 +3,20 @@
 
 #pragma once
 
+#include <array>
 #include <atomic>
 #include <memory>
+#include <span>
 #include <vector>
 
 #include "audio_core/common/common.h"
 #include "common/common_types.h"
+#include "common/reader_writer_queue.h"
+#include "common/ring_buffer.h"
+
+namespace Core {
+class System;
+} // namespace Core
 
 namespace AudioCore::Sink {
 
@@ -34,20 +42,24 @@ struct SinkBuffer {
  * You should regularly call IsBufferConsumed with the unique SinkBuffer tag to check if the buffer
  * has been consumed.
  *
- * Since these are a FIFO queue, always check IsBufferConsumed in the same order you appended the
- * buffers, skipping a buffer will result in all following buffers to never release.
+ * Since these are a FIFO queue, IsBufferConsumed must be checked in the same order buffers were
+ * appended, skipping a buffer will result in the queue getting stuck, and all following buffers to
+ * never release.
  *
  * If the buffers appear to be stuck, you can stop and re-open an IAudioIn/IAudioOut service (this
  * is what games do), or call ClearQueue to flush all of the buffers without a full restart.
  */
 class SinkStream {
 public:
-    virtual ~SinkStream() = default;
+    explicit SinkStream(Core::System& system_, StreamType type_) : system{system_}, type{type_} {}
+    virtual ~SinkStream() {
+        Unstall();
+    }
 
     /**
      * Finalize the sink stream.
      */
-    virtual void Finalize() = 0;
+    virtual void Finalize() {}
 
     /**
      * Start the sink stream.
@@ -55,48 +67,19 @@ public:
      * @param resume - Set to true if this is resuming the stream a previously-active stream.
      *                 Default false.
      */
-    virtual void Start(bool resume = false) = 0;
+    virtual void Start(bool resume = false) {}
 
     /**
      * Stop the sink stream.
      */
-    virtual void Stop() = 0;
-
-    /**
-     * Append a new buffer and its samples to a waiting queue to play.
-     *
-     * @param buffer  - Audio buffer information to be queued.
-     * @param samples - The s16 samples to be queue for playback.
-     */
-    virtual void AppendBuffer(SinkBuffer& buffer, std::vector<s16>& samples) = 0;
-
-    /**
-     * Release a buffer. Audio In only, will fill a buffer with recorded samples.
-     *
-     * @param num_samples - Maximum number of samples to receive.
-     * @return Vector of recorded samples. May have fewer than num_samples.
-     */
-    virtual std::vector<s16> ReleaseBuffer(u64 num_samples) = 0;
-
-    /**
-     * Check if a certain buffer has been consumed (fully played).
-     *
-     * @param tag - Unique tag of a buffer to check for.
-     * @return True if the buffer has been played, otherwise false.
-     */
-    virtual bool IsBufferConsumed(u64 tag) = 0;
-
-    /**
-     * Empty out the buffer queue.
-     */
-    virtual void ClearQueue() = 0;
+    virtual void Stop() {}
 
     /**
      * Check if the stream is paused.
      *
      * @return True if paused, otherwise false.
      */
-    bool IsPaused() {
+    bool IsPaused() const {
         return paused;
     }
 
@@ -125,34 +108,6 @@ public:
      */
     u32 GetDeviceChannels() const {
         return device_channels;
-    }
-
-    /**
-     * Get the total number of samples played by this stream.
-     *
-     * @return Number of samples played.
-     */
-    u64 GetPlayedSampleCount() const {
-        return played_sample_count;
-    }
-
-    /**
-     * Set the number of samples played.
-     * This is started and stopped on system start/stop.
-     *
-     * @param played_sample_count_ - Number of samples to set.
-     */
-    void SetPlayedSampleCount(u64 played_sample_count_) {
-        played_sample_count = played_sample_count_;
-    }
-
-    /**
-     * Add to the played sample count.
-     *
-     * @param num_samples - Number of samples to add.
-     */
-    void AddPlayedSampleCount(u64 num_samples) {
-        played_sample_count += num_samples;
     }
 
     /**
@@ -200,15 +155,65 @@ public:
         return queued_buffers.load();
     }
 
+    /**
+     * Set the maximum buffer queue size.
+     */
+    void SetRingSize(u32 ring_size) {
+        max_queue_size = ring_size;
+    }
+
+    /**
+     * Append a new buffer and its samples to a waiting queue to play.
+     *
+     * @param buffer  - Audio buffer information to be queued.
+     * @param samples - The s16 samples to be queue for playback.
+     */
+    virtual void AppendBuffer(SinkBuffer& buffer, std::vector<s16>& samples);
+
+    /**
+     * Release a buffer. Audio In only, will fill a buffer with recorded samples.
+     *
+     * @param num_samples - Maximum number of samples to receive.
+     * @return Vector of recorded samples. May have fewer than num_samples.
+     */
+    virtual std::vector<s16> ReleaseBuffer(u64 num_samples);
+
+    /**
+     * Empty out the buffer queue.
+     */
+    void ClearQueue();
+
+    /**
+     * Callback for AudioIn.
+     *
+     * @param input_buffer - Input buffer to be filled with samples.
+     * @param num_frames - Number of frames to be filled.
+     */
+    void ProcessAudioIn(std::span<const s16> input_buffer, std::size_t num_frames);
+
+    /**
+     * Callback for AudioOut and AudioRenderer.
+     *
+     * @param output_buffer - Output buffer to be filled with samples.
+     * @param num_frames - Number of frames to be filled.
+     */
+    void ProcessAudioOutAndRender(std::span<s16> output_buffer, std::size_t num_frames);
+
+    /**
+     * Stall core processes if the audio thread falls too far behind.
+     */
+    void Stall();
+
+    /**
+     * Unstall core processes.
+     */
+    void Unstall();
+
 protected:
-    /// Number of buffers waiting to be played
-    std::atomic<u32> queued_buffers{};
-    /// Total samples played by this stream
-    std::atomic<u64> played_sample_count{};
-    /// Set by the audio render/in/out system which uses this stream
-    f32 system_volume{1.0f};
-    /// Set via IAudioDevice service calls
-    f32 device_volume{1.0f};
+    /// Core system
+    Core::System& system;
+    /// Type of this stream
+    StreamType type;
     /// Set by the audio render/in/out systen which uses this stream
     u32 system_channels{2};
     /// Channels supported by hardware
@@ -217,6 +222,28 @@ protected:
     std::atomic<bool> paused{true};
     /// Was this stream previously playing?
     std::atomic<bool> was_playing{false};
+    /// Name of this stream
+    std::string name{};
+
+private:
+    /// Ring buffer of the samples waiting to be played or consumed
+    Common::RingBuffer<s16, 0x10000> samples_buffer;
+    /// Audio buffers queued and waiting to play
+    Common::ReaderWriterQueue<SinkBuffer> queue;
+    /// The currently-playing audio buffer
+    SinkBuffer playing_buffer{};
+    /// The last played (or received) frame of audio, used when the callback underruns
+    std::array<s16, MaxChannels> last_frame{};
+    /// Number of buffers waiting to be played
+    std::atomic<u32> queued_buffers{};
+    /// The ring size for audio out buffers (usually 4, rarely 2 or 8)
+    u32 max_queue_size{};
+    /// Set by the audio render/in/out system which uses this stream
+    f32 system_volume{1.0f};
+    /// Set via IAudioDevice service calls
+    f32 device_volume{1.0f};
+    /// True if coretiming has been stalled
+    bool stalled{false};
 };
 
 using SinkStreamPtr = std::unique_ptr<SinkStream>;

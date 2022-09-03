@@ -6,11 +6,14 @@
 #include <memory>
 #include <QDialog>
 #include <QFutureWatcher>
-#include "core/core.h"
 #include "yuzu/multiplayer/validation.h"
 
 namespace Ui {
 class DirectConnect;
+}
+
+namespace Core {
+class System;
 }
 
 class DirectConnectWindow : public QDialog {

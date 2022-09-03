@@ -8,6 +8,10 @@
 namespace AudioCore {
 
 struct AudioBuffer {
+    /// Timestamp this buffer started playing.
+    u64 start_timestamp;
+    /// Timestamp this buffer should finish playing.
+    u64 end_timestamp;
     /// Timestamp this buffer completed playing.
     s64 played_timestamp;
     /// Game memory address for these samples.

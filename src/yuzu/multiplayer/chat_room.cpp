@@ -154,9 +154,7 @@ public:
         }
         const QString version = data(GameVersionRole).toString();
         QString version_string;
-        if (version.isEmpty()) {
-            version_string = QString{};
-        } else {
+        if (!version.isEmpty()) {
             version_string = QStringLiteral("(%1)").arg(version);
         }
         return QStringLiteral("%1\n      %2 %3")

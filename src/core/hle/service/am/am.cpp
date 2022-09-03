@@ -754,7 +754,7 @@ void ICommonStateGetter::ReceiveMessage(Kernel::HLERequestContext& ctx) {
 }
 
 void ICommonStateGetter::GetCurrentFocusState(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    LOG_DEBUG(Service_AM, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);

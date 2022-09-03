@@ -9,7 +9,6 @@
 #include <QSortFilterProxyModel>
 #include <QStandardItemModel>
 #include "common/announce_multiplayer_room.h"
-#include "core/core.h"
 #include "network/announce_multiplayer_session.h"
 #include "network/network.h"
 #include "yuzu/multiplayer/validation.h"
@@ -20,6 +19,10 @@ class Lobby;
 
 class LobbyModel;
 class LobbyFilterProxyModel;
+
+namespace Core {
+class System;
+}
 
 /**
  * Listing of all public games pulled from services. The lobby should be simple enough for users to

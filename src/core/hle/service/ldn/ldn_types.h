@@ -150,9 +150,9 @@ struct Ssid {
 
     Ssid() = default;
 
-    Ssid(std::string data) {
+    explicit Ssid(std::string_view data) {
         length = static_cast<u8>(std::min(data.size(), SsidLengthMax));
-        std::memcpy(raw.data(), data.data(), length);
+        data.copy(raw.data(), length);
         raw[length] = 0;
     }
 

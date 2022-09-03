@@ -8,6 +8,7 @@
 #include <QStandardItemModel>
 #include "common/announce_multiplayer_room.h"
 #include "common/logging/log.h"
+#include "core/core.h"
 #include "yuzu/game_list.h"
 #include "yuzu/multiplayer/client_room.h"
 #include "yuzu/multiplayer/direct_connect.h"

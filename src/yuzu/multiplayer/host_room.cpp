@@ -12,6 +12,7 @@
 #include <QtConcurrent/QtConcurrentRun>
 #include "common/logging/log.h"
 #include "common/settings.h"
+#include "core/core.h"
 #include "core/internal_network/network_interface.h"
 #include "network/announce_multiplayer_session.h"
 #include "ui_host_room.h"

@@ -6,6 +6,7 @@
 #include <QtConcurrent/QtConcurrentRun>
 #include "common/logging/log.h"
 #include "common/settings.h"
+#include "core/core.h"
 #include "core/internal_network/network_interface.h"
 #include "network/network.h"
 #include "ui_lobby.h"

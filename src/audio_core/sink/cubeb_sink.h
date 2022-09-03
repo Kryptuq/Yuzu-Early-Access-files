@@ -46,7 +46,7 @@ public:
      *
      * @param stream - The stream to close.
      */
-    void CloseStream(const SinkStream* stream) override;
+    void CloseStream(SinkStream* stream) override;
 
     /**
      * Close all streams.

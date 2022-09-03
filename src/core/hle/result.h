@@ -117,6 +117,7 @@ union Result {
     BitField<0, 9, ErrorModule> module;
     BitField<9, 13, u32> description;
 
+    Result() = default;
     constexpr explicit Result(u32 raw_) : raw(raw_) {}
 
     constexpr Result(ErrorModule module_, u32 description_)
@@ -130,6 +131,7 @@ union Result {
         return !IsSuccess();
     }
 };
+static_assert(std::is_trivial_v<Result>);
 
 [[nodiscard]] constexpr bool operator==(const Result& a, const Result& b) {
     return a.raw == b.raw;

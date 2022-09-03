@@ -5,7 +5,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "audio_core/sink/null_sink.h"
+
 #include "audio_core/sink/sink_details.h"
 #ifdef HAVE_CUBEB
 #include "audio_core/sink/cubeb_sink.h"
@@ -13,6 +13,7 @@
 #ifdef HAVE_SDL2
 #include "audio_core/sink/sdl2_sink.h"
 #endif
+#include "audio_core/sink/null_sink.h"
 #include "common/logging/log.h"
 
 namespace AudioCore::Sink {
@@ -59,8 +60,7 @@ const SinkDetails& GetOutputSinkDetails(std::string_view sink_id) {
 
     if (sink_id == "auto" || iter == std::end(sink_details)) {
         if (sink_id != "auto") {
-            LOG_ERROR(Audio, "AudioCore::Sink::GetOutputSinkDetails given invalid sink_id {}",
-                      sink_id);
+            LOG_ERROR(Audio, "Invalid sink_id {}", sink_id);
         }
         // Auto-select.
         // sink_details is ordered in terms of desirability, with the best choice at the front.

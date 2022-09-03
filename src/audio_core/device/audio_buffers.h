@@ -58,6 +58,7 @@ public:
             if (index < 0) {
                 index += N;
             }
+
             out_buffers.push_back(buffers[index]);
             registered_count++;
             registered_index = (registered_index + 1) % append_limit;
@@ -100,7 +101,7 @@ public:
             }
 
             // Check with the backend if this buffer can be released yet.
-            if (!session.IsBufferConsumed(buffers[index].tag)) {
+            if (!session.IsBufferConsumed(buffers[index])) {
                 break;
             }
 
@@ -278,6 +279,16 @@ public:
         }
 
         return true;
+    }
+
+    u64 GetNextTimestamp() const {
+        // Iterate backwards through the buffer queue, and take the most recent buffer's end
+        std::scoped_lock l{lock};
+        auto index{appended_index - 1};
+        if (index < 0) {
+            index += append_limit;
+        }
+        return buffers[index].end_timestamp;
     }
 
 private:

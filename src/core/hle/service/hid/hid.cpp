@@ -819,12 +819,12 @@ void Hid::EnableSixAxisSensorUnalteredPassthrough(Kernel::HLERequestContext& ctx
     const auto result = controller.EnableSixAxisSensorUnalteredPassthrough(
         parameters.sixaxis_handle, parameters.enabled);
 
-    LOG_WARNING(Service_HID,
-                "(STUBBED) called, enabled={}, npad_type={}, npad_id={}, device_index={}, "
-                "applet_resource_user_id={}",
-                parameters.enabled, parameters.sixaxis_handle.npad_type,
-                parameters.sixaxis_handle.npad_id, parameters.sixaxis_handle.device_index,
-                parameters.applet_resource_user_id);
+    LOG_DEBUG(Service_HID,
+              "(STUBBED) called, enabled={}, npad_type={}, npad_id={}, device_index={}, "
+              "applet_resource_user_id={}",
+              parameters.enabled, parameters.sixaxis_handle.npad_type,
+              parameters.sixaxis_handle.npad_id, parameters.sixaxis_handle.device_index,
+              parameters.applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(result);
@@ -846,7 +846,7 @@ void Hid::IsSixAxisSensorUnalteredPassthroughEnabled(Kernel::HLERequestContext& 
     const auto result = controller.IsSixAxisSensorUnalteredPassthroughEnabled(
         parameters.sixaxis_handle, is_unaltered_sisxaxis_enabled);
 
-    LOG_WARNING(
+    LOG_DEBUG(
         Service_HID,
         "(STUBBED) called, npad_type={}, npad_id={}, device_index={}, applet_resource_user_id={}",
         parameters.sixaxis_handle.npad_type, parameters.sixaxis_handle.npad_id,

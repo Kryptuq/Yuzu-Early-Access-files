@@ -57,12 +57,4 @@ void AudioCore::PauseSinks(const bool pausing) const {
     }
 }
 
-u32 AudioCore::GetStreamQueue() const {
-    return estimated_queue.load();
-}
-
-void AudioCore::SetStreamQueue(u32 size) {
-    estimated_queue.store(size);
-}
-
 } // namespace AudioCore

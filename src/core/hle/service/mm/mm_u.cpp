@@ -46,7 +46,7 @@ private:
         IPC::RequestParser rp{ctx};
         min = rp.Pop<u32>();
         max = rp.Pop<u32>();
-        LOG_WARNING(Service_MM, "(STUBBED) called, min=0x{:X}, max=0x{:X}", min, max);
+        LOG_DEBUG(Service_MM, "(STUBBED) called, min=0x{:X}, max=0x{:X}", min, max);
 
         current = min;
         IPC::ResponseBuilder rb{ctx, 2};
@@ -54,7 +54,7 @@ private:
     }
 
     void GetOld(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_MM, "(STUBBED) called");
+        LOG_DEBUG(Service_MM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
@@ -81,8 +81,8 @@ private:
         u32 input_id = rp.Pop<u32>();
         min = rp.Pop<u32>();
         max = rp.Pop<u32>();
-        LOG_WARNING(Service_MM, "(STUBBED) called, input_id=0x{:X}, min=0x{:X}, max=0x{:X}",
-                    input_id, min, max);
+        LOG_DEBUG(Service_MM, "(STUBBED) called, input_id=0x{:X}, min=0x{:X}, max=0x{:X}", input_id,
+                  min, max);
 
         current = min;
         IPC::ResponseBuilder rb{ctx, 2};
@@ -90,7 +90,7 @@ private:
     }
 
     void Get(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_MM, "(STUBBED) called");
+        LOG_DEBUG(Service_MM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
