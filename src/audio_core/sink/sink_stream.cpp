@@ -9,6 +9,7 @@
 #include <span>
 #include <vector>
 
+#include "audio_core/audio_core.h"
 #include "audio_core/common/common.h"
 #include "audio_core/sink/sink_stream.h"
 #include "common/common_types.h"
@@ -194,7 +195,12 @@ void SinkStream::ProcessAudioOutAndRender(std::span<s16> output_buffer, std::siz
     const std::size_t frame_size_bytes = frame_size * sizeof(s16);
     size_t frames_written{0};
 
-    if (queued_buffers > max_queue_size) {
+    // Due to many frames being queued up with nvdec (5 frames or so?), a lot of buffers also get
+    // queued up (30+) but not all at once, which causes constant stalling here, so just let the
+    // video play out without attempting to stall.
+    // Can hopefully remove this later with a more complete NVDEC implementation.
+    const auto nvdec_active{system.AudioCore().IsNVDECActive()};
+    if (!nvdec_active && queued_buffers > max_queue_size) {
         Stall();
     }
 

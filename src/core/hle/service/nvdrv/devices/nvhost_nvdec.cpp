@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "audio_core/audio_core.h"
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "core/core.h"
@@ -66,7 +67,10 @@ NvResult nvhost_nvdec::Ioctl3(DeviceFD fd, Ioctl command, const std::vector<u8>&
     return NvResult::NotImplemented;
 }
 
-void nvhost_nvdec::OnOpen(DeviceFD fd) {}
+void nvhost_nvdec::OnOpen(DeviceFD fd) {
+    LOG_INFO(Service_NVDRV, "NVDEC video stream started");
+    system.AudioCore().SetNVDECActive(true);
+}
 
 void nvhost_nvdec::OnClose(DeviceFD fd) {
     LOG_INFO(Service_NVDRV, "NVDEC video stream ended");
@@ -75,6 +79,7 @@ void nvhost_nvdec::OnClose(DeviceFD fd) {
     if (iter != host1x_file.fd_to_id.end()) {
         system.GPU().ClearCdmaInstance(iter->second);
     }
+    system.AudioCore().SetNVDECActive(false);
 }
 
 } // namespace Service::Nvidia::Devices

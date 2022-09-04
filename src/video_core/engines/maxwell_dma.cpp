@@ -133,7 +133,6 @@ void MaxwellDMA::CopyBlockLinearToPitch() {
     }
 
     // Deswizzle the input and copy it over.
-    UNIMPLEMENTED_IF(regs.launch_dma.remap_enable != 0);
     const Parameters& src_params = regs.src_params;
 
     const u32 num_remap_components = regs.remap_const.num_dst_components_minus_one + 1;
@@ -182,7 +181,6 @@ void MaxwellDMA::CopyBlockLinearToPitch() {
 void MaxwellDMA::CopyPitchToBlockLinear() {
     UNIMPLEMENTED_IF_MSG(regs.dst_params.block_size.width != 0, "Block width is not one");
     UNIMPLEMENTED_IF(regs.dst_params.layer != 0);
-    UNIMPLEMENTED_IF(regs.launch_dma.remap_enable != 0);
 
     const bool is_remapping = regs.launch_dma.remap_enable != 0;
     const u32 num_remap_components = regs.remap_const.num_dst_components_minus_one + 1;

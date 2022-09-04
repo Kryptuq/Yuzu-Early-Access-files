@@ -65,6 +65,18 @@ public:
      */
     void PauseSinks(bool pausing) const;
 
+    /**
+     * Toggle NVDEC state, used to avoid stall in playback.
+     *
+     * @param active - Set true if nvdec is active, otherwise false.
+     */
+    void SetNVDECActive(bool active);
+
+    /**
+     * Get NVDEC state.
+     */
+    bool IsNVDECActive() const;
+
 private:
     /**
      * Create the sinks on startup.
@@ -79,6 +91,8 @@ private:
     std::unique_ptr<Sink::Sink> input_sink;
     /// The ADSP in the sysmodule
     std::unique_ptr<AudioRenderer::ADSP::ADSP> adsp;
+    /// Is NVDec currently active?
+    bool nvdec_active{false};
 };
 
 } // namespace AudioCore

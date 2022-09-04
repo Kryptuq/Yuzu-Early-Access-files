@@ -536,14 +536,14 @@ add_library(core STATIC
     hle/service/npns/npns.cpp
     hle/service/npns/npns.h
     hle/service/ns/errors.h
+    hle/service/ns/iplatform_service_manager.cpp
+    hle/service/ns/iplatform_service_manager.h
     hle/service/ns/language.cpp
     hle/service/ns/language.h
     hle/service/ns/ns.cpp
     hle/service/ns/ns.h
     hle/service/ns/pdm_qry.cpp
     hle/service/ns/pdm_qry.h
-    hle/service/ns/pl_u.cpp
-    hle/service/ns/pl_u.h
     hle/service/nvdrv/core/container.cpp
     hle/service/nvdrv/core/container.h
     hle/service/nvdrv/core/nvmap.cpp

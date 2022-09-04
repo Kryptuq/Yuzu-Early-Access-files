@@ -21,7 +21,7 @@
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/am/applets/applet_web_browser.h"
 #include "core/hle/service/filesystem/filesystem.h"
-#include "core/hle/service/ns/pl_u.h"
+#include "core/hle/service/ns/iplatform_service_manager.h"
 #include "core/loader/loader.h"
 
 namespace Service::AM::Applets {
