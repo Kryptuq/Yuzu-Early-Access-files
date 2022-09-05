@@ -120,7 +120,7 @@ class GMainWindow : public QMainWindow {
 public:
     void filterBarSetChecked(bool state);
     void UpdateUITheme();
-    explicit GMainWindow(bool has_broken_vulkan);
+    explicit GMainWindow(std::unique_ptr<Config> config_, bool has_broken_vulkan);
     ~GMainWindow() override;
 
     bool DropAction(QDropEvent* event);

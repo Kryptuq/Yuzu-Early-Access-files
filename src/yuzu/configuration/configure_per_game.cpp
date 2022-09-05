@@ -42,8 +42,7 @@ ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id_, const std::st
     const auto file_path = std::filesystem::path(Common::FS::ToU8String(file_name));
     const auto config_file_name = title_id == 0 ? Common::FS::PathToUTF8String(file_path.filename())
                                                 : fmt::format("{:016X}", title_id);
-    game_config =
-        std::make_unique<Config>(system, config_file_name, Config::ConfigType::PerGameConfig);
+    game_config = std::make_unique<Config>(config_file_name, Config::ConfigType::PerGameConfig);
 
     addons_tab = std::make_unique<ConfigurePerGameAddons>(system_, this);
     audio_tab = std::make_unique<ConfigureAudio>(system_, this);

@@ -208,6 +208,16 @@ add_executable(yuzu
     yuzu.rc
 )
 
+if (WIN32 AND YUZU_CRASH_DUMPS)
+    target_sources(yuzu PRIVATE
+        mini_dump.cpp
+        mini_dump.h
+    )
+
+    target_link_libraries(yuzu PRIVATE ${DBGHELP_LIBRARY})
+    target_compile_definitions(yuzu PRIVATE -DYUZU_DBGHELP)
+endif()
+
 file(GLOB COMPAT_LIST
      ${PROJECT_BINARY_DIR}/dist/compatibility_list/compatibility_list.qrc
      ${PROJECT_BINARY_DIR}/dist/compatibility_list/compatibility_list.json)

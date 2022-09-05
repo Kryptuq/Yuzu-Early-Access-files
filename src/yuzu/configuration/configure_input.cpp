@@ -65,7 +65,7 @@ void OnDockedModeChanged(bool last_state, bool new_state, Core::System& system) 
 
 ConfigureInput::ConfigureInput(Core::System& system_, QWidget* parent)
     : QWidget(parent), ui(std::make_unique<Ui::ConfigureInput>()),
-      profiles(std::make_unique<InputProfiles>(system_)), system{system_} {
+      profiles(std::make_unique<InputProfiles>()), system{system_} {
     ui->setupUi(this);
 }
 

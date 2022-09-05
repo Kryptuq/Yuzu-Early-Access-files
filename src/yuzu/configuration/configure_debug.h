@@ -32,4 +32,6 @@ private:
     std::unique_ptr<Ui::ConfigureDebug> ui;
 
     const Core::System& system;
+
+    bool crash_dump_warning_shown{false};
 };

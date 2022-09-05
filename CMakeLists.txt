@@ -38,6 +38,8 @@ option(YUZU_USE_BUNDLED_OPUS "Compile bundled opus" ON)
 
 option(YUZU_TESTS "Compile tests" ON)
 
+CMAKE_DEPENDENT_OPTION(YUZU_CRASH_DUMPS "Compile Windows crash dump (Minidump) support" OFF "WIN32" OFF)
+
 option(YUZU_USE_BUNDLED_VCPKG "Use vcpkg for yuzu dependencies" "${MSVC}")
 
 option(YUZU_CHECK_SUBMODULES "Check if submodules are present" ON)
@@ -45,6 +47,9 @@ option(YUZU_CHECK_SUBMODULES "Check if submodules are present" ON)
 if (YUZU_USE_BUNDLED_VCPKG)
     if (YUZU_TESTS)
         list(APPEND VCPKG_MANIFEST_FEATURES "yuzu-tests")
+    endif()
+    if (YUZU_CRASH_DUMPS)
+        list(APPEND VCPKG_MANIFEST_FEATURES "dbghelp")
     endif()
 
     include(${CMAKE_SOURCE_DIR}/externals/vcpkg/scripts/buildsystems/vcpkg.cmake)
@@ -446,6 +451,13 @@ elseif (WIN32)
     if (MINGW)
         # PSAPI is the Process Status API
         set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES} psapi imm32 version)
+    endif()
+
+    if (YUZU_CRASH_DUMPS)
+        find_library(DBGHELP_LIBRARY dbghelp)
+        if ("${DBGHELP_LIBRARY}" STREQUAL "DBGHELP_LIBRARY-NOTFOUND")
+            message(FATAL_ERROR "YUZU_CRASH_DUMPS enabled but dbghelp library not found")
+        endif()
     endif()
 elseif (CMAKE_SYSTEM_NAME MATCHES "^(Linux|kFreeBSD|GNU|SunOS)$")
     set(PLATFORM_LIBRARIES rt)

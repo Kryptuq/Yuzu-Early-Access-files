@@ -7,60 +7,60 @@
   </property>
  <widget class="QWidget">
   <layout class="QVBoxLayout" name="verticalLayout_1">
-    <item>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
-       <item>
-        <widget class="QGroupBox" name="groupBox">
-         <property name="title">
-          <string>Debugger</string>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_3">
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="QGroupBox" name="groupBox">
+       <property name="title">
+        <string>Debugger</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_11">
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_11">
-            <item>
-             <widget class="QCheckBox" name="toggle_gdbstub">
-              <property name="text">
-               <string>Enable GDB Stub</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <spacer name="horizontalSpacer">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <widget class="QLabel" name="label_11">
-              <property name="text">
-               <string>Port:</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QSpinBox" name="gdbport_spinbox">
-              <property name="minimum">
-                <number>1024</number>
-              </property>
-              <property name="maximum">
-               <number>65535</number>
-              </property>
-             </widget>
-            </item>
-           </layout>
+           <widget class="QCheckBox" name="toggle_gdbstub">
+            <property name="text">
+             <string>Enable GDB Stub</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_11">
+            <property name="text">
+             <string>Port:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="gdbport_spinbox">
+            <property name="minimum">
+             <number>1024</number>
+            </property>
+            <property name="maximum">
+             <number>65535</number>
+            </property>
+           </widget>
           </item>
          </layout>
-        </widget>
-       </item>
-      </layout>
+        </item>
+       </layout>
+      </widget>
      </item>
+    </layout>
+   </item>
    <item>
     <widget class="QGroupBox" name="groupBox_2">
      <property name="title">
@@ -231,6 +231,13 @@
       <string>Debugging</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
+      <item row="2" column="0">
+       <widget class="QCheckBox" name="reporting_services">
+        <property name="text">
+         <string>Enable Verbose Reporting Services**</string>
+        </property>
+       </widget>
+      </item>
       <item row="0" column="0">
        <widget class="QCheckBox" name="fs_access_log">
         <property name="text">
@@ -238,20 +245,20 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
+      <item row="0" column="1">
        <widget class="QCheckBox" name="dump_audio_commands">
-        <property name="text">
-         <string>Dump Audio Commands To Console**</string>
-        </property>
         <property name="toolTip">
          <string>Enable this to output the latest generated audio command list to the console. Only affects games using the audio renderer.</string>
         </property>
+        <property name="text">
+         <string>Dump Audio Commands To Console**</string>
+        </property>
        </widget>
       </item>
-      <item row="2" column="0">
-       <widget class="QCheckBox" name="reporting_services">
+      <item row="2" column="1">
+       <widget class="QCheckBox" name="create_crash_dumps">
         <property name="text">
-         <string>Enable Verbose Reporting Services**</string>
+         <string>Create Minidump After Crash</string>
         </property>
        </widget>
       </item>
@@ -340,7 +347,6 @@
   <tabstop>disable_loop_safety_checks</tabstop>
   <tabstop>fs_access_log</tabstop>
   <tabstop>reporting_services</tabstop>
-  <tabstop>dump_audio_commands</tabstop>
   <tabstop>quest_flag</tabstop>
   <tabstop>enable_cpu_debugging</tabstop>
   <tabstop>use_debug_asserts</tabstop>

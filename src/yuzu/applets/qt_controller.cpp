@@ -63,7 +63,7 @@ QtControllerSelectorDialog::QtControllerSelectorDialog(
     InputCommon::InputSubsystem* input_subsystem_, Core::System& system_)
     : QDialog(parent), ui(std::make_unique<Ui::QtControllerSelectorDialog>()),
       parameters(std::move(parameters_)), input_subsystem{input_subsystem_},
-      input_profiles(std::make_unique<InputProfiles>(system_)), system{system_} {
+      input_profiles(std::make_unique<InputProfiles>()), system{system_} {
     ui->setupUi(this);
 
     player_widgets = {
