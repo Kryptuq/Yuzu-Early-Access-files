@@ -40,13 +40,13 @@ public:
     void EnableMotion() {
         if (sdl_controller) {
             SDL_GameController* controller = sdl_controller.get();
-            if (SDL_GameControllerHasSensor(controller, SDL_SENSOR_ACCEL) && !has_accel) {
+            has_accel = SDL_GameControllerHasSensor(controller, SDL_SENSOR_ACCEL);
+            has_gyro = SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO);
+            if (has_accel) {
                 SDL_GameControllerSetSensorEnabled(controller, SDL_SENSOR_ACCEL, SDL_TRUE);
-                has_accel = true;
             }
-            if (SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO) && !has_gyro) {
+            if (has_gyro) {
                 SDL_GameControllerSetSensorEnabled(controller, SDL_SENSOR_GYRO, SDL_TRUE);
-                has_gyro = true;
             }
         }
     }
@@ -305,6 +305,7 @@ void SDLDriver::InitJoystick(int joystick_index) {
         auto joystick = std::make_shared<SDLJoystick>(guid, 0, sdl_joystick, sdl_gamecontroller);
         PreSetController(joystick->GetPadIdentifier());
         SetBattery(joystick->GetPadIdentifier(), joystick->GetBatteryLevel());
+        joystick->EnableMotion();
         joystick_map[guid].emplace_back(std::move(joystick));
         return;
     }
@@ -316,6 +317,7 @@ void SDLDriver::InitJoystick(int joystick_index) {
 
     if (joystick_it != joystick_guid_list.end()) {
         (*joystick_it)->SetSDLJoystick(sdl_joystick, sdl_gamecontroller);
+        (*joystick_it)->EnableMotion();
         return;
     }
 
@@ -323,6 +325,7 @@ void SDLDriver::InitJoystick(int joystick_index) {
     auto joystick = std::make_shared<SDLJoystick>(guid, port, sdl_joystick, sdl_gamecontroller);
     PreSetController(joystick->GetPadIdentifier());
     SetBattery(joystick->GetPadIdentifier(), joystick->GetBatteryLevel());
+    joystick->EnableMotion();
     joystick_guid_list.emplace_back(std::move(joystick));
 }
 
