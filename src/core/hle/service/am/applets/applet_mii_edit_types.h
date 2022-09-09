@@ -32,7 +32,7 @@ enum class MiiEditResult : u32 {
 };
 
 struct MiiEditCharInfo {
-    Service::Mii::MiiInfo mii_info{};
+    Service::Mii::CharInfo mii_info{};
 };
 static_assert(sizeof(MiiEditCharInfo) == 0x58, "MiiEditCharInfo has incorrect size.");
 

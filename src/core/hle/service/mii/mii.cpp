@@ -43,7 +43,7 @@ public:
             {20, nullptr, "IsBrokenDatabaseWithClearFlag"},
             {21, &IDatabaseService::GetIndex, "GetIndex"},
             {22, &IDatabaseService::SetInterfaceVersion, "SetInterfaceVersion"},
-            {23, nullptr, "Convert"},
+            {23, &IDatabaseService::Convert, "Convert"},
             {24, nullptr, "ConvertCoreDataToCharInfo"},
             {25, nullptr, "ConvertCharInfoToCoreData"},
             {26, nullptr, "Append"},
@@ -130,7 +130,7 @@ private:
             return;
         }
 
-        std::vector<MiiInfo> values;
+        std::vector<CharInfo> values;
         for (const auto& element : *result) {
             values.emplace_back(element.info);
         }
@@ -144,7 +144,7 @@ private:
 
     void UpdateLatest(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
-        const auto info{rp.PopRaw<MiiInfo>()};
+        const auto info{rp.PopRaw<CharInfo>()};
         const auto source_flag{rp.PopRaw<SourceFlag>()};
 
         LOG_DEBUG(Service_Mii, "called with source_flag={}", source_flag);
@@ -156,9 +156,9 @@ private:
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 2 + sizeof(MiiInfo) / sizeof(u32)};
+        IPC::ResponseBuilder rb{ctx, 2 + sizeof(CharInfo) / sizeof(u32)};
         rb.Push(ResultSuccess);
-        rb.PushRaw<MiiInfo>(*result);
+        rb.PushRaw<CharInfo>(*result);
     }
 
     void BuildRandom(Kernel::HLERequestContext& ctx) {
@@ -191,9 +191,9 @@ private:
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 2 + sizeof(MiiInfo) / sizeof(u32)};
+        IPC::ResponseBuilder rb{ctx, 2 + sizeof(CharInfo) / sizeof(u32)};
         rb.Push(ResultSuccess);
-        rb.PushRaw<MiiInfo>(manager.BuildRandom(age, gender, race));
+        rb.PushRaw<CharInfo>(manager.BuildRandom(age, gender, race));
     }
 
     void BuildDefault(Kernel::HLERequestContext& ctx) {
@@ -210,14 +210,14 @@ private:
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 2 + sizeof(MiiInfo) / sizeof(u32)};
+        IPC::ResponseBuilder rb{ctx, 2 + sizeof(CharInfo) / sizeof(u32)};
         rb.Push(ResultSuccess);
-        rb.PushRaw<MiiInfo>(manager.BuildDefault(index));
+        rb.PushRaw<CharInfo>(manager.BuildDefault(index));
     }
 
     void GetIndex(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
-        const auto info{rp.PopRaw<MiiInfo>()};
+        const auto info{rp.PopRaw<CharInfo>()};
 
         LOG_DEBUG(Service_Mii, "called");
 
@@ -237,6 +237,18 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
+    }
+
+    void Convert(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+
+        const auto mii_v3{rp.PopRaw<Ver3StoreData>()};
+
+        LOG_INFO(Service_Mii, "called");
+
+        IPC::ResponseBuilder rb{ctx, 2 + sizeof(CharInfo) / sizeof(u32)};
+        rb.Push(ResultSuccess);
+        rb.PushRaw<CharInfo>(manager.ConvertV3ToCharInfo(mii_v3));
     }
 
     constexpr bool IsInterfaceVersionSupported(u32 interface_version) const {

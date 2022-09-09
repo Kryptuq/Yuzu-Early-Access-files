@@ -42,7 +42,7 @@ std::array<T, DestArraySize> ResizeArray(const std::array<T, SourceArraySize>& i
     return out;
 }
 
-MiiInfo ConvertStoreDataToInfo(const MiiStoreData& data) {
+CharInfo ConvertStoreDataToInfo(const MiiStoreData& data) {
     MiiStoreBitFields bf;
     std::memcpy(&bf, data.data.data.data(), sizeof(MiiStoreBitFields));
 
@@ -409,8 +409,8 @@ u32 MiiManager::GetCount(SourceFlag source_flag) const {
     return static_cast<u32>(count);
 }
 
-ResultVal<MiiInfo> MiiManager::UpdateLatest([[maybe_unused]] const MiiInfo& info,
-                                            SourceFlag source_flag) {
+ResultVal<CharInfo> MiiManager::UpdateLatest([[maybe_unused]] const CharInfo& info,
+                                             SourceFlag source_flag) {
     if ((source_flag & SourceFlag::Database) == SourceFlag::None) {
         return ERROR_CANNOT_FIND_ENTRY;
     }
@@ -419,12 +419,89 @@ ResultVal<MiiInfo> MiiManager::UpdateLatest([[maybe_unused]] const MiiInfo& info
     return ERROR_CANNOT_FIND_ENTRY;
 }
 
-MiiInfo MiiManager::BuildRandom(Age age, Gender gender, Race race) {
+CharInfo MiiManager::BuildRandom(Age age, Gender gender, Race race) {
     return ConvertStoreDataToInfo(BuildRandomStoreData(age, gender, race, user_id));
 }
 
-MiiInfo MiiManager::BuildDefault(std::size_t index) {
+CharInfo MiiManager::BuildDefault(std::size_t index) {
     return ConvertStoreDataToInfo(BuildDefaultStoreData(RawData::DefaultMii.at(index), user_id));
+}
+
+CharInfo MiiManager::ConvertV3ToCharInfo(Ver3StoreData mii_v3) const {
+    Service::Mii::MiiManager manager;
+    auto mii = manager.BuildDefault(0);
+
+    // Check if mii data exist
+    if (mii_v3.mii_name[0] == 0) {
+        return mii;
+    }
+
+    // TODO: We are ignoring a bunch of data from the mii_v3
+
+    mii.gender = static_cast<u8>(mii_v3.mii_information.gender);
+    mii.favorite_color = static_cast<u8>(mii_v3.mii_information.favorite_color);
+    mii.height = mii_v3.height;
+    mii.build = mii_v3.build;
+
+    memset(mii.name.data(), 0, sizeof(mii.name));
+    memcpy(mii.name.data(), mii_v3.mii_name.data(), sizeof(mii_v3.mii_name));
+    mii.font_region = mii_v3.region_information.character_set;
+
+    mii.faceline_type = mii_v3.appearance_bits1.face_shape;
+    mii.faceline_color = mii_v3.appearance_bits1.skin_color;
+    mii.faceline_wrinkle = mii_v3.appearance_bits2.wrinkles;
+    mii.faceline_make = mii_v3.appearance_bits2.makeup;
+
+    mii.hair_type = mii_v3.hair_style;
+    mii.hair_color = mii_v3.appearance_bits3.hair_color;
+    mii.hair_flip = mii_v3.appearance_bits3.flip_hair;
+
+    mii.eye_type = static_cast<u8>(mii_v3.appearance_bits4.eye_type);
+    mii.eye_color = static_cast<u8>(mii_v3.appearance_bits4.eye_color);
+    mii.eye_scale = static_cast<u8>(mii_v3.appearance_bits4.eye_scale);
+    mii.eye_aspect = static_cast<u8>(mii_v3.appearance_bits4.eye_vertical_stretch);
+    mii.eye_rotate = static_cast<u8>(mii_v3.appearance_bits4.eye_rotation);
+    mii.eye_x = static_cast<u8>(mii_v3.appearance_bits4.eye_spacing);
+    mii.eye_y = static_cast<u8>(mii_v3.appearance_bits4.eye_y_position);
+
+    mii.eyebrow_type = static_cast<u8>(mii_v3.appearance_bits5.eyebrow_style);
+    mii.eyebrow_color = static_cast<u8>(mii_v3.appearance_bits5.eyebrow_color);
+    mii.eyebrow_scale = static_cast<u8>(mii_v3.appearance_bits5.eyebrow_scale);
+    mii.eyebrow_aspect = static_cast<u8>(mii_v3.appearance_bits5.eyebrow_yscale);
+    mii.eyebrow_rotate = static_cast<u8>(mii_v3.appearance_bits5.eyebrow_rotation);
+    mii.eyebrow_x = static_cast<u8>(mii_v3.appearance_bits5.eyebrow_spacing);
+    mii.eyebrow_y = static_cast<u8>(mii_v3.appearance_bits5.eyebrow_y_position);
+
+    mii.nose_type = static_cast<u8>(mii_v3.appearance_bits6.nose_type);
+    mii.nose_scale = static_cast<u8>(mii_v3.appearance_bits6.nose_scale);
+    mii.nose_y = static_cast<u8>(mii_v3.appearance_bits6.nose_y_position);
+
+    mii.mouth_type = static_cast<u8>(mii_v3.appearance_bits7.mouth_type);
+    mii.mouth_color = static_cast<u8>(mii_v3.appearance_bits7.mouth_color);
+    mii.mouth_scale = static_cast<u8>(mii_v3.appearance_bits7.mouth_scale);
+    mii.mouth_aspect = static_cast<u8>(mii_v3.appearance_bits7.mouth_horizontal_stretch);
+    mii.mouth_y = static_cast<u8>(mii_v3.appearance_bits8.mouth_y_position);
+
+    mii.mustache_type = static_cast<u8>(mii_v3.appearance_bits8.mustache_type);
+    mii.mustache_scale = static_cast<u8>(mii_v3.appearance_bits9.mustache_scale);
+    mii.mustache_y = static_cast<u8>(mii_v3.appearance_bits9.mustache_y_position);
+
+    mii.beard_type = static_cast<u8>(mii_v3.appearance_bits9.bear_type);
+    mii.beard_color = static_cast<u8>(mii_v3.appearance_bits9.facial_hair_color);
+
+    mii.glasses_type = static_cast<u8>(mii_v3.appearance_bits10.glasses_type);
+    mii.glasses_color = static_cast<u8>(mii_v3.appearance_bits10.glasses_color);
+    mii.glasses_scale = static_cast<u8>(mii_v3.appearance_bits10.glasses_scale);
+    mii.glasses_y = static_cast<u8>(mii_v3.appearance_bits10.glasses_y_position);
+
+    mii.mole_type = static_cast<u8>(mii_v3.appearance_bits11.mole_enabled);
+    mii.mole_scale = static_cast<u8>(mii_v3.appearance_bits11.mole_scale);
+    mii.mole_x = static_cast<u8>(mii_v3.appearance_bits11.mole_x_position);
+    mii.mole_y = static_cast<u8>(mii_v3.appearance_bits11.mole_y_position);
+
+    // TODO: Validate mii data
+
+    return mii;
 }
 
 ResultVal<std::vector<MiiInfoElement>> MiiManager::GetDefault(SourceFlag source_flag) {
@@ -441,7 +518,7 @@ ResultVal<std::vector<MiiInfoElement>> MiiManager::GetDefault(SourceFlag source_
     return result;
 }
 
-Result MiiManager::GetIndex([[maybe_unused]] const MiiInfo& info, u32& index) {
+Result MiiManager::GetIndex([[maybe_unused]] const CharInfo& info, u32& index) {
     constexpr u32 INVALID_INDEX{0xFFFFFFFF};
 
     index = INVALID_INDEX;

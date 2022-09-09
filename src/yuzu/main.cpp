@@ -3260,26 +3260,7 @@ void GMainWindow::LoadAmiibo(const QString& filename) {
         return;
     }
 
-    QFile nfc_file{filename};
-    if (!nfc_file.open(QIODevice::ReadOnly)) {
-        QMessageBox::warning(this, tr("Error opening Amiibo data file"),
-                             tr("Unable to open Amiibo file \"%1\" for reading.").arg(filename));
-        return;
-    }
-
-    const u64 nfc_file_size = nfc_file.size();
-    std::vector<u8> buffer(nfc_file_size);
-    const u64 read_size = nfc_file.read(reinterpret_cast<char*>(buffer.data()), nfc_file_size);
-    if (nfc_file_size != read_size) {
-        QMessageBox::warning(this, tr("Error reading Amiibo data file"),
-                             tr("Unable to fully read Amiibo data. Expected to read %1 bytes, but "
-                                "was only able to read %2 bytes.")
-                                 .arg(nfc_file_size)
-                                 .arg(read_size));
-        return;
-    }
-
-    if (!nfc->LoadAmiibo(buffer)) {
+    if (!nfc->LoadAmiibo(filename.toStdString())) {
         QMessageBox::warning(this, tr("Error loading Amiibo data"),
                              tr("Unable to load Amiibo data."));
     }
