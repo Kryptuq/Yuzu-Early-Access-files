@@ -40,6 +40,7 @@ enum RoomMessageTypes : u8 {
     IdRoomInformation,
     IdSetGameInfo,
     IdProxyPacket,
+    IdLdnPacket,
     IdChatMessage,
     IdNameCollision,
     IdIpCollision,

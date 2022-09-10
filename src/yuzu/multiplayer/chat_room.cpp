@@ -61,7 +61,10 @@ public:
 
     /// Format the message using the players color
     QString GetPlayerChatMessage(u16 player) const {
-        auto color = player_color[player % 16];
+        const bool is_dark_theme = QIcon::themeName().contains(QStringLiteral("dark")) ||
+                                   QIcon::themeName().contains(QStringLiteral("midnight"));
+        auto color =
+            is_dark_theme ? player_color_dark[player % 16] : player_color_default[player % 16];
         QString name;
         if (username.isEmpty() || username == nickname) {
             name = nickname;
@@ -84,9 +87,12 @@ public:
     }
 
 private:
-    static constexpr std::array<const char*, 16> player_color = {
+    static constexpr std::array<const char*, 16> player_color_default = {
         {"#0000FF", "#FF0000", "#8A2BE2", "#FF69B4", "#1E90FF", "#008000", "#00FF7F", "#B22222",
-         "#DAA520", "#FF4500", "#2E8B57", "#5F9EA0", "#D2691E", "#9ACD32", "#FF7F50", "FFFF00"}};
+         "#DAA520", "#FF4500", "#2E8B57", "#5F9EA0", "#D2691E", "#9ACD32", "#FF7F50", "#FFFF00"}};
+    static constexpr std::array<const char*, 16> player_color_dark = {
+        {"#559AD1", "#4EC9A8", "#D69D85", "#C6C923", "#B975B5", "#D81F1F", "#7EAE39", "#4F8733",
+         "#F7CD8A", "#6FCACF", "#CE4897", "#8A2BE2", "#D2691E", "#9ACD32", "#FF7F50", "#152ccd"}};
     static constexpr char ping_color[] = "#FFFF00";
 
     QString timestamp;

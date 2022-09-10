@@ -46,6 +46,9 @@ public:
     void UpdateGameList(QStandardItemModel* list);
     void RetranslateUi();
 
+signals:
+    void SaveConfig();
+
 private:
     void Host();
     std::unique_ptr<Network::VerifyUser::Backend> CreateVerifyBackend(bool use_validation) const;

@@ -11,11 +11,10 @@
 
 namespace Column {
 enum List {
-    EXPAND,
-    ROOM_NAME,
     GAME_NAME,
-    HOST,
+    ROOM_NAME,
     MEMBER,
+    HOST,
     TOTAL,
 };
 }
@@ -98,7 +97,12 @@ public:
         if (role == Qt::DecorationRole) {
             auto val = data(GameIconRole);
             if (val.isValid()) {
-                val = val.value<QPixmap>().scaled(16, 16, Qt::KeepAspectRatio);
+                val = val.value<QPixmap>().scaled(32, 32, Qt::KeepAspectRatio,
+                                                  Qt::TransformationMode::SmoothTransformation);
+            } else {
+                auto blank_image = QPixmap(32, 32);
+                blank_image.fill(Qt::black);
+                val = blank_image;
             }
             return val;
         } else if (role != Qt::DisplayRole) {
@@ -191,8 +195,8 @@ public:
             return LobbyItem::data(role);
         }
         auto members = data(MemberListRole).toList();
-        return QStringLiteral("%1 / %2").arg(QString::number(members.size()),
-                                             data(MaxPlayerRole).toString());
+        return QStringLiteral("%1 / %2 ")
+            .arg(QString::number(members.size()), data(MaxPlayerRole).toString());
     }
 
     bool operator<(const QStandardItem& other) const override {

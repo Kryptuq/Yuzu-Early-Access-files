@@ -232,6 +232,7 @@ void HostRoomWindow::Host() {
         }
         UISettings::values.multiplayer_room_description = ui->room_description->toPlainText();
         ui->host->setEnabled(true);
+        emit SaveConfig();
         close();
     }
 }

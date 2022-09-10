@@ -206,4 +206,14 @@ std::optional<NetworkInterface> GetSelectedNetworkInterface() {
     return *res;
 }
 
+void SelectFirstNetworkInterface() {
+    const auto network_interfaces = Network::GetAvailableNetworkInterfaces();
+
+    if (network_interfaces.size() == 0) {
+        return;
+    }
+
+    Settings::values.network_interface.SetValue(network_interfaces[0].name);
+}
+
 } // namespace Network

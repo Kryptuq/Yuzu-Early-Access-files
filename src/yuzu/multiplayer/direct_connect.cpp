@@ -106,6 +106,8 @@ void DirectConnectWindow::Connect() {
         UISettings::values.multiplayer_port = UISettings::values.multiplayer_port.GetDefault();
     }
 
+    emit SaveConfig();
+
     // attempt to connect in a different thread
     QFuture<void> f = QtConcurrent::run([&] {
         if (auto room_member = room_network.GetRoomMember().lock()) {

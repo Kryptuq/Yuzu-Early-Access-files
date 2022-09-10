@@ -17,7 +17,24 @@ namespace Network {
 using AnnounceMultiplayerRoom::GameInfo;
 using AnnounceMultiplayerRoom::RoomInformation;
 
-/// Information about the received WiFi packets.
+enum class LDNPacketType : u8 {
+    Scan,
+    ScanResp,
+    Connect,
+    SyncNetwork,
+    Disconnect,
+    DestroyNetwork,
+};
+
+struct LDNPacket {
+    LDNPacketType type;
+    IPv4Address local_ip;
+    IPv4Address remote_ip;
+    bool broadcast;
+    std::vector<u8> data;
+};
+
+/// Information about the received proxy packets.
 struct ProxyPacket {
     SockAddrIn local_endpoint;
     SockAddrIn remote_endpoint;
@@ -152,6 +169,12 @@ public:
     void SendProxyPacket(const ProxyPacket& packet);
 
     /**
+     * Sends an LDN packet to the room.
+     * @param packet The WiFi packet to send.
+     */
+    void SendLdnPacket(const LDNPacket& packet);
+
+    /**
      * Sends a chat message to the room.
      * @param message The contents of the message.
      */
@@ -203,6 +226,16 @@ public:
      */
     CallbackHandle<ProxyPacket> BindOnProxyPacketReceived(
         std::function<void(const ProxyPacket&)> callback);
+
+    /**
+     * Binds a function to an event that will be triggered every time an LDNPacket is received.
+     * The function wil be called everytime the event is triggered.
+     * The callback function must not bind or unbind a function. Doing so will cause a deadlock
+     * @param callback The function to call
+     * @return A handle used for removing the function from the registered list
+     */
+    CallbackHandle<LDNPacket> BindOnLdnPacketReceived(
+        std::function<void(const LDNPacket&)> callback);
 
     /**
      * Binds a function to an event that will be triggered every time the RoomInformation changes.

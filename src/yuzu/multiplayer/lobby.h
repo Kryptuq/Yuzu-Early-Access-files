@@ -24,6 +24,10 @@ namespace Core {
 class System;
 }
 
+namespace Service::Account {
+class ProfileManager;
+}
+
 /**
  * Listing of all public games pulled from services. The lobby should be simple enough for users to
  * find the game they want to play, and join it.
@@ -75,8 +79,11 @@ private slots:
 
 signals:
     void StateChanged(const Network::RoomMember::State&);
+    void SaveConfig();
 
 private:
+    std::string GetProfileUsername();
+
     /**
      * Removes all entries in the Lobby before refreshing.
      */
@@ -96,6 +103,7 @@ private:
 
     QFutureWatcher<AnnounceMultiplayerRoom::RoomList> room_list_watcher;
     std::weak_ptr<Core::AnnounceMultiplayerSession> announce_multiplayer_session;
+    std::unique_ptr<Service::Account::ProfileManager> profile_manager;
     QFutureWatcher<void>* watcher;
     Validation validation;
     Core::System& system;

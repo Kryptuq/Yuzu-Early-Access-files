@@ -4,11 +4,13 @@
 #include <memory>
 
 #include "core/core.h"
+#include "core/hle/service/ldn/lan_discovery.h"
 #include "core/hle/service/ldn/ldn.h"
 #include "core/hle/service/ldn/ldn_results.h"
 #include "core/hle/service/ldn/ldn_types.h"
 #include "core/internal_network/network.h"
 #include "core/internal_network/network_interface.h"
+#include "network/network.h"
 
 // This is defined by synchapi.h and conflicts with ServiceContext::CreateEvent
 #undef CreateEvent
@@ -105,13 +107,13 @@ class IUserLocalCommunicationService final
 public:
     explicit IUserLocalCommunicationService(Core::System& system_)
         : ServiceFramework{system_, "IUserLocalCommunicationService", ServiceThreadType::CreateNew},
-          service_context{system, "IUserLocalCommunicationService"}, room_network{
-                                                                         system_.GetRoomNetwork()} {
+          service_context{system, "IUserLocalCommunicationService"},
+          room_network{system_.GetRoomNetwork()}, lan_discovery{room_network} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &IUserLocalCommunicationService::GetState, "GetState"},
             {1, &IUserLocalCommunicationService::GetNetworkInfo, "GetNetworkInfo"},
-            {2, nullptr, "GetIpv4Address"},
+            {2, &IUserLocalCommunicationService::GetIpv4Address, "GetIpv4Address"},
             {3, &IUserLocalCommunicationService::GetDisconnectReason, "GetDisconnectReason"},
             {4, &IUserLocalCommunicationService::GetSecurityParameter, "GetSecurityParameter"},
             {5, &IUserLocalCommunicationService::GetNetworkConfig, "GetNetworkConfig"},
@@ -119,7 +121,7 @@ public:
             {101, &IUserLocalCommunicationService::GetNetworkInfoLatestUpdate, "GetNetworkInfoLatestUpdate"},
             {102, &IUserLocalCommunicationService::Scan, "Scan"},
             {103, &IUserLocalCommunicationService::ScanPrivate, "ScanPrivate"},
-            {104, nullptr, "SetWirelessControllerRestriction"},
+            {104, &IUserLocalCommunicationService::SetWirelessControllerRestriction, "SetWirelessControllerRestriction"},
             {200, &IUserLocalCommunicationService::OpenAccessPoint, "OpenAccessPoint"},
             {201, &IUserLocalCommunicationService::CloseAccessPoint, "CloseAccessPoint"},
             {202, &IUserLocalCommunicationService::CreateNetwork, "CreateNetwork"},
@@ -148,7 +150,18 @@ public:
     }
 
     ~IUserLocalCommunicationService() {
+        if (is_initialized) {
+            if (auto room_member = room_network.GetRoomMember().lock()) {
+                room_member->Unbind(ldn_packet_received);
+            }
+        }
+
         service_context.CloseEvent(state_change_event);
+    }
+
+    /// Callback to parse and handle a received LDN packet.
+    void OnLDNPacketReceived(const Network::LDNPacket& packet) {
+        lan_discovery.ReceivePacket(packet);
     }
 
     void OnEventFired() {
@@ -157,7 +170,10 @@ public:
 
     void GetState(Kernel::HLERequestContext& ctx) {
         State state = State::Error;
-        LOG_WARNING(Service_LDN, "(STUBBED) called, state = {}", state);
+
+        if (is_initialized) {
+            state = lan_discovery.GetState();
+        }
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
@@ -175,7 +191,7 @@ public:
         }
 
         NetworkInfo network_info{};
-        const auto rc = ResultSuccess;
+        const auto rc = lan_discovery.GetNetworkInfo(network_info);
         if (rc.IsError()) {
             LOG_ERROR(Service_LDN, "NetworkInfo is not valid {}", rc.raw);
             IPC::ResponseBuilder rb{ctx, 2};
@@ -183,28 +199,52 @@ public:
             return;
         }
 
-        LOG_WARNING(Service_LDN, "(STUBBED) called, ssid='{}', nodes={}",
-                    network_info.common.ssid.GetStringValue(), network_info.ldn.node_count);
-
         ctx.WriteBuffer<NetworkInfo>(network_info);
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(rc);
+        rb.Push(ResultSuccess);
+    }
+
+    void GetIpv4Address(Kernel::HLERequestContext& ctx) {
+        LOG_CRITICAL(Service_LDN, "called");
+
+        const auto network_interface = Network::GetSelectedNetworkInterface();
+
+        if (!network_interface) {
+            LOG_ERROR(Service_LDN, "No network interface available");
+            IPC::ResponseBuilder rb{ctx, 2};
+            rb.Push(ResultNoIpAddress);
+            return;
+        }
+
+        Ipv4Address current_address{Network::TranslateIPv4(network_interface->ip_address)};
+        Ipv4Address subnet_mask{Network::TranslateIPv4(network_interface->subnet_mask)};
+
+        // When we're connected to a room, spoof the hosts IP address
+        if (auto room_member = room_network.GetRoomMember().lock()) {
+            if (room_member->IsConnected()) {
+                current_address = room_member->GetFakeIpAddress();
+            }
+        }
+
+        std::reverse(std::begin(current_address), std::end(current_address)); // ntohl
+        std::reverse(std::begin(subnet_mask), std::end(subnet_mask));         // ntohl
+
+        IPC::ResponseBuilder rb{ctx, 4};
+        rb.Push(ResultSuccess);
+        rb.PushRaw(current_address);
+        rb.PushRaw(subnet_mask);
     }
 
     void GetDisconnectReason(Kernel::HLERequestContext& ctx) {
-        const auto disconnect_reason = DisconnectReason::None;
-
-        LOG_WARNING(Service_LDN, "(STUBBED) called, disconnect_reason={}", disconnect_reason);
-
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
-        rb.PushEnum(disconnect_reason);
+        rb.PushEnum(lan_discovery.GetDisconnectReason());
     }
 
     void GetSecurityParameter(Kernel::HLERequestContext& ctx) {
         SecurityParameter security_parameter{};
         NetworkInfo info{};
-        const Result rc = ResultSuccess;
+        const Result rc = lan_discovery.GetNetworkInfo(info);
 
         if (rc.IsError()) {
             LOG_ERROR(Service_LDN, "NetworkInfo is not valid {}", rc.raw);
@@ -217,8 +257,6 @@ public:
         std::memcpy(security_parameter.data.data(), info.ldn.security_parameter.data(),
                     sizeof(SecurityParameter::data));
 
-        LOG_WARNING(Service_LDN, "(STUBBED) called");
-
         IPC::ResponseBuilder rb{ctx, 10};
         rb.Push(rc);
         rb.PushRaw<SecurityParameter>(security_parameter);
@@ -227,7 +265,7 @@ public:
     void GetNetworkConfig(Kernel::HLERequestContext& ctx) {
         NetworkConfig config{};
         NetworkInfo info{};
-        const Result rc = ResultSuccess;
+        const Result rc = lan_discovery.GetNetworkInfo(info);
 
         if (rc.IsError()) {
             LOG_ERROR(Service_LDN, "NetworkConfig is not valid {}", rc.raw);
@@ -240,12 +278,6 @@ public:
         config.channel = info.common.channel;
         config.node_count_max = info.ldn.node_count_max;
         config.local_communication_version = info.ldn.nodes[0].local_communication_version;
-
-        LOG_WARNING(Service_LDN,
-                    "(STUBBED) called, intent_id={}/{}, channel={}, node_count_max={}, "
-                    "local_communication_version={}",
-                    config.intent_id.local_communication_id, config.intent_id.scene_id,
-                    config.channel, config.node_count_max, config.local_communication_version);
 
         IPC::ResponseBuilder rb{ctx, 10};
         rb.Push(rc);
@@ -265,26 +297,23 @@ public:
         const std::size_t node_buffer_count = ctx.GetWriteBufferSize(1) / sizeof(NodeLatestUpdate);
 
         if (node_buffer_count == 0 || network_buffer_size != sizeof(NetworkInfo)) {
-            LOG_ERROR(Service_LDN, "Invalid buffer size {}, {}", network_buffer_size,
+            LOG_ERROR(Service_LDN, "Invalid buffer, size = {}, count = {}", network_buffer_size,
                       node_buffer_count);
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ResultBadInput);
             return;
         }
 
-        NetworkInfo info;
+        NetworkInfo info{};
         std::vector<NodeLatestUpdate> latest_update(node_buffer_count);
 
-        const auto rc = ResultSuccess;
+        const auto rc = lan_discovery.GetNetworkInfo(info, latest_update, latest_update.size());
         if (rc.IsError()) {
             LOG_ERROR(Service_LDN, "NetworkInfo is not valid {}", rc.raw);
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(rc);
             return;
         }
-
-        LOG_WARNING(Service_LDN, "(STUBBED) called, ssid='{}', nodes={}",
-                    info.common.ssid.GetStringValue(), info.ldn.node_count);
 
         ctx.WriteBuffer(info, 0);
         ctx.WriteBuffer(latest_update, 1);
@@ -317,92 +346,78 @@ public:
 
         u16 count = 0;
         std::vector<NetworkInfo> network_infos(network_info_size);
+        Result rc = lan_discovery.Scan(network_infos, count, scan_filter);
 
-        LOG_WARNING(Service_LDN,
-                    "(STUBBED) called, channel={}, filter_scan_flag={}, filter_network_type={}",
-                    channel, scan_filter.flag, scan_filter.network_type);
+        LOG_INFO(Service_LDN,
+                 "called, channel={}, filter_scan_flag={}, filter_network_type={}, is_private={}",
+                 channel, scan_filter.flag, scan_filter.network_type, is_private);
 
         ctx.WriteBuffer(network_infos);
 
         IPC::ResponseBuilder rb{ctx, 3};
-        rb.Push(ResultSuccess);
+        rb.Push(rc);
         rb.Push<u32>(count);
     }
 
-    void OpenAccessPoint(Kernel::HLERequestContext& ctx) {
+    void SetWirelessControllerRestriction(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_LDN, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
+    }
+
+    void OpenAccessPoint(Kernel::HLERequestContext& ctx) {
+        LOG_INFO(Service_LDN, "called");
+
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(lan_discovery.OpenAccessPoint());
     }
 
     void CloseAccessPoint(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_LDN, "(STUBBED) called");
+        LOG_INFO(Service_LDN, "called");
 
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultSuccess);
+        rb.Push(lan_discovery.CloseAccessPoint());
     }
 
     void CreateNetwork(Kernel::HLERequestContext& ctx) {
-        IPC::RequestParser rp{ctx};
-        struct Parameters {
-            SecurityConfig security_config;
-            UserConfig user_config;
-            INSERT_PADDING_WORDS_NOINIT(1);
-            NetworkConfig network_config;
-        };
-        static_assert(sizeof(Parameters) == 0x98, "Parameters has incorrect size.");
+        LOG_INFO(Service_LDN, "called");
 
-        const auto parameters{rp.PopRaw<Parameters>()};
-
-        LOG_WARNING(Service_LDN,
-                    "(STUBBED) called, passphrase_size={}, security_mode={}, "
-                    "local_communication_version={}",
-                    parameters.security_config.passphrase_size,
-                    parameters.security_config.security_mode,
-                    parameters.network_config.local_communication_version);
-
-        IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultSuccess);
+        CreateNetworkImpl(ctx);
     }
 
     void CreateNetworkPrivate(Kernel::HLERequestContext& ctx) {
+        LOG_INFO(Service_LDN, "called");
+
+        CreateNetworkImpl(ctx, true);
+    }
+
+    void CreateNetworkImpl(Kernel::HLERequestContext& ctx, bool is_private = false) {
         IPC::RequestParser rp{ctx};
-        struct Parameters {
-            SecurityConfig security_config;
-            SecurityParameter security_parameter;
-            UserConfig user_config;
-            NetworkConfig network_config;
-        };
-        static_assert(sizeof(Parameters) == 0xB8, "Parameters has incorrect size.");
 
-        const auto parameters{rp.PopRaw<Parameters>()};
-
-        LOG_WARNING(Service_LDN,
-                    "(STUBBED) called, passphrase_size={}, security_mode={}, "
-                    "local_communication_version={}",
-                    parameters.security_config.passphrase_size,
-                    parameters.security_config.security_mode,
-                    parameters.network_config.local_communication_version);
+        const auto security_config{rp.PopRaw<SecurityConfig>()};
+        [[maybe_unused]] const auto security_parameter{is_private ? rp.PopRaw<SecurityParameter>()
+                                                                  : SecurityParameter{}};
+        const auto user_config{rp.PopRaw<UserConfig>()};
+        rp.Pop<u32>(); // Padding
+        const auto network_Config{rp.PopRaw<NetworkConfig>()};
 
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultSuccess);
+        rb.Push(lan_discovery.CreateNetwork(security_config, user_config, network_Config));
     }
 
     void DestroyNetwork(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_LDN, "(STUBBED) called");
+        LOG_INFO(Service_LDN, "called");
 
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultSuccess);
+        rb.Push(lan_discovery.DestroyNetwork());
     }
 
     void SetAdvertiseData(Kernel::HLERequestContext& ctx) {
         std::vector<u8> read_buffer = ctx.ReadBuffer();
 
-        LOG_WARNING(Service_LDN, "(STUBBED) called, size {}", read_buffer.size());
-
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultSuccess);
+        rb.Push(lan_discovery.SetAdvertiseData(read_buffer));
     }
 
     void SetStationAcceptPolicy(Kernel::HLERequestContext& ctx) {
@@ -420,17 +435,17 @@ public:
     }
 
     void OpenStation(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_LDN, "(STUBBED) called");
+        LOG_INFO(Service_LDN, "called");
 
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultSuccess);
+        rb.Push(lan_discovery.OpenStation());
     }
 
     void CloseStation(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_LDN, "(STUBBED) called");
+        LOG_INFO(Service_LDN, "called");
 
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultSuccess);
+        rb.Push(lan_discovery.CloseStation());
     }
 
     void Connect(Kernel::HLERequestContext& ctx) {
@@ -445,16 +460,13 @@ public:
 
         const auto parameters{rp.PopRaw<Parameters>()};
 
-        LOG_WARNING(Service_LDN,
-                    "(STUBBED) called, passphrase_size={}, security_mode={}, "
-                    "local_communication_version={}",
-                    parameters.security_config.passphrase_size,
-                    parameters.security_config.security_mode,
-                    parameters.local_communication_version);
+        LOG_INFO(Service_LDN,
+                 "called, passphrase_size={}, security_mode={}, "
+                 "local_communication_version={}",
+                 parameters.security_config.passphrase_size,
+                 parameters.security_config.security_mode, parameters.local_communication_version);
 
         const std::vector<u8> read_buffer = ctx.ReadBuffer();
-        NetworkInfo network_info{};
-
         if (read_buffer.size() != sizeof(NetworkInfo)) {
             LOG_ERROR(Frontend, "NetworkInfo doesn't match read_buffer size!");
             IPC::ResponseBuilder rb{ctx, 2};
@@ -462,40 +474,47 @@ public:
             return;
         }
 
+        NetworkInfo network_info{};
         std::memcpy(&network_info, read_buffer.data(), read_buffer.size());
 
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultSuccess);
+        rb.Push(lan_discovery.Connect(network_info, parameters.user_config,
+                                      static_cast<u16>(parameters.local_communication_version)));
     }
 
     void Disconnect(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_LDN, "(STUBBED) called");
+        LOG_INFO(Service_LDN, "called");
 
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultSuccess);
+        rb.Push(lan_discovery.Disconnect());
     }
-    void Initialize(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_LDN, "(STUBBED) called");
 
+    void Initialize(Kernel::HLERequestContext& ctx) {
         const auto rc = InitializeImpl(ctx);
+        if (rc.IsError()) {
+            LOG_ERROR(Service_LDN, "Network isn't initialized, rc={}", rc.raw);
+        }
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(rc);
     }
 
     void Finalize(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_LDN, "(STUBBED) called");
+        if (auto room_member = room_network.GetRoomMember().lock()) {
+            room_member->Unbind(ldn_packet_received);
+        }
 
         is_initialized = false;
 
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultSuccess);
+        rb.Push(lan_discovery.Finalize());
     }
 
     void Initialize2(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_LDN, "(STUBBED) called");
-
         const auto rc = InitializeImpl(ctx);
+        if (rc.IsError()) {
+            LOG_ERROR(Service_LDN, "Network isn't initialized, rc={}", rc.raw);
+        }
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(rc);
@@ -508,14 +527,26 @@ public:
             return ResultAirplaneModeEnabled;
         }
 
+        if (auto room_member = room_network.GetRoomMember().lock()) {
+            ldn_packet_received = room_member->BindOnLdnPacketReceived(
+                [this](const Network::LDNPacket& packet) { OnLDNPacketReceived(packet); });
+        } else {
+            LOG_ERROR(Service_LDN, "Couldn't bind callback!");
+            return ResultAirplaneModeEnabled;
+        }
+
+        lan_discovery.Initialize([&]() { OnEventFired(); });
         is_initialized = true;
-        // TODO (flTobi): Change this to ResultSuccess when LDN is fully implemented
-        return ResultAirplaneModeEnabled;
+        return ResultSuccess;
     }
 
     KernelHelpers::ServiceContext service_context;
     Kernel::KEvent* state_change_event;
     Network::RoomNetwork& room_network;
+    LANDiscovery lan_discovery;
+
+    // Callback identifier for the OnLDNPacketReceived event.
+    Network::RoomMember::CallbackHandle<Network::LDNPacket> ldn_packet_received;
 
     bool is_initialized{};
 };

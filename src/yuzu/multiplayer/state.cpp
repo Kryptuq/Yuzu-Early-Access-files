@@ -44,9 +44,6 @@ MultiplayerState::MultiplayerState(QWidget* parent, QStandardItemModel* game_lis
 
     status_text = new ClickableLabel(this);
     status_icon = new ClickableLabel(this);
-    status_text->setToolTip(tr("Current connection status"));
-    status_text->setText(tr("Not Connected. Click here to find a room!"));
-    status_icon->setPixmap(QIcon::fromTheme(QStringLiteral("disconnected")).pixmap(16));
 
     connect(status_text, &ClickableLabel::clicked, this, &MultiplayerState::OnOpenNetworkRoom);
     connect(status_icon, &ClickableLabel::clicked, this, &MultiplayerState::OnOpenNetworkRoom);
@@ -57,6 +54,8 @@ MultiplayerState::MultiplayerState(QWidget* parent, QStandardItemModel* game_lis
                     HideNotification();
                 }
             });
+
+    retranslateUi();
 }
 
 MultiplayerState::~MultiplayerState() = default;
@@ -90,14 +89,7 @@ void MultiplayerState::Close() {
 void MultiplayerState::retranslateUi() {
     status_text->setToolTip(tr("Current connection status"));
 
-    if (current_state == Network::RoomMember::State::Uninitialized) {
-        status_text->setText(tr("Not Connected. Click here to find a room!"));
-    } else if (current_state == Network::RoomMember::State::Joined ||
-               current_state == Network::RoomMember::State::Moderator) {
-        status_text->setText(tr("Connected"));
-    } else {
-        status_text->setText(tr("Not Connected"));
-    }
+    UpdateNotificationStatus();
 
     if (lobby) {
         lobby->RetranslateUi();
@@ -113,21 +105,55 @@ void MultiplayerState::retranslateUi() {
     }
 }
 
+void MultiplayerState::SetNotificationStatus(NotificationStatus status) {
+    notification_status = status;
+    UpdateNotificationStatus();
+}
+
+void MultiplayerState::UpdateNotificationStatus() {
+    switch (notification_status) {
+    case NotificationStatus::Unitialized:
+        status_icon->setPixmap(QIcon::fromTheme(QStringLiteral("disconnected")).pixmap(16));
+        status_text->setText(tr("Not Connected. Click here to find a room!"));
+        leave_room->setEnabled(false);
+        show_room->setEnabled(false);
+        break;
+    case NotificationStatus::Disconnected:
+        status_icon->setPixmap(QIcon::fromTheme(QStringLiteral("disconnected")).pixmap(16));
+        status_text->setText(tr("Not Connected"));
+        leave_room->setEnabled(false);
+        show_room->setEnabled(false);
+        break;
+    case NotificationStatus::Connected:
+        status_icon->setPixmap(QIcon::fromTheme(QStringLiteral("connected")).pixmap(16));
+        status_text->setText(tr("Connected"));
+        leave_room->setEnabled(true);
+        show_room->setEnabled(true);
+        break;
+    case NotificationStatus::Notification:
+        status_icon->setPixmap(
+            QIcon::fromTheme(QStringLiteral("connected_notification")).pixmap(16));
+        status_text->setText(tr("New Messages Received"));
+        leave_room->setEnabled(true);
+        show_room->setEnabled(true);
+        break;
+    }
+
+    // Clean up status bar if game is running
+    if (system.IsPoweredOn()) {
+        status_text->clear();
+    }
+}
+
 void MultiplayerState::OnNetworkStateChanged(const Network::RoomMember::State& state) {
     LOG_DEBUG(Frontend, "Network State: {}", Network::GetStateStr(state));
     if (state == Network::RoomMember::State::Joined ||
         state == Network::RoomMember::State::Moderator) {
 
         OnOpenNetworkRoom();
-        status_icon->setPixmap(QIcon::fromTheme(QStringLiteral("connected")).pixmap(16));
-        status_text->setText(tr("Connected"));
-        leave_room->setEnabled(true);
-        show_room->setEnabled(true);
+        SetNotificationStatus(NotificationStatus::Connected);
     } else {
-        status_icon->setPixmap(QIcon::fromTheme(QStringLiteral("disconnected")).pixmap(16));
-        status_text->setText(tr("Not Connected"));
-        leave_room->setEnabled(false);
-        show_room->setEnabled(false);
+        SetNotificationStatus(NotificationStatus::Disconnected);
     }
 
     current_state = state;
@@ -185,6 +211,10 @@ void MultiplayerState::OnAnnounceFailed(const WebService::WebResult& result) {
                          QMessageBox::Ok);
 }
 
+void MultiplayerState::OnSaveConfig() {
+    emit SaveConfig();
+}
+
 void MultiplayerState::UpdateThemedIcons() {
     if (show_notification) {
         status_icon->setPixmap(
@@ -209,13 +239,16 @@ static void BringWidgetToFront(QWidget* widget) {
 void MultiplayerState::OnViewLobby() {
     if (lobby == nullptr) {
         lobby = new Lobby(this, game_list_model, announce_multiplayer_session, system);
+        connect(lobby, &Lobby::SaveConfig, this, &MultiplayerState::OnSaveConfig);
     }
+    lobby->RefreshLobby();
     BringWidgetToFront(lobby);
 }
 
 void MultiplayerState::OnCreateRoom() {
     if (host_room == nullptr) {
         host_room = new HostRoomWindow(this, game_list_model, announce_multiplayer_session, system);
+        connect(host_room, &HostRoomWindow::SaveConfig, this, &MultiplayerState::OnSaveConfig);
     }
     BringWidgetToFront(host_room);
 }
@@ -249,14 +282,13 @@ void MultiplayerState::ShowNotification() {
         return; // Do not show notification if the chat window currently has focus
     show_notification = true;
     QApplication::alert(nullptr);
-    status_icon->setPixmap(QIcon::fromTheme(QStringLiteral("connected_notification")).pixmap(16));
-    status_text->setText(tr("New Messages Received"));
+    QApplication::beep();
+    SetNotificationStatus(NotificationStatus::Notification);
 }
 
 void MultiplayerState::HideNotification() {
     show_notification = false;
-    status_icon->setPixmap(QIcon::fromTheme(QStringLiteral("connected")).pixmap(16));
-    status_text->setText(tr("Connected"));
+    SetNotificationStatus(NotificationStatus::Connected);
 }
 
 void MultiplayerState::OnOpenNetworkRoom() {
@@ -279,6 +311,8 @@ void MultiplayerState::OnOpenNetworkRoom() {
 void MultiplayerState::OnDirectConnectToRoom() {
     if (direct_connect == nullptr) {
         direct_connect = new DirectConnectWindow(system, this);
+        connect(direct_connect, &DirectConnectWindow::SaveConfig, this,
+                &MultiplayerState::OnSaveConfig);
     }
     BringWidgetToFront(direct_connect);
 }

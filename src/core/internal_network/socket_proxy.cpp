@@ -6,6 +6,7 @@
 
 #include "common/assert.h"
 #include "common/logging/log.h"
+#include "common/zstd_compression.h"
 #include "core/internal_network/network.h"
 #include "core/internal_network/network_interface.h"
 #include "core/internal_network/socket_proxy.h"
@@ -32,8 +33,11 @@ void ProxySocket::HandleProxyPacket(const ProxyPacket& packet) {
         return;
     }
 
+    auto decompressed = packet;
+    decompressed.data = Common::Compression::DecompressDataZSTD(packet.data);
+
     std::lock_guard guard(packets_mutex);
-    received_packets.push(packet);
+    received_packets.push(decompressed);
 }
 
 template <typename T>
@@ -185,6 +189,8 @@ std::pair<s32, Errno> ProxySocket::Send(const std::vector<u8>& message, int flag
 void ProxySocket::SendPacket(ProxyPacket& packet) {
     if (auto room_member = room_network.GetRoomMember().lock()) {
         if (room_member->IsConnected()) {
+            packet.data = Common::Compression::CompressDataZSTDDefault(packet.data.data(),
+                                                                       packet.data.size());
             room_member->SendProxyPacket(packet);
         }
     }

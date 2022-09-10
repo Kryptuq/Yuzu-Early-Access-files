@@ -58,6 +58,7 @@ public:
 
     private:
         CallbackSet<ProxyPacket> callback_set_proxy_packet;
+        CallbackSet<LDNPacket> callback_set_ldn_packet;
         CallbackSet<ChatEntry> callback_set_chat_messages;
         CallbackSet<StatusMessageEntry> callback_set_status_messages;
         CallbackSet<RoomInformation> callback_set_room_information;
@@ -106,6 +107,12 @@ public:
      * @param event The ENet event that was received.
      */
     void HandleProxyPackets(const ENetEvent* event);
+
+    /**
+     * Extracts an LdnPacket from a received ENet packet.
+     * @param event The ENet event that was received.
+     */
+    void HandleLdnPackets(const ENetEvent* event);
 
     /**
      * Extracts a chat entry from a received ENet packet and adds it to the chat queue.
@@ -165,6 +172,9 @@ void RoomMember::RoomMemberImpl::MemberLoop() {
                 switch (event.packet->data[0]) {
                 case IdProxyPacket:
                     HandleProxyPackets(&event);
+                    break;
+                case IdLdnPacket:
+                    HandleLdnPackets(&event);
                     break;
                 case IdChatMessage:
                     HandleChatPacket(&event);
@@ -372,6 +382,27 @@ void RoomMember::RoomMemberImpl::HandleProxyPackets(const ENetEvent* event) {
     Invoke<ProxyPacket>(proxy_packet);
 }
 
+void RoomMember::RoomMemberImpl::HandleLdnPackets(const ENetEvent* event) {
+    LDNPacket ldn_packet{};
+    Packet packet;
+    packet.Append(event->packet->data, event->packet->dataLength);
+
+    // Ignore the first byte, which is the message id.
+    packet.IgnoreBytes(sizeof(u8)); // Ignore the message type
+
+    u8 packet_type;
+    packet.Read(packet_type);
+    ldn_packet.type = static_cast<LDNPacketType>(packet_type);
+
+    packet.Read(ldn_packet.local_ip);
+    packet.Read(ldn_packet.remote_ip);
+    packet.Read(ldn_packet.broadcast);
+
+    packet.Read(ldn_packet.data);
+
+    Invoke<LDNPacket>(ldn_packet);
+}
+
 void RoomMember::RoomMemberImpl::HandleChatPacket(const ENetEvent* event) {
     Packet packet;
     packet.Append(event->packet->data, event->packet->dataLength);
@@ -447,6 +478,11 @@ void RoomMember::RoomMemberImpl::Disconnect() {
 template <>
 RoomMember::RoomMemberImpl::CallbackSet<ProxyPacket>& RoomMember::RoomMemberImpl::Callbacks::Get() {
     return callback_set_proxy_packet;
+}
+
+template <>
+RoomMember::RoomMemberImpl::CallbackSet<LDNPacket>& RoomMember::RoomMemberImpl::Callbacks::Get() {
+    return callback_set_ldn_packet;
 }
 
 template <>
@@ -607,6 +643,21 @@ void RoomMember::SendProxyPacket(const ProxyPacket& proxy_packet) {
     room_member_impl->Send(std::move(packet));
 }
 
+void RoomMember::SendLdnPacket(const LDNPacket& ldn_packet) {
+    Packet packet;
+    packet.Write(static_cast<u8>(IdLdnPacket));
+
+    packet.Write(static_cast<u8>(ldn_packet.type));
+
+    packet.Write(ldn_packet.local_ip);
+    packet.Write(ldn_packet.remote_ip);
+    packet.Write(ldn_packet.broadcast);
+
+    packet.Write(ldn_packet.data);
+
+    room_member_impl->Send(std::move(packet));
+}
+
 void RoomMember::SendChatMessage(const std::string& message) {
     Packet packet;
     packet.Write(static_cast<u8>(IdChatMessage));
@@ -663,6 +714,11 @@ RoomMember::CallbackHandle<ProxyPacket> RoomMember::BindOnProxyPacketReceived(
     return room_member_impl->Bind(callback);
 }
 
+RoomMember::CallbackHandle<LDNPacket> RoomMember::BindOnLdnPacketReceived(
+    std::function<void(const LDNPacket&)> callback) {
+    return room_member_impl->Bind(callback);
+}
+
 RoomMember::CallbackHandle<RoomInformation> RoomMember::BindOnRoomInformationChanged(
     std::function<void(const RoomInformation&)> callback) {
     return room_member_impl->Bind(callback);
@@ -699,6 +755,7 @@ void RoomMember::Leave() {
 }
 
 template void RoomMember::Unbind(CallbackHandle<ProxyPacket>);
+template void RoomMember::Unbind(CallbackHandle<LDNPacket>);
 template void RoomMember::Unbind(CallbackHandle<RoomMember::State>);
 template void RoomMember::Unbind(CallbackHandle<RoomMember::Error>);
 template void RoomMember::Unbind(CallbackHandle<RoomInformation>);

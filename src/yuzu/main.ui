@@ -120,6 +120,20 @@
     <addaction name="menu_Reset_Window_Size"/>
     <addaction name="menu_View_Debugging"/>
    </widget>
+   <widget class="QMenu" name="menu_Multiplayer">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="title">
+     <string>Multiplayer</string>
+    </property>
+    <addaction name="action_View_Lobby"/>
+    <addaction name="action_Start_Room"/>
+    <addaction name="action_Connect_To_Room"/>
+    <addaction name="separator"/>
+    <addaction name="action_Show_Room"/>
+    <addaction name="action_Leave_Room"/>
+   </widget>
    <widget class="QMenu" name="menu_Tools">
     <property name="title">
      <string>&amp;Tools</string>
@@ -251,7 +265,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Browse Public Game Lobby</string>
+    <string>&amp;Browse Public Game Lobby</string>
    </property>
   </action>
   <action name="action_Start_Room">
@@ -259,7 +273,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Create Room</string>
+    <string>&amp;Create Room</string>
    </property>
   </action>
   <action name="action_Leave_Room">
@@ -267,12 +281,12 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Leave Room</string>
+    <string>&amp;Leave Room</string>
    </property>
   </action>
   <action name="action_Connect_To_Room">
    <property name="text">
-    <string>Direct Connect to Room</string>
+    <string>&amp;Direct Connect to Room</string>
    </property>
   </action>
   <action name="action_Show_Room">
@@ -280,7 +294,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Show Current Room</string>
+    <string>&amp;Show Current Room</string>
    </property>
   </action>
   <action name="action_Fullscreen">

@@ -7,6 +7,7 @@
 #include "common/logging/log.h"
 #include "common/settings.h"
 #include "core/core.h"
+#include "core/hle/service/acc/profile_manager.h"
 #include "core/internal_network/network_interface.h"
 #include "network/network.h"
 #include "ui_lobby.h"
@@ -26,9 +27,9 @@
 Lobby::Lobby(QWidget* parent, QStandardItemModel* list,
              std::shared_ptr<Core::AnnounceMultiplayerSession> session, Core::System& system_)
     : QDialog(parent, Qt::WindowTitleHint | Qt::WindowCloseButtonHint | Qt::WindowSystemMenuHint),
-      ui(std::make_unique<Ui::Lobby>()),
-      announce_multiplayer_session(session), system{system_}, room_network{
-                                                                  system.GetRoomNetwork()} {
+      ui(std::make_unique<Ui::Lobby>()), announce_multiplayer_session(session),
+      profile_manager(std::make_unique<Service::Account::ProfileManager>()), system{system_},
+      room_network{system.GetRoomNetwork()} {
     ui->setupUi(this);
 
     // setup the watcher for background connections
@@ -60,9 +61,17 @@ Lobby::Lobby(QWidget* parent, QStandardItemModel* list,
 
     ui->nickname->setValidator(validation.GetNickname());
     ui->nickname->setText(UISettings::values.multiplayer_nickname.GetValue());
-    if (ui->nickname->text().isEmpty() && !Settings::values.yuzu_username.GetValue().empty()) {
-        // Use yuzu Web Service user name as nickname by default
-        ui->nickname->setText(QString::fromStdString(Settings::values.yuzu_username.GetValue()));
+
+    // Try find the best nickname by default
+    if (ui->nickname->text().isEmpty() || ui->nickname->text() == QStringLiteral("yuzu")) {
+        if (!Settings::values.yuzu_username.GetValue().empty()) {
+            ui->nickname->setText(
+                QString::fromStdString(Settings::values.yuzu_username.GetValue()));
+        } else if (!GetProfileUsername().empty()) {
+            ui->nickname->setText(QString::fromStdString(GetProfileUsername()));
+        } else {
+            ui->nickname->setText(QStringLiteral("yuzu"));
+        }
     }
 
     // UI Buttons
@@ -76,12 +85,6 @@ Lobby::Lobby(QWidget* parent, QStandardItemModel* list,
     // Actions
     connect(&room_list_watcher, &QFutureWatcher<AnnounceMultiplayerRoom::RoomList>::finished, this,
             &Lobby::OnRefreshLobby);
-
-    // manually start a refresh when the window is opening
-    // TODO(jroweboy): if this refresh is slow for people with bad internet, then don't do it as
-    // part of the constructor, but offload the refresh until after the window shown. perhaps emit a
-    // refreshroomlist signal from places that open the lobby
-    RefreshLobby();
 }
 
 Lobby::~Lobby() = default;
@@ -96,6 +99,7 @@ void Lobby::UpdateGameList(QStandardItemModel* list) {
     }
     if (proxy)
         proxy->UpdateGameList(game_list);
+    ui->room_list->sortByColumn(Column::GAME_NAME, Qt::AscendingOrder);
 }
 
 void Lobby::RetranslateUi() {
@@ -116,6 +120,11 @@ void Lobby::OnExpandRoom(const QModelIndex& index) {
 }
 
 void Lobby::OnJoinRoom(const QModelIndex& source) {
+    if (!Network::GetSelectedNetworkInterface()) {
+        LOG_INFO(WebService, "Automatically selected network interface for room network.");
+        Network::SelectFirstNetworkInterface();
+    }
+
     if (!Network::GetSelectedNetworkInterface()) {
         NetworkMessage::ErrorManager::ShowError(
             NetworkMessage::ErrorManager::NO_INTERFACE_SELECTED);
@@ -197,16 +206,16 @@ void Lobby::OnJoinRoom(const QModelIndex& source) {
         proxy->data(connection_index, LobbyItemHost::HostIPRole).toString();
     UISettings::values.multiplayer_port =
         proxy->data(connection_index, LobbyItemHost::HostPortRole).toInt();
+    emit SaveConfig();
 }
 
 void Lobby::ResetModel() {
     model->clear();
     model->insertColumns(0, Column::TOTAL);
-    model->setHeaderData(Column::EXPAND, Qt::Horizontal, QString(), Qt::DisplayRole);
+    model->setHeaderData(Column::MEMBER, Qt::Horizontal, tr("Players"), Qt::DisplayRole);
     model->setHeaderData(Column::ROOM_NAME, Qt::Horizontal, tr("Room Name"), Qt::DisplayRole);
     model->setHeaderData(Column::GAME_NAME, Qt::Horizontal, tr("Preferred Game"), Qt::DisplayRole);
     model->setHeaderData(Column::HOST, Qt::Horizontal, tr("Host"), Qt::DisplayRole);
-    model->setHeaderData(Column::MEMBER, Qt::Horizontal, tr("Players"), Qt::DisplayRole);
 }
 
 void Lobby::RefreshLobby() {
@@ -229,6 +238,7 @@ void Lobby::OnRefreshLobby() {
         for (int r = 0; r < game_list->rowCount(); ++r) {
             auto index = game_list->index(r, 0);
             auto game_id = game_list->data(index, GameListItemPath::ProgramIdRole).toULongLong();
+
             if (game_id != 0 && room.information.preferred_game.id == game_id) {
                 smdh_icon = game_list->data(index, Qt::DecorationRole).value<QPixmap>();
             }
@@ -243,17 +253,16 @@ void Lobby::OnRefreshLobby() {
             members.append(var);
         }
 
-        auto first_item = new LobbyItem();
+        auto first_item = new LobbyItemGame(
+            room.information.preferred_game.id,
+            QString::fromStdString(room.information.preferred_game.name), smdh_icon);
         auto row = QList<QStandardItem*>({
             first_item,
             new LobbyItemName(room.has_password, QString::fromStdString(room.information.name)),
-            new LobbyItemGame(room.information.preferred_game.id,
-                              QString::fromStdString(room.information.preferred_game.name),
-                              smdh_icon),
+            new LobbyItemMemberList(members, room.information.member_slots),
             new LobbyItemHost(QString::fromStdString(room.information.host_username),
                               QString::fromStdString(room.ip), room.information.port,
                               QString::fromStdString(room.verify_uid)),
-            new LobbyItemMemberList(members, room.information.member_slots),
         });
         model->appendRow(row);
         // To make the rows expandable, add the member data as a child of the first column of the
@@ -283,6 +292,26 @@ void Lobby::OnRefreshLobby() {
             ui->room_list->setFirstColumnSpanned(j, proxy->index(i, 0), true);
         }
     }
+
+    ui->room_list->sortByColumn(Column::GAME_NAME, Qt::AscendingOrder);
+}
+
+std::string Lobby::GetProfileUsername() {
+    const auto& current_user = profile_manager->GetUser(Settings::values.current_user.GetValue());
+    Service::Account::ProfileBase profile{};
+
+    if (!current_user.has_value()) {
+        return "";
+    }
+
+    if (!profile_manager->GetProfileBase(*current_user, profile)) {
+        return "";
+    }
+
+    const auto text = Common::StringFromFixedZeroTerminatedBuffer(
+        reinterpret_cast<const char*>(profile.username.data()), profile.username.size());
+
+    return text;
 }
 
 LobbyFilterProxyModel::LobbyFilterProxyModel(QWidget* parent, QStandardItemModel* list)

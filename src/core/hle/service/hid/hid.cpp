@@ -35,7 +35,8 @@ namespace Service::HID {
 
 // Updating period for each HID device.
 // Period time is obtained by measuring the number of samples in a second on HW using a homebrew
-constexpr auto pad_update_ns = std::chrono::nanoseconds{4 * 1000 * 1000};            // (4ms, 250Hz)
+// Correct pad_update_ns is 4ms this is overclocked to lower input lag
+constexpr auto pad_update_ns = std::chrono::nanoseconds{1 * 1000 * 1000}; // (1ms, 1000Hz)
 constexpr auto mouse_keyboard_update_ns = std::chrono::nanoseconds{8 * 1000 * 1000}; // (8ms, 125Hz)
 constexpr auto motion_update_ns = std::chrono::nanoseconds{5 * 1000 * 1000};         // (5ms, 200Hz)
 

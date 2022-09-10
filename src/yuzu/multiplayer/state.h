@@ -22,6 +22,13 @@ class MultiplayerState : public QWidget {
     Q_OBJECT;
 
 public:
+    enum class NotificationStatus {
+        Unitialized,
+        Disconnected,
+        Connected,
+        Notification,
+    };
+
     explicit MultiplayerState(QWidget* parent, QStandardItemModel* game_list, QAction* leave_room,
                               QAction* show_room, Core::System& system_);
     ~MultiplayerState();
@@ -30,6 +37,10 @@ public:
      * Close all open multiplayer related dialogs
      */
     void Close();
+
+    void SetNotificationStatus(NotificationStatus state);
+
+    void UpdateNotificationStatus();
 
     ClickableLabel* GetStatusText() const {
         return status_text;
@@ -64,6 +75,7 @@ public slots:
     void OnOpenNetworkRoom();
     void OnDirectConnectToRoom();
     void OnAnnounceFailed(const WebService::WebResult&);
+    void OnSaveConfig();
     void UpdateThemedIcons();
     void ShowNotification();
     void HideNotification();
@@ -72,6 +84,7 @@ signals:
     void NetworkStateChanged(const Network::RoomMember::State&);
     void NetworkError(const Network::RoomMember::Error&);
     void AnnounceFailed(const WebService::WebResult&);
+    void SaveConfig();
 
 private:
     Lobby* lobby = nullptr;
@@ -85,6 +98,7 @@ private:
     QAction* show_room;
     std::shared_ptr<Core::AnnounceMultiplayerSession> announce_multiplayer_session;
     Network::RoomMember::State current_state = Network::RoomMember::State::Uninitialized;
+    NotificationStatus notification_status = NotificationStatus::Unitialized;
     bool has_mod_perms = false;
     Network::RoomMember::CallbackHandle<Network::RoomMember::State> state_callback_handle;
     Network::RoomMember::CallbackHandle<Network::RoomMember::Error> error_callback_handle;

@@ -169,6 +169,7 @@ public slots:
     void OnLoadComplete();
     void OnExecuteProgram(std::size_t program_index);
     void OnExit();
+    void OnSaveConfig();
     void ControllerSelectorReconfigureControllers(
         const Core::Frontend::ControllerParameters& parameters);
     void SoftwareKeyboardInitialize(

@@ -31,6 +31,7 @@ signals:
      * connections that it might have.
      */
     void Closed();
+    void SaveConfig();
 
 private slots:
     void OnConnection();

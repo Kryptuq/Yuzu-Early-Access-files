@@ -212,6 +212,12 @@ public:
     void HandleProxyPacket(const ENetEvent* event);
 
     /**
+     * Broadcasts this packet to all members except the sender.
+     * @param event The ENet event containing the data
+     */
+    void HandleLdnPacket(const ENetEvent* event);
+
+    /**
      * Extracts a chat entry from a received ENet packet and adds it to the chat queue.
      * @param event The ENet event that was received.
      */
@@ -246,6 +252,9 @@ void Room::RoomImpl::ServerLoop() {
                     break;
                 case IdProxyPacket:
                     HandleProxyPacket(&event);
+                    break;
+                case IdLdnPacket:
+                    HandleLdnPacket(&event);
                     break;
                 case IdChatMessage:
                     HandleChatPacket(&event);
@@ -842,6 +851,60 @@ void Room::RoomImpl::HandleProxyPacket(const ENetEvent* event) {
             enet_packet_destroy(enet_packet);
         }
     } else { // Send the data only to the destination client
+        std::lock_guard lock(member_mutex);
+        auto member = std::find_if(members.begin(), members.end(),
+                                   [destination_address](const Member& member_entry) -> bool {
+                                       return member_entry.fake_ip == destination_address;
+                                   });
+        if (member != members.end()) {
+            enet_peer_send(member->peer, 0, enet_packet);
+        } else {
+            LOG_ERROR(Network,
+                      "Attempting to send to unknown IP address: "
+                      "{}.{}.{}.{}",
+                      destination_address[0], destination_address[1], destination_address[2],
+                      destination_address[3]);
+            enet_packet_destroy(enet_packet);
+        }
+    }
+    enet_host_flush(server);
+}
+
+void Room::RoomImpl::HandleLdnPacket(const ENetEvent* event) {
+    Packet in_packet;
+    in_packet.Append(event->packet->data, event->packet->dataLength);
+
+    in_packet.IgnoreBytes(sizeof(u8)); // Message type
+
+    in_packet.IgnoreBytes(sizeof(u8));          // LAN packet type
+    in_packet.IgnoreBytes(sizeof(IPv4Address)); // Local IP
+
+    IPv4Address remote_ip;
+    in_packet.Read(remote_ip); // Remote IP
+
+    bool broadcast;
+    in_packet.Read(broadcast); // Broadcast
+
+    Packet out_packet;
+    out_packet.Append(event->packet->data, event->packet->dataLength);
+    ENetPacket* enet_packet = enet_packet_create(out_packet.GetData(), out_packet.GetDataSize(),
+                                                 ENET_PACKET_FLAG_RELIABLE);
+
+    const auto& destination_address = remote_ip;
+    if (broadcast) { // Send the data to everyone except the sender
+        std::lock_guard lock(member_mutex);
+        bool sent_packet = false;
+        for (const auto& member : members) {
+            if (member.peer != event->peer) {
+                sent_packet = true;
+                enet_peer_send(member.peer, 0, enet_packet);
+            }
+        }
+
+        if (!sent_packet) {
+            enet_packet_destroy(enet_packet);
+        }
+    } else {
         std::lock_guard lock(member_mutex);
         auto member = std::find_if(members.begin(), members.end(),
                                    [destination_address](const Member& member_entry) -> bool {

@@ -102,7 +102,7 @@ struct Values {
     Settings::Setting<uint32_t> callout_flags{0, "calloutFlags"};
 
     // multiplayer settings
-    Settings::Setting<QString> multiplayer_nickname{QStringLiteral("yuzu"), "nickname"};
+    Settings::Setting<QString> multiplayer_nickname{{}, "nickname"};
     Settings::Setting<QString> multiplayer_ip{{}, "ip"};
     Settings::SwitchableSetting<uint, true> multiplayer_port{24872, 0, UINT16_MAX, "port"};
     Settings::Setting<QString> multiplayer_room_nickname{{}, "room_nickname"};
