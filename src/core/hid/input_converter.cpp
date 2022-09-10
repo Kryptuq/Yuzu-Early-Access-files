@@ -52,6 +52,9 @@ Common::Input::ButtonStatus TransformToButton(const Common::Input::CallbackStatu
     Common::Input::ButtonStatus status{};
     switch (callback.type) {
     case Common::Input::InputType::Analog:
+        status.value = TransformToTrigger(callback).pressed.value;
+        status.toggle = callback.analog_status.properties.toggle;
+        break;
     case Common::Input::InputType::Trigger:
         status.value = TransformToTrigger(callback).pressed.value;
         break;

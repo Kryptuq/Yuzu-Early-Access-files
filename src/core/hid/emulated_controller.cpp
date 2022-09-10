@@ -562,6 +562,16 @@ void EmulatedController::SetButton(const Common::Input::CallbackStatus& callback
         return;
     }
 
+    // GC controllers have triggers not buttons
+    if (npad_type == NpadStyleIndex::GameCube) {
+        if (index == Settings::NativeButton::ZR) {
+            return;
+        }
+        if (index == Settings::NativeButton::ZL) {
+            return;
+        }
+    }
+
     switch (index) {
     case Settings::NativeButton::A:
         controller.npad_button_state.a.Assign(current_status.value);
@@ -735,6 +745,11 @@ void EmulatedController::SetTrigger(const Common::Input::CallbackStatus& callbac
         controller.gc_trigger_state.right = 0;
         lock.unlock();
         TriggerOnChange(ControllerTriggerType::Trigger, false);
+        return;
+    }
+
+    // Only GC controllers have analog triggers
+    if (npad_type != NpadStyleIndex::GameCube) {
         return;
     }
 

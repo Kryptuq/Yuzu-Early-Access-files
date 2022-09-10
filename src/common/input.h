@@ -102,6 +102,8 @@ struct AnalogProperties {
     float offset{};
     // Invert direction of the sensor data
     bool inverted{};
+    // Press once to activate, press again to release
+    bool toggle{};
 };
 
 // Single analog sensor data
@@ -115,8 +117,11 @@ struct AnalogStatus {
 struct ButtonStatus {
     Common::UUID uuid{};
     bool value{};
+    // Invert value of the button
     bool inverted{};
+    // Press once to activate, press again to release
     bool toggle{};
+    // Internal lock for the toggle status
     bool locked{};
 };
 
