@@ -90,6 +90,8 @@ public:
         setData(game_name, GameNameRole);
         if (!smdh_icon.isNull()) {
             setData(smdh_icon, GameIconRole);
+        } else {
+            setData(QIcon::fromTheme(QStringLiteral("chip")).pixmap(32), GameIconRole);
         }
     }
 

@@ -76,8 +76,18 @@ static constexpr char BanListMagic[] = "YuzuRoom-BanList-1";
 static constexpr char token_delimiter{':'};
 
 static void PadToken(std::string& token) {
-    const auto remainder = token.size() % 3;
-    for (size_t i = 0; i < (3 - remainder); i++) {
+    std::size_t outlen = 0;
+
+    std::array<unsigned char, 512> output{};
+    std::array<unsigned char, 2048> roundtrip{};
+    for (size_t i = 0; i < 3; i++) {
+        mbedtls_base64_decode(output.data(), output.size(), &outlen,
+                              reinterpret_cast<const unsigned char*>(token.c_str()),
+                              token.length());
+        mbedtls_base64_encode(roundtrip.data(), roundtrip.size(), &outlen, output.data(), outlen);
+        if (memcmp(roundtrip.data(), token.data(), token.size()) == 0) {
+            break;
+        }
         token.push_back('=');
     }
 }
