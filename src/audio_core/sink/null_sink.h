@@ -44,8 +44,6 @@ public:
 
     void CloseStream(SinkStream*) override {}
     void CloseStreams() override {}
-    void PauseStreams() override {}
-    void UnpauseStreams() override {}
     f32 GetDeviceVolume() const override {
         return 1.0f;
     }

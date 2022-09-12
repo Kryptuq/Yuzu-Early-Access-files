@@ -141,16 +141,12 @@ struct System::Impl {
         core_timing.SyncPause(false);
         is_paused = false;
 
-        audio_core->PauseSinks(false);
-
         return status;
     }
 
     SystemResultStatus Pause() {
         std::unique_lock<std::mutex> lk(suspend_guard);
         status = SystemResultStatus::Success;
-
-        audio_core->PauseSinks(true);
 
         core_timing.SyncPause(true);
         kernel.Suspend(true);

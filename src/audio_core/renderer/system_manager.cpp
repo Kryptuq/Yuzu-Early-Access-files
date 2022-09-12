@@ -22,9 +22,7 @@ SystemManager::SystemManager(Core::System& core_)
       thread_event{Core::Timing::CreateEvent(
           "AudioRendererSystemManager", [this](std::uintptr_t, s64 time, std::chrono::nanoseconds) {
               return ThreadFunc2(time);
-          })} {
-    core.CoreTiming().RegisterPauseCallback([this](bool paused) { PauseCallback(paused); });
-}
+          })} {}
 
 SystemManager::~SystemManager() {
     Stop();
@@ -123,13 +121,6 @@ std::optional<std::chrono::nanoseconds> SystemManager::ThreadFunc2(s64 time) {
     update.store(true);
     update.notify_all();
     return std::nullopt;
-}
-
-void SystemManager::PauseCallback(bool paused) {
-    if (paused && core.IsPoweredOn() && core.IsShuttingDown()) {
-        update.store(true);
-        update.notify_all();
-    }
 }
 
 } // namespace AudioCore::AudioRenderer

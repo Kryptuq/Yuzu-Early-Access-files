@@ -73,7 +73,6 @@ void CoreTiming::Shutdown() {
     if (timer_thread) {
         timer_thread->join();
     }
-    pause_callbacks.clear();
     ClearPendingEvents();
     timer_thread.reset();
     has_started = false;
@@ -85,10 +84,6 @@ void CoreTiming::Pause(bool is_paused) {
 
     if (!is_paused) {
         pause_end_time = GetGlobalTimeNs().count();
-    }
-
-    for (auto& cb : pause_callbacks) {
-        cb(is_paused);
     }
 }
 
@@ -109,10 +104,6 @@ void CoreTiming::SyncPause(bool is_paused) {
 
     if (!is_paused) {
         pause_end_time = GetGlobalTimeNs().count();
-    }
-
-    for (auto& cb : pause_callbacks) {
-        cb(is_paused);
     }
 }
 
@@ -221,11 +212,6 @@ void CoreTiming::RemoveEvent(const std::shared_ptr<EventType>& event_type) {
         event_queue.erase(itr, event_queue.end());
         std::make_heap(event_queue.begin(), event_queue.end(), std::greater<>());
     }
-}
-
-void CoreTiming::RegisterPauseCallback(PauseCallback&& callback) {
-    std::scoped_lock lock{basic_lock};
-    pause_callbacks.emplace_back(std::move(callback));
 }
 
 std::optional<s64> CoreTiming::Advance() {

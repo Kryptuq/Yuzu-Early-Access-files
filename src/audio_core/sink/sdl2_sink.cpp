@@ -108,17 +108,12 @@ public:
      *                 Default false.
      */
     void Start(bool resume = false) override {
-        if (device == 0) {
+        if (device == 0 || !paused) {
             return;
         }
 
-        if (resume && was_playing) {
-            SDL_PauseAudioDevice(device, 0);
-            paused = false;
-        } else if (!resume) {
-            SDL_PauseAudioDevice(device, 0);
-            paused = false;
-        }
+        SDL_PauseAudioDevice(device, 0);
+        paused = false;
     }
 
     /**
@@ -126,7 +121,7 @@ public:
      */
     void Stop() override {
         Unstall();
-        if (device == 0) {
+        if (device == 0 || paused) {
             return;
         }
         SDL_PauseAudioDevice(device, 1);
@@ -205,18 +200,6 @@ void SDLSink::CloseStream(SinkStream* stream) {
 
 void SDLSink::CloseStreams() {
     sink_streams.clear();
-}
-
-void SDLSink::PauseStreams() {
-    for (auto& stream : sink_streams) {
-        stream->Stop();
-    }
-}
-
-void SDLSink::UnpauseStreams() {
-    for (auto& stream : sink_streams) {
-        stream->Start();
-    }
 }
 
 f32 SDLSink::GetDeviceVolume() const {

@@ -54,16 +54,6 @@ public:
     void CloseStreams() override;
 
     /**
-     * Pause all streams.
-     */
-    void PauseStreams() override;
-
-    /**
-     * Unpause all streams.
-     */
-    void UnpauseStreams() override;
-
-    /**
      * Get the device volume. Set from calls to the IAudioDevice service.
      *
      * @return Volume of the device.

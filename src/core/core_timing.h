@@ -22,7 +22,6 @@ namespace Core::Timing {
 /// A callback that may be scheduled for a particular core timing event.
 using TimedCallback = std::function<std::optional<std::chrono::nanoseconds>(
     std::uintptr_t user_data, s64 time, std::chrono::nanoseconds ns_late)>;
-using PauseCallback = std::function<void(bool paused)>;
 
 /// Contains the characteristics of a particular event.
 struct EventType {
@@ -134,9 +133,6 @@ public:
     /// Checks for events manually and returns time in nanoseconds for next event, threadsafe.
     std::optional<s64> Advance();
 
-    /// Register a callback function to be called when coretiming pauses.
-    void RegisterPauseCallback(PauseCallback&& callback);
-
 private:
     struct Event;
 
@@ -176,8 +172,6 @@ private:
     /// Cycle timing
     u64 ticks{};
     s64 downcount{};
-
-    std::vector<PauseCallback> pause_callbacks{};
 };
 
 /// Creates a core timing event with the given name and callback.

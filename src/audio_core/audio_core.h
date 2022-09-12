@@ -58,14 +58,6 @@ public:
     AudioRenderer::ADSP::ADSP& GetADSP();
 
     /**
-     * Pause the sink. Called from the core.
-     *
-     * @param pausing - Is this pause due to an actual pause, or shutdown?
-     *                  Unfortunately, shutdown also pauses streams, which can cause issues.
-     */
-    void PauseSinks(bool pausing) const;
-
-    /**
      * Toggle NVDEC state, used to avoid stall in playback.
      *
      * @param active - Set true if nvdec is active, otherwise false.

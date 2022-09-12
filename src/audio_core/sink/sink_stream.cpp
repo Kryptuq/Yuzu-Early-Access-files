@@ -1,8 +1,6 @@
 // SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#pragma once
-
 #include <array>
 #include <atomic>
 #include <memory>
@@ -145,6 +143,12 @@ void SinkStream::ProcessAudioIn(std::span<const s16> input_buffer, std::size_t n
     const std::size_t frame_size_bytes = frame_size * sizeof(s16);
     size_t frames_written{0};
 
+    // If we're paused or going to shut down, we don't want to consume buffers as coretiming is
+    // paused and we'll desync, so just return.
+    if (system.IsPaused() || system.IsShuttingDown()) {
+        return;
+    }
+
     if (queued_buffers > max_queue_size) {
         Stall();
     }
@@ -194,6 +198,16 @@ void SinkStream::ProcessAudioOutAndRender(std::span<s16> output_buffer, std::siz
     const std::size_t frame_size = num_channels;
     const std::size_t frame_size_bytes = frame_size * sizeof(s16);
     size_t frames_written{0};
+
+    // If we're paused or going to shut down, we don't want to consume buffers as coretiming is
+    // paused and we'll desync, so just play silence.
+    if (system.IsPaused() || system.IsShuttingDown()) {
+        constexpr std::array<s16, 6> silence{};
+        for (size_t i = frames_written; i < num_frames; i++) {
+            std::memcpy(&output_buffer[i * frame_size], &silence[0], frame_size_bytes);
+        }
+        return;
+    }
 
     // Due to many frames being queued up with nvdec (5 frames or so?), a lot of buffers also get
     // queued up (30+) but not all at once, which causes constant stalling here, so just let the

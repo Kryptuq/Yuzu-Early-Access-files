@@ -129,21 +129,14 @@ public:
      *                 Default false.
      */
     void Start(bool resume = false) override {
-        if (!ctx) {
+        if (!ctx || !paused) {
             return;
         }
 
-        if (resume && was_playing) {
-            if (cubeb_stream_start(stream_backend) != CUBEB_OK) {
-                LOG_CRITICAL(Audio_Sink, "Error starting cubeb stream");
-            }
-            paused = false;
-        } else if (!resume) {
-            if (cubeb_stream_start(stream_backend) != CUBEB_OK) {
-                LOG_CRITICAL(Audio_Sink, "Error starting cubeb stream");
-            }
-            paused = false;
+        if (cubeb_stream_start(stream_backend) != CUBEB_OK) {
+            LOG_CRITICAL(Audio_Sink, "Error starting cubeb stream");
         }
+        paused = false;
     }
 
     /**
@@ -151,7 +144,8 @@ public:
      */
     void Stop() override {
         Unstall();
-        if (!ctx) {
+
+        if (!ctx || paused) {
             return;
         }
 
@@ -284,18 +278,6 @@ void CubebSink::CloseStream(SinkStream* stream) {
 
 void CubebSink::CloseStreams() {
     sink_streams.clear();
-}
-
-void CubebSink::PauseStreams() {
-    for (auto& stream : sink_streams) {
-        stream->Stop();
-    }
-}
-
-void CubebSink::UnpauseStreams() {
-    for (auto& stream : sink_streams) {
-        stream->Start(true);
-    }
 }
 
 f32 CubebSink::GetDeviceVolume() const {
