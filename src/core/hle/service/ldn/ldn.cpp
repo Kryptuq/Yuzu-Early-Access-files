@@ -205,8 +205,6 @@ public:
     }
 
     void GetIpv4Address(Kernel::HLERequestContext& ctx) {
-        LOG_CRITICAL(Service_LDN, "called");
-
         const auto network_interface = Network::GetSelectedNetworkInterface();
 
         if (!network_interface) {

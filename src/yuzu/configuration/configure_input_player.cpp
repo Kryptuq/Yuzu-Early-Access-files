@@ -1417,7 +1417,7 @@ void ConfigureInputPlayer::HandleClick(
         ui->controllerFrame->BeginMappingAnalog(button_id);
     }
 
-    timeout_timer->start(2500); // Cancel after 2.5 seconds
+    timeout_timer->start(4000); // Cancel after 4 seconds
     poll_timer->start(25);      // Check for new inputs every 25ms
 }
 

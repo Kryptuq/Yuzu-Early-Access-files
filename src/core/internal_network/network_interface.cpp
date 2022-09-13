@@ -188,7 +188,7 @@ std::vector<NetworkInterface> GetAvailableNetworkInterfaces() {
 std::optional<NetworkInterface> GetSelectedNetworkInterface() {
     const auto& selected_network_interface = Settings::values.network_interface.GetValue();
     const auto network_interfaces = Network::GetAvailableNetworkInterfaces();
-    if (network_interfaces.size() == 0) {
+    if (network_interfaces.empty()) {
         LOG_ERROR(Network, "GetAvailableNetworkInterfaces returned no interfaces");
         return std::nullopt;
     }
@@ -209,7 +209,7 @@ std::optional<NetworkInterface> GetSelectedNetworkInterface() {
 void SelectFirstNetworkInterface() {
     const auto network_interfaces = Network::GetAvailableNetworkInterfaces();
 
-    if (network_interfaces.size() == 0) {
+    if (network_interfaces.empty()) {
         return;
     }
 

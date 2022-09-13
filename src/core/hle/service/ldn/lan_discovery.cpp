@@ -35,12 +35,9 @@ void LanStation::OverrideInfo() {
 
 LANDiscovery::LANDiscovery(Network::RoomNetwork& room_network_)
     : stations({{{1, this}, {2, this}, {3, this}, {4, this}, {5, this}, {6, this}, {7, this}}}),
-      room_network{room_network_} {
-    LOG_INFO(Service_LDN, "LANDiscovery");
-}
+      room_network{room_network_} {}
 
 LANDiscovery::~LANDiscovery() {
-    LOG_INFO(Service_LDN, "~LANDiscovery");
     if (inited) {
         Result rc = Finalize();
         LOG_INFO(Service_LDN, "Finalize: {}", rc.raw);
@@ -62,7 +59,7 @@ void LANDiscovery::InitNetworkInfo() {
 }
 
 void LANDiscovery::InitNodeStateChange() {
-    for (auto& node_update : nodeChanges) {
+    for (auto& node_update : node_changes) {
         node_update.state_change = NodeStateChange::None;
     }
     for (auto& node_state : node_last_states) {
@@ -97,8 +94,8 @@ Result LANDiscovery::GetNetworkInfo(NetworkInfo& out_network,
     if (state == State::AccessPointCreated || state == State::StationConnected) {
         std::memcpy(&out_network, &network_info, sizeof(network_info));
         for (std::size_t i = 0; i < buffer_count; i++) {
-            out_updates[i].state_change = nodeChanges[i].state_change;
-            nodeChanges[i].state_change = NodeStateChange::None;
+            out_updates[i].state_change = node_changes[i].state_change;
+            node_changes[i].state_change = NodeStateChange::None;
         }
         return ResultSuccess;
     }
@@ -168,9 +165,9 @@ Result LANDiscovery::Scan(std::vector<NetworkInfo>& networks, u16& count,
     return ResultSuccess;
 }
 
-Result LANDiscovery::SetAdvertiseData(std::vector<u8>& data) {
+Result LANDiscovery::SetAdvertiseData(std::span<const u8> data) {
     std::scoped_lock lock{packet_mutex};
-    std::size_t size = data.size();
+    const std::size_t size = data.size();
     if (size > AdvertiseDataSizeMax) {
         return ResultAdvertiseDataTooLarge;
     }
@@ -328,7 +325,7 @@ Result LANDiscovery::Disconnect() {
     return ResultSuccess;
 }
 
-Result LANDiscovery::Initialize(LanEventFunc lan_event, bool listening) {
+Result LANDiscovery::Initialize(LanEventFunc lan_event_, bool listening) {
     std::scoped_lock lock{packet_mutex};
     if (inited) {
         return ResultSuccess;
@@ -341,7 +338,7 @@ Result LANDiscovery::Initialize(LanEventFunc lan_event, bool listening) {
     }
 
     connected_clients.clear();
-    LanEvent = lan_event;
+    LanEvent = lan_event_;
 
     SetState(State::Initialized);
 
@@ -439,7 +436,6 @@ void LANDiscovery::SendPacket(Network::LDNPacketType type, const Data& data,
     packet.local_ip = GetLocalIp();
     packet.remote_ip = remote_ip;
 
-    packet.data.clear();
     packet.data.resize(sizeof(data));
     std::memcpy(packet.data.data(), &data, sizeof(data));
     SendPacket(packet);
@@ -453,7 +449,6 @@ void LANDiscovery::SendPacket(Network::LDNPacketType type, Ipv4Address remote_ip
     packet.local_ip = GetLocalIp();
     packet.remote_ip = remote_ip;
 
-    packet.data.clear();
     SendPacket(packet);
 }
 
@@ -465,7 +460,6 @@ void LANDiscovery::SendBroadcast(Network::LDNPacketType type, const Data& data) 
     packet.broadcast = true;
     packet.local_ip = GetLocalIp();
 
-    packet.data.clear();
     packet.data.resize(sizeof(data));
     std::memcpy(packet.data.data(), &data, sizeof(data));
     SendPacket(packet);
@@ -478,7 +472,6 @@ void LANDiscovery::SendBroadcast(Network::LDNPacketType type) {
     packet.broadcast = true;
     packet.local_ip = GetLocalIp();
 
-    packet.data.clear();
     SendPacket(packet);
 }
 
@@ -581,9 +574,9 @@ bool LANDiscovery::IsNodeStateChanged() {
     for (int i = 0; i < NodeCountMax; i++) {
         if (nodes[i].is_connected != node_last_states[i]) {
             if (nodes[i].is_connected) {
-                nodeChanges[i].state_change |= NodeStateChange::Connect;
+                node_changes[i].state_change |= NodeStateChange::Connect;
             } else {
-                nodeChanges[i].state_change |= NodeStateChange::Disconnect;
+                node_changes[i].state_change |= NodeStateChange::Disconnect;
             }
             node_last_states[i] = nodes[i].is_connected;
             changed = true;
@@ -598,7 +591,7 @@ bool LANDiscovery::IsFlagSet(ScanFilterFlag flag, ScanFilterFlag search_flag) co
     return (flag_value & search_flag_value) == search_flag_value;
 }
 
-int LANDiscovery::GetStationCount() {
+int LANDiscovery::GetStationCount() const {
     int count = 0;
     for (const auto& station : stations) {
         if (station.GetStatus() != NodeStatus::Disconnected) {

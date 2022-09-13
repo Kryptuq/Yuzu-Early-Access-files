@@ -716,7 +716,7 @@ RoomMember::CallbackHandle<ProxyPacket> RoomMember::BindOnProxyPacketReceived(
 
 RoomMember::CallbackHandle<LDNPacket> RoomMember::BindOnLdnPacketReceived(
     std::function<void(const LDNPacket&)> callback) {
-    return room_member_impl->Bind(callback);
+    return room_member_impl->Bind(std::move(callback));
 }
 
 RoomMember::CallbackHandle<RoomInformation> RoomMember::BindOnRoomInformationChanged(

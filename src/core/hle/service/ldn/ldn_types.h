@@ -31,13 +31,7 @@ enum class NodeStateChange : u8 {
     DisconnectAndConnect,
 };
 
-inline NodeStateChange operator|(NodeStateChange a, NodeStateChange b) {
-    return static_cast<NodeStateChange>(static_cast<u8>(a) | static_cast<u8>(b));
-}
-
-inline NodeStateChange operator|=(NodeStateChange& a, NodeStateChange b) {
-    return a = a | b;
-}
+DECLARE_ENUM_FLAG_OPERATORS(NodeStateChange)
 
 enum class ScanFilterFlag : u32 {
     None = 0,

@@ -10,6 +10,7 @@
 #include <mutex>
 #include <optional>
 #include <random>
+#include <span>
 #include <thread>
 #include <unordered_map>
 
@@ -44,7 +45,7 @@ protected:
 
 class LANDiscovery {
 public:
-    typedef std::function<void()> LanEventFunc;
+    using LanEventFunc = std::function<void()>;
 
     LANDiscovery(Network::RoomNetwork& room_network_);
     ~LANDiscovery();
@@ -58,7 +59,7 @@ public:
 
     DisconnectReason GetDisconnectReason() const;
     Result Scan(std::vector<NetworkInfo>& networks, u16& count, const ScanFilter& filter);
-    Result SetAdvertiseData(std::vector<u8>& data);
+    Result SetAdvertiseData(std::span<const u8> data);
 
     Result OpenAccessPoint();
     Result CloseAccessPoint();
@@ -74,7 +75,7 @@ public:
                    u16 local_communication_version);
     Result Disconnect();
 
-    Result Initialize(LanEventFunc lan_event = empty_func, bool listening = true);
+    Result Initialize(LanEventFunc lan_event_ = empty_func, bool listening = true);
     Result Finalize();
 
     void ReceivePacket(const Network::LDNPacket& packet);
@@ -94,7 +95,7 @@ protected:
 
     bool IsNodeStateChanged();
     bool IsFlagSet(ScanFilterFlag flag, ScanFilterFlag search_flag) const;
-    int GetStationCount();
+    int GetStationCount() const;
     MacAddress GetFakeMac() const;
     Result GetNodeInfo(NodeInfo& node, const UserConfig& user_config,
                        u16 local_communication_version);
@@ -114,7 +115,7 @@ protected:
     bool inited{};
     std::mutex packet_mutex;
     std::array<LanStation, StationCountMax> stations;
-    std::array<NodeLatestUpdate, NodeCountMax> nodeChanges{};
+    std::array<NodeLatestUpdate, NodeCountMax> node_changes{};
     std::array<u8, NodeCountMax> node_last_states{};
     std::unordered_map<MacAddress, NetworkInfo, MACAddressHash> scan_results{};
     NodeInfo node_info{};
@@ -124,7 +125,7 @@ protected:
 
     // TODO (flTobi): Should this be an std::set?
     std::vector<Ipv4Address> connected_clients;
-    std::optional<Ipv4Address> host_ip = std::nullopt;
+    std::optional<Ipv4Address> host_ip;
 
     LanEventFunc LanEvent;
 
