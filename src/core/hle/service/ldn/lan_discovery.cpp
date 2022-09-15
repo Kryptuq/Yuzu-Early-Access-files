@@ -592,14 +592,10 @@ bool LANDiscovery::IsFlagSet(ScanFilterFlag flag, ScanFilterFlag search_flag) co
 }
 
 int LANDiscovery::GetStationCount() const {
-    int count = 0;
-    for (const auto& station : stations) {
-        if (station.GetStatus() != NodeStatus::Disconnected) {
-            count++;
-        }
-    }
-
-    return count;
+    return static_cast<int>(
+        std::count_if(stations.begin(), stations.end(), [](const auto& station) {
+            return station.GetStatus() != NodeStatus::Disconnected;
+        }));
 }
 
 MacAddress LANDiscovery::GetFakeMac() const {

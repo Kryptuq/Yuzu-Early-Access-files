@@ -133,10 +133,10 @@ public:
             return;
         }
 
+        paused = false;
         if (cubeb_stream_start(stream_backend) != CUBEB_OK) {
             LOG_CRITICAL(Audio_Sink, "Error starting cubeb stream");
         }
-        paused = false;
     }
 
     /**
@@ -149,12 +149,10 @@ public:
             return;
         }
 
+        paused = true;
         if (cubeb_stream_stop(stream_backend) != CUBEB_OK) {
             LOG_CRITICAL(Audio_Sink, "Error stopping cubeb stream");
         }
-
-        was_playing.store(!paused);
-        paused = true;
     }
 
 private:

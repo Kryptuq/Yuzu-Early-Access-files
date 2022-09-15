@@ -220,8 +220,6 @@ protected:
     u32 device_channels{2};
     /// Is this stream currently paused?
     std::atomic<bool> paused{true};
-    /// Was this stream previously playing?
-    std::atomic<bool> was_playing{false};
     /// Name of this stream
     std::string name{};
 

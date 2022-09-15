@@ -112,8 +112,8 @@ public:
             return;
         }
 
-        SDL_PauseAudioDevice(device, 0);
         paused = false;
+        SDL_PauseAudioDevice(device, 0);
     }
 
     /**
@@ -124,8 +124,8 @@ public:
         if (device == 0 || paused) {
             return;
         }
-        SDL_PauseAudioDevice(device, 1);
         paused = true;
+        SDL_PauseAudioDevice(device, 1);
     }
 
 private:

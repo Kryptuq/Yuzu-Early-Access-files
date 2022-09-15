@@ -11,7 +11,7 @@
 
 namespace AudioCore::AudioRenderer {
 
-static void SetCompressorEffectParameter(CompressorInfo::ParameterVersion2& params,
+static void SetCompressorEffectParameter(const CompressorInfo::ParameterVersion2& params,
                                          CompressorInfo::State& state) {
     const auto ratio{1.0f / params.compressor_ratio};
     auto makeup_gain{0.0f};
@@ -31,9 +31,9 @@ static void SetCompressorEffectParameter(CompressorInfo::ParameterVersion2& para
     state.unk_20 = c;
 }
 
-static void InitializeCompressorEffect(CompressorInfo::ParameterVersion2& params,
+static void InitializeCompressorEffect(const CompressorInfo::ParameterVersion2& params,
                                        CompressorInfo::State& state) {
-    std::memset(&state, 0, sizeof(CompressorInfo::State));
+    state = {};
 
     state.unk_00 = 0;
     state.unk_04 = 1.0f;
@@ -42,7 +42,7 @@ static void InitializeCompressorEffect(CompressorInfo::ParameterVersion2& params
     SetCompressorEffectParameter(params, state);
 }
 
-static void ApplyCompressorEffect(CompressorInfo::ParameterVersion2& params,
+static void ApplyCompressorEffect(const CompressorInfo::ParameterVersion2& params,
                                   CompressorInfo::State& state, bool enabled,
                                   std::vector<std::span<const s32>> input_buffers,
                                   std::vector<std::span<s32>> output_buffers, u32 sample_count) {
@@ -103,8 +103,7 @@ static void ApplyCompressorEffect(CompressorInfo::ParameterVersion2& params,
     } else {
         for (s16 channel = 0; channel < params.channel_count; channel++) {
             if (params.inputs[channel] != params.outputs[channel]) {
-                std::memcpy((char*)output_buffers[channel].data(),
-                            (char*)input_buffers[channel].data(),
+                std::memcpy(output_buffers[channel].data(), input_buffers[channel].data(),
                             output_buffers[channel].size_bytes());
             }
         }
