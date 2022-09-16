@@ -214,7 +214,7 @@ protected:
     Core::System& system;
     /// Type of this stream
     StreamType type;
-    /// Set by the audio render/in/out systen which uses this stream
+    /// Set by the audio render/in/out system which uses this stream
     u32 system_channels{2};
     /// Channels supported by hardware
     u32 device_channels{2};

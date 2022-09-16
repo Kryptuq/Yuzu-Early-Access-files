@@ -191,6 +191,7 @@ public:
      * @param volume       - Current mix volume used for calculating the ramp.
      * @param prev_volume  - Previous mix volume, used for calculating the ramp,
      *                       also applied to the input.
+     * @param prev_samples - Previous sample buffer. Used for depopping.
      * @param precision    - Number of decimal bits for fixed point operations.
      */
     void GenerateMixRampCommand(s32 node_id, s16 buffer_count, s16 input_index, s16 output_index,
@@ -208,6 +209,7 @@ public:
      * @param volumes      - Current mix volumes used for calculating the ramp.
      * @param prev_volumes - Previous mix volumes, used for calculating the ramp,
      *                       also applied to the input.
+     * @param prev_samples - Previous sample buffer. Used for depopping.
      * @param precision    - Number of decimal bits for fixed point operations.
      */
     void GenerateMixRampGroupedCommand(s32 node_id, s16 buffer_count, s16 input_index,
@@ -297,11 +299,11 @@ public:
     /**
      * Generate a device sink command, adding it to the command list.
      *
-     * @param node_id       - Node id of the voice this command is generated for.
-     * @param buffer_offset - Base mix buffer offset to use.
-     * @param sink_info     - The sink_info to generate this command from.
-     * @session_id          - System session id this command is generated from.
-     * @samples_buffer      - The buffer to be sent to the sink if upsampling is not used.
+     * @param node_id        - Node id of the voice this command is generated for.
+     * @param buffer_offset  - Base mix buffer offset to use.
+     * @param sink_info      - The sink_info to generate this command from.
+     * @param session_id     - System session id this command is generated from.
+     * @param samples_buffer - The buffer to be sent to the sink if upsampling is not used.
      */
     void GenerateDeviceSinkCommand(s32 node_id, s16 buffer_offset, SinkInfoBase& sink_info,
                                    u32 session_id, std::span<s32> samples_buffer);

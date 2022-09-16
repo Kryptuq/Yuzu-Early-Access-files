@@ -73,7 +73,8 @@ public:
      * Calculate the required size for the performance workbuffer.
      *
      * @param behavior - Check which version is supported.
-     * @param params    - Input parameters.
+     * @param params   - Input parameters.
+     *
      * @return Required workbuffer size.
      */
     static u64 GetRequiredBufferSizeForPerformanceMetricsPerFrame(
@@ -104,7 +105,7 @@ public:
      * @param workbuffer      - Workbuffer to use for performance frames.
      * @param workbuffer_size - Size of the workbuffer.
      * @param params          - Input parameters.
-     * @param behavior       - Behaviour to check version and data format.
+     * @param behavior        - Behaviour to check version and data format.
      * @param memory_pool     - Used to translate the workbuffer address for the DSP.
      */
     virtual void Initialize(std::span<u8> workbuffer, u64 workbuffer_size,
@@ -160,7 +161,8 @@ public:
      * workbuffer, to be written by the AudioRenderer.
      *
      * @param addresses       - Filled with pointers to the new detail, which should be passed
-     * to the AudioRenderer with Performance commands to be written.
+     *                          to the AudioRenderer with Performance commands to be written.
+     * @param detail_type     - Performance detail type.
      * @param entry_type      - The type of this detail. See PerformanceEntryType
      * @param node_id         - Node id for this detail.
      * @return True if a new detail was created and the offsets are valid, otherwise false.

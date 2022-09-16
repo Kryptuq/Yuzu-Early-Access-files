@@ -64,10 +64,10 @@ public:
 
     /**
      * Add a renderer system to the manager.
-     * The system will be reguarly called to generate commands for the AudioRenderer.
+     * The system will be regularly called to generate commands for the AudioRenderer.
      *
      * @param system - The system to add.
-     * @return True if the system was sucessfully added, otherwise false.
+     * @return True if the system was successfully added, otherwise false.
      */
     bool AddSystem(System& system);
 
@@ -75,7 +75,7 @@ public:
      * Remove a renderer system from the manager.
      *
      * @param system - The system to remove.
-     * @return True if the system was sucessfully removed, otherwise false.
+     * @return True if the system was successfully removed, otherwise false.
      */
     bool RemoveSystem(System& system);
 

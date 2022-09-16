@@ -7,17 +7,7 @@
 #include "common/logging/log.h"
 
 namespace AudioCore::AudioRenderer {
-/**
- * Mix input mix buffer into output mix buffer, with volume applied to the input.
- *
- * @tparam Q           - Number of bits for fixed point operations.
- * @param output       - Output mix buffer.
- * @param input        - Input mix buffer.
- * @param volume       - Volume applied to the input.
- * @param ramp         - Ramp applied to volume every sample.
- * @param sample_count - Number of samples to process.
- * @return The final gained input sample, used for depopping.
- */
+
 template <size_t Q>
 s32 ApplyMixRamp(std::span<s32> output, std::span<const s32> input, const f32 volume_,
                  const f32 ramp_, const u32 sample_count) {
@@ -40,10 +30,8 @@ s32 ApplyMixRamp(std::span<s32> output, std::span<const s32> input, const f32 vo
     return sample.to_int();
 }
 
-template s32 ApplyMixRamp<15>(std::span<s32>, std::span<const s32>, const f32, const f32,
-                              const u32);
-template s32 ApplyMixRamp<23>(std::span<s32>, std::span<const s32>, const f32, const f32,
-                              const u32);
+template s32 ApplyMixRamp<15>(std::span<s32>, std::span<const s32>, f32, f32, u32);
+template s32 ApplyMixRamp<23>(std::span<s32>, std::span<const s32>, f32, f32, u32);
 
 void MixRampCommand::Dump(const ADSP::CommandListProcessor& processor, std::string& string) {
     const auto ramp{(volume - prev_volume) / static_cast<f32>(processor.sample_count)};

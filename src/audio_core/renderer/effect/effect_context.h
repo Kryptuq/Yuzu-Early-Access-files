@@ -15,15 +15,15 @@ class EffectContext {
 public:
     /**
      * Initialize the effect context
-     * @param effect_infos List of effect infos for this context
-     * @param effect_count The number of effects in the list
-     * @param result_states_cpu The workbuffer of result states for the CPU for this context
-     * @param result_states_dsp The workbuffer of result states for the DSP for this context
-     * @param state_count The number of result states
+     * @param effect_infos_      - List of effect infos for this context
+     * @param effect_count_      - The number of effects in the list
+     * @param result_states_cpu_ - The workbuffer of result states for the CPU for this context
+     * @param result_states_dsp_ - The workbuffer of result states for the DSP for this context
+     * @param dsp_state_count    - The number of result states
      */
-    void Initialize(std::span<EffectInfoBase> effect_infos_, const u32 effect_count_,
+    void Initialize(std::span<EffectInfoBase> effect_infos_, u32 effect_count_,
                     std::span<EffectResultState> result_states_cpu_,
-                    std::span<EffectResultState> result_states_dsp_, const size_t dsp_state_count);
+                    std::span<EffectResultState> result_states_dsp_, size_t dsp_state_count);
 
     /**
      * Get the EffectInfo for a given index

@@ -76,7 +76,7 @@ public:
 
 private:
     /**
-     * Main thread, waiting on a manager signal and calling the registered fucntion.
+     * Main thread, waiting on a manager signal and calling the registered function.
      */
     void ThreadFunc();
 

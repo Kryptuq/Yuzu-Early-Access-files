@@ -48,8 +48,7 @@ public:
      *                          May differ from the device's channel count.
      * @param name            - Name of this stream.
      * @param type            - Type of this stream, render/in/out.
-     * @param event           - Audio render only, a signal used to prevent the renderer running too
-     *                          fast.
+     *
      * @return A pointer to the created SinkStream
      */
     virtual SinkStream* AcquireSinkStream(Core::System& system, u32 system_channels,

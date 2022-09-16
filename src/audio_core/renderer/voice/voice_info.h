@@ -185,7 +185,8 @@ public:
     /**
      * Does this voice ned an update?
      *
-     * @param params - Input parametetrs to check matching.
+     * @param params - Input parameters to check matching.
+     *
      * @return True if this voice needs an update, otherwise false.
      */
     bool ShouldUpdateParameters(const InParameter& params) const;
@@ -194,9 +195,9 @@ public:
      * Update the parameters of this voice.
      *
      * @param error_info  - Output error code.
-     * @param params      - Input parametters to udpate from.
+     * @param params      - Input parameters to update from.
      * @param pool_mapper - Used to map buffers.
-     * @param behavior   - behavior to check supported features.
+     * @param behavior    - behavior to check supported features.
      */
     void UpdateParameters(BehaviorInfo::ErrorInfo& error_info, const InParameter& params,
                           const PoolMapper& pool_mapper, const BehaviorInfo& behavior);
@@ -218,12 +219,12 @@ public:
     /**
      * Update all wavebuffers.
      *
-     * @param error_infos - Output 2D array of errors, 2 per wavebuffer.
-     * @param error_count - Number of errors provided. Unused.
-     * @param params - Input parametters to be used for the update.
+     * @param error_infos  - Output 2D array of errors, 2 per wavebuffer.
+     * @param error_count  - Number of errors provided. Unused.
+     * @param params       - Input parameters to be used for the update.
      * @param voice_states - The voice states for each channel in this voice to be updated.
-     * @param pool_mapper - Used to map the wavebuffers.
-     * @param behavior - Used to check for supported features.
+     * @param pool_mapper  - Used to map the wavebuffers.
+     * @param behavior     - Used to check for supported features.
      */
     void UpdateWaveBuffers(std::span<std::array<BehaviorInfo::ErrorInfo, 2>> error_infos,
                            u32 error_count, const InParameter& params,
@@ -233,13 +234,13 @@ public:
     /**
      * Update a wavebuffer.
      *
-     * @param error_infos          - Output array of errors.
+     * @param error_info           - Output array of errors.
      * @param wave_buffer          - The wavebuffer to be updated.
      * @param wave_buffer_internal - Input parametters to be used for the update.
      * @param sample_format        - Sample format of the wavebuffer.
      * @param valid                - Is this wavebuffer valid?
      * @param pool_mapper          - Used to map the wavebuffers.
-     * @param behavior            - Used to check for supported features.
+     * @param behavior             - Used to check for supported features.
      */
     void UpdateWaveBuffer(std::span<BehaviorInfo::ErrorInfo> error_info, WaveBuffer& wave_buffer,
                           const WaveBufferInternal& wave_buffer_internal,
@@ -276,7 +277,7 @@ public:
     /**
      * Check if this voice has any mixing connections.
      *
-     * @return True if this voice participes in mixing, otherwise false.
+     * @return True if this voice participates in mixing, otherwise false.
      */
     bool HasAnyConnection() const;
 
@@ -301,7 +302,8 @@ public:
     /**
      * Update this voice on command generation.
      *
-     * @param voice_states  - Voice states for these wavebuffers.
+     * @param voice_context - Voice context for these wavebuffers.
+     *
      * @return True if this voice should be generated, otherwise false.
      */
     bool UpdateForCommandGeneration(VoiceContext& voice_context);

@@ -17,7 +17,7 @@ namespace AudioCore {
 
 class AudioManager;
 /**
- * Main audio class, sotred inside the core, and holding the audio manager, all sinks, and the ADSP.
+ * Main audio class, stored inside the core, and holding the audio manager, all sinks, and the ADSP.
  */
 class AudioCore {
 public:

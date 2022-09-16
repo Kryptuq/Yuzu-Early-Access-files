@@ -197,9 +197,9 @@ public:
     /**
      * Generate an I3DL2 reverb effect command.
      *
-     * @param buffer_offset    - Base mix buffer offset to use.
-     * @param effect_info_base - I3DL2Reverb effect info.
-     * @param node_id          - Node id of the mix this command is generated for.
+     * @param buffer_offset - Base mix buffer offset to use.
+     * @param effect_info   - I3DL2Reverb effect info.
+     * @param node_id       - Node id of the mix this command is generated for.
      */
     void GenerateI3dl2ReverbEffectCommand(s16 buffer_offset, EffectInfoBase& effect_info,
                                           s32 node_id);
@@ -207,18 +207,18 @@ public:
     /**
      * Generate an aux effect command.
      *
-     * @param buffer_offset    - Base mix buffer offset to use.
-     * @param effect_info_base - Aux effect info.
-     * @param node_id          - Node id of the mix this command is generated for.
+     * @param buffer_offset - Base mix buffer offset to use.
+     * @param effect_info   - Aux effect info.
+     * @param node_id       - Node id of the mix this command is generated for.
      */
     void GenerateAuxCommand(s16 buffer_offset, EffectInfoBase& effect_info, s32 node_id);
 
     /**
      * Generate a biquad filter effect command.
      *
-     * @param buffer_offset    - Base mix buffer offset to use.
-     * @param effect_info_base - Aux effect info.
-     * @param node_id          - Node id of the mix this command is generated for.
+     * @param buffer_offset - Base mix buffer offset to use.
+     * @param effect_info   - Aux effect info.
+     * @param node_id       - Node id of the mix this command is generated for.
      */
     void GenerateBiquadFilterEffectCommand(s16 buffer_offset, EffectInfoBase& effect_info,
                                            s32 node_id);
@@ -226,10 +226,10 @@ public:
     /**
      * Generate a light limiter effect command.
      *
-     * @param buffer_offset    - Base mix buffer offset to use.
-     * @param effect_info_base - Limiter effect info.
-     * @param node_id          - Node id of the mix this command is generated for.
-     * @param effect_index     - Index for the statistics state.
+     * @param buffer_offset - Base mix buffer offset to use.
+     * @param effect_info   - Limiter effect info.
+     * @param node_id       - Node id of the mix this command is generated for.
+     * @param effect_index  - Index for the statistics state.
      */
     void GenerateLightLimiterEffectCommand(s16 buffer_offset, EffectInfoBase& effect_info,
                                            s32 node_id, u32 effect_index);
@@ -238,21 +238,20 @@ public:
      * Generate a capture effect command.
      * Writes a mix buffer back to game memory.
      *
-     * @param buffer_offset    - Base mix buffer offset to use.
-     * @param effect_info_base - Capture effect info.
-     * @param node_id          - Node id of the mix this command is generated for.
+     * @param buffer_offset - Base mix buffer offset to use.
+     * @param effect_info   - Capture effect info.
+     * @param node_id       - Node id of the mix this command is generated for.
      */
     void GenerateCaptureCommand(s16 buffer_offset, EffectInfoBase& effect_info, s32 node_id);
 
     /**
      * Generate a compressor effect command.
      *
-     * @param buffer_offset    - Base mix buffer offset to use.
-     * @param effect_info_base - Compressor effect info.
-     * @param node_id          - Node id of the mix this command is generated for.
+     * @param buffer_offset - Base mix buffer offset to use.
+     * @param effect_info   - Compressor effect info.
+     * @param node_id       - Node id of the mix this command is generated for.
      */
-    void GenerateCompressorCommand(const s16 buffer_offset, EffectInfoBase& effect_info,
-                                   const s32 node_id);
+    void GenerateCompressorCommand(s16 buffer_offset, EffectInfoBase& effect_info, s32 node_id);
 
     /**
      * Generate all effect commands for a mix.
@@ -318,8 +317,9 @@ public:
      * Generate a performance command.
      * Used to report performance metrics of the AudioRenderer back to the game.
      *
-     * @param buffer_offset - Base mix buffer offset to use.
-     * @param sink_info     - Sink info to generate the commands from.
+     * @param node_id         - Node ID of the mix this command is generated for
+     * @param state           - Output state of the generated performance command
+     * @param entry_addresses - Addresses to be written
      */
     void GeneratePerformanceCommand(s32 node_id, PerformanceState state,
                                     const PerformanceEntryAddresses& entry_addresses);

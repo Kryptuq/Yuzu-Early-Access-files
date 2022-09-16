@@ -199,7 +199,7 @@ public:
     /**
      * Set this system's current volume.
      *
-     * @param The new volume.
+     * @param volume The new volume.
      */
     void SetVolume(f32 volume);
 

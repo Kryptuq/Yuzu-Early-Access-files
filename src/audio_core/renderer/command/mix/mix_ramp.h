@@ -61,13 +61,13 @@ struct MixRampCommand : ICommand {
  * @tparam Q           - Number of bits for fixed point operations.
  * @param output       - Output mix buffer.
  * @param input        - Input mix buffer.
- * @param volume       - Volume applied to the input.
- * @param ramp         - Ramp applied to volume every sample.
+ * @param volume_      - Volume applied to the input.
+ * @param ramp_        - Ramp applied to volume every sample.
  * @param sample_count - Number of samples to process.
  * @return The final gained input sample, used for depopping.
  */
 template <size_t Q>
-s32 ApplyMixRamp(std::span<s32> output, std::span<const s32> input, const f32 volume_,
-                 const f32 ramp_, const u32 sample_count);
+s32 ApplyMixRamp(std::span<s32> output, std::span<const s32> input, f32 volume_, f32 ramp_,
+                 u32 sample_count);
 
 } // namespace AudioCore::AudioRenderer

@@ -19,8 +19,8 @@ public:
     /**
      * Setup a new AddressInfo.
      *
-     * @param cpu_address - The CPU address of this region.
-     * @param size        - The size of this region.
+     * @param cpu_address_ - The CPU address of this region.
+     * @param size_        - The size of this region.
      */
     void Setup(CpuAddr cpu_address_, u64 size_) {
         cpu_address = cpu_address_;
@@ -42,7 +42,6 @@ public:
      * Assign this region to a memory pool.
      *
      * @param memory_pool_ - Memory pool to assign.
-     * @return The CpuAddr address of this region.
      */
     void SetPool(MemoryPoolInfo* memory_pool_) {
         memory_pool = memory_pool_;

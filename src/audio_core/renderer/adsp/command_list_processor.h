@@ -33,10 +33,10 @@ public:
     /**
      * Initialize the processor.
      *
-     * @param system_ - The core system.
-     * @param buffer  - The command buffer to process.
-     * @param size    - The size of the buffer.
-     * @param stream_ - The stream to be used for sending the samples.
+     * @param system - The core system.
+     * @param buffer - The command buffer to process.
+     * @param size   - The size of the buffer.
+     * @param stream - The stream to be used for sending the samples.
      */
     void Initialize(Core::System& system, CpuAddr buffer, u64 size, Sink::SinkStream* stream);
 
@@ -72,7 +72,8 @@ public:
     /**
      * Process the command list.
      *
-     * @param index - Index of the current command list.
+     * @param session_id - Session ID for the commands being processed.
+     *
      * @return The time taken to process.
      */
     u64 Process(u32 session_id);
@@ -89,7 +90,7 @@ public:
     u8* commands{};
     /// The command buffer size
     u64 commands_buffer_size{};
-    /// The maximum processing time alloted
+    /// The maximum processing time allotted
     u64 max_process_time{};
     /// The number of commands in the buffer
     u32 command_count{};

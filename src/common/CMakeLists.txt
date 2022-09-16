@@ -170,6 +170,7 @@ if(ARCHITECTURE_x86_64)
             x64/xbyak_abi.h
             x64/xbyak_util.h
     )
+    target_link_libraries(common PRIVATE xbyak)
 endif()
 
 if (MSVC)
@@ -193,7 +194,7 @@ endif()
 create_target_directory_groups(common)
 
 target_link_libraries(common PUBLIC ${Boost_LIBRARIES} fmt::fmt microprofile Threads::Threads)
-target_link_libraries(common PRIVATE lz4::lz4 xbyak)
+target_link_libraries(common PRIVATE lz4::lz4)
 if (TARGET zstd::zstd)
   target_link_libraries(common PRIVATE zstd::zstd)
 else()

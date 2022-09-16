@@ -88,7 +88,9 @@ public:
     /**
      * Release all registered buffers.
      *
-     * @param timestamp - The released timestamp for this buffer.
+     * @param core_timing - The CoreTiming instance
+     * @param session     - The device session
+     *
      * @return Is the buffer was released.
      */
     bool ReleaseBuffers(Core::Timing::CoreTiming& core_timing, DeviceSession& session) {

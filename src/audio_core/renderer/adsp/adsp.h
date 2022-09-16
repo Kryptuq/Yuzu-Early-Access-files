@@ -63,8 +63,6 @@ public:
 
     /**
      * Stop the ADSP.
-     *
-     * @return True if started or already running, otherwise false.
      */
     void Stop();
 

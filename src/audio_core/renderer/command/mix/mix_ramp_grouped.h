@@ -50,9 +50,9 @@ struct MixRampGroupedCommand : ICommand {
     std::array<s16, MaxMixBuffers> inputs;
     /// Output mix buffer indexes for each mix buffer
     std::array<s16, MaxMixBuffers> outputs;
-    /// Previous mix vloumes for each mix buffer
+    /// Previous mix volumes for each mix buffer
     std::array<f32, MaxMixBuffers> prev_volumes;
-    /// Current mix vloumes for each mix buffer
+    /// Current mix volumes for each mix buffer
     std::array<f32, MaxMixBuffers> volumes;
     /// Pointer to the previous sample buffer, used for depop
     CpuAddr previous_samples;

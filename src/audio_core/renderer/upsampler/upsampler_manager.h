@@ -27,7 +27,7 @@ public:
     /**
      * Free the given upsampler.
      *
-     * @param The upsampler to be freed.
+     * @param info The upsampler to be freed.
      */
     void Free(UpsamplerInfo* info);
 

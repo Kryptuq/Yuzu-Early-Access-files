@@ -74,7 +74,8 @@ public:
     /**
      * Check if the buffer for the given tag has been consumed by the backend.
      *
-     * @param tag - Unqiue tag of the buffer to check.
+     * @param buffer - the buffer to check.
+     *
      * @return true if the buffer has been consumed, otherwise false.
      */
     bool IsBufferConsumed(AudioBuffer& buffer) const;

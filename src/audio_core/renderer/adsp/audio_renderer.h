@@ -52,7 +52,7 @@ public:
     /**
      * Send a message from the host to the AudioRenderer.
      *
-     * @param message_ - The message to send to the AudioRenderer.
+     * @param message - The message to send to the AudioRenderer.
      */
     void HostSendMessage(RenderMessage message);
 
@@ -66,7 +66,7 @@ public:
     /**
      * Send a message from the AudioRenderer to the host.
      *
-     * @param message_ - The message to send to the host.
+     * @param message - The message to send to the host.
      */
     void ADSPSendMessage(RenderMessage message);
 
@@ -163,7 +163,7 @@ public:
     /**
      * Start the AudioRenderer.
      *
-     * @param The mailbox to use for this session.
+     * @param mailbox The mailbox to use for this session.
      */
     void Start(AudioRenderer_Mailbox* mailbox);
 

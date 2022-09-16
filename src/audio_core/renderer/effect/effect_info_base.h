@@ -291,7 +291,7 @@ public:
      * Update the info with new parameters, version 1.
      *
      * @param error_info  - Used to write call result code.
-     * @param in_params   - New parameters to update the info with.
+     * @param params      - New parameters to update the info with.
      * @param pool_mapper - Pool for mapping buffers.
      */
     virtual void Update(BehaviorInfo::ErrorInfo& error_info,
@@ -305,7 +305,7 @@ public:
      * Update the info with new parameters, version 2.
      *
      * @param error_info  - Used to write call result code.
-     * @param in_params   - New parameters to update the info with.
+     * @param params      - New parameters to update the info with.
      * @param pool_mapper - Pool for mapping buffers.
      */
     virtual void Update(BehaviorInfo::ErrorInfo& error_info,

@@ -14,7 +14,7 @@ namespace AudioCore {
  * Responsible for the input/output events, set by the stream backend when buffers are consumed, and
  * waited on by the audio manager. These callbacks signal the game's events to keep the audio buffer
  * recycling going.
- * In a real Switch this is not a seprate class, and exists entirely within the audio manager.
+ * In a real Switch this is not a separate class, and exists entirely within the audio manager.
  * On the Switch it's implemented more simply through a MultiWaitEventHolder, where it can
  * wait on multiple events at once, and the events are not needed by the backend.
  */
@@ -81,7 +81,7 @@ public:
     void ClearEvents();
 
 private:
-    /// Lock, used bythe audio manager
+    /// Lock, used by the audio manager
     std::mutex event_lock;
     /// Array of events, one per system type (see Type), last event is used to terminate
     std::array<std::atomic<bool>, 4> events_signalled;
