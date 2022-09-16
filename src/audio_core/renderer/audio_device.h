@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <span>
+#include <string_view>
 
 #include "audio_core/audio_render_manager.h"
 
@@ -23,20 +23,12 @@ namespace AudioRenderer {
 class AudioDevice {
 public:
     struct AudioDeviceName {
-        std::array<char, 0x100> name;
+        std::array<char, 0x100> name{};
 
-        AudioDeviceName(const char* name_) {
-            std::strncpy(name.data(), name_, name.size());
+        constexpr AudioDeviceName(std::string_view name_) {
+            name_.copy(name.data(), name.size() - 1);
         }
     };
-
-    std::array<AudioDeviceName, 4> usb_device_names{"AudioStereoJackOutput",
-                                                    "AudioBuiltInSpeakerOutput", "AudioTvOutput",
-                                                    "AudioUsbDeviceOutput"};
-    std::array<AudioDeviceName, 3> device_names{"AudioStereoJackOutput",
-                                                "AudioBuiltInSpeakerOutput", "AudioTvOutput"};
-    std::array<AudioDeviceName, 3> output_device_names{"AudioBuiltInSpeakerOutput", "AudioTvOutput",
-                                                       "AudioExternalOutput"};
 
     explicit AudioDevice(Core::System& system, u64 applet_resource_user_id, u32 revision);
 
@@ -47,7 +39,7 @@ public:
      * @param max_count  - Maximum number of devices to write (count of out_buffer).
      * @return Number of device names written.
      */
-    u32 ListAudioDeviceName(std::vector<AudioDeviceName>& out_buffer, size_t max_count);
+    u32 ListAudioDeviceName(std::vector<AudioDeviceName>& out_buffer, size_t max_count) const;
 
     /**
      * Get a list of the available output devices.
@@ -57,7 +49,7 @@ public:
      * @param max_count  - Maximum number of devices to write (count of out_buffer).
      * @return Number of device names written.
      */
-    u32 ListAudioOutputDeviceName(std::vector<AudioDeviceName>& out_buffer, size_t max_count);
+    u32 ListAudioOutputDeviceName(std::vector<AudioDeviceName>& out_buffer, size_t max_count) const;
 
     /**
      * Set the volume of all streams in the backend sink.
@@ -73,7 +65,7 @@ public:
      * @param name - Name of the device to check. Unused.
      * @return Volume of the device.
      */
-    f32 GetDeviceVolume(std::string_view name);
+    f32 GetDeviceVolume(std::string_view name) const;
 
 private:
     /// Backend output sink for the device

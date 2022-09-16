@@ -13,7 +13,9 @@
 
 #include <boost/container/static_vector.hpp>
 
+#include "common/alignment.h"
 #include "common/common_types.h"
+#include "common/thread_worker.h"
 #include "video_core/textures/astc.h"
 
 class InputBitStream {
@@ -1650,29 +1652,41 @@ static void DecompressBlock(std::span<const u8, 16> inBuf, const u32 blockWidth,
 
 void Decompress(std::span<const uint8_t> data, uint32_t width, uint32_t height, uint32_t depth,
                 uint32_t block_width, uint32_t block_height, std::span<uint8_t> output) {
-    u32 block_index = 0;
-    std::size_t depth_offset = 0;
-    for (u32 z = 0; z < depth; z++) {
-        for (u32 y = 0; y < height; y += block_height) {
-            for (u32 x = 0; x < width; x += block_width) {
-                const std::span<const u8, 16> blockPtr{data.subspan(block_index * 16, 16)};
+    const u32 rows = Common::DivideUp(height, block_height);
+    const u32 cols = Common::DivideUp(width, block_width);
 
-                // Blocks can be at most 12x12
-                std::array<u32, 12 * 12> uncompData;
-                DecompressBlock(blockPtr, block_width, block_height, uncompData);
+    Common::ThreadWorker workers{std::max(std::thread::hardware_concurrency(), 2U) / 2,
+                                 "yuzu:ASTCDecompress"};
 
-                u32 decompWidth = std::min(block_width, width - x);
-                u32 decompHeight = std::min(block_height, height - y);
+    for (u32 z = 0; z < depth; ++z) {
+        const u32 depth_offset = z * height * width * 4;
+        for (u32 y_index = 0; y_index < rows; ++y_index) {
+            auto decompress_stride = [data, width, height, depth, block_width, block_height, output,
+                                      rows, cols, z, depth_offset, y_index] {
+                const u32 y = y_index * block_height;
+                for (u32 x_index = 0; x_index < cols; ++x_index) {
+                    const u32 block_index = (z * rows * cols) + (y_index * cols) + x_index;
+                    const u32 x = x_index * block_width;
 
-                const std::span<u8> outRow = output.subspan(depth_offset + (y * width + x) * 4);
-                for (u32 jj = 0; jj < decompHeight; jj++) {
-                    std::memcpy(outRow.data() + jj * width * 4,
-                                uncompData.data() + jj * block_width, decompWidth * 4);
+                    const std::span<const u8, 16> blockPtr{data.subspan(block_index * 16, 16)};
+
+                    // Blocks can be at most 12x12
+                    std::array<u32, 12 * 12> uncompData;
+                    DecompressBlock(blockPtr, block_width, block_height, uncompData);
+
+                    u32 decompWidth = std::min(block_width, width - x);
+                    u32 decompHeight = std::min(block_height, height - y);
+
+                    const std::span<u8> outRow = output.subspan(depth_offset + (y * width + x) * 4);
+                    for (u32 h = 0; h < decompHeight; ++h) {
+                        std::memcpy(outRow.data() + h * width * 4,
+                                    uncompData.data() + h * block_width, decompWidth * 4);
+                    }
                 }
-                ++block_index;
-            }
+            };
+            workers.QueueWork(std::move(decompress_stride));
         }
-        depth_offset += height * width * 4;
+        workers.WaitForRequests();
     }
 }
 

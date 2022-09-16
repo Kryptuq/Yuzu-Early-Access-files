@@ -246,9 +246,8 @@ void AudOutU::ListAudioOuts(Kernel::HLERequestContext& ctx) {
     const auto write_count =
         static_cast<u32>(ctx.GetWriteBufferSize() / sizeof(AudioDevice::AudioDeviceName));
     std::vector<AudioDevice::AudioDeviceName> device_names{};
-    std::string print_names{};
     if (write_count > 0) {
-        device_names.push_back(AudioDevice::AudioDeviceName("DeviceOut"));
+        device_names.emplace_back("DeviceOut");
         LOG_DEBUG(Service_Audio, "called. \nName=DeviceOut");
     } else {
         LOG_DEBUG(Service_Audio, "called. Empty buffer passed in.");

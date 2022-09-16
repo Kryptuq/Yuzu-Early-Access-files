@@ -82,7 +82,7 @@ u32 Manager::GetDeviceNames(std::vector<AudioRenderer::AudioDevice::AudioDeviceN
 
     auto input_devices{Sink::GetDeviceListForSink(Settings::values.sink_id.GetValue(), true)};
     if (input_devices.size() > 1) {
-        names.push_back(AudioRenderer::AudioDevice::AudioDeviceName("Uac"));
+        names.emplace_back("Uac");
         return 1;
     }
     return 0;

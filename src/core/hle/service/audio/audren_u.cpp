@@ -252,7 +252,7 @@ private:
 
         std::vector<AudioDevice::AudioDeviceName> out_names{};
 
-        u32 out_count = impl->ListAudioDeviceName(out_names, in_count);
+        const u32 out_count = impl->ListAudioDeviceName(out_names, in_count);
 
         std::string out{};
         for (u32 i = 0; i < out_count; i++) {
@@ -365,7 +365,7 @@ private:
 
         std::vector<AudioDevice::AudioDeviceName> out_names{};
 
-        u32 out_count = impl->ListAudioOutputDeviceName(out_names, in_count);
+        const u32 out_count = impl->ListAudioOutputDeviceName(out_names, in_count);
 
         std::string out{};
         for (u32 i = 0; i < out_count; i++) {
