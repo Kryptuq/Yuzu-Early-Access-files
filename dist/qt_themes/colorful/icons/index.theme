@@ -1,7 +1,6 @@
 [Icon Theme]
 Name=colorful
 Comment=Colorful theme
-Inherits=default
 Directories=16x16,48x48,256x256
  
 [16x16]

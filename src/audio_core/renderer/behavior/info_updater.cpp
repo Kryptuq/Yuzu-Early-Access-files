@@ -485,7 +485,7 @@ Result InfoUpdater::UpdateBehaviorInfo(BehaviorInfo& behaviour_) {
     return ResultSuccess;
 }
 
-Result InfoUpdater::UpdateErrorInfo(BehaviorInfo& behaviour_) {
+Result InfoUpdater::UpdateErrorInfo(const BehaviorInfo& behaviour_) {
     auto out_params{reinterpret_cast<BehaviorInfo::OutStatus*>(output)};
     behaviour_.CopyErrorInfo(out_params->errors, out_params->error_count);
 

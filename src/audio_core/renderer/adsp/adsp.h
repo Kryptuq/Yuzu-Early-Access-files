@@ -131,7 +131,7 @@ public:
      * @param session_id     - The session id to check (0 or 1).
      * @param command_buffer - The command buffer to process.
      */
-    void SendCommandBuffer(u32 session_id, CommandBuffer& command_buffer);
+    void SendCommandBuffer(u32 session_id, const CommandBuffer& command_buffer);
 
     /**
      * Clear the command buffers (does not clear the time taken or the remaining command count)

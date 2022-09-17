@@ -51,7 +51,7 @@ CommandBuffer& AudioRenderer_Mailbox::GetCommandBuffer(const s32 session_id) {
     return command_buffers[session_id];
 }
 
-void AudioRenderer_Mailbox::SetCommandBuffer(const u32 session_id, CommandBuffer& buffer) {
+void AudioRenderer_Mailbox::SetCommandBuffer(const u32 session_id, const CommandBuffer& buffer) {
     command_buffers[session_id] = buffer;
 }
 

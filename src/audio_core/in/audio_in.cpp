@@ -72,7 +72,7 @@ Kernel::KReadableEvent& In::GetBufferEvent() {
     return event->GetReadableEvent();
 }
 
-f32 In::GetVolume() {
+f32 In::GetVolume() const {
     std::scoped_lock l{parent_mutex};
     return system.GetVolume();
 }
@@ -82,17 +82,17 @@ void In::SetVolume(f32 volume) {
     system.SetVolume(volume);
 }
 
-bool In::ContainsAudioBuffer(u64 tag) {
+bool In::ContainsAudioBuffer(u64 tag) const {
     std::scoped_lock l{parent_mutex};
     return system.ContainsAudioBuffer(tag);
 }
 
-u32 In::GetBufferCount() {
+u32 In::GetBufferCount() const {
     std::scoped_lock l{parent_mutex};
     return system.GetBufferCount();
 }
 
-u64 In::GetPlayedSampleCount() {
+u64 In::GetPlayedSampleCount() const {
     std::scoped_lock l{parent_mutex};
     return system.GetPlayedSampleCount();
 }

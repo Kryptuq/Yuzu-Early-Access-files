@@ -102,7 +102,7 @@ public:
      *
      * @return The current volume.
      */
-    f32 GetVolume();
+    f32 GetVolume() const;
 
     /**
      * Set the system volume.
@@ -117,21 +117,21 @@ public:
      * @param tag - The tag to search for.
      * @return True if the buffer is in the system, otherwise false.
      */
-    bool ContainsAudioBuffer(u64 tag);
+    bool ContainsAudioBuffer(u64 tag) const;
 
     /**
      * Get the maximum number of buffers.
      *
      * @return The maximum number of buffers.
      */
-    u32 GetBufferCount();
+    u32 GetBufferCount() const;
 
     /**
      * Get the total played sample count for this audio in.
      *
      * @return The played sample count.
      */
-    u64 GetPlayedSampleCount();
+    u64 GetPlayedSampleCount() const;
 
 private:
     /// The AudioIn::Manager this audio in is registered with

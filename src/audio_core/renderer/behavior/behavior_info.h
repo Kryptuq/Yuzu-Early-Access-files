@@ -94,7 +94,7 @@ public:
      *
      * @param error - The new error.
      */
-    void AppendError(ErrorInfo& error);
+    void AppendError(const ErrorInfo& error);
 
     /**
      * Copy errors to the given output container.
@@ -102,7 +102,7 @@ public:
      * @param out_errors - Output container to receive the errors.
      * @param out_count  - The number of errors written.
      */
-    void CopyErrorInfo(std::span<ErrorInfo> out_errors, u32& out_count);
+    void CopyErrorInfo(std::span<ErrorInfo> out_errors, u32& out_count) const;
 
     /**
      * Update the behaviour flags.

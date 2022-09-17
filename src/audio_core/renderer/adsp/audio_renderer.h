@@ -91,7 +91,7 @@ public:
      * @param session_id - The session id to get (0 or 1).
      * @param buffer     - The command buffer to set.
      */
-    void SetCommandBuffer(u32 session_id, CommandBuffer& buffer);
+    void SetCommandBuffer(u32 session_id, const CommandBuffer& buffer);
 
     /**
      * Get the total render time taken for the last command lists sent.

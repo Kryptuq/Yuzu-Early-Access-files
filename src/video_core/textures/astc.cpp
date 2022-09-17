@@ -1413,7 +1413,7 @@ static void FillVoidExtentLDR(InputBitStream& strm, std::span<u32> outBuf, u32 b
 static void FillError(std::span<u32> outBuf, u32 blockWidth, u32 blockHeight) {
     for (u32 j = 0; j < blockHeight; j++) {
         for (u32 i = 0; i < blockWidth; i++) {
-            outBuf[j * blockWidth + i] = 0xFFFF00FF;
+            outBuf[j * blockWidth + i] = 0x00000000;
         }
     }
 }

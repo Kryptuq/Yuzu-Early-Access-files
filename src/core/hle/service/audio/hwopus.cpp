@@ -255,6 +255,32 @@ void HwOpus::GetWorkBufferSizeEx(Kernel::HLERequestContext& ctx) {
     GetWorkBufferSize(ctx);
 }
 
+void HwOpus::GetWorkBufferSizeForMultiStreamEx(Kernel::HLERequestContext& ctx) {
+    OpusMultiStreamParametersEx param;
+    std::memcpy(&param, ctx.ReadBuffer().data(), ctx.GetReadBufferSize());
+
+    const auto sample_rate = param.sample_rate;
+    const auto channel_count = param.channel_count;
+    const auto number_streams = param.number_streams;
+    const auto number_stereo_streams = param.number_stereo_streams;
+
+    LOG_DEBUG(
+        Audio,
+        "called with sample_rate={}, channel_count={}, number_streams={}, number_stereo_streams={}",
+        sample_rate, channel_count, number_streams, number_stereo_streams);
+
+    ASSERT_MSG(sample_rate == 48000 || sample_rate == 24000 || sample_rate == 16000 ||
+                   sample_rate == 12000 || sample_rate == 8000,
+               "Invalid sample rate");
+
+    const u32 worker_buffer_sz =
+        static_cast<u32>(opus_multistream_decoder_get_size(number_streams, number_stereo_streams));
+
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(ResultSuccess);
+    rb.Push<u32>(worker_buffer_sz);
+}
+
 void HwOpus::OpenHardwareOpusDecoder(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto sample_rate = rp.Pop<u32>();
@@ -335,7 +361,7 @@ HwOpus::HwOpus(Core::System& system_) : ServiceFramework{system_, "hwopus"} {
         {4, &HwOpus::OpenHardwareOpusDecoderEx, "OpenHardwareOpusDecoderEx"},
         {5, &HwOpus::GetWorkBufferSizeEx, "GetWorkBufferSizeEx"},
         {6, nullptr, "OpenHardwareOpusDecoderForMultiStreamEx"},
-        {7, nullptr, "GetWorkBufferSizeForMultiStreamEx"},
+        {7, &HwOpus::GetWorkBufferSizeForMultiStreamEx, "GetWorkBufferSizeForMultiStreamEx"},
     };
     RegisterHandlers(functions);
 }

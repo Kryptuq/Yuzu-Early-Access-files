@@ -95,7 +95,7 @@ public:
             return out_sample;
         }
 
-        Common::FixedPoint<50, 14> Read() {
+        Common::FixedPoint<50, 14> Read() const {
             return *output;
         }
 
@@ -106,7 +106,7 @@ public:
             }
         }
 
-        Common::FixedPoint<50, 14> TapOut(const s32 index) {
+        Common::FixedPoint<50, 14> TapOut(const s32 index) const {
             auto out{input - (index + 1)};
             if (out < buffer.data()) {
                 out += sample_count;

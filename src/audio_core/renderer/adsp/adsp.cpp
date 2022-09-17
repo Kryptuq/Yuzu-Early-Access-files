@@ -50,7 +50,7 @@ u32 ADSP::GetRemainCommandCount(const u32 session_id) const {
     return render_mailbox.GetRemainCommandCount(session_id);
 }
 
-void ADSP::SendCommandBuffer(const u32 session_id, CommandBuffer& command_buffer) {
+void ADSP::SendCommandBuffer(const u32 session_id, const CommandBuffer& command_buffer) {
     render_mailbox.SetCommandBuffer(session_id, command_buffer);
 }
 

@@ -25,8 +25,8 @@ SystemManager& Manager::GetSystemManager() {
     return *system_manager;
 }
 
-auto Manager::GetWorkBufferSize(const AudioRendererParameterInternal& params, u64& out_count)
-    -> Result {
+Result Manager::GetWorkBufferSize(const AudioRendererParameterInternal& params,
+                                  u64& out_count) const {
     if (!CheckValidRevision(params.revision)) {
         return Service::Audio::ERR_INVALID_REVISION;
     }
@@ -54,7 +54,7 @@ void Manager::ReleaseSessionId(const s32 session_id) {
     session_ids[--session_count] = session_id;
 }
 
-u32 Manager::GetSessionCount() {
+u32 Manager::GetSessionCount() const {
     std::scoped_lock l{session_lock};
     return session_count;
 }

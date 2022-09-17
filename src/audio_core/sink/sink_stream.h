@@ -151,7 +151,7 @@ public:
      *
      * @return The number of queued buffers.
      */
-    u32 GetQueueSize() {
+    u32 GetQueueSize() const {
         return queued_buffers.load();
     }
 

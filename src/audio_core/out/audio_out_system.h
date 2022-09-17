@@ -68,7 +68,7 @@ public:
      *
      * @return The default audio output device name.
      */
-    std::string_view GetDefaultOutputDeviceName();
+    std::string_view GetDefaultOutputDeviceName() const;
 
     /**
      * Is the given initialize config valid?
@@ -77,7 +77,7 @@ public:
      * @param in_params   - Input parameters, see AudioOutParameter.
      * @return Result code.
      */
-    Result IsConfigValid(std::string_view device_name, const AudioOutParameter& in_params);
+    Result IsConfigValid(std::string_view device_name, const AudioOutParameter& in_params) const;
 
     /**
      * Initialize this system.
@@ -209,14 +209,14 @@ public:
      * @param tag - Unique tag to search for.
      * @return True if the buffer is in the system, otherwise false.
      */
-    bool ContainsAudioBuffer(u64 tag);
+    bool ContainsAudioBuffer(u64 tag) const;
 
     /**
      * Get the maximum number of usable buffers (default 32).
      *
      * @return The number of buffers.
      */
-    u32 GetBufferCount();
+    u32 GetBufferCount() const;
 
     /**
      * Get the total number of samples played by this system.

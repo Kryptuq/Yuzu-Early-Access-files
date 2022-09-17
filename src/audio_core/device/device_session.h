@@ -62,14 +62,14 @@ public:
      *
      * @param buffers - The buffers to play.
      */
-    void AppendBuffers(std::span<AudioBuffer> buffers) const;
+    void AppendBuffers(std::span<const AudioBuffer> buffers) const;
 
     /**
      * (Audio In only) Pop samples from the backend, and write them back to this buffer's address.
      *
      * @param buffer - The buffer to write to.
      */
-    void ReleaseBuffer(AudioBuffer& buffer) const;
+    void ReleaseBuffer(const AudioBuffer& buffer) const;
 
     /**
      * Check if the buffer for the given tag has been consumed by the backend.
@@ -78,7 +78,7 @@ public:
      *
      * @return true if the buffer has been consumed, otherwise false.
      */
-    bool IsBufferConsumed(AudioBuffer& buffer) const;
+    bool IsBufferConsumed(const AudioBuffer& buffer) const;
 
     /**
      * Start this device session, starting the backend stream.

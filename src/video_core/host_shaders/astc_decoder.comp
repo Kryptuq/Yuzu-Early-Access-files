@@ -1065,7 +1065,7 @@ TexelWeightParams DecodeBlockInfo() {
 void FillError(ivec3 coord) {
     for (uint j = 0; j < block_dims.y; j++) {
         for (uint i = 0; i < block_dims.x; i++) {
-            imageStore(dest_image, coord + ivec3(i, j, 0), vec4(1.0, 1.0, 0.0, 1.0));
+            imageStore(dest_image, coord + ivec3(i, j, 0), vec4(0.0, 0.0, 0.0, 0.0));
         }
     }
 }

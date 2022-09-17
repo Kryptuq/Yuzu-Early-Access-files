@@ -130,7 +130,7 @@ public:
      * @param behaviour - Behaviour to update.
      * @return Result code.
      */
-    Result UpdateErrorInfo(BehaviorInfo& behaviour);
+    Result UpdateErrorInfo(const BehaviorInfo& behaviour);
 
     /**
      * Update splitter.

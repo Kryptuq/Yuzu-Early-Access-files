@@ -73,12 +73,12 @@ void DeviceSession::Stop() {
     }
 }
 
-void DeviceSession::AppendBuffers(std::span<AudioBuffer> buffers) const {
-    for (size_t i = 0; i < buffers.size(); i++) {
+void DeviceSession::AppendBuffers(std::span<const AudioBuffer> buffers) const {
+    for (const auto& buffer : buffers) {
         Sink::SinkBuffer new_buffer{
-            .frames = buffers[i].size / (channel_count * sizeof(s16)),
+            .frames = buffer.size / (channel_count * sizeof(s16)),
             .frames_played = 0,
-            .tag = buffers[i].tag,
+            .tag = buffer.tag,
             .consumed = false,
         };
 
@@ -86,21 +86,21 @@ void DeviceSession::AppendBuffers(std::span<AudioBuffer> buffers) const {
             std::vector<s16> samples{};
             stream->AppendBuffer(new_buffer, samples);
         } else {
-            std::vector<s16> samples(buffers[i].size / sizeof(s16));
-            system.Memory().ReadBlockUnsafe(buffers[i].samples, samples.data(), buffers[i].size);
+            std::vector<s16> samples(buffer.size / sizeof(s16));
+            system.Memory().ReadBlockUnsafe(buffer.samples, samples.data(), buffer.size);
             stream->AppendBuffer(new_buffer, samples);
         }
     }
 }
 
-void DeviceSession::ReleaseBuffer(AudioBuffer& buffer) const {
+void DeviceSession::ReleaseBuffer(const AudioBuffer& buffer) const {
     if (type == Sink::StreamType::In) {
         auto samples{stream->ReleaseBuffer(buffer.size / sizeof(s16))};
         system.Memory().WriteBlockUnsafe(buffer.samples, samples.data(), buffer.size);
     }
 }
 
-bool DeviceSession::IsBufferConsumed(AudioBuffer& buffer) const {
+bool DeviceSession::IsBufferConsumed(const AudioBuffer& buffer) const {
     return played_sample_count >= buffer.end_timestamp;
 }
 

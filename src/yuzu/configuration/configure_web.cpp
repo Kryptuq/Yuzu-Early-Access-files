@@ -128,20 +128,25 @@ void ConfigureWeb::RefreshTelemetryID() {
 void ConfigureWeb::OnLoginChanged() {
     if (ui->edit_token->text().isEmpty()) {
         user_verified = true;
-
-        const QPixmap pixmap = QIcon::fromTheme(QStringLiteral("checked")).pixmap(16);
-        ui->label_token_verified->setPixmap(pixmap);
+        // Empty = no icon
+        ui->label_token_verified->setPixmap(QPixmap());
+        ui->label_token_verified->setToolTip(QString());
     } else {
         user_verified = false;
 
-        const QPixmap pixmap = QIcon::fromTheme(QStringLiteral("failed")).pixmap(16);
+        // Show an info icon if it's been changed, clearer than showing failure
+        const QPixmap pixmap = QIcon::fromTheme(QStringLiteral("info")).pixmap(16);
         ui->label_token_verified->setPixmap(pixmap);
+        ui->label_token_verified->setToolTip(
+            tr("Unverified, please click Verify before saving configuration", "Tooltip"));
     }
 }
 
 void ConfigureWeb::VerifyLogin() {
     ui->button_verify_login->setDisabled(true);
     ui->button_verify_login->setText(tr("Verifying..."));
+    ui->label_token_verified->setPixmap(QIcon::fromTheme(QStringLiteral("sync")).pixmap(16));
+    ui->label_token_verified->setToolTip(tr("Verifying..."));
     verify_watcher.setFuture(QtConcurrent::run(
         [username = UsernameFromDisplayToken(ui->edit_token->text().toStdString()),
          token = TokenFromDisplayToken(ui->edit_token->text().toStdString())] {
@@ -155,13 +160,13 @@ void ConfigureWeb::OnLoginVerified() {
     if (verify_watcher.result()) {
         user_verified = true;
 
-        const QPixmap pixmap = QIcon::fromTheme(QStringLiteral("checked")).pixmap(16);
-        ui->label_token_verified->setPixmap(pixmap);
+        ui->label_token_verified->setPixmap(QIcon::fromTheme(QStringLiteral("checked")).pixmap(16));
+        ui->label_token_verified->setToolTip(tr("Verified", "Tooltip"));
         ui->username->setText(
             QString::fromStdString(UsernameFromDisplayToken(ui->edit_token->text().toStdString())));
     } else {
-        const QPixmap pixmap = QIcon::fromTheme(QStringLiteral("failed")).pixmap(16);
-        ui->label_token_verified->setPixmap(pixmap);
+        ui->label_token_verified->setPixmap(QIcon::fromTheme(QStringLiteral("failed")).pixmap(16));
+        ui->label_token_verified->setToolTip(tr("Verification failed", "Tooltip"));
         ui->username->setText(tr("Unspecified"));
         QMessageBox::critical(this, tr("Verification failed"),
                               tr("Verification failed. Check that you have entered your token "
