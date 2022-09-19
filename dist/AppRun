@@ -21,8 +21,8 @@ if [ -n "$extra_libs" ]; then
 fi
 
 export SSL_CERT_FILE="$PWD/ca-certificates.pem"
-#echo ">>>>> $LD_LIBRARY_PATH"
-#echo ">>>>> $LD_PRELOAD"
+#echo ">>>>> LD_LIBRARY_PATH $LD_LIBRARY_PATH"
+#echo ">>>>> LD_PRELOAD $LD_PRELOAD"
 
-./usr/bin/$exec "$*"
-exit $?
+exec ./usr/bin/yuzu "$@"
+
