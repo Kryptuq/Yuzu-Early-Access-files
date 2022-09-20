@@ -13,7 +13,7 @@ constexpr char ENV_VAR_ENABLED_TEXT[] = "ON";
 
 void CheckVulkan();
 bool CheckEnvVars(bool* is_child);
-bool StartupChecks(const char* arg0, bool* has_broken_vulkan);
+bool StartupChecks(const char* arg0, bool* has_broken_vulkan, bool perform_vulkan_check);
 
 #ifdef _WIN32
 bool SpawnChild(const char* arg0, PROCESS_INFORMATION* pi, int flags);

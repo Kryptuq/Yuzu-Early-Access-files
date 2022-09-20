@@ -531,6 +531,7 @@ struct Values {
     Setting<bool> use_auto_stub{false, "use_auto_stub"};
     Setting<bool> enable_all_controllers{false, "enable_all_controllers"};
     Setting<bool> create_crash_dumps{false, "create_crash_dumps"};
+    Setting<bool> perform_vulkan_check{true, "perform_vulkan_check"};
 
     // Miscellaneous
     Setting<std::string> log_filter{"*:Info", "log_filter"};

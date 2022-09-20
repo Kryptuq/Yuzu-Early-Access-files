@@ -57,7 +57,7 @@ bool CheckEnvVars(bool* is_child) {
     return false;
 }
 
-bool StartupChecks(const char* arg0, bool* has_broken_vulkan) {
+bool StartupChecks(const char* arg0, bool* has_broken_vulkan, bool perform_vulkan_check) {
 #ifdef _WIN32
     // Set the startup variable for child processes
     const bool env_var_set = SetEnvironmentVariableA(STARTUP_CHECK_ENV_VAR, ENV_VAR_ENABLED_TEXT);
@@ -67,29 +67,32 @@ bool StartupChecks(const char* arg0, bool* has_broken_vulkan) {
         return false;
     }
 
-    PROCESS_INFORMATION process_info;
-    std::memset(&process_info, '\0', sizeof(process_info));
+    if (perform_vulkan_check) {
+        // Spawn child process that performs Vulkan check
+        PROCESS_INFORMATION process_info;
+        std::memset(&process_info, '\0', sizeof(process_info));
 
-    if (!SpawnChild(arg0, &process_info, 0)) {
-        return false;
-    }
+        if (!SpawnChild(arg0, &process_info, 0)) {
+            return false;
+        }
 
-    // Wait until the processs exits and get exit code from it
-    WaitForSingleObject(process_info.hProcess, INFINITE);
-    DWORD exit_code = STILL_ACTIVE;
-    const int err = GetExitCodeProcess(process_info.hProcess, &exit_code);
-    if (err == 0) {
-        std::fprintf(stderr, "GetExitCodeProcess failed with error %d\n", GetLastError());
-    }
+        // Wait until the processs exits and get exit code from it
+        WaitForSingleObject(process_info.hProcess, INFINITE);
+        DWORD exit_code = STILL_ACTIVE;
+        const int err = GetExitCodeProcess(process_info.hProcess, &exit_code);
+        if (err == 0) {
+            std::fprintf(stderr, "GetExitCodeProcess failed with error %d\n", GetLastError());
+        }
 
-    // Vulkan is broken if the child crashed (return value is not zero)
-    *has_broken_vulkan = (exit_code != 0);
+        // Vulkan is broken if the child crashed (return value is not zero)
+        *has_broken_vulkan = (exit_code != 0);
 
-    if (CloseHandle(process_info.hProcess) == 0) {
-        std::fprintf(stderr, "CloseHandle failed with error %d\n", GetLastError());
-    }
-    if (CloseHandle(process_info.hThread) == 0) {
-        std::fprintf(stderr, "CloseHandle failed with error %d\n", GetLastError());
+        if (CloseHandle(process_info.hProcess) == 0) {
+            std::fprintf(stderr, "CloseHandle failed with error %d\n", GetLastError());
+        }
+        if (CloseHandle(process_info.hThread) == 0) {
+            std::fprintf(stderr, "CloseHandle failed with error %d\n", GetLastError());
+        }
     }
 
     if (!SetEnvironmentVariableA(STARTUP_CHECK_ENV_VAR, nullptr)) {
@@ -98,26 +101,28 @@ bool StartupChecks(const char* arg0, bool* has_broken_vulkan) {
     }
 
 #elif defined(YUZU_UNIX)
-    const pid_t pid = fork();
-    if (pid == 0) {
-        CheckVulkan();
-        return true;
-    } else if (pid == -1) {
-        const int err = errno;
-        std::fprintf(stderr, "fork failed with error %d\n", err);
-        return false;
-    }
+    if (perform_vulkan_check) {
+        const pid_t pid = fork();
+        if (pid == 0) {
+            CheckVulkan();
+            return true;
+        } else if (pid == -1) {
+            const int err = errno;
+            std::fprintf(stderr, "fork failed with error %d\n", err);
+            return false;
+        }
 
-    // Get exit code from child process
-    int status;
-    const int r_val = wait(&status);
-    if (r_val == -1) {
-        const int err = errno;
-        std::fprintf(stderr, "wait failed with error %d\n", err);
-        return false;
+        // Get exit code from child process
+        int status;
+        const int r_val = wait(&status);
+        if (r_val == -1) {
+            const int err = errno;
+            std::fprintf(stderr, "wait failed with error %d\n", err);
+            return false;
+        }
+        // Vulkan is broken if the child crashed (return value is not zero)
+        *has_broken_vulkan = (status != 0);
     }
-    // Vulkan is broken if the child crashed (return value is not zero)
-    *has_broken_vulkan = (status != 0);
 #endif
     return false;
 }

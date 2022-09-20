@@ -546,6 +546,7 @@ void Config::ReadDebuggingValues() {
     ReadBasicSetting(Settings::values.use_auto_stub);
     ReadBasicSetting(Settings::values.enable_all_controllers);
     ReadBasicSetting(Settings::values.create_crash_dumps);
+    ReadBasicSetting(Settings::values.perform_vulkan_check);
 
     qt_config->endGroup();
 }
@@ -1162,6 +1163,7 @@ void Config::SaveDebuggingValues() {
     WriteBasicSetting(Settings::values.disable_macro_jit);
     WriteBasicSetting(Settings::values.enable_all_controllers);
     WriteBasicSetting(Settings::values.create_crash_dumps);
+    WriteBasicSetting(Settings::values.perform_vulkan_check);
 
     qt_config->endGroup();
 }

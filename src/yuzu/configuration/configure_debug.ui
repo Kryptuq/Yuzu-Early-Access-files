@@ -313,6 +313,16 @@
         </property>
        </widget>
       </item>
+      <item row="3" column="0">
+       <widget class="QCheckBox" name="perform_vulkan_check">
+        <property name="toolTip">
+         <string>Enables yuzu to check for a working Vulkan environment when the program starts up. Disable this if this is causing issues with external programs seeing yuzu.</string>
+        </property>
+        <property name="text">
+         <string>Perform Startup Vulkan Check</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
