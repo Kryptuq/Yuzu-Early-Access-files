@@ -157,7 +157,7 @@ struct Ssid {
 
     Ssid() = default;
 
-    explicit Ssid(std::string_view data) {
+    constexpr explicit Ssid(std::string_view data) {
         length = static_cast<u8>(std::min(data.size(), SsidLengthMax));
         data.copy(raw.data(), length);
         raw[length] = 0;
@@ -169,6 +169,10 @@ struct Ssid {
 
     bool operator==(const Ssid& b) const {
         return (length == b.length) && (std::memcmp(raw.data(), b.raw.data(), length) == 0);
+    }
+
+    bool operator!=(const Ssid& b) const {
+        return !operator==(b);
     }
 };
 static_assert(sizeof(Ssid) == 0x22, "Ssid is an invalid size");

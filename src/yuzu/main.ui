@@ -125,7 +125,7 @@
      <bool>true</bool>
     </property>
     <property name="title">
-     <string>Multiplayer</string>
+     <string>&amp;Multiplayer</string>
     </property>
     <addaction name="action_View_Lobby"/>
     <addaction name="action_Start_Room"/>

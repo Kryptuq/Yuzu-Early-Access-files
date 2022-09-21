@@ -110,7 +110,7 @@ protected:
     void SendPacket(const Network::LDNPacket& packet);
 
     static const LanEventFunc empty_func;
-    const Ssid fake_ssid{"YuzuFakeSsidForLdn"};
+    static constexpr Ssid fake_ssid{"YuzuFakeSsidForLdn"};
 
     bool inited{};
     std::mutex packet_mutex;
@@ -127,7 +127,7 @@ protected:
     std::vector<Ipv4Address> connected_clients;
     std::optional<Ipv4Address> host_ip;
 
-    LanEventFunc LanEvent;
+    LanEventFunc lan_event;
 
     Network::RoomNetwork& room_network;
 };

@@ -285,7 +285,7 @@ Result LANDiscovery::DestroyNetwork() {
     ResetStations();
 
     SetState(State::AccessPointOpened);
-    LanEvent();
+    lan_event();
 
     return ResultSuccess;
 }
@@ -320,7 +320,7 @@ Result LANDiscovery::Disconnect() {
     }
 
     SetState(State::StationOpened);
-    LanEvent();
+    lan_event();
 
     return ResultSuccess;
 }
@@ -338,7 +338,7 @@ Result LANDiscovery::Initialize(LanEventFunc lan_event_, bool listening) {
     }
 
     connected_clients.clear();
-    LanEvent = lan_event_;
+    lan_event = lan_event_;
 
     SetState(State::Initialized);
 
@@ -405,13 +405,13 @@ void LANDiscovery::OnDisconnectFromHost() {
     host_ip = std::nullopt;
     if (state == State::StationConnected) {
         SetState(State::StationOpened);
-        LanEvent();
+        lan_event();
     }
 }
 
 void LANDiscovery::OnNetworkInfoChanged() {
     if (IsNodeStateChanged()) {
-        LanEvent();
+        lan_event();
     }
     return;
 }
