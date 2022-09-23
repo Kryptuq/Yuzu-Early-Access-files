@@ -10,21 +10,10 @@
 #include <thread>
 
 #include "audio_core/audio_event.h"
-#include "core/hle/service/audio/errors.h"
 
-namespace Core {
-class System;
-}
+union Result;
 
 namespace AudioCore {
-
-namespace AudioOut {
-class Manager;
-}
-
-namespace AudioIn {
-class Manager;
-}
 
 /**
  * The AudioManager's main purpose is to wait for buffer events for the audio in and out managers,
@@ -43,7 +32,7 @@ class AudioManager {
     using BufferEventFunc = std::function<void()>;
 
 public:
-    explicit AudioManager(Core::System& system);
+    explicit AudioManager();
 
     /**
      * Shutdown the audio manager.
@@ -80,10 +69,6 @@ private:
      */
     void ThreadFunc();
 
-    /// Core system
-    Core::System& system;
-    /// Have sessions started palying?
-    bool sessions_started{};
     /// Is the main thread running?
     std::atomic<bool> running{};
     /// Unused

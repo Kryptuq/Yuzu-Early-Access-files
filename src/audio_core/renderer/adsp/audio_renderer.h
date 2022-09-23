@@ -83,7 +83,7 @@ public:
      * @param session_id - The session id to get (0 or 1).
      * @return The command buffer.
      */
-    CommandBuffer& GetCommandBuffer(s32 session_id);
+    CommandBuffer& GetCommandBuffer(u32 session_id);
 
     /**
      * Set the command buffer with the given session id (0 or 1).

@@ -32,6 +32,10 @@ public:
         std::unique_ptr<SocketBase> socket;
         SockAddrIn sockaddr_in;
     };
+
+    SocketBase() = default;
+    explicit SocketBase(SOCKET fd_) : fd{fd_} {}
+
     virtual ~SocketBase() = default;
 
     virtual SocketBase& operator=(const SocketBase&) = delete;
@@ -89,12 +93,19 @@ public:
 
     virtual void HandleProxyPacket(const ProxyPacket& packet) = 0;
 
+    [[nodiscard]] SOCKET GetFD() const {
+        return fd;
+    }
+
+protected:
     SOCKET fd = INVALID_SOCKET;
 };
 
 class Socket : public SocketBase {
 public:
     Socket() = default;
+    explicit Socket(SOCKET fd_) : SocketBase{fd_} {}
+
     ~Socket() override;
 
     Socket(const Socket&) = delete;

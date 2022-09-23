@@ -47,7 +47,7 @@ RenderMessage AudioRenderer_Mailbox::ADSPWaitMessage() {
     return msg;
 }
 
-CommandBuffer& AudioRenderer_Mailbox::GetCommandBuffer(const s32 session_id) {
+CommandBuffer& AudioRenderer_Mailbox::GetCommandBuffer(const u32 session_id) {
     return command_buffers[session_id];
 }
 

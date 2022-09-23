@@ -364,7 +364,7 @@ std::pair<s32, Errno> Poll(std::vector<PollFD>& pollfds, s32 timeout) {
     std::vector<WSAPOLLFD> host_pollfds(pollfds.size());
     std::transform(pollfds.begin(), pollfds.end(), host_pollfds.begin(), [](PollFD fd) {
         WSAPOLLFD result;
-        result.fd = fd.socket->fd;
+        result.fd = fd.socket->GetFD();
         result.events = TranslatePollEvents(fd.events);
         result.revents = 0;
         return result;
@@ -430,12 +430,12 @@ std::pair<SocketBase::AcceptResult, Errno> Socket::Accept() {
         return {AcceptResult{}, GetAndLogLastError()};
     }
 
-    AcceptResult result;
-    result.socket = std::make_unique<Socket>();
-    result.socket->fd = new_socket;
-
     ASSERT(addrlen == sizeof(sockaddr_in));
-    result.sockaddr_in = TranslateToSockAddrIn(addr);
+
+    AcceptResult result{
+        .socket = std::make_unique<Socket>(new_socket),
+        .sockaddr_in = TranslateToSockAddrIn(addr),
+    };
 
     return {std::move(result), Errno::SUCCESS};
 }
