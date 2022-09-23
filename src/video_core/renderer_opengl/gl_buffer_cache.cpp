@@ -168,7 +168,7 @@ void BufferCacheRuntime::BindIndexBuffer(Buffer& buffer, u32 offset, u32 size) {
     if (has_unified_vertex_buffers) {
         buffer.MakeResident(GL_READ_ONLY);
         glBufferAddressRangeNV(GL_ELEMENT_ARRAY_ADDRESS_NV, 0, buffer.HostGpuAddr() + offset,
-                               static_cast<GLsizeiptr>(size));
+                               static_cast<GLsizeiptr>(Common::AlignUp(size, 4)));
     } else {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.Handle());
         index_buffer_offset = offset;
