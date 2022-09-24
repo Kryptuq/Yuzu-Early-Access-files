@@ -214,8 +214,13 @@ void SinkStream::ProcessAudioOutAndRender(std::span<s16> output_buffer, std::siz
     // video play out without attempting to stall.
     // Can hopefully remove this later with a more complete NVDEC implementation.
     const auto nvdec_active{system.AudioCore().IsNVDECActive()};
-    if (!nvdec_active && queued_buffers > max_queue_size) {
+
+    // Core timing cannot be paused in single-core mode, so Stall ends up being called over and over
+    // and never recovers to a normal state, so just skip attempting to sync things on single-core.
+    if (system.IsMulticore() && !nvdec_active && queued_buffers > max_queue_size) {
         Stall();
+    } else if (system.IsMulticore() && queued_buffers <= max_queue_size) {
+        Unstall();
     }
 
     while (frames_written < num_frames) {
@@ -255,7 +260,7 @@ void SinkStream::ProcessAudioOutAndRender(std::span<s16> output_buffer, std::siz
     std::memcpy(&last_frame[0], &output_buffer[(frames_written - 1) * frame_size],
                 frame_size_bytes);
 
-    if (stalled && queued_buffers <= max_queue_size) {
+    if (system.IsMulticore() && queued_buffers <= max_queue_size) {
         Unstall();
     }
 }

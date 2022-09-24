@@ -660,7 +660,6 @@ void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing
             ASSERT(false);
             break;
         case Core::HID::NpadStyleIndex::ProController:
-        case Core::HID::NpadStyleIndex::Pokeball:
             set_motion_state(sixaxis_fullkey_state, motion_state[0]);
             break;
         case Core::HID::NpadStyleIndex::Handheld:
@@ -675,6 +674,11 @@ void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing
             break;
         case Core::HID::NpadStyleIndex::JoyconRight:
             set_motion_state(sixaxis_right_lifo_state, motion_state[1]);
+            break;
+        case Core::HID::NpadStyleIndex::Pokeball:
+            using namespace std::literals::chrono_literals;
+            set_motion_state(sixaxis_fullkey_state, motion_state[0]);
+            sixaxis_fullkey_state.delta_time = std::chrono::nanoseconds(15ms).count();
             break;
         default:
             break;

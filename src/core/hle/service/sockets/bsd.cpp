@@ -929,7 +929,7 @@ BSD::BSD(Core::System& system_, const char* name)
         proxy_packet_received = room_member->BindOnProxyPacketReceived(
             [this](const Network::ProxyPacket& packet) { OnProxyPacketReceived(packet); });
     } else {
-        LOG_ERROR(Service, "Network isn't initalized");
+        LOG_ERROR(Service, "Network isn't initialized");
     }
 }
 

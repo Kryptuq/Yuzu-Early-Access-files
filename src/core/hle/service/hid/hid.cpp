@@ -27,6 +27,7 @@
 #include "core/hle/service/hid/controllers/keyboard.h"
 #include "core/hle/service/hid/controllers/mouse.h"
 #include "core/hle/service/hid/controllers/npad.h"
+#include "core/hle/service/hid/controllers/palma.h"
 #include "core/hle/service/hid/controllers/stubbed.h"
 #include "core/hle/service/hid/controllers/touchscreen.h"
 #include "core/hle/service/hid/controllers/xpad.h"
@@ -61,6 +62,7 @@ IAppletResource::IAppletResource(Core::System& system_,
     MakeControllerWithServiceContext<Controller_NPad>(HidController::NPad, shared_memory);
     MakeController<Controller_Gesture>(HidController::Gesture, shared_memory);
     MakeController<Controller_ConsoleSixAxis>(HidController::ConsoleSixAxisSensor, shared_memory);
+    MakeControllerWithServiceContext<Controller_Palma>(HidController::Palma, shared_memory);
 
     // Homebrew doesn't try to activate some controllers, so we activate them by default
     GetController<Controller_NPad>(HidController::NPad).ActivateController();
@@ -311,36 +313,36 @@ Hid::Hid(Core::System& system_)
         {406, nullptr, "GetNpadLeftRightInterfaceType"},
         {407, nullptr, "GetNpadOfHighestBatteryLevel"},
         {408, nullptr, "GetNpadOfHighestBatteryLevelForJoyRight"},
-        {500, nullptr, "GetPalmaConnectionHandle"},
-        {501, nullptr, "InitializePalma"},
-        {502, nullptr, "AcquirePalmaOperationCompleteEvent"},
-        {503, nullptr, "GetPalmaOperationInfo"},
-        {504, nullptr, "PlayPalmaActivity"},
-        {505, nullptr, "SetPalmaFrModeType"},
-        {506, nullptr, "ReadPalmaStep"},
-        {507, nullptr, "EnablePalmaStep"},
-        {508, nullptr, "ResetPalmaStep"},
-        {509, nullptr, "ReadPalmaApplicationSection"},
-        {510, nullptr, "WritePalmaApplicationSection"},
-        {511, nullptr, "ReadPalmaUniqueCode"},
-        {512, nullptr, "SetPalmaUniqueCodeInvalid"},
-        {513, nullptr, "WritePalmaActivityEntry"},
-        {514, nullptr, "WritePalmaRgbLedPatternEntry"},
-        {515, nullptr, "WritePalmaWaveEntry"},
-        {516, nullptr, "SetPalmaDataBaseIdentificationVersion"},
-        {517, nullptr, "GetPalmaDataBaseIdentificationVersion"},
-        {518, nullptr, "SuspendPalmaFeature"},
-        {519, nullptr, "GetPalmaOperationResult"},
-        {520, nullptr, "ReadPalmaPlayLog"},
-        {521, nullptr, "ResetPalmaPlayLog"},
+        {500, &Hid::GetPalmaConnectionHandle, "GetPalmaConnectionHandle"},
+        {501, &Hid::InitializePalma, "InitializePalma"},
+        {502, &Hid::AcquirePalmaOperationCompleteEvent, "AcquirePalmaOperationCompleteEvent"},
+        {503, &Hid::GetPalmaOperationInfo, "GetPalmaOperationInfo"},
+        {504, &Hid::PlayPalmaActivity, "PlayPalmaActivity"},
+        {505, &Hid::SetPalmaFrModeType, "SetPalmaFrModeType"},
+        {506, &Hid::ReadPalmaStep, "ReadPalmaStep"},
+        {507, &Hid::EnablePalmaStep, "EnablePalmaStep"},
+        {508, &Hid::ResetPalmaStep, "ResetPalmaStep"},
+        {509, &Hid::ReadPalmaApplicationSection, "ReadPalmaApplicationSection"},
+        {510, &Hid::WritePalmaApplicationSection, "WritePalmaApplicationSection"},
+        {511, &Hid::ReadPalmaUniqueCode, "ReadPalmaUniqueCode"},
+        {512, &Hid::SetPalmaUniqueCodeInvalid, "SetPalmaUniqueCodeInvalid"},
+        {513, &Hid::WritePalmaActivityEntry, "WritePalmaActivityEntry"},
+        {514, &Hid::WritePalmaRgbLedPatternEntry, "WritePalmaRgbLedPatternEntry"},
+        {515, &Hid::WritePalmaWaveEntry, "WritePalmaWaveEntry"},
+        {516, &Hid::SetPalmaDataBaseIdentificationVersion, "SetPalmaDataBaseIdentificationVersion"},
+        {517, &Hid::GetPalmaDataBaseIdentificationVersion, "GetPalmaDataBaseIdentificationVersion"},
+        {518, &Hid::SuspendPalmaFeature, "SuspendPalmaFeature"},
+        {519, &Hid::GetPalmaOperationResult, "GetPalmaOperationResult"},
+        {520, &Hid::ReadPalmaPlayLog, "ReadPalmaPlayLog"},
+        {521, &Hid::ResetPalmaPlayLog, "ResetPalmaPlayLog"},
         {522, &Hid::SetIsPalmaAllConnectable, "SetIsPalmaAllConnectable"},
-        {523, nullptr, "SetIsPalmaPairedConnectable"},
-        {524, nullptr, "PairPalma"},
+        {523, &Hid::SetIsPalmaPairedConnectable, "SetIsPalmaPairedConnectable"},
+        {524, &Hid::PairPalma, "PairPalma"},
         {525, &Hid::SetPalmaBoostMode, "SetPalmaBoostMode"},
-        {526, nullptr, "CancelWritePalmaWaveEntry"},
-        {527, nullptr, "EnablePalmaBoostMode"},
-        {528, nullptr, "GetPalmaBluetoothAddress"},
-        {529, nullptr, "SetDisallowedPalmaConnection"},
+        {526, &Hid::CancelWritePalmaWaveEntry, "CancelWritePalmaWaveEntry"},
+        {527, &Hid::EnablePalmaBoostMode, "EnablePalmaBoostMode"},
+        {528, &Hid::GetPalmaBluetoothAddress, "GetPalmaBluetoothAddress"},
+        {529, &Hid::SetDisallowedPalmaConnection, "SetDisallowedPalmaConnection"},
         {1000, &Hid::SetNpadCommunicationMode, "SetNpadCommunicationMode"},
         {1001, &Hid::GetNpadCommunicationMode, "GetNpadCommunicationMode"},
         {1002, &Hid::SetTouchScreenConfiguration, "SetTouchScreenConfiguration"},
@@ -1879,14 +1881,361 @@ void Hid::IsUsbFullKeyControllerEnabled(Kernel::HLERequestContext& ctx) {
     rb.Push(false);
 }
 
-void Hid::SetIsPalmaAllConnectable(Kernel::HLERequestContext& ctx) {
+void Hid::GetPalmaConnectionHandle(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    const auto applet_resource_user_id{rp.Pop<u64>()};
-    const auto is_palma_all_connectable{rp.Pop<bool>()};
+    struct Parameters {
+        Core::HID::NpadIdType npad_id;
+        INSERT_PADDING_WORDS_NOINIT(1);
+        u64 applet_resource_user_id;
+    };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
+
+    const auto parameters{rp.PopRaw<Parameters>()};
+
+    LOG_WARNING(Service_HID, "(STUBBED) called, npad_id={}, applet_resource_user_id={}",
+                parameters.npad_id, parameters.applet_resource_user_id);
+
+    Controller_Palma::PalmaConnectionHandle handle;
+    auto& controller = GetAppletResource()->GetController<Controller_Palma>(HidController::Palma);
+    const auto result = controller.GetPalmaConnectionHandle(parameters.npad_id, handle);
+
+    IPC::ResponseBuilder rb{ctx, 4};
+    rb.Push(result);
+    rb.PushRaw(handle);
+}
+
+void Hid::InitializePalma(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
+
+    LOG_WARNING(Service_HID, "(STUBBED) called, connection_handle={}", connection_handle.npad_id);
+
+    auto& controller = GetAppletResource()->GetController<Controller_Palma>(HidController::Palma);
+    const auto result = controller.InitializePalma(connection_handle);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(result);
+}
+
+void Hid::AcquirePalmaOperationCompleteEvent(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
+
+    LOG_WARNING(Service_HID, "(STUBBED) called, connection_handle={}", connection_handle.npad_id);
+
+    auto& controller = GetAppletResource()->GetController<Controller_Palma>(HidController::Palma);
+
+    IPC::ResponseBuilder rb{ctx, 2, 1};
+    rb.Push(ResultSuccess);
+    rb.PushCopyObjects(controller.AcquirePalmaOperationCompleteEvent(connection_handle));
+}
+
+void Hid::GetPalmaOperationInfo(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
+
+    LOG_WARNING(Service_HID, "(STUBBED) called, connection_handle={}", connection_handle.npad_id);
+
+    Controller_Palma::PalmaOperationType operation_type;
+    Controller_Palma::PalmaOperationData data;
+    auto& controller = GetAppletResource()->GetController<Controller_Palma>(HidController::Palma);
+    const auto result = controller.GetPalmaOperationInfo(connection_handle, operation_type, data);
+
+    if (result.IsError()) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(result);
+    }
+
+    ctx.WriteBuffer(data);
+    IPC::ResponseBuilder rb{ctx, 4};
+    rb.Push(result);
+    rb.Push(static_cast<u64>(operation_type));
+}
+
+void Hid::PlayPalmaActivity(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
+    const auto palma_activity{rp.Pop<u64>()};
+
+    LOG_WARNING(Service_HID, "(STUBBED) called, connection_handle={}, palma_activity={}",
+                connection_handle.npad_id, palma_activity);
+
+    auto& controller = GetAppletResource()->GetController<Controller_Palma>(HidController::Palma);
+    const auto result = controller.PlayPalmaActivity(connection_handle, palma_activity);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(result);
+}
+
+void Hid::SetPalmaFrModeType(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
+    const auto fr_mode{rp.PopEnum<Controller_Palma::PalmaFrModeType>()};
+
+    LOG_WARNING(Service_HID, "(STUBBED) called, connection_handle={}, fr_mode={}",
+                connection_handle.npad_id, fr_mode);
+
+    auto& controller = GetAppletResource()->GetController<Controller_Palma>(HidController::Palma);
+    const auto result = controller.SetPalmaFrModeType(connection_handle, fr_mode);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(result);
+}
+
+void Hid::ReadPalmaStep(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
+
+    LOG_WARNING(Service_HID, "(STUBBED) called, connection_handle={}", connection_handle.npad_id);
+
+    auto& controller = GetAppletResource()->GetController<Controller_Palma>(HidController::Palma);
+    const auto result = controller.ReadPalmaStep(connection_handle);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(result);
+}
+
+void Hid::EnablePalmaStep(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    struct Parameters {
+        bool is_enabled;
+        INSERT_PADDING_WORDS_NOINIT(1);
+        Controller_Palma::PalmaConnectionHandle connection_handle;
+    };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
+
+    const auto parameters{rp.PopRaw<Parameters>()};
+
+    LOG_WARNING(Service_HID, "(STUBBED) called, connection_handle={}, is_enabled={}",
+                parameters.connection_handle.npad_id, parameters.is_enabled);
+
+    auto& controller = GetAppletResource()->GetController<Controller_Palma>(HidController::Palma);
+    const auto result =
+        controller.EnablePalmaStep(parameters.connection_handle, parameters.is_enabled);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(result);
+}
+
+void Hid::ResetPalmaStep(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
+
+    LOG_WARNING(Service_HID, "(STUBBED) called, connection_handle={}", connection_handle.npad_id);
+
+    auto& controller = GetAppletResource()->GetController<Controller_Palma>(HidController::Palma);
+    const auto result = controller.ResetPalmaStep(connection_handle);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(result);
+}
+
+void Hid::ReadPalmaApplicationSection(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_HID, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void Hid::WritePalmaApplicationSection(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_HID, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void Hid::ReadPalmaUniqueCode(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
+
+    LOG_WARNING(Service_HID, "(STUBBED) called, connection_handle={}", connection_handle.npad_id);
+
+    applet_resource->GetController<Controller_Palma>(HidController::Palma)
+        .ReadPalmaUniqueCode(connection_handle);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void Hid::SetPalmaUniqueCodeInvalid(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
+
+    LOG_WARNING(Service_HID, "(STUBBED) called, connection_handle={}", connection_handle.npad_id);
+
+    applet_resource->GetController<Controller_Palma>(HidController::Palma)
+        .SetPalmaUniqueCodeInvalid(connection_handle);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void Hid::WritePalmaActivityEntry(Kernel::HLERequestContext& ctx) {
+    LOG_CRITICAL(Service_HID, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void Hid::WritePalmaRgbLedPatternEntry(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
+    const auto unknown{rp.Pop<u64>()};
+
+    const auto buffer = ctx.ReadBuffer();
+
+    LOG_WARNING(Service_HID, "(STUBBED) called, connection_handle={}, unknown={}",
+                connection_handle.npad_id, unknown);
+
+    applet_resource->GetController<Controller_Palma>(HidController::Palma)
+        .WritePalmaRgbLedPatternEntry(connection_handle, unknown);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void Hid::WritePalmaWaveEntry(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
+    const auto wave_set{rp.PopEnum<Controller_Palma::PalmaWaveSet>()};
+    const auto unknown{rp.Pop<u64>()};
+    const auto t_mem_size{rp.Pop<u64>()};
+    const auto t_mem_handle{ctx.GetCopyHandle(0)};
+    const auto size{rp.Pop<u64>()};
+
+    ASSERT_MSG(t_mem_size == 0x3000, "t_mem_size is not 0x3000 bytes");
+
+    auto t_mem =
+        system.CurrentProcess()->GetHandleTable().GetObject<Kernel::KTransferMemory>(t_mem_handle);
+
+    if (t_mem.IsNull()) {
+        LOG_ERROR(Service_HID, "t_mem is a nullptr for handle=0x{:08X}", t_mem_handle);
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(ResultUnknown);
+        return;
+    }
+
+    ASSERT_MSG(t_mem->GetSize() == 0x3000, "t_mem has incorrect size");
 
     LOG_WARNING(Service_HID,
-                "(STUBBED) called, applet_resource_user_id={}, is_palma_all_connectable={}",
-                applet_resource_user_id, is_palma_all_connectable);
+                "(STUBBED) called, connection_handle={}, wave_set={}, unkown={}, "
+                "t_mem_handle=0x{:08X}, t_mem_size={}, size={}",
+                connection_handle.npad_id, wave_set, unknown, t_mem_handle, t_mem_size, size);
+
+    applet_resource->GetController<Controller_Palma>(HidController::Palma)
+        .WritePalmaWaveEntry(connection_handle, wave_set,
+                             system.Memory().GetPointer(t_mem->GetSourceAddress()), t_mem_size);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void Hid::SetPalmaDataBaseIdentificationVersion(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    struct Parameters {
+        s32 database_id_version;
+        INSERT_PADDING_WORDS_NOINIT(1);
+        Controller_Palma::PalmaConnectionHandle connection_handle;
+    };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
+
+    const auto parameters{rp.PopRaw<Parameters>()};
+
+    LOG_WARNING(Service_HID, "(STUBBED) called, connection_handle={}, database_id_version={}",
+                parameters.connection_handle.npad_id, parameters.database_id_version);
+
+    applet_resource->GetController<Controller_Palma>(HidController::Palma)
+        .SetPalmaDataBaseIdentificationVersion(parameters.connection_handle,
+                                               parameters.database_id_version);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void Hid::GetPalmaDataBaseIdentificationVersion(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
+
+    LOG_WARNING(Service_HID, "(STUBBED) called, connection_handle={}", connection_handle.npad_id);
+
+    applet_resource->GetController<Controller_Palma>(HidController::Palma)
+        .GetPalmaDataBaseIdentificationVersion(connection_handle);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void Hid::SuspendPalmaFeature(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_HID, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void Hid::GetPalmaOperationResult(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
+
+    LOG_WARNING(Service_HID, "(STUBBED) called, connection_handle={}", connection_handle.npad_id);
+
+    const auto result = applet_resource->GetController<Controller_Palma>(HidController::Palma)
+                            .GetPalmaOperationResult(connection_handle);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(result);
+}
+
+void Hid::ReadPalmaPlayLog(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_HID, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void Hid::ResetPalmaPlayLog(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_HID, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void Hid::SetIsPalmaAllConnectable(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    struct Parameters {
+        bool is_palma_all_connectable;
+        INSERT_PADDING_BYTES_NOINIT(7);
+        u64 applet_resource_user_id;
+    };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
+
+    const auto parameters{rp.PopRaw<Parameters>()};
+
+    LOG_WARNING(Service_HID,
+                "(STUBBED) called, is_palma_all_connectable={},applet_resource_user_id={}",
+                parameters.is_palma_all_connectable, parameters.applet_resource_user_id);
+
+    applet_resource->GetController<Controller_Palma>(HidController::Palma)
+        .SetIsPalmaAllConnectable(parameters.is_palma_all_connectable);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void Hid::SetIsPalmaPairedConnectable(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_HID, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void Hid::PairPalma(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
+
+    LOG_WARNING(Service_HID, "(STUBBED) called, connection_handle={}", connection_handle.npad_id);
+
+    applet_resource->GetController<Controller_Palma>(HidController::Palma)
+        .PairPalma(connection_handle);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
@@ -1897,6 +2246,37 @@ void Hid::SetPalmaBoostMode(Kernel::HLERequestContext& ctx) {
     const auto palma_boost_mode{rp.Pop<bool>()};
 
     LOG_WARNING(Service_HID, "(STUBBED) called, palma_boost_mode={}", palma_boost_mode);
+
+    applet_resource->GetController<Controller_Palma>(HidController::Palma)
+        .SetPalmaBoostMode(palma_boost_mode);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void Hid::CancelWritePalmaWaveEntry(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_HID, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void Hid::EnablePalmaBoostMode(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_HID, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void Hid::GetPalmaBluetoothAddress(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_HID, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void Hid::SetDisallowedPalmaConnection(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_HID, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);

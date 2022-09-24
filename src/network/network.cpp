@@ -15,7 +15,7 @@ RoomNetwork::RoomNetwork() {
 
 bool RoomNetwork::Init() {
     if (enet_initialize() != 0) {
-        LOG_ERROR(Network, "Error initalizing ENet");
+        LOG_ERROR(Network, "Error initializing ENet");
         return false;
     }
     m_room = std::make_shared<Room>();

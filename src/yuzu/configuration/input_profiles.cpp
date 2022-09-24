@@ -67,6 +67,8 @@ std::vector<std::string> InputProfiles::GetInputProfileNames() {
         profile_names.push_back(profile_name);
     }
 
+    std::stable_sort(profile_names.begin(), profile_names.end());
+
     return profile_names;
 }
 

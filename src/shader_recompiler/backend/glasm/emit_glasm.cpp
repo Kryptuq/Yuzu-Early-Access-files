@@ -175,7 +175,7 @@ bool IsReference(IR::Inst& inst) {
 }
 
 void PrecolorInst(IR::Inst& phi) {
-    // Insert phi moves before references to avoid overwritting other phis
+    // Insert phi moves before references to avoid overwriting other phis
     const size_t num_args{phi.NumArgs()};
     for (size_t i = 0; i < num_args; ++i) {
         IR::Block& phi_block{*phi.PhiBlock(i)};

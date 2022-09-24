@@ -800,12 +800,12 @@ Result Module::Interface::Flush() {
 
     // Return to the start of the file
     if (!amiibo_file.Seek(0)) {
-        LOG_ERROR(Service_NFP, "Error writting to file");
+        LOG_ERROR(Service_NFP, "Error writing to file");
         return ErrCodes::WriteAmiiboFailed;
     }
 
     if (!amiibo_file.Write(encrypted_tag_data)) {
-        LOG_ERROR(Service_NFP, "Error writting to file");
+        LOG_ERROR(Service_NFP, "Error writing to file");
         return ErrCodes::WriteAmiiboFailed;
     }
 

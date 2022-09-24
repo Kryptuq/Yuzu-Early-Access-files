@@ -33,6 +33,7 @@ enum class HidController : std::size_t {
     NPad,
     Gesture,
     ConsoleSixAxisSensor,
+    Palma,
 
     MaxControllers,
 };
@@ -166,8 +167,36 @@ private:
     void FinalizeSevenSixAxisSensor(Kernel::HLERequestContext& ctx);
     void ResetSevenSixAxisSensorTimestamp(Kernel::HLERequestContext& ctx);
     void IsUsbFullKeyControllerEnabled(Kernel::HLERequestContext& ctx);
+    void GetPalmaConnectionHandle(Kernel::HLERequestContext& ctx);
+    void InitializePalma(Kernel::HLERequestContext& ctx);
+    void AcquirePalmaOperationCompleteEvent(Kernel::HLERequestContext& ctx);
+    void GetPalmaOperationInfo(Kernel::HLERequestContext& ctx);
+    void PlayPalmaActivity(Kernel::HLERequestContext& ctx);
+    void SetPalmaFrModeType(Kernel::HLERequestContext& ctx);
+    void ReadPalmaStep(Kernel::HLERequestContext& ctx);
+    void EnablePalmaStep(Kernel::HLERequestContext& ctx);
+    void ResetPalmaStep(Kernel::HLERequestContext& ctx);
+    void ReadPalmaApplicationSection(Kernel::HLERequestContext& ctx);
+    void WritePalmaApplicationSection(Kernel::HLERequestContext& ctx);
+    void ReadPalmaUniqueCode(Kernel::HLERequestContext& ctx);
+    void SetPalmaUniqueCodeInvalid(Kernel::HLERequestContext& ctx);
+    void WritePalmaActivityEntry(Kernel::HLERequestContext& ctx);
+    void WritePalmaRgbLedPatternEntry(Kernel::HLERequestContext& ctx);
+    void WritePalmaWaveEntry(Kernel::HLERequestContext& ctx);
+    void SetPalmaDataBaseIdentificationVersion(Kernel::HLERequestContext& ctx);
+    void GetPalmaDataBaseIdentificationVersion(Kernel::HLERequestContext& ctx);
+    void SuspendPalmaFeature(Kernel::HLERequestContext& ctx);
+    void GetPalmaOperationResult(Kernel::HLERequestContext& ctx);
+    void ReadPalmaPlayLog(Kernel::HLERequestContext& ctx);
+    void ResetPalmaPlayLog(Kernel::HLERequestContext& ctx);
     void SetIsPalmaAllConnectable(Kernel::HLERequestContext& ctx);
+    void SetIsPalmaPairedConnectable(Kernel::HLERequestContext& ctx);
+    void PairPalma(Kernel::HLERequestContext& ctx);
     void SetPalmaBoostMode(Kernel::HLERequestContext& ctx);
+    void CancelWritePalmaWaveEntry(Kernel::HLERequestContext& ctx);
+    void EnablePalmaBoostMode(Kernel::HLERequestContext& ctx);
+    void GetPalmaBluetoothAddress(Kernel::HLERequestContext& ctx);
+    void SetDisallowedPalmaConnection(Kernel::HLERequestContext& ctx);
     void SetNpadCommunicationMode(Kernel::HLERequestContext& ctx);
     void GetNpadCommunicationMode(Kernel::HLERequestContext& ctx);
     void SetTouchScreenConfiguration(Kernel::HLERequestContext& ctx);

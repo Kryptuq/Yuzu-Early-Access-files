@@ -458,6 +458,8 @@ add_library(core STATIC
     hle/service/hid/controllers/mouse.h
     hle/service/hid/controllers/npad.cpp
     hle/service/hid/controllers/npad.h
+    hle/service/hid/controllers/palma.cpp
+    hle/service/hid/controllers/palma.h
     hle/service/hid/controllers/stubbed.cpp
     hle/service/hid/controllers/stubbed.h
     hle/service/hid/controllers/touchscreen.cpp
