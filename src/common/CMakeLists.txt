@@ -14,32 +14,7 @@ if (DEFINED ENV{DISPLAYVERSION})
   set(DISPLAY_VERSION $ENV{DISPLAYVERSION})
 endif ()
 
-# Pass the path to git to the GenerateSCMRev.cmake as well
-find_package(Git QUIET)
-
-add_custom_command(OUTPUT scm_rev.cpp
-    COMMAND ${CMAKE_COMMAND}
-      -DSRC_DIR=${PROJECT_SOURCE_DIR}
-      -DBUILD_REPOSITORY=${BUILD_REPOSITORY}
-      -DTITLE_BAR_FORMAT_IDLE=${TITLE_BAR_FORMAT_IDLE}
-      -DTITLE_BAR_FORMAT_RUNNING=${TITLE_BAR_FORMAT_RUNNING}
-      -DBUILD_TAG=${BUILD_TAG}
-      -DBUILD_ID=${DISPLAY_VERSION}
-      -DGIT_REF_SPEC=${GIT_REF_SPEC}
-      -DGIT_REV=${GIT_REV}
-      -DGIT_DESC=${GIT_DESC}
-      -DGIT_BRANCH=${GIT_BRANCH}
-      -DBUILD_FULLNAME=${BUILD_FULLNAME}
-      -DGIT_EXECUTABLE=${GIT_EXECUTABLE}
-      -P ${PROJECT_SOURCE_DIR}/CMakeModules/GenerateSCMRev.cmake
-    DEPENDS
-      # Check that the scm_rev files haven't changed
-      "${CMAKE_CURRENT_SOURCE_DIR}/scm_rev.cpp.in"
-      "${CMAKE_CURRENT_SOURCE_DIR}/scm_rev.h"
-      # technically we should regenerate if the git version changed, but its not worth the effort imo
-      "${PROJECT_SOURCE_DIR}/CMakeModules/GenerateSCMRev.cmake"
-    VERBATIM
-)
+include(GenerateSCMRev)
 
 add_library(common STATIC
     address_space.cpp
@@ -121,7 +96,7 @@ add_library(common STATIC
     quaternion.h
     reader_writer_queue.h
     ring_buffer.h
-    scm_rev.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/scm_rev.cpp
     scm_rev.h
     scope_exit.h
     settings.cpp

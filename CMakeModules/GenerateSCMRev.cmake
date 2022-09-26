@@ -7,11 +7,6 @@ function(get_timestamp _var)
     set(${_var} "${timestamp}" PARENT_SCOPE)
 endfunction()
 
-list(APPEND CMAKE_MODULE_PATH "${SRC_DIR}/externals/cmake-modules")
-
-# Find the package here with the known path so that the GetGit commands can find it as well
-find_package(Git QUIET PATHS "${GIT_EXECUTABLE}")
-
 # generate git/build information
 include(GetGitRevisionDescription)
 if(NOT GIT_REF_SPEC)
@@ -29,6 +24,7 @@ get_timestamp(BUILD_DATE)
 # Also if this is a CI build, add the build name (ie: Nightly, Canary) to the scm_rev file as well
 set(REPO_NAME "")
 set(BUILD_VERSION "0")
+set(BUILD_ID ${DISPLAY_VERSION})
 if (BUILD_REPOSITORY)
   # regex capture the string nightly or canary into CMAKE_MATCH_1
   string(REGEX MATCH "yuzu-emu/yuzu-?(.*)" OUTVAR ${BUILD_REPOSITORY})
@@ -57,6 +53,4 @@ if (BUILD_REPOSITORY)
   endif()
 endif()
 
-# The variable SRC_DIR must be passed into the script
-# (since it uses the current build directory for all values of CMAKE_*_DIR)
-configure_file("${SRC_DIR}/src/common/scm_rev.cpp.in" "scm_rev.cpp" @ONLY)
+configure_file(scm_rev.cpp.in scm_rev.cpp @ONLY)
