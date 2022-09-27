@@ -244,6 +244,10 @@ static std::unique_ptr<AppLoader> GetFileLoader(Core::System& system, FileSys::V
 
 std::unique_ptr<AppLoader> GetLoader(Core::System& system, FileSys::VirtualFile file,
                                      u64 program_id, std::size_t program_index) {
+    if (!file) {
+        return nullptr;
+    }
+
     FileType type = IdentifyFile(file);
     const FileType filename_type = GuessFromFilename(file->GetName());
 

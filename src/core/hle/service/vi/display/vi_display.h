@@ -9,6 +9,7 @@
 
 #include "common/common_funcs.h"
 #include "common/common_types.h"
+#include "core/hle/result.h"
 
 namespace Kernel {
 class KEvent;
@@ -78,8 +79,16 @@ public:
         return layers.size();
     }
 
-    /// Gets the readable vsync event.
-    Kernel::KReadableEvent& GetVSyncEvent();
+    /**
+     * Gets the internal vsync event.
+     *
+     * @returns The internal Vsync event if it has not yet been retrieved,
+     *          VI::ResultPermissionDenied otherwise.
+     */
+    [[nodiscard]] ResultVal<Kernel::KReadableEvent*> GetVSyncEvent();
+
+    /// Gets the internal vsync event.
+    Kernel::KReadableEvent* GetVSyncEventUnchecked();
 
     /// Signals the internal vsync event.
     void SignalVSyncEvent();
@@ -123,6 +132,7 @@ private:
 
     std::vector<std::unique_ptr<Layer>> layers;
     Kernel::KEvent* vsync_event{};
+    bool got_vsync_event{false};
 };
 
 } // namespace Service::VI

@@ -29,15 +29,11 @@
 #include "core/hle/service/service.h"
 #include "core/hle/service/vi/vi.h"
 #include "core/hle/service/vi/vi_m.h"
+#include "core/hle/service/vi/vi_results.h"
 #include "core/hle/service/vi/vi_s.h"
 #include "core/hle/service/vi/vi_u.h"
 
 namespace Service::VI {
-
-constexpr Result ERR_OPERATION_FAILED{ErrorModule::VI, 1};
-constexpr Result ERR_PERMISSION_DENIED{ErrorModule::VI, 5};
-constexpr Result ERR_UNSUPPORTED{ErrorModule::VI, 6};
-constexpr Result ERR_NOT_FOUND{ErrorModule::VI, 7};
 
 struct DisplayInfo {
     /// The name of this particular display.
@@ -349,7 +345,7 @@ private:
         if (!layer_id) {
             LOG_ERROR(Service_VI, "Layer not found! display=0x{:016X}", display);
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERR_NOT_FOUND);
+            rb.Push(ResultNotFound);
             return;
         }
 
@@ -499,7 +495,7 @@ private:
         if (!display_id) {
             LOG_ERROR(Service_VI, "Display not found! display_name={}", name);
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERR_NOT_FOUND);
+            rb.Push(ResultNotFound);
             return;
         }
 
@@ -555,14 +551,14 @@ private:
 
         if (scaling_mode > NintendoScaleMode::PreserveAspectRatio) {
             LOG_ERROR(Service_VI, "Invalid scaling mode provided.");
-            rb.Push(ERR_OPERATION_FAILED);
+            rb.Push(ResultOperationFailed);
             return;
         }
 
         if (scaling_mode != NintendoScaleMode::ScaleToWindow &&
             scaling_mode != NintendoScaleMode::PreserveAspectRatio) {
             LOG_ERROR(Service_VI, "Unsupported scaling mode supplied.");
-            rb.Push(ERR_UNSUPPORTED);
+            rb.Push(ResultNotSupported);
             return;
         }
 
@@ -595,7 +591,7 @@ private:
         if (!display_id) {
             LOG_ERROR(Service_VI, "Layer not found! layer_id={}", layer_id);
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERR_NOT_FOUND);
+            rb.Push(ResultNotFound);
             return;
         }
 
@@ -603,7 +599,7 @@ private:
         if (!buffer_queue_id) {
             LOG_ERROR(Service_VI, "Buffer queue id not found! display_id={}", *display_id);
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERR_NOT_FOUND);
+            rb.Push(ResultNotFound);
             return;
         }
 
@@ -641,7 +637,7 @@ private:
         if (!layer_id) {
             LOG_ERROR(Service_VI, "Layer not found! display_id={}", display_id);
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERR_NOT_FOUND);
+            rb.Push(ResultNotFound);
             return;
         }
 
@@ -649,7 +645,7 @@ private:
         if (!buffer_queue_id) {
             LOG_ERROR(Service_VI, "Buffer queue id not found! display_id={}", display_id);
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERR_NOT_FOUND);
+            rb.Push(ResultNotFound);
             return;
         }
 
@@ -676,19 +672,23 @@ private:
         IPC::RequestParser rp{ctx};
         const u64 display_id = rp.Pop<u64>();
 
-        LOG_WARNING(Service_VI, "(STUBBED) called. display_id=0x{:016X}", display_id);
+        LOG_DEBUG(Service_VI, "called. display_id={}", display_id);
 
         const auto vsync_event = nv_flinger.FindVsyncEvent(display_id);
-        if (!vsync_event) {
-            LOG_ERROR(Service_VI, "Vsync event was not found for display_id={}", display_id);
+        if (vsync_event.Failed()) {
+            const auto result = vsync_event.Code();
+            if (result == ResultNotFound) {
+                LOG_ERROR(Service_VI, "Vsync event was not found for display_id={}", display_id);
+            }
+
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERR_NOT_FOUND);
+            rb.Push(result);
             return;
         }
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(ResultSuccess);
-        rb.PushCopyObjects(vsync_event);
+        rb.PushCopyObjects(*vsync_event);
     }
 
     void ConvertScalingMode(Kernel::HLERequestContext& ctx) {
@@ -765,7 +765,7 @@ private:
             return ConvertedScaleMode::PreserveAspectRatio;
         default:
             LOG_ERROR(Service_VI, "Invalid scaling mode specified, mode={}", mode);
-            return ERR_OPERATION_FAILED;
+            return ResultOperationFailed;
         }
     }
 
@@ -795,7 +795,7 @@ void detail::GetDisplayServiceImpl(Kernel::HLERequestContext& ctx, Core::System&
     if (!IsValidServiceAccess(permission, policy)) {
         LOG_ERROR(Service_VI, "Permission denied for policy {}", policy);
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ERR_PERMISSION_DENIED);
+        rb.Push(ResultPermissionDenied);
         return;
     }
 

@@ -20,6 +20,7 @@
 #include "core/hle/service/nvflinger/hos_binder_driver_server.h"
 #include "core/hle/service/vi/display/vi_display.h"
 #include "core/hle/service/vi/layer/vi_layer.h"
+#include "core/hle/service/vi/vi_results.h"
 
 namespace Service::VI {
 
@@ -58,8 +59,18 @@ const Layer& Display::GetLayer(std::size_t index) const {
     return *layers.at(index);
 }
 
-Kernel::KReadableEvent& Display::GetVSyncEvent() {
-    return vsync_event->GetReadableEvent();
+ResultVal<Kernel::KReadableEvent*> Display::GetVSyncEvent() {
+    if (got_vsync_event) {
+        return ResultPermissionDenied;
+    }
+
+    got_vsync_event = true;
+
+    return GetVSyncEventUnchecked();
+}
+
+Kernel::KReadableEvent* Display::GetVSyncEventUnchecked() {
+    return &vsync_event->GetReadableEvent();
 }
 
 void Display::SignalVSyncEvent() {

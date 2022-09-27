@@ -22,6 +22,7 @@
 #include "core/hle/service/nvflinger/ui/graphic_buffer.h"
 #include "core/hle/service/vi/display/vi_display.h"
 #include "core/hle/service/vi/layer/vi_layer.h"
+#include "core/hle/service/vi/vi_results.h"
 #include "video_core/gpu.h"
 #include "video_core/host1x/host1x.h"
 #include "video_core/host1x/syncpoint_manager.h"
@@ -170,15 +171,15 @@ std::optional<u32> NVFlinger::FindBufferQueueId(u64 display_id, u64 layer_id) {
     return layer->GetBinderId();
 }
 
-Kernel::KReadableEvent* NVFlinger::FindVsyncEvent(u64 display_id) {
+ResultVal<Kernel::KReadableEvent*> NVFlinger::FindVsyncEvent(u64 display_id) {
     const auto lock_guard = Lock();
     auto* const display = FindDisplay(display_id);
 
     if (display == nullptr) {
-        return nullptr;
+        return VI::ResultNotFound;
     }
 
-    return &display->GetVSyncEvent();
+    return display->GetVSyncEvent();
 }
 
 VI::Display* NVFlinger::FindDisplay(u64 display_id) {
