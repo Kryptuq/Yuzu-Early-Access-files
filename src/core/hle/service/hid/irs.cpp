@@ -542,7 +542,8 @@ Result IRS::IsIrCameraHandleValid(const Core::IrSensor::IrCameraHandle& camera_h
 
 Core::IrSensor::DeviceFormat& IRS::GetIrCameraSharedMemoryDeviceEntry(
     const Core::IrSensor::IrCameraHandle& camera_handle) {
-    ASSERT_MSG(sizeof(StatusManager::device) > camera_handle.npad_id, "invalid npad_id");
+    const auto npad_id_max_index = static_cast<u8>(sizeof(StatusManager::device));
+    ASSERT_MSG(camera_handle.npad_id < npad_id_max_index, "invalid npad_id");
     return shared_memory->device[camera_handle.npad_id];
 }
 

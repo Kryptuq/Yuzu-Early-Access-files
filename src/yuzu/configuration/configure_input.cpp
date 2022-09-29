@@ -163,10 +163,9 @@ void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem,
             [this, input_subsystem, &hid_core] {
                 CallConfigureDialog<ConfigureRingController>(*this, input_subsystem, hid_core);
             });
-    connect(advanced, &ConfigureInputAdvanced::CallCameraDialog,
-            [this, input_subsystem, &hid_core] {
-                CallConfigureDialog<ConfigureCamera>(*this, input_subsystem);
-            });
+    connect(advanced, &ConfigureInputAdvanced::CallCameraDialog, [this, input_subsystem] {
+        CallConfigureDialog<ConfigureCamera>(*this, input_subsystem);
+    });
 
     connect(ui->vibrationButton, &QPushButton::clicked,
             [this, &hid_core] { CallConfigureDialog<ConfigureVibration>(*this, hid_core); });
