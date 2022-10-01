@@ -33,6 +33,7 @@ class Camera;
 class Keyboard;
 class Mouse;
 class TouchScreen;
+class VirtualAmiibo;
 struct MappingData;
 } // namespace InputCommon
 
@@ -100,6 +101,12 @@ public:
 
     /// Retrieves the underlying camera input device.
     [[nodiscard]] const Camera* GetCamera() const;
+
+    /// Retrieves the underlying virtual amiibo input device.
+    [[nodiscard]] VirtualAmiibo* GetVirtualAmiibo();
+
+    /// Retrieves the underlying virtual amiibo input device.
+    [[nodiscard]] const VirtualAmiibo* GetVirtualAmiibo() const;
 
     /**
      * Returns all available input devices that this Factory can create a new device with.

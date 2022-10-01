@@ -106,12 +106,12 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/filesystem/filesystem.h"
-#include "core/hle/service/nfp/nfp.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/loader/loader.h"
 #include "core/perf_stats.h"
 #include "core/telemetry_session.h"
 #include "input_common/drivers/tas_input.h"
+#include "input_common/drivers/virtual_amiibo.h"
 #include "input_common/main.h"
 #include "ui_main.h"
 #include "util/overlay_dialog.h"
@@ -3220,21 +3220,16 @@ void GMainWindow::OnLoadAmiibo() {
         return;
     }
 
-    Service::SM::ServiceManager& sm = system->ServiceManager();
-    auto nfc = sm.GetService<Service::NFP::Module::Interface>("nfp:user");
-    if (nfc == nullptr) {
-        QMessageBox::warning(this, tr("Error"), tr("The current game is not looking for amiibos"));
-        return;
-    }
-    const auto nfc_state = nfc->GetCurrentState();
-    if (nfc_state == Service::NFP::DeviceState::TagFound ||
-        nfc_state == Service::NFP::DeviceState::TagMounted) {
-        nfc->CloseAmiibo();
+    auto* virtual_amiibo = input_subsystem->GetVirtualAmiibo();
+
+    // Remove amiibo if one is connected
+    if (virtual_amiibo->GetCurrentState() == InputCommon::VirtualAmiibo::State::AmiiboIsOpen) {
+        virtual_amiibo->CloseAmiibo();
         QMessageBox::warning(this, tr("Amiibo"), tr("The current amiibo has been removed"));
         return;
     }
 
-    if (nfc_state != Service::NFP::DeviceState::SearchingForTag) {
+    if (virtual_amiibo->GetCurrentState() != InputCommon::VirtualAmiibo::State::WaitingForAmiibo) {
         QMessageBox::warning(this, tr("Error"), tr("The current game is not looking for amiibos"));
         return;
     }
@@ -3253,24 +3248,30 @@ void GMainWindow::OnLoadAmiibo() {
 }
 
 void GMainWindow::LoadAmiibo(const QString& filename) {
-    Service::SM::ServiceManager& sm = system->ServiceManager();
-    auto nfc = sm.GetService<Service::NFP::Module::Interface>("nfp:user");
-    if (nfc == nullptr) {
-        return;
-    }
-
+    auto* virtual_amiibo = input_subsystem->GetVirtualAmiibo();
+    const QString title = tr("Error loading Amiibo data");
     // Remove amiibo if one is connected
-    const auto nfc_state = nfc->GetCurrentState();
-    if (nfc_state == Service::NFP::DeviceState::TagFound ||
-        nfc_state == Service::NFP::DeviceState::TagMounted) {
-        nfc->CloseAmiibo();
+    if (virtual_amiibo->GetCurrentState() == InputCommon::VirtualAmiibo::State::AmiiboIsOpen) {
+        virtual_amiibo->CloseAmiibo();
         QMessageBox::warning(this, tr("Amiibo"), tr("The current amiibo has been removed"));
         return;
     }
 
-    if (!nfc->LoadAmiibo(filename.toStdString())) {
-        QMessageBox::warning(this, tr("Error loading Amiibo data"),
-                             tr("Unable to load Amiibo data."));
+    switch (virtual_amiibo->LoadAmiibo(filename.toStdString())) {
+    case InputCommon::VirtualAmiibo::Info::NotAnAmiibo:
+        QMessageBox::warning(this, title, tr("The selected file is not a valid amiibo"));
+        break;
+    case InputCommon::VirtualAmiibo::Info::UnableToLoad:
+        QMessageBox::warning(this, title, tr("The selected file is already on use"));
+        break;
+    case InputCommon::VirtualAmiibo::Info::WrongDeviceState:
+        QMessageBox::warning(this, title, tr("The current game is not looking for amiibos"));
+        break;
+    case InputCommon::VirtualAmiibo::Info::Unknown:
+        QMessageBox::warning(this, title, tr("An unkown error occured"));
+        break;
+    default:
+        break;
     }
 }
 

@@ -20,7 +20,7 @@
 
 namespace Core::HID {
 const std::size_t max_emulated_controllers = 2;
-const std::size_t output_devices = 3;
+const std::size_t output_devices_size = 4;
 struct ControllerMotionInfo {
     Common::Input::MotionStatus raw_status{};
     MotionInput emulated{};
@@ -37,7 +37,8 @@ using TriggerDevices =
 using BatteryDevices =
     std::array<std::unique_ptr<Common::Input::InputDevice>, max_emulated_controllers>;
 using CameraDevices = std::unique_ptr<Common::Input::InputDevice>;
-using OutputDevices = std::array<std::unique_ptr<Common::Input::OutputDevice>, output_devices>;
+using NfcDevices = std::unique_ptr<Common::Input::InputDevice>;
+using OutputDevices = std::array<std::unique_ptr<Common::Input::OutputDevice>, output_devices_size>;
 
 using ButtonParams = std::array<Common::ParamPackage, Settings::NativeButton::NumButtons>;
 using StickParams = std::array<Common::ParamPackage, Settings::NativeAnalog::NumAnalogs>;
@@ -45,7 +46,8 @@ using ControllerMotionParams = std::array<Common::ParamPackage, Settings::Native
 using TriggerParams = std::array<Common::ParamPackage, Settings::NativeTrigger::NumTriggers>;
 using BatteryParams = std::array<Common::ParamPackage, max_emulated_controllers>;
 using CameraParams = Common::ParamPackage;
-using OutputParams = std::array<Common::ParamPackage, output_devices>;
+using NfcParams = Common::ParamPackage;
+using OutputParams = std::array<Common::ParamPackage, output_devices_size>;
 
 using ButtonValues = std::array<Common::Input::ButtonStatus, Settings::NativeButton::NumButtons>;
 using SticksValues = std::array<Common::Input::StickStatus, Settings::NativeAnalog::NumAnalogs>;
@@ -55,6 +57,7 @@ using ControllerMotionValues = std::array<ControllerMotionInfo, Settings::Native
 using ColorValues = std::array<Common::Input::BodyColorStatus, max_emulated_controllers>;
 using BatteryValues = std::array<Common::Input::BatteryStatus, max_emulated_controllers>;
 using CameraValues = Common::Input::CameraStatus;
+using NfcValues = Common::Input::NfcStatus;
 using VibrationValues = std::array<Common::Input::VibrationStatus, max_emulated_controllers>;
 
 struct AnalogSticks {
@@ -78,6 +81,11 @@ struct CameraState {
     Core::IrSensor::ImageTransferProcessorFormat format{};
     std::vector<u8> data{};
     std::size_t sample{};
+};
+
+struct NfcState {
+    Common::Input::NfcState state{};
+    std::vector<u8> data{};
 };
 
 struct ControllerMotion {
@@ -107,6 +115,7 @@ struct ControllerStatus {
     BatteryValues battery_values{};
     VibrationValues vibration_values{};
     CameraValues camera_values{};
+    NfcValues nfc_values{};
 
     // Data for HID serices
     HomeButtonState home_button_state{};
@@ -119,6 +128,7 @@ struct ControllerStatus {
     ControllerColors colors_state{};
     BatteryLevelState battery_state{};
     CameraState camera_state{};
+    NfcState nfc_state{};
 };
 
 enum class ControllerTriggerType {
@@ -130,6 +140,7 @@ enum class ControllerTriggerType {
     Battery,
     Vibration,
     IrSensor,
+    Nfc,
     Connected,
     Disconnected,
     Type,
@@ -315,6 +326,9 @@ public:
     /// Returns the latest camera status from the controller
     const CameraState& GetCamera() const;
 
+    /// Returns the latest ntag status from the controller
+    const NfcState& GetNfc() const;
+
     /**
      * Sends a specific vibration to the output device
      * @return true if vibration had no errors
@@ -340,6 +354,12 @@ public:
      * @return true if SetCameraFormat was successfull
      */
     bool SetCameraFormat(Core::IrSensor::ImageTransferProcessorFormat camera_format);
+
+    /// Returns true if the device has nfc support
+    bool HasNfc() const;
+
+    /// Returns true if the nfc tag was written
+    bool WriteNfc(const std::vector<u8>& data);
 
     /// Returns the led pattern corresponding to this emulated controller
     LedPattern GetLedPattern() const;
@@ -425,6 +445,12 @@ private:
     void SetCamera(const Common::Input::CallbackStatus& callback);
 
     /**
+     * Updates the nfc status of the controller
+     * @param callback A CallbackStatus containing the nfc status
+     */
+    void SetNfc(const Common::Input::CallbackStatus& callback);
+
+    /**
      * Converts a color format from bgra to rgba
      * @param color in bgra format
      * @return NpadColor in rgba format
@@ -458,6 +484,7 @@ private:
     TriggerParams trigger_params;
     BatteryParams battery_params;
     CameraParams camera_params;
+    NfcParams nfc_params;
     OutputParams output_params;
 
     ButtonDevices button_devices;
@@ -466,6 +493,7 @@ private:
     TriggerDevices trigger_devices;
     BatteryDevices battery_devices;
     CameraDevices camera_devices;
+    NfcDevices nfc_devices;
     OutputDevices output_devices;
 
     // TAS related variables

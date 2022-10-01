@@ -222,6 +222,16 @@ private:
     std::unique_ptr<Common::Input::InputDevice> CreateCameraDevice(
         const Common::ParamPackage& params);
 
+    /**
+     * Creates a nfc device from the parameters given.
+     * @param params contains parameters for creating the device:
+     *               - "guid": text string for identifying controllers
+     *               - "port": port of the connected device
+     *               - "pad": slot of the connected controller
+     * @returns a unique input device with the parameters specified
+     */
+    std::unique_ptr<Common::Input::InputDevice> CreateNfcDevice(const Common::ParamPackage& params);
+
     std::shared_ptr<InputEngine> input_engine;
 };
 } // namespace InputCommon

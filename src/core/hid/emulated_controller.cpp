@@ -131,13 +131,16 @@ void EmulatedController::LoadDevices() {
     battery_params[RightIndex].Set("battery", true);
 
     camera_params = Common::ParamPackage{"engine:camera,camera:1"};
+    nfc_params = Common::ParamPackage{"engine:virtual_amiibo,nfc:1"};
 
     output_params[LeftIndex] = left_joycon;
     output_params[RightIndex] = right_joycon;
     output_params[2] = camera_params;
+    output_params[3] = nfc_params;
     output_params[LeftIndex].Set("output", true);
     output_params[RightIndex].Set("output", true);
     output_params[2].Set("output", true);
+    output_params[3].Set("output", true);
 
     LoadTASParams();
 
@@ -155,6 +158,7 @@ void EmulatedController::LoadDevices() {
     std::transform(battery_params.begin(), battery_params.end(), battery_devices.begin(),
                    Common::Input::CreateDevice<Common::Input::InputDevice>);
     camera_devices = Common::Input::CreateDevice<Common::Input::InputDevice>(camera_params);
+    nfc_devices = Common::Input::CreateDevice<Common::Input::InputDevice>(nfc_params);
     std::transform(output_params.begin(), output_params.end(), output_devices.begin(),
                    Common::Input::CreateDevice<Common::Input::OutputDevice>);
 
@@ -284,6 +288,16 @@ void EmulatedController::ReloadInput() {
         camera_devices->ForceUpdate();
     }
 
+    if (nfc_devices) {
+        if (npad_id_type == NpadIdType::Handheld || npad_id_type == NpadIdType::Player1) {
+            nfc_devices->SetCallback({
+                .on_change =
+                    [this](const Common::Input::CallbackStatus& callback) { SetNfc(callback); },
+            });
+            nfc_devices->ForceUpdate();
+        }
+    }
+
     // Use a common UUID for TAS
     static constexpr Common::UUID TAS_UUID = Common::UUID{
         {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x7, 0xA5, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}};
@@ -339,6 +353,8 @@ void EmulatedController::UnloadInput() {
     for (auto& stick : tas_stick_devices) {
         stick.reset();
     }
+    camera_devices.reset();
+    nfc_devices.reset();
 }
 
 void EmulatedController::EnableConfiguration() {
@@ -903,6 +919,25 @@ void EmulatedController::SetCamera(const Common::Input::CallbackStatus& callback
     TriggerOnChange(ControllerTriggerType::IrSensor, true);
 }
 
+void EmulatedController::SetNfc(const Common::Input::CallbackStatus& callback) {
+    std::unique_lock lock{mutex};
+    controller.nfc_values = TransformToNfc(callback);
+
+    if (is_configuring) {
+        lock.unlock();
+        TriggerOnChange(ControllerTriggerType::Nfc, false);
+        return;
+    }
+
+    controller.nfc_state = {
+        controller.nfc_values.state,
+        controller.nfc_values.data,
+    };
+
+    lock.unlock();
+    TriggerOnChange(ControllerTriggerType::Nfc, true);
+}
+
 bool EmulatedController::SetVibration(std::size_t device_index, VibrationValue vibration) {
     if (device_index >= output_devices.size()) {
         return false;
@@ -980,6 +1015,10 @@ bool EmulatedController::TestVibration(std::size_t device_index) {
 bool EmulatedController::SetPollingMode(Common::Input::PollingMode polling_mode) {
     LOG_INFO(Service_HID, "Set polling mode {}", polling_mode);
     auto& output_device = output_devices[static_cast<std::size_t>(DeviceIndex::Right)];
+    auto& nfc_output_device = output_devices[3];
+
+    nfc_output_device->SetPollingMode(polling_mode);
+
     return output_device->SetPollingMode(polling_mode) == Common::Input::PollingError::None;
 }
 
@@ -998,6 +1037,32 @@ bool EmulatedController::SetCameraFormat(
     // Fallback to Qt camera if native device doesn't have support
     return camera_output_device->SetCameraFormat(static_cast<Common::Input::CameraFormat>(
                camera_format)) == Common::Input::CameraError::None;
+}
+
+bool EmulatedController::HasNfc() const {
+    const auto& nfc_output_device = output_devices[3];
+
+    switch (npad_type) {
+    case NpadStyleIndex::JoyconRight:
+    case NpadStyleIndex::JoyconDual:
+    case NpadStyleIndex::ProController:
+        break;
+    default:
+        return false;
+    }
+
+    const bool has_virtual_nfc =
+        npad_id_type == NpadIdType::Player1 || npad_id_type == NpadIdType::Handheld;
+    const bool is_virtual_nfc_supported =
+        nfc_output_device->SupportsNfc() != Common::Input::NfcState::NotSupported;
+
+    return is_connected && (has_virtual_nfc && is_virtual_nfc_supported);
+}
+
+bool EmulatedController::WriteNfc(const std::vector<u8>& data) {
+    auto& nfc_output_device = output_devices[3];
+
+    return nfc_output_device->WriteNfcData(data) == Common::Input::NfcState::Success;
 }
 
 void EmulatedController::SetLedPattern() {
@@ -1361,6 +1426,11 @@ BatteryLevelState EmulatedController::GetBattery() const {
 const CameraState& EmulatedController::GetCamera() const {
     std::scoped_lock lock{mutex};
     return controller.camera_state;
+}
+
+const NfcState& EmulatedController::GetNfc() const {
+    std::scoped_lock lock{mutex};
+    return controller.nfc_state;
 }
 
 NpadColor EmulatedController::GetNpadColor(u32 color) {

@@ -18,6 +18,8 @@ add_library(input_common STATIC
     drivers/touch_screen.h
     drivers/udp_client.cpp
     drivers/udp_client.h
+    drivers/virtual_amiibo.cpp
+    drivers/virtual_amiibo.h
     helpers/stick_from_buttons.cpp
     helpers/stick_from_buttons.h
     helpers/touch_from_buttons.cpp

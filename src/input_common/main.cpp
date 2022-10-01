@@ -11,6 +11,7 @@
 #include "input_common/drivers/tas_input.h"
 #include "input_common/drivers/touch_screen.h"
 #include "input_common/drivers/udp_client.h"
+#include "input_common/drivers/virtual_amiibo.h"
 #include "input_common/helpers/stick_from_buttons.h"
 #include "input_common/helpers/touch_from_buttons.h"
 #include "input_common/input_engine.h"
@@ -86,6 +87,15 @@ struct InputSubsystem::Impl {
                                                                    camera_input_factory);
         Common::Input::RegisterFactory<Common::Input::OutputDevice>(camera->GetEngineName(),
                                                                     camera_output_factory);
+
+        virtual_amiibo = std::make_shared<VirtualAmiibo>("virtual_amiibo");
+        virtual_amiibo->SetMappingCallback(mapping_callback);
+        virtual_amiibo_input_factory = std::make_shared<InputFactory>(virtual_amiibo);
+        virtual_amiibo_output_factory = std::make_shared<OutputFactory>(virtual_amiibo);
+        Common::Input::RegisterFactory<Common::Input::InputDevice>(virtual_amiibo->GetEngineName(),
+                                                                   virtual_amiibo_input_factory);
+        Common::Input::RegisterFactory<Common::Input::OutputDevice>(virtual_amiibo->GetEngineName(),
+                                                                    virtual_amiibo_output_factory);
 
 #ifdef HAVE_SDL2
         sdl = std::make_shared<SDLDriver>("sdl");
@@ -327,6 +337,7 @@ struct InputSubsystem::Impl {
     std::shared_ptr<TasInput::Tas> tas_input;
     std::shared_ptr<CemuhookUDP::UDPClient> udp_client;
     std::shared_ptr<Camera> camera;
+    std::shared_ptr<VirtualAmiibo> virtual_amiibo;
 
     std::shared_ptr<InputFactory> keyboard_factory;
     std::shared_ptr<InputFactory> mouse_factory;
@@ -335,6 +346,7 @@ struct InputSubsystem::Impl {
     std::shared_ptr<InputFactory> udp_client_input_factory;
     std::shared_ptr<InputFactory> tas_input_factory;
     std::shared_ptr<InputFactory> camera_input_factory;
+    std::shared_ptr<InputFactory> virtual_amiibo_input_factory;
 
     std::shared_ptr<OutputFactory> keyboard_output_factory;
     std::shared_ptr<OutputFactory> mouse_output_factory;
@@ -342,6 +354,7 @@ struct InputSubsystem::Impl {
     std::shared_ptr<OutputFactory> udp_client_output_factory;
     std::shared_ptr<OutputFactory> tas_output_factory;
     std::shared_ptr<OutputFactory> camera_output_factory;
+    std::shared_ptr<OutputFactory> virtual_amiibo_output_factory;
 
 #ifdef HAVE_SDL2
     std::shared_ptr<SDLDriver> sdl;
@@ -400,6 +413,14 @@ Camera* InputSubsystem::GetCamera() {
 
 const Camera* InputSubsystem::GetCamera() const {
     return impl->camera.get();
+}
+
+VirtualAmiibo* InputSubsystem::GetVirtualAmiibo() {
+    return impl->virtual_amiibo.get();
+}
+
+const VirtualAmiibo* InputSubsystem::GetVirtualAmiibo() const {
+    return impl->virtual_amiibo.get();
 }
 
 std::vector<Common::ParamPackage> InputSubsystem::GetInputDevices() const {

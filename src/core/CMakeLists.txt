@@ -523,9 +523,12 @@ add_library(core STATIC
     hle/service/nfc/nfc.h
     hle/service/nfp/amiibo_crypto.cpp
     hle/service/nfp/amiibo_crypto.h
-    hle/service/nfp/amiibo_types.h
     hle/service/nfp/nfp.cpp
     hle/service/nfp/nfp.h
+    hle/service/nfp/nfp_device.cpp
+    hle/service/nfp/nfp_device.h
+    hle/service/nfp/nfp_result.h
+    hle/service/nfp/nfp_types.h
     hle/service/nfp/nfp_user.cpp
     hle/service/nfp/nfp_user.h
     hle/service/ngct/ngct.cpp

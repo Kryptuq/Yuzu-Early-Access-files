@@ -705,6 +705,47 @@ private:
     InputEngine* input_engine;
 };
 
+class InputFromNfc final : public Common::Input::InputDevice {
+public:
+    explicit InputFromNfc(PadIdentifier identifier_, InputEngine* input_engine_)
+        : identifier(identifier_), input_engine(input_engine_) {
+        UpdateCallback engine_callback{[this]() { OnChange(); }};
+        const InputIdentifier input_identifier{
+            .identifier = identifier,
+            .type = EngineInputType::Nfc,
+            .index = 0,
+            .callback = engine_callback,
+        };
+        callback_key = input_engine->SetCallback(input_identifier);
+    }
+
+    ~InputFromNfc() override {
+        input_engine->DeleteCallback(callback_key);
+    }
+
+    Common::Input::NfcStatus GetStatus() const {
+        return input_engine->GetNfc(identifier);
+    }
+
+    void ForceUpdate() override {
+        OnChange();
+    }
+
+    void OnChange() {
+        const Common::Input::CallbackStatus status{
+            .type = Common::Input::InputType::Nfc,
+            .nfc_status = GetStatus(),
+        };
+
+        TriggerOnChange(status);
+    }
+
+private:
+    const PadIdentifier identifier;
+    int callback_key;
+    InputEngine* input_engine;
+};
+
 class OutputFromIdentifier final : public Common::Input::OutputDevice {
 public:
     explicit OutputFromIdentifier(PadIdentifier identifier_, InputEngine* input_engine_)
@@ -725,6 +766,14 @@ public:
 
     Common::Input::CameraError SetCameraFormat(Common::Input::CameraFormat camera_format) override {
         return input_engine->SetCameraFormat(identifier, camera_format);
+    }
+
+    Common::Input::NfcState SupportsNfc() const override {
+        return input_engine->SupportsNfc(identifier);
+    }
+
+    Common::Input::NfcState WriteNfcData(const std::vector<u8>& data) override {
+        return input_engine->WriteNfcData(identifier, data);
     }
 
 private:
@@ -978,6 +1027,18 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateCameraDevice(
     return std::make_unique<InputFromCamera>(identifier, input_engine.get());
 }
 
+std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateNfcDevice(
+    const Common::ParamPackage& params) {
+    const PadIdentifier identifier = {
+        .guid = Common::UUID{params.Get("guid", "")},
+        .port = static_cast<std::size_t>(params.Get("port", 0)),
+        .pad = static_cast<std::size_t>(params.Get("pad", 0)),
+    };
+
+    input_engine->PreSetController(identifier);
+    return std::make_unique<InputFromNfc>(identifier, input_engine.get());
+}
+
 InputFactory::InputFactory(std::shared_ptr<InputEngine> input_engine_)
     : input_engine(std::move(input_engine_)) {}
 
@@ -988,6 +1049,9 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::Create(
     }
     if (params.Has("camera")) {
         return CreateCameraDevice(params);
+    }
+    if (params.Has("nfc")) {
+        return CreateNfcDevice(params);
     }
     if (params.Has("button") && params.Has("axis")) {
         return CreateTriggerDevice(params);

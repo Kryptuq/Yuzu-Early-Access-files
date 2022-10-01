@@ -76,6 +76,19 @@ enum class PollingError {
     Unknown,
 };
 
+// Nfc reply from the controller
+enum class NfcState {
+    Success,
+    NewAmiibo,
+    WaitingForAmiibo,
+    AmiiboRemoved,
+    NotAnAmiibo,
+    NotSupported,
+    WrongDeviceState,
+    WriteFailed,
+    Unknown,
+};
+
 // Ir camera reply from the controller
 enum class CameraError {
     None,
@@ -202,6 +215,11 @@ struct CameraStatus {
     std::vector<u8> data{};
 };
 
+struct NfcStatus {
+    NfcState state{};
+    std::vector<u8> data{};
+};
+
 // List of buttons to be passed to Qt that can be translated
 enum class ButtonNames {
     Undefined,
@@ -260,6 +278,7 @@ struct CallbackStatus {
     BatteryStatus battery_status{};
     VibrationStatus vibration_status{};
     CameraStatus camera_status{};
+    NfcStatus nfc_status{};
 };
 
 // Triggered once every input change
@@ -311,6 +330,14 @@ public:
 
     virtual CameraError SetCameraFormat([[maybe_unused]] CameraFormat camera_format) {
         return CameraError::NotSupported;
+    }
+
+    virtual NfcState SupportsNfc() const {
+        return NfcState::NotSupported;
+    }
+
+    virtual NfcState WriteNfcData([[maybe_unused]] const std::vector<u8>& data) {
+        return NfcState::NotSupported;
     }
 };
 

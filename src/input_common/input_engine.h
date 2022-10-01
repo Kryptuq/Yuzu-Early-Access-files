@@ -42,6 +42,7 @@ enum class EngineInputType {
     Camera,
     HatButton,
     Motion,
+    Nfc,
 };
 
 namespace std {
@@ -127,6 +128,18 @@ public:
         return Common::Input::CameraError::NotSupported;
     }
 
+    // Request nfc data from a controller
+    virtual Common::Input::NfcState SupportsNfc(
+        [[maybe_unused]] const PadIdentifier& identifier) const {
+        return Common::Input::NfcState::NotSupported;
+    }
+
+    // Writes data to an nfc tag
+    virtual Common::Input::NfcState WriteNfcData([[maybe_unused]] const PadIdentifier& identifier,
+                                                 [[maybe_unused]] const std::vector<u8>& data) {
+        return Common::Input::NfcState::NotSupported;
+    }
+
     // Returns the engine name
     [[nodiscard]] const std::string& GetEngineName() const;
 
@@ -183,6 +196,7 @@ public:
     Common::Input::BatteryLevel GetBattery(const PadIdentifier& identifier) const;
     BasicMotion GetMotion(const PadIdentifier& identifier, int motion) const;
     Common::Input::CameraStatus GetCamera(const PadIdentifier& identifier) const;
+    Common::Input::NfcStatus GetNfc(const PadIdentifier& identifier) const;
 
     int SetCallback(InputIdentifier input_identifier);
     void SetMappingCallback(MappingCallback callback);
@@ -195,6 +209,7 @@ protected:
     void SetBattery(const PadIdentifier& identifier, Common::Input::BatteryLevel value);
     void SetMotion(const PadIdentifier& identifier, int motion, const BasicMotion& value);
     void SetCamera(const PadIdentifier& identifier, const Common::Input::CameraStatus& value);
+    void SetNfc(const PadIdentifier& identifier, const Common::Input::NfcStatus& value);
 
     virtual std::string GetHatButtonName([[maybe_unused]] u8 direction_value) const {
         return "Unknown";
@@ -208,6 +223,7 @@ private:
         std::unordered_map<int, BasicMotion> motions;
         Common::Input::BatteryLevel battery{};
         Common::Input::CameraStatus camera{};
+        Common::Input::NfcStatus nfc{};
     };
 
     void TriggerOnButtonChange(const PadIdentifier& identifier, int button, bool value);
@@ -218,6 +234,7 @@ private:
                                const BasicMotion& value);
     void TriggerOnCameraChange(const PadIdentifier& identifier,
                                const Common::Input::CameraStatus& value);
+    void TriggerOnNfcChange(const PadIdentifier& identifier, const Common::Input::NfcStatus& value);
 
     bool IsInputIdentifierEqual(const InputIdentifier& input_identifier,
                                 const PadIdentifier& identifier, EngineInputType type,

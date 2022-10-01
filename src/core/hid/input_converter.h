@@ -85,6 +85,14 @@ Common::Input::AnalogStatus TransformToAnalog(const Common::Input::CallbackStatu
 Common::Input::CameraStatus TransformToCamera(const Common::Input::CallbackStatus& callback);
 
 /**
+ * Converts raw input data into a valid nfc status.
+ *
+ * @param callback Supported callbacks: Nfc.
+ * @return A valid CameraObject object.
+ */
+Common::Input::NfcStatus TransformToNfc(const Common::Input::CallbackStatus& callback);
+
+/**
  * Converts raw analog data into a valid analog value
  * @param analog An analog object containing raw data and properties
  * @param clamp_value determines if the value needs to be clamped between -1.0f and 1.0f.

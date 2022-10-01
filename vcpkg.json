@@ -1,7 +1,7 @@
 {
     "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
     "name": "yuzu",
-    "builtin-baseline": "cef0b3ec767df6e83806899fe9525f6cf8d7bc91",
+    "builtin-baseline": "9b22b40c6c61bf0da2d46346dd44a11e90972cc9",
     "version": "1.0",
     "dependencies": [
         "boost-algorithm",
@@ -31,12 +31,20 @@
         "yuzu-tests": {
             "description": "Compile tests",
             "dependencies": [ "catch2" ]
+        },
+        "dbghelp": {
+            "description": "Compile Windows crash dump (Minidump) support",
+            "dependencies": [ "dbghelp" ]
         }
     },
     "overrides": [
         {
             "name": "catch2",
             "version": "2.13.9"
+        },
+        {
+            "name": "fmt",
+            "version": "9.0.0"
         }
     ]
 }

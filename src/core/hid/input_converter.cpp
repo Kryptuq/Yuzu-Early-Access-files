@@ -287,6 +287,20 @@ Common::Input::CameraStatus TransformToCamera(const Common::Input::CallbackStatu
     return camera;
 }
 
+Common::Input::NfcStatus TransformToNfc(const Common::Input::CallbackStatus& callback) {
+    Common::Input::NfcStatus nfc{};
+    switch (callback.type) {
+    case Common::Input::InputType::Nfc:
+        return callback.nfc_status;
+        break;
+    default:
+        LOG_ERROR(Input, "Conversion from type {} to NFC not implemented", callback.type);
+        break;
+    }
+
+    return nfc;
+}
+
 void SanitizeAnalog(Common::Input::AnalogStatus& analog, bool clamp_value) {
     const auto& properties = analog.properties;
     float& raw_value = analog.raw_value;

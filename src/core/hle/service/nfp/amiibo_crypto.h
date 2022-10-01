@@ -5,7 +5,7 @@
 
 #include <array>
 
-#include "core/hle/service/nfp/amiibo_types.h"
+#include "core/hle/service/nfp/nfp_types.h"
 
 struct mbedtls_md_context_t;
 
@@ -22,10 +22,12 @@ using HmacKey = std::array<u8, 0x10>;
 using DrgbOutput = std::array<u8, 0x20>;
 
 struct HashSeed {
-    u16 magic;
+    u16_be magic;
     std::array<u8, 0xE> padding;
-    std::array<u8, 0x8> uuid1;
-    std::array<u8, 0x8> uuid2;
+    UniqueSerialNumber uid_1;
+    u8 nintendo_id_1;
+    UniqueSerialNumber uid_2;
+    u8 nintendo_id_2;
     std::array<u8, 0x20> keygen_salt;
 };
 static_assert(sizeof(HashSeed) == 0x40, "HashSeed is an invalid size");

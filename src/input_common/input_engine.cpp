@@ -102,6 +102,17 @@ void InputEngine::SetCamera(const PadIdentifier& identifier,
     TriggerOnCameraChange(identifier, value);
 }
 
+void InputEngine::SetNfc(const PadIdentifier& identifier, const Common::Input::NfcStatus& value) {
+    {
+        std::scoped_lock lock{mutex};
+        ControllerData& controller = controller_list.at(identifier);
+        if (!configuring) {
+            controller.nfc = value;
+        }
+    }
+    TriggerOnNfcChange(identifier, value);
+}
+
 bool InputEngine::GetButton(const PadIdentifier& identifier, int button) const {
     std::scoped_lock lock{mutex};
     const auto controller_iter = controller_list.find(identifier);
@@ -187,6 +198,18 @@ Common::Input::CameraStatus InputEngine::GetCamera(const PadIdentifier& identifi
     }
     const ControllerData& controller = controller_iter->second;
     return controller.camera;
+}
+
+Common::Input::NfcStatus InputEngine::GetNfc(const PadIdentifier& identifier) const {
+    std::scoped_lock lock{mutex};
+    const auto controller_iter = controller_list.find(identifier);
+    if (controller_iter == controller_list.cend()) {
+        LOG_ERROR(Input, "Invalid identifier guid={}, pad={}, port={}", identifier.guid.RawString(),
+                  identifier.pad, identifier.port);
+        return {};
+    }
+    const ControllerData& controller = controller_iter->second;
+    return controller.nfc;
 }
 
 void InputEngine::ResetButtonState() {
@@ -347,6 +370,20 @@ void InputEngine::TriggerOnCameraChange(const PadIdentifier& identifier,
     for (const auto& poller_pair : callback_list) {
         const InputIdentifier& poller = poller_pair.second;
         if (!IsInputIdentifierEqual(poller, identifier, EngineInputType::Camera, 0)) {
+            continue;
+        }
+        if (poller.callback.on_change) {
+            poller.callback.on_change();
+        }
+    }
+}
+
+void InputEngine::TriggerOnNfcChange(const PadIdentifier& identifier,
+                                     [[maybe_unused]] const Common::Input::NfcStatus& value) {
+    std::scoped_lock lock{mutex_callback};
+    for (const auto& poller_pair : callback_list) {
+        const InputIdentifier& poller = poller_pair.second;
+        if (!IsInputIdentifierEqual(poller, identifier, EngineInputType::Nfc, 0)) {
             continue;
         }
         if (poller.callback.on_change) {
