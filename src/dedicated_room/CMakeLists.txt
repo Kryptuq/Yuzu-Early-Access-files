@@ -23,5 +23,5 @@ endif()
 target_link_libraries(yuzu-room PRIVATE ${PLATFORM_LIBRARIES} Threads::Threads)
 
 if(UNIX AND NOT APPLE)
-    install(TARGETS yuzu-room RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+    install(TARGETS yuzu-room)
 endif()
