@@ -93,7 +93,7 @@ void EmulatedController::ReloadFromSettings() {
         .body = GetNpadColor(player.body_color_left),
         .button = GetNpadColor(player.button_color_left),
     };
-    controller.colors_state.left = {
+    controller.colors_state.right = {
         .body = GetNpadColor(player.body_color_right),
         .button = GetNpadColor(player.button_color_right),
     };

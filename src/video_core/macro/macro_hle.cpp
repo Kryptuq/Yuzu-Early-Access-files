@@ -84,7 +84,7 @@ void HLE_0217920100488FF7(Engines::Maxwell3D& maxwell3d, const std::vector<u32>&
 }
 
 // Multidraw Indirect
-void HLE_3f5e74b9c9a50164(Engines::Maxwell3D& maxwell3d, const std::vector<u32>& parameters) {
+void HLE_3F5E74B9C9A50164(Engines::Maxwell3D& maxwell3d, const std::vector<u32>& parameters) {
     SCOPE_EXIT({
         // Clean everything.
         maxwell3d.regs.reg_array[0x446] = 0x0; // vertex id base?
@@ -143,7 +143,7 @@ constexpr std::array<std::pair<u64, HLEFunction>, 4> hle_funcs{{
     {0x771BB18C62444DA0, &HLE_771BB18C62444DA0},
     {0x0D61FC9FAAC9FCAD, &HLE_0D61FC9FAAC9FCAD},
     {0x0217920100488FF7, &HLE_0217920100488FF7},
-    {0x3f5e74b9c9a50164, &HLE_3f5e74b9c9a50164},
+    {0x3F5E74B9C9A50164, &HLE_3F5E74B9C9A50164},
 }};
 
 class HLEMacroImpl final : public CachedMacro {

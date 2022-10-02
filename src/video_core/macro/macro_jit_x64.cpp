@@ -279,28 +279,13 @@ void MacroJITx64Impl::Compile_ExtractInsert(Macro::Opcode opcode) {
     auto dst = Compile_GetRegister(opcode.src_a, RESULT);
     auto src = Compile_GetRegister(opcode.src_b, eax);
 
-    if (opcode.bf_src_bit != 0 && opcode.bf_src_bit != 31) {
-        shr(src, opcode.bf_src_bit);
-    } else if (opcode.bf_src_bit == 31) {
-        xor_(src, src);
-    }
-    // Don't bother masking the whole register since we're using a 32 bit register
-    if (opcode.bf_size != 31 && opcode.bf_size != 0) {
-        and_(src, opcode.GetBitfieldMask());
-    } else if (opcode.bf_size == 0) {
-        xor_(src, src);
-    }
-    if (opcode.bf_dst_bit != 31 && opcode.bf_dst_bit != 0) {
-        shl(src, opcode.bf_dst_bit);
-    } else if (opcode.bf_dst_bit == 31) {
-        xor_(src, src);
-    }
-
     const u32 mask = ~(opcode.GetBitfieldMask() << opcode.bf_dst_bit);
-    if (mask != 0xffffffff) {
-        and_(dst, mask);
-    }
+    and_(dst, mask);
+    shr(src, opcode.bf_src_bit);
+    and_(src, opcode.GetBitfieldMask());
+    shl(src, opcode.bf_dst_bit);
     or_(dst, src);
+
     Compile_ProcessResult(opcode.result_operation, opcode.dst);
 }
 
@@ -309,17 +294,9 @@ void MacroJITx64Impl::Compile_ExtractShiftLeftImmediate(Macro::Opcode opcode) {
     const auto src = Compile_GetRegister(opcode.src_b, RESULT);
 
     shr(src, dst.cvt8());
-    if (opcode.bf_size != 0 && opcode.bf_size != 31) {
-        and_(src, opcode.GetBitfieldMask());
-    } else if (opcode.bf_size == 0) {
-        xor_(src, src);
-    }
+    and_(src, opcode.GetBitfieldMask());
+    shl(src, opcode.bf_dst_bit);
 
-    if (opcode.bf_dst_bit != 0 && opcode.bf_dst_bit != 31) {
-        shl(src, opcode.bf_dst_bit);
-    } else if (opcode.bf_dst_bit == 31) {
-        xor_(src, src);
-    }
     Compile_ProcessResult(opcode.result_operation, opcode.dst);
 }
 
@@ -327,13 +304,8 @@ void MacroJITx64Impl::Compile_ExtractShiftLeftRegister(Macro::Opcode opcode) {
     const auto dst = Compile_GetRegister(opcode.src_a, ecx);
     const auto src = Compile_GetRegister(opcode.src_b, RESULT);
 
-    if (opcode.bf_src_bit != 0) {
-        shr(src, opcode.bf_src_bit);
-    }
-
-    if (opcode.bf_size != 31) {
-        and_(src, opcode.GetBitfieldMask());
-    }
+    shr(src, opcode.bf_src_bit);
+    and_(src, opcode.GetBitfieldMask());
     shl(src, dst.cvt8());
 
     Compile_ProcessResult(opcode.result_operation, opcode.dst);
@@ -429,17 +401,11 @@ void MacroJITx64Impl::Compile_Branch(Macro::Opcode opcode) {
             Xbyak::Label handle_post_exit{};
             Xbyak::Label skip{};
             jmp(skip, T_NEAR);
-            if (opcode.is_exit) {
-                L(handle_post_exit);
-                // Execute 1 instruction
-                mov(BRANCH_HOLDER, end_of_code);
-                // Jump to next instruction to skip delay slot check
-                jmp(labels[jump_address], T_NEAR);
-            } else {
-                L(handle_post_exit);
-                xor_(BRANCH_HOLDER, BRANCH_HOLDER);
-                jmp(labels[jump_address], T_NEAR);
-            }
+
+            L(handle_post_exit);
+            xor_(BRANCH_HOLDER, BRANCH_HOLDER);
+            jmp(labels[jump_address], T_NEAR);
+
             L(skip);
             mov(BRANCH_HOLDER, handle_post_exit);
             jmp(delay_skip[pc], T_NEAR);
