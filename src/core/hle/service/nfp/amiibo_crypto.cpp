@@ -58,7 +58,7 @@ bool IsAmiiboValid(const EncryptedNTAG215File& ntag_file) {
     if (amiibo_data.model_info.constant_value != 0x02) {
         return false;
     }
-    if (ntag_file.dynamic_lock != 0xBD0F0001U) {
+    if ((ntag_file.dynamic_lock & 0xFFFFFF) != 0x0F0001U) {
         return false;
     }
     if (ntag_file.CFG0 != 0x04000000U) {
