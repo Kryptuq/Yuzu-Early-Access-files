@@ -13,9 +13,6 @@ namespace Shader::Backend::GLASM {
 namespace {
 void GetCbuf(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU32 offset,
              std::string_view size) {
-    if (!binding.IsImmediate()) {
-        throw NotImplementedException("Indirect constant buffer loading");
-    }
     const Register ret{ctx.reg_alloc.Define(inst)};
     if (offset.type == Type::U32) {
         // Avoid reading arrays out of bounds, matching hardware's behavior
@@ -24,7 +21,27 @@ void GetCbuf(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU
             return;
         }
     }
-    ctx.Add("LDC.{} {},c{}[{}];", size, ret, binding.U32(), offset);
+
+    if (binding.IsImmediate()) {
+        ctx.Add("LDC.{} {},c{}[{}];", size, ret, binding.U32(), offset);
+        return;
+    }
+
+    const ScalarU32 idx{ctx.reg_alloc.Consume(binding)};
+    for (u32 i = 0; i < Info::MAX_INDIRECT_CBUFS; i++) {
+        ctx.Add("SEQ.S.CC RC.x,{},{};"
+                "IF NE.x;"
+                "LDC.{} {},c{}[{}];",
+                idx, i, size, ret, i, offset);
+
+        if (i != Info::MAX_INDIRECT_CBUFS - 1) {
+            ctx.Add("ELSE;");
+        }
+    }
+
+    for (u32 i = 0; i < Info::MAX_INDIRECT_CBUFS; i++) {
+        ctx.Add("ENDIF;");
+    }
 }
 
 bool IsInputArray(Stage stage) {
