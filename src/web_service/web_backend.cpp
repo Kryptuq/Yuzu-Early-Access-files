@@ -111,7 +111,8 @@ struct Client::Impl {
         httplib::Error error;
 
         if (!cli->send(request, response, error)) {
-            LOG_ERROR(WebService, "{} to {} returned null", method, host + path);
+            LOG_ERROR(WebService, "{} to {} returned null (httplib Error: {})", method, host + path,
+                      httplib::to_string(error));
             return WebResult{WebResult::Code::LibError, "Null response", ""};
         }
 
