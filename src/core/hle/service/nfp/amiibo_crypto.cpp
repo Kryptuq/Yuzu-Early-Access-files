@@ -28,7 +28,7 @@ bool IsAmiiboValid(const EncryptedNTAG215File& ntag_file) {
     LOG_DEBUG(Service_NFP, "model_number=0x{0:x}",
               static_cast<u16>(amiibo_data.model_info.model_number));
     LOG_DEBUG(Service_NFP, "series={}", amiibo_data.model_info.series);
-    LOG_DEBUG(Service_NFP, "fixed_value=0x{0:x}", amiibo_data.model_info.constant_value);
+    LOG_DEBUG(Service_NFP, "tag_type=0x{0:x}", amiibo_data.model_info.tag_type);
 
     LOG_DEBUG(Service_NFP, "tag_dynamic_lock=0x{0:x}", ntag_file.dynamic_lock);
     LOG_DEBUG(Service_NFP, "tag_CFG0=0x{0:x}", ntag_file.CFG0);
@@ -55,7 +55,7 @@ bool IsAmiiboValid(const EncryptedNTAG215File& ntag_file) {
     if (amiibo_data.constant_value != 0xA5) {
         return false;
     }
-    if (amiibo_data.model_info.constant_value != 0x02) {
+    if (amiibo_data.model_info.tag_type != PackedTagType::Type2) {
         return false;
     }
     if ((ntag_file.dynamic_lock & 0xFFFFFF) != 0x0F0001U) {

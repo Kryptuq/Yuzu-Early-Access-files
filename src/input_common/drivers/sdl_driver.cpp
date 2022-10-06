@@ -436,7 +436,7 @@ SDLDriver::SDLDriver(std::string input_engine_) : InputEngine(std::move(input_en
     initialized = true;
     if (start_thread) {
         poll_thread = std::thread([this] {
-            Common::SetCurrentThreadName("yuzu:input:SDL");
+            Common::SetCurrentThreadName("SDL_MainLoop");
             using namespace std::chrono_literals;
             while (initialized) {
                 SDL_PumpEvents();
@@ -444,7 +444,7 @@ SDLDriver::SDLDriver(std::string input_engine_) : InputEngine(std::move(input_en
             }
         });
         vibration_thread = std::thread([this] {
-            Common::SetCurrentThreadName("yuzu:input:SDL_Vibration");
+            Common::SetCurrentThreadName("SDL_Vibration");
             using namespace std::chrono_literals;
             while (initialized) {
                 SendVibrations();

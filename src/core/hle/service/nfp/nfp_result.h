@@ -8,6 +8,8 @@
 namespace Service::NFP {
 
 constexpr Result DeviceNotFound(ErrorModule::NFP, 64);
+constexpr Result InvalidArgument(ErrorModule::NFP, 65);
+constexpr Result WrongApplicationAreaSize(ErrorModule::NFP, 68);
 constexpr Result WrongDeviceState(ErrorModule::NFP, 73);
 constexpr Result NfcDisabled(ErrorModule::NFP, 80);
 constexpr Result WriteAmiiboFailed(ErrorModule::NFP, 88);

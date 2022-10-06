@@ -189,9 +189,9 @@ void CpuManager::RunThread(std::size_t core) {
     system.RegisterCoreThread(core);
     std::string name;
     if (is_multicore) {
-        name = "yuzu:CPUCore_" + std::to_string(core);
+        name = "CPUCore_" + std::to_string(core);
     } else {
-        name = "yuzu:CPUThread";
+        name = "CPUThread";
     }
     MicroProfileOnThreadCreate(name.c_str());
     Common::SetCurrentThreadName(name.c_str());

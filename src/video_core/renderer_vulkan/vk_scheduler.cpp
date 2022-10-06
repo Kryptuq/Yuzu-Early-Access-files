@@ -136,7 +136,7 @@ bool Scheduler::UpdateRescaling(bool is_rescaling) {
 }
 
 void Scheduler::WorkerThread(std::stop_token stop_token) {
-    Common::SetCurrentThreadName("yuzu:VulkanWorker");
+    Common::SetCurrentThreadName("VulkanWorker");
     do {
         std::unique_ptr<CommandChunk> work;
         bool has_submit{false};

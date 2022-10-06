@@ -33,7 +33,7 @@ constexpr auto frame_ns = std::chrono::nanoseconds{1000000000 / 60};
 
 void NVFlinger::SplitVSync(std::stop_token stop_token) {
     system.RegisterHostThread();
-    std::string name = "yuzu:VSyncThread";
+    std::string name = "VSyncThread";
     MicroProfileOnThreadCreate(name.c_str());
 
     // Cleanup

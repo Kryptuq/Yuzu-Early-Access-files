@@ -43,7 +43,7 @@ CoreTiming::CoreTiming()
 CoreTiming::~CoreTiming() = default;
 
 void CoreTiming::ThreadEntry(CoreTiming& instance) {
-    constexpr char name[] = "yuzu:HostTiming";
+    constexpr char name[] = "HostTiming";
     MicroProfileOnThreadCreate(name);
     Common::SetCurrentThreadName(name);
     Common::SetCurrentThreadPriority(Common::ThreadPriority::Critical);

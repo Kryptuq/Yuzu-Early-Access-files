@@ -269,8 +269,8 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, const Device& device
       render_pass_cache{render_pass_cache_}, buffer_cache{buffer_cache_},
       texture_cache{texture_cache_}, shader_notify{shader_notify_},
       use_asynchronous_shaders{Settings::values.use_asynchronous_shaders.GetValue()},
-      workers(std::max(std::thread::hardware_concurrency(), 2U) - 1, "yuzu:PipelineBuilder"),
-      serialization_thread(1, "yuzu:PipelineSerialization") {
+      workers(std::max(std::thread::hardware_concurrency(), 2U) - 1, "VkPipelineBuilder"),
+      serialization_thread(1, "VkPipelineSerialization") {
     const auto& float_control{device.FloatControlProperties()};
     const VkDriverIdKHR driver_id{device.GetDriverID()};
     profile = Shader::Profile{

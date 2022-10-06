@@ -84,6 +84,15 @@ enum class TagType : u32 {
     Type5, // ISO15693 RW/RO 540 bytes 106kbit/s
 };
 
+enum class PackedTagType : u8 {
+    None,
+    Type1, // ISO14443A RW 96-2k bytes 106kbit/s
+    Type2, // ISO14443A RW/RO 540 bytes 106kbit/s
+    Type3, // Sony Felica RW/RO 2k bytes 212kbit/s
+    Type4, // ISO14443A RW/RO 4k-32k bytes 424kbit/s
+    Type5, // ISO15693 RW/RO 540 bytes 106kbit/s
+};
+
 enum class TagProtocol : u32 {
     None,
     TypeA, // ISO14443A
@@ -104,6 +113,13 @@ struct TagUuid {
 };
 static_assert(sizeof(TagUuid) == 10, "TagUuid is an invalid size");
 
+struct WriteDate {
+    u16 year;
+    u8 month;
+    u8 day;
+};
+static_assert(sizeof(WriteDate) == 0x4, "WriteDate is an invalid size");
+
 struct AmiiboDate {
     u16 raw_date{};
 
@@ -121,6 +137,21 @@ struct AmiiboDate {
         return static_cast<u8>(GetValue() & 0x001F);
     }
 
+    WriteDate GetWriteDate() const {
+        if (!IsValidDate()) {
+            return {
+                .year = 2000,
+                .month = 1,
+                .day = 1,
+            };
+        }
+        return {
+            .year = GetYear(),
+            .month = GetMonth(),
+            .day = GetDay(),
+        };
+    }
+
     void SetYear(u16 year) {
         const u16 year_converted = static_cast<u16>((year - 2000) << 9);
         raw_date = Common::swap16((GetValue() & ~0xFE00) | year_converted);
@@ -132,6 +163,13 @@ struct AmiiboDate {
     void SetDay(u8 day) {
         const u16 day_converted = static_cast<u16>(day);
         raw_date = Common::swap16((GetValue() & ~0x001F) | day_converted);
+    }
+
+    bool IsValidDate() const {
+        const bool is_day_valid = GetDay() > 0 && GetDay() < 32;
+        const bool is_month_valid = GetMonth() >= 0 && GetMonth() < 13;
+        const bool is_year_valid = GetYear() >= 2000;
+        return is_year_valid && is_month_valid && is_day_valid;
     }
 };
 static_assert(sizeof(AmiiboDate) == 2, "AmiiboDate is an invalid size");
@@ -163,7 +201,7 @@ struct AmiiboModelInfo {
     AmiiboType amiibo_type;
     u16_be model_number;
     AmiiboSeries series;
-    u8 constant_value;         // Must be 02
+    PackedTagType tag_type;
     INSERT_PADDING_BYTES(0x4); // Unknown
 };
 static_assert(sizeof(AmiiboModelInfo) == 0xC, "AmiiboModelInfo is an invalid size");
@@ -249,13 +287,6 @@ struct TagInfo {
     INSERT_PADDING_BYTES(0x30);
 };
 static_assert(sizeof(TagInfo) == 0x58, "TagInfo is an invalid size");
-
-struct WriteDate {
-    u16 year;
-    u8 month;
-    u8 day;
-};
-static_assert(sizeof(WriteDate) == 0x4, "WriteDate is an invalid size");
 
 struct CommonInfo {
     WriteDate last_write_date;

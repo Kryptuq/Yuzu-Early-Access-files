@@ -140,7 +140,7 @@ private:
     }
 
     void ThreadLoop(std::stop_token stop_token) {
-        Common::SetCurrentThreadName("yuzu:Debugger");
+        Common::SetCurrentThreadName("Debugger");
 
         // Set up the client signals for new data.
         AsyncReceiveInto(signal_pipe, pipe_data, [&](auto d) { PipeData(d); });

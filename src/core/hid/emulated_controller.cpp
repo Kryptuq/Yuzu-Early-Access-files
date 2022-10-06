@@ -1017,9 +1017,11 @@ bool EmulatedController::SetPollingMode(Common::Input::PollingMode polling_mode)
     auto& output_device = output_devices[static_cast<std::size_t>(DeviceIndex::Right)];
     auto& nfc_output_device = output_devices[3];
 
-    nfc_output_device->SetPollingMode(polling_mode);
+    const auto virtual_nfc_result = nfc_output_device->SetPollingMode(polling_mode);
+    const auto mapped_nfc_result = output_device->SetPollingMode(polling_mode);
 
-    return output_device->SetPollingMode(polling_mode) == Common::Input::PollingError::None;
+    return virtual_nfc_result == Common::Input::PollingError::None ||
+           mapped_nfc_result == Common::Input::PollingError::None;
 }
 
 bool EmulatedController::SetCameraFormat(

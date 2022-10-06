@@ -90,7 +90,7 @@ GCAdapter::~GCAdapter() {
 
 void GCAdapter::AdapterInputThread(std::stop_token stop_token) {
     LOG_DEBUG(Input, "Input thread started");
-    Common::SetCurrentThreadName("yuzu:input:GCAdapter");
+    Common::SetCurrentThreadName("GCAdapter");
     s32 payload_size{};
     AdapterPayload adapter_payload{};
 
@@ -214,7 +214,7 @@ void GCAdapter::UpdateStateAxes(std::size_t port, const AdapterPayload& adapter_
 }
 
 void GCAdapter::AdapterScanThread(std::stop_token stop_token) {
-    Common::SetCurrentThreadName("yuzu:input:ScanGCAdapter");
+    Common::SetCurrentThreadName("ScanGCAdapter");
     usb_adapter_handle = nullptr;
     pads = {};
     while (!stop_token.stop_requested() && !Setup()) {

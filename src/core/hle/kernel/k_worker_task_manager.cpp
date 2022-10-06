@@ -23,7 +23,7 @@ void KWorkerTask::DoWorkerTask() {
     }
 }
 
-KWorkerTaskManager::KWorkerTaskManager() : m_waiting_thread(1, "yuzu:KWorkerTaskManager") {}
+KWorkerTaskManager::KWorkerTaskManager() : m_waiting_thread(1, "KWorkerTaskManager") {}
 
 void KWorkerTaskManager::AddTask(KernelCore& kernel, WorkerType type, KWorkerTask* task) {
     ASSERT(type <= WorkerType::Count);

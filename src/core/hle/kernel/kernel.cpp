@@ -48,7 +48,7 @@ namespace Kernel {
 struct KernelCore::Impl {
     explicit Impl(Core::System& system_, KernelCore& kernel_)
         : time_manager{system_},
-          service_threads_manager{1, "yuzu:ServiceThreadsManager"}, system{system_} {}
+          service_threads_manager{1, "ServiceThreadsManager"}, system{system_} {}
 
     void SetMulticore(bool is_multi) {
         is_multicore = is_multi;

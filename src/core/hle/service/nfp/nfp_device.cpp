@@ -98,11 +98,6 @@ bool NfpDevice::LoadAmiibo(std::span<const u8> data) {
 
     memcpy(&encrypted_tag_data, data.data(), sizeof(EncryptedNTAG215File));
 
-    if (!AmiiboCrypto::IsAmiiboValid(encrypted_tag_data)) {
-        LOG_INFO(Service_NFP, "Invalid amiibo");
-        return false;
-    }
-
     device_state = DeviceState::TagFound;
     deactivate_event->GetReadableEvent().Clear();
     activate_event->GetWritableEvent().Signal();
@@ -148,19 +143,27 @@ void NfpDevice::Finalize() {
 }
 
 Result NfpDevice::StartDetection(s32 protocol_) {
-    if (device_state == DeviceState::Initialized || device_state == DeviceState::TagRemoved) {
-        npad_device->SetPollingMode(Common::Input::PollingMode::NFC);
-        device_state = DeviceState::SearchingForTag;
-        protocol = protocol_;
-        return ResultSuccess;
+    if (device_state != DeviceState::Initialized && device_state != DeviceState::TagRemoved) {
+        LOG_ERROR(Service_NFP, "Wrong device state {}", device_state);
+        return WrongDeviceState;
     }
 
-    LOG_ERROR(Service_NFP, "Wrong device state {}", device_state);
-    return WrongDeviceState;
+    if (!npad_device->SetPollingMode(Common::Input::PollingMode::NFC)) {
+        LOG_ERROR(Service_NFP, "Nfc not supported");
+        return NfcDisabled;
+    }
+
+    device_state = DeviceState::SearchingForTag;
+    protocol = protocol_;
+    return ResultSuccess;
 }
 
 Result NfpDevice::StopDetection() {
     npad_device->SetPollingMode(Common::Input::PollingMode::Active);
+
+    if (device_state == DeviceState::Initialized) {
+        return ResultSuccess;
+    }
 
     if (device_state == DeviceState::TagFound || device_state == DeviceState::TagMounted) {
         CloseAmiibo();
@@ -225,6 +228,11 @@ Result NfpDevice::Mount(MountTarget mount_target_) {
         return WrongDeviceState;
     }
 
+    if (!AmiiboCrypto::IsAmiiboValid(encrypted_tag_data)) {
+        LOG_ERROR(Service_NFP, "Not an amiibo");
+        return NotAnAmiibo;
+    }
+
     if (!AmiiboCrypto::DecodeAmiibo(encrypted_tag_data, tag_data)) {
         LOG_ERROR(Service_NFP, "Can't decode amiibo {}", device_state);
         return CorruptedData;
@@ -238,6 +246,9 @@ Result NfpDevice::Mount(MountTarget mount_target_) {
 Result NfpDevice::Unmount() {
     if (device_state != DeviceState::TagMounted) {
         LOG_ERROR(Service_NFP, "Wrong device state {}", device_state);
+        if (device_state == DeviceState::TagRemoved) {
+            return TagRemoved;
+        }
         return WrongDeviceState;
     }
 
@@ -256,6 +267,9 @@ Result NfpDevice::Unmount() {
 Result NfpDevice::GetTagInfo(TagInfo& tag_info) const {
     if (device_state != DeviceState::TagFound && device_state != DeviceState::TagMounted) {
         LOG_ERROR(Service_NFP, "Wrong device state {}", device_state);
+        if (device_state == DeviceState::TagRemoved) {
+            return TagRemoved;
+        }
         return WrongDeviceState;
     }
 
@@ -287,12 +301,7 @@ Result NfpDevice::GetCommonInfo(CommonInfo& common_info) const {
 
     // TODO: Validate this data
     common_info = {
-        .last_write_date =
-            {
-                settings.write_date.GetYear(),
-                settings.write_date.GetMonth(),
-                settings.write_date.GetDay(),
-            },
+        .last_write_date = settings.write_date.GetWriteDate(),
         .write_counter = tag_data.write_counter,
         .version = 0,
         .application_area_size = sizeof(ApplicationArea),
@@ -303,6 +312,9 @@ Result NfpDevice::GetCommonInfo(CommonInfo& common_info) const {
 Result NfpDevice::GetModelInfo(ModelInfo& model_info) const {
     if (device_state != DeviceState::TagMounted) {
         LOG_ERROR(Service_NFP, "Wrong device state {}", device_state);
+        if (device_state == DeviceState::TagRemoved) {
+            return TagRemoved;
+        }
         return WrongDeviceState;
     }
 
@@ -341,12 +353,7 @@ Result NfpDevice::GetRegisterInfo(RegisterInfo& register_info) const {
     // TODO: Validate this data
     register_info = {
         .mii_char_info = manager.ConvertV3ToCharInfo(tag_data.owner_mii),
-        .creation_date =
-            {
-                settings.init_date.GetYear(),
-                settings.init_date.GetMonth(),
-                settings.init_date.GetDay(),
-            },
+        .creation_date = settings.init_date.GetWriteDate(),
         .amiibo_name = GetAmiiboName(settings),
         .font_region = {},
     };
@@ -478,8 +485,7 @@ Result NfpDevice::GetApplicationArea(std::vector<u8>& data) const {
     }
 
     if (data.size() > sizeof(ApplicationArea)) {
-        LOG_ERROR(Service_NFP, "Wrong data size {}", data.size());
-        return ResultUnknown;
+        data.resize(sizeof(ApplicationArea));
     }
 
     memcpy(data.data(), tag_data.application_area.data(), data.size());
@@ -518,7 +524,7 @@ Result NfpDevice::SetApplicationArea(std::span<const u8> data) {
 
     Common::TinyMT rng{};
     std::memcpy(tag_data.application_area.data(), data.data(), data.size());
-    // HW seems to fill excess data with garbage
+    // Fill remaining data with random numbers
     rng.GenerateRandomBytes(tag_data.application_area.data() + data.size(),
                             sizeof(ApplicationArea) - data.size());
 
@@ -561,12 +567,12 @@ Result NfpDevice::RecreateApplicationArea(u32 access_id, std::span<const u8> dat
 
     if (data.size() > sizeof(ApplicationArea)) {
         LOG_ERROR(Service_NFP, "Wrong data size {}", data.size());
-        return ResultUnknown;
+        return WrongApplicationAreaSize;
     }
 
     Common::TinyMT rng{};
     std::memcpy(tag_data.application_area.data(), data.data(), data.size());
-    // HW seems to fill excess data with garbage
+    // Fill remaining data with random numbers
     rng.GenerateRandomBytes(tag_data.application_area.data() + data.size(),
                             sizeof(ApplicationArea) - data.size());
 
@@ -612,7 +618,6 @@ u64 NfpDevice::GetHandle() const {
 }
 
 u32 NfpDevice::GetApplicationAreaSize() const {
-    // Investigate if this value is really constant
     return sizeof(ApplicationArea);
 }
 

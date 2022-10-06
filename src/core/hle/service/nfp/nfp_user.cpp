@@ -93,6 +93,18 @@ void IUser::ListDevices(Kernel::HLERequestContext& ctx) {
         return;
     }
 
+    if (!ctx.CanWriteBuffer()) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(InvalidArgument);
+        return;
+    }
+
+    if (ctx.GetWriteBufferSize() == 0) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(InvalidArgument);
+        return;
+    }
+
     std::vector<u64> nfp_devices;
     const std::size_t max_allowed_devices = ctx.GetWriteBufferSize() / sizeof(u64);
 
@@ -255,6 +267,12 @@ void IUser::GetApplicationArea(Kernel::HLERequestContext& ctx) {
         return;
     }
 
+    if (!ctx.CanWriteBuffer()) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(InvalidArgument);
+        return;
+    }
+
     auto device = GetNfpDevice(device_handle);
 
     if (!device.has_value()) {
@@ -280,6 +298,12 @@ void IUser::SetApplicationArea(Kernel::HLERequestContext& ctx) {
     if (state == State::NonInitialized) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(NfcDisabled);
+        return;
+    }
+
+    if (!ctx.CanReadBuffer()) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(InvalidArgument);
         return;
     }
 
@@ -355,6 +379,12 @@ void IUser::CreateApplicationArea(Kernel::HLERequestContext& ctx) {
     if (state == State::NonInitialized) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(NfcDisabled);
+        return;
+    }
+
+    if (!ctx.CanReadBuffer()) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(InvalidArgument);
         return;
     }
 
