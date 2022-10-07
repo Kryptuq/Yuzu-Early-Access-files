@@ -519,20 +519,13 @@ public:
           dld{rhs.dld} {}
 
     /// Assign an allocation transfering ownership from another allocation.
-    /// Releases any previously held allocation.
     PoolAllocations& operator=(PoolAllocations&& rhs) noexcept {
-        Release();
         allocations = std::move(rhs.allocations);
         num = rhs.num;
         device = rhs.device;
         pool = rhs.pool;
         dld = rhs.dld;
         return *this;
-    }
-
-    /// Destroys any held allocation.
-    ~PoolAllocations() {
-        Release();
     }
 
     /// Returns the number of allocations.
@@ -557,19 +550,6 @@ public:
     }
 
 private:
-    /// Destroys the held allocations if they exist.
-    void Release() noexcept {
-        if (!allocations) {
-            return;
-        }
-        const Span<AllocationType> span(allocations.get(), num);
-        const VkResult result = Free(device, pool, span, *dld);
-        // There's no way to report errors from a destructor.
-        if (result != VK_SUCCESS) {
-            std::terminate();
-        }
-    }
-
     std::unique_ptr<AllocationType[]> allocations;
     std::size_t num = 0;
     VkDevice device = nullptr;

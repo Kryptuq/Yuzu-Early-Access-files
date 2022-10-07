@@ -145,6 +145,11 @@ VkSemaphore BlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
     // Finish any pending renderpass
     scheduler.RequestOutsideRenderPassOperationContext();
 
+    if (const auto swapchain_images = swapchain.GetImageCount(); swapchain_images != image_count) {
+        image_count = swapchain_images;
+        Recreate();
+    }
+
     const std::size_t image_index = swapchain.GetImageIndex();
 
     scheduler.Wait(resource_ticks[image_index]);
@@ -448,15 +453,15 @@ vk::Framebuffer BlitScreen::CreateFramebuffer(const VkImageView& image_view, VkE
 
 void BlitScreen::CreateStaticResources() {
     CreateShaders();
+    CreateSampler();
+}
+
+void BlitScreen::CreateDynamicResources() {
     CreateSemaphores();
     CreateDescriptorPool();
     CreateDescriptorSetLayout();
     CreateDescriptorSets();
     CreatePipelineLayout();
-    CreateSampler();
-}
-
-void BlitScreen::CreateDynamicResources() {
     CreateRenderPass();
     CreateFramebuffers();
     CreateGraphicsPipeline();

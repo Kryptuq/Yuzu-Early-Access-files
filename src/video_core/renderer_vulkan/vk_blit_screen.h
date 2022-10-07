@@ -109,7 +109,7 @@ private:
     MemoryAllocator& memory_allocator;
     Swapchain& swapchain;
     Scheduler& scheduler;
-    const std::size_t image_count;
+    std::size_t image_count;
     const ScreenInfo& screen_info;
 
     vk::ShaderModule vertex_shader;
