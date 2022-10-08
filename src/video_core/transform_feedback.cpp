@@ -15,51 +15,51 @@ namespace VideoCommon {
 std::vector<Shader::TransformFeedbackVarying> MakeTransformFeedbackVaryings(
     const TransformFeedbackState& state) {
     static constexpr std::array VECTORS{
-        28,  // gl_Position
-        32,  // Generic 0
-        36,  // Generic 1
-        40,  // Generic 2
-        44,  // Generic 3
-        48,  // Generic 4
-        52,  // Generic 5
-        56,  // Generic 6
-        60,  // Generic 7
-        64,  // Generic 8
-        68,  // Generic 9
-        72,  // Generic 10
-        76,  // Generic 11
-        80,  // Generic 12
-        84,  // Generic 13
-        88,  // Generic 14
-        92,  // Generic 15
-        96,  // Generic 16
-        100, // Generic 17
-        104, // Generic 18
-        108, // Generic 19
-        112, // Generic 20
-        116, // Generic 21
-        120, // Generic 22
-        124, // Generic 23
-        128, // Generic 24
-        132, // Generic 25
-        136, // Generic 26
-        140, // Generic 27
-        144, // Generic 28
-        148, // Generic 29
-        152, // Generic 30
-        156, // Generic 31
-        160, // gl_FrontColor
-        164, // gl_FrontSecondaryColor
-        160, // gl_BackColor
-        164, // gl_BackSecondaryColor
-        192, // gl_TexCoord[0]
-        196, // gl_TexCoord[1]
-        200, // gl_TexCoord[2]
-        204, // gl_TexCoord[3]
-        208, // gl_TexCoord[4]
-        212, // gl_TexCoord[5]
-        216, // gl_TexCoord[6]
-        220, // gl_TexCoord[7]
+        28U,  // gl_Position
+        32U,  // Generic 0
+        36U,  // Generic 1
+        40U,  // Generic 2
+        44U,  // Generic 3
+        48U,  // Generic 4
+        52U,  // Generic 5
+        56U,  // Generic 6
+        60U,  // Generic 7
+        64U,  // Generic 8
+        68U,  // Generic 9
+        72U,  // Generic 10
+        76U,  // Generic 11
+        80U,  // Generic 12
+        84U,  // Generic 13
+        88U,  // Generic 14
+        92U,  // Generic 15
+        96U,  // Generic 16
+        100U, // Generic 17
+        104U, // Generic 18
+        108U, // Generic 19
+        112U, // Generic 20
+        116U, // Generic 21
+        120U, // Generic 22
+        124U, // Generic 23
+        128U, // Generic 24
+        132U, // Generic 25
+        136U, // Generic 26
+        140U, // Generic 27
+        144U, // Generic 28
+        148U, // Generic 29
+        152U, // Generic 30
+        156U, // Generic 31
+        160U, // gl_FrontColor
+        164U, // gl_FrontSecondaryColor
+        160U, // gl_BackColor
+        164U, // gl_BackSecondaryColor
+        192U, // gl_TexCoord[0]
+        196U, // gl_TexCoord[1]
+        200U, // gl_TexCoord[2]
+        204U, // gl_TexCoord[3]
+        208U, // gl_TexCoord[4]
+        212U, // gl_TexCoord[5]
+        216U, // gl_TexCoord[6]
+        220U, // gl_TexCoord[7]
     };
     std::vector<Shader::TransformFeedbackVarying> xfb(256);
     for (size_t buffer = 0; buffer < state.layouts.size(); ++buffer) {
@@ -68,8 +68,20 @@ std::vector<Shader::TransformFeedbackVarying> MakeTransformFeedbackVaryings(
         const u32 varying_count = layout.varying_count;
         u32 highest = 0;
         for (u32 offset = 0; offset < varying_count; ++offset) {
-            const u32 base_offset = offset;
-            const u8 location = locations[offset];
+            const auto get_attribute = [&locations](u32 index) -> u32 {
+                switch (index % 4) {
+                case 0:
+                    return locations[index / 4].attribute0.Value();
+                case 1:
+                    return locations[index / 4].attribute1.Value();
+                case 2:
+                    return locations[index / 4].attribute2.Value();
+                case 3:
+                    return locations[index / 4].attribute3.Value();
+                }
+                UNREACHABLE();
+                return 0;
+            };
 
             UNIMPLEMENTED_IF_MSG(layout.stream != 0, "Stream is not zero: {}", layout.stream);
             Shader::TransformFeedbackVarying varying{
@@ -78,16 +90,18 @@ std::vector<Shader::TransformFeedbackVarying> MakeTransformFeedbackVaryings(
                 .offset = offset * 4,
                 .components = 1,
             };
-            if (std::ranges::find(VECTORS, Common::AlignDown(location, 4)) != VECTORS.end()) {
-                UNIMPLEMENTED_IF_MSG(location % 4 != 0, "Unaligned TFB");
+            const u32 base_offset = offset;
+            const auto attribute{get_attribute(offset)};
+            if (std::ranges::find(VECTORS, Common::AlignDown(attribute, 4)) != VECTORS.end()) {
+                UNIMPLEMENTED_IF_MSG(attribute % 4 != 0, "Unaligned TFB {}", attribute);
 
-                const u8 base_index = location / 4;
-                while (offset + 1 < varying_count && base_index == locations[offset + 1] / 4) {
+                const auto base_index = attribute / 4;
+                while (offset + 1 < varying_count && base_index == get_attribute(offset + 1) / 4) {
                     ++offset;
                     ++varying.components;
                 }
             }
-            xfb[location] = varying;
+            xfb[attribute] = varying;
             highest = std::max(highest, (base_offset + varying.components) * 4);
         }
         UNIMPLEMENTED_IF(highest != layout.stride);

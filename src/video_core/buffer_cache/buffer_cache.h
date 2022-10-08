@@ -994,13 +994,13 @@ void BufferCache<P>::BindHostIndexBuffer() {
     const u32 size = index_buffer.size;
     SynchronizeBuffer(buffer, index_buffer.cpu_addr, size);
     if constexpr (HAS_FULL_INDEX_AND_PRIMITIVE_SUPPORT) {
-        const u32 new_offset = offset + maxwell3d->regs.index_array.first *
-                                            maxwell3d->regs.index_array.FormatSizeInBytes();
+        const u32 new_offset = offset + maxwell3d->regs.index_buffer.first *
+                                            maxwell3d->regs.index_buffer.FormatSizeInBytes();
         runtime.BindIndexBuffer(buffer, new_offset, size);
     } else {
-        runtime.BindIndexBuffer(maxwell3d->regs.draw.topology, maxwell3d->regs.index_array.format,
-                                maxwell3d->regs.index_array.first,
-                                maxwell3d->regs.index_array.count, buffer, offset, size);
+        runtime.BindIndexBuffer(maxwell3d->regs.draw.topology, maxwell3d->regs.index_buffer.format,
+                                maxwell3d->regs.index_buffer.first,
+                                maxwell3d->regs.index_buffer.count, buffer, offset, size);
     }
 }
 
@@ -1017,7 +1017,7 @@ void BufferCache<P>::BindHostVertexBuffers() {
         }
         flags[Dirty::VertexBuffer0 + index] = false;
 
-        const u32 stride = maxwell3d->regs.vertex_array[index].stride;
+        const u32 stride = maxwell3d->regs.vertex_streams[index].stride;
         const u32 offset = buffer.Offset(binding.cpu_addr);
         runtime.BindVertexBuffer(index, buffer, offset, binding.size, stride);
     }
@@ -1157,7 +1157,7 @@ void BufferCache<P>::BindHostGraphicsTextureBuffers(size_t stage) {
 
 template <class P>
 void BufferCache<P>::BindHostTransformFeedbackBuffers() {
-    if (maxwell3d->regs.tfb_enabled == 0) {
+    if (maxwell3d->regs.transform_feedback_enabled == 0) {
         return;
     }
     for (u32 index = 0; index < NUM_TRANSFORM_FEEDBACK_BUFFERS; ++index) {
@@ -1268,7 +1268,7 @@ template <class P>
 void BufferCache<P>::UpdateIndexBuffer() {
     // We have to check for the dirty flags and index count
     // The index count is currently changed without updating the dirty flags
-    const auto& index_array = maxwell3d->regs.index_array;
+    const auto& index_array = maxwell3d->regs.index_buffer;
     auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::IndexBuffer] && last_index_count == index_array.count) {
         return;
@@ -1311,10 +1311,10 @@ void BufferCache<P>::UpdateVertexBuffer(u32 index) {
     if (!maxwell3d->dirty.flags[Dirty::VertexBuffer0 + index]) {
         return;
     }
-    const auto& array = maxwell3d->regs.vertex_array[index];
-    const auto& limit = maxwell3d->regs.vertex_array_limit[index];
-    const GPUVAddr gpu_addr_begin = array.StartAddress();
-    const GPUVAddr gpu_addr_end = limit.LimitAddress() + 1;
+    const auto& array = maxwell3d->regs.vertex_streams[index];
+    const auto& limit = maxwell3d->regs.vertex_stream_limits[index];
+    const GPUVAddr gpu_addr_begin = array.Address();
+    const GPUVAddr gpu_addr_end = limit.Address() + 1;
     const std::optional<VAddr> cpu_addr = gpu_memory->GpuToCpuAddress(gpu_addr_begin);
     u32 address_size = static_cast<u32>(
         std::min(gpu_addr_end - gpu_addr_begin, static_cast<u64>(std::numeric_limits<u32>::max())));
@@ -1380,7 +1380,7 @@ void BufferCache<P>::UpdateTextureBuffers(size_t stage) {
 
 template <class P>
 void BufferCache<P>::UpdateTransformFeedbackBuffers() {
-    if (maxwell3d->regs.tfb_enabled == 0) {
+    if (maxwell3d->regs.transform_feedback_enabled == 0) {
         return;
     }
     for (u32 index = 0; index < NUM_TRANSFORM_FEEDBACK_BUFFERS; ++index) {
@@ -1390,11 +1390,11 @@ void BufferCache<P>::UpdateTransformFeedbackBuffers() {
 
 template <class P>
 void BufferCache<P>::UpdateTransformFeedbackBuffer(u32 index) {
-    const auto& binding = maxwell3d->regs.tfb_bindings[index];
-    const GPUVAddr gpu_addr = binding.Address() + binding.buffer_offset;
-    const u32 size = binding.buffer_size;
+    const auto& binding = maxwell3d->regs.transform_feedback.buffers[index];
+    const GPUVAddr gpu_addr = binding.Address() + binding.start_offset;
+    const u32 size = binding.size;
     const std::optional<VAddr> cpu_addr = gpu_memory->GpuToCpuAddress(gpu_addr);
-    if (binding.buffer_enable == 0 || size == 0 || !cpu_addr) {
+    if (binding.enable == 0 || size == 0 || !cpu_addr) {
         transform_feedback_buffers[index] = NULL_BINDING;
         return;
     }

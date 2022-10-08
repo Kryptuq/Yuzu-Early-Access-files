@@ -73,17 +73,17 @@ bool SurfaceTargetIsArray(SurfaceTarget target) {
 
 PixelFormat PixelFormatFromDepthFormat(Tegra::DepthFormat format) {
     switch (format) {
-    case Tegra::DepthFormat::S8_UINT_Z24_UNORM:
+    case Tegra::DepthFormat::Z24_UNORM_S8_UINT:
         return PixelFormat::S8_UINT_D24_UNORM;
-    case Tegra::DepthFormat::D24S8_UNORM:
+    case Tegra::DepthFormat::S8Z24_UNORM:
         return PixelFormat::D24_UNORM_S8_UINT;
-    case Tegra::DepthFormat::D32_FLOAT:
+    case Tegra::DepthFormat::Z32_FLOAT:
         return PixelFormat::D32_FLOAT;
-    case Tegra::DepthFormat::D16_UNORM:
+    case Tegra::DepthFormat::Z16_UNORM:
         return PixelFormat::D16_UNORM;
     case Tegra::DepthFormat::S8_UINT:
         return PixelFormat::S8_UINT;
-    case Tegra::DepthFormat::D32_FLOAT_S8X24_UINT:
+    case Tegra::DepthFormat::Z32_FLOAT_X24S8_UINT:
         return PixelFormat::D32_FLOAT_S8_UINT;
     default:
         UNIMPLEMENTED_MSG("Unimplemented format={}", format);
@@ -117,9 +117,9 @@ PixelFormat PixelFormatFromRenderTargetFormat(Tegra::RenderTargetFormat format) 
         return PixelFormat::R32G32_UINT;
     case Tegra::RenderTargetFormat::R16G16B16X16_FLOAT:
         return PixelFormat::R16G16B16X16_FLOAT;
-    case Tegra::RenderTargetFormat::B8G8R8A8_UNORM:
+    case Tegra::RenderTargetFormat::A8R8G8B8_UNORM:
         return PixelFormat::B8G8R8A8_UNORM;
-    case Tegra::RenderTargetFormat::B8G8R8A8_SRGB:
+    case Tegra::RenderTargetFormat::A8R8G8B8_SRGB:
         return PixelFormat::B8G8R8A8_SRGB;
     case Tegra::RenderTargetFormat::A2B10G10R10_UNORM:
         return PixelFormat::A2B10G10R10_UNORM;

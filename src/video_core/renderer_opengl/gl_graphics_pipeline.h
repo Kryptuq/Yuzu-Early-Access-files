@@ -37,8 +37,8 @@ struct GraphicsPipelineKey {
         BitField<0, 1, u32> xfb_enabled;
         BitField<1, 1, u32> early_z;
         BitField<2, 4, Maxwell::PrimitiveTopology> gs_input_topology;
-        BitField<6, 2, Maxwell::TessellationPrimitive> tessellation_primitive;
-        BitField<8, 2, Maxwell::TessellationSpacing> tessellation_spacing;
+        BitField<6, 2, Maxwell::Tessellation::DomainType> tessellation_primitive;
+        BitField<8, 2, Maxwell::Tessellation::Spacing> tessellation_spacing;
         BitField<10, 1, u32> tessellation_clockwise;
     };
     std::array<u32, 3> padding;

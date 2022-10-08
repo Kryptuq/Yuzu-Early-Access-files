@@ -93,9 +93,6 @@ private:
     size_t free_iterator = 0;
     std::array<u64, NUM_SYNCS> sync_ticks{};
 
-    size_t staging_buffer_size = 0;
-    size_t region_size = 0;
-
     StagingBuffersCache device_local_cache;
     StagingBuffersCache upload_cache;
     StagingBuffersCache download_cache;

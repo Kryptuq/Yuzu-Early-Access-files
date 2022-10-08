@@ -57,9 +57,10 @@ ConfigureGraphics::ConfigureGraphics(const Core::System& system_, QWidget* paren
         UpdateBackgroundColorButton(new_bg_color);
     });
 
-    ui->api->setEnabled(!UISettings::values.has_broken_vulkan);
-    ui->api_widget->setEnabled(!UISettings::values.has_broken_vulkan ||
-                               Settings::IsConfiguringGlobal());
+    ui->api->setEnabled(!UISettings::values.has_broken_vulkan && ui->api->isEnabled());
+    ui->api_widget->setEnabled(
+        (!UISettings::values.has_broken_vulkan || Settings::IsConfiguringGlobal()) &&
+        ui->api_widget->isEnabled());
     ui->bg_label->setVisible(Settings::IsConfiguringGlobal());
     ui->bg_combobox->setVisible(!Settings::IsConfiguringGlobal());
 }

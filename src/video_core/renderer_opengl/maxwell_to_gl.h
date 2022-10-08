@@ -126,51 +126,60 @@ inline const FormatTuple& GetFormatTuple(VideoCore::Surface::PixelFormat pixel_f
 
 inline GLenum VertexFormat(Maxwell::VertexAttribute attrib) {
     switch (attrib.type) {
-    case Maxwell::VertexAttribute::Type::UnsignedNorm:
-    case Maxwell::VertexAttribute::Type::UnsignedScaled:
-    case Maxwell::VertexAttribute::Type::UnsignedInt:
+    case Maxwell::VertexAttribute::Type::UnusedEnumDoNotUseBecauseItWillGoAway:
+        ASSERT_MSG(false, "Invalid vertex attribute type!");
+        break;
+    case Maxwell::VertexAttribute::Type::UNorm:
+    case Maxwell::VertexAttribute::Type::UScaled:
+    case Maxwell::VertexAttribute::Type::UInt:
         switch (attrib.size) {
-        case Maxwell::VertexAttribute::Size::Size_8:
-        case Maxwell::VertexAttribute::Size::Size_8_8:
-        case Maxwell::VertexAttribute::Size::Size_8_8_8:
-        case Maxwell::VertexAttribute::Size::Size_8_8_8_8:
+        case Maxwell::VertexAttribute::Size::Size_R8:
+        case Maxwell::VertexAttribute::Size::Size_A8:
+        case Maxwell::VertexAttribute::Size::Size_R8_G8:
+        case Maxwell::VertexAttribute::Size::Size_G8_R8:
+        case Maxwell::VertexAttribute::Size::Size_R8_G8_B8:
+        case Maxwell::VertexAttribute::Size::Size_R8_G8_B8_A8:
+        case Maxwell::VertexAttribute::Size::Size_X8_B8_G8_R8:
             return GL_UNSIGNED_BYTE;
-        case Maxwell::VertexAttribute::Size::Size_16:
-        case Maxwell::VertexAttribute::Size::Size_16_16:
-        case Maxwell::VertexAttribute::Size::Size_16_16_16:
-        case Maxwell::VertexAttribute::Size::Size_16_16_16_16:
+        case Maxwell::VertexAttribute::Size::Size_R16:
+        case Maxwell::VertexAttribute::Size::Size_R16_G16:
+        case Maxwell::VertexAttribute::Size::Size_R16_G16_B16:
+        case Maxwell::VertexAttribute::Size::Size_R16_G16_B16_A16:
             return GL_UNSIGNED_SHORT;
-        case Maxwell::VertexAttribute::Size::Size_32:
-        case Maxwell::VertexAttribute::Size::Size_32_32:
-        case Maxwell::VertexAttribute::Size::Size_32_32_32:
-        case Maxwell::VertexAttribute::Size::Size_32_32_32_32:
+        case Maxwell::VertexAttribute::Size::Size_R32:
+        case Maxwell::VertexAttribute::Size::Size_R32_G32:
+        case Maxwell::VertexAttribute::Size::Size_R32_G32_B32:
+        case Maxwell::VertexAttribute::Size::Size_R32_G32_B32_A32:
             return GL_UNSIGNED_INT;
-        case Maxwell::VertexAttribute::Size::Size_10_10_10_2:
+        case Maxwell::VertexAttribute::Size::Size_A2_B10_G10_R10:
             return GL_UNSIGNED_INT_2_10_10_10_REV;
         default:
             break;
         }
         break;
-    case Maxwell::VertexAttribute::Type::SignedNorm:
-    case Maxwell::VertexAttribute::Type::SignedScaled:
-    case Maxwell::VertexAttribute::Type::SignedInt:
+    case Maxwell::VertexAttribute::Type::SNorm:
+    case Maxwell::VertexAttribute::Type::SScaled:
+    case Maxwell::VertexAttribute::Type::SInt:
         switch (attrib.size) {
-        case Maxwell::VertexAttribute::Size::Size_8:
-        case Maxwell::VertexAttribute::Size::Size_8_8:
-        case Maxwell::VertexAttribute::Size::Size_8_8_8:
-        case Maxwell::VertexAttribute::Size::Size_8_8_8_8:
+        case Maxwell::VertexAttribute::Size::Size_R8:
+        case Maxwell::VertexAttribute::Size::Size_A8:
+        case Maxwell::VertexAttribute::Size::Size_R8_G8:
+        case Maxwell::VertexAttribute::Size::Size_G8_R8:
+        case Maxwell::VertexAttribute::Size::Size_R8_G8_B8:
+        case Maxwell::VertexAttribute::Size::Size_R8_G8_B8_A8:
+        case Maxwell::VertexAttribute::Size::Size_X8_B8_G8_R8:
             return GL_BYTE;
-        case Maxwell::VertexAttribute::Size::Size_16:
-        case Maxwell::VertexAttribute::Size::Size_16_16:
-        case Maxwell::VertexAttribute::Size::Size_16_16_16:
-        case Maxwell::VertexAttribute::Size::Size_16_16_16_16:
+        case Maxwell::VertexAttribute::Size::Size_R16:
+        case Maxwell::VertexAttribute::Size::Size_R16_G16:
+        case Maxwell::VertexAttribute::Size::Size_R16_G16_B16:
+        case Maxwell::VertexAttribute::Size::Size_R16_G16_B16_A16:
             return GL_SHORT;
-        case Maxwell::VertexAttribute::Size::Size_32:
-        case Maxwell::VertexAttribute::Size::Size_32_32:
-        case Maxwell::VertexAttribute::Size::Size_32_32_32:
-        case Maxwell::VertexAttribute::Size::Size_32_32_32_32:
+        case Maxwell::VertexAttribute::Size::Size_R32:
+        case Maxwell::VertexAttribute::Size::Size_R32_G32:
+        case Maxwell::VertexAttribute::Size::Size_R32_G32_B32:
+        case Maxwell::VertexAttribute::Size::Size_R32_G32_B32_A32:
             return GL_INT;
-        case Maxwell::VertexAttribute::Size::Size_10_10_10_2:
+        case Maxwell::VertexAttribute::Size::Size_A2_B10_G10_R10:
             return GL_INT_2_10_10_10_REV;
         default:
             break;
@@ -178,17 +187,17 @@ inline GLenum VertexFormat(Maxwell::VertexAttribute attrib) {
         break;
     case Maxwell::VertexAttribute::Type::Float:
         switch (attrib.size) {
-        case Maxwell::VertexAttribute::Size::Size_16:
-        case Maxwell::VertexAttribute::Size::Size_16_16:
-        case Maxwell::VertexAttribute::Size::Size_16_16_16:
-        case Maxwell::VertexAttribute::Size::Size_16_16_16_16:
+        case Maxwell::VertexAttribute::Size::Size_R16:
+        case Maxwell::VertexAttribute::Size::Size_R16_G16:
+        case Maxwell::VertexAttribute::Size::Size_R16_G16_B16:
+        case Maxwell::VertexAttribute::Size::Size_R16_G16_B16_A16:
             return GL_HALF_FLOAT;
-        case Maxwell::VertexAttribute::Size::Size_32:
-        case Maxwell::VertexAttribute::Size::Size_32_32:
-        case Maxwell::VertexAttribute::Size::Size_32_32_32:
-        case Maxwell::VertexAttribute::Size::Size_32_32_32_32:
+        case Maxwell::VertexAttribute::Size::Size_R32:
+        case Maxwell::VertexAttribute::Size::Size_R32_G32:
+        case Maxwell::VertexAttribute::Size::Size_R32_G32_B32:
+        case Maxwell::VertexAttribute::Size::Size_R32_G32_B32_A32:
             return GL_FLOAT;
-        case Maxwell::VertexAttribute::Size::Size_11_11_10:
+        case Maxwell::VertexAttribute::Size::Size_B10_G11_R11:
             return GL_UNSIGNED_INT_10F_11F_11F_REV;
         default:
             break;
@@ -335,20 +344,20 @@ inline GLenum DepthCompareFunc(Tegra::Texture::DepthCompareFunc func) {
 
 inline GLenum BlendEquation(Maxwell::Blend::Equation equation) {
     switch (equation) {
-    case Maxwell::Blend::Equation::Add:
-    case Maxwell::Blend::Equation::AddGL:
+    case Maxwell::Blend::Equation::Add_D3D:
+    case Maxwell::Blend::Equation::Add_GL:
         return GL_FUNC_ADD;
-    case Maxwell::Blend::Equation::Subtract:
-    case Maxwell::Blend::Equation::SubtractGL:
+    case Maxwell::Blend::Equation::Subtract_D3D:
+    case Maxwell::Blend::Equation::Subtract_GL:
         return GL_FUNC_SUBTRACT;
-    case Maxwell::Blend::Equation::ReverseSubtract:
-    case Maxwell::Blend::Equation::ReverseSubtractGL:
+    case Maxwell::Blend::Equation::ReverseSubtract_D3D:
+    case Maxwell::Blend::Equation::ReverseSubtract_GL:
         return GL_FUNC_REVERSE_SUBTRACT;
-    case Maxwell::Blend::Equation::Min:
-    case Maxwell::Blend::Equation::MinGL:
+    case Maxwell::Blend::Equation::Min_D3D:
+    case Maxwell::Blend::Equation::Min_GL:
         return GL_MIN;
-    case Maxwell::Blend::Equation::Max:
-    case Maxwell::Blend::Equation::MaxGL:
+    case Maxwell::Blend::Equation::Max_D3D:
+    case Maxwell::Blend::Equation::Max_GL:
         return GL_MAX;
     }
     UNIMPLEMENTED_MSG("Unimplemented blend equation={}", equation);
@@ -357,62 +366,62 @@ inline GLenum BlendEquation(Maxwell::Blend::Equation equation) {
 
 inline GLenum BlendFunc(Maxwell::Blend::Factor factor) {
     switch (factor) {
-    case Maxwell::Blend::Factor::Zero:
-    case Maxwell::Blend::Factor::ZeroGL:
+    case Maxwell::Blend::Factor::Zero_D3D:
+    case Maxwell::Blend::Factor::Zero_GL:
         return GL_ZERO;
-    case Maxwell::Blend::Factor::One:
-    case Maxwell::Blend::Factor::OneGL:
+    case Maxwell::Blend::Factor::One_D3D:
+    case Maxwell::Blend::Factor::One_GL:
         return GL_ONE;
-    case Maxwell::Blend::Factor::SourceColor:
-    case Maxwell::Blend::Factor::SourceColorGL:
+    case Maxwell::Blend::Factor::SourceColor_D3D:
+    case Maxwell::Blend::Factor::SourceColor_GL:
         return GL_SRC_COLOR;
-    case Maxwell::Blend::Factor::OneMinusSourceColor:
-    case Maxwell::Blend::Factor::OneMinusSourceColorGL:
+    case Maxwell::Blend::Factor::OneMinusSourceColor_D3D:
+    case Maxwell::Blend::Factor::OneMinusSourceColor_GL:
         return GL_ONE_MINUS_SRC_COLOR;
-    case Maxwell::Blend::Factor::SourceAlpha:
-    case Maxwell::Blend::Factor::SourceAlphaGL:
+    case Maxwell::Blend::Factor::SourceAlpha_D3D:
+    case Maxwell::Blend::Factor::SourceAlpha_GL:
         return GL_SRC_ALPHA;
-    case Maxwell::Blend::Factor::OneMinusSourceAlpha:
-    case Maxwell::Blend::Factor::OneMinusSourceAlphaGL:
+    case Maxwell::Blend::Factor::OneMinusSourceAlpha_D3D:
+    case Maxwell::Blend::Factor::OneMinusSourceAlpha_GL:
         return GL_ONE_MINUS_SRC_ALPHA;
-    case Maxwell::Blend::Factor::DestAlpha:
-    case Maxwell::Blend::Factor::DestAlphaGL:
+    case Maxwell::Blend::Factor::DestAlpha_D3D:
+    case Maxwell::Blend::Factor::DestAlpha_GL:
         return GL_DST_ALPHA;
-    case Maxwell::Blend::Factor::OneMinusDestAlpha:
-    case Maxwell::Blend::Factor::OneMinusDestAlphaGL:
+    case Maxwell::Blend::Factor::OneMinusDestAlpha_D3D:
+    case Maxwell::Blend::Factor::OneMinusDestAlpha_GL:
         return GL_ONE_MINUS_DST_ALPHA;
-    case Maxwell::Blend::Factor::DestColor:
-    case Maxwell::Blend::Factor::DestColorGL:
+    case Maxwell::Blend::Factor::DestColor_D3D:
+    case Maxwell::Blend::Factor::DestColor_GL:
         return GL_DST_COLOR;
-    case Maxwell::Blend::Factor::OneMinusDestColor:
-    case Maxwell::Blend::Factor::OneMinusDestColorGL:
+    case Maxwell::Blend::Factor::OneMinusDestColor_D3D:
+    case Maxwell::Blend::Factor::OneMinusDestColor_GL:
         return GL_ONE_MINUS_DST_COLOR;
-    case Maxwell::Blend::Factor::SourceAlphaSaturate:
-    case Maxwell::Blend::Factor::SourceAlphaSaturateGL:
+    case Maxwell::Blend::Factor::SourceAlphaSaturate_D3D:
+    case Maxwell::Blend::Factor::SourceAlphaSaturate_GL:
         return GL_SRC_ALPHA_SATURATE;
-    case Maxwell::Blend::Factor::Source1Color:
-    case Maxwell::Blend::Factor::Source1ColorGL:
+    case Maxwell::Blend::Factor::Source1Color_D3D:
+    case Maxwell::Blend::Factor::Source1Color_GL:
         return GL_SRC1_COLOR;
-    case Maxwell::Blend::Factor::OneMinusSource1Color:
-    case Maxwell::Blend::Factor::OneMinusSource1ColorGL:
+    case Maxwell::Blend::Factor::OneMinusSource1Color_D3D:
+    case Maxwell::Blend::Factor::OneMinusSource1Color_GL:
         return GL_ONE_MINUS_SRC1_COLOR;
-    case Maxwell::Blend::Factor::Source1Alpha:
-    case Maxwell::Blend::Factor::Source1AlphaGL:
+    case Maxwell::Blend::Factor::Source1Alpha_D3D:
+    case Maxwell::Blend::Factor::Source1Alpha_GL:
         return GL_SRC1_ALPHA;
-    case Maxwell::Blend::Factor::OneMinusSource1Alpha:
-    case Maxwell::Blend::Factor::OneMinusSource1AlphaGL:
+    case Maxwell::Blend::Factor::OneMinusSource1Alpha_D3D:
+    case Maxwell::Blend::Factor::OneMinusSource1Alpha_GL:
         return GL_ONE_MINUS_SRC1_ALPHA;
-    case Maxwell::Blend::Factor::ConstantColor:
-    case Maxwell::Blend::Factor::ConstantColorGL:
+    case Maxwell::Blend::Factor::BlendFactor_D3D:
+    case Maxwell::Blend::Factor::ConstantColor_GL:
         return GL_CONSTANT_COLOR;
-    case Maxwell::Blend::Factor::OneMinusConstantColor:
-    case Maxwell::Blend::Factor::OneMinusConstantColorGL:
+    case Maxwell::Blend::Factor::OneMinusBlendFactor_D3D:
+    case Maxwell::Blend::Factor::OneMinusConstantColor_GL:
         return GL_ONE_MINUS_CONSTANT_COLOR;
-    case Maxwell::Blend::Factor::ConstantAlpha:
-    case Maxwell::Blend::Factor::ConstantAlphaGL:
+    case Maxwell::Blend::Factor::BothSourceAlpha_D3D:
+    case Maxwell::Blend::Factor::ConstantAlpha_GL:
         return GL_CONSTANT_ALPHA;
-    case Maxwell::Blend::Factor::OneMinusConstantAlpha:
-    case Maxwell::Blend::Factor::OneMinusConstantAlphaGL:
+    case Maxwell::Blend::Factor::OneMinusBothSourceAlpha_D3D:
+    case Maxwell::Blend::Factor::OneMinusConstantAlpha_GL:
         return GL_ONE_MINUS_CONSTANT_ALPHA;
     }
     UNIMPLEMENTED_MSG("Unimplemented blend factor={}", factor);
@@ -421,60 +430,60 @@ inline GLenum BlendFunc(Maxwell::Blend::Factor factor) {
 
 inline GLenum ComparisonOp(Maxwell::ComparisonOp comparison) {
     switch (comparison) {
-    case Maxwell::ComparisonOp::Never:
-    case Maxwell::ComparisonOp::NeverOld:
+    case Maxwell::ComparisonOp::Never_D3D:
+    case Maxwell::ComparisonOp::Never_GL:
         return GL_NEVER;
-    case Maxwell::ComparisonOp::Less:
-    case Maxwell::ComparisonOp::LessOld:
+    case Maxwell::ComparisonOp::Less_D3D:
+    case Maxwell::ComparisonOp::Less_GL:
         return GL_LESS;
-    case Maxwell::ComparisonOp::Equal:
-    case Maxwell::ComparisonOp::EqualOld:
+    case Maxwell::ComparisonOp::Equal_D3D:
+    case Maxwell::ComparisonOp::Equal_GL:
         return GL_EQUAL;
-    case Maxwell::ComparisonOp::LessEqual:
-    case Maxwell::ComparisonOp::LessEqualOld:
+    case Maxwell::ComparisonOp::LessEqual_D3D:
+    case Maxwell::ComparisonOp::LessEqual_GL:
         return GL_LEQUAL;
-    case Maxwell::ComparisonOp::Greater:
-    case Maxwell::ComparisonOp::GreaterOld:
+    case Maxwell::ComparisonOp::Greater_D3D:
+    case Maxwell::ComparisonOp::Greater_GL:
         return GL_GREATER;
-    case Maxwell::ComparisonOp::NotEqual:
-    case Maxwell::ComparisonOp::NotEqualOld:
+    case Maxwell::ComparisonOp::NotEqual_D3D:
+    case Maxwell::ComparisonOp::NotEqual_GL:
         return GL_NOTEQUAL;
-    case Maxwell::ComparisonOp::GreaterEqual:
-    case Maxwell::ComparisonOp::GreaterEqualOld:
+    case Maxwell::ComparisonOp::GreaterEqual_D3D:
+    case Maxwell::ComparisonOp::GreaterEqual_GL:
         return GL_GEQUAL;
-    case Maxwell::ComparisonOp::Always:
-    case Maxwell::ComparisonOp::AlwaysOld:
+    case Maxwell::ComparisonOp::Always_D3D:
+    case Maxwell::ComparisonOp::Always_GL:
         return GL_ALWAYS;
     }
     UNIMPLEMENTED_MSG("Unimplemented comparison op={}", comparison);
     return GL_ALWAYS;
 }
 
-inline GLenum StencilOp(Maxwell::StencilOp stencil) {
+inline GLenum StencilOp(Maxwell::StencilOp::Op stencil) {
     switch (stencil) {
-    case Maxwell::StencilOp::Keep:
-    case Maxwell::StencilOp::KeepOGL:
+    case Maxwell::StencilOp::Op::Keep_D3D:
+    case Maxwell::StencilOp::Op::Keep_GL:
         return GL_KEEP;
-    case Maxwell::StencilOp::Zero:
-    case Maxwell::StencilOp::ZeroOGL:
+    case Maxwell::StencilOp::Op::Zero_D3D:
+    case Maxwell::StencilOp::Op::Zero_GL:
         return GL_ZERO;
-    case Maxwell::StencilOp::Replace:
-    case Maxwell::StencilOp::ReplaceOGL:
+    case Maxwell::StencilOp::Op::Replace_D3D:
+    case Maxwell::StencilOp::Op::Replace_GL:
         return GL_REPLACE;
-    case Maxwell::StencilOp::Incr:
-    case Maxwell::StencilOp::IncrOGL:
+    case Maxwell::StencilOp::Op::IncrSaturate_D3D:
+    case Maxwell::StencilOp::Op::IncrSaturate_GL:
         return GL_INCR;
-    case Maxwell::StencilOp::Decr:
-    case Maxwell::StencilOp::DecrOGL:
+    case Maxwell::StencilOp::Op::DecrSaturate_D3D:
+    case Maxwell::StencilOp::Op::DecrSaturate_GL:
         return GL_DECR;
-    case Maxwell::StencilOp::Invert:
-    case Maxwell::StencilOp::InvertOGL:
+    case Maxwell::StencilOp::Op::Invert_D3D:
+    case Maxwell::StencilOp::Op::Invert_GL:
         return GL_INVERT;
-    case Maxwell::StencilOp::IncrWrap:
-    case Maxwell::StencilOp::IncrWrapOGL:
+    case Maxwell::StencilOp::Op::Incr_D3D:
+    case Maxwell::StencilOp::Op::Incr_GL:
         return GL_INCR_WRAP;
-    case Maxwell::StencilOp::DecrWrap:
-    case Maxwell::StencilOp::DecrWrapOGL:
+    case Maxwell::StencilOp::Op::Decr_D3D:
+    case Maxwell::StencilOp::Op::Decr_GL:
         return GL_DECR_WRAP;
     }
     UNIMPLEMENTED_MSG("Unimplemented stencil op={}", stencil);
@@ -505,39 +514,39 @@ inline GLenum CullFace(Maxwell::CullFace cull_face) {
     return GL_BACK;
 }
 
-inline GLenum LogicOp(Maxwell::LogicOperation operation) {
+inline GLenum LogicOp(Maxwell::LogicOp::Op operation) {
     switch (operation) {
-    case Maxwell::LogicOperation::Clear:
+    case Maxwell::LogicOp::Op::Clear:
         return GL_CLEAR;
-    case Maxwell::LogicOperation::And:
+    case Maxwell::LogicOp::Op::And:
         return GL_AND;
-    case Maxwell::LogicOperation::AndReverse:
+    case Maxwell::LogicOp::Op::AndReverse:
         return GL_AND_REVERSE;
-    case Maxwell::LogicOperation::Copy:
+    case Maxwell::LogicOp::Op::Copy:
         return GL_COPY;
-    case Maxwell::LogicOperation::AndInverted:
+    case Maxwell::LogicOp::Op::AndInverted:
         return GL_AND_INVERTED;
-    case Maxwell::LogicOperation::NoOp:
+    case Maxwell::LogicOp::Op::NoOp:
         return GL_NOOP;
-    case Maxwell::LogicOperation::Xor:
+    case Maxwell::LogicOp::Op::Xor:
         return GL_XOR;
-    case Maxwell::LogicOperation::Or:
+    case Maxwell::LogicOp::Op::Or:
         return GL_OR;
-    case Maxwell::LogicOperation::Nor:
+    case Maxwell::LogicOp::Op::Nor:
         return GL_NOR;
-    case Maxwell::LogicOperation::Equiv:
+    case Maxwell::LogicOp::Op::Equiv:
         return GL_EQUIV;
-    case Maxwell::LogicOperation::Invert:
+    case Maxwell::LogicOp::Op::Invert:
         return GL_INVERT;
-    case Maxwell::LogicOperation::OrReverse:
+    case Maxwell::LogicOp::Op::OrReverse:
         return GL_OR_REVERSE;
-    case Maxwell::LogicOperation::CopyInverted:
+    case Maxwell::LogicOp::Op::CopyInverted:
         return GL_COPY_INVERTED;
-    case Maxwell::LogicOperation::OrInverted:
+    case Maxwell::LogicOp::Op::OrInverted:
         return GL_OR_INVERTED;
-    case Maxwell::LogicOperation::Nand:
+    case Maxwell::LogicOp::Op::Nand:
         return GL_NAND;
-    case Maxwell::LogicOperation::Set:
+    case Maxwell::LogicOp::Op::Set:
         return GL_SET;
     }
     UNIMPLEMENTED_MSG("Unimplemented logic operation={}", operation);

@@ -73,8 +73,8 @@ GLenum AssemblyStage(size_t stage_index) {
 /// @param location Hardware location
 /// @return Pair of ARB_transform_feedback3 token stream first and third arguments
 /// @note Read https://www.khronos.org/registry/OpenGL/extensions/ARB/ARB_transform_feedback3.txt
-std::pair<GLint, GLint> TransformFeedbackEnum(u8 location) {
-    const u8 index = location / 4;
+std::pair<GLint, GLint> TransformFeedbackEnum(u32 location) {
+    const auto index = location / 4;
     if (index >= 8 && index <= 39) {
         return {GL_GENERIC_ATTRIB_NV, index - 8};
     }
@@ -286,7 +286,7 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
     buffer_cache.runtime.SetEnableStorageBuffers(use_storage_buffers);
 
     const auto& regs{maxwell3d->regs};
-    const bool via_header_index{regs.sampler_index == Maxwell::SamplerIndex::ViaHeaderIndex};
+    const bool via_header_index{regs.sampler_binding == Maxwell::SamplerBinding::ViaHeaderBinding};
     const auto config_stage{[&](size_t stage) LAMBDA_FORCEINLINE {
         const Shader::Info& info{stage_infos[stage]};
         buffer_cache.UnbindGraphicsStorageBuffers(stage);
@@ -557,10 +557,25 @@ void GraphicsPipeline::GenerateTransformFeedbackState() {
         ++current_stream;
 
         const auto& locations = key.xfb_state.varyings[feedback];
-        std::optional<u8> current_index;
+        std::optional<u32> current_index;
         for (u32 offset = 0; offset < layout.varying_count; ++offset) {
-            const u8 location = locations[offset];
-            const u8 index = location / 4;
+            const auto get_attribute = [&locations](u32 index) -> u32 {
+                switch (index % 4) {
+                case 0:
+                    return locations[index / 4].attribute0.Value();
+                case 1:
+                    return locations[index / 4].attribute1.Value();
+                case 2:
+                    return locations[index / 4].attribute2.Value();
+                case 3:
+                    return locations[index / 4].attribute3.Value();
+                }
+                UNREACHABLE();
+                return 0;
+            };
+
+            const auto attribute{get_attribute(offset)};
+            const auto index = attribute / 4U;
 
             if (current_index == index) {
                 // Increase number of components of the previous attachment
@@ -569,7 +584,7 @@ void GraphicsPipeline::GenerateTransformFeedbackState() {
             }
             current_index = index;
 
-            std::tie(cursor[0], cursor[2]) = TransformFeedbackEnum(location);
+            std::tie(cursor[0], cursor[2]) = TransformFeedbackEnum(attribute);
             cursor[1] = 1;
             cursor += XFB_ENTRY_STRIDE;
         }

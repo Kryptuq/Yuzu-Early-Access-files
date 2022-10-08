@@ -51,8 +51,8 @@ Flags MakeInvalidationFlags() {
 void SetupDirtyViewports(Tables& tables) {
     FillBlock(tables[0], OFF(viewport_transform), NUM(viewport_transform), Viewports);
     FillBlock(tables[0], OFF(viewports), NUM(viewports), Viewports);
-    tables[0][OFF(viewport_transform_enabled)] = Viewports;
-    tables[1][OFF(screen_y_control)] = Viewports;
+    tables[0][OFF(viewport_scale_offset_enbled)] = Viewports;
+    tables[1][OFF(window_origin)] = Viewports;
 }
 
 void SetupDirtyScissors(Tables& tables) {
@@ -61,9 +61,9 @@ void SetupDirtyScissors(Tables& tables) {
 
 void SetupDirtyDepthBias(Tables& tables) {
     auto& table = tables[0];
-    table[OFF(polygon_offset_units)] = DepthBias;
-    table[OFF(polygon_offset_clamp)] = DepthBias;
-    table[OFF(polygon_offset_factor)] = DepthBias;
+    table[OFF(depth_bias)] = DepthBias;
+    table[OFF(depth_bias_clamp)] = DepthBias;
+    table[OFF(slope_scale_depth_bias)] = DepthBias;
 }
 
 void SetupDirtyBlendConstants(Tables& tables) {
@@ -77,12 +77,12 @@ void SetupDirtyDepthBounds(Tables& tables) {
 void SetupDirtyStencilProperties(Tables& tables) {
     auto& table = tables[0];
     table[OFF(stencil_two_side_enable)] = StencilProperties;
-    table[OFF(stencil_front_func_ref)] = StencilProperties;
-    table[OFF(stencil_front_mask)] = StencilProperties;
-    table[OFF(stencil_front_func_mask)] = StencilProperties;
-    table[OFF(stencil_back_func_ref)] = StencilProperties;
-    table[OFF(stencil_back_mask)] = StencilProperties;
-    table[OFF(stencil_back_func_mask)] = StencilProperties;
+    table[OFF(stencil_front_func.ref)] = StencilProperties;
+    table[OFF(stencil_front_func.mask)] = StencilProperties;
+    table[OFF(stencil_front_func.func_mask)] = StencilProperties;
+    table[OFF(stencil_back_func.ref)] = StencilProperties;
+    table[OFF(stencil_back_func.mask)] = StencilProperties;
+    table[OFF(stencil_back_func.func_mask)] = StencilProperties;
 }
 
 void SetupDirtyLineWidth(Tables& tables) {
@@ -92,8 +92,8 @@ void SetupDirtyLineWidth(Tables& tables) {
 
 void SetupDirtyCullMode(Tables& tables) {
     auto& table = tables[0];
-    table[OFF(cull_face)] = CullMode;
-    table[OFF(cull_test_enabled)] = CullMode;
+    table[OFF(gl_cull_face)] = CullMode;
+    table[OFF(gl_cull_test_enabled)] = CullMode;
 }
 
 void SetupDirtyDepthBoundsEnable(Tables& tables) {
@@ -114,20 +114,20 @@ void SetupDirtyDepthCompareOp(Tables& tables) {
 
 void SetupDirtyFrontFace(Tables& tables) {
     auto& table = tables[0];
-    table[OFF(front_face)] = FrontFace;
-    table[OFF(screen_y_control)] = FrontFace;
+    table[OFF(gl_front_face)] = FrontFace;
+    table[OFF(window_origin)] = FrontFace;
 }
 
 void SetupDirtyStencilOp(Tables& tables) {
     auto& table = tables[0];
-    table[OFF(stencil_front_op_fail)] = StencilOp;
-    table[OFF(stencil_front_op_zfail)] = StencilOp;
-    table[OFF(stencil_front_op_zpass)] = StencilOp;
-    table[OFF(stencil_front_func_func)] = StencilOp;
-    table[OFF(stencil_back_op_fail)] = StencilOp;
-    table[OFF(stencil_back_op_zfail)] = StencilOp;
-    table[OFF(stencil_back_op_zpass)] = StencilOp;
-    table[OFF(stencil_back_func_func)] = StencilOp;
+    table[OFF(stencil_front_op.fail)] = StencilOp;
+    table[OFF(stencil_front_op.zfail)] = StencilOp;
+    table[OFF(stencil_front_op.zpass)] = StencilOp;
+    table[OFF(stencil_front_op.func)] = StencilOp;
+    table[OFF(stencil_back_op.fail)] = StencilOp;
+    table[OFF(stencil_back_op.zfail)] = StencilOp;
+    table[OFF(stencil_back_op.zpass)] = StencilOp;
+    table[OFF(stencil_back_op.func)] = StencilOp;
 
     // Table 0 is used by StencilProperties
     tables[1][OFF(stencil_two_side_enable)] = StencilOp;
@@ -139,10 +139,10 @@ void SetupDirtyStencilTestEnable(Tables& tables) {
 
 void SetupDirtyBlending(Tables& tables) {
     tables[0][OFF(color_mask_common)] = Blending;
-    tables[0][OFF(independent_blend_enable)] = Blending;
+    tables[0][OFF(blend_per_target_enabled)] = Blending;
     FillBlock(tables[0], OFF(color_mask), NUM(color_mask), Blending);
     FillBlock(tables[0], OFF(blend), NUM(blend), Blending);
-    FillBlock(tables[0], OFF(independent_blend), NUM(independent_blend), Blending);
+    FillBlock(tables[0], OFF(blend_per_target), NUM(blend_per_target), Blending);
 }
 
 void SetupDirtyViewportSwizzles(Tables& tables) {
@@ -166,10 +166,10 @@ void SetupDirtyVertexBindings(Tables& tables) {
     static constexpr size_t divisor_offset = 3;
     for (size_t i = 0; i < Regs::NumVertexArrays; ++i) {
         const u8 flag = static_cast<u8>(VertexBinding0 + i);
-        tables[0][OFF(instanced_arrays) + i] = VertexInput;
-        tables[1][OFF(instanced_arrays) + i] = flag;
-        tables[0][OFF(vertex_array) + i * NUM(vertex_array[0]) + divisor_offset] = VertexInput;
-        tables[1][OFF(vertex_array) + i * NUM(vertex_array[0]) + divisor_offset] = flag;
+        tables[0][OFF(vertex_stream_instances) + i] = VertexInput;
+        tables[1][OFF(vertex_stream_instances) + i] = flag;
+        tables[0][OFF(vertex_streams) + i * NUM(vertex_streams[0]) + divisor_offset] = VertexInput;
+        tables[1][OFF(vertex_streams) + i * NUM(vertex_streams[0]) + divisor_offset] = flag;
     }
 }
 } // Anonymous namespace

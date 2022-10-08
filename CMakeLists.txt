@@ -252,7 +252,7 @@ if(ENABLE_QT)
             endif()
 
             # Check for headers
-            Include(FindPkgConfig REQUIRED)
+            find_package(PkgConfig REQUIRED)
             pkg_check_modules(QT_DEP_GLU QUIET glu>=9.0.0)
             if (NOT QT_DEP_GLU_FOUND)
                 message(FATAL_ERROR "Qt bundled pacakge dependency `glu` not found. \
@@ -386,7 +386,7 @@ endif()
 
 # Ensure libusb is properly configured (based on dolphin libusb include)
 if(NOT APPLE AND NOT YUZU_USE_BUNDLED_LIBUSB)
-    include(FindPkgConfig)
+    find_package(PkgConfig)
     if (PKG_CONFIG_FOUND AND NOT CMAKE_SYSTEM_NAME MATCHES "DragonFly|FreeBSD")
         pkg_check_modules(LIBUSB QUIET libusb-1.0>=1.0.24)
     else()
@@ -410,7 +410,7 @@ set(FFmpeg_COMPONENTS
     swscale)
 
 if (UNIX AND NOT APPLE)
-    Include(FindPkgConfig REQUIRED)
+    find_package(PkgConfig REQUIRED)
     pkg_check_modules(LIBVA libva)
 endif()
 if (NOT YUZU_USE_BUNDLED_FFMPEG)

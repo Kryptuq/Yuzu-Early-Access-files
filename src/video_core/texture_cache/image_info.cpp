@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <fmt/format.h>
+
 #include "common/assert.h"
 #include "video_core/surface.h"
 #include "video_core/texture_cache/format_lookup_table.h"
@@ -12,6 +14,7 @@
 
 namespace VideoCommon {
 
+using Tegra::Engines::Maxwell3D;
 using Tegra::Texture::TextureType;
 using Tegra::Texture::TICEntry;
 using VideoCore::Surface::PixelFormat;
@@ -107,12 +110,13 @@ ImageInfo::ImageInfo(const TICEntry& config) noexcept {
     }
 }
 
-ImageInfo::ImageInfo(const Tegra::Engines::Maxwell3D::Regs& regs, size_t index) noexcept {
+ImageInfo::ImageInfo(const Maxwell3D::Regs& regs, size_t index) noexcept {
     const auto& rt = regs.rt[index];
     format = VideoCore::Surface::PixelFormatFromRenderTargetFormat(rt.format);
     rescaleable = false;
     if (rt.tile_mode.is_pitch_linear) {
-        ASSERT(rt.tile_mode.is_3d == 0);
+        ASSERT(rt.tile_mode.dim_control ==
+               Maxwell3D::Regs::TileMode::DimensionControl::DepthDefinesArray);
         type = ImageType::Linear;
         pitch = rt.width;
         size = Extent3D{
@@ -124,15 +128,16 @@ ImageInfo::ImageInfo(const Tegra::Engines::Maxwell3D::Regs& regs, size_t index) 
     }
     size.width = rt.width;
     size.height = rt.height;
-    layer_stride = rt.layer_stride * 4;
+    layer_stride = rt.array_pitch * 4;
     maybe_unaligned_layer_stride = layer_stride;
-    num_samples = NumSamples(regs.multisample_mode);
+    num_samples = NumSamples(regs.anti_alias_samples_mode);
     block = Extent3D{
         .width = rt.tile_mode.block_width,
         .height = rt.tile_mode.block_height,
         .depth = rt.tile_mode.block_depth,
     };
-    if (rt.tile_mode.is_3d) {
+    if (rt.tile_mode.dim_control ==
+        Maxwell3D::Regs::TileMode::DimensionControl::DepthDefinesDepth) {
         type = ImageType::e3D;
         size.depth = rt.depth;
     } else {
@@ -146,31 +151,37 @@ ImageInfo::ImageInfo(const Tegra::Engines::Maxwell3D::Regs& regs, size_t index) 
 
 ImageInfo::ImageInfo(const Tegra::Engines::Maxwell3D::Regs& regs) noexcept {
     format = VideoCore::Surface::PixelFormatFromDepthFormat(regs.zeta.format);
-    size.width = regs.zeta_width;
-    size.height = regs.zeta_height;
+    size.width = regs.zeta_size.width;
+    size.height = regs.zeta_size.height;
     rescaleable = false;
     resources.levels = 1;
-    layer_stride = regs.zeta.layer_stride * 4;
+    layer_stride = regs.zeta.array_pitch * 4;
     maybe_unaligned_layer_stride = layer_stride;
-    num_samples = NumSamples(regs.multisample_mode);
+    num_samples = NumSamples(regs.anti_alias_samples_mode);
     block = Extent3D{
         .width = regs.zeta.tile_mode.block_width,
         .height = regs.zeta.tile_mode.block_height,
         .depth = regs.zeta.tile_mode.block_depth,
     };
     if (regs.zeta.tile_mode.is_pitch_linear) {
-        ASSERT(regs.zeta.tile_mode.is_3d == 0);
+        ASSERT(regs.zeta.tile_mode.dim_control ==
+               Maxwell3D::Regs::TileMode::DimensionControl::DepthDefinesArray);
         type = ImageType::Linear;
         pitch = size.width * BytesPerBlock(format);
-    } else if (regs.zeta.tile_mode.is_3d) {
+    } else if (regs.zeta.tile_mode.dim_control ==
+               Maxwell3D::Regs::TileMode::DimensionControl::DepthDefinesDepth) {
         ASSERT(regs.zeta.tile_mode.is_pitch_linear == 0);
+        ASSERT(regs.zeta_size.dim_control ==
+               Maxwell3D::Regs::ZetaSize::DimensionControl::ArraySizeOne);
         type = ImageType::e3D;
-        size.depth = regs.zeta_depth;
+        size.depth = regs.zeta_size.depth;
     } else {
+        ASSERT(regs.zeta_size.dim_control ==
+               Maxwell3D::Regs::ZetaSize::DimensionControl::DepthDefinesArray);
         rescaleable = block.depth == 0;
         downscaleable = size.height > 512;
         type = ImageType::e2D;
-        resources.layers = regs.zeta_depth;
+        resources.layers = regs.zeta_size.depth;
     }
 }
 

@@ -43,7 +43,7 @@ if (NOT WIN32)
             CACHE PATH "Paths to FFmpeg libraries" FORCE)
     endforeach()
 
-    Include(FindPkgConfig REQUIRED)
+    find_package(PkgConfig REQUIRED)
     pkg_check_modules(LIBVA libva)
     pkg_check_modules(CUDA cuda)
     pkg_check_modules(FFNVCODEC ffnvcodec)

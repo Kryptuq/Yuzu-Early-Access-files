@@ -17,21 +17,23 @@ using Tegra::Engines::Maxwell3D;
 void SetupDirtyVertexBuffers(Maxwell3D::DirtyState::Tables& tables) {
     static constexpr std::size_t num_array = 3;
     for (std::size_t i = 0; i < Maxwell3D::Regs::NumVertexArrays; ++i) {
-        const std::size_t array_offset = OFF(vertex_array) + i * NUM(vertex_array[0]);
-        const std::size_t limit_offset = OFF(vertex_array_limit) + i * NUM(vertex_array_limit[0]);
+        const std::size_t array_offset = OFF(vertex_streams) + i * NUM(vertex_streams[0]);
+        const std::size_t limit_offset =
+            OFF(vertex_stream_limits) + i * NUM(vertex_stream_limits[0]);
 
         FillBlock(tables, array_offset, num_array, VertexBuffer0 + i, VertexBuffers);
-        FillBlock(tables, limit_offset, NUM(vertex_array_limit), VertexBuffer0 + i, VertexBuffers);
+        FillBlock(tables, limit_offset, NUM(vertex_stream_limits), VertexBuffer0 + i,
+                  VertexBuffers);
     }
 }
 
 void SetupIndexBuffer(Maxwell3D::DirtyState::Tables& tables) {
-    FillBlock(tables[0], OFF(index_array), NUM(index_array), IndexBuffer);
+    FillBlock(tables[0], OFF(index_buffer), NUM(index_buffer), IndexBuffer);
 }
 
 void SetupDirtyDescriptors(Maxwell3D::DirtyState::Tables& tables) {
-    FillBlock(tables[0], OFF(tic), NUM(tic), Descriptors);
-    FillBlock(tables[0], OFF(tsc), NUM(tsc), Descriptors);
+    FillBlock(tables[0], OFF(tex_header), NUM(tex_header), Descriptors);
+    FillBlock(tables[0], OFF(tex_sampler), NUM(tex_sampler), Descriptors);
 }
 
 void SetupDirtyRenderTargets(Maxwell3D::DirtyState::Tables& tables) {
@@ -42,7 +44,7 @@ void SetupDirtyRenderTargets(Maxwell3D::DirtyState::Tables& tables) {
         FillBlock(tables[0], begin + rt * num_per_rt, num_per_rt, ColorBuffer0 + rt);
     }
     FillBlock(tables[1], begin, num, RenderTargets);
-    FillBlock(tables[0], OFF(render_area), NUM(render_area), RenderTargets);
+    FillBlock(tables[0], OFF(surface_clip), NUM(surface_clip), RenderTargets);
 
     tables[0][OFF(rt_control)] = RenderTargets;
     tables[1][OFF(rt_control)] = RenderTargetControl;
@@ -52,15 +54,15 @@ void SetupDirtyRenderTargets(Maxwell3D::DirtyState::Tables& tables) {
         const u8 flag = zeta_flags[i];
         auto& table = tables[i];
         table[OFF(zeta_enable)] = flag;
-        table[OFF(zeta_width)] = flag;
-        table[OFF(zeta_height)] = flag;
+        table[OFF(zeta_size.width)] = flag;
+        table[OFF(zeta_size.height)] = flag;
         FillBlock(table, OFF(zeta), NUM(zeta), flag);
     }
 }
 
 void SetupDirtyShaders(Maxwell3D::DirtyState::Tables& tables) {
-    FillBlock(tables[0], OFF(shader_config[0]),
-              NUM(shader_config[0]) * Maxwell3D::Regs::MaxShaderProgram, Shaders);
+    FillBlock(tables[0], OFF(pipelines), NUM(pipelines) * Maxwell3D::Regs::MaxShaderProgram,
+              Shaders);
 }
 } // Anonymous namespace
 

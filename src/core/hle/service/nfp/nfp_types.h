@@ -167,7 +167,7 @@ struct AmiiboDate {
 
     bool IsValidDate() const {
         const bool is_day_valid = GetDay() > 0 && GetDay() < 32;
-        const bool is_month_valid = GetMonth() >= 0 && GetMonth() < 13;
+        const bool is_month_valid = GetMonth() > 0 && GetMonth() < 13;
         const bool is_year_valid = GetYear() >= 2000;
         return is_year_valid && is_month_valid && is_day_valid;
     }

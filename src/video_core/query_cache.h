@@ -137,7 +137,7 @@ public:
         std::unique_lock lock{mutex};
         if (maxwell3d) {
             const auto& regs = maxwell3d->regs;
-            Stream(VideoCore::QueryType::SamplesPassed).Update(regs.samplecnt_enable);
+            Stream(VideoCore::QueryType::SamplesPassed).Update(regs.zpass_pixel_count_enable);
         }
     }
 

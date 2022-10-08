@@ -56,37 +56,37 @@ void Maxwell3D::InitializeRegisterDefaults() {
 
     // Doom and Bomberman seems to use the uninitialized registers and just enable blend
     // so initialize blend registers with sane values
-    regs.blend.equation_rgb = Regs::Blend::Equation::Add;
-    regs.blend.factor_source_rgb = Regs::Blend::Factor::One;
-    regs.blend.factor_dest_rgb = Regs::Blend::Factor::Zero;
-    regs.blend.equation_a = Regs::Blend::Equation::Add;
-    regs.blend.factor_source_a = Regs::Blend::Factor::One;
-    regs.blend.factor_dest_a = Regs::Blend::Factor::Zero;
-    for (auto& blend : regs.independent_blend) {
-        blend.equation_rgb = Regs::Blend::Equation::Add;
-        blend.factor_source_rgb = Regs::Blend::Factor::One;
-        blend.factor_dest_rgb = Regs::Blend::Factor::Zero;
-        blend.equation_a = Regs::Blend::Equation::Add;
-        blend.factor_source_a = Regs::Blend::Factor::One;
-        blend.factor_dest_a = Regs::Blend::Factor::Zero;
+    regs.blend.color_op = Regs::Blend::Equation::Add_D3D;
+    regs.blend.color_source = Regs::Blend::Factor::One_D3D;
+    regs.blend.color_dest = Regs::Blend::Factor::Zero_D3D;
+    regs.blend.alpha_op = Regs::Blend::Equation::Add_D3D;
+    regs.blend.alpha_source = Regs::Blend::Factor::One_D3D;
+    regs.blend.alpha_dest = Regs::Blend::Factor::Zero_D3D;
+    for (auto& blend : regs.blend_per_target) {
+        blend.color_op = Regs::Blend::Equation::Add_D3D;
+        blend.color_source = Regs::Blend::Factor::One_D3D;
+        blend.color_dest = Regs::Blend::Factor::Zero_D3D;
+        blend.alpha_op = Regs::Blend::Equation::Add_D3D;
+        blend.alpha_source = Regs::Blend::Factor::One_D3D;
+        blend.alpha_dest = Regs::Blend::Factor::Zero_D3D;
     }
-    regs.stencil_front_op_fail = Regs::StencilOp::Keep;
-    regs.stencil_front_op_zfail = Regs::StencilOp::Keep;
-    regs.stencil_front_op_zpass = Regs::StencilOp::Keep;
-    regs.stencil_front_func_func = Regs::ComparisonOp::Always;
-    regs.stencil_front_func_mask = 0xFFFFFFFF;
-    regs.stencil_front_mask = 0xFFFFFFFF;
+    regs.stencil_front_op.fail = Regs::StencilOp::Op::Keep_D3D;
+    regs.stencil_front_op.zfail = Regs::StencilOp::Op::Keep_D3D;
+    regs.stencil_front_op.zpass = Regs::StencilOp::Op::Keep_D3D;
+    regs.stencil_front_op.func = Regs::ComparisonOp::Always_GL;
+    regs.stencil_front_func.func_mask = 0xFFFFFFFF;
+    regs.stencil_front_func.mask = 0xFFFFFFFF;
     regs.stencil_two_side_enable = 1;
-    regs.stencil_back_op_fail = Regs::StencilOp::Keep;
-    regs.stencil_back_op_zfail = Regs::StencilOp::Keep;
-    regs.stencil_back_op_zpass = Regs::StencilOp::Keep;
-    regs.stencil_back_func_func = Regs::ComparisonOp::Always;
-    regs.stencil_back_func_mask = 0xFFFFFFFF;
-    regs.stencil_back_mask = 0xFFFFFFFF;
+    regs.stencil_back_op.fail = Regs::StencilOp::Op::Keep_D3D;
+    regs.stencil_back_op.zfail = Regs::StencilOp::Op::Keep_D3D;
+    regs.stencil_back_op.zpass = Regs::StencilOp::Op::Keep_D3D;
+    regs.stencil_back_op.func = Regs::ComparisonOp::Always_GL;
+    regs.stencil_back_func.func_mask = 0xFFFFFFFF;
+    regs.stencil_back_func.mask = 0xFFFFFFFF;
 
-    regs.depth_test_func = Regs::ComparisonOp::Always;
-    regs.front_face = Regs::FrontFace::CounterClockWise;
-    regs.cull_face = Regs::CullFace::Back;
+    regs.depth_test_func = Regs::ComparisonOp::Always_GL;
+    regs.gl_front_face = Regs::FrontFace::CounterClockWise;
+    regs.gl_cull_face = Regs::CullFace::Back;
 
     // TODO(Rodrigo): Most games do not set a point size. I think this is a case of a
     // register carrying a default value. Assume it's OpenGL's default (1).
@@ -107,20 +107,20 @@ void Maxwell3D::InitializeRegisterDefaults() {
 
     // NVN games expect these values to be enabled at boot
     regs.rasterize_enable = 1;
-    regs.rt_separate_frag_data = 1;
+    regs.color_target_mrt_enable = 1;
     regs.framebuffer_srgb = 1;
     regs.line_width_aliased = 1.0f;
     regs.line_width_smooth = 1.0f;
-    regs.front_face = Maxwell3D::Regs::FrontFace::ClockWise;
+    regs.gl_front_face = Maxwell3D::Regs::FrontFace::ClockWise;
     regs.polygon_mode_back = Maxwell3D::Regs::PolygonMode::Fill;
     regs.polygon_mode_front = Maxwell3D::Regs::PolygonMode::Fill;
 
     shadow_state = regs;
 
-    mme_inline[MAXWELL3D_REG_INDEX(draw.vertex_end_gl)] = true;
-    mme_inline[MAXWELL3D_REG_INDEX(draw.vertex_begin_gl)] = true;
+    mme_inline[MAXWELL3D_REG_INDEX(draw.end)] = true;
+    mme_inline[MAXWELL3D_REG_INDEX(draw.begin)] = true;
     mme_inline[MAXWELL3D_REG_INDEX(vertex_buffer.count)] = true;
-    mme_inline[MAXWELL3D_REG_INDEX(index_array.count)] = true;
+    mme_inline[MAXWELL3D_REG_INDEX(index_buffer.count)] = true;
 }
 
 void Maxwell3D::ProcessMacro(u32 method, const u32* base_start, u32 amount, bool is_last_call) {
@@ -173,51 +173,56 @@ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argume
     case MAXWELL3D_REG_INDEX(shadow_ram_control):
         shadow_state.shadow_ram_control = static_cast<Regs::ShadowRamControl>(nonshadow_argument);
         return;
-    case MAXWELL3D_REG_INDEX(macros.upload_address):
-        return macro_engine->ClearCode(regs.macros.upload_address);
-    case MAXWELL3D_REG_INDEX(macros.data):
-        return macro_engine->AddCode(regs.macros.upload_address, argument);
-    case MAXWELL3D_REG_INDEX(macros.bind):
+    case MAXWELL3D_REG_INDEX(load_mme.instruction_ptr):
+        return macro_engine->ClearCode(regs.load_mme.instruction_ptr);
+    case MAXWELL3D_REG_INDEX(load_mme.instruction):
+        return macro_engine->AddCode(regs.load_mme.instruction_ptr, argument);
+    case MAXWELL3D_REG_INDEX(load_mme.start_address):
         return ProcessMacroBind(argument);
-    case MAXWELL3D_REG_INDEX(firmware[4]):
+    case MAXWELL3D_REG_INDEX(falcon[4]):
         return ProcessFirmwareCall4();
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data):
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 1:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 2:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 3:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 4:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 5:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 6:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 7:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 8:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 9:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 10:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 11:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 12:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 13:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 14:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 15:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer):
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 1:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 2:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 3:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 4:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 5:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 6:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 7:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 8:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 9:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 10:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 11:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 12:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 13:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 14:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 15:
         return ProcessCBData(argument);
-    case MAXWELL3D_REG_INDEX(cb_bind[0]):
+    case MAXWELL3D_REG_INDEX(bind_groups[0].raw_config):
         return ProcessCBBind(0);
-    case MAXWELL3D_REG_INDEX(cb_bind[1]):
+    case MAXWELL3D_REG_INDEX(bind_groups[1].raw_config):
         return ProcessCBBind(1);
-    case MAXWELL3D_REG_INDEX(cb_bind[2]):
+    case MAXWELL3D_REG_INDEX(bind_groups[2].raw_config):
         return ProcessCBBind(2);
-    case MAXWELL3D_REG_INDEX(cb_bind[3]):
+    case MAXWELL3D_REG_INDEX(bind_groups[3].raw_config):
         return ProcessCBBind(3);
-    case MAXWELL3D_REG_INDEX(cb_bind[4]):
+    case MAXWELL3D_REG_INDEX(bind_groups[4].raw_config):
         return ProcessCBBind(4);
-    case MAXWELL3D_REG_INDEX(draw.vertex_end_gl):
+    case MAXWELL3D_REG_INDEX(draw.end):
         return DrawArrays();
-    case MAXWELL3D_REG_INDEX(small_index):
-        regs.index_array.count = regs.small_index.count;
-        regs.index_array.first = regs.small_index.first;
+    case MAXWELL3D_REG_INDEX(index_buffer32_first):
+        regs.index_buffer.count = regs.index_buffer32_first.count;
+        regs.index_buffer.first = regs.index_buffer32_first.first;
         dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
         return DrawArrays();
-    case MAXWELL3D_REG_INDEX(small_index_2):
-        regs.index_array.count = regs.small_index_2.count;
-        regs.index_array.first = regs.small_index_2.first;
+    case MAXWELL3D_REG_INDEX(index_buffer16_first):
+        regs.index_buffer.count = regs.index_buffer16_first.count;
+        regs.index_buffer.first = regs.index_buffer16_first.first;
+        dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
+        return DrawArrays();
+    case MAXWELL3D_REG_INDEX(index_buffer8_first):
+        regs.index_buffer.count = regs.index_buffer8_first.count;
+        regs.index_buffer.first = regs.index_buffer8_first.first;
         dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
         // a macro calls this one over and over, should it increase instancing?
         // Used by Hades and likely other Vulkan games.
@@ -225,28 +230,24 @@ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argume
     case MAXWELL3D_REG_INDEX(topology_override):
         use_topology_override = true;
         return;
-    case MAXWELL3D_REG_INDEX(clear_buffers):
+    case MAXWELL3D_REG_INDEX(clear_surface):
         return ProcessClearBuffers();
-    case MAXWELL3D_REG_INDEX(query.query_get):
+    case MAXWELL3D_REG_INDEX(report_semaphore.query):
         return ProcessQueryGet();
-    case MAXWELL3D_REG_INDEX(condition.mode):
+    case MAXWELL3D_REG_INDEX(render_enable.mode):
         return ProcessQueryCondition();
-    case MAXWELL3D_REG_INDEX(counter_reset):
+    case MAXWELL3D_REG_INDEX(clear_report_value):
         return ProcessCounterReset();
     case MAXWELL3D_REG_INDEX(sync_info):
         return ProcessSyncPoint();
-    case MAXWELL3D_REG_INDEX(exec_upload):
-        return upload_state.ProcessExec(regs.exec_upload.linear != 0);
-    case MAXWELL3D_REG_INDEX(data_upload):
+    case MAXWELL3D_REG_INDEX(launch_dma):
+        return upload_state.ProcessExec(regs.launch_dma.memory_layout.Value() ==
+                                        Regs::LaunchDMA::Layout::Pitch);
+    case MAXWELL3D_REG_INDEX(inline_data):
         upload_state.ProcessData(argument, is_last_call);
         return;
     case MAXWELL3D_REG_INDEX(fragment_barrier):
         return rasterizer->FragmentBarrier();
-    case MAXWELL3D_REG_INDEX(invalidate_texture_data_cache):
-        rasterizer->InvalidateGPUCache();
-        return rasterizer->WaitForIdle();
-    case MAXWELL3D_REG_INDEX(tiled_cache_barrier):
-        return rasterizer->TiledCacheBarrier();
     }
 }
 
@@ -296,25 +297,25 @@ void Maxwell3D::CallMultiMethod(u32 method, const u32* base_start, u32 amount,
         return;
     }
     switch (method) {
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data):
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 1:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 2:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 3:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 4:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 5:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 6:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 7:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 8:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 9:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 10:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 11:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 12:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 13:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 14:
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data) + 15:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer):
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 1:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 2:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 3:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 4:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 5:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 6:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 7:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 8:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 9:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 10:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 11:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 12:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 13:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 14:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 15:
         ProcessCBMultiData(base_start, amount);
         break;
-    case MAXWELL3D_REG_INDEX(data_upload):
+    case MAXWELL3D_REG_INDEX(inline_data):
         upload_state.ProcessData(base_start, static_cast<size_t>(amount));
         return;
     default:
@@ -353,14 +354,15 @@ void Maxwell3D::CallMethodFromMME(u32 method, u32 method_argument) {
     if (mme_inline[method]) {
         regs.reg_array[method] = method_argument;
         if (method == MAXWELL3D_REG_INDEX(vertex_buffer.count) ||
-            method == MAXWELL3D_REG_INDEX(index_array.count)) {
+            method == MAXWELL3D_REG_INDEX(index_buffer.count)) {
             const MMEDrawMode expected_mode = method == MAXWELL3D_REG_INDEX(vertex_buffer.count)
                                                   ? MMEDrawMode::Array
                                                   : MMEDrawMode::Indexed;
             StepInstance(expected_mode, method_argument);
-        } else if (method == MAXWELL3D_REG_INDEX(draw.vertex_begin_gl)) {
+        } else if (method == MAXWELL3D_REG_INDEX(draw.begin)) {
             mme_draw.instance_mode =
-                (regs.draw.instance_next != 0) || (regs.draw.instance_cont != 0);
+                (regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::Subsequent) ||
+                (regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::Unchanged);
             mme_draw.gl_begin_consume = true;
         } else {
             mme_draw.gl_end_count++;
@@ -405,11 +407,12 @@ void Maxwell3D::ProcessTopologyOverride() {
 void Maxwell3D::FlushMMEInlineDraw() {
     LOG_TRACE(HW_GPU, "called, topology={}, count={}", regs.draw.topology.Value(),
               regs.vertex_buffer.count);
-    ASSERT_MSG(!(regs.index_array.count && regs.vertex_buffer.count), "Both indexed and direct?");
+    ASSERT_MSG(!(regs.index_buffer.count && regs.vertex_buffer.count), "Both indexed and direct?");
     ASSERT(mme_draw.instance_count == mme_draw.gl_end_count);
 
     // Both instance configuration registers can not be set at the same time.
-    ASSERT_MSG(!regs.draw.instance_next || !regs.draw.instance_cont,
+    ASSERT_MSG(regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::First ||
+                   regs.draw.instance_id != Maxwell3D::Regs::Draw::InstanceId::Unchanged,
                "Illegal combination of instancing parameters");
 
     ProcessTopologyOverride();
@@ -424,7 +427,7 @@ void Maxwell3D::FlushMMEInlineDraw() {
     // it's possible that it is incorrect and that there is some other register used to specify the
     // drawing mode.
     if (is_indexed) {
-        regs.index_array.count = 0;
+        regs.index_buffer.count = 0;
     } else {
         regs.vertex_buffer.count = 0;
     }
@@ -437,11 +440,11 @@ void Maxwell3D::FlushMMEInlineDraw() {
 }
 
 void Maxwell3D::ProcessMacroUpload(u32 data) {
-    macro_engine->AddCode(regs.macros.upload_address++, data);
+    macro_engine->AddCode(regs.load_mme.instruction_ptr++, data);
 }
 
 void Maxwell3D::ProcessMacroBind(u32 data) {
-    macro_positions[regs.macros.entry++] = data;
+    macro_positions[regs.load_mme.start_address_ptr++] = data;
 }
 
 void Maxwell3D::ProcessFirmwareCall4() {
@@ -449,11 +452,11 @@ void Maxwell3D::ProcessFirmwareCall4() {
 
     // Firmware call 4 is a blob that changes some registers depending on its parameters.
     // These registers don't affect emulation and so are stubbed by setting 0xd00 to 1.
-    regs.reg_array[0xd00] = 1;
+    regs.shadow_scratch[0] = 1;
 }
 
 void Maxwell3D::StampQueryResult(u64 payload, bool long_query) {
-    const GPUVAddr sequence_address{regs.query.QueryAddress()};
+    const GPUVAddr sequence_address{regs.report_semaphore.Address()};
     if (long_query) {
         memory_manager.Write<u64>(sequence_address + sizeof(u64), system.GPU().GetTicks());
         memory_manager.Write<u64>(sequence_address, payload);
@@ -464,15 +467,17 @@ void Maxwell3D::StampQueryResult(u64 payload, bool long_query) {
 
 void Maxwell3D::ProcessQueryGet() {
     // TODO(Subv): Support the other query units.
-    if (regs.query.query_get.unit != Regs::QueryUnit::Crop) {
-        LOG_DEBUG(HW_GPU, "Units other than CROP are unimplemented");
+    if (regs.report_semaphore.query.location != Regs::ReportSemaphore::Location::All) {
+        LOG_DEBUG(HW_GPU, "Locations other than ALL are unimplemented");
     }
 
-    switch (regs.query.query_get.operation) {
-    case Regs::QueryOperation::Release:
-        if (regs.query.query_get.fence == 1 || regs.query.query_get.short_query != 0) {
-            const GPUVAddr sequence_address{regs.query.QueryAddress()};
-            const u32 payload = regs.query.query_sequence;
+    switch (regs.report_semaphore.query.operation) {
+    case Regs::ReportSemaphore::Operation::Release:
+        if (regs.report_semaphore.query.release ==
+                Regs::ReportSemaphore::Release::AfterAllPreceedingWrites ||
+            regs.report_semaphore.query.short_query != 0) {
+            const GPUVAddr sequence_address{regs.report_semaphore.Address()};
+            const u32 payload = regs.report_semaphore.payload;
             std::function<void()> operation([this, sequence_address, payload] {
                 memory_manager.Write<u32>(sequence_address, payload);
             });
@@ -482,8 +487,8 @@ void Maxwell3D::ProcessQueryGet() {
                 u64_le value;
                 u64_le timestamp;
             };
-            const GPUVAddr sequence_address{regs.query.QueryAddress()};
-            const u32 payload = regs.query.query_sequence;
+            const GPUVAddr sequence_address{regs.report_semaphore.Address()};
+            const u32 payload = regs.report_semaphore.payload;
             std::function<void()> operation([this, sequence_address, payload] {
                 memory_manager.Write<u64>(sequence_address + sizeof(u64), system.GPU().GetTicks());
                 memory_manager.Write<u64>(sequence_address, payload);
@@ -491,19 +496,19 @@ void Maxwell3D::ProcessQueryGet() {
             rasterizer->SyncOperation(std::move(operation));
         }
         break;
-    case Regs::QueryOperation::Acquire:
+    case Regs::ReportSemaphore::Operation::Acquire:
         // TODO(Blinkhawk): Under this operation, the GPU waits for the CPU to write a value that
         // matches the current payload.
         UNIMPLEMENTED_MSG("Unimplemented query operation ACQUIRE");
         break;
-    case Regs::QueryOperation::Counter:
+    case Regs::ReportSemaphore::Operation::ReportOnly:
         if (const std::optional<u64> result = GetQueryResult()) {
             // If the query returns an empty optional it means it's cached and deferred.
             // In this case we have a non-empty result, so we stamp it immediately.
-            StampQueryResult(*result, regs.query.query_get.short_query == 0);
+            StampQueryResult(*result, regs.report_semaphore.query.short_query == 0);
         }
         break;
-    case Regs::QueryOperation::Trap:
+    case Regs::ReportSemaphore::Operation::Trap:
         UNIMPLEMENTED_MSG("Unimplemented query operation TRAP");
         break;
     default:
@@ -513,31 +518,31 @@ void Maxwell3D::ProcessQueryGet() {
 }
 
 void Maxwell3D::ProcessQueryCondition() {
-    const GPUVAddr condition_address{regs.condition.Address()};
-    switch (regs.condition.mode) {
-    case Regs::ConditionMode::Always: {
+    const GPUVAddr condition_address{regs.render_enable.Address()};
+    switch (regs.render_enable.mode) {
+    case Regs::RenderEnable::Mode::True: {
         execute_on = true;
         break;
     }
-    case Regs::ConditionMode::Never: {
+    case Regs::RenderEnable::Mode::False: {
         execute_on = false;
         break;
     }
-    case Regs::ConditionMode::ResNonZero: {
-        Regs::QueryCompare cmp;
+    case Regs::RenderEnable::Mode::Conditional: {
+        Regs::ReportSemaphore::Compare cmp;
         memory_manager.ReadBlock(condition_address, &cmp, sizeof(cmp));
         execute_on = cmp.initial_sequence != 0U && cmp.initial_mode != 0U;
         break;
     }
-    case Regs::ConditionMode::Equal: {
-        Regs::QueryCompare cmp;
+    case Regs::RenderEnable::Mode::IfEqual: {
+        Regs::ReportSemaphore::Compare cmp;
         memory_manager.ReadBlock(condition_address, &cmp, sizeof(cmp));
         execute_on =
             cmp.initial_sequence == cmp.current_sequence && cmp.initial_mode == cmp.current_mode;
         break;
     }
-    case Regs::ConditionMode::NotEqual: {
-        Regs::QueryCompare cmp;
+    case Regs::RenderEnable::Mode::IfNotEqual: {
+        Regs::ReportSemaphore::Compare cmp;
         memory_manager.ReadBlock(condition_address, &cmp, sizeof(cmp));
         execute_on =
             cmp.initial_sequence != cmp.current_sequence || cmp.initial_mode != cmp.current_mode;
@@ -552,21 +557,21 @@ void Maxwell3D::ProcessQueryCondition() {
 }
 
 void Maxwell3D::ProcessCounterReset() {
-    switch (regs.counter_reset) {
-    case Regs::CounterReset::SampleCnt:
+    switch (regs.clear_report_value) {
+    case Regs::ClearReport::ZPassPixelCount:
         rasterizer->ResetCounter(QueryType::SamplesPassed);
         break;
     default:
-        LOG_DEBUG(Render_OpenGL, "Unimplemented counter reset={}", regs.counter_reset);
+        LOG_DEBUG(Render_OpenGL, "Unimplemented counter reset={}", regs.clear_report_value);
         break;
     }
 }
 
 void Maxwell3D::ProcessSyncPoint() {
     const u32 sync_point = regs.sync_info.sync_point.Value();
-    const u32 increment = regs.sync_info.increment.Value();
-    [[maybe_unused]] const u32 cache_flush = regs.sync_info.unknown.Value();
-    if (increment) {
+    const auto condition = regs.sync_info.condition.Value();
+    [[maybe_unused]] const u32 cache_flush = regs.sync_info.clean_l2.Value();
+    if (condition == Regs::SyncInfo::Condition::RopWritesDone) {
         rasterizer->SignalSyncPoint(sync_point);
     }
 }
@@ -574,23 +579,24 @@ void Maxwell3D::ProcessSyncPoint() {
 void Maxwell3D::DrawArrays() {
     LOG_TRACE(HW_GPU, "called, topology={}, count={}", regs.draw.topology.Value(),
               regs.vertex_buffer.count);
-    ASSERT_MSG(!(regs.index_array.count && regs.vertex_buffer.count), "Both indexed and direct?");
+    ASSERT_MSG(!(regs.index_buffer.count && regs.vertex_buffer.count), "Both indexed and direct?");
 
     // Both instance configuration registers can not be set at the same time.
-    ASSERT_MSG(!regs.draw.instance_next || !regs.draw.instance_cont,
+    ASSERT_MSG(regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::First ||
+                   regs.draw.instance_id != Maxwell3D::Regs::Draw::InstanceId::Unchanged,
                "Illegal combination of instancing parameters");
 
     ProcessTopologyOverride();
 
-    if (regs.draw.instance_next) {
+    if (regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::Subsequent) {
         // Increment the current instance *before* drawing.
-        state.current_instance += 1;
-    } else if (!regs.draw.instance_cont) {
+        state.current_instance++;
+    } else if (regs.draw.instance_id != Maxwell3D::Regs::Draw::InstanceId::Unchanged) {
         // Reset the current instance to 0.
         state.current_instance = 0;
     }
 
-    const bool is_indexed{regs.index_array.count && !regs.vertex_buffer.count};
+    const bool is_indexed{regs.index_buffer.count && !regs.vertex_buffer.count};
     if (ShouldExecute()) {
         rasterizer->Draw(is_indexed, false);
     }
@@ -600,60 +606,60 @@ void Maxwell3D::DrawArrays() {
     // it's possible that it is incorrect and that there is some other register used to specify the
     // drawing mode.
     if (is_indexed) {
-        regs.index_array.count = 0;
+        regs.index_buffer.count = 0;
     } else {
         regs.vertex_buffer.count = 0;
     }
 }
 
 std::optional<u64> Maxwell3D::GetQueryResult() {
-    switch (regs.query.query_get.select) {
-    case Regs::QuerySelect::Payload:
-        return regs.query.query_sequence;
-    case Regs::QuerySelect::SamplesPassed:
+    switch (regs.report_semaphore.query.report) {
+    case Regs::ReportSemaphore::Report::Payload:
+        return regs.report_semaphore.payload;
+    case Regs::ReportSemaphore::Report::ZPassPixelCount64:
         // Deferred.
-        rasterizer->Query(regs.query.QueryAddress(), QueryType::SamplesPassed,
+        rasterizer->Query(regs.report_semaphore.Address(), QueryType::SamplesPassed,
                           system.GPU().GetTicks());
         return std::nullopt;
     default:
-        LOG_DEBUG(HW_GPU, "Unimplemented query select type {}",
-                  regs.query.query_get.select.Value());
+        LOG_DEBUG(HW_GPU, "Unimplemented query report type {}",
+                  regs.report_semaphore.query.report.Value());
         return 1;
     }
 }
 
 void Maxwell3D::ProcessCBBind(size_t stage_index) {
     // Bind the buffer currently in CB_ADDRESS to the specified index in the desired shader stage.
-    const auto& bind_data = regs.cb_bind[stage_index];
-    auto& buffer = state.shader_stages[stage_index].const_buffers[bind_data.index];
+    const auto& bind_data = regs.bind_groups[stage_index];
+    auto& buffer = state.shader_stages[stage_index].const_buffers[bind_data.shader_slot];
     buffer.enabled = bind_data.valid.Value() != 0;
-    buffer.address = regs.const_buffer.BufferAddress();
-    buffer.size = regs.const_buffer.cb_size;
+    buffer.address = regs.const_buffer.Address();
+    buffer.size = regs.const_buffer.size;
 
     const bool is_enabled = bind_data.valid.Value() != 0;
     if (!is_enabled) {
-        rasterizer->DisableGraphicsUniformBuffer(stage_index, bind_data.index);
+        rasterizer->DisableGraphicsUniformBuffer(stage_index, bind_data.shader_slot);
         return;
     }
-    const GPUVAddr gpu_addr = regs.const_buffer.BufferAddress();
-    const u32 size = regs.const_buffer.cb_size;
-    rasterizer->BindGraphicsUniformBuffer(stage_index, bind_data.index, gpu_addr, size);
+    const GPUVAddr gpu_addr = regs.const_buffer.Address();
+    const u32 size = regs.const_buffer.size;
+    rasterizer->BindGraphicsUniformBuffer(stage_index, bind_data.shader_slot, gpu_addr, size);
 }
 
 void Maxwell3D::ProcessCBMultiData(const u32* start_base, u32 amount) {
     // Write the input value to the current const buffer at the current position.
-    const GPUVAddr buffer_address = regs.const_buffer.BufferAddress();
+    const GPUVAddr buffer_address = regs.const_buffer.Address();
     ASSERT(buffer_address != 0);
 
     // Don't allow writing past the end of the buffer.
-    ASSERT(regs.const_buffer.cb_pos <= regs.const_buffer.cb_size);
+    ASSERT(regs.const_buffer.offset <= regs.const_buffer.size);
 
-    const GPUVAddr address{buffer_address + regs.const_buffer.cb_pos};
+    const GPUVAddr address{buffer_address + regs.const_buffer.offset};
     const size_t copy_size = amount * sizeof(u32);
     memory_manager.WriteBlock(address, start_base, copy_size);
 
     // Increment the current buffer position.
-    regs.const_buffer.cb_pos += static_cast<u32>(copy_size);
+    regs.const_buffer.offset += static_cast<u32>(copy_size);
 }
 
 void Maxwell3D::ProcessCBData(u32 value) {
@@ -661,7 +667,8 @@ void Maxwell3D::ProcessCBData(u32 value) {
 }
 
 Texture::TICEntry Maxwell3D::GetTICEntry(u32 tic_index) const {
-    const GPUVAddr tic_address_gpu{regs.tic.Address() + tic_index * sizeof(Texture::TICEntry)};
+    const GPUVAddr tic_address_gpu{regs.tex_header.Address() +
+                                   tic_index * sizeof(Texture::TICEntry)};
 
     Texture::TICEntry tic_entry;
     memory_manager.ReadBlockUnsafe(tic_address_gpu, &tic_entry, sizeof(Texture::TICEntry));
@@ -670,7 +677,8 @@ Texture::TICEntry Maxwell3D::GetTICEntry(u32 tic_index) const {
 }
 
 Texture::TSCEntry Maxwell3D::GetTSCEntry(u32 tsc_index) const {
-    const GPUVAddr tsc_address_gpu{regs.tsc.Address() + tsc_index * sizeof(Texture::TSCEntry)};
+    const GPUVAddr tsc_address_gpu{regs.tex_sampler.Address() +
+                                   tsc_index * sizeof(Texture::TSCEntry)};
 
     Texture::TSCEntry tsc_entry;
     memory_manager.ReadBlockUnsafe(tsc_address_gpu, &tsc_entry, sizeof(Texture::TSCEntry));

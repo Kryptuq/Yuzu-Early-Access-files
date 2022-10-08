@@ -262,6 +262,18 @@ static QString PrettyProductName() {
     return QSysInfo::prettyProductName();
 }
 
+#ifdef _WIN32
+static void OverrideWindowsFont() {
+    // Qt5 chooses these fonts on Windows and they have fairly ugly alphanumeric/cyrllic characters
+    // Asking to use "MS Shell Dlg 2" gives better other chars while leaving the Chinese Characters.
+    const QString startup_font = QApplication::font().family();
+    const QStringList ugly_fonts = {QStringLiteral("SimSun"), QStringLiteral("PMingLiU")};
+    if (ugly_fonts.contains(startup_font)) {
+        QApplication::setFont(QFont(QStringLiteral("MS Shell Dlg 2"), 9, QFont::Normal));
+    }
+}
+#endif
+
 bool GMainWindow::CheckDarkMode() {
 #ifdef __linux__
     const QPalette test_palette(qApp->palette());
@@ -4136,6 +4148,10 @@ int main(int argc, char* argv[]) {
     // Enables the core to make the qt created contexts current on std::threads
     QCoreApplication::setAttribute(Qt::AA_DontCheckOpenGLContextThreadAffinity);
     QApplication app(argc, argv);
+
+#ifdef _WIN32
+    OverrideWindowsFont();
+#endif
 
     // Workaround for QTBUG-85409, for Suzhou numerals the number 1 is actually \u3021
     // so we can see if we get \u3008 instead

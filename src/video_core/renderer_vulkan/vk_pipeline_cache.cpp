@@ -62,29 +62,29 @@ auto MakeSpan(Container& container) {
 
 Shader::CompareFunction MaxwellToCompareFunction(Maxwell::ComparisonOp comparison) {
     switch (comparison) {
-    case Maxwell::ComparisonOp::Never:
-    case Maxwell::ComparisonOp::NeverOld:
+    case Maxwell::ComparisonOp::Never_D3D:
+    case Maxwell::ComparisonOp::Never_GL:
         return Shader::CompareFunction::Never;
-    case Maxwell::ComparisonOp::Less:
-    case Maxwell::ComparisonOp::LessOld:
+    case Maxwell::ComparisonOp::Less_D3D:
+    case Maxwell::ComparisonOp::Less_GL:
         return Shader::CompareFunction::Less;
-    case Maxwell::ComparisonOp::Equal:
-    case Maxwell::ComparisonOp::EqualOld:
+    case Maxwell::ComparisonOp::Equal_D3D:
+    case Maxwell::ComparisonOp::Equal_GL:
         return Shader::CompareFunction::Equal;
-    case Maxwell::ComparisonOp::LessEqual:
-    case Maxwell::ComparisonOp::LessEqualOld:
+    case Maxwell::ComparisonOp::LessEqual_D3D:
+    case Maxwell::ComparisonOp::LessEqual_GL:
         return Shader::CompareFunction::LessThanEqual;
-    case Maxwell::ComparisonOp::Greater:
-    case Maxwell::ComparisonOp::GreaterOld:
+    case Maxwell::ComparisonOp::Greater_D3D:
+    case Maxwell::ComparisonOp::Greater_GL:
         return Shader::CompareFunction::Greater;
-    case Maxwell::ComparisonOp::NotEqual:
-    case Maxwell::ComparisonOp::NotEqualOld:
+    case Maxwell::ComparisonOp::NotEqual_D3D:
+    case Maxwell::ComparisonOp::NotEqual_GL:
         return Shader::CompareFunction::NotEqual;
-    case Maxwell::ComparisonOp::GreaterEqual:
-    case Maxwell::ComparisonOp::GreaterEqualOld:
+    case Maxwell::ComparisonOp::GreaterEqual_D3D:
+    case Maxwell::ComparisonOp::GreaterEqual_GL:
         return Shader::CompareFunction::GreaterThanEqual;
-    case Maxwell::ComparisonOp::Always:
-    case Maxwell::ComparisonOp::AlwaysOld:
+    case Maxwell::ComparisonOp::Always_D3D:
+    case Maxwell::ComparisonOp::Always_GL:
         return Shader::CompareFunction::Always;
     }
     UNIMPLEMENTED_MSG("Unimplemented comparison op={}", comparison);
@@ -96,15 +96,18 @@ Shader::AttributeType CastAttributeType(const FixedPipelineState::VertexAttribut
         return Shader::AttributeType::Disabled;
     }
     switch (attr.Type()) {
-    case Maxwell::VertexAttribute::Type::SignedNorm:
-    case Maxwell::VertexAttribute::Type::UnsignedNorm:
-    case Maxwell::VertexAttribute::Type::UnsignedScaled:
-    case Maxwell::VertexAttribute::Type::SignedScaled:
+    case Maxwell::VertexAttribute::Type::UnusedEnumDoNotUseBecauseItWillGoAway:
+        ASSERT_MSG(false, "Invalid vertex attribute type!");
+        return Shader::AttributeType::Disabled;
+    case Maxwell::VertexAttribute::Type::SNorm:
+    case Maxwell::VertexAttribute::Type::UNorm:
+    case Maxwell::VertexAttribute::Type::UScaled:
+    case Maxwell::VertexAttribute::Type::SScaled:
     case Maxwell::VertexAttribute::Type::Float:
         return Shader::AttributeType::Float;
-    case Maxwell::VertexAttribute::Type::SignedInt:
+    case Maxwell::VertexAttribute::Type::SInt:
         return Shader::AttributeType::SignedInt;
-    case Maxwell::VertexAttribute::Type::UnsignedInt:
+    case Maxwell::VertexAttribute::Type::UInt:
         return Shader::AttributeType::UnsignedInt;
     }
     return Shader::AttributeType::Float;
@@ -162,16 +165,14 @@ Shader::RuntimeInfo MakeRuntimeInfo(std::span<const Shader::IR::Program> program
         }
         break;
     case Shader::Stage::TessellationEval:
-        // We have to flip tessellation clockwise for some reason...
-        info.tess_clockwise = key.state.tessellation_clockwise == 0;
         info.tess_primitive = [&key] {
             const u32 raw{key.state.tessellation_primitive.Value()};
-            switch (static_cast<Maxwell::TessellationPrimitive>(raw)) {
-            case Maxwell::TessellationPrimitive::Isolines:
+            switch (static_cast<Maxwell::Tessellation::DomainType>(raw)) {
+            case Maxwell::Tessellation::DomainType::Isolines:
                 return Shader::TessPrimitive::Isolines;
-            case Maxwell::TessellationPrimitive::Triangles:
+            case Maxwell::Tessellation::DomainType::Triangles:
                 return Shader::TessPrimitive::Triangles;
-            case Maxwell::TessellationPrimitive::Quads:
+            case Maxwell::Tessellation::DomainType::Quads:
                 return Shader::TessPrimitive::Quads;
             }
             ASSERT(false);
@@ -179,12 +180,12 @@ Shader::RuntimeInfo MakeRuntimeInfo(std::span<const Shader::IR::Program> program
         }();
         info.tess_spacing = [&] {
             const u32 raw{key.state.tessellation_spacing};
-            switch (static_cast<Maxwell::TessellationSpacing>(raw)) {
-            case Maxwell::TessellationSpacing::Equal:
+            switch (static_cast<Maxwell::Tessellation::Spacing>(raw)) {
+            case Maxwell::Tessellation::Spacing::Integer:
                 return Shader::TessSpacing::Equal;
-            case Maxwell::TessellationSpacing::FractionalOdd:
+            case Maxwell::Tessellation::Spacing::FractionalOdd:
                 return Shader::TessSpacing::FractionalOdd;
-            case Maxwell::TessellationSpacing::FractionalEven:
+            case Maxwell::Tessellation::Spacing::FractionalEven:
                 return Shader::TessSpacing::FractionalEven;
             }
             ASSERT(false);
@@ -490,7 +491,7 @@ GraphicsPipeline* PipelineCache::BuiltPipeline(GraphicsPipeline* pipeline) const
     // If games are using a small index count, we can assume these are full screen quads.
     // Usually these shaders are only used once for building textures so we can assume they
     // can't be built async
-    if (maxwell3d->regs.index_array.count <= 6 || maxwell3d->regs.vertex_buffer.count <= 6) {
+    if (maxwell3d->regs.index_buffer.count <= 6 || maxwell3d->regs.vertex_buffer.count <= 6) {
         return pipeline;
     }
     return nullptr;

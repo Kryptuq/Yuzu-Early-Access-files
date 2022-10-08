@@ -108,7 +108,7 @@ if (MINGW OR (${CMAKE_SYSTEM_NAME} MATCHES "Linux") OR APPLE)
     target_include_directories(usb INTERFACE "${LIBUSB_INCLUDE_DIRS}")
 
     if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-        Include(FindPkgConfig)
+        find_package(PkgConfig)
         pkg_check_modules(LIBUDEV REQUIRED libudev)
 
         if (LIBUDEV_FOUND)

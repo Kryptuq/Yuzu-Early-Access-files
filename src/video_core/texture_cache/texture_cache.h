@@ -189,15 +189,16 @@ typename P::Sampler* TextureCache<P>::GetComputeSampler(u32 index) {
 
 template <class P>
 void TextureCache<P>::SynchronizeGraphicsDescriptors() {
-    using SamplerIndex = Tegra::Engines::Maxwell3D::Regs::SamplerIndex;
-    const bool linked_tsc = maxwell3d->regs.sampler_index == SamplerIndex::ViaHeaderIndex;
-    const u32 tic_limit = maxwell3d->regs.tic.limit;
-    const u32 tsc_limit = linked_tsc ? tic_limit : maxwell3d->regs.tsc.limit;
-    if (channel_state->graphics_sampler_table.Synchornize(maxwell3d->regs.tsc.Address(),
+    using SamplerBinding = Tegra::Engines::Maxwell3D::Regs::SamplerBinding;
+    const bool linked_tsc = maxwell3d->regs.sampler_binding == SamplerBinding::ViaHeaderBinding;
+    const u32 tic_limit = maxwell3d->regs.tex_header.limit;
+    const u32 tsc_limit = linked_tsc ? tic_limit : maxwell3d->regs.tex_sampler.limit;
+    if (channel_state->graphics_sampler_table.Synchornize(maxwell3d->regs.tex_sampler.Address(),
                                                           tsc_limit)) {
         channel_state->graphics_sampler_ids.resize(tsc_limit + 1, CORRUPT_ID);
     }
-    if (channel_state->graphics_image_table.Synchornize(maxwell3d->regs.tic.Address(), tic_limit)) {
+    if (channel_state->graphics_image_table.Synchornize(maxwell3d->regs.tex_header.Address(),
+                                                        tic_limit)) {
         channel_state->graphics_image_view_ids.resize(tic_limit + 1, CORRUPT_ID);
     }
 }
@@ -352,8 +353,8 @@ void TextureCache<P>::UpdateRenderTargets(bool is_clear) {
         down_shift = Settings::values.resolution_info.down_shift;
     }
     render_targets.size = Extent2D{
-        (maxwell3d->regs.render_area.width * up_scale) >> down_shift,
-        (maxwell3d->regs.render_area.height * up_scale) >> down_shift,
+        (maxwell3d->regs.surface_clip.width * up_scale) >> down_shift,
+        (maxwell3d->regs.surface_clip.height * up_scale) >> down_shift,
     };
     render_targets.is_rescaled = is_rescaling;
 
@@ -1980,7 +1981,7 @@ bool TextureCache<P>::IsFullClear(ImageViewId id) {
         // Images with multiple resources can't be cleared in a single call
         return false;
     }
-    if (regs.clear_flags.scissor == 0) {
+    if (regs.clear_control.use_scissor == 0) {
         // If scissor testing is disabled, the clear is always full
         return true;
     }

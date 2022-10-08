@@ -55,7 +55,7 @@ VkCompareOp ComparisonOp(Maxwell::ComparisonOp comparison);
 
 VkIndexType IndexFormat(Maxwell::IndexFormat index_format);
 
-VkStencilOp StencilOp(Maxwell::StencilOp stencil_op);
+VkStencilOp StencilOp(Maxwell::StencilOp::Op stencil_op);
 
 VkBlendOp BlendEquation(Maxwell::Blend::Equation equation);
 

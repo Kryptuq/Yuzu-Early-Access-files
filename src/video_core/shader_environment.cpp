@@ -250,34 +250,34 @@ Shader::TextureType GenericEnvironment::ReadTextureTypeImpl(GPUVAddr tic_addr, u
 
 GraphicsEnvironment::GraphicsEnvironment(Tegra::Engines::Maxwell3D& maxwell3d_,
                                          Tegra::MemoryManager& gpu_memory_,
-                                         Maxwell::ShaderProgram program, GPUVAddr program_base_,
+                                         Maxwell::ShaderType program, GPUVAddr program_base_,
                                          u32 start_address_)
     : GenericEnvironment{gpu_memory_, program_base_, start_address_}, maxwell3d{&maxwell3d_} {
     gpu_memory->ReadBlock(program_base + start_address, &sph, sizeof(sph));
     initial_offset = sizeof(sph);
-    gp_passthrough_mask = maxwell3d->regs.gp_passthrough_mask;
+    gp_passthrough_mask = maxwell3d->regs.post_vtg_shader_attrib_skip_mask;
     switch (program) {
-    case Maxwell::ShaderProgram::VertexA:
+    case Maxwell::ShaderType::VertexA:
         stage = Shader::Stage::VertexA;
         stage_index = 0;
         break;
-    case Maxwell::ShaderProgram::VertexB:
+    case Maxwell::ShaderType::VertexB:
         stage = Shader::Stage::VertexB;
         stage_index = 0;
         break;
-    case Maxwell::ShaderProgram::TesselationControl:
+    case Maxwell::ShaderType::TessellationInit:
         stage = Shader::Stage::TessellationControl;
         stage_index = 1;
         break;
-    case Maxwell::ShaderProgram::TesselationEval:
+    case Maxwell::ShaderType::Tessellation:
         stage = Shader::Stage::TessellationEval;
         stage_index = 2;
         break;
-    case Maxwell::ShaderProgram::Geometry:
+    case Maxwell::ShaderType::Geometry:
         stage = Shader::Stage::Geometry;
         stage_index = 3;
         break;
-    case Maxwell::ShaderProgram::Fragment:
+    case Maxwell::ShaderType::Pixel:
         stage = Shader::Stage::Fragment;
         stage_index = 4;
         break;
@@ -288,7 +288,7 @@ GraphicsEnvironment::GraphicsEnvironment(Tegra::Engines::Maxwell3D& maxwell3d_,
     const u64 local_size{sph.LocalMemorySize()};
     ASSERT(local_size <= std::numeric_limits<u32>::max());
     local_memory_size = static_cast<u32>(local_size) + sph.common3.shader_local_memory_crs_size;
-    texture_bound = maxwell3d->regs.tex_cb_index;
+    texture_bound = maxwell3d->regs.bindless_texture_const_buffer_slot;
 }
 
 u32 GraphicsEnvironment::ReadCbufValue(u32 cbuf_index, u32 cbuf_offset) {
@@ -304,8 +304,9 @@ u32 GraphicsEnvironment::ReadCbufValue(u32 cbuf_index, u32 cbuf_offset) {
 
 Shader::TextureType GraphicsEnvironment::ReadTextureType(u32 handle) {
     const auto& regs{maxwell3d->regs};
-    const bool via_header_index{regs.sampler_index == Maxwell::SamplerIndex::ViaHeaderIndex};
-    return ReadTextureTypeImpl(regs.tic.Address(), regs.tic.limit, via_header_index, handle);
+    const bool via_header_index{regs.sampler_binding == Maxwell::SamplerBinding::ViaHeaderBinding};
+    return ReadTextureTypeImpl(regs.tex_header.Address(), regs.tex_header.limit, via_header_index,
+                               handle);
 }
 
 ComputeEnvironment::ComputeEnvironment(Tegra::Engines::KeplerCompute& kepler_compute_,

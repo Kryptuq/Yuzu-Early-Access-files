@@ -93,7 +93,7 @@ public:
     explicit GraphicsEnvironment() = default;
     explicit GraphicsEnvironment(Tegra::Engines::Maxwell3D& maxwell3d_,
                                  Tegra::MemoryManager& gpu_memory_,
-                                 Tegra::Engines::Maxwell3D::Regs::ShaderProgram program,
+                                 Tegra::Engines::Maxwell3D::Regs::ShaderType program,
                                  GPUVAddr program_base_, u32 start_address_);
 
     ~GraphicsEnvironment() override = default;

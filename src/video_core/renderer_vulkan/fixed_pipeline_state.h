@@ -21,8 +21,8 @@ struct FixedPipelineState {
     static u32 PackComparisonOp(Maxwell::ComparisonOp op) noexcept;
     static Maxwell::ComparisonOp UnpackComparisonOp(u32 packed) noexcept;
 
-    static u32 PackStencilOp(Maxwell::StencilOp op) noexcept;
-    static Maxwell::StencilOp UnpackStencilOp(u32 packed) noexcept;
+    static u32 PackStencilOp(Maxwell::StencilOp::Op op) noexcept;
+    static Maxwell::StencilOp::Op UnpackStencilOp(u32 packed) noexcept;
 
     static u32 PackCullFace(Maxwell::CullFace cull) noexcept;
     static Maxwell::CullFace UnpackCullFace(u32 packed) noexcept;
@@ -33,8 +33,8 @@ struct FixedPipelineState {
     static u32 PackPolygonMode(Maxwell::PolygonMode mode) noexcept;
     static Maxwell::PolygonMode UnpackPolygonMode(u32 packed) noexcept;
 
-    static u32 PackLogicOp(Maxwell::LogicOperation op) noexcept;
-    static Maxwell::LogicOperation UnpackLogicOp(u32 packed) noexcept;
+    static u32 PackLogicOp(Maxwell::LogicOp::Op op) noexcept;
+    static Maxwell::LogicOp::Op UnpackLogicOp(u32 packed) noexcept;
 
     static u32 PackBlendEquation(Maxwell::Blend::Equation equation) noexcept;
     static Maxwell::Blend::Equation UnpackBlendEquation(u32 packed) noexcept;
@@ -113,15 +113,15 @@ struct FixedPipelineState {
         BitField<Position + 6, 3, u32> action_depth_pass;
         BitField<Position + 9, 3, u32> test_func;
 
-        Maxwell::StencilOp ActionStencilFail() const noexcept {
+        Maxwell::StencilOp::Op ActionStencilFail() const noexcept {
             return UnpackStencilOp(action_stencil_fail);
         }
 
-        Maxwell::StencilOp ActionDepthFail() const noexcept {
+        Maxwell::StencilOp::Op ActionDepthFail() const noexcept {
             return UnpackStencilOp(action_depth_fail);
         }
 
-        Maxwell::StencilOp ActionDepthPass() const noexcept {
+        Maxwell::StencilOp::Op ActionDepthPass() const noexcept {
             return UnpackStencilOp(action_depth_pass);
         }
 
@@ -193,7 +193,6 @@ struct FixedPipelineState {
         BitField<6, 5, u32> depth_format;
         BitField<11, 1, u32> y_negate;
         BitField<12, 1, u32> provoking_vertex_last;
-        BitField<13, 1, u32> conservative_raster_enable;
         BitField<14, 1, u32> smooth_lines;
     };
     std::array<u8, Maxwell::NumRenderTargets> color_formats;

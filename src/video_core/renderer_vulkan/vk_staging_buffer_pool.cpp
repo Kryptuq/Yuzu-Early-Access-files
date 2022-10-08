@@ -26,39 +26,20 @@ using namespace Common::Literals;
 constexpr VkDeviceSize MAX_ALIGNMENT = 256;
 // Maximum size to put elements in the stream buffer
 constexpr VkDeviceSize MAX_STREAM_BUFFER_REQUEST_SIZE = 8_MiB;
+// Stream buffer size in bytes
+constexpr VkDeviceSize STREAM_BUFFER_SIZE = 128_MiB;
+constexpr VkDeviceSize REGION_SIZE = STREAM_BUFFER_SIZE / StagingBufferPool::NUM_SYNCS;
 
 constexpr VkMemoryPropertyFlags HOST_FLAGS =
     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 constexpr VkMemoryPropertyFlags STREAM_FLAGS = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | HOST_FLAGS;
 
-static bool IsStreamHeap(VkMemoryHeap heap, size_t staging_buffer_size) noexcept {
-    return staging_buffer_size < (heap.size * 2) / 3;
-}
-
-static bool HasLargeDeviceLocalHostVisibleMemory(const VkPhysicalDeviceMemoryProperties& props) {
-    const auto flags{VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT};
-
-    for (u32 type_index = 0; type_index < props.memoryTypeCount; ++type_index) {
-        const auto& memory_type{props.memoryTypes[type_index]};
-
-        if ((memory_type.propertyFlags & flags) != flags) {
-            // Memory must be device local and host visible
-            continue;
-        }
-
-        const auto& heap{props.memoryHeaps[memory_type.heapIndex]};
-        if (heap.size >= 7168_MiB) {
-            // This is the right type of memory
-            return true;
-        }
-    }
-
-    return false;
+bool IsStreamHeap(VkMemoryHeap heap) noexcept {
+    return STREAM_BUFFER_SIZE < (heap.size * 2) / 3;
 }
 
 std::optional<u32> FindMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& props, u32 type_mask,
-                                       VkMemoryPropertyFlags flags,
-                                       size_t staging_buffer_size) noexcept {
+                                       VkMemoryPropertyFlags flags) noexcept {
     for (u32 type_index = 0; type_index < props.memoryTypeCount; ++type_index) {
         if (((type_mask >> type_index) & 1) == 0) {
             // Memory type is incompatible
@@ -69,7 +50,7 @@ std::optional<u32> FindMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& p
             // Memory type doesn't have the flags we want
             continue;
         }
-        if (!IsStreamHeap(props.memoryHeaps[memory_type.heapIndex], staging_buffer_size)) {
+        if (!IsStreamHeap(props.memoryHeaps[memory_type.heapIndex])) {
             // Memory heap is not suitable for streaming
             continue;
         }
@@ -80,17 +61,17 @@ std::optional<u32> FindMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& p
 }
 
 u32 FindMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& props, u32 type_mask,
-                        bool try_device_local, size_t staging_buffer_size) {
+                        bool try_device_local) {
     std::optional<u32> type;
     if (try_device_local) {
         // Try to find a DEVICE_LOCAL_BIT type, Nvidia and AMD have a dedicated heap for this
-        type = FindMemoryTypeIndex(props, type_mask, STREAM_FLAGS, staging_buffer_size);
+        type = FindMemoryTypeIndex(props, type_mask, STREAM_FLAGS);
         if (type) {
             return *type;
         }
     }
     // Otherwise try without the DEVICE_LOCAL_BIT
-    type = FindMemoryTypeIndex(props, type_mask, HOST_FLAGS, staging_buffer_size);
+    type = FindMemoryTypeIndex(props, type_mask, HOST_FLAGS);
     if (type) {
         return *type;
     }
@@ -98,32 +79,20 @@ u32 FindMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& props, u32 type_
     throw vk::Exception(VK_ERROR_OUT_OF_DEVICE_MEMORY);
 }
 
-size_t Region(size_t iterator, size_t region_size) noexcept {
-    return iterator / region_size;
+size_t Region(size_t iterator) noexcept {
+    return iterator / REGION_SIZE;
 }
 } // Anonymous namespace
 
 StagingBufferPool::StagingBufferPool(const Device& device_, MemoryAllocator& memory_allocator_,
                                      Scheduler& scheduler_)
     : device{device_}, memory_allocator{memory_allocator_}, scheduler{scheduler_} {
-
-    const auto memory_properties{device.GetPhysical().GetMemoryProperties().memoryProperties};
-    if (HasLargeDeviceLocalHostVisibleMemory(memory_properties)) {
-        // Possible on many integrated and newer discrete cards
-        staging_buffer_size = 1_GiB;
-    } else {
-        // Well-supported default size used by most Vulkan PC games
-        staging_buffer_size = 256_MiB;
-    }
-
-    region_size = staging_buffer_size / StagingBufferPool::NUM_SYNCS;
-
     const vk::Device& dev = device.GetLogical();
     stream_buffer = dev.CreateBuffer(VkBufferCreateInfo{
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
-        .size = staging_buffer_size,
+        .size = STREAM_BUFFER_SIZE,
         .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT |
                  VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
@@ -148,18 +117,19 @@ StagingBufferPool::StagingBufferPool(const Device& device_, MemoryAllocator& mem
         .image = nullptr,
         .buffer = *stream_buffer,
     };
+    const auto memory_properties = device.GetPhysical().GetMemoryProperties().memoryProperties;
     VkMemoryAllocateInfo stream_memory_info{
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
         .pNext = make_dedicated ? &dedicated_info : nullptr,
         .allocationSize = requirements.size,
-        .memoryTypeIndex = FindMemoryTypeIndex(memory_properties, requirements.memoryTypeBits, true,
-                                               staging_buffer_size),
+        .memoryTypeIndex =
+            FindMemoryTypeIndex(memory_properties, requirements.memoryTypeBits, true),
     };
     stream_memory = dev.TryAllocateMemory(stream_memory_info);
     if (!stream_memory) {
         LOG_INFO(Render_Vulkan, "Dynamic memory allocation failed, trying with system memory");
-        stream_memory_info.memoryTypeIndex = FindMemoryTypeIndex(
-            memory_properties, requirements.memoryTypeBits, false, staging_buffer_size);
+        stream_memory_info.memoryTypeIndex =
+            FindMemoryTypeIndex(memory_properties, requirements.memoryTypeBits, false);
         stream_memory = dev.AllocateMemory(stream_memory_info);
     }
 
@@ -167,7 +137,7 @@ StagingBufferPool::StagingBufferPool(const Device& device_, MemoryAllocator& mem
         stream_memory.SetObjectNameEXT("Stream Buffer Memory");
     }
     stream_buffer.BindMemory(*stream_memory, 0);
-    stream_pointer = stream_memory.Map(0, staging_buffer_size);
+    stream_pointer = stream_memory.Map(0, STREAM_BUFFER_SIZE);
 }
 
 StagingBufferPool::~StagingBufferPool() = default;
@@ -188,25 +158,25 @@ void StagingBufferPool::TickFrame() {
 }
 
 StagingBufferRef StagingBufferPool::GetStreamBuffer(size_t size) {
-    if (AreRegionsActive(Region(free_iterator, region_size) + 1,
-                         std::min(Region(iterator + size, region_size) + 1, NUM_SYNCS))) {
+    if (AreRegionsActive(Region(free_iterator) + 1,
+                         std::min(Region(iterator + size) + 1, NUM_SYNCS))) {
         // Avoid waiting for the previous usages to be free
         return GetStagingBuffer(size, MemoryUsage::Upload);
     }
     const u64 current_tick = scheduler.CurrentTick();
-    std::fill(sync_ticks.begin() + Region(used_iterator, region_size),
-              sync_ticks.begin() + Region(iterator, region_size), current_tick);
+    std::fill(sync_ticks.begin() + Region(used_iterator), sync_ticks.begin() + Region(iterator),
+              current_tick);
     used_iterator = iterator;
     free_iterator = std::max(free_iterator, iterator + size);
 
-    if (iterator + size >= staging_buffer_size) {
-        std::fill(sync_ticks.begin() + Region(used_iterator, region_size),
-                  sync_ticks.begin() + NUM_SYNCS, current_tick);
+    if (iterator + size >= STREAM_BUFFER_SIZE) {
+        std::fill(sync_ticks.begin() + Region(used_iterator), sync_ticks.begin() + NUM_SYNCS,
+                  current_tick);
         used_iterator = 0;
         iterator = 0;
         free_iterator = size;
 
-        if (AreRegionsActive(0, Region(size, region_size) + 1)) {
+        if (AreRegionsActive(0, Region(size) + 1)) {
             // Avoid waiting for the previous usages to be free
             return GetStagingBuffer(size, MemoryUsage::Upload);
         }

@@ -78,11 +78,11 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
         info.tess_clockwise = key.tessellation_clockwise != 0;
         info.tess_primitive = [&key] {
             switch (key.tessellation_primitive) {
-            case Maxwell::TessellationPrimitive::Isolines:
+            case Maxwell::Tessellation::DomainType::Isolines:
                 return Shader::TessPrimitive::Isolines;
-            case Maxwell::TessellationPrimitive::Triangles:
+            case Maxwell::Tessellation::DomainType::Triangles:
                 return Shader::TessPrimitive::Triangles;
-            case Maxwell::TessellationPrimitive::Quads:
+            case Maxwell::Tessellation::DomainType::Quads:
                 return Shader::TessPrimitive::Quads;
             }
             ASSERT(false);
@@ -90,11 +90,11 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
         }();
         info.tess_spacing = [&] {
             switch (key.tessellation_spacing) {
-            case Maxwell::TessellationSpacing::Equal:
+            case Maxwell::Tessellation::Spacing::Integer:
                 return Shader::TessSpacing::Equal;
-            case Maxwell::TessellationSpacing::FractionalOdd:
+            case Maxwell::Tessellation::Spacing::FractionalOdd:
                 return Shader::TessSpacing::FractionalOdd;
-            case Maxwell::TessellationSpacing::FractionalEven:
+            case Maxwell::Tessellation::Spacing::FractionalEven:
                 return Shader::TessSpacing::FractionalEven;
             }
             ASSERT(false);
@@ -139,14 +139,15 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
 }
 
 void SetXfbState(VideoCommon::TransformFeedbackState& state, const Maxwell& regs) {
-    std::ranges::transform(regs.tfb_layouts, state.layouts.begin(), [](const auto& layout) {
-        return VideoCommon::TransformFeedbackState::Layout{
-            .stream = layout.stream,
-            .varying_count = layout.varying_count,
-            .stride = layout.stride,
-        };
-    });
-    state.varyings = regs.tfb_varying_locs;
+    std::ranges::transform(regs.transform_feedback.controls, state.layouts.begin(),
+                           [](const auto& layout) {
+                               return VideoCommon::TransformFeedbackState::Layout{
+                                   .stream = layout.stream,
+                                   .varying_count = layout.varying_count,
+                                   .stride = layout.stride,
+                               };
+                           });
+    state.varyings = regs.stream_out_layout;
 }
 } // Anonymous namespace
 
@@ -309,14 +310,16 @@ GraphicsPipeline* ShaderCache::CurrentGraphicsPipeline() {
     }
     const auto& regs{maxwell3d->regs};
     graphics_key.raw = 0;
-    graphics_key.early_z.Assign(regs.force_early_fragment_tests != 0 ? 1 : 0);
+    graphics_key.early_z.Assign(regs.mandated_early_z != 0 ? 1 : 0);
     graphics_key.gs_input_topology.Assign(graphics_key.unique_hashes[4] != 0
                                               ? regs.draw.topology.Value()
                                               : Maxwell::PrimitiveTopology{});
-    graphics_key.tessellation_primitive.Assign(regs.tess_mode.prim.Value());
-    graphics_key.tessellation_spacing.Assign(regs.tess_mode.spacing.Value());
-    graphics_key.tessellation_clockwise.Assign(regs.tess_mode.cw.Value());
-    graphics_key.xfb_enabled.Assign(regs.tfb_enabled != 0 ? 1 : 0);
+    graphics_key.tessellation_primitive.Assign(regs.tessellation.params.domain_type.Value());
+    graphics_key.tessellation_spacing.Assign(regs.tessellation.params.spacing.Value());
+    graphics_key.tessellation_clockwise.Assign(
+        regs.tessellation.params.output_primitives.Value() !=
+        Maxwell::Tessellation::OutputPrimitves::Triangles_CCW);
+    graphics_key.xfb_enabled.Assign(regs.transform_feedback_enabled != 0 ? 1 : 0);
     if (graphics_key.xfb_enabled) {
         SetXfbState(graphics_key.xfb_state, regs);
     }
@@ -354,7 +357,7 @@ GraphicsPipeline* ShaderCache::BuiltPipeline(GraphicsPipeline* pipeline) const n
     // If games are using a small index count, we can assume these are full screen quads.
     // Usually these shaders are only used once for building textures so we can assume they
     // can't be built async
-    if (maxwell3d->regs.index_array.count <= 6 || maxwell3d->regs.vertex_buffer.count <= 6) {
+    if (maxwell3d->regs.index_buffer.count <= 6 || maxwell3d->regs.vertex_buffer.count <= 6) {
         return pipeline;
     }
     return nullptr;

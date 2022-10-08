@@ -38,12 +38,12 @@ void SetupDirtyColorMasks(Tables& tables) {
 void SetupDirtyVertexInstances(Tables& tables) {
     static constexpr std::size_t instance_base_offset = 3;
     for (std::size_t i = 0; i < Regs::NumVertexArrays; ++i) {
-        const std::size_t array_offset = OFF(vertex_array) + i * NUM(vertex_array[0]);
+        const std::size_t array_offset = OFF(vertex_streams) + i * NUM(vertex_streams[0]);
         const std::size_t instance_array_offset = array_offset + instance_base_offset;
         tables[0][instance_array_offset] = static_cast<u8>(VertexInstance0 + i);
         tables[1][instance_array_offset] = VertexInstances;
 
-        const std::size_t instance_offset = OFF(instanced_arrays) + i;
+        const std::size_t instance_offset = OFF(vertex_stream_instances) + i;
         tables[0][instance_offset] = static_cast<u8>(VertexInstance0 + i);
         tables[1][instance_offset] = VertexInstances;
     }
@@ -70,8 +70,8 @@ void SetupDirtyViewports(Tables& tables) {
     FillBlock(tables[1], OFF(viewport_transform), NUM(viewport_transform), Viewports);
     FillBlock(tables[1], OFF(viewports), NUM(viewports), Viewports);
 
-    tables[0][OFF(viewport_transform_enabled)] = ViewportTransform;
-    tables[1][OFF(viewport_transform_enabled)] = Viewports;
+    tables[0][OFF(viewport_scale_offset_enbled)] = ViewportTransform;
+    tables[1][OFF(viewport_scale_offset_enbled)] = Viewports;
 }
 
 void SetupDirtyScissors(Tables& tables) {
@@ -88,7 +88,7 @@ void SetupDirtyPolygonModes(Tables& tables) {
 
     tables[1][OFF(polygon_mode_front)] = PolygonModes;
     tables[1][OFF(polygon_mode_back)] = PolygonModes;
-    tables[0][OFF(fill_rectangle)] = PolygonModes;
+    tables[0][OFF(fill_via_triangle_mode)] = PolygonModes;
 }
 
 void SetupDirtyDepthTest(Tables& tables) {
@@ -100,12 +100,14 @@ void SetupDirtyDepthTest(Tables& tables) {
 
 void SetupDirtyStencilTest(Tables& tables) {
     static constexpr std::array offsets = {
-        OFF(stencil_enable),          OFF(stencil_front_func_func), OFF(stencil_front_func_ref),
-        OFF(stencil_front_func_mask), OFF(stencil_front_op_fail),   OFF(stencil_front_op_zfail),
-        OFF(stencil_front_op_zpass),  OFF(stencil_front_mask),      OFF(stencil_two_side_enable),
-        OFF(stencil_back_func_func),  OFF(stencil_back_func_ref),   OFF(stencil_back_func_mask),
-        OFF(stencil_back_op_fail),    OFF(stencil_back_op_zfail),   OFF(stencil_back_op_zpass),
-        OFF(stencil_back_mask)};
+        OFF(stencil_enable),          OFF(stencil_front_op.func),
+        OFF(stencil_front_func.ref),  OFF(stencil_front_func.func_mask),
+        OFF(stencil_front_op.fail),   OFF(stencil_front_op.zfail),
+        OFF(stencil_front_op.zpass),  OFF(stencil_front_func.mask),
+        OFF(stencil_two_side_enable), OFF(stencil_back_op.func),
+        OFF(stencil_back_func.ref),   OFF(stencil_back_func.func_mask),
+        OFF(stencil_back_op.fail),    OFF(stencil_back_op.zfail),
+        OFF(stencil_back_op.zpass),   OFF(stencil_back_func.mask)};
     for (const auto offset : offsets) {
         tables[0][offset] = StencilTest;
     }
@@ -121,15 +123,15 @@ void SetupDirtyAlphaTest(Tables& tables) {
 void SetupDirtyBlend(Tables& tables) {
     FillBlock(tables[0], OFF(blend_color), NUM(blend_color), BlendColor);
 
-    tables[0][OFF(independent_blend_enable)] = BlendIndependentEnabled;
+    tables[0][OFF(blend_per_target_enabled)] = BlendIndependentEnabled;
 
     for (std::size_t i = 0; i < Regs::NumRenderTargets; ++i) {
-        const std::size_t offset = OFF(independent_blend) + i * NUM(independent_blend[0]);
-        FillBlock(tables[0], offset, NUM(independent_blend[0]), BlendState0 + i);
+        const std::size_t offset = OFF(blend_per_target) + i * NUM(blend_per_target[0]);
+        FillBlock(tables[0], offset, NUM(blend_per_target[0]), BlendState0 + i);
 
         tables[0][OFF(blend.enable) + i] = static_cast<u8>(BlendState0 + i);
     }
-    FillBlock(tables[1], OFF(independent_blend), NUM(independent_blend), BlendStates);
+    FillBlock(tables[1], OFF(blend_per_target), NUM(blend_per_target), BlendStates);
     FillBlock(tables[1], OFF(blend), NUM(blend), BlendStates);
 }
 
@@ -142,13 +144,14 @@ void SetupDirtyPolygonOffset(Tables& tables) {
     table[OFF(polygon_offset_fill_enable)] = PolygonOffset;
     table[OFF(polygon_offset_line_enable)] = PolygonOffset;
     table[OFF(polygon_offset_point_enable)] = PolygonOffset;
-    table[OFF(polygon_offset_factor)] = PolygonOffset;
-    table[OFF(polygon_offset_units)] = PolygonOffset;
-    table[OFF(polygon_offset_clamp)] = PolygonOffset;
+    table[OFF(slope_scale_depth_bias)] = PolygonOffset;
+    table[OFF(depth_bias)] = PolygonOffset;
+    table[OFF(depth_bias_clamp)] = PolygonOffset;
 }
 
 void SetupDirtyMultisampleControl(Tables& tables) {
-    FillBlock(tables[0], OFF(multisample_control), NUM(multisample_control), MultisampleControl);
+    FillBlock(tables[0], OFF(anti_alias_alpha_control), NUM(anti_alias_alpha_control),
+              MultisampleControl);
 }
 
 void SetupDirtyRasterizeEnable(Tables& tables) {
@@ -168,7 +171,7 @@ void SetupDirtyFragmentClampColor(Tables& tables) {
 }
 
 void SetupDirtyPointSize(Tables& tables) {
-    tables[0][OFF(vp_point_size)] = PointSize;
+    tables[0][OFF(point_size_attribute)] = PointSize;
     tables[0][OFF(point_size)] = PointSize;
     tables[0][OFF(point_sprite_enable)] = PointSize;
 }
@@ -176,28 +179,28 @@ void SetupDirtyPointSize(Tables& tables) {
 void SetupDirtyLineWidth(Tables& tables) {
     tables[0][OFF(line_width_smooth)] = LineWidth;
     tables[0][OFF(line_width_aliased)] = LineWidth;
-    tables[0][OFF(line_smooth_enable)] = LineWidth;
+    tables[0][OFF(line_anti_alias_enable)] = LineWidth;
 }
 
 void SetupDirtyClipControl(Tables& tables) {
     auto& table = tables[0];
-    table[OFF(screen_y_control)] = ClipControl;
+    table[OFF(window_origin)] = ClipControl;
     table[OFF(depth_mode)] = ClipControl;
 }
 
 void SetupDirtyDepthClampEnabled(Tables& tables) {
-    tables[0][OFF(view_volume_clip_control)] = DepthClampEnabled;
+    tables[0][OFF(viewport_clip_control)] = DepthClampEnabled;
 }
 
 void SetupDirtyMisc(Tables& tables) {
     auto& table = tables[0];
 
-    table[OFF(clip_distance_enabled)] = ClipDistances;
+    table[OFF(user_clip_enable)] = ClipDistances;
 
-    table[OFF(front_face)] = FrontFace;
+    table[OFF(gl_front_face)] = FrontFace;
 
-    table[OFF(cull_test_enabled)] = CullTest;
-    table[OFF(cull_face)] = CullTest;
+    table[OFF(gl_cull_test_enabled)] = CullTest;
+    table[OFF(gl_cull_face)] = CullTest;
 }
 
 } // Anonymous namespace
