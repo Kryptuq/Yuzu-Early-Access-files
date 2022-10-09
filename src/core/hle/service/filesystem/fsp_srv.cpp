@@ -707,7 +707,7 @@ FSP_SRV::FSP_SRV(Core::System& system_)
         {31, nullptr, "OpenGameCardFileSystem"},
         {32, nullptr, "ExtendSaveDataFileSystem"},
         {33, nullptr, "DeleteCacheStorage"},
-        {34, nullptr, "GetCacheStorageSize"},
+        {34, &FSP_SRV::GetCacheStorageSize, "GetCacheStorageSize"},
         {35, nullptr, "CreateSaveDataFileSystemByHashSalt"},
         {36, nullptr, "OpenHostFileSystemWithOption"},
         {51, &FSP_SRV::OpenSaveDataFileSystem, "OpenSaveDataFileSystem"},
@@ -1105,6 +1105,18 @@ void FSP_SRV::GetProgramIndexForAccessLog(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
     rb.PushEnum(AccessLogVersion::Latest);
     rb.Push(access_log_program_index);
+}
+
+void FSP_SRV::GetCacheStorageSize(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto index{rp.Pop<s32>()};
+
+    LOG_WARNING(Service_FS, "(STUBBED) called with index={}", index);
+
+    IPC::ResponseBuilder rb{ctx, 6};
+    rb.Push(ResultSuccess);
+    rb.Push(s64{0});
+    rb.Push(s64{0});
 }
 
 class IMultiCommitManager final : public ServiceFramework<IMultiCommitManager> {

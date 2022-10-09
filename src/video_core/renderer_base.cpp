@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2015 Citra Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <thread>
+
 #include "common/logging/log.h"
 #include "core/frontend/emu_window.h"
 #include "video_core/renderer_base.h"
@@ -35,8 +37,12 @@ void RendererBase::RequestScreenshot(void* data, std::function<void(bool)> callb
         LOG_ERROR(Render, "A screenshot is already requested or in progress, ignoring the request");
         return;
     }
+    auto async_callback{[callback = std::move(callback)](bool invert_y) {
+        std::thread t{callback, invert_y};
+        t.detach();
+    }};
     renderer_settings.screenshot_bits = data;
-    renderer_settings.screenshot_complete_callback = std::move(callback);
+    renderer_settings.screenshot_complete_callback = async_callback;
     renderer_settings.screenshot_framebuffer_layout = layout;
     renderer_settings.screenshot_requested = true;
 }

@@ -270,6 +270,7 @@ void CoreTiming::ThreadLoop() {
                 // There are more events left in the queue, wait until the next event.
                 const auto wait_time = *next_time - GetGlobalTimeNs().count();
                 if (wait_time > 0) {
+#ifdef _WIN32
                     // Assume a timer resolution of 1ms.
                     static constexpr s64 TimerResolutionNS = 1000000;
 
@@ -287,6 +288,9 @@ void CoreTiming::ThreadLoop() {
                     if (event.IsSet()) {
                         event.Reset();
                     }
+#else
+                    event.WaitFor(std::chrono::nanoseconds(wait_time));
+#endif
                 }
             } else {
                 // Queue is empty, wait until another event is scheduled and signals us to continue.

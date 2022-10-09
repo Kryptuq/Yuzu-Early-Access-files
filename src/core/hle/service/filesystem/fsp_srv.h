@@ -54,6 +54,7 @@ private:
     void OutputAccessLogToSdCard(Kernel::HLERequestContext& ctx);
     void GetProgramIndexForAccessLog(Kernel::HLERequestContext& ctx);
     void OpenMultiCommitManager(Kernel::HLERequestContext& ctx);
+    void GetCacheStorageSize(Kernel::HLERequestContext& ctx);
 
     FileSystemController& fsc;
     const FileSys::ContentProvider& content_provider;
