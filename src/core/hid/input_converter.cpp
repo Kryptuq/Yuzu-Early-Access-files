@@ -277,7 +277,10 @@ Common::Input::CameraStatus TransformToCamera(const Common::Input::CallbackStatu
     Common::Input::CameraStatus camera{};
     switch (callback.type) {
     case Common::Input::InputType::IrSensor:
-        camera = callback.camera_status;
+        camera = {
+            .format = callback.camera_status,
+            .data = callback.raw_data,
+        };
         break;
     default:
         LOG_ERROR(Input, "Conversion from type {} to camera not implemented", callback.type);
@@ -291,7 +294,10 @@ Common::Input::NfcStatus TransformToNfc(const Common::Input::CallbackStatus& cal
     Common::Input::NfcStatus nfc{};
     switch (callback.type) {
     case Common::Input::InputType::Nfc:
-        return callback.nfc_status;
+        nfc = {
+            .state = callback.nfc_status,
+            .data = callback.raw_data,
+        };
         break;
     default:
         LOG_ERROR(Input, "Conversion from type {} to NFC not implemented", callback.type);

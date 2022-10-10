@@ -346,7 +346,7 @@ void MacroJITx64Impl::Compile_Read(Macro::Opcode opcode) {
 }
 
 void Send(Engines::Maxwell3D* maxwell3d, Macro::MethodAddress method_address, u32 value) {
-    maxwell3d->CallMethodFromMME(method_address.address, value);
+    maxwell3d->CallMethod(method_address.address, value, true);
 }
 
 void MacroJITx64Impl::Compile_Send(Xbyak::Reg32 value) {

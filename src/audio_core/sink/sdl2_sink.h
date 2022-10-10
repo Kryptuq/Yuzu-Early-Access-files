@@ -87,4 +87,11 @@ private:
  */
 std::vector<std::string> ListSDLSinkDevices(bool capture);
 
+/**
+ * Get the reported latency for this sink.
+ *
+ * @return Minimum latency for this sink.
+ */
+u32 GetSDLLatency();
+
 } // namespace AudioCore::Sink

@@ -40,7 +40,7 @@ public:
     virtual ~RasterizerInterface() = default;
 
     /// Dispatches a draw invocation
-    virtual void Draw(bool is_indexed, bool is_instanced) = 0;
+    virtual void Draw(bool is_indexed) = 0;
 
     /// Clear the current framebuffer
     virtual void Clear() = 0;

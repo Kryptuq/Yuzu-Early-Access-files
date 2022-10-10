@@ -26,7 +26,7 @@ public:
             {10101, &IFriendService::GetFriendList, "GetFriendList"},
             {10102, nullptr, "UpdateFriendInfo"},
             {10110, nullptr, "GetFriendProfileImage"},
-            {10120, nullptr, "IsFriendListCacheAvailable"},
+            {10120, &IFriendService::CheckFriendListAvailability, "CheckFriendListAvailability"},
             {10121, nullptr, "EnsureFriendListAvailable"},
             {10200, nullptr, "SendFriendRequestForApplication"},
             {10211, nullptr, "AddFacedFriendRequestForApplication"},
@@ -192,6 +192,17 @@ private:
 
         rb.Push<u32>(0); // Friend count
         // TODO(ogniK): Return a buffer of u64s which are the "NetworkServiceAccountId"
+    }
+
+    void CheckFriendListAvailability(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+        const auto uuid{rp.PopRaw<Common::UUID>()};
+
+        LOG_WARNING(Service_Friend, "(STUBBED) called, uuid=0x{}", uuid.RawString());
+
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(ResultSuccess);
+        rb.Push(true);
     }
 
     KernelHelpers::ServiceContext service_context;

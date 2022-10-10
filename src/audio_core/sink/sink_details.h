@@ -19,7 +19,7 @@ class Sink;
  *
  * @return Vector of available sink names.
  */
-std::vector<const char*> GetSinkIDs();
+std::vector<std::string_view> GetSinkIDs();
 
 /**
  * Gets the list of devices for a particular sink identified by the given ID.

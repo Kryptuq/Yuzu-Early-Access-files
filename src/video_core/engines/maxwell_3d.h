@@ -3050,8 +3050,6 @@ public:
         };
 
         std::array<ShaderStageInfo, Regs::MaxShaderStage> shader_stages;
-
-        u32 current_instance = 0; ///< Current instance to be used to simulate instanced rendering.
     };
 
     State state{};
@@ -3066,10 +3064,7 @@ public:
     void CallMultiMethod(u32 method, const u32* base_start, u32 amount,
                          u32 methods_pending) override;
 
-    /// Write the value to the register identified by method.
-    void CallMethodFromMME(u32 method, u32 method_argument);
-
-    void FlushMMEInlineDraw();
+    void FlushInlineDraw();
 
     bool ShouldExecute() const {
         return execute_on;
@@ -3083,20 +3078,20 @@ public:
         return *rasterizer;
     }
 
-    enum class MMEDrawMode : u32 {
+    enum class DrawMode : u32 {
         Undefined,
         Array,
         Indexed,
     };
 
-    struct MMEDrawState {
-        MMEDrawMode current_mode{MMEDrawMode::Undefined};
+    struct DrawState {
+        DrawMode current_mode{DrawMode::Undefined};
         u32 current_count{};
         u32 instance_count{};
         bool instance_mode{};
         bool gl_begin_consume{};
         u32 gl_end_count{};
-    } mme_draw;
+    } draw_state;
 
     struct DirtyState {
         using Flags = std::bitset<std::numeric_limits<u8>::max()>;
@@ -3166,14 +3161,11 @@ private:
     /// Handles a write to the CB_BIND register.
     void ProcessCBBind(size_t stage_index);
 
-    /// Handles a write to the VERTEX_END_GL register, triggering a draw.
-    void DrawArrays();
-
     /// Handles use of topology overrides (e.g., to avoid using a topology assigned from a macro)
     void ProcessTopologyOverride();
 
     // Handles a instance drawcall from MME
-    void StepInstance(MMEDrawMode expected_mode, u32 count);
+    void StepInstance(DrawMode expected_mode, u32 count);
 
     /// Returns a query's value or an empty object if the value will be deferred through a cache.
     std::optional<u64> GetQueryResult();
@@ -3186,7 +3178,7 @@ private:
     /// Start offsets of each macro in macro_memory
     std::array<u32, 0x80> macro_positions{};
 
-    std::array<bool, Regs::NUM_REGS> mme_inline{};
+    std::array<bool, Regs::NUM_REGS> inline_draw{};
 
     /// Macro method that is currently being executed / being fed parameters.
     u32 executing_macro = 0;

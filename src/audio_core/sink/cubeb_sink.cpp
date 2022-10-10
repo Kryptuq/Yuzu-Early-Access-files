@@ -66,10 +66,10 @@ public:
         const auto latency_error = cubeb_get_min_latency(ctx, &params, &minimum_latency);
         if (latency_error != CUBEB_OK) {
             LOG_CRITICAL(Audio_Sink, "Error getting minimum latency, error: {}", latency_error);
-            minimum_latency = 256U;
+            minimum_latency = TargetSampleCount * 2;
         }
 
-        minimum_latency = std::max(minimum_latency, 256u);
+        minimum_latency = std::max(minimum_latency, TargetSampleCount * 2);
 
         LOG_INFO(Service_Audio,
                  "Opening cubeb stream {} type {} with: rate {} channels {} (system channels {}) "
@@ -324,6 +324,33 @@ std::vector<std::string> ListCubebSinkDevices(bool capture) {
 
     cubeb_destroy(ctx);
     return device_list;
+}
+
+u32 GetCubebLatency() {
+    cubeb* ctx;
+
+    if (cubeb_init(&ctx, "yuzu Latency Getter", nullptr) != CUBEB_OK) {
+        LOG_CRITICAL(Audio_Sink, "cubeb_init failed");
+        // Return a large latency so we choose SDL instead.
+        return 10000u;
+    }
+
+    cubeb_stream_params params{};
+    params.rate = TargetSampleRate;
+    params.channels = 2;
+    params.format = CUBEB_SAMPLE_S16LE;
+    params.prefs = CUBEB_STREAM_PREF_NONE;
+    params.layout = CUBEB_LAYOUT_STEREO;
+
+    u32 latency{0};
+    const auto latency_error = cubeb_get_min_latency(ctx, &params, &latency);
+    if (latency_error != CUBEB_OK) {
+        LOG_CRITICAL(Audio_Sink, "Error getting minimum latency, error: {}", latency_error);
+        latency = TargetSampleCount * 2;
+    }
+    latency = std::max(latency, TargetSampleCount * 2);
+    cubeb_destroy(ctx);
+    return latency;
 }
 
 } // namespace AudioCore::Sink

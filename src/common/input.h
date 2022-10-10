@@ -277,8 +277,9 @@ struct CallbackStatus {
     BodyColorStatus color_status{};
     BatteryStatus battery_status{};
     VibrationStatus vibration_status{};
-    CameraStatus camera_status{};
-    NfcStatus nfc_status{};
+    CameraFormat camera_status{CameraFormat::None};
+    NfcState nfc_status{NfcState::Unknown};
+    std::vector<u8> raw_data{};
 };
 
 // Triggered once every input change

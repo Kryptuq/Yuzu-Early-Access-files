@@ -205,7 +205,7 @@ void RasterizerOpenGL::Clear() {
     ++num_queued_commands;
 }
 
-void RasterizerOpenGL::Draw(bool is_indexed, bool is_instanced) {
+void RasterizerOpenGL::Draw(bool is_indexed) {
     MICROPROFILE_SCOPE(OpenGL_Drawing);
 
     SCOPE_EXIT({ gpu.TickWork(); });
@@ -228,8 +228,7 @@ void RasterizerOpenGL::Draw(bool is_indexed, bool is_instanced) {
     BeginTransformFeedback(pipeline, primitive_mode);
 
     const GLuint base_instance = static_cast<GLuint>(maxwell3d->regs.global_base_instance_index);
-    const GLsizei num_instances =
-        static_cast<GLsizei>(is_instanced ? maxwell3d->mme_draw.instance_count : 1);
+    const GLsizei num_instances = maxwell3d->draw_state.instance_count;
     if (is_indexed) {
         const GLint base_vertex = static_cast<GLint>(maxwell3d->regs.global_base_vertex_index);
         const GLsizei num_vertices = static_cast<GLsizei>(maxwell3d->regs.index_buffer.count);

@@ -96,4 +96,11 @@ private:
  */
 std::vector<std::string> ListCubebSinkDevices(bool capture);
 
+/**
+ * Get the reported latency for this sink.
+ *
+ * @return Minimum latency for this sink.
+ */
+u32 GetCubebLatency();
+
 } // namespace AudioCore::Sink

@@ -691,9 +691,12 @@ public:
     }
 
     void OnChange() {
+        const auto camera_status = GetStatus();
+
         const Common::Input::CallbackStatus status{
             .type = Common::Input::InputType::IrSensor,
-            .camera_status = GetStatus(),
+            .camera_status = camera_status.format,
+            .raw_data = camera_status.data,
         };
 
         TriggerOnChange(status);
@@ -732,9 +735,12 @@ public:
     }
 
     void OnChange() {
+        const auto nfc_status = GetStatus();
+
         const Common::Input::CallbackStatus status{
             .type = Common::Input::InputType::Nfc,
-            .nfc_status = GetStatus(),
+            .nfc_status = nfc_status.state,
+            .raw_data = nfc_status.data,
         };
 
         TriggerOnChange(status);
