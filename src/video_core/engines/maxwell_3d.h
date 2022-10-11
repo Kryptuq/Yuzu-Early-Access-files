@@ -1795,12 +1795,6 @@ public:
             ComparisonOp func;
         };
 
-        struct StencilFunc {
-            s32 ref;
-            u32 func_mask;
-            u32 mask;
-        };
-
         struct PsSaturate {
             // Opposite of DepthMode
             enum class Depth : u32 {
@@ -2737,7 +2731,9 @@ public:
                 u32 post_z_pixel_imask;                                                ///< 0x0F1C
                 INSERT_PADDING_BYTES_NOINIT(0x20);
                 ConstantColorRendering const_color_rendering;                          ///< 0x0F40
-                StencilFunc stencil_back_func;                                         ///< 0x0F54
+                s32 stencil_back_ref;                                                  ///< 0x0F54
+                u32 stencil_back_mask;                                                 ///< 0x0F58
+                u32 stencil_back_func_mask;                                            ///< 0x0F5C
                 INSERT_PADDING_BYTES_NOINIT(0x24);
                 VertexStreamSubstitute vertex_stream_substitute;                       ///< 0x0F84
                 u32 line_mode_clip_generated_edge_do_not_draw;                         ///< 0x0F8C
@@ -2855,7 +2851,9 @@ public:
                 Blend blend;                                                           ///< 0x133C
                 u32 stencil_enable;                                                    ///< 0x1380
                 StencilOp stencil_front_op;                                            ///< 0x1384
-                StencilFunc stencil_front_func;                                        ///< 0x1394
+                s32 stencil_front_ref;                                                 ///< 0x1394
+                s32 stencil_front_func_mask;                                           ///< 0x1398
+                s32 stencil_front_mask;                                                ///< 0x139C
                 INSERT_PADDING_BYTES_NOINIT(0x4);
                 u32 draw_auto_start_byte_count;                                        ///< 0x13A4
                 PsSaturate frag_color_clamp;                                           ///< 0x13A8
@@ -3303,7 +3301,9 @@ ASSERT_REG_POSITION(vpc_perf, 0x0F14);
 ASSERT_REG_POSITION(pm_local_trigger, 0x0F18);
 ASSERT_REG_POSITION(post_z_pixel_imask, 0x0F1C);
 ASSERT_REG_POSITION(const_color_rendering, 0x0F40);
-ASSERT_REG_POSITION(stencil_back_func, 0x0F54);
+ASSERT_REG_POSITION(stencil_back_ref, 0x0F54);
+ASSERT_REG_POSITION(stencil_back_mask, 0x0F58);
+ASSERT_REG_POSITION(stencil_back_func_mask, 0x0F5C);
 ASSERT_REG_POSITION(vertex_stream_substitute, 0x0F84);
 ASSERT_REG_POSITION(line_mode_clip_generated_edge_do_not_draw, 0x0F8C);
 ASSERT_REG_POSITION(color_mask_common, 0x0F90);
@@ -3408,7 +3408,9 @@ ASSERT_REG_POSITION(invalidate_texture_data_cache_lines, 0x1338);
 ASSERT_REG_POSITION(blend, 0x133C);
 ASSERT_REG_POSITION(stencil_enable, 0x1380);
 ASSERT_REG_POSITION(stencil_front_op, 0x1384);
-ASSERT_REG_POSITION(stencil_front_func, 0x1394);
+ASSERT_REG_POSITION(stencil_front_ref, 0x1394);
+ASSERT_REG_POSITION(stencil_front_func_mask, 0x1398);
+ASSERT_REG_POSITION(stencil_front_mask, 0x139C);
 ASSERT_REG_POSITION(draw_auto_start_byte_count, 0x13A4);
 ASSERT_REG_POSITION(frag_color_clamp, 0x13A8);
 ASSERT_REG_POSITION(window_origin, 0x13AC);

@@ -150,7 +150,7 @@ public:
     }
 
     ~IUserLocalCommunicationService() {
-        if (is_initialized) {
+        if (is_network_available) {
             if (auto room_member = room_network.GetRoomMember().lock()) {
                 room_member->Unbind(ldn_packet_received);
             }
@@ -193,7 +193,7 @@ public:
         NetworkInfo network_info{};
         const auto rc = lan_discovery.GetNetworkInfo(network_info);
         if (rc.IsError()) {
-            LOG_ERROR(Service_LDN, "NetworkInfo is not valid {}", rc.raw);
+            LOG_DEBUG(Service_LDN, "NetworkInfo is not valid {}", rc.raw);
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(rc);
             return;
@@ -205,6 +205,14 @@ public:
     }
 
     void GetIpv4Address(Kernel::HLERequestContext& ctx) {
+        if (!is_network_available) {
+            IPC::ResponseBuilder rb{ctx, 4};
+            rb.Push(ResultSuccess);
+            rb.PushRaw(Ipv4Address{127, 0, 0, 1});
+            rb.PushRaw(Ipv4Address{255, 255, 255, 0});
+            return;
+        }
+
         const auto network_interface = Network::GetSelectedNetworkInterface();
 
         if (!network_interface) {
@@ -339,6 +347,13 @@ public:
             LOG_ERROR(Service_LDN, "Invalid buffer size {}", network_info_size);
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ResultBadInput);
+            return;
+        }
+
+        if (!is_network_available) {
+            IPC::ResponseBuilder rb{ctx, 3};
+            rb.Push(ResultSuccess);
+            rb.Push(0);
             return;
         }
 
@@ -488,18 +503,18 @@ public:
     }
 
     void Initialize(Kernel::HLERequestContext& ctx) {
-        const auto rc = InitializeImpl(ctx);
-        if (rc.IsError()) {
-            LOG_ERROR(Service_LDN, "Network isn't initialized, rc={}", rc.raw);
-        }
+        InitializeImpl(ctx);
 
+        // Initialize always returns success
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(rc);
+        rb.Push(ResultSuccess);
     }
 
     void Finalize(Kernel::HLERequestContext& ctx) {
-        if (auto room_member = room_network.GetRoomMember().lock()) {
-            room_member->Unbind(ldn_packet_received);
+        if (is_network_available) {
+            if (auto room_member = room_network.GetRoomMember().lock()) {
+                room_member->Unbind(ldn_packet_received);
+            }
         }
 
         is_initialized = false;
@@ -519,22 +534,25 @@ public:
     }
 
     Result InitializeImpl(Kernel::HLERequestContext& ctx) {
+        lan_discovery.Initialize([&]() { OnEventFired(); });
+        is_initialized = true;
+        is_network_available = false;
+
         const auto network_interface = Network::GetSelectedNetworkInterface();
         if (!network_interface) {
             LOG_ERROR(Service_LDN, "No network interface is set");
-            return ResultAirplaneModeEnabled;
+            return ResultSuccess;
         }
 
         if (auto room_member = room_network.GetRoomMember().lock()) {
             ldn_packet_received = room_member->BindOnLdnPacketReceived(
                 [this](const Network::LDNPacket& packet) { OnLDNPacketReceived(packet); });
+            is_network_available = true;
         } else {
             LOG_ERROR(Service_LDN, "Couldn't bind callback!");
-            return ResultAirplaneModeEnabled;
+            return ResultSuccess;
         }
 
-        lan_discovery.Initialize([&]() { OnEventFired(); });
-        is_initialized = true;
         return ResultSuccess;
     }
 
@@ -547,6 +565,7 @@ public:
     Network::RoomMember::CallbackHandle<Network::LDNPacket> ldn_packet_received;
 
     bool is_initialized{};
+    bool is_network_available{};
 };
 
 class LDNS final : public ServiceFramework<LDNS> {

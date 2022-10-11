@@ -100,14 +100,12 @@ void SetupDirtyDepthTest(Tables& tables) {
 
 void SetupDirtyStencilTest(Tables& tables) {
     static constexpr std::array offsets = {
-        OFF(stencil_enable),          OFF(stencil_front_op.func),
-        OFF(stencil_front_func.ref),  OFF(stencil_front_func.func_mask),
-        OFF(stencil_front_op.fail),   OFF(stencil_front_op.zfail),
-        OFF(stencil_front_op.zpass),  OFF(stencil_front_func.mask),
-        OFF(stencil_two_side_enable), OFF(stencil_back_op.func),
-        OFF(stencil_back_func.ref),   OFF(stencil_back_func.func_mask),
-        OFF(stencil_back_op.fail),    OFF(stencil_back_op.zfail),
-        OFF(stencil_back_op.zpass),   OFF(stencil_back_func.mask)};
+        OFF(stencil_enable),          OFF(stencil_front_op.func), OFF(stencil_front_ref),
+        OFF(stencil_front_func_mask), OFF(stencil_front_op.fail), OFF(stencil_front_op.zfail),
+        OFF(stencil_front_op.zpass),  OFF(stencil_front_mask),    OFF(stencil_two_side_enable),
+        OFF(stencil_back_op.func),    OFF(stencil_back_ref),      OFF(stencil_back_func_mask),
+        OFF(stencil_back_op.fail),    OFF(stencil_back_op.zfail), OFF(stencil_back_op.zpass),
+        OFF(stencil_back_mask)};
     for (const auto offset : offsets) {
         tables[0][offset] = StencilTest;
     }

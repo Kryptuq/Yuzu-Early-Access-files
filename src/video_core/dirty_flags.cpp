@@ -61,7 +61,7 @@ void SetupDirtyRenderTargets(Maxwell3D::DirtyState::Tables& tables) {
 }
 
 void SetupDirtyShaders(Maxwell3D::DirtyState::Tables& tables) {
-    FillBlock(tables[0], OFF(pipelines), NUM(pipelines) * Maxwell3D::Regs::MaxShaderProgram,
+    FillBlock(tables[0], OFF(pipelines), NUM(pipelines[0]) * Maxwell3D::Regs::MaxShaderProgram,
               Shaders);
 }
 } // Anonymous namespace

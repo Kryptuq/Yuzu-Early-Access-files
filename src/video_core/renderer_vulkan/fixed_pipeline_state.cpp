@@ -63,7 +63,11 @@ void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d,
     primitive_restart_enable.Assign(regs.primitive_restart.enabled != 0 ? 1 : 0);
     depth_bias_enable.Assign(enabled_lut[POLYGON_OFFSET_ENABLE_LUT[topology_index]] != 0 ? 1 : 0);
     depth_clamp_disabled.Assign(regs.viewport_clip_control.geometry_clip ==
-                                Maxwell::ViewportClipControl::GeometryClip::Passthrough);
+                                    Maxwell::ViewportClipControl::GeometryClip::Passthrough ||
+                                regs.viewport_clip_control.geometry_clip ==
+                                    Maxwell::ViewportClipControl::GeometryClip::FrustumXYZ ||
+                                regs.viewport_clip_control.geometry_clip ==
+                                    Maxwell::ViewportClipControl::GeometryClip::FrustumZ);
     ndc_minus_one_to_one.Assign(regs.depth_mode == Maxwell::DepthMode::MinusOneToOne ? 1 : 0);
     polygon_mode.Assign(PackPolygonMode(regs.polygon_mode_front));
     patch_control_points_minus_one.Assign(regs.patch_vertices - 1);

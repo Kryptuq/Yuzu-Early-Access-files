@@ -487,7 +487,7 @@ void LANDiscovery::ReceivePacket(const Network::LDNPacket& packet) {
     std::scoped_lock lock{packet_mutex};
     switch (packet.type) {
     case Network::LDNPacketType::Scan: {
-        LOG_INFO(Frontend, "Scan packet received!");
+        LOG_DEBUG(Frontend, "Scan packet received!");
         if (state == State::AccessPointCreated) {
             // Reply to the sender
             SendPacket(Network::LDNPacketType::ScanResp, network_info, packet.local_ip);
@@ -495,7 +495,7 @@ void LANDiscovery::ReceivePacket(const Network::LDNPacket& packet) {
         break;
     }
     case Network::LDNPacketType::ScanResp: {
-        LOG_INFO(Frontend, "ScanResp packet received!");
+        LOG_DEBUG(Frontend, "ScanResp packet received!");
 
         NetworkInfo info{};
         std::memcpy(&info, packet.data.data(), sizeof(NetworkInfo));
@@ -611,13 +611,6 @@ MacAddress LANDiscovery::GetFakeMac() const {
 
 Result LANDiscovery::GetNodeInfo(NodeInfo& node, const UserConfig& userConfig,
                                  u16 localCommunicationVersion) {
-    const auto network_interface = Network::GetSelectedNetworkInterface();
-
-    if (!network_interface) {
-        LOG_ERROR(Service_LDN, "No network interface available");
-        return ResultNoIpAddress;
-    }
-
     node.mac_address = GetFakeMac();
     node.is_connected = 1;
     std::memcpy(node.user_name.data(), userConfig.user_name.data(), UserNameBytesMax + 1);

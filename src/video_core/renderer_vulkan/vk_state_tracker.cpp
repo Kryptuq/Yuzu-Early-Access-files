@@ -77,12 +77,12 @@ void SetupDirtyDepthBounds(Tables& tables) {
 void SetupDirtyStencilProperties(Tables& tables) {
     auto& table = tables[0];
     table[OFF(stencil_two_side_enable)] = StencilProperties;
-    table[OFF(stencil_front_func.ref)] = StencilProperties;
-    table[OFF(stencil_front_func.mask)] = StencilProperties;
-    table[OFF(stencil_front_func.func_mask)] = StencilProperties;
-    table[OFF(stencil_back_func.ref)] = StencilProperties;
-    table[OFF(stencil_back_func.mask)] = StencilProperties;
-    table[OFF(stencil_back_func.func_mask)] = StencilProperties;
+    table[OFF(stencil_front_ref)] = StencilProperties;
+    table[OFF(stencil_front_mask)] = StencilProperties;
+    table[OFF(stencil_front_func_mask)] = StencilProperties;
+    table[OFF(stencil_back_ref)] = StencilProperties;
+    table[OFF(stencil_back_mask)] = StencilProperties;
+    table[OFF(stencil_back_func_mask)] = StencilProperties;
 }
 
 void SetupDirtyLineWidth(Tables& tables) {

@@ -74,15 +74,15 @@ void Maxwell3D::InitializeRegisterDefaults() {
     regs.stencil_front_op.zfail = Regs::StencilOp::Op::Keep_D3D;
     regs.stencil_front_op.zpass = Regs::StencilOp::Op::Keep_D3D;
     regs.stencil_front_op.func = Regs::ComparisonOp::Always_GL;
-    regs.stencil_front_func.func_mask = 0xFFFFFFFF;
-    regs.stencil_front_func.mask = 0xFFFFFFFF;
+    regs.stencil_front_func_mask = 0xFFFFFFFF;
+    regs.stencil_front_mask = 0xFFFFFFFF;
     regs.stencil_two_side_enable = 1;
     regs.stencil_back_op.fail = Regs::StencilOp::Op::Keep_D3D;
     regs.stencil_back_op.zfail = Regs::StencilOp::Op::Keep_D3D;
     regs.stencil_back_op.zpass = Regs::StencilOp::Op::Keep_D3D;
     regs.stencil_back_op.func = Regs::ComparisonOp::Always_GL;
-    regs.stencil_back_func.func_mask = 0xFFFFFFFF;
-    regs.stencil_back_func.mask = 0xFFFFFFFF;
+    regs.stencil_back_func_mask = 0xFFFFFFFF;
+    regs.stencil_back_mask = 0xFFFFFFFF;
 
     regs.depth_test_func = Regs::ComparisonOp::Always_GL;
     regs.gl_front_face = Regs::FrontFace::CounterClockWise;

@@ -771,11 +771,10 @@ void RasterizerVulkan::UpdateStencilFaces(Tegra::Engines::Maxwell3D::Regs& regs)
     if (regs.stencil_two_side_enable) {
         // Separate values per face
         scheduler.Record(
-            [front_ref = regs.stencil_front_func.ref,
-             front_write_mask = regs.stencil_front_func.mask,
-             front_test_mask = regs.stencil_front_func.func_mask,
-             back_ref = regs.stencil_back_func.ref, back_write_mask = regs.stencil_back_func.mask,
-             back_test_mask = regs.stencil_back_func.func_mask](vk::CommandBuffer cmdbuf) {
+            [front_ref = regs.stencil_front_ref, front_write_mask = regs.stencil_front_mask,
+             front_test_mask = regs.stencil_front_func_mask, back_ref = regs.stencil_back_ref,
+             back_write_mask = regs.stencil_back_mask,
+             back_test_mask = regs.stencil_back_func_mask](vk::CommandBuffer cmdbuf) {
                 // Front face
                 cmdbuf.SetStencilReference(VK_STENCIL_FACE_FRONT_BIT, front_ref);
                 cmdbuf.SetStencilWriteMask(VK_STENCIL_FACE_FRONT_BIT, front_write_mask);
@@ -788,9 +787,8 @@ void RasterizerVulkan::UpdateStencilFaces(Tegra::Engines::Maxwell3D::Regs& regs)
             });
     } else {
         // Front face defines both faces
-        scheduler.Record([ref = regs.stencil_front_func.ref,
-                          write_mask = regs.stencil_front_func.mask,
-                          test_mask = regs.stencil_front_func.func_mask](vk::CommandBuffer cmdbuf) {
+        scheduler.Record([ref = regs.stencil_front_ref, write_mask = regs.stencil_front_mask,
+                          test_mask = regs.stencil_front_func_mask](vk::CommandBuffer cmdbuf) {
             cmdbuf.SetStencilReference(VK_STENCIL_FACE_FRONT_AND_BACK, ref);
             cmdbuf.SetStencilWriteMask(VK_STENCIL_FACE_FRONT_AND_BACK, write_mask);
             cmdbuf.SetStencilCompareMask(VK_STENCIL_FACE_FRONT_AND_BACK, test_mask);

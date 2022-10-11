@@ -657,8 +657,13 @@ void RasterizerOpenGL::SyncDepthClamp() {
     }
     flags[Dirty::DepthClampEnabled] = false;
 
-    oglEnable(GL_DEPTH_CLAMP, maxwell3d->regs.viewport_clip_control.geometry_clip !=
-                                  Maxwell::ViewportClipControl::GeometryClip::Passthrough);
+    bool depth_clamp_disabled{maxwell3d->regs.viewport_clip_control.geometry_clip ==
+                                  Maxwell::ViewportClipControl::GeometryClip::Passthrough ||
+                              maxwell3d->regs.viewport_clip_control.geometry_clip ==
+                                  Maxwell::ViewportClipControl::GeometryClip::FrustumXYZ ||
+                              maxwell3d->regs.viewport_clip_control.geometry_clip ==
+                                  Maxwell::ViewportClipControl::GeometryClip::FrustumZ};
+    oglEnable(GL_DEPTH_CLAMP, !depth_clamp_disabled);
 }
 
 void RasterizerOpenGL::SyncClipEnabled(u32 clip_mask) {
@@ -745,19 +750,19 @@ void RasterizerOpenGL::SyncStencilTestState() {
     oglEnable(GL_STENCIL_TEST, regs.stencil_enable);
 
     glStencilFuncSeparate(GL_FRONT, MaxwellToGL::ComparisonOp(regs.stencil_front_op.func),
-                          regs.stencil_front_func.ref, regs.stencil_front_func.func_mask);
+                          regs.stencil_front_ref, regs.stencil_front_func_mask);
     glStencilOpSeparate(GL_FRONT, MaxwellToGL::StencilOp(regs.stencil_front_op.fail),
                         MaxwellToGL::StencilOp(regs.stencil_front_op.zfail),
                         MaxwellToGL::StencilOp(regs.stencil_front_op.zpass));
-    glStencilMaskSeparate(GL_FRONT, regs.stencil_front_func.mask);
+    glStencilMaskSeparate(GL_FRONT, regs.stencil_front_mask);
 
     if (regs.stencil_two_side_enable) {
         glStencilFuncSeparate(GL_BACK, MaxwellToGL::ComparisonOp(regs.stencil_back_op.func),
-                              regs.stencil_back_func.ref, regs.stencil_back_func.mask);
+                              regs.stencil_back_ref, regs.stencil_back_mask);
         glStencilOpSeparate(GL_BACK, MaxwellToGL::StencilOp(regs.stencil_back_op.fail),
                             MaxwellToGL::StencilOp(regs.stencil_back_op.zfail),
                             MaxwellToGL::StencilOp(regs.stencil_back_op.zpass));
-        glStencilMaskSeparate(GL_BACK, regs.stencil_back_func.mask);
+        glStencilMaskSeparate(GL_BACK, regs.stencil_back_mask);
     } else {
         glStencilFuncSeparate(GL_BACK, GL_ALWAYS, 0, 0xFFFFFFFF);
         glStencilOpSeparate(GL_BACK, GL_KEEP, GL_KEEP, GL_KEEP);
