@@ -36,7 +36,17 @@ SyncpointManager::ActionHandle SyncpointManager::RegisterAction(
 void SyncpointManager::DeregisterAction(std::list<RegisteredAction>& action_storage,
                                         ActionHandle& handle) {
     std::unique_lock lk(guard);
-    action_storage.erase(handle);
+
+    // We want to ensure the iterator still exists prior to erasing it
+    // Otherwise, if an invalid iterator was passed in then it could lead to UB
+    // It is important to avoid UB in that case since the deregister isn't called from a locked
+    // context
+    for (auto it = action_storage.begin(); it != action_storage.end(); it++) {
+        if (it == handle) {
+            action_storage.erase(it);
+            return;
+        }
+    }
 }
 
 void SyncpointManager::DeregisterGuestAction(u32 syncpoint_id, ActionHandle& handle) {
