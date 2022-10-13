@@ -27,6 +27,7 @@ enum class AspectRatio {
     Default,
     R4_3,
     R21_9,
+    R16_10,
     StretchToWindow,
 };
 

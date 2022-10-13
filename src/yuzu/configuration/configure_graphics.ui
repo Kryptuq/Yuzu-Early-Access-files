@@ -301,6 +301,11 @@
              </item>
              <item>
               <property name="text">
+               <string>Force 16:10</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
                <string>Stretch to Window</string>
               </property>
              </item>

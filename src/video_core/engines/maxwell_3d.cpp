@@ -214,16 +214,22 @@ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argume
         regs.index_buffer.count = regs.index_buffer32_first.count;
         regs.index_buffer.first = regs.index_buffer32_first.first;
         dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
+        draw_state.current_mode = DrawMode::Indexed;
+        draw_state.gl_end_count = draw_state.instance_count = 1;
         return FlushInlineDraw();
     case MAXWELL3D_REG_INDEX(index_buffer16_first):
         regs.index_buffer.count = regs.index_buffer16_first.count;
         regs.index_buffer.first = regs.index_buffer16_first.first;
         dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
+        draw_state.current_mode = DrawMode::Indexed;
+        draw_state.gl_end_count = draw_state.instance_count = 1;
         return FlushInlineDraw();
     case MAXWELL3D_REG_INDEX(index_buffer8_first):
         regs.index_buffer.count = regs.index_buffer8_first.count;
         regs.index_buffer.first = regs.index_buffer8_first.first;
         dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
+        draw_state.current_mode = DrawMode::Indexed;
+        draw_state.gl_end_count = draw_state.instance_count = 1;
         return FlushInlineDraw();
     case MAXWELL3D_REG_INDEX(topology_override):
         use_topology_override = true;
