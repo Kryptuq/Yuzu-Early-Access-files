@@ -239,7 +239,7 @@ public:
         };
         RegisterHandlers(functions);
 
-        event->GetWritableEvent().Signal();
+        event->Signal();
     }
 
     ~IAudioDevice() override {
@@ -325,7 +325,7 @@ private:
     void QueryAudioDeviceSystemEvent(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "(STUBBED) called");
 
-        event->GetWritableEvent().Signal();
+        event->Signal();
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(ResultSuccess);

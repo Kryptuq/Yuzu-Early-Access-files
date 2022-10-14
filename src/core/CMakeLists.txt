@@ -261,8 +261,6 @@ add_library(core STATIC
     hle/kernel/k_worker_task.h
     hle/kernel/k_worker_task_manager.cpp
     hle/kernel/k_worker_task_manager.h
-    hle/kernel/k_writable_event.cpp
-    hle/kernel/k_writable_event.h
     hle/kernel/kernel.cpp
     hle/kernel/kernel.h
     hle/kernel/memory_types.h

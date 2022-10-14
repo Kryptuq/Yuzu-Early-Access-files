@@ -24,7 +24,6 @@ namespace Kernel {
 class KernelCore;
 class KEvent;
 class KReadableEvent;
-class KWritableEvent;
 } // namespace Kernel
 
 namespace Service::KernelHelpers {

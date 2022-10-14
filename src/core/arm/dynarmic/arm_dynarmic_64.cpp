@@ -111,6 +111,7 @@ public:
         LOG_ERROR(Core_ARM,
                   "Unimplemented instruction @ 0x{:X} for {} instructions (instr = {:08X})", pc,
                   num_instructions, memory.Read32(pc));
+        ReturnException(pc, ARM_Interface::no_execute);
     }
 
     void InstructionCacheOperationRaised(Dynarmic::A64::InstructionCacheOperation op,

@@ -7,10 +7,6 @@
 #include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/service.h"
 
-namespace Kernel {
-class KWritableEvent;
-}
-
 namespace Service::Nvidia {
 
 class NVDRV final : public ServiceFramework<NVDRV> {

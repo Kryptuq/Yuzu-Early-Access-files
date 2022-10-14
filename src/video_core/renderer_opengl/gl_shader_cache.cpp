@@ -317,8 +317,8 @@ GraphicsPipeline* ShaderCache::CurrentGraphicsPipeline() {
     graphics_key.tessellation_primitive.Assign(regs.tessellation.params.domain_type.Value());
     graphics_key.tessellation_spacing.Assign(regs.tessellation.params.spacing.Value());
     graphics_key.tessellation_clockwise.Assign(
-        regs.tessellation.params.output_primitives.Value() !=
-        Maxwell::Tessellation::OutputPrimitves::Triangles_CCW);
+        regs.tessellation.params.output_primitives.Value() ==
+        Maxwell::Tessellation::OutputPrimitives::Triangles_CW);
     graphics_key.xfb_enabled.Assign(regs.transform_feedback_enabled != 0 ? 1 : 0);
     if (graphics_key.xfb_enabled) {
         SetXfbState(graphics_key.xfb_state, regs);

@@ -534,7 +534,7 @@ Result System::Update(std::span<const u8> input, std::span<u8> performance, std:
         return result;
     }
 
-    adsp_rendered_event->GetWritableEvent().Clear();
+    adsp_rendered_event->Clear();
     num_times_updated++;
 
     const auto end_time{core.CoreTiming().GetClockTicks()};
@@ -625,7 +625,7 @@ void System::SendCommandToDsp() {
             reset_command_buffers = false;
             command_buffer_size = command_size;
             if (remaining_command_count == 0) {
-                adsp_rendered_event->GetWritableEvent().Signal();
+                adsp_rendered_event->Signal();
             }
         } else {
             adsp.ClearRemainCount(session_id);

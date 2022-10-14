@@ -20,6 +20,7 @@ private:
     };
 
     void GetTemperature(Kernel::HLERequestContext& ctx);
+    void GetTemperatureMilliC(Kernel::HLERequestContext& ctx);
 };
 
 } // namespace Service::PTM

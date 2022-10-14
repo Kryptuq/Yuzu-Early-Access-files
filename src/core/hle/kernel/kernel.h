@@ -52,7 +52,6 @@ class KThread;
 class KThreadLocalPage;
 class KTransferMemory;
 class KWorkerTaskManager;
-class KWritableEvent;
 class KCodeMemory;
 class PhysicalCore;
 class ServiceThread;
@@ -345,8 +344,6 @@ public:
             return slab_heap_container->thread;
         } else if constexpr (std::is_same_v<T, KTransferMemory>) {
             return slab_heap_container->transfer_memory;
-        } else if constexpr (std::is_same_v<T, KWritableEvent>) {
-            return slab_heap_container->writeable_event;
         } else if constexpr (std::is_same_v<T, KCodeMemory>) {
             return slab_heap_container->code_memory;
         } else if constexpr (std::is_same_v<T, KPageBuffer>) {
@@ -412,7 +409,6 @@ private:
         KSlabHeap<KSharedMemoryInfo> shared_memory_info;
         KSlabHeap<KThread> thread;
         KSlabHeap<KTransferMemory> transfer_memory;
-        KSlabHeap<KWritableEvent> writeable_event;
         KSlabHeap<KCodeMemory> code_memory;
         KSlabHeap<KPageBuffer> page_buffer;
         KSlabHeap<KThreadLocalPage> thread_local_page;

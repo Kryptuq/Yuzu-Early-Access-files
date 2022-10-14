@@ -64,7 +64,7 @@ void IAsyncContext::GetResult(Kernel::HLERequestContext& ctx) {
 
 void IAsyncContext::MarkComplete() {
     is_complete.store(true);
-    completion_event->GetWritableEvent().Signal();
+    completion_event->Signal();
 }
 
 } // namespace Service::Account

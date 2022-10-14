@@ -8,37 +8,43 @@
 namespace Kernel {
 
 KEvent::KEvent(KernelCore& kernel_)
-    : KAutoObjectWithSlabHeapAndContainer{kernel_}, readable_event{kernel_}, writable_event{
-                                                                                 kernel_} {}
+    : KAutoObjectWithSlabHeapAndContainer{kernel_}, m_readable_event{kernel_} {}
 
 KEvent::~KEvent() = default;
 
-void KEvent::Initialize(std::string&& name_, KProcess* owner_) {
-    // Increment reference count.
-    // Because reference count is one on creation, this will result
-    // in a reference count of two. Thus, when both readable and
-    // writable events are closed this object will be destroyed.
-    Open();
+void KEvent::Initialize(KProcess* owner) {
+    // Create our readable event.
+    KAutoObject::Create(std::addressof(m_readable_event));
 
-    // Create our sub events.
-    KAutoObject::Create(std::addressof(readable_event));
-    KAutoObject::Create(std::addressof(writable_event));
-
-    // Initialize our sub sessions.
-    readable_event.Initialize(this, name_ + ":Readable");
-    writable_event.Initialize(this, name_ + ":Writable");
+    // Initialize our readable event.
+    m_readable_event.Initialize(this);
 
     // Set our owner process.
-    owner = owner_;
-    owner->Open();
+    m_owner = owner;
+    m_owner->Open();
 
     // Mark initialized.
-    name = std::move(name_);
-    initialized = true;
+    m_initialized = true;
 }
 
 void KEvent::Finalize() {
     KAutoObjectWithSlabHeapAndContainer<KEvent, KAutoObjectWithList>::Finalize();
+}
+
+Result KEvent::Signal() {
+    KScopedSchedulerLock sl{kernel};
+
+    R_SUCCEED_IF(m_readable_event_destroyed);
+
+    return m_readable_event.Signal();
+}
+
+Result KEvent::Clear() {
+    KScopedSchedulerLock sl{kernel};
+
+    R_SUCCEED_IF(m_readable_event_destroyed);
+
+    return m_readable_event.Clear();
 }
 
 void KEvent::PostDestroy(uintptr_t arg) {

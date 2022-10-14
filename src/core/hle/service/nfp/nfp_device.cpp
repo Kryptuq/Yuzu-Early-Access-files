@@ -58,7 +58,7 @@ NfpDevice::~NfpDevice() {
 void NfpDevice::NpadUpdate(Core::HID::ControllerTriggerType type) {
     if (type == Core::HID::ControllerTriggerType::Connected ||
         type == Core::HID::ControllerTriggerType::Disconnected) {
-        availability_change_event->GetWritableEvent().Signal();
+        availability_change_event->Signal();
         return;
     }
 
@@ -100,7 +100,7 @@ bool NfpDevice::LoadAmiibo(std::span<const u8> data) {
 
     device_state = DeviceState::TagFound;
     deactivate_event->GetReadableEvent().Clear();
-    activate_event->GetWritableEvent().Signal();
+    activate_event->Signal();
     return true;
 }
 
@@ -115,7 +115,7 @@ void NfpDevice::CloseAmiibo() {
     encrypted_tag_data = {};
     tag_data = {};
     activate_event->GetReadableEvent().Clear();
-    deactivate_event->GetWritableEvent().Signal();
+    deactivate_event->Signal();
 }
 
 Kernel::KReadableEvent& NfpDevice::GetActivateEvent() const {

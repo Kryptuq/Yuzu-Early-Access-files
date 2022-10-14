@@ -156,7 +156,8 @@ ResultVal<Kernel::KClientSession*> SM::GetServiceImpl(Kernel::HLERequestContext&
 
     // Create a new session.
     Kernel::KClientSession* session{};
-    if (const auto result = port->GetClientPort().CreateSession(std::addressof(session));
+    if (const auto result = port->GetClientPort().CreateSession(
+            std::addressof(session), std::make_shared<Kernel::SessionRequestManager>(kernel));
         result.IsError()) {
         LOG_ERROR(Service_SM, "called service={} -> error 0x{:08X}", name, result.raw);
         return result;

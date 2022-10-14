@@ -18,7 +18,6 @@
 #include "core/hle/kernel/k_synchronization_object.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/k_transfer_memory.h"
-#include "core/hle/kernel/k_writable_event.h"
 
 namespace Kernel {
 
@@ -42,13 +41,12 @@ static_assert(ClassToken<KPort> == 0b10000101'00000000);
 static_assert(ClassToken<KSession> == 0b00011001'00000000);
 static_assert(ClassToken<KSharedMemory> == 0b00101001'00000000);
 static_assert(ClassToken<KEvent> == 0b01001001'00000000);
-static_assert(ClassToken<KWritableEvent> == 0b10001001'00000000);
 // static_assert(ClassToken<KLightClientSession> == 0b00110001'00000000);
 // static_assert(ClassToken<KLightServerSession> == 0b01010001'00000000);
-static_assert(ClassToken<KTransferMemory> == 0b10010001'00000000);
+static_assert(ClassToken<KTransferMemory> == 0b01010001'00000000);
 // static_assert(ClassToken<KDeviceAddressSpace> == 0b01100001'00000000);
 // static_assert(ClassToken<KSessionRequest> == 0b10100001'00000000);
-static_assert(ClassToken<KCodeMemory> == 0b11000001'00000000);
+static_assert(ClassToken<KCodeMemory> == 0b10100001'00000000);
 
 // Ensure that the token hierarchy is correct.
 
@@ -73,13 +71,12 @@ static_assert(ClassToken<KPort> == ((0b10000101 << 8) | ClassToken<KAutoObject>)
 static_assert(ClassToken<KSession> == ((0b00011001 << 8) | ClassToken<KAutoObject>));
 static_assert(ClassToken<KSharedMemory> == ((0b00101001 << 8) | ClassToken<KAutoObject>));
 static_assert(ClassToken<KEvent> == ((0b01001001 << 8) | ClassToken<KAutoObject>));
-static_assert(ClassToken<KWritableEvent> == ((0b10001001 << 8) | ClassToken<KAutoObject>));
 // static_assert(ClassToken<KLightClientSession> == ((0b00110001 << 8) | ClassToken<KAutoObject>));
 // static_assert(ClassToken<KLightServerSession> == ((0b01010001 << 8) | ClassToken<KAutoObject>));
-static_assert(ClassToken<KTransferMemory> == ((0b10010001 << 8) | ClassToken<KAutoObject>));
+static_assert(ClassToken<KTransferMemory> == ((0b01010001 << 8) | ClassToken<KAutoObject>));
 // static_assert(ClassToken<KDeviceAddressSpace> == ((0b01100001 << 8) | ClassToken<KAutoObject>));
 // static_assert(ClassToken<KSessionRequest> == ((0b10100001 << 8) | ClassToken<KAutoObject>));
-static_assert(ClassToken<KCodeMemory> == ((0b11000001 << 8) | ClassToken<KAutoObject>));
+static_assert(ClassToken<KCodeMemory> == ((0b10100001 << 8) | ClassToken<KAutoObject>));
 
 // Ensure that the token hierarchy reflects the class hierarchy.
 
@@ -110,7 +107,6 @@ static_assert(std::is_final_v<KPort> && std::is_base_of_v<KAutoObject, KPort>);
 static_assert(std::is_final_v<KSession> && std::is_base_of_v<KAutoObject, KSession>);
 static_assert(std::is_final_v<KSharedMemory> && std::is_base_of_v<KAutoObject, KSharedMemory>);
 static_assert(std::is_final_v<KEvent> && std::is_base_of_v<KAutoObject, KEvent>);
-static_assert(std::is_final_v<KWritableEvent> && std::is_base_of_v<KAutoObject, KWritableEvent>);
 // static_assert(std::is_final_v<KLightClientSession> &&
 //              std::is_base_of_v<KAutoObject, KLightClientSession>);
 // static_assert(std::is_final_v<KLightServerSession> &&

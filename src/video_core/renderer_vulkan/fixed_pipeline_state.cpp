@@ -73,8 +73,8 @@ void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d,
     patch_control_points_minus_one.Assign(regs.patch_vertices - 1);
     tessellation_primitive.Assign(static_cast<u32>(regs.tessellation.params.domain_type.Value()));
     tessellation_spacing.Assign(static_cast<u32>(regs.tessellation.params.spacing.Value()));
-    tessellation_clockwise.Assign(regs.tessellation.params.output_primitives.Value() !=
-                                  Maxwell::Tessellation::OutputPrimitves::Triangles_CCW);
+    tessellation_clockwise.Assign(regs.tessellation.params.output_primitives.Value() ==
+                                  Maxwell::Tessellation::OutputPrimitives::Triangles_CW);
     logic_op_enable.Assign(regs.logic_op.enable != 0 ? 1 : 0);
     logic_op.Assign(PackLogicOp(regs.logic_op.op));
     topology.Assign(regs.draw.topology);

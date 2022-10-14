@@ -4,14 +4,12 @@
 #pragma once
 
 #include "core/hle/kernel/k_readable_event.h"
-#include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/kernel/slab_helpers.h"
 
 namespace Kernel {
 
 class KernelCore;
 class KReadableEvent;
-class KWritableEvent;
 class KProcess;
 
 class KEvent final : public KAutoObjectWithSlabHeapAndContainer<KEvent, KAutoObjectWithList> {
@@ -21,37 +19,40 @@ public:
     explicit KEvent(KernelCore& kernel_);
     ~KEvent() override;
 
-    void Initialize(std::string&& name, KProcess* owner_);
+    void Initialize(KProcess* owner);
 
     void Finalize() override;
 
     bool IsInitialized() const override {
-        return initialized;
+        return m_initialized;
     }
 
     uintptr_t GetPostDestroyArgument() const override {
-        return reinterpret_cast<uintptr_t>(owner);
+        return reinterpret_cast<uintptr_t>(m_owner);
     }
 
     KProcess* GetOwner() const override {
-        return owner;
+        return m_owner;
     }
 
     KReadableEvent& GetReadableEvent() {
-        return readable_event;
-    }
-
-    KWritableEvent& GetWritableEvent() {
-        return writable_event;
+        return m_readable_event;
     }
 
     static void PostDestroy(uintptr_t arg);
 
+    Result Signal();
+    Result Clear();
+
+    void OnReadableEventDestroyed() {
+        m_readable_event_destroyed = true;
+    }
+
 private:
-    KReadableEvent readable_event;
-    KWritableEvent writable_event;
-    KProcess* owner{};
-    bool initialized{};
+    KReadableEvent m_readable_event;
+    KProcess* m_owner{};
+    bool m_initialized{};
+    bool m_readable_event_destroyed{};
 };
 
 } // namespace Kernel

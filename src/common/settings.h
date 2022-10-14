@@ -431,7 +431,7 @@ struct Values {
         FullscreenMode::Exclusive,
 #endif
         FullscreenMode::Borderless, FullscreenMode::Exclusive, "fullscreen_mode"};
-    SwitchableSetting<int, true> aspect_ratio{0, 0, 3, "aspect_ratio"};
+    SwitchableSetting<int, true> aspect_ratio{0, 0, 4, "aspect_ratio"};
     SwitchableSetting<int, true> max_anisotropy{0, 0, 5, "max_anisotropy"};
     SwitchableSetting<bool> use_speed_limit{true, "use_speed_limit"};
     SwitchableSetting<u16, true> speed_limit{100, 0, 9999, "speed_limit"};

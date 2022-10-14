@@ -46,8 +46,7 @@ public:
         return parent;
     }
 
-    Result SendSyncRequest(KThread* thread, Core::Memory::Memory& memory,
-                           Core::Timing::CoreTiming& core_timing);
+    Result SendSyncRequest();
 
     void OnServerClosed();
 

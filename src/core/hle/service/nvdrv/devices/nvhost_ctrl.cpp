@@ -12,7 +12,6 @@
 #include "common/scope_exit.h"
 #include "core/core.h"
 #include "core/hle/kernel/k_event.h"
-#include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/service/nvdrv/core/container.h"
 #include "core/hle/service/nvdrv/core/syncpoint_manager.h"
 #include "core/hle/service/nvdrv/devices/nvhost_ctrl.h"
@@ -206,7 +205,7 @@ NvResult nvhost_ctrl::IocCtrlEventWait(const std::vector<u8>& input, std::vector
             auto& event_ = events[slot];
             if (event_.status.exchange(EventState::Signalling, std::memory_order_acq_rel) ==
                 EventState::Waiting) {
-                event_.kevent->GetWritableEvent().Signal();
+                event_.kevent->Signal();
             }
             event_.status.store(EventState::Signalled, std::memory_order_release);
         });
@@ -306,7 +305,7 @@ NvResult nvhost_ctrl::IocCtrlClearEventWait(const std::vector<u8>& input, std::v
     }
     event.fails++;
     event.status.store(EventState::Cancelled, std::memory_order_release);
-    event.kevent->GetWritableEvent().Clear();
+    event.kevent->Clear();
 
     return NvResult::Success;
 }

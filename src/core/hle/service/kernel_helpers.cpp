@@ -9,7 +9,6 @@
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/k_resource_limit.h"
 #include "core/hle/kernel/k_scoped_resource_reservation.h"
-#include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/service/kernel_helpers.h"
 
 namespace Service::KernelHelpers {
@@ -46,7 +45,7 @@ Kernel::KEvent* ServiceContext::CreateEvent(std::string&& name) {
     }
 
     // Initialize the event.
-    event->Initialize(std::move(name), process);
+    event->Initialize(process);
 
     // Commit the thread reservation.
     event_reservation.Commit();
@@ -59,7 +58,7 @@ Kernel::KEvent* ServiceContext::CreateEvent(std::string&& name) {
 
 void ServiceContext::CloseEvent(Kernel::KEvent* event) {
     event->GetReadableEvent().Close();
-    event->GetWritableEvent().Close();
+    event->Close();
 }
 
 } // namespace Service::KernelHelpers

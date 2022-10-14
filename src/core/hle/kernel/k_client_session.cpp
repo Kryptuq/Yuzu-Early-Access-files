@@ -21,10 +21,9 @@ void KClientSession::Destroy() {
 
 void KClientSession::OnServerClosed() {}
 
-Result KClientSession::SendSyncRequest(KThread* thread, Core::Memory::Memory& memory,
-                                       Core::Timing::CoreTiming& core_timing) {
+Result KClientSession::SendSyncRequest() {
     // Signal the server session that new data is available
-    return parent->GetServerSession().HandleSyncRequest(thread, memory, core_timing);
+    return parent->GetServerSession().OnRequest();
 }
 
 } // namespace Kernel

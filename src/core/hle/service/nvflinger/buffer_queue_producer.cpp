@@ -11,7 +11,6 @@
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_readable_event.h"
-#include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/nvdrv/core/nvmap.h"
@@ -110,7 +109,7 @@ Status BufferQueueProducer::SetBufferCount(s32 buffer_count) {
 
         core->override_max_buffer_count = buffer_count;
         core->SignalDequeueCondition();
-        buffer_wait_event->GetWritableEvent().Signal();
+        buffer_wait_event->Signal();
         listener = core->consumer_listener;
     }
 
@@ -623,7 +622,7 @@ void BufferQueueProducer::CancelBuffer(s32 slot, const Fence& fence) {
     slots[slot].fence = fence;
 
     core->SignalDequeueCondition();
-    buffer_wait_event->GetWritableEvent().Signal();
+    buffer_wait_event->Signal();
 }
 
 Status BufferQueueProducer::Query(NativeWindow what, s32* out_value) {
@@ -753,7 +752,7 @@ Status BufferQueueProducer::Disconnect(NativeWindowApi api) {
                 core->connected_producer_listener = nullptr;
                 core->connected_api = NativeWindowApi::NoConnectedApi;
                 core->SignalDequeueCondition();
-                buffer_wait_event->GetWritableEvent().Signal();
+                buffer_wait_event->Signal();
                 listener = core->consumer_listener;
             } else {
                 LOG_ERROR(Service_NVFlinger, "still connected to another api (cur = {} req = {})",
@@ -802,7 +801,7 @@ Status BufferQueueProducer::SetPreallocatedBuffer(s32 slot,
     }
 
     core->SignalDequeueCondition();
-    buffer_wait_event->GetWritableEvent().Signal();
+    buffer_wait_event->Signal();
 
     return Status::NoError;
 }

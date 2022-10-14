@@ -23,6 +23,8 @@ private:
         BasicBlack = 1,
     };
 
+    void GetSettingsItemValueSize(Kernel::HLERequestContext& ctx);
+    void GetSettingsItemValue(Kernel::HLERequestContext& ctx);
     void GetFirmwareVersion(Kernel::HLERequestContext& ctx);
     void GetFirmwareVersion2(Kernel::HLERequestContext& ctx);
     void GetColorSetId(Kernel::HLERequestContext& ctx);

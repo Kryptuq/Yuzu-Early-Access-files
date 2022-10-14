@@ -101,7 +101,6 @@ public:
         KSession,
         KSharedMemory,
         KEvent,
-        KWritableEvent,
         KLightClientSession,
         KLightServerSession,
         KTransferMemory,

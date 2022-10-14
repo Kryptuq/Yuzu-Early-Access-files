@@ -390,7 +390,7 @@ public:
                 FractionalEven = 2,
             };
 
-            enum class OutputPrimitves : u32 {
+            enum class OutputPrimitives : u32 {
                 Points = 0,
                 Lines = 1,
                 Triangles_CW = 2,
@@ -401,7 +401,7 @@ public:
                 union {
                     BitField<0, 2, DomainType> domain_type;
                     BitField<4, 2, Spacing> spacing;
-                    BitField<8, 2, OutputPrimitves> output_primitives;
+                    BitField<8, 2, OutputPrimitives> output_primitives;
                 };
             } params;
 

@@ -10,7 +10,6 @@
 #include "core/core.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_readable_event.h"
-#include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/nvdrv/core/container.h"
 #include "core/hle/service/nvflinger/buffer_item_consumer.h"
@@ -74,7 +73,7 @@ Kernel::KReadableEvent* Display::GetVSyncEventUnchecked() {
 }
 
 void Display::SignalVSyncEvent() {
-    vsync_event->GetWritableEvent().Signal();
+    vsync_event->Signal();
 }
 
 void Display::CreateLayer(u64 layer_id, u32 binder_id,

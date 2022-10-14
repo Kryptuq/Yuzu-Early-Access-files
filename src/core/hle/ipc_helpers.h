@@ -152,7 +152,8 @@ public:
                 Kernel::LimitableResource::Sessions, 1);
 
             auto* session = Kernel::KSession::Create(kernel);
-            session->Initialize(nullptr, iface->GetServiceName());
+            session->Initialize(nullptr, iface->GetServiceName(),
+                                std::make_shared<Kernel::SessionRequestManager>(kernel));
 
             context->AddMoveObject(&session->GetClientSession());
             iface->ClientConnected(&session->GetServerSession());

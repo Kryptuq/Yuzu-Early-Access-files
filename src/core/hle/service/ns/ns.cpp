@@ -8,6 +8,7 @@
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/vfs.h"
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/service/glue/glue_manager.h"
 #include "core/hle/service/ns/errors.h"
 #include "core/hle/service/ns/iplatform_service_manager.h"
 #include "core/hle/service/ns/language.h"
@@ -581,7 +582,7 @@ IReadOnlyApplicationControlDataInterface::IReadOnlyApplicationControlDataInterfa
     : ServiceFramework{system_, "IReadOnlyApplicationControlDataInterface"} {
     // clang-format off
     static const FunctionInfo functions[] = {
-        {0, nullptr, "GetApplicationControlData"},
+        {0, &IReadOnlyApplicationControlDataInterface::GetApplicationControlData, "GetApplicationControlData"},
         {1, nullptr, "GetApplicationDesiredLanguage"},
         {2, nullptr, "ConvertApplicationLanguageToLanguageCode"},
         {3, nullptr, "ConvertLanguageCodeToApplicationLanguage"},
@@ -593,6 +594,33 @@ IReadOnlyApplicationControlDataInterface::IReadOnlyApplicationControlDataInterfa
 }
 
 IReadOnlyApplicationControlDataInterface::~IReadOnlyApplicationControlDataInterface() = default;
+
+void IReadOnlyApplicationControlDataInterface::GetApplicationControlData(
+    Kernel::HLERequestContext& ctx) {
+    enum class ApplicationControlSource : u8 {
+        CacheOnly,
+        Storage,
+        StorageOnly,
+    };
+
+    struct RequestParameters {
+        ApplicationControlSource source;
+        u64 application_id;
+    };
+    static_assert(sizeof(RequestParameters) == 0x10, "RequestParameters has incorrect size.");
+
+    IPC::RequestParser rp{ctx};
+    const auto parameters{rp.PopRaw<RequestParameters>()};
+    const auto nacp_data{system.GetARPManager().GetControlProperty(parameters.application_id)};
+    const auto result = nacp_data ? ResultSuccess : ResultUnknown;
+
+    if (nacp_data) {
+        ctx.WriteBuffer(nacp_data->data(), nacp_data->size());
+    }
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(result);
+}
 
 NS::NS(const char* name, Core::System& system_) : ServiceFramework{system_, name} {
     // clang-format off

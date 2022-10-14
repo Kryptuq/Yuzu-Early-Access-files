@@ -328,7 +328,7 @@ private:
     void StartTask(Kernel::HLERequestContext& ctx) {
         // No need to connect to the internet, just finish the task straight away.
         LOG_DEBUG(Service_NIM, "called");
-        finished_event->GetWritableEvent().Signal();
+        finished_event->Signal();
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
@@ -350,7 +350,7 @@ private:
 
     void Cancel(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIM, "called");
-        finished_event->GetWritableEvent().Clear();
+        finished_event->Clear();
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }

@@ -101,6 +101,81 @@ void SET_SYS::SetColorSetId(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
+// FIXME: implement support for the real system_settings.ini
+
+template <typename T>
+static std::vector<u8> ToBytes(const T& value) {
+    static_assert(std::is_trivially_copyable_v<T>);
+
+    const auto* begin = reinterpret_cast<const u8*>(&value);
+    const auto* end = begin + sizeof(T);
+
+    return std::vector<u8>(begin, end);
+}
+
+using Settings =
+    std::map<std::string, std::map<std::string, std::vector<u8>, std::less<>>, std::less<>>;
+
+static Settings GetSettings() {
+    Settings ret;
+
+    ret["hbloader"]["applet_heap_size"] = ToBytes(u64{0x0});
+    ret["hbloader"]["applet_heap_reservation_size"] = ToBytes(u64{0x8600000});
+
+    return ret;
+}
+
+void SET_SYS::GetSettingsItemValueSize(Kernel::HLERequestContext& ctx) {
+    LOG_DEBUG(Service_SET, "called");
+
+    // The category of the setting. This corresponds to the top-level keys of
+    // system_settings.ini.
+    const auto setting_category_buf{ctx.ReadBuffer(0)};
+    const std::string setting_category{setting_category_buf.begin(), setting_category_buf.end()};
+
+    // The name of the setting. This corresponds to the second-level keys of
+    // system_settings.ini.
+    const auto setting_name_buf{ctx.ReadBuffer(1)};
+    const std::string setting_name{setting_name_buf.begin(), setting_name_buf.end()};
+
+    auto settings{GetSettings()};
+    u64 response_size{0};
+
+    if (settings.contains(setting_category) && settings[setting_category].contains(setting_name)) {
+        response_size = settings[setting_category][setting_name].size();
+    }
+
+    IPC::ResponseBuilder rb{ctx, 4};
+    rb.Push(response_size == 0 ? ResultUnknown : ResultSuccess);
+    rb.Push(response_size);
+}
+
+void SET_SYS::GetSettingsItemValue(Kernel::HLERequestContext& ctx) {
+    LOG_DEBUG(Service_SET, "called");
+
+    // The category of the setting. This corresponds to the top-level keys of
+    // system_settings.ini.
+    const auto setting_category_buf{ctx.ReadBuffer(0)};
+    const std::string setting_category{setting_category_buf.begin(), setting_category_buf.end()};
+
+    // The name of the setting. This corresponds to the second-level keys of
+    // system_settings.ini.
+    const auto setting_name_buf{ctx.ReadBuffer(1)};
+    const std::string setting_name{setting_name_buf.begin(), setting_name_buf.end()};
+
+    auto settings{GetSettings()};
+    Result response{ResultUnknown};
+
+    if (settings.contains(setting_category) && settings[setting_category].contains(setting_name)) {
+        auto setting_value = settings[setting_category][setting_name];
+        ctx.WriteBuffer(setting_value.data(), setting_value.size());
+        response = ResultSuccess;
+    }
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(response);
+}
+
 SET_SYS::SET_SYS(Core::System& system_) : ServiceFramework{system_, "set:sys"} {
     // clang-format off
     static const FunctionInfo functions[] = {
@@ -138,8 +213,8 @@ SET_SYS::SET_SYS(Core::System& system_) : ServiceFramework{system_, "set:sys"} {
         {32, nullptr, "SetAccountNotificationSettings"},
         {35, nullptr, "GetVibrationMasterVolume"},
         {36, nullptr, "SetVibrationMasterVolume"},
-        {37, nullptr, "GetSettingsItemValueSize"},
-        {38, nullptr, "GetSettingsItemValue"},
+        {37, &SET_SYS::GetSettingsItemValueSize, "GetSettingsItemValueSize"},
+        {38, &SET_SYS::GetSettingsItemValue, "GetSettingsItemValue"},
         {39, nullptr, "GetTvSettings"},
         {40, nullptr, "SetTvSettings"},
         {41, nullptr, "GetEdid"},

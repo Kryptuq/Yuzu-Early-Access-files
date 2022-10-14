@@ -82,7 +82,7 @@ void ProgressServiceBackend::FinishDownload(Result result) {
 }
 
 void ProgressServiceBackend::SignalUpdate() {
-    update_event->GetWritableEvent().Signal();
+    update_event->Signal();
 }
 
 Backend::Backend(DirectoryGetter getter) : dir_getter(std::move(getter)) {}

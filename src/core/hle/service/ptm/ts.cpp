@@ -15,7 +15,7 @@ TS::TS(Core::System& system_) : ServiceFramework{system_, "ts"} {
         {0, nullptr, "GetTemperatureRange"},
         {1, &TS::GetTemperature, "GetTemperature"},
         {2, nullptr, "SetMeasurementMode"},
-        {3, nullptr, "GetTemperatureMilliC"},
+        {3, &TS::GetTemperatureMilliC, "GetTemperatureMilliC"},
         {4, nullptr, "OpenSession"},
     };
     // clang-format on
@@ -29,9 +29,18 @@ void TS::GetTemperature(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto location{rp.PopEnum<Location>()};
 
-    LOG_WARNING(Service_HID, "(STUBBED) called. location={}", location);
-
     const s32 temperature = location == Location::Internal ? 35 : 20;
+
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(ResultSuccess);
+    rb.Push(temperature);
+}
+
+void TS::GetTemperatureMilliC(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto location{rp.PopEnum<Location>()};
+
+    const s32 temperature = location == Location::Internal ? 35000 : 20000;
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);

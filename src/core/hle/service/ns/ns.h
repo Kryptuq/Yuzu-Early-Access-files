@@ -78,6 +78,9 @@ class IReadOnlyApplicationControlDataInterface final
 public:
     explicit IReadOnlyApplicationControlDataInterface(Core::System& system_);
     ~IReadOnlyApplicationControlDataInterface() override;
+
+private:
+    void GetApplicationControlData(Kernel::HLERequestContext& ctx);
 };
 
 class NS final : public ServiceFramework<NS> {

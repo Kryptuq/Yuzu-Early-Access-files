@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <list>
 #include <memory>
 #include <string>
 #include <utility>
@@ -10,6 +11,7 @@
 #include <boost/intrusive/list.hpp>
 
 #include "core/hle/kernel/hle_ipc.h"
+#include "core/hle/kernel/k_light_lock.h"
 #include "core/hle/kernel/k_synchronization_object.h"
 #include "core/hle/result.h"
 
@@ -59,24 +61,14 @@ public:
     void OnClientClosed();
 
     void ClientConnected(SessionRequestHandlerPtr handler) {
-        manager->SetSessionHandler(std::move(handler));
+        if (manager) {
+            manager->SetSessionHandler(std::move(handler));
+        }
     }
 
     void ClientDisconnected() {
         manager = nullptr;
     }
-
-    /**
-     * Handle a sync request from the emulated application.
-     *
-     * @param thread      Thread that initiated the request.
-     * @param memory      Memory context to handle the sync request under.
-     * @param core_timing Core timing context to schedule the request event under.
-     *
-     * @returns Result from the operation.
-     */
-    Result HandleSyncRequest(KThread* thread, Core::Memory::Memory& memory,
-                             Core::Timing::CoreTiming& core_timing);
 
     /// Adds a new domain request handler to the collection of request handlers within
     /// this ServerSession instance.
@@ -88,7 +80,7 @@ public:
 
     /// Returns true if the session has been converted to a domain, otherwise False
     bool IsDomain() const {
-        return manager->IsDomain();
+        return manager && manager->IsDomain();
     }
 
     /// Converts the session to a domain at the end of the current command
@@ -101,7 +93,15 @@ public:
         return manager;
     }
 
+    /// TODO: flesh these out to match the real kernel
+    Result OnRequest();
+    Result SendReply();
+    Result ReceiveRequest();
+
 private:
+    /// Frees up waiting client sessions when this server session is about to die
+    void CleanupRequests();
+
     /// Queues a sync request from the emulated application.
     Result QueueSyncRequest(KThread* thread, Core::Memory::Memory& memory);
 
@@ -112,7 +112,7 @@ private:
     /// object handle.
     Result HandleDomainSyncRequest(Kernel::HLERequestContext& context);
 
-    /// This session's HLE request handlers
+    /// This session's HLE request handlers; if nullptr, this is not an HLE server
     std::shared_ptr<SessionRequestManager> manager;
 
     /// When set to True, converts the session to a domain at the end of the command
@@ -120,6 +120,13 @@ private:
 
     /// KSession that owns this KServerSession
     KSession* parent{};
+
+    /// List of threads which are pending a reply.
+    /// FIXME: KSessionRequest
+    std::list<KThread*> m_thread_request_list;
+    KThread* m_current_thread_request{};
+
+    KLightLock m_lock;
 };
 
 } // namespace Kernel

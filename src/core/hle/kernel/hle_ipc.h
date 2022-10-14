@@ -43,13 +43,13 @@ class Domain;
 class HLERequestContext;
 class KAutoObject;
 class KernelCore;
+class KEvent;
 class KHandleTable;
 class KProcess;
 class KServerSession;
 class KThread;
 class KReadableEvent;
 class KSession;
-class KWritableEvent;
 class ServiceThread;
 
 enum class ThreadWakeupReason;

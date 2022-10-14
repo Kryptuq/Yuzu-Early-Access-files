@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include "core/hle/kernel/k_writable_event.h"
+#include "core/hle/kernel/k_event.h"
 #include "core/hle/service/time/errors.h"
 #include "core/hle/service/time/system_clock_context_update_callback.h"
 
@@ -20,13 +20,13 @@ bool SystemClockContextUpdateCallback::NeedUpdate(const SystemClockContext& valu
 }
 
 void SystemClockContextUpdateCallback::RegisterOperationEvent(
-    std::shared_ptr<Kernel::KWritableEvent>&& writable_event) {
-    operation_event_list.emplace_back(std::move(writable_event));
+    std::shared_ptr<Kernel::KEvent>&& event) {
+    operation_event_list.emplace_back(std::move(event));
 }
 
 void SystemClockContextUpdateCallback::BroadcastOperationEvent() {
-    for (const auto& writable_event : operation_event_list) {
-        writable_event->Signal();
+    for (const auto& event : operation_event_list) {
+        event->Signal();
     }
 }
 

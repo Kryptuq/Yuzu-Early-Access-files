@@ -29,12 +29,12 @@
 #include "core/hle/kernel/k_resource_limit.h"
 #include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/k_scoped_resource_reservation.h"
+#include "core/hle/kernel/k_session.h"
 #include "core/hle/kernel/k_shared_memory.h"
 #include "core/hle/kernel/k_synchronization_object.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/k_thread_queue.h"
 #include "core/hle/kernel/k_transfer_memory.h"
-#include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/physical_core.h"
 #include "core/hle/kernel/svc.h"
@@ -256,6 +256,93 @@ static Result UnmapMemory32(Core::System& system, u32 dst_addr, u32 src_addr, u3
     return UnmapMemory(system, dst_addr, src_addr, size);
 }
 
+template <typename T>
+Result CreateSession(Core::System& system, Handle* out_server, Handle* out_client, u64 name) {
+    auto& process = *system.CurrentProcess();
+    auto& handle_table = process.GetHandleTable();
+
+    // Declare the session we're going to allocate.
+    T* session;
+
+    // Reserve a new session from the process resource limit.
+    // FIXME: LimitableResource_SessionCountMax
+    KScopedResourceReservation session_reservation(&process, LimitableResource::Sessions);
+    if (session_reservation.Succeeded()) {
+        session = T::Create(system.Kernel());
+    } else {
+        return ResultLimitReached;
+
+        // // We couldn't reserve a session. Check that we support dynamically expanding the
+        // // resource limit.
+        // R_UNLESS(process.GetResourceLimit() ==
+        //          &system.Kernel().GetSystemResourceLimit(), ResultLimitReached);
+        // R_UNLESS(KTargetSystem::IsDynamicResourceLimitsEnabled(), ResultLimitReached());
+
+        // // Try to allocate a session from unused slab memory.
+        // session = T::CreateFromUnusedSlabMemory();
+        // R_UNLESS(session != nullptr, ResultLimitReached);
+        // ON_RESULT_FAILURE { session->Close(); };
+
+        // // If we're creating a KSession, we want to add two KSessionRequests to the heap, to
+        // // prevent request exhaustion.
+        // // NOTE: Nintendo checks if session->DynamicCast<KSession *>() != nullptr, but there's
+        // // no reason to not do this statically.
+        // if constexpr (std::same_as<T, KSession>) {
+        //     for (size_t i = 0; i < 2; i++) {
+        //         KSessionRequest* request = KSessionRequest::CreateFromUnusedSlabMemory();
+        //         R_UNLESS(request != nullptr, ResultLimitReached);
+        //         request->Close();
+        //     }
+        // }
+
+        // We successfully allocated a session, so add the object we allocated to the resource
+        // limit.
+        // system.Kernel().GetSystemResourceLimit().Reserve(LimitableResource::Sessions, 1);
+    }
+
+    // Check that we successfully created a session.
+    R_UNLESS(session != nullptr, ResultOutOfResource);
+
+    // Initialize the session.
+    session->Initialize(nullptr, fmt::format("{}", name));
+
+    // Commit the session reservation.
+    session_reservation.Commit();
+
+    // Ensure that we clean up the session (and its only references are handle table) on function
+    // end.
+    SCOPE_EXIT({
+        session->GetClientSession().Close();
+        session->GetServerSession().Close();
+    });
+
+    // Register the session.
+    T::Register(system.Kernel(), session);
+
+    // Add the server session to the handle table.
+    R_TRY(handle_table.Add(out_server, &session->GetServerSession()));
+
+    // Add the client session to the handle table.
+    const auto result = handle_table.Add(out_client, &session->GetClientSession());
+
+    if (!R_SUCCEEDED(result)) {
+        // Ensure that we maintaing a clean handle state on exit.
+        handle_table.Remove(*out_server);
+    }
+
+    return result;
+}
+
+static Result CreateSession(Core::System& system, Handle* out_server, Handle* out_client,
+                            u32 is_light, u64 name) {
+    if (is_light) {
+        // return CreateSession<KLightSession>(system, out_server, out_client, name);
+        return ResultUnknown;
+    } else {
+        return CreateSession<KSession>(system, out_server, out_client, name);
+    }
+}
+
 /// Connect to an OS service given the port name, returns the handle to the port to out
 static Result ConnectToNamedPort(Core::System& system, Handle* out, VAddr port_name_address) {
     auto& memory = system.Memory();
@@ -295,7 +382,8 @@ static Result ConnectToNamedPort(Core::System& system, Handle* out, VAddr port_n
 
     // Create a session.
     KClientSession* session{};
-    R_TRY(port->CreateSession(std::addressof(session)));
+    R_TRY(port->CreateSession(std::addressof(session),
+                              std::make_shared<SessionRequestManager>(kernel)));
     port->Close();
 
     // Register the session in the table, close the extra reference.
@@ -313,7 +401,7 @@ static Result ConnectToNamedPort32(Core::System& system, Handle* out_handle,
     return ConnectToNamedPort(system, out_handle, port_name_address);
 }
 
-/// Makes a blocking IPC call to an OS service.
+/// Makes a blocking IPC call to a service.
 static Result SendSyncRequest(Core::System& system, Handle handle) {
     auto& kernel = system.Kernel();
 
@@ -327,20 +415,73 @@ static Result SendSyncRequest(Core::System& system, Handle handle) {
 
     LOG_TRACE(Kernel_SVC, "called handle=0x{:08X}({})", handle, session->GetName());
 
-    {
-        KScopedSchedulerLock lock(kernel);
-
-        // This is a synchronous request, so we should wait for our request to complete.
-        GetCurrentThread(kernel).BeginWait(std::addressof(wait_queue));
-        GetCurrentThread(kernel).SetWaitReasonForDebugging(ThreadWaitReasonForDebugging::IPC);
-        session->SendSyncRequest(&GetCurrentThread(kernel), system.Memory(), system.CoreTiming());
-    }
-
-    return GetCurrentThread(kernel).GetWaitResult();
+    return session->SendSyncRequest();
 }
 
 static Result SendSyncRequest32(Core::System& system, Handle handle) {
     return SendSyncRequest(system, handle);
+}
+
+static Result ReplyAndReceive(Core::System& system, s32* out_index, Handle* handles,
+                              s32 num_handles, Handle reply_target, s64 timeout_ns) {
+    auto& kernel = system.Kernel();
+    auto& handle_table = GetCurrentThread(kernel).GetOwnerProcess()->GetHandleTable();
+
+    // Convert handle list to object table.
+    std::vector<KSynchronizationObject*> objs(num_handles);
+    R_UNLESS(
+        handle_table.GetMultipleObjects<KSynchronizationObject>(objs.data(), handles, num_handles),
+        ResultInvalidHandle);
+
+    // Ensure handles are closed when we're done.
+    SCOPE_EXIT({
+        for (auto i = 0; i < num_handles; ++i) {
+            objs[i]->Close();
+        }
+    });
+
+    // Reply to the target, if one is specified.
+    if (reply_target != InvalidHandle) {
+        KScopedAutoObject session = handle_table.GetObject<KServerSession>(reply_target);
+        R_UNLESS(session.IsNotNull(), ResultInvalidHandle);
+
+        // If we fail to reply, we want to set the output index to -1.
+        // ON_RESULT_FAILURE { *out_index = -1; };
+
+        // Send the reply.
+        // R_TRY(session->SendReply());
+
+        Result rc = session->SendReply();
+        if (!R_SUCCEEDED(rc)) {
+            *out_index = -1;
+            return rc;
+        }
+    }
+
+    // Wait for a message.
+    while (true) {
+        // Wait for an object.
+        s32 index;
+        Result result = KSynchronizationObject::Wait(kernel, &index, objs.data(),
+                                                     static_cast<s32>(objs.size()), timeout_ns);
+        if (result == ResultTimedOut) {
+            return result;
+        }
+
+        // Receive the request.
+        if (R_SUCCEEDED(result)) {
+            KServerSession* session = objs[index]->DynamicCast<KServerSession*>();
+            if (session != nullptr) {
+                result = session->ReceiveRequest();
+                if (result == ResultNotFound) {
+                    continue;
+                }
+            }
+        }
+
+        *out_index = index;
+        return result;
+    }
 }
 
 /// Get the ID for the specified thread.
@@ -2303,11 +2444,11 @@ static Result SignalEvent(Core::System& system, Handle event_handle) {
     // Get the current handle table.
     const KHandleTable& handle_table = system.Kernel().CurrentProcess()->GetHandleTable();
 
-    // Get the writable event.
-    KScopedAutoObject writable_event = handle_table.GetObject<KWritableEvent>(event_handle);
-    R_UNLESS(writable_event.IsNotNull(), ResultInvalidHandle);
+    // Get the event.
+    KScopedAutoObject event = handle_table.GetObject<KEvent>(event_handle);
+    R_UNLESS(event.IsNotNull(), ResultInvalidHandle);
 
-    return writable_event->Signal();
+    return event->Signal();
 }
 
 static Result SignalEvent32(Core::System& system, Handle event_handle) {
@@ -2322,9 +2463,9 @@ static Result ClearEvent(Core::System& system, Handle event_handle) {
 
     // Try to clear the writable event.
     {
-        KScopedAutoObject writable_event = handle_table.GetObject<KWritableEvent>(event_handle);
-        if (writable_event.IsNotNull()) {
-            return writable_event->Clear();
+        KScopedAutoObject event = handle_table.GetObject<KEvent>(event_handle);
+        if (event.IsNotNull()) {
+            return event->Clear();
         }
     }
 
@@ -2362,24 +2503,24 @@ static Result CreateEvent(Core::System& system, Handle* out_write, Handle* out_r
     R_UNLESS(event != nullptr, ResultOutOfResource);
 
     // Initialize the event.
-    event->Initialize("CreateEvent", kernel.CurrentProcess());
+    event->Initialize(kernel.CurrentProcess());
 
     // Commit the thread reservation.
     event_reservation.Commit();
 
     // Ensure that we clean up the event (and its only references are handle table) on function end.
     SCOPE_EXIT({
-        event->GetWritableEvent().Close();
         event->GetReadableEvent().Close();
+        event->Close();
     });
 
     // Register the event.
     KEvent::Register(kernel, event);
 
-    // Add the writable event to the handle table.
-    R_TRY(handle_table.Add(out_write, std::addressof(event->GetWritableEvent())));
+    // Add the event to the handle table.
+    R_TRY(handle_table.Add(out_write, event));
 
-    // Add the writable event to the handle table.
+    // Ensure that we maintaing a clean handle state on exit.
     auto handle_guard = SCOPE_GUARD({ handle_table.Remove(*out_write); });
 
     // Add the readable event to the handle table.
@@ -2860,10 +3001,10 @@ static const FunctionDef SVC_Table_64[] = {
     {0x3D, SvcWrap64<ChangeKernelTraceState>, "ChangeKernelTraceState"},
     {0x3E, nullptr, "Unknown3e"},
     {0x3F, nullptr, "Unknown3f"},
-    {0x40, nullptr, "CreateSession"},
+    {0x40, SvcWrap64<CreateSession>, "CreateSession"},
     {0x41, nullptr, "AcceptSession"},
     {0x42, nullptr, "ReplyAndReceiveLight"},
-    {0x43, nullptr, "ReplyAndReceive"},
+    {0x43, SvcWrap64<ReplyAndReceive>, "ReplyAndReceive"},
     {0x44, nullptr, "ReplyAndReceiveWithUserBuffer"},
     {0x45, SvcWrap64<CreateEvent>, "CreateEvent"},
     {0x46, nullptr, "MapIoRegion"},

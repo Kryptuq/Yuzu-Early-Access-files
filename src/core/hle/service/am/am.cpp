@@ -316,7 +316,7 @@ ISelfController::ISelfController(Core::System& system_, NVFlinger::NVFlinger& nv
 
     accumulated_suspended_tick_changed_event =
         service_context.CreateEvent("ISelfController:AccumulatedSuspendedTickChangedEvent");
-    accumulated_suspended_tick_changed_event->GetWritableEvent().Signal();
+    accumulated_suspended_tick_changed_event->Signal();
 }
 
 ISelfController::~ISelfController() {
@@ -378,7 +378,7 @@ void ISelfController::LeaveFatalSection(Kernel::HLERequestContext& ctx) {
 void ISelfController::GetLibraryAppletLaunchableEvent(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_AM, "(STUBBED) called");
 
-    launchable_event->GetWritableEvent().Signal();
+    launchable_event->Signal();
 
     IPC::ResponseBuilder rb{ctx, 2, 1};
     rb.Push(ResultSuccess);
@@ -618,18 +618,18 @@ Kernel::KReadableEvent& AppletMessageQueue::GetOperationModeChangedEvent() {
 
 void AppletMessageQueue::PushMessage(AppletMessage msg) {
     messages.push(msg);
-    on_new_message->GetWritableEvent().Signal();
+    on_new_message->Signal();
 }
 
 AppletMessageQueue::AppletMessage AppletMessageQueue::PopMessage() {
     if (messages.empty()) {
-        on_new_message->GetWritableEvent().Clear();
+        on_new_message->Clear();
         return AppletMessage::None;
     }
     auto msg = messages.front();
     messages.pop();
     if (messages.empty()) {
-        on_new_message->GetWritableEvent().Clear();
+        on_new_message->Clear();
     }
     return msg;
 }
@@ -653,7 +653,7 @@ void AppletMessageQueue::FocusStateChanged() {
 void AppletMessageQueue::OperationModeChanged() {
     PushMessage(AppletMessage::OperationModeChanged);
     PushMessage(AppletMessage::PerformanceModeChanged);
-    on_operation_mode_changed->GetWritableEvent().Signal();
+    on_operation_mode_changed->Signal();
 }
 
 ICommonStateGetter::ICommonStateGetter(Core::System& system_,

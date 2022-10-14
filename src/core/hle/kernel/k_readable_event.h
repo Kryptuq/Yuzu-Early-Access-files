@@ -20,26 +20,23 @@ public:
     explicit KReadableEvent(KernelCore& kernel_);
     ~KReadableEvent() override;
 
-    void Initialize(KEvent* parent_event_, std::string&& name_) {
-        is_signaled = false;
-        parent = parent_event_;
-        name = std::move(name_);
-    }
+    void Initialize(KEvent* parent);
 
     KEvent* GetParent() const {
-        return parent;
+        return m_parent;
     }
+
+    Result Signal();
+    Result Clear();
 
     bool IsSignaled() const override;
     void Destroy() override;
 
-    Result Signal();
-    Result Clear();
     Result Reset();
 
 private:
-    bool is_signaled{};
-    KEvent* parent{};
+    bool m_is_signaled{};
+    KEvent* m_parent{};
 };
 
 } // namespace Kernel

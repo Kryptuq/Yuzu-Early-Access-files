@@ -65,7 +65,7 @@ std::shared_ptr<IStorage> AppletDataBroker::PopNormalDataToGame() {
 
     auto out = std::move(out_channel.front());
     out_channel.pop_front();
-    pop_out_data_event->GetWritableEvent().Clear();
+    pop_out_data_event->Clear();
     return out;
 }
 
@@ -84,7 +84,7 @@ std::shared_ptr<IStorage> AppletDataBroker::PopInteractiveDataToGame() {
 
     auto out = std::move(out_interactive_channel.front());
     out_interactive_channel.pop_front();
-    pop_interactive_out_data_event->GetWritableEvent().Clear();
+    pop_interactive_out_data_event->Clear();
     return out;
 }
 
@@ -103,7 +103,7 @@ void AppletDataBroker::PushNormalDataFromGame(std::shared_ptr<IStorage>&& storag
 
 void AppletDataBroker::PushNormalDataFromApplet(std::shared_ptr<IStorage>&& storage) {
     out_channel.emplace_back(std::move(storage));
-    pop_out_data_event->GetWritableEvent().Signal();
+    pop_out_data_event->Signal();
 }
 
 void AppletDataBroker::PushInteractiveDataFromGame(std::shared_ptr<IStorage>&& storage) {
@@ -112,11 +112,11 @@ void AppletDataBroker::PushInteractiveDataFromGame(std::shared_ptr<IStorage>&& s
 
 void AppletDataBroker::PushInteractiveDataFromApplet(std::shared_ptr<IStorage>&& storage) {
     out_interactive_channel.emplace_back(std::move(storage));
-    pop_interactive_out_data_event->GetWritableEvent().Signal();
+    pop_interactive_out_data_event->Signal();
 }
 
 void AppletDataBroker::SignalStateChanged() {
-    state_changed_event->GetWritableEvent().Signal();
+    state_changed_event->Signal();
 
     switch (applet_mode) {
     case LibraryAppletMode::AllForeground:

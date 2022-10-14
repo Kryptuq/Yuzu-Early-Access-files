@@ -23,7 +23,7 @@ System::~System() {
 void System::Finalize() {
     Stop();
     session->Finalize();
-    buffer_event->GetWritableEvent().Signal();
+    buffer_event->Signal();
 }
 
 void System::StartSession() {
@@ -142,7 +142,7 @@ void System::ReleaseBuffers() {
 
     if (signal) {
         // Signal if any buffer was released, or if none are registered, we need more.
-        buffer_event->GetWritableEvent().Signal();
+        buffer_event->Signal();
     }
 }
 
@@ -159,7 +159,7 @@ bool System::FlushAudioInBuffers() {
     buffers.FlushBuffers(buffers_released);
 
     if (buffers_released > 0) {
-        buffer_event->GetWritableEvent().Signal();
+        buffer_event->Signal();
     }
     return true;
 }

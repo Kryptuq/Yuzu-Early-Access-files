@@ -73,7 +73,7 @@ Result Controller_Palma::PlayPalmaActivity(const PalmaConnectionHandle& handle,
     operation.operation = PalmaOperationType::PlayActivity;
     operation.result = PalmaResultSuccess;
     operation.data = {};
-    operation_complete_event->GetWritableEvent().Signal();
+    operation_complete_event->Signal();
     return ResultSuccess;
 }
 
@@ -93,7 +93,7 @@ Result Controller_Palma::ReadPalmaStep(const PalmaConnectionHandle& handle) {
     operation.operation = PalmaOperationType::ReadStep;
     operation.result = PalmaResultSuccess;
     operation.data = {};
-    operation_complete_event->GetWritableEvent().Signal();
+    operation_complete_event->Signal();
     return ResultSuccess;
 }
 
@@ -122,7 +122,7 @@ Result Controller_Palma::ReadPalmaUniqueCode(const PalmaConnectionHandle& handle
     operation.operation = PalmaOperationType::ReadUniqueCode;
     operation.result = PalmaResultSuccess;
     operation.data = {};
-    operation_complete_event->GetWritableEvent().Signal();
+    operation_complete_event->Signal();
     return ResultSuccess;
 }
 
@@ -133,7 +133,7 @@ Result Controller_Palma::SetPalmaUniqueCodeInvalid(const PalmaConnectionHandle& 
     operation.operation = PalmaOperationType::SetUniqueCodeInvalid;
     operation.result = PalmaResultSuccess;
     operation.data = {};
-    operation_complete_event->GetWritableEvent().Signal();
+    operation_complete_event->Signal();
     return ResultSuccess;
 }
 
@@ -147,7 +147,7 @@ Result Controller_Palma::WritePalmaRgbLedPatternEntry(const PalmaConnectionHandl
     operation.operation = PalmaOperationType::WriteRgbLedPatternEntry;
     operation.result = PalmaResultSuccess;
     operation.data = {};
-    operation_complete_event->GetWritableEvent().Signal();
+    operation_complete_event->Signal();
     return ResultSuccess;
 }
 
@@ -159,7 +159,7 @@ Result Controller_Palma::WritePalmaWaveEntry(const PalmaConnectionHandle& handle
     operation.operation = PalmaOperationType::WriteWaveEntry;
     operation.result = PalmaResultSuccess;
     operation.data = {};
-    operation_complete_event->GetWritableEvent().Signal();
+    operation_complete_event->Signal();
     return ResultSuccess;
 }
 
@@ -172,7 +172,7 @@ Result Controller_Palma::SetPalmaDataBaseIdentificationVersion(const PalmaConnec
     operation.operation = PalmaOperationType::ReadDataBaseIdentificationVersion;
     operation.result = PalmaResultSuccess;
     operation.data[0] = {};
-    operation_complete_event->GetWritableEvent().Signal();
+    operation_complete_event->Signal();
     return ResultSuccess;
 }
 
@@ -185,7 +185,7 @@ Result Controller_Palma::GetPalmaDataBaseIdentificationVersion(
     operation.result = PalmaResultSuccess;
     operation.data = {};
     operation.data[0] = static_cast<u8>(database_id_version);
-    operation_complete_event->GetWritableEvent().Signal();
+    operation_complete_event->Signal();
     return ResultSuccess;
 }
 

@@ -9,7 +9,7 @@
 #include "core/hle/service/time/clock_types.h"
 
 namespace Kernel {
-class KWritableEvent;
+class KEvent;
 }
 
 namespace Service::Time::Clock {
@@ -24,7 +24,7 @@ public:
 
     bool NeedUpdate(const SystemClockContext& value) const;
 
-    void RegisterOperationEvent(std::shared_ptr<Kernel::KWritableEvent>&& writable_event);
+    void RegisterOperationEvent(std::shared_ptr<Kernel::KEvent>&& event);
 
     void BroadcastOperationEvent();
 
@@ -37,7 +37,7 @@ protected:
 
 private:
     bool has_context{};
-    std::vector<std::shared_ptr<Kernel::KWritableEvent>> operation_event_list;
+    std::vector<std::shared_ptr<Kernel::KEvent>> operation_event_list;
 };
 
 } // namespace Service::Time::Clock

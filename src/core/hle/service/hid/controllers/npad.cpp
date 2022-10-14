@@ -16,7 +16,6 @@
 #include "core/hid/hid_core.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_readable_event.h"
-#include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/service/hid/controllers/npad.h"
 #include "core/hle/service/hid/errors.h"
 #include "core/hle/service/kernel_helpers.h"
@@ -167,7 +166,7 @@ void Controller_NPad::InitNewlyAddedController(Core::HID::NpadIdType npad_id) {
     const auto& battery_level = controller.device->GetBattery();
     auto* shared_memory = controller.shared_memory;
     if (controller_type == Core::HID::NpadStyleIndex::None) {
-        controller.styleset_changed_event->GetWritableEvent().Signal();
+        controller.styleset_changed_event->Signal();
         return;
     }
 
@@ -1033,7 +1032,7 @@ Kernel::KReadableEvent& Controller_NPad::GetStyleSetChangedEvent(Core::HID::Npad
 
 void Controller_NPad::SignalStyleSetChangedEvent(Core::HID::NpadIdType npad_id) const {
     const auto& controller = GetControllerFromNpadIdType(npad_id);
-    controller.styleset_changed_event->GetWritableEvent().Signal();
+    controller.styleset_changed_event->Signal();
 }
 
 void Controller_NPad::AddNewControllerAt(Core::HID::NpadStyleIndex controller,

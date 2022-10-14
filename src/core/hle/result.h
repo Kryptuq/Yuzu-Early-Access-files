@@ -5,6 +5,7 @@
 
 #include "common/assert.h"
 #include "common/bit_field.h"
+#include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/expected.h"
 
@@ -128,6 +129,10 @@ union Result {
     }
 
     [[nodiscard]] constexpr bool IsError() const {
+        return !IsSuccess();
+    }
+
+    [[nodiscard]] constexpr bool IsFailure() const {
         return !IsSuccess();
     }
 };
@@ -349,10 +354,109 @@ private:
         }                                                                                          \
     } while (false)
 
-#define R_SUCCEEDED(res) (res.IsSuccess())
+#define R_SUCCEEDED(res) (static_cast<Result>(res).IsSuccess())
+#define R_FAILED(res) (static_cast<Result>(res).IsFailure())
 
-/// Evaluates a boolean expression, and succeeds if that expression is true.
-#define R_SUCCEED_IF(expr) R_UNLESS(!(expr), ResultSuccess)
+namespace ResultImpl {
+template <auto EvaluateResult, class F>
+class ScopedResultGuard {
+    YUZU_NON_COPYABLE(ScopedResultGuard);
+    YUZU_NON_MOVEABLE(ScopedResultGuard);
+
+private:
+    Result& m_ref;
+    F m_f;
+
+public:
+    constexpr ScopedResultGuard(Result& ref, F f) : m_ref(ref), m_f(std::move(f)) {}
+    constexpr ~ScopedResultGuard() {
+        if (EvaluateResult(m_ref)) {
+            m_f();
+        }
+    }
+};
+
+template <auto EvaluateResult>
+class ResultReferenceForScopedResultGuard {
+private:
+    Result& m_ref;
+
+public:
+    constexpr ResultReferenceForScopedResultGuard(Result& r) : m_ref(r) {}
+    constexpr operator Result&() const {
+        return m_ref;
+    }
+};
+
+template <auto EvaluateResult, typename F>
+constexpr ScopedResultGuard<EvaluateResult, F> operator+(
+    ResultReferenceForScopedResultGuard<EvaluateResult> ref, F&& f) {
+    return ScopedResultGuard<EvaluateResult, F>(static_cast<Result&>(ref), std::forward<F>(f));
+}
+
+constexpr bool EvaluateResultSuccess(const Result& r) {
+    return R_SUCCEEDED(r);
+}
+constexpr bool EvaluateResultFailure(const Result& r) {
+    return R_FAILED(r);
+}
+
+template <typename T>
+constexpr void UpdateCurrentResultReference(T result_reference, Result result) = delete;
+// Intentionally not defined
+
+template <>
+constexpr void UpdateCurrentResultReference<Result&>(Result& result_reference, Result result) {
+    result_reference = result;
+}
+
+template <>
+constexpr void UpdateCurrentResultReference<const Result>(Result result_reference, Result result) {}
+} // namespace ResultImpl
+
+#define DECLARE_CURRENT_RESULT_REFERENCE_AND_STORAGE(COUNTER_VALUE)                                \
+    [[maybe_unused]] constexpr bool HasPrevRef_##COUNTER_VALUE =                                   \
+        std::same_as<decltype(__TmpCurrentResultReference), Result&>;                              \
+    [[maybe_unused]] auto& PrevRef_##COUNTER_VALUE = __TmpCurrentResultReference;                  \
+    [[maybe_unused]] Result __tmp_result_##COUNTER_VALUE = ResultSuccess;                          \
+    Result& __TmpCurrentResultReference =                                                          \
+        HasPrevRef_##COUNTER_VALUE ? PrevRef_##COUNTER_VALUE : __tmp_result_##COUNTER_VALUE
+
+#define ON_RESULT_RETURN_IMPL(...)                                                                 \
+    static_assert(std::same_as<decltype(__TmpCurrentResultReference), Result&>);                   \
+    auto RESULT_GUARD_STATE_##__COUNTER__ =                                                        \
+        ResultImpl::ResultReferenceForScopedResultGuard<__VA_ARGS__>(                              \
+            __TmpCurrentResultReference) +                                                         \
+        [&]()
+
+#define ON_RESULT_FAILURE_2 ON_RESULT_RETURN_IMPL(ResultImpl::EvaluateResultFailure)
+
+#define ON_RESULT_FAILURE                                                                          \
+    DECLARE_CURRENT_RESULT_REFERENCE_AND_STORAGE(__COUNTER__);                                     \
+    ON_RESULT_FAILURE_2
+
+#define ON_RESULT_SUCCESS_2 ON_RESULT_RETURN_IMPL(ResultImpl::EvaluateResultSuccess)
+
+#define ON_RESULT_SUCCESS                                                                          \
+    DECLARE_CURRENT_RESULT_REFERENCE_AND_STORAGE(__COUNTER__);                                     \
+    ON_RESULT_SUCCESS_2
+
+constexpr inline Result __TmpCurrentResultReference = ResultSuccess;
+
+/// Returns a result.
+#define R_RETURN(res_expr)                                                                         \
+    {                                                                                              \
+        const Result _tmp_r_throw_rc = (res_expr);                                                 \
+        ResultImpl::UpdateCurrentResultReference<decltype(__TmpCurrentResultReference)>(           \
+            __TmpCurrentResultReference, _tmp_r_throw_rc);                                         \
+        return _tmp_r_throw_rc;                                                                    \
+    }
+
+/// Returns ResultSuccess()
+#define R_SUCCEED() R_RETURN(ResultSuccess)
+
+/// Throws a result.
+#define R_THROW(res_expr) R_RETURN(res_expr)
 
 /// Evaluates a boolean expression, and returns a result unless that expression is true.
 #define R_UNLESS(expr, res)                                                                        \
@@ -361,7 +465,7 @@ private:
             if (res.IsError()) {                                                                   \
                 LOG_ERROR(Kernel, "Failed with result: {}", res.raw);                              \
             }                                                                                      \
-            return res;                                                                            \
+            R_THROW(res);                                                                          \
         }                                                                                          \
     }
 
@@ -369,7 +473,10 @@ private:
 #define R_TRY(res_expr)                                                                            \
     {                                                                                              \
         const auto _tmp_r_try_rc = (res_expr);                                                     \
-        if (_tmp_r_try_rc.IsError()) {                                                             \
-            return _tmp_r_try_rc;                                                                  \
+        if (R_FAILED(_tmp_r_try_rc)) {                                                             \
+            R_THROW(_tmp_r_try_rc);                                                                \
         }                                                                                          \
     }
+
+/// Evaluates a boolean expression, and succeeds if that expression is true.
+#define R_SUCCEED_IF(expr) R_UNLESS(!(expr), ResultSuccess)

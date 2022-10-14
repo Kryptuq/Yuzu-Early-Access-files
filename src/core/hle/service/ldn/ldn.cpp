@@ -165,7 +165,7 @@ public:
     }
 
     void OnEventFired() {
-        state_change_event->GetWritableEvent().Signal();
+        state_change_event->Signal();
     }
 
     void GetState(Kernel::HLERequestContext& ctx) {

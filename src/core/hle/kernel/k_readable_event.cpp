@@ -15,31 +15,44 @@ KReadableEvent::KReadableEvent(KernelCore& kernel_) : KSynchronizationObject{ker
 
 KReadableEvent::~KReadableEvent() = default;
 
-bool KReadableEvent::IsSignaled() const {
-    ASSERT(kernel.GlobalSchedulerContext().IsLocked());
+void KReadableEvent::Initialize(KEvent* parent) {
+    m_is_signaled = false;
+    m_parent = parent;
 
-    return is_signaled;
+    if (m_parent != nullptr) {
+        m_parent->Open();
+    }
+}
+
+bool KReadableEvent::IsSignaled() const {
+    ASSERT(KScheduler::IsSchedulerLockedByCurrentThread(kernel));
+
+    return m_is_signaled;
 }
 
 void KReadableEvent::Destroy() {
-    if (parent) {
-        parent->Close();
+    if (m_parent) {
+        {
+            KScopedSchedulerLock sl{kernel};
+            m_parent->OnReadableEventDestroyed();
+        }
+        m_parent->Close();
     }
 }
 
 Result KReadableEvent::Signal() {
     KScopedSchedulerLock lk{kernel};
 
-    if (!is_signaled) {
-        is_signaled = true;
-        NotifyAvailable();
+    if (!m_is_signaled) {
+        m_is_signaled = true;
+        this->NotifyAvailable();
     }
 
     return ResultSuccess;
 }
 
 Result KReadableEvent::Clear() {
-    Reset();
+    this->Reset();
 
     return ResultSuccess;
 }
@@ -47,11 +60,11 @@ Result KReadableEvent::Clear() {
 Result KReadableEvent::Reset() {
     KScopedSchedulerLock lk{kernel};
 
-    if (!is_signaled) {
+    if (!m_is_signaled) {
         return ResultInvalidState;
     }
 
-    is_signaled = false;
+    m_is_signaled = false;
     return ResultSuccess;
 }
 

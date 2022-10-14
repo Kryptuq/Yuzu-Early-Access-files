@@ -131,12 +131,12 @@ bool RingController::SetCommand(const std::vector<u8>& data) {
     case RingConCommands::ReadRepCount:
     case RingConCommands::ReadTotalPushCount:
         ASSERT_MSG(data.size() == 0x4, "data.size is not 0x4 bytes");
-        send_command_async_event->GetWritableEvent().Signal();
+        send_command_async_event->Signal();
         return true;
     case RingConCommands::ResetRepCount:
         ASSERT_MSG(data.size() == 0x4, "data.size is not 0x4 bytes");
         total_rep_count = 0;
-        send_command_async_event->GetWritableEvent().Signal();
+        send_command_async_event->Signal();
         return true;
     case RingConCommands::SaveCalData: {
         ASSERT_MSG(data.size() == 0x14, "data.size is not 0x14 bytes");
@@ -144,14 +144,14 @@ bool RingController::SetCommand(const std::vector<u8>& data) {
         SaveCalData save_info{};
         std::memcpy(&save_info, data.data(), sizeof(SaveCalData));
         user_calibration = save_info.calibration;
-        send_command_async_event->GetWritableEvent().Signal();
+        send_command_async_event->Signal();
         return true;
     }
     default:
         LOG_ERROR(Service_HID, "Command not implemented {}", command);
         command = RingConCommands::Error;
         // Signal a reply to avoid softlocking the game
-        send_command_async_event->GetWritableEvent().Signal();
+        send_command_async_event->Signal();
         return false;
     }
 }
