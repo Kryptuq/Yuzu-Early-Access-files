@@ -47,7 +47,7 @@ constexpr SinkDetails sink_details[] = {
 #endif
 #ifdef HAVE_SDL2
     SinkDetails{
-        "sdl",
+        "sdl2",
         [](std::string_view device_id) -> std::unique_ptr<Sink> {
             return std::make_unique<SDLSink>(device_id);
         },
@@ -76,7 +76,7 @@ const SinkDetails& GetOutputSinkDetails(std::string_view sink_id) {
 #if defined(HAVE_CUBEB) && defined(HAVE_SDL2)
         iter = find_backend("cubeb");
         if (iter->latency() > TargetSampleCount * 3) {
-            iter = find_backend("sdl");
+            iter = find_backend("sdl2");
         }
 #else
         iter = std::begin(sink_details);
