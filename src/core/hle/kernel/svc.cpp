@@ -933,7 +933,7 @@ static Result GetInfo(Core::System& system, u64* result, u64 info_id, Handle han
             return ResultSuccess;
 
         case GetInfoType::UserExceptionContextAddr:
-            *result = process->GetTLSRegionAddress();
+            *result = process->GetProcessLocalRegionAddress();
             return ResultSuccess;
 
         case GetInfoType::TotalPhysicalMemoryAvailableWithoutSystemResource:
@@ -1888,7 +1888,7 @@ static void ExitProcess(Core::System& system) {
     auto* current_process = system.Kernel().CurrentProcess();
 
     LOG_INFO(Kernel_SVC, "Process {} exiting", current_process->GetProcessID());
-    ASSERT_MSG(current_process->GetStatus() == ProcessStatus::Running,
+    ASSERT_MSG(current_process->GetState() == KProcess::State::Running,
                "Process has already exited");
 
     system.Exit();
@@ -2557,7 +2557,7 @@ static Result GetProcessInfo(Core::System& system, u64* out, Handle process_hand
         return ResultInvalidEnumValue;
     }
 
-    *out = static_cast<u64>(process->GetStatus());
+    *out = static_cast<u64>(process->GetState());
     return ResultSuccess;
 }
 

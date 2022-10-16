@@ -5,6 +5,7 @@
 
 #include <array>
 #include <bitset>
+#include <map>
 
 #include "common/common_types.h"
 #include "shader_recompiler/frontend/ir/type.h"
@@ -126,6 +127,8 @@ struct Info {
     VaryingState loads;
     VaryingState stores;
     VaryingState passthrough;
+
+    std::map<IR::Attribute, IR::Attribute> legacy_stores_mapping;
 
     bool loads_indexed_attributes{};
 

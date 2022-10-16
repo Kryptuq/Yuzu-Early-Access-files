@@ -50,7 +50,7 @@ Result KSharedMemory::Initialize(Core::DeviceMemory& device_memory_, KProcess* o
     is_initialized = true;
 
     // Clear all pages in the memory.
-    std::memset(device_memory_.GetPointer(physical_address_), 0, size_);
+    std::memset(device_memory_.GetPointer<void>(physical_address_), 0, size_);
 
     return ResultSuccess;
 }

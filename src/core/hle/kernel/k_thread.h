@@ -180,6 +180,10 @@ public:
 
     void Exit();
 
+    Result Terminate();
+
+    ThreadState RequestTerminate();
+
     [[nodiscard]] u32 GetSuspendFlags() const {
         return suspend_allowed_flags & suspend_request_flags;
     }

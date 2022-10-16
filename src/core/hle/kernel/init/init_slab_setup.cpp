@@ -94,8 +94,8 @@ VAddr InitializeSlabHeap(Core::System& system, KMemoryLayout& memory_layout, VAd
     // TODO(bunnei): Fix this once we support the kernel virtual memory layout.
 
     if (size > 0) {
-        void* backing_kernel_memory{
-            system.DeviceMemory().GetPointer(TranslateSlabAddrToPhysical(memory_layout, start))};
+        void* backing_kernel_memory{system.DeviceMemory().GetPointer<void>(
+            TranslateSlabAddrToPhysical(memory_layout, start))};
 
         const KMemoryRegion* region = memory_layout.FindVirtual(start + size - 1);
         ASSERT(region != nullptr);
@@ -181,7 +181,7 @@ void InitializeKPageBufferSlabHeap(Core::System& system) {
     ASSERT(slab_address != 0);
 
     // Initialize the slabheap.
-    KPageBuffer::InitializeSlabHeap(kernel, system.DeviceMemory().GetPointer(slab_address),
+    KPageBuffer::InitializeSlabHeap(kernel, system.DeviceMemory().GetPointer<void>(slab_address),
                                     slab_size);
 }
 

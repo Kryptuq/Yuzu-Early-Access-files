@@ -134,6 +134,14 @@ void ARM_Interface::Run() {
         }
         system.ExitDynarmicProfile();
 
+        // If the thread is scheduled for termination, exit the thread.
+        if (current_thread->HasDpc()) {
+            if (current_thread->IsTerminationRequested()) {
+                current_thread->Exit();
+                UNREACHABLE();
+            }
+        }
+
         // Notify the debugger and go to sleep if a breakpoint was hit,
         // or if the thread is unable to continue for any reason.
         if (Has(hr, breakpoint) || Has(hr, no_execute)) {

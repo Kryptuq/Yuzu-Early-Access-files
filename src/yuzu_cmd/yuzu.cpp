@@ -302,6 +302,8 @@ int main(int argc, char** argv) {
     }
 
     Core::System system{};
+    system.Initialize();
+
     InputCommon::InputSubsystem input_subsystem{};
 
     // Apply the command line arguments
@@ -392,7 +394,7 @@ int main(int argc, char** argv) {
     }
     system.DetachDebugger();
     void(system.Pause());
-    system.Shutdown();
+    system.ShutdownMainProcess();
 
     detached_tasks.WaitForAllTasks();
     return 0;

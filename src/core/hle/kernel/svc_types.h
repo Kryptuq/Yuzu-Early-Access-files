@@ -95,6 +95,19 @@ constexpr inline s32 IdealCoreNoUpdate = -3;
 constexpr inline s32 LowestThreadPriority = 63;
 constexpr inline s32 HighestThreadPriority = 0;
 
+constexpr inline s32 SystemThreadPriorityHighest = 16;
+
+enum ProcessState : u32 {
+    ProcessState_Created = 0,
+    ProcessState_CreatedAttached = 1,
+    ProcessState_Running = 2,
+    ProcessState_Crashed = 3,
+    ProcessState_RunningAttached = 4,
+    ProcessState_Terminating = 5,
+    ProcessState_Terminated = 6,
+    ProcessState_DebugBreak = 7,
+};
+
 constexpr inline size_t ThreadLocalRegionSize = 0x200;
 
 } // namespace Kernel::Svc

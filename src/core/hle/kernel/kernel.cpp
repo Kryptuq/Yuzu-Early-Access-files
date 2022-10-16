@@ -24,6 +24,7 @@
 #include "core/hardware_properties.h"
 #include "core/hle/kernel/init/init_slab_setup.h"
 #include "core/hle/kernel/k_client_port.h"
+#include "core/hle/kernel/k_dynamic_resource_manager.h"
 #include "core/hle/kernel/k_handle_table.h"
 #include "core/hle/kernel/k_memory_layout.h"
 #include "core/hle/kernel/k_memory_manager.h"
@@ -73,8 +74,16 @@ struct KernelCore::Impl {
         InitializeMemoryLayout();
         Init::InitializeKPageBufferSlabHeap(system);
         InitializeShutdownThreads();
-        InitializePreemption(kernel);
         InitializePhysicalCores();
+        InitializePreemption(kernel);
+
+        // Initialize the Dynamic Slab Heaps.
+        {
+            const auto& pt_heap_region = memory_layout->GetPageTableHeapRegion();
+            ASSERT(pt_heap_region.GetEndAddress() != 0);
+
+            InitializeResourceManagers(pt_heap_region.GetAddress(), pt_heap_region.GetSize());
+        }
 
         RegisterHostThread();
     }
@@ -84,6 +93,15 @@ struct KernelCore::Impl {
             cores[core_id]->Initialize((*current_process).Is64BitProcess());
             system.Memory().SetCurrentPageTable(*current_process, core_id);
         }
+    }
+
+    void CloseCurrentProcess() {
+        (*current_process).Finalize();
+        // current_process->Close();
+        // TODO: The current process should be destroyed based on accurate ref counting after
+        // calling Close(). Adding a manual Destroy() call instead to avoid a memory leak.
+        (*current_process).Destroy();
+        current_process = nullptr;
     }
 
     void Shutdown() {
@@ -98,10 +116,6 @@ struct KernelCore::Impl {
         next_kernel_process_id = KProcess::InitialKIPIDMin;
         next_user_process_id = KProcess::ProcessIDMin;
         next_thread_id = 1;
-
-        for (auto& core : cores) {
-            core = nullptr;
-        }
 
         global_handle_table->Finalize();
         global_handle_table.reset();
@@ -152,15 +166,7 @@ struct KernelCore::Impl {
             }
         }
 
-        // Shutdown all processes.
-        if (current_process) {
-            (*current_process).Finalize();
-            // current_process->Close();
-            // TODO: The current process should be destroyed based on accurate ref counting after
-            // calling Close(). Adding a manual Destroy() call instead to avoid a memory leak.
-            (*current_process).Destroy();
-            current_process = nullptr;
-        }
+        CloseCurrentProcess();
 
         // Track kernel objects that were not freed on shutdown
         {
@@ -257,6 +263,18 @@ struct KernelCore::Impl {
         system.CoreTiming().ScheduleLoopingEvent(time_interval, time_interval, preemption_event);
     }
 
+    void InitializeResourceManagers(VAddr address, size_t size) {
+        dynamic_page_manager = std::make_unique<KDynamicPageManager>();
+        memory_block_heap = std::make_unique<KMemoryBlockSlabHeap>();
+        app_memory_block_manager = std::make_unique<KMemoryBlockSlabManager>();
+
+        dynamic_page_manager->Initialize(address, size);
+        static constexpr size_t ApplicationMemoryBlockSlabHeapSize = 20000;
+        memory_block_heap->Initialize(dynamic_page_manager.get(),
+                                      ApplicationMemoryBlockSlabHeapSize);
+        app_memory_block_manager->Initialize(nullptr, memory_block_heap.get());
+    }
+
     void InitializeShutdownThreads() {
         for (u32 core_id = 0; core_id < Core::Hardware::NUM_CPU_CORES; core_id++) {
             shutdown_threads[core_id] = KThread::Create(system.Kernel());
@@ -344,11 +362,6 @@ struct KernelCore::Impl {
     static inline thread_local KThread* current_thread{nullptr};
 
     KThread* GetCurrentEmuThread() {
-        // If we are shutting down the kernel, none of this is relevant anymore.
-        if (IsShuttingDown()) {
-            return {};
-        }
-
         const auto thread_id = GetCurrentHostThreadID();
         if (thread_id >= Core::Hardware::NUM_CPU_CORES) {
             return GetHostDummyThread();
@@ -770,6 +783,11 @@ struct KernelCore::Impl {
     // Kernel memory management
     std::unique_ptr<KMemoryManager> memory_manager;
 
+    // Dynamic slab managers
+    std::unique_ptr<KDynamicPageManager> dynamic_page_manager;
+    std::unique_ptr<KMemoryBlockSlabHeap> memory_block_heap;
+    std::unique_ptr<KMemoryBlockSlabManager> app_memory_block_manager;
+
     // Shared memory for services
     Kernel::KSharedMemory* hid_shared_mem{};
     Kernel::KSharedMemory* font_shared_mem{};
@@ -851,6 +869,10 @@ KProcess* KernelCore::CurrentProcess() {
 
 const KProcess* KernelCore::CurrentProcess() const {
     return impl->current_process;
+}
+
+void KernelCore::CloseCurrentProcess() {
+    impl->CloseCurrentProcess();
 }
 
 const std::vector<KProcess*>& KernelCore::GetProcessList() const {
@@ -1039,6 +1061,14 @@ KMemoryManager& KernelCore::MemoryManager() {
 
 const KMemoryManager& KernelCore::MemoryManager() const {
     return *impl->memory_manager;
+}
+
+KMemoryBlockSlabManager& KernelCore::GetApplicationMemoryBlockManager() {
+    return *impl->app_memory_block_manager;
+}
+
+const KMemoryBlockSlabManager& KernelCore::GetApplicationMemoryBlockManager() const {
+    return *impl->app_memory_block_manager;
 }
 
 Kernel::KSharedMemory& KernelCore::GetHidSharedMem() {

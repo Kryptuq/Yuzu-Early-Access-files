@@ -134,6 +134,7 @@ Shader::RuntimeInfo MakeRuntimeInfo(std::span<const Shader::IR::Program> program
     Shader::RuntimeInfo info;
     if (previous_program) {
         info.previous_stage_stores = previous_program->info.stores;
+        info.previous_stage_legacy_stores_mapping = previous_program->info.legacy_stores_mapping;
         if (previous_program->is_geometry_passthrough) {
             info.previous_stage_stores.mask |= previous_program->info.passthrough.mask;
         }

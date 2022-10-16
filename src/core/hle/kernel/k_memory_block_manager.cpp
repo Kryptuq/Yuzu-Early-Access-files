@@ -2,221 +2,336 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/hle/kernel/k_memory_block_manager.h"
-#include "core/hle/kernel/memory_types.h"
 
 namespace Kernel {
 
-KMemoryBlockManager::KMemoryBlockManager(VAddr start_addr_, VAddr end_addr_)
-    : start_addr{start_addr_}, end_addr{end_addr_} {
-    const u64 num_pages{(end_addr - start_addr) / PageSize};
-    memory_block_tree.emplace_back(start_addr, num_pages, KMemoryState::Free,
-                                   KMemoryPermission::None, KMemoryAttribute::None);
+KMemoryBlockManager::KMemoryBlockManager() = default;
+
+Result KMemoryBlockManager::Initialize(VAddr st, VAddr nd, KMemoryBlockSlabManager* slab_manager) {
+    // Allocate a block to encapsulate the address space, insert it into the tree.
+    KMemoryBlock* start_block = slab_manager->Allocate();
+    R_UNLESS(start_block != nullptr, ResultOutOfResource);
+
+    // Set our start and end.
+    m_start_address = st;
+    m_end_address = nd;
+    ASSERT(Common::IsAligned(m_start_address, PageSize));
+    ASSERT(Common::IsAligned(m_end_address, PageSize));
+
+    // Initialize and insert the block.
+    start_block->Initialize(m_start_address, (m_end_address - m_start_address) / PageSize,
+                            KMemoryState::Free, KMemoryPermission::None, KMemoryAttribute::None);
+    m_memory_block_tree.insert(*start_block);
+
+    R_SUCCEED();
 }
 
-KMemoryBlockManager::iterator KMemoryBlockManager::FindIterator(VAddr addr) {
-    auto node{memory_block_tree.begin()};
-    while (node != end()) {
-        const VAddr node_end_addr{node->GetNumPages() * PageSize + node->GetAddress()};
-        if (node->GetAddress() <= addr && node_end_addr - 1 >= addr) {
-            return node;
-        }
-        node = std::next(node);
+void KMemoryBlockManager::Finalize(KMemoryBlockSlabManager* slab_manager,
+                                   HostUnmapCallback&& host_unmap_callback) {
+    // Erase every block until we have none left.
+    auto it = m_memory_block_tree.begin();
+    while (it != m_memory_block_tree.end()) {
+        KMemoryBlock* block = std::addressof(*it);
+        it = m_memory_block_tree.erase(it);
+        slab_manager->Free(block);
+        host_unmap_callback(block->GetAddress(), block->GetSize());
     }
-    return end();
+
+    ASSERT(m_memory_block_tree.empty());
 }
 
-VAddr KMemoryBlockManager::FindFreeArea(VAddr region_start, std::size_t region_num_pages,
-                                        std::size_t num_pages, std::size_t align,
-                                        std::size_t offset, std::size_t guard_pages) {
-    if (num_pages == 0) {
-        return {};
-    }
+VAddr KMemoryBlockManager::FindFreeArea(VAddr region_start, size_t region_num_pages,
+                                        size_t num_pages, size_t alignment, size_t offset,
+                                        size_t guard_pages) const {
+    if (num_pages > 0) {
+        const VAddr region_end = region_start + region_num_pages * PageSize;
+        const VAddr region_last = region_end - 1;
+        for (const_iterator it = this->FindIterator(region_start); it != m_memory_block_tree.cend();
+             it++) {
+            const KMemoryInfo info = it->GetMemoryInfo();
+            if (region_last < info.GetAddress()) {
+                break;
+            }
+            if (info.m_state != KMemoryState::Free) {
+                continue;
+            }
 
-    const VAddr region_end{region_start + region_num_pages * PageSize};
-    const VAddr region_last{region_end - 1};
-    for (auto it{FindIterator(region_start)}; it != memory_block_tree.cend(); it++) {
-        const auto info{it->GetMemoryInfo()};
-        if (region_last < info.GetAddress()) {
-            break;
-        }
+            VAddr area = (info.GetAddress() <= region_start) ? region_start : info.GetAddress();
+            area += guard_pages * PageSize;
 
-        if (info.state != KMemoryState::Free) {
-            continue;
-        }
+            const VAddr offset_area = Common::AlignDown(area, alignment) + offset;
+            area = (area <= offset_area) ? offset_area : offset_area + alignment;
 
-        VAddr area{(info.GetAddress() <= region_start) ? region_start : info.GetAddress()};
-        area += guard_pages * PageSize;
+            const VAddr area_end = area + num_pages * PageSize + guard_pages * PageSize;
+            const VAddr area_last = area_end - 1;
 
-        const VAddr offset_area{Common::AlignDown(area, align) + offset};
-        area = (area <= offset_area) ? offset_area : offset_area + align;
-
-        const VAddr area_end{area + num_pages * PageSize + guard_pages * PageSize};
-        const VAddr area_last{area_end - 1};
-
-        if (info.GetAddress() <= area && area < area_last && area_last <= region_last &&
-            area_last <= info.GetLastAddress()) {
-            return area;
+            if (info.GetAddress() <= area && area < area_last && area_last <= region_last &&
+                area_last <= info.GetLastAddress()) {
+                return area;
+            }
         }
     }
 
     return {};
 }
 
-void KMemoryBlockManager::Update(VAddr addr, std::size_t num_pages, KMemoryState prev_state,
-                                 KMemoryPermission prev_perm, KMemoryAttribute prev_attribute,
-                                 KMemoryState state, KMemoryPermission perm,
-                                 KMemoryAttribute attribute) {
-    const VAddr update_end_addr{addr + num_pages * PageSize};
-    iterator node{memory_block_tree.begin()};
+void KMemoryBlockManager::CoalesceForUpdate(KMemoryBlockManagerUpdateAllocator* allocator,
+                                            VAddr address, size_t num_pages) {
+    // Find the iterator now that we've updated.
+    iterator it = this->FindIterator(address);
+    if (address != m_start_address) {
+        it--;
+    }
 
-    prev_attribute |= KMemoryAttribute::IpcAndDeviceMapped;
-
-    while (node != memory_block_tree.end()) {
-        KMemoryBlock* block{&(*node)};
-        iterator next_node{std::next(node)};
-        const VAddr cur_addr{block->GetAddress()};
-        const VAddr cur_end_addr{block->GetNumPages() * PageSize + cur_addr};
-
-        if (addr < cur_end_addr && cur_addr < update_end_addr) {
-            if (!block->HasProperties(prev_state, prev_perm, prev_attribute)) {
-                node = next_node;
-                continue;
-            }
-
-            iterator new_node{node};
-            if (addr > cur_addr) {
-                memory_block_tree.insert(node, block->Split(addr));
-            }
-
-            if (update_end_addr < cur_end_addr) {
-                new_node = memory_block_tree.insert(node, block->Split(update_end_addr));
-            }
-
-            new_node->Update(state, perm, attribute);
-
-            MergeAdjacent(new_node, next_node);
-        }
-
-        if (cur_end_addr - 1 >= update_end_addr - 1) {
+    // Coalesce blocks that we can.
+    while (true) {
+        iterator prev = it++;
+        if (it == m_memory_block_tree.end()) {
             break;
         }
 
-        node = next_node;
-    }
-}
-
-void KMemoryBlockManager::Update(VAddr addr, std::size_t num_pages, KMemoryState state,
-                                 KMemoryPermission perm, KMemoryAttribute attribute) {
-    const VAddr update_end_addr{addr + num_pages * PageSize};
-    iterator node{memory_block_tree.begin()};
-
-    while (node != memory_block_tree.end()) {
-        KMemoryBlock* block{&(*node)};
-        iterator next_node{std::next(node)};
-        const VAddr cur_addr{block->GetAddress()};
-        const VAddr cur_end_addr{block->GetNumPages() * PageSize + cur_addr};
-
-        if (addr < cur_end_addr && cur_addr < update_end_addr) {
-            iterator new_node{node};
-
-            if (addr > cur_addr) {
-                memory_block_tree.insert(node, block->Split(addr));
-            }
-
-            if (update_end_addr < cur_end_addr) {
-                new_node = memory_block_tree.insert(node, block->Split(update_end_addr));
-            }
-
-            new_node->Update(state, perm, attribute);
-
-            MergeAdjacent(new_node, next_node);
+        if (prev->CanMergeWith(*it)) {
+            KMemoryBlock* block = std::addressof(*it);
+            m_memory_block_tree.erase(it);
+            prev->Add(*block);
+            allocator->Free(block);
+            it = prev;
         }
 
-        if (cur_end_addr - 1 >= update_end_addr - 1) {
+        if (address + num_pages * PageSize < it->GetMemoryInfo().GetEndAddress()) {
             break;
         }
-
-        node = next_node;
     }
 }
 
-void KMemoryBlockManager::UpdateLock(VAddr addr, std::size_t num_pages, LockFunc&& lock_func,
+void KMemoryBlockManager::Update(KMemoryBlockManagerUpdateAllocator* allocator, VAddr address,
+                                 size_t num_pages, KMemoryState state, KMemoryPermission perm,
+                                 KMemoryAttribute attr,
+                                 KMemoryBlockDisableMergeAttribute set_disable_attr,
+                                 KMemoryBlockDisableMergeAttribute clear_disable_attr) {
+    // Ensure for auditing that we never end up with an invalid tree.
+    KScopedMemoryBlockManagerAuditor auditor(this);
+    ASSERT(Common::IsAligned(address, PageSize));
+    ASSERT((attr & (KMemoryAttribute::IpcLocked | KMemoryAttribute::DeviceShared)) ==
+           KMemoryAttribute::None);
+
+    VAddr cur_address = address;
+    size_t remaining_pages = num_pages;
+    iterator it = this->FindIterator(address);
+
+    while (remaining_pages > 0) {
+        const size_t remaining_size = remaining_pages * PageSize;
+        KMemoryInfo cur_info = it->GetMemoryInfo();
+        if (it->HasProperties(state, perm, attr)) {
+            // If we already have the right properties, just advance.
+            if (cur_address + remaining_size < cur_info.GetEndAddress()) {
+                remaining_pages = 0;
+                cur_address += remaining_size;
+            } else {
+                remaining_pages =
+                    (cur_address + remaining_size - cur_info.GetEndAddress()) / PageSize;
+                cur_address = cur_info.GetEndAddress();
+            }
+        } else {
+            // If we need to, create a new block before and insert it.
+            if (cur_info.GetAddress() != cur_address) {
+                KMemoryBlock* new_block = allocator->Allocate();
+
+                it->Split(new_block, cur_address);
+                it = m_memory_block_tree.insert(*new_block);
+                it++;
+
+                cur_info = it->GetMemoryInfo();
+                cur_address = cur_info.GetAddress();
+            }
+
+            // If we need to, create a new block after and insert it.
+            if (cur_info.GetSize() > remaining_size) {
+                KMemoryBlock* new_block = allocator->Allocate();
+
+                it->Split(new_block, cur_address + remaining_size);
+                it = m_memory_block_tree.insert(*new_block);
+
+                cur_info = it->GetMemoryInfo();
+            }
+
+            // Update block state.
+            it->Update(state, perm, attr, cur_address == address, static_cast<u8>(set_disable_attr),
+                       static_cast<u8>(clear_disable_attr));
+            cur_address += cur_info.GetSize();
+            remaining_pages -= cur_info.GetNumPages();
+        }
+        it++;
+    }
+
+    this->CoalesceForUpdate(allocator, address, num_pages);
+}
+
+void KMemoryBlockManager::UpdateIfMatch(KMemoryBlockManagerUpdateAllocator* allocator,
+                                        VAddr address, size_t num_pages, KMemoryState test_state,
+                                        KMemoryPermission test_perm, KMemoryAttribute test_attr,
+                                        KMemoryState state, KMemoryPermission perm,
+                                        KMemoryAttribute attr) {
+    // Ensure for auditing that we never end up with an invalid tree.
+    KScopedMemoryBlockManagerAuditor auditor(this);
+    ASSERT(Common::IsAligned(address, PageSize));
+    ASSERT((attr & (KMemoryAttribute::IpcLocked | KMemoryAttribute::DeviceShared)) ==
+           KMemoryAttribute::None);
+
+    VAddr cur_address = address;
+    size_t remaining_pages = num_pages;
+    iterator it = this->FindIterator(address);
+
+    while (remaining_pages > 0) {
+        const size_t remaining_size = remaining_pages * PageSize;
+        KMemoryInfo cur_info = it->GetMemoryInfo();
+        if (it->HasProperties(test_state, test_perm, test_attr) &&
+            !it->HasProperties(state, perm, attr)) {
+            // If we need to, create a new block before and insert it.
+            if (cur_info.GetAddress() != cur_address) {
+                KMemoryBlock* new_block = allocator->Allocate();
+
+                it->Split(new_block, cur_address);
+                it = m_memory_block_tree.insert(*new_block);
+                it++;
+
+                cur_info = it->GetMemoryInfo();
+                cur_address = cur_info.GetAddress();
+            }
+
+            // If we need to, create a new block after and insert it.
+            if (cur_info.GetSize() > remaining_size) {
+                KMemoryBlock* new_block = allocator->Allocate();
+
+                it->Split(new_block, cur_address + remaining_size);
+                it = m_memory_block_tree.insert(*new_block);
+
+                cur_info = it->GetMemoryInfo();
+            }
+
+            // Update block state.
+            it->Update(state, perm, attr, false, 0, 0);
+            cur_address += cur_info.GetSize();
+            remaining_pages -= cur_info.GetNumPages();
+        } else {
+            // If we already have the right properties, just advance.
+            if (cur_address + remaining_size < cur_info.GetEndAddress()) {
+                remaining_pages = 0;
+                cur_address += remaining_size;
+            } else {
+                remaining_pages =
+                    (cur_address + remaining_size - cur_info.GetEndAddress()) / PageSize;
+                cur_address = cur_info.GetEndAddress();
+            }
+        }
+        it++;
+    }
+
+    this->CoalesceForUpdate(allocator, address, num_pages);
+}
+
+void KMemoryBlockManager::UpdateLock(KMemoryBlockManagerUpdateAllocator* allocator, VAddr address,
+                                     size_t num_pages, MemoryBlockLockFunction lock_func,
                                      KMemoryPermission perm) {
-    const VAddr update_end_addr{addr + num_pages * PageSize};
-    iterator node{memory_block_tree.begin()};
+    // Ensure for auditing that we never end up with an invalid tree.
+    KScopedMemoryBlockManagerAuditor auditor(this);
+    ASSERT(Common::IsAligned(address, PageSize));
 
-    while (node != memory_block_tree.end()) {
-        KMemoryBlock* block{&(*node)};
-        iterator next_node{std::next(node)};
-        const VAddr cur_addr{block->GetAddress()};
-        const VAddr cur_end_addr{block->GetNumPages() * PageSize + cur_addr};
+    VAddr cur_address = address;
+    size_t remaining_pages = num_pages;
+    iterator it = this->FindIterator(address);
 
-        if (addr < cur_end_addr && cur_addr < update_end_addr) {
-            iterator new_node{node};
+    const VAddr end_address = address + (num_pages * PageSize);
 
-            if (addr > cur_addr) {
-                memory_block_tree.insert(node, block->Split(addr));
-            }
+    while (remaining_pages > 0) {
+        const size_t remaining_size = remaining_pages * PageSize;
+        KMemoryInfo cur_info = it->GetMemoryInfo();
 
-            if (update_end_addr < cur_end_addr) {
-                new_node = memory_block_tree.insert(node, block->Split(update_end_addr));
-            }
+        // If we need to, create a new block before and insert it.
+        if (cur_info.m_address != cur_address) {
+            KMemoryBlock* new_block = allocator->Allocate();
 
-            lock_func(new_node, perm);
+            it->Split(new_block, cur_address);
+            it = m_memory_block_tree.insert(*new_block);
+            it++;
 
-            MergeAdjacent(new_node, next_node);
+            cur_info = it->GetMemoryInfo();
+            cur_address = cur_info.GetAddress();
         }
 
-        if (cur_end_addr - 1 >= update_end_addr - 1) {
-            break;
+        if (cur_info.GetSize() > remaining_size) {
+            // If we need to, create a new block after and insert it.
+            KMemoryBlock* new_block = allocator->Allocate();
+
+            it->Split(new_block, cur_address + remaining_size);
+            it = m_memory_block_tree.insert(*new_block);
+
+            cur_info = it->GetMemoryInfo();
         }
 
-        node = next_node;
+        // Call the locked update function.
+        (std::addressof(*it)->*lock_func)(perm, cur_info.GetAddress() == address,
+                                          cur_info.GetEndAddress() == end_address);
+        cur_address += cur_info.GetSize();
+        remaining_pages -= cur_info.GetNumPages();
+        it++;
     }
+
+    this->CoalesceForUpdate(allocator, address, num_pages);
 }
 
-void KMemoryBlockManager::IterateForRange(VAddr start, VAddr end, IterateFunc&& func) {
-    const_iterator it{FindIterator(start)};
-    KMemoryInfo info{};
-    do {
-        info = it->GetMemoryInfo();
-        func(info);
-        it = std::next(it);
-    } while (info.addr + info.size - 1 < end - 1 && it != cend());
-}
+// Debug.
+bool KMemoryBlockManager::CheckState() const {
+    // Loop over every block, ensuring that we are sorted and coalesced.
+    auto it = m_memory_block_tree.cbegin();
+    auto prev = it++;
+    while (it != m_memory_block_tree.cend()) {
+        const KMemoryInfo prev_info = prev->GetMemoryInfo();
+        const KMemoryInfo cur_info = it->GetMemoryInfo();
 
-void KMemoryBlockManager::MergeAdjacent(iterator it, iterator& next_it) {
-    KMemoryBlock* block{&(*it)};
-
-    auto EraseIt = [&](const iterator it_to_erase) {
-        if (next_it == it_to_erase) {
-            next_it = std::next(next_it);
+        // Sequential blocks which can be merged should be merged.
+        if (prev->CanMergeWith(*it)) {
+            return false;
         }
-        memory_block_tree.erase(it_to_erase);
-    };
 
-    if (it != memory_block_tree.begin()) {
-        KMemoryBlock* prev{&(*std::prev(it))};
+        // Sequential blocks should be sequential.
+        if (prev_info.GetEndAddress() != cur_info.GetAddress()) {
+            return false;
+        }
 
-        if (block->HasSameProperties(*prev)) {
-            const iterator prev_it{std::prev(it)};
+        // If the block is ipc locked, it must have a count.
+        if ((cur_info.m_attribute & KMemoryAttribute::IpcLocked) != KMemoryAttribute::None &&
+            cur_info.m_ipc_lock_count == 0) {
+            return false;
+        }
 
-            prev->Add(block->GetNumPages());
-            EraseIt(it);
+        // If the block is device shared, it must have a count.
+        if ((cur_info.m_attribute & KMemoryAttribute::DeviceShared) != KMemoryAttribute::None &&
+            cur_info.m_device_use_count == 0) {
+            return false;
+        }
 
-            it = prev_it;
-            block = prev;
+        // Advance the iterator.
+        prev = it++;
+    }
+
+    // Our loop will miss checking the last block, potentially, so check it.
+    if (prev != m_memory_block_tree.cend()) {
+        const KMemoryInfo prev_info = prev->GetMemoryInfo();
+        // If the block is ipc locked, it must have a count.
+        if ((prev_info.m_attribute & KMemoryAttribute::IpcLocked) != KMemoryAttribute::None &&
+            prev_info.m_ipc_lock_count == 0) {
+            return false;
+        }
+
+        // If the block is device shared, it must have a count.
+        if ((prev_info.m_attribute & KMemoryAttribute::DeviceShared) != KMemoryAttribute::None &&
+            prev_info.m_device_use_count == 0) {
+            return false;
         }
     }
 
-    if (it != cend()) {
-        const KMemoryBlock* const next{&(*std::next(it))};
-
-        if (block->HasSameProperties(*next)) {
-            block->Add(next->GetNumPages());
-            EraseIt(std::next(it));
-        }
-    }
+    return true;
 }
 
 } // namespace Kernel

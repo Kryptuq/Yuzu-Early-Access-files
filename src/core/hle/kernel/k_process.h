@@ -13,6 +13,7 @@
 #include "core/hle/kernel/k_auto_object.h"
 #include "core/hle/kernel/k_condition_variable.h"
 #include "core/hle/kernel/k_handle_table.h"
+#include "core/hle/kernel/k_page_table.h"
 #include "core/hle/kernel/k_synchronization_object.h"
 #include "core/hle/kernel/k_thread_local_page.h"
 #include "core/hle/kernel/k_worker_task.h"
@@ -31,7 +32,6 @@ class ProgramMetadata;
 namespace Kernel {
 
 class KernelCore;
-class KPageTable;
 class KResourceLimit;
 class KThread;
 class KSharedMemoryInfo;
@@ -43,24 +43,6 @@ enum class MemoryRegion : u16 {
     APPLICATION = 1,
     SYSTEM = 2,
     BASE = 3,
-};
-
-/**
- * Indicates the status of a Process instance.
- *
- * @note These match the values as used by kernel,
- *       so new entries should only be added if RE
- *       shows that a new value has been introduced.
- */
-enum class ProcessStatus {
-    Created,
-    CreatedWithDebuggerAttached,
-    Running,
-    WaitingForDebuggerToAttach,
-    DebuggerAttached,
-    Exiting,
-    Exited,
-    DebugBreak,
 };
 
 enum class ProcessActivity : u32 {
@@ -89,6 +71,17 @@ public:
     explicit KProcess(KernelCore& kernel_);
     ~KProcess() override;
 
+    enum class State {
+        Created = Svc::ProcessState_Created,
+        CreatedAttached = Svc::ProcessState_CreatedAttached,
+        Running = Svc::ProcessState_Running,
+        Crashed = Svc::ProcessState_Crashed,
+        RunningAttached = Svc::ProcessState_RunningAttached,
+        Terminating = Svc::ProcessState_Terminating,
+        Terminated = Svc::ProcessState_Terminated,
+        DebugBreak = Svc::ProcessState_DebugBreak,
+    };
+
     enum : u64 {
         /// Lowest allowed process ID for a kernel initial process.
         InitialKIPIDMin = 1,
@@ -114,12 +107,12 @@ public:
 
     /// Gets a reference to the process' page table.
     KPageTable& PageTable() {
-        return *page_table;
+        return page_table;
     }
 
     /// Gets const a reference to the process' page table.
     const KPageTable& PageTable() const {
-        return *page_table;
+        return page_table;
     }
 
     /// Gets a reference to the process' handle table.
@@ -145,26 +138,25 @@ public:
     }
 
     Result WaitConditionVariable(VAddr address, u64 cv_key, u32 tag, s64 ns) {
-        return condition_var.Wait(address, cv_key, tag, ns);
+        R_RETURN(condition_var.Wait(address, cv_key, tag, ns));
     }
 
     Result SignalAddressArbiter(VAddr address, Svc::SignalType signal_type, s32 value, s32 count) {
-        return address_arbiter.SignalToAddress(address, signal_type, value, count);
+        R_RETURN(address_arbiter.SignalToAddress(address, signal_type, value, count));
     }
 
     Result WaitAddressArbiter(VAddr address, Svc::ArbitrationType arb_type, s32 value,
                               s64 timeout) {
-        return address_arbiter.WaitForAddress(address, arb_type, value, timeout);
+        R_RETURN(address_arbiter.WaitForAddress(address, arb_type, value, timeout));
     }
 
-    /// Gets the address to the process' dedicated TLS region.
-    VAddr GetTLSRegionAddress() const {
-        return tls_region_address;
+    VAddr GetProcessLocalRegionAddress() const {
+        return plr_address;
     }
 
     /// Gets the current status of the process
-    ProcessStatus GetStatus() const {
-        return status;
+    State GetState() const {
+        return state;
     }
 
     /// Gets the unique ID that identifies this particular process.
@@ -286,18 +278,18 @@ public:
     }
 
     /// Retrieves the total physical memory available to this process in bytes.
-    u64 GetTotalPhysicalMemoryAvailable() const;
+    u64 GetTotalPhysicalMemoryAvailable();
 
     /// Retrieves the total physical memory available to this process in bytes,
     /// without the size of the personal system resource heap added to it.
-    u64 GetTotalPhysicalMemoryAvailableWithoutSystemResource() const;
+    u64 GetTotalPhysicalMemoryAvailableWithoutSystemResource();
 
     /// Retrieves the total physical memory used by this process in bytes.
-    u64 GetTotalPhysicalMemoryUsed() const;
+    u64 GetTotalPhysicalMemoryUsed();
 
     /// Retrieves the total physical memory used by this process in bytes,
     /// without the size of the personal system resource heap added to it.
-    u64 GetTotalPhysicalMemoryUsedWithoutSystemResource() const;
+    u64 GetTotalPhysicalMemoryUsedWithoutSystemResource();
 
     /// Gets the list of all threads created with this process as their owner.
     std::list<KThread*>& GetThreadList() {
@@ -415,19 +407,24 @@ private:
         pinned_threads[core_id] = nullptr;
     }
 
-    /// Changes the process status. If the status is different
-    /// from the current process status, then this will trigger
-    /// a process signal.
-    void ChangeStatus(ProcessStatus new_status);
+    void FinalizeHandleTable() {
+        // Finalize the table.
+        handle_table.Finalize();
+
+        // Note that the table is finalized.
+        is_handle_table_initialized = false;
+    }
+
+    void ChangeState(State new_state);
 
     /// Allocates the main thread stack for the process, given the stack size in bytes.
     Result AllocateMainThreadStack(std::size_t stack_size);
 
     /// Memory manager for this process
-    std::unique_ptr<KPageTable> page_table;
+    KPageTable page_table;
 
     /// Current status of the process
-    ProcessStatus status{};
+    State state{};
 
     /// The ID of this process
     u64 process_id = 0;
@@ -442,6 +439,8 @@ private:
 
     /// Resource limit descriptor for this process
     KResourceLimit* resource_limit{};
+
+    VAddr system_resource_address{};
 
     /// The ideal CPU core for this process, threads are scheduled on this core by default.
     u8 ideal_core = 0;
@@ -469,7 +468,7 @@ private:
     KConditionVariable condition_var;
 
     /// Address indicating the location of the process' dedicated TLS region.
-    VAddr tls_region_address = 0;
+    VAddr plr_address = 0;
 
     /// Random values for svcGetInfo RandomEntropy
     std::array<u64, RANDOM_ENTROPY_SIZE> random_entropy{};
@@ -495,8 +494,12 @@ private:
     /// Schedule count of this process
     s64 schedule_count{};
 
+    size_t memory_release_hint{};
+
     bool is_signaled{};
     bool is_suspended{};
+    bool is_immortal{};
+    bool is_handle_table_initialized{};
     bool is_initialized{};
 
     std::atomic<u16> num_running_threads{};

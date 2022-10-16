@@ -12,7 +12,7 @@ namespace Kernel {
 
 KPageBuffer* KPageBuffer::FromPhysicalAddress(Core::System& system, PAddr phys_addr) {
     ASSERT(Common::IsAligned(phys_addr, PageSize));
-    return reinterpret_cast<KPageBuffer*>(system.DeviceMemory().GetPointer(phys_addr));
+    return system.DeviceMemory().GetPointer<KPageBuffer>(phys_addr);
 }
 
 } // namespace Kernel

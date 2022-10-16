@@ -63,6 +63,7 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
     Shader::RuntimeInfo info;
     if (previous_program) {
         info.previous_stage_stores = previous_program->info.stores;
+        info.previous_stage_legacy_stores_mapping = previous_program->info.legacy_stores_mapping;
     } else {
         // Mark all stores as available for vertex shaders
         info.previous_stage_stores.mask.set();

@@ -31,12 +31,14 @@ public:
                DramMemoryMap::Base;
     }
 
-    u8* GetPointer(PAddr addr) {
-        return buffer.BackingBasePointer() + (addr - DramMemoryMap::Base);
+    template <typename T>
+    T* GetPointer(PAddr addr) {
+        return reinterpret_cast<T*>(buffer.BackingBasePointer() + (addr - DramMemoryMap::Base));
     }
 
-    const u8* GetPointer(PAddr addr) const {
-        return buffer.BackingBasePointer() + (addr - DramMemoryMap::Base);
+    template <typename T>
+    const T* GetPointer(PAddr addr) const {
+        return reinterpret_cast<T*>(buffer.BackingBasePointer() + (addr - DramMemoryMap::Base));
     }
 
     Common::HostMemory buffer;

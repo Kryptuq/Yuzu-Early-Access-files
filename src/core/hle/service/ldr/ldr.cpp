@@ -290,7 +290,7 @@ public:
         const std::size_t padding_size{page_table.GetNumGuardPages() * Kernel::PageSize};
         const auto start_info{page_table.QueryInfo(start - 1)};
 
-        if (start_info.state != Kernel::KMemoryState::Free) {
+        if (start_info.GetState() != Kernel::KMemoryState::Free) {
             return {};
         }
 
@@ -300,7 +300,7 @@ public:
 
         const auto end_info{page_table.QueryInfo(start + size)};
 
-        if (end_info.state != Kernel::KMemoryState::Free) {
+        if (end_info.GetState() != Kernel::KMemoryState::Free) {
             return {};
         }
 

@@ -54,7 +54,7 @@ public:
      * @return A pointer to the shared memory block from the specified offset
      */
     u8* GetPointer(std::size_t offset = 0) {
-        return device_memory->GetPointer(physical_address + offset);
+        return device_memory->GetPointer<u8>(physical_address + offset);
     }
 
     /**
@@ -63,7 +63,7 @@ public:
      * @return A pointer to the shared memory block from the specified offset
      */
     const u8* GetPointer(std::size_t offset = 0) const {
-        return device_memory->GetPointer(physical_address + offset);
+        return device_memory->GetPointer<u8>(physical_address + offset);
     }
 
     void Finalize() override;

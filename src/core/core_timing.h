@@ -61,17 +61,12 @@ public:
     /// required to end slice - 1 and start slice 0 before the first cycle of code is executed.
     void Initialize(std::function<void()>&& on_thread_init_);
 
-    /// Tears down all timing related functionality.
-    void Shutdown();
+    /// Clear all pending events. This should ONLY be done on exit.
+    void ClearPendingEvents();
 
     /// Sets if emulation is multicore or single core, must be set before Initialize
     void SetMulticore(bool is_multicore_) {
         is_multicore = is_multicore_;
-    }
-
-    /// Check if it's using host timing.
-    bool IsHostTiming() const {
-        return is_multicore;
     }
 
     /// Pauses/Unpauses the execution of the timer thread.
@@ -136,11 +131,10 @@ public:
 private:
     struct Event;
 
-    /// Clear all pending events. This should ONLY be done on exit.
-    void ClearPendingEvents();
-
     static void ThreadEntry(CoreTiming& instance);
     void ThreadLoop();
+
+    void Reset();
 
     std::unique_ptr<Common::WallClock> clock;
 

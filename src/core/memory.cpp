@@ -65,7 +65,7 @@ struct Memory::Impl {
             return {};
         }
 
-        return system.DeviceMemory().GetPointer(paddr) + vaddr;
+        return system.DeviceMemory().GetPointer<u8>(paddr) + vaddr;
     }
 
     [[nodiscard]] u8* GetPointerFromDebugMemory(VAddr vaddr) const {
@@ -75,7 +75,7 @@ struct Memory::Impl {
             return {};
         }
 
-        return system.DeviceMemory().GetPointer(paddr) + vaddr;
+        return system.DeviceMemory().GetPointer<u8>(paddr) + vaddr;
     }
 
     u8 Read8(const VAddr addr) {
@@ -499,7 +499,7 @@ struct Memory::Impl {
         } else {
             while (base != end) {
                 page_table.pointers[base].Store(
-                    system.DeviceMemory().GetPointer(target) - (base << YUZU_PAGEBITS), type);
+                    system.DeviceMemory().GetPointer<u8>(target) - (base << YUZU_PAGEBITS), type);
                 page_table.backing_addr[base] = target - (base << YUZU_PAGEBITS);
 
                 ASSERT_MSG(page_table.pointers[base].Pointer(),

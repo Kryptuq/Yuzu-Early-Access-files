@@ -137,28 +137,35 @@ bool IsLegacyAttribute(IR::Attribute attribute) {
 }
 
 std::map<IR::Attribute, IR::Attribute> GenerateLegacyToGenericMappings(
-    const VaryingState& state, std::queue<IR::Attribute> ununsed_generics) {
+    const VaryingState& state, std::queue<IR::Attribute> unused_generics,
+    const std::map<IR::Attribute, IR::Attribute>& previous_stage_mapping) {
     std::map<IR::Attribute, IR::Attribute> mapping;
+    auto update_mapping = [&mapping, &unused_generics, previous_stage_mapping](IR::Attribute attr,
+                                                                               size_t count) {
+        if (previous_stage_mapping.find(attr) != previous_stage_mapping.end()) {
+            for (size_t i = 0; i < count; ++i) {
+                mapping.insert({attr + i, previous_stage_mapping.at(attr + i)});
+            }
+        } else {
+            for (size_t i = 0; i < count; ++i) {
+                mapping.insert({attr + i, unused_generics.front() + i});
+            }
+            unused_generics.pop();
+        }
+    };
     for (size_t index = 0; index < 4; ++index) {
         auto attr = IR::Attribute::ColorFrontDiffuseR + index * 4;
         if (state.AnyComponent(attr)) {
-            for (size_t i = 0; i < 4; ++i) {
-                mapping.insert({attr + i, ununsed_generics.front() + i});
-            }
-            ununsed_generics.pop();
+            update_mapping(attr, 4);
         }
     }
     if (state[IR::Attribute::FogCoordinate]) {
-        mapping.insert({IR::Attribute::FogCoordinate, ununsed_generics.front()});
-        ununsed_generics.pop();
+        update_mapping(IR::Attribute::FogCoordinate, 1);
     }
     for (size_t index = 0; index < IR::NUM_FIXEDFNCTEXTURE; ++index) {
         auto attr = IR::Attribute::FixedFncTexture0S + index * 4;
         if (state.AnyComponent(attr)) {
-            for (size_t i = 0; i < 4; ++i) {
-                mapping.insert({attr + i, ununsed_generics.front() + i});
-            }
-            ununsed_generics.pop();
+            update_mapping(attr, 4);
         }
     }
     return mapping;
@@ -271,15 +278,16 @@ void ConvertLegacyToGeneric(IR::Program& program, const Shader::RuntimeInfo& run
                 ununsed_output_generics.push(IR::Attribute::Generic0X + index * 4);
             }
         }
-        auto mappings = GenerateLegacyToGenericMappings(stores, ununsed_output_generics);
+        program.info.legacy_stores_mapping =
+            GenerateLegacyToGenericMappings(stores, ununsed_output_generics, {});
         for (IR::Block* const block : program.post_order_blocks) {
             for (IR::Inst& inst : block->Instructions()) {
                 switch (inst.GetOpcode()) {
                 case IR::Opcode::SetAttribute: {
                     const auto attr = inst.Arg(0).Attribute();
                     if (IsLegacyAttribute(attr)) {
-                        stores.Set(mappings[attr], true);
-                        inst.SetArg(0, Shader::IR::Value(mappings[attr]));
+                        stores.Set(program.info.legacy_stores_mapping[attr], true);
+                        inst.SetArg(0, Shader::IR::Value(program.info.legacy_stores_mapping[attr]));
                     }
                     break;
                 }
@@ -300,7 +308,8 @@ void ConvertLegacyToGeneric(IR::Program& program, const Shader::RuntimeInfo& run
                 ununsed_input_generics.push(IR::Attribute::Generic0X + index * 4);
             }
         }
-        auto mappings = GenerateLegacyToGenericMappings(loads, ununsed_input_generics);
+        auto mappings = GenerateLegacyToGenericMappings(
+            loads, ununsed_input_generics, runtime_info.previous_stage_legacy_stores_mapping);
         for (IR::Block* const block : program.post_order_blocks) {
             for (IR::Inst& inst : block->Instructions()) {
                 switch (inst.GetOpcode()) {

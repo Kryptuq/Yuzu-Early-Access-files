@@ -120,8 +120,8 @@ void EmuThread::run() {
         }
     }
 
-    // Shutdown the core emulation
-    system.Shutdown();
+    // Shutdown the main emulated process
+    system.ShutdownMainProcess();
 
 #if MICROPROFILE_ENABLED
     MicroProfileOnThreadExit();

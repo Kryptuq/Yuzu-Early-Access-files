@@ -331,7 +331,7 @@ Result KMemoryManager::AllocateAndOpenForProcess(KPageGroup* out, size_t num_pag
 
     // Set all the allocated memory.
     for (const auto& block : out->Nodes()) {
-        std::memset(system.DeviceMemory().GetPointer(block.GetAddress()), fill_pattern,
+        std::memset(system.DeviceMemory().GetPointer<void>(block.GetAddress()), fill_pattern,
                     block.GetSize());
     }
 

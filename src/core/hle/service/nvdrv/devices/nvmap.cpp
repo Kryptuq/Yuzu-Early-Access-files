@@ -128,7 +128,8 @@ NvResult nvmap::IocAlloc(const std::vector<u8>& input, std::vector<u8>& output) 
     }
     ASSERT(system.CurrentProcess()
                ->PageTable()
-               .LockForDeviceAddressSpace(handle_description->address, handle_description->size)
+               .LockForMapDeviceAddressSpace(handle_description->address, handle_description->size,
+                                             Kernel::KMemoryPermission::None, true)
                .IsSuccess());
     std::memcpy(output.data(), &params, sizeof(params));
     return result;

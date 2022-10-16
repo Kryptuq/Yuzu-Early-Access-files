@@ -135,6 +135,14 @@ union Result {
     [[nodiscard]] constexpr bool IsFailure() const {
         return !IsSuccess();
     }
+
+    [[nodiscard]] constexpr u32 GetInnerValue() const {
+        return static_cast<u32>(module.Value()) | (description << module.bits);
+    }
+
+    [[nodiscard]] constexpr bool Includes(Result result) const {
+        return GetInnerValue() == result.GetInnerValue();
+    }
 };
 static_assert(std::is_trivial_v<Result>);
 
@@ -462,9 +470,6 @@ constexpr inline Result __TmpCurrentResultReference = ResultSuccess;
 #define R_UNLESS(expr, res)                                                                        \
     {                                                                                              \
         if (!(expr)) {                                                                             \
-            if (res.IsError()) {                                                                   \
-                LOG_ERROR(Kernel, "Failed with result: {}", res.raw);                              \
-            }                                                                                      \
             R_THROW(res);                                                                          \
         }                                                                                          \
     }
