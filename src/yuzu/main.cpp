@@ -1895,6 +1895,8 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
     case GameListOpenTarget::SaveData: {
         open_target = tr("Save Data");
         const auto nand_dir = Common::FS::GetYuzuPath(Common::FS::YuzuPath::NANDDir);
+        auto vfs_nand_dir =
+            vfs->OpenDirectory(Common::FS::PathToUTF8String(nand_dir), FileSys::Mode::Read);
 
         if (has_user_save) {
             // User save data
@@ -1921,15 +1923,15 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
             ASSERT(user_id);
 
             const auto user_save_data_path = FileSys::SaveDataFactory::GetFullPath(
-                *system, FileSys::SaveDataSpaceId::NandUser, FileSys::SaveDataType::SaveData,
-                program_id, user_id->AsU128(), 0);
+                *system, vfs_nand_dir, FileSys::SaveDataSpaceId::NandUser,
+                FileSys::SaveDataType::SaveData, program_id, user_id->AsU128(), 0);
 
             path = Common::FS::ConcatPathSafe(nand_dir, user_save_data_path);
         } else {
             // Device save data
             const auto device_save_data_path = FileSys::SaveDataFactory::GetFullPath(
-                *system, FileSys::SaveDataSpaceId::NandUser, FileSys::SaveDataType::SaveData,
-                program_id, {}, 0);
+                *system, vfs_nand_dir, FileSys::SaveDataSpaceId::NandUser,
+                FileSys::SaveDataType::SaveData, program_id, {}, 0);
 
             path = Common::FS::ConcatPathSafe(nand_dir, device_save_data_path);
         }

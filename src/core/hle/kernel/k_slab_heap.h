@@ -8,6 +8,7 @@
 #include "common/assert.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"
+#include "common/spin_lock.h"
 
 namespace Kernel {
 
@@ -36,28 +37,30 @@ public:
     }
 
     void* Allocate() {
-        Node* ret = m_head.load();
+        m_lock.lock();
 
-        do {
-            if (ret == nullptr) {
-                break;
-            }
-        } while (!m_head.compare_exchange_weak(ret, ret->next));
+        Node* ret = m_head;
+        if (ret != nullptr) [[likely]] {
+            m_head = ret->next;
+        }
 
+        m_lock.unlock();
         return ret;
     }
 
     void Free(void* obj) {
-        Node* node = static_cast<Node*>(obj);
+        m_lock.lock();
 
-        Node* cur_head = m_head.load();
-        do {
-            node->next = cur_head;
-        } while (!m_head.compare_exchange_weak(cur_head, node));
+        Node* node = static_cast<Node*>(obj);
+        node->next = m_head;
+        m_head = node;
+
+        m_lock.unlock();
     }
 
 private:
     std::atomic<Node*> m_head{};
+    Common::SpinLock m_lock;
 };
 
 } // namespace impl

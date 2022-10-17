@@ -37,10 +37,10 @@ private:
         u8 pointing_status;
         INSERT_PADDING_BYTES(3);
         u32 unknown;
-        float unkown_float1;
+        float unknown_float1;
         float position_x;
         float position_y;
-        float unkown_float2;
+        float unknown_float2;
         Core::IrSensor::IrsRect window_of_interest;
     };
     static_assert(sizeof(PointingProcessorMarkerData) == 0x20,

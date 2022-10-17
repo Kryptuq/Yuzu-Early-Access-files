@@ -14,7 +14,7 @@ enum class CameraAmbientNoiseLevel : u32 {
     Low,
     Medium,
     High,
-    Unkown3, // This level can't be reached
+    Unknown3, // This level can't be reached
 };
 
 // This is nn::irsensor::CameraLightTarget
@@ -75,9 +75,9 @@ enum class IrCameraStatus : u32 {
 enum class IrCameraInternalStatus : u32 {
     Stopped,
     FirmwareUpdateNeeded,
-    Unkown2,
-    Unkown3,
-    Unkown4,
+    Unknown2,
+    Unknown3,
+    Unknown4,
     FirmwareVersionRequested,
     FirmwareVersionIsInvalid,
     Ready,
@@ -121,20 +121,20 @@ enum class IrSensorFunctionLevel : u8 {
 
 // This is nn::irsensor::MomentProcessorPreprocess
 enum class MomentProcessorPreprocess : u32 {
-    Unkown0,
-    Unkown1,
+    Unknown0,
+    Unknown1,
 };
 
 // This is nn::irsensor::PackedMomentProcessorPreprocess
 enum class PackedMomentProcessorPreprocess : u8 {
-    Unkown0,
-    Unkown1,
+    Unknown0,
+    Unknown1,
 };
 
 // This is nn::irsensor::PointingStatus
 enum class PointingStatus : u32 {
-    Unkown0,
-    Unkown1,
+    Unknown0,
+    Unknown1,
 };
 
 struct IrsRect {

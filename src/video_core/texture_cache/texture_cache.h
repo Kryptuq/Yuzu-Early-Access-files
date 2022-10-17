@@ -193,11 +193,11 @@ void TextureCache<P>::SynchronizeGraphicsDescriptors() {
     const bool linked_tsc = maxwell3d->regs.sampler_binding == SamplerBinding::ViaHeaderBinding;
     const u32 tic_limit = maxwell3d->regs.tex_header.limit;
     const u32 tsc_limit = linked_tsc ? tic_limit : maxwell3d->regs.tex_sampler.limit;
-    if (channel_state->graphics_sampler_table.Synchornize(maxwell3d->regs.tex_sampler.Address(),
+    if (channel_state->graphics_sampler_table.Synchronize(maxwell3d->regs.tex_sampler.Address(),
                                                           tsc_limit)) {
         channel_state->graphics_sampler_ids.resize(tsc_limit + 1, CORRUPT_ID);
     }
-    if (channel_state->graphics_image_table.Synchornize(maxwell3d->regs.tex_header.Address(),
+    if (channel_state->graphics_image_table.Synchronize(maxwell3d->regs.tex_header.Address(),
                                                         tic_limit)) {
         channel_state->graphics_image_view_ids.resize(tic_limit + 1, CORRUPT_ID);
     }
@@ -209,10 +209,10 @@ void TextureCache<P>::SynchronizeComputeDescriptors() {
     const u32 tic_limit = kepler_compute->regs.tic.limit;
     const u32 tsc_limit = linked_tsc ? tic_limit : kepler_compute->regs.tsc.limit;
     const GPUVAddr tsc_gpu_addr = kepler_compute->regs.tsc.Address();
-    if (channel_state->compute_sampler_table.Synchornize(tsc_gpu_addr, tsc_limit)) {
+    if (channel_state->compute_sampler_table.Synchronize(tsc_gpu_addr, tsc_limit)) {
         channel_state->compute_sampler_ids.resize(tsc_limit + 1, CORRUPT_ID);
     }
-    if (channel_state->compute_image_table.Synchornize(kepler_compute->regs.tic.Address(),
+    if (channel_state->compute_image_table.Synchronize(kepler_compute->regs.tic.Address(),
                                                        tic_limit)) {
         channel_state->compute_image_view_ids.resize(tic_limit + 1, CORRUPT_ID);
     }

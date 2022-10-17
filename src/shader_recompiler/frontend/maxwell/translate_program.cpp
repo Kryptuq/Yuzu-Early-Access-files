@@ -272,14 +272,14 @@ IR::Program MergeDualVertexPrograms(IR::Program& vertex_a, IR::Program& vertex_b
 void ConvertLegacyToGeneric(IR::Program& program, const Shader::RuntimeInfo& runtime_info) {
     auto& stores = program.info.stores;
     if (stores.Legacy()) {
-        std::queue<IR::Attribute> ununsed_output_generics{};
+        std::queue<IR::Attribute> unused_output_generics{};
         for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
             if (!stores.Generic(index)) {
-                ununsed_output_generics.push(IR::Attribute::Generic0X + index * 4);
+                unused_output_generics.push(IR::Attribute::Generic0X + index * 4);
             }
         }
         program.info.legacy_stores_mapping =
-            GenerateLegacyToGenericMappings(stores, ununsed_output_generics, {});
+            GenerateLegacyToGenericMappings(stores, unused_output_generics, {});
         for (IR::Block* const block : program.post_order_blocks) {
             for (IR::Inst& inst : block->Instructions()) {
                 switch (inst.GetOpcode()) {
@@ -300,16 +300,16 @@ void ConvertLegacyToGeneric(IR::Program& program, const Shader::RuntimeInfo& run
 
     auto& loads = program.info.loads;
     if (loads.Legacy()) {
-        std::queue<IR::Attribute> ununsed_input_generics{};
+        std::queue<IR::Attribute> unused_input_generics{};
         for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
             const AttributeType input_type{runtime_info.generic_input_types[index]};
             if (!runtime_info.previous_stage_stores.Generic(index) || !loads.Generic(index) ||
                 input_type == AttributeType::Disabled) {
-                ununsed_input_generics.push(IR::Attribute::Generic0X + index * 4);
+                unused_input_generics.push(IR::Attribute::Generic0X + index * 4);
             }
         }
         auto mappings = GenerateLegacyToGenericMappings(
-            loads, ununsed_input_generics, runtime_info.previous_stage_legacy_stores_mapping);
+            loads, unused_input_generics, runtime_info.previous_stage_legacy_stores_mapping);
         for (IR::Block* const block : program.post_order_blocks) {
             for (IR::Inst& inst : block->Instructions()) {
                 switch (inst.GetOpcode()) {

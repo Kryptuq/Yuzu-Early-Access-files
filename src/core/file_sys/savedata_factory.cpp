@@ -5,6 +5,7 @@
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"
+#include "common/uuid.h"
 #include "core/core.h"
 #include "core/file_sys/savedata_factory.h"
 #include "core/file_sys/vfs.h"
@@ -59,6 +60,36 @@ bool ShouldSaveDataBeAutomaticallyCreated(SaveDataSpaceId space, const SaveDataA
             attr.title_id == 0 && attr.save_id == 0);
 }
 
+std::string GetFutureSaveDataPath(SaveDataSpaceId space_id, SaveDataType type, u64 title_id,
+                                  u128 user_id) {
+    // Only detect nand user saves.
+    const auto space_id_path = [space_id]() -> std::string_view {
+        switch (space_id) {
+        case SaveDataSpaceId::NandUser:
+            return "/user/save";
+        default:
+            return "";
+        }
+    }();
+
+    if (space_id_path.empty()) {
+        return "";
+    }
+
+    Common::UUID uuid;
+    std::memcpy(uuid.uuid.data(), user_id.data(), sizeof(Common::UUID));
+
+    // Only detect account/device saves from the future location.
+    switch (type) {
+    case SaveDataType::SaveData:
+        return fmt::format("{}/account/{}/{:016X}/1", space_id_path, uuid.RawString(), title_id);
+    case SaveDataType::DeviceSaveData:
+        return fmt::format("{}/device/{:016X}/1", space_id_path, title_id);
+    default:
+        return "";
+    }
+}
+
 } // Anonymous namespace
 
 std::string SaveDataAttribute::DebugInfo() const {
@@ -82,7 +113,7 @@ ResultVal<VirtualDir> SaveDataFactory::Create(SaveDataSpaceId space,
     PrintSaveDataAttributeWarnings(meta);
 
     const auto save_directory =
-        GetFullPath(system, space, meta.type, meta.title_id, meta.user_id, meta.save_id);
+        GetFullPath(system, dir, space, meta.type, meta.title_id, meta.user_id, meta.save_id);
 
     auto out = dir->CreateDirectoryRelative(save_directory);
 
@@ -99,7 +130,7 @@ ResultVal<VirtualDir> SaveDataFactory::Open(SaveDataSpaceId space,
                                             const SaveDataAttribute& meta) const {
 
     const auto save_directory =
-        GetFullPath(system, space, meta.type, meta.title_id, meta.user_id, meta.save_id);
+        GetFullPath(system, dir, space, meta.type, meta.title_id, meta.user_id, meta.save_id);
 
     auto out = dir->GetDirectoryRelative(save_directory);
 
@@ -134,14 +165,25 @@ std::string SaveDataFactory::GetSaveDataSpaceIdPath(SaveDataSpaceId space) {
     }
 }
 
-std::string SaveDataFactory::GetFullPath(Core::System& system, SaveDataSpaceId space,
-                                         SaveDataType type, u64 title_id, u128 user_id,
-                                         u64 save_id) {
+std::string SaveDataFactory::GetFullPath(Core::System& system, VirtualDir dir,
+                                         SaveDataSpaceId space, SaveDataType type, u64 title_id,
+                                         u128 user_id, u64 save_id) {
     // According to switchbrew, if a save is of type SaveData and the title id field is 0, it should
     // be interpreted as the title id of the current process.
     if (type == SaveDataType::SaveData || type == SaveDataType::DeviceSaveData) {
         if (title_id == 0) {
             title_id = system.GetCurrentProcessProgramID();
+        }
+    }
+
+    // For compat with a future impl.
+    if (std::string future_path =
+            GetFutureSaveDataPath(space, type, title_id & ~(0xFFULL), user_id);
+        !future_path.empty()) {
+        // Check if this location exists, and prefer it over the old.
+        if (const auto future_dir = dir->GetDirectoryRelative(future_path); future_dir != nullptr) {
+            LOG_INFO(Service_FS, "Using save at new location: {}", future_path);
+            return future_path;
         }
     }
 
@@ -167,7 +209,8 @@ std::string SaveDataFactory::GetFullPath(Core::System& system, SaveDataSpaceId s
 
 SaveDataSize SaveDataFactory::ReadSaveDataSize(SaveDataType type, u64 title_id,
                                                u128 user_id) const {
-    const auto path = GetFullPath(system, SaveDataSpaceId::NandUser, type, title_id, user_id, 0);
+    const auto path =
+        GetFullPath(system, dir, SaveDataSpaceId::NandUser, type, title_id, user_id, 0);
     const auto relative_dir = GetOrCreateDirectoryRelative(dir, path);
 
     const auto size_file = relative_dir->GetFile(SAVE_DATA_SIZE_FILENAME);
@@ -185,7 +228,8 @@ SaveDataSize SaveDataFactory::ReadSaveDataSize(SaveDataType type, u64 title_id,
 
 void SaveDataFactory::WriteSaveDataSize(SaveDataType type, u64 title_id, u128 user_id,
                                         SaveDataSize new_value) const {
-    const auto path = GetFullPath(system, SaveDataSpaceId::NandUser, type, title_id, user_id, 0);
+    const auto path =
+        GetFullPath(system, dir, SaveDataSpaceId::NandUser, type, title_id, user_id, 0);
     const auto relative_dir = GetOrCreateDirectoryRelative(dir, path);
 
     const auto size_file = relative_dir->CreateFile(SAVE_DATA_SIZE_FILENAME);

@@ -18,7 +18,7 @@ class DescriptorTable {
 public:
     explicit DescriptorTable(Tegra::MemoryManager& gpu_memory_) : gpu_memory{gpu_memory_} {}
 
-    [[nodiscard]] bool Synchornize(GPUVAddr gpu_addr, u32 limit) {
+    [[nodiscard]] bool Synchronize(GPUVAddr gpu_addr, u32 limit) {
         [[likely]] if (current_gpu_addr == gpu_addr && current_limit == limit) {
             return false;
         }

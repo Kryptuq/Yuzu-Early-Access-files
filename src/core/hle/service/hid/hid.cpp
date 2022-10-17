@@ -2118,7 +2118,7 @@ void Hid::WritePalmaWaveEntry(Kernel::HLERequestContext& ctx) {
     ASSERT_MSG(t_mem->GetSize() == 0x3000, "t_mem has incorrect size");
 
     LOG_WARNING(Service_HID,
-                "(STUBBED) called, connection_handle={}, wave_set={}, unkown={}, "
+                "(STUBBED) called, connection_handle={}, wave_set={}, unknown={}, "
                 "t_mem_handle=0x{:08X}, t_mem_size={}, size={}",
                 connection_handle.npad_id, wave_set, unknown, t_mem_handle, t_mem_size, size);
 
