@@ -4,14 +4,7 @@
 // From: https://github.com/eteran/cpp-utilities/blob/master/fixed/include/cpp-utilities/fixed.h
 // See also: http://stackoverflow.com/questions/79677/whats-the-best-way-to-do-fixed-point-math
 
-#ifndef FIXED_H_
-#define FIXED_H_
-
-#if __cplusplus >= 201402L
-#define CONSTEXPR14 constexpr
-#else
-#define CONSTEXPR14
-#endif
+#pragma once
 
 #include <cstddef> // for size_t
 #include <cstdint>
@@ -106,7 +99,7 @@ constexpr B next_to_base(N rhs) {
 struct divide_by_zero : std::exception {};
 
 template <size_t I, size_t F>
-CONSTEXPR14 FixedPoint<I, F> divide(
+constexpr FixedPoint<I, F> divide(
     FixedPoint<I, F> numerator, FixedPoint<I, F> denominator, FixedPoint<I, F>& remainder,
     typename std::enable_if<type_from_size<I + F>::next_size::is_specialized>::type* = nullptr) {
 
@@ -126,7 +119,7 @@ CONSTEXPR14 FixedPoint<I, F> divide(
 }
 
 template <size_t I, size_t F>
-CONSTEXPR14 FixedPoint<I, F> divide(
+constexpr FixedPoint<I, F> divide(
     FixedPoint<I, F> numerator, FixedPoint<I, F> denominator, FixedPoint<I, F>& remainder,
     typename std::enable_if<!type_from_size<I + F>::next_size::is_specialized>::type* = nullptr) {
 
@@ -196,7 +189,7 @@ CONSTEXPR14 FixedPoint<I, F> divide(
 
 // this is the usual implementation of multiplication
 template <size_t I, size_t F>
-CONSTEXPR14 FixedPoint<I, F> multiply(
+constexpr FixedPoint<I, F> multiply(
     FixedPoint<I, F> lhs, FixedPoint<I, F> rhs,
     typename std::enable_if<type_from_size<I + F>::next_size::is_specialized>::type* = nullptr) {
 
@@ -215,7 +208,7 @@ CONSTEXPR14 FixedPoint<I, F> multiply(
 // it is slightly slower, but is more robust since it doesn't
 // require and upgraded type
 template <size_t I, size_t F>
-CONSTEXPR14 FixedPoint<I, F> multiply(
+constexpr FixedPoint<I, F> multiply(
     FixedPoint<I, F> lhs, FixedPoint<I, F> rhs,
     typename std::enable_if<!type_from_size<I + F>::next_size::is_specialized>::type* = nullptr) {
 
@@ -284,7 +277,7 @@ public: // constructors
 
 public: // conversion
     template <size_t I2, size_t F2>
-    CONSTEXPR14 explicit FixedPoint(FixedPoint<I2, F2> other) {
+    constexpr explicit FixedPoint(FixedPoint<I2, F2> other) {
         static_assert(I2 <= I && F2 <= F, "Scaling conversion can only upgrade types");
         using T = FixedPoint<I2, F2>;
 
@@ -353,81 +346,81 @@ public: // unary operators
         return FixedPoint::from_base(+data_);
     }
 
-    CONSTEXPR14 FixedPoint& operator++() {
+    constexpr FixedPoint& operator++() {
         data_ += one;
         return *this;
     }
 
-    CONSTEXPR14 FixedPoint& operator--() {
+    constexpr FixedPoint& operator--() {
         data_ -= one;
         return *this;
     }
 
-    CONSTEXPR14 FixedPoint operator++(int) {
+    constexpr FixedPoint operator++(int) {
         FixedPoint tmp(*this);
         data_ += one;
         return tmp;
     }
 
-    CONSTEXPR14 FixedPoint operator--(int) {
+    constexpr FixedPoint operator--(int) {
         FixedPoint tmp(*this);
         data_ -= one;
         return tmp;
     }
 
 public: // basic math operators
-    CONSTEXPR14 FixedPoint& operator+=(FixedPoint n) {
+    constexpr FixedPoint& operator+=(FixedPoint n) {
         data_ += n.data_;
         return *this;
     }
 
-    CONSTEXPR14 FixedPoint& operator-=(FixedPoint n) {
+    constexpr FixedPoint& operator-=(FixedPoint n) {
         data_ -= n.data_;
         return *this;
     }
 
-    CONSTEXPR14 FixedPoint& operator*=(FixedPoint n) {
+    constexpr FixedPoint& operator*=(FixedPoint n) {
         return assign(detail::multiply(*this, n));
     }
 
-    CONSTEXPR14 FixedPoint& operator/=(FixedPoint n) {
+    constexpr FixedPoint& operator/=(FixedPoint n) {
         FixedPoint temp;
         return assign(detail::divide(*this, n, temp));
     }
 
 private:
-    CONSTEXPR14 FixedPoint& assign(FixedPoint rhs) {
+    constexpr FixedPoint& assign(FixedPoint rhs) {
         data_ = rhs.data_;
         return *this;
     }
 
 public: // binary math operators, effects underlying bit pattern since these
         // don't really typically make sense for non-integer values
-    CONSTEXPR14 FixedPoint& operator&=(FixedPoint n) {
+    constexpr FixedPoint& operator&=(FixedPoint n) {
         data_ &= n.data_;
         return *this;
     }
 
-    CONSTEXPR14 FixedPoint& operator|=(FixedPoint n) {
+    constexpr FixedPoint& operator|=(FixedPoint n) {
         data_ |= n.data_;
         return *this;
     }
 
-    CONSTEXPR14 FixedPoint& operator^=(FixedPoint n) {
+    constexpr FixedPoint& operator^=(FixedPoint n) {
         data_ ^= n.data_;
         return *this;
     }
 
     template <class Integer,
               class = typename std::enable_if<std::is_integral<Integer>::value>::type>
-    CONSTEXPR14 FixedPoint& operator>>=(Integer n) {
+    constexpr FixedPoint& operator>>=(Integer n) {
         data_ >>= n;
         return *this;
     }
 
     template <class Integer,
               class = typename std::enable_if<std::is_integral<Integer>::value>::type>
-    CONSTEXPR14 FixedPoint& operator<<=(Integer n) {
+    constexpr FixedPoint& operator<<=(Integer n) {
         data_ <<= n;
         return *this;
     }
@@ -485,7 +478,7 @@ public: // conversion to basic types
     }
 
 public:
-    CONSTEXPR14 void swap(FixedPoint& rhs) {
+    constexpr void swap(FixedPoint& rhs) {
         using std::swap;
         swap(data_, rhs.data_);
     }
@@ -497,8 +490,8 @@ public:
 // if we have the same fractional portion, but differing integer portions, we trivially upgrade the
 // smaller type
 template <size_t I1, size_t I2, size_t F>
-CONSTEXPR14 typename std::conditional<I1 >= I2, FixedPoint<I1, F>, FixedPoint<I2, F>>::type
-operator+(FixedPoint<I1, F> lhs, FixedPoint<I2, F> rhs) {
+constexpr typename std::conditional<I1 >= I2, FixedPoint<I1, F>, FixedPoint<I2, F>>::type operator+(
+    FixedPoint<I1, F> lhs, FixedPoint<I2, F> rhs) {
 
     using T = typename std::conditional<I1 >= I2, FixedPoint<I1, F>, FixedPoint<I2, F>>::type;
 
@@ -508,8 +501,8 @@ operator+(FixedPoint<I1, F> lhs, FixedPoint<I2, F> rhs) {
 }
 
 template <size_t I1, size_t I2, size_t F>
-CONSTEXPR14 typename std::conditional<I1 >= I2, FixedPoint<I1, F>, FixedPoint<I2, F>>::type
-operator-(FixedPoint<I1, F> lhs, FixedPoint<I2, F> rhs) {
+constexpr typename std::conditional<I1 >= I2, FixedPoint<I1, F>, FixedPoint<I2, F>>::type operator-(
+    FixedPoint<I1, F> lhs, FixedPoint<I2, F> rhs) {
 
     using T = typename std::conditional<I1 >= I2, FixedPoint<I1, F>, FixedPoint<I2, F>>::type;
 
@@ -519,8 +512,8 @@ operator-(FixedPoint<I1, F> lhs, FixedPoint<I2, F> rhs) {
 }
 
 template <size_t I1, size_t I2, size_t F>
-CONSTEXPR14 typename std::conditional<I1 >= I2, FixedPoint<I1, F>, FixedPoint<I2, F>>::type
-operator*(FixedPoint<I1, F> lhs, FixedPoint<I2, F> rhs) {
+constexpr typename std::conditional<I1 >= I2, FixedPoint<I1, F>, FixedPoint<I2, F>>::type operator*(
+    FixedPoint<I1, F> lhs, FixedPoint<I2, F> rhs) {
 
     using T = typename std::conditional<I1 >= I2, FixedPoint<I1, F>, FixedPoint<I2, F>>::type;
 
@@ -530,8 +523,8 @@ operator*(FixedPoint<I1, F> lhs, FixedPoint<I2, F> rhs) {
 }
 
 template <size_t I1, size_t I2, size_t F>
-CONSTEXPR14 typename std::conditional<I1 >= I2, FixedPoint<I1, F>, FixedPoint<I2, F>>::type
-operator/(FixedPoint<I1, F> lhs, FixedPoint<I2, F> rhs) {
+constexpr typename std::conditional<I1 >= I2, FixedPoint<I1, F>, FixedPoint<I2, F>>::type operator/(
+    FixedPoint<I1, F> lhs, FixedPoint<I2, F> rhs) {
 
     using T = typename std::conditional<I1 >= I2, FixedPoint<I1, F>, FixedPoint<I2, F>>::type;
 
@@ -548,75 +541,75 @@ std::ostream& operator<<(std::ostream& os, FixedPoint<I, F> f) {
 
 // basic math operators
 template <size_t I, size_t F>
-CONSTEXPR14 FixedPoint<I, F> operator+(FixedPoint<I, F> lhs, FixedPoint<I, F> rhs) {
+constexpr FixedPoint<I, F> operator+(FixedPoint<I, F> lhs, FixedPoint<I, F> rhs) {
     lhs += rhs;
     return lhs;
 }
 template <size_t I, size_t F>
-CONSTEXPR14 FixedPoint<I, F> operator-(FixedPoint<I, F> lhs, FixedPoint<I, F> rhs) {
+constexpr FixedPoint<I, F> operator-(FixedPoint<I, F> lhs, FixedPoint<I, F> rhs) {
     lhs -= rhs;
     return lhs;
 }
 template <size_t I, size_t F>
-CONSTEXPR14 FixedPoint<I, F> operator*(FixedPoint<I, F> lhs, FixedPoint<I, F> rhs) {
+constexpr FixedPoint<I, F> operator*(FixedPoint<I, F> lhs, FixedPoint<I, F> rhs) {
     lhs *= rhs;
     return lhs;
 }
 template <size_t I, size_t F>
-CONSTEXPR14 FixedPoint<I, F> operator/(FixedPoint<I, F> lhs, FixedPoint<I, F> rhs) {
+constexpr FixedPoint<I, F> operator/(FixedPoint<I, F> lhs, FixedPoint<I, F> rhs) {
     lhs /= rhs;
     return lhs;
 }
 
 template <size_t I, size_t F, class Number,
           class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-CONSTEXPR14 FixedPoint<I, F> operator+(FixedPoint<I, F> lhs, Number rhs) {
+constexpr FixedPoint<I, F> operator+(FixedPoint<I, F> lhs, Number rhs) {
     lhs += FixedPoint<I, F>(rhs);
     return lhs;
 }
 template <size_t I, size_t F, class Number,
           class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-CONSTEXPR14 FixedPoint<I, F> operator-(FixedPoint<I, F> lhs, Number rhs) {
+constexpr FixedPoint<I, F> operator-(FixedPoint<I, F> lhs, Number rhs) {
     lhs -= FixedPoint<I, F>(rhs);
     return lhs;
 }
 template <size_t I, size_t F, class Number,
           class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-CONSTEXPR14 FixedPoint<I, F> operator*(FixedPoint<I, F> lhs, Number rhs) {
+constexpr FixedPoint<I, F> operator*(FixedPoint<I, F> lhs, Number rhs) {
     lhs *= FixedPoint<I, F>(rhs);
     return lhs;
 }
 template <size_t I, size_t F, class Number,
           class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-CONSTEXPR14 FixedPoint<I, F> operator/(FixedPoint<I, F> lhs, Number rhs) {
+constexpr FixedPoint<I, F> operator/(FixedPoint<I, F> lhs, Number rhs) {
     lhs /= FixedPoint<I, F>(rhs);
     return lhs;
 }
 
 template <size_t I, size_t F, class Number,
           class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-CONSTEXPR14 FixedPoint<I, F> operator+(Number lhs, FixedPoint<I, F> rhs) {
+constexpr FixedPoint<I, F> operator+(Number lhs, FixedPoint<I, F> rhs) {
     FixedPoint<I, F> tmp(lhs);
     tmp += rhs;
     return tmp;
 }
 template <size_t I, size_t F, class Number,
           class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-CONSTEXPR14 FixedPoint<I, F> operator-(Number lhs, FixedPoint<I, F> rhs) {
+constexpr FixedPoint<I, F> operator-(Number lhs, FixedPoint<I, F> rhs) {
     FixedPoint<I, F> tmp(lhs);
     tmp -= rhs;
     return tmp;
 }
 template <size_t I, size_t F, class Number,
           class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-CONSTEXPR14 FixedPoint<I, F> operator*(Number lhs, FixedPoint<I, F> rhs) {
+constexpr FixedPoint<I, F> operator*(Number lhs, FixedPoint<I, F> rhs) {
     FixedPoint<I, F> tmp(lhs);
     tmp *= rhs;
     return tmp;
 }
 template <size_t I, size_t F, class Number,
           class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-CONSTEXPR14 FixedPoint<I, F> operator/(Number lhs, FixedPoint<I, F> rhs) {
+constexpr FixedPoint<I, F> operator/(Number lhs, FixedPoint<I, F> rhs) {
     FixedPoint<I, F> tmp(lhs);
     tmp /= rhs;
     return tmp;
@@ -625,13 +618,13 @@ CONSTEXPR14 FixedPoint<I, F> operator/(Number lhs, FixedPoint<I, F> rhs) {
 // shift operators
 template <size_t I, size_t F, class Integer,
           class = typename std::enable_if<std::is_integral<Integer>::value>::type>
-CONSTEXPR14 FixedPoint<I, F> operator<<(FixedPoint<I, F> lhs, Integer rhs) {
+constexpr FixedPoint<I, F> operator<<(FixedPoint<I, F> lhs, Integer rhs) {
     lhs <<= rhs;
     return lhs;
 }
 template <size_t I, size_t F, class Integer,
           class = typename std::enable_if<std::is_integral<Integer>::value>::type>
-CONSTEXPR14 FixedPoint<I, F> operator>>(FixedPoint<I, F> lhs, Integer rhs) {
+constexpr FixedPoint<I, F> operator>>(FixedPoint<I, F> lhs, Integer rhs) {
     lhs >>= rhs;
     return lhs;
 }
@@ -700,7 +693,3 @@ constexpr bool operator!=(Number lhs, FixedPoint<I, F> rhs) {
 }
 
 } // namespace Common
-
-#undef CONSTEXPR14
-
-#endif

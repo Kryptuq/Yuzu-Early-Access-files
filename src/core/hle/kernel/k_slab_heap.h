@@ -37,6 +37,8 @@ public:
     }
 
     void* Allocate() {
+        // KScopedInterruptDisable di;
+
         m_lock.lock();
 
         Node* ret = m_head;
@@ -49,6 +51,8 @@ public:
     }
 
     void Free(void* obj) {
+        // KScopedInterruptDisable di;
+
         m_lock.lock();
 
         Node* node = static_cast<Node*>(obj);
