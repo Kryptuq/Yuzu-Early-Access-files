@@ -41,7 +41,11 @@ MemoryManager::MemoryManager(Core::System& system_, u64 address_space_bits_, u64
     big_entries.resize(big_page_table_size / 32, 0);
     big_page_table_cpu.resize(big_page_table_size);
     big_page_continous.resize(big_page_table_size / continous_bits, 0);
+    std::array<PTEKind, 32> kind_valus;
+    kind_valus.fill(PTEKind::INVALID);
+    big_kinds.resize(big_page_table_size / 32, kind_valus);
     entries.resize(page_table_size / 32, 0);
+    kinds.resize(big_page_table_size / 32, kind_valus);
 }
 
 MemoryManager::~MemoryManager() = default;
@@ -78,6 +82,41 @@ void MemoryManager::SetEntry(size_t position, MemoryManager::EntryType entry) {
     }
 }
 
+PTEKind MemoryManager::GetPageKind(GPUVAddr gpu_addr) const {
+    auto entry = GetEntry<true>(gpu_addr);
+    if (entry == EntryType::Mapped || entry == EntryType::Reserved) [[likely]] {
+        return GetKind<true>(gpu_addr);
+    } else {
+        return GetKind<false>(gpu_addr);
+    }
+}
+
+template <bool is_big_page>
+PTEKind MemoryManager::GetKind(size_t position) const {
+    if constexpr (is_big_page) {
+        position = position >> big_page_bits;
+        const size_t sub_index = position % 32;
+        return big_kinds[position / 32][sub_index];
+    } else {
+        position = position >> page_bits;
+        const size_t sub_index = position % 32;
+        return kinds[position / 32][sub_index];
+    }
+}
+
+template <bool is_big_page>
+void MemoryManager::SetKind(size_t position, PTEKind kind) {
+    if constexpr (is_big_page) {
+        position = position >> big_page_bits;
+        const size_t sub_index = position % 32;
+        big_kinds[position / 32][sub_index] = kind;
+    } else {
+        position = position >> page_bits;
+        const size_t sub_index = position % 32;
+        kinds[position / 32][sub_index] = kind;
+    }
+}
+
 inline bool MemoryManager::IsBigPageContinous(size_t big_page_index) const {
     const u64 entry_mask = big_page_continous[big_page_index / continous_bits];
     const size_t sub_index = big_page_index % continous_bits;
@@ -92,8 +131,8 @@ inline void MemoryManager::SetBigPageContinous(size_t big_page_index, bool value
 }
 
 template <MemoryManager::EntryType entry_type>
-GPUVAddr MemoryManager::PageTableOp(GPUVAddr gpu_addr, [[maybe_unused]] VAddr cpu_addr,
-                                    size_t size) {
+GPUVAddr MemoryManager::PageTableOp(GPUVAddr gpu_addr, [[maybe_unused]] VAddr cpu_addr, size_t size,
+                                    PTEKind kind) {
     u64 remaining_size{size};
     if constexpr (entry_type == EntryType::Mapped) {
         page_table.ReserveRange(gpu_addr, size);
@@ -102,6 +141,7 @@ GPUVAddr MemoryManager::PageTableOp(GPUVAddr gpu_addr, [[maybe_unused]] VAddr cp
         const GPUVAddr current_gpu_addr = gpu_addr + offset;
         [[maybe_unused]] const auto current_entry_type = GetEntry<false>(current_gpu_addr);
         SetEntry<false>(current_gpu_addr, entry_type);
+        SetKind<false>(current_gpu_addr, kind);
         if (current_entry_type != entry_type) {
             rasterizer->ModifyGPUMemory(unique_identifier, gpu_addr, page_size);
         }
@@ -118,12 +158,13 @@ GPUVAddr MemoryManager::PageTableOp(GPUVAddr gpu_addr, [[maybe_unused]] VAddr cp
 
 template <MemoryManager::EntryType entry_type>
 GPUVAddr MemoryManager::BigPageTableOp(GPUVAddr gpu_addr, [[maybe_unused]] VAddr cpu_addr,
-                                       size_t size) {
+                                       size_t size, PTEKind kind) {
     u64 remaining_size{size};
     for (u64 offset{}; offset < size; offset += big_page_size) {
         const GPUVAddr current_gpu_addr = gpu_addr + offset;
         [[maybe_unused]] const auto current_entry_type = GetEntry<true>(current_gpu_addr);
         SetEntry<true>(current_gpu_addr, entry_type);
+        SetKind<true>(current_gpu_addr, kind);
         if (current_entry_type != entry_type) {
             rasterizer->ModifyGPUMemory(unique_identifier, gpu_addr, big_page_size);
         }
@@ -159,19 +200,19 @@ void MemoryManager::BindRasterizer(VideoCore::RasterizerInterface* rasterizer_) 
     rasterizer = rasterizer_;
 }
 
-GPUVAddr MemoryManager::Map(GPUVAddr gpu_addr, VAddr cpu_addr, std::size_t size,
+GPUVAddr MemoryManager::Map(GPUVAddr gpu_addr, VAddr cpu_addr, std::size_t size, PTEKind kind,
                             bool is_big_pages) {
     if (is_big_pages) [[likely]] {
-        return BigPageTableOp<EntryType::Mapped>(gpu_addr, cpu_addr, size);
+        return BigPageTableOp<EntryType::Mapped>(gpu_addr, cpu_addr, size, kind);
     }
-    return PageTableOp<EntryType::Mapped>(gpu_addr, cpu_addr, size);
+    return PageTableOp<EntryType::Mapped>(gpu_addr, cpu_addr, size, kind);
 }
 
 GPUVAddr MemoryManager::MapSparse(GPUVAddr gpu_addr, std::size_t size, bool is_big_pages) {
     if (is_big_pages) [[likely]] {
-        return BigPageTableOp<EntryType::Reserved>(gpu_addr, 0, size);
+        return BigPageTableOp<EntryType::Reserved>(gpu_addr, 0, size, PTEKind::INVALID);
     }
-    return PageTableOp<EntryType::Reserved>(gpu_addr, 0, size);
+    return PageTableOp<EntryType::Reserved>(gpu_addr, 0, size, PTEKind::INVALID);
 }
 
 void MemoryManager::Unmap(GPUVAddr gpu_addr, std::size_t size) {
@@ -188,8 +229,8 @@ void MemoryManager::Unmap(GPUVAddr gpu_addr, std::size_t size) {
         rasterizer->UnmapMemory(*cpu_addr, map_size);
     }
 
-    BigPageTableOp<EntryType::Free>(gpu_addr, 0, size);
-    PageTableOp<EntryType::Free>(gpu_addr, 0, size);
+    BigPageTableOp<EntryType::Free>(gpu_addr, 0, size, PTEKind::INVALID);
+    PageTableOp<EntryType::Free>(gpu_addr, 0, size, PTEKind::INVALID);
 }
 
 std::optional<VAddr> MemoryManager::GpuToCpuAddress(GPUVAddr gpu_addr) const {

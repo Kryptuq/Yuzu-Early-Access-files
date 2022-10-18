@@ -311,7 +311,8 @@ NvResult nvhost_as_gpu::Remap(const std::vector<u8>& input, std::vector<u8>& out
                 handle->address +
                 (static_cast<u64>(entry.handle_offset_big_pages) << vm.big_page_size_bits))};
 
-            gmmu->Map(virtual_address, cpu_address, size, use_big_pages);
+            gmmu->Map(virtual_address, cpu_address, size, static_cast<Tegra::PTEKind>(entry.kind),
+                      use_big_pages);
         }
     }
 
@@ -350,7 +351,8 @@ NvResult nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8
             u64 gpu_address{static_cast<u64>(params.offset + params.buffer_offset)};
             VAddr cpu_address{mapping->ptr + params.buffer_offset};
 
-            gmmu->Map(gpu_address, cpu_address, params.mapping_size, mapping->big_page);
+            gmmu->Map(gpu_address, cpu_address, params.mapping_size,
+                      static_cast<Tegra::PTEKind>(params.kind), mapping->big_page);
 
             return NvResult::Success;
         } catch (const std::out_of_range&) {
@@ -389,7 +391,8 @@ NvResult nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8
         }
 
         const bool use_big_pages = alloc->second.big_pages && big_page;
-        gmmu->Map(params.offset, cpu_address, size, use_big_pages);
+        gmmu->Map(params.offset, cpu_address, size, static_cast<Tegra::PTEKind>(params.kind),
+                  use_big_pages);
 
         auto mapping{std::make_shared<Mapping>(cpu_address, params.offset, size, true,
                                                use_big_pages, alloc->second.sparse)};
@@ -409,7 +412,8 @@ NvResult nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8
             return NvResult::InsufficientMemory;
         }
 
-        gmmu->Map(params.offset, cpu_address, Common::AlignUp(size, page_size), big_page);
+        gmmu->Map(params.offset, cpu_address, Common::AlignUp(size, page_size),
+                  static_cast<Tegra::PTEKind>(params.kind), big_page);
 
         auto mapping{
             std::make_shared<Mapping>(cpu_address, params.offset, size, false, big_page, false)};

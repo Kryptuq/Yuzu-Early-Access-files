@@ -82,6 +82,7 @@ add_library(video_core STATIC
     gpu_thread.h
     memory_manager.cpp
     memory_manager.h
+    pte_kind.h
     query_cache.h
     rasterizer_accelerated.cpp
     rasterizer_accelerated.h

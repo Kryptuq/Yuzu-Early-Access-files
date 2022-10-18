@@ -219,8 +219,6 @@ private:
     /// registers.
     void Launch();
 
-    void CopyPitchToPitch();
-
     void CopyBlockLinearToPitch();
 
     void CopyPitchToBlockLinear();

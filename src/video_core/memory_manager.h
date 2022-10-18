@@ -11,6 +11,7 @@
 #include "common/common_types.h"
 #include "common/multi_level_page_table.h"
 #include "common/virtual_buffer.h"
+#include "video_core/pte_kind.h"
 
 namespace VideoCore {
 class RasterizerInterface;
@@ -98,7 +99,8 @@ public:
     std::vector<std::pair<GPUVAddr, std::size_t>> GetSubmappedRange(GPUVAddr gpu_addr,
                                                                     std::size_t size) const;
 
-    GPUVAddr Map(GPUVAddr gpu_addr, VAddr cpu_addr, std::size_t size, bool is_big_pages = true);
+    GPUVAddr Map(GPUVAddr gpu_addr, VAddr cpu_addr, std::size_t size,
+                 PTEKind kind = PTEKind::INVALID, bool is_big_pages = true);
     GPUVAddr MapSparse(GPUVAddr gpu_addr, std::size_t size, bool is_big_pages = true);
     void Unmap(GPUVAddr gpu_addr, std::size_t size);
 
@@ -113,6 +115,8 @@ public:
     bool IsWithinGPUAddressRange(GPUVAddr gpu_addr) const {
         return gpu_addr < address_space_size;
     }
+
+    PTEKind GetPageKind(GPUVAddr gpu_addr) const;
 
 private:
     template <bool is_big_pages, typename FuncMapped, typename FuncReserved, typename FuncUnmapped>
@@ -166,16 +170,27 @@ private:
     std::vector<u64> big_entries;
 
     template <EntryType entry_type>
-    GPUVAddr PageTableOp(GPUVAddr gpu_addr, [[maybe_unused]] VAddr cpu_addr, size_t size);
+    GPUVAddr PageTableOp(GPUVAddr gpu_addr, [[maybe_unused]] VAddr cpu_addr, size_t size,
+                         PTEKind kind);
 
     template <EntryType entry_type>
-    GPUVAddr BigPageTableOp(GPUVAddr gpu_addr, [[maybe_unused]] VAddr cpu_addr, size_t size);
+    GPUVAddr BigPageTableOp(GPUVAddr gpu_addr, [[maybe_unused]] VAddr cpu_addr, size_t size,
+                            PTEKind kind);
 
     template <bool is_big_page>
     inline EntryType GetEntry(size_t position) const;
 
     template <bool is_big_page>
     inline void SetEntry(size_t position, EntryType entry);
+
+    std::vector<std::array<PTEKind, 32>> kinds;
+    std::vector<std::array<PTEKind, 32>> big_kinds;
+
+    template <bool is_big_page>
+    inline PTEKind GetKind(size_t position) const;
+
+    template <bool is_big_page>
+    inline void SetKind(size_t position, PTEKind kind);
 
     Common::MultiLevelPageTable<u32> page_table;
     Common::VirtualBuffer<u32> big_page_table_cpu;

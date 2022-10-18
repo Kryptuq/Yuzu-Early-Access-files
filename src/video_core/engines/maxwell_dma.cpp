@@ -56,66 +56,85 @@ void MaxwellDMA::Launch() {
     ASSERT(launch.interrupt_type == LaunchDMA::InterruptType::NONE);
     ASSERT(launch.data_transfer_type == LaunchDMA::DataTransferType::NON_PIPELINED);
 
-    const bool is_src_pitch = launch.src_memory_layout == LaunchDMA::MemoryLayout::PITCH;
-    const bool is_dst_pitch = launch.dst_memory_layout == LaunchDMA::MemoryLayout::PITCH;
+    if (launch.multi_line_enable) {
+        const bool is_src_pitch = launch.src_memory_layout == LaunchDMA::MemoryLayout::PITCH;
+        const bool is_dst_pitch = launch.dst_memory_layout == LaunchDMA::MemoryLayout::PITCH;
 
-    if (!is_src_pitch && !is_dst_pitch) {
-        // If both the source and the destination are in block layout, assert.
-        UNIMPLEMENTED_MSG("Tiled->Tiled DMA transfers are not yet implemented");
-        return;
-    }
+        if (!is_src_pitch && !is_dst_pitch) {
+            // If both the source and the destination are in block layout, assert.
+            UNIMPLEMENTED_MSG("Tiled->Tiled DMA transfers are not yet implemented");
+            return;
+        }
 
-    if (is_src_pitch && is_dst_pitch) {
-        CopyPitchToPitch();
-    } else {
-        ASSERT(launch.multi_line_enable == 1);
-
-        if (!is_src_pitch && is_dst_pitch) {
-            CopyBlockLinearToPitch();
+        if (is_src_pitch && is_dst_pitch) {
+            for (u32 line = 0; line < regs.line_count; ++line) {
+                const GPUVAddr source_line =
+                    regs.offset_in + static_cast<size_t>(line) * regs.pitch_in;
+                const GPUVAddr dest_line =
+                    regs.offset_out + static_cast<size_t>(line) * regs.pitch_out;
+                memory_manager.CopyBlock(dest_line, source_line, regs.line_length_in);
+            }
         } else {
-            CopyPitchToBlockLinear();
+            if (!is_src_pitch && is_dst_pitch) {
+                CopyBlockLinearToPitch();
+            } else {
+                CopyPitchToBlockLinear();
+            }
+        }
+    } else {
+        // TODO: allow multisized components.
+        auto& accelerate = rasterizer->AccessAccelerateDMA();
+        const bool is_const_a_dst = regs.remap_const.dst_x == RemapConst::Swizzle::CONST_A;
+        if (regs.launch_dma.remap_enable != 0 && is_const_a_dst) {
+            ASSERT(regs.remap_const.component_size_minus_one == 3);
+            accelerate.BufferClear(regs.offset_out, regs.line_length_in, regs.remap_consta_value);
+            std::vector<u32> tmp_buffer(regs.line_length_in, regs.remap_consta_value);
+            memory_manager.WriteBlockUnsafe(regs.offset_out,
+                                            reinterpret_cast<u8*>(tmp_buffer.data()),
+                                            regs.line_length_in * sizeof(u32));
+        } else {
+            auto convert_linear_2_blocklinear_addr = [](u64 address) {
+                return (address & ~0x1f0ULL) | ((address & 0x40) >> 2) | ((address & 0x10) << 1) |
+                       ((address & 0x180) >> 1) | ((address & 0x20) << 3);
+            };
+            auto src_kind = memory_manager.GetPageKind(regs.offset_in);
+            auto dst_kind = memory_manager.GetPageKind(regs.offset_out);
+            const bool is_src_pitch = IsPitchKind(static_cast<PTEKind>(src_kind));
+            const bool is_dst_pitch = IsPitchKind(static_cast<PTEKind>(dst_kind));
+            if (!is_src_pitch && is_dst_pitch) {
+                std::vector<u8> tmp_buffer(regs.line_length_in);
+                std::vector<u8> dst_buffer(regs.line_length_in);
+                memory_manager.ReadBlockUnsafe(regs.offset_in, tmp_buffer.data(),
+                                               regs.line_length_in);
+                for (u32 offset = 0; offset < regs.line_length_in; ++offset) {
+                    dst_buffer[offset] =
+                        tmp_buffer[convert_linear_2_blocklinear_addr(regs.offset_in + offset) -
+                                   regs.offset_in];
+                }
+                memory_manager.WriteBlock(regs.offset_out, dst_buffer.data(), regs.line_length_in);
+            } else if (is_src_pitch && !is_dst_pitch) {
+                std::vector<u8> tmp_buffer(regs.line_length_in);
+                std::vector<u8> dst_buffer(regs.line_length_in);
+                memory_manager.ReadBlockUnsafe(regs.offset_in, tmp_buffer.data(),
+                                               regs.line_length_in);
+                for (u32 offset = 0; offset < regs.line_length_in; ++offset) {
+                    dst_buffer[convert_linear_2_blocklinear_addr(regs.offset_out + offset) -
+                               regs.offset_out] = tmp_buffer[offset];
+                }
+                memory_manager.WriteBlock(regs.offset_out, dst_buffer.data(), regs.line_length_in);
+            } else {
+                if (!accelerate.BufferCopy(regs.offset_in, regs.offset_out, regs.line_length_in)) {
+                    std::vector<u8> tmp_buffer(regs.line_length_in);
+                    memory_manager.ReadBlockUnsafe(regs.offset_in, tmp_buffer.data(),
+                                                   regs.line_length_in);
+                    memory_manager.WriteBlock(regs.offset_out, tmp_buffer.data(),
+                                              regs.line_length_in);
+                }
+            }
         }
     }
+
     ReleaseSemaphore();
-}
-
-void MaxwellDMA::CopyPitchToPitch() {
-    // When `multi_line_enable` bit is enabled we copy a 2D image of dimensions
-    // (line_length_in, line_count).
-    // Otherwise the copy is performed as if we were copying a 1D buffer of length line_length_in.
-    const bool remap_enabled = regs.launch_dma.remap_enable != 0;
-    if (regs.launch_dma.multi_line_enable) {
-        UNIMPLEMENTED_IF(remap_enabled);
-
-        // Perform a line-by-line copy.
-        // We're going to take a subrect of size (line_length_in, line_count) from the source
-        // rectangle. There is no need to manually flush/invalidate the regions because CopyBlock
-        // does that for us.
-        for (u32 line = 0; line < regs.line_count; ++line) {
-            const GPUVAddr source_line = regs.offset_in + static_cast<size_t>(line) * regs.pitch_in;
-            const GPUVAddr dest_line = regs.offset_out + static_cast<size_t>(line) * regs.pitch_out;
-            memory_manager.CopyBlock(dest_line, source_line, regs.line_length_in);
-        }
-        return;
-    }
-    // TODO: allow multisized components.
-    auto& accelerate = rasterizer->AccessAccelerateDMA();
-    const bool is_const_a_dst = regs.remap_const.dst_x == RemapConst::Swizzle::CONST_A;
-    const bool is_buffer_clear = remap_enabled && is_const_a_dst;
-    if (is_buffer_clear) {
-        ASSERT(regs.remap_const.component_size_minus_one == 3);
-        accelerate.BufferClear(regs.offset_out, regs.line_length_in, regs.remap_consta_value);
-        std::vector<u32> tmp_buffer(regs.line_length_in, regs.remap_consta_value);
-        memory_manager.WriteBlockUnsafe(regs.offset_out, reinterpret_cast<u8*>(tmp_buffer.data()),
-                                        regs.line_length_in * sizeof(u32));
-        return;
-    }
-    UNIMPLEMENTED_IF(remap_enabled);
-    if (!accelerate.BufferCopy(regs.offset_in, regs.offset_out, regs.line_length_in)) {
-        std::vector<u8> tmp_buffer(regs.line_length_in);
-        memory_manager.ReadBlockUnsafe(regs.offset_in, tmp_buffer.data(), regs.line_length_in);
-        memory_manager.WriteBlock(regs.offset_out, tmp_buffer.data(), regs.line_length_in);
-    }
 }
 
 void MaxwellDMA::CopyBlockLinearToPitch() {
