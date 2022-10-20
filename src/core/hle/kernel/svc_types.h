@@ -97,15 +97,15 @@ constexpr inline s32 HighestThreadPriority = 0;
 
 constexpr inline s32 SystemThreadPriorityHighest = 16;
 
-enum ProcessState : u32 {
-    ProcessState_Created = 0,
-    ProcessState_CreatedAttached = 1,
-    ProcessState_Running = 2,
-    ProcessState_Crashed = 3,
-    ProcessState_RunningAttached = 4,
-    ProcessState_Terminating = 5,
-    ProcessState_Terminated = 6,
-    ProcessState_DebugBreak = 7,
+enum class ProcessState : u32 {
+    Created = 0,
+    CreatedAttached = 1,
+    Running = 2,
+    Crashed = 3,
+    RunningAttached = 4,
+    Terminating = 5,
+    Terminated = 6,
+    DebugBreak = 7,
 };
 
 constexpr inline size_t ThreadLocalRegionSize = 0x200;

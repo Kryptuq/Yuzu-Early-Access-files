@@ -140,9 +140,6 @@ private:
 };
 
 class KScopedMemoryBlockManagerAuditor {
-private:
-    KMemoryBlockManager* m_manager;
-
 public:
     explicit KScopedMemoryBlockManagerAuditor(KMemoryBlockManager* m) : m_manager(m) {
         ASSERT(m_manager->CheckState());
@@ -152,6 +149,9 @@ public:
     ~KScopedMemoryBlockManagerAuditor() {
         ASSERT(m_manager->CheckState());
     }
+
+private:
+    KMemoryBlockManager* m_manager;
 };
 
 } // namespace Kernel

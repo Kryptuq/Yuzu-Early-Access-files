@@ -148,10 +148,12 @@ struct System::Impl {
             Settings::values.custom_rtc.value_or(current_time) - current_time;
 
         // Create a default fs if one doesn't already exist.
-        if (virtual_filesystem == nullptr)
+        if (virtual_filesystem == nullptr) {
             virtual_filesystem = std::make_shared<FileSys::RealVfsFilesystem>();
-        if (content_provider == nullptr)
+        }
+        if (content_provider == nullptr) {
             content_provider = std::make_unique<FileSys::ContentProviderUnion>();
+        }
 
         // Create default implementations of applets if one is not provided.
         applet_manager.SetDefaultAppletsIfMissing();

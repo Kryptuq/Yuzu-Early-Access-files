@@ -243,6 +243,8 @@ add_library(core STATIC
     hle/kernel/k_server_session.h
     hle/kernel/k_session.cpp
     hle/kernel/k_session.h
+    hle/kernel/k_session_request.cpp
+    hle/kernel/k_session_request.h
     hle/kernel/k_shared_memory.cpp
     hle/kernel/k_shared_memory.h
     hle/kernel/k_shared_memory_info.h

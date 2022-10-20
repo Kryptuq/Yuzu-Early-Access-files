@@ -72,14 +72,14 @@ public:
     ~KProcess() override;
 
     enum class State {
-        Created = Svc::ProcessState_Created,
-        CreatedAttached = Svc::ProcessState_CreatedAttached,
-        Running = Svc::ProcessState_Running,
-        Crashed = Svc::ProcessState_Crashed,
-        RunningAttached = Svc::ProcessState_RunningAttached,
-        Terminating = Svc::ProcessState_Terminating,
-        Terminated = Svc::ProcessState_Terminated,
-        DebugBreak = Svc::ProcessState_DebugBreak,
+        Created = static_cast<u32>(Svc::ProcessState::Created),
+        CreatedAttached = static_cast<u32>(Svc::ProcessState::CreatedAttached),
+        Running = static_cast<u32>(Svc::ProcessState::Running),
+        Crashed = static_cast<u32>(Svc::ProcessState::Crashed),
+        RunningAttached = static_cast<u32>(Svc::ProcessState::RunningAttached),
+        Terminating = static_cast<u32>(Svc::ProcessState::Terminating),
+        Terminated = static_cast<u32>(Svc::ProcessState::Terminated),
+        DebugBreak = static_cast<u32>(Svc::ProcessState::DebugBreak),
     };
 
     enum : u64 {

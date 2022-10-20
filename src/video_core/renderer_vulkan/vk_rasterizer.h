@@ -153,7 +153,6 @@ private:
     DescriptorPool descriptor_pool;
     UpdateDescriptorQueue update_descriptor_queue;
     BlitImageHelper blit_image;
-    ASTCDecoderPass astc_decoder_pass;
     RenderPassCache render_pass_cache;
 
     TextureCacheRuntime texture_cache_runtime;

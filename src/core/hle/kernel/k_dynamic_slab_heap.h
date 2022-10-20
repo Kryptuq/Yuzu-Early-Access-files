@@ -16,16 +16,6 @@ class KDynamicSlabHeap : protected impl::KSlabHeapImpl {
     YUZU_NON_COPYABLE(KDynamicSlabHeap);
     YUZU_NON_MOVEABLE(KDynamicSlabHeap);
 
-private:
-    using PageBuffer = KDynamicPageManager::PageBuffer;
-
-private:
-    std::atomic<size_t> m_used{};
-    std::atomic<size_t> m_peak{};
-    std::atomic<size_t> m_count{};
-    VAddr m_address{};
-    size_t m_size{};
-
 public:
     constexpr KDynamicSlabHeap() = default;
 
@@ -117,6 +107,16 @@ public:
         KSlabHeapImpl::Free(t);
         --m_used;
     }
+
+private:
+    using PageBuffer = KDynamicPageManager::PageBuffer;
+
+private:
+    std::atomic<size_t> m_used{};
+    std::atomic<size_t> m_peak{};
+    std::atomic<size_t> m_count{};
+    VAddr m_address{};
+    size_t m_size{};
 };
 
 } // namespace Kernel

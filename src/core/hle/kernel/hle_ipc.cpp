@@ -19,6 +19,7 @@
 #include "core/hle/kernel/k_server_session.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/kernel/service_thread.h"
 #include "core/memory.h"
 
 namespace Kernel {
@@ -56,16 +57,103 @@ bool SessionRequestManager::HasSessionRequestHandler(const HLERequestContext& co
     }
 }
 
+Result SessionRequestManager::CompleteSyncRequest(KServerSession* server_session,
+                                                  HLERequestContext& context) {
+    Result result = ResultSuccess;
+
+    // If the session has been converted to a domain, handle the domain request
+    if (this->HasSessionRequestHandler(context)) {
+        if (IsDomain() && context.HasDomainMessageHeader()) {
+            result = HandleDomainSyncRequest(server_session, context);
+            // If there is no domain header, the regular session handler is used
+        } else if (this->HasSessionHandler()) {
+            // If this manager has an associated HLE handler, forward the request to it.
+            result = this->SessionHandler().HandleSyncRequest(*server_session, context);
+        }
+    } else {
+        ASSERT_MSG(false, "Session handler is invalid, stubbing response!");
+        IPC::ResponseBuilder rb(context, 2);
+        rb.Push(ResultSuccess);
+    }
+
+    if (convert_to_domain) {
+        ASSERT_MSG(!IsDomain(), "ServerSession is already a domain instance.");
+        this->ConvertToDomain();
+        convert_to_domain = false;
+    }
+
+    return result;
+}
+
+Result SessionRequestManager::HandleDomainSyncRequest(KServerSession* server_session,
+                                                      HLERequestContext& context) {
+    if (!context.HasDomainMessageHeader()) {
+        return ResultSuccess;
+    }
+
+    // Set domain handlers in HLE context, used for domain objects (IPC interfaces) as inputs
+    context.SetSessionRequestManager(server_session->GetSessionRequestManager());
+
+    // If there is a DomainMessageHeader, then this is CommandType "Request"
+    const auto& domain_message_header = context.GetDomainMessageHeader();
+    const u32 object_id{domain_message_header.object_id};
+    switch (domain_message_header.command) {
+    case IPC::DomainMessageHeader::CommandType::SendMessage:
+        if (object_id > this->DomainHandlerCount()) {
+            LOG_CRITICAL(IPC,
+                         "object_id {} is too big! This probably means a recent service call "
+                         "needed to return a new interface!",
+                         object_id);
+            ASSERT(false);
+            return ResultSuccess; // Ignore error if asserts are off
+        }
+        if (auto strong_ptr = this->DomainHandler(object_id - 1).lock()) {
+            return strong_ptr->HandleSyncRequest(*server_session, context);
+        } else {
+            ASSERT(false);
+            return ResultSuccess;
+        }
+
+    case IPC::DomainMessageHeader::CommandType::CloseVirtualHandle: {
+        LOG_DEBUG(IPC, "CloseVirtualHandle, object_id=0x{:08X}", object_id);
+
+        this->CloseDomainHandler(object_id - 1);
+
+        IPC::ResponseBuilder rb{context, 2};
+        rb.Push(ResultSuccess);
+        return ResultSuccess;
+    }
+    }
+
+    LOG_CRITICAL(IPC, "Unknown domain command={}", domain_message_header.command.Value());
+    ASSERT(false);
+    return ResultSuccess;
+}
+
+Result SessionRequestManager::QueueSyncRequest(KSession* parent,
+                                               std::shared_ptr<HLERequestContext>&& context) {
+    // Ensure we have a session request handler
+    if (this->HasSessionRequestHandler(*context)) {
+        if (auto strong_ptr = this->GetServiceThread().lock()) {
+            strong_ptr->QueueSyncRequest(*parent, std::move(context));
+        } else {
+            ASSERT_MSG(false, "strong_ptr is nullptr!");
+        }
+    } else {
+        ASSERT_MSG(false, "handler is invalid!");
+    }
+
+    return ResultSuccess;
+}
+
 void SessionRequestHandler::ClientConnected(KServerSession* session) {
-    session->ClientConnected(shared_from_this());
+    session->GetSessionRequestManager()->SetSessionHandler(shared_from_this());
 
     // Ensure our server session is tracked globally.
     kernel.RegisterServerObject(session);
 }
 
-void SessionRequestHandler::ClientDisconnected(KServerSession* session) {
-    session->ClientDisconnected();
-}
+void SessionRequestHandler::ClientDisconnected(KServerSession* session) {}
 
 HLERequestContext::HLERequestContext(KernelCore& kernel_, Core::Memory::Memory& memory_,
                                      KServerSession* server_session_, KThread* thread_)
@@ -126,7 +214,7 @@ void HLERequestContext::ParseCommandBuffer(const KHandleTable& handle_table, u32
         // Padding to align to 16 bytes
         rp.AlignWithPadding();
 
-        if (Session()->IsDomain() &&
+        if (Session()->GetSessionRequestManager()->IsDomain() &&
             ((command_header->type == IPC::CommandType::Request ||
               command_header->type == IPC::CommandType::RequestWithContext) ||
              !incoming)) {
@@ -135,7 +223,7 @@ void HLERequestContext::ParseCommandBuffer(const KHandleTable& handle_table, u32
             if (incoming || domain_message_header) {
                 domain_message_header = rp.PopRaw<IPC::DomainMessageHeader>();
             } else {
-                if (Session()->IsDomain()) {
+                if (Session()->GetSessionRequestManager()->IsDomain()) {
                     LOG_WARNING(IPC, "Domain request has no DomainMessageHeader!");
                 }
             }
@@ -228,12 +316,12 @@ Result HLERequestContext::WriteToOutgoingCommandBuffer(KThread& requesting_threa
     // Write the domain objects to the command buffer, these go after the raw untranslated data.
     // TODO(Subv): This completely ignores C buffers.
 
-    if (Session()->IsDomain()) {
+    if (server_session->GetSessionRequestManager()->IsDomain()) {
         current_offset = domain_offset - static_cast<u32>(outgoing_domain_objects.size());
-        for (const auto& object : outgoing_domain_objects) {
-            server_session->AppendDomainHandler(object);
-            cmd_buf[current_offset++] =
-                static_cast<u32_le>(server_session->NumDomainRequestHandlers());
+        for (auto& object : outgoing_domain_objects) {
+            server_session->GetSessionRequestManager()->AppendDomainHandler(std::move(object));
+            cmd_buf[current_offset++] = static_cast<u32_le>(
+                server_session->GetSessionRequestManager()->DomainHandlerCount());
         }
     }
 

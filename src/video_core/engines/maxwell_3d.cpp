@@ -483,9 +483,7 @@ void Maxwell3D::ProcessQueryGet() {
 
     switch (regs.report_semaphore.query.operation) {
     case Regs::ReportSemaphore::Operation::Release:
-        if (regs.report_semaphore.query.release ==
-                Regs::ReportSemaphore::Release::AfterAllPreceedingWrites ||
-            regs.report_semaphore.query.short_query != 0) {
+        if (regs.report_semaphore.query.short_query != 0) {
             const GPUVAddr sequence_address{regs.report_semaphore.Address()};
             const u32 payload = regs.report_semaphore.payload;
             std::function<void()> operation([this, sequence_address, payload] {
@@ -499,11 +497,10 @@ void Maxwell3D::ProcessQueryGet() {
             };
             const GPUVAddr sequence_address{regs.report_semaphore.Address()};
             const u32 payload = regs.report_semaphore.payload;
-            std::function<void()> operation([this, sequence_address, payload] {
+            [this, sequence_address, payload] {
                 memory_manager.Write<u64>(sequence_address + sizeof(u64), system.GPU().GetTicks());
                 memory_manager.Write<u64>(sequence_address, payload);
-            });
-            rasterizer->SyncOperation(std::move(operation));
+            }();
         }
         break;
     case Regs::ReportSemaphore::Operation::Acquire:
@@ -579,11 +576,11 @@ void Maxwell3D::ProcessCounterReset() {
 
 void Maxwell3D::ProcessSyncPoint() {
     const u32 sync_point = regs.sync_info.sync_point.Value();
-    const auto condition = regs.sync_info.condition.Value();
-    [[maybe_unused]] const u32 cache_flush = regs.sync_info.clean_l2.Value();
-    if (condition == Regs::SyncInfo::Condition::RopWritesDone) {
-        rasterizer->SignalSyncPoint(sync_point);
+    const u32 cache_flush = regs.sync_info.clean_l2.Value();
+    if (cache_flush != 0) {
+        rasterizer->InvalidateGPUCache();
     }
+    rasterizer->SignalSyncPoint(sync_point);
 }
 
 std::optional<u64> Maxwell3D::GetQueryResult() {

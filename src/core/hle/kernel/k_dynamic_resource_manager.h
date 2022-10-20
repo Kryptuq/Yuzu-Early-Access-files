@@ -17,10 +17,6 @@ class KDynamicResourceManager {
 public:
     using DynamicSlabType = KDynamicSlabHeap<T, ClearNode>;
 
-private:
-    KDynamicPageManager* m_page_allocator{};
-    DynamicSlabType* m_slab_heap{};
-
 public:
     constexpr KDynamicResourceManager() = default;
 
@@ -49,6 +45,10 @@ public:
     void Free(T* t) const {
         m_slab_heap->Free(t);
     }
+
+private:
+    KDynamicPageManager* m_page_allocator{};
+    DynamicSlabType* m_slab_heap{};
 };
 
 class KMemoryBlockSlabManager : public KDynamicResourceManager<KMemoryBlock> {};

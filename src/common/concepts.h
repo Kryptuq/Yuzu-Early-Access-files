@@ -34,4 +34,12 @@ concept DerivedFrom = requires {
 template <typename From, typename To>
 concept ConvertibleTo = std::is_convertible_v<From, To>;
 
+// No equivalents in the stdlib
+
+template <typename T>
+concept IsArithmetic = std::is_arithmetic_v<T>;
+
+template <typename T>
+concept IsIntegral = std::is_integral_v<T>;
+
 } // namespace Common

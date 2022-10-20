@@ -47,6 +47,7 @@ class KResourceLimit;
 class KScheduler;
 class KServerSession;
 class KSession;
+class KSessionRequest;
 class KSharedMemory;
 class KSharedMemoryInfo;
 class KThread;
@@ -360,6 +361,8 @@ public:
             return slab_heap_container->page_buffer;
         } else if constexpr (std::is_same_v<T, KThreadLocalPage>) {
             return slab_heap_container->thread_local_page;
+        } else if constexpr (std::is_same_v<T, KSessionRequest>) {
+            return slab_heap_container->session_request;
         }
     }
 
@@ -422,6 +425,7 @@ private:
         KSlabHeap<KCodeMemory> code_memory;
         KSlabHeap<KPageBuffer> page_buffer;
         KSlabHeap<KThreadLocalPage> thread_local_page;
+        KSlabHeap<KSessionRequest> session_request;
     };
 
     std::unique_ptr<SlabHeapContainer> slab_heap_container;

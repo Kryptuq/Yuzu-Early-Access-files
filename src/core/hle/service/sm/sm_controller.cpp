@@ -15,9 +15,10 @@
 namespace Service::SM {
 
 void Controller::ConvertCurrentObjectToDomain(Kernel::HLERequestContext& ctx) {
-    ASSERT_MSG(!ctx.Session()->IsDomain(), "Session is already a domain");
+    ASSERT_MSG(!ctx.Session()->GetSessionRequestManager()->IsDomain(),
+               "Session is already a domain");
     LOG_DEBUG(Service, "called, server_session={}", ctx.Session()->GetId());
-    ctx.Session()->ConvertToDomain();
+    ctx.Session()->GetSessionRequestManager()->ConvertToDomainOnRequestEnd();
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);

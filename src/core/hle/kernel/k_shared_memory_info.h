@@ -15,7 +15,8 @@ class KSharedMemoryInfo final : public KSlabAllocated<KSharedMemoryInfo>,
                                 public boost::intrusive::list_base_hook<> {
 
 public:
-    explicit KSharedMemoryInfo() = default;
+    explicit KSharedMemoryInfo(KernelCore&) {}
+    KSharedMemoryInfo() = default;
 
     constexpr void Initialize(KSharedMemory* shmem) {
         shared_memory = shmem;

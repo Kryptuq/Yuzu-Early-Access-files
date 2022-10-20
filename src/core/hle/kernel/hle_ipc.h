@@ -121,6 +121,10 @@ public:
         is_domain = true;
     }
 
+    void ConvertToDomainOnRequestEnd() {
+        convert_to_domain = true;
+    }
+
     std::size_t DomainHandlerCount() const {
         return domain_handlers.size();
     }
@@ -164,7 +168,12 @@ public:
 
     bool HasSessionRequestHandler(const HLERequestContext& context) const;
 
+    Result HandleDomainSyncRequest(KServerSession* server_session, HLERequestContext& context);
+    Result CompleteSyncRequest(KServerSession* server_session, HLERequestContext& context);
+    Result QueueSyncRequest(KSession* parent, std::shared_ptr<HLERequestContext>&& context);
+
 private:
+    bool convert_to_domain{};
     bool is_domain{};
     SessionRequestHandlerPtr session_handler;
     std::vector<SessionRequestHandlerPtr> domain_handlers;

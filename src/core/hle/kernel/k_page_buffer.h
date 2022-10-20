@@ -13,6 +13,7 @@ namespace Kernel {
 
 class KPageBuffer final : public KSlabAllocated<KPageBuffer> {
 public:
+    explicit KPageBuffer(KernelCore&) {}
     KPageBuffer() = default;
 
     static KPageBuffer* FromPhysicalAddress(Core::System& system, PAddr phys_addr);

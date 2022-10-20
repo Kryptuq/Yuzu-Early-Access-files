@@ -196,6 +196,20 @@ public:
      */
     u32 DropVoices(CommandBuffer& command_buffer, u32 estimated_process_time, u32 time_limit);
 
+    /**
+     * Get the current voice drop parameter.
+     *
+     * @return The current voice drop.
+     */
+    f32 GetVoiceDropParameter() const;
+
+    /**
+     * Set the voice drop parameter.
+     *
+     * @param The new voice drop.
+     */
+    void SetVoiceDropParameter(f32 voice_drop);
+
 private:
     /// Core system
     Core::System& core;
@@ -301,6 +315,8 @@ private:
     u32 num_voices_dropped{};
     /// Tick that rendering started
     u64 render_start_tick{};
+    /// Parameter to control the threshold for dropping voices if the audio graph gets too large
+    f32 drop_voice_param{1.0f};
 };
 
 } // namespace AudioRenderer

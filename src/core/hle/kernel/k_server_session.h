@@ -12,6 +12,7 @@
 
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/k_light_lock.h"
+#include "core/hle/kernel/k_session_request.h"
 #include "core/hle/kernel/k_synchronization_object.h"
 #include "core/hle/result.h"
 
@@ -57,36 +58,7 @@ public:
     }
 
     bool IsSignaled() const override;
-
     void OnClientClosed();
-
-    void ClientConnected(SessionRequestHandlerPtr handler) {
-        if (manager) {
-            manager->SetSessionHandler(std::move(handler));
-        }
-    }
-
-    void ClientDisconnected() {
-        manager = nullptr;
-    }
-
-    /// Adds a new domain request handler to the collection of request handlers within
-    /// this ServerSession instance.
-    void AppendDomainHandler(SessionRequestHandlerPtr handler);
-
-    /// Retrieves the total number of domain request handlers that have been
-    /// appended to this ServerSession instance.
-    std::size_t NumDomainRequestHandlers() const;
-
-    /// Returns true if the session has been converted to a domain, otherwise False
-    bool IsDomain() const {
-        return manager && manager->IsDomain();
-    }
-
-    /// Converts the session to a domain at the end of the current command
-    void ConvertToDomain() {
-        convert_to_domain = true;
-    }
 
     /// Gets the session request manager, which forwards requests to the underlying service
     std::shared_ptr<SessionRequestManager>& GetSessionRequestManager() {
@@ -94,7 +66,7 @@ public:
     }
 
     /// TODO: flesh these out to match the real kernel
-    Result OnRequest();
+    Result OnRequest(KSessionRequest* request);
     Result SendReply();
     Result ReceiveRequest();
 
@@ -108,10 +80,6 @@ private:
     /// Completes a sync request from the emulated application.
     Result CompleteSyncRequest(HLERequestContext& context);
 
-    /// Handles a SyncRequest to a domain, forwarding the request to the proper object or closing an
-    /// object handle.
-    Result HandleDomainSyncRequest(Kernel::HLERequestContext& context);
-
     /// This session's HLE request handlers; if nullptr, this is not an HLE server
     std::shared_ptr<SessionRequestManager> manager;
 
@@ -122,9 +90,8 @@ private:
     KSession* parent{};
 
     /// List of threads which are pending a reply.
-    /// FIXME: KSessionRequest
-    std::list<KThread*> m_thread_request_list;
-    KThread* m_current_thread_request{};
+    boost::intrusive::list<KSessionRequest> m_request_list;
+    KSessionRequest* m_current_request;
 
     KLightLock m_lock;
 };

@@ -98,9 +98,8 @@ System::System(Core::System& core_, Kernel::KEvent* adsp_rendered_event_)
     : core{core_}, adsp{core.AudioCore().GetADSP()}, adsp_rendered_event{adsp_rendered_event_} {}
 
 Result System::Initialize(const AudioRendererParameterInternal& params,
-                          Kernel::KTransferMemory* transfer_memory, const u64 transfer_memory_size,
-                          const u32 process_handle_, const u64 applet_resource_user_id_,
-                          const s32 session_id_) {
+                          Kernel::KTransferMemory* transfer_memory, u64 transfer_memory_size,
+                          u32 process_handle_, u64 applet_resource_user_id_, s32 session_id_) {
     if (!CheckValidRevision(params.revision)) {
         return Service::Audio::ERR_INVALID_REVISION;
     }
@@ -354,6 +353,8 @@ Result System::Initialize(const AudioRendererParameterInternal& params,
 
     render_time_limit_percent = 100;
     drop_voice = params.voice_drop_enabled && params.execution_mode == ExecutionMode::Auto;
+    drop_voice_param = 1.0f;
+    num_voices_dropped = 0;
 
     allocator.Align(0x40);
     command_workbuffer_size = allocator.GetRemainingSize();
@@ -547,7 +548,7 @@ u32 System::GetRenderingTimeLimit() const {
     return render_time_limit_percent;
 }
 
-void System::SetRenderingTimeLimit(const u32 limit) {
+void System::SetRenderingTimeLimit(u32 limit) {
     render_time_limit_percent = limit;
 }
 
@@ -635,7 +636,7 @@ void System::SendCommandToDsp() {
 }
 
 u64 System::GenerateCommand(std::span<u8> in_command_buffer,
-                            [[maybe_unused]] const u64 command_buffer_size_) {
+                            [[maybe_unused]] u64 command_buffer_size_) {
     PoolMapper::ClearUseState(memory_pool_workbuffer, memory_pool_count);
     const auto start_time{core.CoreTiming().GetClockTicks()};
 
@@ -693,7 +694,8 @@ u64 System::GenerateCommand(std::span<u8> in_command_buffer,
 
     voice_context.SortInfo();
 
-    const auto start_estimated_time{command_buffer.estimated_process_time};
+    const auto start_estimated_time{drop_voice_param *
+                                    static_cast<f32>(command_buffer.estimated_process_time)};
 
     command_generator.GenerateVoiceCommands();
     command_generator.GenerateSubMixCommands();
@@ -712,11 +714,16 @@ u64 System::GenerateCommand(std::span<u8> in_command_buffer,
             render_context.behavior->IsAudioRendererProcessingTimeLimit70PercentSupported();
             time_limit_percent = 70.0f;
         }
+
+        const auto end_estimated_time{drop_voice_param *
+                                      static_cast<f32>(command_buffer.estimated_process_time)};
+        const auto estimated_time{start_estimated_time - end_estimated_time};
+
         const auto time_limit{static_cast<u32>(
-            static_cast<f32>(start_estimated_time - command_buffer.estimated_process_time) +
-            (((time_limit_percent / 100.0f) * 2'880'000.0) *
-             (static_cast<f32>(render_time_limit_percent) / 100.0f)))};
-        num_voices_dropped = DropVoices(command_buffer, start_estimated_time, time_limit);
+            estimated_time + (((time_limit_percent / 100.0f) * 2'880'000.0) *
+                              (static_cast<f32>(render_time_limit_percent) / 100.0f)))};
+        num_voices_dropped =
+            DropVoices(command_buffer, static_cast<u32>(start_estimated_time), time_limit);
     }
 
     command_list_header->buffer_size = command_buffer.size;
@@ -737,24 +744,33 @@ u64 System::GenerateCommand(std::span<u8> in_command_buffer,
     return command_buffer.size;
 }
 
-u32 System::DropVoices(CommandBuffer& command_buffer, const u32 estimated_process_time,
-                       const u32 time_limit) {
+f32 System::GetVoiceDropParameter() const {
+    return drop_voice_param;
+}
+
+void System::SetVoiceDropParameter(f32 voice_drop_) {
+    drop_voice_param = voice_drop_;
+}
+
+u32 System::DropVoices(CommandBuffer& command_buffer, u32 estimated_process_time, u32 time_limit) {
     u32 i{0};
     auto command_list{command_buffer.command_list.data() + sizeof(CommandListHeader)};
-    ICommand* cmd{};
+    ICommand* cmd{nullptr};
 
-    for (; i < command_buffer.count; i++) {
+    // Find a first valid voice to drop
+    while (i < command_buffer.count) {
         cmd = reinterpret_cast<ICommand*>(command_list);
-        if (cmd->type != CommandId::Performance &&
-            cmd->type != CommandId::DataSourcePcmInt16Version1 &&
-            cmd->type != CommandId::DataSourcePcmInt16Version2 &&
-            cmd->type != CommandId::DataSourcePcmFloatVersion1 &&
-            cmd->type != CommandId::DataSourcePcmFloatVersion2 &&
-            cmd->type != CommandId::DataSourceAdpcmVersion1 &&
-            cmd->type != CommandId::DataSourceAdpcmVersion2) {
+        if (cmd->type == CommandId::Performance ||
+            cmd->type == CommandId::DataSourcePcmInt16Version1 ||
+            cmd->type == CommandId::DataSourcePcmInt16Version2 ||
+            cmd->type == CommandId::DataSourcePcmFloatVersion1 ||
+            cmd->type == CommandId::DataSourcePcmFloatVersion2 ||
+            cmd->type == CommandId::DataSourceAdpcmVersion1 ||
+            cmd->type == CommandId::DataSourceAdpcmVersion2) {
             break;
         }
         command_list += cmd->size;
+        i++;
     }
 
     if (cmd == nullptr || command_buffer.count == 0 || i >= command_buffer.count) {
@@ -767,6 +783,7 @@ u32 System::DropVoices(CommandBuffer& command_buffer, const u32 estimated_proces
         const auto node_id_type{cmd->node_id >> 28};
         const auto node_id_base{cmd->node_id & 0xFFF};
 
+        // If the new estimated process time falls below the limit, we're done dropping.
         if (estimated_process_time <= time_limit) {
             break;
         }
@@ -775,6 +792,7 @@ u32 System::DropVoices(CommandBuffer& command_buffer, const u32 estimated_proces
             break;
         }
 
+        // Don't drop voices marked with the highest priority.
         auto& voice_info{voice_context.GetInfo(node_id_base)};
         if (voice_info.priority == HighestVoicePriority) {
             break;
@@ -783,18 +801,23 @@ u32 System::DropVoices(CommandBuffer& command_buffer, const u32 estimated_proces
         voices_dropped++;
         voice_info.voice_dropped = true;
 
-        if (i < command_buffer.count) {
-            while (cmd->node_id == node_id) {
-                if (cmd->type == CommandId::DepopPrepare) {
-                    cmd->enabled = true;
-                } else if (cmd->type == CommandId::Performance || !cmd->enabled) {
-                    cmd->enabled = false;
-                }
-                i++;
-                command_list += cmd->size;
-                cmd = reinterpret_cast<ICommand*>(command_list);
+        // First iteration should drop the voice, and then iterate through all of the commands tied
+        // to the voice. We don't need reverb on a voice which we've just removed, for example.
+        // Depops can't be removed otherwise we'll introduce audio popping, and we don't
+        // remove perf commands. Lower the estimated time for each command dropped.
+        while (i < command_buffer.count && cmd->node_id == node_id) {
+            if (cmd->type == CommandId::DepopPrepare) {
+                cmd->enabled = true;
+            } else if (cmd->enabled && cmd->type != CommandId::Performance) {
+                cmd->enabled = false;
+                estimated_process_time -= static_cast<u32>(
+                    drop_voice_param * static_cast<f32>(cmd->estimated_process_time));
             }
+            command_list += cmd->size;
+            cmd = reinterpret_cast<ICommand*>(command_list);
+            i++;
         }
+        i++;
     }
     return voices_dropped;
 }

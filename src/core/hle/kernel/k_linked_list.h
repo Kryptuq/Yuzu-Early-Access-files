@@ -16,6 +16,7 @@ class KLinkedListNode : public boost::intrusive::list_base_hook<>,
                         public KSlabAllocated<KLinkedListNode> {
 
 public:
+    explicit KLinkedListNode(KernelCore&) {}
     KLinkedListNode() = default;
 
     void Initialize(void* it) {

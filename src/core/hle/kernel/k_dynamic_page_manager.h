@@ -20,18 +20,6 @@ public:
     };
     static_assert(sizeof(PageBuffer) == PageSize);
 
-private:
-    KSpinLock m_lock;
-    KPageBitmap m_page_bitmap;
-    size_t m_used{};
-    size_t m_peak{};
-    size_t m_count{};
-    VAddr m_address{};
-    size_t m_size{};
-
-    // TODO(bunnei): Back by host memory until we emulate kernel virtual address space.
-    std::vector<u8> m_backing_memory;
-
 public:
     KDynamicPageManager() = default;
 
@@ -80,19 +68,19 @@ public:
         R_SUCCEED();
     }
 
-    constexpr VAddr GetAddress() const {
+    VAddr GetAddress() const {
         return m_address;
     }
-    constexpr size_t GetSize() const {
+    size_t GetSize() const {
         return m_size;
     }
-    constexpr size_t GetUsed() const {
+    size_t GetUsed() const {
         return m_used;
     }
-    constexpr size_t GetPeak() const {
+    size_t GetPeak() const {
         return m_peak;
     }
-    constexpr size_t GetCount() const {
+    size_t GetCount() const {
         return m_count;
     }
 
@@ -131,6 +119,18 @@ public:
         // Decrement our used count.
         --m_used;
     }
+
+private:
+    KSpinLock m_lock;
+    KPageBitmap m_page_bitmap;
+    size_t m_used{};
+    size_t m_peak{};
+    size_t m_count{};
+    VAddr m_address{};
+    size_t m_size{};
+
+    // TODO(bunnei): Back by host memory until we emulate kernel virtual address space.
+    std::vector<u8> m_backing_memory;
 };
 
 } // namespace Kernel

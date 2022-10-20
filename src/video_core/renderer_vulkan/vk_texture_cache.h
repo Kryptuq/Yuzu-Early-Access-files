@@ -6,6 +6,7 @@
 #include <span>
 
 #include "shader_recompiler/shader_info.h"
+#include "video_core/renderer_vulkan/vk_compute_pass.h"
 #include "video_core/renderer_vulkan/vk_staging_buffer_pool.h"
 #include "video_core/texture_cache/image_view_base.h"
 #include "video_core/texture_cache/texture_cache_base.h"
@@ -25,14 +26,15 @@ using VideoCommon::RenderTargets;
 using VideoCommon::SlotVector;
 using VideoCore::Surface::PixelFormat;
 
-class ASTCDecoderPass;
 class BlitImageHelper;
+class DescriptorPool;
 class Device;
 class Image;
 class ImageView;
 class Framebuffer;
 class RenderPassCache;
 class StagingBufferPool;
+class UpdateDescriptorQueue;
 class Scheduler;
 
 class TextureCacheRuntime {
@@ -41,8 +43,9 @@ public:
                                  MemoryAllocator& memory_allocator_,
                                  StagingBufferPool& staging_buffer_pool_,
                                  BlitImageHelper& blit_image_helper_,
-                                 ASTCDecoderPass& astc_decoder_pass_,
-                                 RenderPassCache& render_pass_cache_);
+                                 RenderPassCache& render_pass_cache_,
+                                 DescriptorPool& descriptor_pool,
+                                 UpdateDescriptorQueue& update_descriptor_queue);
 
     void Finish();
 
@@ -97,8 +100,8 @@ public:
     MemoryAllocator& memory_allocator;
     StagingBufferPool& staging_buffer_pool;
     BlitImageHelper& blit_image_helper;
-    ASTCDecoderPass& astc_decoder_pass;
     RenderPassCache& render_pass_cache;
+    std::optional<ASTCDecoderPass> astc_decoder_pass;
     const Settings::ResolutionScalingInfo& resolution;
 
     constexpr static size_t indexing_slots = 8 * sizeof(size_t);

@@ -24,7 +24,7 @@ public:
     }
 
     static Derived* Allocate(KernelCore& kernel) {
-        return kernel.SlabHeap<Derived>().Allocate();
+        return kernel.SlabHeap<Derived>().Allocate(kernel);
     }
 
     static void Free(KernelCore& kernel, Derived* obj) {

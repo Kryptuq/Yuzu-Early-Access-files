@@ -75,11 +75,10 @@ void Puller::ProcessSemaphoreTriggerMethod() {
     if (op == GpuSemaphoreOperation::WriteLong) {
         const GPUVAddr sequence_address{regs.semaphore_address.SemaphoreAddress()};
         const u32 payload = regs.semaphore_sequence;
-        std::function<void()> operation([this, sequence_address, payload] {
+        [this, sequence_address, payload] {
             memory_manager.Write<u64>(sequence_address + sizeof(u64), gpu.GetTicks());
             memory_manager.Write<u64>(sequence_address, payload);
-        });
-        rasterizer->SignalFence(std::move(operation));
+        }();
     } else {
         do {
             const u32 word{memory_manager.Read<u32>(regs.semaphore_address.SemaphoreAddress())};

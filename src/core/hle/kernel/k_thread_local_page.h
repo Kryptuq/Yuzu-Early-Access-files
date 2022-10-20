@@ -26,7 +26,7 @@ public:
     static_assert(RegionsPerPage > 0);
 
 public:
-    constexpr explicit KThreadLocalPage(VAddr addr = {}) : m_virt_addr(addr) {
+    constexpr explicit KThreadLocalPage(KernelCore&, VAddr addr = {}) : m_virt_addr(addr) {
         m_is_region_free.fill(true);
     }
 

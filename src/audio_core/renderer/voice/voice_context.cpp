@@ -74,8 +74,8 @@ void VoiceContext::SortInfo() {
     }
 
     std::ranges::sort(sorted_voice_info, [](const VoiceInfo* a, const VoiceInfo* b) {
-        return a->priority != b->priority ? a->priority < b->priority
-                                          : a->sort_order < b->sort_order;
+        return a->priority != b->priority ? a->priority > b->priority
+                                          : a->sort_order > b->sort_order;
     });
 }
 
