@@ -129,6 +129,9 @@ struct Values {
     Settings::Setting<bool> favorites_expanded{true, "favorites_expanded"};
     QVector<u64> favorited_ids;
 
+    // Compatibility List
+    Settings::Setting<bool> show_compat{false, "show_compat"};
+
     bool configuration_applied;
     bool reset_to_defaults;
     Settings::Setting<bool> disable_web_applet{true, "disable_web_applet"};

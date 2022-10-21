@@ -114,6 +114,20 @@ public:
         }
         return false;
     }
+
+    void EnableVibration(bool is_enabled) {
+        has_vibration = is_enabled;
+        is_vibration_tested = true;
+    }
+
+    bool HasVibration() const {
+        return has_vibration;
+    }
+
+    bool IsVibrationTested() const {
+        return is_vibration_tested;
+    }
+
     /**
      * The Pad identifier of the joystick
      */
@@ -236,6 +250,8 @@ private:
     u64 last_motion_update{};
     bool has_gyro{false};
     bool has_accel{false};
+    bool has_vibration{false};
+    bool is_vibration_tested{false};
     BasicMotion motion;
 };
 
@@ -517,7 +533,7 @@ std::vector<Common::ParamPackage> SDLDriver::GetInputDevices() const {
     return devices;
 }
 
-Common::Input::VibrationError SDLDriver::SetRumble(
+Common::Input::VibrationError SDLDriver::SetVibration(
     const PadIdentifier& identifier, const Common::Input::VibrationStatus& vibration) {
     const auto joystick =
         GetSDLJoystickByGUID(identifier.guid.RawString(), static_cast<int>(identifier.port));
@@ -546,19 +562,51 @@ Common::Input::VibrationError SDLDriver::SetRumble(
         .type = Common::Input::VibrationAmplificationType::Exponential,
     };
 
-    if (vibration.type == Common::Input::VibrationAmplificationType::Test) {
-        if (!joystick->RumblePlay(new_vibration)) {
-            return Common::Input::VibrationError::Unknown;
-        }
-        return Common::Input::VibrationError::None;
-    }
-
     vibration_queue.Push(VibrationRequest{
         .identifier = identifier,
         .vibration = new_vibration,
     });
 
     return Common::Input::VibrationError::None;
+}
+
+bool SDLDriver::IsVibrationEnabled(const PadIdentifier& identifier) {
+    const auto joystick =
+        GetSDLJoystickByGUID(identifier.guid.RawString(), static_cast<int>(identifier.port));
+
+    constexpr Common::Input::VibrationStatus test_vibration{
+        .low_amplitude = 1,
+        .low_frequency = 160.0f,
+        .high_amplitude = 1,
+        .high_frequency = 320.0f,
+        .type = Common::Input::VibrationAmplificationType::Exponential,
+    };
+
+    constexpr Common::Input::VibrationStatus zero_vibration{
+        .low_amplitude = 0,
+        .low_frequency = 160.0f,
+        .high_amplitude = 0,
+        .high_frequency = 320.0f,
+        .type = Common::Input::VibrationAmplificationType::Exponential,
+    };
+
+    if (joystick->IsVibrationTested()) {
+        return joystick->HasVibration();
+    }
+
+    // First vibration might fail
+    joystick->RumblePlay(test_vibration);
+
+    // Wait for about 15ms to ensure the controller is ready for the stop command
+    std::this_thread::sleep_for(std::chrono::milliseconds(15));
+
+    if (!joystick->RumblePlay(zero_vibration)) {
+        joystick->EnableVibration(false);
+        return false;
+    }
+
+    joystick->EnableVibration(true);
+    return true;
 }
 
 void SDLDriver::SendVibrations() {

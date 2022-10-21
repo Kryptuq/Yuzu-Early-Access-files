@@ -763,7 +763,11 @@ public:
 
     Common::Input::VibrationError SetVibration(
         const Common::Input::VibrationStatus& vibration_status) override {
-        return input_engine->SetRumble(identifier, vibration_status);
+        return input_engine->SetVibration(identifier, vibration_status);
+    }
+
+    bool IsVibrationEnabled() override {
+        return input_engine->IsVibrationEnabled(identifier);
     }
 
     Common::Input::PollingError SetPollingMode(Common::Input::PollingMode polling_mode) override {

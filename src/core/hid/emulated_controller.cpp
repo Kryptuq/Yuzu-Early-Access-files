@@ -970,14 +970,7 @@ bool EmulatedController::SetVibration(std::size_t device_index, VibrationValue v
            Common::Input::VibrationError::None;
 }
 
-bool EmulatedController::TestVibration(std::size_t device_index) {
-    if (device_index >= output_devices.size()) {
-        return false;
-    }
-    if (!output_devices[device_index]) {
-        return false;
-    }
-
+bool EmulatedController::IsVibrationEnabled(std::size_t device_index) {
     const auto player_index = NpadIdTypeToIndex(npad_id_type);
     const auto& player = Settings::values.players.GetValue()[player_index];
 
@@ -985,31 +978,15 @@ bool EmulatedController::TestVibration(std::size_t device_index) {
         return false;
     }
 
-    const Common::Input::VibrationStatus test_vibration = {
-        .low_amplitude = 0.001f,
-        .low_frequency = DEFAULT_VIBRATION_VALUE.low_frequency,
-        .high_amplitude = 0.001f,
-        .high_frequency = DEFAULT_VIBRATION_VALUE.high_frequency,
-        .type = Common::Input::VibrationAmplificationType::Test,
-    };
+    if (device_index >= output_devices.size()) {
+        return false;
+    }
 
-    const Common::Input::VibrationStatus zero_vibration = {
-        .low_amplitude = DEFAULT_VIBRATION_VALUE.low_amplitude,
-        .low_frequency = DEFAULT_VIBRATION_VALUE.low_frequency,
-        .high_amplitude = DEFAULT_VIBRATION_VALUE.high_amplitude,
-        .high_frequency = DEFAULT_VIBRATION_VALUE.high_frequency,
-        .type = Common::Input::VibrationAmplificationType::Test,
-    };
+    if (!output_devices[device_index]) {
+        return false;
+    }
 
-    // Send a slight vibration to test for rumble support
-    output_devices[device_index]->SetVibration(test_vibration);
-
-    // Wait for about 15ms to ensure the controller is ready for the stop command
-    std::this_thread::sleep_for(std::chrono::milliseconds(15));
-
-    // Stop any vibration and return the result
-    return output_devices[device_index]->SetVibration(zero_vibration) ==
-           Common::Input::VibrationError::None;
+    return output_devices[device_index]->IsVibrationEnabled();
 }
 
 bool EmulatedController::SetPollingMode(Common::Input::PollingMode polling_mode) {
@@ -1232,12 +1209,6 @@ bool EmulatedController::IsConnected(bool get_temporary_value) const {
         return tmp_is_connected;
     }
     return is_connected;
-}
-
-bool EmulatedController::IsVibrationEnabled() const {
-    const auto player_index = NpadIdTypeToIndex(npad_id_type);
-    const auto& player = Settings::values.players.GetValue()[player_index];
-    return player.vibration_enabled;
 }
 
 NpadIdType EmulatedController::GetNpadIdType() const {

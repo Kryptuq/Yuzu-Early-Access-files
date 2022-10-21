@@ -324,7 +324,7 @@ bool GCAdapter::GetGCEndpoint(libusb_device* device) {
     return true;
 }
 
-Common::Input::VibrationError GCAdapter::SetRumble(
+Common::Input::VibrationError GCAdapter::SetVibration(
     const PadIdentifier& identifier, const Common::Input::VibrationStatus& vibration) {
     const auto mean_amplitude = (vibration.low_amplitude + vibration.high_amplitude) * 0.5f;
     const auto processed_amplitude =
@@ -336,6 +336,10 @@ Common::Input::VibrationError GCAdapter::SetRumble(
         return Common::Input::VibrationError::Disabled;
     }
     return Common::Input::VibrationError::None;
+}
+
+bool GCAdapter::IsVibrationEnabled([[maybe_unused]] const PadIdentifier& identifier) {
+    return rumble_enabled;
 }
 
 void GCAdapter::UpdateVibrations() {

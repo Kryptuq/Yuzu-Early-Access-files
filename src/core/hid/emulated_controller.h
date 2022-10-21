@@ -206,9 +206,6 @@ public:
      */
     bool IsConnected(bool get_temporary_value = false) const;
 
-    /// Returns true if vibration is enabled
-    bool IsVibrationEnabled() const;
-
     /// Removes all callbacks created from input devices
     void UnloadInput();
 
@@ -339,7 +336,7 @@ public:
      * Sends a small vibration to the output device
      * @return true if SetVibration was successfull
      */
-    bool TestVibration(std::size_t device_index);
+    bool IsVibrationEnabled(std::size_t device_index);
 
     /**
      * Sets the desired data to be polled from a controller

@@ -745,8 +745,9 @@ void Controller_NPad::SetSupportedNpadIdTypes(u8* data, std::size_t length) {
 }
 
 void Controller_NPad::GetSupportedNpadIdTypes(u32* data, std::size_t max_length) {
-    ASSERT(max_length < supported_npad_id_types.size());
-    std::memcpy(data, supported_npad_id_types.data(), supported_npad_id_types.size());
+    const auto copy_amount = supported_npad_id_types.size() * sizeof(u32);
+    ASSERT(max_length <= copy_amount);
+    std::memcpy(data, supported_npad_id_types.data(), copy_amount);
 }
 
 std::size_t Controller_NPad::GetSupportedNpadIdTypesSize() const {
@@ -867,7 +868,7 @@ bool Controller_NPad::VibrateControllerAtIndex(Core::HID::NpadIdType npad_id,
         return false;
     }
 
-    if (!controller.device->IsVibrationEnabled()) {
+    if (!controller.device->IsVibrationEnabled(device_index)) {
         if (controller.vibration[device_index].latest_vibration_value.low_amplitude != 0.0f ||
             controller.vibration[device_index].latest_vibration_value.high_amplitude != 0.0f) {
             // Send an empty vibration to stop any vibrations.
@@ -1000,7 +1001,7 @@ void Controller_NPad::InitializeVibrationDeviceAtIndex(Core::HID::NpadIdType npa
     }
 
     controller.vibration[device_index].device_mounted =
-        controller.device->TestVibration(device_index);
+        controller.device->IsVibrationEnabled(device_index);
 }
 
 void Controller_NPad::SetPermitVibrationSession(bool permit_vibration_session) {

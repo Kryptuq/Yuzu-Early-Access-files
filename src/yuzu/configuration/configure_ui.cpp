@@ -72,6 +72,7 @@ ConfigureUi::ConfigureUi(Core::System& system_, QWidget* parent)
 
     // Force game list reload if any of the relevant settings are changed.
     connect(ui->show_add_ons, &QCheckBox::stateChanged, this, &ConfigureUi::RequestGameListUpdate);
+    connect(ui->show_compat, &QCheckBox::stateChanged, this, &ConfigureUi::RequestGameListUpdate);
     connect(ui->game_icon_size_combobox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &ConfigureUi::RequestGameListUpdate);
     connect(ui->folder_icon_size_combobox, QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -109,6 +110,7 @@ void ConfigureUi::ApplyConfiguration() {
     UISettings::values.theme =
         ui->theme_combobox->itemData(ui->theme_combobox->currentIndex()).toString();
     UISettings::values.show_add_ons = ui->show_add_ons->isChecked();
+    UISettings::values.show_compat = ui->show_compat->isChecked();
     UISettings::values.game_icon_size = ui->game_icon_size_combobox->currentData().toUInt();
     UISettings::values.folder_icon_size = ui->folder_icon_size_combobox->currentData().toUInt();
     UISettings::values.row_1_text_id = ui->row_1_text_combobox->currentData().toUInt();
@@ -129,6 +131,7 @@ void ConfigureUi::SetConfiguration() {
     ui->language_combobox->setCurrentIndex(
         ui->language_combobox->findData(UISettings::values.language));
     ui->show_add_ons->setChecked(UISettings::values.show_add_ons.GetValue());
+    ui->show_compat->setChecked(UISettings::values.show_compat.GetValue());
     ui->game_icon_size_combobox->setCurrentIndex(
         ui->game_icon_size_combobox->findData(UISettings::values.game_icon_size.GetValue()));
     ui->folder_icon_size_combobox->setCurrentIndex(

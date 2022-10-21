@@ -100,7 +100,6 @@ enum class CameraError {
 enum class VibrationAmplificationType {
     Linear,
     Exponential,
-    Test,
 };
 
 // Analog properties for calibration
@@ -323,6 +322,10 @@ public:
 
     virtual VibrationError SetVibration([[maybe_unused]] const VibrationStatus& vibration_status) {
         return VibrationError::NotSupported;
+    }
+
+    virtual bool IsVibrationEnabled() {
+        return false;
     }
 
     virtual PollingError SetPollingMode([[maybe_unused]] PollingMode polling_mode) {

@@ -108,10 +108,15 @@ public:
                          [[maybe_unused]] const Common::Input::LedStatus& led_status) {}
 
     // Sets rumble to a controller
-    virtual Common::Input::VibrationError SetRumble(
+    virtual Common::Input::VibrationError SetVibration(
         [[maybe_unused]] const PadIdentifier& identifier,
         [[maybe_unused]] const Common::Input::VibrationStatus& vibration) {
         return Common::Input::VibrationError::NotSupported;
+    }
+
+    // Returns true if device supports vibrations
+    virtual bool IsVibrationEnabled([[maybe_unused]] const PadIdentifier& identifier) {
+        return false;
     }
 
     // Sets polling mode to a controller
