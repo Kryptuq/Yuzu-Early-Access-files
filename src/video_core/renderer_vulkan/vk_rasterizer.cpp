@@ -174,7 +174,7 @@ RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra
 
 RasterizerVulkan::~RasterizerVulkan() = default;
 
-void RasterizerVulkan::Draw(bool is_indexed) {
+void RasterizerVulkan::Draw(bool is_indexed, u32 instance_count) {
     MICROPROFILE_SCOPE(Vulkan_Drawing);
 
     SCOPE_EXIT({ gpu.TickWork(); });
@@ -191,12 +191,14 @@ void RasterizerVulkan::Draw(bool is_indexed) {
     pipeline->SetEngine(maxwell3d, gpu_memory);
     pipeline->Configure(is_indexed);
 
+    BindInlineIndexBuffer();
+
     BeginTransformFeedback();
 
     UpdateDynamicStates();
 
     const auto& regs{maxwell3d->regs};
-    const u32 num_instances{maxwell3d->draw_state.instance_count};
+    const u32 num_instances{instance_count};
     const DrawParams draw_params{MakeDrawParams(regs, num_instances, is_indexed)};
     scheduler.Record([draw_params](vk::CommandBuffer cmdbuf) {
         if (draw_params.is_indexed) {
@@ -1004,6 +1006,19 @@ void RasterizerVulkan::ReleaseChannel(s32 channel_id) {
     }
     pipeline_cache.EraseChannel(channel_id);
     query_cache.EraseChannel(channel_id);
+}
+
+void RasterizerVulkan::BindInlineIndexBuffer() {
+    if (maxwell3d->inline_index_draw_indexes.empty()) {
+        return;
+    }
+    const auto data_count = static_cast<u32>(maxwell3d->inline_index_draw_indexes.size());
+    auto buffer = buffer_cache_runtime.UploadStagingBuffer(data_count);
+    std::memcpy(buffer.mapped_span.data(), maxwell3d->inline_index_draw_indexes.data(), data_count);
+    buffer_cache_runtime.BindIndexBuffer(
+        maxwell3d->regs.draw.topology, maxwell3d->regs.index_buffer.format,
+        maxwell3d->regs.index_buffer.first, maxwell3d->regs.index_buffer.count, buffer.buffer,
+        static_cast<u32>(buffer.offset), data_count);
 }
 
 } // namespace Vulkan

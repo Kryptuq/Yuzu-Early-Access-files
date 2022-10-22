@@ -68,7 +68,7 @@ public:
                               StateTracker& state_tracker_);
     ~RasterizerOpenGL() override;
 
-    void Draw(bool is_indexed) override;
+    void Draw(bool is_indexed, u32 instance_count) override;
     void Clear() override;
     void DispatchCompute() override;
     void ResetCounter(VideoCore::QueryType type) override;
@@ -198,6 +198,8 @@ private:
 
     /// End a transform feedback
     void EndTransformFeedback();
+
+    void BindInlineIndexBuffer();
 
     Tegra::GPU& gpu;
 

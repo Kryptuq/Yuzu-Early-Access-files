@@ -205,7 +205,7 @@ void RasterizerOpenGL::Clear() {
     ++num_queued_commands;
 }
 
-void RasterizerOpenGL::Draw(bool is_indexed) {
+void RasterizerOpenGL::Draw(bool is_indexed, u32 instance_count) {
     MICROPROFILE_SCOPE(OpenGL_Drawing);
 
     SCOPE_EXIT({ gpu.TickWork(); });
@@ -222,13 +222,15 @@ void RasterizerOpenGL::Draw(bool is_indexed) {
     pipeline->SetEngine(maxwell3d, gpu_memory);
     pipeline->Configure(is_indexed);
 
+    BindInlineIndexBuffer();
+
     SyncState();
 
     const GLenum primitive_mode = MaxwellToGL::PrimitiveTopology(maxwell3d->regs.draw.topology);
     BeginTransformFeedback(pipeline, primitive_mode);
 
     const GLuint base_instance = static_cast<GLuint>(maxwell3d->regs.global_base_instance_index);
-    const GLsizei num_instances = maxwell3d->draw_state.instance_count;
+    const GLsizei num_instances = static_cast<GLsizei>(instance_count);
     if (is_indexed) {
         const GLint base_vertex = static_cast<GLint>(maxwell3d->regs.global_base_vertex_index);
         const GLsizei num_vertices = static_cast<GLsizei>(maxwell3d->regs.index_buffer.count);
@@ -1126,6 +1128,16 @@ void RasterizerOpenGL::ReleaseChannel(s32 channel_id) {
     }
     shader_cache.EraseChannel(channel_id);
     query_cache.EraseChannel(channel_id);
+}
+
+void RasterizerOpenGL::BindInlineIndexBuffer() {
+    if (maxwell3d->inline_index_draw_indexes.empty()) {
+        return;
+    }
+    const auto data_count = static_cast<u32>(maxwell3d->inline_index_draw_indexes.size());
+    auto buffer = Buffer(buffer_cache_runtime, *this, 0, data_count);
+    buffer.ImmediateUpload(0, maxwell3d->inline_index_draw_indexes);
+    buffer_cache_runtime.BindIndexBuffer(buffer, 0, data_count);
 }
 
 AccelerateDMA::AccelerateDMA(BufferCache& buffer_cache_) : buffer_cache{buffer_cache_} {}
