@@ -9,6 +9,7 @@
 #include <mbedtls/hmac_drbg.h>
 
 #include "common/fs/file.h"
+#include "common/fs/fs.h"
 #include "common/fs/path_util.h"
 #include "common/logging/log.h"
 #include "core/hle/service/mii/mii_manager.h"
@@ -279,7 +280,7 @@ bool LoadKeys(InternalKey& locked_secret, InternalKey& unfixed_info) {
                                        Common::FS::FileType::BinaryFile};
 
     if (!keys_file.IsOpen()) {
-        LOG_ERROR(Service_NFP, "No keys detected");
+        LOG_ERROR(Service_NFP, "Failed to open key file");
         return false;
     }
 
@@ -293,6 +294,11 @@ bool LoadKeys(InternalKey& locked_secret, InternalKey& unfixed_info) {
     }
 
     return true;
+}
+
+bool IsKeyAvailable() {
+    const auto yuzu_keys_dir = Common::FS::GetYuzuPath(Common::FS::YuzuPath::KeysDir);
+    return Common::FS::Exists(yuzu_keys_dir / "key_retail.bin");
 }
 
 bool DecodeAmiibo(const EncryptedNTAG215File& encrypted_tag_data, NTAG215File& tag_data) {

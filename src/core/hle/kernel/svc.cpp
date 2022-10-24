@@ -751,8 +751,8 @@ static void Break(Core::System& system, u32 reason, u64 info1, u64 info2) {
     }
 
     system.GetReporter().SaveSvcBreakReport(
-        static_cast<u32>(break_reason.break_type.Value()), break_reason.signal_debugger, info1,
-        info2, has_dumped_buffer ? std::make_optional(debug_buffer) : std::nullopt);
+        static_cast<u32>(break_reason.break_type.Value()), break_reason.signal_debugger.As<bool>(),
+        info1, info2, has_dumped_buffer ? std::make_optional(debug_buffer) : std::nullopt);
 
     if (!break_reason.signal_debugger) {
         LOG_CRITICAL(

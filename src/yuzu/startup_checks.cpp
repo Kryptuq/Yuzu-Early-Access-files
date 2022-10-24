@@ -49,7 +49,7 @@ bool CheckEnvVars(bool* is_child) {
         *is_child = true;
         return false;
     } else if (!SetEnvironmentVariableA(IS_CHILD_ENV_VAR, ENV_VAR_ENABLED_TEXT)) {
-        std::fprintf(stderr, "SetEnvironmentVariableA failed to set %s with error %d\n",
+        std::fprintf(stderr, "SetEnvironmentVariableA failed to set %s with error %lu\n",
                      IS_CHILD_ENV_VAR, GetLastError());
         return true;
     }
@@ -62,7 +62,7 @@ bool StartupChecks(const char* arg0, bool* has_broken_vulkan, bool perform_vulka
     // Set the startup variable for child processes
     const bool env_var_set = SetEnvironmentVariableA(STARTUP_CHECK_ENV_VAR, ENV_VAR_ENABLED_TEXT);
     if (!env_var_set) {
-        std::fprintf(stderr, "SetEnvironmentVariableA failed to set %s with error %d\n",
+        std::fprintf(stderr, "SetEnvironmentVariableA failed to set %s with error %lu\n",
                      STARTUP_CHECK_ENV_VAR, GetLastError());
         return false;
     }
@@ -81,22 +81,22 @@ bool StartupChecks(const char* arg0, bool* has_broken_vulkan, bool perform_vulka
         DWORD exit_code = STILL_ACTIVE;
         const int err = GetExitCodeProcess(process_info.hProcess, &exit_code);
         if (err == 0) {
-            std::fprintf(stderr, "GetExitCodeProcess failed with error %d\n", GetLastError());
+            std::fprintf(stderr, "GetExitCodeProcess failed with error %lu\n", GetLastError());
         }
 
         // Vulkan is broken if the child crashed (return value is not zero)
         *has_broken_vulkan = (exit_code != 0);
 
         if (CloseHandle(process_info.hProcess) == 0) {
-            std::fprintf(stderr, "CloseHandle failed with error %d\n", GetLastError());
+            std::fprintf(stderr, "CloseHandle failed with error %lu\n", GetLastError());
         }
         if (CloseHandle(process_info.hThread) == 0) {
-            std::fprintf(stderr, "CloseHandle failed with error %d\n", GetLastError());
+            std::fprintf(stderr, "CloseHandle failed with error %lu\n", GetLastError());
         }
     }
 
     if (!SetEnvironmentVariableA(STARTUP_CHECK_ENV_VAR, nullptr)) {
-        std::fprintf(stderr, "SetEnvironmentVariableA failed to clear %s with error %d\n",
+        std::fprintf(stderr, "SetEnvironmentVariableA failed to clear %s with error %lu\n",
                      STARTUP_CHECK_ENV_VAR, GetLastError());
     }
 
@@ -135,7 +135,8 @@ bool SpawnChild(const char* arg0, PROCESS_INFORMATION* pi, int flags) {
     startup_info.cb = sizeof(startup_info);
 
     char p_name[255];
-    std::strncpy(p_name, arg0, 255);
+    std::strncpy(p_name, arg0, 254);
+    p_name[254] = '\0';
 
     const bool process_created = CreateProcessA(nullptr,       // lpApplicationName
                                                 p_name,        // lpCommandLine
@@ -149,7 +150,7 @@ bool SpawnChild(const char* arg0, PROCESS_INFORMATION* pi, int flags) {
                                                 pi             // lpProcessInformation
     );
     if (!process_created) {
-        std::fprintf(stderr, "CreateProcessA failed with error %d\n", GetLastError());
+        std::fprintf(stderr, "CreateProcessA failed with error %lu\n", GetLastError());
         return false;
     }
 

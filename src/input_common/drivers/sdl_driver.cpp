@@ -40,8 +40,8 @@ public:
     void EnableMotion() {
         if (sdl_controller) {
             SDL_GameController* controller = sdl_controller.get();
-            has_accel = SDL_GameControllerHasSensor(controller, SDL_SENSOR_ACCEL);
-            has_gyro = SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO);
+            has_accel = SDL_GameControllerHasSensor(controller, SDL_SENSOR_ACCEL) == SDL_TRUE;
+            has_gyro = SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO) == SDL_TRUE;
             if (has_accel) {
                 SDL_GameControllerSetSensorEnabled(controller, SDL_SENSOR_ACCEL, SDL_TRUE);
             }

@@ -48,8 +48,8 @@ namespace Kernel {
 
 struct KernelCore::Impl {
     explicit Impl(Core::System& system_, KernelCore& kernel_)
-        : time_manager{system_},
-          service_threads_manager{1, "ServiceThreadsManager"}, system{system_} {}
+        : time_manager{system_}, service_threads_manager{1, "ServiceThreadsManager"},
+          service_thread_barrier{2}, system{system_} {}
 
     void SetMulticore(bool is_multi) {
         is_multicore = is_multi;
@@ -737,7 +737,12 @@ struct KernelCore::Impl {
     }
 
     void ClearServiceThreads() {
-        service_threads_manager.QueueWork([this]() { service_threads.clear(); });
+        service_threads_manager.QueueWork([this] {
+            service_threads.clear();
+            default_service_thread.reset();
+            service_thread_barrier.Sync();
+        });
+        service_thread_barrier.Sync();
     }
 
     std::mutex server_objects_lock;
@@ -802,6 +807,7 @@ struct KernelCore::Impl {
     std::unordered_set<std::shared_ptr<ServiceThread>> service_threads;
     std::weak_ptr<ServiceThread> default_service_thread;
     Common::ThreadWorker service_threads_manager;
+    Common::Barrier service_thread_barrier;
 
     std::array<KThread*, Core::Hardware::NUM_CPU_CORES> shutdown_threads;
     std::array<std::unique_ptr<Kernel::KScheduler>, Core::Hardware::NUM_CPU_CORES> schedulers{};

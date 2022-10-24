@@ -238,6 +238,8 @@ public:
     explicit Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system);
     ~Services();
 
+    void KillNVNFlinger();
+
 private:
     std::unique_ptr<NVFlinger::HosBinderDriverServer> hos_binder_driver_server;
     std::unique_ptr<NVFlinger::NVFlinger> nv_flinger;

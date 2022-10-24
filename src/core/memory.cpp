@@ -233,18 +233,17 @@ struct Memory::Impl {
                           current_vaddr, src_addr, size);
                 std::memset(dest_buffer, 0, copy_amount);
             },
-            [&dest_buffer](const std::size_t copy_amount, const u8* const src_ptr) {
+            [&](const std::size_t copy_amount, const u8* const src_ptr) {
                 std::memcpy(dest_buffer, src_ptr, copy_amount);
             },
-            [&system = system, &dest_buffer](const VAddr current_vaddr,
-                                             const std::size_t copy_amount,
-                                             const u8* const host_ptr) {
+            [&](const VAddr current_vaddr, const std::size_t copy_amount,
+                const u8* const host_ptr) {
                 if constexpr (!UNSAFE) {
                     system.GPU().FlushRegion(current_vaddr, copy_amount);
                 }
                 std::memcpy(dest_buffer, host_ptr, copy_amount);
             },
-            [&dest_buffer](const std::size_t copy_amount) {
+            [&](const std::size_t copy_amount) {
                 dest_buffer = static_cast<u8*>(dest_buffer) + copy_amount;
             });
     }
@@ -267,17 +266,16 @@ struct Memory::Impl {
                           "Unmapped WriteBlock @ 0x{:016X} (start address = 0x{:016X}, size = {})",
                           current_vaddr, dest_addr, size);
             },
-            [&src_buffer](const std::size_t copy_amount, u8* const dest_ptr) {
+            [&](const std::size_t copy_amount, u8* const dest_ptr) {
                 std::memcpy(dest_ptr, src_buffer, copy_amount);
             },
-            [&system = system, &src_buffer](const VAddr current_vaddr,
-                                            const std::size_t copy_amount, u8* const host_ptr) {
+            [&](const VAddr current_vaddr, const std::size_t copy_amount, u8* const host_ptr) {
                 if constexpr (!UNSAFE) {
                     system.GPU().InvalidateRegion(current_vaddr, copy_amount);
                 }
                 std::memcpy(host_ptr, src_buffer, copy_amount);
             },
-            [&src_buffer](const std::size_t copy_amount) {
+            [&](const std::size_t copy_amount) {
                 src_buffer = static_cast<const u8*>(src_buffer) + copy_amount;
             });
     }
@@ -301,8 +299,7 @@ struct Memory::Impl {
             [](const std::size_t copy_amount, u8* const dest_ptr) {
                 std::memset(dest_ptr, 0, copy_amount);
             },
-            [&system = system](const VAddr current_vaddr, const std::size_t copy_amount,
-                               u8* const host_ptr) {
+            [&](const VAddr current_vaddr, const std::size_t copy_amount, u8* const host_ptr) {
                 system.GPU().InvalidateRegion(current_vaddr, copy_amount);
                 std::memset(host_ptr, 0, copy_amount);
             },
@@ -313,22 +310,20 @@ struct Memory::Impl {
                    const std::size_t size) {
         WalkBlock(
             process, dest_addr, size,
-            [this, &process, &dest_addr, &src_addr, size](const std::size_t copy_amount,
-                                                          const VAddr current_vaddr) {
+            [&](const std::size_t copy_amount, const VAddr current_vaddr) {
                 LOG_ERROR(HW_Memory,
                           "Unmapped CopyBlock @ 0x{:016X} (start address = 0x{:016X}, size = {})",
                           current_vaddr, src_addr, size);
                 ZeroBlock(process, dest_addr, copy_amount);
             },
-            [this, &process, &dest_addr](const std::size_t copy_amount, const u8* const src_ptr) {
+            [&](const std::size_t copy_amount, const u8* const src_ptr) {
                 WriteBlockImpl<false>(process, dest_addr, src_ptr, copy_amount);
             },
-            [this, &system = system, &process, &dest_addr](
-                const VAddr current_vaddr, const std::size_t copy_amount, u8* const host_ptr) {
+            [&](const VAddr current_vaddr, const std::size_t copy_amount, u8* const host_ptr) {
                 system.GPU().FlushRegion(current_vaddr, copy_amount);
                 WriteBlockImpl<false>(process, dest_addr, host_ptr, copy_amount);
             },
-            [&dest_addr, &src_addr](const std::size_t copy_amount) {
+            [&](const std::size_t copy_amount) {
                 dest_addr += static_cast<VAddr>(copy_amount);
                 src_addr += static_cast<VAddr>(copy_amount);
             });
@@ -575,7 +570,7 @@ struct Memory::Impl {
             [vaddr]() {
                 LOG_ERROR(HW_Memory, "Unmapped Read{} @ 0x{:016X}", sizeof(T) * 8, vaddr);
             },
-            [&system = system, vaddr]() { system.GPU().FlushRegion(vaddr, sizeof(T)); });
+            [&]() { system.GPU().FlushRegion(vaddr, sizeof(T)); });
         if (ptr) {
             std::memcpy(&result, ptr, sizeof(T));
         }
@@ -599,7 +594,7 @@ struct Memory::Impl {
                 LOG_ERROR(HW_Memory, "Unmapped Write{} @ 0x{:016X} = 0x{:016X}", sizeof(T) * 8,
                           vaddr, static_cast<u64>(data));
             },
-            [&system = system, vaddr]() { system.GPU().InvalidateRegion(vaddr, sizeof(T)); });
+            [&]() { system.GPU().InvalidateRegion(vaddr, sizeof(T)); });
         if (ptr) {
             std::memcpy(ptr, &data, sizeof(T));
         }
@@ -613,7 +608,7 @@ struct Memory::Impl {
                 LOG_ERROR(HW_Memory, "Unmapped WriteExclusive{} @ 0x{:016X} = 0x{:016X}",
                           sizeof(T) * 8, vaddr, static_cast<u64>(data));
             },
-            [&system = system, vaddr]() { system.GPU().InvalidateRegion(vaddr, sizeof(T)); });
+            [&]() { system.GPU().InvalidateRegion(vaddr, sizeof(T)); });
         if (ptr) {
             const auto volatile_pointer = reinterpret_cast<volatile T*>(ptr);
             return Common::AtomicCompareAndSwap(volatile_pointer, data, expected);
@@ -628,7 +623,7 @@ struct Memory::Impl {
                 LOG_ERROR(HW_Memory, "Unmapped WriteExclusive128 @ 0x{:016X} = 0x{:016X}{:016X}",
                           vaddr, static_cast<u64>(data[1]), static_cast<u64>(data[0]));
             },
-            [&system = system, vaddr]() { system.GPU().InvalidateRegion(vaddr, sizeof(u128)); });
+            [&]() { system.GPU().InvalidateRegion(vaddr, sizeof(u128)); });
         if (ptr) {
             const auto volatile_pointer = reinterpret_cast<volatile u64*>(ptr);
             return Common::AtomicCompareAndSwap(volatile_pointer, data, expected);

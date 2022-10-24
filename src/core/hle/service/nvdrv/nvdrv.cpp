@@ -53,7 +53,7 @@ void InstallInterfaces(SM::ServiceManager& service_manager, NVFlinger::NVFlinger
 }
 
 Module::Module(Core::System& system)
-    : service_context{system, "nvdrv"}, events_interface{*this}, container{system.Host1x()} {
+    : container{system.Host1x()}, service_context{system, "nvdrv"}, events_interface{*this} {
     builders["/dev/nvhost-as-gpu"] = [this, &system](DeviceFD fd) {
         std::shared_ptr<Devices::nvdevice> device =
             std::make_shared<Devices::nvhost_as_gpu>(system, *this, container);

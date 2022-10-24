@@ -8,7 +8,6 @@
 
 #include "common/common_funcs.h"
 #include "core/hle/service/kernel_helpers.h"
-#include "core/hle/service/mii/types.h"
 #include "core/hle/service/nfp/nfp_types.h"
 #include "core/hle/service/service.h"
 

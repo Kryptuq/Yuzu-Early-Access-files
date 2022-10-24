@@ -58,13 +58,11 @@ if (MSVC)
 
         # Warnings
         /W3
-        /we4018 # 'expression': signed/unsigned mismatch
+        /WX
+
         /we4062 # Enumerator 'identifier' in a switch of enum 'enumeration' is not handled
-        /we4101 # 'identifier': unreferenced local variable
         /we4189 # 'identifier': local variable is initialized but not referenced
         /we4265 # 'class': class has virtual functions, but destructor is not virtual
-        /we4267 # 'var': conversion from 'size_t' to 'type', possible loss of data
-        /we4305 # 'context': truncation from 'type1' to 'type2'
         /we4388 # 'expression': signed/unsigned mismatch
         /we4389 # 'operator': signed/unsigned mismatch
         /we4456 # Declaration of 'identifier' hides previous local declaration
@@ -75,10 +73,13 @@ if (MSVC)
         /we4547 # 'operator': operator before comma has no effect; expected operator with side-effect
         /we4549 # 'operator1': operator before comma has no effect; did you intend 'operator2'?
         /we4555 # Expression has no effect; expected expression with side-effect
-        /we4715 # 'function': not all control paths return a value
-        /we4834 # Discarding return value of function with 'nodiscard' attribute
+        /we4826 # Conversion from 'type1' to 'type2' is sign-extended. This may cause unexpected runtime behavior.
         /we5038 # data member 'member1' will be initialized after data member 'member2'
+        /we5233 # explicit lambda capture 'identifier' is not used
         /we5245 # 'function': unreferenced function with internal linkage has been removed
+
+        /wd4100 # 'identifier': unreferenced formal parameter
+        /wd4324 # 'struct_name': structure was padded due to __declspec(align())
     )
 
     if (USE_CCACHE)
@@ -99,24 +100,18 @@ if (MSVC)
     set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/DEBUG /MANIFEST:NO /INCREMENTAL:NO /OPT:REF,ICF" CACHE STRING "" FORCE)
 else()
     add_compile_options(
-        -Wall
-        -Werror=array-bounds
-        -Werror=implicit-fallthrough
+        -Werror=all
+        -Werror=extra
         -Werror=missing-declarations
-        -Werror=missing-field-initializers
-        -Werror=reorder
         -Werror=shadow
-        -Werror=sign-compare
-        -Werror=switch
-        -Werror=uninitialized
-        -Werror=unused-function
-        -Werror=unused-result
-        -Werror=unused-variable
-        -Wextra
-        -Wmissing-declarations
+        -Werror=unused
+
         -Wno-attributes
         -Wno-invalid-offsetof
         -Wno-unused-parameter
+
+        $<$<CXX_COMPILER_ID:Clang>:-Wno-braced-scalar-init>
+        $<$<CXX_COMPILER_ID:Clang>:-Wno-unused-private-field>
     )
 
     if (ARCHITECTURE_x86_64)

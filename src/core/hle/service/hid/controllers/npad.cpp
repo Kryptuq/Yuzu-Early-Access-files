@@ -1502,25 +1502,25 @@ bool Controller_NPad::IsControllerSupported(Core::HID::NpadStyleIndex controller
         Core::HID::NpadStyleTag style = GetSupportedStyleSet();
         switch (controller) {
         case Core::HID::NpadStyleIndex::ProController:
-            return style.fullkey;
+            return style.fullkey.As<bool>();
         case Core::HID::NpadStyleIndex::JoyconDual:
-            return style.joycon_dual;
+            return style.joycon_dual.As<bool>();
         case Core::HID::NpadStyleIndex::JoyconLeft:
-            return style.joycon_left;
+            return style.joycon_left.As<bool>();
         case Core::HID::NpadStyleIndex::JoyconRight:
-            return style.joycon_right;
+            return style.joycon_right.As<bool>();
         case Core::HID::NpadStyleIndex::GameCube:
-            return style.gamecube;
+            return style.gamecube.As<bool>();
         case Core::HID::NpadStyleIndex::Pokeball:
-            return style.palma;
+            return style.palma.As<bool>();
         case Core::HID::NpadStyleIndex::NES:
-            return style.lark;
+            return style.lark.As<bool>();
         case Core::HID::NpadStyleIndex::SNES:
-            return style.lucia;
+            return style.lucia.As<bool>();
         case Core::HID::NpadStyleIndex::N64:
-            return style.lagoon;
+            return style.lagoon.As<bool>();
         case Core::HID::NpadStyleIndex::SegaGenesis:
-            return style.lager;
+            return style.lager.As<bool>();
         default:
             return false;
         }

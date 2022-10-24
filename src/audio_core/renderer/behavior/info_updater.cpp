@@ -91,7 +91,7 @@ Result InfoUpdater::UpdateVoices(VoiceContext& voice_context,
             voice_info.Initialize();
 
             for (u32 channel = 0; channel < in_param.channel_count; channel++) {
-                std::memset(voice_states[channel], 0, sizeof(VoiceState));
+                *voice_states[channel] = {};
             }
         }
 

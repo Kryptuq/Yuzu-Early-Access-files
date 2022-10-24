@@ -156,12 +156,13 @@ if (MSVC)
   )
   target_compile_options(common PRIVATE
     /W4
-    /WX
+
+    /we4242 # 'identifier': conversion from 'type1' to 'type2', possible loss of data
+    /we4254 # 'operator': conversion from 'type1:field_bits' to 'type2:field_bits', possible loss of data
+    /we4800 # Implicit conversion from 'type' to bool. Possible information loss
   )
 else()
   target_compile_options(common PRIVATE
-    -Werror
-
     $<$<CXX_COMPILER_ID:Clang>:-fsized-deallocation>
   )
 endif()

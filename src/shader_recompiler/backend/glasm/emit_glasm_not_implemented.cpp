@@ -5,10 +5,6 @@
 #include "shader_recompiler/backend/glasm/glasm_emit_context.h"
 #include "shader_recompiler/frontend/ir/value.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable : 4100)
-#endif
-
 namespace Shader::Backend::GLASM {
 
 #define NotImplemented() throw NotImplementedException("GLASM instruction {}", __LINE__)

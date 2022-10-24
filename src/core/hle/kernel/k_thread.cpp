@@ -148,7 +148,9 @@ Result KThread::Initialize(KThreadFunction func, uintptr_t arg, VAddr user_stack
     physical_affinity_mask.SetAffinity(phys_core, true);
 
     // Set the thread state.
-    thread_state = (type == ThreadType::Main) ? ThreadState::Runnable : ThreadState::Initialized;
+    thread_state = (type == ThreadType::Main || type == ThreadType::Dummy)
+                       ? ThreadState::Runnable
+                       : ThreadState::Initialized;
 
     // Set TLS address.
     tls_address = 0;
@@ -1231,9 +1233,6 @@ void KThread::EndWait(Result wait_result_) {
         }
 
         wait_queue->EndWait(this, wait_result_);
-
-        // Special case for dummy threads to wakeup if necessary.
-        IfDummyThreadEndWait();
     }
 }
 

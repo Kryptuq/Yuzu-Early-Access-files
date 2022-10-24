@@ -141,10 +141,6 @@ public:
     constexpr BitField(BitField&&) noexcept = default;
     constexpr BitField& operator=(BitField&&) noexcept = default;
 
-    [[nodiscard]] constexpr operator T() const {
-        return Value();
-    }
-
     constexpr void Assign(const T& value) {
 #ifdef _MSC_VER
         storage = static_cast<StorageType>((storage & ~mask) | FormatValue(value));
@@ -160,6 +156,17 @@ public:
 
     [[nodiscard]] constexpr T Value() const {
         return ExtractValue(storage);
+    }
+
+    template <typename ConvertedToType>
+    [[nodiscard]] constexpr ConvertedToType As() const {
+        static_assert(!std::is_same_v<T, ConvertedToType>,
+                      "Unnecessary cast. Use Value() instead.");
+        return static_cast<ConvertedToType>(Value());
+    }
+
+    [[nodiscard]] constexpr operator T() const {
+        return Value();
     }
 
     [[nodiscard]] constexpr explicit operator bool() const {

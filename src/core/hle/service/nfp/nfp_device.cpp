@@ -17,6 +17,7 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/service/mii/mii_manager.h"
+#include "core/hle/service/mii/types.h"
 #include "core/hle/service/nfp/amiibo_crypto.h"
 #include "core/hle/service/nfp/nfp.h"
 #include "core/hle/service/nfp/nfp_device.h"
@@ -231,6 +232,14 @@ Result NfpDevice::Mount(MountTarget mount_target_) {
     if (!AmiiboCrypto::IsAmiiboValid(encrypted_tag_data)) {
         LOG_ERROR(Service_NFP, "Not an amiibo");
         return NotAnAmiibo;
+    }
+
+    // Mark amiibos as read only when keys are missing
+    if (!AmiiboCrypto::IsKeyAvailable()) {
+        LOG_ERROR(Service_NFP, "No keys detected");
+        device_state = DeviceState::TagMounted;
+        mount_target = MountTarget::Rom;
+        return ResultSuccess;
     }
 
     if (!AmiiboCrypto::DecodeAmiibo(encrypted_tag_data, tag_data)) {

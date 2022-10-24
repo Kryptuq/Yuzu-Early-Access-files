@@ -133,7 +133,7 @@ inline void MemoryManager::SetBigPageContinous(size_t big_page_index, bool value
 template <MemoryManager::EntryType entry_type>
 GPUVAddr MemoryManager::PageTableOp(GPUVAddr gpu_addr, [[maybe_unused]] VAddr cpu_addr, size_t size,
                                     PTEKind kind) {
-    u64 remaining_size{size};
+    [[maybe_unused]] u64 remaining_size{size};
     if constexpr (entry_type == EntryType::Mapped) {
         page_table.ReserveRange(gpu_addr, size);
     }
@@ -159,7 +159,7 @@ GPUVAddr MemoryManager::PageTableOp(GPUVAddr gpu_addr, [[maybe_unused]] VAddr cp
 template <MemoryManager::EntryType entry_type>
 GPUVAddr MemoryManager::BigPageTableOp(GPUVAddr gpu_addr, [[maybe_unused]] VAddr cpu_addr,
                                        size_t size, PTEKind kind) {
-    u64 remaining_size{size};
+    [[maybe_unused]] u64 remaining_size{size};
     for (u64 offset{}; offset < size; offset += big_page_size) {
         const GPUVAddr current_gpu_addr = gpu_addr + offset;
         [[maybe_unused]] const auto current_entry_type = GetEntry<true>(current_gpu_addr);

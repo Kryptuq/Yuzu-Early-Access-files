@@ -314,6 +314,9 @@ u64 KScheduler::UpdateHighestPriorityThreadsImpl(KernelCore& kernel) {
         idle_cores &= ~(1ULL << core_id);
     }
 
+    // HACK: any waiting dummy threads can wake up now.
+    kernel.GlobalSchedulerContext().WakeupWaitingDummyThreads();
+
     return cores_needing_scheduling;
 }
 
@@ -536,6 +539,12 @@ void KScheduler::OnThreadStateChanged(KernelCore& kernel, KThread* thread, Threa
         GetPriorityQueue(kernel).PushBack(thread);
         IncrementScheduledCount(thread);
         SetSchedulerUpdateNeeded(kernel);
+
+        if (thread->IsDummyThread()) {
+            // HACK: if this is a dummy thread, it should wake up when the scheduler
+            // lock is released.
+            kernel.GlobalSchedulerContext().RegisterDummyThreadForWakeup(thread);
+        }
     }
 }
 

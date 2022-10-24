@@ -279,14 +279,8 @@ if (MSVC)
 else()
     target_compile_options(video_core PRIVATE
         -Werror=conversion
-        -Wno-error=sign-conversion
-        -Werror=pessimizing-move
-        -Werror=redundant-move
-        -Werror=type-limits
 
-        $<$<CXX_COMPILER_ID:GNU>:-Werror=class-memaccess>
-        $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-parameter>
-        $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-variable>
+        -Wno-sign-conversion
     )
 endif()
 

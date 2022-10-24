@@ -268,7 +268,7 @@ bool MultiplayerState::OnCloseRoom() {
             return true;
         }
         // Save ban list
-        UISettings::values.multiplayer_ban_list = std::move(room->GetBanList());
+        UISettings::values.multiplayer_ban_list = room->GetBanList();
 
         room->Destroy();
         announce_multiplayer_session->Stop();

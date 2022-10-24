@@ -7,10 +7,6 @@
 #include "shader_recompiler/backend/glsl/glsl_emit_context.h"
 #include "shader_recompiler/frontend/ir/value.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable : 4100)
-#endif
-
 namespace Shader::Backend::GLSL {
 
 void EmitGetRegister(EmitContext& ctx) {

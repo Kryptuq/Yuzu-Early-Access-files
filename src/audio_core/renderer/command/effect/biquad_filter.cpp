@@ -94,7 +94,7 @@ void BiquadFilterCommand::Dump([[maybe_unused]] const ADSP::CommandListProcessor
 void BiquadFilterCommand::Process(const ADSP::CommandListProcessor& processor) {
     auto state_{reinterpret_cast<VoiceState::BiquadFilterState*>(state)};
     if (needs_init) {
-        std::memset(state_, 0, sizeof(VoiceState::BiquadFilterState));
+        *state_ = {};
     }
 
     auto input_buffer{

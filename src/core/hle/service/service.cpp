@@ -303,4 +303,8 @@ Services::Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system
 
 Services::~Services() = default;
 
+void Services::KillNVNFlinger() {
+    nv_flinger->ShutdownLayers();
+}
+
 } // namespace Service

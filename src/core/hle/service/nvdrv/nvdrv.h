@@ -97,6 +97,9 @@ private:
     friend class EventInterface;
     friend class Service::NVFlinger::NVFlinger;
 
+    /// Manages syncpoints on the host
+    NvCore::Container container;
+
     /// Id to use for the next open file descriptor.
     DeviceFD next_fd = 1;
 
@@ -107,9 +110,6 @@ private:
     KernelHelpers::ServiceContext service_context;
 
     EventInterface events_interface;
-
-    /// Manages syncpoints on the host
-    NvCore::Container container;
 
     std::unordered_map<std::string, std::function<FilesContainerType::iterator(DeviceFD)>> builders;
 };

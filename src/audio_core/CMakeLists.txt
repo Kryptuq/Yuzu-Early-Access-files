@@ -206,20 +206,11 @@ if (MSVC)
         /we4244 # 'conversion': conversion from 'type1' to 'type2', possible loss of data
         /we4245 # 'conversion': conversion from 'type1' to 'type2', signed/unsigned mismatch
         /we4254 # 'operator': conversion from 'type1:field_bits' to 'type2:field_bits', possible loss of data
-        /we4456 # Declaration of 'identifier' hides previous local declaration
-        /we4457 # Declaration of 'identifier' hides function parameter
-        /we4458 # Declaration of 'identifier' hides class member
-        /we4459 # Declaration of 'identifier' hides global declaration
+        /we4800 # Implicit conversion from 'type' to bool. Possible information loss
     )
 else()
     target_compile_options(audio_core PRIVATE
         -Werror=conversion
-        -Werror=ignored-qualifiers
-        -Werror=shadow
-        -Werror=unused-variable
-
-        $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-parameter>
-        $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-variable>
 
         -Wno-sign-conversion
     )

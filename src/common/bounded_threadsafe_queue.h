@@ -21,11 +21,6 @@ constexpr size_t hardware_interference_size = std::hardware_destructive_interfer
 constexpr size_t hardware_interference_size = 64;
 #endif
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4324)
-#endif
-
 template <typename T, size_t capacity = 0x400>
 class MPSCQueue {
 public:
@@ -159,9 +154,5 @@ private:
 
     static_assert(std::is_nothrow_destructible_v<T>, "T must be nothrow destructible");
 };
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 } // namespace Common

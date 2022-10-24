@@ -232,8 +232,8 @@ const std::vector<std::shared_ptr<NCA>>& XCI::GetNCAs() const {
 
 std::shared_ptr<NCA> XCI::GetNCAByType(NCAContentType type) const {
     const auto program_id = secure_partition->GetProgramTitleID();
-    const auto iter = std::find_if(
-        ncas.begin(), ncas.end(), [this, type, program_id](const std::shared_ptr<NCA>& nca) {
+    const auto iter =
+        std::find_if(ncas.begin(), ncas.end(), [type, program_id](const std::shared_ptr<NCA>& nca) {
             return nca->GetType() == type && nca->GetTitleId() == program_id;
         });
     return iter == ncas.end() ? nullptr : *iter;

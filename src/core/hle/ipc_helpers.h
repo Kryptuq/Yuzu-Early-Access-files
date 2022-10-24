@@ -406,7 +406,7 @@ inline s32 RequestParser::Pop() {
 }
 
 // Ignore the -Wclass-memaccess warning on memcpy for non-trivially default constructible objects.
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wclass-memaccess"
 #endif
@@ -417,7 +417,7 @@ void RequestParser::PopRaw(T& value) {
     std::memcpy(&value, cmdbuf + index, sizeof(T));
     index += (sizeof(T) + 3) / 4; // round up to word length
 }
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)
 #pragma GCC diagnostic pop
 #endif
 

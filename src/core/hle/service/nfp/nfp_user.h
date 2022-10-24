@@ -4,8 +4,7 @@
 #pragma once
 
 #include "core/hle/service/kernel_helpers.h"
-#include "core/hle/service/nfp/nfp.h"
-#include "core/hle/service/nfp/nfp_types.h"
+#include "core/hle/service/service.h"
 
 namespace Service::NFP {
 class NfpDevice;
@@ -15,6 +14,11 @@ public:
     explicit IUser(Core::System& system_);
 
 private:
+    enum class State : u32 {
+        NonInitialized,
+        Initialized,
+    };
+
     void Initialize(Kernel::HLERequestContext& ctx);
     void Finalize(Kernel::HLERequestContext& ctx);
     void ListDevices(Kernel::HLERequestContext& ctx);

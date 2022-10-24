@@ -774,19 +774,15 @@ if (MSVC)
         /we4244 # 'conversion': conversion from 'type1' to 'type2', possible loss of data
         /we4245 # 'conversion': conversion from 'type1' to 'type2', signed/unsigned mismatch
         /we4254 # 'operator': conversion from 'type1:field_bits' to 'type2:field_bits', possible loss of data
+        /we4800 # Implicit conversion from 'type' to bool. Possible information loss
     )
 else()
     target_compile_options(core PRIVATE
         -Werror=conversion
-        -Werror=ignored-qualifiers
-
-        $<$<CXX_COMPILER_ID:GNU>:-Werror=class-memaccess>
-        $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-parameter>
-        $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-variable>
-
-        $<$<CXX_COMPILER_ID:Clang>:-fsized-deallocation>
 
         -Wno-sign-conversion
+
+        $<$<CXX_COMPILER_ID:Clang>:-fsized-deallocation>
     )
 endif()
 

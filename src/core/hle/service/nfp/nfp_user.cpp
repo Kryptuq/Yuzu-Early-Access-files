@@ -6,12 +6,9 @@
 
 #include "common/logging/log.h"
 #include "core/core.h"
-#include "core/hid/emulated_controller.h"
-#include "core/hid/hid_core.h"
 #include "core/hid/hid_types.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
-#include "core/hle/service/mii/mii_manager.h"
 #include "core/hle/service/nfp/nfp_device.h"
 #include "core/hle/service/nfp/nfp_result.h"
 #include "core/hle/service/nfp/nfp_user.h"

@@ -30,7 +30,7 @@ void MultiTapBiquadFilterCommand::Process(const ADSP::CommandListProcessor& proc
     for (u32 i = 0; i < filter_tap_count; i++) {
         auto state{reinterpret_cast<VoiceState::BiquadFilterState*>(states[i])};
         if (needs_init[i]) {
-            std::memset(state, 0, sizeof(VoiceState::BiquadFilterState));
+            *state = {};
         }
 
         ApplyBiquadFilterFloat(output_buffer, input_buffer, biquads[i].b, biquads[i].a, *state,

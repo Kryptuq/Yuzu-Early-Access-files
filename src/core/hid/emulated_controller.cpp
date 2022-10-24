@@ -1025,6 +1025,7 @@ bool EmulatedController::HasNfc() const {
     case NpadStyleIndex::JoyconRight:
     case NpadStyleIndex::JoyconDual:
     case NpadStyleIndex::ProController:
+    case NpadStyleIndex::Handheld:
         break;
     default:
         return false;
@@ -1135,27 +1136,27 @@ bool EmulatedController::IsControllerSupported(bool use_temporary_value) const {
     const auto type = is_configuring && use_temporary_value ? tmp_npad_type : npad_type;
     switch (type) {
     case NpadStyleIndex::ProController:
-        return supported_style_tag.fullkey;
+        return supported_style_tag.fullkey.As<bool>();
     case NpadStyleIndex::Handheld:
-        return supported_style_tag.handheld;
+        return supported_style_tag.handheld.As<bool>();
     case NpadStyleIndex::JoyconDual:
-        return supported_style_tag.joycon_dual;
+        return supported_style_tag.joycon_dual.As<bool>();
     case NpadStyleIndex::JoyconLeft:
-        return supported_style_tag.joycon_left;
+        return supported_style_tag.joycon_left.As<bool>();
     case NpadStyleIndex::JoyconRight:
-        return supported_style_tag.joycon_right;
+        return supported_style_tag.joycon_right.As<bool>();
     case NpadStyleIndex::GameCube:
-        return supported_style_tag.gamecube;
+        return supported_style_tag.gamecube.As<bool>();
     case NpadStyleIndex::Pokeball:
-        return supported_style_tag.palma;
+        return supported_style_tag.palma.As<bool>();
     case NpadStyleIndex::NES:
-        return supported_style_tag.lark;
+        return supported_style_tag.lark.As<bool>();
     case NpadStyleIndex::SNES:
-        return supported_style_tag.lucia;
+        return supported_style_tag.lucia.As<bool>();
     case NpadStyleIndex::N64:
-        return supported_style_tag.lagoon;
+        return supported_style_tag.lagoon.As<bool>();
     case NpadStyleIndex::SegaGenesis:
-        return supported_style_tag.lager;
+        return supported_style_tag.lager.As<bool>();
     default:
         return false;
     }

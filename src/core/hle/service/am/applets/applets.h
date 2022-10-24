@@ -164,7 +164,7 @@ protected:
         u32_le size;
         u32_le library_version;
         u32_le theme_color;
-        u8 play_startup_sound;
+        bool play_startup_sound;
         u64_le system_tick;
     };
     static_assert(sizeof(CommonArguments) == 0x20, "CommonArguments has incorrect size.");

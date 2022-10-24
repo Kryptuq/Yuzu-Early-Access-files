@@ -541,9 +541,9 @@ add_definitions(-DBOOST_ERROR_CODE_HEADER_ONLY
 # Adjustments for MSVC + Ninja
 if (MSVC AND CMAKE_GENERATOR STREQUAL "Ninja")
     add_compile_options(
-        /wd4711 # function 'function' selected for automatic inline expansion
         /wd4464 # relative include path contains '..'
-        /wd4820 # 'identifier1': '4' bytes padding added after data member 'identifier2'
+        /wd4711 # function 'function' selected for automatic inline expansion
+        /wd4820 # 'bytes' bytes padding added after construct 'member_name'
     )
 endif()
 

@@ -21,7 +21,7 @@ constexpr u32 pdep(u32 value) {
     u32 m = mask;
     for (u32 bit = 1; m; bit += bit) {
         if (value & bit)
-            result |= m & -m;
+            result |= m & (~m + 1);
         m &= m - 1;
     }
     return result;

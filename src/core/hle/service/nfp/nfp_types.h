@@ -17,11 +17,6 @@ enum class ServiceType : u32 {
     System,
 };
 
-enum class State : u32 {
-    NonInitialized,
-    Initialized,
-};
-
 enum class DeviceState : u32 {
     Initialized,
     SearchingForTag,

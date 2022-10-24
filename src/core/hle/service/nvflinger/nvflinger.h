@@ -48,6 +48,8 @@ public:
     explicit NVFlinger(Core::System& system_, HosBinderDriverServer& hos_binder_driver_server_);
     ~NVFlinger();
 
+    void ShutdownLayers();
+
     /// Sets the NVDrv module instance to use to send buffers to the GPU.
     void SetNVDrvInstance(std::shared_ptr<Nvidia::Module> instance);
 

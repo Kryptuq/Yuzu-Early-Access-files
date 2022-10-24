@@ -102,14 +102,18 @@ NVFlinger::~NVFlinger() {
         system.CoreTiming().UnscheduleEvent(single_composition_event, {});
     }
 
+    ShutdownLayers();
+
+    if (nvdrv) {
+        nvdrv->Close(disp_fd);
+    }
+}
+
+void NVFlinger::ShutdownLayers() {
     for (auto& display : displays) {
         for (size_t layer = 0; layer < display.GetNumLayers(); ++layer) {
             display.GetLayer(layer).Core().NotifyShutdown();
         }
-    }
-
-    if (nvdrv) {
-        nvdrv->Close(disp_fd);
     }
 }
 
