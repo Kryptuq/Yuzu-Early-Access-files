@@ -44,7 +44,7 @@ public:
 
     [[nodiscard]] unsigned Count() const noexcept {
         unsigned count = 0;
-        for (const auto [index, value] : page_table) {
+        for (const auto& [index, value] : page_table) {
             count += value;
         }
         return count;
