@@ -51,17 +51,24 @@ bool GlobalSchedulerContext::IsLocked() const {
 
 void GlobalSchedulerContext::RegisterDummyThreadForWakeup(KThread* thread) {
     ASSERT(IsLocked());
-    woken_dummy_thread_list.push_back(thread);
+
+    woken_dummy_threads.insert(thread);
+}
+
+void GlobalSchedulerContext::UnregisterDummyThreadForWakeup(KThread* thread) {
+    ASSERT(IsLocked());
+
+    woken_dummy_threads.erase(thread);
 }
 
 void GlobalSchedulerContext::WakeupWaitingDummyThreads() {
     ASSERT(IsLocked());
 
-    for (auto* thread : woken_dummy_thread_list) {
-        thread->IfDummyThreadEndWait();
+    for (auto* thread : woken_dummy_threads) {
+        thread->DummyThreadEndWait();
     }
 
-    woken_dummy_thread_list.clear();
+    woken_dummy_threads.clear();
 }
 
 } // namespace Kernel

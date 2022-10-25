@@ -1176,30 +1176,29 @@ Result KThread::Sleep(s64 timeout) {
     R_SUCCEED();
 }
 
-void KThread::IfDummyThreadTryWait() {
-    if (!IsDummyThread()) {
-        return;
-    }
+void KThread::RequestDummyThreadWait() {
+    ASSERT(KScheduler::IsSchedulerLockedByCurrentThread(kernel));
+    ASSERT(this->IsDummyThread());
 
-    if (GetState() != ThreadState::Waiting) {
-        return;
-    }
-
-    ASSERT(!kernel.IsPhantomModeForSingleCore());
-
-    // Block until we are no longer waiting.
-    std::unique_lock lk(dummy_wait_lock);
-    dummy_wait_cv.wait(
-        lk, [&] { return GetState() != ThreadState::Waiting || kernel.IsShuttingDown(); });
+    // We will block when the scheduler lock is released.
+    dummy_thread_runnable.store(false);
 }
 
-void KThread::IfDummyThreadEndWait() {
-    if (!IsDummyThread()) {
-        return;
-    }
+void KThread::DummyThreadBeginWait() {
+    ASSERT(this->IsDummyThread());
+    ASSERT(!kernel.IsPhantomModeForSingleCore());
+
+    // Block until runnable is no longer false.
+    dummy_thread_runnable.wait(false);
+}
+
+void KThread::DummyThreadEndWait() {
+    ASSERT(KScheduler::IsSchedulerLockedByCurrentThread(kernel));
+    ASSERT(this->IsDummyThread());
 
     // Wake up the waiting thread.
-    dummy_wait_cv.notify_one();
+    dummy_thread_runnable.store(true);
+    dummy_thread_runnable.notify_one();
 }
 
 void KThread::BeginWait(KThreadQueue* queue) {

@@ -101,9 +101,9 @@ public:
     explicit NACP(VirtualFile file);
     ~NACP();
 
-    const LanguageEntry& GetLanguageEntry(Language language = Language::Default) const;
-    std::string GetApplicationName(Language language = Language::Default) const;
-    std::string GetDeveloperName(Language language = Language::Default) const;
+    const LanguageEntry& GetLanguageEntry() const;
+    std::string GetApplicationName() const;
+    std::string GetDeveloperName() const;
     u64 GetTitleId() const;
     u64 GetDLCBaseTitleId() const;
     std::string GetVersionString() const;

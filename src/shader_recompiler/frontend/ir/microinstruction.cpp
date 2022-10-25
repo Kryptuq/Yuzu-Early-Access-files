@@ -325,11 +325,6 @@ void Inst::AddPhiOperand(Block* predecessor, const Value& value) {
     phi_args.emplace_back(predecessor, value);
 }
 
-void Inst::ErasePhiOperand(size_t index) {
-    const auto operand_it{phi_args.begin() + static_cast<ptrdiff_t>(index)};
-    phi_args.erase(operand_it);
-}
-
 void Inst::OrderPhiArgs() {
     if (op != Opcode::Phi) {
         throw LogicError("{} is not a Phi instruction", op);

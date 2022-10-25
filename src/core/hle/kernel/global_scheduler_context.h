@@ -4,6 +4,7 @@
 #pragma once
 
 #include <atomic>
+#include <set>
 #include <vector>
 
 #include "common/common_types.h"
@@ -58,6 +59,7 @@ public:
     /// Returns true if the global scheduler lock is acquired
     bool IsLocked() const;
 
+    void UnregisterDummyThreadForWakeup(KThread* thread);
     void RegisterDummyThreadForWakeup(KThread* thread);
     void WakeupWaitingDummyThreads();
 
@@ -80,7 +82,7 @@ private:
     LockType scheduler_lock;
 
     /// Lists dummy threads pending wakeup on lock release
-    std::vector<KThread*> woken_dummy_thread_list;
+    std::set<KThread*> woken_dummy_threads;
 
     /// Lists all thread ids that aren't deleted/etc.
     std::vector<KThread*> thread_list;

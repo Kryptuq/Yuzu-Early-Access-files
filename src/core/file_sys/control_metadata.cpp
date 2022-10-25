@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "common/settings.h"
 #include "common/string_util.h"
 #include "common/swap.h"
 #include "core/file_sys/control_metadata.h"
@@ -37,6 +38,27 @@ std::string LanguageEntry::GetDeveloperName() const {
                                                        developer_name.size());
 }
 
+constexpr std::array<Language, 18> language_to_codes = {{
+    Language::Japanese,
+    Language::AmericanEnglish,
+    Language::French,
+    Language::German,
+    Language::Italian,
+    Language::Spanish,
+    Language::Chinese,
+    Language::Korean,
+    Language::Dutch,
+    Language::Portuguese,
+    Language::Russian,
+    Language::Taiwanese,
+    Language::BritishEnglish,
+    Language::CanadianFrench,
+    Language::LatinAmericanSpanish,
+    Language::Chinese,
+    Language::Taiwanese,
+    Language::BrazilianPortuguese,
+}};
+
 NACP::NACP() = default;
 
 NACP::NACP(VirtualFile file) {
@@ -45,9 +67,13 @@ NACP::NACP(VirtualFile file) {
 
 NACP::~NACP() = default;
 
-const LanguageEntry& NACP::GetLanguageEntry(Language language) const {
-    if (language != Language::Default) {
-        return raw.language_entries.at(static_cast<u8>(language));
+const LanguageEntry& NACP::GetLanguageEntry() const {
+    Language language = language_to_codes[Settings::values.language_index.GetValue()];
+
+    {
+        const auto& language_entry = raw.language_entries.at(static_cast<u8>(language));
+        if (!language_entry.GetApplicationName().empty())
+            return language_entry;
     }
 
     for (const auto& language_entry : raw.language_entries) {
@@ -55,16 +81,15 @@ const LanguageEntry& NACP::GetLanguageEntry(Language language) const {
             return language_entry;
     }
 
-    // Fallback to English
-    return GetLanguageEntry(Language::AmericanEnglish);
+    return raw.language_entries.at(static_cast<u8>(Language::AmericanEnglish));
 }
 
-std::string NACP::GetApplicationName(Language language) const {
-    return GetLanguageEntry(language).GetApplicationName();
+std::string NACP::GetApplicationName() const {
+    return GetLanguageEntry().GetApplicationName();
 }
 
-std::string NACP::GetDeveloperName(Language language) const {
-    return GetLanguageEntry(language).GetDeveloperName();
+std::string NACP::GetDeveloperName() const {
+    return GetLanguageEntry().GetDeveloperName();
 }
 
 u64 NACP::GetTitleId() const {

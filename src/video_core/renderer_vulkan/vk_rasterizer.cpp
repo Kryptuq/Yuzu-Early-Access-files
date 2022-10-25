@@ -303,14 +303,19 @@ void RasterizerVulkan::Clear() {
             }
         }
 
-        scheduler.Record([color_attachment, clear_value, clear_rect](vk::CommandBuffer cmdbuf) {
-            const VkClearAttachment attachment{
-                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                .colorAttachment = color_attachment,
-                .clearValue = clear_value,
-            };
-            cmdbuf.ClearAttachments(attachment, clear_rect);
-        });
+        if (regs.clear_surface.R && regs.clear_surface.G && regs.clear_surface.B &&
+            regs.clear_surface.A) {
+            scheduler.Record([color_attachment, clear_value, clear_rect](vk::CommandBuffer cmdbuf) {
+                const VkClearAttachment attachment{
+                    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                    .colorAttachment = color_attachment,
+                    .clearValue = clear_value,
+                };
+                cmdbuf.ClearAttachments(attachment, clear_rect);
+            });
+        } else {
+            UNIMPLEMENTED_MSG("Unimplemented Clear only the specified channel");
+        }
     }
 
     if (!use_depth && !use_stencil) {
