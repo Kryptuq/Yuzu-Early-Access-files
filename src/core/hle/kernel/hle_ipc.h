@@ -304,7 +304,7 @@ public:
      */
     template <typename T, typename = std::enable_if_t<!std::is_pointer_v<T>>>
     std::size_t WriteBuffer(const T& data, std::size_t buffer_index = 0) const {
-        if constexpr (Common::IsSTLContainer<T>) {
+        if constexpr (Common::IsContiguousContainer<T>) {
             using ContiguousType = typename T::value_type;
             static_assert(std::is_trivially_copyable_v<ContiguousType>,
                           "Container to WriteBuffer must contain trivially copyable objects");

@@ -209,8 +209,8 @@ public:
 
     /**
      * Helper function which deduces the value type of a contiguous STL container used in ReadSpan.
-     * If T is not a contiguous STL container as defined by the concept IsSTLContainer, this calls
-     * ReadObject and T must be a trivially copyable object.
+     * If T is not a contiguous container as defined by the concept IsContiguousContainer, this
+     * calls ReadObject and T must be a trivially copyable object.
      *
      * See ReadSpan for more details if T is a contiguous container.
      * See ReadObject for more details if T is a trivially copyable object.
@@ -223,7 +223,7 @@ public:
      */
     template <typename T>
     [[nodiscard]] size_t Read(T& data) const {
-        if constexpr (IsSTLContainer<T>) {
+        if constexpr (IsContiguousContainer<T>) {
             using ContiguousType = typename T::value_type;
             static_assert(std::is_trivially_copyable_v<ContiguousType>,
                           "Data type must be trivially copyable.");
@@ -235,8 +235,8 @@ public:
 
     /**
      * Helper function which deduces the value type of a contiguous STL container used in WriteSpan.
-     * If T is not a contiguous STL container as defined by the concept IsSTLContainer, this calls
-     * WriteObject and T must be a trivially copyable object.
+     * If T is not a contiguous STL container as defined by the concept IsContiguousContainer, this
+     * calls WriteObject and T must be a trivially copyable object.
      *
      * See WriteSpan for more details if T is a contiguous container.
      * See WriteObject for more details if T is a trivially copyable object.
@@ -249,7 +249,7 @@ public:
      */
     template <typename T>
     [[nodiscard]] size_t Write(const T& data) const {
-        if constexpr (IsSTLContainer<T>) {
+        if constexpr (IsContiguousContainer<T>) {
             using ContiguousType = typename T::value_type;
             static_assert(std::is_trivially_copyable_v<ContiguousType>,
                           "Data type must be trivially copyable.");
