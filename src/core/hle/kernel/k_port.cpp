@@ -57,12 +57,6 @@ Result KPort::EnqueueSession(KServerSession* session) {
 
     server.EnqueueSession(session);
 
-    if (auto session_ptr = server.GetSessionRequestHandler().lock()) {
-        session_ptr->ClientConnected(server.AcceptSession());
-    } else {
-        ASSERT(false);
-    }
-
     return ResultSuccess;
 }
 

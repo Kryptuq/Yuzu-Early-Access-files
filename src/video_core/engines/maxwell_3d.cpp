@@ -123,9 +123,6 @@ void Maxwell3D::InitializeRegisterDefaults() {
     draw_command[MAXWELL3D_REG_INDEX(vertex_buffer.count)] = true;
     draw_command[MAXWELL3D_REG_INDEX(index_buffer.first)] = true;
     draw_command[MAXWELL3D_REG_INDEX(index_buffer.count)] = true;
-    draw_command[MAXWELL3D_REG_INDEX(index_buffer32_first)] = true;
-    draw_command[MAXWELL3D_REG_INDEX(index_buffer16_first)] = true;
-    draw_command[MAXWELL3D_REG_INDEX(index_buffer8_first)] = true;
     draw_command[MAXWELL3D_REG_INDEX(draw_inline_index)] = true;
     draw_command[MAXWELL3D_REG_INDEX(inline_index_2x16.even)] = true;
     draw_command[MAXWELL3D_REG_INDEX(inline_index_4x8.index0)] = true;
@@ -216,6 +213,21 @@ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argume
         return ProcessCBBind(3);
     case MAXWELL3D_REG_INDEX(bind_groups[4].raw_config):
         return ProcessCBBind(4);
+    case MAXWELL3D_REG_INDEX(index_buffer32_first):
+        regs.index_buffer.count = regs.index_buffer32_first.count;
+        regs.index_buffer.first = regs.index_buffer32_first.first;
+        dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
+        return ProcessDraw();
+    case MAXWELL3D_REG_INDEX(index_buffer16_first):
+        regs.index_buffer.count = regs.index_buffer16_first.count;
+        regs.index_buffer.first = regs.index_buffer16_first.first;
+        dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
+        return ProcessDraw();
+    case MAXWELL3D_REG_INDEX(index_buffer8_first):
+        regs.index_buffer.count = regs.index_buffer8_first.count;
+        regs.index_buffer.first = regs.index_buffer8_first.first;
+        dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
+        return ProcessDraw();
     case MAXWELL3D_REG_INDEX(topology_override):
         use_topology_override = true;
         return;
@@ -583,70 +595,7 @@ void Maxwell3D::ProcessClearBuffers() {
     rasterizer->Clear();
 }
 
-void Maxwell3D::ProcessDeferredDraw() {
-    if (deferred_draw_method.empty()) {
-        return;
-    }
-
-    enum class DrawMode {
-        Undefined,
-        General,
-        Instance,
-    };
-    DrawMode draw_mode{DrawMode::Undefined};
-    u32 instance_count = 1;
-
-    auto first_method = deferred_draw_method[0];
-    if (MAXWELL3D_REG_INDEX(draw.begin) == first_method) {
-        // The minimum number of methods for drawing must be greater than or equal to
-        // 3[draw.begin->vertex(index)count->draw.end] to avoid errors in index mode drawing
-        if (deferred_draw_method.size() < 3) {
-            return;
-        }
-        draw_mode = (regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::Subsequent) ||
-                            (regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::Unchanged)
-                        ? DrawMode::Instance
-                        : DrawMode::General;
-    } else if (MAXWELL3D_REG_INDEX(index_buffer32_first) == first_method ||
-               MAXWELL3D_REG_INDEX(index_buffer16_first) == first_method ||
-               MAXWELL3D_REG_INDEX(index_buffer8_first) == first_method) {
-        draw_mode = DrawMode::General;
-    }
-
-    // Drawing will only begin with draw.begin or index_buffer method, other methods directly
-    // clear
-    if (draw_mode == DrawMode::Undefined) {
-        deferred_draw_method.clear();
-        return;
-    }
-
-    if (draw_mode == DrawMode::Instance) {
-        ASSERT_MSG(deferred_draw_method.size() % 4 == 0, "Instance mode method size error");
-        instance_count = static_cast<u32>(deferred_draw_method.size()) / 4;
-    } else {
-        if (MAXWELL3D_REG_INDEX(index_buffer32_first) == first_method) {
-            regs.index_buffer.count = regs.index_buffer32_first.count;
-            regs.index_buffer.first = regs.index_buffer32_first.first;
-            dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
-        } else if (MAXWELL3D_REG_INDEX(index_buffer32_first) == first_method) {
-            regs.index_buffer.count = regs.index_buffer16_first.count;
-            regs.index_buffer.first = regs.index_buffer16_first.first;
-            dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
-        } else if (MAXWELL3D_REG_INDEX(index_buffer32_first) == first_method) {
-            regs.index_buffer.count = regs.index_buffer8_first.count;
-            regs.index_buffer.first = regs.index_buffer8_first.first;
-            dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
-        } else {
-            auto second_method = deferred_draw_method[1];
-            if (MAXWELL3D_REG_INDEX(draw_inline_index) == second_method ||
-                MAXWELL3D_REG_INDEX(inline_index_2x16.even) == second_method ||
-                MAXWELL3D_REG_INDEX(inline_index_4x8.index0) == second_method) {
-                regs.index_buffer.count = static_cast<u32>(inline_index_draw_indexes.size() / 4);
-                regs.index_buffer.format = Regs::IndexFormat::UnsignedInt;
-            }
-        }
-    }
-
+void Maxwell3D::ProcessDraw(u32 instance_count) {
     LOG_TRACE(HW_GPU, "called, topology={}, count={}", regs.draw.topology.Value(),
               regs.vertex_buffer.count);
 
@@ -669,6 +618,64 @@ void Maxwell3D::ProcessDeferredDraw() {
     } else {
         regs.vertex_buffer.count = 0;
     }
+}
+
+void Maxwell3D::ProcessDeferredDraw() {
+    if (deferred_draw_method.empty()) {
+        return;
+    }
+
+    enum class DrawMode {
+        Undefined,
+        General,
+        Instance,
+    };
+    DrawMode draw_mode{DrawMode::Undefined};
+    u32 instance_count = 1;
+
+    u32 index = 0;
+    u32 method = 0;
+    u32 method_count = static_cast<u32>(deferred_draw_method.size());
+    for (; index < method_count &&
+           (method = deferred_draw_method[index]) != MAXWELL3D_REG_INDEX(draw.begin);
+         ++index)
+        ;
+
+    if (MAXWELL3D_REG_INDEX(draw.begin) != method) {
+        return;
+    }
+
+    // The minimum number of methods for drawing must be greater than or equal to
+    // 3[draw.begin->vertex(index)count(first)->draw.end] to avoid errors in index mode drawing
+    if ((method_count - index) < 3) {
+        return;
+    }
+    draw_mode = (regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::Subsequent) ||
+                        (regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::Unchanged)
+                    ? DrawMode::Instance
+                    : DrawMode::General;
+
+    // Drawing will only begin with draw.begin or index_buffer method, other methods directly
+    // clear
+    if (draw_mode == DrawMode::Undefined) {
+        deferred_draw_method.clear();
+        return;
+    }
+
+    if (draw_mode == DrawMode::Instance) {
+        ASSERT_MSG(deferred_draw_method.size() % 4 == 0, "Instance mode method size error");
+        instance_count = static_cast<u32>(method_count - index) / 4;
+    } else {
+        method = deferred_draw_method[index + 1];
+        if (MAXWELL3D_REG_INDEX(draw_inline_index) == method ||
+            MAXWELL3D_REG_INDEX(inline_index_2x16.even) == method ||
+            MAXWELL3D_REG_INDEX(inline_index_4x8.index0) == method) {
+            regs.index_buffer.count = static_cast<u32>(inline_index_draw_indexes.size() / 4);
+            regs.index_buffer.format = Regs::IndexFormat::UnsignedInt;
+        }
+    }
+
+    ProcessDraw(instance_count);
 
     deferred_draw_method.clear();
     inline_index_draw_indexes.clear();

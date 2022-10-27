@@ -97,7 +97,7 @@ public:
      * @param applet_resource_user_id - Unused.
      * @return Result code.
      */
-    Result Initialize(std::string& device_name, const AudioInParameter& in_params, u32 handle,
+    Result Initialize(std::string device_name, const AudioInParameter& in_params, u32 handle,
                       u64 applet_resource_user_id);
 
     /**

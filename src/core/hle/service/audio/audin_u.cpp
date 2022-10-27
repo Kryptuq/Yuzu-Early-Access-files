@@ -17,7 +17,7 @@ using namespace AudioCore::AudioIn;
 class IAudioIn final : public ServiceFramework<IAudioIn> {
 public:
     explicit IAudioIn(Core::System& system_, Manager& manager, size_t session_id,
-                      std::string& device_name, const AudioInParameter& in_params, u32 handle,
+                      const std::string& device_name, const AudioInParameter& in_params, u32 handle,
                       u64 applet_resource_user_id)
         : ServiceFramework{system_, "IAudioIn"},
           service_context{system_, "IAudioIn"}, event{service_context.CreateEvent("AudioInEvent")},

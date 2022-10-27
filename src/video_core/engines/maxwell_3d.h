@@ -3143,6 +3143,8 @@ private:
     /// Handles use of topology overrides (e.g., to avoid using a topology assigned from a macro)
     void ProcessTopologyOverride();
 
+    void ProcessDraw(u32 instance_count = 1);
+
     void ProcessDeferredDraw();
 
     /// Returns a query's value or an empty object if the value will be deferred through a cache.

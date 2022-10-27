@@ -24,7 +24,7 @@ using namespace AudioCore::AudioOut;
 class IAudioOut final : public ServiceFramework<IAudioOut> {
 public:
     explicit IAudioOut(Core::System& system_, AudioCore::AudioOut::Manager& manager,
-                       size_t session_id, std::string& device_name,
+                       size_t session_id, const std::string& device_name,
                        const AudioOutParameter& in_params, u32 handle, u64 applet_resource_user_id)
         : ServiceFramework{system_, "IAudioOut", ServiceThreadType::CreateNew},
           service_context{system_, "IAudioOut"}, event{service_context.CreateEvent(

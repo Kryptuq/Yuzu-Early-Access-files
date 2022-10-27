@@ -56,7 +56,7 @@ Result System::IsConfigValid(const std::string_view device_name,
     return ResultSuccess;
 }
 
-Result System::Initialize(std::string& device_name, const AudioInParameter& in_params,
+Result System::Initialize(std::string device_name, const AudioInParameter& in_params,
                           const u32 handle_, const u64 applet_resource_user_id_) {
     auto result{IsConfigValid(device_name, in_params)};
     if (result.IsError()) {

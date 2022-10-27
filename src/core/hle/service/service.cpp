@@ -99,6 +99,10 @@ ServiceFrameworkBase::ServiceFrameworkBase(Core::System& system_, const char* se
 ServiceFrameworkBase::~ServiceFrameworkBase() {
     // Wait for other threads to release access before destroying
     const auto guard = LockService();
+
+    if (named_port != nullptr) {
+        named_port->Close();
+    }
 }
 
 void ServiceFrameworkBase::InstallAsService(SM::ServiceManager& service_manager) {
@@ -115,13 +119,12 @@ Kernel::KClientPort& ServiceFrameworkBase::CreatePort() {
 
     ASSERT(!service_registered);
 
-    auto* port = Kernel::KPort::Create(kernel);
-    port->Initialize(max_sessions, false, service_name);
-    port->GetServerPort().SetSessionHandler(shared_from_this());
+    named_port = Kernel::KPort::Create(kernel);
+    named_port->Initialize(max_sessions, false, service_name);
 
     service_registered = true;
 
-    return port->GetClientPort();
+    return named_port->GetClientPort();
 }
 
 void ServiceFrameworkBase::RegisterHandlersBase(const FunctionInfoBase* functions, std::size_t n) {
@@ -199,7 +202,6 @@ Result ServiceFrameworkBase::HandleSyncRequest(Kernel::KServerSession& session,
     switch (ctx.GetCommandType()) {
     case IPC::CommandType::Close:
     case IPC::CommandType::TIPC_Close: {
-        session.Close();
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
         result = IPC::ERR_REMOTE_PROCESS_DEAD;
@@ -244,6 +246,7 @@ Services::Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system
     system.GetFileSystemController().CreateFactories(*system.GetFilesystem(), false);
 
     system.Kernel().RegisterNamedService("sm:", SM::ServiceManager::InterfaceFactory);
+    system.Kernel().RegisterInterfaceForNamedService("sm:", SM::ServiceManager::SessionHandler);
 
     Account::InstallInterfaces(system);
     AM::InstallInterfaces(*sm, *nv_flinger, system);
