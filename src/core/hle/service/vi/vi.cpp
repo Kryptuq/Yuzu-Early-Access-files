@@ -324,10 +324,10 @@ private:
         IPC::RequestParser rp{ctx};
         const u64 display = rp.Pop<u64>();
 
-        LOG_WARNING(Service_VI, "(STUBBED) called. display=0x{:016X}", display);
+        const Result rc = nv_flinger.CloseDisplay(display) ? ResultSuccess : ResultUnknown;
 
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultSuccess);
+        rb.Push(rc);
     }
 
     void CreateManagedLayer(Kernel::HLERequestContext& ctx) {
@@ -508,10 +508,10 @@ private:
         IPC::RequestParser rp{ctx};
         const u64 display_id = rp.Pop<u64>();
 
-        LOG_WARNING(Service_VI, "(STUBBED) called. display_id=0x{:016X}", display_id);
+        const Result rc = nv_flinger.CloseDisplay(display_id) ? ResultSuccess : ResultUnknown;
 
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultSuccess);
+        rb.Push(rc);
     }
 
     // This literally does nothing internally in the actual service itself,

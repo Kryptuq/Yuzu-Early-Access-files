@@ -19,8 +19,6 @@ void KServerPort::Initialize(KPort* parent_port_, std::string&& name_) {
     // Set member variables.
     parent = parent_port_;
     name = std::move(name_);
-
-    kernel.RegisterServerObject(this);
 }
 
 bool KServerPort::IsLight() const {
@@ -63,6 +61,9 @@ void KServerPort::Destroy() {
 
     // Close our reference to our parent.
     parent->Close();
+
+    // Release host emulation members.
+    session_handler.reset();
 
     // Ensure that the global list tracking server objects does not hold on to a reference.
     kernel.UnregisterServerObject(this);

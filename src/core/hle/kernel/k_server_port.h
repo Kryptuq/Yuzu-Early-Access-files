@@ -27,6 +27,24 @@ public:
 
     void Initialize(KPort* parent_port_, std::string&& name_);
 
+    /// Whether or not this server port has an HLE handler available.
+    bool HasSessionRequestHandler() const {
+        return !session_handler.expired();
+    }
+
+    /// Gets the HLE handler for this port.
+    SessionRequestHandlerWeakPtr GetSessionRequestHandler() const {
+        return session_handler;
+    }
+
+    /**
+     * Sets the HLE handler template for the port. ServerSessions crated by connecting to this port
+     * will inherit a reference to this handler.
+     */
+    void SetSessionHandler(SessionRequestHandlerWeakPtr&& handler) {
+        session_handler = std::move(handler);
+    }
+
     void EnqueueSession(KServerSession* pending_session);
 
     KServerSession* AcceptSession();
@@ -47,6 +65,7 @@ private:
     void CleanupSessions();
 
     SessionList session_list;
+    SessionRequestHandlerWeakPtr session_handler;
     KPort* parent{};
 };
 

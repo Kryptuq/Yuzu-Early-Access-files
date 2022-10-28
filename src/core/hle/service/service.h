@@ -20,7 +20,6 @@ class System;
 namespace Kernel {
 class HLERequestContext;
 class KClientPort;
-class KPort;
 class KServerSession;
 class ServiceThread;
 } // namespace Kernel
@@ -98,9 +97,6 @@ protected:
 
     /// Identifier string used to connect to the service.
     std::string service_name;
-
-    /// Port used by ManageNamedPort.
-    Kernel::KPort* named_port{};
 
 private:
     template <typename T>

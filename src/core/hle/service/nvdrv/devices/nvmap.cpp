@@ -251,10 +251,12 @@ NvResult nvmap::IocFree(const std::vector<u8>& input, std::vector<u8>& output) {
     }
 
     if (auto freeInfo{file.FreeHandle(params.handle, false)}) {
-        ASSERT(system.CurrentProcess()
-                   ->PageTable()
-                   .UnlockForDeviceAddressSpace(freeInfo->address, freeInfo->size)
-                   .IsSuccess());
+        if (freeInfo->can_unlock) {
+            ASSERT(system.CurrentProcess()
+                       ->PageTable()
+                       .UnlockForDeviceAddressSpace(freeInfo->address, freeInfo->size)
+                       .IsSuccess());
+        }
         params.address = freeInfo->address;
         params.size = static_cast<u32>(freeInfo->size);
         params.flags.raw = 0;

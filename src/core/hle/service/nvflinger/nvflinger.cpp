@@ -138,6 +138,19 @@ std::optional<u64> NVFlinger::OpenDisplay(std::string_view name) {
     return itr->GetID();
 }
 
+bool NVFlinger::CloseDisplay(u64 display_id) {
+    const auto lock_guard = Lock();
+    auto* const display = FindDisplay(display_id);
+
+    if (display == nullptr) {
+        return false;
+    }
+
+    display->Reset();
+
+    return true;
+}
+
 std::optional<u64> NVFlinger::CreateLayer(u64 display_id) {
     const auto lock_guard = Lock();
     auto* const display = FindDisplay(display_id);

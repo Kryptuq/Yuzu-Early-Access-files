@@ -60,6 +60,7 @@ struct KernelCore::Impl {
         global_scheduler_context = std::make_unique<Kernel::GlobalSchedulerContext>(kernel);
         global_handle_table = std::make_unique<Kernel::KHandleTable>(kernel);
         global_handle_table->Initialize(KHandleTable::MaxTableSize);
+        default_service_thread = CreateServiceThread(kernel, "DefaultServiceThread");
 
         is_phantom_mode_for_singlecore = false;
 
@@ -85,8 +86,6 @@ struct KernelCore::Impl {
         }
 
         RegisterHostThread();
-
-        default_service_thread = CreateServiceThread(kernel, "DefaultServiceThread");
     }
 
     void InitializeCores() {
@@ -704,15 +703,6 @@ struct KernelCore::Impl {
         return port;
     }
 
-    void RegisterNamedServiceHandler(std::string name, KServerPort* server_port) {
-        auto search = service_interface_handlers.find(name);
-        if (search == service_interface_handlers.end()) {
-            return;
-        }
-
-        search->second(system.ServiceManager(), server_port);
-    }
-
     void RegisterServerObject(KAutoObject* server_object) {
         std::scoped_lock lk(server_objects_lock);
         server_objects.insert(server_object);
@@ -725,7 +715,7 @@ struct KernelCore::Impl {
 
     std::weak_ptr<Kernel::ServiceThread> CreateServiceThread(KernelCore& kernel,
                                                              const std::string& name) {
-        auto service_thread = std::make_shared<Kernel::ServiceThread>(kernel, name);
+        auto service_thread = std::make_shared<Kernel::ServiceThread>(kernel, 1, name);
 
         service_threads_manager.QueueWork(
             [this, service_thread]() { service_threads.emplace(service_thread); });
@@ -784,7 +774,6 @@ struct KernelCore::Impl {
     /// Map of named ports managed by the kernel, which can be retrieved using
     /// the ConnectToPort SVC.
     std::unordered_map<std::string, ServiceInterfaceFactory> service_interface_factory;
-    std::unordered_map<std::string, ServiceInterfaceHandlerFn> service_interface_handlers;
     NamedPortTable named_ports;
     std::unordered_set<KAutoObject*> server_objects;
     std::unordered_set<KAutoObject*> registered_objects;
@@ -992,17 +981,8 @@ void KernelCore::RegisterNamedService(std::string name, ServiceInterfaceFactory&
     impl->service_interface_factory.emplace(std::move(name), factory);
 }
 
-void KernelCore::RegisterInterfaceForNamedService(std::string name,
-                                                  ServiceInterfaceHandlerFn&& handler) {
-    impl->service_interface_handlers.emplace(std::move(name), handler);
-}
-
 KClientPort* KernelCore::CreateNamedServicePort(std::string name) {
     return impl->CreateNamedServicePort(std::move(name));
-}
-
-void KernelCore::RegisterNamedServiceHandler(std::string name, KServerPort* server_port) {
-    impl->RegisterNamedServiceHandler(std::move(name), server_port);
 }
 
 void KernelCore::RegisterServerObject(KAutoObject* server_object) {

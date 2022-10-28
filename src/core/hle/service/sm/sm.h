@@ -51,7 +51,6 @@ private:
 class ServiceManager {
 public:
     static Kernel::KClientPort& InterfaceFactory(ServiceManager& self, Core::System& system);
-    static void SessionHandler(ServiceManager& self, Kernel::KServerPort* server_port);
 
     explicit ServiceManager(Kernel::KernelCore& kernel_);
     ~ServiceManager();

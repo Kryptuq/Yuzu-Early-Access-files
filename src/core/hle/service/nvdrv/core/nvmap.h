@@ -105,6 +105,7 @@ public:
         u64 address;       //!< Address the handle referred to before deletion
         u64 size;          //!< Page-aligned handle size
         bool was_uncached; //!< If the handle was allocated as uncached
+        bool can_unlock;   //!< If the address region is ready to be unlocked
     };
 
     explicit NvMap(Tegra::Host1x::Host1x& host1x);

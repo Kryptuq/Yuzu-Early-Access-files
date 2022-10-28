@@ -255,15 +255,16 @@ std::optional<NvMap::FreeInfo> NvMap::FreeHandle(Handle::Id handle, bool interna
             .address = handle_description->address,
             .size = handle_description->size,
             .was_uncached = handle_description->flags.map_uncached.Value() != 0,
+            .can_unlock = true,
         };
     } else {
         return std::nullopt;
     }
 
-    // Handle hasn't been freed from memory, set address to 0 to mark that the handle wasn't freed
+    // If the handle hasn't been freed from memory, mark that
     if (!hWeak.expired()) {
         LOG_DEBUG(Service_NVDRV, "nvmap handle: {} wasn't freed as it is still in use", handle);
-        freeInfo.address = 0;
+        freeInfo.can_unlock = false;
     }
 
     return freeInfo;

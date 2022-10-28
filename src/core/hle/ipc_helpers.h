@@ -86,13 +86,13 @@ public:
         u32 num_domain_objects{};
         const bool always_move_handles{
             (static_cast<u32>(flags) & static_cast<u32>(Flags::AlwaysMoveHandles)) != 0};
-        if (!ctx.GetManager()->IsDomain() || always_move_handles) {
+        if (!ctx.Session()->GetSessionRequestManager()->IsDomain() || always_move_handles) {
             num_handles_to_move = num_objects_to_move;
         } else {
             num_domain_objects = num_objects_to_move;
         }
 
-        if (ctx.GetManager()->IsDomain()) {
+        if (ctx.Session()->GetSessionRequestManager()->IsDomain()) {
             raw_data_size +=
                 static_cast<u32>(sizeof(DomainMessageHeader) / sizeof(u32) + num_domain_objects);
             ctx.write_size += num_domain_objects;
@@ -125,7 +125,8 @@ public:
         if (!ctx.IsTipc()) {
             AlignWithPadding();
 
-            if (ctx.GetManager()->IsDomain() && ctx.HasDomainMessageHeader()) {
+            if (ctx.Session()->GetSessionRequestManager()->IsDomain() &&
+                ctx.HasDomainMessageHeader()) {
                 IPC::DomainMessageHeader domain_header{};
                 domain_header.num_objects = num_domain_objects;
                 PushRaw(domain_header);
@@ -145,18 +146,18 @@ public:
 
     template <class T>
     void PushIpcInterface(std::shared_ptr<T> iface) {
-        if (context->GetManager()->IsDomain()) {
+        if (context->Session()->GetSessionRequestManager()->IsDomain()) {
             context->AddDomainObject(std::move(iface));
         } else {
             kernel.CurrentProcess()->GetResourceLimit()->Reserve(
                 Kernel::LimitableResource::Sessions, 1);
 
             auto* session = Kernel::KSession::Create(kernel);
-            session->Initialize(nullptr, iface->GetServiceName());
-            iface->RegisterSession(&session->GetServerSession(),
-                                   std::make_shared<Kernel::SessionRequestManager>(kernel));
+            session->Initialize(nullptr, iface->GetServiceName(),
+                                std::make_shared<Kernel::SessionRequestManager>(kernel));
 
             context->AddMoveObject(&session->GetClientSession());
+            iface->ClientConnected(&session->GetServerSession());
         }
     }
 
@@ -386,7 +387,7 @@ public:
 
     template <class T>
     std::weak_ptr<T> PopIpcInterface() {
-        ASSERT(context->GetManager()->IsDomain());
+        ASSERT(context->Session()->GetSessionRequestManager()->IsDomain());
         ASSERT(context->GetDomainMessageHeader().input_object_count > 0);
         return context->GetDomainHandler<T>(Pop<u32>() - 1);
     }

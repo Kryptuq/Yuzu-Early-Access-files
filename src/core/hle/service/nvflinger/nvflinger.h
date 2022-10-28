@@ -58,6 +58,11 @@ public:
     /// If an invalid display name is provided, then an empty optional is returned.
     [[nodiscard]] std::optional<u64> OpenDisplay(std::string_view name);
 
+    /// Closes the specified display by its ID.
+    ///
+    /// Returns false if an invalid display ID is provided.
+    [[nodiscard]] bool CloseDisplay(u64 display_id);
+
     /// Creates a layer on the specified display and returns the layer ID.
     ///
     /// If an invalid display ID is specified, then an empty optional is returned.

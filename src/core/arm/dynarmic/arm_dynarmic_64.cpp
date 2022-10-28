@@ -517,7 +517,7 @@ std::vector<ARM_Interface::BacktraceEntry> ARM_Dynarmic_64::GetBacktrace(Core::S
     // Frame records are two words long:
     // fp+0 : pointer to previous frame record
     // fp+8 : value of lr for frame
-    while (true) {
+    for (size_t i = 0; i < 256; i++) {
         out.push_back({"", 0, lr, 0, ""});
         if (!fp || (fp % 4 != 0) || !memory.IsValidVirtualAddressRange(fp, 16)) {
             break;

@@ -106,6 +106,12 @@ public:
     ///
     void CloseLayer(u64 layer_id);
 
+    /// Resets the display for a new connection.
+    void Reset() {
+        layers.clear();
+        got_vsync_event = false;
+    }
+
     /// Attempts to find a layer with the given ID.
     ///
     /// @param layer_id The layer ID.

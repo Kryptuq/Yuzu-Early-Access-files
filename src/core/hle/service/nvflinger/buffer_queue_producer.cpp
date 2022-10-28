@@ -742,6 +742,13 @@ Status BufferQueueProducer::Disconnect(NativeWindowApi api) {
             return Status::NoError;
         }
 
+        // HACK: We are not Android. Remove handle for items in queue, and clear queue.
+        // Allows synchronous destruction of nvmap handles.
+        for (auto& item : core->queue) {
+            nvmap.FreeHandle(item.graphic_buffer->BufferId(), true);
+        }
+        core->queue.clear();
+
         switch (api) {
         case NativeWindowApi::Egl:
         case NativeWindowApi::Cpu:
