@@ -137,6 +137,7 @@ struct System::Impl {
         device_memory = std::make_unique<Core::DeviceMemory>();
 
         is_multicore = Settings::values.use_multi_core.GetValue();
+        extended_memory_layout = Settings::values.use_extended_memory_layout.GetValue();
 
         core_timing.SetMulticore(is_multicore);
         core_timing.Initialize([&system]() { system.RegisterHostThread(); });
@@ -166,13 +167,18 @@ struct System::Impl {
     }
 
     void ReinitializeIfNecessary(System& system) {
-        if (is_multicore == Settings::values.use_multi_core.GetValue()) {
+        const bool must_reinitialize =
+            is_multicore != Settings::values.use_multi_core.GetValue() ||
+            extended_memory_layout != Settings::values.use_extended_memory_layout.GetValue();
+
+        if (!must_reinitialize) {
             return;
         }
 
         LOG_DEBUG(Kernel, "Re-initializing");
 
         is_multicore = Settings::values.use_multi_core.GetValue();
+        extended_memory_layout = Settings::values.use_extended_memory_layout.GetValue();
 
         Initialize(system);
     }
@@ -521,6 +527,7 @@ struct System::Impl {
 
     bool is_multicore{};
     bool is_async_gpu{};
+    bool extended_memory_layout{};
 
     ExecuteProgramCallback execute_program_callback;
     ExitCallback exit_callback;
