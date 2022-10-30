@@ -80,7 +80,6 @@ ResultVal<Kernel::KPort*> ServiceManager::GetServicePort(const std::string& name
     }
 
     auto* port = Kernel::KPort::Create(kernel);
-    SCOPE_EXIT({ port->Close(); });
 
     port->Initialize(ServerSessionCountMax, false, name);
     auto handler = it->second;

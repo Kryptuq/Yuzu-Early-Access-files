@@ -299,7 +299,7 @@ ISelfController::ISelfController(Core::System& system_, NVFlinger::NVFlinger& nv
         {100, &ISelfController::SetAlbumImageTakenNotificationEnabled, "SetAlbumImageTakenNotificationEnabled"},
         {110, nullptr, "SetApplicationAlbumUserData"},
         {120, &ISelfController::SaveCurrentScreenshot, "SaveCurrentScreenshot"},
-        {130, nullptr, "SetRecordVolumeMuted"},
+        {130, &ISelfController::SetRecordVolumeMuted, "SetRecordVolumeMuted"},
         {1000, nullptr, "GetDebugStorageChannel"},
     };
     // clang-format on
@@ -592,6 +592,17 @@ void ISelfController::SaveCurrentScreenshot(Kernel::HLERequestContext& ctx) {
     const auto album_report_option = rp.PopEnum<Capture::AlbumReportOption>();
 
     LOG_WARNING(Service_AM, "(STUBBED) called. album_report_option={}", album_report_option);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
+void ISelfController::SetRecordVolumeMuted(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+
+    const auto is_record_volume_muted = rp.Pop<bool>();
+
+    LOG_WARNING(Service_AM, "(STUBBED) called. is_record_volume_muted={}", is_record_volume_muted);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);

@@ -91,7 +91,7 @@ private:
 
     /// List of threads which are pending a reply.
     boost::intrusive::list<KSessionRequest> m_request_list;
-    KSessionRequest* m_current_request;
+    KSessionRequest* m_current_request{};
 
     KLightLock m_lock;
 };
