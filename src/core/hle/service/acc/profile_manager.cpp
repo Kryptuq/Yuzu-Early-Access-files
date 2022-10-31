@@ -261,6 +261,31 @@ UUID ProfileManager::GetLastOpenedUser() const {
     return last_opened_user;
 }
 
+/// Gets the list of stored opened users.
+UserIDArray ProfileManager::GetStoredOpenedUsers() const {
+    UserIDArray output{};
+    std::ranges::transform(stored_opened_profiles, output.begin(), [](const ProfileInfo& p) {
+        if (p.is_open)
+            return p.user_uuid;
+        return Common::InvalidUUID;
+    });
+    std::stable_partition(output.begin(), output.end(),
+                          [](const UUID& uuid) { return uuid.IsValid(); });
+    return output;
+}
+
+/// Captures the opened users, which can be queried across process launches with
+/// ListOpenContextStoredUsers.
+void ProfileManager::StoreOpenedUsers() {
+    size_t profile_index{};
+    stored_opened_profiles = {};
+    std::for_each(profiles.begin(), profiles.end(), [&](const auto& profile) {
+        if (profile.is_open) {
+            stored_opened_profiles[profile_index++] = profile;
+        }
+    });
+}
+
 /// Return the users profile base and the unknown arbitary data.
 bool ProfileManager::GetProfileBaseAndData(std::optional<std::size_t> index, ProfileBase& profile,
                                            UserData& data) const {

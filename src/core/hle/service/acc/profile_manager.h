@@ -86,6 +86,8 @@ public:
     UserIDArray GetOpenUsers() const;
     UserIDArray GetAllUsers() const;
     Common::UUID GetLastOpenedUser() const;
+    UserIDArray GetStoredOpenedUsers() const;
+    void StoreOpenedUsers();
 
     bool CanSystemRegisterUser() const;
 
@@ -101,6 +103,7 @@ private:
     bool RemoveProfileAtIndex(std::size_t index);
 
     std::array<ProfileInfo, MAX_USERS> profiles{};
+    std::array<ProfileInfo, MAX_USERS> stored_opened_profiles{};
     std::size_t user_count{};
     Common::UUID last_opened_user{};
 };

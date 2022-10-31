@@ -512,10 +512,11 @@ protected:
 
 class IManagerForApplication final : public ServiceFramework<IManagerForApplication> {
 public:
-    explicit IManagerForApplication(Core::System& system_, Common::UUID user_id_)
+    explicit IManagerForApplication(Core::System& system_,
+                                    std::shared_ptr<ProfileManager>& profile_manager_)
         : ServiceFramework{system_, "IManagerForApplication"},
           ensure_token_id{std::make_shared<EnsureTokenIdCacheAsyncInterface>(system)},
-          user_id{user_id_} {
+          profile_manager{profile_manager_} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &IManagerForApplication::CheckAvailability, "CheckAvailability"},
@@ -545,7 +546,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(ResultSuccess);
-        rb.PushRaw<u64>(user_id.Hash());
+        rb.PushRaw<u64>(profile_manager->GetLastOpenedUser().Hash());
     }
 
     void EnsureIdTokenCacheAsync(Kernel::HLERequestContext& ctx) {
@@ -575,17 +576,20 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(ResultSuccess);
-        rb.PushRaw<u64>(user_id.Hash());
+        rb.PushRaw<u64>(profile_manager->GetLastOpenedUser().Hash());
     }
 
     void StoreOpenContext(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_ACC, "(STUBBED) called");
+        LOG_DEBUG(Service_ACC, "called");
+
+        profile_manager->StoreOpenedUsers();
+
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
     std::shared_ptr<EnsureTokenIdCacheAsyncInterface> ensure_token_id{};
-    Common::UUID user_id{};
+    std::shared_ptr<ProfileManager> profile_manager;
 };
 
 // 6.0.0+
@@ -790,7 +794,7 @@ void Module::Interface::GetBaasAccountManagerForApplication(Kernel::HLERequestCo
     LOG_DEBUG(Service_ACC, "called");
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);
-    rb.PushIpcInterface<IManagerForApplication>(system, profile_manager->GetLastOpenedUser());
+    rb.PushIpcInterface<IManagerForApplication>(system, profile_manager);
 }
 
 void Module::Interface::IsUserAccountSwitchLocked(Kernel::HLERequestContext& ctx) {
@@ -855,16 +859,14 @@ void Module::Interface::LoadOpenContext(Kernel::HLERequestContext& ctx) {
     // This is similar to GetBaasAccountManagerForApplication
     // This command is used concurrently with ListOpenContextStoredUsers
     // TODO: Find the differences between this and GetBaasAccountManagerForApplication
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
-    rb.PushIpcInterface<IManagerForApplication>(system, profile_manager->GetLastOpenedUser());
 }
 
 void Module::Interface::ListOpenContextStoredUsers(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_ACC, "(STUBBED) called");
+    LOG_DEBUG(Service_ACC, "called");
 
-    // TODO(ogniK): Handle open contexts
-    ctx.WriteBuffer(profile_manager->GetOpenUsers());
+    ctx.WriteBuffer(profile_manager->GetStoredOpenedUsers());
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }

@@ -1787,17 +1787,17 @@ void Framebuffer::CreateFramebuffer(TextureCacheRuntime& runtime,
 
     const auto& resolution = runtime.resolution;
 
-    u32 width = 0;
-    u32 height = 0;
+    u32 width = std::numeric_limits<u32>::max();
+    u32 height = std::numeric_limits<u32>::max();
     for (size_t index = 0; index < NUM_RT; ++index) {
         const ImageView* const color_buffer = color_buffers[index];
         if (!color_buffer) {
             renderpass_key.color_formats[index] = PixelFormat::Invalid;
             continue;
         }
-        width = std::max(width, is_rescaled ? resolution.ScaleUp(color_buffer->size.width)
+        width = std::min(width, is_rescaled ? resolution.ScaleUp(color_buffer->size.width)
                                             : color_buffer->size.width);
-        height = std::max(height, is_rescaled ? resolution.ScaleUp(color_buffer->size.height)
+        height = std::min(height, is_rescaled ? resolution.ScaleUp(color_buffer->size.height)
                                               : color_buffer->size.height);
         attachments.push_back(color_buffer->RenderTarget());
         renderpass_key.color_formats[index] = color_buffer->format;
@@ -1809,9 +1809,9 @@ void Framebuffer::CreateFramebuffer(TextureCacheRuntime& runtime,
     }
     const size_t num_colors = attachments.size();
     if (depth_buffer) {
-        width = std::max(width, is_rescaled ? resolution.ScaleUp(depth_buffer->size.width)
+        width = std::min(width, is_rescaled ? resolution.ScaleUp(depth_buffer->size.width)
                                             : depth_buffer->size.width);
-        height = std::max(height, is_rescaled ? resolution.ScaleUp(depth_buffer->size.height)
+        height = std::min(height, is_rescaled ? resolution.ScaleUp(depth_buffer->size.height)
                                               : depth_buffer->size.height);
         attachments.push_back(depth_buffer->RenderTarget());
         renderpass_key.depth_format = depth_buffer->format;
