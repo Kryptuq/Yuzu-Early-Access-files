@@ -41,7 +41,7 @@ void Controller::CloneCurrentObject(Kernel::HLERequestContext& ctx) {
                                                            Kernel::LimitableResource::Sessions);
     ASSERT(session_reservation.Succeeded());
 
-    // Create the sessionn.
+    // Create the session.
     Kernel::KSession* session = Kernel::KSession::Create(system.Kernel());
     ASSERT(session != nullptr);
 

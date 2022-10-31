@@ -2802,6 +2802,20 @@ void GMainWindow::ErrorDisplayDisplayError(QString error_code, QString error_tex
 }
 
 void GMainWindow::OnMenuReportCompatibility() {
+    const auto& caps = Common::GetCPUCaps();
+    const bool has_fma = caps.fma || caps.fma4;
+    const auto processor_count = std::thread::hardware_concurrency();
+    const bool has_4threads = processor_count == 0 || processor_count >= 4;
+    const bool has_8gb_ram = Common::GetMemInfo().TotalPhysicalMemory >= 8000000000;
+    const bool has_broken_vulkan = UISettings::values.has_broken_vulkan;
+
+    if (!has_fma || !has_4threads || !has_8gb_ram || has_broken_vulkan) {
+        QMessageBox::critical(this, tr("Hardware requirements not met"),
+                              tr("Your system does not meet the recommended hardware requirements. "
+                                 "Compatibility reporting has been disabled."));
+        return;
+    }
+
     if (!Settings::values.yuzu_token.GetValue().empty() &&
         !Settings::values.yuzu_username.GetValue().empty()) {
         CompatDB compatdb{system->TelemetrySession(), this};

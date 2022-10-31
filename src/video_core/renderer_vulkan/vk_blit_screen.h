@@ -28,6 +28,10 @@ namespace VideoCore {
 class RasterizerInterface;
 }
 
+namespace Service::android {
+enum class PixelFormat : u32;
+}
+
 namespace Vulkan {
 
 struct ScreenInfo;
@@ -156,6 +160,7 @@ private:
 
     u32 raw_width = 0;
     u32 raw_height = 0;
+    Service::android::PixelFormat pixel_format{};
 
     std::unique_ptr<FSR> fsr;
 };
