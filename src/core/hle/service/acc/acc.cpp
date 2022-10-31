@@ -513,7 +513,7 @@ protected:
 class IManagerForApplication final : public ServiceFramework<IManagerForApplication> {
 public:
     explicit IManagerForApplication(Core::System& system_,
-                                    std::shared_ptr<ProfileManager>& profile_manager_)
+                                    const std::shared_ptr<ProfileManager>& profile_manager_)
         : ServiceFramework{system_, "IManagerForApplication"},
           ensure_token_id{std::make_shared<EnsureTokenIdCacheAsyncInterface>(system)},
           profile_manager{profile_manager_} {
@@ -858,7 +858,6 @@ void Module::Interface::LoadOpenContext(Kernel::HLERequestContext& ctx) {
 
     // This is similar to GetBaasAccountManagerForApplication
     // This command is used concurrently with ListOpenContextStoredUsers
-    // TODO: Find the differences between this and GetBaasAccountManagerForApplication
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }

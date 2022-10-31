@@ -1185,8 +1185,10 @@ void KThread::RequestDummyThreadWait() {
 }
 
 void KThread::DummyThreadBeginWait() {
-    ASSERT(this->IsDummyThread());
-    ASSERT(!kernel.IsPhantomModeForSingleCore());
+    if (!this->IsDummyThread() || kernel.IsPhantomModeForSingleCore()) {
+        // Occurs in single core mode.
+        return;
+    }
 
     // Block until runnable is no longer false.
     dummy_thread_runnable.wait(false);

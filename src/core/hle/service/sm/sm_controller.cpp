@@ -28,23 +28,36 @@ void Controller::ConvertCurrentObjectToDomain(Kernel::HLERequestContext& ctx) {
 void Controller::CloneCurrentObject(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service, "called");
 
+    auto& process = *ctx.GetThread().GetOwnerProcess();
     auto& parent_session = *ctx.Session()->GetParent();
-    auto& parent_port = parent_session.GetParent()->GetParent()->GetClientPort();
     auto& session_manager = parent_session.GetServerSession().GetSessionRequestManager();
+    auto& session_handler = session_manager->SessionHandler();
 
-    // Create a session.
-    Kernel::KClientSession* session{};
-    const Result result = parent_port.CreateSession(std::addressof(session), session_manager);
-    if (result.IsError()) {
-        LOG_CRITICAL(Service, "CreateSession failed with error 0x{:08X}", result.raw);
-        IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(result);
-    }
+    // FIXME: this is duplicated from the SVC, it should just call it instead
+    // once this is a proper process
+
+    // Reserve a new session from the process resource limit.
+    Kernel::KScopedResourceReservation session_reservation(&process,
+                                                           Kernel::LimitableResource::Sessions);
+    ASSERT(session_reservation.Succeeded());
+
+    // Create the sessionn.
+    Kernel::KSession* session = Kernel::KSession::Create(system.Kernel());
+    ASSERT(session != nullptr);
+
+    // Initialize the session.
+    session->Initialize(nullptr, parent_session.GetName(), session_manager);
+
+    // Commit the session reservation.
+    session_reservation.Commit();
+
+    // Register the session.
+    session_handler.ClientConnected(&session->GetServerSession());
 
     // We succeeded.
     IPC::ResponseBuilder rb{ctx, 2, 0, 1, IPC::ResponseBuilder::Flags::AlwaysMoveHandles};
     rb.Push(ResultSuccess);
-    rb.PushMoveObjects(session);
+    rb.PushMoveObjects(session->GetClientSession());
 }
 
 void Controller::CloneCurrentObjectEx(Kernel::HLERequestContext& ctx) {
