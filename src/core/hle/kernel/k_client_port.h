@@ -52,7 +52,8 @@ public:
     void Destroy() override;
     bool IsSignaled() const override;
 
-    Result CreateSession(KClientSession** out);
+    Result CreateSession(KClientSession** out,
+                         std::shared_ptr<SessionRequestManager> session_manager = nullptr);
 
 private:
     std::atomic<s32> num_sessions{};

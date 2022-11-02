@@ -16,7 +16,6 @@
 #include "core/hle/kernel/k_auto_object.h"
 #include "core/hle/kernel/k_handle_table.h"
 #include "core/hle/kernel/k_process.h"
-#include "core/hle/kernel/k_server_port.h"
 #include "core/hle/kernel/k_server_session.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
@@ -36,21 +35,7 @@ SessionRequestHandler::SessionRequestHandler(KernelCore& kernel_, const char* se
 }
 
 SessionRequestHandler::~SessionRequestHandler() {
-    kernel.ReleaseServiceThread(service_thread.lock());
-}
-
-void SessionRequestHandler::AcceptSession(KServerPort* server_port) {
-    auto* server_session = server_port->AcceptSession();
-    ASSERT(server_session != nullptr);
-
-    RegisterSession(server_session, std::make_shared<SessionRequestManager>(kernel));
-}
-
-void SessionRequestHandler::RegisterSession(KServerSession* server_session,
-                                            std::shared_ptr<SessionRequestManager> manager) {
-    manager->SetSessionHandler(shared_from_this());
-    service_thread.lock()->RegisterServerSession(server_session, manager);
-    server_session->Close();
+    kernel.ReleaseServiceThread(service_thread);
 }
 
 SessionRequestManager::SessionRequestManager(KernelCore& kernel_) : kernel{kernel_} {}
@@ -107,7 +92,7 @@ Result SessionRequestManager::HandleDomainSyncRequest(KServerSession* server_ses
     }
 
     // Set domain handlers in HLE context, used for domain objects (IPC interfaces) as inputs
-    ASSERT(context.GetManager().get() == this);
+    context.SetSessionRequestManager(server_session->GetSessionRequestManager());
 
     // If there is a DomainMessageHeader, then this is CommandType "Request"
     const auto& domain_message_header = context.GetDomainMessageHeader();
@@ -144,6 +129,31 @@ Result SessionRequestManager::HandleDomainSyncRequest(KServerSession* server_ses
     ASSERT(false);
     return ResultSuccess;
 }
+
+Result SessionRequestManager::QueueSyncRequest(KSession* parent,
+                                               std::shared_ptr<HLERequestContext>&& context) {
+    // Ensure we have a session request handler
+    if (this->HasSessionRequestHandler(*context)) {
+        if (auto strong_ptr = this->GetServiceThread().lock()) {
+            strong_ptr->QueueSyncRequest(*parent, std::move(context));
+        } else {
+            ASSERT_MSG(false, "strong_ptr is nullptr!");
+        }
+    } else {
+        ASSERT_MSG(false, "handler is invalid!");
+    }
+
+    return ResultSuccess;
+}
+
+void SessionRequestHandler::ClientConnected(KServerSession* session) {
+    session->GetSessionRequestManager()->SetSessionHandler(shared_from_this());
+
+    // Ensure our server session is tracked globally.
+    kernel.RegisterServerObject(session);
+}
+
+void SessionRequestHandler::ClientDisconnected(KServerSession* session) {}
 
 HLERequestContext::HLERequestContext(KernelCore& kernel_, Core::Memory::Memory& memory_,
                                      KServerSession* server_session_, KThread* thread_)
@@ -204,7 +214,7 @@ void HLERequestContext::ParseCommandBuffer(const KHandleTable& handle_table, u32
         // Padding to align to 16 bytes
         rp.AlignWithPadding();
 
-        if (GetManager()->IsDomain() &&
+        if (Session()->GetSessionRequestManager()->IsDomain() &&
             ((command_header->type == IPC::CommandType::Request ||
               command_header->type == IPC::CommandType::RequestWithContext) ||
              !incoming)) {
@@ -213,7 +223,7 @@ void HLERequestContext::ParseCommandBuffer(const KHandleTable& handle_table, u32
             if (incoming || domain_message_header) {
                 domain_message_header = rp.PopRaw<IPC::DomainMessageHeader>();
             } else {
-                if (GetManager()->IsDomain()) {
+                if (Session()->GetSessionRequestManager()->IsDomain()) {
                     LOG_WARNING(IPC, "Domain request has no DomainMessageHeader!");
                 }
             }
@@ -306,11 +316,12 @@ Result HLERequestContext::WriteToOutgoingCommandBuffer(KThread& requesting_threa
     // Write the domain objects to the command buffer, these go after the raw untranslated data.
     // TODO(Subv): This completely ignores C buffers.
 
-    if (GetManager()->IsDomain()) {
+    if (server_session->GetSessionRequestManager()->IsDomain()) {
         current_offset = domain_offset - static_cast<u32>(outgoing_domain_objects.size());
         for (auto& object : outgoing_domain_objects) {
-            GetManager()->AppendDomainHandler(std::move(object));
-            cmd_buf[current_offset++] = static_cast<u32_le>(GetManager()->DomainHandlerCount());
+            server_session->GetSessionRequestManager()->AppendDomainHandler(std::move(object));
+            cmd_buf[current_offset++] = static_cast<u32_le>(
+                server_session->GetSessionRequestManager()->DomainHandlerCount());
         }
     }
 

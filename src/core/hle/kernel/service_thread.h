@@ -11,15 +11,13 @@ namespace Kernel {
 class HLERequestContext;
 class KernelCore;
 class KSession;
-class SessionRequestManager;
 
 class ServiceThread final {
 public:
-    explicit ServiceThread(KernelCore& kernel, const std::string& name);
+    explicit ServiceThread(KernelCore& kernel, std::size_t num_threads, const std::string& name);
     ~ServiceThread();
 
-    void RegisterServerSession(KServerSession* session,
-                               std::shared_ptr<SessionRequestManager> manager);
+    void QueueSyncRequest(KSession& session, std::shared_ptr<HLERequestContext>&& context);
 
 private:
     class Impl;

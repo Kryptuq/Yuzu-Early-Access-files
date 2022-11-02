@@ -60,6 +60,7 @@ struct KernelCore::Impl {
         global_scheduler_context = std::make_unique<Kernel::GlobalSchedulerContext>(kernel);
         global_handle_table = std::make_unique<Kernel::KHandleTable>(kernel);
         global_handle_table->Initialize(KHandleTable::MaxTableSize);
+        default_service_thread = CreateServiceThread(kernel, "DefaultServiceThread");
 
         is_phantom_mode_for_singlecore = false;
 
@@ -85,8 +86,6 @@ struct KernelCore::Impl {
         }
 
         RegisterHostThread();
-
-        default_service_thread = CreateServiceThread(kernel, "DefaultServiceThread");
     }
 
     void InitializeCores() {
@@ -185,6 +184,17 @@ struct KernelCore::Impl {
     }
 
     void CloseServices() {
+        // Close all open server sessions and ports.
+        std::unordered_set<KAutoObject*> server_objects_;
+        {
+            std::scoped_lock lk(server_objects_lock);
+            server_objects_ = server_objects;
+            server_objects.clear();
+        }
+        for (auto* server_object : server_objects_) {
+            server_object->Close();
+        }
+
         // Ensures all service threads gracefully shutdown.
         ClearServiceThreads();
     }
@@ -335,8 +345,6 @@ struct KernelCore::Impl {
         }
         return this_id;
     }
-
-    static inline thread_local bool is_phantom_mode_for_singlecore{false};
 
     bool IsPhantomModeForSingleCore() const {
         return is_phantom_mode_for_singlecore;
@@ -690,21 +698,24 @@ struct KernelCore::Impl {
             return {};
         }
 
-        return &search->second(system.ServiceManager(), system);
+        KClientPort* port = &search->second(system.ServiceManager(), system);
+        RegisterServerObject(&port->GetParent()->GetServerPort());
+        return port;
     }
 
-    void RegisterNamedServiceHandler(std::string name, KServerPort* server_port) {
-        auto search = service_interface_handlers.find(name);
-        if (search == service_interface_handlers.end()) {
-            return;
-        }
+    void RegisterServerObject(KAutoObject* server_object) {
+        std::scoped_lock lk(server_objects_lock);
+        server_objects.insert(server_object);
+    }
 
-        search->second(system.ServiceManager(), server_port);
+    void UnregisterServerObject(KAutoObject* server_object) {
+        std::scoped_lock lk(server_objects_lock);
+        server_objects.erase(server_object);
     }
 
     std::weak_ptr<Kernel::ServiceThread> CreateServiceThread(KernelCore& kernel,
                                                              const std::string& name) {
-        auto service_thread = std::make_shared<Kernel::ServiceThread>(kernel, name);
+        auto service_thread = std::make_shared<Kernel::ServiceThread>(kernel, 1, name);
 
         service_threads_manager.QueueWork(
             [this, service_thread]() { service_threads.emplace(service_thread); });
@@ -734,6 +745,7 @@ struct KernelCore::Impl {
         service_thread_barrier.Sync();
     }
 
+    std::mutex server_objects_lock;
     std::mutex registered_objects_lock;
     std::mutex registered_in_use_objects_lock;
 
@@ -762,8 +774,8 @@ struct KernelCore::Impl {
     /// Map of named ports managed by the kernel, which can be retrieved using
     /// the ConnectToPort SVC.
     std::unordered_map<std::string, ServiceInterfaceFactory> service_interface_factory;
-    std::unordered_map<std::string, ServiceInterfaceHandlerFn> service_interface_handlers;
     NamedPortTable named_ports;
+    std::unordered_set<KAutoObject*> server_objects;
     std::unordered_set<KAutoObject*> registered_objects;
     std::unordered_set<KAutoObject*> registered_in_use_objects;
 
@@ -802,6 +814,7 @@ struct KernelCore::Impl {
 
     bool is_multicore{};
     std::atomic_bool is_shutting_down{};
+    bool is_phantom_mode_for_singlecore{};
     u32 single_core_thread_id{};
 
     std::array<u64, Core::Hardware::NUM_CPU_CORES> svc_ticks{};
@@ -968,17 +981,16 @@ void KernelCore::RegisterNamedService(std::string name, ServiceInterfaceFactory&
     impl->service_interface_factory.emplace(std::move(name), factory);
 }
 
-void KernelCore::RegisterInterfaceForNamedService(std::string name,
-                                                  ServiceInterfaceHandlerFn&& handler) {
-    impl->service_interface_handlers.emplace(std::move(name), handler);
-}
-
 KClientPort* KernelCore::CreateNamedServicePort(std::string name) {
     return impl->CreateNamedServicePort(std::move(name));
 }
 
-void KernelCore::RegisterNamedServiceHandler(std::string name, KServerPort* server_port) {
-    impl->RegisterNamedServiceHandler(std::move(name), server_port);
+void KernelCore::RegisterServerObject(KAutoObject* server_object) {
+    impl->RegisterServerObject(server_object);
+}
+
+void KernelCore::UnregisterServerObject(KAutoObject* server_object) {
+    impl->UnregisterServerObject(server_object);
 }
 
 void KernelCore::RegisterKernelObject(KAutoObject* object) {

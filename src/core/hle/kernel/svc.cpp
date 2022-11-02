@@ -24,7 +24,6 @@
 #include "core/hle/kernel/k_memory_block.h"
 #include "core/hle/kernel/k_memory_layout.h"
 #include "core/hle/kernel/k_page_table.h"
-#include "core/hle/kernel/k_port.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/k_resource_limit.h"
@@ -383,9 +382,9 @@ static Result ConnectToNamedPort(Core::System& system, Handle* out, VAddr port_n
 
     // Create a session.
     KClientSession* session{};
-    R_TRY(port->CreateSession(std::addressof(session)));
-
-    kernel.RegisterNamedServiceHandler(port_name, &port->GetParent()->GetServerPort());
+    R_TRY(port->CreateSession(std::addressof(session),
+                              std::make_shared<SessionRequestManager>(kernel)));
+    port->Close();
 
     // Register the session in the table, close the extra reference.
     handle_table.Register(*out, session);

@@ -45,7 +45,6 @@ class KPort;
 class KProcess;
 class KResourceLimit;
 class KScheduler;
-class KServerPort;
 class KServerSession;
 class KSession;
 class KSessionRequest;
@@ -63,8 +62,6 @@ class TimeManager;
 
 using ServiceInterfaceFactory =
     std::function<KClientPort&(Service::SM::ServiceManager&, Core::System&)>;
-
-using ServiceInterfaceHandlerFn = std::function<void(Service::SM::ServiceManager&, KServerPort*)>;
 
 namespace Init {
 struct KSlabResourceCounts;
@@ -195,14 +192,16 @@ public:
     /// Registers a named HLE service, passing a factory used to open a port to that service.
     void RegisterNamedService(std::string name, ServiceInterfaceFactory&& factory);
 
-    /// Registers a setup function for the named HLE service.
-    void RegisterInterfaceForNamedService(std::string name, ServiceInterfaceHandlerFn&& handler);
-
     /// Opens a port to a service previously registered with RegisterNamedService.
     KClientPort* CreateNamedServicePort(std::string name);
 
-    /// Accepts a session on a port created by CreateNamedServicePort.
-    void RegisterNamedServiceHandler(std::string name, KServerPort* server_port);
+    /// Registers a server session or port with the gobal emulation state, to be freed on shutdown.
+    /// This is necessary because we do not emulate processes for HLE sessions and ports.
+    void RegisterServerObject(KAutoObject* server_object);
+
+    /// Unregisters a server session or port previously registered with RegisterServerSession when
+    /// it was destroyed during the current emulation session.
+    void UnregisterServerObject(KAutoObject* server_object);
 
     /// Registers all kernel objects with the global emulation state, this is purely for tracking
     /// leaks after emulation has been shutdown.

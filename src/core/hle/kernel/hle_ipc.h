@@ -45,13 +45,11 @@ class KAutoObject;
 class KernelCore;
 class KEvent;
 class KHandleTable;
-class KServerPort;
 class KProcess;
 class KServerSession;
 class KThread;
 class KReadableEvent;
 class KSession;
-class SessionRequestManager;
 class ServiceThread;
 
 enum class ThreadWakeupReason;
@@ -78,9 +76,19 @@ public:
     virtual Result HandleSyncRequest(Kernel::KServerSession& session,
                                      Kernel::HLERequestContext& context) = 0;
 
-    void AcceptSession(KServerPort* server_port);
-    void RegisterSession(KServerSession* server_session,
-                         std::shared_ptr<SessionRequestManager> manager);
+    /**
+     * Signals that a client has just connected to this HLE handler and keeps the
+     * associated ServerSession alive for the duration of the connection.
+     * @param server_session Owning pointer to the ServerSession associated with the connection.
+     */
+    void ClientConnected(KServerSession* session);
+
+    /**
+     * Signals that a client has just disconnected from this HLE handler and releases the
+     * associated ServerSession.
+     * @param server_session ServerSession associated with the connection.
+     */
+    void ClientDisconnected(KServerSession* session);
 
     std::weak_ptr<ServiceThread> GetServiceThread() const {
         return service_thread;
@@ -162,6 +170,7 @@ public:
 
     Result HandleDomainSyncRequest(KServerSession* server_session, HLERequestContext& context);
     Result CompleteSyncRequest(KServerSession* server_session, HLERequestContext& context);
+    Result QueueSyncRequest(KSession* parent, std::shared_ptr<HLERequestContext>&& context);
 
 private:
     bool convert_to_domain{};
@@ -341,21 +350,17 @@ public:
 
     template <typename T>
     std::shared_ptr<T> GetDomainHandler(std::size_t index) const {
-        return std::static_pointer_cast<T>(GetManager()->DomainHandler(index).lock());
+        return std::static_pointer_cast<T>(manager.lock()->DomainHandler(index).lock());
     }
 
     void SetSessionRequestManager(std::weak_ptr<SessionRequestManager> manager_) {
-        manager = manager_;
+        manager = std::move(manager_);
     }
 
     std::string Description() const;
 
     KThread& GetThread() {
         return *thread;
-    }
-
-    std::shared_ptr<SessionRequestManager> GetManager() const {
-        return manager.lock();
     }
 
 private:
@@ -391,7 +396,7 @@ private:
     u32 handles_offset{};
     u32 domain_offset{};
 
-    std::weak_ptr<SessionRequestManager> manager{};
+    std::weak_ptr<SessionRequestManager> manager;
 
     KernelCore& kernel;
     Core::Memory::Memory& memory;

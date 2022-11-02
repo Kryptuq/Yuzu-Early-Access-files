@@ -15,9 +15,10 @@
 namespace Service::SM {
 
 void Controller::ConvertCurrentObjectToDomain(Kernel::HLERequestContext& ctx) {
-    ASSERT_MSG(!ctx.GetManager()->IsDomain(), "Session is already a domain");
+    ASSERT_MSG(!ctx.Session()->GetSessionRequestManager()->IsDomain(),
+               "Session is already a domain");
     LOG_DEBUG(Service, "called, server_session={}", ctx.Session()->GetId());
-    ctx.GetManager()->ConvertToDomainOnRequestEnd();
+    ctx.Session()->GetSessionRequestManager()->ConvertToDomainOnRequestEnd();
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);
@@ -28,7 +29,9 @@ void Controller::CloneCurrentObject(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service, "called");
 
     auto& process = *ctx.GetThread().GetOwnerProcess();
-    auto session_manager = ctx.GetManager();
+    auto& parent_session = *ctx.Session()->GetParent();
+    auto& session_manager = parent_session.GetServerSession().GetSessionRequestManager();
+    auto& session_handler = session_manager->SessionHandler();
 
     // FIXME: this is duplicated from the SVC, it should just call it instead
     // once this is a proper process
@@ -43,14 +46,13 @@ void Controller::CloneCurrentObject(Kernel::HLERequestContext& ctx) {
     ASSERT(session != nullptr);
 
     // Initialize the session.
-    session->Initialize(nullptr, "");
+    session->Initialize(nullptr, parent_session.GetName(), session_manager);
 
     // Commit the session reservation.
     session_reservation.Commit();
 
-    // Register with manager.
-    session_manager->SessionHandler().RegisterSession(&session->GetServerSession(),
-                                                      session_manager);
+    // Register the session.
+    session_handler.ClientConnected(&session->GetServerSession());
 
     // We succeeded.
     IPC::ResponseBuilder rb{ctx, 2, 0, 1, IPC::ResponseBuilder::Flags::AlwaysMoveHandles};

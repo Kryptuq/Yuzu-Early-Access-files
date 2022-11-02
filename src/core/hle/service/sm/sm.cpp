@@ -23,13 +23,7 @@ constexpr Result ERR_INVALID_NAME(ErrorModule::SM, 6);
 constexpr Result ERR_SERVICE_NOT_REGISTERED(ErrorModule::SM, 7);
 
 ServiceManager::ServiceManager(Kernel::KernelCore& kernel_) : kernel{kernel_} {}
-
-ServiceManager::~ServiceManager() {
-    for (auto& [name, port] : service_ports) {
-        port->GetClientPort().Close();
-        port->GetServerPort().Close();
-    }
-}
+ServiceManager::~ServiceManager() = default;
 
 void ServiceManager::InvokeControlRequest(Kernel::HLERequestContext& context) {
     controller_interface->InvokeRequest(context);
@@ -49,10 +43,6 @@ Kernel::KClientPort& ServiceManager::InterfaceFactory(ServiceManager& self, Core
     return self.sm_interface->CreatePort();
 }
 
-void ServiceManager::SessionHandler(ServiceManager& self, Kernel::KServerPort* server_port) {
-    self.sm_interface->AcceptSession(server_port);
-}
-
 Result ServiceManager::RegisterService(std::string name, u32 max_sessions,
                                        Kernel::SessionRequestHandlerPtr handler) {
 
@@ -63,11 +53,7 @@ Result ServiceManager::RegisterService(std::string name, u32 max_sessions,
         return ERR_ALREADY_REGISTERED;
     }
 
-    auto* port = Kernel::KPort::Create(kernel);
-    port->Initialize(ServerSessionCountMax, false, name);
-
-    service_ports.emplace(name, port);
-    registered_services.emplace(name, handler);
+    registered_services.emplace(std::move(name), handler);
 
     return ResultSuccess;
 }
@@ -82,20 +68,24 @@ Result ServiceManager::UnregisterService(const std::string& name) {
     }
 
     registered_services.erase(iter);
-    service_ports.erase(name);
-
     return ResultSuccess;
 }
 
 ResultVal<Kernel::KPort*> ServiceManager::GetServicePort(const std::string& name) {
     CASCADE_CODE(ValidateServiceName(name));
-    auto it = service_ports.find(name);
-    if (it == service_ports.end()) {
+    auto it = registered_services.find(name);
+    if (it == registered_services.end()) {
         LOG_ERROR(Service_SM, "Server is not registered! service={}", name);
         return ERR_SERVICE_NOT_REGISTERED;
     }
 
-    return it->second;
+    auto* port = Kernel::KPort::Create(kernel);
+
+    port->Initialize(ServerSessionCountMax, false, name);
+    auto handler = it->second;
+    port->GetServerPort().SetSessionHandler(std::move(handler));
+
+    return port;
 }
 
 /**
@@ -154,20 +144,24 @@ ResultVal<Kernel::KClientSession*> SM::GetServiceImpl(Kernel::HLERequestContext&
 
     // Find the named port.
     auto port_result = service_manager.GetServicePort(name);
-    auto service = service_manager.GetService<Kernel::SessionRequestHandler>(name);
-    if (port_result.Failed() || !service) {
+    if (port_result.Failed()) {
         LOG_ERROR(Service_SM, "called service={} -> error 0x{:08X}", name, port_result.Code().raw);
         return port_result.Code();
     }
     auto& port = port_result.Unwrap();
+    SCOPE_EXIT({
+        port->GetClientPort().Close();
+        port->GetServerPort().Close();
+    });
 
     // Create a new session.
     Kernel::KClientSession* session{};
-    if (const auto result = port->GetClientPort().CreateSession(&session); result.IsError()) {
+    if (const auto result = port->GetClientPort().CreateSession(
+            std::addressof(session), std::make_shared<Kernel::SessionRequestManager>(kernel));
+        result.IsError()) {
         LOG_ERROR(Service_SM, "called service={} -> error 0x{:08X}", name, result.raw);
         return result;
     }
-    service->AcceptSession(&port->GetServerPort());
 
     LOG_DEBUG(Service_SM, "called service={} -> session={}", name, session->GetId());
 
