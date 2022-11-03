@@ -35,7 +35,6 @@ public:
         void InitializeApplicationInfoV2(Kernel::HLERequestContext& ctx);
         void GetProfileEditor(Kernel::HLERequestContext& ctx);
         void ListQualifiedUsers(Kernel::HLERequestContext& ctx);
-        void LoadOpenContext(Kernel::HLERequestContext& ctx);
         void ListOpenContextStoredUsers(Kernel::HLERequestContext& ctx);
         void StoreSaveDataThumbnailApplication(Kernel::HLERequestContext& ctx);
         void StoreSaveDataThumbnailSystem(Kernel::HLERequestContext& ctx);

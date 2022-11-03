@@ -21,8 +21,7 @@ public:
     explicit KSession(KernelCore& kernel_);
     ~KSession() override;
 
-    void Initialize(KClientPort* port_, const std::string& name_,
-                    std::shared_ptr<SessionRequestManager> manager_ = nullptr);
+    void Initialize(KClientPort* port_, const std::string& name_);
 
     void Finalize() override;
 

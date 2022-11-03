@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-FileCopyrightText: Copyright 2022 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <tuple>
@@ -33,12 +33,10 @@ KServerSession::KServerSession(KernelCore& kernel_)
 
 KServerSession::~KServerSession() = default;
 
-void KServerSession::Initialize(KSession* parent_session_, std::string&& name_,
-                                std::shared_ptr<SessionRequestManager> manager_) {
+void KServerSession::Initialize(KSession* parent_session_, std::string&& name_) {
     // Set member variables.
     parent = parent_session_;
     name = std::move(name_);
-    manager = manager_;
 }
 
 void KServerSession::Destroy() {
@@ -47,18 +45,99 @@ void KServerSession::Destroy() {
     this->CleanupRequests();
 
     parent->Close();
-
-    // Release host emulation members.
-    manager.reset();
-
-    // Ensure that the global list tracking server objects does not hold on to a reference.
-    kernel.UnregisterServerObject(this);
 }
 
 void KServerSession::OnClientClosed() {
-    if (manager && manager->HasSessionHandler()) {
-        manager->SessionHandler().ClientDisconnected(this);
+    KScopedLightLock lk{m_lock};
+
+    // Handle any pending requests.
+    KSessionRequest* prev_request = nullptr;
+    while (true) {
+        // Declare variables for processing the request.
+        KSessionRequest* request = nullptr;
+        KEvent* event = nullptr;
+        KThread* thread = nullptr;
+        bool cur_request = false;
+        bool terminate = false;
+
+        // Get the next request.
+        {
+            KScopedSchedulerLock sl{kernel};
+
+            if (m_current_request != nullptr && m_current_request != prev_request) {
+                // Set the request, open a reference as we process it.
+                request = m_current_request;
+                request->Open();
+                cur_request = true;
+
+                // Get thread and event for the request.
+                thread = request->GetThread();
+                event = request->GetEvent();
+
+                // If the thread is terminating, handle that.
+                if (thread->IsTerminationRequested()) {
+                    request->ClearThread();
+                    request->ClearEvent();
+                    terminate = true;
+                }
+
+                prev_request = request;
+            } else if (!m_request_list.empty()) {
+                // Pop the request from the front of the list.
+                request = std::addressof(m_request_list.front());
+                m_request_list.pop_front();
+
+                // Get thread and event for the request.
+                thread = request->GetThread();
+                event = request->GetEvent();
+            }
+        }
+
+        // If there are no requests, we're done.
+        if (request == nullptr) {
+            break;
+        }
+
+        // All requests must have threads.
+        ASSERT(thread != nullptr);
+
+        // Ensure that we close the request when done.
+        SCOPE_EXIT({ request->Close(); });
+
+        // If we're terminating, close a reference to the thread and event.
+        if (terminate) {
+            thread->Close();
+            if (event != nullptr) {
+                event->Close();
+            }
+        }
+
+        // If we need to, reply.
+        if (event != nullptr && !cur_request) {
+            // There must be no mappings.
+            ASSERT(request->GetSendCount() == 0);
+            ASSERT(request->GetReceiveCount() == 0);
+            ASSERT(request->GetExchangeCount() == 0);
+
+            // // Get the process and page table.
+            // KProcess *client_process = thread->GetOwnerProcess();
+            // auto &client_pt = client_process->GetPageTable();
+
+            // // Reply to the request.
+            // ReplyAsyncError(client_process, request->GetAddress(), request->GetSize(),
+            //                 ResultSessionClosed);
+
+            // // Unlock the buffer.
+            // // NOTE: Nintendo does not check the result of this.
+            // client_pt.UnlockForIpcUserBuffer(request->GetAddress(), request->GetSize());
+
+            // Signal the event.
+            event->Signal();
+        }
     }
+
+    // Notify.
+    this->NotifyAvailable(ResultSessionClosed);
 }
 
 bool KServerSession::IsSignaled() const {
@@ -71,24 +150,6 @@ bool KServerSession::IsSignaled() const {
 
     // Otherwise, we're signaled if we have a request and aren't handling one.
     return !m_request_list.empty() && m_current_request == nullptr;
-}
-
-Result KServerSession::QueueSyncRequest(KThread* thread, Core::Memory::Memory& memory) {
-    u32* cmd_buf{reinterpret_cast<u32*>(memory.GetPointer(thread->GetTLSAddress()))};
-    auto context = std::make_shared<HLERequestContext>(kernel, memory, this, thread);
-
-    context->PopulateFromIncomingCommandBuffer(kernel.CurrentProcess()->GetHandleTable(), cmd_buf);
-
-    return manager->QueueSyncRequest(parent, std::move(context));
-}
-
-Result KServerSession::CompleteSyncRequest(HLERequestContext& context) {
-    Result result = manager->CompleteSyncRequest(this, context);
-
-    // The calling thread is waiting for this request to complete, so wake it up.
-    context.GetThread().EndWait(result);
-
-    return result;
 }
 
 Result KServerSession::OnRequest(KSessionRequest* request) {
@@ -105,24 +166,16 @@ Result KServerSession::OnRequest(KSessionRequest* request) {
         // Check that we're not terminating.
         R_UNLESS(!GetCurrentThread(kernel).IsTerminationRequested(), ResultTerminationRequested);
 
-        if (manager) {
-            // HLE request.
-            auto& memory{kernel.System().Memory()};
-            this->QueueSyncRequest(GetCurrentThreadPointer(kernel), memory);
-        } else {
-            // Non-HLE request.
+        // Get whether we're empty.
+        const bool was_empty = m_request_list.empty();
 
-            // Get whether we're empty.
-            const bool was_empty = m_request_list.empty();
+        // Add the request to the list.
+        request->Open();
+        m_request_list.push_back(*request);
 
-            // Add the request to the list.
-            request->Open();
-            m_request_list.push_back(*request);
-
-            // If we were empty, signal.
-            if (was_empty) {
-                this->NotifyAvailable();
-            }
+        // If we were empty, signal.
+        if (was_empty) {
+            this->NotifyAvailable();
         }
 
         // If we have a request event, this is asynchronous, and we don't need to wait.
@@ -136,7 +189,7 @@ Result KServerSession::OnRequest(KSessionRequest* request) {
     return GetCurrentThread(kernel).GetWaitResult();
 }
 
-Result KServerSession::SendReply() {
+Result KServerSession::SendReply(bool is_hle) {
     // Lock the session.
     KScopedLightLock lk{m_lock};
 
@@ -171,13 +224,18 @@ Result KServerSession::SendReply() {
     Result result = ResultSuccess;
     if (!closed) {
         // If we're not closed, send the reply.
-        Core::Memory::Memory& memory{kernel.System().Memory()};
-        KThread* server_thread{GetCurrentThreadPointer(kernel)};
-        UNIMPLEMENTED_IF(server_thread->GetOwnerProcess() != client_thread->GetOwnerProcess());
+        if (is_hle) {
+            // HLE servers write directly to a pointer to the thread command buffer. Therefore
+            // the reply has already been written in this case.
+        } else {
+            Core::Memory::Memory& memory{kernel.System().Memory()};
+            KThread* server_thread{GetCurrentThreadPointer(kernel)};
+            UNIMPLEMENTED_IF(server_thread->GetOwnerProcess() != client_thread->GetOwnerProcess());
 
-        auto* src_msg_buffer = memory.GetPointer(server_thread->GetTLSAddress());
-        auto* dst_msg_buffer = memory.GetPointer(client_message);
-        std::memcpy(dst_msg_buffer, src_msg_buffer, client_buffer_size);
+            auto* src_msg_buffer = memory.GetPointer(server_thread->GetTLSAddress());
+            auto* dst_msg_buffer = memory.GetPointer(client_message);
+            std::memcpy(dst_msg_buffer, src_msg_buffer, client_buffer_size);
+        }
     } else {
         result = ResultSessionClosed;
     }
@@ -223,7 +281,8 @@ Result KServerSession::SendReply() {
     return result;
 }
 
-Result KServerSession::ReceiveRequest() {
+Result KServerSession::ReceiveRequest(std::shared_ptr<HLERequestContext>* out_context,
+                                      std::weak_ptr<SessionRequestManager> manager) {
     // Lock the session.
     KScopedLightLock lk{m_lock};
 
@@ -267,12 +326,22 @@ Result KServerSession::ReceiveRequest() {
 
     // Receive the message.
     Core::Memory::Memory& memory{kernel.System().Memory()};
-    KThread* server_thread{GetCurrentThreadPointer(kernel)};
-    UNIMPLEMENTED_IF(server_thread->GetOwnerProcess() != client_thread->GetOwnerProcess());
+    if (out_context != nullptr) {
+        // HLE request.
+        u32* cmd_buf{reinterpret_cast<u32*>(memory.GetPointer(client_message))};
+        *out_context = std::make_shared<HLERequestContext>(kernel, memory, this, client_thread);
+        (*out_context)->SetSessionRequestManager(manager);
+        (*out_context)
+            ->PopulateFromIncomingCommandBuffer(client_thread->GetOwnerProcess()->GetHandleTable(),
+                                                cmd_buf);
+    } else {
+        KThread* server_thread{GetCurrentThreadPointer(kernel)};
+        UNIMPLEMENTED_IF(server_thread->GetOwnerProcess() != client_thread->GetOwnerProcess());
 
-    auto* src_msg_buffer = memory.GetPointer(client_message);
-    auto* dst_msg_buffer = memory.GetPointer(server_thread->GetTLSAddress());
-    std::memcpy(dst_msg_buffer, src_msg_buffer, client_buffer_size);
+        auto* src_msg_buffer = memory.GetPointer(client_message);
+        auto* dst_msg_buffer = memory.GetPointer(server_thread->GetTLSAddress());
+        std::memcpy(dst_msg_buffer, src_msg_buffer, client_buffer_size);
+    }
 
     // We succeeded.
     return ResultSuccess;

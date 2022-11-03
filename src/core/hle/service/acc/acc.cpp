@@ -853,15 +853,6 @@ void Module::Interface::ListQualifiedUsers(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Module::Interface::LoadOpenContext(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_ACC, "(STUBBED) called");
-
-    // This is similar to GetBaasAccountManagerForApplication
-    // This command is used concurrently with ListOpenContextStoredUsers
-    IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(ResultSuccess);
-}
-
 void Module::Interface::ListOpenContextStoredUsers(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
 
