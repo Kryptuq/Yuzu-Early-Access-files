@@ -386,7 +386,8 @@ void EmitInvocationInfo(EmitContext& ctx, IR::Inst& inst) {
         ctx.Add("SHL.U {}.x, primitive.vertexcount, 16;", inst);
         break;
     default:
-        throw NotImplementedException("InvocationInfo");
+        LOG_WARNING(Shader, "(STUBBED) EmitInvocationInfo");
+        ctx.Add("MOV.S {}.x,0x00ff0000;", inst);
     }
 }
 

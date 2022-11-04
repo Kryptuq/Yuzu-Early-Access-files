@@ -76,7 +76,8 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
         }
         break;
     case Shader::Stage::TessellationEval:
-        info.tess_clockwise = key.tessellation_clockwise != 0;
+        // invert the face
+        info.tess_clockwise = key.tessellation_clockwise == 0;
         info.tess_primitive = [&key] {
             switch (key.tessellation_primitive) {
             case Maxwell::Tessellation::DomainType::Isolines:

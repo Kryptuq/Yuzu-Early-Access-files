@@ -520,7 +520,8 @@ Id EmitInvocationInfo(EmitContext& ctx) {
                                       ctx.Const(16u));
         break;
     default:
-        throw NotImplementedException("SPIR-V Instruction");
+        LOG_WARNING(Shader, "(STUBBED) EmitInvocationInfo");
+        return ctx.Const(0x00ff0000u);
     }
 }
 

@@ -406,7 +406,8 @@ void EmitInvocationInfo(EmitContext& ctx, IR::Inst& inst) {
         ctx.AddU32("{}=uint(gl_PatchVerticesIn)<<16;", inst);
         break;
     default:
-        throw NotImplementedException("InvocationInfo");
+        LOG_WARNING(Shader, "(STUBBED) EmitInvocationInfo");
+        ctx.AddU32("{}=uint(0x00ff0000);", inst);
     }
 }
 
