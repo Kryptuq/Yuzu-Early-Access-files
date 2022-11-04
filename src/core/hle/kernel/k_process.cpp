@@ -358,8 +358,8 @@ Result KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata, std:
     }
     // Initialize proces address space
     if (const Result result{page_table.InitializeForProcess(
-            metadata.GetAddressSpaceType(), false, 0x8000000, code_size,
-            &kernel.GetApplicationMemoryBlockManager(), KMemoryManager::Pool::Application)};
+            metadata.GetAddressSpaceType(), false, false, false, KMemoryManager::Pool::Application,
+            0x8000000, code_size, &kernel.GetSystemSystemResource(), resource_limit)};
         result.IsError()) {
         R_RETURN(result);
     }

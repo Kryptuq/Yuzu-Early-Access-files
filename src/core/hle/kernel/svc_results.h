@@ -37,6 +37,7 @@ constexpr Result ResultInvalidState{ErrorModule::Kernel, 125};
 constexpr Result ResultReservedUsed{ErrorModule::Kernel, 126};
 constexpr Result ResultPortClosed{ErrorModule::Kernel, 131};
 constexpr Result ResultLimitReached{ErrorModule::Kernel, 132};
+constexpr Result ResultOutOfAddressSpace{ErrorModule::Kernel, 259};
 constexpr Result ResultInvalidId{ErrorModule::Kernel, 519};
 
 } // namespace Kernel

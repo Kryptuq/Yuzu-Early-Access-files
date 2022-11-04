@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "common/alignment.h"
 #include "common/common_types.h"
 #include "core/hle/kernel/k_page_bitmap.h"
@@ -33,28 +35,36 @@ public:
         return reinterpret_cast<T*>(m_backing_memory.data() + (addr - m_address));
     }
 
-    Result Initialize(VAddr addr, size_t sz) {
+    Result Initialize(VAddr memory, size_t size, size_t align) {
         // We need to have positive size.
-        R_UNLESS(sz > 0, ResultOutOfMemory);
-        m_backing_memory.resize(sz);
+        R_UNLESS(size > 0, ResultOutOfMemory);
+        m_backing_memory.resize(size);
 
-        // Calculate management overhead.
-        const size_t management_size =
-            KPageBitmap::CalculateManagementOverheadSize(sz / sizeof(PageBuffer));
-        const size_t allocatable_size = sz - management_size;
+        // Set addresses.
+        m_address = memory;
+        m_aligned_address = Common::AlignDown(memory, align);
+
+        // Calculate extents.
+        const size_t managed_size = m_address + size - m_aligned_address;
+        const size_t overhead_size = Common::AlignUp(
+            KPageBitmap::CalculateManagementOverheadSize(managed_size / sizeof(PageBuffer)),
+            sizeof(PageBuffer));
+        R_UNLESS(overhead_size < size, ResultOutOfMemory);
 
         // Set tracking fields.
-        m_address = addr;
-        m_size = Common::AlignDown(allocatable_size, sizeof(PageBuffer));
-        m_count = allocatable_size / sizeof(PageBuffer);
-        R_UNLESS(m_count > 0, ResultOutOfMemory);
+        m_size = Common::AlignDown(size - overhead_size, sizeof(PageBuffer));
+        m_count = m_size / sizeof(PageBuffer);
 
         // Clear the management region.
-        u64* management_ptr = GetPointer<u64>(m_address + allocatable_size);
-        std::memset(management_ptr, 0, management_size);
+        u64* management_ptr = GetPointer<u64>(m_address + size - overhead_size);
+        std::memset(management_ptr, 0, overhead_size);
 
         // Initialize the bitmap.
-        m_page_bitmap.Initialize(management_ptr, m_count);
+        const size_t allocatable_region_size =
+            (m_address + size - overhead_size) - m_aligned_address;
+        ASSERT(allocatable_region_size >= sizeof(PageBuffer));
+
+        m_page_bitmap.Initialize(management_ptr, allocatable_region_size / sizeof(PageBuffer));
 
         // Free the pages to the bitmap.
         for (size_t i = 0; i < m_count; i++) {
@@ -62,7 +72,8 @@ public:
             std::memset(GetPointer<PageBuffer>(m_address) + i, 0, PageSize);
 
             // Set the bit for the free page.
-            m_page_bitmap.SetBit(i);
+            m_page_bitmap.SetBit((m_address + (i * sizeof(PageBuffer)) - m_aligned_address) /
+                                 sizeof(PageBuffer));
         }
 
         R_SUCCEED();
@@ -101,7 +112,28 @@ public:
         m_page_bitmap.ClearBit(offset);
         m_peak = std::max(m_peak, (++m_used));
 
-        return GetPointer<PageBuffer>(m_address) + offset;
+        return GetPointer<PageBuffer>(m_aligned_address) + offset;
+    }
+
+    PageBuffer* Allocate(size_t count) {
+        // Take the lock.
+        // TODO(bunnei): We should disable interrupts here via KScopedInterruptDisable.
+        KScopedSpinLock lk(m_lock);
+
+        // Find a random free block.
+        s64 soffset = m_page_bitmap.FindFreeRange(count);
+        if (soffset < 0) [[likely]] {
+            return nullptr;
+        }
+
+        const size_t offset = static_cast<size_t>(soffset);
+
+        // Update our tracking.
+        m_page_bitmap.ClearRange(offset, count);
+        m_used += count;
+        m_peak = std::max(m_peak, m_used);
+
+        return GetPointer<PageBuffer>(m_aligned_address) + offset;
     }
 
     void Free(PageBuffer* pb) {
@@ -113,7 +145,7 @@ public:
         KScopedSpinLock lk(m_lock);
 
         // Set the bit for the free page.
-        size_t offset = (reinterpret_cast<uintptr_t>(pb) - m_address) / sizeof(PageBuffer);
+        size_t offset = (reinterpret_cast<uintptr_t>(pb) - m_aligned_address) / sizeof(PageBuffer);
         m_page_bitmap.SetBit(offset);
 
         // Decrement our used count.
@@ -127,6 +159,7 @@ private:
     size_t m_peak{};
     size_t m_count{};
     VAddr m_address{};
+    VAddr m_aligned_address{};
     size_t m_size{};
 
     // TODO(bunnei): Back by host memory until we emulate kernel virtual address space.

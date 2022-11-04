@@ -29,6 +29,16 @@ enum class TextureType : u32 {
 };
 constexpr u32 NUM_TEXTURE_TYPES = 9;
 
+enum class TexturePixelFormat : u32 {
+    A8B8G8R8_SNORM,
+    R8_SNORM,
+    R8G8_SNORM,
+    R16G16B16A16_SNORM,
+    R16G16_SNORM,
+    R16_SNORM,
+    OTHER
+};
+
 enum class ImageFormat : u32 {
     Typeless,
     R8_UINT,
@@ -117,6 +127,7 @@ struct Info {
     bool uses_workgroup_id{};
     bool uses_local_invocation_id{};
     bool uses_invocation_id{};
+    bool uses_invocation_info{};
     bool uses_sample_id{};
     bool uses_is_helper_invocation{};
     bool uses_subgroup_invocation_id{};
@@ -182,6 +193,7 @@ struct Info {
     bool uses_shadow_lod{};
     bool uses_rescaling_uniform{};
     bool uses_cbuf_indirect{};
+    bool uses_render_area{};
 
     IR::Type used_constant_buffer_types{};
     IR::Type used_storage_buffer_types{};

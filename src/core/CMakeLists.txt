@@ -190,11 +190,13 @@ add_library(core STATIC
     hle/kernel/k_code_memory.h
     hle/kernel/k_condition_variable.cpp
     hle/kernel/k_condition_variable.h
+    hle/kernel/k_debug.h
     hle/kernel/k_dynamic_page_manager.h
     hle/kernel/k_dynamic_resource_manager.h
     hle/kernel/k_dynamic_slab_heap.h
     hle/kernel/k_event.cpp
     hle/kernel/k_event.h
+    hle/kernel/k_event_info.h
     hle/kernel/k_handle_table.cpp
     hle/kernel/k_handle_table.h
     hle/kernel/k_interrupt_manager.cpp
@@ -222,6 +224,8 @@ add_library(core STATIC
     hle/kernel/k_page_group.h
     hle/kernel/k_page_table.cpp
     hle/kernel/k_page_table.h
+    hle/kernel/k_page_table_manager.h
+    hle/kernel/k_page_table_slab_heap.h
     hle/kernel/k_port.cpp
     hle/kernel/k_port.h
     hle/kernel/k_priority_queue.h
@@ -254,6 +258,8 @@ add_library(core STATIC
     hle/kernel/k_synchronization_object.cpp
     hle/kernel/k_synchronization_object.h
     hle/kernel/k_system_control.h
+    hle/kernel/k_system_resource.cpp
+    hle/kernel/k_system_resource.h
     hle/kernel/k_thread.cpp
     hle/kernel/k_thread.h
     hle/kernel/k_thread_local_page.cpp

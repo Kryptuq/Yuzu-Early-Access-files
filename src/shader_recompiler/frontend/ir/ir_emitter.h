@@ -97,11 +97,15 @@ public:
     [[nodiscard]] U32 LocalInvocationIdZ();
 
     [[nodiscard]] U32 InvocationId();
+    [[nodiscard]] U32 InvocationInfo();
     [[nodiscard]] U32 SampleId();
     [[nodiscard]] U1 IsHelperInvocation();
     [[nodiscard]] F32 YDirection();
 
     [[nodiscard]] F32 ResolutionDownFactor();
+
+    [[nodiscard]] F32 RenderAreaWidth();
+    [[nodiscard]] F32 RenderAreaHeight();
 
     [[nodiscard]] U32 LaneId();
 

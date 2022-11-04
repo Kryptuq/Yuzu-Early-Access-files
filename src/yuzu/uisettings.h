@@ -132,6 +132,10 @@ struct Values {
     // Compatibility List
     Settings::Setting<bool> show_compat{false, "show_compat"};
 
+    // Size & File Types Column
+    Settings::Setting<bool> show_size{true, "show_size"};
+    Settings::Setting<bool> show_types{true, "show_types"};
+
     bool configuration_applied;
     bool reset_to_defaults;
     Settings::Setting<bool> disable_web_applet{true, "disable_web_applet"};

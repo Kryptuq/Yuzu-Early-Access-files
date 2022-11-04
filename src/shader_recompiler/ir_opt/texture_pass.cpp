@@ -7,6 +7,7 @@
 
 #include <boost/container/small_vector.hpp>
 
+#include "common/settings.h"
 #include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/breadth_first_search.h"
@@ -363,6 +364,14 @@ TextureType ReadTextureType(Environment& env, const ConstBufferAddr& cbuf) {
     return env.ReadTextureType(lhs_raw | rhs_raw);
 }
 
+TexturePixelFormat ReadTexturePixelFormat(Environment& env, const ConstBufferAddr& cbuf) {
+    const u32 secondary_index{cbuf.has_secondary ? cbuf.secondary_index : cbuf.index};
+    const u32 secondary_offset{cbuf.has_secondary ? cbuf.secondary_offset : cbuf.offset};
+    const u32 lhs_raw{env.ReadCbufValue(cbuf.index, cbuf.offset)};
+    const u32 rhs_raw{env.ReadCbufValue(secondary_index, secondary_offset)};
+    return env.ReadTexturePixelFormat(lhs_raw | rhs_raw);
+}
+
 class Descriptors {
 public:
     explicit Descriptors(TextureBufferDescriptors& texture_buffer_descriptors_,
@@ -450,6 +459,38 @@ void PatchImageSampleImplicitLod(IR::Block& block, IR::Inst& inst) {
                         ir.FPRecip(ir.ConvertUToF(32, 32, ir.CompositeExtract(texture_size, 0)))),
                ir.FPMul(IR::F32(ir.CompositeExtract(coord, 1)),
                         ir.FPRecip(ir.ConvertUToF(32, 32, ir.CompositeExtract(texture_size, 1))))));
+}
+
+void PathTexelFetch(IR::Block& block, IR::Inst& inst, TexturePixelFormat pixel_format) {
+    const auto it{IR::Block::InstructionList::s_iterator_to(inst)};
+    IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
+    auto get_max_value = [pixel_format]() -> float {
+        switch (pixel_format) {
+        case TexturePixelFormat::A8B8G8R8_SNORM:
+        case TexturePixelFormat::R8G8_SNORM:
+        case TexturePixelFormat::R8_SNORM:
+            return 1.f / std::numeric_limits<char>::max();
+        case TexturePixelFormat::R16G16B16A16_SNORM:
+        case TexturePixelFormat::R16G16_SNORM:
+        case TexturePixelFormat::R16_SNORM:
+            return 1.f / std::numeric_limits<short>::max();
+        default:
+            throw InvalidArgument("Invalid texture pixel format");
+        }
+    };
+
+    const IR::Value new_inst{&*block.PrependNewInst(it, inst)};
+    const IR::F32 x(ir.CompositeExtract(new_inst, 0));
+    const IR::F32 y(ir.CompositeExtract(new_inst, 1));
+    const IR::F32 z(ir.CompositeExtract(new_inst, 2));
+    const IR::F32 w(ir.CompositeExtract(new_inst, 3));
+    const IR::F16F32F64 max_value(ir.Imm32(get_max_value()));
+    const IR::Value converted =
+        ir.CompositeConstruct(ir.FPMul(ir.ConvertSToF(32, 32, ir.BitCast<IR::S32>(x)), max_value),
+                              ir.FPMul(ir.ConvertSToF(32, 32, ir.BitCast<IR::S32>(y)), max_value),
+                              ir.FPMul(ir.ConvertSToF(32, 32, ir.BitCast<IR::S32>(z)), max_value),
+                              ir.FPMul(ir.ConvertSToF(32, 32, ir.BitCast<IR::S32>(w)), max_value));
+    inst.ReplaceUsesWith(converted);
 }
 } // Anonymous namespace
 
@@ -596,6 +637,14 @@ void TexturePass(Environment& env, IR::Program& program) {
                                     ir.Imm32(DESCRIPTOR_SIZE - 1)));
         } else {
             inst->SetArg(0, IR::Value{});
+        }
+
+        if (Settings::values.renderer_backend.GetValue() == Settings::RendererBackend::OpenGL &&
+            inst->GetOpcode() == IR::Opcode::ImageFetch && flags.type == TextureType::Buffer) {
+            const auto pixel_format = ReadTexturePixelFormat(env, cbuf);
+            if (pixel_format != TexturePixelFormat::OTHER) {
+                PathTexelFetch(*texture_inst.block, *texture_inst.inst, pixel_format);
+            }
         }
     }
 }

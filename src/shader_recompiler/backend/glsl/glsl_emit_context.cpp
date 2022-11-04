@@ -284,7 +284,8 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         stage_name = "tes";
         header += fmt::format("layout({},{},{})in;", GetTessMode(runtime_info.tess_primitive),
                               GetTessSpacing(runtime_info.tess_spacing),
-                              runtime_info.tess_clockwise ? "cw" : "ccw");
+                              // invert the face
+                              runtime_info.tess_clockwise ? "ccw" : "cw");
         break;
     case Stage::Geometry:
         stage_name = "gs";
@@ -357,6 +358,9 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     }
     if (info.uses_rescaling_uniform) {
         header += "layout(location=0) uniform vec4 scaling;";
+    }
+    if (info.uses_render_area) {
+        header += "layout(location=1) uniform vec4 render_area;";
     }
     DefineConstantBuffers(bindings);
     DefineConstantBufferIndirect();

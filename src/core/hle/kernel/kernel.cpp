@@ -28,10 +28,12 @@
 #include "core/hle/kernel/k_handle_table.h"
 #include "core/hle/kernel/k_memory_layout.h"
 #include "core/hle/kernel/k_memory_manager.h"
+#include "core/hle/kernel/k_page_buffer.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_resource_limit.h"
 #include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/k_shared_memory.h"
+#include "core/hle/kernel/k_system_resource.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/k_worker_task_manager.h"
 #include "core/hle/kernel/kernel.h"
@@ -47,6 +49,11 @@ MICROPROFILE_DEFINE(Kernel_SVC, "Kernel", "SVC", MP_RGB(70, 200, 70));
 namespace Kernel {
 
 struct KernelCore::Impl {
+    static constexpr size_t ApplicationMemoryBlockSlabHeapSize = 20000;
+    static constexpr size_t SystemMemoryBlockSlabHeapSize = 10000;
+    static constexpr size_t BlockInfoSlabHeapSize = 4000;
+    static constexpr size_t ReservedDynamicPageCount = 64;
+
     explicit Impl(Core::System& system_, KernelCore& kernel_)
         : time_manager{system_}, service_threads_manager{1, "ServiceThreadsManager"},
           service_thread_barrier{2}, system{system_} {}
@@ -71,7 +78,6 @@ struct KernelCore::Impl {
         // Initialize kernel memory and resources.
         InitializeSystemResourceLimit(kernel, system.CoreTiming());
         InitializeMemoryLayout();
-        Init::InitializeKPageBufferSlabHeap(system);
         InitializeShutdownThreads();
         InitializePhysicalCores();
         InitializePreemption(kernel);
@@ -81,7 +87,8 @@ struct KernelCore::Impl {
             const auto& pt_heap_region = memory_layout->GetPageTableHeapRegion();
             ASSERT(pt_heap_region.GetEndAddress() != 0);
 
-            InitializeResourceManagers(pt_heap_region.GetAddress(), pt_heap_region.GetSize());
+            InitializeResourceManagers(kernel, pt_heap_region.GetAddress(),
+                                       pt_heap_region.GetSize());
         }
 
         RegisterHostThread();
@@ -253,16 +260,82 @@ struct KernelCore::Impl {
         system.CoreTiming().ScheduleLoopingEvent(time_interval, time_interval, preemption_event);
     }
 
-    void InitializeResourceManagers(VAddr address, size_t size) {
-        dynamic_page_manager = std::make_unique<KDynamicPageManager>();
-        memory_block_heap = std::make_unique<KMemoryBlockSlabHeap>();
-        app_memory_block_manager = std::make_unique<KMemoryBlockSlabManager>();
+    void InitializeResourceManagers(KernelCore& kernel, VAddr address, size_t size) {
+        // Ensure that the buffer is suitable for our use.
+        ASSERT(Common::IsAligned(address, PageSize));
+        ASSERT(Common::IsAligned(size, PageSize));
 
-        dynamic_page_manager->Initialize(address, size);
-        static constexpr size_t ApplicationMemoryBlockSlabHeapSize = 20000;
-        memory_block_heap->Initialize(dynamic_page_manager.get(),
-                                      ApplicationMemoryBlockSlabHeapSize);
-        app_memory_block_manager->Initialize(nullptr, memory_block_heap.get());
+        // Ensure that we have space for our reference counts.
+        const size_t rc_size =
+            Common::AlignUp(KPageTableSlabHeap::CalculateReferenceCountSize(size), PageSize);
+        ASSERT(rc_size < size);
+        size -= rc_size;
+
+        // Initialize the resource managers' shared page manager.
+        resource_manager_page_manager = std::make_unique<KDynamicPageManager>();
+        resource_manager_page_manager->Initialize(
+            address, size, std::max<size_t>(PageSize, KPageBufferSlabHeap::BufferSize));
+
+        // Initialize the KPageBuffer slab heap.
+        page_buffer_slab_heap.Initialize(system);
+
+        // Initialize the fixed-size slabheaps.
+        app_memory_block_heap = std::make_unique<KMemoryBlockSlabHeap>();
+        sys_memory_block_heap = std::make_unique<KMemoryBlockSlabHeap>();
+        block_info_heap = std::make_unique<KBlockInfoSlabHeap>();
+        app_memory_block_heap->Initialize(resource_manager_page_manager.get(),
+                                          ApplicationMemoryBlockSlabHeapSize);
+        sys_memory_block_heap->Initialize(resource_manager_page_manager.get(),
+                                          SystemMemoryBlockSlabHeapSize);
+        block_info_heap->Initialize(resource_manager_page_manager.get(), BlockInfoSlabHeapSize);
+
+        // Reserve all but a fixed number of remaining pages for the page table heap.
+        const size_t num_pt_pages = resource_manager_page_manager->GetCount() -
+                                    resource_manager_page_manager->GetUsed() -
+                                    ReservedDynamicPageCount;
+        page_table_heap = std::make_unique<KPageTableSlabHeap>();
+
+        // TODO(bunnei): Pass in address once we support kernel virtual memory allocations.
+        page_table_heap->Initialize(
+            resource_manager_page_manager.get(), num_pt_pages,
+            /*GetPointer<KPageTableManager::RefCount>(address + size)*/ nullptr);
+
+        // Setup the slab managers.
+        KDynamicPageManager* const app_dynamic_page_manager = nullptr;
+        KDynamicPageManager* const sys_dynamic_page_manager =
+            /*KTargetSystem::IsDynamicResourceLimitsEnabled()*/ true
+                ? resource_manager_page_manager.get()
+                : nullptr;
+        app_memory_block_manager = std::make_unique<KMemoryBlockSlabManager>();
+        sys_memory_block_manager = std::make_unique<KMemoryBlockSlabManager>();
+        app_block_info_manager = std::make_unique<KBlockInfoManager>();
+        sys_block_info_manager = std::make_unique<KBlockInfoManager>();
+        app_page_table_manager = std::make_unique<KPageTableManager>();
+        sys_page_table_manager = std::make_unique<KPageTableManager>();
+
+        app_memory_block_manager->Initialize(app_dynamic_page_manager, app_memory_block_heap.get());
+        sys_memory_block_manager->Initialize(sys_dynamic_page_manager, sys_memory_block_heap.get());
+
+        app_block_info_manager->Initialize(app_dynamic_page_manager, block_info_heap.get());
+        sys_block_info_manager->Initialize(sys_dynamic_page_manager, block_info_heap.get());
+
+        app_page_table_manager->Initialize(app_dynamic_page_manager, page_table_heap.get());
+        sys_page_table_manager->Initialize(sys_dynamic_page_manager, page_table_heap.get());
+
+        // Check that we have the correct number of dynamic pages available.
+        ASSERT(resource_manager_page_manager->GetCount() -
+                   resource_manager_page_manager->GetUsed() ==
+               ReservedDynamicPageCount);
+
+        // Create the system page table managers.
+        app_system_resource = std::make_unique<KSystemResource>(kernel);
+        sys_system_resource = std::make_unique<KSystemResource>(kernel);
+
+        // Set the managers for the system resources.
+        app_system_resource->SetManagers(*app_memory_block_manager, *app_block_info_manager,
+                                         *app_page_table_manager);
+        sys_system_resource->SetManagers(*sys_memory_block_manager, *sys_block_info_manager,
+                                         *sys_page_table_manager);
     }
 
     void InitializeShutdownThreads() {
@@ -446,6 +519,9 @@ struct KernelCore::Impl {
         ASSERT(memory_layout->GetVirtualMemoryRegionTree().Insert(
             misc_region_start, misc_region_size, KMemoryRegionType_KernelMisc));
 
+        // Determine if we'll use extra thread resources.
+        const bool use_extra_resources = KSystemControl::Init::ShouldIncreaseThreadResourceLimit();
+
         // Setup the stack region.
         constexpr size_t StackRegionSize = 14_MiB;
         constexpr size_t StackRegionAlign = KernelAslrAlignment;
@@ -456,7 +532,8 @@ struct KernelCore::Impl {
             stack_region_start, StackRegionSize, KMemoryRegionType_KernelStack));
 
         // Determine the size of the resource region.
-        const size_t resource_region_size = memory_layout->GetResourceRegionSizeForInit();
+        const size_t resource_region_size =
+            memory_layout->GetResourceRegionSizeForInit(use_extra_resources);
 
         // Determine the size of the slab region.
         const size_t slab_region_size =
@@ -751,6 +828,8 @@ struct KernelCore::Impl {
     Init::KSlabResourceCounts slab_resource_counts{};
     KResourceLimit* system_resource_limit{};
 
+    KPageBufferSlabHeap page_buffer_slab_heap;
+
     std::shared_ptr<Core::Timing::EventType> preemption_event;
 
     // This is the kernel's handle table or supervisor handle table which
@@ -776,10 +855,20 @@ struct KernelCore::Impl {
     // Kernel memory management
     std::unique_ptr<KMemoryManager> memory_manager;
 
-    // Dynamic slab managers
-    std::unique_ptr<KDynamicPageManager> dynamic_page_manager;
-    std::unique_ptr<KMemoryBlockSlabHeap> memory_block_heap;
+    // Resource managers
+    std::unique_ptr<KDynamicPageManager> resource_manager_page_manager;
+    std::unique_ptr<KPageTableSlabHeap> page_table_heap;
+    std::unique_ptr<KMemoryBlockSlabHeap> app_memory_block_heap;
+    std::unique_ptr<KMemoryBlockSlabHeap> sys_memory_block_heap;
+    std::unique_ptr<KBlockInfoSlabHeap> block_info_heap;
+    std::unique_ptr<KPageTableManager> app_page_table_manager;
+    std::unique_ptr<KPageTableManager> sys_page_table_manager;
     std::unique_ptr<KMemoryBlockSlabManager> app_memory_block_manager;
+    std::unique_ptr<KMemoryBlockSlabManager> sys_memory_block_manager;
+    std::unique_ptr<KBlockInfoManager> app_block_info_manager;
+    std::unique_ptr<KBlockInfoManager> sys_block_info_manager;
+    std::unique_ptr<KSystemResource> app_system_resource;
+    std::unique_ptr<KSystemResource> sys_system_resource;
 
     // Shared memory for services
     Kernel::KSharedMemory* hid_shared_mem{};
@@ -1057,12 +1146,12 @@ const KMemoryManager& KernelCore::MemoryManager() const {
     return *impl->memory_manager;
 }
 
-KMemoryBlockSlabManager& KernelCore::GetApplicationMemoryBlockManager() {
-    return *impl->app_memory_block_manager;
+KSystemResource& KernelCore::GetSystemSystemResource() {
+    return *impl->sys_system_resource;
 }
 
-const KMemoryBlockSlabManager& KernelCore::GetApplicationMemoryBlockManager() const {
-    return *impl->app_memory_block_manager;
+const KSystemResource& KernelCore::GetSystemSystemResource() const {
+    return *impl->sys_system_resource;
 }
 
 Kernel::KSharedMemory& KernelCore::GetHidSharedMem() {

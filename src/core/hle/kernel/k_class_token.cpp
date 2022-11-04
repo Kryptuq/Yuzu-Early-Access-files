@@ -16,6 +16,7 @@
 #include "core/hle/kernel/k_session.h"
 #include "core/hle/kernel/k_shared_memory.h"
 #include "core/hle/kernel/k_synchronization_object.h"
+#include "core/hle/kernel/k_system_resource.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/k_transfer_memory.h"
 
@@ -118,5 +119,7 @@ static_assert(std::is_final_v<KTransferMemory> && std::is_base_of_v<KAutoObject,
 //              std::is_base_of_v<KAutoObject, KSessionRequest>);
 // static_assert(std::is_final_v<KCodeMemory> &&
 //              std::is_base_of_v<KAutoObject, KCodeMemory>);
+
+static_assert(std::is_base_of<KAutoObject, KSystemResource>::value);
 
 } // namespace Kernel

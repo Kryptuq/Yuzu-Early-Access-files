@@ -60,10 +60,12 @@ constexpr std::size_t KernelSlabHeapGapsSizeMax = 2_MiB - 64_KiB;
 constexpr std::size_t KernelSlabHeapSize = KernelSlabHeapDataSize + KernelSlabHeapGapsSizeMax;
 
 // NOTE: This is calculated from KThread slab counts, assuming KThread size <= 0x860.
-constexpr std::size_t KernelSlabHeapAdditionalSize = 0x68000;
+constexpr size_t KernelPageBufferHeapSize = 0x3E0000;
+constexpr size_t KernelSlabHeapAdditionalSize = 0x148000;
+constexpr size_t KernelPageBufferAdditionalSize = 0x33C000;
 
-constexpr std::size_t KernelResourceSize =
-    KernelPageTableHeapSize + KernelInitialPageHeapSize + KernelSlabHeapSize;
+constexpr std::size_t KernelResourceSize = KernelPageTableHeapSize + KernelInitialPageHeapSize +
+                                           KernelSlabHeapSize + KernelPageBufferHeapSize;
 
 constexpr bool IsKernelAddressKey(VAddr key) {
     return KernelVirtualAddressSpaceBase <= key && key <= KernelVirtualAddressSpaceLast;
@@ -168,6 +170,11 @@ public:
             KMemoryRegionType_VirtualDramKernelTraceBuffer));
     }
 
+    const KMemoryRegion& GetSecureAppletMemoryRegion() {
+        return Dereference(GetVirtualMemoryRegionTree().FindByType(
+            KMemoryRegionType_VirtualDramKernelSecureAppletMemory));
+    }
+
     const KMemoryRegion& GetVirtualLinearRegion(VAddr address) const {
         return Dereference(FindVirtualLinear(address));
     }
@@ -229,7 +236,7 @@ public:
 
     void InitializeLinearMemoryRegionTrees(PAddr aligned_linear_phys_start,
                                            VAddr linear_virtual_start);
-    static size_t GetResourceRegionSizeForInit();
+    static size_t GetResourceRegionSizeForInit(bool use_extra_resource);
 
     auto GetKernelRegionExtents() const {
         return GetVirtualMemoryRegionTree().GetDerivedRegionExtents(KMemoryRegionType_Kernel);
@@ -278,6 +285,10 @@ public:
     auto GetKernelSlabRegionPhysicalExtents() const {
         return GetPhysicalMemoryRegionTree().GetDerivedRegionExtents(
             KMemoryRegionType_DramKernelSlab);
+    }
+    auto GetKernelSecureAppletMemoryRegionPhysicalExtents() {
+        return GetPhysicalMemoryRegionTree().GetDerivedRegionExtents(
+            KMemoryRegionType_DramKernelSecureAppletMemory);
     }
     auto GetKernelPageTableHeapRegionPhysicalExtents() const {
         return GetPhysicalMemoryRegionTree().GetDerivedRegionExtents(

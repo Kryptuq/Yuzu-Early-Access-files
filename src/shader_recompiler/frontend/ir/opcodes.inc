@@ -59,10 +59,12 @@ OPCODE(SetOFlag,                                            Void,           U1, 
 OPCODE(WorkgroupId,                                         U32x3,                                                                                          )
 OPCODE(LocalInvocationId,                                   U32x3,                                                                                          )
 OPCODE(InvocationId,                                        U32,                                                                                            )
+OPCODE(InvocationInfo,                                      U32,                                                                                            )
 OPCODE(SampleId,                                            U32,                                                                                            )
 OPCODE(IsHelperInvocation,                                  U1,                                                                                             )
 OPCODE(YDirection,                                          F32,                                                                                            )
 OPCODE(ResolutionDownFactor,                                F32,                                                                                            )
+OPCODE(RenderArea,                                          F32x4,                                                                                          )
 
 // Undefined
 OPCODE(UndefU1,                                             U1,                                                                                             )
@@ -173,6 +175,7 @@ OPCODE(SelectF64,                                           F64,            U1, 
 OPCODE(BitCastU16F16,                                       U16,            F16,                                                                            )
 OPCODE(BitCastU32F32,                                       U32,            F32,                                                                            )
 OPCODE(BitCastU64F64,                                       U64,            F64,                                                                            )
+OPCODE(BitCastS32F32,                                       S32,            F32,                                                                            )
 OPCODE(BitCastF16U16,                                       F16,            U16,                                                                            )
 OPCODE(BitCastF32U32,                                       F32,            U32,                                                                            )
 OPCODE(BitCastF64U64,                                       F64,            U64,                                                                            )

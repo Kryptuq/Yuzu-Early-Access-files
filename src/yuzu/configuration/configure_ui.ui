@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>363</width>
-    <height>507</height>
+    <height>562</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -87,6 +87,20 @@
          <widget class="QCheckBox" name="show_add_ons">
           <property name="text">
            <string>Show Add-Ons Column</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="show_size">
+          <property name="text">
+           <string>Show Size Column</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="show_types">
+          <property name="text">
+           <string>Show File Types Column</string>
           </property>
          </widget>
         </item>

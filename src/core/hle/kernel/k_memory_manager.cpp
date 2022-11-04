@@ -29,43 +29,44 @@ constexpr KMemoryManager::Pool GetPoolFromMemoryRegionType(u32 type) {
     } else if ((type | KMemoryRegionType_DramSystemNonSecurePool) == type) {
         return KMemoryManager::Pool::SystemNonSecure;
     } else {
-        ASSERT_MSG(false, "InvalidMemoryRegionType for conversion to Pool");
-        return {};
+        UNREACHABLE_MSG("InvalidMemoryRegionType for conversion to Pool");
     }
 }
 
 } // namespace
 
-KMemoryManager::KMemoryManager(Core::System& system_)
-    : system{system_}, pool_locks{
-                           KLightLock{system_.Kernel()},
-                           KLightLock{system_.Kernel()},
-                           KLightLock{system_.Kernel()},
-                           KLightLock{system_.Kernel()},
-                       } {}
+KMemoryManager::KMemoryManager(Core::System& system)
+    : m_system{system}, m_memory_layout{system.Kernel().MemoryLayout()},
+      m_pool_locks{
+          KLightLock{system.Kernel()},
+          KLightLock{system.Kernel()},
+          KLightLock{system.Kernel()},
+          KLightLock{system.Kernel()},
+      } {}
 
 void KMemoryManager::Initialize(VAddr management_region, size_t management_region_size) {
 
     // Clear the management region to zero.
     const VAddr management_region_end = management_region + management_region_size;
+    // std::memset(GetVoidPointer(management_region), 0, management_region_size);
 
     // Reset our manager count.
-    num_managers = 0;
+    m_num_managers = 0;
 
     // Traverse the virtual memory layout tree, initializing each manager as appropriate.
-    while (num_managers != MaxManagerCount) {
+    while (m_num_managers != MaxManagerCount) {
         // Locate the region that should initialize the current manager.
         PAddr region_address = 0;
         size_t region_size = 0;
         Pool region_pool = Pool::Count;
-        for (const auto& it : system.Kernel().MemoryLayout().GetPhysicalMemoryRegionTree()) {
+        for (const auto& it : m_system.Kernel().MemoryLayout().GetPhysicalMemoryRegionTree()) {
             // We only care about regions that we need to create managers for.
             if (!it.IsDerivedFrom(KMemoryRegionType_DramUserPool)) {
                 continue;
             }
 
             // We want to initialize the managers in order.
-            if (it.GetAttributes() != num_managers) {
+            if (it.GetAttributes() != m_num_managers) {
                 continue;
             }
 
@@ -97,8 +98,8 @@ void KMemoryManager::Initialize(VAddr management_region, size_t management_regio
         }
 
         // Initialize a new manager for the region.
-        Impl* manager = std::addressof(managers[num_managers++]);
-        ASSERT(num_managers <= managers.size());
+        Impl* manager = std::addressof(m_managers[m_num_managers++]);
+        ASSERT(m_num_managers <= m_managers.size());
 
         const size_t cur_size = manager->Initialize(region_address, region_size, management_region,
                                                     management_region_end, region_pool);
@@ -107,13 +108,13 @@ void KMemoryManager::Initialize(VAddr management_region, size_t management_regio
 
         // Insert the manager into the pool list.
         const auto region_pool_index = static_cast<u32>(region_pool);
-        if (pool_managers_tail[region_pool_index] == nullptr) {
-            pool_managers_head[region_pool_index] = manager;
+        if (m_pool_managers_tail[region_pool_index] == nullptr) {
+            m_pool_managers_head[region_pool_index] = manager;
         } else {
-            pool_managers_tail[region_pool_index]->SetNext(manager);
-            manager->SetPrev(pool_managers_tail[region_pool_index]);
+            m_pool_managers_tail[region_pool_index]->SetNext(manager);
+            manager->SetPrev(m_pool_managers_tail[region_pool_index]);
         }
-        pool_managers_tail[region_pool_index] = manager;
+        m_pool_managers_tail[region_pool_index] = manager;
     }
 
     // Free each region to its corresponding heap.
@@ -121,11 +122,10 @@ void KMemoryManager::Initialize(VAddr management_region, size_t management_regio
     const PAddr ini_start = GetInitialProcessBinaryPhysicalAddress();
     const PAddr ini_end = ini_start + InitialProcessBinarySizeMax;
     const PAddr ini_last = ini_end - 1;
-    for (const auto& it : system.Kernel().MemoryLayout().GetPhysicalMemoryRegionTree()) {
+    for (const auto& it : m_system.Kernel().MemoryLayout().GetPhysicalMemoryRegionTree()) {
         if (it.IsDerivedFrom(KMemoryRegionType_DramUserPool)) {
             // Get the manager for the region.
-            auto index = it.GetAttributes();
-            auto& manager = managers[index];
+            auto& manager = m_managers[it.GetAttributes()];
 
             const PAddr cur_start = it.GetAddress();
             const PAddr cur_last = it.GetLastAddress();
@@ -162,9 +162,17 @@ void KMemoryManager::Initialize(VAddr management_region, size_t management_regio
     }
 
     // Update the used size for all managers.
-    for (size_t i = 0; i < num_managers; ++i) {
-        managers[i].SetInitialUsedHeapSize(reserved_sizes[i]);
+    for (size_t i = 0; i < m_num_managers; ++i) {
+        m_managers[i].SetInitialUsedHeapSize(reserved_sizes[i]);
     }
+}
+
+Result KMemoryManager::InitializeOptimizedMemory(u64 process_id, Pool pool) {
+    UNREACHABLE();
+}
+
+void KMemoryManager::FinalizeOptimizedMemory(u64 process_id, Pool pool) {
+    UNREACHABLE();
 }
 
 PAddr KMemoryManager::AllocateAndOpenContinuous(size_t num_pages, size_t align_pages, u32 option) {
@@ -175,7 +183,7 @@ PAddr KMemoryManager::AllocateAndOpenContinuous(size_t num_pages, size_t align_p
 
     // Lock the pool that we're allocating from.
     const auto [pool, dir] = DecodeOption(option);
-    KScopedLightLock lk(pool_locks[static_cast<std::size_t>(pool)]);
+    KScopedLightLock lk(m_pool_locks[static_cast<std::size_t>(pool)]);
 
     // Choose a heap based on our page size request.
     const s32 heap_index = KPageHeap::GetAlignedBlockIndex(num_pages, align_pages);
@@ -185,7 +193,7 @@ PAddr KMemoryManager::AllocateAndOpenContinuous(size_t num_pages, size_t align_p
     PAddr allocated_block = 0;
     for (chosen_manager = this->GetFirstManager(pool, dir); chosen_manager != nullptr;
          chosen_manager = this->GetNextManager(chosen_manager, dir)) {
-        allocated_block = chosen_manager->AllocateBlock(heap_index, true);
+        allocated_block = chosen_manager->AllocateAligned(heap_index, num_pages, align_pages);
         if (allocated_block != 0) {
             break;
         }
@@ -196,10 +204,9 @@ PAddr KMemoryManager::AllocateAndOpenContinuous(size_t num_pages, size_t align_p
         return 0;
     }
 
-    // If we allocated more than we need, free some.
-    const size_t allocated_pages = KPageHeap::GetBlockNumPages(heap_index);
-    if (allocated_pages > num_pages) {
-        chosen_manager->Free(allocated_block + num_pages * PageSize, allocated_pages - num_pages);
+    // Maintain the optimized memory bitmap, if we should.
+    if (m_has_optimized_process[static_cast<size_t>(pool)]) {
+        UNIMPLEMENTED();
     }
 
     // Open the first reference to the pages.
@@ -209,20 +216,21 @@ PAddr KMemoryManager::AllocateAndOpenContinuous(size_t num_pages, size_t align_p
 }
 
 Result KMemoryManager::AllocatePageGroupImpl(KPageGroup* out, size_t num_pages, Pool pool,
-                                             Direction dir, bool random) {
+                                             Direction dir, bool unoptimized, bool random) {
     // Choose a heap based on our page size request.
     const s32 heap_index = KPageHeap::GetBlockIndex(num_pages);
     R_UNLESS(0 <= heap_index, ResultOutOfMemory);
 
     // Ensure that we don't leave anything un-freed.
-    auto group_guard = SCOPE_GUARD({
+    ON_RESULT_FAILURE {
         for (const auto& it : out->Nodes()) {
-            auto& manager = this->GetManager(system.Kernel().MemoryLayout(), it.GetAddress());
-            const size_t num_pages_to_free =
+            auto& manager = this->GetManager(it.GetAddress());
+            const size_t node_num_pages =
                 std::min(it.GetNumPages(), (manager.GetEndAddress() - it.GetAddress()) / PageSize);
-            manager.Free(it.GetAddress(), num_pages_to_free);
+            manager.Free(it.GetAddress(), node_num_pages);
         }
-    });
+        out->Finalize();
+    };
 
     // Keep allocating until we've allocated all our pages.
     for (s32 index = heap_index; index >= 0 && num_pages > 0; index--) {
@@ -236,12 +244,17 @@ Result KMemoryManager::AllocatePageGroupImpl(KPageGroup* out, size_t num_pages, 
                     break;
                 }
 
-                // Safely add it to our group.
-                {
-                    auto block_guard =
-                        SCOPE_GUARD({ cur_manager->Free(allocated_block, pages_per_alloc); });
-                    R_TRY(out->AddBlock(allocated_block, pages_per_alloc));
-                    block_guard.Cancel();
+                // Ensure we don't leak the block if we fail.
+                ON_RESULT_FAILURE_2 {
+                    cur_manager->Free(allocated_block, pages_per_alloc);
+                };
+
+                // Add the block to our group.
+                R_TRY(out->AddBlock(allocated_block, pages_per_alloc));
+
+                // Maintain the optimized memory bitmap, if we should.
+                if (unoptimized) {
+                    UNIMPLEMENTED();
                 }
 
                 num_pages -= pages_per_alloc;
@@ -253,8 +266,7 @@ Result KMemoryManager::AllocatePageGroupImpl(KPageGroup* out, size_t num_pages, 
     R_UNLESS(num_pages == 0, ResultOutOfMemory);
 
     // We succeeded!
-    group_guard.Cancel();
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 Result KMemoryManager::AllocateAndOpen(KPageGroup* out, size_t num_pages, u32 option) {
@@ -266,10 +278,11 @@ Result KMemoryManager::AllocateAndOpen(KPageGroup* out, size_t num_pages, u32 op
 
     // Lock the pool that we're allocating from.
     const auto [pool, dir] = DecodeOption(option);
-    KScopedLightLock lk(pool_locks[static_cast<size_t>(pool)]);
+    KScopedLightLock lk(m_pool_locks[static_cast<size_t>(pool)]);
 
     // Allocate the page group.
-    R_TRY(this->AllocatePageGroupImpl(out, num_pages, pool, dir, false));
+    R_TRY(this->AllocatePageGroupImpl(out, num_pages, pool, dir,
+                                      m_has_optimized_process[static_cast<size_t>(pool)], true));
 
     // Open the first reference to the pages.
     for (const auto& block : out->Nodes()) {
@@ -277,7 +290,7 @@ Result KMemoryManager::AllocateAndOpen(KPageGroup* out, size_t num_pages, u32 op
         size_t remaining_pages = block.GetNumPages();
         while (remaining_pages > 0) {
             // Get the manager for the current address.
-            auto& manager = this->GetManager(system.Kernel().MemoryLayout(), cur_address);
+            auto& manager = this->GetManager(cur_address);
 
             // Process part or all of the block.
             const size_t cur_pages =
@@ -290,11 +303,11 @@ Result KMemoryManager::AllocateAndOpen(KPageGroup* out, size_t num_pages, u32 op
         }
     }
 
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
-Result KMemoryManager::AllocateAndOpenForProcess(KPageGroup* out, size_t num_pages, u32 option,
-                                                 u64 process_id, u8 fill_pattern) {
+Result KMemoryManager::AllocateForProcess(KPageGroup* out, size_t num_pages, u32 option,
+                                          u64 process_id, u8 fill_pattern) {
     ASSERT(out != nullptr);
     ASSERT(out->GetNumPages() == 0);
 
@@ -302,83 +315,89 @@ Result KMemoryManager::AllocateAndOpenForProcess(KPageGroup* out, size_t num_pag
     const auto [pool, dir] = DecodeOption(option);
 
     // Allocate the memory.
+    bool optimized;
     {
         // Lock the pool that we're allocating from.
-        KScopedLightLock lk(pool_locks[static_cast<size_t>(pool)]);
+        KScopedLightLock lk(m_pool_locks[static_cast<size_t>(pool)]);
+
+        // Check if we have an optimized process.
+        const bool has_optimized = m_has_optimized_process[static_cast<size_t>(pool)];
+        const bool is_optimized = m_optimized_process_ids[static_cast<size_t>(pool)] == process_id;
 
         // Allocate the page group.
-        R_TRY(this->AllocatePageGroupImpl(out, num_pages, pool, dir, false));
+        R_TRY(this->AllocatePageGroupImpl(out, num_pages, pool, dir, has_optimized && !is_optimized,
+                                          false));
 
-        // Open the first reference to the pages.
+        // Set whether we should optimize.
+        optimized = has_optimized && is_optimized;
+    }
+
+    // Perform optimized memory tracking, if we should.
+    if (optimized) {
+        // Iterate over the allocated blocks.
         for (const auto& block : out->Nodes()) {
-            PAddr cur_address = block.GetAddress();
-            size_t remaining_pages = block.GetNumPages();
-            while (remaining_pages > 0) {
-                // Get the manager for the current address.
-                auto& manager = this->GetManager(system.Kernel().MemoryLayout(), cur_address);
+            // Get the block extents.
+            const PAddr block_address = block.GetAddress();
+            const size_t block_pages = block.GetNumPages();
 
-                // Process part or all of the block.
-                const size_t cur_pages =
-                    std::min(remaining_pages, manager.GetPageOffsetToEnd(cur_address));
-                manager.OpenFirst(cur_address, cur_pages);
+            // If it has no pages, we don't need to do anything.
+            if (block_pages == 0) {
+                continue;
+            }
 
-                // Advance.
-                cur_address += cur_pages * PageSize;
-                remaining_pages -= cur_pages;
+            // Fill all the pages that we need to fill.
+            bool any_new = false;
+            {
+                PAddr cur_address = block_address;
+                size_t remaining_pages = block_pages;
+                while (remaining_pages > 0) {
+                    // Get the manager for the current address.
+                    auto& manager = this->GetManager(cur_address);
+
+                    // Process part or all of the block.
+                    const size_t cur_pages =
+                        std::min(remaining_pages, manager.GetPageOffsetToEnd(cur_address));
+                    any_new =
+                        manager.ProcessOptimizedAllocation(cur_address, cur_pages, fill_pattern);
+
+                    // Advance.
+                    cur_address += cur_pages * PageSize;
+                    remaining_pages -= cur_pages;
+                }
+            }
+
+            // If there are new pages, update tracking for the allocation.
+            if (any_new) {
+                // Update tracking for the allocation.
+                PAddr cur_address = block_address;
+                size_t remaining_pages = block_pages;
+                while (remaining_pages > 0) {
+                    // Get the manager for the current address.
+                    auto& manager = this->GetManager(cur_address);
+
+                    // Lock the pool for the manager.
+                    KScopedLightLock lk(m_pool_locks[static_cast<size_t>(manager.GetPool())]);
+
+                    // Track some or all of the current pages.
+                    const size_t cur_pages =
+                        std::min(remaining_pages, manager.GetPageOffsetToEnd(cur_address));
+                    manager.TrackOptimizedAllocation(cur_address, cur_pages);
+
+                    // Advance.
+                    cur_address += cur_pages * PageSize;
+                    remaining_pages -= cur_pages;
+                }
             }
         }
-    }
-
-    // Set all the allocated memory.
-    for (const auto& block : out->Nodes()) {
-        std::memset(system.DeviceMemory().GetPointer<void>(block.GetAddress()), fill_pattern,
-                    block.GetSize());
-    }
-
-    return ResultSuccess;
-}
-
-void KMemoryManager::Open(PAddr address, size_t num_pages) {
-    // Repeatedly open references until we've done so for all pages.
-    while (num_pages) {
-        auto& manager = this->GetManager(system.Kernel().MemoryLayout(), address);
-        const size_t cur_pages = std::min(num_pages, manager.GetPageOffsetToEnd(address));
-
-        {
-            KScopedLightLock lk(pool_locks[static_cast<size_t>(manager.GetPool())]);
-            manager.Open(address, cur_pages);
+    } else {
+        // Set all the allocated memory.
+        for (const auto& block : out->Nodes()) {
+            std::memset(m_system.DeviceMemory().GetPointer<void>(block.GetAddress()), fill_pattern,
+                        block.GetSize());
         }
-
-        num_pages -= cur_pages;
-        address += cur_pages * PageSize;
     }
-}
 
-void KMemoryManager::Close(PAddr address, size_t num_pages) {
-    // Repeatedly close references until we've done so for all pages.
-    while (num_pages) {
-        auto& manager = this->GetManager(system.Kernel().MemoryLayout(), address);
-        const size_t cur_pages = std::min(num_pages, manager.GetPageOffsetToEnd(address));
-
-        {
-            KScopedLightLock lk(pool_locks[static_cast<size_t>(manager.GetPool())]);
-            manager.Close(address, cur_pages);
-        }
-
-        num_pages -= cur_pages;
-        address += cur_pages * PageSize;
-    }
-}
-
-void KMemoryManager::Close(const KPageGroup& pg) {
-    for (const auto& node : pg.Nodes()) {
-        Close(node.GetAddress(), node.GetNumPages());
-    }
-}
-void KMemoryManager::Open(const KPageGroup& pg) {
-    for (const auto& node : pg.Nodes()) {
-        Open(node.GetAddress(), node.GetNumPages());
-    }
+    R_SUCCEED();
 }
 
 size_t KMemoryManager::Impl::Initialize(PAddr address, size_t size, VAddr management,
@@ -394,16 +413,29 @@ size_t KMemoryManager::Impl::Initialize(PAddr address, size_t size, VAddr manage
     ASSERT(Common::IsAligned(total_management_size, PageSize));
 
     // Setup region.
-    pool = p;
-    management_region = management;
-    page_reference_counts.resize(
+    m_pool = p;
+    m_management_region = management;
+    m_page_reference_counts.resize(
         Kernel::Board::Nintendo::Nx::KSystemControl::Init::GetIntendedMemorySize() / PageSize);
-    ASSERT(Common::IsAligned(management_region, PageSize));
+    ASSERT(Common::IsAligned(m_management_region, PageSize));
 
     // Initialize the manager's KPageHeap.
-    heap.Initialize(address, size, management + manager_size, page_heap_size);
+    m_heap.Initialize(address, size, management + manager_size, page_heap_size);
 
     return total_management_size;
+}
+
+void KMemoryManager::Impl::TrackUnoptimizedAllocation(PAddr block, size_t num_pages) {
+    UNREACHABLE();
+}
+
+void KMemoryManager::Impl::TrackOptimizedAllocation(PAddr block, size_t num_pages) {
+    UNREACHABLE();
+}
+
+bool KMemoryManager::Impl::ProcessOptimizedAllocation(PAddr block, size_t num_pages,
+                                                      u8 fill_pattern) {
+    UNREACHABLE();
 }
 
 size_t KMemoryManager::Impl::CalculateManagementOverheadSize(size_t region_size) {

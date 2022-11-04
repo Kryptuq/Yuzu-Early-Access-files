@@ -153,13 +153,9 @@ void KMemoryLayout::InitializeLinearMemoryRegionTrees(PAddr aligned_linear_phys_
     }
 }
 
-size_t KMemoryLayout::GetResourceRegionSizeForInit() {
-    // Calculate resource region size based on whether we allow extra threads.
-    const bool use_extra_resources = KSystemControl::Init::ShouldIncreaseThreadResourceLimit();
-    size_t resource_region_size =
-        KernelResourceSize + (use_extra_resources ? KernelSlabHeapAdditionalSize : 0);
-
-    return resource_region_size;
+size_t KMemoryLayout::GetResourceRegionSizeForInit(bool use_extra_resource) {
+    return KernelResourceSize + KSystemControl::SecureAppletMemorySize +
+           (use_extra_resource ? KernelSlabHeapAdditionalSize + KernelPageBufferAdditionalSize : 0);
 }
 
 } // namespace Kernel

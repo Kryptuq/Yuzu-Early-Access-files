@@ -468,6 +468,9 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::InvocationId:
         info.uses_invocation_id = true;
         break;
+    case IR::Opcode::InvocationInfo:
+        info.uses_invocation_info = true;
+        break;
     case IR::Opcode::SampleId:
         info.uses_sample_id = true;
         break;

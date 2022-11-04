@@ -33,11 +33,11 @@ struct KSlabResourceCounts {
     size_t num_KDebug;
     size_t num_KIoPool;
     size_t num_KIoRegion;
+    size_t num_KSessionRequestMappings;
 };
 
 void InitializeSlabResourceCounts(KernelCore& kernel);
 size_t CalculateTotalSlabHeapSize(const KernelCore& kernel);
-void InitializeKPageBufferSlabHeap(Core::System& system);
 void InitializeSlabHeaps(Core::System& system, KMemoryLayout& memory_layout);
 
 } // namespace Kernel::Init

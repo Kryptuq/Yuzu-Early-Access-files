@@ -220,6 +220,8 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
 
     Optimization::ConstantPropagationPass(program);
 
+    Optimization::PositionPass(env, program);
+
     Optimization::GlobalMemoryToStorageBufferPass(program);
     Optimization::TexturePass(env, program);
 

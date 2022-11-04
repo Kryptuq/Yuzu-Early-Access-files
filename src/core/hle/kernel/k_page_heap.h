@@ -14,13 +14,9 @@
 
 namespace Kernel {
 
-class KPageHeap final {
+class KPageHeap {
 public:
-    YUZU_NON_COPYABLE(KPageHeap);
-    YUZU_NON_MOVEABLE(KPageHeap);
-
     KPageHeap() = default;
-    ~KPageHeap() = default;
 
     constexpr PAddr GetAddress() const {
         return m_heap_address;
@@ -57,7 +53,20 @@ public:
         m_initial_used_size = m_heap_size - free_size - reserved_size;
     }
 
-    PAddr AllocateBlock(s32 index, bool random);
+    PAddr AllocateBlock(s32 index, bool random) {
+        if (random) {
+            const size_t block_pages = m_blocks[index].GetNumPages();
+            return this->AllocateByRandom(index, block_pages, block_pages);
+        } else {
+            return this->AllocateByLinearSearch(index);
+        }
+    }
+
+    PAddr AllocateAligned(s32 index, size_t num_pages, size_t align_pages) {
+        // TODO: linear search support?
+        return this->AllocateByRandom(index, num_pages, align_pages);
+    }
+
     void Free(PAddr addr, size_t num_pages);
 
     static size_t CalculateManagementOverheadSize(size_t region_size) {
@@ -68,7 +77,7 @@ public:
     static constexpr s32 GetAlignedBlockIndex(size_t num_pages, size_t align_pages) {
         const size_t target_pages = std::max(num_pages, align_pages);
         for (size_t i = 0; i < NumMemoryBlockPageShifts; i++) {
-            if (target_pages <= (size_t(1) << MemoryBlockPageShifts[i]) / PageSize) {
+            if (target_pages <= (static_cast<size_t>(1) << MemoryBlockPageShifts[i]) / PageSize) {
                 return static_cast<s32>(i);
             }
         }
@@ -77,7 +86,7 @@ public:
 
     static constexpr s32 GetBlockIndex(size_t num_pages) {
         for (s32 i = static_cast<s32>(NumMemoryBlockPageShifts) - 1; i >= 0; i--) {
-            if (num_pages >= (size_t(1) << MemoryBlockPageShifts[i]) / PageSize) {
+            if (num_pages >= (static_cast<size_t>(1) << MemoryBlockPageShifts[i]) / PageSize) {
                 return i;
             }
         }
@@ -85,7 +94,7 @@ public:
     }
 
     static constexpr size_t GetBlockSize(size_t index) {
-        return size_t(1) << MemoryBlockPageShifts[index];
+        return static_cast<size_t>(1) << MemoryBlockPageShifts[index];
     }
 
     static constexpr size_t GetBlockNumPages(size_t index) {
@@ -93,13 +102,9 @@ public:
     }
 
 private:
-    class Block final {
+    class Block {
     public:
-        YUZU_NON_COPYABLE(Block);
-        YUZU_NON_MOVEABLE(Block);
-
         Block() = default;
-        ~Block() = default;
 
         constexpr size_t GetShift() const {
             return m_block_shift;
@@ -201,6 +206,9 @@ private:
     };
 
 private:
+    PAddr AllocateByLinearSearch(s32 index);
+    PAddr AllocateByRandom(s32 index, size_t num_pages, size_t align_pages);
+
     static size_t CalculateManagementOverheadSize(size_t region_size, const size_t* block_shifts,
                                                   size_t num_block_shifts);
 
@@ -209,7 +217,8 @@ private:
     size_t m_heap_size{};
     size_t m_initial_used_size{};
     size_t m_num_blocks{};
-    std::array<Block, NumMemoryBlockPageShifts> m_blocks{};
+    std::array<Block, NumMemoryBlockPageShifts> m_blocks;
+    KPageBitmap::RandomBitGenerator m_rng;
     std::vector<u64> m_management_data;
 };
 

@@ -29,17 +29,17 @@ constexpr std::array PROGRAM_LUT{
 [[nodiscard]] GLenum GetTextureBufferFormat(GLenum gl_format) {
     switch (gl_format) {
     case GL_RGBA8_SNORM:
-        return GL_RGBA8;
+        return GL_RGBA8I;
     case GL_R8_SNORM:
-        return GL_R8;
+        return GL_R8I;
     case GL_RGBA16_SNORM:
-        return GL_RGBA16;
+        return GL_RGBA16I;
     case GL_R16_SNORM:
-        return GL_R16;
+        return GL_R16I;
     case GL_RG16_SNORM:
-        return GL_RG16;
+        return GL_RG16I;
     case GL_RG8_SNORM:
-        return GL_RG8;
+        return GL_RG8I;
     default:
         return gl_format;
     }
@@ -96,9 +96,6 @@ GLuint Buffer::View(u32 offset, u32 size, PixelFormat format) {
     texture.Create(GL_TEXTURE_BUFFER);
     const GLenum gl_format{MaxwellToGL::GetFormatTuple(format).internal_format};
     const GLenum texture_format{GetTextureBufferFormat(gl_format)};
-    if (texture_format != gl_format) {
-        LOG_WARNING(Render_OpenGL, "Emulating SNORM texture buffer with UNORM.");
-    }
     glTextureBufferRange(texture.handle, texture_format, buffer.handle, offset, size);
     views.push_back({
         .offset = offset,

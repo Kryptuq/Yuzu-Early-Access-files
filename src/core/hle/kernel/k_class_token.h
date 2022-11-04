@@ -10,6 +10,8 @@ namespace Kernel {
 
 class KAutoObject;
 
+class KSystemResource;
+
 class KClassTokenGenerator {
 public:
     using TokenBaseType = u16;
@@ -58,7 +60,7 @@ private:
         if constexpr (std::is_same<T, KAutoObject>::value) {
             static_assert(T::ObjectType == ObjectType::KAutoObject);
             return 0;
-        } else if constexpr (!std::is_final<T>::value) {
+        } else if constexpr (!std::is_final<T>::value && !std::same_as<T, KSystemResource>) {
             static_assert(ObjectType::BaseClassesStart <= T::ObjectType &&
                           T::ObjectType < ObjectType::BaseClassesEnd);
             constexpr auto ClassIndex = static_cast<TokenBaseType>(T::ObjectType) -
@@ -107,6 +109,8 @@ public:
         KDeviceAddressSpace,
         KSessionRequest,
         KCodeMemory,
+
+        KSystemResource,
 
         // NOTE: True order for these has not been determined yet.
         KAlpha,

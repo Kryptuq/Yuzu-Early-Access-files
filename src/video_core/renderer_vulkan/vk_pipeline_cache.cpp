@@ -53,7 +53,7 @@ using VideoCommon::FileEnvironment;
 using VideoCommon::GenericEnvironment;
 using VideoCommon::GraphicsEnvironment;
 
-constexpr u32 CACHE_VERSION = 6;
+constexpr u32 CACHE_VERSION = 7;
 
 template <typename Container>
 auto MakeSpan(Container& container) {
@@ -166,6 +166,7 @@ Shader::RuntimeInfo MakeRuntimeInfo(std::span<const Shader::IR::Program> program
         }
         break;
     case Shader::Stage::TessellationEval:
+        info.tess_clockwise = key.state.tessellation_clockwise != 0;
         info.tess_primitive = [&key] {
             const u32 raw{key.state.tessellation_primitive.Value()};
             switch (static_cast<Maxwell::Tessellation::DomainType>(raw)) {

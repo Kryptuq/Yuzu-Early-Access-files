@@ -16,6 +16,7 @@
 #include "core/hle/kernel/k_memory_layout.h"
 #include "core/hle/kernel/k_memory_manager.h"
 #include "core/hle/result.h"
+#include "core/memory.h"
 
 namespace Core {
 class System;
@@ -23,7 +24,10 @@ class System;
 
 namespace Kernel {
 
+class KBlockInfoManager;
 class KMemoryBlockManager;
+class KResourceLimit;
+class KSystemResource;
 
 class KPageTable final {
 public:
@@ -36,9 +40,9 @@ public:
     ~KPageTable();
 
     Result InitializeForProcess(FileSys::ProgramAddressSpaceType as_type, bool enable_aslr,
-                                VAddr code_addr, size_t code_size,
-                                KMemoryBlockSlabManager* mem_block_slab_manager,
-                                KMemoryManager::Pool pool);
+                                bool enable_das_merge, bool from_back, KMemoryManager::Pool pool,
+                                VAddr code_addr, size_t code_size, KSystemResource* system_resource,
+                                KResourceLimit* resource_limit);
 
     void Finalize();
 
@@ -74,11 +78,19 @@ public:
                                           KMemoryState state, KMemoryPermission perm,
                                           PAddr map_addr = 0);
 
-    Result LockForMapDeviceAddressSpace(VAddr address, size_t size, KMemoryPermission perm,
-                                        bool is_aligned);
-    Result LockForUnmapDeviceAddressSpace(VAddr address, size_t size);
+    Result LockForMapDeviceAddressSpace(bool* out_is_io, VAddr address, size_t size,
+                                        KMemoryPermission perm, bool is_aligned, bool check_heap);
+    Result LockForUnmapDeviceAddressSpace(VAddr address, size_t size, bool check_heap);
 
     Result UnlockForDeviceAddressSpace(VAddr addr, size_t size);
+
+    Result LockForIpcUserBuffer(PAddr* out, VAddr address, size_t size);
+    Result UnlockForIpcUserBuffer(VAddr address, size_t size);
+
+    Result SetupForIpc(VAddr* out_dst_addr, size_t size, VAddr src_addr, KPageTable& src_page_table,
+                       KMemoryPermission test_perm, KMemoryState dst_state, bool send);
+    Result CleanupForIpcServer(VAddr address, size_t size, KMemoryState dst_state);
+    Result CleanupForIpcClient(VAddr address, size_t size, KMemoryState dst_state);
 
     Result LockForCodeMemory(KPageGroup* out, VAddr addr, size_t size);
     Result UnlockForCodeMemory(VAddr addr, size_t size, const KPageGroup& pg);
@@ -97,13 +109,54 @@ public:
 
     bool CanContain(VAddr addr, size_t size, KMemoryState state) const;
 
+protected:
+    struct PageLinkedList {
+    private:
+        struct Node {
+            Node* m_next;
+            std::array<u8, PageSize - sizeof(Node*)> m_buffer;
+        };
+
+    public:
+        constexpr PageLinkedList() = default;
+
+        void Push(Node* n) {
+            ASSERT(Common::IsAligned(reinterpret_cast<uintptr_t>(n), PageSize));
+            n->m_next = m_root;
+            m_root = n;
+        }
+
+        void Push(Core::Memory::Memory& memory, VAddr addr) {
+            this->Push(memory.GetPointer<Node>(addr));
+        }
+
+        Node* Peek() const {
+            return m_root;
+        }
+
+        Node* Pop() {
+            Node* const r = m_root;
+
+            m_root = r->m_next;
+            r->m_next = nullptr;
+
+            return r;
+        }
+
+    private:
+        Node* m_root{};
+    };
+    static_assert(std::is_trivially_destructible<PageLinkedList>::value);
+
 private:
     enum class OperationType : u32 {
-        Map,
-        MapGroup,
-        Unmap,
-        ChangePermissions,
-        ChangePermissionsAndRefresh,
+        Map = 0,
+        MapFirst = 1,
+        MapGroup = 2,
+        Unmap = 3,
+        ChangePermissions = 4,
+        ChangePermissionsAndRefresh = 5,
+        Separate = 6,
     };
 
     static constexpr KMemoryAttribute DefaultMemoryIgnoreAttr =
@@ -123,6 +176,7 @@ private:
                    OperationType operation);
     Result Operate(VAddr addr, size_t num_pages, KMemoryPermission perm, OperationType operation,
                    PAddr map_addr = 0);
+    void FinalizeUpdate(PageLinkedList* page_list);
     VAddr GetRegionAddress(KMemoryState state) const;
     size_t GetRegionSize(KMemoryState state) const;
 
@@ -198,6 +252,18 @@ private:
 
         return *out != 0;
     }
+
+    Result SetupForIpcClient(PageLinkedList* page_list, size_t* out_blocks_needed, VAddr address,
+                             size_t size, KMemoryPermission test_perm, KMemoryState dst_state);
+    Result SetupForIpcServer(VAddr* out_addr, size_t size, VAddr src_addr,
+                             KMemoryPermission test_perm, KMemoryState dst_state,
+                             KPageTable& src_page_table, bool send);
+    void CleanupForIpcClientOnServerSetupFailure(PageLinkedList* page_list, VAddr address,
+                                                 size_t size, KMemoryPermission prot_perm);
+
+    // HACK: These will be removed once we automatically manage page reference counts.
+    void HACK_OpenPages(PAddr phys_addr, size_t num_pages);
+    void HACK_ClosePages(VAddr virt_addr, size_t num_pages);
 
     mutable KLightLock m_general_lock;
     mutable KLightLock m_map_physical_memory_lock;
@@ -316,6 +382,31 @@ public:
                addr + size - 1 <= m_address_space_end - 1;
     }
 
+public:
+    static VAddr GetLinearMappedVirtualAddress(const KMemoryLayout& layout, PAddr addr) {
+        return layout.GetLinearVirtualAddress(addr);
+    }
+
+    static PAddr GetLinearMappedPhysicalAddress(const KMemoryLayout& layout, VAddr addr) {
+        return layout.GetLinearPhysicalAddress(addr);
+    }
+
+    static VAddr GetHeapVirtualAddress(const KMemoryLayout& layout, PAddr addr) {
+        return GetLinearMappedVirtualAddress(layout, addr);
+    }
+
+    static PAddr GetHeapPhysicalAddress(const KMemoryLayout& layout, VAddr addr) {
+        return GetLinearMappedPhysicalAddress(layout, addr);
+    }
+
+    static VAddr GetPageTableVirtualAddress(const KMemoryLayout& layout, PAddr addr) {
+        return GetLinearMappedVirtualAddress(layout, addr);
+    }
+
+    static PAddr GetPageTablePhysicalAddress(const KMemoryLayout& layout, VAddr addr) {
+        return GetLinearMappedPhysicalAddress(layout, addr);
+    }
+
 private:
     constexpr bool IsKernel() const {
         return m_is_kernel;
@@ -329,6 +420,24 @@ private:
                (num_pages <= (m_address_space_end - m_address_space_start) / PageSize) &&
                (addr + num_pages * PageSize - 1 <= m_address_space_end - 1);
     }
+
+private:
+    class KScopedPageTableUpdater {
+    private:
+        KPageTable* m_pt{};
+        PageLinkedList m_ll;
+
+    public:
+        explicit KScopedPageTableUpdater(KPageTable* pt) : m_pt(pt) {}
+        explicit KScopedPageTableUpdater(KPageTable& pt) : KScopedPageTableUpdater(&pt) {}
+        ~KScopedPageTableUpdater() {
+            m_pt->FinalizeUpdate(this->GetPageList());
+        }
+
+        PageLinkedList* GetPageList() {
+            return &m_ll;
+        }
+    };
 
 private:
     VAddr m_address_space_start{};
@@ -347,20 +456,27 @@ private:
     VAddr m_alias_code_region_start{};
     VAddr m_alias_code_region_end{};
 
-    size_t m_mapped_physical_memory_size{};
     size_t m_max_heap_size{};
-    size_t m_max_physical_memory_size{};
+    size_t m_mapped_physical_memory_size{};
+    size_t m_mapped_unsafe_physical_memory{};
+    size_t m_mapped_insecure_memory{};
+    size_t m_mapped_ipc_server_memory{};
     size_t m_address_space_width{};
 
     KMemoryBlockManager m_memory_block_manager;
+    u32 m_allocate_option{};
 
     bool m_is_kernel{};
     bool m_enable_aslr{};
     bool m_enable_device_address_space_merge{};
 
     KMemoryBlockSlabManager* m_memory_block_slab_manager{};
+    KBlockInfoManager* m_block_info_manager{};
+    KResourceLimit* m_resource_limit{};
 
     u32 m_heap_fill_value{};
+    u32 m_ipc_fill_value{};
+    u32 m_stack_fill_value{};
     const KMemoryRegion* m_cached_physical_heap_region{};
 
     KMemoryManager::Pool m_memory_pool{KMemoryManager::Pool::Application};

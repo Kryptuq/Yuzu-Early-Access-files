@@ -423,16 +423,17 @@ constexpr void UpdateCurrentResultReference<const Result>(Result result_referenc
 } // namespace ResultImpl
 
 #define DECLARE_CURRENT_RESULT_REFERENCE_AND_STORAGE(COUNTER_VALUE)                                \
-    [[maybe_unused]] constexpr bool HasPrevRef_##COUNTER_VALUE =                                   \
+    [[maybe_unused]] constexpr bool CONCAT2(HasPrevRef_, COUNTER_VALUE) =                          \
         std::same_as<decltype(__TmpCurrentResultReference), Result&>;                              \
-    [[maybe_unused]] auto& PrevRef_##COUNTER_VALUE = __TmpCurrentResultReference;                  \
-    [[maybe_unused]] Result __tmp_result_##COUNTER_VALUE = ResultSuccess;                          \
-    Result& __TmpCurrentResultReference =                                                          \
-        HasPrevRef_##COUNTER_VALUE ? PrevRef_##COUNTER_VALUE : __tmp_result_##COUNTER_VALUE
+    [[maybe_unused]] Result CONCAT2(PrevRef_, COUNTER_VALUE) = __TmpCurrentResultReference;        \
+    [[maybe_unused]] Result CONCAT2(__tmp_result_, COUNTER_VALUE) = ResultSuccess;                 \
+    Result& __TmpCurrentResultReference = CONCAT2(HasPrevRef_, COUNTER_VALUE)                      \
+                                              ? CONCAT2(PrevRef_, COUNTER_VALUE)                   \
+                                              : CONCAT2(__tmp_result_, COUNTER_VALUE)
 
 #define ON_RESULT_RETURN_IMPL(...)                                                                 \
     static_assert(std::same_as<decltype(__TmpCurrentResultReference), Result&>);                   \
-    auto RESULT_GUARD_STATE_##__COUNTER__ =                                                        \
+    auto CONCAT2(RESULT_GUARD_STATE_, __COUNTER__) =                                               \
         ResultImpl::ResultReferenceForScopedResultGuard<__VA_ARGS__>(                              \
             __TmpCurrentResultReference) +                                                         \
         [&]()

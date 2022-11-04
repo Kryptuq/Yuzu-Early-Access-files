@@ -117,8 +117,7 @@ enum class SpecialRegister : u64 {
     case SpecialRegister::SR_THREAD_KILL:
         return IR::U32{ir.Select(ir.IsHelperInvocation(), ir.Imm32(-1), ir.Imm32(0))};
     case SpecialRegister::SR_INVOCATION_INFO:
-        LOG_WARNING(Shader, "(STUBBED) SR_INVOCATION_INFO");
-        return ir.Imm32(0x00ff'0000);
+        return ir.InvocationInfo();
     case SpecialRegister::SR_TID: {
         const IR::Value tid{ir.LocalInvocationId()};
         return ir.BitFieldInsert(ir.BitFieldInsert(IR::U32{ir.CompositeExtract(tid, 0)},

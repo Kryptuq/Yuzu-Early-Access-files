@@ -126,10 +126,12 @@ NvResult nvmap::IocAlloc(const std::vector<u8>& input, std::vector<u8>& output) 
         LOG_CRITICAL(Service_NVDRV, "Object failed to allocate, handle={:08X}", params.handle);
         return result;
     }
+    bool is_out_io{};
     ASSERT(system.CurrentProcess()
                ->PageTable()
-               .LockForMapDeviceAddressSpace(handle_description->address, handle_description->size,
-                                             Kernel::KMemoryPermission::None, true)
+               .LockForMapDeviceAddressSpace(&is_out_io, handle_description->address,
+                                             handle_description->size,
+                                             Kernel::KMemoryPermission::None, true, false)
                .IsSuccess());
     std::memcpy(output.data(), &params, sizeof(params));
     return result;

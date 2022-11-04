@@ -11,6 +11,16 @@
 
 namespace Kernel {
 
+class KernelCore;
+
+class KPageBufferSlabHeap : protected impl::KSlabHeapImpl {
+public:
+    static constexpr size_t BufferSize = PageSize;
+
+public:
+    void Initialize(Core::System& system);
+};
+
 class KPageBuffer final : public KSlabAllocated<KPageBuffer> {
 public:
     explicit KPageBuffer(KernelCore&) {}
@@ -21,8 +31,6 @@ public:
 private:
     [[maybe_unused]] alignas(PageSize) std::array<u8, PageSize> m_buffer{};
 };
-
-static_assert(sizeof(KPageBuffer) == PageSize);
-static_assert(alignof(KPageBuffer) == PageSize);
+static_assert(sizeof(KPageBuffer) == KPageBufferSlabHeap::BufferSize);
 
 } // namespace Kernel

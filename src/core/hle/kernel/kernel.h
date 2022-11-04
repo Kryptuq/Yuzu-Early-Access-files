@@ -34,13 +34,16 @@ class KClientPort;
 class GlobalSchedulerContext;
 class KAutoObjectWithListContainer;
 class KClientSession;
+class KDebug;
+class KDynamicPageManager;
 class KEvent;
+class KEventInfo;
 class KHandleTable;
 class KLinkedListNode;
-class KMemoryBlockSlabManager;
 class KMemoryLayout;
 class KMemoryManager;
 class KPageBuffer;
+class KPageBufferSlabHeap;
 class KPort;
 class KProcess;
 class KResourceLimit;
@@ -51,6 +54,7 @@ class KSession;
 class KSessionRequest;
 class KSharedMemory;
 class KSharedMemoryInfo;
+class KSecureSystemResource;
 class KThread;
 class KThreadLocalPage;
 class KTransferMemory;
@@ -244,11 +248,11 @@ public:
     /// Gets the virtual memory manager for the kernel.
     const KMemoryManager& MemoryManager() const;
 
-    /// Gets the application memory block manager for the kernel.
-    KMemoryBlockSlabManager& GetApplicationMemoryBlockManager();
+    /// Gets the system resource manager.
+    KSystemResource& GetSystemSystemResource();
 
-    /// Gets the application memory block manager for the kernel.
-    const KMemoryBlockSlabManager& GetApplicationMemoryBlockManager() const;
+    /// Gets the system resource manager.
+    const KSystemResource& GetSystemSystemResource() const;
 
     /// Gets the shared memory object for HID services.
     Kernel::KSharedMemory& GetHidSharedMem();
@@ -364,6 +368,12 @@ public:
             return slab_heap_container->thread_local_page;
         } else if constexpr (std::is_same_v<T, KSessionRequest>) {
             return slab_heap_container->session_request;
+        } else if constexpr (std::is_same_v<T, KSecureSystemResource>) {
+            return slab_heap_container->secure_system_resource;
+        } else if constexpr (std::is_same_v<T, KEventInfo>) {
+            return slab_heap_container->event_info;
+        } else if constexpr (std::is_same_v<T, KDebug>) {
+            return slab_heap_container->debug;
         }
     }
 
@@ -427,6 +437,9 @@ private:
         KSlabHeap<KPageBuffer> page_buffer;
         KSlabHeap<KThreadLocalPage> thread_local_page;
         KSlabHeap<KSessionRequest> session_request;
+        KSlabHeap<KSecureSystemResource> secure_system_resource;
+        KSlabHeap<KEventInfo> event_info;
+        KSlabHeap<KDebug> debug;
     };
 
     std::unique_ptr<SlabHeapContainer> slab_heap_container;

@@ -2247,7 +2247,7 @@ static u64 GetSystemTick(Core::System& system) {
     auto& core_timing = system.CoreTiming();
 
     // Returns the value of cntpct_el0 (https://switchbrew.org/wiki/SVC#svcGetSystemTick)
-    const u64 result{system.CoreTiming().GetClockTicks()};
+    const u64 result{core_timing.GetClockTicks()};
 
     if (!system.Kernel().IsMulticore()) {
         core_timing.AddTicks(400U);

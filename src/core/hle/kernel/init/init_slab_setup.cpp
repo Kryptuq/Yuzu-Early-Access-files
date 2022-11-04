@@ -10,7 +10,9 @@
 #include "core/hardware_properties.h"
 #include "core/hle/kernel/init/init_slab_setup.h"
 #include "core/hle/kernel/k_code_memory.h"
+#include "core/hle/kernel/k_debug.h"
 #include "core/hle/kernel/k_event.h"
+#include "core/hle/kernel/k_event_info.h"
 #include "core/hle/kernel/k_memory_layout.h"
 #include "core/hle/kernel/k_memory_manager.h"
 #include "core/hle/kernel/k_page_buffer.h"
@@ -22,6 +24,7 @@
 #include "core/hle/kernel/k_shared_memory.h"
 #include "core/hle/kernel/k_shared_memory_info.h"
 #include "core/hle/kernel/k_system_control.h"
+#include "core/hle/kernel/k_system_resource.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/k_thread_local_page.h"
 #include "core/hle/kernel/k_transfer_memory.h"
@@ -44,7 +47,10 @@ namespace Kernel::Init {
     HANDLER(KThreadLocalPage,                                                                      \
             (SLAB_COUNT(KProcess) + (SLAB_COUNT(KProcess) + SLAB_COUNT(KThread)) / 8),             \
             ##__VA_ARGS__)                                                                         \
-    HANDLER(KResourceLimit, (SLAB_COUNT(KResourceLimit)), ##__VA_ARGS__)
+    HANDLER(KResourceLimit, (SLAB_COUNT(KResourceLimit)), ##__VA_ARGS__)                           \
+    HANDLER(KEventInfo, (SLAB_COUNT(KThread) + SLAB_COUNT(KDebug)), ##__VA_ARGS__)                 \
+    HANDLER(KDebug, (SLAB_COUNT(KDebug)), ##__VA_ARGS__)                                           \
+    HANDLER(KSecureSystemResource, (SLAB_COUNT(KProcess)), ##__VA_ARGS__)
 
 namespace {
 
@@ -73,8 +79,20 @@ constexpr size_t SlabCountKResourceLimit = 5;
 constexpr size_t SlabCountKDebug = Core::Hardware::NUM_CPU_CORES;
 constexpr size_t SlabCountKIoPool = 1;
 constexpr size_t SlabCountKIoRegion = 6;
+constexpr size_t SlabcountKSessionRequestMappings = 40;
 
-constexpr size_t SlabCountExtraKThread = 160;
+constexpr size_t SlabCountExtraKThread = (1024 + 256 + 256) - SlabCountKThread;
+
+namespace test {
+
+static_assert(KernelPageBufferHeapSize ==
+              2 * PageSize + (SlabCountKProcess + SlabCountKThread +
+                              (SlabCountKProcess + SlabCountKThread) / 8) *
+                                 PageSize);
+static_assert(KernelPageBufferAdditionalSize ==
+              (SlabCountExtraKThread + (SlabCountExtraKThread / 8)) * PageSize);
+
+} // namespace test
 
 /// Helper function to translate from the slab virtual address to the reserved location in physical
 /// memory.
@@ -109,7 +127,7 @@ VAddr InitializeSlabHeap(Core::System& system, KMemoryLayout& memory_layout, VAd
 }
 
 size_t CalculateSlabHeapGapSize() {
-    constexpr size_t KernelSlabHeapGapSize = 2_MiB - 296_KiB;
+    constexpr size_t KernelSlabHeapGapSize = 2_MiB - 320_KiB;
     static_assert(KernelSlabHeapGapSize <= KernelSlabHeapGapsSizeMax);
     return KernelSlabHeapGapSize;
 }
@@ -134,6 +152,7 @@ KSlabResourceCounts KSlabResourceCounts::CreateDefault() {
         .num_KDebug = SlabCountKDebug,
         .num_KIoPool = SlabCountKIoPool,
         .num_KIoRegion = SlabCountKIoRegion,
+        .num_KSessionRequestMappings = SlabcountKSessionRequestMappings,
     };
 }
 
@@ -162,29 +181,6 @@ size_t CalculateTotalSlabHeapSize(const KernelCore& kernel) {
     size += CalculateSlabHeapGapSize();
 
     return size;
-}
-
-void InitializeKPageBufferSlabHeap(Core::System& system) {
-    auto& kernel = system.Kernel();
-
-    const auto& counts = kernel.SlabResourceCounts();
-    const size_t num_pages =
-        counts.num_KProcess + counts.num_KThread + (counts.num_KProcess + counts.num_KThread) / 8;
-    const size_t slab_size = num_pages * PageSize;
-
-    // Reserve memory from the system resource limit.
-    ASSERT(kernel.GetSystemResourceLimit()->Reserve(LimitableResource::PhysicalMemory, slab_size));
-
-    // Allocate memory for the slab.
-    constexpr auto AllocateOption = KMemoryManager::EncodeOption(
-        KMemoryManager::Pool::System, KMemoryManager::Direction::FromFront);
-    const PAddr slab_address =
-        kernel.MemoryManager().AllocateAndOpenContinuous(num_pages, 1, AllocateOption);
-    ASSERT(slab_address != 0);
-
-    // Initialize the slabheap.
-    KPageBuffer::InitializeSlabHeap(kernel, system.DeviceMemory().GetPointer<void>(slab_address),
-                                    slab_size);
 }
 
 void InitializeSlabHeaps(Core::System& system, KMemoryLayout& memory_layout) {
@@ -258,3 +254,29 @@ void InitializeSlabHeaps(Core::System& system, KMemoryLayout& memory_layout) {
 }
 
 } // namespace Kernel::Init
+
+namespace Kernel {
+
+void KPageBufferSlabHeap::Initialize(Core::System& system) {
+    auto& kernel = system.Kernel();
+    const auto& counts = kernel.SlabResourceCounts();
+    const size_t num_pages =
+        counts.num_KProcess + counts.num_KThread + (counts.num_KProcess + counts.num_KThread) / 8;
+    const size_t slab_size = num_pages * PageSize;
+
+    // Reserve memory from the system resource limit.
+    ASSERT(kernel.GetSystemResourceLimit()->Reserve(LimitableResource::PhysicalMemory, slab_size));
+
+    // Allocate memory for the slab.
+    constexpr auto AllocateOption = KMemoryManager::EncodeOption(
+        KMemoryManager::Pool::System, KMemoryManager::Direction::FromFront);
+    const PAddr slab_address =
+        kernel.MemoryManager().AllocateAndOpenContinuous(num_pages, 1, AllocateOption);
+    ASSERT(slab_address != 0);
+
+    // Initialize the slabheap.
+    KPageBuffer::InitializeSlabHeap(kernel, system.DeviceMemory().GetPointer<void>(slab_address),
+                                    slab_size);
+}
+
+} // namespace Kernel

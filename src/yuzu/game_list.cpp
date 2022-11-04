@@ -788,6 +788,8 @@ void GameList::PopulateAsync(QVector<UISettings::GameDir>& game_dirs) {
     // Update the columns in case UISettings has changed
     tree_view->setColumnHidden(COLUMN_ADD_ONS, !UISettings::values.show_add_ons);
     tree_view->setColumnHidden(COLUMN_COMPATIBILITY, !UISettings::values.show_compat);
+    tree_view->setColumnHidden(COLUMN_FILE_TYPE, !UISettings::values.show_types);
+    tree_view->setColumnHidden(COLUMN_SIZE, !UISettings::values.show_size);
 
     // Delete any rows that might already exist if we're repopulating
     item_model->removeRows(0, item_model->rowCount());

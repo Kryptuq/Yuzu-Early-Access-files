@@ -35,26 +35,32 @@ enum class KMemoryState : u32 {
     FlagCanMapProcess = (1 << 23),
     FlagCanChangeAttribute = (1 << 24),
     FlagCanCodeMemory = (1 << 25),
+    FlagLinearMapped = (1 << 26),
 
     FlagsData = FlagCanReprotect | FlagCanUseIpc | FlagCanUseNonDeviceIpc | FlagCanUseNonSecureIpc |
                 FlagMapped | FlagCanAlias | FlagCanTransfer | FlagCanQueryPhysical |
                 FlagCanDeviceMap | FlagCanAlignedDeviceMap | FlagCanIpcUserBuffer |
-                FlagReferenceCounted | FlagCanChangeAttribute,
+                FlagReferenceCounted | FlagCanChangeAttribute | FlagLinearMapped,
 
     FlagsCode = FlagCanDebug | FlagCanUseIpc | FlagCanUseNonDeviceIpc | FlagCanUseNonSecureIpc |
                 FlagMapped | FlagCode | FlagCanQueryPhysical | FlagCanDeviceMap |
-                FlagCanAlignedDeviceMap | FlagReferenceCounted,
+                FlagCanAlignedDeviceMap | FlagReferenceCounted | FlagLinearMapped,
 
-    FlagsMisc = FlagMapped | FlagReferenceCounted | FlagCanQueryPhysical | FlagCanDeviceMap,
+    FlagsMisc = FlagMapped | FlagReferenceCounted | FlagCanQueryPhysical | FlagCanDeviceMap |
+                FlagLinearMapped,
 
     Free = static_cast<u32>(Svc::MemoryState::Free),
-    Io = static_cast<u32>(Svc::MemoryState::Io) | FlagMapped,
+    Io = static_cast<u32>(Svc::MemoryState::Io) | FlagMapped | FlagCanDeviceMap |
+         FlagCanAlignedDeviceMap,
     Static = static_cast<u32>(Svc::MemoryState::Static) | FlagMapped | FlagCanQueryPhysical,
     Code = static_cast<u32>(Svc::MemoryState::Code) | FlagsCode | FlagCanMapProcess,
     CodeData = static_cast<u32>(Svc::MemoryState::CodeData) | FlagsData | FlagCanMapProcess |
                FlagCanCodeMemory,
-    Shared = static_cast<u32>(Svc::MemoryState::Shared) | FlagMapped | FlagReferenceCounted,
     Normal = static_cast<u32>(Svc::MemoryState::Normal) | FlagsData | FlagCanCodeMemory,
+    Shared = static_cast<u32>(Svc::MemoryState::Shared) | FlagMapped | FlagReferenceCounted |
+             FlagLinearMapped,
+
+    // Alias was removed after 1.0.0.
 
     AliasCode = static_cast<u32>(Svc::MemoryState::AliasCode) | FlagsCode | FlagCanMapProcess |
                 FlagCanCodeAlias,
@@ -67,18 +73,18 @@ enum class KMemoryState : u32 {
     Stack = static_cast<u32>(Svc::MemoryState::Stack) | FlagsMisc | FlagCanAlignedDeviceMap |
             FlagCanUseIpc | FlagCanUseNonSecureIpc | FlagCanUseNonDeviceIpc,
 
-    ThreadLocal =
-        static_cast<u32>(Svc::MemoryState::ThreadLocal) | FlagMapped | FlagReferenceCounted,
+    ThreadLocal = static_cast<u32>(Svc::MemoryState::ThreadLocal) | FlagMapped | FlagLinearMapped,
 
-    Transfered = static_cast<u32>(Svc::MemoryState::Transferred) | FlagsMisc |
+    Transfered = static_cast<u32>(Svc::MemoryState::Transfered) | FlagsMisc |
                  FlagCanAlignedDeviceMap | FlagCanChangeAttribute | FlagCanUseIpc |
                  FlagCanUseNonSecureIpc | FlagCanUseNonDeviceIpc,
 
-    SharedTransfered = static_cast<u32>(Svc::MemoryState::SharedTransferred) | FlagsMisc |
+    SharedTransfered = static_cast<u32>(Svc::MemoryState::SharedTransfered) | FlagsMisc |
                        FlagCanAlignedDeviceMap | FlagCanUseNonSecureIpc | FlagCanUseNonDeviceIpc,
 
     SharedCode = static_cast<u32>(Svc::MemoryState::SharedCode) | FlagMapped |
-                 FlagReferenceCounted | FlagCanUseNonSecureIpc | FlagCanUseNonDeviceIpc,
+                 FlagReferenceCounted | FlagLinearMapped | FlagCanUseNonSecureIpc |
+                 FlagCanUseNonDeviceIpc,
 
     Inaccessible = static_cast<u32>(Svc::MemoryState::Inaccessible),
 
@@ -91,69 +97,69 @@ enum class KMemoryState : u32 {
     Kernel = static_cast<u32>(Svc::MemoryState::Kernel) | FlagMapped,
 
     GeneratedCode = static_cast<u32>(Svc::MemoryState::GeneratedCode) | FlagMapped |
-                    FlagReferenceCounted | FlagCanDebug,
-    CodeOut = static_cast<u32>(Svc::MemoryState::CodeOut) | FlagMapped | FlagReferenceCounted,
+                    FlagReferenceCounted | FlagCanDebug | FlagLinearMapped,
+    CodeOut = static_cast<u32>(Svc::MemoryState::CodeOut) | FlagMapped | FlagReferenceCounted |
+              FlagLinearMapped,
 
     Coverage = static_cast<u32>(Svc::MemoryState::Coverage) | FlagMapped,
+
+    Insecure = static_cast<u32>(Svc::MemoryState::Insecure) | FlagMapped | FlagReferenceCounted |
+               FlagLinearMapped | FlagCanChangeAttribute | FlagCanDeviceMap |
+               FlagCanAlignedDeviceMap | FlagCanUseNonSecureIpc | FlagCanUseNonDeviceIpc,
 };
 DECLARE_ENUM_FLAG_OPERATORS(KMemoryState);
 
 static_assert(static_cast<u32>(KMemoryState::Free) == 0x00000000);
-static_assert(static_cast<u32>(KMemoryState::Io) == 0x00002001);
+static_assert(static_cast<u32>(KMemoryState::Io) == 0x00182001);
 static_assert(static_cast<u32>(KMemoryState::Static) == 0x00042002);
-static_assert(static_cast<u32>(KMemoryState::Code) == 0x00DC7E03);
-static_assert(static_cast<u32>(KMemoryState::CodeData) == 0x03FEBD04);
-static_assert(static_cast<u32>(KMemoryState::Normal) == 0x037EBD05);
-static_assert(static_cast<u32>(KMemoryState::Shared) == 0x00402006);
-static_assert(static_cast<u32>(KMemoryState::AliasCode) == 0x00DD7E08);
-static_assert(static_cast<u32>(KMemoryState::AliasCodeData) == 0x03FFBD09);
-static_assert(static_cast<u32>(KMemoryState::Ipc) == 0x005C3C0A);
-static_assert(static_cast<u32>(KMemoryState::Stack) == 0x005C3C0B);
-static_assert(static_cast<u32>(KMemoryState::ThreadLocal) == 0x0040200C);
-static_assert(static_cast<u32>(KMemoryState::Transfered) == 0x015C3C0D);
-static_assert(static_cast<u32>(KMemoryState::SharedTransfered) == 0x005C380E);
-static_assert(static_cast<u32>(KMemoryState::SharedCode) == 0x0040380F);
+static_assert(static_cast<u32>(KMemoryState::Code) == 0x04DC7E03);
+static_assert(static_cast<u32>(KMemoryState::CodeData) == 0x07FEBD04);
+static_assert(static_cast<u32>(KMemoryState::Normal) == 0x077EBD05);
+static_assert(static_cast<u32>(KMemoryState::Shared) == 0x04402006);
+
+static_assert(static_cast<u32>(KMemoryState::AliasCode) == 0x04DD7E08);
+static_assert(static_cast<u32>(KMemoryState::AliasCodeData) == 0x07FFBD09);
+static_assert(static_cast<u32>(KMemoryState::Ipc) == 0x045C3C0A);
+static_assert(static_cast<u32>(KMemoryState::Stack) == 0x045C3C0B);
+static_assert(static_cast<u32>(KMemoryState::ThreadLocal) == 0x0400200C);
+static_assert(static_cast<u32>(KMemoryState::Transfered) == 0x055C3C0D);
+static_assert(static_cast<u32>(KMemoryState::SharedTransfered) == 0x045C380E);
+static_assert(static_cast<u32>(KMemoryState::SharedCode) == 0x0440380F);
 static_assert(static_cast<u32>(KMemoryState::Inaccessible) == 0x00000010);
-static_assert(static_cast<u32>(KMemoryState::NonSecureIpc) == 0x005C3811);
-static_assert(static_cast<u32>(KMemoryState::NonDeviceIpc) == 0x004C2812);
+static_assert(static_cast<u32>(KMemoryState::NonSecureIpc) == 0x045C3811);
+static_assert(static_cast<u32>(KMemoryState::NonDeviceIpc) == 0x044C2812);
 static_assert(static_cast<u32>(KMemoryState::Kernel) == 0x00002013);
-static_assert(static_cast<u32>(KMemoryState::GeneratedCode) == 0x00402214);
-static_assert(static_cast<u32>(KMemoryState::CodeOut) == 0x00402015);
+static_assert(static_cast<u32>(KMemoryState::GeneratedCode) == 0x04402214);
+static_assert(static_cast<u32>(KMemoryState::CodeOut) == 0x04402015);
 static_assert(static_cast<u32>(KMemoryState::Coverage) == 0x00002016);
+static_assert(static_cast<u32>(KMemoryState::Insecure) == 0x05583817);
 
 enum class KMemoryPermission : u8 {
     None = 0,
     All = static_cast<u8>(~None),
 
-    Read = 1 << 0,
-    Write = 1 << 1,
-    Execute = 1 << 2,
-
-    ReadAndWrite = Read | Write,
-    ReadAndExecute = Read | Execute,
-
-    UserMask = static_cast<u8>(Svc::MemoryPermission::Read | Svc::MemoryPermission::Write |
-                               Svc::MemoryPermission::Execute),
-
     KernelShift = 3,
 
-    KernelRead = Read << KernelShift,
-    KernelWrite = Write << KernelShift,
-    KernelExecute = Execute << KernelShift,
+    KernelRead = static_cast<u8>(Svc::MemoryPermission::Read) << KernelShift,
+    KernelWrite = static_cast<u8>(Svc::MemoryPermission::Write) << KernelShift,
+    KernelExecute = static_cast<u8>(Svc::MemoryPermission::Execute) << KernelShift,
 
     NotMapped = (1 << (2 * KernelShift)),
 
     KernelReadWrite = KernelRead | KernelWrite,
     KernelReadExecute = KernelRead | KernelExecute,
 
-    UserRead = Read | KernelRead,
-    UserWrite = Write | KernelWrite,
-    UserExecute = Execute,
+    UserRead = static_cast<u8>(Svc::MemoryPermission::Read) | KernelRead,
+    UserWrite = static_cast<u8>(Svc::MemoryPermission::Write) | KernelWrite,
+    UserExecute = static_cast<u8>(Svc::MemoryPermission::Execute),
 
     UserReadWrite = UserRead | UserWrite,
     UserReadExecute = UserRead | UserExecute,
 
-    IpcLockChangeMask = NotMapped | UserReadWrite
+    UserMask = static_cast<u8>(Svc::MemoryPermission::Read | Svc::MemoryPermission::Write |
+                               Svc::MemoryPermission::Execute),
+
+    IpcLockChangeMask = NotMapped | UserReadWrite,
 };
 DECLARE_ENUM_FLAG_OPERATORS(KMemoryPermission);
 
@@ -468,6 +474,7 @@ public:
 
     constexpr void UpdateDeviceDisableMergeStateForShareLeft(
         [[maybe_unused]] KMemoryPermission new_perm, bool left, [[maybe_unused]] bool right) {
+        // New permission/right aren't used.
         if (left) {
             m_disable_merge_attribute = static_cast<KMemoryBlockDisableMergeAttribute>(
                 m_disable_merge_attribute | KMemoryBlockDisableMergeAttribute::DeviceLeft);
@@ -478,6 +485,7 @@ public:
 
     constexpr void UpdateDeviceDisableMergeStateForShareRight(
         [[maybe_unused]] KMemoryPermission new_perm, [[maybe_unused]] bool left, bool right) {
+        // New permission/left aren't used.
         if (right) {
             m_disable_merge_attribute = static_cast<KMemoryBlockDisableMergeAttribute>(
                 m_disable_merge_attribute | KMemoryBlockDisableMergeAttribute::DeviceRight);
@@ -494,6 +502,8 @@ public:
 
     constexpr void ShareToDevice([[maybe_unused]] KMemoryPermission new_perm, bool left,
                                  bool right) {
+        // New permission isn't used.
+
         // We must either be shared or have a zero lock count.
         ASSERT((m_attribute & KMemoryAttribute::DeviceShared) == KMemoryAttribute::DeviceShared ||
                m_device_use_count == 0);
@@ -509,6 +519,7 @@ public:
 
     constexpr void UpdateDeviceDisableMergeStateForUnshareLeft(
         [[maybe_unused]] KMemoryPermission new_perm, bool left, [[maybe_unused]] bool right) {
+        // New permission/right aren't used.
 
         if (left) {
             if (!m_device_disable_merge_left_count) {
@@ -528,6 +539,8 @@ public:
 
     constexpr void UpdateDeviceDisableMergeStateForUnshareRight(
         [[maybe_unused]] KMemoryPermission new_perm, [[maybe_unused]] bool left, bool right) {
+        // New permission/left aren't used.
+
         if (right) {
             const u16 old_device_disable_merge_right_count = m_device_disable_merge_right_count--;
             ASSERT(old_device_disable_merge_right_count > 0);
@@ -546,6 +559,8 @@ public:
 
     constexpr void UnshareToDevice([[maybe_unused]] KMemoryPermission new_perm, bool left,
                                    bool right) {
+        // New permission isn't used.
+
         // We must be shared.
         ASSERT((m_attribute & KMemoryAttribute::DeviceShared) == KMemoryAttribute::DeviceShared);
 
@@ -563,6 +578,7 @@ public:
 
     constexpr void UnshareToDeviceRight([[maybe_unused]] KMemoryPermission new_perm, bool left,
                                         bool right) {
+        // New permission isn't used.
 
         // We must be shared.
         ASSERT((m_attribute & KMemoryAttribute::DeviceShared) == KMemoryAttribute::DeviceShared);
@@ -613,6 +629,8 @@ public:
 
     constexpr void UnlockForIpc([[maybe_unused]] KMemoryPermission new_perm, bool left,
                                 [[maybe_unused]] bool right) {
+        // New permission isn't used.
+
         // We must be locked.
         ASSERT((m_attribute & KMemoryAttribute::IpcLocked) == KMemoryAttribute::IpcLocked);
 

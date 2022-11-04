@@ -9,6 +9,10 @@ namespace Kernel::Board::Nintendo::Nx {
 
 class KSystemControl {
 public:
+    // This can be overridden as needed.
+    static constexpr size_t SecureAppletMemorySize = 4 * 1024 * 1024; // 4_MB
+
+public:
     class Init {
     public:
         // Initialization.

@@ -6,6 +6,7 @@
 #include "common/common_funcs.h"
 #include "core/hle/kernel/k_dynamic_slab_heap.h"
 #include "core/hle/kernel/k_memory_block.h"
+#include "core/hle/kernel/k_page_group.h"
 
 namespace Kernel {
 
@@ -51,8 +52,10 @@ private:
     DynamicSlabType* m_slab_heap{};
 };
 
+class KBlockInfoManager : public KDynamicResourceManager<KBlockInfo> {};
 class KMemoryBlockSlabManager : public KDynamicResourceManager<KMemoryBlock> {};
 
+using KBlockInfoSlabHeap = typename KBlockInfoManager::DynamicSlabType;
 using KMemoryBlockSlabHeap = typename KMemoryBlockSlabManager::DynamicSlabType;
 
 } // namespace Kernel

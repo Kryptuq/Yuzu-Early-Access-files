@@ -22,8 +22,8 @@ enum class MemoryState : u32 {
     Ipc = 0x0A,
     Stack = 0x0B,
     ThreadLocal = 0x0C,
-    Transferred = 0x0D,
-    SharedTransferred = 0x0E,
+    Transfered = 0x0D,
+    SharedTransfered = 0x0E,
     SharedCode = 0x0F,
     Inaccessible = 0x10,
     NonSecureIpc = 0x11,
@@ -32,6 +32,7 @@ enum class MemoryState : u32 {
     GeneratedCode = 0x14,
     CodeOut = 0x15,
     Coverage = 0x16,
+    Insecure = 0x17,
 };
 DECLARE_ENUM_FLAG_OPERATORS(MemoryState);
 
@@ -83,6 +84,13 @@ enum class YieldType : s64 {
     ToAnyThread = -2,
 };
 
+enum class ThreadExitReason : u32 {
+    ExitThread = 0,
+    TerminateThread = 1,
+    ExitProcess = 2,
+    TerminateProcess = 3,
+};
+
 enum class ThreadActivity : u32 {
     Runnable = 0,
     Paused = 1,
@@ -108,6 +116,34 @@ enum class ProcessState : u32 {
     DebugBreak = 7,
 };
 
+enum class ProcessExitReason : u32 {
+    ExitProcess = 0,
+    TerminateProcess = 1,
+    Exception = 2,
+};
+
 constexpr inline size_t ThreadLocalRegionSize = 0x200;
+
+// Debug types.
+enum class DebugEvent : u32 {
+    CreateProcess = 0,
+    CreateThread = 1,
+    ExitProcess = 2,
+    ExitThread = 3,
+    Exception = 4,
+};
+
+enum class DebugException : u32 {
+    UndefinedInstruction = 0,
+    InstructionAbort = 1,
+    DataAbort = 2,
+    AlignmentFault = 3,
+    DebuggerAttached = 4,
+    BreakPoint = 5,
+    UserBreak = 6,
+    DebuggerBreak = 7,
+    UndefinedSystemCall = 8,
+    MemorySystemError = 9,
+};
 
 } // namespace Kernel::Svc

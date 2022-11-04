@@ -43,6 +43,10 @@ void EmitBitCastU64F64(EmitContext&, IR::Inst& inst, const IR::Value& value) {
     Alias(inst, value);
 }
 
+void EmitBitCastS32F32(EmitContext&, IR::Inst& inst, const IR::Value& value) {
+    Alias(inst, value);
+}
+
 void EmitBitCastF16U16(EmitContext&, IR::Inst& inst, const IR::Value& value) {
     Alias(inst, value);
 }

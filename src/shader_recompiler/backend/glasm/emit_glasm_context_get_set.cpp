@@ -379,6 +379,17 @@ void EmitInvocationId(EmitContext& ctx, IR::Inst& inst) {
     ctx.Add("MOV.S {}.x,primitive_invocation.x;", inst);
 }
 
+void EmitInvocationInfo(EmitContext& ctx, IR::Inst& inst) {
+    switch (ctx.stage) {
+    case Stage::TessellationControl:
+    case Stage::TessellationEval:
+        ctx.Add("SHL.U {}.x, primitive.vertexcount, 16;", inst);
+        break;
+    default:
+        throw NotImplementedException("InvocationInfo");
+    }
+}
+
 void EmitSampleId(EmitContext& ctx, IR::Inst& inst) {
     ctx.Add("MOV.S {}.x,fragment.sampleid.x;", inst);
 }
@@ -394,6 +405,10 @@ void EmitYDirection(EmitContext& ctx, IR::Inst& inst) {
 
 void EmitResolutionDownFactor(EmitContext& ctx, IR::Inst& inst) {
     ctx.Add("MOV.F {}.x,scaling[0].z;", inst);
+}
+
+void EmitRenderArea(EmitContext& ctx, IR::Inst& inst) {
+    ctx.Add("MOV.F {},render_area[0];", inst);
 }
 
 void EmitLoadLocal(EmitContext& ctx, IR::Inst& inst, ScalarU32 word_offset) {

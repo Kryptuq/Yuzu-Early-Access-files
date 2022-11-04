@@ -399,6 +399,17 @@ void EmitInvocationId(EmitContext& ctx, IR::Inst& inst) {
     ctx.AddU32("{}=uint(gl_InvocationID);", inst);
 }
 
+void EmitInvocationInfo(EmitContext& ctx, IR::Inst& inst) {
+    switch (ctx.stage) {
+    case Stage::TessellationControl:
+    case Stage::TessellationEval:
+        ctx.AddU32("{}=uint(gl_PatchVerticesIn)<<16;", inst);
+        break;
+    default:
+        throw NotImplementedException("InvocationInfo");
+    }
+}
+
 void EmitSampleId(EmitContext& ctx, IR::Inst& inst) {
     ctx.AddU32("{}=uint(gl_SampleID);", inst);
 }
@@ -414,6 +425,10 @@ void EmitYDirection(EmitContext& ctx, IR::Inst& inst) {
 
 void EmitResolutionDownFactor(EmitContext& ctx, IR::Inst& inst) {
     ctx.AddF32("{}=scaling.z;", inst);
+}
+
+void EmitRenderArea(EmitContext& ctx, IR::Inst& inst) {
+    ctx.AddF32x4("{}=render_area;", inst);
 }
 
 void EmitLoadLocal(EmitContext& ctx, IR::Inst& inst, std::string_view word_offset) {

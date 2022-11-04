@@ -62,6 +62,7 @@ class Device;
 class PipelineStatistics;
 class RenderPassCache;
 class RescalingPushConstant;
+class RenderAreaPushConstant;
 class Scheduler;
 class UpdateDescriptorQueue;
 
@@ -119,7 +120,8 @@ private:
     template <typename Spec>
     void ConfigureImpl(bool is_indexed);
 
-    void ConfigureDraw(const RescalingPushConstant& rescaling);
+    void ConfigureDraw(const RescalingPushConstant& rescaling,
+                       const RenderAreaPushConstant& render_are);
 
     void MakePipeline(VkRenderPass render_pass);
 

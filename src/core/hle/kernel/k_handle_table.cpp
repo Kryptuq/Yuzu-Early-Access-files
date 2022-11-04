@@ -5,14 +5,11 @@
 
 namespace Kernel {
 
-KHandleTable::KHandleTable(KernelCore& kernel_) : kernel{kernel_} {}
-KHandleTable::~KHandleTable() = default;
-
 Result KHandleTable::Finalize() {
     // Get the table and clear our record of it.
     u16 saved_table_size = 0;
     {
-        KScopedDisableDispatch dd(kernel);
+        KScopedDisableDispatch dd{m_kernel};
         KScopedSpinLock lk(m_lock);
 
         std::swap(m_table_size, saved_table_size);
@@ -25,28 +22,28 @@ Result KHandleTable::Finalize() {
         }
     }
 
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 bool KHandleTable::Remove(Handle handle) {
     // Don't allow removal of a pseudo-handle.
-    if (Svc::IsPseudoHandle(handle)) {
+    if (Svc::IsPseudoHandle(handle)) [[unlikely]] {
         return false;
     }
 
     // Handles must not have reserved bits set.
     const auto handle_pack = HandlePack(handle);
-    if (handle_pack.reserved != 0) {
+    if (handle_pack.reserved != 0) [[unlikely]] {
         return false;
     }
 
     // Find the object and free the entry.
     KAutoObject* obj = nullptr;
     {
-        KScopedDisableDispatch dd(kernel);
+        KScopedDisableDispatch dd{m_kernel};
         KScopedSpinLock lk(m_lock);
 
-        if (this->IsValidHandle(handle)) {
+        if (this->IsValidHandle(handle)) [[likely]] {
             const auto index = handle_pack.index;
 
             obj = m_objects[index];
@@ -57,13 +54,13 @@ bool KHandleTable::Remove(Handle handle) {
     }
 
     // Close the object.
-    kernel.UnregisterInUseObject(obj);
+    m_kernel.UnregisterInUseObject(obj);
     obj->Close();
     return true;
 }
 
 Result KHandleTable::Add(Handle* out_handle, KAutoObject* obj) {
-    KScopedDisableDispatch dd(kernel);
+    KScopedDisableDispatch dd{m_kernel};
     KScopedSpinLock lk(m_lock);
 
     // Never exceed our capacity.
@@ -82,22 +79,22 @@ Result KHandleTable::Add(Handle* out_handle, KAutoObject* obj) {
         *out_handle = EncodeHandle(static_cast<u16>(index), linear_id);
     }
 
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 Result KHandleTable::Reserve(Handle* out_handle) {
-    KScopedDisableDispatch dd(kernel);
+    KScopedDisableDispatch dd{m_kernel};
     KScopedSpinLock lk(m_lock);
 
     // Never exceed our capacity.
     R_UNLESS(m_count < m_table_size, ResultOutOfHandles);
 
     *out_handle = EncodeHandle(static_cast<u16>(this->AllocateEntry()), this->AllocateLinearId());
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 void KHandleTable::Unreserve(Handle handle) {
-    KScopedDisableDispatch dd(kernel);
+    KScopedDisableDispatch dd{m_kernel};
     KScopedSpinLock lk(m_lock);
 
     // Unpack the handle.
@@ -108,7 +105,7 @@ void KHandleTable::Unreserve(Handle handle) {
     ASSERT(reserved == 0);
     ASSERT(linear_id != 0);
 
-    if (index < m_table_size) {
+    if (index < m_table_size) [[likely]] {
         // NOTE: This code does not check the linear id.
         ASSERT(m_objects[index] == nullptr);
         this->FreeEntry(index);
@@ -116,7 +113,7 @@ void KHandleTable::Unreserve(Handle handle) {
 }
 
 void KHandleTable::Register(Handle handle, KAutoObject* obj) {
-    KScopedDisableDispatch dd(kernel);
+    KScopedDisableDispatch dd{m_kernel};
     KScopedSpinLock lk(m_lock);
 
     // Unpack the handle.
@@ -127,7 +124,7 @@ void KHandleTable::Register(Handle handle, KAutoObject* obj) {
     ASSERT(reserved == 0);
     ASSERT(linear_id != 0);
 
-    if (index < m_table_size) {
+    if (index < m_table_size) [[likely]] {
         // Set the entry.
         ASSERT(m_objects[index] == nullptr);
 

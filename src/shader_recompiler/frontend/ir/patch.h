@@ -14,8 +14,6 @@ enum class Patch : u64 {
     TessellationLodBottom,
     TessellationLodInteriorU,
     TessellationLodInteriorV,
-    ComponentPadding0,
-    ComponentPadding1,
     Component0,
     Component1,
     Component2,
@@ -137,7 +135,7 @@ enum class Patch : u64 {
     Component118,
     Component119,
 };
-static_assert(static_cast<u64>(Patch::Component119) == 127);
+static_assert(static_cast<u64>(Patch::Component119) == 125);
 
 [[nodiscard]] bool IsGeneric(Patch patch) noexcept;
 

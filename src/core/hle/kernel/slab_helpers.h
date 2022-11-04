@@ -53,6 +53,84 @@ public:
 };
 
 template <typename Derived, typename Base>
+class KAutoObjectWithSlabHeap : public Base {
+    static_assert(std::is_base_of<KAutoObject, Base>::value);
+
+private:
+    static Derived* Allocate(KernelCore& kernel) {
+        return kernel.SlabHeap<Derived>().Allocate(kernel);
+    }
+
+    static void Free(KernelCore& kernel, Derived* obj) {
+        kernel.SlabHeap<Derived>().Free(obj);
+    }
+
+public:
+    explicit KAutoObjectWithSlabHeap(KernelCore& kernel_) : Base(kernel_), kernel(kernel_) {}
+    virtual ~KAutoObjectWithSlabHeap() = default;
+
+    virtual void Destroy() override {
+        const bool is_initialized = this->IsInitialized();
+        uintptr_t arg = 0;
+        if (is_initialized) {
+            arg = this->GetPostDestroyArgument();
+            this->Finalize();
+        }
+        Free(kernel, static_cast<Derived*>(this));
+        if (is_initialized) {
+            Derived::PostDestroy(arg);
+        }
+    }
+
+    virtual bool IsInitialized() const {
+        return true;
+    }
+    virtual uintptr_t GetPostDestroyArgument() const {
+        return 0;
+    }
+
+    size_t GetSlabIndex() const {
+        return SlabHeap<Derived>(kernel).GetObjectIndex(static_cast<const Derived*>(this));
+    }
+
+public:
+    static void InitializeSlabHeap(KernelCore& kernel, void* memory, size_t memory_size) {
+        kernel.SlabHeap<Derived>().Initialize(memory, memory_size);
+    }
+
+    static Derived* Create(KernelCore& kernel) {
+        Derived* obj = Allocate(kernel);
+        if (obj != nullptr) {
+            KAutoObject::Create(obj);
+        }
+        return obj;
+    }
+
+    static size_t GetObjectSize(KernelCore& kernel) {
+        return kernel.SlabHeap<Derived>().GetObjectSize();
+    }
+
+    static size_t GetSlabHeapSize(KernelCore& kernel) {
+        return kernel.SlabHeap<Derived>().GetSlabHeapSize();
+    }
+
+    static size_t GetPeakIndex(KernelCore& kernel) {
+        return kernel.SlabHeap<Derived>().GetPeakIndex();
+    }
+
+    static uintptr_t GetSlabHeapAddress(KernelCore& kernel) {
+        return kernel.SlabHeap<Derived>().GetSlabHeapAddress();
+    }
+
+    static size_t GetNumRemaining(KernelCore& kernel) {
+        return kernel.SlabHeap<Derived>().GetNumRemaining();
+    }
+
+protected:
+    KernelCore& kernel;
+};
+
+template <typename Derived, typename Base>
 class KAutoObjectWithSlabHeapAndContainer : public Base {
     static_assert(std::is_base_of<KAutoObjectWithList, Base>::value);
 
