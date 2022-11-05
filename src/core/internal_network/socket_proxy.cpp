@@ -11,6 +11,10 @@
 #include "core/internal_network/network_interface.h"
 #include "core/internal_network/socket_proxy.h"
 
+#if YUZU_UNIX
+#include <sys/socket.h>
+#endif
+
 namespace Network {
 
 ProxySocket::ProxySocket(RoomNetwork& room_network_) noexcept : room_network{room_network_} {}

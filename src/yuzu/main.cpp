@@ -9,7 +9,7 @@
 #ifdef __APPLE__
 #include <unistd.h> // for chdir
 #endif
-#ifdef __linux__
+#ifdef __unix__
 #include <csignal>
 #include <sys/socket.h>
 #endif
@@ -275,7 +275,7 @@ static void OverrideWindowsFont() {
 #endif
 
 bool GMainWindow::CheckDarkMode() {
-#ifdef __linux__
+#ifdef __unix__
     const QPalette test_palette(qApp->palette());
     const QColor text_color = test_palette.color(QPalette::Active, QPalette::Text);
     const QColor window_color = test_palette.color(QPalette::Active, QPalette::Window);
@@ -283,7 +283,7 @@ bool GMainWindow::CheckDarkMode() {
 #else
     // TODO: Windows
     return false;
-#endif // __linux__
+#endif // __unix__
 }
 
 GMainWindow::GMainWindow(std::unique_ptr<Config> config_, bool has_broken_vulkan)
@@ -291,7 +291,7 @@ GMainWindow::GMainWindow(std::unique_ptr<Config> config_, bool has_broken_vulkan
       input_subsystem{std::make_shared<InputCommon::InputSubsystem>()}, config{std::move(config_)},
       vfs{std::make_shared<FileSys::RealVfsFilesystem>()},
       provider{std::make_unique<FileSys::ManualContentProvider>()} {
-#ifdef __linux__
+#ifdef __unix__
     SetupSigInterrupts();
 #endif
     system->Initialize();
@@ -509,7 +509,7 @@ GMainWindow::~GMainWindow() {
         delete render_window;
     }
 
-#ifdef __linux__
+#ifdef __unix__
     ::close(sig_interrupt_fds[0]);
     ::close(sig_interrupt_fds[1]);
 #endif
@@ -1378,7 +1378,7 @@ void GMainWindow::OnDisplayTitleBars(bool show) {
 }
 
 void GMainWindow::SetupPrepareForSleep() {
-#ifdef __linux__
+#ifdef __unix__
     auto bus = QDBusConnection::systemBus();
     if (bus.isConnected()) {
         const bool success = bus.connect(
@@ -1392,7 +1392,7 @@ void GMainWindow::SetupPrepareForSleep() {
     } else {
         LOG_WARNING(Frontend, "QDBusConnection system bus is not connected");
     }
-#endif // __linux__
+#endif // __unix__
 }
 
 void GMainWindow::OnPrepareForSleep(bool prepare_sleep) {
@@ -1414,7 +1414,7 @@ void GMainWindow::OnPrepareForSleep(bool prepare_sleep) {
     }
 }
 
-#ifdef __linux__
+#ifdef __unix__
 static std::optional<QDBusObjectPath> HoldWakeLockLinux(u32 window_id = 0) {
     if (!QDBusConnection::sessionBus().isConnected()) {
         return {};
@@ -1499,14 +1499,14 @@ void GMainWindow::OnSigInterruptNotifierActivated() {
 
     emit SigInterrupt();
 }
-#endif // __linux__
+#endif // __unix__
 
 void GMainWindow::PreventOSSleep() {
 #ifdef _WIN32
     SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
 #elif defined(HAVE_SDL2)
     SDL_DisableScreenSaver();
-#ifdef __linux__
+#ifdef __unix__
     auto reply = HoldWakeLockLinux(winId());
     if (reply) {
         wake_lock = std::move(reply.value());
@@ -1520,7 +1520,7 @@ void GMainWindow::AllowOSSleep() {
     SetThreadExecutionState(ES_CONTINUOUS);
 #elif defined(HAVE_SDL2)
     SDL_EnableScreenSaver();
-#ifdef __linux__
+#ifdef __unix__
     if (!wake_lock.path().isEmpty()) {
         ReleaseWakeLockLinux(wake_lock);
     }
@@ -4083,7 +4083,7 @@ void GMainWindow::SetDiscordEnabled([[maybe_unused]] bool state) {
 }
 
 void GMainWindow::changeEvent(QEvent* event) {
-#ifdef __linux__
+#ifdef __unix__
     // PaletteChange event appears to only reach so far into the GUI, explicitly asking to
     // UpdateUITheme is a decent work around
     if (event->type() == QEvent::PaletteChange) {
@@ -4098,7 +4098,7 @@ void GMainWindow::changeEvent(QEvent* event) {
         }
         last_window_color = window_color;
     }
-#endif // __linux__
+#endif // __unix__
     QWidget::changeEvent(event);
 }
 

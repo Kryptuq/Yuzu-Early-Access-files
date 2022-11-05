@@ -15,7 +15,7 @@
 #include "yuzu/compatibility_list.h"
 #include "yuzu/hotkeys.h"
 
-#ifdef __linux__
+#ifdef __unix__
 #include <QVariant>
 #include <QtDBus/QDBusInterface>
 #include <QtDBus/QtDBus>
@@ -255,7 +255,7 @@ private:
     void changeEvent(QEvent* event) override;
     void closeEvent(QCloseEvent* event) override;
 
-#ifdef __linux__
+#ifdef __unix__
     void SetupSigInterrupts();
     static void HandleSigInterrupt(int);
     void OnSigInterruptNotifierActivated();
@@ -435,7 +435,7 @@ private:
     // True if TAS recording dialog is visible
     bool is_tas_recording_dialog_active{};
 
-#ifdef __linux__
+#ifdef __unix__
     QSocketNotifier* sig_interrupt_notifier;
     static std::array<int, 3> sig_interrupt_fds;
 

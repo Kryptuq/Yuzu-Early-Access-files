@@ -428,10 +428,6 @@ void EmitResolutionDownFactor(EmitContext& ctx, IR::Inst& inst) {
     ctx.AddF32("{}=scaling.z;", inst);
 }
 
-void EmitRenderArea(EmitContext& ctx, IR::Inst& inst) {
-    ctx.AddF32x4("{}=render_area;", inst);
-}
-
 void EmitLoadLocal(EmitContext& ctx, IR::Inst& inst, std::string_view word_offset) {
     ctx.AddU32("{}=lmem[{}];", inst, word_offset);
 }

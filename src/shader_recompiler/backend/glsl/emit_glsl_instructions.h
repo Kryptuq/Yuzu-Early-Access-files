@@ -88,7 +88,6 @@ void EmitSampleId(EmitContext& ctx, IR::Inst& inst);
 void EmitIsHelperInvocation(EmitContext& ctx, IR::Inst& inst);
 void EmitYDirection(EmitContext& ctx, IR::Inst& inst);
 void EmitResolutionDownFactor(EmitContext& ctx, IR::Inst& inst);
-void EmitRenderArea(EmitContext& ctx, IR::Inst& inst);
 void EmitLoadLocal(EmitContext& ctx, IR::Inst& inst, std::string_view word_offset);
 void EmitWriteLocal(EmitContext& ctx, std::string_view word_offset, std::string_view value);
 void EmitUndefU1(EmitContext& ctx, IR::Inst& inst);
@@ -231,7 +230,6 @@ void EmitSelectF64(EmitContext& ctx, IR::Inst& inst, std::string_view cond,
 void EmitBitCastU16F16(EmitContext& ctx, IR::Inst& inst);
 void EmitBitCastU32F32(EmitContext& ctx, IR::Inst& inst, std::string_view value);
 void EmitBitCastU64F64(EmitContext& ctx, IR::Inst& inst, std::string_view value);
-void EmitBitCastS32F32(EmitContext& ctx, IR::Inst& inst, std::string_view value);
 void EmitBitCastF16U16(EmitContext& ctx, IR::Inst& inst);
 void EmitBitCastF32U32(EmitContext& ctx, IR::Inst& inst, std::string_view value);
 void EmitBitCastF64U64(EmitContext& ctx, IR::Inst& inst, std::string_view value);

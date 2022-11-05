@@ -31,7 +31,6 @@ namespace {
 using boost::container::small_vector;
 using boost::container::static_vector;
 using Shader::ImageBufferDescriptor;
-using Shader::Backend::SPIRV::RENDERAREA_LAYOUT_OFFSET;
 using Shader::Backend::SPIRV::RESCALING_LAYOUT_DOWN_FACTOR_OFFSET;
 using Shader::Backend::SPIRV::RESCALING_LAYOUT_WORDS_OFFSET;
 using Tegra::Texture::TexturePair;
@@ -434,19 +433,12 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
     update_descriptor_queue.Acquire();
 
     RescalingPushConstant rescaling;
-    RenderAreaPushConstant render_area;
     const VkSampler* samplers_it{samplers.data()};
     const VideoCommon::ImageViewInOut* views_it{views.data()};
     const auto prepare_stage{[&](size_t stage) LAMBDA_FORCEINLINE {
         buffer_cache.BindHostStageBuffers(stage);
         PushImageDescriptors(texture_cache, update_descriptor_queue, stage_infos[stage], rescaling,
                              samplers_it, views_it);
-        const auto& info{stage_infos[0]};
-        if (info.uses_render_area) {
-            render_area.uses_render_area = true;
-            render_area.words = {static_cast<float>(regs.surface_clip.width),
-                                 static_cast<float>(regs.surface_clip.height)};
-        }
     }};
     if constexpr (Spec::enabled_stages[0]) {
         prepare_stage(0);
@@ -463,11 +455,10 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
     if constexpr (Spec::enabled_stages[4]) {
         prepare_stage(4);
     }
-    ConfigureDraw(rescaling, render_area);
+    ConfigureDraw(rescaling);
 }
 
-void GraphicsPipeline::ConfigureDraw(const RescalingPushConstant& rescaling,
-                                     const RenderAreaPushConstant& render_are) {
+void GraphicsPipeline::ConfigureDraw(const RescalingPushConstant& rescaling) {
     texture_cache.UpdateRenderTargets(false);
     scheduler.RequestRenderpass(texture_cache.GetFramebuffer());
 
@@ -483,9 +474,7 @@ void GraphicsPipeline::ConfigureDraw(const RescalingPushConstant& rescaling,
     const bool bind_pipeline{scheduler.UpdateGraphicsPipeline(this)};
     const void* const descriptor_data{update_descriptor_queue.UpdateData()};
     scheduler.Record([this, descriptor_data, bind_pipeline, rescaling_data = rescaling.Data(),
-                      is_rescaling, update_rescaling,
-                      uses_render_area = render_are.uses_render_area,
-                      render_area_data = render_are.words](vk::CommandBuffer cmdbuf) {
+                      is_rescaling, update_rescaling](vk::CommandBuffer cmdbuf) {
         if (bind_pipeline) {
             cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline);
         }
@@ -494,15 +483,10 @@ void GraphicsPipeline::ConfigureDraw(const RescalingPushConstant& rescaling,
                              rescaling_data.data());
         if (update_rescaling) {
             const f32 config_down_factor{Settings::values.resolution_info.down_factor};
-            const f32 scale_down_factor{is_rescaling ? config_down_factor : 2.0f};
+            const f32 scale_down_factor{is_rescaling ? config_down_factor : 1.0f};
             cmdbuf.PushConstants(*pipeline_layout, VK_SHADER_STAGE_ALL_GRAPHICS,
                                  RESCALING_LAYOUT_DOWN_FACTOR_OFFSET, sizeof(scale_down_factor),
                                  &scale_down_factor);
-        }
-        if (uses_render_area) {
-            cmdbuf.PushConstants(*pipeline_layout, VK_SHADER_STAGE_ALL_GRAPHICS,
-                                 RENDERAREA_LAYOUT_OFFSET, sizeof(render_area_data),
-                                 &render_area_data);
         }
         if (!descriptor_set_layout) {
             return;

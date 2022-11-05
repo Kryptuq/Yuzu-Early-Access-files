@@ -218,11 +218,11 @@ if(ENABLE_QT)
     set(QT_VERSION 5.15)
 
     # Check for system Qt on Linux, fallback to bundled Qt
-    if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    if (UNIX AND NOT APPLE)
         if (NOT YUZU_USE_BUNDLED_QT)
             find_package(Qt5 ${QT_VERSION} COMPONENTS Widgets DBus Multimedia)
         endif()
-        if (NOT Qt5_FOUND OR YUZU_USE_BUNDLED_QT)
+        if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux" AND (NOT Qt5_FOUND OR YUZU_USE_BUNDLED_QT))
             # Check for dependencies, then enable bundled Qt download
 
             # Check that the system GLIBCXX version is compatible
@@ -323,7 +323,7 @@ if(ENABLE_QT)
 
         set(YUZU_QT_NO_CMAKE_SYSTEM_PATH "NO_CMAKE_SYSTEM_PATH")
     endif()
-    if ((${CMAKE_SYSTEM_NAME} STREQUAL "Linux") AND YUZU_USE_BUNDLED_QT)
+    if (UNIX AND NOT APPLE AND YUZU_USE_BUNDLED_QT)
         find_package(Qt5 ${QT_VERSION} REQUIRED COMPONENTS Widgets Concurrent Multimedia DBus ${QT_PREFIX_HINT} ${YUZU_QT_NO_CMAKE_SYSTEM_PATH})
     else()
         find_package(Qt5 ${QT_VERSION} REQUIRED COMPONENTS Widgets Concurrent Multimedia ${QT_PREFIX_HINT} ${YUZU_QT_NO_CMAKE_SYSTEM_PATH})

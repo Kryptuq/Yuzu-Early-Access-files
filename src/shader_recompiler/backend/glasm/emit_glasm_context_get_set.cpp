@@ -408,10 +408,6 @@ void EmitResolutionDownFactor(EmitContext& ctx, IR::Inst& inst) {
     ctx.Add("MOV.F {}.x,scaling[0].z;", inst);
 }
 
-void EmitRenderArea(EmitContext& ctx, IR::Inst& inst) {
-    ctx.Add("MOV.F {},render_area[0];", inst);
-}
-
 void EmitLoadLocal(EmitContext& ctx, IR::Inst& inst, ScalarU32 word_offset) {
     ctx.Add("MOV.U {},lmem[{}].x;", inst, word_offset);
 }

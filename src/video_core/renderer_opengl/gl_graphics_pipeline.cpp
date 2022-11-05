@@ -503,17 +503,6 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
                                    float_image_scaling_mask, down_factor, 0.0f);
             }
         }
-        if (info.uses_render_area) {
-            const auto render_area_width(static_cast<GLfloat>(regs.surface_clip.width));
-            const auto render_area_height(static_cast<GLfloat>(regs.surface_clip.height));
-            if (use_assembly) {
-                glProgramLocalParameter4fARB(AssemblyStage(stage), 1, render_area_width,
-                                             render_area_height, 0.0f, 0.0f);
-            } else {
-                glProgramUniform4f(source_programs[stage].handle, 1, render_area_width,
-                                   render_area_height, 0.0f, 0.0f);
-            }
-        }
     }};
     if constexpr (Spec::enabled_stages[0]) {
         prepare_stage(0);
