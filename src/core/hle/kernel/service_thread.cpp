@@ -36,11 +36,12 @@ public:
 private:
     KernelCore& kernel;
 
-    std::jthread m_thread;
+    std::jthread m_host_thread;
     std::mutex m_session_mutex;
     std::map<KServerSession*, std::shared_ptr<SessionRequestManager>> m_sessions;
     KEvent* m_wakeup_event;
     KProcess* m_process;
+    KThread* m_thread;
     std::atomic<bool> m_shutdown_requested;
     const std::string m_service_name;
 };
@@ -132,7 +133,7 @@ void ServiceThread::Impl::SessionClosed(KServerSession* server_session,
 void ServiceThread::Impl::LoopProcess() {
     Common::SetCurrentThreadName(m_service_name.c_str());
 
-    kernel.RegisterHostThread();
+    kernel.RegisterHostThread(m_thread);
 
     while (!m_shutdown_requested.load()) {
         WaitAndProcessImpl();
@@ -160,7 +161,7 @@ ServiceThread::Impl::~Impl() {
     // Shut down the processing thread.
     m_shutdown_requested.store(true);
     m_wakeup_event->Signal();
-    m_thread.join();
+    m_host_thread.join();
 
     // Lock mutex.
     m_session_mutex.lock();
@@ -176,6 +177,9 @@ ServiceThread::Impl::~Impl() {
     // Close event.
     m_wakeup_event->GetReadableEvent().Close();
     m_wakeup_event->Close();
+
+    // Close thread.
+    m_thread->Close();
 
     // Close process.
     m_process->Close();
@@ -199,11 +203,19 @@ ServiceThread::Impl::Impl(KernelCore& kernel_, const std::string& service_name)
     // Commit the event reservation.
     event_reservation.Commit();
 
-    // Register the event.
-    KEvent::Register(kernel, m_wakeup_event);
+    // Reserve a new thread from the process resource limit
+    KScopedResourceReservation thread_reservation(m_process, LimitableResource::Threads);
+    ASSERT(thread_reservation.Succeeded());
+
+    // Initialize thread.
+    m_thread = KThread::Create(kernel);
+    ASSERT(KThread::InitializeDummyThread(m_thread, m_process).IsSuccess());
+
+    // Commit the thread reservation.
+    thread_reservation.Commit();
 
     // Start thread.
-    m_thread = std::jthread([this] { LoopProcess(); });
+    m_host_thread = std::jthread([this] { LoopProcess(); });
 }
 
 ServiceThread::ServiceThread(KernelCore& kernel, const std::string& name)

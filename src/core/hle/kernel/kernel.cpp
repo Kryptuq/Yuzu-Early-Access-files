@@ -91,7 +91,7 @@ struct KernelCore::Impl {
                                        pt_heap_region.GetSize());
         }
 
-        RegisterHostThread();
+        RegisterHostThread(nullptr);
 
         default_service_thread = CreateServiceThread(kernel, "DefaultServiceThread");
     }
@@ -373,15 +373,18 @@ struct KernelCore::Impl {
     }
 
     // Gets the dummy KThread for the caller, allocating a new one if this is the first time
-    KThread* GetHostDummyThread() {
+    KThread* GetHostDummyThread(KThread* existing_thread) {
         auto initialize = [this](KThread* thread) {
-            ASSERT(KThread::InitializeDummyThread(thread).IsSuccess());
+            ASSERT(KThread::InitializeDummyThread(thread, nullptr).IsSuccess());
             thread->SetName(fmt::format("DummyThread:{}", GetHostThreadId()));
             return thread;
         };
 
-        thread_local auto raw_thread = KThread(system.Kernel());
-        thread_local auto thread = initialize(&raw_thread);
+        thread_local KThread raw_thread{system.Kernel()};
+        thread_local KThread* thread = nullptr;
+        if (thread == nullptr) {
+            thread = (existing_thread == nullptr) ? initialize(&raw_thread) : existing_thread;
+        }
 
         return thread;
     }
@@ -396,9 +399,9 @@ struct KernelCore::Impl {
     }
 
     /// Registers a new host thread by allocating a host thread ID for it
-    void RegisterHostThread() {
+    void RegisterHostThread(KThread* existing_thread) {
         [[maybe_unused]] const auto this_id = GetHostThreadId();
-        [[maybe_unused]] const auto dummy_thread = GetHostDummyThread();
+        [[maybe_unused]] const auto dummy_thread = GetHostDummyThread(existing_thread);
     }
 
     [[nodiscard]] u32 GetCurrentHostThreadID() {
@@ -429,7 +432,7 @@ struct KernelCore::Impl {
     KThread* GetCurrentEmuThread() {
         const auto thread_id = GetCurrentHostThreadID();
         if (thread_id >= Core::Hardware::NUM_CPU_CORES) {
-            return GetHostDummyThread();
+            return GetHostDummyThread(nullptr);
         }
 
         return current_thread;
@@ -1122,8 +1125,12 @@ void KernelCore::RegisterCoreThread(std::size_t core_id) {
     impl->RegisterCoreThread(core_id);
 }
 
-void KernelCore::RegisterHostThread() {
-    impl->RegisterHostThread();
+void KernelCore::RegisterHostThread(KThread* existing_thread) {
+    impl->RegisterHostThread(existing_thread);
+
+    if (existing_thread != nullptr) {
+        ASSERT(GetCurrentEmuThread() == existing_thread);
+    }
 }
 
 u32 KernelCore::GetCurrentHostThreadID() const {
@@ -1198,15 +1205,27 @@ void KernelCore::Suspend(bool suspended) {
     const bool should_suspend{exception_exited || suspended};
     const auto activity = should_suspend ? ProcessActivity::Paused : ProcessActivity::Runnable;
 
-    for (auto* process : GetProcessList()) {
-        process->SetActivity(activity);
+    std::vector<KScopedAutoObject<KThread>> process_threads;
+    {
+        KScopedSchedulerLock sl{*this};
 
-        if (should_suspend) {
-            // Wait for execution to stop
+        if (auto* process = CurrentProcess(); process != nullptr) {
+            process->SetActivity(activity);
+
+            if (!should_suspend) {
+                // Runnable now; no need to wait.
+                return;
+            }
+
             for (auto* thread : process->GetThreadList()) {
-                thread->WaitUntilSuspended();
+                process_threads.emplace_back(thread);
             }
         }
+    }
+
+    // Wait for execution to stop.
+    for (auto& thread : process_threads) {
+        thread->WaitUntilSuspended();
     }
 }
 

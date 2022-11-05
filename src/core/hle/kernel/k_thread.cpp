@@ -263,9 +263,9 @@ Result KThread::InitializeThread(KThread* thread, KThreadFunction func, uintptr_
     R_SUCCEED();
 }
 
-Result KThread::InitializeDummyThread(KThread* thread) {
+Result KThread::InitializeDummyThread(KThread* thread, KProcess* owner) {
     // Initialize the thread.
-    R_TRY(thread->Initialize({}, {}, {}, DummyThreadPriority, 3, {}, ThreadType::Dummy));
+    R_TRY(thread->Initialize({}, {}, {}, DummyThreadPriority, 3, owner, ThreadType::Dummy));
 
     // Initialize emulation parameters.
     thread->stack_parameters.disable_count = 0;

@@ -240,7 +240,7 @@ public:
     void RegisterCoreThread(std::size_t core_id);
 
     /// Register the current thread as a non CPU core thread.
-    void RegisterHostThread();
+    void RegisterHostThread(KThread* existing_thread = nullptr);
 
     /// Gets the virtual memory manager for the kernel.
     KMemoryManager& MemoryManager();

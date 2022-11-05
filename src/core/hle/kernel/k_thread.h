@@ -415,7 +415,7 @@ public:
 
     static void PostDestroy(uintptr_t arg);
 
-    [[nodiscard]] static Result InitializeDummyThread(KThread* thread);
+    [[nodiscard]] static Result InitializeDummyThread(KThread* thread, KProcess* owner);
 
     [[nodiscard]] static Result InitializeMainThread(Core::System& system, KThread* thread,
                                                      s32 virt_core);
