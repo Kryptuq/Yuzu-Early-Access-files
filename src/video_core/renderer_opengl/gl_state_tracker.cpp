@@ -70,8 +70,8 @@ void SetupDirtyViewports(Tables& tables) {
     FillBlock(tables[1], OFF(viewport_transform), NUM(viewport_transform), Viewports);
     FillBlock(tables[1], OFF(viewports), NUM(viewports), Viewports);
 
-    tables[0][OFF(viewport_scale_offset_enbled)] = ViewportTransform;
-    tables[1][OFF(viewport_scale_offset_enbled)] = Viewports;
+    tables[0][OFF(viewport_scale_offset_enabled)] = ViewportTransform;
+    tables[1][OFF(viewport_scale_offset_enabled)] = Viewports;
 }
 
 void SetupDirtyScissors(Tables& tables) {

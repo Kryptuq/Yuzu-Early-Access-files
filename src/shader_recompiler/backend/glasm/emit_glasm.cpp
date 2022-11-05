@@ -450,6 +450,9 @@ std::string EmitGLASM(const Profile& profile, const RuntimeInfo& runtime_info, I
     if (program.info.uses_rescaling_uniform) {
         header += "PARAM scaling[1]={program.local[0..0]};";
     }
+    if (program.info.uses_render_area) {
+        header += "PARAM render_area[1]={program.local[1..1]};";
+    }
     header += "TEMP ";
     for (size_t index = 0; index < ctx.reg_alloc.NumUsedRegisters(); ++index) {
         header += fmt::format("R{},", index);

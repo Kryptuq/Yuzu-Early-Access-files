@@ -95,10 +95,9 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     if (info.uses_invocation_id) {
         Add("ATTRIB primitive_invocation=primitive.invocation;");
     }
-    if (info.uses_invocation_info) {
-        if (stage == Stage::TessellationControl || stage == Stage::TessellationEval) {
-            Add("ATTRIB primitive_vertexcount = primitive.vertexcount;");
-        }
+    if (info.uses_invocation_info &&
+        (stage == Stage::TessellationControl || stage == Stage::TessellationEval)) {
+        Add("ATTRIB primitive_vertexcount = primitive.vertexcount;");
     }
     if (info.stores_tess_level_outer) {
         Add("OUTPUT result_patch_tessouter[]={{result.patch.tessouter[0..3]}};");

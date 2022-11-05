@@ -406,7 +406,7 @@ void EmitInvocationInfo(EmitContext& ctx, IR::Inst& inst) {
         ctx.AddU32("{}=uint(gl_PatchVerticesIn)<<16;", inst);
         break;
     default:
-        LOG_WARNING(Shader, "(STUBBED) EmitInvocationInfo");
+        LOG_WARNING(Shader, "(STUBBED) called");
         ctx.AddU32("{}=uint(0x00ff0000);", inst);
     }
 }
@@ -426,6 +426,10 @@ void EmitYDirection(EmitContext& ctx, IR::Inst& inst) {
 
 void EmitResolutionDownFactor(EmitContext& ctx, IR::Inst& inst) {
     ctx.AddF32("{}=scaling.z;", inst);
+}
+
+void EmitRenderArea(EmitContext& ctx, IR::Inst& inst) {
+    ctx.AddF32x4("{}=render_area;", inst);
 }
 
 void EmitLoadLocal(EmitContext& ctx, IR::Inst& inst, std::string_view word_offset) {

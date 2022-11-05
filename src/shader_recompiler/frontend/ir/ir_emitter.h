@@ -104,6 +104,9 @@ public:
 
     [[nodiscard]] F32 ResolutionDownFactor();
 
+    [[nodiscard]] F32 RenderAreaWidth();
+    [[nodiscard]] F32 RenderAreaHeight();
+
     [[nodiscard]] U32 LaneId();
 
     [[nodiscard]] U32 LoadGlobalU8(const U64& address);

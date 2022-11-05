@@ -19,6 +19,7 @@
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/memory_manager.h"
 #include "video_core/shader_environment.h"
+#include "video_core/texture_cache/format_lookup_table.h"
 #include "video_core/textures/texture.h"
 
 namespace VideoCommon {
@@ -33,7 +34,7 @@ static u64 MakeCbufKey(u32 index, u32 offset) {
     return (static_cast<u64>(index) << 32) | offset;
 }
 
-static Shader::TextureType ConvertType(const Tegra::Texture::TICEntry& entry) {
+static Shader::TextureType ConvertTextureType(const Tegra::Texture::TICEntry& entry) {
     switch (entry.texture_type) {
     case Tegra::Texture::TextureType::Texture1D:
         return Shader::TextureType::Color1D;
@@ -56,6 +57,26 @@ static Shader::TextureType ConvertType(const Tegra::Texture::TICEntry& entry) {
     default:
         UNIMPLEMENTED();
         return Shader::TextureType::Color2D;
+    }
+}
+
+static Shader::TexturePixelFormat ConvertTexturePixelFormat(const Tegra::Texture::TICEntry& entry) {
+    switch (PixelFormatFromTextureInfo(entry.format, entry.r_type, entry.g_type, entry.b_type,
+                                       entry.a_type, entry.srgb_conversion)) {
+    case VideoCore::Surface::PixelFormat::A8B8G8R8_SNORM:
+        return Shader::TexturePixelFormat::A8B8G8R8_SNORM;
+    case VideoCore::Surface::PixelFormat::R8_SNORM:
+        return Shader::TexturePixelFormat::R8_SNORM;
+    case VideoCore::Surface::PixelFormat::R8G8_SNORM:
+        return Shader::TexturePixelFormat::R8G8_SNORM;
+    case VideoCore::Surface::PixelFormat::R16G16B16A16_SNORM:
+        return Shader::TexturePixelFormat::R16G16B16A16_SNORM;
+    case VideoCore::Surface::PixelFormat::R16G16_SNORM:
+        return Shader::TexturePixelFormat::R16G16_SNORM;
+    case VideoCore::Surface::PixelFormat::R16_SNORM:
+        return Shader::TexturePixelFormat::R16_SNORM;
+    default:
+        return Shader::TexturePixelFormat::OTHER;
     }
 }
 
@@ -178,21 +199,30 @@ void GenericEnvironment::Dump(u64 hash) {
 void GenericEnvironment::Serialize(std::ofstream& file) const {
     const u64 code_size{static_cast<u64>(CachedSize())};
     const u64 num_texture_types{static_cast<u64>(texture_types.size())};
+    const u64 num_texture_pixel_formats{static_cast<u64>(texture_pixel_formats.size())};
     const u64 num_cbuf_values{static_cast<u64>(cbuf_values.size())};
 
     file.write(reinterpret_cast<const char*>(&code_size), sizeof(code_size))
         .write(reinterpret_cast<const char*>(&num_texture_types), sizeof(num_texture_types))
+        .write(reinterpret_cast<const char*>(&num_texture_pixel_formats),
+               sizeof(num_texture_pixel_formats))
         .write(reinterpret_cast<const char*>(&num_cbuf_values), sizeof(num_cbuf_values))
         .write(reinterpret_cast<const char*>(&local_memory_size), sizeof(local_memory_size))
         .write(reinterpret_cast<const char*>(&texture_bound), sizeof(texture_bound))
         .write(reinterpret_cast<const char*>(&start_address), sizeof(start_address))
         .write(reinterpret_cast<const char*>(&cached_lowest), sizeof(cached_lowest))
         .write(reinterpret_cast<const char*>(&cached_highest), sizeof(cached_highest))
+        .write(reinterpret_cast<const char*>(&viewport_transform_state),
+               sizeof(viewport_transform_state))
         .write(reinterpret_cast<const char*>(&stage), sizeof(stage))
         .write(reinterpret_cast<const char*>(code.data()), code_size);
     for (const auto& [key, type] : texture_types) {
         file.write(reinterpret_cast<const char*>(&key), sizeof(key))
             .write(reinterpret_cast<const char*>(&type), sizeof(type));
+    }
+    for (const auto& [key, format] : texture_pixel_formats) {
+        file.write(reinterpret_cast<const char*>(&key), sizeof(key))
+            .write(reinterpret_cast<const char*>(&format), sizeof(format));
     }
     for (const auto& [key, type] : cbuf_values) {
         file.write(reinterpret_cast<const char*>(&key), sizeof(key))
@@ -237,15 +267,13 @@ std::optional<u64> GenericEnvironment::TryFindSize() {
     return std::nullopt;
 }
 
-Shader::TextureType GenericEnvironment::ReadTextureTypeImpl(GPUVAddr tic_addr, u32 tic_limit,
-                                                            bool via_header_index, u32 raw) {
+Tegra::Texture::TICEntry GenericEnvironment::ReadTextureInfo(GPUVAddr tic_addr, u32 tic_limit,
+                                                             bool via_header_index, u32 raw) {
     const auto handle{Tegra::Texture::TexturePair(raw, via_header_index)};
     const GPUVAddr descriptor_addr{tic_addr + handle.first * sizeof(Tegra::Texture::TICEntry)};
     Tegra::Texture::TICEntry entry;
     gpu_memory->ReadBlock(descriptor_addr, &entry, sizeof(entry));
-    const Shader::TextureType result{ConvertType(entry)};
-    texture_types.emplace(raw, result);
-    return result;
+    return entry;
 }
 
 GraphicsEnvironment::GraphicsEnvironment(Tegra::Engines::Maxwell3D& maxwell3d_,
@@ -305,8 +333,27 @@ u32 GraphicsEnvironment::ReadCbufValue(u32 cbuf_index, u32 cbuf_offset) {
 Shader::TextureType GraphicsEnvironment::ReadTextureType(u32 handle) {
     const auto& regs{maxwell3d->regs};
     const bool via_header_index{regs.sampler_binding == Maxwell::SamplerBinding::ViaHeaderBinding};
-    return ReadTextureTypeImpl(regs.tex_header.Address(), regs.tex_header.limit, via_header_index,
-                               handle);
+    auto entry =
+        ReadTextureInfo(regs.tex_header.Address(), regs.tex_header.limit, via_header_index, handle);
+    const Shader::TextureType result{ConvertTextureType(entry)};
+    texture_types.emplace(handle, result);
+    return result;
+}
+
+Shader::TexturePixelFormat GraphicsEnvironment::ReadTexturePixelFormat(u32 handle) {
+    const auto& regs{maxwell3d->regs};
+    const bool via_header_index{regs.sampler_binding == Maxwell::SamplerBinding::ViaHeaderBinding};
+    auto entry =
+        ReadTextureInfo(regs.tex_header.Address(), regs.tex_header.limit, via_header_index, handle);
+    const Shader::TexturePixelFormat result(ConvertTexturePixelFormat(entry));
+    texture_pixel_formats.emplace(handle, result);
+    return result;
+}
+
+u32 GraphicsEnvironment::ReadViewportTransformState() {
+    const auto& regs{maxwell3d->regs};
+    viewport_transform_state = regs.viewport_scale_offset_enabled;
+    return viewport_transform_state;
 }
 
 ComputeEnvironment::ComputeEnvironment(Tegra::Engines::KeplerCompute& kepler_compute_,
@@ -337,21 +384,41 @@ u32 ComputeEnvironment::ReadCbufValue(u32 cbuf_index, u32 cbuf_offset) {
 Shader::TextureType ComputeEnvironment::ReadTextureType(u32 handle) {
     const auto& regs{kepler_compute->regs};
     const auto& qmd{kepler_compute->launch_description};
-    return ReadTextureTypeImpl(regs.tic.Address(), regs.tic.limit, qmd.linked_tsc != 0, handle);
+    auto entry = ReadTextureInfo(regs.tic.Address(), regs.tic.limit, qmd.linked_tsc != 0, handle);
+    const Shader::TextureType result{ConvertTextureType(entry)};
+    texture_types.emplace(handle, result);
+    return result;
+}
+
+Shader::TexturePixelFormat ComputeEnvironment::ReadTexturePixelFormat(u32 handle) {
+    const auto& regs{kepler_compute->regs};
+    const auto& qmd{kepler_compute->launch_description};
+    auto entry = ReadTextureInfo(regs.tic.Address(), regs.tic.limit, qmd.linked_tsc != 0, handle);
+    const Shader::TexturePixelFormat result(ConvertTexturePixelFormat(entry));
+    texture_pixel_formats.emplace(handle, result);
+    return result;
+}
+
+u32 ComputeEnvironment::ReadViewportTransformState() {
+    return viewport_transform_state;
 }
 
 void FileEnvironment::Deserialize(std::ifstream& file) {
     u64 code_size{};
     u64 num_texture_types{};
+    u64 num_texture_pixel_formats{};
     u64 num_cbuf_values{};
     file.read(reinterpret_cast<char*>(&code_size), sizeof(code_size))
         .read(reinterpret_cast<char*>(&num_texture_types), sizeof(num_texture_types))
+        .read(reinterpret_cast<char*>(&num_texture_pixel_formats),
+              sizeof(num_texture_pixel_formats))
         .read(reinterpret_cast<char*>(&num_cbuf_values), sizeof(num_cbuf_values))
         .read(reinterpret_cast<char*>(&local_memory_size), sizeof(local_memory_size))
         .read(reinterpret_cast<char*>(&texture_bound), sizeof(texture_bound))
         .read(reinterpret_cast<char*>(&start_address), sizeof(start_address))
         .read(reinterpret_cast<char*>(&read_lowest), sizeof(read_lowest))
         .read(reinterpret_cast<char*>(&read_highest), sizeof(read_highest))
+        .read(reinterpret_cast<char*>(&viewport_transform_state), sizeof(viewport_transform_state))
         .read(reinterpret_cast<char*>(&stage), sizeof(stage));
     code = std::make_unique<u64[]>(Common::DivCeil(code_size, sizeof(u64)));
     file.read(reinterpret_cast<char*>(code.get()), code_size);
@@ -361,6 +428,13 @@ void FileEnvironment::Deserialize(std::ifstream& file) {
         file.read(reinterpret_cast<char*>(&key), sizeof(key))
             .read(reinterpret_cast<char*>(&type), sizeof(type));
         texture_types.emplace(key, type);
+    }
+    for (size_t i = 0; i < num_texture_pixel_formats; ++i) {
+        u32 key;
+        Shader::TexturePixelFormat format;
+        file.read(reinterpret_cast<char*>(&key), sizeof(key))
+            .read(reinterpret_cast<char*>(&format), sizeof(format));
+        texture_pixel_formats.emplace(key, format);
     }
     for (size_t i = 0; i < num_cbuf_values; ++i) {
         u64 key;
@@ -407,6 +481,18 @@ Shader::TextureType FileEnvironment::ReadTextureType(u32 handle) {
         throw Shader::LogicError("Uncached read texture type");
     }
     return it->second;
+}
+
+Shader::TexturePixelFormat FileEnvironment::ReadTexturePixelFormat(u32 handle) {
+    const auto it{texture_pixel_formats.find(handle)};
+    if (it == texture_pixel_formats.end()) {
+        throw Shader::LogicError("Uncached read texture pixel format");
+    }
+    return it->second;
+}
+
+u32 FileEnvironment::ReadViewportTransformState() {
+    return viewport_transform_state;
 }
 
 u32 FileEnvironment::LocalMemorySize() const {

@@ -18,6 +18,10 @@ void EmitBitCastU64F64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
+void EmitBitCastS32F32(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
 void EmitBitCastF16U16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }

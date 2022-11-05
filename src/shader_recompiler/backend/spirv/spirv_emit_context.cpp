@@ -473,6 +473,7 @@ EmitContext::EmitContext(const Profile& profile_, const RuntimeInfo& runtime_inf
     DefineAttributeMemAccess(program.info);
     DefineGlobalMemoryFunctions(program.info);
     DefineRescalingInput(program.info);
+    DefineRenderArea(program.info);
 }
 
 EmitContext::~EmitContext() = default;
@@ -979,6 +980,36 @@ void EmitContext::DefineRescalingInputUniformConstant() {
 
     if (profile.supported_spirv >= 0x00010400) {
         interfaces.push_back(rescaling_uniform_constant);
+    }
+}
+
+void EmitContext::DefineRenderArea(const Info& info) {
+    if (!info.uses_render_area) {
+        return;
+    }
+
+    if (profile.unified_descriptor_binding) {
+        boost::container::static_vector<Id, 1> members{};
+        u32 member_index{0};
+
+        members.push_back(F32[4]);
+        render_are_member_index = member_index++;
+
+        const Id push_constant_struct{TypeStruct(std::span(members.data(), members.size()))};
+        Decorate(push_constant_struct, spv::Decoration::Block);
+        Name(push_constant_struct, "RenderAreaInfo");
+
+        MemberDecorate(push_constant_struct, render_are_member_index, spv::Decoration::Offset, 0);
+        MemberName(push_constant_struct, render_are_member_index, "render_area");
+
+        const Id pointer_type{TypePointer(spv::StorageClass::PushConstant, push_constant_struct)};
+        render_area_push_constant =
+            AddGlobalVariable(pointer_type, spv::StorageClass::PushConstant);
+        Name(render_area_push_constant, "render_area_push_constants");
+
+        if (profile.supported_spirv >= 0x00010400) {
+            interfaces.push_back(render_area_push_constant);
+        }
     }
 }
 

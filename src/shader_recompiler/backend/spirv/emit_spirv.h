@@ -23,8 +23,12 @@ struct RescalingLayout {
     alignas(16) std::array<u32, NUM_IMAGE_SCALING_WORDS> rescaling_images;
     u32 down_factor;
 };
+struct RenderAreaLayout {
+    std::array<f32, 4> render_area;
+};
 constexpr u32 RESCALING_LAYOUT_WORDS_OFFSET = offsetof(RescalingLayout, rescaling_textures);
 constexpr u32 RESCALING_LAYOUT_DOWN_FACTOR_OFFSET = offsetof(RescalingLayout, down_factor);
+constexpr u32 RENDERAREA_LAYOUT_OFFSET = offsetof(RenderAreaLayout, render_area);
 
 [[nodiscard]] std::vector<u32> EmitSPIRV(const Profile& profile, const RuntimeInfo& runtime_info,
                                          IR::Program& program, Bindings& bindings);

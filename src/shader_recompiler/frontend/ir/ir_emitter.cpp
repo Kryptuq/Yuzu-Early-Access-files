@@ -382,6 +382,14 @@ F32 IREmitter::ResolutionDownFactor() {
     return Inst<F32>(Opcode::ResolutionDownFactor);
 }
 
+F32 IREmitter::RenderAreaWidth() {
+    return F32(CompositeExtract(Inst<Value>(Opcode::RenderArea), 0));
+}
+
+F32 IREmitter::RenderAreaHeight() {
+    return F32(CompositeExtract(Inst<Value>(Opcode::RenderArea), 1));
+}
+
 U32 IREmitter::LaneId() {
     return Inst<U32>(Opcode::LaneId);
 }
@@ -685,6 +693,11 @@ Value IREmitter::Select(const U1& condition, const Value& true_value, const Valu
 template <>
 IR::U32 IREmitter::BitCast<IR::U32, IR::F32>(const IR::F32& value) {
     return Inst<IR::U32>(Opcode::BitCastU32F32, value);
+}
+
+template <>
+IR::S32 IREmitter::BitCast<IR::S32, IR::F32>(const IR::F32& value) {
+    return Inst<IR::S32>(Opcode::BitCastS32F32, value);
 }
 
 template <>

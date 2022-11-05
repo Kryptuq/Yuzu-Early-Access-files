@@ -516,7 +516,6 @@ void SwizzleBlockLinearImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr
     const u32 num_blocks_per_layer = NumBlocks(level_size, tile_size);
     const u32 host_bytes_per_layer = num_blocks_per_layer * bytes_per_block;
 
-    UNIMPLEMENTED_IF(info.tile_width_spacing > 0);
     UNIMPLEMENTED_IF(copy.image_offset.x != 0);
     UNIMPLEMENTED_IF(copy.image_offset.y != 0);
     UNIMPLEMENTED_IF(copy.image_offset.z != 0);

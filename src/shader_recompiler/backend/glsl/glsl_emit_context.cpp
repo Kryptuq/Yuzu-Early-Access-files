@@ -358,6 +358,9 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     if (info.uses_rescaling_uniform) {
         header += "layout(location=0) uniform vec4 scaling;";
     }
+    if (info.uses_render_area) {
+        header += "layout(location=1) uniform vec4 render_area;";
+    }
     DefineConstantBuffers(bindings);
     DefineConstantBufferIndirect();
     DefineStorageBuffers(bindings);

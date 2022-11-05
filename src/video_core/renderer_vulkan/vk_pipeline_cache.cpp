@@ -53,7 +53,7 @@ using VideoCommon::FileEnvironment;
 using VideoCommon::GenericEnvironment;
 using VideoCommon::GraphicsEnvironment;
 
-constexpr u32 CACHE_VERSION = 6;
+constexpr u32 CACHE_VERSION = 7;
 
 template <typename Container>
 auto MakeSpan(Container& container) {
@@ -326,6 +326,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, const Device& device
         .support_int64 = device.IsShaderInt64Supported(),
         .needs_demote_reorder = driver_id == VK_DRIVER_ID_AMD_PROPRIETARY_KHR ||
                                 driver_id == VK_DRIVER_ID_AMD_OPEN_SOURCE_KHR,
+        .support_snorm_render_buffer = true,
     };
 }
 

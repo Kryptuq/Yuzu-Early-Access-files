@@ -244,6 +244,9 @@ public:
     u32 texture_rescaling_index{};
     u32 image_rescaling_index{};
 
+    Id render_area_push_constant{};
+    u32 render_are_member_index{};
+
     Id local_memory{};
 
     Id shared_memory_u8{};
@@ -319,6 +322,7 @@ private:
     void DefineRescalingInput(const Info& info);
     void DefineRescalingInputPushConstant();
     void DefineRescalingInputUniformConstant();
+    void DefineRenderArea(const Info& info);
 
     void DefineInputs(const IR::Program& program);
     void DefineOutputs(const IR::Program& program);

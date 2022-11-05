@@ -49,7 +49,7 @@ using VideoCommon::LoadPipelines;
 using VideoCommon::SerializePipeline;
 using Context = ShaderContext::Context;
 
-constexpr u32 CACHE_VERSION = 6;
+constexpr u32 CACHE_VERSION = 7;
 
 template <typename Container>
 auto MakeSpan(Container& container) {
@@ -76,7 +76,7 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
         }
         break;
     case Shader::Stage::TessellationEval:
-        // invert the face
+        // Flip the face, as opengl's drawing is also flipped
         info.tess_clockwise = key.tessellation_clockwise == 0;
         info.tess_primitive = [&key] {
             switch (key.tessellation_primitive) {
@@ -219,6 +219,7 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
           .support_float16 = false,
           .support_int64 = device.HasShaderInt64(),
           .needs_demote_reorder = device.IsAmd(),
+          .support_snorm_render_buffer = false,
       } {
     if (use_asynchronous_shaders) {
         workers = CreateWorkers();

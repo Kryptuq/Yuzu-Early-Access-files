@@ -386,7 +386,7 @@ void EmitInvocationInfo(EmitContext& ctx, IR::Inst& inst) {
         ctx.Add("SHL.U {}.x, primitive.vertexcount, 16;", inst);
         break;
     default:
-        LOG_WARNING(Shader, "(STUBBED) EmitInvocationInfo");
+        LOG_WARNING(Shader, "(STUBBED) called");
         ctx.Add("MOV.S {}.x,0x00ff0000;", inst);
     }
 }
@@ -406,6 +406,10 @@ void EmitYDirection(EmitContext& ctx, IR::Inst& inst) {
 
 void EmitResolutionDownFactor(EmitContext& ctx, IR::Inst& inst) {
     ctx.Add("MOV.F {}.x,scaling[0].z;", inst);
+}
+
+void EmitRenderArea(EmitContext& ctx, IR::Inst& inst) {
+    ctx.Add("MOV.F {},render_area[0];", inst);
 }
 
 void EmitLoadLocal(EmitContext& ctx, IR::Inst& inst, ScalarU32 word_offset) {

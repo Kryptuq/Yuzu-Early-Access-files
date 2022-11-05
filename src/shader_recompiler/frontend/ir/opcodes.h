@@ -37,6 +37,7 @@ constexpr Type U8{Type::U8};
 constexpr Type U16{Type::U16};
 constexpr Type U32{Type::U32};
 constexpr Type U64{Type::U64};
+constexpr Type S32{Type::S32};
 constexpr Type F16{Type::F16};
 constexpr Type F32{Type::F32};
 constexpr Type F64{Type::F64};

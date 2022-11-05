@@ -6,6 +6,10 @@
 #include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/program.h"
 
+namespace Shader {
+struct HostTranslateInfo;
+}
+
 namespace Shader::Optimization {
 
 void CollectShaderInfoPass(Environment& env, IR::Program& program);
@@ -17,7 +21,8 @@ void LowerFp16ToFp32(IR::Program& program);
 void LowerInt64ToInt32(IR::Program& program);
 void RescalingPass(IR::Program& program);
 void SsaRewritePass(IR::Program& program);
-void TexturePass(Environment& env, IR::Program& program);
+void PositionPass(Environment& env, IR::Program& program);
+void TexturePass(Environment& env, IR::Program& program, const HostTranslateInfo& host_info);
 void VerificationPass(const IR::Program& program);
 
 // Dual Vertex
