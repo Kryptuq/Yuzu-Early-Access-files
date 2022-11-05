@@ -120,6 +120,6 @@ static_assert(std::is_final_v<KTransferMemory> && std::is_base_of_v<KAutoObject,
 // static_assert(std::is_final_v<KCodeMemory> &&
 //              std::is_base_of_v<KAutoObject, KCodeMemory>);
 
-static_assert(std::is_base_of<KAutoObject, KSystemResource>::value);
+static_assert(std::is_base_of_v<KAutoObject, KSystemResource>);
 
 } // namespace Kernel

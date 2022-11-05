@@ -74,7 +74,7 @@ public:
         KScopedDisableDispatch dd{m_kernel};
         KScopedSpinLock lk(m_lock);
 
-        if constexpr (std::is_same<T, KAutoObject>::value) {
+        if constexpr (std::is_same_v<T, KAutoObject>) {
             return this->GetObjectImpl(handle);
         } else {
             if (auto* obj = this->GetObjectImpl(handle); obj != nullptr) [[likely]] {
