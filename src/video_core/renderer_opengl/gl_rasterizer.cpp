@@ -468,8 +468,7 @@ bool RasterizerOpenGL::AccelerateSurfaceCopy(const Tegra::Engines::Fermi2D::Surf
                                              const Tegra::Engines::Fermi2D::Config& copy_config) {
     MICROPROFILE_SCOPE(OpenGL_Blits);
     std::scoped_lock lock{texture_cache.mutex};
-    texture_cache.BlitImage(dst, src, copy_config);
-    return true;
+    return texture_cache.BlitImage(dst, src, copy_config);
 }
 
 Tegra::Engines::AccelerateDMAInterface& RasterizerOpenGL::AccessAccelerateDMA() {

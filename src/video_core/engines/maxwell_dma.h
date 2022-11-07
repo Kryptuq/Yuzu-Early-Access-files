@@ -223,6 +223,8 @@ private:
 
     void CopyPitchToBlockLinear();
 
+    void CopyBlockLinearToBlockLinear();
+
     void FastCopyBlockLinearToPitch();
 
     void ReleaseSemaphore();
@@ -234,6 +236,7 @@ private:
 
     std::vector<u8> read_buffer;
     std::vector<u8> write_buffer;
+    std::vector<u8> intermediate_buffer;
 
     static constexpr std::size_t NUM_REGS = 0x800;
     struct Regs {

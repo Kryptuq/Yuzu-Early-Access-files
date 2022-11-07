@@ -93,11 +93,14 @@ PixelFormat PixelFormatFromDepthFormat(Tegra::DepthFormat format) {
 
 PixelFormat PixelFormatFromRenderTargetFormat(Tegra::RenderTargetFormat format) {
     switch (format) {
-    case Tegra::RenderTargetFormat::R32B32G32A32_FLOAT:
+    case Tegra::RenderTargetFormat::R32G32B32A32_FLOAT:
+    case Tegra::RenderTargetFormat::R32G32B32X32_FLOAT:
         return PixelFormat::R32G32B32A32_FLOAT;
     case Tegra::RenderTargetFormat::R32G32B32A32_SINT:
+    case Tegra::RenderTargetFormat::R32G32B32X32_SINT:
         return PixelFormat::R32G32B32A32_SINT;
     case Tegra::RenderTargetFormat::R32G32B32A32_UINT:
+    case Tegra::RenderTargetFormat::R32G32B32X32_UINT:
         return PixelFormat::R32G32B32A32_UINT;
     case Tegra::RenderTargetFormat::R16G16B16A16_UNORM:
         return PixelFormat::R16G16B16A16_UNORM;
@@ -118,16 +121,22 @@ PixelFormat PixelFormatFromRenderTargetFormat(Tegra::RenderTargetFormat format) 
     case Tegra::RenderTargetFormat::R16G16B16X16_FLOAT:
         return PixelFormat::R16G16B16X16_FLOAT;
     case Tegra::RenderTargetFormat::A8R8G8B8_UNORM:
+    case Tegra::RenderTargetFormat::X8R8G8B8_UNORM:
         return PixelFormat::B8G8R8A8_UNORM;
     case Tegra::RenderTargetFormat::A8R8G8B8_SRGB:
+    case Tegra::RenderTargetFormat::X8R8G8B8_SRGB:
         return PixelFormat::B8G8R8A8_SRGB;
     case Tegra::RenderTargetFormat::A2B10G10R10_UNORM:
         return PixelFormat::A2B10G10R10_UNORM;
     case Tegra::RenderTargetFormat::A2B10G10R10_UINT:
         return PixelFormat::A2B10G10R10_UINT;
+    case Tegra::RenderTargetFormat::A2R10G10B10_UNORM:
+        return PixelFormat::A2R10G10B10_UNORM;
     case Tegra::RenderTargetFormat::A8B8G8R8_UNORM:
+    case Tegra::RenderTargetFormat::X8B8G8R8_UNORM:
         return PixelFormat::A8B8G8R8_UNORM;
     case Tegra::RenderTargetFormat::A8B8G8R8_SRGB:
+    case Tegra::RenderTargetFormat::X8B8G8R8_SRGB:
         return PixelFormat::A8B8G8R8_SRGB;
     case Tegra::RenderTargetFormat::A8B8G8R8_SNORM:
         return PixelFormat::A8B8G8R8_SNORM;
@@ -156,6 +165,7 @@ PixelFormat PixelFormatFromRenderTargetFormat(Tegra::RenderTargetFormat format) 
     case Tegra::RenderTargetFormat::R5G6B5_UNORM:
         return PixelFormat::R5G6B5_UNORM;
     case Tegra::RenderTargetFormat::A1R5G5B5_UNORM:
+    case Tegra::RenderTargetFormat::X1R5G5B5_UNORM:
         return PixelFormat::A1R5G5B5_UNORM;
     case Tegra::RenderTargetFormat::R8G8_UNORM:
         return PixelFormat::R8G8_UNORM;

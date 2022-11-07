@@ -62,7 +62,8 @@ void MaxwellDMA::Launch() {
 
         if (!is_src_pitch && !is_dst_pitch) {
             // If both the source and the destination are in block layout, assert.
-            UNIMPLEMENTED_MSG("Tiled->Tiled DMA transfers are not yet implemented");
+            CopyBlockLinearToBlockLinear();
+            ReleaseSemaphore();
             return;
         }
 
@@ -284,6 +285,70 @@ void MaxwellDMA::FastCopyBlockLinearToPitch() {
                      regs.src_params.height, 1, pos_x, pos_y, regs.line_length_in, regs.line_count,
                      regs.src_params.block_size.height, regs.src_params.block_size.depth,
                      regs.pitch_out);
+
+    memory_manager.WriteBlock(regs.offset_out, write_buffer.data(), dst_size);
+}
+
+void MaxwellDMA::CopyBlockLinearToBlockLinear() {
+    UNIMPLEMENTED_IF(regs.src_params.block_size.width != 0);
+
+    const bool is_remapping = regs.launch_dma.remap_enable != 0;
+
+    // Deswizzle the input and copy it over.
+    const Parameters& src = regs.src_params;
+    const Parameters& dst = regs.dst_params;
+
+    const u32 num_remap_components = regs.remap_const.num_dst_components_minus_one + 1;
+    const u32 remap_components_size = regs.remap_const.component_size_minus_one + 1;
+
+    const u32 base_bpp = !is_remapping ? 1U : num_remap_components * remap_components_size;
+
+    u32 src_width = src.width;
+    u32 dst_width = dst.width;
+    u32 x_elements = regs.line_length_in;
+    u32 src_x_offset = src.origin.x;
+    u32 dst_x_offset = dst.origin.x;
+    u32 bpp_shift = 0U;
+    if (!is_remapping) {
+        bpp_shift = Common::FoldRight(
+            4U, [](u32 x, u32 y) { return std::min(x, static_cast<u32>(std::countr_zero(y))); },
+            src_width, dst_width, x_elements, src_x_offset, dst_x_offset,
+            static_cast<u32>(regs.offset_in), static_cast<u32>(regs.offset_out));
+        src_width >>= bpp_shift;
+        dst_width >>= bpp_shift;
+        x_elements >>= bpp_shift;
+        src_x_offset >>= bpp_shift;
+        dst_x_offset >>= bpp_shift;
+    }
+
+    const u32 bytes_per_pixel = base_bpp << bpp_shift;
+    const size_t src_size = CalculateSize(true, bytes_per_pixel, src_width, src.height, src.depth,
+                                          src.block_size.height, src.block_size.depth);
+    const size_t dst_size = CalculateSize(true, bytes_per_pixel, dst_width, dst.height, dst.depth,
+                                          dst.block_size.height, dst.block_size.depth);
+
+    const u32 pitch = x_elements * bytes_per_pixel;
+    const size_t mid_buffer_size = pitch * regs.line_count;
+
+    if (read_buffer.size() < src_size) {
+        read_buffer.resize(src_size);
+    }
+    if (write_buffer.size() < dst_size) {
+        write_buffer.resize(dst_size);
+    }
+
+    intermediate_buffer.resize(mid_buffer_size);
+
+    memory_manager.ReadBlock(regs.offset_in, read_buffer.data(), src_size);
+    memory_manager.ReadBlock(regs.offset_out, write_buffer.data(), dst_size);
+
+    UnswizzleSubrect(intermediate_buffer, read_buffer, bytes_per_pixel, src_width, src.height,
+                     src.depth, src_x_offset, src.origin.y, x_elements, regs.line_count,
+                     src.block_size.height, src.block_size.depth, pitch);
+
+    SwizzleSubrect(write_buffer, intermediate_buffer, bytes_per_pixel, dst_width, dst.height,
+                   dst.depth, dst_x_offset, dst.origin.y, x_elements, regs.line_count,
+                   dst.block_size.height, dst.block_size.depth, pitch);
 
     memory_manager.WriteBlock(regs.offset_out, write_buffer.data(), dst_size);
 }

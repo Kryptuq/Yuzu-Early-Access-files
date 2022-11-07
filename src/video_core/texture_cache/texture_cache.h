@@ -506,10 +506,14 @@ void TextureCache<P>::UnmapGPUMemory(size_t as_id, GPUVAddr gpu_addr, size_t siz
 }
 
 template <class P>
-void TextureCache<P>::BlitImage(const Tegra::Engines::Fermi2D::Surface& dst,
+bool TextureCache<P>::BlitImage(const Tegra::Engines::Fermi2D::Surface& dst,
                                 const Tegra::Engines::Fermi2D::Surface& src,
                                 const Tegra::Engines::Fermi2D::Config& copy) {
-    const BlitImages images = GetBlitImages(dst, src, copy);
+    const auto result = GetBlitImages(dst, src, copy);
+    if (!result) {
+        return false;
+    }
+    const BlitImages images = *result;
     const ImageId dst_id = images.dst_id;
     const ImageId src_id = images.src_id;
 
@@ -596,6 +600,7 @@ void TextureCache<P>::BlitImage(const Tegra::Engines::Fermi2D::Surface& dst,
         runtime.BlitImage(dst_framebuffer, dst_view, src_view, dst_region, src_region, copy.filter,
                           copy.operation);
     }
+    return true;
 }
 
 template <class P>
@@ -1133,7 +1138,7 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
 }
 
 template <class P>
-typename TextureCache<P>::BlitImages TextureCache<P>::GetBlitImages(
+std::optional<typename TextureCache<P>::BlitImages> TextureCache<P>::GetBlitImages(
     const Tegra::Engines::Fermi2D::Surface& dst, const Tegra::Engines::Fermi2D::Surface& src,
     const Tegra::Engines::Fermi2D::Config& copy) {
 
@@ -1154,6 +1159,20 @@ typename TextureCache<P>::BlitImages TextureCache<P>::GetBlitImages(
         has_deleted_images = false;
         src_id = FindImage(src_info, src_addr, try_options);
         dst_id = FindImage(dst_info, dst_addr, try_options);
+        if (!copy.must_accelerate) {
+            do {
+                if (!src_id && !dst_id) {
+                    return std::nullopt;
+                }
+                if (src_id && True(slot_images[src_id].flags & ImageFlagBits::GpuModified)) {
+                    break;
+                }
+                if (dst_id && True(slot_images[dst_id].flags & ImageFlagBits::GpuModified)) {
+                    break;
+                }
+                return std::nullopt;
+            } while (false);
+        }
         const ImageBase* const src_image = src_id ? &slot_images[src_id] : nullptr;
         if (src_image && src_image->info.num_samples > 1) {
             RelaxedOptions find_options{FIND_OPTIONS | RelaxedOptions::ForceBrokenViews};
@@ -1194,12 +1213,12 @@ typename TextureCache<P>::BlitImages TextureCache<P>::GetBlitImages(
             dst_id = FindOrInsertImage(dst_info, dst_addr, RelaxedOptions{});
         } while (has_deleted_images);
     }
-    return BlitImages{
+    return {BlitImages{
         .dst_id = dst_id,
         .src_id = src_id,
         .dst_format = dst_info.format,
         .src_format = src_info.format,
-    };
+    }};
 }
 
 template <class P>

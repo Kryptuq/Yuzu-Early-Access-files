@@ -20,7 +20,7 @@ void ChannelState::Init(Core::System& system, GPU& gpu) {
     ASSERT(memory_manager);
     dma_pusher = std::make_unique<Tegra::DmaPusher>(system, gpu, *memory_manager, *this);
     maxwell_3d = std::make_unique<Engines::Maxwell3D>(system, *memory_manager);
-    fermi_2d = std::make_unique<Engines::Fermi2D>();
+    fermi_2d = std::make_unique<Engines::Fermi2D>(*memory_manager);
     kepler_compute = std::make_unique<Engines::KeplerCompute>(system, *memory_manager);
     maxwell_dma = std::make_unique<Engines::MaxwellDMA>(system, *memory_manager);
     kepler_memory = std::make_unique<Engines::KeplerMemory>(system, *memory_manager);

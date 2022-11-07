@@ -174,7 +174,7 @@ public:
     void UnmapGPUMemory(size_t as_id, GPUVAddr gpu_addr, size_t size);
 
     /// Blit an image with the given parameters
-    void BlitImage(const Tegra::Engines::Fermi2D::Surface& dst,
+    bool BlitImage(const Tegra::Engines::Fermi2D::Surface& dst,
                    const Tegra::Engines::Fermi2D::Surface& src,
                    const Tegra::Engines::Fermi2D::Config& copy);
 
@@ -285,9 +285,9 @@ private:
     [[nodiscard]] ImageId JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VAddr cpu_addr);
 
     /// Return a blit image pair from the given guest blit parameters
-    [[nodiscard]] BlitImages GetBlitImages(const Tegra::Engines::Fermi2D::Surface& dst,
-                                           const Tegra::Engines::Fermi2D::Surface& src,
-                                           const Tegra::Engines::Fermi2D::Config& copy);
+    [[nodiscard]] std::optional<BlitImages> GetBlitImages(
+        const Tegra::Engines::Fermi2D::Surface& dst, const Tegra::Engines::Fermi2D::Surface& src,
+        const Tegra::Engines::Fermi2D::Config& copy);
 
     /// Find or create a sampler from a guest descriptor sampler
     [[nodiscard]] SamplerId FindSampler(const TSCEntry& config);

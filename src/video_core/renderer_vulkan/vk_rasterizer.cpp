@@ -544,8 +544,7 @@ bool RasterizerVulkan::AccelerateSurfaceCopy(const Tegra::Engines::Fermi2D::Surf
                                              const Tegra::Engines::Fermi2D::Surface& dst,
                                              const Tegra::Engines::Fermi2D::Config& copy_config) {
     std::scoped_lock lock{texture_cache.mutex};
-    texture_cache.BlitImage(dst, src, copy_config);
-    return true;
+    return texture_cache.BlitImage(dst, src, copy_config);
 }
 
 Tegra::Engines::AccelerateDMAInterface& RasterizerVulkan::AccessAccelerateDMA() {

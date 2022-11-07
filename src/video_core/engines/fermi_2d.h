@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cstddef>
+#include <memory>
 #include "common/bit_field.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"
@@ -21,6 +22,10 @@ class RasterizerInterface;
 
 namespace Tegra::Engines {
 
+namespace Blitter {
+class SoftwareBlitEngine;
+}
+
 /**
  * This Engine is known as G80_2D. Documentation can be found in:
  * https://github.com/envytools/envytools/blob/master/rnndb/graph/g80_2d.xml
@@ -32,7 +37,7 @@ namespace Tegra::Engines {
 
 class Fermi2D final : public EngineInterface {
 public:
-    explicit Fermi2D();
+    explicit Fermi2D(MemoryManager& memory_manager_);
     ~Fermi2D() override;
 
     /// Binds a rasterizer to this engine.
@@ -286,6 +291,7 @@ public:
     struct Config {
         Operation operation;
         Filter filter;
+        bool must_accelerate;
         s32 dst_x0;
         s32 dst_y0;
         s32 dst_x1;
@@ -298,6 +304,7 @@ public:
 
 private:
     VideoCore::RasterizerInterface* rasterizer = nullptr;
+    std::unique_ptr<Blitter::SoftwareBlitEngine> sw_blitter;
 
     /// Performs the copy from the source surface to the destination surface as configured in the
     /// registers.

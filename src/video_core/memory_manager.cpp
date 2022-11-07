@@ -45,7 +45,7 @@ MemoryManager::MemoryManager(Core::System& system_, u64 address_space_bits_, u64
     kind_valus.fill(PTEKind::INVALID);
     big_kinds.resize(big_page_table_size / 32, kind_valus);
     entries.resize(page_table_size / 32, 0);
-    kinds.resize(big_page_table_size / 32, kind_valus);
+    kinds.resize(page_table_size / 32, kind_valus);
 }
 
 MemoryManager::~MemoryManager() = default;
