@@ -291,7 +291,7 @@
     <item row="6" column="0">
      <widget class="QRadioButton" name="radioButton_Graphical_No">
       <property name="text">
-       <string>None       Everything is rendered as it looks on the Nintendo Switch</string>
+       <string>None     Everything is rendered as it looks on the Nintendo Switch</string>
       </property>
      </widget>
     </item>
@@ -350,7 +350,7 @@
     <item row="6" column="0">
      <widget class="QRadioButton" name="radioButton_Audio_No">
       <property name="text">
-       <string>None       Audio is played perfectly</string>
+       <string>None     Audio is played perfectly</string>
       </property>
      </widget>
     </item>

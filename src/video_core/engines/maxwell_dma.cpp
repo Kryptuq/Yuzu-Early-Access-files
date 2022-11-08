@@ -103,26 +103,29 @@ void MaxwellDMA::Launch() {
             const bool is_src_pitch = IsPitchKind(static_cast<PTEKind>(src_kind));
             const bool is_dst_pitch = IsPitchKind(static_cast<PTEKind>(dst_kind));
             if (!is_src_pitch && is_dst_pitch) {
-                std::vector<u8> tmp_buffer(regs.line_length_in);
-                std::vector<u8> dst_buffer(regs.line_length_in);
-                memory_manager.ReadBlockUnsafe(regs.offset_in, tmp_buffer.data(),
-                                               regs.line_length_in);
-                for (u32 offset = 0; offset < regs.line_length_in; ++offset) {
-                    dst_buffer[offset] =
-                        tmp_buffer[convert_linear_2_blocklinear_addr(regs.offset_in + offset) -
-                                   regs.offset_in];
+                UNIMPLEMENTED_IF(regs.line_length_in % 16 != 0);
+                UNIMPLEMENTED_IF(regs.offset_in % 16 != 0);
+                UNIMPLEMENTED_IF(regs.offset_out % 16 != 0);
+                std::vector<u8> tmp_buffer(16);
+                for (u32 offset = 0; offset < regs.line_length_in; offset += 16) {
+                    memory_manager.ReadBlockUnsafe(
+                        convert_linear_2_blocklinear_addr(regs.offset_in + offset),
+                        tmp_buffer.data(), tmp_buffer.size());
+                    memory_manager.WriteBlock(regs.offset_out + offset, tmp_buffer.data(),
+                                              tmp_buffer.size());
                 }
-                memory_manager.WriteBlock(regs.offset_out, dst_buffer.data(), regs.line_length_in);
             } else if (is_src_pitch && !is_dst_pitch) {
-                std::vector<u8> tmp_buffer(regs.line_length_in);
-                std::vector<u8> dst_buffer(regs.line_length_in);
-                memory_manager.ReadBlockUnsafe(regs.offset_in, tmp_buffer.data(),
-                                               regs.line_length_in);
-                for (u32 offset = 0; offset < regs.line_length_in; ++offset) {
-                    dst_buffer[convert_linear_2_blocklinear_addr(regs.offset_out + offset) -
-                               regs.offset_out] = tmp_buffer[offset];
+                UNIMPLEMENTED_IF(regs.line_length_in % 16 != 0);
+                UNIMPLEMENTED_IF(regs.offset_in % 16 != 0);
+                UNIMPLEMENTED_IF(regs.offset_out % 16 != 0);
+                std::vector<u8> tmp_buffer(16);
+                for (u32 offset = 0; offset < regs.line_length_in; offset += 16) {
+                    memory_manager.ReadBlockUnsafe(regs.offset_in + offset, tmp_buffer.data(),
+                                                   tmp_buffer.size());
+                    memory_manager.WriteBlock(
+                        convert_linear_2_blocklinear_addr(regs.offset_out + offset),
+                        tmp_buffer.data(), tmp_buffer.size());
                 }
-                memory_manager.WriteBlock(regs.offset_out, dst_buffer.data(), regs.line_length_in);
             } else {
                 if (!accelerate.BufferCopy(regs.offset_in, regs.offset_out, regs.line_length_in)) {
                     std::vector<u8> tmp_buffer(regs.line_length_in);

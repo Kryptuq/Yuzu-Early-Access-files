@@ -309,24 +309,24 @@ public:
      * See GetDefaultServiceThread.
      * @param name String name for the ServerSession creating this thread, used for debug
      * purposes.
-     * @returns The a weak pointer newly created service thread.
+     * @returns A reference to the newly created service thread.
      */
-    std::weak_ptr<Kernel::ServiceThread> CreateServiceThread(const std::string& name);
+    Kernel::ServiceThread& CreateServiceThread(const std::string& name);
 
     /**
      * Gets the default host service thread, which executes HLE service requests. Unless service
      * requests need to block on the host, the default service thread should be used in favor of
      * creating a new service thread.
-     * @returns The a weak pointer for the default service thread.
+     * @returns A reference to the default service thread.
      */
-    std::weak_ptr<Kernel::ServiceThread> GetDefaultServiceThread() const;
+    Kernel::ServiceThread& GetDefaultServiceThread() const;
 
     /**
      * Releases a HLE service thread, instructing KernelCore to free it. This should be called when
      * the ServerSession associated with the thread is destroyed.
      * @param service_thread Service thread to release.
      */
-    void ReleaseServiceThread(std::weak_ptr<Kernel::ServiceThread> service_thread);
+    void ReleaseServiceThread(Kernel::ServiceThread& service_thread);
 
     /// Workaround for single-core mode when preempting threads while idle.
     bool IsPhantomModeForSingleCore() const;

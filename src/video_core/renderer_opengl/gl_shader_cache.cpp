@@ -76,7 +76,7 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
         }
         break;
     case Shader::Stage::TessellationEval:
-        // Flip the face, as opengl's drawing is also flipped
+        // Flip the face, as OpenGL's drawing is flipped.
         info.tess_clockwise = key.tessellation_clockwise == 0;
         info.tess_primitive = [&key] {
             switch (key.tessellation_primitive) {

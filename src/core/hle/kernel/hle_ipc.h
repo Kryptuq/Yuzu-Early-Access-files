@@ -82,13 +82,13 @@ public:
     void RegisterSession(KServerSession* server_session,
                          std::shared_ptr<SessionRequestManager> manager);
 
-    std::weak_ptr<ServiceThread> GetServiceThread() const {
+    ServiceThread& GetServiceThread() const {
         return service_thread;
     }
 
 protected:
     KernelCore& kernel;
-    std::weak_ptr<ServiceThread> service_thread;
+    ServiceThread& service_thread;
 };
 
 using SessionRequestHandlerWeakPtr = std::weak_ptr<SessionRequestHandler>;
@@ -154,7 +154,7 @@ public:
         session_handler = std::move(handler);
     }
 
-    std::weak_ptr<ServiceThread> GetServiceThread() const {
+    ServiceThread& GetServiceThread() const {
         return session_handler->GetServiceThread();
     }
 

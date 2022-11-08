@@ -158,7 +158,7 @@ int CompatDB::nextId() const {
     case CompatDBPage::Audio:
         return static_cast<int>(CompatDBPage::Final);
     case CompatDBPage::Final:
-        return static_cast<int>(CompatDBPage::Final);
+        return -1;
     default:
         LOG_ERROR(Frontend, "Unexpected page: {}", currentId());
         return static_cast<int>(CompatDBPage::Intro);

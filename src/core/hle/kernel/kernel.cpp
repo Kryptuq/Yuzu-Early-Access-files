@@ -93,7 +93,7 @@ struct KernelCore::Impl {
 
         RegisterHostThread(nullptr);
 
-        default_service_thread = CreateServiceThread(kernel, "DefaultServiceThread");
+        default_service_thread = &CreateServiceThread(kernel, "DefaultServiceThread");
     }
 
     void InitializeCores() {
@@ -782,33 +782,31 @@ struct KernelCore::Impl {
         search->second(system.ServiceManager(), server_port);
     }
 
-    std::weak_ptr<Kernel::ServiceThread> CreateServiceThread(KernelCore& kernel,
-                                                             const std::string& name) {
-        auto service_thread = std::make_shared<Kernel::ServiceThread>(kernel, name);
+    Kernel::ServiceThread& CreateServiceThread(KernelCore& kernel, const std::string& name) {
+        auto* ptr = new ServiceThread(kernel, name);
 
         service_threads_manager.QueueWork(
-            [this, service_thread]() { service_threads.emplace(service_thread); });
+            [this, ptr]() { service_threads.emplace(ptr, std::unique_ptr<ServiceThread>(ptr)); });
 
-        return service_thread;
+        return *ptr;
     }
 
-    void ReleaseServiceThread(std::weak_ptr<Kernel::ServiceThread> service_thread) {
-        if (auto strong_ptr = service_thread.lock()) {
-            if (strong_ptr == default_service_thread.lock()) {
-                // Nothing to do here, the service is using default_service_thread, which will be
-                // released on shutdown.
-                return;
-            }
+    void ReleaseServiceThread(Kernel::ServiceThread& service_thread) {
+        auto* ptr = &service_thread;
 
-            service_threads_manager.QueueWork(
-                [this, strong_ptr{std::move(strong_ptr)}]() { service_threads.erase(strong_ptr); });
+        if (ptr == default_service_thread) {
+            // Nothing to do here, the service is using default_service_thread, which will be
+            // released on shutdown.
+            return;
         }
+
+        service_threads_manager.QueueWork([this, ptr]() { service_threads.erase(ptr); });
     }
 
     void ClearServiceThreads() {
         service_threads_manager.QueueWork([this] {
             service_threads.clear();
-            default_service_thread.reset();
+            default_service_thread = nullptr;
             service_thread_barrier.Sync();
         });
         service_thread_barrier.Sync();
@@ -884,8 +882,8 @@ struct KernelCore::Impl {
     std::unique_ptr<KMemoryLayout> memory_layout;
 
     // Threads used for services
-    std::unordered_set<std::shared_ptr<ServiceThread>> service_threads;
-    std::weak_ptr<ServiceThread> default_service_thread;
+    std::unordered_map<ServiceThread*, std::unique_ptr<ServiceThread>> service_threads;
+    ServiceThread* default_service_thread{};
     Common::ThreadWorker service_threads_manager;
     Common::Barrier service_thread_barrier;
 
@@ -1258,15 +1256,15 @@ void KernelCore::ExitSVCProfile() {
     MicroProfileLeave(MICROPROFILE_TOKEN(Kernel_SVC), impl->svc_ticks[CurrentPhysicalCoreIndex()]);
 }
 
-std::weak_ptr<Kernel::ServiceThread> KernelCore::CreateServiceThread(const std::string& name) {
+Kernel::ServiceThread& KernelCore::CreateServiceThread(const std::string& name) {
     return impl->CreateServiceThread(*this, name);
 }
 
-std::weak_ptr<Kernel::ServiceThread> KernelCore::GetDefaultServiceThread() const {
-    return impl->default_service_thread;
+Kernel::ServiceThread& KernelCore::GetDefaultServiceThread() const {
+    return *impl->default_service_thread;
 }
 
-void KernelCore::ReleaseServiceThread(std::weak_ptr<Kernel::ServiceThread> service_thread) {
+void KernelCore::ReleaseServiceThread(Kernel::ServiceThread& service_thread) {
     impl->ReleaseServiceThread(service_thread);
 }
 

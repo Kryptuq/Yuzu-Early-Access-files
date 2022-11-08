@@ -27,16 +27,12 @@ namespace Kernel {
 
 SessionRequestHandler::SessionRequestHandler(KernelCore& kernel_, const char* service_name_,
                                              ServiceThreadType thread_type)
-    : kernel{kernel_} {
-    if (thread_type == ServiceThreadType::CreateNew) {
-        service_thread = kernel.CreateServiceThread(service_name_);
-    } else {
-        service_thread = kernel.GetDefaultServiceThread();
-    }
-}
+    : kernel{kernel_}, service_thread{thread_type == ServiceThreadType::CreateNew
+                                          ? kernel.CreateServiceThread(service_name_)
+                                          : kernel.GetDefaultServiceThread()} {}
 
 SessionRequestHandler::~SessionRequestHandler() {
-    kernel.ReleaseServiceThread(service_thread.lock());
+    kernel.ReleaseServiceThread(service_thread);
 }
 
 void SessionRequestHandler::AcceptSession(KServerPort* server_port) {
@@ -49,7 +45,7 @@ void SessionRequestHandler::AcceptSession(KServerPort* server_port) {
 void SessionRequestHandler::RegisterSession(KServerSession* server_session,
                                             std::shared_ptr<SessionRequestManager> manager) {
     manager->SetSessionHandler(shared_from_this());
-    service_thread.lock()->RegisterServerSession(server_session, manager);
+    service_thread.RegisterServerSession(server_session, manager);
     server_session->Close();
 }
 

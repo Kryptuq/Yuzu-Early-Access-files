@@ -383,7 +383,7 @@ void EmitInvocationInfo(EmitContext& ctx, IR::Inst& inst) {
     switch (ctx.stage) {
     case Stage::TessellationControl:
     case Stage::TessellationEval:
-        ctx.Add("SHL.U {}.x, primitive.vertexcount, 16;", inst);
+        ctx.Add("SHL.U {}.x,primitive.vertexcount,16;", inst);
         break;
     default:
         LOG_WARNING(Shader, "(STUBBED) called");
