@@ -359,6 +359,12 @@ public:
             }
         });
 
+        long page_size = sysconf(_SC_PAGESIZE);
+        if (page_size != 0x1000) {
+            LOG_CRITICAL(HW_Memory, "page size {:#x} is incompatible with 4K paging", page_size);
+            throw std::bad_alloc{};
+        }
+
         // Backing memory initialization
 #if defined(__FreeBSD__) && __FreeBSD__ < 13
         // XXX Drop after FreeBSD 12.* reaches EOL on 2024-06-30

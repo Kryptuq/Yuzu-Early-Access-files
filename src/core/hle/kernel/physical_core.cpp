@@ -12,7 +12,7 @@ namespace Kernel {
 
 PhysicalCore::PhysicalCore(std::size_t core_index_, Core::System& system_, KScheduler& scheduler_)
     : core_index{core_index_}, system{system_}, scheduler{scheduler_} {
-#ifdef ARCHITECTURE_x86_64
+#if defined(ARCHITECTURE_x86_64) || defined(ARCHITECTURE_arm64)
     // TODO(bunnei): Initialization relies on a core being available. We may later replace this with
     // a 32-bit instance of Dynarmic. This should be abstracted out to a CPU manager.
     auto& kernel = system.Kernel();
@@ -26,7 +26,7 @@ PhysicalCore::PhysicalCore(std::size_t core_index_, Core::System& system_, KSche
 PhysicalCore::~PhysicalCore() = default;
 
 void PhysicalCore::Initialize([[maybe_unused]] bool is_64_bit) {
-#ifdef ARCHITECTURE_x86_64
+#if defined(ARCHITECTURE_x86_64) || defined(ARCHITECTURE_arm64)
     auto& kernel = system.Kernel();
     if (!is_64_bit) {
         // We already initialized a 64-bit core, replace with a 32-bit one.

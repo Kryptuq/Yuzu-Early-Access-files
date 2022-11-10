@@ -301,6 +301,11 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
         }
     }
 
+#ifdef ARCHITECTURE_arm64
+    // TODO: remove when fixed in dynarmic
+    config.optimizations &= ~Dynarmic::OptimizationFlag::BlockLinking;
+#endif
+
     return std::make_unique<Dynarmic::A32::Jit>(config);
 }
 

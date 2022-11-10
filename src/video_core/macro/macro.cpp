@@ -16,7 +16,10 @@
 #include "video_core/macro/macro.h"
 #include "video_core/macro/macro_hle.h"
 #include "video_core/macro/macro_interpreter.h"
+
+#ifdef ARCHITECTURE_x86_64
 #include "video_core/macro/macro_jit_x64.h"
+#endif
 
 namespace Tegra {
 

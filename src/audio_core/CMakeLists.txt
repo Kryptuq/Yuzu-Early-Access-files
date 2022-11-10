@@ -217,7 +217,7 @@ else()
 endif()
 
 target_link_libraries(audio_core PUBLIC common core)
-if (ARCHITECTURE_x86_64)
+if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64)
     target_link_libraries(audio_core PRIVATE dynarmic)
 endif()
 

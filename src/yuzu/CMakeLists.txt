@@ -385,6 +385,6 @@ if (NOT APPLE)
     target_compile_definitions(yuzu PRIVATE HAS_OPENGL)
 endif()
 
-if (ARCHITECTURE_x86_64)
+if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64)
     target_link_libraries(yuzu PRIVATE dynarmic)
 endif()

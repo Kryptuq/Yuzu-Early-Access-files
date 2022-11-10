@@ -52,12 +52,16 @@ CallbackOrAccessOneWord DynarmicCP15::CompileSendOneWord(bool two, unsigned opc1
         case 4:
             // CP15_DATA_SYNC_BARRIER
             return Callback{
-                [](Dynarmic::A32::Jit*, void*, std::uint32_t, std::uint32_t) -> std::uint64_t {
-#ifdef _MSC_VER
+                [](void*, std::uint32_t, std::uint32_t) -> std::uint64_t {
+#if defined(_MSC_VER) && defined(ARCHITECTURE_x86_64)
                     _mm_mfence();
                     _mm_lfence();
-#else
+#elif defined(ARCHITECTURE_x86_64)
                     asm volatile("mfence\n\tlfence\n\t" : : : "memory");
+#elif defined(ARCHITECTURE_arm64)
+                    asm volatile("dsb sy\n\t" : : : "memory");
+#else
+#error Unsupported architecture
 #endif
                     return 0;
                 },
@@ -66,11 +70,15 @@ CallbackOrAccessOneWord DynarmicCP15::CompileSendOneWord(bool two, unsigned opc1
         case 5:
             // CP15_DATA_MEMORY_BARRIER
             return Callback{
-                [](Dynarmic::A32::Jit*, void*, std::uint32_t, std::uint32_t) -> std::uint64_t {
-#ifdef _MSC_VER
+                [](void*, std::uint32_t, std::uint32_t) -> std::uint64_t {
+#if defined(_MSC_VER) && defined(ARCHITECTURE_x86_64)
                     _mm_mfence();
-#else
+#elif defined(ARCHITECTURE_x86_64)
                     asm volatile("mfence\n\t" : : : "memory");
+#elif defined(ARCHITECTURE_arm64)
+                    asm volatile("dmb sy\n\t" : : : "memory");
+#else
+#error Unsupported architecture
 #endif
                     return 0;
                 },
@@ -115,7 +123,7 @@ CallbackOrAccessOneWord DynarmicCP15::CompileGetOneWord(bool two, unsigned opc1,
 CallbackOrAccessTwoWords DynarmicCP15::CompileGetTwoWords(bool two, unsigned opc, CoprocReg CRm) {
     if (!two && opc == 0 && CRm == CoprocReg::C14) {
         // CNTPCT
-        const auto callback = [](Dynarmic::A32::Jit*, void* arg, u32, u32) -> u64 {
+        const auto callback = [](void* arg, u32, u32) -> u64 {
             const auto& parent_arg = *static_cast<ARM_Dynarmic_32*>(arg);
             return parent_arg.system.CoreTiming().GetClockTicks();
         };

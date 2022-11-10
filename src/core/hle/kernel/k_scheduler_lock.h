@@ -60,6 +60,9 @@ public:
 
         // Release an instance of the lock.
         if ((--lock_count) == 0) {
+            // Perform a memory barrier here.
+            std::atomic_thread_fence(std::memory_order_seq_cst);
+
             // We're no longer going to hold the lock. Take note of what cores need scheduling.
             const u64 cores_needing_scheduling =
                 SchedulerType::UpdateHighestPriorityThreads(kernel);

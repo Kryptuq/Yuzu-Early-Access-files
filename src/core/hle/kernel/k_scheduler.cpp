@@ -384,7 +384,8 @@ void KScheduler::SwitchThread(KThread* next_thread) {
 
 void KScheduler::ScheduleImpl() {
     // First, clear the needs scheduling bool.
-    m_state.needs_scheduling.store(false, std::memory_order_seq_cst);
+    m_state.needs_scheduling.store(false, std::memory_order_relaxed);
+    std::atomic_thread_fence(std::memory_order_seq_cst);
 
     // Load the appropriate thread pointers for scheduling.
     KThread* const cur_thread{GetCurrentThreadPointer(kernel)};
@@ -400,7 +401,8 @@ void KScheduler::ScheduleImpl() {
     // If there aren't, we want to check if the highest priority thread is the same as the current
     // thread.
     if (highest_priority_thread == cur_thread) {
-        // If they're the same, then we can just return.
+        // If they're the same, then we can just issue a memory barrier and return.
+        std::atomic_thread_fence(std::memory_order_seq_cst);
         return;
     }
 
@@ -476,7 +478,8 @@ void KScheduler::ScheduleImplFiber() {
 
         // We failed to successfully do the context switch, and need to retry.
         // Clear needs_scheduling.
-        m_state.needs_scheduling.store(false, std::memory_order_seq_cst);
+        m_state.needs_scheduling.store(false, std::memory_order_relaxed);
+        std::atomic_thread_fence(std::memory_order_seq_cst);
 
         // Refresh the highest priority thread.
         highest_priority_thread = m_state.highest_priority_thread;

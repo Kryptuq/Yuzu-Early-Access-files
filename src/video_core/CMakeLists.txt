@@ -77,8 +77,6 @@ add_library(video_core STATIC
     macro/macro_hle.h
     macro/macro_interpreter.cpp
     macro/macro_interpreter.h
-    macro/macro_jit_x64.cpp
-    macro/macro_jit_x64.h
     fence_manager.h
     gpu.cpp
     gpu.h
@@ -249,7 +247,7 @@ add_library(video_core STATIC
 create_target_directory_groups(video_core)
 
 target_link_libraries(video_core PUBLIC common core)
-target_link_libraries(video_core PUBLIC glad shader_recompiler xbyak)
+target_link_libraries(video_core PUBLIC glad shader_recompiler)
 
 if (YUZU_USE_BUNDLED_FFMPEG AND NOT WIN32)
     add_dependencies(video_core ffmpeg-build)
@@ -286,8 +284,19 @@ else()
 
         -Wno-sign-conversion
     )
+
+    # xbyak
+    set_source_files_properties(macro/macro_jit_x64.cpp PROPERTIES COMPILE_OPTIONS "-Wno-conversion;-Wno-shadow")
 endif()
 
 if (ARCHITECTURE_x86_64)
+    target_sources(video_core PRIVATE
+        macro/macro_jit_x64.cpp
+        macro/macro_jit_x64.h
+    )
+    target_link_libraries(video_core PUBLIC xbyak)
+endif()
+
+if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64)
     target_link_libraries(video_core PRIVATE dynarmic)
 endif()

@@ -497,10 +497,6 @@ add_library(core STATIC
     hle/service/hid/irsensor/processor_base.h
     hle/service/hid/irsensor/tera_plugin_processor.cpp
     hle/service/hid/irsensor/tera_plugin_processor.h
-    hle/service/jit/jit_context.cpp
-    hle/service/jit/jit_context.h
-    hle/service/jit/jit.cpp
-    hle/service/jit/jit.h
     hle/service/lbl/lbl.cpp
     hle/service/lbl/lbl.h
     hle/service/ldn/lan_discovery.cpp
@@ -805,14 +801,18 @@ if (ENABLE_WEB_SERVICE)
     target_link_libraries(core PRIVATE web_service)
 endif()
 
-if (ARCHITECTURE_x86_64)
+if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64)
     target_sources(core PRIVATE
-        arm/dynarmic/arm_dynarmic_32.cpp
-        arm/dynarmic/arm_dynarmic_32.h
         arm/dynarmic/arm_dynarmic_64.cpp
         arm/dynarmic/arm_dynarmic_64.h
+        arm/dynarmic/arm_dynarmic_32.cpp
+        arm/dynarmic/arm_dynarmic_32.h
         arm/dynarmic/arm_dynarmic_cp15.cpp
         arm/dynarmic/arm_dynarmic_cp15.h
+        hle/service/jit/jit_context.cpp
+        hle/service/jit/jit_context.h
+        hle/service/jit/jit.cpp
+        hle/service/jit/jit.h
     )
     target_link_libraries(core PRIVATE dynarmic)
 endif()
