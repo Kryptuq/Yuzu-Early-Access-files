@@ -31,7 +31,7 @@ ServiceContext::~ServiceContext() {
 Kernel::KEvent* ServiceContext::CreateEvent(std::string&& name) {
     // Reserve a new event from the process resource limit
     Kernel::KScopedResourceReservation event_reservation(process,
-                                                         Kernel::LimitableResource::Events);
+                                                         Kernel::LimitableResource::EventCountMax);
     if (!event_reservation.Succeeded()) {
         LOG_CRITICAL(Service, "Resource limit reached!");
         return {};

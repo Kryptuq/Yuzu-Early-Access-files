@@ -65,9 +65,9 @@
    <attribute name="pageId">
     <string notr="true">1</string>
    </attribute>
-   <layout class="QFormLayout" name="formLayout">
+   <layout class="QFormLayout" name="formLayout1">
     <item row="0" column="0" colspan="2">
-     <widget class="QLabel" name="lbl_Independent">
+     <widget class="QLabel" name="lbl_Independent1">
       <property name="font">
        <font>
         <pointsize>10</pointsize>
@@ -82,7 +82,7 @@
      </widget>
     </item>
     <item row="1" column="0" colspan="2">
-     <spacer name="verticalSpacer">
+     <spacer name="verticalSpacer1">
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
@@ -104,7 +104,7 @@
     <item row="4" column="0">
      <widget class="QRadioButton" name="radioButton_GameBoot_No">
       <property name="text">
-       <string>No    The game doesn't get past the "Launching..." screen</string>
+       <string>No    The game doesn't get past the &quot;Launching...&quot; screen</string>
       </property>
      </widget>
     </item>
@@ -117,7 +117,7 @@
    <attribute name="pageId">
     <string notr="true">2</string>
    </attribute>
-   <layout class="QFormLayout" name="formLayout">
+   <layout class="QFormLayout" name="formLayout2">
     <item row="2" column="0">
      <widget class="QRadioButton" name="radioButton_Gameplay_Yes">
       <property name="text">
@@ -133,7 +133,7 @@
      </widget>
     </item>
     <item row="0" column="0" colspan="2">
-     <widget class="QLabel" name="lbl_Independent">
+     <widget class="QLabel" name="lbl_Independent2">
       <property name="font">
        <font>
         <pointsize>10</pointsize>
@@ -148,7 +148,7 @@
      </widget>
     </item>
     <item row="1" column="0" colspan="2">
-     <spacer name="verticalSpacer">
+     <spacer name="verticalSpacer2">
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
@@ -169,7 +169,7 @@
    <attribute name="pageId">
     <string notr="true">3</string>
    </attribute>
-   <layout class="QFormLayout" name="formLayout">
+   <layout class="QFormLayout" name="formLayout3">
     <item row="2" column="0">
      <widget class="QRadioButton" name="radioButton_NoFreeze_Yes">
       <property name="text">
@@ -185,7 +185,7 @@
      </widget>
     </item>
     <item row="0" column="0" colspan="2">
-     <widget class="QLabel" name="lbl_Independent">
+     <widget class="QLabel" name="lbl_Independent3">
       <property name="font">
        <font>
         <pointsize>10</pointsize>
@@ -200,7 +200,7 @@
      </widget>
     </item>
     <item row="1" column="0" colspan="2">
-     <spacer name="verticalSpacer">
+     <spacer name="verticalSpacer3">
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
@@ -221,7 +221,7 @@
    <attribute name="pageId">
     <string notr="true">4</string>
    </attribute>
-   <layout class="QFormLayout" name="formLayout">
+   <layout class="QFormLayout" name="formLayout4">
     <item row="2" column="0">
      <widget class="QRadioButton" name="radioButton_Complete_Yes">
       <property name="text">
@@ -237,7 +237,7 @@
      </widget>
     </item>
     <item row="0" column="0" colspan="2">
-     <widget class="QLabel" name="lbl_Independent">
+     <widget class="QLabel" name="lbl_Independent4">
       <property name="font">
        <font>
         <pointsize>10</pointsize>
@@ -252,7 +252,7 @@
      </widget>
     </item>
     <item row="1" column="0" colspan="2">
-     <spacer name="verticalSpacer">
+     <spacer name="verticalSpacer4">
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
@@ -273,7 +273,7 @@
    <attribute name="pageId">
     <string notr="true">5</string>
    </attribute>
-   <layout class="QFormLayout" name="formLayout">
+   <layout class="QFormLayout" name="formLayout5">
     <item row="2" column="0">
      <widget class="QRadioButton" name="radioButton_Graphical_Major">
       <property name="text">
@@ -296,7 +296,7 @@
      </widget>
     </item>
     <item row="0" column="0" colspan="2">
-     <widget class="QLabel" name="lbl_Independent">
+     <widget class="QLabel" name="lbl_Independent5">
       <property name="font">
        <font>
         <pointsize>10</pointsize>
@@ -311,7 +311,7 @@
      </widget>
     </item>
     <item row="1" column="0" colspan="2">
-     <spacer name="verticalSpacer">
+     <spacer name="verticalSpacer5">
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
@@ -332,7 +332,7 @@
    <attribute name="pageId">
     <string notr="true">6</string>
    </attribute>
-   <layout class="QFormLayout" name="formLayout">
+   <layout class="QFormLayout" name="formLayout6">
     <item row="2" column="0">
      <widget class="QRadioButton" name="radioButton_Audio_Major">
       <property name="text">
@@ -355,7 +355,7 @@
      </widget>
     </item>
     <item row="0" column="0" colspan="2">
-     <widget class="QLabel" name="lbl_Independent">
+     <widget class="QLabel" name="lbl_Independent6">
       <property name="font">
        <font>
         <pointsize>10</pointsize>
@@ -370,7 +370,7 @@
      </widget>
     </item>
     <item row="1" column="0" colspan="2">
-     <spacer name="verticalSpacer">
+     <spacer name="verticalSpacer6">
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>

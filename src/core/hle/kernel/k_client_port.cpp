@@ -61,7 +61,7 @@ bool KClientPort::IsSignaled() const {
 Result KClientPort::CreateSession(KClientSession** out) {
     // Reserve a new session from the resource limit.
     KScopedResourceReservation session_reservation(kernel.CurrentProcess()->GetResourceLimit(),
-                                                   LimitableResource::Sessions);
+                                                   LimitableResource::SessionCountMax);
     R_UNLESS(session_reservation.Succeeded(), ResultLimitReached);
 
     // Update the session counts.

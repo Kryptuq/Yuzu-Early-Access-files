@@ -20,8 +20,12 @@ void KEvent::Initialize(KProcess* owner) {
     m_readable_event.Initialize(this);
 
     // Set our owner process.
-    m_owner = owner;
-    m_owner->Open();
+    // HACK: this should never be nullptr, but service threads don't have a
+    // proper parent process yet.
+    if (owner != nullptr) {
+        m_owner = owner;
+        m_owner->Open();
+    }
 
     // Mark initialized.
     m_initialized = true;
@@ -50,8 +54,11 @@ Result KEvent::Clear() {
 void KEvent::PostDestroy(uintptr_t arg) {
     // Release the event count resource the owner process holds.
     KProcess* owner = reinterpret_cast<KProcess*>(arg);
-    owner->GetResourceLimit()->Release(LimitableResource::Events, 1);
-    owner->Close();
+
+    if (owner != nullptr) {
+        owner->GetResourceLimit()->Release(LimitableResource::EventCountMax, 1);
+        owner->Close();
+    }
 }
 
 } // namespace Kernel

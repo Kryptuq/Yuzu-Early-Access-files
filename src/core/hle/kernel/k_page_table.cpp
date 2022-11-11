@@ -920,8 +920,8 @@ Result KPageTable::SetupForIpcServer(VAddr* out_addr, size_t size, VAddr src_add
 
     // Reserve space for any partial pages we allocate.
     const size_t unmapped_size = aligned_src_size - mapping_src_size;
-    KScopedResourceReservation memory_reservation(m_resource_limit,
-                                                  LimitableResource::PhysicalMemory, unmapped_size);
+    KScopedResourceReservation memory_reservation(
+        m_resource_limit, LimitableResource::PhysicalMemoryMax, unmapped_size);
     R_UNLESS(memory_reservation.Succeeded(), ResultLimitReached);
 
     // Ensure that we manage page references correctly.
@@ -1227,7 +1227,7 @@ Result KPageTable::CleanupForIpcServer(VAddr address, size_t size, KMemoryState 
     const VAddr mapping_start = Common::AlignUp((address), PageSize);
     const VAddr mapping_end = Common::AlignDown((address) + size, PageSize);
     const size_t mapping_size = (mapping_start < mapping_end) ? mapping_end - mapping_start : 0;
-    m_resource_limit->Release(LimitableResource::PhysicalMemory, aligned_size - mapping_size);
+    m_resource_limit->Release(LimitableResource::PhysicalMemoryMax, aligned_size - mapping_size);
 
     R_SUCCEED();
 }
@@ -1568,7 +1568,7 @@ Result KPageTable::MapPhysicalMemory(VAddr address, size_t size) {
         {
             // Reserve the memory from the process resource limit.
             KScopedResourceReservation memory_reservation(
-                m_resource_limit, LimitableResource::PhysicalMemory, size - mapped_size);
+                m_resource_limit, LimitableResource::PhysicalMemoryMax, size - mapped_size);
             R_UNLESS(memory_reservation.Succeeded(), ResultLimitReached);
 
             // Allocate pages for the new memory.
@@ -1908,7 +1908,7 @@ Result KPageTable::UnmapPhysicalMemory(VAddr address, size_t size) {
 
     // Release the memory resource.
     m_mapped_physical_memory_size -= mapped_size;
-    m_resource_limit->Release(LimitableResource::PhysicalMemory, mapped_size);
+    m_resource_limit->Release(LimitableResource::PhysicalMemoryMax, mapped_size);
 
     // Update memory blocks.
     m_memory_block_manager.Update(std::addressof(allocator), address, size / PageSize,
@@ -2492,7 +2492,7 @@ Result KPageTable::SetHeapSize(VAddr* out, size_t size) {
                           OperationType::Unmap));
 
             // Release the memory from the resource limit.
-            m_resource_limit->Release(LimitableResource::PhysicalMemory, num_pages * PageSize);
+            m_resource_limit->Release(LimitableResource::PhysicalMemoryMax, num_pages * PageSize);
 
             // Apply the memory block update.
             m_memory_block_manager.Update(std::addressof(allocator), m_heap_region_start + size,
@@ -2522,7 +2522,7 @@ Result KPageTable::SetHeapSize(VAddr* out, size_t size) {
 
     // Reserve memory for the heap extension.
     KScopedResourceReservation memory_reservation(
-        m_resource_limit, LimitableResource::PhysicalMemory, allocation_size);
+        m_resource_limit, LimitableResource::PhysicalMemoryMax, allocation_size);
     R_UNLESS(memory_reservation.Succeeded(), ResultLimitReached);
 
     // Allocate pages for the heap extension.

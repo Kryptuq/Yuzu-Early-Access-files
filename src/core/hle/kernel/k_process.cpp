@@ -38,7 +38,7 @@ namespace {
  */
 void SetupMainThread(Core::System& system, KProcess& owner_process, u32 priority, VAddr stack_top) {
     const VAddr entry_point = owner_process.PageTable().GetCodeRegionStart();
-    ASSERT(owner_process.GetResourceLimit()->Reserve(LimitableResource::Threads, 1));
+    ASSERT(owner_process.GetResourceLimit()->Reserve(LimitableResource::ThreadCountMax, 1));
 
     KThread* thread = KThread::Create(system.Kernel());
     SCOPE_EXIT({ thread->Close(); });
@@ -124,7 +124,7 @@ void KProcess::DecrementRunningThreadCount() {
 }
 
 u64 KProcess::GetTotalPhysicalMemoryAvailable() {
-    const u64 capacity{resource_limit->GetFreeValue(LimitableResource::PhysicalMemory) +
+    const u64 capacity{resource_limit->GetFreeValue(LimitableResource::PhysicalMemoryMax) +
                        page_table.GetNormalMemorySize() + GetSystemResourceSize() + image_size +
                        main_thread_stack_size};
     if (const auto pool_size = kernel.MemoryManager().GetSize(KMemoryManager::Pool::Application);
@@ -349,8 +349,8 @@ Result KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata, std:
     // We currently do not support process-specific system resource
     UNIMPLEMENTED_IF(system_resource_size != 0);
 
-    KScopedResourceReservation memory_reservation(resource_limit, LimitableResource::PhysicalMemory,
-                                                  code_size + system_resource_size);
+    KScopedResourceReservation memory_reservation(
+        resource_limit, LimitableResource::PhysicalMemoryMax, code_size + system_resource_size);
     if (!memory_reservation.Succeeded()) {
         LOG_ERROR(Kernel, "Could not reserve process memory requirements of size {:X} bytes",
                   code_size + system_resource_size);
@@ -406,8 +406,8 @@ Result KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata, std:
 
 void KProcess::Run(s32 main_thread_priority, u64 stack_size) {
     AllocateMainThreadStack(stack_size);
-    resource_limit->Reserve(LimitableResource::Threads, 1);
-    resource_limit->Reserve(LimitableResource::PhysicalMemory, main_thread_stack_size);
+    resource_limit->Reserve(LimitableResource::ThreadCountMax, 1);
+    resource_limit->Reserve(LimitableResource::PhysicalMemoryMax, main_thread_stack_size);
 
     const std::size_t heap_capacity{memory_usage_capacity - (main_thread_stack_size + image_size)};
     ASSERT(!page_table.SetMaxHeapSize(heap_capacity).IsError());
@@ -442,7 +442,7 @@ void KProcess::PrepareForTermination() {
     plr_address = 0;
 
     if (resource_limit) {
-        resource_limit->Release(LimitableResource::PhysicalMemory,
+        resource_limit->Release(LimitableResource::PhysicalMemoryMax,
                                 main_thread_stack_size + image_size);
     }
 

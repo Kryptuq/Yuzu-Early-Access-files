@@ -37,7 +37,7 @@ void KTransferMemory::Finalize() {
 
 void KTransferMemory::PostDestroy(uintptr_t arg) {
     KProcess* owner = reinterpret_cast<KProcess*>(arg);
-    owner->GetResourceLimit()->Release(LimitableResource::TransferMemory, 1);
+    owner->GetResourceLimit()->Release(LimitableResource::TransferMemoryCountMax, 1);
     owner->Close();
 }
 

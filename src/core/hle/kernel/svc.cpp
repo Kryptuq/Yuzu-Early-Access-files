@@ -267,7 +267,7 @@ Result CreateSession(Core::System& system, Handle* out_server, Handle* out_clien
 
     // Reserve a new session from the process resource limit.
     // FIXME: LimitableResource_SessionCountMax
-    KScopedResourceReservation session_reservation(&process, LimitableResource::Sessions);
+    KScopedResourceReservation session_reservation(&process, LimitableResource::SessionCountMax);
     if (session_reservation.Succeeded()) {
         session = T::Create(system.Kernel());
     } else {
@@ -298,7 +298,7 @@ Result CreateSession(Core::System& system, Handle* out_server, Handle* out_clien
 
         // We successfully allocated a session, so add the object we allocated to the resource
         // limit.
-        // system.Kernel().GetSystemResourceLimit().Reserve(LimitableResource::Sessions, 1);
+        // system.Kernel().GetSystemResourceLimit().Reserve(LimitableResource::SessionCountMax, 1);
     }
 
     // Check that we successfully created a session.
@@ -656,27 +656,12 @@ static Result ArbitrateUnlock32(Core::System& system, u32 address) {
     return ArbitrateUnlock(system, address);
 }
 
-enum class BreakType : u32 {
-    Panic = 0,
-    AssertionFailed = 1,
-    PreNROLoad = 3,
-    PostNROLoad = 4,
-    PreNROUnload = 5,
-    PostNROUnload = 6,
-    CppException = 7,
-};
-
-struct BreakReason {
-    union {
-        u32 raw;
-        BitField<0, 30, BreakType> break_type;
-        BitField<31, 1, u32> signal_debugger;
-    };
-};
-
 /// Break program execution
 static void Break(Core::System& system, u32 reason, u64 info1, u64 info2) {
-    BreakReason break_reason{reason};
+    BreakReason break_reason =
+        static_cast<BreakReason>(reason & ~static_cast<u32>(BreakReason::NotificationOnlyFlag));
+    bool notification_only = (reason & static_cast<u32>(BreakReason::NotificationOnlyFlag)) != 0;
+
     bool has_dumped_buffer{};
     std::vector<u8> debug_buffer;
 
@@ -705,57 +690,56 @@ static void Break(Core::System& system, u32 reason, u64 info1, u64 info2) {
         }
         has_dumped_buffer = true;
     };
-    switch (break_reason.break_type) {
-    case BreakType::Panic:
-        LOG_CRITICAL(Debug_Emulated, "Signalling debugger, PANIC! info1=0x{:016X}, info2=0x{:016X}",
+    switch (break_reason) {
+    case BreakReason::Panic:
+        LOG_CRITICAL(Debug_Emulated, "Userspace PANIC! info1=0x{:016X}, info2=0x{:016X}", info1,
+                     info2);
+        handle_debug_buffer(info1, info2);
+        break;
+    case BreakReason::Assert:
+        LOG_CRITICAL(Debug_Emulated, "Userspace Assertion failed! info1=0x{:016X}, info2=0x{:016X}",
                      info1, info2);
         handle_debug_buffer(info1, info2);
         break;
-    case BreakType::AssertionFailed:
-        LOG_CRITICAL(Debug_Emulated,
-                     "Signalling debugger, Assertion failed! info1=0x{:016X}, info2=0x{:016X}",
-                     info1, info2);
+    case BreakReason::User:
+        LOG_WARNING(Debug_Emulated, "Userspace Break! 0x{:016X} with size 0x{:016X}", info1, info2);
         handle_debug_buffer(info1, info2);
         break;
-    case BreakType::PreNROLoad:
-        LOG_WARNING(
-            Debug_Emulated,
-            "Signalling debugger, Attempting to load an NRO at 0x{:016X} with size 0x{:016X}",
-            info1, info2);
+    case BreakReason::PreLoadDll:
+        LOG_INFO(Debug_Emulated,
+                 "Userspace Attempting to load an NRO at 0x{:016X} with size 0x{:016X}", info1,
+                 info2);
         break;
-    case BreakType::PostNROLoad:
-        LOG_WARNING(Debug_Emulated,
-                    "Signalling debugger, Loaded an NRO at 0x{:016X} with size 0x{:016X}", info1,
-                    info2);
+    case BreakReason::PostLoadDll:
+        LOG_INFO(Debug_Emulated, "Userspace Loaded an NRO at 0x{:016X} with size 0x{:016X}", info1,
+                 info2);
         break;
-    case BreakType::PreNROUnload:
-        LOG_WARNING(
-            Debug_Emulated,
-            "Signalling debugger, Attempting to unload an NRO at 0x{:016X} with size 0x{:016X}",
-            info1, info2);
+    case BreakReason::PreUnloadDll:
+        LOG_INFO(Debug_Emulated,
+                 "Userspace Attempting to unload an NRO at 0x{:016X} with size 0x{:016X}", info1,
+                 info2);
         break;
-    case BreakType::PostNROUnload:
-        LOG_WARNING(Debug_Emulated,
-                    "Signalling debugger, Unloaded an NRO at 0x{:016X} with size 0x{:016X}", info1,
-                    info2);
+    case BreakReason::PostUnloadDll:
+        LOG_INFO(Debug_Emulated, "Userspace Unloaded an NRO at 0x{:016X} with size 0x{:016X}",
+                 info1, info2);
         break;
-    case BreakType::CppException:
+    case BreakReason::CppException:
         LOG_CRITICAL(Debug_Emulated, "Signalling debugger. Uncaught C++ exception encountered.");
         break;
     default:
         LOG_WARNING(
             Debug_Emulated,
-            "Signalling debugger, Unknown break reason {}, info1=0x{:016X}, info2=0x{:016X}",
-            static_cast<u32>(break_reason.break_type.Value()), info1, info2);
+            "Signalling debugger, Unknown break reason {:#X}, info1=0x{:016X}, info2=0x{:016X}",
+            reason, info1, info2);
         handle_debug_buffer(info1, info2);
         break;
     }
 
-    system.GetReporter().SaveSvcBreakReport(
-        static_cast<u32>(break_reason.break_type.Value()), break_reason.signal_debugger.As<bool>(),
-        info1, info2, has_dumped_buffer ? std::make_optional(debug_buffer) : std::nullopt);
+    system.GetReporter().SaveSvcBreakReport(reason, notification_only, info1, info2,
+                                            has_dumped_buffer ? std::make_optional(debug_buffer)
+                                                              : std::nullopt);
 
-    if (!break_reason.signal_debugger) {
+    if (!notification_only) {
         LOG_CRITICAL(
             Debug_Emulated,
             "Emulated program broke execution! reason=0x{:016X}, info1=0x{:016X}, info2=0x{:016X}",
@@ -1716,13 +1700,13 @@ static Result QueryProcessMemory(Core::System& system, VAddr memory_info_address
     auto& memory{system.Memory()};
     const auto memory_info{process->PageTable().QueryInfo(address).GetSvcMemoryInfo()};
 
-    memory.Write64(memory_info_address + 0x00, memory_info.addr);
+    memory.Write64(memory_info_address + 0x00, memory_info.base_address);
     memory.Write64(memory_info_address + 0x08, memory_info.size);
     memory.Write32(memory_info_address + 0x10, static_cast<u32>(memory_info.state) & 0xff);
-    memory.Write32(memory_info_address + 0x14, static_cast<u32>(memory_info.attr));
-    memory.Write32(memory_info_address + 0x18, static_cast<u32>(memory_info.perm));
-    memory.Write32(memory_info_address + 0x1c, memory_info.ipc_refcount);
-    memory.Write32(memory_info_address + 0x20, memory_info.device_refcount);
+    memory.Write32(memory_info_address + 0x14, static_cast<u32>(memory_info.attribute));
+    memory.Write32(memory_info_address + 0x18, static_cast<u32>(memory_info.permission));
+    memory.Write32(memory_info_address + 0x1c, memory_info.ipc_count);
+    memory.Write32(memory_info_address + 0x20, memory_info.device_count);
     memory.Write32(memory_info_address + 0x24, 0);
 
     // Page info appears to be currently unused by the kernel and is always set to zero.
@@ -1943,7 +1927,7 @@ static Result CreateThread(Core::System& system, Handle* out_handle, VAddr entry
 
     // Reserve a new thread from the process resource limit (waiting up to 100ms).
     KScopedResourceReservation thread_reservation(
-        kernel.CurrentProcess(), LimitableResource::Threads, 1,
+        kernel.CurrentProcess(), LimitableResource::ThreadCountMax, 1,
         system.CoreTiming().GetGlobalTimeNs().count() + 100000000);
     if (!thread_reservation.Succeeded()) {
         LOG_ERROR(Kernel_SVC, "Could not reserve a new thread");
@@ -2344,7 +2328,7 @@ static Result CreateTransferMemory(Core::System& system, Handle* out, VAddr addr
 
     // Reserve a new transfer memory from the process resource limit.
     KScopedResourceReservation trmem_reservation(kernel.CurrentProcess(),
-                                                 LimitableResource::TransferMemory);
+                                                 LimitableResource::TransferMemoryCountMax);
     R_UNLESS(trmem_reservation.Succeeded(), ResultLimitReached);
 
     // Create the transfer memory.
@@ -2496,7 +2480,7 @@ static Result CreateEvent(Core::System& system, Handle* out_write, Handle* out_r
 
     // Reserve a new event from the process resource limit
     KScopedResourceReservation event_reservation(kernel.CurrentProcess(),
-                                                 LimitableResource::Events);
+                                                 LimitableResource::EventCountMax);
     R_UNLESS(event_reservation.Succeeded(), ResultLimitReached);
 
     // Create a new event.
@@ -2539,11 +2523,6 @@ static Result CreateEvent32(Core::System& system, Handle* out_write, Handle* out
 static Result GetProcessInfo(Core::System& system, u64* out, Handle process_handle, u32 type) {
     LOG_DEBUG(Kernel_SVC, "called, handle=0x{:08X}, type=0x{:X}", process_handle, type);
 
-    // This function currently only allows retrieving a process' status.
-    enum class InfoType {
-        Status,
-    };
-
     const auto& handle_table = system.Kernel().CurrentProcess()->GetHandleTable();
     KScopedAutoObject process = handle_table.GetObject<KProcess>(process_handle);
     if (process.IsNull()) {
@@ -2552,9 +2531,9 @@ static Result GetProcessInfo(Core::System& system, u64* out, Handle process_hand
         return ResultInvalidHandle;
     }
 
-    const auto info_type = static_cast<InfoType>(type);
-    if (info_type != InfoType::Status) {
-        LOG_ERROR(Kernel_SVC, "Expected info_type to be Status but got {} instead", type);
+    const auto info_type = static_cast<ProcessInfoType>(type);
+    if (info_type != ProcessInfoType::ProcessState) {
+        LOG_ERROR(Kernel_SVC, "Expected info_type to be ProcessState but got {} instead", type);
         return ResultInvalidEnumValue;
     }
 

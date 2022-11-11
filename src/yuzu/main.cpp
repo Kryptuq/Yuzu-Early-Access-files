@@ -2017,38 +2017,50 @@ static bool RomFSRawCopy(QProgressDialog& dialog, const FileSys::VirtualDir& src
     return true;
 }
 
+QString GMainWindow::GetGameListErrorRemoving(InstalledEntryType type) const {
+    switch (type) {
+    case InstalledEntryType::Game:
+        return tr("Error Removing Contents");
+    case InstalledEntryType::Update:
+        return tr("Error Removing Update");
+    case InstalledEntryType::AddOnContent:
+        return tr("Error Removing DLC");
+    default:
+        return QStringLiteral("Error Removing <Invalid Type>");
+    }
+}
 void GMainWindow::OnGameListRemoveInstalledEntry(u64 program_id, InstalledEntryType type) {
-    const QString entry_type = [type] {
+    const QString entry_question = [type] {
         switch (type) {
         case InstalledEntryType::Game:
-            return tr("Contents");
+            return tr("Remove Installed Game Contents?");
         case InstalledEntryType::Update:
-            return tr("Update");
+            return tr("Remove Installed Game Update?");
         case InstalledEntryType::AddOnContent:
-            return tr("DLC");
+            return tr("Remove Installed Game DLC?");
         default:
-            return QString{};
+            return QStringLiteral("Remove Installed Game <Invalid Type>?");
         }
     }();
 
-    if (QMessageBox::question(
-            this, tr("Remove Entry"), tr("Remove Installed Game %1?").arg(entry_type),
-            QMessageBox::Yes | QMessageBox::No, QMessageBox::No) != QMessageBox::Yes) {
+    if (QMessageBox::question(this, tr("Remove Entry"), entry_question,
+                              QMessageBox::Yes | QMessageBox::No,
+                              QMessageBox::No) != QMessageBox::Yes) {
         return;
     }
 
     switch (type) {
     case InstalledEntryType::Game:
-        RemoveBaseContent(program_id, entry_type);
+        RemoveBaseContent(program_id, type);
         [[fallthrough]];
     case InstalledEntryType::Update:
-        RemoveUpdateContent(program_id, entry_type);
+        RemoveUpdateContent(program_id, type);
         if (type != InstalledEntryType::Game) {
             break;
         }
         [[fallthrough]];
     case InstalledEntryType::AddOnContent:
-        RemoveAddOnContent(program_id, entry_type);
+        RemoveAddOnContent(program_id, type);
         break;
     }
     Common::FS::RemoveDirRecursively(Common::FS::GetYuzuPath(Common::FS::YuzuPath::CacheDir) /
@@ -2056,7 +2068,7 @@ void GMainWindow::OnGameListRemoveInstalledEntry(u64 program_id, InstalledEntryT
     game_list->PopulateAsync(UISettings::values.game_dirs);
 }
 
-void GMainWindow::RemoveBaseContent(u64 program_id, const QString& entry_type) {
+void GMainWindow::RemoveBaseContent(u64 program_id, InstalledEntryType type) {
     const auto& fs_controller = system->GetFileSystemController();
     const auto res = fs_controller.GetUserNANDContents()->RemoveExistingEntry(program_id) ||
                      fs_controller.GetSDMCContents()->RemoveExistingEntry(program_id);
@@ -2066,12 +2078,12 @@ void GMainWindow::RemoveBaseContent(u64 program_id, const QString& entry_type) {
                                  tr("Successfully removed the installed base game."));
     } else {
         QMessageBox::warning(
-            this, tr("Error Removing %1").arg(entry_type),
+            this, GetGameListErrorRemoving(type),
             tr("The base game is not installed in the NAND and cannot be removed."));
     }
 }
 
-void GMainWindow::RemoveUpdateContent(u64 program_id, const QString& entry_type) {
+void GMainWindow::RemoveUpdateContent(u64 program_id, InstalledEntryType type) {
     const auto update_id = program_id | 0x800;
     const auto& fs_controller = system->GetFileSystemController();
     const auto res = fs_controller.GetUserNANDContents()->RemoveExistingEntry(update_id) ||
@@ -2081,12 +2093,12 @@ void GMainWindow::RemoveUpdateContent(u64 program_id, const QString& entry_type)
         QMessageBox::information(this, tr("Successfully Removed"),
                                  tr("Successfully removed the installed update."));
     } else {
-        QMessageBox::warning(this, tr("Error Removing %1").arg(entry_type),
+        QMessageBox::warning(this, GetGameListErrorRemoving(type),
                              tr("There is no update installed for this title."));
     }
 }
 
-void GMainWindow::RemoveAddOnContent(u64 program_id, const QString& entry_type) {
+void GMainWindow::RemoveAddOnContent(u64 program_id, InstalledEntryType type) {
     u32 count{};
     const auto& fs_controller = system->GetFileSystemController();
     const auto dlc_entries = system->GetContentProvider().ListEntriesFilter(
@@ -2104,7 +2116,7 @@ void GMainWindow::RemoveAddOnContent(u64 program_id, const QString& entry_type) 
     }
 
     if (count == 0) {
-        QMessageBox::warning(this, tr("Error Removing %1").arg(entry_type),
+        QMessageBox::warning(this, GetGameListErrorRemoving(type),
                              tr("There are no DLC installed for this title."));
         return;
     }

@@ -151,6 +151,7 @@ void UpdateRescalingInfo() {
         ASSERT(false);
         info.up_scale = 1;
         info.down_shift = 0;
+        break;
     }
     info.up_factor = static_cast<f32>(info.up_scale) / (1U << info.down_shift);
     info.down_factor = static_cast<f32>(1U << info.down_shift) / info.up_scale;

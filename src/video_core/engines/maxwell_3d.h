@@ -2970,7 +2970,7 @@ public:
                 CullFace gl_cull_face;                                                 ///< 0x1920
                 Viewport::PixelCenter viewport_pixel_center;                           ///< 0x1924
                 INSERT_PADDING_BYTES_NOINIT(0x4);
-                u32 viewport_scale_offset_enabled;                                      ///< 0x192C
+                u32 viewport_scale_offset_enabled;                                     ///< 0x192C
                 INSERT_PADDING_BYTES_NOINIT(0xC);
                 ViewportClipControl viewport_clip_control;                             ///< 0x193C
                 UserClip::Op user_clip_op;                                             ///< 0x1940

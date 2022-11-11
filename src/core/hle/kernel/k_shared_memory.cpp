@@ -14,7 +14,7 @@ namespace Kernel {
 KSharedMemory::KSharedMemory(KernelCore& kernel_) : KAutoObjectWithSlabHeapAndContainer{kernel_} {}
 
 KSharedMemory::~KSharedMemory() {
-    kernel.GetSystemResourceLimit()->Release(LimitableResource::PhysicalMemory, size);
+    kernel.GetSystemResourceLimit()->Release(LimitableResource::PhysicalMemoryMax, size);
 }
 
 Result KSharedMemory::Initialize(Core::DeviceMemory& device_memory_, KProcess* owner_process_,
@@ -35,7 +35,7 @@ Result KSharedMemory::Initialize(Core::DeviceMemory& device_memory_, KProcess* o
     KResourceLimit* reslimit = kernel.GetSystemResourceLimit();
 
     // Reserve memory for ourselves.
-    KScopedResourceReservation memory_reservation(reslimit, LimitableResource::PhysicalMemory,
+    KScopedResourceReservation memory_reservation(reslimit, LimitableResource::PhysicalMemoryMax,
                                                   size_);
     R_UNLESS(memory_reservation.Succeeded(), ResultLimitReached);
 
@@ -57,7 +57,7 @@ Result KSharedMemory::Initialize(Core::DeviceMemory& device_memory_, KProcess* o
 
 void KSharedMemory::Finalize() {
     // Release the memory reservation.
-    resource_limit->Release(LimitableResource::PhysicalMemory, size);
+    resource_limit->Release(LimitableResource::PhysicalMemoryMax, size);
     resource_limit->Close();
 
     // Perform inherited finalization.

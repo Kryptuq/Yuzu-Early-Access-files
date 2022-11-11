@@ -159,12 +159,13 @@ KResourceLimit* CreateResourceLimitForProcess(Core::System& system, s64 physical
     // TODO(bunnei): These values are the system defaults, the limits for service processes are
     // lower. These should use the correct limit values.
 
-    ASSERT(resource_limit->SetLimitValue(LimitableResource::PhysicalMemory, physical_memory_size)
+    ASSERT(resource_limit->SetLimitValue(LimitableResource::PhysicalMemoryMax, physical_memory_size)
                .IsSuccess());
-    ASSERT(resource_limit->SetLimitValue(LimitableResource::Threads, 800).IsSuccess());
-    ASSERT(resource_limit->SetLimitValue(LimitableResource::Events, 900).IsSuccess());
-    ASSERT(resource_limit->SetLimitValue(LimitableResource::TransferMemory, 200).IsSuccess());
-    ASSERT(resource_limit->SetLimitValue(LimitableResource::Sessions, 1133).IsSuccess());
+    ASSERT(resource_limit->SetLimitValue(LimitableResource::ThreadCountMax, 800).IsSuccess());
+    ASSERT(resource_limit->SetLimitValue(LimitableResource::EventCountMax, 900).IsSuccess());
+    ASSERT(
+        resource_limit->SetLimitValue(LimitableResource::TransferMemoryCountMax, 200).IsSuccess());
+    ASSERT(resource_limit->SetLimitValue(LimitableResource::SessionCountMax, 1133).IsSuccess());
 
     return resource_limit;
 }

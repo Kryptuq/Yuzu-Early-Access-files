@@ -229,18 +229,22 @@ struct KernelCore::Impl {
         const auto kernel_size{sizes.second};
 
         // If setting the default system values fails, then something seriously wrong has occurred.
-        ASSERT(system_resource_limit->SetLimitValue(LimitableResource::PhysicalMemory, total_size)
+        ASSERT(
+            system_resource_limit->SetLimitValue(LimitableResource::PhysicalMemoryMax, total_size)
+                .IsSuccess());
+        ASSERT(system_resource_limit->SetLimitValue(LimitableResource::ThreadCountMax, 800)
                    .IsSuccess());
-        ASSERT(system_resource_limit->SetLimitValue(LimitableResource::Threads, 800).IsSuccess());
-        ASSERT(system_resource_limit->SetLimitValue(LimitableResource::Events, 900).IsSuccess());
-        ASSERT(system_resource_limit->SetLimitValue(LimitableResource::TransferMemory, 200)
+        ASSERT(system_resource_limit->SetLimitValue(LimitableResource::EventCountMax, 900)
                    .IsSuccess());
-        ASSERT(system_resource_limit->SetLimitValue(LimitableResource::Sessions, 1133).IsSuccess());
-        system_resource_limit->Reserve(LimitableResource::PhysicalMemory, kernel_size);
+        ASSERT(system_resource_limit->SetLimitValue(LimitableResource::TransferMemoryCountMax, 200)
+                   .IsSuccess());
+        ASSERT(system_resource_limit->SetLimitValue(LimitableResource::SessionCountMax, 1133)
+                   .IsSuccess());
+        system_resource_limit->Reserve(LimitableResource::PhysicalMemoryMax, kernel_size);
 
         // Reserve secure applet memory, introduced in firmware 5.0.0
         constexpr u64 secure_applet_memory_size{4_MiB};
-        ASSERT(system_resource_limit->Reserve(LimitableResource::PhysicalMemory,
+        ASSERT(system_resource_limit->Reserve(LimitableResource::PhysicalMemoryMax,
                                               secure_applet_memory_size));
     }
 

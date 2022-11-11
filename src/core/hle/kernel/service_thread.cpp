@@ -40,7 +40,6 @@ private:
     std::mutex m_session_mutex;
     std::map<KServerSession*, std::shared_ptr<SessionRequestManager>> m_sessions;
     KEvent* m_wakeup_event;
-    KProcess* m_process;
     KThread* m_thread;
     std::atomic<bool> m_shutdown_requested;
     const std::string m_service_name;
@@ -180,39 +179,17 @@ ServiceThread::Impl::~Impl() {
 
     // Close thread.
     m_thread->Close();
-
-    // Close process.
-    m_process->Close();
 }
 
 ServiceThread::Impl::Impl(KernelCore& kernel_, const std::string& service_name)
     : kernel{kernel_}, m_service_name{service_name} {
-    // Initialize process.
-    m_process = KProcess::Create(kernel);
-    KProcess::Initialize(m_process, kernel.System(), service_name,
-                         KProcess::ProcessType::KernelInternal, kernel.GetSystemResourceLimit());
-
-    // Reserve a new event from the process resource limit
-    KScopedResourceReservation event_reservation(m_process, LimitableResource::Events);
-    ASSERT(event_reservation.Succeeded());
-
     // Initialize event.
     m_wakeup_event = KEvent::Create(kernel);
-    m_wakeup_event->Initialize(m_process);
-
-    // Commit the event reservation.
-    event_reservation.Commit();
-
-    // Reserve a new thread from the process resource limit
-    KScopedResourceReservation thread_reservation(m_process, LimitableResource::Threads);
-    ASSERT(thread_reservation.Succeeded());
+    m_wakeup_event->Initialize(nullptr);
 
     // Initialize thread.
     m_thread = KThread::Create(kernel);
-    ASSERT(KThread::InitializeDummyThread(m_thread, m_process).IsSuccess());
-
-    // Commit the thread reservation.
-    thread_reservation.Commit();
+    ASSERT(KThread::InitializeDummyThread(m_thread, nullptr).IsSuccess());
 
     // Start thread.
     m_host_thread = std::jthread([this] { LoopProcess(); });

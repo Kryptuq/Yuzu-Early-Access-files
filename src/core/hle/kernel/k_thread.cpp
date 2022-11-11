@@ -303,7 +303,7 @@ void KThread::PostDestroy(uintptr_t arg) {
     const bool resource_limit_release_hint = (arg & 1);
     const s64 hint_value = (resource_limit_release_hint ? 0 : 1);
     if (owner != nullptr) {
-        owner->GetResourceLimit()->Release(LimitableResource::Threads, 1, hint_value);
+        owner->GetResourceLimit()->Release(LimitableResource::ThreadCountMax, 1, hint_value);
         owner->Close();
     }
 }
@@ -1054,7 +1054,7 @@ void KThread::Exit() {
 
     // Release the thread resource hint, running thread count from parent.
     if (parent != nullptr) {
-        parent->GetResourceLimit()->Release(Kernel::LimitableResource::Threads, 0, 1);
+        parent->GetResourceLimit()->Release(Kernel::LimitableResource::ThreadCountMax, 0, 1);
         resource_limit_release_hint = true;
         parent->DecrementRunningThreadCount();
     }

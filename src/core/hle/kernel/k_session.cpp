@@ -76,7 +76,7 @@ void KSession::OnClientClosed() {
 void KSession::PostDestroy(uintptr_t arg) {
     // Release the session count resource the owner process holds.
     KProcess* owner = reinterpret_cast<KProcess*>(arg);
-    owner->GetResourceLimit()->Release(LimitableResource::Sessions, 1);
+    owner->GetResourceLimit()->Release(LimitableResource::SessionCountMax, 1);
     owner->Close();
 }
 

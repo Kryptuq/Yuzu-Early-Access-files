@@ -216,13 +216,15 @@ struct KMemoryInfo {
 
     constexpr Svc::MemoryInfo GetSvcMemoryInfo() const {
         return {
-            .addr = m_address,
+            .base_address = m_address,
             .size = m_size,
             .state = static_cast<Svc::MemoryState>(m_state & KMemoryState::Mask),
-            .attr = static_cast<Svc::MemoryAttribute>(m_attribute & KMemoryAttribute::UserMask),
-            .perm = static_cast<Svc::MemoryPermission>(m_permission & KMemoryPermission::UserMask),
-            .ipc_refcount = m_ipc_lock_count,
-            .device_refcount = m_device_use_count,
+            .attribute =
+                static_cast<Svc::MemoryAttribute>(m_attribute & KMemoryAttribute::UserMask),
+            .permission =
+                static_cast<Svc::MemoryPermission>(m_permission & KMemoryPermission::UserMask),
+            .ipc_count = m_ipc_lock_count,
+            .device_count = m_device_use_count,
             .padding = {},
         };
     }

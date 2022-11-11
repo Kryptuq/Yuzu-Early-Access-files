@@ -149,7 +149,7 @@ public:
             context->AddDomainObject(std::move(iface));
         } else {
             kernel.CurrentProcess()->GetResourceLimit()->Reserve(
-                Kernel::LimitableResource::Sessions, 1);
+                Kernel::LimitableResource::SessionCountMax, 1);
 
             auto* session = Kernel::KSession::Create(kernel);
             session->Initialize(nullptr, iface->GetServiceName());

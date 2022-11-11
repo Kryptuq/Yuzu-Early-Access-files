@@ -265,7 +265,8 @@ void KPageBufferSlabHeap::Initialize(Core::System& system) {
     const size_t slab_size = num_pages * PageSize;
 
     // Reserve memory from the system resource limit.
-    ASSERT(kernel.GetSystemResourceLimit()->Reserve(LimitableResource::PhysicalMemory, slab_size));
+    ASSERT(
+        kernel.GetSystemResourceLimit()->Reserve(LimitableResource::PhysicalMemoryMax, slab_size));
 
     // Allocate memory for the slab.
     constexpr auto AllocateOption = KMemoryManager::EncodeOption(
