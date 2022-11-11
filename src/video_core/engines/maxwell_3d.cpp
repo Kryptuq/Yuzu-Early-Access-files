@@ -249,6 +249,11 @@ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argume
         return;
     case MAXWELL3D_REG_INDEX(fragment_barrier):
         return rasterizer->FragmentBarrier();
+    case MAXWELL3D_REG_INDEX(invalidate_texture_data_cache):
+        rasterizer->InvalidateGPUCache();
+        return rasterizer->WaitForIdle();
+    case MAXWELL3D_REG_INDEX(tiled_cache_barrier):
+        return rasterizer->TiledCacheBarrier();
     }
 }
 

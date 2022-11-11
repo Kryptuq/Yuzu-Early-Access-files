@@ -342,6 +342,7 @@ GMainWindow::GMainWindow(std::unique_ptr<Config> config_, bool has_broken_vulkan
     const auto override_build =
         fmt::format(fmt::runtime(std::string(Common::g_title_bar_format_idle)), build_id);
     const auto yuzu_build_version = override_build.empty() ? yuzu_build : override_build;
+    const auto processor_count = std::thread::hardware_concurrency();
 
     LOG_INFO(Frontend, "yuzu Version: {}", yuzu_build_version);
     LogRuntimes();
@@ -361,6 +362,7 @@ GMainWindow::GMainWindow(std::unique_ptr<Config> config_, bool has_broken_vulkan
     }
     LOG_INFO(Frontend, "Host CPU: {}", cpu_string);
 #endif
+    LOG_INFO(Frontend, "Host CPU Threads: {}", processor_count);
     LOG_INFO(Frontend, "Host OS: {}", PrettyProductName().toStdString());
     LOG_INFO(Frontend, "Host RAM: {:.2f} GiB",
              Common::GetMemInfo().TotalPhysicalMemory / f64{1_GiB});

@@ -7,6 +7,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <unordered_map>
 
 #include "common/common_funcs.h"
@@ -20,6 +21,8 @@
 #include "core/hid/motion_input.h"
 
 namespace Core::HID {
+static constexpr std::size_t max_touch_devices = 32;
+static constexpr std::size_t max_active_touch_inputs = 16;
 
 struct ConsoleMotionInfo {
     Common::Input::MotionStatus raw_status{};
@@ -27,13 +30,13 @@ struct ConsoleMotionInfo {
 };
 
 using ConsoleMotionDevices = std::unique_ptr<Common::Input::InputDevice>;
-using TouchDevices = std::array<std::unique_ptr<Common::Input::InputDevice>, 16>;
+using TouchDevices = std::array<std::unique_ptr<Common::Input::InputDevice>, max_touch_devices>;
 
 using ConsoleMotionParams = Common::ParamPackage;
-using TouchParams = std::array<Common::ParamPackage, 16>;
+using TouchParams = std::array<Common::ParamPackage, max_touch_devices>;
 
 using ConsoleMotionValues = ConsoleMotionInfo;
-using TouchValues = std::array<Common::Input::TouchStatus, 16>;
+using TouchValues = std::array<Common::Input::TouchStatus, max_touch_devices>;
 
 struct TouchFinger {
     u64 last_touch{};
@@ -55,7 +58,7 @@ struct ConsoleMotion {
     bool is_at_rest{};
 };
 
-using TouchFingerState = std::array<TouchFinger, 16>;
+using TouchFingerState = std::array<TouchFinger, max_active_touch_inputs>;
 
 struct ConsoleStatus {
     // Data from input_common
@@ -165,6 +168,10 @@ private:
      * @param index Finger ID to be updated
      */
     void SetTouch(const Common::Input::CallbackStatus& callback, std::size_t index);
+
+    std::optional<std::size_t> GetIndexFromFingerId(std::size_t finger_id) const;
+
+    std::optional<std::size_t> GetNextFreeIndex() const;
 
     /**
      * Triggers a callback that something has changed on the console status

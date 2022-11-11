@@ -71,12 +71,14 @@ private:
 
     void GetSharedMemoryHandle(Kernel::HLERequestContext& ctx);
     void UpdateControllers(std::uintptr_t user_data, std::chrono::nanoseconds ns_late);
+    void UpdateNpad(std::uintptr_t user_data, std::chrono::nanoseconds ns_late);
     void UpdateMouseKeyboard(std::uintptr_t user_data, std::chrono::nanoseconds ns_late);
     void UpdateMotion(std::uintptr_t user_data, std::chrono::nanoseconds ns_late);
 
     KernelHelpers::ServiceContext& service_context;
 
-    std::shared_ptr<Core::Timing::EventType> pad_update_event;
+    std::shared_ptr<Core::Timing::EventType> npad_update_event;
+    std::shared_ptr<Core::Timing::EventType> default_update_event;
     std::shared_ptr<Core::Timing::EventType> mouse_keyboard_update_event;
     std::shared_ptr<Core::Timing::EventType> motion_update_event;
 

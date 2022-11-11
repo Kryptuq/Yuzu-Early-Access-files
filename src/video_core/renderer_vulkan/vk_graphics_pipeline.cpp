@@ -680,6 +680,15 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
         .lineStippleFactor = 0,
         .lineStipplePattern = 0,
     };
+    VkPipelineRasterizationConservativeStateCreateInfoEXT conservative_raster{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT,
+        .pNext = nullptr,
+        .flags = 0,
+        .conservativeRasterizationMode = key.state.conservative_raster_enable != 0
+                                             ? VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT
+                                             : VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT,
+        .extraPrimitiveOverestimationSize = 0.0f,
+    };
     VkPipelineRasterizationProvokingVertexStateCreateInfoEXT provoking_vertex{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_PROVOKING_VERTEX_STATE_CREATE_INFO_EXT,
         .pNext = nullptr,
@@ -689,6 +698,9 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
     };
     if (IsLine(input_assembly_topology) && device.IsExtLineRasterizationSupported()) {
         line_state.pNext = std::exchange(rasterization_ci.pNext, &line_state);
+    }
+    if (device.IsExtConservativeRasterizationSupported()) {
+        conservative_raster.pNext = std::exchange(rasterization_ci.pNext, &conservative_raster);
     }
     if (device.IsExtProvokingVertexSupported()) {
         provoking_vertex.pNext = std::exchange(rasterization_ci.pNext, &provoking_vertex);

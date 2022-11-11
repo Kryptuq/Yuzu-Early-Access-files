@@ -10,8 +10,8 @@ namespace InputCommon {
 class TouchFromButtonDevice final : public Common::Input::InputDevice {
 public:
     using Button = std::unique_ptr<Common::Input::InputDevice>;
-    TouchFromButtonDevice(Button button_, int touch_id_, float x_, float y_)
-        : button(std::move(button_)), touch_id(touch_id_), x(x_), y(y_) {
+    TouchFromButtonDevice(Button button_, float x_, float y_)
+        : button(std::move(button_)), x(x_), y(y_) {
         last_button_value = false;
         button->SetCallback({
             .on_change =
@@ -34,7 +34,6 @@ public:
             .pressed = button_status,
             .x = {},
             .y = {},
-            .id = touch_id,
         };
         status.x.properties = properties;
         status.y.properties = properties;
@@ -62,7 +61,6 @@ public:
 private:
     Button button;
     bool last_button_value;
-    const int touch_id;
     const float x;
     const float y;
     const Common::Input::AnalogProperties properties{0.0f, 1.0f, 0.5f, 0.0f, false};
@@ -73,10 +71,9 @@ std::unique_ptr<Common::Input::InputDevice> TouchFromButton::Create(
     const std::string null_engine = Common::ParamPackage{{"engine", "null"}}.Serialize();
     auto button = Common::Input::CreateDeviceFromString<Common::Input::InputDevice>(
         params.Get("button", null_engine));
-    const auto touch_id = params.Get("touch_id", 0);
     const float x = params.Get("x", 0.0f) / 1280.0f;
     const float y = params.Get("y", 0.0f) / 720.0f;
-    return std::make_unique<TouchFromButtonDevice>(std::move(button), touch_id, x, y);
+    return std::make_unique<TouchFromButtonDevice>(std::move(button), x, y);
 }
 
 } // namespace InputCommon

@@ -707,7 +707,7 @@ public:
                 case Size::Size_A2_B10_G10_R10:
                     return "2_10_10_10";
                 case Size::Size_B10_G11_R11:
-                    return "10_11_12";
+                    return "10_11_11";
                 default:
                     ASSERT(false);
                     return {};
@@ -2639,7 +2639,7 @@ public:
                 L2CacheControl l2_cache_control;                                       ///< 0x0218
                 InvalidateShaderCache invalidate_shader_cache;                         ///< 0x021C
                 INSERT_PADDING_BYTES_NOINIT(0xA8);
-                SyncInfo sync_info; ///< 0x02C8
+                SyncInfo sync_info;                                                    ///< 0x02C8
                 INSERT_PADDING_BYTES_NOINIT(0x4);
                 u32 prim_circular_buffer_throttle;                                     ///< 0x02D0
                 u32 flush_invalidate_rop_mini_cache;                                   ///< 0x02D4
@@ -2731,7 +2731,11 @@ public:
                 s32 stencil_back_ref;                                                  ///< 0x0F54
                 u32 stencil_back_mask;                                                 ///< 0x0F58
                 u32 stencil_back_func_mask;                                            ///< 0x0F5C
-                INSERT_PADDING_BYTES_NOINIT(0x24);
+                INSERT_PADDING_BYTES_NOINIT(0x14);
+                u32 invalidate_texture_data_cache;                                     ///< 0x0F74 Assumed - Not in official docs.
+                INSERT_PADDING_BYTES_NOINIT(0x4);
+                u32 tiled_cache_barrier;                                               ///< 0x0F7C Assumed - Not in official docs.
+                INSERT_PADDING_BYTES_NOINIT(0x4);
                 VertexStreamSubstitute vertex_stream_substitute;                       ///< 0x0F84
                 u32 line_mode_clip_generated_edge_do_not_draw;                         ///< 0x0F8C
                 u32 color_mask_common;                                                 ///< 0x0F90
@@ -2791,7 +2795,8 @@ public:
                 FillViaTriangleMode fill_via_triangle_mode;                            ///< 0x113C
                 u32 blend_per_format_snorm8_unorm16_snorm16_enabled;                   ///< 0x1140
                 u32 flush_pending_writes_sm_gloal_store;                               ///< 0x1144
-                INSERT_PADDING_BYTES_NOINIT(0x18);
+                u32 conservative_raster_enable;                                        ///< 0x1148 Assumed - Not in official docs.
+                INSERT_PADDING_BYTES_NOINIT(0x14);
                 std::array<VertexAttribute, NumVertexAttributes> vertex_attrib_format; ///< 0x1160
                 std::array<MsaaSampleLocation, 4> multisample_sample_locations;        ///< 0x11E0
                 u32 offset_render_target_index_by_viewport_index;                      ///< 0x11F0
@@ -3287,6 +3292,8 @@ ASSERT_REG_POSITION(const_color_rendering, 0x0F40);
 ASSERT_REG_POSITION(stencil_back_ref, 0x0F54);
 ASSERT_REG_POSITION(stencil_back_mask, 0x0F58);
 ASSERT_REG_POSITION(stencil_back_func_mask, 0x0F5C);
+ASSERT_REG_POSITION(invalidate_texture_data_cache, 0x0F74);
+ASSERT_REG_POSITION(tiled_cache_barrier, 0x0F7C);
 ASSERT_REG_POSITION(vertex_stream_substitute, 0x0F84);
 ASSERT_REG_POSITION(line_mode_clip_generated_edge_do_not_draw, 0x0F8C);
 ASSERT_REG_POSITION(color_mask_common, 0x0F90);
@@ -3343,6 +3350,7 @@ ASSERT_REG_POSITION(post_ps_use_pre_ps_coverage, 0x1138);
 ASSERT_REG_POSITION(fill_via_triangle_mode, 0x113C);
 ASSERT_REG_POSITION(blend_per_format_snorm8_unorm16_snorm16_enabled, 0x1140);
 ASSERT_REG_POSITION(flush_pending_writes_sm_gloal_store, 0x1144);
+ASSERT_REG_POSITION(conservative_raster_enable, 0x1148);
 ASSERT_REG_POSITION(vertex_attrib_format, 0x1160);
 ASSERT_REG_POSITION(multisample_sample_locations, 0x11E0);
 ASSERT_REG_POSITION(offset_render_target_index_by_viewport_index, 0x11F0);

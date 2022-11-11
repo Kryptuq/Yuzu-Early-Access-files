@@ -19,27 +19,26 @@ void EmulatedConsole::ReloadFromSettings() {
 }
 
 void EmulatedConsole::SetTouchParams() {
-    // TODO(german77): Support any number of fingers
     std::size_t index = 0;
 
-    // Hardcode mouse, touchscreen and cemuhook parameters
+    // We can't use mouse as touch if native mouse is enabled
     if (!Settings::values.mouse_enabled) {
-        // We can't use mouse as touch if native mouse is enabled
         touch_params[index++] = Common::ParamPackage{"engine:mouse,axis_x:10,axis_y:11,button:0"};
     }
 
     touch_params[index++] =
-        Common::ParamPackage{"engine:touch,axis_x:0,axis_y:1,button:0,touch_id:0"};
+        Common::ParamPackage{"engine:cemuhookudp,axis_x:17,axis_y:18,button:65536"};
     touch_params[index++] =
-        Common::ParamPackage{"engine:touch,axis_x:2,axis_y:3,button:1,touch_id:1"};
-    touch_params[index++] =
-        Common::ParamPackage{"engine:touch,axis_x:4,axis_y:5,button:2,touch_id:2"};
-    touch_params[index++] =
-        Common::ParamPackage{"engine:touch,axis_x:6,axis_y:7,button:3,touch_id:3"};
-    touch_params[index++] =
-        Common::ParamPackage{"engine:cemuhookudp,axis_x:17,axis_y:18,button:65536,touch_id:0"};
-    touch_params[index++] =
-        Common::ParamPackage{"engine:cemuhookudp,axis_x:19,axis_y:20,button:131072,touch_id:1"};
+        Common::ParamPackage{"engine:cemuhookudp,axis_x:19,axis_y:20,button:131072"};
+
+    for (int i = 0; i < static_cast<int>(max_active_touch_inputs); i++) {
+        Common::ParamPackage touchscreen_param{};
+        touchscreen_param.Set("engine", "touch_from_button");
+        touchscreen_param.Set("axis_x", i * 2);
+        touchscreen_param.Set("axis_y", (i * 2) + 1);
+        touchscreen_param.Set("button", i);
+        touch_params[index++] = touchscreen_param;
+    }
 
     const auto button_index =
         static_cast<u64>(Settings::values.touch_from_button_map_index.GetValue());
@@ -47,7 +46,7 @@ void EmulatedConsole::SetTouchParams() {
 
     // Map the rest of the fingers from touch from button configuration
     for (const auto& config_entry : touch_buttons) {
-        if (index >= touch_params.size()) {
+        if (index >= max_touch_devices) {
             continue;
         }
         Common::ParamPackage params{config_entry};
@@ -60,7 +59,6 @@ void EmulatedConsole::SetTouchParams() {
         touch_button_params.Set("button", params.Serialize());
         touch_button_params.Set("x", x);
         touch_button_params.Set("y", y);
-        touch_button_params.Set("touch_id", static_cast<int>(index));
         touch_params[index] = touch_button_params;
         index++;
     }
@@ -178,12 +176,38 @@ void EmulatedConsole::SetMotion(const Common::Input::CallbackStatus& callback) {
 }
 
 void EmulatedConsole::SetTouch(const Common::Input::CallbackStatus& callback, std::size_t index) {
-    if (index >= console.touch_values.size()) {
+    if (index >= max_touch_devices) {
         return;
     }
     std::unique_lock lock{mutex};
 
-    console.touch_values[index] = TransformToTouch(callback);
+    const auto touch_input = TransformToTouch(callback);
+    auto touch_index = GetIndexFromFingerId(index);
+    bool is_new_input = false;
+
+    if (!touch_index.has_value() && touch_input.pressed.value) {
+        touch_index = GetNextFreeIndex();
+        is_new_input = true;
+    }
+
+    // No free entries or invalid state. Ignore input
+    if (!touch_index.has_value()) {
+        return;
+    }
+
+    auto& touch_value = console.touch_values[touch_index.value()];
+
+    if (is_new_input) {
+        touch_value.pressed.value = true;
+        touch_value.id = static_cast<u32>(index);
+    }
+
+    touch_value.x = touch_input.x;
+    touch_value.y = touch_input.y;
+
+    if (!touch_input.pressed.value) {
+        touch_value.pressed.value = false;
+    }
 
     if (is_configuring) {
         lock.unlock();
@@ -191,11 +215,15 @@ void EmulatedConsole::SetTouch(const Common::Input::CallbackStatus& callback, st
         return;
     }
 
-    // TODO(german77): Remap touch id in sequential order
-    console.touch_state[index] = {
-        .position = {console.touch_values[index].x.value, console.touch_values[index].y.value},
-        .id = static_cast<u32>(console.touch_values[index].id),
-        .pressed = console.touch_values[index].pressed.value,
+    // Touch outside allowed range. Ignore input
+    if (touch_index.value() >= max_active_touch_inputs) {
+        return;
+    }
+
+    console.touch_state[touch_index.value()] = {
+        .position = {touch_value.x.value, touch_value.y.value},
+        .id = static_cast<u32>(touch_index.value()),
+        .pressed = touch_input.pressed.value,
     };
 
     lock.unlock();
@@ -220,6 +248,28 @@ ConsoleMotion EmulatedConsole::GetMotion() const {
 TouchFingerState EmulatedConsole::GetTouch() const {
     std::scoped_lock lock{mutex};
     return console.touch_state;
+}
+
+std::optional<std::size_t> EmulatedConsole::GetIndexFromFingerId(std::size_t finger_id) const {
+    for (std::size_t index = 0; index < max_touch_devices; ++index) {
+        const auto& finger = console.touch_values[index];
+        if (!finger.pressed.value) {
+            continue;
+        }
+        if (finger.id == static_cast<int>(finger_id)) {
+            return index;
+        }
+    }
+    return std::nullopt;
+}
+
+std::optional<std::size_t> EmulatedConsole::GetNextFreeIndex() const {
+    for (std::size_t index = 0; index < max_touch_devices; ++index) {
+        if (!console.touch_values[index].pressed.value) {
+            return index;
+        }
+    }
+    return std::nullopt;
 }
 
 void EmulatedConsole::TriggerOnChange(ConsoleTriggerType type) {

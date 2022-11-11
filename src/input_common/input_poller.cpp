@@ -229,13 +229,12 @@ private:
 
 class InputFromTouch final : public Common::Input::InputDevice {
 public:
-    explicit InputFromTouch(PadIdentifier identifier_, int touch_id_, int button_, bool toggle_,
-                            bool inverted_, int axis_x_, int axis_y_,
-                            Common::Input::AnalogProperties properties_x_,
+    explicit InputFromTouch(PadIdentifier identifier_, int button_, bool toggle_, bool inverted_,
+                            int axis_x_, int axis_y_, Common::Input::AnalogProperties properties_x_,
                             Common::Input::AnalogProperties properties_y_,
                             InputEngine* input_engine_)
-        : identifier(identifier_), touch_id(touch_id_), button(button_), toggle(toggle_),
-          inverted(inverted_), axis_x(axis_x_), axis_y(axis_y_), properties_x(properties_x_),
+        : identifier(identifier_), button(button_), toggle(toggle_), inverted(inverted_),
+          axis_x(axis_x_), axis_y(axis_y_), properties_x(properties_x_),
           properties_y(properties_y_), input_engine(input_engine_) {
         UpdateCallback engine_callback{[this]() { OnChange(); }};
         const InputIdentifier button_input_identifier{
@@ -271,8 +270,7 @@ public:
     }
 
     Common::Input::TouchStatus GetStatus() const {
-        Common::Input::TouchStatus status;
-        status.id = touch_id;
+        Common::Input::TouchStatus status{};
         status.pressed = {
             .value = input_engine->GetButton(identifier, button),
             .inverted = inverted,
@@ -307,7 +305,6 @@ public:
 
 private:
     const PadIdentifier identifier;
-    const int touch_id;
     const int button;
     const bool toggle;
     const bool inverted;
@@ -919,7 +916,6 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateTriggerDevice(
 
 std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateTouchDevice(
     const Common::ParamPackage& params) {
-    const auto touch_id = params.Get("touch_id", 0);
     const auto deadzone = std::clamp(params.Get("deadzone", 0.0f), 0.0f, 1.0f);
     const auto range = std::clamp(params.Get("range", 1.0f), 0.25f, 1.50f);
     const auto threshold = std::clamp(params.Get("threshold", 0.5f), 0.0f, 1.0f);
@@ -954,8 +950,8 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateTouchDevice(
     input_engine->PreSetAxis(identifier, axis_x);
     input_engine->PreSetAxis(identifier, axis_y);
     input_engine->PreSetButton(identifier, button);
-    return std::make_unique<InputFromTouch>(identifier, touch_id, button, toggle, inverted, axis_x,
-                                            axis_y, properties_x, properties_y, input_engine.get());
+    return std::make_unique<InputFromTouch>(identifier, button, toggle, inverted, axis_x, axis_y,
+                                            properties_x, properties_y, input_engine.get());
 }
 
 std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateBatteryDevice(

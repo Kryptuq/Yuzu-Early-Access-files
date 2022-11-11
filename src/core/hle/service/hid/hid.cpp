@@ -36,8 +36,9 @@ namespace Service::HID {
 
 // Updating period for each HID device.
 // Period time is obtained by measuring the number of samples in a second on HW using a homebrew
-// Correct pad_update_ns is 4ms this is overclocked to lower input lag
-constexpr auto pad_update_ns = std::chrono::nanoseconds{1 * 1000 * 1000}; // (1ms, 1000Hz)
+// Correct npad_update_ns is 4ms this is overclocked to lower input lag
+constexpr auto npad_update_ns = std::chrono::nanoseconds{1 * 1000 * 1000};    // (1ms, 1000Hz)
+constexpr auto default_update_ns = std::chrono::nanoseconds{4 * 1000 * 1000}; // (4ms, 1000Hz)
 constexpr auto mouse_keyboard_update_ns = std::chrono::nanoseconds{8 * 1000 * 1000}; // (8ms, 125Hz)
 constexpr auto motion_update_ns = std::chrono::nanoseconds{5 * 1000 * 1000};         // (5ms, 200Hz)
 
@@ -75,8 +76,16 @@ IAppletResource::IAppletResource(Core::System& system_,
     GetController<Controller_Stubbed>(HidController::UniquePad).SetCommonHeaderOffset(0x5A00);
 
     // Register update callbacks
-    pad_update_event = Core::Timing::CreateEvent(
+    npad_update_event = Core::Timing::CreateEvent(
         "HID::UpdatePadCallback",
+        [this](std::uintptr_t user_data, s64 time,
+               std::chrono::nanoseconds ns_late) -> std::optional<std::chrono::nanoseconds> {
+            const auto guard = LockService();
+            UpdateNpad(user_data, ns_late);
+            return std::nullopt;
+        });
+    default_update_event = Core::Timing::CreateEvent(
+        "HID::UpdateDefaultCallback",
         [this](std::uintptr_t user_data, s64 time,
                std::chrono::nanoseconds ns_late) -> std::optional<std::chrono::nanoseconds> {
             const auto guard = LockService();
@@ -100,7 +109,9 @@ IAppletResource::IAppletResource(Core::System& system_,
             return std::nullopt;
         });
 
-    system.CoreTiming().ScheduleLoopingEvent(pad_update_ns, pad_update_ns, pad_update_event);
+    system.CoreTiming().ScheduleLoopingEvent(npad_update_ns, npad_update_ns, npad_update_event);
+    system.CoreTiming().ScheduleLoopingEvent(default_update_ns, default_update_ns,
+                                             default_update_event);
     system.CoreTiming().ScheduleLoopingEvent(mouse_keyboard_update_ns, mouse_keyboard_update_ns,
                                              mouse_keyboard_update_event);
     system.CoreTiming().ScheduleLoopingEvent(motion_update_ns, motion_update_ns,
@@ -118,7 +129,8 @@ void IAppletResource::DeactivateController(HidController controller) {
 }
 
 IAppletResource::~IAppletResource() {
-    system.CoreTiming().UnscheduleEvent(pad_update_event, 0);
+    system.CoreTiming().UnscheduleEvent(npad_update_event, 0);
+    system.CoreTiming().UnscheduleEvent(default_update_event, 0);
     system.CoreTiming().UnscheduleEvent(mouse_keyboard_update_event, 0);
     system.CoreTiming().UnscheduleEvent(motion_update_event, 0);
 }
@@ -144,8 +156,18 @@ void IAppletResource::UpdateControllers(std::uintptr_t user_data,
         if (controller == controllers[static_cast<size_t>(HidController::Mouse)]) {
             continue;
         }
+        // Npad has it's own update event
+        if (controller == controllers[static_cast<size_t>(HidController::NPad)]) {
+            continue;
+        }
         controller->OnUpdate(core_timing);
     }
+}
+
+void IAppletResource::UpdateNpad(std::uintptr_t user_data, std::chrono::nanoseconds ns_late) {
+    auto& core_timing = system.CoreTiming();
+
+    controllers[static_cast<size_t>(HidController::NPad)]->OnUpdate(core_timing);
 }
 
 void IAppletResource::UpdateMouseKeyboard(std::uintptr_t user_data,

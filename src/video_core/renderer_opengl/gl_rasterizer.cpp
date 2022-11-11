@@ -769,7 +769,7 @@ void RasterizerOpenGL::SyncStencilTestState() {
 
     if (regs.stencil_two_side_enable) {
         glStencilFuncSeparate(GL_BACK, MaxwellToGL::ComparisonOp(regs.stencil_back_op.func),
-                              regs.stencil_back_ref, regs.stencil_back_mask);
+                              regs.stencil_back_ref, regs.stencil_back_func_mask);
         glStencilOpSeparate(GL_BACK, MaxwellToGL::StencilOp(regs.stencil_back_op.fail),
                             MaxwellToGL::StencilOp(regs.stencil_back_op.zfail),
                             MaxwellToGL::StencilOp(regs.stencil_back_op.zpass));

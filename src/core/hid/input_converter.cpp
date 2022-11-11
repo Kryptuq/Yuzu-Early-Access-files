@@ -200,9 +200,6 @@ Common::Input::TouchStatus TransformToTouch(const Common::Input::CallbackStatus&
     x = std::clamp(x, 0.0f, 1.0f);
     y = std::clamp(y, 0.0f, 1.0f);
 
-    // Limit id to maximum number of fingers
-    status.id = std::clamp(status.id, 0, 16);
-
     if (status.pressed.inverted) {
         status.pressed.value = !status.pressed.value;
     }
