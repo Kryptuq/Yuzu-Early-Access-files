@@ -4,14 +4,27 @@
 
 #include <array>
 #include <cstring>
+#include <fstream>
 #include <iterator>
+#include <optional>
 #include <string_view>
+#include <thread>
+#include <vector>
 #include "common/bit_util.h"
 #include "common/common_types.h"
+#include "common/logging/log.h"
 #include "common/x64/cpu_detect.h"
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 #ifdef _MSC_VER
 #include <intrin.h>
+
+static inline u64 xgetbv(u32 index) {
+    return _xgetbv(index);
+}
 #else
 
 #if defined(__DragonFly__) || defined(__FreeBSD__)
@@ -39,12 +52,11 @@ static inline void __cpuid(int info[4], u32 function_id) {
 }
 
 #define _XCR_XFEATURE_ENABLED_MASK 0
-static inline u64 _xgetbv(u32 index) {
+static inline u64 xgetbv(u32 index) {
     u32 eax, edx;
     __asm__ __volatile__("xgetbv" : "=a"(eax), "=d"(edx) : "c"(index));
     return ((u64)edx << 32) | eax;
 }
-
 #endif // _MSC_VER
 
 namespace Common {
@@ -107,7 +119,7 @@ static CPUCaps Detect() {
         //  - Is the XSAVE bit set in CPUID?
         //  - XGETBV result has the XCR bit set.
         if (Common::Bit<28>(cpu_id[2]) && Common::Bit<27>(cpu_id[2])) {
-            if ((_xgetbv(_XCR_XFEATURE_ENABLED_MASK) & 0x6) == 0x6) {
+            if ((xgetbv(_XCR_XFEATURE_ENABLED_MASK) & 0x6) == 0x6) {
                 caps.avx = true;
                 if (Common::Bit<12>(cpu_id[2]))
                     caps.fma = true;
@@ -190,6 +202,47 @@ static CPUCaps Detect() {
 const CPUCaps& GetCPUCaps() {
     static CPUCaps caps = Detect();
     return caps;
+}
+
+std::optional<int> GetProcessorCount() {
+#if defined(_WIN32)
+    // Get the buffer length.
+    DWORD length = 0;
+    GetLogicalProcessorInformation(nullptr, &length);
+    if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+        LOG_ERROR(Frontend, "Failed to query core count.");
+        return std::nullopt;
+    }
+    std::vector<SYSTEM_LOGICAL_PROCESSOR_INFORMATION> buffer(
+        length / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION));
+    // Now query the core count.
+    if (!GetLogicalProcessorInformation(buffer.data(), &length)) {
+        LOG_ERROR(Frontend, "Failed to query core count.");
+        return std::nullopt;
+    }
+    return static_cast<int>(
+        std::count_if(buffer.cbegin(), buffer.cend(), [](const auto& proc_info) {
+            return proc_info.Relationship == RelationProcessorCore;
+        }));
+#elif defined(__unix__)
+    const int thread_count = std::thread::hardware_concurrency();
+    std::ifstream smt("/sys/devices/system/cpu/smt/active");
+    char state = '0';
+    if (smt) {
+        smt.read(&state, sizeof(state));
+    }
+    switch (state) {
+    case '0':
+        return thread_count;
+    case '1':
+        return thread_count / 2;
+    default:
+        return std::nullopt;
+    }
+#else
+    // Shame on you
+    return std::nullopt;
+#endif
 }
 
 } // namespace Common

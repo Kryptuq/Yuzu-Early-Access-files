@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string_view>
 #include "common/common_types.h"
 
@@ -73,5 +74,8 @@ struct CPUCaps {
  * @return Reference to a CPUCaps struct with the detected host CPU capabilities
  */
 const CPUCaps& GetCPUCaps();
+
+/// Detects CPU core count
+std::optional<int> GetProcessorCount();
 
 } // namespace Common
