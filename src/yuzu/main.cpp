@@ -2820,7 +2820,7 @@ void GMainWindow::OnMenuReportCompatibility() {
     const bool has_fma = caps.fma || caps.fma4;
     const auto processor_count = std::thread::hardware_concurrency();
     const bool has_4threads = processor_count == 0 || processor_count >= 4;
-    const bool has_8gb_ram = Common::GetMemInfo().TotalPhysicalMemory >= 8000000000;
+    const bool has_8gb_ram = Common::GetMemInfo().TotalPhysicalMemory >= 8_GiB;
     const bool has_broken_vulkan = UISettings::values.has_broken_vulkan;
 
     if (!has_fma || !has_4threads || !has_8gb_ram || has_broken_vulkan) {
