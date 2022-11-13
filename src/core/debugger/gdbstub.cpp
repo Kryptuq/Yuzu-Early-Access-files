@@ -606,6 +606,8 @@ void GDBStub::HandleQuery(std::string_view command) {
     } else if (command.starts_with("StartNoAckMode")) {
         no_ack = true;
         SendReply(GDB_STUB_REPLY_OK);
+    } else if (command.starts_with("Rcmd,")) {
+        HandleRcmd(Common::HexStringToVector(command.substr(5), false));
     } else {
         SendReply(GDB_STUB_REPLY_EMPTY);
     }
@@ -643,6 +645,155 @@ void GDBStub::HandleVCont(std::string_view command, std::vector<DebuggerAction>&
     } else {
         actions.push_back(DebuggerAction::Continue);
     }
+}
+
+constexpr std::array<std::pair<const char*, Kernel::Svc::MemoryState>, 22> MemoryStateNames{{
+    {"----- Free -----", Kernel::Svc::MemoryState::Free},
+    {"Io              ", Kernel::Svc::MemoryState::Io},
+    {"Static          ", Kernel::Svc::MemoryState::Static},
+    {"Code            ", Kernel::Svc::MemoryState::Code},
+    {"CodeData        ", Kernel::Svc::MemoryState::CodeData},
+    {"Normal          ", Kernel::Svc::MemoryState::Normal},
+    {"Shared          ", Kernel::Svc::MemoryState::Shared},
+    {"AliasCode       ", Kernel::Svc::MemoryState::AliasCode},
+    {"AliasCodeData   ", Kernel::Svc::MemoryState::AliasCodeData},
+    {"Ipc             ", Kernel::Svc::MemoryState::Ipc},
+    {"Stack           ", Kernel::Svc::MemoryState::Stack},
+    {"ThreadLocal     ", Kernel::Svc::MemoryState::ThreadLocal},
+    {"Transfered      ", Kernel::Svc::MemoryState::Transfered},
+    {"SharedTransfered", Kernel::Svc::MemoryState::SharedTransfered},
+    {"SharedCode      ", Kernel::Svc::MemoryState::SharedCode},
+    {"Inaccessible    ", Kernel::Svc::MemoryState::Inaccessible},
+    {"NonSecureIpc    ", Kernel::Svc::MemoryState::NonSecureIpc},
+    {"NonDeviceIpc    ", Kernel::Svc::MemoryState::NonDeviceIpc},
+    {"Kernel          ", Kernel::Svc::MemoryState::Kernel},
+    {"GeneratedCode   ", Kernel::Svc::MemoryState::GeneratedCode},
+    {"CodeOut         ", Kernel::Svc::MemoryState::CodeOut},
+    {"Coverage        ", Kernel::Svc::MemoryState::Coverage},
+}};
+
+static constexpr const char* GetMemoryStateName(Kernel::Svc::MemoryState state) {
+    for (size_t i = 0; i < MemoryStateNames.size(); i++) {
+        if (std::get<1>(MemoryStateNames[i]) == state) {
+            return std::get<0>(MemoryStateNames[i]);
+        }
+    }
+    return "Unknown         ";
+}
+
+static constexpr const char* GetMemoryPermissionString(const Kernel::Svc::MemoryInfo& info) {
+    if (info.state == Kernel::Svc::MemoryState::Free) {
+        return "   ";
+    }
+
+    switch (info.permission) {
+    case Kernel::Svc::MemoryPermission::ReadExecute:
+        return "r-x";
+    case Kernel::Svc::MemoryPermission::Read:
+        return "r--";
+    case Kernel::Svc::MemoryPermission::ReadWrite:
+        return "rw-";
+    default:
+        return "---";
+    }
+}
+
+static VAddr GetModuleEnd(Kernel::KPageTable& page_table, VAddr base) {
+    Kernel::Svc::MemoryInfo mem_info;
+    VAddr cur_addr{base};
+
+    // Expect: r-x Code (.text)
+    mem_info = page_table.QueryInfo(cur_addr).GetSvcMemoryInfo();
+    cur_addr = mem_info.base_address + mem_info.size;
+    if (mem_info.state != Kernel::Svc::MemoryState::Code ||
+        mem_info.permission != Kernel::Svc::MemoryPermission::ReadExecute) {
+        return cur_addr - 1;
+    }
+
+    // Expect: r-- Code (.rodata)
+    mem_info = page_table.QueryInfo(cur_addr).GetSvcMemoryInfo();
+    cur_addr = mem_info.base_address + mem_info.size;
+    if (mem_info.state != Kernel::Svc::MemoryState::Code ||
+        mem_info.permission != Kernel::Svc::MemoryPermission::Read) {
+        return cur_addr - 1;
+    }
+
+    // Expect: rw- CodeData (.data)
+    mem_info = page_table.QueryInfo(cur_addr).GetSvcMemoryInfo();
+    cur_addr = mem_info.base_address + mem_info.size;
+    return cur_addr - 1;
+}
+
+void GDBStub::HandleRcmd(const std::vector<u8>& command) {
+    std::string_view command_str{reinterpret_cast<const char*>(&command[0]), command.size()};
+    std::string reply;
+
+    auto* process = system.CurrentProcess();
+    auto& page_table = process->PageTable();
+
+    if (command_str == "get info") {
+        Loader::AppLoader::Modules modules;
+        system.GetAppLoader().ReadNSOModules(modules);
+
+        reply = fmt::format("Process:     {:#x} ({})\n"
+                            "Program Id:  {:#018x}\n",
+                            process->GetProcessID(), process->GetName(), process->GetProgramID());
+        reply +=
+            fmt::format("Layout:\n"
+                        "  Alias: {:#012x} - {:#012x}\n"
+                        "  Heap:  {:#012x} - {:#012x}\n"
+                        "  Aslr:  {:#012x} - {:#012x}\n"
+                        "  Stack: {:#012x} - {:#012x}\n"
+                        "Modules:\n",
+                        page_table.GetAliasRegionStart(), page_table.GetAliasRegionEnd(),
+                        page_table.GetHeapRegionStart(), page_table.GetHeapRegionEnd(),
+                        page_table.GetAliasCodeRegionStart(), page_table.GetAliasCodeRegionEnd(),
+                        page_table.GetStackRegionStart(), page_table.GetStackRegionEnd());
+
+        for (const auto& [vaddr, name] : modules) {
+            reply += fmt::format("  {:#012x} - {:#012x} {}\n", vaddr,
+                                 GetModuleEnd(page_table, vaddr), name);
+        }
+    } else if (command_str == "get mappings") {
+        reply = "Mappings:\n";
+        VAddr cur_addr = 0;
+
+        while (true) {
+            using MemoryAttribute = Kernel::Svc::MemoryAttribute;
+
+            auto mem_info = page_table.QueryInfo(cur_addr).GetSvcMemoryInfo();
+
+            if (mem_info.state != Kernel::Svc::MemoryState::Inaccessible ||
+                mem_info.base_address + mem_info.size - 1 != std::numeric_limits<u64>::max()) {
+                const char* state = GetMemoryStateName(mem_info.state);
+                const char* perm = GetMemoryPermissionString(mem_info);
+
+                const char l = True(mem_info.attribute & MemoryAttribute::Locked) ? 'L' : '-';
+                const char i = True(mem_info.attribute & MemoryAttribute::IpcLocked) ? 'I' : '-';
+                const char d = True(mem_info.attribute & MemoryAttribute::DeviceShared) ? 'D' : '-';
+                const char u = True(mem_info.attribute & MemoryAttribute::Uncached) ? 'U' : '-';
+
+                reply +=
+                    fmt::format("  {:#012x} - {:#012x} {} {} {}{}{}{} [{}, {}]\n",
+                                mem_info.base_address, mem_info.base_address + mem_info.size - 1,
+                                perm, state, l, i, d, u, mem_info.ipc_count, mem_info.device_count);
+            }
+
+            const uintptr_t next_address = mem_info.base_address + mem_info.size;
+            if (next_address <= cur_addr) {
+                break;
+            }
+
+            cur_addr = next_address;
+        }
+    } else if (command_str == "help") {
+        reply = "Commands:\n  get info\n  get mappings\n";
+    } else {
+        reply = "Unknown command.\nCommands:\n  get info\n  get mappings\n";
+    }
+
+    std::span<const u8> reply_span{reinterpret_cast<u8*>(&reply.front()), reply.size()};
+    SendReply(Common::HexToString(reply_span, false));
 }
 
 Kernel::KThread* GDBStub::GetThreadByID(u64 thread_id) {

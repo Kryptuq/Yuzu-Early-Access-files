@@ -27,10 +27,19 @@ static void AsyncReceiveInto(Readable& r, Buffer& buffer, Callback&& c) {
                 const u8* buffer_start = reinterpret_cast<const u8*>(&buffer);
                 std::span<const u8> received_data{buffer_start, buffer_start + bytes_read};
                 c(received_data);
+                AsyncReceiveInto(r, buffer, c);
             }
-
-            AsyncReceiveInto(r, buffer, c);
         });
+}
+
+template <typename Callback>
+static void AsyncAccept(boost::asio::ip::tcp::acceptor& acceptor, Callback&& c) {
+    acceptor.async_accept([&, c](const boost::system::error_code& error, auto&& peer_socket) {
+        if (!error.failed()) {
+            c(peer_socket);
+            AsyncAccept(acceptor, c);
+        }
+    });
 }
 
 template <typename Readable, typename Buffer>
@@ -59,9 +68,7 @@ namespace Core {
 
 class DebuggerImpl : public DebuggerBackend {
 public:
-    explicit DebuggerImpl(Core::System& system_, u16 port)
-        : system{system_}, signal_pipe{io_context}, client_socket{io_context} {
-        frontend = std::make_unique<GDBStub>(*this, system);
+    explicit DebuggerImpl(Core::System& system_, u16 port) : system{system_} {
         InitializeServer(port);
     }
 
@@ -70,39 +77,42 @@ public:
     }
 
     bool SignalDebugger(SignalInfo signal_info) {
-        {
-            std::scoped_lock lk{connection_lock};
+        std::scoped_lock lk{connection_lock};
 
-            if (stopped) {
-                // Do not notify the debugger about another event.
-                // It should be ignored.
-                return false;
-            }
-
-            // Set up the state.
-            stopped = true;
-            info = signal_info;
+        if (stopped || !state) {
+            // Do not notify the debugger about another event.
+            // It should be ignored.
+            return false;
         }
 
+        // Set up the state.
+        stopped = true;
+        state->info = signal_info;
+
         // Write a single byte into the pipe to wake up the debug interface.
-        boost::asio::write(signal_pipe, boost::asio::buffer(&stopped, sizeof(stopped)));
+        boost::asio::write(state->signal_pipe, boost::asio::buffer(&stopped, sizeof(stopped)));
+
         return true;
     }
 
+    // These functions are callbacks from the frontend, and the lock will be held.
+    // There is no need to relock it.
+
     std::span<const u8> ReadFromClient() override {
-        return ReceiveInto(client_socket, client_data);
+        return ReceiveInto(state->client_socket, state->client_data);
     }
 
     void WriteToClient(std::span<const u8> data) override {
-        boost::asio::write(client_socket, boost::asio::buffer(data.data(), data.size_bytes()));
+        boost::asio::write(state->client_socket,
+                           boost::asio::buffer(data.data(), data.size_bytes()));
     }
 
     void SetActiveThread(Kernel::KThread* thread) override {
-        active_thread = thread;
+        state->active_thread = thread;
     }
 
     Kernel::KThread* GetActiveThread() override {
-        return active_thread;
+        return state->active_thread;
     }
 
 private:
@@ -113,24 +123,53 @@ private:
 
         // Run the connection thread.
         connection_thread = std::jthread([&, port](std::stop_token stop_token) {
+            Common::SetCurrentThreadName("Debugger");
+
             try {
                 // Initialize the listening socket and accept a new client.
                 tcp::endpoint endpoint{boost::asio::ip::address_v4::any(), port};
                 tcp::acceptor acceptor{io_context, endpoint};
 
-                acceptor.async_accept(client_socket, [](const auto&) {});
-                io_context.run_one();
-                io_context.restart();
+                AsyncAccept(acceptor, [&](auto&& peer) { AcceptConnection(std::move(peer)); });
 
-                if (stop_token.stop_requested()) {
-                    return;
+                while (!stop_token.stop_requested() && io_context.run()) {
                 }
-
-                ThreadLoop(stop_token);
             } catch (const std::exception& ex) {
                 LOG_CRITICAL(Debug_GDBStub, "Stopping server: {}", ex.what());
             }
         });
+    }
+
+    void AcceptConnection(boost::asio::ip::tcp::socket&& peer) {
+        LOG_INFO(Debug_GDBStub, "Accepting new peer connection");
+
+        std::scoped_lock lk{connection_lock};
+
+        // Ensure everything is stopped.
+        PauseEmulation();
+
+        // Set up the new frontend.
+        frontend = std::make_unique<GDBStub>(*this, system);
+
+        // Set the new state. This will tear down any existing state.
+        state = ConnectionState{
+            .client_socket{std::move(peer)},
+            .signal_pipe{io_context},
+            .info{},
+            .active_thread{},
+            .client_data{},
+            .pipe_data{},
+        };
+
+        // Set up the client signals for new data.
+        AsyncReceiveInto(state->signal_pipe, state->pipe_data, [&](auto d) { PipeData(d); });
+        AsyncReceiveInto(state->client_socket, state->client_data, [&](auto d) { ClientData(d); });
+
+        // Set the active thread.
+        UpdateActiveThread();
+
+        // Set up the frontend.
+        frontend->Connected();
     }
 
     void ShutdownServer() {
@@ -139,39 +178,23 @@ private:
         connection_thread.join();
     }
 
-    void ThreadLoop(std::stop_token stop_token) {
-        Common::SetCurrentThreadName("Debugger");
-
-        // Set up the client signals for new data.
-        AsyncReceiveInto(signal_pipe, pipe_data, [&](auto d) { PipeData(d); });
-        AsyncReceiveInto(client_socket, client_data, [&](auto d) { ClientData(d); });
-
-        // Set the active thread.
-        UpdateActiveThread();
-
-        // Set up the frontend.
-        frontend->Connected();
-
-        // Main event loop.
-        while (!stop_token.stop_requested() && io_context.run()) {
-        }
-    }
-
     void PipeData(std::span<const u8> data) {
-        switch (info.type) {
+        std::scoped_lock lk{connection_lock};
+
+        switch (state->info.type) {
         case SignalType::Stopped:
         case SignalType::Watchpoint:
             // Stop emulation.
             PauseEmulation();
 
             // Notify the client.
-            active_thread = info.thread;
+            state->active_thread = state->info.thread;
             UpdateActiveThread();
 
-            if (info.type == SignalType::Watchpoint) {
-                frontend->Watchpoint(active_thread, *info.watchpoint);
+            if (state->info.type == SignalType::Watchpoint) {
+                frontend->Watchpoint(state->active_thread, *state->info.watchpoint);
             } else {
-                frontend->Stopped(active_thread);
+                frontend->Stopped(state->active_thread);
             }
 
             break;
@@ -179,8 +202,8 @@ private:
             frontend->ShuttingDown();
 
             // Wait for emulation to shut down gracefully now.
-            signal_pipe.close();
-            client_socket.shutdown(boost::asio::socket_base::shutdown_both);
+            state->signal_pipe.close();
+            state->client_socket.shutdown(boost::asio::socket_base::shutdown_both);
             LOG_INFO(Debug_GDBStub, "Shut down server");
 
             break;
@@ -188,17 +211,16 @@ private:
     }
 
     void ClientData(std::span<const u8> data) {
+        std::scoped_lock lk{connection_lock};
+
         const auto actions{frontend->ClientData(data)};
         for (const auto action : actions) {
             switch (action) {
             case DebuggerAction::Interrupt: {
-                {
-                    std::scoped_lock lk{connection_lock};
-                    stopped = true;
-                }
+                stopped = true;
                 PauseEmulation();
                 UpdateActiveThread();
-                frontend->Stopped(active_thread);
+                frontend->Stopped(state->active_thread);
                 break;
             }
             case DebuggerAction::Continue:
@@ -206,15 +228,15 @@ private:
                 break;
             case DebuggerAction::StepThreadUnlocked:
                 MarkResumed([&] {
-                    active_thread->SetStepState(Kernel::StepState::StepPending);
-                    active_thread->Resume(Kernel::SuspendType::Debug);
-                    ResumeEmulation(active_thread);
+                    state->active_thread->SetStepState(Kernel::StepState::StepPending);
+                    state->active_thread->Resume(Kernel::SuspendType::Debug);
+                    ResumeEmulation(state->active_thread);
                 });
                 break;
             case DebuggerAction::StepThreadLocked: {
                 MarkResumed([&] {
-                    active_thread->SetStepState(Kernel::StepState::StepPending);
-                    active_thread->Resume(Kernel::SuspendType::Debug);
+                    state->active_thread->SetStepState(Kernel::StepState::StepPending);
+                    state->active_thread->Resume(Kernel::SuspendType::Debug);
                 });
                 break;
             }
@@ -254,15 +276,14 @@ private:
     template <typename Callback>
     void MarkResumed(Callback&& cb) {
         Kernel::KScopedSchedulerLock sl{system.Kernel()};
-        std::scoped_lock cl{connection_lock};
         stopped = false;
         cb();
     }
 
     void UpdateActiveThread() {
         const auto& threads{ThreadList()};
-        if (std::find(threads.begin(), threads.end(), active_thread) == threads.end()) {
-            active_thread = threads[0];
+        if (std::find(threads.begin(), threads.end(), state->active_thread) == threads.end()) {
+            state->active_thread = threads[0];
         }
     }
 
@@ -274,18 +295,22 @@ private:
     System& system;
     std::unique_ptr<DebuggerFrontend> frontend;
 
+    boost::asio::io_context io_context;
     std::jthread connection_thread;
     std::mutex connection_lock;
-    boost::asio::io_context io_context;
-    boost::process::async_pipe signal_pipe;
-    boost::asio::ip::tcp::socket client_socket;
 
-    SignalInfo info;
-    Kernel::KThread* active_thread;
-    bool pipe_data;
-    bool stopped;
+    struct ConnectionState {
+        boost::asio::ip::tcp::socket client_socket;
+        boost::process::async_pipe signal_pipe;
 
-    std::array<u8, 4096> client_data;
+        SignalInfo info;
+        Kernel::KThread* active_thread;
+        std::array<u8, 4096> client_data;
+        bool pipe_data;
+    };
+
+    std::optional<ConnectionState> state{};
+    bool stopped{};
 };
 
 Debugger::Debugger(Core::System& system, u16 port) {

@@ -320,6 +320,9 @@ public:
     constexpr VAddr GetAliasCodeRegionStart() const {
         return m_alias_code_region_start;
     }
+    constexpr VAddr GetAliasCodeRegionEnd() const {
+        return m_alias_code_region_end;
+    }
     constexpr VAddr GetAliasCodeRegionSize() const {
         return m_alias_code_region_end - m_alias_code_region_start;
     }
