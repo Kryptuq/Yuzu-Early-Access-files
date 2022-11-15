@@ -2701,14 +2701,24 @@ static Result GetThreadList(Core::System& system, u32* out_num_threads, VAddr ou
     return ResultSuccess;
 }
 
-static Result FlushProcessDataCache32([[maybe_unused]] Core::System& system,
-                                      [[maybe_unused]] Handle handle, [[maybe_unused]] u32 address,
-                                      [[maybe_unused]] u32 size) {
-    // Note(Blinkhawk): For emulation purposes of the data cache this is mostly a no-op,
-    // as all emulation is done in the same cache level in host architecture, thus data cache
-    // does not need flushing.
-    LOG_DEBUG(Kernel_SVC, "called");
-    return ResultSuccess;
+static Result FlushProcessDataCache32(Core::System& system, Handle process_handle, u64 address,
+                                      u64 size) {
+    // Validate address/size.
+    R_UNLESS(size > 0, ResultInvalidSize);
+    R_UNLESS(address == static_cast<uintptr_t>(address), ResultInvalidCurrentMemory);
+    R_UNLESS(size == static_cast<size_t>(size), ResultInvalidCurrentMemory);
+
+    // Get the process from its handle.
+    KScopedAutoObject process =
+        system.Kernel().CurrentProcess()->GetHandleTable().GetObject<KProcess>(process_handle);
+    R_UNLESS(process.IsNotNull(), ResultInvalidHandle);
+
+    // Verify the region is within range.
+    auto& page_table = process->PageTable();
+    R_UNLESS(page_table.Contains(address, size), ResultInvalidCurrentMemory);
+
+    // Perform the operation.
+    R_RETURN(system.Memory().FlushDataCache(*process, address, size));
 }
 
 namespace {

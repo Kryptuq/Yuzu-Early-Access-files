@@ -722,4 +722,12 @@ void SvcWrap32(Core::System& system) {
     FuncReturn(system, retval);
 }
 
+// Used by Invalidate/Store/FlushProcessDataCache32
+template <Result func(Core::System&, Handle, u64, u64)>
+void SvcWrap32(Core::System& system) {
+    const u64 address = (Param(system, 3) << 32) | Param(system, 2);
+    const u64 size = (Param(system, 4) << 32) | Param(system, 1);
+    FuncReturn32(system, func(system, Param32(system, 0), address, size).raw);
+}
+
 } // namespace Kernel

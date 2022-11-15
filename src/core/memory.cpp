@@ -6,6 +6,7 @@
 
 #include "common/assert.h"
 #include "common/atomic_ops.h"
+#include "common/cache_management.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"
 #include "common/page_table.h"
@@ -327,6 +328,55 @@ struct Memory::Impl {
                 dest_addr += static_cast<VAddr>(copy_amount);
                 src_addr += static_cast<VAddr>(copy_amount);
             });
+    }
+
+    template <typename Callback>
+    Result PerformCacheOperation(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size,
+                                 Callback&& cb) {
+        class InvalidMemoryException : public std::exception {};
+
+        try {
+            WalkBlock(
+                process, dest_addr, size,
+                [&](const std::size_t block_size, const VAddr current_vaddr) {
+                    LOG_ERROR(HW_Memory, "Unmapped cache maintenance @ {:#018X}", current_vaddr);
+                    throw InvalidMemoryException();
+                },
+                [&](const std::size_t block_size, u8* const host_ptr) { cb(block_size, host_ptr); },
+                [&](const VAddr current_vaddr, const std::size_t block_size, u8* const host_ptr) {
+                    system.GPU().FlushRegion(current_vaddr, block_size);
+                    cb(block_size, host_ptr);
+                },
+                [](const std::size_t block_size) {});
+        } catch (InvalidMemoryException&) {
+            return Kernel::ResultInvalidCurrentMemory;
+        }
+
+        return ResultSuccess;
+    }
+
+    Result InvalidateDataCache(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size) {
+        auto perform = [&](const std::size_t block_size, u8* const host_ptr) {
+            // Do nothing; this operation (dc ivac) cannot be supported
+            // from EL0
+        };
+        return PerformCacheOperation(process, dest_addr, size, perform);
+    }
+
+    Result StoreDataCache(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size) {
+        auto perform = [&](const std::size_t block_size, u8* const host_ptr) {
+            // dc cvac: Store to point of coherency
+            Common::DataCacheLineCleanByVAToPoC(host_ptr, block_size);
+        };
+        return PerformCacheOperation(process, dest_addr, size, perform);
+    }
+
+    Result FlushDataCache(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size) {
+        auto perform = [&](const std::size_t block_size, u8* const host_ptr) {
+            // dc civac: Store to point of coherency, and invalidate from cache
+            Common::DataCacheLineCleanAndInvalidateByVAToPoC(host_ptr, block_size);
+        };
+        return PerformCacheOperation(process, dest_addr, size, perform);
     }
 
     void MarkRegionDebug(VAddr vaddr, u64 size, bool debug) {
@@ -784,6 +834,21 @@ void Memory::CopyBlock(const Kernel::KProcess& process, VAddr dest_addr, VAddr s
 
 void Memory::ZeroBlock(const Kernel::KProcess& process, VAddr dest_addr, const std::size_t size) {
     impl->ZeroBlock(process, dest_addr, size);
+}
+
+Result Memory::InvalidateDataCache(const Kernel::KProcess& process, VAddr dest_addr,
+                                   const std::size_t size) {
+    return impl->InvalidateDataCache(process, dest_addr, size);
+}
+
+Result Memory::StoreDataCache(const Kernel::KProcess& process, VAddr dest_addr,
+                              const std::size_t size) {
+    return impl->StoreDataCache(process, dest_addr, size);
+}
+
+Result Memory::FlushDataCache(const Kernel::KProcess& process, VAddr dest_addr,
+                              const std::size_t size) {
+    return impl->FlushDataCache(process, dest_addr, size);
 }
 
 void Memory::RasterizerMarkRegionCached(VAddr vaddr, u64 size, bool cached) {

@@ -133,7 +133,7 @@ public:
         return Common::Input::CameraError::NotSupported;
     }
 
-    // Request nfc data from a controller
+    // Returns success if nfc is supported
     virtual Common::Input::NfcState SupportsNfc(
         [[maybe_unused]] const PadIdentifier& identifier) const {
         return Common::Input::NfcState::NotSupported;

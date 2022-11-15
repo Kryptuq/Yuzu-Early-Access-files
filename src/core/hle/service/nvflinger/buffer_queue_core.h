@@ -38,7 +38,7 @@ public:
 
 private:
     void SignalDequeueCondition();
-    bool WaitForDequeueCondition();
+    bool WaitForDequeueCondition(std::unique_lock<std::mutex>& lk);
 
     s32 GetMinUndequeuedBufferCountLocked(bool async) const;
     s32 GetMinMaxBufferCountLocked(bool async) const;
@@ -60,7 +60,8 @@ private:
     BufferQueueDefs::SlotsType slots{};
     std::vector<BufferItem> queue;
     s32 override_max_buffer_count{};
-    mutable std::condition_variable_any dequeue_condition;
+    std::condition_variable dequeue_condition;
+    std::atomic<bool> dequeue_possible{};
     const bool use_async_buffer{}; // This is always disabled on HOS
     bool dequeue_buffer_cannot_block{};
     PixelFormat default_buffer_format{PixelFormat::Rgba8888};

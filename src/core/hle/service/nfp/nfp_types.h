@@ -88,11 +88,22 @@ enum class PackedTagType : u8 {
     Type5, // ISO15693 RW/RO 540 bytes 106kbit/s
 };
 
+// Verify this enum. It might be completely wrong default protocol is 0x48
 enum class TagProtocol : u32 {
     None,
-    TypeA, // ISO14443A
-    TypeB, // ISO14443B
-    TypeF, // Sony Felica
+    TypeA = 1U << 0, // ISO14443A
+    TypeB = 1U << 1, // ISO14443B
+    TypeF = 1U << 2, // Sony Felica
+    Unknown1 = 1U << 3,
+    Unknown2 = 1U << 5,
+    All = 0xFFFFFFFFU,
+};
+
+enum class CabinetMode : u8 {
+    StartNicknameAndOwnerSettings,
+    StartGameDataEraser,
+    StartRestorer,
+    StartFormatter,
 };
 
 using UniqueSerialNumber = std::array<u8, 7>;

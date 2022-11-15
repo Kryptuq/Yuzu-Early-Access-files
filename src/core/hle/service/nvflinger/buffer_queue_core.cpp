@@ -23,15 +23,17 @@ void BufferQueueCore::NotifyShutdown() {
 }
 
 void BufferQueueCore::SignalDequeueCondition() {
+    dequeue_possible.store(true);
     dequeue_condition.notify_all();
 }
 
-bool BufferQueueCore::WaitForDequeueCondition() {
+bool BufferQueueCore::WaitForDequeueCondition(std::unique_lock<std::mutex>& lk) {
     if (is_shutting_down) {
         return false;
     }
 
-    dequeue_condition.wait(mutex);
+    dequeue_condition.wait(lk, [&] { return dequeue_possible.load(); });
+    dequeue_possible.store(false);
 
     return true;
 }

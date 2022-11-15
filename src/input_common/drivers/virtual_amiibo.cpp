@@ -60,6 +60,8 @@ Common::Input::NfcState VirtualAmiibo::WriteNfcData(
         return Common::Input::NfcState::WriteFailed;
     }
 
+    amiibo_data = data;
+
     return Common::Input::NfcState::Success;
 }
 
@@ -91,11 +93,24 @@ VirtualAmiibo::Info VirtualAmiibo::LoadAmiibo(const std::string& filename) {
     return Info::Success;
 }
 
+VirtualAmiibo::Info VirtualAmiibo::ReloadAmiibo() {
+    if (state == State::AmiiboIsOpen) {
+        SetNfc(identifier, {Common::Input::NfcState::NewAmiibo, amiibo_data});
+        return Info::Success;
+    }
+
+    return LoadAmiibo(file_path);
+}
+
 VirtualAmiibo::Info VirtualAmiibo::CloseAmiibo() {
     state = polling_mode == Common::Input::PollingMode::NFC ? State::WaitingForAmiibo
                                                             : State::Initialized;
     SetNfc(identifier, {Common::Input::NfcState::AmiiboRemoved, {}});
     return Info::Success;
+}
+
+std::string VirtualAmiibo::GetLastFilePath() const {
+    return file_path;
 }
 
 } // namespace InputCommon

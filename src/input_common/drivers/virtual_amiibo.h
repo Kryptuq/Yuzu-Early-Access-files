@@ -47,7 +47,10 @@ public:
     State GetCurrentState() const;
 
     Info LoadAmiibo(const std::string& amiibo_file);
+    Info ReloadAmiibo();
     Info CloseAmiibo();
+
+    std::string GetLastFilePath() const;
 
 private:
     static constexpr std::size_t amiibo_size = 0x21C;

@@ -55,6 +55,7 @@ class System;
 } // namespace Core
 
 namespace Core::Frontend {
+struct CabinetParameters;
 struct ControllerParameters;
 struct InlineAppearParameters;
 struct InlineTextParameters;
@@ -81,6 +82,10 @@ enum class SwkbdTextCheckResult : u32;
 enum class SwkbdReplyType : u32;
 enum class WebExitReason : u32;
 } // namespace Service::AM::Applets
+
+namespace Service::NFP {
+class NfpDevice;
+} // namespace Service::NFP
 
 namespace Ui {
 class MainWindow;
@@ -149,6 +154,8 @@ signals:
 
     void UpdateInstallProgress();
 
+    void AmiiboSettingsFinished(bool is_success, const std::string& name);
+
     void ControllerSelectorReconfigureFinished();
 
     void ErrorDisplayFinished();
@@ -170,6 +177,8 @@ public slots:
     void OnExecuteProgram(std::size_t program_index);
     void OnExit();
     void OnSaveConfig();
+    void AmiiboSettingsShowDialog(const Core::Frontend::CabinetParameters& parameters,
+                                  std::shared_ptr<Service::NFP::NfpDevice> nfp_device);
     void ControllerSelectorReconfigureControllers(
         const Core::Frontend::ControllerParameters& parameters);
     void SoftwareKeyboardInitialize(

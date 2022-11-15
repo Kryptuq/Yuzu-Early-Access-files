@@ -121,8 +121,8 @@ Status BufferQueueProducer::SetBufferCount(s32 buffer_count) {
     return Status::NoError;
 }
 
-Status BufferQueueProducer::WaitForFreeSlotThenRelock(bool async, s32* found,
-                                                      Status* return_flags) const {
+Status BufferQueueProducer::WaitForFreeSlotThenRelock(bool async, s32* found, Status* return_flags,
+                                                      std::unique_lock<std::mutex>& lk) const {
     bool try_again = true;
 
     while (try_again) {
@@ -214,7 +214,7 @@ Status BufferQueueProducer::WaitForFreeSlotThenRelock(bool async, s32* found,
                 return Status::WouldBlock;
             }
 
-            if (!core->WaitForDequeueCondition()) {
+            if (!core->WaitForDequeueCondition(lk)) {
                 // We are no longer running
                 return Status::NoError;
             }
@@ -237,7 +237,7 @@ Status BufferQueueProducer::DequeueBuffer(s32* out_slot, Fence* out_fence, bool 
     Status return_flags = Status::NoError;
     bool attached_by_consumer = false;
     {
-        std::scoped_lock lock{core->mutex};
+        std::unique_lock lock{core->mutex};
         core->WaitWhileAllocatingLocked();
 
         if (format == PixelFormat::NoFormat) {
@@ -248,7 +248,7 @@ Status BufferQueueProducer::DequeueBuffer(s32* out_slot, Fence* out_fence, bool 
         usage |= core->consumer_usage_bit;
 
         s32 found{};
-        Status status = WaitForFreeSlotThenRelock(async, &found, &return_flags);
+        Status status = WaitForFreeSlotThenRelock(async, &found, &return_flags, lock);
         if (status != Status::NoError) {
             return status;
         }
@@ -400,13 +400,13 @@ Status BufferQueueProducer::AttachBuffer(s32* out_slot,
         return Status::BadValue;
     }
 
-    std::scoped_lock lock{core->mutex};
+    std::unique_lock lock{core->mutex};
     core->WaitWhileAllocatingLocked();
 
     Status return_flags = Status::NoError;
     s32 found{};
 
-    const auto status = WaitForFreeSlotThenRelock(false, &found, &return_flags);
+    const auto status = WaitForFreeSlotThenRelock(false, &found, &return_flags, lock);
     if (status != Status::NoError) {
         return status;
     }

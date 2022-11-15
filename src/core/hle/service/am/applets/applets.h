@@ -16,6 +16,7 @@ class System;
 }
 
 namespace Core::Frontend {
+class CabinetApplet;
 class ControllerApplet;
 class ECommerceApplet;
 class ErrorApplet;
@@ -176,6 +177,7 @@ protected:
 };
 
 struct AppletFrontendSet {
+    using CabinetApplet = std::unique_ptr<Core::Frontend::CabinetApplet>;
     using ControllerApplet = std::unique_ptr<Core::Frontend::ControllerApplet>;
     using ErrorApplet = std::unique_ptr<Core::Frontend::ErrorApplet>;
     using MiiEdit = std::unique_ptr<Core::Frontend::MiiEditApplet>;
@@ -186,10 +188,11 @@ struct AppletFrontendSet {
     using WebBrowser = std::unique_ptr<Core::Frontend::WebBrowserApplet>;
 
     AppletFrontendSet();
-    AppletFrontendSet(ControllerApplet controller_applet, ErrorApplet error_applet,
-                      MiiEdit mii_edit_, ParentalControlsApplet parental_controls_applet,
-                      PhotoViewer photo_viewer_, ProfileSelect profile_select_,
-                      SoftwareKeyboard software_keyboard_, WebBrowser web_browser_);
+    AppletFrontendSet(CabinetApplet cabinet_applet, ControllerApplet controller_applet,
+                      ErrorApplet error_applet, MiiEdit mii_edit_,
+                      ParentalControlsApplet parental_controls_applet, PhotoViewer photo_viewer_,
+                      ProfileSelect profile_select_, SoftwareKeyboard software_keyboard_,
+                      WebBrowser web_browser_);
     ~AppletFrontendSet();
 
     AppletFrontendSet(const AppletFrontendSet&) = delete;
@@ -198,6 +201,7 @@ struct AppletFrontendSet {
     AppletFrontendSet(AppletFrontendSet&&) noexcept;
     AppletFrontendSet& operator=(AppletFrontendSet&&) noexcept;
 
+    CabinetApplet cabinet;
     ControllerApplet controller;
     ErrorApplet error;
     MiiEdit mii_edit;

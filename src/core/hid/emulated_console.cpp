@@ -33,7 +33,7 @@ void EmulatedConsole::SetTouchParams() {
 
     for (int i = 0; i < static_cast<int>(max_active_touch_inputs); i++) {
         Common::ParamPackage touchscreen_param{};
-        touchscreen_param.Set("engine", "touch_from_button");
+        touchscreen_param.Set("engine", "touch");
         touchscreen_param.Set("axis_x", i * 2);
         touchscreen_param.Set("axis_y", (i * 2) + 1);
         touchscreen_param.Set("button", i);

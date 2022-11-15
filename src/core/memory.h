@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include "common/common_types.h"
+#include "core/hle/result.h"
 
 namespace Common {
 struct PageTable;
@@ -448,6 +449,39 @@ public:
      *       value 0.
      */
     void ZeroBlock(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size);
+
+    /**
+     * Invalidates a range of bytes within the current process' address space at the specified
+     * virtual address.
+     *
+     * @param process   The process that will have data invalidated within its address space.
+     * @param dest_addr The destination virtual address to invalidate the data from.
+     * @param size      The size of the range to invalidate, in bytes.
+     *
+     */
+    Result InvalidateDataCache(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size);
+
+    /**
+     * Stores a range of bytes within the current process' address space at the specified
+     * virtual address.
+     *
+     * @param process   The process that will have data stored within its address space.
+     * @param dest_addr The destination virtual address to store the data from.
+     * @param size      The size of the range to store, in bytes.
+     *
+     */
+    Result StoreDataCache(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size);
+
+    /**
+     * Flushes a range of bytes within the current process' address space at the specified
+     * virtual address.
+     *
+     * @param process   The process that will have data flushed within its address space.
+     * @param dest_addr The destination virtual address to flush the data from.
+     * @param size      The size of the range to flush, in bytes.
+     *
+     */
+    Result FlushDataCache(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size);
 
     /**
      * Marks each page within the specified address range as cached or uncached.

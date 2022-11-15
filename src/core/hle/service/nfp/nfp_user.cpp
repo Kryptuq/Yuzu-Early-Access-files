@@ -130,7 +130,7 @@ void IUser::ListDevices(Kernel::HLERequestContext& ctx) {
 void IUser::StartDetection(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
-    const auto nfp_protocol{rp.Pop<s32>()};
+    const auto nfp_protocol{rp.PopEnum<TagProtocol>()};
     LOG_INFO(Service_NFP, "called, device_handle={}, nfp_protocol={}", device_handle, nfp_protocol);
 
     if (state == State::NonInitialized) {

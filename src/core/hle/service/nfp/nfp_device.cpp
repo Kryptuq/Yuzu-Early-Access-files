@@ -77,6 +77,9 @@ void NfpDevice::NpadUpdate(Core::HID::ControllerTriggerType type) {
         LoadAmiibo(nfc_status.data);
         break;
     case Common::Input::NfcState::AmiiboRemoved:
+        if (device_state == DeviceState::Initialized || device_state == DeviceState::TagRemoved) {
+            break;
+        }
         if (device_state != DeviceState::SearchingForTag) {
             CloseAmiibo();
         }
@@ -96,6 +99,8 @@ bool NfpDevice::LoadAmiibo(std::span<const u8> data) {
         LOG_ERROR(Service_NFP, "Not an amiibo, size={}", data.size());
         return false;
     }
+
+    // TODO: Filter by allowed_protocols here
 
     memcpy(&encrypted_tag_data, data.data(), sizeof(EncryptedNTAG215File));
 
@@ -143,7 +148,7 @@ void NfpDevice::Finalize() {
     device_state = DeviceState::Unavailable;
 }
 
-Result NfpDevice::StartDetection(s32 protocol_) {
+Result NfpDevice::StartDetection(TagProtocol allowed_protocol) {
     if (device_state != DeviceState::Initialized && device_state != DeviceState::TagRemoved) {
         LOG_ERROR(Service_NFP, "Wrong device state {}", device_state);
         return WrongDeviceState;
@@ -155,7 +160,7 @@ Result NfpDevice::StartDetection(s32 protocol_) {
     }
 
     device_state = DeviceState::SearchingForTag;
-    protocol = protocol_;
+    allowed_protocols = allowed_protocol;
     return ResultSuccess;
 }
 
@@ -465,6 +470,32 @@ Result NfpDevice::OpenApplicationArea(u32 access_id) {
     }
 
     is_app_area_open = true;
+
+    return ResultSuccess;
+}
+
+Result NfpDevice::GetApplicationAreaId(u32& application_area_id) const {
+    application_area_id = {};
+
+    if (device_state != DeviceState::TagMounted) {
+        LOG_ERROR(Service_NFP, "Wrong device state {}", device_state);
+        if (device_state == DeviceState::TagRemoved) {
+            return TagRemoved;
+        }
+        return WrongDeviceState;
+    }
+
+    if (mount_target == MountTarget::None || mount_target == MountTarget::Rom) {
+        LOG_ERROR(Service_NFP, "Amiibo is read only", device_state);
+        return WrongDeviceState;
+    }
+
+    if (tag_data.settings.settings.appdata_initialized.Value() == 0) {
+        LOG_WARNING(Service_NFP, "Application area is not initialized");
+        return ApplicationAreaIsNotInitialized;
+    }
+
+    application_area_id = tag_data.application_area_id;
 
     return ResultSuccess;
 }

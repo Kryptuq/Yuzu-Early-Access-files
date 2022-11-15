@@ -5,6 +5,7 @@
 
 #include "common/assert.h"
 #include "core/core.h"
+#include "core/frontend/applets/cabinet.h"
 #include "core/frontend/applets/controller.h"
 #include "core/frontend/applets/error.h"
 #include "core/frontend/applets/general_frontend.h"
@@ -16,6 +17,7 @@
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/am/applet_ae.h"
 #include "core/hle/service/am/applet_oe.h"
+#include "core/hle/service/am/applets/applet_cabinet.h"
 #include "core/hle/service/am/applets/applet_controller.h"
 #include "core/hle/service/am/applets/applet_error.h"
 #include "core/hle/service/am/applets/applet_general_backend.h"
@@ -171,13 +173,15 @@ void Applet::Initialize() {
 
 AppletFrontendSet::AppletFrontendSet() = default;
 
-AppletFrontendSet::AppletFrontendSet(ControllerApplet controller_applet, ErrorApplet error_applet,
+AppletFrontendSet::AppletFrontendSet(CabinetApplet cabinet_applet,
+                                     ControllerApplet controller_applet, ErrorApplet error_applet,
                                      MiiEdit mii_edit_,
                                      ParentalControlsApplet parental_controls_applet,
                                      PhotoViewer photo_viewer_, ProfileSelect profile_select_,
                                      SoftwareKeyboard software_keyboard_, WebBrowser web_browser_)
-    : controller{std::move(controller_applet)}, error{std::move(error_applet)},
-      mii_edit{std::move(mii_edit_)}, parental_controls{std::move(parental_controls_applet)},
+    : cabinet{std::move(cabinet_applet)}, controller{std::move(controller_applet)},
+      error{std::move(error_applet)}, mii_edit{std::move(mii_edit_)},
+      parental_controls{std::move(parental_controls_applet)},
       photo_viewer{std::move(photo_viewer_)}, profile_select{std::move(profile_select_)},
       software_keyboard{std::move(software_keyboard_)}, web_browser{std::move(web_browser_)} {}
 
@@ -196,6 +200,10 @@ const AppletFrontendSet& AppletManager::GetAppletFrontendSet() const {
 }
 
 void AppletManager::SetAppletFrontendSet(AppletFrontendSet set) {
+    if (set.cabinet != nullptr) {
+        frontend.cabinet = std::move(set.cabinet);
+    }
+
     if (set.controller != nullptr) {
         frontend.controller = std::move(set.controller);
     }
@@ -235,6 +243,10 @@ void AppletManager::SetDefaultAppletFrontendSet() {
 }
 
 void AppletManager::SetDefaultAppletsIfMissing() {
+    if (frontend.cabinet == nullptr) {
+        frontend.cabinet = std::make_unique<Core::Frontend::DefaultCabinetApplet>();
+    }
+
     if (frontend.controller == nullptr) {
         frontend.controller =
             std::make_unique<Core::Frontend::DefaultControllerApplet>(system.HIDCore());
@@ -279,6 +291,8 @@ std::shared_ptr<Applet> AppletManager::GetApplet(AppletId id, LibraryAppletMode 
     switch (id) {
     case AppletId::Auth:
         return std::make_shared<Auth>(system, mode, *frontend.parental_controls);
+    case AppletId::Cabinet:
+        return std::make_shared<Cabinet>(system, mode, *frontend.cabinet);
     case AppletId::Controller:
         return std::make_shared<Controller>(system, mode, *frontend.controller);
     case AppletId::Error:
