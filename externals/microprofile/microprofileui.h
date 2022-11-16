@@ -845,8 +845,6 @@ inline void MicroProfileDrawDetailedBars(uint32_t nWidth, uint32_t nHeight, int 
     MicroProfile& S = *MicroProfileGet();
     MP_DEBUG_DUMP_RANGE();
     int nY = nBaseY - UI.nOffsetY;
-    int64_t nNumBoxes = 0;
-    int64_t nNumLines = 0;
 
     uint32_t nFrameNext = (S.nFrameCurrent+1) % MICROPROFILE_MAX_FRAME_HISTORY;
     MicroProfileFrameState* pFrameCurrent = &S.Frames[S.nFrameCurrent];
@@ -1149,7 +1147,6 @@ inline void MicroProfileDrawDetailedBars(uint32_t nWidth, uint32_t nHeight, int 
                                 }
                             }
 #endif
-                            ++nNumBoxes;
                         }
                         else
                         {
@@ -1165,7 +1162,6 @@ inline void MicroProfileDrawDetailedBars(uint32_t nWidth, uint32_t nHeight, int 
                                 }
                                 nLinesDrawn[nStackPos] = nLineX;
                                 MicroProfileDrawLineVertical(nLineX, fYStart + 0.5f, fYEnd + 0.5f, nColor|UI.nOpacityForeground);
-                                ++nNumLines;
                             }
                         }
                         nStackPos--;
