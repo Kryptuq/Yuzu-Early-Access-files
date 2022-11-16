@@ -3,16 +3,24 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
 
+#include <QDialog>
 #include <QList>
 #include <QWidget>
+
+namespace Common {
+struct UUID;
+}
 
 namespace Core {
 class System;
 }
 
 class QGraphicsScene;
+class QDialogButtonBox;
+class QLabel;
 class QStandardItem;
 class QStandardItemModel;
 class QTreeView;
@@ -25,6 +33,20 @@ class ProfileManager;
 namespace Ui {
 class ConfigureProfileManager;
 }
+
+class ConfigureProfileManagerDeleteDialog : public QDialog {
+public:
+    explicit ConfigureProfileManagerDeleteDialog(QWidget* parent);
+    ~ConfigureProfileManagerDeleteDialog();
+
+    void SetInfo(const QString& username, const Common::UUID& uuid,
+                 std::function<void()> accept_callback);
+
+private:
+    QDialogButtonBox* dialog_button_box;
+    QGraphicsScene* icon_scene;
+    QLabel* label_info;
+};
 
 class ConfigureProfileManager : public QWidget {
     Q_OBJECT
@@ -47,13 +69,16 @@ private:
     void SelectUser(const QModelIndex& index);
     void AddUser();
     void RenameUser();
-    void DeleteUser();
+    void ConfirmDeleteUser();
+    void DeleteUser(const Common::UUID& uuid);
     void SetUserImage();
 
     QVBoxLayout* layout;
     QTreeView* tree_view;
     QStandardItemModel* item_model;
     QGraphicsScene* scene;
+
+    ConfigureProfileManagerDeleteDialog* confirm_dialog;
 
     std::vector<QList<QStandardItem*>> list_items;
 

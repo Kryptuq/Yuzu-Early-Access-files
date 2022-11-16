@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
+#include <functional>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QFileDialog>
 #include <QGraphicsItem>
 #include <QHeaderView>
@@ -108,8 +111,11 @@ ConfigureProfileManager::ConfigureProfileManager(const Core::System& system_, QW
 
     connect(ui->pm_add, &QPushButton::clicked, this, &ConfigureProfileManager::AddUser);
     connect(ui->pm_rename, &QPushButton::clicked, this, &ConfigureProfileManager::RenameUser);
-    connect(ui->pm_remove, &QPushButton::clicked, this, &ConfigureProfileManager::DeleteUser);
+    connect(ui->pm_remove, &QPushButton::clicked, this,
+            &ConfigureProfileManager::ConfirmDeleteUser);
     connect(ui->pm_set_image, &QPushButton::clicked, this, &ConfigureProfileManager::SetUserImage);
+
+    confirm_dialog = new ConfigureProfileManagerDeleteDialog(this);
 
     scene = new QGraphicsScene;
     ui->current_user_icon->setScene(scene);
@@ -230,26 +236,23 @@ void ConfigureProfileManager::RenameUser() {
     UpdateCurrentUser();
 }
 
-void ConfigureProfileManager::DeleteUser() {
+void ConfigureProfileManager::ConfirmDeleteUser() {
     const auto index = tree_view->currentIndex().row();
     const auto uuid = profile_manager->GetUser(index);
     ASSERT(uuid);
     const auto username = GetAccountUsername(*profile_manager, *uuid);
 
-    const auto confirm = QMessageBox::question(
-        this, tr("Confirm Delete"),
-        tr("You are about to delete user with name \"%1\". Are you sure?").arg(username));
+    confirm_dialog->SetInfo(username, *uuid, [this, uuid]() { DeleteUser(*uuid); });
+    confirm_dialog->show();
+}
 
-    if (confirm == QMessageBox::No) {
-        return;
-    }
-
+void ConfigureProfileManager::DeleteUser(const Common::UUID& uuid) {
     if (Settings::values.current_user.GetValue() == tree_view->currentIndex().row()) {
         Settings::values.current_user = 0;
     }
     UpdateCurrentUser();
 
-    if (!profile_manager->RemoveUser(*uuid)) {
+    if (!profile_manager->RemoveUser(uuid)) {
         return;
     }
 
@@ -318,4 +321,48 @@ void ConfigureProfileManager::SetUserImage() {
     item_model->setItem(index, 0,
                         new QStandardItem{GetIcon(*uuid), FormatUserEntryText(username, *uuid)});
     UpdateCurrentUser();
+}
+
+ConfigureProfileManagerDeleteDialog::ConfigureProfileManagerDeleteDialog(QWidget* parent)
+    : QDialog{parent} {
+    auto dialog_vbox_layout = new QVBoxLayout(this);
+    dialog_button_box =
+        new QDialogButtonBox(QDialogButtonBox::Yes | QDialogButtonBox::No, Qt::Horizontal, parent);
+    auto label_message =
+        new QLabel(tr("Delete this user? All of the user's save data will be deleted."), this);
+    label_info = new QLabel(this);
+    auto dialog_hbox_layout_widget = new QWidget(this);
+    auto dialog_hbox_layout = new QHBoxLayout(dialog_hbox_layout_widget);
+    icon_scene = new QGraphicsScene(0, 0, 64, 64, this);
+    auto icon_view = new QGraphicsView(icon_scene, this);
+
+    dialog_hbox_layout_widget->setLayout(dialog_hbox_layout);
+    icon_view->setMaximumSize(64, 64);
+    icon_view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    icon_view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    this->setLayout(dialog_vbox_layout);
+    this->setWindowTitle(tr("Confirm Delete"));
+    this->setSizeGripEnabled(false);
+    dialog_vbox_layout->addWidget(label_message);
+    dialog_vbox_layout->addWidget(dialog_hbox_layout_widget);
+    dialog_vbox_layout->addWidget(dialog_button_box);
+    dialog_hbox_layout->addWidget(icon_view);
+    dialog_hbox_layout->addWidget(label_info);
+
+    connect(dialog_button_box, &QDialogButtonBox::rejected, this, [this]() { close(); });
+}
+
+ConfigureProfileManagerDeleteDialog::~ConfigureProfileManagerDeleteDialog() = default;
+
+void ConfigureProfileManagerDeleteDialog::SetInfo(const QString& username, const Common::UUID& uuid,
+                                                  std::function<void()> accept_callback) {
+    label_info->setText(
+        tr("Name: %1\nUUID: %2").arg(username, QString::fromStdString(uuid.FormattedString())));
+    icon_scene->clear();
+    icon_scene->addPixmap(GetIcon(uuid));
+
+    connect(dialog_button_box, &QDialogButtonBox::accepted, this, [this, accept_callback]() {
+        close();
+        accept_callback();
+    });
 }
