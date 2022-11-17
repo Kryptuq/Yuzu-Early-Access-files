@@ -104,6 +104,9 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr, Scal
     case IR::Attribute::PrimitiveId:
         ctx.Add("MOV.F {}.x,primitive.id;", inst);
         break;
+    case IR::Attribute::Layer:
+        ctx.Add("MOV.F {}.x,fragment.layer;", inst);
+        break;
     case IR::Attribute::PositionX:
     case IR::Attribute::PositionY:
     case IR::Attribute::PositionZ:

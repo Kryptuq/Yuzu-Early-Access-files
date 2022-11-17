@@ -43,7 +43,7 @@ public:
     virtual void Draw(bool is_indexed, u32 instance_count) = 0;
 
     /// Clear the current framebuffer
-    virtual void Clear() = 0;
+    virtual void Clear(u32 layer_count) = 0;
 
     /// Dispatches a compute shader invocation
     virtual void DispatchCompute() = 0;

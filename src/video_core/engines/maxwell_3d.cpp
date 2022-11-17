@@ -232,7 +232,7 @@ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argume
         use_topology_override = true;
         return;
     case MAXWELL3D_REG_INDEX(clear_surface):
-        return ProcessClearBuffers();
+        return ProcessClearBuffers(1);
     case MAXWELL3D_REG_INDEX(report_semaphore.query):
         return ProcessQueryGet();
     case MAXWELL3D_REG_INDEX(render_enable.mode):
@@ -596,8 +596,8 @@ u32 Maxwell3D::GetRegisterValue(u32 method) const {
     return regs.reg_array[method];
 }
 
-void Maxwell3D::ProcessClearBuffers() {
-    rasterizer->Clear();
+void Maxwell3D::ProcessClearBuffers(u32 layer_count) {
+    rasterizer->Clear(layer_count);
 }
 
 void Maxwell3D::ProcessDraw(u32 instance_count) {

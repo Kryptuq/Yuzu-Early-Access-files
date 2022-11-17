@@ -213,7 +213,7 @@ void RasterizerVulkan::Draw(bool is_indexed, u32 instance_count) {
     EndTransformFeedback();
 }
 
-void RasterizerVulkan::Clear() {
+void RasterizerVulkan::Clear(u32 layer_count) {
     MICROPROFILE_SCOPE(Vulkan_Clearing);
 
     if (!maxwell3d->ShouldExecute()) {
@@ -256,7 +256,7 @@ void RasterizerVulkan::Clear() {
         .rect = regs.clear_control.use_scissor ? GetScissorState(regs, 0, up_scale, down_shift)
                                                : default_scissor,
         .baseArrayLayer = regs.clear_surface.layer,
-        .layerCount = 1,
+        .layerCount = layer_count,
     };
     if (clear_rect.rect.extent.width == 0 || clear_rect.rect.extent.height == 0) {
         return;

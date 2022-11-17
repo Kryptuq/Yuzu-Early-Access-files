@@ -320,6 +320,7 @@ void SetupOptions(const IR::Program& program, const Profile& profile,
     }
     if (stage == Stage::Fragment) {
         header += "OPTION ARB_draw_buffers;";
+        header += "OPTION ARB_fragment_layer_viewport;";
     }
 }
 

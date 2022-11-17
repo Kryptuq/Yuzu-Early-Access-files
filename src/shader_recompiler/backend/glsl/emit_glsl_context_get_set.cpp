@@ -205,6 +205,9 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
     case IR::Attribute::PrimitiveId:
         ctx.AddF32("{}=itof(gl_PrimitiveID);", inst);
         break;
+    case IR::Attribute::Layer:
+        ctx.AddF32("{}=itof(gl_Layer);", inst);
+        break;
     case IR::Attribute::PositionX:
     case IR::Attribute::PositionY:
     case IR::Attribute::PositionZ:

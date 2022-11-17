@@ -1359,6 +1359,10 @@ void EmitContext::DefineInputs(const IR::Program& program) {
     if (loads[IR::Attribute::PrimitiveId]) {
         primitive_id = DefineInput(*this, U32[1], false, spv::BuiltIn::PrimitiveId);
     }
+    if (loads[IR::Attribute::Layer]) {
+        AddCapability(spv::Capability::Geometry);
+        layer = DefineInput(*this, U32[1], false, spv::BuiltIn::Layer);
+    }
     if (loads.AnyComponent(IR::Attribute::PositionX)) {
         const bool is_fragment{stage != Stage::Fragment};
         const spv::BuiltIn built_in{is_fragment ? spv::BuiltIn::Position : spv::BuiltIn::FragCoord};

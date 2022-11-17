@@ -136,7 +136,7 @@ void RasterizerOpenGL::LoadDiskResources(u64 title_id, std::stop_token stop_load
     shader_cache.LoadDiskResources(title_id, stop_loading, callback);
 }
 
-void RasterizerOpenGL::Clear() {
+void RasterizerOpenGL::Clear(u32 layer_count) {
     MICROPROFILE_SCOPE(OpenGL_Clears);
     if (!maxwell3d->ShouldExecute()) {
         return;

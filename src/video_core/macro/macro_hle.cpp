@@ -126,11 +126,25 @@ void HLE_3F5E74B9C9A50164(Engines::Maxwell3D& maxwell3d, const std::vector<u32>&
     }
 }
 
-constexpr std::array<std::pair<u64, HLEFunction>, 4> hle_funcs{{
+// Multi-layer Clear
+void HLE_EAD26C3E2109B06B(Engines::Maxwell3D& maxwell3d, const std::vector<u32>& parameters) {
+    ASSERT(parameters.size() == 1);
+
+    const Engines::Maxwell3D::Regs::ClearSurface clear_params{parameters[0]};
+    const u32 rt_index = clear_params.RT;
+    const u32 num_layers = maxwell3d.regs.rt[rt_index].depth;
+    ASSERT(clear_params.layer == 0);
+
+    maxwell3d.regs.clear_surface.raw = clear_params.raw;
+    maxwell3d.ProcessClearBuffers(num_layers);
+}
+
+constexpr std::array<std::pair<u64, HLEFunction>, 5> hle_funcs{{
     {0x771BB18C62444DA0, &HLE_771BB18C62444DA0},
     {0x0D61FC9FAAC9FCAD, &HLE_0D61FC9FAAC9FCAD},
     {0x0217920100488FF7, &HLE_0217920100488FF7},
     {0x3F5E74B9C9A50164, &HLE_3F5E74B9C9A50164},
+    {0xEAD26C3E2109B06B, &HLE_EAD26C3E2109B06B},
 }};
 
 class HLEMacroImpl final : public CachedMacro {

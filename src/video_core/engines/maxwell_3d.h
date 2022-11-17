@@ -3086,6 +3086,9 @@ public:
 
     std::vector<u8> inline_index_draw_indexes;
 
+    /// Handles a write to the CLEAR_BUFFERS register.
+    void ProcessClearBuffers(u32 layer_count);
+
 private:
     void InitializeRegisterDefaults();
 
@@ -3119,9 +3122,6 @@ private:
 
     /// Handles firmware blob 4
     void ProcessFirmwareCall4();
-
-    /// Handles a write to the CLEAR_BUFFERS register.
-    void ProcessClearBuffers();
 
     /// Handles a write to the QUERY_GET register.
     void ProcessQueryGet();
