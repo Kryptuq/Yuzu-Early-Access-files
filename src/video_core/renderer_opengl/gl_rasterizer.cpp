@@ -222,8 +222,6 @@ void RasterizerOpenGL::Draw(bool is_indexed, u32 instance_count) {
     pipeline->SetEngine(maxwell3d, gpu_memory);
     pipeline->Configure(is_indexed);
 
-    BindInlineIndexBuffer();
-
     SyncState();
 
     const GLenum primitive_mode = MaxwellToGL::PrimitiveTopology(maxwell3d->regs.draw.topology);
@@ -1137,16 +1135,6 @@ void RasterizerOpenGL::ReleaseChannel(s32 channel_id) {
     }
     shader_cache.EraseChannel(channel_id);
     query_cache.EraseChannel(channel_id);
-}
-
-void RasterizerOpenGL::BindInlineIndexBuffer() {
-    if (maxwell3d->inline_index_draw_indexes.empty()) {
-        return;
-    }
-    const auto data_count = static_cast<u32>(maxwell3d->inline_index_draw_indexes.size());
-    auto buffer = Buffer(buffer_cache_runtime, *this, 0, data_count);
-    buffer.ImmediateUpload(0, maxwell3d->inline_index_draw_indexes);
-    buffer_cache_runtime.BindIndexBuffer(buffer, 0, data_count);
 }
 
 AccelerateDMA::AccelerateDMA(BufferCache& buffer_cache_) : buffer_cache{buffer_cache_} {}

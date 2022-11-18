@@ -201,6 +201,7 @@ bool MacroInterpreterImpl::Step(bool is_delay_slot) {
     }
     default:
         UNIMPLEMENTED_MSG("Unimplemented macro operation {}", opcode.operation.Value());
+        break;
     }
 
     // An instruction with the Exit flag will not actually
@@ -297,6 +298,7 @@ void MacroInterpreterImpl::ProcessResult(Macro::ResultOperation operation, u32 r
         break;
     default:
         UNIMPLEMENTED_MSG("Unimplemented result operation {}", operation);
+        break;
     }
 }
 

@@ -340,6 +340,7 @@ void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
         texture.gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
         // UNIMPLEMENTED_MSG("Unknown framebuffer pixel format: {}",
         //                   static_cast<u32>(framebuffer.pixel_format));
+        break;
     }
 
     texture.resource.Release();

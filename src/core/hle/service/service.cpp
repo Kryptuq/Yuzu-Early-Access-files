@@ -228,6 +228,7 @@ Result ServiceFrameworkBase::HandleSyncRequest(Kernel::KServerSession& session,
         }
 
         UNIMPLEMENTED_MSG("command_type={}", ctx.GetCommandType());
+        break;
     }
 
     // If emulation was shutdown, we are closing service threads, do not write the response back to

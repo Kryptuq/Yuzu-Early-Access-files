@@ -141,8 +141,6 @@ private:
 
     void UpdateVertexInput(Tegra::Engines::Maxwell3D::Regs& regs);
 
-    void BindInlineIndexBuffer();
-
     Tegra::GPU& gpu;
 
     ScreenInfo& screen_info;

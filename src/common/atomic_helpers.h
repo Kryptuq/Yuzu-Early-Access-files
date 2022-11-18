@@ -156,6 +156,7 @@ AE_FORCEINLINE void compiler_fence(memory_order order) AE_NO_TSAN {
         break;
     default:
         assert(false);
+        break;
     }
 }
 

@@ -126,6 +126,7 @@ void CompatDB::Submit() {
         break;
     default:
         LOG_ERROR(Frontend, "Unexpected page: {}", currentId());
+        break;
     }
 }
 

@@ -652,6 +652,7 @@ void MacroJITx64Impl::Compile_ProcessResult(Macro::ResultOperation operation, u3
         break;
     default:
         UNIMPLEMENTED_MSG("Unimplemented macro operation {}", operation);
+        break;
     }
 }
 

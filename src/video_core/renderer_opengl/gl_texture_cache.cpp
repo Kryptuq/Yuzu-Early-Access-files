@@ -891,6 +891,7 @@ void Image::CopyBufferToImage(const VideoCommon::BufferImageCopy& copy, size_t b
         break;
     default:
         ASSERT(false);
+        break;
     }
 }
 
@@ -927,6 +928,7 @@ void Image::CopyImageToBuffer(const VideoCommon::BufferImageCopy& copy, size_t b
         break;
     default:
         ASSERT(false);
+        break;
     }
     // Compressed formats don't have a pixel format or type
     const bool is_compressed = gl_format == GL_NONE;

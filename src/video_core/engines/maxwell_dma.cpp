@@ -379,6 +379,7 @@ void MaxwellDMA::ReleaseSemaphore() {
     }
     default:
         ASSERT_MSG(false, "Unknown semaphore type: {}", static_cast<u32>(type.Value()));
+        break;
     }
 }
 

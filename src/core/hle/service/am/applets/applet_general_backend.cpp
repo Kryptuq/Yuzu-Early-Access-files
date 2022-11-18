@@ -129,6 +129,7 @@ void Auth::Execute() {
     }
     default:
         unimplemented_log();
+        break;
     }
 }
 
@@ -192,6 +193,7 @@ void PhotoViewer::Execute() {
         break;
     default:
         UNIMPLEMENTED_MSG("Unimplemented PhotoViewer applet mode={:02X}!", mode);
+        break;
     }
 }
 

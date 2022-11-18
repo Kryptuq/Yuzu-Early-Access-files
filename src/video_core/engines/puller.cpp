@@ -50,6 +50,7 @@ void Puller::ProcessBindMethod(const MethodCall& method_call) {
         break;
     default:
         UNIMPLEMENTED_MSG("Unimplemented engine {:04X}", engine_id);
+        break;
     }
 }
 
@@ -65,6 +66,7 @@ void Puller::ProcessFenceActionMethod() {
         break;
     default:
         UNIMPLEMENTED_MSG("Unimplemented operation {}", regs.fence_action.op.Value());
+        break;
     }
 }
 
@@ -228,6 +230,7 @@ void Puller::CallEngineMethod(const MethodCall& method_call) {
         break;
     default:
         UNIMPLEMENTED_MSG("Unimplemented engine");
+        break;
     }
 }
 
@@ -254,6 +257,7 @@ void Puller::CallEngineMultiMethod(u32 method, u32 subchannel, const u32* base_s
         break;
     default:
         UNIMPLEMENTED_MSG("Unimplemented engine");
+        break;
     }
 }
 

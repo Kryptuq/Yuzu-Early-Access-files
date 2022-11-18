@@ -144,6 +144,7 @@ void Error::Initialize() {
         break;
     default:
         UNIMPLEMENTED_MSG("Unimplemented LibAppletError mode={:02X}!", mode);
+        break;
     }
 }
 

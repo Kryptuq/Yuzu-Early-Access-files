@@ -2301,6 +2301,7 @@ Result KPageTable::SetProcessMemoryPermission(VAddr addr, size_t size,
             break;
         default:
             ASSERT(false);
+            break;
         }
     }
 
@@ -2803,6 +2804,7 @@ Result KPageTable::Operate(VAddr addr, size_t num_pages, const KPageGroup& page_
             break;
         default:
             ASSERT(false);
+            break;
         }
 
         addr += size;
@@ -2838,6 +2840,7 @@ Result KPageTable::Operate(VAddr addr, size_t num_pages, KMemoryPermission perm,
         break;
     default:
         ASSERT(false);
+        break;
     }
     R_SUCCEED();
 }

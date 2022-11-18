@@ -300,11 +300,10 @@ Kernel::KEvent* nvhost_ctrl_gpu::QueryEvent(u32 event_id) {
         return error_notifier_event;
     case 2:
         return unknown_event;
-    default: {
+    default:
         LOG_CRITICAL(Service_NVDRV, "Unknown Ctrl GPU Event {}", event_id);
+        return nullptr;
     }
-    }
-    return nullptr;
 }
 
 } // namespace Service::Nvidia::Devices

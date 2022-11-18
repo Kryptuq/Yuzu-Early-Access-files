@@ -395,6 +395,7 @@ Result KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata, std:
 
     default:
         ASSERT(false);
+        break;
     }
 
     // Create TLS region

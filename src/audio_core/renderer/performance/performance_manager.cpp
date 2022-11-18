@@ -26,6 +26,7 @@ void PerformanceManager::CreateImpl(const size_t version) {
         impl = std::make_unique<
             PerformanceManagerImpl<PerformanceVersion::Version1, PerformanceFrameHeaderVersion1,
                                    PerformanceEntryVersion1, PerformanceDetailVersion1>>();
+        break;
     }
 }
 

@@ -992,7 +992,20 @@ void BufferCache<P>::BindHostIndexBuffer() {
     TouchBuffer(buffer, index_buffer.buffer_id);
     const u32 offset = buffer.Offset(index_buffer.cpu_addr);
     const u32 size = index_buffer.size;
-    SynchronizeBuffer(buffer, index_buffer.cpu_addr, size);
+    if (maxwell3d->inline_index_draw_indexes.size()) {
+        if constexpr (USE_MEMORY_MAPS) {
+            auto upload_staging = runtime.UploadStagingBuffer(size);
+            std::array<BufferCopy, 1> copies{
+                {BufferCopy{.src_offset = upload_staging.offset, .dst_offset = 0, .size = size}}};
+            std::memcpy(upload_staging.mapped_span.data(),
+                        maxwell3d->inline_index_draw_indexes.data(), size);
+            runtime.CopyBuffer(buffer, upload_staging.buffer, copies);
+        } else {
+            buffer.ImmediateUpload(0, maxwell3d->inline_index_draw_indexes);
+        }
+    } else {
+        SynchronizeBuffer(buffer, index_buffer.cpu_addr, size);
+    }
     if constexpr (HAS_FULL_INDEX_AND_PRIMITIVE_SUPPORT) {
         const u32 new_offset = offset + maxwell3d->regs.index_buffer.first *
                                             maxwell3d->regs.index_buffer.FormatSizeInBytes();
@@ -1275,7 +1288,15 @@ void BufferCache<P>::UpdateIndexBuffer() {
     }
     flags[Dirty::IndexBuffer] = false;
     last_index_count = index_array.count;
-
+    if (maxwell3d->inline_index_draw_indexes.size()) {
+        auto inline_index_size = static_cast<u32>(maxwell3d->inline_index_draw_indexes.size());
+        index_buffer = Binding{
+            .cpu_addr = 0,
+            .size = inline_index_size,
+            .buffer_id = CreateBuffer(0, inline_index_size),
+        };
+        return;
+    }
     const GPUVAddr gpu_addr_begin = index_array.StartAddress();
     const GPUVAddr gpu_addr_end = index_array.EndAddress();
     const std::optional<VAddr> cpu_addr = gpu_memory->GpuToCpuAddress(gpu_addr_begin);
@@ -1491,6 +1512,14 @@ typename BufferCache<P>::OverlapResult BufferCache<P>::ResolveOverlaps(VAddr cpu
     VAddr end = cpu_addr + wanted_size;
     int stream_score = 0;
     bool has_stream_leap = false;
+    if (begin == 0) {
+        return OverlapResult{
+            .ids = std::move(overlap_ids),
+            .begin = begin,
+            .end = end,
+            .has_stream_leap = has_stream_leap,
+        };
+    }
     for (; cpu_addr >> YUZU_PAGEBITS < Common::DivCeil(end, YUZU_PAGESIZE);
          cpu_addr += YUZU_PAGESIZE) {
         const BufferId overlap_id = page_table[cpu_addr >> YUZU_PAGEBITS];

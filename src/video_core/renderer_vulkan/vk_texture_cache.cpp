@@ -108,6 +108,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
             break;
         default:
             ASSERT_MSG(false, "Invalid surface type");
+            break;
         }
     }
     if (info.storage) {

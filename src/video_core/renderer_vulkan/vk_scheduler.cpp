@@ -221,6 +221,7 @@ void Scheduler::SubmitExecution(VkSemaphore signal_semaphore, VkSemaphore wait_s
             [[fallthrough]];
         default:
             vk::Check(result);
+            break;
         }
     });
     chunk->MarkSubmit();
