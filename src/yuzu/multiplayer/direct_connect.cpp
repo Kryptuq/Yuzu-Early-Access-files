@@ -4,7 +4,7 @@
 #include <QComboBox>
 #include <QFuture>
 #include <QIntValidator>
-#include <QRegExpValidator>
+#include <QRegularExpressionValidator>
 #include <QString>
 #include <QtConcurrent/QtConcurrentRun>
 #include "common/settings.h"

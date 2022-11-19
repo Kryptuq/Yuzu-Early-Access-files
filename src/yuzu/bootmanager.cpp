@@ -4,8 +4,10 @@
 #include <glad/glad.h>
 
 #include <QApplication>
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0)) && YUZU_USE_QT_MULTIMEDIA
 #include <QCameraImageCapture>
 #include <QCameraInfo>
+#endif
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QPainter>
@@ -707,6 +709,7 @@ void GRenderWindow::TouchEndEvent() {
 }
 
 void GRenderWindow::InitializeCamera() {
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0)) && YUZU_USE_QT_MULTIMEDIA
     constexpr auto camera_update_ms = std::chrono::milliseconds{50}; // (50ms, 20Hz)
     if (!Settings::values.enable_ir_sensor) {
         return;
@@ -760,18 +763,22 @@ void GRenderWindow::InitializeCamera() {
     connect(camera_timer.get(), &QTimer::timeout, [this] { RequestCameraCapture(); });
     // This timer should be dependent of camera resolution 5ms for every 100 pixels
     camera_timer->start(camera_update_ms);
+#endif
 }
 
 void GRenderWindow::FinalizeCamera() {
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0)) && YUZU_USE_QT_MULTIMEDIA
     if (camera_timer) {
         camera_timer->stop();
     }
     if (camera) {
         camera->unload();
     }
+#endif
 }
 
 void GRenderWindow::RequestCameraCapture() {
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0)) && YUZU_USE_QT_MULTIMEDIA
     if (!Settings::values.enable_ir_sensor) {
         return;
     }
@@ -788,6 +795,7 @@ void GRenderWindow::RequestCameraCapture() {
 
     pending_camera_snapshots++;
     camera_capture->capture();
+#endif
 }
 
 void GRenderWindow::OnCameraCapture(int requestId, const QImage& img) {

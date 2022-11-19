@@ -2,8 +2,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <memory>
+#include <QtCore>
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0)) && YUZU_USE_QT_MULTIMEDIA
 #include <QCameraImageCapture>
 #include <QCameraInfo>
+#endif
 #include <QStandardItemModel>
 #include <QTimer>
 
@@ -33,6 +36,7 @@ ConfigureCamera::ConfigureCamera(QWidget* parent, InputCommon::InputSubsystem* i
 ConfigureCamera::~ConfigureCamera() = default;
 
 void ConfigureCamera::PreviewCamera() {
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0)) && YUZU_USE_QT_MULTIMEDIA
     const auto index = ui->ir_sensor_combo_box->currentIndex();
     bool camera_found = false;
     const QList<QCameraInfo> cameras = QCameraInfo::availableCameras();
@@ -101,6 +105,7 @@ void ConfigureCamera::PreviewCamera() {
     });
 
     camera_timer->start(250);
+#endif
 }
 
 void ConfigureCamera::DisplayCapturedFrame(int requestId, const QImage& img) {
@@ -133,11 +138,13 @@ void ConfigureCamera::LoadConfiguration() {
     ui->ir_sensor_combo_box->clear();
     input_devices.push_back("Auto");
     ui->ir_sensor_combo_box->addItem(tr("Auto"));
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0)) && YUZU_USE_QT_MULTIMEDIA
     const auto cameras = QCameraInfo::availableCameras();
     for (const QCameraInfo& cameraInfo : cameras) {
         input_devices.push_back(cameraInfo.deviceName().toStdString());
         ui->ir_sensor_combo_box->addItem(cameraInfo.description());
     }
+#endif
 
     const auto current_device = Settings::values.ir_sensor_device.GetValue();
 

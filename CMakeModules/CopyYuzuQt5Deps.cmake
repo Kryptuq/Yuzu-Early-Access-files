@@ -27,10 +27,13 @@ function(copy_yuzu_Qt5_deps target_dir)
             Qt5Core$<$<CONFIG:Debug>:d>.*
             Qt5Gui$<$<CONFIG:Debug>:d>.*
             Qt5Widgets$<$<CONFIG:Debug>:d>.*
-            Qt5Multimedia$<$<CONFIG:Debug>:d>.*
             Qt5Network$<$<CONFIG:Debug>:d>.*
         )
-
+        if (YUZU_USE_QT_MULTIMEDIA)
+            windows_copy_files(${target_dir} ${Qt5_DLL_DIR} ${DLL_DEST}
+                Qt5Multimedia$<$<CONFIG:Debug>:d>.*
+            )
+        endif()
         if (YUZU_USE_QT_WEB_ENGINE)
             windows_copy_files(${target_dir} ${Qt5_DLL_DIR} ${DLL_DEST}
                 Qt5Network$<$<CONFIG:Debug>:d>.*

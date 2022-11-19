@@ -237,6 +237,7 @@ static void LogRuntimes() {
         LOG_INFO(Frontend, "Unable to inspect {}", runtime_dll_name);
     }
 #endif
+    LOG_INFO(Frontend, "Qt Compile: {} Runtime: {}", QT_VERSION_STR, qVersion());
 }
 
 static QString PrettyProductName() {
@@ -4216,10 +4217,12 @@ int main(int argc, char* argv[]) {
     // so we can see if we get \u3008 instead
     // TL;DR all other number formats are consecutive in unicode code points
     // This bug is fixed in Qt6, specifically 6.0.0-alpha1
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     const QLocale locale = QLocale::system();
     if (QStringLiteral("\u3008") == locale.toString(1)) {
         QLocale::setDefault(QLocale::system().name());
     }
+#endif
 
     // Qt changes the locale and causes issues in float conversion using std::to_string() when
     // generating shaders

@@ -241,8 +241,10 @@ private:
 
     bool is_virtual_camera;
     int pending_camera_snapshots;
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0)) && YUZU_USE_QT_MULTIMEDIA
     std::unique_ptr<QCamera> camera;
     std::unique_ptr<QCameraImageCapture> camera_capture;
+#endif
     std::unique_ptr<QTimer> camera_timer;
 
     Core::System& system;
