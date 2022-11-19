@@ -21,8 +21,8 @@
 #include "core/hid/motion_input.h"
 
 namespace Core::HID {
-static constexpr std::size_t max_touch_devices = 32;
-static constexpr std::size_t max_active_touch_inputs = 16;
+static constexpr std::size_t MaxTouchDevices = 32;
+static constexpr std::size_t MaxActiveTouchInputs = 16;
 
 struct ConsoleMotionInfo {
     Common::Input::MotionStatus raw_status{};
@@ -30,13 +30,13 @@ struct ConsoleMotionInfo {
 };
 
 using ConsoleMotionDevices = std::unique_ptr<Common::Input::InputDevice>;
-using TouchDevices = std::array<std::unique_ptr<Common::Input::InputDevice>, max_touch_devices>;
+using TouchDevices = std::array<std::unique_ptr<Common::Input::InputDevice>, MaxTouchDevices>;
 
 using ConsoleMotionParams = Common::ParamPackage;
-using TouchParams = std::array<Common::ParamPackage, max_touch_devices>;
+using TouchParams = std::array<Common::ParamPackage, MaxTouchDevices>;
 
 using ConsoleMotionValues = ConsoleMotionInfo;
-using TouchValues = std::array<Common::Input::TouchStatus, max_touch_devices>;
+using TouchValues = std::array<Common::Input::TouchStatus, MaxTouchDevices>;
 
 struct TouchFinger {
     u64 last_touch{};
@@ -58,7 +58,7 @@ struct ConsoleMotion {
     bool is_at_rest{};
 };
 
-using TouchFingerState = std::array<TouchFinger, max_active_touch_inputs>;
+using TouchFingerState = std::array<TouchFinger, MaxActiveTouchInputs>;
 
 struct ConsoleStatus {
     // Data from input_common

@@ -180,7 +180,7 @@ void CpuManager::ShutdownThread() {
     auto* thread = kernel.GetCurrentEmuThread();
     auto core = is_multicore ? kernel.CurrentPhysicalCoreIndex() : 0;
 
-    Common::Fiber::YieldTo(thread->GetHostContext(), *core_data[core].host_context);
+    Common::Fiber::YieldTo(thread->GetHostContext(), core_data[core].host_context);
     UNREACHABLE();
 }
 
@@ -217,7 +217,7 @@ void CpuManager::RunThread(std::size_t core) {
     auto* thread = scheduler.GetSchedulerCurrentThread();
     Kernel::SetCurrentThread(kernel, thread);
 
-    Common::Fiber::YieldTo(data.host_context, *thread->GetHostContext());
+    Common::Fiber::YieldTo(data.host_context, thread->GetHostContext());
 }
 
 } // namespace Core

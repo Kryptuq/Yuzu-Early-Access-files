@@ -31,7 +31,7 @@ void EmulatedConsole::SetTouchParams() {
     touch_params[index++] =
         Common::ParamPackage{"engine:cemuhookudp,axis_x:19,axis_y:20,button:131072"};
 
-    for (int i = 0; i < static_cast<int>(max_active_touch_inputs); i++) {
+    for (int i = 0; i < static_cast<int>(MaxActiveTouchInputs); i++) {
         Common::ParamPackage touchscreen_param{};
         touchscreen_param.Set("engine", "touch");
         touchscreen_param.Set("axis_x", i * 2);
@@ -46,7 +46,7 @@ void EmulatedConsole::SetTouchParams() {
 
     // Map the rest of the fingers from touch from button configuration
     for (const auto& config_entry : touch_buttons) {
-        if (index >= max_touch_devices) {
+        if (index >= MaxTouchDevices) {
             continue;
         }
         Common::ParamPackage params{config_entry};
@@ -176,7 +176,7 @@ void EmulatedConsole::SetMotion(const Common::Input::CallbackStatus& callback) {
 }
 
 void EmulatedConsole::SetTouch(const Common::Input::CallbackStatus& callback, std::size_t index) {
-    if (index >= max_touch_devices) {
+    if (index >= MaxTouchDevices) {
         return;
     }
     std::unique_lock lock{mutex};
@@ -216,7 +216,7 @@ void EmulatedConsole::SetTouch(const Common::Input::CallbackStatus& callback, st
     }
 
     // Touch outside allowed range. Ignore input
-    if (touch_index.value() >= max_active_touch_inputs) {
+    if (touch_index.value() >= MaxActiveTouchInputs) {
         return;
     }
 
@@ -251,7 +251,7 @@ TouchFingerState EmulatedConsole::GetTouch() const {
 }
 
 std::optional<std::size_t> EmulatedConsole::GetIndexFromFingerId(std::size_t finger_id) const {
-    for (std::size_t index = 0; index < max_touch_devices; ++index) {
+    for (std::size_t index = 0; index < MaxTouchDevices; ++index) {
         const auto& finger = console.touch_values[index];
         if (!finger.pressed.value) {
             continue;
@@ -264,7 +264,7 @@ std::optional<std::size_t> EmulatedConsole::GetIndexFromFingerId(std::size_t fin
 }
 
 std::optional<std::size_t> EmulatedConsole::GetNextFreeIndex() const {
-    for (std::size_t index = 0; index < max_touch_devices; ++index) {
+    for (std::size_t index = 0; index < MaxTouchDevices; ++index) {
         if (!console.touch_values[index].pressed.value) {
             return index;
         }

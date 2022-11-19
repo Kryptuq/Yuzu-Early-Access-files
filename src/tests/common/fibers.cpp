@@ -50,7 +50,7 @@ public:
             value++;
         }
         results[id] = value;
-        Fiber::YieldTo(work_fibers[id], *thread_fibers[id]);
+        Fiber::YieldTo(work_fibers[id], thread_fibers[id]);
     }
 
     void ExecuteThread(u32 id);
@@ -68,7 +68,7 @@ void TestControl1::ExecuteThread(u32 id) {
     thread_fibers[id] = thread_fiber;
     work_fibers[id] = std::make_shared<Fiber>([this] { DoWork(); });
     items[id] = rand() % 256;
-    Fiber::YieldTo(thread_fibers[id], *work_fibers[id]);
+    Fiber::YieldTo(thread_fibers[id], work_fibers[id]);
     thread_fibers[id]->Exit();
 }
 
@@ -105,11 +105,11 @@ public:
         for (u32 i = 0; i < 12000; i++) {
             value1 += i;
         }
-        Fiber::YieldTo(fiber1, *fiber3);
+        Fiber::YieldTo(fiber1, fiber3);
         const u32 id = thread_ids.Get();
         assert1 = id == 1;
         value2 += 5000;
-        Fiber::YieldTo(fiber1, *thread_fibers[id]);
+        Fiber::YieldTo(fiber1, thread_fibers[id]);
     }
 
     void DoWork2() {
@@ -117,7 +117,7 @@ public:
             ;
         value2 = 2000;
         trap = false;
-        Fiber::YieldTo(fiber2, *fiber1);
+        Fiber::YieldTo(fiber2, fiber1);
         assert3 = false;
     }
 
@@ -125,19 +125,19 @@ public:
         const u32 id = thread_ids.Get();
         assert2 = id == 0;
         value1 += 1000;
-        Fiber::YieldTo(fiber3, *thread_fibers[id]);
+        Fiber::YieldTo(fiber3, thread_fibers[id]);
     }
 
     void ExecuteThread(u32 id);
 
     void CallFiber1() {
         const u32 id = thread_ids.Get();
-        Fiber::YieldTo(thread_fibers[id], *fiber1);
+        Fiber::YieldTo(thread_fibers[id], fiber1);
     }
 
     void CallFiber2() {
         const u32 id = thread_ids.Get();
-        Fiber::YieldTo(thread_fibers[id], *fiber2);
+        Fiber::YieldTo(thread_fibers[id], fiber2);
     }
 
     void Exit();
@@ -207,23 +207,23 @@ public:
 
     void DoWork1() {
         value1 += 1;
-        Fiber::YieldTo(fiber1, *fiber2);
+        Fiber::YieldTo(fiber1, fiber2);
         const u32 id = thread_ids.Get();
         value3 += 1;
-        Fiber::YieldTo(fiber1, *thread_fibers[id]);
+        Fiber::YieldTo(fiber1, thread_fibers[id]);
     }
 
     void DoWork2() {
         value2 += 1;
         const u32 id = thread_ids.Get();
-        Fiber::YieldTo(fiber2, *thread_fibers[id]);
+        Fiber::YieldTo(fiber2, thread_fibers[id]);
     }
 
     void ExecuteThread(u32 id);
 
     void CallFiber1() {
         const u32 id = thread_ids.Get();
-        Fiber::YieldTo(thread_fibers[id], *fiber1);
+        Fiber::YieldTo(thread_fibers[id], fiber1);
     }
 
     void Exit();
@@ -283,7 +283,7 @@ public:
 
     void Execute() {
         thread_fiber = Fiber::ThreadToFiber();
-        Fiber::YieldTo(thread_fiber, *fiber1);
+        Fiber::YieldTo(thread_fiber, fiber1);
         thread_fiber->Exit();
     }
 
@@ -291,7 +291,7 @@ public:
         fiber1->SetRewindPoint([this] { DoWork(); });
         if (rewinded) {
             goal_reached = true;
-            Fiber::YieldTo(fiber1, *thread_fiber);
+            Fiber::YieldTo(fiber1, thread_fiber);
         }
         rewinded = true;
         fiber1->Rewind();
