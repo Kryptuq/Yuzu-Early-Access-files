@@ -88,9 +88,6 @@ add_executable(yuzu
     configuration/configure_input_advanced.cpp
     configuration/configure_input_advanced.h
     configuration/configure_input_advanced.ui
-    configuration/configure_input_per_game.cpp
-    configuration/configure_input_per_game.h
-    configuration/configure_input_per_game.ui
     configuration/configure_input_player.cpp
     configuration/configure_input_player.h
     configuration/configure_input_player.ui

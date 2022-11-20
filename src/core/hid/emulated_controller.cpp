@@ -107,9 +107,10 @@ void EmulatedController::ReloadFromSettings() {
         original_npad_type = npad_type;
     }
 
-    Disconnect();
     if (player.connected) {
         Connect();
+    } else {
+        Disconnect();
     }
 
     ReloadInput();
