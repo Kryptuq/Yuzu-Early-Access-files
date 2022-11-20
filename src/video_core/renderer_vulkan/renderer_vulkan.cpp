@@ -172,6 +172,7 @@ void RendererVulkan::SwapBuffers(const Tegra::FramebufferConfig* framebuffer) {
 }
 
 void RendererVulkan::Report() const {
+    using namespace Common::Literals;
     const std::string vendor_name{device.GetVendorName()};
     const std::string model_name{device.GetModelName()};
     const std::string driver_version = GetDriverVersion(device);
@@ -181,9 +182,12 @@ void RendererVulkan::Report() const {
 
     const std::string extensions = BuildCommaSeparatedExtensions(device.GetAvailableExtensions());
 
+    const auto available_vram = static_cast<f64>(device.GetDeviceLocalMemory()) / f64{1_GiB};
+
     LOG_INFO(Render_Vulkan, "Driver: {}", driver_name);
     LOG_INFO(Render_Vulkan, "Device: {}", model_name);
     LOG_INFO(Render_Vulkan, "Vulkan: {}", api_version);
+    LOG_INFO(Render_Vulkan, "Available VRAM: {:.2f} GiB", available_vram);
 
     static constexpr auto field = Common::Telemetry::FieldType::UserSystem;
     telemetry_session.AddField(field, "GPU_Vendor", vendor_name);

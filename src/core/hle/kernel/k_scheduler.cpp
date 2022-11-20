@@ -116,7 +116,7 @@ void KScheduler::PreemptSingleCore() {
     auto& previous_scheduler = kernel.Scheduler(thread->GetCurrentCore());
     previous_scheduler.Unload(thread);
 
-    Common::Fiber::YieldTo(thread->GetHostContext(), m_switch_fiber);
+    Common::Fiber::YieldTo(thread->GetHostContext(), *m_switch_fiber);
 
     GetCurrentThread(kernel).EnableDispatch();
 }
@@ -411,7 +411,7 @@ void KScheduler::ScheduleImpl() {
     m_switch_cur_thread = cur_thread;
     m_switch_highest_priority_thread = highest_priority_thread;
     m_switch_from_schedule = true;
-    Common::Fiber::YieldTo(cur_thread->host_context, m_switch_fiber);
+    Common::Fiber::YieldTo(cur_thread->host_context, *m_switch_fiber);
 
     // Returning from ScheduleImpl occurs after this thread has been scheduled again.
 }
@@ -489,7 +489,7 @@ void KScheduler::ScheduleImplFiber() {
     Reload(highest_priority_thread);
 
     // Reload the host thread.
-    Common::Fiber::YieldTo(m_switch_fiber, highest_priority_thread->host_context);
+    Common::Fiber::YieldTo(m_switch_fiber, *highest_priority_thread->host_context);
 }
 
 void KScheduler::Unload(KThread* thread) {

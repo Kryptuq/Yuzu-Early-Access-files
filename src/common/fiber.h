@@ -6,11 +6,9 @@
 #include <functional>
 #include <memory>
 
-#if !defined(_WIN32) && !defined(WIN32)
 namespace boost::context::detail {
 struct transfer_t;
 }
-#endif
 
 namespace Common {
 
@@ -42,7 +40,7 @@ public:
 
     /// Yields control from Fiber 'from' to Fiber 'to'
     /// Fiber 'from' must be the currently running fiber.
-    static void YieldTo(std::shared_ptr<Fiber> from, std::shared_ptr<Fiber> to);
+    static void YieldTo(std::weak_ptr<Fiber> weak_from, Fiber& to);
     [[nodiscard]] static std::shared_ptr<Fiber> ThreadToFiber();
 
     void SetRewindPoint(std::function<void()>&& rewind_func);
@@ -52,23 +50,13 @@ public:
     /// Only call from main thread's fiber
     void Exit();
 
-    /// Changes the start parameter of the fiber. Has no effect if the fiber already started
-    void SetStartParameter(void* new_parameter);
-
 private:
     Fiber();
 
-#if defined(_WIN32) || defined(WIN32)
-    void OnRewind();
-    void Start();
-    static void FiberStartFunc(void* fiber_parameter);
-    static void RewindStartFunc(void* fiber_parameter);
-#else
     void OnRewind(boost::context::detail::transfer_t& transfer);
     void Start(boost::context::detail::transfer_t& transfer);
     static void FiberStartFunc(boost::context::detail::transfer_t transfer);
     static void RewindStartFunc(boost::context::detail::transfer_t transfer);
-#endif
 
     struct FiberImpl;
     std::unique_ptr<FiberImpl> impl;

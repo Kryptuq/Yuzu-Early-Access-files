@@ -48,6 +48,7 @@ void LogSettings() {
     log_setting("CPU_Accuracy", values.cpu_accuracy.GetValue());
     log_setting("Renderer_UseResolutionScaling", values.resolution_setup.GetValue());
     log_setting("Renderer_ScalingFilter", values.scaling_filter.GetValue());
+    log_setting("Renderer_FSRSlider", values.fsr_sharpening_slider.GetValue());
     log_setting("Renderer_AntiAliasing", values.anti_aliasing.GetValue());
     log_setting("Renderer_UseSpeedLimit", values.use_speed_limit.GetValue());
     log_setting("Renderer_SpeedLimit", values.speed_limit.GetValue());

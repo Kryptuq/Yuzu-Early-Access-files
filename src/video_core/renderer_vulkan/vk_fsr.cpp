@@ -5,6 +5,7 @@
 #include "common/bit_cast.h"
 #include "common/common_types.h"
 #include "common/div_ceil.h"
+#include "common/settings.h"
 
 #include "video_core/host_shaders/vulkan_fidelityfx_fsr_easu_fp16_comp_spv.h"
 #include "video_core/host_shaders/vulkan_fidelityfx_fsr_easu_fp32_comp_spv.h"
@@ -227,7 +228,10 @@ VkImageView FSR::Draw(Scheduler& scheduler, size_t image_index, VkImageView imag
 
         cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, *rcas_pipeline);
 
-        FsrRcasCon(push_constants.data(), 0.25f);
+        const float sharpening =
+            static_cast<float>(Settings::values.fsr_sharpening_slider.GetValue()) / 100.0f;
+
+        FsrRcasCon(push_constants.data(), sharpening);
         cmdbuf.PushConstants(*pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, push_constants);
 
         {

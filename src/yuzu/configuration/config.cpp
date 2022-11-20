@@ -672,6 +672,7 @@ void Config::ReadRendererValues() {
     ReadGlobalSetting(Settings::values.aspect_ratio);
     ReadGlobalSetting(Settings::values.resolution_setup);
     ReadGlobalSetting(Settings::values.scaling_filter);
+    ReadGlobalSetting(Settings::values.fsr_sharpening_slider);
     ReadGlobalSetting(Settings::values.anti_aliasing);
     ReadGlobalSetting(Settings::values.max_anisotropy);
     ReadGlobalSetting(Settings::values.use_speed_limit);
@@ -1282,6 +1283,10 @@ void Config::SaveRendererValues() {
                  static_cast<u32>(Settings::values.scaling_filter.GetValue(global)),
                  static_cast<u32>(Settings::values.scaling_filter.GetDefault()),
                  Settings::values.scaling_filter.UsingGlobal());
+    WriteSetting(QString::fromStdString(Settings::values.fsr_sharpening_slider.GetLabel()),
+                 static_cast<u32>(Settings::values.fsr_sharpening_slider.GetValue(global)),
+                 static_cast<u32>(Settings::values.fsr_sharpening_slider.GetDefault()),
+                 Settings::values.fsr_sharpening_slider.UsingGlobal());
     WriteSetting(QString::fromStdString(Settings::values.anti_aliasing.GetLabel()),
                  static_cast<u32>(Settings::values.anti_aliasing.GetValue(global)),
                  static_cast<u32>(Settings::values.anti_aliasing.GetDefault()),

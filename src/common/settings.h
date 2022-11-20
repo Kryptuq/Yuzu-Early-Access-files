@@ -421,6 +421,7 @@ struct Values {
     ResolutionScalingInfo resolution_info{};
     SwitchableSetting<ResolutionSetup> resolution_setup{ResolutionSetup::Res1X, "resolution_setup"};
     SwitchableSetting<ScalingFilter> scaling_filter{ScalingFilter::Bilinear, "scaling_filter"};
+    SwitchableSetting<int, true> fsr_sharpening_slider{25, 0, 200, "fsr_sharpening_slider"};
     SwitchableSetting<AntiAliasing> anti_aliasing{AntiAliasing::None, "anti_aliasing"};
     // *nix platforms may have issues with the borderless windowed fullscreen mode.
     // Default to exclusive fullscreen on these platforms for now.

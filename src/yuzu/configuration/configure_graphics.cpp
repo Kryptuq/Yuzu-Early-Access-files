@@ -110,6 +110,7 @@ void ConfigureGraphics::SetConfiguration() {
             static_cast<int>(Settings::values.resolution_setup.GetValue()));
         ui->scaling_filter_combobox->setCurrentIndex(
             static_cast<int>(Settings::values.scaling_filter.GetValue()));
+        ui->fsr_sharpening_slider->setValue(Settings::values.fsr_sharpening_slider.GetValue());
         ui->anti_aliasing_combobox->setCurrentIndex(
             static_cast<int>(Settings::values.anti_aliasing.GetValue()));
     } else {
@@ -210,6 +211,7 @@ void ConfigureGraphics::ApplyConfiguration() {
         if (Settings::values.anti_aliasing.UsingGlobal()) {
             Settings::values.anti_aliasing.SetValue(anti_aliasing);
         }
+        Settings::values.fsr_sharpening_slider.SetValue(ui->fsr_sharpening_slider->value());
     } else {
         if (ui->resolution_combobox->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
             Settings::values.resolution_setup.SetGlobal(true);
@@ -380,6 +382,7 @@ void ConfigureGraphics::SetupPerGameUI() {
         ui->aspect_ratio_combobox->setEnabled(Settings::values.aspect_ratio.UsingGlobal());
         ui->resolution_combobox->setEnabled(Settings::values.resolution_setup.UsingGlobal());
         ui->scaling_filter_combobox->setEnabled(Settings::values.scaling_filter.UsingGlobal());
+        ui->fsr_sharpening_slider->setEnabled(Settings::values.fsr_sharpening_slider.UsingGlobal());
         ui->anti_aliasing_combobox->setEnabled(Settings::values.anti_aliasing.UsingGlobal());
         ui->use_asynchronous_gpu_emulation->setEnabled(
             Settings::values.use_asynchronous_gpu_emulation.UsingGlobal());
