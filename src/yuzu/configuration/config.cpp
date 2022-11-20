@@ -124,6 +124,10 @@ void Config::Initialize(const std::string& config_name) {
     }
 }
 
+bool Config::IsCustomConfig() {
+    return type == ConfigType::PerGameConfig;
+}
+
 /* {Read,Write}BasicSetting and WriteGlobalSetting templates must be defined here before their
  * usages later in this file. This allows explicit definition of some types that don't work
  * nicely with the general version.
@@ -194,8 +198,20 @@ void Config::ReadPlayerValue(std::size_t player_index) {
     }();
 
     auto& player = Settings::values.players.GetValue()[player_index];
+    if (IsCustomConfig()) {
+        const auto profile_name =
+            qt_config->value(QStringLiteral("%1profile_name").arg(player_prefix), QString{})
+                .toString()
+                .toStdString();
+        if (profile_name.empty()) {
+            // Use the global input config
+            player = Settings::values.players.GetValue(true)[player_index];
+            return;
+        }
+        player.profile_name = profile_name;
+    }
 
-    if (player_prefix.isEmpty()) {
+    if (player_prefix.isEmpty() && Settings::IsConfiguringGlobal()) {
         const auto controller = static_cast<Settings::ControllerType>(
             qt_config
                 ->value(QStringLiteral("%1type").arg(player_prefix),
@@ -388,8 +404,25 @@ void Config::ReadAudioValues() {
 void Config::ReadControlValues() {
     qt_config->beginGroup(QStringLiteral("Controls"));
 
+    Settings::values.players.SetGlobal(!IsCustomConfig());
     for (std::size_t p = 0; p < Settings::values.players.GetValue().size(); ++p) {
         ReadPlayerValue(p);
+    }
+    Settings::values.use_docked_mode.SetGlobal(!IsCustomConfig());
+    ReadGlobalSetting(Settings::values.use_docked_mode);
+
+    // Disable docked mode if handheld is selected
+    const auto controller_type = Settings::values.players.GetValue()[0].controller_type;
+    if (controller_type == Settings::ControllerType::Handheld) {
+        Settings::values.use_docked_mode.SetValue(false);
+    }
+
+    ReadGlobalSetting(Settings::values.vibration_enabled);
+    ReadGlobalSetting(Settings::values.enable_accurate_vibrations);
+    ReadGlobalSetting(Settings::values.motion_enabled);
+    if (IsCustomConfig()) {
+        qt_config->endGroup();
+        return;
     }
     ReadDebugValues();
     ReadKeyboardValues();
@@ -411,18 +444,6 @@ void Config::ReadControlValues() {
     ReadBasicSetting(Settings::values.tas_enable);
     ReadBasicSetting(Settings::values.tas_loop);
     ReadBasicSetting(Settings::values.pause_tas_on_load);
-
-    ReadGlobalSetting(Settings::values.use_docked_mode);
-
-    // Disable docked mode if handheld is selected
-    const auto controller_type = Settings::values.players.GetValue()[0].controller_type;
-    if (controller_type == Settings::ControllerType::Handheld) {
-        Settings::values.use_docked_mode.SetValue(false);
-    }
-
-    ReadGlobalSetting(Settings::values.vibration_enabled);
-    ReadGlobalSetting(Settings::values.enable_accurate_vibrations);
-    ReadGlobalSetting(Settings::values.motion_enabled);
 
     ReadBasicSetting(Settings::values.controller_navigation);
 
@@ -905,7 +926,6 @@ void Config::ReadMultiplayerValues() {
 
 void Config::ReadValues() {
     if (global) {
-        ReadControlValues();
         ReadDataStorageValues();
         ReadDebuggingValues();
         ReadDisabledAddOnValues();
@@ -914,6 +934,7 @@ void Config::ReadValues() {
         ReadWebServiceValues();
         ReadMiscellaneousValues();
     }
+    ReadControlValues();
     ReadCoreValues();
     ReadCpuValues();
     ReadRendererValues();
@@ -932,12 +953,20 @@ void Config::SavePlayerValue(std::size_t player_index) {
     }();
 
     const auto& player = Settings::values.players.GetValue()[player_index];
+    if (IsCustomConfig()) {
+        if (player.profile_name.empty()) {
+            // No custom profile selected
+            return;
+        }
+        WriteSetting(QStringLiteral("%1profile_name").arg(player_prefix),
+                     QString::fromStdString(player.profile_name), QString{});
+    }
 
     WriteSetting(QStringLiteral("%1type").arg(player_prefix),
                  static_cast<u8>(player.controller_type),
                  static_cast<u8>(Settings::ControllerType::ProController));
 
-    if (!player_prefix.isEmpty()) {
+    if (!player_prefix.isEmpty() || !Settings::IsConfiguringGlobal()) {
         WriteSetting(QStringLiteral("%1connected").arg(player_prefix), player.connected,
                      player_index == 0);
         WriteSetting(QStringLiteral("%1vibration_enabled").arg(player_prefix),
@@ -1019,19 +1048,22 @@ void Config::SaveMotionTouchValues() {
     WriteBasicSetting(Settings::values.udp_input_servers);
     WriteBasicSetting(Settings::values.enable_udp_controller);
 
+    if (Settings::values.touch_from_button_maps.empty()) {
+        return;
+    }
     qt_config->beginWriteArray(QStringLiteral("touch_from_button_maps"));
     for (std::size_t p = 0; p < Settings::values.touch_from_button_maps.size(); ++p) {
+        const auto& map = Settings::values.touch_from_button_maps[p];
+        if (map.buttons.empty()) {
+            continue;
+        }
         qt_config->setArrayIndex(static_cast<int>(p));
-        WriteSetting(QStringLiteral("name"),
-                     QString::fromStdString(Settings::values.touch_from_button_maps[p].name),
+        WriteSetting(QStringLiteral("name"), QString::fromStdString(map.name),
                      QStringLiteral("default"));
         qt_config->beginWriteArray(QStringLiteral("entries"));
-        for (std::size_t q = 0; q < Settings::values.touch_from_button_maps[p].buttons.size();
-             ++q) {
+        for (std::size_t q = 0; q < map.buttons.size(); ++q) {
             qt_config->setArrayIndex(static_cast<int>(q));
-            WriteSetting(
-                QStringLiteral("bind"),
-                QString::fromStdString(Settings::values.touch_from_button_maps[p].buttons[q]));
+            WriteSetting(QStringLiteral("bind"), QString::fromStdString(map.buttons[q]));
         }
         qt_config->endArray();
     }
@@ -1055,7 +1087,6 @@ void Config::SaveIrCameraValues() {
 
 void Config::SaveValues() {
     if (global) {
-        SaveControlValues();
         SaveDataStorageValues();
         SaveDebuggingValues();
         SaveDisabledAddOnValues();
@@ -1064,6 +1095,7 @@ void Config::SaveValues() {
         SaveWebServiceValues();
         SaveMiscellaneousValues();
     }
+    SaveControlValues();
     SaveCoreValues();
     SaveCpuValues();
     SaveRendererValues();
@@ -1088,8 +1120,18 @@ void Config::SaveAudioValues() {
 void Config::SaveControlValues() {
     qt_config->beginGroup(QStringLiteral("Controls"));
 
+    Settings::values.players.SetGlobal(!IsCustomConfig());
     for (std::size_t p = 0; p < Settings::values.players.GetValue().size(); ++p) {
         SavePlayerValue(p);
+    }
+    Settings::values.use_docked_mode.SetGlobal(!IsCustomConfig());
+    WriteGlobalSetting(Settings::values.use_docked_mode);
+    WriteGlobalSetting(Settings::values.vibration_enabled);
+    WriteGlobalSetting(Settings::values.enable_accurate_vibrations);
+    WriteGlobalSetting(Settings::values.motion_enabled);
+    if (IsCustomConfig()) {
+        qt_config->endGroup();
+        return;
     }
     SaveDebugValues();
     SaveMouseValues();
@@ -1098,10 +1140,6 @@ void Config::SaveControlValues() {
     SaveHidbusValues();
     SaveIrCameraValues();
 
-    WriteGlobalSetting(Settings::values.use_docked_mode);
-    WriteGlobalSetting(Settings::values.vibration_enabled);
-    WriteGlobalSetting(Settings::values.enable_accurate_vibrations);
-    WriteGlobalSetting(Settings::values.motion_enabled);
     WriteBasicSetting(Settings::values.enable_raw_input);
     WriteBasicSetting(Settings::values.keyboard_enabled);
     WriteBasicSetting(Settings::values.emulate_analog_keyboard);
@@ -1576,6 +1614,13 @@ void Config::ReadControlPlayerValue(std::size_t player_index) {
 void Config::SaveControlPlayerValue(std::size_t player_index) {
     qt_config->beginGroup(QStringLiteral("Controls"));
     SavePlayerValue(player_index);
+    qt_config->endGroup();
+}
+
+void Config::ClearControlPlayerValues() {
+    qt_config->beginGroup(QStringLiteral("Controls"));
+    // If key is an empty string, all keys in the current group() are removed.
+    qt_config->remove(QString{});
     qt_config->endGroup();
 }
 

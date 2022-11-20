@@ -126,6 +126,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "yuzu/compatibility_list.h"
 #include "yuzu/configuration/config.h"
 #include "yuzu/configuration/configure_dialog.h"
+#include "yuzu/configuration/configure_input_per_game.h"
 #include "yuzu/debugger/console.h"
 #include "yuzu/debugger/controller.h"
 #include "yuzu/debugger/profiler.h"
@@ -1670,6 +1671,11 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
     LOG_INFO(Frontend, "yuzu starting...");
     StoreRecentFile(filename); // Put the filename on top of the list
 
+    // Save configurations
+    UpdateUISettings();
+    game_list->SaveInterfaceLayout();
+    config->Save();
+
     u64 title_id{0};
 
     last_filename_booted = filename;
@@ -1686,13 +1692,9 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
                                           ? Common::FS::PathToUTF8String(file_path.filename())
                                           : fmt::format("{:016X}", title_id);
         Config per_game_config(config_file_name, Config::ConfigType::PerGameConfig);
+        system->HIDCore().ReloadInputDevices();
         system->ApplySettings();
     }
-
-    // Save configurations
-    UpdateUISettings();
-    game_list->SaveInterfaceLayout();
-    config->Save();
 
     Settings::LogSettings();
 
@@ -2814,6 +2816,7 @@ void GMainWindow::OnStopGame() {
     ShutdownGame();
 
     Settings::RestoreGlobalState(system->IsPoweredOn());
+    system->HIDCore().ReloadInputDevices();
     UpdateStatusButtons();
 }
 
@@ -3275,6 +3278,7 @@ void GMainWindow::OpenPerGameConfiguration(u64 title_id, const std::string& file
     // Do not cause the global config to write local settings into the config file
     const bool is_powered_on = system->IsPoweredOn();
     Settings::RestoreGlobalState(is_powered_on);
+    system->HIDCore().ReloadInputDevices();
 
     UISettings::values.configuration_applied = false;
 
@@ -3735,6 +3739,7 @@ void GMainWindow::OnCoreError(Core::SystemResultStatus result, std::string detai
             ShutdownGame();
 
             Settings::RestoreGlobalState(system->IsPoweredOn());
+            system->HIDCore().ReloadInputDevices();
             UpdateStatusButtons();
         }
     } else {
@@ -3886,18 +3891,19 @@ void GMainWindow::closeEvent(QCloseEvent* event) {
     // Unload controllers early
     controller_dialog->UnloadController();
     game_list->UnloadController();
-    system->HIDCore().UnloadInputDevices();
 
     // Shutdown session if the emu thread is active...
     if (emu_thread != nullptr) {
         ShutdownGame();
 
         Settings::RestoreGlobalState(system->IsPoweredOn());
+        system->HIDCore().ReloadInputDevices();
         UpdateStatusButtons();
     }
 
     render_window->close();
     multiplayer_state->Close();
+    system->HIDCore().UnloadInputDevices();
     system->GetRoomNetwork().Shutdown();
 
     QWidget::closeEvent(event);

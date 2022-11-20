@@ -761,7 +761,7 @@ void DmntCheatVm::Execute(const CheatProcessMetadata& metadata) {
             u64 src_address =
                 GetCheatProcessAddress(metadata, begin_cond->mem_type, begin_cond->rel_address);
             u64 src_value = 0;
-            switch (store_static->bit_width) {
+            switch (begin_cond->bit_width) {
             case 1:
             case 2:
             case 4:
