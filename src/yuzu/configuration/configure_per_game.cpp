@@ -28,7 +28,7 @@
 #include "yuzu/configuration/configure_general.h"
 #include "yuzu/configuration/configure_graphics.h"
 #include "yuzu/configuration/configure_graphics_advanced.h"
-#include "yuzu/configuration/configure_input.h"
+#include "yuzu/configuration/configure_input_per_game.h"
 #include "yuzu/configuration/configure_per_game.h"
 #include "yuzu/configuration/configure_per_game_addons.h"
 #include "yuzu/configuration/configure_system.h"
@@ -50,6 +50,7 @@ ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id_, const std::st
     general_tab = std::make_unique<ConfigureGeneral>(system_, this);
     graphics_tab = std::make_unique<ConfigureGraphics>(system_, this);
     graphics_advanced_tab = std::make_unique<ConfigureGraphicsAdvanced>(system_, this);
+    input_tab = std::make_unique<ConfigureInputPerGame>(system_, game_config.get(), this);
     system_tab = std::make_unique<ConfigureSystem>(system_, this);
 
     ui->setupUi(this);
@@ -61,6 +62,7 @@ ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id_, const std::st
     ui->tabWidget->addTab(graphics_tab.get(), tr("Graphics"));
     ui->tabWidget->addTab(graphics_advanced_tab.get(), tr("Adv. Graphics"));
     ui->tabWidget->addTab(audio_tab.get(), tr("Audio"));
+    ui->tabWidget->addTab(input_tab.get(), tr("Input Profiles"));
 
     setFocusPolicy(Qt::ClickFocus);
     setWindowTitle(tr("Properties"));
@@ -91,6 +93,7 @@ void ConfigurePerGame::ApplyConfiguration() {
     graphics_tab->ApplyConfiguration();
     graphics_advanced_tab->ApplyConfiguration();
     audio_tab->ApplyConfiguration();
+    input_tab->ApplyConfiguration();
 
     system.ApplySettings();
     Settings::LogSettings();

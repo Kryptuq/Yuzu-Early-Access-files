@@ -38,7 +38,7 @@ enum class InputType;
 
 namespace Ui {
 class ConfigureInputPlayer;
-}
+} // namespace Ui
 
 namespace Core::HID {
 class HIDCore;

@@ -13,7 +13,9 @@
 #include "input_common/drivers/virtual_amiibo.h"
 #include "input_common/main.h"
 #include "ui_qt_amiibo_settings.h"
+#ifdef ENABLE_WEB_SERVICE
 #include "web_service/web_backend.h"
+#endif
 #include "yuzu/applets/qt_amiibo_settings.h"
 #include "yuzu/main.h"
 
@@ -90,6 +92,7 @@ void QtAmiiboSettingsDialog::LoadAmiiboInfo() {
 }
 
 void QtAmiiboSettingsDialog::LoadAmiiboApiInfo(std::string_view amiibo_id) {
+#ifdef ENABLE_WEB_SERVICE
     // TODO: Host this data on our website
     WebService::Client client{"https://amiiboapi.com", {}, {}};
     WebService::Client image_client{"https://raw.githubusercontent.com", {}, {}};
@@ -134,6 +137,7 @@ void QtAmiiboSettingsDialog::LoadAmiiboApiInfo(std::string_view amiibo_id) {
     pixmap = pixmap.scaled(250, 350, Qt::AspectRatioMode::KeepAspectRatio,
                            Qt::TransformationMode::SmoothTransformation);
     ui->amiiboImageLabel->setPixmap(pixmap);
+#endif
 }
 
 void QtAmiiboSettingsDialog::LoadAmiiboData() {

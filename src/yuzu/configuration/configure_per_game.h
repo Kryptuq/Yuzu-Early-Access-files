@@ -16,12 +16,17 @@ namespace Core {
 class System;
 }
 
+namespace InputCommon {
+class InputSubsystem;
+}
+
 class ConfigurePerGameAddons;
 class ConfigureAudio;
 class ConfigureCpu;
 class ConfigureGeneral;
 class ConfigureGraphics;
 class ConfigureGraphicsAdvanced;
+class ConfigureInputPerGame;
 class ConfigureSystem;
 
 class QGraphicsScene;
@@ -72,5 +77,6 @@ private:
     std::unique_ptr<ConfigureGeneral> general_tab;
     std::unique_ptr<ConfigureGraphics> graphics_tab;
     std::unique_ptr<ConfigureGraphicsAdvanced> graphics_advanced_tab;
+    std::unique_ptr<ConfigureInputPerGame> input_tab;
     std::unique_ptr<ConfigureSystem> system_tab;
 };

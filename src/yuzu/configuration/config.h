@@ -34,6 +34,7 @@ public:
 
     void ReadControlPlayerValue(std::size_t player_index);
     void SaveControlPlayerValue(std::size_t player_index);
+    void ClearControlPlayerValues();
 
     const std::string& GetConfigFilePath() const;
 
@@ -58,6 +59,7 @@ public:
 
 private:
     void Initialize(const std::string& config_name);
+    bool IsCustomConfig();
 
     void ReadValues();
     void ReadPlayerValue(std::size_t player_index);

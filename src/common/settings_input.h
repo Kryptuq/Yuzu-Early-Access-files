@@ -391,6 +391,7 @@ struct PlayerInput {
     u32 body_color_right;
     u32 button_color_left;
     u32 button_color_right;
+    std::string profile_name;
 };
 
 struct TouchscreenInput {
