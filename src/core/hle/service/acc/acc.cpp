@@ -7,6 +7,7 @@
 #include "common/fs/file.h"
 #include "common/fs/path_util.h"
 #include "common/logging/log.h"
+#include "common/polyfill_ranges.h"
 #include "common/string_util.h"
 #include "common/swap.h"
 #include "core/constants.h"

@@ -10,12 +10,12 @@
 #include <memory>
 #include <optional>
 #include <span>
-#include <stop_token>
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
 
 #include "common/common_types.h"
+#include "common/polyfill_thread.h"
 #include "common/unique_function.h"
 #include "shader_recompiler/environment.h"
 #include "video_core/engines/maxwell_3d.h"

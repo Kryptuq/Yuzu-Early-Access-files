@@ -9,6 +9,7 @@
 #include "common/bit_cast.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"
+#include "common/polyfill_ranges.h"
 #include "common/settings.h"
 #include "common/string_util.h"
 #include "core/internal_network/network_interface.h"

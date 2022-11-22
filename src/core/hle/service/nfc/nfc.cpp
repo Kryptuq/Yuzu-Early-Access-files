@@ -7,6 +7,7 @@
 #include "common/settings.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/nfc/nfc.h"
+#include "core/hle/service/nfc/nfc_user.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/sm.h"
 
@@ -94,76 +95,6 @@ private:
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<MFIUser>(system);
-    }
-};
-
-class IUser final : public ServiceFramework<IUser> {
-public:
-    explicit IUser(Core::System& system_) : ServiceFramework{system_, "NFC::IUser"} {
-        // clang-format off
-        static const FunctionInfo functions[] = {
-            {0, &IUser::InitializeOld, "InitializeOld"},
-            {1, &IUser::FinalizeOld, "FinalizeOld"},
-            {2, &IUser::GetStateOld, "GetStateOld"},
-            {3, &IUser::IsNfcEnabledOld, "IsNfcEnabledOld"},
-            {400, &IUser::InitializeOld, "Initialize"},
-            {401, &IUser::FinalizeOld, "Finalize"},
-            {402, &IUser::GetStateOld, "GetState"},
-            {403, &IUser::IsNfcEnabledOld, "IsNfcEnabled"},
-            {404, nullptr, "ListDevices"},
-            {405, nullptr, "GetDeviceState"},
-            {406, nullptr, "GetNpadId"},
-            {407, nullptr, "AttachAvailabilityChangeEvent"},
-            {408, nullptr, "StartDetection"},
-            {409, nullptr, "StopDetection"},
-            {410, nullptr, "GetTagInfo"},
-            {411, nullptr, "AttachActivateEvent"},
-            {412, nullptr, "AttachDeactivateEvent"},
-            {1000, nullptr, "ReadMifare"},
-            {1001, nullptr, "WriteMifare"},
-            {1300, nullptr, "SendCommandByPassThrough"},
-            {1301, nullptr, "KeepPassThroughSession"},
-            {1302, nullptr, "ReleasePassThroughSession"},
-        };
-        // clang-format on
-
-        RegisterHandlers(functions);
-    }
-
-private:
-    enum class NfcStates : u32 {
-        Finalized = 6,
-    };
-
-    void InitializeOld(Kernel::HLERequestContext& ctx) {
-        LOG_DEBUG(Service_NFC, "called");
-
-        IPC::ResponseBuilder rb{ctx, 2, 0};
-        rb.Push(ResultSuccess);
-        // We don't deal with hardware initialization so we can just stub this.
-    }
-
-    void IsNfcEnabledOld(Kernel::HLERequestContext& ctx) {
-        LOG_DEBUG(Service_NFC, "IsNfcEnabledOld");
-
-        IPC::ResponseBuilder rb{ctx, 3};
-        rb.Push(ResultSuccess);
-        rb.PushRaw<u8>(true);
-    }
-
-    void GetStateOld(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NFC, "(STUBBED) called");
-
-        IPC::ResponseBuilder rb{ctx, 3};
-        rb.Push(ResultSuccess);
-        rb.PushEnum(NfcStates::Finalized); // TODO(ogniK): Figure out if this matches nfp
-    }
-
-    void FinalizeOld(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NFC, "(STUBBED) called");
-
-        IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultSuccess);
     }
 };
 

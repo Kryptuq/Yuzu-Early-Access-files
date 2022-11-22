@@ -1,9 +1,6 @@
 // SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include <array>
-#include <atomic>
-
 #include "common/logging/log.h"
 #include "core/core.h"
 #include "core/hid/hid_types.h"
@@ -55,8 +52,12 @@ IUser::IUser(Core::System& system_)
     }
 }
 
+IUser ::~IUser() {
+    availability_change_event->Close();
+}
+
 void IUser::Initialize(Kernel::HLERequestContext& ctx) {
-    LOG_INFO(Service_NFC, "called");
+    LOG_INFO(Service_NFP, "called");
 
     state = State::Initialized;
 
@@ -64,7 +65,7 @@ void IUser::Initialize(Kernel::HLERequestContext& ctx) {
         device->Initialize();
     }
 
-    IPC::ResponseBuilder rb{ctx, 2, 0};
+    IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
@@ -551,9 +552,9 @@ void IUser::AttachDeactivateEvent(Kernel::HLERequestContext& ctx) {
 }
 
 void IUser::GetState(Kernel::HLERequestContext& ctx) {
-    LOG_DEBUG(Service_NFC, "called");
+    LOG_DEBUG(Service_NFP, "called");
 
-    IPC::ResponseBuilder rb{ctx, 3, 0};
+    IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);
     rb.PushEnum(state);
 }

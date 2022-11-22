@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "common/logging/log.h"
+#include "common/polyfill_ranges.h"
 #include "common/settings.h"
 #include "core/core.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"

@@ -12,7 +12,7 @@
 namespace Vulkan {
 
 struct RenderPassKey {
-    auto operator<=>(const RenderPassKey&) const noexcept = default;
+    bool operator==(const RenderPassKey&) const noexcept = default;
 
     std::array<VideoCore::Surface::PixelFormat, 8> color_formats;
     VideoCore::Surface::PixelFormat depth_format;

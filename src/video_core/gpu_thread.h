@@ -10,6 +10,7 @@
 #include <thread>
 #include <variant>
 
+#include "common/polyfill_thread.h"
 #include "common/threadsafe_queue.h"
 #include "video_core/framebuffer_config.h"
 

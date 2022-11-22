@@ -19,6 +19,7 @@
 #include "common/literals.h"
 #include "common/lru_cache.h"
 #include "common/microprofile.h"
+#include "common/polyfill_ranges.h"
 #include "common/settings.h"
 #include "core/memory.h"
 #include "video_core/buffer_cache/buffer_base.h"

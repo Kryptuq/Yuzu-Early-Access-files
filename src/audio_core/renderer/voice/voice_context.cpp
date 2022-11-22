@@ -4,6 +4,7 @@
 #include <ranges>
 
 #include "audio_core/renderer/voice/voice_context.h"
+#include "common/polyfill_ranges.h"
 
 namespace AudioCore::AudioRenderer {
 

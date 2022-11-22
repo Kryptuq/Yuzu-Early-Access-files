@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "common/common_types.h"
+#include "common/polyfill_ranges.h"
 #include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/maxwell/decode.h"
 #include "shader_recompiler/frontend/maxwell/opcodes.h"

@@ -10,6 +10,7 @@
 #include <thread>
 
 #include "common/fiber.h"
+#include "common/polyfill_thread.h"
 #include "common/thread.h"
 #include "core/hardware_properties.h"
 

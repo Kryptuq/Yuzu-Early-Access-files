@@ -12,7 +12,6 @@
 #include "common/fs/fs.h"
 #include "common/fs/path_util.h"
 #include "common/logging/log.h"
-#include "core/hle/service/mii/mii_manager.h"
 #include "core/hle/service/nfp/amiibo_crypto.h"
 
 namespace Service::NFP::AmiiboCrypto {

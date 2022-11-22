@@ -2847,6 +2847,7 @@ void GMainWindow::ErrorDisplayDisplayError(QString error_code, QString error_tex
 }
 
 void GMainWindow::OnMenuReportCompatibility() {
+#if defined(ARCHITECTURE_x86_64) && !defined(__APPLE__)
     const auto& caps = Common::GetCPUCaps();
     const bool has_fma = caps.fma || caps.fma4;
     const auto processor_count = std::thread::hardware_concurrency();
@@ -2873,6 +2874,11 @@ void GMainWindow::OnMenuReportCompatibility() {
                "&gt; "
                "Web."));
     }
+#else
+    QMessageBox::critical(this, tr("Hardware requirements not met"),
+                          tr("Your system does not meet the recommended hardware requirements. "
+                             "Compatibility reporting has been disabled."));
+#endif
 }
 
 void GMainWindow::OpenURL(const QUrl& url) {

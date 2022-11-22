@@ -225,8 +225,8 @@ Result KMemoryManager::AllocatePageGroupImpl(KPageGroup* out, size_t num_pages, 
     ON_RESULT_FAILURE {
         for (const auto& it : out->Nodes()) {
             auto& manager = this->GetManager(it.GetAddress());
-            const size_t node_num_pages =
-                std::min(it.GetNumPages(), (manager.GetEndAddress() - it.GetAddress()) / PageSize);
+            const size_t node_num_pages = std::min<u64>(
+                it.GetNumPages(), (manager.GetEndAddress() - it.GetAddress()) / PageSize);
             manager.Free(it.GetAddress(), node_num_pages);
         }
         out->Finalize();

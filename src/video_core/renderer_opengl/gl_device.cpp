@@ -14,6 +14,7 @@
 
 #include "common/literals.h"
 #include "common/logging/log.h"
+#include "common/polyfill_ranges.h"
 #include "common/settings.h"
 #include "shader_recompiler/stage.h"
 #include "video_core/renderer_opengl/gl_device.h"

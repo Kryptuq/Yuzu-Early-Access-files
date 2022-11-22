@@ -6,8 +6,8 @@
 #include <functional>
 #include <optional>
 #include <span>
-#include <stop_token>
 #include "common/common_types.h"
+#include "common/polyfill_thread.h"
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/gpu.h"
 

@@ -3,6 +3,10 @@
 
 #pragma once
 
+#include <array>
+#include <memory>
+#include <optional>
+
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/service.h"
 
@@ -12,6 +16,7 @@ class NfpDevice;
 class IUser final : public ServiceFramework<IUser> {
 public:
     explicit IUser(Core::System& system_);
+    ~IUser();
 
 private:
     enum class State : u32 {

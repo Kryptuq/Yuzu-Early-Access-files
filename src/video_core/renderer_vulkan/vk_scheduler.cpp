@@ -145,7 +145,7 @@ void Scheduler::WorkerThread(std::stop_token stop_token) {
             if (work_queue.empty()) {
                 wait_cv.notify_all();
             }
-            work_cv.wait(lock, stop_token, [this] { return !work_queue.empty(); });
+            Common::CondvarWait(work_cv, lock, stop_token, [&] { return !work_queue.empty(); });
             if (stop_token.stop_requested()) {
                 continue;
             }

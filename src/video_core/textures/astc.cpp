@@ -15,6 +15,7 @@
 
 #include "common/alignment.h"
 #include "common/common_types.h"
+#include "common/polyfill_ranges.h"
 #include "common/thread_worker.h"
 #include "video_core/textures/astc.h"
 

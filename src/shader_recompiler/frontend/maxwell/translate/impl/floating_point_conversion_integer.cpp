@@ -176,12 +176,13 @@ void TranslateF2I(TranslatorVisitor& v, u64 insn, const IR::F16F32F64& src_a) {
         (f2i.src_format == SrcFormat::F64) != (f2i.dest_format == DestFormat::I64);
     if (special_nan_cases) {
         if (f2i.dest_format == DestFormat::I32) {
+            constexpr u32 nan_value = 0x8000'0000U;
             handled_special_case = true;
-            result = IR::U32{v.ir.Select(v.ir.FPIsNan(op_a), v.ir.Imm32(0x8000'0000U), result)};
+            result = IR::U32{v.ir.Select(v.ir.FPIsNan(op_a), v.ir.Imm32(nan_value), result)};
         } else if (f2i.dest_format == DestFormat::I64) {
+            constexpr u64 nan_value = 0x8000'0000'0000'0000ULL;
             handled_special_case = true;
-            result = IR::U64{
-                v.ir.Select(v.ir.FPIsNan(op_a), v.ir.Imm64(0x8000'0000'0000'0000UL), result)};
+            result = IR::U64{v.ir.Select(v.ir.FPIsNan(op_a), v.ir.Imm64(nan_value), result)};
         }
     }
     if (!handled_special_case && is_signed) {

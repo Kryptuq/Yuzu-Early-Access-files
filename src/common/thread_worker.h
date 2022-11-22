@@ -7,13 +7,13 @@
 #include <condition_variable>
 #include <functional>
 #include <mutex>
-#include <stop_token>
 #include <string>
 #include <thread>
 #include <type_traits>
 #include <vector>
 #include <queue>
 
+#include "common/polyfill_thread.h"
 #include "common/thread.h"
 #include "common/unique_function.h"
 
@@ -47,7 +47,8 @@ public:
                         if (requests.empty()) {
                             wait_condition.notify_all();
                         }
-                        condition.wait(lock, stop_token, [this] { return !requests.empty(); });
+                        Common::CondvarWait(condition, lock, stop_token,
+                                            [this] { return !requests.empty(); });
                         if (stop_token.stop_requested()) {
                             break;
                         }

@@ -16,6 +16,7 @@
 #include "common/hash.h"
 #include "common/literals.h"
 #include "common/lru_cache.h"
+#include "common/polyfill_ranges.h"
 #include "video_core/compatible_formats.h"
 #include "video_core/control/channel_state_cache.h"
 #include "video_core/delayed_destruction_ring.h"
@@ -60,8 +61,6 @@ public:
     TextureCacheChannelInfo(Tegra::Control::ChannelState& state) noexcept;
     TextureCacheChannelInfo(const TextureCacheChannelInfo& state) = delete;
     TextureCacheChannelInfo& operator=(const TextureCacheChannelInfo&) = delete;
-    TextureCacheChannelInfo(TextureCacheChannelInfo&& other) noexcept = default;
-    TextureCacheChannelInfo& operator=(TextureCacheChannelInfo&& other) noexcept = default;
 
     DescriptorTable<TICEntry> graphics_image_table{gpu_memory};
     DescriptorTable<TSCEntry> graphics_sampler_table{gpu_memory};

@@ -6,6 +6,7 @@
 #include <atomic>
 
 #include "common/assert.h"
+#include "common/atomic_ops.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/spin_lock.h"
@@ -82,16 +83,13 @@ private:
 
 private:
     void UpdatePeakImpl(uintptr_t obj) {
-        static_assert(std::atomic_ref<uintptr_t>::is_always_lock_free);
-        std::atomic_ref<uintptr_t> peak_ref(m_peak);
-
         const uintptr_t alloc_peak = obj + this->GetObjectSize();
         uintptr_t cur_peak = m_peak;
         do {
             if (alloc_peak <= cur_peak) {
                 break;
             }
-        } while (!peak_ref.compare_exchange_strong(cur_peak, alloc_peak));
+        } while (!Common::AtomicCompareAndSwap(&m_peak, alloc_peak, cur_peak, cur_peak));
     }
 
 public:

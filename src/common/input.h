@@ -8,6 +8,7 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 #include "common/logging/log.h"
 #include "common/param_package.h"
 #include "common/uuid.h"

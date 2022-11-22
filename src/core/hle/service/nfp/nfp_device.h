@@ -3,11 +3,10 @@
 
 #pragma once
 
-#include <array>
 #include <span>
 #include <vector>
 
-#include "common/common_funcs.h"
+#include "common/common_types.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/nfp/nfp_types.h"
 #include "core/hle/service/service.h"

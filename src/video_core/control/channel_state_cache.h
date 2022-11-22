@@ -35,8 +35,6 @@ public:
     explicit ChannelInfo(Tegra::Control::ChannelState& state);
     ChannelInfo(const ChannelInfo& state) = delete;
     ChannelInfo& operator=(const ChannelInfo&) = delete;
-    ChannelInfo(ChannelInfo&& other) = default;
-    ChannelInfo& operator=(ChannelInfo&& other) = default;
 
     Tegra::Engines::Maxwell3D& maxwell3d;
     Tegra::Engines::KeplerCompute& kepler_compute;

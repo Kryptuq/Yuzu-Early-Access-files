@@ -9,6 +9,7 @@
 #include <boost/process/async_pipe.hpp>
 
 #include "common/logging/log.h"
+#include "common/polyfill_thread.h"
 #include "common/thread.h"
 #include "core/core.h"
 #include "core/debugger/debugger.h"

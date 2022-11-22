@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <string>
 
+#include "common/polyfill_ranges.h"
 #include "video_core/texture_cache/formatter.h"
 #include "video_core/texture_cache/image_base.h"
 #include "video_core/texture_cache/image_info.h"

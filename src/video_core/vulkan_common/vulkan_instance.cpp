@@ -9,6 +9,7 @@
 #include "common/common_types.h"
 #include "common/dynamic_library.h"
 #include "common/logging/log.h"
+#include "common/polyfill_ranges.h"
 #include "core/frontend/emu_window.h"
 #include "video_core/vulkan_common/vulkan_instance.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"

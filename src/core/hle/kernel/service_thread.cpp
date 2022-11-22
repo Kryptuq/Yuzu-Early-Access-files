@@ -7,6 +7,7 @@
 #include <thread>
 #include <vector>
 
+#include "common/polyfill_thread.h"
 #include "common/scope_exit.h"
 #include "common/thread.h"
 #include "core/hle/ipc_helpers.h"

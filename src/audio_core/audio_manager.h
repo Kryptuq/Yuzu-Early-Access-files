@@ -9,6 +9,8 @@
 #include <mutex>
 #include <thread>
 
+#include "common/polyfill_thread.h"
+
 #include "audio_core/audio_event.h"
 
 union Result;

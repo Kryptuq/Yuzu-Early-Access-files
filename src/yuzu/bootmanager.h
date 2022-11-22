@@ -14,6 +14,7 @@
 #include <QTouchEvent>
 #include <QWidget>
 
+#include "common/polyfill_thread.h"
 #include "common/thread.h"
 #include "core/frontend/emu_window.h"
 

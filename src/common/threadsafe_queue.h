@@ -12,6 +12,8 @@
 #include <mutex>
 #include <utility>
 
+#include "common/polyfill_thread.h"
+
 namespace Common {
 template <typename T, bool with_stop_token = false>
 class SPSCQueue {
@@ -97,7 +99,7 @@ public:
     T PopWait(std::stop_token stop_token) {
         if (Empty()) {
             std::unique_lock lock{cv_mutex};
-            cv.wait(lock, stop_token, [this] { return !Empty(); });
+            Common::CondvarWait(cv, lock, stop_token, [this] { return !Empty(); });
         }
         if (stop_token.stop_requested()) {
             return T{};

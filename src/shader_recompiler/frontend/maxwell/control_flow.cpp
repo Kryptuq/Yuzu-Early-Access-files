@@ -9,6 +9,7 @@
 
 #include <fmt/format.h>
 
+#include "common/polyfill_ranges.h"
 #include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/maxwell/control_flow.h"
 #include "shader_recompiler/frontend/maxwell/decode.h"

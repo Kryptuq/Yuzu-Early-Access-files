@@ -460,19 +460,21 @@ void CommandBuffer::GenerateDeviceSinkCommand(const s32 node_id, const s16 buffe
 
     cmd.session_id = session_id;
 
+    cmd.input_count = parameter.input_count;
+    s16 max_input{0};
+    for (u32 i = 0; i < parameter.input_count; i++) {
+        cmd.inputs[i] = buffer_offset + parameter.inputs[i];
+        max_input = std::max(max_input, cmd.inputs[i]);
+    }
+
     if (state.upsampler_info != nullptr) {
         const auto size_{state.upsampler_info->sample_count * parameter.input_count};
         const auto size_bytes{size_ * sizeof(s32)};
         const auto addr{memory_pool->Translate(state.upsampler_info->samples_pos, size_bytes)};
         cmd.sample_buffer = {reinterpret_cast<s32*>(addr),
-                             parameter.input_count * state.upsampler_info->sample_count};
+                             (max_input + 1) * state.upsampler_info->sample_count};
     } else {
         cmd.sample_buffer = samples_buffer;
-    }
-
-    cmd.input_count = parameter.input_count;
-    for (u32 i = 0; i < parameter.input_count; i++) {
-        cmd.inputs[i] = buffer_offset + parameter.inputs[i];
     }
 
     GenerateEnd<DeviceSinkCommand>(cmd);

@@ -14,6 +14,7 @@
 #include "common/bit_util.h"
 #include "common/common_funcs.h"
 #include "common/logging/log.h"
+#include "common/polyfill_ranges.h"
 #include "common/string_util.h"
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"

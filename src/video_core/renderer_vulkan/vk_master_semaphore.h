@@ -7,6 +7,7 @@
 #include <thread>
 
 #include "common/common_types.h"
+#include "common/polyfill_thread.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace Vulkan {

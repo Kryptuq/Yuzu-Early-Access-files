@@ -170,8 +170,8 @@ void SinkStream::ProcessAudioIn(std::span<const s16> input_buffer, std::size_t n
 
         // Get the minimum frames available between the currently playing buffer, and the
         // amount we have left to fill
-        size_t frames_available{std::min(playing_buffer.frames - playing_buffer.frames_played,
-                                         num_frames - frames_written)};
+        size_t frames_available{std::min<u64>(playing_buffer.frames - playing_buffer.frames_played,
+                                              num_frames - frames_written)};
 
         samples_buffer.Push(&input_buffer[frames_written * frame_size],
                             frames_available * frame_size);
@@ -241,8 +241,8 @@ void SinkStream::ProcessAudioOutAndRender(std::span<s16> output_buffer, std::siz
 
         // Get the minimum frames available between the currently playing buffer, and the
         // amount we have left to fill
-        size_t frames_available{std::min(playing_buffer.frames - playing_buffer.frames_played,
-                                         num_frames - frames_written)};
+        size_t frames_available{std::min<u64>(playing_buffer.frames - playing_buffer.frames_played,
+                                              num_frames - frames_written)};
 
         samples_buffer.Pop(&output_buffer[frames_written * frame_size],
                            frames_available * frame_size);

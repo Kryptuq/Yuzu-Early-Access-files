@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include <stop_token>
 #include <thread>
 
+#include "common/polyfill_thread.h"
 #include "common/vector_math.h"
 #include "input_common/input_engine.h"
 

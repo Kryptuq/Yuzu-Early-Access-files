@@ -5,6 +5,7 @@
 
 #include "audio_core/renderer/adsp/command_list_processor.h"
 #include "audio_core/renderer/command/effect/i3dl2_reverb.h"
+#include "common/polyfill_ranges.h"
 
 namespace AudioCore::AudioRenderer {
 

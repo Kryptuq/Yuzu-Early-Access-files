@@ -2,10 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <array>
-#include <atomic>
 
-#include "common/fs/file.h"
-#include "common/fs/path_util.h"
 #include "common/input.h"
 #include "common/logging/log.h"
 #include "common/string_util.h"
@@ -19,7 +16,6 @@
 #include "core/hle/service/mii/mii_manager.h"
 #include "core/hle/service/mii/types.h"
 #include "core/hle/service/nfp/amiibo_crypto.h"
-#include "core/hle/service/nfp/nfp.h"
 #include "core/hle/service/nfp/nfp_device.h"
 #include "core/hle/service/nfp/nfp_result.h"
 #include "core/hle/service/nfp/nfp_user.h"
@@ -49,6 +45,8 @@ NfpDevice::NfpDevice(Core::HID::NpadIdType npad_id_, Core::System& system_,
 }
 
 NfpDevice::~NfpDevice() {
+    activate_event->Close();
+    deactivate_event->Close();
     if (!is_controller_set) {
         return;
     }

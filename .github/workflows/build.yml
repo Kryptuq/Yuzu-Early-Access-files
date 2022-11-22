@@ -33,7 +33,7 @@ jobs:
   
       #If Update exists
       - name: Zip the New Update
-        uses: vimtor/action-zip@v1
+        uses: vimtor/action-zip@v1.1
         with:
           files: build/bin
           dest: yuzu-early-access-EA${{ github.event.head_commit.message }}.zip

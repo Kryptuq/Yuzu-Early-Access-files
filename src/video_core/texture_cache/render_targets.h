@@ -13,7 +13,7 @@ namespace VideoCommon {
 
 /// Framebuffer properties used to lookup a framebuffer
 struct RenderTargets {
-    constexpr auto operator<=>(const RenderTargets&) const noexcept = default;
+    constexpr bool operator==(const RenderTargets&) const noexcept = default;
 
     constexpr bool Contains(std::span<const ImageViewId> elements) const noexcept {
         const auto contains = [elements](ImageViewId item) {

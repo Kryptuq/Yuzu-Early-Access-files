@@ -7,6 +7,7 @@
 #include "common/bit_cast.h"
 #include "common/cityhash.h"
 #include "common/common_types.h"
+#include "common/polyfill_ranges.h"
 #include "video_core/renderer_vulkan/fixed_pipeline_state.h"
 #include "video_core/renderer_vulkan/vk_state_tracker.h"
 

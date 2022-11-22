@@ -254,6 +254,7 @@ else()
         # Bracket depth determines maximum size of a fold expression in Clang since 9c9974c3ccb6.
         # And this in turns limits the size of a std::array.
         $<$<CXX_COMPILER_ID:Clang>:-fbracket-depth=1024>
+        $<$<CXX_COMPILER_ID:AppleClang>:-fbracket-depth=1024>
     )
 endif()
 

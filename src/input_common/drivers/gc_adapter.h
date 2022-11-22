@@ -5,10 +5,10 @@
 
 #include <array>
 #include <memory>
-#include <stop_token>
 #include <string>
 #include <thread>
 
+#include "common/polyfill_thread.h"
 #include "input_common/input_engine.h"
 
 struct libusb_context;

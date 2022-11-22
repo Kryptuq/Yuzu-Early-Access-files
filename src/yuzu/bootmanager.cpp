@@ -118,7 +118,7 @@ void EmuThread::run() {
             }
         } else {
             std::unique_lock lock{running_mutex};
-            running_cv.wait(lock, stop_token, [this] { return IsRunning(); });
+            Common::CondvarWait(running_cv, lock, stop_token, [&] { return IsRunning(); });
         }
     }
 

@@ -4,6 +4,7 @@
 #include <algorithm>
 
 #include "common/fs/fs_util.h"
+#include "common/polyfill_ranges.h"
 
 namespace Common::FS {
 

@@ -4,7 +4,6 @@
 #pragma once
 
 #include <filesystem>
-#include <stop_token>
 #include <unordered_map>
 
 #include "common/common_types.h"

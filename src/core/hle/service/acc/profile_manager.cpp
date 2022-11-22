@@ -9,6 +9,7 @@
 #include "common/fs/file.h"
 #include "common/fs/fs.h"
 #include "common/fs/path_util.h"
+#include "common/polyfill_ranges.h"
 #include "common/settings.h"
 #include "core/hle/service/acc/profile_manager.h"
 

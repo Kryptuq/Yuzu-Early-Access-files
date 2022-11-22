@@ -82,7 +82,7 @@ void SvcWrap64(Core::System& system) {
 }
 
 // Used by ControlCodeMemory
-template <Result func(Core::System&, Handle, u32, u64, u64, Svc::MemoryPermission)>
+template <Result func(Core::System&, Handle, u32, VAddr, size_t, Svc::MemoryPermission)>
 void SvcWrap64(Core::System& system) {
     FuncReturn(system, func(system, static_cast<Handle>(Param(system, 0)),
                             static_cast<u32>(Param(system, 1)), Param(system, 2), Param(system, 3),
@@ -327,7 +327,7 @@ void SvcWrap64(Core::System& system) {
 }
 
 // Used by CreateCodeMemory
-template <Result func(Core::System&, Handle*, u64, u64)>
+template <Result func(Core::System&, Handle*, VAddr, size_t)>
 void SvcWrap64(Core::System& system) {
     u32 param_1 = 0;
     const u32 retval = func(system, &param_1, Param(system, 1), Param(system, 2)).raw;

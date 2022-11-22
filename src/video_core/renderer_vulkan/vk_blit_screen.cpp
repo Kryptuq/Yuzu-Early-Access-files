@@ -10,6 +10,7 @@
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "common/math_util.h"
+#include "common/polyfill_ranges.h"
 #include "common/settings.h"
 #include "core/core.h"
 #include "core/frontend/emu_window.h"

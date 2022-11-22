@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "common/logging/log.h"
+#include "common/polyfill_ranges.h"
 #include "core/crypto/aes_util.h"
 #include "core/crypto/ctr_encryption_layer.h"
 #include "core/crypto/key_manager.h"
