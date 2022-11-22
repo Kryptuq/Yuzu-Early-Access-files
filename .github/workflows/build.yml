@@ -37,7 +37,7 @@ jobs:
         with:
           files: build/bin
           dest: yuzu-early-access-EA${{ github.event.head_commit.message }}.zip
-          recursive: true
+          recursive: false
           
       #Publishing to Release
       - name: Release to GitHub Releases
