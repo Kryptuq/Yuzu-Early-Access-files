@@ -42,7 +42,7 @@ jobs:
           
       #Publishing to Release
       - name: Release to GitHub Releases
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v0.1.13
         with:
           name: EA${{ github.event.head_commit.message }}
           tag_name: EA${{ github.event.head_commit.message }}
