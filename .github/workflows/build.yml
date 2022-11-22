@@ -39,6 +39,11 @@ jobs:
           dest: yuzu-early-access-EA${{ github.event.head_commit.message }}.zip
           recursive: true
           
+      #Revert with Script
+      - name: Run Script for Reverting
+        shell: pwsh
+        run: ./revert.ps1
+          
       #Publishing to Release
       - name: Release to GitHub Releases
         uses: softprops/action-gh-release@v1
@@ -48,10 +53,6 @@ jobs:
           body: "Yuzu Early Access CI Builds with Github Actions [Current Build: yuzu Early Access ${{ github.event.head_commit.message }}]"
           files: ${{ github.workspace }}\yuzu-early-access-EA${{ github.event.head_commit.message }}.zip
           
-      #Revert with Script
-      - name: Run Script for Reverting
-        shell: pwsh
-        run: ./revert.ps1
 
       #Upload Artifacts Just in Case
  #     - uses: actions/upload-artifact@v2
