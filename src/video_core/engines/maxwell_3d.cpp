@@ -126,6 +126,7 @@ void Maxwell3D::InitializeRegisterDefaults() {
     draw_command[MAXWELL3D_REG_INDEX(draw_inline_index)] = true;
     draw_command[MAXWELL3D_REG_INDEX(inline_index_2x16.even)] = true;
     draw_command[MAXWELL3D_REG_INDEX(inline_index_4x8.index0)] = true;
+    draw_command[MAXWELL3D_REG_INDEX(draw.instance_id)] = true;
 }
 
 void Maxwell3D::ProcessMacro(u32 method, const u32* base_start, u32 amount, bool is_last_call) {
@@ -288,31 +289,58 @@ void Maxwell3D::CallMethod(u32 method, u32 method_argument, bool is_last_call) {
     ASSERT_MSG(method < Regs::NUM_REGS,
                "Invalid Maxwell3D register, increase the size of the Regs structure");
 
+    const u32 argument = ProcessShadowRam(method, method_argument);
+    ProcessDirtyRegisters(method, argument);
+
     if (draw_command[method]) {
         regs.reg_array[method] = method_argument;
         deferred_draw_method.push_back(method);
-        auto u32_to_u8 = [&](const u32 argument) {
-            inline_index_draw_indexes.push_back(static_cast<u8>(argument & 0x000000ff));
-            inline_index_draw_indexes.push_back(static_cast<u8>((argument & 0x0000ff00) >> 8));
-            inline_index_draw_indexes.push_back(static_cast<u8>((argument & 0x00ff0000) >> 16));
-            inline_index_draw_indexes.push_back(static_cast<u8>((argument & 0xff000000) >> 24));
+        auto update_inline_index = [&](const u32 index) {
+            inline_index_draw_indexes.push_back(static_cast<u8>(index & 0x000000ff));
+            inline_index_draw_indexes.push_back(static_cast<u8>((index & 0x0000ff00) >> 8));
+            inline_index_draw_indexes.push_back(static_cast<u8>((index & 0x00ff0000) >> 16));
+            inline_index_draw_indexes.push_back(static_cast<u8>((index & 0xff000000) >> 24));
+            draw_mode = DrawMode::InlineIndex;
         };
-        if (MAXWELL3D_REG_INDEX(draw_inline_index) == method) {
-            u32_to_u8(method_argument);
-        } else if (MAXWELL3D_REG_INDEX(inline_index_2x16.even) == method) {
-            u32_to_u8(regs.inline_index_2x16.even);
-            u32_to_u8(regs.inline_index_2x16.odd);
-        } else if (MAXWELL3D_REG_INDEX(inline_index_4x8.index0) == method) {
-            u32_to_u8(regs.inline_index_4x8.index0);
-            u32_to_u8(regs.inline_index_4x8.index1);
-            u32_to_u8(regs.inline_index_4x8.index2);
-            u32_to_u8(regs.inline_index_4x8.index3);
+        switch (method) {
+        case MAXWELL3D_REG_INDEX(draw.end):
+            switch (draw_mode) {
+            case DrawMode::General:
+                ProcessDraw(1);
+                break;
+            case DrawMode::InlineIndex:
+                regs.index_buffer.count = static_cast<u32>(inline_index_draw_indexes.size() / 4);
+                regs.index_buffer.format = Regs::IndexFormat::UnsignedInt;
+                ProcessDraw(1);
+                inline_index_draw_indexes.clear();
+                break;
+            case DrawMode::Instance:
+                break;
+            }
+            break;
+        case MAXWELL3D_REG_INDEX(draw_inline_index):
+            update_inline_index(method_argument);
+            break;
+        case MAXWELL3D_REG_INDEX(inline_index_2x16.even):
+            update_inline_index(regs.inline_index_2x16.even);
+            update_inline_index(regs.inline_index_2x16.odd);
+            break;
+        case MAXWELL3D_REG_INDEX(inline_index_4x8.index0):
+            update_inline_index(regs.inline_index_4x8.index0);
+            update_inline_index(regs.inline_index_4x8.index1);
+            update_inline_index(regs.inline_index_4x8.index2);
+            update_inline_index(regs.inline_index_4x8.index3);
+            break;
+        case MAXWELL3D_REG_INDEX(draw.instance_id):
+            draw_mode =
+                (regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::Subsequent) ||
+                        (regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::Unchanged)
+                    ? DrawMode::Instance
+                    : DrawMode::General;
+            break;
         }
     } else {
         ProcessDeferredDraw();
-
-        const u32 argument = ProcessShadowRam(method, method_argument);
-        ProcessDirtyRegisters(method, argument);
         ProcessMethodCall(method, argument, method_argument, is_last_call);
     }
 }
@@ -626,57 +654,27 @@ void Maxwell3D::ProcessDraw(u32 instance_count) {
 }
 
 void Maxwell3D::ProcessDeferredDraw() {
-    if (deferred_draw_method.empty()) {
+    if (draw_mode != DrawMode::Instance || deferred_draw_method.empty()) {
         return;
     }
 
-    enum class DrawMode {
-        Undefined,
-        General,
-        Instance,
-    };
-    DrawMode draw_mode{DrawMode::Undefined};
     u32 method_count = static_cast<u32>(deferred_draw_method.size());
-    u32 method = deferred_draw_method[method_count - 1];
-    if (MAXWELL3D_REG_INDEX(draw.end) != method) {
-        return;
-    }
-    draw_mode = (regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::Subsequent) ||
-                        (regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::Unchanged)
-                    ? DrawMode::Instance
-                    : DrawMode::General;
-    u32 instance_count = 0;
-    if (draw_mode == DrawMode::Instance) {
-        u32 vertex_buffer_count = 0;
-        u32 index_buffer_count = 0;
-        for (u32 index = 0; index < method_count; ++index) {
-            method = deferred_draw_method[index];
-            if (method == MAXWELL3D_REG_INDEX(vertex_buffer.count)) {
-                instance_count = ++vertex_buffer_count;
-            } else if (method == MAXWELL3D_REG_INDEX(index_buffer.count)) {
-                instance_count = ++index_buffer_count;
-            }
-        }
-        ASSERT_MSG(!(vertex_buffer_count && index_buffer_count),
-                   "Instance both indexed and direct?");
-    } else {
-        instance_count = 1;
-        for (u32 index = 0; index < method_count; ++index) {
-            method = deferred_draw_method[index];
-            if (MAXWELL3D_REG_INDEX(draw_inline_index) == method ||
-                MAXWELL3D_REG_INDEX(inline_index_2x16.even) == method ||
-                MAXWELL3D_REG_INDEX(inline_index_4x8.index0) == method) {
-                regs.index_buffer.count = static_cast<u32>(inline_index_draw_indexes.size() / 4);
-                regs.index_buffer.format = Regs::IndexFormat::UnsignedInt;
-                break;
-            }
+    u32 instance_count = 1;
+    u32 vertex_buffer_count = 0;
+    u32 index_buffer_count = 0;
+    for (u32 index = 0; index < method_count; ++index) {
+        u32 method = deferred_draw_method[index];
+        if (method == MAXWELL3D_REG_INDEX(vertex_buffer.count)) {
+            instance_count = ++vertex_buffer_count;
+        } else if (method == MAXWELL3D_REG_INDEX(index_buffer.count)) {
+            instance_count = ++index_buffer_count;
         }
     }
+    ASSERT_MSG(!(vertex_buffer_count && index_buffer_count), "Instance both indexed and direct?");
 
     ProcessDraw(instance_count);
 
     deferred_draw_method.clear();
-    inline_index_draw_indexes.clear();
 }
 
 } // namespace Tegra::Engines

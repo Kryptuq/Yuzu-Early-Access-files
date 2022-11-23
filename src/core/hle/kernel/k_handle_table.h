@@ -113,21 +113,7 @@ public:
         return this->GetObjectImpl(handle);
     }
 
-    KScopedAutoObject<KAutoObject> GetObjectForIpc(Handle handle, KThread* cur_thread) const {
-        // Handle pseudo-handles.
-        ASSERT(cur_thread != nullptr);
-        if (handle == Svc::PseudoHandle::CurrentProcess) {
-            auto* const cur_process =
-                static_cast<KAutoObject*>(static_cast<void*>(cur_thread->GetOwnerProcess()));
-            ASSERT(cur_process != nullptr);
-            return cur_process;
-        }
-        if (handle == Svc::PseudoHandle::CurrentThread) {
-            return static_cast<KAutoObject*>(cur_thread);
-        }
-
-        return GetObjectForIpcWithoutPseudoHandle(handle);
-    }
+    KScopedAutoObject<KAutoObject> GetObjectForIpc(Handle handle, KThread* cur_thread) const;
 
     KScopedAutoObject<KAutoObject> GetObjectByIndex(Handle* out_handle, size_t index) const {
         KScopedDisableDispatch dd{m_kernel};

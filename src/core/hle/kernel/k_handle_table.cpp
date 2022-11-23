@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/hle/kernel/k_handle_table.h"
+#include "core/hle/kernel/k_process.h"
 
 namespace Kernel {
 
@@ -80,6 +81,22 @@ Result KHandleTable::Add(Handle* out_handle, KAutoObject* obj) {
     }
 
     R_SUCCEED();
+}
+
+KScopedAutoObject<KAutoObject> KHandleTable::GetObjectForIpc(Handle handle,
+                                                             KThread* cur_thread) const {
+    // Handle pseudo-handles.
+    ASSERT(cur_thread != nullptr);
+    if (handle == Svc::PseudoHandle::CurrentProcess) {
+        auto* const cur_process = cur_thread->GetOwnerProcess();
+        ASSERT(cur_process != nullptr);
+        return cur_process;
+    }
+    if (handle == Svc::PseudoHandle::CurrentThread) {
+        return cur_thread;
+    }
+
+    return GetObjectForIpcWithoutPseudoHandle(handle);
 }
 
 Result KHandleTable::Reserve(Handle* out_handle) {

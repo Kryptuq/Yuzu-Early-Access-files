@@ -3148,9 +3148,11 @@ private:
     /// Handles use of topology overrides (e.g., to avoid using a topology assigned from a macro)
     void ProcessTopologyOverride();
 
-    void ProcessDraw(u32 instance_count = 1);
-
+    /// Handles deferred draw(e.g., instance draw).
     void ProcessDeferredDraw();
+
+    /// Handles a draw.
+    void ProcessDraw(u32 instance_count = 1);
 
     /// Returns a query's value or an empty object if the value will be deferred through a cache.
     std::optional<u64> GetQueryResult();
@@ -3178,6 +3180,8 @@ private:
 
     std::array<bool, Regs::NUM_REGS> draw_command{};
     std::vector<u32> deferred_draw_method;
+    enum class DrawMode : u32 { General = 0, Instance, InlineIndex };
+    DrawMode draw_mode{DrawMode::General};
 };
 
 #define ASSERT_REG_POSITION(field_name, position)                                                  \
