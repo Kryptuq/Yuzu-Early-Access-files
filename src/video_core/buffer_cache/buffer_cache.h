@@ -1743,12 +1743,12 @@ bool BufferCache<P>::InlineMemory(VAddr dest_address, size_t copy_size,
     SynchronizeBuffer(buffer, dest_address, static_cast<u32>(copy_size));
 
     if constexpr (USE_MEMORY_MAPS) {
+        auto upload_staging = runtime.UploadStagingBuffer(copy_size);
         std::array copies{BufferCopy{
-            .src_offset = 0,
+            .src_offset = upload_staging.offset,
             .dst_offset = buffer.Offset(dest_address),
             .size = copy_size,
         }};
-        auto upload_staging = runtime.UploadStagingBuffer(copy_size);
         u8* const src_pointer = upload_staging.mapped_span.data();
         std::memcpy(src_pointer, inlined_buffer.data(), copy_size);
         runtime.CopyBuffer(buffer, upload_staging.buffer, copies);

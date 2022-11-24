@@ -118,7 +118,7 @@ void Puller::ProcessSemaphoreRelease() {
     std::function<void()> operation([this, sequence_address, payload] {
         memory_manager.Write<u32>(sequence_address, payload);
     });
-    rasterizer->SyncOperation(std::move(operation));
+    rasterizer->SignalFence(std::move(operation));
 }
 
 void Puller::ProcessSemaphoreAcquire() {
@@ -151,8 +151,8 @@ void Puller::CallPullerMethod(const MethodCall& method_call) {
     case BufferMethods::SemaphoreAddressLow:
     case BufferMethods::SemaphoreSequencePayload:
     case BufferMethods::SyncpointPayload:
-        break;
     case BufferMethods::WrcacheFlush:
+        break;
     case BufferMethods::RefCnt:
         rasterizer->SignalReference();
         break;

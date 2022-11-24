@@ -51,11 +51,11 @@ void State::ProcessData(std::span<const u8> read_buffer) {
         } else {
             for (u32 line = 0; line < regs.line_count; ++line) {
                 const GPUVAddr dest_line = address + static_cast<size_t>(line) * regs.dest.pitch;
-                memory_manager.WriteBlockUnsafe(
-                    dest_line, read_buffer.data() + static_cast<size_t>(line) * regs.line_length_in,
-                    regs.line_length_in);
+                std::span<const u8> buffer(read_buffer.data() +
+                                               static_cast<size_t>(line) * regs.line_length_in,
+                                           regs.line_length_in);
+                rasterizer->AccelerateInlineToMemory(dest_line, regs.line_length_in, buffer);
             }
-            memory_manager.InvalidateRegion(address, regs.dest.pitch * regs.line_count);
         }
     } else {
         u32 width = regs.dest.width;
