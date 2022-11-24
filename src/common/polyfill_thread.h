@@ -147,7 +147,7 @@ private:
 
 class stop_source {
 public:
-    stop_source() = default;
+    stop_source() : m_stop_state(make_shared<polyfill::stop_state>()) {}
     explicit stop_source(nostopstate_t) noexcept {}
 
     stop_source(const stop_source&) noexcept = default;

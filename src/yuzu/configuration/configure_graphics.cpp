@@ -63,6 +63,9 @@ ConfigureGraphics::ConfigureGraphics(const Core::System& system_, QWidget* paren
         ui->api_widget->isEnabled());
     ui->bg_label->setVisible(Settings::IsConfiguringGlobal());
     ui->bg_combobox->setVisible(!Settings::IsConfiguringGlobal());
+
+    connect(ui->fsr_sharpening_slider, &QSlider::valueChanged, this,
+            &ConfigureGraphics::SetFSRIndicatorText);
 }
 
 void ConfigureGraphics::UpdateDeviceSelection(int device) {
@@ -156,6 +159,12 @@ void ConfigureGraphics::SetConfiguration() {
                                                 Settings::values.bg_green.GetValue(),
                                                 Settings::values.bg_blue.GetValue()));
     UpdateAPILayout();
+    SetFSRIndicatorText(ui->fsr_sharpening_slider->sliderPosition());
+}
+
+void ConfigureGraphics::SetFSRIndicatorText(int percentage) {
+    ui->fsr_sharpening_value->setText(
+        tr("%1%", "FSR sharpening percentage (e.g. 50%)").arg(100 - (percentage / 2)));
 }
 
 void ConfigureGraphics::ApplyConfiguration() {

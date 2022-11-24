@@ -42,6 +42,8 @@ private:
 
     void RetrieveVulkanDevices();
 
+    void SetFSRIndicatorText(int percentage);
+
     void SetupPerGameUI();
 
     Settings::RendererBackend GetCurrentGraphicsBackend() const;

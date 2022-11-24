@@ -152,6 +152,12 @@
      </item>
      <item>
       <widget class="QGroupBox" name="groupBox">
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>16777215</height>
+        </size>
+       </property>
        <property name="title">
         <string>Graphics Settings</string>
        </property>
@@ -486,6 +492,12 @@
           <property name="enabled">
            <bool>true</bool>
           </property>
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <layout class="QHBoxLayout" name="horizontalLayout">
            <property name="spacing">
             <number>6</number>
@@ -507,6 +519,12 @@
            </property>
            <item alignment="Qt::AlignLeft">
             <widget class="QLabel" name="fsr_sharpening_label">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="text">
               <string>FSR Sharpening:</string>
              </property>
@@ -515,10 +533,16 @@
            <item>
             <widget class="QSlider" name="fsr_sharpening_slider">
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
+             </property>
+             <property name="baseSize">
+              <size>
+               <width>0</width>
+               <height>0</height>
+              </size>
              </property>
              <property name="maximum">
               <number>200</number>
@@ -534,7 +558,32 @@
              </property>
             </widget>
            </item>
+           <item>
+            <widget class="QLabel" name="fsr_sharpening_value">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>32</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>100%</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
           </layout>
+          <zorder>fsr_sharpening_value</zorder>
+          <zorder>fsr_sharpening_label</zorder>
+          <zorder>fsr_sharpening_slider</zorder>
          </widget>
         </item>
         <item>

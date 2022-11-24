@@ -95,10 +95,14 @@ endif()
 add_subdirectory(sirit)
 
 if (ENABLE_WEB_SERVICE)
-    find_package(OpenSSL 1.1)
-    if (OPENSSL_FOUND)
-        set(OPENSSL_LIBRARIES OpenSSL::SSL OpenSSL::Crypto)
-    else()
+    if (NOT WIN32)
+        find_package(OpenSSL 1.1)
+        if (OPENSSL_FOUND)
+            set(OPENSSL_LIBRARIES OpenSSL::SSL OpenSSL::Crypto)
+        endif()
+    endif()
+
+    if (WIN32 OR NOT OPENSSL_FOUND)
         # LibreSSL
         set(LIBRESSL_SKIP_INSTALL ON CACHE BOOL "")
         set(OPENSSLDIR "/etc/ssl/")

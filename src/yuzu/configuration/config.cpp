@@ -408,12 +408,12 @@ void Config::ReadControlValues() {
     for (std::size_t p = 0; p < Settings::values.players.GetValue().size(); ++p) {
         ReadPlayerValue(p);
     }
-    Settings::values.use_docked_mode.SetGlobal(!IsCustomConfig());
     ReadGlobalSetting(Settings::values.use_docked_mode);
 
     // Disable docked mode if handheld is selected
     const auto controller_type = Settings::values.players.GetValue()[0].controller_type;
     if (controller_type == Settings::ControllerType::Handheld) {
+        Settings::values.use_docked_mode.SetGlobal(!IsCustomConfig());
         Settings::values.use_docked_mode.SetValue(false);
     }
 
@@ -1124,11 +1124,6 @@ void Config::SaveControlValues() {
     for (std::size_t p = 0; p < Settings::values.players.GetValue().size(); ++p) {
         SavePlayerValue(p);
     }
-    Settings::values.use_docked_mode.SetGlobal(!IsCustomConfig());
-    WriteGlobalSetting(Settings::values.use_docked_mode);
-    WriteGlobalSetting(Settings::values.vibration_enabled);
-    WriteGlobalSetting(Settings::values.enable_accurate_vibrations);
-    WriteGlobalSetting(Settings::values.motion_enabled);
     if (IsCustomConfig()) {
         qt_config->endGroup();
         return;
@@ -1140,6 +1135,10 @@ void Config::SaveControlValues() {
     SaveHidbusValues();
     SaveIrCameraValues();
 
+    WriteGlobalSetting(Settings::values.use_docked_mode);
+    WriteGlobalSetting(Settings::values.vibration_enabled);
+    WriteGlobalSetting(Settings::values.enable_accurate_vibrations);
+    WriteGlobalSetting(Settings::values.motion_enabled);
     WriteBasicSetting(Settings::values.enable_raw_input);
     WriteBasicSetting(Settings::values.keyboard_enabled);
     WriteBasicSetting(Settings::values.emulate_analog_keyboard);
