@@ -26,8 +26,8 @@ namespace {
 
 constexpr size_t ir_components = 4;
 
-void NeighrestNeighbor(std::span<const u8> input, std::span<u8> output, u32 src_width,
-                       u32 src_height, u32 dst_width, u32 dst_height, size_t bpp) {
+void NearestNeighbor(std::span<const u8> input, std::span<u8> output, u32 src_width, u32 src_height,
+                     u32 dst_width, u32 dst_height, size_t bpp) {
     const size_t dx_du = std::llround((static_cast<f64>(src_width) / dst_width) * (1ULL << 32));
     const size_t dy_dv = std::llround((static_cast<f64>(src_height) / dst_height) * (1ULL << 32));
     size_t src_y = 0;
@@ -44,8 +44,8 @@ void NeighrestNeighbor(std::span<const u8> input, std::span<u8> output, u32 src_
     }
 }
 
-void NeighrestNeighborFast(std::span<const f32> input, std::span<f32> output, u32 src_width,
-                           u32 src_height, u32 dst_width, u32 dst_height) {
+void NearestNeighborFast(std::span<const f32> input, std::span<f32> output, u32 src_width,
+                         u32 src_height, u32 dst_width, u32 dst_height) {
     const size_t dx_du = std::llround((static_cast<f64>(src_width) / dst_width) * (1ULL << 32));
     const size_t dy_dv = std::llround((static_cast<f64>(src_height) / dst_height) * (1ULL << 32));
     size_t src_y = 0;
@@ -171,8 +171,8 @@ bool SoftwareBlitEngine::Blit(Fermi2D::Surface& src, Fermi2D::Surface& dst,
         src.format != dst.format || src_extent_x != dst_extent_x || src_extent_y != dst_extent_y;
 
     const auto convertion_phase_same_format = [&]() {
-        NeighrestNeighbor(impl->src_buffer, impl->dst_buffer, src_extent_x, src_extent_y,
-                          dst_extent_x, dst_extent_y, dst_bytes_per_pixel);
+        NearestNeighbor(impl->src_buffer, impl->dst_buffer, src_extent_x, src_extent_y,
+                        dst_extent_x, dst_extent_y, dst_bytes_per_pixel);
     };
 
     const auto convertion_phase_ir = [&]() {
@@ -182,8 +182,8 @@ bool SoftwareBlitEngine::Blit(Fermi2D::Surface& src, Fermi2D::Surface& dst,
         input_converter->ConvertTo(impl->src_buffer, impl->intermediate_src);
 
         if (config.filter != Fermi2D::Filter::Bilinear) {
-            NeighrestNeighborFast(impl->intermediate_src, impl->intermediate_dst, src_extent_x,
-                                  src_extent_y, dst_extent_x, dst_extent_y);
+            NearestNeighborFast(impl->intermediate_src, impl->intermediate_dst, src_extent_x,
+                                src_extent_y, dst_extent_x, dst_extent_y);
         } else {
             Bilinear(impl->intermediate_src, impl->intermediate_dst, src_extent_x, src_extent_y,
                      dst_extent_x, dst_extent_y);

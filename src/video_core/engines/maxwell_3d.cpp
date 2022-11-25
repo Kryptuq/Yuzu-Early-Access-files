@@ -536,7 +536,7 @@ void Maxwell3D::ProcessCounterReset() {
 
 void Maxwell3D::ProcessSyncPoint() {
     const u32 sync_point = regs.sync_info.sync_point.Value();
-    // const u32 cache_flush = regs.sync_info.clean_l2.Value();
+    [[maybe_unused]] const u32 cache_flush = regs.sync_info.clean_l2.Value();
     rasterizer->SignalSyncPoint(sync_point);
 }
 

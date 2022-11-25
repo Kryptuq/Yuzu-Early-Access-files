@@ -41,6 +41,12 @@ enum class ComponentType : u32 {
 
 namespace {
 
+/*
+ * Note: Use generate_converters.py to generate the structs and searches for new render target
+ * formats and copy paste them to this file in order to update. just call "python
+ * generate_converters.py" and get the code from the output. modify the file to add new formats.
+ */
+
 constexpr std::array<f32, 256> SRGB_TO_RGB_LUT = {
     0.000000e+00f, 3.035270e-04f, 6.070540e-04f, 9.105810e-04f, 1.214108e-03f, 1.517635e-03f,
     1.821162e-03f, 2.124689e-03f, 2.428216e-03f, 2.731743e-03f, 3.035270e-03f, 3.346536e-03f,
