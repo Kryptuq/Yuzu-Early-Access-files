@@ -192,12 +192,10 @@ private:
     }
 
     void ListCommonTicketRightsIds(Kernel::HLERequestContext& ctx) {
-        u32 out_entries;
-        if (keys.GetCommonTickets().empty())
-            out_entries = 0;
-        else
-            out_entries = static_cast<u32>(ctx.GetWriteBufferSize() / sizeof(u128));
-
+        size_t out_entries = 0;
+        if (!keys.GetCommonTickets().empty()) {
+            out_entries = ctx.GetWriteBufferNumElements<u128>();
+        }
         LOG_DEBUG(Service_ETicket, "called, entries={:016X}", out_entries);
 
         keys.PopulateTickets();
@@ -206,20 +204,19 @@ private:
         std::transform(tickets.begin(), tickets.end(), std::back_inserter(ids),
                        [](const auto& pair) { return pair.first; });
 
-        out_entries = static_cast<u32>(std::min<std::size_t>(ids.size(), out_entries));
+        out_entries = std::min(ids.size(), out_entries);
         ctx.WriteBuffer(ids.data(), out_entries * sizeof(u128));
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
-        rb.Push<u32>(out_entries);
+        rb.Push<u32>(static_cast<u32>(out_entries));
     }
 
     void ListPersonalizedTicketRightsIds(Kernel::HLERequestContext& ctx) {
-        u32 out_entries;
-        if (keys.GetPersonalizedTickets().empty())
-            out_entries = 0;
-        else
-            out_entries = static_cast<u32>(ctx.GetWriteBufferSize() / sizeof(u128));
+        size_t out_entries = 0;
+        if (!keys.GetPersonalizedTickets().empty()) {
+            out_entries = ctx.GetWriteBufferNumElements<u128>();
+        }
 
         LOG_DEBUG(Service_ETicket, "called, entries={:016X}", out_entries);
 
@@ -229,12 +226,12 @@ private:
         std::transform(tickets.begin(), tickets.end(), std::back_inserter(ids),
                        [](const auto& pair) { return pair.first; });
 
-        out_entries = static_cast<u32>(std::min<std::size_t>(ids.size(), out_entries));
+        out_entries = std::min(ids.size(), out_entries);
         ctx.WriteBuffer(ids.data(), out_entries * sizeof(u128));
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
-        rb.Push<u32>(out_entries);
+        rb.Push<u32>(static_cast<u32>(out_entries));
     }
 
     void GetCommonTicketSize(Kernel::HLERequestContext& ctx) {

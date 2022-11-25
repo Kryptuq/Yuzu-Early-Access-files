@@ -128,16 +128,16 @@ private:
     }
 
     void GetReleasedAudioOutBuffers(Kernel::HLERequestContext& ctx) {
-        auto write_buffer_size = ctx.GetWriteBufferSize() / sizeof(u64);
-        std::vector<u64> released_buffers(write_buffer_size, 0);
+        const auto write_buffer_size = ctx.GetWriteBufferNumElements<u64>();
+        std::vector<u64> released_buffers(write_buffer_size);
 
-        auto count = impl->GetReleasedBuffers(released_buffers);
+        const auto count = impl->GetReleasedBuffers(released_buffers);
 
         [[maybe_unused]] std::string tags{};
         for (u32 i = 0; i < count; i++) {
             tags += fmt::format("{:08X}, ", released_buffers[i]);
         }
-        [[maybe_unused]] auto sessionid{impl->GetSystem().GetSessionId()};
+        [[maybe_unused]] const auto sessionid{impl->GetSystem().GetSessionId()};
         LOG_TRACE(Service_Audio, "called. Session {} released {} buffers: {}", sessionid, count,
                   tags);
 
@@ -242,7 +242,7 @@ void AudOutU::ListAudioOuts(Kernel::HLERequestContext& ctx) {
     std::scoped_lock l{impl->mutex};
 
     const auto write_count =
-        static_cast<u32>(ctx.GetWriteBufferSize() / sizeof(AudioDevice::AudioDeviceName));
+        static_cast<u32>(ctx.GetWriteBufferNumElements<AudioDevice::AudioDeviceName>());
     std::vector<AudioDevice::AudioDeviceName> device_names{};
     if (write_count > 0) {
         device_names.emplace_back("DeviceOut");

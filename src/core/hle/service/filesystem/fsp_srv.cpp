@@ -277,7 +277,7 @@ private:
         LOG_DEBUG(Service_FS, "called.");
 
         // Calculate how many entries we can fit in the output buffer
-        const u64 count_entries = ctx.GetWriteBufferSize() / sizeof(FileSys::Entry);
+        const u64 count_entries = ctx.GetWriteBufferNumElements<FileSys::Entry>();
 
         // Cap at total number of entries.
         const u64 actual_entries = std::min(count_entries, entries.size() - next_entry_index);
@@ -543,7 +543,7 @@ public:
         LOG_DEBUG(Service_FS, "called");
 
         // Calculate how many entries we can fit in the output buffer
-        const u64 count_entries = ctx.GetWriteBufferSize() / sizeof(SaveDataInfo);
+        const u64 count_entries = ctx.GetWriteBufferNumElements<SaveDataInfo>();
 
         // Cap at total number of entries.
         const u64 actual_entries = std::min(count_entries, info.size() - next_entry_index);

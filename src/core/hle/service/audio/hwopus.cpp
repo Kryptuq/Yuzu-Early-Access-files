@@ -68,7 +68,7 @@ private:
                                  ExtraBehavior extra_behavior) {
         u32 consumed = 0;
         u32 sample_count = 0;
-        std::vector<opus_int16> samples(ctx.GetWriteBufferSize() / sizeof(opus_int16));
+        std::vector<opus_int16> samples(ctx.GetWriteBufferNumElements<opus_int16>());
 
         if (extra_behavior == ExtraBehavior::ResetContext) {
             ResetDecoderContext();

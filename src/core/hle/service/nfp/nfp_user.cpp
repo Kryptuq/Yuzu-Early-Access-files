@@ -104,9 +104,9 @@ void IUser::ListDevices(Kernel::HLERequestContext& ctx) {
     }
 
     std::vector<u64> nfp_devices;
-    const std::size_t max_allowed_devices = ctx.GetWriteBufferSize() / sizeof(u64);
+    const std::size_t max_allowed_devices = ctx.GetWriteBufferNumElements<u64>();
 
-    for (auto& device : devices) {
+    for (const auto& device : devices) {
         if (nfp_devices.size() >= max_allowed_devices) {
             continue;
         }
@@ -115,7 +115,7 @@ void IUser::ListDevices(Kernel::HLERequestContext& ctx) {
         }
     }
 
-    if (nfp_devices.size() == 0) {
+    if (nfp_devices.empty()) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(DeviceNotFound);
         return;

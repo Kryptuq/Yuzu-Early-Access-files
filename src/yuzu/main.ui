@@ -231,6 +231,9 @@
    <property name="text">
     <string>Con&amp;figure...</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::PreferencesRole</enum>
+   </property>
   </action>
   <action name="action_Display_Dock_Widget_Headers">
    <property name="checkable">
@@ -363,6 +366,9 @@
    <property name="text">
     <string>&amp;Configure TAS...</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="action_Configure_Current_Game">
    <property name="enabled">
@@ -370,6 +376,9 @@
    </property>
    <property name="text">
     <string>Configure C&amp;urrent Game...</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="action_TAS_Start">

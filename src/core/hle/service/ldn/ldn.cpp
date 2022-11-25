@@ -300,7 +300,7 @@ public:
 
     void GetNetworkInfoLatestUpdate(Kernel::HLERequestContext& ctx) {
         const std::size_t network_buffer_size = ctx.GetWriteBufferSize(0);
-        const std::size_t node_buffer_count = ctx.GetWriteBufferSize(1) / sizeof(NodeLatestUpdate);
+        const std::size_t node_buffer_count = ctx.GetWriteBufferNumElements<NodeLatestUpdate>(1);
 
         if (node_buffer_count == 0 || network_buffer_size != sizeof(NetworkInfo)) {
             LOG_ERROR(Service_LDN, "Invalid buffer, size = {}, count = {}", network_buffer_size,
@@ -341,7 +341,7 @@ public:
         const auto channel{rp.PopEnum<WifiChannel>()};
         const auto scan_filter{rp.PopRaw<ScanFilter>()};
 
-        const std::size_t network_info_size = ctx.GetWriteBufferSize() / sizeof(NetworkInfo);
+        const std::size_t network_info_size = ctx.GetWriteBufferNumElements<NetworkInfo>();
 
         if (network_info_size == 0) {
             LOG_ERROR(Service_LDN, "Invalid buffer size {}", network_info_size);

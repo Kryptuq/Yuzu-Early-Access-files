@@ -122,10 +122,10 @@ private:
     }
 
     void GetReleasedAudioInBuffer(Kernel::HLERequestContext& ctx) {
-        auto write_buffer_size = ctx.GetWriteBufferSize() / sizeof(u64);
-        std::vector<u64> released_buffers(write_buffer_size, 0);
+        const auto write_buffer_size = ctx.GetWriteBufferNumElements<u64>();
+        std::vector<u64> released_buffers(write_buffer_size);
 
-        auto count = impl->GetReleasedBuffers(released_buffers);
+        const auto count = impl->GetReleasedBuffers(released_buffers);
 
         [[maybe_unused]] std::string tags{};
         for (u32 i = 0; i < count; i++) {
@@ -227,7 +227,7 @@ void AudInU::ListAudioIns(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_Audio, "called");
 
     const auto write_count =
-        static_cast<u32>(ctx.GetWriteBufferSize() / sizeof(AudioDevice::AudioDeviceName));
+        static_cast<u32>(ctx.GetWriteBufferNumElements<AudioDevice::AudioDeviceName>());
     std::vector<AudioDevice::AudioDeviceName> device_names{};
 
     u32 out_count{0};
@@ -247,7 +247,7 @@ void AudInU::ListAudioInsAutoFiltered(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_Audio, "called");
 
     const auto write_count =
-        static_cast<u32>(ctx.GetWriteBufferSize() / sizeof(AudioDevice::AudioDeviceName));
+        static_cast<u32>(ctx.GetWriteBufferNumElements<AudioDevice::AudioDeviceName>());
     std::vector<AudioDevice::AudioDeviceName> device_names{};
 
     u32 out_count{0};

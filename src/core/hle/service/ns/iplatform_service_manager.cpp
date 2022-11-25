@@ -279,13 +279,10 @@ void IPlatformServiceManager::GetSharedFontInOrderOfPriority(Kernel::HLERequestC
         font_sizes.push_back(region.size);
     }
 
-    // Resize buffers if game requests smaller size output.
-    font_codes.resize(
-        std::min<std::size_t>(font_codes.size(), ctx.GetWriteBufferSize(0) / sizeof(u32)));
-    font_offsets.resize(
-        std::min<std::size_t>(font_offsets.size(), ctx.GetWriteBufferSize(1) / sizeof(u32)));
-    font_sizes.resize(
-        std::min<std::size_t>(font_sizes.size(), ctx.GetWriteBufferSize(2) / sizeof(u32)));
+    // Resize buffers if game requests smaller size output
+    font_codes.resize(std::min(font_codes.size(), ctx.GetWriteBufferNumElements<u32>(0)));
+    font_offsets.resize(std::min(font_offsets.size(), ctx.GetWriteBufferNumElements<u32>(1)));
+    font_sizes.resize(std::min(font_sizes.size(), ctx.GetWriteBufferNumElements<u32>(2)));
 
     ctx.WriteBuffer(font_codes, 0);
     ctx.WriteBuffer(font_offsets, 1);

@@ -272,7 +272,7 @@ public:
 
 private:
     void ListAudioDeviceName(Kernel::HLERequestContext& ctx) {
-        const size_t in_count = ctx.GetWriteBufferSize() / sizeof(AudioDevice::AudioDeviceName);
+        const size_t in_count = ctx.GetWriteBufferNumElements<AudioDevice::AudioDeviceName>();
 
         std::vector<AudioDevice::AudioDeviceName> out_names{};
 
@@ -333,7 +333,7 @@ private:
     }
 
     void GetActiveAudioDeviceName(Kernel::HLERequestContext& ctx) {
-        const auto write_size = ctx.GetWriteBufferSize() / sizeof(char);
+        const auto write_size = ctx.GetWriteBufferSize();
         std::string out_name{"AudioTvOutput"};
 
         LOG_DEBUG(Service_Audio, "(STUBBED) called. Name={}", out_name);
@@ -385,7 +385,7 @@ private:
     }
 
     void ListAudioOutputDeviceName(Kernel::HLERequestContext& ctx) {
-        const size_t in_count = ctx.GetWriteBufferSize() / sizeof(AudioDevice::AudioDeviceName);
+        const size_t in_count = ctx.GetWriteBufferNumElements<AudioDevice::AudioDeviceName>();
 
         std::vector<AudioDevice::AudioDeviceName> out_names{};
 

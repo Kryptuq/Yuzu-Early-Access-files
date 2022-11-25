@@ -199,7 +199,7 @@ public:
     ~HLERequestContext();
 
     /// Returns a pointer to the IPC command buffer for this request.
-    u32* CommandBuffer() {
+    [[nodiscard]] u32* CommandBuffer() {
         return cmd_buf.data();
     }
 
@@ -207,7 +207,7 @@ public:
      * Returns the session through which this request was made. This can be used as a map key to
      * access per-client data on services.
      */
-    Kernel::KServerSession* Session() {
+    [[nodiscard]] Kernel::KServerSession* Session() {
         return server_session;
     }
 
@@ -217,61 +217,61 @@ public:
     /// Writes data from this context back to the requesting process/thread.
     Result WriteToOutgoingCommandBuffer(KThread& requesting_thread);
 
-    u32_le GetHipcCommand() const {
+    [[nodiscard]] u32_le GetHipcCommand() const {
         return command;
     }
 
-    u32_le GetTipcCommand() const {
+    [[nodiscard]] u32_le GetTipcCommand() const {
         return static_cast<u32_le>(command_header->type.Value()) -
                static_cast<u32_le>(IPC::CommandType::TIPC_CommandRegion);
     }
 
-    u32_le GetCommand() const {
+    [[nodiscard]] u32_le GetCommand() const {
         return command_header->IsTipc() ? GetTipcCommand() : GetHipcCommand();
     }
 
-    bool IsTipc() const {
+    [[nodiscard]] bool IsTipc() const {
         return command_header->IsTipc();
     }
 
-    IPC::CommandType GetCommandType() const {
+    [[nodiscard]] IPC::CommandType GetCommandType() const {
         return command_header->type;
     }
 
-    u64 GetPID() const {
+    [[nodiscard]] u64 GetPID() const {
         return pid;
     }
 
-    u32 GetDataPayloadOffset() const {
+    [[nodiscard]] u32 GetDataPayloadOffset() const {
         return data_payload_offset;
     }
 
-    const std::vector<IPC::BufferDescriptorX>& BufferDescriptorX() const {
+    [[nodiscard]] const std::vector<IPC::BufferDescriptorX>& BufferDescriptorX() const {
         return buffer_x_desciptors;
     }
 
-    const std::vector<IPC::BufferDescriptorABW>& BufferDescriptorA() const {
+    [[nodiscard]] const std::vector<IPC::BufferDescriptorABW>& BufferDescriptorA() const {
         return buffer_a_desciptors;
     }
 
-    const std::vector<IPC::BufferDescriptorABW>& BufferDescriptorB() const {
+    [[nodiscard]] const std::vector<IPC::BufferDescriptorABW>& BufferDescriptorB() const {
         return buffer_b_desciptors;
     }
 
-    const std::vector<IPC::BufferDescriptorC>& BufferDescriptorC() const {
+    [[nodiscard]] const std::vector<IPC::BufferDescriptorC>& BufferDescriptorC() const {
         return buffer_c_desciptors;
     }
 
-    const IPC::DomainMessageHeader& GetDomainMessageHeader() const {
+    [[nodiscard]] const IPC::DomainMessageHeader& GetDomainMessageHeader() const {
         return domain_message_header.value();
     }
 
-    bool HasDomainMessageHeader() const {
+    [[nodiscard]] bool HasDomainMessageHeader() const {
         return domain_message_header.has_value();
     }
 
     /// Helper function to read a buffer using the appropriate buffer descriptor
-    std::vector<u8> ReadBuffer(std::size_t buffer_index = 0) const;
+    [[nodiscard]] std::vector<u8> ReadBuffer(std::size_t buffer_index = 0) const;
 
     /// Helper function to write a buffer using the appropriate buffer descriptor
     std::size_t WriteBuffer(const void* buffer, std::size_t size,
@@ -308,22 +308,34 @@ public:
     }
 
     /// Helper function to get the size of the input buffer
-    std::size_t GetReadBufferSize(std::size_t buffer_index = 0) const;
+    [[nodiscard]] std::size_t GetReadBufferSize(std::size_t buffer_index = 0) const;
 
     /// Helper function to get the size of the output buffer
-    std::size_t GetWriteBufferSize(std::size_t buffer_index = 0) const;
+    [[nodiscard]] std::size_t GetWriteBufferSize(std::size_t buffer_index = 0) const;
+
+    /// Helper function to derive the number of elements able to be contained in the read buffer
+    template <typename T>
+    [[nodiscard]] std::size_t GetReadBufferNumElements(std::size_t buffer_index = 0) const {
+        return GetReadBufferSize(buffer_index) / sizeof(T);
+    }
+
+    /// Helper function to derive the number of elements able to be contained in the write buffer
+    template <typename T>
+    [[nodiscard]] std::size_t GetWriteBufferNumElements(std::size_t buffer_index = 0) const {
+        return GetWriteBufferSize(buffer_index) / sizeof(T);
+    }
 
     /// Helper function to test whether the input buffer at buffer_index can be read
-    bool CanReadBuffer(std::size_t buffer_index = 0) const;
+    [[nodiscard]] bool CanReadBuffer(std::size_t buffer_index = 0) const;
 
     /// Helper function to test whether the output buffer at buffer_index can be written
-    bool CanWriteBuffer(std::size_t buffer_index = 0) const;
+    [[nodiscard]] bool CanWriteBuffer(std::size_t buffer_index = 0) const;
 
-    Handle GetCopyHandle(std::size_t index) const {
+    [[nodiscard]] Handle GetCopyHandle(std::size_t index) const {
         return incoming_copy_handles.at(index);
     }
 
-    Handle GetMoveHandle(std::size_t index) const {
+    [[nodiscard]] Handle GetMoveHandle(std::size_t index) const {
         return incoming_move_handles.at(index);
     }
 
@@ -348,13 +360,13 @@ public:
         manager = manager_;
     }
 
-    std::string Description() const;
+    [[nodiscard]] std::string Description() const;
 
-    KThread& GetThread() {
+    [[nodiscard]] KThread& GetThread() {
         return *thread;
     }
 
-    std::shared_ptr<SessionRequestManager> GetManager() const {
+    [[nodiscard]] std::shared_ptr<SessionRequestManager> GetManager() const {
         return manager.lock();
     }
 

@@ -443,7 +443,7 @@ private:
     }
 
     void Read(Kernel::HLERequestContext& ctx) {
-        auto write_size = ctx.GetWriteBufferSize() / sizeof(DeliveryCacheDirectoryEntry);
+        auto write_size = ctx.GetWriteBufferNumElements<DeliveryCacheDirectoryEntry>();
 
         LOG_DEBUG(Service_BCAT, "called, write_size={:016X}", write_size);
 
@@ -533,7 +533,7 @@ private:
     }
 
     void EnumerateDeliveryCacheDirectory(Kernel::HLERequestContext& ctx) {
-        auto size = ctx.GetWriteBufferSize() / sizeof(DirectoryName);
+        auto size = ctx.GetWriteBufferNumElements<DirectoryName>();
 
         LOG_DEBUG(Service_BCAT, "called, size={:016X}", size);
 
