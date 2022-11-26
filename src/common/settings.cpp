@@ -182,6 +182,7 @@ void RestoreGlobalState(bool is_powered_on) {
     values.cpuopt_unsafe_ignore_global_monitor.SetGlobal(true);
 
     // Renderer
+    values.fsr_sharpening_slider.SetGlobal(true);
     values.renderer_backend.SetGlobal(true);
     values.vulkan_device.SetGlobal(true);
     values.aspect_ratio.SetGlobal(true);

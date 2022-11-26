@@ -66,6 +66,8 @@ ConfigureGraphics::ConfigureGraphics(const Core::System& system_, QWidget* paren
 
     connect(ui->fsr_sharpening_slider, &QSlider::valueChanged, this,
             &ConfigureGraphics::SetFSRIndicatorText);
+    ui->fsr_sharpening_combobox->setVisible(!Settings::IsConfiguringGlobal());
+    ui->fsr_sharpening_label->setVisible(Settings::IsConfiguringGlobal());
 }
 
 void ConfigureGraphics::UpdateDeviceSelection(int device) {
@@ -150,6 +152,15 @@ void ConfigureGraphics::SetConfiguration() {
                                                &Settings::values.anti_aliasing);
         ConfigurationShared::SetHighlight(ui->anti_aliasing_label,
                                           !Settings::values.anti_aliasing.UsingGlobal());
+
+        ui->fsr_sharpening_combobox->setCurrentIndex(
+            Settings::values.fsr_sharpening_slider.UsingGlobal() ? 0 : 1);
+        ui->fsr_sharpening_slider->setEnabled(
+            !Settings::values.fsr_sharpening_slider.UsingGlobal());
+        ui->fsr_sharpening_value->setEnabled(!Settings::values.fsr_sharpening_slider.UsingGlobal());
+        ConfigurationShared::SetHighlight(ui->fsr_sharpening_layout,
+                                          !Settings::values.fsr_sharpening_slider.UsingGlobal());
+        ui->fsr_sharpening_slider->setValue(Settings::values.fsr_sharpening_slider.GetValue());
 
         ui->bg_combobox->setCurrentIndex(Settings::values.bg_red.UsingGlobal() ? 0 : 1);
         ui->bg_button->setEnabled(!Settings::values.bg_red.UsingGlobal());
@@ -280,6 +291,13 @@ void ConfigureGraphics::ApplyConfiguration() {
             Settings::values.bg_green.SetValue(static_cast<u8>(bg_color.green()));
             Settings::values.bg_blue.SetValue(static_cast<u8>(bg_color.blue()));
         }
+
+        if (ui->fsr_sharpening_combobox->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
+            Settings::values.fsr_sharpening_slider.SetGlobal(true);
+        } else {
+            Settings::values.fsr_sharpening_slider.SetGlobal(false);
+            Settings::values.fsr_sharpening_slider.SetValue(ui->fsr_sharpening_slider->value());
+        }
     }
 }
 
@@ -399,6 +417,7 @@ void ConfigureGraphics::SetupPerGameUI() {
         ui->accelerate_astc->setEnabled(Settings::values.accelerate_astc.UsingGlobal());
         ui->use_disk_shader_cache->setEnabled(Settings::values.use_disk_shader_cache.UsingGlobal());
         ui->bg_button->setEnabled(Settings::values.bg_red.UsingGlobal());
+        ui->fsr_slider_layout->setEnabled(Settings::values.fsr_sharpening_slider.UsingGlobal());
 
         return;
     }
@@ -407,6 +426,13 @@ void ConfigureGraphics::SetupPerGameUI() {
         ui->bg_button->setEnabled(index == 1);
         ConfigurationShared::SetHighlight(ui->bg_layout, index == 1);
     });
+
+    connect(ui->fsr_sharpening_combobox, qOverload<int>(&QComboBox::activated), this,
+            [this](int index) {
+                ui->fsr_sharpening_slider->setEnabled(index == 1);
+                ui->fsr_sharpening_value->setEnabled(index == 1);
+                ConfigurationShared::SetHighlight(ui->fsr_sharpening_layout, index == 1);
+            });
 
     ConfigurationShared::SetColoredTristate(
         ui->use_disk_shader_cache, Settings::values.use_disk_shader_cache, use_disk_shader_cache);
