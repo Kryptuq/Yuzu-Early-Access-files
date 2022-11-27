@@ -6,16 +6,22 @@
 namespace DefaultINI {
 
 const char* sdl2_config_file = R"(
-[ControlsGeneral]
+
+[ControlsP0]
 # The input devices and parameters for each Switch native input
+# The config section determines the player number where the config will be applied on. For example "ControlsP0", "ControlsP1", ...
 # It should be in the format of "engine:[engine_name],[param1]:[value1],[param2]:[value2]..."
 # Escape characters $0 (for ':'), $1 (for ',') and $2 (for '$') can be used in values
+
+# Indicates if this player should be connected at boot
+connected=
 
 # for button input, the following devices are available:
 #  - "keyboard" (default) for keyboard input. Required parameters:
 #      - "code": the code of the key to bind
 #  - "sdl" for joystick input using SDL. Required parameters:
-#      - "joystick": the index of the joystick to bind
+#      - "guid": SDL identification GUID of the joystick
+#      - "port": the index of the joystick to bind
 #      - "button"(optional): the index of the button to bind
 #      - "hat"(optional): the index of the hat to bind as direction buttons
 #      - "axis"(optional): the index of the axis to bind
@@ -58,12 +64,29 @@ button_screenshot=
 #      - "modifier_scale": a float number representing the applied modifier scale to the analog input.
 #          Must be in range of 0.0-1.0. Defaults to 0.5
 #  - "sdl" for joystick input using SDL. Required parameters:
-#      - "joystick": the index of the joystick to bind
+#      - "guid": SDL identification GUID of the joystick
+#      - "port": the index of the joystick to bind
 #      - "axis_x": the index of the axis to bind as x-axis (default to 0)
 #      - "axis_y": the index of the axis to bind as y-axis (default to 1)
 lstick=
 rstick=
 
+# for motion input, the following devices are available:
+#  - "keyboard" (default) for emulating random motion input from buttons. Required parameters:
+#      - "code": the code of the key to bind
+#  - "sdl" for motion input using SDL. Required parameters:
+#      - "guid": SDL identification GUID of the joystick
+#      - "port": the index of the joystick to bind
+#      - "motion": the index of the motion sensor to bind
+#  - "cemuhookudp" for motion input using Cemu Hook protocol. Required parameters:
+#      - "guid": the IP address of the cemu hook server encoded to a hex string. for example 192.168.0.1 = "c0a80001"
+#      - "port": the port of the cemu hook server
+#      - "pad": the index of the joystick
+#      - "motion": the index of the motion sensor of the joystick to bind
+motionleft=
+motionright=
+
+[ControlsGeneral]
 # To use the debug_pad, prepend `debug_pad_` before each button setting above.
 # i.e. debug_pad_button_a=
 

@@ -361,6 +361,12 @@ void SDLDriver::CloseJoystick(SDL_Joystick* sdl_joystick) {
     }
 }
 
+void SDLDriver::PumpEvents() const {
+    if (initialized) {
+        SDL_PumpEvents();
+    }
+}
+
 void SDLDriver::HandleGameControllerEvent(const SDL_Event& event) {
     switch (event.type) {
     case SDL_JOYBUTTONUP: {
@@ -451,14 +457,6 @@ SDLDriver::SDLDriver(std::string input_engine_) : InputEngine(std::move(input_en
 
     initialized = true;
     if (start_thread) {
-        poll_thread = std::thread([this] {
-            Common::SetCurrentThreadName("SDL_MainLoop");
-            using namespace std::chrono_literals;
-            while (initialized) {
-                SDL_PumpEvents();
-                std::this_thread::sleep_for(1ms);
-            }
-        });
         vibration_thread = std::thread([this] {
             Common::SetCurrentThreadName("SDL_Vibration");
             using namespace std::chrono_literals;
@@ -481,7 +479,6 @@ SDLDriver::~SDLDriver() {
 
     initialized = false;
     if (start_thread) {
-        poll_thread.join();
         vibration_thread.join();
         SDL_QuitSubSystem(SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER);
     }

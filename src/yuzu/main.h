@@ -353,6 +353,7 @@ private:
     void UpdateGPUAccuracyButton();
     void UpdateStatusButtons();
     void UpdateUISettings();
+    void UpdateInputDrivers();
     void HideMouseCursor();
     void ShowMouseCursor();
     void CenterMouseCursor();
@@ -404,6 +405,7 @@ private:
     bool auto_muted = false;
     QTimer mouse_hide_timer;
     QTimer mouse_center_timer;
+    QTimer update_input_timer;
 
     QString startup_icon_theme;
     bool os_dark_mode = false;

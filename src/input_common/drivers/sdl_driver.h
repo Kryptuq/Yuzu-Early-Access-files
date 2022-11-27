@@ -36,6 +36,8 @@ public:
     /// Unregisters SDL device factories and shut them down.
     ~SDLDriver() override;
 
+    void PumpEvents() const;
+
     /// Handle SDL_Events for joysticks from SDL_PollEvent
     void HandleGameControllerEvent(const SDL_Event& event);
 
@@ -128,7 +130,6 @@ private:
     bool start_thread = false;
     std::atomic<bool> initialized = false;
 
-    std::thread poll_thread;
     std::thread vibration_thread;
 };
 } // namespace InputCommon

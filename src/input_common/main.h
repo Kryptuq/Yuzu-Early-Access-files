@@ -147,6 +147,9 @@ public:
     /// Stop polling from all backends.
     void StopMapping() const;
 
+    /// Signals SDL driver for new input events
+    void PumpEvents() const;
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl;

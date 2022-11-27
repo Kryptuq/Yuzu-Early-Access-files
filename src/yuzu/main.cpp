@@ -168,6 +168,7 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 
 constexpr int default_mouse_hide_timeout = 2500;
 constexpr int default_mouse_center_timeout = 10;
+constexpr int default_input_update_timeout = 1;
 
 /**
  * "Callouts" are one-time instructional messages shown to the user. In the config settings, there
@@ -405,6 +406,10 @@ GMainWindow::GMainWindow(std::unique_ptr<Config> config_, bool has_broken_vulkan
 
     mouse_center_timer.setInterval(default_mouse_center_timeout);
     connect(&mouse_center_timer, &QTimer::timeout, this, &GMainWindow::CenterMouseCursor);
+
+    update_input_timer.setInterval(default_input_update_timeout);
+    connect(&update_input_timer, &QTimer::timeout, this, &GMainWindow::UpdateInputDrivers);
+    update_input_timer.start();
 
     MigrateConfigFiles();
 
@@ -3644,6 +3649,13 @@ void GMainWindow::UpdateUISettings() {
     UISettings::values.show_filter_bar = ui->action_Show_Filter_Bar->isChecked();
     UISettings::values.show_status_bar = ui->action_Show_Status_Bar->isChecked();
     UISettings::values.first_start = false;
+}
+
+void GMainWindow::UpdateInputDrivers() {
+    if (!input_subsystem) {
+        return;
+    }
+    input_subsystem->PumpEvents();
 }
 
 void GMainWindow::HideMouseCursor() {
