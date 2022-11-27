@@ -189,7 +189,7 @@ struct System::Impl {
 
         kernel.Suspend(false);
         core_timing.SyncPause(false);
-        is_paused = false;
+        is_paused.store(false, std::memory_order_relaxed);
 
         return status;
     }
@@ -200,14 +200,13 @@ struct System::Impl {
 
         core_timing.SyncPause(true);
         kernel.Suspend(true);
-        is_paused = true;
+        is_paused.store(true, std::memory_order_relaxed);
 
         return status;
     }
 
     bool IsPaused() const {
-        std::unique_lock lk(suspend_guard);
-        return is_paused;
+        return is_paused.load(std::memory_order_relaxed);
     }
 
     std::unique_lock<std::mutex> StallProcesses() {
@@ -218,7 +217,7 @@ struct System::Impl {
     }
 
     void UnstallProcesses() {
-        if (!is_paused) {
+        if (!IsPaused()) {
             core_timing.SyncPause(false);
             kernel.Suspend(false);
         }
@@ -465,7 +464,7 @@ struct System::Impl {
     }
 
     mutable std::mutex suspend_guard;
-    bool is_paused{};
+    std::atomic_bool is_paused{};
     std::atomic<bool> is_shutting_down{};
 
     Timing::CoreTiming core_timing;

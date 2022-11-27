@@ -145,6 +145,7 @@ void EmulatedDevices::UnloadInput() {
     for (auto& button : keyboard_modifier_devices) {
         button.reset();
     }
+    ring_analog_device.reset();
 }
 
 void EmulatedDevices::EnableConfiguration() {

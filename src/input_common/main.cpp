@@ -138,6 +138,16 @@ struct InputSubsystem::Impl {
         Common::Input::UnregisterFactory<Common::Input::OutputDevice>(tas_input->GetEngineName());
         tas_input.reset();
 
+        Common::Input::UnregisterFactory<Common::Input::InputDevice>(camera->GetEngineName());
+        Common::Input::UnregisterFactory<Common::Input::OutputDevice>(camera->GetEngineName());
+        camera.reset();
+
+        Common::Input::UnregisterFactory<Common::Input::InputDevice>(
+            virtual_amiibo->GetEngineName());
+        Common::Input::UnregisterFactory<Common::Input::OutputDevice>(
+            virtual_amiibo->GetEngineName());
+        virtual_amiibo.reset();
+
 #ifdef HAVE_SDL2
         Common::Input::UnregisterFactory<Common::Input::InputDevice>(sdl->GetEngineName());
         Common::Input::UnregisterFactory<Common::Input::OutputDevice>(sdl->GetEngineName());

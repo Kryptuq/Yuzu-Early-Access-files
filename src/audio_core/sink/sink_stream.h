@@ -6,6 +6,7 @@
 #include <array>
 #include <atomic>
 #include <memory>
+#include <mutex>
 #include <span>
 #include <vector>
 
@@ -209,6 +210,11 @@ public:
      */
     void Unstall();
 
+private:
+    [[nodiscard]] bool IsStalled() const {
+        return stalled_lock.owns_lock();
+    }
+
 protected:
     /// Core system
     Core::System& system;
@@ -241,7 +247,7 @@ private:
     /// Set via IAudioDevice service calls
     f32 device_volume{1.0f};
     /// True if coretiming has been stalled
-    bool stalled{false};
+    std::unique_lock<std::mutex> stalled_lock;
 };
 
 using SinkStreamPtr = std::unique_ptr<SinkStream>;

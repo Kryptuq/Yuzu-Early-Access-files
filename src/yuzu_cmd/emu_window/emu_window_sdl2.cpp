@@ -7,6 +7,7 @@
 #include "common/scm_rev.h"
 #include "common/settings.h"
 #include "core/core.h"
+#include "core/hid/hid_core.h"
 #include "core/perf_stats.h"
 #include "input_common/drivers/keyboard.h"
 #include "input_common/drivers/mouse.h"
@@ -26,6 +27,7 @@ EmuWindow_SDL2::EmuWindow_SDL2(InputCommon::InputSubsystem* input_subsystem_, Co
 }
 
 EmuWindow_SDL2::~EmuWindow_SDL2() {
+    system.HIDCore().UnloadInputDevices();
     input_subsystem->Shutdown();
     SDL_Quit();
 }

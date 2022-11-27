@@ -4,16 +4,19 @@
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
 #ifdef _WIN32
-#include <cstring> // for memset, strncpy
+#include <cstring>
 #include <processthreadsapi.h>
 #include <windows.h>
 #elif defined(YUZU_UNIX)
+#include <cstring>
 #include <errno.h>
+#include <spawn.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #endif
 
-#include <cstdio>
+#include <fmt/core.h>
 #include "video_core/vulkan_common/vulkan_instance.h"
 #include "video_core/vulkan_common/vulkan_library.h"
 #include "yuzu/startup_checks.h"
@@ -27,7 +30,7 @@ void CheckVulkan() {
             Vulkan::CreateInstance(library, dld, VK_API_VERSION_1_0);
 
     } catch (const Vulkan::vk::Exception& exception) {
-        std::fprintf(stderr, "Failed to initialize Vulkan: %s\n", exception.what());
+        fmt::print(stderr, "Failed to initialize Vulkan: {}\n", exception.what());
     }
 }
 
@@ -49,8 +52,15 @@ bool CheckEnvVars(bool* is_child) {
         *is_child = true;
         return false;
     } else if (!SetEnvironmentVariableA(IS_CHILD_ENV_VAR, ENV_VAR_ENABLED_TEXT)) {
-        std::fprintf(stderr, "SetEnvironmentVariableA failed to set %s with error %lu\n",
-                     IS_CHILD_ENV_VAR, GetLastError());
+        fmt::print(stderr, "SetEnvironmentVariableA failed to set {} with error {}\n",
+                   IS_CHILD_ENV_VAR, GetLastError());
+        return true;
+    }
+#elif defined(YUZU_UNIX)
+    const char* startup_check_var = getenv(STARTUP_CHECK_ENV_VAR);
+    if (startup_check_var != nullptr &&
+        std::strncmp(startup_check_var, ENV_VAR_ENABLED_TEXT, 8) == 0) {
+        CheckVulkan();
         return true;
     }
 #endif
@@ -62,8 +72,8 @@ bool StartupChecks(const char* arg0, bool* has_broken_vulkan, bool perform_vulka
     // Set the startup variable for child processes
     const bool env_var_set = SetEnvironmentVariableA(STARTUP_CHECK_ENV_VAR, ENV_VAR_ENABLED_TEXT);
     if (!env_var_set) {
-        std::fprintf(stderr, "SetEnvironmentVariableA failed to set %s with error %lu\n",
-                     STARTUP_CHECK_ENV_VAR, GetLastError());
+        fmt::print(stderr, "SetEnvironmentVariableA failed to set {} with error {}\n",
+                   STARTUP_CHECK_ENV_VAR, GetLastError());
         return false;
     }
 
@@ -81,47 +91,56 @@ bool StartupChecks(const char* arg0, bool* has_broken_vulkan, bool perform_vulka
         DWORD exit_code = STILL_ACTIVE;
         const int err = GetExitCodeProcess(process_info.hProcess, &exit_code);
         if (err == 0) {
-            std::fprintf(stderr, "GetExitCodeProcess failed with error %lu\n", GetLastError());
+            fmt::print(stderr, "GetExitCodeProcess failed with error {}\n", GetLastError());
         }
 
         // Vulkan is broken if the child crashed (return value is not zero)
         *has_broken_vulkan = (exit_code != 0);
 
         if (CloseHandle(process_info.hProcess) == 0) {
-            std::fprintf(stderr, "CloseHandle failed with error %lu\n", GetLastError());
+            fmt::print(stderr, "CloseHandle failed with error {}\n", GetLastError());
         }
         if (CloseHandle(process_info.hThread) == 0) {
-            std::fprintf(stderr, "CloseHandle failed with error %lu\n", GetLastError());
+            fmt::print(stderr, "CloseHandle failed with error {}\n", GetLastError());
         }
     }
 
     if (!SetEnvironmentVariableA(STARTUP_CHECK_ENV_VAR, nullptr)) {
-        std::fprintf(stderr, "SetEnvironmentVariableA failed to clear %s with error %lu\n",
-                     STARTUP_CHECK_ENV_VAR, GetLastError());
+        fmt::print(stderr, "SetEnvironmentVariableA failed to clear {} with error {}\n",
+                   STARTUP_CHECK_ENV_VAR, GetLastError());
     }
 
 #elif defined(YUZU_UNIX)
+    const int env_var_set = setenv(STARTUP_CHECK_ENV_VAR, ENV_VAR_ENABLED_TEXT, 1);
+    if (env_var_set == -1) {
+        const int err = errno;
+        fmt::print(stderr, "setenv failed to set {} with error {}\n", STARTUP_CHECK_ENV_VAR, err);
+        return false;
+    }
+
     if (perform_vulkan_check) {
-        const pid_t pid = fork();
-        if (pid == 0) {
-            CheckVulkan();
-            return true;
-        } else if (pid == -1) {
-            const int err = errno;
-            std::fprintf(stderr, "fork failed with error %d\n", err);
+        const pid_t pid = SpawnChild(arg0);
+        if (pid == -1) {
             return false;
         }
 
         // Get exit code from child process
         int status;
-        const int r_val = wait(&status);
+        const int r_val = waitpid(pid, &status, 0);
         if (r_val == -1) {
             const int err = errno;
-            std::fprintf(stderr, "wait failed with error %d\n", err);
+            fmt::print(stderr, "wait failed with error {}\n", err);
             return false;
         }
         // Vulkan is broken if the child crashed (return value is not zero)
         *has_broken_vulkan = (status != 0);
+    }
+
+    const int env_var_cleared = unsetenv(STARTUP_CHECK_ENV_VAR);
+    if (env_var_cleared == -1) {
+        const int err = errno;
+        fmt::print(stderr, "unsetenv failed to clear {} with error {}\n", STARTUP_CHECK_ENV_VAR,
+                   err);
     }
 #endif
     return false;
@@ -150,10 +169,29 @@ bool SpawnChild(const char* arg0, PROCESS_INFORMATION* pi, int flags) {
                                                 pi             // lpProcessInformation
     );
     if (!process_created) {
-        std::fprintf(stderr, "CreateProcessA failed with error %lu\n", GetLastError());
+        fmt::print(stderr, "CreateProcessA failed with error {}\n", GetLastError());
         return false;
     }
 
     return true;
+}
+#elif defined(YUZU_UNIX)
+pid_t SpawnChild(const char* arg0) {
+    const pid_t pid = fork();
+
+    if (pid == -1) {
+        // error
+        const int err = errno;
+        fmt::print(stderr, "fork failed with error {}\n", err);
+        return pid;
+    } else if (pid == 0) {
+        // child
+        execl(arg0, arg0, nullptr);
+        const int err = errno;
+        fmt::print(stderr, "execl failed with error {}\n", err);
+        _exit(0);
+    }
+
+    return pid;
 }
 #endif

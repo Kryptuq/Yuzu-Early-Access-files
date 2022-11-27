@@ -266,19 +266,18 @@ void SinkStream::ProcessAudioOutAndRender(std::span<s16> output_buffer, std::siz
 }
 
 void SinkStream::Stall() {
-    if (stalled) {
+    if (IsStalled()) {
         return;
     }
-    stalled = true;
-    system.StallProcesses();
+    stalled_lock = system.StallProcesses();
 }
 
 void SinkStream::Unstall() {
-    if (!stalled) {
+    if (!IsStalled()) {
         return;
     }
     system.UnstallProcesses();
-    stalled = false;
+    stalled_lock.unlock();
 }
 
 } // namespace AudioCore::Sink
