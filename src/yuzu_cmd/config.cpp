@@ -90,7 +90,11 @@ static const std::array<std::array<int, 5>, Settings::NativeAnalog::NumAnalogs> 
 
 template <>
 void Config::ReadSetting(const std::string& group, Settings::Setting<std::string>& setting) {
-    setting = sdl2_config->Get(group, setting.GetLabel(), setting.GetDefault());
+    std::string setting_value = sdl2_config->Get(group, setting.GetLabel(), setting.GetDefault());
+    if (setting_value.empty()) {
+        setting_value = setting.GetDefault();
+    }
+    setting = std::move(setting_value);
 }
 
 template <>
