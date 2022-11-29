@@ -384,6 +384,16 @@ void RegisterFactory(const std::string& name, std::shared_ptr<Factory<InputDevic
     }
 }
 
+inline void RegisterInputFactory(const std::string& name,
+                                 std::shared_ptr<Factory<InputDevice>> factory) {
+    RegisterFactory<InputDevice>(name, std::move(factory));
+}
+
+inline void RegisterOutputFactory(const std::string& name,
+                                  std::shared_ptr<Factory<OutputDevice>> factory) {
+    RegisterFactory<OutputDevice>(name, std::move(factory));
+}
+
 /**
  * Unregisters an input device factory.
  * @tparam InputDeviceType the type of input devices the factory can create
@@ -394,6 +404,14 @@ void UnregisterFactory(const std::string& name) {
     if (Impl::FactoryList<InputDeviceType>::list.erase(name) == 0) {
         LOG_ERROR(Input, "Factory '{}' not registered", name);
     }
+}
+
+inline void UnregisterInputFactory(const std::string& name) {
+    UnregisterFactory<InputDevice>(name);
+}
+
+inline void UnregisterOutputFactory(const std::string& name) {
+    UnregisterFactory<OutputDevice>(name);
 }
 
 /**
@@ -417,13 +435,21 @@ std::unique_ptr<InputDeviceType> CreateDeviceFromString(const std::string& param
     return pair->second->Create(package);
 }
 
+inline std::unique_ptr<InputDevice> CreateInputDeviceFromString(const std::string& params) {
+    return CreateDeviceFromString<InputDevice>(params);
+}
+
+inline std::unique_ptr<OutputDevice> CreateOutputDeviceFromString(const std::string& params) {
+    return CreateDeviceFromString<OutputDevice>(params);
+}
+
 /**
- * Create an input device from given paramters.
+ * Create an input device from given parameters.
  * @tparam InputDeviceType the type of input devices to create
- * @param A ParamPackage that contains all parameters for creating the device
+ * @param package A ParamPackage that contains all parameters for creating the device
  */
 template <typename InputDeviceType>
-std::unique_ptr<InputDeviceType> CreateDevice(const Common::ParamPackage package) {
+std::unique_ptr<InputDeviceType> CreateDevice(const ParamPackage& package) {
     const std::string engine = package.Get("engine", "null");
     const auto& factory_list = Impl::FactoryList<InputDeviceType>::list;
     const auto pair = factory_list.find(engine);
@@ -434,6 +460,14 @@ std::unique_ptr<InputDeviceType> CreateDevice(const Common::ParamPackage package
         return std::make_unique<InputDeviceType>();
     }
     return pair->second->Create(package);
+}
+
+inline std::unique_ptr<InputDevice> CreateInputDevice(const ParamPackage& package) {
+    return CreateDevice<InputDevice>(package);
+}
+
+inline std::unique_ptr<OutputDevice> CreateOutputDevice(const ParamPackage& package) {
+    return CreateDevice<OutputDevice>(package);
 }
 
 } // namespace Common::Input

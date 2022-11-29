@@ -68,7 +68,7 @@ void EmulatedConsole::ReloadInput() {
     // If you load any device here add the equivalent to the UnloadInput() function
     SetTouchParams();
 
-    motion_devices = Common::Input::CreateDevice<Common::Input::InputDevice>(motion_params);
+    motion_devices = Common::Input::CreateInputDevice(motion_params);
     if (motion_devices) {
         motion_devices->SetCallback({
             .on_change =
@@ -79,7 +79,7 @@ void EmulatedConsole::ReloadInput() {
     // Unique index for identifying touch device source
     std::size_t index = 0;
     for (auto& touch_device : touch_devices) {
-        touch_device = Common::Input::CreateDevice<Common::Input::InputDevice>(touch_params[index]);
+        touch_device = Common::Input::CreateInputDevice(touch_params[index]);
         if (!touch_device) {
             continue;
         }

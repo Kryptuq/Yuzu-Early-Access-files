@@ -27,18 +27,18 @@ public:
 
 protected:
     explicit ConsumerBase(std::unique_ptr<BufferQueueConsumer> consumer_);
-    virtual ~ConsumerBase();
+    ~ConsumerBase() override;
 
-    virtual void OnFrameAvailable(const BufferItem& item) override;
-    virtual void OnFrameReplaced(const BufferItem& item) override;
-    virtual void OnBuffersReleased() override;
-    virtual void OnSidebandStreamChanged() override;
+    void OnFrameAvailable(const BufferItem& item) override;
+    void OnFrameReplaced(const BufferItem& item) override;
+    void OnBuffersReleased() override;
+    void OnSidebandStreamChanged() override;
 
     void FreeBufferLocked(s32 slot_index);
     Status AcquireBufferLocked(BufferItem* item, std::chrono::nanoseconds present_when);
-    Status ReleaseBufferLocked(s32 slot, const std::shared_ptr<GraphicBuffer> graphic_buffer);
-    bool StillTracking(s32 slot, const std::shared_ptr<GraphicBuffer> graphic_buffer) const;
-    Status AddReleaseFenceLocked(s32 slot, const std::shared_ptr<GraphicBuffer> graphic_buffer,
+    Status ReleaseBufferLocked(s32 slot, const std::shared_ptr<GraphicBuffer>& graphic_buffer);
+    bool StillTracking(s32 slot, const std::shared_ptr<GraphicBuffer>& graphic_buffer) const;
+    Status AddReleaseFenceLocked(s32 slot, const std::shared_ptr<GraphicBuffer>& graphic_buffer,
                                  const Fence& fence);
 
     struct Slot final {

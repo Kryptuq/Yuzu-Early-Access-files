@@ -25,12 +25,12 @@ void EmulatedDevices::ReloadInput() {
         Common::ParamPackage mouse_params;
         mouse_params.Set("engine", "mouse");
         mouse_params.Set("button", static_cast<int>(key_index));
-        mouse_device = Common::Input::CreateDevice<Common::Input::InputDevice>(mouse_params);
+        mouse_device = Common::Input::CreateInputDevice(mouse_params);
         key_index++;
     }
 
-    mouse_stick_device = Common::Input::CreateDeviceFromString<Common::Input::InputDevice>(
-        "engine:mouse,axis_x:0,axis_y:1");
+    mouse_stick_device =
+        Common::Input::CreateInputDeviceFromString("engine:mouse,axis_x:0,axis_y:1");
 
     // First two axis are reserved for mouse position
     key_index = 2;
@@ -38,7 +38,7 @@ void EmulatedDevices::ReloadInput() {
         Common::ParamPackage mouse_params;
         mouse_params.Set("engine", "mouse");
         mouse_params.Set("axis", static_cast<int>(key_index));
-        mouse_device = Common::Input::CreateDevice<Common::Input::InputDevice>(mouse_params);
+        mouse_device = Common::Input::CreateInputDevice(mouse_params);
         key_index++;
     }
 
@@ -50,7 +50,7 @@ void EmulatedDevices::ReloadInput() {
         keyboard_params.Set("button", static_cast<int>(key_index));
         keyboard_params.Set("port", 1);
         keyboard_params.Set("pad", 0);
-        keyboard_device = Common::Input::CreateDevice<Common::Input::InputDevice>(keyboard_params);
+        keyboard_device = Common::Input::CreateInputDevice(keyboard_params);
         key_index++;
     }
 
@@ -62,11 +62,11 @@ void EmulatedDevices::ReloadInput() {
         keyboard_params.Set("button", static_cast<int>(key_index));
         keyboard_params.Set("port", 1);
         keyboard_params.Set("pad", 1);
-        keyboard_device = Common::Input::CreateDevice<Common::Input::InputDevice>(keyboard_params);
+        keyboard_device = Common::Input::CreateInputDevice(keyboard_params);
         key_index++;
     }
 
-    ring_analog_device = Common::Input::CreateDevice<Common::Input::InputDevice>(ring_params);
+    ring_analog_device = Common::Input::CreateInputDevice(ring_params);
 
     for (std::size_t index = 0; index < mouse_button_devices.size(); ++index) {
         if (!mouse_button_devices[index]) {

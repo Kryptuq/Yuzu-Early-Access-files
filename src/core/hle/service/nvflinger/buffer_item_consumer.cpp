@@ -39,7 +39,7 @@ Status BufferItemConsumer::AcquireBuffer(BufferItem* item, std::chrono::nanoseco
     return Status::NoError;
 }
 
-Status BufferItemConsumer::ReleaseBuffer(const BufferItem& item, Fence& release_fence) {
+Status BufferItemConsumer::ReleaseBuffer(const BufferItem& item, const Fence& release_fence) {
     std::scoped_lock lock{mutex};
 
     if (const auto status = AddReleaseFenceLocked(item.buf, item.graphic_buffer, release_fence);

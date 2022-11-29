@@ -307,8 +307,7 @@ void NVFlinger::Compose() {
 
         swap_interval = buffer.swap_interval;
 
-        auto fence = android::Fence::NoFence();
-        layer.GetConsumer().ReleaseBuffer(buffer, fence);
+        layer.GetConsumer().ReleaseBuffer(buffer, android::Fence::NoFence());
     }
 }
 

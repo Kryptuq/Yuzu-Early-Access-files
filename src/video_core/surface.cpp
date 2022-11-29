@@ -214,23 +214,16 @@ PixelFormat PixelFormatFromGPUPixelFormat(Service::android::PixelFormat format) 
 }
 
 SurfaceType GetFormatType(PixelFormat pixel_format) {
-    if (static_cast<std::size_t>(pixel_format) <
-        static_cast<std::size_t>(PixelFormat::MaxColorFormat)) {
+    if (pixel_format < PixelFormat::MaxColorFormat) {
         return SurfaceType::ColorTexture;
     }
-
-    if (static_cast<std::size_t>(pixel_format) <
-        static_cast<std::size_t>(PixelFormat::MaxDepthFormat)) {
+    if (pixel_format < PixelFormat::MaxDepthFormat) {
         return SurfaceType::Depth;
     }
-
-    if (static_cast<std::size_t>(pixel_format) <
-        static_cast<std::size_t>(PixelFormat::MaxStencilFormat)) {
+    if (pixel_format < PixelFormat::MaxStencilFormat) {
         return SurfaceType::Stencil;
     }
-
-    if (static_cast<std::size_t>(pixel_format) <
-        static_cast<std::size_t>(PixelFormat::MaxDepthStencilFormat)) {
+    if (pixel_format < PixelFormat::MaxDepthStencilFormat) {
         return SurfaceType::DepthStencil;
     }
 

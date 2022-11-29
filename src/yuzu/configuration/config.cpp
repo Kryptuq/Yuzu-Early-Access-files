@@ -1048,22 +1048,19 @@ void Config::SaveMotionTouchValues() {
     WriteBasicSetting(Settings::values.udp_input_servers);
     WriteBasicSetting(Settings::values.enable_udp_controller);
 
-    if (Settings::values.touch_from_button_maps.empty()) {
-        return;
-    }
     qt_config->beginWriteArray(QStringLiteral("touch_from_button_maps"));
     for (std::size_t p = 0; p < Settings::values.touch_from_button_maps.size(); ++p) {
-        const auto& map = Settings::values.touch_from_button_maps[p];
-        if (map.buttons.empty()) {
-            continue;
-        }
         qt_config->setArrayIndex(static_cast<int>(p));
-        WriteSetting(QStringLiteral("name"), QString::fromStdString(map.name),
+        WriteSetting(QStringLiteral("name"),
+                     QString::fromStdString(Settings::values.touch_from_button_maps[p].name),
                      QStringLiteral("default"));
         qt_config->beginWriteArray(QStringLiteral("entries"));
-        for (std::size_t q = 0; q < map.buttons.size(); ++q) {
+        for (std::size_t q = 0; q < Settings::values.touch_from_button_maps[p].buttons.size();
+             ++q) {
             qt_config->setArrayIndex(static_cast<int>(q));
-            WriteSetting(QStringLiteral("bind"), QString::fromStdString(map.buttons[q]));
+            WriteSetting(
+                QStringLiteral("bind"),
+                QString::fromStdString(Settings::values.touch_from_button_maps[p].buttons[q]));
         }
         qt_config->endArray();
     }

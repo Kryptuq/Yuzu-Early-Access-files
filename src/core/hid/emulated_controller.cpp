@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
+
 #include "common/thread.h"
 #include "core/hid/emulated_controller.h"
 #include "core/hid/input_converter.h"
@@ -143,29 +145,23 @@ void EmulatedController::LoadDevices() {
 
     LoadTASParams();
 
-    std::transform(button_params.begin() + Settings::NativeButton::BUTTON_HID_BEGIN,
-                   button_params.begin() + Settings::NativeButton::BUTTON_NS_END,
-                   button_devices.begin(), Common::Input::CreateDevice<Common::Input::InputDevice>);
-    std::transform(stick_params.begin() + Settings::NativeAnalog::STICK_HID_BEGIN,
-                   stick_params.begin() + Settings::NativeAnalog::STICK_HID_END,
-                   stick_devices.begin(), Common::Input::CreateDevice<Common::Input::InputDevice>);
-    std::transform(motion_params.begin() + Settings::NativeMotion::MOTION_HID_BEGIN,
-                   motion_params.begin() + Settings::NativeMotion::MOTION_HID_END,
-                   motion_devices.begin(), Common::Input::CreateDevice<Common::Input::InputDevice>);
-    std::transform(trigger_params.begin(), trigger_params.end(), trigger_devices.begin(),
-                   Common::Input::CreateDevice<Common::Input::InputDevice>);
-    std::transform(battery_params.begin(), battery_params.end(), battery_devices.begin(),
-                   Common::Input::CreateDevice<Common::Input::InputDevice>);
-    camera_devices = Common::Input::CreateDevice<Common::Input::InputDevice>(camera_params);
-    nfc_devices = Common::Input::CreateDevice<Common::Input::InputDevice>(nfc_params);
-    std::transform(output_params.begin(), output_params.end(), output_devices.begin(),
-                   Common::Input::CreateDevice<Common::Input::OutputDevice>);
+    std::ranges::transform(button_params, button_devices.begin(), Common::Input::CreateInputDevice);
+    std::ranges::transform(stick_params, stick_devices.begin(), Common::Input::CreateInputDevice);
+    std::ranges::transform(motion_params, motion_devices.begin(), Common::Input::CreateInputDevice);
+    std::ranges::transform(trigger_params, trigger_devices.begin(),
+                           Common::Input::CreateInputDevice);
+    std::ranges::transform(battery_params, battery_devices.begin(),
+                           Common::Input::CreateInputDevice);
+    camera_devices = Common::Input::CreateInputDevice(camera_params);
+    nfc_devices = Common::Input::CreateInputDevice(nfc_params);
+    std::ranges::transform(output_params, output_devices.begin(),
+                           Common::Input::CreateOutputDevice);
 
     // Initialize TAS devices
-    std::transform(tas_button_params.begin(), tas_button_params.end(), tas_button_devices.begin(),
-                   Common::Input::CreateDevice<Common::Input::InputDevice>);
-    std::transform(tas_stick_params.begin(), tas_stick_params.end(), tas_stick_devices.begin(),
-                   Common::Input::CreateDevice<Common::Input::InputDevice>);
+    std::ranges::transform(tas_button_params, tas_button_devices.begin(),
+                           Common::Input::CreateInputDevice);
+    std::ranges::transform(tas_stick_params, tas_stick_devices.begin(),
+                           Common::Input::CreateInputDevice);
 }
 
 void EmulatedController::LoadTASParams() {

@@ -1,11 +1,10 @@
 // SPDX-FileCopyrightText: Copyright 2022 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <cstdint>
 #include <cstring>
 
-#include "alignment.h"
-#include "cache_management.h"
-#include "common_types.h"
+#include "common/cache_management.h"
 
 namespace Common {
 

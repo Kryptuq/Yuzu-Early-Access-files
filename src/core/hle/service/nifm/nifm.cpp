@@ -129,6 +129,9 @@ static_assert(sizeof(NifmNetworkProfileData) == 0x18E,
               "NifmNetworkProfileData has incorrect size.");
 #pragma pack(pop)
 
+constexpr Result ResultPendingConnection{ErrorModule::NIFM, 111};
+constexpr Result ResultNetworkCommunicationDisabled{ErrorModule::NIFM, 1111};
+
 class IScanRequest final : public ServiceFramework<IScanRequest> {
 public:
     explicit IScanRequest(Core::System& system_) : ServiceFramework{system_, "IScanRequest"} {
@@ -192,6 +195,10 @@ private:
     void Submit(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
+        if (state == RequestState::NotSubmitted) {
+            UpdateState(RequestState::Pending);
+        }
+
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
@@ -201,19 +208,32 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
-
-        if (Network::GetHostIPv4Address().has_value()) {
-            rb.PushEnum(RequestState::Connected);
-        } else {
-            rb.PushEnum(RequestState::NotSubmitted);
-        }
+        rb.PushEnum(state);
     }
 
     void GetResult(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
+        const auto result = [this] {
+            const auto has_connection = Network::GetHostIPv4Address().has_value();
+            switch (state) {
+            case RequestState::NotSubmitted:
+                return has_connection ? ResultSuccess : ResultNetworkCommunicationDisabled;
+            case RequestState::Pending:
+                if (has_connection) {
+                    UpdateState(RequestState::Connected);
+                } else {
+                    UpdateState(RequestState::Error);
+                }
+                return ResultPendingConnection;
+            case RequestState::Connected:
+            default:
+                return ResultSuccess;
+            }
+        }();
+
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultSuccess);
+        rb.Push(result);
     }
 
     void GetSystemEventReadableHandles(Kernel::HLERequestContext& ctx) {
@@ -252,7 +272,14 @@ private:
         rb.Push<u32>(0);
     }
 
+    void UpdateState(RequestState new_state) {
+        state = new_state;
+        event1->Signal();
+    }
+
     KernelHelpers::ServiceContext service_context;
+
+    RequestState state;
 
     Kernel::KEvent* event1;
     Kernel::KEvent* event2;

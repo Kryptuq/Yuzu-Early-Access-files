@@ -44,7 +44,7 @@ public:
     /**
      * @brief Checks if the given syncpoint is both allocated and below the number of HW syncpoints
      */
-    bool IsSyncpointAllocated(u32 id);
+    bool IsSyncpointAllocated(u32 id) const;
 
     /**
      * @brief Finds a free syncpoint and reserves it

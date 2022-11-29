@@ -169,7 +169,7 @@ Status BufferQueueConsumer::Connect(std::shared_ptr<IConsumerListener> consumer_
         return Status::NoInit;
     }
 
-    core->consumer_listener = consumer_listener;
+    core->consumer_listener = std::move(consumer_listener);
     core->consumer_controlled_by_app = controlled_by_app;
 
     return Status::NoError;

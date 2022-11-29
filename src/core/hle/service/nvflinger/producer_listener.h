@@ -10,6 +10,7 @@ namespace Service::android {
 
 class IProducerListener {
 public:
+    virtual ~IProducerListener() = default;
     virtual void OnBufferReleased() = 0;
 };
 

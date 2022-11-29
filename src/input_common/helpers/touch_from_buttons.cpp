@@ -59,18 +59,25 @@ public:
     }
 
 private:
+    static constexpr Common::Input::AnalogProperties properties{
+        .deadzone = 0.0f,
+        .range = 1.0f,
+        .threshold = 0.5f,
+        .offset = 0.0f,
+        .inverted = false,
+        .toggle = false,
+    };
+
     Button button;
     bool last_button_value;
     const float x;
     const float y;
-    const Common::Input::AnalogProperties properties{0.0f, 1.0f, 0.5f, 0.0f, false};
 };
 
 std::unique_ptr<Common::Input::InputDevice> TouchFromButton::Create(
     const Common::ParamPackage& params) {
     const std::string null_engine = Common::ParamPackage{{"engine", "null"}}.Serialize();
-    auto button = Common::Input::CreateDeviceFromString<Common::Input::InputDevice>(
-        params.Get("button", null_engine));
+    auto button = Common::Input::CreateInputDeviceFromString(params.Get("button", null_engine));
     const float x = params.Get("x", 0.0f) / 1280.0f;
     const float y = params.Get("y", 0.0f) / 720.0f;
     return std::make_unique<TouchFromButtonDevice>(std::move(button), x, y);

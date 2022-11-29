@@ -55,48 +55,40 @@ void InstallInterfaces(SM::ServiceManager& service_manager, NVFlinger::NVFlinger
 Module::Module(Core::System& system)
     : container{system.Host1x()}, service_context{system, "nvdrv"}, events_interface{*this} {
     builders["/dev/nvhost-as-gpu"] = [this, &system](DeviceFD fd) {
-        std::shared_ptr<Devices::nvdevice> device =
-            std::make_shared<Devices::nvhost_as_gpu>(system, *this, container);
-        return open_files.emplace(fd, device).first;
+        auto device = std::make_shared<Devices::nvhost_as_gpu>(system, *this, container);
+        return open_files.emplace(fd, std::move(device)).first;
     };
     builders["/dev/nvhost-gpu"] = [this, &system](DeviceFD fd) {
-        std::shared_ptr<Devices::nvdevice> device =
-            std::make_shared<Devices::nvhost_gpu>(system, events_interface, container);
-        return open_files.emplace(fd, device).first;
+        auto device = std::make_shared<Devices::nvhost_gpu>(system, events_interface, container);
+        return open_files.emplace(fd, std::move(device)).first;
     };
     builders["/dev/nvhost-ctrl-gpu"] = [this, &system](DeviceFD fd) {
-        std::shared_ptr<Devices::nvdevice> device =
-            std::make_shared<Devices::nvhost_ctrl_gpu>(system, events_interface);
-        return open_files.emplace(fd, device).first;
+        auto device = std::make_shared<Devices::nvhost_ctrl_gpu>(system, events_interface);
+        return open_files.emplace(fd, std::move(device)).first;
     };
     builders["/dev/nvmap"] = [this, &system](DeviceFD fd) {
-        std::shared_ptr<Devices::nvdevice> device =
-            std::make_shared<Devices::nvmap>(system, container);
-        return open_files.emplace(fd, device).first;
+        auto device = std::make_shared<Devices::nvmap>(system, container);
+        return open_files.emplace(fd, std::move(device)).first;
     };
     builders["/dev/nvdisp_disp0"] = [this, &system](DeviceFD fd) {
-        std::shared_ptr<Devices::nvdevice> device =
-            std::make_shared<Devices::nvdisp_disp0>(system, container);
-        return open_files.emplace(fd, device).first;
+        auto device = std::make_shared<Devices::nvdisp_disp0>(system, container);
+        return open_files.emplace(fd, std::move(device)).first;
     };
     builders["/dev/nvhost-ctrl"] = [this, &system](DeviceFD fd) {
-        std::shared_ptr<Devices::nvdevice> device =
-            std::make_shared<Devices::nvhost_ctrl>(system, events_interface, container);
-        return open_files.emplace(fd, device).first;
+        auto device = std::make_shared<Devices::nvhost_ctrl>(system, events_interface, container);
+        return open_files.emplace(fd, std::move(device)).first;
     };
     builders["/dev/nvhost-nvdec"] = [this, &system](DeviceFD fd) {
-        std::shared_ptr<Devices::nvdevice> device =
-            std::make_shared<Devices::nvhost_nvdec>(system, container);
-        return open_files.emplace(fd, device).first;
+        auto device = std::make_shared<Devices::nvhost_nvdec>(system, container);
+        return open_files.emplace(fd, std::move(device)).first;
     };
     builders["/dev/nvhost-nvjpg"] = [this, &system](DeviceFD fd) {
-        std::shared_ptr<Devices::nvdevice> device = std::make_shared<Devices::nvhost_nvjpg>(system);
-        return open_files.emplace(fd, device).first;
+        auto device = std::make_shared<Devices::nvhost_nvjpg>(system);
+        return open_files.emplace(fd, std::move(device)).first;
     };
     builders["/dev/nvhost-vic"] = [this, &system](DeviceFD fd) {
-        std::shared_ptr<Devices::nvdevice> device =
-            std::make_shared<Devices::nvhost_vic>(system, container);
-        return open_files.emplace(fd, device).first;
+        auto device = std::make_shared<Devices::nvhost_vic>(system, container);
+        return open_files.emplace(fd, std::move(device)).first;
     };
 }
 

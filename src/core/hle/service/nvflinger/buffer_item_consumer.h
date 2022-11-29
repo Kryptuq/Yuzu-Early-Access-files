@@ -22,7 +22,7 @@ public:
     explicit BufferItemConsumer(std::unique_ptr<BufferQueueConsumer> consumer);
     Status AcquireBuffer(BufferItem* item, std::chrono::nanoseconds present_when,
                          bool wait_for_fence = true);
-    Status ReleaseBuffer(const BufferItem& item, Fence& release_fence);
+    Status ReleaseBuffer(const BufferItem& item, const Fence& release_fence);
 };
 
 } // namespace Service::android

@@ -83,7 +83,7 @@ Status ConsumerBase::AcquireBufferLocked(BufferItem* item, std::chrono::nanoseco
 }
 
 Status ConsumerBase::AddReleaseFenceLocked(s32 slot,
-                                           const std::shared_ptr<GraphicBuffer> graphic_buffer,
+                                           const std::shared_ptr<GraphicBuffer>& graphic_buffer,
                                            const Fence& fence) {
     LOG_DEBUG(Service_NVFlinger, "slot={}", slot);
 
@@ -100,7 +100,7 @@ Status ConsumerBase::AddReleaseFenceLocked(s32 slot,
 }
 
 Status ConsumerBase::ReleaseBufferLocked(s32 slot,
-                                         const std::shared_ptr<GraphicBuffer> graphic_buffer) {
+                                         const std::shared_ptr<GraphicBuffer>& graphic_buffer) {
     // If consumer no longer tracks this graphic_buffer (we received a new
     // buffer on the same slot), the buffer producer is definitely no longer
     // tracking it.
@@ -121,7 +121,7 @@ Status ConsumerBase::ReleaseBufferLocked(s32 slot,
 }
 
 bool ConsumerBase::StillTracking(s32 slot,
-                                 const std::shared_ptr<GraphicBuffer> graphic_buffer) const {
+                                 const std::shared_ptr<GraphicBuffer>& graphic_buffer) const {
     if (slot < 0 || slot >= BufferQueueDefs::NUM_BUFFER_SLOTS) {
         return false;
     }
