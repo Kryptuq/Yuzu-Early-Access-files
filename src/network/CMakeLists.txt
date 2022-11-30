@@ -8,6 +8,7 @@ add_library(network STATIC
     network.h
     packet.cpp
     packet.h
+    precompiled_headers.h
     room.cpp
     room.h
     room_member.cpp
@@ -22,4 +23,8 @@ target_link_libraries(network PRIVATE common enet Boost::boost)
 if (ENABLE_WEB_SERVICE)
     target_compile_definitions(network PRIVATE -DENABLE_WEB_SERVICE)
     target_link_libraries(network PRIVATE web_service)
+endif()
+
+if (YUZU_USE_PRECOMPILED_HEADERS)
+    target_precompile_headers(network PRIVATE precompiled_headers.h)
 endif()

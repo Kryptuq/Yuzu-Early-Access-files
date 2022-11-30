@@ -4,6 +4,7 @@
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMakeModules)
 
 add_executable(yuzu-room
+    precompiled_headers.h
     yuzu_room.cpp
     yuzu_room.rc
 )
@@ -24,4 +25,8 @@ target_link_libraries(yuzu-room PRIVATE ${PLATFORM_LIBRARIES} Threads::Threads)
 
 if(UNIX AND NOT APPLE)
     install(TARGETS yuzu-room)
+endif()
+
+if (YUZU_USE_PRECOMPILED_HEADERS)
+    target_precompile_headers(yuzu-room PRIVATE precompiled_headers.h)
 endif()

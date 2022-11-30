@@ -34,7 +34,7 @@ SyncpointManager::ActionHandle SyncpointManager::RegisterAction(
 }
 
 void SyncpointManager::DeregisterAction(std::list<RegisteredAction>& action_storage,
-                                        ActionHandle& handle) {
+                                        const ActionHandle& handle) {
     std::unique_lock lk(guard);
 
     // We want to ensure the iterator still exists prior to erasing it
@@ -49,11 +49,11 @@ void SyncpointManager::DeregisterAction(std::list<RegisteredAction>& action_stor
     }
 }
 
-void SyncpointManager::DeregisterGuestAction(u32 syncpoint_id, ActionHandle& handle) {
+void SyncpointManager::DeregisterGuestAction(u32 syncpoint_id, const ActionHandle& handle) {
     DeregisterAction(guest_action_storage[syncpoint_id], handle);
 }
 
-void SyncpointManager::DeregisterHostAction(u32 syncpoint_id, ActionHandle& handle) {
+void SyncpointManager::DeregisterHostAction(u32 syncpoint_id, const ActionHandle& handle) {
     DeregisterAction(host_action_storage[syncpoint_id], handle);
 }
 

@@ -49,10 +49,9 @@ void State::ProcessData(std::span<const u8> read_buffer) {
         if (regs.line_count == 1) {
             rasterizer->AccelerateInlineToMemory(address, copy_size, read_buffer);
         } else {
-            for (u32 line = 0; line < regs.line_count; ++line) {
-                const GPUVAddr dest_line = address + static_cast<size_t>(line) * regs.dest.pitch;
-                std::span<const u8> buffer(read_buffer.data() +
-                                               static_cast<size_t>(line) * regs.line_length_in,
+            for (size_t line = 0; line < regs.line_count; ++line) {
+                const GPUVAddr dest_line = address + line * regs.dest.pitch;
+                std::span<const u8> buffer(read_buffer.data() + line * regs.line_length_in,
                                            regs.line_length_in);
                 rasterizer->AccelerateInlineToMemory(dest_line, regs.line_length_in, buffer);
             }

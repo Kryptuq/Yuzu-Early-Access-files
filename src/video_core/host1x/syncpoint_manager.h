@@ -36,21 +36,19 @@ public:
 
     template <typename Func>
     ActionHandle RegisterGuestAction(u32 syncpoint_id, u32 expected_value, Func&& action) {
-        std::function<void()> func(action);
         return RegisterAction(syncpoints_guest[syncpoint_id], guest_action_storage[syncpoint_id],
-                              expected_value, std::move(func));
+                              expected_value, std::move(action));
     }
 
     template <typename Func>
     ActionHandle RegisterHostAction(u32 syncpoint_id, u32 expected_value, Func&& action) {
-        std::function<void()> func(action);
         return RegisterAction(syncpoints_host[syncpoint_id], host_action_storage[syncpoint_id],
-                              expected_value, std::move(func));
+                              expected_value, std::move(action));
     }
 
-    void DeregisterGuestAction(u32 syncpoint_id, ActionHandle& handle);
+    void DeregisterGuestAction(u32 syncpoint_id, const ActionHandle& handle);
 
-    void DeregisterHostAction(u32 syncpoint_id, ActionHandle& handle);
+    void DeregisterHostAction(u32 syncpoint_id, const ActionHandle& handle);
 
     void IncrementGuest(u32 syncpoint_id);
 
@@ -76,7 +74,7 @@ private:
                                 std::list<RegisteredAction>& action_storage, u32 expected_value,
                                 std::function<void()>&& action);
 
-    void DeregisterAction(std::list<RegisteredAction>& action_storage, ActionHandle& handle);
+    void DeregisterAction(std::list<RegisteredAction>& action_storage, const ActionHandle& handle);
 
     void Wait(std::atomic<u32>& syncpoint, std::condition_variable& wait_cv, u32 expected_value);
 

@@ -24,6 +24,7 @@ add_executable(yuzu-cmd
     emu_window/emu_window_sdl2_gl.h
     emu_window/emu_window_sdl2_vk.cpp
     emu_window/emu_window_sdl2_vk.h
+    precompiled_headers.h
     yuzu.cpp
     yuzu.rc
 )
@@ -54,4 +55,8 @@ endif()
 if (MSVC)
     include(CopyYuzuSDLDeps)
     copy_yuzu_SDL_deps(yuzu-cmd)
+endif()
+
+if (YUZU_USE_PRECOMPILED_HEADERS)
+    target_precompile_headers(yuzu-cmd PRIVATE precompiled_headers.h)
 endif()

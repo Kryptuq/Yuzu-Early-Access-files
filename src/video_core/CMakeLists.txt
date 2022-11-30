@@ -84,6 +84,7 @@ add_library(video_core STATIC
     gpu_thread.h
     memory_manager.cpp
     memory_manager.h
+    precompiled_headers.h
     pte_kind.h
     query_cache.h
     rasterizer_accelerated.cpp
@@ -299,4 +300,8 @@ endif()
 
 if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64)
     target_link_libraries(video_core PRIVATE dynarmic)
+endif()
+
+if (YUZU_USE_PRECOMPILED_HEADERS)
+    target_precompile_headers(video_core PRIVATE precompiled_headers.h)
 endif()

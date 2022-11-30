@@ -50,11 +50,11 @@ void KeplerCompute::CallMultiMethod(u32 method, const u32* base_start, u32 amoun
                                     u32 methods_pending) {
     switch (method) {
     case KEPLER_COMPUTE_REG_INDEX(data_upload):
-        upload_state.ProcessData(base_start, static_cast<size_t>(amount));
+        upload_state.ProcessData(base_start, amount);
         return;
     default:
-        for (std::size_t i = 0; i < amount; i++) {
-            CallMethod(method, base_start[i], methods_pending - static_cast<u32>(i) <= 1);
+        for (u32 i = 0; i < amount; i++) {
+            CallMethod(method, base_start[i], methods_pending - i <= 1);
         }
         break;
     }

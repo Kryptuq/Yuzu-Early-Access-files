@@ -96,8 +96,7 @@ public:
             u32 type;
 
             GPUVAddr Address() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
-                                             address_low);
+                return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
             }
         };
 
@@ -106,8 +105,7 @@ public:
             u32 address_low;
 
             GPUVAddr Address() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
-                                             address_low);
+                return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
             }
         };
 
@@ -124,8 +122,7 @@ public:
             Mode mode;
 
             GPUVAddr Address() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(offset_high) << 32) |
-                                             offset_low);
+                return (GPUVAddr{offset_high} << 32) | GPUVAddr{offset_low};
             }
         };
 
@@ -187,7 +184,7 @@ public:
                 default:
                     // Thresholds begin at 0x10 (1 << 4)
                     // Threshold is in the range 0x1 to 0x13
-                    return 1 << (4 + threshold.Value() - 1);
+                    return 1U << (4 + threshold.Value() - 1);
                 }
             }
         };
@@ -468,8 +465,7 @@ public:
                 INSERT_PADDING_BYTES_NOINIT(0xC);
 
                 GPUVAddr Address() const {
-                    return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
-                                                 address_low);
+                    return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
                 }
             };
             static_assert(sizeof(Buffer) == 0x20);
@@ -511,12 +507,11 @@ public:
             u32 default_size_per_warp;
 
             GPUVAddr Address() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
-                                             address_low);
+                return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
             }
 
             u64 Size() const {
-                return (static_cast<u64>(size_high) << 32) | size_low;
+                return (u64{size_high} << 32) | u64{size_low};
             }
         };
 
@@ -538,13 +533,11 @@ public:
             u32 storage_limit_address_low;
 
             GPUVAddr StorageAddress() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(storage_address_high) << 32) |
-                                             storage_address_low);
+                return (GPUVAddr{storage_address_high} << 32) | GPUVAddr{storage_address_low};
             }
             GPUVAddr StorageLimitAddress() const {
-                return static_cast<GPUVAddr>(
-                    (static_cast<GPUVAddr>(storage_limit_address_high) << 32) |
-                    storage_limit_address_low);
+                return (GPUVAddr{storage_limit_address_high} << 32) |
+                       GPUVAddr{storage_limit_address_low};
             }
         };
 
@@ -829,11 +822,11 @@ public:
         struct CompressionThresholdSamples {
             u32 samples;
 
-            u32 Samples() {
+            u32 Samples() const {
                 if (samples == 0) {
                     return 0;
                 }
-                return 1 << (samples - 1);
+                return 1U << (samples - 1);
             }
         };
 
@@ -1138,8 +1131,7 @@ public:
             INSERT_PADDING_BYTES_NOINIT(0x18);
 
             GPUVAddr Address() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
-                                             address_low);
+                return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
             }
         };
         static_assert(sizeof(RenderTargetConfig) == 0x40);
@@ -1482,8 +1474,7 @@ public:
             u32 address_low;
 
             GPUVAddr Address() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
-                                             address_low);
+                return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
             }
         };
 
@@ -1533,8 +1524,7 @@ public:
             u32 address_low;
 
             GPUVAddr Address() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
-                                             address_low);
+                return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
             }
         };
 
@@ -1561,8 +1551,7 @@ public:
             u32 array_pitch;
 
             GPUVAddr Address() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
-                                             address_low);
+                return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
             }
         };
 
@@ -1910,8 +1899,7 @@ public:
             Mode mode;
 
             GPUVAddr Address() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
-                                             address_low);
+                return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
             }
         };
 
@@ -1921,8 +1909,7 @@ public:
             u32 limit;
 
             GPUVAddr Address() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
-                                             address_low);
+                return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
             }
         };
 
@@ -1932,8 +1919,7 @@ public:
             u32 limit;
 
             GPUVAddr Address() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
-                                             address_low);
+                return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
             }
         };
 
@@ -1981,8 +1967,7 @@ public:
             u32 address_low;
 
             GPUVAddr Address() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
-                                             address_low);
+                return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
             }
         };
 
@@ -2027,8 +2012,7 @@ public:
             u32 address_low;
 
             GPUVAddr Address() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
-                                             address_low);
+                return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
             }
         };
 
@@ -2224,19 +2208,16 @@ public:
             }
 
             GPUVAddr StartAddress() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(start_addr_high) << 32) |
-                                             start_addr_low);
+                return (GPUVAddr{start_addr_high} << 32) | GPUVAddr{start_addr_low};
             }
 
             GPUVAddr EndAddress() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(limit_addr_high) << 32) |
-                                             limit_addr_low);
+                return (GPUVAddr{limit_addr_high} << 32) | GPUVAddr{limit_addr_low};
             }
 
             /// Adjust the index buffer offset so it points to the first desired index.
             GPUVAddr IndexStart() const {
-                return StartAddress() +
-                       static_cast<size_t>(first) * static_cast<size_t>(FormatSizeInBytes());
+                return StartAddress() + size_t{first} * size_t{FormatSizeInBytes()};
             }
         };
 
@@ -2464,8 +2445,7 @@ public:
             } query;
 
             GPUVAddr Address() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
-                                             address_low);
+                return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
             }
         };
 
@@ -2479,8 +2459,7 @@ public:
             u32 frequency;
 
             GPUVAddr Address() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
-                                             address_low);
+                return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
             }
 
             bool IsEnabled() const {
@@ -2494,8 +2473,7 @@ public:
             u32 address_low;
 
             GPUVAddr Address() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
-                                             address_low);
+                return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
             }
         };
         static_assert(sizeof(VertexStreamLimit) == 0x8);
@@ -2543,8 +2521,7 @@ public:
             std::array<u32, NumCBData> buffer;
 
             GPUVAddr Address() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
-                                             address_low);
+                return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
             }
         };
 

@@ -68,7 +68,7 @@ public:
                 struct {
                     u32 address;
                     GPUVAddr Address() const {
-                        return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address) << 8));
+                        return GPUVAddr{address} << 8;
                     }
                 } launch_desc_loc;
 
@@ -83,8 +83,7 @@ public:
                     u32 address_low;
                     u32 limit;
                     GPUVAddr Address() const {
-                        return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
-                                                     address_low);
+                        return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
                     }
                 } tsc;
 
@@ -95,8 +94,7 @@ public:
                     u32 address_low;
                     u32 limit;
                     GPUVAddr Address() const {
-                        return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
-                                                     address_low);
+                        return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
                     }
                 } tic;
 
@@ -106,8 +104,7 @@ public:
                     u32 address_high;
                     u32 address_low;
                     GPUVAddr Address() const {
-                        return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
-                                                     address_low);
+                        return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
                     }
                 } code_loc;
 
@@ -162,8 +159,7 @@ public:
                 BitField<15, 17, u32> size;
             };
             GPUVAddr Address() const {
-                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high.Value()) << 32) |
-                                             address_low);
+                return (GPUVAddr{address_high.Value()} << 32) | GPUVAddr{address_low};
             }
         };
         std::array<ConstBufferConfig, NumConstBuffers> const_buffer_config;

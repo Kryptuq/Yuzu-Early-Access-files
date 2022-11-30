@@ -97,7 +97,7 @@ public:
         u32 addr_lower;
 
         [[nodiscard]] constexpr GPUVAddr Address() const noexcept {
-            return (static_cast<GPUVAddr>(addr_upper) << 32) | static_cast<GPUVAddr>(addr_lower);
+            return (GPUVAddr{addr_upper} << 32) | GPUVAddr{addr_lower};
         }
     };
     static_assert(sizeof(Surface) == 0x28, "Surface has incorrect size");

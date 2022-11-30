@@ -95,6 +95,7 @@ add_library(common STATIC
     param_package.h
     parent_of_member.h
     point.h
+    precompiled_headers.h
     quaternion.h
     reader_writer_queue.h
     ring_buffer.h
@@ -182,4 +183,9 @@ if (TARGET zstd::zstd)
 else()
   target_link_libraries(common PRIVATE
     $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>)
+endif()
+
+if (YUZU_USE_PRECOMPILED_HEADERS)
+    target_precompile_headers(common PRIVATE precompiled_headers.h)
+    set(CMAKE_PCH_INSTANTIATE_TEMPLATES ON)
 endif()

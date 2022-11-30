@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2018 yuzu Emulator Project
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.22)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externals/cmake-modules")
@@ -43,6 +43,8 @@ option(YUZU_USE_BUNDLED_OPUS "Compile bundled opus" ON)
 
 option(YUZU_TESTS "Compile tests" ON)
 
+option(YUZU_USE_PRECOMPILED_HEADERS "Use precompiled headers" ON)
+
 CMAKE_DEPENDENT_OPTION(YUZU_CRASH_DUMPS "Compile Windows crash dump (Minidump) support" OFF "WIN32" OFF)
 
 option(YUZU_USE_BUNDLED_VCPKG "Use vcpkg for yuzu dependencies" "${MSVC}")
@@ -63,6 +65,24 @@ elseif(NOT "$ENV{VCPKG_TOOLCHAIN_FILE}" STREQUAL "")
     option(VCPKG_MANIFEST_MODE "")
     include("$ENV{VCPKG_TOOLCHAIN_FILE}")
 endif()
+
+if (YUZU_USE_PRECOMPILED_HEADERS)
+    if (MINGW)
+        message(WARNING "MINGW has compilation errors with Precompiled Headers. Disabling PCH")
+        set(YUZU_USE_PRECOMPILED_HEADERS OFF)
+    endif()
+    if (MSVC AND CCACHE)
+        # buildcache does not properly cache PCH files, leading to compilation errors.
+        # See https://github.com/mbitsnbites/buildcache/discussions/230
+        message(WARNING "buildcache does not properly support Precompiled Headers. Disabling PCH")
+        set(YUZU_USE_PRECOMPILED_HEADERS OFF)
+    endif()
+endif()
+if (YUZU_USE_PRECOMPILED_HEADERS)
+    message(STATUS "Using Precompiled Headers.")
+    set(CMAKE_PCH_INSTANTIATE_TEMPLATES ON)
+endif()
+
 
 # Default to a Release build
 get_property(IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)

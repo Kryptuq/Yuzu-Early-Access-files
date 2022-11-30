@@ -370,11 +370,11 @@ void Maxwell3D::CallMultiMethod(u32 method, const u32* base_start, u32 amount,
         ProcessCBMultiData(base_start, amount);
         break;
     case MAXWELL3D_REG_INDEX(inline_data):
-        upload_state.ProcessData(base_start, static_cast<size_t>(amount));
+        upload_state.ProcessData(base_start, amount);
         return;
     default:
-        for (std::size_t i = 0; i < amount; i++) {
-            CallMethod(method, base_start[i], methods_pending - static_cast<u32>(i) <= 1);
+        for (u32 i = 0; i < amount; i++) {
+            CallMethod(method, base_start[i], methods_pending - i <= 1);
         }
         break;
     }
@@ -652,12 +652,12 @@ void Maxwell3D::ProcessDeferredDraw() {
         return;
     }
 
-    u32 method_count = static_cast<u32>(deferred_draw_method.size());
+    const auto method_count = deferred_draw_method.size();
     u32 instance_count = 1;
     u32 vertex_buffer_count = 0;
     u32 index_buffer_count = 0;
-    for (u32 index = 0; index < method_count; ++index) {
-        u32 method = deferred_draw_method[index];
+    for (size_t index = 0; index < method_count; ++index) {
+        const u32 method = deferred_draw_method[index];
         if (method == MAXWELL3D_REG_INDEX(vertex_buffer.count)) {
             instance_count = ++vertex_buffer_count;
         } else if (method == MAXWELL3D_REG_INDEX(index_buffer.count)) {

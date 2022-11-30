@@ -39,7 +39,7 @@ struct Registers {
         u32 y;
 
         GPUVAddr Address() const {
-            return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) | address_low);
+            return (GPUVAddr{address_high} << 32) | GPUVAddr{address_low};
         }
 
         u32 BlockWidth() const {

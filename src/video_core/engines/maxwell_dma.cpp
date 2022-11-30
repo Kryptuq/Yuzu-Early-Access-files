@@ -41,8 +41,8 @@ void MaxwellDMA::CallMethod(u32 method, u32 method_argument, bool is_last_call) 
 
 void MaxwellDMA::CallMultiMethod(u32 method, const u32* base_start, u32 amount,
                                  u32 methods_pending) {
-    for (size_t i = 0; i < amount; ++i) {
-        CallMethod(method, base_start[i], methods_pending - static_cast<u32>(i) <= 1);
+    for (u32 i = 0; i < amount; ++i) {
+        CallMethod(method, base_start[i], methods_pending - i <= 1);
     }
 }
 
@@ -94,14 +94,14 @@ void MaxwellDMA::Launch() {
                                             reinterpret_cast<u8*>(tmp_buffer.data()),
                                             regs.line_length_in * sizeof(u32));
         } else {
-            auto convert_linear_2_blocklinear_addr = [](u64 address) {
+            const auto convert_linear_2_blocklinear_addr = [](u64 address) {
                 return (address & ~0x1f0ULL) | ((address & 0x40) >> 2) | ((address & 0x10) << 1) |
                        ((address & 0x180) >> 1) | ((address & 0x20) << 3);
             };
-            auto src_kind = memory_manager.GetPageKind(regs.offset_in);
-            auto dst_kind = memory_manager.GetPageKind(regs.offset_out);
-            const bool is_src_pitch = IsPitchKind(static_cast<PTEKind>(src_kind));
-            const bool is_dst_pitch = IsPitchKind(static_cast<PTEKind>(dst_kind));
+            const auto src_kind = memory_manager.GetPageKind(regs.offset_in);
+            const auto dst_kind = memory_manager.GetPageKind(regs.offset_out);
+            const bool is_src_pitch = IsPitchKind(src_kind);
+            const bool is_dst_pitch = IsPitchKind(dst_kind);
             if (!is_src_pitch && is_dst_pitch) {
                 UNIMPLEMENTED_IF(regs.line_length_in % 16 != 0);
                 UNIMPLEMENTED_IF(regs.offset_in % 16 != 0);

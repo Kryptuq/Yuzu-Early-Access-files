@@ -31,7 +31,7 @@ void Puller::ProcessBindMethod(const MethodCall& method_call) {
     LOG_DEBUG(HW_GPU, "Binding subchannel {} to engine {}", method_call.subchannel,
               method_call.argument);
     const auto engine_id = static_cast<EngineID>(method_call.argument);
-    bound_engines[method_call.subchannel] = static_cast<EngineID>(engine_id);
+    bound_engines[method_call.subchannel] = engine_id;
     switch (engine_id) {
     case EngineID::FERMI_TWOD_A:
         dma_pusher.BindSubchannel(channel_state.fermi_2d.get(), method_call.subchannel);
@@ -285,12 +285,12 @@ void Puller::CallMultiMethod(u32 method, u32 subchannel, const u32* base_start, 
     if (ExecuteMethodOnEngine(method)) {
         CallEngineMultiMethod(method, subchannel, base_start, amount, methods_pending);
     } else {
-        for (std::size_t i = 0; i < amount; i++) {
+        for (u32 i = 0; i < amount; i++) {
             CallPullerMethod(MethodCall{
                 method,
                 base_start[i],
                 subchannel,
-                methods_pending - static_cast<u32>(i),
+                methods_pending - i,
             });
         }
     }

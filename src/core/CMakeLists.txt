@@ -771,6 +771,7 @@ add_library(core STATIC
     memory.h
     perf_stats.cpp
     perf_stats.h
+    precompiled_headers.h
     reporter.cpp
     reporter.h
     telemetry_session.cpp
@@ -824,4 +825,8 @@ if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64)
         hle/service/jit/jit.h
     )
     target_link_libraries(core PRIVATE dynarmic)
+endif()
+
+if (YUZU_USE_PRECOMPILED_HEADERS)
+    target_precompile_headers(core PRIVATE precompiled_headers.h)
 endif()
