@@ -185,3 +185,11 @@ foreach(c ${_FFmpeg_ALL_COMPONENTS})
 endforeach()
 unset(_FFmpeg_ALL_COMPONENTS)
 unset(_FFmpeg_REQUIRED_VARS)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(FFmpeg
+  REQUIRED_VARS
+    FFmpeg_LIBRARIES
+    FFmpeg_INCLUDE_DIR
+  HANDLE_COMPONENTS
+)

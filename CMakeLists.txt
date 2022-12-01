@@ -67,10 +67,6 @@ elseif(NOT "$ENV{VCPKG_TOOLCHAIN_FILE}" STREQUAL "")
 endif()
 
 if (YUZU_USE_PRECOMPILED_HEADERS)
-    if (MINGW)
-        message(WARNING "MINGW has compilation errors with Precompiled Headers. Disabling PCH")
-        set(YUZU_USE_PRECOMPILED_HEADERS OFF)
-    endif()
     if (MSVC AND CCACHE)
         # buildcache does not properly cache PCH files, leading to compilation errors.
         # See https://github.com/mbitsnbites/buildcache/discussions/230
@@ -478,22 +474,7 @@ if (UNIX AND NOT APPLE)
 endif()
 if (NOT YUZU_USE_BUNDLED_FFMPEG)
     # Use system installed FFmpeg
-    find_package(FFmpeg 4.3 QUIET COMPONENTS ${FFmpeg_COMPONENTS})
-
-    if (FFmpeg_FOUND)
-        # Overwrite aggregate defines from FFmpeg module to avoid over-linking libraries.
-        # Prevents shipping too many libraries with the AppImage.
-        set(FFmpeg_LIBRARIES "")
-        set(FFmpeg_INCLUDE_DIR "")
-
-        foreach(COMPONENT ${FFmpeg_COMPONENTS})
-            set(FFmpeg_LIBRARIES ${FFmpeg_LIBRARIES} ${FFmpeg_LIBRARY_${COMPONENT}} CACHE PATH "Paths to FFmpeg libraries" FORCE)
-            set(FFmpeg_INCLUDE_DIR ${FFmpeg_INCLUDE_DIR} ${FFmpeg_INCLUDE_${COMPONENT}} CACHE PATH "Path to FFmpeg headers" FORCE)
-        endforeach()
-    else()
-        message(WARNING "FFmpeg not found or too old, falling back to externals")
-        set(YUZU_USE_BUNDLED_FFMPEG ON)
-    endif()
+    find_package(FFmpeg 4.3 REQUIRED QUIET COMPONENTS ${FFmpeg_COMPONENTS})
 endif()
 
 # Prefer the -pthread flag on Linux.

@@ -266,14 +266,16 @@ void SinkStream::ProcessAudioOutAndRender(std::span<s16> output_buffer, std::siz
 }
 
 void SinkStream::Stall() {
-    if (IsStalled()) {
+    std::scoped_lock lk{stall_guard};
+    if (stalled_lock) {
         return;
     }
     stalled_lock = system.StallProcesses();
 }
 
 void SinkStream::Unstall() {
-    if (!IsStalled()) {
+    std::scoped_lock lk{stall_guard};
+    if (!stalled_lock) {
         return;
     }
     system.UnstallProcesses();

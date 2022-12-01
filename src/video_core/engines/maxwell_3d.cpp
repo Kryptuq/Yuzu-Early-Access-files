@@ -126,7 +126,6 @@ void Maxwell3D::InitializeRegisterDefaults() {
     draw_command[MAXWELL3D_REG_INDEX(draw_inline_index)] = true;
     draw_command[MAXWELL3D_REG_INDEX(inline_index_2x16.even)] = true;
     draw_command[MAXWELL3D_REG_INDEX(inline_index_4x8.index0)] = true;
-    draw_command[MAXWELL3D_REG_INDEX(draw.instance_id)] = true;
 }
 
 void Maxwell3D::ProcessMacro(u32 method, const u32* base_start, u32 amount, bool is_last_call) {
@@ -218,16 +217,19 @@ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argume
         regs.index_buffer.count = regs.index_buffer32_first.count;
         regs.index_buffer.first = regs.index_buffer32_first.first;
         dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
+        draw_indexed = true;
         return ProcessDraw();
     case MAXWELL3D_REG_INDEX(index_buffer16_first):
         regs.index_buffer.count = regs.index_buffer16_first.count;
         regs.index_buffer.first = regs.index_buffer16_first.first;
         dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
+        draw_indexed = true;
         return ProcessDraw();
     case MAXWELL3D_REG_INDEX(index_buffer8_first):
         regs.index_buffer.count = regs.index_buffer8_first.count;
         regs.index_buffer.first = regs.index_buffer8_first.first;
         dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
+        draw_indexed = true;
         return ProcessDraw();
     case MAXWELL3D_REG_INDEX(topology_override):
         use_topology_override = true;
@@ -300,20 +302,32 @@ void Maxwell3D::CallMethod(u32 method, u32 method_argument, bool is_last_call) {
             draw_mode = DrawMode::InlineIndex;
         };
         switch (method) {
+        case MAXWELL3D_REG_INDEX(draw.begin): {
+            draw_mode =
+                (regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::Subsequent) ||
+                        (regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::Unchanged)
+                    ? DrawMode::Instance
+                    : DrawMode::General;
+            break;
+        }
         case MAXWELL3D_REG_INDEX(draw.end):
             switch (draw_mode) {
             case DrawMode::General:
-                ProcessDraw(1);
+                ProcessDraw();
                 break;
             case DrawMode::InlineIndex:
                 regs.index_buffer.count = static_cast<u32>(inline_index_draw_indexes.size() / 4);
                 regs.index_buffer.format = Regs::IndexFormat::UnsignedInt;
-                ProcessDraw(1);
+                draw_indexed = true;
+                ProcessDraw();
                 inline_index_draw_indexes.clear();
                 break;
             case DrawMode::Instance:
                 break;
             }
+            break;
+        case MAXWELL3D_REG_INDEX(index_buffer.count):
+            draw_indexed = true;
             break;
         case MAXWELL3D_REG_INDEX(draw_inline_index):
             update_inline_index(method_argument);
@@ -327,13 +341,6 @@ void Maxwell3D::CallMethod(u32 method, u32 method_argument, bool is_last_call) {
             update_inline_index(regs.inline_index_4x8.index1);
             update_inline_index(regs.inline_index_4x8.index2);
             update_inline_index(regs.inline_index_4x8.index3);
-            break;
-        case MAXWELL3D_REG_INDEX(draw.instance_id):
-            draw_mode =
-                (regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::Subsequent) ||
-                        (regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::Unchanged)
-                    ? DrawMode::Instance
-                    : DrawMode::General;
             break;
         }
     } else {
@@ -624,27 +631,16 @@ void Maxwell3D::ProcessClearBuffers(u32 layer_count) {
 
 void Maxwell3D::ProcessDraw(u32 instance_count) {
     LOG_TRACE(HW_GPU, "called, topology={}, count={}", regs.draw.topology.Value(),
-              regs.vertex_buffer.count);
-
-    ASSERT_MSG(!(regs.index_buffer.count && regs.vertex_buffer.count), "Both indexed and direct?");
-
-    // Both instance configuration registers can not be set at the same time.
-    ASSERT_MSG(regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::First ||
-                   regs.draw.instance_id != Maxwell3D::Regs::Draw::InstanceId::Unchanged,
-               "Illegal combination of instancing parameters");
+              draw_indexed ? regs.index_buffer.count : regs.vertex_buffer.count);
 
     ProcessTopologyOverride();
 
-    const bool is_indexed = regs.index_buffer.count && !regs.vertex_buffer.count;
     if (ShouldExecute()) {
-        rasterizer->Draw(is_indexed, instance_count);
+        rasterizer->Draw(draw_indexed, instance_count);
     }
 
-    if (is_indexed) {
-        regs.index_buffer.count = 0;
-    } else {
-        regs.vertex_buffer.count = 0;
-    }
+    draw_indexed = false;
+    deferred_draw_method.clear();
 }
 
 void Maxwell3D::ProcessDeferredDraw() {
@@ -667,8 +663,6 @@ void Maxwell3D::ProcessDeferredDraw() {
     ASSERT_MSG(!(vertex_buffer_count && index_buffer_count), "Instance both indexed and direct?");
 
     ProcessDraw(instance_count);
-
-    deferred_draw_method.clear();
 }
 
 } // namespace Tegra::Engines

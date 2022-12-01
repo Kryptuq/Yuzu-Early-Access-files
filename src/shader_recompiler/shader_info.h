@@ -204,6 +204,9 @@ struct Info {
     u32 nvn_buffer_base{};
     std::bitset<16> nvn_buffer_used{};
 
+    bool requires_layer_emulation{};
+    IR::Attribute emulated_layer{};
+
     boost::container::static_vector<ConstantBufferDescriptor, MAX_CBUFS>
         constant_buffer_descriptors;
     boost::container::static_vector<StorageBufferDescriptor, MAX_SSBOS> storage_buffers_descriptors;

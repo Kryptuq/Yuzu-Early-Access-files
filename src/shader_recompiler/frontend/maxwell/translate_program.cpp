@@ -9,6 +9,7 @@
 #include "common/settings.h"
 #include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
+#include "shader_recompiler/frontend/ir/ir_emitter.h"
 #include "shader_recompiler/frontend/ir/post_order.h"
 #include "shader_recompiler/frontend/maxwell/structured_control_flow.h"
 #include "shader_recompiler/frontend/maxwell/translate/translate.h"
@@ -233,6 +234,8 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
         Optimization::VerificationPass(program);
     }
     Optimization::CollectShaderInfoPass(env, program);
+    Optimization::LayerPass(program, host_info);
+
     CollectInterpolationInfo(env, program);
     AddNVNStorageBuffers(program);
     return program;
@@ -329,6 +332,84 @@ void ConvertLegacyToGeneric(IR::Program& program, const Shader::RuntimeInfo& run
             }
         }
     }
+}
+
+IR::Program GenerateGeometryPassthrough(ObjectPool<IR::Inst>& inst_pool,
+                                        ObjectPool<IR::Block>& block_pool,
+                                        const HostTranslateInfo& host_info,
+                                        IR::Program& source_program,
+                                        Shader::OutputTopology output_topology) {
+    IR::Program program;
+    program.stage = Stage::Geometry;
+    program.output_topology = output_topology;
+    switch (output_topology) {
+    case OutputTopology::PointList:
+        program.output_vertices = 1;
+        break;
+    case OutputTopology::LineStrip:
+        program.output_vertices = 2;
+        break;
+    default:
+        program.output_vertices = 3;
+        break;
+    }
+
+    program.is_geometry_passthrough = false;
+    program.info.loads.mask = source_program.info.stores.mask;
+    program.info.stores.mask = source_program.info.stores.mask;
+    program.info.stores.Set(IR::Attribute::Layer, true);
+    program.info.stores.Set(source_program.info.emulated_layer, false);
+
+    IR::Block* current_block = block_pool.Create(inst_pool);
+    auto& node{program.syntax_list.emplace_back()};
+    node.type = IR::AbstractSyntaxNode::Type::Block;
+    node.data.block = current_block;
+
+    IR::IREmitter ir{*current_block};
+    for (u32 i = 0; i < program.output_vertices; i++) {
+        // Assign generics from input
+        for (u32 j = 0; j < 32; j++) {
+            if (!program.info.stores.Generic(j)) {
+                continue;
+            }
+
+            const IR::Attribute attr = IR::Attribute::Generic0X + (j * 4);
+            ir.SetAttribute(attr + 0, ir.GetAttribute(attr + 0, ir.Imm32(i)), ir.Imm32(0));
+            ir.SetAttribute(attr + 1, ir.GetAttribute(attr + 1, ir.Imm32(i)), ir.Imm32(0));
+            ir.SetAttribute(attr + 2, ir.GetAttribute(attr + 2, ir.Imm32(i)), ir.Imm32(0));
+            ir.SetAttribute(attr + 3, ir.GetAttribute(attr + 3, ir.Imm32(i)), ir.Imm32(0));
+        }
+
+        // Assign position from input
+        const IR::Attribute attr = IR::Attribute::PositionX;
+        ir.SetAttribute(attr + 0, ir.GetAttribute(attr + 0, ir.Imm32(i)), ir.Imm32(0));
+        ir.SetAttribute(attr + 1, ir.GetAttribute(attr + 1, ir.Imm32(i)), ir.Imm32(0));
+        ir.SetAttribute(attr + 2, ir.GetAttribute(attr + 2, ir.Imm32(i)), ir.Imm32(0));
+        ir.SetAttribute(attr + 3, ir.GetAttribute(attr + 3, ir.Imm32(i)), ir.Imm32(0));
+
+        // Assign layer
+        ir.SetAttribute(IR::Attribute::Layer, ir.GetAttribute(source_program.info.emulated_layer),
+                        ir.Imm32(0));
+
+        // Emit vertex
+        ir.EmitVertex(ir.Imm32(0));
+    }
+    ir.EndPrimitive(ir.Imm32(0));
+
+    IR::Block* return_block{block_pool.Create(inst_pool)};
+    IR::IREmitter{*return_block}.Epilogue();
+    current_block->AddBranch(return_block);
+
+    auto& merge{program.syntax_list.emplace_back()};
+    merge.type = IR::AbstractSyntaxNode::Type::Block;
+    merge.data.block = return_block;
+    program.syntax_list.emplace_back().type = IR::AbstractSyntaxNode::Type::Return;
+
+    program.blocks = GenerateBlocks(program.syntax_list);
+    program.post_order_blocks = PostOrder(program.syntax_list.front());
+    Optimization::SsaRewritePass(program);
+
+    return program;
 }
 
 } // namespace Shader::Maxwell

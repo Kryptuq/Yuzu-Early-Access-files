@@ -3,11 +3,5 @@
 
 #pragma once
 
-#include <algorithm>
-#include <chrono>
-#include <memory>
-
-#include <fmt/format.h>
-
-#include "common/assert.h"
+#include "common/common_precompiled_headers.h"
 #include "frontend/maxwell/translate/impl/impl.h"

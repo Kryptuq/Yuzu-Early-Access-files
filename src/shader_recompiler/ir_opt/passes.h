@@ -23,6 +23,7 @@ void RescalingPass(IR::Program& program);
 void SsaRewritePass(IR::Program& program);
 void PositionPass(Environment& env, IR::Program& program);
 void TexturePass(Environment& env, IR::Program& program, const HostTranslateInfo& host_info);
+void LayerPass(IR::Program& program, const HostTranslateInfo& host_info);
 void VerificationPass(const IR::Program& program);
 
 // Dual Vertex

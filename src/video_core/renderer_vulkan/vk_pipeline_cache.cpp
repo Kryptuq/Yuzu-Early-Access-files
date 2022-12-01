@@ -46,6 +46,7 @@ MICROPROFILE_DECLARE(Vulkan_PipelineCache);
 namespace {
 using Shader::Backend::SPIRV::EmitSPIRV;
 using Shader::Maxwell::ConvertLegacyToGeneric;
+using Shader::Maxwell::GenerateGeometryPassthrough;
 using Shader::Maxwell::MergeDualVertexPrograms;
 using Shader::Maxwell::TranslateProgram;
 using VideoCommon::ComputeEnvironment;
@@ -58,6 +59,17 @@ constexpr u32 CACHE_VERSION = 7;
 template <typename Container>
 auto MakeSpan(Container& container) {
     return std::span(container.data(), container.size());
+}
+
+Shader::OutputTopology MaxwellToOutputTopology(Maxwell::PrimitiveTopology topology) {
+    switch (topology) {
+    case Maxwell::PrimitiveTopology::Points:
+        return Shader::OutputTopology::PointList;
+    case Maxwell::PrimitiveTopology::LineStrip:
+        return Shader::OutputTopology::LineStrip;
+    default:
+        return Shader::OutputTopology::TriangleStrip;
+    }
 }
 
 Shader::CompareFunction MaxwellToCompareFunction(Maxwell::ComparisonOp comparison) {
@@ -327,6 +339,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, const Device& device
         .needs_demote_reorder = driver_id == VK_DRIVER_ID_AMD_PROPRIETARY_KHR ||
                                 driver_id == VK_DRIVER_ID_AMD_OPEN_SOURCE_KHR,
         .support_snorm_render_buffer = true,
+        .support_viewport_index_layer = device.IsExtShaderViewportIndexLayerSupported(),
     };
 }
 
@@ -509,7 +522,19 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
     std::array<Shader::IR::Program, Maxwell::MaxShaderProgram> programs;
     const bool uses_vertex_a{key.unique_hashes[0] != 0};
     const bool uses_vertex_b{key.unique_hashes[1] != 0};
+
+    // Layer passthrough generation for devices without VK_EXT_shader_viewport_index_layer
+    Shader::IR::Program* layer_source_program{};
+
     for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
+        const bool is_emulated_stage = layer_source_program != nullptr &&
+                                       index == static_cast<u32>(Maxwell::ShaderType::Geometry);
+        if (key.unique_hashes[index] == 0 && is_emulated_stage) {
+            auto topology = MaxwellToOutputTopology(key.state.topology);
+            programs[index] = GenerateGeometryPassthrough(pools.inst, pools.block, host_info,
+                                                          *layer_source_program, topology);
+            continue;
+        }
         if (key.unique_hashes[index] == 0) {
             continue;
         }
@@ -530,6 +555,10 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
             auto program_vb{TranslateProgram(pools.inst, pools.block, env, cfg, host_info)};
             programs[index] = MergeDualVertexPrograms(program_va, program_vb, env);
         }
+
+        if (programs[index].info.requires_layer_emulation) {
+            layer_source_program = &programs[index];
+        }
     }
     std::array<const Shader::Info*, Maxwell::MaxShaderStage> infos{};
     std::array<vk::ShaderModule, Maxwell::MaxShaderStage> modules;
@@ -538,7 +567,9 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
     Shader::Backend::Bindings binding;
     for (size_t index = uses_vertex_a && uses_vertex_b ? 1 : 0; index < Maxwell::MaxShaderProgram;
          ++index) {
-        if (key.unique_hashes[index] == 0) {
+        const bool is_emulated_stage = layer_source_program != nullptr &&
+                                       index == static_cast<u32>(Maxwell::ShaderType::Geometry);
+        if (key.unique_hashes[index] == 0 && !is_emulated_stage) {
             continue;
         }
         UNIMPLEMENTED_IF(index == 0);

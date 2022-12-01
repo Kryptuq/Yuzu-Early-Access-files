@@ -210,11 +210,6 @@ public:
      */
     void Unstall();
 
-private:
-    [[nodiscard]] bool IsStalled() const {
-        return stalled_lock.owns_lock();
-    }
-
 protected:
     /// Core system
     Core::System& system;
@@ -246,7 +241,7 @@ private:
     f32 system_volume{1.0f};
     /// Set via IAudioDevice service calls
     f32 device_volume{1.0f};
-    /// True if coretiming has been stalled
+    std::mutex stall_guard;
     std::unique_lock<std::mutex> stalled_lock;
 };
 

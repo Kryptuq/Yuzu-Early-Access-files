@@ -37,6 +37,7 @@ add_library(common STATIC
     cache_management.cpp
     cache_management.h
     common_funcs.h
+    common_precompiled_headers.h
     common_types.h
     concepts.h
     div_ceil.h
@@ -187,5 +188,4 @@ endif()
 
 if (YUZU_USE_PRECOMPILED_HEADERS)
     target_precompile_headers(common PRIVATE precompiled_headers.h)
-    set(CMAKE_PCH_INSTANTIATE_TEMPLATES ON)
 endif()

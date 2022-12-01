@@ -39,6 +39,7 @@ using Shader::Backend::GLASM::EmitGLASM;
 using Shader::Backend::GLSL::EmitGLSL;
 using Shader::Backend::SPIRV::EmitSPIRV;
 using Shader::Maxwell::ConvertLegacyToGeneric;
+using Shader::Maxwell::GenerateGeometryPassthrough;
 using Shader::Maxwell::MergeDualVertexPrograms;
 using Shader::Maxwell::TranslateProgram;
 using VideoCommon::ComputeEnvironment;
@@ -54,6 +55,17 @@ constexpr u32 CACHE_VERSION = 7;
 template <typename Container>
 auto MakeSpan(Container& container) {
     return std::span(container.data(), container.size());
+}
+
+Shader::OutputTopology MaxwellToOutputTopology(Maxwell::PrimitiveTopology topology) {
+    switch (topology) {
+    case Maxwell::PrimitiveTopology::Points:
+        return Shader::OutputTopology::PointList;
+    case Maxwell::PrimitiveTopology::LineStrip:
+        return Shader::OutputTopology::LineStrip;
+    default:
+        return Shader::OutputTopology::TriangleStrip;
+    }
 }
 
 Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
@@ -220,6 +232,7 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
           .support_int64 = device.HasShaderInt64(),
           .needs_demote_reorder = device.IsAmd(),
           .support_snorm_render_buffer = false,
+          .support_viewport_index_layer = device.HasVertexViewportLayer(),
       } {
     if (use_asynchronous_shaders) {
         workers = CreateWorkers();
@@ -314,9 +327,7 @@ GraphicsPipeline* ShaderCache::CurrentGraphicsPipeline() {
     const auto& regs{maxwell3d->regs};
     graphics_key.raw = 0;
     graphics_key.early_z.Assign(regs.mandated_early_z != 0 ? 1 : 0);
-    graphics_key.gs_input_topology.Assign(graphics_key.unique_hashes[4] != 0
-                                              ? regs.draw.topology.Value()
-                                              : Maxwell::PrimitiveTopology{});
+    graphics_key.gs_input_topology.Assign(regs.draw.topology.Value());
     graphics_key.tessellation_primitive.Assign(regs.tessellation.params.domain_type.Value());
     graphics_key.tessellation_spacing.Assign(regs.tessellation.params.spacing.Value());
     graphics_key.tessellation_clockwise.Assign(
@@ -415,7 +426,19 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
     std::array<Shader::IR::Program, Maxwell::MaxShaderProgram> programs;
     const bool uses_vertex_a{key.unique_hashes[0] != 0};
     const bool uses_vertex_b{key.unique_hashes[1] != 0};
+
+    // Layer passthrough generation for devices without GL_ARB_shader_viewport_layer_array
+    Shader::IR::Program* layer_source_program{};
+
     for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
+        const bool is_emulated_stage = layer_source_program != nullptr &&
+                                       index == static_cast<u32>(Maxwell::ShaderType::Geometry);
+        if (key.unique_hashes[index] == 0 && is_emulated_stage) {
+            auto topology = MaxwellToOutputTopology(key.gs_input_topology);
+            programs[index] = GenerateGeometryPassthrough(pools.inst, pools.block, host_info,
+                                                          *layer_source_program, topology);
+            continue;
+        }
         if (key.unique_hashes[index] == 0) {
             continue;
         }
@@ -443,6 +466,10 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
                 Shader::NumDescriptors(program_vb.info.storage_buffers_descriptors);
             programs[index] = MergeDualVertexPrograms(program_va, program_vb, env);
         }
+
+        if (programs[index].info.requires_layer_emulation) {
+            layer_source_program = &programs[index];
+        }
     }
     const u32 glasm_storage_buffer_limit{device.GetMaxGLASMStorageBufferBlocks()};
     const bool glasm_use_storage_buffers{total_storage_buffers <= glasm_storage_buffer_limit};
@@ -456,7 +483,9 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
     const bool use_glasm{device.UseAssemblyShaders()};
     const size_t first_index = uses_vertex_a && uses_vertex_b ? 1 : 0;
     for (size_t index = first_index; index < Maxwell::MaxShaderProgram; ++index) {
-        if (key.unique_hashes[index] == 0) {
+        const bool is_emulated_stage = layer_source_program != nullptr &&
+                                       index == static_cast<u32>(Maxwell::ShaderType::Geometry);
+        if (key.unique_hashes[index] == 0 && !is_emulated_stage) {
             continue;
         }
         UNIMPLEMENTED_IF(index == 0);

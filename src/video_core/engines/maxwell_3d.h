@@ -3159,6 +3159,7 @@ private:
     std::vector<u32> deferred_draw_method;
     enum class DrawMode : u32 { General = 0, Instance, InlineIndex };
     DrawMode draw_mode{DrawMode::General};
+    bool draw_indexed{};
 };
 
 #define ASSERT_REG_POSITION(field_name, position)                                                  \
