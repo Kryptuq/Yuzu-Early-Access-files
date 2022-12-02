@@ -211,11 +211,6 @@ public:
         return khr_uniform_buffer_standard_layout;
     }
 
-    /// Returns true if the device supports VK_KHR_spirv_1_4.
-    bool IsKhrSpirv1_4Supported() const {
-        return khr_spirv_1_4;
-    }
-
     /// Returns true if the device supports VK_KHR_push_descriptor.
     bool IsKhrPushDescriptorSupported() const {
         return khr_push_descriptor;
@@ -314,6 +309,17 @@ public:
     /// Returns true if the device supports VK_KHR_shader_atomic_int64.
     bool IsExtShaderAtomicInt64Supported() const {
         return ext_shader_atomic_int64;
+    }
+
+    /// Returns the minimum supported version of SPIR-V.
+    u32 SupportedSpirvVersion() const {
+        if (instance_version >= VK_API_VERSION_1_3) {
+            return 0x00010600U;
+        }
+        if (khr_spirv_1_4) {
+            return 0x00010400U;
+        }
+        return 0x00010000U;
     }
 
     /// Returns true when a known debugging tool is attached.

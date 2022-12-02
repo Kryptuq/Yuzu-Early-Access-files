@@ -75,29 +75,31 @@ enum class NvidiaArchitecture {
 };
 
 constexpr std::array REQUIRED_EXTENSIONS{
-    VK_KHR_MAINTENANCE1_EXTENSION_NAME,
-    VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME,
-    VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
-    VK_KHR_16BIT_STORAGE_EXTENSION_NAME,
-    VK_KHR_8BIT_STORAGE_EXTENSION_NAME,
-    VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
-    VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME,
-    VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
-    VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME,
-    VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
-    VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME,
     VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME,
-    VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME,
-    VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME,
     VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
+
+    // Core in 1.2, but required due to use of extension methods,
+    // and well-supported by drivers
+    VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
+    VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME,
     VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
-    VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME,
 #ifdef _WIN32
     VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
 #endif
 #ifdef __unix__
     VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME,
 #endif
+};
+
+constexpr std::array REQUIRED_EXTENSIONS_BEFORE_1_2{
+    VK_KHR_8BIT_STORAGE_EXTENSION_NAME,
+    VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
+    VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME,
+    VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
+};
+
+constexpr std::array REQUIRED_EXTENSIONS_BEFORE_1_3{
+    VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME,
 };
 
 template <typename T>
@@ -328,7 +330,8 @@ NvidiaArchitecture GetNvidiaArchitecture(vk::PhysicalDevice physical,
 Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR surface,
                const vk::InstanceDispatch& dld_)
     : instance{instance_}, dld{dld_}, physical{physical_}, properties{physical.GetProperties()},
-      supported_extensions{GetSupportedExtensions(physical)},
+      instance_version{properties.apiVersion}, supported_extensions{GetSupportedExtensions(
+                                                   physical)},
       format_properties(GetFormatProperties(physical)) {
     CheckSuitability(surface != nullptr);
     SetupFamilies(surface);
@@ -452,8 +455,8 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     };
     SetNext(next, variable_pointers);
 
-    VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT demote{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT,
+    VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures demote{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES,
         .pNext = nullptr,
         .shaderDemoteToHelperInvocation = true,
     };
@@ -897,28 +900,51 @@ std::string Device::GetDriverName() const {
     }
 }
 
+static std::vector<const char*> ExtensionsRequiredForInstanceVersion(u32 available_version) {
+    std::vector<const char*> extensions{REQUIRED_EXTENSIONS.begin(), REQUIRED_EXTENSIONS.end()};
+
+    if (available_version < VK_API_VERSION_1_2) {
+        extensions.insert(extensions.end(), REQUIRED_EXTENSIONS_BEFORE_1_2.begin(),
+                          REQUIRED_EXTENSIONS_BEFORE_1_2.end());
+    }
+
+    if (available_version < VK_API_VERSION_1_3) {
+        extensions.insert(extensions.end(), REQUIRED_EXTENSIONS_BEFORE_1_3.begin(),
+                          REQUIRED_EXTENSIONS_BEFORE_1_3.end());
+    }
+
+    return extensions;
+}
+
 void Device::CheckSuitability(bool requires_swapchain) const {
-    std::bitset<REQUIRED_EXTENSIONS.size()> available_extensions;
-    bool has_swapchain = false;
-    for (const VkExtensionProperties& property : physical.EnumerateDeviceExtensionProperties()) {
-        const std::string_view name{property.extensionName};
-        for (size_t i = 0; i < REQUIRED_EXTENSIONS.size(); ++i) {
-            if (available_extensions[i]) {
-                continue;
-            }
-            available_extensions[i] = name == REQUIRED_EXTENSIONS[i];
-        }
-        has_swapchain = has_swapchain || name == VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+    std::vector<const char*> required_extensions =
+        ExtensionsRequiredForInstanceVersion(instance_version);
+    std::vector<const char*> available_extensions;
+
+    if (requires_swapchain) {
+        required_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     }
-    for (size_t i = 0; i < REQUIRED_EXTENSIONS.size(); ++i) {
-        if (available_extensions[i]) {
-            continue;
-        }
-        LOG_ERROR(Render_Vulkan, "Missing required extension: {}", REQUIRED_EXTENSIONS[i]);
-        throw vk::Exception(VK_ERROR_EXTENSION_NOT_PRESENT);
+
+    auto extension_properties = physical.EnumerateDeviceExtensionProperties();
+
+    for (const VkExtensionProperties& property : extension_properties) {
+        available_extensions.push_back(property.extensionName);
     }
-    if (requires_swapchain && !has_swapchain) {
-        LOG_ERROR(Render_Vulkan, "Missing required extension: VK_KHR_swapchain");
+
+    bool has_all_required_extensions = true;
+    for (const char* requirement_name : required_extensions) {
+        const bool found =
+            std::ranges::any_of(available_extensions, [&](const char* extension_name) {
+                return std::strcmp(requirement_name, extension_name) == 0;
+            });
+
+        if (!found) {
+            LOG_ERROR(Render_Vulkan, "Missing required extension: {}", requirement_name);
+            has_all_required_extensions = false;
+        }
+    }
+
+    if (!has_all_required_extensions) {
         throw vk::Exception(VK_ERROR_EXTENSION_NOT_PRESENT);
     }
 
@@ -941,9 +967,8 @@ void Device::CheckSuitability(bool requires_swapchain) const {
             throw vk::Exception(VK_ERROR_FEATURE_NOT_PRESENT);
         }
     }
-    VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT demote{};
-    demote.sType =
-        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT;
+    VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures demote{};
+    demote.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES;
     demote.pNext = nullptr;
 
     VkPhysicalDeviceVariablePointerFeaturesKHR variable_pointers{};
@@ -961,7 +986,7 @@ void Device::CheckSuitability(bool requires_swapchain) const {
     physical.GetFeatures2KHR(features2);
 
     const VkPhysicalDeviceFeatures& features{features2.features};
-    const std::array feature_report{
+    std::vector feature_report{
         std::make_pair(features.robustBufferAccess, "robustBufferAccess"),
         std::make_pair(features.vertexPipelineStoresAndAtomics, "vertexPipelineStoresAndAtomics"),
         std::make_pair(features.imageCubeArray, "imageCubeArray"),
@@ -984,27 +1009,30 @@ void Device::CheckSuitability(bool requires_swapchain) const {
                        "shaderStorageImageWriteWithoutFormat"),
         std::make_pair(features.shaderClipDistance, "shaderClipDistance"),
         std::make_pair(features.shaderCullDistance, "shaderCullDistance"),
-        std::make_pair(demote.shaderDemoteToHelperInvocation, "shaderDemoteToHelperInvocation"),
         std::make_pair(variable_pointers.variablePointers, "variablePointers"),
         std::make_pair(variable_pointers.variablePointersStorageBuffer,
                        "variablePointersStorageBuffer"),
         std::make_pair(robustness2.robustBufferAccess2, "robustBufferAccess2"),
         std::make_pair(robustness2.robustImageAccess2, "robustImageAccess2"),
         std::make_pair(robustness2.nullDescriptor, "nullDescriptor"),
+        std::make_pair(demote.shaderDemoteToHelperInvocation, "shaderDemoteToHelperInvocation"),
     };
+
+    bool has_all_required_features = true;
     for (const auto& [is_supported, name] : feature_report) {
-        if (is_supported) {
-            continue;
+        if (!is_supported) {
+            LOG_ERROR(Render_Vulkan, "Missing required feature: {}", name);
+            has_all_required_features = false;
         }
-        LOG_ERROR(Render_Vulkan, "Missing required feature: {}", name);
+    }
+
+    if (!has_all_required_features) {
         throw vk::Exception(VK_ERROR_FEATURE_NOT_PRESENT);
     }
 }
 
 std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
-    std::vector<const char*> extensions;
-    extensions.reserve(8 + REQUIRED_EXTENSIONS.size());
-    extensions.insert(extensions.begin(), REQUIRED_EXTENSIONS.begin(), REQUIRED_EXTENSIONS.end());
+    std::vector<const char*> extensions = ExtensionsRequiredForInstanceVersion(instance_version);
     if (requires_surface) {
         extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     }

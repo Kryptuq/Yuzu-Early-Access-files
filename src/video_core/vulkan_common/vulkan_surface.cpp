@@ -11,9 +11,11 @@
 #include <windows.h>
 // ensure include order
 #include <vulkan/vulkan_win32.h>
-#endif
-
-#if !defined(_WIN32) && !defined(__APPLE__)
+#elif defined(__APPLE__)
+#include <vulkan/vulkan_macos.h>
+#elif defined(__ANDROID__)
+#include <vulkan/vulkan_android.h>
+#else
 #include <X11/Xlib.h>
 #include <vulkan/vulkan_wayland.h>
 #include <vulkan/vulkan_xlib.h>
@@ -40,8 +42,33 @@ vk::SurfaceKHR CreateSurface(const vk::Instance& instance,
             throw vk::Exception(VK_ERROR_INITIALIZATION_FAILED);
         }
     }
-#endif
-#if !defined(_WIN32) && !defined(__APPLE__)
+#elif defined(__APPLE__)
+    if (window_info.type == Core::Frontend::WindowSystemType::Cocoa) {
+        const VkMacOSSurfaceCreateInfoMVK mvk_ci{VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK,
+                                                 nullptr, 0, window_info.render_surface};
+        const auto vkCreateMacOSSurfaceMVK = reinterpret_cast<PFN_vkCreateMacOSSurfaceMVK>(
+            dld.vkGetInstanceProcAddr(*instance, "vkCreateMacOSSurfaceMVK"));
+        if (!vkCreateMacOSSurfaceMVK ||
+            vkCreateMacOSSurfaceMVK(*instance, &mvk_ci, nullptr, &unsafe_surface) != VK_SUCCESS) {
+            LOG_ERROR(Render_Vulkan, "Failed to initialize Metal surface");
+            throw vk::Exception(VK_ERROR_INITIALIZATION_FAILED);
+        }
+    }
+#elif defined(__ANDROID__)
+    if (window_info.type == Core::Frontend::WindowSystemType::Android) {
+        const VkAndroidSurfaceCreateInfoKHR android_ci{
+            VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR, nullptr, 0,
+            reinterpret_cast<ANativeWindow*>(window_info.render_surface)};
+        const auto vkCreateAndroidSurfaceKHR = reinterpret_cast<PFN_vkCreateAndroidSurfaceKHR>(
+            dld.vkGetInstanceProcAddr(*instance, "vkCreateAndroidSurfaceKHR"));
+        if (!vkCreateAndroidSurfaceKHR ||
+            vkCreateAndroidSurfaceKHR(*instance, &android_ci, nullptr, &unsafe_surface) !=
+                VK_SUCCESS) {
+            LOG_ERROR(Render_Vulkan, "Failed to initialize Android surface");
+            throw vk::Exception(VK_ERROR_INITIALIZATION_FAILED);
+        }
+    }
+#else
     if (window_info.type == Core::Frontend::WindowSystemType::X11) {
         const VkXlibSurfaceCreateInfoKHR xlib_ci{
             VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR, nullptr, 0,
@@ -70,6 +97,7 @@ vk::SurfaceKHR CreateSurface(const vk::Instance& instance,
         }
     }
 #endif
+
     if (!unsafe_surface) {
         LOG_ERROR(Render_Vulkan, "Presentation not supported on this platform");
         throw vk::Exception(VK_ERROR_INITIALIZATION_FAILED);

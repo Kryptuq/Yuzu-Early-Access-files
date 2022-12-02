@@ -12,7 +12,7 @@ void EmitJoin(EmitContext&) {
 
 void EmitDemoteToHelperInvocation(EmitContext& ctx) {
     if (ctx.profile.support_demote_to_helper_invocation) {
-        ctx.OpDemoteToHelperInvocationEXT();
+        ctx.OpDemoteToHelperInvocation();
     } else {
         const Id kill_label{ctx.OpLabel()};
         const Id impossible_label{ctx.OpLabel()};

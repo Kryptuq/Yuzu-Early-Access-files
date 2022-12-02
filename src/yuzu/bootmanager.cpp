@@ -267,6 +267,10 @@ static Core::Frontend::WindowSystemType GetWindowSystemType() {
         return Core::Frontend::WindowSystemType::X11;
     else if (platform_name == QStringLiteral("wayland"))
         return Core::Frontend::WindowSystemType::Wayland;
+    else if (platform_name == QStringLiteral("cocoa"))
+        return Core::Frontend::WindowSystemType::Cocoa;
+    else if (platform_name == QStringLiteral("android"))
+        return Core::Frontend::WindowSystemType::Android;
 
     LOG_CRITICAL(Frontend, "Unknown Qt platform!");
     return Core::Frontend::WindowSystemType::Windows;

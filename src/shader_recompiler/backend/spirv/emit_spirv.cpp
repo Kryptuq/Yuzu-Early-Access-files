@@ -402,8 +402,10 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
         ctx.AddCapability(spv::Capability::SparseResidency);
     }
     if (info.uses_demote_to_helper_invocation && profile.support_demote_to_helper_invocation) {
-        ctx.AddExtension("SPV_EXT_demote_to_helper_invocation");
-        ctx.AddCapability(spv::Capability::DemoteToHelperInvocationEXT);
+        if (profile.supported_spirv < 0x00010600) {
+            ctx.AddExtension("SPV_EXT_demote_to_helper_invocation");
+        }
+        ctx.AddCapability(spv::Capability::DemoteToHelperInvocation);
     }
     if (info.stores[IR::Attribute::ViewportIndex]) {
         ctx.AddCapability(spv::Capability::MultiViewport);
@@ -426,12 +428,11 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
     if ((info.uses_subgroup_vote || info.uses_subgroup_invocation_id ||
          info.uses_subgroup_shuffles) &&
         profile.support_vote) {
-        ctx.AddExtension("SPV_KHR_shader_ballot");
-        ctx.AddCapability(spv::Capability::SubgroupBallotKHR);
+        ctx.AddCapability(spv::Capability::GroupNonUniformBallot);
+        ctx.AddCapability(spv::Capability::GroupNonUniformShuffle);
         if (!profile.warp_size_potentially_larger_than_guest) {
             // vote ops are only used when not taking the long path
-            ctx.AddExtension("SPV_KHR_subgroup_vote");
-            ctx.AddCapability(spv::Capability::SubgroupVoteKHR);
+            ctx.AddCapability(spv::Capability::GroupNonUniformVote);
         }
     }
     if (info.uses_int64_bit_atomics && profile.support_int64_atomics) {

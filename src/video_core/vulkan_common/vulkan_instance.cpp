@@ -15,13 +15,15 @@
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
 // Include these late to avoid polluting previous headers
-#ifdef _WIN32
+#if defined(_WIN32)
 #include <windows.h>
 // ensure include order
 #include <vulkan/vulkan_win32.h>
-#endif
-
-#if !defined(_WIN32) && !defined(__APPLE__)
+#elif defined(__APPLE__)
+#include <vulkan/vulkan_macos.h>
+#elif defined(__ANDROID__)
+#include <vulkan/vulkan_android.h>
+#else
 #include <X11/Xlib.h>
 #include <vulkan/vulkan_wayland.h>
 #include <vulkan/vulkan_xlib.h>
@@ -40,8 +42,15 @@ namespace {
     case Core::Frontend::WindowSystemType::Windows:
         extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
         break;
-#endif
-#if !defined(_WIN32) && !defined(__APPLE__)
+#elif defined(__APPLE__)
+    case Core::Frontend::WindowSystemType::Cocoa:
+        extensions.push_back(VK_MVK_MACOS_SURFACE_EXTENSION_NAME);
+        break;
+#elif defined(__ANDROID__)
+    case Core::Frontend::WindowSystemType::Android:
+        extensions.push_back(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
+        break;
+#else
     case Core::Frontend::WindowSystemType::X11:
         extensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
         break;
@@ -60,6 +69,10 @@ namespace {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
     extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+#ifdef __APPLE__
+    extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+#endif
     return extensions;
 }
 
@@ -141,7 +154,7 @@ vk::Instance CreateInstance(const Common::DynamicLibrary& library, vk::InstanceD
     }
     vk::Instance instance =
         std::async([&] {
-            return vk::Instance::Create(required_version, layers, extensions, dld);
+            return vk::Instance::Create(available_version, layers, extensions, dld);
         }).get();
     if (!vk::Load(*instance, dld)) {
         LOG_ERROR(Render_Vulkan, "Failed to load Vulkan instance function pointers");

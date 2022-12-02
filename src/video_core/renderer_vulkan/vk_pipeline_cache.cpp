@@ -54,7 +54,7 @@ using VideoCommon::FileEnvironment;
 using VideoCommon::GenericEnvironment;
 using VideoCommon::GraphicsEnvironment;
 
-constexpr u32 CACHE_VERSION = 7;
+constexpr u32 CACHE_VERSION = 8;
 
 template <typename Container>
 auto MakeSpan(Container& container) {
@@ -289,7 +289,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, const Device& device
     const auto& float_control{device.FloatControlProperties()};
     const VkDriverIdKHR driver_id{device.GetDriverID()};
     profile = Shader::Profile{
-        .supported_spirv = device.IsKhrSpirv1_4Supported() ? 0x00010400U : 0x00010000U,
+        .supported_spirv = device.SupportedSpirvVersion(),
         .unified_descriptor_binding = true,
         .support_descriptor_aliasing = true,
         .support_int8 = device.IsInt8Supported(),

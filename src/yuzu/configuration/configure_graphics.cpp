@@ -360,7 +360,7 @@ void ConfigureGraphics::RetrieveVulkanDevices() try {
 
     vk::InstanceDispatch dld;
     const Common::DynamicLibrary library = OpenLibrary();
-    const vk::Instance instance = CreateInstance(library, dld, VK_API_VERSION_1_0);
+    const vk::Instance instance = CreateInstance(library, dld, VK_API_VERSION_1_1);
     const std::vector<VkPhysicalDevice> physical_devices = instance.EnumeratePhysicalDevices();
 
     vulkan_devices.clear();

@@ -6,6 +6,10 @@
 
 namespace Shader::Backend::SPIRV {
 namespace {
+Id SubgroupScope(EmitContext& ctx) {
+    return ctx.Const(static_cast<u32>(spv::Scope::Subgroup));
+}
+
 Id GetThreadId(EmitContext& ctx) {
     return ctx.OpLoad(ctx.U32[1], ctx.subgroup_local_invocation_id);
 }
@@ -49,8 +53,9 @@ Id GetMaxThreadId(EmitContext& ctx, Id thread_id, Id clamp, Id segmentation_mask
 }
 
 Id SelectValue(EmitContext& ctx, Id in_range, Id value, Id src_thread_id) {
-    return ctx.OpSelect(ctx.U32[1], in_range,
-                        ctx.OpSubgroupReadInvocationKHR(ctx.U32[1], value, src_thread_id), value);
+    return ctx.OpSelect(
+        ctx.U32[1], in_range,
+        ctx.OpGroupNonUniformShuffle(ctx.U32[1], SubgroupScope(ctx), value, src_thread_id), value);
 }
 
 Id GetUpperClamp(EmitContext& ctx, Id invocation_id, Id clamp) {
@@ -71,40 +76,46 @@ Id EmitLaneId(EmitContext& ctx) {
 
 Id EmitVoteAll(EmitContext& ctx, Id pred) {
     if (!ctx.profile.warp_size_potentially_larger_than_guest) {
-        return ctx.OpSubgroupAllKHR(ctx.U1, pred);
+        return ctx.OpGroupNonUniformAll(ctx.U1, SubgroupScope(ctx), pred);
     }
-    const Id mask_ballot{ctx.OpSubgroupBallotKHR(ctx.U32[4], ctx.true_value)};
+    const Id mask_ballot{
+        ctx.OpGroupNonUniformBallot(ctx.U32[4], SubgroupScope(ctx), ctx.true_value)};
     const Id active_mask{WarpExtract(ctx, mask_ballot)};
-    const Id ballot{WarpExtract(ctx, ctx.OpSubgroupBallotKHR(ctx.U32[4], pred))};
+    const Id ballot{
+        WarpExtract(ctx, ctx.OpGroupNonUniformBallot(ctx.U32[4], SubgroupScope(ctx), pred))};
     const Id lhs{ctx.OpBitwiseAnd(ctx.U32[1], ballot, active_mask)};
     return ctx.OpIEqual(ctx.U1, lhs, active_mask);
 }
 
 Id EmitVoteAny(EmitContext& ctx, Id pred) {
     if (!ctx.profile.warp_size_potentially_larger_than_guest) {
-        return ctx.OpSubgroupAnyKHR(ctx.U1, pred);
+        return ctx.OpGroupNonUniformAny(ctx.U1, SubgroupScope(ctx), pred);
     }
-    const Id mask_ballot{ctx.OpSubgroupBallotKHR(ctx.U32[4], ctx.true_value)};
+    const Id mask_ballot{
+        ctx.OpGroupNonUniformBallot(ctx.U32[4], SubgroupScope(ctx), ctx.true_value)};
     const Id active_mask{WarpExtract(ctx, mask_ballot)};
-    const Id ballot{WarpExtract(ctx, ctx.OpSubgroupBallotKHR(ctx.U32[4], pred))};
+    const Id ballot{
+        WarpExtract(ctx, ctx.OpGroupNonUniformBallot(ctx.U32[4], SubgroupScope(ctx), pred))};
     const Id lhs{ctx.OpBitwiseAnd(ctx.U32[1], ballot, active_mask)};
     return ctx.OpINotEqual(ctx.U1, lhs, ctx.u32_zero_value);
 }
 
 Id EmitVoteEqual(EmitContext& ctx, Id pred) {
     if (!ctx.profile.warp_size_potentially_larger_than_guest) {
-        return ctx.OpSubgroupAllEqualKHR(ctx.U1, pred);
+        return ctx.OpGroupNonUniformAllEqual(ctx.U1, SubgroupScope(ctx), pred);
     }
-    const Id mask_ballot{ctx.OpSubgroupBallotKHR(ctx.U32[4], ctx.true_value)};
+    const Id mask_ballot{
+        ctx.OpGroupNonUniformBallot(ctx.U32[4], SubgroupScope(ctx), ctx.true_value)};
     const Id active_mask{WarpExtract(ctx, mask_ballot)};
-    const Id ballot{WarpExtract(ctx, ctx.OpSubgroupBallotKHR(ctx.U32[4], pred))};
+    const Id ballot{
+        WarpExtract(ctx, ctx.OpGroupNonUniformBallot(ctx.U32[4], SubgroupScope(ctx), pred))};
     const Id lhs{ctx.OpBitwiseXor(ctx.U32[1], ballot, active_mask)};
     return ctx.OpLogicalOr(ctx.U1, ctx.OpIEqual(ctx.U1, lhs, ctx.u32_zero_value),
                            ctx.OpIEqual(ctx.U1, lhs, active_mask));
 }
 
 Id EmitSubgroupBallot(EmitContext& ctx, Id pred) {
-    const Id ballot{ctx.OpSubgroupBallotKHR(ctx.U32[4], pred)};
+    const Id ballot{ctx.OpGroupNonUniformBallot(ctx.U32[4], SubgroupScope(ctx), pred)};
     if (!ctx.profile.warp_size_potentially_larger_than_guest) {
         return ctx.OpCompositeExtract(ctx.U32[1], ballot, 0U);
     }

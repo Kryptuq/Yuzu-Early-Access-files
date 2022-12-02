@@ -51,22 +51,12 @@ EmuWindow_SDL2_VK::EmuWindow_SDL2_VK(InputCommon::InputSubsystem* input_subsyste
         window_info.type = Core::Frontend::WindowSystemType::Windows;
         window_info.render_surface = reinterpret_cast<void*>(wm.info.win.window);
         break;
-#else
-    case SDL_SYSWM_TYPE::SDL_SYSWM_WINDOWS:
-        LOG_CRITICAL(Frontend, "Window manager subsystem Windows not compiled");
-        std::exit(EXIT_FAILURE);
-        break;
 #endif
 #ifdef SDL_VIDEO_DRIVER_X11
     case SDL_SYSWM_TYPE::SDL_SYSWM_X11:
         window_info.type = Core::Frontend::WindowSystemType::X11;
         window_info.display_connection = wm.info.x11.display;
         window_info.render_surface = reinterpret_cast<void*>(wm.info.x11.window);
-        break;
-#else
-    case SDL_SYSWM_TYPE::SDL_SYSWM_X11:
-        LOG_CRITICAL(Frontend, "Window manager subsystem X11 not compiled");
-        std::exit(EXIT_FAILURE);
         break;
 #endif
 #ifdef SDL_VIDEO_DRIVER_WAYLAND
@@ -75,14 +65,21 @@ EmuWindow_SDL2_VK::EmuWindow_SDL2_VK(InputCommon::InputSubsystem* input_subsyste
         window_info.display_connection = wm.info.wl.display;
         window_info.render_surface = wm.info.wl.surface;
         break;
-#else
-    case SDL_SYSWM_TYPE::SDL_SYSWM_WAYLAND:
-        LOG_CRITICAL(Frontend, "Window manager subsystem Wayland not compiled");
-        std::exit(EXIT_FAILURE);
+#endif
+#ifdef SDL_VIDEO_DRIVER_COCOA
+    case SDL_SYSWM_TYPE::SDL_SYSWM_COCOA:
+        window_info.type = Core::Frontend::WindowSystemType::Cocoa;
+        window_info.render_surface = SDL_Metal_CreateView(render_window);
+        break;
+#endif
+#ifdef SDL_VIDEO_DRIVER_ANDROID
+    case SDL_SYSWM_TYPE::SDL_SYSWM_ANDROID:
+        window_info.type = Core::Frontend::WindowSystemType::Android;
+        window_info.render_surface = reinterpret_cast<void*>(wm.info.android.window);
         break;
 #endif
     default:
-        LOG_CRITICAL(Frontend, "Window manager subsystem not implemented");
+        LOG_CRITICAL(Frontend, "Window manager subsystem {} not implemented", wm.subsystem);
         std::exit(EXIT_FAILURE);
         break;
     }
