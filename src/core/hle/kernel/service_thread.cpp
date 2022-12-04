@@ -183,7 +183,7 @@ ServiceThread::Impl::~Impl() {
 }
 
 ServiceThread::Impl::Impl(KernelCore& kernel_, const std::string& service_name)
-    : kernel{kernel_}, m_service_name{service_name} {
+    : kernel{kernel_}, m_shutdown_requested{false}, m_service_name{service_name} {
     // Initialize event.
     m_wakeup_event = KEvent::Create(kernel);
     m_wakeup_event->Initialize(nullptr);
