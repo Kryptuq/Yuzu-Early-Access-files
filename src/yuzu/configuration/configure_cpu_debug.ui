@@ -175,6 +175,19 @@
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_ignore_memory_aborts">
+          <property name="toolTip">
+           <string>
+            &lt;div style=&quot;white-space: nowrap&quot;&gt;This optimization speeds up memory accesses by allowing invalid memory accesses to succeed.&lt;/div&gt;
+            &lt;div style=&quot;white-space: nowrap&quot;&gt;Enabling it reduces the overhead of all memory accesses and has no impact on programs that don't access invalid memory.&lt;/div&gt;
+           </string>
+          </property>
+          <property name="text">
+           <string>Enable fallbacks for invalid memory accesses</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
      </item>

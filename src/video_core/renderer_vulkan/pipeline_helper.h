@@ -44,17 +44,17 @@ public:
         });
     }
 
-    vk::DescriptorUpdateTemplateKHR CreateTemplate(VkDescriptorSetLayout descriptor_set_layout,
-                                                   VkPipelineLayout pipeline_layout,
-                                                   bool use_push_descriptor) const {
+    vk::DescriptorUpdateTemplate CreateTemplate(VkDescriptorSetLayout descriptor_set_layout,
+                                                VkPipelineLayout pipeline_layout,
+                                                bool use_push_descriptor) const {
         if (entries.empty()) {
             return nullptr;
         }
         const VkDescriptorUpdateTemplateType type =
             use_push_descriptor ? VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR
-                                : VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET_KHR;
-        return device->GetLogical().CreateDescriptorUpdateTemplateKHR({
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO_KHR,
+                                : VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+        return device->GetLogical().CreateDescriptorUpdateTemplate({
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
             .descriptorUpdateEntryCount = static_cast<u32>(entries.size()),
@@ -129,7 +129,7 @@ private:
     const Device* device{};
     bool is_compute{};
     boost::container::small_vector<VkDescriptorSetLayoutBinding, 32> bindings;
-    boost::container::small_vector<VkDescriptorUpdateTemplateEntryKHR, 32> entries;
+    boost::container::small_vector<VkDescriptorUpdateTemplateEntry, 32> entries;
     u32 binding{};
     u32 num_descriptors{};
     size_t offset{};

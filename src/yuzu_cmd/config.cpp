@@ -286,6 +286,7 @@ void Config::ReadValues() {
     ReadSetting("Cpu", Settings::values.cpuopt_fastmem);
     ReadSetting("Cpu", Settings::values.cpuopt_fastmem_exclusives);
     ReadSetting("Cpu", Settings::values.cpuopt_recompile_exclusives);
+    ReadSetting("Cpu", Settings::values.cpuopt_ignore_memory_aborts);
     ReadSetting("Cpu", Settings::values.cpuopt_unsafe_unfuse_fma);
     ReadSetting("Cpu", Settings::values.cpuopt_unsafe_reduce_fp_error);
     ReadSetting("Cpu", Settings::values.cpuopt_unsafe_ignore_standard_fpcr);

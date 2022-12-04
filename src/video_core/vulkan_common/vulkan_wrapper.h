@@ -168,12 +168,13 @@ struct InstanceDispatch {
     PFN_vkEnumerateDeviceExtensionProperties vkEnumerateDeviceExtensionProperties{};
     PFN_vkEnumeratePhysicalDevices vkEnumeratePhysicalDevices{};
     PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr{};
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR{};
+    PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2{};
     PFN_vkGetPhysicalDeviceFormatProperties vkGetPhysicalDeviceFormatProperties{};
     PFN_vkGetPhysicalDeviceMemoryProperties vkGetPhysicalDeviceMemoryProperties{};
     PFN_vkGetPhysicalDeviceMemoryProperties2 vkGetPhysicalDeviceMemoryProperties2{};
     PFN_vkGetPhysicalDeviceProperties vkGetPhysicalDeviceProperties{};
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR{};
+    PFN_vkGetPhysicalDeviceProperties2 vkGetPhysicalDeviceProperties2{};
+    PFN_vkGetPhysicalDeviceToolProperties vkGetPhysicalDeviceToolProperties{};
     PFN_vkGetPhysicalDeviceQueueFamilyProperties vkGetPhysicalDeviceQueueFamilyProperties{};
     PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR vkGetPhysicalDeviceSurfaceCapabilitiesKHR{};
     PFN_vkGetPhysicalDeviceSurfaceFormatsKHR vkGetPhysicalDeviceSurfaceFormatsKHR{};
@@ -247,7 +248,7 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkCreateComputePipelines vkCreateComputePipelines{};
     PFN_vkCreateDescriptorPool vkCreateDescriptorPool{};
     PFN_vkCreateDescriptorSetLayout vkCreateDescriptorSetLayout{};
-    PFN_vkCreateDescriptorUpdateTemplateKHR vkCreateDescriptorUpdateTemplateKHR{};
+    PFN_vkCreateDescriptorUpdateTemplate vkCreateDescriptorUpdateTemplate{};
     PFN_vkCreateEvent vkCreateEvent{};
     PFN_vkCreateFence vkCreateFence{};
     PFN_vkCreateFramebuffer vkCreateFramebuffer{};
@@ -266,7 +267,7 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkDestroyCommandPool vkDestroyCommandPool{};
     PFN_vkDestroyDescriptorPool vkDestroyDescriptorPool{};
     PFN_vkDestroyDescriptorSetLayout vkDestroyDescriptorSetLayout{};
-    PFN_vkDestroyDescriptorUpdateTemplateKHR vkDestroyDescriptorUpdateTemplateKHR{};
+    PFN_vkDestroyDescriptorUpdateTemplate vkDestroyDescriptorUpdateTemplate{};
     PFN_vkDestroyEvent vkDestroyEvent{};
     PFN_vkDestroyFence vkDestroyFence{};
     PFN_vkDestroyFramebuffer vkDestroyFramebuffer{};
@@ -297,18 +298,18 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkGetPipelineExecutablePropertiesKHR vkGetPipelineExecutablePropertiesKHR{};
     PFN_vkGetPipelineExecutableStatisticsKHR vkGetPipelineExecutableStatisticsKHR{};
     PFN_vkGetQueryPoolResults vkGetQueryPoolResults{};
-    PFN_vkGetSemaphoreCounterValueKHR vkGetSemaphoreCounterValueKHR{};
+    PFN_vkGetSemaphoreCounterValue vkGetSemaphoreCounterValue{};
     PFN_vkMapMemory vkMapMemory{};
     PFN_vkQueueSubmit vkQueueSubmit{};
     PFN_vkResetFences vkResetFences{};
-    PFN_vkResetQueryPoolEXT vkResetQueryPoolEXT{};
+    PFN_vkResetQueryPool vkResetQueryPool{};
     PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT{};
     PFN_vkSetDebugUtilsObjectTagEXT vkSetDebugUtilsObjectTagEXT{};
     PFN_vkUnmapMemory vkUnmapMemory{};
-    PFN_vkUpdateDescriptorSetWithTemplateKHR vkUpdateDescriptorSetWithTemplateKHR{};
+    PFN_vkUpdateDescriptorSetWithTemplate vkUpdateDescriptorSetWithTemplate{};
     PFN_vkUpdateDescriptorSets vkUpdateDescriptorSets{};
     PFN_vkWaitForFences vkWaitForFences{};
-    PFN_vkWaitSemaphoresKHR vkWaitSemaphoresKHR{};
+    PFN_vkWaitSemaphores vkWaitSemaphores{};
 };
 
 /// Loads instance agnostic function pointers.
@@ -327,7 +328,7 @@ void Destroy(VkDevice, VkBufferView, const DeviceDispatch&) noexcept;
 void Destroy(VkDevice, VkCommandPool, const DeviceDispatch&) noexcept;
 void Destroy(VkDevice, VkDescriptorPool, const DeviceDispatch&) noexcept;
 void Destroy(VkDevice, VkDescriptorSetLayout, const DeviceDispatch&) noexcept;
-void Destroy(VkDevice, VkDescriptorUpdateTemplateKHR, const DeviceDispatch&) noexcept;
+void Destroy(VkDevice, VkDescriptorUpdateTemplate, const DeviceDispatch&) noexcept;
 void Destroy(VkDevice, VkDeviceMemory, const DeviceDispatch&) noexcept;
 void Destroy(VkDevice, VkEvent, const DeviceDispatch&) noexcept;
 void Destroy(VkDevice, VkFence, const DeviceDispatch&) noexcept;
@@ -559,7 +560,7 @@ private:
 
 using DebugUtilsMessenger = Handle<VkDebugUtilsMessengerEXT, VkInstance, InstanceDispatch>;
 using DescriptorSetLayout = Handle<VkDescriptorSetLayout, VkDevice, DeviceDispatch>;
-using DescriptorUpdateTemplateKHR = Handle<VkDescriptorUpdateTemplateKHR, VkDevice, DeviceDispatch>;
+using DescriptorUpdateTemplate = Handle<VkDescriptorUpdateTemplate, VkDevice, DeviceDispatch>;
 using Pipeline = Handle<VkPipeline, VkDevice, DeviceDispatch>;
 using PipelineLayout = Handle<VkPipelineLayout, VkDevice, DeviceDispatch>;
 using QueryPool = Handle<VkQueryPool, VkDevice, DeviceDispatch>;
@@ -766,7 +767,7 @@ public:
 
     [[nodiscard]] u64 GetCounter() const {
         u64 value;
-        Check(dld->vkGetSemaphoreCounterValueKHR(owner, handle, &value));
+        Check(dld->vkGetSemaphoreCounterValue(owner, handle, &value));
         return value;
     }
 
@@ -778,15 +779,15 @@ public:
      * @return        True on successful wait, false on timeout
      */
     bool Wait(u64 value, u64 timeout = std::numeric_limits<u64>::max()) const {
-        const VkSemaphoreWaitInfoKHR wait_info{
-            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO_KHR,
+        const VkSemaphoreWaitInfo wait_info{
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
             .pNext = nullptr,
             .flags = 0,
             .semaphoreCount = 1,
             .pSemaphores = &handle,
             .pValues = &value,
         };
-        const VkResult result = dld->vkWaitSemaphoresKHR(owner, &wait_info, timeout);
+        const VkResult result = dld->vkWaitSemaphores(owner, &wait_info, timeout);
         switch (result) {
         case VK_SUCCESS:
             return true;
@@ -840,8 +841,8 @@ public:
 
     CommandPool CreateCommandPool(const VkCommandPoolCreateInfo& ci) const;
 
-    DescriptorUpdateTemplateKHR CreateDescriptorUpdateTemplateKHR(
-        const VkDescriptorUpdateTemplateCreateInfoKHR& ci) const;
+    DescriptorUpdateTemplate CreateDescriptorUpdateTemplate(
+        const VkDescriptorUpdateTemplateCreateInfo& ci) const;
 
     QueryPool CreateQueryPool(const VkQueryPoolCreateInfo& ci) const;
 
@@ -869,9 +870,9 @@ public:
     void UpdateDescriptorSets(Span<VkWriteDescriptorSet> writes,
                               Span<VkCopyDescriptorSet> copies) const noexcept;
 
-    void UpdateDescriptorSet(VkDescriptorSet set, VkDescriptorUpdateTemplateKHR update_template,
+    void UpdateDescriptorSet(VkDescriptorSet set, VkDescriptorUpdateTemplate update_template,
                              const void* data) const noexcept {
-        dld->vkUpdateDescriptorSetWithTemplateKHR(handle, set, update_template, data);
+        dld->vkUpdateDescriptorSetWithTemplate(handle, set, update_template, data);
     }
 
     VkResult AcquireNextImageKHR(VkSwapchainKHR swapchain, u64 timeout, VkSemaphore semaphore,
@@ -884,8 +885,8 @@ public:
         return dld->vkDeviceWaitIdle(handle);
     }
 
-    void ResetQueryPoolEXT(VkQueryPool query_pool, u32 first, u32 count) const noexcept {
-        dld->vkResetQueryPoolEXT(handle, query_pool, first, count);
+    void ResetQueryPool(VkQueryPool query_pool, u32 first, u32 count) const noexcept {
+        dld->vkResetQueryPool(handle, query_pool, first, count);
     }
 
     VkResult GetQueryResults(VkQueryPool query_pool, u32 first, u32 count, std::size_t data_size,
@@ -910,17 +911,19 @@ public:
 
     VkPhysicalDeviceProperties GetProperties() const noexcept;
 
-    void GetProperties2KHR(VkPhysicalDeviceProperties2KHR&) const noexcept;
+    void GetProperties2(VkPhysicalDeviceProperties2&) const noexcept;
 
     VkPhysicalDeviceFeatures GetFeatures() const noexcept;
 
-    void GetFeatures2KHR(VkPhysicalDeviceFeatures2KHR&) const noexcept;
+    void GetFeatures2(VkPhysicalDeviceFeatures2&) const noexcept;
 
     VkFormatProperties GetFormatProperties(VkFormat) const noexcept;
 
     std::vector<VkExtensionProperties> EnumerateDeviceExtensionProperties() const;
 
     std::vector<VkQueueFamilyProperties> GetQueueFamilyProperties() const;
+
+    std::vector<VkPhysicalDeviceToolProperties> GetPhysicalDeviceToolProperties() const;
 
     bool GetSurfaceSupportKHR(u32 queue_family_index, VkSurfaceKHR) const;
 
@@ -980,7 +983,7 @@ public:
                                      dynamic_offsets.size(), dynamic_offsets.data());
     }
 
-    void PushDescriptorSetWithTemplateKHR(VkDescriptorUpdateTemplateKHR update_template,
+    void PushDescriptorSetWithTemplateKHR(VkDescriptorUpdateTemplate update_template,
                                           VkPipelineLayout layout, u32 set,
                                           const void* data) const noexcept {
         dld->vkCmdPushDescriptorSetWithTemplateKHR(handle, update_template, layout, set, data);

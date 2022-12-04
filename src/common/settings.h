@@ -19,6 +19,7 @@ namespace Settings {
 enum class RendererBackend : u32 {
     OpenGL = 0,
     Vulkan = 1,
+    Null = 2,
 };
 
 enum class ShaderBackend : u32 {
@@ -399,6 +400,7 @@ struct Values {
     Setting<bool> cpuopt_fastmem{true, "cpuopt_fastmem"};
     Setting<bool> cpuopt_fastmem_exclusives{true, "cpuopt_fastmem_exclusives"};
     Setting<bool> cpuopt_recompile_exclusives{true, "cpuopt_recompile_exclusives"};
+    Setting<bool> cpuopt_ignore_memory_aborts{true, "cpuopt_ignore_memory_aborts"};
 
     SwitchableSetting<bool> cpuopt_unsafe_unfuse_fma{true, "cpuopt_unsafe_unfuse_fma"};
     SwitchableSetting<bool> cpuopt_unsafe_reduce_fp_error{true, "cpuopt_unsafe_reduce_fp_error"};
@@ -411,7 +413,7 @@ struct Values {
 
     // Renderer
     SwitchableSetting<RendererBackend, true> renderer_backend{
-        RendererBackend::Vulkan, RendererBackend::OpenGL, RendererBackend::Vulkan, "backend"};
+        RendererBackend::Vulkan, RendererBackend::OpenGL, RendererBackend::Null, "backend"};
     Setting<bool> renderer_debug{false, "debug"};
     Setting<bool> renderer_shader_feedback{false, "shader_feedback"};
     Setting<bool> enable_nsight_aftermath{false, "nsight_aftermath"};

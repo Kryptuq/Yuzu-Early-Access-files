@@ -151,7 +151,7 @@ private:
     vk::DescriptorSetLayout descriptor_set_layout;
     DescriptorAllocator descriptor_allocator;
     vk::PipelineLayout pipeline_layout;
-    vk::DescriptorUpdateTemplateKHR descriptor_update_template;
+    vk::DescriptorUpdateTemplate descriptor_update_template;
     vk::Pipeline pipeline;
 
     std::condition_variable build_condvar;

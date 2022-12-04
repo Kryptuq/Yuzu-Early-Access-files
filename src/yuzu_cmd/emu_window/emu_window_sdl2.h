@@ -89,3 +89,5 @@ protected:
     /// yuzu core instance
     Core::System& system;
 };
+
+class DummyContext : public Core::Frontend::GraphicsContext {};

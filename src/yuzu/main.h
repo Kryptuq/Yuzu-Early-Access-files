@@ -307,6 +307,7 @@ private slots:
     void OnTasStartStop();
     void OnTasRecord();
     void OnTasReset();
+    void OnToggleGraphicsAPI();
     void OnToggleDockedMode();
     void OnToggleGpuAccuracy();
     void OnToggleAdaptingFilter();
@@ -347,6 +348,7 @@ private:
     void UpdateWindowTitle(std::string_view title_name = {}, std::string_view title_version = {},
                            std::string_view gpu_vendor = {});
     void UpdateDockedButton();
+    void UpdateAPIText();
     void UpdateFilterText();
     void UpdateAAText();
     void UpdateStatusBar();

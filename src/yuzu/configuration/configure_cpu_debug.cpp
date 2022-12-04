@@ -45,6 +45,9 @@ void ConfigureCpuDebug::SetConfiguration() {
     ui->cpuopt_recompile_exclusives->setEnabled(runtime_lock);
     ui->cpuopt_recompile_exclusives->setChecked(
         Settings::values.cpuopt_recompile_exclusives.GetValue());
+    ui->cpuopt_ignore_memory_aborts->setEnabled(runtime_lock);
+    ui->cpuopt_ignore_memory_aborts->setChecked(
+        Settings::values.cpuopt_ignore_memory_aborts.GetValue());
 }
 
 void ConfigureCpuDebug::ApplyConfiguration() {
@@ -59,6 +62,7 @@ void ConfigureCpuDebug::ApplyConfiguration() {
     Settings::values.cpuopt_fastmem = ui->cpuopt_fastmem->isChecked();
     Settings::values.cpuopt_fastmem_exclusives = ui->cpuopt_fastmem_exclusives->isChecked();
     Settings::values.cpuopt_recompile_exclusives = ui->cpuopt_recompile_exclusives->isChecked();
+    Settings::values.cpuopt_ignore_memory_aborts = ui->cpuopt_ignore_memory_aborts->isChecked();
 }
 
 void ConfigureCpuDebug::changeEvent(QEvent* event) {

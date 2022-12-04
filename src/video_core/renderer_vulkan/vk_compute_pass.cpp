@@ -93,7 +93,7 @@ constexpr DescriptorBankInfo ASTC_BANK_INFO{
     .score = 2,
 };
 
-constexpr VkDescriptorUpdateTemplateEntryKHR INPUT_OUTPUT_DESCRIPTOR_UPDATE_TEMPLATE{
+constexpr VkDescriptorUpdateTemplateEntry INPUT_OUTPUT_DESCRIPTOR_UPDATE_TEMPLATE{
     .dstBinding = 0,
     .dstArrayElement = 0,
     .descriptorCount = 2,
@@ -102,7 +102,7 @@ constexpr VkDescriptorUpdateTemplateEntryKHR INPUT_OUTPUT_DESCRIPTOR_UPDATE_TEMP
     .stride = sizeof(DescriptorUpdateEntry),
 };
 
-constexpr std::array<VkDescriptorUpdateTemplateEntryKHR, ASTC_NUM_BINDINGS>
+constexpr std::array<VkDescriptorUpdateTemplateEntry, ASTC_NUM_BINDINGS>
     ASTC_PASS_DESCRIPTOR_UPDATE_TEMPLATE_ENTRY{{
         {
             .dstBinding = ASTC_BINDING_INPUT_BUFFER,
@@ -134,7 +134,7 @@ struct AstcPushConstants {
 
 ComputePass::ComputePass(const Device& device_, DescriptorPool& descriptor_pool,
                          vk::Span<VkDescriptorSetLayoutBinding> bindings,
-                         vk::Span<VkDescriptorUpdateTemplateEntryKHR> templates,
+                         vk::Span<VkDescriptorUpdateTemplateEntry> templates,
                          const DescriptorBankInfo& bank_info,
                          vk::Span<VkPushConstantRange> push_constants, std::span<const u32> code)
     : device{device_} {
@@ -155,13 +155,13 @@ ComputePass::ComputePass(const Device& device_, DescriptorPool& descriptor_pool,
         .pPushConstantRanges = push_constants.data(),
     });
     if (!templates.empty()) {
-        descriptor_template = device.GetLogical().CreateDescriptorUpdateTemplateKHR({
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO_KHR,
+        descriptor_template = device.GetLogical().CreateDescriptorUpdateTemplate({
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
             .descriptorUpdateEntryCount = templates.size(),
             .pDescriptorUpdateEntries = templates.data(),
-            .templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET_KHR,
+            .templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET,
             .descriptorSetLayout = *descriptor_set_layout,
             .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
             .pipelineLayout = *layout,

@@ -194,8 +194,8 @@ void Scheduler::SubmitExecution(VkSemaphore signal_semaphore, VkSemaphore wait_s
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
         };
 
-        const VkTimelineSemaphoreSubmitInfoKHR timeline_si{
-            .sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO_KHR,
+        const VkTimelineSemaphoreSubmitInfo timeline_si{
+            .sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
             .pNext = nullptr,
             .waitSemaphoreValueCount = num_wait_semaphores,
             .pWaitSemaphoreValues = wait_values.data(),

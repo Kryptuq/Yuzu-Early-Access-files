@@ -34,6 +34,7 @@
 #include "yuzu_cmd/config.h"
 #include "yuzu_cmd/emu_window/emu_window_sdl2.h"
 #include "yuzu_cmd/emu_window/emu_window_sdl2_gl.h"
+#include "yuzu_cmd/emu_window/emu_window_sdl2_null.h"
 #include "yuzu_cmd/emu_window/emu_window_sdl2_vk.h"
 
 #ifdef _WIN32
@@ -316,6 +317,9 @@ int main(int argc, char** argv) {
         break;
     case Settings::RendererBackend::Vulkan:
         emu_window = std::make_unique<EmuWindow_SDL2_VK>(&input_subsystem, system, fullscreen);
+        break;
+    case Settings::RendererBackend::Null:
+        emu_window = std::make_unique<EmuWindow_SDL2_Null>(&input_subsystem, system, fullscreen);
         break;
     }
 

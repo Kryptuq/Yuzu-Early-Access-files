@@ -1012,29 +1012,11 @@ void GMainWindow::InitializeWidgets() {
     renderer_status_button->setObjectName(QStringLiteral("RendererStatusBarButton"));
     renderer_status_button->setCheckable(true);
     renderer_status_button->setFocusPolicy(Qt::NoFocus);
-    connect(renderer_status_button, &QPushButton::toggled, [this](bool checked) {
-        renderer_status_button->setText(checked ? tr("VULKAN") : tr("OPENGL"));
-    });
-    renderer_status_button->toggle();
-
+    connect(renderer_status_button, &QPushButton::clicked, this, &GMainWindow::OnToggleGraphicsAPI);
+    UpdateAPIText();
+    renderer_status_button->setCheckable(true);
     renderer_status_button->setChecked(Settings::values.renderer_backend.GetValue() ==
                                        Settings::RendererBackend::Vulkan);
-    connect(renderer_status_button, &QPushButton::clicked, [this] {
-        if (emulation_running) {
-            return;
-        }
-        if (renderer_status_button->isChecked()) {
-            Settings::values.renderer_backend.SetValue(Settings::RendererBackend::Vulkan);
-        } else {
-            Settings::values.renderer_backend.SetValue(Settings::RendererBackend::OpenGL);
-            if (Settings::values.scaling_filter.GetValue() == Settings::ScalingFilter::Fsr) {
-                Settings::values.scaling_filter.SetValue(Settings::ScalingFilter::NearestNeighbor);
-                UpdateFilterText();
-            }
-        }
-
-        system->ApplySettings();
-    });
     statusBar()->insertPermanentWidget(0, renderer_status_button);
 
     statusBar()->setVisible(true);
@@ -3261,6 +3243,18 @@ void GMainWindow::OnToggleAdaptingFilter() {
     UpdateFilterText();
 }
 
+void GMainWindow::OnToggleGraphicsAPI() {
+    auto api = Settings::values.renderer_backend.GetValue();
+    if (api == Settings::RendererBackend::OpenGL) {
+        api = Settings::RendererBackend::Vulkan;
+    } else {
+        api = Settings::RendererBackend::OpenGL;
+    }
+    Settings::values.renderer_backend.SetValue(api);
+    renderer_status_button->setChecked(api == Settings::RendererBackend::Vulkan);
+    UpdateAPIText();
+}
+
 void GMainWindow::OnConfigurePerGame() {
     const u64 title_id = system->GetCurrentProcessProgramID();
     OpenPerGameConfiguration(title_id, current_game_path.toStdString());
@@ -3582,6 +3576,21 @@ void GMainWindow::UpdateDockedButton() {
     dock_status_button->setText(is_docked ? tr("DOCKED") : tr("HANDHELD"));
 }
 
+void GMainWindow::UpdateAPIText() {
+    const auto api = Settings::values.renderer_backend.GetValue();
+    switch (api) {
+    case Settings::RendererBackend::OpenGL:
+        renderer_status_button->setText(tr("OPENGL"));
+        break;
+    case Settings::RendererBackend::Vulkan:
+        renderer_status_button->setText(tr("VULKAN"));
+        break;
+    case Settings::RendererBackend::Null:
+        renderer_status_button->setText(tr("NULL"));
+        break;
+    }
+}
+
 void GMainWindow::UpdateFilterText() {
     const auto filter = Settings::values.scaling_filter.GetValue();
     switch (filter) {
@@ -3627,6 +3636,7 @@ void GMainWindow::UpdateAAText() {
 void GMainWindow::UpdateStatusButtons() {
     renderer_status_button->setChecked(Settings::values.renderer_backend.GetValue() ==
                                        Settings::RendererBackend::Vulkan);
+    UpdateAPIText();
     UpdateGPUAccuracyButton();
     UpdateDockedButton();
     UpdateFilterText();

@@ -130,7 +130,7 @@ void Load(VkDevice device, DeviceDispatch& dld) noexcept {
     X(vkCreateComputePipelines);
     X(vkCreateDescriptorPool);
     X(vkCreateDescriptorSetLayout);
-    X(vkCreateDescriptorUpdateTemplateKHR);
+    X(vkCreateDescriptorUpdateTemplate);
     X(vkCreateEvent);
     X(vkCreateFence);
     X(vkCreateFramebuffer);
@@ -149,7 +149,7 @@ void Load(VkDevice device, DeviceDispatch& dld) noexcept {
     X(vkDestroyCommandPool);
     X(vkDestroyDescriptorPool);
     X(vkDestroyDescriptorSetLayout);
-    X(vkDestroyDescriptorUpdateTemplateKHR);
+    X(vkDestroyDescriptorUpdateTemplate);
     X(vkDestroyEvent);
     X(vkDestroyFence);
     X(vkDestroyFramebuffer);
@@ -180,18 +180,29 @@ void Load(VkDevice device, DeviceDispatch& dld) noexcept {
     X(vkGetQueryPoolResults);
     X(vkGetPipelineExecutablePropertiesKHR);
     X(vkGetPipelineExecutableStatisticsKHR);
-    X(vkGetSemaphoreCounterValueKHR);
+    X(vkGetSemaphoreCounterValue);
     X(vkMapMemory);
     X(vkQueueSubmit);
     X(vkResetFences);
-    X(vkResetQueryPoolEXT);
+    X(vkResetQueryPool);
     X(vkSetDebugUtilsObjectNameEXT);
     X(vkSetDebugUtilsObjectTagEXT);
     X(vkUnmapMemory);
-    X(vkUpdateDescriptorSetWithTemplateKHR);
+    X(vkUpdateDescriptorSetWithTemplate);
     X(vkUpdateDescriptorSets);
     X(vkWaitForFences);
-    X(vkWaitSemaphoresKHR);
+    X(vkWaitSemaphores);
+
+    // Support for timeline semaphores is mandatory in Vulkan 1.2
+    if (!dld.vkGetSemaphoreCounterValue) {
+        Proc(dld.vkGetSemaphoreCounterValue, dld, "vkGetSemaphoreCounterValueKHR", device);
+        Proc(dld.vkWaitSemaphores, dld, "vkWaitSemaphoresKHR", device);
+    }
+
+    // Support for host query reset is mandatory in Vulkan 1.2
+    if (!dld.vkResetQueryPool) {
+        Proc(dld.vkResetQueryPool, dld, "vkResetQueryPoolEXT", device);
+    }
 #undef X
 }
 
@@ -224,12 +235,13 @@ bool Load(VkInstance instance, InstanceDispatch& dld) noexcept {
     X(vkCreateDebugUtilsMessengerEXT);
     X(vkDestroyDebugUtilsMessengerEXT);
     X(vkDestroySurfaceKHR);
-    X(vkGetPhysicalDeviceFeatures2KHR);
-    X(vkGetPhysicalDeviceProperties2KHR);
+    X(vkGetPhysicalDeviceFeatures2);
+    X(vkGetPhysicalDeviceProperties2);
     X(vkGetPhysicalDeviceSurfaceCapabilitiesKHR);
     X(vkGetPhysicalDeviceSurfaceFormatsKHR);
     X(vkGetPhysicalDeviceSurfacePresentModesKHR);
     X(vkGetPhysicalDeviceSurfaceSupportKHR);
+    X(vkGetPhysicalDeviceToolProperties);
     X(vkGetSwapchainImagesKHR);
     X(vkQueuePresentKHR);
 
@@ -359,9 +371,9 @@ void Destroy(VkDevice device, VkDescriptorSetLayout handle, const DeviceDispatch
     dld.vkDestroyDescriptorSetLayout(device, handle, nullptr);
 }
 
-void Destroy(VkDevice device, VkDescriptorUpdateTemplateKHR handle,
+void Destroy(VkDevice device, VkDescriptorUpdateTemplate handle,
              const DeviceDispatch& dld) noexcept {
-    dld.vkDestroyDescriptorUpdateTemplateKHR(device, handle, nullptr);
+    dld.vkDestroyDescriptorUpdateTemplate(device, handle, nullptr);
 }
 
 void Destroy(VkDevice device, VkDeviceMemory handle, const DeviceDispatch& dld) noexcept {
@@ -737,11 +749,11 @@ CommandPool Device::CreateCommandPool(const VkCommandPoolCreateInfo& ci) const {
     return CommandPool(object, handle, *dld);
 }
 
-DescriptorUpdateTemplateKHR Device::CreateDescriptorUpdateTemplateKHR(
-    const VkDescriptorUpdateTemplateCreateInfoKHR& ci) const {
-    VkDescriptorUpdateTemplateKHR object;
-    Check(dld->vkCreateDescriptorUpdateTemplateKHR(handle, &ci, nullptr, &object));
-    return DescriptorUpdateTemplateKHR(object, handle, *dld);
+DescriptorUpdateTemplate Device::CreateDescriptorUpdateTemplate(
+    const VkDescriptorUpdateTemplateCreateInfo& ci) const {
+    VkDescriptorUpdateTemplate object;
+    Check(dld->vkCreateDescriptorUpdateTemplate(handle, &ci, nullptr, &object));
+    return DescriptorUpdateTemplate(object, handle, *dld);
 }
 
 QueryPool Device::CreateQueryPool(const VkQueryPoolCreateInfo& ci) const {
@@ -857,20 +869,20 @@ VkPhysicalDeviceProperties PhysicalDevice::GetProperties() const noexcept {
     return properties;
 }
 
-void PhysicalDevice::GetProperties2KHR(VkPhysicalDeviceProperties2KHR& properties) const noexcept {
-    dld->vkGetPhysicalDeviceProperties2KHR(physical_device, &properties);
+void PhysicalDevice::GetProperties2(VkPhysicalDeviceProperties2& properties) const noexcept {
+    dld->vkGetPhysicalDeviceProperties2(physical_device, &properties);
 }
 
 VkPhysicalDeviceFeatures PhysicalDevice::GetFeatures() const noexcept {
-    VkPhysicalDeviceFeatures2KHR features2;
-    features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR;
+    VkPhysicalDeviceFeatures2 features2;
+    features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
     features2.pNext = nullptr;
-    dld->vkGetPhysicalDeviceFeatures2KHR(physical_device, &features2);
+    dld->vkGetPhysicalDeviceFeatures2(physical_device, &features2);
     return features2.features;
 }
 
-void PhysicalDevice::GetFeatures2KHR(VkPhysicalDeviceFeatures2KHR& features) const noexcept {
-    dld->vkGetPhysicalDeviceFeatures2KHR(physical_device, &features);
+void PhysicalDevice::GetFeatures2(VkPhysicalDeviceFeatures2& features) const noexcept {
+    dld->vkGetPhysicalDeviceFeatures2(physical_device, &features);
 }
 
 VkFormatProperties PhysicalDevice::GetFormatProperties(VkFormat format) const noexcept {
@@ -892,6 +904,18 @@ std::vector<VkQueueFamilyProperties> PhysicalDevice::GetQueueFamilyProperties() 
     dld->vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &num, nullptr);
     std::vector<VkQueueFamilyProperties> properties(num);
     dld->vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &num, properties.data());
+    return properties;
+}
+
+std::vector<VkPhysicalDeviceToolProperties> PhysicalDevice::GetPhysicalDeviceToolProperties()
+    const {
+    u32 num = 0;
+    if (!dld->vkGetPhysicalDeviceToolProperties) {
+        return {};
+    }
+    dld->vkGetPhysicalDeviceToolProperties(physical_device, &num, nullptr);
+    std::vector<VkPhysicalDeviceToolProperties> properties(num);
+    dld->vkGetPhysicalDeviceToolProperties(physical_device, &num, properties.data());
     return properties;
 }
 

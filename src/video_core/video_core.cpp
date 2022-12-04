@@ -7,6 +7,7 @@
 #include "common/settings.h"
 #include "core/core.h"
 #include "video_core/renderer_base.h"
+#include "video_core/renderer_null/renderer_null.h"
 #include "video_core/renderer_opengl/renderer_opengl.h"
 #include "video_core/renderer_vulkan/renderer_vulkan.h"
 #include "video_core/video_core.h"
@@ -26,6 +27,9 @@ std::unique_ptr<VideoCore::RendererBase> CreateRenderer(
     case Settings::RendererBackend::Vulkan:
         return std::make_unique<Vulkan::RendererVulkan>(telemetry_session, emu_window, cpu_memory,
                                                         gpu, std::move(context));
+    case Settings::RendererBackend::Null:
+        return std::make_unique<Null::RendererNull>(emu_window, cpu_memory, gpu,
+                                                    std::move(context));
     default:
         return nullptr;
     }

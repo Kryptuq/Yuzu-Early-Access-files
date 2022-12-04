@@ -830,7 +830,7 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
         */
     }
     VkPipelineCreateFlags flags{};
-    if (device.IsKhrPipelineEexecutablePropertiesEnabled()) {
+    if (device.IsKhrPipelineExecutablePropertiesEnabled()) {
         flags |= VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR;
     }
     pipeline = device.GetLogical().CreateGraphicsPipeline({

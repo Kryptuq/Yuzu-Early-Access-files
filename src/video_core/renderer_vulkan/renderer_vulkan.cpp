@@ -45,14 +45,14 @@ std::string GetDriverVersion(const Device& device) {
     // https://github.com/SaschaWillems/vulkan.gpuinfo.org/blob/5dddea46ea1120b0df14eef8f15ff8e318e35462/functions.php#L308-L314
     const u32 version = device.GetDriverVersion();
 
-    if (device.GetDriverID() == VK_DRIVER_ID_NVIDIA_PROPRIETARY_KHR) {
+    if (device.GetDriverID() == VK_DRIVER_ID_NVIDIA_PROPRIETARY) {
         const u32 major = (version >> 22) & 0x3ff;
         const u32 minor = (version >> 14) & 0x0ff;
         const u32 secondary = (version >> 6) & 0x0ff;
         const u32 tertiary = version & 0x003f;
         return fmt::format("{}.{}.{}.{}", major, minor, secondary, tertiary);
     }
-    if (device.GetDriverID() == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS_KHR) {
+    if (device.GetDriverID() == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS) {
         const u32 major = version >> 14;
         const u32 minor = version & 0x3fff;
         return fmt::format("{}.{}", major, minor);

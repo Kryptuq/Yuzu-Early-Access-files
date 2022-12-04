@@ -58,7 +58,7 @@ VkSamplerAddressMode WrapMode(const Device& device, Tegra::Texture::WrapMode wra
     case Tegra::Texture::WrapMode::Border:
         return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
     case Tegra::Texture::WrapMode::Clamp:
-        if (device.GetDriverID() == VK_DRIVER_ID_NVIDIA_PROPRIETARY_KHR) {
+        if (device.GetDriverID() == VK_DRIVER_ID_NVIDIA_PROPRIETARY) {
             // Nvidia's Vulkan driver defaults to GL_CLAMP on invalid enumerations, we can hack this
             // by sending an invalid enumeration.
             return static_cast<VkSamplerAddressMode>(0xcafe);

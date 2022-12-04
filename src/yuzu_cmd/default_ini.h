@@ -208,6 +208,10 @@ cpuopt_fastmem_exclusives =
 # 0: Disabled, 1 (default): Enabled
 cpuopt_recompile_exclusives =
 
+# Enable optimization to ignore invalid memory accesses (faster guest memory access)
+# 0: Disabled, 1 (default): Enabled
+cpuopt_ignore_memory_aborts =
+
 # Enable unfuse FMA (improve performance on CPUs without FMA)
 # Only enabled if cpu_accuracy is set to Unsafe. Automatically chosen with cpu_accuracy = Auto-select.
 # 0: Disabled, 1 (default): Enabled

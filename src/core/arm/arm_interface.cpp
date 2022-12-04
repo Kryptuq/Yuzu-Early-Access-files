@@ -145,11 +145,15 @@ void ARM_Interface::Run() {
         // Notify the debugger and go to sleep if a breakpoint was hit,
         // or if the thread is unable to continue for any reason.
         if (Has(hr, breakpoint) || Has(hr, no_execute)) {
-            RewindBreakpointInstruction();
+            if (!Has(hr, no_execute)) {
+                RewindBreakpointInstruction();
+            }
             if (system.DebuggerEnabled()) {
                 system.GetDebugger().NotifyThreadStopped(current_thread);
+            } else {
+                LogBacktrace();
             }
-            current_thread->RequestSuspend(Kernel::SuspendType::Debug);
+            current_thread->RequestSuspend(SuspendType::Debug);
             break;
         }
 

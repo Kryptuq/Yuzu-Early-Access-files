@@ -679,6 +679,7 @@ void Config::ReadCpuValues() {
         ReadBasicSetting(Settings::values.cpuopt_fastmem);
         ReadBasicSetting(Settings::values.cpuopt_fastmem_exclusives);
         ReadBasicSetting(Settings::values.cpuopt_recompile_exclusives);
+        ReadBasicSetting(Settings::values.cpuopt_ignore_memory_aborts);
     }
 
     qt_config->endGroup();
@@ -1291,6 +1292,7 @@ void Config::SaveCpuValues() {
         WriteBasicSetting(Settings::values.cpuopt_fastmem);
         WriteBasicSetting(Settings::values.cpuopt_fastmem_exclusives);
         WriteBasicSetting(Settings::values.cpuopt_recompile_exclusives);
+        WriteBasicSetting(Settings::values.cpuopt_ignore_memory_aborts);
     }
 
     qt_config->endGroup();

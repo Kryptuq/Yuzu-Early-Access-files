@@ -29,14 +29,14 @@ class ComputePass {
 public:
     explicit ComputePass(const Device& device, DescriptorPool& descriptor_pool,
                          vk::Span<VkDescriptorSetLayoutBinding> bindings,
-                         vk::Span<VkDescriptorUpdateTemplateEntryKHR> templates,
+                         vk::Span<VkDescriptorUpdateTemplateEntry> templates,
                          const DescriptorBankInfo& bank_info,
                          vk::Span<VkPushConstantRange> push_constants, std::span<const u32> code);
     ~ComputePass();
 
 protected:
     const Device& device;
-    vk::DescriptorUpdateTemplateKHR descriptor_template;
+    vk::DescriptorUpdateTemplate descriptor_template;
     vk::PipelineLayout layout;
     vk::Pipeline pipeline;
     vk::DescriptorSetLayout descriptor_set_layout;

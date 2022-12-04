@@ -217,7 +217,7 @@ public:
     }
 
     /// Returns true if VK_KHR_pipeline_executable_properties is enabled.
-    bool IsKhrPipelineEexecutablePropertiesEnabled() const {
+    bool IsKhrPipelineExecutablePropertiesEnabled() const {
         return khr_pipeline_executable_properties;
     }
 

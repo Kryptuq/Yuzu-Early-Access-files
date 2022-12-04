@@ -77,12 +77,6 @@ enum class NvidiaArchitecture {
 constexpr std::array REQUIRED_EXTENSIONS{
     VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME,
     VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
-
-    // Core in 1.2, but required due to use of extension methods,
-    // and well-supported by drivers
-    VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
-    VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME,
-    VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
 #ifdef _WIN32
     VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
 #endif
@@ -311,10 +305,10 @@ NvidiaArchitecture GetNvidiaArchitecture(vk::PhysicalDevice physical,
         VkPhysicalDeviceFragmentShadingRatePropertiesKHR shading_rate_props{};
         shading_rate_props.sType =
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_PROPERTIES_KHR;
-        VkPhysicalDeviceProperties2KHR physical_properties{};
-        physical_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
+        VkPhysicalDeviceProperties2 physical_properties{};
+        physical_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
         physical_properties.pNext = &shading_rate_props;
-        physical.GetProperties2KHR(physical_properties);
+        physical.GetProperties2(physical_properties);
         if (shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports) {
             // Only Ampere and newer support this feature
             return NvidiaArchitecture::AmpereOrNewer;
@@ -405,15 +399,15 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     const void* first_next = &features2;
     void** next = &features2.pNext;
 
-    VkPhysicalDeviceTimelineSemaphoreFeaturesKHR timeline_semaphore{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR,
+    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES,
         .pNext = nullptr,
         .timelineSemaphore = true,
     };
     SetNext(next, timeline_semaphore);
 
-    VkPhysicalDevice16BitStorageFeaturesKHR bit16_storage{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES_KHR,
+    VkPhysicalDevice16BitStorageFeatures bit16_storage{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES,
         .pNext = nullptr,
         .storageBuffer16BitAccess = true,
         .uniformAndStorageBuffer16BitAccess = true,
@@ -422,8 +416,8 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     };
     SetNext(next, bit16_storage);
 
-    VkPhysicalDevice8BitStorageFeaturesKHR bit8_storage{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES_KHR,
+    VkPhysicalDevice8BitStorageFeatures bit8_storage{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES,
         .pNext = nullptr,
         .storageBuffer8BitAccess = false,
         .uniformAndStorageBuffer8BitAccess = true,
@@ -440,15 +434,15 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     };
     SetNext(next, robustness2);
 
-    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES_EXT,
+    VkPhysicalDeviceHostQueryResetFeatures host_query_reset{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES,
         .pNext = nullptr,
         .hostQueryReset = true,
     };
     SetNext(next, host_query_reset);
 
-    VkPhysicalDeviceVariablePointerFeaturesKHR variable_pointers{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES_KHR,
+    VkPhysicalDeviceVariablePointerFeatures variable_pointers{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES,
         .pNext = nullptr,
         .variablePointersStorageBuffer = VK_TRUE,
         .variablePointers = VK_TRUE,
@@ -462,10 +456,10 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     };
     SetNext(next, demote);
 
-    VkPhysicalDeviceFloat16Int8FeaturesKHR float16_int8;
+    VkPhysicalDeviceShaderFloat16Int8Features float16_int8;
     if (is_int8_supported || is_float16_supported) {
         float16_int8 = {
-            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT16_INT8_FEATURES_KHR,
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES,
             .pNext = nullptr,
             .shaderFloat16 = is_float16_supported,
             .shaderInt8 = is_int8_supported,
@@ -491,10 +485,10 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
         LOG_INFO(Render_Vulkan, "Device doesn't support passthrough geometry shaders");
     }
 
-    VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR std430_layout;
+    VkPhysicalDeviceUniformBufferStandardLayoutFeatures std430_layout;
     if (khr_uniform_buffer_standard_layout) {
         std430_layout = {
-            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES_KHR,
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES,
             .pNext = nullptr,
             .uniformBufferStandardLayout = true,
         };
@@ -612,10 +606,10 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
         LOG_INFO(Render_Vulkan, "Device doesn't support vertex input dynamic state");
     }
 
-    VkPhysicalDeviceShaderAtomicInt64FeaturesKHR atomic_int64;
+    VkPhysicalDeviceShaderAtomicInt64Features atomic_int64;
     if (ext_shader_atomic_int64) {
         atomic_int64 = {
-            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES_KHR,
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES,
             .pNext = nullptr,
             .shaderBufferInt64Atomics = VK_TRUE,
             .shaderSharedInt64Atomics = VK_TRUE,
@@ -971,22 +965,38 @@ void Device::CheckSuitability(bool requires_swapchain) const {
     demote.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES;
     demote.pNext = nullptr;
 
-    VkPhysicalDeviceVariablePointerFeaturesKHR variable_pointers{};
-    variable_pointers.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES_KHR;
+    VkPhysicalDeviceVariablePointerFeatures variable_pointers{};
+    variable_pointers.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES;
     variable_pointers.pNext = &demote;
 
     VkPhysicalDeviceRobustness2FeaturesEXT robustness2{};
     robustness2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
     robustness2.pNext = &variable_pointers;
 
-    VkPhysicalDeviceFeatures2KHR features2{};
-    features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    features2.pNext = &robustness2;
+    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore{};
+    timeline_semaphore.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
+    timeline_semaphore.pNext = &robustness2;
 
-    physical.GetFeatures2KHR(features2);
+    VkPhysicalDevice16BitStorageFeatures bit16_storage{};
+    bit16_storage.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES;
+    bit16_storage.pNext = &timeline_semaphore;
+
+    VkPhysicalDevice8BitStorageFeatures bit8_storage{};
+    bit8_storage.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES;
+    bit8_storage.pNext = &bit16_storage;
+
+    VkPhysicalDeviceHostQueryResetFeatures host_query_reset{};
+    host_query_reset.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES;
+    host_query_reset.pNext = &bit8_storage;
+
+    VkPhysicalDeviceFeatures2 features2{};
+    features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    features2.pNext = &host_query_reset;
+
+    physical.GetFeatures2(features2);
 
     const VkPhysicalDeviceFeatures& features{features2.features};
-    std::vector feature_report{
+    std::array feature_report{
         std::make_pair(features.robustBufferAccess, "robustBufferAccess"),
         std::make_pair(features.vertexPipelineStoresAndAtomics, "vertexPipelineStoresAndAtomics"),
         std::make_pair(features.imageCubeArray, "imageCubeArray"),
@@ -1002,6 +1012,7 @@ void Device::CheckSuitability(bool requires_swapchain) const {
         std::make_pair(features.tessellationShader, "tessellationShader"),
         std::make_pair(features.sampleRateShading, "sampleRateShading"),
         std::make_pair(features.dualSrcBlend, "dualSrcBlend"),
+        std::make_pair(features.logicOp, "logicOp"),
         std::make_pair(features.occlusionQueryPrecise, "occlusionQueryPrecise"),
         std::make_pair(features.fragmentStoresAndAtomics, "fragmentStoresAndAtomics"),
         std::make_pair(features.shaderImageGatherExtended, "shaderImageGatherExtended"),
@@ -1016,6 +1027,13 @@ void Device::CheckSuitability(bool requires_swapchain) const {
         std::make_pair(robustness2.robustImageAccess2, "robustImageAccess2"),
         std::make_pair(robustness2.nullDescriptor, "nullDescriptor"),
         std::make_pair(demote.shaderDemoteToHelperInvocation, "shaderDemoteToHelperInvocation"),
+        std::make_pair(timeline_semaphore.timelineSemaphore, "timelineSemaphore"),
+        std::make_pair(bit16_storage.storageBuffer16BitAccess, "storageBuffer16BitAccess"),
+        std::make_pair(bit16_storage.uniformAndStorageBuffer16BitAccess,
+                       "uniformAndStorageBuffer16BitAccess"),
+        std::make_pair(bit8_storage.uniformAndStorageBuffer8BitAccess,
+                       "uniformAndStorageBuffer8BitAccess"),
+        std::make_pair(host_query_reset.hostQueryReset, "hostQueryReset"),
     };
 
     bool has_all_required_features = true;
@@ -1087,7 +1105,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         test(has_ext_transform_feedback, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME, false);
         test(has_ext_custom_border_color, VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME, false);
         test(has_ext_extended_dynamic_state, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME, false);
-        test(has_ext_subgroup_size_control, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME, false);
+        test(has_ext_subgroup_size_control, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME, true);
         test(has_ext_provoking_vertex, VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME, false);
         test(has_ext_vertex_input_dynamic_state, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME,
              false);
@@ -1108,37 +1126,37 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
                  VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME, false);
         }
     }
-    VkPhysicalDeviceFeatures2KHR features{};
-    features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR;
+    VkPhysicalDeviceFeatures2 features{};
+    features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 
-    VkPhysicalDeviceProperties2KHR physical_properties{};
-    physical_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
+    VkPhysicalDeviceProperties2 physical_properties{};
+    physical_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 
     if (has_khr_shader_float16_int8) {
-        VkPhysicalDeviceFloat16Int8FeaturesKHR float16_int8_features;
-        float16_int8_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT16_INT8_FEATURES_KHR;
+        VkPhysicalDeviceShaderFloat16Int8Features float16_int8_features;
+        float16_int8_features.sType =
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES;
         float16_int8_features.pNext = nullptr;
         features.pNext = &float16_int8_features;
 
-        physical.GetFeatures2KHR(features);
+        physical.GetFeatures2(features);
         is_float16_supported = float16_int8_features.shaderFloat16;
         is_int8_supported = float16_int8_features.shaderInt8;
         extensions.push_back(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     }
     if (has_ext_subgroup_size_control) {
-        VkPhysicalDeviceSubgroupSizeControlFeaturesEXT subgroup_features;
-        subgroup_features.sType =
-            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_FEATURES_EXT;
+        VkPhysicalDeviceSubgroupSizeControlFeatures subgroup_features;
+        subgroup_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_FEATURES;
         subgroup_features.pNext = nullptr;
         features.pNext = &subgroup_features;
-        physical.GetFeatures2KHR(features);
+        physical.GetFeatures2(features);
 
-        VkPhysicalDeviceSubgroupSizeControlPropertiesEXT subgroup_properties;
+        VkPhysicalDeviceSubgroupSizeControlProperties subgroup_properties;
         subgroup_properties.sType =
-            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_PROPERTIES_EXT;
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_PROPERTIES;
         subgroup_properties.pNext = nullptr;
         physical_properties.pNext = &subgroup_properties;
-        physical.GetProperties2KHR(physical_properties);
+        physical.GetProperties2(physical_properties);
 
         is_warp_potentially_bigger = subgroup_properties.maxSubgroupSize > GuestWarpSize;
 
@@ -1157,7 +1175,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         provoking_vertex.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_FEATURES_EXT;
         provoking_vertex.pNext = nullptr;
         features.pNext = &provoking_vertex;
-        physical.GetFeatures2KHR(features);
+        physical.GetFeatures2(features);
 
         if (provoking_vertex.provokingVertexLast &&
             provoking_vertex.transformFeedbackPreservesProvokingVertex) {
@@ -1171,7 +1189,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT;
         vertex_input.pNext = nullptr;
         features.pNext = &vertex_input;
-        physical.GetFeatures2KHR(features);
+        physical.GetFeatures2(features);
 
         if (vertex_input.vertexInputDynamicState) {
             extensions.push_back(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
@@ -1183,7 +1201,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         atomic_int64.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES;
         atomic_int64.pNext = nullptr;
         features.pNext = &atomic_int64;
-        physical.GetFeatures2KHR(features);
+        physical.GetFeatures2(features);
 
         if (atomic_int64.shaderBufferInt64Atomics && atomic_int64.shaderSharedInt64Atomics) {
             extensions.push_back(VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME);
@@ -1195,13 +1213,13 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         tfb_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT;
         tfb_features.pNext = nullptr;
         features.pNext = &tfb_features;
-        physical.GetFeatures2KHR(features);
+        physical.GetFeatures2(features);
 
         VkPhysicalDeviceTransformFeedbackPropertiesEXT tfb_properties;
         tfb_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_PROPERTIES_EXT;
         tfb_properties.pNext = nullptr;
         physical_properties.pNext = &tfb_properties;
-        physical.GetProperties2KHR(physical_properties);
+        physical.GetProperties2(physical_properties);
 
         if (tfb_features.transformFeedback && tfb_features.geometryStreams &&
             tfb_properties.maxTransformFeedbackStreams >= 4 &&
@@ -1216,7 +1234,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         border_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT;
         border_features.pNext = nullptr;
         features.pNext = &border_features;
-        physical.GetFeatures2KHR(features);
+        physical.GetFeatures2(features);
 
         if (border_features.customBorderColors && border_features.customBorderColorWithoutFormat) {
             extensions.push_back(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
@@ -1229,7 +1247,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
         extended_dynamic_state.pNext = nullptr;
         features.pNext = &extended_dynamic_state;
-        physical.GetFeatures2KHR(features);
+        physical.GetFeatures2(features);
 
         if (extended_dynamic_state.extendedDynamicState) {
             extensions.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
@@ -1241,7 +1259,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         line_raster.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES_EXT;
         line_raster.pNext = nullptr;
         features.pNext = &line_raster;
-        physical.GetFeatures2KHR(features);
+        physical.GetFeatures2(features);
         if (line_raster.rectangularLines && line_raster.smoothLines) {
             extensions.push_back(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
             ext_line_rasterization = true;
@@ -1253,7 +1271,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR;
         layout.pNext = nullptr;
         features.pNext = &layout;
-        physical.GetFeatures2KHR(features);
+        physical.GetFeatures2(features);
 
         if (layout.workgroupMemoryExplicitLayout &&
             layout.workgroupMemoryExplicitLayout8BitAccess &&
@@ -1269,7 +1287,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR;
         executable_properties.pNext = nullptr;
         features.pNext = &executable_properties;
-        physical.GetFeatures2KHR(features);
+        physical.GetFeatures2(features);
 
         if (executable_properties.pipelineExecutableInfo) {
             extensions.push_back(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
@@ -1282,7 +1300,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT;
         primitive_topology_list_restart.pNext = nullptr;
         features.pNext = &primitive_topology_list_restart;
-        physical.GetFeatures2KHR(features);
+        physical.GetFeatures2(features);
 
         is_topology_list_restart_supported =
             primitive_topology_list_restart.primitiveTopologyListRestart;
@@ -1300,7 +1318,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         push_descriptor.pNext = nullptr;
 
         physical_properties.pNext = &push_descriptor;
-        physical.GetProperties2KHR(physical_properties);
+        physical.GetProperties2(physical_properties);
 
         max_push_descriptors = push_descriptor.maxPushDescriptors;
     }
@@ -1351,18 +1369,18 @@ void Device::SetupFeatures() {
 }
 
 void Device::SetupProperties() {
-    float_controls.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES_KHR;
+    float_controls.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES;
 
     VkPhysicalDeviceProperties2KHR properties2{};
-    properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
+    properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     properties2.pNext = &float_controls;
 
-    physical.GetProperties2KHR(properties2);
+    physical.GetProperties2(properties2);
 }
 
 void Device::CollectTelemetryParameters() {
-    VkPhysicalDeviceDriverPropertiesKHR driver{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES_KHR,
+    VkPhysicalDeviceDriverProperties driver{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES,
         .pNext = nullptr,
         .driverID = {},
         .driverName = {},
@@ -1370,12 +1388,12 @@ void Device::CollectTelemetryParameters() {
         .conformanceVersion = {},
     };
 
-    VkPhysicalDeviceProperties2KHR device_properties{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR,
+    VkPhysicalDeviceProperties2 device_properties{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
         .pNext = &driver,
         .properties = {},
     };
-    physical.GetProperties2KHR(device_properties);
+    physical.GetProperties2(device_properties);
 
     driver_id = driver.driverID;
     vendor_name = driver.driverName;
@@ -1431,23 +1449,10 @@ void Device::CollectToolingInfo() {
     if (!ext_tooling_info) {
         return;
     }
-    const auto vkGetPhysicalDeviceToolPropertiesEXT =
-        reinterpret_cast<PFN_vkGetPhysicalDeviceToolPropertiesEXT>(
-            dld.vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceToolPropertiesEXT"));
-    if (!vkGetPhysicalDeviceToolPropertiesEXT) {
-        return;
-    }
-    u32 tool_count = 0;
-    if (vkGetPhysicalDeviceToolPropertiesEXT(physical, &tool_count, nullptr) != VK_SUCCESS) {
-        return;
-    }
-    std::vector<VkPhysicalDeviceToolPropertiesEXT> tools(tool_count);
-    if (vkGetPhysicalDeviceToolPropertiesEXT(physical, &tool_count, tools.data()) != VK_SUCCESS) {
-        return;
-    }
-    for (const VkPhysicalDeviceToolPropertiesEXT& tool : tools) {
+    auto tools{physical.GetPhysicalDeviceToolProperties()};
+    for (const VkPhysicalDeviceToolProperties& tool : tools) {
         const std::string_view name = tool.name;
-        LOG_INFO(Render_Vulkan, "{}", name);
+        LOG_INFO(Render_Vulkan, "Attached debugging tool: {}", name);
         has_renderdoc = has_renderdoc || name == "RenderDoc";
         has_nsight_graphics = has_nsight_graphics || name == "NVIDIA Nsight Graphics";
     }

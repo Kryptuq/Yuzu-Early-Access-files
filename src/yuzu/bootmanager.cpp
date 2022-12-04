@@ -237,8 +237,7 @@ private:
     GRenderWindow* render_window;
 };
 
-class OpenGLRenderWidget : public RenderWidget {
-public:
+struct OpenGLRenderWidget : public RenderWidget {
     explicit OpenGLRenderWidget(GRenderWindow* parent) : RenderWidget(parent) {
         windowHandle()->setSurfaceType(QWindow::OpenGLSurface);
     }
@@ -251,11 +250,14 @@ private:
     std::unique_ptr<Core::Frontend::GraphicsContext> context;
 };
 
-class VulkanRenderWidget : public RenderWidget {
-public:
+struct VulkanRenderWidget : public RenderWidget {
     explicit VulkanRenderWidget(GRenderWindow* parent) : RenderWidget(parent) {
         windowHandle()->setSurfaceType(QWindow::VulkanSurface);
     }
+};
+
+struct NullRenderWidget : public RenderWidget {
+    explicit NullRenderWidget(GRenderWindow* parent) : RenderWidget(parent) {}
 };
 
 static Core::Frontend::WindowSystemType GetWindowSystemType() {
@@ -878,6 +880,9 @@ bool GRenderWindow::InitRenderTarget() {
             return false;
         }
         break;
+    case Settings::RendererBackend::Null:
+        InitializeNull();
+        break;
     }
 
     // Update the Window System information with the new render target
@@ -972,6 +977,11 @@ bool GRenderWindow::InitializeVulkan() {
     main_context = std::make_unique<DummyContext>();
 
     return true;
+}
+
+void GRenderWindow::InitializeNull() {
+    child_widget = new NullRenderWidget(this);
+    main_context = std::make_unique<DummyContext>();
 }
 
 bool GRenderWindow::LoadOpenGL() {

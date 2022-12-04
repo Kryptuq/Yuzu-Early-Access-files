@@ -11,10 +11,10 @@
 namespace Vulkan {
 
 MasterSemaphore::MasterSemaphore(const Device& device) {
-    static constexpr VkSemaphoreTypeCreateInfoKHR semaphore_type_ci{
-        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR,
+    static constexpr VkSemaphoreTypeCreateInfo semaphore_type_ci{
+        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
         .pNext = nullptr,
-        .semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR,
+        .semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE,
         .initialValue = 0,
     };
     static constexpr VkSemaphoreCreateInfo semaphore_ci{
@@ -28,7 +28,7 @@ MasterSemaphore::MasterSemaphore(const Device& device) {
         return;
     }
     // Validation layers have a bug where they fail to track resource usage when using timeline
-    // semaphores and synchronizing with GetSemaphoreCounterValueKHR. To workaround this issue, have
+    // semaphores and synchronizing with GetSemaphoreCounterValue. To workaround this issue, have
     // a separate thread waiting for each timeline semaphore value.
     debug_thread = std::jthread([this](std::stop_token stop_token) {
         u64 counter = 0;

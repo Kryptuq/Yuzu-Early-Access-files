@@ -260,6 +260,7 @@ void ConfigureGraphics::ApplyConfiguration() {
             Settings::values.renderer_backend.SetValue(GetCurrentGraphicsBackend());
             switch (GetCurrentGraphicsBackend()) {
             case Settings::RendererBackend::OpenGL:
+            case Settings::RendererBackend::Null:
                 Settings::values.shader_backend.SetGlobal(false);
                 Settings::values.vulkan_device.SetGlobal(true);
                 Settings::values.shader_backend.SetValue(shader_backend);
@@ -346,6 +347,10 @@ void ConfigureGraphics::UpdateAPILayout() {
     case Settings::RendererBackend::Vulkan:
         ui->device->setCurrentIndex(vulkan_device);
         ui->device_widget->setVisible(true);
+        ui->backend_widget->setVisible(false);
+        break;
+    case Settings::RendererBackend::Null:
+        ui->device_widget->setVisible(false);
         ui->backend_widget->setVisible(false);
         break;
     }

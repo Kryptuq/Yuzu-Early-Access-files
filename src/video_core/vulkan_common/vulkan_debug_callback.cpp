@@ -16,6 +16,8 @@ VkBool32 Callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
     case 0x682a878au: // VUID-vkCmdBindVertexBuffers2EXT-pBuffers-parameter
     case 0x99fb7dfdu: // UNASSIGNED-RequiredParameter (vkCmdBindVertexBuffers2EXT pBuffers[0])
     case 0xe8616bf2u: // Bound VkDescriptorSet 0x0[] was destroyed. Likely push_descriptor related
+    case 0x1608dec0u: // Image layout in vkUpdateDescriptorSet doesn't match descriptor use
+    case 0x55362756u: // Descriptor binding and framebuffer attachment overlap
         return VK_FALSE;
     default:
         break;

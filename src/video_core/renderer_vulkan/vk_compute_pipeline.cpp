@@ -53,7 +53,7 @@ ComputePipeline::ComputePipeline(const Device& device_, DescriptorPool& descript
             .requiredSubgroupSize = GuestWarpSize,
         };
         VkPipelineCreateFlags flags{};
-        if (device.IsKhrPipelineEexecutablePropertiesEnabled()) {
+        if (device.IsKhrPipelineExecutablePropertiesEnabled()) {
             flags |= VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR;
         }
         pipeline = device.GetLogical().CreateComputePipeline({

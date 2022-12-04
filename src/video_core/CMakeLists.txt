@@ -92,6 +92,10 @@ add_library(video_core STATIC
     rasterizer_interface.h
     renderer_base.cpp
     renderer_base.h
+    renderer_null/null_rasterizer.cpp
+    renderer_null/null_rasterizer.h
+    renderer_null/renderer_null.cpp
+    renderer_null/renderer_null.h
     renderer_opengl/gl_buffer_cache.cpp
     renderer_opengl/gl_buffer_cache.h
     renderer_opengl/gl_compute_pipeline.cpp

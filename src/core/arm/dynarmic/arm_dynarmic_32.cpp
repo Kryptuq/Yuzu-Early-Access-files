@@ -29,7 +29,9 @@ class DynarmicCallbacks32 : public Dynarmic::A32::UserCallbacks {
 public:
     explicit DynarmicCallbacks32(ARM_Dynarmic_32& parent_)
         : parent{parent_},
-          memory(parent.system.Memory()), debugger_enabled{parent.system.DebuggerEnabled()} {}
+          memory(parent.system.Memory()), debugger_enabled{parent.system.DebuggerEnabled()},
+          check_memory_access{debugger_enabled ||
+                              !Settings::values.cpuopt_ignore_memory_aborts.GetValue()} {}
 
     u8 MemoryRead8(u32 vaddr) override {
         CheckMemoryAccess(vaddr, 1, Kernel::DebugWatchpointType::Read);
@@ -154,6 +156,17 @@ public:
     }
 
     bool CheckMemoryAccess(VAddr addr, u64 size, Kernel::DebugWatchpointType type) {
+        if (!check_memory_access) {
+            return true;
+        }
+
+        if (!memory.IsValidVirtualAddressRange(addr, size)) {
+            LOG_CRITICAL(Core_ARM, "Stopping execution due to unmapped memory access at {:#x}",
+                         addr);
+            parent.jit.load()->HaltExecution(ARM_Interface::no_execute);
+            return false;
+        }
+
         if (!debugger_enabled) {
             return true;
         }
@@ -181,7 +194,8 @@ public:
     ARM_Dynarmic_32& parent;
     Core::Memory::Memory& memory;
     std::size_t num_interpreted_instructions{};
-    bool debugger_enabled{};
+    const bool debugger_enabled{};
+    const bool check_memory_access{};
     static constexpr u64 minimum_run_cycles = 10000U;
 };
 
@@ -263,6 +277,9 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
         }
         if (!Settings::values.cpuopt_recompile_exclusives) {
             config.recompile_on_exclusive_fastmem_failure = false;
+        }
+        if (!Settings::values.cpuopt_ignore_memory_aborts) {
+            config.check_halt_on_memory_access = true;
         }
     } else {
         // Unsafe optimizations
