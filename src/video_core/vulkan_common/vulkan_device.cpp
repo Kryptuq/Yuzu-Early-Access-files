@@ -456,6 +456,13 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     };
     SetNext(next, demote);
 
+    VkPhysicalDeviceShaderDrawParametersFeatures draw_parameters{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETER_FEATURES,
+        .pNext = nullptr,
+        .shaderDrawParameters = true,
+    };
+    SetNext(next, draw_parameters);
+
     VkPhysicalDeviceShaderFloat16Int8Features float16_int8;
     if (is_int8_supported || is_float16_supported) {
         float16_int8 = {
@@ -989,9 +996,13 @@ void Device::CheckSuitability(bool requires_swapchain) const {
     host_query_reset.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES;
     host_query_reset.pNext = &bit8_storage;
 
+    VkPhysicalDeviceShaderDrawParametersFeatures draw_parameters{};
+    draw_parameters.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETER_FEATURES;
+    draw_parameters.pNext = &host_query_reset;
+
     VkPhysicalDeviceFeatures2 features2{};
     features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    features2.pNext = &host_query_reset;
+    features2.pNext = &draw_parameters;
 
     physical.GetFeatures2(features2);
 
@@ -1034,6 +1045,7 @@ void Device::CheckSuitability(bool requires_swapchain) const {
         std::make_pair(bit8_storage.uniformAndStorageBuffer8BitAccess,
                        "uniformAndStorageBuffer8BitAccess"),
         std::make_pair(host_query_reset.hostQueryReset, "hostQueryReset"),
+        std::make_pair(draw_parameters.shaderDrawParameters, "shaderDrawParameters"),
     };
 
     bool has_all_required_features = true;

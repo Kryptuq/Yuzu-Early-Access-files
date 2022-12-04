@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <array>
-#include <bit>
 #include <cmath>
 #include <span>
 #include <unordered_map>
 
 #include "common/assert.h"
+#include "common/bit_cast.h"
 #include "video_core/engines/sw_blitter/converter.h"
 #include "video_core/surface.h"
 #include "video_core/textures/decoders.h"
@@ -693,21 +693,21 @@ private:
             return shifted_value >> shift_amount;
         };
         const auto force_to_fp16 = [](f32 base_value) {
-            u32 tmp = std::bit_cast<u32>(base_value);
+            u32 tmp = Common::BitCast<u32>(base_value);
             constexpr size_t fp32_mantissa_bits = 23;
             constexpr size_t fp16_mantissa_bits = 10;
             constexpr size_t mantissa_mask =
                 ~((1ULL << (fp32_mantissa_bits - fp16_mantissa_bits)) - 1ULL);
             tmp = tmp & static_cast<u32>(mantissa_mask);
             // TODO: force the exponent within the range of half float. Not needed in UNORM / SNORM
-            return std::bit_cast<f32>(tmp);
+            return Common::BitCast<f32>(tmp);
         };
         const auto from_fp_n = [&sign_extend](u32 base_value, size_t bits, size_t mantissa) {
             constexpr size_t fp32_mantissa_bits = 23;
             size_t shift_towards = fp32_mantissa_bits - mantissa;
             const u32 new_value =
                 static_cast<u32>(sign_extend(base_value, bits) << shift_towards) & (~(1U << 31));
-            return std::bit_cast<f32>(new_value);
+            return Common::BitCast<f32>(new_value);
         };
         const auto calculate_snorm = [&]() {
             return static_cast<f32>(
@@ -737,13 +737,13 @@ private:
             out_component = force_to_fp16(out_component);
         } else if constexpr (component_types[which_component] == ComponentType::FLOAT) {
             if constexpr (component_sizes[which_component] == 32) {
-                out_component = std::bit_cast<f32>(value);
+                out_component = Common::BitCast<f32>(value);
             } else if constexpr (component_sizes[which_component] == 16) {
                 static constexpr u32 sign_mask = 0x8000;
                 static constexpr u32 mantissa_mask = 0x8000;
-                out_component = std::bit_cast<f32>(((value & sign_mask) << 16) |
-                                                   (((value & 0x7c00) + 0x1C000) << 13) |
-                                                   ((value & mantissa_mask) << 13));
+                out_component = Common::BitCast<f32>(((value & sign_mask) << 16) |
+                                                     (((value & 0x7c00) + 0x1C000) << 13) |
+                                                     ((value & mantissa_mask) << 13));
             } else {
                 out_component = from_fp_n(value, component_sizes[which_component],
                                           component_sizes[which_component] - 5);
@@ -771,7 +771,7 @@ private:
         };
         const auto to_fp_n = [](f32 base_value, size_t bits, size_t mantissa) {
             constexpr size_t fp32_mantissa_bits = 23;
-            u32 tmp_value = std::bit_cast<u32>(std::max(base_value, 0.0f));
+            u32 tmp_value = Common::BitCast<u32>(std::max(base_value, 0.0f));
             size_t shift_towards = fp32_mantissa_bits - mantissa;
             return tmp_value >> shift_towards;
         };
@@ -799,13 +799,13 @@ private:
             insert_to_word(tmp_word);
         } else if constexpr (component_types[which_component] == ComponentType::FLOAT) {
             if constexpr (component_sizes[which_component] == 32) {
-                u32 tmp_word = std::bit_cast<u32>(in_component);
+                u32 tmp_word = Common::BitCast<u32>(in_component);
                 insert_to_word(tmp_word);
             } else if constexpr (component_sizes[which_component] == 16) {
                 static constexpr u32 sign_mask = 0x8000;
                 static constexpr u32 mantissa_mask = 0x03ff;
                 static constexpr u32 exponent_mask = 0x7c00;
-                const u32 tmp_word = std::bit_cast<u32>(in_component);
+                const u32 tmp_word = Common::BitCast<u32>(in_component);
                 const u32 half = ((tmp_word >> 16) & sign_mask) |
                                  ((((tmp_word & 0x7f800000) - 0x38000000) >> 13) & exponent_mask) |
                                  ((tmp_word >> 13) & mantissa_mask);

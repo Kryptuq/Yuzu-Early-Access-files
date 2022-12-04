@@ -15,7 +15,7 @@
 #pragma clang diagnostic pop
 #endif
 
-#include <inih/cpp/INIReader.h>
+#include <INIReader.h>
 #include "common/fs/file.h"
 #include "common/fs/fs.h"
 #include "common/fs/path_util.h"

@@ -219,11 +219,11 @@ endif()
 
 target_link_libraries(audio_core PUBLIC common core)
 if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64)
-    target_link_libraries(audio_core PRIVATE dynarmic)
+    target_link_libraries(audio_core PRIVATE dynarmic::dynarmic)
 endif()
 
 if(ENABLE_CUBEB)
-    target_link_libraries(audio_core PRIVATE cubeb)
+    target_link_libraries(audio_core PRIVATE cubeb::cubeb)
     target_compile_definitions(audio_core PRIVATE -DHAVE_CUBEB=1)
 endif()
 if(ENABLE_SDL2)

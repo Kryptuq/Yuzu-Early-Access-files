@@ -824,7 +824,7 @@ if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64)
         hle/service/jit/jit.cpp
         hle/service/jit/jit.h
     )
-    target_link_libraries(core PRIVATE dynarmic)
+    target_link_libraries(core PRIVATE dynarmic::dynarmic)
 endif()
 
 if (YUZU_USE_PRECOMPILED_HEADERS)

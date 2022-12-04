@@ -9,4 +9,5 @@ add_library(inih
 )
 
 create_target_directory_groups(inih)
-target_include_directories(inih INTERFACE .)
+target_include_directories(inih INTERFACE inih/cpp)
+add_library(inih::INIReader ALIAS inih)

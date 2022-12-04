@@ -264,8 +264,7 @@ target_link_options(video_core PRIVATE ${FFmpeg_LDFLAGS})
 
 add_dependencies(video_core host_shaders)
 target_include_directories(video_core PRIVATE ${HOST_SHADERS_INCLUDE})
-target_include_directories(video_core PRIVATE sirit ../../externals/Vulkan-Headers/include)
-target_link_libraries(video_core PRIVATE sirit)
+target_link_libraries(video_core PRIVATE sirit Vulkan::Headers)
 
 if (ENABLE_NSIGHT_AFTERMATH)
     if (NOT DEFINED ENV{NSIGHT_AFTERMATH_SDK})
@@ -284,9 +283,15 @@ if (MSVC)
         /we4244 # 'conversion': conversion from 'type1' to 'type2', possible loss of data
     )
 else()
-    target_compile_options(video_core PRIVATE
-        -Werror=conversion
+    if (APPLE)
+        # error: declaration shadows a typedef in 'interval_base_set<SubType, DomainT, Compare, Interval, Alloc>'
+        # error: implicit conversion loses integer precision: 'int' to 'boost::icl::bound_type' (aka 'unsigned char')
+        target_compile_options(video_core PRIVATE -Wno-shadow -Wno-unused-local-typedef)
+    else()
+        target_compile_options(video_core PRIVATE -Werror=conversion)
+    endif()
 
+    target_compile_options(video_core PRIVATE
         -Wno-sign-conversion
     )
 
@@ -299,11 +304,11 @@ if (ARCHITECTURE_x86_64)
         macro/macro_jit_x64.cpp
         macro/macro_jit_x64.h
     )
-    target_link_libraries(video_core PUBLIC xbyak)
+    target_link_libraries(video_core PUBLIC xbyak::xbyak)
 endif()
 
 if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64)
-    target_link_libraries(video_core PRIVATE dynarmic)
+    target_link_libraries(video_core PRIVATE dynarmic::dynarmic)
 endif()
 
 if (YUZU_USE_PRECOMPILED_HEADERS)

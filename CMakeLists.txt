@@ -3,6 +3,10 @@
 
 cmake_minimum_required(VERSION 3.22)
 
+# Dynarmic has cmake_minimum_required(3.12) and we may want to override
+# some of its variables, which is only possible in 3.13+
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externals/cmake-modules")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externals/find-modules")
@@ -39,8 +43,6 @@ option(ENABLE_CUBEB "Enables the cubeb audio backend" ON)
 
 option(USE_DISCORD_PRESENCE "Enables Discord Rich Presence" OFF)
 
-option(YUZU_USE_BUNDLED_OPUS "Compile bundled opus" ON)
-
 option(YUZU_TESTS "Compile tests" ON)
 
 option(YUZU_USE_PRECOMPILED_HEADERS "Use precompiled headers" ON)
@@ -71,7 +73,8 @@ if (YUZU_USE_PRECOMPILED_HEADERS)
         # buildcache does not properly cache PCH files, leading to compilation errors.
         # See https://github.com/mbitsnbites/buildcache/discussions/230
         message(WARNING "buildcache does not properly support Precompiled Headers. Disabling PCH")
-        set(YUZU_USE_PRECOMPILED_HEADERS OFF)
+        set(DYNARMIC_USE_PRECOMPILED_HEADERS OFF CACHE BOOL "" FORCE)
+        set(YUZU_USE_PRECOMPILED_HEADERS OFF CACHE BOOL "" FORCE)
     endif()
 endif()
 if (YUZU_USE_PRECOMPILED_HEADERS)
@@ -196,24 +199,39 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 # System imported libraries
 # =======================================================================
 
-find_package(fmt 8.0.1 REQUIRED CONFIG)
-find_package(nlohmann_json 3.8 REQUIRED CONFIG)
+find_package(enet 1.3)
+find_package(fmt 9 REQUIRED)
+find_package(inih)
+find_package(lz4 1.8 REQUIRED)
+find_package(nlohmann_json 3.8 REQUIRED)
+find_package(Opus 1.3)
+find_package(Vulkan 1.3.213)
 find_package(ZLIB 1.2 REQUIRED)
+find_package(zstd 1.5 REQUIRED)
 
-# Search for config-only package first (for vcpkg), then try non-config
-find_package(zstd 1.5 CONFIG)
-if (NOT zstd_FOUND)
-    find_package(zstd 1.5 REQUIRED)
+if (ARCHITECTURE_x86 OR ARCHITECTURE_x86_64)
+    find_package(xbyak 6)
 endif()
 
-# lz4 1.8 is required, but vcpkg's lz4-config.cmake does not have version info
-find_package(lz4 CONFIG)
-if (NOT lz4_FOUND)
-    find_package(lz4 1.8 REQUIRED)
+if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64)
+    find_package(dynarmic 6.2.4)
+endif()
+
+if (ENABLE_CUBEB)
+    find_package(cubeb)
+endif()
+
+if (USE_DISCORD_PRESENCE)
+    find_package(DiscordRPC)
+endif()
+
+if (ENABLE_WEB_SERVICE)
+    find_package(cpp-jwt 1.4)
+    find_package(httplib 0.11)
 endif()
 
 if (YUZU_TESTS)
-    find_package(Catch2 2.13.7 REQUIRED CONFIG)
+    find_package(Catch2 2.13.7 REQUIRED)
 endif()
 
 find_package(Boost 1.73.0 COMPONENTS context)
@@ -444,7 +462,7 @@ if (TARGET Boost::boost)
 endif()
 
 # Ensure libusb is properly configured (based on dolphin libusb include)
-if(NOT APPLE AND NOT YUZU_USE_BUNDLED_LIBUSB)
+if(NOT YUZU_USE_BUNDLED_LIBUSB)
     find_package(PkgConfig)
     if (PKG_CONFIG_FOUND AND NOT CMAKE_SYSTEM_NAME MATCHES "DragonFly|FreeBSD")
         pkg_check_modules(LIBUSB QUIET libusb-1.0>=1.0.24)
@@ -454,7 +472,8 @@ if(NOT APPLE AND NOT YUZU_USE_BUNDLED_LIBUSB)
 
     if (LIBUSB_FOUND)
         add_library(usb INTERFACE)
-        target_include_directories(usb INTERFACE "${LIBUSB_INCLUDE_DIRS}")
+        target_include_directories(usb INTERFACE "${LIBUSB_INCLUDEDIR}" "${LIBUSB_INCLUDE_DIRS}")
+        target_link_directories(usb INTERFACE "${LIBUSB_LIBRARY_DIRS}")
         target_link_libraries(usb INTERFACE "${LIBUSB_LIBRARIES}")
     else()
         message(WARNING "libusb not found, falling back to externals")

@@ -3,6 +3,7 @@
 
 #include <algorithm>
 
+#include "common/polyfill_ranges.h"
 #include "common/thread.h"
 #include "core/hid/emulated_controller.h"
 #include "core/hid/input_converter.h"

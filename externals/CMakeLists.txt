@@ -6,18 +6,16 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/externals/find-modules")
 include(DownloadExternals)
 
 # xbyak
-if (ARCHITECTURE_x86 OR ARCHITECTURE_x86_64)
-    add_subdirectory(xbyak)
+if ((ARCHITECTURE_x86 OR ARCHITECTURE_x86_64) AND NOT TARGET xbyak::xbyak)
+    add_subdirectory(xbyak EXCLUDE_FROM_ALL)
 endif()
 
 # Dynarmic
-if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64)
-    if (ARCHITECTURE_arm64)
-       set(DYNARMIC_FRONTENDS "A32")
-    endif()
+if ((ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64) AND NOT TARGET dynarmic::dynarmic)
     set(DYNARMIC_NO_BUNDLED_FMT ON)
     set(DYNARMIC_IGNORE_ASSERTS ON CACHE BOOL "" FORCE)
-    add_subdirectory(dynarmic)
+    add_subdirectory(dynarmic EXCLUDE_FROM_ALL)
+    add_library(dynarmic::dynarmic ALIAS dynarmic)
 endif()
 
 # getopt
@@ -29,7 +27,9 @@ endif()
 add_subdirectory(glad)
 
 # inih
-add_subdirectory(inih)
+if (NOT TARGET inih::INIReader)
+    add_subdirectory(inih)
+endif()
 
 # mbedtls
 add_subdirectory(mbedtls EXCLUDE_FROM_ALL)
@@ -75,25 +75,30 @@ if (YUZU_USE_EXTERNAL_SDL2)
 endif()
 
 # ENet
-add_subdirectory(enet)
-target_include_directories(enet INTERFACE ./enet/include)
+if (NOT TARGET enet::enet)
+    add_subdirectory(enet EXCLUDE_FROM_ALL)
+    target_include_directories(enet INTERFACE ./enet/include)
+    add_library(enet::enet ALIAS enet)
+endif()
 
 # Cubeb
-if(ENABLE_CUBEB)
+if (ENABLE_CUBEB AND NOT TARGET cubeb::cubeb)
     set(BUILD_TESTS OFF CACHE BOOL "")
     add_subdirectory(cubeb EXCLUDE_FROM_ALL)
+    add_library(cubeb::cubeb ALIAS cubeb)
 endif()
 
 # DiscordRPC
-if (USE_DISCORD_PRESENCE)
+if (USE_DISCORD_PRESENCE AND NOT TARGET DiscordRPC::discord-rpc)
     add_subdirectory(discord-rpc EXCLUDE_FROM_ALL)
     target_include_directories(discord-rpc INTERFACE ./discord-rpc/include)
+    add_library(DiscordRPC::discord-rpc ALIAS discord-rpc)
 endif()
 
 # Sirit
-add_subdirectory(sirit)
+add_subdirectory(sirit EXCLUDE_FROM_ALL)
 
-if (ENABLE_WEB_SERVICE)
+if (ENABLE_WEB_SERVICE AND NOT TARGET httplib::httplib)
     if (NOT WIN32)
         find_package(OpenSSL 1.1)
         if (OPENSSL_FOUND)
@@ -121,18 +126,20 @@ if (ENABLE_WEB_SERVICE)
     if (WIN32)
         target_link_libraries(httplib INTERFACE crypt32 cryptui ws2_32)
     endif()
-	
-    # cpp-jwt
+    add_library(httplib::httplib ALIAS httplib)
+endif()
+
+# cpp-jwt
+if (ENABLE_WEB_SERVICE AND NOT TARGET cpp-jwt::cpp-jwt)
     add_library(cpp-jwt INTERFACE)
     target_include_directories(cpp-jwt INTERFACE ./cpp-jwt/include)
     target_compile_definitions(cpp-jwt INTERFACE CPP_JWT_USE_VENDORED_NLOHMANN_JSON)
+    add_library(cpp-jwt::cpp-jwt ALIAS cpp-jwt)
 endif()
 
 # Opus
-if (YUZU_USE_BUNDLED_OPUS)
+if (NOT TARGET Opus::opus)
     add_subdirectory(opus EXCLUDE_FROM_ALL)
-else()
-    find_package(Opus 1.3 REQUIRED)
 endif()
 
 # FFMpeg
@@ -142,4 +149,9 @@ if (YUZU_USE_BUNDLED_FFMPEG)
     set(FFmpeg_LDFLAGS "${FFmpeg_LDFLAGS}" PARENT_SCOPE)
     set(FFmpeg_LIBRARIES "${FFmpeg_LIBRARIES}" PARENT_SCOPE)
     set(FFmpeg_INCLUDE_DIR "${FFmpeg_INCLUDE_DIR}" PARENT_SCOPE)
+endif()
+
+# Vulkan-Headers
+if (NOT TARGET Vulkan::Headers)
+    add_subdirectory(Vulkan-Headers EXCLUDE_FROM_ALL)
 endif()

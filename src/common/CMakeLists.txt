@@ -149,7 +149,7 @@ if(ARCHITECTURE_x86_64)
             x64/xbyak_abi.h
             x64/xbyak_util.h
     )
-    target_link_libraries(common PRIVATE xbyak)
+    target_link_libraries(common PRIVATE xbyak::xbyak)
 endif()
 
 if (MSVC)
@@ -174,17 +174,7 @@ endif()
 create_target_directory_groups(common)
 
 target_link_libraries(common PUBLIC ${Boost_LIBRARIES} fmt::fmt microprofile Threads::Threads)
-if (TARGET lz4::lz4)
-  target_link_libraries(common PRIVATE lz4::lz4)
-else()
-  target_link_libraries(common PRIVATE LZ4::lz4_shared)
-endif()
-if (TARGET zstd::zstd)
-  target_link_libraries(common PRIVATE zstd::zstd)
-else()
-  target_link_libraries(common PRIVATE
-    $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>)
-endif()
+target_link_libraries(common PRIVATE lz4::lz4 zstd::zstd)
 
 if (YUZU_USE_PRECOMPILED_HEADERS)
     target_precompile_headers(common PRIVATE precompiled_headers.h)
