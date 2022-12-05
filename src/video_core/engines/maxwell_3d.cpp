@@ -493,40 +493,50 @@ void Maxwell3D::ProcessQueryGet() {
 
 void Maxwell3D::ProcessQueryCondition() {
     const GPUVAddr condition_address{regs.render_enable.Address()};
-    switch (regs.render_enable.mode) {
-    case Regs::RenderEnable::Mode::True: {
+    switch (regs.render_enable_override) {
+    case Regs::RenderEnable::Override::AlwaysRender:
         execute_on = true;
         break;
-    }
-    case Regs::RenderEnable::Mode::False: {
+    case Regs::RenderEnable::Override::NeverRender:
         execute_on = false;
         break;
-    }
-    case Regs::RenderEnable::Mode::Conditional: {
-        Regs::ReportSemaphore::Compare cmp;
-        memory_manager.ReadBlock(condition_address, &cmp, sizeof(cmp));
-        execute_on = cmp.initial_sequence != 0U && cmp.initial_mode != 0U;
+    case Regs::RenderEnable::Override::UseRenderEnable:
+        switch (regs.render_enable.mode) {
+        case Regs::RenderEnable::Mode::True: {
+            execute_on = true;
+            break;
+        }
+        case Regs::RenderEnable::Mode::False: {
+            execute_on = false;
+            break;
+        }
+        case Regs::RenderEnable::Mode::Conditional: {
+            Regs::ReportSemaphore::Compare cmp;
+            memory_manager.ReadBlock(condition_address, &cmp, sizeof(cmp));
+            execute_on = cmp.initial_sequence != 0U && cmp.initial_mode != 0U;
+            break;
+        }
+        case Regs::RenderEnable::Mode::IfEqual: {
+            Regs::ReportSemaphore::Compare cmp;
+            memory_manager.ReadBlock(condition_address, &cmp, sizeof(cmp));
+            execute_on = cmp.initial_sequence == cmp.current_sequence &&
+                         cmp.initial_mode == cmp.current_mode;
+            break;
+        }
+        case Regs::RenderEnable::Mode::IfNotEqual: {
+            Regs::ReportSemaphore::Compare cmp;
+            memory_manager.ReadBlock(condition_address, &cmp, sizeof(cmp));
+            execute_on = cmp.initial_sequence != cmp.current_sequence ||
+                         cmp.initial_mode != cmp.current_mode;
+            break;
+        }
+        default: {
+            UNIMPLEMENTED_MSG("Uninplemented Condition Mode!");
+            execute_on = true;
+            break;
+        }
+        }
         break;
-    }
-    case Regs::RenderEnable::Mode::IfEqual: {
-        Regs::ReportSemaphore::Compare cmp;
-        memory_manager.ReadBlock(condition_address, &cmp, sizeof(cmp));
-        execute_on =
-            cmp.initial_sequence == cmp.current_sequence && cmp.initial_mode == cmp.current_mode;
-        break;
-    }
-    case Regs::RenderEnable::Mode::IfNotEqual: {
-        Regs::ReportSemaphore::Compare cmp;
-        memory_manager.ReadBlock(condition_address, &cmp, sizeof(cmp));
-        execute_on =
-            cmp.initial_sequence != cmp.current_sequence || cmp.initial_mode != cmp.current_mode;
-        break;
-    }
-    default: {
-        UNIMPLEMENTED_MSG("Uninplemented Condition Mode!");
-        execute_on = true;
-        break;
-    }
     }
 }
 

@@ -36,14 +36,14 @@ public:
 
 private:
     KernelCore& kernel;
-
-    std::jthread m_host_thread;
-    std::mutex m_session_mutex;
-    std::map<KServerSession*, std::shared_ptr<SessionRequestManager>> m_sessions;
-    KEvent* m_wakeup_event;
-    KThread* m_thread;
-    std::atomic<bool> m_shutdown_requested;
     const std::string m_service_name;
+
+    std::jthread m_host_thread{};
+    std::mutex m_session_mutex{};
+    std::map<KServerSession*, std::shared_ptr<SessionRequestManager>> m_sessions{};
+    KEvent* m_wakeup_event{};
+    KThread* m_thread{};
+    std::atomic<bool> m_shutdown_requested{};
 };
 
 void ServiceThread::Impl::WaitAndProcessImpl() {
@@ -183,7 +183,7 @@ ServiceThread::Impl::~Impl() {
 }
 
 ServiceThread::Impl::Impl(KernelCore& kernel_, const std::string& service_name)
-    : kernel{kernel_}, m_shutdown_requested{false}, m_service_name{service_name} {
+    : kernel{kernel_}, m_service_name{service_name} {
     // Initialize event.
     m_wakeup_event = KEvent::Create(kernel);
     m_wakeup_event->Initialize(nullptr);
