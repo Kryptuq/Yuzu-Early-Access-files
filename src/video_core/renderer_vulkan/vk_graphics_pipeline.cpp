@@ -714,8 +714,8 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
         .sampleShadingEnable = VK_FALSE,
         .minSampleShading = 0.0f,
         .pSampleMask = nullptr,
-        .alphaToCoverageEnable = VK_FALSE,
-        .alphaToOneEnable = VK_FALSE,
+        .alphaToCoverageEnable = key.state.alpha_to_coverage_enabled != 0 ? VK_TRUE : VK_FALSE,
+        .alphaToOneEnable = key.state.alpha_to_one_enabled != 0 ? VK_TRUE : VK_FALSE,
     };
     const VkPipelineDepthStencilStateCreateInfo depth_stencil_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,

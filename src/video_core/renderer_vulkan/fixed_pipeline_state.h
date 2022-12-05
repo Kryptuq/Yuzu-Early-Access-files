@@ -195,6 +195,8 @@ struct FixedPipelineState {
         BitField<12, 1, u32> provoking_vertex_last;
         BitField<13, 1, u32> conservative_raster_enable;
         BitField<14, 1, u32> smooth_lines;
+        BitField<15, 1, u32> alpha_to_coverage_enabled;
+        BitField<16, 1, u32> alpha_to_one_enabled;
     };
     std::array<u8, Maxwell::NumRenderTargets> color_formats;
 
