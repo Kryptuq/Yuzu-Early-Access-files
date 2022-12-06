@@ -47,20 +47,20 @@ Common::Input::NfcState VirtualAmiibo::SupportsNfc(
 
 Common::Input::NfcState VirtualAmiibo::WriteNfcData(
     [[maybe_unused]] const PadIdentifier& identifier_, const std::vector<u8>& data) {
-    const Common::FS::IOFile amiibo_file{file_path, Common::FS::FileAccessMode::ReadWrite,
-                                         Common::FS::FileType::BinaryFile};
+    const Common::FS::IOFile nfc_file{file_path, Common::FS::FileAccessMode::ReadWrite,
+                                      Common::FS::FileType::BinaryFile};
 
-    if (!amiibo_file.IsOpen()) {
+    if (!nfc_file.IsOpen()) {
         LOG_ERROR(Core, "Amiibo is already on use");
         return Common::Input::NfcState::WriteFailed;
     }
 
-    if (!amiibo_file.Write(data)) {
+    if (!nfc_file.Write(data)) {
         LOG_ERROR(Service_NFP, "Error writting to file");
         return Common::Input::NfcState::WriteFailed;
     }
 
-    amiibo_data = data;
+    nfc_data = data;
 
     return Common::Input::NfcState::Success;
 }
@@ -70,32 +70,44 @@ VirtualAmiibo::State VirtualAmiibo::GetCurrentState() const {
 }
 
 VirtualAmiibo::Info VirtualAmiibo::LoadAmiibo(const std::string& filename) {
-    const Common::FS::IOFile amiibo_file{filename, Common::FS::FileAccessMode::Read,
-                                         Common::FS::FileType::BinaryFile};
+    const Common::FS::IOFile nfc_file{filename, Common::FS::FileAccessMode::Read,
+                                      Common::FS::FileType::BinaryFile};
 
     if (state != State::WaitingForAmiibo) {
         return Info::WrongDeviceState;
     }
 
-    if (!amiibo_file.IsOpen()) {
+    if (!nfc_file.IsOpen()) {
         return Info::UnableToLoad;
     }
 
-    amiibo_data.resize(amiibo_size);
-
-    if (amiibo_file.Read(amiibo_data) < amiibo_size_without_password) {
+    switch (nfc_file.GetSize()) {
+    case AmiiboSize:
+    case AmiiboSizeWithoutPassword:
+        nfc_data.resize(AmiiboSize);
+        if (nfc_file.Read(nfc_data) < AmiiboSizeWithoutPassword) {
+            return Info::NotAnAmiibo;
+        }
+        break;
+    case MifareSize:
+        nfc_data.resize(MifareSize);
+        if (nfc_file.Read(nfc_data) < MifareSize) {
+            return Info::NotAnAmiibo;
+        }
+        break;
+    default:
         return Info::NotAnAmiibo;
     }
 
     file_path = filename;
     state = State::AmiiboIsOpen;
-    SetNfc(identifier, {Common::Input::NfcState::NewAmiibo, amiibo_data});
+    SetNfc(identifier, {Common::Input::NfcState::NewAmiibo, nfc_data});
     return Info::Success;
 }
 
 VirtualAmiibo::Info VirtualAmiibo::ReloadAmiibo() {
     if (state == State::AmiiboIsOpen) {
-        SetNfc(identifier, {Common::Input::NfcState::NewAmiibo, amiibo_data});
+        SetNfc(identifier, {Common::Input::NfcState::NewAmiibo, nfc_data});
         return Info::Success;
     }
 

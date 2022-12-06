@@ -454,6 +454,12 @@ VkResult Free(VkDevice device, VkCommandPool handle, Span<VkCommandBuffer> buffe
 
 Instance Instance::Create(u32 version, Span<const char*> layers, Span<const char*> extensions,
                           InstanceDispatch& dispatch) {
+#ifdef __APPLE__
+    constexpr VkFlags ci_flags{VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR};
+#else
+    constexpr VkFlags ci_flags{};
+#endif
+
     const VkApplicationInfo application_info{
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
         .pNext = nullptr,
@@ -466,7 +472,7 @@ Instance Instance::Create(u32 version, Span<const char*> layers, Span<const char
     const VkInstanceCreateInfo ci{
         .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
         .pNext = nullptr,
-        .flags = 0,
+        .flags = ci_flags,
         .pApplicationInfo = &application_info,
         .enabledLayerCount = layers.size(),
         .ppEnabledLayerNames = layers.data(),

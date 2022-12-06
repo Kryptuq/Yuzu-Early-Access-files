@@ -34,10 +34,16 @@ public:
     void Initialize();
     void Finalize();
 
-    Result StartDetection(s32 protocol_);
+    Result StartDetection(NFP::TagProtocol allowed_protocol);
     Result StopDetection();
+    Result Flush();
 
-    Result GetTagInfo(NFP::TagInfo& tag_info) const;
+    Result GetTagInfo(NFP::TagInfo& tag_info, bool is_mifare) const;
+
+    Result MifareRead(const NFP::MifareReadBlockParameter& parameter,
+                      NFP::MifareReadBlockData& read_block_data);
+
+    Result MifareWrite(const NFP::MifareWriteBlockParameter& parameter);
 
     u64 GetHandle() const;
     NFP::DeviceState GetCurrentState() const;
@@ -61,10 +67,11 @@ private:
     Kernel::KEvent* deactivate_event = nullptr;
     Kernel::KEvent* availability_change_event = nullptr;
 
-    s32 protocol{};
+    NFP::TagProtocol allowed_protocols{};
     NFP::DeviceState device_state{NFP::DeviceState::Unavailable};
 
     NFP::EncryptedNTAG215File encrypted_tag_data{};
+    std::vector<u8> tag_data{};
 };
 
 } // namespace Service::NFC

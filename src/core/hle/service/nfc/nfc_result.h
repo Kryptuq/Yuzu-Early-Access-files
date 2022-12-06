@@ -12,6 +12,12 @@ constexpr Result InvalidArgument(ErrorModule::NFC, 65);
 constexpr Result WrongDeviceState(ErrorModule::NFC, 73);
 constexpr Result NfcDisabled(ErrorModule::NFC, 80);
 constexpr Result TagRemoved(ErrorModule::NFC, 97);
-constexpr Result CorruptedData(ErrorModule::NFC, 144);
+
+constexpr Result MifareDeviceNotFound(ErrorModule::NFCMifare, 64);
+constexpr Result MifareInvalidArgument(ErrorModule::NFCMifare, 65);
+constexpr Result MifareWrongDeviceState(ErrorModule::NFCMifare, 73);
+constexpr Result MifareNfcDisabled(ErrorModule::NFCMifare, 80);
+constexpr Result MifareTagRemoved(ErrorModule::NFCMifare, 97);
+constexpr Result MifareReadError(ErrorModule::NFCMifare, 288);
 
 } // namespace Service::NFC

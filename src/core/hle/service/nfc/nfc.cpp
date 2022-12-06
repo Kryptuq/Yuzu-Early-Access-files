@@ -6,6 +6,7 @@
 #include "common/logging/log.h"
 #include "common/settings.h"
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/service/nfc/mifare_user.h"
 #include "core/hle/service/nfc/nfc.h"
 #include "core/hle/service/nfc/nfc_user.h"
 #include "core/hle/service/service.h"
@@ -47,32 +48,6 @@ private:
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IAm>(system);
-    }
-};
-
-class MFIUser final : public ServiceFramework<MFIUser> {
-public:
-    explicit MFIUser(Core::System& system_) : ServiceFramework{system_, "NFC::MFIUser"} {
-        // clang-format off
-        static const FunctionInfo functions[] = {
-            {0, nullptr, "Initialize"},
-            {1, nullptr, "Finalize"},
-            {2, nullptr, "ListDevices"},
-            {3, nullptr, "StartDetection"},
-            {4, nullptr, "StopDetection"},
-            {5, nullptr, "Read"},
-            {6, nullptr, "Write"},
-            {7, nullptr, "GetTagInfo"},
-            {8, nullptr, "GetActivateEventHandle"},
-            {9, nullptr, "GetDeactivateEventHandle"},
-            {10, nullptr, "GetState"},
-            {11, nullptr, "GetDeviceState"},
-            {12, nullptr, "GetNpadId"},
-            {13, nullptr, "GetAvailabilityChangeEventHandle"},
-        };
-        // clang-format on
-
-        RegisterHandlers(functions);
     }
 };
 

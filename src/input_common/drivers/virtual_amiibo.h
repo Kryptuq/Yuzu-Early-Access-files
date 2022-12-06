@@ -53,12 +53,13 @@ public:
     std::string GetLastFilePath() const;
 
 private:
-    static constexpr std::size_t amiibo_size = 0x21C;
-    static constexpr std::size_t amiibo_size_without_password = amiibo_size - 0x8;
+    static constexpr std::size_t AmiiboSize = 0x21C;
+    static constexpr std::size_t AmiiboSizeWithoutPassword = AmiiboSize - 0x8;
+    static constexpr std::size_t MifareSize = 0x400;
 
     std::string file_path{};
     State state{State::Initialized};
-    std::vector<u8> amiibo_data;
+    std::vector<u8> nfc_data;
     Common::Input::PollingMode polling_mode{Common::Input::PollingMode::Pasive};
 };
 } // namespace InputCommon

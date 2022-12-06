@@ -77,11 +77,13 @@ bool NfcDevice::LoadNfcTag(std::span<const u8> data) {
         return false;
     }
 
-    if (data.size() != sizeof(NFP::EncryptedNTAG215File)) {
+    if (data.size() < sizeof(NFP::EncryptedNTAG215File)) {
         LOG_ERROR(Service_NFC, "Not an amiibo, size={}", data.size());
         return false;
     }
 
+    tag_data.resize(data.size());
+    memcpy(tag_data.data(), data.data(), data.size());
     memcpy(&encrypted_tag_data, data.data(), sizeof(NFP::EncryptedNTAG215File));
 
     device_state = NFP::DeviceState::TagFound;
@@ -121,7 +123,7 @@ void NfcDevice::Finalize() {
     device_state = NFP::DeviceState::Unavailable;
 }
 
-Result NfcDevice::StartDetection(s32 protocol_) {
+Result NfcDevice::StartDetection(NFP::TagProtocol allowed_protocol) {
     if (device_state != NFP::DeviceState::Initialized &&
         device_state != NFP::DeviceState::TagRemoved) {
         LOG_ERROR(Service_NFC, "Wrong device state {}", device_state);
@@ -134,7 +136,7 @@ Result NfcDevice::StartDetection(s32 protocol_) {
     }
 
     device_state = NFP::DeviceState::SearchingForTag;
-    protocol = protocol_;
+    allowed_protocols = allowed_protocol;
     return ResultSuccess;
 }
 
@@ -160,7 +162,7 @@ Result NfcDevice::StopDetection() {
     return WrongDeviceState;
 }
 
-Result NfcDevice::GetTagInfo(NFP::TagInfo& tag_info) const {
+Result NfcDevice::Flush() {
     if (device_state != NFP::DeviceState::TagFound &&
         device_state != NFP::DeviceState::TagMounted) {
         LOG_ERROR(Service_NFC, "Wrong device state {}", device_state);
@@ -170,6 +172,34 @@ Result NfcDevice::GetTagInfo(NFP::TagInfo& tag_info) const {
         return WrongDeviceState;
     }
 
+    if (!npad_device->WriteNfc(tag_data)) {
+        LOG_ERROR(Service_NFP, "Error writing to file");
+        return MifareReadError;
+    }
+
+    return ResultSuccess;
+}
+
+Result NfcDevice::GetTagInfo(NFP::TagInfo& tag_info, bool is_mifare) const {
+    if (device_state != NFP::DeviceState::TagFound &&
+        device_state != NFP::DeviceState::TagMounted) {
+        LOG_ERROR(Service_NFC, "Wrong device state {}", device_state);
+        if (device_state == NFP::DeviceState::TagRemoved) {
+            return TagRemoved;
+        }
+        return WrongDeviceState;
+    }
+
+    if (is_mifare) {
+        tag_info = {
+            .uuid = encrypted_tag_data.uuid.uid,
+            .uuid_length = static_cast<u8>(encrypted_tag_data.uuid.uid.size()),
+            .protocol = NFP::TagProtocol::TypeA,
+            .tag_type = NFP::TagType::Type4,
+        };
+        return ResultSuccess;
+    }
+
     // Protocol and tag type may change here
     tag_info = {
         .uuid = encrypted_tag_data.uuid.uid,
@@ -177,6 +207,52 @@ Result NfcDevice::GetTagInfo(NFP::TagInfo& tag_info) const {
         .protocol = NFP::TagProtocol::TypeA,
         .tag_type = NFP::TagType::Type2,
     };
+
+    return ResultSuccess;
+}
+
+Result NfcDevice::MifareRead(const NFP::MifareReadBlockParameter& parameter,
+                             NFP::MifareReadBlockData& read_block_data) {
+    const std::size_t sector_index = parameter.sector_number * sizeof(NFP::DataBlock);
+    read_block_data.sector_number = parameter.sector_number;
+
+    if (device_state != NFP::DeviceState::TagFound &&
+        device_state != NFP::DeviceState::TagMounted) {
+        LOG_ERROR(Service_NFC, "Wrong device state {}", device_state);
+        if (device_state == NFP::DeviceState::TagRemoved) {
+            return TagRemoved;
+        }
+        return WrongDeviceState;
+    }
+
+    if (tag_data.size() < sector_index + sizeof(NFP::DataBlock)) {
+        return MifareReadError;
+    }
+
+    // TODO: Use parameter.sector_key to read encrypted data
+    memcpy(read_block_data.data.data(), tag_data.data() + sector_index, sizeof(NFP::DataBlock));
+
+    return ResultSuccess;
+}
+
+Result NfcDevice::MifareWrite(const NFP::MifareWriteBlockParameter& parameter) {
+    const std::size_t sector_index = parameter.sector_number * sizeof(NFP::DataBlock);
+
+    if (device_state != NFP::DeviceState::TagFound &&
+        device_state != NFP::DeviceState::TagMounted) {
+        LOG_ERROR(Service_NFC, "Wrong device state {}", device_state);
+        if (device_state == NFP::DeviceState::TagRemoved) {
+            return TagRemoved;
+        }
+        return WrongDeviceState;
+    }
+
+    if (tag_data.size() < sector_index + sizeof(NFP::DataBlock)) {
+        return MifareReadError;
+    }
+
+    // TODO: Use parameter.sector_key to encrypt the data
+    memcpy(tag_data.data() + sector_index, parameter.data.data(), sizeof(NFP::DataBlock));
 
     return ResultSuccess;
 }

@@ -528,6 +528,8 @@ add_library(core STATIC
     hle/service/mnpp/mnpp_app.h
     hle/service/ncm/ncm.cpp
     hle/service/ncm/ncm.h
+    hle/service/nfc/mifare_user.cpp
+    hle/service/nfc/mifare_user.h
     hle/service/nfc/nfc.cpp
     hle/service/nfc/nfc.h
     hle/service/nfc/nfc_device.cpp

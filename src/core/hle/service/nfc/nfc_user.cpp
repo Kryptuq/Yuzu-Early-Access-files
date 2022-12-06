@@ -201,7 +201,7 @@ void IUser::AttachAvailabilityChangeEvent(Kernel::HLERequestContext& ctx) {
 void IUser::StartDetection(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
-    const auto nfp_protocol{rp.Pop<s32>()};
+    const auto nfp_protocol{rp.PopEnum<NFP::TagProtocol>()};
     LOG_INFO(Service_NFC, "called, device_handle={}, nfp_protocol={}", device_handle, nfp_protocol);
 
     if (state == State::NonInitialized) {
@@ -267,7 +267,7 @@ void IUser::GetTagInfo(Kernel::HLERequestContext& ctx) {
     }
 
     NFP::TagInfo tag_info{};
-    const auto result = device.value()->GetTagInfo(tag_info);
+    const auto result = device.value()->GetTagInfo(tag_info, false);
     ctx.WriteBuffer(tag_info);
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(result);

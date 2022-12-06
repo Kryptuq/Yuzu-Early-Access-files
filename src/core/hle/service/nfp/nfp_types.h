@@ -106,11 +106,24 @@ enum class CabinetMode : u8 {
     StartFormatter,
 };
 
+enum class MifareCmd : u8 {
+    AuthA = 0x60,
+    AuthB = 0x61,
+    Read = 0x30,
+    Write = 0xA0,
+    Transfer = 0xB0,
+    Decrement = 0xC0,
+    Increment = 0xC1,
+    Store = 0xC2
+};
+
 using UniqueSerialNumber = std::array<u8, 7>;
 using LockBytes = std::array<u8, 2>;
 using HashData = std::array<u8, 0x20>;
 using ApplicationArea = std::array<u8, 0xD8>;
 using AmiiboName = std::array<char, (amiibo_name_length * 4) + 1>;
+using DataBlock = std::array<u8, 0x10>;
+using KeyData = std::array<u8, 0x6>;
 
 struct TagUuid {
     UniqueSerialNumber uid;
@@ -322,5 +335,38 @@ struct RegisterInfo {
     INSERT_PADDING_BYTES(0x7A);
 };
 static_assert(sizeof(RegisterInfo) == 0x100, "RegisterInfo is an invalid size");
+
+struct SectorKey {
+    MifareCmd command;
+    u8 unknown; // Usually 1
+    INSERT_PADDING_BYTES(0x6);
+    KeyData sector_key;
+    INSERT_PADDING_BYTES(0x2);
+};
+static_assert(sizeof(SectorKey) == 0x10, "SectorKey is an invalid size");
+
+struct MifareReadBlockParameter {
+    u8 sector_number;
+    INSERT_PADDING_BYTES(0x7);
+    SectorKey sector_key;
+};
+static_assert(sizeof(MifareReadBlockParameter) == 0x18,
+              "MifareReadBlockParameter is an invalid size");
+
+struct MifareReadBlockData {
+    DataBlock data;
+    u8 sector_number;
+    INSERT_PADDING_BYTES(0x7);
+};
+static_assert(sizeof(MifareReadBlockData) == 0x18, "MifareReadBlockData is an invalid size");
+
+struct MifareWriteBlockParameter {
+    DataBlock data;
+    u8 sector_number;
+    INSERT_PADDING_BYTES(0x7);
+    SectorKey sector_key;
+};
+static_assert(sizeof(MifareWriteBlockParameter) == 0x28,
+              "MifareWriteBlockParameter is an invalid size");
 
 } // namespace Service::NFP
