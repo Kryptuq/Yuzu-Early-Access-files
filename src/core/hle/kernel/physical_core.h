@@ -85,7 +85,7 @@ private:
     std::mutex guard;
     std::condition_variable on_interrupt;
     std::unique_ptr<Core::ARM_Interface> arm_interface;
-    bool is_interrupted;
+    bool is_interrupted{};
 };
 
 } // namespace Kernel

@@ -12,25 +12,27 @@ namespace Core::Frontend {
 
 class ErrorApplet {
 public:
+    using FinishedCallback = std::function<void()>;
+
     virtual ~ErrorApplet();
 
-    virtual void ShowError(Result error, std::function<void()> finished) const = 0;
+    virtual void ShowError(Result error, FinishedCallback finished) const = 0;
 
     virtual void ShowErrorWithTimestamp(Result error, std::chrono::seconds time,
-                                        std::function<void()> finished) const = 0;
+                                        FinishedCallback finished) const = 0;
 
     virtual void ShowCustomErrorText(Result error, std::string dialog_text,
                                      std::string fullscreen_text,
-                                     std::function<void()> finished) const = 0;
+                                     FinishedCallback finished) const = 0;
 };
 
 class DefaultErrorApplet final : public ErrorApplet {
 public:
-    void ShowError(Result error, std::function<void()> finished) const override;
+    void ShowError(Result error, FinishedCallback finished) const override;
     void ShowErrorWithTimestamp(Result error, std::chrono::seconds time,
-                                std::function<void()> finished) const override;
+                                FinishedCallback finished) const override;
     void ShowCustomErrorText(Result error, std::string main_text, std::string detail_text,
-                             std::function<void()> finished) const override;
+                             FinishedCallback finished) const override;
 };
 
 } // namespace Core::Frontend

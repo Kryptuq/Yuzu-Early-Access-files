@@ -273,3 +273,5 @@ else() # MINGW OR (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
     configure_file(config.h.in config.h)
 endif() # MINGW OR (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+
+add_library(libusb::usb ALIAS usb)

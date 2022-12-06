@@ -424,15 +424,14 @@ void EmulatedController::RestoreConfig() {
     ReloadFromSettings();
 }
 
-std::vector<Common::ParamPackage> EmulatedController::GetMappedDevices(
-    EmulatedDeviceIndex device_index) const {
+std::vector<Common::ParamPackage> EmulatedController::GetMappedDevices() const {
     std::vector<Common::ParamPackage> devices;
     for (const auto& param : button_params) {
         if (!param.Has("engine")) {
             continue;
         }
         const auto devices_it = std::find_if(
-            devices.begin(), devices.end(), [param](const Common::ParamPackage param_) {
+            devices.begin(), devices.end(), [&param](const Common::ParamPackage& param_) {
                 return param.Get("engine", "") == param_.Get("engine", "") &&
                        param.Get("guid", "") == param_.Get("guid", "") &&
                        param.Get("port", 0) == param_.Get("port", 0) &&
@@ -441,12 +440,12 @@ std::vector<Common::ParamPackage> EmulatedController::GetMappedDevices(
         if (devices_it != devices.end()) {
             continue;
         }
-        Common::ParamPackage device{};
+
+        auto& device = devices.emplace_back();
         device.Set("engine", param.Get("engine", ""));
         device.Set("guid", param.Get("guid", ""));
         device.Set("port", param.Get("port", 0));
         device.Set("pad", param.Get("pad", 0));
-        devices.push_back(device);
     }
 
     for (const auto& param : stick_params) {
@@ -457,7 +456,7 @@ std::vector<Common::ParamPackage> EmulatedController::GetMappedDevices(
             continue;
         }
         const auto devices_it = std::find_if(
-            devices.begin(), devices.end(), [param](const Common::ParamPackage param_) {
+            devices.begin(), devices.end(), [&param](const Common::ParamPackage& param_) {
                 return param.Get("engine", "") == param_.Get("engine", "") &&
                        param.Get("guid", "") == param_.Get("guid", "") &&
                        param.Get("port", 0) == param_.Get("port", 0) &&
@@ -466,12 +465,12 @@ std::vector<Common::ParamPackage> EmulatedController::GetMappedDevices(
         if (devices_it != devices.end()) {
             continue;
         }
-        Common::ParamPackage device{};
+
+        auto& device = devices.emplace_back();
         device.Set("engine", param.Get("engine", ""));
         device.Set("guid", param.Get("guid", ""));
         device.Set("port", param.Get("port", 0));
         device.Set("pad", param.Get("pad", 0));
-        devices.push_back(device);
     }
     return devices;
 }

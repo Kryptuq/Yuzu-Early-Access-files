@@ -280,18 +280,19 @@ struct KMemoryInfo {
 
 class KMemoryBlock : public Common::IntrusiveRedBlackTreeBaseNode<KMemoryBlock> {
 private:
-    u16 m_device_disable_merge_left_count;
-    u16 m_device_disable_merge_right_count;
-    VAddr m_address;
-    size_t m_num_pages;
-    KMemoryState m_memory_state;
-    u16 m_ipc_lock_count;
-    u16 m_device_use_count;
-    u16 m_ipc_disable_merge_count;
-    KMemoryPermission m_permission;
-    KMemoryPermission m_original_permission;
-    KMemoryAttribute m_attribute;
-    KMemoryBlockDisableMergeAttribute m_disable_merge_attribute;
+    u16 m_device_disable_merge_left_count{};
+    u16 m_device_disable_merge_right_count{};
+    VAddr m_address{};
+    size_t m_num_pages{};
+    KMemoryState m_memory_state{KMemoryState::None};
+    u16 m_ipc_lock_count{};
+    u16 m_device_use_count{};
+    u16 m_ipc_disable_merge_count{};
+    KMemoryPermission m_permission{KMemoryPermission::None};
+    KMemoryPermission m_original_permission{KMemoryPermission::None};
+    KMemoryAttribute m_attribute{KMemoryAttribute::None};
+    KMemoryBlockDisableMergeAttribute m_disable_merge_attribute{
+        KMemoryBlockDisableMergeAttribute::None};
 
 public:
     static constexpr int Compare(const KMemoryBlock& lhs, const KMemoryBlock& rhs) {
@@ -367,12 +368,8 @@ public:
 
     constexpr KMemoryBlock(VAddr addr, size_t np, KMemoryState ms, KMemoryPermission p,
                            KMemoryAttribute attr)
-        : Common::IntrusiveRedBlackTreeBaseNode<KMemoryBlock>(),
-          m_device_disable_merge_left_count(), m_device_disable_merge_right_count(),
-          m_address(addr), m_num_pages(np), m_memory_state(ms), m_ipc_lock_count(0),
-          m_device_use_count(0), m_ipc_disable_merge_count(), m_permission(p),
-          m_original_permission(KMemoryPermission::None), m_attribute(attr),
-          m_disable_merge_attribute() {}
+        : Common::IntrusiveRedBlackTreeBaseNode<KMemoryBlock>(), m_address(addr), m_num_pages(np),
+          m_memory_state(ms), m_permission(p), m_attribute(attr) {}
 
     constexpr void Initialize(VAddr addr, size_t np, KMemoryState ms, KMemoryPermission p,
                               KMemoryAttribute attr) {

@@ -14,7 +14,7 @@ QtErrorDisplay::QtErrorDisplay(GMainWindow& parent) {
 
 QtErrorDisplay::~QtErrorDisplay() = default;
 
-void QtErrorDisplay::ShowError(Result error, std::function<void()> finished) const {
+void QtErrorDisplay::ShowError(Result error, FinishedCallback finished) const {
     callback = std::move(finished);
     emit MainWindowDisplayError(
         tr("Error Code: %1-%2 (0x%3)")
@@ -25,7 +25,7 @@ void QtErrorDisplay::ShowError(Result error, std::function<void()> finished) con
 }
 
 void QtErrorDisplay::ShowErrorWithTimestamp(Result error, std::chrono::seconds time,
-                                            std::function<void()> finished) const {
+                                            FinishedCallback finished) const {
     callback = std::move(finished);
 
     const QDateTime date_time = QDateTime::fromSecsSinceEpoch(time.count());
@@ -42,7 +42,7 @@ void QtErrorDisplay::ShowErrorWithTimestamp(Result error, std::chrono::seconds t
 
 void QtErrorDisplay::ShowCustomErrorText(Result error, std::string dialog_text,
                                          std::string fullscreen_text,
-                                         std::function<void()> finished) const {
+                                         FinishedCallback finished) const {
     callback = std::move(finished);
     emit MainWindowDisplayError(
         tr("Error Code: %1-%2 (0x%3)")

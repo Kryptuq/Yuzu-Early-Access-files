@@ -11,29 +11,29 @@ namespace Core::Frontend {
 
 class WebBrowserApplet {
 public:
+    using ExtractROMFSCallback = std::function<void()>;
+    using OpenWebPageCallback =
+        std::function<void(Service::AM::Applets::WebExitReason, std::string)>;
+
     virtual ~WebBrowserApplet();
 
-    virtual void OpenLocalWebPage(
-        const std::string& local_url, std::function<void()> extract_romfs_callback,
-        std::function<void(Service::AM::Applets::WebExitReason, std::string)> callback) const = 0;
+    virtual void OpenLocalWebPage(const std::string& local_url,
+                                  ExtractROMFSCallback extract_romfs_callback,
+                                  OpenWebPageCallback callback) const = 0;
 
-    virtual void OpenExternalWebPage(
-        const std::string& external_url,
-        std::function<void(Service::AM::Applets::WebExitReason, std::string)> callback) const = 0;
+    virtual void OpenExternalWebPage(const std::string& external_url,
+                                     OpenWebPageCallback callback) const = 0;
 };
 
 class DefaultWebBrowserApplet final : public WebBrowserApplet {
 public:
     ~DefaultWebBrowserApplet() override;
 
-    void OpenLocalWebPage(const std::string& local_url,
-                          std::function<void()> extract_romfs_callback,
-                          std::function<void(Service::AM::Applets::WebExitReason, std::string)>
-                              callback) const override;
+    void OpenLocalWebPage(const std::string& local_url, ExtractROMFSCallback extract_romfs_callback,
+                          OpenWebPageCallback callback) const override;
 
     void OpenExternalWebPage(const std::string& external_url,
-                             std::function<void(Service::AM::Applets::WebExitReason, std::string)>
-                                 callback) const override;
+                             OpenWebPageCallback callback) const override;
 };
 
 } // namespace Core::Frontend

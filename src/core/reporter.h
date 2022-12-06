@@ -36,7 +36,7 @@ public:
 
     // Used by syscall svcBreak
     void SaveSvcBreakReport(u32 type, bool signal_debugger, u64 info1, u64 info2,
-                            std::optional<std::vector<u8>> resolved_buffer = {}) const;
+                            const std::optional<std::vector<u8>>& resolved_buffer = {}) const;
 
     // Used by HLE service handler
     void SaveUnimplementedFunctionReport(Kernel::HLERequestContext& ctx, u32 command_id,
@@ -44,10 +44,10 @@ public:
                                          const std::string& service_name) const;
 
     // Used by stub applet implementation
-    void SaveUnimplementedAppletReport(u32 applet_id, u32 common_args_version, u32 library_version,
-                                       u32 theme_color, bool startup_sound, u64 system_tick,
-                                       std::vector<std::vector<u8>> normal_channel,
-                                       std::vector<std::vector<u8>> interactive_channel) const;
+    void SaveUnimplementedAppletReport(
+        u32 applet_id, u32 common_args_version, u32 library_version, u32 theme_color,
+        bool startup_sound, u64 system_tick, const std::vector<std::vector<u8>>& normal_channel,
+        const std::vector<std::vector<u8>>& interactive_channel) const;
 
     enum class PlayReportType {
         Old,
@@ -56,13 +56,13 @@ public:
         System,
     };
 
-    void SavePlayReport(PlayReportType type, u64 title_id, std::vector<std::vector<u8>> data,
+    void SavePlayReport(PlayReportType type, u64 title_id, const std::vector<std::vector<u8>>& data,
                         std::optional<u64> process_id = {}, std::optional<u128> user_id = {}) const;
 
     // Used by error applet
     void SaveErrorReport(u64 title_id, Result result,
-                         std::optional<std::string> custom_text_main = {},
-                         std::optional<std::string> custom_text_detail = {}) const;
+                         const std::optional<std::string>& custom_text_main = {},
+                         const std::optional<std::string>& custom_text_detail = {}) const;
 
     void SaveFSAccessLog(std::string_view log_message) const;
 

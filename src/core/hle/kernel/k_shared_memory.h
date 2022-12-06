@@ -74,7 +74,7 @@ public:
     static void PostDestroy([[maybe_unused]] uintptr_t arg) {}
 
 private:
-    Core::DeviceMemory* device_memory;
+    Core::DeviceMemory* device_memory{};
     KProcess* owner_process{};
     KPageGroup page_list;
     Svc::MemoryPermission owner_permission{};

@@ -56,18 +56,12 @@ if (ENABLE_SDL2)
         drivers/sdl_driver.cpp
         drivers/sdl_driver.h
     )
-    if (YUZU_USE_EXTERNAL_SDL2)
-        target_link_libraries(input_common PRIVATE SDL2-static)
-    else()
-        target_link_libraries(input_common PRIVATE SDL2)
-    endif()
+    target_link_libraries(input_common PRIVATE SDL2::SDL2)
     target_compile_definitions(input_common PRIVATE HAVE_SDL2)
 endif()
 
-target_link_libraries(input_common PRIVATE usb)
-
 create_target_directory_groups(input_common)
-target_link_libraries(input_common PUBLIC core PRIVATE common Boost::boost)
+target_link_libraries(input_common PUBLIC core PRIVATE common Boost::boost libusb::usb)
 
 if (YUZU_USE_PRECOMPILED_HEADERS)
     target_precompile_headers(input_common PRIVATE precompiled_headers.h)

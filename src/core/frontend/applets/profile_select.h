@@ -11,14 +11,16 @@ namespace Core::Frontend {
 
 class ProfileSelectApplet {
 public:
+    using SelectProfileCallback = std::function<void(std::optional<Common::UUID>)>;
+
     virtual ~ProfileSelectApplet();
 
-    virtual void SelectProfile(std::function<void(std::optional<Common::UUID>)> callback) const = 0;
+    virtual void SelectProfile(SelectProfileCallback callback) const = 0;
 };
 
 class DefaultProfileSelectApplet final : public ProfileSelectApplet {
 public:
-    void SelectProfile(std::function<void(std::optional<Common::UUID>)> callback) const override;
+    void SelectProfile(SelectProfileCallback callback) const override;
 };
 
 } // namespace Core::Frontend

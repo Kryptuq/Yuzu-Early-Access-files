@@ -31,7 +31,7 @@ ConfigureGraphics::ConfigureGraphics(const Core::System& system_, QWidget* paren
 
     ui->backend->addItem(QStringLiteral("GLSL"));
     ui->backend->addItem(tr("GLASM (Assembly Shaders, NVIDIA Only)"));
-    ui->backend->addItem(QStringLiteral("SPIR-V (Experimental, Mesa Only)"));
+    ui->backend->addItem(tr("SPIR-V (Experimental, Mesa Only)"));
 
     SetupPerGameUI();
 

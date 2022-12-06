@@ -163,8 +163,7 @@ QtProfileSelector::QtProfileSelector(GMainWindow& parent) {
 
 QtProfileSelector::~QtProfileSelector() = default;
 
-void QtProfileSelector::SelectProfile(
-    std::function<void(std::optional<Common::UUID>)> callback_) const {
+void QtProfileSelector::SelectProfile(SelectProfileCallback callback_) const {
     callback = std::move(callback_);
     emit MainWindowSelectProfile();
 }

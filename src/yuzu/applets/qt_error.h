@@ -16,11 +16,11 @@ public:
     explicit QtErrorDisplay(GMainWindow& parent);
     ~QtErrorDisplay() override;
 
-    void ShowError(Result error, std::function<void()> finished) const override;
+    void ShowError(Result error, FinishedCallback finished) const override;
     void ShowErrorWithTimestamp(Result error, std::chrono::seconds time,
-                                std::function<void()> finished) const override;
+                                FinishedCallback finished) const override;
     void ShowCustomErrorText(Result error, std::string dialog_text, std::string fullscreen_text,
-                             std::function<void()> finished) const override;
+                             FinishedCallback finished) const override;
 
 signals:
     void MainWindowDisplayError(QString error_code, QString error_text) const;
@@ -28,5 +28,5 @@ signals:
 private:
     void MainWindowFinishedError();
 
-    mutable std::function<void()> callback;
+    mutable FinishedCallback callback;
 };

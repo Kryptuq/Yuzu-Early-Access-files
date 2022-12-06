@@ -10,13 +10,14 @@ if (httplib_FOUND)
 else()
     find_package(PkgConfig QUIET)
     if (PKG_CONFIG_FOUND)
-        pkg_search_module(HTTPLIB QUIET IMPORTED_TARGET GLOBAL cpp-httplib)
-        if (HTTPLIB_FOUND)
-            add_library(httplib::httplib ALIAS PkgConfig::HTTPLIB)
-        endif()
+        pkg_search_module(HTTPLIB QUIET IMPORTED_TARGET cpp-httplib)
     endif()
     find_package_handle_standard_args(httplib
         REQUIRED_VARS HTTPLIB_INCLUDEDIR
         VERSION_VAR HTTPLIB_VERSION
     )
+endif()
+
+if (httplib_FOUND AND NOT TARGET httplib::httplib)
+    add_library(httplib::httplib ALIAS PkgConfig::HTTPLIB)
 endif()

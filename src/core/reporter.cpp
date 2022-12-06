@@ -38,7 +38,7 @@ std::string GetTimestamp() {
 
 using namespace nlohmann;
 
-void SaveToFile(json json, const std::filesystem::path& filename) {
+void SaveToFile(const json& json, const std::filesystem::path& filename) {
     if (!Common::FS::CreateParentDirs(filename)) {
         LOG_ERROR(Core, "Failed to create path for '{}' to save report!",
                   Common::FS::PathToUTF8String(filename));
@@ -81,8 +81,8 @@ json GetReportCommonData(u64 title_id, Result result, const std::string& timesta
 }
 
 json GetProcessorStateData(const std::string& architecture, u64 entry_point, u64 sp, u64 pc,
-                           u64 pstate, std::array<u64, 31> registers,
-                           std::optional<std::array<u64, 32>> backtrace = {}) {
+                           u64 pstate, const std::array<u64, 31>& registers,
+                           const std::optional<std::array<u64, 32>>& backtrace = {}) {
     auto out = json{
         {"entry_point", fmt::format("{:016X}", entry_point)},
         {"sp", fmt::format("{:016X}", sp)},
@@ -224,11 +224,11 @@ void Reporter::SaveCrashReport(u64 title_id, Result result, u64 set_flags, u64 e
 
     out["processor_state"] = std::move(proc_out);
 
-    SaveToFile(std::move(out), GetPath("crash_report", title_id, timestamp));
+    SaveToFile(out, GetPath("crash_report", title_id, timestamp));
 }
 
 void Reporter::SaveSvcBreakReport(u32 type, bool signal_debugger, u64 info1, u64 info2,
-                                  std::optional<std::vector<u8>> resolved_buffer) const {
+                                  const std::optional<std::vector<u8>>& resolved_buffer) const {
     if (!IsReportingEnabled()) {
         return;
     }
@@ -250,7 +250,7 @@ void Reporter::SaveSvcBreakReport(u32 type, bool signal_debugger, u64 info1, u64
 
     out["svc_break"] = std::move(break_out);
 
-    SaveToFile(std::move(out), GetPath("svc_break_report", title_id, timestamp));
+    SaveToFile(out, GetPath("svc_break_report", title_id, timestamp));
 }
 
 void Reporter::SaveUnimplementedFunctionReport(Kernel::HLERequestContext& ctx, u32 command_id,
@@ -271,13 +271,13 @@ void Reporter::SaveUnimplementedFunctionReport(Kernel::HLERequestContext& ctx, u
 
     out["function"] = std::move(function_out);
 
-    SaveToFile(std::move(out), GetPath("unimpl_func_report", title_id, timestamp));
+    SaveToFile(out, GetPath("unimpl_func_report", title_id, timestamp));
 }
 
 void Reporter::SaveUnimplementedAppletReport(
     u32 applet_id, u32 common_args_version, u32 library_version, u32 theme_color,
-    bool startup_sound, u64 system_tick, std::vector<std::vector<u8>> normal_channel,
-    std::vector<std::vector<u8>> interactive_channel) const {
+    bool startup_sound, u64 system_tick, const std::vector<std::vector<u8>>& normal_channel,
+    const std::vector<std::vector<u8>>& interactive_channel) const {
     if (!IsReportingEnabled()) {
         return;
     }
@@ -308,10 +308,11 @@ void Reporter::SaveUnimplementedAppletReport(
     out["applet_normal_data"] = std::move(normal_out);
     out["applet_interactive_data"] = std::move(interactive_out);
 
-    SaveToFile(std::move(out), GetPath("unimpl_applet_report", title_id, timestamp));
+    SaveToFile(out, GetPath("unimpl_applet_report", title_id, timestamp));
 }
 
-void Reporter::SavePlayReport(PlayReportType type, u64 title_id, std::vector<std::vector<u8>> data,
+void Reporter::SavePlayReport(PlayReportType type, u64 title_id,
+                              const std::vector<std::vector<u8>>& data,
                               std::optional<u64> process_id, std::optional<u128> user_id) const {
     if (!IsReportingEnabled()) {
         return;
@@ -335,12 +336,12 @@ void Reporter::SavePlayReport(PlayReportType type, u64 title_id, std::vector<std
     out["play_report_type"] = fmt::format("{:02}", static_cast<u8>(type));
     out["play_report_data"] = std::move(data_out);
 
-    SaveToFile(std::move(out), GetPath("play_report", title_id, timestamp));
+    SaveToFile(out, GetPath("play_report", title_id, timestamp));
 }
 
 void Reporter::SaveErrorReport(u64 title_id, Result result,
-                               std::optional<std::string> custom_text_main,
-                               std::optional<std::string> custom_text_detail) const {
+                               const std::optional<std::string>& custom_text_main,
+                               const std::optional<std::string>& custom_text_detail) const {
     if (!IsReportingEnabled()) {
         return;
     }
@@ -354,11 +355,11 @@ void Reporter::SaveErrorReport(u64 title_id, Result result,
     out["backtrace"] = GetBacktraceData(system);
 
     out["error_custom_text"] = {
-        {"main", *custom_text_main},
-        {"detail", *custom_text_detail},
+        {"main", custom_text_main.value_or("")},
+        {"detail", custom_text_detail.value_or("")},
     };
 
-    SaveToFile(std::move(out), GetPath("error_report", title_id, timestamp));
+    SaveToFile(out, GetPath("error_report", title_id, timestamp));
 }
 
 void Reporter::SaveFSAccessLog(std::string_view log_message) const {

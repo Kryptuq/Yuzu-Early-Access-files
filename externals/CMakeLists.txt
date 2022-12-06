@@ -45,8 +45,8 @@ if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "12" AND CMAKE_CXX_COMPILER
 endif()
 
 # libusb
-if (NOT LIBUSB_FOUND OR YUZU_USE_BUNDLED_LIBUSB)
-    add_subdirectory(libusb)
+if (NOT TARGET libusb::usb)
+    add_subdirectory(libusb EXCLUDE_FROM_ALL)
 endif()
 
 # SDL2

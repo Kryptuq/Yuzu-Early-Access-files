@@ -401,9 +401,9 @@ QtWebBrowser::QtWebBrowser(GMainWindow& main_window) {
 
 QtWebBrowser::~QtWebBrowser() = default;
 
-void QtWebBrowser::OpenLocalWebPage(
-    const std::string& local_url, std::function<void()> extract_romfs_callback_,
-    std::function<void(Service::AM::Applets::WebExitReason, std::string)> callback_) const {
+void QtWebBrowser::OpenLocalWebPage(const std::string& local_url,
+                                    ExtractROMFSCallback extract_romfs_callback_,
+                                    OpenWebPageCallback callback_) const {
     extract_romfs_callback = std::move(extract_romfs_callback_);
     callback = std::move(callback_);
 
@@ -416,9 +416,8 @@ void QtWebBrowser::OpenLocalWebPage(
     }
 }
 
-void QtWebBrowser::OpenExternalWebPage(
-    const std::string& external_url,
-    std::function<void(Service::AM::Applets::WebExitReason, std::string)> callback_) const {
+void QtWebBrowser::OpenExternalWebPage(const std::string& external_url,
+                                       OpenWebPageCallback callback_) const {
     callback = std::move(callback_);
 
     const auto index = external_url.find('?');

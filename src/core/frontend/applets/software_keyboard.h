@@ -54,14 +54,17 @@ struct InlineTextParameters {
 
 class SoftwareKeyboardApplet {
 public:
+    using SubmitInlineCallback =
+        std::function<void(Service::AM::Applets::SwkbdReplyType, std::u16string, s32)>;
+    using SubmitNormalCallback =
+        std::function<void(Service::AM::Applets::SwkbdResult, std::u16string, bool)>;
+
     virtual ~SoftwareKeyboardApplet();
 
-    virtual void InitializeKeyboard(
-        bool is_inline, KeyboardInitializeParameters initialize_parameters,
-        std::function<void(Service::AM::Applets::SwkbdResult, std::u16string, bool)>
-            submit_normal_callback_,
-        std::function<void(Service::AM::Applets::SwkbdReplyType, std::u16string, s32)>
-            submit_inline_callback_) = 0;
+    virtual void InitializeKeyboard(bool is_inline,
+                                    KeyboardInitializeParameters initialize_parameters,
+                                    SubmitNormalCallback submit_normal_callback_,
+                                    SubmitInlineCallback submit_inline_callback_) = 0;
 
     virtual void ShowNormalKeyboard() const = 0;
 
@@ -81,12 +84,9 @@ class DefaultSoftwareKeyboardApplet final : public SoftwareKeyboardApplet {
 public:
     ~DefaultSoftwareKeyboardApplet() override;
 
-    void InitializeKeyboard(
-        bool is_inline, KeyboardInitializeParameters initialize_parameters,
-        std::function<void(Service::AM::Applets::SwkbdResult, std::u16string, bool)>
-            submit_normal_callback_,
-        std::function<void(Service::AM::Applets::SwkbdReplyType, std::u16string, s32)>
-            submit_inline_callback_) override;
+    void InitializeKeyboard(bool is_inline, KeyboardInitializeParameters initialize_parameters,
+                            SubmitNormalCallback submit_normal_callback_,
+                            SubmitInlineCallback submit_inline_callback_) override;
 
     void ShowNormalKeyboard() const override;
 
@@ -105,12 +105,10 @@ private:
     void SubmitNormalText(std::u16string text) const;
     void SubmitInlineText(std::u16string_view text) const;
 
-    KeyboardInitializeParameters parameters;
+    KeyboardInitializeParameters parameters{};
 
-    mutable std::function<void(Service::AM::Applets::SwkbdResult, std::u16string, bool)>
-        submit_normal_callback;
-    mutable std::function<void(Service::AM::Applets::SwkbdReplyType, std::u16string, s32)>
-        submit_inline_callback;
+    mutable SubmitNormalCallback submit_normal_callback;
+    mutable SubmitInlineCallback submit_inline_callback;
 };
 
 } // namespace Core::Frontend

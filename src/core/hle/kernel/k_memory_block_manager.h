@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <array>
 #include <functional>
 
 #include "common/common_funcs.h"
@@ -17,9 +18,9 @@ public:
     static constexpr size_t MaxBlocks = 2;
 
 private:
-    KMemoryBlock* m_blocks[MaxBlocks];
-    size_t m_index;
-    KMemoryBlockSlabManager* m_slab_manager;
+    std::array<KMemoryBlock*, MaxBlocks> m_blocks{};
+    size_t m_index{MaxBlocks};
+    KMemoryBlockSlabManager* m_slab_manager{};
 
 private:
     Result Initialize(size_t num_blocks) {
@@ -41,7 +42,7 @@ private:
 public:
     KMemoryBlockManagerUpdateAllocator(Result* out_result, KMemoryBlockSlabManager* sm,
                                        size_t num_blocks = MaxBlocks)
-        : m_blocks(), m_index(MaxBlocks), m_slab_manager(sm) {
+        : m_slab_manager(sm) {
         *out_result = this->Initialize(num_blocks);
     }
 

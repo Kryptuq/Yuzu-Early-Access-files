@@ -685,7 +685,7 @@ QtControllerSelector::QtControllerSelector(GMainWindow& parent) {
 QtControllerSelector::~QtControllerSelector() = default;
 
 void QtControllerSelector::ReconfigureControllers(
-    std::function<void()> callback_, const Core::Frontend::ControllerParameters& parameters) const {
+    ReconfigureCallback callback_, const Core::Frontend::ControllerParameters& parameters) const {
     callback = std::move(callback_);
     emit MainWindowReconfigureControllers(parameters);
 }

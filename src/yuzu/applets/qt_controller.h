@@ -157,7 +157,7 @@ public:
     ~QtControllerSelector() override;
 
     void ReconfigureControllers(
-        std::function<void()> callback_,
+        ReconfigureCallback callback_,
         const Core::Frontend::ControllerParameters& parameters) const override;
 
 signals:
@@ -167,5 +167,5 @@ signals:
 private:
     void MainWindowReconfigureFinished();
 
-    mutable std::function<void()> callback;
+    mutable ReconfigureCallback callback;
 };

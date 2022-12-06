@@ -233,12 +233,10 @@ public:
     explicit QtSoftwareKeyboard(GMainWindow& parent);
     ~QtSoftwareKeyboard() override;
 
-    void InitializeKeyboard(
-        bool is_inline, Core::Frontend::KeyboardInitializeParameters initialize_parameters,
-        std::function<void(Service::AM::Applets::SwkbdResult, std::u16string, bool)>
-            submit_normal_callback_,
-        std::function<void(Service::AM::Applets::SwkbdReplyType, std::u16string, s32)>
-            submit_inline_callback_) override;
+    void InitializeKeyboard(bool is_inline,
+                            Core::Frontend::KeyboardInitializeParameters initialize_parameters,
+                            SubmitNormalCallback submit_normal_callback_,
+                            SubmitInlineCallback submit_inline_callback_) override;
 
     void ShowNormalKeyboard() const override;
 
@@ -279,8 +277,6 @@ private:
     void SubmitInlineText(Service::AM::Applets::SwkbdReplyType reply_type,
                           std::u16string submitted_text, s32 cursor_position) const;
 
-    mutable std::function<void(Service::AM::Applets::SwkbdResult, std::u16string, bool)>
-        submit_normal_callback;
-    mutable std::function<void(Service::AM::Applets::SwkbdReplyType, std::u16string, s32)>
-        submit_inline_callback;
+    mutable SubmitNormalCallback submit_normal_callback;
+    mutable SubmitInlineCallback submit_inline_callback;
 };

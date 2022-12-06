@@ -197,13 +197,11 @@ public:
     ~QtWebBrowser() override;
 
     void OpenLocalWebPage(const std::string& local_url,
-                          std::function<void()> extract_romfs_callback_,
-                          std::function<void(Service::AM::Applets::WebExitReason, std::string)>
-                              callback_) const override;
+                          ExtractROMFSCallback extract_romfs_callback_,
+                          OpenWebPageCallback callback_) const override;
 
     void OpenExternalWebPage(const std::string& external_url,
-                             std::function<void(Service::AM::Applets::WebExitReason, std::string)>
-                                 callback_) const override;
+                             OpenWebPageCallback callback_) const override;
 
 signals:
     void MainWindowOpenWebPage(const std::string& main_url, const std::string& additional_args,
@@ -215,7 +213,6 @@ private:
     void MainWindowWebBrowserClosed(Service::AM::Applets::WebExitReason exit_reason,
                                     std::string last_url);
 
-    mutable std::function<void()> extract_romfs_callback;
-
-    mutable std::function<void(Service::AM::Applets::WebExitReason, std::string)> callback;
+    mutable ExtractROMFSCallback extract_romfs_callback;
+    mutable OpenWebPageCallback callback;
 };

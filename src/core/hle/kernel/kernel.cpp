@@ -891,7 +891,7 @@ struct KernelCore::Impl {
     Common::ThreadWorker service_threads_manager;
     Common::Barrier service_thread_barrier;
 
-    std::array<KThread*, Core::Hardware::NUM_CPU_CORES> shutdown_threads;
+    std::array<KThread*, Core::Hardware::NUM_CPU_CORES> shutdown_threads{};
     std::array<std::unique_ptr<Kernel::KScheduler>, Core::Hardware::NUM_CPU_CORES> schedulers{};
 
     bool is_multicore{};

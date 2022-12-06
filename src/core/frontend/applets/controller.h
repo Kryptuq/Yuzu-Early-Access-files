@@ -36,9 +36,11 @@ struct ControllerParameters {
 
 class ControllerApplet {
 public:
+    using ReconfigureCallback = std::function<void()>;
+
     virtual ~ControllerApplet();
 
-    virtual void ReconfigureControllers(std::function<void()> callback,
+    virtual void ReconfigureControllers(ReconfigureCallback callback,
                                         const ControllerParameters& parameters) const = 0;
 };
 
@@ -47,7 +49,7 @@ public:
     explicit DefaultControllerApplet(HID::HIDCore& hid_core_);
     ~DefaultControllerApplet() override;
 
-    void ReconfigureControllers(std::function<void()> callback,
+    void ReconfigureControllers(ReconfigureCallback callback,
                                 const ControllerParameters& parameters) const override;
 
 private:

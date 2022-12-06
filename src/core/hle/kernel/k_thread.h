@@ -784,8 +784,8 @@ private:
     std::vector<KSynchronizationObject*> wait_objects_for_debugging;
     VAddr mutex_wait_address_for_debugging{};
     ThreadWaitReasonForDebugging wait_reason_for_debugging{};
-    uintptr_t argument;
-    VAddr stack_top;
+    uintptr_t argument{};
+    VAddr stack_top{};
 
 public:
     using ConditionVariableThreadTreeType = ConditionVariableThreadTree;

@@ -9,14 +9,16 @@ namespace Core::Frontend {
 
 class MiiEditApplet {
 public:
+    using MiiEditCallback = std::function<void()>;
+
     virtual ~MiiEditApplet();
 
-    virtual void ShowMiiEdit(const std::function<void()>& callback) const = 0;
+    virtual void ShowMiiEdit(const MiiEditCallback& callback) const = 0;
 };
 
 class DefaultMiiEditApplet final : public MiiEditApplet {
 public:
-    void ShowMiiEdit(const std::function<void()>& callback) const override;
+    void ShowMiiEdit(const MiiEditCallback& callback) const override;
 };
 
 } // namespace Core::Frontend

@@ -16,7 +16,7 @@ DefaultControllerApplet::DefaultControllerApplet(HID::HIDCore& hid_core_) : hid_
 
 DefaultControllerApplet::~DefaultControllerApplet() = default;
 
-void DefaultControllerApplet::ReconfigureControllers(std::function<void()> callback,
+void DefaultControllerApplet::ReconfigureControllers(ReconfigureCallback callback,
                                                      const ControllerParameters& parameters) const {
     LOG_INFO(Service_HID, "called, deducing the best configuration based on the given parameters!");
 

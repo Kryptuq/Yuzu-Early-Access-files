@@ -15,10 +15,7 @@ DefaultSoftwareKeyboardApplet::~DefaultSoftwareKeyboardApplet() = default;
 
 void DefaultSoftwareKeyboardApplet::InitializeKeyboard(
     bool is_inline, KeyboardInitializeParameters initialize_parameters,
-    std::function<void(Service::AM::Applets::SwkbdResult, std::u16string, bool)>
-        submit_normal_callback_,
-    std::function<void(Service::AM::Applets::SwkbdReplyType, std::u16string, s32)>
-        submit_inline_callback_) {
+    SubmitNormalCallback submit_normal_callback_, SubmitInlineCallback submit_inline_callback_) {
     if (is_inline) {
         LOG_WARNING(
             Service_AM,
