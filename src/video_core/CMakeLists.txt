@@ -33,6 +33,8 @@ add_library(video_core STATIC
     engines/sw_blitter/converter.cpp
     engines/sw_blitter/converter.h
     engines/const_buffer_info.h
+    engines/draw_manager.cpp
+    engines/draw_manager.h
     engines/engine_interface.h
     engines/engine_upload.cpp
     engines/engine_upload.h

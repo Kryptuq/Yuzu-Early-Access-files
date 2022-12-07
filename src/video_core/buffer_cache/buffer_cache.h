@@ -26,6 +26,7 @@
 #include "video_core/control/channel_state_cache.h"
 #include "video_core/delayed_destruction_ring.h"
 #include "video_core/dirty_flags.h"
+#include "video_core/engines/draw_manager.h"
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/memory_manager.h"
@@ -664,9 +665,10 @@ void BufferCache<P>::BindHostGeometryBuffers(bool is_indexed) {
     if (is_indexed) {
         BindHostIndexBuffer();
     } else if constexpr (!HAS_FULL_INDEX_AND_PRIMITIVE_SUPPORT) {
-        const auto& regs = maxwell3d->regs;
-        if (regs.draw.topology == Maxwell::PrimitiveTopology::Quads) {
-            runtime.BindQuadArrayIndexBuffer(regs.vertex_buffer.first, regs.vertex_buffer.count);
+        const auto& draw_state = maxwell3d->draw_manager->GetDrawState();
+        if (draw_state.topology == Maxwell::PrimitiveTopology::Quads) {
+            runtime.BindQuadArrayIndexBuffer(draw_state.vertex_buffer.first,
+                                             draw_state.vertex_buffer.count);
         }
     }
     BindHostVertexBuffers();
@@ -993,28 +995,29 @@ void BufferCache<P>::BindHostIndexBuffer() {
     TouchBuffer(buffer, index_buffer.buffer_id);
     const u32 offset = buffer.Offset(index_buffer.cpu_addr);
     const u32 size = index_buffer.size;
-    if (maxwell3d->inline_index_draw_indexes.size()) {
+    const auto& draw_state = maxwell3d->draw_manager->GetDrawState();
+    if (!draw_state.inline_index_draw_indexes.empty()) {
         if constexpr (USE_MEMORY_MAPS) {
             auto upload_staging = runtime.UploadStagingBuffer(size);
             std::array<BufferCopy, 1> copies{
                 {BufferCopy{.src_offset = upload_staging.offset, .dst_offset = 0, .size = size}}};
             std::memcpy(upload_staging.mapped_span.data(),
-                        maxwell3d->inline_index_draw_indexes.data(), size);
+                        draw_state.inline_index_draw_indexes.data(), size);
             runtime.CopyBuffer(buffer, upload_staging.buffer, copies);
         } else {
-            buffer.ImmediateUpload(0, maxwell3d->inline_index_draw_indexes);
+            buffer.ImmediateUpload(0, draw_state.inline_index_draw_indexes);
         }
     } else {
         SynchronizeBuffer(buffer, index_buffer.cpu_addr, size);
     }
     if constexpr (HAS_FULL_INDEX_AND_PRIMITIVE_SUPPORT) {
-        const u32 new_offset = offset + maxwell3d->regs.index_buffer.first *
-                                            maxwell3d->regs.index_buffer.FormatSizeInBytes();
+        const u32 new_offset =
+            offset + draw_state.index_buffer.first * draw_state.index_buffer.FormatSizeInBytes();
         runtime.BindIndexBuffer(buffer, new_offset, size);
     } else {
-        runtime.BindIndexBuffer(maxwell3d->regs.draw.topology, maxwell3d->regs.index_buffer.format,
-                                maxwell3d->regs.index_buffer.first,
-                                maxwell3d->regs.index_buffer.count, buffer, offset, size);
+        runtime.BindIndexBuffer(draw_state.topology, draw_state.index_buffer.format,
+                                draw_state.index_buffer.first, draw_state.index_buffer.count,
+                                buffer, offset, size);
     }
 }
 
@@ -1282,15 +1285,16 @@ template <class P>
 void BufferCache<P>::UpdateIndexBuffer() {
     // We have to check for the dirty flags and index count
     // The index count is currently changed without updating the dirty flags
-    const auto& index_array = maxwell3d->regs.index_buffer;
+    const auto& draw_state = maxwell3d->draw_manager->GetDrawState();
+    const auto& index_array = draw_state.index_buffer;
     auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::IndexBuffer] && last_index_count == index_array.count) {
         return;
     }
     flags[Dirty::IndexBuffer] = false;
     last_index_count = index_array.count;
-    if (maxwell3d->inline_index_draw_indexes.size()) {
-        auto inline_index_size = static_cast<u32>(maxwell3d->inline_index_draw_indexes.size());
+    if (!draw_state.inline_index_draw_indexes.empty()) {
+        auto inline_index_size = static_cast<u32>(draw_state.inline_index_draw_indexes.size());
         index_buffer = Binding{
             .cpu_addr = 0,
             .size = inline_index_size,

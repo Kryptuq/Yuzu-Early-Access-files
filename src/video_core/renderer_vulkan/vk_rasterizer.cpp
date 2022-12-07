@@ -12,6 +12,7 @@
 #include "common/scope_exit.h"
 #include "common/settings.h"
 #include "video_core/control/channel_state.h"
+#include "video_core/engines/draw_manager.h"
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/renderer_vulkan/blit_image.h"
@@ -36,6 +37,7 @@
 namespace Vulkan {
 
 using Maxwell = Tegra::Engines::Maxwell3D::Regs;
+using MaxwellDrawState = Tegra::Engines::DrawManager::State;
 using VideoCommon::ImageViewId;
 using VideoCommon::ImageViewType;
 
@@ -127,16 +129,16 @@ VkRect2D GetScissorState(const Maxwell& regs, size_t index, u32 up_scale = 1, u3
     return scissor;
 }
 
-DrawParams MakeDrawParams(const Maxwell& regs, u32 num_instances, bool is_indexed) {
+DrawParams MakeDrawParams(const MaxwellDrawState& draw_state, u32 num_instances, bool is_indexed) {
     DrawParams params{
-        .base_instance = regs.global_base_instance_index,
+        .base_instance = draw_state.base_insance,
         .num_instances = num_instances,
-        .base_vertex = is_indexed ? regs.global_base_vertex_index : regs.vertex_buffer.first,
-        .num_vertices = is_indexed ? regs.index_buffer.count : regs.vertex_buffer.count,
-        .first_index = is_indexed ? regs.index_buffer.first : 0,
+        .base_vertex = is_indexed ? draw_state.base_index : draw_state.vertex_buffer.first,
+        .num_vertices = is_indexed ? draw_state.index_buffer.count : draw_state.vertex_buffer.count,
+        .first_index = is_indexed ? draw_state.index_buffer.first : 0,
         .is_indexed = is_indexed,
     };
-    if (regs.draw.topology == Maxwell::PrimitiveTopology::Quads) {
+    if (draw_state.topology == Maxwell::PrimitiveTopology::Quads) {
         // 6 triangle vertices per quad, base vertex is part of the index
         // See BindQuadArrayIndexBuffer for more details
         params.num_vertices = (params.num_vertices / 4) * 6;
@@ -195,9 +197,9 @@ void RasterizerVulkan::Draw(bool is_indexed, u32 instance_count) {
 
     UpdateDynamicStates();
 
-    const auto& regs{maxwell3d->regs};
+    const auto& draw_state = maxwell3d->draw_manager->GetDrawState();
     const u32 num_instances{instance_count};
-    const DrawParams draw_params{MakeDrawParams(regs, num_instances, is_indexed)};
+    const DrawParams draw_params{MakeDrawParams(draw_state, num_instances, is_indexed)};
     scheduler.Record([draw_params](vk::CommandBuffer cmdbuf) {
         if (draw_params.is_indexed) {
             cmdbuf.DrawIndexed(draw_params.num_vertices, draw_params.num_instances,

@@ -37,6 +37,8 @@ class RasterizerInterface;
 
 namespace Tegra::Engines {
 
+class DrawManager;
+
 /**
  * This Engine is known as GF100_3D. Documentation can be found in:
  * https://github.com/NVIDIA/open-gpu-doc/blob/master/classes/3d/clb197.h
@@ -3061,10 +3063,8 @@ public:
         Tables tables{};
     } dirty;
 
-    std::vector<u8> inline_index_draw_indexes;
-
-    /// Handles a write to the CLEAR_BUFFERS register.
-    void ProcessClearBuffers(u32 layer_count);
+    std::unique_ptr<DrawManager> draw_manager;
+    friend class DrawManager;
 
 private:
     void InitializeRegisterDefaults();
@@ -3122,15 +3122,6 @@ private:
     /// Handles a write to the CB_BIND register.
     void ProcessCBBind(size_t stage_index);
 
-    /// Handles use of topology overrides (e.g., to avoid using a topology assigned from a macro)
-    void ProcessTopologyOverride();
-
-    /// Handles deferred draw(e.g., instance draw).
-    void ProcessDeferredDraw();
-
-    /// Handles a draw.
-    void ProcessDraw(u32 instance_count = 1);
-
     /// Returns a query's value or an empty object if the value will be deferred through a cache.
     std::optional<u64> GetQueryResult();
 
@@ -3153,13 +3144,6 @@ private:
     Upload::State upload_state;
 
     bool execute_on{true};
-    bool use_topology_override{false};
-
-    std::array<bool, Regs::NUM_REGS> draw_command{};
-    std::vector<u32> deferred_draw_method;
-    enum class DrawMode : u32 { General = 0, Instance, InlineIndex };
-    DrawMode draw_mode{DrawMode::General};
-    bool draw_indexed{};
 };
 
 #define ASSERT_REG_POSITION(field_name, position)                                                  \

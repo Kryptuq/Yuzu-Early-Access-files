@@ -8,6 +8,7 @@
 #include "common/cityhash.h"
 #include "common/common_types.h"
 #include "common/polyfill_ranges.h"
+#include "video_core/engines/draw_manager.h"
 #include "video_core/renderer_vulkan/fixed_pipeline_state.h"
 #include "video_core/renderer_vulkan/vk_state_tracker.h"
 
@@ -50,12 +51,13 @@ void RefreshXfbState(VideoCommon::TransformFeedbackState& state, const Maxwell& 
 void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d,
                                  bool has_extended_dynamic_state, bool has_dynamic_vertex_input) {
     const Maxwell& regs = maxwell3d.regs;
+    const auto topology_ = maxwell3d.draw_manager->GetDrawState().topology;
     const std::array enabled_lut{
         regs.polygon_offset_point_enable,
         regs.polygon_offset_line_enable,
         regs.polygon_offset_fill_enable,
     };
-    const u32 topology_index = static_cast<u32>(regs.draw.topology.Value());
+    const u32 topology_index = static_cast<u32>(topology_);
 
     raw1 = 0;
     extended_dynamic_state.Assign(has_extended_dynamic_state ? 1 : 0);
@@ -78,7 +80,7 @@ void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d,
                                   Maxwell::Tessellation::OutputPrimitives::Triangles_CW);
     logic_op_enable.Assign(regs.logic_op.enable != 0 ? 1 : 0);
     logic_op.Assign(PackLogicOp(regs.logic_op.op));
-    topology.Assign(regs.draw.topology);
+    topology.Assign(topology_);
     msaa_mode.Assign(regs.anti_alias_samples_mode);
 
     raw2 = 0;

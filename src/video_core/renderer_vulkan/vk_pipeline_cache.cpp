@@ -507,7 +507,8 @@ GraphicsPipeline* PipelineCache::BuiltPipeline(GraphicsPipeline* pipeline) const
     // If games are using a small index count, we can assume these are full screen quads.
     // Usually these shaders are only used once for building textures so we can assume they
     // can't be built async
-    if (maxwell3d->regs.index_buffer.count <= 6 || maxwell3d->regs.vertex_buffer.count <= 6) {
+    const auto& draw_state = maxwell3d->draw_manager->GetDrawState();
+    if (draw_state.index_buffer.count <= 6 || draw_state.vertex_buffer.count <= 6) {
         return pipeline;
     }
     return nullptr;

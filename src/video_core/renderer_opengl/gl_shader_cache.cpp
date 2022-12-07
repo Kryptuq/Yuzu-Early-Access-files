@@ -22,6 +22,7 @@
 #include "shader_recompiler/frontend/maxwell/control_flow.h"
 #include "shader_recompiler/frontend/maxwell/translate_program.h"
 #include "shader_recompiler/profile.h"
+#include "video_core/engines/draw_manager.h"
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/memory_manager.h"
@@ -327,7 +328,7 @@ GraphicsPipeline* ShaderCache::CurrentGraphicsPipeline() {
     const auto& regs{maxwell3d->regs};
     graphics_key.raw = 0;
     graphics_key.early_z.Assign(regs.mandated_early_z != 0 ? 1 : 0);
-    graphics_key.gs_input_topology.Assign(regs.draw.topology.Value());
+    graphics_key.gs_input_topology.Assign(maxwell3d->draw_manager->GetDrawState().topology);
     graphics_key.tessellation_primitive.Assign(regs.tessellation.params.domain_type.Value());
     graphics_key.tessellation_spacing.Assign(regs.tessellation.params.spacing.Value());
     graphics_key.tessellation_clockwise.Assign(
@@ -371,7 +372,8 @@ GraphicsPipeline* ShaderCache::BuiltPipeline(GraphicsPipeline* pipeline) const n
     // If games are using a small index count, we can assume these are full screen quads.
     // Usually these shaders are only used once for building textures so we can assume they
     // can't be built async
-    if (maxwell3d->regs.index_buffer.count <= 6 || maxwell3d->regs.vertex_buffer.count <= 6) {
+    const auto& draw_state = maxwell3d->draw_manager->GetDrawState();
+    if (draw_state.index_buffer.count <= 6 || draw_state.vertex_buffer.count <= 6) {
         return pipeline;
     }
     return nullptr;

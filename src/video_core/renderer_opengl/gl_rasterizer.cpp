@@ -224,16 +224,18 @@ void RasterizerOpenGL::Draw(bool is_indexed, u32 instance_count) {
 
     SyncState();
 
-    const GLenum primitive_mode = MaxwellToGL::PrimitiveTopology(maxwell3d->regs.draw.topology);
+    const auto& draw_state = maxwell3d->draw_manager->GetDrawState();
+
+    const GLenum primitive_mode = MaxwellToGL::PrimitiveTopology(draw_state.topology);
     BeginTransformFeedback(pipeline, primitive_mode);
 
-    const GLuint base_instance = static_cast<GLuint>(maxwell3d->regs.global_base_instance_index);
+    const GLuint base_instance = static_cast<GLuint>(draw_state.base_insance);
     const GLsizei num_instances = static_cast<GLsizei>(instance_count);
     if (is_indexed) {
-        const GLint base_vertex = static_cast<GLint>(maxwell3d->regs.global_base_vertex_index);
-        const GLsizei num_vertices = static_cast<GLsizei>(maxwell3d->regs.index_buffer.count);
+        const GLint base_vertex = static_cast<GLint>(draw_state.base_index);
+        const GLsizei num_vertices = static_cast<GLsizei>(draw_state.index_buffer.count);
         const GLvoid* const offset = buffer_cache_runtime.IndexOffset();
-        const GLenum format = MaxwellToGL::IndexFormat(maxwell3d->regs.index_buffer.format);
+        const GLenum format = MaxwellToGL::IndexFormat(draw_state.index_buffer.format);
         if (num_instances == 1 && base_instance == 0 && base_vertex == 0) {
             glDrawElements(primitive_mode, num_vertices, format, offset);
         } else if (num_instances == 1 && base_instance == 0) {
@@ -252,8 +254,8 @@ void RasterizerOpenGL::Draw(bool is_indexed, u32 instance_count) {
                                                           base_instance);
         }
     } else {
-        const GLint base_vertex = static_cast<GLint>(maxwell3d->regs.vertex_buffer.first);
-        const GLsizei num_vertices = static_cast<GLsizei>(maxwell3d->regs.vertex_buffer.count);
+        const GLint base_vertex = static_cast<GLint>(draw_state.vertex_buffer.first);
+        const GLsizei num_vertices = static_cast<GLsizei>(draw_state.vertex_buffer.count);
         if (num_instances == 1 && base_instance == 0) {
             glDrawArrays(primitive_mode, base_vertex, num_vertices);
         } else if (base_instance == 0) {
