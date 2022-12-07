@@ -104,12 +104,16 @@ struct KernelCore::Impl {
     }
 
     void CloseCurrentProcess() {
-        (*current_process).Finalize();
-        // current_process->Close();
-        // TODO: The current process should be destroyed based on accurate ref counting after
+        KProcess* old_process = current_process.exchange(nullptr);
+        if (old_process == nullptr) {
+            return;
+        }
+
+        // old_process->Close();
+        // TODO: The process should be destroyed based on accurate ref counting after
         // calling Close(). Adding a manual Destroy() call instead to avoid a memory leak.
-        (*current_process).Destroy();
-        current_process = nullptr;
+        old_process->Finalize();
+        old_process->Destroy();
     }
 
     void Shutdown() {

@@ -11,6 +11,7 @@
 #include <mutex>
 #include <thread>
 #include "common/common_types.h"
+#include "common/polyfill_thread.h"
 
 namespace Common {
 
@@ -69,7 +70,7 @@ public:
     explicit Barrier(std::size_t count_) : count(count_) {}
 
     /// Blocks until all "count" threads have called Sync()
-    void Sync() {
+    bool Sync(std::stop_token token = {}) {
         std::unique_lock lk{mutex};
         const std::size_t current_generation = generation;
 
@@ -77,14 +78,16 @@ public:
             generation++;
             waiting = 0;
             condvar.notify_all();
+            return true;
         } else {
-            condvar.wait(lk,
-                         [this, current_generation] { return current_generation != generation; });
+            CondvarWait(condvar, lk, token,
+                        [this, current_generation] { return current_generation != generation; });
+            return !token.stop_requested();
         }
     }
 
 private:
-    std::condition_variable condvar;
+    std::condition_variable_any condvar;
     std::mutex mutex;
     std::size_t count;
     std::size_t waiting = 0;

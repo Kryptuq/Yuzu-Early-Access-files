@@ -81,12 +81,10 @@ private:
     void SingleCoreRunGuestThread();
     void SingleCoreRunIdleThread();
 
-    static void ThreadStart(std::stop_token stop_token, CpuManager& cpu_manager, std::size_t core);
-
     void GuestActivate();
     void HandleInterrupt();
     void ShutdownThread();
-    void RunThread(std::size_t core);
+    void RunThread(std::stop_token stop_token, std::size_t core);
 
     struct CoreData {
         std::shared_ptr<Common::Fiber> host_context;

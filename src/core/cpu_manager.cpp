@@ -20,23 +20,20 @@ namespace Core {
 CpuManager::CpuManager(System& system_) : system{system_} {}
 CpuManager::~CpuManager() = default;
 
-void CpuManager::ThreadStart(std::stop_token stop_token, CpuManager& cpu_manager,
-                             std::size_t core) {
-    cpu_manager.RunThread(core);
-}
-
 void CpuManager::Initialize() {
     num_cores = is_multicore ? Core::Hardware::NUM_CPU_CORES : 1;
     gpu_barrier = std::make_unique<Common::Barrier>(num_cores + 1);
 
     for (std::size_t core = 0; core < num_cores; core++) {
-        core_data[core].host_thread = std::jthread(ThreadStart, std::ref(*this), core);
+        core_data[core].host_thread =
+            std::jthread([this, core](std::stop_token token) { RunThread(token, core); });
     }
 }
 
 void CpuManager::Shutdown() {
     for (std::size_t core = 0; core < num_cores; core++) {
         if (core_data[core].host_thread.joinable()) {
+            core_data[core].host_thread.request_stop();
             core_data[core].host_thread.join();
         }
     }
@@ -184,7 +181,7 @@ void CpuManager::ShutdownThread() {
     UNREACHABLE();
 }
 
-void CpuManager::RunThread(std::size_t core) {
+void CpuManager::RunThread(std::stop_token token, std::size_t core) {
     /// Initialization
     system.RegisterCoreThread(core);
     std::string name;
@@ -206,7 +203,9 @@ void CpuManager::RunThread(std::size_t core) {
     });
 
     // Running
-    gpu_barrier->Sync();
+    if (!gpu_barrier->Sync(token)) {
+        return;
+    }
 
     if (!is_async_gpu && !is_multicore) {
         system.GPU().ObtainContext();

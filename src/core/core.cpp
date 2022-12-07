@@ -389,7 +389,9 @@ struct System::Impl {
         kernel.ShutdownCores();
         cpu_manager.Shutdown();
         debugger.reset();
-        services->KillNVNFlinger();
+        if (services) {
+            services->KillNVNFlinger();
+        }
         kernel.CloseServices();
         services.reset();
         service_manager.reset();
