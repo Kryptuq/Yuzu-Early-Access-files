@@ -229,7 +229,7 @@ void RasterizerOpenGL::Draw(bool is_indexed, u32 instance_count) {
     const GLenum primitive_mode = MaxwellToGL::PrimitiveTopology(draw_state.topology);
     BeginTransformFeedback(pipeline, primitive_mode);
 
-    const GLuint base_instance = static_cast<GLuint>(draw_state.base_insance);
+    const GLuint base_instance = static_cast<GLuint>(draw_state.base_instance);
     const GLsizei num_instances = static_cast<GLsizei>(instance_count);
     if (is_indexed) {
         const GLint base_vertex = static_cast<GLint>(draw_state.base_index);

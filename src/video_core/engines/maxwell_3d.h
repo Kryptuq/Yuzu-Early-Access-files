@@ -2225,6 +2225,7 @@ public:
 
         struct IndexBufferSmall {
             union {
+                u32 raw;
                 BitField<0, 16, u32> first;
                 BitField<16, 12, u32> count;
                 BitField<28, 4, PrimitiveTopology> topology;

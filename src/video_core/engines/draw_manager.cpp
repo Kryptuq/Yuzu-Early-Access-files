@@ -27,7 +27,7 @@ void DrawManager::ProcessMethodCall(u32 method, u32 argument) {
     case MAXWELL3D_REG_INDEX(index_buffer32_subsequent):
     case MAXWELL3D_REG_INDEX(index_buffer16_subsequent):
     case MAXWELL3D_REG_INDEX(index_buffer8_subsequent):
-        LOG_WARNING(HW_GPU, "(STUBBED) called, Index_Buffer_Subsequent Draw");
+        draw_state.instance_count++;
         [[fallthrough]];
     case MAXWELL3D_REG_INDEX(index_buffer32_first):
     case MAXWELL3D_REG_INDEX(index_buffer16_first):
@@ -70,7 +70,7 @@ void DrawManager::DrawArray(PrimitiveTopology topology, u32 vertex_first, u32 ve
     draw_state.topology = topology;
     draw_state.vertex_buffer.first = vertex_first;
     draw_state.vertex_buffer.count = vertex_count;
-    draw_state.base_insance = base_instance;
+    draw_state.base_instance = base_instance;
     ProcessDraw(false, num_instances);
 }
 
@@ -82,7 +82,7 @@ void DrawManager::DrawIndex(PrimitiveTopology topology, u32 index_first, u32 ind
     draw_state.index_buffer.first = index_first;
     draw_state.index_buffer.count = index_count;
     draw_state.base_index = base_index;
-    draw_state.base_insance = base_instance;
+    draw_state.base_instance = base_instance;
     ProcessDraw(true, num_instances);
 }
 
@@ -119,7 +119,7 @@ void DrawManager::DrawEnd(u32 instance_count, bool force_draw) {
             break;
         [[fallthrough]];
     case DrawMode::General:
-        draw_state.base_insance = regs.global_base_instance_index;
+        draw_state.base_instance = regs.global_base_instance_index;
         draw_state.base_index = regs.global_base_vertex_index;
         if (draw_state.draw_indexed) {
             draw_state.index_buffer = regs.index_buffer;
@@ -131,7 +131,7 @@ void DrawManager::DrawEnd(u32 instance_count, bool force_draw) {
         draw_state.draw_indexed = false;
         break;
     case DrawMode::InlineIndex:
-        draw_state.base_insance = regs.global_base_instance_index;
+        draw_state.base_instance = regs.global_base_instance_index;
         draw_state.base_index = regs.global_base_vertex_index;
         draw_state.index_buffer = regs.index_buffer;
         draw_state.index_buffer.count =
@@ -143,13 +143,15 @@ void DrawManager::DrawEnd(u32 instance_count, bool force_draw) {
     }
 }
 
-void DrawManager::DrawIndexSmall(int argument) {
+void DrawManager::DrawIndexSmall(u32 argument) {
     const auto& regs{maxwell3d->regs};
-    draw_state.base_insance = regs.global_base_instance_index;
+    IndexBufferSmall index_small_params{argument};
+    draw_state.base_instance = regs.global_base_instance_index;
     draw_state.base_index = regs.global_base_vertex_index;
     draw_state.index_buffer = regs.index_buffer;
-    draw_state.index_buffer.first = argument & 0xffff;
-    draw_state.index_buffer.count = (argument >> 16) & 0xfff;
+    draw_state.index_buffer.first = index_small_params.first;
+    draw_state.index_buffer.count = index_small_params.count;
+    draw_state.topology = index_small_params.topology;
     maxwell3d->dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
     ProcessDraw(true, 1);
 }

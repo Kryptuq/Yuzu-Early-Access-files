@@ -131,7 +131,7 @@ VkRect2D GetScissorState(const Maxwell& regs, size_t index, u32 up_scale = 1, u3
 
 DrawParams MakeDrawParams(const MaxwellDrawState& draw_state, u32 num_instances, bool is_indexed) {
     DrawParams params{
-        .base_instance = draw_state.base_insance,
+        .base_instance = draw_state.base_instance,
         .num_instances = num_instances,
         .base_vertex = is_indexed ? draw_state.base_index : draw_state.vertex_buffer.first,
         .num_vertices = is_indexed ? draw_state.index_buffer.count : draw_state.vertex_buffer.count,

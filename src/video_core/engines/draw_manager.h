@@ -14,6 +14,7 @@ using PrimitiveTopology = Maxwell3D::Regs::PrimitiveTopology;
 using PrimitiveTopologyOverride = Maxwell3D::Regs::PrimitiveTopologyOverride;
 using IndexBuffer = Maxwell3D::Regs::IndexBuffer;
 using VertexBuffer = Maxwell3D::Regs::VertexBuffer;
+using IndexBufferSmall = Maxwell3D::Regs::IndexBufferSmall;
 
 class DrawManager {
 public:
@@ -25,7 +26,7 @@ public:
         u32 base_index{};
         VertexBuffer vertex_buffer;
         IndexBuffer index_buffer;
-        u32 base_insance{};
+        u32 base_instance{};
         u32 instance_count{};
         std::vector<u8> inline_index_draw_indexes;
     };
@@ -55,7 +56,7 @@ private:
 
     void DrawEnd(u32 instance_count = 1, bool force_draw = false);
 
-    void DrawIndexSmall(int argument);
+    void DrawIndexSmall(u32 argument);
 
     void ProcessTopologyOverride();
 
