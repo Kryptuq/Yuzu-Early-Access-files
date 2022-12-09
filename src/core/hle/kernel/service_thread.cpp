@@ -163,9 +163,6 @@ ServiceThread::Impl::~Impl() {
     m_wakeup_event->Signal();
     m_host_thread.join();
 
-    // Lock mutex.
-    m_session_mutex.lock();
-
     // Close all remaining sessions.
     for (const auto& [server_session, manager] : m_sessions) {
         server_session->Close();
