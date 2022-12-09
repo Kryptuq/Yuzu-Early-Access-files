@@ -11,10 +11,6 @@ string(TOUPPER ${CONTENTS_NAME} CONTENTS_NAME)
 
 FILE(READ ${SOURCE_FILE} line_contents)
 
-# Replace double quotes with single quotes,
-# as double quotes will be used to wrap the lines
-STRING(REGEX REPLACE "\"" "'" line_contents "${line_contents}")
-
 # CMake separates list elements with semicolons, but semicolons
 # are used extensively in the shader code.
 # Replace with a temporary marker, to be reverted later.
@@ -25,7 +21,7 @@ STRING(REGEX REPLACE "\n" ";" line_contents "${line_contents}")
 
 # Build the shader string, wrapping each line in double quotes.
 foreach(line IN LISTS line_contents)
-    string(CONCAT CONTENTS "${CONTENTS}" \"${line}\\n\"\n)
+    string(CONCAT CONTENTS "${CONTENTS}" "R\"(${line}\n)\" ")
 endforeach()
 
 # Revert the original semicolons in the source.

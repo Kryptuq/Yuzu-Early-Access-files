@@ -127,8 +127,19 @@ private:
 
     /// Display information for Switch screen
     ScreenInfo screen_info;
-    OGLTexture fxaa_texture;
-    OGLFramebuffer fxaa_framebuffer;
+    OGLTexture aa_texture;
+    OGLFramebuffer aa_framebuffer;
+
+    OGLProgram smaa_edge_detection_vert;
+    OGLProgram smaa_blending_weight_calculation_vert;
+    OGLProgram smaa_neighborhood_blending_vert;
+    OGLProgram smaa_edge_detection_frag;
+    OGLProgram smaa_blending_weight_calculation_frag;
+    OGLProgram smaa_neighborhood_blending_frag;
+    OGLTexture smaa_area_tex;
+    OGLTexture smaa_search_tex;
+    OGLTexture smaa_edges_tex;
+    OGLTexture smaa_blend_tex;
 
     /// OpenGL framebuffer data
     std::vector<u8> gl_framebuffer_data;

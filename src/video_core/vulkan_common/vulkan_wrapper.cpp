@@ -86,6 +86,7 @@ void Load(VkDevice device, DeviceDispatch& dld) noexcept {
     X(vkCmdBindVertexBuffers);
     X(vkCmdBlitImage);
     X(vkCmdClearAttachments);
+    X(vkCmdClearColorImage);
     X(vkCmdCopyBuffer);
     X(vkCmdCopyBufferToImage);
     X(vkCmdCopyImage);

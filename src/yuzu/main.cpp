@@ -3627,6 +3627,9 @@ void GMainWindow::UpdateAAText() {
     case Settings::AntiAliasing::Fxaa:
         aa_status_button->setText(tr("FXAA"));
         break;
+    case Settings::AntiAliasing::Smaa:
+        aa_status_button->setText(tr("SMAA"));
+        break;
     default:
         aa_status_button->setText(tr("NO AA"));
         break;

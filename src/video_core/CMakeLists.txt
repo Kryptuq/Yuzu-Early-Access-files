@@ -178,6 +178,8 @@ add_library(video_core STATIC
     renderer_vulkan/vk_scheduler.h
     renderer_vulkan/vk_shader_util.cpp
     renderer_vulkan/vk_shader_util.h
+    renderer_vulkan/vk_smaa.cpp
+    renderer_vulkan/vk_smaa.h
     renderer_vulkan/vk_staging_buffer_pool.cpp
     renderer_vulkan/vk_staging_buffer_pool.h
     renderer_vulkan/vk_state_tracker.cpp
@@ -195,6 +197,8 @@ add_library(video_core STATIC
     shader_environment.h
     shader_notify.cpp
     shader_notify.h
+    smaa_area_tex.h
+    smaa_search_tex.h
     surface.cpp
     surface.h
     texture_cache/accelerated_swizzle.cpp

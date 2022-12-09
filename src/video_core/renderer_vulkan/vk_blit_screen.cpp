@@ -29,6 +29,7 @@
 #include "video_core/renderer_vulkan/vk_fsr.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_shader_util.h"
+#include "video_core/renderer_vulkan/vk_smaa.h"
 #include "video_core/renderer_vulkan/vk_swapchain.h"
 #include "video_core/surface.h"
 #include "video_core/textures/decoders.h"
@@ -156,6 +157,7 @@ VkSemaphore BlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
     scheduler.Wait(resource_ticks[image_index]);
     resource_ticks[image_index] = scheduler.CurrentTick();
 
+    VkImage source_image = use_accelerated ? screen_info.image : *raw_images[image_index];
     VkImageView source_image_view =
         use_accelerated ? screen_info.image_view : *raw_image_views[image_index];
 
@@ -242,7 +244,7 @@ VkSemaphore BlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
     }
 
     const auto anti_alias_pass = Settings::values.anti_aliasing.GetValue();
-    if (use_accelerated && anti_alias_pass != Settings::AntiAliasing::None) {
+    if (use_accelerated && anti_alias_pass == Settings::AntiAliasing::Fxaa) {
         UpdateAADescriptorSet(image_index, source_image_view, false);
         const u32 up_scale = Settings::values.resolution_info.up_scale;
         const u32 down_shift = Settings::values.resolution_info.down_shift;
@@ -340,7 +342,18 @@ VkSemaphore BlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
         });
         source_image_view = *aa_image_view;
     }
-
+    if (use_accelerated && anti_alias_pass == Settings::AntiAliasing::Smaa) {
+        if (!smaa) {
+            const u32 up_scale = Settings::values.resolution_info.up_scale;
+            const u32 down_shift = Settings::values.resolution_info.down_shift;
+            const VkExtent2D smaa_size{
+                .width = (up_scale * framebuffer.width) >> down_shift,
+                .height = (up_scale * framebuffer.height) >> down_shift,
+            };
+            CreateSMAA(smaa_size);
+        }
+        source_image_view = smaa->Draw(scheduler, image_index, source_image, source_image_view);
+    }
     if (fsr) {
         auto crop_rect = framebuffer.crop_rect;
         if (crop_rect.GetWidth() == 0) {
@@ -467,6 +480,7 @@ void BlitScreen::CreateDynamicResources() {
     CreateFramebuffers();
     CreateGraphicsPipeline();
     fsr.reset();
+    smaa.reset();
     if (Settings::values.scaling_filter.GetValue() == Settings::ScalingFilter::Fsr) {
         CreateFSR();
     }
@@ -490,6 +504,7 @@ void BlitScreen::RefreshResources(const Tegra::FramebufferConfig& framebuffer) {
     raw_height = framebuffer.height;
     pixel_format = framebuffer.pixel_format;
 
+    smaa.reset();
     ReleaseRawImages();
 
     CreateStagingBuffer(framebuffer);
@@ -1446,6 +1461,10 @@ void BlitScreen::SetVertexData(BufferData& data, const Tegra::FramebufferConfig&
         ScreenRectVertex(x, y + h, texcoords.top * scale_u, left_start + right * scale_v);
     data.vertices[3] =
         ScreenRectVertex(x + w, y + h, texcoords.bottom * scale_u, left_start + right * scale_v);
+}
+
+void BlitScreen::CreateSMAA(VkExtent2D smaa_size) {
+    smaa = std::make_unique<SMAA>(device, memory_allocator, image_count, smaa_size);
 }
 
 void BlitScreen::CreateFSR() {

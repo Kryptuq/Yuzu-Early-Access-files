@@ -26,9 +26,16 @@ set(SHADER_FILES
     opengl_present.frag
     opengl_present.vert
     opengl_present_scaleforce.frag
+    opengl_smaa.glsl
     pitch_unswizzle.comp
     present_bicubic.frag
     present_gaussian.frag
+    smaa_edge_detection.vert
+    smaa_edge_detection.frag
+    smaa_blending_weight_calculation.vert
+    smaa_blending_weight_calculation.frag
+    smaa_neighborhood_blending.vert
+    smaa_neighborhood_blending.frag
     vulkan_blit_color_float.frag
     vulkan_blit_depth_stencil.frag
     vulkan_fidelityfx_fsr_easu_fp16.comp

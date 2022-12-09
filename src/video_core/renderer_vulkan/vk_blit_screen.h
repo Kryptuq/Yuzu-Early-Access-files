@@ -40,9 +40,11 @@ class Device;
 class FSR;
 class RasterizerVulkan;
 class Scheduler;
+class SMAA;
 class Swapchain;
 
 struct ScreenInfo {
+    VkImage image{};
     VkImageView image_view{};
     u32 width{};
     u32 height{};
@@ -101,6 +103,7 @@ private:
     void SetVertexData(BufferData& data, const Tegra::FramebufferConfig& framebuffer,
                        const Layout::FramebufferLayout layout) const;
 
+    void CreateSMAA(VkExtent2D smaa_size);
     void CreateFSR();
 
     u64 CalculateBufferSize(const Tegra::FramebufferConfig& framebuffer) const;
@@ -163,6 +166,7 @@ private:
     Service::android::PixelFormat pixel_format{};
 
     std::unique_ptr<FSR> fsr;
+    std::unique_ptr<SMAA> smaa;
 };
 
 } // namespace Vulkan

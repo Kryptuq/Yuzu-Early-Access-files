@@ -22,12 +22,21 @@
 #include "video_core/host_shaders/opengl_present_frag.h"
 #include "video_core/host_shaders/opengl_present_scaleforce_frag.h"
 #include "video_core/host_shaders/opengl_present_vert.h"
+#include "video_core/host_shaders/opengl_smaa_glsl.h"
 #include "video_core/host_shaders/present_bicubic_frag.h"
 #include "video_core/host_shaders/present_gaussian_frag.h"
+#include "video_core/host_shaders/smaa_blending_weight_calculation_frag.h"
+#include "video_core/host_shaders/smaa_blending_weight_calculation_vert.h"
+#include "video_core/host_shaders/smaa_edge_detection_frag.h"
+#include "video_core/host_shaders/smaa_edge_detection_vert.h"
+#include "video_core/host_shaders/smaa_neighborhood_blending_frag.h"
+#include "video_core/host_shaders/smaa_neighborhood_blending_vert.h"
 #include "video_core/renderer_opengl/gl_rasterizer.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
 #include "video_core/renderer_opengl/gl_shader_util.h"
 #include "video_core/renderer_opengl/renderer_opengl.h"
+#include "video_core/smaa_area_tex.h"
+#include "video_core/smaa_search_tex.h"
 #include "video_core/textures/decoders.h"
 
 namespace OpenGL {
@@ -258,6 +267,28 @@ void RendererOpenGL::InitOpenGLObjects() {
     // Create shader programs
     fxaa_vertex = CreateProgram(HostShaders::FXAA_VERT, GL_VERTEX_SHADER);
     fxaa_fragment = CreateProgram(HostShaders::FXAA_FRAG, GL_FRAGMENT_SHADER);
+
+    const auto SmaaShader = [](std::string_view specialized_source, GLenum stage) {
+        std::string shader_source{specialized_source};
+        constexpr std::string_view include_string = "#include \"opengl_smaa.glsl\"";
+        const std::size_t pos = shader_source.find(include_string);
+        ASSERT(pos != std::string::npos);
+        shader_source.replace(pos, include_string.size(), HostShaders::OPENGL_SMAA_GLSL);
+        return CreateProgram(shader_source, stage);
+    };
+
+    smaa_edge_detection_vert = SmaaShader(HostShaders::SMAA_EDGE_DETECTION_VERT, GL_VERTEX_SHADER);
+    smaa_edge_detection_frag =
+        SmaaShader(HostShaders::SMAA_EDGE_DETECTION_FRAG, GL_FRAGMENT_SHADER);
+    smaa_blending_weight_calculation_vert =
+        SmaaShader(HostShaders::SMAA_BLENDING_WEIGHT_CALCULATION_VERT, GL_VERTEX_SHADER);
+    smaa_blending_weight_calculation_frag =
+        SmaaShader(HostShaders::SMAA_BLENDING_WEIGHT_CALCULATION_FRAG, GL_FRAGMENT_SHADER);
+    smaa_neighborhood_blending_vert =
+        SmaaShader(HostShaders::SMAA_NEIGHBORHOOD_BLENDING_VERT, GL_VERTEX_SHADER);
+    smaa_neighborhood_blending_frag =
+        SmaaShader(HostShaders::SMAA_NEIGHBORHOOD_BLENDING_FRAG, GL_FRAGMENT_SHADER);
+
     present_vertex = CreateProgram(HostShaders::OPENGL_PRESENT_VERT, GL_VERTEX_SHADER);
     present_bilinear_fragment = CreateProgram(HostShaders::OPENGL_PRESENT_FRAG, GL_FRAGMENT_SHADER);
     present_bicubic_fragment = CreateProgram(HostShaders::PRESENT_BICUBIC_FRAG, GL_FRAGMENT_SHADER);
@@ -293,7 +324,16 @@ void RendererOpenGL::InitOpenGLObjects() {
     // Clear screen to black
     LoadColorToActiveGLTexture(0, 0, 0, 0, screen_info.texture);
 
-    fxaa_framebuffer.Create();
+    aa_framebuffer.Create();
+
+    smaa_area_tex.Create(GL_TEXTURE_2D);
+    glTextureStorage2D(smaa_area_tex.handle, 1, GL_RG8, AREATEX_WIDTH, AREATEX_HEIGHT);
+    glTextureSubImage2D(smaa_area_tex.handle, 0, 0, 0, AREATEX_WIDTH, AREATEX_HEIGHT, GL_RG,
+                        GL_UNSIGNED_BYTE, areaTexBytes);
+    smaa_search_tex.Create(GL_TEXTURE_2D);
+    glTextureStorage2D(smaa_search_tex.handle, 1, GL_R8, SEARCHTEX_WIDTH, SEARCHTEX_HEIGHT);
+    glTextureSubImage2D(smaa_search_tex.handle, 0, 0, 0, SEARCHTEX_WIDTH, SEARCHTEX_HEIGHT, GL_RED,
+                        GL_UNSIGNED_BYTE, searchTexBytes);
 }
 
 void RendererOpenGL::AddTelemetryFields() {
@@ -346,13 +386,22 @@ void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
     texture.resource.Release();
     texture.resource.Create(GL_TEXTURE_2D);
     glTextureStorage2D(texture.resource.handle, 1, internal_format, texture.width, texture.height);
-    fxaa_texture.Release();
-    fxaa_texture.Create(GL_TEXTURE_2D);
-    glTextureStorage2D(fxaa_texture.handle, 1, GL_RGBA16F,
+    aa_texture.Release();
+    aa_texture.Create(GL_TEXTURE_2D);
+    glTextureStorage2D(aa_texture.handle, 1, GL_RGBA16F,
                        Settings::values.resolution_info.ScaleUp(screen_info.texture.width),
                        Settings::values.resolution_info.ScaleUp(screen_info.texture.height));
-    glNamedFramebufferTexture(fxaa_framebuffer.handle, GL_COLOR_ATTACHMENT0, fxaa_texture.handle,
-                              0);
+    glNamedFramebufferTexture(aa_framebuffer.handle, GL_COLOR_ATTACHMENT0, aa_texture.handle, 0);
+    smaa_edges_tex.Release();
+    smaa_edges_tex.Create(GL_TEXTURE_2D);
+    glTextureStorage2D(smaa_edges_tex.handle, 1, GL_RG16F,
+                       Settings::values.resolution_info.ScaleUp(screen_info.texture.width),
+                       Settings::values.resolution_info.ScaleUp(screen_info.texture.height));
+    smaa_blend_tex.Release();
+    smaa_blend_tex.Create(GL_TEXTURE_2D);
+    glTextureStorage2D(smaa_blend_tex.handle, 1, GL_RGBA16F,
+                       Settings::values.resolution_info.ScaleUp(screen_info.texture.width),
+                       Settings::values.resolution_info.ScaleUp(screen_info.texture.height));
 }
 
 void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
@@ -377,11 +426,6 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
 
     state_tracker.ClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 
-    // Update background color before drawing
-    glClearColor(Settings::values.bg_red.GetValue() / 255.0f,
-                 Settings::values.bg_green.GetValue() / 255.0f,
-                 Settings::values.bg_blue.GetValue() / 255.0f, 1.0f);
-
     glEnable(GL_CULL_FACE);
     glDisable(GL_COLOR_LOGIC_OP);
     glDisable(GL_DEPTH_TEST);
@@ -394,12 +438,12 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
     glCullFace(GL_BACK);
     glFrontFace(GL_CW);
     glColorMaski(0, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glDepthRangeIndexed(0, 0.0, 0.0);
 
     glBindTextureUnit(0, screen_info.display_texture);
 
-    if (Settings::values.anti_aliasing.GetValue() == Settings::AntiAliasing::Fxaa) {
-        program_manager.BindPresentPrograms(fxaa_vertex.handle, fxaa_fragment.handle);
-
+    const auto anti_aliasing = Settings::values.anti_aliasing.GetValue();
+    if (anti_aliasing != Settings::AntiAliasing::None) {
         glEnablei(GL_SCISSOR_TEST, 0);
         auto viewport_width = screen_info.texture.width;
         auto scissor_width = framebuffer_crop_rect.GetWidth();
@@ -420,21 +464,60 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
         glScissorIndexed(0, 0, 0, scissor_width, scissor_height);
         glViewportIndexedf(0, 0.0f, 0.0f, static_cast<GLfloat>(viewport_width),
                            static_cast<GLfloat>(viewport_height));
-        glDepthRangeIndexed(0, 0.0, 0.0);
 
         glBindSampler(0, present_sampler.handle);
         GLint old_read_fb;
         GLint old_draw_fb;
         glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &old_read_fb);
         glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &old_draw_fb);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fxaa_framebuffer.handle);
 
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        switch (anti_aliasing) {
+        case Settings::AntiAliasing::Fxaa: {
+            program_manager.BindPresentPrograms(fxaa_vertex.handle, fxaa_fragment.handle);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, aa_framebuffer.handle);
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        } break;
+        case Settings::AntiAliasing::Smaa: {
+            glClearColor(0, 0, 0, 0);
+            glFrontFace(GL_CCW);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, aa_framebuffer.handle);
+            glBindSampler(1, present_sampler.handle);
+            glBindSampler(2, present_sampler.handle);
+
+            glNamedFramebufferTexture(aa_framebuffer.handle, GL_COLOR_ATTACHMENT0,
+                                      smaa_edges_tex.handle, 0);
+            glClear(GL_COLOR_BUFFER_BIT);
+            program_manager.BindPresentPrograms(smaa_edge_detection_vert.handle,
+                                                smaa_edge_detection_frag.handle);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+
+            glBindTextureUnit(0, smaa_edges_tex.handle);
+            glBindTextureUnit(1, smaa_area_tex.handle);
+            glBindTextureUnit(2, smaa_search_tex.handle);
+            glNamedFramebufferTexture(aa_framebuffer.handle, GL_COLOR_ATTACHMENT0,
+                                      smaa_blend_tex.handle, 0);
+            glClear(GL_COLOR_BUFFER_BIT);
+            program_manager.BindPresentPrograms(smaa_blending_weight_calculation_vert.handle,
+                                                smaa_blending_weight_calculation_frag.handle);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+
+            glBindTextureUnit(0, screen_info.display_texture);
+            glBindTextureUnit(1, smaa_blend_tex.handle);
+            glNamedFramebufferTexture(aa_framebuffer.handle, GL_COLOR_ATTACHMENT0,
+                                      aa_texture.handle, 0);
+            program_manager.BindPresentPrograms(smaa_neighborhood_blending_vert.handle,
+                                                smaa_neighborhood_blending_frag.handle);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glFrontFace(GL_CW);
+        } break;
+        default:
+            UNREACHABLE();
+        }
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, old_read_fb);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, old_draw_fb);
 
-        glBindTextureUnit(0, fxaa_texture.handle);
+        glBindTextureUnit(0, aa_texture.handle);
     }
     const std::array ortho_matrix =
         MakeOrthographicMatrix(static_cast<float>(layout.width), static_cast<float>(layout.height));
@@ -550,6 +633,11 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
     } else {
         glBindSampler(0, present_sampler_nn.handle);
     }
+
+    // Update background color before drawing
+    glClearColor(Settings::values.bg_red.GetValue() / 255.0f,
+                 Settings::values.bg_green.GetValue() / 255.0f,
+                 Settings::values.bg_blue.GetValue() / 255.0f, 1.0f);
 
     glClear(GL_COLOR_BUFFER_BIT);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

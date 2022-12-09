@@ -487,6 +487,11 @@
                <string>FXAA</string>
               </property>
              </item>
+             <item>
+              <property name="text">
+               <string>SMAA</string>
+              </property>
+             </item>
             </widget>
            </item>
           </layout>
@@ -524,6 +529,12 @@
            </property>
            <item>
             <layout class="QHBoxLayout" name="fsr_sharpening_label_group">
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
              <item>
               <widget class="QComboBox" name="fsr_sharpening_combobox">
                <property name="sizePolicy">

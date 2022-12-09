@@ -76,7 +76,8 @@ enum class ScalingFilter : u32 {
 enum class AntiAliasing : u32 {
     None = 0,
     Fxaa = 1,
-    LastAA = Fxaa,
+    Smaa = 2,
+    LastAA = Smaa,
 };
 
 struct ResolutionScalingInfo {

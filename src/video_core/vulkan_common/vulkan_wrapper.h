@@ -205,6 +205,7 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkCmdBindVertexBuffers2EXT vkCmdBindVertexBuffers2EXT{};
     PFN_vkCmdBlitImage vkCmdBlitImage{};
     PFN_vkCmdClearAttachments vkCmdClearAttachments{};
+    PFN_vkCmdClearColorImage vkCmdClearColorImage{};
     PFN_vkCmdCopyBuffer vkCmdCopyBuffer{};
     PFN_vkCmdCopyBufferToImage vkCmdCopyBufferToImage{};
     PFN_vkCmdCopyImage vkCmdCopyImage{};
@@ -1022,6 +1023,11 @@ public:
                           Span<VkClearRect> rects) const noexcept {
         dld->vkCmdClearAttachments(handle, attachments.size(), attachments.data(), rects.size(),
                                    rects.data());
+    }
+
+    void ClearColorImage(VkImage image, VkImageLayout layout, VkClearColorValue color,
+                         Span<VkImageSubresourceRange> ranges) {
+        dld->vkCmdClearColorImage(handle, image, layout, &color, ranges.size(), ranges.data());
     }
 
     void BlitImage(VkImage src_image, VkImageLayout src_layout, VkImage dst_image,
