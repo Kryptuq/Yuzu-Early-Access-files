@@ -16,7 +16,6 @@ class CommandGenerator;
  */
 class DetailAspect {
 public:
-    DetailAspect() = default;
     DetailAspect(CommandGenerator& command_generator, PerformanceEntryType entry_type, s32 node_id,
                  PerformanceDetailType detail_type);
 

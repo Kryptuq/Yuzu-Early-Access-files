@@ -16,7 +16,6 @@ class CommandGenerator;
  */
 class EntryAspect {
 public:
-    EntryAspect() = default;
     EntryAspect(CommandGenerator& command_generator, PerformanceEntryType type, s32 node_id);
 
     /// Command generator the command will be generated into

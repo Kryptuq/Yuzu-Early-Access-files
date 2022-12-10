@@ -195,13 +195,11 @@ struct Memory::Impl {
                 break;
             }
             case Common::PageType::Memory: {
-                DEBUG_ASSERT(pointer);
                 u8* mem_ptr = pointer + page_offset + (page_index << YUZU_PAGEBITS);
                 on_memory(copy_amount, mem_ptr);
                 break;
             }
             case Common::PageType::DebugMemory: {
-                DEBUG_ASSERT(pointer);
                 u8* const mem_ptr{GetPointerFromDebugMemory(current_vaddr)};
                 on_memory(copy_amount, mem_ptr);
                 break;

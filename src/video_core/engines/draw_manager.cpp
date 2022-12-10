@@ -180,7 +180,7 @@ void DrawManager::ProcessTopologyOverride() {
 }
 
 void DrawManager::ProcessDraw(bool draw_indexed, u32 instance_count) {
-    LOG_TRACE(HW_GPU, "called, topology={}, count={}", draw_state.topology.Value(),
+    LOG_TRACE(HW_GPU, "called, topology={}, count={}", draw_state.topology,
               draw_indexed ? draw_state.index_buffer.count : draw_state.vertex_buffer.count);
 
     ProcessTopologyOverride();
