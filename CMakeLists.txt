@@ -51,6 +51,8 @@ option(YUZU_USE_BUNDLED_VCPKG "Use vcpkg for yuzu dependencies" "${MSVC}")
 
 option(YUZU_CHECK_SUBMODULES "Check if submodules are present" ON)
 
+CMAKE_DEPENDENT_OPTION(YUZU_USE_FASTER_LD "Check if a faster linker is available" ON "NOT WIN32" OFF)
+
 if (YUZU_USE_BUNDLED_VCPKG)
     if (YUZU_TESTS)
         list(APPEND VCPKG_MANIFEST_FEATURES "yuzu-tests")
@@ -577,6 +579,21 @@ if (MSVC AND CMAKE_GENERATOR STREQUAL "Ninja")
         /wd4711 # function 'function' selected for automatic inline expansion
         /wd4820 # 'bytes' bytes padding added after construct 'member_name'
     )
+endif()
+
+if (YUZU_USE_FASTER_LD AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # We will assume that if the compiler is GCC, it will attempt to use ld.bfd by default.
+    # Try to pick a faster linker.
+    find_program(LLD lld)
+    find_program(MOLD mold)
+
+    if (MOLD AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "12.1")
+        message(NOTICE "Selecting mold as linker")
+        add_link_options("-fuse-ld=mold")
+    elseif (LLD)
+        message(NOTICE "Selecting lld as linker")
+        add_link_options("-fuse-ld=lld")
+    endif()
 endif()
 
 enable_testing()
