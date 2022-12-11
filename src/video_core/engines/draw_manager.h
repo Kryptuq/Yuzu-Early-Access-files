@@ -10,6 +10,7 @@ class RasterizerInterface;
 }
 
 namespace Tegra::Engines {
+using PrimitiveTopologyControl = Maxwell3D::Regs::PrimitiveTopologyControl;
 using PrimitiveTopology = Maxwell3D::Regs::PrimitiveTopology;
 using PrimitiveTopologyOverride = Maxwell3D::Regs::PrimitiveTopologyOverride;
 using IndexBuffer = Maxwell3D::Regs::IndexBuffer;
@@ -58,12 +59,11 @@ private:
 
     void DrawIndexSmall(u32 argument);
 
-    void ProcessTopologyOverride();
+    void UpdateTopology();
 
     void ProcessDraw(bool draw_indexed, u32 instance_count);
 
     Maxwell3D* maxwell3d{};
     State draw_state{};
-    bool use_topology_override{};
 };
 } // namespace Tegra::Engines

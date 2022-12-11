@@ -216,9 +216,6 @@ void RasterizerVulkan::Draw(bool is_indexed, u32 instance_count) {
 void RasterizerVulkan::Clear(u32 layer_count) {
     MICROPROFILE_SCOPE(Vulkan_Clearing);
 
-    if (!maxwell3d->ShouldExecute()) {
-        return;
-    }
     FlushWork();
 
     query_cache.UpdateCounters();

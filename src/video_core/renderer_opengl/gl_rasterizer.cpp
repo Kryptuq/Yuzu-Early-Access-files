@@ -138,9 +138,6 @@ void RasterizerOpenGL::LoadDiskResources(u64 title_id, std::stop_token stop_load
 
 void RasterizerOpenGL::Clear(u32 layer_count) {
     MICROPROFILE_SCOPE(OpenGL_Clears);
-    if (!maxwell3d->ShouldExecute()) {
-        return;
-    }
 
     const auto& regs = maxwell3d->regs;
     bool use_color{};
