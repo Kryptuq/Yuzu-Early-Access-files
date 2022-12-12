@@ -34,8 +34,6 @@ add_library(common STATIC
     bit_util.h
     cityhash.cpp
     cityhash.h
-    cache_management.cpp
-    cache_management.h
     common_funcs.h
     common_precompiled_headers.h
     common_types.h

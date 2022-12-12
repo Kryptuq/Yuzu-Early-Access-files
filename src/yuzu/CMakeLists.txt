@@ -402,7 +402,7 @@ if (MSVC)
     copy_yuzu_FFmpeg_deps(yuzu)
 endif()
 
-if (NOT APPLE)
+if (NOT APPLE AND ENABLE_OPENGL)
     target_compile_definitions(yuzu PRIVATE HAS_OPENGL)
 endif()
 

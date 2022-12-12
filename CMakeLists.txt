@@ -22,6 +22,8 @@ CMAKE_DEPENDENT_OPTION(YUZU_USE_BUNDLED_SDL2 "Download bundled SDL2 binaries" ON
 # On Linux system SDL2 is likely to be lacking HIDAPI support which have drawbacks but is needed for SDL motion
 CMAKE_DEPENDENT_OPTION(YUZU_USE_EXTERNAL_SDL2 "Compile external SDL2" ON "ENABLE_SDL2;NOT MSVC" OFF)
 
+option(ENABLE_OPENGL "Enable OpenGL" ON)
+mark_as_advanced(FORCE ENABLE_OPENGL)
 option(ENABLE_QT "Enable the Qt frontend" ON)
 option(ENABLE_QT6 "Allow usage of Qt6 to be attempted" OFF)
 set(QT6_LOCATION "" CACHE PATH "Additional Location to search for Qt6 libraries like C:/Qt/6.3.1/msvc2019_64/")

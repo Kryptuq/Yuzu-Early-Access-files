@@ -6,7 +6,6 @@
 
 #include "common/assert.h"
 #include "common/atomic_ops.h"
-#include "common/cache_management.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"
 #include "common/page_table.h"
@@ -340,10 +339,9 @@ struct Memory::Impl {
                     LOG_ERROR(HW_Memory, "Unmapped cache maintenance @ {:#018X}", current_vaddr);
                     throw InvalidMemoryException();
                 },
-                [&](const std::size_t block_size, u8* const host_ptr) { cb(block_size, host_ptr); },
+                [&](const std::size_t block_size, u8* const host_ptr) {},
                 [&](const VAddr current_vaddr, const std::size_t block_size, u8* const host_ptr) {
-                    system.GPU().FlushRegion(current_vaddr, block_size);
-                    cb(block_size, host_ptr);
+                    cb(current_vaddr, block_size);
                 },
                 [](const std::size_t block_size) {});
         } catch (InvalidMemoryException&) {
@@ -354,27 +352,30 @@ struct Memory::Impl {
     }
 
     Result InvalidateDataCache(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size) {
-        auto perform = [&](const std::size_t block_size, u8* const host_ptr) {
-            // Do nothing; this operation (dc ivac) cannot be supported
-            // from EL0
+        auto on_rasterizer = [&](const VAddr current_vaddr, const std::size_t block_size) {
+            // dc ivac: Invalidate to point of coherency
+            // GPU flush -> CPU invalidate
+            system.GPU().FlushRegion(current_vaddr, block_size);
         };
-        return PerformCacheOperation(process, dest_addr, size, perform);
+        return PerformCacheOperation(process, dest_addr, size, on_rasterizer);
     }
 
     Result StoreDataCache(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size) {
-        auto perform = [&](const std::size_t block_size, u8* const host_ptr) {
+        auto on_rasterizer = [&](const VAddr current_vaddr, const std::size_t block_size) {
             // dc cvac: Store to point of coherency
-            Common::DataCacheLineCleanByVAToPoC(host_ptr, block_size);
+            // CPU flush -> GPU invalidate
+            system.GPU().InvalidateRegion(current_vaddr, block_size);
         };
-        return PerformCacheOperation(process, dest_addr, size, perform);
+        return PerformCacheOperation(process, dest_addr, size, on_rasterizer);
     }
 
     Result FlushDataCache(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size) {
-        auto perform = [&](const std::size_t block_size, u8* const host_ptr) {
+        auto on_rasterizer = [&](const VAddr current_vaddr, const std::size_t block_size) {
             // dc civac: Store to point of coherency, and invalidate from cache
-            Common::DataCacheLineCleanAndInvalidateByVAToPoC(host_ptr, block_size);
+            // CPU flush -> GPU invalidate
+            system.GPU().InvalidateRegion(current_vaddr, block_size);
         };
-        return PerformCacheOperation(process, dest_addr, size, perform);
+        return PerformCacheOperation(process, dest_addr, size, on_rasterizer);
     }
 
     void MarkRegionDebug(VAddr vaddr, u64 size, bool debug) {
