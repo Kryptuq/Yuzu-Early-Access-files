@@ -341,6 +341,15 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, const Device& device
         .support_snorm_render_buffer = true,
         .support_viewport_index_layer = device.IsExtShaderViewportIndexLayerSupported(),
     };
+
+    if (device.GetMaxVertexInputAttributes() < Maxwell::NumVertexAttributes) {
+        LOG_WARNING(Render_Vulkan, "maxVertexInputAttributes is too low: {} < {}",
+                    device.GetMaxVertexInputAttributes(), Maxwell::NumVertexAttributes);
+    }
+    if (device.GetMaxVertexInputBindings() < Maxwell::NumVertexArrays) {
+        LOG_WARNING(Render_Vulkan, "maxVertexInputBindings is too low: {} < {}",
+                    device.GetMaxVertexInputBindings(), Maxwell::NumVertexArrays);
+    }
 }
 
 PipelineCache::~PipelineCache() = default;

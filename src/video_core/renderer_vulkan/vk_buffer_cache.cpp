@@ -285,6 +285,9 @@ void BufferCacheRuntime::BindQuadArrayIndexBuffer(u32 first, u32 count) {
 
 void BufferCacheRuntime::BindVertexBuffer(u32 index, VkBuffer buffer, u32 offset, u32 size,
                                           u32 stride) {
+    if (index >= device.GetMaxVertexInputBindings()) {
+        return;
+    }
     if (device.IsExtExtendedDynamicStateSupported()) {
         scheduler.Record([index, buffer, offset, size, stride](vk::CommandBuffer cmdbuf) {
             const VkDeviceSize vk_offset = buffer != VK_NULL_HANDLE ? offset : 0;

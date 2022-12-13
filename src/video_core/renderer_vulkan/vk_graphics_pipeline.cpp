@@ -529,7 +529,9 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
     static_vector<VkVertexInputBindingDivisorDescriptionEXT, 32> vertex_binding_divisors;
     static_vector<VkVertexInputAttributeDescription, 32> vertex_attributes;
     if (key.state.dynamic_vertex_input) {
-        for (size_t index = 0; index < key.state.attributes.size(); ++index) {
+        const size_t num_vertex_arrays = std::min(
+            key.state.attributes.size(), static_cast<size_t>(device.GetMaxVertexInputBindings()));
+        for (size_t index = 0; index < num_vertex_arrays; ++index) {
             const u32 type = key.state.DynamicAttributeType(index);
             if (!stage_infos[0].loads.Generic(index) || type == 0) {
                 continue;
@@ -551,7 +553,9 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
             });
         }
     } else {
-        for (size_t index = 0; index < Maxwell::NumVertexArrays; ++index) {
+        const size_t num_vertex_arrays = std::min(
+            Maxwell::NumVertexArrays, static_cast<size_t>(device.GetMaxVertexInputBindings()));
+        for (size_t index = 0; index < num_vertex_arrays; ++index) {
             const bool instanced = key.state.binding_divisors[index] != 0;
             const auto rate =
                 instanced ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
@@ -580,6 +584,8 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
             });
         }
     }
+    ASSERT(vertex_attributes.size() <= device.GetMaxVertexInputAttributes());
+
     VkPipelineVertexInputStateCreateInfo vertex_input_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         .pNext = nullptr,

@@ -697,7 +697,6 @@ void Config::ReadRendererValues() {
     ReadGlobalSetting(Settings::values.fsr_sharpening_slider);
     ReadGlobalSetting(Settings::values.anti_aliasing);
     ReadGlobalSetting(Settings::values.max_anisotropy);
-    ReadGlobalSetting(Settings::values.use_speed_limit);
     ReadGlobalSetting(Settings::values.speed_limit);
     ReadGlobalSetting(Settings::values.use_disk_shader_cache);
     ReadGlobalSetting(Settings::values.gpu_accuracy);
@@ -1328,7 +1327,6 @@ void Config::SaveRendererValues() {
                  static_cast<u32>(Settings::values.anti_aliasing.GetDefault()),
                  Settings::values.anti_aliasing.UsingGlobal());
     WriteGlobalSetting(Settings::values.max_anisotropy);
-    WriteGlobalSetting(Settings::values.use_speed_limit);
     WriteGlobalSetting(Settings::values.speed_limit);
     WriteGlobalSetting(Settings::values.use_disk_shader_cache);
     WriteSetting(QString::fromStdString(Settings::values.gpu_accuracy.GetLabel()),

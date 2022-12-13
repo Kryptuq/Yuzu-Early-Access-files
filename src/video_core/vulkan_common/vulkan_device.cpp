@@ -1380,6 +1380,10 @@ void Device::SetupFeatures() {
     is_shader_storage_image_multisample = features.shaderStorageImageMultisample;
     is_blit_depth_stencil_supported = TestDepthStencilBlits();
     is_optimal_astc_supported = IsOptimalAstcSupported(features);
+
+    const VkPhysicalDeviceLimits& limits{properties.limits};
+    max_vertex_input_attributes = limits.maxVertexInputAttributes;
+    max_vertex_input_bindings = limits.maxVertexInputBindings;
 }
 
 void Device::SetupProperties() {

@@ -1789,6 +1789,9 @@ void GMainWindow::ShutdownGame() {
 
     AllowOSSleep();
 
+    // Disable unlimited frame rate
+    Settings::values.use_speed_limit.SetValue(true);
+
     system->SetShuttingDown(true);
     system->DetachDebugger();
     discord_rpc->Pause();

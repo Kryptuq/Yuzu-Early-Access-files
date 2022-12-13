@@ -368,6 +368,14 @@ public:
         return must_emulate_bgr565;
     }
 
+    u32 GetMaxVertexInputAttributes() const {
+        return max_vertex_input_attributes;
+    }
+
+    u32 GetMaxVertexInputBindings() const {
+        return max_vertex_input_bindings;
+    }
+
 private:
     /// Checks if the physical device is suitable.
     void CheckSuitability(bool requires_swapchain) const;
@@ -467,6 +475,8 @@ private:
     bool supports_d24_depth{};              ///< Supports D24 depth buffers.
     bool cant_blit_msaa{};                  ///< Does not support MSAA<->MSAA blitting.
     bool must_emulate_bgr565{};             ///< Emulates BGR565 by swizzling RGB565 format.
+    u32 max_vertex_input_attributes{};      ///< Max vertex input attributes in pipeline
+    u32 max_vertex_input_bindings{};        ///< Max vertex input buffers in pipeline
 
     // Telemetry parameters
     std::string vendor_name;                       ///< Device's driver name.
