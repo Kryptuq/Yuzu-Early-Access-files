@@ -16,6 +16,8 @@ Common::UUID GetGUID(SDL_Joystick* joystick) {
     const SDL_JoystickGUID guid = SDL_JoystickGetGUID(joystick);
     std::array<u8, 16> data{};
     std::memcpy(data.data(), guid.data, sizeof(data));
+    // Clear controller name crc
+    std::memset(data.data() + 2, 0, sizeof(u16));
     return Common::UUID{data};
 }
 } // Anonymous namespace
