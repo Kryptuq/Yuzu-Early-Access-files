@@ -64,10 +64,11 @@ float TSCEntry::MaxAnisotropy() const noexcept {
         return 1.0f;
     }
     const auto anisotropic_settings = Settings::values.max_anisotropy.GetValue();
-    u32 added_anisotropic{};
+    s32 added_anisotropic{};
     if (anisotropic_settings == 0) {
         added_anisotropic = Settings::values.resolution_info.up_scale >>
                             Settings::values.resolution_info.down_shift;
+        added_anisotropic = std::max(added_anisotropic - 1, 0);
     } else {
         added_anisotropic = Settings::values.max_anisotropy.GetValue() - 1U;
     }
