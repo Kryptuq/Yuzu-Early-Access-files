@@ -1706,9 +1706,6 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
     system->RegisterExecuteProgramCallback(
         [this](std::size_t program_index_) { render_window->ExecuteProgram(program_index_); });
 
-    // Register an Exit callback such that Core can exit the currently running application.
-    system->RegisterExitCallback([this]() { render_window->Exit(); });
-
     connect(render_window, &GRenderWindow::Closed, this, &GMainWindow::OnStopGame);
     connect(render_window, &GRenderWindow::MouseActivity, this, &GMainWindow::OnMouseActivity);
     // BlockingQueuedConnection is important here, it makes sure we've finished refreshing our views
@@ -1795,12 +1792,16 @@ void GMainWindow::ShutdownGame() {
     system->SetShuttingDown(true);
     system->DetachDebugger();
     discord_rpc->Pause();
-    emu_thread->RequestStop();
+
+    RequestGameExit();
 
     emit EmulationStopping();
 
     // Wait for emulation thread to complete and delete it
-    emu_thread->wait();
+    if (!emu_thread->wait(5000)) {
+        emu_thread->ForceStop();
+        emu_thread->wait();
+    }
     emu_thread = nullptr;
 
     emulation_running = false;

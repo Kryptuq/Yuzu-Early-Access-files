@@ -80,6 +80,11 @@ void EmuThread::run() {
 
     system.GetCpuManager().OnGpuReady();
 
+    system.RegisterExitCallback([this]() {
+        stop_source.request_stop();
+        SetRunning(false);
+    });
+
     // Holds whether the cpu was running during the last iteration,
     // so that the DebugModeLeft signal can be emitted before the
     // next execution step
