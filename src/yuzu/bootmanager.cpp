@@ -61,8 +61,6 @@ void EmuThread::run() {
 
     // Main process has been loaded. Make the context current to this thread and begin GPU and CPU
     // execution.
-    gpu.Start();
-
     gpu.ObtainContext();
 
     emit LoadProgress(VideoCore::LoadCallbackStage::Prepare, 0, 0);
@@ -77,6 +75,7 @@ void EmuThread::run() {
     emit LoadProgress(VideoCore::LoadCallbackStage::Complete, 0, 0);
 
     gpu.ReleaseContext();
+    gpu.Start();
 
     system.GetCpuManager().OnGpuReady();
 
@@ -229,6 +228,7 @@ class RenderWidget : public QWidget {
 public:
     explicit RenderWidget(GRenderWindow* parent) : QWidget(parent), render_window(parent) {
         setAttribute(Qt::WA_NativeWindow);
+        setAttribute(Qt::WA_DontCreateNativeAncestors);
         setAttribute(Qt::WA_PaintOnScreen);
     }
 
@@ -318,6 +318,8 @@ GRenderWindow::GRenderWindow(GMainWindow* parent, EmuThread* emu_thread_,
     setLayout(layout);
     input_subsystem->Initialize();
     this->setMouseTracking(true);
+
+    strict_context_required = QGuiApplication::platformName() == QStringLiteral("wayland");
 
     connect(this, &GRenderWindow::FirstFrameDisplayed, parent, &GMainWindow::OnLoadComplete);
     connect(this, &GRenderWindow::ExecuteProgramSignal, parent, &GMainWindow::OnExecuteProgram,
@@ -957,6 +959,12 @@ void GRenderWindow::OnMinimalClientAreaChangeRequest(std::pair<u32, u32> minimal
 
 bool GRenderWindow::InitializeOpenGL() {
 #ifdef HAS_OPENGL
+    if (!QOpenGLContext::supportsThreadedOpenGL()) {
+        QMessageBox::warning(this, tr("OpenGL not available!"),
+                             tr("OpenGL shared contexts are not supported."));
+        return false;
+    }
+
     // TODO: One of these flags might be interesting: WA_OpaquePaintEvent, WA_NoBackground,
     // WA_DontShowOnScreen, WA_DeleteOnClose
     auto child = new OpenGLRenderWidget(this);

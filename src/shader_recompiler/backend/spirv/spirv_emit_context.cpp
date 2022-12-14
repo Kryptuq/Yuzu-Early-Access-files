@@ -1345,8 +1345,10 @@ void EmitContext::DefineInputs(const IR::Program& program) {
     if (info.uses_fswzadd || info.uses_subgroup_invocation_id || info.uses_subgroup_shuffles ||
         (profile.warp_size_potentially_larger_than_guest &&
          (info.uses_subgroup_vote || info.uses_subgroup_mask))) {
+        AddCapability(spv::Capability::GroupNonUniform);
         subgroup_local_invocation_id =
             DefineInput(*this, U32[1], false, spv::BuiltIn::SubgroupLocalInvocationId);
+        Decorate(subgroup_local_invocation_id, spv::Decoration::Flat);
     }
     if (info.uses_fswzadd) {
         const Id f32_one{Const(1.0f)};

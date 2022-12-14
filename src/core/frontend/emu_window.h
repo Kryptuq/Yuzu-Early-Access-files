@@ -131,6 +131,10 @@ public:
         return active_config;
     }
 
+    bool StrictContextRequired() const {
+        return strict_context_required;
+    }
+
     /**
      * Requests the internal configuration to be replaced by the specified argument at some point in
      * the future.
@@ -206,6 +210,8 @@ protected:
     std::pair<f32, f32> MapToTouchScreen(u32 framebuffer_x, u32 framebuffer_y) const;
 
     WindowSystemInfo window_info;
+
+    bool strict_context_required = false;
 
 private:
     /**

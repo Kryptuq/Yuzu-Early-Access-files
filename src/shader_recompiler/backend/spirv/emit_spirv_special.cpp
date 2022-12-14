@@ -116,7 +116,8 @@ void EmitPrologue(EmitContext& ctx) {
 }
 
 void EmitEpilogue(EmitContext& ctx) {
-    if (ctx.stage == Stage::VertexB && ctx.runtime_info.convert_depth_mode) {
+    if (ctx.stage == Stage::VertexB && ctx.runtime_info.convert_depth_mode &&
+        !ctx.profile.support_native_ndc) {
         ConvertDepthMode(ctx);
     }
     if (ctx.stage == Stage::Fragment) {
@@ -125,7 +126,7 @@ void EmitEpilogue(EmitContext& ctx) {
 }
 
 void EmitEmitVertex(EmitContext& ctx, const IR::Value& stream) {
-    if (ctx.runtime_info.convert_depth_mode) {
+    if (ctx.runtime_info.convert_depth_mode && !ctx.profile.support_native_ndc) {
         ConvertDepthMode(ctx);
     }
     if (stream.IsImmediate()) {

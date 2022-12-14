@@ -104,6 +104,8 @@ EmuWindow_SDL2_GL::EmuWindow_SDL2_GL(InputCommon::InputSubsystem* input_subsyste
         exit(1);
     }
 
+    strict_context_required = strcmp(SDL_GetCurrentVideoDriver(), "wayland") == 0;
+
     SetWindowIcon();
 
     if (fullscreen) {

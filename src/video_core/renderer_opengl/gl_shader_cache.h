@@ -69,6 +69,7 @@ private:
     StateTracker& state_tracker;
     VideoCore::ShaderNotify& shader_notify;
     const bool use_asynchronous_shaders;
+    const bool strict_context_required;
 
     GraphicsPipelineKey graphics_key{};
     GraphicsPipeline* current_pipeline{};

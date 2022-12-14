@@ -67,17 +67,19 @@ VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, u32 wi
 
 } // Anonymous namespace
 
-Swapchain::Swapchain(VkSurfaceKHR surface_, const Device& device_, Scheduler& scheduler_, u32 width,
-                     u32 height, bool srgb)
+Swapchain::Swapchain(VkSurfaceKHR surface_, const Device& device_, Scheduler& scheduler_,
+                     u32 width_, u32 height_, bool srgb)
     : surface{surface_}, device{device_}, scheduler{scheduler_} {
-    Create(width, height, srgb);
+    Create(width_, height_, srgb);
 }
 
 Swapchain::~Swapchain() = default;
 
-void Swapchain::Create(u32 width, u32 height, bool srgb) {
+void Swapchain::Create(u32 width_, u32 height_, bool srgb) {
     is_outdated = false;
     is_suboptimal = false;
+    width = width_;
+    height = height_;
 
     const auto physical_device = device.GetPhysical();
     const auto capabilities{physical_device.GetSurfaceCapabilitiesKHR(surface)};
@@ -88,7 +90,7 @@ void Swapchain::Create(u32 width, u32 height, bool srgb) {
     device.GetLogical().WaitIdle();
     Destroy();
 
-    CreateSwapchain(capabilities, width, height, srgb);
+    CreateSwapchain(capabilities, srgb);
     CreateSemaphores();
     CreateImageViews();
 
@@ -148,8 +150,7 @@ void Swapchain::Present(VkSemaphore render_semaphore) {
     }
 }
 
-void Swapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, u32 width, u32 height,
-                                bool srgb) {
+void Swapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, bool srgb) {
     const auto physical_device{device.GetPhysical()};
     const auto formats{physical_device.GetSurfaceFormatsKHR(surface)};
     const auto present_modes{physical_device.GetSurfacePresentModesKHR(surface)};

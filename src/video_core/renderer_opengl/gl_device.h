@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include "common/common_types.h"
+#include "core/frontend/emu_window.h"
 #include "shader_recompiler/stage.h"
 
 namespace Settings {
@@ -15,7 +16,7 @@ namespace OpenGL {
 
 class Device {
 public:
-    explicit Device();
+    explicit Device(Core::Frontend::EmuWindow& emu_window);
 
     [[nodiscard]] std::string GetVendorName() const;
 
@@ -173,6 +174,10 @@ public:
         return can_report_memory;
     }
 
+    bool StrictContextRequired() const {
+        return strict_context_required;
+    }
+
 private:
     static bool TestVariableAoffi();
     static bool TestPreciseBug();
@@ -216,6 +221,7 @@ private:
     bool has_cbuf_ftou_bug{};
     bool has_bool_ref_bug{};
     bool can_report_memory{};
+    bool strict_context_required{};
 
     std::string vendor_name;
 };

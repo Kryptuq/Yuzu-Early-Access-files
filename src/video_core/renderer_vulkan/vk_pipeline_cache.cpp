@@ -321,6 +321,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, const Device& device
         .support_int64_atomics = device.IsExtShaderAtomicInt64Supported(),
         .support_derivative_control = true,
         .support_geometry_shader_passthrough = device.IsNvGeometryShaderPassthroughSupported(),
+        .support_native_ndc = device.IsExtDepthClipControlSupported(),
 
         .warp_size_potentially_larger_than_guest = device.IsWarpSizePotentiallyBiggerThanGuest(),
 

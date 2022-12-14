@@ -223,8 +223,6 @@ struct GPU::Impl {
     /// core timing events.
     void Start() {
         gpu_thread.StartThread(*renderer, renderer->Context(), *scheduler);
-        cpu_context = renderer->GetRenderWindow().CreateSharedContext();
-        cpu_context->MakeCurrent();
     }
 
     void NotifyShutdown() {
@@ -235,6 +233,9 @@ struct GPU::Impl {
 
     /// Obtain the CPU Context
     void ObtainContext() {
+        if (!cpu_context) {
+            cpu_context = renderer->GetRenderWindow().CreateSharedContext();
+        }
         cpu_context->MakeCurrent();
     }
 

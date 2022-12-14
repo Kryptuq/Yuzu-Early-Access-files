@@ -320,6 +320,7 @@ private slots:
     void OnDisplayTitleBars(bool);
     void InitializeHotkeys();
     void ToggleFullscreen();
+    bool UsingExclusiveFullscreen();
     void ShowFullscreen();
     void HideFullscreen();
     void ToggleWindowMode();

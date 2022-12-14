@@ -139,23 +139,25 @@ void RendererVulkan::SwapBuffers(const Tegra::FramebufferConfig* framebuffer) {
     RenderScreenshot(*framebuffer, use_accelerated);
 
     bool has_been_recreated = false;
-    const auto recreate_swapchain = [&] {
+    const auto recreate_swapchain = [&](u32 width, u32 height) {
         if (!has_been_recreated) {
             has_been_recreated = true;
             scheduler.Finish();
         }
-        const Layout::FramebufferLayout layout = render_window.GetFramebufferLayout();
-        swapchain.Create(layout.width, layout.height, is_srgb);
+        swapchain.Create(width, height, is_srgb);
     };
-    if (swapchain.NeedsRecreation(is_srgb)) {
-        recreate_swapchain();
+
+    const Layout::FramebufferLayout layout = render_window.GetFramebufferLayout();
+    if (swapchain.NeedsRecreation(is_srgb) || swapchain.GetWidth() != layout.width ||
+        swapchain.GetHeight() != layout.height) {
+        recreate_swapchain(layout.width, layout.height);
     }
     bool is_outdated;
     do {
         swapchain.AcquireNextImage();
         is_outdated = swapchain.IsOutDated();
         if (is_outdated) {
-            recreate_swapchain();
+            recreate_swapchain(layout.width, layout.height);
         }
     } while (is_outdated);
     if (has_been_recreated) {

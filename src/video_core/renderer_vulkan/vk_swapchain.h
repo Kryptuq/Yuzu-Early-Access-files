@@ -80,9 +80,16 @@ public:
         return *present_semaphores[frame_index];
     }
 
+    u32 GetWidth() const {
+        return width;
+    }
+
+    u32 GetHeight() const {
+        return height;
+    }
+
 private:
-    void CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, u32 width, u32 height,
-                         bool srgb);
+    void CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, bool srgb);
     void CreateSemaphores();
     void CreateImageViews();
 
@@ -104,6 +111,9 @@ private:
     std::vector<vk::Framebuffer> framebuffers;
     std::vector<u64> resource_ticks;
     std::vector<vk::Semaphore> present_semaphores;
+
+    u32 width;
+    u32 height;
 
     u32 image_index{};
     u32 frame_index{};
