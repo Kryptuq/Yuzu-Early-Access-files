@@ -421,7 +421,7 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     VkPhysicalDevice8BitStorageFeatures bit8_storage{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES,
         .pNext = nullptr,
-        .storageBuffer8BitAccess = false,
+        .storageBuffer8BitAccess = true,
         .uniformAndStorageBuffer8BitAccess = true,
         .storagePushConstant8 = false,
     };
@@ -1054,6 +1054,7 @@ void Device::CheckSuitability(bool requires_swapchain) const {
         std::make_pair(bit16_storage.storageBuffer16BitAccess, "storageBuffer16BitAccess"),
         std::make_pair(bit16_storage.uniformAndStorageBuffer16BitAccess,
                        "uniformAndStorageBuffer16BitAccess"),
+        std::make_pair(bit8_storage.storageBuffer8BitAccess, "storageBuffer8BitAccess"),
         std::make_pair(bit8_storage.uniformAndStorageBuffer8BitAccess,
                        "uniformAndStorageBuffer8BitAccess"),
         std::make_pair(host_query_reset.hostQueryReset, "hostQueryReset"),
