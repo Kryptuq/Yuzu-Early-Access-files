@@ -203,8 +203,9 @@ private:
 };
 
 AudInU::AudInU(Core::System& system_)
-    : ServiceFramework{system_, "audin:u"}, service_context{system_, "AudInU"},
-      impl{std::make_unique<AudioCore::AudioIn::Manager>(system_)} {
+    : ServiceFramework{system_, "audin:u", ServiceThreadType::CreateNew},
+      service_context{system_, "AudInU"}, impl{std::make_unique<AudioCore::AudioIn::Manager>(
+                                              system_)} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, &AudInU::ListAudioIns, "ListAudioIns"},
