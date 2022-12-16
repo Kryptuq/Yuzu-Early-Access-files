@@ -3,9 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 find_package(PkgConfig QUIET)
-if (PKG_CONFIG_FOUND)
-    pkg_search_module(INIREADER QUIET IMPORTED_TARGET INIReader)
-endif()
+pkg_search_module(INIREADER QUIET IMPORTED_TARGET INIReader)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(inih

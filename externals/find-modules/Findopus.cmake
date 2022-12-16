@@ -2,9 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 find_package(PkgConfig QUIET)
-if (PKG_CONFIG_FOUND)
-    pkg_search_module(OPUS QUIET IMPORTED_TARGET opus)
-endif()
+pkg_search_module(OPUS QUIET IMPORTED_TARGET opus)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Opus

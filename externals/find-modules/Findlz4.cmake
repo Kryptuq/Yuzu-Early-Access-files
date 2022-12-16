@@ -8,9 +8,7 @@ if (lz4_FOUND)
     find_package_handle_standard_args(lz4 CONFIG_MODE)
 else()
     find_package(PkgConfig QUIET)
-    if (PKG_CONFIG_FOUND)
-        pkg_search_module(LZ4 QUIET IMPORTED_TARGET liblz4)
-    endif()
+    pkg_search_module(LZ4 QUIET IMPORTED_TARGET liblz4)
     find_package_handle_standard_args(lz4
         REQUIRED_VARS LZ4_LINK_LIBRARIES
         VERSION_VAR LZ4_VERSION

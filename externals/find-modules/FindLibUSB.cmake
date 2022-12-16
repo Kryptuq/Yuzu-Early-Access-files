@@ -3,9 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 find_package(PkgConfig QUIET)
-if (PKG_CONFIG_FOUND)
-    pkg_search_module(LIBUSB QUIET IMPORTED_TARGET libusb-1.0)
-endif()
+pkg_search_module(LIBUSB QUIET IMPORTED_TARGET libusb-1.0)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(libusb

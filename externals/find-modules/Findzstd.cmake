@@ -8,9 +8,7 @@ if (zstd_FOUND)
     find_package_handle_standard_args(zstd CONFIG_MODE)
 else()
     find_package(PkgConfig QUIET)
-    if (PKG_CONFIG_FOUND)
-        pkg_search_module(ZSTD QUIET IMPORTED_TARGET libzstd)
-    endif()
+    pkg_search_module(ZSTD QUIET IMPORTED_TARGET libzstd)
     find_package_handle_standard_args(zstd
         REQUIRED_VARS ZSTD_LINK_LIBRARIES
         VERSION_VAR ZSTD_VERSION
