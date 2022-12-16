@@ -69,7 +69,7 @@ void assert_fail_impl();
 #define ASSERT_OR_EXECUTE(_a_, _b_)                                                                \
     do {                                                                                           \
         ASSERT(_a_);                                                                               \
-        if (!(_a_)) {                                                                              \
+        if (!(_a_)) [[unlikely]] {                                                                 \
             _b_                                                                                    \
         }                                                                                          \
     } while (0)
@@ -78,7 +78,7 @@ void assert_fail_impl();
 #define ASSERT_OR_EXECUTE_MSG(_a_, _b_, ...)                                                       \
     do {                                                                                           \
         ASSERT_MSG(_a_, __VA_ARGS__);                                                              \
-        if (!(_a_)) {                                                                              \
+        if (!(_a_)) [[unlikely]] {                                                                 \
             _b_                                                                                    \
         }                                                                                          \
     } while (0)
