@@ -304,6 +304,9 @@ public:
     /// from this process' thread list.
     void UnregisterThread(KThread* thread);
 
+    /// Retrieves the number of available threads for this process.
+    u64 GetFreeThreadCount() const;
+
     /// Clears the signaled state of the process if and only if it's signaled.
     ///
     /// @pre The process must not be already terminated. If this is called on a

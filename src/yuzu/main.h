@@ -38,6 +38,7 @@ class QProgressDialog;
 class WaitTreeWidget;
 enum class GameListOpenTarget;
 enum class GameListRemoveTarget;
+enum class GameListShortcutTarget;
 enum class DumpRomFSTarget;
 enum class InstalledEntryType;
 class GameListPlaceholder;
@@ -293,6 +294,8 @@ private slots:
     void OnGameListCopyTID(u64 program_id);
     void OnGameListNavigateToGamedbEntry(u64 program_id,
                                          const CompatibilityList& compatibility_list);
+    void OnGameListCreateShortcut(u64 program_id, const std::string& game_path,
+                                  GameListShortcutTarget target);
     void OnGameListOpenDirectory(const QString& directory);
     void OnGameListAddDirectory();
     void OnGameListShowList(bool show);
@@ -366,6 +369,10 @@ private:
     bool CheckDarkMode();
 
     QString GetTasStateDescription() const;
+    bool CreateShortcut(const std::string& shortcut_path, const std::string& title,
+                        const std::string& comment, const std::string& icon_path,
+                        const std::string& command, const std::string& arguments,
+                        const std::string& categories, const std::string& keywords);
 
     std::unique_ptr<Ui::MainWindow> ui;
 

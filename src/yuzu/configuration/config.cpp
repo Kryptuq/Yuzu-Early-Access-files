@@ -783,6 +783,8 @@ void Config::ReadSystemValues() {
         }
     }
 
+    ReadBasicSetting(Settings::values.device_name);
+
     if (global) {
         ReadBasicSetting(Settings::values.current_user);
         Settings::values.current_user = std::clamp<int>(Settings::values.current_user.GetValue(), 0,
@@ -1405,6 +1407,7 @@ void Config::SaveSystemValues() {
                  Settings::values.rng_seed.UsingGlobal());
     WriteSetting(QStringLiteral("rng_seed"), Settings::values.rng_seed.GetValue(global).value_or(0),
                  0, Settings::values.rng_seed.UsingGlobal());
+    WriteBasicSetting(Settings::values.device_name);
 
     if (global) {
         WriteBasicSetting(Settings::values.current_user);

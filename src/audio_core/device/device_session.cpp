@@ -73,6 +73,12 @@ void DeviceSession::Stop() {
     }
 }
 
+void DeviceSession::ClearBuffers() {
+    if (stream) {
+        stream->ClearQueue();
+    }
+}
+
 void DeviceSession::AppendBuffers(std::span<const AudioBuffer> buffers) const {
     for (const auto& buffer : buffers) {
         Sink::SinkBuffer new_buffer{

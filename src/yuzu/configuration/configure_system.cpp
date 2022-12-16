@@ -72,6 +72,8 @@ void ConfigureSystem::SetConfiguration() {
     ui->custom_rtc_checkbox->setChecked(Settings::values.custom_rtc.has_value());
     ui->custom_rtc_edit->setEnabled(Settings::values.custom_rtc.has_value());
     ui->custom_rtc_edit->setDateTime(QDateTime::fromSecsSinceEpoch(rtc_time));
+    ui->device_name_edit->setText(
+        QString::fromUtf8(Settings::values.device_name.GetValue().c_str()));
 
     if (Settings::IsConfiguringGlobal()) {
         ui->combo_language->setCurrentIndex(Settings::values.language_index.GetValue());
@@ -114,6 +116,8 @@ void ConfigureSystem::ApplyConfiguration() {
             Settings::values.custom_rtc = std::nullopt;
         }
     }
+
+    Settings::values.device_name = ui->device_name_edit->text().toStdString();
 
     if (!enabled) {
         return;

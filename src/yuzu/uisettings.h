@@ -138,6 +138,7 @@ struct Values {
 
     bool configuration_applied;
     bool reset_to_defaults;
+    bool shortcut_already_warned{false};
     Settings::Setting<bool> disable_web_applet{true, "disable_web_applet"};
 };
 

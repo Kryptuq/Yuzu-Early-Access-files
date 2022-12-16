@@ -91,6 +91,11 @@ public:
     void Stop();
 
     /**
+     * Clear out the underlying audio buffers in the backend stream.
+     */
+    void ClearBuffers();
+
+    /**
      * Set this device session's volume.
      *
      * @param volume - New volume for this session.

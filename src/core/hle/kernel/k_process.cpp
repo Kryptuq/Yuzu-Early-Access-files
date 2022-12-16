@@ -285,6 +285,17 @@ void KProcess::UnregisterThread(KThread* thread) {
     thread_list.remove(thread);
 }
 
+u64 KProcess::GetFreeThreadCount() const {
+    if (resource_limit != nullptr) {
+        const auto current_value =
+            resource_limit->GetCurrentValue(LimitableResource::ThreadCountMax);
+        const auto limit_value = resource_limit->GetLimitValue(LimitableResource::ThreadCountMax);
+        return limit_value - current_value;
+    } else {
+        return 0;
+    }
+}
+
 Result KProcess::Reset() {
     // Lock the process and the scheduler.
     KScopedLightLock lk(state_lock);

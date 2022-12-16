@@ -52,6 +52,11 @@ enum class DumpRomFSTarget {
     SDMC,
 };
 
+enum class GameListShortcutTarget {
+    Desktop,
+    Applications,
+};
+
 enum class InstalledEntryType {
     Game,
     Update,
@@ -108,6 +113,8 @@ signals:
                              const std::string& game_path);
     void DumpRomFSRequested(u64 program_id, const std::string& game_path, DumpRomFSTarget target);
     void CopyTIDRequested(u64 program_id);
+    void CreateShortcut(u64 program_id, const std::string& game_path,
+                        GameListShortcutTarget target);
     void NavigateToGamedbEntryRequested(u64 program_id,
                                         const CompatibilityList& compatibility_list);
     void OpenPerGameGeneralRequested(const std::string& file);

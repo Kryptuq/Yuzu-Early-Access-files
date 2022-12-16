@@ -167,6 +167,9 @@ void HLERequestContext::ParseCommandBuffer(const KHandleTable& handle_table, u32
         }
         if (incoming) {
             // Populate the object lists with the data in the IPC request.
+            incoming_copy_handles.reserve(handle_descriptor_header->num_handles_to_copy);
+            incoming_move_handles.reserve(handle_descriptor_header->num_handles_to_move);
+
             for (u32 handle = 0; handle < handle_descriptor_header->num_handles_to_copy; ++handle) {
                 incoming_copy_handles.push_back(rp.Pop<Handle>());
             }
@@ -180,6 +183,11 @@ void HLERequestContext::ParseCommandBuffer(const KHandleTable& handle_table, u32
             rp.Skip(handle_descriptor_header->num_handles_to_move, false);
         }
     }
+
+    buffer_x_desciptors.reserve(command_header->num_buf_x_descriptors);
+    buffer_a_desciptors.reserve(command_header->num_buf_a_descriptors);
+    buffer_b_desciptors.reserve(command_header->num_buf_b_descriptors);
+    buffer_w_desciptors.reserve(command_header->num_buf_w_descriptors);
 
     for (u32 i = 0; i < command_header->num_buf_x_descriptors; ++i) {
         buffer_x_desciptors.push_back(rp.PopRaw<IPC::BufferDescriptorX>());
@@ -318,25 +326,23 @@ Result HLERequestContext::WriteToOutgoingCommandBuffer(KThread& requesting_threa
 }
 
 std::vector<u8> HLERequestContext::ReadBuffer(std::size_t buffer_index) const {
-    std::vector<u8> buffer{};
     const bool is_buffer_a{BufferDescriptorA().size() > buffer_index &&
                            BufferDescriptorA()[buffer_index].Size()};
-
     if (is_buffer_a) {
         ASSERT_OR_EXECUTE_MSG(
-            BufferDescriptorA().size() > buffer_index, { return buffer; },
+            BufferDescriptorA().size() > buffer_index, { return {}; },
             "BufferDescriptorA invalid buffer_index {}", buffer_index);
-        buffer.resize(BufferDescriptorA()[buffer_index].Size());
+        std::vector<u8> buffer(BufferDescriptorA()[buffer_index].Size());
         memory.ReadBlock(BufferDescriptorA()[buffer_index].Address(), buffer.data(), buffer.size());
+        return buffer;
     } else {
         ASSERT_OR_EXECUTE_MSG(
-            BufferDescriptorX().size() > buffer_index, { return buffer; },
+            BufferDescriptorX().size() > buffer_index, { return {}; },
             "BufferDescriptorX invalid buffer_index {}", buffer_index);
-        buffer.resize(BufferDescriptorX()[buffer_index].Size());
+        std::vector<u8> buffer(BufferDescriptorX()[buffer_index].Size());
         memory.ReadBlock(BufferDescriptorX()[buffer_index].Address(), buffer.data(), buffer.size());
+        return buffer;
     }
-
-    return buffer;
 }
 
 std::size_t HLERequestContext::WriteBuffer(const void* buffer, std::size_t size,

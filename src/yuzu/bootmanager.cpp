@@ -274,12 +274,14 @@ static Core::Frontend::WindowSystemType GetWindowSystemType() {
         return Core::Frontend::WindowSystemType::X11;
     else if (platform_name == QStringLiteral("wayland"))
         return Core::Frontend::WindowSystemType::Wayland;
+    else if (platform_name == QStringLiteral("wayland-egl"))
+        return Core::Frontend::WindowSystemType::Wayland;
     else if (platform_name == QStringLiteral("cocoa"))
         return Core::Frontend::WindowSystemType::Cocoa;
     else if (platform_name == QStringLiteral("android"))
         return Core::Frontend::WindowSystemType::Android;
 
-    LOG_CRITICAL(Frontend, "Unknown Qt platform!");
+    LOG_CRITICAL(Frontend, "Unknown Qt platform {}!", platform_name.toStdString());
     return Core::Frontend::WindowSystemType::Windows;
 }
 
@@ -319,7 +321,8 @@ GRenderWindow::GRenderWindow(GMainWindow* parent, EmuThread* emu_thread_,
     input_subsystem->Initialize();
     this->setMouseTracking(true);
 
-    strict_context_required = QGuiApplication::platformName() == QStringLiteral("wayland");
+    strict_context_required = QGuiApplication::platformName() == QStringLiteral("wayland") ||
+                              QGuiApplication::platformName() == QStringLiteral("wayland-egl");
 
     connect(this, &GRenderWindow::FirstFrameDisplayed, parent, &GMainWindow::OnLoadComplete);
     connect(this, &GRenderWindow::ExecuteProgramSignal, parent, &GMainWindow::OnExecuteProgram,

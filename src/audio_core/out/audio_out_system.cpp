@@ -24,7 +24,6 @@ System::~System() {
 void System::Finalize() {
     Stop();
     session->Finalize();
-    buffer_event->Signal();
 }
 
 std::string_view System::GetDefaultOutputDeviceName() const {
@@ -102,6 +101,10 @@ Result System::Stop() {
     if (state == State::Started) {
         session->Stop();
         session->SetVolume(0.0f);
+        session->ClearBuffers();
+        if (buffers.ReleaseBuffers(system.CoreTiming(), *session, true)) {
+            buffer_event->Signal();
+        }
         state = State::Stopped;
     }
 
@@ -138,7 +141,7 @@ void System::RegisterBuffers() {
 }
 
 void System::ReleaseBuffers() {
-    bool signal{buffers.ReleaseBuffers(system.CoreTiming(), *session)};
+    bool signal{buffers.ReleaseBuffers(system.CoreTiming(), *session, false)};
     if (signal) {
         // Signal if any buffer was released, or if none are registered, we need more.
         buffer_event->Signal();
