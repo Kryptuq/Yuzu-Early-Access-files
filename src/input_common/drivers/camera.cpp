@@ -17,7 +17,7 @@ Camera::Camera(std::string input_engine_) : InputEngine(std::move(input_engine_)
     PreSetController(identifier);
 }
 
-void Camera::SetCameraData(std::size_t width, std::size_t height, std::vector<u32> data) {
+void Camera::SetCameraData(std::size_t width, std::size_t height, std::span<const u32> data) {
     const std::size_t desired_width = getImageWidth();
     const std::size_t desired_height = getImageHeight();
     status.data.resize(desired_width * desired_height);

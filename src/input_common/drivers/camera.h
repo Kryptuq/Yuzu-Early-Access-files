@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <span>
+
 #include "input_common/input_engine.h"
 
 namespace InputCommon {
@@ -15,7 +17,7 @@ class Camera final : public InputEngine {
 public:
     explicit Camera(std::string input_engine_);
 
-    void SetCameraData(std::size_t width, std::size_t height, std::vector<u32> data);
+    void SetCameraData(std::size_t width, std::size_t height, std::span<const u32> data);
 
     std::size_t getImageWidth() const;
     std::size_t getImageHeight() const;

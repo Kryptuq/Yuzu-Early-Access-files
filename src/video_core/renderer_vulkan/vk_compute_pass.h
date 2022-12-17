@@ -74,7 +74,7 @@ public:
 
     std::pair<VkBuffer, VkDeviceSize> Assemble(
         Tegra::Engines::Maxwell3D::Regs::IndexFormat index_format, u32 num_vertices,
-        u32 base_vertex, VkBuffer src_buffer, u32 src_offset);
+        u32 base_vertex, VkBuffer src_buffer, u32 src_offset, bool is_strip);
 
 private:
     Scheduler& scheduler;

@@ -138,10 +138,14 @@ DrawParams MakeDrawParams(const MaxwellDrawState& draw_state, u32 num_instances,
         .first_index = is_indexed ? draw_state.index_buffer.first : 0,
         .is_indexed = is_indexed,
     };
+    // 6 triangle vertices per quad, base vertex is part of the index
+    // See BindQuadIndexBuffer for more details
     if (draw_state.topology == Maxwell::PrimitiveTopology::Quads) {
-        // 6 triangle vertices per quad, base vertex is part of the index
-        // See BindQuadArrayIndexBuffer for more details
         params.num_vertices = (params.num_vertices / 4) * 6;
+        params.base_vertex = 0;
+        params.is_indexed = true;
+    } else if (draw_state.topology == Maxwell::PrimitiveTopology::QuadStrip) {
+        params.num_vertices = (params.num_vertices - 2) / 2 * 6;
         params.base_vertex = 0;
         params.is_indexed = true;
     }
@@ -658,8 +662,7 @@ void RasterizerVulkan::BeginTransformFeedback() {
         return;
     }
     UNIMPLEMENTED_IF(regs.IsShaderConfigEnabled(Maxwell::ShaderType::TessellationInit) ||
-                     regs.IsShaderConfigEnabled(Maxwell::ShaderType::Tessellation) ||
-                     regs.IsShaderConfigEnabled(Maxwell::ShaderType::Geometry));
+                     regs.IsShaderConfigEnabled(Maxwell::ShaderType::Tessellation));
     scheduler.Record(
         [](vk::CommandBuffer cmdbuf) { cmdbuf.BeginTransformFeedbackEXT(0, 0, nullptr, nullptr); });
 }

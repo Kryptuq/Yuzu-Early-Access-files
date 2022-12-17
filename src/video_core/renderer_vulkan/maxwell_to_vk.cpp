@@ -301,6 +301,8 @@ VkPrimitiveTopology PrimitiveTopology([[maybe_unused]] const Device& device,
         return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     case Maxwell::PrimitiveTopology::Lines:
         return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    case Maxwell::PrimitiveTopology::LineLoop:
+        return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     case Maxwell::PrimitiveTopology::LineStrip:
         return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
     case Maxwell::PrimitiveTopology::Triangles:
@@ -309,15 +311,26 @@ VkPrimitiveTopology PrimitiveTopology([[maybe_unused]] const Device& device,
         return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
     case Maxwell::PrimitiveTopology::TriangleFan:
         return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
+    case Maxwell::PrimitiveTopology::LinesAdjacency:
+        return VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
+    case Maxwell::PrimitiveTopology::LineStripAdjacency:
+        return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
+    case Maxwell::PrimitiveTopology::TrianglesAdjacency:
+        return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
+    case Maxwell::PrimitiveTopology::TriangleStripAdjacency:
+        return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
     case Maxwell::PrimitiveTopology::Quads:
-        // TODO(Rodrigo): Use VK_PRIMITIVE_TOPOLOGY_QUAD_LIST_EXT whenever it releases
+    case Maxwell::PrimitiveTopology::QuadStrip:
+        // TODO: Use VK_PRIMITIVE_TOPOLOGY_QUAD_LIST_EXT/VK_PRIMITIVE_TOPOLOGY_QUAD_STRIP_EXT
+        // whenever it releases
         return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     case Maxwell::PrimitiveTopology::Patches:
         return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-    default:
-        UNIMPLEMENTED_MSG("Unimplemented topology={}", topology);
-        return {};
+    case Maxwell::PrimitiveTopology::Polygon:
+        return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
     }
+    UNIMPLEMENTED_MSG("Unimplemented topology={}", topology);
+    return {};
 }
 
 VkFormat VertexFormat(const Device& device, Maxwell::VertexAttribute::Type type,

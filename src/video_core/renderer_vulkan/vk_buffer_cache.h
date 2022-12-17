@@ -50,6 +50,9 @@ private:
     std::vector<BufferView> views;
 };
 
+class QuadArrayIndexBuffer;
+class QuadStripIndexBuffer;
+
 class BufferCacheRuntime {
     friend Buffer;
 
@@ -86,7 +89,7 @@ public:
     void BindIndexBuffer(PrimitiveTopology topology, IndexFormat index_format, u32 num_indices,
                          u32 base_vertex, VkBuffer buffer, u32 offset, u32 size);
 
-    void BindQuadArrayIndexBuffer(u32 first, u32 count);
+    void BindQuadIndexBuffer(PrimitiveTopology topology, u32 first, u32 count);
 
     void BindVertexBuffer(u32 index, VkBuffer buffer, u32 offset, u32 size, u32 stride);
 
@@ -118,8 +121,6 @@ private:
         update_descriptor_queue.AddBuffer(buffer, offset, size);
     }
 
-    void ReserveQuadArrayLUT(u32 num_indices, bool wait_for_idle);
-
     void ReserveNullBuffer();
 
     const Device& device;
@@ -128,10 +129,8 @@ private:
     StagingBufferPool& staging_pool;
     UpdateDescriptorQueue& update_descriptor_queue;
 
-    vk::Buffer quad_array_lut;
-    MemoryCommit quad_array_lut_commit;
-    VkIndexType quad_array_lut_index_type{};
-    u32 current_num_indices = 0;
+    std::shared_ptr<QuadArrayIndexBuffer> quad_array_index_buffer;
+    std::shared_ptr<QuadStripIndexBuffer> quad_strip_index_buffer;
 
     vk::Buffer null_buffer;
     MemoryCommit null_buffer_commit;

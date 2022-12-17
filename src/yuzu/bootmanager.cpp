@@ -760,6 +760,7 @@ void GRenderWindow::InitializeCamera() {
         return;
     }
 
+    camera_data.resize(CAMERA_WIDTH * CAMERA_HEIGHT);
     camera_capture->setCaptureDestination(QCameraImageCapture::CaptureDestination::CaptureToBuffer);
     connect(camera_capture.get(), &QCameraImageCapture::imageCaptured, this,
             &GRenderWindow::OnCameraCapture);
@@ -815,16 +816,13 @@ void GRenderWindow::RequestCameraCapture() {
 }
 
 void GRenderWindow::OnCameraCapture(int requestId, const QImage& img) {
-    constexpr std::size_t camera_width = 320;
-    constexpr std::size_t camera_height = 240;
+    // TODO: Capture directly in the format and resolution needed
     const auto converted =
-        img.scaled(camera_width, camera_height, Qt::AspectRatioMode::IgnoreAspectRatio,
+        img.scaled(CAMERA_WIDTH, CAMERA_HEIGHT, Qt::AspectRatioMode::IgnoreAspectRatio,
                    Qt::TransformationMode::SmoothTransformation)
             .mirrored(false, true);
-    std::vector<u32> camera_data{};
-    camera_data.resize(camera_width * camera_height);
-    std::memcpy(camera_data.data(), converted.bits(), camera_width * camera_height * sizeof(u32));
-    input_subsystem->GetCamera()->SetCameraData(camera_width, camera_height, camera_data);
+    std::memcpy(camera_data.data(), converted.bits(), CAMERA_WIDTH * CAMERA_HEIGHT * sizeof(u32));
+    input_subsystem->GetCamera()->SetCameraData(CAMERA_WIDTH, CAMERA_HEIGHT, camera_data);
     pending_camera_snapshots = 0;
 }
 

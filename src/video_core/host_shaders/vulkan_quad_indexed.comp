@@ -16,6 +16,7 @@ layout (std430, set = 0, binding = 1) writeonly buffer OutputBuffer {
 layout (push_constant) uniform PushConstants {
     uint base_vertex;
     int index_shift; // 0: uint8, 1: uint16, 2: uint32
+    int is_strip; // 0: quads 1: quadstrip
 };
 
 void main() {
@@ -28,9 +29,9 @@ void main() {
     int flipped_shift = 2 - index_shift;
     int mask = (1 << flipped_shift) - 1;
 
-    const int quad_swizzle[6] = int[](0, 1, 2, 0, 2, 3);
+    const int quad_swizzle[6] = (is_strip == 0 ? int[](0, 1, 2, 0, 2, 3) : int[](0, 3, 1, 0, 2, 3));
     for (uint vertex = 0; vertex < 6; ++vertex) {
-        int offset = primitive * 4 + quad_swizzle[vertex];
+        int offset = quad_swizzle[vertex] + (is_strip == 0 ? primitive * 4 : primitive * 2);
         int int_offset = offset >> flipped_shift;
         int bit_offset = (offset & mask) * index_size;
         uint packed_input = input_indexes[int_offset];

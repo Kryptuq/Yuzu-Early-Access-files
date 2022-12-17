@@ -666,9 +666,10 @@ void BufferCache<P>::BindHostGeometryBuffers(bool is_indexed) {
         BindHostIndexBuffer();
     } else if constexpr (!HAS_FULL_INDEX_AND_PRIMITIVE_SUPPORT) {
         const auto& draw_state = maxwell3d->draw_manager->GetDrawState();
-        if (draw_state.topology == Maxwell::PrimitiveTopology::Quads) {
-            runtime.BindQuadArrayIndexBuffer(draw_state.vertex_buffer.first,
-                                             draw_state.vertex_buffer.count);
+        if (draw_state.topology == Maxwell::PrimitiveTopology::Quads ||
+            draw_state.topology == Maxwell::PrimitiveTopology::QuadStrip) {
+            runtime.BindQuadIndexBuffer(draw_state.topology, draw_state.vertex_buffer.first,
+                                        draw_state.vertex_buffer.count);
         }
     }
     BindHostVertexBuffers();

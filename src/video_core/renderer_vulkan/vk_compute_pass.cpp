@@ -253,7 +253,7 @@ QuadIndexedPass::~QuadIndexedPass() = default;
 
 std::pair<VkBuffer, VkDeviceSize> QuadIndexedPass::Assemble(
     Tegra::Engines::Maxwell3D::Regs::IndexFormat index_format, u32 num_vertices, u32 base_vertex,
-    VkBuffer src_buffer, u32 src_offset) {
+    VkBuffer src_buffer, u32 src_offset, bool is_strip) {
     const u32 index_shift = [index_format] {
         switch (index_format) {
         case Tegra::Engines::Maxwell3D::Regs::IndexFormat::UnsignedByte:
@@ -267,7 +267,7 @@ std::pair<VkBuffer, VkDeviceSize> QuadIndexedPass::Assemble(
         return 2;
     }();
     const u32 input_size = num_vertices << index_shift;
-    const u32 num_tri_vertices = (num_vertices / 4) * 6;
+    const u32 num_tri_vertices = (is_strip ? (num_vertices - 2) / 2 : num_vertices / 4) * 6;
 
     const std::size_t staging_size = num_tri_vertices * sizeof(u32);
     const auto staging = staging_buffer_pool.Request(staging_size, MemoryUsage::DeviceLocal);
@@ -278,8 +278,8 @@ std::pair<VkBuffer, VkDeviceSize> QuadIndexedPass::Assemble(
     const void* const descriptor_data{update_descriptor_queue.UpdateData()};
 
     scheduler.RequestOutsideRenderPassOperationContext();
-    scheduler.Record([this, descriptor_data, num_tri_vertices, base_vertex,
-                      index_shift](vk::CommandBuffer cmdbuf) {
+    scheduler.Record([this, descriptor_data, num_tri_vertices, base_vertex, index_shift,
+                      is_strip](vk::CommandBuffer cmdbuf) {
         static constexpr u32 DISPATCH_SIZE = 1024;
         static constexpr VkMemoryBarrier WRITE_BARRIER{
             .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
@@ -287,7 +287,7 @@ std::pair<VkBuffer, VkDeviceSize> QuadIndexedPass::Assemble(
             .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
             .dstAccessMask = VK_ACCESS_INDEX_READ_BIT,
         };
-        const std::array<u32, 2> push_constants{base_vertex, index_shift};
+        const std::array<u32, 3> push_constants{base_vertex, index_shift, is_strip ? 1u : 0u};
         const VkDescriptorSet set = descriptor_allocator.Commit();
         device.GetLogical().UpdateDescriptorSet(set, *descriptor_template, descriptor_data);
         cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline);

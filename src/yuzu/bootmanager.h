@@ -247,6 +247,9 @@ private:
 #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0)) && YUZU_USE_QT_MULTIMEDIA
     std::unique_ptr<QCamera> camera;
     std::unique_ptr<QCameraImageCapture> camera_capture;
+    static constexpr std::size_t CAMERA_WIDTH = 320;
+    static constexpr std::size_t CAMERA_HEIGHT = 240;
+    std::vector<u32> camera_data;
 #endif
     std::unique_ptr<QTimer> camera_timer;
 
