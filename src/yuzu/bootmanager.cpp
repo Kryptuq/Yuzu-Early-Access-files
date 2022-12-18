@@ -764,7 +764,9 @@ void GRenderWindow::InitializeCamera() {
         return;
     }
 
-    camera_data.resize(CAMERA_WIDTH * CAMERA_HEIGHT);
+    const auto camera_width = input_subsystem->GetCamera()->getImageWidth();
+    const auto camera_height = input_subsystem->GetCamera()->getImageHeight();
+    camera_data.resize(camera_width * camera_height);
     camera_capture->setCaptureDestination(QCameraImageCapture::CaptureDestination::CaptureToBuffer);
     connect(camera_capture.get(), &QCameraImageCapture::imageCaptured, this,
             &GRenderWindow::OnCameraCapture);
@@ -820,14 +822,22 @@ void GRenderWindow::RequestCameraCapture() {
 }
 
 void GRenderWindow::OnCameraCapture(int requestId, const QImage& img) {
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0)) && YUZU_USE_QT_MULTIMEDIA
     // TODO: Capture directly in the format and resolution needed
+    const auto camera_width = input_subsystem->GetCamera()->getImageWidth();
+    const auto camera_height = input_subsystem->GetCamera()->getImageHeight();
     const auto converted =
-        img.scaled(CAMERA_WIDTH, CAMERA_HEIGHT, Qt::AspectRatioMode::IgnoreAspectRatio,
+        img.scaled(static_cast<int>(camera_width), static_cast<int>(camera_height),
+                   Qt::AspectRatioMode::IgnoreAspectRatio,
                    Qt::TransformationMode::SmoothTransformation)
             .mirrored(false, true);
-    std::memcpy(camera_data.data(), converted.bits(), CAMERA_WIDTH * CAMERA_HEIGHT * sizeof(u32));
-    input_subsystem->GetCamera()->SetCameraData(CAMERA_WIDTH, CAMERA_HEIGHT, camera_data);
+    if (camera_data.size() != camera_width * camera_height) {
+        camera_data.resize(camera_width * camera_height);
+    }
+    std::memcpy(camera_data.data(), converted.bits(), camera_width * camera_height * sizeof(u32));
+    input_subsystem->GetCamera()->SetCameraData(camera_width, camera_height, camera_data);
     pending_camera_snapshots = 0;
+#endif
 }
 
 bool GRenderWindow::event(QEvent* event) {

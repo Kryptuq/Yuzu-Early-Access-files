@@ -2660,6 +2660,9 @@ void GMainWindow::OnMenuInstallToNAND() {
         return;
     }
 
+    // Save folder location of the first selected file
+    UISettings::values.roms_path = QFileInfo(filenames[0]).path();
+
     int remaining = filenames.size();
 
     // This would only overflow above 2^43 bytes (8.796 TB)

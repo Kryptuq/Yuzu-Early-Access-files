@@ -25,6 +25,7 @@ public:
     Common::Input::CameraError SetCameraFormat(const PadIdentifier& identifier_,
                                                Common::Input::CameraFormat camera_format) override;
 
+private:
     Common::Input::CameraStatus status{};
 };
 

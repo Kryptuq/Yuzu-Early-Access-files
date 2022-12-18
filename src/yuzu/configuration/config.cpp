@@ -783,8 +783,6 @@ void Config::ReadSystemValues() {
         }
     }
 
-    ReadBasicSetting(Settings::values.device_name);
-
     if (global) {
         ReadBasicSetting(Settings::values.current_user);
         Settings::values.current_user = std::clamp<int>(Settings::values.current_user.GetValue(), 0,
@@ -797,6 +795,7 @@ void Config::ReadSystemValues() {
         } else {
             Settings::values.custom_rtc = std::nullopt;
         }
+        ReadBasicSetting(Settings::values.device_name);
     }
 
     ReadGlobalSetting(Settings::values.sound_index);
@@ -1407,7 +1406,6 @@ void Config::SaveSystemValues() {
                  Settings::values.rng_seed.UsingGlobal());
     WriteSetting(QStringLiteral("rng_seed"), Settings::values.rng_seed.GetValue(global).value_or(0),
                  0, Settings::values.rng_seed.UsingGlobal());
-    WriteBasicSetting(Settings::values.device_name);
 
     if (global) {
         WriteBasicSetting(Settings::values.current_user);
@@ -1416,6 +1414,7 @@ void Config::SaveSystemValues() {
                      false);
         WriteSetting(QStringLiteral("custom_rtc"),
                      QVariant::fromValue<long long>(Settings::values.custom_rtc.value_or(0)), 0);
+        WriteBasicSetting(Settings::values.device_name);
     }
 
     WriteGlobalSetting(Settings::values.sound_index);

@@ -29,9 +29,10 @@ void main() {
     int flipped_shift = 2 - index_shift;
     int mask = (1 << flipped_shift) - 1;
 
-    const int quad_swizzle[6] = (is_strip == 0 ? int[](0, 1, 2, 0, 2, 3) : int[](0, 3, 1, 0, 2, 3));
+    const int quads_swizzle[6] = int[](0, 1, 2, 0, 2, 3);
+    const int quad_strip_swizzle[6] = int[](0, 3, 1, 0, 2, 3);
     for (uint vertex = 0; vertex < 6; ++vertex) {
-        int offset = quad_swizzle[vertex] + (is_strip == 0 ? primitive * 4 : primitive * 2);
+        int offset = (is_strip == 0 ? primitive * 4 + quads_swizzle[vertex] : primitive * 2 + quad_strip_swizzle[vertex]);
         int int_offset = offset >> flipped_shift;
         int bit_offset = (offset & mask) * index_size;
         uint packed_input = input_indexes[int_offset];
