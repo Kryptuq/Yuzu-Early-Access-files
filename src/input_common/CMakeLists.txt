@@ -20,6 +20,8 @@ add_library(input_common STATIC
     drivers/udp_client.h
     drivers/virtual_amiibo.cpp
     drivers/virtual_amiibo.h
+    drivers/virtual_gamepad.cpp
+    drivers/virtual_gamepad.h
     helpers/stick_from_buttons.cpp
     helpers/stick_from_buttons.h
     helpers/touch_from_buttons.cpp

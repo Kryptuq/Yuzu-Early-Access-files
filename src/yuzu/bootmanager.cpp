@@ -44,6 +44,8 @@
 #include "yuzu/bootmanager.h"
 #include "yuzu/main.h"
 
+static Core::Frontend::WindowSystemType GetWindowSystemType();
+
 EmuThread::EmuThread(Core::System& system_) : system{system_} {}
 
 EmuThread::~EmuThread() = default;
@@ -228,8 +230,10 @@ class RenderWidget : public QWidget {
 public:
     explicit RenderWidget(GRenderWindow* parent) : QWidget(parent), render_window(parent) {
         setAttribute(Qt::WA_NativeWindow);
-        setAttribute(Qt::WA_DontCreateNativeAncestors);
         setAttribute(Qt::WA_PaintOnScreen);
+        if (GetWindowSystemType() == Core::Frontend::WindowSystemType::Wayland) {
+            setAttribute(Qt::WA_DontCreateNativeAncestors);
+        }
     }
 
     virtual ~RenderWidget() = default;

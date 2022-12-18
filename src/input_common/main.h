@@ -34,6 +34,7 @@ class Keyboard;
 class Mouse;
 class TouchScreen;
 class VirtualAmiibo;
+class VirtualGamepad;
 struct MappingData;
 } // namespace InputCommon
 
@@ -107,6 +108,12 @@ public:
 
     /// Retrieves the underlying virtual amiibo input device.
     [[nodiscard]] const VirtualAmiibo* GetVirtualAmiibo() const;
+
+    /// Retrieves the underlying virtual gamepad input device.
+    [[nodiscard]] VirtualGamepad* GetVirtualGamepad();
+
+    /// Retrieves the underlying virtual gamepad input device.
+    [[nodiscard]] const VirtualGamepad* GetVirtualGamepad() const;
 
     /**
      * Returns all available input devices that this Factory can create a new device with.

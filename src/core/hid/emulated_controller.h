@@ -385,6 +385,9 @@ private:
     /// Set the params for TAS devices
     void LoadTASParams();
 
+    /// Set the params for virtual pad devices
+    void LoadVirtualGamepadParams();
+
     /**
      * @param use_temporary_value If true tmp_npad_type will be used
      * @return true if the controller style is fullkey
@@ -499,6 +502,12 @@ private:
     StickParams tas_stick_params;
     ButtonDevices tas_button_devices;
     StickDevices tas_stick_devices;
+
+    // Virtual gamepad related variables
+    ButtonParams virtual_button_params;
+    StickParams virtual_stick_params;
+    ButtonDevices virtual_button_devices;
+    StickDevices virtual_stick_devices;
 
     mutable std::mutex mutex;
     mutable std::mutex callback_mutex;

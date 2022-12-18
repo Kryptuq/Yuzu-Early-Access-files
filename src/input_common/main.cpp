@@ -12,6 +12,7 @@
 #include "input_common/drivers/touch_screen.h"
 #include "input_common/drivers/udp_client.h"
 #include "input_common/drivers/virtual_amiibo.h"
+#include "input_common/drivers/virtual_gamepad.h"
 #include "input_common/helpers/stick_from_buttons.h"
 #include "input_common/helpers/touch_from_buttons.h"
 #include "input_common/input_engine.h"
@@ -85,6 +86,12 @@ struct InputSubsystem::Impl {
         Common::Input::RegisterOutputFactory(virtual_amiibo->GetEngineName(),
                                              virtual_amiibo_output_factory);
 
+        virtual_gamepad = std::make_shared<VirtualGamepad>("virtual_gamepad");
+        virtual_gamepad->SetMappingCallback(mapping_callback);
+        virtual_gamepad_input_factory = std::make_shared<InputFactory>(virtual_gamepad);
+        Common::Input::RegisterInputFactory(virtual_gamepad->GetEngineName(),
+                                            virtual_gamepad_input_factory);
+
 #ifdef HAVE_SDL2
         sdl = std::make_shared<SDLDriver>("sdl");
         sdl->SetMappingCallback(mapping_callback);
@@ -131,6 +138,9 @@ struct InputSubsystem::Impl {
         Common::Input::UnregisterInputFactory(virtual_amiibo->GetEngineName());
         Common::Input::UnregisterOutputFactory(virtual_amiibo->GetEngineName());
         virtual_amiibo.reset();
+
+        Common::Input::UnregisterInputFactory(virtual_gamepad->GetEngineName());
+        virtual_gamepad.reset();
 
 #ifdef HAVE_SDL2
         Common::Input::UnregisterInputFactory(sdl->GetEngineName());
@@ -290,6 +300,9 @@ struct InputSubsystem::Impl {
         if (engine == tas_input->GetEngineName()) {
             return true;
         }
+        if (engine == virtual_gamepad->GetEngineName()) {
+            return true;
+        }
 #ifdef HAVE_SDL2
         if (engine == sdl->GetEngineName()) {
             return true;
@@ -338,6 +351,7 @@ struct InputSubsystem::Impl {
     std::shared_ptr<CemuhookUDP::UDPClient> udp_client;
     std::shared_ptr<Camera> camera;
     std::shared_ptr<VirtualAmiibo> virtual_amiibo;
+    std::shared_ptr<VirtualGamepad> virtual_gamepad;
 
     std::shared_ptr<InputFactory> keyboard_factory;
     std::shared_ptr<InputFactory> mouse_factory;
@@ -347,6 +361,7 @@ struct InputSubsystem::Impl {
     std::shared_ptr<InputFactory> tas_input_factory;
     std::shared_ptr<InputFactory> camera_input_factory;
     std::shared_ptr<InputFactory> virtual_amiibo_input_factory;
+    std::shared_ptr<InputFactory> virtual_gamepad_input_factory;
 
     std::shared_ptr<OutputFactory> keyboard_output_factory;
     std::shared_ptr<OutputFactory> mouse_output_factory;
@@ -421,6 +436,14 @@ VirtualAmiibo* InputSubsystem::GetVirtualAmiibo() {
 
 const VirtualAmiibo* InputSubsystem::GetVirtualAmiibo() const {
     return impl->virtual_amiibo.get();
+}
+
+VirtualGamepad* InputSubsystem::GetVirtualGamepad() {
+    return impl->virtual_gamepad.get();
+}
+
+const VirtualGamepad* InputSubsystem::GetVirtualGamepad() const {
+    return impl->virtual_gamepad.get();
 }
 
 std::vector<Common::ParamPackage> InputSubsystem::GetInputDevices() const {

@@ -145,6 +145,7 @@ void EmulatedController::LoadDevices() {
     output_params[3].Set("output", true);
 
     LoadTASParams();
+    LoadVirtualGamepadParams();
 
     std::ranges::transform(button_params, button_devices.begin(), Common::Input::CreateInputDevice);
     std::ranges::transform(stick_params, stick_devices.begin(), Common::Input::CreateInputDevice);
@@ -162,6 +163,12 @@ void EmulatedController::LoadDevices() {
     std::ranges::transform(tas_button_params, tas_button_devices.begin(),
                            Common::Input::CreateInputDevice);
     std::ranges::transform(tas_stick_params, tas_stick_devices.begin(),
+                           Common::Input::CreateInputDevice);
+
+    // Initialize virtual gamepad devices
+    std::ranges::transform(virtual_button_params, virtual_button_devices.begin(),
+                           Common::Input::CreateInputDevice);
+    std::ranges::transform(virtual_stick_params, virtual_stick_devices.begin(),
                            Common::Input::CreateInputDevice);
 }
 
@@ -203,6 +210,46 @@ void EmulatedController::LoadTASParams() {
     tas_stick_params[Settings::NativeAnalog::LStick].Set("axis_y", 1);
     tas_stick_params[Settings::NativeAnalog::RStick].Set("axis_x", 2);
     tas_stick_params[Settings::NativeAnalog::RStick].Set("axis_y", 3);
+}
+
+void EmulatedController::LoadVirtualGamepadParams() {
+    const auto player_index = NpadIdTypeToIndex(npad_id_type);
+    Common::ParamPackage common_params{};
+    common_params.Set("engine", "virtual_gamepad");
+    common_params.Set("port", static_cast<int>(player_index));
+    for (auto& param : virtual_button_params) {
+        param = common_params;
+    }
+    for (auto& param : virtual_stick_params) {
+        param = common_params;
+    }
+
+    // TODO(german77): Replace this with an input profile or something better
+    virtual_button_params[Settings::NativeButton::A].Set("button", 0);
+    virtual_button_params[Settings::NativeButton::B].Set("button", 1);
+    virtual_button_params[Settings::NativeButton::X].Set("button", 2);
+    virtual_button_params[Settings::NativeButton::Y].Set("button", 3);
+    virtual_button_params[Settings::NativeButton::LStick].Set("button", 4);
+    virtual_button_params[Settings::NativeButton::RStick].Set("button", 5);
+    virtual_button_params[Settings::NativeButton::L].Set("button", 6);
+    virtual_button_params[Settings::NativeButton::R].Set("button", 7);
+    virtual_button_params[Settings::NativeButton::ZL].Set("button", 8);
+    virtual_button_params[Settings::NativeButton::ZR].Set("button", 9);
+    virtual_button_params[Settings::NativeButton::Plus].Set("button", 10);
+    virtual_button_params[Settings::NativeButton::Minus].Set("button", 11);
+    virtual_button_params[Settings::NativeButton::DLeft].Set("button", 12);
+    virtual_button_params[Settings::NativeButton::DUp].Set("button", 13);
+    virtual_button_params[Settings::NativeButton::DRight].Set("button", 14);
+    virtual_button_params[Settings::NativeButton::DDown].Set("button", 15);
+    virtual_button_params[Settings::NativeButton::SL].Set("button", 16);
+    virtual_button_params[Settings::NativeButton::SR].Set("button", 17);
+    virtual_button_params[Settings::NativeButton::Home].Set("button", 18);
+    virtual_button_params[Settings::NativeButton::Screenshot].Set("button", 19);
+
+    virtual_stick_params[Settings::NativeAnalog::LStick].Set("axis_x", 0);
+    virtual_stick_params[Settings::NativeAnalog::LStick].Set("axis_y", 1);
+    virtual_stick_params[Settings::NativeAnalog::RStick].Set("axis_x", 2);
+    virtual_stick_params[Settings::NativeAnalog::RStick].Set("axis_y", 3);
 }
 
 void EmulatedController::ReloadInput() {
@@ -322,6 +369,35 @@ void EmulatedController::ReloadInput() {
                 },
         });
     }
+
+    // Use a common UUID for Virtual Gamepad
+    static constexpr Common::UUID VIRTUAL_UUID = Common::UUID{
+        {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x7, 0xFF, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}};
+
+    // Register virtual devices. No need to force update
+    for (std::size_t index = 0; index < virtual_button_devices.size(); ++index) {
+        if (!virtual_button_devices[index]) {
+            continue;
+        }
+        virtual_button_devices[index]->SetCallback({
+            .on_change =
+                [this, index](const Common::Input::CallbackStatus& callback) {
+                    SetButton(callback, index, VIRTUAL_UUID);
+                },
+        });
+    }
+
+    for (std::size_t index = 0; index < virtual_stick_devices.size(); ++index) {
+        if (!virtual_stick_devices[index]) {
+            continue;
+        }
+        virtual_stick_devices[index]->SetCallback({
+            .on_change =
+                [this, index](const Common::Input::CallbackStatus& callback) {
+                    SetStick(callback, index, VIRTUAL_UUID);
+                },
+        });
+    }
 }
 
 void EmulatedController::UnloadInput() {
@@ -347,6 +423,12 @@ void EmulatedController::UnloadInput() {
         button.reset();
     }
     for (auto& stick : tas_stick_devices) {
+        stick.reset();
+    }
+    for (auto& button : virtual_button_devices) {
+        button.reset();
+    }
+    for (auto& stick : virtual_stick_devices) {
         stick.reset();
     }
     camera_devices.reset();
