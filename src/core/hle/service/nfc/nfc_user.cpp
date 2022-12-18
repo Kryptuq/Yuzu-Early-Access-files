@@ -97,7 +97,7 @@ void IUser::IsNfcEnabled(Kernel::HLERequestContext& ctx) {
 }
 
 void IUser::ListDevices(Kernel::HLERequestContext& ctx) {
-    LOG_INFO(Service_NFC, "called");
+    LOG_DEBUG(Service_NFC, "called");
 
     if (state == State::NonInitialized) {
         IPC::ResponseBuilder rb{ctx, 2};

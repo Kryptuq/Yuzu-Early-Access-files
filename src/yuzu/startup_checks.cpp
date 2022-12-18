@@ -186,7 +186,7 @@ pid_t SpawnChild(const char* arg0) {
         return pid;
     } else if (pid == 0) {
         // child
-        execl(arg0, arg0, nullptr);
+        execlp(arg0, arg0, nullptr);
         const int err = errno;
         fmt::print(stderr, "execl failed with error {}\n", err);
         _exit(0);

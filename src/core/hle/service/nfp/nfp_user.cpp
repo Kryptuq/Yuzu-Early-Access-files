@@ -83,7 +83,7 @@ void IUser::Finalize(Kernel::HLERequestContext& ctx) {
 }
 
 void IUser::ListDevices(Kernel::HLERequestContext& ctx) {
-    LOG_INFO(Service_NFP, "called");
+    LOG_DEBUG(Service_NFP, "called");
 
     if (state == State::NonInitialized) {
         IPC::ResponseBuilder rb{ctx, 2};
