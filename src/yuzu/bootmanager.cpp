@@ -46,30 +46,28 @@
 
 static Core::Frontend::WindowSystemType GetWindowSystemType();
 
-EmuThread::EmuThread(Core::System& system_) : system{system_} {}
+EmuThread::EmuThread(Core::System& system) : m_system{system} {}
 
 EmuThread::~EmuThread() = default;
 
 void EmuThread::run() {
-    std::string name = "EmuControlThread";
-    MicroProfileOnThreadCreate(name.c_str());
-    Common::SetCurrentThreadName(name.c_str());
+    const char* name = "EmuControlThread";
+    MicroProfileOnThreadCreate(name);
+    Common::SetCurrentThreadName(name);
 
-    auto& gpu = system.GPU();
-    auto stop_token = stop_source.get_token();
-    bool debugger_should_start = system.DebuggerEnabled();
+    auto& gpu = m_system.GPU();
+    auto stop_token = m_stop_source.get_token();
 
-    system.RegisterHostThread();
+    m_system.RegisterHostThread();
 
     // Main process has been loaded. Make the context current to this thread and begin GPU and CPU
     // execution.
     gpu.ObtainContext();
 
     emit LoadProgress(VideoCore::LoadCallbackStage::Prepare, 0, 0);
-
     if (Settings::values.use_disk_shader_cache.GetValue()) {
-        system.Renderer().ReadRasterizer()->LoadDiskResources(
-            system.GetCurrentProcessProgramID(), stop_token,
+        m_system.Renderer().ReadRasterizer()->LoadDiskResources(
+            m_system.GetCurrentProcessProgramID(), stop_token,
             [this](VideoCore::LoadCallbackStage stage, std::size_t value, std::size_t total) {
                 emit LoadProgress(stage, value, total);
             });
@@ -79,57 +77,35 @@ void EmuThread::run() {
     gpu.ReleaseContext();
     gpu.Start();
 
-    system.GetCpuManager().OnGpuReady();
+    m_system.GetCpuManager().OnGpuReady();
+    m_system.RegisterExitCallback([this] { m_stop_source.request_stop(); });
 
-    system.RegisterExitCallback([this]() {
-        stop_source.request_stop();
-        SetRunning(false);
-    });
+    if (m_system.DebuggerEnabled()) {
+        m_system.InitializeDebugger();
+    }
 
-    // Holds whether the cpu was running during the last iteration,
-    // so that the DebugModeLeft signal can be emitted before the
-    // next execution step
-    bool was_active = false;
     while (!stop_token.stop_requested()) {
-        if (running) {
-            if (was_active) {
-                emit DebugModeLeft();
-            }
+        std::unique_lock lk{m_should_run_mutex};
+        if (m_should_run) {
+            m_system.Run();
+            m_is_running.store(true);
+            m_is_running.notify_all();
 
-            running_guard = true;
-            Core::SystemResultStatus result = system.Run();
-            if (result != Core::SystemResultStatus::Success) {
-                running_guard = false;
-                this->SetRunning(false);
-                emit ErrorThrown(result, system.GetStatusDetails());
-            }
-
-            if (debugger_should_start) {
-                system.InitializeDebugger();
-                debugger_should_start = false;
-            }
-
-            running_wait.Wait();
-            result = system.Pause();
-            if (result != Core::SystemResultStatus::Success) {
-                running_guard = false;
-                this->SetRunning(false);
-                emit ErrorThrown(result, system.GetStatusDetails());
-            }
-            running_guard = false;
-
-            if (!stop_token.stop_requested()) {
-                was_active = true;
-                emit DebugModeEntered();
-            }
+            Common::CondvarWait(m_should_run_cv, lk, stop_token, [&] { return !m_should_run; });
         } else {
-            std::unique_lock lock{running_mutex};
-            Common::CondvarWait(running_cv, lock, stop_token, [&] { return IsRunning(); });
+            m_system.Pause();
+            m_is_running.store(false);
+            m_is_running.notify_all();
+
+            emit DebugModeEntered();
+            Common::CondvarWait(m_should_run_cv, lk, stop_token, [&] { return m_should_run; });
+            emit DebugModeLeft();
         }
     }
 
     // Shutdown the main emulated process
-    system.ShutdownMainProcess();
+    m_system.DetachDebugger();
+    m_system.ShutdownMainProcess();
 
 #if MICROPROFILE_ENABLED
     MicroProfileOnThreadExit();

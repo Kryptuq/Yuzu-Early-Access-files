@@ -183,26 +183,20 @@ struct System::Impl {
         Initialize(system);
     }
 
-    SystemResultStatus Run() {
+    void Run() {
         std::unique_lock<std::mutex> lk(suspend_guard);
-        status = SystemResultStatus::Success;
 
         kernel.Suspend(false);
         core_timing.SyncPause(false);
         is_paused.store(false, std::memory_order_relaxed);
-
-        return status;
     }
 
-    SystemResultStatus Pause() {
+    void Pause() {
         std::unique_lock<std::mutex> lk(suspend_guard);
-        status = SystemResultStatus::Success;
 
         core_timing.SyncPause(true);
         kernel.Suspend(true);
         is_paused.store(true, std::memory_order_relaxed);
-
-        return status;
     }
 
     bool IsPaused() const {
@@ -553,12 +547,12 @@ void System::Initialize() {
     impl->Initialize(*this);
 }
 
-SystemResultStatus System::Run() {
-    return impl->Run();
+void System::Run() {
+    impl->Run();
 }
 
-SystemResultStatus System::Pause() {
-    return impl->Pause();
+void System::Pause() {
+    impl->Pause();
 }
 
 bool System::IsPaused() const {

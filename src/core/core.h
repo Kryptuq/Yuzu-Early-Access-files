@@ -152,13 +152,13 @@ public:
      * Run the OS and Application
      * This function will start emulation and run the relevant devices
      */
-    [[nodiscard]] SystemResultStatus Run();
+    void Run();
 
     /**
      * Pause the OS and Application
      * This function will pause emulation and stop the relevant devices
      */
-    [[nodiscard]] SystemResultStatus Pause();
+    void Pause();
 
     /// Check if the core is currently paused.
     [[nodiscard]] bool IsPaused() const;

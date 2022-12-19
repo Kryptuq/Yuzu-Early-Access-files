@@ -39,6 +39,7 @@ class KDynamicPageManager;
 class KEvent;
 class KEventInfo;
 class KHandleTable;
+class KHardwareTimer;
 class KLinkedListNode;
 class KMemoryLayout;
 class KMemoryManager;
@@ -63,7 +64,6 @@ class KCodeMemory;
 class PhysicalCore;
 class ServiceThread;
 class Synchronization;
-class TimeManager;
 
 using ServiceInterfaceFactory =
     std::function<KClientPort&(Service::SM::ServiceManager&, Core::System&)>;
@@ -175,11 +175,8 @@ public:
     /// Gets the an instance of the current physical CPU core.
     const Kernel::PhysicalCore& CurrentPhysicalCore() const;
 
-    /// Gets the an instance of the TimeManager Interface.
-    Kernel::TimeManager& TimeManager();
-
-    /// Gets the an instance of the TimeManager Interface.
-    const Kernel::TimeManager& TimeManager() const;
+    /// Gets the an instance of the hardware timer.
+    Kernel::KHardwareTimer& HardwareTimer();
 
     /// Stops execution of 'id' core, in order to reschedule a new thread.
     void PrepareReschedule(std::size_t id);

@@ -26,79 +26,33 @@
 namespace InputCommon {
 
 struct InputSubsystem::Impl {
-    void Initialize() {
-        mapping_factory = std::make_shared<MappingFactory>();
+    template <typename Engine>
+    void RegisterEngine(std::string name, std::shared_ptr<Engine>& engine) {
         MappingCallback mapping_callback{[this](const MappingData& data) { RegisterInput(data); }};
 
-        keyboard = std::make_shared<Keyboard>("keyboard");
-        keyboard->SetMappingCallback(mapping_callback);
-        keyboard_factory = std::make_shared<InputFactory>(keyboard);
-        keyboard_output_factory = std::make_shared<OutputFactory>(keyboard);
-        Common::Input::RegisterInputFactory(keyboard->GetEngineName(), keyboard_factory);
-        Common::Input::RegisterOutputFactory(keyboard->GetEngineName(), keyboard_output_factory);
+        engine = std::make_shared<Engine>(name);
+        engine->SetMappingCallback(mapping_callback);
 
-        mouse = std::make_shared<Mouse>("mouse");
-        mouse->SetMappingCallback(mapping_callback);
-        mouse_factory = std::make_shared<InputFactory>(mouse);
-        mouse_output_factory = std::make_shared<OutputFactory>(mouse);
-        Common::Input::RegisterInputFactory(mouse->GetEngineName(), mouse_factory);
-        Common::Input::RegisterOutputFactory(mouse->GetEngineName(), mouse_output_factory);
+        std::shared_ptr<InputFactory> input_factory = std::make_shared<InputFactory>(engine);
+        std::shared_ptr<OutputFactory> output_factory = std::make_shared<OutputFactory>(engine);
+        Common::Input::RegisterInputFactory(engine->GetEngineName(), std::move(input_factory));
+        Common::Input::RegisterOutputFactory(engine->GetEngineName(), std::move(output_factory));
+    }
 
-        touch_screen = std::make_shared<TouchScreen>("touch");
-        touch_screen_factory = std::make_shared<InputFactory>(touch_screen);
-        Common::Input::RegisterInputFactory(touch_screen->GetEngineName(), touch_screen_factory);
+    void Initialize() {
+        mapping_factory = std::make_shared<MappingFactory>();
 
-        gcadapter = std::make_shared<GCAdapter>("gcpad");
-        gcadapter->SetMappingCallback(mapping_callback);
-        gcadapter_input_factory = std::make_shared<InputFactory>(gcadapter);
-        gcadapter_output_factory = std::make_shared<OutputFactory>(gcadapter);
-        Common::Input::RegisterInputFactory(gcadapter->GetEngineName(), gcadapter_input_factory);
-        Common::Input::RegisterOutputFactory(gcadapter->GetEngineName(), gcadapter_output_factory);
-
-        udp_client = std::make_shared<CemuhookUDP::UDPClient>("cemuhookudp");
-        udp_client->SetMappingCallback(mapping_callback);
-        udp_client_input_factory = std::make_shared<InputFactory>(udp_client);
-        udp_client_output_factory = std::make_shared<OutputFactory>(udp_client);
-        Common::Input::RegisterInputFactory(udp_client->GetEngineName(), udp_client_input_factory);
-        Common::Input::RegisterOutputFactory(udp_client->GetEngineName(),
-                                             udp_client_output_factory);
-
-        tas_input = std::make_shared<TasInput::Tas>("tas");
-        tas_input->SetMappingCallback(mapping_callback);
-        tas_input_factory = std::make_shared<InputFactory>(tas_input);
-        tas_output_factory = std::make_shared<OutputFactory>(tas_input);
-        Common::Input::RegisterInputFactory(tas_input->GetEngineName(), tas_input_factory);
-        Common::Input::RegisterOutputFactory(tas_input->GetEngineName(), tas_output_factory);
-
-        camera = std::make_shared<Camera>("camera");
-        camera->SetMappingCallback(mapping_callback);
-        camera_input_factory = std::make_shared<InputFactory>(camera);
-        camera_output_factory = std::make_shared<OutputFactory>(camera);
-        Common::Input::RegisterInputFactory(camera->GetEngineName(), camera_input_factory);
-        Common::Input::RegisterOutputFactory(camera->GetEngineName(), camera_output_factory);
-
-        virtual_amiibo = std::make_shared<VirtualAmiibo>("virtual_amiibo");
-        virtual_amiibo->SetMappingCallback(mapping_callback);
-        virtual_amiibo_input_factory = std::make_shared<InputFactory>(virtual_amiibo);
-        virtual_amiibo_output_factory = std::make_shared<OutputFactory>(virtual_amiibo);
-        Common::Input::RegisterInputFactory(virtual_amiibo->GetEngineName(),
-                                            virtual_amiibo_input_factory);
-        Common::Input::RegisterOutputFactory(virtual_amiibo->GetEngineName(),
-                                             virtual_amiibo_output_factory);
-
-        virtual_gamepad = std::make_shared<VirtualGamepad>("virtual_gamepad");
-        virtual_gamepad->SetMappingCallback(mapping_callback);
-        virtual_gamepad_input_factory = std::make_shared<InputFactory>(virtual_gamepad);
-        Common::Input::RegisterInputFactory(virtual_gamepad->GetEngineName(),
-                                            virtual_gamepad_input_factory);
-
+        RegisterEngine("keyboard", keyboard);
+        RegisterEngine("mouse", mouse);
+        RegisterEngine("touch", touch_screen);
+        RegisterEngine("gcpad", gcadapter);
+        RegisterEngine("cemuhookudp", udp_client);
+        RegisterEngine("tas", tas_input);
+        RegisterEngine("camera", camera);
+        RegisterEngine("virtual_amiibo", virtual_amiibo);
+        RegisterEngine("virtual_gamepad", virtual_gamepad);
 #ifdef HAVE_SDL2
-        sdl = std::make_shared<SDLDriver>("sdl");
-        sdl->SetMappingCallback(mapping_callback);
-        sdl_input_factory = std::make_shared<InputFactory>(sdl);
-        sdl_output_factory = std::make_shared<OutputFactory>(sdl);
-        Common::Input::RegisterInputFactory(sdl->GetEngineName(), sdl_input_factory);
-        Common::Input::RegisterOutputFactory(sdl->GetEngineName(), sdl_output_factory);
+        RegisterEngine("sdl", sdl);
 #endif
 
         Common::Input::RegisterInputFactory("touch_from_button",
@@ -107,45 +61,25 @@ struct InputSubsystem::Impl {
                                             std::make_shared<StickFromButton>());
     }
 
+    template <typename Engine>
+    void UnregisterEngine(std::shared_ptr<Engine>& engine) {
+        Common::Input::UnregisterInputFactory(engine->GetEngineName());
+        Common::Input::UnregisterOutputFactory(engine->GetEngineName());
+        engine.reset();
+    }
+
     void Shutdown() {
-        Common::Input::UnregisterInputFactory(keyboard->GetEngineName());
-        Common::Input::UnregisterOutputFactory(keyboard->GetEngineName());
-        keyboard.reset();
-
-        Common::Input::UnregisterInputFactory(mouse->GetEngineName());
-        Common::Input::UnregisterOutputFactory(mouse->GetEngineName());
-        mouse.reset();
-
-        Common::Input::UnregisterInputFactory(touch_screen->GetEngineName());
-        touch_screen.reset();
-
-        Common::Input::UnregisterInputFactory(gcadapter->GetEngineName());
-        Common::Input::UnregisterOutputFactory(gcadapter->GetEngineName());
-        gcadapter.reset();
-
-        Common::Input::UnregisterInputFactory(udp_client->GetEngineName());
-        Common::Input::UnregisterOutputFactory(udp_client->GetEngineName());
-        udp_client.reset();
-
-        Common::Input::UnregisterInputFactory(tas_input->GetEngineName());
-        Common::Input::UnregisterOutputFactory(tas_input->GetEngineName());
-        tas_input.reset();
-
-        Common::Input::UnregisterInputFactory(camera->GetEngineName());
-        Common::Input::UnregisterOutputFactory(camera->GetEngineName());
-        camera.reset();
-
-        Common::Input::UnregisterInputFactory(virtual_amiibo->GetEngineName());
-        Common::Input::UnregisterOutputFactory(virtual_amiibo->GetEngineName());
-        virtual_amiibo.reset();
-
-        Common::Input::UnregisterInputFactory(virtual_gamepad->GetEngineName());
-        virtual_gamepad.reset();
-
+        UnregisterEngine(keyboard);
+        UnregisterEngine(mouse);
+        UnregisterEngine(touch_screen);
+        UnregisterEngine(gcadapter);
+        UnregisterEngine(udp_client);
+        UnregisterEngine(tas_input);
+        UnregisterEngine(camera);
+        UnregisterEngine(virtual_amiibo);
+        UnregisterEngine(virtual_gamepad);
 #ifdef HAVE_SDL2
-        Common::Input::UnregisterInputFactory(sdl->GetEngineName());
-        Common::Input::UnregisterOutputFactory(sdl->GetEngineName());
-        sdl.reset();
+        UnregisterEngine(sdl);
 #endif
 
         Common::Input::UnregisterInputFactory("touch_from_button");
@@ -173,117 +107,86 @@ struct InputSubsystem::Impl {
         return devices;
     }
 
-    [[nodiscard]] AnalogMapping GetAnalogMappingForDevice(
+    [[nodiscard]] std::shared_ptr<InputEngine> GetInputEngine(
         const Common::ParamPackage& params) const {
         if (!params.Has("engine") || params.Get("engine", "") == "any") {
-            return {};
+            return nullptr;
         }
         const std::string engine = params.Get("engine", "");
+        if (engine == keyboard->GetEngineName()) {
+            return keyboard;
+        }
         if (engine == mouse->GetEngineName()) {
-            return mouse->GetAnalogMappingForDevice(params);
+            return mouse;
         }
         if (engine == gcadapter->GetEngineName()) {
-            return gcadapter->GetAnalogMappingForDevice(params);
+            return gcadapter;
         }
         if (engine == udp_client->GetEngineName()) {
-            return udp_client->GetAnalogMappingForDevice(params);
-        }
-        if (engine == tas_input->GetEngineName()) {
-            return tas_input->GetAnalogMappingForDevice(params);
+            return udp_client;
         }
 #ifdef HAVE_SDL2
         if (engine == sdl->GetEngineName()) {
-            return sdl->GetAnalogMappingForDevice(params);
+            return sdl;
         }
 #endif
-        return {};
+        return nullptr;
+    }
+
+    [[nodiscard]] AnalogMapping GetAnalogMappingForDevice(
+        const Common::ParamPackage& params) const {
+        const auto input_engine = GetInputEngine(params);
+
+        if (input_engine == nullptr) {
+            return {};
+        }
+
+        return input_engine->GetAnalogMappingForDevice(params);
     }
 
     [[nodiscard]] ButtonMapping GetButtonMappingForDevice(
         const Common::ParamPackage& params) const {
-        if (!params.Has("engine") || params.Get("engine", "") == "any") {
+        const auto input_engine = GetInputEngine(params);
+
+        if (input_engine == nullptr) {
             return {};
         }
-        const std::string engine = params.Get("engine", "");
-        if (engine == gcadapter->GetEngineName()) {
-            return gcadapter->GetButtonMappingForDevice(params);
-        }
-        if (engine == udp_client->GetEngineName()) {
-            return udp_client->GetButtonMappingForDevice(params);
-        }
-        if (engine == tas_input->GetEngineName()) {
-            return tas_input->GetButtonMappingForDevice(params);
-        }
-#ifdef HAVE_SDL2
-        if (engine == sdl->GetEngineName()) {
-            return sdl->GetButtonMappingForDevice(params);
-        }
-#endif
-        return {};
+
+        return input_engine->GetButtonMappingForDevice(params);
     }
 
     [[nodiscard]] MotionMapping GetMotionMappingForDevice(
         const Common::ParamPackage& params) const {
-        if (!params.Has("engine") || params.Get("engine", "") == "any") {
+        const auto input_engine = GetInputEngine(params);
+
+        if (input_engine == nullptr) {
             return {};
         }
-        const std::string engine = params.Get("engine", "");
-        if (engine == udp_client->GetEngineName()) {
-            return udp_client->GetMotionMappingForDevice(params);
-        }
-#ifdef HAVE_SDL2
-        if (engine == sdl->GetEngineName()) {
-            return sdl->GetMotionMappingForDevice(params);
-        }
-#endif
-        return {};
+
+        return input_engine->GetMotionMappingForDevice(params);
     }
 
     Common::Input::ButtonNames GetButtonName(const Common::ParamPackage& params) const {
         if (!params.Has("engine") || params.Get("engine", "") == "any") {
             return Common::Input::ButtonNames::Undefined;
         }
-        const std::string engine = params.Get("engine", "");
-        if (engine == mouse->GetEngineName()) {
-            return mouse->GetUIName(params);
+        const auto input_engine = GetInputEngine(params);
+
+        if (input_engine == nullptr) {
+            return Common::Input::ButtonNames::Invalid;
         }
-        if (engine == gcadapter->GetEngineName()) {
-            return gcadapter->GetUIName(params);
-        }
-        if (engine == udp_client->GetEngineName()) {
-            return udp_client->GetUIName(params);
-        }
-        if (engine == tas_input->GetEngineName()) {
-            return tas_input->GetUIName(params);
-        }
-#ifdef HAVE_SDL2
-        if (engine == sdl->GetEngineName()) {
-            return sdl->GetUIName(params);
-        }
-#endif
-        return Common::Input::ButtonNames::Invalid;
+
+        return input_engine->GetUIName(params);
     }
 
     bool IsStickInverted(const Common::ParamPackage& params) {
-        const std::string engine = params.Get("engine", "");
-        if (engine == mouse->GetEngineName()) {
-            return mouse->IsStickInverted(params);
+        const auto input_engine = GetInputEngine(params);
+
+        if (input_engine == nullptr) {
+            return false;
         }
-        if (engine == gcadapter->GetEngineName()) {
-            return gcadapter->IsStickInverted(params);
-        }
-        if (engine == udp_client->GetEngineName()) {
-            return udp_client->IsStickInverted(params);
-        }
-        if (engine == tas_input->GetEngineName()) {
-            return tas_input->IsStickInverted(params);
-        }
-#ifdef HAVE_SDL2
-        if (engine == sdl->GetEngineName()) {
-            return sdl->IsStickInverted(params);
-        }
-#endif
-        return false;
+
+        return input_engine->IsStickInverted(params);
     }
 
     bool IsController(const Common::ParamPackage& params) {
@@ -353,28 +256,8 @@ struct InputSubsystem::Impl {
     std::shared_ptr<VirtualAmiibo> virtual_amiibo;
     std::shared_ptr<VirtualGamepad> virtual_gamepad;
 
-    std::shared_ptr<InputFactory> keyboard_factory;
-    std::shared_ptr<InputFactory> mouse_factory;
-    std::shared_ptr<InputFactory> gcadapter_input_factory;
-    std::shared_ptr<InputFactory> touch_screen_factory;
-    std::shared_ptr<InputFactory> udp_client_input_factory;
-    std::shared_ptr<InputFactory> tas_input_factory;
-    std::shared_ptr<InputFactory> camera_input_factory;
-    std::shared_ptr<InputFactory> virtual_amiibo_input_factory;
-    std::shared_ptr<InputFactory> virtual_gamepad_input_factory;
-
-    std::shared_ptr<OutputFactory> keyboard_output_factory;
-    std::shared_ptr<OutputFactory> mouse_output_factory;
-    std::shared_ptr<OutputFactory> gcadapter_output_factory;
-    std::shared_ptr<OutputFactory> udp_client_output_factory;
-    std::shared_ptr<OutputFactory> tas_output_factory;
-    std::shared_ptr<OutputFactory> camera_output_factory;
-    std::shared_ptr<OutputFactory> virtual_amiibo_output_factory;
-
 #ifdef HAVE_SDL2
     std::shared_ptr<SDLDriver> sdl;
-    std::shared_ptr<InputFactory> sdl_input_factory;
-    std::shared_ptr<OutputFactory> sdl_output_factory;
 #endif
 };
 

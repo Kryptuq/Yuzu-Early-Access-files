@@ -5,9 +5,9 @@
 
 #include "common/common_types.h"
 #include "core/hle/kernel/global_scheduler_context.h"
+#include "core/hle/kernel/k_hardware_timer.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
-#include "core/hle/kernel/time_manager.h"
 
 namespace Kernel {
 
@@ -22,7 +22,7 @@ public:
     ~KScopedSchedulerLockAndSleep() {
         // Register the sleep.
         if (timeout_tick > 0) {
-            kernel.TimeManager().ScheduleTimeEvent(thread, timeout_tick);
+            kernel.HardwareTimer().RegisterTask(thread, timeout_tick);
         }
 
         // Unlock the scheduler.

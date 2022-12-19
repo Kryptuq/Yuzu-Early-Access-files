@@ -47,7 +47,7 @@ class EmuThread final : public QThread {
     Q_OBJECT
 
 public:
-    explicit EmuThread(Core::System& system_);
+    explicit EmuThread(Core::System& system);
     ~EmuThread() override;
 
     /**
@@ -57,30 +57,30 @@ public:
     void run() override;
 
     /**
-     * Sets whether the emulation thread is running or not
-     * @param running_ Boolean value, set the emulation thread to running if true
-     * @note This function is thread-safe
+     * Sets whether the emulation thread should run or not
+     * @param should_run Boolean value, set the emulation thread to running if true
      */
-    void SetRunning(bool running_) {
-        std::unique_lock lock{running_mutex};
-        running = running_;
-        lock.unlock();
-        running_cv.notify_all();
-        if (!running) {
-            running_wait.Set();
-            /// Wait until effectively paused
-            while (running_guard)
-                ;
+    void SetRunning(bool should_run) {
+        // TODO: Prevent other threads from modifying the state until we finish.
+        {
+            // Notify the running thread to change state.
+            std::unique_lock run_lk{m_should_run_mutex};
+            m_should_run = should_run;
+            m_should_run_cv.notify_one();
+        }
+
+        // Wait until paused, if pausing.
+        if (!should_run) {
+            m_is_running.wait(true);
         }
     }
 
     /**
      * Check if the emulation thread is running or not
      * @return True if the emulation thread is running, otherwise false
-     * @note This function is thread-safe
      */
     bool IsRunning() const {
-        return running;
+        return m_is_running.load();
     }
 
     /**
@@ -88,18 +88,17 @@ public:
      */
     void ForceStop() {
         LOG_WARNING(Frontend, "Force stopping EmuThread");
-        stop_source.request_stop();
-        SetRunning(false);
+        m_stop_source.request_stop();
     }
 
 private:
-    bool running = false;
-    std::stop_source stop_source;
-    std::mutex running_mutex;
-    std::condition_variable_any running_cv;
-    Common::Event running_wait{};
-    std::atomic_bool running_guard{false};
-    Core::System& system;
+    Core::System& m_system;
+
+    std::stop_source m_stop_source;
+    std::mutex m_should_run_mutex;
+    std::condition_variable_any m_should_run_cv;
+    std::atomic<bool> m_is_running{false};
+    bool m_should_run{true};
 
 signals:
     /**
@@ -119,8 +118,6 @@ signals:
      * Qt::BlockingQueuedConnection (additionally block source thread until slot returns)
      */
     void DebugModeLeft();
-
-    void ErrorThrown(Core::SystemResultStatus, std::string);
 
     void LoadProgress(VideoCore::LoadCallbackStage stage, std::size_t value, std::size_t total);
 };

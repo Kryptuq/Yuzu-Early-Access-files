@@ -1497,7 +1497,7 @@ void GMainWindow::SetupSigInterrupts() {
 
 void GMainWindow::HandleSigInterrupt(int sig) {
     if (sig == SIGINT) {
-        exit(1);
+        _exit(1);
     }
 
     // Calling into Qt directly from a signal handler is not safe,
@@ -1793,15 +1793,16 @@ void GMainWindow::ShutdownGame() {
     Settings::values.use_speed_limit.SetValue(true);
 
     system->SetShuttingDown(true);
-    system->DetachDebugger();
     discord_rpc->Pause();
 
     RequestGameExit();
+    emu_thread->disconnect();
+    emu_thread->SetRunning(true);
 
     emit EmulationStopping();
 
     // Wait for emulation thread to complete and delete it
-    if (!emu_thread->wait(5000)) {
+    if (system->DebuggerEnabled() || !emu_thread->wait(5000)) {
         emu_thread->ForceStop();
         emu_thread->wait();
     }
@@ -2918,8 +2919,6 @@ void GMainWindow::OnStartGame() {
 
     emu_thread->SetRunning(true);
 
-    connect(emu_thread.get(), &EmuThread::ErrorThrown, this, &GMainWindow::OnCoreError);
-
     UpdateMenuState();
     OnTasStateChanged();
 
@@ -3901,79 +3900,6 @@ void GMainWindow::OnMouseActivity() {
         ShowMouseCursor();
     }
     mouse_center_timer.stop();
-}
-
-void GMainWindow::OnCoreError(Core::SystemResultStatus result, std::string details) {
-    QMessageBox::StandardButton answer;
-    QString status_message;
-    const QString common_message =
-        tr("The game you are trying to load requires additional files from your Switch to be "
-           "dumped "
-           "before playing.<br/><br/>For more information on dumping these files, please see the "
-           "following wiki page: <a "
-           "href='https://yuzu-emu.org/wiki/"
-           "dumping-system-archives-and-the-shared-fonts-from-a-switch-console/'>Dumping System "
-           "Archives and the Shared Fonts from a Switch Console</a>.<br/><br/>Would you like to "
-           "quit "
-           "back to the game list? Continuing emulation may result in crashes, corrupted save "
-           "data, or other bugs.");
-    switch (result) {
-    case Core::SystemResultStatus::ErrorSystemFiles: {
-        QString message;
-        if (details.empty()) {
-            message =
-                tr("yuzu was unable to locate a Switch system archive. %1").arg(common_message);
-        } else {
-            message = tr("yuzu was unable to locate a Switch system archive: %1. %2")
-                          .arg(QString::fromStdString(details), common_message);
-        }
-
-        answer = QMessageBox::question(this, tr("System Archive Not Found"), message,
-                                       QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-        status_message = tr("System Archive Missing");
-        break;
-    }
-
-    case Core::SystemResultStatus::ErrorSharedFont: {
-        const QString message =
-            tr("yuzu was unable to locate the Switch shared fonts. %1").arg(common_message);
-        answer = QMessageBox::question(this, tr("Shared Fonts Not Found"), message,
-                                       QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-        status_message = tr("Shared Font Missing");
-        break;
-    }
-
-    default:
-        answer = QMessageBox::question(
-            this, tr("Fatal Error"),
-            tr("yuzu has encountered a fatal error, please see the log for more details. "
-               "For more information on accessing the log, please see the following page: "
-               "<a href='https://community.citra-emu.org/t/how-to-upload-the-log-file/296'>How "
-               "to "
-               "Upload the Log File</a>.<br/><br/>Would you like to quit back to the game "
-               "list? "
-               "Continuing emulation may result in crashes, corrupted save data, or other "
-               "bugs."),
-            QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-        status_message = tr("Fatal Error encountered");
-        break;
-    }
-
-    if (answer == QMessageBox::Yes) {
-        if (emu_thread) {
-            ShutdownGame();
-
-            Settings::RestoreGlobalState(system->IsPoweredOn());
-            system->HIDCore().ReloadInputDevices();
-            UpdateStatusButtons();
-        }
-    } else {
-        // Only show the message if the game is still running.
-        if (emu_thread) {
-            emu_thread->SetRunning(true);
-            message_label->setText(status_message);
-        }
-    }
 }
 
 void GMainWindow::OnReinitializeKeys(ReinitializeKeyBehavior behavior) {

@@ -22,6 +22,7 @@
 #include "core/hle/kernel/k_light_lock.h"
 #include "core/hle/kernel/k_spin_lock.h"
 #include "core/hle/kernel/k_synchronization_object.h"
+#include "core/hle/kernel/k_timer_task.h"
 #include "core/hle/kernel/k_worker_task.h"
 #include "core/hle/kernel/slab_helpers.h"
 #include "core/hle/kernel/svc_common.h"
@@ -112,7 +113,8 @@ void SetCurrentThread(KernelCore& kernel, KThread* thread);
 [[nodiscard]] s32 GetCurrentCoreId(KernelCore& kernel);
 
 class KThread final : public KAutoObjectWithSlabHeapAndContainer<KThread, KWorkerTask>,
-                      public boost::intrusive::list_base_hook<> {
+                      public boost::intrusive::list_base_hook<>,
+                      public KTimerTask {
     KERNEL_AUTOOBJECT_TRAITS(KThread, KSynchronizationObject);
 
 private:
@@ -839,5 +841,9 @@ public:
 private:
     KernelCore& kernel;
 };
+
+inline void KTimerTask::OnTimer() {
+    static_cast<KThread*>(this)->OnTimer();
+}
 
 } // namespace Kernel

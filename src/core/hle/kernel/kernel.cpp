@@ -26,6 +26,7 @@
 #include "core/hle/kernel/k_client_port.h"
 #include "core/hle/kernel/k_dynamic_resource_manager.h"
 #include "core/hle/kernel/k_handle_table.h"
+#include "core/hle/kernel/k_hardware_timer.h"
 #include "core/hle/kernel/k_memory_layout.h"
 #include "core/hle/kernel/k_memory_manager.h"
 #include "core/hle/kernel/k_page_buffer.h"
@@ -39,7 +40,6 @@
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/physical_core.h"
 #include "core/hle/kernel/service_thread.h"
-#include "core/hle/kernel/time_manager.h"
 #include "core/hle/result.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/memory.h"
@@ -55,7 +55,7 @@ struct KernelCore::Impl {
     static constexpr size_t ReservedDynamicPageCount = 64;
 
     explicit Impl(Core::System& system_, KernelCore& kernel_)
-        : time_manager{system_}, service_threads_manager{1, "ServiceThreadsManager"},
+        : service_threads_manager{1, "ServiceThreadsManager"},
           service_thread_barrier{2}, system{system_} {}
 
     void SetMulticore(bool is_multi) {
@@ -63,6 +63,9 @@ struct KernelCore::Impl {
     }
 
     void Initialize(KernelCore& kernel) {
+        hardware_timer = std::make_unique<Kernel::KHardwareTimer>(kernel);
+        hardware_timer->Initialize();
+
         global_object_list_container = std::make_unique<KAutoObjectWithListContainer>(kernel);
         global_scheduler_context = std::make_unique<Kernel::GlobalSchedulerContext>(kernel);
         global_handle_table = std::make_unique<Kernel::KHandleTable>(kernel);
@@ -193,6 +196,9 @@ struct KernelCore::Impl {
         // Ensure that the object list container is finalized and properly shutdown.
         global_object_list_container->Finalize();
         global_object_list_container.reset();
+
+        hardware_timer->Finalize();
+        hardware_timer.reset();
     }
 
     void CloseServices() {
@@ -832,7 +838,7 @@ struct KernelCore::Impl {
     std::vector<KProcess*> process_list;
     std::atomic<KProcess*> current_process{};
     std::unique_ptr<Kernel::GlobalSchedulerContext> global_scheduler_context;
-    Kernel::TimeManager time_manager;
+    std::unique_ptr<Kernel::KHardwareTimer> hardware_timer;
 
     Init::KSlabResourceCounts slab_resource_counts{};
     KResourceLimit* system_resource_limit{};
@@ -1019,12 +1025,8 @@ Kernel::KScheduler* KernelCore::CurrentScheduler() {
     return impl->schedulers[core_id].get();
 }
 
-Kernel::TimeManager& KernelCore::TimeManager() {
-    return impl->time_manager;
-}
-
-const Kernel::TimeManager& KernelCore::TimeManager() const {
-    return impl->time_manager;
+Kernel::KHardwareTimer& KernelCore::HardwareTimer() {
+    return *impl->hardware_timer;
 }
 
 Core::ExclusiveMonitor& KernelCore::GetExclusiveMonitor() {

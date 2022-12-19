@@ -10,7 +10,6 @@
 #include "core/hle/kernel/k_thread_queue.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/svc_results.h"
-#include "core/hle/kernel/time_manager.h"
 #include "core/memory.h"
 
 namespace Kernel {

@@ -201,6 +201,9 @@ add_library(core STATIC
     hle/kernel/k_event_info.h
     hle/kernel/k_handle_table.cpp
     hle/kernel/k_handle_table.h
+    hle/kernel/k_hardware_timer_base.h
+    hle/kernel/k_hardware_timer.cpp
+    hle/kernel/k_hardware_timer.h
     hle/kernel/k_interrupt_manager.cpp
     hle/kernel/k_interrupt_manager.h
     hle/kernel/k_light_condition_variable.cpp
@@ -268,6 +271,7 @@ add_library(core STATIC
     hle/kernel/k_thread_local_page.h
     hle/kernel/k_thread_queue.cpp
     hle/kernel/k_thread_queue.h
+    hle/kernel/k_timer_task.h
     hle/kernel/k_trace.h
     hle/kernel/k_transfer_memory.cpp
     hle/kernel/k_transfer_memory.h
@@ -290,8 +294,6 @@ add_library(core STATIC
     hle/kernel/svc_common.h
     hle/kernel/svc_types.h
     hle/kernel/svc_wrap.h
-    hle/kernel/time_manager.cpp
-    hle/kernel/time_manager.h
     hle/result.h
     hle/service/acc/acc.cpp
     hle/service/acc/acc.h

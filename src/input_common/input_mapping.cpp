@@ -200,12 +200,6 @@ bool MappingFactory::IsDriverValid(const MappingData& data) const {
         return false;
     }
     // The following drivers don't need to be mapped
-    if (data.engine == "tas") {
-        return false;
-    }
-    if (data.engine == "touch") {
-        return false;
-    }
     if (data.engine == "touch_from_button") {
         return false;
     }

@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "core/hle/kernel/k_hardware_timer.h"
 #include "core/hle/kernel/k_thread_queue.h"
 #include "core/hle/kernel/kernel.h"
-#include "core/hle/kernel/time_manager.h"
 
 namespace Kernel {
 
@@ -22,7 +22,7 @@ void KThreadQueue::EndWait(KThread* waiting_thread, Result wait_result) {
     waiting_thread->ClearWaitQueue();
 
     // Cancel the thread task.
-    kernel.TimeManager().UnscheduleTimeEvent(waiting_thread);
+    kernel.HardwareTimer().CancelTask(waiting_thread);
 }
 
 void KThreadQueue::CancelWait(KThread* waiting_thread, Result wait_result, bool cancel_timer_task) {
@@ -37,7 +37,7 @@ void KThreadQueue::CancelWait(KThread* waiting_thread, Result wait_result, bool 
 
     // Cancel the thread task.
     if (cancel_timer_task) {
-        kernel.TimeManager().UnscheduleTimeEvent(waiting_thread);
+        kernel.HardwareTimer().CancelTask(waiting_thread);
     }
 }
 
