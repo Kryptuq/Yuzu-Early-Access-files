@@ -259,3 +259,9 @@ void OverlayDialog::InputThread() {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }
+
+void OverlayDialog::keyPressEvent(QKeyEvent* e) {
+    if (!ui->buttonsDialog->isHidden() || e->key() != Qt::Key_Escape) {
+        QDialog::keyPressEvent(e);
+    }
+}

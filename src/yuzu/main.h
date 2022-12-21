@@ -29,6 +29,7 @@ class GImageInfo;
 class GRenderWindow;
 class LoadingScreen;
 class MicroProfileDialog;
+class OverlayDialog;
 class ProfilerWidget;
 class ControllerDialog;
 class QLabel;
@@ -335,6 +336,10 @@ private slots:
     void OnReinitializeKeys(ReinitializeKeyBehavior behavior);
     void OnLanguageChanged(const QString& locale);
     void OnMouseActivity();
+    void OnShutdownBegin();
+    void OnShutdownBeginDialog();
+    void OnEmulationStopped();
+    void OnEmulationStopTimeExpired();
 
 private:
     QString GetGameListErrorRemoving(InstalledEntryType type) const;
@@ -384,6 +389,8 @@ private:
     GRenderWindow* render_window;
     GameList* game_list;
     LoadingScreen* loading_screen;
+    QTimer shutdown_timer;
+    OverlayDialog* shutdown_dialog;
 
     GameListPlaceholder* game_list_placeholder;
 

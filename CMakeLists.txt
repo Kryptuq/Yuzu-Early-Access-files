@@ -208,7 +208,7 @@ find_package(libusb 1.0.24)
 find_package(lz4 REQUIRED)
 find_package(nlohmann_json 3.8 REQUIRED)
 find_package(Opus 1.3)
-find_package(Vulkan 1.3.213)
+find_package(Vulkan 1.3.238)
 find_package(ZLIB 1.2 REQUIRED)
 find_package(zstd 1.5 REQUIRED)
 

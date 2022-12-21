@@ -94,6 +94,7 @@ private:
 
     /// The thread where input is being polled and processed.
     void InputThread();
+    void keyPressEvent(QKeyEvent* e) override;
 
     std::unique_ptr<Ui::OverlayDialog> ui;
 
