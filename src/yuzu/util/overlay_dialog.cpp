@@ -3,6 +3,7 @@
 
 #include <QKeyEvent>
 #include <QScreen>
+#include <QWindow>
 
 #include "core/core.h"
 #include "core/hid/hid_types.h"
@@ -162,7 +163,7 @@ void OverlayDialog::MoveAndResizeWindow() {
     const auto height = static_cast<float>(parentWidget()->height());
 
     // High DPI
-    const float dpi_scale = qApp->screenAt(pos)->logicalDotsPerInch() / 96.0f;
+    const float dpi_scale = parentWidget()->windowHandle()->screen()->logicalDotsPerInch() / 96.0f;
 
     const auto title_text_font_size = BASE_TITLE_FONT_SIZE * (height / BASE_HEIGHT) / dpi_scale;
     const auto body_text_font_size =
