@@ -24,7 +24,7 @@ void State::BindRasterizer(VideoCore::RasterizerInterface* rasterizer_) {
 void State::ProcessExec(const bool is_linear_) {
     write_offset = 0;
     copy_size = regs.line_length_in * regs.line_count;
-    inner_buffer.resize(copy_size);
+    inner_buffer.resize_destructive(copy_size);
     is_linear = is_linear_;
 }
 
@@ -70,7 +70,7 @@ void State::ProcessData(std::span<const u8> read_buffer) {
         const std::size_t dst_size = Tegra::Texture::CalculateSize(
             true, bytes_per_pixel, width, regs.dest.height, regs.dest.depth,
             regs.dest.BlockHeight(), regs.dest.BlockDepth());
-        tmp_buffer.resize(dst_size);
+        tmp_buffer.resize_destructive(dst_size);
         memory_manager.ReadBlock(address, tmp_buffer.data(), dst_size);
         Tegra::Texture::SwizzleSubrect(tmp_buffer, read_buffer, bytes_per_pixel, width,
                                        regs.dest.height, regs.dest.depth, x_offset, regs.dest.y,

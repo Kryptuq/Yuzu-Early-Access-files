@@ -8,6 +8,7 @@ add_executable(tests
     common/host_memory.cpp
     common/param_package.cpp
     common/ring_buffer.cpp
+    common/scratch_buffer.cpp
     common/unique_function.cpp
     core/core_timing.cpp
     core/internal_network/network.cpp

@@ -368,7 +368,7 @@ private:
     void InvalidateScale(Image& image);
     bool ScaleUp(Image& image);
     bool ScaleDown(Image& image);
-    u64 GetScaledImageSizeBytes(ImageBase& image);
+    u64 GetScaledImageSizeBytes(const ImageBase& image);
 
     Runtime& runtime;
 
@@ -416,6 +416,9 @@ private:
     DelayedDestructionRing<Framebuffer, TICKS_TO_DESTROY> sentenced_framebuffers;
 
     std::unordered_map<GPUVAddr, ImageAllocId> image_allocs_table;
+
+    std::vector<u8> swizzle_data_buffer;
+    std::vector<u8> unswizzle_data_buffer;
 
     u64 modification_tick = 0;
     u64 frame_tick = 0;

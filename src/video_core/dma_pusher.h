@@ -4,11 +4,13 @@
 #pragma once
 
 #include <array>
+#include <span>
 #include <vector>
 #include <queue>
 
 #include "common/bit_field.h"
 #include "common/common_types.h"
+#include "common/scratch_buffer.h"
 #include "video_core/engines/engine_interface.h"
 #include "video_core/engines/puller.h"
 
@@ -136,13 +138,15 @@ private:
     static constexpr u32 non_puller_methods = 0x40;
     static constexpr u32 max_subchannels = 8;
     bool Step();
+    void ProcessCommands(std::span<const CommandHeader> commands);
 
     void SetState(const CommandHeader& command_header);
 
     void CallMethod(u32 argument) const;
     void CallMultiMethod(const u32* base_start, u32 num_methods) const;
 
-    std::vector<CommandHeader> command_headers; ///< Buffer for list of commands fetched at once
+    Common::ScratchBuffer<CommandHeader>
+        command_headers; ///< Buffer for list of commands fetched at once
 
     std::queue<CommandList> dma_pushbuffer; ///< Queue of command lists to be processed
     std::size_t dma_pushbuffer_subindex{};  ///< Index within a command list within the pushbuffer
@@ -159,7 +163,7 @@ private:
     DmaState dma_state{};
     bool dma_increment_once{};
 
-    bool ib_enable{true}; ///< IB mode enabled
+    const bool ib_enable{true}; ///< IB mode enabled
 
     std::array<Engines::EngineInterface*, max_subchannels> subchannels{};
 

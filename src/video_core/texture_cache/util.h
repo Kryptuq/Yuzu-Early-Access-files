@@ -59,6 +59,7 @@ struct OverlapResult {
 
 [[nodiscard]] std::vector<BufferImageCopy> UnswizzleImage(Tegra::MemoryManager& gpu_memory,
                                                           GPUVAddr gpu_addr, const ImageInfo& info,
+                                                          std::span<const u8> input,
                                                           std::span<u8> output);
 
 [[nodiscard]] BufferCopy UploadBufferCopy(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr,
@@ -76,7 +77,8 @@ void ConvertImage(std::span<const u8> input, const ImageInfo& info, std::span<u8
 [[nodiscard]] std::vector<SwizzleParameters> FullUploadSwizzles(const ImageInfo& info);
 
 void SwizzleImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr, const ImageInfo& info,
-                  std::span<const BufferImageCopy> copies, std::span<const u8> memory);
+                  std::span<const BufferImageCopy> copies, std::span<const u8> memory,
+                  std::vector<u8>& tmp_buffer);
 
 [[nodiscard]] bool IsBlockLinearSizeCompatible(const ImageInfo& new_info,
                                                const ImageInfo& overlap_info, u32 new_level,

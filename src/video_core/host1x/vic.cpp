@@ -155,7 +155,7 @@ void Vic::WriteRGBFrame(const AVFrame* frame, const VicConfig& config) {
         // swizzle pitch linear to block linear
         const u32 block_height = static_cast<u32>(config.block_linear_height_log2);
         const auto size = Texture::CalculateSize(true, 4, width, height, 1, block_height, 0);
-        luma_buffer.resize(size);
+        luma_buffer.resize_destructive(size);
         std::span<const u8> frame_buff(converted_frame_buf_addr, 4 * width * height);
         Texture::SwizzleSubrect(luma_buffer, frame_buff, 4, width, height, 1, 0, 0, width, height,
                                 block_height, 0, width * 4);
@@ -181,8 +181,8 @@ void Vic::WriteYUVFrame(const AVFrame* frame, const VicConfig& config) {
 
     const auto stride = static_cast<size_t>(frame->linesize[0]);
 
-    luma_buffer.resize(aligned_width * surface_height);
-    chroma_buffer.resize(aligned_width * surface_height / 2);
+    luma_buffer.resize_destructive(aligned_width * surface_height);
+    chroma_buffer.resize_destructive(aligned_width * surface_height / 2);
 
     // Populate luma buffer
     const u8* luma_src = frame->data[0];

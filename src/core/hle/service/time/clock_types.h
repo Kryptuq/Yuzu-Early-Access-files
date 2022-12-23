@@ -49,6 +49,7 @@ struct SteadyClockContext {
 static_assert(sizeof(SteadyClockContext) == 0x18, "SteadyClockContext is incorrect size");
 static_assert(std::is_trivially_copyable_v<SteadyClockContext>,
               "SteadyClockContext must be trivially copyable");
+using StandardSteadyClockTimePointType = SteadyClockContext;
 
 struct SystemClockContext {
     s64 offset;

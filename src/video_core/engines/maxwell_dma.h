@@ -6,8 +6,10 @@
 #include <array>
 #include <cstddef>
 #include <vector>
+
 #include "common/bit_field.h"
 #include "common/common_types.h"
+#include "common/scratch_buffer.h"
 #include "video_core/engines/engine_interface.h"
 
 namespace Core {
@@ -234,9 +236,9 @@ private:
     MemoryManager& memory_manager;
     VideoCore::RasterizerInterface* rasterizer = nullptr;
 
-    std::vector<u8> read_buffer;
-    std::vector<u8> write_buffer;
-    std::vector<u8> intermediate_buffer;
+    Common::ScratchBuffer<u8> read_buffer;
+    Common::ScratchBuffer<u8> write_buffer;
+    Common::ScratchBuffer<u8> intermediate_buffer;
 
     static constexpr std::size_t NUM_REGS = 0x800;
     struct Regs {

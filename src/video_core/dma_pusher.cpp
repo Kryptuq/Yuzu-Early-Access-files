@@ -56,7 +56,7 @@ bool DmaPusher::Step() {
 
     if (command_list.prefetch_command_list.size()) {
         // Prefetched command list from nvdrv, used for things like synchronization
-        command_headers = std::move(command_list.prefetch_command_list);
+        ProcessCommands(command_list.prefetch_command_list);
         dma_pushbuffer.pop();
     } else {
         const CommandListHeader command_list_header{
@@ -74,7 +74,7 @@ bool DmaPusher::Step() {
         }
 
         // Push buffer non-empty, read a word
-        command_headers.resize(command_list_header.size);
+        command_headers.resize_destructive(command_list_header.size);
         if (Settings::IsGPULevelHigh()) {
             memory_manager.ReadBlock(dma_get, command_headers.data(),
                                      command_list_header.size * sizeof(u32));
@@ -82,16 +82,21 @@ bool DmaPusher::Step() {
             memory_manager.ReadBlockUnsafe(dma_get, command_headers.data(),
                                            command_list_header.size * sizeof(u32));
         }
+        ProcessCommands(command_headers);
     }
-    for (std::size_t index = 0; index < command_headers.size();) {
-        const CommandHeader& command_header = command_headers[index];
+
+    return true;
+}
+
+void DmaPusher::ProcessCommands(std::span<const CommandHeader> commands) {
+    for (std::size_t index = 0; index < commands.size();) {
+        const CommandHeader& command_header = commands[index];
 
         if (dma_state.method_count) {
             // Data word of methods command
             if (dma_state.non_incrementing) {
                 const u32 max_write = static_cast<u32>(
-                    std::min<std::size_t>(index + dma_state.method_count, command_headers.size()) -
-                    index);
+                    std::min<std::size_t>(index + dma_state.method_count, commands.size()) - index);
                 CallMultiMethod(&command_header.argument, max_write);
                 dma_state.method_count -= max_write;
                 dma_state.is_last_call = true;
@@ -142,8 +147,6 @@ bool DmaPusher::Step() {
         }
         index++;
     }
-
-    return true;
 }
 
 void DmaPusher::SetState(const CommandHeader& command_header) {

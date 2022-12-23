@@ -26,23 +26,24 @@ void SharedMemory::SetupStandardSteadyClock(const Common::UUID& clock_source_id,
     const Clock::SteadyClockContext context{
         static_cast<u64>(current_time_point.nanoseconds - ticks_time_span.nanoseconds),
         clock_source_id};
-    shared_memory_format.standard_steady_clock_timepoint.StoreData(
-        system.Kernel().GetTimeSharedMem().GetPointer(), context);
+    StoreToLockFreeAtomicType(&GetFormat()->standard_steady_clock_timepoint, context);
 }
 
 void SharedMemory::UpdateLocalSystemClockContext(const Clock::SystemClockContext& context) {
-    shared_memory_format.standard_local_system_clock_context.StoreData(
-        system.Kernel().GetTimeSharedMem().GetPointer(), context);
+    StoreToLockFreeAtomicType(&GetFormat()->standard_local_system_clock_context, context);
 }
 
 void SharedMemory::UpdateNetworkSystemClockContext(const Clock::SystemClockContext& context) {
-    shared_memory_format.standard_network_system_clock_context.StoreData(
-        system.Kernel().GetTimeSharedMem().GetPointer(), context);
+    StoreToLockFreeAtomicType(&GetFormat()->standard_network_system_clock_context, context);
 }
 
 void SharedMemory::SetAutomaticCorrectionEnabled(bool is_enabled) {
-    shared_memory_format.standard_user_system_clock_automatic_correction.StoreData(
-        system.Kernel().GetTimeSharedMem().GetPointer(), is_enabled);
+    StoreToLockFreeAtomicType(
+        &GetFormat()->is_standard_user_system_clock_automatic_correction_enabled, is_enabled);
+}
+
+SharedMemory::Format* SharedMemory::GetFormat() {
+    return reinterpret_cast<SharedMemory::Format*>(system.Kernel().GetTimeSharedMem().GetPointer());
 }
 
 } // namespace Service::Time

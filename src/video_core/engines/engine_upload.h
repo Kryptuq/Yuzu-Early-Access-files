@@ -4,9 +4,10 @@
 #pragma once
 
 #include <span>
-#include <vector>
+
 #include "common/bit_field.h"
 #include "common/common_types.h"
+#include "common/scratch_buffer.h"
 
 namespace Tegra {
 class MemoryManager;
@@ -73,8 +74,8 @@ private:
 
     u32 write_offset = 0;
     u32 copy_size = 0;
-    std::vector<u8> inner_buffer;
-    std::vector<u8> tmp_buffer;
+    Common::ScratchBuffer<u8> inner_buffer;
+    Common::ScratchBuffer<u8> tmp_buffer;
     bool is_linear = false;
     Registers& regs;
     MemoryManager& memory_manager;

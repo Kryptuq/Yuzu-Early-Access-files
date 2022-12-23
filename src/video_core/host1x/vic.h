@@ -4,8 +4,9 @@
 #pragma once
 
 #include <memory>
-#include <vector>
+
 #include "common/common_types.h"
+#include "common/scratch_buffer.h"
 
 struct SwsContext;
 
@@ -49,8 +50,8 @@ private:
     /// size does not change during a stream
     using AVMallocPtr = std::unique_ptr<u8, decltype(&av_free)>;
     AVMallocPtr converted_frame_buffer;
-    std::vector<u8> luma_buffer;
-    std::vector<u8> chroma_buffer;
+    Common::ScratchBuffer<u8> luma_buffer;
+    Common::ScratchBuffer<u8> chroma_buffer;
 
     GPUVAddr config_struct_address{};
     GPUVAddr output_surface_luma_address{};

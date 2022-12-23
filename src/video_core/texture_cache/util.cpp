@@ -505,7 +505,7 @@ void SwizzlePitchLinearImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr
 
 void SwizzleBlockLinearImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr,
                              const ImageInfo& info, const BufferImageCopy& copy,
-                             std::span<const u8> input) {
+                             std::span<const u8> input, std::vector<u8>& tmp_buffer) {
     const Extent3D size = info.size;
     const LevelInfo level_info = MakeLevelInfo(info);
     const Extent2D tile_size = DefaultBlockSize(info.format);
@@ -534,8 +534,8 @@ void SwizzleBlockLinearImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr
                        tile_size.height, info.tile_width_spacing);
     const size_t subresource_size = sizes[level];
 
-    const auto dst_data = std::make_unique<u8[]>(subresource_size);
-    const std::span<u8> dst(dst_data.get(), subresource_size);
+    tmp_buffer.resize(subresource_size);
+    const std::span<u8> dst(tmp_buffer);
 
     for (s32 layer = 0; layer < info.resources.layers; ++layer) {
         const std::span<const u8> src = input.subspan(host_offset);
@@ -765,8 +765,9 @@ bool IsValidEntry(const Tegra::MemoryManager& gpu_memory, const TICEntry& config
 }
 
 std::vector<BufferImageCopy> UnswizzleImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr,
-                                            const ImageInfo& info, std::span<u8> output) {
-    const size_t guest_size_bytes = CalculateGuestSizeInBytes(info);
+                                            const ImageInfo& info, std::span<const u8> input,
+                                            std::span<u8> output) {
+    const size_t guest_size_bytes = input.size_bytes();
     const u32 bpp_log2 = BytesPerBlockLog2(info.format);
     const Extent3D size = info.size;
 
@@ -789,10 +790,6 @@ std::vector<BufferImageCopy> UnswizzleImage(Tegra::MemoryManager& gpu_memory, GP
             .image_extent = size,
         }};
     }
-    const auto input_data = std::make_unique<u8[]>(guest_size_bytes);
-    gpu_memory.ReadBlockUnsafe(gpu_addr, input_data.get(), guest_size_bytes);
-    const std::span<const u8> input(input_data.get(), guest_size_bytes);
-
     const LevelInfo level_info = MakeLevelInfo(info);
     const s32 num_layers = info.resources.layers;
     const s32 num_levels = info.resources.levels;
@@ -980,13 +977,14 @@ std::vector<SwizzleParameters> FullUploadSwizzles(const ImageInfo& info) {
 }
 
 void SwizzleImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr, const ImageInfo& info,
-                  std::span<const BufferImageCopy> copies, std::span<const u8> memory) {
+                  std::span<const BufferImageCopy> copies, std::span<const u8> memory,
+                  std::vector<u8>& tmp_buffer) {
     const bool is_pitch_linear = info.type == ImageType::Linear;
     for (const BufferImageCopy& copy : copies) {
         if (is_pitch_linear) {
             SwizzlePitchLinearImage(gpu_memory, gpu_addr, info, copy, memory);
         } else {
-            SwizzleBlockLinearImage(gpu_memory, gpu_addr, info, copy, memory);
+            SwizzleBlockLinearImage(gpu_memory, gpu_addr, info, copy, memory, tmp_buffer);
         }
     }
 }

@@ -20,6 +20,7 @@
 #include "common/lru_cache.h"
 #include "common/microprofile.h"
 #include "common/polyfill_ranges.h"
+#include "common/scratch_buffer.h"
 #include "common/settings.h"
 #include "core/memory.h"
 #include "video_core/buffer_cache/buffer_base.h"
@@ -422,8 +423,7 @@ private:
     IntervalSet common_ranges;
     std::deque<IntervalSet> committed_ranges;
 
-    size_t immediate_buffer_capacity = 0;
-    std::unique_ptr<u8[]> immediate_buffer_alloc;
+    Common::ScratchBuffer<u8> immediate_buffer_alloc;
 
     struct LRUItemParams {
         using ObjectType = BufferId;
@@ -1927,11 +1927,8 @@ std::span<const u8> BufferCache<P>::ImmediateBufferWithData(VAddr cpu_addr, size
 
 template <class P>
 std::span<u8> BufferCache<P>::ImmediateBuffer(size_t wanted_capacity) {
-    if (wanted_capacity > immediate_buffer_capacity) {
-        immediate_buffer_capacity = wanted_capacity;
-        immediate_buffer_alloc = std::make_unique<u8[]>(wanted_capacity);
-    }
-    return std::span<u8>(immediate_buffer_alloc.get(), wanted_capacity);
+    immediate_buffer_alloc.resize_destructive(wanted_capacity);
+    return std::span<u8>(immediate_buffer_alloc.data(), wanted_capacity);
 }
 
 template <class P>
