@@ -9,7 +9,7 @@
 #include "core/hle/service/hid/hidbus/hidbus_base.h"
 
 namespace Core::HID {
-class EmulatedDevices;
+class EmulatedController;
 } // namespace Core::HID
 
 namespace Service::HID {
@@ -248,6 +248,6 @@ private:
         .zero = {.value = idle_value, .crc = 225},
     };
 
-    Core::HID::EmulatedDevices* input;
+    Core::HID::EmulatedController* input;
 };
 } // namespace Service::HID

@@ -80,7 +80,7 @@ public:
      * @return True if the emulation thread is running, otherwise false
      */
     bool IsRunning() const {
-        return m_is_running.load();
+        return m_is_running.load() || m_should_run;
     }
 
     /**

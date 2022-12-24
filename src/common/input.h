@@ -51,6 +51,8 @@ enum class PollingMode {
     NFC,
     // Enable infrared camera polling
     IR,
+    // Enable ring controller polling
+    Ring,
 };
 
 enum class CameraFormat {
@@ -67,6 +69,7 @@ enum class VibrationError {
     None,
     NotSupported,
     Disabled,
+    InvalidHandle,
     Unknown,
 };
 
@@ -74,6 +77,7 @@ enum class VibrationError {
 enum class PollingError {
     None,
     NotSupported,
+    InvalidHandle,
     Unknown,
 };
 
@@ -190,6 +194,8 @@ struct TouchStatus {
 struct BodyColorStatus {
     u32 body{};
     u32 buttons{};
+    u32 left_grip{};
+    u32 right_grip{};
 };
 
 // HD rumble data
@@ -228,17 +234,31 @@ enum class ButtonNames {
     Engine,
     // This will display the button by value instead of the button name
     Value,
+
+    // Joycon button names
     ButtonLeft,
     ButtonRight,
     ButtonDown,
     ButtonUp,
-    TriggerZ,
-    TriggerR,
-    TriggerL,
     ButtonA,
     ButtonB,
     ButtonX,
     ButtonY,
+    ButtonPlus,
+    ButtonMinus,
+    ButtonHome,
+    ButtonCapture,
+    ButtonStickL,
+    ButtonStickR,
+    TriggerL,
+    TriggerZL,
+    TriggerSL,
+    TriggerR,
+    TriggerZR,
+    TriggerSR,
+
+    // GC button names
+    TriggerZ,
     ButtonStart,
 
     // DS4 button names

@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 
 #include "common/common_types.h"
@@ -26,9 +27,8 @@ public:
     ~KSharedMemory() override;
 
     Result Initialize(Core::DeviceMemory& device_memory_, KProcess* owner_process_,
-                      KPageGroup&& page_list_, Svc::MemoryPermission owner_permission_,
-                      Svc::MemoryPermission user_permission_, PAddr physical_address_,
-                      std::size_t size_, std::string name_);
+                      Svc::MemoryPermission owner_permission_,
+                      Svc::MemoryPermission user_permission_, std::size_t size_, std::string name_);
 
     /**
      * Maps a shared memory block to an address in the target process' address space
@@ -76,7 +76,7 @@ public:
 private:
     Core::DeviceMemory* device_memory{};
     KProcess* owner_process{};
-    KPageGroup page_list;
+    std::optional<KPageGroup> page_group{};
     Svc::MemoryPermission owner_permission{};
     Svc::MemoryPermission user_permission{};
     PAddr physical_address{};

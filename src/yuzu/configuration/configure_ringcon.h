@@ -13,7 +13,7 @@ class InputSubsystem;
 
 namespace Core::HID {
 class HIDCore;
-class EmulatedDevices;
+class EmulatedController;
 } // namespace Core::HID
 
 namespace Ui {
@@ -78,7 +78,7 @@ private:
     std::optional<std::function<void(const Common::ParamPackage&)>> input_setter;
 
     InputCommon::InputSubsystem* input_subsystem;
-    Core::HID::EmulatedDevices* emulated_device;
+    Core::HID::EmulatedController* emulated_controller;
 
     std::unique_ptr<Ui::ConfigureRingController> ui;
 };

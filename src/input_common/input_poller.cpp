@@ -498,6 +498,58 @@ private:
     InputEngine* input_engine;
 };
 
+class InputFromColor final : public Common::Input::InputDevice {
+public:
+    explicit InputFromColor(PadIdentifier identifier_, InputEngine* input_engine_)
+        : identifier(identifier_), input_engine(input_engine_) {
+        UpdateCallback engine_callback{[this]() { OnChange(); }};
+        const InputIdentifier input_identifier{
+            .identifier = identifier,
+            .type = EngineInputType::Color,
+            .index = 0,
+            .callback = engine_callback,
+        };
+        last_color_value = {};
+        callback_key = input_engine->SetCallback(input_identifier);
+    }
+
+    ~InputFromColor() override {
+        input_engine->DeleteCallback(callback_key);
+    }
+
+    Common::Input::BodyColorStatus GetStatus() const {
+        return input_engine->GetColor(identifier);
+    }
+
+    void ForceUpdate() override {
+        const Common::Input::CallbackStatus status{
+            .type = Common::Input::InputType::Color,
+            .color_status = GetStatus(),
+        };
+
+        last_color_value = status.color_status;
+        TriggerOnChange(status);
+    }
+
+    void OnChange() {
+        const Common::Input::CallbackStatus status{
+            .type = Common::Input::InputType::Color,
+            .color_status = GetStatus(),
+        };
+
+        if (status.color_status.body != last_color_value.body) {
+            last_color_value = status.color_status;
+            TriggerOnChange(status);
+        }
+    }
+
+private:
+    const PadIdentifier identifier;
+    int callback_key;
+    Common::Input::BodyColorStatus last_color_value;
+    InputEngine* input_engine;
+};
+
 class InputFromMotion final : public Common::Input::InputDevice {
 public:
     explicit InputFromMotion(PadIdentifier identifier_, int motion_sensor_, float gyro_threshold_,
@@ -966,6 +1018,18 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateBatteryDevice(
     return std::make_unique<InputFromBattery>(identifier, input_engine.get());
 }
 
+std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateColorDevice(
+    const Common::ParamPackage& params) {
+    const PadIdentifier identifier = {
+        .guid = Common::UUID{params.Get("guid", "")},
+        .port = static_cast<std::size_t>(params.Get("port", 0)),
+        .pad = static_cast<std::size_t>(params.Get("pad", 0)),
+    };
+
+    input_engine->PreSetController(identifier);
+    return std::make_unique<InputFromColor>(identifier, input_engine.get());
+}
+
 std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateMotionDevice(
     Common::ParamPackage params) {
     const PadIdentifier identifier = {
@@ -1052,6 +1116,9 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::Create(
     const Common::ParamPackage& params) {
     if (params.Has("battery")) {
         return CreateBatteryDevice(params);
+    }
+    if (params.Has("color")) {
+        return CreateColorDevice(params);
     }
     if (params.Has("camera")) {
         return CreateCameraDevice(params);

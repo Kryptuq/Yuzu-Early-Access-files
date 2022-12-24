@@ -6,7 +6,7 @@
 #include <QMenu>
 #include <QTimer>
 
-#include "core/hid/emulated_devices.h"
+#include "core/hid/emulated_controller.h"
 #include "core/hid/hid_core.h"
 #include "input_common/drivers/keyboard.h"
 #include "input_common/drivers/mouse.h"
@@ -126,9 +126,9 @@ ConfigureRingController::ConfigureRingController(QWidget* parent,
         ui->buttonRingAnalogPush,
     };
 
-    emulated_device = hid_core_.GetEmulatedDevices();
-    emulated_device->SaveCurrentConfig();
-    emulated_device->EnableConfiguration();
+    emulated_controller = hid_core_.GetEmulatedController(Core::HID::NpadIdType::Player1);
+    emulated_controller->SaveCurrentConfig();
+    emulated_controller->EnableConfiguration();
 
     LoadConfiguration();
 
@@ -143,9 +143,9 @@ ConfigureRingController::ConfigureRingController(QWidget* parent,
             HandleClick(
                 analog_map_buttons[sub_button_id],
                 [=, this](const Common::ParamPackage& params) {
-                    Common::ParamPackage param = emulated_device->GetRingParam();
+                    Common::ParamPackage param = emulated_controller->GetRingParam();
                     SetAnalogParam(params, param, analog_sub_buttons[sub_button_id]);
-                    emulated_device->SetRingParam(param);
+                    emulated_controller->SetRingParam(param);
                 },
                 InputCommon::Polling::InputType::Stick);
         });
@@ -155,16 +155,16 @@ ConfigureRingController::ConfigureRingController(QWidget* parent,
         connect(analog_button, &QPushButton::customContextMenuRequested,
                 [=, this](const QPoint& menu_location) {
                     QMenu context_menu;
-                    Common::ParamPackage param = emulated_device->GetRingParam();
+                    Common::ParamPackage param = emulated_controller->GetRingParam();
                     context_menu.addAction(tr("Clear"), [&] {
-                        emulated_device->SetRingParam({});
+                        emulated_controller->SetRingParam(param);
                         analog_map_buttons[sub_button_id]->setText(tr("[not set]"));
                     });
                     context_menu.addAction(tr("Invert axis"), [&] {
                         const bool invert_value = param.Get("invert_x", "+") == "-";
                         const std::string invert_str = invert_value ? "+" : "-";
                         param.Set("invert_x", invert_str);
-                        emulated_device->SetRingParam(param);
+                        emulated_controller->SetRingParam(param);
                         for (int sub_button_id2 = 0; sub_button_id2 < ANALOG_SUB_BUTTONS_NUM;
                              ++sub_button_id2) {
                             analog_map_buttons[sub_button_id2]->setText(
@@ -177,11 +177,11 @@ ConfigureRingController::ConfigureRingController(QWidget* parent,
     }
 
     connect(ui->sliderRingAnalogDeadzone, &QSlider::valueChanged, [=, this] {
-        Common::ParamPackage param = emulated_device->GetRingParam();
+        Common::ParamPackage param = emulated_controller->GetRingParam();
         const auto slider_value = ui->sliderRingAnalogDeadzone->value();
         ui->labelRingAnalogDeadzone->setText(tr("Deadzone: %1%").arg(slider_value));
         param.Set("deadzone", slider_value / 100.0f);
-        emulated_device->SetRingParam(param);
+        emulated_controller->SetRingParam(param);
     });
 
     connect(ui->restore_defaults_button, &QPushButton::clicked, this,
@@ -202,7 +202,7 @@ ConfigureRingController::ConfigureRingController(QWidget* parent,
 }
 
 ConfigureRingController::~ConfigureRingController() {
-    emulated_device->DisableConfiguration();
+    emulated_controller->DisableConfiguration();
 };
 
 void ConfigureRingController::changeEvent(QEvent* event) {
@@ -219,7 +219,7 @@ void ConfigureRingController::RetranslateUI() {
 
 void ConfigureRingController::UpdateUI() {
     RetranslateUI();
-    const Common::ParamPackage param = emulated_device->GetRingParam();
+    const Common::ParamPackage param = emulated_controller->GetRingParam();
 
     for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM; ++sub_button_id) {
         auto* const analog_button = analog_map_buttons[sub_button_id];
@@ -240,9 +240,9 @@ void ConfigureRingController::UpdateUI() {
 }
 
 void ConfigureRingController::ApplyConfiguration() {
-    emulated_device->DisableConfiguration();
-    emulated_device->SaveCurrentConfig();
-    emulated_device->EnableConfiguration();
+    emulated_controller->DisableConfiguration();
+    emulated_controller->SaveCurrentConfig();
+    emulated_controller->EnableConfiguration();
 }
 
 void ConfigureRingController::LoadConfiguration() {
@@ -252,7 +252,7 @@ void ConfigureRingController::LoadConfiguration() {
 void ConfigureRingController::RestoreDefaults() {
     const std::string default_ring_string = InputCommon::GenerateAnalogParamFromKeys(
         0, 0, Config::default_ringcon_analogs[0], Config::default_ringcon_analogs[1], 0, 0.05f);
-    emulated_device->SetRingParam(Common::ParamPackage(default_ring_string));
+    emulated_controller->SetRingParam(Common::ParamPackage(default_ring_string));
     UpdateUI();
 }
 

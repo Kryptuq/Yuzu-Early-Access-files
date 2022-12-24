@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include "core/hid/emulated_devices.h"
+#include "core/hid/emulated_controller.h"
 #include "core/hid/hid_core.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_readable_event.h"
@@ -12,16 +12,18 @@ namespace Service::HID {
 RingController::RingController(Core::HID::HIDCore& hid_core_,
                                KernelHelpers::ServiceContext& service_context_)
     : HidbusBase(service_context_) {
-    input = hid_core_.GetEmulatedDevices();
+    input = hid_core_.GetEmulatedController(Core::HID::NpadIdType::Player1);
 }
 
 RingController::~RingController() = default;
 
 void RingController::OnInit() {
+    input->SetPollingMode(Common::Input::PollingMode::Ring);
     return;
 }
 
 void RingController::OnRelease() {
+    input->SetPollingMode(Common::Input::PollingMode::Active);
     return;
 };
 

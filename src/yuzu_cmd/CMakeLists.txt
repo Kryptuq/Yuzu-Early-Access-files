@@ -49,6 +49,15 @@ if(UNIX AND NOT APPLE)
     install(TARGETS yuzu-cmd)
 endif()
 
+if(WIN32)
+    # compile as a win32 gui application instead of a console application
+    if(MSVC)
+        set_target_properties(yuzu-cmd PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+    elseif(MINGW)
+        set_target_properties(yuzu-cmd PROPERTIES LINK_FLAGS_RELEASE "-Wl,--subsystem,windows")
+    endif()
+endif()
+
 if (MSVC)
     include(CopyYuzuSDLDeps)
     copy_yuzu_SDL_deps(yuzu-cmd)

@@ -174,6 +174,13 @@ static void OnStatusMessageReceived(const Network::StatusMessageEntry& msg) {
 
 /// Application entry point
 int main(int argc, char** argv) {
+#ifdef _WIN32
+    if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+        freopen("CONOUT$", "wb", stdout);
+        freopen("CONOUT$", "wb", stderr);
+    }
+#endif
+
     Common::Log::Initialize();
     Common::Log::SetColorConsoleBackendEnabled(true);
     Common::Log::Start();

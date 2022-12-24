@@ -35,19 +35,26 @@ using ControllerMotionDevices =
     std::array<std::unique_ptr<Common::Input::InputDevice>, Settings::NativeMotion::NumMotions>;
 using TriggerDevices =
     std::array<std::unique_ptr<Common::Input::InputDevice>, Settings::NativeTrigger::NumTriggers>;
+using ColorDevices =
+    std::array<std::unique_ptr<Common::Input::InputDevice>, max_emulated_controllers>;
 using BatteryDevices =
     std::array<std::unique_ptr<Common::Input::InputDevice>, max_emulated_controllers>;
 using CameraDevices = std::unique_ptr<Common::Input::InputDevice>;
-using NfcDevices = std::unique_ptr<Common::Input::InputDevice>;
+using RingAnalogDevices =
+    std::array<std::unique_ptr<Common::Input::InputDevice>, max_emulated_controllers>;
+using NfcDevices =
+    std::array<std::unique_ptr<Common::Input::InputDevice>, max_emulated_controllers>;
 using OutputDevices = std::array<std::unique_ptr<Common::Input::OutputDevice>, output_devices_size>;
 
 using ButtonParams = std::array<Common::ParamPackage, Settings::NativeButton::NumButtons>;
 using StickParams = std::array<Common::ParamPackage, Settings::NativeAnalog::NumAnalogs>;
 using ControllerMotionParams = std::array<Common::ParamPackage, Settings::NativeMotion::NumMotions>;
 using TriggerParams = std::array<Common::ParamPackage, Settings::NativeTrigger::NumTriggers>;
+using ColorParams = std::array<Common::ParamPackage, max_emulated_controllers>;
 using BatteryParams = std::array<Common::ParamPackage, max_emulated_controllers>;
 using CameraParams = Common::ParamPackage;
-using NfcParams = Common::ParamPackage;
+using RingAnalogParams = std::array<Common::ParamPackage, max_emulated_controllers>;
+using NfcParams = std::array<Common::ParamPackage, max_emulated_controllers>;
 using OutputParams = std::array<Common::ParamPackage, output_devices_size>;
 
 using ButtonValues = std::array<Common::Input::ButtonStatus, Settings::NativeButton::NumButtons>;
@@ -58,6 +65,7 @@ using ControllerMotionValues = std::array<ControllerMotionInfo, Settings::Native
 using ColorValues = std::array<Common::Input::BodyColorStatus, max_emulated_controllers>;
 using BatteryValues = std::array<Common::Input::BatteryStatus, max_emulated_controllers>;
 using CameraValues = Common::Input::CameraStatus;
+using RingAnalogValue = Common::Input::AnalogStatus;
 using NfcValues = Common::Input::NfcStatus;
 using VibrationValues = std::array<Common::Input::VibrationStatus, max_emulated_controllers>;
 
@@ -82,6 +90,10 @@ struct CameraState {
     Core::IrSensor::ImageTransferProcessorFormat format{};
     std::vector<u8> data{};
     std::size_t sample{};
+};
+
+struct RingSensorForce {
+    f32 force;
 };
 
 struct NfcState {
@@ -116,6 +128,7 @@ struct ControllerStatus {
     BatteryValues battery_values{};
     VibrationValues vibration_values{};
     CameraValues camera_values{};
+    RingAnalogValue ring_analog_value{};
     NfcValues nfc_values{};
 
     // Data for HID serices
@@ -129,6 +142,7 @@ struct ControllerStatus {
     ControllerColors colors_state{};
     BatteryLevelState battery_state{};
     CameraState camera_state{};
+    RingSensorForce ring_analog_state{};
     NfcState nfc_state{};
 };
 
@@ -141,6 +155,7 @@ enum class ControllerTriggerType {
     Battery,
     Vibration,
     IrSensor,
+    RingController,
     Nfc,
     Connected,
     Disconnected,
@@ -294,6 +309,9 @@ public:
     /// Returns the latest camera status from the controller with parameters
     CameraValues GetCameraValues() const;
 
+    /// Returns the latest status of analog input from the ring sensor with parameters
+    RingAnalogValue GetRingSensorValues() const;
+
     /// Returns the latest status of button input for the hid::HomeButton service
     HomeButtonState GetHomeButtons() const;
 
@@ -324,6 +342,9 @@ public:
     /// Returns the latest camera status from the controller
     const CameraState& GetCamera() const;
 
+    /// Returns the latest ringcon force sensor value
+    RingSensorForce GetRingSensorForce() const;
+
     /// Returns the latest ntag status from the controller
     const NfcState& GetNfc() const;
 
@@ -352,6 +373,15 @@ public:
      * @return true if SetCameraFormat was successfull
      */
     bool SetCameraFormat(Core::IrSensor::ImageTransferProcessorFormat camera_format);
+
+    // Returns the current mapped ring device
+    Common::ParamPackage GetRingParam() const;
+
+    /**
+     * Updates the current mapped ring device
+     * @param param ParamPackage with ring sensor data to be mapped
+     */
+    void SetRingParam(Common::ParamPackage param);
 
     /// Returns true if the device has nfc support
     bool HasNfc() const;
@@ -433,9 +463,16 @@ private:
     void SetMotion(const Common::Input::CallbackStatus& callback, std::size_t index);
 
     /**
+     * Updates the color status of the controller
+     * @param callback A CallbackStatus containing the color status
+     * @param index color ID of the to be updated
+     */
+    void SetColors(const Common::Input::CallbackStatus& callback, std::size_t index);
+
+    /**
      * Updates the battery status of the controller
      * @param callback A CallbackStatus containing the battery status
-     * @param index Button ID of the to be updated
+     * @param index battery ID of the to be updated
      */
     void SetBattery(const Common::Input::CallbackStatus& callback, std::size_t index);
 
@@ -444,6 +481,12 @@ private:
      * @param callback A CallbackStatus containing the camera status
      */
     void SetCamera(const Common::Input::CallbackStatus& callback);
+
+    /**
+     * Updates the ring analog sensor status of the ring controller
+     * @param callback A CallbackStatus containing the force status
+     */
+    void SetRingAnalog(const Common::Input::CallbackStatus& callback);
 
     /**
      * Updates the nfc status of the controller
@@ -484,7 +527,9 @@ private:
     ControllerMotionParams motion_params;
     TriggerParams trigger_params;
     BatteryParams battery_params;
+    ColorParams color_params;
     CameraParams camera_params;
+    RingAnalogParams ring_params;
     NfcParams nfc_params;
     OutputParams output_params;
 
@@ -493,7 +538,9 @@ private:
     ControllerMotionDevices motion_devices;
     TriggerDevices trigger_devices;
     BatteryDevices battery_devices;
+    ColorDevices color_devices;
     CameraDevices camera_devices;
+    RingAnalogDevices ring_analog_devices;
     NfcDevices nfc_devices;
     OutputDevices output_devices;
 

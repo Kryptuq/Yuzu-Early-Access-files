@@ -94,6 +94,7 @@ struct KernelCore::Impl {
                                        pt_heap_region.GetSize());
         }
 
+        InitializeHackSharedMemory();
         RegisterHostThread(nullptr);
 
         default_service_thread = &CreateServiceThread(kernel, "DefaultServiceThread");
@@ -726,14 +727,14 @@ struct KernelCore::Impl {
     }
 
     void InitializeMemoryLayout() {
-        const auto system_pool = memory_layout->GetKernelSystemPoolRegionPhysicalExtents();
-
         // Initialize the memory manager.
         memory_manager = std::make_unique<KMemoryManager>(system);
         const auto& management_region = memory_layout->GetPoolManagementRegion();
         ASSERT(management_region.GetEndAddress() != 0);
         memory_manager->Initialize(management_region.GetAddress(), management_region.GetSize());
+    }
 
+    void InitializeHackSharedMemory() {
         // Setup memory regions for emulated processes
         // TODO(bunnei): These should not be hardcoded regions initialized within the kernel
         constexpr std::size_t hid_size{0x40000};
@@ -742,39 +743,23 @@ struct KernelCore::Impl {
         constexpr std::size_t time_size{0x1000};
         constexpr std::size_t hidbus_size{0x1000};
 
-        const PAddr hid_phys_addr{system_pool.GetAddress()};
-        const PAddr font_phys_addr{system_pool.GetAddress() + hid_size};
-        const PAddr irs_phys_addr{system_pool.GetAddress() + hid_size + font_size};
-        const PAddr time_phys_addr{system_pool.GetAddress() + hid_size + font_size + irs_size};
-        const PAddr hidbus_phys_addr{system_pool.GetAddress() + hid_size + font_size + irs_size +
-                                     time_size};
-
         hid_shared_mem = KSharedMemory::Create(system.Kernel());
         font_shared_mem = KSharedMemory::Create(system.Kernel());
         irs_shared_mem = KSharedMemory::Create(system.Kernel());
         time_shared_mem = KSharedMemory::Create(system.Kernel());
         hidbus_shared_mem = KSharedMemory::Create(system.Kernel());
 
-        hid_shared_mem->Initialize(system.DeviceMemory(), nullptr,
-                                   {hid_phys_addr, hid_size / PageSize},
-                                   Svc::MemoryPermission::None, Svc::MemoryPermission::Read,
-                                   hid_phys_addr, hid_size, "HID:SharedMemory");
-        font_shared_mem->Initialize(system.DeviceMemory(), nullptr,
-                                    {font_phys_addr, font_size / PageSize},
-                                    Svc::MemoryPermission::None, Svc::MemoryPermission::Read,
-                                    font_phys_addr, font_size, "Font:SharedMemory");
-        irs_shared_mem->Initialize(system.DeviceMemory(), nullptr,
-                                   {irs_phys_addr, irs_size / PageSize},
-                                   Svc::MemoryPermission::None, Svc::MemoryPermission::Read,
-                                   irs_phys_addr, irs_size, "IRS:SharedMemory");
-        time_shared_mem->Initialize(system.DeviceMemory(), nullptr,
-                                    {time_phys_addr, time_size / PageSize},
-                                    Svc::MemoryPermission::None, Svc::MemoryPermission::Read,
-                                    time_phys_addr, time_size, "Time:SharedMemory");
-        hidbus_shared_mem->Initialize(system.DeviceMemory(), nullptr,
-                                      {hidbus_phys_addr, hidbus_size / PageSize},
-                                      Svc::MemoryPermission::None, Svc::MemoryPermission::Read,
-                                      hidbus_phys_addr, hidbus_size, "HidBus:SharedMemory");
+        hid_shared_mem->Initialize(system.DeviceMemory(), nullptr, Svc::MemoryPermission::None,
+                                   Svc::MemoryPermission::Read, hid_size, "HID:SharedMemory");
+        font_shared_mem->Initialize(system.DeviceMemory(), nullptr, Svc::MemoryPermission::None,
+                                    Svc::MemoryPermission::Read, font_size, "Font:SharedMemory");
+        irs_shared_mem->Initialize(system.DeviceMemory(), nullptr, Svc::MemoryPermission::None,
+                                   Svc::MemoryPermission::Read, irs_size, "IRS:SharedMemory");
+        time_shared_mem->Initialize(system.DeviceMemory(), nullptr, Svc::MemoryPermission::None,
+                                    Svc::MemoryPermission::Read, time_size, "Time:SharedMemory");
+        hidbus_shared_mem->Initialize(system.DeviceMemory(), nullptr, Svc::MemoryPermission::None,
+                                      Svc::MemoryPermission::Read, hidbus_size,
+                                      "HidBus:SharedMemory");
     }
 
     KClientPort* CreateNamedServicePort(std::string name) {

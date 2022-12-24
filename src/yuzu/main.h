@@ -390,7 +390,7 @@ private:
     GameList* game_list;
     LoadingScreen* loading_screen;
     QTimer shutdown_timer;
-    OverlayDialog* shutdown_dialog;
+    OverlayDialog* shutdown_dialog{};
 
     GameListPlaceholder* game_list_placeholder;
 

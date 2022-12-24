@@ -272,6 +272,8 @@ void Controller_NPad::InitNewlyAddedController(Core::HID::NpadIdType npad_id) {
         }
         break;
     case Core::HID::NpadStyleIndex::JoyconLeft:
+        shared_memory->fullkey_color.attribute = ColorAttribute::Ok;
+        shared_memory->fullkey_color.fullkey = body_colors.left;
         shared_memory->joycon_color.attribute = ColorAttribute::Ok;
         shared_memory->joycon_color.left = body_colors.left;
         shared_memory->battery_level_dual = battery_level.left.battery_level;
@@ -285,6 +287,8 @@ void Controller_NPad::InitNewlyAddedController(Core::HID::NpadIdType npad_id) {
         shared_memory->sixaxis_left_properties.is_newly_assigned.Assign(1);
         break;
     case Core::HID::NpadStyleIndex::JoyconRight:
+        shared_memory->fullkey_color.attribute = ColorAttribute::Ok;
+        shared_memory->fullkey_color.fullkey = body_colors.right;
         shared_memory->joycon_color.attribute = ColorAttribute::Ok;
         shared_memory->joycon_color.right = body_colors.right;
         shared_memory->battery_level_right = battery_level.right.battery_level;
@@ -332,6 +336,8 @@ void Controller_NPad::InitNewlyAddedController(Core::HID::NpadIdType npad_id) {
 
     controller.is_connected = true;
     controller.device->Connect();
+    controller.device->SetLedPattern();
+    controller.device->SetPollingMode(Common::Input::PollingMode::Active);
     SignalStyleSetChangedEvent(npad_id);
     WriteEmptyEntry(controller.shared_memory);
 }

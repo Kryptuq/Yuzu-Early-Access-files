@@ -477,6 +477,7 @@ struct Values {
 
     Setting<bool> enable_raw_input{false, "enable_raw_input"};
     Setting<bool> controller_navigation{true, "controller_navigation"};
+    Setting<bool> enable_joycon_driver{false, "enable_joycon_driver"};
 
     SwitchableSetting<bool> vibration_enabled{true, "vibration_enabled"};
     SwitchableSetting<bool> enable_accurate_vibrations{false, "enable_accurate_vibrations"};
